@@ -53,12 +53,7 @@ import scratch.aftershockStatistics.aafs.ServerConfig;
 /**
  * Class for making queries to Comcat.
  * Original author unknown.
- * Modified by: Michael Barall.
- *
- * WARNING TO USERS!
- * Do not use the functions marked [DEPRECATED].
- * These functions are known to have problems.
- * These functions have been retained for a transition period until they can be removed.
+ * Extensively modified by: Michael Barall.
  */
 public class ComcatAccessor {
 	
@@ -137,46 +132,6 @@ public class ComcatAccessor {
 	// This is chosen to respect the limits for both Comcat (-100.0 km) and OpenSHA (-5.0).
 
 	public static final double DEFAULT_MIN_DEPTH = 0.0;
-	
-
-
-
-	/**
-	 * [DEPRECATED]
-	 * Fetches an event with the given ID, e.g. "ci37166079"
-	 * @param eventID
-	 * @return
-	 * Note: The longitude is coerced to lie between -90 and +270.
-	 * This is so it is possible to draw a region surrounding the mainshock,
-	 * and have the entire region lie in the valid range -180 <= lon <= +360.
-	 * Note: If in the future, the Region class is replaced by something that
-	 * does spherical geometry, then the coercion here and below could be removed,
-	 * and all longitudes could be between -180 and 180.
-	 */
-	public ObsEqkRupture fetchEvent(String eventID) {
-		EventQuery query = new EventQuery();
-		query.setEventId(eventID);
-		List<JsonEvent> events;
-		try {
-			events = service.getEvents(query);
-		} catch (FileNotFoundException e) {
-			// If ComCat does not recognize the eventID, ComCat returns HTTP error 404, which appears here as FileNotFoundException.
-			return null;
-		} catch (IOException e) {
-			// If the eventID has been deleted from ComCat, ComCat returns HTTP error 409, which appears here as IOException.
-			return null;
-		} catch (Exception e) {
-			throw ExceptionUtils.asRuntimeException(e);
-		}
-		if (events.isEmpty())
-			return null;
-		Preconditions.checkState(events.size() == 1, "More that 1 match? "+events.size());
-		
-		JsonEvent event = events.get(0);
-//		printJSON(event);
-		
-		return eventToObsRup(event);
-	}
 	
 
 
@@ -281,122 +236,6 @@ public class ComcatAccessor {
 				System.out.println(prefix+key+": "+val);
 			}
 		}
-	}
-
-
-
-	
-	/**
-	 * [DEPRECATED]
-	 * Fetch all aftershocks of the given event. Returned list will not contain the mainshock
-	 * even if it matches the query.
-	 * @param mainshock
-	 * @param minDays
-	 * @param maxDays
-	 * @param minDepth
-	 * @param maxDepth
-	 * @param region
-	 * @return
-	 * Note: The mainshock parameter must be a return value from fetchEvent() above.
-	 * Note: If the mainshock longitude is between -90 and +90, then the aftershock
-	 * longitudes lie between -180 and +180.  If the mainshock longitude is between
-	 * +90 and +270, then the aftershock longitudes are coerced to lie between
-	 * 0 and +360.  This makes is possible to easily test if an aftershock lies
-	 * within a region surrounding the mainshock.
-	 */
-	public ObsEqkRupList fetchAftershocks(ObsEqkRupture mainshock, double minDays, double maxDays,
-			double minDepth, double maxDepth, Region region) {
-		EventQuery query = new EventQuery();
-		
-		Preconditions.checkState(minDepth < maxDepth, "Min depth must be less than max depth");
-		query.setMinDepth(new BigDecimal(String.format("%.3f", minDepth)));
-		query.setMaxDepth(new BigDecimal(String.format("%.3f", maxDepth)));
-		
-		Preconditions.checkState(minDays < maxDays, "Min days must be less than max days");
-		// time zones shouldn't be an issue since we're just adding to the original catalog time, whatever
-		// time zone that is in.
-		long eventTime = mainshock.getOriginTime();
-		long startTime = eventTime + (long)(minDays*day_millis);
-		long endTime = eventTime + (long)(maxDays*day_millis);
-		query.setStartTime(new Date(startTime));
-		if(endTime==startTime)
-			endTime=Instant.now().toEpochMilli();
-		query.setEndTime(new Date(endTime));
-		
-		Preconditions.checkState(startTime < System.currentTimeMillis(), "Aftershock fetch start time is after now!");
-		
-		// need to set this threshold at 90 (not 180) so that mainshocks located just
-		// west of the date line are handled correctly
-		boolean mainshockLonWrapped = mainshock.getHypocenterLocation().getLongitude() > 90;
-		
-		query.setMinLatitude(new BigDecimal(String.format("%.5f", region.getMinLat())));
-		query.setMaxLatitude(new BigDecimal(String.format("%.5f", region.getMaxLat())));
-		query.setMinLongitude(new BigDecimal(String.format("%.5f", region.getMinLon())));
-		query.setMaxLongitude(new BigDecimal(String.format("%.5f", region.getMaxLon())));
-		query.setLimit(20000);
-		List<JsonEvent> events;
-		int count=20000;
-		ObsEqkRupList rups = new ObsEqkRupList();
-		Date latest=new Date(endTime);
-		Date endTimeStamp;
-		do{
-			endTimeStamp=latest;
-			query.setEndTime(latest);
-			if (D)
-				try {
-					System.out.println(service.getUrl(query, Format.GEOJSON));
-				} catch (MalformedURLException e) {
-					e.printStackTrace();
-				}
-
-			try {
-				events = service.getEvents(query);
-				count = events.size();
-			} catch (FileNotFoundException e) {
-				events = null;
-				count = 0;
-			} catch (IOException e) {
-				events = null;
-				count = 0;
-			} catch (Exception e) {
-				throw ExceptionUtils.asRuntimeException(e);
-			}
-
-			System.out.println(count);
-
-			if (count > 0) {
-				for (JsonEvent event : events) {
-					boolean wrap = mainshockLonWrapped && event.getLongitude().doubleValue() < 0;
-					ObsEqkRupture rup = eventToObsRup(event, wrap, false);
-					if (rup !=null)
-						rups.add(rup);
-				}
-			}
-			rups.sortByOriginTime();
-			if(count==0)
-				break;
-			latest=rups.get(0).getOriginTimeCal().getTime();
-		}while(count==20000 && endTimeStamp.compareTo(latest)!=0);
-		Collections.sort(rups, new ObsEqkRupEventIdComparator());
-		ObsEqkRupList delrups=new ObsEqkRupList();
-		ObsEqkRupture previous =null;
-		for (ObsEqkRupture rup : rups) {
-			if (rup.getEventId().equals(mainshock.getEventId()) || (previous!=null && rup.getEventId().equals(previous.getEventId()))) {
-				//if (D) System.out.println("Removing mainshock (M="+rup.getMag()+") from aftershock list");
-				delrups.add(rup);
-			}
-		}
-		rups.removeAll(delrups);
-		if (!region.isRectangular()) {
-			if (D) System.out.println("Fetched "+rups.size()+" events before region filtering");
-			for (int i=rups.size(); --i>=0;)
-				if (!region.contains(rups.get(i).getHypocenterLocation()))
-					rups.remove(i);
-		}
-		
-		if (D) System.out.println("Returning "+rups.size()+" aftershocks");
-		
-		return rups;
 	}
 
 
@@ -698,19 +537,6 @@ public class ComcatAccessor {
 		return fetchEventList (exclude_id, startTime, endTime,
 			minDepth, maxDepth, region, wrapLon,
 			minMag, COMCAT_MAX_LIMIT, COMCAT_MAX_CALLS);
-	}
-
-
-
-
-	// [DEPRECATED]
-	// This function should be private.  It is public only to avoid breaking class
-	// scratch.kevin.ucerf3.LaHabraProbCalc.  New code should NOT call this function.
-	public static ObsEqkRupture eventToObsRup(JsonEvent event) {
-		// default to moving anything with lon < -90 to the positive domain
-		// then we'll apply this consistently to all aftershocks
-		// without this fix (and corresponding check in fetchEvent), events such as usp000fuse will fail
-		return eventToObsRup(event, event.getLongitude().doubleValue() < -90, true);
 	}
 
 

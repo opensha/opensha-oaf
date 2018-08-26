@@ -820,6 +820,8 @@ public class TimelineSupport extends ServerComponent {
 			return RESCODE_ALIAS_EVENT_NOT_IN_COMCAT;
 		}
 
+		sg.log_sup.report_candidate_event (fcmain);
+
 		// If the event ID has not been seen before, create the alias timeline
 
 		if (retval == RESCODE_ALIAS_NEW_EVENT) {

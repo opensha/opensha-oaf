@@ -269,16 +269,31 @@ public class LogSupport extends ServerComponent {
 
 	public void report_timeline_appended (TimelineStatus tstatus) {
 
-		if (tstatus.is_first_entry() && tstatus.forecast_mainshock != null) {
-			report_action ("INTAKE-EVENT",
-				SimpleUtils.event_id_and_info_one_line (
-					tstatus.forecast_mainshock.mainshock_event_id,
-					tstatus.forecast_mainshock.mainshock_time,
-					tstatus.forecast_mainshock.mainshock_mag,
-					tstatus.forecast_mainshock.mainshock_lat,
-					tstatus.forecast_mainshock.mainshock_lon,
-					tstatus.forecast_mainshock.mainshock_depth)
-			);
+		if (tstatus.forecast_mainshock != null) {
+			if (tstatus.is_first_entry()) {
+				report_action ("INTAKE-EVENT",
+					SimpleUtils.event_id_and_info_one_line (
+						tstatus.forecast_mainshock.mainshock_event_id,
+						tstatus.forecast_mainshock.mainshock_time,
+						tstatus.forecast_mainshock.mainshock_mag,
+						tstatus.forecast_mainshock.mainshock_lat,
+						tstatus.forecast_mainshock.mainshock_lon,
+						tstatus.forecast_mainshock.mainshock_depth)
+				);
+			}
+			else {
+				report_action ("TIMELINE-EVENT",
+					SimpleUtils.event_id_and_info_one_line (
+						tstatus.forecast_mainshock.mainshock_event_id,
+						tstatus.forecast_mainshock.mainshock_time,
+						tstatus.forecast_mainshock.mainshock_mag,
+						tstatus.forecast_mainshock.mainshock_lat,
+						tstatus.forecast_mainshock.mainshock_lon,
+						tstatus.forecast_mainshock.mainshock_depth),
+					String.format ("lag = %.3f days",
+						((double)(tstatus.last_forecast_lag))/ComcatAccessor.day_millis)
+				);
+			}
 		}
 
 		report_action ("TIMELINE-APPENDED",
@@ -537,6 +552,72 @@ public class LogSupport extends ServerComponent {
 		report_action ("ALIAS-UPDATED",
 					"family_time = " + SimpleUtils.time_raw_and_string (family_time));
 		report_info (info);
+		return;
+	}
+
+
+
+
+	// Report candidate event.
+
+	public void report_candidate_event (ForecastMainshock fcmain) {
+		report_action ("CANDIDATE-EVENT",
+			SimpleUtils.event_id_and_info_one_line (
+				fcmain.mainshock_event_id,
+				fcmain.mainshock_time,
+				fcmain.mainshock_mag,
+				fcmain.mainshock_lat,
+				fcmain.mainshock_lon,
+				fcmain.mainshock_depth)
+		);
+		return;
+	}
+
+
+
+
+	// Report PDL event.
+
+	public void report_pdl_event (OpIntakePDL payload) {
+		report_action ("PDL-EVENT",
+			SimpleUtils.event_id_and_info_one_line (
+				payload.event_id,
+				payload.mainshock_time,
+				payload.mainshock_mag,
+				payload.mainshock_lat,
+				payload.mainshock_lon,
+				payload.mainshock_depth)
+		);
+		return;
+	}
+
+
+
+
+	// Report PDL send forecast found.
+
+	public void report_pdl_forecast_found (TimelineStatus tstatus) {
+		report_action ("PDL-FORECAST-FOUND",
+					tstatus.event_id,
+					tstatus.get_actcode_as_string (),
+					tstatus.get_fc_status_as_string (),
+					tstatus.get_pdl_status_as_string (),
+					(tstatus.result_has_shadowing())
+						? (tstatus.get_fc_result_as_string () + " (" + tstatus.shadowing_event_id + ")")
+						: (tstatus.get_fc_result_as_string ()),
+					"action_time = " + SimpleUtils.time_raw_and_string (tstatus.action_time));
+		return;
+	}
+
+
+
+
+	// Report PDL send catalog found.
+
+	public void report_pdl_catalog_found (String event_id, int eqk_count) {
+		report_action ("PDL-CATALOG-FOUND",
+					event_id,
+					"eqk_count = " + eqk_count);
 		return;
 	}
 

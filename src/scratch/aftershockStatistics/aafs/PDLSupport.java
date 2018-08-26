@@ -34,27 +34,65 @@ public class PDLSupport extends ServerComponent {
 
 
 
+//	// Send a report to PDL.
+//	// Throw an exception if the report failed.
+//
+//	public void send_pdl_report (TimelineStatus tstatus) throws Exception {
+//
+//		// The JSON file to send
+//
+//		String jsonText = tstatus.forecast_results.get_pdl_model();
+//
+//		// The event network and code
+//
+//		String eventNetwork = tstatus.forecast_mainshock.mainshock_network;
+//		String eventCode = tstatus.forecast_mainshock.mainshock_code;
+//
+//		// The event ID, which for us identifies the timeline
+//
+//		String eventID = sg.alias_sup.timeline_id_to_pdl_code (tstatus.event_id);
+//
+//		// Modification time, 0 means now
+//
+//		long modifiedTime = 0L;
+//
+//		// Review status, false means automatically generated
+//
+//		boolean isReviewed = false;
+//
+//		// Build the product
+//
+//		Product product = PDLProductBuilderOaf.createProduct (eventID, eventNetwork, eventCode, isReviewed, jsonText, modifiedTime);
+//
+//		// Sign the product
+//
+//		PDLSender.signProduct(product);
+//
+//		// Send the product, true means it is text
+//
+//		PDLSender.sendProduct(product, true);
+//
+//		return;
+//	}
+
+
+
+
 	// Send a report to PDL.
 	// Throw an exception if the report failed.
+	// Use this version if the catalog is in tstatus.forecast_results.
 
 	public void send_pdl_report (TimelineStatus tstatus) throws Exception {
 
-		// The JSON file to send
+		// Collect the forecast data
 
-		String jsonText = tstatus.forecast_results.get_pdl_model();
-
-		// The event network and code
-
-		String eventNetwork = tstatus.forecast_mainshock.mainshock_network;
-		String eventCode = tstatus.forecast_mainshock.mainshock_code;
+		ForecastData forecast_data = new ForecastData();
+		forecast_data.set_data (tstatus.forecast_mainshock, tstatus.forecast_params,
+							tstatus.forecast_results, tstatus.analyst_options);
 
 		// The event ID, which for us identifies the timeline
 
 		String eventID = sg.alias_sup.timeline_id_to_pdl_code (tstatus.event_id);
-
-		// Modification time, 0 means now
-
-		long modifiedTime = 0L;
 
 		// Review status, false means automatically generated
 
@@ -62,7 +100,45 @@ public class PDLSupport extends ServerComponent {
 
 		// Build the product
 
-		Product product = PDLProductBuilderOaf.createProduct (eventID, eventNetwork, eventCode, isReviewed, jsonText, modifiedTime);
+		Product product = forecast_data.make_pdl_product (eventID, isReviewed);
+
+		// Sign the product
+
+		PDLSender.signProduct(product);
+
+		// Send the product, true means it is text
+
+		PDLSender.sendProduct(product, true);
+
+		return;
+	}
+
+
+
+
+	// Send a report to PDL.
+	// Throw an exception if the report failed.
+	// Use this version to supply the catalog separately.
+
+	public void send_pdl_report (TimelineStatus tstatus, CompactEqkRupList catalog) throws Exception {
+
+		// Collect the forecast data
+
+		ForecastData forecast_data = new ForecastData();
+		forecast_data.set_data (tstatus.forecast_mainshock, tstatus.forecast_params,
+							tstatus.forecast_results, tstatus.analyst_options, catalog);
+
+		// The event ID, which for us identifies the timeline
+
+		String eventID = sg.alias_sup.timeline_id_to_pdl_code (tstatus.event_id);
+
+		// Review status, false means automatically generated
+
+		boolean isReviewed = false;
+
+		// Build the product
+
+		Product product = forecast_data.make_pdl_product (eventID, isReviewed);
 
 		// Sign the product
 

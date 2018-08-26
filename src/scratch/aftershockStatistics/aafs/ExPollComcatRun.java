@@ -202,6 +202,16 @@ public class ExPollComcatRun extends ServerExecTask {
 
 				if (tentry == null) {
 
+					// For an event, process poll no earlier than the time of first forecast
+					// (Intake is delayed as long as possible, because Comcat authoritative event ID
+					// changes typically occur within the first 20 minutes after an earthquake, and
+					// we attempt to avoid intake until the authoritative ID is fixed.)
+
+					long first_forecast = potential_time
+											+ sg.task_disp.get_action_config().get_next_forecast_lag(0L)
+											+ sg.task_disp.get_action_config().get_comcat_clock_skew()
+											+ sg.task_disp.get_action_config().get_comcat_origin_skew();
+
 					// Submit a poll intake task for the event
 
 					OpIntakePoll intake_payload = new OpIntakePoll();
@@ -209,7 +219,7 @@ public class ExPollComcatRun extends ServerExecTask {
 
 					PendingTask.submit_task (
 						EVID_POLL,									// event id
-						sg.task_disp.get_time() + total_delay,		// sched_time
+						Math.max (sg.task_disp.get_time() + total_delay, first_forecast),	// sched_time
 						sg.task_disp.get_time(),					// submit_time
 						SUBID_AAFS,									// submit_id
 						OPCODE_INTAKE_POLL,							// opcode

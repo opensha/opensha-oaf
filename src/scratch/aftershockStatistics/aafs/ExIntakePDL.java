@@ -194,6 +194,8 @@ public class ExIntakePDL extends ServerExecTask {
 			return RESCODE_TASK_CORRUPT;
 		}
 
+		sg.log_sup.report_pdl_event (payload);
+
 		//  //--- Test for timeline existence
 		//  //
 		//  // Note: The test is moved below.  Putting it here would avoid an extra Comcat
@@ -240,6 +242,8 @@ public class ExIntakePDL extends ServerExecTask {
 		if (retval == RESCODE_ALIAS_EVENT_NOT_IN_COMCAT) {
 			return RESCODE_DELETE_NOT_IN_COMCAT;		// Just delete, so that log is not flooded with notifications
 		}
+
+		sg.log_sup.report_candidate_event (fcmain);
 
 		//--- Intake check
 

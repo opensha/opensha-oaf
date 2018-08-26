@@ -109,7 +109,12 @@ public class ServerComponent {
 	public static final int RESCODE_FORECAST_FORESHOCK = 28;		// Forecast skipped because event was found to be a foreshock
 	public static final int RESCODE_INTAKE_AGED = 29;				// Event intake dropped because event was outside age range
 	public static final int RESCODE_TIMELINE_EVENT_REMOVED = 30;	// Timeline stopped due to event removed or merged in Comcat
-	public static final int RESCODE_MAX_NORMAL = 30;				// Maximum known normal result code
+	public static final int RESCODE_TIMELINE_PDL_NO_FORECAST = 31;	// PDL send failed because unable to locate forecast in timeline
+	public static final int RESCODE_TIMELINE_PDL_BAD_FORECAST = 32;	// PDL send failed because unable to interpret forecast in timeline
+	public static final int RESCODE_TIMELINE_PDL_NO_CATALOG = 33;	// PDL send failed because unable to locate catalog snapshot
+	public static final int RESCODE_TIMELINE_PDL_BAD_CATALOG = 34;	// PDL send failed because unable to interpret catalog snapshot
+	public static final int RESCODE_TIMELINE_PDL_CAT_MISMATCH = 35;	// PDL send failed because of catalog snapshot parameter mismatch
+	public static final int RESCODE_MAX_NORMAL = 35;				// Maximum known normal result code
 
 	public static final int RESCODE_DELETE = 101;					// Delete current task (without logging it)
 	public static final int RESCODE_DELETE_TIMELINE_EXISTS = 102;	// Delete current task (without logging it), because timeline already exists
@@ -162,6 +167,11 @@ public class ServerComponent {
 		case RESCODE_FORECAST_FORESHOCK: return "RESCODE_FORECAST_FORESHOCK";
 		case RESCODE_INTAKE_AGED: return "RESCODE_INTAKE_AGED";
 		case RESCODE_TIMELINE_EVENT_REMOVED: return "RESCODE_TIMELINE_EVENT_REMOVED";
+		case RESCODE_TIMELINE_PDL_NO_FORECAST: return "RESCODE_TIMELINE_PDL_NO_FORECAST";
+		case RESCODE_TIMELINE_PDL_BAD_FORECAST: return "RESCODE_TIMELINE_PDL_BAD_FORECAST";
+		case RESCODE_TIMELINE_PDL_NO_CATALOG: return "RESCODE_TIMELINE_PDL_NO_CATALOG";
+		case RESCODE_TIMELINE_PDL_BAD_CATALOG: return "RESCODE_TIMELINE_PDL_BAD_CATALOG";
+		case RESCODE_TIMELINE_PDL_CAT_MISMATCH: return "RESCODE_TIMELINE_PDL_CAT_MISMATCH";
 
 		case RESCODE_DELETE: return "RESCODE_DELETE";
 		case RESCODE_DELETE_TIMELINE_EXISTS: return "RESCODE_DELETE_TIMELINE_EXISTS";

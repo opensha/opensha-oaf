@@ -36,11 +36,13 @@ public class PDLProductBuilderOaf {
 	 * @param isReviewed = True if this product has been reviewed.
 	 * @param jsonText = JSON text that contains the product.
 	 * @param modifiedTime = Modification time, in milliseconds since the epoch, or 0L if none.
+	 * @param productFiles = An optional list of additional product files to attach.
 	 * Note: At present, modifiedTime is ignored, and the time is always set to "now".
 	 * @return
 	 *     The product that was created
 	 */
-	public static Product createProduct (String eventID, String eventNetwork, String eventCode, boolean isReviewed, String jsonText, long modifiedTime) throws Exception {
+	public static Product createProduct (String eventID, String eventNetwork, String eventCode,
+			boolean isReviewed, String jsonText, long modifiedTime, PDLProductFile... productFiles) throws Exception {
 		Product product;
 		ProductId productId;
 
@@ -133,6 +135,10 @@ public class PDLProductBuilderOaf {
 		// Attach content
 
 		attachByteContentToProduct (product, jsonText, modifiedTime);
+
+		// Attach any additional product files
+
+		attachProductFilesToProduct (product, productFiles);
 
 		// Return the constructed product
 
@@ -327,6 +333,28 @@ public class PDLProductBuilderOaf {
 //		// throw an exception...
 //		contents.putAll(FileContent.getDirectoryContents(
 //				new File("./test-content")));
+
+		return;
+	}
+
+
+
+
+	/**
+	 * Attaches additional files to the product contents.
+	 *
+	 * @param product
+	 *     The product on to which the content should be attached.
+	 * @param productFiles = An optional list of additional product files to attach.
+	 */
+	public static void attachProductFilesToProduct (Product product, PDLProductFile... productFiles) {
+		Map<String, Content> contents;
+
+		contents = product.getContents();
+
+		for (PDLProductFile product_file : productFiles) {
+			product_file.attach_to_product (contents);
+		}
 
 		return;
 	}

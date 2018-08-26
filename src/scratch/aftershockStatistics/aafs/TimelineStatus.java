@@ -839,6 +839,9 @@ public class TimelineStatus extends DBPayload {
 	//
 	// Note: This keeps the forecast parameters and results, so that it is possible
 	// to send a PDL report for a forecast which originally didn't send a report.
+	//
+	// Edit: The forecast parameters and results are now set to null, because
+	// the PDL reporting code now searches back in the timeline for the forecast.
 
 	public void set_state_pdl_update (long the_entry_time, int the_pdl_status) {
 
@@ -859,6 +862,8 @@ public class TimelineStatus extends DBPayload {
 		//forecast_mainshock  = kept;
 		//forecast_params     = kept;
 		//forecast_results    = kept;
+		forecast_params     = null;
+		forecast_results    = null;
 
 		//last_forecast_lag   = kept;
 		return;

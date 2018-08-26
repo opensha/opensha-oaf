@@ -267,13 +267,23 @@ public class ServerCmd {
 										payload.mainshock_lon,
 										payload.mainshock_depth);
 
-				// Test if event passes the intake filter, using the minimum magnitude criterion
+				// Process event no earlier than the time of first forecast
+				// (Intake is delayed as long as possible, because Comcat authoritative event ID
+				// changes typically occur within the first 20 minutes after an earthquake, and
+				// we attempt to avoid intake until the authoritative ID is fixed.)
 
 				ActionConfig action_config = new ActionConfig();
 
 				long the_time = ServerClock.get_time();
 
-				long sched_time = the_time;
+				long first_forecast = payload.mainshock_time
+										+ action_config.get_next_forecast_lag(0L)
+										+ action_config.get_comcat_clock_skew()
+										+ action_config.get_comcat_origin_skew();
+
+				long sched_time = Math.max (the_time, first_forecast);
+
+				// Test if event passes the intake filter, using the minimum magnitude criterion
 
 				IntakeSphRegion intake_region = action_config.get_pdl_intake_region_for_min_mag (
 						payload.mainshock_lat, payload.mainshock_lon, payload.mainshock_mag);
@@ -285,11 +295,9 @@ public class ServerCmd {
 					intake_region = action_config.get_pdl_intake_region_for_intake_mag (
 							payload.mainshock_lat, payload.mainshock_lon, payload.mainshock_mag);
 
-					// Schedule task for projected time of first forecast, ignoring origin skew
+					// Schedule task for projected time of first forecast
 
-					sched_time = payload.mainshock_time
-									+ action_config.get_next_forecast_lag(0L)
-									+ action_config.get_comcat_clock_skew();
+					sched_time = first_forecast;
 
 					// If we didn't pass, or if the scheduled time has already passed, then drop event
 

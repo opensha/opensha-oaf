@@ -273,6 +273,8 @@ public class ExIntakePoll extends ServerExecTask {
 			return RESCODE_DELETE_NOT_IN_COMCAT;		// Just delete, so that log is not flooded with notifications
 		}
 
+		sg.log_sup.report_candidate_event (fcmain);
+
 		//--- Intake check
 
 		// Search intake regions, using the minimum magnitude criterion
