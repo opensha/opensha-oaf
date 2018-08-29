@@ -12,7 +12,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+//import org.json.simple.JSONObject;
+import scratch.aftershockStatistics.util.JSONOrderedObject;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
@@ -286,13 +287,13 @@ public class USGS_AftershockForecast {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public JSONObject buildJSON () {
+	public JSONOrderedObject buildJSON () {
 		return buildJSON (System.currentTimeMillis());
 	}
 	
 	@SuppressWarnings("unchecked")
-	public JSONObject buildJSON (long creation_time) {
-		JSONObject json = new JSONObject();
+	public JSONOrderedObject buildJSON (long creation_time) {
+		JSONOrderedObject json = new JSONOrderedObject();
 		
 		json.put("creationTime", creation_time);
 		long maxEndDate = 0l;
@@ -311,10 +312,10 @@ public class USGS_AftershockForecast {
 		json.put("injectableText", injectableText);
 		
 		// OBSERVATIONS
-		JSONObject obsJSON = new JSONObject();
+		JSONOrderedObject obsJSON = new JSONOrderedObject();
 		JSONArray obsMagBins = new JSONArray();
 		for (int m=0; m<minMags.length; m++) {
-			JSONObject magBin = new JSONObject();
+			JSONOrderedObject magBin = new JSONOrderedObject();
 			magBin.put("magnitude", minMags[m]);
 			magBin.put("count", aftershockCounts[m]);
 			obsMagBins.add(magBin);
@@ -323,10 +324,10 @@ public class USGS_AftershockForecast {
 		json.put("observations", obsMagBins);
 
 		// MODEL
-		JSONObject modelJSON = new JSONObject();
+		JSONOrderedObject modelJSON = new JSONOrderedObject();
 		modelJSON.put("name", model.getModelName());
 		modelJSON.put("reference", "#url");
-		JSONObject modelParams = new JSONObject();
+		JSONOrderedObject modelParams = new JSONOrderedObject();
 		// return AftershockStatsCalc.getExpectedNumEvents(getMaxLikelihood_a(), b, magMain, magMin, getMaxLikelihood_p(), getMaxLikelihood_c(), tMinDays, tMaxDays);
 		modelParams.put("a", model.getMaxLikelihood_a());
 		modelParams.put("b", model.get_b());
@@ -339,7 +340,7 @@ public class USGS_AftershockForecast {
 		// FORECAST
 		JSONArray forecastsJSON = new JSONArray();
 		for (int i=0; i<durations.length; i++) {
-			JSONObject forecastJSON = new JSONObject();
+			JSONOrderedObject forecastJSON = new JSONOrderedObject();
 			
 			forecastJSON.put("timeStart", startDate.getTimeInMillis());
 			forecastJSON.put("timeEnd", endDates[i].getTimeInMillis());
@@ -347,7 +348,7 @@ public class USGS_AftershockForecast {
 			
 			JSONArray magBins = new JSONArray();
 			for (int m=0; m<minMags.length; m++) {
-				JSONObject magBin = new JSONObject();
+				JSONOrderedObject magBin = new JSONOrderedObject();
 				magBin.put("magnitude", minMags[m]);
 				magBin.put("p95minimum", Math.round(numEventsLower.get(durations[i], minMags[m])));
 				magBin.put("p95maximum", Math.round(numEventsUpper.get(durations[i], minMags[m])));
@@ -358,7 +359,7 @@ public class USGS_AftershockForecast {
 			forecastJSON.put("bins", magBins);
 			
 			if (includeProbAboveMainshock) {
-				JSONObject magBin = new JSONObject();
+				JSONOrderedObject magBin = new JSONOrderedObject();
 				double mainMag = model.getMainShockMag();
 				magBin.put("magnitude", mainMag);
 				magBin.put("probability", probs.get(durations[i], mainMag));
@@ -370,6 +371,14 @@ public class USGS_AftershockForecast {
 		json.put("forecast", forecastsJSON);
 		
 		return json;
+	}
+	
+	public String buildJSONString () {
+		return buildJSON().toJSONString();
+	}
+	
+	public String buildJSONString (long creation_time) {
+		return buildJSON(creation_time).toJSONString();
 	}
 
 }

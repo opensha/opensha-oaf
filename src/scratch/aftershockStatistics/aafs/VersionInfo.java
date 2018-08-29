@@ -21,11 +21,11 @@ public class VersionInfo  {
 
 	// Program name.
 
-	public static final String program_name = "Automatic Aftershock Forecasting System";
+	public static final String program_name = "USGS Aftershock Forecasting System";
 
 	// Program version.
 
-	public static final String program_version = "Version 0.01.1003 Alpha  (08/26/2018)";
+	public static final String program_version = "Version 0.01.1004 Alpha (08/28/2018)";
 
 	// Program sponsor.
 
@@ -35,13 +35,13 @@ public class VersionInfo  {
 
 	public static final int major_version = 0;
 
-	// Monor version.
+	// Minor version.
 
 	public static final int minor_version = 1;
 
 	// Build.
 
-	public static final int build = 1003;
+	public static final int build = 1004;
 
 
 
@@ -55,5 +55,10 @@ public class VersionInfo  {
 	}
 
 
+	// Get a one-line name and version
+
+	public static String get_one_line_version () {
+		return program_name + ", " + program_version;
+	}
 
 }

@@ -35,7 +35,6 @@ import javax.swing.SwingUtilities;
 import org.jfree.chart.title.PaintScaleLegend;
 import org.jfree.data.Range;
 import org.jfree.ui.RectangleEdge;
-import org.json.simple.JSONObject;
 import org.opensha.commons.calc.magScalingRelations.magScalingRelImpl.WC1994_MagLengthRelationship;
 import org.opensha.commons.data.function.ArbitrarilyDiscretizedFunc;
 import org.opensha.commons.data.function.DefaultXY_DataSet;
@@ -2067,18 +2066,18 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 				int ret = chooser.showSaveDialog(this);
 				if (ret == JFileChooser.APPROVE_OPTION) {
 					File file = chooser.getSelectedFile();
-					JSONObject json = null;
+					String jsonText = null;
 					try {
-						json = forecast.buildJSON();
+						jsonText = forecast.buildJSONString();
 					} catch (Exception e) {
 						e.printStackTrace();
 						String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
 						JOptionPane.showMessageDialog(this, message, "Error building JSON", JOptionPane.ERROR_MESSAGE);
 					}
-					if (json != null) {
+					if (jsonText != null) {
 						try {
 							FileWriter fw = new FileWriter(file);
-							fw.write(json.toJSONString());
+							fw.write(jsonText);
 							fw.close();
 						} catch (IOException e) {
 							e.printStackTrace();
@@ -2095,8 +2094,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 					Product product = null;
 					try {
 						//product = OAF_Publisher.createProduct(mainshock.getEventId(), forecast);
-						JSONObject json = forecast.buildJSON();
-						String jsonText = json.toJSONString();
+						String jsonText = forecast.buildJSONString();
 						Map<String, String> eimap = ComcatAccessor.extendedInfoToMap (mainshock, ComcatAccessor.EITMOPT_OMIT_NULL_EMPTY);
 						String eventNetwork = eimap.get (ComcatAccessor.PARAM_NAME_NETWORK);
 						String eventCode = eimap.get (ComcatAccessor.PARAM_NAME_CODE);

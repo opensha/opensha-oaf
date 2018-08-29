@@ -87,7 +87,7 @@ public class PDLSupport extends ServerComponent {
 		// Collect the forecast data
 
 		ForecastData forecast_data = new ForecastData();
-		forecast_data.set_data (tstatus.forecast_mainshock, tstatus.forecast_params,
+		forecast_data.set_data (tstatus.entry_time, tstatus.forecast_mainshock, tstatus.forecast_params,
 							tstatus.forecast_results, tstatus.analyst_options);
 
 		// The event ID, which for us identifies the timeline
@@ -125,7 +125,7 @@ public class PDLSupport extends ServerComponent {
 		// Collect the forecast data
 
 		ForecastData forecast_data = new ForecastData();
-		forecast_data.set_data (tstatus.forecast_mainshock, tstatus.forecast_params,
+		forecast_data.set_data (tstatus.entry_time, tstatus.forecast_mainshock, tstatus.forecast_params,
 							tstatus.forecast_results, tstatus.analyst_options, catalog);
 
 		// The event ID, which for us identifies the timeline

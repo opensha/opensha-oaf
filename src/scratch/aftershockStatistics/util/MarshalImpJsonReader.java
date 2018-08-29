@@ -16,7 +16,7 @@ import org.json.simple.JSONAware;
 import org.json.simple.JSONStreamAware;
 import org.json.simple.ItemList;
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+//import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import org.json.simple.parser.JSONParser;
@@ -81,7 +81,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 
 		// The map.
 
-		private JSONObject json_map;
+		private JSONOrderedObject json_map;
 
 		// Names currently in use.
 
@@ -171,10 +171,10 @@ public class MarshalImpJsonReader implements MarshalReader {
 			if (o == null) {
 				throw new MarshalException ("Found null, expecting map context: name = " + ((name == null) ? "null" : name));
 			}
-			if (!( o instanceof JSONObject )) {
+			if (!( o instanceof JSONOrderedObject )) {
 				throw new MarshalException ("Wrong element type, expecting map context: name = " + ((name == null) ? "null" : name));
 			}
-			this.json_map = (JSONObject)o;
+			this.json_map = (JSONOrderedObject)o;
 		}
 	}
 
@@ -268,7 +268,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 
 	private static class ContextRoot extends Context {
 
-		// The JSON container, can be either JSONObject or JSONArray, or null.
+		// The JSON container, can be either JSONOrderedObject or JSONArray, or null.
 
 		private Object json_container;
 
@@ -355,7 +355,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 		public ContextRoot (Object json_container) {
 			super (null);
 			if (json_container != null) {
-				if (!( json_container instanceof JSONObject || json_container instanceof JSONArray )) {
+				if (!( json_container instanceof JSONOrderedObject || json_container instanceof JSONArray )) {
 					throw new MarshalException ("Supplied JSON container is of unrecognized type");
 				}
 			}
@@ -487,7 +487,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 			result = "";
 		}
 		else {
-			if (!( o instanceof JSONArray || o instanceof JSONObject )) {
+			if (!( o instanceof JSONArray || o instanceof JSONOrderedObject )) {
 				throw new MarshalException ("Unmarshal JSON string did not find a JSON object or JSON array: name = " + ((name == null) ? "null" : name));
 			}
 			try {
@@ -504,7 +504,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 
 	/**
 	 * Create an object that reads from the source, which can be one of:
-	 *  null, JSONObject, JSONArray, String, or java.io.Reader.
+	 *  null, JSONOrderedObject, JSONArray, String, or java.io.Reader.
 	 */
 	public MarshalImpJsonReader (Object json_source) {
 		Object json_container;
@@ -514,7 +514,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 		}
 		else if (json_source instanceof String) {
 			try {
-				json_container = JSONValue.parseWithException ((String)json_source);
+				json_container = JSONOrderedObject.parseWithException ((String)json_source);
 			}
 			catch (ParseException e) {
 				throw new MarshalException ("Parsing error while parsing JSON string", e);
@@ -525,7 +525,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 		}
 		else if (json_source instanceof Reader) {
 			try {
-				json_container = JSONValue.parseWithException ((Reader)json_source);
+				json_container = JSONOrderedObject.parseWithException ((Reader)json_source);
 			}
 			catch (ParseException e) {
 				throw new MarshalException ("Parsing error while parsing JSON file", e);

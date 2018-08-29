@@ -35,8 +35,6 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.commons.geo.Location;
 
-import org.json.simple.JSONObject;
-
 /**
  * Results of a forecast.
  * Author: Michael Barall 04/26/2018.
@@ -293,11 +291,10 @@ public class ForecastResults {
 
 			// Get the JSON String
 
-			JSONObject json = forecast.buildJSON(result_time);
-			if (json == null) {
+			generic_json = forecast.buildJSONString(result_time);
+			if (generic_json == null) {
 				throw new RuntimeException("ForecastResults.calc_generic_results: Unable to generate JSON");
 			}
-			generic_json = json.toJSONString();
 
 		} catch (Exception e) {
 			throw new RuntimeException("ForecastResults.calc_generic_results: Exception building generic forecast", e);
@@ -431,11 +428,10 @@ public class ForecastResults {
 
 			// Get the JSON String
 
-			JSONObject json = forecast.buildJSON(result_time);
-			if (json == null) {
+			seq_spec_json = forecast.buildJSONString(result_time);
+			if (seq_spec_json == null) {
 				throw new RuntimeException("ForecastResults.calc_seq_spec_results: Unable to generate JSON");
 			}
-			seq_spec_json = json.toJSONString();
 
 		} catch (Exception e) {
 			throw new RuntimeException("ForecastResults.calc_seq_spec_results: Exception building sequence specific forecast", e);
@@ -570,11 +566,10 @@ public class ForecastResults {
 
 			// Get the JSON String
 
-			JSONObject json = forecast.buildJSON(result_time);
-			if (json == null) {
+			bayesian_json = forecast.buildJSONString(result_time);
+			if (bayesian_json == null) {
 				throw new RuntimeException("ForecastResults.calc_bayesian_results: Unable to generate JSON");
 			}
-			bayesian_json = json.toJSONString();
 
 		} catch (Exception e) {
 			//throw new RuntimeException("ForecastResults.calc_bayesian_results: Exception building bayesian forecast", e);

@@ -6,6 +6,7 @@ import scratch.aftershockStatistics.util.MarshalImpJsonWriter;
 import scratch.aftershockStatistics.util.MarshalReader;
 import scratch.aftershockStatistics.util.MarshalWriter;
 import scratch.aftershockStatistics.util.MarshalException;
+import scratch.aftershockStatistics.util.SimpleUtils;
 
 import scratch.aftershockStatistics.CompactEqkRupList;
 import scratch.aftershockStatistics.ComcatAccessor;
@@ -23,6 +24,16 @@ import gov.usgs.earthquake.product.Product;
 public class ForecastData {
 
 	//----- Forecast data -----
+
+	// Header data (introduced in version 2).
+
+	public String creation_time = "";
+	public long creation_time_millis = 0L;
+
+	public String code_version = "";
+	public int code_major_version = 0;
+	public int code_minor_version = 0;
+	public int code_build = 0;
 
 	// Mainshock data, cannot be null.
 
@@ -73,13 +84,20 @@ public class ForecastData {
 	@Override
 	public String toString() {
 		String str = "ForecastData\n"
+			+ "creation_time = " + creation_time + "\n"
+			+ "creation_time_millis = " + creation_time_millis + "\n"
+			+ "code_version = " + code_version + "\n"
+			+ "code_major_version = " + code_major_version + "\n"
+			+ "code_minor_version = " + code_minor_version + "\n"
+			+ "code_build = " + code_build + "\n"
+			+ "pdl_event_id = " + pdl_event_id + "\n"
+			+ "pdl_is_reviewed = " + pdl_is_reviewed + "\n"
 			+ mainshock.toString()
 			+ parameters.toString()
 			+ results.toString()
 			+ analyst.toString()
 			+ catalog.toString()
-			+ "pdl_event_id = " + pdl_event_id + "\n"
-			+ "pdl_is_reviewed = " + pdl_is_reviewed + "\n";
+			;
 		return str;
 	}
 
@@ -88,7 +106,7 @@ public class ForecastData {
 
 	// Set the data.
 
-	public ForecastData set_data (ForecastMainshock mainshock, ForecastParameters parameters,
+	public ForecastData set_data (long creation_time, ForecastMainshock mainshock, ForecastParameters parameters,
 							ForecastResults results, AnalystOptions analyst, CompactEqkRupList catalog) {
 		this.mainshock = mainshock;
 		this.parameters = parameters;
@@ -97,6 +115,13 @@ public class ForecastData {
 		this.catalog = (new ForecastCatalog()).set_rupture_list (catalog);
 		this.pdl_event_id = "";
 		this.pdl_is_reviewed = false;
+
+		this.creation_time_millis = creation_time;
+		this.creation_time = SimpleUtils.time_to_string (creation_time);
+		this.code_version = VersionInfo.get_one_line_version();
+		this.code_major_version = VersionInfo.major_version;
+		this.code_minor_version = VersionInfo.minor_version;
+		this.code_build = VersionInfo.build;
 		return this;
 	}
 
@@ -106,13 +131,13 @@ public class ForecastData {
 	// Set the data.
 	// Note: This should be called soon after results are generated, so the catalog is available.
 
-	public ForecastData set_data (ForecastMainshock mainshock, ForecastParameters parameters,
+	public ForecastData set_data (long creation_time, ForecastMainshock mainshock, ForecastParameters parameters,
 							ForecastResults results, AnalystOptions analyst) {
 		CompactEqkRupList catalog = null;
 		if (results.catalog_result_avail) {
 			catalog = results.catalog_aftershocks;
 		}
-		return set_data (mainshock, parameters, results, analyst, catalog);
+		return set_data (creation_time, mainshock, parameters, results, analyst, catalog);
 	}
 
 
@@ -149,6 +174,19 @@ public class ForecastData {
 		unmarshal (reader, null);
 		reader.check_read_complete ();
 		rebuild_data();
+		return this;
+	}
+
+
+
+
+	// Set contents from JSON string.
+	// Note: This does not rebuild transient data.
+
+	public ForecastData from_json_no_rebuild (String json_string) {
+		MarshalImpJsonReader reader = new MarshalImpJsonReader (json_string);
+		unmarshal (reader, null);
+		reader.check_read_complete ();
 		return this;
 	}
 
@@ -272,6 +310,7 @@ public class ForecastData {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 46001;
+	private static final int MARSHAL_VER_2 = 46002;
 
 	private static final String M_VERSION_NAME = "ForecastData";
 
@@ -294,18 +333,49 @@ public class ForecastData {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Contents
 
-		mainshock.marshal  (writer, "mainshock" );
-		parameters.marshal (writer, "parameters");
-		results.marshal    (writer, "results"   );
-		analyst.marshal    (writer, "analyst"   );
-		catalog.marshal    (writer, "catalog"   );
+		switch (ver) {
 
-		writer.marshalString  ("pdl_event_id"   , pdl_event_id   );
-		writer.marshalBoolean ("pdl_is_reviewed", pdl_is_reviewed);
+		default:
+			throw new MarshalException ("ForecastData.do_marshal: Unknown version number: " + ver);
+
+		case MARSHAL_VER_1:
+
+			mainshock.marshal  (writer, "mainshock" );
+			parameters.marshal (writer, "parameters");
+			results.marshal    (writer, "results"   );
+			analyst.marshal    (writer, "analyst"   );
+			catalog.marshal    (writer, "catalog"   );
+
+			writer.marshalString  ("pdl_event_id"   , pdl_event_id   );
+			writer.marshalBoolean ("pdl_is_reviewed", pdl_is_reviewed);
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			writer.marshalString  ("creation_time"       , creation_time       );
+			writer.marshalLong    ("creation_time_millis", creation_time_millis);
+			writer.marshalString  ("code_version"        , code_version        );
+			writer.marshalInt     ("code_major_version"  , code_major_version  );
+			writer.marshalInt     ("code_minor_version"  , code_minor_version  );
+			writer.marshalInt     ("code_build"          , code_build          );
+
+			writer.marshalString  ("pdl_event_id"   , pdl_event_id   );
+			writer.marshalBoolean ("pdl_is_reviewed", pdl_is_reviewed);
+
+			mainshock.marshal  (writer, "mainshock" );
+			parameters.marshal (writer, "parameters");
+			results.marshal    (writer, "results"   );
+			analyst.marshal    (writer, "analyst"   );
+			catalog.marshal    (writer, "catalog"   );
+
+			break;
+		}
 	
 		return;
 	}
@@ -316,18 +386,55 @@ public class ForecastData {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
-		mainshock =  (new ForecastMainshock()) .unmarshal (reader, "mainshock" );
-		parameters = (new ForecastParameters()).unmarshal (reader, "parameters");
-		results =    (new ForecastResults())   .unmarshal (reader, "results"   );
-		analyst =    (new AnalystOptions())    .unmarshal (reader, "analyst"   );
-		catalog =    (new ForecastCatalog())   .unmarshal (reader, "catalog"   );
+		switch (ver) {
 
-		pdl_event_id    = reader.unmarshalString  ("pdl_event_id"   );
-		pdl_is_reviewed = reader.unmarshalBoolean ("pdl_is_reviewed");
+		default:
+			throw new MarshalException ("ForecastData.do_umarshal: Unknown version number: " + ver);
+
+		case MARSHAL_VER_1:
+
+			mainshock =  (new ForecastMainshock()) .unmarshal (reader, "mainshock" );
+			parameters = (new ForecastParameters()).unmarshal (reader, "parameters");
+			results =    (new ForecastResults())   .unmarshal (reader, "results"   );
+			analyst =    (new AnalystOptions())    .unmarshal (reader, "analyst"   );
+			catalog =    (new ForecastCatalog())   .unmarshal (reader, "catalog"   );
+
+			pdl_event_id    = reader.unmarshalString  ("pdl_event_id"   );
+			pdl_is_reviewed = reader.unmarshalBoolean ("pdl_is_reviewed");
+
+			creation_time = "";
+			creation_time_millis = 0L;
+			code_version = "";
+			code_major_version = 0;
+			code_minor_version = 0;
+			code_build = 0;
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			creation_time        = reader.unmarshalString  ("creation_time"       );
+			creation_time_millis = reader.unmarshalLong    ("creation_time_millis");
+			code_version         = reader.unmarshalString  ("code_version"        );
+			code_major_version   = reader.unmarshalInt     ("code_major_version"  );
+			code_minor_version   = reader.unmarshalInt     ("code_minor_version"  );
+			code_build           = reader.unmarshalInt     ("code_build"          );
+
+			pdl_event_id    = reader.unmarshalString  ("pdl_event_id"   );
+			pdl_is_reviewed = reader.unmarshalBoolean ("pdl_is_reviewed");
+
+			mainshock =  (new ForecastMainshock()) .unmarshal (reader, "mainshock" );
+			parameters = (new ForecastParameters()).unmarshal (reader, "parameters");
+			results =    (new ForecastResults())   .unmarshal (reader, "results"   );
+			analyst =    (new AnalystOptions())    .unmarshal (reader, "analyst"   );
+			catalog =    (new ForecastCatalog())   .unmarshal (reader, "catalog"   );
+
+			break;
+		}
 
 		return;
 	}
@@ -469,9 +576,10 @@ public class ForecastData {
 			// Construct the forecast data
 
 			AnalystOptions fc_analyst = new AnalystOptions();
+			long ctime = System.currentTimeMillis();
 
 			ForecastData fcdata = new ForecastData();
-			fcdata.set_data (fcmain, params, results, fc_analyst);
+			fcdata.set_data (ctime, fcmain, params, results, fc_analyst);
 
 			// Display them
 
@@ -539,9 +647,10 @@ public class ForecastData {
 			// Construct the forecast data
 
 			AnalystOptions fc_analyst = new AnalystOptions();
+			long ctime = System.currentTimeMillis();
 
 			ForecastData fcdata = new ForecastData();
-			fcdata.set_data (fcmain, params, results, fc_analyst);
+			fcdata.set_data (ctime, fcmain, params, results, fc_analyst);
 
 			// Display them
 
@@ -632,9 +741,10 @@ public class ForecastData {
 			// Construct the forecast data
 
 			AnalystOptions fc_analyst = new AnalystOptions();
+			long ctime = System.currentTimeMillis();
 
 			ForecastData fcdata = new ForecastData();
-			fcdata.set_data (fcmain, params, results, fc_analyst);
+			fcdata.set_data (ctime, fcmain, params, results, fc_analyst);
 
 			// Display them
 

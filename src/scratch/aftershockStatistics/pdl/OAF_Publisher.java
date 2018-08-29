@@ -4,7 +4,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 
-import org.json.simple.JSONObject;
 import org.opensha.commons.util.ExceptionUtils;
 
 import com.google.common.base.Preconditions;
@@ -15,6 +14,9 @@ import gov.usgs.earthquake.product.Content;
 import gov.usgs.earthquake.product.Product;
 import gov.usgs.earthquake.product.ProductId;
 import scratch.aftershockStatistics.USGS_AftershockForecast;
+
+// NOTE: Do not use this class!
+// It is included for documentation and historical purposes only.
 
 public class OAF_Publisher {
 	
@@ -172,10 +174,10 @@ public class OAF_Publisher {
 		// and is immediately available to the event page. The only thing that
 		// makes this "inline" content is that the content-path is an empty string.
 		// Content added as inline should be text-based and _not_ binary blobs.
-		JSONObject json = model.buildJSON();
+		String json_string = model.buildJSONString();
 		ByteContent inlineContent = new ByteContent(
 //				"{\"key\": \"Here is some inline content\"}".getBytes());
-				json.toJSONString().getBytes());
+				json_string.getBytes());
 		inlineContent.setContentType("application/json");
 		inlineContent.setLastModified(/*Date*/ null); // `null` implies now
 		contents.put("", inlineContent); // <-- Inline content because empty string

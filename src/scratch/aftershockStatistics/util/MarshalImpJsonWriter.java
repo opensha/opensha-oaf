@@ -16,7 +16,7 @@ import org.json.simple.JSONAware;
 import org.json.simple.JSONStreamAware;
 import org.json.simple.ItemList;
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+//import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import org.json.simple.parser.JSONParser;
@@ -81,7 +81,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 
 		// The map.
 
-		private JSONObject json_map;
+		private JSONOrderedObject json_map;
 
 		// Names currently in use.
 
@@ -147,7 +147,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 
 		public ContextMap (String name, Context previous) {
 			super (previous);
-			this.json_map = new JSONObject();
+			this.json_map = new JSONOrderedObject();
 			this.names = new HashSet<String>();
 			this.child_name = null;
 			this.previous.notify_child_begin (name, this);
@@ -245,7 +245,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 
 	private static class ContextRoot extends Context {
 
-		// The JSON container, can be either JSONObject or JSONArray, or null.
+		// The JSON container, can be either JSONOrderedObject or JSONArray, or null.
 
 		private Object json_container;
 
@@ -436,7 +436,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 		}
 		else {
 			try {
-				json_container = JSONValue.parseWithException (x);
+				json_container = JSONOrderedObject.parseWithException (x);
 			}
 			catch (ParseException e) {
 				throw new MarshalException ("Parsing error while parsing JSON string: name = " + ((name == null) ? "null" : name), e);
@@ -444,7 +444,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 			catch (Exception e) {
 				throw new MarshalException ("Exception while parsing JSON string: name = " + ((name == null) ? "null" : name), e);
 			}
-			if (!( json_container instanceof JSONArray || json_container instanceof JSONObject )) {
+			if (!( json_container instanceof JSONArray || json_container instanceof JSONOrderedObject )) {
 				throw new MarshalException ("JSON String does not contain a JSON object or JSON array: name = " + ((name == null) ? "null" : name));
 			}
 		}
@@ -474,7 +474,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 
 	/**
 	 * Get the JSON container.
-	 * It can be either JSONObject or JSONArray, or null.
+	 * It can be either JSONOrderedObject or JSONArray, or null.
 	 */
 	public Object get_json_container () {
 		return root_context_write.get_json_container();
