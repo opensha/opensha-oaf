@@ -194,7 +194,7 @@ public class ExIntakePDL extends ServerExecTask {
 			return RESCODE_TASK_CORRUPT;
 		}
 
-		sg.log_sup.report_pdl_event (payload);
+		sg.log_sup.report_pdl_event (payload, task.get_submit_time());
 
 		//  //--- Test for timeline existence
 		//  //

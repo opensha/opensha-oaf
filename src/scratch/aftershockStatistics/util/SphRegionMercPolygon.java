@@ -20,16 +20,17 @@ import scratch.aftershockStatistics.util.MarshalException;
 
 
 /**
- * Region for locating aftershocks -- Mercator Rectangle.
+ * Region for locating aftershocks -- Mercator Polygon.
  * Author: Michael Barall 04/10/2018.
  *
- * The AAFS server locates aftershocks by drawing a region surrounding the
- * mainshock.  Earthquakes within that region are considered to be aftershocks.
- * This class represents a rectangle on a Mercator map.
- * The rectangle is specified by giving two diagonally opposite corners.
- * A rectangle is limited to 180 degrees of longitude.
- * Attempting to make a rectangle spanning more than 180 degrees of longitude
- * will make a rectangle that goes around the Earth the "other way".
+ * This class represents a polygon on a Mercator map.
+ * (It is actually an equirectangular map, meaning that circles of latitude
+ * and longitude each appear as parallel straight lines on the map, and one
+ * degree of latitude has the same length as one degree of longitude.)
+ * A polygon is specified by giving a list of vertices in cyclic order.
+ * Each vertex is specified by its latitude and longitude.
+ * A polygon is limited to a maximum span of 180 degrees in longitude;
+ * this is how the code knows which side of the polygon is the "inside".
  */
 public class SphRegionMercPolygon extends SphRegion {
 

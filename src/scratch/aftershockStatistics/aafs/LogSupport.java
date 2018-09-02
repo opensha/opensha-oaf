@@ -578,7 +578,7 @@ public class LogSupport extends ServerComponent {
 
 	// Report PDL event.
 
-	public void report_pdl_event (OpIntakePDL payload) {
+	public void report_pdl_event (OpIntakePDL payload, long recv_time) {
 		report_action ("PDL-EVENT",
 			SimpleUtils.event_id_and_info_one_line (
 				payload.event_id,
@@ -586,7 +586,8 @@ public class LogSupport extends ServerComponent {
 				payload.mainshock_mag,
 				payload.mainshock_lat,
 				payload.mainshock_lon,
-				payload.mainshock_depth)
+				payload.mainshock_depth),
+			"recv_time = " + SimpleUtils.time_to_string (recv_time)
 		);
 		return;
 	}
