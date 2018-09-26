@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.time.Instant;
 
 
 /**
@@ -59,6 +60,28 @@ public class SimpleUtils {
 
 	public static String time_raw_and_string (long the_time) {
 		return the_time + " (" + time_to_string(the_time) + ")";
+	}
+
+
+
+
+	// Convert a time (in milliseconds after the epoch) to a parseable string.
+	// The result can be understood by string_to_time().
+
+	public static String time_to_parseable_string (long the_time) {
+		//SimpleDateFormat fmt = new SimpleDateFormat ("yyyy-MM-dd'T'HH:mm:ssz");
+		//fmt.setTimeZone (TimeZone.getTimeZone ("UTC"));
+		//return fmt.format (new Date (the_time));
+		return Instant.ofEpochMilli(the_time).toString();
+	}
+
+
+
+	// Convert a string in ISO-8601 format to time (in milliseconds after the epoch).
+	// An example is 2011-12-03T10:15:30Z.
+
+	public static long string_to_time (String s) {
+		return Instant.parse(s).toEpochMilli();
 	}
 
 

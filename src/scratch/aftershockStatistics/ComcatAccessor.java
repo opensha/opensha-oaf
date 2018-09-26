@@ -43,7 +43,7 @@ import java.net.UnknownServiceException;
 import java.util.zip.ZipException;
 
 import scratch.aftershockStatistics.util.SphLatLon;
-import scratch.aftershockStatistics.util.SphRegion;
+//import scratch.aftershockStatistics.util.SphRegion;
 import scratch.aftershockStatistics.util.SphRegionCircle;
 import scratch.aftershockStatistics.util.SimpleUtils;
 
@@ -256,7 +256,7 @@ public class ComcatAccessor {
 	 * Note: As a special case, if maxDays == minDays, then the end time is the current time.
 	 */
 	public ObsEqkRupList fetchAftershocks(ObsEqkRupture mainshock, double minDays, double maxDays,
-			double minDepth, double maxDepth, SphRegion region, boolean wrapLon) {
+			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon) {
 
 		long eventTime = mainshock.getOriginTime();
 		long startTime = eventTime + (long)(minDays*day_millis);
@@ -264,8 +264,10 @@ public class ComcatAccessor {
 
 		String exclude_id = mainshock.getEventId();
 
+		boolean extendedInfo = false;
+
 		return fetchEventList (exclude_id, startTime, endTime,
-								minDepth, maxDepth, region, wrapLon,
+								minDepth, maxDepth, region, wrapLon, extendedInfo,
 								COMCAT_NO_MIN_MAG, COMCAT_MAX_LIMIT, COMCAT_MAX_CALLS);
 	}
 
@@ -288,7 +290,7 @@ public class ComcatAccessor {
 	 * Note: As a special case, if maxDays == minDays, then the end time is the current time.
 	 */
 	public ObsEqkRupList fetchAftershocks(ObsEqkRupture mainshock, double minDays, double maxDays,
-			double minDepth, double maxDepth, SphRegion region, boolean wrapLon, double minMag) {
+			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, double minMag) {
 
 		long eventTime = mainshock.getOriginTime();
 		long startTime = eventTime + (long)(minDays*day_millis);
@@ -296,8 +298,10 @@ public class ComcatAccessor {
 
 		String exclude_id = mainshock.getEventId();
 
+		boolean extendedInfo = false;
+
 		return fetchEventList (exclude_id, startTime, endTime,
-								minDepth, maxDepth, region, wrapLon,
+								minDepth, maxDepth, region, wrapLon, extendedInfo,
 								minMag, COMCAT_MAX_LIMIT, COMCAT_MAX_CALLS);
 	}
 
@@ -313,6 +317,7 @@ public class ComcatAccessor {
 	 * @param maxDepth = Maximum depth, in km.  Comcat requires a value from -100 to +1000.
 	 * @param region = Region to search.  Events not in this region are filtered out.
 	 * @param wrapLon = Desired longitude range: false = -180 to 180; true = 0 to 360.
+	 * @param extendedInfo = True to return extended information, see eventToObsRup below.
 	 * @param minMag = Minimum magnitude, or -10.0 for no minimum.
 	 * @param limit_per_call = Maximum number of events to fetch in a single call to Comcat, or 0 for default.
 	 * @param max_calls = Maximum number of calls to ComCat, or 0 for default.
@@ -320,7 +325,7 @@ public class ComcatAccessor {
 	 * Note: As a special case, if endTime == startTime, then the end time is the current time.
 	 */
 	public ObsEqkRupList fetchEventList (String exclude_id, long startTime, long endTime,
-			double minDepth, double maxDepth, SphRegion region, boolean wrapLon,
+			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, boolean extendedInfo,
 			double minMag, int limit_per_call, int max_calls) {
 
 		// Initialize HTTP statuses
@@ -363,8 +368,8 @@ public class ComcatAccessor {
 		// If the region is a circle, use Comcat's circle query
 
 		if (region.isCircular()) {
-			query.setLatitude(new BigDecimal(String.format("%.5f", region.getCircleCenter().get_lat())));
-			query.setLongitude(new BigDecimal(String.format("%.5f", region.getCircleCenter().get_lon())));
+			query.setLatitude(new BigDecimal(String.format("%.5f", region.getCircleCenterLat())));
+			query.setLongitude(new BigDecimal(String.format("%.5f", region.getCircleCenterLon())));
 			query.setMaxRadius(new BigDecimal(String.format("%.5f", region.getCircleRadiusDeg())));
 		}
 
@@ -465,7 +470,7 @@ public class ComcatAccessor {
 				ObsEqkRupture rup = null;
 
 				try {
-					rup = eventToObsRup (event, wrapLon, false);
+					rup = eventToObsRup (event, wrapLon, extendedInfo);
 				} catch (Exception e) {
 					rup = null;
 				}
@@ -531,11 +536,11 @@ public class ComcatAccessor {
 	// Same, with defaults for limit_per_call and max_calls.
 
 	public ObsEqkRupList fetchEventList (String exclude_id, long startTime, long endTime,
-			double minDepth, double maxDepth, SphRegion region, boolean wrapLon,
+			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, boolean extendedInfo,
 			double minMag) {
 
 		return fetchEventList (exclude_id, startTime, endTime,
-			minDepth, maxDepth, region, wrapLon,
+			minDepth, maxDepth, region, wrapLon, extendedInfo,
 			minMag, COMCAT_MAX_LIMIT, COMCAT_MAX_CALLS);
 	}
 
@@ -873,6 +878,45 @@ public class ComcatAccessor {
 
 
 
+	/**
+	 * Convert a rupture to a string.
+	 * @param rup = The ObsEqkRupture to convert.
+	 * @return
+	 * Returns string describing the rupture contents.
+	 */
+	public static String rupToString (ObsEqkRupture rup) {
+		StringBuilder result = new StringBuilder();
+
+		String rup_event_id = rup.getEventId();
+		long rup_time = rup.getOriginTime();
+		double rup_mag = rup.getMag();
+		Location hypo = rup.getHypocenterLocation();
+		double rup_lat = hypo.getLatitude();
+		double rup_lon = hypo.getLongitude();
+		double rup_depth = hypo.getDepth();
+
+		result.append ("ObsEqkRupture:" + "\n");
+		result.append ("rup_event_id = " + rup_event_id + "\n");
+		result.append ("rup_time = " + SimpleUtils.time_raw_and_string(rup_time) + "\n");
+		result.append ("rup_mag = " + rup_mag + "\n");
+		result.append ("rup_lat = " + rup_lat + "\n");
+		result.append ("rup_lon = " + rup_lon + "\n");
+		result.append ("rup_depth = " + rup_depth + "\n");
+
+		ListIterator<Parameter<?>> iter = rup.getAddedParametersIterator();
+		if (iter != null) {
+			while (iter.hasNext()) {
+				Parameter<?> param = iter.next();
+				result.append (param.getName() + " = " + param.getValue() + "\n");
+			}
+		}
+
+		return result.toString();
+	}
+
+
+
+
 	//----- Testing -----
 
 	public static void main(String[] args) {
@@ -925,28 +969,9 @@ public class ComcatAccessor {
 					return;
 				}
 
+				System.out.println (ComcatAccessor.rupToString (rup));
+
 				String rup_event_id = rup.getEventId();
-				long rup_time = rup.getOriginTime();
-				double rup_mag = rup.getMag();
-				Location hypo = rup.getHypocenterLocation();
-				double rup_lat = hypo.getLatitude();
-				double rup_lon = hypo.getLongitude();
-				double rup_depth = hypo.getDepth();
-
-				System.out.println ("rup_event_id = " + rup_event_id);
-				System.out.println ("rup_time = " + rup_time + " (" + SimpleUtils.time_to_string(rup_time) + ")");
-				System.out.println ("rup_mag = " + rup_mag);
-				System.out.println ("rup_lat = " + rup_lat);
-				System.out.println ("rup_lon = " + rup_lon);
-				System.out.println ("rup_depth = " + rup_depth);
-
-				ListIterator<Parameter<?>> iter = rup.getAddedParametersIterator();
-				if (iter != null) {
-					while (iter.hasNext()) {
-						Parameter<?> param = iter.next();
-						System.out.println (param.getName() + " = " + param.getValue());
-					}
-				}
 
 				System.out.println ("http_status = " + accessor.get_http_status_code());
 
@@ -1019,28 +1044,11 @@ public class ComcatAccessor {
 					return;
 				}
 
+				System.out.println (ComcatAccessor.rupToString (rup));
+
 				String rup_event_id = rup.getEventId();
 				long rup_time = rup.getOriginTime();
-				double rup_mag = rup.getMag();
 				Location hypo = rup.getHypocenterLocation();
-				double rup_lat = hypo.getLatitude();
-				double rup_lon = hypo.getLongitude();
-				double rup_depth = hypo.getDepth();
-
-				System.out.println ("rup_event_id = " + rup_event_id);
-				System.out.println ("rup_time = " + rup_time + " (" + SimpleUtils.time_to_string(rup_time) + ")");
-				System.out.println ("rup_mag = " + rup_mag);
-				System.out.println ("rup_lat = " + rup_lat);
-				System.out.println ("rup_lon = " + rup_lon);
-				System.out.println ("rup_depth = " + rup_depth);
-
-				ListIterator<Parameter<?>> iter = rup.getAddedParametersIterator();
-				if (iter != null) {
-					while (iter.hasNext()) {
-						Parameter<?> param = iter.next();
-						System.out.println (param.getName() + " = " + param.getValue());
-					}
-				}
 
 				System.out.println ("http_status = " + accessor.get_http_status_code());
 
@@ -1067,10 +1075,11 @@ public class ComcatAccessor {
 				double minDepth = DEFAULT_MIN_DEPTH;
 				double maxDepth = DEFAULT_MAX_DEPTH;
 				boolean wrapLon = false;
+				boolean extendedInfo = false;
 				int max_calls = 0;
 
 				ObsEqkRupList rup_list = accessor.fetchEventList (rup_event_id, startTime, endTime,
-						minDepth, maxDepth, region, wrapLon,
+						minDepth, maxDepth, region, wrapLon, extendedInfo,
 						min_mag, limit_per_call, max_calls);
 
 				// Display the information

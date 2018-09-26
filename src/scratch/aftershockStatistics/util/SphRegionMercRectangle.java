@@ -66,13 +66,14 @@ public class SphRegionMercRectangle extends SphRegion {
 	 * @param lat = Latitude to check.
 	 * @param lon = Longitude to check, can be -180 to +360.
 	 * @return
-	 * Returns true if loc is inside the region, false if loc is outside the region.
+	 * Returns true if lat/lon is inside the region, false if lat/lon is outside the region.
 	 * Note: Due to rounding errors, it may be indeterminate whether points exactly on,
 	 * or very close to, the boundary of the region are considered inside or outside.
 	 * Implementation note: The function uses plane geometry, in the domain selected
 	 * by plot_wrap.
 	 */
-	private boolean contains (double lat, double lon) {
+	@Override
+	public boolean contains (double lat, double lon) {
 
 		// Coerce longitude according to our wrapping domain.
 

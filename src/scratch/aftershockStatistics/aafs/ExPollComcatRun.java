@@ -126,6 +126,7 @@ public class ExPollComcatRun extends ServerExecTask {
 		double max_depth = ComcatAccessor.DEFAULT_MAX_DEPTH;
 
 		boolean wrapLon = false;
+		boolean extendedInfo = false;
 		int limit_per_call = 0;
 		int max_calls = 0;
 
@@ -135,7 +136,7 @@ public class ExPollComcatRun extends ServerExecTask {
 			potentials = accessor.fetchEventList (exclude_id,
 					search_time_lo, search_time_hi,
 					min_depth, max_depth,
-					search_region, wrapLon,
+					search_region, wrapLon, extendedInfo,
 					min_mag, limit_per_call, max_calls);
 		}
 		catch (Exception e) {

@@ -10,6 +10,8 @@ import org.opensha.commons.geo.LocationUtils;
 import org.opensha.commons.geo.BorderType;
 import org.opensha.commons.geo.GeoTools;
 
+import scratch.aftershockStatistics.ComcatRegion;
+
 import scratch.aftershockStatistics.util.MarshalReader;
 import scratch.aftershockStatistics.util.MarshalWriter;
 import scratch.aftershockStatistics.util.MarshalException;
@@ -25,7 +27,7 @@ import scratch.aftershockStatistics.util.MarshalException;
  * with calculations done using spherical geometry.  Subclasses define specific
  * types of region (circle, rectangle, polygon, etc.).
  */
-public abstract class SphRegion {
+public abstract class SphRegion implements ComcatRegion {
 
 	//----- Querying -----
 
@@ -47,7 +49,20 @@ public abstract class SphRegion {
 	 * Note: Due to rounding errors, it may be indeterminate whether points exactly on,
 	 * or very close to, the boundary of the region are considered inside or outside.
 	 */
+	@Override
 	public abstract boolean contains (Location loc);
+
+	/**
+	 * contains - Test if the region contains the given location.
+	 * @param lat = Latitude to check.
+	 * @param lon = Longitude to check, can be -180 to +360.
+	 * @return
+	 * Returns true if lat/lon is inside the region, false if lat/lon is outside the region.
+	 * Note: Due to rounding errors, it may be indeterminate whether points exactly on,
+	 * or very close to, the boundary of the region are considered inside or outside.
+	 */
+	@Override
+	public abstract boolean contains (double lat, double lon);
 
 
 
@@ -97,6 +112,7 @@ public abstract class SphRegion {
 	/**
 	 * Returns the minimum latitude.
 	 */
+	@Override
 	public double getMinLat() {
 		return min_lat;
 	}
@@ -104,6 +120,7 @@ public abstract class SphRegion {
 	/**
 	 * Returns the maximum latitude.
 	 */
+	@Override
 	public double getMaxLat() {
 		return max_lat;
 	}
@@ -111,6 +128,7 @@ public abstract class SphRegion {
 	/**
 	 * Returns the minimum longitude.
 	 */
+	@Override
 	public double getMinLon() {
 		return min_lon;
 	}
@@ -118,6 +136,7 @@ public abstract class SphRegion {
 	/**
 	 * Returns the maximum longitude.
 	 */
+	@Override
 	public double getMaxLon() {
 		return max_lon;
 	}
@@ -186,6 +205,7 @@ public abstract class SphRegion {
 	 * If this function returns true, then the region is exactly the box
 	 * given by min_lat, etc.
 	 */
+	@Override
 	public boolean isRectangular() {
 		return false;
 	}
@@ -195,6 +215,7 @@ public abstract class SphRegion {
 	 * If this function returns true, then the center and radius can be
 	 * obtained from getCircleCenter and getCircleRadiusDeg.
 	 */
+	@Override
 	public boolean isCircular() {
 		return false;
 	}
@@ -208,9 +229,30 @@ public abstract class SphRegion {
 	}
 
 	/**
+	 * If this is a circular region on the sphere, then get the center latitude.
+	 * The returned value ranges from -90 to +90.
+	 * Otherwise, throw an exception.
+	 */
+	@Override
+	public double getCircleCenterLat() {
+		return getCircleCenter().get_lat();
+	}
+
+	/**
+	 * If this is a circular region on the sphere, then get the center longitude.
+	 * The returned value ranges from -180 to +180.
+	 * Otherwise, throw an exception.
+	 */
+	@Override
+	public double getCircleCenterLon() {
+		return getCircleCenter().get_lon();
+	}
+
+	/**
 	 * If this is a circular region on the sphere, then get the radius in degrees.
 	 * The returned value ranges from 0 to +180.
 	 */
+	@Override
 	public double getCircleRadiusDeg() {
 		throw new UnsupportedOperationException ("The region is not a circle");
 	}

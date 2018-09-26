@@ -227,6 +227,20 @@ public class SphLatLon {
 	}
 
 	/**
+	 * Version that accepts one SphLatLon and latitude/longitude in degrees.
+	 */
+	public static double angle_rad (SphLatLon p1, double lat, double lon) {
+		double lat1 = p1.get_lat_rad();
+		double lat2 = lat * TO_RAD;
+		double sinDlatBy2 = Math.sin((lat2 - lat1) / 2.0);
+		double sinDlonBy2 = Math.sin((lon * TO_RAD - p1.get_lon_rad()) / 2.0);
+		// half length of chord connecting points
+		double c = (sinDlatBy2 * sinDlatBy2) +
+			(Math.cos(lat1) * Math.cos(lat2) * sinDlonBy2 * sinDlonBy2);
+		return 2.0 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+	}
+
+	/**
 	 * Calculates the great circle surface distance between two
 	 * points using the haversine formula for computing the
 	 * angle between two points.
@@ -245,6 +259,13 @@ public class SphLatLon {
 	 */
 	public static double horzDistance (SphLatLon p1, Location p2) {
 		return EARTH_RADIUS_MEAN * angle_rad (p1, p2);
+	}
+
+	/**
+	 * Version that accepts one SphLatLon and latitude/longitude in degrees.
+	 */
+	public static double horzDistance (SphLatLon p1, double lat, double lon) {
+		return EARTH_RADIUS_MEAN * angle_rad (p1, lat, lon);
 	}
 
 	/**

@@ -145,13 +145,14 @@ public class AftershockStatsShadow {
 				double max_depth = ComcatAccessor.DEFAULT_MAX_DEPTH;
 
 				boolean wrapLon = false;
+				boolean extendedInfo = false;
 				int limit_per_call = 0;
 				int max_calls = 0;
 
 				ObsEqkRupList aftershocks = accessor.fetchEventList (candidate_event_id,
 							centroid_time_lo, centroid_time_hi,
 							min_depth, max_depth,
-							centroid_region, wrapLon,
+							centroid_region, wrapLon, extendedInfo,
 							centroid_min_mag, limit_per_call, max_calls);
 
 				System.out.println ("AftershockStatsShadow.accum_from_comcat: Found " + aftershocks.size() + " aftershocks within " + String.format ("%.3f", centroid_radius) + " km of candidate event " + candidate_event_id);
@@ -375,13 +376,14 @@ public class AftershockStatsShadow {
 		double max_depth = ComcatAccessor.DEFAULT_MAX_DEPTH;
 
 		boolean wrapLon = false;
+		boolean extendedInfo = false;
 		int limit_per_call = 0;
 		int max_calls = 0;
 
 		ObsEqkRupList potentials = accessor.fetchEventList (mainshock_event_id,
 					search_time_lo, Math.min (search_time_hi, time_now),
 					min_depth, max_depth,
-					search_region, wrapLon,
+					search_region, wrapLon, extendedInfo,
 					mainshock_mag, limit_per_call, max_calls);
 
 		System.out.println ("AftershockStatsShadow.find_shadow: Found " + potentials.size() + " potential shadowing events for mainshock " + mainshock_event_id);
@@ -513,7 +515,7 @@ public class AftershockStatsShadow {
 			ObsEqkRupList aftershocks = accessor.fetchEventList (null,
 						combined_centroid_time_lo, combined_centroid_time_hi,
 						min_depth, max_depth,
-						centroid_region, wrapLon,
+						centroid_region, wrapLon, extendedInfo,
 						combined_centroid_min_mag, limit_per_call, max_calls);
 
 			System.out.println ("AftershockStatsShadow.find_shadow: Found " + aftershocks.size() + " possible aftershocks within " + String.format ("%.3f", combined_centroid_radius) + " km of mainshock " + mainshock_event_id);

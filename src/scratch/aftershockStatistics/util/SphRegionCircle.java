@@ -70,6 +70,20 @@ public class SphRegionCircle extends SphRegion {
 		return SphLatLon.horzDistance(center, loc) <= radius;
 	}
 
+	/**
+	 * contains - Test if the region contains the given location.
+	 * @param lat = Latitude to check.
+	 * @param lon = Longitude to check, can be -180 to +360.
+	 * @return
+	 * Returns true if lat/lon is inside the region, false if lat/lon is outside the region.
+	 * Note: Due to rounding errors, it may be indeterminate whether points exactly on,
+	 * or very close to, the boundary of the region are considered inside or outside.
+	 */
+	@Override
+	public boolean contains (double lat, double lon) {
+		return SphLatLon.horzDistance(center, lat, lon) <= radius;
+	}
+
 
 
 
