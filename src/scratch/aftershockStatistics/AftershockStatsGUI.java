@@ -15,12 +15,20 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
-import java.util.GregorianCalendar;
+//import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayDeque;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -1346,7 +1354,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	private static String getCatalogLine(ObsEqkRupture rup) {
 		StringBuilder sb = new StringBuilder();
 		Location hypoLoc = rup.getHypocenterLocation();
-		sb.append(catDateFormat.format(rup.getOriginTimeCal().getTime())).append("\t");
+		sb.append(catDateFormat.format(new Date (rup.getOriginTime()))).append("\t");
 		sb.append((float)hypoLoc.getLatitude()).append("\t");
 		sb.append((float)hypoLoc.getLongitude()).append("\t");
 		sb.append((float)hypoLoc.getDepth()).append("\t");
@@ -1867,12 +1875,11 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	//  		}
 	//  	}
 	//  	
-	//  	GregorianCalendar eventDate = mainshock.getOriginTimeCal();
-	//  	GregorianCalendar startDate = new GregorianCalendar();
+	//  	Instant eventDate = Instant.ofEpochMilli(mainshock.getOriginTime());
 	//  	Double minDays = forecastStartTimeParam.getValue();
 	//  	validateParameter(minDays, "start time");
-	//  	double startTime = eventDate.getTime().getTime() + minDays*ProbabilityModelsCalc.MILLISEC_PER_DAY;
-	//  	startDate.setTimeInMillis((long)startTime);
+	//  	double startTime = eventDate.toEpochMilli() + minDays*ProbabilityModelsCalc.MILLISEC_PER_DAY;
+	//  	Instant startDate = Instant.ofEpochMilli((long)startTime);
 	//  	
 	//  	for (int i=0; i<models.size(); i++) {
 	//  		Stopwatch watch = Stopwatch.createStarted();
@@ -1944,12 +1951,11 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 				}
 			}
 		
-			GregorianCalendar eventDate = mainshock.getOriginTimeCal();
-			GregorianCalendar startDate = new GregorianCalendar();
+			Instant eventDate = Instant.ofEpochMilli(mainshock.getOriginTime());
 			Double minDays = forecastStartTimeParam.getValue();
 			validateParameter(minDays, "start time");
-			double startTime = eventDate.getTime().getTime() + minDays*ProbabilityModelsCalc.MILLISEC_PER_DAY;
-			startDate.setTimeInMillis((long)startTime);
+			double startTime = eventDate.toEpochMilli() + minDays*ProbabilityModelsCalc.MILLISEC_PER_DAY;
+			Instant startDate = Instant.ofEpochMilli((long)startTime);
 		
 			for (int i=0; i<models.size(); i++) {
 				Stopwatch watch = Stopwatch.createStarted();
@@ -2510,10 +2516,10 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			new Thread(run).start();
 		} else if (param == forecastStartTimeNowParam) {
 			SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss z");
-			GregorianCalendar now = new GregorianCalendar();
+			Instant now = Instant.now();
 			System.out.println("Computing delta from mainshock time ("
-					+df.format(mainshock.getOriginTimeCal().getTime())+") to now ("+df.format(now.getTime())+")");
-			double delta = USGS_AftershockForecast.getDateDelta(mainshock.getOriginTimeCal(), now);
+					+df.format(new Date (mainshock.getOriginTime()))+") to now ("+df.format(Date.from(now))+")");
+			double delta = USGS_AftershockForecast.getDateDelta(Instant.ofEpochMilli(mainshock.getOriginTime()), now);
 			System.out.println("Delta: "+delta+" days");
 			double prevDiff = forecastEndTimeParam.getValue() - forecastStartTimeParam.getValue();
 			if (prevDiff <= 0)
@@ -2626,20 +2632,18 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 
 	private double getTimeRemainingInUTCDay(){
 		double daysLeftInDay;
-		TimeZone.setDefault(utc);
-		GregorianCalendar origin = mainshock.getOriginTimeCal();
+
+		Instant origin = Instant.ofEpochMilli (mainshock.getOriginTime());
+		ZonedDateTime zdt = ZonedDateTime.ofInstant (origin, ZoneOffset.UTC);
+		ZonedDateTime zdt2 = zdt.toLocalDate().atStartOfDay (ZoneOffset.UTC);
+		Instant daybreak = zdt2.toInstant();
+
+//		SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy, HH:mm:ss");
+//		formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
+//		System.out.println(formatter.format(Date.from (origin)));
+//		System.out.println(formatter.format(Date.from (daybreak)));
 		
-		SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy, HH:mm:ss");
-		formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
-		
-		GregorianCalendar daybreak = new GregorianCalendar(
-				origin.get(GregorianCalendar.YEAR), origin.get(GregorianCalendar.MONTH), origin.get(GregorianCalendar.DAY_OF_MONTH));
-//		daybreak.setTimeZone(origin.getTimeZone());
-		
-//		System.out.println(formatter.format(origin.getTime()));
-//		System.out.println(formatter.format(daybreak.getTime()));
-//		
-		daysLeftInDay = 1.0 - ((double)(origin.getTimeInMillis() - daybreak.getTimeInMillis()))/ComcatAccessor.day_millis;
+		daysLeftInDay = 1.0 - ((double)(origin.toEpochMilli() - daybreak.toEpochMilli()))/ComcatAccessor.day_millis;
 		return daysLeftInDay;
 	}
 	

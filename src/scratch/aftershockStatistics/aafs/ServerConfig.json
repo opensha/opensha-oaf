@@ -14,8 +14,13 @@
   "log_con_control": "'/opt/aafs/logs/'yyyy-MM-dd'-control.log'",
   "log_summary": "'/opt/aafs/logs/'yyyy-MM-dd'-summary.log'",
   "comcat_url": "https://earthquake.usgs.gov/fdsnws/event/1/",
+  "comcat_err_rate": 0.0,
+  "comcat_exclude": [],
+  "locat_bins": 0,
+  "locat_filenames": [],
   "pdl_enable": 0,
   "pdl_key_filename": "",
+  "pdl_err_rate": 0.0,
   "pdl_dev_senders": [
     {
       "host": "dev01-pdl01.cr.usgs.gov",

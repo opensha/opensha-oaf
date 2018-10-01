@@ -122,9 +122,19 @@ public class PDLSender {
 
 	public static void sendProduct (Product product, boolean is_text) {
 
+		ServerConfig server_config = new ServerConfig();
+
+		// Check for simulated error
+
+		double sim_error_rate = server_config.get_pdl_err_rate();
+		if (sim_error_rate > 1.0e-6) {
+			if (sim_error_rate > Math.random()) {
+				throw new PDLSimulatedException ("PDLSender: Simulated PDL error");
+			}
+		}
+
 		// Get the list of senders
 
-		ServerConfig server_config = new ServerConfig();
 		List<PDLSenderConfig> sender_list = server_config.get_pdl_senders();
 
 		// If there are no senders, simulate success and just return

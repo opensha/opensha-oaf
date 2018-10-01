@@ -3,9 +3,18 @@ package scratch.aftershockStatistics;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.GregorianCalendar;
+//import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.Date;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
@@ -30,25 +39,23 @@ public class USGS_AftershockForecast {
 	private static final double fractile_upper = 0.975;
 	
 	public enum Duration {
-		ONE_DAY("1 Day", GregorianCalendar.DAY_OF_MONTH, 1),
-		ONE_WEEK("1 Week", GregorianCalendar.WEEK_OF_MONTH, 1),
-		ONE_MONTH("1 Month", GregorianCalendar.MONTH, 1),
-		ONE_YEAR("1 Year", GregorianCalendar.YEAR, 1);
+		ONE_DAY("1 Day", ChronoUnit.DAYS, 1L),
+		ONE_WEEK("1 Week", ChronoUnit.DAYS, 7L),
+		ONE_MONTH("1 Month", ChronoUnit.DAYS, 30L),
+		ONE_YEAR("1 Year", ChronoUnit.DAYS, 365L);
 		
 		private final String label;
-		private final int calendarField;
-		private final int calendarAmount;
+		private final ChronoUnit calendarField;
+		private final long calendarAmount;
 		
-		private Duration(String label, int calendarField, int calendarAmount) {
+		private Duration(String label, ChronoUnit calendarField, long calendarAmount) {
 			this.label = label;
 			this.calendarField = calendarField;
 			this.calendarAmount = calendarAmount;
 		}
 		
-		public GregorianCalendar getEndDate(GregorianCalendar startDate) {
-			GregorianCalendar endDate = (GregorianCalendar) startDate.clone();
-			endDate.add(calendarField, calendarAmount);
-			return endDate;
+		public Instant getEndDate (Instant startDate) {
+			return startDate.plus (calendarAmount, calendarField);
 		}
 		
 		@Override
@@ -78,9 +85,9 @@ public class USGS_AftershockForecast {
 	
 	private int[] aftershockCounts;
 	
-	private GregorianCalendar eventDate;
-	private GregorianCalendar startDate;
-	private GregorianCalendar[] endDates;
+	private Instant eventDate;
+	private Instant startDate;
+	private Instant[] endDates;
 	
 	private Duration[] durations;
 	private Duration advisoryDuration; // duration for the advisory paragraph
@@ -97,12 +104,12 @@ public class USGS_AftershockForecast {
 	private Template template = Template.MAINSOCK;
 	
 	public USGS_AftershockForecast(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks,
-			GregorianCalendar eventDate, GregorianCalendar startDate) {
+			Instant eventDate, Instant startDate) {
 		this(model, aftershocks, min_mags_default, eventDate, startDate, true);
 	}
 	
 	public USGS_AftershockForecast(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
-			GregorianCalendar eventDate, GregorianCalendar startDate, boolean includeProbAboveMainshock) {
+			Instant eventDate, Instant startDate, boolean includeProbAboveMainshock) {
 		compute(model, aftershocks, minMags, eventDate, startDate, includeProbAboveMainshock);
 	}
 	
@@ -110,7 +117,7 @@ public class USGS_AftershockForecast {
 	private static final TimeZone utc = TimeZone.getTimeZone("UTC");
 	
 	private void compute(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
-			GregorianCalendar eventDate, GregorianCalendar startDate, boolean includeProbAboveMainshock) {
+			Instant eventDate, Instant startDate, boolean includeProbAboveMainshock) {
 		Preconditions.checkArgument(minMags.length > 0);
 		
 		this.model = model;
@@ -133,7 +140,7 @@ public class USGS_AftershockForecast {
 		
 		durations = Duration.values();
 		advisoryDuration = Duration.ONE_WEEK;
-		endDates = new GregorianCalendar[durations.length];
+		endDates = new Instant[durations.length];
 		
 		double[] calcFractiles = {fractile_lower, fractile_upper};
 		
@@ -145,11 +152,11 @@ public class USGS_AftershockForecast {
 		}
 		
 		df.setTimeZone(utc);
-		System.out.println("Start date: "+df.format(startDate.getTime()));
+		System.out.println("Start date: "+df.format(Date.from(startDate)));
 		for (int i=0; i<durations.length; i++) {
 			Duration duration = durations[i];
-			GregorianCalendar endDate = duration.getEndDate(startDate);
-			System.out.println(duration.label+" end date: "+df.format(endDate.getTime()));
+			Instant endDate = duration.getEndDate(startDate);
+			System.out.println(duration.label+" end date: "+df.format(Date.from(endDate)));
 			
 			double tMinDays = getDateDelta(eventDate, startDate);
 			Preconditions.checkState(tMinDays >= 0d, "tMinDays must be positive: %s", tMinDays);
@@ -183,8 +190,8 @@ public class USGS_AftershockForecast {
 		}
 	}
 	
-	static double getDateDelta(GregorianCalendar start, GregorianCalendar end) {
-		long diff = end.getTimeInMillis() - start.getTimeInMillis();
+	static double getDateDelta(Instant start, Instant end) {
+		long diff = end.toEpochMilli() - start.toEpochMilli();
 		return (double)diff/(double)ProbabilityModelsCalc.MILLISEC_PER_DAY;
 	}
 	
@@ -251,11 +258,11 @@ public class USGS_AftershockForecast {
 					if (m == 0)
 						return durations[d].label;
 					else if (m == 1)
-						return df.format(startDate.getTime());
+						return df.format(Date.from(startDate));
 					else if (m == 2)
 						return "through";
 					else if (m == 3)
-						return df.format(endDates[d].getTime());
+						return df.format(Date.from(endDates[d]));
 					else
 						return "";
 				} else {
@@ -296,10 +303,10 @@ public class USGS_AftershockForecast {
 		JSONOrderedObject json = new JSONOrderedObject();
 		
 		json.put("creationTime", creation_time);
-		long maxEndDate = 0l;
-		for (GregorianCalendar endDate : endDates)
-			if (endDate.getTimeInMillis() > maxEndDate)
-				maxEndDate = endDate.getTimeInMillis();
+		long maxEndDate = 0L;
+		for (Instant endDate : endDates)
+			if (endDate.toEpochMilli() > maxEndDate)
+				maxEndDate = endDate.toEpochMilli();
 		json.put("expireTime", maxEndDate);
 		
 		json.put("advisoryTimeFrame", advisoryDuration.label);
@@ -342,8 +349,8 @@ public class USGS_AftershockForecast {
 		for (int i=0; i<durations.length; i++) {
 			JSONOrderedObject forecastJSON = new JSONOrderedObject();
 			
-			forecastJSON.put("timeStart", startDate.getTimeInMillis());
-			forecastJSON.put("timeEnd", endDates[i].getTimeInMillis());
+			forecastJSON.put("timeStart", startDate.toEpochMilli());
+			forecastJSON.put("timeEnd", endDates[i].toEpochMilli());
 			forecastJSON.put("label", durations[i].label);
 			
 			JSONArray magBins = new JSONArray();

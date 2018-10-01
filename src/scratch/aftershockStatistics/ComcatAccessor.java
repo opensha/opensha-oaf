@@ -17,9 +17,11 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Properties;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -58,14 +60,179 @@ import scratch.aftershockStatistics.aafs.ServerConfig;
 public class ComcatAccessor {
 	
 	private static final boolean D = true;
+
+	// The Comcat service provider.
+	// This is never null, even if a local catalog is in use.
 	
 	protected EventWebService service;
 
+	// The list of HTTP status codes for the current operation.
+
 	protected ArrayList<Integer> http_statuses;
+
+	// HTTP status code for a locally completed operation.
+	// If zero, then HTTP status must be obtained from the service provider.
+
+	protected int local_http_status;
+
+	// Simulated error rate, or 0.0 if none.
+	// Simulated errors are generated with this probability.
+
+	protected double sim_error_rate;
+
+	// Set of event IDs that are hidden, can be null if none.
+
+	protected Set<String> hidden_ids;
+
+	// The local catalog being used, or null if none.
+	// If null, then operations are performed by calling Comcat.
+
+	protected ComcatLocalCatalog local_catalog;
+
+	// The cached local catalog, or null if none.
+
+	protected static ComcatLocalCatalog cached_local_catalog = null;
+
+	// The list of filenames for the cached local catalog, or null if no local catalog.
+	// This is used to detect if different filenames are selected.
+
+	protected static String[] cached_locat_filenames = null;
+
+
+
+
+	// Check if a simulated error is desired.
+	// Throws an exception if a simulated error, also simulates unable to connect.
+	// Implementation note: Math.random() is a bad random number generator,
+	// but it is sufficient for this purpose.
+
+	protected void check_simulated_error () {
+		if (sim_error_rate > 1.0e-6) {
+			if (sim_error_rate > Math.random()) {
+				local_http_status = -2;
+				http_statuses.add (new Integer(get_http_status_code()));
+				throw new ComcatSimulatedException ("ComcatAccessor: Simulated Comcat error");
+			}
+		}
+		return;
+	}
+
+
+
+
+	// Check if the given id is hidden.
+
+	protected boolean is_hidden_id (String id) {
+		if (hidden_ids != null) {
+			if (hidden_ids.contains (id)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+
+
+	// Get or create the cached local catalog.
+	// Parameters:
+	//  locat_filenames = List of filenames, or null or empty if no local catalog is requested.
+	//  locat_bins = Number of latitude bins for the local catalog, or 0 for default.
+
+	protected static synchronized ComcatLocalCatalog get_cached_local_catalog (List<String> locat_filenames, int locat_bins) {
 	
-	public ComcatAccessor() {
+		// If no local catalog is requested ...
+
+		if (locat_filenames == null || locat_filenames.isEmpty()) {
+		
+			// Discard any existing local catalog
+
+			cached_local_catalog = null;
+			cached_locat_filenames = null;
+		}
+
+		// Otherwise ...
+
+		else {
+
+			// Get the array of filenames
+
+			String[] the_local_filenames = locat_filenames.toArray (new String[0]);
+
+			// If we don't have the local catalog cached already ...
+
+			if (!( cached_local_catalog != null
+				&& cached_locat_filenames != null
+				&& Arrays.equals (the_local_filenames, cached_locat_filenames) )) {
+
+				// Discard any existing local catalog
+
+				cached_local_catalog = null;
+				cached_locat_filenames = null;
+
+				// Load a new local catalog
+
+				if (D) {
+					System.out.println ("Loading catalog: " + "[" + String.join (", ", the_local_filenames) + "]");
+				}
+
+				ComcatLocalCatalog the_local_catalog = new ComcatLocalCatalog();
+				try {
+					the_local_catalog.load_catalog (locat_bins, the_local_filenames);
+				} catch (Exception e) {
+					throw new RuntimeException ("ComcatAccessor: Error loading local catalog: " + "[" + String.join (", ", the_local_filenames) + "]");
+				}
+
+				if (D) {
+					System.out.println (the_local_catalog.get_summary_string());
+				}
+
+				// Establish the new local catalog
+
+				cached_local_catalog = the_local_catalog;
+				cached_locat_filenames = the_local_filenames;
+			}
+		}
+
+		// Return the cached local catalog, or null
+
+		return cached_local_catalog;
+	}
+
+
+
+
+	// Remove any cached local catalog from memory.
+	// A fresh local catalog will be loaded (if requested) the next time an object is allocated.
+	// Existing objects will continue to use the old catalog.
+
+	public static synchronized void unload_local_catalog () {
+		cached_local_catalog = null;
+		cached_locat_filenames = null;
+		return;
+	}
+
+
+
+	
+	// Construct an object to be used for accessing Comcat.
+	// If f_use_config is true, then program configuration information is used
+	// to control simulated errors, hidden events, and use of a local catalog.
+	// If f_use_config is false, then program configuration information is
+	// ignored and the accessor will pass all requests to Comcat.
+	// If f_use_config is omitted, the default is true.
+
+	public ComcatAccessor () {
+		this (true);
+	}
+
+	public ComcatAccessor (boolean f_use_config) {
+
+		// Obtain program configuration
 
 		ServerConfig server_config = new ServerConfig();
+
+		// Get the Comcat service provider
 
 		try {
 			//service = new EventWebService(new URL("https://earthquake.usgs.gov/fdsnws/event/1/"));
@@ -75,8 +242,38 @@ public class ComcatAccessor {
 			ExceptionUtils.throwAsRuntimeException(e);
 		}
 
+		// Set up HTTP status reporting
+
 		http_statuses = new ArrayList<Integer>();
+		local_http_status = -1;
+
+		// If we're using program configuration ...
+
+		if (f_use_config) {
+		
+			// Set simulated error rate
+
+			sim_error_rate = server_config.get_comcat_err_rate();
+
+			// Set hidden event IDs
+
+			hidden_ids = server_config.get_comcat_exclude();
+
+			// Set local catalog (and load it if needed)
+
+			local_catalog = get_cached_local_catalog (server_config.get_locat_filenames(), server_config.get_locat_bins());
+		}
+
+		// Otherwise, direct Comcat access
+
+		else {
+			sim_error_rate = 0.0;
+			hidden_ids = null;
+			local_catalog = null;
+		}
 	}
+
+
 
 
 	// The number of milliseconds in a day.
@@ -168,6 +365,41 @@ public class ComcatAccessor {
 		// Initialize HTTP statuses
 
 		http_statuses.clear();
+		local_http_status = -1;
+
+		// Test for simulated error
+
+		check_simulated_error();
+
+		// If the event id is hidden ...
+
+		if (is_hidden_id (eventID)) {
+
+			// Set up HTTP status for event not found
+
+			local_http_status = 404;	// not found
+			http_statuses.add (new Integer(get_http_status_code()));
+			return null;
+		}
+
+		// If we are using a local catalog ...
+
+		if (local_catalog != null) {
+
+			// Fetch event from local catalog, or null if none
+
+			ObsEqkRupture locrup = local_catalog.fetchEvent (eventID, wrapLon, extendedInfo);
+
+			// Set up resulting HTTP status
+
+			if (locrup == null) {
+				local_http_status = 404;	// not found
+			} else {
+				local_http_status = 200;	// success
+			}
+			http_statuses.add (new Integer(get_http_status_code()));
+			return locrup;
+		}
 
 		// Set up query on event id
 
@@ -331,6 +563,51 @@ public class ComcatAccessor {
 		// Initialize HTTP statuses
 
 		http_statuses.clear();
+		local_http_status = -1;
+
+		// Test for simulated error
+
+		check_simulated_error();
+
+		// If we are using a local catalog ...
+
+		if (local_catalog != null) {
+
+			// Display the query
+
+			if (D) {
+				StringBuilder sb = new StringBuilder();
+				sb.append ("Local query");
+				sb.append (String.format(": starttime=%s", Instant.ofEpochMilli(startTime).toString()));
+				sb.append (String.format(", endtime=%s", Instant.ofEpochMilli(endTime).toString()));
+				if (region.isCircular()) {
+					sb.append (String.format(", latitude=%.5f", region.getCircleCenterLat()));
+					sb.append (String.format(", longitude=%.5f", region.getCircleCenterLon()));
+					sb.append (String.format(", maxradius=%.5f", region.getCircleRadiusDeg()));
+				}
+				else {
+					sb.append (String.format(", minlatitude=%.5f", region.getMinLat()));
+					sb.append (String.format(", maxlatitude=%.5f", region.getMaxLat()));
+					sb.append (String.format(", minlongitude=%.5f", region.getMinLon()));
+					sb.append (String.format(", maxlongitude=%.5f", region.getMaxLon()));
+				}
+				sb.append (String.format(", mindepth=%.3f", minDepth));
+				sb.append (String.format(", maxdepth=%.3f", maxDepth));
+				sb.append (String.format(", minmagnitude=%.3f", minMag));
+				System.out.println (sb.toString());
+			}
+
+			// Do the local query
+
+			ObsEqkRupList locrups = local_catalog.fetchEventList (exclude_id, startTime, endTime,
+				minDepth, maxDepth, region, wrapLon, extendedInfo, minMag);
+
+			// Set up resulting HTTP status
+
+			local_http_status = 200;	// success
+			http_statuses.add (new Integer(get_http_status_code()));
+			return locrups;
+		}
 
 		// Start a query
 
@@ -611,6 +888,9 @@ public class ComcatAccessor {
 	// Get the HTTP status code from the last operation, or -1 if unknown, or -2 if unable to connect.
 
 	public int get_http_status_code () {
+		if (local_http_status != 0) {
+			return local_http_status;
+		}
 		if (service instanceof ComcatEventWebService) {
 			return ((ComcatEventWebService)service).get_http_status_code();
 		}
@@ -655,6 +935,7 @@ public class ComcatAccessor {
 	protected List<JsonEvent> getEventsFromComcat (EventQuery query) {
 
 		List<JsonEvent> events = null;
+		local_http_status = 0;
 
 		try {
 			events = service.getEvents(query);

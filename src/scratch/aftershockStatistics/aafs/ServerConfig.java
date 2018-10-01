@@ -1,6 +1,7 @@
 package scratch.aftershockStatistics.aafs;
 
 import java.util.List;
+import java.util.Set;
 
 import scratch.aftershockStatistics.OAFParameterSet;
 
@@ -50,8 +51,8 @@ public class ServerConfig {
 
 		} catch (Exception e) {
 			e.printStackTrace();
-            System.err.println("ServerConfig: Error loading parameter file ServerConfig.json, unable to continue");
-            System.exit(0);
+			System.err.println("ServerConfig: Error loading parameter file ServerConfig.json, unable to continue");
+			System.exit(0);
 			//throw new RuntimeException("ServerConfig: Error loading parameter file ServerConfig.json", e);
 		}
 
@@ -92,99 +93,129 @@ public class ServerConfig {
 
 	// Database host name or IP address.
 
-    public String getDb_host() {
-        return param_set.db_host;
-    }
+	public String getDb_host() {
+		return param_set.db_host;
+	}
 
 	// Database port number.
 
-    public int getDb_port() {
-        return param_set.db_port;
-    }
+	public int getDb_port() {
+		return param_set.db_port;
+	}
 
 	// Database name.  Used for both database access and user authentication.
 
-    public String getDb_name() {
-        return param_set.db_name;
-    }
+	public String getDb_name() {
+		return param_set.db_name;
+	}
 
 	// Database user name.  This name provides read/write access.
 
-    public String getDb_user() {
-        return param_set.db_user;
-    }
+	public String getDb_user() {
+		return param_set.db_user;
+	}
 
 	// Database password.
 
-    public String getDb_password() {
-        return param_set.db_password;
-    }
+	public String getDb_password() {
+		return param_set.db_password;
+	}
 
 	// ActiveMQ host name or IP address.
 
-    public String getActivemq_host() {
-        return param_set.activemq_host;
-    }
+	public String getActivemq_host() {
+		return param_set.activemq_host;
+	}
 
 	// ActiveMQ port number.
 
-    public String getActivemq_port() {
-        return String.valueOf (param_set.activemq_port);
-    }
+	public String getActivemq_port() {
+		return String.valueOf (param_set.activemq_port);
+	}
 
 	// ActiveMQ user name.
 
-    public String getActivemq_user() {
-        return param_set.activemq_user;
-    }
+	public String getActivemq_user() {
+		return param_set.activemq_user;
+	}
 
 	// ActiveMQ password.
 
-    public String getActivemq_password() {
-        return param_set.activemq_password;
-    }
+	public String getActivemq_password() {
+		return param_set.activemq_password;
+	}
 
 	// Pattern for AAFS console log filenames, in the format of SimpleDateFormat, or "" if none.
 
 	public String get_log_con_aafs() {
-        return param_set.log_con_aafs;
-    }
+		return param_set.log_con_aafs;
+	}
 
 	// Pattern for intake console log filenames, in the format of SimpleDateFormat, or "" if none.
 
 	public String get_log_con_intake() {
-        return param_set.log_con_intake;
-    }
+		return param_set.log_con_intake;
+	}
 
 	// Pattern for control console log filenames, in the format of SimpleDateFormat, or "" if none.
 
 	public String get_log_con_control() {
-        return param_set.log_con_control;
-    }
+		return param_set.log_con_control;
+	}
 
 	// Pattern for summary log filenames, in the format of SimpleDateFormat, or "" if none.
 
 	public String get_log_summary() {
-        return param_set.log_summary;
-    }
+		return param_set.log_summary;
+	}
 
 	// Comcat URL.
 
-    public String get_comcat_url() {
-        return param_set.comcat_url;
-    }
+	public String get_comcat_url() {
+		return param_set.comcat_url;
+	}
+
+	// Simulated error rate for Comcat.
+
+	public double get_comcat_err_rate() {
+		return param_set.comcat_err_rate;
+	}
+
+	// List of Comcat ids to exclude.
+
+	public Set<String> get_comcat_exclude() {
+		return param_set.comcat_exclude;
+	}
+
+	// Number of latitude bins for local catalog, or 0 for default.
+
+	public int get_locat_bins() {
+		return param_set.locat_bins;
+	}
+
+	// List of filenames for local catalog, empty if no local catalog.
+
+	public List<String> get_locat_filenames() {
+		return param_set.locat_filenames;
+	}
 
 	// PDL enable option.
 
-    public int get_pdl_enable() {
-        return param_set.pdl_enable;
-    }
+	public int get_pdl_enable() {
+		return param_set.pdl_enable;
+	}
 
 	// PDL signing key filename, can be empty string for none.
 
-    public String get_pdl_key_filename() {
-        return param_set.pdl_key_filename;
-    }
+	public String get_pdl_key_filename() {
+		return param_set.pdl_key_filename;
+	}
+
+	// Simulated error rate for PDL.
+
+	public double get_pdl_err_rate() {
+		return param_set.pdl_err_rate;
+	}
 
 	// Get the currently selected list of PDL senders.
 	// This returns a copy of the list, so the original cannot be modified.
@@ -285,8 +316,25 @@ public class ServerConfig {
 			System.out.println("log_con_control = " + server_config.get_log_con_control());
 			System.out.println("log_summary = " + server_config.get_log_summary());
 			System.out.println("comcat_url = " + server_config.get_comcat_url());
+			System.out.println("comcat_err_rate = " + server_config.get_comcat_err_rate());
+
+			System.out.println("comcat_exclude = [");
+			for (String s : server_config.get_comcat_exclude()) {
+				System.out.println("  " + s);
+			}
+			System.out.println("]");
+
+			System.out.println("locat_bins = " + server_config.get_locat_bins());
+
+			System.out.println("locat_filenames = [");
+			for (String s : server_config.get_locat_filenames()) {
+				System.out.println("  " + s);
+			}
+			System.out.println("]");
+
 			System.out.println("pdl_enable = " + server_config.get_pdl_enable());
 			System.out.println("pdl_key_filename = " + server_config.get_pdl_key_filename());
+			System.out.println("pdl_err_rate = " + server_config.get_pdl_err_rate());
 
 			List<PDLSenderConfig> pdl_senders = server_config.get_pdl_senders();
 			System.out.println("pdl_senders = [");

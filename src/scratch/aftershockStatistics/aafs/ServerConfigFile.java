@@ -2,7 +2,10 @@ package scratch.aftershockStatistics.aafs;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 import scratch.aftershockStatistics.util.MarshalReader;
 import scratch.aftershockStatistics.util.MarshalWriter;
@@ -41,8 +44,13 @@ import scratch.aftershockStatistics.pdl.PDLSenderConfig;
  *	"log_con_control" = String giving pattern for control console log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"log_summary" = String giving pattern for summary log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"comcat_url" = String giving Comcat URL.
+ *  "comcat_err_rate" = Real number giving rate of simulated Comcat errors.
+ *  "comcat_exclude" = [ Array giving list of Comcat ids to exclude ]
+ *  "locat_bins" = Integer giving number of latitude bins in local catalog, or 0 for default.
+ *  "locat_filenames" = [ Array giving filenames for local catalog, empty if no local catalog ]
  *	"pdl_enable" = Integer giving PDL enable option: 0 = none, 1 = development, 2 = production.
  *	"pdl_key_filename" = String giving PDL signing key filename, can be empty string for none.
+ *  "pdl_err_rate" = Real number giving rate of simulated PDL errors.
  *	"pdl_dev_senders" = [ Array giving a list of PDL sender configurations for development PDL, in priority order.
  *		element = { Structure giving PDL server configuration.
  *			"host" = String giving PDL sender host name or IP address.
@@ -118,6 +126,22 @@ public class ServerConfigFile {
 
 	public String comcat_url;
 
+	// Simulated error rate for Comcat.
+
+	public double comcat_err_rate;
+
+	// List of Comcat ids to exclude.
+
+	public LinkedHashSet<String> comcat_exclude;
+
+	// Number of latitude bins for local catalog, or 0 for default.
+
+	public int locat_bins;
+
+	// List of filenames for local catalog, empty if no local catalog.
+
+	public ArrayList<String> locat_filenames;
+
 	// PDL enable option.
 
 	public static final int PDLOPT_MIN = 0;
@@ -133,6 +157,10 @@ public class ServerConfigFile {
 	// PDL signing key filename, can be empty string for none.  Cannot be null.
 
 	public String pdl_key_filename;
+
+	// Simulated error rate for PDL.
+
+	public double pdl_err_rate;
 
 	// List of PDL development senders.
 
@@ -168,8 +196,13 @@ public class ServerConfigFile {
 		log_con_control = "";
 		log_summary = "";
 		comcat_url = "";
+		comcat_err_rate = 0.0;
+		comcat_exclude = new LinkedHashSet<String>();
+		locat_bins = 0;
+		locat_filenames = new ArrayList<String>();
 		pdl_enable = PDLOPT_NONE;
 		pdl_key_filename = "";
+		pdl_err_rate = 0.0;
 		pdl_dev_senders = new ArrayList<PDLSenderConfig>();
 		pdl_prod_senders = new ArrayList<PDLSenderConfig>();
 		return;
@@ -235,12 +268,42 @@ public class ServerConfigFile {
 			throw new RuntimeException("ServerConfigFile: Invalid comcat_url: " + ((comcat_url == null) ? "<null>" : comcat_url));
 		}
 
+		if (!( comcat_err_rate >= 0.0 && comcat_err_rate <= 1.0 )) {
+			throw new RuntimeException("ServerConfigFile: Invalid comcat_err_rate: " + comcat_err_rate);
+		}
+
+		if (!( comcat_exclude != null )) {
+			throw new RuntimeException("ServerConfigFile: comcat_exclude list is null");
+		}
+		for (String s : comcat_exclude) {
+			if (!( s != null && s.trim().length() > 0 )) {
+				throw new RuntimeException("ServerConfigFile: Invalid comcat_exclude entry: " + ((s == null) ? "<null>" : s));
+			}
+		}
+
+		if (!( locat_bins >= 0 )) {
+			throw new RuntimeException("ServerConfigFile: Invalid locat_bins: " + locat_bins);
+		}
+
+		if (!( locat_filenames != null )) {
+			throw new RuntimeException("ServerConfigFile: locat_filenames list is null");
+		}
+		for (String s : locat_filenames) {
+			if (!( s != null && s.trim().length() > 0 )) {
+				throw new RuntimeException("ServerConfigFile: Invalid locat_filenames entry: " + ((s == null) ? "<null>" : s));
+			}
+		}
+
 		if (!( pdl_enable >= PDLOPT_MIN && pdl_enable <= PDLOPT_MAX )) {
 			throw new RuntimeException("ServerConfigFile: Invalid pdl_enable: " + pdl_enable);
 		}
 
 		if (!( pdl_key_filename != null )) {
 			throw new RuntimeException("ServerConfigFile: Invalid pdl_key_filename: " + ((pdl_key_filename == null) ? "<null>" : pdl_key_filename));
+		}
+
+		if (!( pdl_err_rate >= 0.0 && pdl_err_rate <= 1.0 )) {
+			throw new RuntimeException("ServerConfigFile: Invalid pdl_err_rate: " + pdl_err_rate);
 		}
 
 		if (!( pdl_dev_senders != null )) {
@@ -283,8 +346,25 @@ public class ServerConfigFile {
 		result.append ("log_con_control = " + ((log_con_control == null) ? "<null>" : log_con_control) + "\n");
 		result.append ("log_summary = " + ((log_summary == null) ? "<null>" : log_summary) + "\n");
 		result.append ("comcat_url = " + ((comcat_url == null) ? "<null>" : comcat_url) + "\n");
+		result.append ("comcat_err_rate = " + comcat_err_rate + "\n");
+
+		result.append ("comcat_exclude = [" + "\n");
+		for (String s : comcat_exclude) {
+			result.append ("  " + s + "\n");
+		}
+		result.append ("]" + "\n");
+
+		result.append ("locat_bins = " + locat_bins + "\n");
+
+		result.append ("locat_filenames = [" + "\n");
+		for (String s : locat_filenames) {
+			result.append ("  " + s + "\n");
+		}
+		result.append ("]" + "\n");
+
 		result.append ("pdl_enable = " + pdl_enable + "\n");
 		result.append ("pdl_key_filename = " + ((pdl_key_filename == null) ? "<null>" : pdl_key_filename) + "\n");
+		result.append ("pdl_err_rate = " + pdl_err_rate + "\n");
 
 		result.append ("pdl_dev_senders = [" + "\n");
 		for (int i = 0; i < pdl_dev_senders.size(); ++i) {
@@ -408,6 +488,29 @@ public class ServerConfigFile {
 		return pdl_sender_list;
 	}
 
+	// Marshal a collection of strings.
+
+	public static void marshal_string_coll (MarshalWriter writer, String name, Collection<String> x) {
+		int n = x.size();
+		writer.marshalArrayBegin (name, n);
+		for (String s : x) {
+			writer.marshalString (null, s);
+		}
+		writer.marshalArrayEnd ();
+		return;
+	}
+
+	// Unmarshal a collection of strings.
+
+	public static void unmarshal_string_coll (MarshalReader reader, String name, Collection<String> x) {
+		int n = reader.unmarshalArrayBegin (name);
+		for (int i = 0; i < n; ++i) {
+			x.add (reader.unmarshalString (null));
+		}
+		reader.unmarshalArrayEnd ();
+		return;
+	}
+
 	// Marshal object, internal.
 
 	protected void do_marshal (MarshalWriter writer) {
@@ -436,8 +539,13 @@ public class ServerConfigFile {
 		writer.marshalString    (        "log_con_control"  , log_con_control  );
 		writer.marshalString    (        "log_summary"      , log_summary      );
 		writer.marshalString    (        "comcat_url"       , comcat_url       );
+		writer.marshalDouble    (        "comcat_err_rate"  , comcat_err_rate  );
+		marshal_string_coll     (writer, "comcat_exclude"   , comcat_exclude   );
+		writer.marshalInt       (        "locat_bins"       , locat_bins       );
+		marshal_string_coll     (writer, "locat_filenames"  , locat_filenames  );
 		writer.marshalInt       (        "pdl_enable"       , pdl_enable       );
 		writer.marshalString    (        "pdl_key_filename" , pdl_key_filename );
+		writer.marshalDouble    (        "pdl_err_rate"     , pdl_err_rate     );
 		marshal_pdl_sender_list (writer, "pdl_dev_senders"  , pdl_dev_senders  );
 		marshal_pdl_sender_list (writer, "pdl_prod_senders" , pdl_prod_senders );
 	
@@ -468,8 +576,15 @@ public class ServerConfigFile {
 		log_con_control   = reader.unmarshalString    (        "log_con_control"  );
 		log_summary       = reader.unmarshalString    (        "log_summary"      );
 		comcat_url        = reader.unmarshalString    (        "comcat_url"       );
+		comcat_err_rate   = reader.unmarshalDouble    (        "comcat_err_rate"  );
+		comcat_exclude = new LinkedHashSet<String>();
+		unmarshal_string_coll                         (reader, "comcat_exclude"   , comcat_exclude   );
+		locat_bins        = reader.unmarshalInt       (        "locat_bins"       );
+		locat_filenames = new ArrayList<String>();
+		unmarshal_string_coll                         (reader, "locat_filenames"  , locat_filenames  );
 		pdl_enable        = reader.unmarshalInt       (        "pdl_enable"       );
 		pdl_key_filename  = reader.unmarshalString    (        "pdl_key_filename" );
+		pdl_err_rate      = reader.unmarshalDouble    (        "pdl_err_rate"     );
 		pdl_dev_senders   = unmarshal_pdl_sender_list (reader, "pdl_dev_senders"  );
 		pdl_prod_senders  = unmarshal_pdl_sender_list (reader, "pdl_prod_senders" );
 

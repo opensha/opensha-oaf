@@ -168,11 +168,11 @@ public class ComcatLocalCatalog {
 	// Load the catalog from a scanner.
 	// Throws an exception if the load fails.
 
-	public void load_catalog (Scanner scanner, int the_n_lat_bins) {
+	public void load_catalog (int the_n_lat_bins, Scanner scanner) {
 
-		// Set the number of latitude bins
+		// Set the number of latitude bins, zero means use default
 
-		n_lat_bins = the_n_lat_bins;
+		n_lat_bins = ((the_n_lat_bins >= 1) ? the_n_lat_bins : DEF_N_LAT_BINS);
 
 		// Initialize counters
 
@@ -295,15 +295,155 @@ public class ComcatLocalCatalog {
 
 
 
-	// Load the catalog from a file.
+//	// Load the catalog from a file.
+//	// Throws an exception if the load fails.
+//
+//	public void load_catalog (int the_n_lat_bins, String filename) throws IOException {
+//		try (
+//			Scanner scanner = new Scanner (new BufferedReader (new FileReader (filename)));
+//		){
+//			load_catalog (the_n_lat_bins, scanner);
+//		}
+//		return;
+//	}
+
+
+
+
+	// Load the catalog from a list of files.
 	// Throws an exception if the load fails.
 
-	public void load_catalog (String filename, int the_n_lat_bins) throws IOException {
-		try (
-			Scanner scanner = new Scanner (new BufferedReader (new FileReader (filename)));
-		){
-			load_catalog (scanner, the_n_lat_bins);
+	public void load_catalog (int the_n_lat_bins, String... filename) throws IOException {
+
+		// Set the number of latitude bins, zero means use default
+
+		n_lat_bins = ((the_n_lat_bins >= 1) ? the_n_lat_bins : DEF_N_LAT_BINS);
+
+		// Initialize counters
+
+		clear_stat();
+
+		// Create the map of event ids
+
+		event_map = new HashMap<String, ComcatLocalCatalogEntry>();
+
+		// Create a temporary array of variable-size bins
+
+		ArrayList<ArrayList<ArrayList<ComcatLocalCatalogEntry>>> var_bins = new ArrayList<ArrayList<ArrayList<ComcatLocalCatalogEntry>>>();
+
+		// Loop over latitude bins
+
+		for (int lat_bin = 0; lat_bin < n_lat_bins; ++lat_bin) {
+			int n_lon_bins = calc_n_lon_bins (lat_bin);
+			stat_total_bins += n_lon_bins;
+
+			// Create the longitude bins
+
+			var_bins.add (new ArrayList<ArrayList<ComcatLocalCatalogEntry>>());
+
+			// Loop over longitude bins, and create the bin
+
+			for (int lon_bin = 0; lon_bin < n_lon_bins; ++lon_bin) {
+				var_bins.get(lat_bin).add (new ArrayList<ComcatLocalCatalogEntry>());
+			}
 		}
+
+		// Loop over files
+
+		for (String fname : filename) {
+
+			try (
+				Scanner scanner = new Scanner (new BufferedReader (new FileReader (fname)));
+			){
+
+				// Loop over catalog entries
+
+				while (scanner.hasNext()) {
+
+					// Read the next entry from the scanner
+
+					ComcatLocalCatalogEntry entry = new ComcatLocalCatalogEntry();
+					entry.parse_line (scanner);
+
+					// Add to our map of event ids
+
+					String dup_id = entry.add_ids_to_map (event_map);
+
+					// If it's not a duplicate ...
+
+					if (dup_id == null) {
+
+						// Accumulate its statistics
+
+						accum_stat (entry);
+
+						// Find its bin
+
+						int lat_bin = get_lat_bin(get_sc_lat(entry.rup_lat));
+						ArrayList<ArrayList<ComcatLocalCatalogEntry>> lon_bins = var_bins.get(lat_bin);
+						int n_lon_bins = lon_bins.size();
+						int lon_bin = get_lon_bin(get_sc_lon(entry.rup_lon), n_lon_bins);
+						ArrayList<ComcatLocalCatalogEntry> bin = lon_bins.get(lon_bin % n_lon_bins);
+
+						// Add to the bin
+
+						bin.add (entry);
+						int bin_size = bin.size();
+						if (stat_max_bin_size < bin_size) {
+							stat_max_bin_size = bin_size;
+						}
+					}
+				}
+			}
+		}
+
+		// Initialize histogram
+
+		stat_bin_size_histogram = new int[stat_max_bin_size + 1];
+		for (int h = 0; h <= stat_max_bin_size; ++h) {
+			stat_bin_size_histogram[h] = 0;
+		}
+
+		// Create the array of bins
+
+		event_bins = new ComcatLocalCatalogEntry[n_lat_bins][][];
+
+		// Loop over latitude bins
+
+		for (int lat_bin = 0; lat_bin < n_lat_bins; ++lat_bin) {
+			int n_lon_bins = var_bins.get(lat_bin).size();
+
+			// Create the longitude bins
+
+			event_bins[lat_bin] = new ComcatLocalCatalogEntry[n_lon_bins][];
+
+			// Loop over longitude bins
+
+			for (int lon_bin = 0; lon_bin < n_lon_bins; ++lon_bin) {
+
+				// Get the variable-size bin
+
+				ArrayList<ComcatLocalCatalogEntry> bin = var_bins.get(lat_bin).get(lon_bin);
+				int bin_size = bin.size();
+				stat_bin_size_histogram[bin_size] = stat_bin_size_histogram[bin_size] + 1;
+
+				// Sort the list in order of increasing time
+
+				if (bin_size > 1) {
+					bin.sort (new Comparator<ComcatLocalCatalogEntry>(){
+						@Override
+						public int compare (ComcatLocalCatalogEntry entry1, ComcatLocalCatalogEntry entry2) {
+							return Long.compare (entry1.rup_time, entry2.rup_time);
+						}
+					});
+				}
+
+				// Convert to an array, and save
+
+				event_bins[lat_bin][lon_bin] = bin.toArray (new ComcatLocalCatalogEntry[bin_size]);
+			}
+		}
+
 		return;
 	}
 
@@ -405,9 +545,53 @@ public class ComcatLocalCatalog {
 		result.append ("stat_max_depth = " + stat_max_depth + "\n");
 		result.append ("stat_min_mag = " + stat_min_mag + "\n");
 		result.append ("stat_max_mag = " + stat_max_mag + "\n");
+		//for (int h = 0; h <= stat_max_bin_size; ++h) {
+		//	result.append ("stat_bin_size_histogram[" + h + "] = " + stat_bin_size_histogram[h] + "\n");
+		//}
+
+		int elided = 0;
 		for (int h = 0; h <= stat_max_bin_size; ++h) {
-			result.append ("stat_bin_size_histogram[" + h + "] = " + stat_bin_size_histogram[h] + "\n");
+			if (elided != 0) {	// if the previous line was elided ...
+				if (h+1 <= stat_max_bin_size && stat_bin_size_histogram[h+1] == 0) {
+					++elided;	// if a line is elided, then the next line exists and is zero
+				} else {
+					result.append ("... skipped " + elided + " zeros" + "\n");
+					elided = 0;
+					result.append ("stat_bin_size_histogram[" + h + "] = " + stat_bin_size_histogram[h] + "\n");
+				}
+			} else {
+				if (   h-1 >= 0
+					&& h+2 <= stat_max_bin_size
+					&& stat_bin_size_histogram[h-1] == 0
+					&& stat_bin_size_histogram[h] == 0
+					&& stat_bin_size_histogram[h+1] == 0
+					&& stat_bin_size_histogram[h+2] == 0) {
+					++elided;
+				} else {
+					result.append ("stat_bin_size_histogram[" + h + "] = " + stat_bin_size_histogram[h] + "\n");
+				}
+			}
 		}
+
+		return result.toString();
+	}
+
+
+
+
+	// Construct a summary string.
+
+	public String get_summary_string () {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("n_lat_bins = " + n_lat_bins + "\n");
+		result.append ("stat_total_bins = " + stat_total_bins + "\n");
+		result.append ("stat_total_events = " + stat_total_events + "\n");
+		result.append ("stat_max_bin_size = " + stat_max_bin_size + "\n");
+		result.append ("stat_min_time = " + SimpleUtils.time_raw_and_string(stat_min_time) + "\n");
+		result.append ("stat_max_time = " + SimpleUtils.time_raw_and_string(stat_max_time) + "\n");
+		result.append ("stat_min_mag = " + stat_min_mag + "\n");
+		result.append ("stat_max_mag = " + stat_max_mag + "\n");
 
 		return result.toString();
 	}
@@ -711,29 +895,29 @@ public class ComcatLocalCatalog {
 
 		// Subcommand : Load catalog from a local file and display statistics.
 		// Command format:
-		//  statistics  filename
+		//  statistics  filename...
 
 		if (args[0].equalsIgnoreCase ("statistics")) {
 
-			// One additional argument
+			// One or more additional arguments
 
-			if (args.length != 2) {
+			if (args.length < 2) {
 				System.err.println ("ComcatLocalCatalogEntry : Invalid 'statistics' subcommand");
 				return;
 			}
 
 			try {
 
-				String filename = args[1];
+				String[] filename = Arrays.copyOfRange (args, 1, args.length);
 
 				// Say hello
 
-				System.out.println ("Loading catalog: " + filename);
+				System.out.println ("Loading catalog: " + "[" + String.join (", ", filename) + "]");
 
 				// Load the catalog
 
 				ComcatLocalCatalog local_catalog = new ComcatLocalCatalog();
-				local_catalog.load_catalog (filename, ComcatLocalCatalog.DEF_N_LAT_BINS);
+				local_catalog.load_catalog (0, filename);
 
 				// Display statistics
 
@@ -749,31 +933,306 @@ public class ComcatLocalCatalog {
 
 
 
+		// Subcommand : Convert catalog file to flat file.
+		// Command format:
+		//  cat_to_flat  cat_filename...  flat_filename
+		// The cat_filename must be a catalog file such as created by the download command.
+		// This command writes the flat_filename file, in the format described in
+		// ComcatLocalCatalogEntry.format_flat_line.
+
+		if (args[0].equalsIgnoreCase ("cat_to_flat")) {
+
+			// Two or more additional arguments
+
+			if (args.length < 3) {
+				System.err.println ("ComcatLocalCatalogEntry : Invalid 'cat_to_flat' subcommand");
+				return;
+			}
+
+			try {
+
+				String[] cat_filename = Arrays.copyOfRange (args, 1, args.length - 1);
+				String flat_filename = args[args.length - 1];
+
+				// Open the files
+
+				int entries_read = 0;
+				int entries_written = 0;
+
+				try (
+					Writer writer = new BufferedWriter (new FileWriter (flat_filename));
+				){
+
+					// Map of event ids used to filter duplicates
+
+					HashMap<String, ComcatLocalCatalogEntry> dup_map = new HashMap<String, ComcatLocalCatalogEntry>();
+
+					// Loop over local catalog files
+
+					for (String fname : cat_filename) {
+
+						try (
+							Scanner scanner = new Scanner (new BufferedReader (new FileReader (fname)));
+						){
+
+							// Loop over catalog entries
+
+							while (scanner.hasNext()) {
+
+								// Read the next entry from the scanner
+
+								ComcatLocalCatalogEntry entry = new ComcatLocalCatalogEntry();
+								entry.parse_line (scanner);
+								++entries_read;
+
+								// Add to our map of event ids
+
+								String dup_id = entry.add_ids_to_map (dup_map);
+
+								// If it's not a duplicate ...
+
+								if (dup_id == null) {
+
+									// Write to the file
+
+									writer.write (entry.format_flat_line() + "\n");
+									++entries_written;
+								}
+							}
+						}
+					}
+				}
+
+				// Display the result
+
+				System.out.println ("Events read from catalog file = " + entries_read);
+				System.out.println ("Events written to flat file = " + entries_written);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Read catalog file and list duplcates.
+		// Command format:
+		//  list_dups  cat_filename...  dup_filename
+		// The cat_filename must be a catalog file such as created by the download command.
+		// This command writes the list of duplicates into the dup_filename file.
+		// This command finds each primary id that also appears as the primary id
+		// of another entry.
+
+		if (args[0].equalsIgnoreCase ("list_dups")) {
+
+			// Two or more additional arguments
+
+			if (args.length < 3) {
+				System.err.println ("ComcatLocalCatalogEntry : Invalid 'list_dups' subcommand");
+				return;
+			}
+
+			try {
+
+				String[] cat_filename = Arrays.copyOfRange (args, 1, args.length - 1);
+				String dup_filename = args[args.length - 1];
+
+				// Open the files
+
+				int entries_read = 0;
+				int entries_dup = 0;
+
+				try (
+					Writer writer = new BufferedWriter (new FileWriter (dup_filename));
+				){
+
+					// Map of event ids used to filter duplicates
+
+					HashMap<String, ComcatLocalCatalogEntry> dup_map = new HashMap<String, ComcatLocalCatalogEntry>();
+
+					// Loop over local catalog files
+
+					for (String fname : cat_filename) {
+
+						try (
+							Scanner scanner = new Scanner (new BufferedReader (new FileReader (fname)));
+						){
+
+							// Loop over catalog entries
+
+							while (scanner.hasNext()) {
+
+								// Read the next entry from the scanner
+
+								ComcatLocalCatalogEntry entry = new ComcatLocalCatalogEntry();
+								entry.parse_line (scanner);
+								++entries_read;
+
+								// Add to our map of event ids
+
+								String dup_id = entry.add_ids_to_map (dup_map);
+
+								// If it's a duplicate ...
+
+								if (dup_id != null) {
+								
+									// Write info to file
+
+									ComcatLocalCatalogEntry dup_entry = dup_map.get (dup_id);
+									writer.write ("----- " + dup_id + "\n");
+									writer.write (dup_entry.format_line() + "\n");
+									writer.write (entry.format_line() + "\n");
+									++entries_dup;
+								}
+							}
+						}
+					}
+
+					writer.write ("----- " + "\n");
+					writer.write ("Events read from catalog file = " + entries_read + "\n");
+					writer.write ("Events duplicated = " + entries_dup + "\n");
+				}
+
+				// Display the result
+
+				System.out.println ("Events read from catalog file = " + entries_read);
+				System.out.println ("Events duplicated = " + entries_dup);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Read catalog file and list secondary ids that are duplcates.
+		// Command format:
+		//  secondary_dups  cat_filename...  dup_filename
+		// The cat_filename must be a catalog file such as created by the download command.
+		// This command writes the list of duplicates into the dup_filename file.
+		// This command finds each secondary id that also appears as a (primary or
+		// secondary) id in a different earthquake (i.e., in an entry with different
+		// primary id).
+		// If there are catalog entries with the same primary id, then the second
+		// and subsequent ones are discarded (and not listed in the dup_filename file).
+
+		if (args[0].equalsIgnoreCase ("secondary_dups")) {
+
+			// Two or more additional arguments
+
+			if (args.length < 3) {
+				System.err.println ("ComcatLocalCatalogEntry : Invalid 'secondary_dups' subcommand");
+				return;
+			}
+
+			try {
+
+				String[] cat_filename = Arrays.copyOfRange (args, 1, args.length - 1);
+				String dup_filename = args[args.length - 1];
+
+				// Open the files
+
+				int entries_read = 0;
+				int entries_dup = 0;
+
+				try (
+					Writer writer = new BufferedWriter (new FileWriter (dup_filename));
+				){
+
+					// Map of event ids used to filter duplicates
+
+					HashMap<String, ComcatLocalCatalogEntry> dup_map = new HashMap<String, ComcatLocalCatalogEntry>();
+
+					// Loop over local catalog files
+
+					for (String fname : cat_filename) {
+
+						try (
+							Scanner scanner = new Scanner (new BufferedReader (new FileReader (fname)));
+						){
+
+							// Loop over catalog entries
+
+							while (scanner.hasNext()) {
+
+								// Read the next entry from the scanner
+
+								ComcatLocalCatalogEntry entry = new ComcatLocalCatalogEntry();
+								entry.parse_line (scanner);
+								++entries_read;
+
+								// Add to our map of event ids
+
+								List<String> dup_ids = new ArrayList<String>();
+								boolean f_added = entry.add_ids_to_map_checkall (dup_map, dup_ids);
+
+								// Loop over duplicate ids ...
+
+								for (String dup_id : dup_ids) {
+								
+									// Write info to file: duplicate id, original entry, this entry
+
+									ComcatLocalCatalogEntry dup_entry = dup_map.get (dup_id);
+									writer.write ("----- " + dup_id + "\n");
+									writer.write (dup_entry.format_line() + "\n");
+									writer.write (entry.format_line() + "\n");
+									++entries_dup;
+								}
+							}
+						}
+					}
+
+					writer.write ("----- " + "\n");
+					writer.write ("Events read from catalog file = " + entries_read + "\n");
+					writer.write ("Secondary ids duplicated = " + entries_dup + "\n");
+				}
+
+				// Display the result
+
+				System.out.println ("Events read from catalog file = " + entries_read);
+				System.out.println ("Secondary ids duplicated = " + entries_dup);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
 		// Subcommand : Test #1
 		// Command format:
-		//  test1  filename  event_id
+		//  test1  filename...  event_id
 		// Fetch information for an event, and display it.
 		// Same as ComcatAccessor test #1, except reading from a local catalog.
 
 		if (args[0].equalsIgnoreCase ("test1")) {
 
-			// Two additional arguments
+			// Two or more additional arguments
 
-			if (args.length != 3) {
+			if (args.length < 3) {
 				System.err.println ("ComcatLocalCatalogEntry : Invalid 'test1' subcommand");
 				return;
 			}
 
 			try {
 
-				String filename = args[1];
-				String event_id = args[2];
+				String filename[] = Arrays.copyOfRange (args, 1, args.length - 1);
+				String event_id = args[args.length - 1];
 
 				// Load the catalog
 
-				System.out.println ("Loading catalog: " + filename);
+				System.out.println ("Loading catalog: " + "[" + String.join (", ", filename) + "]");
 				ComcatLocalCatalog local_catalog = new ComcatLocalCatalog();
-				local_catalog.load_catalog (filename, ComcatLocalCatalog.DEF_N_LAT_BINS);
+				local_catalog.load_catalog (0, filename);
 
 				// Say hello
 
@@ -818,7 +1277,7 @@ public class ComcatLocalCatalog {
 
 		// Subcommand : Test #2
 		// Command format:
-		//  test2  filename  event_id  min_days  max_days  radius_km  min_mag
+		//  test2  filename...  event_id  min_days  max_days  radius_km  min_mag
 		// Fetch information for an event, and display it.
 		// Then fetch the event list for a circle surrounding the hypocenter,
 		// for the specified interval in days after the origin time,
@@ -827,27 +1286,27 @@ public class ComcatLocalCatalog {
 
 		if (args[0].equalsIgnoreCase ("test2")) {
 
-			// Six additional arguments
+			// Six or more additional arguments
 
-			if (args.length != 7) {
+			if (args.length < 7) {
 				System.err.println ("ComcatLocalCatalogEntry : Invalid 'test2' subcommand");
 				return;
 			}
 
 			try {
 
-				String filename = args[1];
-				String event_id = args[2];
-				double min_days = Double.parseDouble (args[3]);
-				double max_days = Double.parseDouble (args[4]);
-				double radius_km = Double.parseDouble (args[5]);
-				double min_mag = Double.parseDouble (args[6]);
+				String filename[] = Arrays.copyOfRange (args, 1, args.length - 5);
+				String event_id = args[args.length - 5];
+				double min_days = Double.parseDouble (args[args.length - 4]);
+				double max_days = Double.parseDouble (args[args.length - 3]);
+				double radius_km = Double.parseDouble (args[args.length - 2]);
+				double min_mag = Double.parseDouble (args[args.length - 1]);
 
 				// Load the catalog
 
-				System.out.println ("Loading catalog: " + filename);
+				System.out.println ("Loading catalog: " + "[" + String.join (", ", filename) + "]");
 				ComcatLocalCatalog local_catalog = new ComcatLocalCatalog();
-				local_catalog.load_catalog (filename, ComcatLocalCatalog.DEF_N_LAT_BINS);
+				local_catalog.load_catalog (0, filename);
 
 				// Say hello
 

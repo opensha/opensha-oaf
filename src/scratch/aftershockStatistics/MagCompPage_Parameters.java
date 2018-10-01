@@ -96,6 +96,7 @@ public class MagCompPage_Parameters {
 	
 	/**
 	 * Return the minimum magnitude to use when finding the centroid of aftershock activity, or -10.0 if none.
+	 * A value of 10.0 means to skip the centroid calculation and search around the hypocenter.
 	 * @return
 	 */
 	public double get_magCentroid() {return magCentroid;}

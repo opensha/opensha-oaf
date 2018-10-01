@@ -1,6 +1,8 @@
 package scratch.aftershockStatistics.aafs;
 
-import java.util.GregorianCalendar;
+//import java.util.GregorianCalendar;
+
+import java.time.Instant;
 
 import scratch.aftershockStatistics.util.MarshalReader;
 import scratch.aftershockStatistics.util.MarshalWriter;
@@ -267,10 +269,8 @@ public class ForecastResults {
 
 			// Build the forecast
 
-			GregorianCalendar eventDate = new GregorianCalendar();
-			eventDate.setTimeInMillis(mainshock.getOriginTime());
-			GregorianCalendar startDate = new GregorianCalendar();
-			startDate.setTimeInMillis(Math.max (result_time, mainshock.getOriginTime() + 1000L));
+			Instant eventDate = Instant.ofEpochMilli(mainshock.getOriginTime());
+			Instant startDate = Instant.ofEpochMilli(Math.max (result_time, mainshock.getOriginTime() + 1000L));
 			USGS_AftershockForecast forecast = new USGS_AftershockForecast (generic_model, catalog_aftershocks, eventDate, startDate);
 
 			if (advisory_lag >= ADVISORY_LAG_YEAR) {
@@ -404,10 +404,8 @@ public class ForecastResults {
 
 			// Build the forecast
 
-			GregorianCalendar eventDate = new GregorianCalendar();
-			eventDate.setTimeInMillis(mainshock.getOriginTime());
-			GregorianCalendar startDate = new GregorianCalendar();
-			startDate.setTimeInMillis(Math.max (result_time, mainshock.getOriginTime() + 1000L));
+			Instant eventDate = Instant.ofEpochMilli(mainshock.getOriginTime());
+			Instant startDate = Instant.ofEpochMilli(Math.max (result_time, mainshock.getOriginTime() + 1000L));
 			USGS_AftershockForecast forecast = new USGS_AftershockForecast (seq_spec_model, catalog_aftershocks, eventDate, startDate);
 
 			if (advisory_lag >= ADVISORY_LAG_YEAR) {
@@ -542,10 +540,8 @@ public class ForecastResults {
 
 			// Build the forecast
 
-			GregorianCalendar eventDate = new GregorianCalendar();
-			eventDate.setTimeInMillis(mainshock.getOriginTime());
-			GregorianCalendar startDate = new GregorianCalendar();
-			startDate.setTimeInMillis(Math.max (result_time, mainshock.getOriginTime() + 1000L));
+			Instant eventDate = Instant.ofEpochMilli(mainshock.getOriginTime());
+			Instant startDate = Instant.ofEpochMilli(Math.max (result_time, mainshock.getOriginTime() + 1000L));
 			USGS_AftershockForecast forecast = new USGS_AftershockForecast (bayesian_model, catalog_aftershocks, eventDate, startDate);
 
 			if (advisory_lag >= ADVISORY_LAG_YEAR) {

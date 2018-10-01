@@ -499,11 +499,15 @@ public class ForecastParameters {
 
 		ObsEqkRupList aftershocks;
 
-		try {
-			ComcatAccessor accessor = new ComcatAccessor();
-			aftershocks = accessor.fetchAftershocks(fcmain.get_eqk_rupture(), min_days, max_days, min_depth, max_depth, initial_region, initial_region.getPlotWrap(), centroid_min_mag);
-		} catch (Exception e) {
-			throw new RuntimeException("ForecastParameters.fetch_aftershock_search_region: Comcat exception", e);
+		if (centroid_min_mag > 9.9) {
+			aftershocks = new ObsEqkRupList();
+		} else {
+			try {
+				ComcatAccessor accessor = new ComcatAccessor();
+				aftershocks = accessor.fetchAftershocks(fcmain.get_eqk_rupture(), min_days, max_days, min_depth, max_depth, initial_region, initial_region.getPlotWrap(), centroid_min_mag);
+			} catch (Exception e) {
+				throw new RuntimeException("ForecastParameters.fetch_aftershock_search_region: Comcat exception", e);
+			}
 		}
 
 		// Center of search region

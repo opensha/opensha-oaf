@@ -14,6 +14,10 @@ import java.util.regex.Pattern;
 
 import java.io.UnsupportedEncodingException;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.commons.geo.Location;
@@ -363,14 +367,61 @@ public class ComcatLocalCatalogEntry {
 
 
 
+	// Format our contents as a single line for a flat file.
+	// Note: The line does not have a newline at the end.
+	// The line has 10 fields, separated by a single space.
+	// Field 1: year, 4 digits.
+	// Field 2: month, 1 or 2 digits, right-justified in 2 columns.
+	// Field 3: day of month, 1 or 2 digits, right-justified in 2 columns.
+	// Field 4: hour, 1 or 2 digits, right-justified in 2 columns.
+	// Field 5: minute, 1 or 2 digits, right-justified in 2 columns.
+	// Field 6: second, 1 or 2 digits left of decimal point,
+	//          2 digits right of decimal point, right-justified in 5 columns.
+	// Field 7: latitude in degrees, north positive, 1 or 2 digits left of decimal point,
+	//          3 digits right of decimal point, right-justified in 7 columns.
+	// Field 8: longitude in degrees, east positive, 1 to 3 digits left of decimal point,
+	//          3 digits right of decimal point, right-justified in 8 columns.
+	// Field 9: depth in km, down positive, 1 to 4 digits left of decimal point,
+	//          1 digit right of decimal point, right-justified in 6 columns.
+	// Field 10: magnitude, 1 or 2 digits left of decimal point (or 1 digit plus sign),
+	//           2 digits right of decimal point, right-justified in 5 columns. 
+
+	public String format_flat_line () {
+
+		// Convert the time
+
+		SimpleDateFormat fmt = new SimpleDateFormat ("yyyy MM dd HH mm ss.SSS");
+		fmt.setTimeZone (TimeZone.getTimeZone ("UTC"));
+		String t1 = fmt.format (new Date (rup_time));
+
+		// Remove leading zeros from month, day, hour, minute, second
+
+		String t2 = t1.replace (" 0", "  ");
+
+		// Strip off the last decimal place
+
+		String t3 = t2.substring (0, t2.length() - 1);
+
+		// Format the string
+
+		String s = String.format ("%s %7.3f %8.3f %6.1f %5.2f",
+					t3, rup_lat, rup_lon, rup_depth, rup_mag);
+
+		return s;
+	}
+
+
+
+
 	//----- Utilities -----
 
 
 	// Add all our ids to a map.
 	// Returns null if none of our ids are already in the map.
-	// Returns the duplicate id if one of our ids is already in the map
+	// Returns the duplicate id if one of our ids is already in the map.
+	// Note: This version does not modify any entries.
 
-	public String add_ids_to_map (Map<String, ComcatLocalCatalogEntry> map) {
+	public String add_ids_to_map_nofix (Map<String, ComcatLocalCatalogEntry> map) {
 		for (String id : rup_id_list) {
 			if (map.containsKey (id)) {
 				return id;
@@ -380,6 +431,162 @@ public class ComcatLocalCatalogEntry {
 			map.put (id, this);
 		}
 		return null;
+	}
+
+
+
+
+	// Add all our ids to a map.
+	// Returns null if the operation is successful.
+	// Returns the duplicate id if this entry is not added to the map.
+	// Note: This version may modify entries to resolve conflicts.
+	// We have observed that on rare occasions Comcat may have the same id
+	// refer to two different earthquakes; either primary in one and secondary
+	// in the other, or secondary in both.  (We have not observed the same id
+	// to be primary in two different earthquakes, and such a case would be
+	// filtered in ComcatAccessor anyway.)  [Note: Comcat maintainers have
+	// confirmed that this is a bug in Comcat.  When/if the bug is fixed,
+	// this will not occur any more.]
+	// If this entry has the same primary id as another entry that is
+	// already in the map, then this function returns the primary id and
+	// this entry is not added to the map.
+	// All other conflicts are resolved by deleting a secondary id, either
+	// from this entry or from a previously-processed entry.  If there is
+	// a choice, it is deleted from this entry.
+
+	public String add_ids_to_map (Map<String, ComcatLocalCatalogEntry> map) {
+
+		// If our primary id is in use ...
+
+		ComcatLocalCatalogEntry other = map.get (rup_id_list[0]);
+		if (other != null) {
+		
+			// If it's the primary id of the other entry, report conflict
+
+			if (rup_id_list[0].equals (other.rup_id_list[0])) {
+				return rup_id_list[0];
+			}
+
+			// Remove secondary id from the other entry
+
+			other.delete_secondary_id (rup_id_list[0]);
+		}
+
+		// Now scan our secondary ids ...
+
+		String[] original_rup_id_list = rup_id_list;
+		for (int k = 1; k < original_rup_id_list.length; ++k) {
+
+			// If the id is in use, remove it from this entry
+		
+			if (map.containsKey (original_rup_id_list[k])) {
+				delete_secondary_id (original_rup_id_list[k]);
+			}
+		}
+
+		// Add all our ids to the map
+
+		for (String id : rup_id_list) {
+			map.put (id, this);
+		}
+		return null;
+	}
+
+
+
+
+	// Delete the given id, which must be a secondary id.
+	// Throw an exception if the id is not a secondary id.
+	// Note: It is expected that calls to this function will be rare.
+
+	private void delete_secondary_id (String id) {
+
+		// Search for the index of the element to delete
+
+		int delix;
+		for (delix = 1; delix < rup_id_list.length; ++delix) {
+			if (rup_id_list[delix].equals(id)) {
+				break;
+			}
+		}
+
+		// Didn't find it
+
+		if (delix >= rup_id_list.length) {
+			throw new IllegalArgumentException ("ComcatLocalCatalogEntry.delete_secondary_id: Not a secondary id, id = " + id);
+		}
+
+		// Make the new array and fill it
+
+		String[] new_rup_id_list = new String[rup_id_list.length - 1];
+		int k = 0;
+		for (int j = 0; j < rup_id_list.length; ++j) {
+			if (j != delix) {
+				new_rup_id_list[k] = rup_id_list[j];
+				++k;
+			}
+		}
+
+		// Set the new List
+
+		rup_id_list = new_rup_id_list;
+		return;
+	}
+
+
+
+
+	// Add all our ids to a map.
+	// Returns true if this event has not been seen before.
+	// Note: This version does not modify any entries.
+	// If our primary id equals the primary id of an existing map entry,
+	// then return false and make no changes to map or dup_ids.
+	// Otherwise, for all our ids (primary and secondary):
+	// - If the id is not in the map, then add the id to the map.
+	// - If our id is in the map, then add the id to dup_ids.
+
+	public boolean add_ids_to_map_checkall (Map<String, ComcatLocalCatalogEntry> map, List<String> dup_ids) {
+
+		// If our primary id is in use ...
+
+		ComcatLocalCatalogEntry other = map.get (rup_id_list[0]);
+		if (other != null) {
+		
+			// If it's the primary id of the other entry, discard
+
+			if (rup_id_list[0].equals (other.rup_id_list[0])) {
+				return false;
+			}
+
+			// Record it as a duplicate
+
+			dup_ids.add (rup_id_list[0]);
+		}
+
+		// Otherwise, add it to the map
+		
+		else {
+			map.put (rup_id_list[0], this);
+		}
+
+		// Now scan our secondary ids ...
+
+		for (int k = 1; k < rup_id_list.length; ++k) {
+
+			// If the secondary id is in use, record it as a duplicate
+		
+			if (map.containsKey (rup_id_list[k])) {
+				dup_ids.add (rup_id_list[k]);
+			}
+
+			// Otherwise, add it to the map
+		
+			else {
+				map.put (rup_id_list[k], this);
+			}
+		}
+
+		return true;
 	}
 
 
@@ -469,6 +676,80 @@ public class ComcatLocalCatalogEntry {
 				ObsEqkRupture rup2 = entry2.get_eqk_rupture (false, true);
 
 				System.out.println (ComcatAccessor.rupToString (rup2));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  event_id
+		// Fetch information for an event, and display it.
+		// Then convert to a local catalog entry, and display it.
+		// Then format a string, and display it.
+		// Then format a line for a flat file, and display it.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("ComcatLocalCatalogEntry : Invalid 'test2' subcommand");
+				return;
+			}
+
+			String event_id = args[1];
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatAccessor accessor = new ComcatAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					return;
+				}
+
+				System.out.println (ComcatAccessor.rupToString (rup));
+
+				// Convert to local catalog entry
+
+				ComcatLocalCatalogEntry entry = new ComcatLocalCatalogEntry();
+				entry.set_eqk_rupture (rup);
+
+				System.out.println (entry.toString());
+
+				// Format a line
+
+				String line = entry.format_line();
+
+				System.out.println (line);
+				System.out.println ("");
+
+				// Format a flat-file line
+
+				String line2 = entry.format_flat_line();
+
+				System.out.println (line2);
+				System.out.println ("");
 
             } catch (Exception e) {
                 e.printStackTrace();

@@ -130,7 +130,8 @@ public class AftershockStatsShadow {
 
 			if (centroid_time_lo < system_time_now
 				&& centroid_time_lo < centroid_time_hi
-				&& centroid_radius > 0.0) {
+				&& centroid_radius > 0.0
+				&& centroid_min_mag <= 9.9) {
 
 				// Construct a circle around the rupture hypocenter with the centroid radius
 
