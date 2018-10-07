@@ -50,8 +50,20 @@ import scratch.aftershockStatistics.OAFParameterSet;
  *  "poll_long_lookback" = String giving lookback time for the long polling cycle, in java.time.Duration format.
  *  "poll_long_intake_gap" = String giving time gap between intake actions for the long polling cycle, in java.time.Duration format.
  *  "pdl_intake_max_age" = String giving maximum allowed age for PDL intake, in java.time.Duration format.
- *  "pdl_intake_max_future" = String giving default value of injectable text for PDL JSON files, or "" for none.
- *  "def_injectable_text" = String giving maximum allowed time in future for PDL intake, in java.time.Duration format.
+ *  "pdl_intake_max_future" = String giving maximum allowed time in future for PDL intake, in java.time.Duration format.
+ *  "def_injectable_text" = String giving default value of injectable text for PDL JSON files, or "" for none.
+ *	"adv_min_mag_bins" = [ Array giving a list of minimum magnitudes for which forecasts are generated, in increasing order.
+ *		element = Real value giving minimum magnitude for the bin.
+ *	]
+ *	"adv_window_start_offs" = [ Array giving a list of time offsets, from the forecast generation time, at which the forecast window starts.
+ *		element = String giving offset from forecast generation time, in java.time.Duration format.
+ *	]
+ *	"adv_window_end_offs" = [ Array giving a list of time offsets, from the forecast generation time, at which the forecast window ends.
+ *		element = String giving offset from forecast generation time, in java.time.Duration format.
+ *	]
+ *	"adv_window_names" = [ Array giving a list of names for the forecast windows.
+ *		element = String giving the forecast window name.
+ *	]
  *	"forecast_lags" = [ Array giving a list of time lags at which forecasts are generated, in increasing order.
  *		element = String giving time lag since mainshock, in java.time.Duration format.
  *	]
@@ -208,6 +220,28 @@ public class ActionConfigFile {
 
 	public String def_injectable_text;
 
+	// Minimum magnitude for advisory magnitude bins.  Must be in increasing order.
+
+	public ArrayList<Double> adv_min_mag_bins;
+
+	// Time offsets, from forecast generation time, at which the forecast window starts, in milliseconds.
+	// Each element must be a whole number of seconds, between 0 and 10^9 seconds.
+	// The length must equal the number of forecast windows.
+
+	public ArrayList<Long> adv_window_start_offs;
+
+	// Time offsets, from forecast generation time, at which the forecast window ends, in milliseconds.
+	// Each element must be a whole number of seconds, between 1 and 10^9 seconds,
+	// and must be larger than the corresponding start offset.
+	// The length must equal the number of forecast windows.
+
+	public ArrayList<Long> adv_window_end_offs;
+
+	// The name assigned to each forecast window.
+	// The length must equal the number of forecast windows.
+
+	public ArrayList<String> adv_window_names;
+
 	// Time lags at which forecasts are generated, in milliseconds.  Must be in increasing order.
 	// This is time lag since the mainshock.  Must have at least 1 element.
 	// The difference between successive elements must be at least the minimum gap.
@@ -278,6 +312,10 @@ public class ActionConfigFile {
 		pdl_intake_max_age = 0L;
 		pdl_intake_max_future = 0L;
 		def_injectable_text = "";
+		adv_min_mag_bins = new ArrayList<Double>();
+		adv_window_start_offs = new ArrayList<Long>();
+		adv_window_end_offs = new ArrayList<Long>();
+		adv_window_names = new ArrayList<String>();
 		forecast_lags = new ArrayList<Long>();
 		comcat_retry_lags = new ArrayList<Long>();
 		comcat_intake_lags = new ArrayList<Long>();
@@ -400,8 +438,58 @@ public class ActionConfigFile {
 			throw new RuntimeException("ActionConfigFile: Invalid def_injectable_text: " + ((def_injectable_text == null) ? "null" : def_injectable_text));
 		}
 
-		int n = forecast_lags.size();
-		long min_lag = MIN_LAG;
+		int n;
+		long min_lag;
+
+		n = adv_min_mag_bins.size();
+		
+		if (!( n > 0 )) {
+				throw new RuntimeException("ActionConfigFile: Empty list of advisory minimum magnitude bins");
+		}
+
+		n = adv_window_start_offs.size();
+		min_lag = 0L;
+		
+		if (!( n > 0 )) {
+				throw new RuntimeException("ActionConfigFile: Empty list of advisory window start offsets");
+		}
+
+		for (int i = 0; i < n; ++i) {
+			long adv_window_start_off = adv_window_start_offs.get(i);
+			if (!( is_valid_lag(adv_window_start_off, min_lag) )) {
+				throw new RuntimeException("ActionConfigFile: Invalid adv_window_start_off: " + adv_window_start_off + ", index = " + i);
+			}
+		}
+
+		n = adv_window_end_offs.size();
+		
+		if (!( n == adv_window_start_offs.size() )) {
+				throw new RuntimeException("ActionConfigFile: Length mismatch for list of advisory window end offsets");
+		}
+
+		for (int i = 0; i < n; ++i) {
+			long adv_window_end_off = adv_window_end_offs.get(i);
+			min_lag = adv_window_start_offs.get(i) + 1L;
+			if (!( is_valid_lag(adv_window_end_off, min_lag) )) {
+				throw new RuntimeException("ActionConfigFile: Invalid adv_window_end_off: " + adv_window_end_off + ", index = " + i);
+			}
+		}
+
+		n = adv_window_names.size();
+		
+		if (!( n == adv_window_start_offs.size() )) {
+				throw new RuntimeException("ActionConfigFile: Length mismatch for list of advisory window names");
+		}
+
+		for (int i = 0; i < n; ++i) {
+			String adv_window_name = adv_window_names.get(i);
+			if (!( adv_window_name != null && adv_window_name.length() > 0 )) {
+				throw new RuntimeException("ActionConfigFile: Invalid adv_window_name: " + ((adv_window_name == null) ? "null" : adv_window_name) + ", index = " + i);
+			}
+		}
+
+		n = forecast_lags.size();
+		min_lag = MIN_LAG;
 		
 		if (!( n > 0 )) {
 				throw new RuntimeException("ActionConfigFile: Empty forecast_lags list");
@@ -484,6 +572,34 @@ public class ActionConfigFile {
 		result.append ("pdl_intake_max_age = " + Duration.ofMillis(pdl_intake_max_age).toString() + "\n");
 		result.append ("pdl_intake_max_future = " + Duration.ofMillis(pdl_intake_max_future).toString() + "\n");
 		result.append ("def_injectable_text = " + ((def_injectable_text == null) ? "null" : def_injectable_text) + "\n");
+
+		result.append ("adv_min_mag_bins = [" + "\n");
+		for (int i = 0; i < adv_min_mag_bins.size(); ++i) {
+			double adv_min_mag_bin = adv_min_mag_bins.get(i);
+			result.append ("  " + i + ":  " + adv_min_mag_bin + "\n");
+		}
+		result.append ("]" + "\n");
+
+		result.append ("adv_window_start_offs = [" + "\n");
+		for (int i = 0; i < adv_window_start_offs.size(); ++i) {
+			long adv_window_start_off = adv_window_start_offs.get(i);
+			result.append ("  " + i + ":  " + Duration.ofMillis(adv_window_start_off).toString() + "\n");
+		}
+		result.append ("]" + "\n");
+
+		result.append ("adv_window_end_offs = [" + "\n");
+		for (int i = 0; i < adv_window_end_offs.size(); ++i) {
+			long adv_window_end_off = adv_window_end_offs.get(i);
+			result.append ("  " + i + ":  " + Duration.ofMillis(adv_window_end_off).toString() + "\n");
+		}
+		result.append ("]" + "\n");
+
+		result.append ("adv_window_names = [" + "\n");
+		for (int i = 0; i < adv_window_names.size(); ++i) {
+			String adv_window_name = adv_window_names.get(i);
+			result.append ("  " + i + ":  " + adv_window_name + "\n");
+		}
+		result.append ("]" + "\n");
 
 		result.append ("forecast_lags = [" + "\n");
 		for (int i = 0; i < forecast_lags.size(); ++i) {
@@ -948,6 +1064,11 @@ public class ActionConfigFile {
 		marshal_duration           (writer, "pdl_intake_max_future", pdl_intake_max_future);
 		writer.marshalString       (        "def_injectable_text"  , def_injectable_text  );
 
+		writer.marshalDoubleCollection     ("adv_min_mag_bins"     , adv_min_mag_bins     );
+		marshal_duration_list      (writer, "adv_window_start_offs", adv_window_start_offs);
+		marshal_duration_list      (writer, "adv_window_end_offs"  , adv_window_end_offs  );
+		writer.marshalStringCollection     ("adv_window_names"     , adv_window_names     );
+
 		marshal_duration_list      (writer, "forecast_lags"        , forecast_lags        );
 		marshal_duration_list      (writer, "comcat_retry_lags"    , comcat_retry_lags    );
 		marshal_duration_list      (writer, "comcat_intake_lags"   , comcat_intake_lags   );
@@ -994,6 +1115,13 @@ public class ActionConfigFile {
 		pdl_intake_max_age    = unmarshal_duration           (reader, "pdl_intake_max_age"   );
 		pdl_intake_max_future = unmarshal_duration           (reader, "pdl_intake_max_future");
 		def_injectable_text   = reader.unmarshalString       (        "def_injectable_text"  );
+
+		adv_min_mag_bins = new ArrayList<Double>();
+		reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
+		adv_window_start_offs = unmarshal_duration_list      (reader, "adv_window_start_offs");
+		adv_window_end_offs   = unmarshal_duration_list      (reader, "adv_window_end_offs"  );
+		adv_window_names = new ArrayList<String>();
+		reader.unmarshalStringCollection                     (        "adv_window_names"     , adv_window_names     );
 
 		forecast_lags         = unmarshal_duration_list      (reader, "forecast_lags"        );
 		comcat_retry_lags     = unmarshal_duration_list      (reader, "comcat_retry_lags"    );

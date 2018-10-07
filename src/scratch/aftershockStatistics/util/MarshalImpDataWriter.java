@@ -478,6 +478,13 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		current_context_write = root_context_write;
 	}
 
+	/**
+	 * Create an object that writes to the given file.
+	 */
+	public MarshalImpDataWriter (String filename, boolean f_store_names) throws IOException {
+		this (new DataOutputStream (new BufferedOutputStream (new FileOutputStream (filename))), f_store_names);
+	}
+
 	//----- Control -----
 
 	/**

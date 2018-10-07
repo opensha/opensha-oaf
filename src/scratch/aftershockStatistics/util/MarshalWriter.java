@@ -1,5 +1,7 @@
 package scratch.aftershockStatistics.util;
 
+import java.util.Collection;
+
 /**
  * Interface for marshaling parameters/data to the OAF database.
  * Author: Michael Barall 03/31/2018.
@@ -117,6 +119,58 @@ public interface MarshalWriter {
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
 			 marshalInt (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Marshal a long collection.
+	 */
+	public default void marshalLongCollection (String name, Collection<Long> x) {
+		int n = x.size();
+		marshalArrayBegin (name, n);
+		for (Long y : x) {
+			 marshalLong (null, y.longValue());
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Marshal a double collection.
+	 */
+	public default void marshalDoubleCollection (String name, Collection<Double> x) {
+		int n = x.size();
+		marshalArrayBegin (name, n);
+		for (Double y : x) {
+			 marshalDouble (null, y.doubleValue());
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Marshal a string collection.  (Null strings are not allowed.)
+	 */
+	public default void marshalStringCollection (String name, Collection<String> x) {
+		int n = x.size();
+		marshalArrayBegin (name, n);
+		for (String y : x) {
+			 marshalString (null, y);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Marshal an int collection.
+	 */
+	public default void marshalIntCollection (String name, Collection<Integer> x) {
+		int n = x.size();
+		marshalArrayBegin (name, n);
+		for (Integer y : x) {
+			 marshalInt (null, y.intValue());
 		}
 		marshalArrayEnd ();
 		return;

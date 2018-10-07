@@ -1,10 +1,10 @@
 {
   "version":1,
   "regimes":[
-    {"regime":"WORLD"     , "params":{"MagCompPage_Parameters":2001, "magCat":4.50, "capG":0.25, "capH":1.00, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.50, "radiusCentroid":1.00}},
-    {"regime":"CALIFORNIA", "params":{"MagCompPage_Parameters":2001, "magCat":2.50, "capG":0.25, "capH":1.00, "magSample":2.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}},
-    {"regime":"ALASKA"    , "params":{"MagCompPage_Parameters":2001, "magCat":3.00, "capG":0.25, "capH":1.00, "magSample":2.50, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}},
-    {"regime":"USA"       , "params":{"MagCompPage_Parameters":2001, "magCat":3.00, "capG":0.25, "capH":1.00, "magSample":2.50, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}}
+    {"regime":"WORLD"     , "params":{"MagCompPage_Parameters":2001, "magCat":4.60, "capG":0.25, "capH":1.00, "magSample":3.00, "radiusSample":1.00, "magCentroid":4.00, "radiusCentroid":1.00}},
+    {"regime":"CALIFORNIA", "params":{"MagCompPage_Parameters":2001, "magCat":3.50, "capG":0.25, "capH":1.00, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}},
+    {"regime":"ALASKA"    , "params":{"MagCompPage_Parameters":2001, "magCat":3.50, "capG":0.25, "capH":1.00, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}},
+    {"regime":"USA"       , "params":{"MagCompPage_Parameters":2001, "magCat":3.50, "capG":0.25, "capH":1.00, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}}
   ],
   "regions":[
     {

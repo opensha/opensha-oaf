@@ -525,6 +525,13 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 		current_context_read = root_context_read;
 	}
 
+	/**
+	 * Create an object that reads from the given file.
+	 */
+	public MarshalImpDataReader (String filename, boolean f_store_names) throws IOException {
+		this (new DataInputStream (new BufferedInputStream (new FileInputStream (filename))), f_store_names);
+	}
+
 	//----- Control -----
 
 	/**

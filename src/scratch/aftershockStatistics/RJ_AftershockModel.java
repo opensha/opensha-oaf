@@ -1027,6 +1027,80 @@ public abstract class RJ_AftershockModel {
 
 	
 	/**
+	 * This provides the probability density function, where aleatory variability
+	 * is included in the result based on a Poisson distribution.
+	 * @param fractileArray = Desired fractiles (percentile/100) of the probability distribution.
+	 * @param mag = Minimum magnitude of aftershocks considered.
+	 * @param tMinDays = Start of time range, in days after the mainshock.
+	 * @param tMaxDays = End of time range, in days after the mainshock.
+	 * @return
+	 * This function constructs a probability distribution for number of aftershocks
+	 * of magnitude mag or greater, in the time interval from tMinDays to tMagDays,
+	 * which combines epistemic and aleatory uncertainty.
+	 * Epistemic uncertainty is represented by numMag5_DistributionFunc, which is the
+	 * probability distribution of the R&J expected number of aftershocks induced by the
+	 * probability distribution of the parameter triple (a,p,c).
+	 * Aleatory uncertainty is represented by a Poisson distribution whose expected value
+	 * equals the R&J expected number of aftershocks.
+	 * This function constructs a Poisson distribution for each set of parameter values (a,p,c),
+	 * and then sums all the Poisson distributions with weight equal to the probability
+	 * (i.e., likelihood) of the correponding (a,p,c) triple.
+	 * The return value is an array whose length is one more than the maximum number of
+	 * aftershocks that has a significantly non-zero probability.
+	 * The i-th element of the return value is the probability of i aftershocks occurring.
+	 *
+	 * Implementation notes:
+	 * Documentation for PoissonDistribution is here:
+	 * http://commons.apache.org/proper/commons-math/javadocs/api-3.6/org/apache/commons/math3/distribution/PoissonDistribution.html
+	 * Since we do not generate samples from PoissonDistribution, it is better to use the constructor:
+	 * PoissonDistribution(RandomGenerator rng, double p, double epsilon, int maxIterations)
+	 * Set rng = null so that it does not create a random number generator.
+	 * Set epsilon and maxIterations to their default values.
+	 * However, this constructor is apparently planned for removal from Apache Math 4.0,
+	 * so leave the original constructor commented-out in case it needs to be restored.
+	 */
+	public double[] getDistFuncWithAleatory(double mag, double tMinDays, double tMaxDays) {
+		// compute the distribution for the expected num aftershocks with M >= 5 (which we will scale to other magnitudes)
+		computeNumMag5_DistributionFunc(tMinDays, tMaxDays);
+
+		// get the maximum expected num, which we will use to set the maximum num in the distribution function
+//System.out.print("\tworking on M "+mag+"\nunm="+numMag5_DistributionFunc.size()+"\n");
+		double maxExpNum = numMag5_DistributionFunc.getMaxX()*Math.pow(10d, b*(5-mag));
+
+//		PoissonDistribution poissDist = new PoissonDistribution(maxExpNum);
+		PoissonDistribution poissDist = new PoissonDistribution(null, maxExpNum, PoissonDistribution.DEFAULT_EPSILON, PoissonDistribution.DEFAULT_MAX_ITERATIONS);
+		int maxAleatoryNum = poissDist.inverseCumulativeProbability(0.999);
+		
+		double[] distFunc = new double[maxAleatoryNum+1];
+		double totWt=0;
+		
+		for(int i=0;i<numMag5_DistributionFunc.size();i++) {
+//System.out.print(", "+i);
+			double expNum = numMag5_DistributionFunc.getX(i)*Math.pow(10d, b*(5-mag));
+			double wt = numMag5_DistributionFunc.getY(i);
+//			poissDist = new PoissonDistribution(expNum);
+			poissDist = new PoissonDistribution(null, expNum, PoissonDistribution.DEFAULT_EPSILON, PoissonDistribution.DEFAULT_MAX_ITERATIONS);
+			totWt+=wt;
+			
+			int minLoopVal = poissDist.inverseCumulativeProbability(0.0001);
+			int maxLoopVal = poissDist.inverseCumulativeProbability(0.9999);
+			if(maxLoopVal>maxAleatoryNum)
+				maxLoopVal=maxAleatoryNum;
+			if(minLoopVal < 0)
+				minLoopVal = 0;
+			for(int j=minLoopVal;j<=maxLoopVal;j++) {
+				distFunc[j] += poissDist.probability(j)*wt;
+			}
+			
+		}
+
+		return distFunc;
+	}
+
+
+
+	
+	/**
 	 * This returns the PDF of a, which is a marginal distribution if either c or p 
 	 * are unconstrained (either num_p or num_c not equal to 1). Null is returned if
 	 * a is constrained (num_a=1).

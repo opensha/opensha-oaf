@@ -1,5 +1,7 @@
 package scratch.aftershockStatistics.util;
 
+import java.util.Collection;
+
 /**
  * Interface for unmarshaling parameters/data from the OAF database.
  * Author: Michael Barall 03/31/2018.
@@ -172,6 +174,54 @@ public interface MarshalReader {
 		}
 		unmarshalArrayEnd ();
 		return x;
+	}
+
+	/**
+	 * Unmarshal a long collection.
+	 */
+	public default void unmarshalLongCollection (String name, Collection<Long> x) {
+		int n = unmarshalArrayBegin (name);
+		for (int i = 0; i < n; ++i) {
+			x.add (new Long (unmarshalLong (null)));
+		}
+		unmarshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Unmarshal a double collection.
+	 */
+	public default void unmarshalDoubleCollection (String name, Collection<Double> x) {
+		int n = unmarshalArrayBegin (name);
+		for (int i = 0; i < n; ++i) {
+			x.add (new Double (unmarshalDouble (null)));
+		}
+		unmarshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Unmarshal a string collection.  (Null strings are not allowed.)
+	 */
+	public default void unmarshalStringCollection (String name, Collection<String> x) {
+		int n = unmarshalArrayBegin (name);
+		for (int i = 0; i < n; ++i) {
+			x.add (unmarshalString (null));
+		}
+		unmarshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Unmarshal an int collection.
+	 */
+	public default void unmarshalIntCollection (String name, Collection<Integer> x) {
+		int n = unmarshalArrayBegin (name);
+		for (int i = 0; i < n; ++i) {
+			x.add (new Integer (unmarshalInt (null)));
+		}
+		unmarshalArrayEnd ();
+		return;
 	}
 
 }

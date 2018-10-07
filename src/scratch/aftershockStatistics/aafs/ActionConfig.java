@@ -290,6 +290,56 @@ public class ActionConfig {
 		return param_set.def_injectable_text;
 	}
 
+	// Get the number of advisory magnitude bins.
+
+	public int get_adv_min_mag_bin_count () {
+		return param_set.adv_min_mag_bins.size();
+	}
+
+	// Get the minimum magnitude for the i-th advisory magnitude bin.
+
+	public double get_adv_min_mag_bin (int i) {
+		return param_set.adv_min_mag_bins.get(i).doubleValue();
+	}
+
+	// Get the number of advisory forecast windows.
+
+	public int get_adv_window_count () {
+		return param_set.adv_window_start_offs.size();
+	}
+
+	// Get the start offset for the i-th advisory forecast window.
+
+	public long get_adv_window_start_off (int i) {
+		return param_set.adv_window_start_offs.get(i).longValue();
+	}
+
+	// Get the end offset for the i-th advisory forecast window.
+
+	public long get_adv_window_end_off (int i) {
+		return param_set.adv_window_end_offs.get(i).longValue();
+	}
+
+	// Get the name for the i-th advisory forecast window.
+
+	public String get_adv_window_name (int i) {
+		return param_set.adv_window_names.get(i);
+	}
+
+	// Get the maximum end offset for any advisory forecast window.
+
+	public long get_max_adv_window_end_off () {
+		long result = 0L;
+		int n = get_adv_window_count();
+		for (int i = 0; i < n; ++i) {
+			long end_off = get_adv_window_end_off (i);
+			if (result < end_off) {
+				result = end_off;
+			}
+		}
+		return result;
+	}
+
 	// Get the first element of forecast_lags that is >= the supplied min_lag.
 	// The return is -1 if the supplied min_lag is greater than all elements.
 	// If a value is found, it is guaranteed to be a whole number of seconds, from 1 to 10^9 seconds.
@@ -396,6 +446,18 @@ public class ActionConfig {
 	}
 
 
+	//----- Parameter modification -----
+
+	// Get the internal action configuration file.
+	// Note: This is provided so that command-line code can adjust parameters.
+	// Note: Calling unload_data will revert all parameters to the values in
+	// the configuration file.
+
+	public ActionConfigFile get_action_config_file () {
+		return param_set;
+	}
+
+
 
 
 	//----- Testing -----
@@ -439,6 +501,29 @@ public class ActionConfig {
 			System.out.println ("omit_stale_forecasts = " + action_config.get_omit_stale_forecasts());
 			System.out.println ("pdl_intake_region_min_min_mag = " + action_config.get_pdl_intake_region_min_min_mag());
 			System.out.println ("pdl_intake_region_min_intake_mag = " + action_config.get_pdl_intake_region_min_intake_mag());
+			System.out.println ("max_adv_window_end_off = " + action_config.get_max_adv_window_end_off());
+
+			// Display the list of advisory magnitude bins
+
+			System.out.println ("");
+
+			int n_bin = action_config.get_adv_min_mag_bin_count();
+			for (int i = 0; i < n_bin; ++i) {
+				System.out.println ("advisory bin " + i + ": mag = " + action_config.get_adv_min_mag_bin(i));
+			}
+
+			// Display the list of advisory forecast windows
+
+			System.out.println ("");
+
+			int n_window = action_config.get_adv_window_count();
+			for (int i = 0; i < n_window; ++i) {
+				System.out.println ("advisory window " + i
+					+ ": start = " + Duration.ofMillis(action_config.get_adv_window_start_off(i)).toString()
+					+ ", end = " + Duration.ofMillis(action_config.get_adv_window_end_off(i)).toString()
+					+ ", name = " + action_config.get_adv_window_name(i)
+					);
+			}
 
 			// Display list of forecast time lags
 
