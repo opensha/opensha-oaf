@@ -85,6 +85,26 @@ public interface MarshalWriter {
 		return;
 	}
 
+	public default void marshalLong2DArray (String name, long[][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			 marshalLongArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalLong3DArray (String name, long[][][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			 marshalLong2DArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
 	/**
 	 * Marshal a double array.
 	 */
@@ -93,6 +113,26 @@ public interface MarshalWriter {
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
 			 marshalDouble (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalDouble2DArray (String name, double[][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			 marshalDoubleArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalDouble3DArray (String name, double[][][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			 marshalDouble2DArray (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -110,6 +150,26 @@ public interface MarshalWriter {
 		marshalArrayEnd ();
 		return;
 	}
+	public default void marshalString2DArray (String name, String[][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			 marshalStringArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalString3DArray (String name, String[][][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			 marshalString2DArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
 
 	/**
 	 * Marshal an int array.
@@ -119,6 +179,26 @@ public interface MarshalWriter {
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
 			 marshalInt (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalInt2DArray (String name, int[][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			 marshalIntArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalInt3DArray (String name, int[][][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			 marshalInt2DArray (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;

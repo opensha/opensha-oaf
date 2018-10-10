@@ -635,6 +635,7 @@ public class AftershockStatsCalc {
 	 * @param c = Omori c-parameter (time offset), in days.
 	 * @param tMinDays = Beginning of time span (since origin time), in days.
 	 * @param tMaxDays = End of time span (since origin time), in days.
+	 * @param rangen = Random number generator to use, if omitted then this routine creates one.
 	 * @return
 	 * Returns a randomly-generated sequence of aftershocks.
 	 * Each entry in the returned list contains a time (in milliseconds since the mainshock)
@@ -656,7 +657,18 @@ public class AftershockStatsCalc {
 	 * The algorithm used for generating the exponential distribution is given here:
 	 * https://en.wikipedia.org/wiki/Exponential_distribution
 	 */
-	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat, double capG, double capH, double p, double c, double tMinDays, double tMaxDays) {
+	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat,
+			double capG, double capH, double p, double c, double tMinDays, double tMaxDays) {
+
+		// Random number generator, produces random numbers between 0.0 (inclusive) and 1.0 (exclusive)
+
+		UniformRealDistribution rangen = new UniformRealDistribution();
+
+		return simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays, rangen);
+	}
+
+	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat,
+			double capG, double capH, double p, double c, double tMinDays, double tMaxDays, UniformRealDistribution rangen) {
 		if (!( b > 0.0 )) {
 			throw new RuntimeException("AftershockStatsCalc.simAftershockSequence: b parameter is negative or zero");
 		}
@@ -680,10 +692,6 @@ public class AftershockStatsCalc {
 		// Array to hold the time for each aftershock within an interval
 
 		double[] t_aftershock = new double[max_aftershocks];
-
-		// Random number generator, produces random numbers between 0.0 (inclusive) and 1.0 (exclusive)
-
-		UniformRealDistribution rangen = new UniformRealDistribution();
 
 		// The list of aftershocks
 

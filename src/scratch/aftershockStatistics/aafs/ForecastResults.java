@@ -229,7 +229,7 @@ public class ForecastResults {
 	// Generic aftershock model.
 	// This field is not marshaled.
 
-	RJ_AftershockModel_Generic generic_model = null;
+	public RJ_AftershockModel_Generic generic_model = null;
 
 	// set_default_generic_results - Set generic results to default values.
 
@@ -361,7 +361,7 @@ public class ForecastResults {
 	// Sequence specific aftershock model.
 	// This field is not marshaled.
 
-	RJ_AftershockModel_SequenceSpecific seq_spec_model = null;
+	public RJ_AftershockModel_SequenceSpecific seq_spec_model = null;
 
 	// set_default_seq_spec_results - Set sequence specific results to default values.
 
@@ -498,7 +498,7 @@ public class ForecastResults {
 	// Bayesian aftershock model.
 	// This field is not marshaled.
 
-	RJ_AftershockModel_Bayesian bayesian_model = null;
+	public RJ_AftershockModel_Bayesian bayesian_model = null;
 
 	// set_default_bayesian_results - Set bayesian results to default values.
 

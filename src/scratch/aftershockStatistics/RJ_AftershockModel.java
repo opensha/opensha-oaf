@@ -225,6 +225,14 @@ public abstract class RJ_AftershockModel {
 	//@Transient
 	protected double tMaxDaysCurrent = -1.0;
 
+	// The cumulative probability distribution of (a,p,c) values.
+	// The length of this array is apc_total_size.
+	// Indexes into this array are single indexes, as defined by get_single_index();
+	// This is used only when sampling from the (a,p,c) distribution.
+
+	//@Transient
+	protected double[] cum_apc_probability = null;
+
 
 
 
@@ -290,6 +298,19 @@ public abstract class RJ_AftershockModel {
 	public int getNum_a() {return num_a;}
 	public int getNum_p() {return num_p;}
 	public int getNum_c() {return num_c;}
+
+	// Given index numbers for a, p, and c, return a single index.
+	// Note: The single-indexing scheme is that c-index varies most rapidly, a-index most slowly. 
+
+	protected int get_single_index (int aIndex, int pIndex, int cIndex) {
+		return (((aIndex * num_p) + pIndex) * num_c) + cIndex;
+	}
+
+	// Return the floating-point value of a, p, or c, given a single index.
+		
+	protected double get_a_from_single_index (int index) {return get_a (index / (num_p * num_c));}
+	protected double get_p_from_single_index (int index) {return get_p ((index / num_c) % num_p);}
+	protected double get_c_from_single_index (int index) {return get_c (index % num_c);}
 
 
 
@@ -392,6 +413,8 @@ public abstract class RJ_AftershockModel {
 		numMag5_DistributionFunc = null;
 		tMinDaysCurrent = -1.0;
 		tMaxDaysCurrent = -1.0;
+
+		cum_apc_probability = null;
 
 		// Find the biggest element in the matrix
 
@@ -1029,7 +1052,6 @@ public abstract class RJ_AftershockModel {
 	/**
 	 * This provides the probability density function, where aleatory variability
 	 * is included in the result based on a Poisson distribution.
-	 * @param fractileArray = Desired fractiles (percentile/100) of the probability distribution.
 	 * @param mag = Minimum magnitude of aftershocks considered.
 	 * @param tMinDays = Start of time range, in days after the mainshock.
 	 * @param tMaxDays = End of time range, in days after the mainshock.
@@ -1095,6 +1117,78 @@ public abstract class RJ_AftershockModel {
 		}
 
 		return distFunc;
+	}
+
+
+
+	
+	/**
+	 * Sample from the distribution of (a,p,c) values.
+	 * @param ranval = Random value between 0.0 and 1.0.
+	 * @param apcval = 3-element array used to return the (a,p,c) values.
+	 * @return
+	 * apcval[0] receives the value of a.
+	 * apcval[1] receives the value of p.
+	 * apcval[2] receives the value of c.
+	 */
+	public void sample_apc (double ranval, double[] apcval) {
+
+		// If the cumulative probability distribution has not been computed ...
+
+		if (cum_apc_probability == null) {
+
+			// Allocate the array
+
+			cum_apc_probability = new double[apc_total_size];
+
+			// Compute the cumulative distribution, neglecting elements in the tail
+
+			double cum_prob = 0.0;
+			for (int aIndex = 0; aIndex < num_a; aIndex++) {
+				for (int pIndex = 0; pIndex < num_p; pIndex++) {
+					for (int cIndex = 0; cIndex < num_c; cIndex++) {
+						if (apc_likelihood[aIndex][pIndex][cIndex] > apc_max_tail_element) {
+							cum_prob += apc_likelihood[aIndex][pIndex][cIndex];
+						}
+						cum_apc_probability[get_single_index (aIndex, pIndex, cIndex)] = cum_prob;
+					}
+				}
+			}
+		}
+
+		// Force the random value to be slightly different than 0 or 1
+
+		if (ranval < 1.0e-12) {
+			ranval = 1.0e-12;
+		}
+		if (ranval > (1.0 - 1.0e-12)) {
+			ranval = (1.0 - 1.0e-12);
+		}
+
+		// Scale the random value by the top of the cumulative distribution
+
+		ranval *= cum_apc_probability[apc_total_size - 1];
+
+		// Use binary search to find the first entry with cumulative probability >= ranval
+
+		int lo = -1;
+		int hi = apc_total_size - 1;
+		while (hi - lo > 1) {
+			int mid = (lo + hi) / 2;
+			if (cum_apc_probability[mid] >= ranval) {
+				hi = mid;
+			} else {
+				lo = mid;
+			}
+		}
+
+		// Return the (a,p,c) values
+
+		apcval[0] = get_a_from_single_index (hi);
+		apcval[1] = get_p_from_single_index (hi);
+		apcval[2] = get_c_from_single_index (hi);
+	
+		return;
 	}
 
 

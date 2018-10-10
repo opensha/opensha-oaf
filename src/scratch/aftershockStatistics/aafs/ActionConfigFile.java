@@ -444,14 +444,20 @@ public class ActionConfigFile {
 		n = adv_min_mag_bins.size();
 		
 		if (!( n > 0 )) {
-				throw new RuntimeException("ActionConfigFile: Empty list of advisory minimum magnitude bins");
+			throw new RuntimeException("ActionConfigFile: Empty list of advisory minimum magnitude bins");
+		}
+
+		for (int i = 1; i < n; ++i) {
+			if (!( adv_min_mag_bins.get(i-1).doubleValue() < adv_min_mag_bins.get(i).doubleValue() )) {
+				throw new RuntimeException("ActionConfigFile: Out-of-order adv_min_mag_bin: " + adv_min_mag_bins.get(i).doubleValue() + ", index = " + i);
+			}
 		}
 
 		n = adv_window_start_offs.size();
 		min_lag = 0L;
 		
 		if (!( n > 0 )) {
-				throw new RuntimeException("ActionConfigFile: Empty list of advisory window start offsets");
+			throw new RuntimeException("ActionConfigFile: Empty list of advisory window start offsets");
 		}
 
 		for (int i = 0; i < n; ++i) {
@@ -464,7 +470,7 @@ public class ActionConfigFile {
 		n = adv_window_end_offs.size();
 		
 		if (!( n == adv_window_start_offs.size() )) {
-				throw new RuntimeException("ActionConfigFile: Length mismatch for list of advisory window end offsets");
+			throw new RuntimeException("ActionConfigFile: Length mismatch for list of advisory window end offsets");
 		}
 
 		for (int i = 0; i < n; ++i) {
@@ -478,7 +484,7 @@ public class ActionConfigFile {
 		n = adv_window_names.size();
 		
 		if (!( n == adv_window_start_offs.size() )) {
-				throw new RuntimeException("ActionConfigFile: Length mismatch for list of advisory window names");
+			throw new RuntimeException("ActionConfigFile: Length mismatch for list of advisory window names");
 		}
 
 		for (int i = 0; i < n; ++i) {
@@ -492,7 +498,7 @@ public class ActionConfigFile {
 		min_lag = MIN_LAG;
 		
 		if (!( n > 0 )) {
-				throw new RuntimeException("ActionConfigFile: Empty forecast_lags list");
+			throw new RuntimeException("ActionConfigFile: Empty forecast_lags list");
 		}
 
 		for (int i = 0; i < n; ++i) {

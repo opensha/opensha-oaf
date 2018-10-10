@@ -326,20 +326,6 @@ public class ActionConfig {
 		return param_set.adv_window_names.get(i);
 	}
 
-	// Get the maximum end offset for any advisory forecast window.
-
-	public long get_max_adv_window_end_off () {
-		long result = 0L;
-		int n = get_adv_window_count();
-		for (int i = 0; i < n; ++i) {
-			long end_off = get_adv_window_end_off (i);
-			if (result < end_off) {
-				result = end_off;
-			}
-		}
-		return result;
-	}
-
 	// Get the first element of forecast_lags that is >= the supplied min_lag.
 	// The return is -1 if the supplied min_lag is greater than all elements.
 	// If a value is found, it is guaranteed to be a whole number of seconds, from 1 to 10^9 seconds.
@@ -409,6 +395,109 @@ public class ActionConfig {
 
 	public double get_pdl_intake_region_min_intake_mag () {
 		return param_set.get_pdl_intake_region_min_intake_mag ();
+	}
+
+
+	//----- Derived convenience functions -----
+
+	// Return all advisory magnitude bins in a newly-allocated array.
+	// The return values are in increasing order.
+
+	public double[] get_adv_min_mag_bins_array () {
+		int n = get_adv_min_mag_bin_count();
+		double[] result = new double[n];
+		for (int i = 0; i < n; ++i) {
+			result[i] = get_adv_min_mag_bin(i);
+		}
+		return result;
+	}
+
+	// Return all advisory forecast window start offsets in a newly-allocated array.
+
+	public long[] get_adv_window_start_offs_array () {
+		int n = get_adv_window_count();
+		long[] result = new long[n];
+		for (int i = 0; i < n; ++i) {
+			result[i] = get_adv_window_start_off(i);
+		}
+		return result;
+	}
+
+	// Return all advisory forecast window end offsets in a newly-allocated array.
+
+	public long[] get_adv_window_end_offs_array () {
+		int n = get_adv_window_count();
+		long[] result = new long[n];
+		for (int i = 0; i < n; ++i) {
+			result[i] = get_adv_window_end_off(i);
+		}
+		return result;
+	}
+
+	// Return all advisory forecast window names in a newly-allocated array.
+
+	public String[] get_adv_window_names_array () {
+		int n = get_adv_window_count();
+		String[] result = new String[n];
+		for (int i = 0; i < n; ++i) {
+			result[i] = get_adv_window_name(i);
+		}
+		return result;
+	}
+
+	// Get the maximum end offset for any advisory forecast window.
+
+	public long get_max_adv_window_end_off () {
+		long result = 0L;
+		int n = get_adv_window_count();
+		for (int i = 0; i < n; ++i) {
+			long end_off = get_adv_window_end_off (i);
+			if (result < end_off) {
+				result = end_off;
+			}
+		}
+		return result;
+	}
+
+	// Get the number of forecast_lags that are <= the supplied max_lag.
+	// If max_lag <= 0, then def_max_forecast_lag is used as the upper bound.
+
+	public int get_forecast_lag_count (long max_lag) {
+		int n = 0;
+		long min_lag = 0L;
+		for (;;) {
+			long forecast_lag = get_next_forecast_lag (min_lag, max_lag);
+			if (forecast_lag < 0L) {
+				break;
+			}
+			++n;
+			min_lag = forecast_lag + 1L;
+		}
+		return n;
+	}
+
+	// Get a newly-allocated array containing the forecast_lags that are <= the supplied max_lag.
+	// If max_lag <= 0, then def_max_forecast_lag is used as the upper bound.
+	// The return values are in increasing order.
+
+	public long[] get_forecast_lag_array (long max_lag) {
+		int n = get_forecast_lag_count (max_lag);
+		long[] result = new long[n];
+		int i = 0;
+		long min_lag = 0L;
+		for (;;) {
+			long forecast_lag = get_next_forecast_lag (min_lag, max_lag);
+			if (forecast_lag < 0L) {
+				break;
+			}
+			result[i] = forecast_lag;
+			++i;
+			min_lag = forecast_lag + 1L;
+		}
+		if (i != n) {
+			throw new IllegalStateException ("ActionConfig.get_forecast_lag_array: Length mismatch: i = " + i + ", n = " + n);
+		}
+		return result;
 	}
 
 

@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 import java.time.Instant;
+import java.time.Duration;
 
 
 /**
@@ -77,11 +78,41 @@ public class SimpleUtils {
 
 
 
+
 	// Convert a string in ISO-8601 format to time (in milliseconds after the epoch).
 	// An example is 2011-12-03T10:15:30Z.
 
 	public static long string_to_time (String s) {
 		return Instant.parse(s).toEpochMilli();
+	}
+
+
+
+
+	// Convert a duration (in milliseconds) to a human-readable string in java.time.Duration format.
+
+	public static String duration_to_string (long the_duration) {
+		return Duration.ofMillis(the_duration).toString();
+	}
+
+
+
+
+	// Given a duration (in milliseconds), produce a string which
+	// is its numerical value followed by the human-readable form in parentheses.
+
+	public static String duration_raw_and_string (long the_duration) {
+		return the_duration + " (" + duration_to_string(the_duration) + ")";
+	}
+
+
+
+
+	// Convert a string in java.time.Duration format to duration (in milliseconds).
+	// An example is P3DT11H45M04S.
+
+	public static long string_to_duration (String s) {
+		return Duration.parse(s).toMillis();
 	}
 
 

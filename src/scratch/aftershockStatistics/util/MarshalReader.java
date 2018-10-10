@@ -137,6 +137,26 @@ public interface MarshalReader {
 		return x;
 	}
 
+	public default long[][] unmarshalLong2DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		long[][] x = new long[n][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalLongArray (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	public default long[][][] unmarshalLong3DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		long[][][] x = new long[n][][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalLong2DArray (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
 	/**
 	 * Unmarshal a double array.
 	 */
@@ -145,6 +165,26 @@ public interface MarshalReader {
 		double[] x = new double[n];
 		for (int i = 0; i < n; ++i) {
 			x[i] = unmarshalDouble (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	public default double[][] unmarshalDouble2DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		double[][] x = new double[n][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalDoubleArray (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	public default double[][][] unmarshalDouble3DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		double[][][] x = new double[n][][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalDouble2DArray (null);
 		}
 		unmarshalArrayEnd ();
 		return x;
@@ -163,6 +203,26 @@ public interface MarshalReader {
 		return x;
 	}
 
+	public default String[][] unmarshalString2DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		String[][] x = new String[n][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalStringArray (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	public default String[][][] unmarshalString3DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		String[][][] x = new String[n][][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalString2DArray (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
 	/**
 	 * Unmarshal an int array.
 	 */
@@ -171,6 +231,26 @@ public interface MarshalReader {
 		int[] x = new int[n];
 		for (int i = 0; i < n; ++i) {
 			x[i] = unmarshalInt (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	public default int[][] unmarshalInt2DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		int[][] x = new int[n][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalIntArray (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	public default int[][][] unmarshalInt3DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		int[][][] x = new int[n][][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalInt2DArray (null);
 		}
 		unmarshalArrayEnd ();
 		return x;
