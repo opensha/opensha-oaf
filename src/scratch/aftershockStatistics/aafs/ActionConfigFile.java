@@ -225,7 +225,7 @@ public class ActionConfigFile {
 	public ArrayList<Double> adv_min_mag_bins;
 
 	// Time offsets, from forecast generation time, at which the forecast window starts, in milliseconds.
-	// Each element must be a whole number of seconds, between 0 and 10^9 seconds.
+	// Each element must be a whole number of seconds, between -10^9 and 10^9 seconds.
 	// The length must equal the number of forecast windows.
 
 	public ArrayList<Long> adv_window_start_offs;
@@ -454,7 +454,7 @@ public class ActionConfigFile {
 		}
 
 		n = adv_window_start_offs.size();
-		min_lag = 0L;
+		min_lag = -MAX_LAG;
 		
 		if (!( n > 0 )) {
 			throw new RuntimeException("ActionConfigFile: Empty list of advisory window start offsets");

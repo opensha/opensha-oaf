@@ -85,6 +85,18 @@ public class GammaConfig {
 
 	UniformRealDistribution rangen;
 
+	// Offset from rupture at which simulation starts, in milliseconds.
+
+	long sim_start_off;
+
+	// Number of simulation slots to use when summing over earthquakes.
+
+	int eqk_summation_count;
+
+	// True to randomize slots when summing over earthquakes.
+
+	boolean eqk_summation_randomize;
+
 
 
 
@@ -124,6 +136,10 @@ public class GammaConfig {
 
 		simulation_count = 1000;
 		rangen = new UniformRealDistribution();
+		sim_start_off = 60000L;
+
+		eqk_summation_count = 10000;
+		eqk_summation_randomize = true;
 	}
 
 
@@ -133,11 +149,11 @@ public class GammaConfig {
 
 	public String model_kind_to_string (int kind) {
 		switch (kind) {
-			case MODEL_KIND_GENERIC: return "MODEL_KIND_GENERIC";
-			case MODEL_KIND_SEQ_SPEC: return "MODEL_KIND_SEQ_SPEC";
-			case MODEL_KIND_BAYESIAN: return "MODEL_KIND_BAYESIAN";
+			case MODEL_KIND_GENERIC: return "Generic";
+			case MODEL_KIND_SEQ_SPEC: return "Seq-Spec";
+			case MODEL_KIND_BAYESIAN: return "Bayesian";
 		}
-		return "MODEL_KIND_UNKNOWN(" + kind + ")";
+		return "Unknown(" + kind + ")";
 	}
 
 
@@ -196,8 +212,31 @@ public class GammaConfig {
 		result.append ("]" + "\n");
 
 		result.append ("simulation_count = " + simulation_count + "\n");
+		result.append ("sim_start_off = " + SimpleUtils.duration_raw_and_string (sim_start_off) + "\n");
+		result.append ("eqk_summation_count = " + eqk_summation_count + "\n");
+		result.append ("eqk_summation_randomize = " + eqk_summation_randomize + "\n");
 
 		return result.toString();
+	}
+
+
+
+
+	// Return the advisory forecast window name, or "Sum-Win" if the index equals adv_window_count.
+	// This is used for naming an extra element representing the sum over windows.
+
+	public String get_adv_window_name_or_sum (int i) {
+		return ((i == adv_window_count) ? "Sum-Win" : adv_window_names[i]);
+	}
+
+
+
+
+	// Return the forecast lag as a string, or "Sum-Lag" if the index equals forecast_lag_count.
+	// This is used for naming an extra element representing the sum over forecast lags.
+
+	public String get_forecast_lag_string_or_sum (int i) {
+		return ((i == forecast_lag_count) ? "Sum-Lag" : SimpleUtils.duration_to_string (forecast_lags[i]));
 	}
 
 

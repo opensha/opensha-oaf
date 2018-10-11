@@ -79,7 +79,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalLong (null, x[i]);
+			marshalLong (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -89,7 +89,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalLongArray (null, x[i]);
+			marshalLongArray (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -99,7 +99,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalLong2DArray (null, x[i]);
+			marshalLong2DArray (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -112,7 +112,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalDouble (null, x[i]);
+			marshalDouble (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -122,7 +122,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalDoubleArray (null, x[i]);
+			marshalDoubleArray (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -132,7 +132,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalDouble2DArray (null, x[i]);
+			marshalDouble2DArray (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -145,7 +145,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalString (null, x[i]);
+			marshalString (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -154,7 +154,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalStringArray (null, x[i]);
+			marshalStringArray (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -164,7 +164,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalString2DArray (null, x[i]);
+			marshalString2DArray (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -178,7 +178,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalInt (null, x[i]);
+			marshalInt (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -188,7 +188,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalIntArray (null, x[i]);
+			marshalIntArray (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;
@@ -198,7 +198,7 @@ public interface MarshalWriter {
 		int n = x.length;
 		marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
-			 marshalInt2DArray (null, x[i]);
+			marshalInt2DArray (null, x[i]);
 		}
 		marshalArrayEnd ();
 		return;

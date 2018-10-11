@@ -1,6 +1,7 @@
 package scratch.aftershockStatistics.gamma;
 
 import java.util.List;
+import java.util.Arrays;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -86,6 +87,7 @@ public class LogLikeSet {
 
 
 	// Run simulations.
+	// Parameters:
 	//  gamma_config = Configuration information.
 	//  the_forecast_lag = Forecast lag, in milliseconds.
 	//  the_num_sim = The number of simulations to run.
@@ -94,7 +96,7 @@ public class LogLikeSet {
 	//  all_aftershocks = Aftershock sequence used to set observed data.
 	//  verbose = True to write output for each simulation.
 
-	private void run_simulations (GammaConfig gamma_config, long the_forecast_lag, int the_num_sim,
+	public void run_simulations (GammaConfig gamma_config, long the_forecast_lag, int the_num_sim,
 		ForecastMainshock fcmain, RJ_AftershockModel model, List<ObsEqkRupture> all_aftershocks, boolean verbose) {
 
 		// Save forecast lag and number of simulations
@@ -151,8 +153,10 @@ public class LogLikeSet {
 			double capH = 0.0;
 			double p = apcval[1];
 			double c = apcval[2];
-			double tMinDays = ((double)(forecast_lag)) / ComcatAccessor.day_millis;
-			double tMaxDays = ((double)(forecast_lag + gamma_config.max_adv_window_end_off)) / ComcatAccessor.day_millis;
+			//double tMinDays = ((double)(forecast_lag)) / ComcatAccessor.day_millis;
+			//double tMaxDays = ((double)(forecast_lag + gamma_config.max_adv_window_end_off)) / ComcatAccessor.day_millis;
+			double tMinDays = ((double)(gamma_config.sim_start_off)) / ComcatAccessor.day_millis;
+			double tMaxDays = ((double)(gamma_config.max_forecast_lag + gamma_config.max_adv_window_end_off)) / ComcatAccessor.day_millis;
 
 			// Run the simulation
 
@@ -205,14 +209,114 @@ public class LogLikeSet {
 
 
 
+	// Allocate and zero-initialize all arrays.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  the_forecast_lag = Forecast lag, in milliseconds, can be -1L for sums over forecast lags.
+	//  the_num_sim = The number of simulations to run.
+
+	public void zero_init (GammaConfig gamma_config, long the_forecast_lag, int the_num_sim) {
+
+		// Save forecast lag and number of simulations
+
+		forecast_lag = the_forecast_lag;
+		num_sim = the_num_sim;
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Allocate all the arrays
+
+		sim_log_like = new double[num_adv_win][num_mag_bin][num_sim];
+		sim_event_count = new int[num_adv_win][num_mag_bin][num_sim];
+
+		obs_log_like = new double[num_adv_win][num_mag_bin];
+		obs_event_count = new int[num_adv_win][num_mag_bin];
+
+		// Zero-initialize
+
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+				obs_event_count[i_adv_win][i_mag_bin] = 0;
+				obs_log_like[i_adv_win][i_mag_bin] = 0.0;
+				for (int i_sim = 0; i_sim < num_sim; ++i_sim) {
+					sim_event_count[i_adv_win][i_mag_bin][i_sim] = 0;
+					sim_log_like[i_adv_win][i_mag_bin][i_sim] = 0.0;
+				}
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Add array contents from another object into this object.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  other = The other object.
+	//  randomize = True to select simulations from the other object randomly.
+
+	public void add_from (GammaConfig gamma_config, LogLikeSet other, boolean randomize) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Add observed data
+
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+				obs_event_count[i_adv_win][i_mag_bin] += other.obs_event_count[i_adv_win][i_mag_bin];
+				obs_log_like[i_adv_win][i_mag_bin] += other.obs_log_like[i_adv_win][i_mag_bin];
+			}
+		}
+
+		// Add simulated data
+
+		for (int i_sim = 0; i_sim < num_sim; ++i_sim) {
+
+			// Select simulation from other object
+
+			int o_sim = i_sim % other.num_sim;
+			if (randomize) {
+				o_sim = (int)(gamma_config.rangen.sample() * ((double)other.num_sim));
+				if (o_sim < 0) {
+					o_sim = 0;
+				}
+				else if (o_sim >= other.num_sim) {
+					o_sim = other.num_sim - 1;
+				}
+			}
+
+			// Add the data
+
+			for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+				for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+					sim_event_count[i_adv_win][i_mag_bin][i_sim] += other.sim_event_count[i_adv_win][i_mag_bin][o_sim];
+					sim_log_like[i_adv_win][i_mag_bin][i_sim] += other.sim_log_like[i_adv_win][i_mag_bin][o_sim];
+				}
+			}
+		}
+
+		return;
+	}
+
+
+
 
 	//----- Querying -----
 
 	// Compute the single-event gamma.
 	// Parameters:
 	//  gamma_config = Configuration information.
-	//  gamma_lo = Array to receive low value of gamma.
-	//  gamma_hi = Array to receive high value of gamma.
+	//  gamma_lo = Array to receive low value of gamma, dimension gamma_lo[adv_window_count + 1][adv_min_mag_bin_count].
+	//  gamma_hi = Array to receive high value of gamma, dimension gamma_hi[adv_window_count + 1][adv_min_mag_bin_count].
+	// The extra advisory window slot is used to report the sum over all windows.
 
 	public void single_event_gamma (GammaConfig gamma_config, double[][] gamma_lo, double[][] gamma_hi) {
 
@@ -221,7 +325,7 @@ public class LogLikeSet {
 		int num_adv_win = gamma_config.adv_window_count;
 		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
 
-		// Loop over windows and magnitude bins
+		// Loop over windows and magnitude bins, computing gamma for each
 
 		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
 			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
@@ -246,7 +350,176 @@ public class LogLikeSet {
 			}
 		}
 
+		// Loop over magnitude bins, computing gamma for the sum over prospective windows
+
+		for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+
+			// Accumulate number of simulations with log-likelihood below and above observation
+
+			double total_obs_log_like = 0.0;
+			for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+				if (gamma_config.adv_window_start_offs[i_adv_win] >= 0L) {
+					total_obs_log_like += obs_log_like[i_adv_win][i_mag_bin];
+				}
+			}
+
+			int below = 0;
+			int above = 0;
+			for (int i_sim = 0; i_sim < num_sim; ++i_sim) {
+
+				double total_sim_log_like = 0.0;
+				for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+					if (gamma_config.adv_window_start_offs[i_adv_win] >= 0L) {
+						total_sim_log_like += sim_log_like[i_adv_win][i_mag_bin][i_sim];
+					}
+				}
+
+				if (total_sim_log_like < total_obs_log_like) {
+					++below;
+				}
+				else if (total_sim_log_like > total_obs_log_like) {
+					++above;
+				}
+			}
+
+			// Compute gammas
+
+			gamma_lo[num_adv_win][i_mag_bin] = ((double)below) / ((double)num_sim);
+			gamma_hi[num_adv_win][i_mag_bin] = ((double)(num_sim - above)) / ((double)num_sim);
+		}
+
 		return;
+	}
+
+
+
+
+	// Compute event count statistics.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  obs_count = Array to receive observed count, dimension obs_count[adv_window_count][adv_min_mag_bin_count].
+	//  sim_median_count = Array to receive simulated median count, dimension sim_median_count[adv_window_count][adv_min_mag_bin_count].
+	//  sim_fractile_5_count = Array to receive simulated 5 percent fractile count, dimension sim_fractile_5_count[adv_window_count][adv_min_mag_bin_count].
+	//  sim_fractile_95_count = Array to receive simulated 95 percent fractile count, dimension sim_fractile_95_count[adv_window_count][adv_min_mag_bin_count].
+
+	public void compute_count_stats (GammaConfig gamma_config, int[][] obs_count,
+		int[][] sim_median_count, int[][] sim_fractile_5_count, int[][] sim_fractile_95_count) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Indexes for median and fractiles
+
+		int i_median = num_sim / 2;
+		int i_fractile_5 = (num_sim * 5 + 50) / 100;
+		int i_fractile_95 = (num_sim * 95 + 50) / 100;
+
+		// Loop over windows and magnitude bins, computing statistics for each
+
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+
+				// Observed count
+
+				obs_count[i_adv_win][i_mag_bin] = obs_event_count[i_adv_win][i_mag_bin];
+
+				// Sort the array of simulated counts
+
+				int[] sorted_sim_count = Arrays.copyOf (sim_event_count[i_adv_win][i_mag_bin], num_sim);
+				Arrays.sort (sorted_sim_count);
+
+				// Return median and fractiles
+
+				sim_median_count[i_adv_win][i_mag_bin] = sorted_sim_count[i_median];
+				sim_fractile_5_count[i_adv_win][i_mag_bin] = sorted_sim_count[i_fractile_5];
+				sim_fractile_95_count[i_adv_win][i_mag_bin] = sorted_sim_count[i_fractile_95];
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Compute the single-event gamma, and convert the table to a string.
+	// Parameters:
+	//  gamma_config = Configuration information.
+
+	public String single_event_gamma_to_string (GammaConfig gamma_config) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Compute results
+
+		double[][] generic_gamma_lo = new double[num_adv_win + 1][num_mag_bin];
+		double[][] generic_gamma_hi = new double[num_adv_win + 1][num_mag_bin];
+
+		single_event_gamma (gamma_config, generic_gamma_lo, generic_gamma_hi);
+
+		// Convert the table
+
+		StringBuilder sb = new StringBuilder();
+		for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+				sb.append (
+					gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
+					+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+					+ "gamma_lo = " + generic_gamma_lo[i_adv_win][i_mag_bin] + ",  "
+					+ "gamma_hi = " + generic_gamma_hi[i_adv_win][i_mag_bin] + "\n"
+				);
+			}
+		}
+
+		return sb.toString();
+	}
+
+
+
+
+	// Compute event count statistics, and convert the table to a string.
+	// Parameters:
+	//  gamma_config = Configuration information.
+
+	public String compute_count_stats_to_string (GammaConfig gamma_config) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Compute results
+
+		int[][] generic_obs_count = new int[num_adv_win][num_mag_bin];
+		int[][] generic_sim_median_count = new int[num_adv_win][num_mag_bin];
+		int[][] generic_sim_fractile_5_count = new int[num_adv_win][num_mag_bin];
+		int[][] generic_sim_fractile_95_count = new int[num_adv_win][num_mag_bin];
+
+		compute_count_stats (gamma_config, generic_obs_count,
+			generic_sim_median_count, generic_sim_fractile_5_count, generic_sim_fractile_95_count);
+
+		// Convert to string
+
+		StringBuilder sb = new StringBuilder();
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+				sb.append (
+					gamma_config.adv_window_names[i_adv_win] + ",  "
+					+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+					+ "obs = " + generic_obs_count[i_adv_win][i_mag_bin] + ",  "
+					+ "median = " + generic_sim_median_count[i_adv_win][i_mag_bin] + ",  "
+					+ "fractile_5 = " + generic_sim_fractile_5_count[i_adv_win][i_mag_bin] + ",  "
+					+ "fractile_95 = " + generic_sim_fractile_95_count[i_adv_win][i_mag_bin] + "\n"
+				);
+			}
+		}
+
+		return sb.toString();
 	}
 
 
@@ -380,6 +653,54 @@ public class LogLikeSet {
 		return result;
 	}
 
+	// Marshal an array of objects, polymorphic.
+
+	public static void marshal_array_poly (MarshalWriter writer, String name, LogLikeSet[] x) {
+		int n = x.length;
+		writer.marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshal_poly (writer, null, x[i]);
+		}
+		writer.marshalArrayEnd ();
+		return;
+	}
+
+	// Marshal a 2D array of objects, polymorphic.
+
+	public static void marshal_2d_array_poly (MarshalWriter writer, String name, LogLikeSet[][] x) {
+		int n = x.length;
+		writer.marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshal_array_poly (writer, null, x[i]);
+		}
+		writer.marshalArrayEnd ();
+		return;
+	}
+
+	// Unmarshal an array of objects, polymorphic.
+
+	public static LogLikeSet[] unmarshal_array_poly (MarshalReader reader, String name) {
+		int n = reader.unmarshalArrayBegin (name);
+		LogLikeSet[] x = new LogLikeSet[n];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshal_poly (reader, null);
+		}
+		reader.unmarshalArrayEnd ();
+		return x;
+	}
+
+	// Unmarshal a 2d array of objects, polymorphic.
+
+	public static LogLikeSet[][] unmarshal_2d_array_poly (MarshalReader reader, String name) {
+		int n = reader.unmarshalArrayBegin (name);
+		LogLikeSet[][] x = new LogLikeSet[n][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshal_array_poly (reader, null);
+		}
+		reader.unmarshalArrayEnd ();
+		return x;
+	}
+
 
 
 
@@ -464,12 +785,32 @@ public class LogLikeSet {
 
 			LogLikeSet generic_log_like_set = new LogLikeSet();
 			generic_log_like_set.run_simulations (gamma_config, the_forecast_lag, gamma_config.simulation_count,
-				fcmain, results.generic_model, all_aftershocks, true);
+				fcmain, results.generic_model, all_aftershocks, false);
 
-			double[][] generic_gamma_lo = new double[num_adv_win][num_mag_bin];
-			double[][] generic_gamma_hi = new double[num_adv_win][num_mag_bin];
+			double[][] generic_gamma_lo = new double[num_adv_win + 1][num_mag_bin];
+			double[][] generic_gamma_hi = new double[num_adv_win + 1][num_mag_bin];
 
 			generic_log_like_set.single_event_gamma (gamma_config, generic_gamma_lo, generic_gamma_hi);
+
+			System.out.println ("");
+			for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+				for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+					System.out.println (
+						gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
+						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+						+ "gamma_lo = " + generic_gamma_lo[i_adv_win][i_mag_bin] + ",  "
+						+ "gamma_hi = " + generic_gamma_hi[i_adv_win][i_mag_bin]
+					);
+				}
+			}
+
+			int[][] generic_obs_count = new int[num_adv_win][num_mag_bin];
+			int[][] generic_sim_median_count = new int[num_adv_win][num_mag_bin];
+			int[][] generic_sim_fractile_5_count = new int[num_adv_win][num_mag_bin];
+			int[][] generic_sim_fractile_95_count = new int[num_adv_win][num_mag_bin];
+
+			generic_log_like_set.compute_count_stats (gamma_config, generic_obs_count,
+				generic_sim_median_count, generic_sim_fractile_5_count, generic_sim_fractile_95_count);
 
 			System.out.println ("");
 			for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
@@ -477,8 +818,10 @@ public class LogLikeSet {
 					System.out.println (
 						gamma_config.adv_window_names[i_adv_win] + ",  "
 						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-						+ "gamma_lo = " + generic_gamma_lo[i_adv_win][i_mag_bin] + ",  "
-						+ "gamma_hi = " + generic_gamma_hi[i_adv_win][i_mag_bin]
+						+ "obs = " + generic_obs_count[i_adv_win][i_mag_bin] + ",  "
+						+ "median = " + generic_sim_median_count[i_adv_win][i_mag_bin] + ",  "
+						+ "fractile_5 = " + generic_sim_fractile_5_count[i_adv_win][i_mag_bin] + ",  "
+						+ "fractile_95 = " + generic_sim_fractile_95_count[i_adv_win][i_mag_bin]
 					);
 				}
 			}
@@ -490,12 +833,32 @@ public class LogLikeSet {
 
 			LogLikeSet seq_spec_log_like_set = new LogLikeSet();
 			seq_spec_log_like_set.run_simulations (gamma_config, the_forecast_lag, gamma_config.simulation_count,
-				fcmain, results.seq_spec_model, all_aftershocks, true);
+				fcmain, results.seq_spec_model, all_aftershocks, false);
 
-			double[][] seq_spec_gamma_lo = new double[num_adv_win][num_mag_bin];
-			double[][] seq_spec_gamma_hi = new double[num_adv_win][num_mag_bin];
+			double[][] seq_spec_gamma_lo = new double[num_adv_win + 1][num_mag_bin];
+			double[][] seq_spec_gamma_hi = new double[num_adv_win + 1][num_mag_bin];
 
 			seq_spec_log_like_set.single_event_gamma (gamma_config, seq_spec_gamma_lo, seq_spec_gamma_hi);
+
+			System.out.println ("");
+			for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+				for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+					System.out.println (
+						gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
+						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+						+ "gamma_lo = " + seq_spec_gamma_lo[i_adv_win][i_mag_bin] + ",  "
+						+ "gamma_hi = " + seq_spec_gamma_hi[i_adv_win][i_mag_bin]
+					);
+				}
+			}
+
+			int[][] seq_spec_obs_count = new int[num_adv_win][num_mag_bin];
+			int[][] seq_spec_sim_median_count = new int[num_adv_win][num_mag_bin];
+			int[][] seq_spec_sim_fractile_5_count = new int[num_adv_win][num_mag_bin];
+			int[][] seq_spec_sim_fractile_95_count = new int[num_adv_win][num_mag_bin];
+
+			seq_spec_log_like_set.compute_count_stats (gamma_config, seq_spec_obs_count,
+				seq_spec_sim_median_count, seq_spec_sim_fractile_5_count, seq_spec_sim_fractile_95_count);
 
 			System.out.println ("");
 			for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
@@ -503,8 +866,10 @@ public class LogLikeSet {
 					System.out.println (
 						gamma_config.adv_window_names[i_adv_win] + ",  "
 						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-						+ "gamma_lo = " + seq_spec_gamma_lo[i_adv_win][i_mag_bin] + ",  "
-						+ "gamma_hi = " + seq_spec_gamma_hi[i_adv_win][i_mag_bin]
+						+ "obs = " + seq_spec_obs_count[i_adv_win][i_mag_bin] + ",  "
+						+ "median = " + seq_spec_sim_median_count[i_adv_win][i_mag_bin] + ",  "
+						+ "fractile_5 = " + seq_spec_sim_fractile_5_count[i_adv_win][i_mag_bin] + ",  "
+						+ "fractile_95 = " + seq_spec_sim_fractile_95_count[i_adv_win][i_mag_bin]
 					);
 				}
 			}
@@ -516,12 +881,32 @@ public class LogLikeSet {
 
 			LogLikeSet bayesian_log_like_set = new LogLikeSet();
 			bayesian_log_like_set.run_simulations (gamma_config, the_forecast_lag, gamma_config.simulation_count,
-				fcmain, results.bayesian_model, all_aftershocks, true);
+				fcmain, results.bayesian_model, all_aftershocks, false);
 
-			double[][] bayesian_gamma_lo = new double[num_adv_win][num_mag_bin];
-			double[][] bayesian_gamma_hi = new double[num_adv_win][num_mag_bin];
+			double[][] bayesian_gamma_lo = new double[num_adv_win + 1][num_mag_bin];
+			double[][] bayesian_gamma_hi = new double[num_adv_win + 1][num_mag_bin];
 
 			bayesian_log_like_set.single_event_gamma (gamma_config, bayesian_gamma_lo, bayesian_gamma_hi);
+
+			System.out.println ("");
+			for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+				for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+					System.out.println (
+						gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
+						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+						+ "gamma_lo = " + bayesian_gamma_lo[i_adv_win][i_mag_bin] + ",  "
+						+ "gamma_hi = " + bayesian_gamma_hi[i_adv_win][i_mag_bin]
+					);
+				}
+			}
+
+			int[][] bayesian_obs_count = new int[num_adv_win][num_mag_bin];
+			int[][] bayesian_sim_median_count = new int[num_adv_win][num_mag_bin];
+			int[][] bayesian_sim_fractile_5_count = new int[num_adv_win][num_mag_bin];
+			int[][] bayesian_sim_fractile_95_count = new int[num_adv_win][num_mag_bin];
+
+			bayesian_log_like_set.compute_count_stats (gamma_config, bayesian_obs_count,
+				bayesian_sim_median_count, bayesian_sim_fractile_5_count, bayesian_sim_fractile_95_count);
 
 			System.out.println ("");
 			for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
@@ -529,8 +914,10 @@ public class LogLikeSet {
 					System.out.println (
 						gamma_config.adv_window_names[i_adv_win] + ",  "
 						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-						+ "gamma_lo = " + bayesian_gamma_lo[i_adv_win][i_mag_bin] + ",  "
-						+ "gamma_hi = " + bayesian_gamma_hi[i_adv_win][i_mag_bin]
+						+ "obs = " + bayesian_obs_count[i_adv_win][i_mag_bin] + ",  "
+						+ "median = " + bayesian_sim_median_count[i_adv_win][i_mag_bin] + ",  "
+						+ "fractile_5 = " + bayesian_sim_fractile_5_count[i_adv_win][i_mag_bin] + ",  "
+						+ "fractile_95 = " + bayesian_sim_fractile_95_count[i_adv_win][i_mag_bin]
 					);
 				}
 			}

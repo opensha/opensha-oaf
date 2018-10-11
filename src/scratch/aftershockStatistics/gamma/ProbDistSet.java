@@ -70,7 +70,7 @@ public class ProbDistSet {
 		prob_dist = new double[num_adv_win][][];
 		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
 			prob_dist[i_adv_win] = new double[num_mag_bin][];
-			double tMinDays = ((double)(forecast_lag + gamma_config.adv_window_start_offs[i_adv_win])) / ComcatAccessor.day_millis;
+			double tMinDays = ((double)(Math.max (gamma_config.sim_start_off, forecast_lag + gamma_config.adv_window_start_offs[i_adv_win]))) / ComcatAccessor.day_millis;
 			double tMaxDays = ((double)(forecast_lag + gamma_config.adv_window_end_offs[i_adv_win])) / ComcatAccessor.day_millis;
 			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
 				double mag = gamma_config.adv_min_mag_bins[i_mag_bin];
