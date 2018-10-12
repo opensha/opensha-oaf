@@ -62,15 +62,15 @@ public class GammaConfig {
 
 	// Maximum end offset for any advisory forecast window, equals largest element of adv_window_end_offs.
 
-	long max_adv_window_end_off;
+	public long max_adv_window_end_off;
 
 	// Number of advisory magnitude bins.
 
-	int adv_min_mag_bin_count;
+	public int adv_min_mag_bin_count;
 
 	// Array of minimum magnitudes for advisory magnitude bins, in increasing order.
 
-	double[] adv_min_mag_bins;
+	public double[] adv_min_mag_bins;
 
 
 
@@ -79,23 +79,27 @@ public class GammaConfig {
 
 	// Number of simulations per forecast and model.
 
-	int simulation_count;
+	public int simulation_count;
 
 	// The random number generator to use for simulations.
 
-	UniformRealDistribution rangen;
+	public UniformRealDistribution rangen;
 
 	// Offset from rupture at which simulation starts, in milliseconds.
 
-	long sim_start_off;
+	public long sim_start_off;
 
 	// Number of simulation slots to use when summing over earthquakes.
 
-	int eqk_summation_count;
+	public int eqk_summation_count;
 
 	// True to randomize slots when summing over earthquakes.
 
-	boolean eqk_summation_randomize;
+	public boolean eqk_summation_randomize;
+
+	// True to discard simulations with an aftershock larger than the mainshock.
+
+	public boolean discard_sim_with_large_as;
 
 
 
@@ -140,6 +144,7 @@ public class GammaConfig {
 
 		eqk_summation_count = 10000;
 		eqk_summation_randomize = true;
+		discard_sim_with_large_as = true;
 	}
 
 

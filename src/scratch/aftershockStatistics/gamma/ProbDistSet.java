@@ -251,6 +251,105 @@ public class ProbDistSet {
 
 
 
+	// Compute probability distribution statistics.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  mean_prob = Array to receive mean, dimension mean_prob[adv_window_count][adv_min_mag_bin_count].
+	//  median_prob = Array to receive median, dimension median_prob[adv_window_count][adv_min_mag_bin_count].
+	//  fractile_5_prob = Array to receive 5 percent fractile, dimension fractile_5_prob[adv_window_count][adv_min_mag_bin_count].
+	//  fractile_95_prob = Array to receive 95 percent fractile, dimension fractile_95_prob[adv_window_count][adv_min_mag_bin_count].
+
+	public void compute_prob_stats (GammaConfig gamma_config, double[][] mean_prob,
+		int[][] median_prob, int[][] fractile_5_prob, int[][] fractile_95_prob) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Loop over windows and magnitude bins, computing statistics for each
+
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+
+				// Number of aftershock counts
+
+				int num_as = prob_dist[i_adv_win][i_mag_bin].length;
+
+				// Compute mean
+
+				double sum = 0.0;
+				double total = 0.0;
+
+				for (int i_as = 0; i_as < num_as; ++i_as) {
+					total += prob_dist[i_adv_win][i_mag_bin][i_as];
+					sum += ((double)i_as) * prob_dist[i_adv_win][i_mag_bin][i_as];
+				}
+
+				mean_prob[i_adv_win][i_mag_bin] = sum / total;
+
+				// Compute fractiles
+
+				boolean want_5 = true;
+				boolean want_50 = false;
+				boolean want_95 = false;
+				sum = 0.0;
+
+				for (int i_as = 0; i_as < num_as; ++i_as) {
+					sum += prob_dist[i_adv_win][i_mag_bin][i_as];
+					if (want_5 && sum >= total*0.05) {
+						fractile_5_prob[i_adv_win][i_mag_bin] = i_as;
+						want_5 = false;
+						want_50 = true;
+					}
+					if (want_50 && sum >= total*0.50) {
+						median_prob[i_adv_win][i_mag_bin] = i_as;
+						want_50 = false;
+						want_95 = true;
+					}
+					if (want_95 && sum >= total*0.95) {
+						fractile_95_prob[i_adv_win][i_mag_bin] = i_as;
+						want_95 = false;
+					}
+				}
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Compute the R&J expected number of aftershocks in each interval for the maximum likelihood a/p/c.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  the_forecast_lag = Forecast lag, in milliseconds.
+	//  model = RJ aftershock model, including transient data.
+	//  mean_rj = Array to receive expected aftershocks, dimension mean_rj[adv_window_count][adv_min_mag_bin_count].
+
+	public static void compute_rj_means (GammaConfig gamma_config, long the_forecast_lag, RJ_AftershockModel model, double[][] mean_rj) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Get the probability distributions from the model
+
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+			double tMinDays = ((double)(Math.max (gamma_config.sim_start_off, the_forecast_lag + gamma_config.adv_window_start_offs[i_adv_win]))) / ComcatAccessor.day_millis;
+			double tMaxDays = ((double)(the_forecast_lag + gamma_config.adv_window_end_offs[i_adv_win])) / ComcatAccessor.day_millis;
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+				double mag = gamma_config.adv_min_mag_bins[i_mag_bin];
+				mean_rj[i_adv_win][i_mag_bin] = model.getModalNumEvents(mag, tMinDays, tMaxDays);
+			}
+		}
+	}
+
+
+
+
 	//----- Testing -----
 
 	// Entry point.

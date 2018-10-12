@@ -9,6 +9,7 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import scratch.aftershockStatistics.ComcatAccessor;
 import scratch.aftershockStatistics.AftershockStatsCalc;
 import scratch.aftershockStatistics.RJ_AftershockModel;
+import scratch.aftershockStatistics.RJ_AftershockModel_Generic;
 
 import scratch.aftershockStatistics.aafs.ForecastMainshock;
 import scratch.aftershockStatistics.aafs.ForecastParameters;
@@ -175,7 +176,7 @@ public class LogLikeSet {
 
 			// If the simulation has an aftershock larger than the mainshock, discard it
 
-			if (max_mag > magMain) {
+			if (gamma_config.discard_sim_with_large_as && max_mag > magMain) {
 				if (verbose) {
 					System.out.println ("Discarding simulation, max_mag = " + max_mag);
 				}
@@ -435,6 +436,38 @@ public class LogLikeSet {
 				sim_median_count[i_adv_win][i_mag_bin] = sorted_sim_count[i_median];
 				sim_fractile_5_count[i_adv_win][i_mag_bin] = sorted_sim_count[i_fractile_5];
 				sim_fractile_95_count[i_adv_win][i_mag_bin] = sorted_sim_count[i_fractile_95];
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Compute event count means.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  sim_mean_count = Array to receive simulated mean count, dimension sim_mean_count[adv_window_count][adv_min_mag_bin_count].
+
+	public void compute_count_means (GammaConfig gamma_config, double[][] sim_mean_count) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Loop over windows and magnitude bins, computing means for each
+
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+
+				double sum = 0.0;
+				for (int i_sim = 0; i_sim < num_sim; ++i_sim) {
+					sum += (double)(sim_event_count[i_adv_win][i_mag_bin][i_sim]);
+				}
+
+				sim_mean_count[i_adv_win][i_mag_bin] = sum / ((double)num_sim);
 			}
 		}
 
@@ -706,6 +739,149 @@ public class LogLikeSet {
 
 	//----- Testing -----
 
+
+
+
+	// Test routine, to run simulations for a model, and compare statistics to probability distributions.
+	// Parameters are the same as run_simulations.
+
+	private static void compare_sim_to_prob (GammaConfig gamma_config, long the_forecast_lag, int the_num_sim,
+		ForecastMainshock fcmain, RJ_AftershockModel model, List<ObsEqkRupture> all_aftershocks, boolean verbose) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Run simulations and collect statistics
+
+		LogLikeSet log_like_set = new LogLikeSet();
+		log_like_set.run_simulations (gamma_config, the_forecast_lag, the_num_sim,
+			fcmain, model, all_aftershocks, verbose);
+
+		int[][] obs_count = new int[num_adv_win][num_mag_bin];
+		int[][] sim_median_count = new int[num_adv_win][num_mag_bin];
+		int[][] sim_fractile_5_count = new int[num_adv_win][num_mag_bin];
+		int[][] sim_fractile_95_count = new int[num_adv_win][num_mag_bin];
+
+		log_like_set.compute_count_stats (gamma_config, obs_count,
+			sim_median_count, sim_fractile_5_count, sim_fractile_95_count);
+
+		double[][] sim_mean_count = new double[num_adv_win + 1][num_mag_bin];
+
+		log_like_set.compute_count_means (gamma_config, sim_mean_count);
+
+		// Compute probability distribution and collect its statistics
+
+		ProbDistSet prob_dist_set = new ProbDistSet (gamma_config, the_forecast_lag, model);
+
+		double[][] mean_prob = new double[num_adv_win][num_mag_bin];
+		int[][] median_prob = new int[num_adv_win][num_mag_bin];
+		int[][] fractile_5_prob = new int[num_adv_win][num_mag_bin];
+		int[][] fractile_95_prob = new int[num_adv_win][num_mag_bin];
+
+		prob_dist_set.compute_prob_stats (gamma_config, mean_prob,
+			median_prob, fractile_5_prob, fractile_95_prob);
+
+		double[][] mean_rj = new double[num_adv_win][num_mag_bin];
+
+		ProbDistSet.compute_rj_means (gamma_config, the_forecast_lag, model, mean_rj);
+
+		// Display results
+
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+				System.out.println (
+					gamma_config.adv_window_names[i_adv_win] + ",  "
+					+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+					+ "obs = " + obs_count[i_adv_win][i_mag_bin] + ",  "
+					+ "s50 = " + sim_median_count[i_adv_win][i_mag_bin] + ",  "
+					+ "s05 = " + sim_fractile_5_count[i_adv_win][i_mag_bin] + ",  "
+					+ "s95 = " + sim_fractile_95_count[i_adv_win][i_mag_bin] + ",  "
+					+ "sm = " + String.format ("%.2f", sim_mean_count[i_adv_win][i_mag_bin]) + ",  "
+					+ "p50 = " + median_prob[i_adv_win][i_mag_bin] + ",  "
+					+ "p05 = " + fractile_5_prob[i_adv_win][i_mag_bin] + ",  "
+					+ "p95 = " + fractile_95_prob[i_adv_win][i_mag_bin] + ",  "
+					+ "pm = " + String.format ("%.2f", mean_prob[i_adv_win][i_mag_bin]) + ",  "
+					+ "rjm = " + String.format ("%.2f", mean_rj[i_adv_win][i_mag_bin])
+				);
+			}
+		}
+		
+		return;
+	}
+
+
+
+
+	// Test routine, to test the selection of a/p/c for epistemic uncertainty.
+
+	private static void test_epi_selection (GammaConfig gamma_config, int the_num_sim,
+		RJ_AftershockModel model) {
+
+		// Number of a/p/c values
+
+		int num_a = model.getNum_a();
+		int num_p = model.getNum_p();
+		int num_c = model.getNum_c();
+
+		// Allocate the count matrix
+
+		int[][][] count = new int[num_a][num_p][num_c];
+
+		for (int aIndex = 0; aIndex < num_a; aIndex++) {
+			for (int pIndex = 0; pIndex < num_p; pIndex++) {
+				for (int cIndex = 0; cIndex < num_c; cIndex++) {
+					count[aIndex][pIndex][cIndex] = 0;
+				}
+			}
+		}
+
+		// Take the samples
+
+		double[] apcval = new double[3];
+
+		for (int i_sim = 0; i_sim < the_num_sim; ++i_sim) {
+		
+			// Take a sample
+
+			model.sample_apc (gamma_config.rangen.sample(), apcval);
+
+			// Convert to indexes
+
+			int aIndex = model.get_aIndex_from_a (apcval[0]);
+			int pIndex = model.get_pIndex_from_p (apcval[1]);
+			int cIndex = model.get_cIndex_from_c (apcval[2]);
+
+			// Increment counter, this will also check for indexes out-of-range
+
+			count[aIndex][pIndex][cIndex] = count[aIndex][pIndex][cIndex] + 1;
+		}
+
+		// Display results
+
+		for (int aIndex = 0; aIndex < num_a; aIndex++) {
+			for (int pIndex = 0; pIndex < num_p; pIndex++) {
+				for (int cIndex = 0; cIndex < num_c; cIndex++) {
+					double expected = model.get_clipped_apc_prob (aIndex, pIndex, cIndex) * ((double)the_num_sim);
+					System.out.println (
+						"aIndex = " + aIndex + ",  "
+						+ "pIndex = " + pIndex + ",  "
+						+ "cIndex = " + cIndex + ",  "
+						+ "count = " + count[aIndex][pIndex][cIndex] + ",  "
+						+ "expected = " + String.format ("%.2f", expected)
+					);
+					count[aIndex][pIndex][cIndex] = 0;
+				}
+			}
+		}
+		
+		return;
+	}
+
+
+
+
 	// Entry point.
 	
 	public static void main(String[] args) {
@@ -921,6 +1097,238 @@ public class LogLikeSet {
 					);
 				}
 			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test1  event_id  forecast_lag  num_sim  discard_large_as
+		// Compute model for the given event at the given forecast lag.
+		// The forecast_lag is given in java.time.Duration format.
+		// The boolean discard_large_as is true to discard simulations with an aftershock
+		// larger than the mainshock (which is the default).
+		// Run the requested number of simulations (overriding the number in GammaConfig)
+		// and compare the simulated statistics with the R&J probability distributions.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// Four additional arguments
+
+			if (args.length != 5) {
+				System.err.println ("LogLikeSet : Invalid 'test2' subcommand");
+				return;
+			}
+
+			String the_event_id = args[1];
+			long the_forecast_lag = SimpleUtils.string_to_duration (args[2]);
+			int the_num_sim = Integer.parseInt (args[3]);
+			boolean discard_large_as = Boolean.parseBoolean (args[4]);
+
+			// Get configuration
+
+			GammaConfig gamma_config = new GammaConfig();
+			gamma_config.discard_sim_with_large_as = discard_large_as;
+
+			// Number of advisory windows and magnitude bins
+
+			int num_adv_win = gamma_config.adv_window_count;
+			int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+			// Fetch the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "", fcmain, params, true);
+
+			if (!( results.generic_result_avail
+				&& results.seq_spec_result_avail
+				&& results.bayesian_result_avail )) {
+				throw new RuntimeException ("LogLikeSet: Failed to compute aftershock models");
+			}
+
+			// Get catalog of all aftershocks
+
+			List<ObsEqkRupture> all_aftershocks = ProbDistSet.get_all_aftershocks (gamma_config, fcmain);
+
+			System.out.println ("");
+			System.out.println ("Total number of aftershocks = " + all_aftershocks.size());
+
+			// Generic model
+
+			System.out.println ("");
+			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("");
+
+			compare_sim_to_prob (gamma_config, the_forecast_lag, the_num_sim,
+				fcmain, results.generic_model, all_aftershocks, false);
+
+			// Sequence specific model
+
+			System.out.println ("");
+			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("");
+
+			compare_sim_to_prob (gamma_config, the_forecast_lag, the_num_sim,
+				fcmain, results.seq_spec_model, all_aftershocks, false);
+
+			// Bayesian model
+
+			System.out.println ("");
+			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("");
+
+			compare_sim_to_prob (gamma_config, the_forecast_lag, the_num_sim,
+				fcmain, results.bayesian_model, all_aftershocks, false);
+
+			// Zero-epistemic generic model with no epistemic uncertainty
+
+			System.out.println ("");
+			System.out.println ("Zero-epistemic model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("");
+
+			double ze_magMain = results.generic_model.getMainShockMag();
+			double ze_mean_a = results.generic_model.getMaxLikelihood_a();
+			double ze_sigma_a = 1.0;
+			double ze_min_a = results.generic_model.getMaxLikelihood_a();
+			double ze_max_a = results.generic_model.getMaxLikelihood_a();
+			double ze_delta_a = results.generic_model.getDelta_a();
+			double ze_b = results.generic_model.get_b();
+			double ze_p = results.generic_model.getMaxLikelihood_p();
+			double ze_c = results.generic_model.getMaxLikelihood_c();
+
+			RJ_AftershockModel_Generic ze_model = new RJ_AftershockModel_Generic (
+				ze_magMain, ze_mean_a, ze_sigma_a, ze_min_a,ze_max_a, ze_delta_a, ze_b, ze_p, ze_c);
+
+			compare_sim_to_prob (gamma_config, the_forecast_lag, the_num_sim,
+				fcmain, ze_model, all_aftershocks, false);
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test1  event_id  forecast_lag  num_sim
+		// Compute model for the given event at the given forecast lag.
+		// The forecast_lag is given in java.time.Duration format.
+		// Sample the epistemic probability distribution the requested number of times,
+		// and display comparison to expected distribution.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// Three additional arguments
+
+			if (args.length != 4) {
+				System.err.println ("LogLikeSet : Invalid 'test3' subcommand");
+				return;
+			}
+
+			String the_event_id = args[1];
+			long the_forecast_lag = SimpleUtils.string_to_duration (args[2]);
+			int the_num_sim = Integer.parseInt (args[3]);
+
+			// Get configuration
+
+			GammaConfig gamma_config = new GammaConfig();
+
+			// Number of advisory windows and magnitude bins
+
+			int num_adv_win = gamma_config.adv_window_count;
+			int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+			// Fetch the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "", fcmain, params, true);
+
+			if (!( results.generic_result_avail
+				&& results.seq_spec_result_avail
+				&& results.bayesian_result_avail )) {
+				throw new RuntimeException ("LogLikeSet: Failed to compute aftershock models");
+			}
+
+			// Get catalog of all aftershocks
+
+			List<ObsEqkRupture> all_aftershocks = ProbDistSet.get_all_aftershocks (gamma_config, fcmain);
+
+			System.out.println ("");
+			System.out.println ("Total number of aftershocks = " + all_aftershocks.size());
+
+			// Generic model
+
+			System.out.println ("");
+			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("");
+
+			test_epi_selection (gamma_config, the_num_sim, results.generic_model);
+
+			// Sequence specific model
+
+			System.out.println ("");
+			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("");
+
+			test_epi_selection (gamma_config, the_num_sim, results.seq_spec_model);
+
+			// Bayesian model
+
+			System.out.println ("");
+			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("");
+
+			test_epi_selection (gamma_config, the_num_sim, results.bayesian_model);
+
+			// Zero-epistemic generic model with no epistemic uncertainty
+
+			System.out.println ("");
+			System.out.println ("Zero-epistemic model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("");
+
+			double ze_magMain = results.generic_model.getMainShockMag();
+			double ze_mean_a = results.generic_model.getMaxLikelihood_a();
+			double ze_sigma_a = 1.0;
+			double ze_min_a = results.generic_model.getMaxLikelihood_a();
+			double ze_max_a = results.generic_model.getMaxLikelihood_a();
+			double ze_delta_a = results.generic_model.getDelta_a();
+			double ze_b = results.generic_model.get_b();
+			double ze_p = results.generic_model.getMaxLikelihood_p();
+			double ze_c = results.generic_model.getMaxLikelihood_c();
+
+			RJ_AftershockModel_Generic ze_model = new RJ_AftershockModel_Generic (
+				ze_magMain, ze_mean_a, ze_sigma_a, ze_min_a,ze_max_a, ze_delta_a, ze_b, ze_p, ze_c);
+
+			test_epi_selection (gamma_config, the_num_sim, ze_model);
 
 			return;
 		}

@@ -312,6 +312,42 @@ public abstract class RJ_AftershockModel {
 	protected double get_p_from_single_index (int index) {return get_p ((index / num_c) % num_p);}
 	protected double get_c_from_single_index (int index) {return get_c (index % num_c);}
 
+	// Get index value from a/p/c value.
+	// Note: This is primary for testing.
+
+	public int get_aIndex_from_a (double the_a) {
+		if (num_a == 1) {
+			return 0;
+		}
+		return (int)(Math.round((the_a - min_a)/delta_a));
+	}
+
+	public int get_pIndex_from_p (double the_p) {
+		if (num_p == 1) {
+			return 0;
+		}
+		return (int)(Math.round((the_p - min_p)/delta_p));
+	}
+
+	public int get_cIndex_from_c (double the_c) {
+		if (num_c == 1) {
+			return 0;
+		}
+		return (int)(Math.round((the_c - min_c)/delta_c));
+	}
+
+	// Get the probability for the given indexes,
+	// clipped and rescaled so small tail elements are forced to zero.
+
+	public double get_clipped_apc_prob (int aIndex, int pIndex, int cIndex) {
+		double result = apc_likelihood[aIndex][pIndex][cIndex];
+		if (result > apc_max_tail_element) {
+			result = result / apc_support_total;
+		} else {
+			result = 0.0;
+		}
+		return result;
+	}
 
 
 
