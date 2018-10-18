@@ -124,7 +124,7 @@ public class AftershockStatsShadow {
 		// Call Comcat to obtain a list of possible aftershocks, and accumulate their unit vectors.
 		// An exception from this function likely indicates a problem with Comcat.
 
-		public void accum_from_comcat (ComcatAccessor accessor, long system_time_now) {
+		public void accum_from_comcat (ComcatAccessor accessor, long system_time_now, boolean f_verbose) {
 
 			// If there is a nonempty time and space region in which we need to look for aftershocks ...
 
@@ -156,7 +156,9 @@ public class AftershockStatsShadow {
 							centroid_region, wrapLon, extendedInfo,
 							centroid_min_mag, limit_per_call, max_calls);
 
-				System.out.println ("AftershockStatsShadow.accum_from_comcat: Found " + aftershocks.size() + " aftershocks within " + String.format ("%.3f", centroid_radius) + " km of candidate event " + candidate_event_id);
+				if (f_verbose) {
+					System.out.println ("AftershockStatsShadow.accum_from_comcat: Found " + aftershocks.size() + " aftershocks within " + String.format ("%.3f", centroid_radius) + " km of candidate event " + candidate_event_id);
+				}
 		
 				// For each aftershock ...
 
@@ -337,6 +339,10 @@ public class AftershockStatsShadow {
 			}
 		}
 
+		// Verbose mode flag
+
+		boolean f_verbose = AftershockVerbose.get_verbose_mode();
+
 		// List of candidate shadowing earthquakes
 
 		ArrayList<CandidateShadow> candidates = new ArrayList<CandidateShadow>();
@@ -387,7 +393,9 @@ public class AftershockStatsShadow {
 					search_region, wrapLon, extendedInfo,
 					mainshock_mag, limit_per_call, max_calls);
 
-		System.out.println ("AftershockStatsShadow.find_shadow: Found " + potentials.size() + " potential shadowing events for mainshock " + mainshock_event_id);
+		if (f_verbose) {
+			System.out.println ("AftershockStatsShadow.find_shadow: Found " + potentials.size() + " potential shadowing events for mainshock " + mainshock_event_id);
+		}
 
 		// Combined values for centroid radius, minimum magnitude, start time, and stop time
 
@@ -470,7 +478,7 @@ public class AftershockStatsShadow {
 
 						// Accumulate its aftershocks now, in a separate call to Comcat
 
-						candidate.accum_from_comcat (accessor, system_time_now);
+						candidate.accum_from_comcat (accessor, system_time_now, f_verbose);
 					}
 
 					// Otherwise the candidate is small ...
@@ -497,7 +505,9 @@ public class AftershockStatsShadow {
 			}
 		}
 
-		System.out.println ("AftershockStatsShadow.find_shadow: Found " + candidates.size() + " candidate shadowing events for mainshock " + mainshock_event_id);
+		if (f_verbose) {
+			System.out.println ("AftershockStatsShadow.find_shadow: Found " + candidates.size() + " candidate shadowing events for mainshock " + mainshock_event_id);
+		}
 
 		// If there is a nonempty time and space region in which we need to look for aftershocks ...
 
@@ -519,7 +529,9 @@ public class AftershockStatsShadow {
 						centroid_region, wrapLon, extendedInfo,
 						combined_centroid_min_mag, limit_per_call, max_calls);
 
-			System.out.println ("AftershockStatsShadow.find_shadow: Found " + aftershocks.size() + " possible aftershocks within " + String.format ("%.3f", combined_centroid_radius) + " km of mainshock " + mainshock_event_id);
+			if (f_verbose) {
+				System.out.println ("AftershockStatsShadow.find_shadow: Found " + aftershocks.size() + " possible aftershocks within " + String.format ("%.3f", combined_centroid_radius) + " km of mainshock " + mainshock_event_id);
+			}
 		
 			// For each aftershock ...
 
@@ -594,7 +606,9 @@ public class AftershockStatsShadow {
 		// If no candidates shadow the mainshock, then return null
 
 		if (best_candidate == null) {
-			System.out.println ("AftershockStatsShadow.find_shadow: Mainshock " + mainshock_event_id + " is not shadowed");
+			if (f_verbose) {
+				System.out.println ("AftershockStatsShadow.find_shadow: Mainshock " + mainshock_event_id + " is not shadowed");
+			}
 			return null;
 		}
 
@@ -608,9 +622,11 @@ public class AftershockStatsShadow {
 			separation[1] = best_time_offset;
 		}
 
-		System.out.println ("AftershockStatsShadow.find_shadow: Mainshock " + mainshock_event_id + " is shadowed by event " + best_candidate.candidate_event_id);
-		System.out.println (String.format ("AftershockStatsShadow.find_shadow: Mainshock magnitude = %.2f, shadowing event magnitude = %.2f", mainshock_mag, best_candidate.candidate_mag));
-		System.out.println (String.format ("AftershockStatsShadow.find_shadow: Distance = %.3f km, time offset = %.3f days", best_distance, best_time_offset));
+		if (f_verbose) {
+			System.out.println ("AftershockStatsShadow.find_shadow: Mainshock " + mainshock_event_id + " is shadowed by event " + best_candidate.candidate_event_id);
+			System.out.println (String.format ("AftershockStatsShadow.find_shadow: Mainshock magnitude = %.2f, shadowing event magnitude = %.2f", mainshock_mag, best_candidate.candidate_mag));
+			System.out.println (String.format ("AftershockStatsShadow.find_shadow: Distance = %.3f km, time offset = %.3f days", best_distance, best_time_offset));
+		}
 
 		return best_candidate.rupture;
 	}

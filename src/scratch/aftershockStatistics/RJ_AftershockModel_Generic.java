@@ -137,6 +137,36 @@ public class RJ_AftershockModel_Generic extends RJ_AftershockModel {
 	}
 
 
+	
+	
+	/**
+	 * This instantiates a generic RJ model for fixed parameter values (zero epistemic uncertainty)
+	 * @param magMain - main shock magnitude
+	 * @param a - a-value
+	 * @param b - b-value
+	 * @param p - p-value
+	 * @param c - c-value
+	 */
+	public RJ_AftershockModel_Generic(double magMain, double a, double b, double p, double c) {
+		
+		this.magMain = magMain;
+		this.b = b;
+
+		this.mean_a = a;
+		this.sigma_a = 1.0;		// must be non-zero to avoid divide-by-zero in apc_build, but value irrelevant
+
+		set_fixed_a(a);
+		set_fixed_p(p);
+		set_fixed_c(c);
+
+		apc_build();
+
+		if(D) {
+			System.out.println(String.format("a=%.4g", a));
+		}
+	}
+
+
 
 
 	/**
@@ -146,6 +176,24 @@ public class RJ_AftershockModel_Generic extends RJ_AftershockModel {
     public RJ_AftershockModel_Generic() {
 		// When retrieving from database, remain quiet by default
 		D = false;
+    }
+
+
+
+
+	/**
+	 * Create a model with fixed parameters equal to the maximum liklihood
+	 * parameter values of the given model.
+	 */
+    public static RJ_AftershockModel_Generic from_max_like (RJ_AftershockModel model) {
+
+		double magMain = model.getMainShockMag();;
+		double a = model.getMaxLikelihood_a();
+		double b = model.get_b();
+		double p = model.getMaxLikelihood_p();
+		double c = model.getMaxLikelihood_c();
+
+		return new RJ_AftershockModel_Generic (magMain, a, b, p, c);
     }
 
 

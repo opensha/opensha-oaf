@@ -255,6 +255,24 @@ public class ForecastMainshock {
 		return;
 	}
 
+	// Set up a simulated mainshock.
+
+	public void setup_sim_mainshock (String network, String code, long time, double mag, double lat, double lon, double depth) {
+		query_event_id = network + code;
+		mainshock_avail = true;
+		mainshock_event_id = network + code;
+		mainshock_network = network;
+		mainshock_code = code;
+		mainshock_id_list = new String[1];
+		mainshock_id_list[0] = network + code;
+		mainshock_time = time;
+		mainshock_mag = mag;
+		mainshock_lat = lat;
+		mainshock_lon = lon;
+		mainshock_depth = depth;
+		return;
+	}
+
 	// Copy from another object.
 
 	public void copy_from (ForecastMainshock other) {

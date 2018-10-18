@@ -635,6 +635,7 @@ public class AftershockStatsCalc {
 	 * @param c = Omori c-parameter (time offset), in days.
 	 * @param tMinDays = Beginning of time span (since origin time), in days.
 	 * @param tMaxDays = End of time span (since origin time), in days.
+	 * @param originTime = Origin time of simulated sequence, in milliseconds since the epoch; if omitted then zero.
 	 * @param rangen = Random number generator to use, if omitted then this routine creates one.
 	 * @return
 	 * Returns a randomly-generated sequence of aftershocks.
@@ -662,13 +663,26 @@ public class AftershockStatsCalc {
 
 		// Random number generator, produces random numbers between 0.0 (inclusive) and 1.0 (exclusive)
 
+		long originTime = 0L;
 		UniformRealDistribution rangen = new UniformRealDistribution();
 
-		return simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays, rangen);
+		return simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays, originTime, rangen);
 	}
 
+
 	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat,
-			double capG, double capH, double p, double c, double tMinDays, double tMaxDays, UniformRealDistribution rangen) {
+			double capG, double capH, double p, double c, double tMinDays, double tMaxDays, long originTime) {
+
+		// Random number generator, produces random numbers between 0.0 (inclusive) and 1.0 (exclusive)
+
+		UniformRealDistribution rangen = new UniformRealDistribution();
+
+		return simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays, originTime, rangen);
+	}
+
+
+	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat,
+			double capG, double capH, double p, double c, double tMinDays, double tMaxDays, long originTime, UniformRealDistribution rangen) {
 		if (!( b > 0.0 )) {
 			throw new RuntimeException("AftershockStatsCalc.simAftershockSequence: b parameter is negative or zero");
 		}
@@ -828,7 +842,8 @@ public class AftershockStatsCalc {
 
 						double timeMillis = t*((double)MILLISEC_PER_DAY);
 						int eventId = aftershock_list.size() + 1;
-						aftershock_list.add(new ObsEqkRupture(Integer.toString(eventId), (long)timeMillis, null, mag));
+						long lag = (long)timeMillis;
+						aftershock_list.add(new ObsEqkRupture(Integer.toString(eventId), lag + originTime, null, mag));
 					}
 				}
 			}
@@ -979,11 +994,19 @@ public class AftershockStatsCalc {
 	
 	
 	
-	
+	// Find the mode of an incremental magnitude-frequency distribution.
+	// The mode is the magnitude at which the MFD achieves its maximum,
+	// that is, the magnitude bin which contains the largest number of events.
+	// If there is more than one bin that contains the largest number of
+	// events, then this function returns the average magnitude of those bins.
 	
 	public static double getMmaxC(IncrementalMagFreqDist mfd) {
 		List<Double> magsAtMax = Lists.newArrayList();
 		double max = 0d;
+
+		// Scan to find max = largest number of events in any bin, and
+		// magsAtMax = list of magnitude bins which contain that number of events;
+		// note that these bins are not required to be consecutive
 		
 		for (Point2D pt : mfd) {
 			if (pt.getY() == max)
@@ -994,12 +1017,19 @@ public class AftershockStatsCalc {
 				max = pt.getY();
 			}
 		}
+
+		// Return the average of the magnitudes which contain the maximum number of events
 		
 		double mmaxc = 0;
 		for (double mag : magsAtMax)
 			mmaxc += mag;
 		mmaxc /= (double)magsAtMax.size();
-		System.out.println("Mmaxc="+(float)mmaxc+" from MFD mode(s): "+Joiner.on(",").join(magsAtMax));
+
+		boolean f_verbose = AftershockVerbose.get_verbose_mode();
+		if (f_verbose) {
+			System.out.println("Mmaxc="+(float)mmaxc+" from MFD mode(s): "+Joiner.on(",").join(magsAtMax));
+		}
+
 		return mmaxc;
 	}
 
@@ -1223,7 +1253,12 @@ public class AftershockStatsCalc {
 			lon += 360;
 		Location centroid = new Location(lat, lon);
 		double dist = LocationUtils.horzDistanceFast(mainshock.getHypocenterLocation(), centroid);
-		System.out.println("Centroid: "+(float)lat+", "+(float)lon+" ("+(float)dist+" km from epicenter)");
+
+		boolean f_verbose = AftershockVerbose.get_verbose_mode();
+		if (f_verbose) {
+			System.out.println("Centroid: "+(float)lat+", "+(float)lon+" ("+(float)dist+" km from epicenter)");
+		}
+
 		return centroid;
 	}
 
@@ -1288,7 +1323,12 @@ public class AftershockStatsCalc {
 
 		Location centroid = new Location (lat, lon);
 		double dist = LocationUtils.horzDistance (mainshock.getHypocenterLocation(), centroid);
-		System.out.println (String.format ("Centroid: %.5f, %.5f (%.3f km from epicenter)", lat, lon, dist));
+
+		boolean f_verbose = AftershockVerbose.get_verbose_mode();
+		if (f_verbose) {
+			System.out.println (String.format ("Centroid: %.5f, %.5f (%.3f km from epicenter)", lat, lon, dist));
+		}
+
 		return centroid;
 	}
 

@@ -125,6 +125,8 @@ public class USGS_AftershockForecast {
 		this.eventDate = eventDate;
 		this.startDate = startDate;
 		this.includeProbAboveMainshock = includeProbAboveMainshock;
+				
+		boolean f_verbose = AftershockVerbose.get_verbose_mode();
 		
 		// calcualte number of observations for each bin
 		aftershockCounts = new int[minMags.length];
@@ -152,11 +154,15 @@ public class USGS_AftershockForecast {
 		}
 		
 		df.setTimeZone(utc);
-		System.out.println("Start date: "+df.format(Date.from(startDate)));
+		if (f_verbose) {
+			System.out.println("Start date: "+df.format(Date.from(startDate)));
+		}
 		for (int i=0; i<durations.length; i++) {
 			Duration duration = durations[i];
 			Instant endDate = duration.getEndDate(startDate);
-			System.out.println(duration.label+" end date: "+df.format(Date.from(endDate)));
+			if (f_verbose) {
+				System.out.println(duration.label+" end date: "+df.format(Date.from(endDate)));
+			}
 			
 			double tMinDays = getDateDelta(eventDate, startDate);
 			Preconditions.checkState(tMinDays >= 0d, "tMinDays must be positive: %s", tMinDays);

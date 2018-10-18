@@ -1,6 +1,7 @@
 package scratch.aftershockStatistics.aafs;
 
 //import java.util.GregorianCalendar;
+import java.util.List;
 
 import java.time.Instant;
 
@@ -153,6 +154,98 @@ public class ForecastResults {
 		long eventTime = mainshock.getOriginTime();
 		catalog_start_time = eventTime + (long)(params.min_days * ComcatAccessor.day_millis);
 		catalog_end_time = eventTime + (long)(params.max_days * ComcatAccessor.day_millis);
+
+		catalog_eqk_count = catalog_comcat_aftershocks.size();
+		catalog_aftershocks = new CompactEqkRupList (catalog_comcat_aftershocks);
+
+		if (catalog_eqk_count == 0) {
+			catalog_max_mag = 0.0;
+			catalog_max_event_id = "";
+		} else {
+			catalog_max_mag = -Double.MAX_VALUE;
+			for (ObsEqkRupture rup : catalog_comcat_aftershocks) {
+				double mag = rup.getMag();
+				if (mag > catalog_max_mag) {
+					catalog_max_mag = mag;
+					catalog_max_event_id = rup.getEventId();
+				}
+			}
+		}
+
+		catalog_result_avail = true;
+		return;
+	}
+
+	// calc_catalog_results_from_known_as - Calculate catalog results from a known aftershock sequence.
+	// Note: The purpose of this function is to inject simulated aftershock sequences of known
+	// statistical properties, for testing purposes.  The supplied aftershock sequence is
+	// filtered by time and magnitude.  It is not filtered by location or depth, because
+	// simulated sequences are unlikely to contain that information.
+
+	public void calc_catalog_results_from_known_as (ForecastMainshock fcmain,
+		ForecastParameters params, List<ObsEqkRupture> known_as) {
+
+		// Parameters must have mainshock
+
+		if (!( fcmain.mainshock_avail )) {
+			set_default_catalog_results();
+			catalog_result_avail = false;
+			return;
+		}
+
+		// Get the time range
+
+		ObsEqkRupture mainshock = fcmain.get_eqk_rupture();
+		//ObsEqkRupList catalog_comcat_aftershocks;		// if this isn't an object field
+
+		long eventTime = mainshock.getOriginTime();
+		catalog_start_time = eventTime + (long)(params.min_days * ComcatAccessor.day_millis);
+		catalog_end_time = eventTime + (long)(params.max_days * ComcatAccessor.day_millis);
+
+		// Loop over supplied aftershocks
+
+		catalog_comcat_aftershocks = new ObsEqkRupList();
+
+		int event_num = 0;
+
+		for (ObsEqkRupture rup : known_as) {
+
+			// Extract time, magnitude, event id, hypocenter
+
+			String rup_event_id = rup.getEventId();
+			long rup_time = rup.getOriginTime();
+			double rup_mag = rup.getMag();
+			Location hypo = rup.getHypocenterLocation();
+
+			// Count it
+
+			++event_num;
+
+			// If it passes the filter ...
+
+			if (rup_time >= catalog_start_time
+				&& rup_time <= catalog_end_time
+				&& rup_mag >= params.min_mag) {
+
+				// If no hypocenter supplied, replace with mainshock hypocenter
+
+				if (hypo == null) {
+					hypo = fcmain.get_eqk_location();
+				}
+
+				// If no event id supplied, replace with a generated id
+
+				if (rup_event_id == null) {
+					rup_event_id = "kas_" + Integer.toString(event_num);
+				}
+
+				// Add to our catalog
+
+				catalog_comcat_aftershocks.add (new ObsEqkRupture (rup_event_id, rup_time, hypo, rup_mag));
+			}
+		}
+
+		// Save catalog and info
 
 		catalog_eqk_count = catalog_comcat_aftershocks.size();
 		catalog_aftershocks = new CompactEqkRupList (catalog_comcat_aftershocks);
@@ -633,6 +726,23 @@ public class ForecastResults {
 		advisory_lag = the_advisory_lag;
 		injectable_text = ((the_injectable_text == null) ? "" : the_injectable_text);
 		calc_catalog_results (fcmain, params);
+		calc_generic_results (fcmain, params);
+		calc_seq_spec_results (fcmain, params, f_seq_spec);
+		calc_bayesian_results (fcmain, params);
+		return;
+	}
+
+	// Calculate all results from a known aftershock sequence.
+	// If f_seq_spec is false, then sequence specific results are not calculated.
+	// See comments for calc_catalog_results_from_known_as() regarding known_as.
+
+	public void calc_all_from_known_as (long the_result_time, long the_advisory_lag, String the_injectable_text,
+		ForecastMainshock fcmain, ForecastParameters params, boolean f_seq_spec, List<ObsEqkRupture> known_as) {
+
+		result_time = the_result_time;
+		advisory_lag = the_advisory_lag;
+		injectable_text = ((the_injectable_text == null) ? "" : the_injectable_text);
+		calc_catalog_results_from_known_as (fcmain, params, known_as);
 		calc_generic_results (fcmain, params);
 		calc_seq_spec_results (fcmain, params, f_seq_spec);
 		calc_bayesian_results (fcmain, params);

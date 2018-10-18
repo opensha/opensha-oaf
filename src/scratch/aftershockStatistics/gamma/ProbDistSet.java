@@ -215,42 +215,6 @@ public class ProbDistSet {
 
 
 
-	// Get the list of all aftershocks for the given event.
-	// Parameters:
-	//  gamma_config = Configuration information.
-	//  fcmain = Mainshock information.
-	// The returned list of earthquakes includes all aftershocks from the
-	// rupture time to the end of the longest advisory window of the
-	// maximum forecast lag.
-
-	public static List<ObsEqkRupture> get_all_aftershocks (GammaConfig gamma_config, ForecastMainshock fcmain) {
-	
-		// Get the aftershock list end lag
-
-		long as_end_lag = gamma_config.max_forecast_lag + gamma_config.max_adv_window_end_off;
-
-		// Get parameters
-
-		ForecastParameters params = new ForecastParameters();
-		params.fetch_all_params (as_end_lag, fcmain, null);
-
-		// Get catalog
-
-		ForecastResults results = new ForecastResults();
-		results.calc_catalog_results (fcmain, params);
-
-		if (!( results.catalog_result_avail )) {
-			throw new RuntimeException ("ProbDistSet.get_all_aftershocks: Failed to get aftershock catalog, event_id = " + fcmain.mainshock_event_id);
-		}
-
-		// Return the catalog
-
-		return results.catalog_comcat_aftershocks;
-	}
-
-
-
-
 	// Compute probability distribution statistics.
 	// Parameters:
 	//  gamma_config = Configuration information.
@@ -419,7 +383,7 @@ public class ProbDistSet {
 
 			// Get catalog of all aftershocks
 
-			List<ObsEqkRupture> all_aftershocks = get_all_aftershocks (gamma_config, fcmain);
+			List<ObsEqkRupture> all_aftershocks = GammaUtils.get_all_aftershocks (gamma_config, fcmain);
 
 			System.out.println ("");
 			System.out.println ("Total number of aftershocks = " + all_aftershocks.size());

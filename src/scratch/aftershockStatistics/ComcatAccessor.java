@@ -58,8 +58,10 @@ import scratch.aftershockStatistics.aafs.ServerConfig;
  * Extensively modified by: Michael Barall.
  */
 public class ComcatAccessor {
+
+	// Flag is set true to write progress to System.out.
 	
-	private static final boolean D = true;
+	protected boolean D = true;
 
 	// The Comcat service provider.
 	// This is never null, even if a local catalog is in use.
@@ -97,6 +99,17 @@ public class ComcatAccessor {
 	// This is used to detect if different filenames are selected.
 
 	protected static String[] cached_locat_filenames = null;
+
+
+
+
+	/**
+	 * Turn verbose mode on or off.
+	 */
+	public void set_verbose (boolean f_verbose) {
+		D = f_verbose;
+		return;
+	}
 
 
 
@@ -172,7 +185,9 @@ public class ComcatAccessor {
 
 				// Load a new local catalog
 
-				if (D) {
+				boolean f_verbose = AftershockVerbose.get_verbose_mode();
+
+				if (f_verbose) {
 					System.out.println ("Loading catalog: " + "[" + String.join (", ", the_local_filenames) + "]");
 				}
 
@@ -183,7 +198,7 @@ public class ComcatAccessor {
 					throw new RuntimeException ("ComcatAccessor: Error loading local catalog: " + "[" + String.join (", ", the_local_filenames) + "]");
 				}
 
-				if (D) {
+				if (f_verbose) {
 					System.out.println (the_local_catalog.get_summary_string());
 				}
 
@@ -214,6 +229,26 @@ public class ComcatAccessor {
 
 
 
+
+	// Load the local catalog into memory.
+	// If not explicitly loaded, then the local catalog will be loaded in the constructor.
+	// If the local catalog is already loaded, or if no local catalog is specified
+	// in the system configuration, then perform no operation.
+
+	public static void load_local_catalog () {
+
+		// Obtain program configuration
+
+		ServerConfig server_config = new ServerConfig();
+
+		// Load the catalog
+
+		get_cached_local_catalog (server_config.get_locat_filenames(), server_config.get_locat_bins());
+		return;
+	}
+
+
+
 	
 	// Construct an object to be used for accessing Comcat.
 	// If f_use_config is true, then program configuration information is used
@@ -227,6 +262,10 @@ public class ComcatAccessor {
 	}
 
 	public ComcatAccessor (boolean f_use_config) {
+
+		// Establish verbose mode
+
+		D = AftershockVerbose.get_verbose_mode();
 
 		// Obtain program configuration
 

@@ -90,6 +90,15 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 
 
+
+	// Get the number of aftershocks that were used to determine parameters.
+
+	public int get_num_aftershocks () {
+		return numAftershocks;
+	}
+
+
+
 	
 	/**
 	 * Use this constructor to initialize from parameter holders.
@@ -293,55 +302,58 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 		apc_likelihood = new double[num_a][num_p][num_c];
 		double ln10 = Math.log(10);
 
-		// Loop over c first, so we can accumulate log(t+c)
+		// Sum of magMain - magMin(t_i)
 
+		double sum1 = 0.0;
+
+		// Sum of log(t_i + c)
+
+		double[] sum2 = new double[num_c];
 		for(int cIndex = 0; cIndex < num_c; cIndex++) {
-			double c = get_c(cIndex);
+			sum2[cIndex] = 0.0;
+		}
 
-			// Sum of magMain - magMin(t_i)
+		// Number of aftershocks
 
-			double sum1 = 0.0;
+		int numEvents = 0;
 
-			// Sum of log(t_i + c)
+		// Scan list of aftershocks
 
-			double sum2 = 0.0;
+		for(ObsEqkRupture rup:aftershockList) {
 
-			// Number of aftershocks
+			// Get time since the mainshock in days, skip it if it is outside our time interval
 
-			int numEvents = 0;
-
-			// Scan list of aftershocks
-
-			for(ObsEqkRupture rup:aftershockList) {
-
-				// Get time since the mainshock in days, skip it if it is outside our time interval
-
-				double timeSinceMainDays = (double)(rup.getOriginTime()-mainShock.getOriginTime()) / (double)AftershockStatsCalc.MILLISEC_PER_DAY;
-				if(timeSinceMainDays < dataStartTimeDays || timeSinceMainDays > dataEndTimeDays) { // not necessary if list already filtered
-					continue;
-				}
-
-				// Get the magnitude of completeness at this time
-
-				double magMin = AftershockStatsCalc.getPageMagCompleteness(
-									magMain, magCat, capG, capH, timeSinceMainDays);
-
-				// If the aftershock magnitude is at least the magnitude of completeness, accumulate it
-
-				if(rup.getMag() >= magMin) {
-					numEvents += 1;
-					sum1 += (magMain - magMin);
-					sum2 += Math.log(timeSinceMainDays + c);
-					++numAftershocks;
-				}
+			double timeSinceMainDays = (double)(rup.getOriginTime()-mainShock.getOriginTime()) / (double)AftershockStatsCalc.MILLISEC_PER_DAY;
+			if(timeSinceMainDays < dataStartTimeDays || timeSinceMainDays > dataEndTimeDays) { // not necessary if list already filtered
+				continue;
 			}
 
-			// Now loop over p and a
+			// Get the magnitude of completeness at this time
 
-			for(int pIndex=0;pIndex<num_p;pIndex++) {
-				double p = get_p(pIndex);
-				for(int aIndex=0;aIndex<num_a;aIndex++) {
-					double a = get_a(aIndex);
+			double magMin = AftershockStatsCalc.getPageMagCompleteness(
+								magMain, magCat, capG, capH, timeSinceMainDays);
+
+			// If the aftershock magnitude is at least the magnitude of completeness, accumulate it
+
+			if(rup.getMag() >= magMin) {
+				numEvents += 1;
+				sum1 += (magMain - magMin);
+				for(int cIndex = 0; cIndex < num_c; cIndex++) {
+					double c = get_c(cIndex);
+					sum2[cIndex] += Math.log(timeSinceMainDays + c);
+				}
+				++numAftershocks;
+			}
+		}
+
+		// Now loop over p and a
+
+		for(int pIndex=0;pIndex<num_p;pIndex++) {
+			double p = get_p(pIndex);
+			for(int aIndex=0;aIndex<num_a;aIndex++) {
+				double a = get_a(aIndex);
+				for(int cIndex = 0; cIndex < num_c; cIndex++) {
+					double c = get_c(cIndex);
 
 					// Compute the integral of the aftershock rate over the time interval
 
@@ -350,7 +362,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 					// Form the log likelihood
 
-					double logLike = numEvents*a*ln10 + b*ln10*sum1 - p*sum2 - integral;
+					double logLike = numEvents*a*ln10 + b*ln10*sum1 - p*sum2[cIndex] - integral;
 
 					// Save it as the array element
 

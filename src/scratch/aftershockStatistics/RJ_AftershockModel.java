@@ -313,7 +313,7 @@ public abstract class RJ_AftershockModel {
 	protected double get_c_from_single_index (int index) {return get_c (index % num_c);}
 
 	// Get index value from a/p/c value.
-	// Note: This is primary for testing.
+	// Note: This is primarily for testing.
 
 	public int get_aIndex_from_a (double the_a) {
 		if (num_a == 1) {
@@ -338,6 +338,7 @@ public abstract class RJ_AftershockModel {
 
 	// Get the probability for the given indexes,
 	// clipped and rescaled so small tail elements are forced to zero.
+	// Note: This is primarily for testing.
 
 	public double get_clipped_apc_prob (int aIndex, int pIndex, int cIndex) {
 		double result = apc_likelihood[aIndex][pIndex][cIndex];
@@ -354,9 +355,18 @@ public abstract class RJ_AftershockModel {
 	/**
 	 * Turn verbose mode on or off.
 	 */
-	public void set_verbose(boolean f_verbose) {
+	public void set_verbose (boolean f_verbose) {
 		D = f_verbose;
 		return;
+	}
+
+
+
+	/**
+	 * Constructor establishes verbose mode.
+	 */
+	public RJ_AftershockModel () {
+		D = AftershockVerbose.get_verbose_mode();
 	}
 
 

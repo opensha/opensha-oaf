@@ -43,6 +43,10 @@ public class LogLikeSet {
 
 	private int num_sim;
 
+	// True if explicitly set to zero.
+
+	private boolean is_zero;
+
 	// Array of log-likelihoods for simulations.
 	// Dimension of the array is
 	//  sim_log_like[adv_window_count][adv_min_mag_bin_count][num_sim].
@@ -78,6 +82,7 @@ public class LogLikeSet {
 	public LogLikeSet () {
 		forecast_lag = -1L;
 		num_sim = -1;
+		is_zero = false;
 		sim_log_like = null;
 		sim_event_count = null;
 		obs_log_like = null;
@@ -105,10 +110,20 @@ public class LogLikeSet {
 		forecast_lag = the_forecast_lag;
 		num_sim = the_num_sim;
 
+		// Adjust zero flag
+
+		is_zero = false;
+
 		// Number of advisory windows and magnitude bins
 
 		int num_adv_win = gamma_config.adv_window_count;
 		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// If no epistemic uncertainty desired, replace the model with a fixed-parameter model
+
+		if (gamma_config.no_epistemic_uncertainty) {
+			model = RJ_AftershockModel_Generic.from_max_like (model);
+		}
 
 		// Allocate all the arrays
 
@@ -162,7 +177,7 @@ public class LogLikeSet {
 			// Run the simulation
 
 			ObsEqkRupList sim_aftershocks = AftershockStatsCalc.simAftershockSequence (
-						a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays, gamma_config.rangen);
+						a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays, 0L, gamma_config.rangen);
 
 			// Find the maximum magnitude
 
@@ -223,6 +238,10 @@ public class LogLikeSet {
 		forecast_lag = the_forecast_lag;
 		num_sim = the_num_sim;
 
+		// Adjust zero flag
+
+		is_zero = true;
+
 		// Number of advisory windows and magnitude bins
 
 		int num_adv_win = gamma_config.adv_window_count;
@@ -267,6 +286,13 @@ public class LogLikeSet {
 
 		int num_adv_win = gamma_config.adv_window_count;
 		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Adjust zero flag
+
+		if (other.is_zero) {
+			return;
+		}
+		is_zero = false;
 
 		// Add observed data
 
@@ -591,6 +617,7 @@ public class LogLikeSet {
 
 		writer.marshalLong          ("forecast_lag"   , forecast_lag   );
 		writer.marshalInt           ("num_sim"        , num_sim        );
+		writer.marshalBoolean       ("is_zero"        , is_zero        );
 		writer.marshalDouble3DArray ("sim_log_like"   , sim_log_like   );
 		writer.marshalInt3DArray    ("sim_event_count", sim_event_count);
 		writer.marshalDouble2DArray ("obs_log_like"   , obs_log_like   );
@@ -611,6 +638,7 @@ public class LogLikeSet {
 
 		forecast_lag    = reader.unmarshalLong          ("forecast_lag"   );
 		num_sim         = reader.unmarshalInt           ("num_sim"        );
+		is_zero         = reader.unmarshalBoolean       ("is_zero"        );
 		sim_log_like    = reader.unmarshalDouble3DArray ("sim_log_like"   );
 		sim_event_count = reader.unmarshalInt3DArray    ("sim_event_count");
 		obs_log_like    = reader.unmarshalDouble2DArray ("obs_log_like"   );
@@ -949,7 +977,7 @@ public class LogLikeSet {
 
 			// Get catalog of all aftershocks
 
-			List<ObsEqkRupture> all_aftershocks = ProbDistSet.get_all_aftershocks (gamma_config, fcmain);
+			List<ObsEqkRupture> all_aftershocks = GammaUtils.get_all_aftershocks (gamma_config, fcmain);
 
 			System.out.println ("");
 			System.out.println ("Total number of aftershocks = " + all_aftershocks.size());
@@ -1164,7 +1192,7 @@ public class LogLikeSet {
 
 			// Get catalog of all aftershocks
 
-			List<ObsEqkRupture> all_aftershocks = ProbDistSet.get_all_aftershocks (gamma_config, fcmain);
+			List<ObsEqkRupture> all_aftershocks = GammaUtils.get_all_aftershocks (gamma_config, fcmain);
 
 			System.out.println ("");
 			System.out.println ("Total number of aftershocks = " + all_aftershocks.size());
@@ -1280,7 +1308,7 @@ public class LogLikeSet {
 
 			// Get catalog of all aftershocks
 
-			List<ObsEqkRupture> all_aftershocks = ProbDistSet.get_all_aftershocks (gamma_config, fcmain);
+			List<ObsEqkRupture> all_aftershocks = GammaUtils.get_all_aftershocks (gamma_config, fcmain);
 
 			System.out.println ("");
 			System.out.println ("Total number of aftershocks = " + all_aftershocks.size());

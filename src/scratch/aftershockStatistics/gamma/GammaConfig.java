@@ -93,14 +93,21 @@ public class GammaConfig {
 
 	public int eqk_summation_count;
 
-	// True to randomize slots when summing over earthquakes.
+	// True to randomize slots when summing over earthquakes (default = true).
 
 	public boolean eqk_summation_randomize;
 
-	// True to discard simulations with an aftershock larger than the mainshock.
+	// True to discard simulations with an aftershock larger than the mainshock (default = true).
 
 	public boolean discard_sim_with_large_as;
 
+	// True to run simulations with zero epistemic uncertainty (default = false).
+
+	public boolean no_epistemic_uncertainty;
+
+	// Minimum number of aftershocks required to use sequence specific model.
+
+	public int seq_spec_min_aftershocks;
 
 
 
@@ -138,13 +145,19 @@ public class GammaConfig {
 
 		// Fill in simulation parameters
 
-		simulation_count = 1000;
 		rangen = new UniformRealDistribution();
+		for (int i = 0; i < 1000000; ++i) {
+			rangen.sample();
+		}
+
+		simulation_count = 1000;
 		sim_start_off = 60000L;
 
 		eqk_summation_count = 10000;
 		eqk_summation_randomize = true;
 		discard_sim_with_large_as = true;
+		no_epistemic_uncertainty = false;
+		seq_spec_min_aftershocks = 3;
 	}
 
 
@@ -220,6 +233,9 @@ public class GammaConfig {
 		result.append ("sim_start_off = " + SimpleUtils.duration_raw_and_string (sim_start_off) + "\n");
 		result.append ("eqk_summation_count = " + eqk_summation_count + "\n");
 		result.append ("eqk_summation_randomize = " + eqk_summation_randomize + "\n");
+		result.append ("discard_sim_with_large_as = " + discard_sim_with_large_as + "\n");
+		result.append ("no_epistemic_uncertainty = " + no_epistemic_uncertainty + "\n");
+		result.append ("seq_spec_min_aftershocks = " + seq_spec_min_aftershocks + "\n");
 
 		return result.toString();
 	}

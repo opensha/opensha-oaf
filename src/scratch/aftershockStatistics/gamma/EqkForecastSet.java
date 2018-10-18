@@ -9,6 +9,14 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import scratch.aftershockStatistics.ComcatAccessor;
 import scratch.aftershockStatistics.AftershockStatsCalc;
 import scratch.aftershockStatistics.RJ_AftershockModel;
+import scratch.aftershockStatistics.RJ_AftershockModel_Generic;
+import scratch.aftershockStatistics.GenericRJ_Parameters;
+import scratch.aftershockStatistics.GenericRJ_ParametersFetch;
+import scratch.aftershockStatistics.MagCompPage_Parameters;
+import scratch.aftershockStatistics.MagCompPage_ParametersFetch;
+import scratch.aftershockStatistics.OAFTectonicRegime;
+import scratch.aftershockStatistics.SeqSpecRJ_Parameters;
+import scratch.aftershockStatistics.RJ_Summary_Generic;
 
 import scratch.aftershockStatistics.aafs.ForecastMainshock;
 import scratch.aftershockStatistics.aafs.ForecastParameters;
@@ -93,7 +101,7 @@ public class EqkForecastSet {
 
 		// Get catalog of all aftershocks
 
-		List<ObsEqkRupture> all_aftershocks = ProbDistSet.get_all_aftershocks (gamma_config, fcmain);
+		List<ObsEqkRupture> all_aftershocks = GammaUtils.get_all_aftershocks (gamma_config, fcmain);
 
 		// Loop over forecast lags ...
 
@@ -113,9 +121,13 @@ public class EqkForecastSet {
 			ForecastResults results = new ForecastResults();
 			results.calc_all (fcmain.mainshock_time + forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "", fcmain, params, true);
 
-			if (!( results.generic_result_avail
-				&& results.seq_spec_result_avail
-				&& results.bayesian_result_avail )) {
+			//if (!( results.generic_result_avail
+			//	&& results.seq_spec_result_avail
+			//	&& results.bayesian_result_avail )) {
+			//	throw new RuntimeException ("EqkForecastSet: Failed to compute aftershock models");
+			//}
+
+			if (!( results.generic_result_avail )) {
 				throw new RuntimeException ("EqkForecastSet: Failed to compute aftershock models");
 			}
 
@@ -127,15 +139,220 @@ public class EqkForecastSet {
 
 			// Sequence specific model
 
-			log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].run_simulations (
-				gamma_config, forecast_lag, num_sim,
-				fcmain, results.seq_spec_model, all_aftershocks, verbose);
+			if (results.seq_spec_result_avail
+				&& results.seq_spec_model.get_num_aftershocks() >= gamma_config.seq_spec_min_aftershocks) {
+
+				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].run_simulations (
+					gamma_config, forecast_lag, num_sim,
+					fcmain, results.seq_spec_model, all_aftershocks, verbose);
+			}
+			else {
+				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].zero_init (
+					gamma_config, forecast_lag, num_sim);
+			}
 
 			// Bayesian model
 
-			log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].run_simulations (
+			if (results.bayesian_result_avail
+				&& results.seq_spec_result_avail
+				&& results.seq_spec_model.get_num_aftershocks() >= gamma_config.seq_spec_min_aftershocks) {
+
+				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].run_simulations (
+					gamma_config, forecast_lag, num_sim,
+					fcmain, results.bayesian_model, all_aftershocks, verbose);
+			}
+			else {
+				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].zero_init (
+					gamma_config, forecast_lag, num_sim);
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Run simulations for simulated data.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  the_num_sim = The number of simulations to run.
+	//  the_fcmain = Mainshock information.
+	//	cat_min_mag = Minimum magnitude for simulated aftershock catalog.
+	//  f_epi = True to use epistemic uncertaintly when choosing simulation parameters.
+	//  verbose = True to write output for each simulation.
+	//  show_models = True to write summary for each R&J model.
+
+	public void run_sim_simulations (GammaConfig gamma_config, int the_num_sim,
+		ForecastMainshock the_fcmain, double cat_min_mag, boolean f_epi, boolean verbose, boolean show_models) {
+
+		// Save number of simulations and mainshock information
+
+		num_sim = the_num_sim;
+		fcmain = the_fcmain;
+
+		// Number of forecast lags and aftershock models
+
+		int num_fc_lag = gamma_config.forecast_lag_count;
+		int num_model = gamma_config.model_kind_count;
+
+		// Allocate all the arrays
+
+		log_like_sets = new LogLikeSet[num_fc_lag][num_model];
+
+		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
+			for (int i_model = 0; i_model < num_model; ++i_model) {
+				log_like_sets[i_fc_lag][i_model] = new LogLikeSet();
+			}
+		}
+
+		// Get the generic model for this mainshock, to use for simulation parameters
+
+		GenericRJ_ParametersFetch fetch = new GenericRJ_ParametersFetch();
+		OAFTectonicRegime regime = fetch.getRegion (fcmain.get_eqk_location());
+		GenericRJ_Parameters sim_generic_params = fetch.get (regime);
+		RJ_AftershockModel_Generic sim_generic_model = new RJ_AftershockModel_Generic (fcmain.mainshock_mag, sim_generic_params);
+
+		if (show_models) {
+			RJ_Summary_Generic sim_generic_summary = new RJ_Summary_Generic (sim_generic_model);
+			System.out.println ("Mainshock generic model:");
+			System.out.println (sim_generic_summary.toString());
+		}
+
+		// Loop to reject simulations with magnitude larger than mainshock
+
+		List<ObsEqkRupture> all_aftershocks;
+
+		for (;;) {
+
+			// Choose simulation parameters, either using epistemic prob dist, or max likelihood values
+
+			double[] apcval = new double[3];
+			if (f_epi) {
+				sim_generic_model.sample_apc (gamma_config.rangen.sample(), apcval);
+			} else {
+				apcval[0] = sim_generic_model.getMaxLikelihood_a();
+				apcval[1] = sim_generic_model.getMaxLikelihood_p();
+				apcval[2] = sim_generic_model.getMaxLikelihood_c();
+			}
+		
+			double a = apcval[0];
+			double b = sim_generic_model.get_b();
+			double magMain = fcmain.mainshock_mag;
+			double magCat = cat_min_mag;
+			double capG = 10.0;
+			double capH = 0.0;
+			double p = apcval[1];
+			double c = apcval[2];
+			//double tMinDays = ((double)(gamma_config.sim_start_off)) / ComcatAccessor.day_millis;
+			double tMinDays = 0.0;
+			double tMaxDays = ((double)(gamma_config.max_forecast_lag + gamma_config.max_adv_window_end_off)) / ComcatAccessor.day_millis;
+			long originTime = fcmain.mainshock_time;
+
+			// Run the simulation
+
+			all_aftershocks = AftershockStatsCalc.simAftershockSequence (
+						a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays, originTime, gamma_config.rangen);
+
+			// Find the maximum magnitude
+
+			double max_mag = -1000.0;
+			for (ObsEqkRupture rup : all_aftershocks) {
+				double mag = rup.getMag();
+				if (max_mag < mag) {
+					max_mag = mag;
+				}
+			}
+
+			// If maximum magnitude does not exceed mainshock, stop
+
+			if (!( gamma_config.discard_sim_with_large_as )) {
+				break;
+			}
+
+			if (max_mag <= magMain) {
+				break;
+			}
+		}
+
+		// Loop over forecast lags ...
+
+		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
+
+			// Get the forecast lag
+
+			long forecast_lag = gamma_config.forecast_lags[i_fc_lag];
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (forecast_lag, fcmain, null);
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all_from_known_as (fcmain.mainshock_time + forecast_lag,
+				ForecastResults.ADVISORY_LAG_WEEK, "", fcmain, params, true, all_aftershocks);
+
+			//if (!( results.generic_result_avail
+			//	&& results.seq_spec_result_avail
+			//	&& results.bayesian_result_avail )) {
+			//	throw new RuntimeException ("EqkForecastSet: Failed to compute aftershock models");
+			//}
+
+			if (!( results.generic_result_avail )) {
+				throw new RuntimeException ("EqkForecastSet: Failed to compute aftershock models");
+			}
+
+			// Generic model
+
+			if (show_models) {
+				System.out.println ("Generic model:");
+				System.out.println (results.generic_summary.toString());
+			}
+
+			log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_GENERIC].run_simulations (
 				gamma_config, forecast_lag, num_sim,
-				fcmain, results.bayesian_model, all_aftershocks, verbose);
+				fcmain, results.generic_model, all_aftershocks, verbose);
+
+			// Sequence specific model
+
+			if (results.seq_spec_result_avail
+				&& results.seq_spec_model.get_num_aftershocks() >= gamma_config.seq_spec_min_aftershocks) {
+
+				if (show_models) {
+					System.out.println ("Sequence specific model:");
+					System.out.println (results.seq_spec_summary.toString());
+				}
+
+				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].run_simulations (
+					gamma_config, forecast_lag, num_sim,
+					fcmain, results.seq_spec_model, all_aftershocks, verbose);
+			}
+			else {
+				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].zero_init (
+					gamma_config, forecast_lag, num_sim);
+			}
+
+			// Bayesian model
+
+			if (results.bayesian_result_avail
+				&& results.seq_spec_result_avail
+				&& results.seq_spec_model.get_num_aftershocks() >= gamma_config.seq_spec_min_aftershocks) {
+
+				if (show_models) {
+					System.out.println ("Bayesian model:");
+					System.out.println (results.bayesian_summary.toString());
+				}
+
+				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].run_simulations (
+					gamma_config, forecast_lag, num_sim,
+					fcmain, results.bayesian_model, all_aftershocks, verbose);
+			}
+			else {
+				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].zero_init (
+					gamma_config, forecast_lag, num_sim);
+			}
 		}
 
 		return;
