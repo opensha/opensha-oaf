@@ -109,6 +109,10 @@ public class GammaConfig {
 
 	public int seq_spec_min_aftershocks;
 
+	// Minimum number of aftershocks required to use bayesian model.
+
+	public int bayesian_min_aftershocks;
+
 
 
 
@@ -158,6 +162,7 @@ public class GammaConfig {
 		discard_sim_with_large_as = true;
 		no_epistemic_uncertainty = false;
 		seq_spec_min_aftershocks = 3;
+		bayesian_min_aftershocks = 0;
 	}
 
 
@@ -188,7 +193,7 @@ public class GammaConfig {
 
 		result.append ("forecast_lags = [" + "\n");
 		for (int i = 0; i < forecast_lags.length; ++i) {
-			result.append ("  " + i + ":  " + SimpleUtils.duration_raw_and_string (forecast_lags[i]) + "\n");
+			result.append ("  " + i + ":  " + SimpleUtils.duration_raw_and_string_2 (forecast_lags[i]) + "\n");
 		}
 		result.append ("]" + "\n");
 
@@ -205,13 +210,13 @@ public class GammaConfig {
 
 		result.append ("adv_window_start_offs = [" + "\n");
 		for (int i = 0; i < adv_window_start_offs.length; ++i) {
-			result.append ("  " + i + ":  " + SimpleUtils.duration_raw_and_string (adv_window_start_offs[i]) + "\n");
+			result.append ("  " + i + ":  " + SimpleUtils.duration_raw_and_string_2 (adv_window_start_offs[i]) + "\n");
 		}
 		result.append ("]" + "\n");
 
 		result.append ("adv_window_end_offs = [" + "\n");
 		for (int i = 0; i < adv_window_end_offs.length; ++i) {
-			result.append ("  " + i + ":  " + SimpleUtils.duration_raw_and_string (adv_window_end_offs[i]) + "\n");
+			result.append ("  " + i + ":  " + SimpleUtils.duration_raw_and_string_2 (adv_window_end_offs[i]) + "\n");
 		}
 		result.append ("]" + "\n");
 
@@ -230,12 +235,13 @@ public class GammaConfig {
 		result.append ("]" + "\n");
 
 		result.append ("simulation_count = " + simulation_count + "\n");
-		result.append ("sim_start_off = " + SimpleUtils.duration_raw_and_string (sim_start_off) + "\n");
+		result.append ("sim_start_off = " + SimpleUtils.duration_raw_and_string_2 (sim_start_off) + "\n");
 		result.append ("eqk_summation_count = " + eqk_summation_count + "\n");
 		result.append ("eqk_summation_randomize = " + eqk_summation_randomize + "\n");
 		result.append ("discard_sim_with_large_as = " + discard_sim_with_large_as + "\n");
 		result.append ("no_epistemic_uncertainty = " + no_epistemic_uncertainty + "\n");
 		result.append ("seq_spec_min_aftershocks = " + seq_spec_min_aftershocks + "\n");
+		result.append ("bayesian_min_aftershocks = " + bayesian_min_aftershocks + "\n");
 
 		return result.toString();
 	}
@@ -257,7 +263,7 @@ public class GammaConfig {
 	// This is used for naming an extra element representing the sum over forecast lags.
 
 	public String get_forecast_lag_string_or_sum (int i) {
-		return ((i == forecast_lag_count) ? "Sum-Lag" : SimpleUtils.duration_to_string (forecast_lags[i]));
+		return ((i == forecast_lag_count) ? "Sum-Lag" : SimpleUtils.duration_to_string_2 (forecast_lags[i]));
 	}
 
 

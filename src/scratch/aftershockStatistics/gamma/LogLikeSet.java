@@ -985,7 +985,7 @@ public class LogLikeSet {
 			// Generic model
 
 			System.out.println ("");
-			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 
 			LogLikeSet generic_log_like_set = new LogLikeSet();
 			generic_log_like_set.run_simulations (gamma_config, the_forecast_lag, gamma_config.simulation_count,
@@ -1033,7 +1033,7 @@ public class LogLikeSet {
 			// Sequence specific model
 
 			System.out.println ("");
-			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 
 			LogLikeSet seq_spec_log_like_set = new LogLikeSet();
 			seq_spec_log_like_set.run_simulations (gamma_config, the_forecast_lag, gamma_config.simulation_count,
@@ -1081,7 +1081,7 @@ public class LogLikeSet {
 			// Bayesian model
 
 			System.out.println ("");
-			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 
 			LogLikeSet bayesian_log_like_set = new LogLikeSet();
 			bayesian_log_like_set.run_simulations (gamma_config, the_forecast_lag, gamma_config.simulation_count,
@@ -1200,7 +1200,7 @@ public class LogLikeSet {
 			// Generic model
 
 			System.out.println ("");
-			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 			System.out.println ("");
 
 			compare_sim_to_prob (gamma_config, the_forecast_lag, the_num_sim,
@@ -1209,7 +1209,7 @@ public class LogLikeSet {
 			// Sequence specific model
 
 			System.out.println ("");
-			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 			System.out.println ("");
 
 			compare_sim_to_prob (gamma_config, the_forecast_lag, the_num_sim,
@@ -1218,7 +1218,7 @@ public class LogLikeSet {
 			// Bayesian model
 
 			System.out.println ("");
-			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 			System.out.println ("");
 
 			compare_sim_to_prob (gamma_config, the_forecast_lag, the_num_sim,
@@ -1227,7 +1227,7 @@ public class LogLikeSet {
 			// Zero-epistemic generic model with no epistemic uncertainty
 
 			System.out.println ("");
-			System.out.println ("Zero-epistemic model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Zero-epistemic model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 			System.out.println ("");
 
 			double ze_magMain = results.generic_model.getMainShockMag();
@@ -1316,7 +1316,7 @@ public class LogLikeSet {
 			// Generic model
 
 			System.out.println ("");
-			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 			System.out.println ("");
 
 			test_epi_selection (gamma_config, the_num_sim, results.generic_model);
@@ -1324,7 +1324,7 @@ public class LogLikeSet {
 			// Sequence specific model
 
 			System.out.println ("");
-			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 			System.out.println ("");
 
 			test_epi_selection (gamma_config, the_num_sim, results.seq_spec_model);
@@ -1332,7 +1332,7 @@ public class LogLikeSet {
 			// Bayesian model
 
 			System.out.println ("");
-			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 			System.out.println ("");
 
 			test_epi_selection (gamma_config, the_num_sim, results.bayesian_model);
@@ -1340,7 +1340,7 @@ public class LogLikeSet {
 			// Zero-epistemic generic model with no epistemic uncertainty
 
 			System.out.println ("");
-			System.out.println ("Zero-epistemic model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Zero-epistemic model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 			System.out.println ("");
 
 			double ze_magMain = results.generic_model.getMainShockMag();

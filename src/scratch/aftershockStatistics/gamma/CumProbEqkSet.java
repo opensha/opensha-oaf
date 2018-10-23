@@ -29,17 +29,17 @@ import scratch.aftershockStatistics.util.MarshalException;
 
 
 /**
- * A set of log-likelihood setss for an earthquake.
- * Author: Michael Barall 10/10/2018.
+ * A set of cumulative probability sets for an earthquake.
+ * Author: Michael Barall 10/20/2018.
  *
- * This object holds a set of log-likelihood sets for a single earthquake.
- * There is one log-likelihood set for each forecast lag and aftershock model.
+ * This object holds a set of cumulative probability sets for a single earthquake.
+ * There is one cumulative probability set for each forecast lag and aftershock model.
  */
-public class EqkForecastSet {
+public class CumProbEqkSet {
 
 	//----- Data -----
 
-	// Number of simulations.
+	// Number of simulations (not used for this class).
 
 	private int num_sim;
 
@@ -47,11 +47,11 @@ public class EqkForecastSet {
 
 	private ForecastMainshock fcmain;
 
-	// Array of log-likelihood sets for the earthquake.
+	// Array of cumulative probability sets for the earthquake.
 	// Dimension of the array is
-	//  obs_log_like[forecast_lag_count][model_kind_count].
+	//  cum_prob_sets[forecast_lag_count][model_kind_count].
 	
-	private LogLikeSet[][] log_like_sets;
+	private CumProbSet[][] cum_prob_sets;
 
 
 
@@ -60,16 +60,17 @@ public class EqkForecastSet {
 
 	// Constructor creates an empty object.
 
-	public EqkForecastSet () {
+	public CumProbEqkSet () {
 		fcmain = null;
 		num_sim = -1;
-		log_like_sets = null;
+		cum_prob_sets = null;
 	}
 
 
 
 
 	// Run simulations.
+	// (Despite the name, this function does not run simulations, it uses the analytic formulas.)
 	// Parameters:
 	//  gamma_config = Configuration information.
 	//  the_num_sim = The number of simulations to run.
@@ -91,11 +92,11 @@ public class EqkForecastSet {
 
 		// Allocate all the arrays
 
-		log_like_sets = new LogLikeSet[num_fc_lag][num_model];
+		cum_prob_sets = new CumProbSet[num_fc_lag][num_model];
 
 		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
 			for (int i_model = 0; i_model < num_model; ++i_model) {
-				log_like_sets[i_fc_lag][i_model] = new LogLikeSet();
+				cum_prob_sets[i_fc_lag][i_model] = new CumProbSet();
 			}
 		}
 
@@ -124,16 +125,16 @@ public class EqkForecastSet {
 			//if (!( results.generic_result_avail
 			//	&& results.seq_spec_result_avail
 			//	&& results.bayesian_result_avail )) {
-			//	throw new RuntimeException ("EqkForecastSet: Failed to compute aftershock models");
+			//	throw new RuntimeException ("CumProbEqkSet: Failed to compute aftershock models");
 			//}
 
 			if (!( results.generic_result_avail )) {
-				throw new RuntimeException ("EqkForecastSet: Failed to compute aftershock models");
+				throw new RuntimeException ("CumProbEqkSet: Failed to compute aftershock models");
 			}
 
 			// Generic model
 
-			log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_GENERIC].run_simulations (
+			cum_prob_sets[i_fc_lag][GammaConfig.MODEL_KIND_GENERIC].run_simulations (
 				gamma_config, forecast_lag, num_sim,
 				fcmain, results.generic_model, all_aftershocks, verbose);
 
@@ -142,12 +143,12 @@ public class EqkForecastSet {
 			if (results.seq_spec_result_avail
 				&& results.seq_spec_model.get_num_aftershocks() >= gamma_config.seq_spec_min_aftershocks) {
 
-				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].run_simulations (
+				cum_prob_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].run_simulations (
 					gamma_config, forecast_lag, num_sim,
 					fcmain, results.seq_spec_model, all_aftershocks, verbose);
 			}
 			else {
-				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].zero_init (
+				cum_prob_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].zero_init (
 					gamma_config, forecast_lag, num_sim);
 			}
 
@@ -157,12 +158,12 @@ public class EqkForecastSet {
 				&& results.seq_spec_result_avail
 				&& results.seq_spec_model.get_num_aftershocks() >= gamma_config.bayesian_min_aftershocks) {
 
-				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].run_simulations (
+				cum_prob_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].run_simulations (
 					gamma_config, forecast_lag, num_sim,
 					fcmain, results.bayesian_model, all_aftershocks, verbose);
 			}
 			else {
-				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].zero_init (
+				cum_prob_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].zero_init (
 					gamma_config, forecast_lag, num_sim);
 			}
 		}
@@ -174,6 +175,7 @@ public class EqkForecastSet {
 
 
 	// Run simulations for simulated data.
+	// (Despite the name, this function does not run simulations, it uses the analytic formulas.)
 	// Parameters:
 	//  gamma_config = Configuration information.
 	//  the_num_sim = The number of simulations to run.
@@ -198,11 +200,11 @@ public class EqkForecastSet {
 
 		// Allocate all the arrays
 
-		log_like_sets = new LogLikeSet[num_fc_lag][num_model];
+		cum_prob_sets = new CumProbSet[num_fc_lag][num_model];
 
 		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
 			for (int i_model = 0; i_model < num_model; ++i_model) {
-				log_like_sets[i_fc_lag][i_model] = new LogLikeSet();
+				cum_prob_sets[i_fc_lag][i_model] = new CumProbSet();
 			}
 		}
 
@@ -297,11 +299,11 @@ public class EqkForecastSet {
 			//if (!( results.generic_result_avail
 			//	&& results.seq_spec_result_avail
 			//	&& results.bayesian_result_avail )) {
-			//	throw new RuntimeException ("EqkForecastSet: Failed to compute aftershock models");
+			//	throw new RuntimeException ("CumProbEqkSet: Failed to compute aftershock models");
 			//}
 
 			if (!( results.generic_result_avail )) {
-				throw new RuntimeException ("EqkForecastSet: Failed to compute aftershock models");
+				throw new RuntimeException ("CumProbEqkSet: Failed to compute aftershock models");
 			}
 
 			// Generic model
@@ -311,7 +313,7 @@ public class EqkForecastSet {
 				System.out.println (results.generic_summary.toString());
 			}
 
-			log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_GENERIC].run_simulations (
+			cum_prob_sets[i_fc_lag][GammaConfig.MODEL_KIND_GENERIC].run_simulations (
 				gamma_config, forecast_lag, num_sim,
 				fcmain, results.generic_model, all_aftershocks, verbose);
 
@@ -325,12 +327,12 @@ public class EqkForecastSet {
 					System.out.println (results.seq_spec_summary.toString());
 				}
 
-				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].run_simulations (
+				cum_prob_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].run_simulations (
 					gamma_config, forecast_lag, num_sim,
 					fcmain, results.seq_spec_model, all_aftershocks, verbose);
 			}
 			else {
-				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].zero_init (
+				cum_prob_sets[i_fc_lag][GammaConfig.MODEL_KIND_SEQ_SPEC].zero_init (
 					gamma_config, forecast_lag, num_sim);
 			}
 
@@ -345,12 +347,12 @@ public class EqkForecastSet {
 					System.out.println (results.bayesian_summary.toString());
 				}
 
-				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].run_simulations (
+				cum_prob_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].run_simulations (
 					gamma_config, forecast_lag, num_sim,
 					fcmain, results.bayesian_model, all_aftershocks, verbose);
 			}
 			else {
-				log_like_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].zero_init (
+				cum_prob_sets[i_fc_lag][GammaConfig.MODEL_KIND_BAYESIAN].zero_init (
 					gamma_config, forecast_lag, num_sim);
 			}
 		}
@@ -380,41 +382,13 @@ public class EqkForecastSet {
 
 		// Allocate all the arrays and zero-initialize
 
-		log_like_sets = new LogLikeSet[num_fc_lag][num_model];
+		cum_prob_sets = new CumProbSet[num_fc_lag][num_model];
 
 		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
 			long forecast_lag = gamma_config.forecast_lags[i_fc_lag];
 			for (int i_model = 0; i_model < num_model; ++i_model) {
-				log_like_sets[i_fc_lag][i_model] = new LogLikeSet();
-				log_like_sets[i_fc_lag][i_model].zero_init (gamma_config, forecast_lag, num_sim);
-			}
-		}
-
-		return;
-	}
-
-
-
-
-	// Add array contents from another object into this object.
-	// Parameters:
-	//  gamma_config = Configuration information.
-	//  other = The other object.
-	//  randomize = True to select simulations from the other object randomly.
-
-	public void add_from (GammaConfig gamma_config, EqkForecastSet other, boolean randomize) {
-
-		// Number of forecast lags and aftershock models
-
-		int num_fc_lag = gamma_config.forecast_lag_count;
-		int num_model = gamma_config.model_kind_count;
-
-		// Add each array element
-
-		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
-			for (int i_model = 0; i_model < num_model; ++i_model) {
-				log_like_sets[i_fc_lag][i_model].add_from (
-					gamma_config, other.log_like_sets[i_fc_lag][i_model], randomize);
+				cum_prob_sets[i_fc_lag][i_model] = new CumProbSet();
+				cum_prob_sets[i_fc_lag][i_model].zero_init (gamma_config, forecast_lag, num_sim);
 			}
 		}
 
@@ -426,49 +400,28 @@ public class EqkForecastSet {
 
 	//----- Querying -----
 
-	// Compute the single-event gamma.
+	// Compute the single-event cumulative probabilities.
 	// Parameters:
 	//  gamma_config = Configuration information.
-	//  gamma_lo = Array to receive low value of gamma, dimension:
-	//    gamma_lo[forecast_lag_count + 1][model_kind_count][adv_window_count + 1][adv_min_mag_bin_count].
-	//  gamma_hi = Array to receive high value of gamma, dimension:
-	//    gamma_hi[forecast_lag_count + 1][model_kind_count][adv_window_count + 1][adv_min_mag_bin_count].
-	// The extra forecast lag slot is used to report the sum over all forecast lags.
-	// The extra advisory window slot is used to report the sum over all windows.
+	//  zeta_lo = Array to receive low cumulative probability, dimension:
+	//    zeta_lo[forecast_lag_count][model_kind_count][adv_window_count][adv_min_mag_bin_count].
+	//  zeta_hi = Array to receive high cumulative probability, dimension:
+	//    zeta_hi[forecast_lag_count][model_kind_count][adv_window_count][adv_min_mag_bin_count].
 
-	public void single_event_gamma (GammaConfig gamma_config, double[][][][] gamma_lo, double[][][][] gamma_hi) {
+	public void single_event_zeta (GammaConfig gamma_config, double[][][][] zeta_lo, double[][][][] zeta_hi) {
 
 		// Number of forecast lags and aftershock models
 
 		int num_fc_lag = gamma_config.forecast_lag_count;
 		int num_model = gamma_config.model_kind_count;
 
-		// Loop over forecast lags and aftershock models, computing gamma for each
+		// Loop over forecast lags and aftershock models, computing zeta for each
 
 		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
 			for (int i_model = 0; i_model < num_model; ++i_model) {
-				log_like_sets[i_fc_lag][i_model].single_event_gamma (gamma_config,
-					gamma_lo[i_fc_lag][i_model], gamma_hi[i_fc_lag][i_model]);
+				cum_prob_sets[i_fc_lag][i_model].single_event_zeta (gamma_config,
+					zeta_lo[i_fc_lag][i_model], zeta_hi[i_fc_lag][i_model]);
 			}
-		}
-
-		// Loop over models, computing gamma for sum over forecast lags
-
-		for (int i_model = 0; i_model < num_model; ++i_model) {
-
-			// Accumulate sum
-
-			LogLikeSet sum = new LogLikeSet();
-			sum.zero_init (gamma_config, -1L, num_sim);
-
-			for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
-				sum.add_from (gamma_config, log_like_sets[i_fc_lag][i_model], false);
-			}
-
-			// Compute gamma
-
-			sum.single_event_gamma (gamma_config,
-				gamma_lo[num_fc_lag][i_model], gamma_hi[num_fc_lag][i_model]);
 		}
 
 		return;
@@ -481,17 +434,9 @@ public class EqkForecastSet {
 	// Parameters:
 	//  gamma_config = Configuration information.
 	//  obs_count = Array to receive observed count, dimension:
-	//    obs_count[forecast_lag_count + 1][model_kind_count][adv_window_count][adv_min_mag_bin_count].
-	//  sim_median_count = Array to receive simulated median count, dimension:
-	//    sim_median_count[forecast_lag_count + 1][model_kind_count][adv_window_count][adv_min_mag_bin_count].
-	//  sim_fractile_5_count = Array to receive simulated 5 percent fractile count, dimension:
-	//    sim_fractile_5_count[forecast_lag_count + 1][model_kind_count][adv_window_count][adv_min_mag_bin_count].
-	//  sim_fractile_95_count = Array to receive simulated 95 percent fractile count, dimension:
-	//    sim_fractile_95_count[forecast_lag_count + 1][model_kind_count][adv_window_count][adv_min_mag_bin_count].
-	// The extra forecast lag slot is used to report the sum over all forecast lags.
+	//    obs_count[forecast_lag_count][model_kind_count][adv_window_count][adv_min_mag_bin_count].
 
-	public void compute_count_stats (GammaConfig gamma_config, int[][][][] obs_count,
-		int[][][][] sim_median_count, int[][][][] sim_fractile_5_count, int[][][][] sim_fractile_95_count) {
+	public void compute_count_stats (GammaConfig gamma_config, int[][][][] obs_count) {
 
 		// Number of forecast lags and aftershock models
 
@@ -502,30 +447,9 @@ public class EqkForecastSet {
 
 		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
 			for (int i_model = 0; i_model < num_model; ++i_model) {
-				log_like_sets[i_fc_lag][i_model].compute_count_stats (gamma_config,
-					obs_count[i_fc_lag][i_model], sim_median_count[i_fc_lag][i_model],
-					sim_fractile_5_count[i_fc_lag][i_model], sim_fractile_95_count[i_fc_lag][i_model]);
+				cum_prob_sets[i_fc_lag][i_model].compute_count_stats (gamma_config,
+					obs_count[i_fc_lag][i_model]);
 			}
-		}
-
-		// Loop over models, computing statistics for sum over forecast lags
-
-		for (int i_model = 0; i_model < num_model; ++i_model) {
-
-			// Accumulate sum
-
-			LogLikeSet sum = new LogLikeSet();
-			sum.zero_init (gamma_config, -1L, num_sim);
-
-			for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
-				sum.add_from (gamma_config, log_like_sets[i_fc_lag][i_model], false);
-			}
-
-			// Compute statistics
-
-			sum.compute_count_stats (gamma_config,
-				obs_count[num_fc_lag][i_model], sim_median_count[num_fc_lag][i_model],
-				sim_fractile_5_count[num_fc_lag][i_model], sim_fractile_95_count[num_fc_lag][i_model]);
 		}
 
 		return;
@@ -534,11 +458,12 @@ public class EqkForecastSet {
 
 
 
-	// Compute the single-event gamma, and convert the table to a string.
+	// Compute the single-event zeta, and convert the table to a string.
 	// Parameters:
 	//  gamma_config = Configuration information.
+	//  keep_empty = True to retain lines that contain no data, false to omit them.
 
-	public String single_event_gamma_to_string (GammaConfig gamma_config) {
+	public String single_event_zeta_to_string (GammaConfig gamma_config, boolean keep_empty) {
 
 		// Number of forecast lags and aftershock models
 
@@ -552,26 +477,30 @@ public class EqkForecastSet {
 
 		// Compute results
 
-		double[][][][] gamma_lo = new double[num_fc_lag + 1][num_model][num_adv_win + 1][num_mag_bin];
-		double[][][][] gamma_hi = new double[num_fc_lag + 1][num_model][num_adv_win + 1][num_mag_bin];
+		double[][][][] zeta_lo = new double[num_fc_lag][num_model][num_adv_win][num_mag_bin];
+		double[][][][] zeta_hi = new double[num_fc_lag][num_model][num_adv_win][num_mag_bin];
 
-		single_event_gamma (gamma_config, gamma_lo, gamma_hi);
+		single_event_zeta (gamma_config, zeta_lo, zeta_hi);
 
 		// Convert the table
 
 		StringBuilder sb = new StringBuilder();
-		for (int i_fc_lag = 0; i_fc_lag <= num_fc_lag; ++i_fc_lag) {
+		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
 			for (int i_model = 0; i_model < num_model; ++i_model) {
-				for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+				for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
 					for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
-						sb.append (
-							gamma_config.get_forecast_lag_string_or_sum(i_fc_lag) + ",  "
-							+ gamma_config.model_kind_to_string(i_model) + ",  "
-							+ gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
-							+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-							+ "gamma_lo = " + gamma_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin] + ",  "
-							+ "gamma_hi = " + gamma_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin] + "\n"
-						);
+						if (keep_empty
+							|| zeta_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin] > -0.5
+							|| zeta_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin] > -0.5) {
+							sb.append (
+								gamma_config.get_forecast_lag_string_or_sum(i_fc_lag) + ",  "
+								+ gamma_config.model_kind_to_string(i_model) + ",  "
+								+ gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
+								+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+								+ "zeta_lo = " + String.format ("%.6f", zeta_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + ",  "
+								+ "zeta_hi = " + String.format ("%.6f", zeta_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + "\n"
+							);
+						}
 					}
 				}
 			}
@@ -601,18 +530,14 @@ public class EqkForecastSet {
 
 		// Compute results
 
-		int[][][][] obs_count = new int[num_fc_lag + 1][num_model][num_adv_win][num_mag_bin];
-		int[][][][] sim_median_count = new int[num_fc_lag + 1][num_model][num_adv_win][num_mag_bin];
-		int[][][][] sim_fractile_5_count = new int[num_fc_lag + 1][num_model][num_adv_win][num_mag_bin];
-		int[][][][] sim_fractile_95_count = new int[num_fc_lag + 1][num_model][num_adv_win][num_mag_bin];
+		int[][][][] obs_count = new int[num_fc_lag][num_model][num_adv_win][num_mag_bin];
 
-		compute_count_stats (gamma_config, obs_count,
-			sim_median_count, sim_fractile_5_count, sim_fractile_95_count);
+		compute_count_stats (gamma_config, obs_count);
 
 		// Convert the table
 
 		StringBuilder sb = new StringBuilder();
-		for (int i_fc_lag = 0; i_fc_lag <= num_fc_lag; ++i_fc_lag) {
+		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
 			for (int i_model = 0; i_model < num_model; ++i_model) {
 				for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
 					for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
@@ -621,11 +546,74 @@ public class EqkForecastSet {
 							+ gamma_config.model_kind_to_string(i_model) + ",  "
 							+ gamma_config.adv_window_names[i_adv_win] + ",  "
 							+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-							+ "obs = " + obs_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + ",  "
-							+ "median = " + sim_median_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + ",  "
-							+ "fractile_5 = " + sim_fractile_5_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + ",  "
-							+ "fractile_95 = " + sim_fractile_95_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + "\n"
+							+ "obs = " + obs_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + "\n"
 						);
+					}
+				}
+			}
+		}
+
+		return sb.toString();
+	}
+
+
+
+
+	// Compute the single-event zeta, and convert the table to a string.
+	// The string is formatted as a series of lines in a data file.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  i_eqk = Earthquake number to insert at the start of each line.
+	//  keep_empty = True to retain lines that contain no data, false to omit them.
+
+	public String single_event_zeta_to_lines (GammaConfig gamma_config, int i_eqk, boolean keep_empty) {
+
+		// Number of forecast lags and aftershock models
+
+		int num_fc_lag = gamma_config.forecast_lag_count;
+		int num_model = gamma_config.model_kind_count;
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Compute results
+
+		double[][][][] zeta_lo = new double[num_fc_lag][num_model][num_adv_win][num_mag_bin];
+		double[][][][] zeta_hi = new double[num_fc_lag][num_model][num_adv_win][num_mag_bin];
+
+		single_event_zeta (gamma_config, zeta_lo, zeta_hi);
+
+		int[][][][] obs_count = new int[num_fc_lag][num_model][num_adv_win][num_mag_bin];
+
+		compute_count_stats (gamma_config, obs_count);
+
+		// Convert the table
+
+		StringBuilder sb = new StringBuilder();
+		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
+			for (int i_model = 0; i_model < num_model; ++i_model) {
+				for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+					for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+						if (keep_empty
+							|| zeta_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin] > -0.5
+							|| zeta_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin] > -0.5) {
+							sb.append (
+								i_eqk + " "
+								+ i_fc_lag + " "
+								+ i_model + " "
+								+ i_adv_win + " "
+								+ i_mag_bin + " "
+								+ gamma_config.get_forecast_lag_string_or_sum(i_fc_lag) + " "
+								+ gamma_config.model_kind_to_string(i_model).replace(' ', '-') + " "
+								+ gamma_config.get_adv_window_name_or_sum(i_adv_win).replace(' ', '-') + " "
+								+ gamma_config.adv_min_mag_bins[i_mag_bin] + " "
+								+ obs_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + " "
+								+ String.format ("%.6f", zeta_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + " "
+								+ String.format ("%.6f", zeta_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + "\n"
+							);
+						}
 					}
 				}
 			}
@@ -641,21 +629,21 @@ public class EqkForecastSet {
 
 	// Marshal version number.
 
-	private static final int MARSHAL_VER_1 = 48001;
+	private static final int MARSHAL_VER_1 = 50001;
 
-	private static final String M_VERSION_NAME = "EqkForecastSet";
+	private static final String M_VERSION_NAME = "CumProbEqkSet";
 
 	// Marshal type code.
 
-	protected static final int MARSHAL_NULL = 48000;
-	protected static final int MARSHAL_EQK_FORECAST_SET = 48001;
+	protected static final int MARSHAL_NULL = 50000;
+	protected static final int MARSHAL_CUM_PROB_EQK_SET = 50001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
 	// Get the type code.
 
 	protected int get_marshal_type () {
-		return MARSHAL_EQK_FORECAST_SET;
+		return MARSHAL_CUM_PROB_EQK_SET;
 	}
 
 	// Marshal object, internal.
@@ -670,7 +658,7 @@ public class EqkForecastSet {
 
 		writer.marshalInt                (        "num_sim"        , num_sim        );
 		ForecastMainshock.marshal_poly   (writer, "fcmain"         , fcmain         );
-		LogLikeSet.marshal_2d_array_poly (writer, "log_like_sets"  , log_like_sets  );
+		CumProbSet.marshal_2d_array_poly (writer, "cum_prob_sets"  , cum_prob_sets  );
 	
 		return;
 	}
@@ -687,7 +675,7 @@ public class EqkForecastSet {
 
 		num_sim         = reader.unmarshalInt                (        "num_sim"        );
 		fcmain          = ForecastMainshock.unmarshal_poly   (reader, "fcmain"         );
-		log_like_sets   = LogLikeSet.unmarshal_2d_array_poly (reader, "log_like_sets"  );
+		cum_prob_sets   = CumProbSet.unmarshal_2d_array_poly (reader, "cum_prob_sets"  );
 
 		return;
 	}
@@ -703,7 +691,7 @@ public class EqkForecastSet {
 
 	// Unmarshal object.
 
-	public EqkForecastSet unmarshal (MarshalReader reader, String name) {
+	public CumProbEqkSet unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
 		reader.unmarshalMapEnd ();
@@ -712,7 +700,7 @@ public class EqkForecastSet {
 
 	// Marshal object, polymorphic.
 
-	public static void marshal_poly (MarshalWriter writer, String name, EqkForecastSet obj) {
+	public static void marshal_poly (MarshalWriter writer, String name, CumProbEqkSet obj) {
 
 		writer.marshalMapBegin (name);
 
@@ -730,8 +718,8 @@ public class EqkForecastSet {
 
 	// Unmarshal object, polymorphic.
 
-	public static EqkForecastSet unmarshal_poly (MarshalReader reader, String name) {
-		EqkForecastSet result;
+	public static CumProbEqkSet unmarshal_poly (MarshalReader reader, String name) {
+		CumProbEqkSet result;
 
 		reader.unmarshalMapBegin (name);
 	
@@ -742,14 +730,14 @@ public class EqkForecastSet {
 		switch (type) {
 
 		default:
-			throw new MarshalException ("EqkForecastSet.unmarshal_poly: Unknown class type code: type = " + type);
+			throw new MarshalException ("CumProbEqkSet.unmarshal_poly: Unknown class type code: type = " + type);
 
 		case MARSHAL_NULL:
 			result = null;
 			break;
 
-		case MARSHAL_EQK_FORECAST_SET:
-			result = new EqkForecastSet();
+		case MARSHAL_CUM_PROB_EQK_SET:
+			result = new CumProbEqkSet();
 			result.do_umarshal (reader);
 			break;
 		}
@@ -761,7 +749,7 @@ public class EqkForecastSet {
 
 	// Marshal an array of objects, polymorphic.
 
-	public static void marshal_array_poly (MarshalWriter writer, String name, EqkForecastSet[] x) {
+	public static void marshal_array_poly (MarshalWriter writer, String name, CumProbEqkSet[] x) {
 		int n = x.length;
 		writer.marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
@@ -773,7 +761,7 @@ public class EqkForecastSet {
 
 	// Marshal a 2D array of objects, polymorphic.
 
-	public static void marshal_2d_array_poly (MarshalWriter writer, String name, EqkForecastSet[][] x) {
+	public static void marshal_2d_array_poly (MarshalWriter writer, String name, CumProbEqkSet[][] x) {
 		int n = x.length;
 		writer.marshalArrayBegin (name, n);
 		for (int i = 0; i < n; ++i) {
@@ -785,9 +773,9 @@ public class EqkForecastSet {
 
 	// Unmarshal an array of objects, polymorphic.
 
-	public static EqkForecastSet[] unmarshal_array_poly (MarshalReader reader, String name) {
+	public static CumProbEqkSet[] unmarshal_array_poly (MarshalReader reader, String name) {
 		int n = reader.unmarshalArrayBegin (name);
-		EqkForecastSet[] x = new EqkForecastSet[n];
+		CumProbEqkSet[] x = new CumProbEqkSet[n];
 		for (int i = 0; i < n; ++i) {
 			x[i] = unmarshal_poly (reader, null);
 		}
@@ -797,9 +785,9 @@ public class EqkForecastSet {
 
 	// Unmarshal a 2d array of objects, polymorphic.
 
-	public static EqkForecastSet[][] unmarshal_2d_array_poly (MarshalReader reader, String name) {
+	public static CumProbEqkSet[][] unmarshal_2d_array_poly (MarshalReader reader, String name) {
 		int n = reader.unmarshalArrayBegin (name);
-		EqkForecastSet[][] x = new EqkForecastSet[n][];
+		CumProbEqkSet[][] x = new CumProbEqkSet[n][];
 		for (int i = 0; i < n; ++i) {
 			x[i] = unmarshal_array_poly (reader, null);
 		}
@@ -819,7 +807,7 @@ public class EqkForecastSet {
 		// There needs to be at least one argument, which is the subcommand
 
 		if (args.length < 1) {
-			System.err.println ("EqkForecastSet : Missing subcommand");
+			System.err.println ("CumProbEqkSet : Missing subcommand");
 			return;
 		}
 
@@ -836,7 +824,7 @@ public class EqkForecastSet {
 			// One additional argument
 
 			if (args.length != 2) {
-				System.err.println ("EqkForecastSet : Invalid 'test1' subcommand");
+				System.err.println ("CumProbEqkSet : Invalid 'test1' subcommand");
 				return;
 			}
 
@@ -869,55 +857,27 @@ public class EqkForecastSet {
 			System.out.println ("");
 			System.out.println ("Computing models for event_id = " + the_event_id);
 
-			EqkForecastSet eqk_forecast_set = new EqkForecastSet();
-			eqk_forecast_set.run_simulations (gamma_config,
+			CumProbEqkSet cum_prob_eqk_set = new CumProbEqkSet();
+			cum_prob_eqk_set.run_simulations (gamma_config,
 				gamma_config.simulation_count, fcmain, false);
 
-			double[][][][] gamma_lo = new double[num_fc_lag + 1][num_model][num_adv_win + 1][num_mag_bin];
-			double[][][][] gamma_hi = new double[num_fc_lag + 1][num_model][num_adv_win + 1][num_mag_bin];
+			double[][][][] zeta_lo = new double[num_fc_lag][num_model][num_adv_win][num_mag_bin];
+			double[][][][] zeta_hi = new double[num_fc_lag][num_model][num_adv_win][num_mag_bin];
 
-			eqk_forecast_set.single_event_gamma (gamma_config, gamma_lo, gamma_hi);
-
-			System.out.println ("");
-			for (int i_fc_lag = 0; i_fc_lag <= num_fc_lag; ++i_fc_lag) {
-				for (int i_model = 0; i_model < num_model; ++i_model) {
-					for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
-						for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
-							System.out.println (
-								gamma_config.get_forecast_lag_string_or_sum(i_fc_lag) + ",  "
-								+ gamma_config.model_kind_to_string(i_model) + ",  "
-								+ gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
-								+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-								+ "gamma_lo = " + gamma_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin] + ",  "
-								+ "gamma_hi = " + gamma_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin]
-							);
-						}
-					}
-				}
-			}
-
-			int[][][][] obs_count = new int[num_fc_lag + 1][num_model][num_adv_win][num_mag_bin];
-			int[][][][] sim_median_count = new int[num_fc_lag + 1][num_model][num_adv_win][num_mag_bin];
-			int[][][][] sim_fractile_5_count = new int[num_fc_lag + 1][num_model][num_adv_win][num_mag_bin];
-			int[][][][] sim_fractile_95_count = new int[num_fc_lag + 1][num_model][num_adv_win][num_mag_bin];
-
-			eqk_forecast_set.compute_count_stats (gamma_config, obs_count,
-				sim_median_count, sim_fractile_5_count, sim_fractile_95_count);
+			cum_prob_eqk_set.single_event_zeta (gamma_config, zeta_lo, zeta_hi);
 
 			System.out.println ("");
-			for (int i_fc_lag = 0; i_fc_lag <= num_fc_lag; ++i_fc_lag) {
+			for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
 				for (int i_model = 0; i_model < num_model; ++i_model) {
 					for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
 						for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
 							System.out.println (
 								gamma_config.get_forecast_lag_string_or_sum(i_fc_lag) + ",  "
 								+ gamma_config.model_kind_to_string(i_model) + ",  "
-								+ gamma_config.adv_window_names[i_adv_win] + ",  "
+								+ gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
 								+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-								+ "obs = " + obs_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + ",  "
-								+ "median = " + sim_median_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + ",  "
-								+ "fractile_5 = " + sim_fractile_5_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + ",  "
-								+ "fractile_95 = " + sim_fractile_95_count[i_fc_lag][i_model][i_adv_win][i_mag_bin]
+								+ "zeta_lo = " + String.format ("%.6f", zeta_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + ",  "
+								+ "zeta_hi = " + String.format ("%.6f", zeta_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin])
 							);
 						}
 					}
@@ -930,9 +890,69 @@ public class EqkForecastSet {
 
 
 
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  event_id  keep_empty
+		// Compute all models at all forecast lags for the given event.
+		// If keep_empty is true, lines with no data are retained.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("CumProbEqkSet : Invalid 'test2' subcommand");
+				return;
+			}
+
+			String the_event_id = args[1];
+			boolean keep_empty = Boolean.parseBoolean (args[2]);
+
+			// Get configuration
+
+			GammaConfig gamma_config = new GammaConfig();
+
+			// Number of forecast lags and aftershock models
+
+			int num_fc_lag = gamma_config.forecast_lag_count;
+			int num_model = gamma_config.model_kind_count;
+
+			// Number of advisory windows and magnitude bins
+
+			int num_adv_win = gamma_config.adv_window_count;
+			int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+			// Fetch the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Compute models
+
+			System.out.println ("");
+			System.out.println ("Computing models for event_id = " + the_event_id);
+
+			CumProbEqkSet cum_prob_eqk_set = new CumProbEqkSet();
+			cum_prob_eqk_set.run_simulations (gamma_config,
+				gamma_config.simulation_count, fcmain, false);
+
+			// Display lines
+
+			System.out.println ("");
+			System.out.println (cum_prob_eqk_set.single_event_zeta_to_lines (gamma_config, 0, keep_empty));
+
+			return;
+		}
+
+
+
+
 		// Unrecognized subcommand.
 
-		System.err.println ("EqkForecastSet : Unrecognized subcommand : " + args[0]);
+		System.err.println ("CumProbEqkSet : Unrecognized subcommand : " + args[0]);
 		return;
 	}
 }

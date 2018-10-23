@@ -42,6 +42,18 @@ public class ProbDistSet {
 
 	private long forecast_lag;
 
+	// Array of cumulative probability distributions.
+	// Dimension of the array is
+	//  cum_dist[adv_window_count][adv_min_mag_bin_count][max_as]
+	// where max_as is the maximum number of aftershocks with significantly
+	// non-zero probability of occurring.  Note that max_as can be
+	// different in each advisory window and magnitude bin.
+	// The value of cum_dist[i_adv_win][i_mag_bin][i_as] is the probability
+	// of finding i_as or fewer events in the advisory window and magnitude bin.
+	// This is set to null in the constructor, and built if needed.
+	
+	private double[][][] cum_dist;
+
 
 
 
@@ -77,6 +89,49 @@ public class ProbDistSet {
 				prob_dist[i_adv_win][i_mag_bin] = model.getDistFuncWithAleatory(mag, tMinDays, tMaxDays);
 			}
 		}
+
+		// No cumulative distribution yet
+
+		cum_dist = null;
+	}
+
+
+
+
+	// Build the cumulative distribution.
+
+	private void build_cum_dist (GammaConfig gamma_config) {
+
+		// If the cumulative distribution is not created yet ...
+
+		if (cum_dist == null) {
+
+			// Number of advisory windows and magnitude bins
+
+			int num_adv_win = gamma_config.adv_window_count;
+			int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+			// Allocate and fill in the cumulative distribution
+
+			cum_dist = new double[num_adv_win][][];
+			for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+				cum_dist[i_adv_win] = new double[num_mag_bin][];
+				for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+					int max_as = prob_dist[i_adv_win][i_mag_bin].length;
+					cum_dist[i_adv_win][i_mag_bin] = new double[max_as];
+					double p = 0.0;
+					for (int i_as = 0; i_as < max_as; ++i_as) {
+						p += prob_dist[i_adv_win][i_mag_bin][i_as];
+						if (p > 1.0) {
+							p = 1.0;	// can only happen due to rounding errors
+						}
+						cum_dist[i_adv_win][i_mag_bin][i_as] = p;
+					}
+				}
+			}
+		}
+
+		return;
 	}
 
 
@@ -314,6 +369,84 @@ public class ProbDistSet {
 
 
 
+	// Compute cumulative probability distribution.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  bin_count = Number of aftershocks in each bin, as returned from count_bins().
+	//  zeta_lo = Array to receive lo cumulative probability, dimension zeta_lo[adv_window_count][adv_min_mag_bin_count].
+	//  zeta_hi = Array to receive hi cumulative probability, dimension zeta_hi[adv_window_count][adv_min_mag_bin_count].
+	// Note: zeta_lo contains the cumulative probability that the number of aftershocks
+	// is less than the value in bin_count, and zeta_hi contains the cumulative probability
+	// that the number of aftershocks is less than or equal to the value in bin_count.
+
+	public void compute_cum_prob (GammaConfig gamma_config, int[][] bin_count,
+		double[][] zeta_lo, double[][] zeta_hi) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Build the cumulative distribution if needed
+
+		build_cum_dist (gamma_config);
+
+		// Compute the cumulative probabilities
+
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+				int num_as = bin_count[i_adv_win][i_mag_bin];
+				if (num_as < prob_dist[i_adv_win][i_mag_bin].length) {
+					zeta_hi[i_adv_win][i_mag_bin] = cum_dist[i_adv_win][i_mag_bin][num_as];
+				} else {
+					zeta_hi[i_adv_win][i_mag_bin] = 1.0;
+				}
+				if (num_as == 0) {
+					zeta_lo[i_adv_win][i_mag_bin] = 0.0;
+				} else if (num_as <= prob_dist[i_adv_win][i_mag_bin].length) {
+					zeta_lo[i_adv_win][i_mag_bin] = cum_dist[i_adv_win][i_mag_bin][num_as - 1];
+				} else {
+					zeta_lo[i_adv_win][i_mag_bin] = 1.0;
+				}
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Compute cumulative probability distribution.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  aftershocks = Sequence of aftershocks.
+	//  origin_time = Origin time of the aftershock sequence, in milliseconds.
+	//  zeta_lo = Array to receive low cumulative probability, dimension zeta_lo[adv_window_count][adv_min_mag_bin_count].
+	//  zeta_hi = Array to receive high cumulative probability, dimension zeta_hi[adv_window_count][adv_min_mag_bin_count].
+	// For an observed sequence, origin_time should be the rupture time.
+	// For a simulated sequence, origin_time should be zero.
+	// In the sequence of aftershocks, only the rupture time and magnitude are used.
+	// Note: zeta_lo contains the cumulative probability that the number of aftershocks
+	// is less than the value in bin_count, and zeta_hi contains the cumulative probability
+	// that the number of aftershocks is less than or equal to the value in bin_count.
+
+	public void compute_cum_prob (GammaConfig gamma_config, List<ObsEqkRupture> aftershocks, long origin_time,
+		double[][] zeta_lo, double[][] zeta_hi) {
+
+		// Count the number of aftershocks in each bin
+
+		int[][] bin_count = count_bins (gamma_config, aftershocks, origin_time);
+
+		// Compute the cumulative probabilities
+
+		compute_cum_prob (gamma_config, bin_count, zeta_lo,  zeta_hi);
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 	// Entry point.
@@ -391,7 +524,7 @@ public class ProbDistSet {
 			// Generic model
 
 			System.out.println ("");
-			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 
 			ProbDistSet generic_prob_dist_set = new ProbDistSet (gamma_config, the_forecast_lag, results.generic_model);
 
@@ -414,7 +547,7 @@ public class ProbDistSet {
 			// Sequence specific model
 
 			System.out.println ("");
-			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 
 			ProbDistSet seq_spec_prob_dist_set = new ProbDistSet (gamma_config, the_forecast_lag, results.seq_spec_model);
 
@@ -437,7 +570,7 @@ public class ProbDistSet {
 			// Bayesian model
 
 			System.out.println ("");
-			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string (the_forecast_lag));
+			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
 
 			ProbDistSet bayesian_prob_dist_set = new ProbDistSet (gamma_config, the_forecast_lag, results.bayesian_model);
 
@@ -461,6 +594,158 @@ public class ProbDistSet {
 		}
 
 
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test1  event_id  forecast_lag
+		// Compute model for the given event at the given forecast lag.
+		// The forecast_lag is given in java.time.Duration format.
+		// Same as test #1 except also display the cumulative probabilities.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// Two additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("ProbDistSet : Invalid 'test2' subcommand");
+				return;
+			}
+
+			String the_event_id = args[1];
+			long the_forecast_lag = SimpleUtils.string_to_duration (args[2]);
+
+			// Get configuration
+
+			GammaConfig gamma_config = new GammaConfig();
+
+			// Number of advisory windows and magnitude bins
+
+			int num_adv_win = gamma_config.adv_window_count;
+			int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+			// Fetch the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "", fcmain, params, true);
+
+			if (!( results.generic_result_avail
+				&& results.seq_spec_result_avail
+				&& results.bayesian_result_avail )) {
+				throw new RuntimeException ("ProbDistSet: Failed to compute aftershock models");
+			}
+
+			// Get catalog of all aftershocks
+
+			List<ObsEqkRupture> all_aftershocks = GammaUtils.get_all_aftershocks (gamma_config, fcmain);
+
+			System.out.println ("");
+			System.out.println ("Total number of aftershocks = " + all_aftershocks.size());
+
+			// Generic model
+
+			System.out.println ("");
+			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
+
+			ProbDistSet generic_prob_dist_set = new ProbDistSet (gamma_config, the_forecast_lag, results.generic_model);
+
+			int[][] generic_bin_count = generic_prob_dist_set.count_bins (gamma_config, all_aftershocks, fcmain.mainshock_time);
+			//double[][] generic_log_like = generic_prob_dist_set.compute_log_like (gamma_config, all_aftershocks, fcmain.mainshock_time);
+			double[][] generic_log_like = generic_prob_dist_set.compute_log_like (gamma_config, generic_bin_count);
+
+			double[][] generic_zeta_lo = new double[num_adv_win][num_mag_bin];
+			double[][] generic_zeta_hi = new double[num_adv_win][num_mag_bin];
+			generic_prob_dist_set.compute_cum_prob (gamma_config, generic_bin_count, generic_zeta_lo, generic_zeta_hi);
+
+			System.out.println ("");
+			for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+				for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+					System.out.println (
+						gamma_config.adv_window_names[i_adv_win] + ",  "
+						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+						+ "count = " + generic_bin_count[i_adv_win][i_mag_bin] + ",  "
+						+ "log_like = " + generic_log_like[i_adv_win][i_mag_bin] + ",  "
+						+ "zeta_lo = " + generic_zeta_lo[i_adv_win][i_mag_bin] + ",  "
+						+ "zeta_hi = " + generic_zeta_hi[i_adv_win][i_mag_bin]
+					);
+				}
+			}
+
+			// Sequence specific model
+
+			System.out.println ("");
+			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
+
+			ProbDistSet seq_spec_prob_dist_set = new ProbDistSet (gamma_config, the_forecast_lag, results.seq_spec_model);
+
+			int[][] seq_spec_bin_count = seq_spec_prob_dist_set.count_bins (gamma_config, all_aftershocks, fcmain.mainshock_time);
+			//double[][] seq_spec_log_like = seq_spec_prob_dist_set.compute_log_like (gamma_config, all_aftershocks, fcmain.mainshock_time);
+			double[][] seq_spec_log_like = seq_spec_prob_dist_set.compute_log_like (gamma_config, seq_spec_bin_count);
+
+			double[][] seq_spec_zeta_lo = new double[num_adv_win][num_mag_bin];
+			double[][] seq_spec_zeta_hi = new double[num_adv_win][num_mag_bin];
+			seq_spec_prob_dist_set.compute_cum_prob (gamma_config, seq_spec_bin_count, seq_spec_zeta_lo, seq_spec_zeta_hi);
+
+			System.out.println ("");
+			for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+				for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+					System.out.println (
+						gamma_config.adv_window_names[i_adv_win] + ",  "
+						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+						+ "count = " + seq_spec_bin_count[i_adv_win][i_mag_bin] + ",  "
+						+ "log_like = " + seq_spec_log_like[i_adv_win][i_mag_bin] + ",  "
+						+ "zeta_lo = " + seq_spec_zeta_lo[i_adv_win][i_mag_bin] + ",  "
+						+ "zeta_hi = " + seq_spec_zeta_hi[i_adv_win][i_mag_bin]
+					);
+				}
+			}
+
+			// Bayesian model
+
+			System.out.println ("");
+			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
+
+			ProbDistSet bayesian_prob_dist_set = new ProbDistSet (gamma_config, the_forecast_lag, results.bayesian_model);
+
+			int[][] bayesian_bin_count = bayesian_prob_dist_set.count_bins (gamma_config, all_aftershocks, fcmain.mainshock_time);
+			//double[][] bayesian_log_like = bayesian_prob_dist_set.compute_log_like (gamma_config, all_aftershocks, fcmain.mainshock_time);
+			double[][] bayesian_log_like = bayesian_prob_dist_set.compute_log_like (gamma_config, bayesian_bin_count);
+
+			double[][] bayesian_zeta_lo = new double[num_adv_win][num_mag_bin];
+			double[][] bayesian_zeta_hi = new double[num_adv_win][num_mag_bin];
+			bayesian_prob_dist_set.compute_cum_prob (gamma_config, bayesian_bin_count, bayesian_zeta_lo, bayesian_zeta_hi);
+
+			System.out.println ("");
+			for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+				for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+					System.out.println (
+						gamma_config.adv_window_names[i_adv_win] + ",  "
+						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+						+ "count = " + bayesian_bin_count[i_adv_win][i_mag_bin] + ",  "
+						+ "log_like = " + bayesian_log_like[i_adv_win][i_mag_bin] + ",  "
+						+ "zeta_lo = " + bayesian_zeta_lo[i_adv_win][i_mag_bin] + ",  "
+						+ "zeta_hi = " + bayesian_zeta_hi[i_adv_win][i_mag_bin]
+					);
+				}
+			}
+
+			return;
+		}
+
+		
 
 
 		// Unrecognized subcommand.

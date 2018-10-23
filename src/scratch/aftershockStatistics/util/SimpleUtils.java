@@ -21,6 +21,23 @@ public class SimpleUtils {
 
 
 
+	// Number of milliseconds in a day, hour, minute, second.
+
+	public static final long SECOND_MILLIS = 1000L;
+	public static final long MINUTE_MILLIS = 60000L;
+	public static final long HOUR_MILLIS = 3600000L;
+	public static final long DAY_MILLIS = 86400000L;
+
+	// Number of milliseconds in a day, hour, minute, second, in floating point.
+
+	public static final double SECOND_MILLIS_D = 1000.0;
+	public static final double MINUTE_MILLIS_D = 60000.0;
+	public static final double HOUR_MILLIS_D = 3600000.0;
+	public static final double DAY_MILLIS_D = 86400000.0;
+
+
+
+
 	// Get a stack trace as a string.
 
 	public static String getStackTraceAsString (Throwable e) {
@@ -113,6 +130,99 @@ public class SimpleUtils {
 
 	public static long string_to_duration (String s) {
 		return Duration.parse(s).toMillis();
+	}
+
+
+
+
+	// Convert a duration (in milliseconds) to a human-readable string in java.time.Duration format.
+	// This version includes a "days" field for durations of 1 day or more.
+
+	public static String duration_to_string_2 (long the_duration) {
+		String result;
+
+		// If negative, reverse the sign and prepend a minus sign
+
+		long x = the_duration;
+		String sign = "";
+
+		if (x < 0L) {
+			x = -x;
+			sign = "-";
+		}
+
+		// Split
+
+		long days = x / DAY_MILLIS;
+		long hours = (x / HOUR_MILLIS) % 24L;
+		long minutes = (x / MINUTE_MILLIS) % 60L;
+		long seconds = (x / SECOND_MILLIS) % 60L;
+		long millis = x % 1000L;
+
+		// Leading field is days
+
+		if (days != 0) {
+			if (millis != 0) {
+				result = String.format ("%sP%dDT%dH%dM%d.%03dS", sign, days, hours, minutes, seconds, millis);
+			} else if (seconds != 0) {
+				result = String.format ("%sP%dDT%dH%dM%dS", sign, days, hours, minutes, seconds);
+			} else if (minutes != 0) {
+				result = String.format ("%sP%dDT%dH%dM", sign, days, hours, minutes);
+			} else if (hours != 0) {
+				result = String.format ("%sP%dDT%dH", sign, days, hours);
+			} else {
+				result = String.format ("%sP%dD", sign, days);
+			}
+		}
+
+		// Leading field is hours
+
+		else if (hours != 0) {
+			if (millis != 0) {
+				result = String.format ("%sPT%dH%dM%d.%03dS", sign, hours, minutes, seconds, millis);
+			} else if (seconds != 0) {
+				result = String.format ("%sPT%dH%dM%dS", sign, hours, minutes, seconds);
+			} else if (minutes != 0) {
+				result = String.format ("%sPT%dH%dM", sign, hours, minutes);
+			} else {
+				result = String.format ("%sPT%dH", sign, hours);
+			}
+		}
+
+		// Leading field is minutes
+
+		else if (minutes != 0) {
+			if (millis != 0) {
+				result = String.format ("%sPT%dM%d.%03dS", sign, minutes, seconds, millis);
+			} else if (seconds != 0) {
+				result = String.format ("%sPT%dM%dS", sign, minutes, seconds);
+			} else {
+				result = String.format ("%sPT%dM", sign, minutes);
+			}
+		}
+
+		// Leading field is seconds
+
+		else {
+			if (millis != 0) {
+				result = String.format ("%sPT%d.%03dS", sign, seconds, millis);
+			} else {
+				result = String.format ("%sPT%dS", sign, seconds);
+			}
+		}
+
+		return result;
+	}
+
+
+
+
+	// Given a duration (in milliseconds), produce a string which
+	// is its numerical value followed by the human-readable form in parentheses.
+	// This version includes a "days" field for durations of 1 day or more.
+
+	public static String duration_raw_and_string_2 (long the_duration) {
+		return the_duration + " (" + duration_to_string_2(the_duration) + ")";
 	}
 
 
