@@ -30,6 +30,22 @@ import scratch.aftershockStatistics.util.MarshalException;
  * advisory window and magnitude bin, there is an array of log-likelihoods
  * and event counts for a series of simulations.  There are also log-likelihoods
  * and event counts for the observed aftershock sequence.
+ *
+ * Given an observation O, the likelihood is defined to be P(O), which is the
+ * probability that O occurs assuming that the model is correct.  The
+ * log-likelihood is of course log(P(O)).
+ *
+ * The gamma statistic is defined to be the cumulative probability of the
+ * log-likelihood log(P(O)).  That is, gamma is sum(P(O')), where the sum runs
+ * over all possible observations O' such that P(O') < P(O), or P(O') <= P(O).
+ * We refer to the former case as gamma_lo, and the latter case as gamma_hi.
+ * The two cases are different because our probability distributions are discrete.
+ *
+ * If O is the number of aftershocks that have been observed in some window,
+ * then the zeta statistic is defined to be the cumulative probability of O.
+ * That is, zeta is sum(P(O')), where the sum runs over all possible observations
+ * O' such that O' < O, or O' <= O.  We refer to the former case as zeta_lo,
+ * and the latter case as zeta_hi.
  */
 public class LogLikeSet {
 
@@ -421,6 +437,102 @@ public class LogLikeSet {
 
 
 
+	// Compute the single-event zeta.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  zeta_lo = Array to receive low value of zeta, dimension zeta_lo[adv_window_count + 1][adv_min_mag_bin_count].
+	//  zeta_hi = Array to receive high value of zeta, dimension zeta_hi[adv_window_count + 1][adv_min_mag_bin_count].
+	// The extra advisory window slot is used to report the sum over all windows.
+	// If the data was explicitly set to zero, then zeta_lo and zeta_hi are set to -1.0 to indicate no data.
+
+	public void single_event_zeta (GammaConfig gamma_config, double[][] zeta_lo, double[][] zeta_hi) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Handle case of no data
+
+		if (is_zero) {
+			for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+				for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+					zeta_lo[i_adv_win][i_mag_bin] = -1.0;
+					zeta_hi[i_adv_win][i_mag_bin] = -1.0;
+				}
+			}
+			return;
+		}
+
+		// Loop over windows and magnitude bins, computing zeta for each
+
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+
+				// Accumulate number of simulations with event count below and above observation
+
+				int below = 0;
+				int above = 0;
+				for (int i_sim = 0; i_sim < num_sim; ++i_sim) {
+					if (sim_event_count[i_adv_win][i_mag_bin][i_sim] < obs_event_count[i_adv_win][i_mag_bin]) {
+						++below;
+					}
+					else if (sim_event_count[i_adv_win][i_mag_bin][i_sim] > obs_event_count[i_adv_win][i_mag_bin]) {
+						++above;
+					}
+				}
+
+				// Compute zetas
+
+				zeta_lo[i_adv_win][i_mag_bin] = ((double)below) / ((double)num_sim);
+				zeta_hi[i_adv_win][i_mag_bin] = ((double)(num_sim - above)) / ((double)num_sim);
+			}
+		}
+
+		// Loop over magnitude bins, computing zeta for the sum over prospective windows
+
+		for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+
+			// Accumulate number of simulations with event count below and above observation
+
+			int total_obs_event_count = 0;
+			for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+				if (gamma_config.adv_window_start_offs[i_adv_win] >= 0L) {
+					total_obs_event_count += obs_event_count[i_adv_win][i_mag_bin];
+				}
+			}
+
+			int below = 0;
+			int above = 0;
+			for (int i_sim = 0; i_sim < num_sim; ++i_sim) {
+
+				int total_sim_event_count = 0;
+				for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+					if (gamma_config.adv_window_start_offs[i_adv_win] >= 0L) {
+						total_sim_event_count += sim_event_count[i_adv_win][i_mag_bin][i_sim];
+					}
+				}
+
+				if (total_sim_event_count < total_obs_event_count) {
+					++below;
+				}
+				else if (total_sim_event_count > total_obs_event_count) {
+					++above;
+				}
+			}
+
+			// Compute zetas
+
+			zeta_lo[num_adv_win][i_mag_bin] = ((double)below) / ((double)num_sim);
+			zeta_hi[num_adv_win][i_mag_bin] = ((double)(num_sim - above)) / ((double)num_sim);
+		}
+
+		return;
+	}
+
+
+
+
 	// Compute event count statistics.
 	// Parameters:
 	//  gamma_config = Configuration information.
@@ -463,6 +575,53 @@ public class LogLikeSet {
 				sim_fractile_5_count[i_adv_win][i_mag_bin] = sorted_sim_count[i_fractile_5];
 				sim_fractile_95_count[i_adv_win][i_mag_bin] = sorted_sim_count[i_fractile_95];
 			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Compute event count statistics.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  obs_count = Array to receive observed count, dimension obs_count[adv_window_count + 1][adv_min_mag_bin_count].
+	// The extra advisory window slot is used to report the sum over all windows.
+	// Note the dimension of obs_count is different than in the overloaded function above.
+
+	public void compute_count_stats (GammaConfig gamma_config, int[][] obs_count) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Loop over windows and magnitude bins, computing statistics for each
+
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+
+				// Observed count
+
+				obs_count[i_adv_win][i_mag_bin] = obs_event_count[i_adv_win][i_mag_bin];
+			}
+		}
+
+		// Loop over magnitude bins, computing statistics for the sum over prospective windows
+
+		for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+
+			// Accumulate observed counts
+
+			int total_obs_event_count = 0;
+			for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
+				if (gamma_config.adv_window_start_offs[i_adv_win] >= 0L) {
+					total_obs_event_count += obs_event_count[i_adv_win][i_mag_bin];
+				}
+			}
+
+			obs_count[num_adv_win][i_mag_bin] = total_obs_event_count;
 		}
 
 		return;
@@ -516,10 +675,10 @@ public class LogLikeSet {
 
 		// Compute results
 
-		double[][] generic_gamma_lo = new double[num_adv_win + 1][num_mag_bin];
-		double[][] generic_gamma_hi = new double[num_adv_win + 1][num_mag_bin];
+		double[][] gamma_lo = new double[num_adv_win + 1][num_mag_bin];
+		double[][] gamma_hi = new double[num_adv_win + 1][num_mag_bin];
 
-		single_event_gamma (gamma_config, generic_gamma_lo, generic_gamma_hi);
+		single_event_gamma (gamma_config, gamma_lo, gamma_hi);
 
 		// Convert the table
 
@@ -529,8 +688,46 @@ public class LogLikeSet {
 				sb.append (
 					gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
 					+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-					+ "gamma_lo = " + generic_gamma_lo[i_adv_win][i_mag_bin] + ",  "
-					+ "gamma_hi = " + generic_gamma_hi[i_adv_win][i_mag_bin] + "\n"
+					+ "gamma_lo = " + String.format ("%.6f", gamma_lo[i_adv_win][i_mag_bin]) + ",  "
+					+ "gamma_hi = " + String.format ("%.6f", gamma_hi[i_adv_win][i_mag_bin]) + "\n"
+				);
+			}
+		}
+
+		return sb.toString();
+	}
+
+
+
+
+	// Compute the single-event zeta, and convert the table to a string.
+	// Parameters:
+	//  gamma_config = Configuration information.
+
+	public String single_event_zeta_to_string (GammaConfig gamma_config) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Compute results
+
+		double[][] zeta_lo = new double[num_adv_win + 1][num_mag_bin];
+		double[][] zeta_hi = new double[num_adv_win + 1][num_mag_bin];
+
+		single_event_zeta (gamma_config, zeta_lo, zeta_hi);
+
+		// Convert the table
+
+		StringBuilder sb = new StringBuilder();
+		for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+				sb.append (
+					gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
+					+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+					+ "zeta_lo = " + String.format ("%.6f", zeta_lo[i_adv_win][i_mag_bin]) + ",  "
+					+ "zeta_hi = " + String.format ("%.6f", zeta_hi[i_adv_win][i_mag_bin]) + "\n"
 				);
 			}
 		}
@@ -910,6 +1107,47 @@ public class LogLikeSet {
 
 
 
+	// Test routine, to compute and show cumulative probabilities for a model.
+	// Parameters are the same as run_simulations.
+
+	private static void compute_and_show_cum_prob (GammaConfig gamma_config, long the_forecast_lag, int the_num_sim,
+		ForecastMainshock fcmain, RJ_AftershockModel model, List<ObsEqkRupture> all_aftershocks, boolean verbose) {
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Compute cumulative probabilities and collect results
+
+		LogLikeSet log_like_set = new LogLikeSet();
+		log_like_set.run_simulations (gamma_config, the_forecast_lag, the_num_sim,
+			fcmain, model, all_aftershocks, verbose);
+
+		double[][] zeta_lo = new double[num_adv_win + 1][num_mag_bin];
+		double[][] zeta_hi = new double[num_adv_win + 1][num_mag_bin];
+
+		log_like_set.single_event_zeta (gamma_config, zeta_lo, zeta_hi);
+
+		// Display results
+
+		for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+				System.out.println (
+					gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
+					+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+					+ "zeta_lo = " + String.format ("%.6f", zeta_lo[i_adv_win][i_mag_bin]) + ",  "
+					+ "zeta_hi = " + String.format ("%.6f", zeta_hi[i_adv_win][i_mag_bin])
+				);
+			}
+		}
+		
+		return;
+	}
+
+
+
+
 	// Entry point.
 	
 	public static void main(String[] args) {
@@ -1002,8 +1240,8 @@ public class LogLikeSet {
 					System.out.println (
 						gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
 						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-						+ "gamma_lo = " + generic_gamma_lo[i_adv_win][i_mag_bin] + ",  "
-						+ "gamma_hi = " + generic_gamma_hi[i_adv_win][i_mag_bin]
+						+ "gamma_lo = " + String.format ("%.6f", generic_gamma_lo[i_adv_win][i_mag_bin]) + ",  "
+						+ "gamma_hi = " + String.format ("%.6f", generic_gamma_hi[i_adv_win][i_mag_bin])
 					);
 				}
 			}
@@ -1050,8 +1288,8 @@ public class LogLikeSet {
 					System.out.println (
 						gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
 						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-						+ "gamma_lo = " + seq_spec_gamma_lo[i_adv_win][i_mag_bin] + ",  "
-						+ "gamma_hi = " + seq_spec_gamma_hi[i_adv_win][i_mag_bin]
+						+ "gamma_lo = " + String.format ("%.6f", seq_spec_gamma_lo[i_adv_win][i_mag_bin]) + ",  "
+						+ "gamma_hi = " + String.format ("%.6f", seq_spec_gamma_hi[i_adv_win][i_mag_bin])
 					);
 				}
 			}
@@ -1098,8 +1336,8 @@ public class LogLikeSet {
 					System.out.println (
 						gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
 						+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-						+ "gamma_lo = " + bayesian_gamma_lo[i_adv_win][i_mag_bin] + ",  "
-						+ "gamma_hi = " + bayesian_gamma_hi[i_adv_win][i_mag_bin]
+						+ "gamma_lo = " + String.format ("%.6f", bayesian_gamma_lo[i_adv_win][i_mag_bin]) + ",  "
+						+ "gamma_hi = " + String.format ("%.6f", bayesian_gamma_hi[i_adv_win][i_mag_bin])
 					);
 				}
 			}
@@ -1357,6 +1595,114 @@ public class LogLikeSet {
 				ze_magMain, ze_mean_a, ze_sigma_a, ze_min_a,ze_max_a, ze_delta_a, ze_b, ze_p, ze_c);
 
 			test_epi_selection (gamma_config, the_num_sim, ze_model);
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  event_id  forecast_lag
+		// Compute model for the given event at the given forecast lag.
+		// The forecast_lag is given in java.time.Duration format.
+		// Show the cumulative probabilities (zeta) for the given model and the given forecast lag.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// Two additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("LogLikeSet : Invalid 'test4' subcommand");
+				return;
+			}
+
+			String the_event_id = args[1];
+			long the_forecast_lag = SimpleUtils.string_to_duration (args[2]);
+
+			//boolean discard_large_as = true;
+
+			// Get configuration
+
+			GammaConfig gamma_config = new GammaConfig();
+			//gamma_config.discard_sim_with_large_as = discard_large_as;
+
+			int the_num_sim = gamma_config.simulation_count;
+
+			// Number of advisory windows and magnitude bins
+
+			int num_adv_win = gamma_config.adv_window_count;
+			int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+			// Fetch the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "", fcmain, params, true);
+
+			if (!( results.generic_result_avail
+				&& results.seq_spec_result_avail
+				&& results.bayesian_result_avail )) {
+				throw new RuntimeException ("LogLikeSet: Failed to compute aftershock models");
+			}
+
+			// Get catalog of all aftershocks
+
+			List<ObsEqkRupture> all_aftershocks = GammaUtils.get_all_aftershocks (gamma_config, fcmain);
+
+			System.out.println ("");
+			System.out.println ("Total number of aftershocks = " + all_aftershocks.size());
+
+			// Generic model
+
+			System.out.println ("");
+			System.out.println ("Generic model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
+			System.out.println ("");
+
+			compute_and_show_cum_prob (gamma_config, the_forecast_lag, the_num_sim,
+				fcmain, results.generic_model, all_aftershocks, false);
+
+			// Sequence specific model
+
+			System.out.println ("");
+			System.out.println ("Sequence specific model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
+			System.out.println ("");
+
+			compute_and_show_cum_prob (gamma_config, the_forecast_lag, the_num_sim,
+				fcmain, results.seq_spec_model, all_aftershocks, false);
+
+			// Bayesian model
+
+			System.out.println ("");
+			System.out.println ("Bayesian model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
+			System.out.println ("");
+
+			compute_and_show_cum_prob (gamma_config, the_forecast_lag, the_num_sim,
+				fcmain, results.bayesian_model, all_aftershocks, false);
+
+			// Zero-epistemic generic model with no epistemic uncertainty
+
+			System.out.println ("");
+			System.out.println ("Zero-epistemic model, forecast_lag = " + SimpleUtils.duration_to_string_2 (the_forecast_lag));
+			System.out.println ("");
+
+			RJ_AftershockModel_Generic ze_model = RJ_AftershockModel_Generic.from_max_like (results.generic_model);
+
+			compute_and_show_cum_prob (gamma_config, the_forecast_lag, the_num_sim,
+				fcmain, ze_model, all_aftershocks, false);
 
 			return;
 		}

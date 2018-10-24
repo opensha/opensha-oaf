@@ -280,7 +280,7 @@ public class CumProbSet {
 		// Convert the table
 
 		StringBuilder sb = new StringBuilder();
-		for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
 			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
 				sb.append (
 					gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "

@@ -477,6 +477,57 @@ public class EqkForecastSet {
 
 
 
+	// Compute the single-event zeta.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  zeta_lo = Array to receive low value of zeta, dimension:
+	//    zeta_lo[forecast_lag_count + 1][model_kind_count][adv_window_count + 1][adv_min_mag_bin_count].
+	//  zeta_hi = Array to receive high value of zeta, dimension:
+	//    zeta_hi[forecast_lag_count + 1][model_kind_count][adv_window_count + 1][adv_min_mag_bin_count].
+	// The extra forecast lag slot is used to report the sum over all forecast lags.
+	// The extra advisory window slot is used to report the sum over all windows.
+
+	public void single_event_zeta (GammaConfig gamma_config, double[][][][] zeta_lo, double[][][][] zeta_hi) {
+
+		// Number of forecast lags and aftershock models
+
+		int num_fc_lag = gamma_config.forecast_lag_count;
+		int num_model = gamma_config.model_kind_count;
+
+		// Loop over forecast lags and aftershock models, computing zeta for each
+
+		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
+			for (int i_model = 0; i_model < num_model; ++i_model) {
+				log_like_sets[i_fc_lag][i_model].single_event_zeta (gamma_config,
+					zeta_lo[i_fc_lag][i_model], zeta_hi[i_fc_lag][i_model]);
+			}
+		}
+
+		// Loop over models, computing zeta for sum over forecast lags
+
+		for (int i_model = 0; i_model < num_model; ++i_model) {
+
+			// Accumulate sum
+
+			LogLikeSet sum = new LogLikeSet();
+			sum.zero_init (gamma_config, -1L, num_sim);
+
+			for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
+				sum.add_from (gamma_config, log_like_sets[i_fc_lag][i_model], false);
+			}
+
+			// Compute zeta
+
+			sum.single_event_zeta (gamma_config,
+				zeta_lo[num_fc_lag][i_model], zeta_hi[num_fc_lag][i_model]);
+		}
+
+		return;
+	}
+
+
+
+
 	// Compute event count statistics.
 	// Parameters:
 	//  gamma_config = Configuration information.
@@ -534,6 +585,56 @@ public class EqkForecastSet {
 
 
 
+	// Compute event count statistics.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  obs_count = Array to receive observed count, dimension:
+	//    obs_count[forecast_lag_count + 1][model_kind_count][adv_window_count + 1][adv_min_mag_bin_count].
+	// The extra advisory window slot is used to report the sum over all windows.
+	// The extra forecast lag slot is used to report the sum over all forecast lags.
+	// Note the dimension of obs_count is different than in the overloaded function above.
+
+	public void compute_count_stats (GammaConfig gamma_config, int[][][][] obs_count) {
+
+		// Number of forecast lags and aftershock models
+
+		int num_fc_lag = gamma_config.forecast_lag_count;
+		int num_model = gamma_config.model_kind_count;
+
+		// Loop over forecast lags and aftershock models, computing statistics for each
+
+		for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
+			for (int i_model = 0; i_model < num_model; ++i_model) {
+				log_like_sets[i_fc_lag][i_model].compute_count_stats (gamma_config,
+					obs_count[i_fc_lag][i_model]);
+			}
+		}
+
+		// Loop over models, computing statistics for sum over forecast lags
+
+		for (int i_model = 0; i_model < num_model; ++i_model) {
+
+			// Accumulate sum
+
+			LogLikeSet sum = new LogLikeSet();
+			sum.zero_init (gamma_config, -1L, num_sim);
+
+			for (int i_fc_lag = 0; i_fc_lag < num_fc_lag; ++i_fc_lag) {
+				sum.add_from (gamma_config, log_like_sets[i_fc_lag][i_model], false);
+			}
+
+			// Compute statistics
+
+			sum.compute_count_stats (gamma_config,
+				obs_count[num_fc_lag][i_model]);
+		}
+
+		return;
+	}
+
+
+
+
 	// Compute the single-event gamma, and convert the table to a string.
 	// Parameters:
 	//  gamma_config = Configuration information.
@@ -569,9 +670,63 @@ public class EqkForecastSet {
 							+ gamma_config.model_kind_to_string(i_model) + ",  "
 							+ gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
 							+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-							+ "gamma_lo = " + gamma_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin] + ",  "
-							+ "gamma_hi = " + gamma_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin] + "\n"
+							+ "gamma_lo = " + String.format ("%.6f", gamma_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + ",  "
+							+ "gamma_hi = " + String.format ("%.6f", gamma_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + "\n"
 						);
+					}
+				}
+			}
+		}
+
+		return sb.toString();
+	}
+
+
+
+
+	// Compute the single-event zeta, and convert the table to a string.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  keep_empty = True to retain lines that contain no data, false to omit them.
+
+	public String single_event_zeta_to_string (GammaConfig gamma_config, boolean keep_empty) {
+
+		// Number of forecast lags and aftershock models
+
+		int num_fc_lag = gamma_config.forecast_lag_count;
+		int num_model = gamma_config.model_kind_count;
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Compute results
+
+		double[][][][] zeta_lo = new double[num_fc_lag + 1][num_model][num_adv_win + 1][num_mag_bin];
+		double[][][][] zeta_hi = new double[num_fc_lag + 1][num_model][num_adv_win + 1][num_mag_bin];
+
+		single_event_zeta (gamma_config, zeta_lo, zeta_hi);
+
+		// Convert the table
+
+		StringBuilder sb = new StringBuilder();
+		for (int i_fc_lag = 0; i_fc_lag <= num_fc_lag; ++i_fc_lag) {
+			for (int i_model = 0; i_model < num_model; ++i_model) {
+				for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+					for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+						if (keep_empty
+							|| zeta_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin] > -0.5
+							|| zeta_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin] > -0.5) {
+							sb.append (
+								gamma_config.get_forecast_lag_string_or_sum(i_fc_lag) + ",  "
+								+ gamma_config.model_kind_to_string(i_model) + ",  "
+								+ gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
+								+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+								+ "zeta_lo = " + String.format ("%.6f", zeta_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + ",  "
+								+ "zeta_hi = " + String.format ("%.6f", zeta_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + "\n"
+							);
+						}
 					}
 				}
 			}
@@ -626,6 +781,72 @@ public class EqkForecastSet {
 							+ "fractile_5 = " + sim_fractile_5_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + ",  "
 							+ "fractile_95 = " + sim_fractile_95_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + "\n"
 						);
+					}
+				}
+			}
+		}
+
+		return sb.toString();
+	}
+
+
+
+
+	// Compute the single-event zeta, and convert the table to a string.
+	// The string is formatted as a series of lines in a data file.
+	// Parameters:
+	//  gamma_config = Configuration information.
+	//  i_eqk = Earthquake number to insert at the start of each line.
+	//  keep_empty = True to retain lines that contain no data, false to omit them.
+
+	public String single_event_zeta_to_lines (GammaConfig gamma_config, int i_eqk, boolean keep_empty) {
+
+		// Number of forecast lags and aftershock models
+
+		int num_fc_lag = gamma_config.forecast_lag_count;
+		int num_model = gamma_config.model_kind_count;
+
+		// Number of advisory windows and magnitude bins
+
+		int num_adv_win = gamma_config.adv_window_count;
+		int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+		// Compute results
+
+		double[][][][] zeta_lo = new double[num_fc_lag + 1][num_model][num_adv_win + 1][num_mag_bin];
+		double[][][][] zeta_hi = new double[num_fc_lag + 1][num_model][num_adv_win + 1][num_mag_bin];
+
+		single_event_zeta (gamma_config, zeta_lo, zeta_hi);
+
+		int[][][][] obs_count = new int[num_fc_lag + 1][num_model][num_adv_win + 1][num_mag_bin];
+
+		compute_count_stats (gamma_config, obs_count);
+
+		// Convert the table
+
+		StringBuilder sb = new StringBuilder();
+		for (int i_fc_lag = 0; i_fc_lag <= num_fc_lag; ++i_fc_lag) {
+			for (int i_model = 0; i_model < num_model; ++i_model) {
+				for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+					for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+						if (keep_empty
+							|| zeta_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin] > -0.5
+							|| zeta_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin] > -0.5) {
+							sb.append (
+								i_eqk + " "
+								+ i_fc_lag + " "
+								+ i_model + " "
+								+ i_adv_win + " "
+								+ i_mag_bin + " "
+								+ gamma_config.get_forecast_lag_string_or_sum(i_fc_lag) + " "
+								+ gamma_config.model_kind_to_string(i_model).replace(' ', '-') + " "
+								+ gamma_config.get_adv_window_name_or_sum(i_adv_win).replace(' ', '-') + " "
+								+ gamma_config.adv_min_mag_bins[i_mag_bin] + " "
+								+ obs_count[i_fc_lag][i_model][i_adv_win][i_mag_bin] + " "
+								+ String.format ("%.6f", zeta_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + " "
+								+ String.format ("%.6f", zeta_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + "\n"
+							);
+						}
 					}
 				}
 			}
@@ -888,8 +1109,8 @@ public class EqkForecastSet {
 								+ gamma_config.model_kind_to_string(i_model) + ",  "
 								+ gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
 								+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
-								+ "gamma_lo = " + gamma_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin] + ",  "
-								+ "gamma_hi = " + gamma_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin]
+								+ "gamma_lo = " + String.format ("%.6f", gamma_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + ",  "
+								+ "gamma_hi = " + String.format ("%.6f", gamma_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin])
 							);
 						}
 					}
@@ -923,6 +1144,144 @@ public class EqkForecastSet {
 					}
 				}
 			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  event_id
+		// Compute all models at all forecast lags for the given event.
+		// This test displays the cumulative probability (zeta) statistic.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("EqkForecastSet : Invalid 'test2' subcommand");
+				return;
+			}
+
+			String the_event_id = args[1];
+
+			// Get configuration
+
+			GammaConfig gamma_config = new GammaConfig();
+
+			// Number of forecast lags and aftershock models
+
+			int num_fc_lag = gamma_config.forecast_lag_count;
+			int num_model = gamma_config.model_kind_count;
+
+			// Number of advisory windows and magnitude bins
+
+			int num_adv_win = gamma_config.adv_window_count;
+			int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+			// Fetch the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Compute models
+
+			System.out.println ("");
+			System.out.println ("Computing models for event_id = " + the_event_id);
+
+			EqkForecastSet eqk_forecast_set = new EqkForecastSet();
+			eqk_forecast_set.run_simulations (gamma_config,
+				gamma_config.simulation_count, fcmain, false);
+
+			double[][][][] zeta_lo = new double[num_fc_lag + 1][num_model][num_adv_win + 1][num_mag_bin];
+			double[][][][] zeta_hi = new double[num_fc_lag + 1][num_model][num_adv_win + 1][num_mag_bin];
+
+			eqk_forecast_set.single_event_zeta (gamma_config, zeta_lo, zeta_hi);
+
+			System.out.println ("");
+			for (int i_fc_lag = 0; i_fc_lag <= num_fc_lag; ++i_fc_lag) {
+				for (int i_model = 0; i_model < num_model; ++i_model) {
+					for (int i_adv_win = 0; i_adv_win <= num_adv_win; ++i_adv_win) {
+						for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
+							System.out.println (
+								gamma_config.get_forecast_lag_string_or_sum(i_fc_lag) + ",  "
+								+ gamma_config.model_kind_to_string(i_model) + ",  "
+								+ gamma_config.get_adv_window_name_or_sum(i_adv_win) + ",  "
+								+ "mag = " + gamma_config.adv_min_mag_bins[i_mag_bin] + ",  "
+								+ "zeta_lo = " + String.format ("%.6f", zeta_lo[i_fc_lag][i_model][i_adv_win][i_mag_bin]) + ",  "
+								+ "zeta_hi = " + String.format ("%.6f", zeta_hi[i_fc_lag][i_model][i_adv_win][i_mag_bin])
+							);
+						}
+					}
+				}
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  event_id  keep_empty
+		// Compute all models at all forecast lags for the given event.
+		// If keep_empty is true, lines with no data are retained.
+		// This test displays the cumulative probability (zeta) statistic.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("EqkForecastSet : Invalid 'test3' subcommand");
+				return;
+			}
+
+			String the_event_id = args[1];
+			boolean keep_empty = Boolean.parseBoolean (args[2]);
+
+			// Get configuration
+
+			GammaConfig gamma_config = new GammaConfig();
+
+			// Number of forecast lags and aftershock models
+
+			int num_fc_lag = gamma_config.forecast_lag_count;
+			int num_model = gamma_config.model_kind_count;
+
+			// Number of advisory windows and magnitude bins
+
+			int num_adv_win = gamma_config.adv_window_count;
+			int num_mag_bin = gamma_config.adv_min_mag_bin_count;
+
+			// Fetch the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Compute models
+
+			System.out.println ("");
+			System.out.println ("Computing models for event_id = " + the_event_id);
+
+			EqkForecastSet eqk_forecast_set = new EqkForecastSet();
+			eqk_forecast_set.run_simulations (gamma_config,
+				gamma_config.simulation_count, fcmain, false);
+
+			// Display lines
+
+			System.out.println ("");
+			System.out.println (eqk_forecast_set.single_event_zeta_to_lines (gamma_config, 0, keep_empty));
 
 			return;
 		}
