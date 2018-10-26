@@ -1,6 +1,7 @@
 package scratch.aftershockStatistics.gamma;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import java.io.Closeable;
@@ -38,6 +39,11 @@ import scratch.aftershockStatistics.util.SphRegionWorld;
 import scratch.aftershockStatistics.util.SphLatLon;
 import scratch.aftershockStatistics.util.SphRegion;
 import scratch.aftershockStatistics.util.SphRegionCircle;
+import scratch.aftershockStatistics.util.ObsEqkRupEventIdComparator;
+import scratch.aftershockStatistics.util.ObsEqkRupMaxMagComparator;
+import scratch.aftershockStatistics.util.ObsEqkRupMaxTimeComparator;
+import scratch.aftershockStatistics.util.ObsEqkRupMinMagComparator;
+import scratch.aftershockStatistics.util.ObsEqkRupMinTimeComparator;
 
 import scratch.aftershockStatistics.aafs.ActionConfig;
 import scratch.aftershockStatistics.aafs.ServerComponent;
@@ -1726,6 +1732,574 @@ public class GammaCmd {
 
 
 
+	// cmd_sim_agg_zeta_table_2 - Write the aggregated zeta table for a list of earthquakes, using simulated aftershock sequences.
+	// Command format:
+	//  sim_agg_zeta_table_2  log_filename  event_list_filename  gamma_table_filename  cat_min_mag  f_epi  num_rep  f_discard  f_randsum  f_data_fmt  f_keep_empty
+	// Read the list of events, and for each event compute the log-likelihoods and event counts.
+	// Sum over all events, and write the combined tables.
+	// Aftershock sequences are simulated using generic models, with minimum magnitude cat_min_mag.
+	// If f_epi is true, then epistemic uncertaintly is used when sampling the generic model.  (default true)
+	// Each event is repeated num_rep times.
+	// if f_discard is true, then discard simulations that have an aftershock larger than the mainshock. (default true)
+	// If f_randsum is true, then randomize sum over earthquakes.  (default true)
+	// The boolean f_data_fmt is true to write data file format, false for human-oriented format.
+	// The boolean f_keep_empty is true to write lines that contain no data.
+	//
+	// Usage requirements:
+	// Set up ServerConfig.json to read from the desired catalog.
+	// Set up ActionConfig.json to contain the desired forecast advisory windows and magnitude bins.
+	// Typical ActionConfig.json setup is:
+	//  "adv_min_mag_bins": [ 5.00, 6.00, 7.00 ],
+	//  "adv_window_start_offs": [ "P0D", "P0D", "P0D", "P0D", "-P365D" ],
+	//  "adv_window_end_offs": [ "P1D", "P7D", "P30D", "P365D", "P0D" ],
+	//  "adv_window_names": [ "1 Day", "1 Week", "1 Month", "1 Year", "Retro" ],
+
+	public static void cmd_sim_agg_zeta_table_2(String[] args) {
+
+		// 10 additional arguments
+
+		if (args.length != 11) {
+			System.err.println ("GammaCmd : Invalid 'sim_agg_zeta_table_2' subcommand");
+			return;
+		}
+
+		String log_filename = args[1];
+
+		// Redirect to the log file
+
+		try (
+
+			// Console redirection and log
+
+			ConsoleRedirector con_red = ConsoleRedirector.make_redirector (
+				new BufferedOutputStream (new FileOutputStream (log_filename)), true, true);
+
+		){
+
+			try {
+
+				// Parse arguments
+
+				String event_list_filename = args[2];
+				String gamma_table_filename = args[3];
+				double cat_min_mag = Double.parseDouble (args[4]);
+				boolean f_epi = Boolean.parseBoolean (args[5]);
+				int num_rep = Integer.parseInt (args[6]);
+				boolean f_discard = Boolean.parseBoolean (args[7]);
+				boolean f_randsum = Boolean.parseBoolean (args[8]);
+				boolean f_data_fmt = Boolean.parseBoolean (args[9]);
+				boolean f_keep_empty = Boolean.parseBoolean (args[10]);
+
+				// Say hello
+
+				System.out.println ("Command line:");
+				System.out.println (String.join ("  ", args));
+				System.out.println ("");
+
+				System.out.println ("Function: " + "cmd_sim_agg_zeta_table_2");
+				System.out.println ("");
+
+				System.out.println ("Event list filename: " + event_list_filename);
+				System.out.println ("Gamma table filename: " + gamma_table_filename);
+				System.out.println ("Minimum magnitude for simulated catalog: " + cat_min_mag);
+				System.out.println ("Use epistemic uncertainty for simulation parameters: " + f_epi);
+				System.out.println ("Number of repetitions: " + num_rep);
+				System.out.println ("Discard simulations with a large aftershock: " + f_discard);
+				System.out.println ("Randomize simulation sum over earthquakes: " + f_randsum);
+				System.out.println ("Write data format: " + f_data_fmt);
+				System.out.println ("Keep lines with no data: " + f_keep_empty);
+				System.out.println ("");
+
+				// Adjust verbosity
+
+				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				AftershockVerbose.set_verbose_mode (false);
+				System.out.println ("");
+
+				// Get configuration
+
+				GammaConfig gamma_config = new GammaConfig();
+
+				gamma_config.no_epistemic_uncertainty = !f_epi;
+				//gamma_config.sim_start_off = 0L;
+				gamma_config.discard_sim_with_large_as = f_discard;
+
+				if (!( f_randsum )) {
+					gamma_config.eqk_summation_count = gamma_config.simulation_count;
+					gamma_config.eqk_summation_randomize = false;
+				}
+
+				System.out.println (gamma_config.toString());
+				System.out.println ("");
+
+				// Total earthquake forecast set
+
+				EqkForecastSet total = new EqkForecastSet();
+				total.zero_init (gamma_config, gamma_config.eqk_summation_count);
+
+				// Open the input file
+
+				int events_processed = 0;
+
+				try (
+					Scanner scanner = new Scanner (new BufferedReader (new FileReader (event_list_filename)));
+				){
+					// Loop over earthquakes
+
+					while (scanner.hasNext()) {
+
+						// Count it
+
+						++events_processed;
+
+						// Read the event id
+
+						String the_event_id = scanner.next();
+						System.out.println ("Processing event " + events_processed + ": " + the_event_id);
+
+						// Repeat desired number of times
+
+						for (int i_rep = 0; i_rep < num_rep; ++i_rep) {
+
+							if (i_rep > 0) {
+								System.out.println ("Processing event " + events_processed + " repetition " + (i_rep + 1) + ": " + the_event_id);
+							}
+
+							// Fetch the mainshock info
+
+							ForecastMainshock fcmain = new ForecastMainshock();
+							fcmain.setup_mainshock_only (the_event_id);
+
+							// Compute models
+
+							EqkForecastSet eqk_forecast_set = new EqkForecastSet();
+							eqk_forecast_set.run_sim_simulations (gamma_config,
+								gamma_config.simulation_count, fcmain, cat_min_mag, f_epi, false, false);
+
+							// Add in to total
+
+							total.add_from (gamma_config, eqk_forecast_set, gamma_config.eqk_summation_randomize);
+						}
+					}
+				}
+
+				// Open the output file
+
+				try (
+					Writer writer = new BufferedWriter (new FileWriter (gamma_table_filename));
+				){
+					// Compute the gamma table and statistics table
+
+					String gamma_table = total.single_event_gamma_to_string (gamma_config);
+					String stats_table = total.compute_count_stats_to_string (gamma_config);
+
+					// Write to file
+
+					writer.write (gamma_table);
+					writer.write ("\n");
+					writer.write (stats_table);
+					writer.write ("\n");
+
+					// Write to file
+
+					String lines;
+					if (f_data_fmt) {
+						lines = total.single_event_zeta_to_lines (gamma_config, 0, f_keep_empty);
+					} else {
+						lines = total.single_event_zeta_to_string (gamma_config, f_keep_empty);
+					}
+
+					if (!( lines.isEmpty() )) {
+						writer.write (lines);
+					}
+				}
+
+				// Display the result
+
+				System.out.println ("");
+				System.out.println ("Events processed = " + events_processed);
+
+			}
+
+			// Report any uncaught exceptions
+
+			catch (Exception e) {
+				System.out.println ("cmd_sim_agg_zeta_table_2 had an exception");
+				e.printStackTrace();
+			}
+		}
+
+		// Report any uncaught exceptions
+
+		catch (Exception e) {
+			System.out.println ("cmd_sim_agg_zeta_table_2 had an exception");
+            e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_split_by_time - Split an event list into two or more parts, by time.
+	// Command format:
+	//  split_by_time  log_filename  event_list_filename  out_filename_pattern  num_parts
+	// Read the list of events, and split into num_parts according to event time.
+	// Write each part to a separate file.
+	// The out_filename_pattern must be suitable as the first argument to String.format,
+	// for a single integer value which is the part number (1, 2, ...).
+	//
+	// Usage requirements:
+	// Set up ServerConfig.json to read from the desired catalog.
+
+	public static void cmd_split_by_time(String[] args) {
+
+		// 4 additional arguments
+
+		if (args.length != 5) {
+			System.err.println ("GammaCmd : Invalid 'split_by_time' subcommand");
+			return;
+		}
+
+		String log_filename = args[1];
+
+		// Redirect to the log file
+
+		try (
+
+			// Console redirection and log
+
+			ConsoleRedirector con_red = ConsoleRedirector.make_redirector (
+				new BufferedOutputStream (new FileOutputStream (log_filename)), true, true);
+
+		){
+
+			try {
+
+				// Parse arguments
+
+				String event_list_filename = args[2];
+				String out_filename_pattern = args[3];
+				int num_parts = Integer.parseInt (args[4]);
+
+				if (num_parts < 1) {
+					throw new RuntimeException ("Illegal number of parts: " + num_parts);
+				}
+
+				// Say hello
+
+				System.out.println ("Command line:");
+				System.out.println (String.join ("  ", args));
+				System.out.println ("");
+
+				System.out.println ("Function: " + "cmd_split_by_time");
+				System.out.println ("");
+
+				System.out.println ("Event list filename: " + event_list_filename);
+				System.out.println ("Output filename pattern: " + out_filename_pattern);
+				System.out.println ("Number of parts: " + num_parts);
+				System.out.println ("");
+
+				// Adjust verbosity
+
+				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				AftershockVerbose.set_verbose_mode (false);
+				System.out.println ("");
+
+				// Get configuration
+
+				GammaConfig gamma_config = new GammaConfig();
+
+				System.out.println (gamma_config.toString());
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatAccessor accessor = new ComcatAccessor();
+
+				// List of earthquakes
+
+				ArrayList<ObsEqkRupture> rup_list = new ArrayList<ObsEqkRupture>();
+
+				// Open the input file
+
+				int events_retrieved = 0;
+
+				try (
+					Scanner scanner = new Scanner (new BufferedReader (new FileReader (event_list_filename)));
+				){
+					// Loop over earthquakes
+
+					while (scanner.hasNext()) {
+
+						// Count it
+
+						++events_retrieved;
+
+						// Read the event id
+
+						String the_event_id = scanner.next();
+						System.out.println ("Retrieving event " + events_retrieved + ": " + the_event_id);
+
+						// Fetch the rupture
+
+						ObsEqkRupture rup = accessor.fetchEvent (the_event_id, false, false);
+
+						if (rup == null) {
+							throw new RuntimeException ("Unable to retrieve catalog entry for event: " + the_event_id);
+						}
+
+						// Add to the List
+
+						rup_list.add (rup);
+					}
+				}
+
+				// Display the count
+
+				System.out.println ("");
+				System.out.println ("Events retrieved = " + events_retrieved);
+
+				// Sort list by time
+
+				rup_list.sort (new ObsEqkRupMinTimeComparator());
+
+				// Loop over parts
+
+				for (int i_part = 1; i_part <= num_parts; ++i_part) {
+
+					// Index range for this part
+
+					int k_lo = ((i_part - 1) * rup_list.size()) / num_parts;
+					int k_hi = (i_part * rup_list.size()) / num_parts;
+
+					System.out.println ("");
+					System.out.println ("Writing part " + i_part);
+
+					// Open the output file
+
+					try (
+						Writer writer = new BufferedWriter (new FileWriter (String.format (out_filename_pattern, i_part)));
+					){
+						// Write the events to the file
+
+						for (int k = k_lo; k < k_hi; ++k) {
+							ObsEqkRupture rup = rup_list.get(k);
+							String the_event_id = rup.getEventId();
+							System.out.println ("Writing part " + i_part + " event " + (k + 1 - k_lo) + ": " + the_event_id + ", time = " + SimpleUtils.time_raw_and_string(rup.getOriginTime()));
+							writer.write (the_event_id + "\n");
+						}
+					}
+
+					// Display the count
+
+					System.out.println ("");
+					System.out.println ("Part " + i_part + " events written = " + (k_hi - k_lo));
+				}
+
+			}
+
+			// Report any uncaught exceptions
+
+			catch (Exception e) {
+				System.out.println ("cmd_split_by_time had an exception");
+				e.printStackTrace();
+			}
+		}
+
+		// Report any uncaught exceptions
+
+		catch (Exception e) {
+			System.out.println ("cmd_split_by_time had an exception");
+            e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_split_by_mag - Split an event list into two or more parts, by magnitude.
+	// Command format:
+	//  split_by_mag  log_filename  event_list_filename  out_filename_pattern  num_parts
+	// Read the list of events, and split into num_parts according to event magnitude.
+	// Write each part to a separate file.
+	// The out_filename_pattern must be suitable as the first argument to String.format,
+	// for a single integer value which is the part number (1, 2, ...).
+	//
+	// Usage requirements:
+	// Set up ServerConfig.json to read from the desired catalog.
+
+	public static void cmd_split_by_mag(String[] args) {
+
+		// 4 additional arguments
+
+		if (args.length != 5) {
+			System.err.println ("GammaCmd : Invalid 'split_by_mag' subcommand");
+			return;
+		}
+
+		String log_filename = args[1];
+
+		// Redirect to the log file
+
+		try (
+
+			// Console redirection and log
+
+			ConsoleRedirector con_red = ConsoleRedirector.make_redirector (
+				new BufferedOutputStream (new FileOutputStream (log_filename)), true, true);
+
+		){
+
+			try {
+
+				// Parse arguments
+
+				String event_list_filename = args[2];
+				String out_filename_pattern = args[3];
+				int num_parts = Integer.parseInt (args[4]);
+
+				if (num_parts < 1) {
+					throw new RuntimeException ("Illegal number of parts: " + num_parts);
+				}
+
+				// Say hello
+
+				System.out.println ("Command line:");
+				System.out.println (String.join ("  ", args));
+				System.out.println ("");
+
+				System.out.println ("Function: " + "cmd_split_by_time");
+				System.out.println ("");
+
+				System.out.println ("Event list filename: " + event_list_filename);
+				System.out.println ("Output filename pattern: " + out_filename_pattern);
+				System.out.println ("Number of parts: " + num_parts);
+				System.out.println ("");
+
+				// Adjust verbosity
+
+				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				AftershockVerbose.set_verbose_mode (false);
+				System.out.println ("");
+
+				// Get configuration
+
+				GammaConfig gamma_config = new GammaConfig();
+
+				System.out.println (gamma_config.toString());
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatAccessor accessor = new ComcatAccessor();
+
+				// List of earthquakes
+
+				ArrayList<ObsEqkRupture> rup_list = new ArrayList<ObsEqkRupture>();
+
+				// Open the input file
+
+				int events_retrieved = 0;
+
+				try (
+					Scanner scanner = new Scanner (new BufferedReader (new FileReader (event_list_filename)));
+				){
+					// Loop over earthquakes
+
+					while (scanner.hasNext()) {
+
+						// Count it
+
+						++events_retrieved;
+
+						// Read the event id
+
+						String the_event_id = scanner.next();
+						System.out.println ("Retrieving event " + events_retrieved + ": " + the_event_id);
+
+						// Fetch the rupture
+
+						ObsEqkRupture rup = accessor.fetchEvent (the_event_id, false, false);
+
+						if (rup == null) {
+							throw new RuntimeException ("Unable to retrieve catalog entry for event: " + the_event_id);
+						}
+
+						// Add to the List
+
+						rup_list.add (rup);
+					}
+				}
+
+				// Display the count
+
+				System.out.println ("");
+				System.out.println ("Events retrieved = " + events_retrieved);
+
+				// Sort list by magnitude
+
+				rup_list.sort (new ObsEqkRupMinMagComparator());
+
+				// Loop over parts
+
+				for (int i_part = 1; i_part <= num_parts; ++i_part) {
+
+					// Index range for this part
+
+					int k_lo = ((i_part - 1) * rup_list.size()) / num_parts;
+					int k_hi = (i_part * rup_list.size()) / num_parts;
+
+					System.out.println ("");
+					System.out.println ("Writing part " + i_part);
+
+					// Open the output file
+
+					try (
+						Writer writer = new BufferedWriter (new FileWriter (String.format (out_filename_pattern, i_part)));
+					){
+						// Write the events to the file
+
+						for (int k = k_lo; k < k_hi; ++k) {
+							ObsEqkRupture rup = rup_list.get(k);
+							String the_event_id = rup.getEventId();
+							System.out.println ("Writing part " + i_part + " event " + (k + 1 - k_lo) + ": " + the_event_id + ", mag = " + String.format("%.3f", rup.getMag()));
+							writer.write (the_event_id + "\n");
+						}
+					}
+
+					// Display the count
+
+					System.out.println ("");
+					System.out.println ("Part " + i_part + " events written = " + (k_hi - k_lo));
+				}
+
+			}
+
+			// Report any uncaught exceptions
+
+			catch (Exception e) {
+				System.out.println ("cmd_split_by_mag had an exception");
+				e.printStackTrace();
+			}
+		}
+
+		// Report any uncaught exceptions
+
+		catch (Exception e) {
+			System.out.println ("cmd_split_by_mag had an exception");
+            e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
 	// Entry point.
 	
 	public static void main(String[] args) {
@@ -1986,6 +2560,77 @@ public class GammaCmd {
 		case "sim_agg_zeta_table":
 			try {
 				cmd_sim_agg_zeta_table(args);
+            } catch (Exception e) {
+                e.printStackTrace();
+			}
+			return;
+
+
+		// Subcommand : cmd_sim_agg_zeta_table_2
+		// Command format:
+		//  sim_agg_zeta_table_2  log_filename  event_list_filename  gamma_table_filename  cat_min_mag  f_epi  num_rep  f_discard  f_randsum  f_data_fmt  f_keep_empty
+		// Read the list of events, and for each event compute the log-likelihoods and event counts.
+		// Sum over all events, and write the combined tables.
+		// Aftershock sequences are simulated using generic models, with minimum magnitude cat_min_mag.
+		// If f_epi is true, then epistemic uncertaintly is used when sampling the generic model.  (default true)
+		// Each event is repeated num_rep times.
+		// if f_discard is true, then discard simulations that have an aftershock larger than the mainshock. (default true)
+		// If f_randsum is true, then randomize sum over earthquakes.  (default true)
+		// The boolean f_data_fmt is true to write data file format, false for human-oriented format.
+		// The boolean f_keep_empty is true to write lines that contain no data.
+		//
+		// Usage requirements:
+		// Set up ServerConfig.json to read from the desired catalog.
+		// Set up ActionConfig.json to contain the desired forecast advisory windows and magnitude bins.
+		// Typical ActionConfig.json setup is:
+		//  "adv_min_mag_bins": [ 5.00, 6.00, 7.00 ],
+		//  "adv_window_start_offs": [ "P0D", "P0D", "P0D", "P0D", "-P365D" ],
+		//  "adv_window_end_offs": [ "P1D", "P7D", "P30D", "P365D", "P0D" ],
+		//  "adv_window_names": [ "1 Day", "1 Week", "1 Month", "1 Year", "Retro" ],
+
+		case "sim_agg_zeta_table_2":
+			try {
+				cmd_sim_agg_zeta_table_2(args);
+            } catch (Exception e) {
+                e.printStackTrace();
+			}
+			return;
+
+
+		// Subcommand : cmd_split_by_time
+		// Command format:
+		//  split_by_time  log_filename  event_list_filename  out_filename_pattern  num_parts
+		// Read the list of events, and split into num_parts according to event time.
+		// Write each part to a separate file.
+		// The out_filename_pattern must be suitable as the first argument to String.format,
+		// for a single integer value which is the part number (1, 2, ...).
+		//
+		// Usage requirements:
+		// Set up ServerConfig.json to read from the desired catalog.
+
+		case "split_by_time":
+			try {
+				cmd_split_by_time(args);
+            } catch (Exception e) {
+                e.printStackTrace();
+			}
+			return;
+
+
+		// Subcommand : cmd_split_by_mag
+		// Command format:
+		//  split_by_mag  log_filename  event_list_filename  out_filename_pattern  num_parts
+		// Read the list of events, and split into num_parts according to event magnitude.
+		// Write each part to a separate file.
+		// The out_filename_pattern must be suitable as the first argument to String.format,
+		// for a single integer value which is the part number (1, 2, ...).
+		//
+		// Usage requirements:
+		// Set up ServerConfig.json to read from the desired catalog.
+
+		case "split_by_mag":
+			try {
+				cmd_split_by_mag(args);
             } catch (Exception e) {
                 e.printStackTrace();
 			}

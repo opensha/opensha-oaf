@@ -161,7 +161,7 @@ public class GammaConfig {
 		eqk_summation_randomize = true;
 		discard_sim_with_large_as = true;
 		no_epistemic_uncertainty = false;
-		seq_spec_min_aftershocks = 3;
+		seq_spec_min_aftershocks = 1;
 		bayesian_min_aftershocks = 0;
 	}
 
