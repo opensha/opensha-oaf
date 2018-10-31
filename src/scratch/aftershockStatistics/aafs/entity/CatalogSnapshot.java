@@ -27,6 +27,7 @@ import scratch.aftershockStatistics.aafs.MongoDBUtil;
 import scratch.aftershockStatistics.aafs.RecordKey;
 import scratch.aftershockStatistics.aafs.RecordPayload;
 import scratch.aftershockStatistics.aafs.RecordIterator;
+import scratch.aftershockStatistics.aafs.RecordIteratorMorphia;
 
 import scratch.aftershockStatistics.util.MarshalImpArray;
 import scratch.aftershockStatistics.util.MarshalImpJsonReader;
@@ -439,7 +440,7 @@ public class CatalogSnapshot implements java.io.Serializable {
 
 		MorphiaIterator<CatalogSnapshot, CatalogSnapshot> morphia_iterator = query.fetch();
 
-		return new RecordIterator<CatalogSnapshot>(morphia_iterator);
+		return new RecordIteratorMorphia<CatalogSnapshot>(morphia_iterator);
 	}
 
 

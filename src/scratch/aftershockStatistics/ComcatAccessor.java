@@ -773,7 +773,9 @@ public class ComcatAccessor {
 			// Display the number of events received
 
 			int count = events.size();
-			System.out.println ("Count of events received = " + count);
+			if (D) {
+				System.out.println ("Count of events received = " + count);
+			}
 
 			// Loop over returned events
 
@@ -819,7 +821,9 @@ public class ComcatAccessor {
 
 			// Display the number of events that survived filtering
 
-			System.out.println ("Count of events after filtering = " + filtered_count);
+			if (D) {
+				System.out.println ("Count of events after filtering = " + filtered_count);
+			}
 
 			// Advance the offset
 
@@ -841,7 +845,9 @@ public class ComcatAccessor {
 
 		// Display final result
 		
-		if (D) System.out.println("Total number of events returned = " + rups.size());
+		if (D) {
+			System.out.println("Total number of events returned = " + rups.size());
+		}
 		
 		return rups;
 	}

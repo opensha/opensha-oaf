@@ -24,6 +24,7 @@ import scratch.aftershockStatistics.aafs.MongoDBUtil;
 import scratch.aftershockStatistics.aafs.RecordKey;
 import scratch.aftershockStatistics.aafs.RecordPayload;
 import scratch.aftershockStatistics.aafs.RecordIterator;
+import scratch.aftershockStatistics.aafs.RecordIteratorMorphia;
 
 import scratch.aftershockStatistics.util.MarshalImpArray;
 import scratch.aftershockStatistics.util.MarshalImpJsonReader;
@@ -32,6 +33,13 @@ import scratch.aftershockStatistics.util.MarshalReader;
 import scratch.aftershockStatistics.util.MarshalWriter;
 import scratch.aftershockStatistics.util.MarshalException;
 
+
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
+//import com.mongodb.client.model.Indexes;
+//import com.mongodb.client.model.IndexOptions;
+
+import scratch.aftershockStatistics.aafs.DBCorruptException;
 
 
 
@@ -549,7 +557,7 @@ public class PendingTask implements java.io.Serializable {
 
 		MorphiaIterator<PendingTask, PendingTask> morphia_iterator = query.fetch();
 
-		return new RecordIterator<PendingTask>(morphia_iterator);
+		return new RecordIteratorMorphia<PendingTask>(morphia_iterator);
 	}
 
 
@@ -649,7 +657,7 @@ public class PendingTask implements java.io.Serializable {
 
 		MorphiaIterator<PendingTask, PendingTask> morphia_iterator = query.fetch();
 
-		return new RecordIterator<PendingTask>(morphia_iterator);
+		return new RecordIteratorMorphia<PendingTask>(morphia_iterator);
 	}
 
 
@@ -868,6 +876,151 @@ public class PendingTask implements java.io.Serializable {
 		datastore.delete(ptask);
 		
 		return;
+	}
+
+
+
+
+	//----- MongoDB Java driver access -----
+
+	// Our collection.
+
+	private static MongoCollection<Document> my_collection = null;
+
+
+
+
+	// Get the collection.
+
+	private static synchronized MongoCollection<Document> get_collection () {
+	
+		// If we don't have our collection yet ...
+
+		if (my_collection == null) {
+
+			// Get the collection
+
+			my_collection = MongoDBUtil.getCollection ("tasks");
+
+			// Create the indexes
+
+			my_collection.createIndex (
+				com.mongodb.client.model.Indexes.ascending ("event_id"),
+				new com.mongodb.client.model.IndexOptions().name ("eventid"));
+			my_collection.createIndex (
+				com.mongodb.client.model.Indexes.ascending ("exec_time"),
+				new com.mongodb.client.model.IndexOptions().name ("extime"));
+		}
+
+		// Return the collection
+
+		return my_collection;
+	}
+
+
+
+
+	// Convert this object to a document.
+	// If id is null, it is filled in with a newly allocated id.
+
+	private Document to_bson_doc () {
+	
+		// Supply the id if needed
+
+		if (id == null) {
+			id = new ObjectId();
+		}
+
+		// Construct the document
+
+		Document doc = new Document ("_id", id)
+						.append ("exec_time"  , new Long(exec_time))
+						.append ("event_id"   , event_id)
+						.append ("sched_time" , new Long(sched_time))
+						.append ("submit_time", new Long(submit_time))
+						.append ("submit_id"  , submit_id)
+						.append ("opcode"     , new Integer(opcode))
+						.append ("stage"      , new Integer(stage))
+						.append ("details"    , details);
+
+		return doc;
+	}
+
+
+
+
+	// Fill this object from a document.
+	// Throws an exception if conversion error.
+
+	private PendingTask from_bson_doc (Document doc) {
+
+		try {
+			id = doc.getObjectId("_id");
+		} catch (Exception e) {
+			throw new DBCorruptException ("PendingTask.from_document: Error converting id", e);
+		}
+		if (id == null) {
+			throw new DBCorruptException ("PendingTask.from_document: Null id");
+		}
+
+		try {
+			exec_time = doc.getLong("exec_time").longValue();
+		} catch (Exception e) {
+			throw new DBCorruptException ("PendingTask.from_document: Error converting exec_time", e);
+		}
+
+		try {
+			event_id = doc.getString("event_id");
+		} catch (Exception e) {
+			throw new DBCorruptException ("PendingTask.from_document: Error converting event_id", e);
+		}
+		if (event_id == null) {
+			throw new DBCorruptException ("PendingTask.from_document: Null event_id");
+		}
+
+		try {
+			sched_time = doc.getLong("sched_time").longValue();
+		} catch (Exception e) {
+			throw new DBCorruptException ("PendingTask.from_document: Error converting sched_time", e);
+		}
+
+		try {
+			submit_time = doc.getLong("submit_time").longValue();
+		} catch (Exception e) {
+			throw new DBCorruptException ("PendingTask.from_document: Error converting submit_time", e);
+		}
+
+		try {
+			submit_id = doc.getString("submit_id");
+		} catch (Exception e) {
+			throw new DBCorruptException ("PendingTask.from_document: Error converting submit_id", e);
+		}
+		if (submit_id == null) {
+			throw new DBCorruptException ("PendingTask.from_document: Null submit_id");
+		}
+
+		try {
+			opcode = doc.getInteger("opcode").intValue();
+		} catch (Exception e) {
+			throw new DBCorruptException ("PendingTask.from_document: Error converting opcode", e);
+		}
+
+		try {
+			stage = doc.getInteger("stage").intValue();
+		} catch (Exception e) {
+			throw new DBCorruptException ("PendingTask.from_document: Error converting stage", e);
+		}
+
+		try {
+			details = doc.getString("details");
+		} catch (Exception e) {
+			throw new DBCorruptException ("PendingTask.from_document: Error converting submit_id", e);
+		}
+		if (details == null) {
+			throw new DBCorruptException ("PendingTask.from_document: Null details");
+		}
+	
+		return this;
 	}
 
 

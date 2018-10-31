@@ -11,6 +11,11 @@ import com.mongodb.MongoCredential;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.client.MongoDatabase;
 
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
+import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.IndexOptions;
+
 
 /**
  * This class holds utilities for access to MongoDB.
@@ -41,7 +46,7 @@ public class MongoDBUtil implements AutoCloseable {
 
 	// The MongoDB database.
 
-    //private static MongoDatabase db = null;
+    private static MongoDatabase db = null;
 
 	// The Morphia endpoint.
 
@@ -106,7 +111,7 @@ public class MongoDBUtil implements AutoCloseable {
 			// Get the database, using database name.
 			// This could be used for database operations not supported by Morphia.
 
-			//db = mongoClient.getDatabase(config.getDb_name());
+			db = mongoClient.getDatabase(config.getDb_name());
 
 			// Create the Morphia endpoint.
 
@@ -171,7 +176,7 @@ public class MongoDBUtil implements AutoCloseable {
 		if (mongoClient != null) {
 			datastore = null;
 			morphia = null;
-			//db = null;
+			db = null;
 			mongoClient.close();
 			mongoClient = null;
 			mongoOptions = null;
@@ -184,23 +189,31 @@ public class MongoDBUtil implements AutoCloseable {
 
 
 
-
 	
 	/**
 	 * Retrieve the MongoDB database.
 	 */
-    //public static DB getDB() {
-    //    return db;
-    //}
+    public static MongoDatabase getDB() {
+        return db;
+    }
 
  
-
 
 	
 	/**
 	 * Retrieve the Morphia datastore.
 	 */
-   public static Datastore getDatastore() {
+    public static Datastore getDatastore() {
         return datastore;
     }
+
+
+
+	// Get or create a collection.
+
+	public static MongoCollection<Document> getCollection (String name) {
+		return db.getCollection (name);
+	}
+
+
 }

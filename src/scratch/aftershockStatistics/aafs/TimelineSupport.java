@@ -369,7 +369,9 @@ public class TimelineSupport extends ServerComponent {
 
 		// Get the next ComCat retry lag
 
-		long min_lag = sg.task_disp.get_action_config().int_to_lag (task.get_stage()) + 1L;
+		long last_comcat_retry_lag = sg.task_disp.get_action_config().int_to_lag (task.get_stage());
+
+		long min_lag = last_comcat_retry_lag + 1L;
 
 		if (e instanceof ComcatRemovedException) {
 			if (min_lag < sg.task_disp.get_action_config().get_comcat_retry_missing()) {
@@ -385,8 +387,13 @@ public class TimelineSupport extends ServerComponent {
 
 			sg.log_sup.report_comcat_exception (task.get_event_id(), e);
 
-			sg.task_disp.set_taskres_stage (task.get_sched_time() + next_comcat_retry_lag,
-								sg.task_disp.get_action_config().lag_to_int (next_comcat_retry_lag));
+			//sg.task_disp.set_taskres_stage (task.get_sched_time() + next_comcat_retry_lag,
+			//					sg.task_disp.get_action_config().lag_to_int (next_comcat_retry_lag));
+
+			sg.task_disp.set_taskres_stage (
+					Math.max (task.get_sched_time(), sg.task_disp.get_time() - last_comcat_retry_lag) + next_comcat_retry_lag,
+					sg.task_disp.get_action_config().lag_to_int (next_comcat_retry_lag));
+
 			return RESCODE_STAGE_COMCAT_RETRY;
 		}
 
