@@ -34,12 +34,25 @@ import scratch.aftershockStatistics.util.MarshalWriter;
 import scratch.aftershockStatistics.util.MarshalException;
 
 
+import java.util.ArrayList;
+
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 //import com.mongodb.client.model.Indexes;
 //import com.mongodb.client.model.IndexOptions;
+import org.bson.conversions.Bson;
+import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndDeleteOptions;
+import com.mongodb.client.model.FindOneAndReplaceOptions;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.ReturnDocument;
+import com.mongodb.client.model.Updates;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCursor;
 
 import scratch.aftershockStatistics.aafs.DBCorruptException;
+import scratch.aftershockStatistics.aafs.RecordIteratorMongo;
 
 
 
@@ -439,6 +452,10 @@ public class PendingTask implements java.io.Serializable {
 	public static PendingTask submit_task (String event_id, long sched_time, long submit_time,
 								String submit_id, int opcode, int stage, MarshalWriter details) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_submit_task (event_id, sched_time, submit_time, submit_id, opcode, stage, details);
+		}
+
 		// Check conditions
 
 		if (!( event_id != null
@@ -478,6 +495,10 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static PendingTask store_task (PendingTask ptask) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_store_task (ptask);
+		}
+
 		// Call MongoDB to store into database
 
 		Datastore datastore = MongoDBUtil.getDatastore();
@@ -494,6 +515,10 @@ public class PendingTask implements java.io.Serializable {
 	 * This is primarily for testing and monitoring.
 	 */
 	public static List<PendingTask> get_all_tasks_unsorted () {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_all_tasks_unsorted ();
+		}
 
 		// Get the MongoDB data store
 
@@ -519,6 +544,10 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static List<PendingTask> get_all_tasks () {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_all_tasks ();
+		}
+
 		// Get the MongoDB data store
 
 		Datastore datastore = MongoDBUtil.getDatastore();
@@ -543,6 +572,10 @@ public class PendingTask implements java.io.Serializable {
 	 * This is primarily for testing and monitoring.
 	 */
 	public static RecordIterator<PendingTask> fetch_all_tasks () {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_fetch_all_tasks ();
+		}
 
 		// Get the MongoDB data store
 
@@ -572,6 +605,10 @@ public class PendingTask implements java.io.Serializable {
 	 * @param event_id = Event id. Can be null to return entries for all events.
 	 */
 	public static List<PendingTask> get_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_task_entry_range (exec_time_lo, exec_time_hi, event_id);
+		}
 
 		// Get the MongoDB data store
 
@@ -622,6 +659,10 @@ public class PendingTask implements java.io.Serializable {
 	 * @param event_id = Event id. Can be null to return entries for all events.
 	 */
 	public static RecordIterator<PendingTask> fetch_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_fetch_task_entry_range (exec_time_lo, exec_time_hi, event_id);
+		}
 
 		// Get the MongoDB data store
 
@@ -675,6 +716,10 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static PendingTask get_first_task_entry (long exec_time_lo, long exec_time_hi, String event_id) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_first_task_entry (exec_time_lo, exec_time_hi, event_id);
+		}
+
 		// Get the MongoDB data store
 
 		Datastore datastore = MongoDBUtil.getDatastore();
@@ -721,6 +766,10 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static PendingTask get_first_task () {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_first_task ();
+		}
+
 		// Get the MongoDB data store
 
 		Datastore datastore = MongoDBUtil.getDatastore();
@@ -748,6 +797,10 @@ public class PendingTask implements java.io.Serializable {
 	 * This is primarily for testing and monitoring.
 	 */
 	public static PendingTask get_first_ready_task (long cutoff_time) {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_first_ready_task (cutoff_time);
+		}
 
 		// Get the MongoDB data store
 
@@ -777,6 +830,10 @@ public class PendingTask implements java.io.Serializable {
 	 * The task is marked active by setting exec_time = 0 in the database.
 	 */
 	public static PendingTask activate_first_ready_task (long cutoff_time) {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_activate_first_ready_task (cutoff_time);
+		}
 
 		// Get the MongoDB data store
 
@@ -820,6 +877,11 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static void stage_task (PendingTask ptask, long exec_time, int stage, String event_id) {
 
+		if (MongoDBUtil.use_jd()) {
+			jd_stage_task (ptask, exec_time, stage, event_id);
+			return;
+		}
+
 		// Check conditions
 
 		if (!( ptask != null && ptask.get_id() != null
@@ -860,6 +922,11 @@ public class PendingTask implements java.io.Serializable {
 	 * @return
 	 */
 	public static void delete_task (PendingTask ptask) {
+
+		if (MongoDBUtil.use_jd()) {
+			jd_delete_task (ptask);
+			return;
+		}
 
 		// Check conditions
 
@@ -904,12 +971,8 @@ public class PendingTask implements java.io.Serializable {
 
 			// Create the indexes
 
-			my_collection.createIndex (
-				com.mongodb.client.model.Indexes.ascending ("event_id"),
-				new com.mongodb.client.model.IndexOptions().name ("eventid"));
-			my_collection.createIndex (
-				com.mongodb.client.model.Indexes.ascending ("exec_time"),
-				new com.mongodb.client.model.IndexOptions().name ("extime"));
+			MongoDBUtil.make_simple_index (my_collection, "event_id", "eventid");
+			MongoDBUtil.make_simple_index (my_collection, "exec_time", "extime");
 		}
 
 		// Return the collection
@@ -954,73 +1017,498 @@ public class PendingTask implements java.io.Serializable {
 
 	private PendingTask from_bson_doc (Document doc) {
 
-		try {
-			id = doc.getObjectId("_id");
-		} catch (Exception e) {
-			throw new DBCorruptException ("PendingTask.from_document: Error converting id", e);
-		}
-		if (id == null) {
-			throw new DBCorruptException ("PendingTask.from_document: Null id");
-		}
+		id          = MongoDBUtil.doc_get_object_id (doc, "_id"        );
+		exec_time   = MongoDBUtil.doc_get_long      (doc, "exec_time"  );
+		event_id    = MongoDBUtil.doc_get_string    (doc, "event_id"   );
+		sched_time  = MongoDBUtil.doc_get_long      (doc, "sched_time" );
+		submit_time = MongoDBUtil.doc_get_long      (doc, "submit_time");
+		submit_id   = MongoDBUtil.doc_get_string    (doc, "submit_id"  );
+		opcode      = MongoDBUtil.doc_get_int       (doc, "opcode"     );
+		stage       = MongoDBUtil.doc_get_int       (doc, "stage"      );
+		details     = MongoDBUtil.doc_get_string    (doc, "details"    );
 
-		try {
-			exec_time = doc.getLong("exec_time").longValue();
-		} catch (Exception e) {
-			throw new DBCorruptException ("PendingTask.from_document: Error converting exec_time", e);
-		}
-
-		try {
-			event_id = doc.getString("event_id");
-		} catch (Exception e) {
-			throw new DBCorruptException ("PendingTask.from_document: Error converting event_id", e);
-		}
-		if (event_id == null) {
-			throw new DBCorruptException ("PendingTask.from_document: Null event_id");
-		}
-
-		try {
-			sched_time = doc.getLong("sched_time").longValue();
-		} catch (Exception e) {
-			throw new DBCorruptException ("PendingTask.from_document: Error converting sched_time", e);
-		}
-
-		try {
-			submit_time = doc.getLong("submit_time").longValue();
-		} catch (Exception e) {
-			throw new DBCorruptException ("PendingTask.from_document: Error converting submit_time", e);
-		}
-
-		try {
-			submit_id = doc.getString("submit_id");
-		} catch (Exception e) {
-			throw new DBCorruptException ("PendingTask.from_document: Error converting submit_id", e);
-		}
-		if (submit_id == null) {
-			throw new DBCorruptException ("PendingTask.from_document: Null submit_id");
-		}
-
-		try {
-			opcode = doc.getInteger("opcode").intValue();
-		} catch (Exception e) {
-			throw new DBCorruptException ("PendingTask.from_document: Error converting opcode", e);
-		}
-
-		try {
-			stage = doc.getInteger("stage").intValue();
-		} catch (Exception e) {
-			throw new DBCorruptException ("PendingTask.from_document: Error converting stage", e);
-		}
-
-		try {
-			details = doc.getString("details");
-		} catch (Exception e) {
-			throw new DBCorruptException ("PendingTask.from_document: Error converting submit_id", e);
-		}
-		if (details == null) {
-			throw new DBCorruptException ("PendingTask.from_document: Null details");
-		}
-	
 		return this;
+	}
+
+
+
+
+	// Our record iterator class.
+
+	private static class MyRecordIterator extends RecordIteratorMongo<PendingTask> {
+
+		// Constructor passes thru the cursor.
+
+		public MyRecordIterator (MongoCursor<Document> mongo_cursor) {
+			super (mongo_cursor);
+		}
+
+		// Hook routine to convert a Document to a T.
+
+		@Override
+		protected PendingTask hook_convert (Document doc) {
+			return (new PendingTask()).from_bson_doc (doc);
+		}
+	}
+
+
+
+
+	// Make the natural sort for this collection.
+	// The natural sort is in increasing order of execution time.
+
+	private static Bson natural_sort () {
+		return Sorts.ascending ("exec_time");
+	}
+
+
+
+
+	// Make a filter on the id field.
+
+	private static Bson id_filter (ObjectId the_id) {
+		return Filters.eq ("_id", the_id);
+	}
+
+
+
+
+	// Make the natural filter for this collection.
+	// exec_time_lo = Minimum execution time, in milliseconds since the epoch.
+	//                Can be 0L for no minimum.
+	// exec_time_hi = Maximum execution time, in milliseconds since the epoch.
+	//                Can be 0L for no maximum.
+	// event_id = Event id. Can be null to return entries for all events.
+	// Return the filter, or null if no filter is required.
+	// Note: An alternative to returning null would be to return new Document(),
+	// which is an empty document, and which when used as a filter matches everything.
+
+	private static Bson natural_filter (long exec_time_lo, long exec_time_hi, String event_id) {
+		ArrayList<Bson> filters = new ArrayList<Bson>();
+
+		// Select by event_id
+
+		if (event_id != null) {
+			filters.add (Filters.eq ("event_id", event_id));
+		}
+
+		// Select entries with exec_time >= exec_time_lo
+
+		if (exec_time_lo > 0L) {
+			filters.add (Filters.gte ("exec_time", new Long(exec_time_lo)));
+		}
+
+		// Select entries with exec_time <= exec_time_hi
+
+		if (exec_time_hi > 0L) {
+			filters.add (Filters.lte ("exec_time", new Long(exec_time_hi)));
+		}
+
+		// Return combination of filters
+
+		if (filters.size() == 0) {
+			return null;
+		}
+		if (filters.size() == 1) {
+			return filters.get(0);
+		}
+		return Filters.and (filters);
+	}
+
+
+
+
+	// Make a cutoff filter for this collection.
+	// cutoff_time = Cutoff time, in milliseconds since the epoch.
+	// The filter selects tasks with exec_time <= cutoff_time.
+
+	private static Bson cutoff_filter (long cutoff_time) {
+		return Filters.lte ("exec_time", new Long(cutoff_time));
+	}
+
+
+
+
+	/**
+	 * submit_task - Submit a task.
+	 * @param event_id = Event associated with this task, or "" if none. Cannot be null.
+	 * @param sched_time = Time at which task should execute, in milliseconds
+	 *                     since the epoch. Must be positive.
+	 * @param submit_time = Time at which the task is submitted, in milliseconds
+	 *                      since the epoch. Must be positive.
+	 * @param submit_id = Person or entity submitting this task. Cannot be empty or null.
+	 * @param opcode = Operation code used to dispatch the task.
+	 * @param stage = Stage number, user-defined, effectively an extension of the opcode.
+	 * @param details = Further details of this task. Can be null if there are none.
+	 * @return
+	 * Returns the new entry.
+	 */
+	public static PendingTask jd_submit_task (String event_id, long sched_time, long submit_time,
+								String submit_id, int opcode, int stage, MarshalWriter details) {
+
+		// Check conditions
+
+		if (!( event_id != null
+			&& sched_time > 0L
+			&& submit_time > 0L
+			&& submit_id != null && submit_id.length() > 0 )) {
+			throw new IllegalArgumentException("PendingTask.submit_task: Invalid task parameters");
+		}
+
+		// Construct the pending task object
+
+		PendingTask ptask = new PendingTask();
+		ptask.set_id (null);
+		ptask.set_exec_time (sched_time);
+		ptask.set_event_id (event_id);
+		ptask.set_sched_time (sched_time);
+		ptask.set_submit_time (submit_time);
+		ptask.set_submit_id (submit_id);
+		ptask.set_opcode (opcode);
+		ptask.set_stage (stage);
+		ptask.set_details (details);
+
+		// Call MongoDB to store into database
+
+		get_collection().insertOne (ptask.to_bson_doc());
+		
+		return ptask;
+	}
+
+
+
+
+	/**
+	 * store_task - Store a task into the database.
+	 * This is primarily for restoring from backup.
+	 */
+	public static PendingTask jd_store_task (PendingTask ptask) {
+
+		// Call MongoDB to store into database
+
+		get_collection().insertOne (ptask.to_bson_doc());
+		
+		return ptask;
+	}
+
+
+
+
+	/**
+	 * get_all_tasks_unsorted - Get a list of all pending tasks, without sorting.
+	 * This is primarily for testing and monitoring.
+	 */
+	public static List<PendingTask> jd_get_all_tasks_unsorted () {
+		ArrayList<PendingTask> tasks = new ArrayList<PendingTask>();
+
+		// Get the cursor and iterator
+
+		MongoCursor<Document> cursor = get_collection().find().iterator();
+		try (
+			MyRecordIterator iter = new MyRecordIterator (cursor);
+		){
+			// Dump into the list
+
+			while (iter.hasNext()) {
+				tasks.add (iter.next());
+			}
+		}
+
+		return tasks;
+	}
+
+
+
+
+	/**
+	 * get_all_tasks - Get a list of all pending tasks, sorted by execution time.
+	 * This is primarily for testing and monitoring.
+	 */
+	public static List<PendingTask> jd_get_all_tasks () {
+		ArrayList<PendingTask> tasks = new ArrayList<PendingTask>();
+
+		// Get the cursor and iterator
+
+		MongoCursor<Document> cursor = get_collection().find().sort(natural_sort()).iterator();
+		try (
+			MyRecordIterator iter = new MyRecordIterator (cursor);
+		){
+			// Dump into the list
+
+			while (iter.hasNext()) {
+				tasks.add (iter.next());
+			}
+		}
+
+		return tasks;
+	}
+
+
+
+
+	/**
+	 * fetch_all_tasks - Iterate all pending tasks, sorted by execution time.
+	 * This is primarily for testing and monitoring.
+	 */
+	public static RecordIterator<PendingTask> jd_fetch_all_tasks () {
+
+		// Get the cursor and iterator
+
+		MongoCursor<Document> cursor = get_collection().find().sort(natural_sort()).iterator();
+		return new MyRecordIterator (cursor);
+	}
+
+
+
+
+	/**
+	 * get_task_entry_range - Get a range of task entries, sorted by execution time.
+	 * @param exec_time_lo = Minimum execution time, in milliseconds since the epoch.
+	 *                       Can be 0L for no minimum.
+	 * @param exec_time_hi = Maximum execution time, in milliseconds since the epoch.
+	 *                       Can be 0L for no maximum.
+	 * @param event_id = Event id. Can be null to return entries for all events.
+	 */
+	public static List<PendingTask> jd_get_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
+		ArrayList<PendingTask> tasks = new ArrayList<PendingTask>();
+
+		// Get the cursor and iterator
+
+		Bson filter = natural_filter (exec_time_lo, exec_time_hi, event_id);
+		MongoCursor<Document> cursor;
+		if (filter == null) {
+			cursor = get_collection().find().sort(natural_sort()).iterator();
+		} else {
+			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
+		}
+		try (
+			MyRecordIterator iter = new MyRecordIterator (cursor);
+		){
+			// Dump into the list
+
+			while (iter.hasNext()) {
+				tasks.add (iter.next());
+			}
+		}
+
+		return tasks;
+	}
+
+
+
+
+	/**
+	 * fetch_task_entry_range - Iterate a range of task entries, sorted by execution time.
+	 * @param exec_time_lo = Minimum execution time, in milliseconds since the epoch.
+	 *                       Can be 0L for no minimum.
+	 * @param exec_time_hi = Maximum execution time, in milliseconds since the epoch.
+	 *                       Can be 0L for no maximum.
+	 * @param event_id = Event id. Can be null to return entries for all events.
+	 */
+	public static RecordIterator<PendingTask> jd_fetch_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
+
+		// Get the cursor and iterator
+
+		Bson filter = natural_filter (exec_time_lo, exec_time_hi, event_id);
+		MongoCursor<Document> cursor;
+		if (filter == null) {
+			cursor = get_collection().find().sort(natural_sort()).iterator();
+		} else {
+			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
+		}
+		return new MyRecordIterator (cursor);
+	}
+
+
+
+
+	/**
+	 * get_first_task_entry - Get the first in a range of task entries.
+	 * @param exec_time_lo = Minimum execution time, in milliseconds since the epoch.
+	 *                       Can be 0L for no minimum.
+	 * @param exec_time_hi = Maximum execution time, in milliseconds since the epoch.
+	 *                       Can be 0L for no maximum.
+	 * @param event_id = Event id. Can be null to return entries for all events.
+	 * Returns the matching task entry with the smallest exec_time (first to execute),
+	 * or null if there is no matching task entry.
+	 */
+	public static PendingTask jd_get_first_task_entry (long exec_time_lo, long exec_time_hi, String event_id) {
+
+		// Get the document
+
+		Bson filter = natural_filter (exec_time_lo, exec_time_hi, event_id);
+		Document doc;
+		if (filter == null) {
+			doc = get_collection().find().sort(natural_sort()).first();
+		} else {
+			doc = get_collection().find(filter).sort(natural_sort()).first();
+		}
+
+		// Convert to task
+
+		if (doc == null) {
+			return null;
+		}
+
+		return (new PendingTask()).from_bson_doc (doc);
+	}
+
+
+
+
+	/**
+	 * get_first_task - Get the first task, that is, the task with smallest execution time.
+	 * This is primarily for testing and monitoring.
+	 */
+	public static PendingTask jd_get_first_task () {
+
+		// Get the document
+
+		Document doc = get_collection().find().sort(natural_sort()).first();
+
+		// Convert to task
+
+		if (doc == null) {
+			return null;
+		}
+
+		return (new PendingTask()).from_bson_doc (doc);
+	}
+
+
+
+
+	/**
+	 * get_first_ready_task - Get the first ready task, according to execution time.
+	 * @param cutoff_time = Cutoff time, in milliseconds since the epoch.
+	 * Only tasks with exec_time <= cutoff_time are considered.
+	 * Return is null if there are no such tasks.
+	 * This is primarily for testing and monitoring.
+	 */
+	public static PendingTask jd_get_first_ready_task (long cutoff_time) {
+
+		// Get the document
+
+		Document doc = get_collection().find(cutoff_filter (cutoff_time)).sort(natural_sort()).first();
+
+		// Convert to task
+
+		if (doc == null) {
+			return null;
+		}
+
+		return (new PendingTask()).from_bson_doc (doc);
+	}
+
+
+
+
+	/**
+	 * activate_first_ready_task - Get and activate the first ready task, according to execution time.
+	 * @param cutoff_time = Cutoff time, in milliseconds since the epoch.
+	 * Only tasks with exec_time <= cutoff_time are considered.
+	 * Return is null if there are no such tasks.
+	 * The task is marked active by setting exec_time = 0 in the database.
+	 */
+	public static PendingTask jd_activate_first_ready_task (long cutoff_time) {
+
+		// Filter: exec_time <= cutoff_time
+
+		Bson filter = cutoff_filter (cutoff_time);
+
+		// Update: Set exec_time to 0L
+
+		Bson update = Updates.set ("exec_time", new Long(0L));
+
+		// Options: sort by exec_time, return original document value
+
+		FindOneAndUpdateOptions options = (new FindOneAndUpdateOptions()).sort(natural_sort()).returnDocument(ReturnDocument.BEFORE);
+
+		// Get the document
+
+		Document doc = get_collection().findOneAndUpdate (filter, update, options);
+
+		// Convert to task
+
+		if (doc == null) {
+			return null;
+		}
+
+		return (new PendingTask()).from_bson_doc (doc);
+	}
+
+
+
+
+	/**
+	 * stage_task - Begin a new stage of a task.
+	 * @param ptask = Existing pending task to stage.
+	 * @param exec_time = Time at which task should execute, in milliseconds
+	 *                    since the epoch. Must be positive.
+	 * @param event_id = New event ID, or null to leave it unchanged.
+	 * @param stage = Stage number, user-defined, effectively an extension of the opcode.
+	 * @return
+	 */
+	public static void jd_stage_task (PendingTask ptask, long exec_time, int stage, String event_id) {
+
+		// Check conditions
+
+		if (!( ptask != null && ptask.get_id() != null
+			&& exec_time > 0L )) {
+			throw new IllegalArgumentException("PendingTask.stage_task: Invalid task parameters");
+		}
+
+		// Filter: id == ptask.id
+
+		Bson filter = id_filter (ptask.get_id());
+
+		// Construct the update operations: Set exec_time and stage
+
+		ArrayList<Bson> updates = new ArrayList<Bson>();
+
+		updates.add (Updates.set ("exec_time", new Long(exec_time)));
+		updates.add (Updates.set ("stage", new Integer(stage)));
+
+		// Update event ID if desired
+
+		if (event_id != null) {
+			updates.add (Updates.set ("event_id", event_id));
+		}
+
+		Bson update = Updates.combine (updates);
+
+		// Run the update
+
+		get_collection().updateOne (filter, update);
+		
+		return;
+	}
+
+
+
+
+	/**
+	 * delete_task - Delete a task.
+	 * @param ptask = Existing pending task to delete.
+	 * @return
+	 */
+	public static void jd_delete_task (PendingTask ptask) {
+
+		// Check conditions
+
+		if (!( ptask != null && ptask.get_id() != null )) {
+			throw new IllegalArgumentException("PendingTask.delete_task: Invalid task parameters");
+		}
+
+		// Filter: id == ptask.id
+
+		Bson filter = id_filter (ptask.get_id());
+
+		// Run the delete
+
+		get_collection().deleteOne (filter);
+		
+		return;
 	}
 
 

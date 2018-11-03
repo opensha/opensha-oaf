@@ -34,6 +34,27 @@ import scratch.aftershockStatistics.util.MarshalWriter;
 import scratch.aftershockStatistics.util.MarshalException;
 
 
+import java.util.ArrayList;
+
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
+//import com.mongodb.client.model.Indexes;
+//import com.mongodb.client.model.IndexOptions;
+import org.bson.conversions.Bson;
+import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndDeleteOptions;
+import com.mongodb.client.model.FindOneAndReplaceOptions;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.ReturnDocument;
+import com.mongodb.client.model.Updates;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCursor;
+
+import scratch.aftershockStatistics.aafs.DBCorruptException;
+import scratch.aftershockStatistics.aafs.RecordIteratorMongo;
+
+
 
 
 /**
@@ -457,6 +478,12 @@ public class LogEntry implements java.io.Serializable {
 			long sched_time, long submit_time, String submit_id, int opcode, int stage,
 			MarshalWriter details, int rescode, String results) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_submit_log_entry (key, log_time, event_id,
+				sched_time, submit_time, submit_id, opcode, stage,
+				details, rescode, results);
+		}
+
 		// Check conditions
 
 		if (!( log_time > 0L
@@ -542,6 +569,10 @@ public class LogEntry implements java.io.Serializable {
 	 */
 	public static LogEntry store_log_entry (LogEntry lentry) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_store_log_entry (lentry);
+		}
+
 		// Call MongoDB to store into database
 
 		Datastore datastore = MongoDBUtil.getDatastore();
@@ -559,6 +590,10 @@ public class LogEntry implements java.io.Serializable {
 	 * Returns the log entry, or null if not found.
 	 */
 	public static LogEntry get_log_entry_for_key (RecordKey key) {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_log_entry_for_key (key);
+		}
 
 		if (!( key != null && key.getId() != null )) {
 			throw new IllegalArgumentException("LogEntry.get_log_entry_for_key: Missing or empty record key");
@@ -592,6 +627,10 @@ public class LogEntry implements java.io.Serializable {
 	 * @param event_id = Event id. Can be null to return entries for all events.
 	 */
 	public static List<LogEntry> get_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_log_entry_range (log_time_lo, log_time_hi, event_id);
+		}
 
 		// Get the MongoDB data store
 
@@ -643,6 +682,10 @@ public class LogEntry implements java.io.Serializable {
 	 */
 	public static RecordIterator<LogEntry> fetch_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_fetch_log_entry_range (log_time_lo, log_time_hi, event_id);
+		}
+
 		// Get the MongoDB data store
 
 		Datastore datastore = MongoDBUtil.getDatastore();
@@ -690,6 +733,11 @@ public class LogEntry implements java.io.Serializable {
 	 */
 	public static void delete_log_entry (LogEntry entry) {
 
+		if (MongoDBUtil.use_jd()) {
+			jd_delete_log_entry (entry);
+			return;
+		}
+
 		// Check conditions
 
 		if (!( entry != null && entry.get_id() != null )) {
@@ -703,6 +751,374 @@ public class LogEntry implements java.io.Serializable {
 		// Run the delete
 
 		datastore.delete(entry);
+		
+		return;
+	}
+
+
+
+
+	//----- MongoDB Java driver access -----
+
+	// Our collection.
+
+	private static MongoCollection<Document> my_collection = null;
+
+
+
+
+	// Get the collection.
+
+	private static synchronized MongoCollection<Document> get_collection () {
+	
+		// If we don't have our collection yet ...
+
+		if (my_collection == null) {
+
+			// Get the collection
+
+			my_collection = MongoDBUtil.getCollection ("log");
+
+			// Create the indexes
+
+			MongoDBUtil.make_simple_index (my_collection, "event_id", "logevid");
+			MongoDBUtil.make_simple_index (my_collection, "log_time", "logtime");
+		}
+
+		// Return the collection
+
+		return my_collection;
+	}
+
+
+
+
+	// Convert this object to a document.
+	// If id is null, it is filled in with a newly allocated id.
+
+	private Document to_bson_doc () {
+	
+		// Supply the id if needed
+
+		if (id == null) {
+			id = new ObjectId();
+		}
+
+		// Construct the document
+
+		Document doc = new Document ("_id", id)
+						.append ("log_time"   , new Long(log_time))
+						.append ("event_id"   , event_id)
+						.append ("sched_time" , new Long(sched_time))
+						.append ("submit_time", new Long(submit_time))
+						.append ("submit_id"  , submit_id)
+						.append ("opcode"     , new Integer(opcode))
+						.append ("stage"      , new Integer(stage))
+						.append ("details"    , details)
+						.append ("rescode"    , new Integer(rescode))
+						.append ("results"    , results);
+
+		return doc;
+	}
+
+
+
+
+	// Fill this object from a document.
+	// Throws an exception if conversion error.
+
+	private LogEntry from_bson_doc (Document doc) {
+
+		id          = MongoDBUtil.doc_get_object_id (doc, "_id"        );
+		log_time    = MongoDBUtil.doc_get_long      (doc, "log_time"   );
+		event_id    = MongoDBUtil.doc_get_string    (doc, "event_id"   );
+		sched_time  = MongoDBUtil.doc_get_long      (doc, "sched_time" );
+		submit_time = MongoDBUtil.doc_get_long      (doc, "submit_time");
+		submit_id   = MongoDBUtil.doc_get_string    (doc, "submit_id"  );
+		opcode      = MongoDBUtil.doc_get_int       (doc, "opcode"     );
+		stage       = MongoDBUtil.doc_get_int       (doc, "stage"      );
+		details     = MongoDBUtil.doc_get_string    (doc, "details"    );
+		rescode     = MongoDBUtil.doc_get_int       (doc, "rescode"    );
+		results     = MongoDBUtil.doc_get_string    (doc, "results"    );
+
+		return this;
+	}
+
+
+
+
+	// Our record iterator class.
+
+	private static class MyRecordIterator extends RecordIteratorMongo<LogEntry> {
+
+		// Constructor passes thru the cursor.
+
+		public MyRecordIterator (MongoCursor<Document> mongo_cursor) {
+			super (mongo_cursor);
+		}
+
+		// Hook routine to convert a Document to a T.
+
+		@Override
+		protected LogEntry hook_convert (Document doc) {
+			return (new LogEntry()).from_bson_doc (doc);
+		}
+	}
+
+
+
+
+	// Make the natural sort for this collection.
+	// The natural sort is in decreasing order of log time (most recent first).
+
+	private static Bson natural_sort () {
+		return Sorts.descending ("log_time");
+	}
+
+
+
+
+	// Make a filter on the id field.
+
+	private static Bson id_filter (ObjectId the_id) {
+		return Filters.eq ("_id", the_id);
+	}
+
+
+
+
+	// Make the natural filter for this collection.
+	// @param log_time_lo = Minimum log time, in milliseconds since the epoch.
+	//                      Can be 0L for no minimum.
+	// @param log_time_hi = Maximum log time, in milliseconds since the epoch.
+	//                      Can be 0L for no maximum.
+	// event_id = Event id. Can be null to return entries for all events.
+	// Return the filter, or null if no filter is required.
+	// Note: An alternative to returning null would be to return new Document(),
+	// which is an empty document, and which when used as a filter matches everything.
+
+	private static Bson natural_filter (long log_time_lo, long log_time_hi, String event_id) {
+		ArrayList<Bson> filters = new ArrayList<Bson>();
+
+		// Select by event_id
+
+		if (event_id != null) {
+			filters.add (Filters.eq ("event_id", event_id));
+		}
+
+		// Select entries with log_time >= log_time_lo
+
+		if (log_time_lo > 0L) {
+			filters.add (Filters.gte ("log_time", new Long(log_time_lo)));
+		}
+
+		// Select entries with log_time <= log_time_hi
+
+		if (log_time_hi > 0L) {
+			filters.add (Filters.lte ("log_time", new Long(log_time_hi)));
+		}
+
+		// Return combination of filters
+
+		if (filters.size() == 0) {
+			return null;
+		}
+		if (filters.size() == 1) {
+			return filters.get(0);
+		}
+		return Filters.and (filters);
+	}
+
+
+
+
+	/**
+	 * submit_log_entry - Submit a log entry.
+	 * @param key = Record key associated with this task. Can be null to assign a new one.
+	 * @param log_time = Time of this log entry, in milliseconds
+	 *                   since the epoch. Must be positive.
+	 * @param event_id = Event associated with this task, or "" if none. Cannot be null.
+	 * @param sched_time = Time at which task should execute, in milliseconds
+	 *                     since the epoch. Must be positive.
+	 * @param submit_time = Time at which the task is submitted, in milliseconds
+	 *                      since the epoch. Must be positive.
+	 * @param submit_id = Person or entity submitting this task. Cannot be empty or null.
+	 * @param opcode = Operation code used to dispatch the task.
+	 * @param stage = Stage number, user-defined, effectively an extension of the opcode.
+	 * @param details = Further details of this task. Can be null if there are none.
+	 * @param rescode = Result code.
+	 * @param results = Further results of this task, or "" if none. Cannot be null.
+	 * @return
+	 * Returns the new entry.
+	 */
+	public static LogEntry jd_submit_log_entry (RecordKey key, long log_time, String event_id,
+			long sched_time, long submit_time, String submit_id, int opcode, int stage,
+			MarshalWriter details, int rescode, String results) {
+
+		// Check conditions
+
+		if (!( log_time > 0L
+			&& event_id != null
+			&& sched_time > 0L
+			&& submit_time > 0L
+			&& submit_id != null && submit_id.length() > 0
+			&& results != null )) {
+			throw new IllegalArgumentException("LogEntry.submit_log_entry: Invalid log parameters");
+		}
+
+		// Construct the log entry object
+
+		LogEntry lentry = new LogEntry();
+		lentry.set_record_key (key);
+		lentry.set_log_time (log_time);
+		lentry.set_event_id (event_id);
+		lentry.set_sched_time (sched_time);
+		lentry.set_submit_time (submit_time);
+		lentry.set_submit_id (submit_id);
+		lentry.set_opcode (opcode);
+		lentry.set_stage (stage);
+		lentry.set_details (details);
+		lentry.set_rescode (rescode);
+		lentry.set_results (results);
+
+		// Call MongoDB to store into database
+
+		get_collection().insertOne (lentry.to_bson_doc());
+		
+		return lentry;
+	}
+
+
+
+
+	/**
+	 * store_log_entry - Store a log entry into the database.
+	 * This is primarily for restoring from backup.
+	 */
+	public static LogEntry jd_store_log_entry (LogEntry lentry) {
+
+		// Call MongoDB to store into database
+
+		get_collection().insertOne (lentry.to_bson_doc());
+		
+		return lentry;
+	}
+
+
+
+
+	/**
+	 * get_log_entry_for_key - Get the log entry with the given key.
+	 * @param key = Record key. Cannot be null or empty.
+	 * Returns the log entry, or null if not found.
+	 */
+	public static LogEntry jd_get_log_entry_for_key (RecordKey key) {
+
+		if (!( key != null && key.getId() != null )) {
+			throw new IllegalArgumentException("LogEntry.get_log_entry_for_key: Missing or empty record key");
+		}
+
+		// Filter: id == key.getId()
+
+		Bson filter = id_filter (key.getId());
+
+		// Get the document
+
+		Document doc = get_collection().find(filter).first();
+
+		// Convert to log entry
+
+		if (doc == null) {
+			return null;
+		}
+
+		return (new LogEntry()).from_bson_doc (doc);
+	}
+
+
+
+
+	/**
+	 * get_log_entry_range - Get a range of log entries, reverse-sorted by log time.
+	 * @param log_time_lo = Minimum log time, in milliseconds since the epoch.
+	 *                      Can be 0L for no minimum.
+	 * @param log_time_hi = Maximum log time, in milliseconds since the epoch.
+	 *                      Can be 0L for no maximum.
+	 * @param event_id = Event id. Can be null to return entries for all events.
+	 */
+	public static List<LogEntry> jd_get_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
+		ArrayList<LogEntry> entries = new ArrayList<LogEntry>();
+
+		// Get the cursor and iterator
+
+		Bson filter = natural_filter (log_time_lo, log_time_hi, event_id);
+		MongoCursor<Document> cursor;
+		if (filter == null) {
+			cursor = get_collection().find().sort(natural_sort()).iterator();
+		} else {
+			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
+		}
+		try(
+			MyRecordIterator iter = new MyRecordIterator (cursor);
+		){
+			// Dump into the list
+
+			while (iter.hasNext()) {
+				entries.add (iter.next());
+			}
+		}
+
+		return entries;
+	}
+
+
+
+
+	/**
+	 * fetch_log_entry_range - Iterate a range of log entries, reverse-sorted by log time.
+	 * @param log_time_lo = Minimum log time, in milliseconds since the epoch.
+	 *                      Can be 0L for no minimum.
+	 * @param log_time_hi = Maximum log time, in milliseconds since the epoch.
+	 *                      Can be 0L for no maximum.
+	 * @param event_id = Event id. Can be null to return entries for all events.
+	 */
+	public static RecordIterator<LogEntry> jd_fetch_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
+
+		// Get the cursor and iterator
+
+		Bson filter = natural_filter (log_time_lo, log_time_hi, event_id);
+		MongoCursor<Document> cursor;
+		if (filter == null) {
+			cursor = get_collection().find().sort(natural_sort()).iterator();
+		} else {
+			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
+		}
+		return new MyRecordIterator (cursor);
+	}
+
+
+
+
+	/**
+	 * delete_log_entry - Delete a log entry.
+	 * @param entry = Existing log entry to delete.
+	 * @return
+	 */
+	public static void jd_delete_log_entry (LogEntry entry) {
+
+		// Check conditions
+
+		if (!( entry != null && entry.get_id() != null )) {
+			throw new IllegalArgumentException("LogEntry.delete_log_entry: Invalid parameters");
+		}
+
+		// Filter: id == entry.id
+
+		Bson filter = id_filter (entry.get_id());
+
+		// Run the delete
+
+		get_collection().deleteOne (filter);
 		
 		return;
 	}

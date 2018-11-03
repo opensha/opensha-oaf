@@ -39,6 +39,27 @@ import scratch.aftershockStatistics.util.MarshalException;
 import scratch.aftershockStatistics.CompactEqkRupList;
 
 
+import java.util.ArrayList;
+
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
+//import com.mongodb.client.model.Indexes;
+//import com.mongodb.client.model.IndexOptions;
+import org.bson.conversions.Bson;
+import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndDeleteOptions;
+import com.mongodb.client.model.FindOneAndReplaceOptions;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.ReturnDocument;
+import com.mongodb.client.model.Updates;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCursor;
+
+import scratch.aftershockStatistics.aafs.DBCorruptException;
+import scratch.aftershockStatistics.aafs.RecordIteratorMongo;
+
+
 
 
 /**
@@ -270,6 +291,10 @@ public class CatalogSnapshot implements java.io.Serializable {
 	public static CatalogSnapshot submit_catalog_shapshot (RecordKey key, String event_id,
 			long start_time, long end_time, CompactEqkRupList rupture_list) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_submit_catalog_shapshot (key, event_id, start_time, end_time, rupture_list);
+		}
+
 		// Check conditions
 
 		if (!( event_id != null
@@ -305,6 +330,10 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 */
 	public static CatalogSnapshot store_catalog_shapshot (CatalogSnapshot catsnap) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_store_catalog_shapshot (catsnap);
+		}
+
 		// Call MongoDB to store into database
 
 		Datastore datastore = MongoDBUtil.getDatastore();
@@ -322,6 +351,10 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 * Returns the catalog snapshot, or null if not found.
 	 */
 	public static CatalogSnapshot get_catalog_shapshot_for_key (RecordKey key) {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_catalog_shapshot_for_key (key);
+		}
 
 		if (!( key != null && key.getId() != null )) {
 			throw new IllegalArgumentException("CatalogSnapshot.get_catalog_shapshot_for_key: Missing or empty record key");
@@ -355,6 +388,10 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 * @param event_id = Event id. Can be null to return entries for all events.
 	 */
 	public static List<CatalogSnapshot> get_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_catalog_snapshot_range (end_time_lo, end_time_hi, event_id);
+		}
 
 		// Get the MongoDB data store
 
@@ -406,6 +443,10 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 */
 	public static RecordIterator<CatalogSnapshot> fetch_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_fetch_catalog_snapshot_range (end_time_lo, end_time_hi, event_id);
+		}
+
 		// Get the MongoDB data store
 
 		Datastore datastore = MongoDBUtil.getDatastore();
@@ -453,6 +494,11 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 */
 	public static void delete_catalog_snapshot (CatalogSnapshot entry) {
 
+		if (MongoDBUtil.use_jd()) {
+			jd_delete_catalog_snapshot (entry);
+			return;
+		}
+
 		// Check conditions
 
 		if (!( entry != null && entry.get_id() != null )) {
@@ -466,6 +512,351 @@ public class CatalogSnapshot implements java.io.Serializable {
 		// Run the delete
 
 		datastore.delete(entry);
+		
+		return;
+	}
+
+
+
+
+	//----- MongoDB Java driver access -----
+
+	// Our collection.
+
+	private static MongoCollection<Document> my_collection = null;
+
+
+
+
+	// Get the collection.
+
+	private static synchronized MongoCollection<Document> get_collection () {
+	
+		// If we don't have our collection yet ...
+
+		if (my_collection == null) {
+
+			// Get the collection
+
+			my_collection = MongoDBUtil.getCollection ("catalog");
+
+			// Create the indexes
+
+			// <none>
+		}
+
+		// Return the collection
+
+		return my_collection;
+	}
+
+
+
+
+	// Convert this object to a document.
+	// If id is null, it is filled in with a newly allocated id.
+
+	private Document to_bson_doc () {
+	
+		// Supply the id if needed
+
+		if (id == null) {
+			id = new ObjectId();
+		}
+
+		// Convert the arrays to lists
+
+		// Construct the document
+
+		Document doc = new Document ("_id", id)
+						.append ("event_id"          , event_id)
+						.append ("start_time"        , new Long(start_time))
+						.append ("end_time"          , new Long(end_time))
+						.append ("eqk_count"         , new Integer(eqk_count))
+						.append ("lat_lon_depth_list", MongoDBUtil.long_array_to_list (lat_lon_depth_list))
+						.append ("mag_time_list"     , MongoDBUtil.long_array_to_list (mag_time_list));
+
+		return doc;
+	}
+
+
+
+
+	// Fill this object from a document.
+	// Throws an exception if conversion error.
+
+	private CatalogSnapshot from_bson_doc (Document doc) {
+
+		id                 = MongoDBUtil.doc_get_object_id  (doc, "_id"               );
+		event_id           = MongoDBUtil.doc_get_string     (doc, "event_id"          );
+		start_time         = MongoDBUtil.doc_get_long       (doc, "start_time"        );
+		end_time           = MongoDBUtil.doc_get_long       (doc, "end_time"          );
+		eqk_count          = MongoDBUtil.doc_get_int        (doc, "eqk_count"         );
+		lat_lon_depth_list = MongoDBUtil.doc_get_long_array (doc, "lat_lon_depth_list");
+		mag_time_list      = MongoDBUtil.doc_get_long_array (doc, "mag_time_list"     );
+
+		return this;
+	}
+
+
+
+
+	// Our record iterator class.
+
+	private static class MyRecordIterator extends RecordIteratorMongo<CatalogSnapshot> {
+
+		// Constructor passes thru the cursor.
+
+		public MyRecordIterator (MongoCursor<Document> mongo_cursor) {
+			super (mongo_cursor);
+		}
+
+		// Hook routine to convert a Document to a T.
+
+		@Override
+		protected CatalogSnapshot hook_convert (Document doc) {
+			return (new CatalogSnapshot()).from_bson_doc (doc);
+		}
+	}
+
+
+
+
+	// Make the natural sort for this collection.
+	// The natural sort is in decreasing order of end_time (most recent first).
+
+	private static Bson natural_sort () {
+		return Sorts.descending ("end_time");
+	}
+
+
+
+
+	// Make a filter on the id field.
+
+	private static Bson id_filter (ObjectId the_id) {
+		return Filters.eq ("_id", the_id);
+	}
+
+
+
+
+	// Make the natural filter for this collection.
+	// @param end_time_lo = Minimum end time, in milliseconds since the epoch.
+	//                      Can be 0L for no minimum.
+	// @param end_time_hi = Maximum end time, in milliseconds since the epoch.
+	//                      Can be 0L for no maximum.
+	// @param event_id = Event id. Can be null to return entries for all events.
+	// Return the filter, or null if no filter is required.
+	// Note: An alternative to returning null would be to return new Document(),
+	// which is an empty document, and which when used as a filter matches everything.
+
+	private static Bson natural_filter (long end_time_lo, long end_time_hi, String event_id) {
+		ArrayList<Bson> filters = new ArrayList<Bson>();
+
+		// Select by event_id
+
+		if (event_id != null) {
+			filters.add (Filters.eq ("event_id", event_id));
+		}
+
+		// Select entries with end_time >= end_time_lo
+
+		if (end_time_lo > 0L) {
+			filters.add (Filters.gte ("end_time", new Long(end_time_lo)));
+		}
+
+		// Select entries with end_time <= end_time_hi
+
+		if (end_time_hi > 0L) {
+			filters.add (Filters.lte ("end_time", new Long(end_time_hi)));
+		}
+
+		// Return combination of filters
+
+		if (filters.size() == 0) {
+			return null;
+		}
+		if (filters.size() == 1) {
+			return filters.get(0);
+		}
+		return Filters.and (filters);
+	}
+
+
+
+
+	/**
+	 * submit_catalog_shapshot - Submit a catalog snapshot.
+	 * @param key = Record key associated with this catalog snapshot. Can be null to assign a new one.
+	 * @param event_id = Event associated with this catalog snapshot, or "" if none. Cannot be null.
+	 * @param start_time = Start time of this earthquake sequence, in milliseconds
+	 *                     since the epoch. Must be positive.
+	 * @param end_time = End time of this earthquake sequence, in milliseconds
+	 *                   since the epoch. Must be positive. Must be >= start_time.
+	 * @param rupture_list = Rupture list. Cannot be null.
+	 * @return
+	 * Returns the new entry.
+	 */
+	public static CatalogSnapshot jd_submit_catalog_shapshot (RecordKey key, String event_id,
+			long start_time, long end_time, CompactEqkRupList rupture_list) {
+
+		// Check conditions
+
+		if (!( event_id != null
+			&& start_time > 0L
+			&& end_time >= start_time
+			&& rupture_list != null )) {
+			throw new IllegalArgumentException("CatalogSnapshot.submit_catalog_shapshot: Invalid catalog snapshot parameters");
+		}
+
+		// Construct the catalog snapshot object
+
+		CatalogSnapshot catsnap = new CatalogSnapshot();
+		catsnap.set_record_key (key);
+		catsnap.set_event_id (event_id);
+		catsnap.set_start_time (start_time);
+		catsnap.set_end_time (end_time);
+		catsnap.set_rupture_list (rupture_list);
+
+		// Call MongoDB to store into database
+
+		get_collection().insertOne (catsnap.to_bson_doc());
+		
+		return catsnap;
+	}
+
+
+
+
+	/**
+	 * store_catalog_shapshot - Store a catalog snapshot into the database.
+	 * This is primarily for restoring from backup.
+	 */
+	public static CatalogSnapshot jd_store_catalog_shapshot (CatalogSnapshot catsnap) {
+
+		// Call MongoDB to store into database
+
+		get_collection().insertOne (catsnap.to_bson_doc());
+		
+		return catsnap;
+	}
+
+
+
+
+	/**
+	 * get_catalog_shapshot_for_key - Get the catalog snapshot with the given key.
+	 * @param key = Record key. Cannot be null or empty.
+	 * Returns the catalog snapshot, or null if not found.
+	 */
+	public static CatalogSnapshot jd_get_catalog_shapshot_for_key (RecordKey key) {
+
+		if (!( key != null && key.getId() != null )) {
+			throw new IllegalArgumentException("CatalogSnapshot.get_catalog_shapshot_for_key: Missing or empty record key");
+		}
+
+		// Filter: id == key.getId()
+
+		Bson filter = id_filter (key.getId());
+
+		// Get the document
+
+		Document doc = get_collection().find(filter).first();
+
+		// Convert to catalog snapshot
+
+		if (doc == null) {
+			return null;
+		}
+
+		return (new CatalogSnapshot()).from_bson_doc (doc);
+	}
+
+
+
+
+	/**
+	 * get_catalog_snapshot_range - Get a range of catalog snapshots, reverse-sorted by end time.
+	 * @param end_time_lo = Minimum end time, in milliseconds since the epoch.
+	 *                      Can be 0L for no minimum.
+	 * @param end_time_hi = Maximum end time, in milliseconds since the epoch.
+	 *                      Can be 0L for no maximum.
+	 * @param event_id = Event id. Can be null to return entries for all events.
+	 */
+	public static List<CatalogSnapshot> jd_get_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
+		ArrayList<CatalogSnapshot> entries = new ArrayList<CatalogSnapshot>();
+
+		// Get the cursor and iterator
+
+		Bson filter = natural_filter (end_time_lo, end_time_hi, event_id);
+		MongoCursor<Document> cursor;
+		if (filter == null) {
+			cursor = get_collection().find().sort(natural_sort()).iterator();
+		} else {
+			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
+		}
+		try (
+			MyRecordIterator iter = new MyRecordIterator (cursor);
+		){
+			// Dump into the list
+
+			while (iter.hasNext()) {
+				entries.add (iter.next());
+			}
+		}
+
+		return entries;
+	}
+
+
+
+
+	/**
+	 * fetch_catalog_snapshot_range - Iterate a range of catalog snapshots, reverse-sorted by end time.
+	 * @param end_time_lo = Minimum end time, in milliseconds since the epoch.
+	 *                      Can be 0L for no minimum.
+	 * @param end_time_hi = Maximum end time, in milliseconds since the epoch.
+	 *                      Can be 0L for no maximum.
+	 * @param event_id = Event id. Can be null to return entries for all events.
+	 */
+	public static RecordIterator<CatalogSnapshot> jd_fetch_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
+
+		// Get the cursor and iterator
+
+		Bson filter = natural_filter (end_time_lo, end_time_hi, event_id);
+		MongoCursor<Document> cursor;
+		if (filter == null) {
+			cursor = get_collection().find().sort(natural_sort()).iterator();
+		} else {
+			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
+		}
+		return new MyRecordIterator (cursor);
+	}
+
+
+
+
+	/**
+	 * delete_catalog_snapshot - Delete a catalog snapshot.
+	 * @param entry = Existing catalog snapshot to delete.
+	 * @return
+	 */
+	public static void jd_delete_catalog_snapshot (CatalogSnapshot entry) {
+
+		// Check conditions
+
+		if (!( entry != null && entry.get_id() != null )) {
+			throw new IllegalArgumentException("CatalogSnapshot.delete_catalog_snapshot: Invalid parameters");
+		}
+
+		// Filter: id == entry.id
+
+		Bson filter = id_filter (entry.get_id());
+
+		// Run the delete
+
+		get_collection().deleteOne (filter);
 		
 		return;
 	}

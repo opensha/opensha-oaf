@@ -40,6 +40,27 @@ import scratch.aftershockStatistics.util.MarshalWriter;
 import scratch.aftershockStatistics.util.MarshalException;
 
 
+import java.util.ArrayList;
+
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
+//import com.mongodb.client.model.Indexes;
+//import com.mongodb.client.model.IndexOptions;
+import org.bson.conversions.Bson;
+import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndDeleteOptions;
+import com.mongodb.client.model.FindOneAndReplaceOptions;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.ReturnDocument;
+import com.mongodb.client.model.Updates;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCursor;
+
+import scratch.aftershockStatistics.aafs.DBCorruptException;
+import scratch.aftershockStatistics.aafs.RecordIteratorMongo;
+
+
 
 
 /**
@@ -146,6 +167,21 @@ public class AliasFamily implements java.io.Serializable {
 	private String[] comcat_ids;
 
 	// Encoded list of bindings for this alias family.
+	// Let N be the number of timelines (i.e., the length of timeline_ids).  The length
+	// of enc_bindings is 2*N plus the total number of removed IDs for all timelines.
+	// Then enc_bindings consists of three parts:
+	// 1. Elements 0 thru N-1 are indexes into comcat_ids.  The value of enc_bindings[i]
+	// is the end+1 index of the list of current Comcat IDs for timeline i.  Notice that it
+	// is possible for a timeline to have zero current Comcat IDs.
+	// 2. Elements N thru 2*N-1 are indexes into enc_bindings.  The value of enc_bindings[N+i]
+	// is the end+1 index of the list of removed ID indexes for timeline i.  As a
+	// consequence, the value of enc_bindings[2*N-1] equals the length of enc_bindings.
+	// 3. Elements 2*N onward are indexes into comcat_ids.  Each of these identifies a
+	// removed ID for a timeline.  First come indexes of the removed IDs for the first
+	// timeline, then come the indexes of the removed IDs for the second timeline, and so on.
+	// Notice that a given ID can be a removed ID for multiple timelines, and can be
+	// a current ID for one timeline while simultaneously being a removed ID for one or
+	// more other timelines.
 
 	private int[] enc_bindings;
 
@@ -417,6 +453,10 @@ public class AliasFamily implements java.io.Serializable {
 	private static AliasFamily submit_alias_family (RecordKey key, long family_time, String[] timeline_ids,
 			String[] comcat_ids, int[] enc_bindings) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_submit_alias_family (key, family_time, timeline_ids, comcat_ids, enc_bindings);
+		}
+
 		// Check conditions
 
 		if (!( family_time > 0L
@@ -472,6 +512,10 @@ public class AliasFamily implements java.io.Serializable {
 	 */
 	public static AliasFamily submit_alias_family (RecordKey key, long family_time, AliasAssignmentList assignments) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_submit_alias_family (key, family_time, assignments);
+		}
+
 		// Check conditions
 
 		if (!( family_time > 0L
@@ -503,6 +547,10 @@ public class AliasFamily implements java.io.Serializable {
 	 */
 	public static AliasFamily store_alias_family (AliasFamily alfam) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_store_alias_family (alfam);
+		}
+
 		// Call MongoDB to store into database
 
 		Datastore datastore = MongoDBUtil.getDatastore();
@@ -520,6 +568,10 @@ public class AliasFamily implements java.io.Serializable {
 	 * Returns the alias family, or null if not found.
 	 */
 	public static AliasFamily get_alias_family_for_key (RecordKey key) {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_alias_family_for_key (key);
+		}
 
 		if (!( key != null && key.getId() != null )) {
 			throw new IllegalArgumentException("AliasFamily.get_alias_family_for_key: Missing or empty record key");
@@ -557,6 +609,10 @@ public class AliasFamily implements java.io.Serializable {
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
 	 */
 	public static List<AliasFamily> get_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_alias_family_range (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
+		}
 
 		// Get the MongoDB data store
 
@@ -630,6 +686,10 @@ public class AliasFamily implements java.io.Serializable {
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
 	 */
 	public static RecordIterator<AliasFamily> fetch_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
+
+		if (MongoDBUtil.use_jd()) {
+			return jd_fetch_alias_family_range (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
+		}
 
 		// Get the MongoDB data store
 
@@ -706,6 +766,10 @@ public class AliasFamily implements java.io.Serializable {
 	 */
 	public static AliasFamily get_recent_alias_family (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
 
+		if (MongoDBUtil.use_jd()) {
+			return jd_get_recent_alias_family (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
+		}
+
 		// Get the MongoDB data store
 
 		Datastore datastore = MongoDBUtil.getDatastore();
@@ -772,6 +836,11 @@ public class AliasFamily implements java.io.Serializable {
 	 */
 	public static void delete_alias_family (AliasFamily alfam) {
 
+		if (MongoDBUtil.use_jd()) {
+			jd_delete_alias_family (alfam);
+			return;
+		}
+
 		// Check conditions
 
 		if (!( alfam != null && alfam.get_id() != null )) {
@@ -785,6 +854,462 @@ public class AliasFamily implements java.io.Serializable {
 		// Run the delete
 
 		datastore.delete(alfam);
+		
+		return;
+	}
+
+
+
+
+	//----- MongoDB Java driver access -----
+
+	// Our collection.
+
+	private static MongoCollection<Document> my_collection = null;
+
+
+
+
+	// Get the collection.
+
+	private static synchronized MongoCollection<Document> get_collection () {
+	
+		// If we don't have our collection yet ...
+
+		if (my_collection == null) {
+
+			// Get the collection
+
+			my_collection = MongoDBUtil.getCollection ("alias");
+
+			// Create the indexes
+
+			MongoDBUtil.make_simple_index (my_collection, "timeline_ids", "famtlid");
+			MongoDBUtil.make_simple_index (my_collection, "comcat_ids", "famccid");
+			MongoDBUtil.make_simple_index (my_collection, "family_time", "famtime");
+		}
+
+		// Return the collection
+
+		return my_collection;
+	}
+
+
+
+
+	// Convert this object to a document.
+	// If id is null, it is filled in with a newly allocated id.
+
+	private Document to_bson_doc () {
+	
+		// Supply the id if needed
+
+		if (id == null) {
+			id = new ObjectId();
+		}
+
+		// Construct the document
+
+		Document doc = new Document ("_id", id)
+						.append ("family_time" , new Long(family_time))
+						.append ("timeline_ids", Arrays.asList(timeline_ids.clone()))
+						.append ("comcat_ids"  , Arrays.asList(comcat_ids.clone()))
+						.append ("enc_bindings", MongoDBUtil.int_array_to_list (enc_bindings));
+
+		return doc;
+	}
+
+
+
+
+	// Fill this object from a document.
+	// Throws an exception if conversion error.
+
+	private AliasFamily from_bson_doc (Document doc) {
+
+		id           = MongoDBUtil.doc_get_object_id    (doc, "_id"         );
+		family_time  = MongoDBUtil.doc_get_long         (doc, "family_time" );
+		timeline_ids = MongoDBUtil.doc_get_string_array (doc, "timeline_ids");
+		comcat_ids   = MongoDBUtil.doc_get_string_array (doc, "comcat_ids"  );
+		enc_bindings = MongoDBUtil.doc_get_int_array    (doc, "enc_bindings");
+
+		return this;
+	}
+
+
+
+
+	// Our record iterator class.
+
+	private static class MyRecordIterator extends RecordIteratorMongo<AliasFamily> {
+
+		// Constructor passes thru the cursor.
+
+		public MyRecordIterator (MongoCursor<Document> mongo_cursor) {
+			super (mongo_cursor);
+		}
+
+		// Hook routine to convert a Document to a T.
+
+		@Override
+		protected AliasFamily hook_convert (Document doc) {
+			return (new AliasFamily()).from_bson_doc (doc);
+		}
+	}
+
+
+
+
+	// Make the natural sort for this collection.
+	// The natural sort is in decreasing order of family_time (most recent first).
+
+	private static Bson natural_sort () {
+		return Sorts.descending ("family_time");
+	}
+
+
+
+
+	// Make a filter on the id field.
+
+	private static Bson id_filter (ObjectId the_id) {
+		return Filters.eq ("_id", the_id);
+	}
+
+
+
+
+	// Make the natural filter for this collection.
+	// @param family_time_lo = Minimum action time, in milliseconds since the epoch.
+	//                         Can be 0L for no minimum.
+	// @param family_time_hi = Maximum action time, in milliseconds since the epoch.
+	//                         Can be 0L for no maximum.
+	// @param timeline_id = Timeline id. Can be null to return entries for all timelines.
+	// @param comcat_ids = Comcat id list. Can be null or empty to return entries for all Comcat ids.
+	//                     If specified, return entries associated with any of the given ids.
+	// @param family_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
+	//                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	// Return the filter, or null if no filter is required.
+	// Note: An alternative to returning null would be to return new Document(),
+	// which is an empty document, and which when used as a filter matches everything.
+
+	private static Bson natural_filter (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
+		ArrayList<Bson> filters = new ArrayList<Bson>();
+
+		// Select by timeline_id
+
+		if (timeline_id != null) {
+			filters.add (Filters.eq ("timeline_ids", timeline_id));
+		}
+
+		// Select by comcat_ids
+
+		if (comcat_ids != null) {
+			if (comcat_ids.length > 0) {
+				filters.add (Filters.in ("comcat_ids", comcat_ids));
+			}
+		}
+
+		// Select entries with family_time >= family_time_lo
+
+		if (family_time_lo > 0L) {
+			filters.add (Filters.gte ("family_time", new Long(family_time_lo)));
+		}
+
+		// Select entries with family_time <= family_time_hi
+
+		if (family_time_hi > 0L) {
+			filters.add (Filters.lte ("family_time", new Long(family_time_hi)));
+		}
+
+		// Select entries with family_time % family_time_div_rem[0] == family_time_div_rem[1]
+
+		if (family_time_div_rem != null) {
+			if (family_time_div_rem[0] > 0L) {
+				filters.add (Filters.mod ("family_time", new Long(family_time_div_rem[0]), new Long(family_time_div_rem[1])));
+			}
+		}
+
+		// Return combination of filters
+
+		if (filters.size() == 0) {
+			return null;
+		}
+		if (filters.size() == 1) {
+			return filters.get(0);
+		}
+		return Filters.and (filters);
+	}
+
+
+
+
+	/**
+	 * submit_alias_family - Submit an alias family.
+	 * @param key = Record key associated with this alias family. Can be null to assign a new one.
+	 * @param family_time = Time of this alias family, in milliseconds
+	 *                      since the epoch. Must be positive.
+	 * @param timeline_ids = List of timeline IDs associated with this alias family. Cannot be null or empty.
+	 * @param comcat_ids = List of Comcat IDs associated with this alias family. Cannot be null or empty.
+	 * @param enc_bindings = Encoded bindings for the list of assignments. Cannot be null or empty.
+	 * @return
+	 * Returns the new family.
+	 */
+	private static AliasFamily jd_submit_alias_family (RecordKey key, long family_time, String[] timeline_ids,
+			String[] comcat_ids, int[] enc_bindings) {
+
+		// Check conditions
+
+		if (!( family_time > 0L
+			&& timeline_ids != null
+			&& timeline_ids.length > 0
+			&& comcat_ids != null
+			&& comcat_ids.length > 0
+			&& enc_bindings != null
+			&& enc_bindings.length >= 2*timeline_ids.length )) {
+			throw new IllegalArgumentException("AliasFamily.submit_alias_family: Invalid alias family parameters");
+		}
+
+		for (String timeline_id : timeline_ids) {
+			if (!( timeline_id != null )) {
+				throw new IllegalArgumentException("AliasFamily.submit_alias_family: Invalid alias family parameters");
+			}
+		}
+
+		for (String comcat_id : comcat_ids) {
+			if (!( comcat_id != null )) {
+				throw new IllegalArgumentException("AliasFamily.submit_alias_family: Invalid alias family parameters");
+			}
+		}
+
+		// Construct the alias family object
+
+		AliasFamily alfam = new AliasFamily();
+		alfam.set_record_key (key);
+		alfam.set_family_time (family_time);
+		alfam.set_timeline_ids (timeline_ids);
+		alfam.set_comcat_ids (comcat_ids);
+		alfam.set_enc_bindings (enc_bindings);
+
+		// Call MongoDB to store into database
+
+		get_collection().insertOne (alfam.to_bson_doc());
+		
+		return alfam;
+	}
+
+
+
+
+	/**
+	 * submit_alias_family - Submit an alias family.
+	 * @param key = Record key associated with this alias family. Can be null to assign a new one.
+	 * @param family_time = Time of this alias family, in milliseconds
+	 *                      since the epoch. Must be positive.
+	 * @param assignments = List of assignments for this alias family. Cannot be null or empty.
+	 * @return
+	 * Returns the new family.
+	 */
+	public static AliasFamily jd_submit_alias_family (RecordKey key, long family_time, AliasAssignmentList assignments) {
+
+		// Check conditions
+
+		if (!( family_time > 0L
+			&& assignments != null )) {
+			throw new IllegalArgumentException("AliasFamily.submit_alias_family: Invalid alias family parameters");
+		}
+
+		// Construct the alias family object
+
+		AliasFamily alfam = new AliasFamily();
+		alfam.set_record_key (key);
+		alfam.set_family_time (family_time);
+		alfam.set_assignments (assignments);
+
+		// Call MongoDB to store into database
+
+		get_collection().insertOne (alfam.to_bson_doc());
+		
+		return alfam;
+	}
+
+
+
+
+	/**
+	 * store_alias_family - Store an alias family into the database.
+	 * This is primarily for restoring from backup.
+	 */
+	public static AliasFamily jd_store_alias_family (AliasFamily alfam) {
+
+		// Call MongoDB to store into database
+
+		get_collection().insertOne (alfam.to_bson_doc());
+		
+		return alfam;
+	}
+
+
+
+
+	/**
+	 * get_alias_family_for_key - Get the alias family with the given key.
+	 * @param key = Record key. Cannot be null or empty.
+	 * Returns the alias family, or null if not found.
+	 */
+	public static AliasFamily jd_get_alias_family_for_key (RecordKey key) {
+
+		if (!( key != null && key.getId() != null )) {
+			throw new IllegalArgumentException("AliasFamily.get_alias_family_for_key: Missing or empty record key");
+		}
+
+		// Filter: id == key.getId()
+
+		Bson filter = id_filter (key.getId());
+
+		// Get the document
+
+		Document doc = get_collection().find(filter).first();
+
+		// Convert to alias family
+
+		if (doc == null) {
+			return null;
+		}
+
+		return (new AliasFamily()).from_bson_doc (doc);
+	}
+
+
+
+
+	/**
+	 * get_alias_family_range - Get a range of alias families, reverse-sorted by action time.
+	 * @param family_time_lo = Minimum action time, in milliseconds since the epoch.
+	 *                         Can be 0L for no minimum.
+	 * @param family_time_hi = Maximum action time, in milliseconds since the epoch.
+	 *                         Can be 0L for no maximum.
+	 * @param timeline_id = Timeline id. Can be null to return entries for all timelines.
+	 * @param comcat_ids = Comcat id list. Can be null or empty to return entries for all Comcat ids.
+	 *                     If specified, return entries associated with any of the given ids.
+	 * @param family_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
+	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 */
+	public static List<AliasFamily> jd_get_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
+		ArrayList<AliasFamily> entries = new ArrayList<AliasFamily>();
+
+		// Get the cursor and iterator
+
+		Bson filter = natural_filter (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
+		MongoCursor<Document> cursor;
+		if (filter == null) {
+			cursor = get_collection().find().sort(natural_sort()).iterator();
+		} else {
+			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
+		}
+		try (
+			MyRecordIterator iter = new MyRecordIterator (cursor);
+		){
+			// Dump into the list
+
+			while (iter.hasNext()) {
+				entries.add (iter.next());
+			}
+		}
+
+		return entries;
+	}
+
+
+
+
+	/**
+	 * fetch_alias_family_range - Iterate a range of alias families, reverse-sorted by action time.
+	 * @param family_time_lo = Minimum action time, in milliseconds since the epoch.
+	 *                         Can be 0L for no minimum.
+	 * @param family_time_hi = Maximum action time, in milliseconds since the epoch.
+	 *                         Can be 0L for no maximum.
+	 * @param timeline_id = Timeline id. Can be null to return entries for all timelines.
+	 * @param comcat_ids = Comcat id list. Can be null or empty to return entries for all Comcat ids.
+	 *                     If specified, return entries associated with any of the given ids.
+	 * @param family_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
+	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 */
+	public static RecordIterator<AliasFamily> jd_fetch_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
+
+		// Get the cursor and iterator
+
+		Bson filter = natural_filter (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
+		MongoCursor<Document> cursor;
+		if (filter == null) {
+			cursor = get_collection().find().sort(natural_sort()).iterator();
+		} else {
+			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
+		}
+		return new MyRecordIterator (cursor);
+	}
+
+
+
+
+	/**
+	 * get_recent_alias_family - Get the most recent in a range of alias families.
+	 * @param family_time_lo = Minimum action time, in milliseconds since the epoch.
+	 *                         Can be 0L for no minimum.
+	 * @param family_time_hi = Maximum action time, in milliseconds since the epoch.
+	 *                         Can be 0L for no maximum.
+	 * @param timeline_id = Timeline id. Can be null to return entries for all timelines.
+	 * @param comcat_ids = Comcat id list. Can be null or empty to return entries for all Comcat ids.
+	 *                     If specified, return entries associated with any of the given ids.
+	 * @param family_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
+	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 * Returns the matching alias family with the greatest family_time (most recent),
+	 * or null if there is no matching alias family.
+	 */
+	public static AliasFamily jd_get_recent_alias_family (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
+
+		// Get the document
+
+		Bson filter = natural_filter (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
+		Document doc;
+		if (filter == null) {
+			doc = get_collection().find().sort(natural_sort()).first();
+		} else {
+			doc = get_collection().find(filter).sort(natural_sort()).first();
+		}
+
+		// Convert to alias family
+
+		if (doc == null) {
+			return null;
+		}
+
+		return (new AliasFamily()).from_bson_doc (doc);
+	}
+
+
+
+
+	/**
+	 * delete_alias_family - Delete an alias family.
+	 * @param alfam = Existing alias family to delete.
+	 * @return
+	 */
+	public static void jd_delete_alias_family (AliasFamily alfam) {
+
+		// Check conditions
+
+		if (!( alfam != null && alfam.get_id() != null )) {
+			throw new IllegalArgumentException("AliasFamily.delete_alias_family: Invalid parameters");
+		}
+
+		// Filter: id == alfam.id
+
+		Bson filter = id_filter (alfam.get_id());
+
+		// Run the delete
+
+		get_collection().deleteOne (filter);
 		
 		return;
 	}
