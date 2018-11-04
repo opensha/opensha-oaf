@@ -36,7 +36,7 @@ task appOAFJar(type: Jar) {
 	manifest {
     	attributes(
 			'Class-Path': configurations.compileAndResource.collect { it.getName() }.join(' '),
-			'Main-Class': 'scratch.aftershockStatistics.AftershockStatsGUI'
+			'Main-Class': 'org.opensha.oaf.aftershockStatistics.AftershockStatsGUI'
 		)
 	}
     with jar
@@ -57,7 +57,7 @@ task appOAF_ETAS_Jar(type: Jar) {
 	manifest {
     	attributes(
 			'Class-Path': configurations.compileAndResource.collect { it.getName() }.join(' '),
-			'Main-Class': 'scratch.aftershockStatisticsETAS.AftershockStatsGUI_ETAS'
+			'Main-Class': 'org.opensha.oaf.aftershockStatisticsETAS.AftershockStatsGUI_ETAS'
 		)
 	}
     with jar
