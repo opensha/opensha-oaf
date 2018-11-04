@@ -9,8 +9,8 @@ import org.opensha.oaf.aftershockStatistics.util.MarshalException;
 import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatException;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
+import org.opensha.commons.data.comcat.ComcatException;
 
 import org.opensha.oaf.aftershockStatistics.pdl.PDLProductFile;
 import org.opensha.oaf.aftershockStatistics.pdl.PDLProductBuilderOaf;
@@ -551,7 +551,7 @@ public class ForecastData {
 
 			// Set the forecast time to be 7 days after the mainshock
 
-			long the_forecast_lag = Math.round(ComcatAccessor.day_millis * 7.0);
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
 
 			// Get parameters
 
@@ -622,7 +622,7 @@ public class ForecastData {
 
 			// Set the forecast time to be 7 days after the mainshock
 
-			long the_forecast_lag = Math.round(ComcatAccessor.day_millis * 7.0);
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
 
 			// Get parameters
 
@@ -712,7 +712,7 @@ public class ForecastData {
 
 			// Set the forecast time to be 7 days after the mainshock
 
-			long the_forecast_lag = Math.round(ComcatAccessor.day_millis * 7.0);
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
 
 			// Get parameters
 

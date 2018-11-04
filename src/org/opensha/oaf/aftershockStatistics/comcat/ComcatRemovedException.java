@@ -1,5 +1,7 @@
 package org.opensha.oaf.aftershockStatistics.comcat;
 
+import org.opensha.commons.data.comcat.ComcatException;
+
 /**
  * Exception class for Comcat access that fails to find expected data.
  * Author: Michael Barall 08/12/2018.

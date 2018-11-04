@@ -1,10 +1,9 @@
-package org.opensha.oaf.aftershockStatistics.comcat;
+package org.opensha.commons.data.comcat;
 
 import gov.usgs.earthquake.event.EventQuery;
 import gov.usgs.earthquake.event.EventWebService;
 import gov.usgs.earthquake.event.Format;
 import gov.usgs.earthquake.event.JsonEvent;
-import org.opensha.oaf.aftershockStatistics.util.ObsEqkRupEventIdComparator;
 
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
@@ -22,6 +21,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Arrays;
+import java.time.format.DateTimeFormatter;
+import java.time.ZoneOffset;
+import java.time.ZoneId;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -44,19 +46,34 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownServiceException;
 import java.util.zip.ZipException;
 
-import org.opensha.oaf.aftershockStatistics.util.SphLatLon;
-//import org.opensha.oaf.aftershockStatistics.util.SphRegion;
-import org.opensha.oaf.aftershockStatistics.util.SphRegionCircle;
-import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
-
-import org.opensha.oaf.aftershockStatistics.AftershockVerbose;
-import org.opensha.oaf.aftershockStatistics.aafs.ServerConfig;
-
 
 /**
  * Class for making queries to Comcat.
  * Original author unknown.
  * Extensively modified by: Michael Barall.
+ *
+ *     ********** READ THIS **********
+ *
+ * 1. DO NOT OVERLOAD COMCAT.  Comcat is a shared resource used by people world-wide.
+ * This class can send a large number of queries to Comcat in rapid succession.
+ * Doing so would have a negative effect on the operation of Comcat.  So don't do that.
+ *
+ * 2. COMCAT IS NOT 100% RELIABLE.  Sometimes Comcat will fail to respond to a query.
+ * Sometimes it will respond after a significant delay.  Any code using this class
+ * must be prepared to handle these possibilities.
+ *
+ * 3. COMCAT HAS A QUERY MATCH LIMIT.  Comcat will not respond to a query that matches
+ * more than about 150,000 earthquakes, even if you tell Comcat to only return a small
+ * portion of the matching earthquakes.  Such a query has to be broken down into
+ * smaller queries.  Also, be aware that such large queries impose a heavy load on
+ * Comcat, and so they should only be done rarely.
+ *
+ * 4. DO NOT MODIFY THIS CLASS.  If you want to change something, the correct procedure
+ * is to write a subclass and override whatever methods you want to change.  See
+ * org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor for an example.
+ * Because subclasses depend on the internal design of this class remaining stable,
+ * any changes carry a risk of breaking subclasses.  If you feel there is something in
+ * this class that absolutely must be changed, contact the maintainer.
  */
 public class ComcatAccessor {
 
@@ -65,7 +82,7 @@ public class ComcatAccessor {
 	protected boolean D = true;
 
 	// The Comcat service provider.
-	// This is never null, even if a local catalog is in use.
+	// This is never null.
 	
 	protected EventWebService service;
 
@@ -77,29 +94,6 @@ public class ComcatAccessor {
 	// If zero, then HTTP status must be obtained from the service provider.
 
 	protected int local_http_status;
-
-	// Simulated error rate, or 0.0 if none.
-	// Simulated errors are generated with this probability.
-
-	protected double sim_error_rate;
-
-	// Set of event IDs that are hidden, can be null if none.
-
-	protected Set<String> hidden_ids;
-
-	// The local catalog being used, or null if none.
-	// If null, then operations are performed by calling Comcat.
-
-	protected ComcatLocalCatalog local_catalog;
-
-	// The cached local catalog, or null if none.
-
-	protected static ComcatLocalCatalog cached_local_catalog = null;
-
-	// The list of filenames for the cached local catalog, or null if no local catalog.
-	// This is used to detect if different filenames are selected.
-
-	protected static String[] cached_locat_filenames = null;
 
 
 
@@ -114,203 +108,44 @@ public class ComcatAccessor {
 
 
 
-
-	// Check if a simulated error is desired.
-	// Throws an exception if a simulated error, also simulates unable to connect.
-	// Implementation note: Math.random() is a bad random number generator,
-	// but it is sufficient for this purpose.
-
-	protected void check_simulated_error () {
-		if (sim_error_rate > 1.0e-6) {
-			if (sim_error_rate > Math.random()) {
-				local_http_status = -2;
-				http_statuses.add (new Integer(get_http_status_code()));
-				throw new ComcatSimulatedException ("ComcatAccessor: Simulated Comcat error");
-			}
-		}
-		return;
-	}
-
-
-
-
-	// Check if the given id is hidden.
-
-	protected boolean is_hidden_id (String id) {
-		if (hidden_ids != null) {
-			if (hidden_ids.contains (id)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-
-
-
-	// Get or create the cached local catalog.
-	// Parameters:
-	//  locat_filenames = List of filenames, or null or empty if no local catalog is requested.
-	//  locat_bins = Number of latitude bins for the local catalog, or 0 for default.
-
-	protected static synchronized ComcatLocalCatalog get_cached_local_catalog (List<String> locat_filenames, int locat_bins) {
-	
-		// If no local catalog is requested ...
-
-		if (locat_filenames == null || locat_filenames.isEmpty()) {
-		
-			// Discard any existing local catalog
-
-			cached_local_catalog = null;
-			cached_locat_filenames = null;
-		}
-
-		// Otherwise ...
-
-		else {
-
-			// Get the array of filenames
-
-			String[] the_local_filenames = locat_filenames.toArray (new String[0]);
-
-			// If we don't have the local catalog cached already ...
-
-			if (!( cached_local_catalog != null
-				&& cached_locat_filenames != null
-				&& Arrays.equals (the_local_filenames, cached_locat_filenames) )) {
-
-				// Discard any existing local catalog
-
-				cached_local_catalog = null;
-				cached_locat_filenames = null;
-
-				// Load a new local catalog
-
-				boolean f_verbose = AftershockVerbose.get_verbose_mode();
-
-				if (f_verbose) {
-					System.out.println ("Loading catalog: " + "[" + String.join (", ", the_local_filenames) + "]");
-				}
-
-				ComcatLocalCatalog the_local_catalog = new ComcatLocalCatalog();
-				try {
-					the_local_catalog.load_catalog (locat_bins, the_local_filenames);
-				} catch (Exception e) {
-					throw new RuntimeException ("ComcatAccessor: Error loading local catalog: " + "[" + String.join (", ", the_local_filenames) + "]");
-				}
-
-				if (f_verbose) {
-					System.out.println (the_local_catalog.get_summary_string());
-				}
-
-				// Establish the new local catalog
-
-				cached_local_catalog = the_local_catalog;
-				cached_locat_filenames = the_local_filenames;
-			}
-		}
-
-		// Return the cached local catalog, or null
-
-		return cached_local_catalog;
-	}
-
-
-
-
-	// Remove any cached local catalog from memory.
-	// A fresh local catalog will be loaded (if requested) the next time an object is allocated.
-	// Existing objects will continue to use the old catalog.
-
-	public static synchronized void unload_local_catalog () {
-		cached_local_catalog = null;
-		cached_locat_filenames = null;
-		return;
-	}
-
-
-
-
-	// Load the local catalog into memory.
-	// If not explicitly loaded, then the local catalog will be loaded in the constructor.
-	// If the local catalog is already loaded, or if no local catalog is specified
-	// in the system configuration, then perform no operation.
-
-	public static void load_local_catalog () {
-
-		// Obtain program configuration
-
-		ServerConfig server_config = new ServerConfig();
-
-		// Load the catalog
-
-		get_cached_local_catalog (server_config.get_locat_filenames(), server_config.get_locat_bins());
-		return;
-	}
-
-
-
 	
 	// Construct an object to be used for accessing Comcat.
-	// If f_use_config is true, then program configuration information is used
-	// to control simulated errors, hidden events, and use of a local catalog.
-	// If f_use_config is false, then program configuration information is
-	// ignored and the accessor will pass all requests to Comcat.
-	// If f_use_config is omitted, the default is true.
 
 	public ComcatAccessor () {
 		this (true);
 	}
 
-	public ComcatAccessor (boolean f_use_config) {
+
+
+
+	// Construct an object to be used for accessing Comcat.
+	// If f_create_service is true, then create a default web service with default URL.
+	// Otherwise, do not create any service, in which case the subclass must create the service.
+	// This constructor is intended for use by subclasses.
+
+	protected ComcatAccessor (boolean f_create_service) {
 
 		// Establish verbose mode
 
-		D = AftershockVerbose.get_verbose_mode();
+		D = true;
 
-		// Obtain program configuration
+		// Get the Comcat service provider, if desired
 
-		ServerConfig server_config = new ServerConfig();
+		if (f_create_service) {
 
-		// Get the Comcat service provider
+			try {
+				//service = new EventWebService(new URL("https://earthquake.usgs.gov/fdsnws/event/1/"));
+				service = new ComcatEventWebService(new URL("https://earthquake.usgs.gov/fdsnws/event/1/"));
+			} catch (MalformedURLException e) {
+				ExceptionUtils.throwAsRuntimeException(e);
+			}
 
-		try {
-			//service = new EventWebService(new URL("https://earthquake.usgs.gov/fdsnws/event/1/"));
-			//service = new ComcatEventWebService(new URL("https://earthquake.usgs.gov/fdsnws/event/1/"));
-			service = new ComcatEventWebService(new URL(server_config.get_comcat_url()));
-		} catch (MalformedURLException e) {
-			ExceptionUtils.throwAsRuntimeException(e);
 		}
 
 		// Set up HTTP status reporting
 
 		http_statuses = new ArrayList<Integer>();
 		local_http_status = -1;
-
-		// If we're using program configuration ...
-
-		if (f_use_config) {
-		
-			// Set simulated error rate
-
-			sim_error_rate = server_config.get_comcat_err_rate();
-
-			// Set hidden event IDs
-
-			hidden_ids = server_config.get_comcat_exclude();
-
-			// Set local catalog (and load it if needed)
-
-			local_catalog = get_cached_local_catalog (server_config.get_locat_filenames(), server_config.get_locat_bins());
-		}
-
-		// Otherwise, direct Comcat access
-
-		else {
-			sim_error_rate = 0.0;
-			hidden_ids = null;
-			local_catalog = null;
-		}
 	}
 
 
@@ -399,6 +234,7 @@ public class ComcatAccessor {
 	 * The return value can be null if the event could not be obtained.
 	 * A null return means the event is either not found or deleted in Comcat.
 	 * A ComcatException means that there was an error accessing Comcat.
+	 * Note: This function is overridden in org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor.
 	 */
 	public ObsEqkRupture fetchEvent (String eventID, boolean wrapLon, boolean extendedInfo) {
 
@@ -406,40 +242,6 @@ public class ComcatAccessor {
 
 		http_statuses.clear();
 		local_http_status = -1;
-
-		// Test for simulated error
-
-		check_simulated_error();
-
-		// If the event id is hidden ...
-
-		if (is_hidden_id (eventID)) {
-
-			// Set up HTTP status for event not found
-
-			local_http_status = 404;	// not found
-			http_statuses.add (new Integer(get_http_status_code()));
-			return null;
-		}
-
-		// If we are using a local catalog ...
-
-		if (local_catalog != null) {
-
-			// Fetch event from local catalog, or null if none
-
-			ObsEqkRupture locrup = local_catalog.fetchEvent (eventID, wrapLon, extendedInfo);
-
-			// Set up resulting HTTP status
-
-			if (locrup == null) {
-				local_http_status = 404;	// not found
-			} else {
-				local_http_status = 200;	// success
-			}
-			http_statuses.add (new Integer(get_http_status_code()));
-			return locrup;
-		}
 
 		// Set up query on event id
 
@@ -481,7 +283,8 @@ public class ComcatAccessor {
 
 
 
-	// Print a JSONObject.  Apparently for debugging.
+	// Print a JSONObject.
+	// This is a debugging function, not used in normal operation.
 
 	public static void printJSON(JSONObject json) {
 		printJSON(json, "");
@@ -595,6 +398,7 @@ public class ComcatAccessor {
 	 * @param max_calls = Maximum number of calls to ComCat, or 0 for default.
 	 * @return
 	 * Note: As a special case, if endTime == startTime, then the end time is the current time.
+	 * Note: This function is overridden in org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor.
 	 */
 	public ObsEqkRupList fetchEventList (String exclude_id, long startTime, long endTime,
 			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, boolean extendedInfo,
@@ -604,50 +408,6 @@ public class ComcatAccessor {
 
 		http_statuses.clear();
 		local_http_status = -1;
-
-		// Test for simulated error
-
-		check_simulated_error();
-
-		// If we are using a local catalog ...
-
-		if (local_catalog != null) {
-
-			// Display the query
-
-			if (D) {
-				StringBuilder sb = new StringBuilder();
-				sb.append ("Local query");
-				sb.append (String.format(": starttime=%s", Instant.ofEpochMilli(startTime).toString()));
-				sb.append (String.format(", endtime=%s", Instant.ofEpochMilli(endTime).toString()));
-				if (region.isCircular()) {
-					sb.append (String.format(", latitude=%.5f", region.getCircleCenterLat()));
-					sb.append (String.format(", longitude=%.5f", region.getCircleCenterLon()));
-					sb.append (String.format(", maxradius=%.5f", region.getCircleRadiusDeg()));
-				}
-				else {
-					sb.append (String.format(", minlatitude=%.5f", region.getMinLat()));
-					sb.append (String.format(", maxlatitude=%.5f", region.getMaxLat()));
-					sb.append (String.format(", minlongitude=%.5f", region.getMinLon()));
-					sb.append (String.format(", maxlongitude=%.5f", region.getMaxLon()));
-				}
-				sb.append (String.format(", mindepth=%.3f", minDepth));
-				sb.append (String.format(", maxdepth=%.3f", maxDepth));
-				sb.append (String.format(", minmagnitude=%.3f", minMag));
-				System.out.println (sb.toString());
-			}
-
-			// Do the local query
-
-			ObsEqkRupList locrups = local_catalog.fetchEventList (exclude_id, startTime, endTime,
-				minDepth, maxDepth, region, wrapLon, extendedInfo, minMag);
-
-			// Set up resulting HTTP status
-
-			local_http_status = 200;	// success
-			http_statuses.add (new Integer(get_http_status_code()));
-			return locrups;
-		}
 
 		// Start a query
 
@@ -1210,6 +970,7 @@ public class ComcatAccessor {
 	 * @param rup = The ObsEqkRupture to convert.
 	 * @return
 	 * Returns string describing the rupture contents.
+	 * This function is mainly for testing.
 	 */
 	public static String rupToString (ObsEqkRupture rup) {
 		StringBuilder result = new StringBuilder();
@@ -1222,9 +983,12 @@ public class ComcatAccessor {
 		double rup_lon = hypo.getLongitude();
 		double rup_depth = hypo.getDepth();
 
+		String rup_time_string = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'")
+			.withZone(ZoneOffset.UTC).format(Instant.ofEpochMilli(rup_time));
+
 		result.append ("ObsEqkRupture:" + "\n");
 		result.append ("rup_event_id = " + rup_event_id + "\n");
-		result.append ("rup_time = " + SimpleUtils.time_raw_and_string(rup_time) + "\n");
+		result.append ("rup_time = " + rup_time + " (" + rup_time_string + ")" + "\n");
 		result.append ("rup_mag = " + rup_mag + "\n");
 		result.append ("rup_lat = " + rup_lat + "\n");
 		result.append ("rup_lon = " + rup_lon + "\n");
@@ -1239,200 +1003,6 @@ public class ComcatAccessor {
 		}
 
 		return result.toString();
-	}
-
-
-
-
-	//----- Testing -----
-
-	public static void main(String[] args) {
-
-		// There needs to be at least one argument, which is the subcommand
-
-		if (args.length < 1) {
-			System.err.println ("ComcatAccessor : Missing subcommand");
-			return;
-		}
-
-
-
-
-		// Subcommand : Test #1
-		// Command format:
-		//  test1  event_id
-		// Fetch information for an event, and display it.
-
-		if (args[0].equalsIgnoreCase ("test1")) {
-
-			// One additional argument
-
-			if (args.length != 2) {
-				System.err.println ("ComcatAccessor : Invalid 'test1' subcommand");
-				return;
-			}
-
-			String event_id = args[1];
-
-			try {
-
-				// Say hello
-
-				System.out.println ("Fetching event: " + event_id);
-
-				// Create the accessor
-
-				ComcatAccessor accessor = new ComcatAccessor();
-
-				// Get the rupture
-
-				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
-
-				// Display its information
-
-				if (rup == null) {
-					System.out.println ("Null return from fetchEvent");
-					System.out.println ("http_status = " + accessor.get_http_status_code());
-					return;
-				}
-
-				System.out.println (ComcatAccessor.rupToString (rup));
-
-				String rup_event_id = rup.getEventId();
-
-				System.out.println ("http_status = " + accessor.get_http_status_code());
-
-				Map<String, String> eimap = extendedInfoToMap (rup, EITMOPT_NULL_TO_EMPTY);
-
-				for (String key : eimap.keySet()) {
-					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
-				}
-
-				List<String> idlist = idsToList (eimap.get (PARAM_NAME_IDLIST), rup_event_id);
-
-				for (String id : idlist) {
-					System.out.println ("ID List: " + id);
-				}
-
-            } catch (Exception e) {
-                e.printStackTrace();
-			}
-
-			return;
-		}
-
-
-
-
-		// Subcommand : Test #2
-		// Command format:
-		//  test2  event_id  min_days  max_days  radius_km  min_mag  limit_per_call
-		// Fetch information for an event, and display it.
-		// Then fetch the event list for a circle surrounding the hypocenter,
-		// for the specified interval in days after the origin time,
-		// excluding the event itself.
-		// The adjustable limit per call can test the multi-fetch logic.
-
-		if (args[0].equalsIgnoreCase ("test2")) {
-
-			// Six additional arguments
-
-			if (args.length != 7) {
-				System.err.println ("ComcatAccessor : Invalid 'test2' subcommand");
-				return;
-			}
-
-			try {
-
-				String event_id = args[1];
-				double min_days = Double.parseDouble (args[2]);
-				double max_days = Double.parseDouble (args[3]);
-				double radius_km = Double.parseDouble (args[4]);
-				double min_mag = Double.parseDouble (args[5]);
-				int limit_per_call = Integer.parseInt(args[6]);
-
-				// Say hello
-
-				System.out.println ("Fetching event: " + event_id);
-
-				// Create the accessor
-
-				ComcatAccessor accessor = new ComcatAccessor();
-
-				// Get the rupture
-
-				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
-
-				// Display its information
-
-				if (rup == null) {
-					System.out.println ("Null return from fetchEvent");
-					System.out.println ("http_status = " + accessor.get_http_status_code());
-					return;
-				}
-
-				System.out.println (ComcatAccessor.rupToString (rup));
-
-				String rup_event_id = rup.getEventId();
-				long rup_time = rup.getOriginTime();
-				Location hypo = rup.getHypocenterLocation();
-
-				System.out.println ("http_status = " + accessor.get_http_status_code());
-
-				// Say hello
-
-				System.out.println ("Fetching event list");
-				System.out.println ("min_days = " + min_days);
-				System.out.println ("max_days = " + max_days);
-				System.out.println ("radius_km = " + radius_km);
-				System.out.println ("min_mag = " + min_mag);
-				System.out.println ("limit_per_call = " + limit_per_call);
-
-				// Construct the Region
-
-				SphRegionCircle region = new SphRegionCircle (new SphLatLon(hypo), radius_km);
-
-				// Calculate the times
-
-				long startTime = rup_time + (long)(min_days*day_millis);
-				long endTime = rup_time + (long)(max_days*day_millis);
-
-				// Call Comcat
-
-				double minDepth = DEFAULT_MIN_DEPTH;
-				double maxDepth = DEFAULT_MAX_DEPTH;
-				boolean wrapLon = false;
-				boolean extendedInfo = false;
-				int max_calls = 0;
-
-				ObsEqkRupList rup_list = accessor.fetchEventList (rup_event_id, startTime, endTime,
-						minDepth, maxDepth, region, wrapLon, extendedInfo,
-						min_mag, limit_per_call, max_calls);
-
-				// Display the information
-
-				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
-
-				int n_status = accessor.get_http_status_count();
-				for (int i = 0; i < n_status; ++i) {
-					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
-				}
-
-            } catch (Exception e) {
-                e.printStackTrace();
-			}
-
-			return;
-		}
-
-
-
-
-		// Unrecognized subcommand.
-
-		System.err.println ("ComcatAccessor : Unrecognized subcommand : " + args[0]);
-		return;
-
 	}
 
 }

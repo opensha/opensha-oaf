@@ -17,8 +17,8 @@ import org.opensha.oaf.aftershockStatistics.util.SphRegion;
 import org.opensha.oaf.aftershockStatistics.util.ObsEqkRupMaxTimeComparator;
 
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatException;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
+import org.opensha.commons.data.comcat.ComcatException;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
@@ -102,7 +102,7 @@ public class ExPollComcatRun extends ServerExecTask {
 
 		// Create the accessor
 
-		ComcatAccessor accessor = new ComcatAccessor();
+		ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
 		// Search the entire world, for minimum magnitude equal to the lowest in any intake region
 
@@ -122,8 +122,8 @@ public class ExPollComcatRun extends ServerExecTask {
 
 		String exclude_id = null;
 
-		double min_depth = ComcatAccessor.DEFAULT_MIN_DEPTH;
-		double max_depth = ComcatAccessor.DEFAULT_MAX_DEPTH;
+		double min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+		double max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 
 		boolean wrapLon = false;
 		boolean extendedInfo = false;

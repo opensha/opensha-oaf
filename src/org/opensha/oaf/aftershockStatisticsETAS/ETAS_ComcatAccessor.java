@@ -4,7 +4,7 @@ import gov.usgs.earthquake.event.EventQuery;
 import gov.usgs.earthquake.event.EventWebService;
 import gov.usgs.earthquake.event.Format;
 import gov.usgs.earthquake.event.JsonEvent;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.aftershockStatistics.util.ObsEqkRupEventIdComparator;
 import org.opensha.oaf.aftershockStatistics.util.SphRegion;
 

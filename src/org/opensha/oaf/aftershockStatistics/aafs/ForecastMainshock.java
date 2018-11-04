@@ -13,10 +13,11 @@ import org.opensha.oaf.aftershockStatistics.util.MarshalImpJsonReader;
 import org.opensha.oaf.aftershockStatistics.util.MarshalImpJsonWriter;
 import org.opensha.oaf.aftershockStatistics.util.SphLatLon;
 import org.opensha.oaf.aftershockStatistics.util.SphRegion;
+import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 
 import org.opensha.oaf.aftershockStatistics.AftershockStatsCalc;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatException;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
+import org.opensha.commons.data.comcat.ComcatException;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
@@ -105,21 +106,21 @@ public class ForecastMainshock {
 			throw new EventNotFoundException ("ForecastMainshock.set_eqk_rupture: Comcat did not return event id: query_event_id = " + ((query_event_id == null) ? "null" : query_event_id));
 		}
 
-		Map<String, String> eimap = ComcatAccessor.extendedInfoToMap (rup, ComcatAccessor.EITMOPT_NULL_TO_EMPTY);
-		mainshock_network = eimap.get (ComcatAccessor.PARAM_NAME_NETWORK);
+		Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+		mainshock_network = eimap.get (ComcatOAFAccessor.PARAM_NAME_NETWORK);
 		if (mainshock_network == null || mainshock_network.isEmpty()) {
 			throw new EventNotFoundException ("ForecastMainshock.set_eqk_rupture: Comcat did not return event network: query_event_id = " + ((query_event_id == null) ? "null" : query_event_id));
 		}
-		mainshock_code = eimap.get (ComcatAccessor.PARAM_NAME_CODE);
+		mainshock_code = eimap.get (ComcatOAFAccessor.PARAM_NAME_CODE);
 		if (mainshock_code == null || mainshock_code.isEmpty()) {
 			throw new EventNotFoundException ("ForecastMainshock.set_eqk_rupture: Comcat did not return event code: query_event_id = " + ((query_event_id == null) ? "null" : query_event_id));
 		}
 
-		String comcat_idlist = eimap.get (ComcatAccessor.PARAM_NAME_IDLIST);
+		String comcat_idlist = eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST);
 		//if (comcat_idlist == null || comcat_idlist.isEmpty()) {
 		//	throw new EventNotFoundException ("ForecastMainshock.set_eqk_rupture: Comcat did not return event id list: query_event_id = " + ((query_event_id == null) ? "null" : query_event_id));
 		//}
-		List<String> idlist = ComcatAccessor.idsToList (comcat_idlist, mainshock_event_id);
+		List<String> idlist = ComcatOAFAccessor.idsToList (comcat_idlist, mainshock_event_id);
 		if (idlist.isEmpty()) {
 			throw new EventNotFoundException ("ForecastMainshock.set_eqk_rupture: Unable to construct event id list: query_event_id = " + ((query_event_id == null) ? "null" : query_event_id));
 		}
@@ -177,7 +178,7 @@ public class ForecastMainshock {
 		ObsEqkRupture rup;
 
 		try {
-			ComcatAccessor accessor = new ComcatAccessor();
+			ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 			rup = accessor.fetchEvent(query_event_id, false, true);		// request extended info
 		} catch (Exception e) {
 			throw new ComcatException ("ForecastMainshock.fetch_mainshock_params: Comcat exception: query_event_id = " + ((query_event_id == null) ? "null" : query_event_id), e);
@@ -306,7 +307,7 @@ public class ForecastMainshock {
 			result.append ("mainshock_network = " + mainshock_network + "\n");
 			result.append ("mainshock_code = " + mainshock_code + "\n");
 			result.append ("mainshock_id_list = " + Arrays.toString (mainshock_id_list) + "\n");
-			result.append ("mainshock_time = " + mainshock_time + "\n");
+			result.append ("mainshock_time = " + SimpleUtils.time_raw_and_string(mainshock_time) + "\n");
 			result.append ("mainshock_mag = " + mainshock_mag + "\n");
 			result.append ("mainshock_lat = " + mainshock_lat + "\n");
 			result.append ("mainshock_lon = " + mainshock_lon + "\n");

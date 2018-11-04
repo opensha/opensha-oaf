@@ -120,7 +120,7 @@ import org.opensha.oaf.aftershockStatistics.util.GUICalcProgressBar;
 import org.opensha.oaf.aftershockStatistics.aafs.ServerConfig;
 import org.opensha.oaf.aftershockStatistics.aafs.ServerConfigFile;
 import org.opensha.oaf.aftershockStatistics.aafs.PDLCmd;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
 
 public class AftershockStatsGUI extends JFrame implements ParameterChangeListener {
 
@@ -260,7 +260,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	private GraphWidget aftershockExpectedGraph;
 	private JTabbedPane forecastTablePane;
 	
-	private ComcatAccessor accessor;
+	private ComcatOAFAccessor accessor;
 	private WC1994_MagLengthRelationship wcMagLen;
 	
 	private SphRegion region;
@@ -319,9 +319,9 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, new Double(36d));
 		minLonParam = new DoubleParameter("Min Lon", -180d, 180d, new Double(32d));
 		maxLonParam = new DoubleParameter("Max Lon", -180d, 180d, new Double(36d));
-		minDepthParam = new DoubleParameter("Min Depth", ComcatAccessor.DEFAULT_MIN_DEPTH, ComcatAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatAccessor.DEFAULT_MIN_DEPTH));
+		minDepthParam = new DoubleParameter("Min Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MIN_DEPTH));
 		minDepthParam.setUnits("km");
-		maxDepthParam = new DoubleParameter("Max Depth", ComcatAccessor.DEFAULT_MIN_DEPTH, ComcatAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatAccessor.DEFAULT_MAX_DEPTH));
+		maxDepthParam = new DoubleParameter("Max Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MAX_DEPTH));
 		maxDepthParam.setUnits("km");
 		regionCenterTypeParam = new EnumParameter<AftershockStatsGUI.RegionCenterType>(
 				"Region Center", EnumSet.allOf(RegionCenterType.class), RegionCenterType.CENTROID, null);
@@ -491,7 +491,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		setTitle("Aftershock Statistics GUI");
 		setLocationRelativeTo(null);
 		
-		accessor = new ComcatAccessor();
+		accessor = new ComcatOAFAccessor();
 	}
 	
 	private void updateRegionParamList(RegionType type, RegionCenterType centerType) {
@@ -609,13 +609,13 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	//  	
 	//  	// check that end date is before current time
 	//  	long eventTime = mainshock.getOriginTime();
-	//  	long startTime = eventTime + (long)(minDays*ComcatAccessor.day_millis);
-	//  	long endTime = eventTime + (long)(maxDays*ComcatAccessor.day_millis);
+	//  	long startTime = eventTime + (long)(minDays*ComcatOAFAccessor.day_millis);
+	//  	long endTime = eventTime + (long)(maxDays*ComcatOAFAccessor.day_millis);
 	//  	
 	//  	Preconditions.checkState(startTime < System.currentTimeMillis(), "Start time is before now!");
 	//  	
 	//  	if (endTime > System.currentTimeMillis()) {
-	//  		double calcMaxDays = (System.currentTimeMillis() - startTime)/ComcatAccessor.day_millis;
+	//  		double calcMaxDays = (System.currentTimeMillis() - startTime)/ComcatOAFAccessor.day_millis;
 	//  		System.out.println("WARNING: End time after current time. Setting max days to: "+calcMaxDays);
 	//  		dataEndTimeParam.setValue(calcMaxDays);
 	//  		dataEndTimeParam.getEditor().refreshParamEditor();
@@ -697,13 +697,13 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		
 			// check that end date is before current time
 			eventTime = my_mainshock.getOriginTime();
-			startTime = eventTime + (long)(minDays*ComcatAccessor.day_millis);
-			endTime = eventTime + (long)(maxDays*ComcatAccessor.day_millis);
+			startTime = eventTime + (long)(minDays*ComcatOAFAccessor.day_millis);
+			endTime = eventTime + (long)(maxDays*ComcatOAFAccessor.day_millis);
 		
 			Preconditions.checkState(startTime < System.currentTimeMillis(), "Start time is before now!");
 		
 			if (endTime > System.currentTimeMillis()) {
-				double calcMaxDays = (System.currentTimeMillis() - startTime)/ComcatAccessor.day_millis;
+				double calcMaxDays = (System.currentTimeMillis() - startTime)/ComcatOAFAccessor.day_millis;
 				System.out.println("WARNING: End time after current time. Setting max days to: "+calcMaxDays);
 				dataEndTimeParam.setValue(calcMaxDays);
 				dataEndTimeParam.getEditor().refreshParamEditor();
@@ -2102,9 +2102,9 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 					try {
 						//product = OAF_Publisher.createProduct(mainshock.getEventId(), forecast);
 						String jsonText = forecast.buildJSONString();
-						Map<String, String> eimap = ComcatAccessor.extendedInfoToMap (mainshock, ComcatAccessor.EITMOPT_OMIT_NULL_EMPTY);
-						String eventNetwork = eimap.get (ComcatAccessor.PARAM_NAME_NETWORK);
-						String eventCode = eimap.get (ComcatAccessor.PARAM_NAME_CODE);
+						Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (mainshock, ComcatOAFAccessor.EITMOPT_OMIT_NULL_EMPTY);
+						String eventNetwork = eimap.get (ComcatOAFAccessor.PARAM_NAME_NETWORK);
+						String eventCode = eimap.get (ComcatOAFAccessor.PARAM_NAME_CODE);
 						String eventID = mainshock.getEventId();
 						long modifiedTime = 0L;
 						boolean isReviewed = true;
@@ -2644,7 +2644,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 //		System.out.println(formatter.format(Date.from (origin)));
 //		System.out.println(formatter.format(Date.from (daybreak)));
 		
-		daysLeftInDay = 1.0 - ((double)(origin.toEpochMilli() - daybreak.toEpochMilli()))/ComcatAccessor.day_millis;
+		daysLeftInDay = 1.0 - ((double)(origin.toEpochMilli() - daybreak.toEpochMilli()))/ComcatOAFAccessor.day_millis;
 		return daysLeftInDay;
 	}
 	

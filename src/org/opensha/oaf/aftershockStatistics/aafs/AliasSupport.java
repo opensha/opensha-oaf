@@ -25,7 +25,7 @@ import org.opensha.oaf.aftershockStatistics.util.MarshalWriter;
 import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatException;
+import org.opensha.commons.data.comcat.ComcatException;
 import org.opensha.oaf.aftershockStatistics.comcat.ComcatConflictException;
 import org.opensha.oaf.aftershockStatistics.comcat.ComcatRemovedException;
 

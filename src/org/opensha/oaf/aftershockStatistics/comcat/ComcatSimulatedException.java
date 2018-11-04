@@ -1,5 +1,7 @@
 package org.opensha.oaf.aftershockStatistics.comcat;
 
+import org.opensha.commons.data.comcat.ComcatException;
+
 /**
  * Exception class for simulated Comcat errors.
  * Author: Michael Barall 09/17/2018.

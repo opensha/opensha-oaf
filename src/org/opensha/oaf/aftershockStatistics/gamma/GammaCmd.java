@@ -23,7 +23,7 @@ import java.io.PrintWriter;
 import org.opensha.oaf.aftershockStatistics.AftershockStatsCalc;
 import org.opensha.oaf.aftershockStatistics.AftershockStatsShadow;
 import org.opensha.oaf.aftershockStatistics.AftershockVerbose;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
 import org.opensha.oaf.aftershockStatistics.RJ_AftershockModel;
 
@@ -123,7 +123,7 @@ public class GammaCmd {
 
 				// Create the accessor
 
-				ComcatAccessor accessor = new ComcatAccessor();
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
 				// Construct the Region
 
@@ -132,8 +132,8 @@ public class GammaCmd {
 				// Call Comcat
 
 				String null_event_id = null;
-				double minDepth = ComcatAccessor.DEFAULT_MIN_DEPTH;
-				double maxDepth = ComcatAccessor.DEFAULT_MAX_DEPTH;
+				double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+				double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 				boolean wrapLon = false;
 				boolean extendedInfo = false;
 
@@ -308,7 +308,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -464,7 +464,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -618,7 +618,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -749,7 +749,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -942,7 +942,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -1108,7 +1108,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -1268,7 +1268,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -1437,7 +1437,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -1614,7 +1614,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -1812,7 +1812,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -2003,7 +2003,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -2016,7 +2016,7 @@ public class GammaCmd {
 
 				// Create the accessor
 
-				ComcatAccessor accessor = new ComcatAccessor();
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
 				// List of earthquakes
 
@@ -2182,7 +2182,7 @@ public class GammaCmd {
 
 				// Adjust verbosity
 
-				ComcatAccessor.load_local_catalog();	// So catalog in use is displayed
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
 				AftershockVerbose.set_verbose_mode (false);
 				System.out.println ("");
 
@@ -2195,7 +2195,7 @@ public class GammaCmd {
 
 				// Create the accessor
 
-				ComcatAccessor accessor = new ComcatAccessor();
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
 				// List of earthquakes
 

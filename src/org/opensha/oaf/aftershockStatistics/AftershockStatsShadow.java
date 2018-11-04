@@ -21,7 +21,7 @@ import org.opensha.oaf.aftershockStatistics.util.SphRegion;
 import org.opensha.oaf.aftershockStatistics.util.SphRegionCircle;
 import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
 
 
 
@@ -126,7 +126,7 @@ public class AftershockStatsShadow {
 		// Call Comcat to obtain a list of possible aftershocks, and accumulate their unit vectors.
 		// An exception from this function likely indicates a problem with Comcat.
 
-		public void accum_from_comcat (ComcatAccessor accessor, long system_time_now, boolean f_verbose) {
+		public void accum_from_comcat (ComcatOAFAccessor accessor, long system_time_now, boolean f_verbose) {
 
 			// If there is a nonempty time and space region in which we need to look for aftershocks ...
 
@@ -144,8 +144,8 @@ public class AftershockStatsShadow {
 				// Aftershocks must lie in the centroid region, within the centroid times,
 				// and have magnitude at least equal to the centroid magnitude
 
-				double min_depth = ComcatAccessor.DEFAULT_MIN_DEPTH;
-				double max_depth = ComcatAccessor.DEFAULT_MAX_DEPTH;
+				double min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+				double max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 
 				boolean wrapLon = false;
 				boolean extendedInfo = false;
@@ -355,7 +355,7 @@ public class AftershockStatsShadow {
 
 		// A Comcat accessor to use
 
-		ComcatAccessor accessor = new ComcatAccessor();
+		ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
 		// Fetch object for magnitude of completeness parameters
 
@@ -381,8 +381,8 @@ public class AftershockStatsShadow {
 		// Potentials must lie in the search region, within the search times,
 		// have magnitude at least equal to the mainshock, and not be the mainshock
 
-		double min_depth = ComcatAccessor.DEFAULT_MIN_DEPTH;
-		double max_depth = ComcatAccessor.DEFAULT_MAX_DEPTH;
+		double min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+		double max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 
 		boolean wrapLon = false;
 		boolean extendedInfo = false;
@@ -617,7 +617,7 @@ public class AftershockStatsShadow {
 		// Return the largest-magnitude event that shadows the mainshock
 
 		double best_distance = LocationUtils.horzDistance (mainshock_hypo, best_candidate.candidate_hypo);
-		double best_time_offset = ((double)(mainshock_time - best_candidate.candidate_time))/ComcatAccessor.day_millis;
+		double best_time_offset = ((double)(mainshock_time - best_candidate.candidate_time))/ComcatOAFAccessor.day_millis;
 
 		if (separation != null) {
 			separation[0] = best_distance;
@@ -686,7 +686,7 @@ public class AftershockStatsShadow {
 
 				// Create the accessor
 
-				ComcatAccessor accessor = new ComcatAccessor();
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
 				// Get the rupture
 
@@ -717,7 +717,7 @@ public class AftershockStatsShadow {
 
 				// Get find shadow parameters
 
-				long time_now = rup_time + (long)(days*ComcatAccessor.day_millis);
+				long time_now = rup_time + (long)(days*ComcatOAFAccessor.day_millis);
 				double search_radius = DEF_SEARCH_RADIUS;
 				long search_time_lo = rup_time - YEAR_IN_MILLIS;
 				long search_time_hi = rup_time + YEAR_IN_MILLIS;

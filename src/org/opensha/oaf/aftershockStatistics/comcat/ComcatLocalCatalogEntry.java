@@ -115,21 +115,21 @@ public class ComcatLocalCatalogEntry {
 			throw new RuntimeException ("ComcatLocalCatalogEntry.set_eqk_rupture: Missing or invalid event id");
 		}
 
-		Map<String, String> eimap = ComcatAccessor.extendedInfoToMap (rup, ComcatAccessor.EITMOPT_NULL_TO_EMPTY);
-		rup_network = eimap.get (ComcatAccessor.PARAM_NAME_NETWORK);
+		Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+		rup_network = eimap.get (ComcatOAFAccessor.PARAM_NAME_NETWORK);
 		if (rup_network == null || !(pattern.matcher(rup_network).matches())) {
 			throw new RuntimeException ("ComcatLocalCatalogEntry.set_eqk_rupture: Missing or invalid event network: rup_event_id = " + rup_event_id);
 		}
-		rup_code = eimap.get (ComcatAccessor.PARAM_NAME_CODE);
+		rup_code = eimap.get (ComcatOAFAccessor.PARAM_NAME_CODE);
 		if (rup_code == null || !(pattern.matcher(rup_code).matches())) {
 			throw new RuntimeException ("ComcatLocalCatalogEntry.set_eqk_rupture: Missing or invalid event code: rup_event_id = " + rup_event_id);
 		}
 
-		String comcat_idlist = eimap.get (ComcatAccessor.PARAM_NAME_IDLIST);
+		String comcat_idlist = eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST);
 		if (comcat_idlist == null || comcat_idlist.isEmpty()) {
 			throw new RuntimeException ("ComcatLocalCatalogEntry.set_eqk_rupture: No id list: rup_event_id = " + rup_event_id);
 		}
-		List<String> idlist = ComcatAccessor.idsToList (comcat_idlist, rup_event_id);
+		List<String> idlist = ComcatOAFAccessor.idsToList (comcat_idlist, rup_event_id);
 		if (idlist.isEmpty()) {
 			throw new RuntimeException ("ComcatLocalCatalogEntry.set_eqk_rupture: Empty id list: rup_event_id = " + rup_event_id);
 		}
@@ -140,7 +140,7 @@ public class ComcatLocalCatalogEntry {
 			}
 		}
 
-		rup_place = eimap.get (ComcatAccessor.PARAM_NAME_DESCRIPTION);
+		rup_place = eimap.get (ComcatOAFAccessor.PARAM_NAME_DESCRIPTION);
 		if (rup_place == null || rup_place.isEmpty()) {
 			rup_place = "Unknown";
 		}
@@ -217,13 +217,13 @@ public class ComcatLocalCatalogEntry {
 		
 		if (extendedInfo) {
 			// adds the place description ("10km from wherever")
-			rup.addParameter(new StringParameter(ComcatAccessor.PARAM_NAME_DESCRIPTION, rup_place));
+			rup.addParameter(new StringParameter(ComcatOAFAccessor.PARAM_NAME_DESCRIPTION, rup_place));
 			// adds the event id list, which can be used to resolve duplicates
-			rup.addParameter(new StringParameter(ComcatAccessor.PARAM_NAME_IDLIST, get_comcat_idlist()));
+			rup.addParameter(new StringParameter(ComcatOAFAccessor.PARAM_NAME_IDLIST, get_comcat_idlist()));
 			// adds the seismic network, which is needed for reporting to PDL
-			rup.addParameter(new StringParameter(ComcatAccessor.PARAM_NAME_NETWORK, rup_network));
+			rup.addParameter(new StringParameter(ComcatOAFAccessor.PARAM_NAME_NETWORK, rup_network));
 			// adds the event code, which is needed for reporting to PDL
-			rup.addParameter(new StringParameter(ComcatAccessor.PARAM_NAME_CODE, rup_code));
+			rup.addParameter(new StringParameter(ComcatOAFAccessor.PARAM_NAME_CODE, rup_code));
 		}
 		
 		return rup;
@@ -444,7 +444,7 @@ public class ComcatLocalCatalogEntry {
 	// refer to two different earthquakes; either primary in one and secondary
 	// in the other, or secondary in both.  (We have not observed the same id
 	// to be primary in two different earthquakes, and such a case would be
-	// filtered in ComcatAccessor anyway.)  [Note: Comcat maintainers have
+	// filtered in ComcatOAFAccessor anyway.)  [Note: Comcat maintainers have
 	// confirmed that this is a bug in Comcat.  When/if the bug is fixed,
 	// this will not occur any more.]
 	// If this entry has the same primary id as another entry that is
@@ -634,7 +634,7 @@ public class ComcatLocalCatalogEntry {
 
 				// Create the accessor
 
-				ComcatAccessor accessor = new ComcatAccessor();
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
 				// Get the rupture
 
@@ -648,7 +648,7 @@ public class ComcatLocalCatalogEntry {
 					return;
 				}
 
-				System.out.println (ComcatAccessor.rupToString (rup));
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
 
 				// Convert to local catalog entry
 
@@ -675,7 +675,7 @@ public class ComcatLocalCatalogEntry {
 
 				ObsEqkRupture rup2 = entry2.get_eqk_rupture (false, true);
 
-				System.out.println (ComcatAccessor.rupToString (rup2));
+				System.out.println (ComcatOAFAccessor.rupToString (rup2));
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -714,7 +714,7 @@ public class ComcatLocalCatalogEntry {
 
 				// Create the accessor
 
-				ComcatAccessor accessor = new ComcatAccessor();
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
 				// Get the rupture
 
@@ -728,7 +728,7 @@ public class ComcatLocalCatalogEntry {
 					return;
 				}
 
-				System.out.println (ComcatAccessor.rupToString (rup));
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
 
 				// Convert to local catalog entry
 

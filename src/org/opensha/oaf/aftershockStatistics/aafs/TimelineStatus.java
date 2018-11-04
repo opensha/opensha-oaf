@@ -10,7 +10,7 @@ import org.opensha.oaf.aftershockStatistics.aafs.entity.CatalogSnapshot;
 import org.opensha.oaf.aftershockStatistics.aafs.entity.TimelineEntry;
 import org.opensha.oaf.aftershockStatistics.aafs.entity.AliasFamily;
 
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatException;
+import org.opensha.commons.data.comcat.ComcatException;
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
 
 

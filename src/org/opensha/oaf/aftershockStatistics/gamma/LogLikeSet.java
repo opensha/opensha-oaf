@@ -6,7 +6,7 @@ import java.util.Arrays;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.aftershockStatistics.AftershockStatsCalc;
 import org.opensha.oaf.aftershockStatistics.RJ_AftershockModel;
 import org.opensha.oaf.aftershockStatistics.RJ_AftershockModel_Generic;
@@ -185,10 +185,10 @@ public class LogLikeSet {
 			double capH = 0.0;
 			double p = apcval[1];
 			double c = apcval[2];
-			//double tMinDays = ((double)(forecast_lag)) / ComcatAccessor.day_millis;
-			//double tMaxDays = ((double)(forecast_lag + gamma_config.max_adv_window_end_off)) / ComcatAccessor.day_millis;
-			double tMinDays = ((double)(gamma_config.sim_start_off)) / ComcatAccessor.day_millis;
-			double tMaxDays = ((double)(gamma_config.max_forecast_lag + gamma_config.max_adv_window_end_off)) / ComcatAccessor.day_millis;
+			//double tMinDays = ((double)(forecast_lag)) / ComcatOAFAccessor.day_millis;
+			//double tMaxDays = ((double)(forecast_lag + gamma_config.max_adv_window_end_off)) / ComcatOAFAccessor.day_millis;
+			double tMinDays = ((double)(gamma_config.sim_start_off)) / ComcatOAFAccessor.day_millis;
+			double tMaxDays = ((double)(gamma_config.max_forecast_lag + gamma_config.max_adv_window_end_off)) / ComcatOAFAccessor.day_millis;
 
 			// Run the simulation
 

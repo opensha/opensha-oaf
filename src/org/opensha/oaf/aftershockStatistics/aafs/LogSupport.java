@@ -18,10 +18,10 @@ import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 import org.opensha.oaf.aftershockStatistics.util.TimeSplitOutputStream;
 
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatException;
+import org.opensha.commons.data.comcat.ComcatException;
 import org.opensha.oaf.aftershockStatistics.comcat.ComcatConflictException;
 import org.opensha.oaf.aftershockStatistics.comcat.ComcatRemovedException;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -291,7 +291,7 @@ public class LogSupport extends ServerComponent {
 						tstatus.forecast_mainshock.mainshock_lon,
 						tstatus.forecast_mainshock.mainshock_depth),
 					String.format ("lag = %.3f days",
-						((double)(tstatus.last_forecast_lag))/ComcatAccessor.day_millis)
+						((double)(tstatus.last_forecast_lag))/ComcatOAFAccessor.day_millis)
 				);
 			}
 		}
@@ -523,7 +523,7 @@ public class LogSupport extends ServerComponent {
 	// Report Comcat poll done.
 
 	public void report_comcat_poll_done (long poll_lookback, int count_no_timeline, int count_withdrawn_timeline) {
-		double poll_lookback_days = ((double)poll_lookback)/ComcatAccessor.day_millis;
+		double poll_lookback_days = ((double)poll_lookback)/ComcatOAFAccessor.day_millis;
 		report_action ("COMCAT-POLL-DONE",
 					"poll_lookback = " + String.format ("%.3f", poll_lookback_days) + " days",
 					"count_no_timeline = " + count_no_timeline,

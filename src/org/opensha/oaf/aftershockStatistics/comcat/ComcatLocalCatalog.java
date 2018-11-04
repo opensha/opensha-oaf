@@ -30,6 +30,8 @@ import org.opensha.oaf.aftershockStatistics.util.SphLatLon;
 //import org.opensha.oaf.aftershockStatistics.util.SphRegion;
 import org.opensha.oaf.aftershockStatistics.util.SphRegionCircle;
 
+import org.opensha.commons.data.comcat.ComcatRegion;
+
 /**
  * A local earthquake catalog.
  * Author: Michael Barall 09/24/2018.
@@ -826,7 +828,7 @@ public class ComcatLocalCatalog {
 
 				// Create the accessor
 
-				ComcatAccessor accessor = new ComcatAccessor();
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
 				// Construct the Region
 
@@ -835,8 +837,8 @@ public class ComcatLocalCatalog {
 				// Call Comcat
 
 				String rup_event_id = null;
-				double minDepth = ComcatAccessor.DEFAULT_MIN_DEPTH;
-				double maxDepth = ComcatAccessor.DEFAULT_MAX_DEPTH;
+				double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+				double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 				boolean wrapLon = false;
 				boolean extendedInfo = true;
 
@@ -1212,7 +1214,7 @@ public class ComcatLocalCatalog {
 		// Command format:
 		//  test1  filename...  event_id
 		// Fetch information for an event, and display it.
-		// Same as ComcatAccessor test #1, except reading from a local catalog.
+		// Same as ComcatOAFAccessor test #1, except reading from a local catalog.
 
 		if (args[0].equalsIgnoreCase ("test1")) {
 
@@ -1249,17 +1251,17 @@ public class ComcatLocalCatalog {
 					return;
 				}
 
-				System.out.println (ComcatAccessor.rupToString (rup));
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
 
 				String rup_event_id = rup.getEventId();
 
-				Map<String, String> eimap = ComcatAccessor.extendedInfoToMap (rup, ComcatAccessor.EITMOPT_NULL_TO_EMPTY);
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
 
 				for (String key : eimap.keySet()) {
 					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
 				}
 
-				List<String> idlist = ComcatAccessor.idsToList (eimap.get (ComcatAccessor.PARAM_NAME_IDLIST), rup_event_id);
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
 
 				for (String id : idlist) {
 					System.out.println ("ID List: " + id);
@@ -1282,7 +1284,7 @@ public class ComcatLocalCatalog {
 		// Then fetch the event list for a circle surrounding the hypocenter,
 		// for the specified interval in days after the origin time,
 		// excluding the event itself.
-		// Same as ComcatAccessor test #2, except reading from a local catalog.
+		// Same as ComcatOAFAccessor test #2, except reading from a local catalog.
 
 		if (args[0].equalsIgnoreCase ("test2")) {
 
@@ -1323,7 +1325,7 @@ public class ComcatLocalCatalog {
 					return;
 				}
 
-				System.out.println (ComcatAccessor.rupToString (rup));
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
 
 				String rup_event_id = rup.getEventId();
 				long rup_time = rup.getOriginTime();
@@ -1343,13 +1345,13 @@ public class ComcatLocalCatalog {
 
 				// Calculate the times
 
-				long startTime = rup_time + (long)(min_days*ComcatAccessor.day_millis);
-				long endTime = rup_time + (long)(max_days*ComcatAccessor.day_millis);
+				long startTime = rup_time + (long)(min_days*ComcatOAFAccessor.day_millis);
+				long endTime = rup_time + (long)(max_days*ComcatOAFAccessor.day_millis);
 
 				// Call Comcat
 
-				double minDepth = ComcatAccessor.DEFAULT_MIN_DEPTH;
-				double maxDepth = ComcatAccessor.DEFAULT_MAX_DEPTH;
+				double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+				double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 				boolean wrapLon = false;
 				boolean extendedInfo = false;
 

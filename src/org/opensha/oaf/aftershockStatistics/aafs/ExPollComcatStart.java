@@ -13,8 +13,8 @@ import org.opensha.oaf.aftershockStatistics.util.MarshalWriter;
 import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatException;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
+import org.opensha.commons.data.comcat.ComcatException;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;

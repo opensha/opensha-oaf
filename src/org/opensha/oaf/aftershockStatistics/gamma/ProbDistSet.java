@@ -5,7 +5,7 @@ import java.util.List;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.aftershockStatistics.RJ_AftershockModel;
 
 import org.opensha.oaf.aftershockStatistics.aafs.ForecastMainshock;
@@ -82,8 +82,8 @@ public class ProbDistSet {
 		prob_dist = new double[num_adv_win][][];
 		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
 			prob_dist[i_adv_win] = new double[num_mag_bin][];
-			double tMinDays = ((double)(Math.max (gamma_config.sim_start_off, forecast_lag + gamma_config.adv_window_start_offs[i_adv_win]))) / ComcatAccessor.day_millis;
-			double tMaxDays = ((double)(forecast_lag + gamma_config.adv_window_end_offs[i_adv_win])) / ComcatAccessor.day_millis;
+			double tMinDays = ((double)(Math.max (gamma_config.sim_start_off, forecast_lag + gamma_config.adv_window_start_offs[i_adv_win]))) / ComcatOAFAccessor.day_millis;
+			double tMaxDays = ((double)(forecast_lag + gamma_config.adv_window_end_offs[i_adv_win])) / ComcatOAFAccessor.day_millis;
 			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
 				double mag = gamma_config.adv_min_mag_bins[i_mag_bin];
 				prob_dist[i_adv_win][i_mag_bin] = model.getDistFuncWithAleatory(mag, tMinDays, tMaxDays);
@@ -357,8 +357,8 @@ public class ProbDistSet {
 		// Get the probability distributions from the model
 
 		for (int i_adv_win = 0; i_adv_win < num_adv_win; ++i_adv_win) {
-			double tMinDays = ((double)(Math.max (gamma_config.sim_start_off, the_forecast_lag + gamma_config.adv_window_start_offs[i_adv_win]))) / ComcatAccessor.day_millis;
-			double tMaxDays = ((double)(the_forecast_lag + gamma_config.adv_window_end_offs[i_adv_win])) / ComcatAccessor.day_millis;
+			double tMinDays = ((double)(Math.max (gamma_config.sim_start_off, the_forecast_lag + gamma_config.adv_window_start_offs[i_adv_win]))) / ComcatOAFAccessor.day_millis;
+			double tMaxDays = ((double)(the_forecast_lag + gamma_config.adv_window_end_offs[i_adv_win])) / ComcatOAFAccessor.day_millis;
 			for (int i_mag_bin = 0; i_mag_bin < num_mag_bin; ++i_mag_bin) {
 				double mag = gamma_config.adv_min_mag_bins[i_mag_bin];
 				mean_rj[i_adv_win][i_mag_bin] = model.getModalNumEvents(mag, tMinDays, tMaxDays);

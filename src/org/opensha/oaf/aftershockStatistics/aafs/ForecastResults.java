@@ -15,7 +15,7 @@ import org.opensha.oaf.aftershockStatistics.util.SphLatLon;
 import org.opensha.oaf.aftershockStatistics.util.SphRegion;
 
 import org.opensha.oaf.aftershockStatistics.AftershockStatsCalc;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
 import org.opensha.oaf.aftershockStatistics.GenericRJ_Parameters;
 import org.opensha.oaf.aftershockStatistics.MagCompPage_Parameters;
@@ -142,7 +142,7 @@ public class ForecastResults {
 		//ObsEqkRupList catalog_comcat_aftershocks;		// if this isn't an object field
 
 		try {
-			ComcatAccessor accessor = new ComcatAccessor();
+			ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 			catalog_comcat_aftershocks = accessor.fetchAftershocks(mainshock, params.min_days, params.max_days,
 				params.min_depth, params.max_depth, params.aftershock_search_region, false, params.min_mag);
 		} catch (Exception e) {
@@ -152,8 +152,8 @@ public class ForecastResults {
 		// Save catalog and info
 
 		long eventTime = mainshock.getOriginTime();
-		catalog_start_time = eventTime + (long)(params.min_days * ComcatAccessor.day_millis);
-		catalog_end_time = eventTime + (long)(params.max_days * ComcatAccessor.day_millis);
+		catalog_start_time = eventTime + (long)(params.min_days * ComcatOAFAccessor.day_millis);
+		catalog_end_time = eventTime + (long)(params.max_days * ComcatOAFAccessor.day_millis);
 
 		catalog_eqk_count = catalog_comcat_aftershocks.size();
 		catalog_aftershocks = new CompactEqkRupList (catalog_comcat_aftershocks);
@@ -199,8 +199,8 @@ public class ForecastResults {
 		//ObsEqkRupList catalog_comcat_aftershocks;		// if this isn't an object field
 
 		long eventTime = mainshock.getOriginTime();
-		catalog_start_time = eventTime + (long)(params.min_days * ComcatAccessor.day_millis);
-		catalog_end_time = eventTime + (long)(params.max_days * ComcatAccessor.day_millis);
+		catalog_start_time = eventTime + (long)(params.min_days * ComcatOAFAccessor.day_millis);
+		catalog_end_time = eventTime + (long)(params.max_days * ComcatOAFAccessor.day_millis);
 
 		// Loop over supplied aftershocks
 
@@ -1099,7 +1099,7 @@ public class ForecastResults {
 
 			// Set the forecast time to be 7 days after the mainshock
 
-			long the_forecast_lag = Math.round(ComcatAccessor.day_millis * 7.0);
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
 
 			// Get parameters
 
@@ -1154,7 +1154,7 @@ public class ForecastResults {
 
 			// Set the forecast time to be 7 days after the mainshock
 
-			long the_forecast_lag = Math.round(ComcatAccessor.day_millis * 7.0);
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
 
 			// Get parameters
 

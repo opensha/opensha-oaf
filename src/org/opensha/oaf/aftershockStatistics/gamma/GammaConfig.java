@@ -1,6 +1,6 @@
 package org.opensha.oaf.aftershockStatistics.gamma;
 
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
 
 import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 

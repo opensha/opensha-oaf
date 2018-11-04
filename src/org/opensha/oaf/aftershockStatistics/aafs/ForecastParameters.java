@@ -15,7 +15,7 @@ import org.opensha.oaf.aftershockStatistics.util.SphLatLon;
 import org.opensha.oaf.aftershockStatistics.util.SphRegion;
 
 import org.opensha.oaf.aftershockStatistics.AftershockStatsCalc;
-import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.aftershockStatistics.GenericRJ_Parameters;
 import org.opensha.oaf.aftershockStatistics.GenericRJ_ParametersFetch;
 import org.opensha.oaf.aftershockStatistics.MagCompPage_Parameters;
@@ -389,12 +389,12 @@ public class ForecastParameters {
 
 	// Minimum search depth, in kilometers.
 
-	public double min_depth = ComcatAccessor.DEFAULT_MIN_DEPTH;
+	public double min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
 
 	// Maximum search depth, in kilometers.
 	// (Comcat has 1000 km maximum, OpenSHA has 700 km maximum.)
 
-	public double max_depth = ComcatAccessor.DEFAULT_MAX_DEPTH;
+	public double max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 
 	// Minimum magnitude to consider in search, or -10.0 if none.
 
@@ -406,8 +406,8 @@ public class ForecastParameters {
 		aftershock_search_region = null;
 		min_days = 0.0;
 		max_days = 0.0;
-		min_depth = ComcatAccessor.DEFAULT_MIN_DEPTH;
-		max_depth = ComcatAccessor.DEFAULT_MAX_DEPTH;
+		min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+		max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 		min_mag = -10.0;
 		return;
 	}
@@ -415,7 +415,7 @@ public class ForecastParameters {
 	// Fetch aftershock search region.
 	// Note: Mainshock parameters must be fetched first.
 
-	public void fetch_aftershock_search_region (ForecastMainshock fcmain, ForecastParameters prior_params) {
+	public void fetch_aftershock_search_region (ForecastMainshock fcmain, ForecastParameters prior_params, long the_start_lag) {
 
 		// Inherit fetch method from prior parameters, or use default
 
@@ -442,7 +442,7 @@ public class ForecastParameters {
 
 			// Special handling for max_days, try to make it match forecast_lag if available
 
-			max_days = ((double)forecast_lag)/ComcatAccessor.day_millis;
+			max_days = ((double)forecast_lag)/ComcatOAFAccessor.day_millis;
 
 			return;
 
@@ -481,15 +481,16 @@ public class ForecastParameters {
 
 		// Time range used for sampling aftershocks, in days since the mainshock
 
-		min_days = 0.0;
+		//min_days = 0.0;
+		min_days = ((double)the_start_lag)/ComcatOAFAccessor.day_millis;
 
-		//max_days = ((double)System.currentTimeMillis())/ComcatAccessor.day_millis;
-		max_days = ((double)forecast_lag)/ComcatAccessor.day_millis;
+		//max_days = ((double)System.currentTimeMillis())/ComcatOAFAccessor.day_millis;
+		max_days = ((double)forecast_lag)/ComcatOAFAccessor.day_millis;
 
 		// Depth range used for sampling aftershocks, in kilometers
 
-		min_depth = ComcatAccessor.DEFAULT_MIN_DEPTH;
-		max_depth = ComcatAccessor.DEFAULT_MAX_DEPTH;
+		min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+		max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 
 		// Minimum magnitude used for sampling aftershocks
 
@@ -503,7 +504,7 @@ public class ForecastParameters {
 			aftershocks = new ObsEqkRupList();
 		} else {
 			try {
-				ComcatAccessor accessor = new ComcatAccessor();
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 				aftershocks = accessor.fetchAftershocks(fcmain.get_eqk_rupture(), min_days, max_days, min_depth, max_depth, initial_region, initial_region.getPlotWrap(), centroid_min_mag);
 			} catch (Exception e) {
 				throw new RuntimeException("ForecastParameters.fetch_aftershock_search_region: Comcat exception", e);
@@ -578,7 +579,19 @@ public class ForecastParameters {
 		fetch_generic_params (fcmain, prior_params);
 		fetch_mag_comp_params (fcmain, prior_params);
 		fetch_seq_spec_params (fcmain, prior_params);
-		fetch_aftershock_search_region (fcmain, prior_params);
+		fetch_aftershock_search_region (fcmain, prior_params, 0L);
+		return;
+	}
+
+	// Fetch all parameters, with variable start lag.
+
+	public void fetch_all_params (long the_forecast_lag, ForecastMainshock fcmain, ForecastParameters prior_params, long the_start_lag) {
+		forecast_lag = the_forecast_lag;
+		fetch_control_params (fcmain, prior_params);
+		fetch_generic_params (fcmain, prior_params);
+		fetch_mag_comp_params (fcmain, prior_params);
+		fetch_seq_spec_params (fcmain, prior_params);
+		fetch_aftershock_search_region (fcmain, prior_params, the_start_lag);
 		return;
 	}
 
@@ -913,7 +926,7 @@ public class ForecastParameters {
 
 			// Set the forecast time to be 7 days after the mainshock
 
-			long the_forecast_lag = Math.round(ComcatAccessor.day_millis * 7.0);
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
 
 			// Get parameters
 
@@ -959,7 +972,7 @@ public class ForecastParameters {
 
 			// Set the forecast time to be 7 days after the mainshock
 
-			long the_forecast_lag = Math.round(ComcatAccessor.day_millis * 7.0);
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
 
 			// Get parameters
 
