@@ -120,6 +120,7 @@ import org.opensha.oaf.aftershockStatistics.util.GUICalcProgressBar;
 import org.opensha.oaf.aftershockStatistics.aafs.ServerConfig;
 import org.opensha.oaf.aftershockStatistics.aafs.ServerConfigFile;
 import org.opensha.oaf.aftershockStatistics.aafs.PDLCmd;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
 
 public class AftershockStatsGUI extends JFrame implements ParameterChangeListener {
 

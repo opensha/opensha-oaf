@@ -12,7 +12,7 @@ import org.opensha.oaf.aftershockStatistics.util.MarshalReader;
 import org.opensha.oaf.aftershockStatistics.util.MarshalWriter;
 import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 
-import org.opensha.oaf.aftershockStatistics.ComcatException;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatException;
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
 
 import org.opensha.oaf.aftershockStatistics.pdl.PDLProductBuilderOaf;

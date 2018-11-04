@@ -5,7 +5,7 @@ import java.util.List;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
-import org.opensha.oaf.aftershockStatistics.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
 import org.opensha.oaf.aftershockStatistics.RJ_AftershockModel;
 
 import org.opensha.oaf.aftershockStatistics.aafs.ForecastMainshock;

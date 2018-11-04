@@ -18,10 +18,10 @@ import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 import org.opensha.oaf.aftershockStatistics.util.TimeSplitOutputStream;
 
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
-import org.opensha.oaf.aftershockStatistics.ComcatException;
-import org.opensha.oaf.aftershockStatistics.ComcatConflictException;
-import org.opensha.oaf.aftershockStatistics.ComcatRemovedException;
-import org.opensha.oaf.aftershockStatistics.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatException;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatConflictException;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatRemovedException;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;

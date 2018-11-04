@@ -10,7 +10,7 @@ import org.opensha.commons.geo.LocationUtils;
 import org.opensha.commons.geo.BorderType;
 import org.opensha.commons.geo.GeoTools;
 
-import org.opensha.oaf.aftershockStatistics.ComcatRegion;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatRegion;
 
 import org.opensha.oaf.aftershockStatistics.util.MarshalReader;
 import org.opensha.oaf.aftershockStatistics.util.MarshalWriter;

@@ -1,4 +1,4 @@
-package org.opensha.oaf.aftershockStatistics;
+package org.opensha.oaf.aftershockStatistics.comcat;
 
 import gov.usgs.earthquake.event.EventQuery;
 import gov.usgs.earthquake.event.EventWebService;
@@ -49,6 +49,7 @@ import org.opensha.oaf.aftershockStatistics.util.SphLatLon;
 import org.opensha.oaf.aftershockStatistics.util.SphRegionCircle;
 import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 
+import org.opensha.oaf.aftershockStatistics.AftershockVerbose;
 import org.opensha.oaf.aftershockStatistics.aafs.ServerConfig;
 
 

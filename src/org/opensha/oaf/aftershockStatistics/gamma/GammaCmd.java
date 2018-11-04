@@ -23,7 +23,7 @@ import java.io.PrintWriter;
 import org.opensha.oaf.aftershockStatistics.AftershockStatsCalc;
 import org.opensha.oaf.aftershockStatistics.AftershockStatsShadow;
 import org.opensha.oaf.aftershockStatistics.AftershockVerbose;
-import org.opensha.oaf.aftershockStatistics.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
 import org.opensha.oaf.aftershockStatistics.RJ_AftershockModel;
 

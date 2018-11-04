@@ -15,8 +15,8 @@ import org.opensha.oaf.aftershockStatistics.util.SphLatLon;
 import org.opensha.oaf.aftershockStatistics.util.SphRegion;
 
 import org.opensha.oaf.aftershockStatistics.AftershockStatsCalc;
-import org.opensha.oaf.aftershockStatistics.ComcatAccessor;
-import org.opensha.oaf.aftershockStatistics.ComcatException;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatException;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;

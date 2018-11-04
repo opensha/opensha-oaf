@@ -9,8 +9,8 @@ import org.opensha.oaf.aftershockStatistics.util.MarshalException;
 import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 
 import org.opensha.oaf.aftershockStatistics.CompactEqkRupList;
-import org.opensha.oaf.aftershockStatistics.ComcatAccessor;
-import org.opensha.oaf.aftershockStatistics.ComcatException;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatException;
 
 import org.opensha.oaf.aftershockStatistics.pdl.PDLProductFile;
 import org.opensha.oaf.aftershockStatistics.pdl.PDLProductBuilderOaf;

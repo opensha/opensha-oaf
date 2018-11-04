@@ -1,4 +1,4 @@
-package org.opensha.oaf.aftershockStatistics;
+package org.opensha.oaf.aftershockStatistics.comcat;
 
 /**
  * Exception class for simulated Comcat errors.

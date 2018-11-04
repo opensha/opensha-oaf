@@ -1,4 +1,4 @@
-package org.opensha.oaf.aftershockStatistics;
+package org.opensha.oaf.aftershockStatistics.comcat;
 
 import gov.usgs.earthquake.event.EventQuery;
 import gov.usgs.earthquake.event.EventWebService;

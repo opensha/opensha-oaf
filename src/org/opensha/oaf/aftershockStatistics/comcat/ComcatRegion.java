@@ -1,4 +1,4 @@
-package org.opensha.oaf.aftershockStatistics;
+package org.opensha.oaf.aftershockStatistics.comcat;
 
 import org.opensha.commons.geo.Location;
 

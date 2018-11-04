@@ -21,6 +21,8 @@ import org.opensha.oaf.aftershockStatistics.util.SphRegion;
 import org.opensha.oaf.aftershockStatistics.util.SphRegionCircle;
 import org.opensha.oaf.aftershockStatistics.util.SimpleUtils;
 
+import org.opensha.oaf.aftershockStatistics.comcat.ComcatAccessor;
+
 
 
 /**
