@@ -1,9 +1,9 @@
 package org.opensha.oaf.aftershockStatistics.comcat;
 
-import gov.usgs.earthquake.event.EventQuery;
-import gov.usgs.earthquake.event.EventWebService;
-import gov.usgs.earthquake.event.Format;
-import gov.usgs.earthquake.event.JsonEvent;
+//import gov.usgs.earthquake.event.EventQuery;
+//import gov.usgs.earthquake.event.EventWebService;
+//import gov.usgs.earthquake.event.Format;
+//import gov.usgs.earthquake.event.JsonEvent;
 
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
@@ -27,15 +27,12 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.opensha.commons.geo.GeoTools;
 import org.opensha.commons.geo.Location;
-import org.opensha.commons.geo.Region;
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.param.ParameterList;
 import org.opensha.commons.param.impl.StringParameter;
 import org.opensha.commons.util.ExceptionUtils;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
-
-import com.google.common.base.Preconditions;
 
 import java.io.IOException;
 import java.io.FileNotFoundException;
@@ -371,6 +368,39 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 
 
+
+	// Print a JSONObject.
+	// This is a debugging function, not used in normal operation.
+
+	public static void printJSON(JSONObject json) {
+		printJSON(json, "");
+	}
+	public static void printJSON(JSONObject json, String prefix) {
+		for (Object key : json.keySet()) {
+			Object val = json.get(key);
+			if (val != null && val.toString().startsWith("[{")) {
+				String str = val.toString();
+				try {
+					val = new JSONParser().parse(str.substring(1, str.length()-1));
+				} catch (ParseException e) {
+//					e.printStackTrace();
+				}
+			}
+			if (val != null && val instanceof JSONObject) {
+				System.out.println(prefix+key+":");
+				String prefix2 = prefix;
+				if (prefix2 == null)
+					prefix2 = "";
+				prefix2 += "\t";
+				printJSON((JSONObject)val, prefix2);
+			} else {
+				System.out.println(prefix+key+": "+val);
+			}
+		}
+	}
+
+
+
 	
 	/**
 	 * Fetch a list of events satisfying the given conditions.
@@ -605,6 +635,178 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				// Create the accessor
 
 				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+				long rup_time = rup.getOriginTime();
+				Location hypo = rup.getHypocenterLocation();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				// Say hello
+
+				System.out.println ("Fetching event list");
+				System.out.println ("min_days = " + min_days);
+				System.out.println ("max_days = " + max_days);
+				System.out.println ("radius_km = " + radius_km);
+				System.out.println ("min_mag = " + min_mag);
+				System.out.println ("limit_per_call = " + limit_per_call);
+
+				// Construct the Region
+
+				SphRegionCircle region = new SphRegionCircle (new SphLatLon(hypo), radius_km);
+
+				// Calculate the times
+
+				long startTime = rup_time + (long)(min_days*day_millis);
+				long endTime = rup_time + (long)(max_days*day_millis);
+
+				// Call Comcat
+
+				double minDepth = DEFAULT_MIN_DEPTH;
+				double maxDepth = DEFAULT_MAX_DEPTH;
+				boolean wrapLon = false;
+				boolean extendedInfo = false;
+				int max_calls = 0;
+
+				ObsEqkRupList rup_list = accessor.fetchEventList (rup_event_id, startTime, endTime,
+						minDepth, maxDepth, region, wrapLon, extendedInfo,
+						min_mag, limit_per_call, max_calls);
+
+				// Display the information
+
+				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
+
+				int n_status = accessor.get_http_status_count();
+				for (int i = 0; i < n_status; ++i) {
+					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
+				}
+
+            } catch (Exception e) {
+                e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  event_id
+		// Fetch information for an event, and display it.
+		// Same as test #1, except using ComcatAccessor.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test3' subcommand");
+				return;
+			}
+
+			String event_id = args[1];
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatAccessor accessor = new ComcatAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = extendedInfoToMap (rup, EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = idsToList (eimap.get (PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+            } catch (Exception e) {
+                e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  event_id  min_days  max_days  radius_km  min_mag  limit_per_call
+		// Fetch information for an event, and display it.
+		// Then fetch the event list for a circle surrounding the hypocenter,
+		// for the specified interval in days after the origin time,
+		// excluding the event itself.
+		// The adjustable limit per call can test the multi-fetch logic.
+		// Same as test #2, except using ComcatAccessor.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// Six additional arguments
+
+			if (args.length != 7) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				double min_days = Double.parseDouble (args[2]);
+				double max_days = Double.parseDouble (args[3]);
+				double radius_km = Double.parseDouble (args[4]);
+				double min_mag = Double.parseDouble (args[5]);
+				int limit_per_call = Integer.parseInt(args[6]);
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatAccessor accessor = new ComcatAccessor();
 
 				// Get the rupture
 

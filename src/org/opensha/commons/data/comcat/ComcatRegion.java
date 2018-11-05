@@ -23,12 +23,13 @@ public interface ComcatRegion {
 	 * or very close to, the boundary of the region are considered inside or outside.
 	 * Note: If a point on the earth's surface has more than one possible longitude, then
 	 * this function must return a correct result regardless of which longitude is used.
+	 * For example, longitude -90 must return the same result as longitude +270.
 	 */
 	public boolean contains (Location loc);
 
 	/**
 	 * contains - Test if the region contains the given location.
-	 * @param lat = Latitude to check.
+	 * @param lat = Latitude to check, can be -90 to +90.
 	 * @param lon = Longitude to check, can be -180 to +360.
 	 * @return
 	 * Returns true if lat/lon is inside the region, false if lat/lon is outside the region.
@@ -36,6 +37,7 @@ public interface ComcatRegion {
 	 * or very close to, the boundary of the region are considered inside or outside.
 	 * Note: If a point on the earth's surface has more than one possible longitude, then
 	 * this function must return a correct result regardless of which longitude is used.
+	 * For example, longitude -90 must return the same result as longitude +270.
 	 */
 	public boolean contains (double lat, double lon);
 

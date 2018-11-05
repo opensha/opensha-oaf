@@ -25,20 +25,14 @@ import java.time.format.DateTimeFormatter;
 import java.time.ZoneOffset;
 import java.time.ZoneId;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.opensha.commons.geo.GeoTools;
 import org.opensha.commons.geo.Location;
-import org.opensha.commons.geo.Region;
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.param.ParameterList;
 import org.opensha.commons.param.impl.StringParameter;
 import org.opensha.commons.util.ExceptionUtils;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
-
-import com.google.common.base.Preconditions;
 
 import java.io.IOException;
 import java.io.FileNotFoundException;
@@ -49,8 +43,8 @@ import java.util.zip.ZipException;
 
 /**
  * Class for making queries to Comcat.
- * Original author unknown.
- * Extensively modified by: Michael Barall.
+ * Author: Michael Barall.
+ * Includes code from an earlier version written by other author(s).
  *
  *     ********** READ THIS **********
  *
@@ -73,7 +67,7 @@ import java.util.zip.ZipException;
  * org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor for an example.
  * Because subclasses depend on the internal design of this class remaining stable,
  * any changes carry a risk of breaking subclasses.  If you feel there is something in
- * this class that absolutely must be changed, contact the maintainer.
+ * this class that absolutely must be changed, contact the author.
  */
 public class ComcatAccessor {
 
@@ -82,7 +76,6 @@ public class ComcatAccessor {
 	protected boolean D = true;
 
 	// The Comcat service provider.
-	// This is never null.
 	
 	protected EventWebService service;
 
@@ -214,8 +207,8 @@ public class ComcatAccessor {
 	 * @param wrapLon = Desired longitude range: false = -180 to 180; true = 0 to 360.
 	 * @return
 	 * The return value can be null if the event could not be obtained.
-	 * A null return may indicate a temporary condition (e.g., Comcat not responding) or a
-	 * permanent condition (e.g., event id not recognized).
+	 * A null return means the event is either not found or deleted in Comcat.
+	 * A ComcatException means that there was an error accessing Comcat.
 	 * Note: This entry point always returns extended information.
 	 */
 	public ObsEqkRupture fetchEvent(String eventID, boolean wrapLon) {
@@ -265,7 +258,6 @@ public class ComcatAccessor {
 		}
 		
 		JsonEvent event = events.get(0);
-//		printJSON(event);
 
 		// Convert event to our form, treating any failure as if nothing was returned
 
@@ -278,39 +270,6 @@ public class ComcatAccessor {
 		}
 		
 		return rup;
-	}
-	
-
-
-
-	// Print a JSONObject.
-	// This is a debugging function, not used in normal operation.
-
-	public static void printJSON(JSONObject json) {
-		printJSON(json, "");
-	}
-	private static void printJSON(JSONObject json, String prefix) {
-		for (Object key : json.keySet()) {
-			Object val = json.get(key);
-			if (val != null && val.toString().startsWith("[{")) {
-				String str = val.toString();
-				try {
-					val = new JSONParser().parse(str.substring(1, str.length()-1));
-				} catch (ParseException e) {
-//					e.printStackTrace();
-				}
-			}
-			if (val != null && val instanceof JSONObject) {
-				System.out.println(prefix+key+":");
-				String prefix2 = prefix;
-				if (prefix2 == null)
-					prefix2 = "";
-				prefix2 += "\t";
-				printJSON((JSONObject)val, prefix2);
-			} else {
-				System.out.println(prefix+key+": "+val);
-			}
-		}
 	}
 
 
@@ -554,7 +513,7 @@ public class ComcatAccessor {
 					rup = null;
 				}
 
-				// Skip this event if we couldn't convert it (not clear this is the right thing to do)
+				// Skip this event if we couldn't convert it
 
 				if (rup == null) {
 					continue;
@@ -616,8 +575,21 @@ public class ComcatAccessor {
 
 
 
-	// Same, with defaults for limit_per_call and max_calls.
-
+	/**
+	 * Fetch a list of events satisfying the given conditions.
+	 * @param exclude_id = An event id to exclude from the results, or null if none.
+	 * @param startTime = Start of time interval, in milliseconds after the epoch.
+	 * @param endTime = End of time interval, in milliseconds after the epoch.
+	 * @param minDepth = Minimum depth, in km.  Comcat requires a value from -100 to +1000.
+	 * @param maxDepth = Maximum depth, in km.  Comcat requires a value from -100 to +1000.
+	 * @param region = Region to search.  Events not in this region are filtered out.
+	 * @param wrapLon = Desired longitude range: false = -180 to 180; true = 0 to 360.
+	 * @param extendedInfo = True to return extended information, see eventToObsRup below.
+	 * @param minMag = Minimum magnitude, or -10.0 for no minimum.
+	 * @return
+	 * Note: As a special case, if endTime == startTime, then the end time is the current time.
+	 * Note: This function is overridden in org.opensha.oaf.aftershockStatistics.comcat.ComcatOAFAccessor.
+	 */
 	public ObsEqkRupList fetchEventList (String exclude_id, long startTime, long endTime,
 			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, boolean extendedInfo,
 			double minMag) {
@@ -638,8 +610,9 @@ public class ComcatAccessor {
 	// If the conversion could not be performed, then the function either returns null
 	//  or throws an exception.  Note that the event.getXXXXX functions can return null,
 	//  which will lead to NullPointerException being thrown.
+	// Note: A subclass can override this method to add more extended information.
 	
-	private static ObsEqkRupture eventToObsRup(JsonEvent event, boolean wrapLon, boolean extendedInfo) {
+	protected ObsEqkRupture eventToObsRup(JsonEvent event, boolean wrapLon, boolean extendedInfo) {
 		double lat = event.getLatitude().doubleValue();
 		double lon = event.getLongitude().doubleValue();
 
