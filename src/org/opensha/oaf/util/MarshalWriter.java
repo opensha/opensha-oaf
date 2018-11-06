@@ -1,0 +1,259 @@
+package org.opensha.oaf.util;
+
+import java.util.Collection;
+
+/**
+ * Interface for marshaling parameters/data to the OAF database.
+ * Author: Michael Barall 03/31/2018.
+ */
+public interface MarshalWriter {
+
+	/**
+	 * Begin a map context.
+	 */
+	public void marshalMapBegin (String name);
+
+	/**
+	 * End a map context.
+	 */
+	public void marshalMapEnd ();
+
+	/**
+	 * Begin an array context, specify the array size.
+	 */
+	public void marshalArrayBegin (String name, int array_size);
+
+	/**
+	 * End an array context.
+	 */
+	public void marshalArrayEnd ();
+
+	/**
+	 * Marshal a long.
+	 */
+	public void marshalLong (String name, long x);
+
+	/**
+	 * Marshal a double.
+	 */
+	public void marshalDouble (String name, double x);
+
+	/**
+	 * Marshal a string.  (Null strings are not allowed.)
+	 */
+	public void marshalString (String name, String x);
+
+	/**
+	 * Marshal an int.
+	 */
+	public default void marshalInt (String name, int x) {
+		marshalLong (name, (long)x);
+		return;
+	}
+
+	/**
+	 * Marshal a boolean.
+	 */
+	public default void marshalBoolean (String name, boolean x) {
+		marshalLong (name, x ? 1L : 0L);
+		return;
+	}
+
+	/**
+	 * Marshal a JSON string.  (Null strings are not allowed.)
+	 * The string must contain a JSON object or array, or be an empty string.
+	 * For JSON storage, the string is merged into the JSON instead of being
+	 * embedded as string-valued data.  (An empty string becomes a JSON null.)
+	 * The unmarshaled string may differ from the marshaled string due to JSON parsing.
+	 * (Named element ordering, numeric formats, and spacing may be changed).
+	 */
+	public default void marshalJsonString (String name, String x) {
+		marshalString (name, x);
+		return;
+	}
+
+	/**
+	 * Marshal a long array.
+	 */
+	public default void marshalLongArray (String name, long[] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalLong (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalLong2DArray (String name, long[][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalLongArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalLong3DArray (String name, long[][][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalLong2DArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Marshal a double array.
+	 */
+	public default void marshalDoubleArray (String name, double[] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalDouble (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalDouble2DArray (String name, double[][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalDoubleArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalDouble3DArray (String name, double[][][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalDouble2DArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Marshal a string array.  (Null strings are not allowed.)
+	 */
+	public default void marshalStringArray (String name, String[] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalString (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+	public default void marshalString2DArray (String name, String[][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalStringArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalString3DArray (String name, String[][][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalString2DArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+
+	/**
+	 * Marshal an int array.
+	 */
+	public default void marshalIntArray (String name, int[] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalInt (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalInt2DArray (String name, int[][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalIntArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalInt3DArray (String name, int[][][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalInt2DArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Marshal a long collection.
+	 */
+	public default void marshalLongCollection (String name, Collection<Long> x) {
+		int n = x.size();
+		marshalArrayBegin (name, n);
+		for (Long y : x) {
+			 marshalLong (null, y.longValue());
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Marshal a double collection.
+	 */
+	public default void marshalDoubleCollection (String name, Collection<Double> x) {
+		int n = x.size();
+		marshalArrayBegin (name, n);
+		for (Double y : x) {
+			 marshalDouble (null, y.doubleValue());
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Marshal a string collection.  (Null strings are not allowed.)
+	 */
+	public default void marshalStringCollection (String name, Collection<String> x) {
+		int n = x.size();
+		marshalArrayBegin (name, n);
+		for (String y : x) {
+			 marshalString (null, y);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Marshal an int collection.
+	 */
+	public default void marshalIntCollection (String name, Collection<Integer> x) {
+		int n = x.size();
+		marshalArrayBegin (name, n);
+		for (Integer y : x) {
+			 marshalInt (null, y.intValue());
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+}
