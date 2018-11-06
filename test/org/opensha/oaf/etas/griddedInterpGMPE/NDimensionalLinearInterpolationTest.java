@@ -1,4 +1,4 @@
-package scratch.aftershockStatisticsETAS.griddedInterpGMPE;
+package org.opensha.oaf.etas.griddedInterpGMPE;
 
 import static org.junit.Assert.*;
 
@@ -7,12 +7,11 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
+import org.opensha.oaf.etas.griddedInterpGMPE.NDimArrayCalc;
+import org.opensha.oaf.etas.griddedInterpGMPE.NDimensionalLinearInterpolation;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
-
-import scratch.aftershockStatisticsETAS.griddedInterpGMPE.NDimArrayCalc;
-import scratch.aftershockStatisticsETAS.griddedInterpGMPE.NDimensionalLinearInterpolation;
 
 public class NDimensionalLinearInterpolationTest {
 	
