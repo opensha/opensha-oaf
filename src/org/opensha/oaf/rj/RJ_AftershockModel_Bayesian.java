@@ -68,17 +68,17 @@ public class RJ_AftershockModel_Bayesian extends RJ_AftershockModel {
 	/**
 	 * Return true if x1 and x2 are approximately equal (to 7 digits).
 	 */
-    public static boolean areParamsEquivalent(double x1, double x2) {
+	public static boolean areParamsEquivalent(double x1, double x2) {
 		if (Math.abs(x1 - x2) <= 1.0e-7 * Math.max(Math.abs(x1), Math.abs(x2)) + Double.MIN_NORMAL) {
 			return true;
 		}
 		return false;
-    }
+	}
 
 
 
 
-    /**
+	/**
 	 * Check similarity of both models, return true if the parameters are equivalent
 	 * 
 	 * @param model1 = First model to check.
@@ -119,10 +119,10 @@ public class RJ_AftershockModel_Bayesian extends RJ_AftershockModel {
 	 * This default constructor creates an empty model.
 	 * This is intended for use in database retrieval.
 	 */
-    public RJ_AftershockModel_Bayesian() {
+	public RJ_AftershockModel_Bayesian() {
 		// When retrieving from database, remain quiet by default
 		D = false;
-    }
+	}
 
 
 
@@ -132,7 +132,7 @@ public class RJ_AftershockModel_Bayesian extends RJ_AftershockModel {
 	 * @param model1 = First model to combine.
 	 * @param model2 = Second model to combine.
 	 */
-    public void setup_model(RJ_AftershockModel model1, RJ_AftershockModel model2) {
+	public void setup_model(RJ_AftershockModel model1, RJ_AftershockModel model2) {
 
 		// check similarity of the two models
 		Preconditions.checkArgument(areModelsEquivalent(model1, model2),

@@ -1229,7 +1229,7 @@ public class AftershockStatsCalc {
 	
 
 	// [DEPRECATED]
-    public static Location getCentroid(ObsEqkRupture mainshock, List<ObsEqkRupture> aftershocks) {
+	public static Location getCentroid(ObsEqkRupture mainshock, List<ObsEqkRupture> aftershocks) {
 		// now works across prime meridian
 		List<Location> locs = Lists.newArrayList(mainshock.getHypocenterLocation());
 		for (ObsEqkRupture aftershock : aftershocks)
@@ -1268,7 +1268,7 @@ public class AftershockStatsCalc {
 	// Calculate the centroid of an aftershock sequence, using spherical geometry.
 	// Note: This routine implicitly assumes that the mainshock itself is not in the list of aftershocks.
 
-    public static Location getSphCentroid(ObsEqkRupture mainshock, List<ObsEqkRupture> aftershocks) {
+	public static Location getSphCentroid(ObsEqkRupture mainshock, List<ObsEqkRupture> aftershocks) {
 		
 		// Convert spherical to rectangular coordinates, and sum the unit vectors
 

@@ -1229,7 +1229,7 @@ public abstract class OAFParameterSet<T> {
 
 
 
-    public static void main(String[] args) {
+	public static void main(String[] args) {
 
 		// There needs to be at least one argument, which is the subcommand
 

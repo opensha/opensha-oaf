@@ -776,8 +776,8 @@ public class AftershockStatsShadow {
 					System.out.println ("separation_days = " + separation[1]);
 				}
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;

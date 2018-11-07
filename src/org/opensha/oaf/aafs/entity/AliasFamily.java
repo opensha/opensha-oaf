@@ -132,8 +132,8 @@ public class AliasFamily implements java.io.Serializable {
 	// Note that ObjectId implements java.io.Serializable.
 	// This is set to the same value as the id of the task that generated the alias family.
 
-    @Id
-    private ObjectId id;
+	@Id
+	private ObjectId id;
 
 	// Time that this alias family was created, in milliseconds since the epoch.
 	// The collection is indexed on this field, so alias families in a given
@@ -190,45 +190,45 @@ public class AliasFamily implements java.io.Serializable {
 
 	//----- Getters and setters -----
 
-    private ObjectId get_id() {
-        return id;
-    }
+	private ObjectId get_id() {
+		return id;
+	}
 
-    private void set_id (ObjectId id) {
-        this.id = id;
-    }
+	private void set_id (ObjectId id) {
+		this.id = id;
+	}
 
-    public long get_family_time() {
-        return family_time;
-    }
+	public long get_family_time() {
+		return family_time;
+	}
 
-    private void set_family_time (long family_time) {
-        this.family_time = family_time;
-    }
+	private void set_family_time (long family_time) {
+		this.family_time = family_time;
+	}
 
-    public String[] get_timeline_ids() {
-        return timeline_ids.clone();
-    }
+	public String[] get_timeline_ids() {
+		return timeline_ids.clone();
+	}
 
-    private void set_timeline_ids (String[] timeline_ids) {
-        this.timeline_ids = timeline_ids.clone();
-    }
+	private void set_timeline_ids (String[] timeline_ids) {
+		this.timeline_ids = timeline_ids.clone();
+	}
 
-    public String[] get_comcat_ids() {
-        return comcat_ids.clone();
-    }
+	public String[] get_comcat_ids() {
+		return comcat_ids.clone();
+	}
 
-    private void set_comcat_ids (String[] comcat_ids) {
-        this.comcat_ids = comcat_ids.clone();
-    }
+	private void set_comcat_ids (String[] comcat_ids) {
+		this.comcat_ids = comcat_ids.clone();
+	}
 
-    public int[] get_enc_bindings() {
-        return enc_bindings.clone();
-    }
+	public int[] get_enc_bindings() {
+		return enc_bindings.clone();
+	}
 
-    private void set_enc_bindings (int[] enc_bindings) {
-        this.enc_bindings = enc_bindings.clone();
-    }
+	private void set_enc_bindings (int[] enc_bindings) {
+		this.enc_bindings = enc_bindings.clone();
+	}
 
 
 

@@ -21,7 +21,7 @@ public class RecordKey {
 
 	// The ObjectId, which can be used as a key for MongoDB.
 
-    private ObjectId id;
+	private ObjectId id;
 
 	// Constructor saves the ObjectId.
 

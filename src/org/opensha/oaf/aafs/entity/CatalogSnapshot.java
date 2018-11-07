@@ -78,8 +78,8 @@ public class CatalogSnapshot implements java.io.Serializable {
 	// Note that ObjectId implements java.io.Serializable.
 	// This is set to the same value as the id of the task that generated the snapshot.
 
-    @Id
-    private ObjectId id;
+	@Id
+	private ObjectId id;
 
 	//----- Catalog information -----
 
@@ -120,61 +120,61 @@ public class CatalogSnapshot implements java.io.Serializable {
 
 	//----- Getters and setters -----
 
-    private ObjectId get_id() {
-        return id;
-    }
+	private ObjectId get_id() {
+		return id;
+	}
 
-    private void set_id (ObjectId id) {
-        this.id = id;
-    }
+	private void set_id (ObjectId id) {
+		this.id = id;
+	}
 
-    public String get_event_id() {
-        return event_id;
-    }
+	public String get_event_id() {
+		return event_id;
+	}
 
-    private void set_event_id (String event_id) {
-        this.event_id = event_id;
-    }
+	private void set_event_id (String event_id) {
+		this.event_id = event_id;
+	}
 
-    public long get_start_time() {
-        return start_time;
-    }
+	public long get_start_time() {
+		return start_time;
+	}
 
-    private void set_start_time (long start_time) {
-        this.start_time = start_time;
-    }
+	private void set_start_time (long start_time) {
+		this.start_time = start_time;
+	}
 
-    public long get_end_time() {
-        return end_time;
-    }
+	public long get_end_time() {
+		return end_time;
+	}
 
-    private void set_end_time (long end_time) {
-        this.end_time = end_time;
-    }
+	private void set_end_time (long end_time) {
+		this.end_time = end_time;
+	}
 
-    public int get_eqk_count() {
-        return eqk_count;
-    }
+	public int get_eqk_count() {
+		return eqk_count;
+	}
 
-    private void set_eqk_count (int eqk_count) {
-        this.eqk_count = eqk_count;
-    }
+	private void set_eqk_count (int eqk_count) {
+		this.eqk_count = eqk_count;
+	}
 
-    private long[] get_lat_lon_depth_list() {
-        return lat_lon_depth_list;
-    }
+	private long[] get_lat_lon_depth_list() {
+		return lat_lon_depth_list;
+	}
 
-    private void set_lat_lon_depth_list (long[] lat_lon_depth_list) {
-        this.lat_lon_depth_list = lat_lon_depth_list;
-    }
+	private void set_lat_lon_depth_list (long[] lat_lon_depth_list) {
+		this.lat_lon_depth_list = lat_lon_depth_list;
+	}
 
-    private long[] get_mag_time_list() {
-        return mag_time_list;
-    }
+	private long[] get_mag_time_list() {
+		return mag_time_list;
+	}
 
-    private void set_mag_time_list (long[] mag_time_list) {
-        this.mag_time_list = mag_time_list;
-    }
+	private void set_mag_time_list (long[] mag_time_list) {
+		this.mag_time_list = mag_time_list;
+	}
 
 
 

@@ -24,7 +24,7 @@ public class RecordPayload implements MarshalWriter {
 
 	// The JSON string.
 
-    private String json_string;
+	private String json_string;
 
 	// Constructor saves the JSON string.
 

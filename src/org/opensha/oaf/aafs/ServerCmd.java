@@ -116,7 +116,7 @@ public class ServerCmd {
 
 		catch (Exception e) {
 			System.out.println ("AAFS server had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -188,7 +188,7 @@ public class ServerCmd {
 
 		catch (Exception e) {
 			System.out.println ("Shutdown command had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -351,7 +351,7 @@ public class ServerCmd {
 
 		catch (Exception e) {
 			System.out.println ("PDL intake had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -496,7 +496,7 @@ public class ServerCmd {
 
 		catch (Exception e) {
 			System.out.println ("AAFS server had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -578,7 +578,7 @@ public class ServerCmd {
 
 		catch (Exception e) {
 			System.out.println ("Command to start polling had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -660,7 +660,7 @@ public class ServerCmd {
 
 		catch (Exception e) {
 			System.out.println ("Command to stop polling had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -711,8 +711,8 @@ public class ServerCmd {
 		case "start":
 			try {
 				cmd_start(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -724,8 +724,8 @@ public class ServerCmd {
 		case "stop":
 			try {
 				cmd_stop(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -747,8 +747,8 @@ public class ServerCmd {
 		case "pdl_intake":
 			try {
 				cmd_pdl_intake(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -760,8 +760,8 @@ public class ServerCmd {
 		case "add_event":
 			try {
 				cmd_add_event(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -773,8 +773,8 @@ public class ServerCmd {
 		case "start_with_pdl":
 			try {
 				cmd_start_with_pdl(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -786,8 +786,8 @@ public class ServerCmd {
 		case "start_comcat_poll":
 			try {
 				cmd_start_comcat_poll(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -799,8 +799,8 @@ public class ServerCmd {
 		case "stop_comcat_poll":
 			try {
 				cmd_stop_comcat_poll(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -812,8 +812,8 @@ public class ServerCmd {
 		case "show_version":
 			try {
 				cmd_show_version(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 

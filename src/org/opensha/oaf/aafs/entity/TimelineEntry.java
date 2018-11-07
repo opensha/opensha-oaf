@@ -79,8 +79,8 @@ public class TimelineEntry implements java.io.Serializable {
 	// Note that ObjectId implements java.io.Serializable.
 	// This is set to the same value as the id of the task that generated the timeline entry.
 
-    @Id
-    private ObjectId id;
+	@Id
+	private ObjectId id;
 
 	// Time that this timeline entry was created, in milliseconds since the epoch.
 	// The collection is indexed on this field, so timeline entries in a given
@@ -138,45 +138,45 @@ public class TimelineEntry implements java.io.Serializable {
 
 	//----- Getters and setters -----
 
-    private ObjectId get_id() {
-        return id;
-    }
+	private ObjectId get_id() {
+		return id;
+	}
 
-    private void set_id (ObjectId id) {
-        this.id = id;
-    }
+	private void set_id (ObjectId id) {
+		this.id = id;
+	}
 
-    public long get_action_time() {
-        return action_time;
-    }
+	public long get_action_time() {
+		return action_time;
+	}
 
-    private void set_action_time (long action_time) {
-        this.action_time = action_time;
-    }
+	private void set_action_time (long action_time) {
+		this.action_time = action_time;
+	}
 
-    public String get_event_id() {
-        return event_id;
-    }
+	public String get_event_id() {
+		return event_id;
+	}
 
-    private void set_event_id (String event_id) {
-        this.event_id = event_id;
-    }
+	private void set_event_id (String event_id) {
+		this.event_id = event_id;
+	}
 
-    public String[] get_comcat_ids() {
-        return comcat_ids.clone();
-    }
+	public String[] get_comcat_ids() {
+		return comcat_ids.clone();
+	}
 
-    private void set_comcat_ids (String[] comcat_ids) {
-        this.comcat_ids = comcat_ids.clone();
-    }
+	private void set_comcat_ids (String[] comcat_ids) {
+		this.comcat_ids = comcat_ids.clone();
+	}
 
-    public int get_actcode() {
-        return actcode;
-    }
+	public int get_actcode() {
+		return actcode;
+	}
 
-    private void set_actcode (int actcode) {
-        this.actcode = actcode;
-    }
+	private void set_actcode (int actcode) {
+		this.actcode = actcode;
+	}
 
 
 
@@ -184,7 +184,7 @@ public class TimelineEntry implements java.io.Serializable {
 	/**
 	 * get_details - Get a reader for the details.
 	 */
-    public MarshalReader get_details() {
+	public MarshalReader get_details() {
 		Object json_source;
 		if (details == null) {
 			json_source = null;
@@ -195,14 +195,14 @@ public class TimelineEntry implements java.io.Serializable {
 		else {
 			json_source = details;
 		}
-        return new MarshalImpJsonReader (json_source);
-    }
+		return new MarshalImpJsonReader (json_source);
+	}
 
 
 	/**
 	 * set_details - Set details from the marshaled data, can be null for none.
 	 */
-    private void set_details (MarshalWriter writer) {
+	private void set_details (MarshalWriter writer) {
 
 		if (writer == null) {
 			details = "";
@@ -226,23 +226,23 @@ public class TimelineEntry implements java.io.Serializable {
 		}
 
 		throw new IllegalArgumentException("TimelineEntry.set_details: Incorrect type of marshal writer");
-    }
+	}
 
 
 	/**
 	 * begin_details - Get a writer to use for marhaling details.
 	 */
-    public static MarshalWriter begin_details() {
-        return new MarshalImpJsonWriter ();
-    }
+	public static MarshalWriter begin_details() {
+		return new MarshalImpJsonWriter ();
+	}
 
 
 	/**
 	 * get_details_as_payload - Get a writer containing the details.
 	 */
-    RecordPayload get_details_as_payload() {
-        return new RecordPayload (details);
-    }
+	RecordPayload get_details_as_payload() {
+		return new RecordPayload (details);
+	}
 
 
 	/**

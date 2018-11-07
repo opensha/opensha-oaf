@@ -31,7 +31,7 @@ public abstract class RecordIteratorMongo<T> implements RecordIterator<T> {
 
 	// The MongoDB cursor.
 
-    private MongoCursor<Document> mongo_cursor;
+	private MongoCursor<Document> mongo_cursor;
 
 	// Constructor saves the MongoDB cursor.
 

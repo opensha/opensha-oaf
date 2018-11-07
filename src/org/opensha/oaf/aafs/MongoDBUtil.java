@@ -50,7 +50,7 @@ public class MongoDBUtil implements AutoCloseable {
 
 	// The MongoDB database.
 
-    private static MongoDatabase db = null;
+	private static MongoDatabase db = null;
 
 	// The Morphia endpoint.
 
@@ -58,7 +58,7 @@ public class MongoDBUtil implements AutoCloseable {
 
 	// The Morphia datastore.
 
-    private static Datastore datastore = null;
+	private static Datastore datastore = null;
 
 
 
@@ -214,9 +214,9 @@ public class MongoDBUtil implements AutoCloseable {
 	/**
 	 * Retrieve the MongoDB database.
 	 */
-    public static MongoDatabase getDB() {
-        return db;
-    }
+	public static MongoDatabase getDB() {
+		return db;
+	}
 
  
 
@@ -224,9 +224,9 @@ public class MongoDBUtil implements AutoCloseable {
 	/**
 	 * Retrieve the Morphia datastore.
 	 */
-    public static Datastore getDatastore() {
-        return datastore;
-    }
+	public static Datastore getDatastore() {
+		return datastore;
+	}
 
 
 

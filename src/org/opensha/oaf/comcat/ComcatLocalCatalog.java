@@ -885,8 +885,8 @@ public class ComcatLocalCatalog {
 
 				System.out.println ("Events written to local catalog = " + entries_written);
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -925,8 +925,8 @@ public class ComcatLocalCatalog {
 
 				System.out.println (local_catalog.toString());
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -1010,8 +1010,8 @@ public class ComcatLocalCatalog {
 				System.out.println ("Events read from catalog file = " + entries_read);
 				System.out.println ("Events written to flat file = " + entries_written);
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -1103,8 +1103,8 @@ public class ComcatLocalCatalog {
 				System.out.println ("Events read from catalog file = " + entries_read);
 				System.out.println ("Events duplicated = " + entries_dup);
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -1200,8 +1200,8 @@ public class ComcatLocalCatalog {
 				System.out.println ("Events read from catalog file = " + entries_read);
 				System.out.println ("Secondary ids duplicated = " + entries_dup);
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -1267,8 +1267,8 @@ public class ComcatLocalCatalog {
 					System.out.println ("ID List: " + id);
 				}
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -1363,8 +1363,8 @@ public class ComcatLocalCatalog {
 
 				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;

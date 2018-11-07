@@ -735,8 +735,8 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				System.out.println ("Error count: " + errors);
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -934,8 +934,8 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				System.out.println ("Error count: " + errors);
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -1133,8 +1133,8 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				System.out.println ("Error count: " + errors);
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;

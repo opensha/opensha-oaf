@@ -243,7 +243,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_list_events had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -397,7 +397,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_gamma_table had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -557,7 +557,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_zepi_gamma_table had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -669,7 +669,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_stacked_gui_cat had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -856,7 +856,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_sim_gamma_table had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -1037,7 +1037,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_seq_gamma_table had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -1185,7 +1185,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_zeta_table had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -1366,7 +1366,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_sim_zeta_table had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -1528,7 +1528,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_agg_zeta_table had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -1723,7 +1723,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_sim_agg_zeta_table had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -1933,7 +1933,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_sim_agg_zeta_table_2 had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -2112,7 +2112,7 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_split_by_time had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
 		}
 
 		return;
@@ -2291,7 +2291,154 @@ public class GammaCmd {
 
 		catch (Exception e) {
 			System.out.println ("cmd_split_by_mag had an exception");
-            e.printStackTrace();
+			e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_comp_param_win - Write the table comparing parameters in different windows, for a list of earthquakes.
+	// Command format:
+	//  comp_param_table  log_filename  event_list_filename  comp_table_filename  f_keep  start_lag_1  end_lag_1  [start_lag_2  end_lag_2]...
+	// Read the list of events, and for each event compute the model parameters in each time window.
+	// Write the results for all earthquakes.
+	// The boolean f_keep is true to write lines that do not contain full data.
+	// Each start and end lag is in java.time.Duration format.
+	//
+	// Usage requirements:
+	// Set up ServerConfig.json to read from the desired catalog.
+
+	public static void cmd_comp_param_table(String[] args) {
+
+		// At least 7 arguments, and an odd number
+
+		if (args.length < 7 || args.length % 2 != 1) {
+			System.err.println ("GammaCmd : Invalid 'comp_param_table' subcommand");
+			return;
+		}
+
+		String log_filename = args[1];
+
+		// Redirect to the log file
+
+		try (
+
+			// Console redirection and log
+
+			ConsoleRedirector con_red = ConsoleRedirector.make_redirector (
+				new BufferedOutputStream (new FileOutputStream (log_filename)), true, true);
+
+		){
+
+			try {
+
+				// Parse arguments
+
+				String event_list_filename = args[2];
+				String comp_table_filename = args[3];
+				boolean f_keep = Boolean.parseBoolean (args[4]);
+
+				int my_num_win = (args.length - 5) / 2;
+				CompParamWin.StartEnd[] my_win_list = new CompParamWin.StartEnd[my_num_win];
+				for (int i_win = 0; i_win < my_num_win; ++i_win) {
+					long my_start_lag = SimpleUtils.string_to_duration (args[2*i_win + 5]);
+					long my_end_lag = SimpleUtils.string_to_duration (args[2*i_win + 6]);
+					my_win_list[i_win] = new CompParamWin.StartEnd (my_start_lag, my_end_lag);
+				}
+
+				// Say hello
+
+				System.out.println ("Command line:");
+				System.out.println (String.join ("  ", args));
+				System.out.println ("");
+
+				System.out.println ("Event list filename: " + event_list_filename);
+				System.out.println ("Comparison table filename: " + comp_table_filename);
+				System.out.println ("Keep lines without complete data: " + f_keep);
+				for (int i_win = 0; i_win < my_num_win; ++i_win) {
+					System.out.println ("Window " + i_win + ": "
+						+ SimpleUtils.duration_to_string_2 (my_win_list[i_win].get_start_lag()) + " to "
+						+ SimpleUtils.duration_to_string_2 (my_win_list[i_win].get_end_lag()));
+				}
+				System.out.println ("");
+
+				// Adjust verbosity
+
+				ComcatOAFAccessor.load_local_catalog();	// So catalog in use is displayed
+				AftershockVerbose.set_verbose_mode (false);
+				System.out.println ("");
+
+				// Get configuration
+
+				GammaConfig gamma_config = new GammaConfig();
+
+				System.out.println (gamma_config.toString());
+				System.out.println ("");
+
+				// Open the input file and output file
+
+				int events_processed = 0;
+
+				try (
+					Scanner scanner = new Scanner (new BufferedReader (new FileReader (event_list_filename)));
+					Writer writer = new BufferedWriter (new FileWriter (comp_table_filename));
+				){
+					// Loop over earthquakes
+
+					while (scanner.hasNext()) {
+
+						// Count it
+
+						++events_processed;
+
+						// Read the event id
+
+						String the_event_id = scanner.next();
+						System.out.println ("Processing event " + events_processed + ": " + the_event_id);
+
+						// Fetch the mainshock info
+
+						ForecastMainshock fcmain = new ForecastMainshock();
+						fcmain.setup_mainshock_only (the_event_id);
+
+						// Compute models
+
+						CompParamWin comp_param_win = new CompParamWin();
+						comp_param_win.calc_params (gamma_config, my_win_list, fcmain, false);
+
+						// Write output
+
+						String lines = comp_param_win.single_event_comp_to_lines (gamma_config, events_processed, f_keep);
+
+						if (!( lines.isEmpty() )) {
+							writer.write (lines);
+						}
+					}
+				}
+
+				// Display the result
+
+				System.out.println ("");
+				System.out.println ("Events processed = " + events_processed);
+
+			}
+
+			// Report any uncaught exceptions
+
+			catch (Exception e) {
+				System.out.println ("cmd_comp_param_table had an exception");
+				e.printStackTrace();
+			}
+		}
+
+		// Report any uncaught exceptions
+
+		catch (Exception e) {
+			System.out.println ("cmd_comp_param_table had an exception");
+			e.printStackTrace();
 		}
 
 		return;
@@ -2324,8 +2471,8 @@ public class GammaCmd {
 		case "list_events":
 			try {
 				cmd_list_events(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2348,8 +2495,8 @@ public class GammaCmd {
 		case "gamma_table":
 			try {
 				cmd_gamma_table(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2373,8 +2520,8 @@ public class GammaCmd {
 		case "zepi_gamma_table":
 			try {
 				cmd_zepi_gamma_table(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2389,8 +2536,8 @@ public class GammaCmd {
 		case "stacked_gui_cat":
 			try {
 				cmd_stacked_gui_cat(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2418,8 +2565,8 @@ public class GammaCmd {
 		case "sim_gamma_table":
 			try {
 				cmd_sim_gamma_table(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2447,8 +2594,8 @@ public class GammaCmd {
 		case "seq_gamma_table":
 			try {
 				cmd_seq_gamma_table(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2473,8 +2620,8 @@ public class GammaCmd {
 		case "zeta_table":
 			try {
 				cmd_zeta_table(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2503,8 +2650,8 @@ public class GammaCmd {
 		case "sim_zeta_table":
 			try {
 				cmd_sim_zeta_table(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2529,8 +2676,8 @@ public class GammaCmd {
 		case "agg_zeta_table":
 			try {
 				cmd_agg_zeta_table(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2560,8 +2707,8 @@ public class GammaCmd {
 		case "sim_agg_zeta_table":
 			try {
 				cmd_sim_agg_zeta_table(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2591,8 +2738,8 @@ public class GammaCmd {
 		case "sim_agg_zeta_table_2":
 			try {
 				cmd_sim_agg_zeta_table_2(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2611,8 +2758,8 @@ public class GammaCmd {
 		case "split_by_time":
 			try {
 				cmd_split_by_time(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 
@@ -2631,8 +2778,28 @@ public class GammaCmd {
 		case "split_by_mag":
 			try {
 				cmd_split_by_mag(args);
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+
+		// Subcommand : cmd_comp_param_table
+		// Command format:
+		//  comp_param_table  log_filename  event_list_filename  comp_table_filename  f_keep  start_lag_1  end_lag_1  [start_lag_2  end_lag_2]...
+		// Read the list of events, and for each event compute the model parameters in each time window.
+		// Write the results for all earthquakes.
+		// The boolean f_keep is true to write lines that do not contain full data.
+		// Each start and end lag is in java.time.Duration format.
+		//
+		// Usage requirements:
+		// Set up ServerConfig.json to read from the desired catalog.
+
+		case "comp_param_table":
+			try {
+				cmd_comp_param_table(args);
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 			return;
 

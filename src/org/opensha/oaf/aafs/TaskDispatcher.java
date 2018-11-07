@@ -440,13 +440,13 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 		// Abnormal return
 
-        } catch (Exception e) {
+		} catch (Exception e) {
 			result = false;
-            e.printStackTrace();
-        } catch (Throwable e) {
+			e.printStackTrace();
+		} catch (Throwable e) {
 			result = false;
-            e.printStackTrace();
-        }
+			e.printStackTrace();
+		}
 
 		return result;
 	}
@@ -736,17 +736,17 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 		// Abnormal return
 
-        } catch (Exception e) {
-            e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
 			if (task != null) {
 				System.err.println ("Failing task: " + task.toString());
 			}
-        } catch (Throwable e) {
-            e.printStackTrace();
+		} catch (Throwable e) {
+			e.printStackTrace();
 			if (task != null) {
 				System.err.println ("Failing task: " + task.toString());
 			}
-        }
+		}
 
 		return result;
 	}

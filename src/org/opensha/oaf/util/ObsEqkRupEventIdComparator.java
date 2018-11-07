@@ -18,7 +18,7 @@ public class ObsEqkRupEventIdComparator implements Comparator<ObsEqkRupture> {
 	// integer as the first argument is less than, equal to, or greater than the second.
 
 	@Override
-    public int compare (ObsEqkRupture rupEvent1, ObsEqkRupture rupEvent2) {
+	public int compare (ObsEqkRupture rupEvent1, ObsEqkRupture rupEvent2) {
 
 		// Order by event ID, lexicographically
 
@@ -27,6 +27,6 @@ public class ObsEqkRupEventIdComparator implements Comparator<ObsEqkRupture> {
 		return (eid1 == null)
 				? ((eid2 == null) ? 0 : -1)
 				: ((eid2 == null) ? 1 : (eid1.compareTo(eid2)));
-    }
+	}
 
 }

@@ -58,8 +58,8 @@ public class ActionConfig {
 
 		} catch (Exception e) {
 			e.printStackTrace();
-            System.err.println("ActionConfig: Error loading parameter file ActionConfig.json, unable to continue");
-            System.exit(0);
+			System.err.println("ActionConfig: Error loading parameter file ActionConfig.json, unable to continue");
+			System.exit(0);
 			//throw new RuntimeException("ActionConfig: Error loading parameter file ActionConfig.json", e);
 		}
 

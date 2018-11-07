@@ -593,8 +593,8 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 					System.out.println ("ID List: " + id);
 				}
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -697,8 +697,8 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
 				}
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -764,8 +764,8 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 					System.out.println ("ID List: " + id);
 				}
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -869,8 +869,8 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
 				}
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;

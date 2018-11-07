@@ -77,8 +77,8 @@ public class LogEntry implements java.io.Serializable {
 	// Note that ObjectId implements java.io.Serializable.
 	// This is set to the same value as the id of the task that generated the log entry.
 
-    @Id
-    private ObjectId id;
+	@Id
+	private ObjectId id;
 
 	// Time that this log entry was created, in milliseconds since the epoch.
 	// The collection is indexed on this field, so log entries in a given
@@ -150,85 +150,85 @@ public class LogEntry implements java.io.Serializable {
 
 	//----- Getters and setters -----
 
-    private ObjectId get_id() {
-        return id;
-    }
+	private ObjectId get_id() {
+		return id;
+	}
 
-    private void set_id (ObjectId id) {
-        this.id = id;
-    }
+	private void set_id (ObjectId id) {
+		this.id = id;
+	}
 
-    public long get_log_time() {
-        return log_time;
-    }
+	public long get_log_time() {
+		return log_time;
+	}
 
-    private void set_log_time (long log_time) {
-        this.log_time = log_time;
-    }
+	private void set_log_time (long log_time) {
+		this.log_time = log_time;
+	}
 
-    public String get_event_id() {
-        return event_id;
-    }
+	public String get_event_id() {
+		return event_id;
+	}
 
-    private void set_event_id (String event_id) {
-        this.event_id = event_id;
-    }
+	private void set_event_id (String event_id) {
+		this.event_id = event_id;
+	}
 
-    public long get_sched_time() {
-        return sched_time;
-    }
+	public long get_sched_time() {
+		return sched_time;
+	}
 
-    private void set_sched_time (long sched_time) {
-        this.sched_time = sched_time;
-    }
+	private void set_sched_time (long sched_time) {
+		this.sched_time = sched_time;
+	}
 
-    public long get_submit_time() {
-        return submit_time;
-    }
+	public long get_submit_time() {
+		return submit_time;
+	}
 
-    private void set_submit_time (long submit_time) {
-        this.submit_time = submit_time;
-    }
+	private void set_submit_time (long submit_time) {
+		this.submit_time = submit_time;
+	}
 
-    public String get_submit_id() {
-        return submit_id;
-    }
+	public String get_submit_id() {
+		return submit_id;
+	}
 
-    private void set_submit_id (String submit_id) {
-        this.submit_id = submit_id;
-    }
+	private void set_submit_id (String submit_id) {
+		this.submit_id = submit_id;
+	}
 
-    public int get_opcode() {
-        return opcode;
-    }
+	public int get_opcode() {
+		return opcode;
+	}
 
-    private void set_opcode (int opcode) {
-        this.opcode = opcode;
-    }
+	private void set_opcode (int opcode) {
+		this.opcode = opcode;
+	}
 
-    public int get_stage() {
-        return stage;
-    }
+	public int get_stage() {
+		return stage;
+	}
 
-    private void set_stage (int stage) {
-        this.stage = stage;
-    }
+	private void set_stage (int stage) {
+		this.stage = stage;
+	}
 
-    public int get_rescode() {
-        return rescode;
-    }
+	public int get_rescode() {
+		return rescode;
+	}
 
-    private void set_rescode (int rescode) {
-        this.rescode = rescode;
-    }
+	private void set_rescode (int rescode) {
+		this.rescode = rescode;
+	}
 
-    public String get_results() {
-        return results;
-    }
+	public String get_results() {
+		return results;
+	}
 
-    private void set_results (String results) {
-        this.results = results;
-    }
+	private void set_results (String results) {
+		this.results = results;
+	}
 
 
 
@@ -236,7 +236,7 @@ public class LogEntry implements java.io.Serializable {
 	/**
 	 * get_details - Get a reader for the details.
 	 */
-    public MarshalReader get_details() {
+	public MarshalReader get_details() {
 		Object json_source;
 		if (details == null) {
 			json_source = null;
@@ -247,14 +247,14 @@ public class LogEntry implements java.io.Serializable {
 		else {
 			json_source = details;
 		}
-        return new MarshalImpJsonReader (json_source);
-    }
+		return new MarshalImpJsonReader (json_source);
+	}
 
 
 	/**
 	 * set_details - Set details from the marshaled data, can be null for none.
 	 */
-    private void set_details (MarshalWriter writer) {
+	private void set_details (MarshalWriter writer) {
 
 		if (writer == null) {
 			details = "";
@@ -278,23 +278,23 @@ public class LogEntry implements java.io.Serializable {
 		}
 
 		throw new IllegalArgumentException("LogEntry.set_details: Incorrect type of marshal writer");
-    }
+	}
 
 
 	/**
 	 * begin_details - Get a writer to use for marhaling details.
 	 */
-    public static MarshalWriter begin_details() {
-        return new MarshalImpJsonWriter ();
-    }
+	public static MarshalWriter begin_details() {
+		return new MarshalImpJsonWriter ();
+	}
 
 
 	/**
 	 * get_details_as_payload - Get a writer containing the details.
 	 */
-    RecordPayload get_details_as_payload() {
-        return new RecordPayload (details);
-    }
+	RecordPayload get_details_as_payload() {
+		return new RecordPayload (details);
+	}
 
 
 	/**

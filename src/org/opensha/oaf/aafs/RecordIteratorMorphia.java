@@ -30,7 +30,7 @@ public class RecordIteratorMorphia<T> implements RecordIterator<T> {
 
 	// The Morphia iterator.
 
-    private MorphiaIterator<T,T> morphia_iterator;
+	private MorphiaIterator<T,T> morphia_iterator;
 
 	// Constructor saves the Morphia iterator.
 

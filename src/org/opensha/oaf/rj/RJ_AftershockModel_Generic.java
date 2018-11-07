@@ -173,10 +173,10 @@ public class RJ_AftershockModel_Generic extends RJ_AftershockModel {
 	 * This default constructor creates an empty model.
 	 * This is intended for use in database retrieval.
 	 */
-    public RJ_AftershockModel_Generic() {
+	public RJ_AftershockModel_Generic() {
 		// When retrieving from database, remain quiet by default
 		D = false;
-    }
+	}
 
 
 
@@ -185,7 +185,7 @@ public class RJ_AftershockModel_Generic extends RJ_AftershockModel {
 	 * Create a model with fixed parameters equal to the maximum liklihood
 	 * parameter values of the given model.
 	 */
-    public static RJ_AftershockModel_Generic from_max_like (RJ_AftershockModel model) {
+	public static RJ_AftershockModel_Generic from_max_like (RJ_AftershockModel model) {
 
 		double magMain = model.getMainShockMag();;
 		double a = model.getMaxLikelihood_a();
@@ -194,7 +194,7 @@ public class RJ_AftershockModel_Generic extends RJ_AftershockModel {
 		double c = model.getMaxLikelihood_c();
 
 		return new RJ_AftershockModel_Generic (magMain, a, b, p, c);
-    }
+	}
 
 
 
@@ -202,7 +202,7 @@ public class RJ_AftershockModel_Generic extends RJ_AftershockModel {
 	/**
 	 * Build the apc_likelihood matrix, that gives the probability distribution of (a,p,c).
 	 */
-    public void apc_build() {
+	public void apc_build() {
 
 		// Construct the Gaussian distribution
 		
@@ -217,12 +217,12 @@ public class RJ_AftershockModel_Generic extends RJ_AftershockModel {
 		apcFinish (false);
 
 		return;
-    }
+	}
 
 
 
 
-    public static void main(String[] args) {
+	public static void main(String[] args) {
 
 		// There needs to be at least one argument, which is the subcommand
 

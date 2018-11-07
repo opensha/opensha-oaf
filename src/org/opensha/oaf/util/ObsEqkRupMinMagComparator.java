@@ -19,7 +19,7 @@ public class ObsEqkRupMinMagComparator implements Comparator<ObsEqkRupture> {
 	// integer as the first argument is less than, equal to, or greater than the second.
 
 	@Override
-    public int compare (ObsEqkRupture rupEvent1, ObsEqkRupture rupEvent2) {
+	public int compare (ObsEqkRupture rupEvent1, ObsEqkRupture rupEvent2) {
 
 		// Order by magnitude, smallest first
 
@@ -44,6 +44,6 @@ public class ObsEqkRupMinMagComparator implements Comparator<ObsEqkRupture> {
 		}
 
 		return result;
-    }
+	}
 
 }

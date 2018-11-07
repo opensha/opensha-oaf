@@ -677,8 +677,8 @@ public class ComcatLocalCatalogEntry {
 
 				System.out.println (ComcatOAFAccessor.rupToString (rup2));
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;
@@ -751,8 +751,8 @@ public class ComcatLocalCatalogEntry {
 				System.out.println (line2);
 				System.out.println ("");
 
-            } catch (Exception e) {
-                e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 
 			return;

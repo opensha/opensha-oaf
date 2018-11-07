@@ -271,10 +271,10 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 	 * This default constructor creates an empty model.
 	 * This is intended for use in database retrieval.
 	 */
-    public RJ_AftershockModel_SequenceSpecific() {
+	public RJ_AftershockModel_SequenceSpecific() {
 		// When retrieving from database, remain quiet by default
 		D = false;
-    }
+	}
 
 
 
@@ -286,7 +286,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 	 * @param dataStartTimeDays - start time for data, in days since the mainshock
 	 * @param dataEndTimeDays - end time for data, in days since the mainshock
 	 */
-    public void apc_build(ObsEqkRupture mainShock, List<ObsEqkRupture> aftershockList, double dataStartTimeDays, double dataEndTimeDays) {
+	public void apc_build(ObsEqkRupture mainShock, List<ObsEqkRupture> aftershockList, double dataStartTimeDays, double dataEndTimeDays) {
 
 		// Save the parameters
 
