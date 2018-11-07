@@ -1,4 +1,4 @@
-package scratch.aftershockStatisticsETAS.griddedInterpGMPE;
+package org.opensha.oaf.etas.griddedInterpGMPE;
 
 import static org.junit.Assert.*;
 
@@ -7,12 +7,11 @@ import java.util.HashSet;
 import java.util.Random;
 
 import org.junit.Test;
+import org.opensha.oaf.etas.griddedInterpGMPE.NDimArrayCalc;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
-
-import scratch.aftershockStatisticsETAS.griddedInterpGMPE.NDimArrayCalc;
 
 public class NDimArrayCalcTest {
 	

@@ -1758,6 +1758,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		
 		mcParam.setValue(round(mc,2));
 		mcParam.getEditor().refreshParamEditor();
+		validateMcParam();
+		
 		bParam.setValue(round(b_value,2));
 		bParam.getEditor().refreshParamEditor();
 		
@@ -3554,12 +3556,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				
 				setEnableParamsPostComputeMc(false);
 
-				// check that it's not greater than mainshock magnitude
-				if(mcParam.getValue() > mainshock.getMag() - 0.05){
-					System.err.println("Mc cannot be set to larger than the mainshock magnitude");
-					mcParam.setValue(round(mainshock.getMag() - 0.05,2));
-					mcParam.getEditor().refreshParamEditor();
-				} 
+				validateMcParam(); //takes care of the following commented bit
+//				// check that it's not greater than mainshock magnitude
+//				if(mcParam.getValue() > mainshock.getMag() - 0.05){
+//					System.err.println("Mc cannot be set to larger than the mainshock magnitude");
+//					mcParam.setValue(round(mainshock.getMag() - 0.05,2));
+//					mcParam.getEditor().refreshParamEditor();
+//				} 
 				
 				changeListenerEnabled = true;
 
@@ -4052,12 +4055,16 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						ETAS_AftershockModel model = models.get(j);
 						Color c = colors.get(j);
 
-						EvenlyDiscretizedFunc[] fractilesFuncs = model.getCumNumMFD_FractileWithAleatoryVariability(
-								fractiles, minMag, maxMag, numMag, minDays, maxDays);
+//						EvenlyDiscretizedFunc[] fractilesFuncs = model.getCumNumMFD_FractileWithAleatoryVariability(
+//								fractiles, minMag, maxMag, numMag, minDays, maxDays);
+						
+						List<EvenlyDiscretizedFunc[]> forecast = model.getMNDandMPOE(fractiles, minMag, maxMag, numMag, minDays, maxDays);
+ 						EvenlyDiscretizedFunc[] fractilesFuncs = forecast.get(0);
+ 						EvenlyDiscretizedFunc magPDFfunc = forecast.get(1)[0];
 						
 						UncertainArbDiscDataset uncertainFunc = new UncertainArbDiscDataset(fractilesFuncs[1], fractilesFuncs[0], fractilesFuncs[2]);
 
-						EvenlyDiscretizedFunc magPDFfunc = model.getMagnitudePDFwithAleatoryVariability(minMag, maxMag, numMag, minDays, maxDays);
+//						EvenlyDiscretizedFunc magPDFfunc = model.getMagnitudePDFwithAleatoryVariability(minMag, maxMag, numMag, minDays, maxDays);
 						magPDFfunc.scale(100d);
 						magPDFfunc.setName(name);
 						funcsProb.add(magPDFfunc);
@@ -4141,7 +4148,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 
 					int npts = 20; 
-					EvenlyDiscretizedFunc yVals = new EvenlyDiscretizedFunc(Math.min(yTrack.getMin(),1), Math.max(1e3,yTrack.getMax()), npts);
+					EvenlyDiscretizedFunc yVals = new EvenlyDiscretizedFunc(Math.min(yTrack.getMin(),0.5), Math.max(1e3,yTrack.getMax()), npts);
 					for (int j=0; j<yVals.size(); j++) {
 						double y = yVals.getX(j);
 						mainshockFunc.set(mainshockMag, y);
@@ -4179,7 +4186,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					aftershockExpectedNumGraph.get(nTabs).setName("Number (" + durString + ")");
 					
 					aftershockExpectedNumGraph.get(nTabs).setY_Log(true);
-					aftershockExpectedNumGraph.get(nTabs).setY_AxisRange(new Range(1, Math.max(yTrack.getMax(),1e3)));
+					aftershockExpectedNumGraph.get(nTabs).setY_AxisRange(new Range(0.5, Math.max(yTrack.getMax(),1e3)));
 					aftershockExpectedNumGraph.get(nTabs).setX_AxisRange(new Range(minMag, mainshockMag+1d));
 					setupGP(aftershockExpectedNumGraph.get(nTabs));
 
@@ -5840,6 +5847,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			Preconditions.checkState(num > 1, "Num must be >1 for variable "+name);
 	}
 
+	private void validateMcParam() {
+		// check that it's not greater than mainshock magnitude
+		if(mcParam.getValue() > mainshock.getMag() - 0.05){
+			System.err.println("Mc cannot be set to larger than the mainshock magnitude");
+			mcParam.setValue(round(mainshock.getMag() - 0.05,2));
+			mcParam.getEditor().refreshParamEditor();
+		} 
+	}
+	
 	private static void validateParameter(Double value, String name) {
 		Preconditions.checkState(value != null, "Must specify "+name);
 		Preconditions.checkState(Doubles.isFinite(value), name+" must be finite: %s", value);
@@ -6060,7 +6076,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		String welcomeMessage = "This a Beta version of the Aftershock Forecaster software. Get the latest version from www.opensha.org/apps.\n"
 				+ "The Beta version will expire " + formatter.format(expirationDate.getTime()) + String.format(" (%d days remaining).", (int) -elapsedDays);
 
-		tipText.add(welcomeMessage + "\n\n>> Welcome to the aftershock forecaster. Enter a USGS event ID to get started. (e.g: ci14607652)");
+		tipText.add(welcomeMessage + "\n\n>> Welcome to the aftershock forecaster. Enter a USGS event ID to get started. (e.g: us2000cifa)");
 		tipText.add(">> Specify a forecast start time and duration. Then click \"Fetch Data\" to retrieve the catalog\n  ...or click \"Quick Forecast\" to run the entire forecast automatically with default settings.");
 		tipText.add(">> Click \"Compute Model Fit\" to compute sequence-specific model\n  ...or go straight to \"Run Generic Forecast\" to get a generic forecast for this region.");
 		tipText.add(">> Click \"Compute Model Fit\" to compute sequence-specific model\n  ...or click \"Render\" to get a generic aftershock rate map.");
