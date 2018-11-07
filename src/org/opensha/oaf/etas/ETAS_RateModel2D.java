@@ -26,7 +26,7 @@ public class ETAS_RateModel2D {
 
 	private ETAS_AftershockModel forecastModel;
 	private GriddedGeoDataSet rateModel;
-	private Boolean D = false;
+	private Boolean D = true;
 	
 	public ETAS_RateModel2D(ETAS_AftershockModel forecastModel){
 		this.forecastModel = forecastModel;
@@ -66,11 +66,16 @@ public class ETAS_RateModel2D {
 
 		// make the readius set to the largest earthquake in the catalog
 		double maxMag = forecastModel.mainShock.getMag();
+
 		ObsEqkRupList largeAftershocks = forecastModel.aftershockList.getRupsAboveMag(maxMag);
+		ObsEqkRupture largestShock = forecastModel.mainShock;
+		
 		if (!largeAftershocks.isEmpty()) {
 			for (ObsEqkRupture rup : aftershockPlotList) {
-				if (rup.getMag() > maxMag)
+				if (rup.getMag() > maxMag) {
 					maxMag = rup.getMag();
+					largestShock = rup;
+				}
 			}
 		}
 		
@@ -99,18 +104,27 @@ public class ETAS_RateModel2D {
 		if (fitType.equals("aftershocks") && aftershockFitList.size() >= 3){
 			// fit finite mainshock source to early aftershocks
 			if(D) System.out.println("Fitting " + aftershockFitList.size() + " early aftershocks, out of " + forecastModel.aftershockList.size() + " total aftershocks.");
-			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(forecastModel.mainShock, aftershockFitList, stressDrop);
+//			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(forecastModel.mainShock, aftershockFitList, stressDrop);
+			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(largestShock, aftershockFitList, stressDrop);
 			
 		} else if (fitType.equals("shakemap") && faultTrace != null && faultTrace.size() > 1){
 			// fit finite mainshock source to shakemap source (fits line to rupture geometry...)
-			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(forecastModel.mainShock, faultTrace, stressDrop);
+//			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(forecastModel.mainShock, faultTrace, stressDrop);
+			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(largestShock, faultTrace, stressDrop);
 		} else if (fitType.equals("custom") && faultTrace != null && faultTrace.size() > 1) {
-			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(forecastModel.mainShock, faultTrace, stressDrop);
+			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(largestShock, faultTrace, stressDrop);
 		}
 		//else {equivalentMainshock was already constructed with a faultTrace made up of the mainshock hypocenter}
 
+		// check up on the mainshock fit process. If the loc has a NaN make it a point source again
+		FaultTrace trace = equivalentMainshock.getFaultTrace();
+		if(Double.isNaN(trace.get(0).getLatitude())) {
+			System.out.println("Fitting early aftershocks failed. Using point source centered on largest event.");
+			equivalentMainshock = new ETASEqkRupture(forecastModel.mainShock, stressDrop);
+		}
+			
 		if(D){
-			FaultTrace trace = equivalentMainshock.getFaultTrace();
+//			FaultTrace trace = equivalentMainshock.getFaultTrace();
 			for (int i = 0; i < trace.size(); i++){
 				Location loc = trace.get(i);
 				System.out.println(loc);
@@ -140,7 +154,8 @@ public class ETAS_RateModel2D {
 		Iterator<ObsEqkRupture> iter = aftershockFitList.listIterator();
 		while (iter.hasNext()){
 			ObsEqkRupture as = iter.next();
-			if (as.getMag() < forecastModel.mainShock.getMag() - maxDeltaMag)
+//			if (as.getMag() < forecastModel.mainShock.getMag() - maxDeltaMag)
+			if (as.getMag() < largestShock.getMag() - maxDeltaMag)
 				iter.remove();
 		}
 

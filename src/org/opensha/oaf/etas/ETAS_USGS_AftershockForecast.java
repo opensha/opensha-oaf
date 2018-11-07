@@ -125,13 +125,14 @@ public class ETAS_USGS_AftershockForecast {
 					numEventsMedian.put(duration, minMag, fractiles[1]);
 					numEventsUpper.put(duration, minMag, fractiles[2]);
 
+					
 
 					//				double rate = model.getModalNumEvents(minMag, tMinDays, tMaxDays);
 
 
 					ArbDiscrEmpiricalDistFunc subDist = model.computeNum_DistributionFunc(tMinDays, tMaxDays, minMag);
 					double prob, probMult = 1;
-					if(Math.abs(subDist.getX(0) - 0) >  1e-6)
+					if(Math.abs(subDist.getX(0) - 0) >  1e-6) //if there is no zeros column, no sims had zero events, so: p = 1.
 						prob = 1;
 					else
 						prob = 1 - subDist.getY(0);
@@ -139,7 +140,7 @@ public class ETAS_USGS_AftershockForecast {
 					if(minMag < model.magComplete)
 						//scale up the probability to account for events below the simulation min magnitude
 						probMult = Math.pow(10, -model.b*(minMag - model.magComplete));
-					prob = 1 - Math.pow(1-prob, probMult); //assumes probabilities are Poissonian
+					prob = 1 - Math.pow(1-prob, probMult); //assumes probabilities are Poissonian...
 
 					//				System.out.println(minMag +" "+ model.magComplete +" "+ prob +" "+ probMult);
 					probs.put(duration, minMag, prob);
@@ -203,11 +204,15 @@ public class ETAS_USGS_AftershockForecast {
 					if (columnIndex == 1) {
 						return "M ≥ "+(float)mag;
 					} else if (columnIndex == 2) {
-						int median = (int)(numEventsMedian.get(durations[d], mag)+0.5);
+						// rounding bad! Doesn't make a whole lot of sense
+//						int median = (int)(numEventsMedian.get(durations[d], mag)+0.5);
+						int median = (int)(numEventsMedian.get(durations[d], mag).intValue());
 						return median;
 					} else if (columnIndex == 3) {
-						int lower = (int)(numEventsLower.get(durations[d], mag)+0.5);
-						int upper = (int)(numEventsUpper.get(durations[d], mag)+0.5);
+//						int lower = (int)(numEventsLower.get(durations[d], mag)+0.5);
+//						int upper = (int)(numEventsUpper.get(durations[d], mag)+0.5);
+						int lower = (int)(numEventsLower.get(durations[d], mag).intValue());
+						int upper = (int)(numEventsUpper.get(durations[d], mag).intValue());
 						if (upper == 0)
 							return "0";
 						return lower+" to "+upper;
