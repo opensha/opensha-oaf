@@ -17,6 +17,7 @@ import org.opensha.oaf.rj.MagCompPage_ParametersFetch;
 import org.opensha.oaf.rj.OAFTectonicRegime;
 import org.opensha.oaf.rj.SeqSpecRJ_Parameters;
 import org.opensha.oaf.rj.RJ_Summary_Generic;
+import org.opensha.oaf.rj.MagCompFn;
 
 import org.opensha.oaf.aafs.ForecastMainshock;
 import org.opensha.oaf.aafs.ForecastParameters;
@@ -242,8 +243,6 @@ public class CumProbEqkSet {
 			double b = sim_generic_model.get_b();
 			double magMain = fcmain.mainshock_mag;
 			double magCat = cat_min_mag;
-			double capG = 10.0;
-			double capH = 0.0;
 			double p = apcval[1];
 			double c = apcval[2];
 			//double tMinDays = ((double)(gamma_config.sim_start_off)) / ComcatOAFAccessor.day_millis;
@@ -251,10 +250,12 @@ public class CumProbEqkSet {
 			double tMaxDays = ((double)(gamma_config.max_forecast_lag + gamma_config.max_adv_window_end_off)) / ComcatOAFAccessor.day_millis;
 			long originTime = fcmain.mainshock_time;
 
+			MagCompFn magCompFn = MagCompFn.makeConstant();
+
 			// Run the simulation
 
 			all_aftershocks = AftershockStatsCalc.simAftershockSequence (
-						a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays, originTime, gamma_config.rangen);
+						a, b, magMain, magCat, magCompFn, p, c, tMinDays, tMaxDays, originTime, gamma_config.rangen);
 
 			// Find the maximum magnitude
 

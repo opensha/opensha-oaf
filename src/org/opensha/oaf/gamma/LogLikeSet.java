@@ -10,6 +10,7 @@ import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.rj.RJ_AftershockModel;
 import org.opensha.oaf.rj.RJ_AftershockModel_Generic;
+import org.opensha.oaf.rj.MagCompFn;
 
 import org.opensha.oaf.aafs.ForecastMainshock;
 import org.opensha.oaf.aafs.ForecastParameters;
@@ -181,8 +182,6 @@ public class LogLikeSet {
 			double b = model.get_b();
 			double magMain = fcmain.mainshock_mag;
 			double magCat = gamma_config.adv_min_mag_bins[0];
-			double capG = 10.0;
-			double capH = 0.0;
 			double p = apcval[1];
 			double c = apcval[2];
 			//double tMinDays = ((double)(forecast_lag)) / ComcatOAFAccessor.day_millis;
@@ -190,10 +189,12 @@ public class LogLikeSet {
 			double tMinDays = ((double)(gamma_config.sim_start_off)) / ComcatOAFAccessor.day_millis;
 			double tMaxDays = ((double)(gamma_config.max_forecast_lag + gamma_config.max_adv_window_end_off)) / ComcatOAFAccessor.day_millis;
 
+			MagCompFn magCompFn = MagCompFn.makeConstant();
+
 			// Run the simulation
 
 			ObsEqkRupList sim_aftershocks = AftershockStatsCalc.simAftershockSequence (
-						a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays, 0L, gamma_config.rangen);
+						a, b, magMain, magCat, magCompFn, p, c, tMinDays, tMaxDays, 0L, gamma_config.rangen);
 
 			// Find the maximum magnitude
 

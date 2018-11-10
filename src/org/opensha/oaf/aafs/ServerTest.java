@@ -20,6 +20,7 @@ import org.opensha.oaf.aafs.entity.AliasFamily;
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.oaf.rj.RJ_AftershockModel_SequenceSpecific;
+import org.opensha.oaf.rj.MagCompFn;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -760,10 +761,13 @@ public class ServerTest {
 			double p = 1.08;
 			double magMain = 7.5;
 			double magCat = 2.5;
+			double capF = 0.5;
 			double capG = 1.25;
 			double capH = 0.75;
 
-			ObsEqkRupList aftershockList = AftershockStatsCalc.simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, start_time_days, end_time_days);
+			MagCompFn magCompFn = MagCompFn.makePageOrConstant (capF, capG, capH);
+
+			ObsEqkRupList aftershockList = AftershockStatsCalc.simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, start_time_days, end_time_days);
 
 			CompactEqkRupList rupture_list = new CompactEqkRupList (aftershockList);
 
@@ -801,7 +805,7 @@ public class ServerTest {
 
 			RJ_AftershockModel_SequenceSpecific seqModel =
 				new RJ_AftershockModel_SequenceSpecific(mainShock, rupture_list_out,
-			 								magCat, capG, capH,
+			 								magCat, magCompFn,
 											b, start_time_days, end_time_days,
 											min_a, max_a, num_a, 
 											min_p, max_p, num_p, 

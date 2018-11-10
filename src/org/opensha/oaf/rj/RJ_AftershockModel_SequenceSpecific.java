@@ -37,7 +37,7 @@ import org.opensha.oaf.util.MarshalImpJsonWriter;
  * where
  *  k = 10^(a + b*(magMain - magMin))
  * According to Page et al. the time-dependent magnitude of completeness is
- *  magMin(t) = Max(magMain/2 - G - H*log10(t), magCat)
+ *  magMin(t) = Max(F*magMain - G - H*log10(t), magCat)
  * In these formulas, t is measured in days.
  *
  * Suppose that in a time interval tMinDays <= t <= tMaxDays, there is a sequence of aftershocks
@@ -54,8 +54,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 	// Parameters for the time-dependent magnitude of completeness.
 
-	protected double capG = 10.0;
-	protected double capH = 0.0;
+	protected MagCompFn magCompFn;
 	protected double magCat = 0.0;
 
 	// The list of aftershocks used to construct the model.
@@ -114,7 +113,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 				MagCompPage_Parameters mcParam, SeqSpecRJ_Parameters sqParam) {
 		
 		this(mainShock, aftershockList,
-				mcParam.get_magCat(), mcParam.get_capG(), mcParam.get_capH(),
+				mcParam.get_magCat(), mcParam.get_magCompFn(),
 				sqParam.get_b(), dataStartTimeDays, dataEndTimeDays,
 				sqParam.get_min_a(), sqParam.get_max_a(), sqParam.get_num_a(),
 				sqParam.get_min_p(), sqParam.get_max_p(), sqParam.get_num_p(),
@@ -153,7 +152,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 				double min_p, double max_p, int num_p, 
 				double min_c, double max_c, int num_c) {
 		
-		this(mainShock, aftershockList, magCat, Double.NaN, Double.NaN, b, dataStartTimeDays, dataEndTimeDays,
+		this(mainShock, aftershockList, magCat, MagCompFn.makeConstant(), b, dataStartTimeDays, dataEndTimeDays,
 				min_a, max_a, num_a, min_p, max_p, num_p, min_c, max_c, num_c);
 
 	}
@@ -170,9 +169,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 	 * @param mainShock - the mainshock
 	 * @param aftershockList - list of aftershocks; events with mag below magCat will be filtered out
 	 * @param magCat - "Mcat" in the in the time-dependent magnitude of completeness model defined above
-	 * @param capG - the "G" parameter in the time-dependent magnitude of completeness model defined above; 
-	 *               As a special case, if capG == 10.0 then the magnitude of completeness is always magCat.
-	 * @param capH - the "H" parameter in the time-dependent magnitude of completeness model defined above
+	 * @param magCompFn - the magnitude of completeness function
 	 * @param b - assumed b value
 	 * @param dataStartTimeDays - start time for data, in days since the mainshock
 	 * @param dataEndTimeDays - end time for data, in days since the mainshock
@@ -185,12 +182,9 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 	 * @param min_c \
 	 * @param max_c  | - range of c-values for grid search (set min=max and num=1 to constrain to single value)
 	 * @param num_c /
-	 * Note: For compatibility, if either capG or capH is equal to Double.NaN, then it is treated
-	 * as if capG==10.0 and capH==0.0, that is, the magnitude of completeness is always magCat.
-	 * New code should not rely on this behavior.
 	 */
 	public RJ_AftershockModel_SequenceSpecific(ObsEqkRupture mainShock, List<ObsEqkRupture> aftershockList,
-			 								double magCat, double capG, double capH,
+			 								double magCat, MagCompFn magCompFn,
 											double b, double dataStartTimeDays, double dataEndTimeDays,
 											double min_a, double max_a, int num_a, 
 											double min_p, double max_p, int num_p, 
@@ -227,20 +221,13 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 		this.num_c = num_c;
 		this.b = b;
 		this.magCat = magCat;
+		this.magCompFn = magCompFn;
 
 		this.aftershockList=aftershockList;
 //		this.aftershockList = new ObsEqkRupList();
 		this.mainShock=mainShock;
 		this.dataStartTimeDays=dataStartTimeDays;
 		this.dataEndTimeDays=dataEndTimeDays;
-
-		if(Double.isNaN(capG) || Double.isNaN(capH)) {
-			this.capG = 10.0;
-			this.capH = 0.0;
-		} else {
-			this.capG = capG;
-			this.capH = capH;
-		}
 		
 		this.magMain = mainShock.getMag();
 
@@ -330,8 +317,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 			// Get the magnitude of completeness at this time
 
-			double magMin = AftershockStatsCalc.getPageMagCompleteness(
-								magMain, magCat, capG, capH, timeSinceMainDays);
+			double magMin = magCompFn.getMagCompleteness (magMain, magCat, timeSinceMainDays);
 
 			// If the aftershock magnitude is at least the magnitude of completeness, accumulate it
 
@@ -358,7 +344,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 					// Compute the integral of the aftershock rate over the time interval
 
 					double integral = AftershockStatsCalc.getPageExpectedNumEvents(
-						a, b, magMain, magCat, capG, capH, p, c, dataStartTimeDays, dataEndTimeDays);
+						a, b, magMain, magCat, magCompFn, p, c, dataStartTimeDays, dataEndTimeDays);
 
 					// Form the log likelihood
 
@@ -376,8 +362,8 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 		apcFinish (true);	// true means array contains log-likelihood
 
 		if(D) {
-			System.out.println(String.format("G=%.4g  H=%.4g  magCat=%.4g  tStart=%.8g  tEnd=%.8g  nEvents=%d",
-				capG, capH, magCat, dataStartTimeDays, dataEndTimeDays, numAftershocks));
+			System.out.println(String.format("magCompFn=%s  magCat=%.4g  tStart=%.8g  tEnd=%.8g  nEvents=%d",
+				magCompFn.toString(), magCat, dataStartTimeDays, dataEndTimeDays, numAftershocks));
 		}
 		
 		return;
@@ -419,6 +405,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			double p = 1.08;
 			double magMain = 7.5;
 			double magCat = 2.5;
+			double capF = 0.5;
 			double capG = 1.25;
 			double capH = 0.75;
 			double dataStartTimeDays = 0.0;
@@ -436,9 +423,11 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			double max_c=0.05;
 			int num_c=1;
 
+			MagCompFn magCompFn = MagCompFn.makePageOrConstant (capF, capG, capH);
+
 			// Run the simulation
 
-			ObsEqkRupList aftershockList = AftershockStatsCalc.simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, dataStartTimeDays, dataEndTimeDays);
+			ObsEqkRupList aftershockList = AftershockStatsCalc.simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, dataStartTimeDays, dataEndTimeDays);
 
 			// Make the mainshock
 
@@ -448,7 +437,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 			RJ_AftershockModel_SequenceSpecific gen =
 				new RJ_AftershockModel_SequenceSpecific(mainShock, aftershockList,
-			 								magCat, capG, capH,
+			 								magCat, magCompFn,
 											b, dataStartTimeDays, dataEndTimeDays,
 											min_a, max_a, num_a, 
 											min_p, max_p, num_p, 
@@ -498,6 +487,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			double p = 1.08;
 			double magMain = 7.5;
 			double magCat = 2.5;
+			double capF = 0.5;
 			double capG = 1.25;
 			double capH = 0.75;
 			double dataStartTimeDays = 0.0;
@@ -515,9 +505,11 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			double max_c=0.05;
 			int num_c=1;
 
+			MagCompFn magCompFn = MagCompFn.makePageOrConstant (capF, capG, capH);
+
 			// Run the simulation
 
-			ObsEqkRupList aftershockList = AftershockStatsCalc.simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, dataStartTimeDays, dataEndTimeDays);
+			ObsEqkRupList aftershockList = AftershockStatsCalc.simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, dataStartTimeDays, dataEndTimeDays);
 
 			// Make the mainshock
 
@@ -527,7 +519,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 			RJ_AftershockModel_SequenceSpecific gen =
 				new RJ_AftershockModel_SequenceSpecific(mainShock, aftershockList,
-			 								magCat, capG, capH,
+			 								magCat, magCompFn,
 											b, dataStartTimeDays, dataEndTimeDays,
 											min_a, max_a, num_a, 
 											min_p, max_p, num_p, 
@@ -553,13 +545,13 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 			//RJ_AftershockModel_SequenceSpecific compactGen =
 			//	new RJ_AftershockModel_SequenceSpecific(mainShock, compactList,
-			// 								magCat, capG, capH,
+			// 								magCat, magCompFn,
 			//								b, dataStartTimeDays, dataEndTimeDays,
 			//								min_a, max_a, num_a, 
 			//								min_p, max_p, num_p, 
 			//								min_c, max_c, num_c);
 
-			MagCompPage_Parameters mcParam = new MagCompPage_Parameters (magCat, capG, capH);
+			MagCompPage_Parameters mcParam = new MagCompPage_Parameters (magCat, magCompFn);
 			SeqSpecRJ_Parameters sqParam = new SeqSpecRJ_Parameters (b,
 				min_a, max_a, num_a, min_p, max_p, num_p, min_c, max_c, num_c);
 
@@ -612,6 +604,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			double p = 1.08;
 			double magMain = 7.5;
 			double magCat = 2.5;
+			double capF = 0.5;
 			double capG = 1.25;
 			double capH = 0.75;
 			double dataStartTimeDays = 0.0;
@@ -629,9 +622,11 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			double max_c=0.05;
 			int num_c=1;
 
+			MagCompFn magCompFn = MagCompFn.makePageOrConstant (capF, capG, capH);
+
 			// Run the simulation
 
-			ObsEqkRupList aftershockList = AftershockStatsCalc.simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, dataStartTimeDays, dataEndTimeDays);
+			ObsEqkRupList aftershockList = AftershockStatsCalc.simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, dataStartTimeDays, dataEndTimeDays);
 
 			// Make the mainshock
 
@@ -651,7 +646,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			GenericRJ_Parameters rjParam = new GenericRJ_Parameters (a, a_sigma, a_sigma0, a_sigma1, 
 					b, p, c, min_a, max_a, a_delta);
 
-			MagCompPage_Parameters mcParam = new MagCompPage_Parameters (magCat, capG, capH);
+			MagCompPage_Parameters mcParam = new MagCompPage_Parameters (magCat, magCompFn);
 
 			SeqSpecRJ_Parameters sqParam = new SeqSpecRJ_Parameters (b,
 				min_a, max_a, num_a, min_p, max_p, num_p, min_c, max_c, num_c);
@@ -751,6 +746,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			double p = 1.08;
 			double magMain = 7.5;
 			double magCat = 2.5;
+			double capF = 0.5;
 			double capG = 1.25;
 			double capH = 0.75;
 			double dataStartTimeDays = 0.0;
@@ -768,9 +764,11 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			double max_c=0.05;
 			int num_c=1;
 
+			MagCompFn magCompFn = MagCompFn.makePageOrConstant (capF, capG, capH);
+
 			// Run the simulation
 
-			ObsEqkRupList aftershockList = AftershockStatsCalc.simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, dataStartTimeDays, dataEndTimeDays);
+			ObsEqkRupList aftershockList = AftershockStatsCalc.simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, dataStartTimeDays, dataEndTimeDays);
 
 			// Make the mainshock
 
@@ -790,7 +788,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			GenericRJ_Parameters rjParam = new GenericRJ_Parameters (a, a_sigma, a_sigma0, a_sigma1, 
 					b, p, c, min_a, max_a, a_delta);
 
-			MagCompPage_Parameters mcParam = new MagCompPage_Parameters (magCat, capG, capH);
+			MagCompPage_Parameters mcParam = new MagCompPage_Parameters (magCat, magCompFn);
 
 			SeqSpecRJ_Parameters sqParam = new SeqSpecRJ_Parameters (b,
 				min_a, max_a, num_a, min_p, max_p, num_p, min_c, max_c, num_c);

@@ -8,12 +8,11 @@ public class RJ_Summary_SequenceSpecific extends RJ_Summary {
 
 	// Summary values, see RJ_AftershockModel_SequenceSpecific for description.
 
-	private double capG                ;
-	private double capH                ;
-	private double magCat              ;
-	private double dataStartTimeDays   ;
-	private double dataEndTimeDays     ;
-	private int    numAftershocks      ;
+	private MagCompFn magCompFn           ;
+	private double    magCat              ;
+	private double    dataStartTimeDays   ;
+	private double    dataEndTimeDays     ;
+	private int       numAftershocks      ;
 
 	
 	/**
@@ -30,8 +29,7 @@ public class RJ_Summary_SequenceSpecific extends RJ_Summary {
 	public RJ_Summary_SequenceSpecific(RJ_AftershockModel_SequenceSpecific model) {
 		super (model);
 
-		this.capG                 = model.capG                 ;
-		this.capH                 = model.capH                 ;
+		this.magCompFn            = model.magCompFn            ;
 		this.magCat               = model.magCat               ;
 		this.dataStartTimeDays    = model.dataStartTimeDays    ;
 		this.dataEndTimeDays      = model.dataEndTimeDays      ;
@@ -42,20 +40,18 @@ public class RJ_Summary_SequenceSpecific extends RJ_Summary {
 	/**
 	 * Getters.
 	 */
-	public double get_capG                () {return capG                ;}
-	public double get_capH                () {return capH                ;}
-	public double get_magCat              () {return magCat              ;}
-	public double get_dataStartTimeDays   () {return dataStartTimeDays   ;}
-	public double get_dataEndTimeDays     () {return dataEndTimeDays     ;}
-	public int    get_numAftershocks      () {return numAftershocks      ;}
+	public MagCompFn get_magCompFn           () {return magCompFn           ;}
+	public double    get_magCat              () {return magCat              ;}
+	public double    get_dataStartTimeDays   () {return dataStartTimeDays   ;}
+	public double    get_dataEndTimeDays     () {return dataEndTimeDays     ;}
+	public int       get_numAftershocks      () {return numAftershocks      ;}
 
 
 
 	@Override
 	public String toString() {
 		return super.toString() + "\n" +
-			"capG                 = " + get_capG                () + "\n" +
-			"capH                 = " + get_capH                () + "\n" +
+			"magCompFn            = " + magCompFn.toString      () + "\n" +
 			"magCat               = " + get_magCat              () + "\n" +
 			"dataStartTimeDays    = " + get_dataStartTimeDays   () + "\n" +
 			"dataEndTimeDays      = " + get_dataEndTimeDays     () + "\n" +
@@ -70,6 +66,7 @@ public class RJ_Summary_SequenceSpecific extends RJ_Summary {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 7001;
+	private static final int MARSHAL_VER_2 = 7002;
 
 	private static final String M_VERSION_NAME = "RJ_Summary_SequenceSpecific";
 
@@ -87,7 +84,8 @@ public class RJ_Summary_SequenceSpecific extends RJ_Summary {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Superclass
 
@@ -95,12 +93,35 @@ public class RJ_Summary_SequenceSpecific extends RJ_Summary {
 
 		// Contents
 
-		writer.marshalDouble ("capG"                , capG                );
-		writer.marshalDouble ("capH"                , capH                );
-		writer.marshalDouble ("magCat"              , magCat              );
-		writer.marshalDouble ("dataStartTimeDays"   , dataStartTimeDays   );
-		writer.marshalDouble ("dataEndTimeDays"     , dataEndTimeDays     );
-		writer.marshalInt    ("numAftershocks"      , numAftershocks      );
+		switch (ver) {
+
+		default:
+			throw new MarshalException ("RJ_Summary_SequenceSpecific.do_marshal: Unknown version number: " + ver);
+
+		case MARSHAL_VER_1: {
+
+			writer.marshalDouble ("capG"                , magCompFn.getLegacyCapG());
+			writer.marshalDouble ("capH"                , magCompFn.getLegacyCapH());
+			writer.marshalDouble ("magCat"              , magCat              );
+			writer.marshalDouble ("dataStartTimeDays"   , dataStartTimeDays   );
+			writer.marshalDouble ("dataEndTimeDays"     , dataEndTimeDays     );
+			writer.marshalInt    ("numAftershocks"      , numAftershocks      );
+
+		}
+		break;
+
+		case MARSHAL_VER_2: {
+
+			MagCompFn.marshal_poly (writer, "magCompFn" , magCompFn           );
+			writer.marshalDouble ("magCat"              , magCat              );
+			writer.marshalDouble ("dataStartTimeDays"   , dataStartTimeDays   );
+			writer.marshalDouble ("dataEndTimeDays"     , dataEndTimeDays     );
+			writer.marshalInt    ("numAftershocks"      , numAftershocks      );
+
+		}
+		break;
+
+		}
 	
 		return;
 	}
@@ -112,7 +133,7 @@ public class RJ_Summary_SequenceSpecific extends RJ_Summary {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Superclass
 
@@ -120,12 +141,36 @@ public class RJ_Summary_SequenceSpecific extends RJ_Summary {
 
 		// Contents
 
-		capG                 = reader.unmarshalDouble ("capG"                );
-		capH                 = reader.unmarshalDouble ("capH"                );
-		magCat               = reader.unmarshalDouble ("magCat"              );
-		dataStartTimeDays    = reader.unmarshalDouble ("dataStartTimeDays"   );
-		dataEndTimeDays      = reader.unmarshalDouble ("dataEndTimeDays"     );
-		numAftershocks       = reader.unmarshalInt    ("numAftershocks"      , 0);
+		switch (ver) {
+
+		default:
+			throw new MarshalException ("RJ_Summary_SequenceSpecific.do_umarshal: Unknown version number: " + ver);
+
+		case MARSHAL_VER_1: {
+
+			double capG          = reader.unmarshalDouble ("capG"                );
+			double capH          = reader.unmarshalDouble ("capH"                );
+			magCompFn            = MagCompFn.makeLegacyPage (capG, capH);
+			magCat               = reader.unmarshalDouble ("magCat"              );
+			dataStartTimeDays    = reader.unmarshalDouble ("dataStartTimeDays"   );
+			dataEndTimeDays      = reader.unmarshalDouble ("dataEndTimeDays"     );
+			numAftershocks       = reader.unmarshalInt    ("numAftershocks"      , 0);
+
+		}
+		break;
+
+		case MARSHAL_VER_2: {
+
+			magCompFn            = MagCompFn.unmarshal_poly (reader, "magCompFn" );
+			magCat               = reader.unmarshalDouble ("magCat"              );
+			dataStartTimeDays    = reader.unmarshalDouble ("dataStartTimeDays"   );
+			dataEndTimeDays      = reader.unmarshalDouble ("dataEndTimeDays"     );
+			numAftershocks       = reader.unmarshalInt    ("numAftershocks"      , 0);
+
+		}
+		break;
+
+		}
 
 		return;
 	}

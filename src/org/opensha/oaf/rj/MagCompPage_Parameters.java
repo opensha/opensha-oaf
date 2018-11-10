@@ -7,8 +7,7 @@ import org.opensha.oaf.util.MarshalException;
 public class MagCompPage_Parameters {
 	
 	private double magCat;
-	private double capG;
-	private double capH;
+	private MagCompFn magCompFn;
 
 	private double magSample;
 	private double radiusSample;
@@ -16,12 +15,14 @@ public class MagCompPage_Parameters {
 	private double radiusCentroid;
 	
 	/**
-	 * This class is a container for the magnitude of completeness parameters defined by 
-	 * Page et al. (2016, BSSA).
+	 * This class is a container for the magnitude of completeness parameters and function. 
+	 * Most oftern we use the function defined by Page et al. (2016, BSSA).
 	 * According to Page et al. the magnitude of completeness is
-	 *  magMin(t) = Max(magMain/2 - G - H*log10(t), magCat)
+	 *  magMin(t) = Max(F*magMain - G - H*log10(t), magCat)
 	 * where t is measured in days.
-	 * As a special case, if capG == 10.0 then the magnitude of completeness is always magCat
+	 *
+	 * In "legacy" code, the Page function is used with capF = 0.5.  Also in "legacy" code,
+	 * as a special case, if capG == 10.0 then the magnitude of completeness is always magCat
 	 * (in which case it is recommended that capH == 0.0).
 	 *
 	 * This class also holds the magnitude and radius of the areas used to sample aftershocks
@@ -30,18 +31,16 @@ public class MagCompPage_Parameters {
 	 * multiple of the Wells and Coppersmith radius.  Magnitude can be -10.0 for no limit.
 	 * 
 	 * @param magCat
-	 * @param capG
-	 * @param capH
+	 * @param magCompFn
 	 * @param magSample
 	 * @param radiusSample
 	 * @param magCentroid
 	 * @param radiusCentroid
 	 */
-	public MagCompPage_Parameters(double magCat, double capG, double capH,
+	public MagCompPage_Parameters (double magCat, MagCompFn magCompFn,
 				double magSample, double radiusSample, double magCentroid, double radiusCentroid) {
 		this.magCat = magCat;
-		this.capG = capG;
-		this.capH = capH;
+		this.magCompFn = magCompFn;
 		this.magSample = magSample;
 		this.radiusSample = radiusSample;
 		this.magCentroid = magCentroid;
@@ -53,8 +52,8 @@ public class MagCompPage_Parameters {
 	 * This version defaults the magnitudes to -10.0 (no minimum) and the
 	 * radii to 1.0 (Wells and Coppersmith value).
 	 */
-	public MagCompPage_Parameters(double magCat, double capG, double capH) {
-		this (magCat, capG, capH, -10.0, 1.0, -10.0, 1.0);
+	public MagCompPage_Parameters (double magCat, MagCompFn magCompFn) {
+		this (magCat, magCompFn, -10.0, 1.0, -10.0, 1.0);
 	}
 
 	
@@ -69,18 +68,26 @@ public class MagCompPage_Parameters {
 	 * @return
 	 */
 	public double get_magCat() {return magCat;}
-	
+
 	/**
-	 * This returns the G parameter (capG).
+	 * This returns the magnitude of completeness function (magCompFn).
 	 * @return
 	 */
-	public double get_capG() {return capG;}
+	public MagCompFn get_magCompFn() {return magCompFn;}
 	
 	/**
-	 * This returns the H parameter (capH).
+	 * [DEPRECATED]
+	 * This returns the G parameter (capG), for use in legacy code.
 	 * @return
 	 */
-	public double get_capH() {return capH;}
+	//public double get_capG() {return magCompFn.getLegacyCapG();}
+	
+	/**
+	 * [DEPRECATED]
+	 * This returns the H parameter (capH), for use in legacy code.
+	 * @return
+	 */
+	//public double get_capH() {return magCompFn.getLegacyCapH();}
 	
 	/**
 	 * Return the minimum magnitude to use when sampling aftershocks, or -10.0 if none.
@@ -110,8 +117,7 @@ public class MagCompPage_Parameters {
 	@Override
 	public String toString() {
 		return "Page_Params[magCat=" + get_magCat()
-			+ ", capG=" + get_capG()
-			+ ", capH=" + get_capH()
+			+ ", magCompFn=" + get_magCompFn().toString()
 			+ ", magSample=" + get_magSample()
 			+ ", radiusSample=" + get_radiusSample()
 			+ ", magCentroid=" + get_magCentroid()
@@ -127,6 +133,7 @@ public class MagCompPage_Parameters {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 2001;
+	private static final int MARSHAL_VER_2 = 2002;
 
 	private static final String M_VERSION_NAME = "MagCompPage_Parameters";
 
@@ -149,17 +156,42 @@ public class MagCompPage_Parameters {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Contents
 
-		writer.marshalDouble ("magCat"        , magCat        );
-		writer.marshalDouble ("capG"          , capG          );
-		writer.marshalDouble ("capH"          , capH          );
-		writer.marshalDouble ("magSample"     , magSample     );
-		writer.marshalDouble ("radiusSample"  , radiusSample  );
-		writer.marshalDouble ("magCentroid"   , magCentroid   );
-		writer.marshalDouble ("radiusCentroid", radiusCentroid);
+		switch (ver) {
+
+		default:
+			throw new MarshalException ("MagCompPage_Parameters.do_marshal: Unknown version number: " + ver);
+
+		case MARSHAL_VER_1: {
+
+			writer.marshalDouble ("magCat"        , magCat        );
+			writer.marshalDouble ("capG"          , magCompFn.getLegacyCapG());
+			writer.marshalDouble ("capH"          , magCompFn.getLegacyCapH());
+			writer.marshalDouble ("magSample"     , magSample     );
+			writer.marshalDouble ("radiusSample"  , radiusSample  );
+			writer.marshalDouble ("magCentroid"   , magCentroid   );
+			writer.marshalDouble ("radiusCentroid", radiusCentroid);
+
+		}
+		break;
+
+		case MARSHAL_VER_2: {
+
+			writer.marshalDouble ("magCat"        , magCat        );
+			MagCompFn.marshal_poly (writer, "magCompFn", magCompFn);
+			writer.marshalDouble ("magSample"     , magSample     );
+			writer.marshalDouble ("radiusSample"  , radiusSample  );
+			writer.marshalDouble ("magCentroid"   , magCentroid   );
+			writer.marshalDouble ("radiusCentroid", radiusCentroid);
+
+		}
+		break;
+
+		}
 	
 		return;
 	}
@@ -170,17 +202,42 @@ public class MagCompPage_Parameters {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
-		magCat         = reader.unmarshalDouble ("magCat"        );
-		capG           = reader.unmarshalDouble ("capG"          );
-		capH           = reader.unmarshalDouble ("capH"          );
-		magSample      = reader.unmarshalDouble ("magSample"     );
-		radiusSample   = reader.unmarshalDouble ("radiusSample"  );
-		magCentroid    = reader.unmarshalDouble ("magCentroid"   );
-		radiusCentroid = reader.unmarshalDouble ("radiusCentroid");
+		switch (ver) {
+
+		default:
+			throw new MarshalException ("ForecastData.do_umarshal: Unknown version number: " + ver);
+
+		case MARSHAL_VER_1: {
+
+			magCat         = reader.unmarshalDouble ("magCat"        );
+			double capG    = reader.unmarshalDouble ("capG"          );
+			double capH    = reader.unmarshalDouble ("capH"          );
+			magCompFn      = MagCompFn.makeLegacyPage (capG, capH);
+			magSample      = reader.unmarshalDouble ("magSample"     );
+			radiusSample   = reader.unmarshalDouble ("radiusSample"  );
+			magCentroid    = reader.unmarshalDouble ("magCentroid"   );
+			radiusCentroid = reader.unmarshalDouble ("radiusCentroid");
+
+		}
+		break;
+
+		case MARSHAL_VER_2: {
+
+			magCat         = reader.unmarshalDouble ("magCat"        );
+			magCompFn      = MagCompFn.unmarshal_poly (reader, "magCompFn");
+			magSample      = reader.unmarshalDouble ("magSample"     );
+			radiusSample   = reader.unmarshalDouble ("radiusSample"  );
+			magCentroid    = reader.unmarshalDouble ("magCentroid"   );
+			radiusCentroid = reader.unmarshalDouble ("radiusCentroid");
+
+		}
+		break;
+
+		}
 
 		return;
 	}

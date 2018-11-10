@@ -224,6 +224,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	private IntegerParameter cValNumParam;
 	
 	private BooleanParameter timeDepMcParam;
+	private DoubleParameter fParam;
 	private DoubleParameter gParam;
 	private DoubleParameter hParam;
 	private DoubleParameter mCatParam;
@@ -405,15 +406,19 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		timeDepMcParam.addParameterChangeListener(this);
 		fitParams.addParameter(timeDepMcParam);
 		
-		gParam = new DoubleParameter("G", 0.1d, 10d, new Double(0.25));
+		fParam = new DoubleParameter("F", 0.0, 2.0, new Double(0.5));
+		fParam.addParameterChangeListener(this);
+		fitParams.addParameter(fParam);
+		
+		gParam = new DoubleParameter("G", -10.0, 100.0, new Double(0.25));
 		gParam.addParameterChangeListener(this);
 		fitParams.addParameter(gParam);
 		
-		hParam = new DoubleParameter("H", 0.25, 2d, new Double(1d));
+		hParam = new DoubleParameter("H", 0.0, 10.0, new Double(1.0));
 		hParam.addParameterChangeListener(this);
 		fitParams.addParameter(hParam);
 		
-		mCatParam = new DoubleParameter("Mcat", 1d, 7d, new Double(4.5));
+		mCatParam = new DoubleParameter("Mcat", 1.0, 7.0, new Double(4.5));
 		mCatParam.addParameterChangeListener(this);
 		fitParams.addParameter(mCatParam);
 		
@@ -2438,7 +2443,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		} else if (param == timeDepMcParam) {
 			setEnableParamsPostAfershockParams(false);
 			setEnableParamsPostComputeB(true);
-		} else if (param == gParam || param == hParam || param == mCatParam) {
+		} else if (param == fParam || param == gParam || param == hParam || param == mCatParam) {
 			setEnableParamsPostAfershockParams(false);
 		} else if (param == computeAftershockParamsButton) {
 			setEnableParamsPostAfershockParams(false);
@@ -2463,6 +2468,9 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 					validateParameter(b, "b-value");
 					
 					if (timeDepMcParam.getValue()) {
+						Double f = fParam.getValue();
+						validateParameter(f, "F");
+						
 						Double g = gParam.getValue();
 						validateParameter(g, "G");
 						
@@ -2471,8 +2479,10 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 						
 						Double mCat = mCatParam.getValue();
 						validateParameter(mCat, "Mcat");
+
+						MagCompFn magCompFn = MagCompFn.makePageOrConstant (f, g, h);
 						
-						model = new RJ_AftershockModel_SequenceSpecific(mainshock, aftershocks, mCat, g, h, b,
+						model = new RJ_AftershockModel_SequenceSpecific(mainshock, aftershocks, mCat, magCompFn, b,
 								dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
 								aRange.getLowerBound(), aRange.getUpperBound(), aNum,
 								pRange.getLowerBound(), pRange.getUpperBound(), pNum,
@@ -2713,6 +2723,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		cValNumParam.getEditor().setEnabled(enabled);
 		computeAftershockParamsButton.getEditor().setEnabled(enabled);
 		timeDepMcParam.getEditor().setEnabled(enabled);
+		fParam.getEditor().setEnabled(enabled && timeDepMcParam.getValue());
 		gParam.getEditor().setEnabled(enabled && timeDepMcParam.getValue());
 		hParam.getEditor().setEnabled(enabled && timeDepMcParam.getValue());
 		mCatParam.getEditor().setEnabled(enabled && timeDepMcParam.getValue());

@@ -433,6 +433,7 @@ public class AftershockStatsCalc {
 
 
 	/**
+	 * [DEPRECATED]
 	 * This returns the Page et al. (2016) time-dependent magnitude of completeness 
 	 * at time tDays (days after the mainshock) for the given arguments.
 	 * @param magMain = Magnitude of mainshock.
@@ -451,17 +452,18 @@ public class AftershockStatsCalc {
 	 * Note: The magnitude of completeness is the minimum magnitude at which the catalog contains
 	 * essentially all earthquakes (which Page et al. defines as 95% of earthquakes).
 	 */
-	public static double getPageMagCompleteness(double magMain, double magCat, double capG, double capH, double tDays) {
-		if (capG > 9.999) {
-			return magCat;
-		}
-		return Math.max (magCat, 0.5 * magMain - capG - capH * Math.log10 (Math.max (tDays, Double.MIN_NORMAL)));
-	}
+	//public static double getPageMagCompleteness(double magMain, double magCat, double capG, double capH, double tDays) {
+	//	if (capG > 9.999) {
+	//		return magCat;
+	//	}
+	//	return Math.max (magCat, 0.5 * magMain - capG - capH * Math.log10 (Math.max (tDays, Double.MIN_NORMAL)));
+	//}
 
 
 
 
 	/**
+	 * [DEPRECATED]
 	 * This returns the Page et al. (2016) time of completeness, in days since the mainshock.
 	 * @param magMain = Magnitude of mainshock.
 	 * @param magCat = Magnitude of completeness when there has not been a mainshock.
@@ -478,26 +480,26 @@ public class AftershockStatsCalc {
 	 *  t = 10^((magMain/2 - G - magCat)/H)
 	 * However this must be evaluated carefully to avoid overflow or divide-by-zero.
 	 */
-	public static double getPageTimeOfCompleteness(double magMain, double magCat, double capG, double capH) {
-		if (capG > 9.999) {
-			return 0.0;
-		}
-
-		if (!( capH >= 0.0 )) {
-			throw new RuntimeException("AftershockStatsCalc.getPageTimeOfCompleteness: H parameter is negative");
-		}
-
-		double x = 0.5 * magMain - capG - magCat;
-
-		if (x <= -8.0 * capH) {
-			return 0.0;			// less than about 1 millisecond, just return 0
-		}
-		if (x >= 12.0 * capH) {
-			return 1.0e12;		// more than about 3 billion years
-		}
-
-		return Math.pow(10.0, x/capH);
-	}
+	//public static double getPageTimeOfCompleteness(double magMain, double magCat, double capG, double capH) {
+	//	if (capG > 9.999) {
+	//		return 0.0;
+	//	}
+	//
+	//	if (!( capH >= 0.0 )) {
+	//		throw new RuntimeException("AftershockStatsCalc.getPageTimeOfCompleteness: H parameter is negative");
+	//	}
+	//
+	//	double x = 0.5 * magMain - capG - magCat;
+	//
+	//	if (x <= -8.0 * capH) {
+	//		return 0.0;			// less than about 1 millisecond, just return 0
+	//	}
+	//	if (x >= 12.0 * capH) {
+	//		return 1.0e12;		// more than about 3 billion years
+	//	}
+	//
+	//	return Math.pow(10.0, x/capH);
+	//}
 
 
 
@@ -510,9 +512,7 @@ public class AftershockStatsCalc {
 	 * @param b = Gutenberg-Richter b-parameter.
 	 * @param magMain = Magnitude of mainshock.
 	 * @param magCat = Magnitude of completeness when there has not been a mainshock.
-	 * @param capG = The "G" parameter in the time-dependent magnitude of completeness model. 
-	 *               As a special case, if capG == 10.0 then the return value is always magCat.
-	 * @param capH = The "H" parameter in the time-dependent magnitude of completeness model.
+	 * @param magCompFn = The magnitude of completeness function.
 	 * @param p = Omori p-parameter (exponent).
 	 * @param c = Omori c-parameter (time offset), in days.
 	 * @param tDays = Time (since origin time), in days.
@@ -522,12 +522,12 @@ public class AftershockStatsCalc {
 	 * where
 	 *  k = 10^(a + b*(magMain - magMin))
 	 * According to Page et al. the magnitude of completeness is
-	 *  magMin(t) = Max(magMain/2 - G - H*log10(t), magCat)
+	 *  magMin(t) = Max(F*magMain - G - H*log10(t), magCat)
 	 * In these formulas, t is measured in days.
 	 * The value returned by this function is lambda(t) at t=tDays.
 	 */
-	public static double getPageExpectedEventsRate(double a, double b, double magMain, double magCat, double capG, double capH, double p, double c, double tDays) {
-		double magMin = getPageMagCompleteness(magMain, magCat, capG, capH, tDays);
+	public static double getPageExpectedEventsRate(double a, double b, double magMain, double magCat, MagCompFn magCompFn, double p, double c, double tDays) {
+		double magMin = magCompFn.getMagCompleteness(magMain, magCat, tDays);
 		return getExpectedEventsRate(a, b, magMain, magMin, p, c, tDays);
 	}
 
@@ -542,9 +542,7 @@ public class AftershockStatsCalc {
 	 * @param b = Gutenberg-Richter b-parameter.
 	 * @param magMain = Magnitude of mainshock.
 	 * @param magCat = Magnitude of completeness when there has not been a mainshock.
-	 * @param capG = The "G" parameter in the time-dependent magnitude of completeness model. 
-	 *               As a special case, if capG == 10.0 then the return value is always magCat.
-	 * @param capH = The "H" parameter in the time-dependent magnitude of completeness model.
+	 * @param magCompFn = The magnitude of completeness function.
 	 * @param p = Omori p-parameter (exponent).
 	 * @param c = Omori c-parameter (time offset), in days.
 	 * @param tMinDays = Beginning of forecast time window (since origin time), in days.
@@ -555,7 +553,7 @@ public class AftershockStatsCalc {
 	 * where
 	 *  k = 10^(a + b*(magMain - magMin))
 	 * According to Page et al. the magnitude of completeness is
-	 *  magMin(t) = Max(magMain/2 - G - H*log10(t), magCat)
+	 *  magMin(t) = Max(F*magMain - G - H*log10(t), magCat)
 	 * In these formulas, t is measured in days.
 	 * The value returned by this function is the integral of lambda(t) from t=tMinDays to t=tMaxDays.
 	 *
@@ -567,16 +565,17 @@ public class AftershockStatsCalc {
 	 *
 	 * Note: It is possible to force the use of numeric integration for an RJ distribution
 	 * with constant magMin by choosing parameters so that:
-	 *  magMain/2 - G == magMin
+	 *  F == 0
+	 *  G == - magMin
 	 *  H == 0
 	 *  magCat < magMin
 	 * This is useful for testing the numeric integration code, by comparing to the analytic formula.
 	 */
-	public static double getPageExpectedNumEvents(double a, double b, double magMain, double magCat, double capG, double capH, double p, double c, double tMinDays, double tMaxDays) {
+	public static double getPageExpectedNumEvents(double a, double b, double magMain, double magCat, MagCompFn magCompFn, double p, double c, double tMinDays, double tMaxDays) {
 		
 		// Transition time, when magnitude of completeness first becomes equal to magCat
 
-		double tPage = getPageTimeOfCompleteness(magMain, magCat, capG, capH);
+		double tPage = magCompFn.getTimeOfCompleteness(magMain, magCat);
 		
 		// Integral value
 
@@ -588,7 +587,7 @@ public class AftershockStatsCalc {
 
 			// Set up functional object
 		
-			funcExpectedEventsRate func = new funcExpectedEventsRate (a, b, magMain, magCat, capG, capH, p, c);
+			funcExpectedEventsRate func = new funcExpectedEventsRate (a, b, magMain, magCat, magCompFn, p, c);
 
 			// Upper limit of integration
 
@@ -628,9 +627,7 @@ public class AftershockStatsCalc {
 	 * @param b = Gutenberg-Richter b-parameter.
 	 * @param magMain = Magnitude of mainshock.
 	 * @param magCat = Magnitude of completeness when there has not been a mainshock.
-	 * @param capG = The "G" parameter in the time-dependent magnitude of completeness model. 
-	 *               As a special case, if capG == 10.0 then the magnitude of completeness is always magCat.
-	 * @param capH = The "H" parameter in the time-dependent magnitude of completeness model.
+	 * @param magCompFn = The magnitude of completeness function.
 	 * @param p = Omori p-parameter (exponent).
 	 * @param c = Omori c-parameter (time offset), in days.
 	 * @param tMinDays = Beginning of time span (since origin time), in days.
@@ -659,35 +656,32 @@ public class AftershockStatsCalc {
 	 * https://en.wikipedia.org/wiki/Exponential_distribution
 	 */
 	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat,
-			double capG, double capH, double p, double c, double tMinDays, double tMaxDays) {
+			MagCompFn magCompFn, double p, double c, double tMinDays, double tMaxDays) {
 
 		// Random number generator, produces random numbers between 0.0 (inclusive) and 1.0 (exclusive)
 
 		long originTime = 0L;
 		UniformRealDistribution rangen = new UniformRealDistribution();
 
-		return simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays, originTime, rangen);
+		return simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, tMinDays, tMaxDays, originTime, rangen);
 	}
 
 
 	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat,
-			double capG, double capH, double p, double c, double tMinDays, double tMaxDays, long originTime) {
+			MagCompFn magCompFn, double p, double c, double tMinDays, double tMaxDays, long originTime) {
 
 		// Random number generator, produces random numbers between 0.0 (inclusive) and 1.0 (exclusive)
 
 		UniformRealDistribution rangen = new UniformRealDistribution();
 
-		return simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays, originTime, rangen);
+		return simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, tMinDays, tMaxDays, originTime, rangen);
 	}
 
 
 	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat,
-			double capG, double capH, double p, double c, double tMinDays, double tMaxDays, long originTime, UniformRealDistribution rangen) {
+			MagCompFn magCompFn, double p, double c, double tMinDays, double tMaxDays, long originTime, UniformRealDistribution rangen) {
 		if (!( b > 0.0 )) {
 			throw new RuntimeException("AftershockStatsCalc.simAftershockSequence: b parameter is negative or zero");
-		}
-		if (!( capH >= 0.0 )) {
-			throw new RuntimeException("AftershockStatsCalc.simAftershockSequence: H parameter is negative");
 		}
 		if (!( p > 0.0 )) {
 			throw new RuntimeException("AftershockStatsCalc.simAftershockSequence: p parameter is negative or zero");
@@ -714,7 +708,7 @@ public class AftershockStatsCalc {
 		// The minimum magnitude we need to consider is the magnitude of completeness at the end of the time span,
 		// which is a lower bound for magnitude of completeness throughout the time span
 
-		double magMin = getPageMagCompleteness(magMain, magCat, capG, capH, tMaxDays);
+		double magMin = magCompFn.getMagCompleteness(magMain, magCat, tMaxDays);
 
 		// The start time of the current interval, in days
 
@@ -753,7 +747,7 @@ public class AftershockStatsCalc {
 			// The minimum magnitude we need to consider is the magnitude of completeness at the end of the interval,
 			// which is a lower bound for magnitude of completeness throughout the interval
 
-			double magMinInt = getPageMagCompleteness(magMain, magCat, capG, capH, t_now + t_delta);
+			double magMinInt = magCompFn.getMagCompleteness(magMain, magCat, t_now + t_delta);
 
 			// Get the expected number of aftershocks in the interval from t_now to t_now + t_delta
 
@@ -764,7 +758,7 @@ public class AftershockStatsCalc {
 			if (f_continue) {
 				while (expected_aftershocks < 0.75 && t_now + t_delta*4.0 < tMaxDays) {
 					double new_t_delta = t_delta * 2.0;
-					double new_magMinInt = getPageMagCompleteness(magMain, magCat, capG, capH, t_now + new_t_delta);
+					double new_magMinInt = magCompFn.getMagCompleteness(magMain, magCat, t_now + new_t_delta);
 					double new_expected_aftershocks = getExpectedNumEvents(a, b, magMain, new_magMinInt, p, c, t_now, t_now + new_t_delta);
 
 					if (new_expected_aftershocks > 3.0) {
@@ -836,7 +830,7 @@ public class AftershockStatsCalc {
 
 					// If the magnitude is at least the magnitude of completeness ...
 
-					if (mag >= getPageMagCompleteness(magMain, magCat, capG, capH, t)) {
+					if (mag >= magCompFn.getMagCompleteness(magMain, magCat, t)) {
 					
 						// Add the aftershock to the list
 
@@ -1045,9 +1039,7 @@ public class AftershockStatsCalc {
 	 * @param b = Gutenberg-Richter b-parameter.
 	 * @param magMain = Magnitude of mainshock.
 	 * @param magCat = Magnitude of completeness when there has not been a mainshock.
-	 * @param capG = The "G" parameter in the time-dependent magnitude of completeness model. 
-	 *               As a special case, if capG == 10.0 then the magnitude of completeness is always magCat.
-	 * @param capH = The "H" parameter in the time-dependent magnitude of completeness model.
+	 * @param magCompFn = The magnitude of completeness function.
 	 * @param p = Omori p-parameter (exponent).
 	 * @param c = Omori c-parameter (time offset), in days.
 	 *
@@ -1062,20 +1054,18 @@ public class AftershockStatsCalc {
 		public double b;
 		public double magMain;
 		public double magCat;
-		public double capG;
-		public double capH;
+		public MagCompFn magCompFn;
 		public double p;
 		public double c;
 
 		// Constructor saves all the parameters.
 
-		public funcExpectedEventsRate (double a, double b, double magMain, double magCat, double capG, double capH, double p, double c) {
+		public funcExpectedEventsRate (double a, double b, double magMain, double magCat, MagCompFn magCompFn, double p, double c) {
 			this.a = a;
 			this.b = b;
 			this.magMain = magMain;
 			this.magCat = magCat;
-			this.capG = capG;
-			this.capH = capH;
+			this.magCompFn = magCompFn;
 			this.p = p;
 			this.c = c;
 		}
@@ -1083,8 +1073,8 @@ public class AftershockStatsCalc {
 		// Get the aftershock rate at time tDays (in days since the mainshock).
 
 		@Override
-		public double value(double tDays) {
-			return AftershockStatsCalc.getPageExpectedEventsRate(a, b, magMain, magCat, capG, capH, p, c, tDays);
+		public double value (double tDays) {
+			return AftershockStatsCalc.getPageExpectedEventsRate(a, b, magMain, magCat, magCompFn, p, c, tDays);
 		}
 	}
 
@@ -1524,6 +1514,7 @@ public class AftershockStatsCalc {
 			double p = 1.08;
 			double magMain = 7.5;
 			double magCat = 2.5;
+			double capF = 0.5;
 //			double capG = 4.5;
 			double capH = 0.75;
 			double tMinDays = 0.0;
@@ -1534,9 +1525,11 @@ public class AftershockStatsCalc {
 
 			double capG = 1.25;
 
+			MagCompFn magCompFn = MagCompFn.makePageOrConstant (capF, capG, capH);
+
 			// Run the simulation
 
-			ObsEqkRupList aftershock_list = simAftershockSequence(a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays);
+			ObsEqkRupList aftershock_list = simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, tMinDays, tMaxDays);
 
 			// Output the number of aftershocks
 					
@@ -1583,6 +1576,7 @@ public class AftershockStatsCalc {
 			double p = 1.08;
 			double magMain = 7.5;
 			double magCat = 2.5;
+			double capF = 0.5;
 			double capG = 1.25;
 			double capH = 0.75;
 			double tMinDays = 0.0;
@@ -1594,15 +1588,73 @@ public class AftershockStatsCalc {
 
 			// R&J, analytic
 
-			double rj_analytic = getPageExpectedNumEvents(a, b, magMain, magCat, 10.0, 0.0, p, c, tMinDays, tMaxDays);
+			double rj_analytic = getPageExpectedNumEvents(a, b, magMain, magCat, MagCompFn.makeConstant(), p, c, tMinDays, tMaxDays);
 
 			// R&J, numeric
 
-			double rj_numeric = getPageExpectedNumEvents(a, b, magMain, 1.00, 1.25, 0.0, p, c, tMinDays, tMaxDays);
+			double rj_numeric = getPageExpectedNumEvents(a, b, magMain, 1.00, MagCompFn.makePage (0.0, -magCat, 0.0), p, c, tMinDays, tMaxDays);
 
 			// R&J, page completeness
 
-			double rj_page = getPageExpectedNumEvents(a, b, magMain, magCat, capG, capH, p, c, tMinDays, tMaxDays);
+			double rj_page = getPageExpectedNumEvents(a, b, magMain, magCat, MagCompFn.makePageOrConstant (capF, capG, capH), p, c, tMinDays, tMaxDays);
+
+			// Output the results
+					
+			System.out.println (String.format ("rj_direct   = %.15e", rj_direct));
+			System.out.println (String.format ("rj_analytic = %.15e", rj_analytic));
+			System.out.println (String.format ("rj_numeric  = %.15e", rj_numeric));
+			System.out.println (String.format ("rj_page     = %.15e", rj_page));
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5
+		// Test the numeric integration code.
+		// Same as test #4 except only 1 day.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// No additional arguments
+
+			if (args.length != 1) {
+				System.err.println ("AftershockStatsCalc : Invalid 'test5' subcommand");
+				return;
+			}
+
+			// Parameter values
+			
+			double a = -1.67;
+			double b = 0.91;
+			double c = 0.05;
+			double p = 1.08;
+			double magMain = 7.5;
+			double magCat = 2.5;
+			double capF = 0.5;
+			double capG = 1.25;
+			double capH = 0.75;
+			double tMinDays = 0.0;
+			double tMaxDays = 1.0;
+
+			// R&J, direct calculation
+
+			double rj_direct = getExpectedNumEvents(a, b, magMain, magCat, p, c, tMinDays, tMaxDays);
+
+			// R&J, analytic
+
+			double rj_analytic = getPageExpectedNumEvents(a, b, magMain, magCat, MagCompFn.makeConstant(), p, c, tMinDays, tMaxDays);
+
+			// R&J, numeric
+
+			double rj_numeric = getPageExpectedNumEvents(a, b, magMain, 1.00, MagCompFn.makePage (0.0, -magCat, 0.0), p, c, tMinDays, tMaxDays);
+
+			// R&J, page completeness
+
+			double rj_page = getPageExpectedNumEvents(a, b, magMain, magCat, MagCompFn.makePageOrConstant (capF, capG, capH), p, c, tMinDays, tMaxDays);
 
 			// Output the results
 					

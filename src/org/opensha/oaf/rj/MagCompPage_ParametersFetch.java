@@ -33,7 +33,7 @@ public class MagCompPage_ParametersFetch {
 
 	// load_data - Load parameters from the data file.
 	//
-	// The text data file format is:
+	// The text data file format is:  [NOT SUPPORTED ANY MORE]
 	//	[int]		Number of tectonic regimes
 	//	[repeated]	Repeated once for each tectonic regime:
 	//		[string]	Name of tectonic regime
@@ -62,7 +62,7 @@ public class MagCompPage_ParametersFetch {
 	//		element = { Structure containing regime and parameter values.
 	//			"regime" = Name of tectonic regime.
 	//			"params" = { Structure containing marshaled MagCompPage_Parameters.
-	//				"MagCompPage_Parameters" = Integer version number, should be 2001.
+	//				"MagCompPage_Parameters" = Integer version number, should be 2001 to 2002 (2001 is deprecated).
 	//				. . .
 	//			}
 	//		. . .
@@ -111,19 +111,21 @@ public class MagCompPage_ParametersFetch {
 			@Override
 			protected MagCompPage_Parameters load_parameter_values (Scanner sc) {
 
-				// Get the Page parameters
-				
-				double magCat = load_table_double (sc);
-				double capG = load_table_double (sc);
-				double capH = load_table_double (sc);
-				double magSample = load_table_double (sc);
-				double radiusSample = load_table_double (sc);
-				double magCentroid = load_table_double (sc);
-				double radiusCentroid = load_table_double (sc);
+				//// Get the Page parameters
+				//
+				//double magCat = load_table_double (sc);
+				//double capG = load_table_double (sc);
+				//double capH = load_table_double (sc);
+				//double magSample = load_table_double (sc);
+				//double radiusSample = load_table_double (sc);
+				//double magCentroid = load_table_double (sc);
+				//double radiusCentroid = load_table_double (sc);
+				//
+				//// Make the parameter object
+				//
+				//return new MagCompPage_Parameters(magCat, capG, capH, magSample, radiusSample, magCentroid, radiusCentroid);
 
-				// Make the parameter object
-
-				return new MagCompPage_Parameters(magCat, capG, capH, magSample, radiusSample, magCentroid, radiusCentroid);
+				throw new UnsupportedOperationException ("MagCompPage_ParametersFetch: Loading from text file is not supported");
 			}
 
 			// load_parameter_values - Load parameter values for the tables.
