@@ -7,7 +7,7 @@ apply from: '../opensha-commons/build-common.gradle'
 dependencies {
 
     /* for OAF */
-    compileAndResource 'org.mongodb:mongo-java-driver:3.8.1'
+    compileAndResource 'org.mongodb:mongo-java-driver:3.9.0'
     compileAndResource 'org.mongodb.morphia:morphia:1.3.2'
  
     /* no remote repo */
