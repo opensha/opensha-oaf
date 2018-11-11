@@ -3,7 +3,6 @@ package org.opensha.oaf.rj;
 import java.util.ArrayList;
 import java.util.List;
 
-//import org.mongodb.morphia.annotations.Transient;
 import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
 import org.opensha.commons.data.function.HistogramFunction;
 import org.opensha.commons.data.xyz.EvenlyDiscrXYZ_DataSet;
@@ -49,7 +48,6 @@ import org.opensha.oaf.util.MarshalImpJsonWriter;
  */
 public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
-//	//@Transient
 //	boolean D=true;	// debug flag (inherited)
 
 	// Parameters for the time-dependent magnitude of completeness.
@@ -59,12 +57,10 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 	// The list of aftershocks used to construct the model.
 
-	//@Transient
 	protected List<ObsEqkRupture> aftershockList = null;
 
 	// The mainshock.
 
-	//@Transient
 	protected ObsEqkRupture mainShock = null;
 
 	// The time interval covered by the list of aftershocks, in days since the mainshock.

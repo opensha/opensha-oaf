@@ -5,29 +5,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Index;
-import org.mongodb.morphia.annotations.Indexed;
-import org.mongodb.morphia.annotations.IndexOptions;
-import org.mongodb.morphia.annotations.Indexes;
-import org.mongodb.morphia.annotations.Field;
-import org.mongodb.morphia.annotations.Transient;
-import org.mongodb.morphia.annotations.Embedded;
-
-import org.mongodb.morphia.Datastore;
-import org.mongodb.morphia.FindAndModifyOptions;
-
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.MorphiaIterator;
 
 import org.opensha.oaf.aafs.DBCorruptException;
 import org.opensha.oaf.aafs.MongoDBUtil;
 import org.opensha.oaf.aafs.RecordKey;
 import org.opensha.oaf.aafs.RecordPayload;
 import org.opensha.oaf.aafs.RecordIterator;
-import org.opensha.oaf.aafs.RecordIteratorMorphia;
 
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
@@ -43,8 +26,8 @@ import java.util.ArrayList;
 
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
-//import com.mongodb.client.model.Indexes;
-//import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.IndexOptions;
 import org.bson.conversions.Bson;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.Filters;
@@ -68,7 +51,6 @@ import org.opensha.oaf.aafs.RecordIteratorMongo;
  *
  * The collection "catalog" holds the earthquake catalog snapshots.
  */
-@Entity(value = "catalog", noClassnameStored = true)
 public class CatalogSnapshot implements java.io.Serializable {
 
 	//----- Envelope information -----
@@ -78,7 +60,6 @@ public class CatalogSnapshot implements java.io.Serializable {
 	// Note that ObjectId implements java.io.Serializable.
 	// This is set to the same value as the id of the task that generated the snapshot.
 
-	@Id
 	private ObjectId id;
 
 	//----- Catalog information -----
@@ -105,14 +86,12 @@ public class CatalogSnapshot implements java.io.Serializable {
 	// An entry may be zero if there is no location data for the particular earthquake.
 	// The length must equal max(eqk_count,1).
 
-	@Embedded
 	private long[] lat_lon_depth_list;
 
 	// mag_time_list - Compressed magnitude and time for each earthquake.
 	// An entry may be zero if there is no time and magnitude data for the particular earthquake.
 	// The length must equal max(eqk_count,1).
 
-	@Embedded
 	private long[] mag_time_list;
 
 
@@ -270,249 +249,6 @@ public class CatalogSnapshot implements java.io.Serializable {
 		if (mag_time_list.length != eqk_count) {
 			mag_time_list = Arrays.copyOf (mag_time_list, eqk_count);
 		}
-		return;
-	}
-
-
-
-
-	/**
-	 * submit_catalog_shapshot - Submit a catalog snapshot.
-	 * @param key = Record key associated with this catalog snapshot. Can be null to assign a new one.
-	 * @param event_id = Event associated with this catalog snapshot, or "" if none. Cannot be null.
-	 * @param start_time = Start time of this earthquake sequence, in milliseconds
-	 *                     since the epoch. Must be positive.
-	 * @param end_time = End time of this earthquake sequence, in milliseconds
-	 *                   since the epoch. Must be positive. Must be >= start_time.
-	 * @param rupture_list = Rupture list. Cannot be null.
-	 * @return
-	 * Returns the new entry.
-	 */
-	public static CatalogSnapshot submit_catalog_shapshot (RecordKey key, String event_id,
-			long start_time, long end_time, CompactEqkRupList rupture_list) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_submit_catalog_shapshot (key, event_id, start_time, end_time, rupture_list);
-		}
-
-		// Check conditions
-
-		if (!( event_id != null
-			&& start_time > 0L
-			&& end_time >= start_time
-			&& rupture_list != null )) {
-			throw new IllegalArgumentException("CatalogSnapshot.submit_catalog_shapshot: Invalid catalog snapshot parameters");
-		}
-
-		// Construct the catalog snapshot object
-
-		CatalogSnapshot catsnap = new CatalogSnapshot();
-		catsnap.set_record_key (key);
-		catsnap.set_event_id (event_id);
-		catsnap.set_start_time (start_time);
-		catsnap.set_end_time (end_time);
-		catsnap.set_rupture_list (rupture_list);
-
-		// Call MongoDB to store into database
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-		datastore.save(catsnap);
-		
-		return catsnap;
-	}
-
-
-
-
-	/**
-	 * store_catalog_shapshot - Store a catalog snapshot into the database.
-	 * This is primarily for restoring from backup.
-	 */
-	public static CatalogSnapshot store_catalog_shapshot (CatalogSnapshot catsnap) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_store_catalog_shapshot (catsnap);
-		}
-
-		// Call MongoDB to store into database
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-		datastore.save(catsnap);
-		
-		return catsnap;
-	}
-
-
-
-
-	/**
-	 * get_catalog_shapshot_for_key - Get the catalog snapshot with the given key.
-	 * @param key = Record key. Cannot be null or empty.
-	 * Returns the catalog snapshot, or null if not found.
-	 */
-	public static CatalogSnapshot get_catalog_shapshot_for_key (RecordKey key) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_get_catalog_shapshot_for_key (key);
-		}
-
-		if (!( key != null && key.getId() != null )) {
-			throw new IllegalArgumentException("CatalogSnapshot.get_catalog_shapshot_for_key: Missing or empty record key");
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Construct the query: Select id == key
-
-		Query<CatalogSnapshot> query = datastore.createQuery(CatalogSnapshot.class)
-											.filter("id ==", key.getId());
-
-		// Run the query
-
-		CatalogSnapshot catsnap = query.get();
-
-		return catsnap;
-	}
-
-
-
-
-	/**
-	 * get_catalog_snapshot_range - Get a range of catalog snapshots, reverse-sorted by end time.
-	 * @param end_time_lo = Minimum end time, in milliseconds since the epoch.
-	 *                      Can be 0L for no minimum.
-	 * @param end_time_hi = Maximum end time, in milliseconds since the epoch.
-	 *                      Can be 0L for no maximum.
-	 * @param event_id = Event id. Can be null to return entries for all events.
-	 */
-	public static List<CatalogSnapshot> get_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_get_catalog_snapshot_range (end_time_lo, end_time_hi, event_id);
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Construct the query
-
-		Query<CatalogSnapshot> query = datastore.createQuery(CatalogSnapshot.class);
-
-		// Select by event_id
-
-		if (event_id != null) {
-			query = query.filter("event_id ==", event_id);
-		}
-
-		// Select entries with end_time >= end_time_lo
-
-		if (end_time_lo > 0L) {
-			query = query.filter("end_time >=", new Long(end_time_lo));
-		}
-
-		// Select entries with end_time <= end_time_hi
-
-		if (end_time_hi > 0L) {
-			query = query.filter("end_time <=", new Long(end_time_hi));
-		}
-
-		// Sort by end_time in descending order (most recent first)
-
-		query = query.order("-end_time");
-
-		// Run the query
-
-		List<CatalogSnapshot> entries = query.asList();
-
-		return entries;
-	}
-
-
-
-
-	/**
-	 * fetch_catalog_snapshot_range - Iterate a range of catalog snapshots, reverse-sorted by end time.
-	 * @param end_time_lo = Minimum end time, in milliseconds since the epoch.
-	 *                      Can be 0L for no minimum.
-	 * @param end_time_hi = Maximum end time, in milliseconds since the epoch.
-	 *                      Can be 0L for no maximum.
-	 * @param event_id = Event id. Can be null to return entries for all events.
-	 */
-	public static RecordIterator<CatalogSnapshot> fetch_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_fetch_catalog_snapshot_range (end_time_lo, end_time_hi, event_id);
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Construct the query
-
-		Query<CatalogSnapshot> query = datastore.createQuery(CatalogSnapshot.class);
-
-		// Select by event_id
-
-		if (event_id != null) {
-			query = query.filter("event_id ==", event_id);
-		}
-
-		// Select entries with end_time >= end_time_lo
-
-		if (end_time_lo > 0L) {
-			query = query.filter("end_time >=", new Long(end_time_lo));
-		}
-
-		// Select entries with end_time <= end_time_hi
-
-		if (end_time_hi > 0L) {
-			query = query.filter("end_time <=", new Long(end_time_hi));
-		}
-
-		// Sort by end_time in descending order (most recent first)
-
-		query = query.order("-end_time");
-
-		// Run the query
-
-		MorphiaIterator<CatalogSnapshot, CatalogSnapshot> morphia_iterator = query.fetch();
-
-		return new RecordIteratorMorphia<CatalogSnapshot>(morphia_iterator);
-	}
-
-
-
-
-	/**
-	 * delete_catalog_snapshot - Delete a catalog snapshot.
-	 * @param entry = Existing catalog snapshot to delete.
-	 * @return
-	 */
-	public static void delete_catalog_snapshot (CatalogSnapshot entry) {
-
-		if (MongoDBUtil.use_jd()) {
-			jd_delete_catalog_snapshot (entry);
-			return;
-		}
-
-		// Check conditions
-
-		if (!( entry != null && entry.get_id() != null )) {
-			throw new IllegalArgumentException("CatalogSnapshot.delete_catalog_snapshot: Invalid parameters");
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Run the delete
-
-		datastore.delete(entry);
-		
 		return;
 	}
 
@@ -698,7 +434,7 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 * @return
 	 * Returns the new entry.
 	 */
-	public static CatalogSnapshot jd_submit_catalog_shapshot (RecordKey key, String event_id,
+	public static CatalogSnapshot submit_catalog_shapshot (RecordKey key, String event_id,
 			long start_time, long end_time, CompactEqkRupList rupture_list) {
 
 		// Check conditions
@@ -733,7 +469,7 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 * store_catalog_shapshot - Store a catalog snapshot into the database.
 	 * This is primarily for restoring from backup.
 	 */
-	public static CatalogSnapshot jd_store_catalog_shapshot (CatalogSnapshot catsnap) {
+	public static CatalogSnapshot store_catalog_shapshot (CatalogSnapshot catsnap) {
 
 		// Call MongoDB to store into database
 
@@ -750,7 +486,7 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the catalog snapshot, or null if not found.
 	 */
-	public static CatalogSnapshot jd_get_catalog_shapshot_for_key (RecordKey key) {
+	public static CatalogSnapshot get_catalog_shapshot_for_key (RecordKey key) {
 
 		if (!( key != null && key.getId() != null )) {
 			throw new IllegalArgumentException("CatalogSnapshot.get_catalog_shapshot_for_key: Missing or empty record key");
@@ -784,7 +520,7 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
 	 */
-	public static List<CatalogSnapshot> jd_get_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
+	public static List<CatalogSnapshot> get_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
 		ArrayList<CatalogSnapshot> entries = new ArrayList<CatalogSnapshot>();
 
 		// Get the cursor and iterator
@@ -820,7 +556,7 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
 	 */
-	public static RecordIterator<CatalogSnapshot> jd_fetch_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
+	public static RecordIterator<CatalogSnapshot> fetch_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
 
 		// Get the cursor and iterator
 
@@ -842,7 +578,7 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 * @param entry = Existing catalog snapshot to delete.
 	 * @return
 	 */
-	public static void jd_delete_catalog_snapshot (CatalogSnapshot entry) {
+	public static void delete_catalog_snapshot (CatalogSnapshot entry) {
 
 		// Check conditions
 

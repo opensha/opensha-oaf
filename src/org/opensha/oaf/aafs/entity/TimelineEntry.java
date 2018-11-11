@@ -4,28 +4,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Index;
-import org.mongodb.morphia.annotations.Indexed;
-import org.mongodb.morphia.annotations.IndexOptions;
-import org.mongodb.morphia.annotations.Indexes;
-import org.mongodb.morphia.annotations.Field;
-import org.mongodb.morphia.annotations.Transient;
-import org.mongodb.morphia.annotations.Embedded;
-
-import org.mongodb.morphia.Datastore;
-import org.mongodb.morphia.FindAndModifyOptions;
-
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.MorphiaIterator;
 
 import org.opensha.oaf.aafs.MongoDBUtil;
 import org.opensha.oaf.aafs.RecordKey;
 import org.opensha.oaf.aafs.RecordPayload;
 import org.opensha.oaf.aafs.RecordIterator;
-import org.opensha.oaf.aafs.RecordIteratorMorphia;
 
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
@@ -39,8 +22,8 @@ import java.util.ArrayList;
 
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
-//import com.mongodb.client.model.Indexes;
-//import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.IndexOptions;
 import org.bson.conversions.Bson;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.Filters;
@@ -64,12 +47,6 @@ import org.opensha.oaf.aafs.RecordIteratorMongo;
  *
  * The collection "timeline" holds the timeline entries.
  */
-@Entity(value = "timeline", noClassnameStored = true)
-@Indexes({
-	@Index(fields = {@Field("event_id")}, options = @IndexOptions(name = "actevid")),
-	@Index(fields = {@Field("comcat_ids")}, options = @IndexOptions(name = "actccid")),
-	@Index(fields = {@Field("action_time")}, options = @IndexOptions(name = "acttime"))
-})
 public class TimelineEntry implements java.io.Serializable {
 
 	//----- Envelope information -----
@@ -79,7 +56,6 @@ public class TimelineEntry implements java.io.Serializable {
 	// Note that ObjectId implements java.io.Serializable.
 	// This is set to the same value as the id of the task that generated the timeline entry.
 
-	@Id
 	private ObjectId id;
 
 	// Time that this timeline entry was created, in milliseconds since the epoch.
@@ -91,7 +67,6 @@ public class TimelineEntry implements java.io.Serializable {
 	// The low-order part may have a few bits of additional information, allowing searches
 	// qualified by the additional information by querying on the action_time modulus.
 
-	//@Indexed(options = @IndexOptions(name = "acttime"))
 	private long action_time;
 
 	//----- Action information -----
@@ -102,14 +77,12 @@ public class TimelineEntry implements java.io.Serializable {
 	// In practice, this is not a Comcat event ID, but rather a similar string that serves
 	// to identify an earthquake uniquely even if the Comcat IDs change.
 
-	//@Indexed(options = @IndexOptions(name = "actevid"))
 	private String event_id;
 
 	// List of Comcat IDs for this timeline.
 	// This cannot be null or empty, and the array elements cannot be null.
 	// This can be used to find all timeline entries pertaining to one or more Comcat IDs.
 
-	//@Indexed(options = @IndexOptions(name = "actccid"))
 	private String[] comcat_ids;
 
 	// Action code for this timeline entry.
@@ -126,11 +99,8 @@ public class TimelineEntry implements java.io.Serializable {
 //	// Any additional information needed is stored as marshaled data.
 //	// Each array should have at least one element.
 //
-//	@Embedded
 //	private long[] details_l;
-//	@Embedded
 //	private double[] details_d;
-//	@Embedded
 //	private String[] details_s;
 
 
@@ -398,399 +368,6 @@ public class TimelineEntry implements java.io.Serializable {
 
 
 
-	/**
-	 * submit_timeline_entry - Submit a timeline entry.
-	 * @param key = Record key associated with this timeline entry. Can be null to assign a new one.
-	 * @param action_time = Time of this timeline entry, in milliseconds
-	 *                      since the epoch. Must be positive.
-	 * @param event_id = ID associated with this timeline, or "" if none. Cannot be null.
-	 *                   It may be an event ID, or an invented ID that represents the timeline
-	 *                   as distinct from any particular event ID.
-	 * @param actcode = Action code, which identifies that action that occurred on the timeline.
-	 * @param details = Further details of this timeline entry. Can be null if there are none.
-	 * @return
-	 * Returns the new entry.
-	 */
-	public static TimelineEntry submit_timeline_entry (RecordKey key, long action_time, String event_id,
-			String[] comcat_ids, int actcode, MarshalWriter details) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_submit_timeline_entry (key, action_time, event_id, comcat_ids, actcode, details);
-		}
-
-		// Check conditions
-
-		if (!( action_time > 0L
-			&& event_id != null
-			&& comcat_ids != null
-			&& comcat_ids.length > 0 )) {
-			throw new IllegalArgumentException("TimelineEntry.submit_timeline_entry: Invalid timeline parameters");
-		}
-
-		for (String comcat_id: comcat_ids) {
-			if (!( comcat_id != null )) {
-				throw new IllegalArgumentException("TimelineEntry.submit_timeline_entry: Invalid timeline parameters");
-			}
-		}
-
-		// Construct the timeline entry object
-
-		TimelineEntry tentry = new TimelineEntry();
-		tentry.set_record_key (key);
-		tentry.set_action_time (action_time);
-		tentry.set_event_id (event_id);
-		tentry.set_comcat_ids (comcat_ids);
-		tentry.set_actcode (actcode);
-		tentry.set_details (details);
-
-		// Call MongoDB to store into database
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-		datastore.save(tentry);
-		
-		return tentry;
-	}
-
-
-
-
-//	/**
-//	 * submit_timeline_entry - Submit a timeline entry.
-//	 * Temporary function signature for transition.
-//	 */
-//	public static TimelineEntry submit_timeline_entry (RecordKey key, long action_time, String event_id,
-//			int actcode, MarshalWriter details) {
-//
-//		String[] comcat_ids = new String[1];
-//		comcat_ids[0] = event_id;
-//
-//		return submit_timeline_entry (key, action_time, event_id,
-//			comcat_ids, actcode, details);
-//	}
-
-
-
-
-	/**
-	 * store_timeline_entry - Store a timeline entry into the database.
-	 * This is primarily for restoring from backup.
-	 */
-	public static TimelineEntry store_timeline_entry (TimelineEntry tentry) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_store_timeline_entry (tentry);
-		}
-
-		// Call MongoDB to store into database
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-		datastore.save(tentry);
-		
-		return tentry;
-	}
-
-
-
-
-	/**
-	 * get_timeline_entry_for_key - Get the timeline entry with the given key.
-	 * @param key = Record key. Cannot be null or empty.
-	 * Returns the timeline entry, or null if not found.
-	 */
-	public static TimelineEntry get_timeline_entry_for_key (RecordKey key) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_get_timeline_entry_for_key (key);
-		}
-
-		if (!( key != null && key.getId() != null )) {
-			throw new IllegalArgumentException("TimelineEntry.get_timeline_entry_for_key: Missing or empty record key");
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Construct the query: Select id == key
-
-		Query<TimelineEntry> query = datastore.createQuery(TimelineEntry.class)
-											.filter("id ==", key.getId());
-
-		// Run the query
-
-		TimelineEntry tentry = query.get();
-
-		return tentry;
-	}
-
-
-
-
-	/**
-	 * get_timeline_entry_range - Get a range of timeline entries, reverse-sorted by action time.
-	 * @param action_time_lo = Minimum action time, in milliseconds since the epoch.
-	 *                         Can be 0L for no minimum.
-	 * @param action_time_hi = Maximum action time, in milliseconds since the epoch.
-	 *                         Can be 0L for no maximum.
-	 * @param event_id = Event id. Can be null to return entries for all events.
-	 * @param comcat_ids = Comcat id list. Can be null or empty to return entries for all Comcat ids.
-	 *                     If specified, return entries associated with any of the given ids.
-	 * @param action_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
-	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
-	 */
-	public static List<TimelineEntry> get_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_get_timeline_entry_range (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem);
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Construct the query
-
-		Query<TimelineEntry> query = datastore.createQuery(TimelineEntry.class);
-
-		// Select by event_id
-
-		if (event_id != null) {
-			query = query.filter("event_id ==", event_id);
-		}
-
-		// Select by comcat_ids
-
-		if (comcat_ids != null) {
-			if (comcat_ids.length > 0) {
-				query = query.filter("comcat_ids in", comcat_ids);
-			}
-		}
-
-		// Select entries with action_time >= action_time_lo
-
-		if (action_time_lo > 0L) {
-			query = query.filter("action_time >=", new Long(action_time_lo));
-		}
-
-		// Select entries with action_time <= action_time_hi
-
-		if (action_time_hi > 0L) {
-			query = query.filter("action_time <=", new Long(action_time_hi));
-		}
-
-		// Select entries with action_time % action_time_div_rem[0] == action_time_div_rem[1]
-
-		if (action_time_div_rem != null) {
-			if (action_time_div_rem[0] > 0L) {
-				Long[] div_rem = new Long[2];
-				div_rem[0] = new Long(action_time_div_rem[0]);
-				div_rem[1] = new Long(action_time_div_rem[1]);
-				query = query.filter("action_time mod", div_rem);
-			}
-		}
-
-		// Sort by action_time in descending order (most recent first)
-
-		query = query.order("-action_time");
-
-		// Run the query
-
-		List<TimelineEntry> entries = query.asList();
-
-		return entries;
-	}
-
-
-
-
-	/**
-	 * fetch_timeline_entry_range - Iterate a range of timeline entries, reverse-sorted by action time.
-	 * @param action_time_lo = Minimum action time, in milliseconds since the epoch.
-	 *                         Can be 0L for no minimum.
-	 * @param action_time_hi = Maximum action time, in milliseconds since the epoch.
-	 *                         Can be 0L for no maximum.
-	 * @param event_id = Event id. Can be null to return entries for all events.
-	 * @param comcat_ids = Comcat id list. Can be null or empty to return entries for all Comcat ids.
-	 *                     If specified, return entries associated with any of the given ids.
-	 * @param action_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
-	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
-	 */
-	public static RecordIterator<TimelineEntry> fetch_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_fetch_timeline_entry_range (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem);
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Construct the query
-
-		Query<TimelineEntry> query = datastore.createQuery(TimelineEntry.class);
-
-		// Select by event_id
-
-		if (event_id != null) {
-			query = query.filter("event_id ==", event_id);
-		}
-
-		// Select by comcat_ids
-
-		if (comcat_ids != null) {
-			if (comcat_ids.length > 0) {
-				query = query.filter("comcat_ids in", comcat_ids);
-			}
-		}
-
-		// Select entries with action_time >= action_time_lo
-
-		if (action_time_lo > 0L) {
-			query = query.filter("action_time >=", new Long(action_time_lo));
-		}
-
-		// Select entries with action_time <= action_time_hi
-
-		if (action_time_hi > 0L) {
-			query = query.filter("action_time <=", new Long(action_time_hi));
-		}
-
-		// Select entries with action_time % action_time_div_rem[0] == action_time_div_rem[1]
-
-		if (action_time_div_rem != null) {
-			if (action_time_div_rem[0] > 0L) {
-				Long[] div_rem = new Long[2];
-				div_rem[0] = new Long(action_time_div_rem[0]);
-				div_rem[1] = new Long(action_time_div_rem[1]);
-				query = query.filter("action_time mod", div_rem);
-			}
-		}
-
-		// Sort by action_time in descending order (most recent first)
-
-		query = query.order("-action_time");
-
-		// Run the query
-
-		MorphiaIterator<TimelineEntry, TimelineEntry> morphia_iterator = query.fetch();
-
-		return new RecordIteratorMorphia<TimelineEntry>(morphia_iterator);
-	}
-
-
-
-
-	/**
-	 * get_recent_timeline_entry - Get the most recent in a range of timeline entries.
-	 * @param action_time_lo = Minimum action time, in milliseconds since the epoch.
-	 *                         Can be 0L for no minimum.
-	 * @param action_time_hi = Maximum action time, in milliseconds since the epoch.
-	 *                         Can be 0L for no maximum.
-	 * @param event_id = Event id. Can be null to return entries for all events.
-	 * @param comcat_ids = Comcat id list. Can be null or empty to return entries for all Comcat ids.
-	 *                     If specified, return entries associated with any of the given ids.
-	 * @param action_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
-	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
-	 * Returns the matching timeline entry with the greatest action_time (most recent),
-	 * or null if there is no matching timeline entry.
-	 */
-	public static TimelineEntry get_recent_timeline_entry (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_get_recent_timeline_entry (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem);
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Construct the query
-
-		Query<TimelineEntry> query = datastore.createQuery(TimelineEntry.class);
-
-		// Select by event_id
-
-		if (event_id != null) {
-			query = query.filter("event_id ==", event_id);
-		}
-
-		// Select by comcat_ids
-
-		if (comcat_ids != null) {
-			if (comcat_ids.length > 0) {
-				query = query.filter("comcat_ids in", comcat_ids);
-			}
-		}
-
-		// Select entries with action_time >= action_time_lo
-
-		if (action_time_lo > 0L) {
-			query = query.filter("action_time >=", new Long(action_time_lo));
-		}
-
-		// Select entries with action_time <= action_time_hi
-
-		if (action_time_hi > 0L) {
-			query = query.filter("action_time <=", new Long(action_time_hi));
-		}
-
-		// Select entries with action_time % action_time_div_rem[0] == action_time_div_rem[1]
-
-		if (action_time_div_rem != null) {
-			if (action_time_div_rem[0] > 0L) {
-				Long[] div_rem = new Long[2];
-				div_rem[0] = new Long(action_time_div_rem[0]);
-				div_rem[1] = new Long(action_time_div_rem[1]);
-				query = query.filter("action_time mod", div_rem);
-			}
-		}
-
-		// Sort by action_time in descending order (most recent first)
-
-		query = query.order("-action_time");
-
-		// Run the query
-
-		TimelineEntry tentry = query.get();
-
-		return tentry;
-	}
-
-
-
-
-	/**
-	 * delete_timeline_entry - Delete a timeline entry.
-	 * @param entry = Existing timeline entry to delete.
-	 * @return
-	 */
-	public static void delete_timeline_entry (TimelineEntry entry) {
-
-		if (MongoDBUtil.use_jd()) {
-			jd_delete_timeline_entry (entry);
-			return;
-		}
-
-		// Check conditions
-
-		if (!( entry != null && entry.get_id() != null )) {
-			throw new IllegalArgumentException("TimelineEntry.delete_timeline_entry: Invalid parameters");
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Run the delete
-
-		datastore.delete(entry);
-		
-		return;
-	}
-
-
-
-
 	//----- MongoDB Java driver access -----
 
 	// Our collection.
@@ -989,7 +566,7 @@ public class TimelineEntry implements java.io.Serializable {
 	 * @return
 	 * Returns the new entry.
 	 */
-	public static TimelineEntry jd_submit_timeline_entry (RecordKey key, long action_time, String event_id,
+	public static TimelineEntry submit_timeline_entry (RecordKey key, long action_time, String event_id,
 			String[] comcat_ids, int actcode, MarshalWriter details) {
 
 		// Check conditions
@@ -1031,7 +608,7 @@ public class TimelineEntry implements java.io.Serializable {
 	 * store_timeline_entry - Store a timeline entry into the database.
 	 * This is primarily for restoring from backup.
 	 */
-	public static TimelineEntry jd_store_timeline_entry (TimelineEntry tentry) {
+	public static TimelineEntry store_timeline_entry (TimelineEntry tentry) {
 
 		// Call MongoDB to store into database
 
@@ -1048,7 +625,7 @@ public class TimelineEntry implements java.io.Serializable {
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the timeline entry, or null if not found.
 	 */
-	public static TimelineEntry jd_get_timeline_entry_for_key (RecordKey key) {
+	public static TimelineEntry get_timeline_entry_for_key (RecordKey key) {
 
 		if (!( key != null && key.getId() != null )) {
 			throw new IllegalArgumentException("TimelineEntry.get_timeline_entry_for_key: Missing or empty record key");
@@ -1086,7 +663,7 @@ public class TimelineEntry implements java.io.Serializable {
 	 * @param action_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
 	 */
-	public static List<TimelineEntry> jd_get_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
+	public static List<TimelineEntry> get_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
 		ArrayList<TimelineEntry> entries = new ArrayList<TimelineEntry>();
 
 		// Get the cursor and iterator
@@ -1126,7 +703,7 @@ public class TimelineEntry implements java.io.Serializable {
 	 * @param action_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
 	 */
-	public static RecordIterator<TimelineEntry> jd_fetch_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
+	public static RecordIterator<TimelineEntry> fetch_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
 
 		// Get the cursor and iterator
 
@@ -1157,7 +734,7 @@ public class TimelineEntry implements java.io.Serializable {
 	 * Returns the matching timeline entry with the greatest action_time (most recent),
 	 * or null if there is no matching timeline entry.
 	 */
-	public static TimelineEntry jd_get_recent_timeline_entry (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
+	public static TimelineEntry get_recent_timeline_entry (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
 
 		// Get the document
 
@@ -1186,7 +763,7 @@ public class TimelineEntry implements java.io.Serializable {
 	 * @param entry = Existing timeline entry to delete.
 	 * @return
 	 */
-	public static void jd_delete_timeline_entry (TimelineEntry entry) {
+	public static void delete_timeline_entry (TimelineEntry entry) {
 
 		// Check conditions
 

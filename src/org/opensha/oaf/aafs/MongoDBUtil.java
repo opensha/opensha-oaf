@@ -1,18 +1,17 @@
 package org.opensha.oaf.aafs;
 
-import org.mongodb.morphia.Datastore;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.MapperOptions;
-import org.mongodb.morphia.mapping.Mapper;
-
-import com.mongodb.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoClient;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.ConnectionString;
 import com.mongodb.ServerAddress;
 import com.mongodb.MongoCredential;
-import com.mongodb.MongoClientOptions;
+import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoDatabase;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.bson.types.ObjectId;
 import com.mongodb.client.MongoCollection;
@@ -41,7 +40,7 @@ public class MongoDBUtil implements AutoCloseable {
 
 	// The MongoDB client options.
 
-	private static MongoClientOptions mongoOptions = null;
+	private static MongoClientSettings mongoSettings = null;
 
 	// The MongoDB client endpoint.
 	// Note that there should be only one client per JVM.
@@ -51,25 +50,6 @@ public class MongoDBUtil implements AutoCloseable {
 	// The MongoDB database.
 
 	private static MongoDatabase db = null;
-
-	// The Morphia endpoint.
-
-	private static Morphia morphia = null;
-
-	// The Morphia datastore.
-
-	private static Datastore datastore = null;
-
-
-
-
-	// Return true to use Java driver, false to use Morphia.
-
-	private static final boolean OPT_USE_JD = true;
-
-	public static boolean use_jd () {
-		return OPT_USE_JD;
-	}
 
 
 
@@ -82,7 +62,7 @@ public class MongoDBUtil implements AutoCloseable {
 		// This cannot be called if the connection is currently open.
 
 		if (mongoClient != null) {
-			throw new RuntimeException("MongoDBUtil: Connection to MongoDB is already open");
+			throw new RuntimeException ("MongoDBUtil: Connection to MongoDB is already open");
 		}
 
 		MongoClient saved_mongoClient = null;
@@ -96,7 +76,7 @@ public class MongoDBUtil implements AutoCloseable {
 			// Create the address of the server, using host IP address and port.
 			// Note: ServerAddress offers several ways to specify the address.
 
-			serverAddress = new ServerAddress(config.getDb_host(), config.getDb_port());
+			serverAddress = new ServerAddress (config.getDb_host(), config.getDb_port());
 
 			// Create the login credentials, for username, database name, and password.
 			// Note: MongoCredential can create various other sorts of credentials.
@@ -104,69 +84,27 @@ public class MongoDBUtil implements AutoCloseable {
 			//  It must be the database that was used to create the user account.
 			//  This does not limit the databases that can be used, once logged in.
 
-			credentials = MongoCredential.createCredential(config.getDb_user(), config.getDb_name(), config.getDb_password().toCharArray());
+			credentials = MongoCredential.createCredential (config.getDb_user(), config.getDb_name(), config.getDb_password().toCharArray());
 
-			// Create the MongoDB client options.
-			// Note: We use the default client options.
-			// Note: MongoClientOptions offers many options that can be set, using manipulator methods.
-			// For example, this would set the connection timeout to connectTimeout milliseconds:
-			//  new MongoClientOptions.Builder().connectTimeout(connectTimeout).build();
+			// Create the MongoDB client settings.
+			// Note: We use the default client settings.
+			// Note: MongoClientSettings.Builder offers various settings, using manipulator methods.
 
-			mongoOptions = new MongoClientOptions.Builder().build();
+			mongoSettings = MongoClientSettings.builder()
+								.applyToClusterSettings (builder -> builder.hosts(Arrays.asList(serverAddress)))
+								.credential (credentials)
+								.build();
 
 			// Create the MongoDB client endpoint.
 
-			mongoClient = new MongoClient(serverAddress, credentials, mongoOptions);
+			mongoClient = MongoClients.create (mongoSettings);
 			saved_mongoClient = mongoClient;
 
-			// Apparently the Mongo client lazy connects, this call forces check for connection success.
+			// Get the database, using database name.
 
-			mongoClient.getAddress();
-
-			if (use_jd()) {
-
-				// Get the database, using database name.
-				// This could be used for database operations not supported by Morphia.
-
-				db = mongoClient.getDatabase(config.getDb_name());
-
-			} else {
-
-				// Create the Morphia endpoint.
-
-				morphia = new Morphia();
-
-				// At this point we could configure mapping options.
-				// The most common options to be configured are storeEmpties (which selects whether
-				// empty List, Map, Set, and array values are stored; default false), and storeNulls
-				// (which selects whether null values are stored; default false).
-				// Apparently this would be done like so:
-				//  MapperOptions options = new MapperOptions();
-				//  options.setStoreEmpties(true);
-				//  options.setStoreNulls(true);
-				//  morphia.getMapper().setOptions(options);
-
-				// Tell Morphia where to find our classes.
-				// Morphia finds every class in the specified package that is annotated with @Entity,
-				// and reads its metadata.
-				// This could be called multiple times to specify multiple packages.
-
-				morphia.mapPackage("org.opensha.oaf.aafs.entity");
-
-				// Create the Morphia datastore, using the database name.
-
-				datastore = morphia.createDatastore(mongoClient, config.getDb_name());
-
-				// This ensures the existence of any indexes found during class mapping.
-				// Indexes are created if necessary.
-
-				datastore.ensureIndexes();
-
-			}
+			db = mongoClient.getDatabase (config.getDb_name());
 
 		} catch (Exception e) {
-			datastore = null;
-			morphia = null;
 			db = null;
 			mongoClient = null;
 			if (saved_mongoClient != null) {
@@ -176,10 +114,10 @@ public class MongoDBUtil implements AutoCloseable {
 				}
 			}
 			saved_mongoClient = null;
-			mongoOptions = null;
+			mongoSettings = null;
 			credentials = null;
 			serverAddress = null;
-			throw new RuntimeException("MongoDBUtil: Unable to connect to MongoDB", e);
+			throw new RuntimeException ("MongoDBUtil: Unable to connect to MongoDB", e);
 		}
 	}
 
@@ -195,12 +133,10 @@ public class MongoDBUtil implements AutoCloseable {
 		// Close the client if it is currently open.
 
 		if (mongoClient != null) {
-			datastore = null;
-			morphia = null;
 			db = null;
 			mongoClient.close();
 			mongoClient = null;
-			mongoOptions = null;
+			mongoSettings = null;
 			credentials = null;
 			serverAddress = null;
 		}
@@ -216,16 +152,6 @@ public class MongoDBUtil implements AutoCloseable {
 	 */
 	public static MongoDatabase getDB() {
 		return db;
-	}
-
- 
-
-	
-	/**
-	 * Retrieve the Morphia datastore.
-	 */
-	public static Datastore getDatastore() {
-		return datastore;
 	}
 
 

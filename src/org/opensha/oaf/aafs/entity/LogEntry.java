@@ -3,28 +3,11 @@ package org.opensha.oaf.aafs.entity;
 import java.util.List;
 
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Index;
-import org.mongodb.morphia.annotations.Indexed;
-import org.mongodb.morphia.annotations.IndexOptions;
-import org.mongodb.morphia.annotations.Indexes;
-import org.mongodb.morphia.annotations.Field;
-import org.mongodb.morphia.annotations.Transient;
-import org.mongodb.morphia.annotations.Embedded;
-
-import org.mongodb.morphia.Datastore;
-import org.mongodb.morphia.FindAndModifyOptions;
-
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.MorphiaIterator;
 
 import org.opensha.oaf.aafs.MongoDBUtil;
 import org.opensha.oaf.aafs.RecordKey;
 import org.opensha.oaf.aafs.RecordPayload;
 import org.opensha.oaf.aafs.RecordIterator;
-import org.opensha.oaf.aafs.RecordIteratorMorphia;
 
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
@@ -38,8 +21,8 @@ import java.util.ArrayList;
 
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
-//import com.mongodb.client.model.Indexes;
-//import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.IndexOptions;
 import org.bson.conversions.Bson;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.Filters;
@@ -63,11 +46,6 @@ import org.opensha.oaf.aafs.RecordIteratorMongo;
  *
  * The collection "log" holds the log entries.
  */
-@Entity(value = "log", noClassnameStored = true)
-@Indexes({
-	@Index(fields = {@Field("event_id")}, options = @IndexOptions(name = "logevid")),
-	@Index(fields = {@Field("log_time")}, options = @IndexOptions(name = "logtime"))
-})
 public class LogEntry implements java.io.Serializable {
 
 	//----- Envelope information -----
@@ -77,14 +55,12 @@ public class LogEntry implements java.io.Serializable {
 	// Note that ObjectId implements java.io.Serializable.
 	// This is set to the same value as the id of the task that generated the log entry.
 
-	@Id
 	private ObjectId id;
 
 	// Time that this log entry was created, in milliseconds since the epoch.
 	// The collection is indexed on this field, so log entries in a given
 	// time span can be obtained with a database query efficiently.
 
-	//@Indexed(options = @IndexOptions(name = "logtime"))
 	private long log_time;
 
 	//----- Task information -----
@@ -93,7 +69,6 @@ public class LogEntry implements java.io.Serializable {
 	// Entries not referring to an event should put an empty string here (not null).
 	// This can be used to find all log entries pertaining to an event.
 
-	//@Indexed(options = @IndexOptions(name = "logevid"))
 	private String event_id;
 
 	// Time this task was originally scheduled to execute, in milliseconds since the epoch.
@@ -127,11 +102,8 @@ public class LogEntry implements java.io.Serializable {
 //	// Any additional information needed is stored as marshaled data.
 //	// Each array should have at least one element.
 //
-//	@Embedded
 //	private long[] details_l;
-//	@Embedded
 //	private double[] details_d;
-//	@Embedded
 //	private String[] details_s;
 
 	//----- Result information -----
@@ -455,309 +427,6 @@ public class LogEntry implements java.io.Serializable {
 
 
 
-	/**
-	 * submit_log_entry - Submit a log entry.
-	 * @param key = Record key associated with this task. Can be null to assign a new one.
-	 * @param log_time = Time of this log entry, in milliseconds
-	 *                   since the epoch. Must be positive.
-	 * @param event_id = Event associated with this task, or "" if none. Cannot be null.
-	 * @param sched_time = Time at which task should execute, in milliseconds
-	 *                     since the epoch. Must be positive.
-	 * @param submit_time = Time at which the task is submitted, in milliseconds
-	 *                      since the epoch. Must be positive.
-	 * @param submit_id = Person or entity submitting this task. Cannot be empty or null.
-	 * @param opcode = Operation code used to dispatch the task.
-	 * @param stage = Stage number, user-defined, effectively an extension of the opcode.
-	 * @param details = Further details of this task. Can be null if there are none.
-	 * @param rescode = Result code.
-	 * @param results = Further results of this task, or "" if none. Cannot be null.
-	 * @return
-	 * Returns the new entry.
-	 */
-	public static LogEntry submit_log_entry (RecordKey key, long log_time, String event_id,
-			long sched_time, long submit_time, String submit_id, int opcode, int stage,
-			MarshalWriter details, int rescode, String results) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_submit_log_entry (key, log_time, event_id,
-				sched_time, submit_time, submit_id, opcode, stage,
-				details, rescode, results);
-		}
-
-		// Check conditions
-
-		if (!( log_time > 0L
-			&& event_id != null
-			&& sched_time > 0L
-			&& submit_time > 0L
-			&& submit_id != null && submit_id.length() > 0
-			&& results != null )) {
-			throw new IllegalArgumentException("LogEntry.submit_log_entry: Invalid log parameters");
-		}
-
-		// Construct the log entry object
-
-		LogEntry lentry = new LogEntry();
-		lentry.set_record_key (key);
-		lentry.set_log_time (log_time);
-		lentry.set_event_id (event_id);
-		lentry.set_sched_time (sched_time);
-		lentry.set_submit_time (submit_time);
-		lentry.set_submit_id (submit_id);
-		lentry.set_opcode (opcode);
-		lentry.set_stage (stage);
-		lentry.set_details (details);
-		lentry.set_rescode (rescode);
-		lentry.set_results (results);
-
-		// Call MongoDB to store into database
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-		datastore.save(lentry);
-		
-		return lentry;
-	}
-
-
-
-
-	/**
-	 * submit_log_entry - Submit a log entry.
-	 * @param ptask = Pending task record associated with this task. Cannot be null.
-	 * @param log_time = Time of this log entry, in milliseconds
-	 *                     since the epoch. Must be positive.
-	 * @param rescode = Result code.
-	 * @param results = Further results of this task, or "" if none. Cannot be null.
-	 * @return
-	 * Other log parameters are copied from ptask.
-	 * Returns the new entry.
-	 */
-	public static LogEntry submit_log_entry (PendingTask ptask, long log_time, int rescode, String results) {
-
-		// Check conditions
-
-		if (!( ptask != null
-			&& log_time > 0L
-			&& results != null )) {
-			throw new IllegalArgumentException("LogEntry.submit_log_entry: Invalid log parameters");
-		}
-
-		// Submit the log entry
-
-		LogEntry lentry = submit_log_entry (
-			ptask.get_record_key(),
-			log_time,
-			ptask.get_event_id(),
-			ptask.get_sched_time(),
-			ptask.get_submit_time(),
-			ptask.get_submit_id(),
-			ptask.get_opcode(),
-			ptask.get_stage(),
-			ptask.get_details_as_payload(),
-			rescode,
-			results);
-		
-		return lentry;
-	}
-
-
-
-
-	/**
-	 * store_log_entry - Store a log entry into the database.
-	 * This is primarily for restoring from backup.
-	 */
-	public static LogEntry store_log_entry (LogEntry lentry) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_store_log_entry (lentry);
-		}
-
-		// Call MongoDB to store into database
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-		datastore.save(lentry);
-		
-		return lentry;
-	}
-
-
-
-
-	/**
-	 * get_log_entry_for_key - Get the log entry with the given key.
-	 * @param key = Record key. Cannot be null or empty.
-	 * Returns the log entry, or null if not found.
-	 */
-	public static LogEntry get_log_entry_for_key (RecordKey key) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_get_log_entry_for_key (key);
-		}
-
-		if (!( key != null && key.getId() != null )) {
-			throw new IllegalArgumentException("LogEntry.get_log_entry_for_key: Missing or empty record key");
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Construct the query: Select id == key
-
-		Query<LogEntry> query = datastore.createQuery(LogEntry.class)
-											.filter("id ==", key.getId());
-
-		// Run the query
-
-		LogEntry lentry = query.get();
-
-		return lentry;
-	}
-
-
-
-
-	/**
-	 * get_log_entry_range - Get a range of log entries, reverse-sorted by log time.
-	 * @param log_time_lo = Minimum log time, in milliseconds since the epoch.
-	 *                      Can be 0L for no minimum.
-	 * @param log_time_hi = Maximum log time, in milliseconds since the epoch.
-	 *                      Can be 0L for no maximum.
-	 * @param event_id = Event id. Can be null to return entries for all events.
-	 */
-	public static List<LogEntry> get_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_get_log_entry_range (log_time_lo, log_time_hi, event_id);
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Construct the query
-
-		Query<LogEntry> query = datastore.createQuery(LogEntry.class);
-
-		// Select by event_id
-
-		if (event_id != null) {
-			query = query.filter("event_id ==", event_id);
-		}
-
-		// Select entries with log_time >= log_time_lo
-
-		if (log_time_lo > 0L) {
-			query = query.filter("log_time >=", new Long(log_time_lo));
-		}
-
-		// Select entries with log_time <= log_time_hi
-
-		if (log_time_hi > 0L) {
-			query = query.filter("log_time <=", new Long(log_time_hi));
-		}
-
-		// Sort by log_time in descending order (most recent first)
-
-		query = query.order("-log_time");
-
-		// Run the query
-
-		List<LogEntry> entries = query.asList();
-
-		return entries;
-	}
-
-
-
-
-	/**
-	 * fetch_log_entry_range - Iterate a range of log entries, reverse-sorted by log time.
-	 * @param log_time_lo = Minimum log time, in milliseconds since the epoch.
-	 *                      Can be 0L for no minimum.
-	 * @param log_time_hi = Maximum log time, in milliseconds since the epoch.
-	 *                      Can be 0L for no maximum.
-	 * @param event_id = Event id. Can be null to return entries for all events.
-	 */
-	public static RecordIterator<LogEntry> fetch_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
-
-		if (MongoDBUtil.use_jd()) {
-			return jd_fetch_log_entry_range (log_time_lo, log_time_hi, event_id);
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Construct the query
-
-		Query<LogEntry> query = datastore.createQuery(LogEntry.class);
-
-		// Select by event_id
-
-		if (event_id != null) {
-			query = query.filter("event_id ==", event_id);
-		}
-
-		// Select entries with log_time >= log_time_lo
-
-		if (log_time_lo > 0L) {
-			query = query.filter("log_time >=", new Long(log_time_lo));
-		}
-
-		// Select entries with log_time <= log_time_hi
-
-		if (log_time_hi > 0L) {
-			query = query.filter("log_time <=", new Long(log_time_hi));
-		}
-
-		// Sort by log_time in descending order (most recent first)
-
-		query = query.order("-log_time");
-
-		// Run the query
-
-		MorphiaIterator<LogEntry, LogEntry> morphia_iterator = query.fetch();
-
-		return new RecordIteratorMorphia<LogEntry>(morphia_iterator);
-	}
-
-
-
-
-	/**
-	 * delete_log_entry - Delete a log entry.
-	 * @param entry = Existing log entry to delete.
-	 * @return
-	 */
-	public static void delete_log_entry (LogEntry entry) {
-
-		if (MongoDBUtil.use_jd()) {
-			jd_delete_log_entry (entry);
-			return;
-		}
-
-		// Check conditions
-
-		if (!( entry != null && entry.get_id() != null )) {
-			throw new IllegalArgumentException("LogEntry.delete_log_entry: Invalid parameters");
-		}
-
-		// Get the MongoDB data store
-
-		Datastore datastore = MongoDBUtil.getDatastore();
-
-		// Run the delete
-
-		datastore.delete(entry);
-		
-		return;
-	}
-
-
-
-
 	//----- MongoDB Java driver access -----
 
 	// Our collection.
@@ -951,7 +620,7 @@ public class LogEntry implements java.io.Serializable {
 	 * @return
 	 * Returns the new entry.
 	 */
-	public static LogEntry jd_submit_log_entry (RecordKey key, long log_time, String event_id,
+	public static LogEntry submit_log_entry (RecordKey key, long log_time, String event_id,
 			long sched_time, long submit_time, String submit_id, int opcode, int stage,
 			MarshalWriter details, int rescode, String results) {
 
@@ -992,10 +661,52 @@ public class LogEntry implements java.io.Serializable {
 
 
 	/**
+	 * submit_log_entry - Submit a log entry.
+	 * @param ptask = Pending task record associated with this task. Cannot be null.
+	 * @param log_time = Time of this log entry, in milliseconds
+	 *                     since the epoch. Must be positive.
+	 * @param rescode = Result code.
+	 * @param results = Further results of this task, or "" if none. Cannot be null.
+	 * @return
+	 * Other log parameters are copied from ptask.
+	 * Returns the new entry.
+	 */
+	public static LogEntry submit_log_entry (PendingTask ptask, long log_time, int rescode, String results) {
+
+		// Check conditions
+
+		if (!( ptask != null
+			&& log_time > 0L
+			&& results != null )) {
+			throw new IllegalArgumentException("LogEntry.submit_log_entry: Invalid log parameters");
+		}
+
+		// Submit the log entry
+
+		LogEntry lentry = submit_log_entry (
+			ptask.get_record_key(),
+			log_time,
+			ptask.get_event_id(),
+			ptask.get_sched_time(),
+			ptask.get_submit_time(),
+			ptask.get_submit_id(),
+			ptask.get_opcode(),
+			ptask.get_stage(),
+			ptask.get_details_as_payload(),
+			rescode,
+			results);
+		
+		return lentry;
+	}
+
+
+
+
+	/**
 	 * store_log_entry - Store a log entry into the database.
 	 * This is primarily for restoring from backup.
 	 */
-	public static LogEntry jd_store_log_entry (LogEntry lentry) {
+	public static LogEntry store_log_entry (LogEntry lentry) {
 
 		// Call MongoDB to store into database
 
@@ -1012,7 +723,7 @@ public class LogEntry implements java.io.Serializable {
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the log entry, or null if not found.
 	 */
-	public static LogEntry jd_get_log_entry_for_key (RecordKey key) {
+	public static LogEntry get_log_entry_for_key (RecordKey key) {
 
 		if (!( key != null && key.getId() != null )) {
 			throw new IllegalArgumentException("LogEntry.get_log_entry_for_key: Missing or empty record key");
@@ -1046,7 +757,7 @@ public class LogEntry implements java.io.Serializable {
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
 	 */
-	public static List<LogEntry> jd_get_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
+	public static List<LogEntry> get_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
 		ArrayList<LogEntry> entries = new ArrayList<LogEntry>();
 
 		// Get the cursor and iterator
@@ -1082,7 +793,7 @@ public class LogEntry implements java.io.Serializable {
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
 	 */
-	public static RecordIterator<LogEntry> jd_fetch_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
+	public static RecordIterator<LogEntry> fetch_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
 
 		// Get the cursor and iterator
 
@@ -1104,7 +815,7 @@ public class LogEntry implements java.io.Serializable {
 	 * @param entry = Existing log entry to delete.
 	 * @return
 	 */
-	public static void jd_delete_log_entry (LogEntry entry) {
+	public static void delete_log_entry (LogEntry entry) {
 
 		// Check conditions
 

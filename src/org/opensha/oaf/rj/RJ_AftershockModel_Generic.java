@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.jfree.data.Range;
-//import org.mongodb.morphia.annotations.Transient;
 import org.opensha.commons.data.function.ArbDiscrEmpiricalDistFunc;
 import org.opensha.commons.data.function.ArbitrarilyDiscretizedFunc;
 import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
@@ -46,7 +45,6 @@ import org.opensha.sha.magdist.GutenbergRichterMagFreqDist;
  */
 public class RJ_AftershockModel_Generic extends RJ_AftershockModel {
 
-//	//@Transient
 //	protected boolean D=true;	// debug flag (inherited)
 
 	// Mean and standard deviation of the Gaussian distribution of a-values.

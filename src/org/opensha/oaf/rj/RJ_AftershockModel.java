@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.math3.distribution.PoissonDistribution;
-//import org.mongodb.morphia.annotations.Transient;
 import org.opensha.commons.data.function.ArbDiscrEmpiricalDistFunc;
 import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
 import org.opensha.commons.data.function.HistogramFunction;
@@ -78,7 +77,6 @@ public abstract class RJ_AftershockModel {
 	// Debug flag.
 	// When set to true, some values are written to System.out, which are logged in the OAF server.
 
-	//@Transient
 	protected boolean D = true;	// debug flag
 
 	// The Gutenberg-Richter b-value
@@ -118,7 +116,6 @@ public abstract class RJ_AftershockModel {
 	// Note: A subclass or user of this class must supply the likelihood values.
 	// They are not computed in this class.
 
-	//@Transient
 	protected double[][][] apc_likelihood = null;
 
 	// The fraction of the (a,p,c) probability distribution that can be ignored as negligably small.
@@ -211,7 +208,6 @@ public abstract class RJ_AftershockModel {
 	// to get the mean, standard deviation, and fractile of the R&J expected number of
 	// aftershocks.  But, for example, a naive computation of the mode would be wrong.
 
-	//@Transient
 	protected ArbDiscrEmpiricalDistFunc numMag5_DistributionFunc = null;
 
 	// The time interval used to calculate numMag5_DistributionFunc,
@@ -220,9 +216,7 @@ public abstract class RJ_AftershockModel {
 	// every time it is needed.  The values of tMinDaysCurrent and tMaxDaysCurrent are
 	// used to check whether recomputation is needed.
 
-	//@Transient
 	protected double tMinDaysCurrent = -1.0;
-	//@Transient
 	protected double tMaxDaysCurrent = -1.0;
 
 	// The cumulative probability distribution of (a,p,c) values.
@@ -230,7 +224,6 @@ public abstract class RJ_AftershockModel {
 	// Indexes into this array are single indexes, as defined by get_single_index();
 	// This is used only when sampling from the (a,p,c) distribution.
 
-	//@Transient
 	protected double[] cum_apc_probability = null;
 
 

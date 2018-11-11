@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.jfree.data.Range;
-//import org.mongodb.morphia.annotations.Transient;
 import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
 import org.opensha.commons.data.function.HistogramFunction;
 import org.opensha.commons.data.xyz.EvenlyDiscrXYZ_DataSet;
@@ -48,7 +47,6 @@ import com.google.common.base.Preconditions;
  */
 public class RJ_AftershockModel_Bayesian extends RJ_AftershockModel {
 
-//	//@Transient
 //	protected boolean D=true;	// debug flag (inherited)
 
 
