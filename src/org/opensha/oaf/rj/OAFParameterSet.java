@@ -1046,6 +1046,13 @@ public abstract class OAFParameterSet<T> {
 //			locs.add(new Location(lat, lon, depth));
 //		}
 
+		locs.add(new Location(34.0, -119.0, 15.00000));	// CAL-SCSN
+		locs.add(new Location(40.0, -122.0, 15.00000));	// CAL-NCSS
+		locs.add(new Location(41.0, -124.0, 15.00000));	// CAL-MENDOCINO
+		locs.add(new Location(37.5, -118.8, 15.00000));	// CAL-HYDROTHERMAL 1
+		locs.add(new Location(33.0, -115.6, 15.00000));	// CAL-HYDROTHERMAL 2
+		locs.add(new Location(36.0, -118.0, 15.00000));	// CAL-HYDROTHERMAL 3
+
 		locs.add(new Location(38.0, 80.0, 15.00000));	// ANSR_ABSLDEC
 		locs.add(new Location(-15.0, 175.0, 15.00000));	// ANSR_ABSLOCB
 		locs.add(new Location(60.0, -175.0, 15.00000));	// ANSR_ABSLSHC

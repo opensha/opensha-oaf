@@ -277,6 +277,9 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	private GenericRJ_Parameters genericParams = null;
 	private RJ_AftershockModel_Generic genericModel = null;
 	
+	private MagCompPage_ParametersFetch magCompFetch = null;
+	private MagCompPage_Parameters magCompParams = null;
+	
 	private RJ_AftershockModel_Bayesian bayesianModel = null;
 	
 	private static final Color generic_color = Color.GREEN.darker();
@@ -386,7 +389,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		aValNumParam.addParameterChangeListener(this);
 		fitParams.addParameter(aValNumParam);
 		
-		pValRangeParam = new RangeParameter("p-value range", new Range(0.9, 2.0));
+		pValRangeParam = new RangeParameter("p-value range", new Range(0.5, 2.0));
 		pValRangeParam.addParameterChangeListener(this);
 		fitParams.addParameter(pValRangeParam);
 		
@@ -752,14 +755,19 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	private void setMainshock(ObsEqkRupture mainshock) {
 		this.mainshock = mainshock;
 		genericParams = null;
+		magCompParams = null;
 		try (
 			ChangeBlock change_block = new ChangeBlock();
 		){
 			bParam.setValue(null);
 		}
 		try {
-			if (genericFetch == null)
+			if (genericFetch == null) {
 				genericFetch = new GenericRJ_ParametersFetch();
+			}
+			if (magCompFetch == null) {
+				magCompFetch = new MagCompPage_ParametersFetch();
+			}
 			
 			System.out.println("Determining tectonic regime for generic parameters");
 			OAFTectonicRegime regime = genericFetch.getRegion(mainshock.getHypocenterLocation());
@@ -767,20 +775,43 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			genericParams = genericFetch.get(regime);
 			Preconditions.checkNotNull(genericParams, "Generic params not found or server error");
 			System.out.println("Generic params for "+regime+": "+genericParams);
+			
+			System.out.println("Determining tectonic regime for magnitude-of-completeness parameters");
+			OAFTectonicRegime mc_regime = magCompFetch.getRegion(mainshock.getHypocenterLocation());
+			Preconditions.checkNotNull(mc_regime, "Regime not found or server error");
+			magCompParams = magCompFetch.get(mc_regime);
+			Preconditions.checkNotNull(magCompParams, "Magnitude-of-completeness params not found or server error");
+			System.out.println("Magnitude-of-completeness params for "+mc_regime+": "+magCompParams);
+
 			genericModel = new RJ_AftershockModel_Generic(mainshock.getMag(), genericParams);
 			// set default values to generic
+			aValRangeParam.setValue(new Range(genericModel.getMin_a(), genericModel.getMax_a()));
+			aValRangeParam.getEditor().refreshParamEditor();
+			aValNumParam.setValue(genericModel.getNum_a());
+			aValNumParam.getEditor().refreshParamEditor();
 			pValRangeParam.setValue(new Range(genericParams.get_pValue(), genericParams.get_pValue()));
 			pValRangeParam.getEditor().refreshParamEditor();
 			cValRangeParam.setValue(new Range(genericParams.get_cValue(), genericParams.get_cValue()));
 			cValRangeParam.getEditor().refreshParamEditor();
+
 			try (
 				ChangeBlock change_block = new ChangeBlock();
 			){
 				bParam.setValue(genericModel.get_b());
 			}
 			bParam.getEditor().refreshParamEditor();
+
+			fParam.setValue(magCompParams.get_magCompFn().getDefaultGUICapF());
+			fParam.getEditor().refreshParamEditor();
+			gParam.setValue(magCompParams.get_magCompFn().getDefaultGUICapG());
+			gParam.getEditor().refreshParamEditor();
+			hParam.setValue(magCompParams.get_magCompFn().getDefaultGUICapH());
+			hParam.getEditor().refreshParamEditor();
+			mCatParam.setValue(magCompParams.get_magCat());
+			mCatParam.getEditor().refreshParamEditor();
+
 		} catch (RuntimeException e) {
-			System.err.println("Error fetching generic params");
+			System.err.println("Error fetching generic or magnitude-of-completeness params");
 			e.printStackTrace();
 			genericParams = null;
 		}
@@ -2655,6 +2686,9 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 //		System.out.println(formatter.format(Date.from (daybreak)));
 		
 		daysLeftInDay = 1.0 - ((double)(origin.toEpochMilli() - daybreak.toEpochMilli()))/ComcatOAFAccessor.day_millis;
+		if (daysLeftInDay == 1.0) {
+			daysLeftInDay = 0.0;
+		}
 		return daysLeftInDay;
 	}
 	

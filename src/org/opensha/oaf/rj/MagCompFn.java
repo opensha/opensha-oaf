@@ -175,6 +175,32 @@ public abstract class MagCompFn {
 
 
 
+	//----- Support methods -----
+
+
+	// Get the default capF value to be inserted into the GUI.
+
+	public double getDefaultGUICapF () {
+		return 0.5;
+	}
+
+
+	// Get the default capG value to be inserted into the GUI.
+
+	public double getDefaultGUICapG () {
+		return 0.25;
+	}
+
+
+	// Get the default capH value to be inserted into the GUI.
+
+	public double getDefaultGUICapH () {
+		return 1.0;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.

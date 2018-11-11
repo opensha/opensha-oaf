@@ -1,33 +1,112 @@
 {
   "version":1,
   "regimes":[
-    {"regime":"WORLD"     , "params":{"MagCompPage_Parameters":2002, "magCat":4.60, "magCompFn":{"ClassType":53001, "MagCompFnPage":1, "capF":0.5, "capG":0.25, "capH":1.00}, "magSample":3.00, "radiusSample":1.00, "magCentroid":4.00, "radiusCentroid":1.00}},
-    {"regime":"CALIFORNIA", "params":{"MagCompPage_Parameters":2002, "magCat":3.50, "magCompFn":{"ClassType":53001, "MagCompFnPage":1, "capF":0.5, "capG":0.25, "capH":1.00}, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}},
-    {"regime":"ALASKA"    , "params":{"MagCompPage_Parameters":2002, "magCat":3.50, "magCompFn":{"ClassType":53001, "MagCompFnPage":1, "capF":0.5, "capG":0.25, "capH":1.00}, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}},
-    {"regime":"USA"       , "params":{"MagCompPage_Parameters":2002, "magCat":3.50, "magCompFn":{"ClassType":53001, "MagCompFnPage":1, "capF":0.5, "capG":0.25, "capH":1.00}, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}}
+    {"regime":"WORLD"           , "params":{"MagCompPage_Parameters":2002, "magCat":4.60, "magCompFn":{"ClassType":53001, "MagCompFnPage":1, "capF":0.5, "capG":0.25, "capH":1.00}, "magSample":3.00, "radiusSample":1.00, "magCentroid":4.00, "radiusCentroid":1.00}},
+    {"regime":"CAL-SCSN"        , "params":{"MagCompPage_Parameters":2002, "magCat":3.00, "magCompFn":{"ClassType":53001, "MagCompFnPage":1, "capF":1.0, "capG":4.50, "capH":0.75}, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}},
+    {"regime":"CAL-NCSS"        , "params":{"MagCompPage_Parameters":2002, "magCat":3.00, "magCompFn":{"ClassType":53001, "MagCompFnPage":1, "capF":1.0, "capG":4.50, "capH":0.75}, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}},
+    {"regime":"CAL-MENDOCINO"   , "params":{"MagCompPage_Parameters":2002, "magCat":3.00, "magCompFn":{"ClassType":53001, "MagCompFnPage":1, "capF":1.0, "capG":4.50, "capH":0.75}, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}},
+    {"regime":"CAL-HYDROTHERMAL", "params":{"MagCompPage_Parameters":2002, "magCat":3.00, "magCompFn":{"ClassType":53001, "MagCompFnPage":1, "capF":1.0, "capG":4.50, "capH":0.75}, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}},
+    {"regime":"ALASKA"          , "params":{"MagCompPage_Parameters":2002, "magCat":3.50, "magCompFn":{"ClassType":53001, "MagCompFnPage":1, "capF":0.5, "capG":0.25, "capH":1.00}, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}},
+    {"regime":"USA"             , "params":{"MagCompPage_Parameters":2002, "magCat":3.50, "magCompFn":{"ClassType":53001, "MagCompFnPage":1, "capF":0.5, "capG":0.25, "capH":1.00}, "magSample":3.00, "radiusSample":1.00, "magCentroid":3.00, "radiusCentroid":1.00}}
   ],
   "regions":[
     {
-      "regime":"CALIFORNIA",
+      "regime":"CAL-HYDROTHERMAL",
       "min_depth":-1.0e10,
       "max_depth":1.0e10,
       "region":{
         "ClassType":14001,
         "SphRegionMercPolygon":1,
         "vertex_list":[
-          {"lat":36.6847, "lon":-117.7930},
-          {"lat":35.8000, "lon":-116.4000},
-          {"lat":34.0815, "lon":-114.4720},
-          {"lat":32.0000, "lon":-114.3330},
-          {"lat":32.0000, "lon":-120.5000},
-          {"lat":34.6945, "lon":-121.3800},
-          {"lat":40.0000, "lon":-125.5000},
-          {"lat":43.0200, "lon":-125.0000},
-          {"lat":42.0000, "lon":-122.7000},
-          {"lat":42.0000, "lon":-121.4170},
-          {"lat":39.5000, "lon":-120.7500},
+          {"lat":37.2500, "lon":-119.2500},
+          {"lat":37.2500, "lon":-118.2500},
+          {"lat":37.8250, "lon":-118.2500},
+          {"lat":37.8250, "lon":-119.2500}
+        ]
+      }
+    },
+    {
+      "regime":"CAL-HYDROTHERMAL",
+      "min_depth":-1.0e10,
+      "max_depth":1.0e10,
+      "region":{
+        "ClassType":14001,
+        "SphRegionMercPolygon":1,
+        "vertex_list":[
+          {"lat":32.9000, "lon":-115.3000},
+          {"lat":33.3000, "lon":-115.3000},
+          {"lat":33.3000, "lon":-116.0000},
+          {"lat":32.9000, "lon":-116.0000}
+        ]
+      }
+    },
+    {
+      "regime":"CAL-HYDROTHERMAL",
+      "min_depth":-1.0e10,
+      "max_depth":1.0e10,
+      "region":{
+        "ClassType":14001,
+        "SphRegionMercPolygon":1,
+        "vertex_list":[
+          {"lat":35.5500, "lon":-117.5000},
+          {"lat":36.3000, "lon":-117.5000},
+          {"lat":36.3000, "lon":-118.2000},
+          {"lat":35.5500, "lon":-118.2000}
+        ]
+      }
+    },
+    {
+      "regime":"CAL-MENDOCINO",
+      "min_depth":-1.0e10,
+      "max_depth":1.0e10,
+      "region":{
+        "ClassType":14001,
+        "SphRegionMercPolygon":1,
+        "vertex_list":[
+          {"lat":39.7500, "lon":-125.3000},
+          {"lat":39.7500, "lon":-123.0000},
+          {"lat":42.1000, "lon":-123.0000},
+          {"lat":43.0000, "lon":-125.0000},
+          {"lat":40.0000, "lon":-125.5000}
+        ]
+      }
+    },
+    {
+      "regime":"CAL-NCSS",
+      "min_depth":-1.0e10,
+      "max_depth":1.0e10,
+      "region":{
+        "ClassType":14001,
+        "SphRegionMercPolygon":1,
+        "vertex_list":[
+          {"lat":34.5000, "lon":-121.2500},
+          {"lat":37.2167, "lon":-118.0167},
+          {"lat":37.7500, "lon":-118.2500},
           {"lat":37.7500, "lon":-119.5000},
-          {"lat":37.7500, "lon":-118.2500}
+          {"lat":39.5000, "lon":-120.7500},
+          {"lat":42.0000, "lon":-121.4167},
+          {"lat":42.0000, "lon":-122.7000},
+          {"lat":42.1000, "lon":-123.0000},
+          {"lat":39.7500, "lon":-123.0000},
+          {"lat":39.7500, "lon":-125.3000}
+        ]
+      }
+    },
+    {
+      "regime":"CAL-SCSN",
+      "min_depth":-1.0e10,
+      "max_depth":1.0e10,
+      "region":{
+        "ClassType":14001,
+        "SphRegionMercPolygon":1,
+        "vertex_list":[
+          {"lat":35.8000, "lon":-116.4000},
+          {"lat":34.0815, "lon":-114.4717},
+          {"lat":32.0000, "lon":-114.3333},
+          {"lat":32.0000, "lon":-120.5000},
+          {"lat":34.5000, "lon":-121.2500},
+          {"lat":37.2167, "lon":-118.0167},
+          {"lat":36.6847, "lon":-117.7930}
         ]
       }
     },

@@ -158,6 +158,35 @@ public class MagCompFnPage extends MagCompFn {
 
 
 
+	//----- Support methods -----
+
+
+	// Get the default capF value to be inserted into the GUI.
+
+	@Override
+	public double getDefaultGUICapF () {
+		return capF;
+	}
+
+
+	// Get the default capG value to be inserted into the GUI.
+
+	@Override
+	public double getDefaultGUICapG () {
+		return capG;
+	}
+
+
+	// Get the default capH value to be inserted into the GUI.
+
+	@Override
+	public double getDefaultGUICapH () {
+		return capH;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.
