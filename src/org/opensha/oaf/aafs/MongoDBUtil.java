@@ -12,6 +12,8 @@ import com.mongodb.client.MongoDatabase;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.bson.types.ObjectId;
 import com.mongodb.client.MongoCollection;
@@ -50,6 +52,10 @@ public class MongoDBUtil implements AutoCloseable {
 	// The MongoDB database.
 
 	private static MongoDatabase db = null;
+
+	// A map of collection names to MongoDB collections.
+
+	private static HashMap<String, MongoCollection<Document>> coll_map = null;
 
 
 
@@ -104,7 +110,12 @@ public class MongoDBUtil implements AutoCloseable {
 
 			db = mongoClient.getDatabase (config.getDb_name());
 
+			// Create the map for caching collections.
+
+			coll_map = new HashMap<String, MongoCollection<Document>>();
+
 		} catch (Exception e) {
+			coll_map = null;
 			db = null;
 			mongoClient = null;
 			if (saved_mongoClient != null) {
@@ -133,6 +144,7 @@ public class MongoDBUtil implements AutoCloseable {
 		// Close the client if it is currently open.
 
 		if (mongoClient != null) {
+			coll_map = null;
 			db = null;
 			mongoClient.close();
 			mongoClient = null;
@@ -156,10 +168,23 @@ public class MongoDBUtil implements AutoCloseable {
 
 
 
+
 	// Get or create a collection.
 
-	public static MongoCollection<Document> getCollection (String name) {
-		return db.getCollection (name);
+	public static synchronized MongoDBCollRet getCollection (String name) {
+
+		// Try to get the collection from the cache
+
+		MongoCollection<Document> collection = coll_map.get (name);
+		if (collection != null) {
+			return new MongoDBCollRet (collection, false);
+		}
+
+		// Otherwise make a new collection and store it in the cache
+
+		collection = db.getCollection (name);
+		coll_map.put (name, collection);
+		return new MongoDBCollRet (collection, true);
 	}
 
 

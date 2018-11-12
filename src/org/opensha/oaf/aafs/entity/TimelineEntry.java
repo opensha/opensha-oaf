@@ -37,6 +37,7 @@ import com.mongodb.client.MongoCursor;
 
 import org.opensha.oaf.aafs.DBCorruptException;
 import org.opensha.oaf.aafs.RecordIteratorMongo;
+import org.opensha.oaf.aafs.MongoDBCollRet;
 
 
 
@@ -370,10 +371,6 @@ public class TimelineEntry implements java.io.Serializable {
 
 	//----- MongoDB Java driver access -----
 
-	// Our collection.
-
-	private static MongoCollection<Document> my_collection = null;
-
 
 
 
@@ -381,24 +378,21 @@ public class TimelineEntry implements java.io.Serializable {
 
 	private static synchronized MongoCollection<Document> get_collection () {
 	
-		// If we don't have our collection yet ...
+		// Get the collection
 
-		if (my_collection == null) {
+		MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("timeline");
 
-			// Get the collection
+		// Create the indexes
 
-			my_collection = MongoDBUtil.getCollection ("timeline");
-
-			// Create the indexes
-
-			MongoDBUtil.make_simple_index (my_collection, "event_id", "actevid");
-			MongoDBUtil.make_simple_index (my_collection, "comcat_ids", "actccid");
-			MongoDBUtil.make_simple_index (my_collection, "action_time", "acttime");
+		if (coll_ret.f_new) {
+			MongoDBUtil.make_simple_index (coll_ret.collection, "event_id", "actevid");
+			MongoDBUtil.make_simple_index (coll_ret.collection, "comcat_ids", "actccid");
+			MongoDBUtil.make_simple_index (coll_ret.collection, "action_time", "acttime");
 		}
 
 		// Return the collection
 
-		return my_collection;
+		return coll_ret.collection;
 	}
 
 

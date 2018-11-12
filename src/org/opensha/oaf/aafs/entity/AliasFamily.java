@@ -42,6 +42,7 @@ import com.mongodb.client.MongoCursor;
 
 import org.opensha.oaf.aafs.DBCorruptException;
 import org.opensha.oaf.aafs.RecordIteratorMongo;
+import org.opensha.oaf.aafs.MongoDBCollRet;
 
 
 
@@ -414,10 +415,6 @@ public class AliasFamily implements java.io.Serializable {
 
 	//----- MongoDB Java driver access -----
 
-	// Our collection.
-
-	private static MongoCollection<Document> my_collection = null;
-
 
 
 
@@ -425,24 +422,21 @@ public class AliasFamily implements java.io.Serializable {
 
 	private static synchronized MongoCollection<Document> get_collection () {
 	
-		// If we don't have our collection yet ...
+		// Get the collection
 
-		if (my_collection == null) {
+		MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("alias");
 
-			// Get the collection
+		// Create the indexes
 
-			my_collection = MongoDBUtil.getCollection ("alias");
-
-			// Create the indexes
-
-			MongoDBUtil.make_simple_index (my_collection, "timeline_ids", "famtlid");
-			MongoDBUtil.make_simple_index (my_collection, "comcat_ids", "famccid");
-			MongoDBUtil.make_simple_index (my_collection, "family_time", "famtime");
+		if (coll_ret.f_new) {
+			MongoDBUtil.make_simple_index (coll_ret.collection, "timeline_ids", "famtlid");
+			MongoDBUtil.make_simple_index (coll_ret.collection, "comcat_ids", "famccid");
+			MongoDBUtil.make_simple_index (coll_ret.collection, "family_time", "famtime");
 		}
 
 		// Return the collection
 
-		return my_collection;
+		return coll_ret.collection;
 	}
 
 

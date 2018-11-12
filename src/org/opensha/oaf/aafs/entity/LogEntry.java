@@ -36,6 +36,7 @@ import com.mongodb.client.MongoCursor;
 
 import org.opensha.oaf.aafs.DBCorruptException;
 import org.opensha.oaf.aafs.RecordIteratorMongo;
+import org.opensha.oaf.aafs.MongoDBCollRet;
 
 
 
@@ -429,34 +430,27 @@ public class LogEntry implements java.io.Serializable {
 
 	//----- MongoDB Java driver access -----
 
-	// Our collection.
-
-	private static MongoCollection<Document> my_collection = null;
-
 
 
 
 	// Get the collection.
 
 	private static synchronized MongoCollection<Document> get_collection () {
-	
-		// If we don't have our collection yet ...
 
-		if (my_collection == null) {
+		// Get the collection
 
-			// Get the collection
+		MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("log");
 
-			my_collection = MongoDBUtil.getCollection ("log");
+		// Create the indexes
 
-			// Create the indexes
-
-			MongoDBUtil.make_simple_index (my_collection, "event_id", "logevid");
-			MongoDBUtil.make_simple_index (my_collection, "log_time", "logtime");
+		if (coll_ret.f_new) {
+			MongoDBUtil.make_simple_index (coll_ret.collection, "event_id", "logevid");
+			MongoDBUtil.make_simple_index (coll_ret.collection, "log_time", "logtime");
 		}
 
 		// Return the collection
 
-		return my_collection;
+		return coll_ret.collection;
 	}
 
 

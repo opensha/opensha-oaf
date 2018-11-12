@@ -36,6 +36,7 @@ import com.mongodb.client.MongoCursor;
 
 import org.opensha.oaf.aafs.DBCorruptException;
 import org.opensha.oaf.aafs.RecordIteratorMongo;
+import org.opensha.oaf.aafs.MongoDBCollRet;
 
 
 
@@ -409,10 +410,6 @@ public class PendingTask implements java.io.Serializable {
 
 	//----- MongoDB Java driver access -----
 
-	// Our collection.
-
-	private static MongoCollection<Document> my_collection = null;
-
 
 
 
@@ -420,23 +417,20 @@ public class PendingTask implements java.io.Serializable {
 
 	private static synchronized MongoCollection<Document> get_collection () {
 	
-		// If we don't have our collection yet ...
+		// Get the collection
 
-		if (my_collection == null) {
+		MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("tasks");
 
-			// Get the collection
+		// Create the indexes
 
-			my_collection = MongoDBUtil.getCollection ("tasks");
-
-			// Create the indexes
-
-			MongoDBUtil.make_simple_index (my_collection, "event_id", "eventid");
-			MongoDBUtil.make_simple_index (my_collection, "exec_time", "extime");
+		if (coll_ret.f_new) {
+			MongoDBUtil.make_simple_index (coll_ret.collection, "event_id", "eventid");
+			MongoDBUtil.make_simple_index (coll_ret.collection, "exec_time", "extime");
 		}
 
 		// Return the collection
 
-		return my_collection;
+		return coll_ret.collection;
 	}
 
 

@@ -41,6 +41,7 @@ import com.mongodb.client.MongoCursor;
 
 import org.opensha.oaf.aafs.DBCorruptException;
 import org.opensha.oaf.aafs.RecordIteratorMongo;
+import org.opensha.oaf.aafs.MongoDBCollRet;
 
 
 
@@ -257,33 +258,24 @@ public class CatalogSnapshot implements java.io.Serializable {
 
 	//----- MongoDB Java driver access -----
 
-	// Our collection.
-
-	private static MongoCollection<Document> my_collection = null;
-
 
 
 
 	// Get the collection.
 
 	private static synchronized MongoCollection<Document> get_collection () {
-	
-		// If we don't have our collection yet ...
 
-		if (my_collection == null) {
+		// Get the collection
 
-			// Get the collection
+		MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("catalog");
 
-			my_collection = MongoDBUtil.getCollection ("catalog");
+		// Create the indexes
 
-			// Create the indexes
-
-			// <none>
-		}
+		// <none>
 
 		// Return the collection
 
-		return my_collection;
+		return coll_ret.collection;
 	}
 
 
