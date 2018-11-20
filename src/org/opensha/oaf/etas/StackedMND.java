@@ -22,12 +22,14 @@ import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
 
 public class StackedMND {
 //	private double[][] prob;
-	private boolean D = true;
+	private boolean D = false;
+	
 	public EvenlyDiscretizedFunc[] mfdArray;
 	public EvenlyDiscretizedFunc probability;
 	public int[] eventCounts;
 	public double magComplete;
 	private double[] q;
+	private int minQuant = 10;
 		
 	
 	public StackedMND(EvenlyDiscretizedFunc[] mfdArray, int[] eventCounts, double magComplete, double b, double[] quantiles){
@@ -89,7 +91,7 @@ public class StackedMND {
 				quantTemp = N[(int) (quantiles[i]*N.length)];
 				// make a correction to a fractional quantile if the quantile is small.
 				// ...
-				if(quantTemp < 1 && probability.getY(j) > 1d/(N.length+1d)){
+				if(quantTemp <= minQuant && probability.getY(j) > 1d/(N.length+1d)){
 					if(D) System.out.println("using Poisson approximation for fractile");
 					lambda = Math.abs(-Math.log(1 - probability.getY(j)));
 					quantTemp = poissQuantile(lambda, quantiles[i]);
@@ -175,7 +177,7 @@ public class StackedMND {
 			quantTemp = N[(int) (quantiles[i]*N.length)];
 			// make a correction to a fractional quantile if the quantile is small.
 			// ...
-			if(quantTemp < 1 && probability > 1d/(N.length+1d)){
+			if(quantTemp <= minQuant && probability > 1d/(N.length+1d)){
 				if(D) System.out.println("using Poisson approximation for fractile");
 				lambda = Math.abs(-Math.log(1 - probability));
 				quantTemp = poissQuantile(lambda, quantiles[i]);

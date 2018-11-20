@@ -26,7 +26,7 @@ public class ETAS_RateModel2D {
 
 	private ETAS_AftershockModel forecastModel;
 	private GriddedGeoDataSet rateModel;
-	private Boolean D = true;
+	private Boolean D = false;
 	
 	public ETAS_RateModel2D(ETAS_AftershockModel forecastModel){
 		this.forecastModel = forecastModel;
@@ -46,7 +46,7 @@ public class ETAS_RateModel2D {
 		// TODO: assign these parameters somewhere, rather than hardcoded.
 		double seismogenicDepth = 10;	//in km
 		double mapSizeInRuptureLengths = 10;
-		double minMapDistance = 20;	
+		double minMapDistance = 40;	
 		double forecastMaxDays = forecastModel.getForecastMinDays() + plotDuration;
 		double maxDeltaMag = 3.0;	//minimum aftershock magnitude that contributes to rate estmate
 

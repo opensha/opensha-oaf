@@ -3,6 +3,7 @@ package org.opensha.oaf.etas;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -112,8 +113,13 @@ public class ETAS_ShakingForecastCalc {
 		// build sites list
 		List<Site> sites = new ArrayList<>();
 		List<Double> vs30s = null;
-		if (vs30Provider != null)
-			vs30s = vs30Provider.getValues(calcRegion.getNodeList());
+		if (vs30Provider != null) {
+			try {
+				vs30s = vs30Provider.getValues(calcRegion.getNodeList());
+			} catch(UnknownHostException e) {
+				System.out.println("Could not retrieve global DEM for estimating site effects. Proceeding without site effects.");
+			}
+		}
 		for (int i=0; i<calcRegion.getNodeCount(); i++) {
 			Site site = new Site(calcRegion.locationForIndex(i));
 			for (Parameter<?> param : gmpe.getSiteParams())

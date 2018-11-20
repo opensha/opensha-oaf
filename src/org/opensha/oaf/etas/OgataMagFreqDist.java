@@ -99,59 +99,71 @@ public class OgataMagFreqDist{
 		double B3 = Math.log(1d/Math.sqrt(2*Math.PI)/bPrior_sigma);
 
 		double[] mc_span = ETAS_StatsCalc.linspace(Math.min(getMin(magnitudes),1.0), getMax(magnitudes), npts);
-		
-		
+	
 		int mc_index = 0;
-		for (; mc_index < mc_span.length; mc_index++){
-			double mc = mc_span[mc_index];
+		if (magnitudes.length > 1) {
 			
-//			b = calculateBWithFixedMc(mc);
-			
-			double[] b_span = new double[]{b - bPrior_sigma, b, b + bPrior_sigma};
-//			if(D) System.out.println("b: " + b_span[0] + " " + b_span[1] + " " + b_span[2]);
-			
-			double[] thisLike = new double[b_span.length];
-//			double thisLike;
-//			double N;
-//			double prevLike;
-//			double bprev = b;
-//			int Nprev = 0;
-//			
-			for (int j = 0; j < b_span.length; j++){
-				double B = b_span[j]*Math.log(10);
-				double logB = Math.log(B); 
-				
-				logDistributionLike = 0;
+			for (; mc_index < mc_span.length; mc_index++){
+				double mc = mc_span[mc_index];
 
-//				N = 0;
-				for(double mag : magnitudes){
-					if (mag >= mc){
-						logLikeIncrement = logB - B*(mag - mc);
-						logDistributionLike += logLikeIncrement;
-//						N++;
+				//			b = calculateBWithFixedMc(mc);
+
+				double[] b_span = new double[]{b - bPrior_sigma, b, b + bPrior_sigma};
+				//			if(D) System.out.println("b: " + b_span[0] + " " + b_span[1] + " " + b_span[2]);
+
+				double[] thisLike = new double[b_span.length];
+				//			double thisLike;
+				//			double N;
+				//			double prevLike;
+				//			double bprev = b;
+				//			int Nprev = 0;
+				//			
+				for (int j = 0; j < b_span.length; j++){
+					double B = b_span[j]*Math.log(10);
+					double logB = Math.log(B); 
+
+					logDistributionLike = 0;
+
+					//				N = 0;
+					for(double mag : magnitudes){
+						if (mag >= mc){
+							logLikeIncrement = logB - B*(mag - mc);
+							logDistributionLike += logLikeIncrement;
+							//						N++;
+						}
 					}
+
+					logBayesLike = B3 - (b_span[j] - bPrior_mean)*(b_span[j] - bPrior_mean)/2/bPrior_sigma/bPrior_sigma; //Gaussian prior on b-value
+
+					thisLike[j] = logDistributionLike + logBayesLike;
+
 				}
-				
-				logBayesLike = B3 - (b_span[j] - bPrior_mean)*(b_span[j] - bPrior_mean)/2/bPrior_sigma/bPrior_sigma; //Gaussian prior on b-value
-				
-				thisLike[j] = logDistributionLike + logBayesLike;
-				
+				if(D) System.out.println(mc + ": " + thisLike[0] + " "+ thisLike[1] + " " + thisLike[2]);
+
+				if (thisLike[1] > thisLike[0] && thisLike[1] > thisLike[2])
+					break;
+				else{
+					//				bprev = b;
+					//				Nprev = N;
+					//				prevLike = thisLike;
+				}
+
 			}
-//			if(D) System.out.println(mc + ": " + thisLike[0] + " "+ thisLike[1] + " " + thisLike[2]);
-			
-			if (thisLike[1] > thisLike[0] && thisLike[1] > thisLike[2])
-				break;
-			else{
-//				bprev = b;
-//				Nprev = N;
-//				prevLike = thisLike;
+		} else {
+			for(; mc_index < mc_span.length; mc_index++){
+				double mc = mc_span[mc_index];
+				if (mc > magnitudes[0] - 0.5) {
+					if (mc_index > 0)
+						mc_index--;
+					break;
+				}
 			}
-			
 		}
 		b_Ogata = b;
 		mu_Ogata = mc_span[mc_index]+0.5;
 		sigma_Ogata = 0.0; 
 		return mc_span[mc_index]+0.5; //sets to highest index for which b not consistent with 1.
+		
 	}
 		
 	private void calculateParametersFast(){

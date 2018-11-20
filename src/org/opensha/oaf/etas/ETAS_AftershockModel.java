@@ -43,7 +43,7 @@ import org.opensha.sha.gui.infoTools.CalcProgressBar;
  */
 public abstract class ETAS_AftershockModel {
 
-	private Boolean D=true;	// debug flag
+	private Boolean D=false;	// debug flag
 
 	protected ArbDiscrEmpiricalDistFunc num_DistributionFunc = null;
 	protected CalcProgressBar progress;
@@ -601,7 +601,7 @@ public abstract class ETAS_AftershockModel {
 //		}
 		
 		// WHAT ABOUT THE STOCHASTIC METHOD WITH NO MAGNITUDES
-		// use the stochastic method. This needs a new constructor, dude.
+		// use the stochastic method. This needs a new constructor.
 		double[] fractValArray = new double[fractileArray.length];
 		int[] eventCounts = simulatedCatalog.getEventCounts(tMinDays,tMaxDays,mag);
 		StackedMND mndStack = new StackedMND(mag, eventCounts, magComplete, b, fractileArray); 

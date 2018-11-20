@@ -247,7 +247,7 @@ public class GriddedInterpGMPE_Calc {
 		// set up timer/time estimator
 		double toc, timeEstimate, n;
 		Stopwatch watch = Stopwatch.createStarted();
-		int warnTime = 3;
+		int warnTime = 1;
 		boolean userWarned = false;
 		double deltaT = 0; //this will record the time spent waiting for the dialog box.
 		String initialMessageString = "Calculating shaking map. ";
@@ -297,7 +297,11 @@ public class GriddedInterpGMPE_Calc {
 					if (!userWarned && timeEstimate > 30 && promptForLongCalc) { // only the first time around and if it'll take more than a minute
 						userWarned = true;
 						// launch a dialog as a new thread
-						String message = "It will take approximately " + (int) timeEstimate + " seconds to complete each map at this resolution.\n"
+//						String message = "It will take approximately " + Math.round(timeEstimate) + " seconds to complete each map at this resolution.\n"
+//								+ "If plotting MMI multiply this estimate by a factor of 2.\n";
+//						message += "Are you sure you wish to continue with the current grid spacing of \u0394 (km)?";
+						
+						String message = "It will take approximately " + Math.round(timeEstimate) + " seconds to complete each map at this resolution.\n"
 								+ "If plotting MMI multiply this estimate by a factor of 2.\n";
 						message += "Are you sure you wish to continue with the current grid spacing of \u0394 (km)?";
 						

@@ -369,8 +369,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private enum FitSourceType {
 		SHAKEMAP("Shakemap finite source"),
 		AFTERSHOCKS("Early aftershocks"),
-		POINT_SOURCE("Point source"),
-		CUSTOM("Load from file");
+		POINT_SOURCE("Point source");
+//		CUSTOM("Load from file");
 		
 		private String name;
 		
@@ -854,7 +854,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			mapPlotParams.addParameter(mapPOEParam);
 //		}
 		
-		mapGridSpacingParam = new DoubleParameter("\u0394 (km)", 0.01, 10000, new Double(10d));
+		mapGridSpacingParam = new DoubleParameter("\u0394 (km)", 1, 100, new Double(10d));
 		mapGridSpacingParam.setInfo("Cell size for map (km)");
 		mapGridSpacingParam.addParameterChangeListener(this);
 		mapGridSpacingParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
@@ -2265,6 +2265,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	}
 	
 	private void loadCatalog(File catalogFile) throws IOException {
+		
 			List<String> lines = Files.readLines(catalogFile, Charset.defaultCharset());
 			ObsEqkRupList myAftershocks = new ObsEqkRupList();
 			ObsEqkRupture myMainshock = null;
@@ -2363,12 +2364,46 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				if(aftershocks.get(i).getMag() > maxMag)
 					maxMag = aftershocks.get(i).getMag();
 			
+			// get lon/lat bounds
+			MinMaxAveTracker latTrack = new MinMaxAveTracker();
+			MinMaxAveTracker lonTrack = new MinMaxAveTracker();
+			latTrack.addValue(mainshock.getHypocenterLocation().getLatitude());
+			lonTrack.addValue(mainshock.getHypocenterLocation().getLongitude());
+			for (ObsEqkRupture rup : aftershocks) {
+				Location loc = rup.getHypocenterLocation();
+				latTrack.addValue(loc.getLatitude());
+				lonTrack.addValue(loc.getLongitude());
+			}
+			// update edit aftershock zone information
+			double regBuff = 0.05;
+			minLatParam.setValue(latTrack.getMin()-regBuff);
+			minLatParam.getEditor().refreshParamEditor();
+
+			maxLatParam.setValue(latTrack.getMax()+regBuff);
+			maxLatParam.getEditor().refreshParamEditor();
+
+			minLonParam.setValue(lonTrack.getMin()-regBuff);
+			minLonParam.getEditor().refreshParamEditor();
+
+			maxLonParam.setValue(lonTrack.getMax()+regBuff);
+			maxLonParam.getEditor().refreshParamEditor();
+
+			regionCenterLatParam.setValue(latTrack.getAverage());
+			regionCenterLatParam.getEditor().refreshParamEditor();
+
+			regionCenterLonParam.setValue(lonTrack.getAverage());
+			regionCenterLonParam.getEditor().refreshParamEditor();
+
+			radiusParam.setValue((latTrack.getMax()-latTrack.getMin()+2*regBuff)/2d*111.111);
+			radiusParam.getEditor().refreshParamEditor();
+			
 			region = buildRegion(largestShock, getCentroid());
 			
 			// update with eventID from catalog
 			mainshock.setEventId(catalogEventID);
 			eventIDParam.setValue(catalogEventID);
 			eventIDParam.getEditor().refreshParamEditor();
+			
 			
 			// populate/validate data and forecast time windows
 			updateForecastTimes();
@@ -3806,9 +3841,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //				}
 //
 			} else if (param == fitSourceTypeParam) { 
-				if (fitSourceTypeParam.getValue() == FitSourceType.CUSTOM) {
-					loadSourceFromFile();
-				}
+//				if (fitSourceTypeParam.getValue() == FitSourceType.CUSTOM) {
+//					loadSourceFromFile();
+//				}
 				
 				pgvCurves = null;
 				pgaCurves = null;
@@ -3816,13 +3851,18 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				
 				printTip(8);
 				
-			} else if (param == vs30Param || param == mapGridSpacingParam || param == mapScaleParam) {
+			} else if (param == vs30Param || param == mapGridSpacingParam) {
 				// these parameter changes are going to change the plot. Erase the old ones
 				pgvCurves = null;
 				pgaCurves = null;
 				psaCurves = null;
 				
 				printTip(8);
+			} else if (param == mapScaleParam) {
+				//validate the mapGridSpacing
+				pgvCurves = null;
+				pgaCurves = null;
+				psaCurves = null;
 				
 			} else if (param == generateMapButton) {
 				System.out.println("Computing spatial forecast map...");
@@ -4310,8 +4350,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				fitType = "aftershocks";
 			else if (fitSourceTypeParam.getValue() == FitSourceType.SHAKEMAP)
 				fitType = "shakemap";
-			else if (fitSourceTypeParam.getValue() == FitSourceType.CUSTOM)
-				fitType = "custom";
+//			else if (fitSourceTypeParam.getValue() == FitSourceType.CUSTOM)
+//				fitType = "custom";
 			else
 				fitType = "none";
 			
@@ -4350,9 +4390,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			GriddedGeoDataSet gmpeProbModel = getIntensityModel(forecastRateModel, value, isMapOfProbabilities, true);
 			
 			/*
-			 * If something goews from with the intensity calculation, or if the calculation is cancelled, this is the exit point
+			 * If something goes wrong with the intensity calculation, or if the calculation is cancelled, this is the exit point
 			 */
-			if (gmpeProbModel == null) return; //EXIT THE MAP COMPUTATION		
+			if (gmpeProbModel == null) {
+				stopRequested = true;
+				return; //EXIT THE MAP COMPUTATION		
+			}
 			
 			
 			if(D) {
@@ -4807,15 +4850,18 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			// first get the PGA model
 			intensityTypeParam.setValue(IntensityType.PGA);
 			GriddedGeoDataSet pgaMap = getIntensityModel(rateModel, pga, isMapOfProbabilities, prompt);
-			if (pgaMap == null)
+			if (pgaMap == null) {
+				intensityTypeParam.setValue(IntensityType.MMI);
 				return null;
+			}
 			
 			// then get the PGV model
 			intensityTypeParam.setValue(IntensityType.PGV);
 			GriddedGeoDataSet pgvMap = getIntensityModel(rateModel, pgv, isMapOfProbabilities, false);
-			if (pgvMap == null)
+			if (pgvMap == null) {
+				intensityTypeParam.setValue(IntensityType.MMI);
 				return null;
-			
+			}
 			// put things back the way they were
 //			mapLevelParam.setValue(level);
 			intensityTypeParam.setValue(IntensityType.MMI);
@@ -4836,11 +4882,21 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			intensityTypeParam.setValue(IntensityType.PGA);
 			GriddedGeoDataSet pgaMap = getIntensityModel(rateModel, value, isMapOfProbabilities, prompt);
 
+			if (pgaMap == null) {
+				intensityTypeParam.setValue(IntensityType.MMI);
+				return null;
+			}
+			
 			// then get the PGV model
 			if(D) System.out.println("Calculating PGV map with " + value + " probability of being exceeded...");
 			intensityTypeParam.setValue(IntensityType.PGV);
 			GriddedGeoDataSet pgvMap = getIntensityModel(rateModel, value, isMapOfProbabilities, false);
 			
+			if (pgvMap == null) {
+				intensityTypeParam.setValue(IntensityType.MMI);
+				return null;
+			}
+
 			// put things back the way they were
 			intensityTypeParam.setValue(IntensityType.MMI);
 
@@ -4931,7 +4987,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		GriddedRegion calcRegion = new GriddedRegion(new Region(new Location(newRegion.getMaxLat(), newRegion.getMaxLon()),
 				new Location(newRegion.getMinLat(), newRegion.getMinLon())), calcSpacing, null);
 		
-		if(D) System.out.println("currentRadius: " + currentRadius + " calcSpacing: " + calcSpacing);
+		if(D) System.out.println("currentRadius: " + currentRadius + " mapScale: " + mapScaleParam.getValue() + " calcSpacing: " + calcSpacing);
 		//this is what is in the old code
 //		double calcSpacing = rateModel.getRegion().getSpacing()*2;
 //		GriddedRegion calcRegion = new GriddedRegion(new Region(new Location(rateModel.getMaxLat(), rateModel.getMaxLon()),
@@ -4973,11 +5029,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				} else {
 					vs30Provider.setActiveCoefficients();
 				}
-			} catch (IOException e1) {
+			} catch (Exception e1) {
 				// TODO Auto-generated catch block
 				System.err.println("Could not retrieve global DEM for estimating site effects. Proceeding without site effects.");
-				e1.printStackTrace();
-				return null;
+//				e1.printStackTrace();
+//				return null;
+				vs30Provider = null;
 			}
 		}
 
@@ -5443,7 +5500,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	
 	private void doPostFetchCalculations() {
 		// update the grid spacing based on the region size
-		mapGridSpacingParam.setValue(Math.max(0.01,
+		mapGridSpacingParam.setValue(Math.max(1,
 				round((region.getMaxLat() - region.getMinLat())*111.111/20,1) ));
 		mapGridSpacingParam.getEditor().refreshParamEditor();
 		
@@ -5854,6 +5911,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			mcParam.setValue(round(mainshock.getMag() - 0.05,2));
 			mcParam.getEditor().refreshParamEditor();
 		} 
+			
 	}
 	
 	private static void validateParameter(Double value, String name) {
@@ -6073,7 +6131,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
 		double elapsedDays = (double) (System.currentTimeMillis() - expirationDate.getTimeInMillis())/ETAS_StatsCalc.MILLISEC_PER_DAY;
 		
-		String welcomeMessage = "This a Beta version of the Aftershock Forecaster software. Get the latest version from www.opensha.org/apps.\n"
+		String welcomeMessage = "This a Beta version of the Aftershock Forecaster software. Get the latest version from www.caltech.edu/~nvandere/AftershockForecaster.\n"
 				+ "The Beta version will expire " + formatter.format(expirationDate.getTime()) + String.format(" (%d days remaining).", (int) -elapsedDays);
 
 		tipText.add(welcomeMessage + "\n\n>> Welcome to the aftershock forecaster. Enter a USGS event ID to get started. (e.g: us2000cifa)");
