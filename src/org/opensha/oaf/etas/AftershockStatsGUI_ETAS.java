@@ -854,7 +854,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			mapPlotParams.addParameter(mapPOEParam);
 //		}
 		
-		mapGridSpacingParam = new DoubleParameter("\u0394 (km)", 1, 100, new Double(10d));
+		mapGridSpacingParam = new DoubleParameter("\u0394 (km)", 1, 1000, new Double(10d));
 		mapGridSpacingParam.setInfo("Cell size for map (km)");
 		mapGridSpacingParam.addParameterChangeListener(this);
 		mapGridSpacingParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
@@ -3162,7 +3162,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					public void run() {
 						if(verbose) System.out.println("Computing Generic forecast");
 						genericModel.setMagComplete(mcParam.getValue());
-						genericModel.computeNewForecast(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
+						genericModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
 								forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), 10000);
 					}
 		}, true);
@@ -3191,7 +3191,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						if (bayesianModel != null){
 							bayesianModel.setMagComplete(mcParam.getValue());
 							if(verbose)System.out.println("Computing Bayesian forecast");
-							bayesianModel.computeNewForecast(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
+							bayesianModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
 									forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), 10000);
 						}
 					}		
@@ -3375,7 +3375,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 					@Override
 					public void run() {
-						printTip(6);
+						printTip(5);
 					}
 
 				}, true);
@@ -3398,10 +3398,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						postForecastPlotStep,
 						plotTableStep,
 						quickTabRefreshStep3,
-						fetchSourceStep,
-						plotMapStep,
-						quickTabRefreshStep4,
-						quickTabSelectStep,
+//						fetchSourceStep,
+//						plotMapStep,
+//						quickTabRefreshStep4,
+//						quickTabSelectStep,
 						tipStep);
 				new Thread(run).start();
 

@@ -291,7 +291,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 		this.relativeTimeAftershocks = relativeEventTimes;
 		
 		// initialize a forecast
-		computeNewForecast(dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, nSims);
+		generateStochasticCatalog(dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, nSims);
 		
 	}		
 

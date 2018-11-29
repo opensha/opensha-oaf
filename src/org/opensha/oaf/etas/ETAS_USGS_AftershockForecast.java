@@ -137,9 +137,13 @@ public class ETAS_USGS_AftershockForecast {
 					else
 						prob = 1 - subDist.getY(0);
 
-					if(minMag < model.magComplete)
+//					if(minMag < model.magComplete)
+//						//scale up the probability to account for events below the simulation min magnitude
+//						probMult = Math.pow(10, -model.b*(minMag - model.magComplete));
+					if(minMag < model.simulatedCatalog.minMagLimit)
 						//scale up the probability to account for events below the simulation min magnitude
-						probMult = Math.pow(10, -model.b*(minMag - model.magComplete));
+						probMult = Math.pow(10, -model.b*(minMag - model.simulatedCatalog.minMagLimit));
+					
 					prob = 1 - Math.pow(1-prob, probMult); //assumes probabilities are Poissonian...
 
 					//				System.out.println(minMag +" "+ model.magComplete +" "+ prob +" "+ probMult);

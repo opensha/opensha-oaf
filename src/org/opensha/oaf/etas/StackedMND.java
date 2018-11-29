@@ -29,7 +29,7 @@ public class StackedMND {
 	public int[] eventCounts;
 	public double magComplete;
 	private double[] q;
-	private int minQuant = 10;
+	private int minQuant = 1;
 		
 	
 	public StackedMND(EvenlyDiscretizedFunc[] mfdArray, int[] eventCounts, double magComplete, double b, double[] quantiles){

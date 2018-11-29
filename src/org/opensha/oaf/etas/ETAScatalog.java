@@ -44,6 +44,7 @@ public class ETAScatalog {
 	double forecastStart;
 	double forecastEnd;
 	double Mc;
+	double minMagLimit;
 	double maxMagLimit;
 	int nSims;
 	int maxGenerations; //simulation depth
@@ -57,7 +58,7 @@ public class ETAScatalog {
 	
 	public ETAScatalog(double[] ams_vec, double[] a_vec, double[] p_vec, double[] c_vec, double[][][][] likelihood, double alpha, double b, double refMag,
 			ObsEqkRupture mainshock, ObsEqkRupList aftershocks,
-			double dataStart, double dataEnd, double forecastStart, double forecastEnd, double Mc, double maxMag, int maxGenerations, int nSims){
+			double dataStart, double dataEnd, double forecastStart, double forecastEnd, double Mc, double minMagLimit, double maxMagLimit, int maxGenerations, int nSims){
 	
 		this.ams_vec = ams_vec;
 		this.a_vec = a_vec;
@@ -70,11 +71,12 @@ public class ETAScatalog {
 		this.forecastStart = forecastStart;
 		this.forecastEnd = forecastEnd;
 		this.Mc = Mc;
-		this.maxMagLimit = maxMag;
+		this.minMagLimit = minMagLimit;
+		this.maxMagLimit = maxMagLimit;
 		this.maxGenerations = maxGenerations;
 		this.nSims = nSims;
 		
-		if(D) System.out.println("ETAS simulation params: alpha=" + alpha + " b=" + b + " Mref=" + refMag + " Mc=" + Mc + " Mmax=" + maxMag + " nSims=" + nSims); 
+		if(D) System.out.println("ETAS simulation params: alpha=" + alpha + " b=" + b + " Mref=" + refMag + " Mc=" + Mc + " minSimMag=" + minMagLimit + " Mmax=" + maxMagLimit + " nSims=" + nSims); 
 				
 		
 		List<float[]> newEqList = new ArrayList<float[]>();	//catalog containing list of {time, mag, gen}
@@ -93,7 +95,9 @@ public class ETAScatalog {
 		double[][] paramList;
 		if(nSims>0){
 			//get the list of parameters to supply to each simulation
-			paramList = sampleParams(nSims, maxMag);
+			paramList = sampleParams(nSims, maxMagLimit);
+			
+			
 			
 			Stopwatch watch = Stopwatch.createStarted();
 			int warnTime = 3;
@@ -247,7 +251,8 @@ public class ETAScatalog {
 			event[2] = 0;	//generation number
 			
 			//check whether event is prior to forecast start, and larger than Mc
-			if( event[0] <= forecastStart && event[0] >= 0 && event[1] >= Mc){
+//			if( event[0] <= forecastStart && event[0] >= 0 && event[1] >= Mc){
+			if( event[0] <= forecastStart && event[0] >= 0 && event[1] >= minMagLimit){
 				//System.out.println("Seed "+counter++);
 				//newEqList.add(event); 
 
@@ -283,9 +288,15 @@ public class ETAScatalog {
 		
 		float newMag;
 		float newTime;
-			
+
+		double prod;
 		//calculate productivity of this quake
-		double prod = calculateProductivity(t, mag, forecastStart, forecastEnd, a_sample, b, p_sample, c_sample, alpha, Mc);
+		if (ngen == 1) {
+			prod = calculateProductivity(t, mag, forecastStart, forecastEnd, a_sample, b, p_sample, c_sample, alpha, minMagLimit);
+		} else {
+			double prodCorrection = Math.log10( (maxMagLimit - Mc)/(maxMagLimit - minMagLimit) );
+			prod = calculateProductivity(t, mag, forecastStart, forecastEnd, a_sample + prodCorrection, b, p_sample, c_sample, alpha, minMagLimit);
+		}
 		long numNew = assignNumberOfOffspring(prod); 
 		
 //		if(D) System.out.format("Parent Mag: %.2f Time: %5.2f Generation: %d Number of offspring: %d %n", mag, t, (int)ngen, (int)numNew);
@@ -295,7 +306,8 @@ public class ETAScatalog {
 				float[] event = new float[3];		//this must be declared within for block, in order to generate a new address
 				
 				// assign a magnitude
-				newMag = (float) assignMagnitude(b, Mc, maxMagLimit);
+//				newMag = (float) assignMagnitude(b, Mc, maxMagLimit);
+				newMag = (float) assignMagnitude(b, minMagLimit, maxMagLimit);
 				// assign a time
 				newTime = (float) assignTime(t, forecastStart, forecastEnd, p_sample, c_sample);
 
@@ -312,8 +324,9 @@ public class ETAScatalog {
 			}
 		} else if(ngen == maxGenerations) {
 			if(D) System.out.println("Sim=" + simNumber + " t=" + t + " has reached " + maxGenerations + " generations. Cutting it short.");
-			if(D) System.out.println("n = " + ETAS_StatsCalc.calculateBranchingRatio(a_sample, p_sample, c_sample, alpha, b, forecastEnd, Mc, maxMagLimit)
-					+ " a=" + a_sample + " p=" + p_sample + " c=" + c_sample + " al=" + alpha + " b=" + b + " T=" + forecastEnd + " Mc=" + Mc + " Mmax=" + maxMagLimit);
+//			if(D) System.out.println("n = " + ETAS_StatsCalc.calculateBranchingRatio(a_sample, p_sample, c_sample, alpha, b, forecastEnd, Mc, maxMagLimit)
+			if(D) System.out.println("n = " + ETAS_StatsCalc.calculateBranchingRatio(a_sample, p_sample, c_sample, alpha, b, forecastEnd, minMagLimit, maxMagLimit)
+					+ " a=" + a_sample + " p=" + p_sample + " c=" + c_sample + " al=" + alpha + " b=" + b + " T=" + forecastEnd + " Mmin=" + minMagLimit + " Mmax=" + maxMagLimit);
 		}
 		return newEqList;
 		
