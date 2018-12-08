@@ -134,6 +134,12 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	// ETA: All calculation steps have been split, and patches commented out.
 
 	//private boolean patchWorkerEDT = true;
+
+	// Setting this flag true causes PDL products to be created using the query ID
+	// (contents of the eventIDParam parameter) as the eventID.  Setting this flag false
+	// (which is the default) uses the authoritative event ID retrieved from Comcat.
+
+	private boolean pdlUseEventIDParam = true;
 	
 	/*
 	 * Data parameters
@@ -1289,11 +1295,22 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	
 	private void plotCumulativeNum() {
 		double magMin;
+		MagCompFn magCompFn;
+		double magMain = mainshock.getMag();
+		String magMinCaption;
 		
-		if (model != null && timeDepMcParam.getValue() == true)
+		if (model != null && timeDepMcParam.getValue() == true) {
 			magMin = mCatParam.getValue();
-		else
+			double f = fParam.getValue();
+			double g = gParam.getValue();
+			double h = hParam.getValue();
+			magCompFn = MagCompFn.makePageOrConstant (f, g, h);
+			magMinCaption = "Mc(t)";
+		} else {
 			magMin = mcParam.getValue();
+			magCompFn = MagCompFn.makeConstant();
+			magMinCaption = String.format ("%.3f", magMin);
+		}
 		
 		ArbitrarilyDiscretizedFunc countFunc = new ArbitrarilyDiscretizedFunc();
 		double count = 0;
@@ -1301,9 +1318,10 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		aftershocks.sortByOriginTime();
 		for (int i=0; i<aftershocks.size(); i++) {
 			ObsEqkRupture aftershock = aftershocks.get(i);
-			if (aftershock.getMag() < magMin)
+			double time = getTimeSinceMainshock(aftershock);	// time in days
+			if (aftershock.getMag() < magCompFn.getMagCompleteness (magMain, magMin, time)) {
 				continue;
-			double time = getTimeSinceMainshock(aftershock);
+			}
 			count++;
 			countFunc.set(time, count);
 		}
@@ -1353,7 +1371,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			}
 		}
 		
-		PlotSpec spec = new PlotSpec(funcs, chars, "Cumulative M≥"+(float)magMin, "Days Since Mainshock",
+		PlotSpec spec = new PlotSpec(funcs, chars, "Cumulative M≥"+magMinCaption, "Days Since Mainshock",
 				"Cumulative Number of Aftershocks");
 		spec.setLegendVisible(true);
 		
@@ -2142,6 +2160,9 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 						String eventNetwork = eimap.get (ComcatOAFAccessor.PARAM_NAME_NETWORK);
 						String eventCode = eimap.get (ComcatOAFAccessor.PARAM_NAME_CODE);
 						String eventID = mainshock.getEventId();
+						if (pdlUseEventIDParam) {
+							eventID = eventIDParam.getValue();
+						}
 						long modifiedTime = 0L;
 						boolean isReviewed = true;
 						product = PDLProductBuilderOaf.createProduct (eventID, eventNetwork, eventCode, isReviewed, jsonText, modifiedTime);

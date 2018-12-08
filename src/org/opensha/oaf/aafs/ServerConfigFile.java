@@ -44,6 +44,9 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  *	"log_con_control" = String giving pattern for control console log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"log_summary" = String giving pattern for summary log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"comcat_url" = String giving Comcat URL.
+ *	"feed_url" = String giving real-time feed URL, or empty string to not use the feed.
+ *	"comcat_dev_url" = String giving Comcat development URL.
+ *	"feed_dev_url" = String giving real-time feed development URL, or empty string to not use the feed.
  *  "comcat_err_rate" = Real number giving rate of simulated Comcat errors.
  *  "comcat_exclude" = [ Array giving list of Comcat ids to exclude ]
  *  "locat_bins" = Integer giving number of latitude bins in local catalog, or 0 for default.
@@ -126,6 +129,18 @@ public class ServerConfigFile {
 
 	public String comcat_url;
 
+	// Real-time feed URL, or empty string to not use the feed.
+
+	public String feed_url;
+
+	// Comcat development URL.
+
+	public String comcat_dev_url;
+
+	// Real-time feed development URL, or empty string to not use the feed.
+
+	public String feed_dev_url;
+
 	// Simulated error rate for Comcat.
 
 	public double comcat_err_rate;
@@ -196,6 +211,9 @@ public class ServerConfigFile {
 		log_con_control = "";
 		log_summary = "";
 		comcat_url = "";
+		feed_url = "";
+		comcat_dev_url = "";
+		feed_dev_url = "";
 		comcat_err_rate = 0.0;
 		comcat_exclude = new LinkedHashSet<String>();
 		locat_bins = 0;
@@ -266,6 +284,18 @@ public class ServerConfigFile {
 
 		if (!( comcat_url != null && comcat_url.trim().length() > 0 )) {
 			throw new RuntimeException("ServerConfigFile: Invalid comcat_url: " + ((comcat_url == null) ? "<null>" : comcat_url));
+		}
+
+		if (!( feed_url != null )) {
+			throw new RuntimeException("ServerConfigFile: Invalid feed_url: " + ((feed_url == null) ? "<null>" : feed_url));
+		}
+
+		if (!( comcat_dev_url != null && comcat_dev_url.trim().length() > 0 )) {
+			throw new RuntimeException("ServerConfigFile: Invalid comcat_dev_url: " + ((comcat_dev_url == null) ? "<null>" : comcat_dev_url));
+		}
+
+		if (!( feed_dev_url != null )) {
+			throw new RuntimeException("ServerConfigFile: Invalid feed_dev_url: " + ((feed_dev_url == null) ? "<null>" : feed_dev_url));
 		}
 
 		if (!( comcat_err_rate >= 0.0 && comcat_err_rate <= 1.0 )) {
@@ -346,6 +376,9 @@ public class ServerConfigFile {
 		result.append ("log_con_control = " + ((log_con_control == null) ? "<null>" : log_con_control) + "\n");
 		result.append ("log_summary = " + ((log_summary == null) ? "<null>" : log_summary) + "\n");
 		result.append ("comcat_url = " + ((comcat_url == null) ? "<null>" : comcat_url) + "\n");
+		result.append ("feed_url = " + ((feed_url == null) ? "<null>" : feed_url) + "\n");
+		result.append ("comcat_dev_url = " + ((comcat_dev_url == null) ? "<null>" : comcat_dev_url) + "\n");
+		result.append ("feed_dev_url = " + ((feed_dev_url == null) ? "<null>" : feed_dev_url) + "\n");
 		result.append ("comcat_err_rate = " + comcat_err_rate + "\n");
 
 		result.append ("comcat_exclude = [" + "\n");
@@ -539,6 +572,9 @@ public class ServerConfigFile {
 		writer.marshalString    (        "log_con_control"  , log_con_control  );
 		writer.marshalString    (        "log_summary"      , log_summary      );
 		writer.marshalString    (        "comcat_url"       , comcat_url       );
+		writer.marshalString    (        "feed_url"         , feed_url         );
+		writer.marshalString    (        "comcat_dev_url"   , comcat_dev_url   );
+		writer.marshalString    (        "feed_dev_url"     , feed_dev_url     );
 		writer.marshalDouble    (        "comcat_err_rate"  , comcat_err_rate  );
 		marshal_string_coll     (writer, "comcat_exclude"   , comcat_exclude   );
 		writer.marshalInt       (        "locat_bins"       , locat_bins       );
@@ -576,6 +612,9 @@ public class ServerConfigFile {
 		log_con_control   = reader.unmarshalString    (        "log_con_control"  );
 		log_summary       = reader.unmarshalString    (        "log_summary"      );
 		comcat_url        = reader.unmarshalString    (        "comcat_url"       );
+		feed_url          = reader.unmarshalString    (        "feed_url"         );
+		comcat_dev_url    = reader.unmarshalString    (        "comcat_dev_url"   );
+		feed_dev_url      = reader.unmarshalString    (        "feed_dev_url"     );
 		comcat_err_rate   = reader.unmarshalDouble    (        "comcat_err_rate"  );
 		comcat_exclude = new LinkedHashSet<String>();
 		unmarshal_string_coll                         (reader, "comcat_exclude"   , comcat_exclude   );

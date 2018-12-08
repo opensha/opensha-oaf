@@ -23,8 +23,11 @@ import java.util.HashMap;
 import java.util.Arrays;
 
 import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+
 import org.opensha.commons.geo.GeoTools;
 import org.opensha.commons.geo.Location;
 import org.opensha.commons.param.Parameter;
@@ -246,12 +249,24 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 	// If f_use_config is false, then program configuration information is
 	// ignored and the accessor will pass all requests to Comcat.
 	// If f_use_config is omitted, the default is true.
+	// If f_use_prod is true, then use production servers, otherwise use development servers.
+	// If f_use_prod is omitted, the default is true.
+	// If f_use_feed is true, then use the real-time feed for single-event queries.
+	// If f_use_feed is omited, the default is true.
 
 	public ComcatOAFAccessor () {
-		this (true);
+		this (true, true, true);
 	}
 
 	public ComcatOAFAccessor (boolean f_use_config) {
+		this (f_use_config, true, true);
+	}
+
+	public ComcatOAFAccessor (boolean f_use_config, boolean f_use_prod) {
+		this (f_use_config, f_use_prod, true);
+	}
+
+	public ComcatOAFAccessor (boolean f_use_config, boolean f_use_prod, boolean f_use_feed) {
 
 		// We create the service
 
@@ -270,7 +285,27 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 		try {
 			//service = new EventWebService(new URL("https://earthquake.usgs.gov/fdsnws/event/1/"));
 			//service = new ComcatEventWebService(new URL("https://earthquake.usgs.gov/fdsnws/event/1/"));
-			service = new ComcatEventWebService(new URL(server_config.get_comcat_url()));
+			//service = new ComcatEventWebService(new URL(server_config.get_comcat_url()));
+
+			URL serviceURL = null;
+			URL feedURL = null;
+			if (f_use_prod) {
+				serviceURL = new URL (server_config.get_comcat_url());
+				if (f_use_feed) {
+					if (!( server_config.get_feed_url().isEmpty() )) {
+						feedURL = new URL (server_config.get_feed_url());
+					}
+				}
+			} else {
+				serviceURL = new URL (server_config.get_comcat_dev_url());
+				if (f_use_feed) {
+					if (!( server_config.get_feed_dev_url().isEmpty() )) {
+						feedURL = new URL (server_config.get_feed_dev_url());
+					}
+				}
+			}
+			service = new ComcatEventWebService (serviceURL, feedURL);
+
 		} catch (MalformedURLException e) {
 			ExceptionUtils.throwAsRuntimeException(e);
 		}
@@ -279,6 +314,8 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 		//http_statuses = new ArrayList<Integer>();
 		//local_http_status = -1;
+		//
+		//last_geojson = null;
 
 		// If we're using program configuration ...
 
@@ -326,6 +363,8 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 		http_statuses.clear();
 		local_http_status = -1;
+
+		last_geojson = null;
 
 		// Test for simulated error
 
@@ -397,6 +436,90 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				System.out.println(prefix+key+": "+val);
 			}
 		}
+	}
+
+
+
+
+	// Convert a JSONObject to a string.
+	// This is a debugging function.
+
+	public static String jsonObjectToString (Object o) {
+		StringBuilder sb = new StringBuilder();
+		jsonObjectToString (sb, o, null, "");
+		return sb.toString();
+	}
+
+
+	public static void jsonObjectToString (StringBuilder sb, Object o, String name, String prefix) {
+
+		// Write prefix and name
+
+		sb.append (prefix);
+		if (name != null) {
+			sb.append (name);
+			sb.append (": ");
+		}
+
+		// Handle null
+
+		if (o == null) {
+			sb.append ("null");
+			sb.append ("\n");
+		}
+
+		// Handle string
+
+		else if (o instanceof String) {
+			String s = (String) o;
+			sb.append ("\"");
+			sb.append (JSONValue.escape (s));
+			sb.append ("\"");
+			sb.append ("\n");
+		}
+
+		// Handle object (Map)
+
+		else if (o instanceof JSONObject) {
+			JSONObject m = (JSONObject) o;
+			sb.append ("{");
+			sb.append ("\n");
+			String new_prefix = prefix + "  ";
+			for (Object key : m.keySet()) {
+				Object val = m.get (key);
+				jsonObjectToString (sb, val, key.toString(), new_prefix);
+			}
+			sb.append (prefix);
+			sb.append ("}");
+			sb.append ("\n");
+		}
+
+		// Handle array (List)
+
+		else if (o instanceof JSONArray) {
+			JSONArray a = (JSONArray) o;
+			sb.append ("[");
+			sb.append ("\n");
+			String new_prefix = prefix + "  ";
+			int n = a.size();
+			for (int k = 0; k < n; ++k) {
+				Object val = a.get (k);
+				jsonObjectToString (sb, val, Integer.toString (k), new_prefix);
+
+			}
+			sb.append (prefix);
+			sb.append ("]");
+			sb.append ("\n");
+		}
+
+		// Anything else
+
+		else {
+			sb.append (o.toString());
+			sb.append ("\n");
+		}
+
+		return;
 	}
 
 
@@ -572,6 +695,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				if (rup == null) {
 					System.out.println ("Null return from fetchEvent");
 					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
 					return;
 				}
 
@@ -592,6 +716,8 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				for (String id : idlist) {
 					System.out.println ("ID List: " + id);
 				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -743,6 +869,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				if (rup == null) {
 					System.out.println ("Null return from fetchEvent");
 					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
 					return;
 				}
 
@@ -763,6 +890,8 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				for (String id : idlist) {
 					System.out.println ("ID List: " + id);
 				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -868,6 +997,405 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				for (int i = 0; i < n_status; ++i) {
 					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
 				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  event_id
+		// Fetch information for an event, and display it.
+		// Then display the geojson for the event.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test5' subcommand");
+				return;
+			}
+
+			String event_id = args[1];
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = extendedInfoToMap (rup, EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = idsToList (eimap.get (PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+				System.out.println (ComcatOAFAccessor.jsonObjectToString (accessor.get_last_geojson()));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6  event_id
+		// Fetch information for an event, and display it.
+		// Then display the geojson for the event.
+		// Same as test #5, except using ComcatAccessor.
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test6' subcommand");
+				return;
+			}
+
+			String event_id = args[1];
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatAccessor accessor = new ComcatAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = extendedInfoToMap (rup, EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = idsToList (eimap.get (PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+				System.out.println (ComcatOAFAccessor.jsonObjectToString (accessor.get_last_geojson()));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  f_use_prod  f_use_feed  event_id
+		// Fetch information for an event, and display it.
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// Three additional arguments
+
+			if (args.length != 4) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test7' subcommand");
+				return;
+			}
+
+			boolean f_use_prod = Boolean.parseBoolean (args[1]);
+			boolean f_use_feed = Boolean.parseBoolean (args[2]);
+			String event_id = args[3];
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod, f_use_feed);
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = extendedInfoToMap (rup, EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = idsToList (eimap.get (PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #8
+		// Command format:
+		//  test8  f_use_prod  f_use_feed  event_id  min_days  max_days  radius_km  min_mag  limit_per_call
+		// Fetch information for an event, and display it.
+		// Then fetch the event list for a circle surrounding the hypocenter,
+		// for the specified interval in days after the origin time,
+		// excluding the event itself.
+		// The adjustable limit per call can test the multi-fetch logic.
+
+		if (args[0].equalsIgnoreCase ("test8")) {
+
+			// Eight additional arguments
+
+			if (args.length != 9) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test8' subcommand");
+				return;
+			}
+
+			try {
+
+				boolean f_use_prod = Boolean.parseBoolean (args[1]);
+				boolean f_use_feed = Boolean.parseBoolean (args[2]);
+				String event_id = args[3];
+				double min_days = Double.parseDouble (args[4]);
+				double max_days = Double.parseDouble (args[5]);
+				double radius_km = Double.parseDouble (args[6]);
+				double min_mag = Double.parseDouble (args[7]);
+				int limit_per_call = Integer.parseInt(args[8]);
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod, f_use_feed);
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+				long rup_time = rup.getOriginTime();
+				Location hypo = rup.getHypocenterLocation();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				// Say hello
+
+				System.out.println ("Fetching event list");
+				System.out.println ("min_days = " + min_days);
+				System.out.println ("max_days = " + max_days);
+				System.out.println ("radius_km = " + radius_km);
+				System.out.println ("min_mag = " + min_mag);
+				System.out.println ("limit_per_call = " + limit_per_call);
+
+				// Construct the Region
+
+				SphRegionCircle region = new SphRegionCircle (new SphLatLon(hypo), radius_km);
+
+				// Calculate the times
+
+				long startTime = rup_time + (long)(min_days*day_millis);
+				long endTime = rup_time + (long)(max_days*day_millis);
+
+				// Call Comcat
+
+				double minDepth = DEFAULT_MIN_DEPTH;
+				double maxDepth = DEFAULT_MAX_DEPTH;
+				boolean wrapLon = false;
+				boolean extendedInfo = false;
+				int max_calls = 0;
+
+				ObsEqkRupList rup_list = accessor.fetchEventList (rup_event_id, startTime, endTime,
+						minDepth, maxDepth, region, wrapLon, extendedInfo,
+						min_mag, limit_per_call, max_calls);
+
+				// Display the information
+
+				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
+
+				int n_status = accessor.get_http_status_count();
+				for (int i = 0; i < n_status; ++i) {
+					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #9
+		// Command format:
+		//  test9  f_use_prod  f_use_feed  event_id
+		// Fetch information for an event, and display it.
+		// Then display the geojson for the event.
+
+		if (args[0].equalsIgnoreCase ("test9")) {
+
+			// Three additional arguments
+
+			if (args.length != 4) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test9' subcommand");
+				return;
+			}
+
+			boolean f_use_prod = Boolean.parseBoolean (args[1]);
+			boolean f_use_feed = Boolean.parseBoolean (args[2]);
+			String event_id = args[3];
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod, f_use_feed);
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = extendedInfoToMap (rup, EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = idsToList (eimap.get (PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+				System.out.println (ComcatOAFAccessor.jsonObjectToString (accessor.get_last_geojson()));
 
 			} catch (Exception e) {
 				e.printStackTrace();

@@ -175,6 +175,24 @@ public class ServerConfig {
 		return param_set.comcat_url;
 	}
 
+	// Real-time feed URL, or empty string to not use the feed.
+
+	public String get_feed_url() {
+		return param_set.feed_url;
+	}
+
+	// Comcat development URL.
+
+	public String get_comcat_dev_url() {
+		return param_set.comcat_dev_url;
+	}
+
+	// Real-time feed development URL, or empty string to not use the feed.
+
+	public String get_feed_dev_url() {
+		return param_set.feed_dev_url;
+	}
+
 	// Simulated error rate for Comcat.
 
 	public double get_comcat_err_rate() {
@@ -316,6 +334,9 @@ public class ServerConfig {
 			System.out.println("log_con_control = " + server_config.get_log_con_control());
 			System.out.println("log_summary = " + server_config.get_log_summary());
 			System.out.println("comcat_url = " + server_config.get_comcat_url());
+			System.out.println("feed_url = " + server_config.get_feed_url());
+			System.out.println("comcat_dev_url = " + server_config.get_comcat_dev_url());
+			System.out.println("feed_dev_url = " + server_config.get_feed_dev_url());
 			System.out.println("comcat_err_rate = " + server_config.get_comcat_err_rate());
 
 			System.out.println("comcat_exclude = [");
