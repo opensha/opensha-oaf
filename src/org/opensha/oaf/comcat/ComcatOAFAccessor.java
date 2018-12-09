@@ -407,123 +407,6 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 
 
-
-	// Print a JSONObject.
-	// This is a debugging function, not used in normal operation.
-
-	public static void printJSON(JSONObject json) {
-		printJSON(json, "");
-	}
-	public static void printJSON(JSONObject json, String prefix) {
-		for (Object key : json.keySet()) {
-			Object val = json.get(key);
-			if (val != null && val.toString().startsWith("[{")) {
-				String str = val.toString();
-				try {
-					val = new JSONParser().parse(str.substring(1, str.length()-1));
-				} catch (ParseException e) {
-//					e.printStackTrace();
-				}
-			}
-			if (val != null && val instanceof JSONObject) {
-				System.out.println(prefix+key+":");
-				String prefix2 = prefix;
-				if (prefix2 == null)
-					prefix2 = "";
-				prefix2 += "\t";
-				printJSON((JSONObject)val, prefix2);
-			} else {
-				System.out.println(prefix+key+": "+val);
-			}
-		}
-	}
-
-
-
-
-	// Convert a JSONObject to a string.
-	// This is a debugging function.
-
-	public static String jsonObjectToString (Object o) {
-		StringBuilder sb = new StringBuilder();
-		jsonObjectToString (sb, o, null, "");
-		return sb.toString();
-	}
-
-
-	public static void jsonObjectToString (StringBuilder sb, Object o, String name, String prefix) {
-
-		// Write prefix and name
-
-		sb.append (prefix);
-		if (name != null) {
-			sb.append (name);
-			sb.append (": ");
-		}
-
-		// Handle null
-
-		if (o == null) {
-			sb.append ("null");
-			sb.append ("\n");
-		}
-
-		// Handle string
-
-		else if (o instanceof String) {
-			String s = (String) o;
-			sb.append ("\"");
-			sb.append (JSONValue.escape (s));
-			sb.append ("\"");
-			sb.append ("\n");
-		}
-
-		// Handle object (Map)
-
-		else if (o instanceof JSONObject) {
-			JSONObject m = (JSONObject) o;
-			sb.append ("{");
-			sb.append ("\n");
-			String new_prefix = prefix + "  ";
-			for (Object key : m.keySet()) {
-				Object val = m.get (key);
-				jsonObjectToString (sb, val, key.toString(), new_prefix);
-			}
-			sb.append (prefix);
-			sb.append ("}");
-			sb.append ("\n");
-		}
-
-		// Handle array (List)
-
-		else if (o instanceof JSONArray) {
-			JSONArray a = (JSONArray) o;
-			sb.append ("[");
-			sb.append ("\n");
-			String new_prefix = prefix + "  ";
-			int n = a.size();
-			for (int k = 0; k < n; ++k) {
-				Object val = a.get (k);
-				jsonObjectToString (sb, val, Integer.toString (k), new_prefix);
-
-			}
-			sb.append (prefix);
-			sb.append ("]");
-			sb.append ("\n");
-		}
-
-		// Anything else
-
-		else {
-			sb.append (o.toString());
-			sb.append ("\n");
-		}
-
-		return;
-	}
-
-
-
 	
 	/**
 	 * Fetch a list of events satisfying the given conditions.
@@ -1069,7 +952,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				System.out.println ("URL = " + accessor.get_last_url_as_string());
 
 				System.out.println ();
-				System.out.println (ComcatOAFAccessor.jsonObjectToString (accessor.get_last_geojson()));
+				System.out.println (GeoJsonUtils.jsonObjectToString (accessor.get_last_geojson()));
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -1143,7 +1026,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				System.out.println ("URL = " + accessor.get_last_url_as_string());
 
 				System.out.println ();
-				System.out.println (ComcatOAFAccessor.jsonObjectToString (accessor.get_last_geojson()));
+				System.out.println (GeoJsonUtils.jsonObjectToString (accessor.get_last_geojson()));
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -1395,7 +1278,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				System.out.println ("URL = " + accessor.get_last_url_as_string());
 
 				System.out.println ();
-				System.out.println (ComcatOAFAccessor.jsonObjectToString (accessor.get_last_geojson()));
+				System.out.println (GeoJsonUtils.jsonObjectToString (accessor.get_last_geojson()));
 
 			} catch (Exception e) {
 				e.printStackTrace();

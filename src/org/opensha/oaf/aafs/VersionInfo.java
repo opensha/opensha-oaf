@@ -1,17 +1,5 @@
 package org.opensha.oaf.aafs;
 
-import java.util.List;
-
-import org.opensha.oaf.aafs.entity.PendingTask;
-import org.opensha.oaf.aafs.entity.LogEntry;
-import org.opensha.oaf.aafs.entity.CatalogSnapshot;
-import org.opensha.oaf.aafs.entity.TimelineEntry;
-
-import org.opensha.oaf.util.MarshalReader;
-import org.opensha.oaf.util.MarshalWriter;
-import org.opensha.oaf.util.SimpleUtils;
-
-import org.opensha.oaf.rj.CompactEqkRupList;
 
 /**
  * Program version information.
@@ -25,7 +13,7 @@ public class VersionInfo  {
 
 	// Program version.
 
-	public static final String program_version = "Version 0.02.1036 Beta (11/12/2018)";
+	public static final String program_version = "Version 0.02.1037 Beta (12/08/2018)";
 
 	// Program sponsor.
 
@@ -41,7 +29,7 @@ public class VersionInfo  {
 
 	// Build.
 
-	public static final int build = 1036;
+	public static final int build = 1037;
 
 
 
