@@ -242,6 +242,18 @@ public class ServerConfig {
 		return param_set.get_pdl_senders();
 	}
 
+	// Get true if sending to PDL is permitted, false if not..
+
+	public boolean get_is_pdl_permitted () {
+		return param_set.get_is_pdl_permitted();
+	}
+
+	// Get true if readback of PDL products should come from production, false if not.
+
+	public boolean get_is_pdl_readback_prod () {
+		return param_set.get_is_pdl_readback_prod();
+	}
+
 
 	//----- Parameter modification -----
 
@@ -364,6 +376,8 @@ public class ServerConfig {
 				System.out.println("  " + i + ":  " + pdl_sender.toString());
 			}
 			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 
 			// Adjust PDL enable to development, and display senders
 
@@ -375,6 +389,8 @@ public class ServerConfig {
 				System.out.println("  " + i + ":  " + pdl_sender.toString());
 			}
 			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 
 			// Adjust PDL enable to production, and display senders
 
@@ -386,6 +402,34 @@ public class ServerConfig {
 				System.out.println("  " + i + ":  " + pdl_sender.toString());
 			}
 			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+
+			// Adjust PDL enable to simulated development, and display senders
+
+			server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_SIM_DEV;
+			pdl_senders = server_config.get_pdl_senders();
+			System.out.println("pdl_senders (SIM DEV) = [");
+			for (int i = 0; i < pdl_senders.size(); ++i) {
+				PDLSenderConfig pdl_sender = pdl_senders.get(i);
+				System.out.println("  " + i + ":  " + pdl_sender.toString());
+			}
+			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+
+			// Adjust PDL enable to simulated production, and display senders
+
+			server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_SIM_PROD;
+			pdl_senders = server_config.get_pdl_senders();
+			System.out.println("pdl_senders (SIM PROD) = [");
+			for (int i = 0; i < pdl_senders.size(); ++i) {
+				PDLSenderConfig pdl_sender = pdl_senders.get(i);
+				System.out.println("  " + i + ":  " + pdl_sender.toString());
+			}
+			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 
 			return;
 		}

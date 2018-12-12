@@ -180,25 +180,33 @@ public class PDLSender {
 				int port = sender_config.get_port();
 				int connectTimeout = sender_config.get_connectTimeout();
 
-				System.out.println ("Sending PDL product to " + host + ":" + port);
+				if (server_config.get_is_pdl_permitted()) {
 
-				// SocketProductSenders send directly to a PDL HUB and do not introduce
-				// any polling latency.
-				sender = new SocketProductSender(host, port, connectTimeout);
+					System.out.println ("Sending PDL product to " + host + ":" + port);
 
-				// If product consists primarily of binary data, set this option `true`
-				// to accelerate distribution.
-				sender.setBinaryFormat(!is_text);
+					// SocketProductSenders send directly to a PDL HUB and do not introduce
+					// any polling latency.
+					sender = new SocketProductSender(host, port, connectTimeout);
 
-				// If product consists primarily of text data, set this option `true`
-				// to accelerate distribution.
-				sender.setEnableDeflate(is_text);
+					// If product consists primarily of binary data, set this option `true`
+					// to accelerate distribution.
+					sender.setBinaryFormat(!is_text);
 
-				// ^^ Note ^^ Typically do not set both of the above options to `true` as
-				//            binary content doesn't compress efficiently but adds
-				//            processing overhead.
+					// If product consists primarily of text data, set this option `true`
+					// to accelerate distribution.
+					sender.setEnableDeflate(is_text);
+
+					// ^^ Note ^^ Typically do not set both of the above options to `true` as
+					//            binary content doesn't compress efficiently but adds
+					//            processing overhead.
 		
-				sender.sendProduct(product);
+					sender.sendProduct(product);
+
+				} else {
+
+					System.out.println ("[SIMULATED] Sending PDL product to " + host + ":" + port);
+				
+				}
 			}
 
 			// Send failed
@@ -291,23 +299,33 @@ public class PDLSender {
 				int port = sender_config.get_port();
 				int connectTimeout = sender_config.get_connectTimeout();
 
-				// SocketProductSenders send directly to a PDL HUB and do not introduce
-				// any polling latency.
-				sender = new SocketProductSender(host, port, connectTimeout);
+				if (server_config.get_is_pdl_permitted()) {
 
-				// If product consists primarily of binary data, set this option `true`
-				// to accelerate distribution.
-				sender.setBinaryFormat(!is_text);
+					System.out.println ("Sending PDL product to " + host + ":" + port);
 
-				// If product consists primarily of text data, set this option `true`
-				// to accelerate distribution.
-				sender.setEnableDeflate(is_text);
+					// SocketProductSenders send directly to a PDL HUB and do not introduce
+					// any polling latency.
+					sender = new SocketProductSender(host, port, connectTimeout);
 
-				// ^^ Note ^^ Typically do not set both of the above options to `true` as
-				//            binary content doesn't compress efficiently but adds
-				//            processing overhead.
+					// If product consists primarily of binary data, set this option `true`
+					// to accelerate distribution.
+					sender.setBinaryFormat(!is_text);
+
+					// If product consists primarily of text data, set this option `true`
+					// to accelerate distribution.
+					sender.setEnableDeflate(is_text);
+
+					// ^^ Note ^^ Typically do not set both of the above options to `true` as
+					//            binary content doesn't compress efficiently but adds
+					//            processing overhead.
 		
-				sender.sendProduct(product);
+					sender.sendProduct(product);
+
+				} else {
+
+					System.out.println ("[SIMULATED] Sending PDL product to " + host + ":" + port);
+				
+				}
 			}
 
 			// Send failed

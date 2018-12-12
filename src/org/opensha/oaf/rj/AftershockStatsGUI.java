@@ -2087,6 +2087,12 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			case ServerConfigFile.PDLOPT_PROD:
 				publish_forecast = "Publish Forecast to PDL-PRODUCTION";
 				break;
+			case ServerConfigFile.PDLOPT_SIM_DEV:
+				publish_forecast = "Publish Forecast to PDL-Development [SIMULATED]";
+				break;
+			case ServerConfigFile.PDLOPT_SIM_PROD:
+				publish_forecast = "Publish Forecast to PDL-PRODUCTION [SIMULATED]";
+				break;
 			}
 			//publishButton = new ButtonParameter("USGS PDL", "Publish Forecast");
 			publishButton = new ButtonParameter("USGS PDL", publish_forecast);

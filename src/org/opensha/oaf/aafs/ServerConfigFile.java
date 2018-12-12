@@ -51,7 +51,7 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  *  "comcat_exclude" = [ Array giving list of Comcat ids to exclude ]
  *  "locat_bins" = Integer giving number of latitude bins in local catalog, or 0 for default.
  *  "locat_filenames" = [ Array giving filenames for local catalog, empty if no local catalog ]
- *	"pdl_enable" = Integer giving PDL enable option: 0 = none, 1 = development, 2 = production.
+ *	"pdl_enable" = Integer giving PDL enable option: 0 = none, 1 = development, 2 = production, 3 =  simulated development, 4 = simulated production.
  *	"pdl_key_filename" = String giving PDL signing key filename, can be empty string for none.
  *  "pdl_err_rate" = Real number giving rate of simulated PDL errors.
  *	"pdl_dev_senders" = [ Array giving a list of PDL sender configurations for development PDL, in priority order.
@@ -163,7 +163,9 @@ public class ServerConfigFile {
 	public static final int PDLOPT_NONE = 0;		// No PDL access
 	public static final int PDLOPT_DEV = 1;			// PDL development server
 	public static final int PDLOPT_PROD = 2;		// PDL production server
-	public static final int PDLOPT_MAX = 2;
+	public static final int PDLOPT_SIM_DEV = 3;		// Simulated PDL development server
+	public static final int PDLOPT_SIM_PROD = 4;	// Simulated PDL production server
+	public static final int PDLOPT_MAX = 4;
 
 	public static final int PDLOPT_UNSPECIFIED = -1;	// PDL access is unspecified
 
@@ -340,7 +342,7 @@ public class ServerConfigFile {
 			throw new RuntimeException("ServerConfigFile: pdl_dev_senders list is null");
 		}
 
-		if ( pdl_enable == PDLOPT_DEV && pdl_dev_senders.size() == 0 ) {
+		if ( (pdl_enable == PDLOPT_DEV || pdl_enable == PDLOPT_SIM_DEV) && pdl_dev_senders.size() == 0 ) {
 			throw new RuntimeException("ServerConfigFile: pdl_dev_senders is empty, but pdl_enable = " + pdl_enable);
 		}
 
@@ -348,7 +350,7 @@ public class ServerConfigFile {
 			throw new RuntimeException("ServerConfigFile: pdl_prod_senders list is null");
 		}
 
-		if ( pdl_enable == PDLOPT_PROD && pdl_prod_senders.size() == 0 ) {
+		if ( (pdl_enable == PDLOPT_PROD || pdl_enable == PDLOPT_SIM_PROD) && pdl_prod_senders.size() == 0 ) {
 			throw new RuntimeException("ServerConfigFile: pdl_prod_senders is empty, but pdl_enable = " + pdl_enable);
 		}
 
@@ -428,12 +430,14 @@ public class ServerConfigFile {
 		switch (pdl_enable) {
 
 		case PDLOPT_DEV:
+		case PDLOPT_SIM_DEV:
 			for (PDLSenderConfig pdl_sender : pdl_dev_senders) {
 				pdl_senders.add (pdl_sender);
 			}
 			break;
 
 		case PDLOPT_PROD:
+		case PDLOPT_SIM_PROD:
 			for (PDLSenderConfig pdl_sender : pdl_prod_senders) {
 				pdl_senders.add (pdl_sender);
 			}
@@ -442,6 +446,40 @@ public class ServerConfigFile {
 		}
 
 		return pdl_senders;
+	}
+
+	// Get true if sending to PDL is permitted, false if not..
+
+	public boolean get_is_pdl_permitted () {
+		boolean result = false;
+
+		switch (pdl_enable) {
+
+		case PDLOPT_DEV:
+		case PDLOPT_PROD:
+			result = true;
+			break;
+
+		}
+
+		return result;
+	}
+
+	// Get true if readback of PDL products should come from production, false if not..
+
+	public boolean get_is_pdl_readback_prod () {
+		boolean result = true;
+
+		switch (pdl_enable) {
+
+		case PDLOPT_DEV:
+		case PDLOPT_SIM_DEV:
+			result = false;
+			break;
+
+		}
+
+		return result;
 	}
 
 

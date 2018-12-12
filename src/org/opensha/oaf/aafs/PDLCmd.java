@@ -69,6 +69,8 @@ public class PDLCmd {
 	public static final String PVAL_DRYRUN = "dryrun";					// No PDL access (drt run)
 	public static final String PVAL_DEV = "dev";						// PDL development server
 	public static final String PVAL_PROD = "prod";						// PDL production server
+	public static final String PVAL_SIM_DEV = "simdev";					// Simulated PDL development server
+	public static final String PVAL_SIM_PROD = "simprod";				// Simulated PDL production server
 
 	// String for splitting parameter into name and value
 
@@ -155,9 +157,15 @@ public class PDLCmd {
 				else if (value.equalsIgnoreCase (PVAL_PROD)) {
 					pdl_enable = ServerConfigFile.PDLOPT_PROD;
 				}
+				else if (value.equalsIgnoreCase (PVAL_SIM_DEV)) {
+					pdl_enable = ServerConfigFile.PDLOPT_SIM_DEV;
+				}
+				else if (value.equalsIgnoreCase (PVAL_SIM_PROD)) {
+					pdl_enable = ServerConfigFile.PDLOPT_SIM_PROD;
+				}
 				else {
 					System.out.println ("Invalid value in command-line option: " + arg);
-					System.out.println ("Valid values are: " + PVAL_DRYRUN + ", " + PVAL_DEV + ", " + PVAL_PROD);
+					System.out.println ("Valid values are: " + PVAL_DRYRUN + ", " + PVAL_DEV + ", " + PVAL_PROD + ", " + PVAL_SIM_DEV + ", " + PVAL_SIM_PROD);
 					return true;
 				}
 			}

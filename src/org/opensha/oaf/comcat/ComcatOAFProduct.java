@@ -26,6 +26,8 @@ import org.json.simple.parser.ParseException;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
+import org.opensha.oaf.util.SimpleUtils;
+
 
 /**
  * An OAF product, as retrieved from Comcat.
@@ -257,6 +259,22 @@ public class ComcatOAFProduct {
 
 
 
+	// Make a one-line summary string.
+
+	public String summary_string () {
+		StringBuilder sb = new StringBuilder();
+		sb.append ("code = " + eventID);
+		if (!( sourceID.equalsIgnoreCase ("us") )) {
+			sb.append (", source = " + sourceID);
+		}
+		sb.append (", reviewed = " + isReviewed);
+		sb.append (", time = " + SimpleUtils.time_raw_and_string (updateTime));
+		return sb.toString();
+	}
+
+
+
+
 	//----- Testing -----
 
 	public static void main(String[] args) {
@@ -341,6 +359,7 @@ public class ComcatOAFProduct {
 					System.out.println ();
 					System.out.println ("OAF product " + k);
 					System.out.println (oaf_product_list.get(k).toString());
+					System.out.println ("Summary: " + oaf_product_list.get(k).summary_string());
 				}
 
 			} catch (Exception e) {
