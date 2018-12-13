@@ -16,6 +16,13 @@ import org.opensha.oaf.pdl.PDLProductFile;
 import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 import org.opensha.oaf.pdl.PDLSender;
 import gov.usgs.earthquake.product.Product;
+import org.opensha.oaf.pdl.PDLCodeChooserOaf;
+
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  * All the data pertaining to a forecast.
@@ -248,6 +255,8 @@ public class ForecastData {
 	// Parameters:
 	//  eventID = The event ID for PDL, which for us identifies the timeline.
 	//  isReviewed = Review status, false means automatically generated.
+	// Returns null if the product cannot be constructed due to the presence
+	// of a conflicting product in PDL.
 
 	public Product make_pdl_product (String eventID, boolean isReviewed) throws Exception {
 
@@ -285,6 +294,27 @@ public class ForecastData {
 
 		//boolean isReviewed = ...;
 
+		// Choose the code to use
+
+		String suggestedCode = eventID;
+		long reviewOverwrite = (isReviewed ? 0L : 1L);		// don't overwrite reviewed forecast if we're not reviewed
+		String queryID = mainshock.mainshock_event_id;
+		JSONObject geojson = null;
+		boolean f_gj_prod = true;
+		String chosenCode = PDLCodeChooserOaf.chooseOafCode (suggestedCode, reviewOverwrite,
+			geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed);
+
+		// If no chosen code, return null to indicate conflict
+
+		if (chosenCode == null || chosenCode.isEmpty()) {
+			pdl_event_id = "";
+			return null;
+		}
+
+		// Save the chosed code
+
+		pdl_event_id = chosenCode;
+
 		// The contents.xml file
 
 		PDLProductFile file_contents_xml = make_product_file_contents_xml();
@@ -296,7 +326,7 @@ public class ForecastData {
 		// Build the product
 
 		Product product = PDLProductBuilderOaf.createProduct (
-			eventID, eventNetwork, eventCode, isReviewed, jsonText, modifiedTime,
+			chosenCode, eventNetwork, eventCode, isReviewed, jsonText, modifiedTime,
 			file_contents_xml, file_forecast_data);
 	
 		return product;
@@ -680,11 +710,11 @@ public class ForecastData {
 
 		// Subcommand : Test #3
 		// Command format:
-		//  test1  event_id
+		//  test3  event_id
 		// Get parameters for the event, and display them.
 		// Then get results for the event, and display them.
 		// Then put everything in a ForecastData object, and display it.
-		// Then construct the PDL product.
+		// Then construct the PDL product and send it to PDL-Development.
 
 		if (args[0].equalsIgnoreCase ("test3")) {
 
@@ -752,7 +782,7 @@ public class ForecastData {
 			System.out.println (fcdata.toString());
 			System.out.println ("");
 
-			// Make the PDL product
+			// Make the PDL product, marked not-reviewed
 
 			Product product;
 
@@ -761,6 +791,128 @@ public class ForecastData {
 			}
 			catch (Exception e) {
 				e.printStackTrace();
+				return;
+			}
+
+			// Stop if conflict
+
+			if (product == null) {
+				System.out.println ("ForecastData.make_pdl_product returned null, indicating conflict");
+				return;
+			}
+
+			// Sign the product
+
+			PDLSender.signProduct(product);
+
+			// Send the product, true means it is text
+
+			PDLSender.sendProduct(product, true);
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  pdl_enable  event_id  isReviewed
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then put everything in a ForecastData object, and display it.
+		// Then construct the PDL product and send it to the selected PDL destination.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// Three additional arguments
+
+			if (args.length != 4) {
+				System.err.println ("ForecastData : Invalid 'test4' subcommand");
+				return;
+			}
+
+			int pdl_enable = Integer.parseInt (args[1]);
+			String the_event_id = args[2];
+			Boolean isReviewed = Boolean.parseBoolean (args[3]);
+
+			// Set the PDL enable code
+
+			if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+				System.out.println ("Invalid pdl_enable = " + pdl_enable);
+				return;
+			}
+
+			ServerConfig server_config = new ServerConfig();
+			server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+			// Fetch just the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Set the forecast time to be 7 days after the mainshock
+
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "NOTE: This is a test, do not use this forecast.", fcmain, params, true);
+
+			// Select report for PDL, if any
+
+			results.pick_pdl_model();
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (results.toString());
+
+			// Construct the forecast data
+
+			AnalystOptions fc_analyst = new AnalystOptions();
+			long ctime = System.currentTimeMillis();
+
+			ForecastData fcdata = new ForecastData();
+			fcdata.set_data (ctime, fcmain, params, results, fc_analyst);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (fcdata.toString());
+			System.out.println ("");
+
+			// Make the PDL product, marked reviewed or not
+
+			Product product;
+
+			try {
+				product = fcdata.make_pdl_product (the_event_id, isReviewed);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				return;
+			}
+
+			// Stop if conflict
+
+			if (product == null) {
+				System.out.println ("ForecastData.make_pdl_product returned null, indicating conflict");
 				return;
 			}
 

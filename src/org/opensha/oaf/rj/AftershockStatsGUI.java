@@ -109,6 +109,7 @@ import scratch.UCERF3.erf.utils.ProbabilityModelsCalc;
 //import org.opensha.oaf.pdl.OAF_Publisher;
 import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 import org.opensha.oaf.pdl.PDLSender;
+import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
@@ -121,6 +122,9 @@ import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.PDLCmd;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
+import org.opensha.oaf.comcat.ComcatOAFProduct;
+
+import org.json.simple.JSONObject;
 
 public class AftershockStatsGUI extends JFrame implements ParameterChangeListener {
 
@@ -139,7 +143,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	// (contents of the eventIDParam parameter) as the eventID.  Setting this flag false
 	// (which is the default) uses the authoritative event ID retrieved from Comcat.
 
-	private boolean pdlUseEventIDParam = true;
+	private boolean pdlUseEventIDParam = false;
 	
 	/*
 	 * Data parameters
@@ -689,6 +693,15 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			my_mainshock = accessor.fetchEvent(eventID, false, true);	// need extended info for sending to PDL
 			Preconditions.checkState(my_mainshock != null, "Event not found: %s", eventID);
 			System.out.println("Mainshock Location: "+my_mainshock.getHypocenterLocation());
+
+			System.out.println (ComcatOAFAccessor.rupToString (my_mainshock));
+			List<ComcatOAFProduct> oaf_product_list = ComcatOAFProduct.make_list_from_gj (accessor.get_last_geojson());
+			for (int k = 0; k < oaf_product_list.size(); ++k) {
+				System.out.println ("OAF product: " + oaf_product_list.get(k).summary_string());
+			}
+			if (oaf_product_list.size() > 0) {
+				System.out.println ();
+			}
 		
 			return;
 		}
@@ -2088,10 +2101,10 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 				publish_forecast = "Publish Forecast to PDL-PRODUCTION";
 				break;
 			case ServerConfigFile.PDLOPT_SIM_DEV:
-				publish_forecast = "Publish Forecast to PDL-Development [SIMULATED]";
+				publish_forecast = "Publish Forecast to PDL-Dev [SIMULATED]";
 				break;
 			case ServerConfigFile.PDLOPT_SIM_PROD:
-				publish_forecast = "Publish Forecast to PDL-PRODUCTION [SIMULATED]";
+				publish_forecast = "Publish Forecast to PDL-PROD [SIMULATED]";
 				break;
 			}
 			//publishButton = new ButtonParameter("USGS PDL", "Publish Forecast");
@@ -2171,6 +2184,15 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 						}
 						long modifiedTime = 0L;
 						boolean isReviewed = true;
+
+						String suggestedCode = eventID;
+						long reviewOverwrite = 0L;
+						String queryID = eventIDParam.getValue();
+						JSONObject geojson = null;
+						boolean f_gj_prod = true;
+						eventID = PDLCodeChooserOaf.chooseOafCode (suggestedCode, reviewOverwrite,
+							geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed);
+
 						product = PDLProductBuilderOaf.createProduct (eventID, eventNetwork, eventCode, isReviewed, jsonText, modifiedTime);
 					} catch (Exception e) {
 						e.printStackTrace();

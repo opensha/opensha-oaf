@@ -37,6 +37,7 @@ public class USGS_AftershockForecast {
 	private static final double[] min_mags_default = { 3d, 5d, 6d, 7d };
 	private static final double fractile_lower = 0.025;
 	private static final double fractile_upper = 0.975;
+	private static final double mag_bin_half_width_default = 0.05;
 	
 	public enum Duration {
 		ONE_DAY("1 Day", ChronoUnit.DAYS, 1L),
@@ -105,19 +106,19 @@ public class USGS_AftershockForecast {
 	
 	public USGS_AftershockForecast(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks,
 			Instant eventDate, Instant startDate) {
-		this(model, aftershocks, min_mags_default, eventDate, startDate, true);
+		this(model, aftershocks, min_mags_default, eventDate, startDate, true, mag_bin_half_width_default);
 	}
 	
 	public USGS_AftershockForecast(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
-			Instant eventDate, Instant startDate, boolean includeProbAboveMainshock) {
-		compute(model, aftershocks, minMags, eventDate, startDate, includeProbAboveMainshock);
+			Instant eventDate, Instant startDate, boolean includeProbAboveMainshock, double mag_bin_half_width) {
+		compute(model, aftershocks, minMags, eventDate, startDate, includeProbAboveMainshock, mag_bin_half_width);
 	}
 	
 	private static final DateFormat df = new SimpleDateFormat();
 	private static final TimeZone utc = TimeZone.getTimeZone("UTC");
 	
 	private void compute(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
-			Instant eventDate, Instant startDate, boolean includeProbAboveMainshock) {
+			Instant eventDate, Instant startDate, boolean includeProbAboveMainshock, double mag_bin_half_width) {
 		Preconditions.checkArgument(minMags.length > 0);
 		
 		this.model = model;
@@ -128,12 +129,14 @@ public class USGS_AftershockForecast {
 				
 		boolean f_verbose = AftershockVerbose.get_verbose_mode();
 		
-		// calcualte number of observations for each bin
+		// calculate number of observations for each bin
 		aftershockCounts = new int[minMags.length];
 		for (int m=0; m<minMags.length; m++) {
-			for (ObsEqkRupture eq : aftershocks)
-				if (eq.getMag() >= minMags[m])
+			for (ObsEqkRupture eq : aftershocks) {
+				if (eq.getMag() >= minMags[m] - mag_bin_half_width) {
 					aftershockCounts[m]++;
+				}
+			}
 		}
 		
 		numEventsLower = HashBasedTable.create();

@@ -79,10 +79,11 @@ public class PDLSupport extends ServerComponent {
 
 
 	// Send a report to PDL.
+	// Return the code used to send to PDL, null if not stored due to conflict with existing forecast.
 	// Throw an exception if the report failed.
 	// Use this version if the catalog is in tstatus.forecast_results.
 
-	public void send_pdl_report (TimelineStatus tstatus) throws Exception {
+	public String send_pdl_report (TimelineStatus tstatus) throws Exception {
 
 		// Collect the forecast data
 
@@ -102,6 +103,13 @@ public class PDLSupport extends ServerComponent {
 
 		Product product = forecast_data.make_pdl_product (eventID, isReviewed);
 
+		// Stop if conflict
+
+		if (product == null) {
+			System.out.println ("ForecastData.make_pdl_product returned null, indicating conflict");
+			return null;
+		}
+
 		// Sign the product
 
 		PDLSender.signProduct(product);
@@ -110,17 +118,18 @@ public class PDLSupport extends ServerComponent {
 
 		PDLSender.sendProduct(product, true);
 
-		return;
+		return forecast_data.pdl_event_id;
 	}
 
 
 
 
 	// Send a report to PDL.
+	// Return the code used to send to PDL, null if not stored due to conflict with existing forecast.
 	// Throw an exception if the report failed.
 	// Use this version to supply the catalog separately.
 
-	public void send_pdl_report (TimelineStatus tstatus, CompactEqkRupList catalog) throws Exception {
+	public String send_pdl_report (TimelineStatus tstatus, CompactEqkRupList catalog) throws Exception {
 
 		// Collect the forecast data
 
@@ -140,6 +149,13 @@ public class PDLSupport extends ServerComponent {
 
 		Product product = forecast_data.make_pdl_product (eventID, isReviewed);
 
+		// Stop if conflict
+
+		if (product == null) {
+			System.out.println ("ForecastData.make_pdl_product returned null, indicating conflict");
+			return null;
+		}
+
 		// Sign the product
 
 		PDLSender.signProduct(product);
@@ -148,7 +164,7 @@ public class PDLSupport extends ServerComponent {
 
 		PDLSender.sendProduct(product, true);
 
-		return;
+		return forecast_data.pdl_event_id;
 	}
 
 

@@ -242,7 +242,10 @@ public class TimelineStatus extends DBPayload {
 	public static final int PDLSTAT_BYPASSED         = 7;
 		// Forecast needs to be reported to PDL, but it was not done because it
 		// was too late or some other blocking condition.
-	public static final int PDLSTAT_MAX              = 7;
+	public static final int PDLSTAT_CONFLICT         = 8;
+		// Forecast was not stored in PDL because of the presence of a conflicting
+		// forecast. This is considered a successful PDL send.
+	public static final int PDLSTAT_MAX              = 8;
 
 	// Return a string describing the pdl_status.
 
@@ -255,6 +258,7 @@ public class TimelineStatus extends DBPayload {
 		case PDLSTAT_SECONDARY: return "PDLSTAT_SECONDARY";
 		case PDLSTAT_CONFIRMED: return "PDLSTAT_CONFIRMED";
 		case PDLSTAT_BYPASSED: return "PDLSTAT_BYPASSED";
+		case PDLSTAT_CONFLICT: return "PDLSTAT_CONFLICT";
 		}
 		return "PDLSTAT_INVALID(" + pdl_status + ")";
 	}
@@ -588,6 +592,7 @@ public class TimelineStatus extends DBPayload {
 	public boolean is_pdl_send_successful () {
 		switch (pdl_status) {
 		case PDLSTAT_SUCCESS:
+		case PDLSTAT_CONFLICT:
 			return true;
 		}
 		return false;

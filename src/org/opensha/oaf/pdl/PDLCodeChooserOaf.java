@@ -309,6 +309,7 @@ public class PDLCodeChooserOaf {
 					if (reviewOverwrite == 1L || oafProducts.get(ix_recent).updateTime >= reviewOverwrite) {
 
 						System.out.println ("Skipping PDL update due to existing reviewed OAF product: " + oafProducts.get(ix_recent).summary_string());
+						deleteOafProducts (oafProducts, ix_recent, eventNetwork, eventCode, isReviewed);
 						return null;
 					}
 				}

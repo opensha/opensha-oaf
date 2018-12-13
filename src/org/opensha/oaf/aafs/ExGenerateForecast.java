@@ -363,7 +363,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 		if (tstatus.analyst_options.is_shadow_normal()) {
 
-			// Get find shadow parameters
+			// Get find_shadow parameters
 
 			ObsEqkRupture rup = fcmain.get_eqk_rupture();
 			long time_now = fcmain.mainshock_time + next_forecast_lag;
@@ -602,9 +602,11 @@ public class ExGenerateForecast extends ServerExecTask {
 			
 				// Attempt to send the report
 
+				String productCode = null;
+
 				try {
-					sg.pdl_sup.send_pdl_report (tstatus);
-					tstatus.set_pdl_status (TimelineStatus.PDLSTAT_SUCCESS);
+					productCode = sg.pdl_sup.send_pdl_report (tstatus);
+					tstatus.set_pdl_status ((productCode == null) ? TimelineStatus.PDLSTAT_CONFLICT : TimelineStatus.PDLSTAT_SUCCESS);
 					new_next_pdl_lag = -1L;
 				}
 
@@ -632,7 +634,11 @@ public class ExGenerateForecast extends ServerExecTask {
 				}
 
 				if (tstatus.is_pdl_send_successful()) {
-					sg.log_sup.report_pdl_send_ok (tstatus);
+					if (productCode == null) {
+						sg.log_sup.report_pdl_send_conflict (tstatus);
+					} else {
+						sg.log_sup.report_pdl_send_ok (tstatus, productCode);
+					}
 				}
 			}
 		}

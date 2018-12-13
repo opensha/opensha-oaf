@@ -495,8 +495,22 @@ public class LogSupport extends ServerComponent {
 
 	// Report successful PDL send.
 
-	public void report_pdl_send_ok (TimelineStatus tstatus) {
+	public void report_pdl_send_ok (TimelineStatus tstatus, String productCode) {
 		report_action ("PDL-SEND-OK",
+					"eventID = " + sg.alias_sup.timeline_id_to_pdl_code (tstatus.event_id),
+					"productCode = " + productCode,
+					"eventNetwork = " + tstatus.forecast_mainshock.mainshock_network,
+					"eventCode = " + tstatus.forecast_mainshock.mainshock_code);
+		return;
+	}
+
+
+
+
+	// Report successful PDL send, but not stored due to presence of conflicting forecast.
+
+	public void report_pdl_send_conflict (TimelineStatus tstatus) {
+		report_action ("PDL-SEND-CONFLICT",
 					"eventID = " + sg.alias_sup.timeline_id_to_pdl_code (tstatus.event_id),
 					"eventNetwork = " + tstatus.forecast_mainshock.mainshock_network,
 					"eventCode = " + tstatus.forecast_mainshock.mainshock_code);

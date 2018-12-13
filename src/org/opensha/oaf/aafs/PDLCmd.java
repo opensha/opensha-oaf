@@ -20,6 +20,8 @@ import gov.usgs.earthquake.product.Product;
 // --pdl=dryrun
 // --pdl=dev
 // --pdl=prod
+// --pdl=simdev
+// --pdl=simprod
 // If the --pdl option is not specified, the default is taken from the pdl_default function parameter;
 // if pdl_default is not specified then the default is taken from the server configuration file.
 //

@@ -259,8 +259,10 @@ public class ExGeneratePDLReport extends ServerExecTask {
 			
 		// Attempt to send the report
 
+		String productCode = null;
+
 		try {
-			sg.pdl_sup.send_pdl_report (pdl_tstatus, pdl_catalog);
+			productCode = sg.pdl_sup.send_pdl_report (pdl_tstatus, pdl_catalog);
 		}
 
 		// Exception here means PDL report did not succeed
@@ -308,7 +310,11 @@ public class ExGeneratePDLReport extends ServerExecTask {
 			return RESCODE_TIMELINE_PDL_FAIL;
 		}
 
-		sg.log_sup.report_pdl_send_ok (tstatus);
+		if (productCode == null) {
+			sg.log_sup.report_pdl_send_conflict (tstatus);
+		} else {
+			sg.log_sup.report_pdl_send_ok (tstatus, productCode);
+		}
 
 		//--- Final steps
 
