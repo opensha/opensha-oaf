@@ -217,6 +217,48 @@ public class ServerConfig {
 		return param_set.locat_filenames;
 	}
 
+	// PDL intake blocking option: 0 = don't block, 1 = block.
+
+	public int get_block_pdl_intake() {
+		return param_set.block_pdl_intake;
+	}
+
+	// Poll intake blocking option: 0 = don't block, 1 = block.
+
+	public int get_block_poll_intake() {
+		return param_set.block_poll_intake;
+	}
+
+	// Forecast content blocking option: 0 = don't block, 1 = block.
+
+	public int get_block_fc_content() {
+		return param_set.block_fc_content;
+	}
+
+	// Get true if PDL intake is blocked, false if not.
+
+	public boolean get_is_pdl_intake_blocked () {
+		return param_set.get_is_pdl_intake_blocked();
+	}
+
+	// Get true if poll intake is blocked, false if not.
+
+	public boolean get_is_poll_intake_blocked () {
+		return param_set.get_is_poll_intake_blocked();
+	}
+
+	// Get true if forecast content is blocked, false if not.
+
+	public boolean get_is_fc_content_blocked () {
+		return param_set.get_is_fc_content_blocked();
+	}
+
+	// Simulated error rate for database.
+
+	public double get_db_err_rate() {
+		return param_set.db_err_rate;
+	}
+
 	// PDL enable option.
 
 	public int get_pdl_enable() {
@@ -364,6 +406,14 @@ public class ServerConfig {
 				System.out.println("  " + s);
 			}
 			System.out.println("]");
+
+			System.out.println("block_pdl_intake = " + server_config.get_block_pdl_intake());
+			System.out.println("block_poll_intake = " + server_config.get_block_poll_intake());
+			System.out.println("block_fc_content = " + server_config.get_block_fc_content());
+			System.out.println("is_pdl_intake_blocked = " + server_config.get_is_pdl_intake_blocked());
+			System.out.println("is_poll_intake_blocked = " + server_config.get_is_poll_intake_blocked());
+			System.out.println("is_fc_content_blocked = " + server_config.get_is_fc_content_blocked());
+			System.out.println("db_err_rate = " + server_config.get_db_err_rate());
 
 			System.out.println("pdl_enable = " + server_config.get_pdl_enable());
 			System.out.println("pdl_key_filename = " + server_config.get_pdl_key_filename());

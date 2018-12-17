@@ -872,6 +872,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 		case RESCODE_DELETE_TIMELINE_NO_ALIAS:
 		case RESCODE_DELETE_TIMELINE_BAD_STATE:
 		case RESCODE_DELETE_NOT_IN_COMCAT:
+		case RESCODE_DELETE_INTAKE_BLOCKED:
 
 			// Display message
 

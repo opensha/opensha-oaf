@@ -123,6 +123,7 @@ public class ServerComponent {
 	public static final int RESCODE_DELETE_TIMELINE_NO_ALIAS = 105;	// Delete current task (without logging it), because timeline has no active alias
 	public static final int RESCODE_DELETE_TIMELINE_BAD_STATE = 106;	// Delete current task (without logging it), because timeline state does not permit operation
 	public static final int RESCODE_DELETE_NOT_IN_COMCAT = 107;		// Delete current task (without logging it), because event is not in Comcat
+	public static final int RESCODE_DELETE_INTAKE_BLOCKED = 108;	// Delete current task (without logging it), because event intake is blocked
 
 	public static final int RESCODE_STAGE = 201;					// Stage current task (execute it again)
 	public static final int RESCODE_STAGE_COMCAT_RETRY = 202;		// Stage current task (execute it again), to retry a failed Comcat operation
@@ -180,6 +181,7 @@ public class ServerComponent {
 		case RESCODE_DELETE_TIMELINE_NO_ALIAS: return "RESCODE_DELETE_TIMELINE_NO_ALIAS";
 		case RESCODE_DELETE_TIMELINE_BAD_STATE: return "RESCODE_DELETE_TIMELINE_BAD_STATE";
 		case RESCODE_DELETE_NOT_IN_COMCAT: return "RESCODE_DELETE_NOT_IN_COMCAT";
+		case RESCODE_DELETE_INTAKE_BLOCKED: return "RESCODE_DELETE_INTAKE_BLOCKED";
 
 		case RESCODE_STAGE: return "RESCODE_STAGE";
 		case RESCODE_STAGE_COMCAT_RETRY: return "RESCODE_STAGE_COMCAT_RETRY";

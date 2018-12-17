@@ -263,6 +263,11 @@ public class TimelineStatus extends DBPayload {
 		return "PDLSTAT_INVALID(" + pdl_status + ")";
 	}
 
+	// The code used for the last PDL product successfully sent.
+	// If this is an empty string "", then the code is derived from event_id.
+
+	public String pdl_product_code;
+
 	// Result code, for the current or most recent forecast.
 
 	public int fc_result;
@@ -380,6 +385,7 @@ public class TimelineStatus extends DBPayload {
 		fc_origin           = other.fc_origin;
 		fc_status           = other.fc_status;
 		pdl_status          = other.pdl_status;
+		pdl_product_code    = other.pdl_product_code;
 		fc_result           = other.fc_result;
 		shadowing_event_id  = other.shadowing_event_id;
 
@@ -598,6 +604,15 @@ public class TimelineStatus extends DBPayload {
 		return false;
 	}
 
+	// Return true if this timeline has a PDL product code different from the timeline event id.
+
+	public boolean has_pdl_product_code () {
+		if (pdl_product_code.isEmpty()) {
+			return false;
+		}
+		return true;
+	}
+
 
 
 
@@ -643,6 +658,7 @@ public class TimelineStatus extends DBPayload {
 		fc_origin           = FCORIG_UNKNOWN;
 		fc_status           = FCSTAT_STOP_ERROR;
 		pdl_status          = PDLSTAT_NONE;
+		pdl_product_code    = "";
 		fc_result           = FCRES_NONE;
 		shadowing_event_id  = "";
 
@@ -669,6 +685,7 @@ public class TimelineStatus extends DBPayload {
 		//fc_origin           = kept;
 		fc_status           = FCSTAT_STOP_COMCAT_FAIL;
 		pdl_status          = PDLSTAT_NONE;
+		//pdl_product_code    = kept;
 		//fc_result           = kept;
 		//shadowing_event_id  = kept;
 
@@ -695,6 +712,7 @@ public class TimelineStatus extends DBPayload {
 		//fc_origin           = kept;
 		fc_status           = FCSTAT_STOP_SHADOWED;
 		pdl_status          = PDLSTAT_NONE;
+		//pdl_product_code    = kept;
 		fc_result           = the_fc_result;
 		shadowing_event_id  = the_shadowing_event_id;
 
@@ -727,6 +745,7 @@ public class TimelineStatus extends DBPayload {
 		//fc_origin           = kept;
 		fc_status           = FCSTAT_STOP_WITHDRAWN;
 		pdl_status          = PDLSTAT_NONE;
+		//pdl_product_code    = kept;
 		//fc_result           = kept;
 		//shadowing_event_id  = kept;
 
@@ -778,6 +797,7 @@ public class TimelineStatus extends DBPayload {
 		//fc_status           = ((next_forecast_lag >= 0L) ? FCSTAT_ACTIVE_NORMAL : FCSTAT_STOP_EXPIRED);
 		fc_status           = FCSTAT_ACTIVE_NORMAL;
 		pdl_status          = ((pdl_json == null) ? PDLSTAT_NONE : PDLSTAT_PENDING);
+		//pdl_product_code    = kept;
 		fc_result           = ((pdl_json == null) ? FCRES_FORECAST_NO_PDL : FCRES_FORECAST_PDL);
 		shadowing_event_id  = "";
 
@@ -825,6 +845,7 @@ public class TimelineStatus extends DBPayload {
 			fc_status           = FCSTAT_ACTIVE_NORMAL;
 		}
 		pdl_status          = PDLSTAT_NONE;
+		//pdl_product_code    = kept;
 		fc_result           = the_fc_result;
 		shadowing_event_id  = ((the_shadowing_event_id == null) ? "" : the_shadowing_event_id);
 
@@ -859,6 +880,7 @@ public class TimelineStatus extends DBPayload {
 		//fc_origin           = kept;
 		//fc_status           = kpet;
 		pdl_status          = the_pdl_status;
+		//pdl_product_code    = kept;
 		//fc_result           = kept;
 		//shadowing_event_id  = kept;
 
@@ -891,6 +913,7 @@ public class TimelineStatus extends DBPayload {
 		if (pdl_status == PDLSTAT_PENDING) {
 			pdl_status          = PDLSTAT_NONE;
 		}
+		//pdl_product_code    = kept;
 		//fc_result           = kept;
 		//shadowing_event_id  = kept;
 
@@ -919,6 +942,7 @@ public class TimelineStatus extends DBPayload {
 		//fc_origin           = kept;
 		fc_status           = the_fc_status;
 		pdl_status          = PDLSTAT_NONE;
+		//pdl_product_code    = kept;
 		//fc_result           = kept;
 		//shadowing_event_id  = kept;
 
@@ -950,6 +974,7 @@ public class TimelineStatus extends DBPayload {
 		//fc_origin           = kept;
 		//fc_status           = kept;
 		pdl_status          = PDLSTAT_NONE;
+		//pdl_product_code    = kept;
 		//fc_result           = kept;
 		//shadowing_event_id  = kept;
 
@@ -982,6 +1007,7 @@ public class TimelineStatus extends DBPayload {
 		fc_origin           = the_fc_origin;
 		fc_status           = the_fc_status;
 		pdl_status          = PDLSTAT_NONE;
+		pdl_product_code    = "";
 		fc_result           = FCRES_NONE;
 		shadowing_event_id  = "";
 
@@ -1003,6 +1029,7 @@ public class TimelineStatus extends DBPayload {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 27001;
+	private static final int MARSHAL_VER_2 = 27002;
 
 	private static final String M_VERSION_NAME = "TimelineStatus";
 
@@ -1013,7 +1040,8 @@ public class TimelineStatus extends DBPayload {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Superclass
 
@@ -1021,20 +1049,51 @@ public class TimelineStatus extends DBPayload {
 
 		// Contents
 
-		writer.marshalLong                      ("entry_time"         , entry_time         );
-		writer.marshalInt                       ("fc_origin"          , fc_origin          );
-		writer.marshalInt                       ("fc_status"          , fc_status          );
-		writer.marshalInt                       ("pdl_status"         , pdl_status         );
-		writer.marshalInt                       ("fc_result"          , fc_result          );
-		writer.marshalString                    ("shadowing_event_id" , shadowing_event_id );
+		switch (ver) {
 
-		AnalystOptions.marshal_poly     (writer, "analyst_options"    , analyst_options    );
+		default:
+			throw new MarshalException ("TimelineStatus.do_marshal: Unknown version number: " + ver);
 
-		ForecastMainshock.marshal_poly  (writer, "forecast_mainshock" , forecast_mainshock );
-		ForecastParameters.marshal_poly (writer, "forecast_params"    , forecast_params    );
-		ForecastResults.marshal_poly    (writer, "forecast_results"   , forecast_results   );
+		case MARSHAL_VER_1:
 
-		writer.marshalLong                      ("last_forecast_lag"  , last_forecast_lag  );
+			writer.marshalLong                      ("entry_time"         , entry_time         );
+			writer.marshalInt                       ("fc_origin"          , fc_origin          );
+			writer.marshalInt                       ("fc_status"          , fc_status          );
+			writer.marshalInt                       ("pdl_status"         , pdl_status         );
+			writer.marshalInt                       ("fc_result"          , fc_result          );
+			writer.marshalString                    ("shadowing_event_id" , shadowing_event_id );
+
+			AnalystOptions.marshal_poly     (writer, "analyst_options"    , analyst_options    );
+
+			ForecastMainshock.marshal_poly  (writer, "forecast_mainshock" , forecast_mainshock );
+			ForecastParameters.marshal_poly (writer, "forecast_params"    , forecast_params    );
+			ForecastResults.marshal_poly    (writer, "forecast_results"   , forecast_results   );
+
+			writer.marshalLong                      ("last_forecast_lag"  , last_forecast_lag  );
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			writer.marshalLong                      ("entry_time"         , entry_time         );
+			writer.marshalInt                       ("fc_origin"          , fc_origin          );
+			writer.marshalInt                       ("fc_status"          , fc_status          );
+			writer.marshalInt                       ("pdl_status"         , pdl_status         );
+			writer.marshalInt                       ("fc_result"          , fc_result          );
+			writer.marshalString                    ("shadowing_event_id" , shadowing_event_id );
+
+			AnalystOptions.marshal_poly     (writer, "analyst_options"    , analyst_options    );
+
+			ForecastMainshock.marshal_poly  (writer, "forecast_mainshock" , forecast_mainshock );
+			ForecastParameters.marshal_poly (writer, "forecast_params"    , forecast_params    );
+			ForecastResults.marshal_poly    (writer, "forecast_results"   , forecast_results   );
+
+			writer.marshalLong                      ("last_forecast_lag"  , last_forecast_lag  );
+
+			writer.marshalString                    ("pdl_product_code"   , pdl_product_code   );
+
+			break;
+		}
 	
 		return;
 	}
@@ -1046,7 +1105,7 @@ public class TimelineStatus extends DBPayload {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Superclass
 
@@ -1054,20 +1113,53 @@ public class TimelineStatus extends DBPayload {
 
 		// Contents
 
-		entry_time          = reader.unmarshalLong                      ("entry_time"         );
-		fc_origin           = reader.unmarshalInt                       ("fc_origin"          , FCORIG_MIN, FCORIG_MAX);
-		fc_status           = reader.unmarshalInt                       ("fc_status"          , FCSTAT_MIN, FCSTAT_MAX);
-		pdl_status          = reader.unmarshalInt                       ("pdl_status"         , PDLSTAT_MIN, PDLSTAT_MAX);
-		fc_result           = reader.unmarshalInt                       ("fc_result"          , FCRES_MIN, FCRES_MAX);
-		shadowing_event_id  = reader.unmarshalString                    ("shadowing_event_id" );
+		switch (ver) {
 
-		analyst_options     = AnalystOptions.unmarshal_poly     (reader, "analyst_options"    );
+		default:
+			throw new MarshalException ("TimelineStatus.do_umarshal: Unknown version number: " + ver);
 
-		forecast_mainshock  = ForecastMainshock.unmarshal_poly  (reader, "forecast_mainshock" );
-		forecast_params     = ForecastParameters.unmarshal_poly (reader, "forecast_params"    );
-		forecast_results    = ForecastResults.unmarshal_poly    (reader, "forecast_results"   );
+		case MARSHAL_VER_1:
 
-		last_forecast_lag   = reader.unmarshalLong                      ("last_forecast_lag"  );
+			entry_time          = reader.unmarshalLong                      ("entry_time"         );
+			fc_origin           = reader.unmarshalInt                       ("fc_origin"          , FCORIG_MIN, FCORIG_MAX);
+			fc_status           = reader.unmarshalInt                       ("fc_status"          , FCSTAT_MIN, FCSTAT_MAX);
+			pdl_status          = reader.unmarshalInt                       ("pdl_status"         , PDLSTAT_MIN, PDLSTAT_MAX);
+			fc_result           = reader.unmarshalInt                       ("fc_result"          , FCRES_MIN, FCRES_MAX);
+			shadowing_event_id  = reader.unmarshalString                    ("shadowing_event_id" );
+
+			analyst_options     = AnalystOptions.unmarshal_poly     (reader, "analyst_options"    );
+
+			forecast_mainshock  = ForecastMainshock.unmarshal_poly  (reader, "forecast_mainshock" );
+			forecast_params     = ForecastParameters.unmarshal_poly (reader, "forecast_params"    );
+			forecast_results    = ForecastResults.unmarshal_poly    (reader, "forecast_results"   );
+
+			last_forecast_lag   = reader.unmarshalLong                      ("last_forecast_lag"  );
+
+			pdl_product_code = "";
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			entry_time          = reader.unmarshalLong                      ("entry_time"         );
+			fc_origin           = reader.unmarshalInt                       ("fc_origin"          , FCORIG_MIN, FCORIG_MAX);
+			fc_status           = reader.unmarshalInt                       ("fc_status"          , FCSTAT_MIN, FCSTAT_MAX);
+			pdl_status          = reader.unmarshalInt                       ("pdl_status"         , PDLSTAT_MIN, PDLSTAT_MAX);
+			fc_result           = reader.unmarshalInt                       ("fc_result"          , FCRES_MIN, FCRES_MAX);
+			shadowing_event_id  = reader.unmarshalString                    ("shadowing_event_id" );
+
+			analyst_options     = AnalystOptions.unmarshal_poly     (reader, "analyst_options"    );
+
+			forecast_mainshock  = ForecastMainshock.unmarshal_poly  (reader, "forecast_mainshock" );
+			forecast_params     = ForecastParameters.unmarshal_poly (reader, "forecast_params"    );
+			forecast_results    = ForecastResults.unmarshal_poly    (reader, "forecast_results"   );
+
+			last_forecast_lag   = reader.unmarshalLong                      ("last_forecast_lag"  );
+
+			pdl_product_code    = reader.unmarshalString                    ("pdl_product_code"   );
+
+			break;
+		}
 
 		return;
 	}

@@ -300,7 +300,9 @@ public class LogSupport extends ServerComponent {
 					tstatus.event_id,
 					tstatus.get_actcode_as_string (),
 					tstatus.get_fc_status_as_string (),
-					tstatus.get_pdl_status_as_string (),
+					(tstatus.has_pdl_product_code())
+						? (tstatus.get_pdl_status_as_string () + " (" + tstatus.pdl_product_code + ")")
+						: (tstatus.get_pdl_status_as_string ()),
 					(tstatus.result_has_shadowing())
 						? (tstatus.get_fc_result_as_string () + " (" + tstatus.shadowing_event_id + ")")
 						: (tstatus.get_fc_result_as_string ()),
@@ -340,6 +342,27 @@ public class LogSupport extends ServerComponent {
 	public void report_expire_request (String event_id) {
 		report_action ("EXPIRE-REQUEST",
 					event_id);
+		return;
+	}
+
+
+
+
+	// Report timeline idle.
+
+	public void report_timeline_idle (TimelineStatus tstatus) {
+
+		report_action ("TIMELINE-IDLE",
+					tstatus.event_id,
+					tstatus.get_actcode_as_string (),
+					tstatus.get_fc_status_as_string (),
+					(tstatus.has_pdl_product_code())
+						? (tstatus.get_pdl_status_as_string () + " (" + tstatus.pdl_product_code + ")")
+						: (tstatus.get_pdl_status_as_string ()),
+					(tstatus.result_has_shadowing())
+						? (tstatus.get_fc_result_as_string () + " (" + tstatus.shadowing_event_id + ")")
+						: (tstatus.get_fc_result_as_string ()),
+					"action_time = " + SimpleUtils.time_raw_and_string (tstatus.action_time));
 		return;
 	}
 
@@ -616,7 +639,9 @@ public class LogSupport extends ServerComponent {
 					tstatus.event_id,
 					tstatus.get_actcode_as_string (),
 					tstatus.get_fc_status_as_string (),
-					tstatus.get_pdl_status_as_string (),
+					(tstatus.has_pdl_product_code())
+						? (tstatus.get_pdl_status_as_string () + " (" + tstatus.pdl_product_code + ")")
+						: (tstatus.get_pdl_status_as_string ()),
 					(tstatus.result_has_shadowing())
 						? (tstatus.get_fc_result_as_string () + " (" + tstatus.shadowing_event_id + ")")
 						: (tstatus.get_fc_result_as_string ()),

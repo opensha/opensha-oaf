@@ -32,6 +32,8 @@ import com.google.common.collect.Table;
 
 import scratch.UCERF3.erf.utils.ProbabilityModelsCalc;
 
+import org.opensha.oaf.aafs.ServerConfig;
+
 public class USGS_AftershockForecast {
 	
 	private static final double[] min_mags_default = { 3d, 5d, 6d, 7d };
@@ -310,12 +312,16 @@ public class USGS_AftershockForecast {
 	@SuppressWarnings("unchecked")
 	public JSONOrderedObject buildJSON (long creation_time) {
 		JSONOrderedObject json = new JSONOrderedObject();
+
+		boolean is_blocked = (new ServerConfig()).get_is_fc_content_blocked();
 		
 		json.put("creationTime", creation_time);
 		long maxEndDate = 0L;
-		for (Instant endDate : endDates)
-			if (endDate.toEpochMilli() > maxEndDate)
+		for (Instant endDate : endDates) {
+			if (endDate.toEpochMilli() > maxEndDate) {
 				maxEndDate = endDate.toEpochMilli();
+			}
+		}
 		json.put("expireTime", maxEndDate);
 		
 		json.put("advisoryTimeFrame", advisoryDuration.label);
@@ -323,8 +329,12 @@ public class USGS_AftershockForecast {
 		json.put("template", template.title);
 		
 		String injectableText = this.injectableText;
-		if (injectableText == null)
+		if (injectableText == null) {
 			injectableText = "";
+		}
+		if (is_blocked) {
+			injectableText = "*** THIS IS A SYSTEM TEST. IT IS NOT AN ACTUAL FORECAST. ***";
+		}
 		json.put("injectableText", injectableText);
 		
 		// OBSERVATIONS
@@ -333,7 +343,11 @@ public class USGS_AftershockForecast {
 		for (int m=0; m<minMags.length; m++) {
 			JSONOrderedObject magBin = new JSONOrderedObject();
 			magBin.put("magnitude", minMags[m]);
-			magBin.put("count", aftershockCounts[m]);
+			if (is_blocked) {
+				magBin.put("count", 0);
+			} else {
+				magBin.put("count", aftershockCounts[m]);
+			}
 			obsMagBins.add(magBin);
 		}
 		obsJSON.put("bins", obsMagBins);
@@ -344,12 +358,19 @@ public class USGS_AftershockForecast {
 		modelJSON.put("name", model.getModelName());
 		modelJSON.put("reference", "#url");
 		JSONOrderedObject modelParams = new JSONOrderedObject();
-		// return AftershockStatsCalc.getExpectedNumEvents(getMaxLikelihood_a(), b, magMain, magMin, getMaxLikelihood_p(), getMaxLikelihood_c(), tMinDays, tMaxDays);
-		modelParams.put("a", model.getMaxLikelihood_a());
-		modelParams.put("b", model.get_b());
-		modelParams.put("magMain", model.getMainShockMag());
-		modelParams.put("p", model.getMaxLikelihood_p());
-		modelParams.put("c", model.getMaxLikelihood_c());
+		if (is_blocked) {
+			modelParams.put("a", 0.0);
+			modelParams.put("b", 0.0);
+			modelParams.put("magMain", 0.0);
+			modelParams.put("p", 0.0);
+			modelParams.put("c", 0.0);
+		} else {
+			modelParams.put("a", model.getMaxLikelihood_a());
+			modelParams.put("b", model.get_b());
+			modelParams.put("magMain", model.getMainShockMag());
+			modelParams.put("p", model.getMaxLikelihood_p());
+			modelParams.put("c", model.getMaxLikelihood_c());
+		}
 		modelJSON.put("parameters", modelParams);
 		json.put("model", modelJSON);
 		
@@ -366,9 +387,15 @@ public class USGS_AftershockForecast {
 			for (int m=0; m<minMags.length; m++) {
 				JSONOrderedObject magBin = new JSONOrderedObject();
 				magBin.put("magnitude", minMags[m]);
-				magBin.put("p95minimum", Math.round(numEventsLower.get(durations[i], minMags[m])));
-				magBin.put("p95maximum", Math.round(numEventsUpper.get(durations[i], minMags[m])));
-				magBin.put("probability", probs.get(durations[i], minMags[m]));
+				if (is_blocked) {
+					magBin.put("p95minimum", -1L);
+					magBin.put("p95maximum", -1L);
+					magBin.put("probability", -1.0);
+				} else {
+					magBin.put("p95minimum", Math.round(numEventsLower.get(durations[i], minMags[m])));
+					magBin.put("p95maximum", Math.round(numEventsUpper.get(durations[i], minMags[m])));
+					magBin.put("probability", probs.get(durations[i], minMags[m]));
+				}
 				magBins.add(magBin);
 			}
 			
@@ -378,7 +405,11 @@ public class USGS_AftershockForecast {
 				JSONOrderedObject magBin = new JSONOrderedObject();
 				double mainMag = model.getMainShockMag();
 				magBin.put("magnitude", mainMag);
-				magBin.put("probability", probs.get(durations[i], mainMag));
+				if (is_blocked) {
+					magBin.put("probability", -1.0);
+				} else {
+					magBin.put("probability", probs.get(durations[i], mainMag));
+				}
 				forecastJSON.put("aboveMainshockMag", magBin);
 			}
 			

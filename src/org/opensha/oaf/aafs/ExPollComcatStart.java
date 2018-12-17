@@ -47,6 +47,12 @@ public class ExPollComcatStart extends ServerExecTask {
 
 	private int exec_poll_comcat_start (PendingTask task) {
 
+		// Check for intake blocked
+
+		if ((new ServerConfig()).get_is_poll_intake_blocked()) {
+			return RESCODE_DELETE_INTAKE_BLOCKED;
+		}
+
 		//--- Get payload
 
 		OpPollComcatStart payload = new OpPollComcatStart();

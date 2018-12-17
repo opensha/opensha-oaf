@@ -47,6 +47,12 @@ public class ExIntakePoll extends ServerExecTask {
 
 	private int exec_intake_poll (PendingTask task) {
 
+		// Check for intake blocked
+
+		if ((new ServerConfig()).get_is_poll_intake_blocked()) {
+			return RESCODE_DELETE_INTAKE_BLOCKED;
+		}
+
 		// Convert delayed command to non-delayed command if needed
 
 		int dcres = intake_poll_delayed (task);

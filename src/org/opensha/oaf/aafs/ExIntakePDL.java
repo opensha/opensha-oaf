@@ -44,6 +44,12 @@ public class ExIntakePDL extends ServerExecTask {
 
 	private int exec_intake_pdl (PendingTask task) {
 
+		// Check for intake blocked
+
+		if ((new ServerConfig()).get_is_pdl_intake_blocked()) {
+			return RESCODE_DELETE_INTAKE_BLOCKED;
+		}
+
 		// Convert event ID to timeline ID if needed
 
 		//int etres = sg.timeline_sup.intake_event_id_to_timeline_id (task);
@@ -229,6 +235,13 @@ public class ExIntakePDL extends ServerExecTask {
 
 		try {
 			retval = sg.alias_sup.get_mainshock_for_event_id (task.get_event_id(), fcmain);
+
+			// If event not in Comcat, then throw an exception to trigger the retry sequence
+			// Note: This allows for the possibility that an event reported by PDL may not be visibile immediately in Comcat.
+
+			if (retval == RESCODE_ALIAS_EVENT_NOT_IN_COMCAT) {
+				throw new ComcatRemovedException ("Event reported by PDL is not visible in Comcat: " + task.get_event_id());
+			}
 		}
 
 		// Handle Comcat exception
@@ -238,6 +251,9 @@ public class ExIntakePDL extends ServerExecTask {
 		}
 
 		// If event not in Comcat, then drop the event
+		// Note: This check is now redundant because RESCODE_ALIAS_EVENT_NOT_IN_COMCAT is checked above,
+		// but we retain this check in case the check above is ever removed or restricted (e.g., limited
+		// to only events that have occurred recently).
 
 		if (retval == RESCODE_ALIAS_EVENT_NOT_IN_COMCAT) {
 			return RESCODE_DELETE_NOT_IN_COMCAT;		// Just delete, so that log is not flooded with notifications

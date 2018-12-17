@@ -32,6 +32,8 @@
   "adv_window_names": [ "1 Day", "1 Week", "1 Month", "1 Year" ],
   "forecast_lags": [
     "P0DT0H20M0S",
+    "P0DT0H50M0S",
+    "P0DT2H0M0S",
     "P0DT6H0M0S",
     "P0DT12H0M0S",
     "P0DT18H0M0S",
@@ -153,7 +155,9 @@
     "P0DT0H2M0S",
     "P0DT0H5M0S",
     "P0DT0H10M0S",
+    "P0DT0H15M0S",
     "P0DT0H20M0S",
+    "P0DT0H25M0S",
     "P0DT0H30M0S",
     "P0DT0H40M0S",
     "P0DT0H50M0S",

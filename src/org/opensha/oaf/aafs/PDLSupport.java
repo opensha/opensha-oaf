@@ -81,6 +81,7 @@ public class PDLSupport extends ServerComponent {
 	// Send a report to PDL.
 	// Return the code used to send to PDL, null if not stored due to conflict with existing forecast.
 	// Throw an exception if the report failed.
+	// If successful send with no conflict, then set tstatus.pdl_product_code to the product code used. 
 	// Use this version if the catalog is in tstatus.forecast_results.
 
 	public String send_pdl_report (TimelineStatus tstatus) throws Exception {
@@ -95,13 +96,17 @@ public class PDLSupport extends ServerComponent {
 
 		String eventID = sg.alias_sup.timeline_id_to_pdl_code (tstatus.event_id);
 
+		// The suggested product code, either derived from the event ID or saved from the prior Send
+
+		String suggested_code = ((tstatus.has_pdl_product_code()) ? (tstatus.pdl_product_code) : eventID);
+
 		// Review status, false means automatically generated
 
 		boolean isReviewed = false;
 
 		// Build the product
 
-		Product product = forecast_data.make_pdl_product (eventID, isReviewed);
+		Product product = forecast_data.make_pdl_product (suggested_code, isReviewed);
 
 		// Stop if conflict
 
@@ -118,6 +123,10 @@ public class PDLSupport extends ServerComponent {
 
 		PDLSender.sendProduct(product, true);
 
+		// Save the product code that was used in the send
+
+		tstatus.pdl_product_code = ((forecast_data.pdl_event_id.equals (eventID)) ? "" : (forecast_data.pdl_event_id));
+
 		return forecast_data.pdl_event_id;
 	}
 
@@ -127,6 +136,7 @@ public class PDLSupport extends ServerComponent {
 	// Send a report to PDL.
 	// Return the code used to send to PDL, null if not stored due to conflict with existing forecast.
 	// Throw an exception if the report failed.
+	// If successful send with no conflict, then set tstatus.pdl_product_code to the product code used. 
 	// Use this version to supply the catalog separately.
 
 	public String send_pdl_report (TimelineStatus tstatus, CompactEqkRupList catalog) throws Exception {
@@ -141,13 +151,17 @@ public class PDLSupport extends ServerComponent {
 
 		String eventID = sg.alias_sup.timeline_id_to_pdl_code (tstatus.event_id);
 
+		// The suggested product code, either derived from the event ID or saved from the prior Send
+
+		String suggested_code = ((tstatus.has_pdl_product_code()) ? (tstatus.pdl_product_code) : eventID);
+
 		// Review status, false means automatically generated
 
 		boolean isReviewed = false;
 
 		// Build the product
 
-		Product product = forecast_data.make_pdl_product (eventID, isReviewed);
+		Product product = forecast_data.make_pdl_product (suggested_code, isReviewed);
 
 		// Stop if conflict
 
@@ -163,6 +177,10 @@ public class PDLSupport extends ServerComponent {
 		// Send the product, true means it is text
 
 		PDLSender.sendProduct(product, true);
+
+		// Save the product code that was used in the send
+
+		tstatus.pdl_product_code = ((forecast_data.pdl_event_id.equals (eventID)) ? "" : (forecast_data.pdl_event_id));
 
 		return forecast_data.pdl_event_id;
 	}

@@ -742,6 +742,8 @@ public class TimelineSupport extends ServerComponent {
 
 		// No command required
 
+		sg.log_sup.report_timeline_idle (tstatus);
+
 		return false;
 	}
 

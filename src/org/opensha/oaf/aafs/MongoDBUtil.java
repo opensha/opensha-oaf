@@ -108,7 +108,8 @@ public class MongoDBUtil implements AutoCloseable {
 
 			// Get the database, using database name.
 
-			db = mongoClient.getDatabase (config.getDb_name());
+			db = mongoClient.getDatabase (config.getDb_name())
+							.withWriteConcern (WriteConcern.JOURNALED);
 
 			// Create the map for caching collections.
 

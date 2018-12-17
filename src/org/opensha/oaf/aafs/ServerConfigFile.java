@@ -51,6 +51,10 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  *  "comcat_exclude" = [ Array giving list of Comcat ids to exclude ]
  *  "locat_bins" = Integer giving number of latitude bins in local catalog, or 0 for default.
  *  "locat_filenames" = [ Array giving filenames for local catalog, empty if no local catalog ]
+ *	"block_pdl_intake" = Integer giving PDL intake blocking option: 0 = don't block, 1 = block.
+ *	"block_poll_intake" = Integer giving poll intake blocking option: 0 = don't block, 1 = block.
+ *	"block_fc_content" = Integer giving forecast content blocking option: 0 = don't block, 1 = block.
+ *  "db_err_rate" = Real number giving rate of simulated database errors.
  *	"pdl_enable" = Integer giving PDL enable option: 0 = none, 1 = development, 2 = production, 3 =  simulated development, 4 = simulated production.
  *	"pdl_key_filename" = String giving PDL signing key filename, can be empty string for none.
  *  "pdl_err_rate" = Real number giving rate of simulated PDL errors.
@@ -157,6 +161,22 @@ public class ServerConfigFile {
 
 	public ArrayList<String> locat_filenames;
 
+	// PDL intake blocking option: 0 = don't block, 1 = block.
+
+	public int block_pdl_intake;
+
+	// Poll intake blocking option: 0 = don't block, 1 = block.
+
+	public int block_poll_intake;
+
+	// Forecast content blocking option: 0 = don't block, 1 = block.
+
+	public int block_fc_content;
+
+	// Simulated error rate for database.
+
+	public double db_err_rate;
+
 	// PDL enable option.
 
 	public static final int PDLOPT_MIN = 0;
@@ -220,6 +240,10 @@ public class ServerConfigFile {
 		comcat_exclude = new LinkedHashSet<String>();
 		locat_bins = 0;
 		locat_filenames = new ArrayList<String>();
+		block_pdl_intake = 0;
+		block_poll_intake = 0;
+		block_fc_content = 0;
+		db_err_rate = 0.0;
 		pdl_enable = PDLOPT_NONE;
 		pdl_key_filename = "";
 		pdl_err_rate = 0.0;
@@ -326,6 +350,22 @@ public class ServerConfigFile {
 			}
 		}
 
+		if (!( block_pdl_intake >= 0 && block_pdl_intake <= 1 )) {
+			throw new RuntimeException("ServerConfigFile: Invalid block_pdl_intake: " + block_pdl_intake);
+		}
+
+		if (!( block_poll_intake >= 0 && block_poll_intake <= 1 )) {
+			throw new RuntimeException("ServerConfigFile: Invalid block_poll_intake: " + block_poll_intake);
+		}
+
+		if (!( block_fc_content >= 0 && block_fc_content <= 1 )) {
+			throw new RuntimeException("ServerConfigFile: Invalid block_fc_content: " + block_fc_content);
+		}
+
+		if (!( db_err_rate >= 0.0 && db_err_rate <= 1.0 )) {
+			throw new RuntimeException("ServerConfigFile: Invalid db_err_rate: " + db_err_rate);
+		}
+
 		if (!( pdl_enable >= PDLOPT_MIN && pdl_enable <= PDLOPT_MAX )) {
 			throw new RuntimeException("ServerConfigFile: Invalid pdl_enable: " + pdl_enable);
 		}
@@ -397,6 +437,11 @@ public class ServerConfigFile {
 		}
 		result.append ("]" + "\n");
 
+		result.append ("block_pdl_intake = " + block_pdl_intake + "\n");
+		result.append ("block_poll_intake = " + block_poll_intake + "\n");
+		result.append ("block_fc_content = " + block_fc_content + "\n");
+		result.append ("db_err_rate = " + db_err_rate + "\n");
+
 		result.append ("pdl_enable = " + pdl_enable + "\n");
 		result.append ("pdl_key_filename = " + ((pdl_key_filename == null) ? "<null>" : pdl_key_filename) + "\n");
 		result.append ("pdl_err_rate = " + pdl_err_rate + "\n");
@@ -448,7 +493,7 @@ public class ServerConfigFile {
 		return pdl_senders;
 	}
 
-	// Get true if sending to PDL is permitted, false if not..
+	// Get true if sending to PDL is permitted, false if not.
 
 	public boolean get_is_pdl_permitted () {
 		boolean result = false;
@@ -465,7 +510,7 @@ public class ServerConfigFile {
 		return result;
 	}
 
-	// Get true if readback of PDL products should come from production, false if not..
+	// Get true if readback of PDL products should come from production, false if not.
 
 	public boolean get_is_pdl_readback_prod () {
 		boolean result = true;
@@ -477,6 +522,42 @@ public class ServerConfigFile {
 			result = false;
 			break;
 
+		}
+
+		return result;
+	}
+
+	// Get true if PDL intake is blocked, false if not.
+
+	public boolean get_is_pdl_intake_blocked () {
+		boolean result = false;
+
+		if (block_pdl_intake != 0) {
+			result = true;
+		}
+
+		return result;
+	}
+
+	// Get true if poll intake is blocked, false if not.
+
+	public boolean get_is_poll_intake_blocked () {
+		boolean result = false;
+
+		if (block_poll_intake != 0) {
+			result = true;
+		}
+
+		return result;
+	}
+
+	// Get true if forecast content is blocked, false if not.
+
+	public boolean get_is_fc_content_blocked () {
+		boolean result = false;
+
+		if (block_fc_content != 0) {
+			result = true;
 		}
 
 		return result;
@@ -617,6 +698,10 @@ public class ServerConfigFile {
 		marshal_string_coll     (writer, "comcat_exclude"   , comcat_exclude   );
 		writer.marshalInt       (        "locat_bins"       , locat_bins       );
 		marshal_string_coll     (writer, "locat_filenames"  , locat_filenames  );
+		writer.marshalInt       (        "block_pdl_intake" , block_pdl_intake );
+		writer.marshalInt       (        "block_poll_intake", block_poll_intake);
+		writer.marshalInt       (        "block_fc_content" , block_fc_content );
+		writer.marshalDouble    (        "db_err_rate"      , db_err_rate      );
 		writer.marshalInt       (        "pdl_enable"       , pdl_enable       );
 		writer.marshalString    (        "pdl_key_filename" , pdl_key_filename );
 		writer.marshalDouble    (        "pdl_err_rate"     , pdl_err_rate     );
@@ -659,6 +744,10 @@ public class ServerConfigFile {
 		locat_bins        = reader.unmarshalInt       (        "locat_bins"       );
 		locat_filenames = new ArrayList<String>();
 		unmarshal_string_coll                         (reader, "locat_filenames"  , locat_filenames  );
+		block_pdl_intake  = reader.unmarshalInt       (        "block_pdl_intake" );
+		block_poll_intake = reader.unmarshalInt       (        "block_poll_intake");
+		block_fc_content  = reader.unmarshalInt       (        "block_fc_content" );
+		db_err_rate       = reader.unmarshalDouble    (        "db_err_rate"      );
 		pdl_enable        = reader.unmarshalInt       (        "pdl_enable"       );
 		pdl_key_filename  = reader.unmarshalString    (        "pdl_key_filename" );
 		pdl_err_rate      = reader.unmarshalDouble    (        "pdl_err_rate"     );
