@@ -616,12 +616,15 @@ public class TimelineSupport extends ServerComponent {
 
 				if (next_forecast_lag >= 0L) {
 					pdl_time_ceiling = Math.min (pdl_time_ceiling,
-						tstatus.forecast_mainshock.mainshock_time + next_forecast_lag - sg.task_disp.get_action_config().get_forecast_min_gap());
+						tstatus.forecast_mainshock.mainshock_time + next_forecast_lag
+						+ sg.task_disp.get_action_config().get_comcat_clock_skew()
+						+ sg.task_disp.get_action_config().get_comcat_origin_skew()
+						- sg.task_disp.get_action_config().get_forecast_min_gap());
 				}
 
 				// If there is a previous forecast (should always be), limit to a maximum time after it
 				// Note: Originally the "else" did not appear on the following line.  With "else" the
-				// staleness test is applied only after the last forecast.  Wihtout "else" the staleness
+				// staleness test is applied only after the last forecast.  Without "else" the staleness
 				// test is applied to every forecast.
 
 				else if (tstatus.last_forecast_lag >= 0L) {

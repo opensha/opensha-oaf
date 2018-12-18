@@ -1,6 +1,6 @@
 {
   "ActionConfigFile": 24001,
-  "forecast_min_gap": "PT20M",
+  "forecast_min_gap": "PT5M",
   "forecast_max_delay": "P7D",
   "comcat_clock_skew": "PT8M0S",
   "comcat_origin_skew": "PT2M0S",
