@@ -558,7 +558,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 
 			// Random number generator
 
-			UniformRealDistribution rangen = new UniformRealDistribution();
+			UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
 
 			// Generate random values
 
@@ -728,7 +728,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 
 			// Random number generator
 
-			UniformRealDistribution rangen = new UniformRealDistribution();
+			UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
 
 			// Generate random values
 

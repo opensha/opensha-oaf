@@ -52,6 +52,6 @@ public class RecordKey {
 	// create_unique_key - Create a key, whose value is different than any other key.
 
 	public static RecordKey create_unique_key () {
-		return new RecordKey (new ObjectId());
+		return new RecordKey (MongoDBUtil.make_object_id());
 	}
 }

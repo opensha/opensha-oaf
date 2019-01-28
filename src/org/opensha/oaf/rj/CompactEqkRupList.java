@@ -12,6 +12,8 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 
+import org.opensha.oaf.util.SimpleUtils;
+
 /**
  * Compact representation of earthquake rupture sequence.
  * Author: Michael Barall 03/29/2018.
@@ -867,7 +869,7 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 
 			// Random number generator
 
-			UniformRealDistribution rangen = new UniformRealDistribution();
+			UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
 
 			// Generate random values
 
@@ -986,7 +988,7 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 
 			// Random number generator
 
-			UniformRealDistribution rangen = new UniformRealDistribution();
+			UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
 
 			// Quick test of the comparitor.
 

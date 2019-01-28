@@ -149,7 +149,7 @@ public class GammaConfig {
 
 		// Fill in simulation parameters
 
-		rangen = new UniformRealDistribution();
+		rangen = SimpleUtils.make_uniform_rangen();
 		for (int i = 0; i < 1000000; ++i) {
 			rangen.sample();
 		}

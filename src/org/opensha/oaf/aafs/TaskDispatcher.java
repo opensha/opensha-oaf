@@ -15,6 +15,7 @@ import org.opensha.oaf.aafs.entity.AliasFamily;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.TestMode;
 import org.opensha.oaf.util.TimeSplitOutputStream;
 
 import org.opensha.commons.data.comcat.ComcatException;
@@ -933,8 +934,13 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 	public void setup_task_context () {
 
-		dispatcher_time = ServerClock.get_time();
-		dispatcher_true_time = ServerClock.get_true_time();
+		dispatcher_time = TestMode.get_test_time();
+		dispatcher_true_time = dispatcher_time;
+		if (dispatcher_time <= 0L) {
+			dispatcher_time = ServerClock.get_time();
+			dispatcher_true_time = ServerClock.get_true_time();
+		}
+
 		dispatcher_action_config = new ActionConfig();
 
 		taskres_log_time = dispatcher_time;
@@ -966,8 +972,13 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 	public void test_exec_idle_time () {
 
-		dispatcher_time = ServerClock.get_time();
-		dispatcher_true_time = ServerClock.get_true_time();
+		dispatcher_time = TestMode.get_test_time();
+		dispatcher_true_time = dispatcher_time;
+		if (dispatcher_time <= 0L) {
+			dispatcher_time = ServerClock.get_time();
+			dispatcher_true_time = ServerClock.get_true_time();
+		}
+
 		dispatcher_action_config = new ActionConfig();
 	
 		exec_idle_time();

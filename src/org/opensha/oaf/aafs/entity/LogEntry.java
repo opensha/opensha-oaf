@@ -37,6 +37,7 @@ import com.mongodb.client.MongoCursor;
 import org.opensha.oaf.aafs.DBCorruptException;
 import org.opensha.oaf.aafs.RecordIteratorMongo;
 import org.opensha.oaf.aafs.MongoDBCollRet;
+import org.opensha.oaf.aafs.MongoDBCollHandle;
 
 
 
@@ -433,24 +434,53 @@ public class LogEntry implements java.io.Serializable {
 
 
 
-	// Get the collection.
+	//  // Get the collection.
+	//  
+	//  private static synchronized MongoCollection<Document> get_collection () {
+	//  
+	//  	// Get the collection
+	//  
+	//  	MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("log");
+	//  
+	//  	// Create the indexes
+	//  
+	//  	if (coll_ret.f_new) {
+	//  		MongoDBUtil.make_simple_index (coll_ret.collection, "event_id", "logevid");
+	//  		MongoDBUtil.make_simple_index (coll_ret.collection, "log_time", "logtime");
+	//  	}
+	//  
+	//  	// Return the collection
+	//  
+	//  	return coll_ret.collection;
+	//  }
 
-	private static synchronized MongoCollection<Document> get_collection () {
 
-		// Get the collection
 
-		MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("log");
 
-		// Create the indexes
+	// Get the collection handle.
+	// If db_handle is null or empty, then use the current default database.
 
-		if (coll_ret.f_new) {
-			MongoDBUtil.make_simple_index (coll_ret.collection, "event_id", "logevid");
-			MongoDBUtil.make_simple_index (coll_ret.collection, "log_time", "logtime");
-		}
+	private static MongoDBCollHandle get_coll_handle (String db_handle) {
+		return MongoDBUtil.get_coll_handle (db_handle, "log");
+	}
 
-		// Return the collection
 
-		return coll_ret.collection;
+
+
+	// Make indexes for our collection.
+
+	public static void make_indexes () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Make the indexes
+
+		coll_handle.make_simple_index ("event_id", "logevid");
+		coll_handle.make_simple_index ("log_time", "logtime");
+
+		return;
 	}
 
 
@@ -464,7 +494,7 @@ public class LogEntry implements java.io.Serializable {
 		// Supply the id if needed
 
 		if (id == null) {
-			id = new ObjectId();
+			id = MongoDBUtil.make_object_id();
 		}
 
 		// Construct the document
@@ -516,8 +546,8 @@ public class LogEntry implements java.io.Serializable {
 
 		// Constructor passes thru the cursor.
 
-		public MyRecordIterator (MongoCursor<Document> mongo_cursor) {
-			super (mongo_cursor);
+		public MyRecordIterator (MongoCursor<Document> mongo_cursor, MongoDBCollHandle coll_handle) {
+			super (mongo_cursor, coll_handle);
 		}
 
 		// Hook routine to convert a Document to a T.
@@ -629,6 +659,10 @@ public class LogEntry implements java.io.Serializable {
 			throw new IllegalArgumentException("LogEntry.submit_log_entry: Invalid log parameters");
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Construct the log entry object
 
 		LogEntry lentry = new LogEntry();
@@ -646,7 +680,7 @@ public class LogEntry implements java.io.Serializable {
 
 		// Call MongoDB to store into database
 
-		get_collection().insertOne (lentry.to_bson_doc());
+		coll_handle.insertOne (lentry.to_bson_doc());
 		
 		return lentry;
 	}
@@ -702,9 +736,13 @@ public class LogEntry implements java.io.Serializable {
 	 */
 	public static LogEntry store_log_entry (LogEntry lentry) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Call MongoDB to store into database
 
-		get_collection().insertOne (lentry.to_bson_doc());
+		coll_handle.insertOne (lentry.to_bson_doc());
 		
 		return lentry;
 	}
@@ -723,13 +761,17 @@ public class LogEntry implements java.io.Serializable {
 			throw new IllegalArgumentException("LogEntry.get_log_entry_for_key: Missing or empty record key");
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Filter: id == key.getId()
 
 		Bson filter = id_filter (key.getId());
 
 		// Get the document
 
-		Document doc = get_collection().find(filter).first();
+		Document doc = coll_handle.find_first (filter);
 
 		// Convert to log entry
 
@@ -754,17 +796,16 @@ public class LogEntry implements java.io.Serializable {
 	public static List<LogEntry> get_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
 		ArrayList<LogEntry> entries = new ArrayList<LogEntry>();
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (log_time_lo, log_time_hi, event_id);
-		MongoCursor<Document> cursor;
-		if (filter == null) {
-			cursor = get_collection().find().sort(natural_sort()).iterator();
-		} else {
-			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
-		}
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
 		try(
-			MyRecordIterator iter = new MyRecordIterator (cursor);
+			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
 			// Dump into the list
 
@@ -789,16 +830,15 @@ public class LogEntry implements java.io.Serializable {
 	 */
 	public static RecordIterator<LogEntry> fetch_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (log_time_lo, log_time_hi, event_id);
-		MongoCursor<Document> cursor;
-		if (filter == null) {
-			cursor = get_collection().find().sort(natural_sort()).iterator();
-		} else {
-			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
-		}
-		return new MyRecordIterator (cursor);
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		return new MyRecordIterator (cursor, coll_handle);
 	}
 
 
@@ -817,13 +857,17 @@ public class LogEntry implements java.io.Serializable {
 			throw new IllegalArgumentException("LogEntry.delete_log_entry: Invalid parameters");
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Filter: id == entry.id
 
 		Bson filter = id_filter (entry.get_id());
 
 		// Run the delete
 
-		get_collection().deleteOne (filter);
+		coll_handle.deleteOne (filter);
 		
 		return;
 	}

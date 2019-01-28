@@ -4,7 +4,7 @@ package org.opensha.oaf.aafs;
  * Exception class for database contents inconsistent or corrupted.
  * Author: Michael Barall 04/02/2018.
  */
-public class DBCorruptException extends RuntimeException {
+public class DBCorruptException extends DBException {
 
 	// Constructors.
 

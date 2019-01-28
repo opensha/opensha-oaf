@@ -367,7 +367,7 @@ public class ServerCmd {
 		// One additional argument
 
 		if (args.length != 2) {
-			System.err.println ("ServerCmd : Invalid 'cmd_add_event' subcommand");
+			System.err.println ("ServerCmd : Invalid 'add_event' subcommand");
 			return;
 		}
 
@@ -690,6 +690,49 @@ public class ServerCmd {
 
 
 
+	// cmd_make_indexes - Make the indexes for our MongoDB collections.
+
+	public static void cmd_make_indexes(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerCmd : Invalid 'make_indexes' subcommand");
+			return;
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Create the indexes
+		
+			System.out.println ("Creating indexes for task entries...");
+			PendingTask.make_indexes();
+		
+			System.out.println ("Creating indexes for log entries...");
+			LogEntry.make_indexes();
+		
+			System.out.println ("Creating indexes for catalog snapshot entries...");
+			CatalogSnapshot.make_indexes();
+		
+			System.out.println ("Creating indexes for timeline entries...");
+			TimelineEntry.make_indexes();
+		
+			System.out.println ("Creating indexes for alias family entries...");
+			AliasFamily.make_indexes();
+			
+			System.out.println ("All indexes were created successfully.");
+		}
+
+		return;
+	}
+
+
+
+
 	// Entry point.
 	
 	public static void main(String[] args) {
@@ -812,6 +855,20 @@ public class ServerCmd {
 		case "show_version":
 			try {
 				cmd_show_version(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : make_indexes
+		// Command format:
+		//  make_indexes
+		// Make indexes for all local database collections.
+		// Note : It is not an error to make indexes that already exist; the existing indexes are unchanged.
+
+		case "make_indexes":
+			try {
+				cmd_make_indexes(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

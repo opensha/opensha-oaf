@@ -1,10 +1,69 @@
 {
   "ServerConfigFile": 34001,
-  "db_host": "127.0.0.1",
-  "db_port": 27017,
-  "db_name": "usgs",
-  "db_user": "usgs",
-  "db_password": "usgs",
+  "mongo_config": {
+    "MongoDBConfig": 54001,
+    "default_db_handle": "local-usgs",
+    "hosts": [
+      {
+        "host_handle": "local",
+        "write_concern": "majority+journaled",
+        "read_concern": "majority",
+        "read_preference": "",
+        "retry_writes": "",
+        "connection_mode": "",
+        "cluster_type": "",
+        "replica_set_name": "",
+        "connection_string": "",
+        "username": "usgs",
+        "auth_db": "usgs",
+        "password": "usgs",
+        "session_level": 0,
+        "causal_consistency": "",
+        "transact_write_concern": "majority+journaled",
+        "transact_read_concern": "snapshot",
+        "transact_read_preference": "",
+        "transact_retries": 0,
+        "commit_retries": 0,
+        "addresses": [
+          {
+            "host_name": "127.0.0.1",
+            "host_port": 27017
+          }
+        ],
+        "databases": [
+          {
+            "db_handle": "local-usgs",
+            "db_name": "usgs",
+            "write_concern": "majority+journaled",
+            "read_concern": "majority",
+            "read_preference": "",
+            "collections": [
+              {
+                "coll_name": "alias",
+                "access_level": 2
+              },
+              {
+                "coll_name": "catalog",
+                "access_level": 2
+              },
+              {
+                "coll_name": "log",
+                "access_level": 2
+              },
+              {
+                "coll_name": "tasks",
+                "access_level": 2
+              },
+              {
+                "coll_name": "timeline",
+                "access_level": 2
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
   "activemq_host": "127.0.0.1",
   "activemq_port": 61616,
   "activemq_user": "admin",

@@ -2,7 +2,9 @@ package org.opensha.oaf.aafs;
 
 import java.util.List;
 import java.util.Arrays;
+import java.util.ArrayList;
 
+import java.io.File;
 import java.io.Reader;
 import java.io.FileReader;
 import java.io.BufferedReader;
@@ -56,7 +58,7 @@ public class ServerTest {
 		// No additional arguments
 
 		if (args.length != 1) {
-			System.err.println ("ServerTest : Invalid 'test1' subcommand");
+			System.err.println ("ServerTest : Invalid 'test1' or 'task_add_some' subcommand");
 			return;
 		}
 
@@ -167,7 +169,7 @@ public class ServerTest {
 		// No additional arguments
 
 		if (args.length != 1) {
-			System.err.println ("ServerTest : Invalid 'test2' subcommand");
+			System.err.println ("ServerTest : Invalid 'test2' or 'task_display_unsorted' subcommand");
 			return;
 		}
 
@@ -202,7 +204,7 @@ public class ServerTest {
 		// No additional arguments
 
 		if (args.length != 1) {
-			System.err.println ("ServerTest : Invalid 'test3' subcommand");
+			System.err.println ("ServerTest : Invalid 'test3' or 'task_display_list' subcommand");
 			return;
 		}
 
@@ -237,7 +239,7 @@ public class ServerTest {
 		// No additional arguments
 
 		if (args.length != 1) {
-			System.err.println ("ServerTest : Invalid 'test4' subcommand");
+			System.err.println ("ServerTest : Invalid 'test4' or 'task_display_first' subcommand");
 			return;
 		}
 
@@ -274,7 +276,7 @@ public class ServerTest {
 		// One additional argument
 
 		if (args.length != 2) {
-			System.err.println ("ServerTest : Invalid 'test5' subcommand");
+			System.err.println ("ServerTest : Invalid 'test5' or 'task_cutoff_first' subcommand");
 			return;
 		}
 
@@ -313,7 +315,7 @@ public class ServerTest {
 		// One additional argument
 
 		if (args.length != 2) {
-			System.err.println ("ServerTest : Invalid 'test6' subcommand");
+			System.err.println ("ServerTest : Invalid 'test6' or 'task_cutoff_activate' subcommand");
 			return;
 		}
 
@@ -352,7 +354,7 @@ public class ServerTest {
 		// Three or four additional arguments
 
 		if (args.length != 4 && args.length != 5) {
-			System.err.println ("ServerTest : Invalid 'test7' subcommand");
+			System.err.println ("ServerTest : Invalid 'test7' or 'task_cutoff_activate_stage' subcommand");
 			return;
 		}
 
@@ -403,7 +405,7 @@ public class ServerTest {
 		// One additional argument
 
 		if (args.length != 2) {
-			System.err.println ("ServerTest : Invalid 'test8' subcommand");
+			System.err.println ("ServerTest : Invalid 'test8' or 'task_cutoff_activate_delete' subcommand");
 			return;
 		}
 
@@ -448,7 +450,7 @@ public class ServerTest {
 		// No additional arguments
 
 		if (args.length != 1) {
-			System.err.println ("ServerTest : Invalid 'test9' subcommand");
+			System.err.println ("ServerTest : Invalid 'test9' or 'run_dispatcher' subcommand");
 			return;
 		}
 
@@ -477,7 +479,7 @@ public class ServerTest {
 		// No additional arguments
 
 		if (args.length != 1) {
-			System.err.println ("ServerTest : Invalid 'test10' subcommand");
+			System.err.println ("ServerTest : Invalid 'test10' or 'post_shutdown' subcommand");
 			return;
 		}
 
@@ -506,7 +508,7 @@ public class ServerTest {
 		// No additional arguments
 
 		if (args.length != 1) {
-			System.err.println ("ServerTest : Invalid 'test11' subcommand");
+			System.err.println ("ServerTest : Invalid 'test11' or 'log_add_from_tasks' subcommand");
 			return;
 		}
 
@@ -541,7 +543,7 @@ public class ServerTest {
 		// No additional arguments
 
 		if (args.length != 1) {
-			System.err.println ("ServerTest : Invalid 'test12' subcommand");
+			System.err.println ("ServerTest : Invalid 'test12' or 'log_search_for_tasks' subcommand");
 			return;
 		}
 
@@ -582,7 +584,7 @@ public class ServerTest {
 		// Two or three additional arguments
 
 		if (args.length != 3 && args.length != 4) {
-			System.err.println ("ServerTest : Invalid 'test13' subcommand");
+			System.err.println ("ServerTest : Invalid 'test13' or 'log_query_list' subcommand");
 			return;
 		}
 
@@ -624,7 +626,7 @@ public class ServerTest {
 		// Two or three additional arguments
 
 		if (args.length != 3 && args.length != 4) {
-			System.err.println ("ServerTest : Invalid 'test14' subcommand");
+			System.err.println ("ServerTest : Invalid 'test14' or 'log_query_list_delete' subcommand");
 			return;
 		}
 
@@ -667,7 +669,7 @@ public class ServerTest {
 		// Three or four additional arguments
 
 		if (args.length != 4 && args.length != 5) {
-			System.err.println ("ServerTest : Invalid 'test15' subcommand");
+			System.err.println ("ServerTest : Invalid 'test15' or 'post_task' subcommand");
 			return;
 		}
 
@@ -703,7 +705,7 @@ public class ServerTest {
 		// Zero or one additional arguments
 
 		if (args.length < 1 || args.length > 2) {
-			System.err.println ("ServerTest : Invalid 'test16' subcommand");
+			System.err.println ("ServerTest : Invalid 'test16' or 'exec_task' subcommand");
 			return;
 		}
 
@@ -735,7 +737,7 @@ public class ServerTest {
 		// Three additional arguments
 
 		if (args.length != 4) {
-			System.err.println ("ServerTest : Invalid 'test17' subcommand");
+			System.err.println ("ServerTest : Invalid 'test17' or 'catsnap_add' subcommand");
 			return;
 		}
 
@@ -826,7 +828,7 @@ public class ServerTest {
 		// Two or three additional arguments
 
 		if (args.length != 3 && args.length != 4) {
-			System.err.println ("ServerTest : Invalid 'test18' subcommand");
+			System.err.println ("ServerTest : Invalid 'test18' or 'catsnap_query_list' subcommand");
 			return;
 		}
 
@@ -871,7 +873,7 @@ public class ServerTest {
 		// Two or three additional arguments
 
 		if (args.length != 3 && args.length != 4) {
-			System.err.println ("ServerTest : Invalid 'test19' subcommand");
+			System.err.println ("ServerTest : Invalid 'test19' or 'catsnap_query_delete' subcommand");
 			return;
 		}
 
@@ -917,7 +919,7 @@ public class ServerTest {
 		// No additional arguments
 
 		if (args.length != 1) {
-			System.err.println ("ServerTest : Invalid 'test20' subcommand");
+			System.err.println ("ServerTest : Invalid 'test20' or 'tline_add_some' subcommand");
 			return;
 		}
 
@@ -1016,7 +1018,7 @@ public class ServerTest {
 		// Three or more additional arguments
 
 		if (args.length < 4) {
-			System.err.println ("ServerTest : Invalid 'test21' subcommand");
+			System.err.println ("ServerTest : Invalid 'test21' or 'tline_query_list' subcommand");
 			return;
 		}
 
@@ -1071,7 +1073,7 @@ public class ServerTest {
 		// Three or more additional arguments
 
 		if (args.length < 4) {
-			System.err.println ("ServerTest : Invalid 'test22' subcommand");
+			System.err.println ("ServerTest : Invalid 'test22' or 'tline_query_iterate' subcommand");
 			return;
 		}
 
@@ -1128,7 +1130,7 @@ public class ServerTest {
 		// Three or more additional arguments
 
 		if (args.length < 4) {
-			System.err.println ("ServerTest : Invalid 'test23' subcommand");
+			System.err.println ("ServerTest : Invalid 'test23' or 'tline_query_refetch' subcommand");
 			return;
 		}
 
@@ -1184,7 +1186,7 @@ public class ServerTest {
 		// Three or more additional arguments
 
 		if (args.length < 4) {
-			System.err.println ("ServerTest : Invalid 'test24' subcommand");
+			System.err.println ("ServerTest : Invalid 'test24' or 'tline_query_delete' subcommand");
 			return;
 		}
 
@@ -1239,7 +1241,7 @@ public class ServerTest {
 		// No additional arguments
 
 		if (args.length != 1) {
-			System.err.println ("ServerTest : Invalid 'test25' subcommand");
+			System.err.println ("ServerTest : Invalid 'test25' or 'task_display_iterate' subcommand");
 			return;
 		}
 
@@ -1276,7 +1278,7 @@ public class ServerTest {
 		// Two or three additional arguments
 
 		if (args.length != 3 && args.length != 4) {
-			System.err.println ("ServerTest : Invalid 'test26' subcommand");
+			System.err.println ("ServerTest : Invalid 'test26' or 'log_query_iterate' subcommand");
 			return;
 		}
 
@@ -1320,7 +1322,7 @@ public class ServerTest {
 		// Two or three additional arguments
 
 		if (args.length != 3 && args.length != 4) {
-			System.err.println ("ServerTest : Invalid 'test27' subcommand");
+			System.err.println ("ServerTest : Invalid 'test27' or 'catsnap_query_iterate' subcommand");
 			return;
 		}
 
@@ -1398,7 +1400,7 @@ public class ServerTest {
 		// Two or three additional arguments
 
 		if (args.length != 3 && args.length != 4) {
-			System.err.println ("ServerTest : Invalid 'test29' subcommand");
+			System.err.println ("ServerTest : Invalid 'test29' or 'task_query_list' subcommand");
 			return;
 		}
 
@@ -1440,7 +1442,7 @@ public class ServerTest {
 		// Two or three additional arguments
 
 		if (args.length != 3 && args.length != 4) {
-			System.err.println ("ServerTest : Invalid 'test30' subcommand");
+			System.err.println ("ServerTest : Invalid 'test30' or 'task_query_iterate' subcommand");
 			return;
 		}
 
@@ -1484,7 +1486,7 @@ public class ServerTest {
 		// Three or more additional arguments
 
 		if (args.length < 4) {
-			System.err.println ("ServerTest : Invalid 'test31' subcommand");
+			System.err.println ("ServerTest : Invalid 'test31' or 'tline_query_first' subcommand");
 			return;
 		}
 
@@ -1657,7 +1659,7 @@ public class ServerTest {
 		// No additional arguments
 
 		if (args.length != 1) {
-			System.err.println ("ServerTest : Invalid 'test35' subcommand");
+			System.err.println ("ServerTest : Invalid 'test35' or 'alias_add_some' subcommand");
 			return;
 		}
 
@@ -1794,7 +1796,7 @@ public class ServerTest {
 		// Three or more additional arguments
 
 		if (args.length < 4) {
-			System.err.println ("ServerTest : Invalid 'test36' subcommand");
+			System.err.println ("ServerTest : Invalid 'test36' or 'alias_query_list' subcommand");
 			return;
 		}
 
@@ -1850,7 +1852,7 @@ public class ServerTest {
 		// Three or more additional arguments
 
 		if (args.length < 4) {
-			System.err.println ("ServerTest : Invalid 'test37' subcommand");
+			System.err.println ("ServerTest : Invalid 'test37' or 'alias_query_iterate' subcommand");
 			return;
 		}
 
@@ -1908,7 +1910,7 @@ public class ServerTest {
 		// Three or more additional arguments
 
 		if (args.length < 4) {
-			System.err.println ("ServerTest : Invalid 'test38' subcommand");
+			System.err.println ("ServerTest : Invalid 'test38' or 'alias_query_refetch' subcommand");
 			return;
 		}
 
@@ -1966,7 +1968,7 @@ public class ServerTest {
 		// Three or more additional arguments
 
 		if (args.length < 4) {
-			System.err.println ("ServerTest : Invalid 'test39' subcommand");
+			System.err.println ("ServerTest : Invalid 'test39' or 'alias_query_delete' subcommand");
 			return;
 		}
 
@@ -2022,7 +2024,7 @@ public class ServerTest {
 		// Three or more additional arguments
 
 		if (args.length < 4) {
-			System.err.println ("ServerTest : Invalid 'test40' subcommand");
+			System.err.println ("ServerTest : Invalid 'test40' or 'alias_query_first' subcommand");
 			return;
 		}
 
@@ -2080,7 +2082,7 @@ public class ServerTest {
 		// Three additional arguments
 
 		if (args.length != 4) {
-			System.err.println ("ServerTest : Invalid 'test41' subcommand");
+			System.err.println ("ServerTest : Invalid 'test41' or 'pdl_dev_delete' subcommand");
 			return;
 		}
 
@@ -2117,7 +2119,7 @@ public class ServerTest {
 		// One additional argument
 
 		if (args.length != 2) {
-			System.err.println ("ServerTest : Invalid 'test42' subcommand");
+			System.err.println ("ServerTest : Invalid 'test42' or 'alias_add_from_file' subcommand");
 			return;
 		}
 
@@ -2162,7 +2164,7 @@ public class ServerTest {
 		// One additional argument
 
 		if (args.length != 2) {
-			System.err.println ("ServerTest : Invalid 'test43' subcommand");
+			System.err.println ("ServerTest : Invalid 'test43' or 'alias_get_timeline_info' subcommand");
 			return;
 		}
 
@@ -2213,7 +2215,7 @@ public class ServerTest {
 		// One additional argument
 
 		if (args.length != 2) {
-			System.err.println ("ServerTest : Invalid 'test44' subcommand");
+			System.err.println ("ServerTest : Invalid 'test44' or 'alias_get_event_info' subcommand");
 			return;
 		}
 
@@ -2239,6 +2241,12 @@ public class ServerTest {
 			ForecastMainshock fcmain = new ForecastMainshock();
 
 			int rescode = sg.alias_sup.get_mainshock_for_event_id (event_id, fcmain);
+
+			// If event was not found in Comcat, then touch the database because get_mainshock_for_event_id didn't (needed for unit test)
+
+			if (rescode == ServerComponent.RESCODE_ALIAS_EVENT_NOT_IN_COMCAT) {
+				AliasFamily.get_recent_alias_family (0L, 100L, null, null, null);
+			}
 
 			// Write the result code
 
@@ -2264,7 +2272,7 @@ public class ServerTest {
 		// One additional argument
 
 		if (args.length != 2) {
-			System.err.println ("ServerTest : Invalid 'test45' subcommand");
+			System.err.println ("ServerTest : Invalid 'test45' or 'alias_create_timeline_for_event' subcommand");
 			return;
 		}
 
@@ -2290,6 +2298,12 @@ public class ServerTest {
 			ForecastMainshock fcmain = new ForecastMainshock();
 
 			int rescode = sg.alias_sup.get_mainshock_for_event_id (event_id, fcmain);
+
+			// If event was not found in Comcat, then touch the database because get_mainshock_for_event_id didn't (needed for unit test)
+
+			if (rescode == ServerComponent.RESCODE_ALIAS_EVENT_NOT_IN_COMCAT) {
+				AliasFamily.get_recent_alias_family (0L, 100L, null, null, null);
+			}
 
 			// Write the result code
 
@@ -2320,14 +2334,14 @@ public class ServerTest {
 
 		// No additional arguments
 
-		if (args.length != 1) {
+		if (args.length != 1 && args.length != 2) {
 			System.err.println ("ServerTest : Invalid 'test46' subcommand");
 			return;
 		}
 
 		long day_millis = 86400000L;
 
-		long day_1 = System.currentTimeMillis();
+		long day_1 = SimpleUtils.get_system_time();
 		long day_2 = day_1 + day_millis;
 		long day_3 = day_2 + day_millis;
 		long day_4 = day_3 + day_millis;
@@ -2339,6 +2353,12 @@ public class ServerTest {
 		String pattern_test = "'logtest/logs/'yyyy-MM-dd'-test.log'";
 		String pattern_out = "'logtest/logs/'yyyy-MM-dd'-out.log'";
 		String pattern_err = "'logtest/logs/'yyyy-MM-dd'-err.log'";
+
+		if (args.length == 2) {
+			pattern_test = "'" + args[1] + "/'yyyy-MM-dd'-test.log'";
+			pattern_out = "'" + args[1] + "/'yyyy-MM-dd'-out.log'";
+			pattern_err = "'" + args[1] + "/'yyyy-MM-dd'-err.log'";
+		}
 
 		System.out.println ("Start time = " + day_1 + " (" + SimpleUtils.time_to_string (day_1) + ")");
 
@@ -2479,14 +2499,14 @@ public class ServerTest {
 		// Three additional arguments
 
 		if (args.length != 4) {
-			System.err.println ("ServerTest : Invalid 'test47' subcommand");
+			System.err.println ("ServerTest : Invalid 'test47' or 'delete_all_tables' subcommand");
 			return;
 		}
 
 		if (!( args[1].equals ("delete")
 			&& args[2].equals ("all")
 			&& args[3].equals ("tables") )) {
-			System.err.println ("ServerTest : Wrong confirmation for 'test47' subcommand");
+			System.err.println ("ServerTest : Wrong confirmation for 'test47' or 'delete_all_tables' subcommand");
 			return;
 		}
 
@@ -2667,6 +2687,235 @@ public class ServerTest {
 
 
 
+	// Test 51 - Search the task queue for execution time and/or event id; and get first matching task.
+
+	public static void test51(String[] args) {
+
+		// Two or three additional arguments
+
+		if (args.length != 3 && args.length != 4) {
+			System.err.println ("ServerTest : Invalid 'test51' or 'task_query_first' subcommand");
+			return;
+		}
+
+		long exec_time_lo = Long.parseLong(args[1]);
+		long exec_time_hi = Long.parseLong(args[2]);
+		String event_id = null;
+		if (args.length == 4) {
+			event_id = args[3];
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Get the task
+
+			PendingTask task = PendingTask.get_first_task_entry (exec_time_lo, exec_time_hi, event_id);
+
+			// Display it
+
+			if (task == null) {
+				System.out.println ("null");
+			} else {
+				System.out.println (task.toString());
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #52 - Search the catalog snapshots for end time and/or event id; and refetch.
+
+	public static void test52(String[] args) {
+
+		// Two or three additional arguments
+
+		if (args.length != 3 && args.length != 4) {
+			System.err.println ("ServerTest : Invalid 'test52' or 'catsnap_query_refetch' subcommand");
+			return;
+		}
+
+		double end_time_lo_days = Double.parseDouble (args[1]);
+		double end_time_hi_days = Double.parseDouble (args[2]);
+		String event_id = null;
+		if (args.length == 4) {
+			event_id = args[3];
+		}
+
+		long end_time_lo = Math.round(end_time_lo_days * 86400000L);
+		long end_time_hi = Math.round(end_time_hi_days * 86400000L);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Get the list of matching catalog snapshots
+
+			List<CatalogSnapshot> entries = CatalogSnapshot.get_catalog_snapshot_range (end_time_lo, end_time_hi, event_id);
+
+			// Display them
+
+			for (CatalogSnapshot entry : entries) {
+				System.out.println (entry.toString());
+				CatalogSnapshot entry_out = CatalogSnapshot.get_catalog_shapshot_for_key (entry.get_record_key());
+				System.out.println (entry_out.toString());
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #53 - Search the catalog snapshots for end time and/or event id; and display entire catalog.
+
+	public static void test53(String[] args) {
+
+		// Two or three additional arguments
+
+		if (args.length != 3 && args.length != 4) {
+			System.err.println ("ServerTest : Invalid 'test53' or 'catsnap_query_verbose' subcommand");
+			return;
+		}
+
+		double end_time_lo_days = Double.parseDouble (args[1]);
+		double end_time_hi_days = Double.parseDouble (args[2]);
+		String event_id = null;
+		if (args.length == 4) {
+			event_id = args[3];
+		}
+
+		long end_time_lo = Math.round(end_time_lo_days * 86400000L);
+		long end_time_hi = Math.round(end_time_hi_days * 86400000L);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Get the list of matching catalog snapshots
+
+			List<CatalogSnapshot> entries = CatalogSnapshot.get_catalog_snapshot_range (end_time_lo, end_time_hi, event_id);
+
+			// Display them
+
+			for (CatalogSnapshot entry : entries) {
+				System.out.println (entry.toString());
+				CompactEqkRupList rups = entry.get_rupture_list();
+				int n = rups.get_eqk_count();
+				long[] lat_lon_depth_list = rups.get_lat_lon_depth_list();
+				long[] mag_time_list = rups.get_mag_time_list();
+				for (int k = 0; k < n; ++k) {
+					System.out.println (k + "  " + lat_lon_depth_list[k] + "  " + mag_time_list[k]);
+				}
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #54 - Read a file and write it to standard output.
+
+	public static void test54(String[] args) throws Exception {
+
+		// One additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerTest : Invalid 'test54' or 'dump_file' subcommand");
+			return;
+		}
+
+		String filename = args[1];
+
+		// Read the file
+
+		try (
+			BufferedReader file_reader = new BufferedReader (new FileReader (filename));
+		){
+			for (String line = file_reader.readLine(); line != null; line = file_reader.readLine()) {
+				System.out.println (line);
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #55 - Read all the files in a directory (not recursive) and write each to standard output.
+
+	public static void test55(String[] args) throws Exception {
+
+		// One additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerTest : Invalid 'test55' or 'dump_files_in_dir' subcommand");
+			return;
+		}
+
+		String dirname = args[1];
+
+		// List all the files in the directory
+
+		File dir = new File (dirname);
+		File[] dir_list = dir.listFiles();
+
+		// Get the list of base filenames, and sort them
+
+		List<String> base_names = new ArrayList<String>();
+		for (File file : dir_list) {
+			if (file.isFile()) {
+				base_names.add (file.getName());
+			}
+		}
+		base_names.sort (null);
+
+		// Loop over files
+
+		for (String base_name : base_names) {
+
+			// Write the filename
+
+			System.out.println (base_name + ":");
+
+			// Read the file
+
+			try (
+				BufferedReader file_reader = new BufferedReader (new FileReader (new File (dirname, base_name)));
+			){
+				for (String line = file_reader.readLine(); line != null; line = file_reader.readLine()) {
+					System.out.println (line);
+				}
+			}
+
+			// Final blank line
+
+			System.out.println ();
+		}
+
+		return;
+	}
+
+
+
+
 	// Test dispatcher.
 	
 	public static void main(String[] args) {
@@ -2683,7 +2932,7 @@ public class ServerTest {
 		//  test1
 		// Add a few items to the pending task queue.
 
-		if (args[0].equalsIgnoreCase ("test1")) {
+		if (args[0].equalsIgnoreCase ("test1") || args[0].equalsIgnoreCase ("task_add_some")) {
 
 			try {
 				test1(args);
@@ -2699,7 +2948,7 @@ public class ServerTest {
 		//  test2
 		// Display the pending task queue, unsorted.
 
-		if (args[0].equalsIgnoreCase ("test2")) {
+		if (args[0].equalsIgnoreCase ("test2") || args[0].equalsIgnoreCase ("task_display_unsorted")) {
 
 			try {
 				test2(args);
@@ -2715,7 +2964,7 @@ public class ServerTest {
 		//  test3
 		// Display the pending task queue, sorted by execution time.
 
-		if (args[0].equalsIgnoreCase ("test3")) {
+		if (args[0].equalsIgnoreCase ("test3") || args[0].equalsIgnoreCase ("task_display_list")) {
 
 			try {
 				test3(args);
@@ -2731,7 +2980,7 @@ public class ServerTest {
 		//  test4
 		// Display the first task in the pending task queue, according to execution time.
 
-		if (args[0].equalsIgnoreCase ("test4")) {
+		if (args[0].equalsIgnoreCase ("test4") || args[0].equalsIgnoreCase ("task_display_first")) {
 
 			try {
 				test4(args);
@@ -2747,7 +2996,7 @@ public class ServerTest {
 		//  test5  cutoff_time
 		// Display the first task in the pending task queue, before cutoff time, according to execution time.
 
-		if (args[0].equalsIgnoreCase ("test5")) {
+		if (args[0].equalsIgnoreCase ("test5") || args[0].equalsIgnoreCase ("task_cutoff_first")) {
 
 			try {
 				test5(args);
@@ -2763,7 +3012,7 @@ public class ServerTest {
 		//  test6  cutoff_time
 		// Activate the first document before the cutoff time, and display the retrieved document.
 
-		if (args[0].equalsIgnoreCase ("test6")) {
+		if (args[0].equalsIgnoreCase ("test6") || args[0].equalsIgnoreCase ("task_cutoff_activate")) {
 
 			try {
 				test6(args);
@@ -2779,7 +3028,7 @@ public class ServerTest {
 		//  test7  cutoff_time  exec_time  stage  [event_id]
 		// Activate the first document before the cutoff time, and stage it.
 
-		if (args[0].equalsIgnoreCase ("test7")) {
+		if (args[0].equalsIgnoreCase ("test7") || args[0].equalsIgnoreCase ("task_cutoff_activate_stage")) {
 
 			try {
 				test7(args);
@@ -2795,7 +3044,7 @@ public class ServerTest {
 		//  test6  cutoff_time
 		// Activate the first document before the cutoff time, and delete it.
 
-		if (args[0].equalsIgnoreCase ("test8")) {
+		if (args[0].equalsIgnoreCase ("test8") || args[0].equalsIgnoreCase ("task_cutoff_activate_delete")) {
 
 			try {
 				test8(args);
@@ -2811,7 +3060,7 @@ public class ServerTest {
 		//  test9
 		// Run task dispatcher.
 
-		if (args[0].equalsIgnoreCase ("test9")) {
+		if (args[0].equalsIgnoreCase ("test9") || args[0].equalsIgnoreCase ("run_dispatcher")) {
 
 			try {
 				test9(args);
@@ -2827,7 +3076,7 @@ public class ServerTest {
 		//  test10
 		// Post a shutdown task.
 
-		if (args[0].equalsIgnoreCase ("test10")) {
+		if (args[0].equalsIgnoreCase ("test10") || args[0].equalsIgnoreCase ("post_shutdown")) {
 
 			try {
 				test10(args);
@@ -2843,7 +3092,7 @@ public class ServerTest {
 		//  test11
 		// Scan the pending task queue, sorted, and write a log entry for each.
 
-		if (args[0].equalsIgnoreCase ("test11")) {
+		if (args[0].equalsIgnoreCase ("test11") || args[0].equalsIgnoreCase ("log_add_from_tasks")) {
 
 			try {
 				test11(args);
@@ -2859,7 +3108,7 @@ public class ServerTest {
 		//  test12
 		// Scan the pending task queue, sorted, and search the log for each.
 
-		if (args[0].equalsIgnoreCase ("test12")) {
+		if (args[0].equalsIgnoreCase ("test12") || args[0].equalsIgnoreCase ("log_search_for_tasks")) {
 
 			try {
 				test12(args);
@@ -2876,7 +3125,7 @@ public class ServerTest {
 		// Search the log for log time and/or event id.
 		// Log times can be 0 for no bound, event id can be omitted for no restriction.
 
-		if (args[0].equalsIgnoreCase ("test13")) {
+		if (args[0].equalsIgnoreCase ("test13") || args[0].equalsIgnoreCase ("log_query_list")) {
 
 			try {
 				test13(args);
@@ -2893,7 +3142,7 @@ public class ServerTest {
 		// Search the log for log time and/or event id, and delete the matching entries.
 		// Log times can be 0 for no bound, event id can be omitted for no restriction.
 
-		if (args[0].equalsIgnoreCase ("test14")) {
+		if (args[0].equalsIgnoreCase ("test14") || args[0].equalsIgnoreCase ("log_query_list_delete")) {
 
 			try {
 				test14(args);
@@ -2910,7 +3159,7 @@ public class ServerTest {
 		// Post a task with given event id, opcode, stage, and details.
 		// Event id can be "-" for an empty string.
 
-		if (args[0].equalsIgnoreCase ("test15")) {
+		if (args[0].equalsIgnoreCase ("test15") || args[0].equalsIgnoreCase ("post_task")) {
 
 			try {
 				test15(args);
@@ -2928,7 +3177,7 @@ public class ServerTest {
 		// If f_adjust_time is "true" then adjust clock to be the execution time of the task.
 		// If f_adjust_time is omitted then the default value is "false".
 
-		if (args[0].equalsIgnoreCase ("test16")) {
+		if (args[0].equalsIgnoreCase ("test16") || args[0].equalsIgnoreCase ("exec_task")) {
 
 			try {
 				test16(args);
@@ -2944,7 +3193,7 @@ public class ServerTest {
 		//  test17  start_time_days  end_time_days  event_id
 		// Write a catalog snapshot.
 
-		if (args[0].equalsIgnoreCase ("test17")) {
+		if (args[0].equalsIgnoreCase ("test17") || args[0].equalsIgnoreCase ("catsnap_add")) {
 
 			try {
 				test17(args);
@@ -2961,7 +3210,7 @@ public class ServerTest {
 		// Search the catalog snapshots for end time and/or event id.
 		// Times can be 0 for no bound, event id can be omitted for no restriction.
 
-		if (args[0].equalsIgnoreCase ("test18")) {
+		if (args[0].equalsIgnoreCase ("test18") || args[0].equalsIgnoreCase ("catsnap_query_list")) {
 
 			try {
 				test18(args);
@@ -2978,7 +3227,7 @@ public class ServerTest {
 		// Search the catalog snapshots for end time and/or event id, and delete the matching entries.
 		// Times can be 0 for no bound, event id can be omitted for no restriction.
 
-		if (args[0].equalsIgnoreCase ("test19")) {
+		if (args[0].equalsIgnoreCase ("test19") || args[0].equalsIgnoreCase ("catsnap_query_delete")) {
 
 			try {
 				test19(args);
@@ -2994,7 +3243,7 @@ public class ServerTest {
 		//  test20
 		// Add a few elements to the timeline.
 
-		if (args[0].equalsIgnoreCase ("test20")) {
+		if (args[0].equalsIgnoreCase ("test20") || args[0].equalsIgnoreCase ("tline_add_some")) {
 
 			try {
 				test20(args);
@@ -3013,7 +3262,7 @@ public class ServerTest {
 		// If any comcat_id are given, the entry must match at least one of them.
 		// The action_time_div_rem can be 0 for no modulus test, otherwise it is divisor * 1000 + remainder.
 
-		if (args[0].equalsIgnoreCase ("test21")) {
+		if (args[0].equalsIgnoreCase ("test21") || args[0].equalsIgnoreCase ("tline_query_list")) {
 
 			try {
 				test21(args);
@@ -3032,7 +3281,7 @@ public class ServerTest {
 		// If any comcat_id are given, the entry must match at least one of them.
 		// The action_time_div_rem can be 0 for no modulus test, otherwise it is divisor * 1000 + remainder.
 
-		if (args[0].equalsIgnoreCase ("test22")) {
+		if (args[0].equalsIgnoreCase ("test22") || args[0].equalsIgnoreCase ("tline_query_iterate")) {
 
 			try {
 				test22(args);
@@ -3051,7 +3300,7 @@ public class ServerTest {
 		// If any comcat_id are given, the entry must match at least one of them.
 		// The action_time_div_rem can be 0 for no modulus test, otherwise it is divisor * 1000 + remainder.
 
-		if (args[0].equalsIgnoreCase ("test23")) {
+		if (args[0].equalsIgnoreCase ("test23") || args[0].equalsIgnoreCase ("tline_query_refetch")) {
 
 			try {
 				test23(args);
@@ -3070,7 +3319,7 @@ public class ServerTest {
 		// If any comcat_id are given, the entry must match at least one of them.
 		// The action_time_div_rem can be 0 for no modulus test, otherwise it is divisor * 1000 + remainder.
 
-		if (args[0].equalsIgnoreCase ("test24")) {
+		if (args[0].equalsIgnoreCase ("test24") || args[0].equalsIgnoreCase ("tline_query_delete")) {
 
 			try {
 				test24(args);
@@ -3086,7 +3335,7 @@ public class ServerTest {
 		//  test25
 		// Display the pending task queue, sorted by execution time, using iterator.
 
-		if (args[0].equalsIgnoreCase ("test25")) {
+		if (args[0].equalsIgnoreCase ("test25") || args[0].equalsIgnoreCase ("task_display_iterate")) {
 
 			try {
 				test25(args);
@@ -3103,7 +3352,7 @@ public class ServerTest {
 		// Search the log for log time and/or event id, using iterator.
 		// Log times can be 0 for no bound, event id can be omitted for no restriction.
 
-		if (args[0].equalsIgnoreCase ("test26")) {
+		if (args[0].equalsIgnoreCase ("test26") || args[0].equalsIgnoreCase ("log_query_iterate")) {
 
 			try {
 				test26(args);
@@ -3120,7 +3369,7 @@ public class ServerTest {
 		// Search the catalog snapshots for end time and/or event id, using iterator.
 		// Times can be 0 for no bound, event id can be omitted for no restriction.
 
-		if (args[0].equalsIgnoreCase ("test27")) {
+		if (args[0].equalsIgnoreCase ("test27") || args[0].equalsIgnoreCase ("catsnap_query_iterate")) {
 
 			try {
 				test27(args);
@@ -3153,7 +3402,7 @@ public class ServerTest {
 		// Search the task queue for execution time and/or event id.
 		// Execution times can be 0 for no bound, event id can be omitted for no restriction.
 
-		if (args[0].equalsIgnoreCase ("test29")) {
+		if (args[0].equalsIgnoreCase ("test29") || args[0].equalsIgnoreCase ("task_query_list")) {
 
 			try {
 				test29(args);
@@ -3170,7 +3419,7 @@ public class ServerTest {
 		// Search the task queue for execution time and/or event id, using iterator.
 		// Execution times can be 0 for no bound, event id can be omitted for no restriction.
 
-		if (args[0].equalsIgnoreCase ("test30")) {
+		if (args[0].equalsIgnoreCase ("test30") || args[0].equalsIgnoreCase ("task_query_iterate")) {
 
 			try {
 				test30(args);
@@ -3189,7 +3438,7 @@ public class ServerTest {
 		// If any comcat_id are given, the entry must match at least one of them.
 		// The action_time_div_rem can be 0 for no modulus test, otherwise it is divisor * 1000 + remainder.
 
-		if (args[0].equalsIgnoreCase ("test31")) {
+		if (args[0].equalsIgnoreCase ("test31") || args[0].equalsIgnoreCase ("tline_query_first")) {
 
 			try {
 				test31(args);
@@ -3253,7 +3502,7 @@ public class ServerTest {
 		//  test35
 		// Add a few elements to the alias families.
 
-		if (args[0].equalsIgnoreCase ("test35")) {
+		if (args[0].equalsIgnoreCase ("test35") || args[0].equalsIgnoreCase ("alias_add_some")) {
 
 			try {
 				test35(args);
@@ -3272,7 +3521,7 @@ public class ServerTest {
 		// If any comcat_id are given, the entry must match at least one of them.
 		// The family_time_div_rem can be 0 for no modulus test, otherwise it is divisor * 1000 + remainder.
 
-		if (args[0].equalsIgnoreCase ("test36")) {
+		if (args[0].equalsIgnoreCase ("test36") || args[0].equalsIgnoreCase ("alias_query_list")) {
 
 			try {
 				test36(args);
@@ -3291,7 +3540,7 @@ public class ServerTest {
 		// If any comcat_id are given, the entry must match at least one of them.
 		// The family_time_div_rem can be 0 for no modulus test, otherwise it is divisor * 1000 + remainder.
 
-		if (args[0].equalsIgnoreCase ("test37")) {
+		if (args[0].equalsIgnoreCase ("test37") || args[0].equalsIgnoreCase ("alias_query_iterate")) {
 
 			try {
 				test37(args);
@@ -3310,7 +3559,7 @@ public class ServerTest {
 		// If any comcat_id are given, the entry must match at least one of them.
 		// The family_time_div_rem can be 0 for no modulus test, otherwise it is divisor * 1000 + remainder.
 
-		if (args[0].equalsIgnoreCase ("test38")) {
+		if (args[0].equalsIgnoreCase ("test38") || args[0].equalsIgnoreCase ("alias_query_refetch")) {
 
 			try {
 				test38(args);
@@ -3329,7 +3578,7 @@ public class ServerTest {
 		// If any comcat_id are given, the entry must match at least one of them.
 		// The family_time_div_rem can be 0 for no modulus test, otherwise it is divisor * 1000 + remainder.
 
-		if (args[0].equalsIgnoreCase ("test39")) {
+		if (args[0].equalsIgnoreCase ("test39") || args[0].equalsIgnoreCase ("alias_query_delete")) {
 
 			try {
 				test39(args);
@@ -3348,7 +3597,7 @@ public class ServerTest {
 		// If any comcat_id are given, the entry must match at least one of them.
 		// The family_time_div_rem can be 0 for no modulus test, otherwise it is divisor * 1000 + remainder.
 
-		if (args[0].equalsIgnoreCase ("test40")) {
+		if (args[0].equalsIgnoreCase ("test40") || args[0].equalsIgnoreCase ("alias_query_first")) {
 
 			try {
 				test40(args);
@@ -3365,7 +3614,7 @@ public class ServerTest {
 		// Delete a product from PDL-Development.
 		// Note this always uses PDL-Development regardless of the ServerConfig setting.
 
-		if (args[0].equalsIgnoreCase ("test41")) {
+		if (args[0].equalsIgnoreCase ("test41") || args[0].equalsIgnoreCase ("pdl_dev_delete")) {
 
 			try {
 				test41(args);
@@ -3381,7 +3630,7 @@ public class ServerTest {
 		//  test42  filename
 		// Read an alias list from a file, and store it in the database.
 
-		if (args[0].equalsIgnoreCase ("test42")) {
+		if (args[0].equalsIgnoreCase ("test42") || args[0].equalsIgnoreCase ("alias_add_from_file")) {
 
 			try {
 				test42(args);
@@ -3397,7 +3646,7 @@ public class ServerTest {
 		//  test43  timeline_id
 		// Get current alias information for a timeline.
 
-		if (args[0].equalsIgnoreCase ("test43")) {
+		if (args[0].equalsIgnoreCase ("test43") || args[0].equalsIgnoreCase ("alias_get_timeline_info")) {
 
 			try {
 				test43(args);
@@ -3413,7 +3662,7 @@ public class ServerTest {
 		//  test44  event_id
 		// Get current alias information for an event.
 
-		if (args[0].equalsIgnoreCase ("test44")) {
+		if (args[0].equalsIgnoreCase ("test44") || args[0].equalsIgnoreCase ("alias_get_event_info")) {
 
 			try {
 				test44(args);
@@ -3429,7 +3678,7 @@ public class ServerTest {
 		//  test45  event_id
 		// Get current alias information for an event, create timeline if new event.
 
-		if (args[0].equalsIgnoreCase ("test45")) {
+		if (args[0].equalsIgnoreCase ("test45") || args[0].equalsIgnoreCase ("alias_create_timeline_for_event")) {
 
 			try {
 				test45(args);
@@ -3442,10 +3691,12 @@ public class ServerTest {
 
 		// Subcommand : Test #46
 		// Command format:
-		//  test46
+		//  test46  [dirname]
 		// Test console redirection and time split output streams.
+		// If dirname is given, it must not end in / and the test files are written there.
+		// If dirname is not given, the default is logtest/logs.
 
-		if (args[0].equalsIgnoreCase ("test46")) {
+		if (args[0].equalsIgnoreCase ("test46") || args[0].equalsIgnoreCase ("conred_tsop")) {
 
 			try {
 				test46(args);
@@ -3461,7 +3712,7 @@ public class ServerTest {
 		//  test47 "delete" "all" "tables"
 		// Delete all the database tables, allowing a fresh start.
 
-		if (args[0].equalsIgnoreCase ("test47")) {
+		if (args[0].equalsIgnoreCase ("test47") || args[0].equalsIgnoreCase ("delete_all_tables")) {
 
 			try {
 				test47(args);
@@ -3517,6 +3768,89 @@ public class ServerTest {
 
 			try {
 				test50(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #51
+		// Command format:
+		//  test51  exec_time_lo  exec_time_hi  [event_id]
+		// Search the task queue for execution time and/or event id; and get first matching task.
+		// Execution times can be 0 for no bound, event id can be omitted for no restriction.
+
+		if (args[0].equalsIgnoreCase ("test51") || args[0].equalsIgnoreCase ("task_query_first")) {
+
+			try {
+				test51(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #52
+		// Command format:
+		//  test52  end_time_lo_days  end_time_hi_days  [event_id]
+		// Search the catalog snapshots for end time and/or event id; and refetch.
+		// Times can be 0 for no bound, event id can be omitted for no restriction.
+
+		if (args[0].equalsIgnoreCase ("test52") || args[0].equalsIgnoreCase ("catsnap_query_refetch")) {
+
+			try {
+				test52(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #53
+		// Command format:
+		//  test53  end_time_lo_days  end_time_hi_days  [event_id]
+		// Search the catalog snapshots for end time and/or event id; and display entire catalog.
+		// Times can be 0 for no bound, event id can be omitted for no restriction.
+
+		if (args[0].equalsIgnoreCase ("test53") || args[0].equalsIgnoreCase ("catsnap_query_verbose")) {
+
+			try {
+				test53(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #54
+		// Command format:
+		//  test54  filename
+		// Read a file and write it to standard output.
+
+		if (args[0].equalsIgnoreCase ("test54") || args[0].equalsIgnoreCase ("dump_file")) {
+
+			try {
+				test54(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #55
+		// Command format:
+		//  test55  dirname
+		// Read all the files in a directory (not recursive) and write each to standard output.
+
+		if (args[0].equalsIgnoreCase ("test55") || args[0].equalsIgnoreCase ("dump_files_in_dir")) {
+
+			try {
+				test55(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

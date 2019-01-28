@@ -91,34 +91,10 @@ public class ServerConfig {
 
 	//----- Parameter access -----
 
-	// Database host name or IP address.
+	// MongoDB configuration.
 
-	public String getDb_host() {
-		return param_set.db_host;
-	}
-
-	// Database port number.
-
-	public int getDb_port() {
-		return param_set.db_port;
-	}
-
-	// Database name.  Used for both database access and user authentication.
-
-	public String getDb_name() {
-		return param_set.db_name;
-	}
-
-	// Database user name.  This name provides read/write access.
-
-	public String getDb_user() {
-		return param_set.db_user;
-	}
-
-	// Database password.
-
-	public String getDb_password() {
-		return param_set.db_password;
+	public MongoDBConfig get_mongo_config() {
+		return param_set.mongo_config;
 	}
 
 	// ActiveMQ host name or IP address.
@@ -374,11 +350,8 @@ public class ServerConfig {
 
 			// Display it
 
-			System.out.println("db_host = " + server_config.getDb_host());
-			System.out.println("db_port = " + server_config.getDb_port());
-			System.out.println("db_name = " + server_config.getDb_name());
-			System.out.println("db_user = " + server_config.getDb_user());
-			System.out.println("db_password = " + server_config.getDb_password());
+			System.out.println("mongo_config = {\n" + server_config.get_mongo_config().toString("  ") + "}");
+
 			System.out.println("activemq_host = " + server_config.getActivemq_host());
 			System.out.println("activemq_port = " + server_config.getActivemq_port());
 			System.out.println("activemq_user = " + server_config.getActivemq_user());

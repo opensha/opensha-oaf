@@ -43,6 +43,7 @@ import com.mongodb.client.MongoCursor;
 import org.opensha.oaf.aafs.DBCorruptException;
 import org.opensha.oaf.aafs.RecordIteratorMongo;
 import org.opensha.oaf.aafs.MongoDBCollRet;
+import org.opensha.oaf.aafs.MongoDBCollHandle;
 
 
 
@@ -418,25 +419,55 @@ public class AliasFamily implements java.io.Serializable {
 
 
 
-	// Get the collection.
+	//  // Get the collection.
+	//  
+	//  private static synchronized MongoCollection<Document> get_collection () {
+	//  
+	//  	// Get the collection
+	//  
+	//  	MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("alias");
+	//  
+	//  	// Create the indexes
+	//  
+	//  	if (coll_ret.f_new) {
+	//  		MongoDBUtil.make_simple_index (coll_ret.collection, "timeline_ids", "famtlid");
+	//  		MongoDBUtil.make_simple_index (coll_ret.collection, "comcat_ids", "famccid");
+	//  		MongoDBUtil.make_simple_index (coll_ret.collection, "family_time", "famtime");
+	//  	}
+	//  
+	//  	// Return the collection
+	//  
+	//  	return coll_ret.collection;
+	//  }
 
-	private static synchronized MongoCollection<Document> get_collection () {
-	
-		// Get the collection
 
-		MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("alias");
 
-		// Create the indexes
 
-		if (coll_ret.f_new) {
-			MongoDBUtil.make_simple_index (coll_ret.collection, "timeline_ids", "famtlid");
-			MongoDBUtil.make_simple_index (coll_ret.collection, "comcat_ids", "famccid");
-			MongoDBUtil.make_simple_index (coll_ret.collection, "family_time", "famtime");
-		}
+	// Get the collection handle.
+	// If db_handle is null or empty, then use the current default database.
 
-		// Return the collection
+	private static MongoDBCollHandle get_coll_handle (String db_handle) {
+		return MongoDBUtil.get_coll_handle (db_handle, "alias");
+	}
 
-		return coll_ret.collection;
+
+
+
+	// Make indexes for our collection.
+
+	public static void make_indexes () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Make the indexes
+
+		coll_handle.make_simple_index ("timeline_ids", "famtlid");
+		coll_handle.make_simple_index ("comcat_ids", "famccid");
+		coll_handle.make_simple_index ("family_time", "famtime");
+
+		return;
 	}
 
 
@@ -450,7 +481,7 @@ public class AliasFamily implements java.io.Serializable {
 		// Supply the id if needed
 
 		if (id == null) {
-			id = new ObjectId();
+			id = MongoDBUtil.make_object_id();
 		}
 
 		// Construct the document
@@ -490,8 +521,8 @@ public class AliasFamily implements java.io.Serializable {
 
 		// Constructor passes thru the cursor.
 
-		public MyRecordIterator (MongoCursor<Document> mongo_cursor) {
-			super (mongo_cursor);
+		public MyRecordIterator (MongoCursor<Document> mongo_cursor, MongoDBCollHandle coll_handle) {
+			super (mongo_cursor, coll_handle);
 		}
 
 		// Hook routine to convert a Document to a T.
@@ -627,6 +658,10 @@ public class AliasFamily implements java.io.Serializable {
 			}
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Construct the alias family object
 
 		AliasFamily alfam = new AliasFamily();
@@ -638,7 +673,7 @@ public class AliasFamily implements java.io.Serializable {
 
 		// Call MongoDB to store into database
 
-		get_collection().insertOne (alfam.to_bson_doc());
+		coll_handle.insertOne (alfam.to_bson_doc());
 		
 		return alfam;
 	}
@@ -664,6 +699,10 @@ public class AliasFamily implements java.io.Serializable {
 			throw new IllegalArgumentException("AliasFamily.submit_alias_family: Invalid alias family parameters");
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Construct the alias family object
 
 		AliasFamily alfam = new AliasFamily();
@@ -673,7 +712,7 @@ public class AliasFamily implements java.io.Serializable {
 
 		// Call MongoDB to store into database
 
-		get_collection().insertOne (alfam.to_bson_doc());
+		coll_handle.insertOne (alfam.to_bson_doc());
 		
 		return alfam;
 	}
@@ -687,9 +726,13 @@ public class AliasFamily implements java.io.Serializable {
 	 */
 	public static AliasFamily store_alias_family (AliasFamily alfam) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Call MongoDB to store into database
 
-		get_collection().insertOne (alfam.to_bson_doc());
+		coll_handle.insertOne (alfam.to_bson_doc());
 		
 		return alfam;
 	}
@@ -708,13 +751,17 @@ public class AliasFamily implements java.io.Serializable {
 			throw new IllegalArgumentException("AliasFamily.get_alias_family_for_key: Missing or empty record key");
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Filter: id == key.getId()
 
 		Bson filter = id_filter (key.getId());
 
 		// Get the document
 
-		Document doc = get_collection().find(filter).first();
+		Document doc = coll_handle.find_first (filter);
 
 		// Convert to alias family
 
@@ -743,17 +790,16 @@ public class AliasFamily implements java.io.Serializable {
 	public static List<AliasFamily> get_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
 		ArrayList<AliasFamily> entries = new ArrayList<AliasFamily>();
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
-		MongoCursor<Document> cursor;
-		if (filter == null) {
-			cursor = get_collection().find().sort(natural_sort()).iterator();
-		} else {
-			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
-		}
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
 		try (
-			MyRecordIterator iter = new MyRecordIterator (cursor);
+			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
 			// Dump into the list
 
@@ -782,16 +828,15 @@ public class AliasFamily implements java.io.Serializable {
 	 */
 	public static RecordIterator<AliasFamily> fetch_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
-		MongoCursor<Document> cursor;
-		if (filter == null) {
-			cursor = get_collection().find().sort(natural_sort()).iterator();
-		} else {
-			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
-		}
-		return new MyRecordIterator (cursor);
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		return new MyRecordIterator (cursor, coll_handle);
 	}
 
 
@@ -813,15 +858,14 @@ public class AliasFamily implements java.io.Serializable {
 	 */
 	public static AliasFamily get_recent_alias_family (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the document
 
 		Bson filter = natural_filter (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
-		Document doc;
-		if (filter == null) {
-			doc = get_collection().find().sort(natural_sort()).first();
-		} else {
-			doc = get_collection().find(filter).sort(natural_sort()).first();
-		}
+		Document doc = coll_handle.find_first (filter, natural_sort());
 
 		// Convert to alias family
 
@@ -848,13 +892,17 @@ public class AliasFamily implements java.io.Serializable {
 			throw new IllegalArgumentException("AliasFamily.delete_alias_family: Invalid parameters");
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Filter: id == alfam.id
 
 		Bson filter = id_filter (alfam.get_id());
 
 		// Run the delete
 
-		get_collection().deleteOne (filter);
+		coll_handle.deleteOne (filter);
 		
 		return;
 	}

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Properties;
@@ -36,6 +37,8 @@ import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SphRegionMercPolygon;
 
 import org.apache.commons.math3.distribution.UniformRealDistribution;
+
+import org.opensha.oaf.util.SimpleUtils;
 
 // Class for region-dependent parameters.
 // Author: Michael Barall
@@ -295,9 +298,9 @@ public abstract class OAFParameterSet<T> {
 		dataMap = null;
 		region_list = null;
 
-		// Make working data
+		// Make working data (use LinkedHashMap to support unit tests, otherwise HashMap would be OK)
 
-		Map<OAFTectonicRegime, T> wk_dataMap = new HashMap<OAFTectonicRegime, T>();
+		Map<OAFTectonicRegime, T> wk_dataMap = new LinkedHashMap<OAFTectonicRegime, T>();
 		List<OAFRegion> wk_region_list = new ArrayList<OAFRegion>();
 
 		// Number of tectonic regimes, must be at least 1
@@ -445,9 +448,9 @@ public abstract class OAFParameterSet<T> {
 		dataMap = null;
 		region_list = null;
 
-		// Make working data
+		// Make working data (use LinkedHashMap to support unit tests, otherwise HashMap would be OK)
 
-		Map<OAFTectonicRegime, T> wk_dataMap = new HashMap<OAFTectonicRegime, T>();
+		Map<OAFTectonicRegime, T> wk_dataMap = new LinkedHashMap<OAFTectonicRegime, T>();
 		List<OAFRegion> wk_region_list = new ArrayList<OAFRegion>();
 
 		// Begin the JSON object
@@ -1181,7 +1184,7 @@ public abstract class OAFParameterSet<T> {
 
 		// Make random number generator
 
-		UniformRealDistribution rangen = new UniformRealDistribution();
+		UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
 
 		// Run the tests
 

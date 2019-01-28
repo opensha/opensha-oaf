@@ -679,7 +679,7 @@ public class MarshalImpArray implements MarshalReader, MarshalWriter {
 
 			// Random number generator
 
-			UniformRealDistribution rangen = new UniformRealDistribution();
+			UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
 
 			// Generate random values
 

@@ -9,6 +9,8 @@ import java.util.TimeZone;
 import java.time.Instant;
 import java.time.Duration;
 
+import org.apache.commons.math3.distribution.UniformRealDistribution;
+
 
 /**
  * Class to hold some simple utility functions.
@@ -277,6 +279,39 @@ public class SimpleUtils {
 				+ " ("
 				+ event_info_one_line (event_time, event_mag, event_lat, event_lon, event_depth)
 				+ ")";
+	}
+
+
+
+
+	// Create a new uniform random number generator.
+	// The generator returns values uniformly distributed between 0 and 1.
+	// If a test is in progress, the generator is seeded so that results are reproducible.
+
+	public static UniformRealDistribution make_uniform_rangen () {
+		UniformRealDistribution rangen = new UniformRealDistribution();
+
+		long ranseed = TestMode.get_test_ranseed();
+		if (ranseed > 0L) {
+			rangen.reseedRandomGenerator (ranseed);
+		}
+
+		return rangen;
+	}
+
+
+
+
+	// Get the system time, in milliseconds since the epoch.
+	// If a test is in progress, the return value is the test time.
+	// Otherwise, the return value is System.currentTimeMillis().
+
+	public static long get_system_time () {
+		long the_time = TestMode.get_test_time();
+		if (the_time <= 0L) {
+			the_time = System.currentTimeMillis();
+		}
+		return the_time;
 	}
 
 

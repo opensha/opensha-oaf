@@ -44,6 +44,8 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
+import org.opensha.oaf.util.SimpleUtils;
+
 /**
  * @author field
  *
@@ -661,7 +663,7 @@ public class AftershockStatsCalc {
 		// Random number generator, produces random numbers between 0.0 (inclusive) and 1.0 (exclusive)
 
 		long originTime = 0L;
-		UniformRealDistribution rangen = new UniformRealDistribution();
+		UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
 
 		return simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, tMinDays, tMaxDays, originTime, rangen);
 	}
@@ -672,7 +674,7 @@ public class AftershockStatsCalc {
 
 		// Random number generator, produces random numbers between 0.0 (inclusive) and 1.0 (exclusive)
 
-		UniformRealDistribution rangen = new UniformRealDistribution();
+		UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
 
 		return simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, tMinDays, tMaxDays, originTime, rangen);
 	}

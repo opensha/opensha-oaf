@@ -37,6 +37,7 @@ import com.mongodb.client.MongoCursor;
 import org.opensha.oaf.aafs.DBCorruptException;
 import org.opensha.oaf.aafs.RecordIteratorMongo;
 import org.opensha.oaf.aafs.MongoDBCollRet;
+import org.opensha.oaf.aafs.MongoDBCollHandle;
 
 
 
@@ -413,24 +414,53 @@ public class PendingTask implements java.io.Serializable {
 
 
 
-	// Get the collection.
+	//  // Get the collection.
+	//  
+	//  private static synchronized MongoCollection<Document> get_collection () {
+	//  
+	//  	// Get the collection
+	//  
+	//  	MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("tasks");
+	//  
+	//  	// Create the indexes
+	//  
+	//  	if (coll_ret.f_new) {
+	//  		MongoDBUtil.make_simple_index (coll_ret.collection, "event_id", "eventid");
+	//  		MongoDBUtil.make_simple_index (coll_ret.collection, "exec_time", "extime");
+	//  	}
+	//  
+	//  	// Return the collection
+	//  
+	//  	return coll_ret.collection;
+	//  }
 
-	private static synchronized MongoCollection<Document> get_collection () {
-	
-		// Get the collection
 
-		MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("tasks");
 
-		// Create the indexes
 
-		if (coll_ret.f_new) {
-			MongoDBUtil.make_simple_index (coll_ret.collection, "event_id", "eventid");
-			MongoDBUtil.make_simple_index (coll_ret.collection, "exec_time", "extime");
-		}
+	// Get the collection handle.
+	// If db_handle is null or empty, then use the current default database.
 
-		// Return the collection
+	private static MongoDBCollHandle get_coll_handle (String db_handle) {
+		return MongoDBUtil.get_coll_handle (db_handle, "tasks");
+	}
 
-		return coll_ret.collection;
+
+
+
+	// Make indexes for our collection.
+
+	public static void make_indexes () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Make the indexes
+
+		coll_handle.make_simple_index ("event_id", "eventid");
+		coll_handle.make_simple_index ("exec_time", "extime");
+
+		return;
 	}
 
 
@@ -444,7 +474,7 @@ public class PendingTask implements java.io.Serializable {
 		// Supply the id if needed
 
 		if (id == null) {
-			id = new ObjectId();
+			id = MongoDBUtil.make_object_id();
 		}
 
 		// Construct the document
@@ -492,8 +522,8 @@ public class PendingTask implements java.io.Serializable {
 
 		// Constructor passes thru the cursor.
 
-		public MyRecordIterator (MongoCursor<Document> mongo_cursor) {
-			super (mongo_cursor);
+		public MyRecordIterator (MongoCursor<Document> mongo_cursor, MongoDBCollHandle coll_handle) {
+			super (mongo_cursor, coll_handle);
 		}
 
 		// Hook routine to convert a Document to a T.
@@ -608,6 +638,10 @@ public class PendingTask implements java.io.Serializable {
 			throw new IllegalArgumentException("PendingTask.submit_task: Invalid task parameters");
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Construct the pending task object
 
 		PendingTask ptask = new PendingTask();
@@ -623,7 +657,7 @@ public class PendingTask implements java.io.Serializable {
 
 		// Call MongoDB to store into database
 
-		get_collection().insertOne (ptask.to_bson_doc());
+		coll_handle.insertOne (ptask.to_bson_doc());
 		
 		return ptask;
 	}
@@ -637,9 +671,13 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static PendingTask store_task (PendingTask ptask) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Call MongoDB to store into database
 
-		get_collection().insertOne (ptask.to_bson_doc());
+		coll_handle.insertOne (ptask.to_bson_doc());
 		
 		return ptask;
 	}
@@ -654,11 +692,15 @@ public class PendingTask implements java.io.Serializable {
 	public static List<PendingTask> get_all_tasks_unsorted () {
 		ArrayList<PendingTask> tasks = new ArrayList<PendingTask>();
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the cursor and iterator
 
-		MongoCursor<Document> cursor = get_collection().find().iterator();
+		MongoCursor<Document> cursor = coll_handle.find_iterator();
 		try (
-			MyRecordIterator iter = new MyRecordIterator (cursor);
+			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
 			// Dump into the list
 
@@ -680,11 +722,15 @@ public class PendingTask implements java.io.Serializable {
 	public static List<PendingTask> get_all_tasks () {
 		ArrayList<PendingTask> tasks = new ArrayList<PendingTask>();
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the cursor and iterator
 
-		MongoCursor<Document> cursor = get_collection().find().sort(natural_sort()).iterator();
+		MongoCursor<Document> cursor = coll_handle.find_iterator (null, natural_sort());
 		try (
-			MyRecordIterator iter = new MyRecordIterator (cursor);
+			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
 			// Dump into the list
 
@@ -705,10 +751,14 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static RecordIterator<PendingTask> fetch_all_tasks () {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the cursor and iterator
 
-		MongoCursor<Document> cursor = get_collection().find().sort(natural_sort()).iterator();
-		return new MyRecordIterator (cursor);
+		MongoCursor<Document> cursor = coll_handle.find_iterator (null, natural_sort());
+		return new MyRecordIterator (cursor, coll_handle);
 	}
 
 
@@ -725,17 +775,16 @@ public class PendingTask implements java.io.Serializable {
 	public static List<PendingTask> get_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
 		ArrayList<PendingTask> tasks = new ArrayList<PendingTask>();
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (exec_time_lo, exec_time_hi, event_id);
-		MongoCursor<Document> cursor;
-		if (filter == null) {
-			cursor = get_collection().find().sort(natural_sort()).iterator();
-		} else {
-			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
-		}
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
 		try (
-			MyRecordIterator iter = new MyRecordIterator (cursor);
+			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
 			// Dump into the list
 
@@ -760,16 +809,15 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static RecordIterator<PendingTask> fetch_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (exec_time_lo, exec_time_hi, event_id);
-		MongoCursor<Document> cursor;
-		if (filter == null) {
-			cursor = get_collection().find().sort(natural_sort()).iterator();
-		} else {
-			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
-		}
-		return new MyRecordIterator (cursor);
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		return new MyRecordIterator (cursor, coll_handle);
 	}
 
 
@@ -787,15 +835,14 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static PendingTask get_first_task_entry (long exec_time_lo, long exec_time_hi, String event_id) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the document
 
 		Bson filter = natural_filter (exec_time_lo, exec_time_hi, event_id);
-		Document doc;
-		if (filter == null) {
-			doc = get_collection().find().sort(natural_sort()).first();
-		} else {
-			doc = get_collection().find(filter).sort(natural_sort()).first();
-		}
+		Document doc = coll_handle.find_first (filter, natural_sort());
 
 		// Convert to task
 
@@ -815,9 +862,13 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static PendingTask get_first_task () {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the document
 
-		Document doc = get_collection().find().sort(natural_sort()).first();
+		Document doc = coll_handle.find_first (null, natural_sort());
 
 		// Convert to task
 
@@ -840,9 +891,13 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static PendingTask get_first_ready_task (long cutoff_time) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the document
 
-		Document doc = get_collection().find(cutoff_filter (cutoff_time)).sort(natural_sort()).first();
+		Document doc = coll_handle.find_first (cutoff_filter (cutoff_time), natural_sort());
 
 		// Convert to task
 
@@ -865,6 +920,10 @@ public class PendingTask implements java.io.Serializable {
 	 */
 	public static PendingTask activate_first_ready_task (long cutoff_time) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Filter: exec_time <= cutoff_time
 
 		Bson filter = cutoff_filter (cutoff_time);
@@ -879,7 +938,7 @@ public class PendingTask implements java.io.Serializable {
 
 		// Get the document
 
-		Document doc = get_collection().findOneAndUpdate (filter, update, options);
+		Document doc = coll_handle.findOneAndUpdate (filter, update, options);
 
 		// Convert to task
 
@@ -911,6 +970,10 @@ public class PendingTask implements java.io.Serializable {
 			throw new IllegalArgumentException("PendingTask.stage_task: Invalid task parameters");
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Filter: id == ptask.id
 
 		Bson filter = id_filter (ptask.get_id());
@@ -932,7 +995,7 @@ public class PendingTask implements java.io.Serializable {
 
 		// Run the update
 
-		get_collection().updateOne (filter, update);
+		coll_handle.updateOne (filter, update);
 		
 		return;
 	}
@@ -953,13 +1016,17 @@ public class PendingTask implements java.io.Serializable {
 			throw new IllegalArgumentException("PendingTask.delete_task: Invalid task parameters");
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Filter: id == ptask.id
 
 		Bson filter = id_filter (ptask.get_id());
 
 		// Run the delete
 
-		get_collection().deleteOne (filter);
+		coll_handle.deleteOne (filter);
 		
 		return;
 	}

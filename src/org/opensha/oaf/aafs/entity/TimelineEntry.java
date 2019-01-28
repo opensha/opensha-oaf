@@ -38,6 +38,7 @@ import com.mongodb.client.MongoCursor;
 import org.opensha.oaf.aafs.DBCorruptException;
 import org.opensha.oaf.aafs.RecordIteratorMongo;
 import org.opensha.oaf.aafs.MongoDBCollRet;
+import org.opensha.oaf.aafs.MongoDBCollHandle;
 
 
 
@@ -374,25 +375,55 @@ public class TimelineEntry implements java.io.Serializable {
 
 
 
-	// Get the collection.
+	//  // Get the collection.
+	//  
+	//  private static synchronized MongoCollection<Document> get_collection () {
+	//  
+	//  	// Get the collection
+	//  
+	//  	MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("timeline");
+	//  
+	//  	// Create the indexes
+	//  
+	//  	if (coll_ret.f_new) {
+	//  		MongoDBUtil.make_simple_index (coll_ret.collection, "event_id", "actevid");
+	//  		MongoDBUtil.make_simple_index (coll_ret.collection, "comcat_ids", "actccid");
+	//  		MongoDBUtil.make_simple_index (coll_ret.collection, "action_time", "acttime");
+	//  	}
+	//  
+	//  	// Return the collection
+	//  
+	//  	return coll_ret.collection;
+	//  }
 
-	private static synchronized MongoCollection<Document> get_collection () {
-	
-		// Get the collection
 
-		MongoDBCollRet coll_ret = MongoDBUtil.getCollection ("timeline");
 
-		// Create the indexes
 
-		if (coll_ret.f_new) {
-			MongoDBUtil.make_simple_index (coll_ret.collection, "event_id", "actevid");
-			MongoDBUtil.make_simple_index (coll_ret.collection, "comcat_ids", "actccid");
-			MongoDBUtil.make_simple_index (coll_ret.collection, "action_time", "acttime");
-		}
+	// Get the collection handle.
+	// If db_handle is null or empty, then use the current default database.
 
-		// Return the collection
+	private static MongoDBCollHandle get_coll_handle (String db_handle) {
+		return MongoDBUtil.get_coll_handle (db_handle, "timeline");
+	}
 
-		return coll_ret.collection;
+
+
+
+	// Make indexes for our collection.
+
+	public static void make_indexes () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Make the indexes
+
+		coll_handle.make_simple_index ("event_id", "actevid");
+		coll_handle.make_simple_index ("comcat_ids", "actccid");
+		coll_handle.make_simple_index ("action_time", "acttime");
+
+		return;
 	}
 
 
@@ -406,7 +437,7 @@ public class TimelineEntry implements java.io.Serializable {
 		// Supply the id if needed
 
 		if (id == null) {
-			id = new ObjectId();
+			id = MongoDBUtil.make_object_id();
 		}
 
 		// Construct the document
@@ -448,8 +479,8 @@ public class TimelineEntry implements java.io.Serializable {
 
 		// Constructor passes thru the cursor.
 
-		public MyRecordIterator (MongoCursor<Document> mongo_cursor) {
-			super (mongo_cursor);
+		public MyRecordIterator (MongoCursor<Document> mongo_cursor, MongoDBCollHandle coll_handle) {
+			super (mongo_cursor, coll_handle);
 		}
 
 		// Hook routine to convert a Document to a T.
@@ -578,6 +609,10 @@ public class TimelineEntry implements java.io.Serializable {
 			}
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Construct the timeline entry object
 
 		TimelineEntry tentry = new TimelineEntry();
@@ -590,7 +625,7 @@ public class TimelineEntry implements java.io.Serializable {
 
 		// Call MongoDB to store into database
 
-		get_collection().insertOne (tentry.to_bson_doc());
+		coll_handle.insertOne (tentry.to_bson_doc());
 		
 		return tentry;
 	}
@@ -604,9 +639,13 @@ public class TimelineEntry implements java.io.Serializable {
 	 */
 	public static TimelineEntry store_timeline_entry (TimelineEntry tentry) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Call MongoDB to store into database
 
-		get_collection().insertOne (tentry.to_bson_doc());
+		coll_handle.insertOne (tentry.to_bson_doc());
 		
 		return tentry;
 	}
@@ -625,13 +664,17 @@ public class TimelineEntry implements java.io.Serializable {
 			throw new IllegalArgumentException("TimelineEntry.get_timeline_entry_for_key: Missing or empty record key");
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Filter: id == key.getId()
 
 		Bson filter = id_filter (key.getId());
 
 		// Get the document
 
-		Document doc = get_collection().find(filter).first();
+		Document doc = coll_handle.find_first (filter);
 
 		// Convert to timeline entry
 
@@ -660,17 +703,16 @@ public class TimelineEntry implements java.io.Serializable {
 	public static List<TimelineEntry> get_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
 		ArrayList<TimelineEntry> entries = new ArrayList<TimelineEntry>();
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem);
-		MongoCursor<Document> cursor;
-		if (filter == null) {
-			cursor = get_collection().find().sort(natural_sort()).iterator();
-		} else {
-			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
-		}
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
 		try (
-			MyRecordIterator iter = new MyRecordIterator (cursor);
+			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
 			// Dump into the list
 
@@ -699,16 +741,15 @@ public class TimelineEntry implements java.io.Serializable {
 	 */
 	public static RecordIterator<TimelineEntry> fetch_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem);
-		MongoCursor<Document> cursor;
-		if (filter == null) {
-			cursor = get_collection().find().sort(natural_sort()).iterator();
-		} else {
-			cursor = get_collection().find(filter).sort(natural_sort()).iterator();
-		}
-		return new MyRecordIterator (cursor);
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		return new MyRecordIterator (cursor, coll_handle);
 	}
 
 
@@ -730,15 +771,14 @@ public class TimelineEntry implements java.io.Serializable {
 	 */
 	public static TimelineEntry get_recent_timeline_entry (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Get the document
 
 		Bson filter = natural_filter (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem);
-		Document doc;
-		if (filter == null) {
-			doc = get_collection().find().sort(natural_sort()).first();
-		} else {
-			doc = get_collection().find(filter).sort(natural_sort()).first();
-		}
+		Document doc = coll_handle.find_first (filter, natural_sort());
 
 		// Convert to timeline entry
 
@@ -765,13 +805,17 @@ public class TimelineEntry implements java.io.Serializable {
 			throw new IllegalArgumentException("TimelineEntry.delete_timeline_entry: Invalid parameters");
 		}
 
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
 		// Filter: id == entry.id
 
 		Bson filter = id_filter (entry.get_id());
 
 		// Run the delete
 
-		get_collection().deleteOne (filter);
+		coll_handle.deleteOne (filter);
 		
 		return;
 	}

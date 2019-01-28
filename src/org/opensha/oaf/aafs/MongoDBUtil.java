@@ -14,12 +14,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Date;
 
 import org.bson.types.ObjectId;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.IndexOptions;
+
+import org.opensha.oaf.util.TestMode;
 
 
 /**
@@ -32,103 +35,105 @@ import com.mongodb.client.model.IndexOptions;
  */
 public class MongoDBUtil implements AutoCloseable {
 
-	// The MongoDB server address.
+	// MongoDB connection access, which is shared among all threads.
 
-	private static ServerAddress serverAddress = null;
+	private static MongoDBConnect cached_mongo_connect = null;
 
-	// The MongoDB security credentials, used to log in to the MongoDB server.
+	// MongoDB content access, which is separate for each thread.
 
-	private static MongoCredential credentials = null;
+	private static final ThreadLocal<MongoDBContent> cached_mongo_content =
+		new ThreadLocal<MongoDBContent>() {
+			@Override protected MongoDBContent initialValue () {
+				return null;
+			}
+		};
 
-	// The MongoDB client options.
+	// Database handle to disconnect when this object is closed, none if null or empty.
 
-	private static MongoClientSettings mongoSettings = null;
+	private String saved_db_handle;
 
-	// The MongoDB client endpoint.
-	// Note that there should be only one client per JVM.
 
-	private static MongoClient mongoClient = null;
 
-	// The MongoDB database.
 
-	private static MongoDatabase db = null;
+	// Get the connection access, create it if necessary.
 
-	// A map of collection names to MongoDB collections.
+	private static synchronized MongoDBConnect get_mongo_connect () {
 
-	private static HashMap<String, MongoCollection<Document>> coll_map = null;
+		// If not created yet ...
+
+		if (cached_mongo_connect == null) {
+
+			// Get the server configuration, which has the database configuration.
+
+			ServerConfig config = new ServerConfig();
+
+			// Create the connection
+
+			MongoDBConnect mongo_connect = new MongoDBConnect (config.get_mongo_config());
+
+			// Save the connection
+
+			cached_mongo_connect = mongo_connect;
+		}
+		
+		// Return it
+
+		return cached_mongo_connect;
+	}
+
+
+
+
+	// Get the content access for this thread, create it if necessary.
+
+	private static MongoDBContent get_mongo_content () {
+
+		// Get thread-local value
+
+		MongoDBContent mongo_content = cached_mongo_content.get();
+
+		// If not created yet ...
+
+		if (mongo_content == null) {
+
+			// Create the content
+
+			mongo_content = new MongoDBContent (get_mongo_connect());
+
+			// Save the content
+		
+			cached_mongo_content.set (mongo_content);
+		}
+	
+		// Return it
+
+		return mongo_content;
+	}
 
 
 
 	
-	/**
-	 * Attach to the MongoDB database.
-	 */
-	public MongoDBUtil() {
+	// Attach to the MongoDB database.
 
-		// This cannot be called if the connection is currently open.
-
-		if (mongoClient != null) {
-			throw new RuntimeException ("MongoDBUtil: Connection to MongoDB is already open");
-		}
-
-		MongoClient saved_mongoClient = null;
+	public MongoDBUtil () {
 
 		try {
 
-			// Get the server configuration, which has the database address and credentials.
+			// Get the content accessor
 
-			ServerConfig config = new ServerConfig();
+			MongoDBContent mongo_content = get_mongo_content();
 
-			// Create the address of the server, using host IP address and port.
-			// Note: ServerAddress offers several ways to specify the address.
+			// Save the default database handle
 
-			serverAddress = new ServerAddress (config.getDb_host(), config.getDb_port());
+			saved_db_handle = mongo_content.get_default_db_handle();
 
-			// Create the login credentials, for username, database name, and password.
-			// Note: MongoCredential can create various other sorts of credentials.
-			// Note: In MongoDB, it is necessary to authenticate to a particular database.
-			//  It must be the database that was used to create the user account.
-			//  This does not limit the databases that can be used, once logged in.
+			// If it's non-empty, connect to it
 
-			credentials = MongoCredential.createCredential (config.getDb_user(), config.getDb_name(), config.getDb_password().toCharArray());
-
-			// Create the MongoDB client settings.
-			// Note: We use the default client settings.
-			// Note: MongoClientSettings.Builder offers various settings, using manipulator methods.
-
-			mongoSettings = MongoClientSettings.builder()
-								.applyToClusterSettings (builder -> builder.hosts(Arrays.asList(serverAddress)))
-								.credential (credentials)
-								.build();
-
-			// Create the MongoDB client endpoint.
-
-			mongoClient = MongoClients.create (mongoSettings);
-			saved_mongoClient = mongoClient;
-
-			// Get the database, using database name.
-
-			db = mongoClient.getDatabase (config.getDb_name())
-							.withWriteConcern (WriteConcern.JOURNALED);
-
-			// Create the map for caching collections.
-
-			coll_map = new HashMap<String, MongoCollection<Document>>();
+			if (!( saved_db_handle == null || saved_db_handle.isEmpty() )) {
+				mongo_content.connect_database (saved_db_handle);
+			}
 
 		} catch (Exception e) {
-			coll_map = null;
-			db = null;
-			mongoClient = null;
-			if (saved_mongoClient != null) {
-				try {
-					saved_mongoClient.close();
-				} catch (Exception e2) {
-				}
-			}
-			saved_mongoClient = null;
-			mongoSettings = null;
-			credentials = null;
-			serverAddress = null;
 			throw new RuntimeException ("MongoDBUtil: Unable to connect to MongoDB", e);
 		}
 	}
@@ -136,22 +141,25 @@ public class MongoDBUtil implements AutoCloseable {
 
 
 	
-	/**
-	 * Close the MongoDB database.
-	 */
+	// Close the MongoDB database.
+
 	@Override
-	public void close() {
+	public void close () {
 
-		// Close the client if it is currently open.
+		try {
 
-		if (mongoClient != null) {
-			coll_map = null;
-			db = null;
-			mongoClient.close();
-			mongoClient = null;
-			mongoSettings = null;
-			credentials = null;
-			serverAddress = null;
+			// Get the content accessor
+
+			MongoDBContent mongo_content = get_mongo_content();
+
+			// If the saved database handle is non-empty, disconnect from it
+
+			if (!( saved_db_handle == null || saved_db_handle.isEmpty() )) {
+				mongo_content.disconnect_database (saved_db_handle);
+			}
+
+		} catch (Exception e) {
+			throw new RuntimeException ("MongoDBUtil: Unable to disconnect from MongoDB", e);
 		}
 
 		return;
@@ -159,34 +167,36 @@ public class MongoDBUtil implements AutoCloseable {
 
 
 
-	
-	/**
-	 * Retrieve the MongoDB database.
-	 */
-	public static MongoDatabase getDB() {
-		return db;
+
+	// Get the collection handle, given the database handle and the collection name.
+	// If db_handle is null or empty, then the default database handle is used.
+
+	public static MongoDBCollHandle get_coll_handle (String db_handle, String coll_name) {
+
+		// Get the content accessor
+
+		MongoDBContent mongo_content = get_mongo_content();
+
+		// Get the handle
+
+		return mongo_content.get_coll_handle (db_handle, coll_name);
 	}
 
 
 
 
-	// Get or create a collection.
-
-	public static synchronized MongoDBCollRet getCollection (String name) {
-
-		// Try to get the collection from the cache
-
-		MongoCollection<Document> collection = coll_map.get (name);
-		if (collection != null) {
-			return new MongoDBCollRet (collection, false);
-		}
-
-		// Otherwise make a new collection and store it in the cache
-
-		collection = db.getCollection (name);
-		coll_map.put (name, collection);
-		return new MongoDBCollRet (collection, true);
-	}
+	//  // Get a collection, in the default database.
+	//  
+	//  public static MongoDBCollRet getCollection (String name) {
+	//  
+	//  	// Get the collection handle
+	//  
+	//  	MongoDBCollHandle coll_handle = get_coll_handle (null, name);
+	//  
+	//  	// Return the MongoDB collection
+	//  
+	//  	return new MongoDBCollRet (coll_handle.get_mongo_collection(), false);
+	//  }
 
 
 
@@ -517,6 +527,50 @@ public class MongoDBUtil implements AutoCloseable {
 			w.add (new Double(x));
 		}
 		return w;
+	}
+
+
+
+
+	// Construct a repeatable ObjectId given a time in milliseconds.
+	// This uses a counter which is incremented on every call.
+
+	private static int sim_key_counter = 0;
+
+	private static synchronized ObjectId make_repeatable_object_id (long the_time) {
+		++sim_key_counter;
+
+		Date date = new Date (the_time);
+		int machineIdentifier = sim_key_counter / 16777216;
+		short processIdentifier = (short)0;
+		int counter = sim_key_counter % 16777216;
+
+		return new ObjectId (date, machineIdentifier, processIdentifier, counter);
+	}
+
+
+
+
+	// Construct a new ObjectId.
+	// If time has been set in test mode, then return a repeatable ObjectId,
+	// which allows a repeatable sequence of ObjectId to be generated provided
+	// that each invocation of the program has a different test time.
+
+	public static ObjectId make_object_id () {
+
+		// Check for test mode
+
+		long the_time = TestMode.get_test_time();
+
+		// If test mode is in effect, return a repeatable ObjectId
+
+		if (the_time > 0L) {
+			return make_repeatable_object_id (the_time);
+		}
+
+		// Just return a new ObjectId
+	
+		return new ObjectId ();
 	}
 
 

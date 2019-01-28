@@ -16,6 +16,7 @@ import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.TimeSplitOutputStream;
+import org.opensha.oaf.util.InvariantViolationException;
 
 import org.opensha.oaf.rj.OAFParameterSet;
 
@@ -30,15 +31,12 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  * JSON file format:
  *
  *	"ServerConfigFile" = Integer giving file version number, currently 34001.
- *	"db_host" = String giving database host name or IP address.
- *	"db_port" = Integer giving database port number.
- *	"db_name" = String giving database name.  Used for both database access and user authentication.
- *	"db_user" = String giving database user name.  This name provides read/write access.
- *	"db_password" = String giving database password.
- *	"activemq_host" = String giving ActiveMQ host name or IP address.
- *	"activemq_port" = Integer giving ActiveMQ port number.
- *	"activemq_user" = String giving ActiveMQ user name.
- *	"activemq_password" = String giving ActiveMQ password.
+ *	"mongo_config" = { Structure giving MongoDB configuration, see MongoDBConfig.java.
+ *   }
+ *	"activemq_host" = String giving ActiveMQ host name or IP address (currently not used).
+ *	"activemq_port" = Integer giving ActiveMQ port number (currently not used).
+ *	"activemq_user" = String giving ActiveMQ user name (currently not used).
+ *	"activemq_password" = String giving ActiveMQ password (currently not used).
  *	"log_con_aafs" = String giving pattern for AAFS console log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"log_con_intake" = String giving pattern for intake console log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"log_con_control" = String giving pattern for control console log filenames, in the format of SimpleDateFormat, or "" if none.
@@ -77,25 +75,9 @@ public class ServerConfigFile {
 
 	//----- Parameter values -----
 
-	// Database host name or IP address.
+	// MongoDB configuration.
 
-	public String db_host;
-
-	// Database port number.
-
-	public int db_port;
-
-	// Database name.  Used for both database access and user authentication.
-
-	public String db_name;
-
-	// Database user name.  This name provides read/write access.
-
-	public String db_user;
-
-	// Database password.
-
-	public String db_password;
+	public MongoDBConfig mongo_config;
 
 	// ActiveMQ host name or IP address.
 
@@ -219,11 +201,7 @@ public class ServerConfigFile {
 	// Clear the contents.
 
 	public void clear () {
-		db_host = "";
-		db_port = 0;
-		db_name = "";
-		db_user = "";
-		db_password = "";
+		mongo_config = null;
 		activemq_host = "";
 		activemq_port = 0;
 		activemq_user = "";
@@ -256,142 +234,132 @@ public class ServerConfigFile {
 
 	public void check_invariant () {
 
-		if (!( db_host != null && db_host.trim().length() > 0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid db_host: " + ((db_host == null) ? "<null>" : db_host));
-		}
-
-		if (!( db_port >= 1024 && db_port <= 65535 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid db_port: " + db_port);
-		}
-
-		if (!( db_name != null && db_name.trim().length() > 0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid db_name: " + ((db_name == null) ? "<null>" : db_name));
-		}
-
-		if (!( db_user != null && db_user.trim().length() > 0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid db_user: " + ((db_user == null) ? "<null>" : db_user));
-		}
-
-		if (!( db_password != null && db_password.trim().length() > 0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid db_password: " + ((db_password == null) ? "<null>" : db_password));
+		if (mongo_config != null) {
+			try {
+				mongo_config.check_invariant();
+			} catch (Exception e) {
+				throw new InvariantViolationException ("ServerConfigFile: Invalid mongo_config", e);
+			}
+		} else {
+			throw new InvariantViolationException ("ServerConfigFile: Invalid mongo_config: <null>");
 		}
 
 		if (!( activemq_host != null && activemq_host.trim().length() > 0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid activemq_host: " + ((activemq_host == null) ? "<null>" : activemq_host));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid activemq_host: " + ((activemq_host == null) ? "<null>" : activemq_host));
 		}
 
 		if (!( activemq_port >= 1024 && activemq_port <= 65535 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid activemq_port: " + activemq_port);
+			throw new InvariantViolationException ("ServerConfigFile: Invalid activemq_port: " + activemq_port);
 		}
 
 		if (!( activemq_user != null && activemq_user.trim().length() > 0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid activemq_user: " + ((activemq_user == null) ? "<null>" : activemq_user));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid activemq_user: " + ((activemq_user == null) ? "<null>" : activemq_user));
 		}
 
 		if (!( activemq_password != null && activemq_password.trim().length() > 0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid activemq_password: " + ((activemq_password == null) ? "<null>" : activemq_password));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid activemq_password: " + ((activemq_password == null) ? "<null>" : activemq_password));
 		}
 
 		if (!( log_con_aafs != null && (log_con_aafs.isEmpty() || TimeSplitOutputStream.is_valid_pattern(log_con_aafs)) )) {
-			throw new RuntimeException("ServerConfigFile: Invalid log_con_aafs: " + ((log_con_aafs == null) ? "<null>" : log_con_aafs));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid log_con_aafs: " + ((log_con_aafs == null) ? "<null>" : log_con_aafs));
 		}
 
 		if (!( log_con_intake != null && (log_con_intake.isEmpty() || TimeSplitOutputStream.is_valid_pattern(log_con_intake)) )) {
-			throw new RuntimeException("ServerConfigFile: Invalid log_con_intake: " + ((log_con_intake == null) ? "<null>" : log_con_intake));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid log_con_intake: " + ((log_con_intake == null) ? "<null>" : log_con_intake));
 		}
 
 		if (!( log_con_control != null && (log_con_control.isEmpty() || TimeSplitOutputStream.is_valid_pattern(log_con_control)) )) {
-			throw new RuntimeException("ServerConfigFile: Invalid log_con_control: " + ((log_con_control == null) ? "<null>" : log_con_control));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid log_con_control: " + ((log_con_control == null) ? "<null>" : log_con_control));
 		}
 
 		if (!( log_summary != null && (log_summary.isEmpty() || TimeSplitOutputStream.is_valid_pattern(log_summary)) )) {
-			throw new RuntimeException("ServerConfigFile: Invalid log_summary: " + ((log_summary == null) ? "<null>" : log_summary));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid log_summary: " + ((log_summary == null) ? "<null>" : log_summary));
 		}
 
 		if (!( comcat_url != null && comcat_url.trim().length() > 0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid comcat_url: " + ((comcat_url == null) ? "<null>" : comcat_url));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid comcat_url: " + ((comcat_url == null) ? "<null>" : comcat_url));
 		}
 
 		if (!( feed_url != null )) {
-			throw new RuntimeException("ServerConfigFile: Invalid feed_url: " + ((feed_url == null) ? "<null>" : feed_url));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid feed_url: " + ((feed_url == null) ? "<null>" : feed_url));
 		}
 
 		if (!( comcat_dev_url != null && comcat_dev_url.trim().length() > 0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid comcat_dev_url: " + ((comcat_dev_url == null) ? "<null>" : comcat_dev_url));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid comcat_dev_url: " + ((comcat_dev_url == null) ? "<null>" : comcat_dev_url));
 		}
 
 		if (!( feed_dev_url != null )) {
-			throw new RuntimeException("ServerConfigFile: Invalid feed_dev_url: " + ((feed_dev_url == null) ? "<null>" : feed_dev_url));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid feed_dev_url: " + ((feed_dev_url == null) ? "<null>" : feed_dev_url));
 		}
 
 		if (!( comcat_err_rate >= 0.0 && comcat_err_rate <= 1.0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid comcat_err_rate: " + comcat_err_rate);
+			throw new InvariantViolationException ("ServerConfigFile: Invalid comcat_err_rate: " + comcat_err_rate);
 		}
 
 		if (!( comcat_exclude != null )) {
-			throw new RuntimeException("ServerConfigFile: comcat_exclude list is null");
+			throw new InvariantViolationException ("ServerConfigFile: comcat_exclude list is null");
 		}
 		for (String s : comcat_exclude) {
 			if (!( s != null && s.trim().length() > 0 )) {
-				throw new RuntimeException("ServerConfigFile: Invalid comcat_exclude entry: " + ((s == null) ? "<null>" : s));
+				throw new InvariantViolationException ("ServerConfigFile: Invalid comcat_exclude entry: " + ((s == null) ? "<null>" : s));
 			}
 		}
 
 		if (!( locat_bins >= 0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid locat_bins: " + locat_bins);
+			throw new InvariantViolationException ("ServerConfigFile: Invalid locat_bins: " + locat_bins);
 		}
 
 		if (!( locat_filenames != null )) {
-			throw new RuntimeException("ServerConfigFile: locat_filenames list is null");
+			throw new InvariantViolationException ("ServerConfigFile: locat_filenames list is null");
 		}
 		for (String s : locat_filenames) {
 			if (!( s != null && s.trim().length() > 0 )) {
-				throw new RuntimeException("ServerConfigFile: Invalid locat_filenames entry: " + ((s == null) ? "<null>" : s));
+				throw new InvariantViolationException ("ServerConfigFile: Invalid locat_filenames entry: " + ((s == null) ? "<null>" : s));
 			}
 		}
 
 		if (!( block_pdl_intake >= 0 && block_pdl_intake <= 1 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid block_pdl_intake: " + block_pdl_intake);
+			throw new InvariantViolationException ("ServerConfigFile: Invalid block_pdl_intake: " + block_pdl_intake);
 		}
 
 		if (!( block_poll_intake >= 0 && block_poll_intake <= 1 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid block_poll_intake: " + block_poll_intake);
+			throw new InvariantViolationException ("ServerConfigFile: Invalid block_poll_intake: " + block_poll_intake);
 		}
 
 		if (!( block_fc_content >= 0 && block_fc_content <= 1 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid block_fc_content: " + block_fc_content);
+			throw new InvariantViolationException ("ServerConfigFile: Invalid block_fc_content: " + block_fc_content);
 		}
 
 		if (!( db_err_rate >= 0.0 && db_err_rate <= 1.0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid db_err_rate: " + db_err_rate);
+			throw new InvariantViolationException ("ServerConfigFile: Invalid db_err_rate: " + db_err_rate);
 		}
 
 		if (!( pdl_enable >= PDLOPT_MIN && pdl_enable <= PDLOPT_MAX )) {
-			throw new RuntimeException("ServerConfigFile: Invalid pdl_enable: " + pdl_enable);
+			throw new InvariantViolationException ("ServerConfigFile: Invalid pdl_enable: " + pdl_enable);
 		}
 
 		if (!( pdl_key_filename != null )) {
-			throw new RuntimeException("ServerConfigFile: Invalid pdl_key_filename: " + ((pdl_key_filename == null) ? "<null>" : pdl_key_filename));
+			throw new InvariantViolationException ("ServerConfigFile: Invalid pdl_key_filename: " + ((pdl_key_filename == null) ? "<null>" : pdl_key_filename));
 		}
 
 		if (!( pdl_err_rate >= 0.0 && pdl_err_rate <= 1.0 )) {
-			throw new RuntimeException("ServerConfigFile: Invalid pdl_err_rate: " + pdl_err_rate);
+			throw new InvariantViolationException ("ServerConfigFile: Invalid pdl_err_rate: " + pdl_err_rate);
 		}
 
 		if (!( pdl_dev_senders != null )) {
-			throw new RuntimeException("ServerConfigFile: pdl_dev_senders list is null");
+			throw new InvariantViolationException ("ServerConfigFile: pdl_dev_senders list is null");
 		}
 
 		if ( (pdl_enable == PDLOPT_DEV || pdl_enable == PDLOPT_SIM_DEV) && pdl_dev_senders.size() == 0 ) {
-			throw new RuntimeException("ServerConfigFile: pdl_dev_senders is empty, but pdl_enable = " + pdl_enable);
+			throw new InvariantViolationException ("ServerConfigFile: pdl_dev_senders is empty, but pdl_enable = " + pdl_enable);
 		}
 
 		if (!( pdl_prod_senders != null )) {
-			throw new RuntimeException("ServerConfigFile: pdl_prod_senders list is null");
+			throw new InvariantViolationException ("ServerConfigFile: pdl_prod_senders list is null");
 		}
 
 		if ( (pdl_enable == PDLOPT_PROD || pdl_enable == PDLOPT_SIM_PROD) && pdl_prod_senders.size() == 0 ) {
-			throw new RuntimeException("ServerConfigFile: pdl_prod_senders is empty, but pdl_enable = " + pdl_enable);
+			throw new InvariantViolationException ("ServerConfigFile: pdl_prod_senders is empty, but pdl_enable = " + pdl_enable);
 		}
 
 		return;
@@ -404,11 +372,10 @@ public class ServerConfigFile {
 		StringBuilder result = new StringBuilder();
 		result.append ("ServerConfigFile:" + "\n");
 
-		result.append ("db_host = " + ((db_host == null) ? "<null>" : db_host) + "\n");
-		result.append ("db_port = " + db_port + "\n");
-		result.append ("db_name = " + ((db_name == null) ? "<null>" : db_name) + "\n");
-		result.append ("db_user = " + ((db_user == null) ? "<null>" : db_user) + "\n");
-		result.append ("db_password = " + ((db_password == null) ? "<null>" : db_password) + "\n");
+		result.append ("mongo_config = {" + "\n");
+		result.append (mongo_config.toString ("  "));
+		result.append ("}" + "\n");
+
 		result.append ("activemq_host = " + ((activemq_host == null) ? "<null>" : activemq_host) + "\n");
 		result.append ("activemq_port = " + activemq_port + "\n");
 		result.append ("activemq_user = " + ((activemq_user == null) ? "<null>" : activemq_user) + "\n");
@@ -577,14 +544,14 @@ public class ServerConfigFile {
 	// Marshal type code.
 
 	protected static final int MARSHAL_NULL = 34000;
-	protected static final int MARSHAL_ACTION_CFG = 34001;
+	protected static final int MARSHAL_SERVER_CFG = 34001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
 	// Get the type code.
 
 	protected int get_marshal_type () {
-		return MARSHAL_ACTION_CFG;
+		return MARSHAL_SERVER_CFG;
 	}
 
 	// Marshal a PDL sender configuration.
@@ -677,11 +644,8 @@ public class ServerConfigFile {
 
 		// Contents
 
-		writer.marshalString    (        "db_host"          , db_host          );
-		writer.marshalInt       (        "db_port"          , db_port          );
-		writer.marshalString    (        "db_name"          , db_name          );
-		writer.marshalString    (        "db_user"          , db_user          );
-		writer.marshalString    (        "db_password"      , db_password      );
+		mongo_config.marshal    (writer, "mongo_config"                        );
+
 		writer.marshalString    (        "activemq_host"    , activemq_host    );
 		writer.marshalInt       (        "activemq_port"    , activemq_port    );
 		writer.marshalString    (        "activemq_user"    , activemq_user    );
@@ -721,11 +685,8 @@ public class ServerConfigFile {
 
 		// Contents
 
-		db_host           = reader.unmarshalString    (        "db_host"          );
-		db_port           = reader.unmarshalInt       (        "db_port"          );
-		db_name           = reader.unmarshalString    (        "db_name"          );
-		db_user           = reader.unmarshalString    (        "db_user"          );
-		db_password       = reader.unmarshalString    (        "db_password"      );
+		mongo_config      = new MongoDBConfig         (reader, "mongo_config"     );
+
 		activemq_host     = reader.unmarshalString    (        "activemq_host"    );
 		activemq_port     = reader.unmarshalInt       (        "activemq_port"    );
 		activemq_user     = reader.unmarshalString    (        "activemq_user"    );
@@ -817,7 +778,7 @@ public class ServerConfigFile {
 			result = null;
 			break;
 
-		case MARSHAL_ACTION_CFG:
+		case MARSHAL_SERVER_CFG:
 			result = new ServerConfigFile();
 			result.do_umarshal (reader);
 			break;
