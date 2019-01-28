@@ -1,0 +1,11 @@
+{
+  "AliasAssignmentList": 35001,
+  "assignments": [
+    {
+      "timeline_id": ".b",
+      "comcat_ids": ["atlas20140824102044", "hv70307431"],
+      "removed_ids": ["bad2"]
+    }
+  ],
+  "family_time": 150000
+}
