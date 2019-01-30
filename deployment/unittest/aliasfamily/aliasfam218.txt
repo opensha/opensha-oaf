@@ -1,0 +1,21 @@
+aliasfam218 aafs.ServerTest task_query_list 0 0
+PendingTask
+	id: 54a9f0200000000000000001
+	exec_time: 18999999
+	event_id: .nc72282711
+	sched_time: 18999999
+	submit_time: 1420423200000
+	submit_id: AAFS
+	opcode: 11
+	stage: 0
+	details: len = 68
+PendingTask
+	id: 54a963800000000000000001
+	exec_time: 19000000
+	event_id: .b
+	sched_time: 19000000
+	submit_time: 1420387200000
+	submit_id: AAFS
+	opcode: 13
+	stage: 0
+	details: len = 69

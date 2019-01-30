@@ -1,0 +1,15 @@
+alfam175 aafs.ServerTest alias_query_iterate 0 50090 0 event_2
+AliasFamily
+	id: 54a49c100000000000000002
+	family_time: 20102
+	timeline_ids: [event_2]
+	comcat_ids: [ccid_21, ccid_23, ccid_22, rmid_22, rmid_21]
+	enc_bindings: [3, 4, 3, 4]
+AliasAssignmentList:
+	family_time: 20102
+AliasAssignment[0]:
+	timeline_id: event_2
+	primary_id: ccid_21
+	comcat_ids: [ccid_21, ccid_23, ccid_22]
+	removed_ids: [rmid_22, rmid_21]
+	all_absent_ids: []

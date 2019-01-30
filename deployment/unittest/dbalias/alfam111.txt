@@ -1,0 +1,1 @@
+alfam111 aafs.ServerTest alias_query_list 60010 0 0

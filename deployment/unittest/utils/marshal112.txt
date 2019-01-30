@@ -1,0 +1,18 @@
+marshal112 util.MarshalImpJsonWriter test3
+Original strings:
+string_data[0] = {"one":1, "two":2, "three":3, "four":4}
+string_data[1] = [5, 6, 7, 8, 9]
+string_data[2] = 
+string_data[3] = {"ten":10, "array":[11, 12, 13], "fourteen":14}
+Embedded unmarshaled strings:
+embed[0] = {"one":1, "two":2, "three":3, "four":4}
+embed[1] = [5, 6, 7, 8, 9]
+embed[2] = 
+embed[3] = {"ten":10, "array":[11, 12, 13], "fourteen":14}
+Merged unmarshaled strings:
+merge[0] = {"one":1,"two":2,"three":3,"four":4}
+merge[1] = [5,6,7,8,9]
+merge[2] = 
+merge[3] = {"ten":10,"array":[11,12,13],"fourteen":14}
+JSON string:
+{"embed0":"{\"one\":1, \"two\":2, \"three\":3, \"four\":4}","embed1":"[5, 6, 7, 8, 9]","embed2":"","embed3":"{\"ten\":10, \"array\":[11, 12, 13], \"fourteen\":14}","merge0":{"one":1,"two":2,"three":3,"four":4},"merge1":[5,6,7,8,9],"merge2":null,"merge3":{"ten":10,"array":[11,12,13],"fourteen":14}}

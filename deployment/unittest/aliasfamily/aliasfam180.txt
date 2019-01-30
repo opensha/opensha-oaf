@@ -1,0 +1,21 @@
+aliasfam180 aafs.ServerTest alias_get_timeline_info .b
+Alias: Update for timeline ID = .b
+Alias: Merges from Comcat = 1, IDs processed = 5
+Alias: Merges from database = 0, IDs processed = 3
+Alias: Matches with method 1 = 0
+Alias: Matches with method 2U = 0
+Alias: Matches with method 3U = 0
+Alias: Matches with method 2N = 0
+Alias: Matches with method 3N = 0
+Alias: Matches with method 4U = 0
+Alias: Matches with method 5U = 1
+Alias: Matches with method 4N = 0
+Alias: Matches with method 5N = 0
+Alias: Matches with method RU = 0
+Alias: Matches with method RN = 0
+Alias: Matches with method S = 1
+Alias: Update summary:
+.a = [us20002926, atlas20150425061125, gcmt20150425061126, -bad1, -bad2] live
+.b = [-bad3, -bad2, -atlas20150425061125] stopped
+removed IDs = [bad3, bad1, bad2]
+result code = RESCODE_ALIAS_STOPPED

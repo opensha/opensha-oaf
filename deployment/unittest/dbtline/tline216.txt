@@ -1,0 +1,22 @@
+tline216 aafs.ServerTest tline_query_list 0 0 0 - ccid_23
+TimelineEntry
+	id: 54a49c100000000000000004
+	action_time: 50105
+	event_id: Event_5
+	comcat_ids: [ccid_51, ccid_52, ccid_53, ccid_23, ccid_13]
+	actcode: 105
+	details: len = 41
+TimelineEntry
+	id: 54a49c100000000000000002
+	action_time: 40104
+	event_id: Event_4
+	comcat_ids: [ccid_41, ccid_42, ccid_43, ccid_23]
+	actcode: 104
+	details: len = 0
+TimelineEntry
+	id: 54a49c100000000000000001
+	action_time: 20102
+	event_id: Event_2
+	comcat_ids: [ccid_21, ccid_22, ccid_23]
+	actcode: 102
+	details: len = 41

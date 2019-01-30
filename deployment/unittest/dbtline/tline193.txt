@@ -1,0 +1,8 @@
+tline193 aafs.ServerTest tline_query_iterate 0 0 2001 Event_1
+TimelineEntry
+	id: 54a49c100000000000000003
+	action_time: 10101
+	event_id: Event_1
+	comcat_ids: [ccid_11, ccid_12, ccid_13]
+	actcode: 101
+	details: len = 41

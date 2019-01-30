@@ -1,0 +1,15 @@
+alfam205 aafs.ServerTest alias_query_iterate 30010 50090 2001
+AliasFamily
+	id: 54a49c100000000000000003
+	family_time: 30103
+	timeline_ids: [event_3]
+	comcat_ids: [ccid_31, rmid_31]
+	enc_bindings: [1, 3, 1]
+AliasAssignmentList:
+	family_time: 30103
+AliasAssignment[0]:
+	timeline_id: event_3
+	primary_id: ccid_31
+	comcat_ids: [ccid_31]
+	removed_ids: [rmid_31]
+	all_absent_ids: []

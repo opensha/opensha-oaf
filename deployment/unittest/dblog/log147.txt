@@ -1,0 +1,13 @@
+log147 aafs.ServerTest log_query_iterate 30110 50190 Event_4
+LogEntry
+	id: 54a49c100000000000000002
+	log_time: 40200
+	event_id: Event_4
+	sched_time: 40100
+	submit_time: 40000
+	submit_id: Submitter_4_no_details
+	opcode: 104
+	stage: 4
+	details: len = 0
+	rescode: 1104
+	results: Result_for_104

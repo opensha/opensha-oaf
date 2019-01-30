@@ -1,0 +1,1 @@
+log100 aafs.ServerTest task_add_some

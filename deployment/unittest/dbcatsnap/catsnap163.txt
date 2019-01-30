@@ -1,0 +1,17 @@
+catsnap163 aafs.ServerTest catsnap_query_delete 5.0 29.0
+CatalogSnapshot
+	id: 54a51aa00000000000000001
+	event_id: Event_4
+	start_time: 12096000
+	end_time: 1209600000
+	eqk_count: 2539
+	lat_lon_depth_list: len=2539
+	mag_time_list: len=2539
+CatalogSnapshot
+	id: 54a4f0700000000000000001
+	event_id: Event_3
+	start_time: 6048000
+	end_time: 604800000
+	eqk_count: 2226
+	lat_lon_depth_list: len=2226
+	mag_time_list: len=2226

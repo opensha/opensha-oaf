@@ -1,0 +1,22 @@
+tline141 aafs.ServerTest tline_query_list 30103 50105 0
+TimelineEntry
+	id: 54a49c100000000000000004
+	action_time: 50105
+	event_id: Event_5
+	comcat_ids: [ccid_51, ccid_52, ccid_53, ccid_23, ccid_13]
+	actcode: 105
+	details: len = 41
+TimelineEntry
+	id: 54a49c100000000000000002
+	action_time: 40104
+	event_id: Event_4
+	comcat_ids: [ccid_41, ccid_42, ccid_43, ccid_23]
+	actcode: 104
+	details: len = 0
+TimelineEntry
+	id: 54a49c100000000000000005
+	action_time: 30103
+	event_id: Event_3
+	comcat_ids: [ccid_31, ccid_32]
+	actcode: 103
+	details: len = 41

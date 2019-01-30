@@ -1,0 +1,15 @@
+alfam263 aafs.ServerTest alias_query_delete 0 0 0 event_1
+AliasFamily
+	id: 54a49c100000000000000001
+	family_time: 10101
+	timeline_ids: [event_1]
+	comcat_ids: [ccid_11, ccid_13, ccid_12]
+	enc_bindings: [3, 2]
+AliasAssignmentList:
+	family_time: 10101
+AliasAssignment[0]:
+	timeline_id: event_1
+	primary_id: ccid_11
+	comcat_ids: [ccid_11, ccid_13, ccid_12]
+	removed_ids: []
+	all_absent_ids: []

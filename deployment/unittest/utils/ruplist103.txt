@@ -1,0 +1,22 @@
+ruplist103 rj.CompactEqkRupList test1 1000000
+lat_min = -90.0
+lat_max = 90.0
+lat_tol = 1.0E-4
+lon_min = -180.0
+lon_max = 360.0
+lon_tol = 1.0E-4
+depth_min = -5.0
+depth_max = 700.0
+depth_tol = 0.01
+mag_min = -12.0
+mag_max = 12.0
+mag_tol = 0.001
+time_min = -30000000000000
+time_max = 30000000000000
+time_tol = 1
+num_events = 1000000
+Generating random data ...
+Creating rupture list ...
+Compressing rupture list ...
+Comparing results ...
+Error count: 0

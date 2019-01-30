@@ -1,0 +1,34 @@
+aliasfam216 aafs.ServerTest alias_get_timeline_info .a
+Alias: Update for timeline ID = .a
+Alias: Merges from Comcat = 0, IDs processed = 2
+Alias: Merges from database = 0, IDs processed = 1
+Alias: Matches with method 1 = 1
+Alias: Matches with method 2U = 0
+Alias: Matches with method 3U = 0
+Alias: Matches with method 2N = 0
+Alias: Matches with method 3N = 0
+Alias: Matches with method 4U = 0
+Alias: Matches with method 5U = 0
+Alias: Matches with method 4N = 0
+Alias: Matches with method 5N = 0
+Alias: Matches with method RU = 0
+Alias: Matches with method RN = 0
+Alias: Matches with method S = 0
+Alias: Update summary:
+.a = [us1000h3p4, -us1000h4p4] live
+removed IDs = [us1000h4p4]
+result code = RESCODE_SUCCESS
+ForecastMainshock:
+query_event_id = us1000h3p4
+mainshock_avail = true
+mainshock_event_id = us1000h3p4
+mainshock_network = us
+mainshock_code = 1000h3p4
+mainshock_id_list = [us1000h3p4]
+mainshock_time = 1538128965250 (2018-09-28 10:02:45 UTC)
+mainshock_mag = 7.5
+mainshock_lat = -0.2559
+mainshock_lon = 119.84619999999998
+mainshock_depth = 20.0
+timeline_id = .a
+

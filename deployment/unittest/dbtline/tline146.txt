@@ -1,0 +1,8 @@
+tline146 aafs.ServerTest tline_query_first 30104 50104 0
+TimelineEntry
+	id: 54a49c100000000000000002
+	action_time: 40104
+	event_id: Event_4
+	comcat_ids: [ccid_41, ccid_42, ccid_43, ccid_23]
+	actcode: 104
+	details: len = 0

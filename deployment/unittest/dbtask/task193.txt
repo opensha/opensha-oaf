@@ -1,0 +1,11 @@
+task193 aafs.ServerTest task_cutoff_activate_delete 999999999
+PendingTask
+	id: 54a49c100000000000000004
+	exec_time: 50100
+	event_id: Event_5
+	sched_time: 50100
+	submit_time: 50000
+	submit_id: Submitter_5
+	opcode: 105
+	stage: 5
+	details: len = 41

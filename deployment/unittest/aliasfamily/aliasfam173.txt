@@ -1,0 +1,35 @@
+aliasfam173 aafs.ServerTest alias_get_timeline_info .a
+Alias: Update for timeline ID = .a
+Alias: Merges from Comcat = 1, IDs processed = 5
+Alias: Merges from database = 0, IDs processed = 3
+Alias: Matches with method 1 = 0
+Alias: Matches with method 2U = 0
+Alias: Matches with method 3U = 0
+Alias: Matches with method 2N = 0
+Alias: Matches with method 3N = 0
+Alias: Matches with method 4U = 0
+Alias: Matches with method 5U = 1
+Alias: Matches with method 4N = 0
+Alias: Matches with method 5N = 0
+Alias: Matches with method RU = 0
+Alias: Matches with method RN = 0
+Alias: Matches with method S = 1
+Alias: Update summary:
+.a = [us20002926, atlas20150425061125, gcmt20150425061126, -bad1, -bad2] live
+.b = [-bad3, -bad2, -atlas20150425061125] stopped
+removed IDs = [bad3, bad1, bad2]
+result code = RESCODE_SUCCESS
+ForecastMainshock:
+query_event_id = us20002926
+mainshock_avail = true
+mainshock_event_id = us20002926
+mainshock_network = us
+mainshock_code = 20002926
+mainshock_id_list = [us20002926, gcmt20150425061126, atlas20150425061125]
+mainshock_time = 1429942285950 (2015-04-25 06:11:25 UTC)
+mainshock_mag = 7.8
+mainshock_lat = 28.2305
+mainshock_lon = 84.7314
+mainshock_depth = 8.22
+timeline_id = .a
+

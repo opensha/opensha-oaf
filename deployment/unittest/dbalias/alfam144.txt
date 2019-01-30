@@ -1,0 +1,20 @@
+alfam144 aafs.ServerTest alias_query_list 30104 50104 0
+AliasFamily
+	id: 54a49c100000000000000004
+	family_time: 40104
+	timeline_ids: [event_1, event_4]
+	comcat_ids: [ccid_42, ccid_11, ccid_41, ccid_12, ccid_13]
+	enc_bindings: [2, 4, 6, 7, 4, 3, 4]
+AliasAssignmentList:
+	family_time: 40104
+AliasAssignment[0]:
+	timeline_id: event_1
+	primary_id: ccid_42
+	comcat_ids: [ccid_42, ccid_11]
+	removed_ids: [ccid_13, ccid_12]
+AliasAssignment[1]:
+	timeline_id: event_4
+	primary_id: ccid_41
+	comcat_ids: [ccid_41, ccid_12]
+	removed_ids: [ccid_13]
+	all_absent_ids: []

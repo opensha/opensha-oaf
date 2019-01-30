@@ -1,0 +1,22 @@
+catsnap112 aafs.ServerTest catsnap_add 0.30 30.0 Event_5
+CatalogSnapshot
+	id: 54a544d00000000000000001
+	event_id: Event_5
+	start_time: 25920000
+	end_time: 2592000000
+	eqk_count: 2807
+	lat_lon_depth_list: len=2807
+	mag_time_list: len=2807
+CatalogSnapshot
+	id: 54a544d00000000000000001
+	event_id: Event_5
+	start_time: 25920000
+	end_time: 2592000000
+	eqk_count: 2807
+	lat_lon_depth_list: len=2807
+	mag_time_list: len=2807
+b=0.9100  magMain=7.500  apcTot=3131  apcSup=75
+a: like=-1.670  mean=-1.669  sdev=0.01153  min=-2.000  max=-1.000  delta=0.01000  num=101  lo=29  hi=39
+p: like=1.080  mean=1.085  sdev=0.01552  min=0.9000  max=1.200  delta=0.01000  num=31  lo=12  hi=26
+c: like=0.05000  mean=0.05000  sdev=0.000  min=0.05000  max=0.05000  delta=0.000  num=1  lo=0  hi=1
+magCompFn=FnPage[capF=0.5, capG=1.25, capH=0.75]  magCat=2.500  tStart=0.30000000  tEnd=30.000000  nEvents=2807

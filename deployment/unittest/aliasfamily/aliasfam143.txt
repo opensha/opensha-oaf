@@ -1,0 +1,2 @@
+aliasfam143 aafs.ServerTest alias_get_timeline_info .us1000e5k1
+result code = RESCODE_ALIAS_TIMELINE_NOT_FOUND

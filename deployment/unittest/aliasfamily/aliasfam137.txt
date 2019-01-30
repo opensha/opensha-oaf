@@ -1,0 +1,2 @@
+aliasfam137 aafs.ServerTest alias_get_event_info badevent
+result code = RESCODE_ALIAS_EVENT_NOT_IN_COMCAT

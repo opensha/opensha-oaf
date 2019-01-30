@@ -1,0 +1,84 @@
+server04 aafs.ServerConfig test1
+ServerConfig:
+ServerConfigFile:
+mongo_config = {
+  default_db_handle = local-usgs
+  hosts[0]:
+    host_handle = local
+    write_concern = majority+journaled
+    read_concern = majority
+    read_preference = 
+    retry_writes = 
+    connection_mode = 
+    cluster_type = 
+    replica_set_name = 
+    connection_string = 
+    username = usgs
+    auth_db = usgs
+    password = usgs
+    session_level = 0
+    causal_consistency = 
+    transact_write_concern = majority+journaled
+    transact_read_concern = snapshot
+    transact_read_preference = 
+    transact_retries = 0
+    commit_retries = 0
+    addresses[0]:
+      host_name = 127.0.0.1
+      host_port = 27017
+    databases[0]:
+      db_handle = local-usgs
+      db_name = usgs
+      write_concern = majority+journaled
+      read_concern = majority
+      read_preference = 
+      collections[0]:
+        coll_name = alias
+        access_level = 2
+      collections[1]:
+        coll_name = catalog
+        access_level = 2
+      collections[2]:
+        coll_name = log
+        access_level = 2
+      collections[3]:
+        coll_name = tasks
+        access_level = 2
+      collections[4]:
+        coll_name = timeline
+        access_level = 2
+}
+activemq_host = 127.0.0.1
+activemq_port = 61616
+activemq_user = admin
+activemq_password = admin
+log_con_aafs = '/data/aafs/logs/'yyyy-MM-dd'-aafs.log'
+log_con_intake = '/data/aafs/logs/'yyyy-MM-dd'-intake.log'
+log_con_control = '/data/aafs/logs/'yyyy-MM-dd'-control.log'
+log_summary = '/data/aafs/logs/'yyyy-MM-dd'-summary.log'
+comcat_url = https://earthquake.usgs.gov/fdsnws/event/1/
+feed_url = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/
+comcat_dev_url = https://dev-earthquake.cr.usgs.gov/fdsnws/event/1/
+feed_dev_url = https://dev-earthquake.cr.usgs.gov/earthquakes/feed/v1.0/detail/
+comcat_err_rate = 0.0
+comcat_exclude = [
+]
+locat_bins = 0
+locat_filenames = [
+]
+block_pdl_intake = 0
+block_poll_intake = 0
+block_fc_content = 0
+db_err_rate = 0.0
+pdl_enable = 0
+pdl_key_filename = 
+pdl_err_rate = 0.0
+pdl_dev_senders = [
+  0:  host = dev01-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
+  1:  host = dev02-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
+]
+pdl_prod_senders = [
+  0:  host = prod01-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
+  1:  host = prod02-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
+]
+

@@ -1,0 +1,15 @@
+aliasfam105 aafs.ServerTest alias_get_event_info at00nat3ek
+result code = RESCODE_ALIAS_NEW_EVENT
+ForecastMainshock:
+query_event_id = at00nat3ek
+mainshock_avail = true
+mainshock_event_id = nc72282711
+mainshock_network = nc
+mainshock_code = 72282711
+mainshock_id_list = [nc72282711, at00nat3ek, usb000s5tp, atlas20140824102044]
+mainshock_time = 1408875644070 (2014-08-24 10:20:44 UTC)
+mainshock_mag = 6.02
+mainshock_lat = 38.2151667
+mainshock_lon = -122.3123333
+mainshock_depth = 11.12
+

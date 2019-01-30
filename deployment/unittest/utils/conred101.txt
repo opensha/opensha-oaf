@@ -1,0 +1,43 @@
+conred101 aafs.ServerTest dump_files_in_dir opensha-oaf/build/libs/unittest/scratchdir1.tmp
+2015-01-01-test.log:
+day 1 - out - line 2
+day 1 - err - line 2
+day 1 - out - line 3
+day 1 - err - line 3
+day 1 - out - line 4
+day 1 - err - line 4
+day 1 - out - line 5
+day 1 - err - line 5
+day 1 - out - line 6
+day 1 - err - line 6
+day 1 - out - line 7
+day 1 - err - line 7
+
+2015-01-02-test.log:
+day 2 - out - line 8
+day 2 - err - line 8
+day 2 - out - line 9
+day 2 - err - line 9
+
+2015-01-04-test.log:
+day 4 - out - line 10
+day 4 - err - line 10
+day 4 - out - line 11
+day 4 - err - line 11
+
+2015-01-06-err.log:
+day 6 - tee - err - line 12
+day 6 - tee - err - line 13
+
+2015-01-06-out.log:
+day 6 - tee - out - line 12
+day 6 - tee - out - line 13
+
+2015-01-07-err.log:
+day 7 - tee - err - line 14
+day 7 - tee - err - line 15
+
+2015-01-07-out.log:
+day 7 - tee - out - line 14
+day 7 - tee - out - line 15
+

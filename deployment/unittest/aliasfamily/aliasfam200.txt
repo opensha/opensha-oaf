@@ -1,0 +1,1 @@
+aliasfam200 aafs.ServerTest alias_add_from_file opensha-oaf/deployment/scripts/utsh/aliasfamily/aft10a.txt

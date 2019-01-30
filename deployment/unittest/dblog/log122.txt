@@ -1,0 +1,25 @@
+log122 aafs.ServerTest log_query_list 30110 50190
+LogEntry
+	id: 54a49c100000000000000002
+	log_time: 40200
+	event_id: Event_4
+	sched_time: 40100
+	submit_time: 40000
+	submit_id: Submitter_4_no_details
+	opcode: 104
+	stage: 4
+	details: len = 0
+	rescode: 1104
+	results: Result_for_104
+LogEntry
+	id: 54a49c100000000000000005
+	log_time: 30200
+	event_id: Event_3
+	sched_time: 30100
+	submit_time: 30000
+	submit_id: Submitter_3
+	opcode: 103
+	stage: 3
+	details: len = 41
+	rescode: 1103
+	results: Result_for_103

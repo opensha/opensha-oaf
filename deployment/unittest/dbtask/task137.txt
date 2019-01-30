@@ -1,0 +1,11 @@
+task137 aafs.ServerTest task_query_first 10010 60090
+PendingTask
+	id: 54a49c100000000000000003
+	exec_time: 10100
+	event_id: Event_1
+	sched_time: 10100
+	submit_time: 10000
+	submit_id: Submitter_1
+	opcode: 101
+	stage: 1
+	details: len = 41

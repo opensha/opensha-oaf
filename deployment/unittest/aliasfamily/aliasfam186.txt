@@ -1,0 +1,20 @@
+aliasfam186 aafs.ServerTest alias_query_list 0 0 0
+AliasFamily
+	id: 54a947600000000000000001
+	family_time: 110000
+	timeline_ids: [.a, .b]
+	comcat_ids: [bad1, gcmt20150425061126, at00nat3ek, bad3, bad2]
+	enc_bindings: [2, 2, 5, 8, 4, 2, 3, 4]
+AliasAssignmentList:
+	family_time: 110000
+AliasAssignment[0]:
+	timeline_id: .a
+	primary_id: bad1
+	comcat_ids: [bad1, gcmt20150425061126]
+	removed_ids: [bad2]
+AliasAssignment[1]:
+	timeline_id: .b
+	primary_id: null
+	comcat_ids: []
+	removed_ids: [at00nat3ek, bad3, bad2]
+	all_absent_ids: []

@@ -1,0 +1,15 @@
+tline235 aafs.ServerTest tline_query_iterate 20010 50090 0 - ccid_13 ccid_23
+TimelineEntry
+	id: 54a49c100000000000000002
+	action_time: 40104
+	event_id: Event_4
+	comcat_ids: [ccid_41, ccid_42, ccid_43, ccid_23]
+	actcode: 104
+	details: len = 0
+TimelineEntry
+	id: 54a49c100000000000000001
+	action_time: 20102
+	event_id: Event_2
+	comcat_ids: [ccid_21, ccid_22, ccid_23]
+	actcode: 102
+	details: len = 41

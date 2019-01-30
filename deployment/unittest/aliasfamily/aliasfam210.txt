@@ -1,0 +1,43 @@
+aliasfam210 aafs.ServerTest alias_query_list 0 0 0
+AliasFamily
+	id: 54aa98e00000000000000001
+	family_time: 160000
+	timeline_ids: [.c]
+	comcat_ids: [us1000eze5, bad3]
+	enc_bindings: [1, 3, 1]
+AliasAssignmentList:
+	family_time: 160000
+AliasAssignment[0]:
+	timeline_id: .c
+	primary_id: us1000eze5
+	comcat_ids: [us1000eze5]
+	removed_ids: [bad3]
+	all_absent_ids: []
+AliasFamily
+	id: 54aa8ad00000000000000001
+	family_time: 150000
+	timeline_ids: [.b]
+	comcat_ids: [atlas20140824102044, hv70307431, bad2]
+	enc_bindings: [2, 3, 2]
+AliasAssignmentList:
+	family_time: 150000
+AliasAssignment[0]:
+	timeline_id: .b
+	primary_id: atlas20140824102044
+	comcat_ids: [atlas20140824102044, hv70307431]
+	removed_ids: [bad2]
+	all_absent_ids: []
+AliasFamily
+	id: 54aa7cc00000000000000001
+	family_time: 140000
+	timeline_ids: [.a]
+	comcat_ids: [gcmt20150425061126, at00nat3ek, bad1]
+	enc_bindings: [2, 3, 2]
+AliasAssignmentList:
+	family_time: 140000
+AliasAssignment[0]:
+	timeline_id: .a
+	primary_id: gcmt20150425061126
+	comcat_ids: [gcmt20150425061126, at00nat3ek]
+	removed_ids: [bad1]
+	all_absent_ids: []

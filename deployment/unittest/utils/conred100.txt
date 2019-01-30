@@ -1,0 +1,18 @@
+conred100 aafs.ServerTest conred_tsop opensha-oaf/build/libs/unittest/scratchdir1.tmp
+Start time = 1420074000000 (2015-01-01 01:00:00 UTC)
+con - out - line 1
+con - err - line 1
+day 6 - tee - out - line 12
+day 6 - tee - err - line 12
+day 6 - tee - out - line 13
+day 6 - tee - err - line 13
+day 7 - tee - out - line 14
+day 7 - tee - err - line 14
+day 7 - tee - out - line 15
+day 7 - tee - err - line 15
+day 8 - empty - out - line 16
+day 8 - empty - err - line 16
+day 8 - empty - out - line 17
+day 8 - empty - err - line 17
+con - out - line 18
+con - err - line 18

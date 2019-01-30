@@ -1,0 +1,8 @@
+tline201 aafs.ServerTest tline_query_list 0 0 0 - ccid_22
+TimelineEntry
+	id: 54a49c100000000000000001
+	action_time: 20102
+	event_id: Event_2
+	comcat_ids: [ccid_21, ccid_22, ccid_23]
+	actcode: 102
+	details: len = 41

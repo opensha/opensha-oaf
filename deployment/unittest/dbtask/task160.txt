@@ -1,0 +1,11 @@
+task160 aafs.ServerTest task_query_iterate 30010 0 Event_3
+PendingTask
+	id: 54a49c100000000000000005
+	exec_time: 30100
+	event_id: Event_3
+	sched_time: 30100
+	submit_time: 30000
+	submit_id: Submitter_3
+	opcode: 103
+	stage: 3
+	details: len = 41

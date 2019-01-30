@@ -1,0 +1,2 @@
+aliasfam124 aafs.ServerTest alias_create_timeline_for_event badevent
+result code = RESCODE_ALIAS_EVENT_NOT_IN_COMCAT

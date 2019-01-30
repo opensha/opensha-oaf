@@ -1,0 +1,15 @@
+aliasfam110 aafs.ServerTest alias_get_event_info us1000eze5
+result code = RESCODE_ALIAS_NEW_EVENT
+ForecastMainshock:
+query_event_id = us1000eze5
+mainshock_avail = true
+mainshock_event_id = hv70307431
+mainshock_network = hv
+mainshock_code = 70307431
+mainshock_id_list = [hv70307431, us1000eze5]
+mainshock_time = 1529729536210 (2018-06-23 04:52:16 UTC)
+mainshock_mag = 5.3
+mainshock_lat = 19.3983333
+mainshock_lon = -155.2726667
+mainshock_depth = 0.28
+

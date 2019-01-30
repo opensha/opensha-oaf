@@ -1,0 +1,39 @@
+alfam226 aafs.ServerTest alias_query_iterate 0 0 0 - rmid_22
+AliasFamily
+	id: 54a49c100000000000000005
+	family_time: 50105
+	timeline_ids: [event_2, event_3, event_5]
+	comcat_ids: [ccid_21, ccid_31, ccid_23, ccid_22, rmid_22, rmid_21, rmid_31]
+	enc_bindings: [1, 3, 4, 10, 11, 11, 4, 5, 2, 3, 6]
+AliasAssignmentList:
+	family_time: 50105
+AliasAssignment[0]:
+	timeline_id: event_2
+	primary_id: ccid_21
+	comcat_ids: [ccid_21]
+	removed_ids: [rmid_22, rmid_21, ccid_23, ccid_22]
+AliasAssignment[1]:
+	timeline_id: event_3
+	primary_id: ccid_31
+	comcat_ids: [ccid_31, ccid_23]
+	removed_ids: [rmid_31]
+AliasAssignment[2]:
+	timeline_id: event_5
+	primary_id: ccid_22
+	comcat_ids: [ccid_22]
+	removed_ids: []
+	all_absent_ids: []
+AliasFamily
+	id: 54a49c100000000000000002
+	family_time: 20102
+	timeline_ids: [event_2]
+	comcat_ids: [ccid_21, ccid_23, ccid_22, rmid_22, rmid_21]
+	enc_bindings: [3, 4, 3, 4]
+AliasAssignmentList:
+	family_time: 20102
+AliasAssignment[0]:
+	timeline_id: event_2
+	primary_id: ccid_21
+	comcat_ids: [ccid_21, ccid_23, ccid_22]
+	removed_ids: [rmid_22, rmid_21]
+	all_absent_ids: []

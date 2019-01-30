@@ -1,0 +1,2 @@
+aliasfam175 aafs.ServerTest alias_get_timeline_info .b
+result code = RESCODE_ALIAS_STOPPED

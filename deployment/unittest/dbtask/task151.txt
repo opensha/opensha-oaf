@@ -1,0 +1,11 @@
+task151 aafs.ServerTest task_query_iterate 0 0 Event_4
+PendingTask
+	id: 54a49c100000000000000002
+	exec_time: 40100
+	event_id: Event_4
+	sched_time: 40100
+	submit_time: 40000
+	submit_id: Submitter_4_no_details
+	opcode: 104
+	stage: 4
+	details: len = 0

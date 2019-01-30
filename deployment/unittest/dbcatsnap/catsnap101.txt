@@ -1,0 +1,9 @@
+catsnap101 aafs.ServerTest catsnap_query_list 0.0 0.0
+CatalogSnapshot
+	id: 54a49c100000000000000001
+	event_id: Event_1
+	start_time: 864000
+	end_time: 86400000
+	eqk_count: 906
+	lat_lon_depth_list: len=906
+	mag_time_list: len=906

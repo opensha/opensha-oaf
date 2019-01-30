@@ -1,0 +1,29 @@
+aliasfam217 aafs.ServerTest alias_query_delete 0 0 0
+AliasFamily
+	id: 54aafb500000000000000001
+	family_time: 1420491600000
+	timeline_ids: [.a]
+	comcat_ids: [us1000h3p4, us1000h4p4]
+	enc_bindings: [1, 3, 1]
+AliasAssignmentList:
+	family_time: 1420491600000
+AliasAssignment[0]:
+	timeline_id: .a
+	primary_id: us1000h3p4
+	comcat_ids: [us1000h3p4]
+	removed_ids: [us1000h4p4]
+	all_absent_ids: []
+AliasFamily
+	id: 54aadf300000000000000001
+	family_time: 170000
+	timeline_ids: [.a]
+	comcat_ids: [us1000h3p4, us1000h4p4]
+	enc_bindings: [2, 2]
+AliasAssignmentList:
+	family_time: 170000
+AliasAssignment[0]:
+	timeline_id: .a
+	primary_id: us1000h3p4
+	comcat_ids: [us1000h3p4, us1000h4p4]
+	removed_ids: []
+	all_absent_ids: []

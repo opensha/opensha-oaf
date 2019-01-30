@@ -1,0 +1,15 @@
+aliasfam101 aafs.ServerTest alias_get_event_info us20002926
+result code = RESCODE_ALIAS_NEW_EVENT
+ForecastMainshock:
+query_event_id = us20002926
+mainshock_avail = true
+mainshock_event_id = us20002926
+mainshock_network = us
+mainshock_code = 20002926
+mainshock_id_list = [us20002926, gcmt20150425061126, atlas20150425061125]
+mainshock_time = 1429942285950 (2015-04-25 06:11:25 UTC)
+mainshock_mag = 7.8
+mainshock_lat = 28.2305
+mainshock_lon = 84.7314
+mainshock_depth = 8.22
+

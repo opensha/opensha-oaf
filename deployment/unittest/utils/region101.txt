@@ -1,0 +1,11 @@
+region101 rj.OAFParameterSet test1 10000 true
+min_lat = -89.9999
+max_lat = 89.9999
+min_lon = -179.9999
+max_lon = 179.9999
+n_points = 10000
+n_in_in = 10
+n_in_out = 0
+n_out_in = 0
+n_out_out = 9990
+n_mismatch = 0

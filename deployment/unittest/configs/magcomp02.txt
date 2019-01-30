@@ -1,0 +1,8 @@
+magcomp02 rj.MagCompPage_ParametersFetch test2
+WORLD: Page_Params[magCat=4.6, magCompFn=FnPage[capF=0.5, capG=0.25, capH=1.0], magSample=2.95, radiusSample=1.0, magCentroid=3.95, radiusCentroid=1.0]
+CAL-SCSN: Page_Params[magCat=3.0, magCompFn=FnPage[capF=1.0, capG=4.5, capH=0.75], magSample=2.95, radiusSample=1.0, magCentroid=2.95, radiusCentroid=1.0]
+CAL-NCSS: Page_Params[magCat=3.0, magCompFn=FnPage[capF=1.0, capG=4.5, capH=0.75], magSample=2.95, radiusSample=1.0, magCentroid=2.95, radiusCentroid=1.0]
+CAL-MENDOCINO: Page_Params[magCat=3.0, magCompFn=FnPage[capF=1.0, capG=4.5, capH=0.75], magSample=2.95, radiusSample=1.0, magCentroid=2.95, radiusCentroid=1.0]
+CAL-HYDROTHERMAL: Page_Params[magCat=3.0, magCompFn=FnPage[capF=1.0, capG=4.5, capH=0.75], magSample=2.95, radiusSample=1.0, magCentroid=2.95, radiusCentroid=1.0]
+ALASKA: Page_Params[magCat=3.5, magCompFn=FnPage[capF=0.5, capG=0.25, capH=1.0], magSample=2.95, radiusSample=1.0, magCentroid=2.95, radiusCentroid=1.0]
+USA: Page_Params[magCat=3.5, magCompFn=FnPage[capF=0.5, capG=0.25, capH=1.0], magSample=2.95, radiusSample=1.0, magCentroid=2.95, radiusCentroid=1.0]
