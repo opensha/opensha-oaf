@@ -35,6 +35,14 @@ import org.opensha.oaf.util.TestMode;
  */
 public class MongoDBUtil implements AutoCloseable {
 
+
+
+
+	//----- Connection and content management -----
+
+
+
+
 	// MongoDB connection access, which is shared among all threads.
 
 	private static MongoDBConnect cached_mongo_connect = null;
@@ -47,10 +55,6 @@ public class MongoDBUtil implements AutoCloseable {
 				return null;
 			}
 		};
-
-	// Database handle to disconnect when this object is closed, none if null or empty.
-
-	private String saved_db_handle;
 
 
 
@@ -112,30 +116,286 @@ public class MongoDBUtil implements AutoCloseable {
 
 
 
+
+	//----- Application access RAII -----
+
+
+
+
+	// Connection options.
+
+	public static final int	CONOPT_NONE = 0;				// Do not make any connection
+	public static final int	CONOPT_CONNECT = 1;				// Connect to database
+	public static final int	CONOPT_SESSION = 2;				// Start a session for the database
+	public static final int	CONOPT_TRANSACT_COMMIT = 3;		// Start a transaction for the database, with default action = commit
+	public static final int	CONOPT_TRANSACT_ABORT = 4;		// Start a transaction for the database, with default action = abort
+
+	// Default database options.
+
+	public static final int	DDBOPT_NONE = 0;				// Take no action
+	public static final int	DDBOPT_SAVE = 1;				// Save and restore current default database
+	public static final int	DDBOPT_SET = 2;					// Set default database
+	public static final int	DDBOPT_SAVE_SET = 3;			// Save and restore current default database, and set default database
+
+
+	// Default connection option.
+
+	private static int def_conopt = CONOPT_CONNECT;
+
+	// Default default database option.
+
+	private static int def_ddbopt = DDBOPT_SAVE_SET;
+
+
+	// Saved value of the default database handle.
+
+	private String saved_default_db_handle;
+
+	// The connection option.
+
+	private int conopt;
+
+	// The default database option.
+
+	private int ddbopt;
+
+	// The effective database handle for this operation.
+
+	private String eff_db_handle;
+
+
+
+
+	// Undo-able connection establishment.
+
+	public class UndoConnect implements AutoCloseable {
+
+		// Flag indicates if undo is desired.
+
+		public boolean f_undo;
+
+		// Turn off undo, to keep the connection.
+
+		public void keep () {
+			f_undo = false;
+		}
+		
+		// Connect during constructor, if requested.
+
+		public UndoConnect (boolean f_make) {
+			f_undo = true;
+			if (f_make) {
+				get_mongo_content().connect_database (eff_db_handle);
+			}
+		}
+
+		// Disconnect during close, if requested.
+
+		@Override
+		public void close () {
+			if (f_undo) {
+				f_undo = false;
+				get_mongo_content().disconnect_database (eff_db_handle);
+			}
+
+			return;
+		}
+	}
+
+
+
+
+	// Undo-able session establishment.
+
+	public class UndoSession implements AutoCloseable {
+
+		// Flag indicates if undo is desired.
+
+		public boolean f_undo;
+
+		// Turn off undo, to keep the connection.
+
+		public void keep () {
+			f_undo = false;
+		}
+		
+		// Open session during constructor, if requested.
+
+		public UndoSession (boolean f_make) {
+			f_undo = true;
+			if (f_make) {
+				get_mongo_content().start_session (eff_db_handle);
+			}
+		}
+
+		// Close session during close, if requested.
+
+		@Override
+		public void close () {
+			if (f_undo) {
+				f_undo = false;
+				get_mongo_content().stop_session (eff_db_handle);
+			}
+
+			return;
+		}
+	}
+
+
+
+
+	// Undo-able transaction establishment.
+
+	public class UndoTransact implements AutoCloseable {
+
+		// Flag indicates if undo is desired.
+
+		public boolean f_undo;
+
+		// Turn off undo, to keep the connection.
+
+		public void keep () {
+			f_undo = false;
+		}
+		
+		// Start transaction during constructor, if requested.
+
+		public UndoTransact (boolean f_make, boolean f_commit) {
+			f_undo = true;
+			if (f_make) {
+				get_mongo_content().start_transact (eff_db_handle, f_commit);
+			}
+		}
+
+		// Stop transaction during close, if requested.
+
+		@Override
+		public void close () {
+			if (f_undo) {
+				f_undo = false;
+				get_mongo_content().stop_transact (eff_db_handle);
+			}
+
+			return;
+		}
+	}
+
+
+
+
+	// Connect to the MongoDB database.
+	// Parameters:
+	//  conopt = Connect option.
+	//  ddbopt = Default database option.
+	//  db_handle = Database handle, can be null or empty to select default database.
+
+	public MongoDBUtil (int conopt, int ddbopt, String db_handle) {
+
+		// Validate the options
+
+		switch (conopt) {
+			case CONOPT_NONE:
+			case CONOPT_CONNECT:
+			case CONOPT_SESSION:
+			case CONOPT_TRANSACT_COMMIT:
+			case CONOPT_TRANSACT_ABORT:
+				break;
+
+			default:
+				throw new IllegalArgumentException ("MongoDBUtil: Invalid connection option: conopt = " + conopt);
+		}
+
+		switch (ddbopt) {
+			case DDBOPT_NONE:
+			case DDBOPT_SAVE:
+			case DDBOPT_SET:
+			case DDBOPT_SAVE_SET:
+				break;
+
+			default:
+				throw new IllegalArgumentException ("MongoDBUtil: Invalid default database option: ddbopt = " + ddbopt);
+		}
+
+		// Save options
+
+		this.conopt = conopt;
+		this.ddbopt = ddbopt;
+
+		// Save default database handle
+
+		MongoDBContent mongo_content = get_mongo_content();
+		saved_default_db_handle = mongo_content.get_default_db_handle();
+
+		// Get the database handle this applies to
+
+		eff_db_handle = db_handle;
+		if (eff_db_handle == null || eff_db_handle.isEmpty()) {
+			eff_db_handle = saved_default_db_handle;
+		}
+
+		// Do requested connections
+
+		switch (this.conopt) {
+			case CONOPT_CONNECT:
+				try (
+					UndoConnect undo_connect = new UndoConnect (true);
+				) {
+					undo_connect.keep();
+				}
+				break;
+
+			case CONOPT_SESSION:
+				try (
+					UndoConnect undo_connect = new UndoConnect (true);
+					UndoSession undo_session = new UndoSession (true);
+				) {
+					undo_connect.keep();
+					undo_session.keep();
+				}
+				break;
+
+			case CONOPT_TRANSACT_COMMIT:
+				try (
+					UndoConnect undo_connect = new UndoConnect (true);
+					UndoSession undo_session = new UndoSession (true);
+					UndoTransact undo_transact = new UndoTransact (true, true);
+				) {
+					undo_connect.keep();
+					undo_session.keep();
+					undo_transact.keep();
+				}
+				break;
+
+			case CONOPT_TRANSACT_ABORT:
+				try (
+					UndoConnect undo_connect = new UndoConnect (true);
+					UndoSession undo_session = new UndoSession (true);
+					UndoTransact undo_transact = new UndoTransact (true, false);
+				) {
+					undo_connect.keep();
+					undo_session.keep();
+					undo_transact.keep();
+				}
+				break;
+		}
+
+		// Set new default database if requested
+
+		switch (ddbopt) {
+			case DDBOPT_SET:
+			case DDBOPT_SAVE_SET:
+				mongo_content.set_default_db_handle (eff_db_handle);
+				break;
+		}
+	}
+
+
+
 	
 	// Attach to the MongoDB database.
 
 	public MongoDBUtil () {
-
-		try {
-
-			// Get the content accessor
-
-			MongoDBContent mongo_content = get_mongo_content();
-
-			// Save the default database handle
-
-			saved_db_handle = mongo_content.get_default_db_handle();
-
-			// If it's non-empty, connect to it
-
-			if (!( saved_db_handle == null || saved_db_handle.isEmpty() )) {
-				mongo_content.connect_database (saved_db_handle);
-			}
-
-		} catch (Exception e) {
-			throw new RuntimeException ("MongoDBUtil: Unable to connect to MongoDB", e);
-		}
+		this (def_conopt, def_ddbopt, null);
 	}
 
 
@@ -146,24 +406,72 @@ public class MongoDBUtil implements AutoCloseable {
 	@Override
 	public void close () {
 
-		try {
+		// Restore default database if requested
 
-			// Get the content accessor
+		MongoDBContent mongo_content = get_mongo_content();
 
-			MongoDBContent mongo_content = get_mongo_content();
+		switch (ddbopt) {
+			case DDBOPT_SAVE:
+			case DDBOPT_SAVE_SET:
+				mongo_content.set_default_db_handle (saved_default_db_handle);
+				break;
+		}
 
-			// If the saved database handle is non-empty, disconnect from it
+		// Do requested disconnections
 
-			if (!( saved_db_handle == null || saved_db_handle.isEmpty() )) {
-				mongo_content.disconnect_database (saved_db_handle);
-			}
+		switch (this.conopt) {
+			case CONOPT_CONNECT:
+				try (
+					UndoConnect undo_connect = new UndoConnect (false);
+				) {
+				}
+				break;
 
-		} catch (Exception e) {
-			throw new RuntimeException ("MongoDBUtil: Unable to disconnect from MongoDB", e);
+			case CONOPT_SESSION:
+				try (
+					UndoConnect undo_connect = new UndoConnect (false);
+					UndoSession undo_session = new UndoSession (false);
+				) {
+				}
+				break;
+
+			case CONOPT_TRANSACT_COMMIT:
+				try (
+					UndoConnect undo_connect = new UndoConnect (false);
+					UndoSession undo_session = new UndoSession (false);
+					UndoTransact undo_transact = new UndoTransact (false, false);
+				) {
+				}
+				break;
+
+			case CONOPT_TRANSACT_ABORT:
+				try (
+					UndoConnect undo_connect = new UndoConnect (false);
+					UndoSession undo_session = new UndoSession (false);
+					UndoTransact undo_transact = new UndoTransact (false, false);
+				) {
+				}
+				break;
 		}
 
 		return;
 	}
+
+
+
+
+	// Set the transaction commit flag.
+	// There must be a transaction in progress on our database, or it will throw exception.
+
+	public void set_transact_commit (boolean f_commit) {
+		get_mongo_content().set_transact_commit (eff_db_handle, f_commit);
+		return;
+	}
+
+
+
+
+	//----- Entity access -----
 
 
 
@@ -207,6 +515,11 @@ public class MongoDBUtil implements AutoCloseable {
 		c.createIndex (Indexes.ascending (field), new IndexOptions().name (name));
 		return;
 	}
+
+
+
+
+	//----- BSON Document access -----
 
 
 
@@ -528,6 +841,11 @@ public class MongoDBUtil implements AutoCloseable {
 		}
 		return w;
 	}
+
+
+
+
+	//----- Testing support -----
 
 
 

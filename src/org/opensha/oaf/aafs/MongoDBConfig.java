@@ -1644,6 +1644,141 @@ public class MongoDBConfig {
 			return client_session;
 		}
 
+		// Start a MongoDB transaction on the given client session.
+		// The supplied ClientSession can be null if transactions are not supported.
+		// Note: If this throws an exception, it is recommended that the caller
+		// close the client session and open a new one.
+
+		public void start_transaction (ClientSession client_session) {
+
+			// If transactions are enabled ...
+
+			if (session_level == SESSION_LEVEL_TRANSACT) {
+
+				// Transaction options
+
+				TransactionOptions transaction_options = null;
+
+				if (   quick_check_write_concern (transact_write_concern)
+					|| quick_check_read_concern (transact_read_concern)
+					|| quick_check_read_preference (transact_read_preference)) {
+					
+					TransactionOptions.Builder builder = TransactionOptions.builder();
+					builder = apply_write_concern (builder, transact_write_concern);
+					builder = apply_read_concern (builder, transact_read_concern);
+					builder = apply_read_preference (builder, transact_read_preference);
+					transaction_options = builder.build();
+				}
+
+				// Start the transaction
+
+				if (transaction_options != null) {
+					client_session.startTransaction (transaction_options);
+				} else {
+					client_session.startTransaction ();
+				}
+			
+			}
+
+			return;
+		}
+
+		// Commit a MongoDB transaction on the given client session.
+		// The supplied ClientSession can be null if transactions are not supported.
+		// Note: If this throws an exception, it is recommended that the caller
+		// close the client session and open a new one.
+
+		public void commit_transaction (ClientSession client_session) {
+
+			// If transactions are enabled ...
+
+			if (session_level == SESSION_LEVEL_TRANSACT) {
+
+				// Number of attempts so far
+
+				int attempts = 0;
+
+				// Loop over retryable attempts
+
+				while (commit_retries < 0 || attempts < commit_retries) {
+				
+					// Adjust count
+
+					if (commit_retries >= 0) {
+						++attempts;
+					}
+
+					// Commit with retry
+
+					try {
+						client_session.commitTransaction();
+						return;
+					}
+					catch (MongoException e) {
+						if (e.hasErrorLabel (MongoException.UNKNOWN_TRANSACTION_COMMIT_RESULT_LABEL)) {
+							continue;
+						} else {
+							throw e;
+						}
+					}
+				}
+
+				// Final attempt
+
+				client_session.commitTransaction();
+			}
+
+			return;
+		}
+
+		// Abort a MongoDB transaction on the given client session.
+		// The supplied ClientSession can be null if transactions are not supported.
+		// Note: If this throws an exception, it is recommended that the caller
+		// close the client session and open a new one.
+
+		public void abort_transaction (ClientSession client_session) {
+
+			// If transactions are enabled ...
+
+			if (session_level == SESSION_LEVEL_TRANSACT) {
+
+				//  // Number of attempts so far
+				//  
+				//  int attempts = 0;
+				//  
+				//  // Loop over retryable attempts
+				//  
+				//  while (commit_retries < 0 || attempts < commit_retries) {
+				//  
+				//  	// Adjust count
+				//  
+				//  	if (commit_retries >= 0) {
+				//  		++attempts;
+				//  	}
+				//  
+				//  	// Commit with retry
+				//  
+				//  	try {
+				//  		client_session.abortTransaction();
+				//  		return;
+				//  	}
+				//  	catch (MongoException e) {
+				//  		if (e.hasErrorLabel (MongoException.UNKNOWN_TRANSACTION_COMMIT_RESULT_LABEL)) {
+				//  			continue;
+				//  		} else {
+				//  			throw e;
+				//  		}
+				//  	}
+				//  }
+
+				// Final attempt
+
+				client_session.abortTransaction();
+			}
+
+			return;
+		}
+
 		// Display our contents.
 
 		public String toString (String prefix) {

@@ -695,9 +695,13 @@ public class MongoDBContent implements AutoCloseable {
 
 		private int conn_count;
 
-		// The current number of sessions.
+		// The current number of sessions; if nonzero then conn_count must also be nonzero.
 
 		private int session_count;
+
+		// The current number of transactions, 0 or 1; if nonzero then session_count must also be nonzero.
+
+		private int transact_count;
 
 		// The contained collection states, indexed by collection name.
 
@@ -727,6 +731,7 @@ public class MongoDBContent implements AutoCloseable {
 			mongo_database = null;
 			conn_count = 0;
 			session_count = 0;
+			transact_count = 0;
 			collection_states = new LinkedHashMap<String, CollectionState>();
 			auto_resources = new LinkedHashSet<AutoCloseable>();
 
@@ -757,10 +762,192 @@ public class MongoDBContent implements AutoCloseable {
 			return mongo_database;
 		}
 
+		// Undo-able connection establishment.
+
+		public class UndoConnect implements AutoCloseable {
+
+			// Flag indicates if undo is desired.
+
+			public boolean f_undo;
+
+			// Turn off undo, to keep the connection.
+
+			public void keep () {
+				f_undo = false;
+			}
+		
+			// Connect during constructor, if requested.
+
+			public UndoConnect (boolean f_make) {
+				f_undo = true;
+				if (f_make) {
+
+					// If not currently connected ...
+
+					if (conn_count == 0) {
+			
+						// Connect the session
+
+						session_state.conn_session();
+					}
+
+					// Count the connection
+
+					++conn_count;
+				}
+			}
+
+			// Disconnect during close, if requested.
+
+			@Override
+			public void close () {
+				if (f_undo) {
+					f_undo = false;
+		
+					// If currently connected ...
+
+					if (conn_count != 0) {
+
+						// If we're not disconnecting, just update the count
+
+						if (conn_count != 1) {
+							--conn_count;
+						}
+
+						// Otherwise, tear down the database
+
+						else {
+							teardown_database (true);
+						}
+					}
+				}
+
+				return;
+			}
+		}
+
+		// Undo-able session establishment.
+
+		public class UndoSession implements AutoCloseable {
+
+			// Flag indicates if undo is desired.
+
+			public boolean f_undo;
+
+			// Turn off undo, to keep the connection.
+
+			public void keep () {
+				f_undo = false;
+			}
+		
+			// Create session during constructor, if requested.
+
+			public UndoSession (boolean f_make) {
+				f_undo = true;
+				if (f_make) {
+
+					// Error if not connected
+
+					if (conn_count == 0) {
+						throw new InvariantViolationException ("DatabaseState.UndoSession.UndoSession: Not connected: " + make_db_id_message());
+					}
+
+					// If no client session currently ...
+
+					if (session_count == 0) {
+			
+						// Open the client session
+						// Note exceptions here need not be caught
+
+						session_state.open_client_session();
+					}
+		
+					// Count the client session
+
+					++session_count;
+				}
+			}
+
+			// Close session during close, if requested.
+
+			@Override
+			public void close () {
+				if (f_undo) {
+					f_undo = false;
+		
+					// Error if not connected
+
+					if (conn_count == 0) {
+						throw new DBUnavailableDatabaseException ("DatabaseState.UndoSession.close: Not connected: " + make_db_id_message());
+					}
+		
+					// If currently have a session ...
+
+					if (session_count != 0) {
+
+						// If we're not closing client_session, just update the count
+
+						if (session_count != 1) {
+							--session_count;
+						}
+
+						// Otherwise, tear down client_session
+
+						else {
+							teardown_client_session (true);
+						}
+					}
+				}
+
+				return;
+			}
+		}
+
+		//  // Connect the database.
+		//  // If this throws an exception, then the connection has NOT occurred.
+		//  
+		//  public void conn_database () {
+		//  
+		//  	// Error if there is a session
+		//  
+		//  	if (session_count != 0) {
+		//  		throw new DBUnavailableDatabaseException ("DatabaseState.conn_database: Cannot connect because a session is open: " + make_db_id_message());
+		//  	}
+		//  
+		//  	try (
+		//  		UndoConnect undo_connect = new UndoConnect (true);
+		//  	) {
+		//  		undo_connect.keep();
+		//  	}
+		//  
+		//  	return;
+		//  }
+		//  
+		//  // Disconnect the database.
+		//  // If this throws an exception, then the disconnection HAS occurred.
+		//  // Performs no operation if not currently connected.
+		//  
+		//  public void disc_database () {
+		//  
+		//  	// Error if there is a session
+		//  
+		//  	if (session_count != 0) {
+		//  		throw new DBUnavailableDatabaseException ("DatabaseState.disc_database: Cannot disconnect because a session is open: " + make_db_id_message());
+		//  	}
+		//  
+		//  	try (
+		//  		UndoConnect undo_connect = new UndoConnect (false);
+		//  	) {
+		//  	}
+		//  
+		//  	return;
+		//  }
+
 		// Connect the database.
 		// If this throws an exception, then the connection has NOT occurred.
+		// Returns the connection count after the connect.
 
-		public void conn_database () {
+		public int conn_database () {
 
 			// If not currently connected ...
 
@@ -775,14 +962,16 @@ public class MongoDBContent implements AutoCloseable {
 			// Count the connection
 
 			++conn_count;
-			return;
+			return conn_count;
 		}
 
 		// Disconnect the database.
 		// If this throws an exception, then the disconnection HAS occurred.
 		// Performs no operation if not currently connected.
+		// Returns the connection count before the disconnect.
 
-		public void disc_database () {
+		public int disc_database () {
+			int result = conn_count;
 		
 			// If currently connected ...
 
@@ -801,7 +990,7 @@ public class MongoDBContent implements AutoCloseable {
 				}
 			}
 
-			return;
+			return result;
 		}
 
 		// Release all resources.
@@ -861,6 +1050,24 @@ public class MongoDBContent implements AutoCloseable {
 
 			mongo_database = null;
 
+			// If we have a transaction, clear the count, and report it upstream if desired
+
+			if (transact_count != 0) {
+				transact_count = 0;
+
+				if (f_call_upstream) {
+					try {
+						session_state.stop_transaction();
+					} catch (DBDriverException e) {
+						if (my_driver_exception == null && my_mongo_exception == null) {my_driver_exception = e;}
+					} catch (MongoException e) {
+						if (my_driver_exception == null && my_mongo_exception == null) {my_mongo_exception = e;}
+					} catch (Exception e) {
+						if (my_exception == null) {my_exception = e;}
+					}
+				}
+			}
+
 			// If we have a session, clear the count, and report it upstream if desired
 
 			if (session_count != 0) {
@@ -912,10 +1119,117 @@ public class MongoDBContent implements AutoCloseable {
 			return;
 		}
 
+		// Release all resources related to client_session (but not the connection, database, iterators, or collections).
+		// If f_call_upstream is true, can make upstream calls to release upstream resources (should be false if called from upstream).
+		// If this throws an exception, then the resources HAVE been released.
+
+		public void teardown_client_session (boolean f_call_upstream) {
+
+			// Accumulate exceptions to re-throw
+
+			DBDriverException my_driver_exception = null;
+			MongoException my_mongo_exception = null;
+			Exception my_exception = null;
+
+			// If we have a transaction, clear the count, and report it upstream if desired
+
+			if (transact_count != 0) {
+				transact_count = 0;
+
+				if (f_call_upstream) {
+					try {
+						session_state.stop_transaction();
+					} catch (DBDriverException e) {
+						if (my_driver_exception == null && my_mongo_exception == null) {my_driver_exception = e;}
+					} catch (MongoException e) {
+						if (my_driver_exception == null && my_mongo_exception == null) {my_mongo_exception = e;}
+					} catch (Exception e) {
+						if (my_exception == null) {my_exception = e;}
+					}
+				}
+			}
+
+			// If we have a session, clear the count, and report it upstream if desired
+
+			if (session_count != 0) {
+				session_count = 0;
+
+				if (f_call_upstream) {
+					try {
+						session_state.close_client_session();
+					} catch (DBDriverException e) {
+						if (my_driver_exception == null && my_mongo_exception == null) {my_driver_exception = e;}
+					} catch (MongoException e) {
+						if (my_driver_exception == null && my_mongo_exception == null) {my_mongo_exception = e;}
+					} catch (Exception e) {
+						if (my_exception == null) {my_exception = e;}
+					}
+				}
+			}
+
+			// Propagate exceptions
+
+			if (my_driver_exception != null) {
+				throw new DBDriverException (my_driver_exception.get_locus(), "DatabaseState.teardown_database: Driver exception: " + make_db_id_message(), my_driver_exception);
+			}
+			if (my_mongo_exception != null) {
+				throw new DBDriverException (make_locus(my_mongo_exception), "DatabaseState.teardown_database: MongoDB exception: " + make_db_id_message(), my_mongo_exception);
+			}
+			if (my_exception != null) {
+				throw new DBException ("DatabaseState.teardown_database: Exception during tear-down: " + make_db_id_message(), my_exception);
+			}
+		
+			return;
+		}
+
+		//  // Open a client session.
+		//  // If this throws an exception, the client session is NOT opened.
+		//  
+		//  public void open_client_session () {
+		//  
+		//  	// Error if there is a transaction
+		//  
+		//  	if (transact_count != 0) {
+		//  		throw new DBUnavailableDatabaseException ("DatabaseState.open_client_session: Cannot open session because a transaction is in progress: " + make_db_id_message());
+		//  	}
+		//  
+		//  	try (
+		//  		UndoConnect undo_connect = new UndoConnect (true);
+		//  		UndoSession undo_session = new UndoSession (true);
+		//  	) {
+		//  		undo_connect.keep();
+		//  		undo_session.keep();
+		//  	}
+		//  
+		//  	return;
+		//  }
+		//  
+		//  // Close a client session.
+		//  // If this throws an exception, the client session IS closed.
+		//  // Performs no operation if the client session is not open.
+		//  
+		//  public void close_client_session () {
+		//  
+		//  	// Error if there is a transaction
+		//  
+		//  	if (transact_count != 0) {
+		//  		throw new DBUnavailableDatabaseException ("DatabaseState.close_client_session: Cannot close session because a transaction is in progress: " + make_db_id_message());
+		//  	}
+		//  
+		//  	try (
+		//  		UndoConnect undo_connect = new UndoConnect (false);
+		//  		UndoSession undo_session = new UndoSession (false);
+		//  	) {
+		//  	}
+		//  
+		//  	return;
+		//  }
+
 		// Open a client session.
 		// If this throws an exception, the client session is NOT opened.
+		// Returns the session count after the open.
 
-		public void open_client_session () {
+		public int open_client_session () {
 
 			// Error if not connected
 
@@ -936,36 +1250,41 @@ public class MongoDBContent implements AutoCloseable {
 			// Count the client session
 
 			++session_count;
-			return;
+			return session_count;
 		}
 
 		// Close a client session.
 		// If this throws an exception, the client session IS closed.
 		// Performs no operation if the client session is not open.
+		// Returns the session count before the close.
 
-		public void close_client_session () {
+		public int close_client_session () {
+			int result = session_count;
 
 			// Error if not connected
 
 			if (conn_count == 0) {
 				throw new DBUnavailableDatabaseException ("DatabaseState.close_client_session: Not connected: " + make_db_id_message());
 			}
+		
+			// If currently have a session ...
 
-			// Update the count
+			if (session_count != 0) {
 
-			--session_count;
+				// If we're not closing client_session, just update the count
 
-			// If we want to close the session ...
+				if (session_count != 1) {
+					--session_count;
+				}
 
-			if (session_count == 0) {
-			
-				// Close the client session
-				// Note exceptions here need not be caught
+				// Otherwise, tear down client_session
 
-				session_state.close_client_session();
+				else {
+					teardown_client_session (true);
+				}
 			}
 
-			return;
+			return result;
 		}
 
 		// Get the current client session.
@@ -989,6 +1308,103 @@ public class MongoDBContent implements AutoCloseable {
 			// Return the client session
 
 			return session_state.get_client_session();
+		}
+
+		// Start a transaction.
+		// If this throws an exception, the transaction is NOT started.
+
+		public void start_transaction (boolean f_commit) {
+
+			// Error if no session
+
+			if (session_count == 0) {
+				throw new DBUnavailableDatabaseException ("DatabaseState.start_transaction: No session: " + make_db_id_message());
+			}
+
+			// Error if there is already a transaction
+
+			if (transact_count != 0) {
+				throw new DBUnavailableDatabaseException ("DatabaseState.start_transaction: Transaction already started: " + make_db_id_message());
+			}
+			
+			// Start the transaction
+			// Note exceptions here need not be caught
+
+			session_state.start_transaction (f_commit);
+		
+			// Count the transaction
+
+			++transact_count;
+			return;
+		}
+
+		// Stop a transaction.
+		// If this throws an exception, the transaction IS stopped.
+
+		public void stop_transaction () {
+
+			// Error if no session
+
+			if (session_count == 0) {
+				throw new DBUnavailableDatabaseException ("DatabaseState.stop_transaction: No session: " + make_db_id_message());
+			}
+
+			// If there is a transaction in progress ...
+
+			if (transact_count != 0) {
+			
+				// Clear the counter
+
+				transact_count = 0;
+
+				// Stop the transaction
+				// Note exceptions here need not be caught
+
+				session_state.stop_transaction ();
+			}
+
+			return;
+		}
+
+		public void stop_transaction (boolean f_commit) {
+
+			// Error if no session
+
+			if (session_count == 0) {
+				throw new DBUnavailableDatabaseException ("DatabaseState.stop_transaction: No session: " + make_db_id_message());
+			}
+
+			// If there is a transaction in progress ...
+
+			if (transact_count != 0) {
+			
+				// Clear the counter
+
+				transact_count = 0;
+
+				// Stop the transaction
+				// Note exceptions here need not be caught
+
+				session_state.stop_transaction (f_commit);
+			}
+
+			return;
+		}
+
+		// Set the transaction commit flag.
+
+		public void set_transaction_commit (boolean f_commit) {
+
+			// Error if no transaction
+
+			if (transact_count == 0) {
+				throw new DBUnavailableDatabaseException ("DatabaseState.set_transaction_commit: No transaction: " + make_db_id_message());
+			}
+
+			// Pass thru
+
+			session_state.set_transaction_commit (f_commit);
+			return;
 		}
 
 		// Add a resource that must be auto-closed during database disconnect.
@@ -1099,10 +1515,19 @@ public class MongoDBContent implements AutoCloseable {
 
 		private int conn_count;
 
-		// The current number of sessions.
+		// The current number of sessions; if nonzero then conn_count must also be nonzero.
 		// Note: All sessions are multiplexed onto a single MongoDB session.
 
 		private int session_count;
+
+		// The current number of transactions, 0 or 1; if nonzero then session_count must also be nonzero,
+		// and client_session must be non-null if tranactions are supported.
+
+		private int transact_count;
+
+		// Whether to commit (true) or abort (false) the transaction when it is stopped.
+
+		private boolean transact_commit;
 
 		// Database state list.
 
@@ -1119,6 +1544,8 @@ public class MongoDBContent implements AutoCloseable {
 			client_session = null;
 			conn_count = 0;
 			session_count = 0;
+			transact_count = 0;
+			transact_commit = false;
 			database_states = new ArrayList<DatabaseState>();
 
 			// Create the contained databases
@@ -1208,6 +1635,24 @@ public class MongoDBContent implements AutoCloseable {
 				}
 			}
 
+			// If there is a transaction, stop it
+
+			if (transact_count != 0) {
+				transact_count = 0;
+
+				try {
+					if (transact_commit) {
+						host_state.get_host_config().commit_transaction (client_session);
+					}
+				} catch (DBDriverException e) {
+					if (my_driver_exception == null && my_mongo_exception == null) {my_driver_exception = e;}
+				} catch (MongoException e) {
+					if (my_driver_exception == null && my_mongo_exception == null) {my_mongo_exception = e;}
+				} catch (Exception e) {
+					if (my_exception == null) {my_exception = e;}
+				}
+			}
+
 			// If there is a client session, close it
 
 			ClientSession my_client_session = client_session;
@@ -1241,6 +1686,68 @@ public class MongoDBContent implements AutoCloseable {
 					} catch (Exception e) {
 						if (my_exception == null) {my_exception = e;}
 					}
+				}
+			}
+
+			// Propagate exceptions
+
+			if (my_driver_exception != null) {
+				throw new DBDriverException (my_driver_exception.get_locus(), "SessionState.teardown_session: Driver exception: " + make_sess_id_message(), my_driver_exception);
+			}
+			if (my_mongo_exception != null) {
+				throw new DBDriverException (make_locus(my_mongo_exception), "SessionState.teardown_session: MongoDB exception: " + make_sess_id_message(), my_mongo_exception);
+			}
+			if (my_exception != null) {
+				throw new DBException ("SessionState.teardown_session: Exception during tear-down: " + make_sess_id_message(), my_exception);
+			}
+		
+			return;
+		}
+
+		// Release all resources related to client_session (but not the connection or databases).
+		// If this throws an exception, then the resources HAVE been released.
+
+		public void teardown_client_session () {
+
+			// Accumulate exceptions to re-throw
+
+			DBDriverException my_driver_exception = null;
+			MongoException my_mongo_exception = null;
+			Exception my_exception = null;
+
+			// If there is a transaction, stop it
+
+			if (transact_count != 0) {
+				transact_count = 0;
+
+				try {
+					if (transact_commit) {
+						host_state.get_host_config().commit_transaction (client_session);
+					}
+				} catch (DBDriverException e) {
+					if (my_driver_exception == null && my_mongo_exception == null) {my_driver_exception = e;}
+				} catch (MongoException e) {
+					if (my_driver_exception == null && my_mongo_exception == null) {my_mongo_exception = e;}
+				} catch (Exception e) {
+					if (my_exception == null) {my_exception = e;}
+				}
+			}
+
+			// If there is a client session, close it
+
+			ClientSession my_client_session = client_session;
+			client_session = null;
+			session_count = 0;
+
+			if (my_client_session != null) {
+				try {
+					my_client_session.close();
+				} catch (DBDriverException e) {
+					if (my_driver_exception == null && my_mongo_exception == null) {my_driver_exception = e;}
+				} catch (MongoException e) {
+					if (my_driver_exception == null && my_mongo_exception == null) {my_mongo_exception = e;}
+				} catch (Exception e) {
+					if (my_exception == null) {my_exception = e;}
 				}
 			}
 
@@ -1304,29 +1811,21 @@ public class MongoDBContent implements AutoCloseable {
 			if (conn_count == 0) {
 				throw new InvariantViolationException ("SessionState.close_client_session: Not connected: " + make_sess_id_message());
 			}
+		
+			// If currently have a session ...
 
-			// Update the count
+			if (session_count != 0) {
 
-			--session_count;
+				// If we're not closing client_session, just update the count
 
-			// If we want to close the session ...
+				if (session_count != 1) {
+					--session_count;
+				}
 
-			if (session_count == 0) {
-			
-				// If there is a client session, close it
-				// Note that client_session can be null, depending on the configuration.
-				// Note not all exceptions here need to be caught because the count is already updated.
+				// Otherwise, tear down client_session
 
-				ClientSession my_client_session = client_session;
-				client_session = null;
-
-				if (my_client_session != null) {
-					try {
-						my_client_session.close();
-					}
-					catch (MongoException e) {
-						throw new DBDriverException (make_locus(e), "SessionState.close_client_session: MongoDB exception: " + make_sess_id_message(), e);
-					}
+				else {
+					teardown_client_session ();
 				}
 			}
 
@@ -1345,9 +1844,173 @@ public class MongoDBContent implements AutoCloseable {
 				throw new InvariantViolationException ("SessionState.get_client_session: Not connected: " + make_sess_id_message());
 			}
 
+			// If we have a session, but not a MongoDB session ...
+
+			if (session_count != 0 && client_session == null) {
+			
+				// Open the client session
+				// Note not all exceptions here need to be caught
+
+				ClientSession my_client_session;
+				try {
+					my_client_session = host_state.get_host_config().make_session (host_state.get_mongo_client());
+				}
+				catch (MongoException e) {
+					throw new DBDriverException (make_locus(e), "SessionState.get_client_session: MongoDB exception: " + make_sess_id_message(), e);
+				}
+				client_session = my_client_session;
+			}
+
 			// Return the client session
 
 			return client_session;
+		}
+
+		// Class to close MongoDB session during exception processing.
+
+		public class ErrorCloseSession implements AutoCloseable {
+
+			// Flag indicates if close is desired.
+
+			public boolean f_close;
+
+			// Turn off close, to keep the session.
+
+			public void keep () {
+				f_close = false;
+			}
+		
+			// Constructor
+
+			public ErrorCloseSession () {
+				f_close = true;
+			}
+
+			// Close session during close, if requested.
+
+			@Override
+			public void close () {
+				if (f_close) {
+					f_close = false;
+
+					// If there is a client session, close it
+					// Note that client_session can be null, depending on the configuration.
+					// Note not all exceptions here need to be caught here.
+
+					ClientSession my_client_session = client_session;
+					client_session = null;
+
+					if (my_client_session != null) {
+						my_client_session.close();
+					}
+				}
+
+				return;
+			}
+		}
+
+		// Start a transaction.
+		// If this throws an exception, the transaction is NOT started.
+
+		public void start_transaction (boolean f_commit) {
+
+			// Error if no session
+
+			if (session_count == 0) {
+				throw new InvariantViolationException ("SessionState.start_transaction: No session: " + make_sess_id_message());
+			}
+
+			// Error if there is already a transaction
+
+			if (transact_count != 0) {
+				throw new InvariantViolationException ("SessionState.start_transaction: Transaction already started: " + make_sess_id_message());
+			}
+
+			// Get the current session
+
+			ClientSession my_client_session = get_client_session();
+
+			// Save the commit flag
+
+			transact_commit = f_commit;
+
+			// Start the transaction, close the MongoDB session if there is an exception
+
+			try (
+				ErrorCloseSession error_close_session = new ErrorCloseSession();
+			) {
+				host_state.get_host_config().start_transaction (my_client_session);
+				error_close_session.keep();
+			}
+			catch (MongoException e) {
+				throw new DBDriverException (make_locus(e), "SessionState.start_transaction: MongoDB exception: " + make_sess_id_message(), e);
+			}
+		
+			// Count the transaction
+
+			++transact_count;
+			return;
+		}
+
+		// Stop a transaction.
+		// If this throws an exception, the transaction IS stopped.
+
+		public void stop_transaction () {
+			stop_transaction (transact_commit);
+		}
+
+		public void stop_transaction (boolean f_commit) {
+
+			// Error if no session
+
+			if (session_count == 0) {
+				throw new InvariantViolationException ("SessionState.stop_transaction: No session: " + make_sess_id_message());
+			}
+
+			// If there is a transaction in progress ...
+
+			if (transact_count != 0) {
+			
+				// Clear the counter
+
+				transact_count = 0;
+
+				// Commit the transaction, close the MongoDB session if there is an exception or abort
+
+				try (
+					ErrorCloseSession error_close_session = new ErrorCloseSession();
+				) {
+					if (f_commit) {
+						host_state.get_host_config().commit_transaction (client_session);
+						error_close_session.keep();
+					}
+					else {
+						host_state.get_host_config().abort_transaction (client_session);
+						error_close_session.keep();
+					}
+				}
+				catch (MongoException e) {
+					throw new DBDriverException (make_locus(e), "SessionState.stop_transaction: MongoDB exception: " + make_sess_id_message(), e);
+				}
+			}
+
+			return;
+		}
+
+		// Set the transaction commit flag.
+
+		public void set_transaction_commit (boolean f_commit) {
+
+			// Error if no transaction
+
+			if (transact_count == 0) {
+				throw new InvariantViolationException ("SessionState.set_transaction_commit: No transaction: " + make_sess_id_message());
+			}
+
+			// Save the commit flag
+
+			transact_commit = f_commit;
+			return;
 		}
 
 		//--- Subroutines ---
@@ -1484,31 +2147,51 @@ public class MongoDBContent implements AutoCloseable {
 	// If an exception is thrown, then the connection did NOT occur.
 	// Multiple connections are allowed, and an equal number of disconnections
 	// is required to terminate access to the database.
+	// Returns the connection count after the connect.
 
-	public void connect_database (String db_handle) {
+	public int connect_database (String db_handle) {
 		String my_db_handle = db_handle;
 		if (my_db_handle == null || my_db_handle.isEmpty()) {
 			my_db_handle = default_db_handle;
 		}
 
-		get_all_database_state(my_db_handle).conn_database();
-		return;
+		int result = get_all_database_state(my_db_handle).conn_database();
+		return result;
 	}
 
 	// Disconnect from the given database, given the database handle.
 	// If db_handle is null or empty, then the default database handle is used.
-	// If an exception is thrown, then the disconnection DID occur.
+	// If an exception is thrown, then the disconnection DID occur, except for
+	// DBUnknownDatabaseException and DBUnavailableDatabaseException.
 	// Multiple connections are allowed, and an equal number of disconnections
 	// is required to terminate access to the database.
 	// Performs no operation if the database is currently not connected.
+	// Returns the connection count before the disconnect.
 
-	public void disconnect_database (String db_handle) {
+	public int disconnect_database (String db_handle) {
 		String my_db_handle = db_handle;
 		if (my_db_handle == null || my_db_handle.isEmpty()) {
 			my_db_handle = default_db_handle;
 		}
 
-		get_all_database_state(my_db_handle).disc_database();
+		int result = get_all_database_state(my_db_handle).disc_database();
+		return result;
+	}
+
+	// Forcibly disconnect from the given database, given the database handle.
+	// If db_handle is null or empty, then the default database handle is used.
+	// If an exception is thrown, then the disconnection DID occur.
+	// This function immediately terminates all connections, sessions, transactions,
+	// and iterators on the database.
+	// Performs no operation if the database is currently not connected.
+
+	public void abort_database (String db_handle) {
+		String my_db_handle = db_handle;
+		if (my_db_handle == null || my_db_handle.isEmpty()) {
+			my_db_handle = default_db_handle;
+		}
+
+		get_all_database_state(my_db_handle).teardown_database(true);
 		return;
 	}
 
@@ -1518,32 +2201,94 @@ public class MongoDBContent implements AutoCloseable {
 	// Multiple starts are allowed, and an equal number of stops
 	// is required to terminate the client session.
 	// Performs no operation if configured to disable sessions.
+	// Returns the session count after the open.
 
-	public void start_session (String db_handle) {
+	public int start_session (String db_handle) {
 		String my_db_handle = db_handle;
 		if (my_db_handle == null || my_db_handle.isEmpty()) {
 			my_db_handle = default_db_handle;
 		}
 
-		get_all_database_state(my_db_handle).open_client_session();
-		return;
+		int result = get_all_database_state(my_db_handle).open_client_session();
+		return result;
 	}
 
 	// Stop a client session for a given database, given the database handle.
 	// If db_handle is null or empty, then the default database handle is used.
-	// If an exception is thrown, then the session WAS stopped.
+	// If an exception is thrown, then the session WAS stopped, except for
+	// DBUnknownDatabaseException and DBUnavailableDatabaseException.
 	// Multiple starts are allowed, and an equal number of stops
 	// is required to terminate the client session.
 	// Performs no operation if configured to disable sessions.
-	// Performs no operation if the session has been started.
+	// Performs no operation if the session has not been started.
+	// Returns the session count before the close.
 
-	public void stop_session (String db_handle) {
+	public int stop_session (String db_handle) {
 		String my_db_handle = db_handle;
 		if (my_db_handle == null || my_db_handle.isEmpty()) {
 			my_db_handle = default_db_handle;
 		}
 
-		get_all_database_state(my_db_handle).close_client_session();
+		int result = get_all_database_state(my_db_handle).close_client_session();
+		return result;
+	}
+
+	// Start a transaction for a given database, given the database handle and commit flag.
+	// If db_handle is null or empty, then the default database handle is used.
+	// If an exception is thrown, then the transaction was NOT started.
+	// Only one transaction at a time can be active.
+	// Performs no operation if configured to disable transactions.
+
+	public void start_transact (String db_handle, boolean f_commit) {
+		String my_db_handle = db_handle;
+		if (my_db_handle == null || my_db_handle.isEmpty()) {
+			my_db_handle = default_db_handle;
+		}
+
+		get_all_database_state(my_db_handle).start_transaction (f_commit);
+		return;
+	}
+
+	// Stop a transaction for a given database, given the database handle and optional commit flag.
+	// If db_handle is null or empty, then the default database handle is used.
+	// If an exception is thrown, then the transaction WAS stopped, except for
+	// DBUnknownDatabaseException and DBUnavailableDatabaseException.
+	// Only one transaction at a time can be active.
+	// Performs no operation if configured to disable transactions.
+
+	public void stop_transact (String db_handle, boolean f_commit) {
+		String my_db_handle = db_handle;
+		if (my_db_handle == null || my_db_handle.isEmpty()) {
+			my_db_handle = default_db_handle;
+		}
+
+		get_all_database_state(my_db_handle).stop_transaction (f_commit);
+		return;
+	}
+
+	public void stop_transact (String db_handle) {
+		String my_db_handle = db_handle;
+		if (my_db_handle == null || my_db_handle.isEmpty()) {
+			my_db_handle = default_db_handle;
+		}
+
+		get_all_database_state(my_db_handle).stop_transaction ();
+		return;
+	}
+
+	// Set the transaction commit flag for a given database, given the database handle and commit flag.
+	// If db_handle is null or empty, then the default database handle is used.
+	// Only one transaction at a time can be active.
+	// Throws an exception if no transaction is active.
+	// The actual commit or abort occurs when the transaction is stopped (not immediately).
+
+	public void set_transact_commit (String db_handle, boolean f_commit) {
+		String my_db_handle = db_handle;
+		if (my_db_handle == null || my_db_handle.isEmpty()) {
+			my_db_handle = default_db_handle;
+		}
+
+		get_all_database_state(my_db_handle).set_transaction_commit (f_commit);
 		return;
 	}
 
