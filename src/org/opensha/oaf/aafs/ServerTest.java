@@ -2916,6 +2916,348 @@ public class ServerTest {
 
 
 
+	// Test #56 - Add a few elements to the task pending queue, with connection option and wait time.
+
+	public static void test56(String[] args) {
+
+		// Two additional arguments
+
+		if (args.length != 3) {
+			System.err.println ("ServerTest : Invalid 'test56' or 'conopt_task_add_some' subcommand");
+			return;
+		}
+
+		int conopt = Integer.parseInt (args[1]);
+		int waitsec = Integer.parseInt (args[2]);
+
+		// Enable tracing
+
+		MongoDBConnect.set_trace_conn (true);
+		MongoDBContent.set_trace_conn (true);
+		MongoDBContent.set_trace_session (true);
+		MongoDBContent.set_trace_transact (true);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil (conopt, MongoDBUtil.DDBOPT_SAVE_SET, null);
+		){
+		
+			String event_id;
+			long sched_time;
+			long submit_time;
+			String submit_id;
+			int opcode;
+			int stage;
+			MarshalWriter details;
+		
+			event_id = "Event_2";
+			sched_time = 20100L;
+			submit_time = 20000L;
+			submit_id = "Submitter_2";
+			opcode = 102;
+			stage = 2;
+			details = PendingTask.begin_details();
+			details.marshalArrayBegin (null, 5);
+			details.marshalString (null, "Details_2");
+			details.marshalLong (null, 21010L);
+			details.marshalLong (null, 21020L);
+			details.marshalDouble (null, 21030.0);
+			details.marshalDouble (null, 21040.0);
+			details.marshalArrayEnd ();
+			PendingTask.submit_task (event_id, sched_time, submit_time,
+				submit_id, opcode, stage, details);
+		
+			event_id = "Event_4";
+			sched_time = 40100L;
+			submit_time = 40000L;
+			submit_id = "Submitter_4_no_details";
+			opcode = 104;
+			stage = 4;
+			details = null;
+			PendingTask.submit_task (event_id, sched_time, submit_time,
+				submit_id, opcode, stage, details);
+		
+			event_id = "Event_1";
+			sched_time = 10100L;
+			submit_time = 10000L;
+			submit_id = "Submitter_1";
+			opcode = 101;
+			stage = 1;
+			details = PendingTask.begin_details();
+			details.marshalArrayBegin (null, 5);
+			details.marshalString (null, "Details_1");
+			details.marshalLong (null, 11010L);
+			details.marshalLong (null, 11020L);
+			details.marshalDouble (null, 11030.0);
+			details.marshalDouble (null, 11040.0);
+			details.marshalArrayEnd ();
+			PendingTask.submit_task (event_id, sched_time, submit_time,
+				submit_id, opcode, stage, details);
+		
+			event_id = "Event_5";
+			sched_time = 50100L;
+			submit_time = 50000L;
+			submit_id = "Submitter_5";
+			opcode = 105;
+			stage = 5;
+			details = PendingTask.begin_details();
+			details.marshalArrayBegin (null, 5);
+			details.marshalString (null, "Details_5");
+			details.marshalLong (null, 51010L);
+			details.marshalLong (null, 51020L);
+			details.marshalDouble (null, 51030.0);
+			details.marshalDouble (null, 51040.0);
+			details.marshalArrayEnd ();
+			PendingTask.submit_task (event_id, sched_time, submit_time,
+				submit_id, opcode, stage, details);
+		
+			event_id = "Event_3";
+			sched_time = 30100L;
+			submit_time = 30000L;
+			submit_id = "Submitter_3";
+			opcode = 103;
+			stage = 3;
+			details = PendingTask.begin_details();
+			details.marshalArrayBegin (null, 5);
+			details.marshalString (null, "Details_3");
+			details.marshalLong (null, 31010L);
+			details.marshalLong (null, 31020L);
+			details.marshalDouble (null, 31030.0);
+			details.marshalDouble (null, 31040.0);
+			details.marshalArrayEnd ();
+			PendingTask.submit_task (event_id, sched_time, submit_time,
+				submit_id, opcode, stage, details);
+
+			// Display modified task queue
+
+			System.out.println ("Modified task queue:");
+
+			// Get the list of pending tasks
+
+			List<PendingTask> tasks = PendingTask.get_all_tasks();
+
+			// Display them
+
+			for (PendingTask task2 : tasks) {
+				System.out.println (task2.toString());
+			}
+
+			if (waitsec > 0) {
+				long wait_delay = ((long)waitsec) * 1000L;
+				try {
+					Thread.sleep (wait_delay);
+				} catch (InterruptedException e) {
+				}
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #57 - Display the pending task queue, sorted by execution time, with connection option and wait time.
+
+	public static void test57(String[] args) {
+
+		// Two additional arguments
+
+		if (args.length != 3) {
+			System.err.println ("ServerTest : Invalid 'test57' or 'conopt_task_display_list' subcommand");
+			return;
+		}
+
+		int conopt = Integer.parseInt (args[1]);
+		int waitsec = Integer.parseInt (args[2]);
+
+		// Enable tracing
+
+		MongoDBConnect.set_trace_conn (true);
+		MongoDBContent.set_trace_conn (true);
+		MongoDBContent.set_trace_session (true);
+		MongoDBContent.set_trace_transact (true);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil (conopt, MongoDBUtil.DDBOPT_SAVE_SET, null);
+		){
+
+			// Get the list of pending tasks
+
+			List<PendingTask> tasks = PendingTask.get_all_tasks();
+
+			// Display them
+
+			for (PendingTask task : tasks) {
+				System.out.println (task.toString());
+			}
+
+			if (waitsec > 0) {
+				long wait_delay = ((long)waitsec) * 1000L;
+				try {
+					Thread.sleep (wait_delay);
+				} catch (InterruptedException e) {
+				}
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #58 - Activate the first document before the cutoff time, and display the retrieved document, with connection option and wait time.
+
+	public static void test58(String[] args) {
+
+		// Three additional arguments
+
+		if (args.length != 4) {
+			System.err.println ("ServerTest : Invalid 'test58' or 'conopt_task_cutoff_activate' subcommand");
+			return;
+		}
+
+		int conopt = Integer.parseInt (args[1]);
+		int waitsec = Integer.parseInt (args[2]);
+		long cutoff_time = Long.parseLong(args[3]);
+
+		// Enable tracing
+
+		MongoDBConnect.set_trace_conn (true);
+		MongoDBContent.set_trace_conn (true);
+		MongoDBContent.set_trace_session (true);
+		MongoDBContent.set_trace_transact (true);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil (conopt, MongoDBUtil.DDBOPT_SAVE_SET, null);
+		){
+
+			// Get the task
+
+			PendingTask task = PendingTask.activate_first_ready_task (cutoff_time);
+
+			// Display it
+
+			if (task == null) {
+				System.out.println ("null");
+			} else {
+				System.out.println (task.toString());
+			}
+
+			// Display modified task queue
+
+			System.out.println ("Modified task queue:");
+
+			// Get the list of pending tasks
+
+			List<PendingTask> tasks = PendingTask.get_all_tasks();
+
+			// Display them
+
+			for (PendingTask task2 : tasks) {
+				System.out.println (task2.toString());
+			}
+
+			if (waitsec > 0) {
+				long wait_delay = ((long)waitsec) * 1000L;
+				try {
+					Thread.sleep (wait_delay);
+				} catch (InterruptedException e) {
+				}
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #59 - Activate the first document before the cutoff time, and delete it, with connection option and wait time.
+
+	public static void test59(String[] args) {
+
+		// Three additional arguments
+
+		if (args.length != 4) {
+			System.err.println ("ServerTest : Invalid 'test59' or 'conopt_task_cutoff_activate_delete' subcommand");
+			return;
+		}
+
+		int conopt = Integer.parseInt (args[1]);
+		int waitsec = Integer.parseInt (args[2]);
+		long cutoff_time = Long.parseLong(args[3]);
+
+		// Enable tracing
+
+		MongoDBConnect.set_trace_conn (true);
+		MongoDBContent.set_trace_conn (true);
+		MongoDBContent.set_trace_session (true);
+		MongoDBContent.set_trace_transact (true);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil (conopt, MongoDBUtil.DDBOPT_SAVE_SET, null);
+		){
+
+			// Get the task
+
+			PendingTask task = PendingTask.activate_first_ready_task (cutoff_time);
+
+			// Delete it
+
+			if (task != null) {
+				PendingTask.delete_task (task);
+			}
+
+			// Display it
+
+			if (task == null) {
+				System.out.println ("null");
+			} else {
+				System.out.println (task.toString());
+			}
+
+			// Display modified task queue
+
+			System.out.println ("Modified task queue:");
+
+			// Get the list of pending tasks
+
+			List<PendingTask> tasks = PendingTask.get_all_tasks();
+
+			// Display them
+
+			for (PendingTask task2 : tasks) {
+				System.out.println (task2.toString());
+			}
+
+			if (waitsec > 0) {
+				long wait_delay = ((long)waitsec) * 1000L;
+				try {
+					Thread.sleep (wait_delay);
+				} catch (InterruptedException e) {
+				}
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
 	// Test dispatcher.
 	
 	public static void main(String[] args) {
@@ -3851,6 +4193,70 @@ public class ServerTest {
 
 			try {
 				test55(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #56
+		// Command format:
+		//  test56  conopt  waitsec
+		// Add a few items to the pending task queue, with connection option and wait time.
+
+		if (args[0].equalsIgnoreCase ("test56") || args[0].equalsIgnoreCase ("conopt_task_add_some")) {
+
+			try {
+				test56(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #57
+		// Command format:
+		//  test57  conopt  waitsec
+		// Display the pending task queue, sorted by execution time, with connection option and wait time.
+
+		if (args[0].equalsIgnoreCase ("test57") || args[0].equalsIgnoreCase ("conopt_task_display_list")) {
+
+			try {
+				test57(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #58
+		// Command format:
+		//  test58  conopt  waitsec  cutoff_time
+		// Activate the first document before the cutoff time, and display the retrieved document, with connection option and wait time.
+
+		if (args[0].equalsIgnoreCase ("test58") || args[0].equalsIgnoreCase ("conopt_task_cutoff_activate")) {
+
+			try {
+				test58(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #59
+		// Command format:
+		//  test59  conopt  waitsec  cutoff_time
+		// Activate the first document before the cutoff time, and delete it, with connection option and wait time.
+
+		if (args[0].equalsIgnoreCase ("test59") || args[0].equalsIgnoreCase ("conopt_task_cutoff_activate_delete")) {
+
+			try {
+				test59(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

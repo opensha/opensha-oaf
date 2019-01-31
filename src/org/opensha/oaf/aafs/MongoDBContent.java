@@ -82,6 +82,41 @@ public class MongoDBContent implements AutoCloseable {
 
 
 
+	//----- Tracing -----
+
+
+
+
+	// Flag to trace connections.  (Not synchronized because it should only be set at startup.)
+
+	private static boolean trace_conn = false;
+
+	public static void set_trace_conn (boolean b) {
+		trace_conn = b;
+		return;
+	}
+
+	// Flag to trace sessions.  (Not synchronized because it should only be set at startup.)
+
+	private static boolean trace_session = false;
+
+	public static void set_trace_session (boolean b) {
+		trace_session = b;
+		return;
+	}
+
+	// Flag to trace transactions.  (Not synchronized because it should only be set at startup.)
+
+	private static boolean trace_transact = false;
+
+	public static void set_trace_transact (boolean b) {
+		trace_transact = b;
+		return;
+	}
+
+
+
+
 	//----- Collections -----
 
 
@@ -949,6 +984,10 @@ public class MongoDBContent implements AutoCloseable {
 
 		public int conn_database () {
 
+			if (trace_conn) {
+				System.out.println ("DatabaseState.conn_database: Enter: " + make_db_id_message() + ", conn_count = " + conn_count);
+			}
+
 			// If not currently connected ...
 
 			if (conn_count == 0) {
@@ -962,6 +1001,11 @@ public class MongoDBContent implements AutoCloseable {
 			// Count the connection
 
 			++conn_count;
+
+			if (trace_conn) {
+				System.out.println ("DatabaseState.conn_database: Exit: " + make_db_id_message() + ", conn_count = " + conn_count);
+			}
+
 			return conn_count;
 		}
 
@@ -971,6 +1015,11 @@ public class MongoDBContent implements AutoCloseable {
 		// Returns the connection count before the disconnect.
 
 		public int disc_database () {
+
+			if (trace_conn) {
+				System.out.println ("DatabaseState.disc_database: Enter: " + make_db_id_message() + ", conn_count = " + conn_count);
+			}
+
 			int result = conn_count;
 		
 			// If currently connected ...
@@ -988,6 +1037,10 @@ public class MongoDBContent implements AutoCloseable {
 				else {
 					teardown_database (true);
 				}
+			}
+
+			if (trace_conn) {
+				System.out.println ("DatabaseState.disc_database: Exit: " + make_db_id_message() + ", conn_count = " + conn_count);
 			}
 
 			return result;
@@ -1231,6 +1284,10 @@ public class MongoDBContent implements AutoCloseable {
 
 		public int open_client_session () {
 
+			if (trace_session) {
+				System.out.println ("DatabaseState.open_client_session: Enter: " + make_db_id_message() + ", session_count = " + session_count);
+			}
+
 			// Error if not connected
 
 			if (conn_count == 0) {
@@ -1250,6 +1307,11 @@ public class MongoDBContent implements AutoCloseable {
 			// Count the client session
 
 			++session_count;
+
+			if (trace_session) {
+				System.out.println ("DatabaseState.open_client_session: Exit: " + make_db_id_message() + ", session_count = " + session_count);
+			}
+
 			return session_count;
 		}
 
@@ -1259,6 +1321,11 @@ public class MongoDBContent implements AutoCloseable {
 		// Returns the session count before the close.
 
 		public int close_client_session () {
+
+			if (trace_session) {
+				System.out.println ("DatabaseState.close_client_session: Enter: " + make_db_id_message() + ", session_count = " + session_count);
+			}
+
 			int result = session_count;
 
 			// Error if not connected
@@ -1282,6 +1349,10 @@ public class MongoDBContent implements AutoCloseable {
 				else {
 					teardown_client_session (true);
 				}
+			}
+
+			if (trace_session) {
+				System.out.println ("DatabaseState.close_client_session: Exit: " + make_db_id_message() + ", session_count = " + session_count);
 			}
 
 			return result;
@@ -1315,6 +1386,10 @@ public class MongoDBContent implements AutoCloseable {
 
 		public void start_transaction (boolean f_commit) {
 
+			if (trace_transact) {
+				System.out.println ("DatabaseState.start_transaction: Enter: " + make_db_id_message() + ", transact_count = " + transact_count);
+			}
+
 			// Error if no session
 
 			if (session_count == 0) {
@@ -1335,6 +1410,11 @@ public class MongoDBContent implements AutoCloseable {
 			// Count the transaction
 
 			++transact_count;
+
+			if (trace_transact) {
+				System.out.println ("DatabaseState.start_transaction: Exit: " + make_db_id_message() + ", transact_count = " + transact_count);
+			}
+
 			return;
 		}
 
@@ -1342,6 +1422,10 @@ public class MongoDBContent implements AutoCloseable {
 		// If this throws an exception, the transaction IS stopped.
 
 		public void stop_transaction () {
+
+			if (trace_transact) {
+				System.out.println ("DatabaseState.stop_transaction: Enter: " + make_db_id_message() + ", transact_count = " + transact_count);
+			}
 
 			// Error if no session
 
@@ -1363,10 +1447,18 @@ public class MongoDBContent implements AutoCloseable {
 				session_state.stop_transaction ();
 			}
 
+			if (trace_transact) {
+				System.out.println ("DatabaseState.stop_transaction: Exit: " + make_db_id_message() + ", transact_count = " + transact_count);
+			}
+
 			return;
 		}
 
 		public void stop_transaction (boolean f_commit) {
+
+			if (trace_transact) {
+				System.out.println ("DatabaseState.stop_transaction: Enter: " + make_db_id_message() + ", transact_count = " + transact_count + ", f_commit = " + f_commit);
+			}
 
 			// Error if no session
 
@@ -1388,12 +1480,20 @@ public class MongoDBContent implements AutoCloseable {
 				session_state.stop_transaction (f_commit);
 			}
 
+			if (trace_transact) {
+				System.out.println ("DatabaseState.stop_transaction: Exit: " + make_db_id_message() + ", transact_count = " + transact_count + ", f_commit = " + f_commit);
+			}
+
 			return;
 		}
 
 		// Set the transaction commit flag.
 
 		public void set_transaction_commit (boolean f_commit) {
+
+			if (trace_transact) {
+				System.out.println ("DatabaseState.set_transaction_commit: Enter: " + make_db_id_message() + ", transact_count = " + transact_count + ", f_commit = " + f_commit);
+			}
 
 			// Error if no transaction
 
@@ -1404,6 +1504,11 @@ public class MongoDBContent implements AutoCloseable {
 			// Pass thru
 
 			session_state.set_transaction_commit (f_commit);
+
+			if (trace_transact) {
+				System.out.println ("DatabaseState.set_transaction_commit: Exit: " + make_db_id_message() + ", transact_count = " + transact_count + ", f_commit = " + f_commit);
+			}
+
 			return;
 		}
 
@@ -1562,6 +1667,10 @@ public class MongoDBContent implements AutoCloseable {
 
 		public void conn_session () {
 
+			if (trace_conn) {
+				System.out.println ("SessionState.conn_session: Enter: " + make_sess_id_message() + ", conn_count = " + conn_count);
+			}
+
 			// If not currently connected ...
 
 			if (conn_count == 0) {
@@ -1580,6 +1689,11 @@ public class MongoDBContent implements AutoCloseable {
 			// Count the connection
 
 			++conn_count;
+
+			if (trace_conn) {
+				System.out.println ("SessionState.conn_session: Exit: " + make_sess_id_message() + ", conn_count = " + conn_count);
+			}
+
 			return;
 		}
 
@@ -1588,6 +1702,10 @@ public class MongoDBContent implements AutoCloseable {
 		// Performs no operation if not currently connected.
 
 		public void disc_session () {
+
+			if (trace_conn) {
+				System.out.println ("SessionState.disc_session: Enter: " + make_sess_id_message() + ", conn_count = " + conn_count);
+			}
 		
 			// If currently connected ...
 
@@ -1604,6 +1722,10 @@ public class MongoDBContent implements AutoCloseable {
 				else {
 					teardown_session (true);
 				}
+			}
+
+			if (trace_conn) {
+				System.out.println ("SessionState.disc_session: Exit: " + make_sess_id_message() + ", conn_count = " + conn_count);
 			}
 
 			return;
@@ -1771,6 +1893,10 @@ public class MongoDBContent implements AutoCloseable {
 
 		public void open_client_session () {
 
+			if (trace_session) {
+				System.out.println ("SessionState.open_client_session: Enter: " + make_sess_id_message() + ", session_count = " + session_count);
+			}
+
 			// Error if not connected
 
 			if (conn_count == 0) {
@@ -1797,6 +1923,11 @@ public class MongoDBContent implements AutoCloseable {
 			// Count the client session
 
 			++session_count;
+
+			if (trace_session) {
+				System.out.println ("SessionState.open_client_session: Exit: " + make_sess_id_message() + ", session_count = " + session_count);
+			}
+
 			return;
 		}
 
@@ -1805,6 +1936,10 @@ public class MongoDBContent implements AutoCloseable {
 		// Performs no operation if the client session is not open.
 
 		public void close_client_session () {
+
+			if (trace_session) {
+				System.out.println ("SessionState.close_client_session: Enter: " + make_sess_id_message() + ", session_count = " + session_count);
+			}
 
 			// Error if not connected
 
@@ -1827,6 +1962,10 @@ public class MongoDBContent implements AutoCloseable {
 				else {
 					teardown_client_session ();
 				}
+			}
+
+			if (trace_session) {
+				System.out.println ("SessionState.close_client_session: Exit: " + make_sess_id_message() + ", session_count = " + session_count);
 			}
 
 			return;
@@ -1914,6 +2053,10 @@ public class MongoDBContent implements AutoCloseable {
 
 		public void start_transaction (boolean f_commit) {
 
+			if (trace_transact) {
+				System.out.println ("SessionState.start_transaction: Enter: " + make_sess_id_message() + ", transact_count = " + transact_count);
+			}
+
 			// Error if no session
 
 			if (session_count == 0) {
@@ -1949,6 +2092,11 @@ public class MongoDBContent implements AutoCloseable {
 			// Count the transaction
 
 			++transact_count;
+
+			if (trace_transact) {
+				System.out.println ("SessionState.start_transaction: Exit: " + make_sess_id_message() + ", transact_count = " + transact_count);
+			}
+
 			return;
 		}
 
@@ -1960,6 +2108,10 @@ public class MongoDBContent implements AutoCloseable {
 		}
 
 		public void stop_transaction (boolean f_commit) {
+
+			if (trace_transact) {
+				System.out.println ("SessionState.stop_transaction: Enter: " + make_sess_id_message() + ", transact_count = " + transact_count + ", f_commit = " + f_commit);
+			}
 
 			// Error if no session
 
@@ -1994,12 +2146,20 @@ public class MongoDBContent implements AutoCloseable {
 				}
 			}
 
+			if (trace_transact) {
+				System.out.println ("SessionState.stop_transaction: Exit: " + make_sess_id_message() + ", transact_count = " + transact_count + ", f_commit = " + f_commit);
+			}
+
 			return;
 		}
 
 		// Set the transaction commit flag.
 
 		public void set_transaction_commit (boolean f_commit) {
+
+			if (trace_transact) {
+				System.out.println ("SessionState.set_transaction_commit: Enter: " + make_sess_id_message() + ", transact_count = " + transact_count + ", f_commit = " + f_commit);
+			}
 
 			// Error if no transaction
 
@@ -2010,6 +2170,11 @@ public class MongoDBContent implements AutoCloseable {
 			// Save the commit flag
 
 			transact_commit = f_commit;
+
+			if (trace_transact) {
+				System.out.println ("SessionState.set_transaction_commit: Exit: " + make_sess_id_message() + ", transact_count = " + transact_count + ", f_commit = " + f_commit);
+			}
+
 			return;
 		}
 

@@ -17,7 +17,7 @@
         "username": "usgs",
         "auth_db": "usgs",
         "password": "usgs",
-        "session_level": 0,
+        "session_level": 2,
         "causal_consistency": "",
         "transact_write_concern": "majority+journaled",
         "transact_read_concern": "snapshot",

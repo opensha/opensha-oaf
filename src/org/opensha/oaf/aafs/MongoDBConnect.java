@@ -84,6 +84,23 @@ public class MongoDBConnect implements AutoCloseable {
 
 
 
+	//----- Tracing -----
+
+
+
+
+	// Flag to trace connections.  (Not synchronized because it should only be set at startup.)
+
+	private static boolean trace_conn = false;
+
+	public static void set_trace_conn (boolean b) {
+		trace_conn = b;
+		return;
+	}
+
+
+
+
 	//----- Hosts -----
 
 
@@ -127,6 +144,10 @@ public class MongoDBConnect implements AutoCloseable {
 
 		public synchronized void conn_host () {
 
+			if (trace_conn) {
+				System.out.println ("HostState.conn_host: Enter: host_handle = " + host_config.get_host_handle() + ", conn_count = " + conn_count);
+			}
+
 			// If not currently connected ...
 
 			if (conn_count == 0) {
@@ -144,6 +165,11 @@ public class MongoDBConnect implements AutoCloseable {
 			// Increment connection count
 
 			++conn_count;
+
+			if (trace_conn) {
+				System.out.println ("HostState.conn_host: Exit: host_handle = " + host_config.get_host_handle() + ", conn_count = " + conn_count);
+			}
+
 			return;
 		}
 
@@ -152,6 +178,10 @@ public class MongoDBConnect implements AutoCloseable {
 		// Throws an exception if not currently connected.
 
 		public synchronized void disc_host () {
+
+			if (trace_conn) {
+				System.out.println ("HostState.disc_host: Enter: host_handle = " + host_config.get_host_handle() + ", conn_count = " + conn_count);
+			}
 		
 			// If not connected, error
 
@@ -170,6 +200,12 @@ public class MongoDBConnect implements AutoCloseable {
 				mongo_client = null;
 				my_client.close();
 			}
+
+			if (trace_conn) {
+				System.out.println ("HostState.disc_host: Exit: host_handle = " + host_config.get_host_handle() + ", conn_count = " + conn_count);
+			}
+
+			return;
 		}
 
 		// Get the MongoDB client.
