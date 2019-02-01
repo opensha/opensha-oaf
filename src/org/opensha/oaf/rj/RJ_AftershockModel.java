@@ -802,6 +802,38 @@ public abstract class RJ_AftershockModel {
 		return AftershockStatsCalc.getExpectedCumulativeNumWithTimeFunc(getMaxLikelihood_a(), b, magMain, magMin, 
 				getMaxLikelihood_p(), getMaxLikelihood_c(), tMinDays, tMaxDays, tDelta);
 	}
+	
+
+
+	
+	/**
+	 * This gives the expected cumulative number of aftershocks as a function of time for the maximum likelihood a/p/c parameters 
+	 * (which represents the mode in the number of events space) above the given minimum magnitude and over 
+	 * the specified time span.  A GR distribution with no upper bound is assumed.
+	 * @param magCat = Magnitude of completeness when there has not been a mainshock.
+	 * @param magCompFn = The magnitude of completeness function.
+	 * @param tMinDays = Start of time range, in days after the mainshock.
+	 * @param tMaxDays = End of time range, in days after the mainshock.
+	 * @param tDelta = Spacing between time values in the returned function.
+	 * @return
+	 * Returns a discrete function with:
+	 *  x = time (in days after mainshock)
+	 *  y = cumulative expected number of aftershocks for the corresponding time interval.
+	 * The range [tMinDays, tMaxDays] is partitioned into equal-sized intervals, with the
+	 * width of each interval equal to approximately tDelta.  The interval width is
+	 * adjusted so that a whole number of intervals fit within the range [tMinDays, tMaxDays].
+	 * For each such interval, the x value is the midpoint of the interval (and so
+	 * the first and last x values are tMin+x_delta/2 and tMax-x_delta/2,
+	 * where x_delta is the adjusted interval width).  The y value is the expected
+	 * number of aftershocks within that interval plus all preceding intervals according
+	 * to the R&J formula, with Page time-dependent magnitude of completeness.  In
+	 * evaluating the R&J formula, parameters a, p, and c are set
+	 * to their maximum-likelihood values, and parameter b is the fixed value in this model.
+	 */
+	public EvenlyDiscretizedFunc getPageModalCumNumEventsWithTime(double magCat, MagCompFn magCompFn, double tMinDays, double tMaxDays, double tDelta) {
+		return AftershockStatsCalc.getPageExpectedCumulativeNumWithTimeFunc(getMaxLikelihood_a(), b, magMain, magCat, magCompFn,
+				getMaxLikelihood_p(), getMaxLikelihood_c(), tMinDays, tMaxDays, tDelta);
+	}
 
 
 

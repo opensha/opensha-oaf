@@ -618,6 +618,125 @@ public class AftershockStatsCalc {
 		return s;
 	}
 
+	
+	
+	
+	/**
+	 * This returns the expected number of primary aftershocks as a function of time
+	 * 
+	 * @param a = Reasenberg-Jones productivity parameter.
+	 * @param b = Gutenberg-Richter b-parameter.
+	 * @param magMain = Magnitude of mainshock.
+	 * @param magCat = Magnitude of completeness when there has not been a mainshock.
+	 * @param magCompFn = The magnitude of completeness function.
+	 * @param p = Omori p-parameter (exponent).
+	 * @param c = Omori c-parameter (time offset), in days.
+	 * @param tMin = Start of time range, in days after the mainshock.
+	 * @param tMax = End of time range, in days after the mainshock.
+	 * @param tDelta = Spacing between time values in the returned function.
+	 * @return
+	 * Returns a discrete function with:
+	 *  x = Time (in days after mainshock).
+	 *  y = Expected number of aftershocks within the corresponding time interval.
+	 * The range [tMin, tMax] is partitioned into equal-sized intervals, with the
+	 * width of each interval equal to approximately tDelta.  The interval width is
+	 * adjusted so that a whole number of intervals fit within the range [tMin, tMax].
+	 * For each such interval, the x value is the midpoint of the interval (and so
+	 * the first and last x values are tMin+x_delta/2 and tMax-x_delta/2,
+	 * where x_delta is the adjusted interval width).  The y value is the expected
+	 * number of aftershocks within that interval according to the R&J formula
+	 * with Page time-dependent magnitude of completeness.
+	 */
+	public static  EvenlyDiscretizedFunc gePagetExpectedNumWithTimeFunc(double a, double b, double magMain, double magCat, MagCompFn magCompFn, double p, double c,  double tMin, double tMax, double tDelta) {
+		
+		// Get the function spacing
+
+		int num = Math.max((int)Math.round((tMax-tMin)/tDelta), 1);
+		double x_delta = (tMax-tMin)/num;
+		double x_min;
+		double x_max;
+		if (num == 1) {
+			x_min = (tMin + tMax)*0.5;
+			x_max = x_min;	// x_max and x_min must be precisely equal for num==1, otherwise EvenlyDiscretizedFunc throws an exception
+		} else {
+			x_min = tMin+x_delta/2;
+			x_max = tMax-x_delta/2;
+		}
+
+		// Construct the function
+		
+		EvenlyDiscretizedFunc func = new EvenlyDiscretizedFunc(x_min, x_max, num);
+		for(int i=0;i<func.size();i++) {
+			double binTmin = func.getX(i) - x_delta/2;
+			double binTmax = func.getX(i) + x_delta/2;
+			double yVal = getPageExpectedNumEvents(a, b, magMain, magCat, magCompFn, p, c, binTmin, binTmax);
+			func.set(i,yVal);
+		}
+
+		// Insert info
+
+		func.setName("Expected Number of Primary Aftershocks for "+x_delta+"-day intervals");
+		func.setInfo("for a="+a+", b="+b+", p="+p+", c="+c+", magMain="+magMain+", magCat="+magCat);
+		return func;
+	}
+	
+	
+	/**
+	 * This returns the expected cumulative number of primary aftershocks as a function of time
+	 * 
+	 * @param a = Reasenberg-Jones productivity parameter.
+	 * @param b = Gutenberg-Richter b-parameter.
+	 * @param magMain = Magnitude of mainshock.
+	 * @param magCat = Magnitude of completeness when there has not been a mainshock.
+	 * @param magCompFn = The magnitude of completeness function.
+	 * @param p = Omori p-parameter (exponent).
+	 * @param c = Omori c-parameter (time offset).
+	 * @param tMin = Start of time range, in days after the mainshock.
+	 * @param tMax = End of time range, in days after the mainshock.
+	 * @param tDelta = Spacing between time values in the returned function.
+	 * @return
+	 * Returns a discrete function with:
+	 *  x = Time (in days after mainshock).
+	 *  y = Cumulative expected number of aftershocks for the corresponding time interval.
+	 * The range [tMin, tMax] is partitioned into equal-sized intervals, with the
+	 * width of each interval equal to approximately tDelta.  The interval width is
+	 * adjusted so that a whole number of intervals fit within the range [tMin, tMax].
+	 * For each such interval, the x value is the midpoint of the interval (and so
+	 * the first and last x values are tMin+x_delta/2 and tMax-x_delta/2,
+	 * where x_delta is the adjusted interval width).  The y value is the expected
+	 * number of aftershocks within that interval plus all preceding intervals according
+	 * to the R&J formula with Page time-dependent magnitude of completeness.
+	 */
+	public static  EvenlyDiscretizedFunc getPageExpectedCumulativeNumWithTimeFunc(double a, double b, double magMain, double magCat, MagCompFn magCompFn, double p, double c,  double tMin, double tMax, double tDelta) {
+		
+		// Get the function spacing
+
+		int num = Math.max((int)Math.round((tMax-tMin)/tDelta), 1);
+		double x_delta = (tMax-tMin)/num;
+		double x_min;
+		double x_max;
+		if (num == 1) {
+			x_min = (tMin + tMax)*0.5;
+			x_max = x_min;	// x_max and x_min must be precisely equal for num==1, otherwise EvenlyDiscretizedFunc throws an exception
+		} else {
+			x_min = tMin+x_delta/2;
+			x_max = tMax-x_delta/2;
+		}
+
+		// Construct the function
+		
+		EvenlyDiscretizedFunc func = new EvenlyDiscretizedFunc(x_min, x_max, num);
+		double yVal = 0.0;
+		for(int i=0;i<func.size();i++) {
+			double binTmin = func.getX(i) - x_delta/2;
+			double binTmax = func.getX(i) + x_delta/2;
+			yVal += getPageExpectedNumEvents(a, b, magMain, magCat, magCompFn, p, c, binTmin, binTmax);
+			func.set(i,yVal);
+		}
+
+		return func;
+	}
+
 
 
 

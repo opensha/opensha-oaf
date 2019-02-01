@@ -1309,6 +1309,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	private void plotCumulativeNum() {
 		double magMin;
 		MagCompFn magCompFn;
+		MagCompFn magCompFnPlot;
 		double magMain = mainshock.getMag();
 		String magMinCaption;
 		
@@ -1318,10 +1319,12 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			double g = gParam.getValue();
 			double h = hParam.getValue();
 			magCompFn = MagCompFn.makePageOrConstant (f, g, h);
+			magCompFnPlot = magCompFn;
 			magMinCaption = "Mc(t)";
 		} else {
 			magMin = mcParam.getValue();
 			magCompFn = MagCompFn.makeConstant();
+			magCompFnPlot = null;
 			magMinCaption = String.format ("%.3f", magMin);
 		}
 		
@@ -1350,7 +1353,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		chars.add(new PlotCurveCharacterstics(PlotLineType.SOLID, 3f, Color.BLACK));
 		
 		if (model != null) {
-			EvenlyDiscretizedFunc expected = getModelCumNumWithTimePlot(model, magMin);
+			EvenlyDiscretizedFunc expected = getModelCumNumWithTimePlot(model, magMin, magCompFnPlot);
 			
 			maxY = Math.max(count, expected.getMaxY());
 			
@@ -1363,7 +1366,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		if (genericModel != null) {
 			// calculate generic
 			
-			EvenlyDiscretizedFunc expected = getModelCumNumWithTimePlot(genericModel, magMin);
+			EvenlyDiscretizedFunc expected = getModelCumNumWithTimePlot(genericModel, magMin, magCompFnPlot);
 			
 			maxY = Math.max(count, expected.getMaxY());
 			
@@ -1373,7 +1376,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			expected.setName("Generic: "+new DecimalFormat("0.#").format(expected.getMaxY()));
 			
 			if (bayesianModel != null) {
-				expected = getModelCumNumWithTimePlot(bayesianModel, magMin);
+				expected = getModelCumNumWithTimePlot(bayesianModel, magMin, magCompFnPlot);
 				
 				maxY = Math.max(count, expected.getMaxY());
 				
@@ -1405,12 +1408,15 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			Preconditions.checkState(tabbedPane.getTabCount() > cml_num_tab_index, "Plots added out of order");
 	}
 	
-	private EvenlyDiscretizedFunc getModelCumNumWithTimePlot(RJ_AftershockModel model, double magMin) {
+	private EvenlyDiscretizedFunc getModelCumNumWithTimePlot(RJ_AftershockModel model, double magMin, MagCompFn magCompFnPlot) {
 		double tMin = dataStartTimeParam.getValue();
 		double tMax = Math.max(dataEndTimeParam.getValue(), forecastEndTimeParam.getValue());
 		Preconditions.checkState(tMax > tMin);
 		double tDelta = (tMax - tMin)/1000d;
-		return model.getModalCumNumEventsWithTime(magMin, tMin, tMax, tDelta);
+		if (magCompFnPlot == null) {
+			return model.getModalCumNumEventsWithTime(magMin, tMin, tMax, tDelta);
+		}
+		return model.getPageModalCumNumEventsWithTime(magMin, magCompFnPlot, tMin, tMax, tDelta);
 	}
 	
 	private static SimpleDateFormat catDateFormat = new SimpleDateFormat("yyyy\tMM\tdd\tHH\tmm\tss");
