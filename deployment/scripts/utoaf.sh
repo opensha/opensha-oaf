@@ -55,6 +55,10 @@ RED='\033[1;31m'
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 
+# Connection option
+
+CONOPT="-1"
+
 # This counter is incremented on each test.
 
 n=1
@@ -272,7 +276,7 @@ rundbut () {
     # Run the test
 
     shift 2
-    java -Dtesttime=$testtime -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@" > "$TMPFILE2" 2>&1
+    java -Dtesttime=$testtime -Dtestconopt=$CONOPT -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@" > "$TMPFILE2" 2>&1
 
     # This is how to strip a fixed number of lines.
     # In tail -n +11, the 11 is one more than the number of lines produced by database open.
@@ -329,6 +333,45 @@ case "$2" in
     # Run tests
 
     test)
+
+        # Remove current test results directory if it exists, then create an empty one
+
+        if [ ! -d "$CURPARENT" ]; then
+            mkdir "$CURPARENT"
+        fi
+
+        if [ -d "$CURDIR" ]; then
+            rm -r "$CURDIR"
+        fi
+        mkdir "$CURDIR"
+
+        # Delete scratch files and directory, then make the scratch directory
+
+        delscratch
+        mkdir "$SCRATCHDIR1"
+
+        # Run the tests
+
+        source "$TSCRIPT"
+
+        # Display results
+
+        echo "Total = $count_total, matched = $count_match, error = $count_error, unchecked = $count_unchecked"
+
+        # Delete scratch files and directory
+
+        delscratch
+
+        ;;
+
+
+    # Run tests, with $3 = Connection option
+
+    testcon)
+
+        # Connection option
+
+        CONOPT="$3"
 
         # Remove current test results directory if it exists, then create an empty one
 

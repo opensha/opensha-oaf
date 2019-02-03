@@ -166,6 +166,34 @@ public class MongoDBUtil implements AutoCloseable {
 
 
 
+	// Set the default connection option.
+	// This is intended only for use in testing, and only before the first connection.
+
+	public static void set_def_conopt (int conopt) {
+
+		// Validate the option
+
+		switch (conopt) {
+			case CONOPT_NONE:
+			case CONOPT_CONNECT:
+			case CONOPT_SESSION:
+			case CONOPT_TRANSACT_COMMIT:
+			case CONOPT_TRANSACT_ABORT:
+				break;
+
+			default:
+				throw new IllegalArgumentException ("MongoDBUtil.set_def_conopt: Invalid connection option: conopt = " + conopt);
+		}
+
+		// Set the default
+
+		def_conopt = conopt;
+		return;
+	}
+
+
+
+
 	// Undo-able connection establishment.
 
 	public class UndoConnect implements AutoCloseable {
@@ -466,6 +494,40 @@ public class MongoDBUtil implements AutoCloseable {
 	public void set_transact_commit (boolean f_commit) {
 		get_mongo_content().set_transact_commit (eff_db_handle, f_commit);
 		return;
+	}
+
+
+
+
+	// Return true if sessions are enabled.
+
+	public boolean is_session_enabled () {
+		return get_mongo_content().is_session_enabled (eff_db_handle);
+	}
+
+
+	// Return true if sessions are enabled on the given database.
+	// If db_handle is null or empty, then the default database handle is used.
+
+	public static boolean is_session_enabled (String db_handle) {
+		return get_mongo_content().is_session_enabled (db_handle);
+	}
+
+
+
+
+	// Return true if transactions are enabled.
+
+	public boolean is_transaction_enabled () {
+		return get_mongo_content().is_transaction_enabled (eff_db_handle);
+	}
+
+
+	// Return true if transactions are enabled on the given database.
+	// If db_handle is null or empty, then the default database handle is used.
+
+	public static boolean is_transaction_enabled (String db_handle) {
+		return get_mongo_content().is_transaction_enabled (db_handle);
 	}
 
 

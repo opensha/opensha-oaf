@@ -8,11 +8,11 @@
         "host_handle": "local",
         "write_concern": "majority+journaled",
         "read_concern": "majority",
-        "read_preference": "",
+        "read_preference": "primary",
         "retry_writes": "",
         "connection_mode": "",
         "cluster_type": "",
-        "replica_set_name": "",
+        "replica_set_name": "rs0",
         "connection_string": "",
         "username": "usgs",
         "auth_db": "usgs",
@@ -21,7 +21,7 @@
         "causal_consistency": "",
         "transact_write_concern": "majority+journaled",
         "transact_read_concern": "snapshot",
-        "transact_read_preference": "",
+        "transact_read_preference": "primary",
         "transact_retries": 0,
         "commit_retries": 0,
         "addresses": [
@@ -36,7 +36,7 @@
             "db_name": "usgs",
             "write_concern": "majority+journaled",
             "read_concern": "majority",
-            "read_preference": "",
+            "read_preference": "primary",
             "collections": [
               {
                 "coll_name": "alias",

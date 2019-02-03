@@ -36,6 +36,7 @@ import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TimeSplitOutputStream;
 import org.opensha.oaf.util.ConsoleRedirector;
+import org.opensha.oaf.util.TestMode;
 
 import gov.usgs.earthquake.product.Product;
 import org.opensha.oaf.pdl.PDLProductBuilderOaf;
@@ -3049,6 +3050,14 @@ public class ServerTest {
 					Thread.sleep (wait_delay);
 				} catch (InterruptedException e) {
 				}
+
+				// Display list again at end of wait
+
+				System.out.println ("End-of-wait task queue:");
+				List<PendingTask> tasks3 = PendingTask.get_all_tasks();
+				for (PendingTask task3 : tasks3) {
+					System.out.println (task3.toString());
+				}
 			}
 
 		}
@@ -3101,6 +3110,14 @@ public class ServerTest {
 				try {
 					Thread.sleep (wait_delay);
 				} catch (InterruptedException e) {
+				}
+
+				// Display list again at end of wait
+
+				System.out.println ("End-of-wait task queue:");
+				List<PendingTask> tasks3 = PendingTask.get_all_tasks();
+				for (PendingTask task3 : tasks3) {
+					System.out.println (task3.toString());
 				}
 			}
 
@@ -3171,6 +3188,14 @@ public class ServerTest {
 				try {
 					Thread.sleep (wait_delay);
 				} catch (InterruptedException e) {
+				}
+
+				// Display list again at end of wait
+
+				System.out.println ("End-of-wait task queue:");
+				List<PendingTask> tasks3 = PendingTask.get_all_tasks();
+				for (PendingTask task3 : tasks3) {
+					System.out.println (task3.toString());
 				}
 			}
 
@@ -3248,7 +3273,62 @@ public class ServerTest {
 					Thread.sleep (wait_delay);
 				} catch (InterruptedException e) {
 				}
+
+				// Display list again at end of wait
+
+				System.out.println ("End-of-wait task queue:");
+				List<PendingTask> tasks3 = PendingTask.get_all_tasks();
+				for (PendingTask task3 : tasks3) {
+					System.out.println (task3.toString());
+				}
 			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #60 - Display the pending task queue, sorted by execution time, with default connection option, and tracing.
+	// This test is intended to check the setting of the default connection option.
+
+	public static void test60(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerTest : Invalid 'test60' or 'traced_task_display_list' subcommand");
+			return;
+		}
+
+		// Enable tracing
+
+		MongoDBConnect.set_trace_conn (true);
+		MongoDBContent.set_trace_conn (true);
+		MongoDBContent.set_trace_session (true);
+		MongoDBContent.set_trace_transact (true);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Get the list of pending tasks
+
+			List<PendingTask> tasks = PendingTask.get_all_tasks();
+
+			// Display them
+
+			for (PendingTask task : tasks) {
+				System.out.println (task.toString());
+			}
+
+			// Display parameter
+
+			System.out.println ("test_conopt = " + TestMode.get_test_conopt());
 
 		}
 
@@ -3267,6 +3347,20 @@ public class ServerTest {
 		if (args.length < 1) {
 			System.err.println ("ServerTest : Missing subcommand");
 			return;
+		}
+
+		// Establish test mode connection option
+
+		int my_conopt = TestMode.get_test_conopt();
+		if (my_conopt >= 0) {
+			MongoDBUtil.set_def_conopt (my_conopt);
+		}
+
+		// Establish test mode time
+
+		long my_test_time = TestMode.get_test_time();
+		if (my_test_time > 0L) {
+			ServerClock.freeze_time (my_test_time);
 		}
 
 		// Subcommand : Test #1
@@ -4257,6 +4351,22 @@ public class ServerTest {
 
 			try {
 				test59(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #60
+		// Command format:
+		//  test60  conopt  waitsec
+		// Display the pending task queue, sorted by execution time, with default connection option, and tracing.
+
+		if (args[0].equalsIgnoreCase ("test60") || args[0].equalsIgnoreCase ("traced_task_display_list")) {
+
+			try {
+				test60(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

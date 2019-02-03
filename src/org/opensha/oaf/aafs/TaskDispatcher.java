@@ -93,6 +93,12 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 
 
+	// Flag, true if dispatcher is using transactions.
+
+	private boolean dispatcher_transact = false;
+
+
+
 
 	//----- Task context -----
 	//
@@ -492,6 +498,15 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 		active_time = start_time;
 		restart_time = start_time - restart_delay_max;
 
+		// Transaction flag and connect options
+
+		dispatcher_transact = MongoDBUtil.is_transaction_enabled (null);
+
+		int conopt_outer = (dispatcher_transact ? MongoDBUtil.CONOPT_SESSION : MongoDBUtil.CONOPT_CONNECT);
+		int conopt_inner = (dispatcher_transact ? MongoDBUtil.CONOPT_TRANSACT_ABORT : MongoDBUtil.CONOPT_CONNECT);
+
+		int ddbopt = MongoDBUtil.DDBOPT_SAVE_SET;
+
 		// Restart loop, continue until shutdown or failure
 
 		for (;;) {
@@ -503,7 +518,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 			// Connect to MongoDB
 
 			try (
-				MongoDBUtil mongo_instance = new MongoDBUtil();
+				MongoDBUtil mongo_instance = new MongoDBUtil (conopt_outer, ddbopt, null);
 			){
 
 				// If first connection ...
@@ -552,11 +567,62 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 					// Get the next task on the pending queue, that's ready to execute, and activate it
 
 					long cutoff_time = dispatcher_time;
-					task = PendingTask.activate_first_ready_task (cutoff_time);
+					boolean f_idle = true;
+					task = null;
 
-					// Check if there is a task
+					// If doing transactions, do a prelimiary check without starting a transaction
 
-					if (task == null) {
+					boolean f_prelim = true;
+					if (dispatcher_transact) {
+						PendingTask prelim_task = PendingTask.get_first_ready_task (cutoff_time);
+						if (prelim_task == null) {
+							f_prelim = false;
+						}
+					}
+
+					// If passed prelimiary check, start a transaction if enabled
+
+					if (f_prelim) {
+						try (
+							MongoDBUtil mongo_inner = new MongoDBUtil (conopt_inner, ddbopt, null);
+						){
+
+							// Activate the task
+
+							task = PendingTask.activate_first_ready_task (cutoff_time);
+
+							// If we got an active task ...
+
+							if (task != null) {
+
+								// Not idle
+
+								f_idle = false;
+
+								// State = processing
+
+								dispatcher_state = STATE_PROCESSING;
+
+								// Dispatch on opcode
+
+								dispatch_task (task);
+							}
+
+							// If doing transactions, commit
+
+							if (dispatcher_transact) {
+								mongo_inner.set_transact_commit (true);
+							}
+
+							// No active task
+
+							task = null;
+						}
+					}
+
+					// If idle ...
+
+					if (f_idle) {
 
 						// State = waiting
 
@@ -581,20 +647,6 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 							} catch (InterruptedException e) {
 							}
 						}
-
-					} else {
-
-						// State = processing
-
-						dispatcher_state = STATE_PROCESSING;
-
-						// Dispatch on opcode
-
-						dispatch_task (task);
-
-						// No active task
-
-						task = null;
 					}
 				}
 
@@ -673,6 +725,15 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 		boolean result = true;
 
+		// Transaction flag and connect options
+
+		dispatcher_transact = MongoDBUtil.is_transaction_enabled (null);
+
+		int conopt_outer = (dispatcher_transact ? MongoDBUtil.CONOPT_SESSION : MongoDBUtil.CONOPT_CONNECT);
+		int conopt_inner = (dispatcher_transact ? MongoDBUtil.CONOPT_TRANSACT_ABORT : MongoDBUtil.CONOPT_CONNECT);
+
+		int ddbopt = MongoDBUtil.DDBOPT_SAVE_SET;
+
 		// Active task, null if none
 
 		PendingTask task = null;
@@ -680,7 +741,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 		// Connect to MongoDB
 
 		try (
-			MongoDBUtil mongo_instance = new MongoDBUtil();
+			MongoDBUtil mongo_instance = new MongoDBUtil (conopt_outer, ddbopt, null);
 		){
 
 			// Get task time and configuration
@@ -691,11 +752,71 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 			// Get the next task on the pending queue, and activate it
 
 			long cutoff_time = EXEC_TIME_FAR_FUTURE;
-			task = PendingTask.activate_first_ready_task (cutoff_time);
+			boolean f_idle = true;
+			task = null;
 
-			// Check if there is a task
+			// If doing transactions, do a prelimiary check without starting a transaction
 
-			if (task == null) {
+			boolean f_prelim = true;
+			if (dispatcher_transact) {
+				PendingTask prelim_task = PendingTask.get_first_ready_task (cutoff_time);
+				if (prelim_task == null) {
+					f_prelim = false;
+				}
+			}
+
+			// If passed prelimiary check, start a transaction if enabled
+
+			if (f_prelim) {
+				try (
+					MongoDBUtil mongo_inner = new MongoDBUtil (conopt_inner, ddbopt, null);
+				){
+
+					// Activate the task
+
+					task = PendingTask.activate_first_ready_task (cutoff_time);
+
+					// If we got an active task ...
+
+					if (task != null) {
+
+						// Not idle
+
+						f_idle = false;
+
+						// Adjust the time
+
+						if (f_adjust_time) {
+							ServerClock.advance_frozen_time (task.get_apparent_time());
+						}
+						dispatcher_time = ServerClock.get_time();
+
+						// If verbose, write message
+
+						if (f_verbose) {
+							System.out.println ("Executing task: " + task.toString());
+						}
+
+						// Dispatch on opcode
+
+						dispatch_task (task);
+					}
+
+					// If doing transactions, commit
+
+					if (dispatcher_transact) {
+						mongo_inner.set_transact_commit (true);
+					}
+
+					// No active task
+
+					task = null;
+				}
+			}
+
+			// If idle ...
+
+			if (f_idle) {
 
 				// No task
 
@@ -706,33 +827,6 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 				if (f_verbose) {
 					System.out.println ("No task available");
 				}
-
-			} else {
-
-				// Got a task
-
-				result = true;
-
-				// Adjust the time
-
-				if (f_adjust_time) {
-					ServerClock.advance_frozen_time (task.get_apparent_time());
-				}
-				dispatcher_time = ServerClock.get_time();
-
-				// If verbose, write message
-
-				if (f_verbose) {
-					System.out.println ("Executing task: " + task.toString());
-				}
-
-				// Dispatch on opcode
-
-				dispatch_task (task);
-
-				// No active task
-
-				task = null;
 			}
 
 		// Abnormal return

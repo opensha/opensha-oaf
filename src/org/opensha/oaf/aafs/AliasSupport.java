@@ -401,6 +401,12 @@ public class AliasSupport extends ServerComponent {
 			try {
 				merge_from_database (db_assignments, db_in_queue, cc_in_queue);
 			}
+			catch (DBDriverException e) {
+				throw new DBDriverException ("AliasSupport.dual_merge_database_comcat: Database error while merging", e);
+			}
+			catch (DBException e) {
+				throw new DBCorruptException ("AliasSupport.dual_merge_database_comcat: Database error while merging", e);
+			}
 			catch (Exception e) {
 				throw new DBCorruptException ("AliasSupport.dual_merge_database_comcat: Database error while merging", e);
 			}

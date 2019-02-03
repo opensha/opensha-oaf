@@ -2457,6 +2457,32 @@ public class MongoDBContent implements AutoCloseable {
 		return;
 	}
 
+	// Return true if sessions are enabled, given the database handle.
+	// If db_handle is null or empty, then the default database handle is used.
+
+	public boolean is_session_enabled (String db_handle) {
+		String my_db_handle = db_handle;
+		if (my_db_handle == null || my_db_handle.isEmpty()) {
+			my_db_handle = default_db_handle;
+		}
+
+		boolean result = get_all_database_state(my_db_handle).get_session_state().get_host_state().get_host_config().is_session_enabled();
+		return result;
+	}
+
+	// Return true if transactions are enabled, given the database handle.
+	// If db_handle is null or empty, then the default database handle is used.
+
+	public boolean is_transaction_enabled (String db_handle) {
+		String my_db_handle = db_handle;
+		if (my_db_handle == null || my_db_handle.isEmpty()) {
+			my_db_handle = default_db_handle;
+		}
+
+		boolean result = get_all_database_state(my_db_handle).get_session_state().get_host_state().get_host_config().is_transaction_enabled();
+		return result;
+	}
+
 	// Release all resources and clear all data structures.
 
 	@Override

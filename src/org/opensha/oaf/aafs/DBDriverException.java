@@ -7,7 +7,7 @@ import com.mongodb.MongoException;
  * Author: Michael Barall.
  *
  * Note: com.mongodb.MongoException is the base class for exceptions originating in the MongoDB driver.
- * This class (or a subclass) can be used to re-throw MongoException (or a subclass).
+ * This class (or a subclass) can be used to re-throw MongoException (or a subclass), or itself.
  */
 public class DBDriverException extends DBException {
 
@@ -19,44 +19,46 @@ public class DBDriverException extends DBException {
 		return locus;
 	}
 
-	// Constructors.
+	// Constructors, from MongoException.
 
-	public DBDriverException () {
-		super ();
-		this.locus = null;
-	}
-
-	public DBDriverException (String s) {
-		super (s);
-		this.locus = null;
-	}
-
-	public DBDriverException (String message, Throwable cause) {
+	public DBDriverException (String message, MongoException cause) {
 		super (message, cause);
-		this.locus = null;
+		this.locus = new MongoDBErrorLocus (null, null, null, cause);
 	}
 
-	public DBDriverException (Throwable cause) {
+	public DBDriverException (MongoException cause) {
 		super (cause);
-		this.locus = null;
+		this.locus = new MongoDBErrorLocus (null, null, null, cause);
 	}
 
-	public DBDriverException (MongoDBErrorLocus locus) {
-		super ();
-		this.locus = locus;
-	}
-
-	public DBDriverException (MongoDBErrorLocus locus, String s) {
-		super (s);
-		this.locus = locus;
-	}
-
-	public DBDriverException (MongoDBErrorLocus locus, String message, Throwable cause) {
+	public DBDriverException (MongoDBErrorLocus locus, String message, MongoException cause) {
 		super (message, cause);
 		this.locus = locus;
 	}
 
-	public DBDriverException (MongoDBErrorLocus locus, Throwable cause) {
+	public DBDriverException (MongoDBErrorLocus locus, MongoException cause) {
+		super (cause);
+		this.locus = locus;
+	}
+
+	// Constructors, from DBDriverException.
+
+	public DBDriverException (String message, DBDriverException cause) {
+		super (message, cause);
+		this.locus = cause.get_locus();
+	}
+
+	public DBDriverException (DBDriverException cause) {
+		super (cause);
+		this.locus = cause.get_locus();
+	}
+
+	public DBDriverException (MongoDBErrorLocus locus, String message, DBDriverException cause) {
+		super (message, cause);
+		this.locus = locus;
+	}
+
+	public DBDriverException (MongoDBErrorLocus locus, DBDriverException cause) {
 		super (cause);
 		this.locus = locus;
 	}
