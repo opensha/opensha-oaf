@@ -90,7 +90,8 @@ public class ETAS_USGS_AftershockForecast {
 		
 		GregorianCalendar forecastEndDate = new GregorianCalendar();
 		forecastEndDate.setTimeInMillis(
-				(long) (startDate.getTimeInMillis() + forecastEndTime*ETAS_StatsCalc.MILLISEC_PER_DAY));
+//				(long) (startDate.getTimeInMillis() + forecastEndTime*ETAS_StatsCalc.MILLISEC_PER_DAY));
+				(long) (eventDate.getTimeInMillis() + forecastEndTime*ETAS_StatsCalc.MILLISEC_PER_DAY));
 		
 		
 		endDates = new GregorianCalendar[durations.length];
@@ -105,7 +106,8 @@ public class ETAS_USGS_AftershockForecast {
 			GregorianCalendar endDate = duration.getEndDate(startDate);
 			
 			if (!endDate.after(forecastEndDate)){ //check to make sure forecast extends that far
-				if(D) System.out.println(duration.label+" end date: "+df.format(endDate.getTime()));
+				if(D) System.out.println(duration.label+" end date: "+df.format(endDate.getTime())
+						+ " forecastEndDate: " + df.format(forecastEndDate.getTime()) );
 
 				double tMinDays = getDateDelta(eventDate, startDate);
 				Preconditions.checkState(tMinDays >= 0d, "tMinDays must be positive: %s", tMinDays);

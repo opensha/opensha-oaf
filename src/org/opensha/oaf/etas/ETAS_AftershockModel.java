@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.univariate.BrentOptimizer;
@@ -43,7 +44,7 @@ import org.opensha.sha.gui.infoTools.CalcProgressBar;
  */
 public abstract class ETAS_AftershockModel {
 
-	private Boolean D=false;	// debug flag
+	private Boolean D=true;	// debug flag
 
 	protected ArbDiscrEmpiricalDistFunc num_DistributionFunc = null;
 	protected CalcProgressBar progress;
@@ -87,6 +88,7 @@ public abstract class ETAS_AftershockModel {
 	protected ETAScatalog simulatedCatalog;	//results of the stochastic simulations
 	protected Boolean timeDependentMc = false;
 
+	
 	/**
 	 * This converts the likelihood from log-likelihood to likelihood values, making sure NaNs do not occur 
 	 * due to high logLikelihoods, and re-normalizes the likelihood so as values sum to 1.0.
@@ -317,8 +319,23 @@ public abstract class ETAS_AftershockModel {
 			if (magAftershocks[i] > maxASmag)
 				maxASmag = magAftershocks[i];
 		}
-		double minMag = maxASmag - 3.0;
+		double minMag = maxASmag - 2.0;
 		
+		// calibrate minimum magnitude choice by running 10 sims. If any come back with zero events, reduce minMag
+		int nCalibrationSims = 100;
+		boolean iszero = true;
+		while (iszero & minMag > 3.0){
+			simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
+					mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nCalibrationSims); //maxMag = 9.5, maxGeneratons = 100;
+			iszero = false;
+			for (int i = 0; i < simulatedCatalog.numEventsFinal.length; i++) {
+				if(simulatedCatalog.numEventsFinal[i] == 0)
+					iszero = true;
+			}
+			minMag--;
+		}
+		
+		if (minMag < 3) minMag = 3;
 		
 		try{
 			simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
@@ -698,13 +715,14 @@ public abstract class ETAS_AftershockModel {
 
 		for(int i = 0; i < fractileArray.length; i++){
 			double fractValComplete = num_DistributionFunc.getDiscreteFractile(fractileArray[i]);
+			
 			// fractValComplete is an integer (the number of earthquakes for which f% of the simulations have fewer)
 			// this can be zero, which is no good for scaling the rate to magnitudes lower than mag (or magComplete)
 			// It is therefore necessary to produce some kind of fractional count. We do this by computing the
 			// Poisson rate that gives the observed probability of zero events in the simulations. This is approximate, but
 			// do you have a better idea?
 
-			if(D) System.out.println("mag=" + mag + " duration=" + (tMaxDays-tMinDays) + " fractValComplete=" + fractValComplete);
+//			if(D) System.out.println("mag=" + mag + " duration=" + (tMaxDays-tMinDays) + " fractValComplete=" + fractValComplete);
 //			if(fractValComplete <= 1){
 //				if(D) System.out.println("using Poisson approximation for fractile");
 //				double probOne = 1 - num_DistributionFunc.getY(0); // (1 - probability of zero events)
@@ -722,7 +740,60 @@ public abstract class ETAS_AftershockModel {
 
 		return fractValArray;
 	}
+	
+	public double getMedianPoissInterp(double mag, double tMinDays, double tMaxDays) {
+		computeNum_DistributionFunc(tMinDays, tMaxDays, mag);
+		double fractVal, fractValComplete;
+		int discreteMedian = (int)(num_DistributionFunc.getDiscreteFractile(0.5) + 0.5);
+		
+		// find the probability of exceeding the discrete median value (less than 50%, usually)
+		double prob = 1;
+		for (int x = 0; x <= discreteMedian; x++)
+			prob -= num_DistributionFunc.getY(x); // (1 - probability of i events)
+				
+		// find lambda, using a search
+		double lambda = findPoissLambda(prob, discreteMedian);
+				
+		if(D) System.out.println("new discreteMedian=" + discreteMedian + " prob of exceeding median=" + prob + " lambda=" + lambda);
+		fractValComplete = lambda;
+			
+		// the preceding gives the number of magComplete used in the simulation. We want the number of mag. Scale:
+		if(mag < simulatedCatalog.minMagLimit)
+			fractVal = Math.pow(10, -b*(mag - simulatedCatalog.minMagLimit)) * fractValComplete;	
+		else
+			fractVal = fractValComplete;
 
+		return fractVal;
+	}
+	
+	private double findPoissLambda(double prob, int discreteMedian){
+		LambdaMisfit lambdaMisfit = new LambdaMisfit();
+		lambdaMisfit.setParams(discreteMedian, prob);
+		UnivariateOptimizer fminbnd = new BrentOptimizer(1e-6,1e-9);
+
+		UnivariatePointValuePair optimum = fminbnd.optimize(
+				new UnivariateObjectiveFunction(lambdaMisfit), new MaxEval(100), GoalType.MINIMIZE,
+				new SearchInterval(0,20));
+		return optimum.getPoint();
+	
+	}
+	private class LambdaMisfit implements UnivariateFunction{
+		private int discreteMedian;
+		private double prob;
+		
+		public double value(double lambda) {
+			PoissonDistribution poissDist = new PoissonDistribution(lambda);
+			
+			return Math.abs((1 - prob) - poissDist.cumulativeProbability(discreteMedian));
+
+		}
+
+		public void setParams(int discreteMedian, double prob){
+			this.discreteMedian = discreteMedian;
+			this.prob = prob;
+		}
+	}
+	
 //	/** Computes the "Poissonian" quantile using a continuous gamma distribution to get non-integer quantiles.
 //	 *  This is approximate. Ideas welcomed.
 //	 *  

@@ -45,50 +45,114 @@ public class GraphicalForecast{
 	private String shakeMapURL = null;
 	private String eventURL = "#";
 	
+	
+	
+	private final static int DAY = 1;
+	private final static int WEEK = 7;
+	private final static int MONTH = 31;
+	private final static int YEAR = 366;
+		
+	
+	//	parameters for word wrap algorithm and text summary
+	private boolean smartRoundPercentages = true;   //give rounded range of probabilities?
+	private double feltMag = 3;  //% magnitude to use for calculating number of 'felt' earthquakes
+	private double damageMag = 6.0;   // magnitude to use for damaging earthquake
+	private double pDamage_display = 0;
+	private double[] nfelt_display = new double[3];
+	
+	
+	private double[] predictionMagnitudes = new double[]{3,4,5,6,7,8,9};
+	private double[] predictionIntervals = new double[]{DAY,WEEK,MONTH,YEAR}; //day,week,month,year
+	
+//	private String[] predictionIntervalStrings = new String[]{"day","week","month","year"}; //day,week,month,year
+	private double[][][] number;  //dimensions: [predMag][predInterval][range: exp, lower, upper];
+	private String[][] numberString;
+	private double[][] probability;
+	private String[][] probString;
+	private String forecastHorizon;
+	private String spatialForecastInterval = "week";
+	
+	
+	private HashMap<String, String> tags = new HashMap<String, String>();
+
 	public GraphicalForecast(){
 		// run with dummy data. This is all made up.
-		eventDate.set(1980, 3, 4, 11, 59, 59);
+		eventDate.set(1980, 3, 4, 11, 59, 59); //dummy values
 		
 		number = new double[predictionMagnitudes.length][predictionIntervals.length][3];
 		probability = new double[predictionMagnitudes.length][predictionIntervals.length];
 		
+		predictionIntervals = new double[] {DAY,WEEK,MONTH};
+		
+		switch (predictionIntervals.length) {
+			case 1:
+				forecastHorizon = "day";
+				break;
+			case 2:
+				forecastHorizon = "week";
+				break;
+			case 3:
+				forecastHorizon = "month";
+				break;
+			case 4:
+				forecastHorizon = "year";
+				break;
+			default:
+				forecastHorizon = "year";
+				break;
+		}
+		
+		
+		spatialForecastInterval = forecastHorizon;
+		
+		
 		double[] fractiles = new double[3];
 		
-		double baseRate = 1000;
+		double baseRate = 1000; //dummy values
 		for (int i = 0; i < predictionMagnitudes.length; i++){
 			for (int j = 0; j < predictionIntervals.length; j++){
-				double rate = baseRate*(j+1d)/Math.pow(10d, i) ;
-				probability[i][j] = 1 - Math.exp( -rate );
+				double rate = baseRate*(j+1d)/Math.pow(10d, i) ; //dummy values
+				probability[i][j] = 1 - Math.exp( -rate ); //dummy values
 				
-				fractiles[0] = rate;
-				fractiles[1] = rate - Math.sqrt(rate);
-				fractiles[2] = rate*10d;
+				fractiles[0] = rate; //dummy values
+				fractiles[1] = rate - Math.sqrt(rate); //dummy values
+				fractiles[2] = rate*10d; //dummy values
 				
-				number[i][j][0] = fractiles[0];
-				number[i][j][1] = fractiles[1];
-				number[i][j][2] = fractiles[2];
+				number[i][j][0] = fractiles[0]; //dummy values
+				number[i][j][1] = fractiles[1]; //dummy values
+				number[i][j][2] = fractiles[2]; //dummy values
 			}
 		}
 		
 		// do weekly probabilities of felt and damaging quakes
-		double rate = baseRate*(1+1d)/Math.pow(10d, 3);
-		pDamage_wk = 1 - Math.exp( -rate );
+		double rate = baseRate*(1+1d)/Math.pow(10d, 3); //dummy values
+		pDamage_display = 1 - Math.exp( -rate ); //dummy values
 		
-		rate = baseRate*(1+1d)/Math.pow(10d, 0);
-		fractiles[0] = rate;
-		fractiles[1] = rate - Math.sqrt(rate);
-		fractiles[2] = rate*10d;
+		rate = baseRate*(1+1d)/Math.pow(10d, 0); //dummy values
+		fractiles[0] = rate; //dummy values
+		fractiles[1] = rate - Math.sqrt(rate); //dummy values
+		fractiles[2] = rate*10d; //dummy values
 		
-		nfelt_wk[0] = Math.max(fractiles[0],0);
-		nfelt_wk[1] = Math.max(fractiles[1],0);
-		nfelt_wk[2] = Math.max(fractiles[2],1);
+		nfelt_display[0] = Math.max(fractiles[0],0); //dummy values
+		nfelt_display[1] = Math.max(fractiles[1],0); //dummy values
+		nfelt_display[2] = Math.max(fractiles[2],1); //dummy values
+		
 	}
 	
 	public GraphicalForecast(File outFile, ETAS_AftershockModel aftershockModel, GregorianCalendar eventDate,
 			GregorianCalendar startDate) {
+		this(outFile, aftershockModel, eventDate, startDate, 4);
+	}
+	
+	public GraphicalForecast(File outFile, ETAS_AftershockModel aftershockModel, GregorianCalendar eventDate,
+			GregorianCalendar startDate, int numberOfTimeIntervals) {
 		
 		startDate.setTimeZone(TimeZone.getTimeZone("UTC"));
 		eventDate.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+		if(D) System.out.println("numberOfTimeIntervals = " + numberOfTimeIntervals); 
+			
+		this.predictionIntervals = Arrays.copyOf(this.predictionIntervals, numberOfTimeIntervals);
 
 		this.forecastStartDate = startDate;
 		this.eventDate = eventDate;
@@ -118,34 +182,6 @@ public class GraphicalForecast{
 		} 
 		return "";
 	}
-	
-	private final static int DAY = 1;
-	private final static int WEEK = 7;
-	private final static int MONTH = 30;
-	private final static int YEAR = 365;
-		
-	
-	//	parameters for word wrap algorithm and text summary
-	private boolean smartRoundPercentages = true;   //give rounded range of probabilities?
-	private double feltMag = 3;  //% magnitude to use for calculating number of 'felt' earthquakes
-	private double damageMag = 6.0;   // magnitude to use for damaging earthquake
-	private double pDamage_wk = 0;
-	private double[] nfelt_wk = new double[3];
-	
-	
-	private double[] predictionMagnitudes = new double[]{3,4,5,6,7,8,9};
-	private double[] predictionIntervals = new double[]{DAY,WEEK,MONTH,YEAR}; //day,week,month,year
-//	private String[] predictionIntervalStrings = new String[]{"day","week","month","year"}; //day,week,month,year
-	private double[][][] number;  //dimensions: [predMag][predInterval][range: exp, lower, upper];
-	private String[][] numberString;
-	private double[][] probability;
-	private String[][] probString;
-	private String forecastHorizon;
-	private String spatialForecastInterval = "week";
-	
-	
-	private HashMap<String, String> tags = new HashMap<String, String>();
-
 	public void constructForecast(){
 		number = new double[predictionMagnitudes.length][predictionIntervals.length][3];
 		probability = new double[predictionMagnitudes.length][predictionIntervals.length];
@@ -168,13 +204,20 @@ public class GraphicalForecast{
 		}
 		
 		// do weekly probabilities of felt and damaging quakes
-		tMaxDays = tMinDays + WEEK;
-		pDamage_wk = aftershockModel.getProbabilityWithAleatory(damageMag, tMinDays, tMaxDays);
-		fractiles = aftershockModel.getCumNumFractileWithAleatory(calcFractiles, feltMag, tMinDays, tMaxDays);
-		nfelt_wk[0] = Math.max(fractiles[0],0);
-		nfelt_wk[1] = Math.max(fractiles[1],0);
-		nfelt_wk[2] = Math.max(fractiles[2],0);
+		if (predictionIntervals.length > 1) {
+			tMaxDays = tMinDays + WEEK;
+			spatialForecastInterval = "week";
+		} else { 
+			tMaxDays = tMinDays + DAY;
+			spatialForecastInterval = "day";
+		}
 		
+		pDamage_display = aftershockModel.getProbabilityWithAleatory(damageMag, tMinDays, tMaxDays);
+		fractiles = aftershockModel.getCumNumFractileWithAleatory(calcFractiles, feltMag, tMinDays, tMaxDays);
+		nfelt_display[0] = Math.max(fractiles[0],0);
+		nfelt_display[1] = Math.max(fractiles[1],0);
+		nfelt_display[2] = Math.max(fractiles[2],0);
+
 		processForecastStrings();
 		
 		setForecastHorizon();
@@ -216,117 +259,124 @@ public class GraphicalForecast{
 	}
 
 	private void setForecastHorizon(){
-		if (number[0][3][0] >= number[0][2][0] + 1 || //number[predMagIndex][predIntervalIndex][median, lower,  upper]
-				number[0][3][2] >= number[0][2][2] + 1)
+		
+		if (predictionIntervals.length == 4 && (number[0][3][0] >= number[0][2][0] + 1 || //number[predMagIndex][predIntervalIndex][median, lower,  upper]
+				number[0][3][2] >= number[0][2][2] + 1))
 		    forecastHorizon = "year";
-		else if (number[0][2][0] >= number[0][2][0] + 1 ||
-				number[0][3][2] >= number[0][2][2] + 1)
+		else if (predictionIntervals.length == 3 && (number[0][2][0] >= number[0][1][0] + 1 ||
+				number[0][2][2] >= number[0][1][2] + 1))
 			forecastHorizon = "month";
-		else
+		else if (predictionIntervals.length == 2)
+			forecastHorizon = "week";
+		else 
 			forecastHorizon = "week";
 	}
 	
 	// Set all the variable bits of text 
 	private void assignForecastStrings(){
-		tags.put("N1_DA", numberString[0][0]);
-		tags.put("P1_DA", probString[0][0]);
-		tags.put("N1_WK", numberString[0][1]);
-		tags.put("P1_WK", probString[0][1]);
-		tags.put("N1_MO", numberString[0][2]);
-		tags.put("P1_MO", probString[0][2]);
-		tags.put("N1_YR", numberString[0][3]);
-		tags.put("P1_YR", probString[0][3]);
-		
-		tags.put("N2_DA", numberString[1][0]);
-		tags.put("P2_DA", probString[1][0]);
-		tags.put("N2_WK", numberString[1][1]);
-		tags.put("P2_WK", probString[1][1]);
-		tags.put("N2_MO", numberString[1][2]);
-		tags.put("P2_MO", probString[1][2]);
-		tags.put("N2_YR", numberString[1][3]);
-		tags.put("P2_YR", probString[1][3]);
-		
-		tags.put("N3_DA", numberString[2][0]);
-		tags.put("P3_DA", probString[2][0]);
-		tags.put("N3_WK", numberString[2][1]);
-		tags.put("P3_WK", probString[2][1]);
-		tags.put("N3_MO", numberString[2][2]);
-		tags.put("P3_MO", probString[2][2]);
-		tags.put("N3_YR", numberString[2][3]);
-		tags.put("P3_YR", probString[2][3]);
-		
-		tags.put("N4_DA", numberString[3][0]);
-		tags.put("P4_DA", probString[3][0]);
-		tags.put("N4_WK", numberString[3][1]);
-		tags.put("P4_WK", probString[3][1]);
-		tags.put("N4_MO", numberString[3][2]);
-		tags.put("P4_MO", probString[3][2]);
-		tags.put("N4_YR", numberString[3][3]);
-		tags.put("P4_YR", probString[3][3]);
-		
-		tags.put("N5_DA", numberString[4][0]);
-		tags.put("P5_DA", probString[4][0]);
-		tags.put("N5_WK", numberString[4][1]);
-		tags.put("P5_WK", probString[4][1]);
-		tags.put("N5_MO", numberString[4][2]);
-		tags.put("P5_MO", probString[4][2]);
-		tags.put("N5_YR", numberString[4][3]);
-		tags.put("P5_YR", probString[4][3]);
-		
-		tags.put("N6_DA", numberString[5][0]);
-		tags.put("P6_DA", probString[5][0]);
-		tags.put("N6_WK", numberString[5][1]);
-		tags.put("P6_WK", probString[5][1]);
-		tags.put("N6_MO", numberString[5][2]);
-		tags.put("P6_MO", probString[5][2]);
-		tags.put("N6_YR", numberString[5][3]);
-		tags.put("P6_YR", probString[5][3]);
-		
-		tags.put("N7_DA", numberString[6][0]);
-		tags.put("P7_DA", probString[6][0]);
-		tags.put("N7_WK", numberString[6][1]);
-		tags.put("P7_WK", probString[6][1]);
-		tags.put("N7_MO", numberString[6][2]);
-		tags.put("P7_MO", probString[6][2]);
-		tags.put("N7_YR", numberString[6][3]);
-		tags.put("P7_YR", probString[6][3]);
+		if (predictionIntervals.length > 0) {
+			tags.put("N1_DA", numberString[0][0]);
+			tags.put("P1_DA", probString[0][0]);
+			tags.put("N2_DA", numberString[1][0]);
+			tags.put("P2_DA", probString[1][0]);
+			tags.put("N3_DA", numberString[2][0]);
+			tags.put("P3_DA", probString[2][0]);
+			tags.put("N4_DA", numberString[3][0]);
+			tags.put("P4_DA", probString[3][0]);
+			tags.put("N5_DA", numberString[4][0]);
+			tags.put("P5_DA", probString[4][0]);
+			tags.put("N6_DA", numberString[5][0]);
+			tags.put("P6_DA", probString[5][0]);
+			tags.put("N7_DA", numberString[6][0]);
+			tags.put("P7_DA", probString[6][0]);
+		} 
+		if (predictionIntervals.length > 1) {
+			tags.put("N1_WK", numberString[0][1]);
+			tags.put("P1_WK", probString[0][1]);
+			tags.put("N2_WK", numberString[1][1]);
+			tags.put("P2_WK", probString[1][1]);
+			tags.put("N3_WK", numberString[2][1]);
+			tags.put("P3_WK", probString[2][1]);
+			tags.put("N4_WK", numberString[3][1]);
+			tags.put("P4_WK", probString[3][1]);
+			tags.put("N5_WK", numberString[4][1]);
+			tags.put("P5_WK", probString[4][1]);
+			tags.put("N6_WK", numberString[5][1]);
+			tags.put("P6_WK", probString[5][1]);
+			tags.put("N7_WK", numberString[6][1]);
+			tags.put("P7_WK", probString[6][1]);
+		}
+		if (predictionIntervals.length > 2) {
+			tags.put("N1_MO", numberString[0][2]);
+			tags.put("P1_MO", probString[0][2]);
+			tags.put("N2_MO", numberString[1][2]);
+			tags.put("P2_MO", probString[1][2]);
+			tags.put("N3_MO", numberString[2][2]);
+			tags.put("P3_MO", probString[2][2]);
+			tags.put("N4_MO", numberString[3][2]);
+			tags.put("P4_MO", probString[3][2]);
+			tags.put("N5_MO", numberString[4][2]);
+			tags.put("P5_MO", probString[4][2]);
+			tags.put("N6_MO", numberString[5][2]);
+			tags.put("P6_MO", probString[5][2]);
+			tags.put("N7_MO", numberString[6][2]);
+			tags.put("P7_MO", probString[6][2]);
+		}
+		if (predictionIntervals.length > 3) {
+			tags.put("N1_YR", numberString[0][3]);
+			tags.put("P1_YR", probString[0][3]);
+			tags.put("N2_YR", numberString[1][3]);
+			tags.put("P2_YR", probString[1][3]);
+			tags.put("N3_YR", numberString[2][3]);
+			tags.put("P3_YR", probString[2][3]);
+			tags.put("N4_YR", numberString[3][3]);
+			tags.put("P4_YR", probString[3][3]);
+			tags.put("N5_YR", numberString[4][3]);
+			tags.put("P5_YR", probString[4][3]);
+			tags.put("N6_YR", numberString[5][3]);
+			tags.put("P6_YR", probString[5][3]);
+			tags.put("N7_YR", numberString[6][3]);
+			tags.put("P7_YR", probString[6][3]);
+		}
 		
 //		tags.put("M1_R", String.format("%2.1f", predictionMagnitudes[0]));
 //		tags.put("M2_R", String.format("%2.1f", predictionMagnitudes[1]));
 //		tags.put("M3_R", String.format("%2.1f", predictionMagnitudes[2]));
 		
-		tags.put("NFELT_WK", numberRange(nfelt_wk[1], nfelt_wk[2]));
+		tags.put("NFELT_DISP", numberRange(nfelt_display[1], nfelt_display[2]));
 		
 		if (smartRoundPercentages) {
-			if (pDamage_wk < 0.001)
-				tags.put("PDAMAGE_WK", "much less than 1");
-			else if (pDamage_wk < 0.01)
-				tags.put("PDAMAGE_WK", "less than 1");
-			else if (pDamage_wk < 0.05)
-				tags.put("PDAMAGE_WK", "1-5");
-			else if (pDamage_wk < 0.95)
-				tags.put("PDAMAGE_WK", String.format("%d", smartRound(Math.floor(pDamage_wk*100/5)*5)) + " - " +
-						String.format("%d", (int) Math.ceil(pDamage_wk*100/5)*5));
-			else if (pDamage_wk < 0.99)
-				tags.put("PDAMAGE_WK", "greater than 95");
-			else if (pDamage_wk <= 1.0) 
-				tags.put("PDAMAGE_WK", "greater than 99");
+			if (pDamage_display < 0.001)
+				tags.put("PDAMAGE_DISP", "much less than 1");
+			else if (pDamage_display < 0.01)
+				tags.put("PDAMAGE_DISP", "less than 1");
+			else if (pDamage_display < 0.05)
+				tags.put("PDAMAGE_DISP", "1-5");
+			else if (pDamage_display < 0.95)
+				tags.put("PDAMAGE_DISP", String.format("%d", smartRound(Math.floor(pDamage_display*100/5)*5)) + " - " +
+						String.format("%d", (int) Math.ceil(pDamage_display*100/5)*5));
+			else if (pDamage_display < 0.99)
+				tags.put("PDAMAGE_DISP", "greater than 95");
+			else if (pDamage_display <= 1.0) 
+				tags.put("PDAMAGE_DISP", "greater than 99");
 			else
-				tags.put("PDAMAGE_WK", "NaN");
+				tags.put("PDAMAGE_DISP", "NaN");
 		} else {
 			String formatStr;
-			if (pDamage_wk < 0.01)
+			if (pDamage_display < 0.01)
 				formatStr = "%2.1f";
 			else
 				formatStr = "%1.0f";
-			tags.put("PDAMAGE_WK", String.format(formatStr, pDamage_wk*100));
+			tags.put("PDAMAGE_DISP", String.format(formatStr, pDamage_display*100));
 		}
 
 		// spatial forecast time interval
-		if (spatialForecastInterval.equals("week"))
+		if (spatialForecastInterval.equals("day"))
+			tags.put("F_PLOT_T", "1");
+		else if (spatialForecastInterval.equals("week"))
 			tags.put("F_PLOT_T", "7");
 		else if (spatialForecastInterval.equals("month"))
-			tags.put("F_PLOT_T", "30");
+			tags.put("F_PLOT_T", "31");
 		else if (spatialForecastInterval.equals("year"))
 			tags.put("F_PLOT_T", "365");
 	
@@ -358,6 +408,9 @@ public class GraphicalForecast{
 		tags.put("V_NUM", versionNumber);
 		tags.put("V_DATE", formatter.format(versionDate.getTime()));
 		
+		formatter = new SimpleDateFormat("d MMM yyyy, HH:mm");  
+		formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+		
 		tags.put("F_START_ABS", formatter.format(forecastStartDate.getTime()));
 		
 		String MS_LOC = location;
@@ -374,9 +427,9 @@ public class GraphicalForecast{
 		String DESCRIPTIVE_TEXT = 
 		    "An earthquake of magnitude " + tags.get("MS_MAG") + " occurred " + F_START_REL_DAYS + " " + DAYS + " ago " + MS_LOC + ". " +
 		    "More earthquakes than usual will continue to occur in the area, decreasing " +
-		    "in frequency over the following " + F_HORIZON + " or longer. During the next week " +
-		    "there are likely to be " + tags.get("NFELT_WK") + " aftershocks large enough to be felt locally, " +
-		    "and there is a " + tags.get("PDAMAGE_WK") + "% chance of at least one damaging M" + DAMAGE_MAG + " (or larger) aftershock." +
+		    "in frequency over the following " + F_HORIZON + " or longer. During the next " + spatialForecastInterval +
+		    " there are likely to be " + tags.get("NFELT_DISP") + " aftershocks large enough to be felt locally, " +
+		    "and there is a " + tags.get("PDAMAGE_DISP") + "% chance of at least one damaging M" + DAMAGE_MAG + " (or larger) aftershock." +
 		    " The earthquake rate may be re-invigorated in response to large aftershocks, should they occur. ";
 		
 		tags.put("DESCRIPTIVE_TEXT", DESCRIPTIVE_TEXT);
@@ -461,7 +514,7 @@ public class GraphicalForecast{
 			
 		String DATE_START = tags.get("F_START_ABS");
 		String DATE_END;
-		SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy, HH:mm:ss");  
+		SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy, HH:mm");  
 		formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 		GregorianCalendar forecastEndDate = new GregorianCalendar();
 		
@@ -470,16 +523,18 @@ public class GraphicalForecast{
 		// assign variables
 		int minMag = 3;
 		double maxObsMag = mag0;
-		for (int i = 0; i < aftershockModel.magAftershocks.length; i++) {
-			if (aftershockModel.magAftershocks[i] > maxObsMag)
-				maxObsMag = aftershockModel.magAftershocks[i];
+		
+		if (aftershockModel != null) {
+			for (int i = 0; i < aftershockModel.magAftershocks.length; i++) {
+				if (aftershockModel.magAftershocks[i] > maxObsMag)
+					maxObsMag = aftershockModel.magAftershocks[i];
+			}
 		}
 		int maxMag = Math.max(minMag + 3, Math.min(9, (int) Math.ceil(maxObsMag + 0.5)));
 		if(D) System.out.println("maxMag: " + maxMag + " largestShockMag: " + maxObsMag);
-		
 
 		String[] durString = new String[]{"Day","Week","Month","Year"};
-		for (int j = 0; j<4; j++){
+		for (int j = 0; j<predictionIntervals.length; j++){
 			forecastEndDate.setTimeInMillis(forecastStartDate.getTimeInMillis() + (long) (predictionIntervals[j]*ETAS_StatsCalc.MILLISEC_PER_DAY));
 			DATE_END = formatter.format(forecastEndDate.getTime());
 			tableString.append(""
@@ -502,11 +557,13 @@ public class GraphicalForecast{
 					n++;
 				}
 			}
-			while(n++ <= 5)
-				if (n == 6 && j == 3)
+			while(n++ <= 5) {
+				if (n == 6 && j == predictionIntervals.length - 1) 
 					tableString.append("<tr><td colspan=\"5\" class=\"tableFootnote\">*Earthquake possible but with low probability</td><tr>\n");
 				else
 					tableString.append("	<tr><td colspan=\"5\"><br></td></tr>\n");
+			}
+				
 		}
 		tableString.append(""
 	            +"		</table>\n"
@@ -552,12 +609,20 @@ public class GraphicalForecast{
 		
 		//parameters for the svg table
 		double barHeight = 40;
+		if(predictionIntervals.length==2)
+			barHeight = 60;
+		else if(predictionIntervals.length==1)
+			barHeight = 120;
+		
+		
 		double barWidth = 50;
 		double barPadding = 2;
 		String[] colors = new String[]{"#abe0ff","#81fff3","#aaff63","#ffd100","#ff5700","#800000","#800000"};
-		String[][] tableTags = new String[][]{{"P1_WK","P2_WK","P3_WK","P4_WK","P5_WK","P6_WK","P7_WK"},
-			{"P1_MO","P2_MO","P3_MO","P4_MO","P5_MO","P6_MO","P7_MO"},
-			{"P1_YR","P2_YR","P3_YR","P4_YR","P5_YR","P6_YR","P7_YR"}};
+		String[][] tableTags = new String[][]{{"P1_DA","P2_DA","P3_DA","P4_DA","P5_DA","P6_DA","P7_DA"},
+				{"P1_WK","P2_WK","P3_WK","P4_WK","P5_WK","P6_WK","P7_WK"},
+				{"P1_MO","P2_MO","P3_MO","P4_MO","P5_MO","P6_MO","P7_MO"},
+				{"P1_YR","P2_YR","P3_YR","P4_YR","P5_YR","P6_YR","P7_YR"}};
+					
 		
 		headString.append(""
 				+"    <!DOCTYPE html>\n"
@@ -671,10 +736,16 @@ public class GraphicalForecast{
 				+"                            <td>\n"
 				+"                                <table>\n"
 				+"                                    <tr><th class=\"forecastHeader\" style=\"width:60px\"></th> </tr>\n"
-				+"                                    <tr><th class=\"forecastBar\">Week</th></tr>\n"
-				+"                                    <tr><th class=\"forecastBar\">Month</th></tr>\n"
-				+"                                    <tr><th class=\"forecastBar\">Year</th></tr>\n"
-				+"                                </table>\n"
+		);
+		if (predictionIntervals.length < 4)
+			probTableString.append("                                     <tr><th class=\"forecastBar\">Day</th></tr>\n");
+		if (predictionIntervals.length > 1)	
+			probTableString.append("                                     <tr><th class=\"forecastBar\">Week</th></tr>\n");
+		if (predictionIntervals.length > 2)
+			probTableString.append("                                    <tr><th class=\"forecastBar\">Month</th></tr>\n");
+		if (predictionIntervals.length > 3)
+			probTableString.append("                                    <tr><th class=\"forecastBar\">Year</th></tr>\n");
+		probTableString.append("                                </table>\n"
 				+"                            </td>\n"
 				+"                            <td>\n"
 				+"                                <table class=\"forecast\">\n"
@@ -692,12 +763,17 @@ public class GraphicalForecast{
 		
 		
 		//generate forecast table
-		for (int j = 0; j<3; j++){
+		int maxRow = predictionIntervals.length;
+		int minRow = 0;
+		if (predictionIntervals.length == 4)
+				minRow = 1;
+		
+		for (int j = minRow; j<maxRow; j++){
 			probTableString.append(""
 					+"                                    <tr class = \"forecastRow\">\n");
 
 			for (int i = 0; i<colors.length; i++){
-				double probVal = probability[i][j+1];
+				double probVal = probability[i][j];
 				double height = barHeight*probVal;
 				String probStr = tags.get(tableTags[j][i]); 
 				double yVal;
@@ -850,12 +926,12 @@ public class GraphicalForecast{
 				+"	<script>\n"
 				+"		function showTable(){\n"
 				+"			document.getElementById('imageBox').innerHTML = '<iframe style=\"width:550px;height:480px;border:none\" src=\"Table.html\"></iframe>';\n"
-				+"			for (i = 1; i < 5; i++){\n"
+				+"			for (i = 1; i <= " + predictionIntervals.length+1 + "; i++){\n"
 				+"				document.getElementById('imageButton' + i).className = 'imageButton';\n"
 				+"			}\n"
 				+"			document.getElementById('imageButton0').className = 'activeImageButton';\n"
 				+"\n"
-				+"			for (i = 1; i < 5; i++){\n"
+				+"			for (i = 1; i <= " + predictionIntervals.length+1 + "; i++){\n"
                 +"			    if (document.getElementById('durationButton' + i).className == 'durButton')\n"
                 +"			        document.getElementById('durationButton' + i).className = 'durButtonDisabled';\n"
                 +"			    if (document.getElementById('durationButton' + i).className == 'activeDurButton')\n"
@@ -870,7 +946,7 @@ public class GraphicalForecast{
 		        +"\n"
 		        +" 		// now decide which image\n"
 				+"			durationIndex = 1;\n"
-				+"			for (i = 1; i < 5; i++){\n"
+				+"			for (i = 1; i <= " + predictionIntervals.length + " ; i++){\n"
 				+"				if (document.getElementById('durationButton' + i).className.includes('active')){\n"
 				+"	 				var durationIndex = i;\n"
 				+"		   		}\n"
@@ -928,14 +1004,14 @@ public class GraphicalForecast{
 				+"			document.getElementById('imageButton' + buttonNumber).className = 'activeImageButton';\n"
 				+"\n"
 				+"			if (durNeeded){\n"
-				+"				for (i = 1; i < 5; i++){\n"
+				+"				for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
                 +"			    	if (document.getElementById('durationButton' + i).className == 'durButtonDisabled')\n"
                 +"			    	    document.getElementById('durationButton' + i).className = 'durButton';\n"
                 +"			    	if (document.getElementById('durationButton' + i).className == 'activeDurButtonDisabled')\n"
                 +"			    	    document.getElementById('durationButton' + i).className = 'activeDurButton';\n"
                 +"				}\n"
                 +"			} else {\n"
-                +"				for (i = 1; i < 5; i++){\n"
+                +"				for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
                 +"				    if (document.getElementById('durationButton' + i).className == 'durButton')\n"
                 +"				        document.getElementById('durationButton' + i).className = 'durButtonDisabled';\n"
                 +"				    if (document.getElementById('durationButton' + i).className == 'activeDurButton')\n"
@@ -945,58 +1021,60 @@ public class GraphicalForecast{
 				+"		}\n"
 				+"\n"
 				+"		function changeDuration(buttonNumber){\n"
-				+"			var imgName = document.getElementById('theimage').src;\n"
+				+"			if(buttonNumber <= " + predictionIntervals.length + "){\n"
+				+"				var imgName = document.getElementById('theimage').src;\n"
 				+"\n"
-				+"	        if (imgName.includes('number')) {\n"
-				+"	    		var imgtype = 'number';\n"
-				+"	          	durNeeded = true;\n"
-				+"			} else if (imgName.includes('forecastCmlNum')){\n"
-				+"				var imgtype = 'forecastCmlNum';\n"
-				+"				durNeeded = false;\n"
-				+"			} else if (imgName.includes('rate')){\n"
-				+"				var imgtype = 'ratemap';\n"
-				+"				durNeeded = false;\n"
-				+"			} else if (imgName.includes('shaking')){\n"
-				+"				var imgtype = 'shaking';\n"
-				+"				durNeeded = true;\n"
-				+"			} else {\n"
-				+"				var imgtype = 'ImageNotRecognized';\n"
-				+"				durNeeded = false;\n"
-				+"			}\n"
+				+"	        	if (imgName.includes('number')) {\n"
+				+"	    			var imgtype = 'number';\n"
+				+"	          		durNeeded = true;\n"
+				+"				} else if (imgName.includes('forecastCmlNum')){\n"
+				+"					var imgtype = 'forecastCmlNum';\n"
+				+"					durNeeded = false;\n"
+				+"				} else if (imgName.includes('rate')){\n"
+				+"					var imgtype = 'ratemap';\n"
+				+"					durNeeded = false;\n"
+				+"				} else if (imgName.includes('shaking')){\n"
+				+"					var imgtype = 'shaking';\n"
+				+"					durNeeded = true;\n"
+				+"				} else {\n"
+				+"					var imgtype = 'ImageNotRecognized';\n"
+				+"					durNeeded = false;\n"
+				+"				}\n"
 				+"\n"
-				+"			if (durNeeded) {\n"
-				+"				switch (buttonNumber){\n"
-				+"				    case '1':\n"
-				+"	    				imgName = imgtype+'day';\n"
-				+"	 					break;\n"
-				+"					case '2':\n"
-				+"						imgName = imgtype+'week';\n"
-				+"						break;\n"
-				+"					case '3':\n"
-				+"						imgName = imgtype+'month';\n"
-				+"						break;\n"
-				+"					case '4':\n"
-				+"						imgName = imgtype+'year';\n"
-				+"						break;\n"
-				+"			    }\n"
-				+"			} else {\n"
-				+"				imgName = imgtype;\n"
-				+"			}\n"
+				+"				if (durNeeded) {\n"
+				+"					switch (buttonNumber){\n"
+				+"				    	case '1':\n"
+				+"	    					imgName = imgtype+'day';\n"
+				+"	 						break;\n"
+				+"						case '2':\n"
+				+"							imgName = imgtype+'week';\n"
+				+"							break;\n"
+				+"						case '3':\n"
+				+"							imgName = imgtype+'month';\n"
+				+"							break;\n"
+				+"						case '4':\n"
+				+"							imgName = imgtype+'year';\n"
+				+"							break;\n"
+				+"			    	}\n"
+				+"				} else {\n"
+				+"					imgName = imgtype;\n"
+				+"				}\n"
 				+"\n"
-				+"			var image = document.getElementById('theimage');\n"
-				+"			image.src = imgName + '.png';\n"
+				+"				var image = document.getElementById('theimage');\n"
+				+"				image.src = imgName + '.png';\n"
 				+"\n"
-				+"			if (durNeeded){\n"
-				+"        		for (i = 1; i < 5; i++){\n"
-		        +"            		document.getElementById('durationButton' + i).className = 'durButton';\n"
-		        +"        		}\n"
-		        +"        		document.getElementById('durationButton' + buttonNumber).className = 'activeDurButton';\n"
-		        +"    		} else {\n"
-		        +"       		for (i = 1; i < 5; i++){\n"
-		        +"            		document.getElementById('durationButton' + i).className = 'durButtonDisabled';\n"
-		        +"        		}\n"
-		        +"        		document.getElementById('durationButton' + buttonNumber).className = 'activeDurButtonDisabled';\n"
-		        +"    		}\n"
+				+"				if (durNeeded){\n"
+				+"        			for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
+		        +"            			document.getElementById('durationButton' + i).className = 'durButton';\n"
+		        +"        			}\n"
+		        +"        			document.getElementById('durationButton' + buttonNumber).className = 'activeDurButton';\n"
+		        +"    			} else {\n"
+		        +"       			for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
+		        +"            			document.getElementById('durationButton' + i).className = 'durButtonDisabled';\n"
+		        +"        			}\n"
+		        +"        			document.getElementById('durationButton' + buttonNumber).className = 'activeDurButtonDisabled';\n"
+		        +"    			}\n"
+		        +"			}\n"
 				+"		}\n"
 				+"	</script>\n"
 				);

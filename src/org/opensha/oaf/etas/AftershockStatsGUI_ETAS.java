@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -67,6 +68,7 @@ import org.opensha.commons.gui.plot.PlotSpec;
 import org.opensha.commons.gui.plot.PlotSymbol;
 import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZGraphPanel;
 import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotSpec;
+import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
 import org.opensha.commons.param.AbstractParameter;
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.param.ParameterList;
@@ -127,7 +129,7 @@ import java.awt.event.WindowListener;
 
 public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeListener {
 		
-	private GregorianCalendar expirationDate = new GregorianCalendar(2018, 12, 31);
+	private GregorianCalendar expirationDate = new GregorianCalendar(2019, 3, 1);
 	
 	public AftershockStatsGUI_ETAS(String... args) {
 		checkArguments(args);
@@ -142,7 +144,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			double elapsedDays = (double) (System.currentTimeMillis() - expirationDate.getTimeInMillis())/ETAS_StatsCalc.MILLISEC_PER_DAY;
 			
 			if (elapsedDays > 0) {
-				String message = "The Beta version expired on " + formatter.format(expirationDate.getTime()) + ".\n Go get the latest version from www.opensha.org/apps.";
+				String message = "The Beta version expired on " + formatter.format(expirationDate.getTime()) + ".\n Go get the latest version from www.caltech.edu/~nvandere/AftershockForecaster/.";
 				System.out.println(message);
 				JOptionPane.showMessageDialog(null, message, "Beta version expired", JOptionPane.ERROR_MESSAGE);
 				return;
@@ -177,14 +179,16 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private DoubleParameter dataEndTimeParam;
 	private BooleanParameter nowBoolean;
 	
+	private StringParameter dateStartString;
+	
 	private JFileChooser workingDirChooser;
 	
 	private enum ForecastDuration {
 		
-		YEAR("year",365d),
-		MONTH("month",30d),
-		WEEK("week", 7d),
-		DAY("day",1d);
+		YEAR("Year",366d),
+		MONTH("Month",31d),
+		WEEK("Week", 7d),
+		DAY("Day",1d);
 		
 		private double duration;
 		private String name;
@@ -194,11 +198,16 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			this.name = name;
 		}
 		
+		public double getValueNumeric() {
+			return duration;
+		}
+		
 		@Override
 		public String toString() {
 			return name;
 		}
 	}
+	
 	private BooleanParameter plotAllDurationsParam;
 	
 	private enum RegionType {
@@ -315,7 +324,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	
 	private DoubleParameter forecastStartTimeParam;
 	private DoubleParameter forecastEndTimeParam;
-	private DoubleParameter forecastDurationParam;
+//	private DoubleParameter forecastDurationParam;
+	private EnumParameter<ForecastDuration> forecastDurationParam;
 	
 	private ButtonParameter computeAftershockForecastButton;
 	private BooleanParameter plotSpecificOnlyParam;
@@ -504,16 +514,29 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		forecastStartTimeParam.addParameterChangeListener(this);
 		forecastParams.addParameter(forecastStartTimeParam);
 
-		forecastDurationParam = new DoubleParameter("Forecast Duration", 0d, 366, new Double(366d));
-		forecastDurationParam.setUnits("Days");
-		forecastDurationParam.setInfo("Forecast duration realative to forecast start time");
+		DateFormat df = new SimpleDateFormat();
+		
+		dateStartString = new StringParameter("Forecast start (UTC)", df.format(System.currentTimeMillis()));
+		dateStartString.setInfo("Date and time for forecast start");
+		dateStartString.getEditor().setEnabled(false);
+		forecastParams.addParameter(dateStartString);
+		
+//		forecastDurationParam = new DoubleParameter("Forecast Duration", 0d, 366, new Double(366d));
+//		forecastDurationParam.setUnits("Days");
+//		forecastDurationParam.setInfo("Forecast duration realative to forecast start time");
+//		forecastDurationParam.addParameterChangeListener(this);
+//		forecastParams.addParameter(forecastDurationParam);
+		
+		forecastDurationParam = new EnumParameter<ForecastDuration>(
+				"Forecast Duration", EnumSet.allOf(ForecastDuration.class), ForecastDuration.YEAR, null);
+		forecastDurationParam.setInfo("Choose tectonic regime. ACR = active continental region, SCR = stable continental region, SOR = stable oceanic region, SZ = subduction zone");
 		forecastDurationParam.addParameterChangeListener(this);
 		forecastParams.addParameter(forecastDurationParam);
 
 		plotAllDurationsParam = new BooleanParameter("Plot Week/Month/Year", true);	
 		plotAllDurationsParam.addParameterChangeListener(this);
 		plotAllDurationsParam.setInfo("Build plots for day, week, month, and year increments");
-		forecastParams.addParameter(plotAllDurationsParam);
+//		forecastParams.addParameter(plotAllDurationsParam);
 		
 		quickForecastButton = new ButtonParameter("Forecast using default settings", "Quick Forecast");
 		quickForecastButton.setInfo("Run all steps using default settings");
@@ -1165,6 +1188,19 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		return getDistCPT();
 	}
 	
+	// color by shakemap
+	private CPT getShakemapCPT() {
+		
+		CPT shakemapCPT;
+		try {
+			shakemapCPT = GMT_CPT_Files.SHAKEMAP.instance();
+		} catch(Exception e) {
+			return null;
+		}
+		return shakemapCPT;
+	}
+	
+	
 	// for plotting: how to color the events by distance
 	private EvenlyDiscretizedFunc distFunc;
 
@@ -1578,8 +1614,17 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 		forecastStartTimeParam.setValue(round(forecastStartDays));
 		forecastStartTimeParam.getEditor().refreshParamEditor();
+	
+		if (mainshock != null) {
+			GregorianCalendar mainshockDate = mainshock.getOriginTimeCal();
+			mainshockDate.setTimeInMillis((long)(mainshock.getOriginTime() + forecastStartTimeParam.getValue()*ETAS_StatsCalc.MILLISEC_PER_DAY ));
 
-		forecastEndTimeParam.setValue(round(forecastStartDays + forecastDurationParam.getValue()));
+			DateFormat df = new SimpleDateFormat();
+			dateStartString.setValue(df.format(mainshockDate.getTime()));
+			dateStartString.getEditor().refreshParamEditor();
+		}
+		
+		forecastEndTimeParam.setValue(round(forecastStartDays + forecastDurationParam.getValue().getValueNumeric()));
 		forecastEndTimeParam.getEditor().refreshParamEditor();
 
 		//check for data end time greater than current time and set to current time if smaller
@@ -1703,7 +1748,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		updateForecastTimes();
 		
 		// as a courtesy, spit out the decimal days remaining in the origin day
-		System.out.println("The mainshock occurred " + String.format("%.4f", getTimeRemainingInUTCDay()) + " days before midnight (UTC)\n");
+		System.out.println("The mainshock occurred " + String.format("%.8f", getTimeRemainingInUTCDay()) + " days before midnight (UTC)\n");
 		
 		if(verbose) System.out.println("Building generic model...");
 		// initialize the generic model using an assumed global Mmax of 9.5, max generation depth 100, number of simulations 0
@@ -2156,7 +2201,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				if (bayesianModel == null || devMode){
 					funcs.add(expected);
 					chars.add(new PlotCurveCharacterstics(PlotLineType.SOLID, 2f, generic_color));
-					expected.setName("Typical sequence");
+					expected.setName("Generic forecast");
 				}
 
 				ArbitrarilyDiscretizedFunc lower = getFractileCumNumWithLogTimePlot(genericModel, magMin, 0.025);
@@ -2174,7 +2219,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 				UncertainArbDiscDataset uncertainFunc = new UncertainArbDiscDataset(expected, lower, upper);
 				funcs.add(uncertainFunc);
-				uncertainFunc.setName("Typical range");
+				uncertainFunc.setName("Generic forecast");
 				PlotLineType plt = PlotLineType.SHADED_UNCERTAIN;
 				Color generic_color_trans = new Color(generic_color.getRed(), generic_color.getGreen(),generic_color.getBlue(), (int) (0.3*255) );
 				chars.add(new PlotCurveCharacterstics(plt, 1f, generic_color_trans));
@@ -2183,7 +2228,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //				ArbitrarilyDiscretizedFunc fit = getModelFit(genericModel, magMin);
 //				funcs.add(fit);
 //				chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 2f, generic_color));
-//				fit.setName("Typical sequence");
+//				fit.setName("Generic forecast");
 //			}
 		}
 		
@@ -2194,7 +2239,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 				funcs.add(expected);
 				chars.add(new PlotCurveCharacterstics(PlotLineType.SOLID, 2f, bayesian_color));
-				expected.setName("This sequence");
+				expected.setName("Sequence-specific");
 				
 				ArbitrarilyDiscretizedFunc lower = getFractileCumNumWithLogTimePlot(bayesianModel, magMin, 0.025);
 
@@ -2211,7 +2256,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 				UncertainArbDiscDataset uncertainFunc = new UncertainArbDiscDataset(expected, lower, upper);
 				funcs.add(uncertainFunc);
-				uncertainFunc.setName("Range for this sequence");
+				uncertainFunc.setName("95% uncertainty range");
 				PlotLineType plt = PlotLineType.SHADED_UNCERTAIN;
 				Color bayesian_color_trans = new Color(bayesian_color.getRed(), bayesian_color.getGreen(),bayesian_color.getBlue(), (int) (0.3*255) );
 				chars.add(new PlotCurveCharacterstics(plt, 1f, bayesian_color_trans));
@@ -2529,10 +2574,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			HistogramFunction genericP = genericModel.getPriorPDF_p();
 			HistogramFunction genericLogC = genericModel.getPriorPDF_logc();
 			
-			genericAms.setName("Typical");
-			genericA.setName("Typical");
-			genericP.setName("Typical");
-			genericLogC.setName("Typical");
+			genericAms.setName("Generic");
+			genericA.setName("Generic");
+			genericP.setName("Generic");
+			genericLogC.setName("Generic");
 
 			HistogramFunction bayesianAms;
 			HistogramFunction bayesianA;
@@ -2547,13 +2592,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				bayesianLogC = bayesianModel.getPDF_logc();
 				
 				if(bayesianAms != null)
-					bayesianAms.setName("This sequence");
+					bayesianAms.setName("Sequence-specificific");
 				if(bayesianA != null)
-					bayesianA.setName("This sequence");
+					bayesianA.setName("Sequence-specific");
 				if(bayesianP != null)
-					bayesianP.setName("This sequence");
+					bayesianP.setName("Sequence-specific");
 				if(bayesianLogC != null)
-					bayesianLogC.setName("This sequence");
+					bayesianLogC.setName("Sequence-specific");
 				
 				amsValExtras = new HistogramFunction[] { genericAms, bayesianAms };
 				aValExtras = new HistogramFunction[] { genericA, bayesianA };
@@ -3426,13 +3471,25 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 			} else if (param == nowBoolean){
 //				if(verbose) System.out.println("Updating start now flag");
+				
+				if(nowBoolean.getValue()) {
+					if (mainshock != null) {
+						forecastStartTimeParam.setValue( (double) (System.currentTimeMillis() - mainshock.getOriginTime())/ETAS_StatsCalc.MILLISEC_PER_DAY);
+						forecastStartTimeParam.getEditor().refreshParamEditor();
+					}
+					DateFormat df = new SimpleDateFormat();
+					dateStartString.setValue(df.format(System.currentTimeMillis()));
+					dateStartString.getEditor().refreshParamEditor();
+					
+				}
+				
 				refreshTimeWindowEditor();
 
 			} else if (param == forecastDurationParam) {
 //				if(verbose) System.out.println("Updating forecast duration");
 				try{
 					if (forecastStartTimeParam.getValue() != null){
-						forecastEndTimeParam.setValue(round(forecastStartTimeParam.getValue() + forecastDurationParam.getValue()));
+						forecastEndTimeParam.setValue(round(forecastStartTimeParam.getValue() + forecastDurationParam.getValue().getValueNumeric()));
 						forecastEndTimeParam.getEditor().refreshParamEditor();
 					}
 				}finally{
@@ -3446,8 +3503,18 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				try{
 					dataEndTimeParam.setValue(forecastStartTimeParam.getValue());
 					dataEndTimeParam.getEditor().refreshParamEditor();	
-					forecastEndTimeParam.setValue(forecastStartTimeParam.getValue() + forecastDurationParam.getValue());
+					forecastEndTimeParam.setValue(forecastStartTimeParam.getValue() + forecastDurationParam.getValue().getValueNumeric());
 					forecastEndTimeParam.getEditor().refreshParamEditor();
+					
+					if (mainshock != null) {
+						GregorianCalendar mainshockDate = mainshock.getOriginTimeCal();
+						mainshockDate.setTimeInMillis((long)(mainshock.getOriginTime() + forecastStartTimeParam.getValue()*ETAS_StatsCalc.MILLISEC_PER_DAY ));
+						DateFormat df = new SimpleDateFormat();
+						dateStartString.setValue(df.format(mainshockDate.getTime()));
+						dateStartString.getEditor().refreshParamEditor();
+					}
+				
+					
 				} finally {
 				}
 				refreshTimeWindowEditor();
@@ -3457,6 +3524,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				updateRegionParamList(regionTypeParam.getValue(), regionCenterTypeParam.getValue());
 		
 			} else if (param == fetchButton) {
+				// reset the workspace added 11/29/18
+				resetWorkspace();
+
 				System.out.println("Fetching events from ComCat...");
 				setEnableParamsPostFetch(false);
 
@@ -3928,56 +3998,71 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				}, true);
 
 				CalcRunnable run = new CalcRunnable(progress);
-				if (!plotAllDurationsParam.getValue() && forecastDurationParam.getValue() >= 366d){
-					CalcStep updateForecastWindowStep = new CalcStep( "Updating", "Updating foreacst duration", new Runnable() {
-						@Override
-						public void run() {
-							plotAllDurationsParam.setValue(true);
-							plotAllDurationsParam.getEditor().refreshParamEditor();
-						}
-					}, true);
-					
-					run = new CalcRunnable(progress,
-							updateForecastWindowStep,
-							postForecastPlotStep, 
-							fetchSourceStep,
-							plotMapStep,
-							pubStep, 
-							autoSaveStep);	
-					
-				} else if (forecastDurationParam.getValue() < 366d) {
-					
-					CalcStep updateForecastWindowStep = new CalcStep( "Updating", "Updating foreacst duration", new Runnable() {
-						@Override
-						public void run() {
-
-							plotAllDurationsParam.setValue(true);
-							plotAllDurationsParam.getEditor().refreshParamEditor();
-							forecastDurationParam.setValue(366d);
-							forecastDurationParam.getEditor().refreshParamEditor();
-							updateForecastTimes();
-						}
-					}, true);
-					
-					run = new CalcRunnable(progress, 
-							updateForecastWindowStep,
-//							computeAftershockParamStep,
-							computeBayesStep,
-							postParamPlotStep,
-							genericForecastStep,
-//							seqSpecForecastStep,
-							bayesianForecastStep,
-							postForecastPlotStep,
-							plotTableStep,
-							fetchSourceStep,
-							plotMapStep,
-							quickTabRefreshStep,
-							pubStep,
-							autoSaveStep);
-				} else
-					run = new CalcRunnable(progress, fetchSourceStep, pubStep, autoSaveStep);
 				
-				new Thread(run).start();
+			
+//				if (!plotAllDurationsParam.getValue() && forecastDurationParam.getValue() == ForecastDuration.YEAR){
+//					// Is this dead code?
+//					
+//					CalcStep updateForecastWindowStep = new CalcStep( "Updating", "Updating foreacst duration", new Runnable() {
+//						@Override
+//						public void run() {
+//							plotAllDurationsParam.setValue(true);
+//							plotAllDurationsParam.getEditor().refreshParamEditor();
+//						}
+//					}, true);
+//					
+//					run = new CalcRunnable(progress,
+//							updateForecastWindowStep,
+//							postForecastPlotStep, 
+//							fetchSourceStep,
+//							plotMapStep,
+//							pubStep, 
+//							autoSaveStep);	
+//					
+//				} else if (forecastDurationParam.getValue() !=  ForecastDuration.YEAR) {
+//					// is this dead code? I don't think I want it to always go to a year...
+//					CalcStep updateForecastWindowStep = new CalcStep( "Updating", "Updating foreacst duration", new Runnable() {
+//						@Override
+//						public void run() {
+//
+//							plotAllDurationsParam.setValue(true);
+//							plotAllDurationsParam.getEditor().refreshParamEditor();
+//							forecastDurationParam.setValue(ForecastDuration.YEAR);
+//							forecastDurationParam.getEditor().refreshParamEditor();
+//							updateForecastTimes();
+//						}
+//					}, true);
+//					
+//					run = new CalcRunnable(progress, 
+//							updateForecastWindowStep,
+////							computeAftershockParamStep,
+//							computeBayesStep,
+//							postParamPlotStep,
+//							genericForecastStep,
+////							seqSpecForecastStep,
+//							bayesianForecastStep,
+//							postForecastPlotStep,
+//							plotTableStep,
+//							fetchSourceStep,
+//							plotMapStep,
+//							quickTabRefreshStep,
+//							pubStep,
+//							autoSaveStep);
+//				} else
+				
+//				if (forecastDurationParam.getValue() != ForecastDuration.YEAR) {
+//					// error message
+//
+//					String message = "The graphical summary can only be generated for a Forecast Duration of one Year. Set Forecast Duration to \"Year\" and regenerate the forecast.";
+//					System.out.println(message);
+//					JOptionPane.showMessageDialog(null, message, "", JOptionPane.ERROR_MESSAGE);
+//					return;
+//
+//				} else { 
+					run = new CalcRunnable(progress, fetchSourceStep, pubStep, autoSaveStep);
+					
+					new Thread(run).start();
+//				}
 			} else if (param == intensityTypeParam || param == mapTypeParam) {
 //				if(verbose) System.out.println("updating map panel");
 				updateMapPanel();
@@ -4012,7 +4097,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 			Double minDays = forecastStartTimeParam.getValue();
 			validateParameter(minDays, "start time");
-			Double forecastDuration = forecastDurationParam.getValue();
+			Double forecastDuration = forecastDurationParam.getValue().getValueNumeric();
 			Double maxDays = minDays + forecastDuration;
 			validateParameter(maxDays, "end time");
 			
@@ -4043,12 +4128,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 			if (genericModel != null && !plotSpecificOnlyParam.getValue()) {
 				models.add(genericModel);
-				names.add("Typical sequence");
+				names.add("Generic forecast");
 				colors.add(generic_color);
 			}
 			if (bayesianModel != null) {
 				models.add(bayesianModel);
-				names.add("This sequence");
+				names.add("Sequence-specific");
 				colors.add(bayesian_color);
 			}
 					
@@ -4057,25 +4142,46 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			final MinMaxAveTracker yTrack = new MinMaxAveTracker();
 			final MinMaxAveTracker yTrackProb = new MinMaxAveTracker();
 
+			int maxDur;
+			switch(forecastDurationParam.getValue()) {
+				case YEAR:
+					maxDur = 0;
+					break;
+				case MONTH:
+					maxDur = 1;
+					break;
+				case WEEK:
+					maxDur = 2;
+					break;
+				case DAY:
+					maxDur = 3;
+					break;
+				default:
+					maxDur = 0;
+					break;
+			}
+			
 			int nTabs = 0;
+//			for (int i = 0; i < maxDur; i++){
 			for (int i = 0; i < ForecastDuration.values().length; i++){
 				// this logic tree decides whether to plot day.week.month.year plots or just a single plot with full duration 
-				ForecastDuration  foreDur;
+				ForecastDuration foreDur;
 				String durString;
-				if (plotAllDurationsParam.getValue()){
+				// commented out the dead logic (plotAllDurations is always on)
+//				if (plotAllDurationsParam.getValue()){
 					foreDur = ForecastDuration.values()[i];
 					maxDays = minDays + foreDur.duration;
 					validateParameter(maxDays, "end time");
 					durString = foreDur.toString();
-				} else if ( i == 0 ) {
-					maxDays = minDays + forecastDurationParam.getValue();
-					durString = String.format("%d days", Math.round(forecastDurationParam.getValue()));
-				} else {
-					break;
-				}
+//				} else if ( i == 0 ) {
+//					maxDays = minDays + forecastDurationParam.getValue().getValueNumeric();
+//					durString = String.format("%d days", Math.round(forecastDurationParam.getValue().getValueNumeric()));
+//				} else {
+//					break;
+//				}
 						
-				
-				if (maxDays <= forecastEndTimeParam.getValue()){
+				if (foreDur.getValueNumeric() <= ForecastDuration.values()[maxDur].getValueNumeric() + 0.1) {
+//				if (maxDays <= forecastEndTimeParam.getValue()){
 					
 					
 					List<PlotElement> funcs = Lists.newArrayList();
@@ -4136,7 +4242,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							chars.add(new PlotCurveCharacterstics(PlotLineType.SOLID, 2f, c));
 						}
 
-						uncertainFunc.setName("Range for " + name);
+						uncertainFunc.setName("Uncertainty range for " + name);
 						funcs.add(uncertainFunc);
 
 						PlotLineType plt = PlotLineType.SHADED_UNCERTAIN;
@@ -4279,7 +4385,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	
 			if (bayesianModel != null) {
 				models.add(bayesianModel);
-				names.add("This sequence");
+				names.add("Sequence-specific");
 			}
 	
 //			if (seqSpecModel != null && devMode){
@@ -4289,7 +4395,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 			if (genericModel != null) {
 				models.add(genericModel);
-				names.add("Typical sequence");
+				names.add("Generic forecast");
 			}	
 		
 			
@@ -4507,9 +4613,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					//					validateParameter(maxDays, "end time");
 					durString = foreDur.toString();
 				} else if ( i == 0 ) {
-					plotDur = forecastDurationParam.getValue();
+					plotDur = forecastDurationParam.getValue().getValueNumeric();
 					maxDays = minDays + plotDur;
-					durString = String.format("%d days", Math.round(forecastDurationParam.getValue()));
+					durString = String.format("%d days", Math.round(forecastDurationParam.getValue().getValueNumeric()));
 				} else {
 					break;
 				}
@@ -4522,9 +4628,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					double targetRate;
 					if (bayesianModel == null){
 						targetRate = genericModel.getCumNumFractileWithAleatory(new double[]{0.5}, genericModel.magComplete, minDays, maxDays)[0];
+						if (targetRate <= 20)
+							targetRate =  genericModel.getMedianPoissInterp(genericModel.magComplete, minDays, maxDays);
 					} else {
 						targetRate =  bayesianModel.getCumNumFractileWithAleatory(new double[]{0.5}, bayesianModel.magComplete, minDays, maxDays)[0];
+						if (targetRate <= 20)
+							targetRate =  bayesianModel.getMedianPoissInterp(bayesianModel.magComplete, minDays, maxDays);
 					}
+					
+					
 					if(D) System.out.println("rateModel & targetRate (" + i + "): " + referenceRate + " " + targetRate);
 					newForecastRateModel.scale(targetRate/referenceRate);
 					if(D) System.out.println("newForecastRateModel sum: " + newForecastRateModel.getSumZ());
@@ -4660,7 +4772,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							cpt2 = getProbCPT().rescale(minColorLevel, cptMax);
 							contourLevels = ETAS_StatsCalc.linspace(minContourLevel,Math.max(new_gmpeProbModel.getMaxZ(),cptMax),21);	//specify contourLevels directly
 						} else {
-							cpt2 = getProbCPT().rescale(minColorLevel, Math.max(new_gmpeProbModel.getMaxZ(),maxContourLevel));
+							if (intensityTypeParam.getValue() == IntensityType.MMI) {
+								//MMI color palate
+								cpt2 = getShakemapCPT();
+							} else
+								cpt2 = getProbCPT().rescale(minColorLevel, Math.max(new_gmpeProbModel.getMaxZ(),maxContourLevel));
+							
 							contourLevels = ETAS_StatsCalc.linspace(minContourLevel,Math.max(new_gmpeProbModel.getMaxZ(),maxContourLevel),21);	//specify contourLevels directly
 						}
 						List<PolyLine> contours = ETAS_RateModel2D.getContours(new_gmpeProbModel, contourLevels);
@@ -5339,7 +5456,26 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 			if(verbose) System.out.println("Publishing forecast...");
 			
-			GraphicalForecast graphForecast = new GraphicalForecast(outFile, model, eventDate, startDate);
+//			GraphicalForecast graphForecast = new GraphicalForecast(outFile, model, eventDate, startDate);
+			int numberOfIntervals;
+			switch (forecastDurationParam.getValue()) {
+				case YEAR:
+					numberOfIntervals = 4;
+					break;
+				case MONTH:
+					numberOfIntervals = 3;
+					break;
+				case WEEK:
+					numberOfIntervals = 2;
+					break;
+				case DAY:
+					numberOfIntervals = 1;
+					break;
+				default:
+					numberOfIntervals = 4;
+					break;
+			}
+			GraphicalForecast graphForecast = new GraphicalForecast(outFile, model, eventDate, startDate, numberOfIntervals);
 			graphForecast.setShakeMapURL(shakeMapURL);
 			graphForecast.constructForecast();
 			graphForecast.writeHTML(outFile);
@@ -5598,6 +5734,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private void refreshTimeWindowEditor(){
 		boolean now = nowBoolean.getValue();
 		
+		
 		forecastStartTimeParam.getEditor().setVisible(!now);
 		
 		if (forecastStartTimeParam.getValue() == null){
@@ -5616,6 +5753,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		dataStartTimeParam.getEditor().setEnabled(!now);
 		dataEndTimeParam.getEditor().setEnabled(!now);
 		forecastStartTimeParam.getEditor().setEnabled(!now);
+		
+		if (mainshock != null) {
+			GregorianCalendar mainshockDate = mainshock.getOriginTimeCal();
+			mainshockDate.setTimeInMillis((long)(mainshock.getOriginTime() + forecastStartTimeParam.getValue()*ETAS_StatsCalc.MILLISEC_PER_DAY ));
+
+			DateFormat df = new SimpleDateFormat();
+			dateStartString.setValue(df.format(mainshockDate.getTime()));
+			dateStartString.getEditor().refreshParamEditor();
+		}
 	}
 		
 	

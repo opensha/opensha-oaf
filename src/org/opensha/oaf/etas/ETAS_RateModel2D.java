@@ -181,6 +181,10 @@ public class ETAS_RateModel2D {
 
 		//		double rateTotal = this.getModalNumEvents(this.magComplete, forecastMinDays, forecastMaxDays);
 		double rateTotal = forecastModel.getCumNumFractileWithAleatory(new double[]{0.5}, forecastModel.magComplete, forecastModel.forecastMinDays, forecastMaxDays)[0];
+		if (rateTotal <= 20) {
+			rateTotal =  forecastModel.getMedianPoissInterp(forecastModel.magComplete, forecastModel.forecastMinDays, forecastMaxDays);
+		}
+			
 		gridSum = gridData.getSumZ();
 		gridData.scale(rateTotal/gridSum);
 
