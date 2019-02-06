@@ -235,6 +235,13 @@ public class ServerComponent {
 
 
 
+	// MongoDB related.
+
+	public static final int MONGO_DUP_INTAKE_CLEANUP = 20;		// Maxmimum duplicate intake commands to remove in a single transaction
+
+
+
+
 	//----- Component access -----
 
 

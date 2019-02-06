@@ -300,9 +300,31 @@ public class CatalogSnapshot implements java.io.Serializable {
 
 		MongoDBCollHandle coll_handle = get_coll_handle (null);
 
+		// Create the collection (must be done explicitly because we're not making indexes)
+
+		coll_handle.createCollection();
+
 		// Make the indexes
 
 		// <none>
+
+		return;
+	}
+
+
+
+
+	// Drop our collection.
+
+	public static void drop_collection () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Drop the collection
+
+		coll_handle.drop ();
 
 		return;
 	}

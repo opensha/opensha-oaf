@@ -459,7 +459,7 @@ public class LogSupport extends ServerComponent {
 
 
 	// Report Comcat exception.
-	// Note: event_id can be null;
+	// Note: event_id can be null.
 
 	public void report_comcat_exception (String event_id, Exception e) {
 
@@ -565,6 +565,47 @@ public class LogSupport extends ServerComponent {
 					"poll_lookback = " + String.format ("%.3f", poll_lookback_days) + " days",
 					"count_no_timeline = " + count_no_timeline,
 					"count_withdrawn_timeline = " + count_withdrawn_timeline);
+		return;
+	}
+
+
+
+
+	// Report Comcat poll begin.
+
+	public void report_comcat_poll_begin () {
+		report_action ("COMCAT-POLL-BEGIN");
+		return;
+	}
+
+
+
+
+	// Report Comcat poll end.
+
+	public void report_comcat_poll_end (long next_poll_time) {
+		report_action ("COMCAT-POLL-END",
+					"next_poll_time = " + SimpleUtils.time_raw_and_string (next_poll_time));
+		return;
+	}
+
+
+
+
+	// Report Comcat poll cleanup begin.
+
+	public void report_comcat_poll_cleanup_begin () {
+		report_action ("COMCAT-POLL-CLEANUP-BEGIN");
+		return;
+	}
+
+
+
+
+	// Report Comcat poll cleanup end.
+
+	public void report_comcat_poll_cleanup_end () {
+		report_action ("COMCAT-POLL-CLEANUP-END");
 		return;
 	}
 

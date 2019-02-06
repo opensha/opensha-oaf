@@ -3338,6 +3338,62 @@ public class ServerTest {
 
 
 
+	// Test #61 - Drop all database collections, allowing a fresh start.
+
+	public static void test61(String[] args) throws Exception {
+
+		// Three additional arguments
+
+		if (args.length != 4) {
+			System.err.println ("ServerTest : Invalid 'test61' or 'drop_all_collections' subcommand");
+			return;
+		}
+
+		if (!( args[1].equals ("drop")
+			&& args[2].equals ("all")
+			&& args[3].equals ("collections") )) {
+			System.err.println ("ServerTest : Wrong confirmation for 'test61' or 'drop_all_collections' subcommand");
+			return;
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+			
+			System.out.println ("ServerTest : Dropping all database collections");
+		
+			System.out.println ("ServerTest : Dropping task collection");
+
+			PendingTask.drop_collection ();
+		
+			System.out.println ("ServerTest : Dropping log collection");
+
+			LogEntry.drop_collection ();
+		
+			System.out.println ("ServerTest : Dropping catalog snapshot collection");
+
+			CatalogSnapshot.drop_collection ();
+		
+			System.out.println ("ServerTest : Dropping timeline collection");
+
+			TimelineEntry.drop_collection ();
+		
+			System.out.println ("ServerTest : Dropping alias family collection");
+
+			AliasFamily.drop_collection ();
+			
+			System.out.println ("ServerTest : Dropped all database collections");
+
+		}
+
+		return;
+	}
+
+
+
+
 	// Test dispatcher.
 	
 	public static void main(String[] args) {
@@ -4367,6 +4423,22 @@ public class ServerTest {
 
 			try {
 				test60(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #61
+		// Command format:
+		//  test61 "drop" "all" "collections"
+		// Drop all database collections, allowing a fresh start.
+
+		if (args[0].equalsIgnoreCase ("test61") || args[0].equalsIgnoreCase ("drop_all_collections")) {
+
+			try {
+				test61(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

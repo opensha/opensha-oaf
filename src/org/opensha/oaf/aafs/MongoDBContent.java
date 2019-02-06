@@ -51,6 +51,7 @@ import com.mongodb.client.model.InsertOneOptions;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.DeleteOptions;
+import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.connection.ClusterSettings;
@@ -267,6 +268,37 @@ public class MongoDBContent implements AutoCloseable {
 
 		//--- MongoDB functions ---
 
+		// Create a collection.
+		// Parameters:
+		//  options = Options, or null if none, defaults to null.
+
+		@Override
+		public void createCollection (CreateCollectionOptions options) {
+			try {
+				ClientSession client_session = get_op_session_update();
+
+				if (client_session != null) {
+					if (options != null) {
+						database_state.get_mongo_database().createCollection (client_session, collection_config.get_coll_name(), options);
+					} else {
+						database_state.get_mongo_database().createCollection (client_session, collection_config.get_coll_name());
+					}
+				} else {
+					if (options != null) {
+						database_state.get_mongo_database().createCollection (collection_config.get_coll_name(), options);
+					} else {
+						database_state.get_mongo_database().createCollection (collection_config.get_coll_name());
+					}
+				}
+
+			}
+			catch (MongoException e) {
+				throw new DBDriverException (make_locus(e), "MongoDBCollHandle.createCollection: MongoDB exception: " + make_coll_id_message(), e);
+			}
+			return;
+		}
+
+
 		// Create an index.
 		// Parameters:
 		//  keys = Index keys (constructed by Indexes), cannot be null.
@@ -332,6 +364,26 @@ public class MongoDBContent implements AutoCloseable {
 				throw new DBDriverException (make_locus(e), "MongoDBCollHandle.deleteOne: MongoDB exception: " + make_coll_id_message(), e);
 			}
 			return result;
+		}
+
+		// Drop a collection.
+
+		@Override
+		public void drop () {
+			try {
+				ClientSession client_session = get_op_session_update();
+
+				if (client_session != null) {
+					mongo_collection.drop (client_session);
+				} else {
+					mongo_collection.drop ();
+				}
+
+			}
+			catch (MongoException e) {
+				throw new DBDriverException (make_locus(e), "MongoDBCollHandle.drop: MongoDB exception: " + make_coll_id_message(), e);
+			}
+			return;
 		}
 
 		// Find documents, and return the first matching document, or null if no matching document.

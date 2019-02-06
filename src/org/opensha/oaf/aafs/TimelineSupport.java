@@ -763,9 +763,11 @@ public class TimelineSupport extends ServerComponent {
 		sg.log_sup.report_comcat_exception (task.get_event_id(), e);
 
 		// For PDL intake only, delete any other PDL intake commands for this event, so we don't have multiple retries going on
+		// Note: The number deleted is limited so that, if PDL floods us with intake commands, we don't delete so many that
+		// we exceed the MongoDB oplog size limit.  Any remaining commands cause no harm and are eventually processed or deleted.
 
 		if (task.get_opcode() == OPCODE_INTAKE_PDL) {
-			sg.task_sup.delete_all_waiting_tasks (task.get_event_id(), OPCODE_INTAKE_PDL);
+			sg.task_sup.delete_all_waiting_tasks_limited (MONGO_DUP_INTAKE_CLEANUP, task.get_event_id(), OPCODE_INTAKE_PDL);
 		}
 
 		// Get the next ComCat retry lag

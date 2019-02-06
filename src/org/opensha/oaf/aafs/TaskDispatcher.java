@@ -378,6 +378,10 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 			}
 		}
 
+		// Do Comcat polling
+
+		sg.poll_sup.run_poll_during_idle (dispatcher_verbose);
+
 		return;
 	}
 

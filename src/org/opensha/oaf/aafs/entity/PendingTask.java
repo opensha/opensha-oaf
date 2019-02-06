@@ -466,6 +466,24 @@ public class PendingTask implements java.io.Serializable {
 
 
 
+	// Drop our collection.
+
+	public static void drop_collection () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Drop the collection
+
+		coll_handle.drop ();
+
+		return;
+	}
+
+
+
+
 	// Convert this object to a document.
 	// If id is null, it is filled in with a newly allocated id.
 

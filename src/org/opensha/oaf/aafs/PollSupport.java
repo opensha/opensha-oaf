@@ -3,6 +3,7 @@ package org.opensha.oaf.aafs;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 import org.opensha.oaf.aafs.entity.PendingTask;
 import org.opensha.oaf.aafs.entity.LogEntry;
@@ -16,6 +17,7 @@ import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
+import org.opensha.oaf.util.ObsEqkRupMaxTimeComparator;
 
 import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
@@ -39,6 +41,10 @@ public class PollSupport extends ServerComponent {
 	// True if polling is currently enabled, false if not.
 
 	private boolean f_polling_enabled;
+
+	// True if a poll cleanup operation is needed, false if not.
+
+	private boolean f_poll_cleanup_needed;
 
 	// True to allow the next poll to be long.
 
@@ -93,14 +99,26 @@ public class PollSupport extends ServerComponent {
 
 
 
+	// Delete the poll Comcat run task, and all delayed poll intake tasks, if any.
+	// The currently active task is deleted, if it is a match.
+
+	public void delete_all_existing_poll_run_tasks () {
+		sg.task_sup.delete_all_tasks_for_event (EVID_POLL, OPCODE_INTAKE_POLL, OPCODE_POLL_COMCAT_RUN);
+		return;
+	}
+
+
+
+
 	// Set polling to the disabled state.
 	// Also deletes the poll Comcat run task, if any.
 	// Note: This is to be called from the execution function of a polling task.
 
 	public void set_polling_disabled () {
-		delete_waiting_poll_run_tasks ();
+		//delete_waiting_poll_run_tasks ();		// uncomment to use ExPollComcatRun
 
 		f_polling_enabled = false;
+		f_poll_cleanup_needed = true;
 
 		return;
 	}
@@ -114,16 +132,17 @@ public class PollSupport extends ServerComponent {
 	// Note: If polling is already enabled, the cycle is reset.
 
 	public void set_polling_enabled () {
-		delete_waiting_poll_run_tasks ();
+		//delete_waiting_poll_run_tasks ();		// uncomment to use ExPollComcatRun
 
 		f_polling_enabled = true;
+		f_poll_cleanup_needed = true;
 		f_long_poll_ok = false;
 		next_short_poll_time = sg.task_disp.get_time();
 		next_long_poll_time = sg.task_disp.get_time();
 
 		// Kick off polling
 
-		kick_off_polling (0L);
+		//kick_off_polling (0L);		// uncomment to use ExPollComcatRun
 		return;
 	}
 
@@ -139,6 +158,7 @@ public class PollSupport extends ServerComponent {
 		delete_all_existing_polling_tasks ();
 
 		f_polling_enabled = false;
+		f_poll_cleanup_needed = false;
 		f_long_poll_ok = false;
 		next_short_poll_time = 0L;
 		next_long_poll_time = 0L;
@@ -297,6 +317,320 @@ public class PollSupport extends ServerComponent {
 
 
 
+	// Run poll operation during task idle time.
+	// On entry, these task dispatcher context variables must set up:
+	//  dispatcher_time, dispatcher_true_time, dispatcher_action_config
+	// This should be run during idle time, not during a MongoDB transaction.
+
+	public void run_poll_during_idle (boolean f_verbose) {
+
+		//--- Cleanup operation
+
+		// If cleanup is needed, do it
+
+		if (f_poll_cleanup_needed) {
+
+			// Say hello
+
+			if (f_verbose) {
+				System.out.println (LOG_SEPARATOR_LINE);
+				System.out.println ("COMCAT-POLL-CLEANUP-BEGIN: " + SimpleUtils.time_to_string (sg.task_disp.get_time()));
+			}
+			sg.log_sup.report_comcat_poll_cleanup_begin ();
+
+			// Delete all poll run tasks
+
+			delete_all_existing_poll_run_tasks();
+
+			// Clear the flag
+		
+			f_poll_cleanup_needed = false;
+
+			// Say goodbye
+
+			if (f_verbose) {
+				System.out.println ("COMCAT-POLL-CLEANUP-END");
+			}
+			sg.log_sup.report_comcat_poll_cleanup_end ();
+		}
+
+		//--- Polling operation
+
+		// Find which poll to do
+
+		int which_poll = check_if_poll_time();
+
+		// No poll, just return
+
+		if (which_poll == 0) {
+			return;
+		}
+
+		// Check for intake blocked
+
+		if ((new ServerConfig()).get_is_poll_intake_blocked()) {
+			f_polling_enabled = false;
+			f_poll_cleanup_needed = true;
+			return;
+		}
+
+		// Say hello
+
+		if (f_verbose) {
+			System.out.println (LOG_SEPARATOR_LINE);
+			System.out.println ("COMCAT-POLL-BEGIN: " + SimpleUtils.time_to_string (sg.task_disp.get_time()));
+		}
+		sg.log_sup.report_comcat_poll_begin ();
+
+		// Get lookback depending on whether it is a short or long poll
+
+		long poll_lookback;
+
+		if (which_poll == 2) {
+			poll_lookback = sg.task_disp.get_action_config().get_poll_long_lookback();
+		} else {
+			poll_lookback = sg.task_disp.get_action_config().get_poll_short_lookback();
+		}
+
+		// Create the accessor
+
+		ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+		// Search the entire world, for minimum magnitude equal to the lowest in any intake region
+
+		SphRegion search_region = SphRegion.makeWorld ();
+		double min_mag = sg.task_disp.get_action_config().get_pdl_intake_region_min_min_mag();
+
+		// Search within the lookback of the current time minus the clock skew
+
+		long search_time_hi = sg.task_disp.get_time() - sg.task_disp.get_action_config().get_comcat_clock_skew();
+		long search_time_lo = search_time_hi - poll_lookback;
+
+		// This is the start of the search interval, for a short poll
+
+		long search_time_short = search_time_hi - sg.task_disp.get_action_config().get_poll_short_lookback();
+
+		// Call Comcat to get a list of potential events
+
+		String exclude_id = null;
+
+		double min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+		double max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+
+		boolean wrapLon = false;
+		boolean extendedInfo = false;
+		int limit_per_call = 0;
+		int max_calls = 0;
+
+		ObsEqkRupList potentials = null;
+
+		try {
+			potentials = accessor.fetchEventList (exclude_id,
+					search_time_lo, search_time_hi,
+					min_depth, max_depth,
+					search_region, wrapLon, extendedInfo,
+					min_mag, limit_per_call, max_calls);
+		}
+		catch (Exception e) {
+		
+			// In case of Comcat failure, just delay to next polling time
+
+			next_short_poll_time = sg.task_disp.get_time()
+								+ sg.task_disp.get_action_config().get_poll_short_period();
+
+			// Say goodbye
+
+			if (f_verbose) {
+				System.out.println ("Poll failed due to Comcat exception");
+				System.out.println ("COMCAT-POLL-END");
+			}
+			sg.log_sup.report_comcat_exception (null, e);
+			sg.log_sup.report_comcat_poll_end (get_next_poll_time());
+
+			return;
+		}
+
+		double poll_lookback_days = ((double)poll_lookback) / ((double)DURATION_DAY);
+		System.out.println ("COMCAT-POLL-INFO: Comcat poll found " + potentials.size() + " potential events in " + String.format ("%.3f", poll_lookback_days) + " days");
+
+		// Process potential events in temporal order, most recent first
+
+		if (potentials.size() > 1) {
+			Collections.sort (potentials, new ObsEqkRupMaxTimeComparator());
+		}
+
+		// Loop over potential events
+
+		int count_no_timeline = 0;
+		int count_withdrawn_timeline = 0;
+
+		long total_delay = 0L;
+		long short_delay = 0L;
+		boolean f_seen_long = false;
+
+		for (ObsEqkRupture potential : potentials) {
+
+			// Get the potential parameters
+
+			String potential_event_id = potential.getEventId();
+			long potential_time = potential.getOriginTime();
+			double potential_mag = potential.getMag();
+			Location potential_hypo = potential.getHypocenterLocation();
+			double potential_lat = potential_hypo.getLatitude();
+			double potential_lon = potential_hypo.getLongitude();
+
+			// Search intake regions, using the minimum magnitude criterion
+
+			IntakeSphRegion intake_region = sg.task_disp.get_action_config().get_pdl_intake_region_for_min_mag (
+				potential_lat, potential_lon, potential_mag);
+
+			// If we passed the intake filter ...
+
+			if (intake_region != null) {
+
+				// Try to identify the timeline for this event
+
+				String timeline_id = sg.alias_sup.get_timeline_id_for_primary_id (potential_event_id);
+
+				// Get the corresponding timeline entry, or null if none
+
+				TimelineEntry tentry = null;
+
+				if (timeline_id != null) {
+					tentry = TimelineEntry.get_recent_timeline_entry (0L, 0L, timeline_id, null, null);
+				}
+
+				// If no timeline found ...
+
+				if (tentry == null) {
+
+					// For an event, process poll no earlier than the time of first forecast
+					// (Intake is delayed as long as possible, because Comcat authoritative event ID
+					// changes typically occur within the first 20 minutes after an earthquake, and
+					// we attempt to avoid intake until the authoritative ID is fixed.)
+
+					long first_forecast = potential_time
+											+ sg.task_disp.get_action_config().get_next_forecast_lag(0L)
+											+ sg.task_disp.get_action_config().get_comcat_clock_skew()
+											+ sg.task_disp.get_action_config().get_comcat_origin_skew();
+
+					// Submit a poll intake task for the event
+
+					OpIntakePoll intake_payload = new OpIntakePoll();
+					intake_payload.setup (potential_event_id);
+
+					PendingTask.submit_task (
+						EVID_POLL,									// event id
+						Math.max (sg.task_disp.get_time() + total_delay, first_forecast),	// sched_time
+						sg.task_disp.get_time(),					// submit_time
+						SUBID_AAFS,									// submit_id
+						OPCODE_INTAKE_POLL,							// opcode
+						0,											// stage
+						intake_payload.marshal_task());				// details
+
+					++count_no_timeline;
+
+					// Adjust total and short delay time
+
+					if (which_poll == 2 && potential_time < search_time_short) {
+						f_seen_long = true;
+					}
+					if (f_seen_long) {
+						total_delay += sg.task_disp.get_action_config().get_poll_long_intake_gap();
+					} else {
+						total_delay += sg.task_disp.get_action_config().get_poll_short_intake_gap();
+						short_delay = total_delay;
+					}
+				}
+
+				// Otherwise, found timeline entry ...
+
+				else {
+
+					// If the last action was one that could indicate a withdrawn timeline ...
+
+					if (TimelineStatus.can_actcode_intake_poll_start (tentry.get_actcode())) {
+
+						// Get the status for this timeline entry
+					
+						TimelineStatus tstatus = new TimelineStatus();
+					
+						try {
+							tstatus.unmarshal_timeline (tentry);
+						}
+					
+						// Invalid timeline entry
+					
+						catch (Exception e2) {
+							tstatus = null;
+						}
+					
+						// If we got the timeline status ...
+					
+						if (tstatus != null) {
+					
+							// If it is in a state that can be awakened by a poll ...
+
+							if (tstatus.can_intake_poll_start()) {
+
+								// Submit a poll intake task for the timeline
+
+								OpIntakePoll intake_payload = new OpIntakePoll();
+								intake_payload.setup (timeline_id);
+
+								PendingTask.submit_task (
+									EVID_POLL,									// event id
+									sg.task_disp.get_time() + total_delay,		// sched_time
+									sg.task_disp.get_time(),					// submit_time
+									SUBID_AAFS,									// submit_id
+									OPCODE_INTAKE_POLL,							// opcode
+									0,											// stage
+									intake_payload.marshal_task());				// details
+
+								++count_withdrawn_timeline;
+
+								// Adjust total and short delay time
+
+								if (which_poll == 2 && potential_time < search_time_short) {
+									f_seen_long = true;
+								}
+								if (f_seen_long) {
+									total_delay += sg.task_disp.get_action_config().get_poll_long_intake_gap();
+								} else {
+									total_delay += sg.task_disp.get_action_config().get_poll_short_intake_gap();
+									short_delay = total_delay;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		System.out.println ("COMCAT-POLL-INFO: Comcat poll found " + count_no_timeline + " potential events with no corresponding timeline");
+		System.out.println ("COMCAT-POLL-INFO: Comcat poll found " + count_withdrawn_timeline + " potential events with a withdrawn timeline");
+
+		sg.log_sup.report_comcat_poll_done (poll_lookback, count_no_timeline, count_withdrawn_timeline);
+
+		//--- Final steps
+
+		// Update the poll timers
+
+		update_last_poll_time (which_poll, total_delay, short_delay);
+
+		// Say goodbye
+
+		if (f_verbose) {
+			System.out.println ("COMCAT-POLL-END");
+		}
+		sg.log_sup.report_comcat_poll_end (get_next_poll_time());
+
+		return;	
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -305,6 +639,7 @@ public class PollSupport extends ServerComponent {
 	public PollSupport () {
 
 		f_polling_enabled = false;
+		f_poll_cleanup_needed = false;
 		f_long_poll_ok = false;
 		next_short_poll_time = 0L;
 		next_long_poll_time = 0L;
@@ -320,6 +655,7 @@ public class PollSupport extends ServerComponent {
 		super.setup (the_sg);
 
 		f_polling_enabled = false;
+		f_poll_cleanup_needed = false;
 		f_long_poll_ok = false;
 		next_short_poll_time = 0L;
 		next_long_poll_time = 0L;

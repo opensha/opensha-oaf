@@ -73,6 +73,42 @@ public class TaskSupport extends ServerComponent {
 
 
 
+	// Delete all waiting tasks with the given event id and any of the given opcodes.
+	// A maximum of maxdel tasks are deleted.
+	// Returns true if all matching tasks were deleted, false if not all were deleted.
+	// Note: The currently active task is not deleted, even if it would match.
+
+	public boolean delete_all_waiting_tasks_limited (int maxdel, String event_id, int... opcodes) {
+
+		// Get a list of all waiting tasks for the given event
+
+		List<PendingTask> tasks = PendingTask.get_task_entry_range (EXEC_TIME_MIN_WAITING, 0L, event_id);
+
+		// The number of tasks deleted so far
+
+		int n = 0;
+
+		// Delete tasks with the given opcode
+
+		for (PendingTask task : tasks) {
+			for (int opcode : opcodes) {
+				if (task.get_opcode() == opcode) {
+					if (n >= maxdel) {
+						return false;
+					}
+					++n;
+					PendingTask.delete_task (task);
+					break;
+				}
+			}
+		}
+	
+		return true;
+	}
+
+
+
+
 	// Delete all tasks with the given event id and any of the given opcodes.
 	// Note: The currently active task is deleted, if it matches.
 

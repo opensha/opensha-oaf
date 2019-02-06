@@ -43,6 +43,7 @@ import com.mongodb.client.model.InsertOneOptions;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.DeleteOptions;
+import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.connection.ClusterSettings;
@@ -65,6 +66,17 @@ import org.bson.types.ObjectId;
 public interface MongoDBCollHandle {
 
 	//--- MongoDB functions ---
+
+	// Create a collection.
+	// Parameters:
+	//  options = Options, or null if none, defaults to null.
+
+	public void createCollection (CreateCollectionOptions options);
+
+	public default void createCollection () {
+		createCollection (null);
+		return;
+	}
 
 	// Create an index.
 	// Parameters:
@@ -97,6 +109,10 @@ public interface MongoDBCollHandle {
 	public default DeleteResult deleteOne (Bson filter) {
 		return deleteOne (filter, null);
 	}
+
+	// Drop a collection.
+
+	public void drop ();
 
 	// Find documents, and return the first matching document, or null if no matching document.
 	// Parameters:

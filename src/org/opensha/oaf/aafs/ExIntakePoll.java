@@ -304,7 +304,7 @@ public class ExIntakePoll extends ServerExecTask {
 
 		// Delete any other intake poll command with the same timeline ID
 
-		sg.task_sup.delete_all_waiting_tasks (fcmain.timeline_id, OPCODE_INTAKE_POLL);
+		sg.task_sup.delete_all_waiting_tasks_limited (MONGO_DUP_INTAKE_CLEANUP, fcmain.timeline_id, OPCODE_INTAKE_POLL);
 
 		// Stage the task, using the timeline ID in place of the event ID, for immediate execution
 
@@ -354,7 +354,7 @@ public class ExIntakePoll extends ServerExecTask {
 
 		// Delete any other intake poll command with the same event ID
 
-		sg.task_sup.delete_all_waiting_tasks (payload.delayed_event_id, OPCODE_INTAKE_POLL);
+		sg.task_sup.delete_all_waiting_tasks_limited (MONGO_DUP_INTAKE_CLEANUP, payload.delayed_event_id, OPCODE_INTAKE_POLL);
 
 		// Stage the task, using the delayed event ID in place of the event ID, for immediate execution
 

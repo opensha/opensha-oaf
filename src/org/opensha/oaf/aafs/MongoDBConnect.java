@@ -51,6 +51,7 @@ import com.mongodb.client.model.InsertOneOptions;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.DeleteOptions;
+import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.connection.ClusterSettings;
