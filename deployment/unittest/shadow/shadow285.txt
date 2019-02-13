@@ -1,0 +1,44 @@
+shadow285 rj.AftershockStatsShadow test1 usc000rkga 365
+Fetching event: usc000rkga
+rup_event_id = usc000rkga
+rup_time = 1403551305990 (2014-06-23 19:21:45 UTC)
+rup_mag = 6.5
+rup_lat = -29.9379
+rup_lon = -177.5159
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1435087305990 (2015-06-23 19:21:45 UTC)
+search_radius = 2000.0
+search_time_lo = 1372015305990 (2013-06-23 19:21:45 UTC)
+search_time_hi = 1435087305990 (2015-06-23 19:21:45 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-06-23T19:21:45.990Z&format=geojson&latitude=-29.93790&limit=20000&longitude=-177.51590&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.500&starttime=2013-06-23T19:21:45.990Z
+Count of events received = 16
+Count of events after filtering = 15
+Total number of events returned = 15
+AftershockStatsShadow.find_shadow: Found 15 potential shadowing events for mainshock usc000rkga
+AftershockStatsShadow.find_shadow: Found 2 candidate shadowing events for mainshock usc000rkga
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-06-23T19:21:45.990Z&format=geojson&latitude=-29.93790&limit=20000&longitude=-177.51590&maxdepth=700.000&maxradius=0.49767&mindepth=0.000&minmagnitude=3.950&starttime=2014-06-23T19:19:15.940Z
+Count of events received = 236
+Count of events after filtering = 236
+Total number of events returned = 236
+AftershockStatsShadow.find_shadow: Found 236 possible aftershocks within 55.338 km of mainshock usc000rkga
+AftershockStatsShadow.find_shadow: Mainshock usc000rkga is shadowed by event usc000rkg5
+AftershockStatsShadow.find_shadow: Mainshock magnitude = 6.50, shadowing event magnitude = 6.90
+AftershockStatsShadow.find_shadow: Distance = 20.585 km, time offset = 0.002 days
+
+Event is shadowed by:
+shadow_event_id = usc000rkg5
+shadow_time = 1403551155940 (2014-06-23 19:19:15 UTC)
+shadow_mag = 6.9
+shadow_lat = -29.977200000000003
+shadow_lon = -177.7247
+shadow_depth = 20.0
+separation_km = 20.585
+separation_days = 0.002

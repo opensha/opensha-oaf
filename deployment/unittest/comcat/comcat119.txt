@@ -1,0 +1,37 @@
+comcat119 comcat.ComcatOAFAccessor test10 us20002926 0.001 365.0 200.0 5.5 0
+Fetching event: us20002926
+ObsEqkRupture:
+rup_event_id = us20002926
+rup_time = 1429942285950 (2015-04-25 06:11:25 UTC)
+rup_mag = 7.8
+rup_lat = 28.2305
+rup_lon = 84.7314
+rup_depth = 8.22
+description = 36km E of Khudi, Nepal
+ids = ,us20002926,gcmt20150425061126,atlas20150425061125,
+net = us
+code = 20002926
+
+http_status = 200
+Fetching event list
+min_days = 0.001
+max_days = 365.0
+radius_km = 200.0
+min_mag = 5.5
+limit_per_call = 0
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-04-24T06:11:25.950Z&format=geojson&latitude=28.23050&limit=20000&longitude=84.73140&maxdepth=700.000&maxradius=1.79864&mindepth=0.000&minmagnitude=5.500&starttime=2015-04-25T06:12:52.350Z
+Count of events received = 9
+Count of events after filtering = 9
+Total number of events returned = 9
+Events returned by fetchEventList = 9
+http_status[0] = 200
+List of events returned by fetchEventList:
+0: us100029rn (time = 2015-05-16 11:34:09 UTC, mag = 5.500, lat = 27.56030, lon = 86.07340, depth = 7.000)
+1: us20002ek5 (time = 2015-05-12 07:36:54 UTC, mag = 6.300, lat = 27.62500, lon = 86.16170, depth = 15.000)
+2: us20002ek0 (time = 2015-05-12 07:17:20 UTC, mag = 5.500, lat = 27.71410, lon = 86.21770, depth = 13.010)
+3: us20002ejl (time = 2015-05-12 07:05:19 UTC, mag = 7.300, lat = 27.80870, lon = 86.06550, depth = 15.000)
+4: us200029bt (time = 2015-04-26 07:09:10 UTC, mag = 6.700, lat = 27.77110, lon = 86.01730, depth = 22.910)
+5: us20002934 (time = 2015-04-25 06:56:33 UTC, mag = 5.500, lat = 27.88220, lon = 85.75050, depth = 10.000)
+6: us2000292y (time = 2015-04-25 06:45:21 UTC, mag = 6.600, lat = 28.22440, lon = 84.82160, depth = 10.000)
+7: us20002bi0 (time = 2015-04-25 06:18:10 UTC, mag = 5.600, lat = 27.68570, lon = 86.02130, depth = 10.000)
+8: us20002bi4 (time = 2015-04-25 06:15:22 UTC, mag = 6.100, lat = 27.62850, lon = 85.53980, depth = 10.000)

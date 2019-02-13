@@ -1,0 +1,29 @@
+shadow209 rj.AftershockStatsShadow test1 usp000ab03 365
+Fetching event: usp000ab03
+rup_event_id = usp000ab03
+rup_time = 983870256080 (2001-03-06 09:17:36 UTC)
+rup_mag = 6.4
+rup_lat = -54.588
+rup_lon = 157.271
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1015406256080 (2002-03-06 09:17:36 UTC)
+search_radius = 2000.0
+search_time_lo = 952334256080 (2000-03-06 09:17:36 UTC)
+search_time_hi = 1015406256080 (2002-03-06 09:17:36 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2002-03-06T09:17:36.080Z&format=geojson&latitude=-54.58800&limit=20000&longitude=157.27100&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.400&starttime=2000-03-06T09:17:36.080Z
+Count of events received = 2
+Count of events after filtering = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow: Found 1 potential shadowing events for mainshock usp000ab03
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000ab03
+AftershockStatsShadow.find_shadow: Mainshock usp000ab03 is not shadowed
+
+Event is not shadowed

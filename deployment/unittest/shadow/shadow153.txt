@@ -1,0 +1,29 @@
+shadow153 rj.AftershockStatsShadow test1 usp000besw 365
+Fetching event: usp000besw
+rup_event_id = usp000besw
+rup_time = 1034939808310 (2002-10-18 11:16:48 UTC)
+rup_mag = 6.1
+rup_lat = -57.185
+rup_lon = -142.751
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1066475808310 (2003-10-18 11:16:48 UTC)
+search_radius = 2000.0
+search_time_lo = 1003403808310 (2001-10-18 11:16:48 UTC)
+search_time_hi = 1066475808310 (2003-10-18 11:16:48 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-10-18T11:16:48.310Z&format=geojson&latitude=-57.18500&limit=20000&longitude=-142.75100&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&starttime=2001-10-18T11:16:48.310Z
+Count of events received = 3
+Count of events after filtering = 2
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow: Found 2 potential shadowing events for mainshock usp000besw
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000besw
+AftershockStatsShadow.find_shadow: Mainshock usp000besw is not shadowed
+
+Event is not shadowed

@@ -1,0 +1,29 @@
+shadow182 rj.AftershockStatsShadow test1 usp000hqnd 365
+Fetching event: usp000hqnd
+rup_event_id = usp000hqnd
+rup_time = 1291785875260 (2010-12-08 05:24:35 UTC)
+rup_mag = 6.3
+rup_lat = -56.412
+rup_lon = -25.741
+rup_depth = 29.4
+
+find_shadow parameters:
+time_now = 1323321875260 (2011-12-08 05:24:35 UTC)
+search_radius = 2000.0
+search_time_lo = 1260249875260 (2009-12-08 05:24:35 UTC)
+search_time_hi = 1323321875260 (2011-12-08 05:24:35 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-12-08T05:24:35.260Z&format=geojson&latitude=-56.41200&limit=20000&longitude=-25.74100&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.300&starttime=2009-12-08T05:24:35.260Z
+Count of events received = 4
+Count of events after filtering = 3
+Total number of events returned = 3
+AftershockStatsShadow.find_shadow: Found 3 potential shadowing events for mainshock usp000hqnd
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000hqnd
+AftershockStatsShadow.find_shadow: Mainshock usp000hqnd is not shadowed
+
+Event is not shadowed

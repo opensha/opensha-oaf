@@ -1,0 +1,29 @@
+shadow201 rj.AftershockStatsShadow test1 us10003mrv 365
+Fetching event: us10003mrv
+rup_event_id = us10003mrv
+rup_time = 1444525107170 (2015-10-11 00:58:27 UTC)
+rup_mag = 6.1
+rup_lat = -54.4856
+rup_lon = -135.708
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1476061107170 (2016-10-10 00:58:27 UTC)
+search_radius = 2000.0
+search_time_lo = 1412989107170 (2014-10-11 00:58:27 UTC)
+search_time_hi = 1476061107170 (2016-10-10 00:58:27 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-10-10T00:58:27.170Z&format=geojson&latitude=-54.48560&limit=20000&longitude=-135.70800&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&starttime=2014-10-11T00:58:27.170Z
+Count of events received = 4
+Count of events after filtering = 3
+Total number of events returned = 3
+AftershockStatsShadow.find_shadow: Found 3 potential shadowing events for mainshock us10003mrv
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock us10003mrv
+AftershockStatsShadow.find_shadow: Mainshock us10003mrv is not shadowed
+
+Event is not shadowed

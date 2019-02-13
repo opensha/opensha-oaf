@@ -1,0 +1,29 @@
+shadow204 rj.AftershockStatsShadow test1 usp000eang 365
+Fetching event: usp000eang
+rup_event_id = usp000eang
+rup_time = 1140667445020 (2006-02-23 04:04:05 UTC)
+rup_mag = 6.2
+rup_lat = -54.669
+rup_lon = 1.765
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1172203445020 (2007-02-23 04:04:05 UTC)
+search_radius = 2000.0
+search_time_lo = 1109131445020 (2005-02-23 04:04:05 UTC)
+search_time_hi = 1172203445020 (2007-02-23 04:04:05 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2007-02-23T04:04:05.020Z&format=geojson&latitude=-54.66900&limit=20000&longitude=1.76500&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.200&starttime=2005-02-23T04:04:05.020Z
+Count of events received = 2
+Count of events after filtering = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow: Found 1 potential shadowing events for mainshock usp000eang
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000eang
+AftershockStatsShadow.find_shadow: Mainshock usp000eang is not shadowed
+
+Event is not shadowed

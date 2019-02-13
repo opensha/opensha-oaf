@@ -1,0 +1,28 @@
+comcat256 comcat.ComcatOAFAccessor test7 true true usp000eg5g
+Fetching event: usp000eg5g
+ObsEqkRupture:
+rup_event_id = usp000eg5g
+rup_time = 1146670000290 (2006-05-03 15:26:40 UTC)
+rup_mag = 8.0
+rup_lat = -20.187
+rup_lon = -174.123
+rup_depth = 55.0
+description = Tonga
+ids = ,iscgem10698255,usp000eg5g,us2006mgas,choy20060503152640,gcmtc200605031527a,gcmt20060503152640,duputel200605031527a,atlas20060503152640,
+net = us
+code = p000eg5g
+
+http_status = 200
+EI Map: code = p000eg5g
+EI Map: description = Tonga
+EI Map: ids = ,iscgem10698255,usp000eg5g,us2006mgas,choy20060503152640,gcmtc200605031527a,gcmt20060503152640,duputel200605031527a,atlas20060503152640,
+EI Map: net = us
+ID List: usp000eg5g
+ID List: iscgem10698255
+ID List: us2006mgas
+ID List: choy20060503152640
+ID List: gcmtc200605031527a
+ID List: gcmt20060503152640
+ID List: duputel200605031527a
+ID List: atlas20060503152640
+URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000eg5g.geojson

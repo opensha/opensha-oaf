@@ -1,0 +1,23 @@
+comcat100 comcat.ComcatOAFAccessor test1 us20002926
+Fetching event: us20002926
+ObsEqkRupture:
+rup_event_id = us20002926
+rup_time = 1429942285950 (2015-04-25 06:11:25 UTC)
+rup_mag = 7.8
+rup_lat = 28.2305
+rup_lon = 84.7314
+rup_depth = 8.22
+description = 36km E of Khudi, Nepal
+ids = ,us20002926,gcmt20150425061126,atlas20150425061125,
+net = us
+code = 20002926
+
+http_status = 200
+EI Map: code = 20002926
+EI Map: description = 36km E of Khudi, Nepal
+EI Map: ids = ,us20002926,gcmt20150425061126,atlas20150425061125,
+EI Map: net = us
+ID List: us20002926
+ID List: gcmt20150425061126
+ID List: atlas20150425061125
+URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson

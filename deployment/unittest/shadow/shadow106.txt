@@ -1,0 +1,29 @@
+shadow106 rj.AftershockStatsShadow test1 usp000eg5g 365
+Fetching event: usp000eg5g
+rup_event_id = usp000eg5g
+rup_time = 1146670000290 (2006-05-03 15:26:40 UTC)
+rup_mag = 8.0
+rup_lat = -20.187
+rup_lon = -174.123
+rup_depth = 55.0
+
+find_shadow parameters:
+time_now = 1178206000290 (2007-05-03 15:26:40 UTC)
+search_radius = 2000.0
+search_time_lo = 1115134000290 (2005-05-03 15:26:40 UTC)
+search_time_hi = 1178206000290 (2007-05-03 15:26:40 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2007-05-03T15:26:40.290Z&format=geojson&latitude=-20.18700&limit=20000&longitude=-174.12300&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=8.000&starttime=2005-05-03T15:26:40.290Z
+Count of events received = 1
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow: Found 0 potential shadowing events for mainshock usp000eg5g
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000eg5g
+AftershockStatsShadow.find_shadow: Mainshock usp000eg5g is not shadowed
+
+Event is not shadowed

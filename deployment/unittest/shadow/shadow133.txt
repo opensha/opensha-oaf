@@ -1,0 +1,29 @@
+shadow133 rj.AftershockStatsShadow test1 usp000jtsk 365
+Fetching event: usp000jtsk
+rup_event_id = usp000jtsk
+rup_time = 1349785929770 (2012-10-09 12:32:09 UTC)
+rup_mag = 6.6
+rup_lat = -60.326
+rup_lon = 153.699
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1381321929770 (2013-10-09 12:32:09 UTC)
+search_radius = 2000.0
+search_time_lo = 1318249929770 (2011-10-10 12:32:09 UTC)
+search_time_hi = 1381321929770 (2013-10-09 12:32:09 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2013-10-09T12:32:09.770Z&format=geojson&latitude=-60.32600&limit=20000&longitude=153.69900&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.600&starttime=2011-10-10T12:32:09.770Z
+Count of events received = 1
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow: Found 0 potential shadowing events for mainshock usp000jtsk
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000jtsk
+AftershockStatsShadow.find_shadow: Mainshock usp000jtsk is not shadowed
+
+Event is not shadowed

@@ -1,0 +1,29 @@
+shadow265 rj.AftershockStatsShadow test1 usp000gqvv 365
+Fetching event: usp000gqvv
+rup_event_id = usp000gqvv
+rup_time = 1229635168380 (2008-12-18 21:19:28 UTC)
+rup_mag = 6.2
+rup_lat = -32.458
+rup_lon = -71.726
+rup_depth = 18.0
+
+find_shadow parameters:
+time_now = 1261171168380 (2009-12-18 21:19:28 UTC)
+search_radius = 2000.0
+search_time_lo = 1198099168380 (2007-12-19 21:19:28 UTC)
+search_time_hi = 1261171168380 (2009-12-18 21:19:28 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2009-12-18T21:19:28.380Z&format=geojson&latitude=-32.45800&limit=20000&longitude=-71.72600&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.200&starttime=2007-12-19T21:19:28.380Z
+Count of events received = 8
+Count of events after filtering = 7
+Total number of events returned = 7
+AftershockStatsShadow.find_shadow: Found 7 potential shadowing events for mainshock usp000gqvv
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000gqvv
+AftershockStatsShadow.find_shadow: Mainshock usp000gqvv is not shadowed
+
+Event is not shadowed

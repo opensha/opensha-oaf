@@ -1,0 +1,29 @@
+shadow103 rj.AftershockStatsShadow test1 usc000rki5 365
+Fetching event: usc000rki5
+rup_event_id = usc000rki5
+rup_time = 1403556789700 (2014-06-23 20:53:09 UTC)
+rup_mag = 7.9
+rup_lat = 51.8486
+rup_lon = 178.7352
+rup_depth = 109.0
+
+find_shadow parameters:
+time_now = 1435092789700 (2015-06-23 20:53:09 UTC)
+search_radius = 2000.0
+search_time_lo = 1372020789700 (2013-06-23 20:53:09 UTC)
+search_time_hi = 1435092789700 (2015-06-23 20:53:09 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-06-23T20:53:09.700Z&format=geojson&latitude=51.84860&limit=20000&longitude=178.73520&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=7.900&starttime=2013-06-23T20:53:09.700Z
+Count of events received = 1
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow: Found 0 potential shadowing events for mainshock usc000rki5
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usc000rki5
+AftershockStatsShadow.find_shadow: Mainshock usc000rki5 is not shadowed
+
+Event is not shadowed

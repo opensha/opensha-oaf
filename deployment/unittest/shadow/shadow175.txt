@@ -1,0 +1,29 @@
+shadow175 rj.AftershockStatsShadow test1 usp000g3wg 365
+Fetching event: usp000g3wg
+rup_event_id = usp000g3wg
+rup_time = 1208166319700 (2008-04-14 09:45:19 UTC)
+rup_mag = 6.0
+rup_lat = -56.022000000000006
+rup_lon = -28.035
+rup_depth = 140.2
+
+find_shadow parameters:
+time_now = 1239702319700 (2009-04-14 09:45:19 UTC)
+search_radius = 2000.0
+search_time_lo = 1176630319700 (2007-04-15 09:45:19 UTC)
+search_time_hi = 1239702319700 (2009-04-14 09:45:19 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2009-04-14T09:45:19.700Z&format=geojson&latitude=-56.02200&limit=20000&longitude=-28.03500&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.000&starttime=2007-04-15T09:45:19.700Z
+Count of events received = 8
+Count of events after filtering = 7
+Total number of events returned = 7
+AftershockStatsShadow.find_shadow: Found 7 potential shadowing events for mainshock usp000g3wg
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000g3wg
+AftershockStatsShadow.find_shadow: Mainshock usp000g3wg is not shadowed
+
+Event is not shadowed

@@ -1,0 +1,24 @@
+comcat263 comcat.ComcatOAFAccessor test7 true false usc000nzvd
+Fetching event: usc000nzvd
+ObsEqkRupture:
+rup_event_id = usc000nzvd
+rup_time = 1396396007260 (2014-04-01 23:46:47 UTC)
+rup_mag = 8.2
+rup_lat = -19.6097
+rup_lon = -70.7691
+rup_depth = 25.0
+description = 94km NW of Iquique, Chile
+ids = ,pt14091000,at00n3dm1y,usc000nzvd,atlas20140401234647,
+net = us
+code = c000nzvd
+
+http_status = 200
+EI Map: code = c000nzvd
+EI Map: description = 94km NW of Iquique, Chile
+EI Map: ids = ,pt14091000,at00n3dm1y,usc000nzvd,atlas20140401234647,
+EI Map: net = us
+ID List: usc000nzvd
+ID List: pt14091000
+ID List: at00n3dm1y
+ID List: atlas20140401234647
+URL = https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=usc000nzvd&format=geojson

@@ -1,0 +1,29 @@
+shadow233 rj.AftershockStatsShadow test1 us200028qc 365
+Fetching event: us200028qc
+rup_event_id = us200028qc
+rup_time = 1429846602400 (2015-04-24 03:36:42 UTC)
+rup_mag = 6.1
+rup_lat = -42.0602
+rup_lon = 173.0066
+rup_depth = 48.0
+
+find_shadow parameters:
+time_now = 1461382602400 (2016-04-23 03:36:42 UTC)
+search_radius = 2000.0
+search_time_lo = 1398310602400 (2014-04-24 03:36:42 UTC)
+search_time_hi = 1461382602400 (2016-04-23 03:36:42 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-04-23T03:36:42.400Z&format=geojson&latitude=-42.06020&limit=20000&longitude=173.00660&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&starttime=2014-04-24T03:36:42.400Z
+Count of events received = 9
+Count of events after filtering = 8
+Total number of events returned = 8
+AftershockStatsShadow.find_shadow: Found 8 potential shadowing events for mainshock us200028qc
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock us200028qc
+AftershockStatsShadow.find_shadow: Mainshock us200028qc is not shadowed
+
+Event is not shadowed

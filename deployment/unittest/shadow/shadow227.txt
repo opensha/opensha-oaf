@@ -1,0 +1,44 @@
+shadow227 rj.AftershockStatsShadow test1 usp000czam 365
+Fetching event: usp000czam
+rup_event_id = usp000czam
+rup_time = 1088656777510 (2004-07-01 04:39:37 UTC)
+rup_mag = 6.2
+rup_lat = -49.581
+rup_lon = 163.669
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1120192777510 (2005-07-01 04:39:37 UTC)
+search_radius = 2000.0
+search_time_lo = 1057120777510 (2003-07-02 04:39:37 UTC)
+search_time_hi = 1120192777510 (2005-07-01 04:39:37 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-07-01T04:39:37.510Z&format=geojson&latitude=-49.58100&limit=20000&longitude=163.66900&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.200&starttime=2003-07-02T04:39:37.510Z
+Count of events received = 6
+Count of events after filtering = 5
+Total number of events returned = 5
+AftershockStatsShadow.find_shadow: Found 5 potential shadowing events for mainshock usp000czam
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-07-01T04:39:37.510Z&format=geojson&latitude=-49.31200&limit=20000&longitude=161.34500&maxdepth=700.000&maxradius=2.10336&mindepth=0.000&minmagnitude=3.950&starttime=2004-12-23T14:59:04.410Z
+Count of events received = 40
+Count of events after filtering = 39
+Total number of events returned = 39
+AftershockStatsShadow.accum_from_comcat: Found 39 aftershocks within 233.884 km of candidate event usp000db93
+AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock usp000czam
+AftershockStatsShadow.find_shadow: Mainshock usp000czam is shadowed by event usp000db93
+AftershockStatsShadow.find_shadow: Mainshock magnitude = 6.20, shadowing event magnitude = 8.10
+AftershockStatsShadow.find_shadow: Distance = 170.647 km, time offset = -175.430 days
+
+Event is shadowed by:
+shadow_event_id = usp000db93
+shadow_time = 1103813944410 (2004-12-23 14:59:04 UTC)
+shadow_mag = 8.1
+shadow_lat = -49.312
+shadow_lon = 161.345
+shadow_depth = 10.0
+separation_km = 170.647
+separation_days = -175.430

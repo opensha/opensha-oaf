@@ -1,0 +1,26 @@
+comcat249 comcat.ComcatOAFAccessor test3 us20003k7a
+Fetching event: us20003k7a
+ObsEqkRupture:
+rup_event_id = us20003k7a
+rup_time = 1442444072860 (2015-09-16 22:54:32 UTC)
+rup_mag = 8.3
+rup_lat = -31.5729
+rup_lon = -71.6744
+rup_depth = 22.44
+description = 48km W of Illapel, Chile
+ids = ,us20003k7a,gcmt20150916225432,gcmt20150916225433,at00nuskyv,pt15259054,atlas20150916225432,
+net = us
+code = 20003k7a
+
+http_status = 200
+EI Map: code = 20003k7a
+EI Map: description = 48km W of Illapel, Chile
+EI Map: ids = ,us20003k7a,gcmt20150916225432,gcmt20150916225433,at00nuskyv,pt15259054,atlas20150916225432,
+EI Map: net = us
+ID List: us20003k7a
+ID List: gcmt20150916225432
+ID List: gcmt20150916225433
+ID List: at00nuskyv
+ID List: pt15259054
+ID List: atlas20150916225432
+URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20003k7a.geojson

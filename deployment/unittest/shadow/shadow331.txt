@@ -1,0 +1,49 @@
+shadow331 rj.AftershockStatsShadow test1 usc000p2cs 365
+Fetching event: usc000p2cs
+rup_event_id = usc000p2cs
+rup_time = 1396502775700 (2014-04-03 05:26:15 UTC)
+rup_mag = 6.4
+rup_lat = -20.7969
+rup_lon = -70.5865
+rup_depth = 25.0
+
+find_shadow parameters:
+time_now = 1428038775700 (2015-04-03 05:26:15 UTC)
+search_radius = 2000.0
+search_time_lo = 1364966775700 (2013-04-03 05:26:15 UTC)
+search_time_hi = 1428038775700 (2015-04-03 05:26:15 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-03T05:26:15.700Z&format=geojson&latitude=-20.79690&limit=20000&longitude=-70.58650&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.400&starttime=2013-04-03T05:26:15.700Z
+Count of events received = 13
+Count of events after filtering = 12
+Total number of events returned = 12
+AftershockStatsShadow.find_shadow: Found 12 potential shadowing events for mainshock usc000p2cs
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-01T23:46:47.260Z&format=geojson&latitude=-19.60970&limit=20000&longitude=-70.76910&maxdepth=700.000&maxradius=2.46555&mindepth=0.000&minmagnitude=3.950&starttime=2014-04-01T23:46:47.260Z
+Count of events received = 617
+Count of events after filtering = 616
+Total number of events returned = 616
+AftershockStatsShadow.accum_from_comcat: Found 616 aftershocks within 274.157 km of candidate event usc000nzvd
+AftershockStatsShadow.find_shadow: Found 2 candidate shadowing events for mainshock usc000p2cs
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-03T02:43:13.110Z&format=geojson&latitude=-20.79690&limit=20000&longitude=-70.58650&maxdepth=700.000&maxradius=1.35638&mindepth=0.000&minmagnitude=3.950&starttime=2014-04-03T02:43:13.110Z
+Count of events received = 370
+Count of events after filtering = 370
+Total number of events returned = 370
+AftershockStatsShadow.find_shadow: Found 370 possible aftershocks within 150.823 km of mainshock usc000p2cs
+AftershockStatsShadow.find_shadow: Mainshock usc000p2cs is shadowed by event usc000nzvd
+AftershockStatsShadow.find_shadow: Mainshock magnitude = 6.40, shadowing event magnitude = 8.20
+AftershockStatsShadow.find_shadow: Distance = 133.379 km, time offset = 1.236 days
+
+Event is shadowed by:
+shadow_event_id = usc000nzvd
+shadow_time = 1396396007260 (2014-04-01 23:46:47 UTC)
+shadow_mag = 8.2
+shadow_lat = -19.6097
+shadow_lon = -70.7691
+shadow_depth = 25.0
+separation_km = 133.379
+separation_days = 1.236

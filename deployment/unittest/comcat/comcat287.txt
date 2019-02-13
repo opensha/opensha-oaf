@@ -1,0 +1,27 @@
+comcat287 comcat.ComcatOAFAccessor test7 true false usp000hzf6
+Fetching event: usp000hzf6
+ObsEqkRupture:
+rup_event_id = usp000hzf6
+rup_time = 1302186763290 (2011-04-07 14:32:43 UTC)
+rup_mag = 7.1
+rup_lat = 38.276
+rup_lon = 141.588
+rup_depth = 42.0
+description = near the east coast of Honshu, Japan
+ids = ,usc0002ksa,atlas20110407143200,atlas20110407143243,usp000hzf6,choy20110407143243,duputel201104071432a,iscgem16413596,
+net = us
+code = p000hzf6
+
+http_status = 200
+EI Map: code = p000hzf6
+EI Map: description = near the east coast of Honshu, Japan
+EI Map: ids = ,usc0002ksa,atlas20110407143200,atlas20110407143243,usp000hzf6,choy20110407143243,duputel201104071432a,iscgem16413596,
+EI Map: net = us
+ID List: usp000hzf6
+ID List: usc0002ksa
+ID List: atlas20110407143200
+ID List: atlas20110407143243
+ID List: choy20110407143243
+ID List: duputel201104071432a
+ID List: iscgem16413596
+URL = https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=usp000hzf6&format=geojson

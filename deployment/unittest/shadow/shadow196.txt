@@ -1,0 +1,29 @@
+shadow196 rj.AftershockStatsShadow test1 usp000fepk 365
+Fetching event: usp000fepk
+rup_event_id = usp000fepk
+rup_time = 1182644718400 (2007-06-24 00:25:18 UTC)
+rup_mag = 6.5
+rup_lat = -55.645
+rup_lon = -2.626
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1214180718400 (2008-06-23 00:25:18 UTC)
+search_radius = 2000.0
+search_time_lo = 1151108718400 (2006-06-24 00:25:18 UTC)
+search_time_hi = 1214180718400 (2008-06-23 00:25:18 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-06-23T00:25:18.400Z&format=geojson&latitude=-55.64500&limit=20000&longitude=-2.62600&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.500&starttime=2006-06-24T00:25:18.400Z
+Count of events received = 4
+Count of events after filtering = 3
+Total number of events returned = 3
+AftershockStatsShadow.find_shadow: Found 3 potential shadowing events for mainshock usp000fepk
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000fepk
+AftershockStatsShadow.find_shadow: Mainshock usp000fepk is not shadowed
+
+Event is not shadowed

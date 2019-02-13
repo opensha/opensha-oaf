@@ -1,0 +1,29 @@
+shadow113 rj.AftershockStatsShadow test1 usp000hvnu 365
+Fetching event: usp000hvnu
+rup_event_id = official20110311054624120_30
+rup_time = 1299822384120 (2011-03-11 05:46:24 UTC)
+rup_mag = 9.1
+rup_lat = 38.297
+rup_lon = 142.373
+rup_depth = 29.0
+
+find_shadow parameters:
+time_now = 1331358384120 (2012-03-10 05:46:24 UTC)
+search_radius = 2000.0
+search_time_lo = 1268286384120 (2010-03-11 05:46:24 UTC)
+search_time_hi = 1331358384120 (2012-03-10 05:46:24 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2012-03-10T05:46:24.120Z&format=geojson&latitude=38.29700&limit=20000&longitude=142.37300&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=9.100&starttime=2010-03-11T05:46:24.120Z
+Count of events received = 1
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow: Found 0 potential shadowing events for mainshock official20110311054624120_30
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock official20110311054624120_30
+AftershockStatsShadow.find_shadow: Mainshock official20110311054624120_30 is not shadowed
+
+Event is not shadowed

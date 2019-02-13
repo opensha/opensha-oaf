@@ -1,0 +1,29 @@
+shadow266 rj.AftershockStatsShadow test1 usb000s5rc 365
+Fetching event: usb000s5rc
+rup_event_id = usb000s5rc
+rup_time = 1408833143320 (2014-08-23 22:32:23 UTC)
+rup_mag = 6.4
+rup_lat = -32.6953
+rup_lon = -71.4416
+rup_depth = 32.0
+
+find_shadow parameters:
+time_now = 1440369143320 (2015-08-23 22:32:23 UTC)
+search_radius = 2000.0
+search_time_lo = 1377297143320 (2013-08-23 22:32:23 UTC)
+search_time_hi = 1440369143320 (2015-08-23 22:32:23 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-08-23T22:32:23.320Z&format=geojson&latitude=-32.69530&limit=20000&longitude=-71.44160&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.400&starttime=2013-08-23T22:32:23.320Z
+Count of events received = 13
+Count of events after filtering = 12
+Total number of events returned = 12
+AftershockStatsShadow.find_shadow: Found 12 potential shadowing events for mainshock usb000s5rc
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usb000s5rc
+AftershockStatsShadow.find_shadow: Mainshock usb000s5rc is not shadowed
+
+Event is not shadowed

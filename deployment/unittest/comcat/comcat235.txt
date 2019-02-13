@@ -1,0 +1,5 @@
+comcat235 comcat.ComcatOAFAccessor test7 true false badevent
+Fetching event: badevent
+Null return from fetchEvent
+http_status = 404
+URL = https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=badevent&format=geojson

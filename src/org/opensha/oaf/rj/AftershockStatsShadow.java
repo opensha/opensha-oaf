@@ -772,8 +772,8 @@ public class AftershockStatsShadow {
 					System.out.println ("shadow_lon = " + shadow_lon);
 					System.out.println ("shadow_depth = " + shadow_depth);
 
-					System.out.println ("separation_km = " + separation[0]);
-					System.out.println ("separation_days = " + separation[1]);
+					System.out.println ("separation_km = " + String.format ("%.3f", separation[0]));
+					System.out.println ("separation_days = " + String.format ("%.3f", separation[1]));
 				}
 
 			} catch (Exception e) {

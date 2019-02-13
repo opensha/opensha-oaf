@@ -1,0 +1,29 @@
+shadow174 rj.AftershockStatsShadow test1 usp000bhrf 365
+Fetching event: usp000bhrf
+rup_event_id = usp000bhrf
+rup_time = 1037390311780 (2002-11-15 19:58:31 UTC)
+rup_mag = 6.6
+rup_lat = -56.051
+rup_lon = -36.404
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1068926311780 (2003-11-15 19:58:31 UTC)
+search_radius = 2000.0
+search_time_lo = 1005854311780 (2001-11-15 19:58:31 UTC)
+search_time_hi = 1068926311780 (2003-11-15 19:58:31 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-11-15T19:58:31.780Z&format=geojson&latitude=-56.05100&limit=20000&longitude=-36.40400&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.600&starttime=2001-11-15T19:58:31.780Z
+Count of events received = 2
+Count of events after filtering = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow: Found 1 potential shadowing events for mainshock usp000bhrf
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000bhrf
+AftershockStatsShadow.find_shadow: Mainshock usp000bhrf is not shadowed
+
+Event is not shadowed

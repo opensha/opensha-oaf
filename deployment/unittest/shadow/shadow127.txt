@@ -1,0 +1,29 @@
+shadow127 rj.AftershockStatsShadow test1 usp000gufy 365
+Fetching event: usp000gufy
+rup_event_id = usp000gufy
+rup_time = 1235831586350 (2009-02-28 14:33:06 UTC)
+rup_mag = 6.3
+rup_lat = -60.525
+rup_lon = -24.796
+rup_depth = 15.0
+
+find_shadow parameters:
+time_now = 1267367586350 (2010-02-28 14:33:06 UTC)
+search_radius = 2000.0
+search_time_lo = 1204295586350 (2008-02-29 14:33:06 UTC)
+search_time_hi = 1267367586350 (2010-02-28 14:33:06 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2010-02-28T14:33:06.350Z&format=geojson&latitude=-60.52500&limit=20000&longitude=-24.79600&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.300&starttime=2008-02-29T14:33:06.350Z
+Count of events received = 4
+Count of events after filtering = 3
+Total number of events returned = 3
+AftershockStatsShadow.find_shadow: Found 3 potential shadowing events for mainshock usp000gufy
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000gufy
+AftershockStatsShadow.find_shadow: Mainshock usp000gufy is not shadowed
+
+Event is not shadowed
