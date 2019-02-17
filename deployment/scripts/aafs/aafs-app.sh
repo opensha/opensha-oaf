@@ -12,8 +12,11 @@
 # start - Start the AAFS application.
 #
 # stop - Stop the AAFS application.
+#
+# initdb - Initialize the AAFS database.
 
 case "$1" in
+
     start)
         if [ ! -d /data/aafs/logs ]; then
             mkdir /data/aafs/logs
@@ -42,6 +45,7 @@ case "$1" in
         echo "Starting Comcat poll..."
         /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd start_comcat_poll 2>&1
         ;;
+
     stop)
         echo "Stopping PDL listener..."
         cd /opt/aafs/intake
@@ -57,8 +61,19 @@ case "$1" in
         echo "Pausing 90 seconds..."
         sleep 90
         ;;
+
+    initdb)
+        /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd show_version 2>&1
+        echo "Pausing 30 seconds..."
+        sleep 30
+        echo "Initializing AAFS database..."
+        /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd make_indexes 2>&1
+        echo "Pausing 30 seconds..."
+        sleep 30
+        ;;
+
        *)
-        echo "Usage: aafs-app.sh {start|stop}"
+        echo "Usage: aafs-app.sh {start|stop|initdb}"
         exit 1
         ;;
 esac
