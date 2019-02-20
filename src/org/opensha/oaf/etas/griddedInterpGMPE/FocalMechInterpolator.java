@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Set;
 
 import org.opensha.commons.data.Site;
-import org.opensha.nshmp2.util.FocalMech;
 import org.opensha.sha.earthquake.EqkRupture;
 import org.opensha.sha.earthquake.ProbEqkSource;
 import org.opensha.sha.imr.ScalarIMR;
+import org.opensha.sha.util.FocalMech;
 
 import com.google.common.collect.Lists;
 
