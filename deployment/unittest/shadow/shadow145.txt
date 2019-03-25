@@ -1,0 +1,29 @@
+shadow145 rj.AftershockStatsShadow test1 usc000iq6f 365
+Fetching event: usc000iq6f
+rup_event_id = usc000iq6f
+rup_time = 1374874379990 (2013-07-26 21:32:59 UTC)
+rup_mag = 6.3
+rup_lat = -57.915
+rup_lon = -23.841000000000005
+rup_depth = 13.0
+
+find_shadow parameters:
+time_now = 1406410379990 (2014-07-26 21:32:59 UTC)
+search_radius = 2000.0
+search_time_lo = 1343338379990 (2012-07-26 21:32:59 UTC)
+search_time_hi = 1406410379990 (2014-07-26 21:32:59 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-07-26T21:32:59.990Z&format=geojson&latitude=-57.91500&limit=20000&longitude=-23.84100&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.300&starttime=2012-07-26T21:32:59.990Z
+Count of events received = 8
+Count of events after filtering = 7
+Total number of events returned = 7
+AftershockStatsShadow.find_shadow: Found 7 potential shadowing events for mainshock usc000iq6f
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usc000iq6f
+AftershockStatsShadow.find_shadow: Mainshock usc000iq6f is not shadowed
+
+Event is not shadowed

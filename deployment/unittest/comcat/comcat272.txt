@@ -1,0 +1,23 @@
+comcat272 comcat.ComcatOAFAccessor test1 nc10089897
+Fetching event: nc10089897
+ObsEqkRupture:
+rup_event_id = nc10089897
+rup_time = 618567207390 (1989-08-08 08:13:27 UTC)
+rup_mag = 5.4
+rup_lat = 37.1481667
+rup_lon = -121.92683329999998
+rup_depth = 13.409
+description = Northern California
+ids = ,nc10089897,usp0003y7s,atlas19890808081327,
+net = nc
+code = 10089897
+
+http_status = 200
+EI Map: code = 10089897
+EI Map: description = Northern California
+EI Map: ids = ,nc10089897,usp0003y7s,atlas19890808081327,
+EI Map: net = nc
+ID List: nc10089897
+ID List: usp0003y7s
+ID List: atlas19890808081327
+URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc10089897.geojson

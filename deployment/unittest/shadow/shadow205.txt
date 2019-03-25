@@ -1,0 +1,29 @@
+shadow205 rj.AftershockStatsShadow test1 usp000gy9c 365
+Fetching event: usp000gy9c
+rup_event_id = usp000gy9c
+rup_time = 1245182756990 (2009-06-16 20:05:56 UTC)
+rup_mag = 6.1
+rup_lat = -54.366
+rup_lon = 5.871
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1276718756990 (2010-06-16 20:05:56 UTC)
+search_radius = 2000.0
+search_time_lo = 1213646756990 (2008-06-16 20:05:56 UTC)
+search_time_hi = 1276718756990 (2010-06-16 20:05:56 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2010-06-16T20:05:56.990Z&format=geojson&latitude=-54.36600&limit=20000&longitude=5.87100&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&starttime=2008-06-16T20:05:56.990Z
+Count of events received = 4
+Count of events after filtering = 3
+Total number of events returned = 3
+AftershockStatsShadow.find_shadow: Found 3 potential shadowing events for mainshock usp000gy9c
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000gy9c
+AftershockStatsShadow.find_shadow: Mainshock usp000gy9c is not shadowed
+
+Event is not shadowed

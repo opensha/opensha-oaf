@@ -1,0 +1,27 @@
+comcat203 comcat.ComcatOAFAccessor test10 nc72282711 0.001 365.0 100.0 4.5 0
+Fetching event: nc72282711
+ObsEqkRupture:
+rup_event_id = nc72282711
+rup_time = 1408875644070 (2014-08-24 10:20:44 UTC)
+rup_mag = 6.02
+rup_lat = 38.2151667
+rup_lon = -122.3123333
+rup_depth = 11.12
+description = South Napa
+ids = ,at00nat3ek,nc72282711,usb000s5tp,atlas20140824102044,
+net = nc
+code = 72282711
+
+http_status = 200
+Fetching event list
+min_days = 0.001
+max_days = 365.0
+radius_km = 100.0
+min_mag = 4.5
+limit_per_call = 0
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-08-24T10:20:44.070Z&format=geojson&latitude=38.21517&limit=20000&longitude=-122.31233&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=4.500&starttime=2014-08-24T10:22:10.470Z
+Count of events received = 0
+Count of events after filtering = 0
+Total number of events returned = 0
+Events returned by fetchEventList = 0
+http_status[0] = 200

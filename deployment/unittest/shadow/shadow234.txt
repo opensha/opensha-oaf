@@ -1,0 +1,44 @@
+shadow234 rj.AftershockStatsShadow test1 usb000j4iz 365
+Fetching event: usb000j4iz
+rup_event_id = usb000j4iz
+rup_time = 1376620265750 (2013-08-16 02:31:05 UTC)
+rup_mag = 6.5
+rup_lat = -41.734
+rup_lon = 174.15200000000002
+rup_depth = 8.2
+
+find_shadow parameters:
+time_now = 1408156265750 (2014-08-16 02:31:05 UTC)
+search_radius = 2000.0
+search_time_lo = 1345084265750 (2012-08-16 02:31:05 UTC)
+search_time_hi = 1408156265750 (2014-08-16 02:31:05 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-08-16T02:31:05.750Z&format=geojson&latitude=-41.73400&limit=20000&longitude=174.15200&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.500&starttime=2012-08-16T02:31:05.750Z
+Count of events received = 8
+Count of events after filtering = 7
+Total number of events returned = 7
+AftershockStatsShadow.find_shadow: Found 7 potential shadowing events for mainshock usb000j4iz
+AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock usb000j4iz
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-07-21T05:09:31.450Z&format=geojson&latitude=-41.73400&limit=20000&longitude=174.15200&maxdepth=700.000&maxradius=0.30685&mindepth=0.000&minmagnitude=3.950&starttime=2013-07-21T05:09:31.450Z
+Count of events received = 111
+Count of events after filtering = 111
+Total number of events returned = 111
+AftershockStatsShadow.find_shadow: Found 111 possible aftershocks within 34.121 km of mainshock usb000j4iz
+AftershockStatsShadow.find_shadow: Mainshock usb000j4iz is shadowed by event usb000iivv
+AftershockStatsShadow.find_shadow: Mainshock magnitude = 6.50, shadowing event magnitude = 6.50
+AftershockStatsShadow.find_shadow: Distance = 15.713 km, time offset = 25.890 days
+
+Event is shadowed by:
+shadow_event_id = usb000iivv
+shadow_time = 1374383371450 (2013-07-21 05:09:31 UTC)
+shadow_mag = 6.5
+shadow_lat = -41.704
+shadow_lon = 174.337
+shadow_depth = 17.0
+separation_km = 15.713
+separation_days = 25.890

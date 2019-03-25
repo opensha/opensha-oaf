@@ -1,0 +1,27 @@
+comcat267 comcat.ComcatOAFAccessor test3 nc216859
+Fetching event: nc216859
+ObsEqkRupture:
+rup_event_id = nc216859
+rup_time = 624672255190 (1989-10-18 00:04:15 UTC)
+rup_mag = 6.9
+rup_lat = 37.0361667
+rup_lon = -121.8798333
+rup_depth = 17.214
+description = Loma Prieta, California Earthquake
+ids = ,nc216859,nclomaprie,choy19891018000415,gcmtm101889a,usp00040t8,iscgem389808,atlas19891018000415,
+net = nc
+code = 216859
+
+http_status = 200
+EI Map: code = 216859
+EI Map: description = Loma Prieta, California Earthquake
+EI Map: ids = ,nc216859,nclomaprie,choy19891018000415,gcmtm101889a,usp00040t8,iscgem389808,atlas19891018000415,
+EI Map: net = nc
+ID List: nc216859
+ID List: nclomaprie
+ID List: choy19891018000415
+ID List: gcmtm101889a
+ID List: usp00040t8
+ID List: iscgem389808
+ID List: atlas19891018000415
+URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc216859.geojson

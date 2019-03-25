@@ -1,0 +1,49 @@
+shadow241 rj.AftershockStatsShadow test1 usp000h7s9 365
+Fetching event: usp000h7s9
+rup_event_id = usp000h7s9
+rup_time = 1267256237960 (2010-02-27 07:37:17 UTC)
+rup_mag = 6.0
+rup_lat = -36.869
+rup_lon = -72.673
+rup_depth = 35.0
+
+find_shadow parameters:
+time_now = 1298792237960 (2011-02-27 07:37:17 UTC)
+search_radius = 2000.0
+search_time_lo = 1235720237960 (2009-02-27 07:37:17 UTC)
+search_time_hi = 1298792237960 (2011-02-27 07:37:17 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T07:37:17.960Z&format=geojson&latitude=-36.86900&limit=20000&longitude=-72.67300&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.000&starttime=2009-02-27T07:37:17.960Z
+Count of events received = 41
+Count of events after filtering = 40
+Total number of events returned = 40
+AftershockStatsShadow.find_shadow: Found 40 potential shadowing events for mainshock usp000h7s9
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:34:11.530Z&format=geojson&latitude=-36.12200&limit=20000&longitude=-72.89800&maxdepth=700.000&maxradius=6.39609&mindepth=0.000&minmagnitude=3.950&starttime=2010-02-27T06:34:11.530Z
+Count of events received = 2087
+Count of events after filtering = 2086
+Total number of events returned = 2086
+AftershockStatsShadow.accum_from_comcat: Found 2086 aftershocks within 711.214 km of candidate event official20100227063411530_30
+AftershockStatsShadow.find_shadow: Found 2 candidate shadowing events for mainshock usp000h7s9
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T07:37:17.960Z&format=geojson&latitude=-36.86900&limit=20000&longitude=-72.67300&maxdepth=700.000&maxradius=0.81537&mindepth=0.000&minmagnitude=3.950&starttime=2011-02-11T20:05:30.910Z
+Count of events received = 30
+Count of events after filtering = 30
+Total number of events returned = 30
+AftershockStatsShadow.find_shadow: Found 30 possible aftershocks within 90.665 km of mainshock usp000h7s9
+AftershockStatsShadow.find_shadow: Mainshock usp000h7s9 is shadowed by event official20100227063411530_30
+AftershockStatsShadow.find_shadow: Mainshock magnitude = 6.00, shadowing event magnitude = 8.80
+AftershockStatsShadow.find_shadow: Distance = 85.463 km, time offset = 0.044 days
+
+Event is shadowed by:
+shadow_event_id = official20100227063411530_30
+shadow_time = 1267252451530 (2010-02-27 06:34:11 UTC)
+shadow_mag = 8.8
+shadow_lat = -36.122
+shadow_lon = -72.898
+shadow_depth = 22.9
+separation_km = 85.463
+separation_days = 0.044

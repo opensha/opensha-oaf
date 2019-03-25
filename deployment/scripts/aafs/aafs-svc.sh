@@ -14,14 +14,17 @@
 # stop - Stop the required services.
 
 case "$1" in
+
     start)
         echo "Starting MongoDB..."
         sudo /usr/sbin/service mongod start
         ;;
+
     stop)
         echo "Stopping MongoDB..."
         sudo /usr/sbin/service mongod stop
         ;;
+
        *)
         echo "Usage: aafs-svc.sh {start|stop}"
         exit 1

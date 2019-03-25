@@ -1,0 +1,52 @@
+comcat192 comcat.ComcatOAFAccessor test10 nc72282711 -0.001 30.0 100.0 2.5 0
+Fetching event: nc72282711
+ObsEqkRupture:
+rup_event_id = nc72282711
+rup_time = 1408875644070 (2014-08-24 10:20:44 UTC)
+rup_mag = 6.02
+rup_lat = 38.2151667
+rup_lon = -122.3123333
+rup_depth = 11.12
+description = South Napa
+ids = ,at00nat3ek,nc72282711,usb000s5tp,atlas20140824102044,
+net = nc
+code = 72282711
+
+http_status = 200
+Fetching event list
+min_days = -0.001
+max_days = 30.0
+radius_km = 100.0
+min_mag = 2.5
+limit_per_call = 0
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-09-23T10:20:44.070Z&format=geojson&latitude=38.21517&limit=20000&longitude=-122.31233&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=2.500&starttime=2014-08-24T10:19:17.670Z
+Count of events received = 25
+Count of events after filtering = 24
+Total number of events returned = 24
+Events returned by fetchEventList = 24
+http_status[0] = 200
+List of events returned by fetchEventList:
+0: nc72303256 (time = 2014-09-21 20:17:53 UTC, mag = 2.630, lat = 38.33733, lon = -122.38083, depth = 7.515)
+1: nc72300301 (time = 2014-09-16 20:23:31 UTC, mag = 2.720, lat = 38.79000, lon = -122.72367, depth = 1.530)
+2: nc72298871 (time = 2014-09-14 18:07:34 UTC, mag = 2.690, lat = 38.82833, lon = -122.79433, depth = 1.812)
+3: nc72292671 (time = 2014-09-06 07:19:14 UTC, mag = 2.680, lat = 37.58117, lon = -121.98133, depth = 7.580)
+4: nc72291211 (time = 2014-09-04 10:56:23 UTC, mag = 2.930, lat = 38.18033, lon = -122.30317, depth = 10.937)
+5: nc72290996 (time = 2014-09-04 03:24:02 UTC, mag = 2.910, lat = 37.40283, lon = -122.20317, depth = 4.740)
+6: nc72290666 (time = 2014-09-03 10:18:51 UTC, mag = 2.630, lat = 38.23333, lon = -122.32917, depth = 9.280)
+7: nc72288561 (time = 2014-08-31 08:56:20 UTC, mag = 3.240, lat = 38.23583, lon = -122.32850, depth = 9.550)
+8: nc72287451 (time = 2014-08-29 21:53:18 UTC, mag = 2.660, lat = 38.81833, lon = -122.82600, depth = 2.521)
+9: nc72285636 (time = 2014-08-27 18:57:19 UTC, mag = 2.620, lat = 38.24650, lon = -122.34617, depth = 8.002)
+10: nc72284741 (time = 2014-08-26 17:56:51 UTC, mag = 2.520, lat = 38.24517, lon = -122.33967, depth = 8.052)
+11: nc72284621 (time = 2014-08-26 13:45:52 UTC, mag = 2.990, lat = 38.24167, lon = -122.34033, depth = 8.912)
+12: nc72284611 (time = 2014-08-26 13:12:19 UTC, mag = 2.710, lat = 38.17933, lon = -122.29683, depth = 10.006)
+13: nc72284591 (time = 2014-08-26 12:35:52 UTC, mag = 2.700, lat = 38.17567, lon = -122.30650, depth = 11.473)
+14: nc71095504 (time = 2014-08-26 12:33:22 UTC, mag = 3.730, lat = 38.16617, lon = -122.29983, depth = 10.405)
+15: nc72284586 (time = 2014-08-26 12:33:16 UTC, mag = 3.900, lat = 38.17850, lon = -122.30083, depth = 12.577)
+16: nc72284286 (time = 2014-08-26 00:02:34 UTC, mag = 2.790, lat = 38.24033, lon = -122.34133, depth = 6.927)
+17: nc72284076 (time = 2014-08-25 17:16:54 UTC, mag = 2.870, lat = 38.81533, lon = -122.82783, depth = 2.301)
+18: nc72283366 (time = 2014-08-24 15:10:48 UTC, mag = 2.570, lat = 38.22150, lon = -122.32950, depth = 8.937)
+19: nc72283346 (time = 2014-08-24 14:54:23 UTC, mag = 2.770, lat = 38.20083, lon = -122.33967, depth = 9.647)
+20: nc72283201 (time = 2014-08-24 12:47:12 UTC, mag = 3.600, lat = 38.23833, lon = -122.34250, depth = 8.439)
+21: nc72282751 (time = 2014-08-24 10:24:44 UTC, mag = 3.510, lat = 38.25983, lon = -122.33733, depth = 10.343)
+22: nc72282716 (time = 2014-08-24 10:21:45 UTC, mag = 3.810, lat = 38.23500, lon = -122.31983, depth = 9.001)
+23: nc71086369 (time = 2014-08-24 10:21:10 UTC, mag = 4.380, lat = 38.76017, lon = -122.72567, depth = 0.182)

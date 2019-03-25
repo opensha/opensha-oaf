@@ -1,0 +1,27 @@
+comcat278 comcat.ComcatOAFAccessor test1 usp000hvnu
+Fetching event: usp000hvnu
+ObsEqkRupture:
+rup_event_id = official20110311054624120_30
+rup_time = 1299822384120 (2011-03-11 05:46:24 UTC)
+rup_mag = 9.1
+rup_lat = 38.297
+rup_lon = 142.373
+rup_depth = 29.0
+description = near the east coast of Honshu, Japan
+ids = ,usc0001xgp,usp000hvnu,choy20110311054623,official20110311054624120_30,duputel201103110546a,atlas20110311054624,iscgem16461282,
+net = official
+code = 20110311054624120_30
+
+http_status = 200
+EI Map: code = 20110311054624120_30
+EI Map: description = near the east coast of Honshu, Japan
+EI Map: ids = ,usc0001xgp,usp000hvnu,choy20110311054623,official20110311054624120_30,duputel201103110546a,atlas20110311054624,iscgem16461282,
+EI Map: net = official
+ID List: official20110311054624120_30
+ID List: usc0001xgp
+ID List: usp000hvnu
+ID List: choy20110311054623
+ID List: duputel201103110546a
+ID List: atlas20110311054624
+ID List: iscgem16461282
+URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000hvnu.geojson

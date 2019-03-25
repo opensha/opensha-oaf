@@ -19,21 +19,140 @@
 #
 # deploy - Copy the AAFS jar file and required libraries into /opt/aafs/oefjava.
 #
-# deploycfg - Copy the AAFS configuration files into /opt/aafs/oafcfg.
-#             The ServerConfig.json file is not copied if it already exists,
-#             to avoid overwriting passwords and other server configuration settings.
+# deploycfg - Copy the AAFS configuration files and scripts into /opt/aafs and its subdirectories.
+#             The user is prompted before any existing file in /opt/aafs is changed.
 #
 # run - Run a class in the org.opensha.oaf package, using the compiled-in configuration.
 #       After the 'run' keyword comes the name of the class (without the 'org.opensha.oaf.'
 #       prefix), followed by any command-line parameters for the class.
 #
 # runcfg - Run a class in the org.opensha.oaf package, reading configuration from ./oafcfg.
-#          After the 'run' keyword comes the name of the class (without the 'org.opensha.oaf.'
+#          After the 'runcfg' keyword comes the name of the class (without the 'org.opensha.oaf.'
 #          prefix), followed by any command-line parameters for the class.
 #
+# runaafs - Run a class in the org.opensha.oaf package, reading configuration from /opt/aafs/oafcfg.
+#           After the 'runaafs' keyword comes the name of the class (without the 'org.opensha.oaf.'
+#           prefix), followed by any command-line parameters for the class.
+#
 # runany - Run a class in any package, using the compiled-in configuration.
-#          After the 'run' keyword comes the full name of the class, followed by any command-line
+#          After the 'runany' keyword comes the full name of the class, followed by any command-line
 #          parameters for the class.
+
+
+
+
+# Function to copy a script file, prompting if existing file is being changed.
+# $1 = Source file.
+# $2 = Destination file.
+
+copyscr () {
+
+    # If the destination file exists then test if the content is changing
+
+    if [ -f "$2" ]; then
+        if cmp -s "$1" "$2"; then
+            # File exists, but content is the same
+            rm "$2"
+            cp -pi "$1" "$2"
+            chmod 755 "$2"
+        else
+            # File exists, and content is different
+            while true; do
+                read -p "Overwrite $2 (y/n)? " -n 1 -r
+                echo
+                case "$REPLY" in
+                    y|Y)
+                        rm "$2"
+                        cp -pi "$1" "$2"
+                        chmod 755 "$2"
+                        break
+                        ;;
+                    n|N)
+                        break
+                        ;;
+                    *)
+                        echo "Please reply y or n"
+                        ;;
+                esac
+            done
+        fi
+    else
+        # File does not exist
+        cp -pi "$1" "$2"
+        chmod 755 "$2"
+    fi
+}
+
+
+
+
+# Function to copy a configuration file, prompting if existing file is being changed.
+# $1 = Source file.
+# $2 = Destination file.
+
+copycfg () {
+
+    # If the destination file exists then test if the content is changing
+
+    if [ -f "$2" ]; then
+        if cmp -s "$1" "$2"; then
+            # File exists, but content is the same
+            rm "$2"
+            cp -pi "$1" "$2"
+        else
+            # File exists, and content is different
+            while true; do
+                read -p "Overwrite $2 (y/n)? " -n 1 -r
+                echo
+                case "$REPLY" in
+                    y|Y)
+                        rm "$2"
+                        cp -pi "$1" "$2"
+                        break
+                        ;;
+                    n|N)
+                        break
+                        ;;
+                    *)
+                        echo "Please reply y or n"
+                        ;;
+                esac
+            done
+        fi
+    else
+        # File does not exist
+        cp -pi "$1" "$2"
+    fi
+}
+
+
+
+
+# Function to copy a file, overwriting any existing file.
+# $1 = Source file.
+# $2 = Destination file.
+
+copyover () {
+    if [ -f "$2" ]; then
+        rm "$2"
+    fi
+    cp -pi "$1" "$2"
+}
+
+
+
+
+# Function to make a directory, if the directory does not exist.
+# $1 = Directory.
+
+makenewdir () {
+    if [ ! -d "$1" ]; then
+        mkdir "$1"
+    fi
+}
+
+
+
 
 case "$1" in
 
@@ -117,38 +236,36 @@ case "$1" in
             cd ..
             jar -cf oefjava.jar -C otmp .
             cd ../../..
+        else
+            echo "Program has not been compiled yet"
         fi
         ;;
 
     deploy)
         if [ -f opensha-oaf/build/libs/oefjava.jar ]; then
-            if [ -f /opt/aafs/oefjava/oefjava.jar ]; then
-                rm /opt/aafs/oefjava/oefjava.jar
-            fi
-            cp -pi opensha-oaf/build/libs/oefjava.jar /opt/aafs/oefjava/oefjava.jar
-            if [ -f /opt/aafs/oefjava/ProductClient.jar ]; then
-                rm /opt/aafs/oefjava/ProductClient.jar
-            fi
-            cp -pi opensha-oaf/lib/ProductClient.jar /opt/aafs/oefjava/ProductClient.jar
+            makenewdir /opt/aafs/oefjava
+            copyover opensha-oaf/build/libs/oefjava.jar /opt/aafs/oefjava/oefjava.jar
+            copyover opensha-oaf/lib/ProductClient.jar /opt/aafs/oefjava/ProductClient.jar
+        else
+            echo "Program has not been compiled and packed yet"
         fi
         ;;
 
     deploycfg)
-        if [ ! -f /opt/aafs/oafcfg/ServerConfig.json ]; then
-            cp -pi opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
-        fi
-        if [ -f /opt/aafs/oafcfg/ActionConfig.json ]; then
-            rm /opt/aafs/oafcfg/ActionConfig.json
-        fi
-        cp -pi opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
-        if [ -f /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json ]; then
-            rm /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
-        fi
-        cp -pi opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
-        if [ -f /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json ]; then
-            rm /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
-        fi
-        cp -pi opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
+        makenewdir /opt/aafs/oefjava
+        makenewdir /opt/aafs/oafcfg
+        makenewdir /opt/aafs/intake
+        makenewdir /opt/aafs/key
+        copycfg opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
+        copycfg opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
+        copycfg opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
+        copycfg opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
+        copyscr opensha-oaf/deployment/scripts/aafs/aafs.sh /opt/aafs/aafs.sh
+        copyscr opensha-oaf/deployment/scripts/aafs/aafs-app.sh /opt/aafs/aafs-app.sh
+        copyscr opensha-oaf/deployment/scripts/aafs/aafs-svc.sh /opt/aafs/aafs-svc.sh
+        copyscr opensha-oaf/deployment/scripts/aafs/intake/init.sh /opt/aafs/intake/init.sh
+        copyscr opensha-oaf/deployment/scripts/aafs/intake/listener.sh /opt/aafs/intake/listener.sh
+        copycfg opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
         ;;
 
     run)
@@ -163,6 +280,12 @@ case "$1" in
         java -Doafcfg=./oafcfg -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
         ;;
 
+    runaafs)
+        JCLASS="org.opensha.oaf.$2"
+        shift 2
+        java -Doafcfg=/opt/aafs/oafcfg -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
     runany)
         JCLASS="$2"
         shift 2
@@ -170,7 +293,7 @@ case "$1" in
         ;;
 
     *)
-        echo "Usage: boaf.sh {clone|update|clean|compile|pack|deploy|deploycfg|run|runcfg|runany}"
+        echo "Usage: boaf.sh {clone|update|clean|compile|pack|deploy|deploycfg|run|runcfg|runaafs|runany}"
         exit 1
         ;;
 esac

@@ -1,0 +1,29 @@
+shadow122 rj.AftershockStatsShadow test1 usp000f9hz 365
+Fetching event: usp000f9hz
+rup_event_id = usp000f9hz
+rup_time = 1176402289030 (2007-04-12 18:24:49 UTC)
+rup_mag = 6.0
+rup_lat = -61.828
+rup_lon = 160.96
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1207938289030 (2008-04-11 18:24:49 UTC)
+search_radius = 2000.0
+search_time_lo = 1144866289030 (2006-04-12 18:24:49 UTC)
+search_time_hi = 1207938289030 (2008-04-11 18:24:49 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-04-11T18:24:49.030Z&format=geojson&latitude=-61.82800&limit=20000&longitude=160.96000&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.000&starttime=2006-04-12T18:24:49.030Z
+Count of events received = 11
+Count of events after filtering = 10
+Total number of events returned = 10
+AftershockStatsShadow.find_shadow: Found 10 potential shadowing events for mainshock usp000f9hz
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000f9hz
+AftershockStatsShadow.find_shadow: Mainshock usp000f9hz is not shadowed
+
+Event is not shadowed

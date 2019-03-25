@@ -1,0 +1,56 @@
+comcat216 comcat.ComcatOAFAccessor test11 nc72282711 -0.001 365.0 25.0 2.5 0
+Fetching event: nc72282711
+ObsEqkRupture:
+rup_event_id = nc72282711
+rup_time = 1408875644070 (2014-08-24 10:20:44 UTC)
+rup_mag = 6.02
+rup_lat = 38.2151667
+rup_lon = -122.3123333
+rup_depth = 11.12
+description = South Napa
+ids = ,at00nat3ek,nc72282711,usb000s5tp,atlas20140824102044,
+net = nc
+code = 72282711
+
+http_status = 200
+Fetching event list
+min_days = -0.001
+max_days = 365.0
+radius_km = 25.0
+min_mag = 2.5
+limit_per_call = 0
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-08-24T10:20:44.070Z&format=geojson&latitude=38.21517&limit=20000&longitude=-122.31233&maxdepth=700.000&maxradius=0.22483&mindepth=0.000&minmagnitude=2.500&starttime=2014-08-24T10:19:17.670Z
+Count of events received = 29
+Count of events after filtering = 28
+Total number of events returned = 28
+Events returned by fetchEventList = 28
+http_status[0] = 200
+List of events returned by fetchEventList:
+0: nc72467761 (time = 2015-06-17 23:12:12 UTC, mag = 2.680, lat = 38.35367, lon = -122.38933, depth = 9.525)
+1: nc72453246 (time = 2015-05-22 02:53:00 UTC, mag = 4.090, lat = 38.43167, lon = -122.25033, depth = 12.830)
+2: nc72428515 (time = 2015-04-14 18:32:30 UTC, mag = 2.670, lat = 38.03450, lon = -122.20283, depth = 9.731)
+3: nc72408835 (time = 2015-03-10 16:36:01 UTC, mag = 2.560, lat = 38.20150, lon = -122.31617, depth = 9.819)
+4: nc72389786 (time = 2015-02-01 02:17:34 UTC, mag = 2.730, lat = 38.35700, lon = -122.39250, depth = 7.195)
+5: nc72388726 (time = 2015-01-30 00:04:41 UTC, mag = 2.960, lat = 38.43033, lon = -122.23700, depth = 8.057)
+6: nc72373016 (time = 2014-12-31 09:01:13 UTC, mag = 2.540, lat = 38.21400, lon = -122.32700, depth = 8.759)
+7: nc72357101 (time = 2014-11-27 20:36:15 UTC, mag = 2.950, lat = 38.35100, lon = -122.36717, depth = 4.807)
+8: nc72335236 (time = 2014-10-29 16:31:18 UTC, mag = 2.650, lat = 38.24667, lon = -122.36033, depth = 7.037)
+9: nc72316546 (time = 2014-09-29 07:17:01 UTC, mag = 2.500, lat = 38.17700, lon = -122.30333, depth = 11.711)
+10: nc72311841 (time = 2014-09-26 16:38:42 UTC, mag = 2.520, lat = 38.24800, lon = -122.34367, depth = 7.890)
+11: nc72303256 (time = 2014-09-21 20:17:53 UTC, mag = 2.630, lat = 38.33733, lon = -122.38083, depth = 7.515)
+12: nc72291211 (time = 2014-09-04 10:56:23 UTC, mag = 2.930, lat = 38.18033, lon = -122.30317, depth = 10.937)
+13: nc72290666 (time = 2014-09-03 10:18:51 UTC, mag = 2.630, lat = 38.23333, lon = -122.32917, depth = 9.280)
+14: nc72288561 (time = 2014-08-31 08:56:20 UTC, mag = 3.240, lat = 38.23583, lon = -122.32850, depth = 9.550)
+15: nc72285636 (time = 2014-08-27 18:57:19 UTC, mag = 2.620, lat = 38.24650, lon = -122.34617, depth = 8.002)
+16: nc72284741 (time = 2014-08-26 17:56:51 UTC, mag = 2.520, lat = 38.24517, lon = -122.33967, depth = 8.052)
+17: nc72284621 (time = 2014-08-26 13:45:52 UTC, mag = 2.990, lat = 38.24167, lon = -122.34033, depth = 8.912)
+18: nc72284611 (time = 2014-08-26 13:12:19 UTC, mag = 2.710, lat = 38.17933, lon = -122.29683, depth = 10.006)
+19: nc72284591 (time = 2014-08-26 12:35:52 UTC, mag = 2.700, lat = 38.17567, lon = -122.30650, depth = 11.473)
+20: nc71095504 (time = 2014-08-26 12:33:22 UTC, mag = 3.730, lat = 38.16617, lon = -122.29983, depth = 10.405)
+21: nc72284586 (time = 2014-08-26 12:33:16 UTC, mag = 3.900, lat = 38.17850, lon = -122.30083, depth = 12.577)
+22: nc72284286 (time = 2014-08-26 00:02:34 UTC, mag = 2.790, lat = 38.24033, lon = -122.34133, depth = 6.927)
+23: nc72283366 (time = 2014-08-24 15:10:48 UTC, mag = 2.570, lat = 38.22150, lon = -122.32950, depth = 8.937)
+24: nc72283346 (time = 2014-08-24 14:54:23 UTC, mag = 2.770, lat = 38.20083, lon = -122.33967, depth = 9.647)
+25: nc72283201 (time = 2014-08-24 12:47:12 UTC, mag = 3.600, lat = 38.23833, lon = -122.34250, depth = 8.439)
+26: nc72282751 (time = 2014-08-24 10:24:44 UTC, mag = 3.510, lat = 38.25983, lon = -122.33733, depth = 10.343)
+27: nc72282716 (time = 2014-08-24 10:21:45 UTC, mag = 3.810, lat = 38.23500, lon = -122.31983, depth = 9.001)

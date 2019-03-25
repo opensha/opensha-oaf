@@ -38,11 +38,15 @@ public class PollSupport extends ServerComponent {
 
 	//----- Timing variables -----
 
+	// True to poll using the ExPollComcatRun task, false to poll during idle.
+
+	private boolean f_poll_using_task;
+
 	// True if polling is currently enabled, false if not.
 
 	private boolean f_polling_enabled;
 
-	// True if a poll cleanup operation is needed, false if not.
+	// True if a poll cleanup operation is needed, false if not (used when polling during idle time).
 
 	private boolean f_poll_cleanup_needed;
 
@@ -115,7 +119,10 @@ public class PollSupport extends ServerComponent {
 	// Note: This is to be called from the execution function of a polling task.
 
 	public void set_polling_disabled () {
-		//delete_waiting_poll_run_tasks ();		// uncomment to use ExPollComcatRun
+
+		if (f_poll_using_task) {
+			delete_waiting_poll_run_tasks ();
+		}
 
 		f_polling_enabled = false;
 		f_poll_cleanup_needed = true;
@@ -132,7 +139,10 @@ public class PollSupport extends ServerComponent {
 	// Note: If polling is already enabled, the cycle is reset.
 
 	public void set_polling_enabled () {
-		//delete_waiting_poll_run_tasks ();		// uncomment to use ExPollComcatRun
+
+		if (f_poll_using_task) {
+			delete_waiting_poll_run_tasks ();
+		}
 
 		f_polling_enabled = true;
 		f_poll_cleanup_needed = true;
@@ -142,7 +152,10 @@ public class PollSupport extends ServerComponent {
 
 		// Kick off polling
 
-		//kick_off_polling (0L);		// uncomment to use ExPollComcatRun
+		if (f_poll_using_task) {
+			kick_off_polling (0L);
+		}
+
 		return;
 	}
 
@@ -210,11 +223,15 @@ public class PollSupport extends ServerComponent {
 
 			// Effective time is current time plus jitter allowance
 
-			long eff_time = sg.task_disp.get_time() + jitter;
+			long eff_time_short = sg.task_disp.get_time();
+			long eff_time_long = eff_time_short + jitter;
+			if (f_poll_using_task) {
+				eff_time_short = eff_time_long;
+			}
 
 			// If it's time for a short poll ...
 
-			if (eff_time >= next_short_poll_time) {
+			if (eff_time_short >= next_short_poll_time) {
 
 				// If long poll is allowed ...
 
@@ -222,7 +239,7 @@ public class PollSupport extends ServerComponent {
 
 					// If it's time for a long poll, return it
 
-					if (eff_time >= next_long_poll_time) {
+					if (eff_time_long >= next_long_poll_time) {
 						return 2;
 					}
 				}
@@ -321,8 +338,14 @@ public class PollSupport extends ServerComponent {
 	// On entry, these task dispatcher context variables must set up:
 	//  dispatcher_time, dispatcher_true_time, dispatcher_action_config
 	// This should be run during idle time, not during a MongoDB transaction.
+	// Returns true if it did work, false if not.
 
-	public void run_poll_during_idle (boolean f_verbose) {
+	public boolean run_poll_during_idle (boolean f_verbose) {
+		boolean result = false;
+
+		if (f_poll_using_task) {
+			return result;
+		}
 
 		//--- Cleanup operation
 
@@ -337,6 +360,8 @@ public class PollSupport extends ServerComponent {
 				System.out.println ("COMCAT-POLL-CLEANUP-BEGIN: " + SimpleUtils.time_to_string (sg.task_disp.get_time()));
 			}
 			sg.log_sup.report_comcat_poll_cleanup_begin ();
+
+			result = true;
 
 			// Delete all poll run tasks
 
@@ -363,7 +388,7 @@ public class PollSupport extends ServerComponent {
 		// No poll, just return
 
 		if (which_poll == 0) {
-			return;
+			return result;
 		}
 
 		// Check for intake blocked
@@ -371,7 +396,7 @@ public class PollSupport extends ServerComponent {
 		if ((new ServerConfig()).get_is_poll_intake_blocked()) {
 			f_polling_enabled = false;
 			f_poll_cleanup_needed = true;
-			return;
+			return result;
 		}
 
 		// Say hello
@@ -381,6 +406,8 @@ public class PollSupport extends ServerComponent {
 			System.out.println ("COMCAT-POLL-BEGIN: " + SimpleUtils.time_to_string (sg.task_disp.get_time()));
 		}
 		sg.log_sup.report_comcat_poll_begin ();
+
+		result = true;
 
 		// Get lookback depending on whether it is a short or long poll
 
@@ -447,7 +474,7 @@ public class PollSupport extends ServerComponent {
 			sg.log_sup.report_comcat_exception (null, e);
 			sg.log_sup.report_comcat_poll_end (get_next_poll_time());
 
-			return;
+			return result;
 		}
 
 		double poll_lookback_days = ((double)poll_lookback) / ((double)DURATION_DAY);
@@ -625,7 +652,7 @@ public class PollSupport extends ServerComponent {
 		}
 		sg.log_sup.report_comcat_poll_end (get_next_poll_time());
 
-		return;	
+		return result;	
 	}
 
 
@@ -637,6 +664,8 @@ public class PollSupport extends ServerComponent {
 	// Default constructor.
 
 	public PollSupport () {
+
+		f_poll_using_task = false;
 
 		f_polling_enabled = false;
 		f_poll_cleanup_needed = false;
@@ -653,6 +682,8 @@ public class PollSupport extends ServerComponent {
 	@Override
 	public void setup (ServerGroup the_sg) {
 		super.setup (the_sg);
+
+		f_poll_using_task = false;
 
 		f_polling_enabled = false;
 		f_poll_cleanup_needed = false;

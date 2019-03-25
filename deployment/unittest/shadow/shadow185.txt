@@ -1,0 +1,29 @@
+shadow185 rj.AftershockStatsShadow test1 usp000avmx 365
+Fetching event: usp000avmx
+rup_event_id = usp000avmx
+rup_time = 1009881546820 (2002-01-01 10:39:06 UTC)
+rup_mag = 6.0
+rup_lat = -55.214
+rup_lon = -129.0
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1041417546820 (2003-01-01 10:39:06 UTC)
+search_radius = 2000.0
+search_time_lo = 978345546820 (2001-01-01 10:39:06 UTC)
+search_time_hi = 1041417546820 (2003-01-01 10:39:06 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-01-01T10:39:06.820Z&format=geojson&latitude=-55.21400&limit=20000&longitude=-129.00000&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.000&starttime=2001-01-01T10:39:06.820Z
+Count of events received = 8
+Count of events after filtering = 7
+Total number of events returned = 7
+AftershockStatsShadow.find_shadow: Found 7 potential shadowing events for mainshock usp000avmx
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000avmx
+AftershockStatsShadow.find_shadow: Mainshock usp000avmx is not shadowed
+
+Event is not shadowed

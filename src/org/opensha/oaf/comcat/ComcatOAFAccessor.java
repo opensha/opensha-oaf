@@ -47,6 +47,7 @@ import org.opensha.oaf.util.SphLatLon;
 //import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SphRegionCircle;
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.ObsEqkRupMaxTimeComparator;
 
 import org.opensha.oaf.rj.AftershockVerbose;
 import org.opensha.oaf.aafs.ServerConfig;
@@ -1279,6 +1280,259 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 				System.out.println ();
 				System.out.println (GeoJsonUtils.jsonObjectToString (accessor.get_last_geojson()));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #10
+		// Command format:
+		//  test2  event_id  min_days  max_days  radius_km  min_mag  limit_per_call
+		// Fetch information for an event, and display it.
+		// Then fetch the event list for a circle surrounding the hypocenter,
+		// for the specified interval in days after the origin time,
+		// excluding the event itself.
+		// The adjustable limit per call can test the multi-fetch logic.
+		// Same as test #2, except also displays the list of events retrieved.
+
+		if (args[0].equalsIgnoreCase ("test10")) {
+
+			// Six additional arguments
+
+			if (args.length != 7) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test10' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				double min_days = Double.parseDouble (args[2]);
+				double max_days = Double.parseDouble (args[3]);
+				double radius_km = Double.parseDouble (args[4]);
+				double min_mag = Double.parseDouble (args[5]);
+				int limit_per_call = Integer.parseInt(args[6]);
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+				long rup_time = rup.getOriginTime();
+				Location hypo = rup.getHypocenterLocation();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				// Say hello
+
+				System.out.println ("Fetching event list");
+				System.out.println ("min_days = " + min_days);
+				System.out.println ("max_days = " + max_days);
+				System.out.println ("radius_km = " + radius_km);
+				System.out.println ("min_mag = " + min_mag);
+				System.out.println ("limit_per_call = " + limit_per_call);
+
+				// Construct the Region
+
+				SphRegionCircle region = new SphRegionCircle (new SphLatLon(hypo), radius_km);
+
+				// Calculate the times
+
+				long startTime = rup_time + (long)(min_days*day_millis);
+				long endTime = rup_time + (long)(max_days*day_millis);
+
+				// Call Comcat
+
+				double minDepth = DEFAULT_MIN_DEPTH;
+				double maxDepth = DEFAULT_MAX_DEPTH;
+				boolean wrapLon = false;
+				boolean extendedInfo = false;
+				int max_calls = 0;
+
+				ObsEqkRupList rup_list = accessor.fetchEventList (rup_event_id, startTime, endTime,
+						minDepth, maxDepth, region, wrapLon, extendedInfo,
+						min_mag, limit_per_call, max_calls);
+
+				// Display the information
+
+				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
+
+				int n_status = accessor.get_http_status_count();
+				for (int i = 0; i < n_status; ++i) {
+					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
+				}
+
+				// If list of events is nonempty, display it, in temporal order, most recent first
+
+				if (rup_list.size() > 0) {
+					System.out.println ("List of events returned by fetchEventList:");
+					Collections.sort (rup_list, new ObsEqkRupMaxTimeComparator());
+					int n = 0;
+					for (ObsEqkRupture r : rup_list) {
+						String r_event_id = r.getEventId();
+						long r_time = r.getOriginTime();
+						double r_mag = r.getMag();
+						Location r_hypo = r.getHypocenterLocation();
+						double r_lat = r_hypo.getLatitude();
+						double r_lon = r_hypo.getLongitude();
+						double r_depth = r_hypo.getDepth();
+
+						String event_info = SimpleUtils.event_id_and_info_one_line (r_event_id, r_time, r_mag, r_lat, r_lon, r_depth);
+						System.out.println (n + ": " + event_info);
+						++n;
+					}
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #11
+		// Command format:
+		//  test4  event_id  min_days  max_days  radius_km  min_mag  limit_per_call
+		// Fetch information for an event, and display it.
+		// Then fetch the event list for a circle surrounding the hypocenter,
+		// for the specified interval in days after the origin time,
+		// excluding the event itself.
+		// The adjustable limit per call can test the multi-fetch logic.
+		// Same as test #10, except using ComcatAccessor.
+		// Same as test #4, except also displays the list of events retrieved.
+
+		if (args[0].equalsIgnoreCase ("test11")) {
+
+			// Six additional arguments
+
+			if (args.length != 7) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test11' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				double min_days = Double.parseDouble (args[2]);
+				double max_days = Double.parseDouble (args[3]);
+				double radius_km = Double.parseDouble (args[4]);
+				double min_mag = Double.parseDouble (args[5]);
+				int limit_per_call = Integer.parseInt(args[6]);
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatAccessor accessor = new ComcatAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+				long rup_time = rup.getOriginTime();
+				Location hypo = rup.getHypocenterLocation();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				// Say hello
+
+				System.out.println ("Fetching event list");
+				System.out.println ("min_days = " + min_days);
+				System.out.println ("max_days = " + max_days);
+				System.out.println ("radius_km = " + radius_km);
+				System.out.println ("min_mag = " + min_mag);
+				System.out.println ("limit_per_call = " + limit_per_call);
+
+				// Construct the Region
+
+				SphRegionCircle region = new SphRegionCircle (new SphLatLon(hypo), radius_km);
+
+				// Calculate the times
+
+				long startTime = rup_time + (long)(min_days*day_millis);
+				long endTime = rup_time + (long)(max_days*day_millis);
+
+				// Call Comcat
+
+				double minDepth = DEFAULT_MIN_DEPTH;
+				double maxDepth = DEFAULT_MAX_DEPTH;
+				boolean wrapLon = false;
+				boolean extendedInfo = false;
+				int max_calls = 0;
+
+				ObsEqkRupList rup_list = accessor.fetchEventList (rup_event_id, startTime, endTime,
+						minDepth, maxDepth, region, wrapLon, extendedInfo,
+						min_mag, limit_per_call, max_calls);
+
+				// Display the information
+
+				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
+
+				int n_status = accessor.get_http_status_count();
+				for (int i = 0; i < n_status; ++i) {
+					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
+				}
+
+				// If list of events is nonempty, display it, in temporal order, most recent first
+
+				if (rup_list.size() > 0) {
+					System.out.println ("List of events returned by fetchEventList:");
+					Collections.sort (rup_list, new ObsEqkRupMaxTimeComparator());
+					int n = 0;
+					for (ObsEqkRupture r : rup_list) {
+						String r_event_id = r.getEventId();
+						long r_time = r.getOriginTime();
+						double r_mag = r.getMag();
+						Location r_hypo = r.getHypocenterLocation();
+						double r_lat = r_hypo.getLatitude();
+						double r_lon = r_hypo.getLongitude();
+						double r_depth = r_hypo.getDepth();
+
+						String event_info = SimpleUtils.event_id_and_info_one_line (r_event_id, r_time, r_mag, r_lat, r_lon, r_depth);
+						System.out.println (n + ": " + event_info);
+						++n;
+					}
+				}
 
 			} catch (Exception e) {
 				e.printStackTrace();

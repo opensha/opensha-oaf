@@ -1,0 +1,29 @@
+shadow148 rj.AftershockStatsShadow test1 usp000h5ra 365
+Fetching event: usp000h5ra
+rup_event_id = usp000h5ra
+rup_time = 1262667339410 (2010-01-05 04:55:39 UTC)
+rup_mag = 6.8
+rup_lat = -58.173
+rup_lon = -14.695000000000002
+rup_depth = 13.0
+
+find_shadow parameters:
+time_now = 1294203339410 (2011-01-05 04:55:39 UTC)
+search_radius = 2000.0
+search_time_lo = 1231131339410 (2009-01-05 04:55:39 UTC)
+search_time_hi = 1294203339410 (2011-01-05 04:55:39 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-01-05T04:55:39.410Z&format=geojson&latitude=-58.17300&limit=20000&longitude=-14.69500&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.800&starttime=2009-01-05T04:55:39.410Z
+Count of events received = 1
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow: Found 0 potential shadowing events for mainshock usp000h5ra
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000h5ra
+AftershockStatsShadow.find_shadow: Mainshock usp000h5ra is not shadowed
+
+Event is not shadowed

@@ -11,18 +11,29 @@
 # start - Start the AAFS system.
 #
 # stop - Stop the AAFS system.
+#
+# initdb - Initialize the AAFS database.
 
 case "$1" in
+
     start)
         /opt/aafs/aafs-svc.sh start
         /opt/aafs/aafs-app.sh start
         ;;
+
     stop)
         /opt/aafs/aafs-app.sh stop
         /opt/aafs/aafs-svc.sh stop
         ;;
+
+    initdb)
+        /opt/aafs/aafs-svc.sh start
+        /opt/aafs/aafs-app.sh initdb
+        /opt/aafs/aafs-svc.sh stop
+        ;;
+
        *)
-        echo "Usage: aafs.sh {start|stop}"
+        echo "Usage: aafs.sh {start|stop|initdb}"
         exit 1
         ;;
 esac

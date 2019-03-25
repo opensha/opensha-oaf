@@ -1,0 +1,29 @@
+shadow152 rj.AftershockStatsShadow test1 usp000f9va 365
+Fetching event: usp000f9va
+rup_event_id = usp000f9va
+rup_time = 1176729638230 (2007-04-16 13:20:38 UTC)
+rup_mag = 6.4
+rup_lat = -58.01500000000001
+rup_lon = 147.964
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1208265638230 (2008-04-15 13:20:38 UTC)
+search_radius = 2000.0
+search_time_lo = 1145193638230 (2006-04-16 13:20:38 UTC)
+search_time_hi = 1208265638230 (2008-04-15 13:20:38 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-04-15T13:20:38.230Z&format=geojson&latitude=-58.01500&limit=20000&longitude=147.96400&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.400&starttime=2006-04-16T13:20:38.230Z
+Count of events received = 7
+Count of events after filtering = 6
+Total number of events returned = 6
+AftershockStatsShadow.find_shadow: Found 6 potential shadowing events for mainshock usp000f9va
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000f9va
+AftershockStatsShadow.find_shadow: Mainshock usp000f9va is not shadowed
+
+Event is not shadowed

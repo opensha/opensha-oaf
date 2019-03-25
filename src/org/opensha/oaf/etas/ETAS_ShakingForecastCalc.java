@@ -29,11 +29,10 @@ import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotSpec;
 import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.util.cpt.CPT;
-import org.opensha.nshmp2.erf.source.PointSource13b;
-import org.opensha.nshmp2.util.FocalMech;
 import org.opensha.sha.calc.hazardMap.HazardDataSetLoader;
 import org.opensha.sha.earthquake.AbstractERF;
 import org.opensha.sha.earthquake.ProbEqkSource;
+import org.opensha.sha.earthquake.rupForecastImpl.PointSource13b;
 import org.opensha.sha.gui.infoTools.IMT_Info;
 import org.opensha.sha.imr.AttenRelRef;
 import org.opensha.sha.imr.ScalarIMR;
@@ -43,6 +42,7 @@ import org.opensha.sha.imr.param.IntensityMeasureParams.PGV_Param;
 import org.opensha.sha.imr.param.IntensityMeasureParams.SA_Param;
 import org.opensha.sha.imr.param.SiteParams.Vs30_Param;
 import org.opensha.sha.magdist.GutenbergRichterMagFreqDist;
+import org.opensha.sha.util.FocalMech;
 
 import com.google.common.base.Preconditions;
 

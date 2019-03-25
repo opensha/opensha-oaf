@@ -1,0 +1,29 @@
+shadow162 rj.AftershockStatsShadow test1 usp000aehw 365
+Fetching event: usp000aehw
+rup_event_id = usp000aehw
+rup_time = 989195603800 (2001-05-07 00:33:23 UTC)
+rup_mag = 6.2
+rup_lat = -56.186
+rup_lon = -144.471
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1020731603800 (2002-05-07 00:33:23 UTC)
+search_radius = 2000.0
+search_time_lo = 957659603800 (2000-05-07 00:33:23 UTC)
+search_time_hi = 1020731603800 (2002-05-07 00:33:23 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2002-05-07T00:33:23.800Z&format=geojson&latitude=-56.18600&limit=20000&longitude=-144.47100&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.200&starttime=2000-05-07T00:33:23.800Z
+Count of events received = 4
+Count of events after filtering = 3
+Total number of events returned = 3
+AftershockStatsShadow.find_shadow: Found 3 potential shadowing events for mainshock usp000aehw
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000aehw
+AftershockStatsShadow.find_shadow: Mainshock usp000aehw is not shadowed
+
+Event is not shadowed

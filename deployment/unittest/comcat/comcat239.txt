@@ -1,0 +1,24 @@
+comcat239 comcat.ComcatOAFAccessor test7 true false usc000rki5
+Fetching event: usc000rki5
+ObsEqkRupture:
+rup_event_id = usc000rki5
+rup_time = 1403556789700 (2014-06-23 20:53:09 UTC)
+rup_mag = 7.9
+rup_lat = 51.8486
+rup_lon = 178.7352
+rup_depth = 109.0
+description = 19km SE of Little Sitkin Island, Alaska
+ids = ,at00n7n3cm,pt14174004,usc000rki5,ak11300221,
+net = us
+code = c000rki5
+
+http_status = 200
+EI Map: code = c000rki5
+EI Map: description = 19km SE of Little Sitkin Island, Alaska
+EI Map: ids = ,at00n7n3cm,pt14174004,usc000rki5,ak11300221,
+EI Map: net = us
+ID List: usc000rki5
+ID List: at00n7n3cm
+ID List: pt14174004
+ID List: ak11300221
+URL = https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=usc000rki5&format=geojson

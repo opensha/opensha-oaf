@@ -1,0 +1,29 @@
+shadow128 rj.AftershockStatsShadow test1 usp000j4yz 365
+Fetching event: usp000j4yz
+rup_event_id = usp000j4yz
+rup_time = 1310736362950 (2011-07-15 13:26:02 UTC)
+rup_mag = 6.1
+rup_lat = -60.76200000000001
+rup_lon = -23.523
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1342272362950 (2012-07-14 13:26:02 UTC)
+search_radius = 2000.0
+search_time_lo = 1279200362950 (2010-07-15 13:26:02 UTC)
+search_time_hi = 1342272362950 (2012-07-14 13:26:02 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2012-07-14T13:26:02.950Z&format=geojson&latitude=-60.76200&limit=20000&longitude=-23.52300&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&starttime=2010-07-15T13:26:02.950Z
+Count of events received = 7
+Count of events after filtering = 6
+Total number of events returned = 6
+AftershockStatsShadow.find_shadow: Found 6 potential shadowing events for mainshock usp000j4yz
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000j4yz
+AftershockStatsShadow.find_shadow: Mainshock usp000j4yz is not shadowed
+
+Event is not shadowed

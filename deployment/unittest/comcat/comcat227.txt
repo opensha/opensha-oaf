@@ -1,0 +1,21 @@
+comcat227 comcat.ComcatOAFAccessor test7 true false us1000h3p4
+Fetching event: us1000h3p4
+ObsEqkRupture:
+rup_event_id = us1000h3p4
+rup_time = 1538128965250 (2018-09-28 10:02:45 UTC)
+rup_mag = 7.5
+rup_lat = -0.2559
+rup_lon = 119.84619999999998
+rup_depth = 20.0
+description = 70km N of Palu, Indonesia
+ids = ,us1000h3p4,
+net = us
+code = 1000h3p4
+
+http_status = 200
+EI Map: code = 1000h3p4
+EI Map: description = 70km N of Palu, Indonesia
+EI Map: ids = ,us1000h3p4,
+EI Map: net = us
+ID List: us1000h3p4
+URL = https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=us1000h3p4&format=geojson

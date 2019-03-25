@@ -1,0 +1,29 @@
+shadow130 rj.AftershockStatsShadow test1 usc000n7bm 365
+Fetching event: usc000n7bm
+rup_event_id = usc000n7bm
+rup_time = 1394505845830 (2014-03-11 02:44:05 UTC)
+rup_mag = 6.4
+rup_lat = -60.862300000000005
+rup_lon = -19.977500000000003
+rup_depth = 10.0
+
+find_shadow parameters:
+time_now = 1426041845830 (2015-03-11 02:44:05 UTC)
+search_radius = 2000.0
+search_time_lo = 1362969845830 (2013-03-11 02:44:05 UTC)
+search_time_hi = 1426041845830 (2015-03-11 02:44:05 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-03-11T02:44:05.830Z&format=geojson&latitude=-60.86230&limit=20000&longitude=-19.97750&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.400&starttime=2013-03-11T02:44:05.830Z
+Count of events received = 7
+Count of events after filtering = 6
+Total number of events returned = 6
+AftershockStatsShadow.find_shadow: Found 6 potential shadowing events for mainshock usc000n7bm
+AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usc000n7bm
+AftershockStatsShadow.find_shadow: Mainshock usc000n7bm is not shadowed
+
+Event is not shadowed

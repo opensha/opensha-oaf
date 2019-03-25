@@ -1,0 +1,29 @@
+comcat244 comcat.ComcatOAFAccessor test7 true true official20100227063411530_30
+Fetching event: official20100227063411530_30
+ObsEqkRupture:
+rup_event_id = official20100227063411530_30
+rup_time = 1267252451530 (2010-02-27 06:34:11 UTC)
+rup_mag = 8.8
+rup_lat = -36.122
+rup_lon = -72.898
+rup_depth = 22.9
+description = offshore Bio-Bio, Chile
+ids = ,usp000h7rf,us2010tfan,choy20100227063411,gcmtc201002270634a,official20100227063411530_30,gcmt20100227063415,duputel201002270634a,atlas20100227063414,iscgem14340585,
+net = official
+code = 20100227063411530_30
+
+http_status = 200
+EI Map: code = 20100227063411530_30
+EI Map: description = offshore Bio-Bio, Chile
+EI Map: ids = ,usp000h7rf,us2010tfan,choy20100227063411,gcmtc201002270634a,official20100227063411530_30,gcmt20100227063415,duputel201002270634a,atlas20100227063414,iscgem14340585,
+EI Map: net = official
+ID List: official20100227063411530_30
+ID List: usp000h7rf
+ID List: us2010tfan
+ID List: choy20100227063411
+ID List: gcmtc201002270634a
+ID List: gcmt20100227063415
+ID List: duputel201002270634a
+ID List: atlas20100227063414
+ID List: iscgem14340585
+URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/official20100227063411530_30.geojson
