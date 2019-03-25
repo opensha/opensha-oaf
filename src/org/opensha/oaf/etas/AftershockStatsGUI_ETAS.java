@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -158,16 +159,17 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			
 		}
 		else
 			createAndShowGUI();
 	}
     
-	private boolean validateForecast;
 	private boolean D; //debug
 	private boolean devMode;
 	private boolean verbose;
 	private boolean commandLine = false;
+	private boolean validate = false;
 	private volatile boolean changeListenerEnabled = true;
 	private boolean tipsOn = true;
 	private File workingDir;
@@ -1125,21 +1127,6 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		eventIDParam.setValue(eventID);
 		forecastStartTimeParam.setValue(forecastStartTime);
 		
-//		List<String> lines = Files.readLines(configFile, Charset.defaultCharset());
-//		System.out.println("loaded configuration file");
-//		for (int i=0; i<lines.size(); i++) {
-//			String line = lines.get(i).trim();
-//			if(verbose) System.out.println(line);
-//
-//			if (!line.isEmpty()){
-//				String[] words = line.split(" ");
-//				if (words[0].trim().equalsIgnoreCase("eventID") && words.length > 1)
-//					eventIDParam.setValue(words[1].trim());
-//				else if (words[0].trim().equalsIgnoreCase("forecastStartTime") && words.length > 1)
-//					forecastStartTimeParam.setValue(Double.parseDouble(words[1].trim()));
-//			}
-//		}
-
 		// run the forecast!
 		parameterChange(new ParameterChangeEvent(quickForecastButton, quickForecastButton.getName(), quickForecastButton.getValue(),  quickForecastButton.getValue()));
 		
@@ -1557,7 +1544,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						}
 				}
 					
-				System.out.println("Mainshock Mag/Lat/Lon/Depth: " + mainshock.getMag() + " " + mainshock.getHypocenterLocation());
+				System.out.println("Mainshock ID/Mag/Lat/Lon/Depth: " + mainshock.getEventId() + " " + mainshock.getMag() + " " + mainshock.getHypocenterLocation());
 
 				Double minDepth = minDepthParam.getValue();
 				validateParameter(minDepth, "min depth");
@@ -1577,6 +1564,16 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					region = buildRegion(mainshock, mainshock.getHypocenterLocation());
 					aftershocks = accessor.fetchAftershocks(mainshock, dataMinDays, dataMaxDays, minDepth, maxDepth, region, region.getPlotWrap());
 
+					// filter out duplicate events
+					Iterator<ObsEqkRupture> asIter = aftershocks.iterator();
+					while(asIter.hasNext()) {
+						ObsEqkRupture eq = asIter.next();
+						if (eq.getOriginTime() - mainshock.getOriginTime() < 1e3) {
+							asIter.remove();
+							System.out.println("Removed an M" + eq.getMag() + " aftershock within 1 second of the mainshock." );
+						}
+					}
+						
 					ObsEqkRupList bigAftershocks = aftershocks.getRupsAboveMag(mainshock.getMag());
 					largestShock = mainshock;
 					while (!bigAftershocks.isEmpty()){
@@ -1645,7 +1642,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				regionCenterLonParam.setValue((region.getMaxLon()+region.getMinLon())/2d);
 				regionCenterLonParam.getEditor().refreshParamEditor();
 				
-				if (validateForecast) {
+				if (validate) {
 					// get the catalog of events within the forecast window for validation
 					observedAftershocks = accessor.fetchAftershocks(mainshock, forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), minDepth, maxDepth, region, region.getPlotWrap());
 				}
@@ -1828,12 +1825,16 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				genericFetch = new GenericETAS_ParametersFetch();
 			
 			if(verbose) System.out.println("Determining tectonic regime...");
-			if(!commandLine)
-				consoleScroll.repaint();
-
+			
 			TectonicRegimeTable regime_table = new TectonicRegimeTable();
-			String regimeName = regime_table.get_strec_name(mainshock.getHypocenterLocation().getLatitude(), mainshock.getHypocenterLocation().getLongitude());
-			regime = TectonicRegime.forName(regimeName);
+			
+			if(!commandLine) {
+				consoleScroll.repaint();
+				String regimeName = regime_table.get_strec_name(mainshock.getHypocenterLocation().getLatitude(), mainshock.getHypocenterLocation().getLongitude());
+				regime = TectonicRegime.forName(regimeName);
+			} else {
+				regime = TectonicRegime.GLOBAL_AVERAGE;
+			}
 					
 		} catch (RuntimeException e) {
 			System.out.println("Error fetching generic params. Assigning global average values");
@@ -1867,7 +1868,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		tectonicRegimeParam.setValue(regime);
 		tectonicRegimeParam.getEditor().refreshParamEditor();
 		
-		setMagComplete();
+		if (commandLine)
+			setMagComplete(4.5);
+		else
+			setMagComplete();
+		
 		resetFitConstraints(genericParams);
 		updateForecastTimes();
 		
@@ -1879,7 +1884,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		genericModel = new ETAS_AftershockModel_Generic(mainshock, aftershocks, genericParams, 
 				dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
 				forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), mcParam.getValue(),
-				9.5, 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue());
+				9.5, 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(), validate);
 
 	} //end setupGUI
 	
@@ -2894,7 +2899,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					
 					try{
 						progress.pack();
-						progress.setVisible(true);
+						if (!commandLine)
+							progress.setVisible(true);
 												
 					} catch(Exception e) {
 						System.err.println("Afershock forecaster has encountered an error and needs to close.\n"
@@ -3050,19 +3056,21 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				final String title = "Error "+curTitle;
 				exception.printStackTrace();
 				final String message = exception.getMessage();
-				try {
-					SwingUtilities.invokeAndWait(new Runnable() {
-						
-						@Override
-						public void run() {
-							JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
-						}
-					});
-				} catch (Exception e) {
-					System.err.println("Error displaying error message!");
-					e.printStackTrace();
-				}
 				
+				if(!commandLine) {
+					try {
+						SwingUtilities.invokeAndWait(new Runnable() {
+
+							@Override
+							public void run() {
+								JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
+							}
+						});
+					} catch (Exception e) {
+						System.err.println("Error displaying error message!");
+						e.printStackTrace();
+					}
+				}
 			}
 		}
 	}
@@ -3175,7 +3183,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					genericModel = new ETAS_AftershockModel_Generic(mainshock, aftershocks, genericParams, 
 							dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
 							forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), mcParam.getValue(),
-							genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue());
+							genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(), validate);
 
 					resetFitConstraints(genericParams);
 					setEnableParamsPostAftershockParams(false);
@@ -3296,7 +3304,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							alpha, b, magRefParam.getValue(),	dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
 							forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(),
 							mcParam.getValue(), genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(),
-							genericModel, progress);
+							genericModel, progress, validate);
 				}
 
 
@@ -6210,7 +6218,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		verbose = false;
 		devMode = false;
 		D = false;
-		validateForecast = false;
+		validate = false;
 		
 		//check for arguments
 		for(int i = 0; i < args.length; i++) {
@@ -6219,10 +6227,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			if (argument.contains("verbose")) verbose = true;
 			if (argument.contains("expert")) devMode = true;
 			if (argument.contains("debug")) D = true;
-			if (argument.contains("validate")) validateForecast = true;
+			if (argument.contains("validate")) validate = true;
 			if (argument.contains("eventID")) {
 				i++;
 				eventID = args[i];
+				commandLine = true;
 			}
 			if (argument.contains("forecastStartTime")) {
 				i++;
@@ -6470,15 +6479,18 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				probability[i][j] = bayesianModel.getProbabilityWithAleatory(predictionMagnitudes[i], tMinDays, tMaxDays);
 				
 				
-				if (validateForecast && predictionMagnitudes[i] >= mcParam.getValue()) {
-					observedNumber[i][j] = observedAftershocks.getRupsAboveMag(predictionMagnitudes[i]).getRupsBefore(mainshock.getOriginTime() + (long)(tMaxDays*ETAS_StatsCalc.MILLISEC_PER_DAY)).size();
-
-					bayesianModel.computeNum_DistributionFunc(tMinDays, tMaxDays, predictionMagnitudes[i]);
-					double fracLessThanOrEqual = bayesianModel.num_DistributionFunc.getNormalizedCumDist().getY(observedNumber[i][j]);
-					double fracEqual = bayesianModel.num_DistributionFunc.getY(observedNumber[i][j]);
-
-					observedFractile[i][j] = fracLessThanOrEqual - Math.random()*fracEqual;
-
+				if (validate && predictionMagnitudes[i] >= mcParam.getValue()) {
+					observedNumber[i][j] = observedAftershocks.getRupsAboveMag(predictionMagnitudes[i]).getRupsAfter(mainshock.getOriginTime())
+							.getRupsBefore(mainshock.getOriginTime() + (long)(tMaxDays*ETAS_StatsCalc.MILLISEC_PER_DAY)).size();
+					observedFractile[i][j] = bayesianModel.getCumulativeQuantileValue(tMinDays, tMaxDays, predictionMagnitudes[i], (int) observedNumber[i][j]);
+					
+//					bayesianModel.computeNum_DistributionFunc(tMinDays, tMaxDays, predictionMagnitudes[i]);
+//					if(D) System.out.println(bayesianModel.num_DistributionFunc + " " + bayesianModel.num_DistributionFunc.getNormalizedCumDist() + " " +observedNumber[i][j]);
+//					double fracLessThanOrEqual = bayesianModel.num_DistributionFunc.getNormalizedCumDist().getInterpolatedY (observedNumber[i][j]);
+//					double fracEqual = bayesianModel.num_DistributionFunc.getInterpolatedY(observedNumber[i][j]);
+//
+//					observedFractile[i][j] = fracLessThanOrEqual - Math.random()*fracEqual;
+					
 					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[%.0f] \t%5.4f \t[%5.4f]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], observedNumber[i][j], probability[i][j], observedFractile[i][j]));
 				} else {
 					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[-] \t%5.4f \t[-]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], probability[i][j]));
@@ -6496,12 +6508,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				number[i][j][2] = fractiles[2];
 				probability[i][j] = genericModel.getProbabilityWithAleatory(predictionMagnitudes[i], tMinDays, tMaxDays);
 
-				if (validateForecast && predictionMagnitudes[i] >= mcParam.getValue()) {
-					genericModel.computeNum_DistributionFunc(tMinDays, tMaxDays, predictionMagnitudes[i]);
-					double fracLessThanOrEqual = genericModel.num_DistributionFunc.getNormalizedCumDist().getY(observedNumber[i][j]);
-					double fracEqual = genericModel.num_DistributionFunc.getY(observedNumber[i][j]);
-
-					observedFractile[i][j] = fracLessThanOrEqual - Math.random()*fracEqual;
+				if (validate && predictionMagnitudes[i] >= mcParam.getValue()) {
+					observedFractile[i][j] = genericModel.getCumulativeQuantileValue(tMinDays, tMaxDays, predictionMagnitudes[i], (int) observedNumber[i][j]);
+//					genericModel.computeNum_DistributionFunc(tMinDays, tMaxDays, predictionMagnitudes[i]);
+//					double fracLessThanOrEqual = genericModel.num_DistributionFunc.getNormalizedCumDist().getInterpolatedY(observedNumber[i][j]);
+//					double fracEqual = genericModel.num_DistributionFunc.getInterpolatedY(observedNumber[i][j]);
+//
+//					observedFractile[i][j] = fracLessThanOrEqual - Math.random()*fracEqual;
 
 					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[%.0f] \t%5.4f \t[%5.4f]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], observedNumber[i][j], probability[i][j], observedFractile[i][j]));
 				} else {
@@ -6510,16 +6523,17 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			}
 		}
 		
-		File outFile = new File(workingDir + "/Forecasts/validation/" + eventID + ".forecast");
+		String headerString = "";
+		File outFile = new File(workingDir + "/Forecasts/validationC0_" + String.format("%2.1f", dataEndTimeParam.getValue()) + "/" + eventID + ".forecast");
 		FileWriter fw = null;
 		try {
 			fw = new FileWriter(outFile);
 			//write the header
-			String headerString = "# Header: eventID: " + mainshock.getEventId() + " dataEndTime: " + dataEndTimeParam.getValue() + " Mc: " + mcParam.getValue() + "\n";  
+			headerString = "# Header: eventID: " + mainshock.getEventId() + " dataEndTime: " + dataEndTimeParam.getValue() + " Mc: " + mcParam.getValue() + "\n";  
 			fw.write(headerString);
 			
-			headerString = "#Mag \tDur \tNum \t(95% range) \tObs \tProb \tFractile\n"; 
-			fw.write(headerString);
+			String columnHeaderString = "#Mag \tDur \tNum \t(95% range) \tObs \tProb \tFractile\n"; 
+			fw.write(columnHeaderString);
 			
 			//write all the earthquakes
 			fw.write(outputString.toString());
@@ -6536,7 +6550,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			}
 		}
 
+		System.out.println(headerString.toString());
 		System.out.println(outputString.toString());
+		
+		System.exit(0);
 	}
 	
 	

@@ -249,7 +249,7 @@ public class ETAS_ComcatAccessor {
 					}
 				}
 				rups.sortByOriginTime();
-				if(count==0)
+				if(count==0 || rups.isEmpty())
 					break;
 				latest=rups.get(0).getOriginTimeCal().getTime();
 			}while(count==20000 && endTimeStamp.compareTo(latest)!=0);
@@ -369,7 +369,7 @@ public class ETAS_ComcatAccessor {
 					}
 				}
 				rups.sortByOriginTime();
-				if(count==0)
+				if(count==0 || rups.isEmpty())
 					break;
 				latest=rups.get(0).getOriginTimeCal().getTime();
 			}while(count==20000 && endTimeStamp.compareTo(latest)!=0);
@@ -444,7 +444,9 @@ public class ETAS_ComcatAccessor {
 			try{
 				mag = event.getMag().doubleValue();
 			}catch(Exception e){
-				System.err.println(event.toString());
+				if(D) //typically this exception occurs because event has no magnitude
+					System.err.println("ETAS_ComcatAccessor: skipping event with no magnitude " + event.toString());
+				
 				return null;
 			}
 			ObsEqkRupture rup = new ObsEqkRupture(event.getEventId().toString(),

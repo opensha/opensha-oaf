@@ -29,23 +29,24 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 	public ETAS_AftershockModel_SequenceSpecific(ObsEqkRupture mainshock, ObsEqkRupList aftershocks,
 			double[] amsVec, double amsSigma, double[] aVec, double[] pVec, double[] cVec, double alpha, double b, double refMag, 	
 			double dataStartTimeDays, double dataEndTimeDays, double forecastMinDays, double forecastMaxDays, 
-			double minMag, double maxMag, int maxGenerations, int nSims, boolean fitMSProductivity) {
+			double minMag, double maxMag, int maxGenerations, int nSims, boolean fitMSProductivity, boolean validate) {
 
 		this(mainshock, aftershocks, amsVec, amsSigma, aVec, pVec, cVec, alpha, b, refMag,
 				dataStartTimeDays, dataEndTimeDays, forecastMinDays, forecastMaxDays, 
-				minMag, maxMag, maxGenerations, nSims, fitMSProductivity, false, null, null);
+				minMag, maxMag, maxGenerations, nSims, fitMSProductivity, false, null, null, validate);
 	}
 
 	public ETAS_AftershockModel_SequenceSpecific(ObsEqkRupture mainshock, ObsEqkRupList aftershocks,
 			double[] amsVec, double amsSigma, double[] aVec, double[] pVec, double[] cVec, double alpha, double b, double refMag, 	
 			double dataStartTimeDays, double dataEndTimeDays, double forecastMinDays, double forecastMaxDays, 
-			double minMag, double maxMag, int maxGenerations, int nSims, boolean fitMSProductivity, boolean timeDependentMc, ETAS_AftershockModel_Generic priorModel){
+			double minMag, double maxMag, int maxGenerations, int nSims, boolean fitMSProductivity, boolean timeDependentMc, 
+			ETAS_AftershockModel_Generic priorModel, boolean validate){
 
 		this(mainshock, aftershocks,
 				amsVec, amsSigma, aVec, pVec, cVec, alpha, b, refMag,
 				dataStartTimeDays, dataEndTimeDays, forecastMinDays, forecastMaxDays, 
 				minMag, maxMag, maxGenerations, nSims, fitMSProductivity, timeDependentMc,
-				priorModel, null);	
+				priorModel, null, validate);	
 	}
 
 	/**
@@ -62,7 +63,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 			 								double dataStartTimeDays, double dataEndTimeDays, double forecastMinDays, double forecastMaxDays, 
 			 								double magComplete, double maxMag, int maxGenerations, int nSims, boolean fitMSProductivity, boolean timeDependentMc,
 			 								ETAS_AftershockModel_Generic priorModel,
-			 								CalcProgressBar progress) {
+			 								CalcProgressBar progress, boolean validate) {
 		
 		if(fitMSProductivity){
 			this.min_ams = amsVec[0];
@@ -111,6 +112,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 		this.timeDependentMc = timeDependentMc;
 		this.priorModel = priorModel;
 		this.progress = progress;
+		this.validate = validate;
 		
 		if(D) {
 			System.out.println("ams-values range:\t"+min_ams+"\t"+max_ams+"\t"+num_ams);

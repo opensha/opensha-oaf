@@ -34,7 +34,7 @@ import com.google.common.base.Stopwatch;
 
 public class ETAScatalog {
 
-	private final static boolean D = true; //debug
+	private final static boolean D = false; //debug
 	
 	double[] ams_vec, a_vec, p_vec, c_vec;
 	double[][][][] likelihood;
@@ -54,11 +54,11 @@ public class ETAScatalog {
 	
 	private List<List<float[]>> catalogList;	//list of catalogs
 //	private List<List<float[]>> catalogTimesList;	//list of catalog times
-	
+	private boolean validate;
 	
 	public ETAScatalog(double[] ams_vec, double[] a_vec, double[] p_vec, double[] c_vec, double[][][][] likelihood, double alpha, double b, double refMag,
 			ObsEqkRupture mainshock, ObsEqkRupList aftershocks,
-			double dataStart, double dataEnd, double forecastStart, double forecastEnd, double Mc, double minMagLimit, double maxMagLimit, int maxGenerations, int nSims){
+			double dataStart, double dataEnd, double forecastStart, double forecastEnd, double Mc, double minMagLimit, double maxMagLimit, int maxGenerations, int nSims, boolean validate){
 	
 		this.ams_vec = ams_vec;
 		this.a_vec = a_vec;
@@ -75,6 +75,7 @@ public class ETAScatalog {
 		this.maxMagLimit = maxMagLimit;
 		this.maxGenerations = maxGenerations;
 		this.nSims = nSims;
+		this.validate = validate;
 		
 		if(D) System.out.println("ETAS simulation params: alpha=" + alpha + " b=" + b + " Mref=" + refMag + " Mc=" + Mc + " minSimMag=" + minMagLimit + " Mmax=" + maxMagLimit + " nSims=" + nSims); 
 				
@@ -285,17 +286,27 @@ public class ETAScatalog {
 	private List<float[]> getChildren(List<float[]> newEqList, float t, float mag, int ngen, 
 			double a_sample, double p_sample, double c_sample, int simNumber){//, double forecastStart, double forecastEnd,
 			//double a, double b, double p, double c, double alpha, double refMag, double maxMag, int maxGen){
-		
+
 		float newMag;
 		float newTime;
-
 		double prod;
+		
+		double c;
+		if (validate) { //forecasts cataloged earthquakes (rather than felt)
+//			double k = Math.pow(10, ams_vec[(int)(ams_vec.length/2)] + alpha*(mag - minMagLimit));
+//			c = c_sample*Math.pow(k, 1d/p_sample);
+//			if (c < c_sample)
+				c = c_sample;
+		} else
+			c = c_sample;
+		
+		
 		//calculate productivity of this quake
 		if (ngen == 1) {
-			prod = calculateProductivity(t, mag, forecastStart, forecastEnd, a_sample, b, p_sample, c_sample, alpha, minMagLimit);
+			prod = calculateProductivity(t, mag, forecastStart, forecastEnd, a_sample, b, p_sample, c, alpha, minMagLimit);
 		} else {
 			double prodCorrection = Math.log10( (maxMagLimit - Mc)/(maxMagLimit - minMagLimit) );
-			prod = calculateProductivity(t, mag, forecastStart, forecastEnd, a_sample + prodCorrection, b, p_sample, c_sample, alpha, minMagLimit);
+			prod = calculateProductivity(t, mag, forecastStart, forecastEnd, a_sample + prodCorrection, b, p_sample, c, alpha, minMagLimit);
 		}
 		long numNew = assignNumberOfOffspring(prod); 
 		
@@ -309,7 +320,7 @@ public class ETAScatalog {
 //				newMag = (float) assignMagnitude(b, Mc, maxMagLimit);
 				newMag = (float) assignMagnitude(b, minMagLimit, maxMagLimit);
 				// assign a time
-				newTime = (float) assignTime(t, forecastStart, forecastEnd, p_sample, c_sample);
+				newTime = (float) assignTime(t, forecastStart, forecastEnd, p_sample, c);
 
 				// add new child to the list
 				event[0] = newTime;
@@ -325,8 +336,8 @@ public class ETAScatalog {
 		} else if(ngen == maxGenerations) {
 			if(D) System.out.println("Sim=" + simNumber + " t=" + t + " has reached " + maxGenerations + " generations. Cutting it short.");
 //			if(D) System.out.println("n = " + ETAS_StatsCalc.calculateBranchingRatio(a_sample, p_sample, c_sample, alpha, b, forecastEnd, Mc, maxMagLimit)
-			if(D) System.out.println("n = " + ETAS_StatsCalc.calculateBranchingRatio(a_sample, p_sample, c_sample, alpha, b, forecastEnd, minMagLimit, maxMagLimit)
-					+ " a=" + a_sample + " p=" + p_sample + " c=" + c_sample + " al=" + alpha + " b=" + b + " T=" + forecastEnd + " Mmin=" + minMagLimit + " Mmax=" + maxMagLimit);
+			if(D) System.out.println("n = " + ETAS_StatsCalc.calculateBranchingRatio(a_sample, p_sample, c, alpha, b, forecastEnd, minMagLimit, maxMagLimit)
+					+ " a=" + a_sample + " p=" + p_sample + " c=" + c +" (" + c_sample + ")" + " al=" + alpha + " b=" + b + " T=" + forecastEnd + " Mmin=" + minMagLimit + " Mmax=" + maxMagLimit);
 		}
 		return newEqList;
 		

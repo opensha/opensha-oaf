@@ -35,7 +35,7 @@ import org.opensha.sha.gui.infoTools.CalcProgressBar;
  */
 public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 	
-	private static Boolean D=false;	// debug flag
+	private static Boolean D=true;	// debug flag
 	
 	private double[][] covariance;
 	private double[][] covInverse;
@@ -59,11 +59,11 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 	public ETAS_AftershockModel_Generic(
 			ObsEqkRupture mainShock, ObsEqkRupList aftershockList, GenericETAS_Parameters genericETAS_Parameters,
 			double dataMinDays, double dataMaxDays, double forecastMinDays, double forecastMaxDays, double Mc, 
-			double maxSimMag, int maxNumGenerations, int nSims, boolean fitMSProductivity, boolean timeDependentMc) {
+			double maxSimMag, int maxNumGenerations, int nSims, boolean fitMSProductivity, boolean timeDependentMc, boolean validate) {
 
 		this(mainShock,  aftershockList,  genericETAS_Parameters,
 				dataMinDays,  dataMaxDays,  forecastMinDays,  forecastMaxDays,  Mc, 
-				maxSimMag,  maxNumGenerations,  nSims,  fitMSProductivity, timeDependentMc, null); 
+				maxSimMag,  maxNumGenerations,  nSims,  fitMSProductivity, timeDependentMc, null, validate); 
 	}
 
 	
@@ -77,7 +77,8 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 	public ETAS_AftershockModel_Generic(
 			ObsEqkRupture mainShock, ObsEqkRupList aftershockList, GenericETAS_Parameters genericETAS_Parameters,
 			double dataMinDays, double dataMaxDays, double forecastMinDays, double forecastMaxDays, double Mc, 
-			double maxSimMag, int maxNumGenerations, int nSims, boolean fitMSProductivity, boolean timeDependentMc, CalcProgressBar progress) {
+			double maxSimMag, int maxNumGenerations, int nSims, boolean fitMSProductivity, boolean timeDependentMc, 
+			CalcProgressBar progress, boolean validate) {
 		
 		this(mainShock, aftershockList,
 				genericETAS_Parameters.get_a(), genericETAS_Parameters.get_aSigma(), 
@@ -86,7 +87,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 				genericETAS_Parameters.get_covariance(), genericETAS_Parameters.get_priorCovariance(),
 				genericETAS_Parameters.get_alpha(), genericETAS_Parameters.get_b(), genericETAS_Parameters.get_refMag(),
 				dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, Mc,
-				maxSimMag, maxNumGenerations, nSims, fitMSProductivity, timeDependentMc, progress); 
+				maxSimMag, maxNumGenerations, nSims, fitMSProductivity, timeDependentMc, progress, validate); 
 	}
 	
 	
@@ -110,7 +111,8 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 			int maxGenerations, int nSims,
 			boolean fitMSProductivity,
 			boolean timeDependentMc,
-			CalcProgressBar progress) {
+			CalcProgressBar progress,
+			boolean validate) {
 
 		//		this.simulatedCatalog = simulatedCatalog;
 		
@@ -164,7 +166,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 			num_ams = 1;
 			ams_vec = new double[]{mean_a};
 		}
-//		System.out.println("ams_vec: " + min_ams +" "+ max_ams +" "+ num_ams);
+		if(D) System.out.println("ams_vec: " + min_ams +" "+ max_ams +" "+ num_ams);
 		
 		double[] a_vec;
 		if(sigma_a == 0 || num_a == 1){
@@ -177,7 +179,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 			max_a = mean_a + 3*sigma_a;
 			a_vec = ETAS_StatsCalc.linspace(min_a, max_a, num_a);
 		}
-//		System.out.println("a_vec: " + min_a +" "+ max_a +" "+ num_a);
+		if(D) System.out.println("a_vec: " + min_a +" "+ max_a +" "+ num_a);
 		
 		double[] p_vec;
 		if(sigma_p == 0 || num_p == 1){
@@ -190,7 +192,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 			max_p = mean_p + 3*sigma_p;
 			p_vec = ETAS_StatsCalc.linspace(min_p, max_p, num_p);
 		}
-//		System.out.println("p_vec: " + min_p +" "+ max_p +" "+ num_p);
+		if(D) System.out.println("p_vec: " + min_p +" "+ max_p +" "+ num_p);
 
 		double[] c_vec;
 		if(sigma_logc == 0 || num_c == 1){
@@ -203,7 +205,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 			max_c = Math.pow(10, Math.log10(mean_c) + 3*sigma_logc);
 			c_vec = ETAS_StatsCalc.logspace(min_c, max_c, num_c);
 		}
-//		System.out.println("c_vec: " + min_c +" "+ max_c +" "+ num_c);
+		if(D) System.out.println("c_vec: " + min_c +" "+ max_c +" "+ num_c);
 
 		this.ams_vec = ams_vec;
 		this.a_vec = a_vec;

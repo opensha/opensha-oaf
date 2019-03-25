@@ -44,7 +44,7 @@ import org.opensha.sha.gui.infoTools.CalcProgressBar;
  */
 public abstract class ETAS_AftershockModel {
 
-	private Boolean D=true;	// debug flag
+	private Boolean D=false;	// debug flag
 
 	protected ArbDiscrEmpiricalDistFunc num_DistributionFunc = null;
 	protected CalcProgressBar progress;
@@ -87,7 +87,7 @@ public abstract class ETAS_AftershockModel {
 	protected int nSims;
 	protected ETAScatalog simulatedCatalog;	//results of the stochastic simulations
 	protected Boolean timeDependentMc = false;
-
+	protected boolean validate;
 	
 	/**
 	 * This converts the likelihood from log-likelihood to likelihood values, making sure NaNs do not occur 
@@ -326,7 +326,7 @@ public abstract class ETAS_AftershockModel {
 		boolean iszero = true;
 		while (iszero & minMag > 3.0){
 			simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
-					mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nCalibrationSims); //maxMag = 9.5, maxGeneratons = 100;
+					mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nCalibrationSims, validate); //maxMag = 9.5, maxGeneratons = 100;
 			iszero = false;
 			for (int i = 0; i < simulatedCatalog.numEventsFinal.length; i++) {
 				if(simulatedCatalog.numEventsFinal[i] == 0)
@@ -339,7 +339,7 @@ public abstract class ETAS_AftershockModel {
 		
 		try{
 			simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
-					mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nSims); //maxMag = 9.5, maxGeneratons = 100;
+					mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nSims, validate); //maxMag = 9.5, maxGeneratons = 100;
 		} catch(Exception e) {
 			e.printStackTrace();
 			System.err.println("The Java Virtual Machine may have run out of memory.\n"
@@ -1191,6 +1191,33 @@ public abstract class ETAS_AftershockModel {
 		}
 	}
 
+	/*
+	 * This one returns the value of the cdf at the specified x-value, with a randomized correction for the discreteness of
+	 * the distribution. The fractile value for count n is defined q = P(N <= n) - rand(1)*P(N == n); 
+	 */
+	public double getCumulativeQuantileValue(double tmin, double tmax, double minMag, int nObserved) {
+		
+		this.computeNum_DistributionFunc(tmin, tmax, minMag);
+		
+		double[] xValues = num_DistributionFunc.getXVals();
+		double[] yValues = num_DistributionFunc.getYVals();
+		
+		double ySum = 0;
+		for (int i = 0; i < xValues.length; i++) {
+			if (nObserved > xValues[i]) {
+				ySum += yValues[i];
+			} else if (nObserved == (int) (xValues[i] + 0.5)) {
+				ySum += Math.random()*yValues[i];
+				break;
+			} else {
+				break;
+			}
+		}
+
+//		if(D) System.out.println(this.num_DistributionFunc + " " + this.num_DistributionFunc.getNormalizedCumDist() + " " + nObserved + " " + ySum);
+
+		return ySum/num_DistributionFunc.getSumOfAllY_Values();
+	}
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
