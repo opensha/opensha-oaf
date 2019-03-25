@@ -93,7 +93,6 @@ import org.opensha.commons.util.DataUtils.MinMaxAveTracker;
 import org.opensha.commons.util.ExceptionUtils;
 import org.opensha.commons.util.cpt.Blender;
 import org.opensha.commons.util.cpt.CPT;
-import org.opensha.nshmp2.util.FocalMech;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupListCalc;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -108,6 +107,7 @@ import org.opensha.sha.imr.param.IntensityMeasureParams.PGA_Param;
 import org.opensha.sha.imr.param.IntensityMeasureParams.PGV_Param;
 import org.opensha.sha.imr.param.IntensityMeasureParams.SA_Param;
 import org.opensha.sha.magdist.IncrementalMagFreqDist;
+import org.opensha.sha.util.FocalMech;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
@@ -159,7 +159,6 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
 		}
 		else
 			createAndShowGUI();
@@ -169,7 +168,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private boolean devMode;
 	private boolean verbose;
 	private boolean commandLine = false;
-	private boolean validate = false;
+	private boolean validate;
 	private volatile boolean changeListenerEnabled = true;
 	private boolean tipsOn = true;
 	private File workingDir;
@@ -1126,7 +1125,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 		eventIDParam.setValue(eventID);
 		forecastStartTimeParam.setValue(forecastStartTime);
-		
+
 		// run the forecast!
 		parameterChange(new ParameterChangeEvent(quickForecastButton, quickForecastButton.getName(), quickForecastButton.getValue(),  quickForecastButton.getValue()));
 		
@@ -1573,7 +1572,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							System.out.println("Removed an M" + eq.getMag() + " aftershock within 1 second of the mainshock." );
 						}
 					}
-						
+					
 					ObsEqkRupList bigAftershocks = aftershocks.getRupsAboveMag(mainshock.getMag());
 					largestShock = mainshock;
 					while (!bigAftershocks.isEmpty()){
@@ -1825,7 +1824,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				genericFetch = new GenericETAS_ParametersFetch();
 			
 			if(verbose) System.out.println("Determining tectonic regime...");
-			
+
 			TectonicRegimeTable regime_table = new TectonicRegimeTable();
 			
 			if(!commandLine) {
@@ -1872,7 +1871,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			setMagComplete(4.5);
 		else
 			setMagComplete();
-		
+
 		resetFitConstraints(genericParams);
 		updateForecastTimes();
 		
@@ -6483,14 +6482,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					observedNumber[i][j] = observedAftershocks.getRupsAboveMag(predictionMagnitudes[i]).getRupsAfter(mainshock.getOriginTime())
 							.getRupsBefore(mainshock.getOriginTime() + (long)(tMaxDays*ETAS_StatsCalc.MILLISEC_PER_DAY)).size();
 					observedFractile[i][j] = bayesianModel.getCumulativeQuantileValue(tMinDays, tMaxDays, predictionMagnitudes[i], (int) observedNumber[i][j]);
-					
+
 //					bayesianModel.computeNum_DistributionFunc(tMinDays, tMaxDays, predictionMagnitudes[i]);
 //					if(D) System.out.println(bayesianModel.num_DistributionFunc + " " + bayesianModel.num_DistributionFunc.getNormalizedCumDist() + " " +observedNumber[i][j]);
-//					double fracLessThanOrEqual = bayesianModel.num_DistributionFunc.getNormalizedCumDist().getInterpolatedY (observedNumber[i][j]);
-//					double fracEqual = bayesianModel.num_DistributionFunc.getInterpolatedY(observedNumber[i][j]);
+//					double fracLessThanOrEqual = bayesianModel.num_DistributionFunc.getNormalizedCumDist().getY(observedNumber[i][j]);
+//					double fracEqual = bayesianModel.num_DistributionFunc.getY(observedNumber[i][j]);
 //
 //					observedFractile[i][j] = fracLessThanOrEqual - Math.random()*fracEqual;
-					
+
 					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[%.0f] \t%5.4f \t[%5.4f]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], observedNumber[i][j], probability[i][j], observedFractile[i][j]));
 				} else {
 					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[-] \t%5.4f \t[-]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], probability[i][j]));
@@ -6552,7 +6551,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 		System.out.println(headerString.toString());
 		System.out.println(outputString.toString());
-		
+
 		System.exit(0);
 	}
 	
