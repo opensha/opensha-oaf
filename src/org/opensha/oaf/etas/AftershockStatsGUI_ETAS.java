@@ -184,6 +184,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	 * Data parameters
 	 */
 	private static final long serialVersionUID = 1L;
+	
+	private IntegerParameter numberSimsParam;
+	
 	private StringParameter eventIDParam;
 	
 	private ParameterList timeWindow;
@@ -766,6 +769,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		timeDepMcParam.setInfo("Apply time dependent magnitude of completeness");
 		timeDepMcParam.addParameterChangeListener(this);
 
+		numberSimsParam = new IntegerParameter("number of ETAS simulations");
+		numberSimsParam.setValue(10000);
+		numberSimsParam.setInfo("Set the number of ETAS stochastic catalogs. Higher numbers produce more accurate estimates, but require more memory and processor time.");
+		
+		
+		
 		constraintList = new ParameterList();
 		if(devMode) constraintList.addParameter(fitMSProductivityParam);
 		constraintList.addParameter(timeDepMcParam);
@@ -777,6 +786,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		constraintList.addParameter(pValNumParam);
 		constraintList.addParameter(cValRangeParam);
 		constraintList.addParameter(cValNumParam);
+		constraintList.addParameter(numberSimsParam);
 		if(devMode) constraintList.addParameter(rmaxParam);
 				
 		constraintEditParam = new ParameterListParameter("Edit Fit Constraints", constraintList);
@@ -1853,6 +1863,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 		if(verbose) System.out.println("Generic params for "+regime+": "+genericParams);
 		
+		amsValRangeParam.setValue(new Range(round(genericParams.get_a()-3*genericParams.get_aSigma(),2), round(genericParams.get_a()+3*genericParams.get_aSigma(),2)));
 		aValRangeParam.setValue(new Range(round(genericParams.get_a()-3*genericParams.get_aSigma(),2), round(genericParams.get_a()+3*genericParams.get_aSigma(),2)));
 		pValRangeParam.setValue(new Range(round(genericParams.get_p()-3*genericParams.get_pSigma(),2), round(genericParams.get_p()+3*genericParams.get_pSigma(),2)));
 		cValRangeParam.setValue(new Range(round(genericParams.get_c()/Math.pow(10, 3*genericParams.get_logcSigma()),sigDigits), Math.min(1, round(genericParams.get_c()*Math.pow(10, 3*genericParams.get_logcSigma()),sigDigits))));
@@ -2697,10 +2708,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		
 		if (genericModel != null) {
 			if(D) System.out.println("getting generic pdfs");
-			HistogramFunction genericAms = genericModel.getPriorPDF_ams(); 
-			HistogramFunction genericA = genericModel.getPriorPDF_a();
-			HistogramFunction genericP = genericModel.getPriorPDF_p();
-			HistogramFunction genericLogC = genericModel.getPriorPDF_logc();
+//			HistogramFunction genericAms = genericModel.getPriorPDF_ams(); 
+//			HistogramFunction genericA = genericModel.getPriorPDF_a();
+//			HistogramFunction genericP = genericModel.getPriorPDF_p();
+//			HistogramFunction genericLogC = genericModel.getPriorPDF_logc();
+			
+			HistogramFunction genericAms = genericModel.getPDF_ams(); 
+			HistogramFunction genericA = genericModel.getPDF_a();
+			HistogramFunction genericP = genericModel.getPDF_p();
+			HistogramFunction genericLogC = genericModel.getPDF_logc();
 			
 			genericAms.setName("Generic");
 			genericA.setName("Generic");
@@ -3340,7 +3356,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						if(verbose) System.out.println("Computing Generic forecast");
 						genericModel.setMagComplete(mcParam.getValue());
 						genericModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-								forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), 10000);
+								forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue());
 					}
 		}, true);
 		
@@ -3369,7 +3385,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							bayesianModel.setMagComplete(mcParam.getValue());
 							if(verbose)System.out.println("Computing Bayesian forecast");
 							bayesianModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-									forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), 10000);
+									forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue());
 						}
 					}		
 		}, true);
@@ -3618,6 +3634,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			} else if (param == nowBoolean){
 //				if(verbose) System.out.println("Updating start now flag");
 				
+				System.out.println(nowBoolean.getValue());
+				
 				if(nowBoolean.getValue()) {
 					if (mainshock != null) {
 						forecastStartTimeParam.setValue( (double) (System.currentTimeMillis() - mainshock.getOriginTime())/ETAS_StatsCalc.MILLISEC_PER_DAY);
@@ -3626,7 +3644,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					DateFormat df = new SimpleDateFormat();
 					dateStartString.setValue(df.format(System.currentTimeMillis()));
 					dateStartString.getEditor().refreshParamEditor();
-					
+	
+				} else {
+					if (mainshock == null) {
+						dateStartString.setValue("");
+						dateStartString.getEditor().refreshParamEditor();
+					}
 				}
 				
 				refreshTimeWindowEditor();
@@ -3658,8 +3681,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						DateFormat df = new SimpleDateFormat();
 						dateStartString.setValue(df.format(mainshockDate.getTime()));
 						dateStartString.getEditor().refreshParamEditor();
-					}
-				
+					} 
 					
 				} finally {
 				}

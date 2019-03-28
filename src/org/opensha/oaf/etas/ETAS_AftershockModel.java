@@ -44,7 +44,7 @@ import org.opensha.sha.gui.infoTools.CalcProgressBar;
  */
 public abstract class ETAS_AftershockModel {
 
-	private Boolean D=false;	// debug flag
+	private Boolean D=true;	// debug flag
 
 	protected ArbDiscrEmpiricalDistFunc num_DistributionFunc = null;
 	protected CalcProgressBar progress;
@@ -72,7 +72,7 @@ public abstract class ETAS_AftershockModel {
 	
 	// likelihood search parameters
 	protected double min_ams, max_ams, delta_ams=0, min_a, max_a, delta_a=0, min_p, max_p, delta_p=0, min_c, max_c, delta_c=0;	//grid search not used for forecast
-	protected int num_ams = 101, num_a = 1, num_p = 1, num_c = 1;
+	protected int num_ams = 51, num_a = 31, num_p = 31, num_c = 21;
 	protected double[] ams_vec, a_vec, p_vec, c_vec;
 	protected double[][][][] likelihood;
 	protected double[][][][] epiLikelihood;
@@ -321,22 +321,26 @@ public abstract class ETAS_AftershockModel {
 		}
 		double minMag = maxASmag - 2.0;
 		
-		// calibrate minimum magnitude choice by running 10 sims. If any come back with zero events, reduce minMag
-		int nCalibrationSims = 100;
-		boolean iszero = true;
-		while (iszero & minMag > 3.0){
-			simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
-					mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nCalibrationSims, validate); //maxMag = 9.5, maxGeneratons = 100;
-			iszero = false;
-			for (int i = 0; i < simulatedCatalog.numEventsFinal.length; i++) {
-				if(simulatedCatalog.numEventsFinal[i] == 0)
-					iszero = true;
+		
+		// calibrate minimum magnitude choice by running 100 sims. If any come back with zero events, reduce minMag
+		if (nSims > 100) {
+			int nCalibrationSims = 100;
+			boolean iszero = true;
+			while (iszero & minMag > 3.0){
+				simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
+						mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nCalibrationSims, validate); //maxMag = 9.5, maxGeneratons = 100;
+				iszero = false;
+				for (int i = 0; i < simulatedCatalog.numEventsFinal.length; i++) {
+					if(simulatedCatalog.numEventsFinal[i] == 0)
+						iszero = true;
+				}
+				minMag--;
 			}
-			minMag--;
+
+			if (minMag < 3) minMag = 3;
 		}
-		
-		if (minMag < 3) minMag = 3;
-		
+
+		// now make the real catalogs with the new minMag, etc.
 		try{
 			simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
 					mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nSims, validate); //maxMag = 9.5, maxGeneratons = 100;
@@ -876,7 +880,8 @@ public abstract class ETAS_AftershockModel {
 			// changed this to still return a 1-bar histogram.
 			return null;
 		} else {
-			if(D) System.out.println("ams: " + getMaxLikelihood_ams() + " " + min_ams + " " + max_ams + " " + num_ams);
+			if(D) System.out.println("ams: " + getMaxLikelihood_ams() + " " + sigma_ams + " " + min_ams + " " + max_ams + " " + num_ams);
+			
 			HistogramFunction hist = new HistogramFunction(min_ams, max_ams, num_ams);
 
 			for(int amsIndex=0;amsIndex<num_ams;amsIndex++) {
@@ -896,7 +901,7 @@ public abstract class ETAS_AftershockModel {
 				name += " (marginal)";
 			
 			hist.setName(name);
-			if(D) System.out.println("PDF of ams-value: totalTest = "+hist.calcSumOfY_Vals());
+//			if(D) System.out.println("PDF of ams-value: totalTest = "+hist.calcSumOfY_Vals());
 
 			hist.scale(1d/hist.getDelta());
 			return hist;
@@ -914,8 +919,8 @@ public abstract class ETAS_AftershockModel {
 			return null;
 		}
 		else {
-			if (D) System.out.println(min_a +" "+ max_a +" "+ num_a);
 			
+			if(D) System.out.println("a: " + getMaxLikelihood_a() + " " + sigma_a + " " + min_a + " " + max_a + " " + num_a);
 			HistogramFunction hist = new HistogramFunction(min_a, max_a, num_a);
 			for(int amsIndex=0;amsIndex<num_ams;amsIndex++) {
 				for(int aIndex=0;aIndex<num_a;aIndex++) {
@@ -932,7 +937,7 @@ public abstract class ETAS_AftershockModel {
 			else if(num_p !=1 || num_c != 1)
 				name += " (marginal)";
 			hist.setName(name);
-			if(D) System.out.println("PDF of a-value: totalTest = "+hist.calcSumOfY_Vals());
+//			if(D) System.out.println("PDF of a-value: totalTest = "+hist.calcSumOfY_Vals());
 
 			hist.scale(1d/hist.getDelta());
 			return hist;
@@ -950,6 +955,8 @@ public abstract class ETAS_AftershockModel {
 			return null;
 		}
 		else {
+			if(D) System.out.println("p: " + getMaxLikelihood_p() + " " + sigma_p + " " + min_p + " " + max_p + " " + num_p);
+			
 			HistogramFunction hist = new HistogramFunction(min_p, max_p, num_p);
 			for(int amsIndex=0;amsIndex<num_ams;amsIndex++) {
 				for(int aIndex=0;aIndex<num_a;aIndex++) {
@@ -966,7 +973,7 @@ public abstract class ETAS_AftershockModel {
 			else if(num_a !=1 || num_c != 1)
 				name += " (marginal)";
 			hist.setName(name);
-			if(D) System.out.println("PDF of p-value: totalTest = "+hist.calcSumOfY_Vals() + " Max = " + hist.getMaxY());
+//			if(D) System.out.println("PDF of p-value: totalTest = "+hist.calcSumOfY_Vals() + " Max = " + hist.getMaxY());
 
 			hist.scale(1d/hist.getDelta());
 			return hist;
@@ -984,6 +991,8 @@ public abstract class ETAS_AftershockModel {
 			return null;
 		}
 		else {
+			if(D) System.out.println("c: " + getMaxLikelihood_c() + " " + sigma_logc + " " + min_c + " " + max_c + " " + num_c);
+			
 			HistogramFunction hist = new HistogramFunction(min_c, max_c, num_c);
 			for(int amsIndex=0;amsIndex<num_ams;amsIndex++) {
 				for(int aIndex=0;aIndex<num_a;aIndex++) {
@@ -1000,7 +1009,7 @@ public abstract class ETAS_AftershockModel {
 			else if(num_a !=1 || num_p != 1)
 				name += " (marginal)";
 			hist.setName(name);
-			if(D) System.out.println("PDF of c-value: totalTest = "+hist.calcSumOfY_Vals());
+//			if(D) System.out.println("PDF of c-value: totalTest = "+hist.calcSumOfY_Vals());
 
 			hist.scale(1d/hist.getDelta());
 			return hist;
@@ -1022,6 +1031,7 @@ public abstract class ETAS_AftershockModel {
 			double min_logc = Math.log10(min_c);
 			double max_logc = Math.log10(max_c);
 
+			if(D) System.out.println("c: " + getMaxLikelihood_c() + " " + sigma_logc + " " + min_logc + " " + max_logc + " " + num_c);
 			HistogramFunction hist = new HistogramFunction(min_logc, max_logc, num_c);
 			
 			for(int amsIndex=0;amsIndex<num_ams;amsIndex++) {
@@ -1039,7 +1049,7 @@ public abstract class ETAS_AftershockModel {
 			else if(num_a !=1 || num_p != 1)
 				name += " (marginal)";
 			hist.setName(name);
-			if(D) System.out.println("PDF of logc-value: totalTest = "+hist.calcSumOfY_Vals());
+//			if(D) System.out.println("PDF of logc-value: totalTest = "+hist.calcSumOfY_Vals());
 
 			hist.scale(1d/hist.getDelta());
 			return hist;

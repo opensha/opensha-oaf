@@ -20,7 +20,7 @@ import com.google.common.primitives.Doubles;
  */
 public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel {
 	
-	Boolean D = false;	// debug flag
+	Boolean D = true;	// debug flag
 	private boolean fitMSProductivity;
 	private volatile boolean stopRequested;
 	private volatile boolean pauseRequested;
@@ -59,9 +59,17 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 	 * @param aVec: values of ams to use in grid search
 	**/
 	public ETAS_AftershockModel_SequenceSpecific(ObsEqkRupture mainShock, ObsEqkRupList aftershockList,
-			 								double[] amsVec, double amsSigma, double[] aVec, double[] pVec, double[] cVec, double alpha, double b, double refMag, 	
+			 								double[] amsVec, double amsSigma, 
+			 								double[] aVec, 
+			 								double[] pVec, 
+			 								double[] cVec,
+			 								
+			 								double alpha, double b, double refMag, 	
 			 								double dataStartTimeDays, double dataEndTimeDays, double forecastMinDays, double forecastMaxDays, 
-			 								double magComplete, double maxMag, int maxGenerations, int nSims, boolean fitMSProductivity, boolean timeDependentMc,
+			 								double magComplete, double maxMag,
+			 								int maxGenerations, int nSims, 
+			 								boolean fitMSProductivity, 
+			 								boolean timeDependentMc,
 			 								ETAS_AftershockModel_Generic priorModel,
 			 								CalcProgressBar progress, boolean validate) {
 		
@@ -124,10 +132,11 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 		
 		// Find the max like parameters by grid search
 		if(D) System.out.println("finding maximum likelihood parameters...");
-		if (timeDependentMc && (dataEndTimeDays > dataStartTimeDays) && priorModel != null) {
+		if (timeDependentMc && (dataEndTimeDays >= dataStartTimeDays) && priorModel != null) {
 			if(D) System.out.println("Time-dependent Mc is active, the fit will be done twice...");
 			this.ac = priorModel.ac;
 			getLikelihoodMatrixGridFastMc();
+			if(D) System.out.println("Running the fit again with estimated Mc(t) model");
 			this.ac = getMaxLikelihood_ams();
 			getLikelihoodMatrixGridFastMc();
 		} else { 
@@ -273,6 +282,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 					timeIntegralMS = (Math.pow(dataEndTimeDays + c, 1-p) - Math.pow(tStartIntegration + c, 1-p)) / (1-p);
 				}
 				NtotMS = productivityMS*timeIntegralMS;
+//				if(D) System.out.println("NtotMS: " + NtotMS);
 				
 				//compute instantaneous intensities and total number for aftershocks (unscaled by a)
 				NtotAS = 0;
@@ -301,6 +311,8 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 						}
 						
 						NtotAS += productivityAS[i]*timeIntegral;	//aftershock Contributions
+						
+//						if(D) System.out.println("NtotAS: " + NtotAS);
 					}
 				}
 				
@@ -319,7 +331,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 						k = Math.pow(10, a);
 						
 						Ntot = kms*NtotMS + k*NtotAS;
-						
+
 						logLike += -Ntot;
 						
 						for(int i=0; i<Nas; i++){
@@ -327,6 +339,8 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 							lambda[i] = kms*timeDecayMS[i]; //from the mainshock
 							lambda[i] += k*timeDecayAS[i];	//from the aftershocks
 							logLike += Math.log(lambda[i]);
+							
+//							if(D) System.out.println("logLike: " + logLike);
 						}
 						
 						//add prior regularization
@@ -337,8 +351,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 						n = ETAS_StatsCalc.calculateBranchingRatio(a, p, c, alpha, b, forecastMaxDays, magComplete, maxMag);
 						
 						subCritFlag = ( n < 1 );
-
-						
+												
 						// fill out the likelihood matrices with the joint likelihood
 						if(Doubles.isFinite(logLike)){
 							if (subCritFlag){

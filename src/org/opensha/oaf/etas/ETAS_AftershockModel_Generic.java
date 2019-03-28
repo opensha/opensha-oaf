@@ -257,7 +257,8 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 
 		//get likelihoods (epistemic and prior("likelihood))
 		epiLikelihood = get_likelihoodMatrix(ams_vec, a_vec, p_vec, c_vec);		//the tight covariance
-		likelihood = get_priorLikelihoodMatrix(ams_vec, a_vec, p_vec, c_vec, true);		//the prior covariance
+		likelihood = epiLikelihood;
+//		likelihood = get_priorLikelihoodMatrix(ams_vec, a_vec, p_vec, c_vec, true);		//the prior covariance
 		
 		// get aftershock times and mags and store as simple doubles[]
 		double[] relativeEventTimes = ETAS_StatsCalc.getDaysSinceMainShockArray(mainShock, aftershockList.getRupsAboveMag(magComplete));
@@ -320,19 +321,45 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 	 */
 	public double[][][][] get_likelihoodMatrix(double[] ams_vec, double[] a_vec, double[] p_vec, double[] c_vec){
 		double[][][][] likelihood = new double[ams_vec.length][a_vec.length][p_vec.length][c_vec.length];
-		double cumSum = 0;
+		double cumSum = 0d, superCumSum = 0d;
 
 		if(D) System.out.println("generating Generic likelihood matrix...");
 		if(D) System.out.println("Mc-adjusted params: " + mean_ams + " (" +sigma_ams +") " + mean_a +" ("+sigma_a+") "+ mean_p+" ("+sigma_p+") "+ mean_c + " ("+sigma_logc+") ");
 		long tic = System.currentTimeMillis();
 		long toc;
 		
+		double likeSub, n, c, kc;
+		boolean subCritFlag;
+		
+		if(D) System.out.println("Generic matrix size: " + num_ams + " " + num_a + " " + num_p + " " + num_c);
 		for(int h = 0; h < ams_vec.length ; h++ ){
 			for(int i = 0; i < a_vec.length ; i++ ){
 				for(int j = 0; j < p_vec.length ; j++ ){
 					for(int k = 0; k < c_vec.length ; k++ ){
-						likelihood[h][i][j][k] = get_likelihood(ams_vec[h], a_vec[i], p_vec[j], c_vec[k]);
-						cumSum += likelihood[h][i][j][k];
+						
+//						likeSub = get_likelihood(ams_vec[h], a_vec[i], p_vec[j], c_vec[k]);
+						likeSub = get_priorLikelihood(ams_vec[h], a_vec[i], p_vec[j], c_vec[k]);
+						
+						// check for subcriticality
+						//check for supercritical parameters over the forecast time window
+//						c = c0*Math.pow(kc,1/p);
+						
+						kc = Math.pow(10,  ac);
+						c = c_vec[k]*Math.pow(kc, 1/p_vec[j]);
+						
+						n = ETAS_StatsCalc.calculateBranchingRatio(a_vec[i], p_vec[j], c, alpha, b, forecastMaxDays, magComplete, maxMag);
+						
+						subCritFlag = ( n < 1 );
+
+						// if subcritical
+						if(subCritFlag) {
+							likelihood[h][i][j][k] = likeSub;
+							cumSum += likeSub;
+						} else { 
+							// if supercritical
+							likelihood[h][i][j][k] = 0d;
+							superCumSum += likeSub;
+						}
 					}
 				}
 			}
@@ -350,6 +377,9 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 		
 		toc = System.currentTimeMillis();
 		if (D) System.out.println("It took " + (toc-tic)/1000 + " seconds to compute generic likelihood matrix.");
+		
+		if(D) System.out.format("cumSum: " + cumSum + " superCumSum: " + superCumSum);
+		if(D) System.out.format("Generic Model: %3.2f%% subcritical.\n", cumSum/(cumSum + superCumSum)*100);
 		
 		return likelihood;
 	}
@@ -471,6 +501,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 		double[] likelihood = new double[num_ams];
 		double likelihoodTotal = 0;
 		
+		if(D) System.out.println("ams: " + getMaxLikelihood_ams() + " " + sigma_ams + " " + min_ams + " " + max_ams + " " + num_ams);
 		HistogramFunction hist = new HistogramFunction(min_ams, max_ams, num_ams);
 		String name = "ams-value prior distribution";
 		
@@ -485,7 +516,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 		}
 		
 		hist.setName(name);
-		if(D) System.out.println("PDF of ams-value: totalTest = "+hist.calcSumOfY_Vals());
+//		if(D) System.out.println("PDF of ams-value: totalTest = "+hist.calcSumOfY_Vals());
 		
 		hist.scale(1d/hist.getDelta());
 		return hist;
@@ -500,6 +531,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 		double[] likelihood = new double[num_a];
 		double likelihoodTotal = 0;
 		
+		if(D) System.out.println("a: " + getMaxLikelihood_a() + " " + sigma_a + " " + min_a + " " + max_a + " " + num_a);
 		HistogramFunction hist = new HistogramFunction(min_a, max_a, num_a);
 		String name = "a-value prior distribution";
 		
@@ -514,7 +546,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 		}
 		
 		hist.setName(name);
-		if(D) System.out.println("PDF of a-value: totalTest = "+hist.calcSumOfY_Vals());
+//		if(D) System.out.println("PDF of a-value: totalTest = "+hist.calcSumOfY_Vals());
 		
 		hist.scale(1d/hist.getDelta());
 		return hist;
@@ -529,7 +561,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 		double[] likelihood = new double[num_p];
 		double likelihoodTotal = 0;
 		
-//		System.out.println("p: " + getMaxLikelihood_p() + " " + min_p + " " + max_p + " " + num_p);
+		if(D) System.out.println("p: " + getMaxLikelihood_p() + " " + sigma_p + " " + min_p + " " + max_p + " " + num_p);
 		HistogramFunction hist = new HistogramFunction(min_p, max_p, num_p);
 		String name = "p-value prior distribution";
 		
@@ -544,7 +576,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 		}
 		
 		hist.setName(name);
-		if(D) System.out.println("PDF of p-value: totalTest = "+hist.calcSumOfY_Vals());
+//		if(D) System.out.println("PDF of p-value: totalTest = "+hist.calcSumOfY_Vals());
 		
 		hist.scale(1d/hist.getDelta());
 		return hist;
@@ -575,7 +607,7 @@ public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 		}
 		
 		hist.setName(name);
-		if(D) System.out.println("PDF of logc-value: totalTest = "+hist.calcSumOfY_Vals());
+//		if(D) System.out.println("PDF of logc-value: totalTest = "+hist.calcSumOfY_Vals());
 		
 		hist.scale(1d/hist.getDelta());
 		return hist;
