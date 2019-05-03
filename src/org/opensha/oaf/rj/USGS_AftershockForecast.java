@@ -40,6 +40,16 @@ public class USGS_AftershockForecast {
 	private static final double fractile_lower = 0.025;
 	private static final double fractile_upper = 0.975;
 	private static final double mag_bin_half_width_default = 0.05;
+
+	//  private static final long[] sdround_thresholds = {86400000L, 259200000L, 604800000L};
+	//  		// 24 hours, 3 days, 7 days
+	//  private static final long[] sdround_snaps = {300000L, 600000L, 1800000L, 3600000L};
+	//  		// 5 minutes, 10 minutes, 30 minutes, 60 minutes (should have 1 more element than above)
+
+	private static final long[] sdround_thresholds = {86400000L};
+			// 24 hours
+	private static final long[] sdround_snaps = {600000L, 3600000L};
+			// 10 minutes, 60 minutes (should have 1 more element than above)
 	
 	public enum Duration {
 		ONE_DAY("1 Day", ChronoUnit.DAYS, 1L),
@@ -122,6 +132,10 @@ public class USGS_AftershockForecast {
 	private void compute(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
 			Instant eventDate, Instant startDate, boolean includeProbAboveMainshock, double mag_bin_half_width) {
 		Preconditions.checkArgument(minMags.length > 0);
+
+		// Round the start time
+
+		startDate = sdround (eventDate, startDate);
 		
 		this.model = model;
 		this.minMags = minMags;
@@ -303,6 +317,31 @@ public class USGS_AftershockForecast {
 			
 		};
 	}
+
+	// Round the start date to a "nice" time.
+	public static Instant sdround (Instant theEventDate, Instant theStartDate) {
+
+		// Convert to milliseconds since the epoch
+
+		long event_millis = theEventDate.toEpochMilli();
+		long start_millis = theStartDate.toEpochMilli();
+		long delta_millis = start_millis - event_millis;
+
+		// Find the rounding threshold
+		int n;
+		for (n = 0; n < sdround_thresholds.length; ++n) {
+			if (delta_millis <= sdround_thresholds[n]) {
+				break;
+			}
+		}
+		long snap = sdround_snaps[n];
+
+		// Round up to the next multiple of the snap
+
+		long snap_units = (start_millis + snap - 1L) / snap;
+		return Instant.ofEpochMilli (snap_units * snap);
+	}
+
 	
 	@SuppressWarnings("unchecked")
 	public JSONOrderedObject buildJSON () {
@@ -364,12 +403,16 @@ public class USGS_AftershockForecast {
 			modelParams.put("magMain", 0.0);
 			modelParams.put("p", 0.0);
 			modelParams.put("c", 0.0);
+			modelParams.put("aSigma", 0.0);
+			modelParams.put("pSigma", 0.0);
 		} else {
 			modelParams.put("a", model.getMaxLikelihood_a());
 			modelParams.put("b", model.get_b());
 			modelParams.put("magMain", model.getMainShockMag());
 			modelParams.put("p", model.getMaxLikelihood_p());
 			modelParams.put("c", model.getMaxLikelihood_c());
+			modelParams.put("aSigma", model.getStdDev_a());
+			modelParams.put("pSigma", model.getStdDev_p());
 		}
 		modelJSON.put("parameters", modelParams);
 		json.put("model", modelJSON);

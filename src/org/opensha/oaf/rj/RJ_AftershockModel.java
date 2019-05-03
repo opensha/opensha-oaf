@@ -685,11 +685,11 @@ public abstract class RJ_AftershockModel {
 		// Debug or verbose output
 
 		if(D) {
-			System.out.println("M>=5 mean = "+numMag5_DistributionFunc.getMean());
-			//System.out.println("M>=5 mode (caution) = "+numMag5_DistributionFunc.getApparentMode());	// don't do this because it can throw
-			System.out.println("M>=5 median = "+numMag5_DistributionFunc.getMedian());
-			System.out.println("M>=5 2.5 Percentile = "+numMag5_DistributionFunc.getInterpolatedFractile(0.025));
-			System.out.println("M>=5 97.5 Percentile = "+numMag5_DistributionFunc.getInterpolatedFractile(0.975));
+			System.out.println("M>=5 mean = " + String.format("%.6g", numMag5_DistributionFunc.getMean()));
+			//System.out.println("M>=5 mode (caution) = " + String.format("%.6g", numMag5_DistributionFunc.getApparentMode()));	// don't do this because it can throw
+			System.out.println("M>=5 median = " + String.format("%.6g", numMag5_DistributionFunc.getMedian()));
+			System.out.println("M>=5 2.5 Percentile = " + String.format("%.6g", numMag5_DistributionFunc.getInterpolatedFractile(0.025)));
+			System.out.println("M>=5 97.5 Percentile = " + String.format("%.6g", numMag5_DistributionFunc.getInterpolatedFractile(0.975)));
 		}
 
 		return numMag5_DistributionFunc;

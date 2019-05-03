@@ -49,6 +49,12 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.connection.ClusterSettings;
 import com.mongodb.connection.ClusterConnectionMode;
 import com.mongodb.connection.ClusterType;
+import com.mongodb.client.ChangeStreamIterable;
+import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import com.mongodb.client.model.changestream.UpdateDescription;
+import com.mongodb.client.model.changestream.ChangeStreamLevel;
+import com.mongodb.client.model.changestream.FullDocument;
+import com.mongodb.client.model.changestream.OperationType;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -230,6 +236,12 @@ public interface MongoDBCollHandle {
 	public default UpdateResult updateOne (Bson filter, Bson update) {
 		return updateOne (filter, update, null);
 	}
+
+	// Open a change stream iterator on the collection.
+	// The change stream is configured with the full document option set.
+	// Note: This function is only supported on replica sets.
+
+	public MongoCursor<ChangeStreamDocument<Document>> watch ();
 
 	//--- Handle functions ---
 

@@ -57,6 +57,12 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.connection.ClusterSettings;
 import com.mongodb.connection.ClusterConnectionMode;
 import com.mongodb.connection.ClusterType;
+import com.mongodb.client.ChangeStreamIterable;
+import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import com.mongodb.client.model.changestream.UpdateDescription;
+import com.mongodb.client.model.changestream.ChangeStreamLevel;
+import com.mongodb.client.model.changestream.FullDocument;
+import com.mongodb.client.model.changestream.OperationType;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -671,6 +677,28 @@ public class MongoDBContent implements AutoCloseable {
 			}
 			catch (MongoException e) {
 				throw new DBDriverException (make_locus(e), "MongoDBCollHandle.updateOne: MongoDB exception: " + make_coll_id_message(), e);
+			}
+			return result;
+		}
+
+		// Open a change stream iterator on the collection.
+		// The change stream is configured with the full document option set.
+		// Note: This function is only supported on replica sets.
+
+		@Override
+		public MongoCursor<ChangeStreamDocument<Document>> watch () {
+			MongoCursor<ChangeStreamDocument<Document>> result;
+			try {
+				ClientSession client_session = get_op_session_read();
+
+				if (client_session != null) {
+					result = mongo_collection.watch(client_session).fullDocument(FullDocument.UPDATE_LOOKUP).iterator();
+				} else {
+					result = mongo_collection.watch().fullDocument(FullDocument.UPDATE_LOOKUP).iterator();
+				}
+			}
+			catch (MongoException e) {
+				throw new DBDriverException (make_locus(e), "MongoDBCollHandle.watch: MongoDB exception: " + make_coll_id_message(), e);
 			}
 			return result;
 		}
