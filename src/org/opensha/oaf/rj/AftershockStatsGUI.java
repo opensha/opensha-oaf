@@ -1473,7 +1473,15 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		}
 	}
 	
+	// Load catalog from a file.
+	// Note: This must execute on the event dispatch thread.
+
 	private void loadCatalog(File catalogFile) throws IOException {
+		Double minDays = dataStartTimeParam.getValue();
+		validateParameter(minDays, "start time");
+		Double maxDays = dataEndTimeParam.getValue();
+		validateParameter(maxDays, "end time");
+
 		List<String> lines = Files.readLines(catalogFile, Charset.defaultCharset());
 		ObsEqkRupList myAftershocks = new ObsEqkRupList();
 		ObsEqkRupture myMainshock = null;
@@ -1530,13 +1538,32 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		}
 		
 		Preconditions.checkState(myMainshock != null, "Could not laod mainshock");
+
+		// Here we need to trim the catalog to be only events that lie within the selected time interval
+		
+		ObsEqkRupList trimmedAftershocks = new ObsEqkRupList();
+		long eventTime = myMainshock.getOriginTime();
+		long startTime = eventTime + (long)(minDays*ComcatOAFAccessor.day_millis);
+		long endTime = eventTime + (long)(maxDays*ComcatOAFAccessor.day_millis);
+		for (ObsEqkRupture as : myAftershocks) {
+			long asTime = as.getOriginTime();
+			if (asTime >= startTime && asTime <= endTime) {
+				trimmedAftershocks.add(as);
+			}
+		}
+		
+		System.out.println("Found " + trimmedAftershocks.size() + " aftershocks between selected start and end times");
+
+		// Set the new catalog into the application
+
 		if (myMainshock != mainshock) {
 			// custom mainshock
 			eventIDParam.setName("<custom>");
 			eventIDParam.getEditor().refreshParamEditor();
 		}
 		setMainshock(myMainshock);
-		aftershocks = myAftershocks;
+		//aftershocks = myAftershocks;
+		aftershocks = trimmedAftershocks;
 		region = null;
 		setEnableParamsPostFetch(true);
 	}
