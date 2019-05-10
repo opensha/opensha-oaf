@@ -455,10 +455,39 @@ public class PendingTask implements java.io.Serializable {
 
 		MongoDBCollHandle coll_handle = get_coll_handle (null);
 
-		// Make the indexes
+		//  // Make the indexes (original version)
+		//  
+		//  coll_handle.make_simple_index ("event_id", "eventid");
+		//  coll_handle.make_simple_index ("exec_time", "extime");
 
-		coll_handle.make_simple_index ("event_id", "eventid");
+		// Production code does queries which include an equality test on event_id
+		// and/or a range test on exec_time, followed by an ascending sort on exec_time.
+		// This index covers query and sort which does not reference event_id:
+
 		coll_handle.make_simple_index ("exec_time", "extime");
+
+		// This index covers query and sort which includes an equality test on event_id:
+		// (It would work regardless of whether the exec_time index is ascending or descending.)
+
+		coll_handle.make_compound_index_asc_asc ("event_id", "exec_time", "eventidtm");
+
+		return;
+	}
+
+
+
+
+	// Drop all indexes our collection.
+
+	public static void drop_indexes () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Drop the collection
+
+		coll_handle.drop_indexes ();
 
 		return;
 	}
@@ -706,6 +735,8 @@ public class PendingTask implements java.io.Serializable {
 	/**
 	 * get_all_tasks_unsorted - Get a list of all pending tasks, without sorting.
 	 * This is primarily for testing and monitoring.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static List<PendingTask> get_all_tasks_unsorted () {
 		ArrayList<PendingTask> tasks = new ArrayList<PendingTask>();
@@ -736,6 +767,8 @@ public class PendingTask implements java.io.Serializable {
 	/**
 	 * get_all_tasks - Get a list of all pending tasks, sorted by execution time.
 	 * This is primarily for testing and monitoring.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static List<PendingTask> get_all_tasks () {
 		ArrayList<PendingTask> tasks = new ArrayList<PendingTask>();
@@ -766,6 +799,8 @@ public class PendingTask implements java.io.Serializable {
 	/**
 	 * fetch_all_tasks - Iterate all pending tasks, sorted by execution time.
 	 * This is primarily for testing and monitoring.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static RecordIterator<PendingTask> fetch_all_tasks () {
 
@@ -789,6 +824,12 @@ public class PendingTask implements java.io.Serializable {
 	 * @param exec_time_hi = Maximum execution time, in milliseconds since the epoch.
 	 *                       Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 *
+	 * Current usage: Production.
+	 * Production code calls this with non-null event_id.
+	 * There may or may not be filters on exec_time.  These filters could easily be done
+	 * by the caller, if there were an advantage to not supporting them here.
+	 * The production code does not rely on the results being sorted.
 	 */
 	public static List<PendingTask> get_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
 		ArrayList<PendingTask> tasks = new ArrayList<PendingTask>();
@@ -824,6 +865,8 @@ public class PendingTask implements java.io.Serializable {
 	 * @param exec_time_hi = Maximum execution time, in milliseconds since the epoch.
 	 *                       Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static RecordIterator<PendingTask> fetch_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
 
@@ -850,6 +893,10 @@ public class PendingTask implements java.io.Serializable {
 	 * @param event_id = Event id. Can be null to return entries for all events.
 	 * Returns the matching task entry with the smallest exec_time (first to execute),
 	 * or null if there is no matching task entry.
+	 *
+	 * Current usage: Production.
+	 * Production code calls this with null event_id.
+	 * Production code requires that the result be sorted (so it returns the first to execute).
 	 */
 	public static PendingTask get_first_task_entry (long exec_time_lo, long exec_time_hi, String event_id) {
 
@@ -877,6 +924,8 @@ public class PendingTask implements java.io.Serializable {
 	/**
 	 * get_first_task - Get the first task, that is, the task with smallest execution time.
 	 * This is primarily for testing and monitoring.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static PendingTask get_first_task () {
 
@@ -905,7 +954,9 @@ public class PendingTask implements java.io.Serializable {
 	 * @param cutoff_time = Cutoff time, in milliseconds since the epoch.
 	 * Only tasks with exec_time <= cutoff_time are considered.
 	 * Return is null if there are no such tasks.
-	 * This is primarily for testing and monitoring.
+	 *
+	 * Current usage: Production.
+	 * Production code requires that the result be sorted (so it returns the first to execute).
 	 */
 	public static PendingTask get_first_ready_task (long cutoff_time) {
 
@@ -935,6 +986,9 @@ public class PendingTask implements java.io.Serializable {
 	 * Only tasks with exec_time <= cutoff_time are considered.
 	 * Return is null if there are no such tasks.
 	 * The task is marked active by setting exec_time = 0 in the database.
+	 *
+	 * Current usage: Production.
+	 * Production code requires that the result be sorted (so it returns the first to execute).
 	 */
 	public static PendingTask activate_first_ready_task (long cutoff_time) {
 

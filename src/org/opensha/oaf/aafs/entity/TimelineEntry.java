@@ -417,11 +417,42 @@ public class TimelineEntry implements java.io.Serializable {
 
 		MongoDBCollHandle coll_handle = get_coll_handle (null);
 
-		// Make the indexes
+		//  // Make the indexes (original version)
+		//  
+		//  coll_handle.make_simple_index ("event_id", "actevid");
+		//  coll_handle.make_simple_index ("comcat_ids", "actccid");
+		//  coll_handle.make_simple_index ("action_time", "acttime");
 
-		coll_handle.make_simple_index ("event_id", "actevid");
-		coll_handle.make_simple_index ("comcat_ids", "actccid");
-		coll_handle.make_simple_index ("action_time", "acttime");
+		// Production code does queries which include an equality test on event_id
+		// followed by a descending sort on action_time.
+		// This index covers the production query and sort:
+		// (It would work regardless of whether the action_time index is ascending or descending.)
+
+		coll_handle.make_compound_index_asc_desc ("event_id", "action_time", "actevidtm");
+
+		// Although not currently required for production code,
+		// these indexes would cover likely future queries:
+
+		//coll_handle.make_simple_index ("comcat_ids", "actccid");
+		//coll_handle.make_simple_index ("action_time", "acttime");
+
+		return;
+	}
+
+
+
+
+	// Drop all indexes our collection.
+
+	public static void drop_indexes () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Drop the collection
+
+		coll_handle.drop_indexes ();
 
 		return;
 	}
@@ -675,6 +706,8 @@ public class TimelineEntry implements java.io.Serializable {
 	 * get_timeline_entry_for_key - Get the timeline entry with the given key.
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the timeline entry, or null if not found.
+	 *
+	 * Current usage: Production.
 	 */
 	public static TimelineEntry get_timeline_entry_for_key (RecordKey key) {
 
@@ -717,6 +750,11 @@ public class TimelineEntry implements java.io.Serializable {
 	 *                     If specified, return entries associated with any of the given ids.
 	 * @param action_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 *
+	 * Current usage: Production.
+	 * Production code does calls in this form only:
+	 *   get_timeline_entry_range (0L, 0L, event_id, null, null)
+	 * Production code depends on the results being sorted by decreasing action time (most recent first).
 	 */
 	public static List<TimelineEntry> get_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
 		ArrayList<TimelineEntry> entries = new ArrayList<TimelineEntry>();
@@ -756,6 +794,8 @@ public class TimelineEntry implements java.io.Serializable {
 	 *                     If specified, return entries associated with any of the given ids.
 	 * @param action_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static RecordIterator<TimelineEntry> fetch_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
 
@@ -786,6 +826,11 @@ public class TimelineEntry implements java.io.Serializable {
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
 	 * Returns the matching timeline entry with the greatest action_time (most recent),
 	 * or null if there is no matching timeline entry.
+	 *
+	 * Current usage: Production.
+	 * Production code does calls in this form only:
+	 *   get_recent_timeline_entry (0L, 0L, event_id, null, null)
+	 * Production code depends on the results being sorted by decreasing action time (most recent first).
 	 */
 	public static TimelineEntry get_recent_timeline_entry (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
 

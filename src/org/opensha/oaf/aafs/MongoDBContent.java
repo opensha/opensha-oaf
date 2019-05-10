@@ -277,23 +277,46 @@ public class MongoDBContent implements AutoCloseable {
 		// Create a collection.
 		// Parameters:
 		//  options = Options, or null if none, defaults to null.
+		// Returns true if collection was created, false if it already existed.
 
 		@Override
-		public void createCollection (CreateCollectionOptions options) {
+		public boolean createCollection (CreateCollectionOptions options) {
+			boolean result = true;
 			try {
 				ClientSession client_session = get_op_session_update();
 
-				if (client_session != null) {
-					if (options != null) {
-						database_state.get_mongo_database().createCollection (client_session, collection_config.get_coll_name(), options);
-					} else {
-						database_state.get_mongo_database().createCollection (client_session, collection_config.get_coll_name());
+				// It is necessary to check if the collection already exists, because MongoDB
+				// throws an exception if an attempt is made to create a collection that already exists.
+				// (In contrast, MongoDB ignores an attempt to create an index that already exists.)
+
+				try (
+					MongoCursor<String> it = ((client_session != null)
+						? database_state.get_mongo_database().listCollectionNames(client_session).iterator()
+						: database_state.get_mongo_database().listCollectionNames().iterator()
+					);
+				){
+					while (it.hasNext()) {
+						String s = it.next();
+						if (s.equals (collection_config.get_coll_name())) {
+							result = false;
+							break;
+						}
 					}
-				} else {
-					if (options != null) {
-						database_state.get_mongo_database().createCollection (collection_config.get_coll_name(), options);
+				}
+
+				if (result) {
+					if (client_session != null) {
+						if (options != null) {
+							database_state.get_mongo_database().createCollection (client_session, collection_config.get_coll_name(), options);
+						} else {
+							database_state.get_mongo_database().createCollection (client_session, collection_config.get_coll_name());
+						}
 					} else {
-						database_state.get_mongo_database().createCollection (collection_config.get_coll_name());
+						if (options != null) {
+							database_state.get_mongo_database().createCollection (collection_config.get_coll_name(), options);
+						} else {
+							database_state.get_mongo_database().createCollection (collection_config.get_coll_name());
+						}
 					}
 				}
 
@@ -301,7 +324,7 @@ public class MongoDBContent implements AutoCloseable {
 			catch (MongoException e) {
 				throw new DBDriverException (make_locus(e), "MongoDBCollHandle.createCollection: MongoDB exception: " + make_coll_id_message(), e);
 			}
-			return;
+			return result;
 		}
 
 
@@ -388,6 +411,26 @@ public class MongoDBContent implements AutoCloseable {
 			}
 			catch (MongoException e) {
 				throw new DBDriverException (make_locus(e), "MongoDBCollHandle.drop: MongoDB exception: " + make_coll_id_message(), e);
+			}
+			return;
+		}
+
+		// Drop all indexes for a collection.
+
+		@Override
+		public void drop_indexes () {
+			try {
+				ClientSession client_session = get_op_session_update();
+
+				if (client_session != null) {
+					mongo_collection.dropIndexes (client_session);
+				} else {
+					mongo_collection.dropIndexes ();
+				}
+
+			}
+			catch (MongoException e) {
+				throw new DBDriverException (make_locus(e), "MongoDBCollHandle.drop_indexes: MongoDB exception: " + make_coll_id_message(), e);
 			}
 			return;
 		}

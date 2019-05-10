@@ -3394,6 +3394,62 @@ public class ServerTest {
 
 
 
+	// Test #62 - Drop all database indexes, allowing indexes to be rebuilt.
+
+	public static void test62(String[] args) throws Exception {
+
+		// Three additional arguments
+
+		if (args.length != 4) {
+			System.err.println ("ServerTest : Invalid 'test62' or 'drop_all_indexes' subcommand");
+			return;
+		}
+
+		if (!( args[1].equals ("drop")
+			&& args[2].equals ("all")
+			&& args[3].equals ("indexes") )) {
+			System.err.println ("ServerTest : Wrong confirmation for 'test62' or 'drop_all_indexes' subcommand");
+			return;
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+			
+			System.out.println ("ServerTest : Dropping all database indexes");
+		
+			System.out.println ("ServerTest : Dropping task indexes");
+
+			PendingTask.drop_indexes ();
+		
+			System.out.println ("ServerTest : Dropping log indexes");
+
+			LogEntry.drop_indexes ();
+		
+			System.out.println ("ServerTest : Dropping catalog snapshot indexes");
+
+			CatalogSnapshot.drop_indexes ();
+		
+			System.out.println ("ServerTest : Dropping timeline indexes");
+
+			TimelineEntry.drop_indexes ();
+		
+			System.out.println ("ServerTest : Dropping alias family indexes");
+
+			AliasFamily.drop_indexes ();
+			
+			System.out.println ("ServerTest : Dropped all database indexes");
+
+		}
+
+		return;
+	}
+
+
+
+
 	// Test dispatcher.
 	
 	public static void main(String[] args) {
@@ -4439,6 +4495,22 @@ public class ServerTest {
 
 			try {
 				test61(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #62
+		// Command format:
+		//  test62 "drop" "all" "indexes"
+		// Drop all database indexes, allowing indexes to be rebuilt.
+
+		if (args[0].equalsIgnoreCase ("test62") || args[0].equalsIgnoreCase ("drop_all_indexes")) {
+
+			try {
+				test62(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

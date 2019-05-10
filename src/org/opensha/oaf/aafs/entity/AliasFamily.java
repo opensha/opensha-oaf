@@ -461,11 +461,42 @@ public class AliasFamily implements java.io.Serializable {
 
 		MongoDBCollHandle coll_handle = get_coll_handle (null);
 
-		// Make the indexes
+		//  // Make the indexes
+		//  
+		//  coll_handle.make_simple_index ("timeline_ids", "famtlid");
+		//  coll_handle.make_simple_index ("comcat_ids", "famccid");
+		//  coll_handle.make_simple_index ("family_time", "famtime");
+
+		// Production code does queries which include either an in-test on timeline_id,
+		// or an in-test on comcat_ids, followed by a descending sort on family_time.
+		// A given timeline id or comcat id rarely appears in more than one entry, and perhaps
+		// never in more than three entries.  So our approach is to create indexes to cover
+		// the query, and let MongoDB do the sort in-memory.
+		// This index covers queries of timeline_id:
 
 		coll_handle.make_simple_index ("timeline_ids", "famtlid");
+
+		// This index covers queries of comcat_ids:
+
 		coll_handle.make_simple_index ("comcat_ids", "famccid");
-		coll_handle.make_simple_index ("family_time", "famtime");
+
+		return;
+	}
+
+
+
+
+	// Drop all indexes our collection.
+
+	public static void drop_indexes () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Drop the collection
+
+		coll_handle.drop_indexes ();
 
 		return;
 	}
@@ -762,6 +793,8 @@ public class AliasFamily implements java.io.Serializable {
 	 * get_alias_family_for_key - Get the alias family with the given key.
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the alias family, or null if not found.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static AliasFamily get_alias_family_for_key (RecordKey key) {
 
@@ -804,6 +837,8 @@ public class AliasFamily implements java.io.Serializable {
 	 *                     If specified, return entries associated with any of the given ids.
 	 * @param family_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static List<AliasFamily> get_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
 		ArrayList<AliasFamily> entries = new ArrayList<AliasFamily>();
@@ -843,6 +878,8 @@ public class AliasFamily implements java.io.Serializable {
 	 *                     If specified, return entries associated with any of the given ids.
 	 * @param family_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static RecordIterator<AliasFamily> fetch_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
 
@@ -873,6 +910,12 @@ public class AliasFamily implements java.io.Serializable {
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
 	 * Returns the matching alias family with the greatest family_time (most recent),
 	 * or null if there is no matching alias family.
+	 *
+	 * Current usage: Production.
+	 * Production code does calls in these forms only:
+	 *   get_recent_alias_family (0L, 0L, timeline_id, null, null)
+	 *   get_recent_alias_family (0L, 0L, null, comcat_ids, null)
+	 * Production code depends on the results being sorted by decreasing family time (most recent first).
 	 */
 	public static AliasFamily get_recent_alias_family (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
 

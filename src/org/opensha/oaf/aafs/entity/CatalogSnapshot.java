@@ -300,6 +300,8 @@ public class CatalogSnapshot implements java.io.Serializable {
 
 		MongoDBCollHandle coll_handle = get_coll_handle (null);
 
+		// Production code does no queries or sorts, and therefore no indexes are needed.
+
 		// Create the collection (must be done explicitly because we're not making indexes)
 
 		coll_handle.createCollection();
@@ -307,6 +309,24 @@ public class CatalogSnapshot implements java.io.Serializable {
 		// Make the indexes
 
 		// <none>
+
+		return;
+	}
+
+
+
+
+	// Drop all indexes our collection.
+
+	public static void drop_indexes () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Drop the collection
+
+		coll_handle.drop_indexes ();
 
 		return;
 	}
@@ -536,6 +556,8 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 * get_catalog_shapshot_for_key - Get the catalog snapshot with the given key.
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the catalog snapshot, or null if not found.
+	 *
+	 * Current usage: Production.
 	 */
 	public static CatalogSnapshot get_catalog_shapshot_for_key (RecordKey key) {
 
@@ -574,6 +596,8 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 * @param end_time_hi = Maximum end time, in milliseconds since the epoch.
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static List<CatalogSnapshot> get_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
 		ArrayList<CatalogSnapshot> entries = new ArrayList<CatalogSnapshot>();
@@ -609,6 +633,8 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 * @param end_time_hi = Maximum end time, in milliseconds since the epoch.
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static RecordIterator<CatalogSnapshot> fetch_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
 

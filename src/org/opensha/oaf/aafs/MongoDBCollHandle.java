@@ -76,12 +76,12 @@ public interface MongoDBCollHandle {
 	// Create a collection.
 	// Parameters:
 	//  options = Options, or null if none, defaults to null.
+	// Returns true if collection was created, false if it already existed.
 
-	public void createCollection (CreateCollectionOptions options);
+	public boolean createCollection (CreateCollectionOptions options);
 
-	public default void createCollection () {
-		createCollection (null);
-		return;
+	public default boolean createCollection () {
+		return createCollection (null);
 	}
 
 	// Create an index.
@@ -103,6 +103,22 @@ public interface MongoDBCollHandle {
 		return;
 	}
 
+	// Make a compound index on two fields, with the given name.
+	// The first field is ascending, and the second field is ascending.
+
+	public default void make_compound_index_asc_asc (String field1, String field2, String name) {
+		createIndex (Indexes.compoundIndex (Indexes.ascending (field1), Indexes.ascending (field2)), (new IndexOptions()).name (name));
+		return;
+	}
+
+	// Make a compound index on two fields, with the given name.
+	// The first field is ascending, and the second field is descending.
+
+	public default void make_compound_index_asc_desc (String field1, String field2, String name) {
+		createIndex (Indexes.compoundIndex (Indexes.ascending (field1), Indexes.descending (field2)), (new IndexOptions()).name (name));
+		return;
+	}
+
 	// Delete one document.
 	// Parameters:
 	//  filter = Filter to use for query (constructed by Filters), cannot be null.
@@ -119,6 +135,10 @@ public interface MongoDBCollHandle {
 	// Drop a collection.
 
 	public void drop ();
+
+	// Drop all indexes for a collection.
+
+	public void drop_indexes ();
 
 	// Find documents, and return the first matching document, or null if no matching document.
 	// Parameters:

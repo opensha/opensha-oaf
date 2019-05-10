@@ -475,10 +475,37 @@ public class LogEntry implements java.io.Serializable {
 
 		MongoDBCollHandle coll_handle = get_coll_handle (null);
 
-		// Make the indexes
+		//  // Make the indexes
+		//  
+		//  coll_handle.make_simple_index ("event_id", "logevid");
+		//  coll_handle.make_simple_index ("log_time", "logtime");
 
-		coll_handle.make_simple_index ("event_id", "logevid");
+		// Production code does no queries or sorts, and therefore no indexes are needed.
+		// However, we include one index which would allow querying and sorting by log_time:
+
 		coll_handle.make_simple_index ("log_time", "logtime");
+
+		// Note: If no indexes are created, then it is necessary to create the collection explicitly, like this:
+
+		//coll_handle.createCollection();
+
+		return;
+	}
+
+
+
+
+	// Drop all indexes our collection.
+
+	public static void drop_indexes () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Drop the collection
+
+		coll_handle.drop_indexes ();
 
 		return;
 	}
@@ -772,6 +799,8 @@ public class LogEntry implements java.io.Serializable {
 	 * get_log_entry_for_key - Get the log entry with the given key.
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the log entry, or null if not found.
+	 *
+	 * Current usage: Production.
 	 */
 	public static LogEntry get_log_entry_for_key (RecordKey key) {
 
@@ -810,6 +839,8 @@ public class LogEntry implements java.io.Serializable {
 	 * @param log_time_hi = Maximum log time, in milliseconds since the epoch.
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static List<LogEntry> get_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
 		ArrayList<LogEntry> entries = new ArrayList<LogEntry>();
@@ -845,6 +876,8 @@ public class LogEntry implements java.io.Serializable {
 	 * @param log_time_hi = Maximum log time, in milliseconds since the epoch.
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 *
+	 * Current usage: Test only.
 	 */
 	public static RecordIterator<LogEntry> fetch_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
 
