@@ -1,0 +1,4 @@
+relit201 aafs.ServerTest relit_add_one Event_3 30090 Details_3_Before false
+Failed to add relay item, relay_id = Event_3, relay_time = 30090
+Begin change stream iterator
+End change stream iterator

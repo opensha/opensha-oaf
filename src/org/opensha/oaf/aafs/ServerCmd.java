@@ -11,6 +11,7 @@ import org.opensha.oaf.aafs.entity.LogEntry;
 import org.opensha.oaf.aafs.entity.CatalogSnapshot;
 import org.opensha.oaf.aafs.entity.TimelineEntry;
 import org.opensha.oaf.aafs.entity.AliasFamily;
+import org.opensha.oaf.aafs.entity.RelayItem;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.rj.CompactEqkRupList;
@@ -723,8 +724,57 @@ public class ServerCmd {
 		
 			System.out.println ("Creating indexes for alias family entries...");
 			AliasFamily.make_indexes();
+		
+			System.out.println ("Creating indexes for relay items...");
+			RelayItem.make_indexes();
 			
 			System.out.println ("All indexes were created successfully.");
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_drop_indexes - Drop the indexes for our MongoDB collections.
+
+	public static void cmd_drop_indexes(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerCmd : Invalid 'drop_indexes' subcommand");
+			return;
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Create the indexes
+		
+			System.out.println ("Dropping indexes for task entries...");
+			PendingTask.drop_indexes();
+		
+			System.out.println ("Dropping indexes for log entries...");
+			LogEntry.drop_indexes();
+		
+			System.out.println ("Dropping indexes for catalog snapshot entries...");
+			CatalogSnapshot.drop_indexes();
+		
+			System.out.println ("Dropping indexes for timeline entries...");
+			TimelineEntry.drop_indexes();
+		
+			System.out.println ("Dropping indexes for alias family entries...");
+			AliasFamily.drop_indexes();
+		
+			System.out.println ("Dropping indexes for relay items...");
+			RelayItem.drop_indexes ();
+			
+			System.out.println ("All indexes were dropped successfully.");
 		}
 
 		return;
@@ -864,11 +914,27 @@ public class ServerCmd {
 		// Command format:
 		//  make_indexes
 		// Make indexes for all local database collections.
-		// Note : It is not an error to make indexes that already exist; the existing indexes are unchanged.
+		// Note: It is not an error to make indexes that already exist; the existing indexes are unchanged.
 
 		case "make_indexes":
 			try {
 				cmd_make_indexes(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : drop_indexes
+		// Command format:
+		//  drop_indexes
+		// Drop indexes for all local database collections.
+		// Note: It is not an error to drop indexes that have already been dropped.
+		// Note: This does not delete any data.
+		// Note: Indexes can be rebuilt by calling make_indexes afterward.
+
+		case "drop_indexes":
+			try {
+				cmd_drop_indexes(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

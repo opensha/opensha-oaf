@@ -14,6 +14,8 @@
 # stop - Stop the AAFS application.
 #
 # initdb - Initialize the AAFS database.
+#
+# rebuild_indexes - Rebuild AAFS database indexes.
 
 case "$1" in
 
@@ -72,8 +74,22 @@ case "$1" in
         sleep 30
         ;;
 
+    rebuild_indexes)
+        /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd show_version 2>&1
+        echo "Pausing 30 seconds..."
+        sleep 30
+        echo "Dropping AAFS database indexes..."
+        /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd drop_indexes 2>&1
+        echo "Pausing 30 seconds..."
+        sleep 30
+        echo "Building new AAFS database indexes..."
+        /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd make_indexes 2>&1
+        echo "Pausing 30 seconds..."
+        sleep 30
+        ;;
+
        *)
-        echo "Usage: aafs-app.sh {start|stop|initdb}"
+        echo "Usage: aafs-app.sh {start|stop|initdb|rebuild_indexes}"
         exit 1
         ;;
 esac

@@ -1,0 +1,11 @@
+relit130 aafs.ServerTest relit_query_iterate false 30010 50090
+RelayItem
+	id: 54a49c100000000000000005
+	relay_time: 30100
+	relay_id: Event_3
+	details: ["Details_3",31010,31020,31030.0,31040.0]
+RelayItem
+	id: 54a49c100000000000000002
+	relay_time: 40100
+	relay_id: Event_4
+	details: 

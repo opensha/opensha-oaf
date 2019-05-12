@@ -22,6 +22,8 @@
 # deploycfg - Copy the AAFS configuration files and scripts into /opt/aafs and its subdirectories.
 #             The user is prompted before any existing file in /opt/aafs is changed.
 #
+# diffcfg - Use git diff to compare the configuration files in /opt/aafs to the originals.
+#
 # run - Run a class in the org.opensha.oaf package, using the compiled-in configuration.
 #       After the 'run' keyword comes the name of the class (without the 'org.opensha.oaf.'
 #       prefix), followed by any command-line parameters for the class.
@@ -268,6 +270,14 @@ case "$1" in
         copycfg opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
         ;;
 
+    diffcfg)
+        git diff /opt/aafs/oafcfg/ServerConfig.json opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json
+        git diff /opt/aafs/oafcfg/ActionConfig.json opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json
+        git diff /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json
+        git diff /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json
+        git diff /opt/aafs/intake/config.ini opensha-oaf/deployment/scripts/aafs/intake/config.ini
+        ;;
+
     run)
         JCLASS="org.opensha.oaf.$2"
         shift 2
@@ -293,7 +303,7 @@ case "$1" in
         ;;
 
     *)
-        echo "Usage: boaf.sh {clone|update|clean|compile|pack|deploy|deploycfg|run|runcfg|runaafs|runany}"
+        echo "Usage: boaf.sh {clone|update|clean|compile|pack|deploy|deploycfg|diffcfg|run|runcfg|runaafs|runany}"
         exit 1
         ;;
 esac

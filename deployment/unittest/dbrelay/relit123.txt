@@ -1,0 +1,1 @@
+relit123 aafs.ServerTest relit_query_list false 10010 10090

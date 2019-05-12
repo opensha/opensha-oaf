@@ -1,0 +1,6 @@
+relit151 aafs.ServerTest relit_query_iterate true 0 0 Event_2
+RelayItem
+	id: 54a49c100000000000000001
+	relay_time: 20100
+	relay_id: Event_2
+	details: ["Details_2",21010,21020,21030.0,21040.0]

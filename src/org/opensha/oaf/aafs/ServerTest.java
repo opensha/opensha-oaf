@@ -18,6 +18,7 @@ import org.opensha.oaf.aafs.entity.LogEntry;
 import org.opensha.oaf.aafs.entity.CatalogSnapshot;
 import org.opensha.oaf.aafs.entity.TimelineEntry;
 import org.opensha.oaf.aafs.entity.AliasFamily;
+import org.opensha.oaf.aafs.entity.RelayItem;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.rj.CompactEqkRupList;
@@ -3439,8 +3440,486 @@ public class ServerTest {
 			System.out.println ("ServerTest : Dropping alias family indexes");
 
 			AliasFamily.drop_indexes ();
+		
+			System.out.println ("ServerTest : Dropping relay item indexes");
+
+			RelayItem.drop_indexes ();
 			
 			System.out.println ("ServerTest : Dropped all database indexes");
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #63 - Add a few elements to the relay items.
+
+	public static void test63(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerTest : Invalid 'test63' or 'relit_add_some' subcommand");
+			return;
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Set up a change stream iterator
+
+			try (
+				RecordIterator<RelayItem> csit = RelayItem.watch_relay_item_changes();
+			){
+
+				// Wait 3 seconds to make sure it's in effect
+
+				try {
+					Thread.sleep (3000L);
+				} catch (InterruptedException e) {
+				}
+		
+				String relay_id;
+				long relay_time;
+				MarshalWriter details;
+				boolean f_force = false;
+
+				RelayItem relit;
+		
+				relay_id = "Event_2";
+				relay_time = 20100L;
+				details = RelayItem.begin_details();
+				details.marshalArrayBegin (null, 5);
+				details.marshalString (null, "Details_2");
+				details.marshalLong (null, 21010L);
+				details.marshalLong (null, 21020L);
+				details.marshalDouble (null, 21030.0);
+				details.marshalDouble (null, 21040.0);
+				details.marshalArrayEnd ();
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				if (relit != null) {
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+				} else {
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+				}
+		
+				relay_id = "Event_4";
+				relay_time = 40100L;
+				details = null;
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				if (relit != null) {
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+				} else {
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+				}
+		
+				relay_id = "Event_1";
+				relay_time = 10100L;
+				details = RelayItem.begin_details();
+				details.marshalArrayBegin (null, 5);
+				details.marshalString (null, "Details_1");
+				details.marshalLong (null, 11010L);
+				details.marshalLong (null, 11020L);
+				details.marshalDouble (null, 11030.0);
+				details.marshalDouble (null, 11040.0);
+				details.marshalArrayEnd ();
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				if (relit != null) {
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+				} else {
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+				}
+		
+				relay_id = "Event_5";
+				relay_time = 50100L;
+				details = RelayItem.begin_details();
+				details.marshalArrayBegin (null, 5);
+				details.marshalString (null, "Details_5");
+				details.marshalLong (null, 51010L);
+				details.marshalLong (null, 51020L);
+				details.marshalDouble (null, 51030.0);
+				details.marshalDouble (null, 51040.0);
+				details.marshalArrayEnd ();
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				if (relit != null) {
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+				} else {
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+				}
+		
+				relay_id = "Event_3";
+				relay_time = 30100L;
+				details = RelayItem.begin_details();
+				details.marshalArrayBegin (null, 5);
+				details.marshalString (null, "Details_3");
+				details.marshalLong (null, 31010L);
+				details.marshalLong (null, 31020L);
+				details.marshalDouble (null, 31030.0);
+				details.marshalDouble (null, 31040.0);
+				details.marshalArrayEnd ();
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				if (relit != null) {
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+				} else {
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+				}
+
+				// Wait 3 seconds, then dump the change stream iterator
+
+				try {
+					Thread.sleep (3000L);
+				} catch (InterruptedException e) {
+				}
+
+				System.out.println ("Begin change stream iterator");
+
+				while (csit.hasNext()) {
+					RelayItem csrelit = csit.next();
+					System.out.println (csrelit.dumpString());
+				}
+
+				System.out.println ("End change stream iterator");
+
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #64 - Search the relay items for relay time and/or relay id; using list.
+
+	public static void test64(String[] args) {
+
+		// Three or more additional arguments
+
+		if (args.length < 4) {
+			System.err.println ("ServerTest : Invalid 'test64' or 'relit_query_list' subcommand");
+			return;
+		}
+
+		boolean f_descending = Boolean.parseBoolean (args[1]);
+		long relay_time_lo = Long.parseLong(args[2]);
+		long relay_time_hi = Long.parseLong(args[3]);
+		//String[] relay_id = null;
+		String[] relay_id = new String[0];
+		if (args.length >= 5) {
+			relay_id = Arrays.copyOfRange (args, 4, args.length);
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Get the list of matching relay items
+
+			List<RelayItem> items = RelayItem.get_relay_item_range (f_descending, relay_time_lo, relay_time_hi, relay_id);
+
+			// Display them
+
+			for (RelayItem relit : items) {
+				System.out.println (relit.dumpString());
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #65 - Search the relay items for relay time and/or relay id; using iterator.
+
+	public static void test65(String[] args) {
+
+		// Three or more additional arguments
+
+		if (args.length < 4) {
+			System.err.println ("ServerTest : Invalid 'test65' or 'relit_query_iterate' subcommand");
+			return;
+		}
+
+		boolean f_descending = Boolean.parseBoolean (args[1]);
+		long relay_time_lo = Long.parseLong(args[2]);
+		long relay_time_hi = Long.parseLong(args[3]);
+		String[] relay_id = null;
+		//String[] relay_id = new String[0];
+		if (args.length >= 5) {
+			relay_id = Arrays.copyOfRange (args, 4, args.length);
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+			try (
+
+				// Get an iterator over matching relay items
+
+				RecordIterator<RelayItem> items = RelayItem.fetch_relay_item_range (f_descending, relay_time_lo, relay_time_hi, relay_id);
+			){
+
+				// Display them
+
+				for (RelayItem relit : items) {
+					System.out.println (relit.dumpString());
+				}
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #66 - Search the relay items for relay time and/or relay id; using first.
+
+	public static void test66(String[] args) {
+
+		// Three or more additional arguments
+
+		if (args.length < 4) {
+			System.err.println ("ServerTest : Invalid 'test66' or 'relit_query_first' subcommand");
+			return;
+		}
+
+		boolean f_descending = Boolean.parseBoolean (args[1]);
+		long relay_time_lo = Long.parseLong(args[2]);
+		long relay_time_hi = Long.parseLong(args[3]);
+		//String[] relay_id = null;
+		String[] relay_id = new String[0];
+		if (args.length >= 5) {
+			relay_id = Arrays.copyOfRange (args, 4, args.length);
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Get the list of matching relay items
+
+			RelayItem relit = RelayItem.get_first_relay_item (f_descending, relay_time_lo, relay_time_hi, relay_id);
+
+			// Display it
+
+			if (relit == null) {
+				System.out.println ("null");
+			} else {
+				System.out.println (relit.dumpString());
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #67 - Search the relay items for relay time and/or relay id; and re-fetch the items.
+
+	public static void test67(String[] args) {
+
+		// Three or more additional arguments
+
+		if (args.length < 4) {
+			System.err.println ("ServerTest : Invalid 'test67' or 'relit_query_refetch' subcommand");
+			return;
+		}
+
+		boolean f_descending = Boolean.parseBoolean (args[1]);
+		long relay_time_lo = Long.parseLong(args[2]);
+		long relay_time_hi = Long.parseLong(args[3]);
+		//String[] relay_id = null;
+		String[] relay_id = new String[0];
+		if (args.length >= 5) {
+			relay_id = Arrays.copyOfRange (args, 4, args.length);
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Get the list of matching relay items
+
+			List<RelayItem> items = RelayItem.get_relay_item_range (f_descending, relay_time_lo, relay_time_hi, relay_id);
+
+			// Display them, and re-fetch
+
+			for (RelayItem relit : items) {
+				System.out.println (relit.dumpString());
+				RelayItem refetch = RelayItem.get_relay_item_for_key (relit.get_record_key());
+				System.out.println (refetch.dumpString());
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #68 - Search the relay items for relay time and/or relay id; and delete the items.
+
+	public static void test68(String[] args) {
+
+		// Three or more additional arguments
+
+		if (args.length < 4) {
+			System.err.println ("ServerTest : Invalid 'test68' or 'relit_query_delete' subcommand");
+			return;
+		}
+
+		boolean f_descending = Boolean.parseBoolean (args[1]);
+		long relay_time_lo = Long.parseLong(args[2]);
+		long relay_time_hi = Long.parseLong(args[3]);
+		//String[] relay_id = null;
+		String[] relay_id = new String[0];
+		if (args.length >= 5) {
+			relay_id = Arrays.copyOfRange (args, 4, args.length);
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Set up a change stream iterator
+
+			try (
+				RecordIterator<RelayItem> csit = RelayItem.watch_relay_item_changes();
+			){
+
+				// Wait 3 seconds to make sure it's in effect
+
+				try {
+					Thread.sleep (3000L);
+				} catch (InterruptedException e) {
+				}
+
+				// Get the list of matching relay items
+
+				List<RelayItem> items = RelayItem.get_relay_item_range (f_descending, relay_time_lo, relay_time_hi, relay_id);
+
+				// Display them, and delete
+
+				for (RelayItem relit : items) {
+					System.out.println (relit.dumpString());
+					RelayItem.delete_relay_item (relit);
+				}
+
+				// Wait 3 seconds, then dump the change stream iterator
+
+				try {
+					Thread.sleep (3000L);
+				} catch (InterruptedException e) {
+				}
+
+				System.out.println ("Begin change stream iterator");
+
+				while (csit.hasNext()) {
+					RelayItem csrelit = csit.next();
+					System.out.println (csrelit.dumpString());
+				}
+
+				System.out.println ("End change stream iterator");
+
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #69 - Add an element to the relay items.
+
+	public static void test69(String[] args) {
+
+		// Four additional arguments
+
+		if (args.length != 5) {
+			System.err.println ("ServerTest : Invalid 'test69' or 'relit_add_one' subcommand");
+			return;
+		}
+
+		String relay_id = args[1];
+		long relay_time = Long.parseLong(args[2]);
+		String details_text = args[3];
+		boolean f_force = Boolean.parseBoolean (args[4]);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Set up a change stream iterator
+
+			try (
+				RecordIterator<RelayItem> csit = RelayItem.watch_relay_item_changes();
+			){
+
+				// Wait 3 seconds to make sure it's in effect
+
+				try {
+					Thread.sleep (3000L);
+				} catch (InterruptedException e) {
+				}
+
+				RelayItem relit;
+		
+				MarshalWriter details = RelayItem.begin_details();
+				details.marshalArrayBegin (null, 1);
+				details.marshalString (null, details_text);
+				details.marshalArrayEnd ();
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				if (relit != null) {
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+				} else {
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+				}
+
+				// Wait 3 seconds, then dump the change stream iterator
+
+				try {
+					Thread.sleep (3000L);
+				} catch (InterruptedException e) {
+				}
+
+				System.out.println ("Begin change stream iterator");
+
+				while (csit.hasNext()) {
+					RelayItem csrelit = csit.next();
+					System.out.println (csrelit.dumpString());
+				}
+
+				System.out.println ("End change stream iterator");
+
+			}
 
 		}
 
@@ -4511,6 +4990,130 @@ public class ServerTest {
 
 			try {
 				test62(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #63
+		// Command format:
+		//  test63
+		// Add a few elements to the relay items.
+
+		if (args[0].equalsIgnoreCase ("test63") || args[0].equalsIgnoreCase ("relit_add_some")) {
+
+			try {
+				test63(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #64
+		// Command format:
+		//  test64  f_descending  relay_time_lo  relay_time_hi  [relay_id]...
+		// Search the relay items for relay time and/or relay id; using list.
+		// Times can be 0 for no bound, relay id can be omitted for no restriction or repeated to search for several.
+		// If any relay are given, the entry must match at least one of them.
+
+		if (args[0].equalsIgnoreCase ("test64") || args[0].equalsIgnoreCase ("relit_query_list")) {
+
+			try {
+				test64(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #65
+		// Command format:
+		//  test65  f_descending  relay_time_lo  relay_time_hi  [relay_id]...
+		// Search the relay items for relay time and/or relay id; using iterator.
+		// Times can be 0 for no bound, relay id can be omitted for no restriction or repeated to search for several.
+		// If any relay are given, the entry must match at least one of them.
+
+		if (args[0].equalsIgnoreCase ("test65") || args[0].equalsIgnoreCase ("relit_query_iterate")) {
+
+			try {
+				test65(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #66
+		// Command format:
+		//  test66  f_descending  relay_time_lo  relay_time_hi  [relay_id]...
+		// Search the relay items for relay time and/or relay id; using first.
+		// Times can be 0 for no bound, relay id can be omitted for no restriction or repeated to search for several.
+		// If any relay are given, the entry must match at least one of them.
+
+		if (args[0].equalsIgnoreCase ("test66") || args[0].equalsIgnoreCase ("relit_query_first")) {
+
+			try {
+				test66(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #67
+		// Command format:
+		//  test67  f_descending  relay_time_lo  relay_time_hi  [relay_id]...
+		// Search the relay items for relay time and/or relay id; and re-fetch the items.
+		// Times can be 0 for no bound, relay id can be omitted for no restriction or repeated to search for several.
+		// If any relay are given, the entry must match at least one of them.
+
+		if (args[0].equalsIgnoreCase ("test67") || args[0].equalsIgnoreCase ("relit_query_refetch")) {
+
+			try {
+				test67(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #68
+		// Command format:
+		//  test68  f_descending  relay_time_lo  relay_time_hi  [relay_id]...
+		// Search the relay items for relay time and/or relay id; using list.
+		// Times can be 0 for no bound, relay id can be omitted for no restriction or repeated to search for several.
+		// If any relay are given, the entry must match at least one of them.
+
+		if (args[0].equalsIgnoreCase ("test68") || args[0].equalsIgnoreCase ("relit_query_delete")) {
+
+			try {
+				test68(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #69
+		// Command format:
+		//  test69  relay_id  relay_time  details_text  f_force
+		// Search the relay items for relay time and/or relay id; using list.
+		// Times can be 0 for no bound, relay id can be omitted for no restriction or repeated to search for several.
+		// If any relay are given, the entry must match at least one of them.
+
+		if (args[0].equalsIgnoreCase ("test69") || args[0].equalsIgnoreCase ("relit_add_one")) {
+
+			try {
+				test69(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

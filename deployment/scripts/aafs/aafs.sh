@@ -13,6 +13,8 @@
 # stop - Stop the AAFS system.
 #
 # initdb - Initialize the AAFS database.
+#
+# rebuild_indexes - Rebuild AAFS database indexes.
 
 case "$1" in
 
@@ -32,8 +34,14 @@ case "$1" in
         /opt/aafs/aafs-svc.sh stop
         ;;
 
+    rebuild_indexes)
+        /opt/aafs/aafs-svc.sh start
+        /opt/aafs/aafs-app.sh rebuild_indexes
+        /opt/aafs/aafs-svc.sh stop
+        ;;
+
        *)
-        echo "Usage: aafs.sh {start|stop|initdb}"
+        echo "Usage: aafs.sh {start|stop|initdb|rebuild_indexes}"
         exit 1
         ;;
 esac

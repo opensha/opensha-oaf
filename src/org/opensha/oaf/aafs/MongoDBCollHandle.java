@@ -119,6 +119,13 @@ public interface MongoDBCollHandle {
 		return;
 	}
 
+	// Make a unique index on one field, with the given name.
+
+	public default void make_unique_index (String field, String name) {
+		createIndex (Indexes.ascending (field), (new IndexOptions()).name (name).unique (true));
+		return;
+	}
+
 	// Delete one document.
 	// Parameters:
 	//  filter = Filter to use for query (constructed by Filters), cannot be null.

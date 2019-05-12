@@ -1,0 +1,9 @@
+relit213 aafs.ServerTest relit_add_one Event_2 20090 Details_2_Forced true
+Added relay item, relay_id = Event_2, relay_time = 20101
+Begin change stream iterator
+RelayItem
+	id: 54a49c100000000000000001
+	relay_time: 20101
+	relay_id: Event_2
+	details: ["Details_2_Forced"]
+End change stream iterator

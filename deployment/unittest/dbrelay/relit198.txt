@@ -1,0 +1,1 @@
+relit198 aafs.ServerTest relit_query_list true 30010 50090 Event_1 Event_5 Event_2
