@@ -173,12 +173,39 @@ rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 rundbut relit$n aafs.ServerTest relit_query_iterate false 0 0
 rundbut relit$n aafs.ServerTest relit_query_first   false 0 0
 
+rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30110 Details_3_After false
+
+rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
+rundbut relit$n aafs.ServerTest relit_query_iterate false 0 0
+rundbut relit$n aafs.ServerTest relit_query_first   false 0 0
+
+rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30110 Details_2_After false
+
+rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
+rundbut relit$n aafs.ServerTest relit_query_iterate false 0 0
+rundbut relit$n aafs.ServerTest relit_query_first   false 0 0
+
+rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30110 Details_4_After false
+
+rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
+rundbut relit$n aafs.ServerTest relit_query_iterate false 0 0
+rundbut relit$n aafs.ServerTest relit_query_first   false 0 0
+
 # Tests for delete
 
 rundbut relit$n aafs.ServerTest relit_query_delete  false 30010 50090
 rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 
 rundbut relit$n aafs.ServerTest relit_query_delete  true 0 0 Event_1
+rundbut relit$n aafs.ServerTest relit_query_list    true 0 0
+
+rundbut relit$n aafs.ServerTest relit_query_delete  false 0 0
+rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
+
+# Tests for multiple cycles of change stream
+
+rundbut relit$n aafs.ServerTest relit_add_cycles  20
+rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 rundbut relit$n aafs.ServerTest relit_query_list    true 0 0
 
 rundbut relit$n aafs.ServerTest relit_query_delete  false 0 0

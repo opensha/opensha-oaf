@@ -1,4 +1,4 @@
-relit222 aafs.ServerTest relit_query_list false 0 0
+relit226 aafs.ServerTest relit_query_list false 0 0
 RelayItem
 	id: 54a49c100000000000000003
 	relay_time: 10100
@@ -13,7 +13,7 @@ RelayItem
 	id: 54a49c100000000000000005
 	relay_time: 30110
 	relay_id: Event_3
-	details: ["Details_3_After"]
+	details: ["Details_4_After"]
 RelayItem
 	id: 54a49c100000000000000002
 	relay_time: 40100

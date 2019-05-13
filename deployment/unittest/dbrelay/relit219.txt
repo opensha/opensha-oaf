@@ -1,8 +1,26 @@
-relit219 aafs.ServerTest relit_query_delete true 0 0 Event_1
+relit219 aafs.ServerTest relit_query_iterate false 0 0
 RelayItem
 	id: 54a49c100000000000000003
 	relay_time: 10100
 	relay_id: Event_1
 	details: ["Details_1",11010,11020,11030.0,11040.0]
-Begin change stream iterator
-End change stream iterator
+RelayItem
+	id: 54a49c100000000000000001
+	relay_time: 20101
+	relay_id: Event_2
+	details: ["Details_2_Forced"]
+RelayItem
+	id: 54a49c100000000000000005
+	relay_time: 30110
+	relay_id: Event_3
+	details: ["Details_3_After"]
+RelayItem
+	id: 54a49c100000000000000002
+	relay_time: 40100
+	relay_id: Event_4
+	details: 
+RelayItem
+	id: 54a49c100000000000000004
+	relay_time: 50100
+	relay_id: Event_5
+	details: ["Details_5",51010,51020,51030.0,51040.0]

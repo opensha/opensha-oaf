@@ -3384,6 +3384,10 @@ public class ServerTest {
 			System.out.println ("ServerTest : Dropping alias family collection");
 
 			AliasFamily.drop_collection ();
+		
+			System.out.println ("ServerTest : Dropping relay item collection");
+
+			RelayItem.drop_collection ();
 			
 			System.out.println ("ServerTest : Dropped all database collections");
 
@@ -3918,6 +3922,88 @@ public class ServerTest {
 				}
 
 				System.out.println ("End change stream iterator");
+
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #70 - Add elements to the relay items in multiple cycles.
+
+	public static void test70(String[] args) {
+
+		// One additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerTest : Invalid 'test70' or 'relit_add_cycles' subcommand");
+			return;
+		}
+
+		long n_cycles = Long.parseLong(args[1]);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Set up a change stream iterator
+
+			try (
+				RecordIterator<RelayItem> csit = RelayItem.watch_relay_item_changes();
+			){
+
+				// Wait 3 seconds to make sure it's in effect
+
+				try {
+					Thread.sleep (3000L);
+				} catch (InterruptedException e) {
+				}
+
+				// Loop over cycles, and items within a cycle, adding 5 new items each cycle
+
+				for (long cycle = 1L; cycle <= n_cycles; ++cycle) {
+					for (long item = 1L; item <= cycle * 5L; ++item) {
+					
+						RelayItem relit;
+						String relay_id = "item_" + item;
+						long relay_time = cycle * 1000000L + item;
+						boolean f_force = false;
+		
+						MarshalWriter details = RelayItem.begin_details();
+						details.marshalArrayBegin (null, 1);
+						details.marshalString (null, "Cycle = " + cycle + ", item = " + item);
+						details.marshalArrayEnd ();
+						relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+						if (relit != null) {
+							System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+						} else {
+							System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+						}
+
+					}
+
+					// Wait 3 seconds, then dump the change stream iterator
+
+					try {
+						Thread.sleep (3000L);
+					} catch (InterruptedException e) {
+					}
+
+					System.out.println ("Begin change stream iterator, cycle = " + cycle);
+
+					while (csit.hasNext()) {
+						RelayItem csrelit = csit.next();
+						System.out.println (csrelit.dumpString());
+					}
+
+					System.out.println ("End change stream iterator, cycle = " + cycle);
+				}
 
 			}
 
@@ -5114,6 +5200,23 @@ public class ServerTest {
 
 			try {
 				test69(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #70
+		// Command format:
+		//  test70  n_cycles
+		// Add elements to the relay items in multiple cycles.
+		// Each cycle updates all prior items and adds 5 new items, then dumps the change stream iterator.
+
+		if (args[0].equalsIgnoreCase ("test70") || args[0].equalsIgnoreCase ("relit_add_cycles")) {
+
+			try {
+				test70(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

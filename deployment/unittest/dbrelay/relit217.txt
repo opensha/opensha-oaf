@@ -1,13 +1,4 @@
-relit217 aafs.ServerTest relit_query_delete false 30010 50090
-RelayItem
-	id: 54a49c100000000000000005
-	relay_time: 30110
-	relay_id: Event_3
-	details: ["Details_3_After"]
-RelayItem
-	id: 54a49c100000000000000002
-	relay_time: 40100
-	relay_id: Event_4
-	details: 
+relit217 aafs.ServerTest relit_add_one Event_3 30110 Details_3_After false
+Failed to add relay item, relay_id = Event_3, relay_time = 30110
 Begin change stream iterator
 End change stream iterator

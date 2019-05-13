@@ -1,4 +1,4 @@
-relit220 aafs.ServerTest relit_query_first false 0 0
+relit224 aafs.ServerTest relit_query_first false 0 0
 RelayItem
 	id: 54a49c100000000000000003
 	relay_time: 10100
