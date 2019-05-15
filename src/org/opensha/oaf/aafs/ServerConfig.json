@@ -133,6 +133,8 @@
   "pdl_enable": 0,
   "pdl_key_filename": "",
   "pdl_err_rate": 0.0,
+  "pdl_oaf_source": "us",
+  "pdl_oaf_type": "oaf",
   "pdl_dev_senders": [
     {
       "host": "dev01-pdl01.cr.usgs.gov",

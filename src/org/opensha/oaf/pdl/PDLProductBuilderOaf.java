@@ -17,6 +17,8 @@ import java.net.URL;
 import java.util.Map;
 import java.util.List;
 
+import org.opensha.oaf.aafs.ServerConfig;
+
 
 
 /**
@@ -103,8 +105,13 @@ public class PDLProductBuilderOaf {
 
 		// Our PDL source, type, and code
 
-		String source = "us";
-		String type = "oaf";
+		//String source = "us";
+		//String type = "oaf";
+
+		ServerConfig server_config = new ServerConfig();
+		String source = server_config.get_pdl_oaf_source();
+		String type = server_config.get_pdl_oaf_type();
+
 		String code = eventID;
 
 		// Construct the product ID
@@ -217,8 +224,13 @@ public class PDLProductBuilderOaf {
 
 		// Our PDL source, type, and code
 
-		String source = "us";
-		String type = "oaf";
+		//String source = "us";
+		//String type = "oaf";
+
+		ServerConfig server_config = new ServerConfig();
+		String source = server_config.get_pdl_oaf_source();
+		String type = server_config.get_pdl_oaf_type();
+
 		String code = eventID;
 
 		// Construct the product ID

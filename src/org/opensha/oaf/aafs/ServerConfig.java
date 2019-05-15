@@ -253,6 +253,18 @@ public class ServerConfig {
 		return param_set.pdl_err_rate;
 	}
 
+	// Creator (source network) for OAF PDL products.
+
+	public String get_pdl_oaf_source() {
+		return param_set.pdl_oaf_source;
+	}
+
+	// Product type for OAF PDL products.
+
+	public String get_pdl_oaf_type() {
+		return param_set.pdl_oaf_type;
+	}
+
 	// Get the currently selected list of PDL senders.
 	// This returns a copy of the list, so the original cannot be modified.
 
@@ -391,6 +403,8 @@ public class ServerConfig {
 			System.out.println("pdl_enable = " + server_config.get_pdl_enable());
 			System.out.println("pdl_key_filename = " + server_config.get_pdl_key_filename());
 			System.out.println("pdl_err_rate = " + server_config.get_pdl_err_rate());
+			System.out.println("pdl_oaf_source = " + server_config.get_pdl_oaf_source());
+			System.out.println("pdl_oaf_type = " + server_config.get_pdl_oaf_type());
 
 			List<PDLSenderConfig> pdl_senders = server_config.get_pdl_senders();
 			System.out.println("pdl_senders = [");

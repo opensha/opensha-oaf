@@ -28,6 +28,9 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
 import org.opensha.oaf.util.SimpleUtils;
 
+import org.opensha.oaf.aafs.ServerConfig;
+import org.opensha.oaf.aafs.ServerConfigFile;
+
 
 /**
  * An OAF product, as retrieved from Comcat.
@@ -200,14 +203,15 @@ public class ComcatOAFProduct {
 
 
 	// Make a list OAF product from a GeoJson event.
-	// Returns empty list of OAF products doe not exist, or if data missing or mis-formatted.
+	// Returns empty list if OAF products do not exist, or if data missing or mis-formatted.
 
 	public static List<ComcatOAFProduct> make_list_from_gj (JSONObject event) {
 		ArrayList<ComcatOAFProduct> oaf_product_list = new ArrayList<ComcatOAFProduct>();
 
 		// Get the array of OAF products
 
-		JSONArray gj_product_array = GeoJsonUtils.getJsonArray (event, "properties", "products", "oaf");
+		//JSONArray gj_product_array = GeoJsonUtils.getJsonArray (event, "properties", "products", "oaf");
+		JSONArray gj_product_array = GeoJsonUtils.getJsonArray (event, "properties", "products", (new ServerConfig()).get_pdl_oaf_type());
 		if (gj_product_array != null) {
 
 			// Loop over products in the array

@@ -34,19 +34,29 @@ import gov.usgs.earthquake.product.Product;
 // --code=PRODUCTCODE
 // --eventsource=EVENTNETWORK
 // --eventsourcecode=EVENTCODE
+// --source=PRODUCTSOURCE     [optional, defaults to configured value, which should be "us"]
+// --type=PRODUCTTYPE         [optional, defaults to configured value, which should be "oaf"]
+// --reviewed=ISREVIEWED      [optional, defaults to "true"]
 // The value of --code identifies the product that is to be deleted.  The value of --code is typically an event ID.
 // The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
 // these determine which event page displays the product.
+// The optional parameters --source and --type identify the source (typically a network) and type of the product.
+// The optional parameter --reviewed, which must be "true" or "false", indicates if the deletion has been reviewed.
 //
 // If a JSON file exists on disk, then it can be sent as a product by including:
 // --update=JSONFILENAME
 // --code=PRODUCTCODE
 // --eventsource=EVENTNETWORK
 // --eventsourcecode=EVENTCODE
+// --source=PRODUCTSOURCE     [optional, defaults to configured value, which should be "us"]
+// --type=PRODUCTTYPE         [optional, defaults to configured value, which should be "oaf"]
+// --reviewed=ISREVIEWED      [optional, defaults to "true"]
 // The value of --code identifies the product that is to be sent.  The value of --code is typically an event ID.
 // The product replaces any prior product that was sent with the same --code.
 // The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
 // these determine which event page displays the product.
+// The optional parameters --source and --type identify the source (typically a network) and type of the product.
+// The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
 //
 // The command line is considered to be "consumed" if a product or delete was sent to PDL,
 // or if an error was reported to the user.  If the command line is consumed, then the caller
@@ -65,6 +75,9 @@ public class PDLCmd {
 	public static final String PNAME_EVENT_CODE = "--eventsourcecode";	// Network's code for the event
 	public static final String PNAME_UPDATE = "--update";				// Send product update
 	public static final String PNAME_DELETE = "--delete";				// Delete product
+	public static final String PNAME_SOURCE = "--source";				// Product source code (network code)
+	public static final String PNAME_TYPE = "--type";					// Product type
+	public static final String PNAME_REVIEWED = "--reviewed";			// Product is reviewed
 
 	// Values for the PNAME_PDL parameter
 
@@ -115,6 +128,10 @@ public class PDLCmd {
 		String event_code = null;
 		String update = null;
 		boolean delete = false;
+		String product_source = null;
+		String product_type = null;
+		boolean f_is_reviewed = true;
+		boolean f_seen_reviewed = false;
 
 		// Scan parameters
 
@@ -244,6 +261,68 @@ public class PDLCmd {
 				event_code = value;
 			}
 
+			// Product source option
+
+			else if (name.equalsIgnoreCase (PNAME_SOURCE)) {
+				if (!( f_send )) {
+					System.out.println ("Unrecognized command-line option: " + arg);
+					return true;
+				}
+				if (product_source != null) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				product_source = value;
+			}
+
+			// Product type option
+
+			else if (name.equalsIgnoreCase (PNAME_TYPE)) {
+				if (!( f_send )) {
+					System.out.println ("Unrecognized command-line option: " + arg);
+					return true;
+				}
+				if (product_type != null) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				product_type = value;
+			}
+
+			// Product reviewed option
+
+			else if (name.equalsIgnoreCase (PNAME_REVIEWED)) {
+				if (!( f_send )) {
+					System.out.println ("Unrecognized command-line option: " + arg);
+					return true;
+				}
+				if (f_seen_reviewed) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				if (value.equalsIgnoreCase ("true")) {
+					f_is_reviewed = true;
+				} else if (value.equalsIgnoreCase ("false")) {
+					f_is_reviewed = false;
+				} else {
+					System.out.println ("Invalid value in command-line option: " + arg);
+					return true;
+				}
+				f_seen_reviewed = true;
+			}
+
 			// Update option
 
 			else if (name.equalsIgnoreCase (PNAME_UPDATE)) {
@@ -331,6 +410,18 @@ public class PDLCmd {
 			server_config.get_server_config_file().pdl_key_filename = keyfile;
 		}
 
+		// If product source is specified, enter it into server configuration
+
+		if (product_source != null) {
+			server_config.get_server_config_file().pdl_oaf_source = product_source;
+		}
+
+		// If product type is specified, enter it into server configuration
+
+		if (product_type != null) {
+			server_config.get_server_config_file().pdl_oaf_type = product_type;
+		}
+
 		// Send update
 
 		if (update != null) {
@@ -361,7 +452,8 @@ public class PDLCmd {
 
 				// Review status, false means automatically generated
 
-				boolean isReviewed = true;
+				//boolean isReviewed = true;
+				boolean isReviewed = f_is_reviewed;
 
 				// Build the product
 
@@ -422,7 +514,8 @@ public class PDLCmd {
 
 				// Review status, false means automatically generated
 
-				boolean isReviewed = true;
+				//boolean isReviewed = true;
+				boolean isReviewed = f_is_reviewed;
 
 				// Build the product
 

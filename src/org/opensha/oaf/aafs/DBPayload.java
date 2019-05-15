@@ -8,6 +8,7 @@ import org.opensha.oaf.aafs.entity.PendingTask;
 import org.opensha.oaf.aafs.entity.LogEntry;
 import org.opensha.oaf.aafs.entity.CatalogSnapshot;
 import org.opensha.oaf.aafs.entity.TimelineEntry;
+import org.opensha.oaf.aafs.entity.RelayItem;
 
 
 /**
@@ -142,6 +143,25 @@ public class DBPayload {
 			unmarshal (tentry.get_details(), null);
 		} catch (Exception e) {
 			throw new DBCorruptException("Error unmarshaling timeline entry payload\n" + tentry.toString() + "\nDump:\n" + tentry.dump_details(), e);
+		}
+		return this;
+	}
+
+	// Marshal object, for a relay item.
+
+	public MarshalWriter marshal_relay () {
+		MarshalWriter writer = RelayItem.begin_details();
+		marshal (writer, null);
+		return writer;
+	}
+
+	// Unmarshal object, for a relay item.
+
+	public DBPayload unmarshal_relay (RelayItem relit) {
+		try {
+			unmarshal (relit.get_details(), null);
+		} catch (Exception e) {
+			throw new DBCorruptException("Error unmarshaling relay item payload\n" + relit.toString() + "\nDump:\n" + relit.dump_details(), e);
 		}
 		return this;
 	}

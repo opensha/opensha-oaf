@@ -45,6 +45,9 @@ import gov.usgs.earthquake.product.ProductId;
  * authoritative ID changes.  The automatic system tries to handle with By
  * using the timeline ID, but the GUI has no simple solution.
  *
+ * (The strings "oaf" and "us" now come from ServerConfig.json.  This allows
+ * them to be changed for use in scenario earthquakes.)
+ *
  * Our approach is to choose the code by reading the OAF product that already
  * exists in Comcat and re-using its code.  If none exist, then we choose the
  * code suggested by the caller, which will be a timeline ID, query ID, or
@@ -70,11 +73,11 @@ public class PDLCodeChooserOaf {
 
 	// Our type.
 
-	public static final String TYPE_OAF = "oaf";
+	//public static final String TYPE_OAF = "oaf";
 
 	// Our source.
 
-	public static final String SOURCE_US = "us";
+	//public static final String SOURCE_US = "us";
 
 
 
@@ -94,9 +97,11 @@ public class PDLCodeChooserOaf {
 
 		// If not our source ID, do nothing
 
-		if (!( oafProduct.sourceID.equals (SOURCE_US) )) {
+		if (!( oafProduct.sourceID.equals ((new ServerConfig()).get_pdl_oaf_source()) )) {
 			return;
 		}
+			
+		System.out.println ("Deleting existing OAF product: " + oafProduct.summary_string());
 
 		// The code
 
@@ -268,7 +273,7 @@ public class PDLCodeChooserOaf {
 
 			// If the product is for our source ...
 
-			if (oafProduct.sourceID.equals (SOURCE_US)) {
+			if (oafProduct.sourceID.equals ((new ServerConfig()).get_pdl_oaf_source())) {
 
 				// Update most recent product
 
@@ -386,7 +391,7 @@ public class PDLCodeChooserOaf {
 		// Command format:
 		//  test1  pdl_enable  suggestedCode   reviewOverwrite  queryID  eventNetwork  eventCode  isReviewed
 		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
-		// Then call choosOafCode and display the result.
+		// Then call chooseOafCode and display the result.
 
 		if (args[0].equalsIgnoreCase ("test1")) {
 

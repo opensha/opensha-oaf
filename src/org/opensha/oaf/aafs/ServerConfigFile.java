@@ -56,6 +56,8 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  *	"pdl_enable" = Integer giving PDL enable option: 0 = none, 1 = development, 2 = production, 3 =  simulated development, 4 = simulated production.
  *	"pdl_key_filename" = String giving PDL signing key filename, can be empty string for none.
  *  "pdl_err_rate" = Real number giving rate of simulated PDL errors.
+ *	"pdl_oaf_source" = String giving creator (source network) for OAF PDL products.
+ *	"pdl_oaf_type" = String giving product type for OAF PDL products.
  *	"pdl_dev_senders" = [ Array giving a list of PDL sender configurations for development PDL, in priority order.
  *		element = { Structure giving PDL server configuration.
  *			"host" = String giving PDL sender host name or IP address.
@@ -181,6 +183,14 @@ public class ServerConfigFile {
 
 	public double pdl_err_rate;
 
+	// Creator (source network) for OAF PDL products.
+
+	public String pdl_oaf_source;
+
+	// Product type for OAF PDL products.
+
+	public String pdl_oaf_type;
+
 	// List of PDL development senders.
 
 	public ArrayList<PDLSenderConfig> pdl_dev_senders;
@@ -225,6 +235,8 @@ public class ServerConfigFile {
 		pdl_enable = PDLOPT_NONE;
 		pdl_key_filename = "";
 		pdl_err_rate = 0.0;
+		pdl_oaf_source = "";
+		pdl_oaf_type = "";
 		pdl_dev_senders = new ArrayList<PDLSenderConfig>();
 		pdl_prod_senders = new ArrayList<PDLSenderConfig>();
 		return;
@@ -346,6 +358,14 @@ public class ServerConfigFile {
 			throw new InvariantViolationException ("ServerConfigFile: Invalid pdl_err_rate: " + pdl_err_rate);
 		}
 
+		if (!( pdl_oaf_source != null && pdl_oaf_source.trim().length() > 0 )) {
+			throw new InvariantViolationException ("ServerConfigFile: Invalid pdl_oaf_source: " + ((pdl_oaf_source == null) ? "<null>" : pdl_oaf_source));
+		}
+
+		if (!( pdl_oaf_type != null && pdl_oaf_type.trim().length() > 0 )) {
+			throw new InvariantViolationException ("ServerConfigFile: Invalid pdl_oaf_type: " + ((pdl_oaf_type == null) ? "<null>" : pdl_oaf_type));
+		}
+
 		if (!( pdl_dev_senders != null )) {
 			throw new InvariantViolationException ("ServerConfigFile: pdl_dev_senders list is null");
 		}
@@ -412,6 +432,8 @@ public class ServerConfigFile {
 		result.append ("pdl_enable = " + pdl_enable + "\n");
 		result.append ("pdl_key_filename = " + ((pdl_key_filename == null) ? "<null>" : pdl_key_filename) + "\n");
 		result.append ("pdl_err_rate = " + pdl_err_rate + "\n");
+		result.append ("pdl_oaf_source = " + ((pdl_oaf_source == null) ? "<null>" : pdl_oaf_source) + "\n");
+		result.append ("pdl_oaf_type = " + ((pdl_oaf_type == null) ? "<null>" : pdl_oaf_type) + "\n");
 
 		result.append ("pdl_dev_senders = [" + "\n");
 		for (int i = 0; i < pdl_dev_senders.size(); ++i) {
@@ -669,6 +691,8 @@ public class ServerConfigFile {
 		writer.marshalInt       (        "pdl_enable"       , pdl_enable       );
 		writer.marshalString    (        "pdl_key_filename" , pdl_key_filename );
 		writer.marshalDouble    (        "pdl_err_rate"     , pdl_err_rate     );
+		writer.marshalString    (        "pdl_oaf_source"   , pdl_oaf_source   );
+		writer.marshalString    (        "pdl_oaf_type"     , pdl_oaf_type     );
 		marshal_pdl_sender_list (writer, "pdl_dev_senders"  , pdl_dev_senders  );
 		marshal_pdl_sender_list (writer, "pdl_prod_senders" , pdl_prod_senders );
 	
@@ -712,6 +736,8 @@ public class ServerConfigFile {
 		pdl_enable        = reader.unmarshalInt       (        "pdl_enable"       );
 		pdl_key_filename  = reader.unmarshalString    (        "pdl_key_filename" );
 		pdl_err_rate      = reader.unmarshalDouble    (        "pdl_err_rate"     );
+		pdl_oaf_source    = reader.unmarshalString    (        "pdl_oaf_source"   );
+		pdl_oaf_type      = reader.unmarshalString    (        "pdl_oaf_type"     );
 		pdl_dev_senders   = unmarshal_pdl_sender_list (reader, "pdl_dev_senders"  );
 		pdl_prod_senders  = unmarshal_pdl_sender_list (reader, "pdl_prod_senders" );
 
