@@ -544,6 +544,239 @@ public class RelayItem implements java.io.Serializable {
 
 	public static int submit_relay_item (RelayItem relit, boolean f_force) {
 
+		// Check if it can be inserted into the database
+
+		int chkres = check_relay_item (relit, f_force);
+
+		// Insert the relay item, if possible
+
+		if (chkres > 0) {
+			insert_relay_item (relit);
+		}
+
+		return chkres;
+	}
+
+//	public static int submit_relay_item (RelayItem relit, boolean f_force) {
+//
+//		// Get collection handle
+//
+//		MongoDBCollHandle coll_handle = get_coll_handle (null);
+//
+//		// Search for an existing item with the same relay_id
+//
+//		Bson filter = natural_filter (0L, 0L, relit.get_relay_id());
+//		Document doc = coll_handle.find_first (filter);
+//
+//		// If not found ...
+//
+//		if (doc == null) {
+//
+//			// Erase existing object id, if any
+//
+//			relit.set_id (null);
+//
+//			// Call MongoDB to store into database
+//
+//			coll_handle.insertOne (relit.to_bson_doc());
+//
+//			// Return that we inserted item
+//
+//			return 2;
+//		}
+//
+//		// Get existing relay item
+//
+//		RelayItem existing = (new RelayItem()).from_bson_doc (doc);
+//
+//		// Copy the object id
+//
+//		relit.set_id (existing.get_id());
+//
+//		// If force, increase relay_time if necessary
+//
+//		if (f_force) {
+//			if (relit.get_relay_time() <= existing.get_relay_time()) {
+//				relit.set_relay_time (existing.get_relay_time() + 1L);
+//			}
+//		}
+//
+//		// Otherwise, compare to existing item
+//
+//		else {
+//
+//			int cmp = compare (relit, existing);
+//
+//			// If identical, return identical
+//
+//			if (cmp == 0) {
+//				return 0;
+//			}
+//
+//			// If earlier than existing item, return that
+//
+//			if (cmp < 0) {
+//				return -1;
+//			}
+//		}
+//
+//		// Update existing item
+//
+//		// Filter: id == relit.id
+//
+//		filter = id_filter (relit.get_id());
+//
+//		// Construct the update operations: Set relay_time and details
+//
+//		ArrayList<Bson> updates = new ArrayList<Bson>();
+//
+//		updates.add (Updates.set ("relay_time", new Long(relit.relay_time)));
+//		updates.add (Updates.set ("details", relit.details));
+//
+//		// Update item id if desired (this would send the item id thru the changestream)
+//
+//		//updates.add (Updates.set ("relay_id", relit.relay_id));
+//
+//		Bson update = Updates.combine (updates);
+//
+//		// Run the update
+//
+//		coll_handle.updateOne (filter, update);
+//
+//		// Return updated
+//
+//		return 1;
+//	}
+
+
+
+
+	// submit_relay_item - Submit a relay item.
+	// Parameters:
+	//  relay_id = Relay item id, or "" if none. Cannot be null.
+	//  relay_time = Relay item time stamp, in milliseconds since the epoch. Must be positive.
+	//  details = Further details of this relay item. Can be null if there are none.
+	//  f_force = True to force item to be written.
+	// If an item is written or updated, then the new or updated item is returned.
+	// If an item is not written, then null is returned.
+	// If f_force is true, then the time stamp is increased, if necessary,
+	//  to ensure that the item is written.  Otherwise, if there is an existing item
+	//  that is equal or later to the proposed new item, then nothing is written.
+
+	public static RelayItem submit_relay_item (String relay_id, long relay_time, MarshalWriter details, boolean f_force) {
+
+		// Build the relay item
+
+		RelayItem relit = build_relay_item (relay_id, relay_time, details);
+
+		// Do the insert
+
+		if (submit_relay_item (relit, f_force) <= 0) {
+			relit = null;		// item not written
+		}
+		
+		return relit;
+	}
+
+//	public static RelayItem submit_relay_item (String relay_id, long relay_time, MarshalWriter details, boolean f_force) {
+//
+//		// Build the relay item
+//
+//		RelayItem relit = build_relay_item (relay_id, relay_time, details);
+//
+//		// Check if it can be inserted into the database
+//
+//		int chkres = check_relay_item (relit, f_force);
+//
+//		if (chkres <= 0) {
+//			return null;
+//		}
+//
+//		// Insert the relay item
+//
+//		insert_relay_item (relit);
+//
+//		return relit;
+//	}
+
+//	public static RelayItem submit_relay_item (String relay_id, long relay_time, MarshalWriter details, boolean f_force) {
+//
+//		// Check conditions
+//
+//		if (!( relay_id != null
+//			&& relay_time > 0L )) {
+//			throw new IllegalArgumentException("RelayItem.submit_relay_item: Invalid relay item parameters");
+//		}
+//
+//		// Construct the relay item object
+//
+//		RelayItem relit = new RelayItem();
+//		relit.set_id (null);
+//		relit.set_relay_time (relay_time);
+//		relit.set_relay_id (relay_id);
+//		relit.set_details (details);
+//
+//		// Do the insert
+//
+//		if (submit_relay_item (relit, f_force) <= 0) {
+//			relit = null;		// item not written
+//		}
+//		
+//		return relit;
+//	}
+
+
+
+
+	// build_relay_item - Build a relay item.
+	// Parameters:
+	//  relay_id = Relay item id, or "" if none. Cannot be null.
+	//  relay_time = Relay item time stamp, in milliseconds since the epoch. Must be positive.
+	//  details = Further details of this relay item. Can be null if there are none.
+	// Returns a newly created RelayItem, with null object id.
+
+	public static RelayItem build_relay_item (String relay_id, long relay_time, MarshalWriter details) {
+
+		// Check conditions
+
+		if (!( relay_id != null
+			&& relay_time > 0L )) {
+			throw new IllegalArgumentException("RelayItem.submit_relay_item: Invalid relay item parameters");
+		}
+
+		// Construct the relay item object
+
+		RelayItem relit = new RelayItem();
+		relit.set_id (null);
+		relit.set_relay_time (relay_time);
+		relit.set_relay_id (relay_id);
+		relit.set_details (details);
+		
+		return relit;
+	}
+
+
+
+
+	// check_relay_item - Check if a relay item can be inserted into the database.
+	// Parameters:
+	//  relit = Relay item to check.
+	//  f_force = True to force item to be insertable.
+	// This function tests if there is an existing item with the same relay_id.
+	// If there is no existing item, then:
+	//  - relit.id is set to null (overwriting relit.id).
+	//  - The function returns 2.
+	// If there is an existing item, then:
+	//  - relit.id is filled with the object id of the existing item (overwriting relit.id).
+	//  - If f_force is true, then relit.relay_time is adjusted, if necessary, so it is
+	//    larger then the value of relay_time in the existing item.
+	//  - If relit equals the existing item, then return 0.
+	//  - If relit is earlier than the existing item, then return -1.
+	//  - Otherwise (relit is later then the existing item), return 1.
+	// Note that a return value > 0 means the relay item can be inserted into the database.
+
+	public static int check_relay_item (RelayItem relit, boolean f_force) {
+
 		// Get collection handle
 
 		MongoDBCollHandle coll_handle = get_coll_handle (null);
@@ -561,11 +794,7 @@ public class RelayItem implements java.io.Serializable {
 
 			relit.set_id (null);
 
-			// Call MongoDB to store into database
-
-			coll_handle.insertOne (relit.to_bson_doc());
-
-			// Return that we inserted item
+			// Return that item can be inserted
 
 			return 2;
 		}
@@ -605,6 +834,47 @@ public class RelayItem implements java.io.Serializable {
 			}
 		}
 
+		// Return later than existing item
+
+		return 1;
+	}
+
+
+
+
+	// insert_relay_item - Insert a relay item into the database.
+	// Parameters:
+	//  relit = Relay item to write into database.
+	// If relit.id is null, then there must not be any existing item with the same relay id,
+	//  and then relit.id is filled with a new object id and the item is inserted into the database.
+	// If relit.id is non-null, then it must be the object id of an existing relay item,
+	//  and the existing relay item is replaced with this one.
+	// Note: Before calling this function, you must call check_relay_item and get a return value > 0.
+	// Note: The caller must ensure that any existing item is not modified after the call to check_relay_item.
+	//  This can be done by limit writes to a single thread, or though the use of locks.
+
+	public static void insert_relay_item (RelayItem relit) {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Search for an existing item with the same relay_id
+
+		Bson filter = natural_filter (0L, 0L, relit.get_relay_id());
+		Document doc = coll_handle.find_first (filter);
+
+		// If not replacing an existing item ...
+
+		if (relit.get_id() == null) {
+
+			// Call MongoDB to store into database
+
+			coll_handle.insertOne (relit.to_bson_doc());
+
+			return;
+		}
+
 		// Update existing item
 
 		// Filter: id == relit.id
@@ -628,50 +898,7 @@ public class RelayItem implements java.io.Serializable {
 
 		coll_handle.updateOne (filter, update);
 
-		// Return updated
-
-		return 1;
-	}
-
-
-
-
-	// submit_relay_item - Submit a relay item.
-	// Parameters:
-	//  relay_id = Relay item id, or "" if none. Cannot be null.
-	//  relay_time = Relay item time stamp, in milliseconds since the epoch. Must be positive.
-	//  details = Further details of this relay item. Can be null if there are none.
-	//  f_force = True to force item to be written.
-	// If an item is written or updated, then the new or updated item is returned.
-	// If an item is not written, then null is returned.
-	// If f_force is true, then the time stamp is increased, if necessary,
-	//  to ensure that the item is written.  Otherwise, if there is an existing item
-	//  that is equal or later to the proposed new item, then nothing is written.
-
-	public static RelayItem submit_relay_item (String relay_id, long relay_time, MarshalWriter details, boolean f_force) {
-
-		// Check conditions
-
-		if (!( relay_id != null
-			&& relay_time > 0L )) {
-			throw new IllegalArgumentException("RelayItem.submit_relay_item: Invalid relay item parameters");
-		}
-
-		// Construct the relay item object
-
-		RelayItem relit = new RelayItem();
-		relit.set_id (null);
-		relit.set_relay_time (relay_time);
-		relit.set_relay_id (relay_id);
-		relit.set_details (details);
-
-		// Do the insert
-
-		if (submit_relay_item (relit, f_force) <= 0) {
-			relit = null;		// item not written
-		}
-		
-		return relit;
+		return;
 	}
 
 

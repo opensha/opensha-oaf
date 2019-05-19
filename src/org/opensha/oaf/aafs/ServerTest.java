@@ -4015,6 +4015,260 @@ public class ServerTest {
 
 
 
+	// Test #71 - Add elements to the relay items in multiple cycles, using relay thread.
+
+	public static void test71(String[] args) {
+
+		// One additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerTest : Invalid 'test71' or 'relit_thread_add_cycles' subcommand");
+			return;
+		}
+
+		long n_cycles = Long.parseLong(args[1]);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Set up a relay thread
+
+			RelayThread relay_thread = new RelayThread();
+			relay_thread.set_ri_polling_interval (1000L);
+			relay_thread.set_ri_initial_query_interval (86400000L);	// 24 hours, effectively disabling second and later queries
+			relay_thread.set_ri_query_interval (86400000L);			// 24 hours, effectively disabling second and later queries
+
+			try (
+				RelayThread.Sentinel rtsent = relay_thread.make_sentinel();
+			){
+				relay_thread.start_relay_thread();
+
+				// Wait 4 seconds to make sure it's in effect
+
+				try {
+					Thread.sleep (4000L);
+				} catch (InterruptedException e) {
+				}
+
+				// Loop over cycles, and items within a cycle, adding 5 new items each cycle
+
+				for (long cycle = 1L; cycle <= n_cycles; ++cycle) {
+					for (long item = 1L; item <= cycle * 5L; ++item) {
+					
+						RelayItem relit;
+						String relay_id = "item_" + item;
+						long relay_time = cycle * 1000000L + item;
+						boolean f_force = false;
+		
+						MarshalWriter details = RelayItem.begin_details();
+						details.marshalArrayBegin (null, 1);
+						details.marshalString (null, "Cycle = " + cycle + ", item = " + item);
+						details.marshalArrayEnd ();
+						relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+						if (relit != null) {
+							System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+						} else {
+							System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+						}
+
+					}
+
+					// Wait 4 seconds, then dump the relay item queue
+
+					try {
+						Thread.sleep (4000L);
+					} catch (InterruptedException e) {
+					}
+
+					System.out.println ("Begin relay thread item queue, cycle = " + cycle);
+
+					for (;;) {
+						RelayItem rtrelit = relay_thread.ri_queue_remove();
+						if (rtrelit == null) {
+							break;
+						}
+						System.out.println (rtrelit.dumpString());
+					}
+
+					System.out.println ("End relay thread item queue, cycle = " + cycle);
+				}
+
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #72 - Dump all the relay items, using relay thread.
+
+	public static void test72(String[] args) {
+
+		// No additional argument
+
+		if (args.length != 1) {
+			System.err.println ("ServerTest : Invalid 'test72' or 'relit_thread_dump' subcommand");
+			return;
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Set up a relay thread
+
+			RelayThread relay_thread = new RelayThread();
+			relay_thread.set_ri_polling_interval (1000L);
+			relay_thread.set_ri_initial_query_interval (86400000L);	// 24 hours, effectively disabling second and later queries
+			relay_thread.set_ri_query_interval (86400000L);			// 24 hours, effectively disabling second and later queries
+
+			try (
+				RelayThread.Sentinel rtsent = relay_thread.make_sentinel();
+			){
+				relay_thread.start_relay_thread();
+
+				// Wait 4 seconds to make sure it's in effect
+
+				try {
+					Thread.sleep (4000L);
+				} catch (InterruptedException e) {
+				}
+
+				// Dump the relay item queue
+
+				System.out.println ("Begin relay thread item queue");
+
+				for (;;) {
+					RelayItem rtrelit = relay_thread.ri_queue_remove();
+					if (rtrelit == null) {
+						break;
+					}
+					System.out.println (rtrelit.dumpString());
+				}
+
+				System.out.println ("End relay thread item queue");
+
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #73 - Add elements to the relay items in multiple cycles, testing thread query and change stream.
+
+	public static void test73(String[] args) {
+
+		// One additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerTest : Invalid 'test73' or 'relit_thread_add_multi' subcommand");
+			return;
+		}
+
+		long n_cycles = Long.parseLong(args[1]);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Set up a relay thread
+
+			RelayThread relay_thread = new RelayThread();
+			relay_thread.set_ri_polling_interval (500L);			// 0.5 seconds
+			relay_thread.set_ri_initial_query_interval (6000L);		// 6 seconds
+			relay_thread.set_ri_query_interval (6000L);				// 6 seconds
+			relay_thread.set_ri_query_lookback_time (10L);			// chosen to exactly match on cycle 3
+			relay_thread.set_max_ri_queue_size (11);				// chosen to exactly match on cycle 3 change stream, triple on cycle 7
+
+			try (
+				RelayThread.Sentinel rtsent = relay_thread.make_sentinel();
+			){
+				relay_thread.start_relay_thread();
+
+				// Wait 3 seconds to make sure it's in effect
+
+				try {
+					Thread.sleep (3000L);
+				} catch (InterruptedException e) {
+				}
+
+				// Get complete time
+
+				long complete_time = relay_thread.get_ri_complete_time();
+				System.out.println ("complete_time = " + complete_time);
+
+				// Loop over cycles, and items within a cycle, adding 3 new items each cycle
+
+				for (long cycle = 1L; cycle <= n_cycles; ++cycle) {
+					for (long item = cycle * 2L - 1L; item <= cycle * 5L; ++item) {
+					
+						RelayItem relit;
+						String relay_id = "item_" + item;
+						long relay_time = cycle * 1000000L + item;
+						boolean f_force = false;
+		
+						MarshalWriter details = RelayItem.begin_details();
+						details.marshalArrayBegin (null, 1);
+						details.marshalString (null, "Cycle = " + cycle + ", item = " + item);
+						details.marshalArrayEnd ();
+						relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+						if (relit != null) {
+							System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+						} else {
+							System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+						}
+
+					}
+
+					// Dump relay item queue until the complete time changes
+
+					System.out.println ("Begin relay thread item queue, cycle = " + cycle);
+
+					for (;;) {
+						RelayItem rtrelit = relay_thread.ri_queue_remove();
+						if (rtrelit == null) {
+							long new_complete_time = relay_thread.get_ri_complete_time();
+							if (complete_time != new_complete_time) {
+								complete_time = new_complete_time;
+								System.out.println ("complete_time = " + complete_time);
+								break;
+							}
+							try {
+								Thread.sleep (500L);
+							} catch (InterruptedException e) {
+							}
+						} else {
+							System.out.println (rtrelit.dumpString());
+						}
+					}
+
+					System.out.println ("End relay thread item queue, cycle = " + cycle);
+				}
+
+			}
+
+		}
+
+		return;
+	}
+
+
+
+
 	// Test dispatcher.
 	
 	public static void main(String[] args) {
@@ -5217,6 +5471,57 @@ public class ServerTest {
 
 			try {
 				test70(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #71
+		// Command format:
+		//  test71  n_cycles
+		// Add elements to the relay items in multiple cycles, using relay thread.
+		// Each cycle updates all prior items and adds 5 new items, then dumps the change stream iterator.
+
+		if (args[0].equalsIgnoreCase ("test71") || args[0].equalsIgnoreCase ("relit_thread_add_cycles")) {
+
+			try {
+				test71(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #72
+		// Command format:
+		//  test72
+		// Dump all the relay items, using relay thread.
+
+		if (args[0].equalsIgnoreCase ("test72") || args[0].equalsIgnoreCase ("relit_thread_dump")) {
+
+			try {
+				test72(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #73
+		// Command format:
+		//  test73  n_cycles
+		// Add elements to the relay items in multiple cycles, using relay thread.
+		// Each cycle updates some prior items and adds 3 new items, then dumps the change stream iterator and relay thread query.
+		// Probably 10 cycles is enough.
+
+		if (args[0].equalsIgnoreCase ("test73") || args[0].equalsIgnoreCase ("relit_thread_add_multi")) {
+
+			try {
+				test73(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
