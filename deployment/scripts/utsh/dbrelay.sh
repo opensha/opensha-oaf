@@ -211,4 +211,32 @@ rundbut relit$n aafs.ServerTest relit_query_list    true 0 0
 rundbut relit$n aafs.ServerTest relit_query_delete  false 0 0
 rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 
+# Tests for relay thread
+
+rundbut relit$n aafs.ServerTest relit_add_some
+rundbut relit$n aafs.ServerTest relit_thread_dump
+rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
+rundbut relit$n aafs.ServerTest relit_query_list    true 0 0
+
+rundbut relit$n aafs.ServerTest relit_query_delete  false 0 0
+rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
+
+rundbut relit$n aafs.ServerTest relit_thread_add_cycles  20
+rundbut relit$n aafs.ServerTest relit_thread_dump
+rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
+rundbut relit$n aafs.ServerTest relit_query_list    true 0 0
+
+rundbut relit$n aafs.ServerTest relit_query_delete  false 0 0
+rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
+
+rundbut relit$n aafs.ServerTest relit_thread_add_multi  10
+rundbut relit$n aafs.ServerTest relit_thread_dump
+rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
+rundbut relit$n aafs.ServerTest relit_query_list    true 0 0
+
+rundbut relit$n aafs.ServerTest relit_query_delete  false 0 0
+rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
+
+
+
 

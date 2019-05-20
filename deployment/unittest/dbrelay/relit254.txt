@@ -1,0 +1,251 @@
+relit254 aafs.ServerTest relit_query_list false 0 0
+RelayItem
+	id: 54acf5900000000000000001
+	relay_time: 1000001
+	relay_id: item_1
+	details: ["Cycle = 1, item = 1"]
+RelayItem
+	id: 54acf5900000000000000002
+	relay_time: 1000002
+	relay_id: item_2
+	details: ["Cycle = 1, item = 2"]
+RelayItem
+	id: 54acf5900000000000000003
+	relay_time: 2000003
+	relay_id: item_3
+	details: ["Cycle = 2, item = 3"]
+RelayItem
+	id: 54acf5900000000000000004
+	relay_time: 2000004
+	relay_id: item_4
+	details: ["Cycle = 2, item = 4"]
+RelayItem
+	id: 54acf5900000000000000005
+	relay_time: 3000005
+	relay_id: item_5
+	details: ["Cycle = 3, item = 5"]
+RelayItem
+	id: 54acf5900000000000000006
+	relay_time: 3000006
+	relay_id: item_6
+	details: ["Cycle = 3, item = 6"]
+RelayItem
+	id: 54acf5900000000000000007
+	relay_time: 4000007
+	relay_id: item_7
+	details: ["Cycle = 4, item = 7"]
+RelayItem
+	id: 54acf5900000000000000008
+	relay_time: 4000008
+	relay_id: item_8
+	details: ["Cycle = 4, item = 8"]
+RelayItem
+	id: 54acf5900000000000000009
+	relay_time: 5000009
+	relay_id: item_9
+	details: ["Cycle = 5, item = 9"]
+RelayItem
+	id: 54acf590000000000000000a
+	relay_time: 5000010
+	relay_id: item_10
+	details: ["Cycle = 5, item = 10"]
+RelayItem
+	id: 54acf590000000000000000b
+	relay_time: 6000011
+	relay_id: item_11
+	details: ["Cycle = 6, item = 11"]
+RelayItem
+	id: 54acf590000000000000000c
+	relay_time: 6000012
+	relay_id: item_12
+	details: ["Cycle = 6, item = 12"]
+RelayItem
+	id: 54acf590000000000000000d
+	relay_time: 7000013
+	relay_id: item_13
+	details: ["Cycle = 7, item = 13"]
+RelayItem
+	id: 54acf590000000000000000e
+	relay_time: 7000014
+	relay_id: item_14
+	details: ["Cycle = 7, item = 14"]
+RelayItem
+	id: 54acf590000000000000000f
+	relay_time: 8000015
+	relay_id: item_15
+	details: ["Cycle = 8, item = 15"]
+RelayItem
+	id: 54acf5900000000000000010
+	relay_time: 8000016
+	relay_id: item_16
+	details: ["Cycle = 8, item = 16"]
+RelayItem
+	id: 54acf5900000000000000011
+	relay_time: 9000017
+	relay_id: item_17
+	details: ["Cycle = 9, item = 17"]
+RelayItem
+	id: 54acf5900000000000000012
+	relay_time: 9000018
+	relay_id: item_18
+	details: ["Cycle = 9, item = 18"]
+RelayItem
+	id: 54acf5900000000000000013
+	relay_time: 10000019
+	relay_id: item_19
+	details: ["Cycle = 10, item = 19"]
+RelayItem
+	id: 54acf5900000000000000014
+	relay_time: 10000020
+	relay_id: item_20
+	details: ["Cycle = 10, item = 20"]
+RelayItem
+	id: 54acf5900000000000000015
+	relay_time: 10000021
+	relay_id: item_21
+	details: ["Cycle = 10, item = 21"]
+RelayItem
+	id: 54acf5900000000000000016
+	relay_time: 10000022
+	relay_id: item_22
+	details: ["Cycle = 10, item = 22"]
+RelayItem
+	id: 54acf5900000000000000017
+	relay_time: 10000023
+	relay_id: item_23
+	details: ["Cycle = 10, item = 23"]
+RelayItem
+	id: 54acf5900000000000000018
+	relay_time: 10000024
+	relay_id: item_24
+	details: ["Cycle = 10, item = 24"]
+RelayItem
+	id: 54acf5900000000000000019
+	relay_time: 10000025
+	relay_id: item_25
+	details: ["Cycle = 10, item = 25"]
+RelayItem
+	id: 54acf590000000000000001a
+	relay_time: 10000026
+	relay_id: item_26
+	details: ["Cycle = 10, item = 26"]
+RelayItem
+	id: 54acf590000000000000001b
+	relay_time: 10000027
+	relay_id: item_27
+	details: ["Cycle = 10, item = 27"]
+RelayItem
+	id: 54acf590000000000000001c
+	relay_time: 10000028
+	relay_id: item_28
+	details: ["Cycle = 10, item = 28"]
+RelayItem
+	id: 54acf590000000000000001d
+	relay_time: 10000029
+	relay_id: item_29
+	details: ["Cycle = 10, item = 29"]
+RelayItem
+	id: 54acf590000000000000001e
+	relay_time: 10000030
+	relay_id: item_30
+	details: ["Cycle = 10, item = 30"]
+RelayItem
+	id: 54acf590000000000000001f
+	relay_time: 10000031
+	relay_id: item_31
+	details: ["Cycle = 10, item = 31"]
+RelayItem
+	id: 54acf5900000000000000020
+	relay_time: 10000032
+	relay_id: item_32
+	details: ["Cycle = 10, item = 32"]
+RelayItem
+	id: 54acf5900000000000000021
+	relay_time: 10000033
+	relay_id: item_33
+	details: ["Cycle = 10, item = 33"]
+RelayItem
+	id: 54acf5900000000000000022
+	relay_time: 10000034
+	relay_id: item_34
+	details: ["Cycle = 10, item = 34"]
+RelayItem
+	id: 54acf5900000000000000023
+	relay_time: 10000035
+	relay_id: item_35
+	details: ["Cycle = 10, item = 35"]
+RelayItem
+	id: 54acf5900000000000000024
+	relay_time: 10000036
+	relay_id: item_36
+	details: ["Cycle = 10, item = 36"]
+RelayItem
+	id: 54acf5900000000000000025
+	relay_time: 10000037
+	relay_id: item_37
+	details: ["Cycle = 10, item = 37"]
+RelayItem
+	id: 54acf5900000000000000026
+	relay_time: 10000038
+	relay_id: item_38
+	details: ["Cycle = 10, item = 38"]
+RelayItem
+	id: 54acf5900000000000000027
+	relay_time: 10000039
+	relay_id: item_39
+	details: ["Cycle = 10, item = 39"]
+RelayItem
+	id: 54acf5900000000000000028
+	relay_time: 10000040
+	relay_id: item_40
+	details: ["Cycle = 10, item = 40"]
+RelayItem
+	id: 54acf5900000000000000029
+	relay_time: 10000041
+	relay_id: item_41
+	details: ["Cycle = 10, item = 41"]
+RelayItem
+	id: 54acf590000000000000002a
+	relay_time: 10000042
+	relay_id: item_42
+	details: ["Cycle = 10, item = 42"]
+RelayItem
+	id: 54acf590000000000000002b
+	relay_time: 10000043
+	relay_id: item_43
+	details: ["Cycle = 10, item = 43"]
+RelayItem
+	id: 54acf590000000000000002c
+	relay_time: 10000044
+	relay_id: item_44
+	details: ["Cycle = 10, item = 44"]
+RelayItem
+	id: 54acf590000000000000002d
+	relay_time: 10000045
+	relay_id: item_45
+	details: ["Cycle = 10, item = 45"]
+RelayItem
+	id: 54acf590000000000000002e
+	relay_time: 10000046
+	relay_id: item_46
+	details: ["Cycle = 10, item = 46"]
+RelayItem
+	id: 54acf590000000000000002f
+	relay_time: 10000047
+	relay_id: item_47
+	details: ["Cycle = 10, item = 47"]
+RelayItem
+	id: 54acf5900000000000000030
+	relay_time: 10000048
+	relay_id: item_48
+	details: ["Cycle = 10, item = 48"]
+RelayItem
+	id: 54acf5900000000000000031
+	relay_time: 10000049
+	relay_id: item_49
+	details: ["Cycle = 10, item = 49"]
+RelayItem
+	id: 54acf5900000000000000032
+	relay_time: 10000050
+	relay_id: item_50
+	details: ["Cycle = 10, item = 50"]
