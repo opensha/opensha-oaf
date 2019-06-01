@@ -34,7 +34,8 @@ public class ServerComponent {
 	public static final int OPCODE_POLL_COMCAT_RUN = 15;	// Run a poll of Comcat to discover events
 	public static final int OPCODE_POLL_COMCAT_START = 16;	// Start polling Comcat to discover events
 	public static final int OPCODE_POLL_COMCAT_STOP = 17;	// Stop polling Comcat to discover events
-	public static final int OPCODE_MAX = 17;				// Maximum allowed opcode
+	public static final int OPCODE_NEXT_TIMELINE_OP = 18;	// Issue next delayed operation for a timeline
+	public static final int OPCODE_MAX = 18;				// Maximum allowed opcode
 
 	// Return a string describing an opcode.
 
@@ -57,6 +58,7 @@ public class ServerComponent {
 		case OPCODE_POLL_COMCAT_RUN: return "OPCODE_POLL_COMCAT_RUN";
 		case OPCODE_POLL_COMCAT_START: return "OPCODE_POLL_COMCAT_START";
 		case OPCODE_POLL_COMCAT_STOP: return "OPCODE_POLL_COMCAT_STOP";
+		case OPCODE_NEXT_TIMELINE_OP: return "OPCODE_NEXT_TIMELINE_OP";
 		}
 		return "OPCODE_INVALID(" + x + ")";
 	}
@@ -114,7 +116,8 @@ public class ServerComponent {
 	public static final int RESCODE_TIMELINE_PDL_NO_CATALOG = 33;	// PDL send failed because unable to locate catalog snapshot
 	public static final int RESCODE_TIMELINE_PDL_BAD_CATALOG = 34;	// PDL send failed because unable to interpret catalog snapshot
 	public static final int RESCODE_TIMELINE_PDL_CAT_MISMATCH = 35;	// PDL send failed because of catalog snapshot parameter mismatch
-	public static final int RESCODE_MAX_NORMAL = 35;				// Maximum known normal result code
+	public static final int RESCODE_TIMELINE_ID_INVALID = 36;		// Timeline ID does not have a valid form
+	public static final int RESCODE_MAX_NORMAL = 36;				// Maximum known normal result code
 
 	public static final int RESCODE_DELETE = 101;					// Delete current task (without logging it)
 	public static final int RESCODE_DELETE_TIMELINE_EXISTS = 102;	// Delete current task (without logging it), because timeline already exists
@@ -173,6 +176,7 @@ public class ServerComponent {
 		case RESCODE_TIMELINE_PDL_NO_CATALOG: return "RESCODE_TIMELINE_PDL_NO_CATALOG";
 		case RESCODE_TIMELINE_PDL_BAD_CATALOG: return "RESCODE_TIMELINE_PDL_BAD_CATALOG";
 		case RESCODE_TIMELINE_PDL_CAT_MISMATCH: return "RESCODE_TIMELINE_PDL_CAT_MISMATCH";
+		case RESCODE_TIMELINE_ID_INVALID: return "RESCODE_TIMELINE_ID_INVALID";
 
 		case RESCODE_DELETE: return "RESCODE_DELETE";
 		case RESCODE_DELETE_TIMELINE_EXISTS: return "RESCODE_DELETE_TIMELINE_EXISTS";

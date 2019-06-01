@@ -15,7 +15,7 @@ import org.opensha.oaf.aafs.entity.RelayItem;
  * Thread for pulling relay items from the partner server.
  * Author: Michael Barall 08/05/2018.
  */
-public class RelayThread extends ServerComponent implements Runnable {
+public class RelayThread implements Runnable {
 
 	//----- Constants -----
 
@@ -347,6 +347,7 @@ public class RelayThread extends ServerComponent implements Runnable {
 
 
 		// Constructor.
+		// Note: The constructor and setup() do exactly the same thing.
 
 		public RelaySyncVar () {
 			setup();
@@ -355,6 +356,7 @@ public class RelayThread extends ServerComponent implements Runnable {
 
 		// Set up (initialize or re-initialize).
 		// This establishes default parameter values.
+		// Note: The constructor and setup() do exactly the same thing.
 
 		public synchronized void setup () {
 
@@ -411,9 +413,9 @@ public class RelayThread extends ServerComponent implements Runnable {
 	//----- Internal variables -----
 
 
-	// The thread that is running the relay thread, or null if relay thread is not running.
+	// The Java thread that is running the relay thread, or null if relay thread is not running.
 
-	private Thread relay_thread;
+	private Thread relay_java_thread;
 
 
 
@@ -504,12 +506,12 @@ public class RelayThread extends ServerComponent implements Runnable {
 	// Throws an exception if the thread already exists.
 
 	public void start_relay_thread () {
-		if (relay_thread != null) {
+		if (relay_java_thread != null) {
 			throw new IllegalStateException ("RelayThread.start_relay_thread: Thread is already started");
 		}
 		sync_var.prepare();
-		relay_thread = new Thread (this);
-		relay_thread.start();
+		relay_java_thread = new Thread (this);
+		relay_java_thread.start();
 		return;
 	}
 
@@ -519,9 +521,9 @@ public class RelayThread extends ServerComponent implements Runnable {
 	// This function waits for the relay thread to die.
 
 	public void stop_relay_thread () {
-		Thread the_thread = relay_thread;
+		Thread the_thread = relay_java_thread;
 		if (the_thread != null) {
-			relay_thread = null;
+			relay_java_thread = null;
 			sync_var.set_ri_shutdown_req (true);
 			try {
 				the_thread.join();
@@ -838,26 +840,26 @@ public class RelayThread extends ServerComponent implements Runnable {
 
 
 	// Default constructor.
+	// Note: The constructor and setup() leave this object in exactly the same state.
 
 	public RelayThread () {
 
 		sync_var = new RelaySyncVar();
 
-		relay_thread = null;
+		relay_java_thread = null;
 
 	}
 
 
-	// Set up this component by linking to the server group.
-	// A subclass may override this to perform additional setup operations.
+	// Set up (initialize or re-initialize).
+	// This establishes default parameter values.
+	// Note: The constructor and setup() leave this object in exactly the same state.
 
-	@Override
-	public void setup (ServerGroup the_sg) {
-		super.setup (the_sg);
+	public void setup () {
 
 		sync_var.setup();
 
-		relay_thread = null;
+		relay_java_thread = null;
 		
 		return;
 	}
