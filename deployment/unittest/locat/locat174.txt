@@ -1,0 +1,21 @@
+locat174 comcat.ComcatLocalCatalog test3 opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt us20003k7a -0.001 90.0 400.0 7.5
+Loading catalog: [opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt]
+Fetching event: us20003k7a
+ObsEqkRupture:
+rup_event_id = us20003k7a
+rup_time = 1442444072860 (2015-09-16 22:54:32 UTC)
+rup_mag = 8.3
+rup_lat = -31.5729
+rup_lon = -71.6744
+rup_depth = 22.44
+description = 48km W of Illapel, Chile
+ids = ,us20003k7a,gcmt20150916225432,gcmt20150916225433,at00nuskyv,pt15259054,atlas20150916225432,
+net = us
+code = 20003k7a
+
+Fetching event list
+min_days = -0.001
+max_days = 90.0
+radius_km = 400.0
+min_mag = 7.5
+Events returned by fetchEventList = 0

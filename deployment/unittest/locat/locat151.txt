@@ -1,0 +1,33 @@
+locat151 comcat.ComcatLocalCatalog test3 opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt us20002ki3 0.001 90.0 200.0 4.5
+Loading catalog: [opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt]
+Fetching event: us20002ki3
+ObsEqkRupture:
+rup_event_id = us20002ki3
+rup_time = 1432984982110 (2015-05-30 11:23:02 UTC)
+rup_mag = 7.8
+rup_lat = 27.8386
+rup_lon = 140.4931
+rup_depth = 664.0
+description = 189km WNW of Chichi-shima, Japan
+ids = ,us20002ki3,at00np5uaf,pt15150050,gcmt20150530112302,atlas20150530112302,
+net = us
+code = 20002ki3
+
+Fetching event list
+min_days = 0.001
+max_days = 90.0
+radius_km = 200.0
+min_mag = 4.5
+Events returned by fetchEventList = 11
+List of events returned by fetchEventList:
+0: us10003559 (time = 2015-08-26 21:31:50 UTC, mag = 4.600, lat = 27.62090, lon = 140.02290, depth = 460.660)
+1: us100036bj (time = 2015-08-14 10:36:14 UTC, mag = 4.600, lat = 28.30100, lon = 141.36470, depth = 57.420)
+2: us20002ysl (time = 2015-07-20 11:53:12 UTC, mag = 4.600, lat = 27.50300, lon = 141.04030, depth = 102.670)
+3: us10002mif (time = 2015-06-30 07:05:00 UTC, mag = 4.700, lat = 27.11890, lon = 141.29440, depth = 98.830)
+4: us20002w1f (time = 2015-06-23 13:02:43 UTC, mag = 4.600, lat = 27.71120, lon = 140.19590, depth = 478.260)
+5: us20002w0x (time = 2015-06-23 12:22:20 UTC, mag = 5.600, lat = 27.64750, lon = 140.06860, depth = 470.670)
+6: us20002w0y (time = 2015-06-23 12:19:29 UTC, mag = 5.500, lat = 27.70700, lon = 139.77450, depth = 462.130)
+7: us10002l37 (time = 2015-06-23 12:18:30 UTC, mag = 6.500, lat = 27.73750, lon = 139.72540, depth = 460.000)
+8: us20002pss (time = 2015-06-14 22:22:20 UTC, mag = 4.900, lat = 27.32860, lon = 140.13290, depth = 378.640)
+9: us20002lfe (time = 2015-06-02 21:04:29 UTC, mag = 4.900, lat = 27.87920, lon = 140.57600, depth = 677.640)
+10: us20002nlp (time = 2015-05-30 12:10:13 UTC, mag = 4.500, lat = 27.84250, lon = 140.61210, depth = 683.360)

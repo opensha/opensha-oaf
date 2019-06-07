@@ -1,0 +1,24 @@
+locat137 comcat.ComcatLocalCatalog test1 opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt us20002ki3
+Loading catalog: [opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt]
+Fetching event: us20002ki3
+ObsEqkRupture:
+rup_event_id = us20002ki3
+rup_time = 1432984982110 (2015-05-30 11:23:02 UTC)
+rup_mag = 7.8
+rup_lat = 27.8386
+rup_lon = 140.4931
+rup_depth = 664.0
+description = 189km WNW of Chichi-shima, Japan
+ids = ,us20002ki3,at00np5uaf,pt15150050,gcmt20150530112302,atlas20150530112302,
+net = us
+code = 20002ki3
+
+EI Map: code = 20002ki3
+EI Map: description = 189km WNW of Chichi-shima, Japan
+EI Map: ids = ,us20002ki3,at00np5uaf,pt15150050,gcmt20150530112302,atlas20150530112302,
+EI Map: net = us
+ID List: us20002ki3
+ID List: at00np5uaf
+ID List: pt15150050
+ID List: gcmt20150530112302
+ID List: atlas20150530112302

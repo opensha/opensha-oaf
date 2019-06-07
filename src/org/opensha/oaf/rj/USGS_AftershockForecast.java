@@ -342,6 +342,17 @@ public class USGS_AftershockForecast {
 		return Instant.ofEpochMilli (snap_units * snap);
 	}
 
+	// Round a displayed parameter value to look "nice".
+	public static double dparm_round (double value) {
+		double result = value;
+		try {
+			result = Double.parseDouble (String.format ("%.2e", value));	// limit to 3 significant digits
+		} catch (Exception e) {
+			result = value;
+		}
+		return result;
+	}
+
 	
 	@SuppressWarnings("unchecked")
 	public JSONOrderedObject buildJSON () {
@@ -406,13 +417,13 @@ public class USGS_AftershockForecast {
 			modelParams.put("aSigma", 0.0);
 			modelParams.put("pSigma", 0.0);
 		} else {
-			modelParams.put("a", model.getMaxLikelihood_a());
-			modelParams.put("b", model.get_b());
-			modelParams.put("magMain", model.getMainShockMag());
-			modelParams.put("p", model.getMaxLikelihood_p());
-			modelParams.put("c", model.getMaxLikelihood_c());
-			modelParams.put("aSigma", model.getStdDev_a());
-			modelParams.put("pSigma", model.getStdDev_p());
+			modelParams.put("a", dparm_round (model.getMaxLikelihood_a()));
+			modelParams.put("b", dparm_round (model.get_b()));
+			modelParams.put("magMain", dparm_round (model.getMainShockMag()));
+			modelParams.put("p", dparm_round (model.getMaxLikelihood_p()));
+			modelParams.put("c", dparm_round (model.getMaxLikelihood_c()));
+			modelParams.put("aSigma", dparm_round (model.getStdDev_a()));
+			modelParams.put("pSigma", dparm_round (model.getStdDev_p()));
 		}
 		modelJSON.put("parameters", modelParams);
 		json.put("model", modelJSON);

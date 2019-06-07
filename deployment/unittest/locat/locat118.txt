@@ -1,0 +1,49 @@
+locat118 comcat.ComcatLocalCatalog test3 opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt us20002926 30.000 90.0 200.0 3.5
+Loading catalog: [opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt]
+Fetching event: us20002926
+ObsEqkRupture:
+rup_event_id = us20002926
+rup_time = 1429942285950 (2015-04-25 06:11:25 UTC)
+rup_mag = 7.8
+rup_lat = 28.2305
+rup_lon = 84.7314
+rup_depth = 8.22
+description = 36km E of Khudi, Nepal
+ids = ,us20002926,gcmt20150425061126,atlas20150425061125,
+net = us
+code = 20002926
+
+Fetching event list
+min_days = 30.0
+max_days = 90.0
+radius_km = 200.0
+min_mag = 3.5
+Events returned by fetchEventList = 27
+List of events returned by fetchEventList:
+0: us20002wnl (time = 2015-07-10 21:13:01 UTC, mag = 4.200, lat = 27.72970, lon = 86.08360, depth = 10.000)
+1: us20002vji (time = 2015-07-06 15:29:07 UTC, mag = 4.200, lat = 27.93680, lon = 85.68860, depth = 10.000)
+2: us10002nbj (time = 2015-07-03 20:04:07 UTC, mag = 4.500, lat = 27.72360, lon = 84.90640, depth = 3.360)
+3: us10002mxq (time = 2015-07-02 01:56:11 UTC, mag = 4.200, lat = 27.98350, lon = 85.57140, depth = 10.000)
+4: us10002mfm (time = 2015-06-29 21:46:23 UTC, mag = 4.300, lat = 27.47240, lon = 85.75250, depth = 10.000)
+5: us10002mfa (time = 2015-06-29 17:42:43 UTC, mag = 4.000, lat = 28.00300, lon = 85.62790, depth = 10.000)
+6: us10002m90 (time = 2015-06-28 23:57:15 UTC, mag = 4.700, lat = 28.03160, lon = 86.05600, depth = 10.000)
+7: us20002w0e (time = 2015-06-22 07:34:31 UTC, mag = 4.300, lat = 27.54130, lon = 85.98980, depth = 10.000)
+8: us10002np2 (time = 2015-06-21 13:41:47 UTC, mag = 4.100, lat = 27.80590, lon = 86.02950, depth = 10.000)
+9: us20002qjl (time = 2015-06-17 02:15:14 UTC, mag = 4.300, lat = 28.27740, lon = 85.87660, depth = 10.000)
+10: us20002qj4 (time = 2015-06-17 00:29:59 UTC, mag = 4.300, lat = 27.94260, lon = 85.49810, depth = 10.000)
+11: us20002qj3 (time = 2015-06-17 00:13:20 UTC, mag = 4.000, lat = 27.73810, lon = 85.29440, depth = 5.700)
+12: us10002lx6 (time = 2015-06-14 07:47:46 UTC, mag = 4.100, lat = 28.17630, lon = 85.75290, depth = 10.000)
+13: us20002pk4 (time = 2015-06-13 01:18:30 UTC, mag = 4.800, lat = 27.63260, lon = 86.07090, depth = 10.000)
+14: us10002ld5 (time = 2015-06-12 04:34:10 UTC, mag = 4.000, lat = 27.77050, lon = 86.03790, depth = 10.000)
+15: us20002p53 (time = 2015-06-11 19:37:06 UTC, mag = 4.400, lat = 28.11500, lon = 84.69370, depth = 10.320)
+16: us20002p1y (time = 2015-06-11 16:12:20 UTC, mag = 4.800, lat = 27.83210, lon = 85.58360, depth = 24.490)
+17: us10002l5z (time = 2015-06-11 04:17:46 UTC, mag = 4.200, lat = 27.89550, lon = 85.79590, depth = 10.000)
+18: us20002qpy (time = 2015-06-07 05:17:45 UTC, mag = 4.200, lat = 27.97340, lon = 85.53280, depth = 10.000)
+19: us20002pdj (time = 2015-06-03 07:52:37 UTC, mag = 4.000, lat = 28.01100, lon = 86.09530, depth = 10.000)
+20: us20002knv (time = 2015-05-30 16:28:19 UTC, mag = 4.300, lat = 27.88020, lon = 84.92630, depth = 10.000)
+21: us20002kau (time = 2015-05-29 10:00:00 UTC, mag = 4.800, lat = 27.97980, lon = 84.78190, depth = 10.000)
+22: us20002mzl (time = 2015-05-28 23:35:52 UTC, mag = 4.000, lat = 28.09230, lon = 84.64350, depth = 10.000)
+23: us20002mcv (time = 2015-05-27 16:45:00 UTC, mag = 4.100, lat = 28.25280, lon = 84.97170, depth = 10.000)
+24: us10002cg5 (time = 2015-05-27 07:30:58 UTC, mag = 4.400, lat = 27.40290, lon = 84.71600, depth = 10.000)
+25: us10002cpp (time = 2015-05-27 07:30:41 UTC, mag = 4.000, lat = 27.32560, lon = 84.66350, depth = 10.000)
+26: us10002c8p (time = 2015-05-26 17:07:14 UTC, mag = 4.600, lat = 28.23380, lon = 85.10050, depth = 10.000)

@@ -1,0 +1,4 @@
+locat177 comcat.ComcatLocalCatalog test1 opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt badevent
+Loading catalog: [opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt]
+Fetching event: badevent
+Null return from fetchEvent

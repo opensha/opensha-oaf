@@ -1,0 +1,39 @@
+locat143 comcat.ComcatLocalCatalog test3 opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt us20002ki3 0.001 30.0 200.0 3.5
+Loading catalog: [opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt]
+Fetching event: us20002ki3
+ObsEqkRupture:
+rup_event_id = us20002ki3
+rup_time = 1432984982110 (2015-05-30 11:23:02 UTC)
+rup_mag = 7.8
+rup_lat = 27.8386
+rup_lon = 140.4931
+rup_depth = 664.0
+description = 189km WNW of Chichi-shima, Japan
+ids = ,us20002ki3,at00np5uaf,pt15150050,gcmt20150530112302,atlas20150530112302,
+net = us
+code = 20002ki3
+
+Fetching event list
+min_days = 0.001
+max_days = 30.0
+radius_km = 200.0
+min_mag = 3.5
+Events returned by fetchEventList = 17
+List of events returned by fetchEventList:
+0: us10002l59 (time = 2015-06-23 13:54:04 UTC, mag = 4.400, lat = 27.64540, lon = 139.86760, depth = 475.190)
+1: us20002w1h (time = 2015-06-23 13:34:43 UTC, mag = 4.000, lat = 27.72140, lon = 140.11650, depth = 476.610)
+2: us20002w1f (time = 2015-06-23 13:02:43 UTC, mag = 4.600, lat = 27.71120, lon = 140.19590, depth = 478.260)
+3: us20002w0z (time = 2015-06-23 12:51:56 UTC, mag = 4.200, lat = 27.71770, lon = 139.89430, depth = 463.080)
+4: us20002w0x (time = 2015-06-23 12:22:20 UTC, mag = 5.600, lat = 27.64750, lon = 140.06860, depth = 470.670)
+5: us20002w0y (time = 2015-06-23 12:19:29 UTC, mag = 5.500, lat = 27.70700, lon = 139.77450, depth = 462.130)
+6: us10002l37 (time = 2015-06-23 12:18:30 UTC, mag = 6.500, lat = 27.73750, lon = 139.72540, depth = 460.000)
+7: us20002pss (time = 2015-06-14 22:22:20 UTC, mag = 4.900, lat = 27.32860, lon = 140.13290, depth = 378.640)
+8: us20002qc5 (time = 2015-06-06 23:09:07 UTC, mag = 4.400, lat = 29.44780, lon = 140.60350, depth = 97.720)
+9: us20002pzn (time = 2015-06-04 19:59:44 UTC, mag = 4.000, lat = 27.88300, lon = 140.71020, depth = 685.990)
+10: us20002llj (time = 2015-06-03 10:47:10 UTC, mag = 4.100, lat = 28.77630, lon = 139.75430, depth = 416.160)
+11: us20002lfe (time = 2015-06-02 21:04:29 UTC, mag = 4.900, lat = 27.87920, lon = 140.57600, depth = 677.640)
+12: us20002nzx (time = 2015-05-31 09:36:30 UTC, mag = 4.300, lat = 28.19860, lon = 140.84390, depth = 393.980)
+13: us20002ksk (time = 2015-05-31 08:46:17 UTC, mag = 4.400, lat = 28.27900, lon = 139.76240, depth = 426.970)
+14: us20002nli (time = 2015-05-30 12:46:27 UTC, mag = 4.000, lat = 27.84980, lon = 140.56760, depth = 686.390)
+15: us20002nlp (time = 2015-05-30 12:10:13 UTC, mag = 4.500, lat = 27.84250, lon = 140.61210, depth = 683.360)
+16: us20002nmd (time = 2015-05-30 11:40:54 UTC, mag = 4.400, lat = 27.80840, lon = 140.98460, depth = 673.190)

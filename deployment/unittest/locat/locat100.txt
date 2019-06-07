@@ -1,0 +1,124 @@
+locat100 comcat.ComcatLocalCatalog statistics opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt
+Loading catalog: [opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt]
+ComcatLocalCatalog:
+n_lat_bins = 200
+stat_total_bins = 50930
+stat_total_events = 15336
+stat_max_bin_size = 320
+stat_min_time = 1420071000590 (2015-01-01 00:10:00 UTC)
+stat_max_time = 1451605168940 (2015-12-31 23:39:28 UTC)
+stat_min_depth = 0.0
+stat_max_depth = 686.39
+stat_min_mag = 4.0
+stat_max_mag = 8.3
+stat_bin_size_histogram[0] = 47961
+stat_bin_size_histogram[1] = 1279
+stat_bin_size_histogram[2] = 475
+stat_bin_size_histogram[3] = 296
+stat_bin_size_histogram[4] = 191
+stat_bin_size_histogram[5] = 122
+stat_bin_size_histogram[6] = 86
+stat_bin_size_histogram[7] = 74
+stat_bin_size_histogram[8] = 56
+stat_bin_size_histogram[9] = 55
+stat_bin_size_histogram[10] = 31
+stat_bin_size_histogram[11] = 32
+stat_bin_size_histogram[12] = 30
+stat_bin_size_histogram[13] = 24
+stat_bin_size_histogram[14] = 17
+stat_bin_size_histogram[15] = 16
+stat_bin_size_histogram[16] = 14
+stat_bin_size_histogram[17] = 8
+stat_bin_size_histogram[18] = 12
+stat_bin_size_histogram[19] = 4
+stat_bin_size_histogram[20] = 10
+stat_bin_size_histogram[21] = 8
+stat_bin_size_histogram[22] = 5
+stat_bin_size_histogram[23] = 11
+stat_bin_size_histogram[24] = 7
+stat_bin_size_histogram[25] = 2
+stat_bin_size_histogram[26] = 6
+stat_bin_size_histogram[27] = 9
+stat_bin_size_histogram[28] = 4
+stat_bin_size_histogram[29] = 6
+stat_bin_size_histogram[30] = 2
+stat_bin_size_histogram[31] = 2
+stat_bin_size_histogram[32] = 5
+stat_bin_size_histogram[33] = 2
+stat_bin_size_histogram[34] = 2
+stat_bin_size_histogram[35] = 5
+stat_bin_size_histogram[36] = 3
+stat_bin_size_histogram[37] = 4
+stat_bin_size_histogram[38] = 1
+stat_bin_size_histogram[39] = 5
+stat_bin_size_histogram[40] = 2
+stat_bin_size_histogram[41] = 1
+stat_bin_size_histogram[42] = 1
+stat_bin_size_histogram[43] = 2
+stat_bin_size_histogram[44] = 2
+stat_bin_size_histogram[45] = 3
+stat_bin_size_histogram[46] = 2
+stat_bin_size_histogram[47] = 0
+stat_bin_size_histogram[48] = 1
+stat_bin_size_histogram[49] = 0
+stat_bin_size_histogram[50] = 0
+stat_bin_size_histogram[51] = 1
+stat_bin_size_histogram[52] = 2
+stat_bin_size_histogram[53] = 3
+stat_bin_size_histogram[54] = 0
+stat_bin_size_histogram[55] = 1
+stat_bin_size_histogram[56] = 0
+stat_bin_size_histogram[57] = 1
+stat_bin_size_histogram[58] = 0
+stat_bin_size_histogram[59] = 1
+stat_bin_size_histogram[60] = 4
+stat_bin_size_histogram[61] = 1
+stat_bin_size_histogram[62] = 2
+stat_bin_size_histogram[63] = 0
+... skipped 4 zeros
+stat_bin_size_histogram[68] = 0
+stat_bin_size_histogram[69] = 3
+stat_bin_size_histogram[70] = 0
+stat_bin_size_histogram[71] = 1
+stat_bin_size_histogram[72] = 0
+stat_bin_size_histogram[73] = 0
+stat_bin_size_histogram[74] = 1
+stat_bin_size_histogram[75] = 1
+stat_bin_size_histogram[76] = 1
+stat_bin_size_histogram[77] = 1
+stat_bin_size_histogram[78] = 0
+... skipped 18 zeros
+stat_bin_size_histogram[97] = 0
+stat_bin_size_histogram[98] = 1
+stat_bin_size_histogram[99] = 0
+stat_bin_size_histogram[100] = 0
+stat_bin_size_histogram[101] = 1
+stat_bin_size_histogram[102] = 0
+... skipped 18 zeros
+stat_bin_size_histogram[121] = 0
+stat_bin_size_histogram[122] = 1
+stat_bin_size_histogram[123] = 0
+stat_bin_size_histogram[124] = 0
+stat_bin_size_histogram[125] = 1
+stat_bin_size_histogram[126] = 0
+... skipped 17 zeros
+stat_bin_size_histogram[144] = 0
+stat_bin_size_histogram[145] = 1
+stat_bin_size_histogram[146] = 0
+... skipped 2 zeros
+stat_bin_size_histogram[149] = 0
+stat_bin_size_histogram[150] = 1
+stat_bin_size_histogram[151] = 1
+stat_bin_size_histogram[152] = 0
+... skipped 5 zeros
+stat_bin_size_histogram[158] = 0
+stat_bin_size_histogram[159] = 1
+stat_bin_size_histogram[160] = 0
+... skipped 55 zeros
+stat_bin_size_histogram[216] = 0
+stat_bin_size_histogram[217] = 1
+stat_bin_size_histogram[218] = 0
+... skipped 100 zeros
+stat_bin_size_histogram[319] = 0
+stat_bin_size_histogram[320] = 1
+

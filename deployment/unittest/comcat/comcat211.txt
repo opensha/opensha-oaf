@@ -20,10 +20,10 @@ radius_km = 100.0
 min_mag = 2.5
 limit_per_call = 0
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-09-23T10:20:44.070Z&format=geojson&latitude=38.21517&limit=20000&longitude=-122.31233&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=2.500&starttime=2014-08-24T10:22:10.470Z
-Count of events received = 22
-Count of events after filtering = 22
-Total number of events returned = 22
-Events returned by fetchEventList = 22
+Count of events received = 23
+Count of events after filtering = 23
+Total number of events returned = 23
+Events returned by fetchEventList = 23
 http_status[0] = 200
 List of events returned by fetchEventList:
 0: nc72303256 (time = 2014-09-21 20:17:53 UTC, mag = 2.630, lat = 38.33733, lon = -122.38083, depth = 7.515)
@@ -47,4 +47,5 @@ List of events returned by fetchEventList:
 18: nc72283366 (time = 2014-08-24 15:10:48 UTC, mag = 2.570, lat = 38.22150, lon = -122.32950, depth = 8.937)
 19: nc72283346 (time = 2014-08-24 14:54:23 UTC, mag = 2.770, lat = 38.20083, lon = -122.33967, depth = 9.647)
 20: nc72283201 (time = 2014-08-24 12:47:12 UTC, mag = 3.600, lat = 38.23833, lon = -122.34250, depth = 8.439)
-21: nc72282751 (time = 2014-08-24 10:24:44 UTC, mag = 3.510, lat = 38.25983, lon = -122.33733, depth = 10.343)
+21: nc72282756 (time = 2014-08-24 10:25:12 UTC, mag = 2.680, lat = 38.79483, lon = -122.78900, depth = 0.450)
+22: nc72282751 (time = 2014-08-24 10:24:44 UTC, mag = 3.510, lat = 38.25983, lon = -122.33733, depth = 10.343)

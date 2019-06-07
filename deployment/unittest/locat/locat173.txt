@@ -1,0 +1,29 @@
+locat173 comcat.ComcatLocalCatalog test3 opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt us20003k7a 0.001 90.0 400.0 6.5
+Loading catalog: [opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt]
+Fetching event: us20003k7a
+ObsEqkRupture:
+rup_event_id = us20003k7a
+rup_time = 1442444072860 (2015-09-16 22:54:32 UTC)
+rup_mag = 8.3
+rup_lat = -31.5729
+rup_lon = -71.6744
+rup_depth = 22.44
+description = 48km W of Illapel, Chile
+ids = ,us20003k7a,gcmt20150916225432,gcmt20150916225433,at00nuskyv,pt15259054,atlas20150916225432,
+net = us
+code = 20003k7a
+
+Fetching event list
+min_days = 0.001
+max_days = 90.0
+radius_km = 400.0
+min_mag = 6.5
+Events returned by fetchEventList = 7
+List of events returned by fetchEventList:
+0: us10003x9g (time = 2015-11-11 02:46:19 UTC, mag = 6.900, lat = -29.50970, lon = -72.05850, depth = 10.000)
+1: us10003x8t (time = 2015-11-11 01:54:38 UTC, mag = 6.900, lat = -29.50670, lon = -72.00680, depth = 12.000)
+2: us10003vgt (time = 2015-11-07 07:31:43 UTC, mag = 6.800, lat = -30.87960, lon = -71.45190, depth = 46.000)
+3: us20003mi0 (time = 2015-09-21 17:40:00 UTC, mag = 6.600, lat = -31.72750, lon = -71.37920, depth = 35.000)
+4: us20003kfv (time = 2015-09-17 04:10:27 UTC, mag = 6.700, lat = -31.51730, lon = -71.80400, depth = 23.000)
+5: us20003kfj (time = 2015-09-17 03:55:15 UTC, mag = 6.500, lat = -31.42440, lon = -71.68760, depth = 27.000)
+6: us20003k7w (time = 2015-09-16 23:18:41 UTC, mag = 7.000, lat = -31.56220, lon = -71.42620, depth = 28.410)

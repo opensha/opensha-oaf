@@ -56,6 +56,7 @@ import org.opensha.commons.data.comcat.ComcatRegion;
 import org.opensha.commons.data.comcat.ComcatException;
 import org.opensha.commons.data.comcat.ComcatAccessor;
 import org.opensha.commons.data.comcat.ComcatEventWebService;
+import org.opensha.commons.data.comcat.ComcatVisitor;
 
 
 /**
@@ -410,7 +411,8 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 	
 	/**
-	 * Fetch a list of events satisfying the given conditions.
+	 * Visit a list of events satisfying the given conditions.
+	 * @param visitor = The visitor that is called for each event, cannot be null.
 	 * @param exclude_id = An event id to exclude from the results, or null if none.
 	 * @param startTime = Start of time interval, in milliseconds after the epoch.
 	 * @param endTime = End of time interval, in milliseconds after the epoch.
@@ -423,12 +425,14 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 	 * @param limit_per_call = Maximum number of events to fetch in a single call to Comcat, or 0 for default.
 	 * @param max_calls = Maximum number of calls to ComCat, or 0 for default.
 	 * @return
+	 * Returns the result code from the last call to the visitor.
 	 * Note: As a special case, if endTime == startTime, then the end time is the current time.
 	 * Note: This function can retrieve a maximum of about 150,000 earthquakes.  Comcat will
 	 * time out if the query matches too many earthquakes, typically with HTTP status 504.
+	 * Note: This function is overridden in org.opensha.oaf.comcat.ComcatOAFAccessor.
 	 */
 	@Override
-	public ObsEqkRupList fetchEventList (String exclude_id, long startTime, long endTime,
+	public int visitEventList (ComcatVisitor visitor, String exclude_id, long startTime, long endTime,
 			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, boolean extendedInfo,
 			double minMag, int limit_per_call, int max_calls) {
 
@@ -436,6 +440,12 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 		http_statuses.clear();
 		local_http_status = -1;
+
+		// Check the visitor
+
+		if (visitor == null) {
+			throw new IllegalArgumentException ("ComcatAccessor.visitEventList: No visitor supplied");
+		}
 
 		// Test for simulated error
 
@@ -471,19 +481,19 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 			// Do the local query
 
-			ObsEqkRupList locrups = local_catalog.fetchEventList (exclude_id, startTime, endTime,
+			int result = local_catalog.visitEventList (visitor, exclude_id, startTime, endTime,
 				minDepth, maxDepth, region, wrapLon, extendedInfo, minMag);
 
 			// Set up resulting HTTP status
 
 			local_http_status = 200;	// success
 			http_statuses.add (new Integer(get_http_status_code()));
-			return locrups;
+			return result;
 		}
 
 		// Pass thru to superclass
 
-		return super.fetchEventList (exclude_id, startTime, endTime,
+		return super.visitEventList (visitor, exclude_id, startTime, endTime,
 			minDepth, maxDepth, region, wrapLon, extendedInfo,
 			minMag, limit_per_call, max_calls);
 	}
@@ -1293,7 +1303,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 		// Subcommand : Test #10
 		// Command format:
-		//  test2  event_id  min_days  max_days  radius_km  min_mag  limit_per_call
+		//  test10  event_id  min_days  max_days  radius_km  min_mag  limit_per_call
 		// Fetch information for an event, and display it.
 		// Then fetch the event list for a circle surrounding the hypocenter,
 		// for the specified interval in days after the origin time,
@@ -1419,7 +1429,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 		// Subcommand : Test #11
 		// Command format:
-		//  test4  event_id  min_days  max_days  radius_km  min_mag  limit_per_call
+		//  test11  event_id  min_days  max_days  radius_km  min_mag  limit_per_call
 		// Fetch information for an event, and display it.
 		// Then fetch the event list for a circle surrounding the hypocenter,
 		// for the specified interval in days after the origin time,

@@ -8,17 +8,18 @@ rup_lat = 51.8486
 rup_lon = 178.7352
 rup_depth = 109.0
 description = 19km SE of Little Sitkin Island, Alaska
-ids = ,at00n7n3cm,pt14174004,usc000rki5,ak11300221,
+ids = ,ak11300221,at00n7n3cm,pt14174004,usc000rki5,ak014803qfpr,
 net = us
 code = c000rki5
 
 http_status = 200
 EI Map: code = c000rki5
 EI Map: description = 19km SE of Little Sitkin Island, Alaska
-EI Map: ids = ,at00n7n3cm,pt14174004,usc000rki5,ak11300221,
+EI Map: ids = ,ak11300221,at00n7n3cm,pt14174004,usc000rki5,ak014803qfpr,
 EI Map: net = us
 ID List: usc000rki5
+ID List: ak11300221
 ID List: at00n7n3cm
 ID List: pt14174004
-ID List: ak11300221
+ID List: ak014803qfpr
 URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usc000rki5.geojson

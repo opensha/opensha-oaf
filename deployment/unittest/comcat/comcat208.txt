@@ -20,10 +20,10 @@ radius_km = 100.0
 min_mag = 2.5
 limit_per_call = 0
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-08-31T10:20:44.070Z&format=geojson&latitude=38.21517&limit=20000&longitude=-122.31233&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=2.500&starttime=2014-08-24T10:19:17.670Z
-Count of events received = 18
-Count of events after filtering = 17
-Total number of events returned = 17
-Events returned by fetchEventList = 17
+Count of events received = 20
+Count of events after filtering = 19
+Total number of events returned = 19
+Events returned by fetchEventList = 19
 http_status[0] = 200
 List of events returned by fetchEventList:
 0: nc72288561 (time = 2014-08-31 08:56:20 UTC, mag = 3.240, lat = 38.23583, lon = -122.32850, depth = 9.550)
@@ -40,6 +40,8 @@ List of events returned by fetchEventList:
 11: nc72283366 (time = 2014-08-24 15:10:48 UTC, mag = 2.570, lat = 38.22150, lon = -122.32950, depth = 8.937)
 12: nc72283346 (time = 2014-08-24 14:54:23 UTC, mag = 2.770, lat = 38.20083, lon = -122.33967, depth = 9.647)
 13: nc72283201 (time = 2014-08-24 12:47:12 UTC, mag = 3.600, lat = 38.23833, lon = -122.34250, depth = 8.439)
-14: nc72282751 (time = 2014-08-24 10:24:44 UTC, mag = 3.510, lat = 38.25983, lon = -122.33733, depth = 10.343)
-15: nc72282716 (time = 2014-08-24 10:21:45 UTC, mag = 3.810, lat = 38.23500, lon = -122.31983, depth = 9.001)
-16: nc71086369 (time = 2014-08-24 10:21:10 UTC, mag = 4.380, lat = 38.76017, lon = -122.72567, depth = 0.182)
+14: nc72282756 (time = 2014-08-24 10:25:12 UTC, mag = 2.680, lat = 38.79483, lon = -122.78900, depth = 0.450)
+15: nc72282751 (time = 2014-08-24 10:24:44 UTC, mag = 3.510, lat = 38.25983, lon = -122.33733, depth = 10.343)
+16: nc71110124 (time = 2014-08-24 10:21:59 UTC, mag = 2.830, lat = 38.80583, lon = -122.74950, depth = 1.670)
+17: nc72282716 (time = 2014-08-24 10:21:45 UTC, mag = 3.810, lat = 38.23500, lon = -122.31983, depth = 9.001)
+18: nc71086369 (time = 2014-08-24 10:21:10 UTC, mag = 3.800, lat = 38.76017, lon = -122.72567, depth = 0.180)

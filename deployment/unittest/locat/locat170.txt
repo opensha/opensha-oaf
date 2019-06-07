@@ -1,0 +1,69 @@
+locat170 comcat.ComcatLocalCatalog test3 opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt us20003k7a -0.001 90.0 400.0 5.5
+Loading catalog: [opensha-oaf/deployment/scripts/utsh/locat/cat_2015_m4.txt]
+Fetching event: us20003k7a
+ObsEqkRupture:
+rup_event_id = us20003k7a
+rup_time = 1442444072860 (2015-09-16 22:54:32 UTC)
+rup_mag = 8.3
+rup_lat = -31.5729
+rup_lon = -71.6744
+rup_depth = 22.44
+description = 48km W of Illapel, Chile
+ids = ,us20003k7a,gcmt20150916225432,gcmt20150916225433,at00nuskyv,pt15259054,atlas20150916225432,
+net = us
+code = 20003k7a
+
+Fetching event list
+min_days = -0.001
+max_days = 90.0
+radius_km = 400.0
+min_mag = 5.5
+Events returned by fetchEventList = 47
+List of events returned by fetchEventList:
+0: us1000454p (time = 2015-12-08 12:56:07 UTC, mag = 5.600, lat = -30.80960, lon = -71.75190, depth = 25.000)
+1: us100044k5 (time = 2015-12-07 07:51:11 UTC, mag = 5.500, lat = -31.39850, lon = -71.26240, depth = 49.530)
+2: us100041ui (time = 2015-11-28 05:44:40 UTC, mag = 5.600, lat = -30.36880, lon = -72.15100, depth = 10.000)
+3: us10004077 (time = 2015-11-21 23:05:30 UTC, mag = 5.800, lat = -30.57540, lon = -71.76760, depth = 27.000)
+4: us10003x9g (time = 2015-11-11 02:46:19 UTC, mag = 6.900, lat = -29.50970, lon = -72.05850, depth = 10.000)
+5: us10003x8t (time = 2015-11-11 01:54:38 UTC, mag = 6.900, lat = -29.50670, lon = -72.00680, depth = 12.000)
+6: us10003vij (time = 2015-11-07 10:53:44 UTC, mag = 5.700, lat = -30.72270, lon = -71.39040, depth = 42.000)
+7: us10003vgt (time = 2015-11-07 07:31:43 UTC, mag = 6.800, lat = -30.87960, lon = -71.45190, depth = 46.000)
+8: us10003vgi (time = 2015-11-07 07:04:31 UTC, mag = 6.200, lat = -29.46420, lon = -72.30150, depth = 13.000)
+9: us10003mxa (time = 2015-10-12 03:15:19 UTC, mag = 5.600, lat = -31.18490, lon = -71.82270, depth = 21.000)
+10: us10003mjs (time = 2015-10-09 18:27:36 UTC, mag = 5.500, lat = -31.73230, lon = -71.73250, depth = 35.000)
+11: us10003kg9 (time = 2015-10-05 16:33:26 UTC, mag = 5.900, lat = -30.30350, lon = -71.53180, depth = 34.000)
+12: us10003k53 (time = 2015-10-04 03:49:49 UTC, mag = 5.500, lat = -30.31050, lon = -72.10180, depth = 5.890)
+13: us10003jyt (time = 2015-10-03 06:26:55 UTC, mag = 5.900, lat = -30.30100, lon = -71.55100, depth = 38.000)
+14: us20003p9y (time = 2015-09-26 02:51:18 UTC, mag = 6.300, lat = -30.81480, lon = -71.32170, depth = 46.000)
+15: us20003msd (time = 2015-09-22 07:13:00 UTC, mag = 6.000, lat = -31.44410, lon = -71.26530, depth = 58.000)
+16: us20003mjn (time = 2015-09-21 19:56:08 UTC, mag = 5.600, lat = -31.78190, lon = -71.64070, depth = 28.360)
+17: us20003mis (time = 2015-09-21 18:36:53 UTC, mag = 5.500, lat = -31.04580, lon = -71.82000, depth = 26.950)
+18: us20003mi0 (time = 2015-09-21 17:40:00 UTC, mag = 6.600, lat = -31.72750, lon = -71.37920, depth = 35.000)
+19: us20003mcj (time = 2015-09-21 05:39:34 UTC, mag = 6.100, lat = -31.57570, lon = -71.74310, depth = 30.000)
+20: us20003lv1 (time = 2015-09-19 13:08:57 UTC, mag = 5.600, lat = -30.52560, lon = -72.19840, depth = 10.000)
+21: us20003luw (time = 2015-09-19 12:52:20 UTC, mag = 6.200, lat = -32.33350, lon = -72.06290, depth = 18.000)
+22: us20003lsq (time = 2015-09-19 09:07:09 UTC, mag = 5.700, lat = -31.09990, lon = -71.59020, depth = 28.000)
+23: us20003lql (time = 2015-09-19 05:06:47 UTC, mag = 6.100, lat = -29.64110, lon = -72.07700, depth = 6.000)
+24: us20003l5d (time = 2015-09-18 09:10:44 UTC, mag = 6.200, lat = -32.36810, lon = -72.22920, depth = 8.000)
+25: us20003l55 (time = 2015-09-18 08:18:17 UTC, mag = 5.600, lat = -32.22920, lon = -72.36780, depth = 6.000)
+26: us20003kwk (time = 2015-09-17 20:40:31 UTC, mag = 5.500, lat = -29.96140, lon = -71.88510, depth = 5.690)
+27: us20003kld (time = 2015-09-17 14:19:15 UTC, mag = 5.700, lat = -30.91020, lon = -71.98290, depth = 10.000)
+28: us20003kl4 (time = 2015-09-17 13:32:26 UTC, mag = 5.900, lat = -32.14320, lon = -72.37790, depth = 10.000)
+29: us20003kkw (time = 2015-09-17 12:14:34 UTC, mag = 5.900, lat = -32.91490, lon = -71.60640, depth = 10.000)
+30: us20003khn (time = 2015-09-17 05:44:39 UTC, mag = 5.500, lat = -31.80110, lon = -72.13090, depth = 10.000)
+31: us20003kgi (time = 2015-09-17 04:26:38 UTC, mag = 5.500, lat = -31.41670, lon = -71.98000, depth = 17.620)
+32: us20003kfv (time = 2015-09-17 04:10:27 UTC, mag = 6.700, lat = -31.51730, lon = -71.80400, depth = 23.000)
+33: us20003kft (time = 2015-09-17 04:02:10 UTC, mag = 5.700, lat = -31.22440, lon = -71.92600, depth = 15.970)
+34: us20003kfj (time = 2015-09-17 03:55:15 UTC, mag = 6.500, lat = -31.42440, lon = -71.68760, depth = 27.000)
+35: us20003ke3 (time = 2015-09-17 02:59:29 UTC, mag = 5.500, lat = -30.96690, lon = -71.53980, depth = 35.000)
+36: us20003kcn (time = 2015-09-17 01:41:05 UTC, mag = 6.400, lat = -31.10430, lon = -71.65040, depth = 42.320)
+37: us20003kc5 (time = 2015-09-17 01:33:02 UTC, mag = 5.800, lat = -31.73630, lon = -72.02650, depth = 9.290)
+38: us20003k89 (time = 2015-09-16 23:38:01 UTC, mag = 5.900, lat = -31.78420, lon = -72.02220, depth = 12.460)
+39: us10003it9 (time = 2015-09-16 23:28:23 UTC, mag = 5.500, lat = -30.71790, lon = -71.80370, depth = 20.710)
+40: us20003m3n (time = 2015-09-16 23:23:25 UTC, mag = 5.700, lat = -31.16740, lon = -71.77200, depth = 32.100)
+41: us20003k7w (time = 2015-09-16 23:18:41 UTC, mag = 7.000, lat = -31.56220, lon = -71.42620, depth = 28.410)
+42: us20003k83 (time = 2015-09-16 23:16:09 UTC, mag = 6.100, lat = -31.60000, lon = -71.91890, depth = 35.000)
+43: us10003itv (time = 2015-09-16 23:09:26 UTC, mag = 5.700, lat = -31.57430, lon = -71.67170, depth = 35.000)
+44: us20003kdq (time = 2015-09-16 23:09:06 UTC, mag = 5.600, lat = -31.10550, lon = -71.40500, depth = 37.800)
+45: us20003k7m (time = 2015-09-16 23:03:56 UTC, mag = 6.100, lat = -31.75020, lon = -71.74250, depth = 19.100)
+46: us20003k8b (time = 2015-09-16 22:59:15 UTC, mag = 6.400, lat = -31.61800, lon = -71.74500, depth = 26.700)

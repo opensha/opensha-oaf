@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Comparator;
+import java.util.Collections;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -29,8 +30,13 @@ import org.opensha.oaf.util.SphRegionWorld;
 import org.opensha.oaf.util.SphLatLon;
 //import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SphRegionCircle;
+import org.opensha.oaf.util.ObsEqkRupMaxTimeComparator;
 
 import org.opensha.commons.data.comcat.ComcatRegion;
+import org.opensha.commons.data.comcat.ComcatVisitor;
+
+import gov.usgs.earthquake.event.JsonEvent;
+
 
 /**
  * A local earthquake catalog.
@@ -653,6 +659,60 @@ public class ComcatLocalCatalog {
 			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, boolean extendedInfo,
 			double minMag) {
 
+		// The list of ruptures we are going to build
+
+		final ObsEqkRupList rups = new ObsEqkRupList();
+
+		// The visitor that builds the list
+
+		ComcatVisitor visitor = new ComcatVisitor() {
+			@Override
+			public int visit (ObsEqkRupture rup, JsonEvent geojson) {
+				rups.add(rup);
+				return 0;
+			}
+		};
+
+		// Visit each event
+
+		visitEventList (visitor, exclude_id, startTime, endTime,
+			minDepth, maxDepth, region, wrapLon, extendedInfo,
+			minMag);
+
+		// Return the list
+		
+		return rups;
+	}
+
+
+
+	
+	/**
+	 * Visit a list of events satisfying the given conditions.
+	 * @param visitor = The visitor that is called for each event, cannot be null.
+	 * @param exclude_id = An event id to exclude from the results, or null if none.
+	 * @param startTime = Start of time interval, in milliseconds after the epoch.
+	 * @param endTime = End of time interval, in milliseconds after the epoch.
+	 * @param minDepth = Minimum depth, in km.  Comcat requires a value from -100 to +1000.
+	 * @param maxDepth = Maximum depth, in km.  Comcat requires a value from -100 to +1000.
+	 * @param region = Region to search.  Events not in this region are filtered out.
+	 * @param wrapLon = Desired longitude range: false = -180 to 180; true = 0 to 360.
+	 * @param extendedInfo = True to return extended information, see eventToObsRup below.
+	 * @param minMag = Minimum magnitude, or -10.0 for no minimum.
+	 * @return
+	 * Returns the result code from the last call to the visitor.
+	 * Note: As a special case, if endTime == startTime, then the end time is the current time.
+	 */
+	public int visitEventList (ComcatVisitor visitor, String exclude_id, long startTime, long endTime,
+			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, boolean extendedInfo,
+			double minMag) {
+
+		// Check the visitor
+
+		if (visitor == null) {
+			throw new IllegalArgumentException ("ComcatLocalCatalog.visitEventList: No visitor supplied");
+		}
+
 		// Check depth range
 
 		if (!( minDepth < maxDepth )) {
@@ -683,9 +743,9 @@ public class ComcatLocalCatalog {
 			event_filter.add (exclude_id);
 		}
 
-		// The list of ruptures we are going to build
+		// Result code to return
 
-		ObsEqkRupList rups = new ObsEqkRupList();
+		int result = 0;
 
 		// Scaled latitude range
 
@@ -768,15 +828,21 @@ public class ComcatLocalCatalog {
 
 						ObsEqkRupture rup = entry.get_eqk_rupture (wrapLon, extendedInfo);
 
-						// Add to the list
+						// Visit the event
 
-						rups.add(rup);
+						result = visitor.visit (rup, null);
+
+						// Stop if requested
+
+						if (result != 0) {
+							return result;
+						}
 					}
 				}
 			}
 		}
 		
-		return rups;
+		return result;
 	}
 
 
@@ -1362,6 +1428,124 @@ public class ComcatLocalCatalog {
 				// Display the information
 
 				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  filename...  event_id  min_days  max_days  radius_km  min_mag
+		// Fetch information for an event, and display it.
+		// Then fetch the event list for a circle surrounding the hypocenter,
+		// for the specified interval in days after the origin time,
+		// excluding the event itself.
+		// Same as test #2, except also displays the list of events retrieved.
+		// Same as ComcatOAFAccessor test #10, except reading from a local catalog.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// Six or more additional arguments
+
+			if (args.length < 7) {
+				System.err.println ("ComcatLocalCatalogEntry : Invalid 'test3' subcommand");
+				return;
+			}
+
+			try {
+
+				String filename[] = Arrays.copyOfRange (args, 1, args.length - 5);
+				String event_id = args[args.length - 5];
+				double min_days = Double.parseDouble (args[args.length - 4]);
+				double max_days = Double.parseDouble (args[args.length - 3]);
+				double radius_km = Double.parseDouble (args[args.length - 2]);
+				double min_mag = Double.parseDouble (args[args.length - 1]);
+
+				// Load the catalog
+
+				System.out.println ("Loading catalog: " + "[" + String.join (", ", filename) + "]");
+				ComcatLocalCatalog local_catalog = new ComcatLocalCatalog();
+				local_catalog.load_catalog (0, filename);
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Get the rupture
+
+				ObsEqkRupture rup = local_catalog.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+				long rup_time = rup.getOriginTime();
+				Location hypo = rup.getHypocenterLocation();
+
+				// Say hello
+
+				System.out.println ("Fetching event list");
+				System.out.println ("min_days = " + min_days);
+				System.out.println ("max_days = " + max_days);
+				System.out.println ("radius_km = " + radius_km);
+				System.out.println ("min_mag = " + min_mag);
+
+				// Construct the Region
+
+				SphRegionCircle region = new SphRegionCircle (new SphLatLon(hypo), radius_km);
+
+				// Calculate the times
+
+				long startTime = rup_time + (long)(min_days*ComcatOAFAccessor.day_millis);
+				long endTime = rup_time + (long)(max_days*ComcatOAFAccessor.day_millis);
+
+				// Call Comcat
+
+				double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+				double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+				boolean wrapLon = false;
+				boolean extendedInfo = false;
+
+				ObsEqkRupList rup_list = local_catalog.fetchEventList (rup_event_id, startTime, endTime,
+						minDepth, maxDepth, region, wrapLon, extendedInfo,
+						min_mag);
+
+				// Display the information
+
+				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
+
+				// If list of events is nonempty, display it, in temporal order, most recent first
+
+				if (rup_list.size() > 0) {
+					System.out.println ("List of events returned by fetchEventList:");
+					Collections.sort (rup_list, new ObsEqkRupMaxTimeComparator());
+					int n = 0;
+					for (ObsEqkRupture r : rup_list) {
+						String r_event_id = r.getEventId();
+						long r_time = r.getOriginTime();
+						double r_mag = r.getMag();
+						Location r_hypo = r.getHypocenterLocation();
+						double r_lat = r_hypo.getLatitude();
+						double r_lon = r_hypo.getLongitude();
+						double r_depth = r_hypo.getDepth();
+
+						String event_info = SimpleUtils.event_id_and_info_one_line (r_event_id, r_time, r_mag, r_lat, r_lon, r_depth);
+						System.out.println (n + ": " + event_info);
+						++n;
+					}
+				}
 
 			} catch (Exception e) {
 				e.printStackTrace();

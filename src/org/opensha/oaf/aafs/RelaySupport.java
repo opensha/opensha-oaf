@@ -162,7 +162,7 @@ public class RelaySupport extends ServerComponent {
 
 	// The thread for pulling relay items from the partner server.
 
-	RelayThread relay_thread;
+	private RelayThread relay_thread;
 
 
 
