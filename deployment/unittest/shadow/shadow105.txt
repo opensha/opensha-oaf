@@ -1,5 +1,7 @@
 shadow105 rj.AftershockStatsShadow test1 us20003k7a 365
 Fetching event: us20003k7a
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20003k7a.geojson
+Count of events received = 1
 rup_event_id = us20003k7a
 rup_time = 1442444072860 (2015-09-16 22:54:32 UTC)
 rup_mag = 8.3
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-15T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=8.300&starttime=2014-09-16T22:54:32.860Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-15T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=8.300&orderby=time&starttime=2014-09-16T22:54:32.860Z
 Count of events received = 1
 Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 0
 AftershockStatsShadow.find_shadow: Found 0 potential shadowing events for mainshock us20003k7a
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock us20003k7a

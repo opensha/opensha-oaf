@@ -1,4 +1,6 @@
 aliasfam153 aafs.ServerTest alias_get_timeline_info .a
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/gcmt20150425061126.geojson
+Count of events received = 1
 Alias: Update for timeline ID = .a
 Alias: Merges from Comcat = 0, IDs processed = 3
 Alias: Merges from database = 0, IDs processed = 3
@@ -17,6 +19,8 @@ Alias: Matches with method S = 0
 Alias: Update summary:
 .a = [us20002926, atlas20150425061125, gcmt20150425061126] live
 removed IDs = []
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson
+Count of events received = 1
 result code = RESCODE_SUCCESS
 ForecastMainshock:
 query_event_id = us20002926

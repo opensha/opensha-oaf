@@ -1,5 +1,7 @@
 shadow329 rj.AftershockStatsShadow test1 us200029x8 365
 Fetching event: us200029x8
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us200029x8.geojson
+Count of events received = 1
 rup_event_id = us200029x8
 rup_time = 1430239179190 (2015-04-28 16:39:39 UTC)
 rup_mag = 6.1
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-04-27T16:39:39.190Z&format=geojson&latitude=-20.88650&limit=20000&longitude=-178.63290&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&starttime=2014-04-28T16:39:39.190Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-04-27T16:39:39.190Z&format=geojson&latitude=-20.88650&limit=20000&longitude=-178.63290&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&orderby=time&starttime=2014-04-28T16:39:39.190Z
 Count of events received = 33
 Count of events after filtering = 32
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 32
 AftershockStatsShadow.find_shadow: Found 32 potential shadowing events for mainshock us200029x8
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock us200029x8

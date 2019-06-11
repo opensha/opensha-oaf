@@ -1,5 +1,7 @@
 comcat186 comcat.ComcatOAFAccessor test7 true true nc72282711
 Fetching event: nc72282711
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc72282711.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = nc72282711
 rup_time = 1408875644070 (2014-08-24 10:20:44 UTC)

@@ -1,5 +1,7 @@
 comcat224 comcat.ComcatOAFAccessor test1 us1000h3p4
 Fetching event: us1000h3p4
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us1000h3p4.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = us1000h3p4
 rup_time = 1538128965250 (2018-09-28 10:02:45 UTC)

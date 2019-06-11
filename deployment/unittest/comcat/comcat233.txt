@@ -1,5 +1,7 @@
 comcat233 comcat.ComcatOAFAccessor test3 badevent
 Fetching event: badevent
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/badevent.geojson
+Count of events received = 0
 Null return from fetchEvent
 http_status = 404
 URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/badevent.geojson

@@ -1,4 +1,6 @@
 aliasfam102 aafs.ServerTest alias_get_event_info gcmt20150425061126
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/gcmt20150425061126.geojson
+Count of events received = 1
 result code = RESCODE_ALIAS_NEW_EVENT
 ForecastMainshock:
 query_event_id = gcmt20150425061126

@@ -1,5 +1,7 @@
 comcat103 comcat.ComcatOAFAccessor test7 true false us20002926
 Fetching event: us20002926
+https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=us20002926&format=geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = us20002926
 rup_time = 1429942285950 (2015-04-25 06:11:25 UTC)

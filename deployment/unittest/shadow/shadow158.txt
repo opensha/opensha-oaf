@@ -1,5 +1,7 @@
 shadow158 rj.AftershockStatsShadow test1 usp000d754 365
 Fetching event: usp000d754
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000d754.geojson
+Count of events received = 1
 rup_event_id = usp000d754
 rup_time = 1098831187860 (2004-10-26 22:53:07 UTC)
 rup_mag = 6.4
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-10-26T22:53:07.860Z&format=geojson&latitude=-57.07100&limit=20000&longitude=-24.67900&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.400&starttime=2003-10-27T22:53:07.860Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-10-26T22:53:07.860Z&format=geojson&latitude=-57.07100&limit=20000&longitude=-24.67900&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.400&orderby=time&starttime=2003-10-27T22:53:07.860Z
 Count of events received = 3
 Count of events after filtering = 2
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 2
 AftershockStatsShadow.find_shadow: Found 2 potential shadowing events for mainshock usp000d754
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000d754

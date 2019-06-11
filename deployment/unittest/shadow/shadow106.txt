@@ -1,5 +1,7 @@
 shadow106 rj.AftershockStatsShadow test1 usp000eg5g 365
 Fetching event: usp000eg5g
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000eg5g.geojson
+Count of events received = 1
 rup_event_id = usp000eg5g
 rup_time = 1146670000290 (2006-05-03 15:26:40 UTC)
 rup_mag = 8.0
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2007-05-03T15:26:40.290Z&format=geojson&latitude=-20.18700&limit=20000&longitude=-174.12300&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=8.000&starttime=2005-05-03T15:26:40.290Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2007-05-03T15:26:40.290Z&format=geojson&latitude=-20.18700&limit=20000&longitude=-174.12300&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=8.000&orderby=time&starttime=2005-05-03T15:26:40.290Z
 Count of events received = 1
 Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 0
 AftershockStatsShadow.find_shadow: Found 0 potential shadowing events for mainshock usp000eg5g
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000eg5g

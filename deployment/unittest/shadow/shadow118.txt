@@ -1,5 +1,7 @@
 shadow118 rj.AftershockStatsShadow test1 usc000rpfu 365
 Fetching event: usc000rpfu
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usc000rpfu.geojson
+Count of events received = 1
 rup_event_id = usc000rpfu
 rup_time = 1404280409200 (2014-07-02 05:53:29 UTC)
 rup_mag = 6.0
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-07-02T05:53:29.200Z&format=geojson&latitude=-62.30140&limit=20000&longitude=155.18680&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.000&starttime=2013-07-02T05:53:29.200Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-07-02T05:53:29.200Z&format=geojson&latitude=-62.30140&limit=20000&longitude=155.18680&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.000&orderby=time&starttime=2013-07-02T05:53:29.200Z
 Count of events received = 3
 Count of events after filtering = 2
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 2
 AftershockStatsShadow.find_shadow: Found 2 potential shadowing events for mainshock usc000rpfu
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usc000rpfu

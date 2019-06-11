@@ -1,5 +1,7 @@
 comcat269 comcat.ComcatOAFAccessor test7 true false nc216859
 Fetching event: nc216859
+https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=nc216859&format=geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = nc216859
 rup_time = 624672255190 (1989-10-18 00:04:15 UTC)

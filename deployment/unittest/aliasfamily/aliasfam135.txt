@@ -1,4 +1,6 @@
 aliasfam135 aafs.ServerTest alias_get_event_info us1000eze5
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us1000eze5.geojson
+Count of events received = 1
 result code = RESCODE_SUCCESS
 ForecastMainshock:
 query_event_id = us1000eze5

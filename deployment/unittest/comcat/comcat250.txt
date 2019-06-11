@@ -1,5 +1,7 @@
 comcat250 comcat.ComcatOAFAccessor test7 true true us20003k7a
 Fetching event: us20003k7a
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20003k7a.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = us20003k7a
 rup_time = 1442444072860 (2015-09-16 22:54:32 UTC)

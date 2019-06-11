@@ -1,2 +1,4 @@
 aliasfam112 aafs.ServerTest alias_get_event_info badevent
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/badevent.geojson
+Count of events received = 0
 result code = RESCODE_ALIAS_EVENT_NOT_IN_COMCAT

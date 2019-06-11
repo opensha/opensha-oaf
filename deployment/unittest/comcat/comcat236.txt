@@ -1,5 +1,7 @@
 comcat236 comcat.ComcatOAFAccessor test1 usc000rki5
 Fetching event: usc000rki5
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usc000rki5.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = usc000rki5
 rup_time = 1403556789700 (2014-06-23 20:53:09 UTC)

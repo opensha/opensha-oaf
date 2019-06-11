@@ -1,5 +1,7 @@
 comcat289 comcat.ComcatOAFAccessor test11 usp000hzf6 -0.001 365.0 100.0 3.5 0
 Fetching event: usp000hzf6
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000hzf6.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = usp000hzf6
 rup_time = 1302186763290 (2011-04-07 14:32:43 UTC)
@@ -19,9 +21,10 @@ max_days = 365.0
 radius_km = 100.0
 min_mag = 3.5
 limit_per_call = 0
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2012-04-06T14:32:43.290Z&format=geojson&latitude=38.27600&limit=20000&longitude=141.58800&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=3.500&starttime=2011-04-07T14:31:16.890Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2012-04-06T14:32:43.290Z&format=geojson&latitude=38.27600&limit=20000&longitude=141.58800&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=3.500&orderby=time&starttime=2011-04-07T14:31:16.890Z
 Count of events received = 308
 Count of events after filtering = 307
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 307
 Events returned by fetchEventList = 307
 http_status[0] = 200

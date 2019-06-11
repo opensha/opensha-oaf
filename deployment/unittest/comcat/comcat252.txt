@@ -1,5 +1,7 @@
 comcat252 comcat.ComcatOAFAccessor test10 us20003k7a -0.001 365.0 100.0 3.5 0
 Fetching event: us20003k7a
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20003k7a.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = us20003k7a
 rup_time = 1442444072860 (2015-09-16 22:54:32 UTC)
@@ -19,9 +21,10 @@ max_days = 365.0
 radius_km = 100.0
 min_mag = 3.5
 limit_per_call = 0
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-15T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=3.500&starttime=2015-09-16T22:53:06.460Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-15T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=3.500&orderby=time&starttime=2015-09-16T22:53:06.460Z
 Count of events received = 684
 Count of events after filtering = 683
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 683
 Events returned by fetchEventList = 683
 http_status[0] = 200

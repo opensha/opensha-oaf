@@ -1,5 +1,7 @@
 comcat227 comcat.ComcatOAFAccessor test7 true false us1000h3p4
 Fetching event: us1000h3p4
+https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=us1000h3p4&format=geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = us1000h3p4
 rup_time = 1538128965250 (2018-09-28 10:02:45 UTC)

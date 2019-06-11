@@ -1,5 +1,7 @@
 shadow189 rj.AftershockStatsShadow test1 us100049ce 365
 Fetching event: us100049ce
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us100049ce.geojson
+Count of events received = 1
 rup_event_id = us100049ce
 rup_time = 1450986243130 (2015-12-24 19:44:03 UTC)
 rup_mag = 6.2
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-12-23T19:44:03.130Z&format=geojson&latitude=-55.75500&limit=20000&longitude=-123.11580&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.200&starttime=2014-12-24T19:44:03.130Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-12-23T19:44:03.130Z&format=geojson&latitude=-55.75500&limit=20000&longitude=-123.11580&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.200&orderby=time&starttime=2014-12-24T19:44:03.130Z
 Count of events received = 2
 Count of events after filtering = 1
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 1
 AftershockStatsShadow.find_shadow: Found 1 potential shadowing events for mainshock us100049ce
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock us100049ce

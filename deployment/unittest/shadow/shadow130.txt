@@ -1,5 +1,7 @@
 shadow130 rj.AftershockStatsShadow test1 usc000n7bm 365
 Fetching event: usc000n7bm
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usc000n7bm.geojson
+Count of events received = 1
 rup_event_id = usc000n7bm
 rup_time = 1394505845830 (2014-03-11 02:44:05 UTC)
 rup_mag = 6.4
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-03-11T02:44:05.830Z&format=geojson&latitude=-60.86230&limit=20000&longitude=-19.97750&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.400&starttime=2013-03-11T02:44:05.830Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-03-11T02:44:05.830Z&format=geojson&latitude=-60.86230&limit=20000&longitude=-19.97750&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.400&orderby=time&starttime=2013-03-11T02:44:05.830Z
 Count of events received = 7
 Count of events after filtering = 6
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 6
 AftershockStatsShadow.find_shadow: Found 6 potential shadowing events for mainshock usc000n7bm
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usc000n7bm

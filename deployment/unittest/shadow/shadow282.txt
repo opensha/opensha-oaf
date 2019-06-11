@@ -1,5 +1,7 @@
 shadow282 rj.AftershockStatsShadow test1 us20003p9y 365
 Fetching event: us20003p9y
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20003p9y.geojson
+Count of events received = 1
 rup_event_id = us20003p9y
 rup_time = 1443235878830 (2015-09-26 02:51:18 UTC)
 rup_mag = 6.3
@@ -18,18 +20,20 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-25T02:51:18.830Z&format=geojson&latitude=-30.81480&limit=20000&longitude=-71.32170&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.300&starttime=2014-09-26T02:51:18.830Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-25T02:51:18.830Z&format=geojson&latitude=-30.81480&limit=20000&longitude=-71.32170&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.300&orderby=time&starttime=2014-09-26T02:51:18.830Z
 Count of events received = 16
 Count of events after filtering = 15
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 15
 AftershockStatsShadow.find_shadow: Found 15 potential shadowing events for mainshock us20003p9y
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-15T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=2.89011&mindepth=0.000&minmagnitude=3.950&starttime=2015-09-16T22:54:32.860Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-15T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=2.89011&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2015-09-16T22:54:32.860Z
 Count of events received = 1187
 Count of events after filtering = 1186
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 1186
 AftershockStatsShadow.accum_from_comcat: Found 1186 aftershocks within 321.366 km of candidate event us20003k7a
 AftershockStatsShadow.find_shadow: Found 2 candidate shadowing events for mainshock us20003p9y
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-25T02:51:18.830Z&format=geojson&latitude=-30.81480&limit=20000&longitude=-71.32170&maxdepth=700.000&maxradius=0.39584&mindepth=0.000&minmagnitude=3.950&starttime=2015-11-07T07:31:43.870Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-25T02:51:18.830Z&format=geojson&latitude=-30.81480&limit=20000&longitude=-71.32170&maxdepth=700.000&maxradius=0.39584&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2015-11-07T07:31:43.870Z
 Count of events received = 90
 Count of events after filtering = 90
 Total number of events returned = 90

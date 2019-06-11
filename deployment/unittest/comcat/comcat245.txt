@@ -1,5 +1,7 @@
 comcat245 comcat.ComcatOAFAccessor test7 true false official20100227063411530_30
 Fetching event: official20100227063411530_30
+https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=official20100227063411530_30&format=geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = official20100227063411530_30
 rup_time = 1267252451530 (2010-02-27 06:34:11 UTC)

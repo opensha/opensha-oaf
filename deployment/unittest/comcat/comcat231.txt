@@ -1,5 +1,7 @@
 comcat231 comcat.ComcatOAFAccessor test7 true false us1000h4p4
 Fetching event: us1000h4p4
+https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=us1000h4p4&format=geojson
+Count of events received = 1
 Null return from fetchEvent
 http_status = 200
 URL = https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=us1000h4p4&format=geojson

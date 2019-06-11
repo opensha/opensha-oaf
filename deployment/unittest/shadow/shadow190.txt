@@ -1,5 +1,7 @@
 shadow190 rj.AftershockStatsShadow test1 usp000d3qv 365
 Fetching event: usp000d3qv
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000d3qv.geojson
+Count of events received = 1
 rup_event_id = usp000d3qv
 rup_time = 1094474579390 (2004-09-06 12:42:59 UTC)
 rup_mag = 6.9
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-09-06T12:42:59.390Z&format=geojson&latitude=-55.37200&limit=20000&longitude=-28.97600&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.900&starttime=2003-09-07T12:42:59.390Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-09-06T12:42:59.390Z&format=geojson&latitude=-55.37200&limit=20000&longitude=-28.97600&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.900&orderby=time&starttime=2003-09-07T12:42:59.390Z
 Count of events received = 1
 Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 0
 AftershockStatsShadow.find_shadow: Found 0 potential shadowing events for mainshock usp000d3qv
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000d3qv

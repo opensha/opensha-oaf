@@ -1,5 +1,7 @@
 shadow261 rj.AftershockStatsShadow test1 usp000h7zx 365
 Fetching event: usp000h7zx
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000h7zx.geojson
+Count of events received = 1
 rup_event_id = usp000h7zx
 rup_time = 1267297206860 (2010-02-27 19:00:06 UTC)
 rup_mag = 6.2
@@ -18,14 +20,16 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T19:00:06.860Z&format=geojson&latitude=-33.42200&limit=20000&longitude=-71.82800&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.200&starttime=2009-02-27T19:00:06.860Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T19:00:06.860Z&format=geojson&latitude=-33.42200&limit=20000&longitude=-71.82800&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.200&orderby=time&starttime=2009-02-27T19:00:06.860Z
 Count of events received = 24
 Count of events after filtering = 23
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 23
 AftershockStatsShadow.find_shadow: Found 23 potential shadowing events for mainshock usp000h7zx
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:34:11.530Z&format=geojson&latitude=-36.12200&limit=20000&longitude=-72.89800&maxdepth=700.000&maxradius=6.39609&mindepth=0.000&minmagnitude=3.950&starttime=2010-02-27T06:34:11.530Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:34:11.530Z&format=geojson&latitude=-36.12200&limit=20000&longitude=-72.89800&maxdepth=700.000&maxradius=6.39609&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2010-02-27T06:34:11.530Z
 Count of events received = 2087
 Count of events after filtering = 2086
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 2086
 AftershockStatsShadow.accum_from_comcat: Found 2086 aftershocks within 711.214 km of candidate event official20100227063411530_30
 AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock usp000h7zx

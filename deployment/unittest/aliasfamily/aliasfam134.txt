@@ -1,4 +1,6 @@
 aliasfam134 aafs.ServerTest alias_get_event_info hv70307431
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/hv70307431.geojson
+Count of events received = 1
 result code = RESCODE_SUCCESS
 ForecastMainshock:
 query_event_id = hv70307431

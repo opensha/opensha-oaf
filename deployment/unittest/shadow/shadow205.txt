@@ -1,5 +1,7 @@
 shadow205 rj.AftershockStatsShadow test1 usp000gy9c 365
 Fetching event: usp000gy9c
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000gy9c.geojson
+Count of events received = 1
 rup_event_id = usp000gy9c
 rup_time = 1245182756990 (2009-06-16 20:05:56 UTC)
 rup_mag = 6.1
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2010-06-16T20:05:56.990Z&format=geojson&latitude=-54.36600&limit=20000&longitude=5.87100&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&starttime=2008-06-16T20:05:56.990Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2010-06-16T20:05:56.990Z&format=geojson&latitude=-54.36600&limit=20000&longitude=5.87100&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&orderby=time&starttime=2008-06-16T20:05:56.990Z
 Count of events received = 4
 Count of events after filtering = 3
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 3
 AftershockStatsShadow.find_shadow: Found 3 potential shadowing events for mainshock usp000gy9c
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000gy9c

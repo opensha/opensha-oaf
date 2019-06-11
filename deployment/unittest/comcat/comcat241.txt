@@ -1,5 +1,7 @@
 comcat241 comcat.ComcatOAFAccessor test11 usc000rki5 -0.001 365.0 100.0 3.5 0
 Fetching event: usc000rki5
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usc000rki5.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = usc000rki5
 rup_time = 1403556789700 (2014-06-23 20:53:09 UTC)
@@ -19,9 +21,10 @@ max_days = 365.0
 radius_km = 100.0
 min_mag = 3.5
 limit_per_call = 0
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-06-23T20:53:09.700Z&format=geojson&latitude=51.84860&limit=20000&longitude=178.73520&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=3.500&starttime=2014-06-23T20:51:43.300Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-06-23T20:53:09.700Z&format=geojson&latitude=51.84860&limit=20000&longitude=178.73520&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=3.500&orderby=time&starttime=2014-06-23T20:51:43.300Z
 Count of events received = 251
 Count of events after filtering = 250
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 250
 Events returned by fetchEventList = 250
 http_status[0] = 200

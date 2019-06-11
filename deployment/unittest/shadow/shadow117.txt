@@ -1,5 +1,7 @@
 shadow117 rj.AftershockStatsShadow test1 usb000pnw2 365
 Fetching event: usb000pnw2
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usb000pnw2.geojson
+Count of events received = 1
 rup_event_id = usb000pnw2
 rup_time = 1397747211490 (2014-04-17 15:06:51 UTC)
 rup_mag = 6.2
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-17T15:06:51.490Z&format=geojson&latitude=-62.87050&limit=20000&longitude=155.74310&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.200&starttime=2013-04-17T15:06:51.490Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-17T15:06:51.490Z&format=geojson&latitude=-62.87050&limit=20000&longitude=155.74310&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.200&orderby=time&starttime=2013-04-17T15:06:51.490Z
 Count of events received = 1
 Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 0
 AftershockStatsShadow.find_shadow: Found 0 potential shadowing events for mainshock usb000pnw2
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usb000pnw2

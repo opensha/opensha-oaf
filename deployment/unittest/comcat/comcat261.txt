@@ -1,5 +1,7 @@
 comcat261 comcat.ComcatOAFAccessor test3 usc000nzvd
 Fetching event: usc000nzvd
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usc000nzvd.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = usc000nzvd
 rup_time = 1396396007260 (2014-04-01 23:46:47 UTC)

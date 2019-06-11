@@ -1,5 +1,7 @@
 shadow303 rj.AftershockStatsShadow test1 usp000ba6n 365
 Fetching event: usp000ba6n
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000ba6n.geojson
+Count of events received = 1
 rup_event_id = usp000ba6n
 rup_time = 1029756186200 (2002-08-19 11:23:06 UTC)
 rup_mag = 6.1
@@ -18,13 +20,14 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-08-19T11:23:06.200Z&format=geojson&latitude=-23.89900&limit=20000&longitude=178.37500&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&starttime=2001-08-19T11:23:06.200Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-08-19T11:23:06.200Z&format=geojson&latitude=-23.89900&limit=20000&longitude=178.37500&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&orderby=time&starttime=2001-08-19T11:23:06.200Z
 Count of events received = 40
 Count of events after filtering = 39
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 39
 AftershockStatsShadow.find_shadow: Found 39 potential shadowing events for mainshock usp000ba6n
 AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock usp000ba6n
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-08-19T11:08:24.310Z&format=geojson&latitude=-23.89900&limit=20000&longitude=178.37500&maxdepth=700.000&maxradius=1.22481&mindepth=0.000&minmagnitude=3.950&starttime=2002-08-19T11:08:24.310Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-08-19T11:08:24.310Z&format=geojson&latitude=-23.89900&limit=20000&longitude=178.37500&maxdepth=700.000&maxradius=1.22481&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2002-08-19T11:08:24.310Z
 Count of events received = 33
 Count of events after filtering = 33
 Total number of events returned = 33

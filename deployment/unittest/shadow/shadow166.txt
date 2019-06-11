@@ -1,5 +1,7 @@
 shadow166 rj.AftershockStatsShadow test1 usp000db7t 365
 Fetching event: usp000db7t
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000db7t.geojson
+Count of events received = 1
 rup_event_id = usp000db7t
 rup_time = 1103749419390 (2004-12-22 21:03:39 UTC)
 rup_mag = 6.1
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-12-22T21:03:39.390Z&format=geojson&latitude=-55.94200&limit=20000&longitude=-124.99700&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&starttime=2003-12-23T21:03:39.390Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-12-22T21:03:39.390Z&format=geojson&latitude=-55.94200&limit=20000&longitude=-124.99700&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&orderby=time&starttime=2003-12-23T21:03:39.390Z
 Count of events received = 5
 Count of events after filtering = 4
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 4
 AftershockStatsShadow.find_shadow: Found 4 potential shadowing events for mainshock usp000db7t
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000db7t

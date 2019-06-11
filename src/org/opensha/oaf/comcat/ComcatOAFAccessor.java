@@ -1554,6 +1554,234 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 
 
+		// Subcommand : Test #12
+		// Command format:
+		//  test12  f_use_prod  f_use_feed  connect_timeout  read_timeout  event_id
+		// Fetch information for an event, and display it.
+		// Also display the timeout values that were used.
+		// Each timeout is in milliseconds, and can be 0 for no timeout, -1 for system default,
+		// -2 for ComcatEventWebService default, -3 for no setting, or -4 for invalid.
+		// Same as test #7, except also sets and displays the timeouts.
+
+		if (args[0].equalsIgnoreCase ("test12")) {
+
+			// Five additional arguments
+
+			if (args.length != 6) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test12' subcommand");
+				return;
+			}
+
+			boolean f_use_prod = Boolean.parseBoolean (args[1]);
+			boolean f_use_feed = Boolean.parseBoolean (args[2]);
+			int connect_timeout = Integer.parseInt (args[3]);
+			int read_timeout = Integer.parseInt (args[4]);
+			String event_id = args[5];
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod, f_use_feed);
+
+				// Set timeouts
+
+				accessor.setEnableTimeoutReadback (true);
+
+				if (connect_timeout != -3) {
+					accessor.setConnectTimeout (connect_timeout);
+				}
+
+				if (read_timeout != -3) {
+					accessor.setReadTimeout (read_timeout);
+				}
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display timeouts used
+					
+				System.out.println ("last_connect_timeout = " + accessor.getLastConnectTimeout());
+				System.out.println ("last_read_timeout = " + accessor.getLastReadTimeout());
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = extendedInfoToMap (rup, EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = idsToList (eimap.get (PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #13
+		// Command format:
+		//  test13  f_use_prod  f_use_feed  connect_timeout  read_timeout  event_id  min_days  max_days  radius_km  min_mag  limit_per_call
+		// Fetch information for an event, and display it.
+		// Then fetch the event list for a circle surrounding the hypocenter,
+		// for the specified interval in days after the origin time,
+		// excluding the event itself.
+		// The adjustable limit per call can test the multi-fetch logic.
+		// Also display the timeout values that were used.
+		// Each timeout is in milliseconds, and can be 0 for no timeout, -1 for system default,
+		// -2 for ComcatEventWebService default, -3 for no setting, or -4 for invalid.
+		// Same as test #8, except also sets and displays the timeouts.
+
+		if (args[0].equalsIgnoreCase ("test13")) {
+
+			// Ten additional arguments
+
+			if (args.length != 11) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test13' subcommand");
+				return;
+			}
+
+			try {
+
+				boolean f_use_prod = Boolean.parseBoolean (args[1]);
+				boolean f_use_feed = Boolean.parseBoolean (args[2]);
+				int connect_timeout = Integer.parseInt (args[3]);
+				int read_timeout = Integer.parseInt (args[4]);
+				String event_id = args[5];
+				double min_days = Double.parseDouble (args[6]);
+				double max_days = Double.parseDouble (args[7]);
+				double radius_km = Double.parseDouble (args[8]);
+				double min_mag = Double.parseDouble (args[9]);
+				int limit_per_call = Integer.parseInt(args[10]);
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod, f_use_feed);
+
+				// Set timeouts
+
+				accessor.setEnableTimeoutReadback (true);
+
+				if (connect_timeout != -3) {
+					accessor.setConnectTimeout (connect_timeout);
+				}
+
+				if (read_timeout != -3) {
+					accessor.setReadTimeout (read_timeout);
+				}
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display timeouts used
+					
+				System.out.println ("last_connect_timeout = " + accessor.getLastConnectTimeout());
+				System.out.println ("last_read_timeout = " + accessor.getLastReadTimeout());
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+				long rup_time = rup.getOriginTime();
+				Location hypo = rup.getHypocenterLocation();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				// Say hello
+
+				System.out.println ("Fetching event list");
+				System.out.println ("min_days = " + min_days);
+				System.out.println ("max_days = " + max_days);
+				System.out.println ("radius_km = " + radius_km);
+				System.out.println ("min_mag = " + min_mag);
+				System.out.println ("limit_per_call = " + limit_per_call);
+
+				// Construct the Region
+
+				SphRegionCircle region = new SphRegionCircle (new SphLatLon(hypo), radius_km);
+
+				// Calculate the times
+
+				long startTime = rup_time + (long)(min_days*day_millis);
+				long endTime = rup_time + (long)(max_days*day_millis);
+
+				// Call Comcat
+
+				double minDepth = DEFAULT_MIN_DEPTH;
+				double maxDepth = DEFAULT_MAX_DEPTH;
+				boolean wrapLon = false;
+				boolean extendedInfo = false;
+				int max_calls = 0;
+
+				ObsEqkRupList rup_list = accessor.fetchEventList (rup_event_id, startTime, endTime,
+						minDepth, maxDepth, region, wrapLon, extendedInfo,
+						min_mag, limit_per_call, max_calls);
+
+				// Display timeouts used
+					
+				System.out.println ("last_connect_timeout = " + accessor.getLastConnectTimeout());
+				System.out.println ("last_read_timeout = " + accessor.getLastReadTimeout());
+
+				// Display the information
+
+				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
+
+				int n_status = accessor.get_http_status_count();
+				for (int i = 0; i < n_status; ++i) {
+					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
 		// Unrecognized subcommand.
 
 		System.err.println ("ComcatOAFAccessor : Unrecognized subcommand : " + args[0]);

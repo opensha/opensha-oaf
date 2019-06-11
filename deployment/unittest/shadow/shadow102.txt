@@ -1,5 +1,7 @@
 shadow102 rj.AftershockStatsShadow test1 nc72282711 365
 Fetching event: nc72282711
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc72282711.geojson
+Count of events received = 1
 rup_event_id = nc72282711
 rup_time = 1408875644070 (2014-08-24 10:20:44 UTC)
 rup_mag = 6.02
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-08-24T10:20:44.070Z&format=geojson&latitude=38.21517&limit=20000&longitude=-122.31233&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.020&starttime=2013-08-24T10:20:44.070Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-08-24T10:20:44.070Z&format=geojson&latitude=38.21517&limit=20000&longitude=-122.31233&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.020&orderby=time&starttime=2013-08-24T10:20:44.070Z
 Count of events received = 6
 Count of events after filtering = 5
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 5
 AftershockStatsShadow.find_shadow: Found 5 potential shadowing events for mainshock nc72282711
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock nc72282711

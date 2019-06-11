@@ -1,5 +1,7 @@
 comcat287 comcat.ComcatOAFAccessor test7 true false usp000hzf6
 Fetching event: usp000hzf6
+https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=usp000hzf6&format=geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = usp000hzf6
 rup_time = 1302186763290 (2011-04-07 14:32:43 UTC)

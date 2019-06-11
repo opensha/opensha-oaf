@@ -1,5 +1,7 @@
 shadow109 rj.AftershockStatsShadow test1 nc10089897 365
 Fetching event: nc10089897
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc10089897.geojson
+Count of events received = 1
 rup_event_id = nc10089897
 rup_time = 618567207390 (1989-08-08 08:13:27 UTC)
 rup_mag = 5.4
@@ -18,13 +20,14 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1990-08-08T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=5.400&starttime=1988-08-08T08:13:27.390Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1990-08-08T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=5.400&orderby=time&starttime=1988-08-08T08:13:27.390Z
 Count of events received = 17
 Count of events after filtering = 16
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 16
 AftershockStatsShadow.find_shadow: Found 16 potential shadowing events for mainshock nc10089897
 AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock nc10089897
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1990-08-08T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=0.43065&mindepth=0.000&minmagnitude=2.950&starttime=1989-10-18T00:04:15.190Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1990-08-08T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=0.43065&mindepth=0.000&minmagnitude=2.950&orderby=time&starttime=1989-10-18T00:04:15.190Z
 Count of events received = 257
 Count of events after filtering = 257
 Total number of events returned = 257

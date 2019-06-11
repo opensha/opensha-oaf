@@ -1,5 +1,7 @@
 shadow199 rj.AftershockStatsShadow test1 usp000hcxv 365
 Fetching event: usp000hcxv
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000hcxv.geojson
+Count of events received = 1
 rup_event_id = usp000hcxv
 rup_time = 1274265010400 (2010-05-19 10:30:10 UTC)
 rup_mag = 6.0
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-05-19T10:30:10.400Z&format=geojson&latitude=-54.80000&limit=20000&longitude=-135.25200&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.000&starttime=2009-05-19T10:30:10.400Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-05-19T10:30:10.400Z&format=geojson&latitude=-54.80000&limit=20000&longitude=-135.25200&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.000&orderby=time&starttime=2009-05-19T10:30:10.400Z
 Count of events received = 7
 Count of events after filtering = 6
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 6
 AftershockStatsShadow.find_shadow: Found 6 potential shadowing events for mainshock usp000hcxv
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000hcxv

@@ -1,5 +1,7 @@
 comcat280 comcat.ComcatOAFAccessor test7 true true usp000hvnu
 Fetching event: usp000hvnu
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000hvnu.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = official20110311054624120_30
 rup_time = 1299822384120 (2011-03-11 05:46:24 UTC)

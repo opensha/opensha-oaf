@@ -1,2 +1,6 @@
 aliasfam175 aafs.ServerTest alias_get_timeline_info .b
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/bad3.geojson
+Count of events received = 0
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/bad2.geojson
+Count of events received = 0
 result code = RESCODE_ALIAS_STOPPED

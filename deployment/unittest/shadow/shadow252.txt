@@ -1,5 +1,7 @@
 shadow252 rj.AftershockStatsShadow test1 usp000ha3d 365
 Fetching event: usp000ha3d
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000ha3d.geojson
+Count of events received = 1
 rup_event_id = usp000ha3d
 rup_time = 1269812308000 (2010-03-28 21:38:28 UTC)
 rup_mag = 6.0
@@ -18,18 +20,20 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-28T21:38:28.000Z&format=geojson&latitude=-35.38700&limit=20000&longitude=-73.38500&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.000&starttime=2009-03-28T21:38:28.000Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-28T21:38:28.000Z&format=geojson&latitude=-35.38700&limit=20000&longitude=-73.38500&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.000&orderby=time&starttime=2009-03-28T21:38:28.000Z
 Count of events received = 43
 Count of events after filtering = 42
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 42
 AftershockStatsShadow.find_shadow: Found 42 potential shadowing events for mainshock usp000ha3d
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:34:11.530Z&format=geojson&latitude=-36.12200&limit=20000&longitude=-72.89800&maxdepth=700.000&maxradius=6.39609&mindepth=0.000&minmagnitude=3.950&starttime=2010-02-27T06:34:11.530Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:34:11.530Z&format=geojson&latitude=-36.12200&limit=20000&longitude=-72.89800&maxdepth=700.000&maxradius=6.39609&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2010-02-27T06:34:11.530Z
 Count of events received = 2087
 Count of events after filtering = 2086
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 2086
 AftershockStatsShadow.accum_from_comcat: Found 2086 aftershocks within 711.214 km of candidate event official20100227063411530_30
 AftershockStatsShadow.find_shadow: Found 2 candidate shadowing events for mainshock usp000ha3d
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-28T21:38:28.000Z&format=geojson&latitude=-35.38700&limit=20000&longitude=-73.38500&maxdepth=700.000&maxradius=0.67675&mindepth=0.000&minmagnitude=3.950&starttime=2011-02-14T03:40:09.920Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-28T21:38:28.000Z&format=geojson&latitude=-35.38700&limit=20000&longitude=-73.38500&maxdepth=700.000&maxradius=0.67675&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2011-02-14T03:40:09.920Z
 Count of events received = 5
 Count of events after filtering = 5
 Total number of events returned = 5

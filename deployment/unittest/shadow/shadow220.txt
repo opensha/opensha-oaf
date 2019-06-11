@@ -1,5 +1,7 @@
 shadow220 rj.AftershockStatsShadow test1 usb000kznc 365
 Fetching event: usb000kznc
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usb000kznc.geojson
+Count of events received = 1
 rup_event_id = usb000kznc
 rup_time = 1384572871230 (2013-11-16 03:34:31 UTC)
 rup_mag = 6.9
@@ -18,13 +20,14 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-11-16T03:34:31.230Z&format=geojson&latitude=-60.26270&limit=20000&longitude=-47.06210&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.900&starttime=2012-11-16T03:34:31.230Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-11-16T03:34:31.230Z&format=geojson&latitude=-60.26270&limit=20000&longitude=-47.06210&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.900&orderby=time&starttime=2012-11-16T03:34:31.230Z
 Count of events received = 5
 Count of events after filtering = 4
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 4
 AftershockStatsShadow.find_shadow: Found 4 potential shadowing events for mainshock usb000kznc
 AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock usb000kznc
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-11-16T03:34:31.230Z&format=geojson&latitude=-60.26270&limit=20000&longitude=-47.06210&maxdepth=700.000&maxradius=1.44208&mindepth=0.000&minmagnitude=3.950&starttime=2013-11-17T09:04:55.530Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-11-16T03:34:31.230Z&format=geojson&latitude=-60.26270&limit=20000&longitude=-47.06210&maxdepth=700.000&maxradius=1.44208&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2013-11-17T09:04:55.530Z
 Count of events received = 138
 Count of events after filtering = 138
 Total number of events returned = 138

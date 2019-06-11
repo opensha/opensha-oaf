@@ -1,5 +1,7 @@
 comcat191 comcat.ComcatOAFAccessor test10 nc72282711 0.001 7.0 100.0 2.5 0
 Fetching event: nc72282711
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc72282711.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = nc72282711
 rup_time = 1408875644070 (2014-08-24 10:20:44 UTC)
@@ -19,7 +21,7 @@ max_days = 7.0
 radius_km = 100.0
 min_mag = 2.5
 limit_per_call = 0
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-08-31T10:20:44.070Z&format=geojson&latitude=38.21517&limit=20000&longitude=-122.31233&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=2.500&starttime=2014-08-24T10:22:10.470Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-08-31T10:20:44.070Z&format=geojson&latitude=38.21517&limit=20000&longitude=-122.31233&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=2.500&orderby=time&starttime=2014-08-24T10:22:10.470Z
 Count of events received = 16
 Count of events after filtering = 16
 Total number of events returned = 16

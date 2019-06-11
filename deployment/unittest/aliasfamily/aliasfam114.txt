@@ -1,4 +1,6 @@
 aliasfam114 aafs.ServerTest alias_create_timeline_for_event us20002926
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson
+Count of events received = 1
 result code = RESCODE_ALIAS_NEW_EVENT
 Alias: Created new timeline ID = .us20002926, for Comcat ID = us20002926
 ForecastMainshock:

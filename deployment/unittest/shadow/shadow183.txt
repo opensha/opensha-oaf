@@ -1,5 +1,7 @@
 shadow183 rj.AftershockStatsShadow test1 usp000j2rm 365
 Fetching event: usp000j2rm
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000j2rm.geojson
+Count of events received = 1
 rup_event_id = usp000j2rm
 rup_time = 1307274672010 (2011-06-05 11:51:12 UTC)
 rup_mag = 6.4
@@ -18,9 +20,10 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2012-06-04T11:51:12.010Z&format=geojson&latitude=-55.84300&limit=20000&longitude=146.62000&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.400&starttime=2010-06-05T11:51:12.010Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2012-06-04T11:51:12.010Z&format=geojson&latitude=-55.84300&limit=20000&longitude=146.62000&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.400&orderby=time&starttime=2010-06-05T11:51:12.010Z
 Count of events received = 1
 Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 0
 AftershockStatsShadow.find_shadow: Found 0 potential shadowing events for mainshock usp000j2rm
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000j2rm

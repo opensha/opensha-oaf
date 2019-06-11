@@ -1,4 +1,6 @@
 aliasfam140 aafs.ServerTest alias_get_timeline_info .nc72282711
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc72282711.geojson
+Count of events received = 1
 result code = RESCODE_SUCCESS
 ForecastMainshock:
 query_event_id = nc72282711

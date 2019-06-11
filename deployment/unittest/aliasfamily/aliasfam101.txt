@@ -1,4 +1,6 @@
 aliasfam101 aafs.ServerTest alias_get_event_info us20002926
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson
+Count of events received = 1
 result code = RESCODE_ALIAS_NEW_EVENT
 ForecastMainshock:
 query_event_id = us20002926

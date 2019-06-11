@@ -1,5 +1,7 @@
 shadow258 rj.AftershockStatsShadow test1 usp000h94t 365
 Fetching event: usp000h94t
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000h94t.geojson
+Count of events received = 1
 rup_event_id = usp000h94t
 rup_time = 1268318383950 (2010-03-11 14:39:43 UTC)
 rup_mag = 6.9
@@ -18,18 +20,20 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-11T14:39:43.950Z&format=geojson&latitude=-34.29000&limit=20000&longitude=-71.89100&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.900&starttime=2009-03-11T14:39:43.950Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-11T14:39:43.950Z&format=geojson&latitude=-34.29000&limit=20000&longitude=-71.89100&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.900&orderby=time&starttime=2009-03-11T14:39:43.950Z
 Count of events received = 7
 Count of events after filtering = 6
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 6
 AftershockStatsShadow.find_shadow: Found 6 potential shadowing events for mainshock usp000h94t
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:34:11.530Z&format=geojson&latitude=-36.12200&limit=20000&longitude=-72.89800&maxdepth=700.000&maxradius=6.39609&mindepth=0.000&minmagnitude=3.950&starttime=2010-02-27T06:34:11.530Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:34:11.530Z&format=geojson&latitude=-36.12200&limit=20000&longitude=-72.89800&maxdepth=700.000&maxradius=6.39609&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2010-02-27T06:34:11.530Z
 Count of events received = 2087
 Count of events after filtering = 2086
+Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 2086
 AftershockStatsShadow.accum_from_comcat: Found 2086 aftershocks within 711.214 km of candidate event official20100227063411530_30
 AftershockStatsShadow.find_shadow: Found 2 candidate shadowing events for mainshock usp000h94t
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-11T14:39:43.950Z&format=geojson&latitude=-34.29000&limit=20000&longitude=-71.89100&maxdepth=700.000&maxradius=0.45046&mindepth=0.000&minmagnitude=3.950&starttime=2010-03-11T14:55:27.510Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-11T14:39:43.950Z&format=geojson&latitude=-34.29000&limit=20000&longitude=-71.89100&maxdepth=700.000&maxradius=0.45046&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2010-03-11T14:55:27.510Z
 Count of events received = 195
 Count of events after filtering = 195
 Total number of events returned = 195
