@@ -617,12 +617,13 @@ public class ComcatLocalCatalog {
 	 * @param eventID = Earthquake event id.
 	 * @param wrapLon = Desired longitude range: false = -180 to 180; true = 0 to 360.
 	 * @param extendedInfo = True to return extended information, see eventToObsRup below.
+	 * @param superseded = True to include superseded and deletion products in the geojson. (ignored)
 	 * @return
 	 * The return value can be null if the event could not be obtained.
 	 * A null return means the event is either not found or deleted in Comcat.
 	 * A ComcatException means that there was an error accessing Comcat.
 	 */
-	public ObsEqkRupture fetchEvent (String eventID, boolean wrapLon, boolean extendedInfo) {
+	public ObsEqkRupture fetchEvent (String eventID, boolean wrapLon, boolean extendedInfo, boolean superseded) {
 		ObsEqkRupture rup = null;
 
 		// Retrieve the entry
@@ -675,9 +676,11 @@ public class ComcatLocalCatalog {
 
 		// Visit each event
 
+		String productType = null;
+
 		visitEventList (visitor, exclude_id, startTime, endTime,
 			minDepth, maxDepth, region, wrapLon, extendedInfo,
-			minMag);
+			minMag, productType);
 
 		// Return the list
 		
@@ -699,13 +702,14 @@ public class ComcatLocalCatalog {
 	 * @param wrapLon = Desired longitude range: false = -180 to 180; true = 0 to 360.
 	 * @param extendedInfo = True to return extended information, see eventToObsRup below.
 	 * @param minMag = Minimum magnitude, or -10.0 for no minimum.
+	 * @param productType = Required product type, or null if none (ignored).
 	 * @return
 	 * Returns the result code from the last call to the visitor.
 	 * Note: As a special case, if endTime == startTime, then the end time is the current time.
 	 */
 	public int visitEventList (ComcatVisitor visitor, String exclude_id, long startTime, long endTime,
 			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, boolean extendedInfo,
-			double minMag) {
+			double minMag, String productType) {
 
 		// Check the visitor
 
@@ -1308,7 +1312,7 @@ public class ComcatLocalCatalog {
 
 				// Get the rupture
 
-				ObsEqkRupture rup = local_catalog.fetchEvent (event_id, false, true);
+				ObsEqkRupture rup = local_catalog.fetchEvent (event_id, false, true, false);
 
 				// Display its information
 
@@ -1382,7 +1386,7 @@ public class ComcatLocalCatalog {
 
 				// Get the rupture
 
-				ObsEqkRupture rup = local_catalog.fetchEvent (event_id, false, true);
+				ObsEqkRupture rup = local_catalog.fetchEvent (event_id, false, true, false);
 
 				// Display its information
 
@@ -1479,7 +1483,7 @@ public class ComcatLocalCatalog {
 
 				// Get the rupture
 
-				ObsEqkRupture rup = local_catalog.fetchEvent (event_id, false, true);
+				ObsEqkRupture rup = local_catalog.fetchEvent (event_id, false, true, false);
 
 				// Display its information
 

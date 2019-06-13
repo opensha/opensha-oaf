@@ -27,6 +27,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import gov.usgs.earthquake.event.JsonEvent;
 
 import org.opensha.commons.geo.GeoTools;
 import org.opensha.commons.geo.Location;
@@ -353,13 +354,14 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 	 * @param eventID = Earthquake event id.
 	 * @param wrapLon = Desired longitude range: false = -180 to 180; true = 0 to 360.
 	 * @param extendedInfo = True to return extended information, see eventToObsRup below.
+	 * @param superseded = True to include superseded and deletion products in the geojson.
 	 * @return
 	 * The return value can be null if the event could not be obtained.
 	 * A null return means the event is either not found or deleted in Comcat.
 	 * A ComcatException means that there was an error accessing Comcat.
 	 */
 	@Override
-	public ObsEqkRupture fetchEvent (String eventID, boolean wrapLon, boolean extendedInfo) {
+	public ObsEqkRupture fetchEvent (String eventID, boolean wrapLon, boolean extendedInfo, boolean superseded) {
 
 		// Initialize HTTP statuses
 
@@ -389,7 +391,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 			// Fetch event from local catalog, or null if none
 
-			ObsEqkRupture locrup = local_catalog.fetchEvent (eventID, wrapLon, extendedInfo);
+			ObsEqkRupture locrup = local_catalog.fetchEvent (eventID, wrapLon, extendedInfo, superseded);
 
 			// Set up resulting HTTP status
 
@@ -404,7 +406,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 		// Pass thru to superclass
 
-		return super.fetchEvent (eventID, wrapLon, extendedInfo);
+		return super.fetchEvent (eventID, wrapLon, extendedInfo, superseded);
 	}
 
 
@@ -422,6 +424,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 	 * @param wrapLon = Desired longitude range: false = -180 to 180; true = 0 to 360.
 	 * @param extendedInfo = True to return extended information, see eventToObsRup below.
 	 * @param minMag = Minimum magnitude, or -10.0 for no minimum.
+	 * @param productType = Required product type, or null if none.
 	 * @param limit_per_call = Maximum number of events to fetch in a single call to Comcat, or 0 for default.
 	 * @param max_calls = Maximum number of calls to ComCat, or 0 for default.
 	 * @return
@@ -434,7 +437,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 	@Override
 	public int visitEventList (ComcatVisitor visitor, String exclude_id, long startTime, long endTime,
 			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, boolean extendedInfo,
-			double minMag, int limit_per_call, int max_calls) {
+			double minMag, String productType, int limit_per_call, int max_calls) {
 
 		// Initialize HTTP statuses
 
@@ -482,7 +485,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 			// Do the local query
 
 			int result = local_catalog.visitEventList (visitor, exclude_id, startTime, endTime,
-				minDepth, maxDepth, region, wrapLon, extendedInfo, minMag);
+				minDepth, maxDepth, region, wrapLon, extendedInfo, minMag, productType);
 
 			// Set up resulting HTTP status
 
@@ -495,7 +498,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 		return super.visitEventList (visitor, exclude_id, startTime, endTime,
 			minDepth, maxDepth, region, wrapLon, extendedInfo,
-			minMag, limit_per_call, max_calls);
+			minMag, productType, limit_per_call, max_calls);
 	}
 
 
@@ -1771,6 +1774,206 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				for (int i = 0; i < n_status; ++i) {
 					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
 				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #14
+		// Command format:
+		//  test14  f_use_prod  f_use_feed  event_id  min_days  max_days  radius_km  min_mag  product_type  limit_per_call
+		// Fetch information for an event, and display it.
+		// Then fetch the event list for a circle surrounding the hypocenter,
+		// for the specified interval in days after the origin time,
+		// excluding the event itself.
+		// The adjustable limit per call can test the multi-fetch logic.
+		// Same as test #8 except filters by product type.
+
+		if (args[0].equalsIgnoreCase ("test14")) {
+
+			// Nine additional arguments
+
+			if (args.length != 10) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test14' subcommand");
+				return;
+			}
+
+			try {
+
+				boolean f_use_prod = Boolean.parseBoolean (args[1]);
+				boolean f_use_feed = Boolean.parseBoolean (args[2]);
+				String event_id = args[3];
+				double min_days = Double.parseDouble (args[4]);
+				double max_days = Double.parseDouble (args[5]);
+				double radius_km = Double.parseDouble (args[6]);
+				double min_mag = Double.parseDouble (args[7]);
+				String product_type = args[8];
+				int limit_per_call = Integer.parseInt(args[9]);
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod, f_use_feed);
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+				long rup_time = rup.getOriginTime();
+				Location hypo = rup.getHypocenterLocation();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				// Say hello
+
+				System.out.println ("Fetching event list");
+				System.out.println ("min_days = " + min_days);
+				System.out.println ("max_days = " + max_days);
+				System.out.println ("radius_km = " + radius_km);
+				System.out.println ("min_mag = " + min_mag);
+				System.out.println ("product_type = " + product_type);
+				System.out.println ("limit_per_call = " + limit_per_call);
+
+				// The list of ruptures we are going to build
+
+				final ObsEqkRupList rup_list = new ObsEqkRupList();
+
+				// The visitor that builds the list
+
+				ComcatVisitor visitor = new ComcatVisitor() {
+					@Override
+					public int visit (ObsEqkRupture rup, JsonEvent geojson) {
+						rup_list.add(rup);
+						return 0;
+					}
+				};
+
+				// Construct the Region
+
+				SphRegionCircle region = new SphRegionCircle (new SphLatLon(hypo), radius_km);
+
+				// Calculate the times
+
+				long startTime = rup_time + (long)(min_days*day_millis);
+				long endTime = rup_time + (long)(max_days*day_millis);
+
+				// Call Comcat
+
+				double minDepth = DEFAULT_MIN_DEPTH;
+				double maxDepth = DEFAULT_MAX_DEPTH;
+				boolean wrapLon = false;
+				boolean extendedInfo = false;
+				int max_calls = 0;
+
+				accessor.visitEventList (visitor, rup_event_id, startTime, endTime,
+					minDepth, maxDepth, region, wrapLon, extendedInfo,
+					min_mag, product_type, limit_per_call, max_calls);
+
+				// Display the information
+
+				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
+
+				int n_status = accessor.get_http_status_count();
+				for (int i = 0; i < n_status; ++i) {
+					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #15
+		// Command format:
+		//  test15  f_use_prod  f_use_feed  event_id  superseded
+		// Fetch information for an event, and display it.
+		// Then display the geojson for the event.
+		// Same as test #9 except can display superseded and deleted products.
+
+		if (args[0].equalsIgnoreCase ("test15")) {
+
+			// Four additional arguments
+
+			if (args.length != 5) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test15' subcommand");
+				return;
+			}
+
+			boolean f_use_prod = Boolean.parseBoolean (args[1]);
+			boolean f_use_feed = Boolean.parseBoolean (args[2]);
+			String event_id = args[3];
+			boolean superseded = Boolean.parseBoolean (args[4]);
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod, f_use_feed);
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true, superseded);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = extendedInfoToMap (rup, EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = idsToList (eimap.get (PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+				System.out.println (GeoJsonUtils.jsonObjectToString (accessor.get_last_geojson()));
 
 			} catch (Exception e) {
 				e.printStackTrace();
