@@ -7,6 +7,7 @@ import org.opensha.oaf.aafs.entity.LogEntry;
 import org.opensha.oaf.aafs.entity.CatalogSnapshot;
 import org.opensha.oaf.aafs.entity.TimelineEntry;
 import org.opensha.oaf.aafs.entity.AliasFamily;
+import org.opensha.oaf.aafs.entity.RelayItem;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -92,6 +93,14 @@ public class ExGeneratePDLReport extends ServerExecTask {
 			sg.timeline_sup.next_auto_timeline (tstatus);
 			return RESCODE_TIMELINE_TASK_MISMATCH;
 		}
+
+		// Skip the operation if this is a secondary server
+
+		//if (!( sg.pdl_sup.is_pdl_primary() )) {
+		//	sg.timeline_sup.next_auto_timeline (tstatus);
+		//	return RESCODE_PDL_SECONDARY;
+		//}
+
 
 		//--- Find most recent forecast
 
@@ -315,6 +324,16 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		} else {
 			sg.log_sup.report_pdl_send_ok (tstatus, productCode);
 		}
+
+		// Write the relay item
+
+		sg.relay_sup.submit_pdl_relay_item (
+			pdl_tstatus.forecast_mainshock.get_pdl_relay_id(),		// event_id
+			sg.task_disp.get_time(),								// relay_time
+			true,													// f_force
+			RiPDLCompletion.RIPDL_ACT_FORECAST_PDL,					// ripdl_action
+			tstatus.last_forecast_lag								// ripdl_forecast_lag
+		);
 
 		//--- Final steps
 

@@ -2,6 +2,7 @@ package org.opensha.oaf.pdl;
 
 import java.util.Map;
 import java.util.List;
+import java.util.Date;
 
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
@@ -18,6 +19,8 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
+
+import org.opensha.oaf.util.SimpleUtils;
 
 import gov.usgs.earthquake.distribution.ProductSender;
 import gov.usgs.earthquake.distribution.SocketProductSender;
@@ -370,6 +373,294 @@ public class PDLCodeChooserOaf {
 
 
 
+	// Delete old OAF products associated with an event.
+	// Parameters:
+	//  f_prod = True to read from prod-Comcat, false to read from dev-Comcat,
+	//           null to read from the configured PDL destination.
+	//  geojson = GeoJSON for the event, or null if not available.  If not supplied,
+	//   or if f_gj_prod does not correspond to the PDL destination, then this
+	//   function retrieves the geojson from Comcat.
+	//  f_gj_prod = True if geojson was retrieved from Comcat-production, false if it
+	//   was retrieved from Comcat-development.  This is only used if geojson is non-null.
+	//  queryID = Event ID used to query Comcat.
+	//  isReviewed = True to set reviewed flag on the delete products.
+	//  cutoff_time = Cutoff time in milliseconds since the epoch, or 0L if none.
+	// Returns true if products were delete, false if not.
+	// If cutoff_time > 0L, then all products are deleted if the most recent product
+	//  was updated before cutoff_time.  If cutoff_time == 0L then all products are
+	//  deleted unconditionally.
+	// Note: Throws ComcatException if Comcat access error.  Throws Exception if PDL
+	//  error.  It is recommended that any exception be considered a transient condition.
+
+	public static boolean deleteOldOafProducts (Boolean f_prod,
+			JSONObject geojson, boolean f_gj_prod, String queryID,
+			boolean isReviewed, long cutoff_time) throws Exception {
+
+		// Server configuration
+
+		ServerConfig server_config = new ServerConfig();
+
+		// Get flag indicating if we should read back products from production
+
+		boolean f_use_prod = server_config.get_is_pdl_readback_prod();
+
+		if (f_prod != null) {
+			f_use_prod = f_prod.booleanValue();
+		}
+
+		// Get the geojson, reading from Comcat if necessary
+
+		JSONObject my_geojson = geojson;
+
+		if (f_gj_prod != f_use_prod) {
+			my_geojson = null;
+		}
+
+		if (my_geojson == null) {
+		
+			// Get the accessor
+
+			ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod);
+
+			// Try to retrieve the event
+
+			ObsEqkRupture rup = accessor.fetchEvent (queryID, false, true);
+
+			// If not found, nothing to delete
+
+			if (rup == null) {
+				return false;
+			}
+
+			// Get the geojson from the fetch (must allow for the possibility this is null)
+
+			my_geojson = accessor.get_last_geojson();
+		}
+
+		// If no geojson, nothing to delete
+
+		if (my_geojson == null) {
+			return false;
+		}
+
+		// Need to have event net, code, ids, and time
+
+		String event_net = GeoJsonUtils.getNet (my_geojson);
+		String event_code = GeoJsonUtils.getCode (my_geojson);
+		String event_ids = GeoJsonUtils.getIds (my_geojson);
+		Date event_time = GeoJsonUtils.getTime (my_geojson);
+
+		if ( event_net == null || event_net.isEmpty() 
+			|| event_code == null || event_code.isEmpty()
+			|| event_ids == null || event_ids.isEmpty() || event_time == null ) {
+			
+			return false;
+		}
+
+		// Get the list of IDs for this event, with the authorative id first
+
+		List<String> idlist = ComcatOAFAccessor.idsToList (event_ids, event_net + event_code);
+
+		// Get the list of OAF products
+
+		List<ComcatOAFProduct> oafProducts = ComcatOAFProduct.make_list_from_gj (my_geojson);
+
+		// Index of the most recent product, with correct source
+
+		int ix_recent = -1;
+
+		// Index of the most recent product, with correct source and valid code
+
+		int ix_valid = -1;
+
+		// Loop over products to find indexes ...
+
+		for (int k = 0; k < oafProducts.size(); ++k) {
+			ComcatOAFProduct oafProduct = oafProducts.get (k);
+
+			// If the product is for our source ...
+
+			if (oafProduct.sourceID.equals (server_config.get_pdl_oaf_source())) {
+
+				// Update most recent product
+
+				if (ix_recent == -1 || oafProduct.updateTime > oafProducts.get(ix_recent).updateTime) {
+					ix_recent = k;
+				}
+
+				// If the product has a valid code ...
+
+				if (idlist.contains (oafProduct.eventID)) {
+
+					// Update most recent product with valid code
+
+					if (ix_valid == -1 || oafProduct.updateTime > oafProducts.get(ix_valid).updateTime) {
+						ix_valid = k;
+					}
+				}
+			}
+		}
+
+		// If no products for our source, nothing to delete
+
+		if (ix_recent == -1) {
+			return false;
+		}
+
+		// If not too old, nothing to delete
+
+		if (cutoff_time > 0L) {
+			if (oafProducts.get(ix_recent).updateTime >= cutoff_time) {
+				return false;
+			}
+		}
+
+		// Delete all OAF products from our source
+
+		deleteOafProducts (oafProducts, -1, event_net, event_code, isReviewed);
+		return true;
+	}
+
+
+
+
+	// Check for existence of old OAF products associated with an event.
+	// Parameters:
+	//  f_prod = True to read from prod-Comcat, false to read from dev-Comcat,
+	//           null to read from the configured PDL destination.
+	//  geojson = GeoJSON for the event, or null if not available.  If not supplied,
+	//   or if f_gj_prod does not correspond to the PDL destination, then this
+	//   function retrieves the geojson from Comcat.
+	//  f_gj_prod = True if geojson was retrieved from Comcat-production, false if it
+	//   was retrieved from Comcat-development.  This is only used if geojson is non-null.
+	//  queryID = Event ID used to query Comcat.
+	// Returns: The update time of the most recent OAF product, in milliseconds since the
+	//  epoch, or 0L if there is no existing OAF product.
+	// Note: Throws ComcatException if Comcat access error.  It is recommended that
+	//  any exception be considered a transient condition.
+
+	public static long checkOldOafProducts (Boolean f_prod,
+			JSONObject geojson, boolean f_gj_prod, String queryID) {
+
+		// Server configuration
+
+		ServerConfig server_config = new ServerConfig();
+
+		// Get flag indicating if we should read back products from production
+
+		boolean f_use_prod = server_config.get_is_pdl_readback_prod();
+
+		if (f_prod != null) {
+			f_use_prod = f_prod.booleanValue();
+		}
+
+		// Get the geojson, reading from Comcat if necessary
+
+		JSONObject my_geojson = geojson;
+
+		if (f_gj_prod != f_use_prod) {
+			my_geojson = null;
+		}
+
+		if (my_geojson == null) {
+		
+			// Get the accessor
+
+			ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod);
+
+			// Try to retrieve the event
+
+			ObsEqkRupture rup = accessor.fetchEvent (queryID, false, true);
+
+			// If not found, no product exists
+
+			if (rup == null) {
+				return 0L;
+			}
+
+			// Get the geojson from the fetch (must allow for the possibility this is null)
+
+			my_geojson = accessor.get_last_geojson();
+		}
+
+		// If no geojson, no product exists
+
+		if (my_geojson == null) {
+			return 0L;
+		}
+
+		// Need to have event net, code, ids, and time
+
+		String event_net = GeoJsonUtils.getNet (my_geojson);
+		String event_code = GeoJsonUtils.getCode (my_geojson);
+		String event_ids = GeoJsonUtils.getIds (my_geojson);
+		Date event_time = GeoJsonUtils.getTime (my_geojson);
+
+		if ( event_net == null || event_net.isEmpty() 
+			|| event_code == null || event_code.isEmpty()
+			|| event_ids == null || event_ids.isEmpty() || event_time == null ) {
+			
+			return 0L;
+		}
+
+		// Get the list of IDs for this event, with the authorative id first
+
+		List<String> idlist = ComcatOAFAccessor.idsToList (event_ids, event_net + event_code);
+
+		// Get the list of OAF products
+
+		List<ComcatOAFProduct> oafProducts = ComcatOAFProduct.make_list_from_gj (my_geojson);
+
+		// Index of the most recent product, with correct source
+
+		int ix_recent = -1;
+
+		// Index of the most recent product, with correct source and valid code
+
+		int ix_valid = -1;
+
+		// Loop over products to find indexes ...
+
+		for (int k = 0; k < oafProducts.size(); ++k) {
+			ComcatOAFProduct oafProduct = oafProducts.get (k);
+
+			// If the product is for our source ...
+
+			if (oafProduct.sourceID.equals (server_config.get_pdl_oaf_source())) {
+
+				// Update most recent product
+
+				if (ix_recent == -1 || oafProduct.updateTime > oafProducts.get(ix_recent).updateTime) {
+					ix_recent = k;
+				}
+
+				// If the product has a valid code ...
+
+				if (idlist.contains (oafProduct.eventID)) {
+
+					// Update most recent product with valid code
+
+					if (ix_valid == -1 || oafProduct.updateTime > oafProducts.get(ix_valid).updateTime) {
+						ix_valid = k;
+					}
+				}
+			}
+		}
+
+		// If no products for our source, no product exists
+
+		if (ix_recent == -1) {
+			return 0L;
+		}
+
+		// Return the time of the most recent product
+
+		return oafProducts.get(ix_recent).updateTime;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -406,11 +697,11 @@ public class PDLCodeChooserOaf {
 
 				int pdl_enable = Integer.parseInt (args[1]);
 				String suggestedCode = args[2];
-				Long reviewOverwrite = Long.parseLong (args[3]);
+				long reviewOverwrite = Long.parseLong (args[3]);
 				String queryID = args[4];
 				String eventNetwork = args[5];
 				String eventCode = args[6];
-				Boolean isReviewed = Boolean.parseBoolean (args[7]);
+				boolean isReviewed = Boolean.parseBoolean (args[7]);
 
 				// Set the PDL enable code
 
@@ -434,6 +725,133 @@ public class PDLCodeChooserOaf {
 
 				System.out.println ((chosen_code == null) ? "<null>" : chosen_code);
 
+			}
+
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  pdl_enable  query_id
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Then call checkOldOafProducts and display the result.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("PDLCodeChooserOaf : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				String query_id = args[2];
+
+				// Set the PDL enable code
+
+				if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+					System.out.println ("Invalid pdl_enable = " + pdl_enable);
+					return;
+				}
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+				// Say hello
+
+				System.out.println ("PDL enable: " + pdl_enable);
+				System.out.println ("Query ID: " + query_id);
+				System.out.println ("");
+
+				// Make the call
+
+				JSONObject geojson = null;
+				boolean f_gj_prod = true;
+
+				long result = PDLCodeChooserOaf.checkOldOafProducts (null,
+					geojson, f_gj_prod, query_id);
+
+				// Display result
+
+				System.out.println ("PDLCodeChooserOaf.checkOldOafProducts returned: " + SimpleUtils.time_raw_and_string(result));
+			}
+
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  pdl_enable  query_id  isReviewed  cutoff_time
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Then call deleteOldOafProducts and display the result.
+		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+		// Times before 1970-01-01 are converted to zero.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// 4 additional arguments
+
+			if (args.length != 5) {
+				System.err.println ("PDLCodeChooserOaf : Invalid 'test3' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				String query_id = args[2];
+				boolean isReviewed = Boolean.parseBoolean (args[3]);
+				long cutoff_time = SimpleUtils.string_to_time (args[4]);
+				if (cutoff_time < 0L) {
+					cutoff_time = 0L;
+				}
+
+				// Set the PDL enable code
+
+				if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+					System.out.println ("Invalid pdl_enable = " + pdl_enable);
+					return;
+				}
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+				// Say hello
+
+				System.out.println ("PDL enable: " + pdl_enable);
+				System.out.println ("Query ID: " + query_id);
+				System.out.println ("Review status: " + isReviewed);
+				System.out.println ("Cutoff time: " + SimpleUtils.time_raw_and_string(cutoff_time));
+				System.out.println ("");
+
+				// Make the call
+
+				JSONObject geojson = null;
+				boolean f_gj_prod = true;
+
+				boolean result = PDLCodeChooserOaf.deleteOldOafProducts (null,
+					geojson, f_gj_prod, query_id, isReviewed, cutoff_time);
+
+				// Display result
+
+				System.out.println ("PDLCodeChooserOaf.deleteOldOafProducts returned: " + result);
 			}
 
 			catch (Exception e) {

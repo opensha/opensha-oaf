@@ -647,8 +647,8 @@ public class ComcatOAFProduct {
 					System.out.println (eventList.get(i));
 				}
 
-				if (n < nmax) {
-					System.out.println ("Plus " + (nmax - n) + "more");
+				if (n < eventList.size()) {
+					System.out.println ("Plus " + (eventList.size() - n) + " more");
 				}
 
 			}

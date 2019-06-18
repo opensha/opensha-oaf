@@ -7,6 +7,7 @@ import org.opensha.oaf.aafs.entity.LogEntry;
 import org.opensha.oaf.aafs.entity.CatalogSnapshot;
 import org.opensha.oaf.aafs.entity.TimelineEntry;
 import org.opensha.oaf.aafs.entity.AliasFamily;
+import org.opensha.oaf.aafs.entity.RelayItem;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -248,6 +249,10 @@ public class ExGenerateForecast extends ServerExecTask {
 				+ "mainshock_event_id = " + fcmain.mainshock_event_id + "\n"
 				+ "mainshock_mag = " + fcmain.mainshock_mag);
 
+			// Delete OAF products and write relay item
+
+			sg.pdl_sup.delete_oaf_products (fcmain, RiPDLCompletion.RIPDL_ACT_SKIPPED_ANALYST, next_forecast_lag);
+
 			// Write the new timeline entry
 
 			sg.timeline_sup.append_timeline (task, tstatus);
@@ -319,6 +324,10 @@ public class ExGenerateForecast extends ServerExecTask {
 					+ "fcmain.mainshock_lat = " + fcmain.mainshock_lat + "\n"
 					+ "fcmain.mainshock_lon = " + fcmain.mainshock_lon + "\n"
 					+ "fcmain.mainshock_mag = " + fcmain.mainshock_mag);
+
+				// Delete OAF products and write relay item
+
+				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLCompletion.RIPDL_ACT_SKIPPED_INTAKE, next_forecast_lag);
 
 				// Write the new timeline entry
 
@@ -433,6 +442,10 @@ public class ExGenerateForecast extends ServerExecTask {
 						separation[0],
 						separation[1]);
 
+				// Delete OAF products and write relay item
+
+				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLCompletion.RIPDL_ACT_SKIPPED_SHADOWED, next_forecast_lag);
+
 				// Write the new timeline entry
 
 				sg.timeline_sup.append_timeline (task, tstatus);
@@ -528,6 +541,10 @@ public class ExGenerateForecast extends ServerExecTask {
 							forecast_results.catalog_max_event_id,
 							fcmain.mainshock_mag,
 							forecast_results.catalog_max_mag);
+
+					// Delete OAF products and write relay item
+
+					sg.pdl_sup.delete_oaf_products (fcmain, RiPDLCompletion.RIPDL_ACT_SKIPPED_FORESHOCK, next_forecast_lag);
 
 					// Write the new timeline entry
 
@@ -639,6 +656,16 @@ public class ExGenerateForecast extends ServerExecTask {
 					} else {
 						sg.log_sup.report_pdl_send_ok (tstatus, productCode);
 					}
+
+					// Write the relay item
+
+					sg.relay_sup.submit_pdl_relay_item (
+						tstatus.forecast_mainshock.get_pdl_relay_id(),			// event_id
+						sg.task_disp.get_time(),								// relay_time
+						true,													// f_force
+						RiPDLCompletion.RIPDL_ACT_FORECAST_PDL,					// ripdl_action
+						tstatus.last_forecast_lag								// ripdl_forecast_lag
+					);
 				}
 			}
 		}

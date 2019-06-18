@@ -10,6 +10,7 @@ import org.opensha.oaf.aafs.entity.RelayItem;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
+import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.oaf.rj.CompactEqkRupList;
@@ -156,13 +157,66 @@ public class RelaySupport extends ServerComponent {
 
 
 
-
 	//----- Thread management -----
 
 
 	// The thread for pulling relay items from the partner server.
 
 	private RelayThread relay_thread;
+
+
+
+
+	//----- PDL relay item support -----
+
+
+
+
+	// Submit a PDL relay item.
+	// Parmeters:
+	//  event_id = Event id for the pdl operation (this function handles the conversion).
+	//  relay_time = Time of this PDL action.
+	//  f_force = True to force this item to be written, increasing the relay time if needed.
+	//  ripdl_action = Action code, see RIPDL_ACT_XXXXX in class RiPDLCompletion.
+	//  ripdl_forecast_lag = Forecast lag, or -1L if unknown or none.
+	// Returns the new RelayItem if it was added to the database.
+	// Returns null if not added to the database (because a newer one alreay exists).
+	// Remark: The appropriate event id to use is the event id to which the OAF product is
+	// associated, that is, the eventsource + eventsourcecode from the PDL send operation.
+
+	public RelayItem submit_pdl_relay_item (String event_id, long relay_time, boolean f_force,
+				int ripdl_action, long ripdl_forecast_lag) {
+		
+		RiPDLCompletion ripdl_payload = new RiPDLCompletion();
+		ripdl_payload.setup (ripdl_action, ripdl_forecast_lag);
+
+		RelayItem result = RelayItem.submit_relay_item (
+			event_id_to_pdl_relay_id (event_id),			// relay_id
+			relay_time,										// relay_time
+			ripdl_payload.marshal_relay(),					// details
+			f_force);										// f_force
+
+		int log_op = ((result == null) ? 2 : 1);
+		long log_relay_time = ((result == null) ? relay_time : (result.get_relay_time()));
+		sg.log_sup.report_pdl_relay_set (log_op, event_id, log_relay_time, ripdl_payload);
+	
+		return result;
+	}
+
+
+
+	// Get a PDL relay item.
+	// Parameters:
+	//  event_ids = Event ids to search for.
+	// Returns the relay item, if one is found.
+	// Returns null if no relay item is found.
+	// If more than one event_id is given, returns the newest relay item for any of them.
+
+	public RelayItem get_pdl_relay_item (String... event_ids) {
+		String[] relay_ids = event_ids_to_pdl_relay_ids (event_ids);
+		RelayItem result = RelayItem.get_first_relay_item (true, 0L, 0L, relay_ids);
+		return result;
+	}
 
 
 

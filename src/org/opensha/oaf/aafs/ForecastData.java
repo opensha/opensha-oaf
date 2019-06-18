@@ -299,7 +299,8 @@ public class ForecastData {
 		String suggestedCode = eventID;
 		long reviewOverwrite = (isReviewed ? 0L : 1L);		// don't overwrite reviewed forecast if we're not reviewed
 		String queryID = mainshock.mainshock_event_id;
-		JSONObject geojson = null;
+		//JSONObject geojson = null;
+		JSONObject geojson = mainshock.mainshock_geojson;	// it's OK if this is null
 		boolean f_gj_prod = true;
 		String chosenCode = PDLCodeChooserOaf.chooseOafCode (suggestedCode, reviewOverwrite,
 			geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed);

@@ -23,6 +23,8 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.commons.geo.Location;
 
+import org.json.simple.JSONObject;
+
 /**
  * Mainshock properties a forecast.
  * Author: Michael Barall 07/29/2018.
@@ -176,10 +178,12 @@ public class ForecastMainshock {
 		// Fetch parameters from Comcat
 
 		ObsEqkRupture rup;
+		JSONObject my_geojson;
 
 		try {
 			ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 			rup = accessor.fetchEvent(query_event_id, false, true);		// request extended info
+			my_geojson = accessor.get_last_geojson();
 		} catch (Exception e) {
 			throw new ComcatException ("ForecastMainshock.fetch_mainshock_params: Comcat exception: query_event_id = " + ((query_event_id == null) ? "null" : query_event_id), e);
 		}
@@ -189,8 +193,15 @@ public class ForecastMainshock {
 		}
 
 		set_eqk_rupture (rup);
+		mainshock_geojson = my_geojson;
 		mainshock_avail = true;
 		return;
+	}
+
+	// Get the id used in relay items to identify pdl operations on this event.
+
+	public String get_pdl_relay_id () {
+		return mainshock_event_id;
 	}
 
 
@@ -201,10 +212,16 @@ public class ForecastMainshock {
 
 	public String timeline_id = null;
 
+	// The GeoJSON for the event, or null if none.
+	// Note: This parameter is not marshaled/unmarshaled.
+
+	public JSONObject mainshock_geojson = null;
+
 	// Set transient parameters to default.
 
 	public void set_default_transient_params () {
 		timeline_id = null;
+		mainshock_geojson = null;
 		return;
 	}
 
@@ -271,6 +288,7 @@ public class ForecastMainshock {
 		mainshock_lat = lat;
 		mainshock_lon = lon;
 		mainshock_depth = depth;
+		mainshock_geojson = null;
 		return;
 	}
 
@@ -288,6 +306,7 @@ public class ForecastMainshock {
 		mainshock_lon = other.mainshock_lon;
 		mainshock_depth = other.mainshock_depth;
 		timeline_id = other.timeline_id;
+		mainshock_geojson = other.mainshock_geojson;
 		return;
 	}
 
@@ -316,6 +335,10 @@ public class ForecastMainshock {
 
 		if (timeline_id != null) {
 			result.append ("timeline_id = " + timeline_id + "\n");
+		}
+
+		if (mainshock_geojson != null) {
+			result.append ("mainshock_geojson is available" + "\n");
 		}
 
 		return result.toString();

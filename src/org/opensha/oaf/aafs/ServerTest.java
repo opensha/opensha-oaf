@@ -4269,6 +4269,195 @@ public class ServerTest {
 
 
 
+	// Test #74 - Use relay support to submit a pdl relay item.
+
+	public static void test74(String[] args) throws Exception {
+
+		// 6 additional arguments
+
+		if (args.length != 7) {
+			System.err.println ("ServerTest : Invalid 'test74' or 'rsup_pdl_submit' subcommand");
+			return;
+		}
+
+		String logfile = args[1];		// can be "-" for none
+		String event_id = args[2];
+		long relay_time = Long.parseLong (args[3]);
+		boolean f_force = Boolean.parseBoolean (args[4]);
+		int ripdl_action = Integer.parseInt (args[5]);
+		long ripdl_forecast_lag = Long.parseLong (args[6]);
+
+		String my_logfile = null;
+		if (!( logfile.equals ("-") )) {
+			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+			TimeSplitOutputStream sum_tsop = TimeSplitOutputStream.make_tsop (my_logfile, 0L);
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Install the log file
+
+			dispatcher.set_summary_log_tsop (sum_tsop);
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Call relay support
+
+			RelayItem relit = sg.relay_sup.submit_pdl_relay_item (event_id, relay_time, f_force,
+				ripdl_action, ripdl_forecast_lag);
+
+			// Display result
+
+			if (relit == null) {
+				System.out.println ("submit_pdl_relay_item returned null");
+			} else {
+				System.out.println (relit.dumpString());
+
+				// Unmarshal the payload and display it
+
+				RiPDLCompletion payload = new RiPDLCompletion();
+				payload.unmarshal_relay (relit);
+				System.out.println ("RiPDLCompletion");
+				System.out.println ("\tripdl_action = " + payload.ripdl_action + " (" + payload.get_ripdl_action_as_string() + ")");
+				System.out.println ("\tripdl_forecast_lag = " + payload.get_ripdl_forecast_lag_as_string());
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #75 - Use relay support to get a pdl relay item.
+
+	public static void test75(String[] args) throws Exception {
+
+		// 1 or more additional arguments
+
+		if (args.length < 2) {
+			System.err.println ("ServerTest : Invalid 'test75' or 'rsup_pdl_get' subcommand");
+			return;
+		}
+
+		String[] event_ids = Arrays.copyOfRange (args, 1, args.length);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Call relay support
+
+			RelayItem relit = sg.relay_sup.get_pdl_relay_item (event_ids);
+
+			// Display result
+
+			if (relit == null) {
+				System.out.println ("get_pdl_relay_item returned null");
+			} else {
+				System.out.println (relit.dumpString());
+
+				// Unmarshal the payload and display it
+
+				RiPDLCompletion payload = new RiPDLCompletion();
+				payload.unmarshal_relay (relit);
+				System.out.println ("RiPDLCompletion");
+				System.out.println ("\tripdl_action = " + payload.ripdl_action + " (" + payload.get_ripdl_action_as_string() + ")");
+				System.out.println ("\tripdl_forecast_lag = " + payload.get_ripdl_forecast_lag_as_string());
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #76 - Use pdl support to delete OAF products.
+
+	public static void test76(String[] args) throws Exception {
+
+		// 4 additional arguments
+
+		if (args.length != 5) {
+			System.err.println ("ServerTest : Invalid 'test76' or 'psup_delete_oaf' subcommand");
+			return;
+		}
+
+		String logfile = args[1];		// can be "-" for none
+		String event_id = args[2];
+		int ripdl_action = Integer.parseInt (args[3]);
+		long ripdl_forecast_lag = Long.parseLong (args[4]);
+
+		String my_logfile = null;
+		if (!( logfile.equals ("-") )) {
+			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
+		}
+
+		// Direct operation to PDL-Development
+
+		ServerConfig server_config = new ServerConfig();
+		server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DEV;
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+			TimeSplitOutputStream sum_tsop = TimeSplitOutputStream.make_tsop (my_logfile, 0L);
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Install the log file
+
+			dispatcher.set_summary_log_tsop (sum_tsop);
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Fetch event
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (event_id);
+			System.out.println (fcmain.toString());
+
+			// Call pdl support
+
+			sg.pdl_sup.delete_oaf_products (fcmain, ripdl_action, ripdl_forecast_lag);
+		}
+
+		return;
+	}
+
+
+
+
 	// Test dispatcher.
 	
 	public static void main(String[] args) {
@@ -5522,6 +5711,59 @@ public class ServerTest {
 
 			try {
 				test73(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #74
+		// Command format:
+		//  test74  logfile  event_id  relay_time  f_force  ripdl_action  ripdl_forecast_lag
+		// Use relay support to submit a pdl relay item.
+		// Then display the item that was written.
+		// The logfile can be "-" for none.
+
+		if (args[0].equalsIgnoreCase ("test74") || args[0].equalsIgnoreCase ("rsup_pdl_submit")) {
+
+			try {
+				test74(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #75
+		// Command format:
+		//  test75  event_id...
+		// Use relay support to get a pdl relay item.
+		// Then display the returned item.
+		// If several event ids are given, retrieve the newest item for any of them.
+
+		if (args[0].equalsIgnoreCase ("test75") || args[0].equalsIgnoreCase ("rsup_pdl_get")) {
+
+			try {
+				test75(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #76
+		// Command format:
+		//  test76  logfile  event_id  ripdl_action  ripdl_forecast_lag
+		// Use pdl support to delete OAF products.
+		// The logfile can be "-" for none.
+
+		if (args[0].equalsIgnoreCase ("test76") || args[0].equalsIgnoreCase ("psup_delete_oaf")) {
+
+			try {
+				test76(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

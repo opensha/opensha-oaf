@@ -117,7 +117,8 @@ public class ServerComponent {
 	public static final int RESCODE_TIMELINE_PDL_BAD_CATALOG = 34;	// PDL send failed because unable to interpret catalog snapshot
 	public static final int RESCODE_TIMELINE_PDL_CAT_MISMATCH = 35;	// PDL send failed because of catalog snapshot parameter mismatch
 	public static final int RESCODE_TIMELINE_ID_INVALID = 36;		// Timeline ID does not have a valid form
-	public static final int RESCODE_MAX_NORMAL = 36;				// Maximum known normal result code
+	public static final int RESCODE_PDL_SECONDARY = 37;				// PDL operation skipped because this is a secondary server
+	public static final int RESCODE_MAX_NORMAL = 37;				// Maximum known normal result code
 
 	public static final int RESCODE_DELETE = 101;					// Delete current task (without logging it)
 	public static final int RESCODE_DELETE_TIMELINE_EXISTS = 102;	// Delete current task (without logging it), because timeline already exists
@@ -177,6 +178,7 @@ public class ServerComponent {
 		case RESCODE_TIMELINE_PDL_BAD_CATALOG: return "RESCODE_TIMELINE_PDL_BAD_CATALOG";
 		case RESCODE_TIMELINE_PDL_CAT_MISMATCH: return "RESCODE_TIMELINE_PDL_CAT_MISMATCH";
 		case RESCODE_TIMELINE_ID_INVALID: return "RESCODE_TIMELINE_ID_INVALID";
+		case RESCODE_PDL_SECONDARY: return "RESCODE_PDL_SECONDARY";
 
 		case RESCODE_DELETE: return "RESCODE_DELETE";
 		case RESCODE_DELETE_TIMELINE_EXISTS: return "RESCODE_DELETE_TIMELINE_EXISTS";

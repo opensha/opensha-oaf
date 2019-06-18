@@ -7,6 +7,7 @@ import org.opensha.oaf.aafs.entity.LogEntry;
 import org.opensha.oaf.aafs.entity.CatalogSnapshot;
 import org.opensha.oaf.aafs.entity.TimelineEntry;
 import org.opensha.oaf.aafs.entity.AliasFamily;
+import org.opensha.oaf.aafs.entity.RelayItem;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -15,9 +16,12 @@ import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.commons.data.comcat.ComcatException;
 import org.opensha.oaf.rj.CompactEqkRupList;
 
+import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 import org.opensha.oaf.pdl.PDLSender;
 import gov.usgs.earthquake.product.Product;
+
+import org.json.simple.JSONObject;
 
 
 /**
@@ -195,6 +199,74 @@ public class PDLSupport extends ServerComponent {
 		// For now, just assume primary
 
 		return true;
+	}
+
+
+
+
+	// Delete the OAF produts for an event.
+	// Parameters:
+	//  fcmain = Forecast mainshock structure, already filled in.
+	//  ripdl_action = Relay item action code, from RiPDLCompletion.RIPDL_ACT_XXXXX.
+	//                 It must be one of the codes associated with product deletion.
+	//  ripdl_forecast_lag = Forecast lag for this action, or -1L if unknown.
+	// If this is a primary machine, then this function:
+	// - Writes a relay item for the given action code.
+	// - Deletes all OAF products associated with the event.
+	// - Writes a log message.
+	// If an exception occurs during the deletion of OAF products, this function
+	//  absorbs the exception and doe not propagate it to hogher levels.
+	// If this is a secondary machine, the function does nothing.
+	// Note: Exceptions do not trigger any special retry logic.  The relay item is submitted
+	//  to the database before attempting the PDL deletion, so following an exception the
+	//  cleanup process should eventually finish the deletion.
+
+	public void delete_oaf_products (ForecastMainshock fcmain, int ripdl_action, long ripdl_forecast_lag) {
+
+		// If this is not primary, then do nothing
+
+		if (!( is_pdl_primary() )) {
+			return;
+		}
+
+		// Write the relay item
+
+		String event_id = fcmain.get_pdl_relay_id();
+		long relay_time = sg.task_disp.get_time();
+		boolean f_force = false;
+
+		RelayItem relit = sg.relay_sup.submit_pdl_relay_item (event_id, relay_time, f_force, ripdl_action, ripdl_forecast_lag);
+	
+		// Delete the old OAF products
+
+		boolean f_did;
+
+		try {
+			JSONObject geojson = fcmain.mainshock_geojson;	// it's OK if this is null
+			boolean f_gj_prod = true;
+			String queryID = fcmain.mainshock_event_id;
+			boolean isReviewed = false;
+			long cutoff_time = 0L;
+
+			f_did = PDLCodeChooserOaf.deleteOldOafProducts (null, geojson, f_gj_prod, queryID, isReviewed, cutoff_time);
+
+		} catch (Exception e) {
+
+			// Just log the exception and done
+
+			sg.log_sup.report_pdl_delete_exception (event_id, e);
+			return;
+		}
+
+		// Log successful deletion, if we deleted something
+
+		if (f_did) {
+			sg.log_sup.report_pdl_delete_ok (event_id);
+		}
+
+		// Done
+
+		return;
 	}
 
 

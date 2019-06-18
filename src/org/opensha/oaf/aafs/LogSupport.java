@@ -705,6 +705,57 @@ public class LogSupport extends ServerComponent {
 
 
 
+	// Report PDL relay item set.
+	// op = Operation code:
+	//  1 = Locally-generated relay item saved.
+	//  2 = Locally-generated relay item is stale.
+	//  3 = Remote relay item saved.
+
+	public void report_pdl_relay_set (int op, String event_id, long relay_time, RiPDLCompletion ripdl) {
+
+		String name = "RELAY-PDL-SET-UNKNOWN";
+
+		switch (op) {
+		case 1: name = "RELAY-PDL-SAVE"; break;
+		case 2: name = "RELAY-PDL-STALE"; break;
+		case 3: name = "RELAY-PDL-COPY"; break;
+		}
+
+		report_action (name,
+					event_id,
+					ripdl.get_ripdl_action_as_string (),
+					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time),
+					"forecast_lag = " + ripdl.get_ripdl_forecast_lag_as_string()
+					);
+		return;
+	}
+
+
+
+
+	// Report successful PDL delete of all OAF products for an event.
+
+	public void report_pdl_delete_ok (String event_id) {
+		report_action ("PDL-DELETE-OK",
+					"eventID = " + event_id);
+		return;
+	}
+
+
+
+
+	// Report PDL exception while attempting to delete all OAF products for an event.
+
+	public void report_pdl_delete_exception (String event_id, Exception e) {
+		report_action ("PDL-DELETE-EXCEPTION",
+					"eventID = " + event_id);
+		report_exception (e);
+		return;
+	}
+
+
+
+
 	//----- Construction -----
 
 
