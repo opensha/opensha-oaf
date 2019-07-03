@@ -51,6 +51,11 @@ import org.opensha.oaf.rj.OAFParameterSet;
  *  "poll_long_intake_gap" = String giving time gap between intake actions for the long polling cycle, in java.time.Duration format.
  *  "pdl_intake_max_age" = String giving maximum allowed age for PDL intake, in java.time.Duration format.
  *  "pdl_intake_max_future" = String giving maximum allowed time in future for PDL intake, in java.time.Duration format.
+ *  "removal_forecast_age" = String giving age at which forecasts should be removed from PDL, in java.time.Duration format.
+ *  "removal_update_skew" = String giving update time clock skew allowance for PDL forecasts, in java.time.Duration format.
+ *  "removal_lookback_time" = String giving maximum time before present to search for forecasts that need to be removed from PDL, in java.time.Duration format.
+ *  "removal_check_period" = String giving period for checking for forecasts that need to be removed from PDL, in java.time.Duration format.
+ *  "removal_retry_period" = String giving retry interval for checking for forecasts that need to be removed from PDL, in java.time.Duration format.
  *  "def_injectable_text" = String giving default value of injectable text for PDL JSON files, or "" for none.
  *	"adv_min_mag_bins" = [ Array giving a list of minimum magnitudes for which forecasts are generated, in increasing order.
  *		element = Real value giving minimum magnitude for the bin.
@@ -216,6 +221,31 @@ public class ActionConfigFile {
 
 	public long pdl_intake_max_future;
 
+	// Age at which forecasts should be removed from PDL.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long removal_forecast_age;
+
+	// Update time clock skew allowance for PDL forecasts.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long removal_update_skew;
+
+	// Maximum time before present to search for forecasts that need to be removed from PDL.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long removal_lookback_time;
+
+	// Period for checking for forecasts that need to be removed from PDL.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long removal_check_period;
+
+	// Retry interval for checking for forecasts that need to be removed from PDL.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long removal_retry_period;
+
 	// Default value of injectable text for PDL JSON files, or "" for none.
 
 	public String def_injectable_text;
@@ -311,6 +341,11 @@ public class ActionConfigFile {
 		poll_long_intake_gap = 0L;
 		pdl_intake_max_age = 0L;
 		pdl_intake_max_future = 0L;
+		removal_forecast_age = 0L;
+		removal_update_skew = 0L;
+		removal_lookback_time = 0L;
+		removal_check_period = 0L;
+		removal_retry_period = 0L;
 		def_injectable_text = "";
 		adv_min_mag_bins = new ArrayList<Double>();
 		adv_window_start_offs = new ArrayList<Long>();
@@ -432,6 +467,26 @@ public class ActionConfigFile {
 
 		if (!( is_valid_lag(pdl_intake_max_future) )) {
 			throw new RuntimeException("ActionConfigFile: Invalid pdl_intake_max_future: " + pdl_intake_max_future);
+		}
+
+		if (!( is_valid_lag(removal_forecast_age) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid removal_forecast_age: " + removal_forecast_age);
+		}
+
+		if (!( is_valid_lag(removal_update_skew) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid removal_update_skew: " + removal_update_skew);
+		}
+
+		if (!( is_valid_lag(removal_lookback_time) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid removal_lookback_time: " + removal_lookback_time);
+		}
+
+		if (!( is_valid_lag(removal_check_period) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid removal_check_period: " + removal_check_period);
+		}
+
+		if (!( is_valid_lag(removal_retry_period) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid removal_retry_period: " + removal_retry_period);
 		}
 
 		if (!( def_injectable_text != null )) {
@@ -577,6 +632,11 @@ public class ActionConfigFile {
 		result.append ("poll_long_intake_gap = " + Duration.ofMillis(poll_long_intake_gap).toString() + "\n");
 		result.append ("pdl_intake_max_age = " + Duration.ofMillis(pdl_intake_max_age).toString() + "\n");
 		result.append ("pdl_intake_max_future = " + Duration.ofMillis(pdl_intake_max_future).toString() + "\n");
+		result.append ("removal_forecast_age = " + Duration.ofMillis(removal_forecast_age).toString() + "\n");
+		result.append ("removal_update_skew = " + Duration.ofMillis(removal_update_skew).toString() + "\n");
+		result.append ("removal_lookback_time = " + Duration.ofMillis(removal_lookback_time).toString() + "\n");
+		result.append ("removal_check_period = " + Duration.ofMillis(removal_check_period).toString() + "\n");
+		result.append ("removal_retry_period = " + Duration.ofMillis(removal_retry_period).toString() + "\n");
 		result.append ("def_injectable_text = " + ((def_injectable_text == null) ? "null" : def_injectable_text) + "\n");
 
 		result.append ("adv_min_mag_bins = [" + "\n");
@@ -1068,6 +1128,11 @@ public class ActionConfigFile {
 		marshal_duration           (writer, "poll_long_intake_gap" , poll_long_intake_gap );
 		marshal_duration           (writer, "pdl_intake_max_age"   , pdl_intake_max_age   );
 		marshal_duration           (writer, "pdl_intake_max_future", pdl_intake_max_future);
+		marshal_duration           (writer, "removal_forecast_age" , removal_forecast_age );
+		marshal_duration           (writer, "removal_update_skew"  , removal_update_skew  );
+		marshal_duration           (writer, "removal_lookback_time", removal_lookback_time);
+		marshal_duration           (writer, "removal_check_period" , removal_check_period );
+		marshal_duration           (writer, "removal_retry_period" , removal_retry_period );
 		writer.marshalString       (        "def_injectable_text"  , def_injectable_text  );
 
 		writer.marshalDoubleCollection     ("adv_min_mag_bins"     , adv_min_mag_bins     );
@@ -1120,6 +1185,11 @@ public class ActionConfigFile {
 		poll_long_intake_gap  = unmarshal_duration           (reader, "poll_long_intake_gap" );
 		pdl_intake_max_age    = unmarshal_duration           (reader, "pdl_intake_max_age"   );
 		pdl_intake_max_future = unmarshal_duration           (reader, "pdl_intake_max_future");
+		removal_forecast_age  = unmarshal_duration           (reader, "removal_forecast_age" );
+		removal_update_skew   = unmarshal_duration           (reader, "removal_update_skew"  );
+		removal_lookback_time = unmarshal_duration           (reader, "removal_lookback_time");
+		removal_check_period  = unmarshal_duration           (reader, "removal_check_period" );
+		removal_retry_period  = unmarshal_duration           (reader, "removal_retry_period" );
 		def_injectable_text   = reader.unmarshalString       (        "def_injectable_text"  );
 
 		adv_min_mag_bins = new ArrayList<Double>();

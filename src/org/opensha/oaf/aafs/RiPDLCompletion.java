@@ -14,99 +14,72 @@ import org.opensha.oaf.aafs.entity.RelayItem;
 
 
 /**
- * Relay item payload for completion of PDL actions for the most recent forecast.
+ * Relay item payload for submission of forecasts to PDL.
  * Author: Michael Barall 05/14/2019.
  *
- * These items are generated when:
- * - A forecast is sent to PDL.
- * - A forecast is skipped (the OAF product may or may not be deleted).
- * - Cleanup discovers a previously-unknown OAF product.
- * - Cleanup deletes an OAF product.
+ * This items is generated when:
+ * - The primary server successfully sends a forecast to PDL.
+ * - The cleanup process finds an existing OAF product that has no matching item. 
+ *
+ * The relay_id should contain the authoritative event id.
+ *
+ * The existence of this item means that a forecast was sent to PDL, with an
+ * update time equal or close to the contained update time.
+ *
+ * This item can be used in two ways:
+ * - When a server transitions from secondary to primary, it can look for this item
+ *   to check if a forecast has already been sent.
+ * - When the cleanup process finds an earthquake with an existing OAF product,
+ *   it can look for this item to determine the update time, and skip that earthquake
+ *   if it is too young to be deleted, without doing a separate Comcat call.
+ *
+ * There is no need to retain items when ripdl_update_time is more than one year old
+ * (specifically, the value of ActionConfig.get_removal_forecast_age()), because forecasts
+ * older than that can be deleted from PDL based on their age.
  */
 public class RiPDLCompletion extends DBPayload {
 
 	//----- Constants and variables -----
 
 	// Action code, which specifies what PDL action was taken.
+	// Note: All action codes are 3 digits, so that the JSON-encoded form
+	// of this object has fixed length.
 
 	public int ripdl_action;
 
 	// If associated with a forecast, this is the time lag in milliseconds since the mainshock.
 	// The value -1L is used if no forecast lag is available.
+	// Note: An offset is added when the object is serialized, so that the
+	// JSON-encoded form of this object has fixed length.
 
 	public long ripdl_forecast_lag;
 
+	// The update time associated with the OAF product.
+	// It may vary slightly from the update time in PDL due to clock skew.
+	// Note: An offset is added when the object is serialized, so that the
+	// JSON-encoded form of this object has fixed length.
+
+	public long ripdl_update_time;
+
 	// Action codes, which are possible values of ripdl_action.
 
-	public static final int RIPDL_ACT_MIN				= 1;
-	public static final int RIPDL_ACT_FORECAST_PDL		= 1;
-		// An OAF product containing a forecast was sent to PDL;
+	public static final int RIPDL_ACT_MIN				= 101;
+	public static final int RIPDL_ACT_FORECAST_PDL		= 101;
+		// An OAF product containing a forecast was sent to PDL successfully;
 		// forecast lag is supplied.
-	public static final int RIPDL_ACT_FORECAST_NO_PDL	= 2;
-		// A forecast was generated but did not produce results eligible for PDL;
-		// forecast lag is supplied; any existing OAF product is unchanged.
-	public static final int RIPDL_ACT_SKIPPED_STALE		= 3;
-		// A forecast was skipped because it would be stale;
-		// forecast lag is supplied; any existing OAF product is unchanged.
-	public static final int RIPDL_ACT_SKIPPED_ANALYST	= 4;
-		// A forecast was skipped at analyst request;
-		// forecast lag is supplied; any existing OAF product is deleted.
-	public static final int RIPDL_ACT_SKIPPED_INTAKE	= 5;
-		// A forecast was skipped because the event does not pass the intake filter;
-		// forecast lag is supplied; any existing OAF product is deleted.
-	public static final int RIPDL_ACT_SKIPPED_SHADOWED	= 6;
-		// A forecast was skipped because the mainshock was shadowed;
-		// forecast lag is supplied; any existing OAF product is deleted.
-	public static final int RIPDL_ACT_SKIPPED_FORESHOCK	= 7;
-		// A forecast was skipped because the mainshock has an aftershock of larger magnitude;
-		// forecast lag is supplied; any existing OAF product is deleted.
-	public static final int RIPDL_ACT_CLEANUP_FIND		= 8;
+	public static final int RIPDL_ACT_CLEANUP_FIND		= 102;
 		// The cleanup process found an existing OAF product;
 		// forecast lag is -1L; the existing OAF product is unchanged.
-	public static final int RIPDL_ACT_CLEANUP_DELETE	= 9;
-		// The cleanup process deleted an OAF product; forecast lag is -1L.
-	public static final int RIPDL_ACT_MAX				= 9;
+	public static final int RIPDL_ACT_MAX				= 102;
 
 	// Return a string describing the ripdl_action.
 
 	public String get_ripdl_action_as_string () {
 		switch (ripdl_action) {
 		case RIPDL_ACT_FORECAST_PDL: return "RIPDL_ACT_FORECAST_PDL";
-		case RIPDL_ACT_FORECAST_NO_PDL: return "RIPDL_ACT_FORECAST_NO_PDL";
-		case RIPDL_ACT_SKIPPED_STALE: return "RIPDL_ACT_SKIPPED_STALE";
-		case RIPDL_ACT_SKIPPED_ANALYST: return "RIPDL_ACT_SKIPPED_ANALYST";
-		case RIPDL_ACT_SKIPPED_INTAKE: return "RIPDL_ACT_SKIPPED_INTAKE";
-		case RIPDL_ACT_SKIPPED_SHADOWED: return "RIPDL_ACT_SKIPPED_SHADOWED";
-		case RIPDL_ACT_SKIPPED_FORESHOCK: return "RIPDL_ACT_SKIPPED_FORESHOCK";
 		case RIPDL_ACT_CLEANUP_FIND: return "RIPDL_ACT_CLEANUP_FIND";
-		case RIPDL_ACT_CLEANUP_DELETE: return "RIPDL_ACT_CLEANUP_DELETE";
 		}
 		return "RIPDL_ACT_INVALID(" + ripdl_action + ")";
-	}
-
-	// Return true if this item represents the presence of an OAF product at the item time.
-
-	public boolean is_product_update () {
-		switch (ripdl_action) {
-		case RIPDL_ACT_FORECAST_PDL:
-		case RIPDL_ACT_CLEANUP_FIND:
-			return true;
-		}
-		return false;
-	}
-
-	// Return true if this item represents the deletion of an OAF product at the item time.
-
-	public boolean is_product_delete () {
-		switch (ripdl_action) {
-		case RIPDL_ACT_SKIPPED_ANALYST:
-		case RIPDL_ACT_SKIPPED_INTAKE:
-		case RIPDL_ACT_SKIPPED_SHADOWED:
-		case RIPDL_ACT_SKIPPED_FORESHOCK:
-		case RIPDL_ACT_CLEANUP_DELETE:
-			return true;
-		}
-		return false;
 	}
 
 	// Return a friendly string representation of ripdl_forecast_lag.
@@ -117,6 +90,16 @@ public class RiPDLCompletion extends DBPayload {
 		}
 		return SimpleUtils.duration_to_string (ripdl_forecast_lag);
 	}
+
+	// Return a friendly string representation of ripdl_update_time.
+
+	public String get_ripdl_update_time_as_string () {
+		return SimpleUtils.time_raw_and_string (ripdl_update_time);
+	}
+
+	// Serialization offset for longs.
+
+	private static final long OFFSERL = 2000000000000000L;		// 2*10^15 ~ 60,000 years
 
 
 
@@ -131,18 +114,10 @@ public class RiPDLCompletion extends DBPayload {
 
 	// Set up the contents.
 
-	public void setup (int the_ripdl_action, long the_ripdl_forecast_lag) {
+	public void setup (int the_ripdl_action, long the_ripdl_forecast_lag, long the_ripdl_update_time) {
 		ripdl_action = the_ripdl_action;
 		ripdl_forecast_lag = the_ripdl_forecast_lag;
-		return;
-	}
-
-
-	// Set up the contents, if no forecast lag is specified.
-
-	public void setup (int the_ripdl_action) {
-		ripdl_action = the_ripdl_action;
-		ripdl_forecast_lag = -1L;
+		ripdl_update_time = the_ripdl_update_time;
 		return;
 	}
 
@@ -173,7 +148,8 @@ public class RiPDLCompletion extends DBPayload {
 		// Contents
 
 		writer.marshalInt  ("ripdl_action"      , ripdl_action      );
-		writer.marshalLong ("ripdl_forecast_lag", ripdl_forecast_lag);
+		writer.marshalLong ("ripdl_forecast_lag", ripdl_forecast_lag + OFFSERL);
+		writer.marshalLong ("ripdl_update_time" , ripdl_update_time  + OFFSERL);
 
 		return;
 	}
@@ -194,7 +170,8 @@ public class RiPDLCompletion extends DBPayload {
 		// Contents
 
 		ripdl_action       = reader.unmarshalInt  ("ripdl_action"      , RIPDL_ACT_MIN, RIPDL_ACT_MAX);
-		ripdl_forecast_lag = reader.unmarshalLong ("ripdl_forecast_lag");
+		ripdl_forecast_lag = reader.unmarshalLong ("ripdl_forecast_lag") - OFFSERL;
+		ripdl_update_time  = reader.unmarshalLong ("ripdl_update_time" ) - OFFSERL;
 
 		return;
 	}

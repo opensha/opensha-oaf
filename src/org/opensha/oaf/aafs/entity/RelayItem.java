@@ -430,9 +430,13 @@ public class RelayItem implements java.io.Serializable {
 
 	// Make the natural sort for this collection.
 	// The natural sort is in ascending or decreasing order of relay item time.
+	// If f_descending is null, then return null.
 
-	private static Bson natural_sort (boolean f_descending) {
-		if (f_descending) {
+	private static Bson natural_sort (Boolean f_descending) {
+		if (f_descending == null) {
+			return null;
+		}
+		if (f_descending.booleanValue()) {
 			return Sorts.descending ("relay_time");
 		}
 		return Sorts.ascending ("relay_time");
@@ -446,7 +450,7 @@ public class RelayItem implements java.io.Serializable {
 	// Except, if the query is for a single relay id, then return null
 	// because no sort is needed (because there is only one entry with a given id).
 
-	private static Bson natural_sort (boolean f_descending, String[] relay_id) {
+	private static Bson natural_sort (Boolean f_descending, String[] relay_id) {
 		if (relay_id != null) {
 			if (relay_id.length == 1) {
 				return null;
@@ -964,7 +968,8 @@ public class RelayItem implements java.io.Serializable {
 	/**
 	 * get_relay_item_range - Get a range of relay items, sorted by relay item time.
 	 * @param f_descending = True to sort in descending order by time (most recent first),
-	 *                       false to sort in ascending order by time (oldest first).
+	 *                       false to sort in ascending order by time (oldest first),
+	 *                       null to return unsorted results.
 	 * @param relay_time_lo = Minimum relay item time, in milliseconds since the epoch.
 	 *                        Can be 0L for no minimum.
 	 * @param relay_time_hi = Maximum relay item time, in milliseconds since the epoch.
@@ -973,7 +978,7 @@ public class RelayItem implements java.io.Serializable {
 	 *
 	 * Expected usage: Test only.
 	 */
-	public static List<RelayItem> get_relay_item_range (boolean f_descending, long relay_time_lo, long relay_time_hi, String... relay_id) {
+	public static List<RelayItem> get_relay_item_range (Boolean f_descending, long relay_time_lo, long relay_time_hi, String... relay_id) {
 		ArrayList<RelayItem> relits = new ArrayList<RelayItem>();
 
 		// Get collection handle
@@ -1003,7 +1008,8 @@ public class RelayItem implements java.io.Serializable {
 	/**
 	 * fetch_relay_item_range - Iterate a range of task entries, sorted by relay item time.
 	 * @param f_descending = True to sort in descending order by time (most recent first),
-	 *                       false to sort in ascending order by time (oldest first).
+	 *                       false to sort in ascending order by time (oldest first),
+	 *                       null to return unsorted results.
 	 * @param relay_time_lo = Minimum relay item time, in milliseconds since the epoch.
 	 *                        Can be 0L for no minimum.
 	 * @param relay_time_hi = Maximum relay item time, in milliseconds since the epoch.
@@ -1013,7 +1019,7 @@ public class RelayItem implements java.io.Serializable {
 	 * Expected usage: Production.
 	 * Production code calls this in the form fetch_relay_item_range (f_descending, relay_time_lo, relay_time_hi).
 	 */
-	public static RecordIterator<RelayItem> fetch_relay_item_range (boolean f_descending, long relay_time_lo, long relay_time_hi, String... relay_id) {
+	public static RecordIterator<RelayItem> fetch_relay_item_range (Boolean f_descending, long relay_time_lo, long relay_time_hi, String... relay_id) {
 
 		// Get collection handle
 
@@ -1032,7 +1038,8 @@ public class RelayItem implements java.io.Serializable {
 	/**
 	 * get_first_relay_item - Get the first in a range of relay items.
 	 * @param f_descending = True to sort in descending order by time (most recent first),
-	 *                       false to sort in ascending order by time (oldest first).
+	 *                       false to sort in ascending order by time (oldest first),
+	 *                       null to return unsorted results.
 	 * @param relay_time_lo = Minimum relay item time, in milliseconds since the epoch.
 	 *                        Can be 0L for no minimum.
 	 * @param relay_time_hi = Maximum relay item time, in milliseconds since the epoch.
@@ -1045,7 +1052,7 @@ public class RelayItem implements java.io.Serializable {
 	 * Production code calls this in the form get_first_relay_item (f_descending, 0L, 0L, relay_id).
 	 * Production code requires that the result be sorted (so it returns the most recent among all given ids).
 	 */
-	public static RelayItem get_first_relay_item (boolean f_descending, long relay_time_lo, long relay_time_hi, String... relay_id) {
+	public static RelayItem get_first_relay_item (Boolean f_descending, long relay_time_lo, long relay_time_hi, String... relay_id) {
 
 		// Get collection handle
 

@@ -284,6 +284,41 @@ public class ActionConfig {
 		return param_set.pdl_intake_max_future;
 	}
 
+	// Get age at which forecasts should be removed from PDL.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_removal_forecast_age () {
+		return param_set.removal_forecast_age;
+	}
+
+	// Get update time clock skew allowance for PDL forecasts.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_removal_update_skew () {
+		return param_set.removal_update_skew;
+	}
+
+	// Get maximum time before present to search for forecasts that need to be removed from PDL.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_removal_lookback_time () {
+		return param_set.removal_lookback_time;
+	}
+
+	// Get period for checking for forecasts that need to be removed from PDL.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_removal_check_period () {
+		return param_set.removal_check_period;
+	}
+
+	// Get retry interval for checking for forecasts that need to be removed from PDL.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_removal_retry_period () {
+		return param_set.removal_retry_period;
+	}
+
 	// Get default value of injectable text for PDL JSON files, or "" for none.
 
 	public String get_def_injectable_text () {

@@ -207,21 +207,22 @@ public class PDLSupport extends ServerComponent {
 	// Delete the OAF produts for an event.
 	// Parameters:
 	//  fcmain = Forecast mainshock structure, already filled in.
-	//  ripdl_action = Relay item action code, from RiPDLCompletion.RIPDL_ACT_XXXXX.
-	//                 It must be one of the codes associated with product deletion.
-	//  ripdl_forecast_lag = Forecast lag for this action, or -1L if unknown.
+	//  riprem_reason = Relay item action code, from RiPDLRemoval.RIPREM_REAS_XXXXX.
+	//  riprem_forecast_lag = Forecast lag for this action, or -1L if unknown.
+	// If a forecast lag is supplied, then the removal time is equal to the mainshock time
+	//  plus the forecast lag.  Otherwise, the removel time is the current time.
 	// If this is a primary machine, then this function:
 	// - Writes a relay item for the given action code.
 	// - Deletes all OAF products associated with the event.
 	// - Writes a log message.
 	// If an exception occurs during the deletion of OAF products, this function
-	//  absorbs the exception and doe not propagate it to hogher levels.
+	//  absorbs the exception and does not propagate it to hogher levels.
 	// If this is a secondary machine, the function does nothing.
 	// Note: Exceptions do not trigger any special retry logic.  The relay item is submitted
 	//  to the database before attempting the PDL deletion, so following an exception the
 	//  cleanup process should eventually finish the deletion.
 
-	public void delete_oaf_products (ForecastMainshock fcmain, int ripdl_action, long ripdl_forecast_lag) {
+	public void delete_oaf_products (ForecastMainshock fcmain, int riprem_reason, long riprem_forecast_lag) {
 
 		// If this is not primary, then do nothing
 
@@ -235,7 +236,14 @@ public class PDLSupport extends ServerComponent {
 		long relay_time = sg.task_disp.get_time();
 		boolean f_force = false;
 
-		RelayItem relit = sg.relay_sup.submit_pdl_relay_item (event_id, relay_time, f_force, ripdl_action, ripdl_forecast_lag);
+		long riprem_remove_time;
+		if (riprem_forecast_lag < 0L) {
+			riprem_remove_time = sg.task_disp.get_time();
+		} else {
+			riprem_remove_time = fcmain.mainshock_time + riprem_forecast_lag;
+		}
+
+		RelayItem relit = sg.relay_sup.submit_prem_relay_item (event_id, relay_time, f_force, riprem_reason, riprem_forecast_lag, riprem_remove_time);
 	
 		// Delete the old OAF products
 
@@ -268,6 +276,7 @@ public class PDLSupport extends ServerComponent {
 
 		return;
 	}
+
 
 
 

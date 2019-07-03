@@ -251,7 +251,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 			// Delete OAF products and write relay item
 
-			sg.pdl_sup.delete_oaf_products (fcmain, RiPDLCompletion.RIPDL_ACT_SKIPPED_ANALYST, next_forecast_lag);
+			sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_ANALYST, next_forecast_lag);
 
 			// Write the new timeline entry
 
@@ -327,7 +327,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 				// Delete OAF products and write relay item
 
-				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLCompletion.RIPDL_ACT_SKIPPED_INTAKE, next_forecast_lag);
+				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_INTAKE, next_forecast_lag);
 
 				// Write the new timeline entry
 
@@ -444,7 +444,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 				// Delete OAF products and write relay item
 
-				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLCompletion.RIPDL_ACT_SKIPPED_SHADOWED, next_forecast_lag);
+				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_SHADOWED, next_forecast_lag);
 
 				// Write the new timeline entry
 
@@ -544,7 +544,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 					// Delete OAF products and write relay item
 
-					sg.pdl_sup.delete_oaf_products (fcmain, RiPDLCompletion.RIPDL_ACT_SKIPPED_FORESHOCK, next_forecast_lag);
+					sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_FORESHOCK, next_forecast_lag);
 
 					// Write the new timeline entry
 
@@ -664,7 +664,8 @@ public class ExGenerateForecast extends ServerExecTask {
 						sg.task_disp.get_time(),								// relay_time
 						true,													// f_force
 						RiPDLCompletion.RIPDL_ACT_FORECAST_PDL,					// ripdl_action
-						tstatus.last_forecast_lag								// ripdl_forecast_lag
+						tstatus.last_forecast_lag,								// ripdl_forecast_lag
+						sg.task_disp.get_time()									// ripdl_update_time
 					);
 				}
 			}

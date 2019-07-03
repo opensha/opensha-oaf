@@ -332,7 +332,8 @@ public class ExGeneratePDLReport extends ServerExecTask {
 			sg.task_disp.get_time(),								// relay_time
 			true,													// f_force
 			RiPDLCompletion.RIPDL_ACT_FORECAST_PDL,					// ripdl_action
-			tstatus.last_forecast_lag								// ripdl_forecast_lag
+			tstatus.last_forecast_lag,								// ripdl_forecast_lag
+			sg.task_disp.get_time()									// ripdl_update_time
 		);
 
 		//--- Final steps

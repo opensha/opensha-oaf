@@ -705,7 +705,7 @@ public class LogSupport extends ServerComponent {
 
 
 
-	// Report PDL relay item set.
+	// Report PDL completion relay item set.
 	// op = Operation code:
 	//  1 = Locally-generated relay item saved.
 	//  2 = Locally-generated relay item is stale.
@@ -725,7 +725,37 @@ public class LogSupport extends ServerComponent {
 					event_id,
 					ripdl.get_ripdl_action_as_string (),
 					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time),
-					"forecast_lag = " + ripdl.get_ripdl_forecast_lag_as_string()
+					"forecast_lag = " + ripdl.get_ripdl_forecast_lag_as_string(),
+					"update_time = " + ripdl.get_ripdl_update_time_as_string()
+					);
+		return;
+	}
+
+
+
+
+	// Report PDL removal relay item set.
+	// op = Operation code:
+	//  1 = Locally-generated relay item saved.
+	//  2 = Locally-generated relay item is stale.
+	//  3 = Remote relay item saved.
+
+	public void report_prem_relay_set (int op, String event_id, long relay_time, RiPDLRemoval riprem) {
+
+		String name = "RELAY-PREM-SET-UNKNOWN";
+
+		switch (op) {
+		case 1: name = "RELAY-PREM-SAVE"; break;
+		case 2: name = "RELAY-PREM-STALE"; break;
+		case 3: name = "RELAY-PREM-COPY"; break;
+		}
+
+		report_action (name,
+					event_id,
+					riprem.get_riprem_reason_as_string (),
+					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time),
+					"forecast_lag = " + riprem.get_riprem_forecast_lag_as_string(),
+					"remove_time = " + riprem.get_riprem_remove_time_as_string()
 					);
 		return;
 	}
