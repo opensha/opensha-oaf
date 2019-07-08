@@ -33,9 +33,10 @@ import org.opensha.oaf.aafs.entity.RelayItem;
  *   it can look for this item to determine the update time, and skip that earthquake
  *   if it is too young to be deleted, without doing a separate Comcat call.
  *
- * There is no need to retain items when ripdl_update_time is more than one year old
- * (specifically, the value of ActionConfig.get_removal_forecast_age()), because forecasts
- * older than that can be deleted from PDL based on their age.
+ * There is no need to retain items when ripdl_update_time is more than one year old,
+ * because forecasts older than that can be deleted from PDL based on their age.
+ * (Specifically, an item can be deleted if ripdl_update_time is older than
+ * ActionConfig.get_removal_forecast_age() + ActionConfig.get_removal_update_skew().)
  */
 public class RiPDLCompletion extends DBPayload {
 
@@ -95,6 +96,21 @@ public class RiPDLCompletion extends DBPayload {
 
 	public String get_ripdl_update_time_as_string () {
 		return SimpleUtils.time_raw_and_string (ripdl_update_time);
+	}
+
+	// Return true if this item is expired.
+	// Parameters:
+	//  time_now = Current time, in milliseconds since the epoch.
+	//  action_config = Action configuration parameters.
+	// Returns true if this item is old enough that it can be deleted.
+
+	public boolean is_expired (long time_now, ActionConfig action_config) {
+		if (ripdl_update_time + action_config.get_removal_forecast_age()
+			+ action_config.get_removal_update_skew() < time_now) {
+
+			return true;
+		}
+		return false;
 	}
 
 	// Serialization offset for longs.

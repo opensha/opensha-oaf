@@ -23,6 +23,8 @@ import org.opensha.oaf.comcat.ComcatConflictException;
 import org.opensha.oaf.comcat.ComcatRemovedException;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 
+import org.opensha.oaf.pdl.PDLCodeChooserOaf;
+
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
@@ -704,21 +706,32 @@ public class LogSupport extends ServerComponent {
 
 
 
+	// Relay item operation codes
+
+	public static final int RIOP_SAVE = 1;				// 1 = Locally-generated relay item saved.
+	public static final int RIOP_STALE = 2;				// 2 = Locally-generated relay item is stale.
+	public static final int RIOP_COPY = 3;				// 3 = Remote relay item saved.
+	public static final int RIOP_DELETE = 4;			// 4 = Relay item deleted.
+
+
+
 
 	// Report PDL completion relay item set.
 	// op = Operation code:
-	//  1 = Locally-generated relay item saved.
-	//  2 = Locally-generated relay item is stale.
-	//  3 = Remote relay item saved.
+	//  RIOP_SAVE = 1 = Locally-generated relay item saved.
+	//  RIOP_STALE = 2 = Locally-generated relay item is stale.
+	//  RIOP_COPY = 3 = Remote relay item saved.
+	//  RIOP_DELETE = 4 = Relay item deleted.
 
 	public void report_pdl_relay_set (int op, String event_id, long relay_time, RiPDLCompletion ripdl) {
 
 		String name = "RELAY-PDL-SET-UNKNOWN";
 
 		switch (op) {
-		case 1: name = "RELAY-PDL-SAVE"; break;
-		case 2: name = "RELAY-PDL-STALE"; break;
-		case 3: name = "RELAY-PDL-COPY"; break;
+		case RIOP_SAVE: name = "RELAY-PDL-SAVE"; break;
+		case RIOP_STALE: name = "RELAY-PDL-STALE"; break;
+		case RIOP_COPY: name = "RELAY-PDL-COPY"; break;
+		case RIOP_DELETE: name = "RELAY-PDL-DELETE"; break;
 		}
 
 		report_action (name,
@@ -736,18 +749,20 @@ public class LogSupport extends ServerComponent {
 
 	// Report PDL removal relay item set.
 	// op = Operation code:
-	//  1 = Locally-generated relay item saved.
-	//  2 = Locally-generated relay item is stale.
-	//  3 = Remote relay item saved.
+	//  RIOP_SAVE = 1 = Locally-generated relay item saved.
+	//  RIOP_STALE = 2 = Locally-generated relay item is stale.
+	//  RIOP_COPY = 3 = Remote relay item saved.
+	//  RIOP_DELETE = 4 = Relay item deleted.
 
 	public void report_prem_relay_set (int op, String event_id, long relay_time, RiPDLRemoval riprem) {
 
 		String name = "RELAY-PREM-SET-UNKNOWN";
 
 		switch (op) {
-		case 1: name = "RELAY-PREM-SAVE"; break;
-		case 2: name = "RELAY-PREM-STALE"; break;
-		case 3: name = "RELAY-PREM-COPY"; break;
+		case RIOP_SAVE: name = "RELAY-PREM-SAVE"; break;
+		case RIOP_STALE: name = "RELAY-PREM-STALE"; break;
+		case RIOP_COPY: name = "RELAY-PREM-COPY"; break;
+		case RIOP_DELETE: name = "RELAY-PREM-DELETE"; break;
 		}
 
 		report_action (name,
@@ -756,6 +771,36 @@ public class LogSupport extends ServerComponent {
 					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time),
 					"forecast_lag = " + riprem.get_riprem_forecast_lag_as_string(),
 					"remove_time = " + riprem.get_riprem_remove_time_as_string()
+					);
+		return;
+	}
+
+
+
+
+	// Report PDL foreign relay item set.
+	// op = Operation code:
+	//  RIOP_SAVE = 1 = Locally-generated relay item saved.
+	//  RIOP_STALE = 2 = Locally-generated relay item is stale.
+	//  RIOP_COPY = 3 = Remote relay item saved.
+	//  RIOP_DELETE = 4 = Relay item deleted.
+
+	public void report_pfrn_relay_set (int op, String event_id, long relay_time, RiPDLForeign ripfrn) {
+
+		String name = "RELAY-PFRN-SET-UNKNOWN";
+
+		switch (op) {
+		case RIOP_SAVE: name = "RELAY-PFRN-SAVE"; break;
+		case RIOP_STALE: name = "RELAY-PFRN-STALE"; break;
+		case RIOP_COPY: name = "RELAY-PFRN-COPY"; break;
+		case RIOP_DELETE: name = "RELAY-PFRN-DELETE"; break;
+		}
+
+		report_action (name,
+					event_id,
+					ripfrn.get_ripfrn_status_as_string (),
+					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time),
+					"detect_time = " + ripfrn.get_ripfrn_detect_time_as_string()
 					);
 		return;
 	}
@@ -780,6 +825,63 @@ public class LogSupport extends ServerComponent {
 		report_action ("PDL-DELETE-EXCEPTION",
 					"eventID = " + event_id);
 		report_exception (e);
+		return;
+	}
+
+
+
+
+	// Report cleanup query done.
+
+	public void report_cleanup_query_done (long query_lookback, int count_with_oaf, int count_needing_cleanup) {
+		double query_lookback_days = ((double)query_lookback)/ComcatOAFAccessor.day_millis;
+		report_action ("CLEANUP-QUERY-DONE",
+					"query_lookback = " + String.format ("%.3f", query_lookback_days) + " days",
+					"count_with_oaf = " + count_with_oaf,
+					"count_needing_cleanup = " + count_needing_cleanup);
+		return;
+	}
+
+
+
+
+	// Report cleanup query begin.
+
+	public void report_cleanup_query_begin () {
+		report_action ("CLEANUP-QUERY-BEGIN");
+		return;
+	}
+
+
+
+
+	// Report cleanup query end.
+
+	public void report_cleanup_query_end (long next_query_time) {
+		report_action ("CLEANUP-QUERY-END",
+					"next_query_time = " + SimpleUtils.time_raw_and_string (next_query_time));
+		return;
+	}
+
+
+
+
+	// Report cleanup event begin.
+
+	public void report_cleanup_event_begin (String event_id) {
+		report_action ("CLEANUP-EVENT-BEGIN",
+					event_id);
+		return;
+	}
+
+
+
+
+	// Report cleanup event end.
+
+	public void report_cleanup_event_end (long doop) {
+		report_action ("CLEANUP-EVENT-END",
+					PDLCodeChooserOaf.get_doop_as_string (doop));
 		return;
 	}
 

@@ -382,17 +382,52 @@ public class PDLCodeChooserOaf {
 	//   function retrieves the geojson from Comcat.
 	//  f_gj_prod = True if geojson was retrieved from Comcat-production, false if it
 	//   was retrieved from Comcat-development.  This is only used if geojson is non-null.
-	//  queryID = Event ID used to query Comcat.
+	//  queryID = Event ID used to query Comcat.  This is used only if geojson is null,
+	//   or if f_gj_prod does not correspond to the PDL destination.
 	//  isReviewed = True to set reviewed flag on the delete products.
 	//  cutoff_time = Cutoff time in milliseconds since the epoch, or 0L if none.
-	// Returns true if products were delete, false if not.
+	// Returns 0L (== DOOP_DELETED) if one or more products were deleted.
+	// Returns > 0L if no product was deleted because the most recent product was
+	//  updated at or after the cutoff time.  In this case, the return value is the
+	//  time that the most recent product (from our source) was updated.
+	// Returns < 0L if no product was deleted for some other reason.  In this case,
+	//  the return value is one of the DOOP_XXXXX return codes.
 	// If cutoff_time > 0L, then all products are deleted if the most recent product
 	//  was updated before cutoff_time.  If cutoff_time == 0L then all products are
 	//  deleted unconditionally.
 	// Note: Throws ComcatException if Comcat access error.  Throws Exception if PDL
 	//  error.  It is recommended that any exception be considered a transient condition.
+	// Note: To be deleted, the update time of the most recent product (from our source)
+	//  must be stricly less than cutoff_time (if cutoff_time > 0L).
 
-	public static boolean deleteOldOafProducts (Boolean f_prod,
+	public static final long DOOP_DELETED = 0L;
+		// One or more OAF products were deleted.
+	public static final long DOOP_NOT_FOUND = -1L;
+		// The event was not found in Comcat.
+	public static final long DOOP_NO_GEOJSON = -2L;
+		// The geojson could not be fetched.
+	public static final long DOOP_INCOMPLETE = -3L;
+		// The geojson contained incomplete information.
+	public static final long DOOP_NO_PRODUCTS = -4L;
+		// There are no OAF products (from any source) for the event.
+	public static final long DOOP_FOREIGN = -5L;
+		// There are no OAF products from our source, but there exists
+		// an OAF product from another source.
+	public static final long DOOP_BLOCKED = -6L;
+		// A blocking condition (such as an existing relay item) prevents deletion
+		// from being considered at this time
+		// (not used here, but used in CleanupSupport).
+	public static final long DOOP_COMCAT_EXCEPTION = -7L;
+		// The operation could not be completed because of a Comcat exception
+		// (not used here, but used in CleanupSupport).
+	public static final long DOOP_PDL_EXCEPTION = -8L;
+		// The operation could not be completed because of a PDL exception
+		// (not used here, but used in CleanupSupport).
+	public static final long DOOP_DB_EXCEPTION = -9L;
+		// The operation could not be completed because of a database exception
+		// (not used here, but used in CleanupSupport).
+
+	public static long deleteOldOafProducts (Boolean f_prod,
 			JSONObject geojson, boolean f_gj_prod, String queryID,
 			boolean isReviewed, long cutoff_time) throws Exception {
 
@@ -429,7 +464,7 @@ public class PDLCodeChooserOaf {
 			// If not found, nothing to delete
 
 			if (rup == null) {
-				return false;
+				return DOOP_NOT_FOUND;
 			}
 
 			// Get the geojson from the fetch (must allow for the possibility this is null)
@@ -440,7 +475,7 @@ public class PDLCodeChooserOaf {
 		// If no geojson, nothing to delete
 
 		if (my_geojson == null) {
-			return false;
+			return DOOP_NO_GEOJSON;
 		}
 
 		// Need to have event net, code, ids, and time
@@ -454,7 +489,7 @@ public class PDLCodeChooserOaf {
 			|| event_code == null || event_code.isEmpty()
 			|| event_ids == null || event_ids.isEmpty() || event_time == null ) {
 			
-			return false;
+			return DOOP_INCOMPLETE;
 		}
 
 		// Get the list of IDs for this event, with the authorative id first
@@ -464,6 +499,12 @@ public class PDLCodeChooserOaf {
 		// Get the list of OAF products
 
 		List<ComcatOAFProduct> oafProducts = ComcatOAFProduct.make_list_from_gj (my_geojson);
+
+		// If no OAF products, nothing to delete
+
+		if (oafProducts.isEmpty()) {
+			return DOOP_NO_PRODUCTS;
+		}
 
 		// Index of the most recent product, with correct source
 
@@ -504,21 +545,58 @@ public class PDLCodeChooserOaf {
 		// If no products for our source, nothing to delete
 
 		if (ix_recent == -1) {
-			return false;
+			return DOOP_FOREIGN;
 		}
 
 		// If not too old, nothing to delete
 
 		if (cutoff_time > 0L) {
 			if (oafProducts.get(ix_recent).updateTime >= cutoff_time) {
-				return false;
+				return oafProducts.get(ix_recent).updateTime;	// note this must be positive
 			}
 		}
 
 		// Delete all OAF products from our source
 
 		deleteOafProducts (oafProducts, -1, event_net, event_code, isReviewed);
-		return true;
+		return DOOP_DELETED;
+	}
+
+
+
+
+	// Return a string describing the deleteOldOafProducts return value.
+
+	public static String get_doop_as_string (long doop) {
+		if (doop > 0L) {
+			return "DOOP_CURRENT updateTime = " + SimpleUtils.time_raw_and_string (doop);
+		}
+
+		//switch (doop) {
+		//case DOOP_DELETED: return "DOOP_DELETED";
+		//case DOOP_NOT_FOUND: return "DOOP_NOT_FOUND";
+		//case DOOP_NO_GEOJSON: return "DOOP_NO_GEOJSON";
+		//case DOOP_INCOMPLETE: return "DOOP_INCOMPLETE";
+		//case DOOP_NO_PRODUCTS: return "DOOP_NO_PRODUCTS";
+		//case DOOP_FOREIGN: return "DOOP_FOREIGN";
+		//case DOOP_BLOCKED: return "DOOP_BLOCKED";
+		//case DOOP_COMCAT_EXCEPTION: return "DOOP_COMCAT_EXCEPTION";
+		//case DOOP_PDL_EXCEPTION: return "DOOP_PDL_EXCEPTION";
+		//case DOOP_DB_EXCEPTION: return "DOOP_DB_EXCEPTION";
+		//}
+
+		if (doop == DOOP_DELETED) {return "DOOP_DELETED";}
+		if (doop == DOOP_NOT_FOUND) {return "DOOP_NOT_FOUND";}
+		if (doop == DOOP_NO_GEOJSON) {return "DOOP_NO_GEOJSON";}
+		if (doop == DOOP_INCOMPLETE) {return "DOOP_INCOMPLETE";}
+		if (doop == DOOP_NO_PRODUCTS) {return "DOOP_NO_PRODUCTS";}
+		if (doop == DOOP_FOREIGN) {return "DOOP_FOREIGN";}
+		if (doop == DOOP_BLOCKED) {return "DOOP_BLOCKED";}
+		if (doop == DOOP_COMCAT_EXCEPTION) {return "DOOP_COMCAT_EXCEPTION";}
+		if (doop == DOOP_PDL_EXCEPTION) {return "DOOP_PDL_EXCEPTION";}
+		if (doop == DOOP_DB_EXCEPTION) {return "DOOP_DB_EXCEPTION";}
+
+		return "DOOP_INVALID(" + doop + ")";
 	}
 
 
@@ -533,7 +611,8 @@ public class PDLCodeChooserOaf {
 	//   function retrieves the geojson from Comcat.
 	//  f_gj_prod = True if geojson was retrieved from Comcat-production, false if it
 	//   was retrieved from Comcat-development.  This is only used if geojson is non-null.
-	//  queryID = Event ID used to query Comcat.
+	//  queryID = Event ID used to query Comcat.  This is used only if geojson is null,
+	//   or if f_gj_prod does not correspond to the PDL destination.
 	// Returns: The update time of the most recent OAF product, in milliseconds since the
 	//  epoch, or 0L if there is no existing OAF product.
 	// Note: Throws ComcatException if Comcat access error.  It is recommended that
@@ -846,12 +925,16 @@ public class PDLCodeChooserOaf {
 				JSONObject geojson = null;
 				boolean f_gj_prod = true;
 
-				boolean result = PDLCodeChooserOaf.deleteOldOafProducts (null,
+				long result = PDLCodeChooserOaf.deleteOldOafProducts (null,
 					geojson, f_gj_prod, query_id, isReviewed, cutoff_time);
 
 				// Display result
 
-				System.out.println ("PDLCodeChooserOaf.deleteOldOafProducts returned: " + result);
+				if (result > 0L) {
+					System.out.println ("PDLCodeChooserOaf.deleteOldOafProducts returned: " + SimpleUtils.time_raw_and_string(result));
+				} else {
+					System.out.println ("PDLCodeChooserOaf.deleteOldOafProducts returned: " + result);
+				}
 			}
 
 			catch (Exception e) {

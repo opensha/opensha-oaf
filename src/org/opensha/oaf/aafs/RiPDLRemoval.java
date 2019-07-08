@@ -33,9 +33,10 @@ import org.opensha.oaf.aafs.entity.RelayItem;
  * The existence of this item means that any forecast sent to PDL before the riprem_remove_time of
  * this item can be immediately deleted from PDL.
  *
- * There is no need to retain items when riprem_remove_time is more than one year old
- * (specifically, the value of ActionConfig.get_removal_forecast_age()), because forecasts
- * older than that can be deleted from PDL based on their age.
+ * There is no need to retain items when riprem_remove_time is more than one year old,
+ * because forecasts older than that can be deleted from PDL based on their age.
+ * (Specifically, an item can be deleted if riprem_remove_time is older than
+ * ActionConfig.get_removal_forecast_age() + ActionConfig.get_removal_update_skew().)
  */
 public class RiPDLRemoval extends DBPayload {
 
@@ -102,6 +103,21 @@ public class RiPDLRemoval extends DBPayload {
 
 	public String get_riprem_remove_time_as_string () {
 		return SimpleUtils.time_raw_and_string (riprem_remove_time);
+	}
+
+	// Return true if this item is expired.
+	// Parameters:
+	//  time_now = Current time, in milliseconds since the epoch.
+	//  action_config = Action configuration parameters.
+	// Returns true if this item is old enough that it can be deleted.
+
+	public boolean is_expired (long time_now, ActionConfig action_config) {
+		if (riprem_remove_time + action_config.get_removal_forecast_age()
+			+ action_config.get_removal_update_skew() < time_now) {
+
+			return true;
+		}
+		return false;
 	}
 
 	// Serialization offset for longs.

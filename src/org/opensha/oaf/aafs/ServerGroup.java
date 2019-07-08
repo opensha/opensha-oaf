@@ -48,6 +48,10 @@ public class ServerGroup extends ServerComponent {
 
 	public RelaySupport relay_sup;
 
+	// Cleanup support.
+
+	public CleanupSupport cleanup_sup;
+
 	// Dispatch table.
 
 	public ServerExecTask[] dispatch_table;
@@ -69,6 +73,7 @@ public class ServerGroup extends ServerComponent {
 		this.backup_sup     = null;
 		this.poll_sup       = null;
 		this.relay_sup      = null;
+		this.cleanup_sup    = null;
 
 		this.dispatch_table = null;
 	}
@@ -113,6 +118,9 @@ public class ServerGroup extends ServerComponent {
 		this.relay_sup      = new RelaySupport();
 		this.relay_sup.setup (this);
 
+		this.cleanup_sup    = new CleanupSupport();
+		this.cleanup_sup.setup (this);
+
 		// Set up the dispatch table
 
 		dispatch_table = new ServerExecTask[OPCODE_MAX + 1];
@@ -139,6 +147,8 @@ public class ServerGroup extends ServerComponent {
 		dispatch_table[OPCODE_POLL_COMCAT_START] = new ExPollComcatStart();
 		dispatch_table[OPCODE_POLL_COMCAT_STOP ] = new ExPollComcatStop();
 		dispatch_table[OPCODE_NEXT_TIMELINE_OP ] = new ExNextTimelineOp();
+		dispatch_table[OPCODE_CLEANUP_PDL_START] = new ExCleanupPDLStart();
+		dispatch_table[OPCODE_CLEANUP_PDL_STOP ] = new ExCleanupPDLStop();
 
 		for (int i = 0; i <= OPCODE_MAX; ++i) {
 			if (dispatch_table[i] != null) {

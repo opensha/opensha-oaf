@@ -247,7 +247,7 @@ public class PDLSupport extends ServerComponent {
 	
 		// Delete the old OAF products
 
-		boolean f_did;
+		long delres;
 
 		try {
 			JSONObject geojson = fcmain.mainshock_geojson;	// it's OK if this is null
@@ -256,7 +256,7 @@ public class PDLSupport extends ServerComponent {
 			boolean isReviewed = false;
 			long cutoff_time = 0L;
 
-			f_did = PDLCodeChooserOaf.deleteOldOafProducts (null, geojson, f_gj_prod, queryID, isReviewed, cutoff_time);
+			delres = PDLCodeChooserOaf.deleteOldOafProducts (null, geojson, f_gj_prod, queryID, isReviewed, cutoff_time);
 
 		} catch (Exception e) {
 
@@ -268,7 +268,7 @@ public class PDLSupport extends ServerComponent {
 
 		// Log successful deletion, if we deleted something
 
-		if (f_did) {
+		if (delres == PDLCodeChooserOaf.DOOP_DELETED) {
 			sg.log_sup.report_pdl_delete_ok (event_id);
 		}
 

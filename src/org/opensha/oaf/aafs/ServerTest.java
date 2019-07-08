@@ -3,6 +3,7 @@ package org.opensha.oaf.aafs;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 
 import java.io.File;
 import java.io.Reader;
@@ -42,6 +43,7 @@ import org.opensha.oaf.util.TestMode;
 import gov.usgs.earthquake.product.Product;
 import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 import org.opensha.oaf.pdl.PDLSender;
+import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 
 
 /**
@@ -4594,7 +4596,7 @@ public class ServerTest {
 
 
 
-	// Test #79 - Use relay support to get pdl completion and removal relay items.
+	// Test #79 - Use relay support to get pdl completion, removal, and foreign relay items.
 
 	public static void test79(String[] args) throws Exception {
 
@@ -4624,12 +4626,12 @@ public class ServerTest {
 
 			// Call relay support
 
-			List<RelayItem> relits = sg.relay_sup.get_pdl_and_prem_relay_items (event_ids);
+			List<RelayItem> relits = sg.relay_sup.get_pdl_prem_pfrn_relay_items (event_ids);
 
 			// Display result
 
 			if (relits.isEmpty()) {
-				System.out.println ("get_pdl_and_prem_relay_items returned an empty list");
+				System.out.println ("get_pdl_prem_pfrn_relay_items returned an empty list");
 			} else {
 				for (RelayItem relit : relits) {
 					System.out.println (relit.dumpString());
@@ -4659,9 +4661,295 @@ public class ServerTest {
 						System.out.println ("\triprem_remove_time = " + payload.get_riprem_remove_time_as_string());
 					}
 					break;
+
+					case RelaySupport.RITYPE_PDL_FOREIGN:
+					{
+						RiPDLForeign payload = new RiPDLForeign();
+						payload.unmarshal_relay (relit);
+						System.out.println ("RiPDLForeign");
+						System.out.println ("\tripfrn_status = " + payload.ripfrn_status + " (" + payload.get_ripfrn_status_as_string() + ")");
+						System.out.println ("\tripfrn_detect_time = " + payload.get_ripfrn_detect_time_as_string());
+					}
+					break;
 					}
 				}
 			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #80 - Use relay support to submit a pdl foreign relay item.
+
+	public static void test80(String[] args) throws Exception {
+
+		// 6 additional arguments
+
+		if (args.length != 7) {
+			System.err.println ("ServerTest : Invalid 'test80' or 'rsup_pfrn_submit' subcommand");
+			return;
+		}
+
+		String logfile = args[1];		// can be "-" for none
+		String event_id = args[2];
+		long relay_time = Long.parseLong (args[3]);
+		boolean f_force = Boolean.parseBoolean (args[4]);
+		int ripfrn_status = Integer.parseInt (args[5]);
+		long ripfrn_detect_time = Long.parseLong (args[6]);
+
+		String my_logfile = null;
+		if (!( logfile.equals ("-") )) {
+			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+			TimeSplitOutputStream sum_tsop = TimeSplitOutputStream.make_tsop (my_logfile, 0L);
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Install the log file
+
+			dispatcher.set_summary_log_tsop (sum_tsop);
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Call relay support
+
+			RelayItem relit = sg.relay_sup.submit_pfrn_relay_item (event_id, relay_time, f_force,
+				ripfrn_status, ripfrn_detect_time);
+
+			// Display result
+
+			if (relit == null) {
+				System.out.println ("submit_pfrn_relay_item returned null");
+			} else {
+				System.out.println (relit.dumpString());
+
+				// Unmarshal the payload and display it
+
+				RiPDLForeign payload = new RiPDLForeign();
+				payload.unmarshal_relay (relit);
+				System.out.println ("RiPDLForeign");
+				System.out.println ("\tripfrn_status = " + payload.ripfrn_status + " (" + payload.get_ripfrn_status_as_string() + ")");
+				System.out.println ("\tripfrn_detect_time = " + payload.get_ripfrn_detect_time_as_string());
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #81 - Use relay support to get pdl foreign relay items.
+
+	public static void test81(String[] args) throws Exception {
+
+		// 1 or more additional arguments
+
+		if (args.length < 2) {
+			System.err.println ("ServerTest : Invalid 'test81' or 'rsup_pfrn_get' subcommand");
+			return;
+		}
+
+		String[] event_ids = Arrays.copyOfRange (args, 1, args.length);
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Call relay support
+
+			List<RelayItem> relits = sg.relay_sup.get_pfrn_relay_items (event_ids);
+
+			// Display result
+
+			if (relits.isEmpty()) {
+				System.out.println ("get_pfrn_relay_items returned an empty list");
+			} else {
+				for (RelayItem relit : relits) {
+					System.out.println (relit.dumpString());
+
+					// Unmarshal the payload and display it
+
+					RiPDLForeign payload = new RiPDLForeign();
+					payload.unmarshal_relay (relit);
+					System.out.println ("RiPDLForeign");
+					System.out.println ("\tripfrn_status = " + payload.ripfrn_status + " (" + payload.get_ripfrn_status_as_string() + ")");
+					System.out.println ("\tripfrn_detect_time = " + payload.get_ripfrn_detect_time_as_string());
+				}
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #82 - Use cleanup support to find events needing cleanup.
+	// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+
+	public static void test82(String[] args) throws Exception {
+
+		// 6 additional arguments
+
+		if (args.length != 7) {
+			System.err.println ("ServerTest : Invalid 'test82' or 'cleanup_query' subcommand");
+			return;
+		}
+
+		String logfile = args[1];		// can be "-" for none
+		int pdl_enable = Integer.parseInt (args[2]);
+		long time_now = SimpleUtils.string_to_time (args[3]);
+		long startTime = SimpleUtils.string_to_time (args[4]);
+		long endTime = SimpleUtils.string_to_time (args[5]);
+		double minMag = Double.parseDouble (args[6]);
+
+		String my_logfile = null;
+		if (!( logfile.equals ("-") )) {
+			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
+		}
+
+		// Set the PDL enable code
+
+		if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+			System.out.println ("Invalid pdl_enable = " + pdl_enable);
+			return;
+		}
+
+		ServerConfig server_config = new ServerConfig();
+		server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+			TimeSplitOutputStream sum_tsop = TimeSplitOutputStream.make_tsop (my_logfile, 0L);
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Install the log file
+
+			dispatcher.set_summary_log_tsop (sum_tsop);
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Find events
+
+			ArrayDeque<String> coll = new ArrayDeque<String>();
+			int[] count = sg.cleanup_sup.find_events_needing_cleanup (coll, time_now, startTime, endTime, minMag);
+
+			// Display results
+
+			System.out.println ("Events needing cleanup = " + count[0]);
+			System.out.println ("Events with OAF products = " + count[1]);
+			System.out.println ("Size of list returned = " + coll.size());
+
+			for (int n = 0; n < 100 && coll.size() > 0; ++n) {
+				System.out.println (coll.remove());
+			}
+
+			if (coll.size() > 0) {
+				System.out.println ("Plus " + coll.size() + " more");
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #83 - Use cleanup support to find events needing cleanup.
+	// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+
+	public static void test83(String[] args) throws Exception {
+
+		// 4 additional arguments
+
+		if (args.length != 5) {
+			System.err.println ("ServerTest : Invalid 'test83' or 'cleanup_event' subcommand");
+			return;
+		}
+
+		String logfile = args[1];		// can be "-" for none
+		int pdl_enable = Integer.parseInt (args[2]);
+		long time_now = SimpleUtils.string_to_time (args[3]);
+		String event_id = args[4];
+
+		String my_logfile = null;
+		if (!( logfile.equals ("-") )) {
+			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
+		}
+
+		// Set the PDL enable code
+
+		if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+			System.out.println ("Invalid pdl_enable = " + pdl_enable);
+			return;
+		}
+
+		ServerConfig server_config = new ServerConfig();
+		server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+			TimeSplitOutputStream sum_tsop = TimeSplitOutputStream.make_tsop (my_logfile, 0L);
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Install the log file
+
+			dispatcher.set_summary_log_tsop (sum_tsop);
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Cleanup event
+
+			long doop = sg.cleanup_sup.cleanup_event (event_id, time_now);
+
+			// Display results
+
+			System.out.println ("cleanup_event returned " + doop);
+			System.out.println ("Friendly form = " + PDLCodeChooserOaf.get_doop_as_string (doop));
 		}
 
 		return;
@@ -5933,7 +6221,7 @@ public class ServerTest {
 		// Subcommand : Test #74
 		// Command format:
 		//  test74  logfile  event_id  relay_time  f_force  ripdl_action  ripdl_forecast_lag  ripdl_update_time
-		// Use relay support to submit a pdl relay item.
+		// Use relay support to submit a pdl completion relay item.
 		// Then display the item that was written.
 		// The logfile can be "-" for none.
 
@@ -5951,7 +6239,7 @@ public class ServerTest {
 		// Subcommand : Test #75
 		// Command format:
 		//  test75  event_id...
-		// Use relay support to get pdl removal relay item.
+		// Use relay support to get pdl completion relay items.
 		// Then display the returned items, sorted most recent first.
 
 		if (args[0].equalsIgnoreCase ("test75") || args[0].equalsIgnoreCase ("rsup_pdl_get")) {
@@ -5985,7 +6273,7 @@ public class ServerTest {
 		// Subcommand : Test #77
 		// Command format:
 		//  test77  logfile  event_id  relay_time  f_force  riprem_reason  riprem_forecast_lag  riprem_remove_time
-		// Use relay support to submit a pdl relay item.
+		// Use relay support to submit a pdl removal relay item.
 		// Then display the item that was written.
 		// The logfile can be "-" for none.
 
@@ -6020,13 +6308,84 @@ public class ServerTest {
 		// Subcommand : Test #79
 		// Command format:
 		//  test79  event_id...
-		// Use relay support to get pdl completion and removal relay items.
+		// Use relay support to get pdl completion, removal, and foreign relay items.
 		// Then display the returned items, sorted most recent first.
 
 		if (args[0].equalsIgnoreCase ("test79") || args[0].equalsIgnoreCase ("rsup_pdl_prem_get")) {
 
 			try {
 				test79(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #80
+		// Command format:
+		//  test80  logfile  event_id  relay_time  f_force  ripfrn_status  ripfrn_detect_time
+		// Use relay support to submit a pdl foreign relay item.
+		// Then display the item that was written.
+		// The logfile can be "-" for none.
+
+		if (args[0].equalsIgnoreCase ("test80") || args[0].equalsIgnoreCase ("rsup_pfrn_submit")) {
+
+			try {
+				test80(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #81
+		// Command format:
+		//  test81  event_id...
+		// Use relay support to get pdl foreign relay items.
+		// Then display the returned items, sorted most recent first.
+
+		if (args[0].equalsIgnoreCase ("test81") || args[0].equalsIgnoreCase ("rsup_pfrn_get")) {
+
+			try {
+				test81(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #82
+		// Command format:
+		//  test82  logfile  pdl_enable  time_now  startTime  endTime  minMag
+		// Use cleanup support to find events needing cleanup.
+		// The logfile can be "-" for none.
+		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+
+		if (args[0].equalsIgnoreCase ("test82") || args[0].equalsIgnoreCase ("cleanup_query")) {
+
+			try {
+				test82(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #83
+		// Command format:
+		//  test83  logfile  pdl_enable  time_now  event_id
+		// Use cleanup support to find events needing cleanup.
+		// The logfile can be "-" for none.
+		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+
+		if (args[0].equalsIgnoreCase ("test83") || args[0].equalsIgnoreCase ("cleanup_event")) {
+
+			try {
+				test83(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

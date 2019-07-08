@@ -301,8 +301,21 @@ public class ActionConfig {
 	// Get maximum time before present to search for forecasts that need to be removed from PDL.
 	// Must be a whole number of seconds, between 1 and 10^9 seconds.
 
-	public long get_removal_lookback_time () {
-		return param_set.removal_lookback_time;
+	public long get_removal_lookback_tmax () {
+		return param_set.removal_lookback_tmax;
+	}
+
+	// Get minimum time before present to search for forecasts that need to be removed from PDL.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_removal_lookback_tmin () {
+		return param_set.removal_lookback_tmin;
+	}
+
+	// Get minimum magnitude to search for forecasts that need to be removed from PDL
+
+	public double get_removal_lookback_mag () {
+		return param_set.removal_lookback_mag;
 	}
 
 	// Get period for checking for forecasts that need to be removed from PDL.
@@ -317,6 +330,20 @@ public class ActionConfig {
 
 	public long get_removal_retry_period () {
 		return param_set.removal_retry_period;
+	}
+
+	// Get gap between processing events with forecasts that may need to be removed from PDL.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_removal_event_gap () {
+		return param_set.removal_event_gap;
+	}
+
+	// Get time after observing a foreign forecast that removal checks are suppressed.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_removal_foreign_block () {
+		return param_set.removal_foreign_block;
 	}
 
 	// Get default value of injectable text for PDL JSON files, or "" for none.

@@ -35,7 +35,9 @@ public class ServerComponent {
 	public static final int OPCODE_POLL_COMCAT_START = 16;	// Start polling Comcat to discover events
 	public static final int OPCODE_POLL_COMCAT_STOP = 17;	// Stop polling Comcat to discover events
 	public static final int OPCODE_NEXT_TIMELINE_OP = 18;	// Issue next delayed operation for a timeline
-	public static final int OPCODE_MAX = 18;				// Maximum allowed opcode
+	public static final int OPCODE_CLEANUP_PDL_START = 19;	// Start cleaning up old forecasts in PDL
+	public static final int OPCODE_CLEANUP_PDL_STOP = 20;	// Stop cleaning up old forecasts in PDL
+	public static final int OPCODE_MAX = 20;				// Maximum allowed opcode
 
 	// Return a string describing an opcode.
 
@@ -59,6 +61,8 @@ public class ServerComponent {
 		case OPCODE_POLL_COMCAT_START: return "OPCODE_POLL_COMCAT_START";
 		case OPCODE_POLL_COMCAT_STOP: return "OPCODE_POLL_COMCAT_STOP";
 		case OPCODE_NEXT_TIMELINE_OP: return "OPCODE_NEXT_TIMELINE_OP";
+		case OPCODE_CLEANUP_PDL_START: return "OPCODE_CLEANUP_PDL_START";
+		case OPCODE_CLEANUP_PDL_STOP: return "OPCODE_CLEANUP_PDL_STOP";
 		}
 		return "OPCODE_INVALID(" + x + ")";
 	}
@@ -214,6 +218,8 @@ public class ServerComponent {
 	public static final String EVID_ANALYST = "===analyst===";	// Used for analyst-selected shadowing
 
 	public static final String EVID_POLL = "===poll===";	// Used for polling tasks
+
+	public static final String EVID_CLEANUP = "===cleanup===";	// Used for cleanup tasks
 
 
 
