@@ -366,8 +366,9 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 	// Run idle time operations.
 	// On entry, task context variables are set up:
 	//  dispatcher_time, dispatcher_true_time, dispatcher_action_config
+	// Returns true if work was done.
 
-	private void exec_idle_time () {
+	private boolean exec_idle_time () {
 
 		// Redirect time split output streams
 
@@ -378,11 +379,23 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 			}
 		}
 
+		// Flag indicates if work was done
+
+		boolean did_work = false;
+
 		// Do Comcat polling
 
-		sg.poll_sup.run_poll_during_idle (dispatcher_verbose);
+		if (!( did_work )) {
+			did_work = sg.poll_sup.run_poll_during_idle (dispatcher_verbose);
+		}
 
-		return;
+		// Do PDL cleanup
+
+		if (!( did_work )) {
+			did_work = sg.cleanup_sup.run_cleanup_during_idle (dispatcher_verbose);
+		}
+
+		return did_work;
 	}
 
 
@@ -544,6 +557,10 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 					// Initialize Comcat polling, begin disabled
 
 					sg.poll_sup.init_polling_disabled();
+
+					// Initialize PDL cleanup, begin disabled
+
+					sg.cleanup_sup.init_cleanup_disabled();
 				}
 
 				else {
@@ -1066,9 +1083,10 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 	// Execute the idle time operations.
 	// This set up the task context and executes the idle time operations.
+	// Returns true if work was done.
 	// This is a test function.
 
-	public void test_exec_idle_time () {
+	public boolean test_exec_idle_time () {
 
 		dispatcher_time = TestMode.get_test_time();
 		dispatcher_true_time = dispatcher_time;
@@ -1079,9 +1097,9 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 		dispatcher_action_config = new ActionConfig();
 	
-		exec_idle_time();
+		boolean did_work = exec_idle_time();
 
-		return;
+		return did_work;
 	}
 
 }

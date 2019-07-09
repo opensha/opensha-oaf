@@ -142,6 +142,36 @@ public class CleanupSupport extends ServerComponent {
 
 
 
+	// Delete all cleanup tasks (the cleanup PDL start/stop tasks).
+	// The currently active task is deleted, if it is a cleanup task.
+
+	public void delete_all_existing_cleanup_tasks () {
+		sg.task_sup.delete_all_tasks_for_event (EVID_CLEANUP, OPCODE_CLEANUP_PDL_START, OPCODE_CLEANUP_PDL_STOP);
+		return;
+	}
+
+
+
+
+	// Initialize cleanup to the disabled state.
+	// Also deletes all cleanup tasks.
+	// Note: This is to be called from the task dispatcher, not during execution of a task.
+	// This must be called before the first task is executed from the task queue.
+
+	public void init_cleanup_disabled () {
+		delete_all_existing_cleanup_tasks ();
+
+		f_cleanup_enabled = false;
+		cleanup_query_wake_time = 0L;
+		cleanup_event_wake_time = 0L;
+		cleanup_ids = null;
+
+		return;
+	}
+
+
+
+
 	// Check if cleanup is needed for an event.
 	// Parameters:
 	//  time_now = Current time, in milliseconds since the epoch.
@@ -795,6 +825,15 @@ public class CleanupSupport extends ServerComponent {
 				// Did work
 
 				return true;
+			}
+
+			// Log successful deletion, if we deleted something
+
+			if (doop == PDLCodeChooserOaf.DOOP_DELETED) {
+				if (f_verbose) {
+					System.out.println ("CLEANUP-EVENT-INFO: Deleted product from PDL, event_id = " + event_id);
+				}
+				sg.log_sup.report_pdl_delete_ok (event_id);
 			}
 
 			// Finished event cleanup

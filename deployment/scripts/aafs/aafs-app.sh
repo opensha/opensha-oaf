@@ -46,6 +46,10 @@ case "$1" in
         sleep 30
         echo "Starting Comcat poll..."
         /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd start_comcat_poll 2>&1
+        echo "Pausing 15 seconds..."
+        sleep 15
+        echo "Starting PDL cleanup..."
+        /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd start_pdl_cleanup 2>&1
         ;;
 
     stop)

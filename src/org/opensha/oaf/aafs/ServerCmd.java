@@ -670,6 +670,170 @@ public class ServerCmd {
 
 
 
+	// cmd_start_pdl_cleanup - Tell the server to start PDL cleanup.
+
+	public static void cmd_start_pdl_cleanup(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerCmd : Invalid 'start_pdl_cleanup' subcommand");
+			return;
+		}
+
+		// Get current time
+
+		long start_time = ServerClock.get_true_time();
+
+		try (
+
+			// Console redirection and log
+
+			TimeSplitOutputStream con_tsop = TimeSplitOutputStream.make_tsop (
+										(new ServerConfig()).get_log_con_control(), start_time);
+			ConsoleRedirector con_red = ConsoleRedirector.make_redirector (con_tsop, false, false);
+			Closeable auto_out = TimeSplitOutputStream.add_auto_upstream (con_tsop,
+										ConsoleRedirector.get_new_out (con_red));
+			Closeable auto_err = TimeSplitOutputStream.add_auto_upstream (con_tsop,
+										ConsoleRedirector.get_new_err (con_red));
+
+		){
+
+			try {
+
+				String event_id = ServerComponent.EVID_CLEANUP;
+
+				OpCleanupPDLStart payload = new OpCleanupPDLStart();
+				payload.setup ();
+
+				// Say hello
+
+				System.out.println (ServerComponent.LOG_SEPARATOR_LINE);
+				System.out.println ("Sending command to start PDL cleanup at " + SimpleUtils.time_to_string (start_time));
+
+				// Post the task
+
+				int opcode = TaskDispatcher.OPCODE_CLEANUP_PDL_START;
+				int stage = 0;
+
+				long the_time = ServerClock.get_time();
+
+				boolean result = TaskDispatcher.post_task (event_id, the_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
+
+				// Display result
+
+				if (result) {
+					System.out.println ("Command to start PDL cleanup was sent to AAFS server at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+					System.out.println ("It takes about 30 seconds for the command to take effect.");
+				} else {
+					System.out.println ("Unable to send AAFS server command to start PDL cleanup at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+				}
+
+			}
+
+			// Report any uncaught exceptions
+
+			catch (Exception e) {
+				System.out.println ("Command to start cleanup had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+				e.printStackTrace();
+			}
+		}
+
+		// Report any uncaught exceptions
+
+		catch (Exception e) {
+			System.out.println ("Command to start cleanup had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+			e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_stop_pdl_cleanup - Tell the server to stop PDL cleanup.
+
+	public static void cmd_stop_pdl_cleanup(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerCmd : Invalid 'stop_pdl_cleanup' subcommand");
+			return;
+		}
+
+		// Get current time
+
+		long start_time = ServerClock.get_true_time();
+
+		try (
+
+			// Console redirection and log
+
+			TimeSplitOutputStream con_tsop = TimeSplitOutputStream.make_tsop (
+										(new ServerConfig()).get_log_con_control(), start_time);
+			ConsoleRedirector con_red = ConsoleRedirector.make_redirector (con_tsop, false, false);
+			Closeable auto_out = TimeSplitOutputStream.add_auto_upstream (con_tsop,
+										ConsoleRedirector.get_new_out (con_red));
+			Closeable auto_err = TimeSplitOutputStream.add_auto_upstream (con_tsop,
+										ConsoleRedirector.get_new_err (con_red));
+
+		){
+
+			try {
+
+				String event_id = ServerComponent.EVID_CLEANUP;
+
+				OpCleanupPDLStop payload = new OpCleanupPDLStop();
+				payload.setup ();
+
+				// Say hello
+
+				System.out.println (ServerComponent.LOG_SEPARATOR_LINE);
+				System.out.println ("Sending command to stop PDL cleanup at " + SimpleUtils.time_to_string (start_time));
+
+				// Post the task
+
+				int opcode = TaskDispatcher.OPCODE_CLEANUP_PDL_STOP;
+				int stage = 0;
+
+				long the_time = ServerClock.get_time();
+
+				boolean result = TaskDispatcher.post_task (event_id, the_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
+
+				// Display result
+
+				if (result) {
+					System.out.println ("Command to stop PDL cleanup was sent to AAFS server at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+					System.out.println ("It takes about 30 seconds for the command to take effect.");
+				} else {
+					System.out.println ("Unable to send AAFS server command to stop PDL cleanup at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+				}
+
+			}
+
+			// Report any uncaught exceptions
+
+			catch (Exception e) {
+				System.out.println ("Command to stop cleanup had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+				e.printStackTrace();
+			}
+		}
+
+		// Report any uncaught exceptions
+
+		catch (Exception e) {
+			System.out.println ("Command to stop cleanup had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+			e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
 	// cmd_show_version - Print version info to the standard output.
 
 	public static void cmd_show_version(String[] args) {
@@ -892,6 +1056,32 @@ public class ServerCmd {
 		case "stop_comcat_poll":
 			try {
 				cmd_stop_comcat_poll(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : start_pdl_cleanup
+		// Command format:
+		//  start_pdl_cleanup 
+		// Post a command to start PDL cleanup.
+
+		case "start_pdl_cleanup":
+			try {
+				cmd_start_pdl_cleanup(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : stop_pdl_cleanup
+		// Command format:
+		//  stop_pdl_cleanup
+		// Post a command to stop PDL cleanup.
+
+		case "stop_pdl_cleanup":
+			try {
+				cmd_stop_pdl_cleanup(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

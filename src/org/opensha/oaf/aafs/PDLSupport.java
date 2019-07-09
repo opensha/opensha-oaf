@@ -260,6 +260,10 @@ public class PDLSupport extends ServerComponent {
 
 		} catch (Exception e) {
 
+			// Run cleanup process after retry interval
+
+			sg.cleanup_sup.set_cleanup_retry();
+
 			// Just log the exception and done
 
 			sg.log_sup.report_pdl_delete_exception (event_id, e);

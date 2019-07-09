@@ -4890,7 +4890,7 @@ public class ServerTest {
 
 
 
-	// Test #83 - Use cleanup support to find events needing cleanup.
+	// Test #83 - Use cleanup support to clean up an event.
 	// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
 
 	public static void test83(String[] args) throws Exception {
@@ -4950,6 +4950,180 @@ public class ServerTest {
 
 			System.out.println ("cleanup_event returned " + doop);
 			System.out.println ("Friendly form = " + PDLCodeChooserOaf.get_doop_as_string (doop));
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #84 - Post a task to start PDL cleanup.
+
+	public static void test84(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerTest : Invalid 'test84' subcommand");
+			return;
+		}
+
+		String event_id = ServerComponent.EVID_CLEANUP;
+
+		OpCleanupPDLStart payload = new OpCleanupPDLStart();
+		payload.setup ();
+
+		// Post the task
+
+		int opcode = TaskDispatcher.OPCODE_CLEANUP_PDL_START;
+		int stage = 0;
+
+		long the_time = ServerClock.get_time();
+
+		boolean result = TaskDispatcher.post_task (event_id, the_time, the_time, "ServerTest", opcode, stage, payload.marshal_task());
+
+		// Display result
+
+		System.out.println ("Post PDL cleanup start result: " + result);
+
+		return;
+	}
+
+
+
+
+	// Test #85 - Post a task to stop PDL cleanup.
+
+	public static void test85(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerTest : Invalid 'test85' subcommand");
+			return;
+		}
+
+		String event_id = ServerComponent.EVID_CLEANUP;
+
+		OpCleanupPDLStop payload = new OpCleanupPDLStop();
+		payload.setup ();
+
+		// Post the task
+
+		int opcode = TaskDispatcher.OPCODE_CLEANUP_PDL_STOP;
+		int stage = 0;
+
+		long the_time = ServerClock.get_time();
+
+		boolean result = TaskDispatcher.post_task (event_id, the_time, the_time, "ServerTest", opcode, stage, payload.marshal_task());
+
+		// Display result
+
+		System.out.println ("Post PDL cleanup stop result: " + result);
+
+		return;
+	}
+
+
+
+
+	// Test #86 - Run the idle time cleanup process.
+	// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+
+	public static void test86(String[] args) throws Exception {
+
+		// 6 additional arguments
+
+		if (args.length != 7) {
+			System.err.println ("ServerTest : Invalid 'test86' or 'cleanup_run_idle' subcommand");
+			return;
+		}
+
+		String logfile = args[1];		// can be "-" for none
+		int pdl_enable = Integer.parseInt (args[2]);
+		long startTime = SimpleUtils.string_to_time (args[3]);
+		long endTime = SimpleUtils.string_to_time (args[4]);
+		double minMag = Double.parseDouble (args[5]);
+		int max_calls = Integer.parseInt (args[6]);
+
+		String my_logfile = null;
+		if (!( logfile.equals ("-") )) {
+			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
+		}
+
+		long time_now = ServerClock.get_time();
+
+		// Set the PDL enable code
+
+		if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+			System.out.println ("Invalid pdl_enable = " + pdl_enable);
+			return;
+		}
+
+		ServerConfig server_config = new ServerConfig();
+		server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+		// Set the action parameters to scan the selected time range and magnitude, with 0.1 second gaps between operations
+
+		ActionConfig action_config = new ActionConfig();
+
+		action_config.get_action_config_file().removal_event_gap = 100L;
+		action_config.get_action_config_file().removal_lookback_tmax = time_now - startTime;
+		action_config.get_action_config_file().removal_lookback_tmin = time_now - endTime;
+		action_config.get_action_config_file().removal_lookback_mag = minMag;
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+			TimeSplitOutputStream sum_tsop = TimeSplitOutputStream.make_tsop (my_logfile, 0L);
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Install the log file
+
+			dispatcher.set_summary_log_tsop (sum_tsop);
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Enable cleanup
+
+			sg.cleanup_sup.set_cleanup_enabled();
+
+			// Execute calls until nothing to do
+
+			for (int n = 1; n <= max_calls; ++n) {
+
+				// Wait 1 second for timers to run
+
+				try {
+					Thread.sleep (1000L);
+				} catch (InterruptedException e) {
+				}
+
+				// Set up task context (necessary to update the time)
+
+				dispatcher.setup_task_context();
+
+				// Execute the call
+
+				System.out.println ("Running idle time call " + n);
+				boolean did_work = sg.cleanup_sup.run_cleanup_during_idle (true);
+
+				// Stop if no work was done
+
+				if (!( did_work )) {
+					System.out.println ("No work done on call " + n);
+					break;
+				}
+			}
 		}
 
 		return;
@@ -6378,7 +6552,7 @@ public class ServerTest {
 		// Subcommand : Test #83
 		// Command format:
 		//  test83  logfile  pdl_enable  time_now  event_id
-		// Use cleanup support to find events needing cleanup.
+		// Use cleanup support to clean up an event.
 		// The logfile can be "-" for none.
 		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
 
@@ -6386,6 +6560,56 @@ public class ServerTest {
 
 			try {
 				test83(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #84
+		// Command format:
+		//  test84
+		// Post a task to start PDL cleanup.
+
+		if (args[0].equalsIgnoreCase ("test84")) {
+
+			try {
+				test84(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #85
+		// Command format:
+		//  test85
+		// Post a task to stop PDL cleanup.
+
+		if (args[0].equalsIgnoreCase ("test85")) {
+
+			try {
+				test85(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #86
+		// Command format:
+		//  test86  logfile  pdl_enable  startTime  endTime  minMag  max_calls
+		// Run the idle time cleanup process.
+		// The logfile can be "-" for none.
+		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+
+		if (args[0].equalsIgnoreCase ("test86") || args[0].equalsIgnoreCase ("cleanup_run_idle")) {
+
+			try {
+				test86(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
