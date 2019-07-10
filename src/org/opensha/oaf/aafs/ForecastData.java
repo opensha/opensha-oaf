@@ -297,7 +297,8 @@ public class ForecastData {
 		// Choose the code to use
 
 		String suggestedCode = eventID;
-		long reviewOverwrite = (isReviewed ? 0L : 1L);		// don't overwrite reviewed forecast if we're not reviewed
+		//long reviewOverwrite = (isReviewed ? 0L : 1L);		// don't overwrite reviewed forecast if we're not reviewed
+		long reviewOverwrite = -1L;
 		String queryID = mainshock.mainshock_event_id;
 		//JSONObject geojson = null;
 		JSONObject geojson = mainshock.mainshock_geojson;	// it's OK if this is null

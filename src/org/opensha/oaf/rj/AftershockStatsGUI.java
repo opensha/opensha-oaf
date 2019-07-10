@@ -2219,7 +2219,8 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 						boolean isReviewed = true;
 
 						String suggestedCode = eventID;
-						long reviewOverwrite = 0L;
+						//long reviewOverwrite = 0L;
+						long reviewOverwrite = -1L;
 						String queryID = eventIDParam.getValue();
 						JSONObject geojson = null;
 						boolean f_gj_prod = true;

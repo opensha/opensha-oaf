@@ -915,6 +915,19 @@ public class MongoDBUtil implements AutoCloseable {
 	// Construct a repeatable ObjectId given a time in milliseconds.
 	// This uses a counter which is incremented on every call.
 
+	// Implementation note: As of MongoDB Java driver 3.10, the ObjectId constructor used
+	// below is deprecated.  Without using deprecated APIs, the only way to make a repeatable
+	// ObjectId now is to construct it from a hex string or array of bytes.  It is 12 bytes
+	// as follows:
+	//  bytes 0 - 3 = timestamp = (int)(date.getTime() / 1000L)   [byte 0 is high-order, byte 3 is low-order]
+	//  bytes 4 - 6 = machineIdentifier low 3 bytes   [byte 4 is high-order, byte 6 is low-order]
+	//  bytes 7 - 8 = processIdentifier 2 bytes   [byte 7 is high-order, byte 8 is low-order]
+	//  bytes 9 - 11 = counter low 3 bytes   [byte 9 is high-order, byte 11 is low-order]
+	// The hex string is byte 0 as the first two characters, byte 1 as the third and fourth characters, etc.
+	// Apparently any 24-character hex string is acceptable for constructing an ObjectId.
+	// ObjectId produces hex strings with lower case letters, but accepts both upper and lower case.
+	// The machineIdentifier and counter each must be between 0 and 16777215.
+
 	private static int sim_key_counter = 0;
 
 	private static synchronized ObjectId make_repeatable_object_id (long the_time) {
@@ -951,6 +964,29 @@ public class MongoDBUtil implements AutoCloseable {
 		// Just return a new ObjectId
 	
 		return new ObjectId ();
+	}
+
+
+
+
+	// Construct a new ObjectId that can be used as an end-of-file marker.
+
+	private static final String OID_EOF_HEX_STRING = "0e0f0e0f0e0f0e0f0e0f0e0f";
+
+	public static ObjectId make_eof_object_id () {
+
+		// Return a new ObjectId constructed from a fixed hex string
+	
+		return new ObjectId (OID_EOF_HEX_STRING);
+	}
+
+
+
+
+	// Test if the given ObjectId is the end-of-file marker.
+
+	public static boolean is_eof_object_id (ObjectId id) {
+		return id.toHexString().equalsIgnoreCase (OID_EOF_HEX_STRING);
 	}
 
 

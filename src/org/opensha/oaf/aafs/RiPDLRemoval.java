@@ -96,7 +96,7 @@ public class RiPDLRemoval extends DBPayload {
 		if (riprem_forecast_lag <= 0L) {
 			return String.valueOf (riprem_forecast_lag);
 		}
-		return SimpleUtils.duration_to_string (riprem_forecast_lag);
+		return SimpleUtils.duration_to_string_2 (riprem_forecast_lag);
 	}
 
 	// Return a friendly string representation of ripdl_update_time.

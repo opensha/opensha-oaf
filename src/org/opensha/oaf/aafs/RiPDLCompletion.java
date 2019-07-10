@@ -89,7 +89,7 @@ public class RiPDLCompletion extends DBPayload {
 		if (ripdl_forecast_lag <= 0L) {
 			return String.valueOf (ripdl_forecast_lag);
 		}
-		return SimpleUtils.duration_to_string (ripdl_forecast_lag);
+		return SimpleUtils.duration_to_string_2 (ripdl_forecast_lag);
 	}
 
 	// Return a friendly string representation of ripdl_update_time.
