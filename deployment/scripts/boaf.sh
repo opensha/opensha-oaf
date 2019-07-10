@@ -24,6 +24,8 @@
 #
 # diffcfg - Use git diff to compare the configuration files in /opt/aafs to the originals.
 #
+# diffcfgc - Same as diffcfg except forces the use of colored text when displaying changes.
+#
 # run - Run a class in the org.opensha.oaf package, using the compiled-in configuration.
 #       After the 'run' keyword comes the name of the class (without the 'org.opensha.oaf.'
 #       prefix), followed by any command-line parameters for the class.
@@ -271,11 +273,19 @@ case "$1" in
         ;;
 
     diffcfg)
-        git diff /opt/aafs/oafcfg/ServerConfig.json opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json
-        git diff /opt/aafs/oafcfg/ActionConfig.json opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json
-        git diff /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json
-        git diff /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json
-        git diff /opt/aafs/intake/config.ini opensha-oaf/deployment/scripts/aafs/intake/config.ini
+        git diff opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
+        git diff opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
+        git diff opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
+        git diff opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
+        git diff opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
+        ;;
+
+    diffcfgc)
+        git diff --color opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
+        git diff --color opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
+        git diff --color opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
+        git diff --color opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
+        git diff --color opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
         ;;
 
     run)
@@ -303,7 +313,7 @@ case "$1" in
         ;;
 
     *)
-        echo "Usage: boaf.sh {clone|update|clean|compile|pack|deploy|deploycfg|diffcfg|run|runcfg|runaafs|runany}"
+        echo "Usage: boaf.sh {clone|update|clean|compile|pack|deploy|deploycfg|diffcfg|diffcfgc|run|runcfg|runaafs|runany}"
         exit 1
         ;;
 esac
