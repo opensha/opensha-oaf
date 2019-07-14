@@ -73,6 +73,11 @@ public interface MongoDBCollHandle {
 
 	//--- MongoDB functions ---
 
+	// Test if a collection exists.
+	// Returns true if the collection exists, false if not.
+
+	public boolean collection_exists ();
+
 	// Create a collection.
 	// Parameters:
 	//  options = Options, or null if none, defaults to null.

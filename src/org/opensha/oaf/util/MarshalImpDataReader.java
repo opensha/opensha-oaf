@@ -242,11 +242,11 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 
 		// Number of top-level objects created.
 
-		private int root_count;
+		private long root_count;
 
 		// Return number of complete children that have been processed, exception if in progress.
 
-		public int get_root_status () {
+		public long get_root_status () {
 			if (next != null) {
 				throw new MarshalException ("Marshal/unmarshal is incomplete");
 			}
@@ -276,7 +276,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 				}
 				throw new MarshalException ("Attempt to begin second child context when in root context: name = " + name);
 			}
-			//  if (root_count > 0) {		// This would limit to one top-level object
+			//  if (root_count > 0L) {		// This would limit to one top-level object
 			//  	if (name == null) {
 			//  		throw new MarshalException ("Attempt to begin child context when in already-used root context: name = null");
 			//  	}
@@ -319,7 +319,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 
 		public ContextRoot () {
 			super (null);
-			root_count = 0;
+			root_count = 0L;
 		}
 	}
 
@@ -551,7 +551,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 	/**
 	 * Check read status, return number of top-level objects read, exception if in progress.
 	 */
-	public int check_read_complete () {
+	public long check_read_complete () {
 		return root_context_read.get_root_status();
 	}
 

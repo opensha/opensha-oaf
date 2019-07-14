@@ -274,6 +274,38 @@ public class MongoDBContent implements AutoCloseable {
 
 		//--- MongoDB functions ---
 
+		// Test if a collection exists.
+		// Returns true if the collection exists, false if not.
+
+		@Override
+		public boolean collection_exists () {
+			boolean result = false;
+			try {
+				ClientSession client_session = get_op_session_read();
+
+				try (
+					MongoCursor<String> it = ((client_session != null)
+						? database_state.get_mongo_database().listCollectionNames(client_session).iterator()
+						: database_state.get_mongo_database().listCollectionNames().iterator()
+					);
+				){
+					while (it.hasNext()) {
+						String s = it.next();
+						if (s.equals (collection_config.get_coll_name())) {
+							result = true;
+							break;
+						}
+					}
+				}
+
+			}
+			catch (MongoException e) {
+				throw new DBDriverException (make_locus(e), "MongoDBCollHandle.collection_exists: MongoDB exception: " + make_coll_id_message(), e);
+			}
+			return result;
+		}
+
+
 		// Create a collection.
 		// Parameters:
 		//  options = Options, or null if none, defaults to null.

@@ -315,7 +315,7 @@ public class RelaySupport extends ServerComponent {
 
 	public List<RelayItem> get_pdl_relay_items (String... event_ids) {
 		String[] relay_ids = event_ids_to_pdl_relay_ids (event_ids);
-		List<RelayItem> result = RelayItem.get_relay_item_range (true, 0L, 0L, relay_ids);
+		List<RelayItem> result = RelayItem.get_relay_item_range (RelayItem.DESCENDING, 0L, 0L, relay_ids);
 		return result;
 	}
 
@@ -369,7 +369,7 @@ public class RelaySupport extends ServerComponent {
 
 	public List<RelayItem> get_prem_relay_items (String... event_ids) {
 		String[] relay_ids = event_ids_to_prem_relay_ids (event_ids);
-		List<RelayItem> result = RelayItem.get_relay_item_range (true, 0L, 0L, relay_ids);
+		List<RelayItem> result = RelayItem.get_relay_item_range (RelayItem.DESCENDING, 0L, 0L, relay_ids);
 		return result;
 	}
 
@@ -422,7 +422,7 @@ public class RelaySupport extends ServerComponent {
 
 	public List<RelayItem> get_pfrn_relay_items (String... event_ids) {
 		String[] relay_ids = event_ids_to_pfrn_relay_ids (event_ids);
-		List<RelayItem> result = RelayItem.get_relay_item_range (true, 0L, 0L, relay_ids);
+		List<RelayItem> result = RelayItem.get_relay_item_range (RelayItem.DESCENDING, 0L, 0L, relay_ids);
 		return result;
 	}
 
@@ -442,7 +442,7 @@ public class RelaySupport extends ServerComponent {
 
 	public List<RelayItem> get_pdl_prem_pfrn_relay_items (String... event_ids) {
 		String[] relay_ids = event_ids_to_pdl_prem_pfrn_relay_ids (event_ids);
-		List<RelayItem> result = RelayItem.get_relay_item_range (true, 0L, 0L, relay_ids);
+		List<RelayItem> result = RelayItem.get_relay_item_range (RelayItem.DESCENDING, 0L, 0L, relay_ids);
 		return result;
 	}
 

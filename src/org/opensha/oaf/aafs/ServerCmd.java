@@ -3,6 +3,17 @@ package org.opensha.oaf.aafs;
 import java.util.List;
 
 import java.io.Closeable;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.GZIPInputStream;
 
 import org.opensha.oaf.aafs.MongoDBUtil;
 
@@ -12,6 +23,7 @@ import org.opensha.oaf.aafs.entity.CatalogSnapshot;
 import org.opensha.oaf.aafs.entity.TimelineEntry;
 import org.opensha.oaf.aafs.entity.AliasFamily;
 import org.opensha.oaf.aafs.entity.RelayItem;
+import org.opensha.oaf.aafs.entity.DBEntity;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.rj.CompactEqkRupList;
@@ -22,6 +34,8 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
+import org.opensha.oaf.util.MarshalImpDataReader;
+import org.opensha.oaf.util.MarshalImpDataWriter;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TimeSplitOutputStream;
 import org.opensha.oaf.util.ConsoleRedirector;
@@ -873,26 +887,8 @@ public class ServerCmd {
 		){
 
 			// Create the indexes
-		
-			System.out.println ("Creating indexes for task entries...");
-			PendingTask.make_indexes();
-		
-			System.out.println ("Creating indexes for log entries...");
-			LogEntry.make_indexes();
-		
-			System.out.println ("Creating indexes for catalog snapshot entries...");
-			CatalogSnapshot.make_indexes();
-		
-			System.out.println ("Creating indexes for timeline entries...");
-			TimelineEntry.make_indexes();
-		
-			System.out.println ("Creating indexes for alias family entries...");
-			AliasFamily.make_indexes();
-		
-			System.out.println ("Creating indexes for relay items...");
-			RelayItem.make_indexes();
-			
-			System.out.println ("All indexes were created successfully.");
+
+			DBEntity.make_all_indexes (true);
 		}
 
 		return;
@@ -918,27 +914,285 @@ public class ServerCmd {
 			MongoDBUtil mongo_instance = new MongoDBUtil();
 		){
 
-			// Create the indexes
-		
-			System.out.println ("Dropping indexes for task entries...");
-			PendingTask.drop_indexes();
-		
-			System.out.println ("Dropping indexes for log entries...");
-			LogEntry.drop_indexes();
-		
-			System.out.println ("Dropping indexes for catalog snapshot entries...");
-			CatalogSnapshot.drop_indexes();
-		
-			System.out.println ("Dropping indexes for timeline entries...");
-			TimelineEntry.drop_indexes();
-		
-			System.out.println ("Dropping indexes for alias family entries...");
-			AliasFamily.drop_indexes();
-		
-			System.out.println ("Dropping indexes for relay items...");
-			RelayItem.drop_indexes ();
-			
-			System.out.println ("All indexes were dropped successfully.");
+			// Drop the indexes
+
+			DBEntity.drop_all_indexes (true);
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_erase_database - Erase our MongoDB collections.
+
+	public static void cmd_erase_database(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerCmd : Invalid 'erase_database_this_is_irreversible' subcommand");
+			return;
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Drop the collections
+
+			DBEntity.drop_all_collections (true);
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_check_collections - Check for existence of our MongoDB collections.
+
+	public static void cmd_check_collections(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerCmd : Invalid 'check_collections' subcommand");
+			return;
+		}
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Drop the indexes
+
+			DBEntity.check_all_collections (true);
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_backup_database - Back up all of our MongoDB collections.
+
+	public static void cmd_backup_database(String[] args) {
+
+		// 1 additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerCmd : Invalid 'backup_database' subcommand");
+			return;
+		}
+
+		String filename = args[1];
+
+		try {
+
+			// Connect to MongoDB and then open the file
+
+			try (
+				MongoDBUtil mongo_instance = new MongoDBUtil();
+				MarshalImpDataWriter writer = new MarshalImpDataWriter (filename, true);
+			){
+
+				// Back up all collections
+
+				DBEntity.backup_database (writer, true);
+
+				writer.check_write_complete();
+			}
+
+		}
+
+		// Report any exceptions
+
+		catch (FileNotFoundException e) {
+			System.out.println ("Failed to backup database because file was not accessible: " + filename);
+			e.printStackTrace();
+		}
+
+		catch (IOException e) {
+			System.out.println ("Failed to backup database due to I/O error on file: " + filename);
+			e.printStackTrace();
+		}
+
+		catch (Exception e) {
+			System.out.println ("Failed to backup database to file: " + filename);
+			e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_backup_database_gzip - Back up all of our MongoDB collections, to gzipped file.
+
+	public static void cmd_backup_database_gzip(String[] args) {
+
+		// 1 additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerCmd : Invalid 'backup_database_gzip' subcommand");
+			return;
+		}
+
+		String filename = args[1];
+
+		try {
+
+			// Connect to MongoDB and then open the file
+
+			try (
+				MongoDBUtil mongo_instance = new MongoDBUtil();
+				MarshalImpDataWriter writer = new MarshalImpDataWriter (
+					new DataOutputStream (new GZIPOutputStream (new BufferedOutputStream (new FileOutputStream (filename)))),
+					true);
+			){
+
+				// Back up all collections
+
+				DBEntity.backup_database (writer, true);
+
+				writer.check_write_complete();
+			}
+
+		}
+
+		// Report any exceptions
+
+		catch (FileNotFoundException e) {
+			System.out.println ("Failed to backup database because file was not accessible: " + filename);
+			e.printStackTrace();
+		}
+
+		catch (IOException e) {
+			System.out.println ("Failed to backup database due to I/O error on file: " + filename);
+			e.printStackTrace();
+		}
+
+		catch (Exception e) {
+			System.out.println ("Failed to backup database to file: " + filename);
+			e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_restore_database - Restore all of our MongoDB collections.
+
+	public static void cmd_restore_database(String[] args) {
+
+		// 1 additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerCmd : Invalid 'restore_database' subcommand");
+			return;
+		}
+
+		String filename = args[1];
+
+		try {
+
+			// Open the file and then connect to MongoDB
+
+			try (
+				MarshalImpDataReader reader = new MarshalImpDataReader (filename, true);
+				MongoDBUtil mongo_instance = new MongoDBUtil();
+			){
+
+				// Back up all collections
+
+				DBEntity.restore_database (reader, true);
+
+				reader.check_read_complete();
+			}
+
+		}
+
+		// Report any exceptions
+
+		catch (FileNotFoundException e) {
+			System.out.println ("Failed to restore database because file was not accessible: " + filename);
+			e.printStackTrace();
+		}
+
+		catch (IOException e) {
+			System.out.println ("Failed to restore database due to I/O error on file: " + filename);
+			e.printStackTrace();
+		}
+
+		catch (Exception e) {
+			System.out.println ("Failed to restore database from file: " + filename);
+			e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_restore_database_gzip - Restore all of our MongoDB collection, from gzipped file.
+
+	public static void cmd_restore_database_gzip(String[] args) {
+
+		// 1 additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerCmd : Invalid 'restore_database_gzip' subcommand");
+			return;
+		}
+
+		String filename = args[1];
+
+		try {
+
+			// Open the file and then connect to MongoDB
+
+			try (
+				MarshalImpDataReader reader = new MarshalImpDataReader (
+					new DataInputStream (new GZIPInputStream (new BufferedInputStream (new FileInputStream (filename)))),
+					true);
+				MongoDBUtil mongo_instance = new MongoDBUtil();
+			){
+
+				// Back up all collections
+
+				DBEntity.restore_database (reader, true);
+
+				reader.check_read_complete();
+			}
+
+		}
+
+		// Report any exceptions
+
+		catch (FileNotFoundException e) {
+			System.out.println ("Failed to restore database because file was not accessible: " + filename);
+			e.printStackTrace();
+		}
+
+		catch (IOException e) {
+			System.out.println ("Failed to restore database due to I/O error on file: " + filename);
+			e.printStackTrace();
+		}
+
+		catch (Exception e) {
+			System.out.println ("Failed to restore database from file: " + filename);
+			e.printStackTrace();
 		}
 
 		return;
@@ -1125,6 +1379,93 @@ public class ServerCmd {
 		case "drop_indexes":
 			try {
 				cmd_drop_indexes(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : erase_database_this_is_irreversible
+		// Command format:
+		//  erase_database_this_is_irreversible
+		// Drop all local database collections, thereby erasing the database.
+		// Note: This action is irreversible
+
+		case "erase_database_this_is_irreversible":
+			try {
+				cmd_erase_database(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : check_collections
+		// Command format:
+		//  check_collections
+		// Check for existence of our MongoDB collections.
+
+		case "check_collections":
+			try {
+				cmd_check_collections(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : backup_database
+		// Command format:
+		//  backup_database  filename
+		// Back up all local database collections.
+		// Note: The entire database contents is stored into the given file.
+
+		case "backup_database":
+			try {
+				cmd_backup_database(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : backup_database_gzip
+		// Command format:
+		//  backup_database_gzip  filename
+		// Back up all local database collections, and gzip the file.
+		// Note: The entire database contents is stored into the given file.
+
+		case "backup_database_gzip":
+			try {
+				cmd_backup_database_gzip(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : restore_database
+		// Command format:
+		//  restore_database  filename
+		// Restore all local database collections.
+		// Note: The entire database contents is restored from the given file.
+		// Note: The database must be empty (none of our collections can exist).
+		// Note: This command also creates the collections and indexes.
+
+		case "restore_database":
+			try {
+				cmd_restore_database(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : restore_database_gzip
+		// Command format:
+		//  restore_database_gzip  filename
+		// Restore all local database collections, and gunzip the file.
+		// Note: The entire database contents is restored from the given file.
+		// Note: The database must be empty (none of our collections can exist).
+		// Note: This command also creates the collections and indexes.
+
+		case "restore_database_gzip":
+			try {
+				cmd_restore_database_gzip(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

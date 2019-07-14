@@ -242,11 +242,11 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 		// Number of top-level objects created.
 
-		private int root_count;
+		private long root_count;
 
 		// Return number of complete children that have been processed, exception if in progress.
 
-		public int get_root_status () {
+		public long get_root_status () {
 			if (next != null) {
 				throw new MarshalException ("Marshal/unmarshal is incomplete");
 			}
@@ -276,7 +276,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 				}
 				throw new MarshalException ("Attempt to begin second child context when in root context: name = " + name);
 			}
-			//  if (root_count > 0) {		// This would limit to one top-level object
+			//  if (root_count > 0L) {		// This would limit to one top-level object
 			//  	if (name == null) {
 			//  		throw new MarshalException ("Attempt to begin child context when in already-used root context: name = null");
 			//  	}
@@ -319,7 +319,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 		public ContextRoot () {
 			super (null);
-			root_count = 0;
+			root_count = 0L;
 		}
 	}
 
@@ -504,7 +504,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 	/**
 	 * Check write status, return number of top-level object written, exception if in progress.
 	 */
-	public int check_write_complete () {
+	public long check_write_complete () {
 		return root_context_write.get_root_status();
 	}
 
@@ -649,7 +649,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				writer.marshalArrayEnd ();
 
-				if (!( writer.check_write_complete() == 1 )) {
+				if (!( writer.check_write_complete() == 1L )) {
 					System.out.println ("Writer reports writing not complete");
 					return;
 				}
@@ -725,7 +725,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				reader.unmarshalArrayEnd ();
 
-				if (!( reader.check_read_complete() == 1 )) {
+				if (!( reader.check_read_complete() == 1L )) {
 					System.out.println ("Reader reports reading not complete");
 					return;
 				}
@@ -747,7 +747,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 		// Subcommand : Test #2
 		// Command format:
-		//  test1  filename  num_long  num_double  num_string  num_int
+		//  test2  filename  num_long  num_double  num_string  num_int
 		// Test marshaling and unmarshaling with the given numbers of long and double and string and int.
 		// Data values are randomly generated.
 		// This is the same as test #1, except data values are written to a map instead of an array.
@@ -853,7 +853,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				writer.marshalMapEnd ();
 
-				if (!( writer.check_write_complete() == 1 )) {
+				if (!( writer.check_write_complete() == 1L )) {
 					System.out.println ("Writer reports writing not complete");
 					return;
 				}
@@ -924,7 +924,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				reader.unmarshalMapEnd ();
 
-				if (!( reader.check_read_complete() == 1 )) {
+				if (!( reader.check_read_complete() == 1L )) {
 					System.out.println ("Reader reports reading not complete");
 					return;
 				}
@@ -946,7 +946,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 		// Subcommand : Test #3
 		// Command format:
-		//  test1  filename  num_long  num_double  num_string  num_int
+		//  test3  filename  num_long  num_double  num_string  num_int
 		// Test marshaling and unmarshaling with the given numbers of long and double and string and int.
 		// Data values are randomly generated.
 		// This is the same as test #2, except field names are not stored in the file.
@@ -1052,7 +1052,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				writer.marshalMapEnd ();
 
-				if (!( writer.check_write_complete() == 1 )) {
+				if (!( writer.check_write_complete() == 1L )) {
 					System.out.println ("Writer reports writing not complete");
 					return;
 				}
@@ -1123,7 +1123,647 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				reader.unmarshalMapEnd ();
 
-				if (!( reader.check_read_complete() == 1 )) {
+				if (!( reader.check_read_complete() == 1L )) {
+					System.out.println ("Reader reports reading not complete");
+					return;
+				}
+
+				reader.close();
+				reader = null;
+
+				System.out.println ("Error count: " + errors);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  filename  num_long  num_double  num_string  num_int
+		// Test marshaling and unmarshaling with the given numbers of long and double and string and int.
+		// Data values are randomly generated.
+		// This is the same as test #2, except data values are written to multiple maps, and all data is written twice.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// Five additional arguments
+
+			if (args.length != 6) {
+				System.err.println ("MarshalImpDataWriter : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				String filename = args[1];
+				int num_long = Integer.parseInt(args[2]);
+				int num_double = Integer.parseInt(args[3]);
+				int num_string = Integer.parseInt(args[4]);
+				int num_int = Integer.parseInt(args[5]);
+
+				System.out.println (
+					"filename = " + filename + "\n" +
+					"num_long = " + num_long + "\n" +
+					"num_double = " + num_double + "\n" +
+					"num_string = " + num_string + "\n" +
+					"num_int = " + num_int + "\n"
+				);
+
+				// Random number generator
+
+				UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+
+				// Generate random values
+
+				System.out.println ("Generating random data ...");
+
+				long[] long_data = new long[num_long];
+				for (int i = 0; i < num_long; ++i) {
+					long_data[i] = Math.round (rangen.sample() * 1.0e12);
+					if (i < 10) {
+						System.out.println ("long_data[" + i + "] = " + long_data[i]);
+					}
+				}
+
+				double[] double_data = new double[num_double];
+				for (int i = 0; i < num_double; ++i) {
+					switch (i % 5) {
+					case 0: double_data[i] = rangen.sample() * 1.0e12; break;
+					case 1: double_data[i] = rangen.sample() * 2.0e7; break;
+					case 2: double_data[i] = rangen.sample() * 3.0e0; break;
+					case 3: double_data[i] = rangen.sample() * 2.0e-3; break;
+					case 4: double_data[i] = rangen.sample() * 1.0e-12; break;
+					}
+					if (i < 10) {
+						System.out.println ("double_data[" + i + "] = " + double_data[i]);
+					}
+				}
+
+				String[] string_data = new String[num_string];
+				for (int i = 0; i < num_string; ++i) {
+					string_data[i] = "String" + Math.round (rangen.sample() * 1.0e12);
+					if (i < 10) {
+						System.out.println ("string_data[" + i + "] = " + string_data[i]);
+					}
+				}
+
+				int[] int_data = new int[num_int];
+				for (int i = 0; i < num_int; ++i) {
+					int_data[i] = (int)(Math.round (rangen.sample() * 1.0e8));
+					if (i < 10) {
+						System.out.println ("int_data[" + i + "] = " + int_data[i]);
+					}
+				}
+
+				// Marshal the data
+
+				System.out.println ("Marshaling data ...");
+
+				MarshalImpDataWriter writer = new MarshalImpDataWriter (filename, true);
+
+				writer.marshalMapBegin (null);
+
+				writer.marshalBoolean ("boolean_data[true]", true);
+				writer.marshalBoolean ("boolean_data[false]", false);
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = 0; i < num_long; ++i) {
+					writer.marshalLong ("long_data[" + i + "]", long_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = 0; i < num_double; ++i) {
+					writer.marshalDouble ("double_data[" + i + "]", double_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = 0; i < num_string; ++i) {
+					writer.marshalString ("string_data[" + i + "]", string_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = 0; i < num_int; ++i) {
+					writer.marshalInt ("int_data[" + i + "]", int_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				writer.marshalBoolean ("boolean_data[false]", false);
+				writer.marshalBoolean ("boolean_data[true]", true);
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = num_long - 1; i >= 0; --i) {
+					writer.marshalLong ("long_data[" + i + "]", long_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = num_double - 1; i >= 0; --i) {
+					writer.marshalDouble ("double_data[" + i + "]", double_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = num_string - 1; i >= 0; --i) {
+					writer.marshalString ("string_data[" + i + "]", string_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = num_int - 1; i >= 0; --i) {
+					writer.marshalInt ("int_data[" + i + "]", int_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+
+				if (!( writer.check_write_complete() == 10L )) {
+					System.out.println ("Writer reports writing not complete");
+					return;
+				}
+
+				writer.close();
+				writer = null;
+
+				// Unmarshal and check the data
+
+				System.out.println ("Unmarshaling data ...");
+
+				MarshalImpDataReader reader = new MarshalImpDataReader (filename, true);
+
+				int errors = 0;
+
+				reader.unmarshalMapBegin (null);
+
+				if (!( reader.unmarshalBoolean ("boolean_data[true]") )) {
+					++errors;
+					System.out.println ("Mismatched boolean: expecting true, got false");
+				}
+
+				if ( reader.unmarshalBoolean ("boolean_data[false]") ) {
+					++errors;
+					System.out.println ("Mismatched boolean: expecting false, got true");
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = 0; i < num_long; ++i) {
+					long x = reader.unmarshalLong ("long_data[" + i + "]");
+					if (x != long_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched long: i = " + i + ", d = " + long_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = 0; i < num_double; ++i) {
+					double x = reader.unmarshalDouble ("double_data[" + i + "]");
+					if (x != double_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched double: i = " + i + ", d = " + double_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = 0; i < num_string; ++i) {
+					String x = reader.unmarshalString ("string_data[" + i + "]");
+					if (!( x.equals(string_data[i]) )) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched string: i = " + i + ", d = " + string_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = 0; i < num_int; ++i) {
+					int x = reader.unmarshalInt ("int_data[" + i + "]");
+					if (x != int_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched int: i = " + i + ", d = " + int_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				if ( reader.unmarshalBoolean ("boolean_data[false]") ) {
+					++errors;
+					System.out.println ("Mismatched boolean: expecting false, got true");
+				}
+
+				if (!( reader.unmarshalBoolean ("boolean_data[true]") )) {
+					++errors;
+					System.out.println ("Mismatched boolean: expecting true, got false");
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = num_long - 1; i >= 0; --i) {
+					long x = reader.unmarshalLong ("long_data[" + i + "]");
+					if (x != long_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched long: i = " + i + ", d = " + long_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = num_double - 1; i >= 0; --i) {
+					double x = reader.unmarshalDouble ("double_data[" + i + "]");
+					if (x != double_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched double: i = " + i + ", d = " + double_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = num_string - 1; i >= 0; --i) {
+					String x = reader.unmarshalString ("string_data[" + i + "]");
+					if (!( x.equals(string_data[i]) )) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched string: i = " + i + ", d = " + string_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = num_int - 1; i >= 0; --i) {
+					int x = reader.unmarshalInt ("int_data[" + i + "]");
+					if (x != int_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched int: i = " + i + ", d = " + int_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+
+				if (!( reader.check_read_complete() == 10L )) {
+					System.out.println ("Reader reports reading not complete");
+					return;
+				}
+
+				reader.close();
+				reader = null;
+
+				System.out.println ("Error count: " + errors);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  filename  num_long  num_double  num_string  num_int
+		// Test marshaling and unmarshaling with the given numbers of long and double and string and int.
+		// Data values are randomly generated.
+		// This is the same as test #4, except field names are not stored in the file.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// Five additional arguments
+
+			if (args.length != 6) {
+				System.err.println ("MarshalImpDataWriter : Invalid 'test5' subcommand");
+				return;
+			}
+
+			try {
+
+				String filename = args[1];
+				int num_long = Integer.parseInt(args[2]);
+				int num_double = Integer.parseInt(args[3]);
+				int num_string = Integer.parseInt(args[4]);
+				int num_int = Integer.parseInt(args[5]);
+
+				System.out.println (
+					"filename = " + filename + "\n" +
+					"num_long = " + num_long + "\n" +
+					"num_double = " + num_double + "\n" +
+					"num_string = " + num_string + "\n" +
+					"num_int = " + num_int + "\n"
+				);
+
+				// Random number generator
+
+				UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+
+				// Generate random values
+
+				System.out.println ("Generating random data ...");
+
+				long[] long_data = new long[num_long];
+				for (int i = 0; i < num_long; ++i) {
+					long_data[i] = Math.round (rangen.sample() * 1.0e12);
+					if (i < 10) {
+						System.out.println ("long_data[" + i + "] = " + long_data[i]);
+					}
+				}
+
+				double[] double_data = new double[num_double];
+				for (int i = 0; i < num_double; ++i) {
+					switch (i % 5) {
+					case 0: double_data[i] = rangen.sample() * 1.0e12; break;
+					case 1: double_data[i] = rangen.sample() * 2.0e7; break;
+					case 2: double_data[i] = rangen.sample() * 3.0e0; break;
+					case 3: double_data[i] = rangen.sample() * 2.0e-3; break;
+					case 4: double_data[i] = rangen.sample() * 1.0e-12; break;
+					}
+					if (i < 10) {
+						System.out.println ("double_data[" + i + "] = " + double_data[i]);
+					}
+				}
+
+				String[] string_data = new String[num_string];
+				for (int i = 0; i < num_string; ++i) {
+					string_data[i] = "String" + Math.round (rangen.sample() * 1.0e12);
+					if (i < 10) {
+						System.out.println ("string_data[" + i + "] = " + string_data[i]);
+					}
+				}
+
+				int[] int_data = new int[num_int];
+				for (int i = 0; i < num_int; ++i) {
+					int_data[i] = (int)(Math.round (rangen.sample() * 1.0e8));
+					if (i < 10) {
+						System.out.println ("int_data[" + i + "] = " + int_data[i]);
+					}
+				}
+
+				// Marshal the data
+
+				System.out.println ("Marshaling data ...");
+
+				MarshalImpDataWriter writer = new MarshalImpDataWriter (filename, false);
+
+				writer.marshalMapBegin (null);
+
+				writer.marshalBoolean ("boolean_data[true]", true);
+				writer.marshalBoolean ("boolean_data[false]", false);
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = 0; i < num_long; ++i) {
+					writer.marshalLong ("long_data[" + i + "]", long_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = 0; i < num_double; ++i) {
+					writer.marshalDouble ("double_data[" + i + "]", double_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = 0; i < num_string; ++i) {
+					writer.marshalString ("string_data[" + i + "]", string_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = 0; i < num_int; ++i) {
+					writer.marshalInt ("int_data[" + i + "]", int_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				writer.marshalBoolean ("boolean_data[false]", false);
+				writer.marshalBoolean ("boolean_data[true]", true);
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = num_long - 1; i >= 0; --i) {
+					writer.marshalLong ("long_data[" + i + "]", long_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = num_double - 1; i >= 0; --i) {
+					writer.marshalDouble ("double_data[" + i + "]", double_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = num_string - 1; i >= 0; --i) {
+					writer.marshalString ("string_data[" + i + "]", string_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+				writer.marshalMapBegin (null);
+
+				for (int i = num_int - 1; i >= 0; --i) {
+					writer.marshalInt ("int_data[" + i + "]", int_data[i]);
+				}
+
+				writer.marshalMapEnd ();
+
+				if (!( writer.check_write_complete() == 10L )) {
+					System.out.println ("Writer reports writing not complete");
+					return;
+				}
+
+				writer.close();
+				writer = null;
+
+				// Unmarshal and check the data
+
+				System.out.println ("Unmarshaling data ...");
+
+				MarshalImpDataReader reader = new MarshalImpDataReader (filename, false);
+
+				int errors = 0;
+
+				reader.unmarshalMapBegin (null);
+
+				if (!( reader.unmarshalBoolean ("boolean_data[true]") )) {
+					++errors;
+					System.out.println ("Mismatched boolean: expecting true, got false");
+				}
+
+				if ( reader.unmarshalBoolean ("boolean_data[false]") ) {
+					++errors;
+					System.out.println ("Mismatched boolean: expecting false, got true");
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = 0; i < num_long; ++i) {
+					long x = reader.unmarshalLong ("long_data[" + i + "]");
+					if (x != long_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched long: i = " + i + ", d = " + long_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = 0; i < num_double; ++i) {
+					double x = reader.unmarshalDouble ("double_data[" + i + "]");
+					if (x != double_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched double: i = " + i + ", d = " + double_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = 0; i < num_string; ++i) {
+					String x = reader.unmarshalString ("string_data[" + i + "]");
+					if (!( x.equals(string_data[i]) )) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched string: i = " + i + ", d = " + string_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = 0; i < num_int; ++i) {
+					int x = reader.unmarshalInt ("int_data[" + i + "]");
+					if (x != int_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched int: i = " + i + ", d = " + int_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				if ( reader.unmarshalBoolean ("boolean_data[false]") ) {
+					++errors;
+					System.out.println ("Mismatched boolean: expecting false, got true");
+				}
+
+				if (!( reader.unmarshalBoolean ("boolean_data[true]") )) {
+					++errors;
+					System.out.println ("Mismatched boolean: expecting true, got false");
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = num_long - 1; i >= 0; --i) {
+					long x = reader.unmarshalLong ("long_data[" + i + "]");
+					if (x != long_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched long: i = " + i + ", d = " + long_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = num_double - 1; i >= 0; --i) {
+					double x = reader.unmarshalDouble ("double_data[" + i + "]");
+					if (x != double_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched double: i = " + i + ", d = " + double_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = num_string - 1; i >= 0; --i) {
+					String x = reader.unmarshalString ("string_data[" + i + "]");
+					if (!( x.equals(string_data[i]) )) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched string: i = " + i + ", d = " + string_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+				reader.unmarshalMapBegin (null);
+
+				for (int i = num_int - 1; i >= 0; --i) {
+					int x = reader.unmarshalInt ("int_data[" + i + "]");
+					if (x != int_data[i]) {
+						++errors;
+						if (errors <= 10) {
+							System.out.println ("Mismatched int: i = " + i + ", d = " + int_data[i] + ", x = " + x);
+						}
+					}
+				}
+
+				reader.unmarshalMapEnd ();
+
+				if (!( reader.check_read_complete() == 10L )) {
 					System.out.println ("Reader reports reading not complete");
 					return;
 				}

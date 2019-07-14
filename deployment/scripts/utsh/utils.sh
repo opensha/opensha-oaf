@@ -67,6 +67,24 @@ rm "$SCRATCHFILE1"
 runut marshal$n util.MarshalImpDataWriter test3 "$SCRATCHFILE1" 100000 100000 100000 100000
 rm "$SCRATCHFILE1"
 
+runut marshal$n util.MarshalImpDataWriter test4 "$SCRATCHFILE1" 100 100 100 100
+rm "$SCRATCHFILE1"
+runut marshal$n util.MarshalImpDataWriter test4 "$SCRATCHFILE1" 1000 1000 1000 1000
+rm "$SCRATCHFILE1"
+runut marshal$n util.MarshalImpDataWriter test4 "$SCRATCHFILE1" 10000 10000 10000 10000
+rm "$SCRATCHFILE1"
+runut marshal$n util.MarshalImpDataWriter test4 "$SCRATCHFILE1" 100000 100000 100000 100000
+rm "$SCRATCHFILE1"
+
+runut marshal$n util.MarshalImpDataWriter test5 "$SCRATCHFILE1" 100 100 100 100
+rm "$SCRATCHFILE1"
+runut marshal$n util.MarshalImpDataWriter test5 "$SCRATCHFILE1" 1000 1000 1000 1000
+rm "$SCRATCHFILE1"
+runut marshal$n util.MarshalImpDataWriter test5 "$SCRATCHFILE1" 10000 10000 10000 10000
+rm "$SCRATCHFILE1"
+runut marshal$n util.MarshalImpDataWriter test5 "$SCRATCHFILE1" 100000 100000 100000 100000
+rm "$SCRATCHFILE1"
+
 # Tests for regions
 
 n=100

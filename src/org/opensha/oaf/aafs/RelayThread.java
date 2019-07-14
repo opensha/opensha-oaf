@@ -665,7 +665,7 @@ public class RelayThread implements Runnable {
 
 									// Get an iterator over relay items
 
-									RecordIterator<RelayItem> items = RelayItem.fetch_relay_item_range (false, relay_time_lo, 0L);
+									RecordIterator<RelayItem> items = RelayItem.fetch_relay_item_range (RelayItem.ASCENDING, relay_time_lo, 0L);
 								){
 									// Move items from iterator to the queue, up to a limit
 

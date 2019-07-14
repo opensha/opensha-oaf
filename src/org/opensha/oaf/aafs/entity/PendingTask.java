@@ -47,7 +47,7 @@ import org.opensha.oaf.aafs.MongoDBCollHandle;
  *
  * The collection "tasks" holds the queue of pending tasks.
  */
-public class PendingTask implements java.io.Serializable {
+public class PendingTask extends DBEntity implements java.io.Serializable {
 
 	//----- Envelope information -----
 
@@ -513,6 +513,23 @@ public class PendingTask implements java.io.Serializable {
 
 
 
+	// Test if our collection exists.
+	// Return true if the collection exists
+
+	public static boolean collection_exists () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Test if the collection exists
+
+		return coll_handle.collection_exists ();
+	}
+
+
+
+
 	// Convert this object to a document.
 	// If id is null, it is filled in with a newly allocated id.
 
@@ -584,11 +601,41 @@ public class PendingTask implements java.io.Serializable {
 
 
 
-	// Make the natural sort for this collection.
-	// The natural sort is in increasing order of execution time.
+	//  // Make the natural sort for this collection.
+	//  // The natural sort is in increasing order of execution time.
+	//  
+	//  private static Bson natural_sort () {
+	//  	return Sorts.ascending ("exec_time");
+	//  }
 
-	private static Bson natural_sort () {
-		return Sorts.ascending ("exec_time");
+
+
+
+	// Sort order options.
+
+	public static final int ASCENDING = 1;
+	public static final int DESCENDING = -1;
+	public static final int UNSORTED = 0;
+
+	private static final int DEFAULT_SORT = ASCENDING;
+
+
+
+
+	// Make the natural sort for this collection.
+	// The natural sort is in ascending or descending order of exec_time.
+	// If sort_order is UNSORTED, then return null, which means unsorted.
+
+	private static Bson natural_sort (int sort_order) {
+		switch (sort_order) {
+		case UNSORTED:
+			return null;
+		case DESCENDING:
+			return Sorts.descending ("exec_time");
+		case ASCENDING:
+			return Sorts.ascending ("exec_time");
+		}
+		throw new IllegalArgumentException ("PendingTask.natural_sort: Invalid sort order: " + sort_order);
 	}
 
 
@@ -733,6 +780,19 @@ public class PendingTask implements java.io.Serializable {
 
 
 	/**
+	 * store_entity - Store this entity into the database.
+	 * This is primarily for restoring from backup.
+	 */
+	@Override
+	public PendingTask store_entity () {
+		store_task (this);
+		return this;
+	}
+
+
+
+
+	/**
 	 * get_all_tasks_unsorted - Get a list of all pending tasks, without sorting.
 	 * This is primarily for testing and monitoring.
 	 *
@@ -779,7 +839,7 @@ public class PendingTask implements java.io.Serializable {
 
 		// Get the cursor and iterator
 
-		MongoCursor<Document> cursor = coll_handle.find_iterator (null, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (null, natural_sort (DEFAULT_SORT));
 		try (
 			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
@@ -810,7 +870,7 @@ public class PendingTask implements java.io.Serializable {
 
 		// Get the cursor and iterator
 
-		MongoCursor<Document> cursor = coll_handle.find_iterator (null, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (null, natural_sort (DEFAULT_SORT));
 		return new MyRecordIterator (cursor, coll_handle);
 	}
 
@@ -824,6 +884,9 @@ public class PendingTask implements java.io.Serializable {
 	 * @param exec_time_hi = Maximum execution time, in milliseconds since the epoch.
 	 *                       Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 * @param sort_order = DESCENDING to sort in descending order by exec_time (latest first),
+	 *                     ASCENDING to sort in ascending order by exec_time (earliest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to ASCENDING.
 	 *
 	 * Current usage: Production.
 	 * Production code calls this with non-null event_id.
@@ -832,6 +895,10 @@ public class PendingTask implements java.io.Serializable {
 	 * The production code does not rely on the results being sorted.
 	 */
 	public static List<PendingTask> get_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
+		return get_task_entry_range (exec_time_lo, exec_time_hi, event_id, DEFAULT_SORT);
+	}
+
+	public static List<PendingTask> get_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id, int sort_order) {
 		ArrayList<PendingTask> tasks = new ArrayList<PendingTask>();
 
 		// Get collection handle
@@ -841,7 +908,7 @@ public class PendingTask implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (exec_time_lo, exec_time_hi, event_id);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order));
 		try (
 			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
@@ -865,10 +932,17 @@ public class PendingTask implements java.io.Serializable {
 	 * @param exec_time_hi = Maximum execution time, in milliseconds since the epoch.
 	 *                       Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 * @param sort_order = DESCENDING to sort in descending order by exec_time (latest first),
+	 *                     ASCENDING to sort in ascending order by exec_time (earliest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to ASCENDING.
 	 *
 	 * Current usage: Test only.
 	 */
 	public static RecordIterator<PendingTask> fetch_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
+		return fetch_task_entry_range (exec_time_lo, exec_time_hi, event_id, DEFAULT_SORT);
+	}
+
+	public static RecordIterator<PendingTask> fetch_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id, int sort_order) {
 
 		// Get collection handle
 
@@ -877,7 +951,7 @@ public class PendingTask implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (exec_time_lo, exec_time_hi, event_id);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order));
 		return new MyRecordIterator (cursor, coll_handle);
 	}
 
@@ -891,6 +965,9 @@ public class PendingTask implements java.io.Serializable {
 	 * @param exec_time_hi = Maximum execution time, in milliseconds since the epoch.
 	 *                       Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 * @param sort_order = DESCENDING to sort in descending order by exec_time (latest first),
+	 *                     ASCENDING to sort in ascending order by exec_time (earliest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to ASCENDING.
 	 * Returns the matching task entry with the smallest exec_time (first to execute),
 	 * or null if there is no matching task entry.
 	 *
@@ -899,6 +976,10 @@ public class PendingTask implements java.io.Serializable {
 	 * Production code requires that the result be sorted (so it returns the first to execute).
 	 */
 	public static PendingTask get_first_task_entry (long exec_time_lo, long exec_time_hi, String event_id) {
+		return get_first_task_entry (exec_time_lo, exec_time_hi, event_id, DEFAULT_SORT);
+	}
+
+	public static PendingTask get_first_task_entry (long exec_time_lo, long exec_time_hi, String event_id, int sort_order) {
 
 		// Get collection handle
 
@@ -907,7 +988,7 @@ public class PendingTask implements java.io.Serializable {
 		// Get the document
 
 		Bson filter = natural_filter (exec_time_lo, exec_time_hi, event_id);
-		Document doc = coll_handle.find_first (filter, natural_sort());
+		Document doc = coll_handle.find_first (filter, natural_sort (sort_order));
 
 		// Convert to task
 
@@ -935,7 +1016,7 @@ public class PendingTask implements java.io.Serializable {
 
 		// Get the document
 
-		Document doc = coll_handle.find_first (null, natural_sort());
+		Document doc = coll_handle.find_first (null, natural_sort (DEFAULT_SORT));
 
 		// Convert to task
 
@@ -966,7 +1047,7 @@ public class PendingTask implements java.io.Serializable {
 
 		// Get the document
 
-		Document doc = coll_handle.find_first (cutoff_filter (cutoff_time), natural_sort());
+		Document doc = coll_handle.find_first (cutoff_filter (cutoff_time), natural_sort (DEFAULT_SORT));
 
 		// Convert to task
 
@@ -1006,7 +1087,7 @@ public class PendingTask implements java.io.Serializable {
 
 		// Options: sort by exec_time, return original document value
 
-		FindOneAndUpdateOptions options = (new FindOneAndUpdateOptions()).sort(natural_sort()).returnDocument(ReturnDocument.BEFORE);
+		FindOneAndUpdateOptions options = (new FindOneAndUpdateOptions()).sort(natural_sort(DEFAULT_SORT)).returnDocument(ReturnDocument.BEFORE);
 
 		// Get the document
 
@@ -1114,8 +1195,16 @@ public class PendingTask implements java.io.Serializable {
 
 	private static final String M_VERSION_NAME = "PendingTask";
 
+	// Get the type code.
+
+	@Override
+	protected int get_marshal_type () {
+		return MARSHAL_PENDING_TASK;
+	}
+
 	// Marshal object, internal.
 
+	@Override
 	protected void do_marshal (MarshalWriter writer) {
 
 		// Version
@@ -1133,7 +1222,7 @@ public class PendingTask implements java.io.Serializable {
 		writer.marshalString      ("submit_id"  , submit_id  );
 		writer.marshalInt         ("opcode"     , opcode     );
 		writer.marshalInt         ("stage"      , stage      );
-		writer.marshalJsonString  ("details"    , details    );
+		writer.marshalString      ("details"    , details    );
 //		writer.marshalLongArray   ("details_l"  , details_l  );
 //		writer.marshalDoubleArray ("details_d"  , details_d  );
 //		writer.marshalStringArray ("details_s"  , details_s  );
@@ -1143,6 +1232,7 @@ public class PendingTask implements java.io.Serializable {
 
 	// Unmarshal object, internal.
 
+	@Override
 	protected void do_umarshal (MarshalReader reader) {
 	
 		// Version
@@ -1160,7 +1250,7 @@ public class PendingTask implements java.io.Serializable {
 		submit_id   = reader.unmarshalString      ("submit_id"  );
 		opcode      = reader.unmarshalInt         ("opcode"     );
 		stage       = reader.unmarshalInt         ("stage"      );
-		details     = reader.unmarshalJsonString  ("details"    );
+		details     = reader.unmarshalString      ("details"    );
 //		details_l   = reader.unmarshalLongArray   ("details_l"  );
 //		details_d   = reader.unmarshalDoubleArray ("details_d"  );
 //		details_s   = reader.unmarshalStringArray ("details_s"  );
@@ -1187,5 +1277,53 @@ public class PendingTask implements java.io.Serializable {
 		return this;
 	}
 
+	// Marshal object, polymorphic.
+
+	public static void marshal_poly (MarshalWriter writer, String name, PendingTask obj) {
+
+		writer.marshalMapBegin (name);
+
+		if (obj == null) {
+			writer.marshalInt (M_TYPE_NAME, MARSHAL_NULL);
+		} else {
+			writer.marshalInt (M_TYPE_NAME, obj.get_marshal_type());
+			obj.do_marshal (writer);
+		}
+
+		writer.marshalMapEnd ();
+
+		return;
+	}
+
+	// Unmarshal object, polymorphic.
+
+	public static PendingTask unmarshal_poly (MarshalReader reader, String name) {
+		PendingTask result;
+
+		reader.unmarshalMapBegin (name);
+	
+		// Switch according to type
+
+		int type = reader.unmarshalInt (M_TYPE_NAME);
+
+		switch (type) {
+
+		default:
+			throw new MarshalException ("PendingTask.unmarshal_poly: Unknown class type code: type = " + type);
+
+		case MARSHAL_NULL:
+			result = null;
+			break;
+
+		case MARSHAL_PENDING_TASK:
+			result = new PendingTask();
+			result.do_umarshal (reader);
+			break;
+		}
+
+		reader.unmarshalMapEnd ();
+
+		return result;
+	}
 
 }

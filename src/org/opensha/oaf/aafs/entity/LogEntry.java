@@ -48,7 +48,7 @@ import org.opensha.oaf.aafs.MongoDBCollHandle;
  *
  * The collection "log" holds the log entries.
  */
-public class LogEntry implements java.io.Serializable {
+public class LogEntry extends DBEntity implements java.io.Serializable {
 
 	//----- Envelope information -----
 
@@ -531,6 +531,23 @@ public class LogEntry implements java.io.Serializable {
 
 
 
+	// Test if our collection exists.
+	// Return true if the collection exists
+
+	public static boolean collection_exists () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Test if the collection exists
+
+		return coll_handle.collection_exists ();
+	}
+
+
+
+
 	// Convert this object to a document.
 	// If id is null, it is filled in with a newly allocated id.
 
@@ -606,11 +623,41 @@ public class LogEntry implements java.io.Serializable {
 
 
 
-	// Make the natural sort for this collection.
-	// The natural sort is in decreasing order of log time (most recent first).
+	//  // Make the natural sort for this collection.
+	//  // The natural sort is in decreasing order of log time (most recent first).
+	//  
+	//  private static Bson natural_sort () {
+	//  	return Sorts.descending ("log_time");
+	//  }
 
-	private static Bson natural_sort () {
-		return Sorts.descending ("log_time");
+
+
+
+	// Sort order options.
+
+	public static final int ASCENDING = 1;
+	public static final int DESCENDING = -1;
+	public static final int UNSORTED = 0;
+
+	private static final int DEFAULT_SORT = DESCENDING;
+
+
+
+
+	// Make the natural sort for this collection.
+	// The natural sort is in ascending or descending order of log_time.
+	// If sort_order is UNSORTED, then return null, which means unsorted.
+
+	private static Bson natural_sort (int sort_order) {
+		switch (sort_order) {
+		case UNSORTED:
+			return null;
+		case DESCENDING:
+			return Sorts.descending ("log_time");
+		case ASCENDING:
+			return Sorts.ascending ("log_time");
+		}
+		throw new IllegalArgumentException ("LogEntry.natural_sort: Invalid sort order: " + sort_order);
 	}
 
 
@@ -796,6 +843,19 @@ public class LogEntry implements java.io.Serializable {
 
 
 	/**
+	 * store_entity - Store this entity into the database.
+	 * This is primarily for restoring from backup.
+	 */
+	@Override
+	public LogEntry store_entity () {
+		store_log_entry (this);
+		return this;
+	}
+
+
+
+
+	/**
 	 * get_log_entry_for_key - Get the log entry with the given key.
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the log entry, or null if not found.
@@ -839,10 +899,17 @@ public class LogEntry implements java.io.Serializable {
 	 * @param log_time_hi = Maximum log time, in milliseconds since the epoch.
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 * @param sort_order = DESCENDING to sort in descending order by log_time (most recent first),
+	 *                     ASCENDING to sort in ascending order by log_time (oldest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
 	 * Current usage: Test only.
 	 */
 	public static List<LogEntry> get_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
+		return get_log_entry_range (log_time_lo, log_time_hi, event_id, DEFAULT_SORT);
+	}
+
+	public static List<LogEntry> get_log_entry_range (long log_time_lo, long log_time_hi, String event_id, int sort_order) {
 		ArrayList<LogEntry> entries = new ArrayList<LogEntry>();
 
 		// Get collection handle
@@ -852,7 +919,7 @@ public class LogEntry implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (log_time_lo, log_time_hi, event_id);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order));
 		try(
 			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
@@ -876,10 +943,17 @@ public class LogEntry implements java.io.Serializable {
 	 * @param log_time_hi = Maximum log time, in milliseconds since the epoch.
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 * @param sort_order = DESCENDING to sort in descending order by log_time (most recent first),
+	 *                     ASCENDING to sort in ascending order by log_time (oldest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
 	 * Current usage: Test only.
 	 */
 	public static RecordIterator<LogEntry> fetch_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
+		return fetch_log_entry_range (log_time_lo, log_time_hi, event_id, DEFAULT_SORT);
+	}
+
+	public static RecordIterator<LogEntry> fetch_log_entry_range (long log_time_lo, long log_time_hi, String event_id, int sort_order) {
 
 		// Get collection handle
 
@@ -888,7 +962,7 @@ public class LogEntry implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (log_time_lo, log_time_hi, event_id);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order));
 		return new MyRecordIterator (cursor, coll_handle);
 	}
 
@@ -934,8 +1008,16 @@ public class LogEntry implements java.io.Serializable {
 
 	private static final String M_VERSION_NAME = "LogEntry";
 
+	// Get the type code.
+
+	@Override
+	protected int get_marshal_type () {
+		return MARSHAL_LOG_ENTRY;
+	}
+
 	// Marshal object, internal.
 
+	@Override
 	protected void do_marshal (MarshalWriter writer) {
 
 		// Version
@@ -953,7 +1035,7 @@ public class LogEntry implements java.io.Serializable {
 		writer.marshalString      ("submit_id"  , submit_id  );
 		writer.marshalInt         ("opcode"     , opcode     );
 		writer.marshalInt         ("stage"      , stage      );
-		writer.marshalJsonString  ("details"    , details    );
+		writer.marshalString      ("details"    , details    );
 //		writer.marshalLongArray   ("details_l"  , details_l  );
 //		writer.marshalDoubleArray ("details_d"  , details_d  );
 //		writer.marshalStringArray ("details_s"  , details_s  );
@@ -965,6 +1047,7 @@ public class LogEntry implements java.io.Serializable {
 
 	// Unmarshal object, internal.
 
+	@Override
 	protected void do_umarshal (MarshalReader reader) {
 	
 		// Version
@@ -982,7 +1065,7 @@ public class LogEntry implements java.io.Serializable {
 		submit_id   = reader.unmarshalString      ("submit_id"  );
 		opcode      = reader.unmarshalInt         ("opcode"     );
 		stage       = reader.unmarshalInt         ("stage"      );
-		details     = reader.unmarshalJsonString  ("details"    );
+		details     = reader.unmarshalString      ("details"    );
 //		details_l   = reader.unmarshalLongArray   ("details_l"  );
 //		details_d   = reader.unmarshalDoubleArray ("details_d"  );
 //		details_s   = reader.unmarshalStringArray ("details_s"  );
@@ -1011,5 +1094,53 @@ public class LogEntry implements java.io.Serializable {
 		return this;
 	}
 
+	// Marshal object, polymorphic.
+
+	public static void marshal_poly (MarshalWriter writer, String name, LogEntry obj) {
+
+		writer.marshalMapBegin (name);
+
+		if (obj == null) {
+			writer.marshalInt (M_TYPE_NAME, MARSHAL_NULL);
+		} else {
+			writer.marshalInt (M_TYPE_NAME, obj.get_marshal_type());
+			obj.do_marshal (writer);
+		}
+
+		writer.marshalMapEnd ();
+
+		return;
+	}
+
+	// Unmarshal object, polymorphic.
+
+	public static LogEntry unmarshal_poly (MarshalReader reader, String name) {
+		LogEntry result;
+
+		reader.unmarshalMapBegin (name);
+	
+		// Switch according to type
+
+		int type = reader.unmarshalInt (M_TYPE_NAME);
+
+		switch (type) {
+
+		default:
+			throw new MarshalException ("LogEntry.unmarshal_poly: Unknown class type code: type = " + type);
+
+		case MARSHAL_NULL:
+			result = null;
+			break;
+
+		case MARSHAL_LOG_ENTRY:
+			result = new LogEntry();
+			result.do_umarshal (reader);
+			break;
+		}
+
+		reader.unmarshalMapEnd ();
+
+		return result;
+	}
 
 }

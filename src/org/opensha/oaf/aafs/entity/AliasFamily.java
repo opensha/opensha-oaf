@@ -102,7 +102,7 @@ import org.opensha.oaf.aafs.MongoDBCollHandle;
  * a given event to never change.  In this common case, the corresponding object contains a
  * single timeline ID and is never superseded.
  */
-public class AliasFamily implements java.io.Serializable {
+public class AliasFamily extends DBEntity implements java.io.Serializable {
 
 	//----- Envelope information -----
 
@@ -522,6 +522,23 @@ public class AliasFamily implements java.io.Serializable {
 
 
 
+	// Test if our collection exists.
+	// Return true if the collection exists
+
+	public static boolean collection_exists () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Test if the collection exists
+
+		return coll_handle.collection_exists ();
+	}
+
+
+
+
 	// Convert this object to a document.
 	// If id is null, it is filled in with a newly allocated id.
 
@@ -585,11 +602,41 @@ public class AliasFamily implements java.io.Serializable {
 
 
 
-	// Make the natural sort for this collection.
-	// The natural sort is in decreasing order of family_time (most recent first).
+	//  // Make the natural sort for this collection.
+	//  // The natural sort is in decreasing order of family_time (most recent first).
+	//  
+	//  private static Bson natural_sort () {
+	//  	return Sorts.descending ("family_time");
+	//  }
 
-	private static Bson natural_sort () {
-		return Sorts.descending ("family_time");
+
+
+
+	// Sort order options.
+
+	public static final int ASCENDING = 1;
+	public static final int DESCENDING = -1;
+	public static final int UNSORTED = 0;
+
+	private static final int DEFAULT_SORT = DESCENDING;
+
+
+
+
+	// Make the natural sort for this collection.
+	// The natural sort is in ascending or descending order of family_time.
+	// If sort_order is UNSORTED, then return null, which means unsorted.
+
+	private static Bson natural_sort (int sort_order) {
+		switch (sort_order) {
+		case UNSORTED:
+			return null;
+		case DESCENDING:
+			return Sorts.descending ("family_time");
+		case ASCENDING:
+			return Sorts.ascending ("family_time");
+		}
+		throw new IllegalArgumentException ("AliasFamily.natural_sort: Invalid sort order: " + sort_order);
 	}
 
 
@@ -790,6 +837,19 @@ public class AliasFamily implements java.io.Serializable {
 
 
 	/**
+	 * store_entity - Store this entity into the database.
+	 * This is primarily for restoring from backup.
+	 */
+	@Override
+	public AliasFamily store_entity () {
+		store_alias_family (this);
+		return this;
+	}
+
+
+
+
+	/**
 	 * get_alias_family_for_key - Get the alias family with the given key.
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the alias family, or null if not found.
@@ -837,10 +897,17 @@ public class AliasFamily implements java.io.Serializable {
 	 *                     If specified, return entries associated with any of the given ids.
 	 * @param family_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 * @param sort_order = DESCENDING to sort in descending order by family_time (most recent first),
+	 *                     ASCENDING to sort in ascending order by family_time (oldest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
 	 * Current usage: Test only.
 	 */
 	public static List<AliasFamily> get_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
+		return get_alias_family_range (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem, DEFAULT_SORT);
+	}
+
+	public static List<AliasFamily> get_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem, int sort_order) {
 		ArrayList<AliasFamily> entries = new ArrayList<AliasFamily>();
 
 		// Get collection handle
@@ -850,7 +917,7 @@ public class AliasFamily implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order));
 		try (
 			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
@@ -878,10 +945,17 @@ public class AliasFamily implements java.io.Serializable {
 	 *                     If specified, return entries associated with any of the given ids.
 	 * @param family_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 * @param sort_order = DESCENDING to sort in descending order by family_time (most recent first),
+	 *                     ASCENDING to sort in ascending order by family_time (oldest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
 	 * Current usage: Test only.
 	 */
 	public static RecordIterator<AliasFamily> fetch_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
+		return fetch_alias_family_range (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem, DEFAULT_SORT);
+	}
+
+	public static RecordIterator<AliasFamily> fetch_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem, int sort_order) {
 
 		// Get collection handle
 
@@ -890,7 +964,7 @@ public class AliasFamily implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order));
 		return new MyRecordIterator (cursor, coll_handle);
 	}
 
@@ -908,6 +982,9 @@ public class AliasFamily implements java.io.Serializable {
 	 *                     If specified, return entries associated with any of the given ids.
 	 * @param family_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 * @param sort_order = DESCENDING to sort in descending order by family_time (most recent first),
+	 *                     ASCENDING to sort in ascending order by family_time (oldest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 * Returns the matching alias family with the greatest family_time (most recent),
 	 * or null if there is no matching alias family.
 	 *
@@ -918,6 +995,10 @@ public class AliasFamily implements java.io.Serializable {
 	 * Production code depends on the results being sorted by decreasing family time (most recent first).
 	 */
 	public static AliasFamily get_recent_alias_family (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
+		return get_recent_alias_family (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem, DEFAULT_SORT);
+	}
+
+	public static AliasFamily get_recent_alias_family (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem, int sort_order) {
 
 		// Get collection handle
 
@@ -926,7 +1007,7 @@ public class AliasFamily implements java.io.Serializable {
 		// Get the document
 
 		Bson filter = natural_filter (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem);
-		Document doc = coll_handle.find_first (filter, natural_sort());
+		Document doc = coll_handle.find_first (filter, natural_sort (sort_order));
 
 		// Convert to alias family
 
@@ -975,12 +1056,20 @@ public class AliasFamily implements java.io.Serializable {
 
 	// Marshal version number.
 
-	private static final int MARSHAL_VER_1 = 11001;
+	private static final int MARSHAL_VER_1 = 65001;
 
 	private static final String M_VERSION_NAME = "AliasFamily";
 
+	// Get the type code.
+
+	@Override
+	protected int get_marshal_type () {
+		return MARSHAL_ALIAS_FAMILY;
+	}
+
 	// Marshal object, internal.
 
+	@Override
 	protected void do_marshal (MarshalWriter writer) {
 
 		// Version
@@ -1001,6 +1090,7 @@ public class AliasFamily implements java.io.Serializable {
 
 	// Unmarshal object, internal.
 
+	@Override
 	protected void do_umarshal (MarshalReader reader) {
 	
 		// Version
@@ -1038,5 +1128,53 @@ public class AliasFamily implements java.io.Serializable {
 		return this;
 	}
 
+	// Marshal object, polymorphic.
+
+	public static void marshal_poly (MarshalWriter writer, String name, AliasFamily obj) {
+
+		writer.marshalMapBegin (name);
+
+		if (obj == null) {
+			writer.marshalInt (M_TYPE_NAME, MARSHAL_NULL);
+		} else {
+			writer.marshalInt (M_TYPE_NAME, obj.get_marshal_type());
+			obj.do_marshal (writer);
+		}
+
+		writer.marshalMapEnd ();
+
+		return;
+	}
+
+	// Unmarshal object, polymorphic.
+
+	public static AliasFamily unmarshal_poly (MarshalReader reader, String name) {
+		AliasFamily result;
+
+		reader.unmarshalMapBegin (name);
+	
+		// Switch according to type
+
+		int type = reader.unmarshalInt (M_TYPE_NAME);
+
+		switch (type) {
+
+		default:
+			throw new MarshalException ("AliasFamily.unmarshal_poly: Unknown class type code: type = " + type);
+
+		case MARSHAL_NULL:
+			result = null;
+			break;
+
+		case MARSHAL_ALIAS_FAMILY:
+			result = new AliasFamily();
+			result.do_umarshal (reader);
+			break;
+		}
+
+		reader.unmarshalMapEnd ();
+
+		return result;
+	}
 
 }

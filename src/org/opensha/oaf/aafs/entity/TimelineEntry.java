@@ -49,7 +49,7 @@ import org.opensha.oaf.aafs.MongoDBCollHandle;
  *
  * The collection "timeline" holds the timeline entries.
  */
-public class TimelineEntry implements java.io.Serializable {
+public class TimelineEntry extends DBEntity implements java.io.Serializable {
 
 	//----- Envelope information -----
 
@@ -478,6 +478,23 @@ public class TimelineEntry implements java.io.Serializable {
 
 
 
+	// Test if our collection exists.
+	// Return true if the collection exists
+
+	public static boolean collection_exists () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Test if the collection exists
+
+		return coll_handle.collection_exists ();
+	}
+
+
+
+
 	// Convert this object to a document.
 	// If id is null, it is filled in with a newly allocated id.
 
@@ -543,11 +560,41 @@ public class TimelineEntry implements java.io.Serializable {
 
 
 
-	// Make the natural sort for this collection.
-	// The natural sort is in decreasing order of action_time (most recent first).
+	//  // Make the natural sort for this collection.
+	//  // The natural sort is in decreasing order of action_time (most recent first).
+	//  
+	//  private static Bson natural_sort () {
+	//  	return Sorts.descending ("action_time");
+	//  }
 
-	private static Bson natural_sort () {
-		return Sorts.descending ("action_time");
+
+
+
+	// Sort order options.
+
+	public static final int ASCENDING = 1;
+	public static final int DESCENDING = -1;
+	public static final int UNSORTED = 0;
+
+	private static final int DEFAULT_SORT = DESCENDING;
+
+
+
+
+	// Make the natural sort for this collection.
+	// The natural sort is in ascending or descending order of action_time.
+	// If sort_order is UNSORTED, then return null, which means unsorted.
+
+	private static Bson natural_sort (int sort_order) {
+		switch (sort_order) {
+		case UNSORTED:
+			return null;
+		case DESCENDING:
+			return Sorts.descending ("action_time");
+		case ASCENDING:
+			return Sorts.ascending ("action_time");
+		}
+		throw new IllegalArgumentException ("TimelineEntry.natural_sort: Invalid sort order: " + sort_order);
 	}
 
 
@@ -703,6 +750,19 @@ public class TimelineEntry implements java.io.Serializable {
 
 
 	/**
+	 * store_entity - Store this entity into the database.
+	 * This is primarily for restoring from backup.
+	 */
+	@Override
+	public TimelineEntry store_entity () {
+		store_timeline_entry (this);
+		return this;
+	}
+
+
+
+
+	/**
 	 * get_timeline_entry_for_key - Get the timeline entry with the given key.
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the timeline entry, or null if not found.
@@ -750,6 +810,9 @@ public class TimelineEntry implements java.io.Serializable {
 	 *                     If specified, return entries associated with any of the given ids.
 	 * @param action_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 * @param sort_order = DESCENDING to sort in descending order by action_time (most recent first),
+	 *                     ASCENDING to sort in ascending order by action_time (oldest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
 	 * Current usage: Production.
 	 * Production code does calls in this form only:
@@ -757,6 +820,10 @@ public class TimelineEntry implements java.io.Serializable {
 	 * Production code depends on the results being sorted by decreasing action time (most recent first).
 	 */
 	public static List<TimelineEntry> get_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
+		return get_timeline_entry_range (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem, DEFAULT_SORT);
+	}
+
+	public static List<TimelineEntry> get_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem, int sort_order) {
 		ArrayList<TimelineEntry> entries = new ArrayList<TimelineEntry>();
 
 		// Get collection handle
@@ -766,7 +833,7 @@ public class TimelineEntry implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order));
 		try (
 			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
@@ -794,10 +861,17 @@ public class TimelineEntry implements java.io.Serializable {
 	 *                     If specified, return entries associated with any of the given ids.
 	 * @param action_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 * @param sort_order = DESCENDING to sort in descending order by action_time (most recent first),
+	 *                     ASCENDING to sort in ascending order by action_time (oldest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
 	 * Current usage: Test only.
 	 */
 	public static RecordIterator<TimelineEntry> fetch_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
+		return fetch_timeline_entry_range (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem, DEFAULT_SORT);
+	}
+
+	public static RecordIterator<TimelineEntry> fetch_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem, int sort_order) {
 
 		// Get collection handle
 
@@ -806,7 +880,7 @@ public class TimelineEntry implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order));
 		return new MyRecordIterator (cursor, coll_handle);
 	}
 
@@ -824,6 +898,9 @@ public class TimelineEntry implements java.io.Serializable {
 	 *                     If specified, return entries associated with any of the given ids.
 	 * @param action_time_div_rem = 2-element array containing divisor (element 0) and remainder (element 1) for
 	 *                              action time modulus. Can be null, or contain zeros, for no modulus test.
+	 * @param sort_order = DESCENDING to sort in descending order by action_time (most recent first),
+	 *                     ASCENDING to sort in ascending order by action_time (oldest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 * Returns the matching timeline entry with the greatest action_time (most recent),
 	 * or null if there is no matching timeline entry.
 	 *
@@ -833,6 +910,10 @@ public class TimelineEntry implements java.io.Serializable {
 	 * Production code depends on the results being sorted by decreasing action time (most recent first).
 	 */
 	public static TimelineEntry get_recent_timeline_entry (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
+		return get_recent_timeline_entry (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem, DEFAULT_SORT);
+	}
+
+	public static TimelineEntry get_recent_timeline_entry (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem, int sort_order) {
 
 		// Get collection handle
 
@@ -841,7 +922,7 @@ public class TimelineEntry implements java.io.Serializable {
 		// Get the document
 
 		Bson filter = natural_filter (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem);
-		Document doc = coll_handle.find_first (filter, natural_sort());
+		Document doc = coll_handle.find_first (filter, natural_sort (sort_order));
 
 		// Convert to timeline entry
 
@@ -894,8 +975,16 @@ public class TimelineEntry implements java.io.Serializable {
 
 	private static final String M_VERSION_NAME = "TimelineEntry";
 
+	// Get the type code.
+
+	@Override
+	protected int get_marshal_type () {
+		return MARSHAL_TIMELINE_ENTRY;
+	}
+
 	// Marshal object, internal.
 
+	@Override
 	protected void do_marshal (MarshalWriter writer) {
 
 		// Version
@@ -910,7 +999,7 @@ public class TimelineEntry implements java.io.Serializable {
 		writer.marshalString      ("event_id"   , event_id   );
 		writer.marshalStringArray ("comcat_ids" , comcat_ids );
 		writer.marshalInt         ("actcode"    , actcode    );
-		writer.marshalJsonString  ("details"    , details    );
+		writer.marshalString      ("details"    , details    );
 //		writer.marshalLongArray   ("details_l"  , details_l  );
 //		writer.marshalDoubleArray ("details_d"  , details_d  );
 //		writer.marshalStringArray ("details_s"  , details_s  );
@@ -920,6 +1009,7 @@ public class TimelineEntry implements java.io.Serializable {
 
 	// Unmarshal object, internal.
 
+	@Override
 	protected void do_umarshal (MarshalReader reader) {
 	
 		// Version
@@ -934,7 +1024,7 @@ public class TimelineEntry implements java.io.Serializable {
 		event_id    = reader.unmarshalString      ("event_id"   );
 		comcat_ids  = reader.unmarshalStringArray ("comcat_ids" );
 		actcode     = reader.unmarshalInt         ("actcode"    );
-		details     = reader.unmarshalJsonString  ("details"    );
+		details     = reader.unmarshalString      ("details"    );
 //		details_l   = reader.unmarshalLongArray   ("details_l"  );
 //		details_d   = reader.unmarshalDoubleArray ("details_d"  );
 //		details_s   = reader.unmarshalStringArray ("details_s"  );
@@ -961,5 +1051,53 @@ public class TimelineEntry implements java.io.Serializable {
 		return this;
 	}
 
+	// Marshal object, polymorphic.
+
+	public static void marshal_poly (MarshalWriter writer, String name, TimelineEntry obj) {
+
+		writer.marshalMapBegin (name);
+
+		if (obj == null) {
+			writer.marshalInt (M_TYPE_NAME, MARSHAL_NULL);
+		} else {
+			writer.marshalInt (M_TYPE_NAME, obj.get_marshal_type());
+			obj.do_marshal (writer);
+		}
+
+		writer.marshalMapEnd ();
+
+		return;
+	}
+
+	// Unmarshal object, polymorphic.
+
+	public static TimelineEntry unmarshal_poly (MarshalReader reader, String name) {
+		TimelineEntry result;
+
+		reader.unmarshalMapBegin (name);
+	
+		// Switch according to type
+
+		int type = reader.unmarshalInt (M_TYPE_NAME);
+
+		switch (type) {
+
+		default:
+			throw new MarshalException ("TimelineEntry.unmarshal_poly: Unknown class type code: type = " + type);
+
+		case MARSHAL_NULL:
+			result = null;
+			break;
+
+		case MARSHAL_TIMELINE_ENTRY:
+			result = new TimelineEntry();
+			result.do_umarshal (reader);
+			break;
+		}
+
+		reader.unmarshalMapEnd ();
+
+		return result;
+	}
 
 }

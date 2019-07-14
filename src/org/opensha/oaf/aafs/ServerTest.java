@@ -3630,7 +3630,7 @@ public class ServerTest {
 
 			// Get the list of matching relay items
 
-			List<RelayItem> items = RelayItem.get_relay_item_range (f_descending, relay_time_lo, relay_time_hi, relay_id);
+			List<RelayItem> items = RelayItem.get_relay_item_range (f_descending ? RelayItem.DESCENDING : RelayItem.ASCENDING , relay_time_lo, relay_time_hi, relay_id);
 
 			// Display them
 
@@ -3675,7 +3675,7 @@ public class ServerTest {
 
 				// Get an iterator over matching relay items
 
-				RecordIterator<RelayItem> items = RelayItem.fetch_relay_item_range (f_descending, relay_time_lo, relay_time_hi, relay_id);
+				RecordIterator<RelayItem> items = RelayItem.fetch_relay_item_range (f_descending ? RelayItem.DESCENDING : RelayItem.ASCENDING, relay_time_lo, relay_time_hi, relay_id);
 			){
 
 				// Display them
@@ -3721,7 +3721,7 @@ public class ServerTest {
 
 			// Get the list of matching relay items
 
-			RelayItem relit = RelayItem.get_first_relay_item (f_descending, relay_time_lo, relay_time_hi, relay_id);
+			RelayItem relit = RelayItem.get_first_relay_item (f_descending ? RelayItem.DESCENDING : RelayItem.ASCENDING, relay_time_lo, relay_time_hi, relay_id);
 
 			// Display it
 
@@ -3767,7 +3767,7 @@ public class ServerTest {
 
 			// Get the list of matching relay items
 
-			List<RelayItem> items = RelayItem.get_relay_item_range (f_descending, relay_time_lo, relay_time_hi, relay_id);
+			List<RelayItem> items = RelayItem.get_relay_item_range (f_descending ? RelayItem.DESCENDING : RelayItem.ASCENDING, relay_time_lo, relay_time_hi, relay_id);
 
 			// Display them, and re-fetch
 
@@ -3826,7 +3826,7 @@ public class ServerTest {
 
 				// Get the list of matching relay items
 
-				List<RelayItem> items = RelayItem.get_relay_item_range (f_descending, relay_time_lo, relay_time_hi, relay_id);
+				List<RelayItem> items = RelayItem.get_relay_item_range (f_descending ? RelayItem.DESCENDING : RelayItem.ASCENDING, relay_time_lo, relay_time_hi, relay_id);
 
 				// Display them, and delete
 

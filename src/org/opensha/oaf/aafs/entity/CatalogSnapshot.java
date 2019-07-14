@@ -53,7 +53,7 @@ import org.opensha.oaf.aafs.MongoDBCollHandle;
  *
  * The collection "catalog" holds the earthquake catalog snapshots.
  */
-public class CatalogSnapshot implements java.io.Serializable {
+public class CatalogSnapshot extends DBEntity implements java.io.Serializable {
 
 	//----- Envelope information -----
 
@@ -352,6 +352,23 @@ public class CatalogSnapshot implements java.io.Serializable {
 
 
 
+	// Test if our collection exists.
+	// Return true if the collection exists
+
+	public static boolean collection_exists () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Test if the collection exists
+
+		return coll_handle.collection_exists ();
+	}
+
+
+
+
 	// Convert this object to a document.
 	// If id is null, it is filled in with a newly allocated id.
 
@@ -421,11 +438,41 @@ public class CatalogSnapshot implements java.io.Serializable {
 
 
 
-	// Make the natural sort for this collection.
-	// The natural sort is in decreasing order of end_time (most recent first).
+	//  // Make the natural sort for this collection.
+	//  // The natural sort is in decreasing order of end_time (most recent first).
+	//  
+	//  private static Bson natural_sort () {
+	//  	return Sorts.descending ("end_time");
+	//  }
 
-	private static Bson natural_sort () {
-		return Sorts.descending ("end_time");
+
+
+
+	// Sort order options.
+
+	public static final int ASCENDING = 1;
+	public static final int DESCENDING = -1;
+	public static final int UNSORTED = 0;
+
+	private static final int DEFAULT_SORT = DESCENDING;
+
+
+
+
+	// Make the natural sort for this collection.
+	// The natural sort is in ascending or descending order of end_time.
+	// If sort_order is UNSORTED, then return null, which means unsorted.
+
+	private static Bson natural_sort (int sort_order) {
+		switch (sort_order) {
+		case UNSORTED:
+			return null;
+		case DESCENDING:
+			return Sorts.descending ("end_time");
+		case ASCENDING:
+			return Sorts.ascending ("end_time");
+		}
+		throw new IllegalArgumentException ("CatalogSnapshot.natural_sort: Invalid sort order: " + sort_order);
 	}
 
 
@@ -553,6 +600,19 @@ public class CatalogSnapshot implements java.io.Serializable {
 
 
 	/**
+	 * store_entity - Store this entity into the database.
+	 * This is primarily for restoring from backup.
+	 */
+	@Override
+	public CatalogSnapshot store_entity () {
+		store_catalog_shapshot (this);
+		return this;
+	}
+
+
+
+
+	/**
 	 * get_catalog_shapshot_for_key - Get the catalog snapshot with the given key.
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the catalog snapshot, or null if not found.
@@ -596,10 +656,17 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 * @param end_time_hi = Maximum end time, in milliseconds since the epoch.
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 * @param sort_order = DESCENDING to sort in descending order by end_time (most recent first),
+	 *                     ASCENDING to sort in ascending order by end_time (oldest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
 	 * Current usage: Test only.
 	 */
 	public static List<CatalogSnapshot> get_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
+		return get_catalog_snapshot_range (end_time_lo, end_time_hi, event_id, DEFAULT_SORT);
+	}
+
+	public static List<CatalogSnapshot> get_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id, int sort_order) {
 		ArrayList<CatalogSnapshot> entries = new ArrayList<CatalogSnapshot>();
 
 		// Get collection handle
@@ -609,7 +676,7 @@ public class CatalogSnapshot implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (end_time_lo, end_time_hi, event_id);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order));
 		try (
 			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
@@ -633,10 +700,17 @@ public class CatalogSnapshot implements java.io.Serializable {
 	 * @param end_time_hi = Maximum end time, in milliseconds since the epoch.
 	 *                      Can be 0L for no maximum.
 	 * @param event_id = Event id. Can be null to return entries for all events.
+	 * @param sort_order = DESCENDING to sort in descending order by end_time (most recent first),
+	 *                     ASCENDING to sort in ascending order by end_time (oldest first),
+	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
 	 * Current usage: Test only.
 	 */
 	public static RecordIterator<CatalogSnapshot> fetch_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
+		return fetch_catalog_snapshot_range (end_time_lo, end_time_hi, event_id, DEFAULT_SORT);
+	}
+
+	public static RecordIterator<CatalogSnapshot> fetch_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id, int sort_order) {
 
 		// Get collection handle
 
@@ -645,7 +719,7 @@ public class CatalogSnapshot implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (end_time_lo, end_time_hi, event_id);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort());
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order));
 		return new MyRecordIterator (cursor, coll_handle);
 	}
 
@@ -691,8 +765,16 @@ public class CatalogSnapshot implements java.io.Serializable {
 
 	private static final String M_VERSION_NAME = "CatalogSnapshot";
 
+	// Get the type code.
+
+	@Override
+	protected int get_marshal_type () {
+		return MARSHAL_CATALOG_SNAPSHOT;
+	}
+
 	// Marshal object, internal.
 
+	@Override
 	protected void do_marshal (MarshalWriter writer) {
 
 		// Version
@@ -715,6 +797,7 @@ public class CatalogSnapshot implements java.io.Serializable {
 
 	// Unmarshal object, internal.
 
+	@Override
 	protected void do_umarshal (MarshalReader reader) {
 	
 		// Version
@@ -754,5 +837,53 @@ public class CatalogSnapshot implements java.io.Serializable {
 		return this;
 	}
 
+	// Marshal object, polymorphic.
+
+	public static void marshal_poly (MarshalWriter writer, String name, CatalogSnapshot obj) {
+
+		writer.marshalMapBegin (name);
+
+		if (obj == null) {
+			writer.marshalInt (M_TYPE_NAME, MARSHAL_NULL);
+		} else {
+			writer.marshalInt (M_TYPE_NAME, obj.get_marshal_type());
+			obj.do_marshal (writer);
+		}
+
+		writer.marshalMapEnd ();
+
+		return;
+	}
+
+	// Unmarshal object, polymorphic.
+
+	public static CatalogSnapshot unmarshal_poly (MarshalReader reader, String name) {
+		CatalogSnapshot result;
+
+		reader.unmarshalMapBegin (name);
+	
+		// Switch according to type
+
+		int type = reader.unmarshalInt (M_TYPE_NAME);
+
+		switch (type) {
+
+		default:
+			throw new MarshalException ("CatalogSnapshot.unmarshal_poly: Unknown class type code: type = " + type);
+
+		case MARSHAL_NULL:
+			result = null;
+			break;
+
+		case MARSHAL_CATALOG_SNAPSHOT:
+			result = new CatalogSnapshot();
+			result.do_umarshal (reader);
+			break;
+		}
+
+		reader.unmarshalMapEnd ();
+
+		return result;
+	}
 
 }

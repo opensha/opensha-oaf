@@ -54,7 +54,7 @@ import org.opensha.oaf.aafs.MongoDBCollHandle;
  * which must be synchronized between the two servers.  It only contains
  * current state;  older items are replaced or deleted.
  */
-public class RelayItem implements java.io.Serializable {
+public class RelayItem extends DBEntity implements java.io.Serializable {
 
 	//----- Envelope information -----
 
@@ -346,6 +346,23 @@ public class RelayItem implements java.io.Serializable {
 
 
 
+	// Test if our collection exists.
+	// Return true if the collection exists
+
+	public static boolean collection_exists () {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
+
+		// Test if the collection exists
+
+		return coll_handle.collection_exists ();
+	}
+
+
+
+
 	// Convert this object to a document.
 	// If id is null, it is filled in with a newly allocated id.
 
@@ -428,35 +445,46 @@ public class RelayItem implements java.io.Serializable {
 
 
 
-	// Make the natural sort for this collection.
-	// The natural sort is in ascending or decreasing order of relay item time.
-	// If f_descending is null, then return null.
+	// Sort order options.
 
-	private static Bson natural_sort (Boolean f_descending) {
-		if (f_descending == null) {
+	public static final int ASCENDING = 1;
+	public static final int DESCENDING = -1;
+	public static final int UNSORTED = 0;
+
+
+
+
+	// Make the natural sort for this collection.
+	// The natural sort is in ascending or descending order of relay_time.
+	// If sort_order is UNSORTED, then return null, which means unsorted.
+
+	private static Bson natural_sort (int sort_order) {
+		switch (sort_order) {
+		case UNSORTED:
 			return null;
-		}
-		if (f_descending.booleanValue()) {
+		case DESCENDING:
 			return Sorts.descending ("relay_time");
+		case ASCENDING:
+			return Sorts.ascending ("relay_time");
 		}
-		return Sorts.ascending ("relay_time");
+		throw new IllegalArgumentException ("RelayItem.natural_sort: Invalid sort order: " + sort_order);
 	}
 
 
 
 
 	// Make the natural sort for this collection, for a given query on relay ids.
-	// The natural sort is in decreasing order of relay item time.
+	// The natural sort is in ascending or descending order of relay_time.
 	// Except, if the query is for a single relay id, then return null
 	// because no sort is needed (because there is only one entry with a given id).
 
-	private static Bson natural_sort (Boolean f_descending, String[] relay_id) {
+	private static Bson natural_sort (int sort_order, String[] relay_id) {
 		if (relay_id != null) {
 			if (relay_id.length == 1) {
 				return null;
 			}
 		}
-		return natural_sort (f_descending);
+		return natural_sort (sort_order);
 	}
 
 
@@ -929,6 +957,19 @@ public class RelayItem implements java.io.Serializable {
 
 
 	/**
+	 * store_entity - Store this entity into the database.
+	 * This is primarily for restoring from backup.
+	 */
+	@Override
+	public RelayItem store_entity () {
+		store_relay_item (this);
+		return this;
+	}
+
+
+
+
+	/**
 	 * get_relay_item_for_key - Get the relay item with the given key.
 	 * @param key = Record key. Cannot be null or empty.
 	 * Returns the relay item, or null if not found.
@@ -967,9 +1008,9 @@ public class RelayItem implements java.io.Serializable {
 
 	/**
 	 * get_relay_item_range - Get a range of relay items, sorted by relay item time.
-	 * @param f_descending = True to sort in descending order by time (most recent first),
-	 *                       false to sort in ascending order by time (oldest first),
-	 *                       null to return unsorted results.
+	 * @param sort_order = DESCENDING to sort in descending order by time (most recent first),
+	 *                     ASCENDING to sort in ascending order by time (oldest first),
+	 *                     UNSORTED to return unsorted results.
 	 * @param relay_time_lo = Minimum relay item time, in milliseconds since the epoch.
 	 *                        Can be 0L for no minimum.
 	 * @param relay_time_hi = Maximum relay item time, in milliseconds since the epoch.
@@ -978,7 +1019,7 @@ public class RelayItem implements java.io.Serializable {
 	 *
 	 * Expected usage: Test only.
 	 */
-	public static List<RelayItem> get_relay_item_range (Boolean f_descending, long relay_time_lo, long relay_time_hi, String... relay_id) {
+	public static List<RelayItem> get_relay_item_range (int sort_order, long relay_time_lo, long relay_time_hi, String... relay_id) {
 		ArrayList<RelayItem> relits = new ArrayList<RelayItem>();
 
 		// Get collection handle
@@ -988,7 +1029,7 @@ public class RelayItem implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (relay_time_lo, relay_time_hi, relay_id);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (f_descending, relay_id));
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order, relay_id));
 		try (
 			MyRecordIterator iter = new MyRecordIterator (cursor, coll_handle);
 		){
@@ -1007,9 +1048,9 @@ public class RelayItem implements java.io.Serializable {
 
 	/**
 	 * fetch_relay_item_range - Iterate a range of task entries, sorted by relay item time.
-	 * @param f_descending = True to sort in descending order by time (most recent first),
-	 *                       false to sort in ascending order by time (oldest first),
-	 *                       null to return unsorted results.
+	 * @param sort_order = DESCENDING to sort in descending order by time (most recent first),
+	 *                     ASCENDING to sort in ascending order by time (oldest first),
+	 *                     UNSORTED to return unsorted results.
 	 * @param relay_time_lo = Minimum relay item time, in milliseconds since the epoch.
 	 *                        Can be 0L for no minimum.
 	 * @param relay_time_hi = Maximum relay item time, in milliseconds since the epoch.
@@ -1017,9 +1058,9 @@ public class RelayItem implements java.io.Serializable {
 	 * @param relay_id = List of relay item ids. Can be null or empty to return items for all ids.
 	 *
 	 * Expected usage: Production.
-	 * Production code calls this in the form fetch_relay_item_range (f_descending, relay_time_lo, relay_time_hi).
+	 * Production code calls this in the form fetch_relay_item_range (sort_order, relay_time_lo, relay_time_hi).
 	 */
-	public static RecordIterator<RelayItem> fetch_relay_item_range (Boolean f_descending, long relay_time_lo, long relay_time_hi, String... relay_id) {
+	public static RecordIterator<RelayItem> fetch_relay_item_range (int sort_order, long relay_time_lo, long relay_time_hi, String... relay_id) {
 
 		// Get collection handle
 
@@ -1028,7 +1069,7 @@ public class RelayItem implements java.io.Serializable {
 		// Get the cursor and iterator
 
 		Bson filter = natural_filter (relay_time_lo, relay_time_hi, relay_id);
-		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (f_descending, relay_id));
+		MongoCursor<Document> cursor = coll_handle.find_iterator (filter, natural_sort (sort_order, relay_id));
 		return new MyRecordIterator (cursor, coll_handle);
 	}
 
@@ -1037,9 +1078,9 @@ public class RelayItem implements java.io.Serializable {
 
 	/**
 	 * get_first_relay_item - Get the first in a range of relay items.
-	 * @param f_descending = True to sort in descending order by time (most recent first),
-	 *                       false to sort in ascending order by time (oldest first),
-	 *                       null to return unsorted results.
+	 * @param sort_order = DESCENDING to sort in descending order by time (most recent first),
+	 *                     ASCENDING to sort in ascending order by time (oldest first),
+	 *                     UNSORTED to return unsorted results.
 	 * @param relay_time_lo = Minimum relay item time, in milliseconds since the epoch.
 	 *                        Can be 0L for no minimum.
 	 * @param relay_time_hi = Maximum relay item time, in milliseconds since the epoch.
@@ -1049,10 +1090,10 @@ public class RelayItem implements java.io.Serializable {
 	 * or null if there is no matching relay item.
 	 *
 	 * Expected usage: Production.
-	 * Production code calls this in the form get_first_relay_item (f_descending, 0L, 0L, relay_id).
+	 * Production code calls this in the form get_first_relay_item (sort_order, 0L, 0L, relay_id).
 	 * Production code requires that the result be sorted (so it returns the most recent among all given ids).
 	 */
-	public static RelayItem get_first_relay_item (Boolean f_descending, long relay_time_lo, long relay_time_hi, String... relay_id) {
+	public static RelayItem get_first_relay_item (int sort_order, long relay_time_lo, long relay_time_hi, String... relay_id) {
 
 		// Get collection handle
 
@@ -1061,7 +1102,7 @@ public class RelayItem implements java.io.Serializable {
 		// Get the document
 
 		Bson filter = natural_filter (relay_time_lo, relay_time_hi, relay_id);
-		Document doc = coll_handle.find_first (filter, natural_sort (f_descending, relay_id));
+		Document doc = coll_handle.find_first (filter, natural_sort (sort_order, relay_id));
 
 		// Convert to task
 
@@ -1134,8 +1175,16 @@ public class RelayItem implements java.io.Serializable {
 
 	private static final String M_VERSION_NAME = "RelayItem";
 
+	// Get the type code.
+
+	@Override
+	protected int get_marshal_type () {
+		return MARSHAL_RELAY_ITEM;
+	}
+
 	// Marshal object, internal.
 
+	@Override
 	protected void do_marshal (MarshalWriter writer) {
 
 		// Version
@@ -1148,13 +1197,14 @@ public class RelayItem implements java.io.Serializable {
 		writer.marshalString      ("id"         , sid        );
 		writer.marshalLong        ("relay_time" , relay_time );
 		writer.marshalString      ("relay_id"   , relay_id   );
-		writer.marshalJsonString  ("details"    , details    );
+		writer.marshalString      ("details"    , details    );
 	
 		return;
 	}
 
 	// Unmarshal object, internal.
 
+	@Override
 	protected void do_umarshal (MarshalReader reader) {
 	
 		// Version
@@ -1167,7 +1217,7 @@ public class RelayItem implements java.io.Serializable {
 		sid         = reader.unmarshalString      ("id"         );
 		relay_time  = reader.unmarshalLong        ("relay_time"  );
 		relay_id    = reader.unmarshalString      ("relay_id"   );
-		details     = reader.unmarshalJsonString  ("details"    );
+		details     = reader.unmarshalString      ("details"    );
 		id = new ObjectId(sid);
 
 		return;
@@ -1191,5 +1241,53 @@ public class RelayItem implements java.io.Serializable {
 		return this;
 	}
 
+	// Marshal object, polymorphic.
+
+	public static void marshal_poly (MarshalWriter writer, String name, RelayItem obj) {
+
+		writer.marshalMapBegin (name);
+
+		if (obj == null) {
+			writer.marshalInt (M_TYPE_NAME, MARSHAL_NULL);
+		} else {
+			writer.marshalInt (M_TYPE_NAME, obj.get_marshal_type());
+			obj.do_marshal (writer);
+		}
+
+		writer.marshalMapEnd ();
+
+		return;
+	}
+
+	// Unmarshal object, polymorphic.
+
+	public static RelayItem unmarshal_poly (MarshalReader reader, String name) {
+		RelayItem result;
+
+		reader.unmarshalMapBegin (name);
+	
+		// Switch according to type
+
+		int type = reader.unmarshalInt (M_TYPE_NAME);
+
+		switch (type) {
+
+		default:
+			throw new MarshalException ("RelayItem.unmarshal_poly: Unknown class type code: type = " + type);
+
+		case MARSHAL_NULL:
+			result = null;
+			break;
+
+		case MARSHAL_RELAY_ITEM:
+			result = new RelayItem();
+			result.do_umarshal (reader);
+			break;
+		}
+
+		reader.unmarshalMapEnd ();
+
+		return result;
+	}
 
 }
