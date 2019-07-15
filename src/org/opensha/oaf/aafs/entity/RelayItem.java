@@ -80,6 +80,13 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 
 	private String relay_id;
 
+	// Origin stamp for this relay item.
+	// This is set when a relay item is written into the database, and indicates its source.
+	// The change stream is configured to only pass items with relay_stamp >= 0L.
+	// This prevents round-tripping of relay items when each server monitors the other.
+
+	private long relay_stamp;
+
 	//----- Item information -----
 
 	// Details of this relay item.
@@ -115,6 +122,14 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 
 	private void set_relay_id (String relay_id) {
 		this.relay_id = relay_id;
+	}
+
+	public long get_relay_stamp() {
+		return relay_stamp;
+	}
+
+	private void set_relay_stamp (long relay_stamp) {
+		this.relay_stamp = relay_stamp;
 	}
 
 
@@ -210,6 +225,7 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 			+ "\tid: " + ((id == null) ? ("null") : (id.toHexString())) + "\n"
 			+ "\trelay_time: " + relay_time + "\n"
 			+ "\trelay_id: " + relay_id + "\n"
+			+ "\trelay_stamp: " + relay_stamp + "\n"
 			+ "\tdetails: " + get_details_description();
 		return str;
 	}
@@ -224,6 +240,7 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 			+ "\tid: " + ((id == null) ? ("null") : (id.toHexString())) + "\n"
 			+ "\trelay_time: " + relay_time + "\n"
 			+ "\trelay_id: " + relay_id + "\n"
+			+ "\trelay_stamp: " + relay_stamp + "\n"
 			+ "\tdetails: " + dump_details();
 		return str;
 	}
@@ -249,7 +266,7 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 	// Returns > 0 if relit1 is after (later than) relit2.
 	// The comparison is primarily based on relay_time.
 	// If the value of relay_time is equal, then relay_id and details are used as tie-breakers.
-	// Note that the object id does not enter into the comparison.
+	// Note that relay_stamp and the object id do not enter into the comparison.
 
 	public static int compare (RelayItem relit1, RelayItem relit2) {
 		int result = Long.compare (relit1.relay_time, relit2.relay_time);
@@ -379,6 +396,7 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 		Document doc = new Document ("_id", id)
 						.append ("relay_time" , new Long(relay_time))
 						.append ("relay_id"   , relay_id)
+						.append ("relay_stamp", new Long(relay_stamp))
 						.append ("details"    , details);
 
 		return doc;
@@ -393,8 +411,9 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 	private RelayItem from_bson_doc (Document doc) {
 
 		id          = MongoDBUtil.doc_get_object_id (doc, "_id"        );
-		relay_time  = MongoDBUtil.doc_get_long      (doc, "relay_time"  );
+		relay_time  = MongoDBUtil.doc_get_long      (doc, "relay_time" );
 		relay_id    = MongoDBUtil.doc_get_string    (doc, "relay_id"   );
+		relay_stamp = MongoDBUtil.doc_get_long      (doc, "relay_stamp");
 		details     = MongoDBUtil.doc_get_string    (doc, "details"    );
 
 		return this;
@@ -555,13 +574,16 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 	// Parameters:
 	//  relit = Relay item to write into database.
 	//  f_force = True to force item to be written.
+	//  relay_stamp = Origin stamp to indicate source.
 	// This function first tests if there is an existing item with the same relay_id.
 	// If there is no existing item, then:
 	//  - relit.id is filled with a new object id (overwriting relit.id).
+	//  - relit.relay_stamp is filled with the supplied relay_stamp (overwriting it).
 	//  - relit is written to the database.
 	//  - The function returns 2.
 	// If there is an existing item, then:
 	//  - relit.id is filled with the object id of the existing item (overwriting relit.id).
+	//  - relit.relay_stamp is filled with the supplied relay_stamp (overwriting it).
 	//  - If f_force is true, then relit.relay_time is adjusted, if necessary, so it is
 	//    larger then the value of relay_time in the existing item.
 	//  - If relit equals the existing item, then return 0.
@@ -574,7 +596,11 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 	// this function.  Therefore, it should be called only if there is a single thread that writes
 	// to this collection, or within a transaction.
 
-	public static int submit_relay_item (RelayItem relit, boolean f_force) {
+	public static int submit_relay_item (RelayItem relit, boolean f_force, long relay_stamp) {
+
+		// Set the origin stamp
+
+		relit.set_relay_stamp (relay_stamp);
 
 		// Check if it can be inserted into the database
 
@@ -589,97 +615,6 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 		return chkres;
 	}
 
-//	public static int submit_relay_item (RelayItem relit, boolean f_force) {
-//
-//		// Get collection handle
-//
-//		MongoDBCollHandle coll_handle = get_coll_handle (null);
-//
-//		// Search for an existing item with the same relay_id
-//
-//		Bson filter = natural_filter (0L, 0L, relit.get_relay_id());
-//		Document doc = coll_handle.find_first (filter);
-//
-//		// If not found ...
-//
-//		if (doc == null) {
-//
-//			// Erase existing object id, if any
-//
-//			relit.set_id (null);
-//
-//			// Call MongoDB to store into database
-//
-//			coll_handle.insertOne (relit.to_bson_doc());
-//
-//			// Return that we inserted item
-//
-//			return 2;
-//		}
-//
-//		// Get existing relay item
-//
-//		RelayItem existing = (new RelayItem()).from_bson_doc (doc);
-//
-//		// Copy the object id
-//
-//		relit.set_id (existing.get_id());
-//
-//		// If force, increase relay_time if necessary
-//
-//		if (f_force) {
-//			if (relit.get_relay_time() <= existing.get_relay_time()) {
-//				relit.set_relay_time (existing.get_relay_time() + 1L);
-//			}
-//		}
-//
-//		// Otherwise, compare to existing item
-//
-//		else {
-//
-//			int cmp = compare (relit, existing);
-//
-//			// If identical, return identical
-//
-//			if (cmp == 0) {
-//				return 0;
-//			}
-//
-//			// If earlier than existing item, return that
-//
-//			if (cmp < 0) {
-//				return -1;
-//			}
-//		}
-//
-//		// Update existing item
-//
-//		// Filter: id == relit.id
-//
-//		filter = id_filter (relit.get_id());
-//
-//		// Construct the update operations: Set relay_time and details
-//
-//		ArrayList<Bson> updates = new ArrayList<Bson>();
-//
-//		updates.add (Updates.set ("relay_time", new Long(relit.relay_time)));
-//		updates.add (Updates.set ("details", relit.details));
-//
-//		// Update item id if desired (this would send the item id thru the changestream)
-//
-//		//updates.add (Updates.set ("relay_id", relit.relay_id));
-//
-//		Bson update = Updates.combine (updates);
-//
-//		// Run the update
-//
-//		coll_handle.updateOne (filter, update);
-//
-//		// Return updated
-//
-//		return 1;
-//	}
-
 
 
 
@@ -689,13 +624,14 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 	//  relay_time = Relay item time stamp, in milliseconds since the epoch. Must be positive.
 	//  details = Further details of this relay item. Can be null if there are none.
 	//  f_force = True to force item to be written.
+	//  relay_stamp = Origin stamp to indicate source.
 	// If an item is written or updated, then the new or updated item is returned.
 	// If an item is not written, then null is returned.
 	// If f_force is true, then the time stamp is increased, if necessary,
 	//  to ensure that the item is written.  Otherwise, if there is an existing item
 	//  that is equal or later to the proposed new item, then nothing is written.
 
-	public static RelayItem submit_relay_item (String relay_id, long relay_time, MarshalWriter details, boolean f_force) {
+	public static RelayItem submit_relay_item (String relay_id, long relay_time, MarshalWriter details, boolean f_force, long relay_stamp) {
 
 		// Build the relay item
 
@@ -703,59 +639,12 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 
 		// Do the insert
 
-		if (submit_relay_item (relit, f_force) <= 0) {
+		if (submit_relay_item (relit, f_force, relay_stamp) <= 0) {
 			relit = null;		// item not written
 		}
 		
 		return relit;
 	}
-
-//	public static RelayItem submit_relay_item (String relay_id, long relay_time, MarshalWriter details, boolean f_force) {
-//
-//		// Build the relay item
-//
-//		RelayItem relit = build_relay_item (relay_id, relay_time, details);
-//
-//		// Check if it can be inserted into the database
-//
-//		int chkres = check_relay_item (relit, f_force);
-//
-//		if (chkres <= 0) {
-//			return null;
-//		}
-//
-//		// Insert the relay item
-//
-//		insert_relay_item (relit);
-//
-//		return relit;
-//	}
-
-//	public static RelayItem submit_relay_item (String relay_id, long relay_time, MarshalWriter details, boolean f_force) {
-//
-//		// Check conditions
-//
-//		if (!( relay_id != null
-//			&& relay_time > 0L )) {
-//			throw new IllegalArgumentException("RelayItem.submit_relay_item: Invalid relay item parameters");
-//		}
-//
-//		// Construct the relay item object
-//
-//		RelayItem relit = new RelayItem();
-//		relit.set_id (null);
-//		relit.set_relay_time (relay_time);
-//		relit.set_relay_id (relay_id);
-//		relit.set_details (details);
-//
-//		// Do the insert
-//
-//		if (submit_relay_item (relit, f_force) <= 0) {
-//			relit = null;		// item not written
-//		}
-//		
-//		return relit;
-//	}
 
 
 
@@ -766,6 +655,7 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 	//  relay_time = Relay item time stamp, in milliseconds since the epoch. Must be positive.
 	//  details = Further details of this relay item. Can be null if there are none.
 	// Returns a newly created RelayItem, with null object id.
+	// Note: relay_stamp is initialized to 0L (it receives its final value when written to the database).
 
 	public static RelayItem build_relay_item (String relay_id, long relay_time, MarshalWriter details) {
 
@@ -782,6 +672,7 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 		relit.set_id (null);
 		relit.set_relay_time (relay_time);
 		relit.set_relay_id (relay_id);
+		relit.set_relay_stamp (0L);
 		relit.set_details (details);
 		
 		return relit;
@@ -913,11 +804,12 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 
 		filter = id_filter (relit.get_id());
 
-		// Construct the update operations: Set relay_time and details
+		// Construct the update operations: Set relay_time, relay_stamp, and details
 
 		ArrayList<Bson> updates = new ArrayList<Bson>();
 
 		updates.add (Updates.set ("relay_time", new Long(relit.relay_time)));
+		updates.add (Updates.set ("relay_stamp", new Long(relit.relay_stamp)));
 		updates.add (Updates.set ("details", relit.details));
 
 		// Update item id if desired (this would send the item id thru the changestream)
@@ -1158,9 +1050,18 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 
 		MongoDBCollHandle coll_handle = get_coll_handle (null);
 
+		// Filter to watch relay_stamp >= 0L, in the fullDocument subdocument of the change stream document
+
+		long stamp_cutoff = 0L;
+		//Bson filter = Filters.gte ("fullDocument.relay_stamp", new Long(stamp_cutoff));
+
+		// The "not" form of the filter also passes changes that don't contain a full document, such as invalidate
+
+		Bson filter = Filters.not (Filters.lt ("fullDocument.relay_stamp", new Long(stamp_cutoff)));
+
 		// Get the cursor and iterator
 
-		MongoCursor<ChangeStreamDocument<Document>> cursor = coll_handle.watch();
+		MongoCursor<ChangeStreamDocument<Document>> cursor = coll_handle.watch (filter);
 		return new MyChangeStreamIterator (cursor, coll_handle);
 	}
 
@@ -1172,6 +1073,7 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 55001;
+	private static final int MARSHAL_VER_2 = 55002;
 
 	private static final String M_VERSION_NAME = "RelayItem";
 
@@ -1189,15 +1091,37 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Contents
 
-		String sid = id.toHexString();
-		writer.marshalString      ("id"         , sid        );
-		writer.marshalLong        ("relay_time" , relay_time );
-		writer.marshalString      ("relay_id"   , relay_id   );
-		writer.marshalString      ("details"    , details    );
+		String sid;
+
+		switch (ver) {
+
+		case MARSHAL_VER_1:
+
+			sid = id.toHexString();
+			writer.marshalString      ("id"         , sid        );
+			writer.marshalLong        ("relay_time" , relay_time );
+			writer.marshalString      ("relay_id"   , relay_id   );
+			writer.marshalString      ("details"    , details    );
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			sid = id.toHexString();
+			writer.marshalString      ("id"         , sid        );
+			writer.marshalLong        ("relay_time" , relay_time );
+			writer.marshalString      ("relay_id"   , relay_id   );
+			writer.marshalLong        ("relay_stamp", relay_stamp);
+			writer.marshalString      ("details"    , details    );
+
+			break;
+		}
 	
 		return;
 	}
@@ -1209,16 +1133,37 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
 		String sid;
-		sid         = reader.unmarshalString      ("id"         );
-		relay_time  = reader.unmarshalLong        ("relay_time"  );
-		relay_id    = reader.unmarshalString      ("relay_id"   );
-		details     = reader.unmarshalString      ("details"    );
-		id = new ObjectId(sid);
+
+		switch (ver) {
+
+		case MARSHAL_VER_1:
+
+			sid         = reader.unmarshalString      ("id"         );
+			relay_time  = reader.unmarshalLong        ("relay_time" );
+			relay_id    = reader.unmarshalString      ("relay_id"   );
+			details     = reader.unmarshalString      ("details"    );
+			id = new ObjectId(sid);
+
+			relay_stamp = 0L;
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			sid         = reader.unmarshalString      ("id"         );
+			relay_time  = reader.unmarshalLong        ("relay_time" );
+			relay_id    = reader.unmarshalString      ("relay_id"   );
+			relay_stamp = reader.unmarshalLong        ("relay_stamp");
+			details     = reader.unmarshalString      ("details"    );
+			id = new ObjectId(sid);
+
+			break;
+		}
 
 		return;
 	}

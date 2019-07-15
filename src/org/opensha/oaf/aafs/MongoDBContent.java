@@ -63,6 +63,7 @@ import com.mongodb.client.model.changestream.UpdateDescription;
 import com.mongodb.client.model.changestream.ChangeStreamLevel;
 import com.mongodb.client.model.changestream.FullDocument;
 import com.mongodb.client.model.changestream.OperationType;
+import com.mongodb.client.model.Aggregates;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -757,19 +758,33 @@ public class MongoDBContent implements AutoCloseable {
 		}
 
 		// Open a change stream iterator on the collection.
+		// Parameters:
+		//  filter = Filter to use for change stream (constructed by Filters), or null if no filter, defaults to null.
 		// The change stream is configured with the full document option set.
 		// Note: This function is only supported on replica sets.
 
 		@Override
-		public MongoCursor<ChangeStreamDocument<Document>> watch () {
+		public MongoCursor<ChangeStreamDocument<Document>> watch (Bson filter) {
 			MongoCursor<ChangeStreamDocument<Document>> result;
 			try {
 				ClientSession client_session = get_op_session_read();
 
 				if (client_session != null) {
-					result = mongo_collection.watch(client_session).fullDocument(FullDocument.UPDATE_LOOKUP).iterator();
+					if (filter != null) {
+						ArrayList<Bson> pipeline = new ArrayList<Bson>();
+						pipeline.add (Aggregates.match (filter));
+						result = mongo_collection.watch(client_session, pipeline).fullDocument(FullDocument.UPDATE_LOOKUP).iterator();
+					} else {
+						result = mongo_collection.watch(client_session).fullDocument(FullDocument.UPDATE_LOOKUP).iterator();
+					}
 				} else {
-					result = mongo_collection.watch().fullDocument(FullDocument.UPDATE_LOOKUP).iterator();
+					if (filter != null) {
+						ArrayList<Bson> pipeline = new ArrayList<Bson>();
+						pipeline.add (Aggregates.match (filter));
+						result = mongo_collection.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP).iterator();
+					} else {
+						result = mongo_collection.watch().fullDocument(FullDocument.UPDATE_LOOKUP).iterator();
+					}
 				}
 			}
 			catch (MongoException e) {

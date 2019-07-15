@@ -3495,11 +3495,13 @@ public class ServerTest {
 				long relay_time;
 				MarshalWriter details;
 				boolean f_force = false;
+				long relay_stamp;
 
 				RelayItem relit;
 		
 				relay_id = "Event_2";
 				relay_time = 20100L;
+				relay_stamp = 0L;
 				details = RelayItem.begin_details();
 				details.marshalArrayBegin (null, 5);
 				details.marshalString (null, "Details_2");
@@ -3508,25 +3510,27 @@ public class ServerTest {
 				details.marshalDouble (null, 21030.0);
 				details.marshalDouble (null, 21040.0);
 				details.marshalArrayEnd ();
-				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force, relay_stamp);
 				if (relit != null) {
-					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time() + ", relay_stamp = " + relit.get_relay_stamp());
 				} else {
-					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time + ", relay_stamp = " + relay_stamp);
 				}
 		
 				relay_id = "Event_4";
 				relay_time = 40100L;
+				relay_stamp = -1L;
 				details = null;
-				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force, relay_stamp);
 				if (relit != null) {
-					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time() + ", relay_stamp = " + relit.get_relay_stamp());
 				} else {
-					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time + ", relay_stamp = " + relay_stamp);
 				}
 		
 				relay_id = "Event_1";
 				relay_time = 10100L;
+				relay_stamp = 1L;
 				details = RelayItem.begin_details();
 				details.marshalArrayBegin (null, 5);
 				details.marshalString (null, "Details_1");
@@ -3535,15 +3539,16 @@ public class ServerTest {
 				details.marshalDouble (null, 11030.0);
 				details.marshalDouble (null, 11040.0);
 				details.marshalArrayEnd ();
-				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force, relay_stamp);
 				if (relit != null) {
-					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time() + ", relay_stamp = " + relit.get_relay_stamp());
 				} else {
-					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time + ", relay_stamp = " + relay_stamp);
 				}
 		
 				relay_id = "Event_5";
 				relay_time = 50100L;
+				relay_stamp = -2L;
 				details = RelayItem.begin_details();
 				details.marshalArrayBegin (null, 5);
 				details.marshalString (null, "Details_5");
@@ -3552,15 +3557,16 @@ public class ServerTest {
 				details.marshalDouble (null, 51030.0);
 				details.marshalDouble (null, 51040.0);
 				details.marshalArrayEnd ();
-				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force, relay_stamp);
 				if (relit != null) {
-					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time() + ", relay_stamp = " + relit.get_relay_stamp());
 				} else {
-					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time + ", relay_stamp = " + relay_stamp);
 				}
 		
 				relay_id = "Event_3";
 				relay_time = 30100L;
+				relay_stamp = 2L;
 				details = RelayItem.begin_details();
 				details.marshalArrayBegin (null, 5);
 				details.marshalString (null, "Details_3");
@@ -3569,11 +3575,11 @@ public class ServerTest {
 				details.marshalDouble (null, 31030.0);
 				details.marshalDouble (null, 31040.0);
 				details.marshalArrayEnd ();
-				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force, relay_stamp);
 				if (relit != null) {
-					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time() + ", relay_stamp = " + relit.get_relay_stamp());
 				} else {
-					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time + ", relay_stamp = " + relay_stamp);
 				}
 
 				// Wait 3 seconds, then dump the change stream iterator
@@ -3865,9 +3871,9 @@ public class ServerTest {
 
 	public static void test69(String[] args) {
 
-		// Four additional arguments
+		// Five additional arguments
 
-		if (args.length != 5) {
+		if (args.length != 6) {
 			System.err.println ("ServerTest : Invalid 'test69' or 'relit_add_one' subcommand");
 			return;
 		}
@@ -3876,6 +3882,7 @@ public class ServerTest {
 		long relay_time = Long.parseLong(args[2]);
 		String details_text = args[3];
 		boolean f_force = Boolean.parseBoolean (args[4]);
+		long relay_stamp = Long.parseLong(args[5]);
 
 		// Connect to MongoDB
 
@@ -3902,11 +3909,11 @@ public class ServerTest {
 				details.marshalArrayBegin (null, 1);
 				details.marshalString (null, details_text);
 				details.marshalArrayEnd ();
-				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+				relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force, relay_stamp);
 				if (relit != null) {
-					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+					System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time() + ", relay_stamp = " + relit.get_relay_stamp());
 				} else {
-					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+					System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time + ", relay_stamp = " + relay_stamp);
 				}
 
 				// Wait 3 seconds, then dump the change stream iterator
@@ -3976,16 +3983,17 @@ public class ServerTest {
 						String relay_id = "item_" + item;
 						long relay_time = cycle * 1000000L + item;
 						boolean f_force = false;
+						long relay_stamp = (cycle * 1000000L + item) * (((cycle + item) % 3L == 1L) ? -10L : 10L);
 		
 						MarshalWriter details = RelayItem.begin_details();
 						details.marshalArrayBegin (null, 1);
 						details.marshalString (null, "Cycle = " + cycle + ", item = " + item);
 						details.marshalArrayEnd ();
-						relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+						relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force, relay_stamp);
 						if (relit != null) {
-							System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+							System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time() + ", relay_stamp = " + relit.get_relay_stamp());
 						} else {
-							System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+							System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time + ", relay_stamp = " + relay_stamp);
 						}
 
 					}
@@ -4064,16 +4072,17 @@ public class ServerTest {
 						String relay_id = "item_" + item;
 						long relay_time = cycle * 1000000L + item;
 						boolean f_force = false;
+						long relay_stamp = (cycle * 1000000L + item) * (((cycle + item) % 3L == 1L) ? -10L : 10L);
 		
 						MarshalWriter details = RelayItem.begin_details();
 						details.marshalArrayBegin (null, 1);
 						details.marshalString (null, "Cycle = " + cycle + ", item = " + item);
 						details.marshalArrayEnd ();
-						relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+						relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force, relay_stamp);
 						if (relit != null) {
-							System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+							System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time() + ", relay_stamp = " + relit.get_relay_stamp());
 						} else {
-							System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+							System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time + ", relay_stamp = " + relay_stamp);
 						}
 
 					}
@@ -4222,16 +4231,17 @@ public class ServerTest {
 						String relay_id = "item_" + item;
 						long relay_time = cycle * 1000000L + item;
 						boolean f_force = false;
+						long relay_stamp = (cycle * 1000000L + item) * (((cycle + item) % 3L == 1L) ? -10L : 10L);
 		
 						MarshalWriter details = RelayItem.begin_details();
 						details.marshalArrayBegin (null, 1);
 						details.marshalString (null, "Cycle = " + cycle + ", item = " + item);
 						details.marshalArrayEnd ();
-						relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force);
+						relit = RelayItem.submit_relay_item (relay_id, relay_time, details, f_force, relay_stamp);
 						if (relit != null) {
-							System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time());
+							System.out.println ("Added relay item, relay_id = " + relit.get_relay_id() + ", relay_time = " + relit.get_relay_time() + ", relay_stamp = " + relit.get_relay_stamp());
 						} else {
-							System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time);
+							System.out.println ("Failed to add relay item, relay_id = " + relay_id + ", relay_time = " + relay_time + ", relay_stamp = " + relay_stamp);
 						}
 
 					}
@@ -6308,10 +6318,9 @@ public class ServerTest {
 
 		// Subcommand : Test #69
 		// Command format:
-		//  test69  relay_id  relay_time  details_text  f_force
-		// Search the relay items for relay time and/or relay id; using list.
-		// Times can be 0 for no bound, relay id can be omitted for no restriction or repeated to search for several.
-		// If any relay are given, the entry must match at least one of them.
+		//  test69  relay_id  relay_time  details_text  f_force  relay_stamp
+		// Add an element to the relay items.
+		// It may or may not succeeded depending on whether an equal or later item already exists.
 
 		if (args[0].equalsIgnoreCase ("test69") || args[0].equalsIgnoreCase ("relit_add_one")) {
 

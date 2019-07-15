@@ -270,10 +270,16 @@ public interface MongoDBCollHandle {
 	}
 
 	// Open a change stream iterator on the collection.
+	// Parameters:
+	//  filter = Filter to use for change stream (constructed by Filters), or null if no filter, defaults to null.
 	// The change stream is configured with the full document option set.
 	// Note: This function is only supported on replica sets.
 
-	public MongoCursor<ChangeStreamDocument<Document>> watch ();
+	public MongoCursor<ChangeStreamDocument<Document>> watch (Bson filter);
+
+	public default MongoCursor<ChangeStreamDocument<Document>> watch () {
+		return watch (null);
+	}
 
 	//--- Handle functions ---
 

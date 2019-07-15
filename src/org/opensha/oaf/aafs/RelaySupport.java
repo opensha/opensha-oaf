@@ -296,7 +296,8 @@ public class RelaySupport extends ServerComponent {
 			event_id_to_pdl_relay_id (event_id),			// relay_id
 			relay_time,										// relay_time
 			ripdl_payload.marshal_relay(),					// details
-			f_force);										// f_force
+			f_force,										// f_force
+			0L);											// relay_stamp
 
 		int log_op = ((result == null) ? LogSupport.RIOP_STALE : LogSupport.RIOP_SAVE);
 		long log_relay_time = ((result == null) ? relay_time : (result.get_relay_time()));
@@ -350,7 +351,8 @@ public class RelaySupport extends ServerComponent {
 			event_id_to_prem_relay_id (event_id),			// relay_id
 			relay_time,										// relay_time
 			riprem_payload.marshal_relay(),					// details
-			f_force);										// f_force
+			f_force,										// f_force
+			0L);											// relay_stamp
 
 		int log_op = ((result == null) ? LogSupport.RIOP_STALE : LogSupport.RIOP_SAVE);
 		long log_relay_time = ((result == null) ? relay_time : (result.get_relay_time()));
@@ -403,7 +405,8 @@ public class RelaySupport extends ServerComponent {
 			event_id_to_pfrn_relay_id (event_id),			// relay_id
 			relay_time,										// relay_time
 			ripfrn_payload.marshal_relay(),					// details
-			f_force);										// f_force
+			f_force,										// f_force
+			0L);											// relay_stamp
 
 		int log_op = ((result == null) ? LogSupport.RIOP_STALE : LogSupport.RIOP_SAVE);
 		long log_relay_time = ((result == null) ? relay_time : (result.get_relay_time()));
