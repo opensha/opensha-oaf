@@ -1,7 +1,24 @@
 package org.opensha.oaf.aafs;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.util.Queue;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.GZIPInputStream;
 
 import org.opensha.oaf.aafs.entity.PendingTask;
 import org.opensha.oaf.aafs.entity.LogEntry;
@@ -9,6 +26,13 @@ import org.opensha.oaf.aafs.entity.CatalogSnapshot;
 import org.opensha.oaf.aafs.entity.TimelineEntry;
 import org.opensha.oaf.aafs.entity.AliasFamily;
 import org.opensha.oaf.aafs.entity.RelayItem;
+import org.opensha.oaf.aafs.entity.DBEntity;
+
+import org.opensha.oaf.util.MarshalImpDataReader;
+import org.opensha.oaf.util.MarshalImpDataWriter;
+import org.opensha.oaf.util.MarshalReader;
+import org.opensha.oaf.util.MarshalWriter;
+import org.opensha.oaf.util.MarshalException;
 
 
 /**
@@ -18,6 +42,91 @@ import org.opensha.oaf.aafs.entity.RelayItem;
 public class RelayThread implements Runnable {
 
 	//----- Constants -----
+
+
+	// Relay thread status values.
+
+	public static final int RTSTAT_IDLE = 1;			// Thread is idle, initial state.
+	public static final int RTSTAT_STARTING = 2;		// Thread is in the process of starting.  [Active state]
+	public static final int RTSTAT_CONNECTING = 3;		// Thread is in the process of connecting to remote server.  [Active state]
+	public static final int RTSTAT_CONNECT_FAIL = 4;	// Thread stopped because it was never able to connect.
+	public static final int RTSTAT_RUNNING = 5;			// Thread is running normally.  [Active state]
+	public static final int RTSTAT_SHUTDOWN = 6;		// Thread shut down normally.
+	public static final int RTSTAT_CONNECT_LOSS = 7;	// Thread stopped because connection was lost or database issue.
+	public static final int RTSTAT_QUEUE_OVERFLOW = 8;	// Thread stopped because of queue overflow or internal error.
+
+	// Return true if the relay status is active (meaning that the thread has not exited).
+
+	public static boolean is_relay_active (int rtstat) {
+		switch (rtstat) {
+		case RTSTAT_IDLE:
+		case RTSTAT_CONNECT_FAIL:
+		case RTSTAT_SHUTDOWN:
+		case RTSTAT_CONNECT_LOSS:
+		case RTSTAT_QUEUE_OVERFLOW:
+			return false;
+		case RTSTAT_STARTING:
+		case RTSTAT_CONNECTING:
+		case RTSTAT_RUNNING:
+			return true;
+		}
+		throw new IllegalArgumentException ("RelayThread.is_relay_active: Unknown relay status: " + rtstat);
+	}
+
+	// Fetch item status values.
+
+	public static final int FISTAT_IDLE = 1;			// Fetch idle, waiting for fetch command.
+	public static final int FISTAT_PENDING = 2;			// Fetch request pending.  [Active state]
+	public static final int FISTAT_FETCHING = 3;		// Fetch active, fetching items.  [Active state]
+	public static final int FISTAT_FINISHED = 4;		// Fetch finished normally, fetch results are available.
+	public static final int FISTAT_CANCELED = 5;		// Fetch stopped because it was canceled.
+	public static final int FISTAT_IO_FAIL = 6;			// Fetch failed because of I/O error.
+	public static final int FISTAT_EXITED = 7;			// Fetch failed because thread exited.
+
+	// Return true if the fetch status is active (meaning that the thread can undertake additional fetch actions).
+
+	public static boolean is_fetch_active (int fistat) {
+		switch (fistat) {
+		case FISTAT_IDLE:
+		case FISTAT_FINISHED:
+		case FISTAT_CANCELED:
+		case FISTAT_IO_FAIL:
+		case FISTAT_EXITED:
+			return false;
+		case FISTAT_PENDING:
+		case FISTAT_FETCHING:
+			return true;
+		}
+		throw new IllegalArgumentException ("RelayThread.is_fetch_active: Unknown fetch status: " + fistat);
+	}
+
+	// Default polling interval, in milliseconds.
+
+	public static final long DEFAULT_POLLING_INTERVAL = 30000;		// 30 seconds
+
+	// Default maximum queue size.
+
+	public static final int DEFAULT_MAX_QUEUE_SIZE = 10000;
+
+	// An exception that can be thrown to terminate the thread.
+
+	public static class RelayTerminateException extends RuntimeException {
+	
+		// The termination status
+
+		int term_relay_status;
+
+		// The termination exception, which can be null.
+
+		Exception term_relay_exception;
+
+		// Constructor.
+
+		RelayTerminateException (int term_relay_status, Exception term_relay_exception) {
+			this.term_relay_status = term_relay_status;
+			this.term_relay_exception = term_relay_exception;
+		}
+	}
 
 
 
@@ -32,20 +141,7 @@ public class RelayThread implements Runnable {
 
 		//--- Parameters
 
-		// Maximum allowed size of the relay item queue.
-
-		private int max_ri_queue_size;
-
-		public synchronized int get_max_ri_queue_size () {
-			return max_ri_queue_size;
-		}
-
-		public synchronized void set_max_ri_queue_size (int the_max_ri_queue_size) {
-			max_ri_queue_size = the_max_ri_queue_size;
-			return;
-		}
-
-		// The database handle from which relay items are retrieved.
+		// The database handle from which relay items are retrieved, or null to use the default database.
 
 		private String ri_db_handle;
 
@@ -67,158 +163,20 @@ public class RelayThread implements Runnable {
 		}
 
 		public synchronized void set_ri_polling_interval (long the_ri_polling_interval) {
-			ri_polling_interval = the_ri_polling_interval;
+			ri_polling_interval = ((the_ri_polling_interval > 0L) ? the_ri_polling_interval : DEFAULT_POLLING_INTERVAL);
 			return;
 		}
 
-		// Minimum amount of time to wait between reconnection attempts, in milliseconds.
+		// Maximum allowed size of the relay item change stream queue.
 
-		private long ri_reconnect_delay_min;
+		private int max_ri_queue_size;
 
-		public synchronized long get_ri_reconnect_delay_min () {
-			return ri_reconnect_delay_min;
+		public synchronized int get_max_ri_queue_size () {
+			return max_ri_queue_size;
 		}
 
-		public synchronized void set_ri_reconnect_delay_min (long the_ri_reconnect_delay_min) {
-			ri_reconnect_delay_min = the_ri_reconnect_delay_min;
-			return;
-		}
-
-		// Maximum amount of time to wait between reconnection attempts, in milliseconds.
-
-		private long ri_reconnect_delay_max;
-
-		public synchronized long get_ri_reconnect_delay_max () {
-			return ri_reconnect_delay_max;
-		}
-
-		public synchronized void set_ri_reconnect_delay_max (long the_ri_reconnect_delay_max) {
-			ri_reconnect_delay_max = the_ri_reconnect_delay_max;
-			return;
-		}
-
-		// The interval between queries when connection is first established, in milliseconds.
-
-		private long ri_initial_query_interval;
-
-		public synchronized long get_ri_initial_query_interval () {
-			return ri_initial_query_interval;
-		}
-
-		public synchronized void set_ri_initial_query_interval (long the_ri_initial_query_interval) {
-			ri_initial_query_interval = the_ri_initial_query_interval;
-			return;
-		}
-
-		// The interval between queries, after the initial burst, in milliseconds.
-
-		private long ri_query_interval;
-
-		public synchronized long get_ri_query_interval () {
-			return ri_query_interval;
-		}
-
-		public synchronized void set_ri_query_interval (long the_ri_query_interval) {
-			ri_query_interval = the_ri_query_interval;
-			return;
-		}
-
-		// The time to look back before the current completion time, in milliseconds.
-
-		private long ri_query_lookback_time;
-
-		public synchronized long get_ri_query_lookback_time () {
-			return ri_query_lookback_time;
-		}
-
-		public synchronized void set_ri_query_lookback_time (long the_ri_query_lookback_time) {
-			ri_query_lookback_time = the_ri_query_lookback_time;
-			return;
-		}
-
-		// The number of queries in the initial burst after the thread is started.
-
-		private int ri_initial_query_count;
-
-		public synchronized int get_ri_initial_query_count () {
-			return ri_initial_query_count;
-		}
-
-		public synchronized void set_ri_initial_query_count (int the_ri_initial_query_count) {
-			ri_initial_query_count = the_ri_initial_query_count;
-			return;
-		}
-
-		// The number of queries which are presumed to read all relay items.
-
-		private int ri_complete_query_count;
-
-		public synchronized int get_ri_complete_query_count () {
-			return ri_complete_query_count;
-		}
-
-		public synchronized void set_ri_complete_query_count (int the_ri_complete_query_count) {
-			ri_complete_query_count = the_ri_complete_query_count;
-			return;
-		}
-
-
-
-
-		//--- Communication variables
-
-		// Flag indicating that a shutdown request has been received.
-
-		private boolean ri_shutdown_req;
-
-		public synchronized boolean get_ri_shutdown_req () {
-			return ri_shutdown_req;
-		}
-
-		public synchronized void set_ri_shutdown_req (boolean the_ri_shutdown_req) {
-			ri_shutdown_req = the_ri_shutdown_req;
-			return;
-		}
-
-		// The time before which the local relay item table is considered complete, in milliseconds since the epoch.
-
-		private long ri_complete_time;
-
-		public synchronized long get_ri_complete_time () {
-			return ri_complete_time;
-		}
-
-		public synchronized void set_ri_complete_time (long the_ri_complete_time) {
-			ri_complete_time = Math.max (1L, the_ri_complete_time);
-
-			// Also clear the maximum time queue so this value cannot be overriden until after several queries.
-			ri_query_maxtime_internal_clear();
-			return;
-		}
-
-		// Flag indicating that the relay thread is currently connected to the partner server (with hysteresis).
-
-		private boolean ri_is_connected;
-
-		public synchronized boolean get_ri_is_connected () {
-			return ri_is_connected;
-		}
-
-		public synchronized void set_ri_is_connected (boolean the_ri_is_connected) {
-			ri_is_connected = the_ri_is_connected;
-			return;
-		}
-
-		// Flag indicating that the relay thread is currently polling.
-
-		private boolean ri_is_polling;
-
-		public synchronized boolean get_ri_is_polling () {
-			return ri_is_polling;
-		}
-
-		public synchronized void set_ri_is_polling (boolean the_ri_is_polling) {
-			ri_is_polling = the_ri_is_polling;
+		public synchronized void set_max_ri_queue_size (int the_max_ri_queue_size) {
+			max_ri_queue_size = ((the_max_ri_queue_size > 0) ? the_max_ri_queue_size : DEFAULT_MAX_QUEUE_SIZE);
 			return;
 		}
 
@@ -239,26 +197,26 @@ public class RelayThread implements Runnable {
 		}
 
 
-		// Return true if the relay item queue is full.
+		//  // Return true if the relay item queue is full.
+		//  
+		//  public synchronized boolean ri_queue_is_full () {
+		//  	boolean f_result = false;
+		//  	if (ri_queue.size() >= max_ri_queue_size) {
+		//  		f_result = true;
+		//  	}
+		//  	return f_result;
+		//  }
 
-		public synchronized boolean ri_queue_is_full () {
-			boolean f_result = false;
+
+		// Return true if the relay item queue has room.
+
+		public synchronized boolean ri_queue_has_room () {
+			boolean f_result = true;
 			if (ri_queue.size() >= max_ri_queue_size) {
-				f_result = true;
+				f_result = false;
 			}
 			return f_result;
 		}
-
-
-		// Return true if the relay item queue is non-empty.
-
-		//public synchronized boolean ri_queue_has_data () {
-		//	boolean f_result = false;
-		//	if (ri_queue.size() > 0) {
-		//		f_result = true;
-		//	}
-		//	return f_result;
-		//}
 
 
 		// Insert an item in the relay item queue.
@@ -272,12 +230,9 @@ public class RelayThread implements Runnable {
 
 		// Remove an item from the relay item queue.
 		// Returns null if the queue is empty.
-		// Note: If the queue is or becomes empty, then ri_complete_time is updated
-		//  from the query maximum time queue.
 
 		public synchronized RelayItem ri_queue_remove () {
 			RelayItem relit = ri_queue.poll();
-			ri_query_maxtime_apply();
 			return relit;
 		}
 
@@ -292,50 +247,127 @@ public class RelayThread implements Runnable {
 
 
 
-		//--- Query maximum time queue
+		//--- Relay thread status
 
-		// Queue used to hold maximum time seen in recent queries, each in milliseconds since the epoch.
+		// Relay status, one of the RTSTAT_XXXXX values.
 
-		private ArrayDeque<Long> ri_query_maxtime;
+		private int ri_relay_status;
 
+		public synchronized int get_ri_relay_status () {
+			return ri_relay_status;
+		}
 
-		// Clear the query maximum time queue.
+		public synchronized void set_ri_relay_status (int the_ri_relay_status) {
+			ri_relay_status = the_ri_relay_status;
+			return;
+		}
 
-		//public synchronized void ri_query_maxtime_clear () {
-		//	ri_query_maxtime.clear();
-		//	return;
-		//}
+		// Relay exception, or null if none.
 
+		private Exception ri_relay_exception;
 
-		// Insert a maximum time into the queue.
-		// If after insertion the queue size is greater or equal to ri_complete_query_count, then
-		//  the oldest elements are popped from the queue and applied to ri_complete_time.
+		public synchronized Exception get_ri_relay_exception () {
+			return ri_relay_exception;
+		}
 
-		public synchronized void ri_query_maxtime_insert (long maxtime) {
-			ri_query_maxtime.add (maxtime);
-			ri_query_maxtime_apply();
+		public synchronized void set_ri_relay_exception (Exception the_ri_relay_exception) {
+			ri_relay_exception = the_ri_relay_exception;
+			return;
+		}
+
+		// Flag indicating that a shutdown request has been received.
+
+		private boolean ri_shutdown_req;
+
+		public synchronized boolean get_ri_shutdown_req () {
+			return ri_shutdown_req;
+		}
+
+		public synchronized void set_ri_shutdown_req (boolean the_ri_shutdown_req) {
+			ri_shutdown_req = the_ri_shutdown_req;
 			return;
 		}
 
 
-		// Apply items from the query maximum time queue to ri_complete_time (internal subroutine).
-		// Items are applied only when the relay item queue is empty, so that changes in
-		//  ri_complete_time are not visible to the dispatcher thread until after the
-		//  relevant relay items have been processed by the dispatcher thread.
 
-		private void ri_query_maxtime_apply () {
-			if (ri_queue.isEmpty()) {
-				while (ri_query_maxtime.size() >= ri_complete_query_count) {
-					long new_complete_time = ri_query_maxtime.poll();
-					ri_complete_time = Math.max (ri_complete_time, new_complete_time);
-				}
-			}
+
+		//--- Fetch operation status
+
+		// Fetch status, one of the FISTAT_XXXXX values.
+
+		private int ri_fetch_status;
+
+		public synchronized int get_ri_fetch_status () {
+			return ri_fetch_status;
 		}
 
-		// Clear the query maximum time queue (internal subroutine).
+		public synchronized void set_ri_fetch_status (int the_ri_fetch_status) {
+			ri_fetch_status = the_ri_fetch_status;
+			return;
+		}
 
-		private void ri_query_maxtime_internal_clear () {
-			ri_query_maxtime.clear();
+		// Fetch exception, or null if none.
+
+		private Exception ri_fetch_exception;
+
+		public synchronized Exception get_ri_fetch_exception () {
+			return ri_fetch_exception;
+		}
+
+		public synchronized void set_ri_fetch_exception (Exception the_ri_fetch_exception) {
+			ri_fetch_exception = the_ri_fetch_exception;
+			return;
+		}
+
+		// Destination for fetch operation.
+
+		private MarshalWriter ri_fetch_writer;
+
+		public synchronized MarshalWriter get_ri_fetch_writer () {
+			return ri_fetch_writer;
+		}
+
+		public synchronized void set_ri_fetch_writer (MarshalWriter the_ri_fetch_writer) {
+			ri_fetch_writer = the_ri_fetch_writer;
+			return;
+		}
+
+		// Lower time range for fetch operation, or 0L if no limit.
+
+		private long ri_fetch_relay_time_lo;
+
+		public synchronized long get_ri_fetch_relay_time_lo () {
+			return ri_fetch_relay_time_lo;
+		}
+
+		public synchronized void set_ri_fetch_relay_time_lo (long the_ri_fetch_relay_time_lo) {
+			ri_fetch_relay_time_lo = the_ri_fetch_relay_time_lo;
+			return;
+		}
+
+		// Upper time range for fetch operation, or 0L if no limit.
+
+		private long ri_fetch_relay_time_hi;
+
+		public synchronized long get_ri_fetch_relay_time_hi () {
+			return ri_fetch_relay_time_hi;
+		}
+
+		public synchronized void set_ri_fetch_relay_time_hi (long the_ri_fetch_relay_time_hi) {
+			ri_fetch_relay_time_hi = the_ri_fetch_relay_time_hi;
+			return;
+		}
+
+		// Flag indicating that a cancel request has been received.
+
+		private boolean ri_fetch_cancel_req;
+
+		public synchronized boolean get_ri_fetch_cancel_req () {
+			return ri_fetch_cancel_req;
+		}
+
+		public synchronized void set_ri_fetch_cancel_req (boolean the_ri_fetch_cancel_req) {
+			ri_fetch_cancel_req = the_ri_fetch_cancel_req;
 			return;
 		}
 
@@ -343,8 +375,6 @@ public class RelayThread implements Runnable {
 
 
 		//--- Setup
-
-
 
 		// Constructor.
 		// Note: The constructor and setup() do exactly the same thing.
@@ -360,48 +390,157 @@ public class RelayThread implements Runnable {
 
 		public synchronized void setup () {
 
-			max_ri_queue_size = 1000;
-			ri_db_handle = null;
-			ri_polling_interval = 30000L;				// 30 seconds
-			ri_reconnect_delay_min = 30000L;			// 30 seconds
-			ri_reconnect_delay_max = 300000L;			// 5 minutes
-			ri_initial_query_interval = 300000L;		// 5 minutes
-			ri_query_interval = 3600000L;				// 1 hour
-			ri_query_lookback_time = 86400000L;			// 24 hours
-			ri_initial_query_count = 3;
-			ri_complete_query_count = 3;
+			// Parameters
 
-			ri_shutdown_req = false;
-			ri_complete_time = 1L;
-			ri_is_connected = false;
-			ri_is_polling = false;
+			ri_db_handle = null;
+			ri_polling_interval = DEFAULT_POLLING_INTERVAL;
+			max_ri_queue_size = DEFAULT_MAX_QUEUE_SIZE;
+
+			// Relay item queue
 
 			ri_queue = new ArrayDeque<RelayItem>();
 
-			ri_query_maxtime = new ArrayDeque<Long>();
+			// Relay thread status
+
+			ri_relay_status = RTSTAT_IDLE;
+			ri_relay_exception = null;
+			ri_shutdown_req = false;
+
+			// Fetch operation status
+
+			ri_fetch_status = FISTAT_IDLE;
+			ri_fetch_exception = null;
+			ri_fetch_writer = null;
+			ri_fetch_relay_time_lo = 0L;
+			ri_fetch_relay_time_hi = 0L;
+			ri_fetch_cancel_req = false;
 
 			return;
 		}
 
 
 		// Prepare to start thread.
-		// This performs initialization needed prior to starting or re-starting the thread,
-		// without erasing parameter values.
+		// This should be called after setting up parameters, and before launching the thread.
+		// Returns true if preparation was successful, false if unsuccessful.
+		// Note: The function returns false if the thread is already active.
 
-		public synchronized void prepare () {
+		public synchronized boolean prepare () {
 
+			// Error if thread is active.
 
-			ri_shutdown_req = false;
-			ri_is_connected = false;
-			ri_is_polling = false;
+			if (is_relay_active (ri_relay_status)) {
+				return false;
+			}
+
+			// Relay item queue
 
 			ri_queue = new ArrayDeque<RelayItem>();
 
-			ri_query_maxtime = new ArrayDeque<Long>();
+			// Relay thread status
+
+			ri_relay_status = RTSTAT_STARTING;		// Thread is starting
+			ri_relay_exception = null;
+			ri_shutdown_req = false;
+
+			// Fetch operation status
+
+			ri_fetch_status = FISTAT_IDLE;
+			ri_fetch_exception = null;
+			ri_fetch_writer = null;
+			ri_fetch_relay_time_lo = 0L;
+			ri_fetch_relay_time_hi = 0L;
+			ri_fetch_cancel_req = false;
+
+			return true;
+		}
+
+
+
+
+		//--- Atomic operations
+
+
+		// Set relay thread exit status.
+		// This is intended to be called only from the relay thread, when the thread is exiting.
+
+		public synchronized void set_relay_exit_status (int relay_status, Exception relay_exception) {
+
+			// If a fetch operation is active, terminate it
+
+			if (is_fetch_active (ri_fetch_status)) {
+				ri_fetch_status = FISTAT_EXITED;
+				ri_fetch_exception = null;
+				ri_fetch_writer = null;
+				ri_fetch_relay_time_lo = 0L;
+				ri_fetch_relay_time_hi = 0L;
+				ri_fetch_cancel_req = false;
+			}
+
+			// Relay item queue
+
+			ri_queue = new ArrayDeque<RelayItem>();
+
+			// Set the relay status
+
+			ri_relay_status = relay_status;
+			ri_relay_exception = relay_exception;
+			ri_shutdown_req = false;
 
 			return;
 		}
 
+
+		// Set fetch operation completion status.
+		// This is intended to be called only from the relay thread, when the fetch operation is ending.
+
+		public synchronized void set_fetch_completion_status (int fetch_status, Exception fetch_exception) {
+		
+			// Set the fetch status
+
+			ri_fetch_status = fetch_status;
+			ri_fetch_exception = fetch_exception;
+			ri_fetch_writer = null;
+			ri_fetch_relay_time_lo = 0L;
+			ri_fetch_relay_time_hi = 0L;
+			ri_fetch_cancel_req = false;
+
+			return;
+		}
+
+
+		// Request a fetch operation.
+		// Parameters:
+		//  writer = Destination for fetch.
+		//  relay_time_lo = Lower limit of relay_time range.
+		//  relay_time_hi = Upper limit of relay_time range.
+		// Returns true if successful, false if operation could not be started.
+		// Note: The function returns false if a fetch operation is already active, or if the thread is not active.
+
+		public synchronized boolean request_fetch (MarshalWriter writer, long relay_time_lo, long relay_time_hi) {
+
+			// Error if thread is not active.
+
+			if (!( is_relay_active (ri_relay_status) )) {
+				return false;
+			}
+
+			// Error if fetch is active.
+
+			if (is_fetch_active (ri_fetch_status)) {
+				return false;
+			}
+
+			// Fetch operation status
+
+			ri_fetch_status = FISTAT_PENDING;
+			ri_fetch_exception = null;
+			ri_fetch_writer = writer;
+			ri_fetch_relay_time_lo = relay_time_lo;
+			ri_fetch_relay_time_hi = relay_time_hi;
+			ri_fetch_cancel_req = false;
+		
+			return true;
+		}
 
 	}
 
@@ -423,46 +562,11 @@ public class RelayThread implements Runnable {
 	//----- Service functions (callable from the dispatcher thread) -----
 
 
-	// Remove an item from the relay item queue.
-	// Returns null if the queue is empty.
-
-	public RelayItem ri_queue_remove () {
-		return sync_var.ri_queue_remove();
-	}
-
-
-	// Get the time before which the local relay table is considered complete, in milliseconds since the epoch.
-
-	public long get_ri_complete_time () {
-		return sync_var.get_ri_complete_time();
-	}
-
-
-	// Set the time before which the local relay table is considered complete, in milliseconds since the epoch.
-	// Note: As queries are performed, this time is automatically updated.
-
-	public void set_ri_complete_time (long the_ri_complete_time) {
-		sync_var.set_ri_complete_time (the_ri_complete_time);
-		return;
-	}
-
-	
-	// Get flag indicating that the relay thread is currently connected to the partner server (with hysteresis).
-
-	//public boolean get_ri_is_connected () {
-	//	return sync_var.get_ri_is_connected();
-	//}
-
-
-	// Set maximum allowed size of the relay item queue.
-
-	public void set_max_ri_queue_size (int the_max_ri_queue_size) {
-		sync_var.set_max_ri_queue_size (the_max_ri_queue_size);
-		return;
-	}
+	//--- Parameters
 
 
 	// Set the database handle from which relay items are retrieved.
+	// Can be null to select the default database.
 
 	public void set_ri_db_handle (String the_ri_db_handle) {
 		sync_var.set_ri_db_handle (the_ri_db_handle);
@@ -471,45 +575,110 @@ public class RelayThread implements Runnable {
 
 
 	// Set the polling interval, in milliseconds.
+	// Can be 0L to select the default value.
 
 	public void set_ri_polling_interval (long the_ri_polling_interval) {
 		sync_var.set_ri_polling_interval (the_ri_polling_interval);
 		return;
 	}
 
+	// Set the maximum allowed size of the relay item change stream queue.
+	// Can be 0 to select the default value.
 
-	// Set the interval between queries when connection is first established, in milliseconds.
-
-	public void set_ri_initial_query_interval (long the_ri_initial_query_interval) {
-		sync_var.set_ri_initial_query_interval (the_ri_initial_query_interval);
+	public synchronized void set_max_ri_queue_size (int the_max_ri_queue_size) {
+		sync_var.set_max_ri_queue_size (the_max_ri_queue_size);
 		return;
 	}
 
 
-	// Set the interval between queries, after the initial burst, in milliseconds.
+	//--- Relay item queue
 
-	public void set_ri_query_interval (long the_ri_query_interval) {
-		sync_var.set_ri_query_interval (the_ri_query_interval);
+
+	// Remove an item from the relay item queue.
+	// Returns null if the queue is empty.
+
+	public RelayItem ri_queue_remove () {
+		return sync_var.ri_queue_remove();
+	}
+
+
+	// Get relay status, one of the RTSTAT_XXXXX values.
+
+	public int get_ri_relay_status () {
+		return sync_var.get_ri_relay_status();
+	}
+
+
+	//--- Relay thread status
+
+
+	// Get relay exception, or null if none.
+
+	public Exception get_ri_relay_exception () {
+		return sync_var.get_ri_relay_exception();
+	}
+
+
+	// Request relay thread shutdown.
+
+	public void set_ri_shutdown_req () {
+		sync_var.set_ri_shutdown_req (true);
 		return;
 	}
 
 
-	// Set the time to look back before the current completion time, in milliseconds.
+	//--- Fetch operation status
 
-	public void set_ri_query_lookback_time (long the_ri_query_lookback_time) {
-		sync_var.set_ri_query_lookback_time (the_ri_query_lookback_time);
+
+	// Get fetch status, one of the FISTAT_XXXXX values.
+
+	public int get_ri_fetch_status () {
+		return sync_var.get_ri_fetch_status();
+	}
+
+
+	// Get fetch exception, or null if none.
+
+	public Exception get_ri_fetch_exception () {
+		return sync_var.get_ri_fetch_exception();
+	}
+
+
+	// Request fetch operation cancel.
+
+	public void set_ri_fetch_cancel_req () {
+		sync_var.set_ri_fetch_cancel_req (true);
 		return;
 	}
+
+
+	// Request a fetch operation.
+	// Parameters:
+	//  writer = Destination for fetch.
+	//  relay_time_lo = Lower limit of relay_time range, or 0L for no limit.
+	//  relay_time_hi = Upper limit of relay_time range, or 0L for no limit.
+	// Returns true if successful, false if operation could not be started.
+	// Note: The function returns false if a fetch operation is already active, or if the thread is not active.
+
+	public boolean request_fetch (MarshalWriter writer, long relay_time_lo, long relay_time_hi) {
+		return sync_var.request_fetch (writer, relay_time_lo, relay_time_hi);
+	}
+
+
+	//--- Thread management
 
 
 	// Start the relay thread.
-	// Throws an exception if the thread already exists.
+	// Returns true if success, false if thread is not started.
+	// Note: The function throws an exception if a thread is already running.
 
 	public void start_relay_thread () {
 		if (relay_java_thread != null) {
-			throw new IllegalStateException ("RelayThread.start_relay_thread: Thread is already started");
+			throw new IllegalStateException ("RelayThread.start_relay_thread: Thread is already running");
 		}
-		sync_var.prepare();
+		if (!( sync_var.prepare() )) {
+			throw new IllegalStateException ("RelayThread.start_relay_thread: Thread state is invalid");
+		}
 		relay_java_thread = new Thread (this);
 		relay_java_thread.start();
 		return;
@@ -525,9 +694,11 @@ public class RelayThread implements Runnable {
 		if (the_thread != null) {
 			relay_java_thread = null;
 			sync_var.set_ri_shutdown_req (true);
-			try {
-				the_thread.join();
-			} catch (InterruptedException e) {
+			while (the_thread.isAlive()) {
+				try {
+					the_thread.join();
+				} catch (InterruptedException e) {
+				}
 			}
 		}
 		return;
@@ -555,6 +726,132 @@ public class RelayThread implements Runnable {
 	}
 
 
+	//--- Test helpers
+
+
+	// Run a fetch operation, wait for completion, and then return results in a reader.
+	// Parameters:
+	//  relay_time_lo = Lower limit of relay_time range, or 0L for no limit.
+	//  relay_time_hi = Upper limit of relay_time range, or 0L for no limit.
+	// Returns a reader that contain the results, in a memory buffer.
+	// The results are a sequence of relay items, terminated with a null item.
+	// Throws an exception if the operation cannot be done.
+	// This function can be used in try-with-resources statement.
+	// This function is intended for testing.
+
+	public MarshalImpDataReader run_fetch_and_wait (long relay_time_lo, long relay_time_hi) throws IOException {
+
+		// The output buffer
+
+		ByteArrayOutputStream output_buffer = new ByteArrayOutputStream();
+
+		// Open the writer
+
+		try (
+			MarshalImpDataWriter writer = new MarshalImpDataWriter (
+				new DataOutputStream (new GZIPOutputStream (output_buffer)),
+				true);
+		){
+
+			// Start the fetch operation
+
+			if (!( request_fetch (writer, relay_time_lo, relay_time_hi) )) {
+				throw new RuntimeException ("RelayThread.run_fetch_and_wait: Unable to start fetch operation");
+			}
+
+			// Wait for operation to complete
+
+			int fetch_status = get_ri_fetch_status();
+
+			while (is_fetch_active (fetch_status)) {
+				try {
+					Thread.sleep (2000L);
+				} catch (InterruptedException e) {
+				}
+				fetch_status = get_ri_fetch_status();
+			}
+
+			// If it did not finish normally ...
+
+			if (fetch_status != FISTAT_FINISHED) {
+
+				// Get the exception, if any
+
+				Exception fetch_exception = get_ri_fetch_exception();
+
+				// Throw exception
+
+				if (fetch_exception != null) {
+					throw new RuntimeException ("RelayThread.run_fetch_and_wait: Fetch operation failed, status = " + fetch_status, fetch_exception);
+				}
+				throw new RuntimeException ("RelayThread.run_fetch_and_wait: Fetch operation failed, status = " + fetch_status);
+			}
+
+			// Check for write complete
+
+			writer.check_write_complete();
+		}
+
+		// The input buffer
+
+		ByteArrayInputStream input_buffer = new ByteArrayInputStream (output_buffer.toByteArray());
+		output_buffer = null;
+
+		// Create the reader
+
+		MarshalImpDataReader reader = new MarshalImpDataReader (
+			new DataInputStream (new GZIPInputStream (input_buffer)),
+			true);
+
+		return reader;
+	}
+
+
+	// Run a fetch operation, wait for completion, and then return results as a sorted list.
+	// Parameters:
+	//  relay_time_lo = Lower limit of relay_time range, or 0L for no limit.
+	//  relay_time_hi = Upper limit of relay_time range, or 0L for no limit.
+	// Returns a list that contain the results, sorted in ascending order (earliest first).
+	// Throws an exception if the operation cannot be done.
+	// This function is intended for testing.
+
+	public List<RelayItem> run_fetch_and_sort (long relay_time_lo, long relay_time_hi) throws IOException {
+
+		// Allocate the list
+
+		ArrayList<RelayItem> items = new ArrayList<RelayItem>();
+
+		// Run the fetch operation
+
+		try (
+			MarshalImpDataReader reader = run_fetch_and_wait (relay_time_lo, relay_time_hi);
+		){
+		
+			// Read items and add to list until end of list
+
+			for (;;) {
+				RelayItem relit = RelayItem.unmarshal_poly (reader, null);
+				if (relit == null) {
+					break;
+				}
+				items.add (relit);
+			}
+
+			// Check for read complete
+
+			reader.check_read_complete();
+		}
+
+		// Sort the list
+
+		items.sort (new RelayItem.AscendingComparator());
+
+		// Done
+
+		return items;
+	}
+
+
 
 
 	//----- Relay thread -----
@@ -567,24 +864,26 @@ public class RelayThread implements Runnable {
 	@Override
 	public void run() {
 
-		// Time of most recent restart, 0 if none so far
+		// Flag indicates if we were ever connected
 
-		long restart_time = 0L;
+		boolean was_connected = false;
 
-		// Transaction flag and connect options
+		try {
 
-		String db_handle = sync_var.get_ri_db_handle();
+			// Set state to connection in progress
 
-		boolean is_transact = MongoDBUtil.is_transaction_enabled (db_handle);
+			sync_var.set_ri_relay_status (RTSTAT_CONNECTING);
 
-		int conopt_connect = (is_transact ? MongoDBUtil.CONOPT_SESSION : MongoDBUtil.CONOPT_CONNECT);
-		//int conopt_transact = (is_transact ? MongoDBUtil.CONOPT_TRANSACT_ABORT : MongoDBUtil.CONOPT_CONNECT);
+			// Transaction flag and connect options
 
-		int ddbopt = MongoDBUtil.DDBOPT_SAVE_SET;
+			String db_handle = sync_var.get_ri_db_handle();
 
-		// Restart loop, continue until shutdown or failure
+			boolean is_transact = MongoDBUtil.is_transaction_enabled (db_handle);
 
-		for (;;) {
+			int conopt_connect = (is_transact ? MongoDBUtil.CONOPT_SESSION : MongoDBUtil.CONOPT_CONNECT);
+			//int conopt_transact = (is_transact ? MongoDBUtil.CONOPT_TRANSACT_ABORT : MongoDBUtil.CONOPT_CONNECT);
+
+			int ddbopt = MongoDBUtil.DDBOPT_SAVE_SET;
 
 			// Connect to MongoDB
 
@@ -598,180 +897,211 @@ public class RelayThread implements Runnable {
 					RecordIterator<RelayItem> csit = RelayItem.watch_relay_item_changes();
 				){
 
-					// Time when next query occurs
+					// At this point, we might do a fetch to verify the connection, or fetch remote server status
 
-					long next_query_time = 0L;
+					// Set state indicating connection established
 
-					// Number of initial queries remaining to be performed
-
-					int initial_query_count = sync_var.get_ri_initial_query_count();
-
-					// Minimum relay time for query, or 0 if no query in progress
-
-					long relay_time_lo = 0L;
+					was_connected = true;
+					sync_var.set_ri_relay_status (RTSTAT_RUNNING);
 
 					// Loop until shutdown request or exception
 
 					while (!( sync_var.get_ri_shutdown_req() )) {
 
-						// True if we need to delay before next loop
+						//  // If there is something in the change stream iterator ...
+						//  
+						//  if (csit.hasNext()) {
+						//  
+						//  	// If there is room in the queue...
+						//  
+						//  	if (sync_var.ri_queue_has_room()) {
+						//
+						//			// Add the item to the queue
+						//
+						//  		RelayItem csrelit = csit.next();
+						//  		sync_var.ri_queue_insert (csrelit);
+						//  	}
+						//  
+						//  	// Otherwise, terminate with a queue full error
+						//  
+						//  	else {
+						//			throw new RelayTerminateException (RTSTAT_QUEUE_OVERFLOW, null);
+						//  	}
+						//  }
 
-						boolean f_need_delay = true;
+						// If there is room in the queue and there is something in the change stream iterator ...
 
-						// If there is room in the queue ...
+						if ( sync_var.ri_queue_has_room() && csit.hasNext() ) {
 
-						if (!( sync_var.ri_queue_is_full() )) {
+							// Add the item to the queue
 
-							// Move items from change stream to the queue, up to a limit
+							RelayItem csrelit = csit.next();
+							sync_var.ri_queue_insert (csrelit);
+						}
 
-							int n = sync_var.get_max_ri_queue_size();
+						// Otherwise, if there is a request to start a fetch operation ...
 
-							while (n != 0 && csit.hasNext()) {
-								RelayItem csrelit = csit.next();
-								sync_var.ri_queue_insert (csrelit);
-								--n;
-							}
+						else if (sync_var.get_ri_fetch_status() == FISTAT_PENDING) {
 
-							// If stopped because of limit, then no delay
+							// Do the fetch operation
 
-							if (n == 0) {
-								f_need_delay = false;
-							}
+							do_fetch (csit);
+						}
 
-							// Get the current time
+						// Otherwise, delay to next polling time
 
-							long current_time = System.currentTimeMillis();
-
-							// If query not started yet ...
-
-							if (relay_time_lo == 0L) {
-
-								// If at or after the next scheduled query, initialize the relay time
-
-								if (current_time >= next_query_time) {
-									relay_time_lo = Math.max (1L, sync_var.get_ri_complete_time() - sync_var.get_ri_query_lookback_time());
-								}
-							}
-
-							// If we want to do a query ...
-
-							if (relay_time_lo != 0L) {
-
-								// Limit on number of items to fetch
-
-								n = sync_var.get_max_ri_queue_size();
-
-								try (
-
-									// Get an iterator over relay items
-
-									RecordIterator<RelayItem> items = RelayItem.fetch_relay_item_range (RelayItem.ASCENDING, relay_time_lo, 0L);
-								){
-									// Move items from iterator to the queue, up to a limit
-
-									while (n != 0 && items.hasNext()) {
-										RelayItem relit = items.next();
-										sync_var.ri_queue_insert (relit);
-
-										// Count down, but not to zero if relay time has not changed
-
-										if (!( n == 1 && relit.get_relay_time() == relay_time_lo )) {
-											--n;
-										}
-
-										// New maximum time
-
-										relay_time_lo = relit.get_relay_time();
-									}
-
-								}	// close iterator over relay items
-
-								// If stopped because of limit, then no delay
-
-								if (n == 0) {
-									f_need_delay = false;
-								}
-
-								// If exhausted iterator, save new maximum time and establish next query time
-
-								else {
-
-									// Save maximum time seen, and indicate no query in progress
-
-									sync_var.ri_query_maxtime_insert (relay_time_lo);
-									relay_time_lo = 0L;
-
-									// Count initial queries
-
-									if (initial_query_count > 0) {
-										--initial_query_count;
-									}
-
-									// Get next query time, using short interval if the next query is an initial query
-
-									next_query_time = current_time + ( (initial_query_count > 0) ?
-												(sync_var.get_ri_initial_query_interval()) : (sync_var.get_ri_query_interval()) );
-								}
-
-							}	// end if doing a query
-
-						}	// end if there is room in the queue
-
-						// If we need a delay ...
-
-						if (f_need_delay) {
-
-							// Wait for the polling interval
-						
+						else {
 							sleep_checked (sync_var.get_ri_polling_interval());
-
-						}	// end if need a delay
+						}
 
 					}	// end loop until shutdown
 
 				}	// close change stream iterator
 
-			// Close connection to MongoDB
-
-			// Exception indicates connection lost
-
-			} catch (Exception e) {
-				//e.printStackTrace();
-				//sg.log_sup.report_dispatcher_exception (task, e);
-			} catch (Throwable e) {
-				//e.printStackTrace();
-				//sg.log_sup.report_dispatcher_exception (task, e);
-			}
-
-			// If shutdown request, exit the restart loop
-
-			if (sync_var.get_ri_shutdown_req()) {
-				break;
-			}
-
-			// Calculate restart delay:
-			// restart time is ri_reconnect_delay_min after the current time,
-			// or ri_reconnect_delay_max after the last restart, whichever is later
-
-			long restart_delay = Math.max (sync_var.get_ri_reconnect_delay_min(),
-						sync_var.get_ri_reconnect_delay_max() + restart_time - System.currentTimeMillis());
-
-			// Wait until time for restart
-
-			sleep_checked (restart_delay);
-
-			// New restart time
-
-			restart_time = System.currentTimeMillis();
-
-			// If shutdown request, exit the restart loop
-
-			if (sync_var.get_ri_shutdown_req()) {
-				break;
-			}
+			}	// Close connection to MongoDB
 
 		}
 
+		// Exception indicates queue full or other internal error
+
+		catch (RelayTerminateException e) {
+			sync_var.set_relay_exit_status (e.term_relay_status, e.term_relay_exception);
+			return;
+		}
+
+		// Exception indicates connection lost or never established
+
+		catch (Exception e) {
+			sync_var.set_relay_exit_status (was_connected ? RTSTAT_CONNECT_LOSS : RTSTAT_CONNECT_FAIL, e);
+			return;
+		}
+		
+		catch (Throwable e) {
+			sync_var.set_relay_exit_status (was_connected ? RTSTAT_CONNECT_LOSS : RTSTAT_CONNECT_FAIL, null);
+			return;
+		}
+
+		// Normal termination
+
+		sync_var.set_relay_exit_status (RTSTAT_SHUTDOWN, null);
+		return;
+	}
+
+
+
+
+	// Do a fetch operation.
+	// Parameters:
+	//  csit = Change stream iterator.
+	// This function should be called when the fetch status is FISTAT_PENDING,
+	// after checking that the change stream iterator has no data.
+	// On return, fetch status is inactive.
+	// An exception should be treated as a connection failure.
+
+	private void do_fetch (RecordIterator<RelayItem> csit) {
+
+		// Set fetch status to fetch in progress
+
+		sync_var.set_ri_fetch_status (FISTAT_FETCHING);
+
+		// Iterate over relay items
+
+		try (
+
+			// Get an iterator over matching relay items
+
+			RecordIterator<RelayItem> items = RelayItem.fetch_relay_item_range (
+					RelayItem.UNSORTED, sync_var.get_ri_fetch_relay_time_lo(), sync_var.get_ri_fetch_relay_time_hi());
+		){
+
+			// True if we are polling the change stream iterator
+
+			boolean f_polling = false;
+
+			// Time of next change stream poll
+
+			long next_poll_time = System.currentTimeMillis() + sync_var.get_ri_polling_interval();
+
+			// Iterate over returned items
+
+			for (RelayItem relit : items) {
+
+				// Write out the relay item
+
+				try {
+					RelayItem.marshal_poly (sync_var.get_ri_fetch_writer(), null, relit);
+				}
+
+				// Handle exception during write
+
+				catch (Exception e) {
+					sync_var.set_fetch_completion_status (FISTAT_IO_FAIL, e);
+					return;
+				}
+
+				// Handle cancel request
+
+				if (sync_var.get_ri_fetch_cancel_req()) {
+					sync_var.set_fetch_completion_status (FISTAT_CANCELED, null);
+					return;
+				}
+
+				// Handle shutdown request
+
+				if (sync_var.get_ri_shutdown_req()) {
+					sync_var.set_fetch_completion_status (FISTAT_EXITED, null);
+					return;
+				}
+
+				// If we are polling the change stream ...
+
+				if (f_polling) {
+
+					// If there is room in the queue and there is something in the change stream iterator ...
+
+					if ( sync_var.ri_queue_has_room() && csit.hasNext() ) {
+
+						// Add the item to the queue
+
+						RelayItem csrelit = csit.next();
+						sync_var.ri_queue_insert (csrelit);
+					}
+
+					// Otherwise, reset the polling time
+
+					else {
+						f_polling = false;
+						next_poll_time = System.currentTimeMillis() + sync_var.get_ri_polling_interval();
+					}
+				}
+
+				// Otherwise, check if it is time to start the poll ...
+
+				else {
+					if (System.currentTimeMillis() >= next_poll_time) {
+						f_polling = true;
+					}
+				}
+			}
+
+			// Write a null item to mark end-of-file
+
+			try {
+				RelayItem.marshal_poly (sync_var.get_ri_fetch_writer(), null, null);
+			}
+
+			// Handle exception during write
+
+			catch (Exception e) {
+				sync_var.set_fetch_completion_status (FISTAT_IO_FAIL, e);
+				return;
+			}
+
+			// Successful completion
+
+			sync_var.set_fetch_completion_status (FISTAT_FINISHED, null);
+		}
+						
 		return;
 	}
 

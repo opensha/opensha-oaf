@@ -4027,7 +4027,7 @@ public class ServerTest {
 
 	// Test #71 - Add elements to the relay items in multiple cycles, using relay thread.
 
-	public static void test71(String[] args) {
+	public static void test71(String[] args) throws IOException {
 
 		// One additional argument
 
@@ -4048,18 +4048,16 @@ public class ServerTest {
 
 			RelayThread relay_thread = new RelayThread();
 			relay_thread.set_ri_polling_interval (1000L);
-			relay_thread.set_ri_initial_query_interval (86400000L);	// 24 hours, effectively disabling second and later queries
-			relay_thread.set_ri_query_interval (86400000L);			// 24 hours, effectively disabling second and later queries
 
 			try (
 				RelayThread.Sentinel rtsent = relay_thread.make_sentinel();
 			){
 				relay_thread.start_relay_thread();
 
-				// Wait 4 seconds to make sure it's in effect
+				// Wait 3 seconds to make sure it's in effect
 
 				try {
-					Thread.sleep (4000L);
+					Thread.sleep (3000L);
 				} catch (InterruptedException e) {
 				}
 
@@ -4087,10 +4085,10 @@ public class ServerTest {
 
 					}
 
-					// Wait 4 seconds, then dump the relay item queue
+					// Wait 3 seconds, then dump the relay item queue
 
 					try {
-						Thread.sleep (4000L);
+						Thread.sleep (3000L);
 					} catch (InterruptedException e) {
 					}
 
@@ -4105,6 +4103,16 @@ public class ServerTest {
 					}
 
 					System.out.println ("End relay thread item queue, cycle = " + cycle);
+
+					System.out.println ("Begin relay thread fetch operation, cycle = " + cycle);
+
+					List<RelayItem> fi_list = relay_thread.run_fetch_and_sort (0L, 0L);
+
+					for (RelayItem fi_relit : fi_list) {
+						System.out.println (fi_relit.dumpString());
+					}
+
+					System.out.println ("End relay thread fetch operation, cycle = " + cycle);
 				}
 
 			}
@@ -4119,7 +4127,7 @@ public class ServerTest {
 
 	// Test #72 - Dump all the relay items, using relay thread.
 
-	public static void test72(String[] args) {
+	public static void test72(String[] args) throws IOException {
 
 		// No additional argument
 
@@ -4138,18 +4146,16 @@ public class ServerTest {
 
 			RelayThread relay_thread = new RelayThread();
 			relay_thread.set_ri_polling_interval (1000L);
-			relay_thread.set_ri_initial_query_interval (86400000L);	// 24 hours, effectively disabling second and later queries
-			relay_thread.set_ri_query_interval (86400000L);			// 24 hours, effectively disabling second and later queries
 
 			try (
 				RelayThread.Sentinel rtsent = relay_thread.make_sentinel();
 			){
 				relay_thread.start_relay_thread();
 
-				// Wait 4 seconds to make sure it's in effect
+				// Wait 3 seconds to make sure it's in effect
 
 				try {
-					Thread.sleep (4000L);
+					Thread.sleep (3000L);
 				} catch (InterruptedException e) {
 				}
 
@@ -4167,6 +4173,16 @@ public class ServerTest {
 
 				System.out.println ("End relay thread item queue");
 
+				System.out.println ("Begin relay thread fetch operation");
+
+				List<RelayItem> fi_list = relay_thread.run_fetch_and_sort (0L, 0L);
+
+				for (RelayItem fi_relit : fi_list) {
+					System.out.println (fi_relit.dumpString());
+				}
+
+				System.out.println ("End relay thread fetch operation");
+
 			}
 
 		}
@@ -4179,7 +4195,7 @@ public class ServerTest {
 
 	// Test #73 - Add elements to the relay items in multiple cycles, testing thread query and change stream.
 
-	public static void test73(String[] args) {
+	public static void test73(String[] args) throws IOException {
 
 		// One additional argument
 
@@ -4200,10 +4216,6 @@ public class ServerTest {
 
 			RelayThread relay_thread = new RelayThread();
 			relay_thread.set_ri_polling_interval (500L);			// 0.5 seconds
-			relay_thread.set_ri_initial_query_interval (6000L);		// 6 seconds
-			relay_thread.set_ri_query_interval (6000L);				// 6 seconds
-			relay_thread.set_ri_query_lookback_time (10L);			// chosen to exactly match on cycle 3
-			relay_thread.set_max_ri_queue_size (11);				// chosen to exactly match on cycle 3 change stream, triple on cycle 7
 
 			try (
 				RelayThread.Sentinel rtsent = relay_thread.make_sentinel();
@@ -4216,11 +4228,6 @@ public class ServerTest {
 					Thread.sleep (3000L);
 				} catch (InterruptedException e) {
 				}
-
-				// Get complete time
-
-				long complete_time = relay_thread.get_ri_complete_time();
-				System.out.println ("complete_time = " + complete_time);
 
 				// Loop over cycles, and items within a cycle, adding 3 new items each cycle
 
@@ -4246,29 +4253,35 @@ public class ServerTest {
 
 					}
 
-					// Dump relay item queue until the complete time changes
+					// Wait 3 seconds, then dump the relay item queue
+
+					try {
+						Thread.sleep (3000L);
+					} catch (InterruptedException e) {
+					}
 
 					System.out.println ("Begin relay thread item queue, cycle = " + cycle);
 
 					for (;;) {
 						RelayItem rtrelit = relay_thread.ri_queue_remove();
 						if (rtrelit == null) {
-							long new_complete_time = relay_thread.get_ri_complete_time();
-							if (complete_time != new_complete_time) {
-								complete_time = new_complete_time;
-								System.out.println ("complete_time = " + complete_time);
-								break;
-							}
-							try {
-								Thread.sleep (500L);
-							} catch (InterruptedException e) {
-							}
-						} else {
-							System.out.println (rtrelit.dumpString());
+							break;
 						}
+						System.out.println (rtrelit.dumpString());
 					}
 
 					System.out.println ("End relay thread item queue, cycle = " + cycle);
+
+					System.out.println ("Begin relay thread fetch operation, cycle = " + cycle);
+
+					long relay_time_lo = ((cycle < 3L) ? 0L : ((cycle - 2L) * 1000000L));
+					List<RelayItem> fi_list = relay_thread.run_fetch_and_sort (relay_time_lo , 0L);
+
+					for (RelayItem fi_relit : fi_list) {
+						System.out.println (fi_relit.dumpString());
+					}
+
+					System.out.println ("End relay thread fetch operation, cycle = " + cycle);
 				}
 
 			}

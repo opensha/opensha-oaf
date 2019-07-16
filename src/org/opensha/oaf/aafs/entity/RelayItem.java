@@ -18,6 +18,7 @@ import org.opensha.oaf.util.MarshalException;
 
 
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
@@ -277,6 +278,36 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 			}
 		}
 		return result;
+	}
+
+
+
+
+	// A comparator that can be used for sorting lists of relay items in ascending order (earliest first).
+
+	public static class AscendingComparator implements Comparator<RelayItem>, java.io.Serializable {
+	
+		// Compare two items
+
+		@Override
+		public int compare (RelayItem relit1, RelayItem relit2) {
+			return RelayItem.compare (relit1, relit2);
+		}
+	}
+
+
+
+
+	// A comparator that can be used for sorting lists of relay items in descending order (most recent first).
+
+	public static class DescendingComparator implements Comparator<RelayItem>, java.io.Serializable {
+	
+		// Compare two items
+
+		@Override
+		public int compare (RelayItem relit1, RelayItem relit2) {
+			return RelayItem.compare (relit2, relit1);
+		}
 	}
 
 
@@ -1055,7 +1086,7 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 		long stamp_cutoff = 0L;
 		//Bson filter = Filters.gte ("fullDocument.relay_stamp", new Long(stamp_cutoff));
 
-		// The "not" form of the filter also passes changes that don't contain a full document, such as invalidate
+		// The "not" form of the filter also passes changes that don't contain a full document, such as delete and invalidate
 
 		Bson filter = Filters.not (Filters.lt ("fullDocument.relay_stamp", new Long(stamp_cutoff)));
 
