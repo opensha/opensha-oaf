@@ -3,19 +3,23 @@ RelayItem
 	id: 54a49c100000000000000003
 	relay_time: 10100
 	relay_id: Event_1
+	relay_stamp: 1
 	details: ["Details_1",11010,11020,11030.0,11040.0]
 RelayItem
 	id: 54a49c100000000000000001
 	relay_time: 20100
 	relay_id: Event_2
+	relay_stamp: 0
 	details: ["Details_2",21010,21020,21030.0,21040.0]
 RelayItem
 	id: 54a49c100000000000000005
 	relay_time: 30100
 	relay_id: Event_3
+	relay_stamp: 2
 	details: ["Details_3",31010,31020,31030.0,31040.0]
 RelayItem
 	id: 54a49c100000000000000002
 	relay_time: 40100
 	relay_id: Event_4
+	relay_stamp: -1
 	details: 

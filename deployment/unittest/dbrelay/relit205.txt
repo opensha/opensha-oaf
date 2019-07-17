@@ -1,9 +1,10 @@
-relit205 aafs.ServerTest relit_add_one Event_3 30110 Details_3_After false
-Added relay item, relay_id = Event_3, relay_time = 30110
+relit205 aafs.ServerTest relit_add_one Event_3 30110 Details_3_After false 7002
+Added relay item, relay_id = Event_3, relay_time = 30110, relay_stamp = 7002
 Begin change stream iterator
 RelayItem
 	id: 54a49c100000000000000005
 	relay_time: 30110
 	relay_id: Event_3
+	relay_stamp: 7002
 	details: ["Details_3_After"]
 End change stream iterator

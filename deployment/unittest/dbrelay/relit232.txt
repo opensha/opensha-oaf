@@ -3,9 +3,11 @@ RelayItem
 	id: 54a49c100000000000000004
 	relay_time: 50100
 	relay_id: Event_5
+	relay_stamp: -2
 	details: ["Details_5",51010,51020,51030.0,51040.0]
 RelayItem
 	id: 54a49c100000000000000001
 	relay_time: 20101
 	relay_id: Event_2
+	relay_stamp: 7004
 	details: ["Details_2_Forced"]

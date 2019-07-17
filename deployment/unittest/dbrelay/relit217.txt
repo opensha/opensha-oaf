@@ -1,4 +1,4 @@
-relit217 aafs.ServerTest relit_add_one Event_3 30110 Details_3_After false
-Failed to add relay item, relay_id = Event_3, relay_time = 30110
+relit217 aafs.ServerTest relit_add_one Event_3 30110 Details_3_After false 7005
+Failed to add relay item, relay_id = Event_3, relay_time = 30110, relay_stamp = 7005
 Begin change stream iterator
 End change stream iterator

@@ -149,43 +149,43 @@ rundbut relit$n aafs.ServerTest relit_query_first   true 30010 50090 Event_1 Eve
 
 # Tests for update
 
-rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30090 Details_3_Before false
+rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30090 Details_3_Before false 7001
 
 rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 rundbut relit$n aafs.ServerTest relit_query_iterate false 0 0
 rundbut relit$n aafs.ServerTest relit_query_first   false 0 0
 
-rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30110 Details_3_After false
+rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30110 Details_3_After false 7002
 
 rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 rundbut relit$n aafs.ServerTest relit_query_iterate false 0 0
 rundbut relit$n aafs.ServerTest relit_query_first   false 0 0
 
-rundbut relit$n aafs.ServerTest relit_add_one  Event_2 20090 Details_2_Before false
+rundbut relit$n aafs.ServerTest relit_add_one  Event_2 20090 Details_2_Before false 7003
 
 rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 rundbut relit$n aafs.ServerTest relit_query_iterate false 0 0
 rundbut relit$n aafs.ServerTest relit_query_first   false 0 0
 
-rundbut relit$n aafs.ServerTest relit_add_one  Event_2 20090 Details_2_Forced true
+rundbut relit$n aafs.ServerTest relit_add_one  Event_2 20090 Details_2_Forced true 7004
 
 rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 rundbut relit$n aafs.ServerTest relit_query_iterate false 0 0
 rundbut relit$n aafs.ServerTest relit_query_first   false 0 0
 
-rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30110 Details_3_After false
+rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30110 Details_3_After false 7005
 
 rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 rundbut relit$n aafs.ServerTest relit_query_iterate false 0 0
 rundbut relit$n aafs.ServerTest relit_query_first   false 0 0
 
-rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30110 Details_2_After false
+rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30110 Details_2_After false 7006
 
 rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 rundbut relit$n aafs.ServerTest relit_query_iterate false 0 0
 rundbut relit$n aafs.ServerTest relit_query_first   false 0 0
 
-rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30110 Details_4_After false
+rundbut relit$n aafs.ServerTest relit_add_one  Event_3 30110 Details_4_After false 7007
 
 rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 rundbut relit$n aafs.ServerTest relit_query_iterate false 0 0
@@ -229,7 +229,7 @@ rundbut relit$n aafs.ServerTest relit_query_list    true 0 0
 rundbut relit$n aafs.ServerTest relit_query_delete  false 0 0
 rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 
-rundbut relit$n aafs.ServerTest relit_thread_add_multi  10
+rundbut relit$n aafs.ServerTest relit_thread_add_multi  20
 rundbut relit$n aafs.ServerTest relit_thread_dump
 rundbut relit$n aafs.ServerTest relit_query_list    false 0 0
 rundbut relit$n aafs.ServerTest relit_query_list    true 0 0

@@ -3,4 +3,5 @@ RelayItem
 	id: 54a49c100000000000000002
 	relay_time: 40100
 	relay_id: Event_4
+	relay_stamp: -1
 	details: 
