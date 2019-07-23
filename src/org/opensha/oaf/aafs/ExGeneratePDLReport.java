@@ -63,6 +63,21 @@ public class ExGeneratePDLReport extends ServerExecTask {
 			return rescode;
 		}
 
+		//--- Cancellation check
+
+		// Check for cancel stage
+
+		if (task.get_stage() == STAGE_CANCEL) {
+		
+			sg.task_disp.set_display_taskres_log ("TASK-INFO: PDL report command is canceled:\n"
+				+ "event_id = " + task.get_event_id() + "\n"
+				+ "payload.action_time = " + payload.action_time + "\n"
+				+ "payload.last_forecast_lag = " + payload.last_forecast_lag);
+
+			sg.timeline_sup.next_auto_timeline (tstatus);
+			return RESCODE_PDL_CANCELED;
+		}
+
 		//--- Timeline state check
 
 		// Check that timeline is sending a PDL report
@@ -94,12 +109,14 @@ public class ExGeneratePDLReport extends ServerExecTask {
 			return RESCODE_TIMELINE_TASK_MISMATCH;
 		}
 
-		// Skip the operation if this is a secondary server
-
-		//if (!( sg.pdl_sup.is_pdl_primary() )) {
-		//	sg.timeline_sup.next_auto_timeline (tstatus);
-		//	return RESCODE_PDL_SECONDARY;
-		//}
+		//  // Skip the operation if this is a secondary server
+		//  // (This does not create an infinite loop because next_auto_timeline() never produces
+		//  // a PDL report command on a secondary server)
+		//  
+		//  if (!( sg.pdl_sup.is_pdl_primary() )) {
+		//  	sg.timeline_sup.next_auto_timeline (tstatus);
+		//  	return RESCODE_PDL_SECONDARY;
+		//  }
 
 
 		//--- Find most recent forecast
@@ -265,6 +282,46 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		}
 
 		//--- PDL report
+
+		// Check if PDL operation has already been done
+
+		if (sg.timeline_sup.has_pdl_been_confirmed (pdl_tstatus)) {
+
+			// PDL report confirmed
+
+			tstatus.set_state_pdl_update (sg.task_disp.get_time(), TimelineStatus.PDLSTAT_CONFIRMED);
+		
+			sg.task_disp.set_display_taskres_log ("TASK-INFO: PDL report has already been sent:\n"
+				+ "event_id = " + tstatus.event_id + "\n"
+				+ "last_forecast_lag = " + tstatus.last_forecast_lag);
+
+			sg.log_sup.report_pdl_sent_already (tstatus);
+
+			// Write the new timeline entry
+
+			sg.timeline_sup.append_timeline (task, tstatus);
+
+			// Log the task
+
+			return RESCODE_PDL_CONFIRMED;
+		}
+
+		// Skip the operation if this is a secondary server
+		// (This does not create an infinite loop because next_auto_timeline() never produces
+		// a PDL report command on a secondary server)
+
+		if (!( sg.pdl_sup.is_pdl_primary() )) {
+		
+			sg.task_disp.set_display_taskres_log ("TASK-INFO: PDL report not sent from secondary server:\n"
+				+ "event_id = " + tstatus.event_id + "\n"
+				+ "last_forecast_lag = " + tstatus.last_forecast_lag);
+
+			sg.log_sup.report_pdl_not_sent_secondary (tstatus);
+
+			sg.timeline_sup.next_auto_timeline (tstatus);
+
+			return RESCODE_PDL_SECONDARY;
+		}
 			
 		// Attempt to send the report
 

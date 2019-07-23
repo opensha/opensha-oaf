@@ -982,6 +982,7 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 	 *
 	 * Expected usage: Production.
 	 * Production code calls this in the form fetch_relay_item_range (sort_order, relay_time_lo, relay_time_hi).
+	 * Backup code calls this with no filters and UNSORTED.
 	 */
 	public static RecordIterator<RelayItem> fetch_relay_item_range (int sort_order, long relay_time_lo, long relay_time_hi, String... relay_id) {
 
@@ -1128,14 +1129,11 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid;
-
 		switch (ver) {
 
 		case MARSHAL_VER_1:
 
-			sid = id.toHexString();
-			writer.marshalString      ("id"         , sid        );
+			MongoDBUtil.marshal_object_id (writer, "id", id);
 			writer.marshalLong        ("relay_time" , relay_time );
 			writer.marshalString      ("relay_id"   , relay_id   );
 			writer.marshalString      ("details"    , details    );
@@ -1144,8 +1142,7 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 
 		case MARSHAL_VER_2:
 
-			sid = id.toHexString();
-			writer.marshalString      ("id"         , sid        );
+			MongoDBUtil.marshal_object_id (writer, "id", id);
 			writer.marshalLong        ("relay_time" , relay_time );
 			writer.marshalString      ("relay_id"   , relay_id   );
 			writer.marshalLong        ("relay_stamp", relay_stamp);
@@ -1168,17 +1165,14 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid;
-
 		switch (ver) {
 
 		case MARSHAL_VER_1:
 
-			sid         = reader.unmarshalString      ("id"         );
+			id          = MongoDBUtil.unmarshal_object_id (reader, "id");
 			relay_time  = reader.unmarshalLong        ("relay_time" );
 			relay_id    = reader.unmarshalString      ("relay_id"   );
 			details     = reader.unmarshalString      ("details"    );
-			id = new ObjectId(sid);
 
 			relay_stamp = 0L;
 
@@ -1186,12 +1180,11 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 
 		case MARSHAL_VER_2:
 
-			sid         = reader.unmarshalString      ("id"         );
+			id          = MongoDBUtil.unmarshal_object_id (reader, "id");
 			relay_time  = reader.unmarshalLong        ("relay_time" );
 			relay_id    = reader.unmarshalString      ("relay_id"   );
 			relay_stamp = reader.unmarshalLong        ("relay_stamp");
 			details     = reader.unmarshalString      ("details"    );
-			id = new ObjectId(sid);
 
 			break;
 		}

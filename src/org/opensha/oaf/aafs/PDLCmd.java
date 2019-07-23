@@ -86,6 +86,8 @@ public class PDLCmd {
 	public static final String PVAL_PROD = "prod";						// PDL production server
 	public static final String PVAL_SIM_DEV = "simdev";					// Simulated PDL development server
 	public static final String PVAL_SIM_PROD = "simprod";				// Simulated PDL production server
+	public static final String PVAL_DOWN_DEV = "downdev";				// Down PDL development server
+	public static final String PVAL_DOWN_PROD = "downprod";				// Down PDL production server
 
 	// String for splitting parameter into name and value
 
@@ -182,9 +184,15 @@ public class PDLCmd {
 				else if (value.equalsIgnoreCase (PVAL_SIM_PROD)) {
 					pdl_enable = ServerConfigFile.PDLOPT_SIM_PROD;
 				}
+				else if (value.equalsIgnoreCase (PVAL_DOWN_DEV)) {
+					pdl_enable = ServerConfigFile.PDLOPT_DOWN_DEV;
+				}
+				else if (value.equalsIgnoreCase (PVAL_DOWN_PROD)) {
+					pdl_enable = ServerConfigFile.PDLOPT_DOWN_PROD;
+				}
 				else {
 					System.out.println ("Invalid value in command-line option: " + arg);
-					System.out.println ("Valid values are: " + PVAL_DRYRUN + ", " + PVAL_DEV + ", " + PVAL_PROD + ", " + PVAL_SIM_DEV + ", " + PVAL_SIM_PROD);
+					System.out.println ("Valid values are: " + PVAL_DRYRUN + ", " + PVAL_DEV + ", " + PVAL_PROD + ", " + PVAL_SIM_DEV + ", " + PVAL_SIM_PROD + ", " + PVAL_DOWN_DEV + ", " + PVAL_DOWN_PROD);
 					return true;
 				}
 			}

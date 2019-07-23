@@ -68,6 +68,22 @@ public class ExGenerateForecast extends ServerExecTask {
 			return rescode;
 		}
 
+		//--- Cancellation check
+
+		// Check for cancel stage
+
+		if (task.get_stage() == STAGE_CANCEL) {
+		
+			sg.task_disp.set_display_taskres_log ("TASK-INFO: Forecast command is canceled:\n"
+				+ "event_id = " + task.get_event_id() + "\n"
+				+ "payload.action_time = " + payload.action_time + "\n"
+				+ "payload.next_forecast_lag = " + payload.next_forecast_lag + "\n"
+				+ "payload.last_forecast_lag = " + payload.last_forecast_lag);
+
+			sg.timeline_sup.next_auto_timeline (tstatus);
+			return RESCODE_FORECAST_CANCELED;
+		}
+
 		//--- Timeline state check
 
 		// Get the expected forecast lag
@@ -601,16 +617,36 @@ public class ExGenerateForecast extends ServerExecTask {
 
 			long new_next_pdl_lag = sg.timeline_sup.get_next_pdl_lag (tstatus, new_next_forecast_lag, -1L, sg.task_disp.get_time());
 
-			// Check for secondary status
+			// If no PDL report is requested based on timing, mark it bypassed
 
-			if (!( sg.pdl_sup.is_pdl_primary() )) {
-				tstatus.set_pdl_status (TimelineStatus.PDLSTAT_SECONDARY);
+			if (new_next_pdl_lag < 0L) {
+				tstatus.set_pdl_status (TimelineStatus.PDLSTAT_BYPASSED);
 			}
 
-			// Otherwise, if no PDL report is requested based on timing, mark it bypassed
+			// Otherwise, check if PDL operation has already been done
 
-			else if (new_next_pdl_lag < 0L) {
-				tstatus.set_pdl_status (TimelineStatus.PDLSTAT_BYPASSED);
+			else if (sg.timeline_sup.has_pdl_been_confirmed (tstatus)) {
+		
+				sg.task_disp.display_taskinfo ("TASK-INFO: PDL report has already been sent:\n"
+					+ "event_id = " + tstatus.event_id + "\n"
+					+ "last_forecast_lag = " + tstatus.last_forecast_lag);
+
+				sg.log_sup.report_pdl_sent_already (tstatus);
+
+				tstatus.set_pdl_status (TimelineStatus.PDLSTAT_CONFIRMED);
+			}
+
+			// Otherwise, check for secondary status
+
+			else if (!( sg.pdl_sup.is_pdl_primary() )) {
+		
+				sg.task_disp.set_display_taskres_log ("TASK-INFO: PDL report not sent from secondary server:\n"
+					+ "event_id = " + tstatus.event_id + "\n"
+					+ "last_forecast_lag = " + tstatus.last_forecast_lag);
+
+				sg.log_sup.report_pdl_not_sent_secondary (tstatus);
+
+				tstatus.set_pdl_status (TimelineStatus.PDLSTAT_SECONDARY);
 			}
 
 			// Otherwise, we need to send a PDL report ...

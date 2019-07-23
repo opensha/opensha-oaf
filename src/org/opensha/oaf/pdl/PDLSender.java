@@ -126,6 +126,10 @@ public class PDLSender {
 
 		// Check for simulated error
 
+		if (server_config.get_is_pdl_down()) {
+			throw new PDLSimulatedException ("PDLSender: Simulated PDL down");
+		}
+
 		double sim_error_rate = server_config.get_pdl_err_rate();
 		if (sim_error_rate > 1.0e-6) {
 			if (sim_error_rate > Math.random()) {

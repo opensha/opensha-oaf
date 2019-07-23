@@ -949,7 +949,7 @@ public class AliasFamily extends DBEntity implements java.io.Serializable {
 	 *                     ASCENDING to sort in ascending order by family_time (oldest first),
 	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
-	 * Current usage: Test only.
+	 * Current usage: Backup only, with no filters and UNSORTED.
 	 */
 	public static RecordIterator<AliasFamily> fetch_alias_family_range (long family_time_lo, long family_time_hi, String timeline_id, String[] comcat_ids, long[] family_time_div_rem) {
 		return fetch_alias_family_range (family_time_lo, family_time_hi, timeline_id, comcat_ids, family_time_div_rem, DEFAULT_SORT);
@@ -1078,8 +1078,7 @@ public class AliasFamily extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid = id.toHexString();
-		writer.marshalString      ("id"          , sid         );
+		MongoDBUtil.marshal_object_id (writer, "id", id);
 		writer.marshalLong        ("family_time" , family_time );
 		writer.marshalStringArray ("timeline_ids", timeline_ids);
 		writer.marshalStringArray ("comcat_ids"  , comcat_ids  );
@@ -1099,13 +1098,11 @@ public class AliasFamily extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid;
-		sid          = reader.unmarshalString      ("id"          );
+		id           = MongoDBUtil.unmarshal_object_id (reader, "id");
 		family_time  = reader.unmarshalLong        ("family_time" );
 		timeline_ids = reader.unmarshalStringArray ("timeline_ids");
 		comcat_ids   = reader.unmarshalStringArray ("comcat_ids"  );
 		enc_bindings = reader.unmarshalIntArray    ("enc_bindings");
-		id = new ObjectId(sid);
 
 		return;
 	}

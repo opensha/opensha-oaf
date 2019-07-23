@@ -704,7 +704,7 @@ public class CatalogSnapshot extends DBEntity implements java.io.Serializable {
 	 *                     ASCENDING to sort in ascending order by end_time (oldest first),
 	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
-	 * Current usage: Test only.
+	 * Current usage: Backup only, with no filters and UNSORTED.
 	 */
 	public static RecordIterator<CatalogSnapshot> fetch_catalog_snapshot_range (long end_time_lo, long end_time_hi, String event_id) {
 		return fetch_catalog_snapshot_range (end_time_lo, end_time_hi, event_id, DEFAULT_SORT);
@@ -783,8 +783,7 @@ public class CatalogSnapshot extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid = id.toHexString();
-		writer.marshalString      ("id"                , sid               );
+		MongoDBUtil.marshal_object_id (writer, "id", id);
 		writer.marshalString      ("event_id"          , event_id          );
 		writer.marshalLong        ("start_time"        , start_time        );
 		writer.marshalLong        ("end_time"          , end_time          );
@@ -806,15 +805,13 @@ public class CatalogSnapshot extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid;
-		sid                = reader.unmarshalString      ("id"                );
+		id                 = MongoDBUtil.unmarshal_object_id (reader, "id");
 		event_id           = reader.unmarshalString      ("event_id"          );
 		start_time         = reader.unmarshalLong        ("start_time"        );
 		end_time           = reader.unmarshalLong        ("end_time"          );
 		eqk_count          = reader.unmarshalInt         ("eqk_count"         );
 		lat_lon_depth_list = reader.unmarshalLongArray   ("lat_lon_depth_list");
 		mag_time_list      = reader.unmarshalLongArray   ("mag_time_list"     );
-		id = new ObjectId(sid);
 
 		return;
 	}

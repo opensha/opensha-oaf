@@ -8,6 +8,8 @@ import org.opensha.oaf.aafs.entity.PendingTask;
 import org.opensha.oaf.aafs.entity.LogEntry;
 import org.opensha.oaf.aafs.entity.CatalogSnapshot;
 import org.opensha.oaf.aafs.entity.TimelineEntry;
+import org.opensha.oaf.aafs.entity.RelayItem;
+import org.opensha.oaf.aafs.entity.DBEntity;
 
 
 /**
@@ -27,6 +29,12 @@ public class OpGenerateExpire extends DBPayload {
 
 	public long last_forecast_lag;
 
+	// If the last forecast was not sent to PDL due to being a secondary server, these are the
+	// relay item ids that can be used to check if the primary server sent the forecast.
+	// Otherwise, this is an empty array.  It cannot be null.
+
+	public String[] pdl_relay_ids;
+
 
 
 
@@ -40,9 +48,16 @@ public class OpGenerateExpire extends DBPayload {
 
 	// Set up the contents.
 
-	public void setup (long the_action_time, long the_last_forecast_lag) {
+	public void setup (long the_action_time, long the_last_forecast_lag, String... the_pdl_relay_ids) {
 		action_time = the_action_time;
 		last_forecast_lag = the_last_forecast_lag;
+
+		if (the_pdl_relay_ids == null) {
+			pdl_relay_ids = new String[0];
+		} else {
+			pdl_relay_ids = the_pdl_relay_ids.clone();
+		}
+
 		return;
 	}
 
@@ -54,6 +69,7 @@ public class OpGenerateExpire extends DBPayload {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 30001;
+	private static final int MARSHAL_VER_2 = 30002;
 
 	private static final String M_VERSION_NAME = "OpGenerateExpire";
 
@@ -64,7 +80,9 @@ public class OpGenerateExpire extends DBPayload {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Superclass
 
@@ -72,8 +90,23 @@ public class OpGenerateExpire extends DBPayload {
 
 		// Contents
 
-		writer.marshalLong ("action_time"      , action_time      );
-		writer.marshalLong ("last_forecast_lag", last_forecast_lag);
+		switch (ver) {
+
+		case MARSHAL_VER_1:
+
+			writer.marshalLong ("action_time"      , action_time      );
+			writer.marshalLong ("last_forecast_lag", last_forecast_lag);
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			writer.marshalLong        ("action_time"      , action_time      );
+			writer.marshalLong        ("last_forecast_lag", last_forecast_lag);
+			writer.marshalStringArray ("pdl_relay_ids"    , pdl_relay_ids    );
+
+			break;
+		}
 
 		return;
 	}
@@ -85,7 +118,7 @@ public class OpGenerateExpire extends DBPayload {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Superclass
 
@@ -93,8 +126,25 @@ public class OpGenerateExpire extends DBPayload {
 
 		// Contents
 
-		action_time       = reader.unmarshalLong ("action_time"      );
-		last_forecast_lag = reader.unmarshalLong ("last_forecast_lag");
+		switch (ver) {
+
+		case MARSHAL_VER_1:
+
+			action_time       = reader.unmarshalLong ("action_time"      );
+			last_forecast_lag = reader.unmarshalLong ("last_forecast_lag");
+			
+			pdl_relay_ids = new String[0];
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			action_time       = reader.unmarshalLong        ("action_time"      );
+			last_forecast_lag = reader.unmarshalLong        ("last_forecast_lag");
+			pdl_relay_ids     = reader.unmarshalStringArray ("pdl_relay_ids"    );
+
+			break;
+		}
 
 		return;
 	}

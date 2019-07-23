@@ -1,6 +1,7 @@
 package org.opensha.oaf.aafs;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import org.opensha.oaf.aafs.entity.PendingTask;
 import org.opensha.oaf.aafs.entity.LogEntry;
@@ -675,9 +676,9 @@ public class TimelineSupport extends ServerComponent {
 
 		long next_pdl_lag = get_next_pdl_lag (tstatus, next_forecast_lag, last_pdl_lag, sg.task_disp.get_time());
 
-		// If a PDL report is desired, submit the task
+		// If a PDL report is desired, and this is a primary server, submit the task
 
-		if (next_pdl_lag >= 0L) {
+		if (next_pdl_lag >= 0L && sg.pdl_sup.is_pdl_primary()) {
 		
 			OpGeneratePDLReport pdl_payload = new OpGeneratePDLReport();
 			pdl_payload.setup (tstatus.action_time, tstatus.last_forecast_lag, sg.task_disp.get_time());
@@ -699,9 +700,17 @@ public class TimelineSupport extends ServerComponent {
 		// If a forecast is desired, submit the task
 
 		if (next_forecast_lag >= 0L) {
+
+			String[] forecast_pdl_relay_ids;
+
+			if (next_pdl_lag >= 0L) {	// if PDL report desired, only possible on a secondary server with tstatus.is_pdl_retry_state() == true
+				forecast_pdl_relay_ids = tstatus.forecast_mainshock.get_confirm_relay_ids();
+			} else {
+				forecast_pdl_relay_ids = new String[0];
+			}
 		
 			OpGenerateForecast forecast_payload = new OpGenerateForecast();
-			forecast_payload.setup (tstatus.action_time, tstatus.last_forecast_lag, next_forecast_lag);
+			forecast_payload.setup (tstatus.action_time, tstatus.last_forecast_lag, next_forecast_lag, forecast_pdl_relay_ids);
 
 			PendingTask.submit_task (
 				tstatus.event_id,												// event id
@@ -725,20 +734,31 @@ public class TimelineSupport extends ServerComponent {
 		// If timeline state requests an action, submit an expire command
 
 		if (tstatus.is_forecast_state() || tstatus.is_pdl_retry_state()) {
+
+			String[] expire_pdl_relay_ids;
+			long expire_sched_time;
+
+			if (next_pdl_lag >= 0L) {	// if PDL report desired, only possible on a secondary server with tstatus.is_pdl_retry_state() == true
+				expire_pdl_relay_ids = tstatus.forecast_mainshock.get_confirm_relay_ids();
+				expire_sched_time = tstatus.forecast_mainshock.mainshock_time + tstatus.last_forecast_lag + sg.task_disp.get_action_config().get_forecast_max_delay();
+			} else {
+				expire_pdl_relay_ids = new String[0];
+				expire_sched_time = sg.task_sup.get_prompt_exec_time();		// can expire immediately if no PDL send pending
+			}
 		
 			OpGenerateExpire expire_payload = new OpGenerateExpire();
-			expire_payload.setup (tstatus.action_time, tstatus.last_forecast_lag);
+			expire_payload.setup (tstatus.action_time, tstatus.last_forecast_lag, expire_pdl_relay_ids);
 
 			PendingTask.submit_task (
 				tstatus.event_id,										// event id
-				sg.task_sup.get_prompt_exec_time(),						// sched_time
+				expire_sched_time,										// sched_time
 				sg.task_disp.get_time(),								// submit_time
 				SUBID_AAFS,												// submit_id
 				OPCODE_GEN_EXPIRE,										// opcode
 				0,														// stage
 				expire_payload.marshal_task());							// details
 
-			sg.log_sup.report_expire_request (tstatus.event_id);
+			sg.log_sup.report_expire_request (tstatus.event_id, expire_sched_time);
 
 			return true;
 		}
@@ -848,6 +868,274 @@ public class TimelineSupport extends ServerComponent {
 										task.get_stage(),
 										fcmain.timeline_id);
 		return RESCODE_STAGE_TIMELINE_ID;
+	}
+
+
+
+
+	// Test if a forecast or other PDL operation has already been sent (presumably by another server).
+	// Parameters:
+	//  tstatus = Timeline status.
+	// Returns true if there is a relay item indicating that a PDL operation
+	// has occured at equal or later forecast lag than tstatus.last_forecast_lag.
+	// Note: This function attempts to be conservative, returning true only if it
+	// is certain that a PDL operation has been sent.  It cannot eliminate the
+	// possibility that it may return false even if a PDL operation has been sent.
+
+	public boolean has_pdl_been_confirmed (TimelineStatus tstatus) {
+
+		// Only do this check if the timeline is in a state that requires a PDL report
+		// (This may be unnecessary because callers have probably already checked is_pdl_retry_state())
+
+		if (tstatus.is_pdl_retry_state() && tstatus.last_forecast_lag >= 0L) {		// the check on last_forecast_lag should be unnecessary
+		
+			// Get the most recent forecast lag from the relay items, note it is -1L if none
+
+			long relay_forecast_lag = sg.relay_sup.get_pdl_prem_forecast_lag (tstatus.forecast_mainshock.get_confirm_relay_ids());
+
+			// If it's equal or later to ours, then consider it confirmed
+
+			if (relay_forecast_lag >= tstatus.last_forecast_lag) {
+				return true;
+			}
+		}
+
+		// Not confirmed
+
+		return false;
+	}
+
+
+
+
+	// Set the timeline to correct state for a primary server.
+	// Returns the number of tasks canceled.
+	// Currently, this scans the task queue, looking for any forecast or expire task that was issued
+	// while the previous forecast was not yet sent to PDL (which can only happen if this was a
+	// secondary server at the time the task was issued).  For each such task, we attempt to confirm
+	// that the previous forecast has now been sent to PDL.  If we cannot confirm it, then the task
+	// is canceled, which permits a PDL report task to be issued.
+	// Note: This function should be called during idle time processing.
+
+	public int set_timeline_to_primary () {
+
+		// List of tasks to cancel
+
+		ArrayList<PendingTask> tasks_to_cancel = new ArrayList<PendingTask>();
+
+		// Scan the entire task queue
+
+		try (
+			RecordIterator<PendingTask> tasks = PendingTask.fetch_task_entry_range (0L, 0L, null, PendingTask.UNSORTED);
+		){
+			for (PendingTask task : tasks) {
+
+				// Switch on opcode
+
+				switch (task.get_opcode()) {
+
+				// Forecast task
+
+				case OPCODE_GEN_FORECAST:
+
+					// If not already canceled ...
+
+					if (task.get_stage() != STAGE_CANCEL) {
+
+						// Get the payload
+
+						OpGenerateForecast payload = new OpGenerateForecast();
+						try {
+							payload.unmarshal_task (task);
+						}
+
+						// Invalid task, skip it
+
+						catch (Exception e) {
+							break;
+						}
+
+						// If the last forecast was not sent to PDL ...
+
+						if (payload.last_forecast_lag >= 0L && payload.pdl_relay_ids.length > 0) {
+						
+							// Get the most recent forecast lag from the relay items, note it is -1L if none
+
+							long relay_forecast_lag = sg.relay_sup.get_pdl_prem_forecast_lag (payload.pdl_relay_ids);
+
+							// If it's earlier than ours, then consider it not confirmed
+
+							if (relay_forecast_lag < payload.last_forecast_lag) {
+
+								// Put this task on the list to be canceled
+
+								tasks_to_cancel.add (task);
+							}
+						}
+					}
+					break;
+
+				// Expire task
+
+				case OPCODE_GEN_EXPIRE:
+
+					// If not already canceled ...
+
+					if (task.get_stage() != STAGE_CANCEL) {
+
+						// Get the payload
+
+						OpGenerateExpire payload = new OpGenerateExpire();
+						try {
+							payload.unmarshal_task (task);
+						}
+
+						// Invalid task, skip it
+
+						catch (Exception e) {
+							break;
+						}
+
+						// If the last forecast was not sent to PDL ...
+
+						if (payload.last_forecast_lag >= 0L && payload.pdl_relay_ids.length > 0) {
+						
+							// Get the most recent forecast lag from the relay items, note it is -1L if none
+
+							long relay_forecast_lag = sg.relay_sup.get_pdl_prem_forecast_lag (payload.pdl_relay_ids);
+
+							// If it's earlier than ours, then consider it not confirmed
+
+							if (relay_forecast_lag < payload.last_forecast_lag) {
+
+								// Put this task on the list to be canceled
+
+								tasks_to_cancel.add (task);
+							}
+						}
+					}
+					break;
+				}
+			}
+		}
+
+		// Sort the tasks that need to be canceled, earliest first
+
+		if (tasks_to_cancel.size() > 1) {
+			tasks_to_cancel.sort (new PendingTask.AscendingComparator());
+		}
+
+		// Increment between cancels
+
+		long cancel_time_increment = 15000L;		// 15 seconds
+
+		// Initial execution time
+
+		long exec_time = sg.task_disp.get_time();
+
+		// Iterate over the tasks to cancel
+
+		for (PendingTask task_to_cancel : tasks_to_cancel) {
+
+			// Stage the task
+
+			exec_time += cancel_time_increment;
+			long eff_exec_time = Math.min (exec_time, task_to_cancel.get_exec_time());
+
+			PendingTask.stage_task (task_to_cancel, eff_exec_time, STAGE_CANCEL, null);
+		}
+
+		// Return the number of canceled tasks
+
+		return tasks_to_cancel.size();
+	}
+
+
+
+
+	// Set the timeline to correct state for a secondary server.
+	// Returns the number of tasks canceled.
+	// Currently, this scans the task queue, looking for any PDL report task (which can only exist
+	// issued if this was a primary server at the time the task was issued).  The task is canceled,
+	// which permits the next forecast or expire command to be issued.
+	// Note: This function should be called during idle time processing.
+
+	public int set_timeline_to_secondary () {
+
+		// List of tasks to cancel
+
+		ArrayList<PendingTask> tasks_to_cancel = new ArrayList<PendingTask>();
+
+		// Scan the entire task queue
+
+		try (
+			RecordIterator<PendingTask> tasks = PendingTask.fetch_task_entry_range (0L, 0L, null, PendingTask.UNSORTED);
+		){
+			for (PendingTask task : tasks) {
+
+				// Switch on opcode
+
+				switch (task.get_opcode()) {
+
+				// PDL report task
+
+				case OPCODE_GEN_PDL_REPORT:
+
+					// If not already canceled ...
+
+					if (task.get_stage() != STAGE_CANCEL) {
+
+						// Get the payload
+
+						OpGeneratePDLReport payload = new OpGeneratePDLReport();
+						try {
+							payload.unmarshal_task (task);
+						}
+
+						// Invalid task, skip it
+
+						catch (Exception e) {
+							break;
+						}
+
+						// Put this task on the list to be canceled
+
+						tasks_to_cancel.add (task);
+					}
+					break;
+				}
+			}
+		}
+
+		// Sort the tasks that need to be canceled, earliest first
+
+		if (tasks_to_cancel.size() > 1) {
+			tasks_to_cancel.sort (new PendingTask.AscendingComparator());
+		}
+
+		// Increment between cancels
+
+		long cancel_time_increment = 15000L;		// 15 seconds
+
+		// Initial execution time
+
+		long exec_time = sg.task_disp.get_time();
+
+		// Iterate over the tasks to cancel
+
+		for (PendingTask task_to_cancel : tasks_to_cancel) {
+
+			// Stage the task
+
+			exec_time += cancel_time_increment;
+			long eff_exec_time = Math.min (exec_time, task_to_cancel.get_exec_time());
+
+			PendingTask.stage_task (task_to_cancel, eff_exec_time, STAGE_CANCEL, null);
+		}
+
+		// Return the number of canceled tasks
+
+		return tasks_to_cancel.size();
 	}
 
 

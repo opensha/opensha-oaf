@@ -947,7 +947,7 @@ public class LogEntry extends DBEntity implements java.io.Serializable {
 	 *                     ASCENDING to sort in ascending order by log_time (oldest first),
 	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
-	 * Current usage: Test only.
+	 * Current usage: Backup only, with no filters and UNSORTED.
 	 */
 	public static RecordIterator<LogEntry> fetch_log_entry_range (long log_time_lo, long log_time_hi, String event_id) {
 		return fetch_log_entry_range (log_time_lo, log_time_hi, event_id, DEFAULT_SORT);
@@ -1026,8 +1026,7 @@ public class LogEntry extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid = id.toHexString();
-		writer.marshalString      ("id"         , sid        );
+		MongoDBUtil.marshal_object_id (writer, "id", id);
 		writer.marshalLong        ("log_time"   , log_time   );
 		writer.marshalString      ("event_id"   , event_id   );
 		writer.marshalLong        ("sched_time" , sched_time );
@@ -1056,8 +1055,7 @@ public class LogEntry extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid;
-		sid         = reader.unmarshalString      ("id"         );
+		id          = MongoDBUtil.unmarshal_object_id (reader, "id");
 		log_time    = reader.unmarshalLong        ("log_time"   );
 		event_id    = reader.unmarshalString      ("event_id"   );
 		sched_time  = reader.unmarshalLong        ("sched_time" );
@@ -1071,7 +1069,6 @@ public class LogEntry extends DBEntity implements java.io.Serializable {
 //		details_s   = reader.unmarshalStringArray ("details_s"  );
 		rescode     = reader.unmarshalInt         ("rescode"    );
 		results     = reader.unmarshalString      ("results"    );
-		id = new ObjectId(sid);
 
 		return;
 	}

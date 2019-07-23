@@ -158,8 +158,19 @@ public abstract class RecordChangeIteratorMongo<T> implements RecordIterator<T> 
 
 					case INSERT:
 					case REPLACE:
-					case UPDATE:
 						next_record = hook_convert (doc.getFullDocument(), optype);
+						break;
+
+					// For update, we must allow for the possibility of no full document if the record has been deleted
+
+					case UPDATE: {
+							Document full_doc = doc.getFullDocument();
+							if (full_doc != null) {
+								if (!( full_doc.isEmpty() )) {
+									next_record = hook_convert (full_doc, optype);
+								}
+							}
+						}
 						break;
 
 					// If delete or other, or unknown, ignore the document

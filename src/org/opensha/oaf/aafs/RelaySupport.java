@@ -1,6 +1,7 @@
 package org.opensha.oaf.aafs;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import org.opensha.oaf.aafs.entity.PendingTask;
 import org.opensha.oaf.aafs.entity.LogEntry;
@@ -56,7 +57,7 @@ public class RelaySupport extends ServerComponent {
 
 	// The name used for server status relay items.
 
-	//public static final String RI_STATUS_ID = "===status===";
+	public static final String RI_STATUS_ID = "===status===";
 
 	// The prefix used for server status relay items.
 
@@ -212,6 +213,21 @@ public class RelaySupport extends ServerComponent {
 
 
 
+	// Convert an array of event ids to an array of pdl completion and removal relay ids.
+
+	public static String[] event_ids_to_pdl_and_prem_relay_ids (String[] event_ids) {
+		int len = event_ids.length;
+		String[] result = new String[2*len];
+		for (int i = 0; i < len; ++i) {
+			result[2*i] = RI_PDL_PREFIX + event_ids[i];
+			result[2*i + 1] = RI_PREM_PREFIX + event_ids[i];
+		}
+		return result;
+	}
+
+
+
+
 	// Convert an array of event ids to an array of pdl completion, removal, and foreign relay ids.
 
 	public static String[] event_ids_to_pdl_prem_pfrn_relay_ids (String[] event_ids) {
@@ -312,9 +328,12 @@ public class RelaySupport extends ServerComponent {
 	// Parameters:
 	//  event_ids = Event ids to search for.
 	// Returns the list of matching relay items, sorted newest relay item first.
-	// Returns an empty list if no relay item is found.
+	// Returns an empty list if no relay item is found, or if no event ids are supplied.
 
 	public List<RelayItem> get_pdl_relay_items (String... event_ids) {
+		if (event_ids == null || event_ids.length == 0) {
+			return new ArrayList<RelayItem>();
+		}
 		String[] relay_ids = event_ids_to_pdl_relay_ids (event_ids);
 		List<RelayItem> result = RelayItem.get_relay_item_range (RelayItem.DESCENDING, 0L, 0L, relay_ids);
 		return result;
@@ -367,9 +386,12 @@ public class RelaySupport extends ServerComponent {
 	// Parameters:
 	//  event_ids = Event ids to search for.
 	// Returns the list of matching relay items, sorted newest relay item first.
-	// Returns an empty list if no relay item is found.
+	// Returns an empty list if no relay item is found, or if no event ids are supplied.
 
 	public List<RelayItem> get_prem_relay_items (String... event_ids) {
+		if (event_ids == null || event_ids.length == 0) {
+			return new ArrayList<RelayItem>();
+		}
 		String[] relay_ids = event_ids_to_prem_relay_ids (event_ids);
 		List<RelayItem> result = RelayItem.get_relay_item_range (RelayItem.DESCENDING, 0L, 0L, relay_ids);
 		return result;
@@ -421,9 +443,12 @@ public class RelaySupport extends ServerComponent {
 	// Parameters:
 	//  event_ids = Event ids to search for.
 	// Returns the list of matching relay items, sorted newest relay item first.
-	// Returns an empty list if no relay item is found.
+	// Returns an empty list if no relay item is found, or if no event ids are supplied.
 
 	public List<RelayItem> get_pfrn_relay_items (String... event_ids) {
+		if (event_ids == null || event_ids.length == 0) {
+			return new ArrayList<RelayItem>();
+		}
 		String[] relay_ids = event_ids_to_pfrn_relay_ids (event_ids);
 		List<RelayItem> result = RelayItem.get_relay_item_range (RelayItem.DESCENDING, 0L, 0L, relay_ids);
 		return result;
@@ -437,16 +462,132 @@ public class RelaySupport extends ServerComponent {
 
 
 
+	// Get PDL completion and removal relay items.
+	// Parameters:
+	//  event_ids = Event ids to search for.
+	// Returns the list of matching relay items, sorted newest relay item first.
+	// Returns an empty list if no relay item is found, or if no event ids are supplied.
+
+	public List<RelayItem> get_pdl_and_prem_relay_items (String... event_ids) {
+		if (event_ids == null || event_ids.length == 0) {
+			return new ArrayList<RelayItem>();
+		}
+		String[] relay_ids = event_ids_to_pdl_and_prem_relay_ids (event_ids);
+		List<RelayItem> result = RelayItem.get_relay_item_range (RelayItem.DESCENDING, 0L, 0L, relay_ids);
+		return result;
+	}
+
+
+
 	// Get PDL completion, removal, and foreign relay items.
 	// Parameters:
 	//  event_ids = Event ids to search for.
 	// Returns the list of matching relay items, sorted newest relay item first.
-	// Returns an empty list if no relay item is found.
+	// Returns an empty list if no relay item is found, or if no event ids are supplied.
 
 	public List<RelayItem> get_pdl_prem_pfrn_relay_items (String... event_ids) {
+		if (event_ids == null || event_ids.length == 0) {
+			return new ArrayList<RelayItem>();
+		}
 		String[] relay_ids = event_ids_to_pdl_prem_pfrn_relay_ids (event_ids);
 		List<RelayItem> result = RelayItem.get_relay_item_range (RelayItem.DESCENDING, 0L, 0L, relay_ids);
 		return result;
+	}
+
+
+
+	// Get the latest forecast lag from any PDL completion relay items.
+	// Parameters:
+	//  event_ids = Event ids to search for.
+	// Returns the largest forecast_lag from any PDL completion relay item
+	// for the given event_ids.  Returns -1L if no relay item is found, or if no event ids
+	// are supplied, or if no relay item contains a forecast_lag.
+
+	public long get_pdl_forecast_lag (String... event_ids) {
+
+		// Get PDL completion relay items
+
+		List<RelayItem> relits = get_pdl_relay_items (event_ids);
+
+		// Accumulate the most recent forecast lag
+
+		long forecast_lag = -1L;
+
+		for (RelayItem relit : relits) {
+
+			// Unmarshal the payload and accumulate
+
+			switch (RelaySupport.classify_relay_id (relit.get_relay_id())) {
+
+			case RelaySupport.RITYPE_PDL_COMPLETION:
+			{
+				RiPDLCompletion payload = new RiPDLCompletion();
+				payload.unmarshal_relay (relit);
+
+				forecast_lag = Math.max (forecast_lag, payload.ripdl_forecast_lag);
+
+			}
+			break;
+
+			}
+		}
+
+		// Return the forecast lag
+
+		return forecast_lag;
+	}
+
+
+
+	// Get the latest forecast lag from any PDL completion and removal relay items.
+	// Parameters:
+	//  event_ids = Event ids to search for.
+	// Returns the largest forecast_lag from any PDL completion or removal relay item
+	// for the given event_ids.  Returns -1L if no relay item is found, or if no event ids
+	// are supplied, or if no relay item contains a forecast_lag.
+
+	public long get_pdl_prem_forecast_lag (String... event_ids) {
+
+		// Get PDL completion and removal relay items
+
+		List<RelayItem> relits = get_pdl_and_prem_relay_items (event_ids);
+
+		// Accumulate the most recent forecast lag
+
+		long forecast_lag = -1L;
+
+		for (RelayItem relit : relits) {
+
+			// Unmarshal the payload and accumulate
+
+			switch (RelaySupport.classify_relay_id (relit.get_relay_id())) {
+
+			case RelaySupport.RITYPE_PDL_COMPLETION:
+			{
+				RiPDLCompletion payload = new RiPDLCompletion();
+				payload.unmarshal_relay (relit);
+
+				forecast_lag = Math.max (forecast_lag, payload.ripdl_forecast_lag);
+
+			}
+			break;
+
+			case RelaySupport.RITYPE_PDL_REMOVAL:
+			{
+				RiPDLRemoval payload = new RiPDLRemoval();
+				payload.unmarshal_relay (relit);
+
+				forecast_lag = Math.max (forecast_lag, payload.riprem_forecast_lag);
+
+			}
+			break;
+
+			}
+		}
+
+		// Return the forecast lag
+
+		return forecast_lag;
 	}
 
 

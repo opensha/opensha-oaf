@@ -2524,7 +2524,7 @@ public class ServerTest {
 
 			// Get the list of task entries and delete
 
-			List<PendingTask> task_entries = PendingTask.get_task_entry_range (0L, 0L, null);
+			List<PendingTask> task_entries = PendingTask.get_task_entry_range (0L, 0L, null, PendingTask.UNSORTED);
 		
 			System.out.println ("ServerTest : Deleting " + task_entries.size() + " task entries");
 
@@ -2534,7 +2534,7 @@ public class ServerTest {
 
 			// Get the list of log entries and delete
 
-			List<LogEntry> log_entries = LogEntry.get_log_entry_range (0L, 0L, null);
+			List<LogEntry> log_entries = LogEntry.get_log_entry_range (0L, 0L, null, LogEntry.UNSORTED);
 		
 			System.out.println ("ServerTest : Deleting " + log_entries.size() + " log entries");
 
@@ -2544,7 +2544,7 @@ public class ServerTest {
 
 			// Get the list of catalog snapshots and delete
 
-			List<CatalogSnapshot> cat_entries = CatalogSnapshot.get_catalog_snapshot_range (0L, 0L, null);
+			List<CatalogSnapshot> cat_entries = CatalogSnapshot.get_catalog_snapshot_range (0L, 0L, null, CatalogSnapshot.UNSORTED);
 		
 			System.out.println ("ServerTest : Deleting " + cat_entries.size() + " catalog snapshot entries");
 
@@ -2554,7 +2554,7 @@ public class ServerTest {
 
 			// Get the list of timeline entries and delete
 
-			List<TimelineEntry> tline_entries = TimelineEntry.get_timeline_entry_range (0L, 0L, null, null, null);
+			List<TimelineEntry> tline_entries = TimelineEntry.get_timeline_entry_range (0L, 0L, null, null, null, TimelineEntry.UNSORTED);
 		
 			System.out.println ("ServerTest : Deleting " + tline_entries.size() + " timeline entries");
 
@@ -2564,12 +2564,22 @@ public class ServerTest {
 
 			// Get the list of alias family entries and delete
 
-			List<AliasFamily> alfam_entries = AliasFamily.get_alias_family_range (0L, 0L, null, null, null);
+			List<AliasFamily> alfam_entries = AliasFamily.get_alias_family_range (0L, 0L, null, null, null, AliasFamily.UNSORTED);
 		
 			System.out.println ("ServerTest : Deleting " + alfam_entries.size() + " alias family entries");
 
 			for (AliasFamily entry : alfam_entries) {
 				AliasFamily.delete_alias_family (entry);
+			}
+
+			// Get the list of relay item entries and delete
+
+			List<RelayItem> relit_entries = RelayItem.get_relay_item_range (RelayItem.UNSORTED, 0L, 0L);
+		
+			System.out.println ("ServerTest : Deleting " + relit_entries.size() + " relay item entries");
+
+			for (RelayItem entry : relit_entries) {
+				RelayItem.delete_relay_item (entry);
 			}
 			
 			System.out.println ("ServerTest : Deleted all database tables");
@@ -5155,6 +5165,123 @@ public class ServerTest {
 
 
 
+	// Test #87 - Execute the next task, with support for PDL and logging.
+
+	public static void test87(String[] args) throws Exception {
+
+		// 4 additional arguments
+
+		if (args.length != 5) {
+			System.err.println ("ServerTest : Invalid 'test87' or 'exec_next_task' subcommand");
+			return;
+		}
+
+		String logfile = args[1];		// can be "-" for none
+		int pdl_enable = Integer.parseInt (args[2]);
+		int pdl_mode = Integer.parseInt (args[3]);	// 0 = normal, 1 = force primary, 2 = force secondary
+		boolean f_adjust_time = Boolean.parseBoolean (args[4]);
+
+		String my_logfile = null;
+		if (!( logfile.equals ("-") )) {
+			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
+		}
+
+		if (pdl_mode < 0 || pdl_mode > 2) {
+			System.out.println ("Invalid pdl_mode = " + pdl_mode);
+			return;
+		}
+
+		// Set the PDL enable code
+
+		if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+			System.out.println ("Invalid pdl_enable = " + pdl_enable);
+			return;
+		}
+
+		ServerConfig server_config = new ServerConfig();
+		server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+		// Open the summary log file
+
+		try (
+			TimeSplitOutputStream sum_tsop = TimeSplitOutputStream.make_tsop (my_logfile, 0L);
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Install the log file
+
+			dispatcher.set_summary_log_tsop (sum_tsop);
+
+			// Set the PDL mode
+
+			sg.pdl_sup.set_force_primary (pdl_mode);
+
+			// Run one task
+
+			boolean f_verbose = true;
+
+			dispatcher.run_next_task (f_verbose, f_adjust_time);
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #88 - Use timeline support to change the PDL mode.
+
+	public static void test88(String[] args) throws Exception {
+
+		// 1 additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerTest : Invalid 'test88' or 'change_pdl_mode' subcommand");
+			return;
+		}
+
+		boolean f_primary = Boolean.parseBoolean (args[1]);	// true = change to primary, false = change to secondary
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Call timeline support
+
+			int n_cancel;
+
+			if (f_primary) {
+				System.out.println ("Changing PDL mode to primary");
+				n_cancel = sg.timeline_sup.set_timeline_to_primary();
+			} else {
+				System.out.println ("Changing PDL mode to secondary");
+				n_cancel = sg.timeline_sup.set_timeline_to_secondary();
+			}
+				
+			System.out.println ("Number of tasks canceled = " + n_cancel);
+		}
+
+		return;
+	}
+
+
+
+
 	// Test dispatcher.
 	
 	public static void main(String[] args) {
@@ -6632,6 +6759,40 @@ public class ServerTest {
 
 			try {
 				test86(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #87
+		// Command format:
+		//  test87  logfile  pdl_enable  pdl_mode  f_adjust_time
+		// Execute the next task, with support for PDL and logging.
+		// The logfile can be "-" for none.
+		// The pdl_mode can be: 0 = normal, 1 = force primary, 2 = force secondary.
+
+		if (args[0].equalsIgnoreCase ("test87") || args[0].equalsIgnoreCase ("exec_next_task")) {
+
+			try {
+				test87(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #88
+		// Command format:
+		//  test88  f_primary
+		// Use timeline support to change the PDL mode.
+
+		if (args[0].equalsIgnoreCase ("test88") || args[0].equalsIgnoreCase ("change_pdl_mode")) {
+
+			try {
+				test88(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

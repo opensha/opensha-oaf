@@ -192,18 +192,6 @@ public class PDLSupport extends ServerComponent {
 
 
 
-	// Return true if this machine is primary for sending reports to PDL, false if secondary
-
-	public boolean is_pdl_primary () {
-
-		// For now, just assume primary
-
-		return true;
-	}
-
-
-
-
 	// Delete the OAF produts for an event.
 	// Parameters:
 	//  fcmain = Forecast mainshock structure, already filled in.
@@ -284,11 +272,70 @@ public class PDLSupport extends ServerComponent {
 
 
 
+	//----- Primary/Secondary -----
+
+
+
+
+	// Force primary/secondary mode (used for testing):
+	// 0 = normal operation, 1 = force primary mode, 2 = force secondary mode.
+
+	private int force_primary;
+
+
+	// Set the force primary mode.
+
+	public void set_force_primary (int the_force_primary) {
+		force_primary = the_force_primary;
+		return;
+	}
+
+
+
+
+	// Return true if this machine is primary for sending reports to PDL, false if secondary
+
+	public boolean is_pdl_primary () {
+
+		// Check if mode is forced
+
+		switch (force_primary) {
+		case 1:
+			return true;
+		case 2:
+			return false;
+		}
+
+		// For now, just assume primary
+
+		return true;
+	}
+
+
+
+
 	//----- Construction -----
 
 
 	// Default constructor.
 
-	public PDLSupport () {}
+	public PDLSupport () {
+	
+		force_primary = 0;
+	
+	}
+
+
+	// Set up this component by linking to the server group.
+	// A subclass may override this to perform additional setup operations.
+
+	@Override
+	public void setup (ServerGroup the_sg) {
+		super.setup (the_sg);
+
+		force_primary = 0;
+
+		return;
+	}
 
 }

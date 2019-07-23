@@ -546,7 +546,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 				
 					// Remove any shutdown commands from the task queue
 
-					List<PendingTask> shutdown_tasks = PendingTask.get_task_entry_range (0L, 0L, EVID_SHUTDOWN);
+					List<PendingTask> shutdown_tasks = PendingTask.get_task_entry_range (0L, 0L, EVID_SHUTDOWN, PendingTask.UNSORTED);
 
 					for (PendingTask shutdown_task : shutdown_tasks) {
 						if (shutdown_task.get_opcode() == OPCODE_SHUTDOWN) {

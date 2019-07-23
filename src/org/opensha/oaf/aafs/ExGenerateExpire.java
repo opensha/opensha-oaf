@@ -61,6 +61,21 @@ public class ExGenerateExpire extends ServerExecTask {
 			return rescode;
 		}
 
+		//--- Cancellation check
+
+		// Check for cancel stage
+
+		if (task.get_stage() == STAGE_CANCEL) {
+		
+			sg.task_disp.set_display_taskres_log ("TASK-INFO: Expire command is canceled:\n"
+				+ "event_id = " + task.get_event_id() + "\n"
+				+ "payload.action_time = " + payload.action_time + "\n"
+				+ "payload.last_forecast_lag = " + payload.last_forecast_lag);
+
+			sg.timeline_sup.next_auto_timeline (tstatus);
+			return RESCODE_EXPIRE_CANCELED;
+		}
+
 		//--- Timeline state check
 
 		// Check that timeline is generating forecasts or sending a PDL report

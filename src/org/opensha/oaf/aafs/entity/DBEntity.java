@@ -334,9 +334,9 @@ public abstract class DBEntity implements java.io.Serializable {
 
 		// Backup the collections
 
-		if (f_verbose) {
-			System.out.print ("Backing up database...");
-		}
+		//  if (f_verbose) {
+		//  	System.out.print ("Backing up database...");
+		//  }
 
 		try {
 
@@ -348,14 +348,14 @@ public abstract class DBEntity implements java.io.Serializable {
 				for (PendingTask task : tasks) {
 					DBEntity.marshal_poly (writer, null, task);
 					if (f_verbose) {
-						++rec_count;
 						if (rec_count % rec_freq == 0L) {
-							System.out.print (".");
+							System.out.print ((rec_count == 0L) ? "Backing up database..." : ".");
 							++dot_count;
 							if (dot_count % dot_freq == 0L) {
 								rec_freq = rec_freq * 2L;
 							}
 						}
+						++rec_count;
 					}
 				}
 			}
@@ -368,14 +368,14 @@ public abstract class DBEntity implements java.io.Serializable {
 				for (LogEntry entry : entries) {
 					DBEntity.marshal_poly (writer, null, entry);
 					if (f_verbose) {
-						++rec_count;
 						if (rec_count % rec_freq == 0L) {
-							System.out.print (".");
+							System.out.print ((rec_count == 0L) ? "Backing up database..." : ".");
 							++dot_count;
 							if (dot_count % dot_freq == 0L) {
 								rec_freq = rec_freq * 2L;
 							}
 						}
+						++rec_count;
 					}
 				}
 			}
@@ -388,14 +388,14 @@ public abstract class DBEntity implements java.io.Serializable {
 				for (CatalogSnapshot entry : entries) {
 					DBEntity.marshal_poly (writer, null, entry);
 					if (f_verbose) {
-						++rec_count;
 						if (rec_count % rec_freq == 0L) {
-							System.out.print (".");
+							System.out.print ((rec_count == 0L) ? "Backing up database..." : ".");
 							++dot_count;
 							if (dot_count % dot_freq == 0L) {
 								rec_freq = rec_freq * 2L;
 							}
 						}
+						++rec_count;
 					}
 				}
 			}
@@ -408,14 +408,14 @@ public abstract class DBEntity implements java.io.Serializable {
 				for (TimelineEntry entry : entries) {
 					DBEntity.marshal_poly (writer, null, entry);
 					if (f_verbose) {
-						++rec_count;
 						if (rec_count % rec_freq == 0L) {
-							System.out.print (".");
+							System.out.print ((rec_count == 0L) ? "Backing up database..." : ".");
 							++dot_count;
 							if (dot_count % dot_freq == 0L) {
 								rec_freq = rec_freq * 2L;
 							}
 						}
+						++rec_count;
 					}
 				}
 			}
@@ -428,14 +428,14 @@ public abstract class DBEntity implements java.io.Serializable {
 				for (AliasFamily entry : entries) {
 					DBEntity.marshal_poly (writer, null, entry);
 					if (f_verbose) {
-						++rec_count;
 						if (rec_count % rec_freq == 0L) {
-							System.out.print (".");
+							System.out.print ((rec_count == 0L) ? "Backing up database..." : ".");
 							++dot_count;
 							if (dot_count % dot_freq == 0L) {
 								rec_freq = rec_freq * 2L;
 							}
 						}
+						++rec_count;
 					}
 				}
 			}
@@ -448,19 +448,25 @@ public abstract class DBEntity implements java.io.Serializable {
 				for (RelayItem relit : items) {
 					DBEntity.marshal_poly (writer, null, relit);
 					if (f_verbose) {
-						++rec_count;
 						if (rec_count % rec_freq == 0L) {
-							System.out.print (".");
+							System.out.print ((rec_count == 0L) ? "Backing up database..." : ".");
 							++dot_count;
 							if (dot_count % dot_freq == 0L) {
 								rec_freq = rec_freq * 2L;
 							}
 						}
+						++rec_count;
 					}
 				}
 			}
 
 			// End-of-file indicator
+
+			if (f_verbose) {
+				if (rec_count == 0L) {
+					System.out.print ("Backing up database...");
+				}
+			}
 
 			DBEntity.marshal_poly (writer, null, null);
 
@@ -529,11 +535,11 @@ public abstract class DBEntity implements java.io.Serializable {
 		long rec_freq = 128L;			// frequency at which records produce a dot_count
 		long dot_freq = 128L;			// frequency at which dots product a doubling of the record frequency
 
-		// Backup the collections
+		// Restore the collections
 
-		if (f_verbose) {
-			System.out.print ("Restoring database...");
-		}
+		//  if (f_verbose) {
+		//  	System.out.print ("Restoring database...");
+		//  }
 
 		try {
 
@@ -558,14 +564,14 @@ public abstract class DBEntity implements java.io.Serializable {
 				record.store_entity();
 
 				if (f_verbose) {
-					++rec_count;
 					if (rec_count % rec_freq == 0L) {
-						System.out.print (".");
+						System.out.print ((rec_count == 0L) ? "Restoring database..." : ".");
 						++dot_count;
 						if (dot_count % dot_freq == 0L) {
 							rec_freq = rec_freq * 2L;
 						}
 					}
+					++rec_count;
 				}
 			}
 

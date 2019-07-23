@@ -204,6 +204,14 @@ public class ForecastMainshock {
 		return mainshock_event_id;
 	}
 
+	// Get the ids used to search relay items to confirm pdl operations on this event.
+
+	public String[] get_confirm_relay_ids () {
+		String[] result = new String[1];
+		result[0] = mainshock_event_id;
+		return result;
+	}
+
 
 	//----- Transient parameters -----
 

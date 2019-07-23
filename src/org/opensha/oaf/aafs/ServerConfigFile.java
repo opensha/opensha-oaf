@@ -33,10 +33,7 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  *	"ServerConfigFile" = Integer giving file version number, currently 34001.
  *	"mongo_config" = { Structure giving MongoDB configuration, see MongoDBConfig.java.
  *   }
- *	"activemq_host" = String giving ActiveMQ host name or IP address (currently not used).
- *	"activemq_port" = Integer giving ActiveMQ port number (currently not used).
- *	"activemq_user" = String giving ActiveMQ user name (currently not used).
- *	"activemq_password" = String giving ActiveMQ password (currently not used).
+ *  "server_name" = String giving the name used to manage the server.
  *	"log_con_aafs" = String giving pattern for AAFS console log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"log_con_intake" = String giving pattern for intake console log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"log_con_control" = String giving pattern for control console log filenames, in the format of SimpleDateFormat, or "" if none.
@@ -53,7 +50,7 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  *	"block_poll_intake" = Integer giving poll intake blocking option: 0 = don't block, 1 = block.
  *	"block_fc_content" = Integer giving forecast content blocking option: 0 = don't block, 1 = block.
  *  "db_err_rate" = Real number giving rate of simulated database errors.
- *	"pdl_enable" = Integer giving PDL enable option: 0 = none, 1 = development, 2 = production, 3 =  simulated development, 4 = simulated production.
+ *	"pdl_enable" = Integer giving PDL enable option: 0 = none, 1 = development, 2 = production, 3 =  simulated development, 4 = simulated production, 5 = down development, 6 = down production.
  *	"pdl_key_filename" = String giving PDL signing key filename, can be empty string for none.
  *  "pdl_err_rate" = Real number giving rate of simulated PDL errors.
  *	"pdl_oaf_source" = String giving creator (source network) for OAF PDL products.
@@ -81,21 +78,9 @@ public class ServerConfigFile {
 
 	public MongoDBConfig mongo_config;
 
-	// ActiveMQ host name or IP address.
+	// Name used to manage the server.
 
-	public String activemq_host;
-
-	// ActiveMQ port number.
-
-	public int activemq_port;
-
-	// ActiveMQ user name.
-
-	public String activemq_user;
-
-	// ActiveMQ password.
-
-	public String activemq_password;
+	public String server_name;
 
 	// Pattern for AAFS console log filenames, in the format of SimpleDateFormat, or "" if none.
 
@@ -169,7 +154,9 @@ public class ServerConfigFile {
 	public static final int PDLOPT_PROD = 2;		// PDL production server
 	public static final int PDLOPT_SIM_DEV = 3;		// Simulated PDL development server
 	public static final int PDLOPT_SIM_PROD = 4;	// Simulated PDL production server
-	public static final int PDLOPT_MAX = 4;
+	public static final int PDLOPT_DOWN_DEV = 5;	// Down PDL development server
+	public static final int PDLOPT_DOWN_PROD = 6;	// Down PDL production server
+	public static final int PDLOPT_MAX = 6;
 
 	public static final int PDLOPT_UNSPECIFIED = -1;	// PDL access is unspecified
 
@@ -212,10 +199,7 @@ public class ServerConfigFile {
 
 	public void clear () {
 		mongo_config = null;
-		activemq_host = "";
-		activemq_port = 0;
-		activemq_user = "";
-		activemq_password = "";
+		server_name = "";
 		log_con_aafs = "";
 		log_con_intake = "";
 		log_con_control = "";
@@ -256,20 +240,8 @@ public class ServerConfigFile {
 			throw new InvariantViolationException ("ServerConfigFile: Invalid mongo_config: <null>");
 		}
 
-		if (!( activemq_host != null && activemq_host.trim().length() > 0 )) {
-			throw new InvariantViolationException ("ServerConfigFile: Invalid activemq_host: " + ((activemq_host == null) ? "<null>" : activemq_host));
-		}
-
-		if (!( activemq_port >= 1024 && activemq_port <= 65535 )) {
-			throw new InvariantViolationException ("ServerConfigFile: Invalid activemq_port: " + activemq_port);
-		}
-
-		if (!( activemq_user != null && activemq_user.trim().length() > 0 )) {
-			throw new InvariantViolationException ("ServerConfigFile: Invalid activemq_user: " + ((activemq_user == null) ? "<null>" : activemq_user));
-		}
-
-		if (!( activemq_password != null && activemq_password.trim().length() > 0 )) {
-			throw new InvariantViolationException ("ServerConfigFile: Invalid activemq_password: " + ((activemq_password == null) ? "<null>" : activemq_password));
+		if (!( server_name != null && server_name.trim().length() > 0 )) {
+			throw new InvariantViolationException ("ServerConfigFile: Invalid server_name: " + ((server_name == null) ? "<null>" : server_name));
 		}
 
 		if (!( log_con_aafs != null && (log_con_aafs.isEmpty() || TimeSplitOutputStream.is_valid_pattern(log_con_aafs)) )) {
@@ -370,7 +342,7 @@ public class ServerConfigFile {
 			throw new InvariantViolationException ("ServerConfigFile: pdl_dev_senders list is null");
 		}
 
-		if ( (pdl_enable == PDLOPT_DEV || pdl_enable == PDLOPT_SIM_DEV) && pdl_dev_senders.size() == 0 ) {
+		if ( (pdl_enable == PDLOPT_DEV || pdl_enable == PDLOPT_SIM_DEV || pdl_enable == PDLOPT_DOWN_DEV) && pdl_dev_senders.size() == 0 ) {
 			throw new InvariantViolationException ("ServerConfigFile: pdl_dev_senders is empty, but pdl_enable = " + pdl_enable);
 		}
 
@@ -378,7 +350,7 @@ public class ServerConfigFile {
 			throw new InvariantViolationException ("ServerConfigFile: pdl_prod_senders list is null");
 		}
 
-		if ( (pdl_enable == PDLOPT_PROD || pdl_enable == PDLOPT_SIM_PROD) && pdl_prod_senders.size() == 0 ) {
+		if ( (pdl_enable == PDLOPT_PROD || pdl_enable == PDLOPT_SIM_PROD || pdl_enable == PDLOPT_DOWN_PROD) && pdl_prod_senders.size() == 0 ) {
 			throw new InvariantViolationException ("ServerConfigFile: pdl_prod_senders is empty, but pdl_enable = " + pdl_enable);
 		}
 
@@ -396,10 +368,7 @@ public class ServerConfigFile {
 		result.append (mongo_config.toString ("  "));
 		result.append ("}" + "\n");
 
-		result.append ("activemq_host = " + ((activemq_host == null) ? "<null>" : activemq_host) + "\n");
-		result.append ("activemq_port = " + activemq_port + "\n");
-		result.append ("activemq_user = " + ((activemq_user == null) ? "<null>" : activemq_user) + "\n");
-		result.append ("activemq_password = " + ((activemq_password == null) ? "<null>" : activemq_password) + "\n");
+		result.append ("server_name = " + ((server_name == null) ? "<null>" : server_name) + "\n");
 		result.append ("log_con_aafs = " + ((log_con_aafs == null) ? "<null>" : log_con_aafs) + "\n");
 		result.append ("log_con_intake = " + ((log_con_intake == null) ? "<null>" : log_con_intake) + "\n");
 		result.append ("log_con_control = " + ((log_con_control == null) ? "<null>" : log_con_control) + "\n");
@@ -465,6 +434,7 @@ public class ServerConfigFile {
 
 		case PDLOPT_DEV:
 		case PDLOPT_SIM_DEV:
+		case PDLOPT_DOWN_DEV:
 			for (PDLSenderConfig pdl_sender : pdl_dev_senders) {
 				pdl_senders.add (pdl_sender);
 			}
@@ -472,6 +442,7 @@ public class ServerConfigFile {
 
 		case PDLOPT_PROD:
 		case PDLOPT_SIM_PROD:
+		case PDLOPT_DOWN_PROD:
 			for (PDLSenderConfig pdl_sender : pdl_prod_senders) {
 				pdl_senders.add (pdl_sender);
 			}
@@ -508,7 +479,25 @@ public class ServerConfigFile {
 
 		case PDLOPT_DEV:
 		case PDLOPT_SIM_DEV:
+		case PDLOPT_DOWN_DEV:
 			result = false;
+			break;
+
+		}
+
+		return result;
+	}
+
+	// Get true if PDL is configured to be down, false if not.
+
+	public boolean get_is_pdl_down () {
+		boolean result = false;
+
+		switch (pdl_enable) {
+
+		case PDLOPT_DOWN_DEV:
+		case PDLOPT_DOWN_PROD:
+			result = true;
 			break;
 
 		}
@@ -668,10 +657,7 @@ public class ServerConfigFile {
 
 		mongo_config.marshal    (writer, "mongo_config"                        );
 
-		writer.marshalString    (        "activemq_host"    , activemq_host    );
-		writer.marshalInt       (        "activemq_port"    , activemq_port    );
-		writer.marshalString    (        "activemq_user"    , activemq_user    );
-		writer.marshalString    (        "activemq_password", activemq_password);
+		writer.marshalString    (        "server_name"      , server_name      );
 		writer.marshalString    (        "log_con_aafs"     , log_con_aafs     );
 		writer.marshalString    (        "log_con_intake"   , log_con_intake   );
 		writer.marshalString    (        "log_con_control"  , log_con_control  );
@@ -711,10 +697,7 @@ public class ServerConfigFile {
 
 		mongo_config      = new MongoDBConfig         (reader, "mongo_config"     );
 
-		activemq_host     = reader.unmarshalString    (        "activemq_host"    );
-		activemq_port     = reader.unmarshalInt       (        "activemq_port"    );
-		activemq_user     = reader.unmarshalString    (        "activemq_user"    );
-		activemq_password = reader.unmarshalString    (        "activemq_password");
+		server_name       = reader.unmarshalString    (        "server_name"      );
 		log_con_aafs      = reader.unmarshalString    (        "log_con_aafs"     );
 		log_con_intake    = reader.unmarshalString    (        "log_con_intake"   );
 		log_con_control   = reader.unmarshalString    (        "log_con_control"  );

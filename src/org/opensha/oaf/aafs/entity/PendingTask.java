@@ -18,6 +18,7 @@ import org.opensha.oaf.util.MarshalException;
 
 
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
@@ -409,6 +410,36 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 
 
 
+	// A comparator that can be used for sorting lists of pending tasks in ascending order by exec_time (earliest first).
+
+	public static class AscendingComparator implements Comparator<PendingTask>, java.io.Serializable {
+	
+		// Compare two items
+
+		@Override
+		public int compare (PendingTask ptask1, PendingTask ptask2) {
+			return Long.compare (ptask1.get_exec_time(), ptask2.get_exec_time());
+		}
+	}
+
+
+
+
+	// A comparator that can be used for sorting lists of pending tasks in descending order by exec_time (latest first).
+
+	public static class DescendingComparator implements Comparator<PendingTask>, java.io.Serializable {
+	
+		// Compare two items
+
+		@Override
+		public int compare (PendingTask ptask1, PendingTask ptask2) {
+			return Long.compare (ptask2.get_exec_time(), ptask1.get_exec_time());
+		}
+	}
+
+
+
+
 	//----- MongoDB Java driver access -----
 
 
@@ -723,18 +754,83 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 	public static PendingTask submit_task (String event_id, long sched_time, long submit_time,
 								String submit_id, int opcode, int stage, MarshalWriter details) {
 
+		// Build the task
+
+		PendingTask ptask = build_task (event_id, sched_time, submit_time, submit_id, opcode, stage, details);
+
+		// Insert task into database
+
+		insert_task (ptask);
+		
+		return ptask;
+	}
+
+
+	//  public static PendingTask submit_task (String event_id, long sched_time, long submit_time,
+	//  							String submit_id, int opcode, int stage, MarshalWriter details) {
+	//  
+	//  	// Check conditions
+	//  
+	//  	if (!( event_id != null
+	//  		&& sched_time > 0L
+	//  		&& submit_time > 0L
+	//  		&& submit_id != null && submit_id.length() > 0 )) {
+	//  		throw new IllegalArgumentException("PendingTask.submit_task: Invalid task parameters");
+	//  	}
+	//  
+	//  	// Get collection handle
+	//  
+	//  	MongoDBCollHandle coll_handle = get_coll_handle (null);
+	//  
+	//  	// Construct the pending task object
+	//  
+	//  	PendingTask ptask = new PendingTask();
+	//  	ptask.set_id (null);
+	//  	ptask.set_exec_time (sched_time);
+	//  	ptask.set_event_id (event_id);
+	//  	ptask.set_sched_time (sched_time);
+	//  	ptask.set_submit_time (submit_time);
+	//  	ptask.set_submit_id (submit_id);
+	//  	ptask.set_opcode (opcode);
+	//  	ptask.set_stage (stage);
+	//  	ptask.set_details (details);
+	//  
+	//  	// Call MongoDB to store into database
+	//  
+	//  	coll_handle.insertOne (ptask.to_bson_doc());
+	//  	
+	//  	return ptask;
+	//  }
+
+
+
+
+	/**
+	 * build_task - Build a task.
+	 * @param event_id = Event associated with this task, or "" if none. Cannot be null.
+	 * @param sched_time = Time at which task should execute, in milliseconds
+	 *                     since the epoch. Must be positive.
+	 * @param submit_time = Time at which the task is submitted, in milliseconds
+	 *                      since the epoch. Must be positive.
+	 * @param submit_id = Person or entity submitting this task. Cannot be empty or null.
+	 * @param opcode = Operation code used to dispatch the task.
+	 * @param stage = Stage number, user-defined, effectively an extension of the opcode.
+	 * @param details = Further details of this task. Can be null if there are none.
+	 * @return
+	 * Returns the new task.
+	 * The new task has id equal to null.
+	 */
+	public static PendingTask build_task (String event_id, long sched_time, long submit_time,
+								String submit_id, int opcode, int stage, MarshalWriter details) {
+
 		// Check conditions
 
 		if (!( event_id != null
 			&& sched_time > 0L
 			&& submit_time > 0L
 			&& submit_id != null && submit_id.length() > 0 )) {
-			throw new IllegalArgumentException("PendingTask.submit_task: Invalid task parameters");
+			throw new IllegalArgumentException("PendingTask.build_task: Invalid task parameters");
 		}
-
-		// Get collection handle
-
-		MongoDBCollHandle coll_handle = get_coll_handle (null);
 
 		// Construct the pending task object
 
@@ -748,12 +844,29 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 		ptask.set_opcode (opcode);
 		ptask.set_stage (stage);
 		ptask.set_details (details);
+		
+		return ptask;
+	}
+
+
+
+
+	/**
+	 * insert_task - Insert a task into the database.
+	 * The task should be previously created with build_task.
+	 * If ptask.id is null, then it is filled in with a new object id.
+	 */
+	public static void insert_task (PendingTask ptask) {
+
+		// Get collection handle
+
+		MongoDBCollHandle coll_handle = get_coll_handle (null);
 
 		// Call MongoDB to store into database
 
 		coll_handle.insertOne (ptask.to_bson_doc());
 		
-		return ptask;
+		return;
 	}
 
 
@@ -892,7 +1005,7 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 	 * Production code calls this with non-null event_id.
 	 * There may or may not be filters on exec_time.  These filters could easily be done
 	 * by the caller, if there were an advantage to not supporting them here.
-	 * The production code does not rely on the results being sorted.
+	 * Production code calls this with sort_order equal to UNSORTED (so it does not depend on sorting).
 	 */
 	public static List<PendingTask> get_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
 		return get_task_entry_range (exec_time_lo, exec_time_hi, event_id, DEFAULT_SORT);
@@ -936,7 +1049,7 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 	 *                     ASCENDING to sort in ascending order by exec_time (earliest first),
 	 *                     UNSORTED to return unsorted results.  Defaults to ASCENDING.
 	 *
-	 * Current usage: Test only.
+	 * Current usage: Production and backup, with no filters and UNSORTED.
 	 */
 	public static RecordIterator<PendingTask> fetch_task_entry_range (long exec_time_lo, long exec_time_hi, String event_id) {
 		return fetch_task_entry_range (exec_time_lo, exec_time_hi, event_id, DEFAULT_SORT);
@@ -1110,8 +1223,8 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 	 * @param ptask = Existing pending task to stage.
 	 * @param exec_time = Time at which task should execute, in milliseconds
 	 *                    since the epoch. Must be positive.
-	 * @param event_id = New event ID, or null to leave it unchanged.
 	 * @param stage = Stage number, user-defined, effectively an extension of the opcode.
+	 * @param event_id = New event ID, or null to leave it unchanged.
 	 * @return
 	 */
 	public static void stage_task (PendingTask ptask, long exec_time, int stage, String event_id) {
@@ -1213,8 +1326,7 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid = id.toHexString();
-		writer.marshalString      ("id"         , sid        );
+		MongoDBUtil.marshal_object_id (writer, "id", id);
 		writer.marshalLong        ("exec_time"  , exec_time  );
 		writer.marshalString      ("event_id"   , event_id   );
 		writer.marshalLong        ("sched_time" , sched_time );
@@ -1241,8 +1353,7 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid;
-		sid         = reader.unmarshalString      ("id"         );
+		id          = MongoDBUtil.unmarshal_object_id (reader, "id");
 		exec_time   = reader.unmarshalLong        ("exec_time"  );
 		event_id    = reader.unmarshalString      ("event_id"   );
 		sched_time  = reader.unmarshalLong        ("sched_time" );
@@ -1254,7 +1365,6 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 //		details_l   = reader.unmarshalLongArray   ("details_l"  );
 //		details_d   = reader.unmarshalDoubleArray ("details_d"  );
 //		details_s   = reader.unmarshalStringArray ("details_s"  );
-		id = new ObjectId(sid);
 
 		return;
 	}

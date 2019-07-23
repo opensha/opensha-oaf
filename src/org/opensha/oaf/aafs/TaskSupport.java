@@ -54,7 +54,7 @@ public class TaskSupport extends ServerComponent {
 
 		// Get a list of all waiting tasks for the given event
 
-		List<PendingTask> tasks = PendingTask.get_task_entry_range (EXEC_TIME_MIN_WAITING, 0L, event_id);
+		List<PendingTask> tasks = PendingTask.get_task_entry_range (EXEC_TIME_MIN_WAITING, 0L, event_id, PendingTask.UNSORTED);
 
 		// Delete tasks with the given opcode
 
@@ -82,7 +82,13 @@ public class TaskSupport extends ServerComponent {
 
 		// Get a list of all waiting tasks for the given event
 
-		List<PendingTask> tasks = PendingTask.get_task_entry_range (EXEC_TIME_MIN_WAITING, 0L, event_id);
+		List<PendingTask> tasks = PendingTask.get_task_entry_range (EXEC_TIME_MIN_WAITING, 0L, event_id, PendingTask.UNSORTED);
+
+		// Sort the tasks so we delete in execution order
+
+		if (tasks.size() > 1) {
+			tasks.sort (new PendingTask.AscendingComparator());
+		}
 
 		// The number of tasks deleted so far
 
@@ -116,7 +122,7 @@ public class TaskSupport extends ServerComponent {
 
 		// Get a list of all waiting tasks for the given event
 
-		List<PendingTask> tasks = PendingTask.get_task_entry_range (0L, 0L, event_id);
+		List<PendingTask> tasks = PendingTask.get_task_entry_range (0L, 0L, event_id, PendingTask.UNSORTED);
 
 		// Delete tasks with the given opcode
 

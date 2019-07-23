@@ -234,11 +234,12 @@ public class TimelineStatus extends DBPayload {
 		// but the attempt will be repeated.
 	public static final int PDLSTAT_SECONDARY        = 5;
 		// Forecast needs to be reported to PDL, but it was not done because this
-		// is a secondary server.
+		// is a secondary server.  PDLSTAT_SECONDARY and PDLSTAT_PENDING are the
+		// same state, the only difference is how the state was entered.
 	public static final int PDLSTAT_CONFIRMED        = 6;
 		// Forecast needs to be reported to PDL, but it was not done because this
-		// is a secondary server, and it has been confirmed that the primary server
-		// sent the report.
+		// is or was a secondary server, and it has been confirmed that the other
+		// server sent the report.
 	public static final int PDLSTAT_BYPASSED         = 7;
 		// Forecast needs to be reported to PDL, but it was not done because it
 		// was too late or some other blocking condition.
@@ -433,7 +434,7 @@ public class TimelineStatus extends DBPayload {
 		case FCSTAT_ACTIVE_NORMAL:
 		case FCSTAT_ACTIVE_INTAKE:
 		case FCSTAT_STOP_EXPIRED:
-			if (pdl_status == PDLSTAT_PENDING) {
+			if (pdl_status == PDLSTAT_PENDING || pdl_status == PDLSTAT_SECONDARY) {
 
 				// It is an error to be in this state if there is no PDL report available
 
@@ -442,7 +443,7 @@ public class TimelineStatus extends DBPayload {
 					&& forecast_params != null
 					&& forecast_results != null
 					&& forecast_results.get_pdl_model() != null )) {
-					throw new IllegalStateException ("TimelineStatus.is_pdl_retry_state: In PDLSTAT_PENDING state but no PDL report is available");
+					throw new IllegalStateException ("TimelineStatus.is_pdl_retry_state: In " + get_pdl_status_as_string() + " state but no PDL report is available");
 				}
 
 				return true;
@@ -910,7 +911,7 @@ public class TimelineStatus extends DBPayload {
 		if (fc_status == FCSTAT_ACTIVE_NORMAL || fc_status == FCSTAT_ACTIVE_INTAKE) {
 			fc_status           = FCSTAT_STOP_EXPIRED;
 		}
-		if (pdl_status == PDLSTAT_PENDING) {
+		if (pdl_status == PDLSTAT_PENDING || pdl_status == PDLSTAT_SECONDARY) {
 			pdl_status          = PDLSTAT_NONE;
 		}
 		//pdl_product_code    = kept;

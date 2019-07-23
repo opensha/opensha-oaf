@@ -81,10 +81,7 @@ mongo_config = {
         coll_name = relay
         access_level = 0
 }
-activemq_host = 127.0.0.1
-activemq_port = 61616
-activemq_user = admin
-activemq_password = admin
+server_name = test
 log_con_aafs = '/data/aafs/logs/'yyyy-MM'/'yyyy-MM-dd'-aafs.log'
 log_con_intake = '/data/aafs/logs/'yyyy-MM'/'yyyy-MM-dd'-intake.log'
 log_con_control = '/data/aafs/logs/'yyyy-MM'/'yyyy-MM-dd'-control.log'
@@ -115,27 +112,46 @@ pdl_senders = [
 ]
 is_pdl_permitted = false
 is_pdl_readback_prod = true
+is_pdl_down = false
 pdl_senders (DEV) = [
   0:  host = dev01-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
   1:  host = dev02-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
 ]
 is_pdl_permitted = true
 is_pdl_readback_prod = false
+is_pdl_down = false
 pdl_senders (PROD) = [
   0:  host = prod01-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
   1:  host = prod02-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
 ]
 is_pdl_permitted = true
 is_pdl_readback_prod = true
+is_pdl_down = false
 pdl_senders (SIM DEV) = [
   0:  host = dev01-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
   1:  host = dev02-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
 ]
 is_pdl_permitted = false
 is_pdl_readback_prod = false
+is_pdl_down = false
 pdl_senders (SIM PROD) = [
   0:  host = prod01-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
   1:  host = prod02-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
 ]
 is_pdl_permitted = false
 is_pdl_readback_prod = true
+is_pdl_down = false
+pdl_senders (DOWN DEV) = [
+  0:  host = dev01-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
+  1:  host = dev02-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
+]
+is_pdl_permitted = false
+is_pdl_readback_prod = false
+is_pdl_down = true
+pdl_senders (DOWN PROD) = [
+  0:  host = prod01-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
+  1:  host = prod02-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
+]
+is_pdl_permitted = false
+is_pdl_readback_prod = true
+is_pdl_down = true

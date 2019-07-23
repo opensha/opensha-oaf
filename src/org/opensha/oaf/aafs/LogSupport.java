@@ -341,9 +341,10 @@ public class LogSupport extends ServerComponent {
 
 	// Report expire request.
 
-	public void report_expire_request (String event_id) {
+	public void report_expire_request (String event_id, long sched_time) {
 		report_action ("EXPIRE-REQUEST",
-					event_id);
+					event_id,
+					"sched_time = " + SimpleUtils.time_raw_and_string (sched_time));
 		return;
 	}
 
@@ -553,6 +554,32 @@ public class LogSupport extends ServerComponent {
 					"eventNetwork = " + tstatus.forecast_mainshock.mainshock_network,
 					"eventCode = " + tstatus.forecast_mainshock.mainshock_code);
 		report_exception (e);
+		return;
+	}
+
+
+
+
+	// Report PDL alreeady sent.
+
+	public void report_pdl_sent_already (TimelineStatus tstatus) {
+		report_action ("PDL-SENT-ALREADY",
+					"eventID = " + sg.alias_sup.timeline_id_to_pdl_code (tstatus.event_id),
+					"eventNetwork = " + tstatus.forecast_mainshock.mainshock_network,
+					"eventCode = " + tstatus.forecast_mainshock.mainshock_code);
+		return;
+	}
+
+
+
+
+	// Report PDL not sent on a secondary server.
+
+	public void report_pdl_not_sent_secondary (TimelineStatus tstatus) {
+		report_action ("PDL-NOT-SENT-SECONDARY",
+					"eventID = " + sg.alias_sup.timeline_id_to_pdl_code (tstatus.event_id),
+					"eventNetwork = " + tstatus.forecast_mainshock.mainshock_network,
+					"eventCode = " + tstatus.forecast_mainshock.mainshock_code);
 		return;
 	}
 

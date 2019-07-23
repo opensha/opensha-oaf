@@ -865,7 +865,7 @@ public class TimelineEntry extends DBEntity implements java.io.Serializable {
 	 *                     ASCENDING to sort in ascending order by action_time (oldest first),
 	 *                     UNSORTED to return unsorted results.  Defaults to DESCENDING.
 	 *
-	 * Current usage: Test only.
+	 * Current usage: Backup only, with no filters and UNSORTED.
 	 */
 	public static RecordIterator<TimelineEntry> fetch_timeline_entry_range (long action_time_lo, long action_time_hi, String event_id, String[] comcat_ids, long[] action_time_div_rem) {
 		return fetch_timeline_entry_range (action_time_lo, action_time_hi, event_id, comcat_ids, action_time_div_rem, DEFAULT_SORT);
@@ -993,8 +993,7 @@ public class TimelineEntry extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid = id.toHexString();
-		writer.marshalString      ("id"         , sid        );
+		MongoDBUtil.marshal_object_id (writer, "id", id);
 		writer.marshalLong        ("action_time", action_time);
 		writer.marshalString      ("event_id"   , event_id   );
 		writer.marshalStringArray ("comcat_ids" , comcat_ids );
@@ -1018,8 +1017,7 @@ public class TimelineEntry extends DBEntity implements java.io.Serializable {
 
 		// Contents
 
-		String sid;
-		sid         = reader.unmarshalString      ("id"         );
+		id          = MongoDBUtil.unmarshal_object_id (reader, "id");
 		action_time = reader.unmarshalLong        ("action_time");
 		event_id    = reader.unmarshalString      ("event_id"   );
 		comcat_ids  = reader.unmarshalStringArray ("comcat_ids" );
@@ -1028,7 +1026,6 @@ public class TimelineEntry extends DBEntity implements java.io.Serializable {
 //		details_l   = reader.unmarshalLongArray   ("details_l"  );
 //		details_d   = reader.unmarshalDoubleArray ("details_d"  );
 //		details_s   = reader.unmarshalStringArray ("details_s"  );
-		id = new ObjectId(sid);
 
 		return;
 	}

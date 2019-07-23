@@ -23,6 +23,9 @@ import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.IndexOptions;
 
 import org.opensha.oaf.util.TestMode;
+import org.opensha.oaf.util.MarshalReader;
+import org.opensha.oaf.util.MarshalWriter;
+import org.opensha.oaf.util.MarshalException;
 
 
 /**
@@ -969,25 +972,88 @@ public class MongoDBUtil implements AutoCloseable {
 
 
 
-	// Construct a new ObjectId that can be used as an end-of-file marker.
+	//  // Construct a new ObjectId that can be used as an end-of-file marker.
+	//  
+	//  private static final String OID_EOF_HEX_STRING = "0e0f0e0f0e0f0e0f0e0f0e0f";
+	//  
+	//  public static ObjectId make_eof_object_id () {
+	//  
+	//  	// Return a new ObjectId constructed from a fixed hex string
+	//  
+	//  	return new ObjectId (OID_EOF_HEX_STRING);
+	//  }
 
-	private static final String OID_EOF_HEX_STRING = "0e0f0e0f0e0f0e0f0e0f0e0f";
 
-	public static ObjectId make_eof_object_id () {
 
-		// Return a new ObjectId constructed from a fixed hex string
+
+	//  // Test if the given ObjectId is the end-of-file marker.
+	//  
+	//  public static boolean is_eof_object_id (ObjectId id) {
+	//  	return id.toHexString().equalsIgnoreCase (OID_EOF_HEX_STRING);
+	//  }
+
+
+
+
+	// Marshal an ObjectId.
+	// The supplied ObjectId can be null.
+
+	public static void marshal_object_id (MarshalWriter writer, String name, ObjectId id) {
+
+		// Use an empty string for null, otherwise use the hex string representation
+
+		String sid;
+		if (id == null) {
+			sid = "";
+		} else {
+			sid = id.toHexString();
+		}
+
+		writer.marshalString (name, sid);
+		return;
+	}
+
+
+
+
+	// Unmarshal and ObjectId.
+	// The returned ObjectId can be null.
+
+	public static ObjectId unmarshal_object_id (MarshalReader reader, String name) {
+
+		// Expect an empty string for null, otherwise the hex string representation
+
+		String sid = reader.unmarshalString (name);
+
+		ObjectId id;
+		if (sid.isEmpty()) {
+			id = null;
+		} else {
+			try {
+				id = new ObjectId (sid);
+			} catch (Exception e) {
+				throw new MarshalException ("MongoDBUtil.unmarshal_object_id: Invalid string representation of ObjectId: " + sid, e);
+			}
+		}
 	
-		return new ObjectId (OID_EOF_HEX_STRING);
+		return id;
 	}
 
 
 
 
-	// Test if the given ObjectId is the end-of-file marker.
+	// Construct a unique string.
+	// This function returns a string which is different each time it is called.
+	// The string is intended to be globally unique.
+	// Note: The caller should not make any assumptions about the contents or length of these strings.
+	// In particular, do not assume any relationship to the time.
 
-	public static boolean is_eof_object_id (ObjectId id) {
-		return id.toHexString().equalsIgnoreCase (OID_EOF_HEX_STRING);
+	// Implementation note: An implementation based on java.util.UUID is also possible,
+	// and perhaps better.  This version produces repeatable results when in test mode.
+
+	public static String get_unique_string () {
+		return make_object_id().toHexString();
+		// return java.util.UUID.randomUUID().toString();
 	}
-
 
 }

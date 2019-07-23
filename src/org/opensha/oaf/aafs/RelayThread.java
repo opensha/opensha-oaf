@@ -358,6 +358,26 @@ public class RelayThread implements Runnable {
 			return;
 		}
 
+		// List of relay item ids for fetch operation, or null or empty for no restriction.
+
+		private String[] ri_fetch_relay_id;
+
+		public synchronized String[] get_ri_fetch_relay_id () {
+			if (ri_fetch_relay_id == null) {
+				return null;
+			}
+			return ri_fetch_relay_id.clone();
+		}
+
+		public synchronized void set_ri_fetch_relay_id (String[] the_ri_fetch_relay_id) {
+			if (the_ri_fetch_relay_id == null) {
+				ri_fetch_relay_id = null;
+			} else {
+				ri_fetch_relay_id = the_ri_fetch_relay_id.clone();
+			}
+			return;
+		}
+
 		// Flag indicating that a cancel request has been received.
 
 		private boolean ri_fetch_cancel_req;
@@ -413,6 +433,7 @@ public class RelayThread implements Runnable {
 			ri_fetch_writer = null;
 			ri_fetch_relay_time_lo = 0L;
 			ri_fetch_relay_time_hi = 0L;
+			ri_fetch_relay_id = null;
 			ri_fetch_cancel_req = false;
 
 			return;
@@ -449,6 +470,7 @@ public class RelayThread implements Runnable {
 			ri_fetch_writer = null;
 			ri_fetch_relay_time_lo = 0L;
 			ri_fetch_relay_time_hi = 0L;
+			ri_fetch_relay_id = null;
 			ri_fetch_cancel_req = false;
 
 			return true;
@@ -473,6 +495,7 @@ public class RelayThread implements Runnable {
 				ri_fetch_writer = null;
 				ri_fetch_relay_time_lo = 0L;
 				ri_fetch_relay_time_hi = 0L;
+				ri_fetch_relay_id = null;
 				ri_fetch_cancel_req = false;
 			}
 
@@ -502,6 +525,7 @@ public class RelayThread implements Runnable {
 			ri_fetch_writer = null;
 			ri_fetch_relay_time_lo = 0L;
 			ri_fetch_relay_time_hi = 0L;
+			ri_fetch_relay_id = null;
 			ri_fetch_cancel_req = false;
 
 			return;
@@ -513,10 +537,11 @@ public class RelayThread implements Runnable {
 		//  writer = Destination for fetch.
 		//  relay_time_lo = Lower limit of relay_time range.
 		//  relay_time_hi = Upper limit of relay_time range.
+		//  relay_id = List of relay item ids for fetch operation, or null or empty for no restriction.
 		// Returns true if successful, false if operation could not be started.
 		// Note: The function returns false if a fetch operation is already active, or if the thread is not active.
 
-		public synchronized boolean request_fetch (MarshalWriter writer, long relay_time_lo, long relay_time_hi) {
+		public synchronized boolean request_fetch (MarshalWriter writer, long relay_time_lo, long relay_time_hi, String... relay_id) {
 
 			// Error if thread is not active.
 
@@ -537,6 +562,11 @@ public class RelayThread implements Runnable {
 			ri_fetch_writer = writer;
 			ri_fetch_relay_time_lo = relay_time_lo;
 			ri_fetch_relay_time_hi = relay_time_hi;
+			if (relay_id == null) {
+				ri_fetch_relay_id = null;
+			} else {
+				ri_fetch_relay_id = relay_id.clone();
+			}
 			ri_fetch_cancel_req = false;
 		
 			return true;
@@ -657,11 +687,12 @@ public class RelayThread implements Runnable {
 	//  writer = Destination for fetch.
 	//  relay_time_lo = Lower limit of relay_time range, or 0L for no limit.
 	//  relay_time_hi = Upper limit of relay_time range, or 0L for no limit.
+	//  relay_id = List of relay item ids for fetch operation, or null or empty for no restriction.
 	// Returns true if successful, false if operation could not be started.
 	// Note: The function returns false if a fetch operation is already active, or if the thread is not active.
 
-	public boolean request_fetch (MarshalWriter writer, long relay_time_lo, long relay_time_hi) {
-		return sync_var.request_fetch (writer, relay_time_lo, relay_time_hi);
+	public boolean request_fetch (MarshalWriter writer, long relay_time_lo, long relay_time_hi, String... relay_id) {
+		return sync_var.request_fetch (writer, relay_time_lo, relay_time_hi, relay_id);
 	}
 
 
@@ -733,13 +764,14 @@ public class RelayThread implements Runnable {
 	// Parameters:
 	//  relay_time_lo = Lower limit of relay_time range, or 0L for no limit.
 	//  relay_time_hi = Upper limit of relay_time range, or 0L for no limit.
+	//  relay_id = List of relay item ids for fetch operation, or null or empty for no restriction.
 	// Returns a reader that contain the results, in a memory buffer.
 	// The results are a sequence of relay items, terminated with a null item.
 	// Throws an exception if the operation cannot be done.
 	// This function can be used in try-with-resources statement.
 	// This function is intended for testing.
 
-	public MarshalImpDataReader run_fetch_and_wait (long relay_time_lo, long relay_time_hi) throws IOException {
+	public MarshalImpDataReader run_fetch_and_wait (long relay_time_lo, long relay_time_hi, String... relay_id) throws IOException {
 
 		// The output buffer
 
@@ -755,7 +787,7 @@ public class RelayThread implements Runnable {
 
 			// Start the fetch operation
 
-			if (!( request_fetch (writer, relay_time_lo, relay_time_hi) )) {
+			if (!( request_fetch (writer, relay_time_lo, relay_time_hi, relay_id) )) {
 				throw new RuntimeException ("RelayThread.run_fetch_and_wait: Unable to start fetch operation");
 			}
 
@@ -811,11 +843,12 @@ public class RelayThread implements Runnable {
 	// Parameters:
 	//  relay_time_lo = Lower limit of relay_time range, or 0L for no limit.
 	//  relay_time_hi = Upper limit of relay_time range, or 0L for no limit.
+	//  relay_id = List of relay item ids for fetch operation, or null or empty for no restriction.
 	// Returns a list that contain the results, sorted in ascending order (earliest first).
 	// Throws an exception if the operation cannot be done.
 	// This function is intended for testing.
 
-	public List<RelayItem> run_fetch_and_sort (long relay_time_lo, long relay_time_hi) throws IOException {
+	public List<RelayItem> run_fetch_and_sort (long relay_time_lo, long relay_time_hi, String... relay_id) throws IOException {
 
 		// Allocate the list
 
@@ -824,7 +857,7 @@ public class RelayThread implements Runnable {
 		// Run the fetch operation
 
 		try (
-			MarshalImpDataReader reader = run_fetch_and_wait (relay_time_lo, relay_time_hi);
+			MarshalImpDataReader reader = run_fetch_and_wait (relay_time_lo, relay_time_hi, relay_id);
 		){
 		
 			// Read items and add to list until end of list
@@ -896,6 +929,14 @@ public class RelayThread implements Runnable {
 				try (
 					RecordIterator<RelayItem> csit = RelayItem.watch_relay_item_changes();
 				){
+
+					// Fetch remote server status, this also verifies the connection
+
+					RelayItem init_status = RelayItem.get_first_relay_item (RelayItem.DESCENDING, 0L, 0L, RelaySupport.RI_STATUS_ID);
+					if (init_status != null) {
+						sync_var.ri_queue_insert (init_status);
+						init_status = null;
+					}
 
 					// At this point, we might do a fetch to verify the connection, or fetch remote server status
 
@@ -1011,7 +1052,7 @@ public class RelayThread implements Runnable {
 			// Get an iterator over matching relay items
 
 			RecordIterator<RelayItem> items = RelayItem.fetch_relay_item_range (
-					RelayItem.UNSORTED, sync_var.get_ri_fetch_relay_time_lo(), sync_var.get_ri_fetch_relay_time_hi());
+					RelayItem.UNSORTED, sync_var.get_ri_fetch_relay_time_lo(), sync_var.get_ri_fetch_relay_time_hi(), sync_var.get_ri_fetch_relay_id());
 		){
 
 			// True if we are polling the change stream iterator

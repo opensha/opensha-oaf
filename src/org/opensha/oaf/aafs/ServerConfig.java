@@ -99,26 +99,8 @@ public class ServerConfig {
 
 	// ActiveMQ host name or IP address.
 
-	public String getActivemq_host() {
-		return param_set.activemq_host;
-	}
-
-	// ActiveMQ port number.
-
-	public String getActivemq_port() {
-		return String.valueOf (param_set.activemq_port);
-	}
-
-	// ActiveMQ user name.
-
-	public String getActivemq_user() {
-		return param_set.activemq_user;
-	}
-
-	// ActiveMQ password.
-
-	public String getActivemq_password() {
-		return param_set.activemq_password;
+	public String get_server_name() {
+		return param_set.server_name;
 	}
 
 	// Pattern for AAFS console log filenames, in the format of SimpleDateFormat, or "" if none.
@@ -284,6 +266,12 @@ public class ServerConfig {
 		return param_set.get_is_pdl_readback_prod();
 	}
 
+	// Get true if PDL is configured to be down, false if not.
+
+	public boolean get_is_pdl_down () {
+		return param_set.get_is_pdl_down();
+	}
+
 
 	//----- Parameter modification -----
 
@@ -364,10 +352,7 @@ public class ServerConfig {
 
 			System.out.println("mongo_config = {\n" + server_config.get_mongo_config().toString("  ") + "}");
 
-			System.out.println("activemq_host = " + server_config.getActivemq_host());
-			System.out.println("activemq_port = " + server_config.getActivemq_port());
-			System.out.println("activemq_user = " + server_config.getActivemq_user());
-			System.out.println("activemq_password = " + server_config.getActivemq_password());
+			System.out.println("server_name = " + server_config.get_server_name());
 			System.out.println("log_con_aafs = " + server_config.get_log_con_aafs());
 			System.out.println("log_con_intake = " + server_config.get_log_con_intake());
 			System.out.println("log_con_control = " + server_config.get_log_con_control());
@@ -415,6 +400,7 @@ public class ServerConfig {
 			System.out.println("]");
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
 
 			// Adjust PDL enable to development, and display senders
 
@@ -428,6 +414,7 @@ public class ServerConfig {
 			System.out.println("]");
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
 
 			// Adjust PDL enable to production, and display senders
 
@@ -441,6 +428,7 @@ public class ServerConfig {
 			System.out.println("]");
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
 
 			// Adjust PDL enable to simulated development, and display senders
 
@@ -454,6 +442,7 @@ public class ServerConfig {
 			System.out.println("]");
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
 
 			// Adjust PDL enable to simulated production, and display senders
 
@@ -467,6 +456,35 @@ public class ServerConfig {
 			System.out.println("]");
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+
+			// Adjust PDL enable to down development, and display senders
+
+			server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DOWN_DEV;
+			pdl_senders = server_config.get_pdl_senders();
+			System.out.println("pdl_senders (DOWN DEV) = [");
+			for (int i = 0; i < pdl_senders.size(); ++i) {
+				PDLSenderConfig pdl_sender = pdl_senders.get(i);
+				System.out.println("  " + i + ":  " + pdl_sender.toString());
+			}
+			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+
+			// Adjust PDL enable to down production, and display senders
+
+			server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DOWN_PROD;
+			pdl_senders = server_config.get_pdl_senders();
+			System.out.println("pdl_senders (DOWN PROD) = [");
+			for (int i = 0; i < pdl_senders.size(); ++i) {
+				PDLSenderConfig pdl_sender = pdl_senders.get(i);
+				System.out.println("  " + i + ":  " + pdl_sender.toString());
+			}
+			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
 
 			return;
 		}
