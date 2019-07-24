@@ -33,6 +33,12 @@ public class OpGenerateForecast extends DBPayload {
 
 	public long next_forecast_lag;
 
+	// Time at which the mainshock occurred, in milliseconds since the epoch.
+	// Can be 0L if this object was unmarshaled from old version 1.
+	// If pdl_relay_ids is non-empty, then mainshock_time cannot be 0L.
+
+	public long mainshock_time;
+
 	// If the last forecast was not sent to PDL due to being a secondary server, these are the
 	// relay item ids that can be used to check if the primary server sent the forecast.
 	// Otherwise, this is an empty array.  It cannot be null.
@@ -52,10 +58,11 @@ public class OpGenerateForecast extends DBPayload {
 
 	// Set up the contents.
 
-	public void setup (long the_action_time, long the_last_forecast_lag, long the_next_forecast_lag, String... the_pdl_relay_ids) {
+	public void setup (long the_action_time, long the_last_forecast_lag, long the_next_forecast_lag, long the_mainshock_time, String... the_pdl_relay_ids) {
 		action_time = the_action_time;
 		last_forecast_lag = the_last_forecast_lag;
 		next_forecast_lag = the_next_forecast_lag;
+		mainshock_time = the_mainshock_time;
 
 		if (the_pdl_relay_ids == null) {
 			pdl_relay_ids = new String[0];
@@ -110,6 +117,7 @@ public class OpGenerateForecast extends DBPayload {
 			writer.marshalLong        ("action_time"      , action_time      );
 			writer.marshalLong        ("last_forecast_lag", last_forecast_lag);
 			writer.marshalLong        ("next_forecast_lag", next_forecast_lag);
+			writer.marshalLong        ("mainshock_time"   , mainshock_time   );
 			writer.marshalStringArray ("pdl_relay_ids"    , pdl_relay_ids    );
 
 			break;
@@ -141,6 +149,7 @@ public class OpGenerateForecast extends DBPayload {
 			last_forecast_lag = reader.unmarshalLong ("last_forecast_lag");
 			next_forecast_lag = reader.unmarshalLong ("next_forecast_lag");
 			
+			mainshock_time = 0L;
 			pdl_relay_ids = new String[0];
 
 			break;
@@ -150,6 +159,7 @@ public class OpGenerateForecast extends DBPayload {
 			action_time       = reader.unmarshalLong        ("action_time"      );
 			last_forecast_lag = reader.unmarshalLong        ("last_forecast_lag");
 			next_forecast_lag = reader.unmarshalLong        ("next_forecast_lag");
+			mainshock_time    = reader.unmarshalLong        ("mainshock_time"   );
 			pdl_relay_ids     = reader.unmarshalStringArray ("pdl_relay_ids"    );
 
 			break;

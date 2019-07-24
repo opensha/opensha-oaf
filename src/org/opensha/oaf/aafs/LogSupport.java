@@ -915,6 +915,28 @@ public class LogSupport extends ServerComponent {
 
 
 
+	// Report timeline converted to primary.
+
+	public void report_timeline_to_primary (int tasks_canceled) {
+		report_action ("TIMELINE-TO-PRIMARY",
+					"tasks_canceled = " + tasks_canceled);
+		return;
+	}
+
+
+
+
+	// Report timeline converted to secondary.
+
+	public void report_timeline_to_secondary (int tasks_canceled) {
+		report_action ("TIMELINE-TO-SECONDARY",
+					"tasks_canceled = " + tasks_canceled);
+		return;
+	}
+
+
+
+
 	//----- Construction -----
 
 

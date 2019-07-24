@@ -5237,25 +5237,36 @@ public class ServerTest {
 
 	public static void test88(String[] args) throws Exception {
 
-		// 1 additional argument
+		// 2 additional arguments
 
-		if (args.length != 2) {
+		if (args.length != 3) {
 			System.err.println ("ServerTest : Invalid 'test88' or 'change_pdl_mode' subcommand");
 			return;
 		}
 
-		boolean f_primary = Boolean.parseBoolean (args[1]);	// true = change to primary, false = change to secondary
+		String logfile = args[1];		// can be "-" for none
+		boolean f_primary = Boolean.parseBoolean (args[2]);	// true = change to primary, false = change to secondary
+
+		String my_logfile = null;
+		if (!( logfile.equals ("-") )) {
+			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
+		}
 
 		// Connect to MongoDB
 
 		try (
 			MongoDBUtil mongo_instance = new MongoDBUtil();
+			TimeSplitOutputStream sum_tsop = TimeSplitOutputStream.make_tsop (my_logfile, 0L);
 		){
 
 			// Get a task dispatcher and server group
 
 			TaskDispatcher dispatcher = new TaskDispatcher();
 			ServerGroup sg = dispatcher.get_server_group();
+
+			// Install the log file
+
+			dispatcher.set_summary_log_tsop (sum_tsop);
 
 			// Set up task context
 
@@ -6786,8 +6797,9 @@ public class ServerTest {
 
 		// Subcommand : Test #88
 		// Command format:
-		//  test88  f_primary
+		//  test88  logfile  f_primary
 		// Use timeline support to change the PDL mode.
+		// The logfile can be "-" for none.
 
 		if (args[0].equalsIgnoreCase ("test88") || args[0].equalsIgnoreCase ("change_pdl_mode")) {
 

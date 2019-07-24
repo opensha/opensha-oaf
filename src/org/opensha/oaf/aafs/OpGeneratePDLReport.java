@@ -31,6 +31,12 @@ public class OpGeneratePDLReport extends DBPayload {
 
 	public long base_pdl_time;
 
+	// Time at which the mainshock occurred, in milliseconds since the epoch.
+	// Can be 0L if this object was unmarshaled from old version 1.
+	// If pdl_relay_ids is non-empty, then mainshock_time cannot be 0L.
+
+	public long mainshock_time;
+
 
 
 
@@ -44,10 +50,11 @@ public class OpGeneratePDLReport extends DBPayload {
 
 	// Set up the contents.
 
-	public void setup (long the_action_time, long the_last_forecast_lag, long the_base_pdl_time) {
+	public void setup (long the_action_time, long the_last_forecast_lag, long the_base_pdl_time, long the_mainshock_time) {
 		action_time = the_action_time;
 		last_forecast_lag = the_last_forecast_lag;
 		base_pdl_time = the_base_pdl_time;
+		mainshock_time = the_mainshock_time;
 		return;
 	}
 
@@ -59,6 +66,7 @@ public class OpGeneratePDLReport extends DBPayload {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 29001;
+	private static final int MARSHAL_VER_2 = 29002;
 
 	private static final String M_VERSION_NAME = "OpGeneratePDLReport";
 
@@ -69,7 +77,9 @@ public class OpGeneratePDLReport extends DBPayload {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Superclass
 
@@ -77,9 +87,25 @@ public class OpGeneratePDLReport extends DBPayload {
 
 		// Contents
 
-		writer.marshalLong ("action_time"      , action_time      );
-		writer.marshalLong ("last_forecast_lag", last_forecast_lag);
-		writer.marshalLong ("base_pdl_time"    , base_pdl_time    );
+		switch (ver) {
+
+		case MARSHAL_VER_1:
+
+			writer.marshalLong ("action_time"      , action_time      );
+			writer.marshalLong ("last_forecast_lag", last_forecast_lag);
+			writer.marshalLong ("base_pdl_time"    , base_pdl_time    );
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			writer.marshalLong ("action_time"      , action_time      );
+			writer.marshalLong ("last_forecast_lag", last_forecast_lag);
+			writer.marshalLong ("base_pdl_time"    , base_pdl_time    );
+			writer.marshalLong ("mainshock_time"   , mainshock_time   );
+
+			break;
+		}
 
 		return;
 	}
@@ -91,7 +117,7 @@ public class OpGeneratePDLReport extends DBPayload {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Superclass
 
@@ -99,9 +125,27 @@ public class OpGeneratePDLReport extends DBPayload {
 
 		// Contents
 
-		action_time       = reader.unmarshalLong ("action_time"      );
-		last_forecast_lag = reader.unmarshalLong ("last_forecast_lag");
-		base_pdl_time     = reader.unmarshalLong ("base_pdl_time"    );
+		switch (ver) {
+
+		case MARSHAL_VER_1:
+
+			action_time       = reader.unmarshalLong ("action_time"      );
+			last_forecast_lag = reader.unmarshalLong ("last_forecast_lag");
+			base_pdl_time     = reader.unmarshalLong ("base_pdl_time"    );
+			
+			mainshock_time = 0L;
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			action_time       = reader.unmarshalLong ("action_time"      );
+			last_forecast_lag = reader.unmarshalLong ("last_forecast_lag");
+			base_pdl_time     = reader.unmarshalLong ("base_pdl_time"    );
+			mainshock_time    = reader.unmarshalLong ("mainshock_time"   );
+
+			break;
+		}
 
 		return;
 	}

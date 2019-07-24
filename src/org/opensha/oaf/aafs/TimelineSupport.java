@@ -2,6 +2,7 @@ package org.opensha.oaf.aafs;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import org.opensha.oaf.aafs.entity.PendingTask;
 import org.opensha.oaf.aafs.entity.LogEntry;
@@ -588,6 +589,7 @@ public class TimelineSupport extends ServerComponent {
 	// non-negative, a multiple of the lag unit, and greather than last_pdl_lag.
 	// Note: PDL report lag is relative to the start time of the PDL report sequence.
 	// Note: If last_pdl_lag == -1L and there is a next PDL report lag, then the return value is 0L.
+	// Note: If the return value is not -1L, then it is guaranteed that tstatus.is_pdl_retry_state() == true.
 
 	public long get_next_pdl_lag (TimelineStatus tstatus, long next_forecast_lag, long last_pdl_lag, long base_pdl_time) {
 
@@ -681,7 +683,11 @@ public class TimelineSupport extends ServerComponent {
 		if (next_pdl_lag >= 0L && sg.pdl_sup.is_pdl_primary()) {
 		
 			OpGeneratePDLReport pdl_payload = new OpGeneratePDLReport();
-			pdl_payload.setup (tstatus.action_time, tstatus.last_forecast_lag, sg.task_disp.get_time());
+			pdl_payload.setup (
+				tstatus.action_time,										// the_action_time
+				tstatus.last_forecast_lag,									// the_last_forecast_lag
+				sg.task_disp.get_time(),									// the_base_pdl_time
+				tstatus.forecast_mainshock.mainshock_time);					// the_mainshock_time
 
 			PendingTask.submit_task (
 				tstatus.event_id,											// event id
@@ -710,7 +716,12 @@ public class TimelineSupport extends ServerComponent {
 			}
 		
 			OpGenerateForecast forecast_payload = new OpGenerateForecast();
-			forecast_payload.setup (tstatus.action_time, tstatus.last_forecast_lag, next_forecast_lag, forecast_pdl_relay_ids);
+			forecast_payload.setup (
+				tstatus.action_time,											// the_action_time
+				tstatus.last_forecast_lag,										// the_last_forecast_lag
+				next_forecast_lag,												// the_next_forecast_lag
+				tstatus.forecast_mainshock.mainshock_time,						// the_mainshock_time
+				forecast_pdl_relay_ids);										// the_pdl_relay_ids
 
 			PendingTask.submit_task (
 				tstatus.event_id,												// event id
@@ -737,17 +748,24 @@ public class TimelineSupport extends ServerComponent {
 
 			String[] expire_pdl_relay_ids;
 			long expire_sched_time;
+			long expire_mainshock_time;
 
 			if (next_pdl_lag >= 0L) {	// if PDL report desired, only possible on a secondary server with tstatus.is_pdl_retry_state() == true
 				expire_pdl_relay_ids = tstatus.forecast_mainshock.get_confirm_relay_ids();
 				expire_sched_time = tstatus.forecast_mainshock.mainshock_time + tstatus.last_forecast_lag + sg.task_disp.get_action_config().get_forecast_max_delay();
+				expire_mainshock_time = tstatus.forecast_mainshock.mainshock_time;
 			} else {
 				expire_pdl_relay_ids = new String[0];
 				expire_sched_time = sg.task_sup.get_prompt_exec_time();		// can expire immediately if no PDL send pending
+				expire_mainshock_time = 0L;
 			}
 		
 			OpGenerateExpire expire_payload = new OpGenerateExpire();
-			expire_payload.setup (tstatus.action_time, tstatus.last_forecast_lag, expire_pdl_relay_ids);
+			expire_payload.setup (
+				tstatus.action_time,									// the_action_time
+				tstatus.last_forecast_lag,								// the_last_forecast_lag
+				expire_mainshock_time,									// the_mainshock_time
+				expire_pdl_relay_ids);									// the_pdl_relay_ids
 
 			PendingTask.submit_task (
 				tstatus.event_id,										// event id
@@ -908,6 +926,51 @@ public class TimelineSupport extends ServerComponent {
 
 
 
+	// A class that holds a pending task and a time.
+
+	public static class TaskAndTime {
+		public PendingTask task;
+		public long time;
+
+		public TaskAndTime (PendingTask the_task, long the_time) {
+			task = the_task;
+			time = the_time;
+		}
+	}
+
+
+
+
+	// Comparator to sort TaskAndTime into ascending order by time (earliest first).
+
+	public static class TaskAndTimeAscendingComparator implements Comparator<TaskAndTime> {
+	
+		// Compare two items
+
+		@Override
+		public int compare (TaskAndTime tandt1, TaskAndTime tandt2) {
+			return Long.compare (tandt1.time, tandt2.time);
+		}
+	}
+
+
+
+
+	// Comparator to sort TaskAndTime into descending order by time (most recent first).
+
+	public static class TaskAndTimeDescendingComparator implements Comparator<TaskAndTime> {
+	
+		// Compare two items
+
+		@Override
+		public int compare (TaskAndTime tandt1, TaskAndTime tandt2) {
+			return Long.compare (tandt2.time, tandt1.time);
+		}
+	}
+	
+
+
+
 	// Set the timeline to correct state for a primary server.
 	// Returns the number of tasks canceled.
 	// Currently, this scans the task queue, looking for any forecast or expire task that was issued
@@ -921,7 +984,7 @@ public class TimelineSupport extends ServerComponent {
 
 		// List of tasks to cancel
 
-		ArrayList<PendingTask> tasks_to_cancel = new ArrayList<PendingTask>();
+		ArrayList<TaskAndTime> tasks_to_cancel = new ArrayList<TaskAndTime>();
 
 		// Scan the entire task queue
 
@@ -969,7 +1032,7 @@ public class TimelineSupport extends ServerComponent {
 
 								// Put this task on the list to be canceled
 
-								tasks_to_cancel.add (task);
+								tasks_to_cancel.add (new TaskAndTime (task, payload.mainshock_time));
 							}
 						}
 					}
@@ -1010,7 +1073,7 @@ public class TimelineSupport extends ServerComponent {
 
 								// Put this task on the list to be canceled
 
-								tasks_to_cancel.add (task);
+								tasks_to_cancel.add (new TaskAndTime (task, payload.mainshock_time));
 							}
 						}
 					}
@@ -1022,12 +1085,12 @@ public class TimelineSupport extends ServerComponent {
 		// Sort the tasks that need to be canceled, earliest first
 
 		if (tasks_to_cancel.size() > 1) {
-			tasks_to_cancel.sort (new PendingTask.AscendingComparator());
+			tasks_to_cancel.sort (new TaskAndTimeDescendingComparator());
 		}
 
 		// Increment between cancels
 
-		long cancel_time_increment = 15000L;		// 15 seconds
+		long cancel_time_increment = 20000L;		// 20 seconds
 
 		// Initial execution time
 
@@ -1035,17 +1098,19 @@ public class TimelineSupport extends ServerComponent {
 
 		// Iterate over the tasks to cancel
 
-		for (PendingTask task_to_cancel : tasks_to_cancel) {
+		for (TaskAndTime task_to_cancel : tasks_to_cancel) {
 
 			// Stage the task
 
 			exec_time += cancel_time_increment;
-			long eff_exec_time = Math.min (exec_time, task_to_cancel.get_exec_time());
+			long eff_exec_time = Math.min (exec_time, task_to_cancel.task.get_exec_time());
 
-			PendingTask.stage_task (task_to_cancel, eff_exec_time, STAGE_CANCEL, null);
+			PendingTask.stage_task (task_to_cancel.task, eff_exec_time, STAGE_CANCEL, null);
 		}
 
 		// Return the number of canceled tasks
+
+		sg.log_sup.report_timeline_to_primary (tasks_to_cancel.size());
 
 		return tasks_to_cancel.size();
 	}
@@ -1064,7 +1129,7 @@ public class TimelineSupport extends ServerComponent {
 
 		// List of tasks to cancel
 
-		ArrayList<PendingTask> tasks_to_cancel = new ArrayList<PendingTask>();
+		ArrayList<TaskAndTime> tasks_to_cancel = new ArrayList<TaskAndTime>();
 
 		// Scan the entire task queue
 
@@ -1100,7 +1165,7 @@ public class TimelineSupport extends ServerComponent {
 
 						// Put this task on the list to be canceled
 
-						tasks_to_cancel.add (task);
+						tasks_to_cancel.add (new TaskAndTime (task, payload.mainshock_time));
 					}
 					break;
 				}
@@ -1110,12 +1175,12 @@ public class TimelineSupport extends ServerComponent {
 		// Sort the tasks that need to be canceled, earliest first
 
 		if (tasks_to_cancel.size() > 1) {
-			tasks_to_cancel.sort (new PendingTask.AscendingComparator());
+			tasks_to_cancel.sort (new TaskAndTimeDescendingComparator());
 		}
 
 		// Increment between cancels
 
-		long cancel_time_increment = 15000L;		// 15 seconds
+		long cancel_time_increment = 20000L;		// 20 seconds
 
 		// Initial execution time
 
@@ -1123,17 +1188,19 @@ public class TimelineSupport extends ServerComponent {
 
 		// Iterate over the tasks to cancel
 
-		for (PendingTask task_to_cancel : tasks_to_cancel) {
+		for (TaskAndTime task_to_cancel : tasks_to_cancel) {
 
 			// Stage the task
 
 			exec_time += cancel_time_increment;
-			long eff_exec_time = Math.min (exec_time, task_to_cancel.get_exec_time());
+			long eff_exec_time = Math.min (exec_time, task_to_cancel.task.get_exec_time());
 
-			PendingTask.stage_task (task_to_cancel, eff_exec_time, STAGE_CANCEL, null);
+			PendingTask.stage_task (task_to_cancel.task, eff_exec_time, STAGE_CANCEL, null);
 		}
 
 		// Return the number of canceled tasks
+
+		sg.log_sup.report_timeline_to_secondary (tasks_to_cancel.size());
 
 		return tasks_to_cancel.size();
 	}
