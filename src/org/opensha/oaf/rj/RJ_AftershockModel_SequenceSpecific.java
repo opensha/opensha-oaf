@@ -109,7 +109,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 				MagCompPage_Parameters mcParam, SeqSpecRJ_Parameters sqParam) {
 		
 		this(mainShock, aftershockList,
-				mcParam.get_magCat(), mcParam.get_magCompFn(),
+				mcParam.get_magCat(mainShock.getMag()), mcParam.get_magCompFn(),
 				sqParam.get_b(), dataStartTimeDays, dataEndTimeDays,
 				sqParam.get_min_a(), sqParam.get_max_a(), sqParam.get_num_a(),
 				sqParam.get_min_p(), sqParam.get_max_p(), sqParam.get_num_p(),

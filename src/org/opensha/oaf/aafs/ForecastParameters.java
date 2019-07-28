@@ -26,7 +26,6 @@ import org.opensha.oaf.rj.SeqSpecRJ_Parameters;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.commons.geo.Location;
-import org.opensha.commons.calc.magScalingRelations.magScalingRelImpl.WC1994_MagLengthRelationship;
 
 /**
  * Parameters for constructing a forecast.
@@ -462,22 +461,17 @@ public class ForecastParameters {
 			return;
 		}
 
-		// Get minimum magnitude and radius multiplier parameters
+		// Get minimum magnitude and radius parameters
 
-		double sample_min_mag = mag_comp_params.get_magSample();
-		double sample_radius_mult = mag_comp_params.get_radiusSample();
+		double sample_min_mag = mag_comp_params.get_magSample (fcmain.mainshock_mag);
+		double sample_radius = mag_comp_params.get_radiusSample (fcmain.mainshock_mag);
 
-		double centroid_min_mag = mag_comp_params.get_magCentroid();
-		double centroid_radius_mult = mag_comp_params.get_radiusCentroid();
-
-		// Get initial search radius from Wells and Coppersmith
-
-		WC1994_MagLengthRelationship wcMagLen = new WC1994_MagLengthRelationship();
-		double radius = wcMagLen.getMedianLength(fcmain.mainshock_mag);
+		double centroid_min_mag = mag_comp_params.get_magCentroid (fcmain.mainshock_mag);
+		double centroid_radius = mag_comp_params.get_radiusCentroid (fcmain.mainshock_mag);
 
 		// The initial region is a circle centered at the epicenter
 
-		SphRegion initial_region = SphRegion.makeCircle (fcmain.get_sph_eqk_location(), radius * centroid_radius_mult);
+		SphRegion initial_region = SphRegion.makeCircle (fcmain.get_sph_eqk_location(), centroid_radius);
 
 		// Time range used for sampling aftershocks, in days since the mainshock
 
@@ -529,7 +523,7 @@ public class ForecastParameters {
 
 		// Search region is a circle centered at the centroid (or hypocenter if no aftershocks)
 			
-		aftershock_search_region = SphRegion.makeCircle (new SphLatLon(centroid), radius * sample_radius_mult);
+		aftershock_search_region = SphRegion.makeCircle (new SphLatLon(centroid), sample_radius);
 
 		aftershock_search_avail = true;
 		return;

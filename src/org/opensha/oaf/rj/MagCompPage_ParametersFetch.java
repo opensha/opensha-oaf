@@ -367,6 +367,44 @@ public class MagCompPage_ParametersFetch {
 			return;
 		}
 
+		// Subcommand : Test #5
+		// Command format:
+		//  test5
+		// List all regimes, and the properties assigned to each.
+		// Also print a table of magnitude-dependent parameters for various magnitudes.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// No additional arguments
+
+			if (args.length != 1) {
+				System.err.println ("MagCompPage_ParametersFetch : Invalid 'test5' subcommand");
+				return;
+			}
+
+			// Display info for each regime
+		
+			MagCompPage_ParametersFetch fetch = new MagCompPage_ParametersFetch();
+			Set<OAFTectonicRegime> regimes = fetch.getRegimeSet();
+			for (OAFTectonicRegime regime : regimes) {
+				MagCompPage_Parameters mc_param = fetch.get(regime);
+				System.out.println (regime + ": " + mc_param.toString());
+				for (int n = 40; n <= 95; n += 5) {
+					double mag = ((double)n) / 10.0;
+					System.out.println (
+						"mag = " + String.format ("%.3f", mag) +
+						", magCat = " + String.format ("%.3f", mc_param.get_magCat (mag)) +
+						", magSample = " + String.format ("%.3f", mc_param.get_magSample (mag)) +
+						", radiusSample = " + String.format ("%.1f", mc_param.get_radiusSample (mag)) +
+						", magCentroid = " + String.format ("%.3f", mc_param.get_magCentroid (mag)) +
+						", radiusCentroid = " + String.format ("%.1f", mc_param.get_radiusCentroid (mag)));
+				}
+				System.out.println();
+			}
+
+			return;
+		}
+
 		// Unrecognized subcommand.
 
 		System.err.println ("MagCompPage_ParametersFetch : Unrecognized subcommand : " + args[0]);

@@ -9,10 +9,10 @@ public class MagCompPage_Parameters {
 	private double magCat;
 	private MagCompFn magCompFn;
 
-	private double magSample;
-	private double radiusSample;
-	private double magCentroid;
-	private double radiusCentroid;
+	private SearchMagFn magSample;
+	private SearchRadiusFn radiusSample;
+	private SearchMagFn magCentroid;
+	private SearchRadiusFn radiusCentroid;
 	
 	/**
 	 * This class is a container for the magnitude of completeness parameters and function. 
@@ -29,6 +29,9 @@ public class MagCompPage_Parameters {
 	 * (magSample and radiusSample) and to find the centroid of aftershock activity (magCentroid
 	 * and radiusCentroid).  Magnitude is the minimum magnitude considered, and raidus is the
 	 * multiple of the Wells and Coppersmith radius.  Magnitude can be -10.0 for no limit.
+	 *
+	 * In version 2 "legacy" code, magSample, radiusSample, magCentroid, and radiusCentroid
+	 * were scalar variables.
 	 * 
 	 * @param magCat
 	 * @param magCompFn
@@ -38,7 +41,7 @@ public class MagCompPage_Parameters {
 	 * @param radiusCentroid
 	 */
 	public MagCompPage_Parameters (double magCat, MagCompFn magCompFn,
-				double magSample, double radiusSample, double magCentroid, double radiusCentroid) {
+				SearchMagFn magSample, SearchRadiusFn radiusSample, SearchMagFn magCentroid, SearchRadiusFn radiusCentroid) {
 		this.magCat = magCat;
 		this.magCompFn = magCompFn;
 		this.magSample = magSample;
@@ -53,27 +56,41 @@ public class MagCompPage_Parameters {
 	 * radii to 1.0 (Wells and Coppersmith value).
 	 */
 	public MagCompPage_Parameters (double magCat, MagCompFn magCompFn) {
-		this (magCat, magCompFn, -10.0, 1.0, -10.0, 1.0);
+		this (magCat, magCompFn, SearchMagFn.makeNoMinMag(), SearchRadiusFn.makeWC(1.0), SearchMagFn.makeNoMinMag(), SearchRadiusFn.makeWC(1.0));
 	}
 
 	
 	/**
 	 * Default constructor.
 	 */
-	public MagCompPage_Parameters(){}
+	public MagCompPage_Parameters () {}
+	
+
+	/**
+	 * This returns the magnitude-independent catalog magnitude of completeness (magCat).
+	 * (At present only the GUI uses this.)
+	 * @return
+	 */
+	public double get_magCat () {
+		return magCat;
+	}
 	
 
 	/**
 	 * This returns the catalog magnitude of completeness (magCat).
 	 * @return
 	 */
-	public double get_magCat() {return magCat;}
+	public double get_magCat (double magMain) {
+		return Math.max (magCat, magSample.getMag (magMain));
+	}
 
 	/**
 	 * This returns the magnitude of completeness function (magCompFn).
 	 * @return
 	 */
-	public MagCompFn get_magCompFn() {return magCompFn;}
+	public MagCompFn get_magCompFn () {
+		return magCompFn;
+	}
 	
 	/**
 	 * [DEPRECATED]
@@ -93,36 +110,44 @@ public class MagCompPage_Parameters {
 	 * Return the minimum magnitude to use when sampling aftershocks, or -10.0 if none.
 	 * @return
 	 */
-	public double get_magSample() {return magSample;}
+	public double get_magSample (double magMain) {
+		return magSample.getMag (magMain);
+	}
 	
 	/**
-	 * Return the radius to use when sampling aftershocks, as a multiple of the Wells and Coppersmith radius.
+	 * Return the radius to use when sampling aftershocks, in km.
 	 * @return
 	 */
-	public double get_radiusSample() {return radiusSample;}
+	public double get_radiusSample (double magMain) {
+		return radiusSample.getRadius (magMain);
+	}
 	
 	/**
 	 * Return the minimum magnitude to use when finding the centroid of aftershock activity, or -10.0 if none.
 	 * A value of 10.0 means to skip the centroid calculation and search around the hypocenter.
 	 * @return
 	 */
-	public double get_magCentroid() {return magCentroid;}
+	public double get_magCentroid (double magMain) {
+		return magCentroid.getMag (magMain);
+	}
 	
 	/**
-	 * Return the radius to use when finding the centroid of aftershock activity, as a multiple of the Wells and Coppersmith radius.
+	 * Return the radius to use when finding the centroid of aftershock activity, in km.
 	 * @return
 	 */
-	public double get_radiusCentroid() {return radiusCentroid;}
+	public double get_radiusCentroid (double magMain) {
+		return radiusCentroid.getRadius (magMain);
+	}
 
 	@Override
 	public String toString() {
-		return "Page_Params[magCat=" + get_magCat()
-			+ ", magCompFn=" + get_magCompFn().toString()
-			+ ", magSample=" + get_magSample()
-			+ ", radiusSample=" + get_radiusSample()
-			+ ", magCentroid=" + get_magCentroid()
-			+ ", radiusCentroid=" + get_radiusCentroid()
-			+ "]";
+		return "Page_Params:" + "\n"
+			+ "  magCat = " + magCat + "\n"
+			+ "  magCompFn = " + magCompFn.toString() + "\n"
+			+ "  magSample = " + magSample.toString() + "\n"
+			+ "  radiusSample = " + radiusSample.toString() + "\n"
+			+ "  magCentroid = " + magCentroid.toString() + "\n"
+			+ "  radiusCentroid = " + radiusCentroid.toString();
 	}
 
 
@@ -134,6 +159,7 @@ public class MagCompPage_Parameters {
 
 	private static final int MARSHAL_VER_1 = 2001;
 	private static final int MARSHAL_VER_2 = 2002;
+	private static final int MARSHAL_VER_3 = 2003;
 
 	private static final String M_VERSION_NAME = "MagCompPage_Parameters";
 
@@ -156,7 +182,7 @@ public class MagCompPage_Parameters {
 
 		// Version
 
-		int ver = MARSHAL_VER_2;
+		int ver = MARSHAL_VER_3;
 		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Contents
@@ -171,10 +197,10 @@ public class MagCompPage_Parameters {
 			writer.marshalDouble ("magCat"        , magCat        );
 			writer.marshalDouble ("capG"          , magCompFn.getLegacyCapG());
 			writer.marshalDouble ("capH"          , magCompFn.getLegacyCapH());
-			writer.marshalDouble ("magSample"     , magSample     );
-			writer.marshalDouble ("radiusSample"  , radiusSample  );
-			writer.marshalDouble ("magCentroid"   , magCentroid   );
-			writer.marshalDouble ("radiusCentroid", radiusCentroid);
+			writer.marshalDouble ("magSample"     , magSample.getLegacyMag()        );
+			writer.marshalDouble ("radiusSample"  , radiusSample.getLegacyRadius()  );
+			writer.marshalDouble ("magCentroid"   , magCentroid.getLegacyMag()      );
+			writer.marshalDouble ("radiusCentroid", radiusCentroid.getLegacyRadius());
 
 		}
 		break;
@@ -183,10 +209,22 @@ public class MagCompPage_Parameters {
 
 			writer.marshalDouble ("magCat"        , magCat        );
 			MagCompFn.marshal_poly (writer, "magCompFn", magCompFn);
-			writer.marshalDouble ("magSample"     , magSample     );
-			writer.marshalDouble ("radiusSample"  , radiusSample  );
-			writer.marshalDouble ("magCentroid"   , magCentroid   );
-			writer.marshalDouble ("radiusCentroid", radiusCentroid);
+			writer.marshalDouble ("magSample"     , magSample.getLegacyMag()        );
+			writer.marshalDouble ("radiusSample"  , radiusSample.getLegacyRadius()  );
+			writer.marshalDouble ("magCentroid"   , magCentroid.getLegacyMag()      );
+			writer.marshalDouble ("radiusCentroid", radiusCentroid.getLegacyRadius());
+
+		}
+		break;
+
+		case MARSHAL_VER_3: {
+
+			writer.marshalDouble        (        "magCat"        , magCat        );
+			MagCompFn.marshal_poly      (writer, "magCompFn"     , magCompFn     );
+			SearchMagFn.marshal_poly    (writer, "magSample"     , magSample     );
+			SearchRadiusFn.marshal_poly (writer, "radiusSample"  , radiusSample  );
+			SearchMagFn.marshal_poly    (writer, "magCentroid"   , magCentroid   );
+			SearchRadiusFn.marshal_poly (writer, "radiusCentroid", radiusCentroid);
 
 		}
 		break;
@@ -202,7 +240,7 @@ public class MagCompPage_Parameters {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Contents
 
@@ -217,10 +255,10 @@ public class MagCompPage_Parameters {
 			double capG    = reader.unmarshalDouble ("capG"          );
 			double capH    = reader.unmarshalDouble ("capH"          );
 			magCompFn      = MagCompFn.makeLegacyPage (capG, capH);
-			magSample      = reader.unmarshalDouble ("magSample"     );
-			radiusSample   = reader.unmarshalDouble ("radiusSample"  );
-			magCentroid    = reader.unmarshalDouble ("magCentroid"   );
-			radiusCentroid = reader.unmarshalDouble ("radiusCentroid");
+			magSample      = SearchMagFn.makeLegacyMag   (reader.unmarshalDouble ("magSample"     ));
+			radiusSample   = SearchRadiusFn.makeLegacyWC (reader.unmarshalDouble ("radiusSample"  ));
+			magCentroid    = SearchMagFn.makeLegacyMag   (reader.unmarshalDouble ("magCentroid"   ));
+			radiusCentroid = SearchRadiusFn.makeLegacyWC (reader.unmarshalDouble ("radiusCentroid"));
 
 		}
 		break;
@@ -229,10 +267,22 @@ public class MagCompPage_Parameters {
 
 			magCat         = reader.unmarshalDouble ("magCat"        );
 			magCompFn      = MagCompFn.unmarshal_poly (reader, "magCompFn");
-			magSample      = reader.unmarshalDouble ("magSample"     );
-			radiusSample   = reader.unmarshalDouble ("radiusSample"  );
-			magCentroid    = reader.unmarshalDouble ("magCentroid"   );
-			radiusCentroid = reader.unmarshalDouble ("radiusCentroid");
+			magSample      = SearchMagFn.makeLegacyMag   (reader.unmarshalDouble ("magSample"     ));
+			radiusSample   = SearchRadiusFn.makeLegacyWC (reader.unmarshalDouble ("radiusSample"  ));
+			magCentroid    = SearchMagFn.makeLegacyMag   (reader.unmarshalDouble ("magCentroid"   ));
+			radiusCentroid = SearchRadiusFn.makeLegacyWC (reader.unmarshalDouble ("radiusCentroid"));
+
+		}
+		break;
+
+		case MARSHAL_VER_3: {
+
+			magCat         = reader.unmarshalDouble        (        "magCat"        );
+			magCompFn      = MagCompFn.unmarshal_poly      (reader, "magCompFn"     );
+			magSample      = SearchMagFn.unmarshal_poly    (reader, "magSample"     );
+			radiusSample   = SearchRadiusFn.unmarshal_poly (reader, "radiusSample"  );
+			magCentroid    = SearchMagFn.unmarshal_poly    (reader, "magCentroid"   );
+			radiusCentroid = SearchRadiusFn.unmarshal_poly (reader, "radiusCentroid");
 
 		}
 		break;

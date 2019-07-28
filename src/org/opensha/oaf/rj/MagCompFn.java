@@ -35,6 +35,16 @@ import org.opensha.oaf.util.MarshalException;
  *
  * 4. For times 0 <= t <= epsilon, magComp is constant and equal to its maximum
  * value.  (Note that magComp must have a finite value at t == 0).
+ *
+ * Considered as a function of magCat, magComp must satisfy the following condition:
+ *
+ * 5. If magCat1 > magCat2, then magComp(magCat1) = max(magComp(magCat2), magCat1).
+ * (The purpose of this rule is to properly account for cases where earthquakes
+ * detected by the seismic network are not available from Comcat unless they
+ * exceed a magnitude threshold (which could be our Comcat search magnitude).
+ * This is most easily achieved by choosing magComp to have the form
+ * magComp(magMain, magCat, tDays) = max(F(magMain, tDays), magCat)
+ * where F is some function that depends only on magMain and tDays.)
  */
 public abstract class MagCompFn {
 

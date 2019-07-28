@@ -11,7 +11,6 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.LocationUtils;
-import org.opensha.commons.calc.magScalingRelations.magScalingRelImpl.WC1994_MagLengthRelationship;
 
 import static org.opensha.commons.geo.GeoTools.TO_DEG;
 import static org.opensha.commons.geo.GeoTools.TO_RAD;
@@ -361,10 +360,6 @@ public class AftershockStatsShadow {
 
 		MagCompPage_ParametersFetch mag_comp_fetch = new MagCompPage_ParametersFetch();
 
-		// Wells and Coppersmith relation
-
-		WC1994_MagLengthRelationship wcMagLen = new WC1994_MagLengthRelationship();
-
 		// Get the mainshock parameters
 
 		String mainshock_event_id = mainshock.getEventId();
@@ -431,17 +426,13 @@ public class AftershockStatsShadow {
 
 				MagCompPage_Parameters mag_comp_params = mag_comp_fetch.get (potential_hypo);
 
-				// Get the Wells and Coppersmith radius
-
-				double wc_radius = wcMagLen.getMedianLength (potential_mag);
-
 				// Get the centroid radius
 
-				double centroid_radius = wc_radius * mag_comp_params.get_radiusCentroid();
+				double centroid_radius = mag_comp_params.get_radiusCentroid (potential_mag);
 
 				// Get the sample radius
 
-				double sample_radius = wc_radius * mag_comp_params.get_radiusSample();
+				double sample_radius = mag_comp_params.get_radiusSample (potential_mag);
 
 				// Get the distance to the mainshock
 
@@ -453,7 +444,7 @@ public class AftershockStatsShadow {
 
 					// Get the centroid minimum magnitude
 
-					double centroid_min_mag = Math.max (mag_comp_params.get_magCentroid(), centroid_mag_floor);
+					double centroid_min_mag = Math.max (mag_comp_params.get_magCentroid (potential_mag), centroid_mag_floor);
 
 					// Get the centroid start and end times
 
