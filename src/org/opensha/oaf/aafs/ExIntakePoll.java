@@ -119,6 +119,8 @@ public class ExIntakePoll extends ServerExecTask {
 					return RESCODE_DELETE_INTAKE_FILTERED;		// Just delete, so that log is not flooded with poll notifications
 				}
 
+				sg.log_sup.report_intake_region (fcmain2.mainshock_event_id, intake_region2);
+
 				//--- Final steps
 
 				// Set status update
@@ -186,6 +188,8 @@ public class ExIntakePoll extends ServerExecTask {
 		if (intake_region == null) {
 			return RESCODE_DELETE_INTAKE_FILTERED;		// Just delete, so that log is not flooded with poll notifications
 		}
+
+		sg.log_sup.report_intake_region (fcmain.mainshock_event_id, intake_region);
 
 		//--- Final steps
 
@@ -293,6 +297,8 @@ public class ExIntakePoll extends ServerExecTask {
 		if (intake_region == null) {
 			return RESCODE_DELETE_INTAKE_FILTERED;		// Just delete, so that log is not flooded with notifications
 		}
+
+		sg.log_sup.report_intake_region (fcmain.mainshock_event_id, intake_region);
 
 		//--- Final steps
 

@@ -62,7 +62,7 @@ public class MagCompPage_ParametersFetch {
 	//		element = { Structure containing regime and parameter values.
 	//			"regime" = Name of tectonic regime.
 	//			"params" = { Structure containing marshaled MagCompPage_Parameters.
-	//				"MagCompPage_Parameters" = Integer version number, should be 2001 to 2002 (2001 is deprecated).
+	//				"MagCompPage_Parameters" = Integer version number, should be 2001 to 2003 (2001 to 2002 are deprecated).
 	//				. . .
 	//			}
 	//		. . .

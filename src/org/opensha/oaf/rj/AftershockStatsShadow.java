@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Comparator;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -79,10 +80,10 @@ public class AftershockStatsShadow {
 
 		// Candidate parameters: event ID, origin time, magnitude, hypocenter.
 
-		String candidate_event_id;
-		long candidate_time;
-		double candidate_mag;
-		Location candidate_hypo;
+		public String candidate_event_id;
+		public long candidate_time;
+		public double candidate_mag;
+		public Location candidate_hypo;
 
 		// Constructor.
 
@@ -224,6 +225,44 @@ public class AftershockStatsShadow {
 
 
 
+	// Comparator for sorting candidates, with the "best" candidates appearing first.
+
+	public static class CandidateComparator implements Comparator<CandidateShadow> {
+	
+		// Compares its two arguments for order. Returns a negative integer, zero, or a positive
+		// integer as the first argument is less than, equal to, or greater than the second.
+
+		@Override
+		public int compare (CandidateShadow candidate1, CandidateShadow candidate2) {
+
+			// Order by magnitude, largest first
+
+			int result = Double.compare (candidate2.candidate_mag, candidate1.candidate_mag);
+
+			if (result == 0) {
+
+				// Order by time, earliest first
+
+				result = Long.compare (candidate1.candidate_time, candidate2.candidate_time);
+
+				if (result == 0) {
+
+					// Order by event ID, lexicographically
+
+					String eid1 = candidate1.candidate_event_id;
+					String eid2 = candidate2.candidate_event_id;
+					result = ( (eid1 == null)
+								? ((eid2 == null) ? 0 : -1)
+								: ((eid2 == null) ? 1 : (eid1.compareTo(eid2))) );
+				}
+			}
+
+			return result;
+		}
+	}
+
+
+
 
 	// Default parameter values for find_shadow.
 
@@ -344,9 +383,13 @@ public class AftershockStatsShadow {
 
 		boolean f_verbose = AftershockVerbose.get_verbose_mode();
 
-		// List of candidate shadowing earthquakes
+		// List of large candidate shadowing earthquakes
 
-		ArrayList<CandidateShadow> candidates = new ArrayList<CandidateShadow>();
+		ArrayList<CandidateShadow> large_candidates = new ArrayList<CandidateShadow>();
+
+		// List of small candidate shadowing earthquakes
+
+		ArrayList<CandidateShadow> small_candidates = new ArrayList<CandidateShadow>();
 
 		// List of candidate shadowing earthquakes that are combined into a single aftershock call to Comcat
 
@@ -461,22 +504,22 @@ public class AftershockStatsShadow {
 													centroid_time_hi,
 													sample_radius);
 
-					// Add to the list of candidates
-
-					candidates.add (candidate);
-
 					// If the candidate is large ...
 
 					if (potential_mag >= large_mag) {
 
-						// Accumulate its aftershocks now, in a separate call to Comcat
+						// Place on the list of large candidates
 
-						candidate.accum_from_comcat (accessor, system_time_now, f_verbose);
+						large_candidates.add (candidate);
 					}
 
 					// Otherwise the candidate is small ...
 
 					else {
+
+						// Place on the list of small candidates
+
+						small_candidates.add (candidate);
 
 						// If the candidate can accept aftershocks ...
 
@@ -499,7 +542,46 @@ public class AftershockStatsShadow {
 		}
 
 		if (f_verbose) {
-			System.out.println ("AftershockStatsShadow.find_shadow: Found " + candidates.size() + " candidate shadowing events for mainshock " + mainshock_event_id);
+			System.out.println ("AftershockStatsShadow.find_shadow: Found " + (large_candidates.size() + small_candidates.size()) + " candidate shadowing events for mainshock " + mainshock_event_id);
+		}
+
+		// For each large candidate, with the best (largest) considered first ...
+
+		large_candidates.sort (new CandidateComparator());
+		for (CandidateShadow candidate : large_candidates) {
+
+			// Accumulate its aftershocks now, in a separate call to Comcat
+
+			candidate.accum_from_comcat (accessor, system_time_now, f_verbose);
+
+			// Get the centroid
+
+			Location centroid = candidate.get_centroid();
+
+			// If the centroid is within the sample radius of the mainshock, then it's shadowing the mainshock
+
+			if (LocationUtils.horzDistance (mainshock_hypo, centroid) <= candidate.sample_radius) {
+
+				// Return the largest-magnitude event that shadows the mainshock
+
+				CandidateShadow best_candidate = candidate;
+
+				double best_distance = LocationUtils.horzDistance (mainshock_hypo, best_candidate.candidate_hypo);
+				double best_time_offset = ((double)(mainshock_time - best_candidate.candidate_time))/ComcatOAFAccessor.day_millis;
+
+				if (separation != null) {
+					separation[0] = best_distance;
+					separation[1] = best_time_offset;
+				}
+
+				if (f_verbose) {
+					System.out.println ("AftershockStatsShadow.find_shadow: Mainshock " + mainshock_event_id + " is shadowed by event " + best_candidate.candidate_event_id);
+					System.out.println (String.format ("AftershockStatsShadow.find_shadow: Mainshock magnitude = %.2f, shadowing event magnitude = %.2f", mainshock_mag, best_candidate.candidate_mag));
+					System.out.println (String.format ("AftershockStatsShadow.find_shadow: Distance = %.3f km, time offset = %.3f days", best_distance, best_time_offset));
+				}
+
+				return best_candidate.rupture;
+			}
 		}
 
 		// If there is a nonempty time and space region in which we need to look for aftershocks ...
@@ -569,13 +651,10 @@ public class AftershockStatsShadow {
 			}
 		}
 
-		// This is the best candidate so far
+		// For each small candidate, with the best (largest) considered first ...
 
-		CandidateShadow best_candidate = null;
-
-		// For each candidate ...
-
-		for (CandidateShadow candidate : candidates) {
+		small_candidates.sort (new CandidateComparator());
+		for (CandidateShadow candidate : small_candidates) {
 
 			// Get the centroid
 
@@ -584,44 +663,36 @@ public class AftershockStatsShadow {
 			// If the centroid is within the sample radius of the mainshock, then it's shadowing the mainshock
 
 			if (LocationUtils.horzDistance (mainshock_hypo, centroid) <= candidate.sample_radius) {
-			
-				// If this is a new best candidate, save it
 
-				if (best_candidate == null
-					|| candidate.candidate_mag > best_candidate.candidate_mag
-					|| (candidate.candidate_mag == best_candidate.candidate_mag && candidate.candidate_time < best_candidate.candidate_time) ) {
-					
-					best_candidate = candidate;
+				// Return the largest-magnitude event that shadows the mainshock
+
+				CandidateShadow best_candidate = candidate;
+
+				double best_distance = LocationUtils.horzDistance (mainshock_hypo, best_candidate.candidate_hypo);
+				double best_time_offset = ((double)(mainshock_time - best_candidate.candidate_time))/ComcatOAFAccessor.day_millis;
+
+				if (separation != null) {
+					separation[0] = best_distance;
+					separation[1] = best_time_offset;
 				}
+
+				if (f_verbose) {
+					System.out.println ("AftershockStatsShadow.find_shadow: Mainshock " + mainshock_event_id + " is shadowed by event " + best_candidate.candidate_event_id);
+					System.out.println (String.format ("AftershockStatsShadow.find_shadow: Mainshock magnitude = %.2f, shadowing event magnitude = %.2f", mainshock_mag, best_candidate.candidate_mag));
+					System.out.println (String.format ("AftershockStatsShadow.find_shadow: Distance = %.3f km, time offset = %.3f days", best_distance, best_time_offset));
+				}
+
+				return best_candidate.rupture;
 			}
 		}
 
 		// If no candidates shadow the mainshock, then return null
 
-		if (best_candidate == null) {
-			if (f_verbose) {
-				System.out.println ("AftershockStatsShadow.find_shadow: Mainshock " + mainshock_event_id + " is not shadowed");
-			}
-			return null;
-		}
-
-		// Return the largest-magnitude event that shadows the mainshock
-
-		double best_distance = LocationUtils.horzDistance (mainshock_hypo, best_candidate.candidate_hypo);
-		double best_time_offset = ((double)(mainshock_time - best_candidate.candidate_time))/ComcatOAFAccessor.day_millis;
-
-		if (separation != null) {
-			separation[0] = best_distance;
-			separation[1] = best_time_offset;
-		}
-
 		if (f_verbose) {
-			System.out.println ("AftershockStatsShadow.find_shadow: Mainshock " + mainshock_event_id + " is shadowed by event " + best_candidate.candidate_event_id);
-			System.out.println (String.format ("AftershockStatsShadow.find_shadow: Mainshock magnitude = %.2f, shadowing event magnitude = %.2f", mainshock_mag, best_candidate.candidate_mag));
-			System.out.println (String.format ("AftershockStatsShadow.find_shadow: Distance = %.3f km, time offset = %.3f days", best_distance, best_time_offset));
+			System.out.println ("AftershockStatsShadow.find_shadow: Mainshock " + mainshock_event_id + " is not shadowed");
 		}
 
-		return best_candidate.rupture;
+		return null;
 	}
 
 

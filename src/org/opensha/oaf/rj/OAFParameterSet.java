@@ -1056,6 +1056,20 @@ public abstract class OAFParameterSet<T> {
 		locs.add(new Location(33.0, -115.6, 15.00000));	// CAL-HYDROTHERMAL 2
 		locs.add(new Location(36.0, -118.0, 15.00000));	// CAL-HYDROTHERMAL 3
 
+		locs.add(new Location(64.8434, -147.7452, 15.00000));	// ALASKA (Fairbanks)
+		locs.add(new Location(58.2022, -134.7586, 15.00000));	// ALASKA (Juneau)
+		locs.add(new Location(54.1402, -165.8121, 15.00000));	// ALASKA (Akutan)
+		locs.add(new Location(21.3070, -157.8597, 15.00000));	// HAWAII (Honolulu)
+		locs.add(new Location(18.3990, -66.0980, 15.00000));	// PUERTO RICO (San Juan)
+		locs.add(new Location(13.4172, 144.7492, 15.00000));	// GUAM
+		locs.add(new Location(15.0207, 145.6244, 15.00000));	// MARIANAS
+		locs.add(new Location(-14.2817, -170.7003, 15.00000));	// AMERICAN SAMOA (Pago Pago)
+		locs.add(new Location(29.7531, -95.3778, 15.00000));	// USA (Houston)
+		locs.add(new Location(41.8768, -87.6411, 15.00000));	// USA (Chicago)
+		locs.add(new Location(47.6042, -122.3369, 15.00000));	// USA (Seattle)
+		locs.add(new Location(25.7653, -80.2012, 15.00000));	// USA (Miami)
+		locs.add(new Location(42.3628, -71.0586, 15.00000));	// USA (Boston)
+
 		locs.add(new Location(38.0, 80.0, 15.00000));	// ANSR_ABSLDEC
 		locs.add(new Location(-15.0, 175.0, 15.00000));	// ANSR_ABSLOCB
 		locs.add(new Location(60.0, -175.0, 15.00000));	// ANSR_ABSLSHC

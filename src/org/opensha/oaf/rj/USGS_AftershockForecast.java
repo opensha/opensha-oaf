@@ -105,6 +105,7 @@ public class USGS_AftershockForecast {
 	private Duration[] durations;
 	private Duration advisoryDuration; // duration for the advisory paragraph
 	private double[] minMags;
+	private double[] calcMags;
 	private Table<Duration, Double, Double> numEventsLower;
 	private Table<Duration, Double, Double> numEventsUpper;
 	private Table<Duration, Double, Double> probs;
@@ -165,7 +166,7 @@ public class USGS_AftershockForecast {
 		
 		double[] calcFractiles = {fractile_lower, fractile_upper};
 		
-		double[] calcMags = minMags;
+		calcMags = minMags;
 		if (includeProbAboveMainshock) {
 			// also calculate for mainshock mag
 			calcMags = Arrays.copyOf(minMags, minMags.length+1);
@@ -255,8 +256,9 @@ public class USGS_AftershockForecast {
 	private static String[] headers = {"Time Window For Analysis", "Magnitude Range",
 			"Most Likely Number Of Aftershocks (95% confidence)", "Probability of one or more aftershocks"};
 	
+	// In this function, change calcMags to minMags if you don't want to display the M>=mainshock row
 	public TableModel getTableModel() {
-		final int numEach = minMags.length+1;
+		final int numEach = calcMags.length+1;
 		final int rows = probs.rowKeySet().size()*numEach;
 		final int cols = 4;
 		return new AbstractTableModel() {
@@ -291,10 +293,13 @@ public class USGS_AftershockForecast {
 					else
 						return "";
 				} else {
-					if (m >= minMags.length)
+					if (m >= calcMags.length)
 						return "";
-					double mag = minMags[m];
+					double mag = calcMags[m];
 					if (columnIndex == 1) {
+						if (m == minMags.length) {
+							return "M ≥ Main (" + ((float)mag) + ")";
+						}
 						return "M ≥ "+(float)mag;
 					} else if (columnIndex == 2) {
 						int lower = (int)(numEventsLower.get(durations[d], mag)+0.5);

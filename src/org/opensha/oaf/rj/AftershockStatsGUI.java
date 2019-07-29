@@ -43,7 +43,6 @@ import javax.swing.SwingUtilities;
 import org.jfree.chart.title.PaintScaleLegend;
 import org.jfree.data.Range;
 import org.jfree.ui.RectangleEdge;
-import org.opensha.commons.calc.magScalingRelations.magScalingRelImpl.WC1994_MagLengthRelationship;
 import org.opensha.commons.data.function.ArbitrarilyDiscretizedFunc;
 import org.opensha.commons.data.function.DefaultXY_DataSet;
 import org.opensha.commons.data.function.DiscretizedFunc;
@@ -272,7 +271,6 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	private JTabbedPane forecastTablePane;
 	
 	private ComcatOAFAccessor accessor;
-	private WC1994_MagLengthRelationship wcMagLen;
 	
 	private SphRegion region;
 	private ObsEqkRupture mainshock;
@@ -546,7 +544,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	}
 	
 	// buildRegion must run on worker threads, and so must not set any parameters.
-	private SphRegion buildRegion(ObsEqkRupture event, Location centroid) {
+	private SphRegion buildRegion(ObsEqkRupture event, Location centroid, double wc_radius) {
 		SphRegion result;
 		RegionType type = regionTypeParam.getValue();
 		
@@ -555,10 +553,8 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			if (type == RegionType.CIRCULAR) {
 				radius = radiusParam.getValue();
 			} else {
-				if (wcMagLen == null)
-					wcMagLen = new WC1994_MagLengthRelationship();
-				radius = wcMagLen.getMedianLength(event.getMag());
-				System.out.println("Using Wells & Coppersmith 94 Radius: "+(float)radius+" km");
+				radius = wc_radius;
+				System.out.println("Using Wells & Coppersmith 94 Radius: " + String.format("%.3f", radius) + " km");
 			}
 			
 			RegionCenterType centerType = regionCenterTypeParam.getValue();
@@ -747,21 +743,17 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		
 			if (regionTypeParam.getValue().isCircular()
 					&& regionCenterTypeParam.getValue() == RegionCenterType.CENTROID) {
-				// first with hypocenter
-				region = buildRegion(my_mainshock, my_mainshock.getHypocenterLocation());
+				// first make circle around hypocenter to find the centroid
+				region = buildRegion(my_mainshock, my_mainshock.getHypocenterLocation(), magCompParams.get_radiusCentroid(my_mainshock.getMag()));
 			
 				aftershocks = accessor.fetchAftershocks(my_mainshock, minDays, maxDays, minDepth, maxDepth, region, region.getPlotWrap());
 			
-				// now find centroid
-				if (aftershocks.isEmpty()) {
-					System.out.println("No aftershocks found, skipping centroid");
-				} else {
-					region = buildRegion(my_mainshock, getCentroid());
+				// now make circle around centroid
+				region = buildRegion(my_mainshock, getCentroid(), magCompParams.get_radiusSample(my_mainshock.getMag()));
 				
-					aftershocks = accessor.fetchAftershocks(my_mainshock, minDays, maxDays, minDepth, maxDepth, region, region.getPlotWrap());
-				}
+				aftershocks = accessor.fetchAftershocks(my_mainshock, minDays, maxDays, minDepth, maxDepth, region, region.getPlotWrap());
 			} else {
-				region = buildRegion(my_mainshock, null);
+				region = buildRegion(my_mainshock, null, magCompParams.get_radiusSample(my_mainshock.getMag()));
 			
 				aftershocks = accessor.fetchAftershocks(my_mainshock, minDays, maxDays, minDepth, maxDepth, region, region.getPlotWrap());
 			}

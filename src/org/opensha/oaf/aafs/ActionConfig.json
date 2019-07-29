@@ -8,14 +8,14 @@
   "comcat_retry_missing": "P0DT1H0M0S",
   "seq_spec_min_lag": "PT3H",
   "advisory_dur_week": "PT1S",
-  "advisory_dur_month": "P25D",
-  "advisory_dur_year": "P350D",
+  "advisory_dur_month": "P26D",
+  "advisory_dur_year": "P343D",
   "def_max_forecast_lag": "P365DT0H0M0S",
   "withdraw_forecast_lag": "P3DT0H0M0S",
   "stale_forecast_option": 3,
   "shadow_search_radius": 2000.0,
   "shadow_lookback_time": "P365D",
-  "shadow_centroid_mag": 3.0,
+  "shadow_centroid_mag": 2.95,
   "shadow_large_mag": 7.6,
   "poll_short_period": "P0DT0H20M0S",
   "poll_short_lookback": "P3DT0H0M0S",
@@ -29,7 +29,7 @@
   "removal_update_skew": "P0DT2H0M0S",
   "removal_lookback_tmax": "P4380DT0H0M0S",
   "removal_lookback_tmin": "P0DT0H30M0S",
-  "removal_lookback_mag": 4.0,
+  "removal_lookback_mag": 3.9,
   "removal_check_period": "P1DT0H0M0S",
   "removal_retry_period": "P0DT0H30M0S",
   "removal_event_gap": "P0DT0H2M0S",
@@ -46,28 +46,44 @@
     "P0DT6H0M0S",
     "P0DT12H0M0S",
     "P0DT18H0M0S",
-    "P1DT0H0M0S",
-    "P2DT0H0M0S",
-    "P3DT0H0M0S",
-    "P4DT0H0M0S",
-    "P5DT0H0M0S",
-    "P6DT0H0M0S",
-    "P7DT0H0M0S",
-    "P14DT0H0M0S",
-    "P21DT0H0M0S",
-    "P28DT0H0M0S",
-    "P56DT0H0M0S",
-    "P84DT0H0M0S",
-    "P112DT0H0M0S",
-    "P140DT0H0M0S",
-    "P168DT0H0M0S",
-    "P196DT0H0M0S",
-    "P224DT0H0M0S",
-    "P252DT0H0M0S",
-    "P280DT0H0M0S",
-    "P308DT0H0M0S",
-    "P336DT0H0M0S",
-    "P365DT0H0M0S",
+    "P1D",
+    "P2D",
+    "P3D",
+    "P4D",
+    "P5D",
+    "P6D",
+    "P7D",
+    "P10D",
+    "P13D",
+    "P16D",
+    "P19D",
+    "P22D",
+    "P25D",
+    "P28D",
+    "P42D",
+    "P56D",
+    "P70D",
+    "P84D",
+    "P98D",
+    "P112D",
+    "P126D",
+    "P140D",
+    "P154D",
+    "P168D",
+    "P182D",
+    "P196D",
+    "P210D",
+    "P224D",
+    "P238D",
+    "P252D",
+    "P266D",
+    "P280D",
+    "P294D",
+    "P308D",
+    "P322D",
+    "P336D",
+    "P350D",
+    "P365D",
     "P393D",
     "P421D",
     "P449D",
@@ -214,56 +230,160 @@
   ],
   "pdl_intake_regions": [
     {
-      "name": "CALIFORNIA",
-      "min_mag": 5.0,
-      "intake_mag": 4.0,
+      "name": "CAL-NCSS",
+      "min_mag": 4.0,
+      "intake_mag": 3.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
         "vertex_list":[
-          {"lat":36.6847, "lon":-117.7930},
-          {"lat":35.8000, "lon":-116.4000},
-          {"lat":34.0815, "lon":-114.4720},
-          {"lat":32.0000, "lon":-114.3330},
-          {"lat":32.0000, "lon":-120.5000},
-          {"lat":34.6945, "lon":-121.3800},
-          {"lat":40.0000, "lon":-125.5000},
-          {"lat":43.0200, "lon":-125.0000},
-          {"lat":42.0000, "lon":-122.7000},
-          {"lat":42.0000, "lon":-121.4170},
-          {"lat":39.5000, "lon":-120.7500},
+          {"lat":34.5000, "lon":-121.2500},
+          {"lat":37.2167, "lon":-118.0167},
+          {"lat":37.7500, "lon":-118.2500},
           {"lat":37.7500, "lon":-119.5000},
-          {"lat":37.7500, "lon":-118.2500}
+          {"lat":39.5000, "lon":-120.7500},
+          {"lat":42.0000, "lon":-121.4167},
+          {"lat":42.0000, "lon":-122.7000},
+          {"lat":42.1000, "lon":-123.0000},
+          {"lat":39.7500, "lon":-123.0000},
+          {"lat":39.7500, "lon":-125.3000}
+        ]
+      }
+    },
+    {
+      "name": "CAL-SCSN",
+      "min_mag": 4.0,
+      "intake_mag": 3.75,
+      "region": {
+        "ClassType": 14001,
+        "SphRegionMercPolygon": 1,
+        "vertex_list":[
+          {"lat":35.8000, "lon":-116.4000},
+          {"lat":34.0815, "lon":-114.4717},
+          {"lat":32.0000, "lon":-114.3333},
+          {"lat":32.0000, "lon":-120.5000},
+          {"lat":34.5000, "lon":-121.2500},
+          {"lat":37.2167, "lon":-118.0167},
+          {"lat":36.6847, "lon":-117.7930}
         ]
       }
     },
     {
       "name": "ALASKA",
-      "min_mag": 5.0,
-      "intake_mag": 4.0,
+      "min_mag": 4.0,
+      "intake_mag": 3.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
         "vertex_list":[
-          {"lat":71.4000, "lon":172.4000},
-          {"lat":51.8000, "lon":172.4000},
-          {"lat":51.8000, "lon":-130.0000},
-          {"lat":71.4000, "lon":-130.0000}
+          {"lat":54.6850, "lon":-129.1600},
+          {"lat":59.7916, "lon":-135.4762},
+          {"lat":59.1100, "lon":-136.9800},
+          {"lat":60.5741, "lon":-141.0023},
+          {"lat":71.7700, "lon":-141.0023},
+          {"lat":71.7700, "lon":-162.5100},
+          {"lat":59.9800, "lon":-175.0800},
+          {"lat":49.5500, "lon":166.9900},
+          {"lat":49.5500, "lon":-166.6400},
+          {"lat":57.6600, "lon":-142.2900},
+          {"lat":54.6850, "lon":-134.8700}
+        ]
+      }
+    },
+    {
+      "name": "HAWAII",
+      "min_mag": 4.0,
+      "intake_mag": 3.75,
+      "region": {
+        "ClassType": 14001,
+        "SphRegionMercPolygon": 1,
+        "vertex_list":[
+          {"lat":15.4500, "lon":-153.9000},
+          {"lat":22.0200, "lon":-151.5200},
+          {"lat":31.8800, "lon":-179.9999},
+          {"lat":24.9300, "lon":-179.9999}
+        ]
+      }
+    },
+    {
+      "name": "PUERTO-RICO",
+      "min_mag": 4.0,
+      "intake_mag": 3.75,
+      "region": {
+        "ClassType": 14001,
+        "SphRegionMercPolygon": 1,
+        "vertex_list":[
+          {"lat":19.6800, "lon":-68.1200},
+          {"lat":16.9700, "lon":-68.1200},
+          {"lat":16.9700, "lon":-64.2900},
+          {"lat":18.1300, "lon":-64.2900},
+          {"lat":18.6200, "lon":-65.0700},
+          {"lat":19.6800, "lon":-65.0700}
+        ]
+      }
+    },
+    {
+      "name": "GUAM-MARIANAS",
+      "min_mag": 4.0,
+      "intake_mag": 3.75,
+      "region": {
+        "ClassType": 14001,
+        "SphRegionMercPolygon": 1,
+        "vertex_list":[
+          {"lat":22.4310, "lon":140.9770},
+          {"lat":22.4310, "lon":149.4140},
+          {"lat":10.1420, "lon":149.4140},
+          {"lat":10.1420, "lon":140.9770}
+        ]
+      }
+    },
+    {
+      "name": "AMERICAN-SAMOA",
+      "min_mag": 4.0,
+      "intake_mag": 3.75,
+      "region": {
+        "ClassType": 14001,
+        "SphRegionMercPolygon": 1,
+        "vertex_list":[
+          {"lat":-10.9410, "lon":-171.2550},
+          {"lat":-10.9410, "lon":-167.6510},
+          {"lat":-17.0990, "lon":-167.6510},
+          {"lat":-17.0990, "lon":-171.2550}
         ]
       }
     },
     {
       "name": "USA",
-      "min_mag": 5.0,
-      "intake_mag": 4.0,
+      "min_mag": 4.0,
+      "intake_mag": 3.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
         "vertex_list":[
-          {"lat":50.0000, "lon":-125.0000},
-          {"lat":24.6000, "lon":-125.0000},
-          {"lat":24.6000, "lon":-65.0000},
-          {"lat":50.0000, "lon":-65.0000}
+          {"lat":24.0959, "lon":-80.1764},
+          {"lat":26.0800, "lon":-98.8300},
+          {"lat":29.7200, "lon":-101.3700},
+          {"lat":28.8400, "lon":-103.7100},
+          {"lat":31.7834, "lon":-106.5366},
+          {"lat":31.7834, "lon":-108.2077},
+          {"lat":31.3323, "lon":-108.2077},
+          {"lat":31.3323, "lon":-111.0748},
+          {"lat":32.4938, "lon":-114.8135},
+          {"lat":32.7175, "lon":-114.7423},
+          {"lat":31.5216, "lon":-130.1218},
+          {"lat":49.2170, "lon":-130.4154},
+          {"lat":48.2152, "lon":-123.3628},
+          {"lat":49.0025, "lon":-122.8964},
+          {"lat":49.0000, "lon":-95.1952},
+          {"lat":48.1700, "lon":-87.2100},
+          {"lat":44.8400, "lon":-81.3900},
+          {"lat":41.6700, "lon":-83.0600},
+          {"lat":44.1100, "lon":-76.4200},
+          {"lat":45.0000, "lon":-74.9800},
+          {"lat":45.0134, "lon":-71.5528},
+          {"lat":47.4598, "lon":-69.2244},
+          {"lat":47.4000, "lon":-67.9400},
+          {"lat":42.8800, "lon":-66.2000}
         ]
       }
     },

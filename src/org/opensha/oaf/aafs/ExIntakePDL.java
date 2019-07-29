@@ -132,6 +132,8 @@ public class ExIntakePDL extends ServerExecTask {
 			}
 		}
 
+		sg.log_sup.report_intake_region (fcmain.mainshock_event_id, intake_region);
+
 		//--- Final steps
 
 		// Set track state
@@ -292,6 +294,8 @@ public class ExIntakePDL extends ServerExecTask {
 				return RESCODE_DELETE_INTAKE_FILTERED;		// Just delete, so that log is not flooded with PDL notifications
 			}
 		}
+
+		sg.log_sup.report_intake_region (fcmain.mainshock_event_id, intake_region);
 
 		//--- Final steps (part 1)
 
