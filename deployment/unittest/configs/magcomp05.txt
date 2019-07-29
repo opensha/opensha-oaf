@@ -1,0 +1,221 @@
+magcomp05 rj.MagCompPage_ParametersFetch test5
+WORLD: Page_Params:
+  magCat = 4.6
+  magCompFn = FnPage[capF=0.5, capG=0.25, capH=1.0]
+  magSample = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=3.95, deltaMax=5.05]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+mag = 4.000, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 4.500, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 5.000, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 5.500, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 6.000, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 6.500, magCat = 4.600, magSample = 2.950, radiusSample = 18.4, magCentroid = 3.950, radiusCentroid = 18.4
+mag = 7.000, magCat = 4.600, magSample = 2.950, radiusSample = 40.7, magCentroid = 3.950, radiusCentroid = 40.7
+mag = 7.500, magCat = 4.600, magSample = 2.950, radiusSample = 90.2, magCentroid = 3.950, radiusCentroid = 90.2
+mag = 8.000, magCat = 4.600, magSample = 2.950, radiusSample = 199.5, magCentroid = 3.950, radiusCentroid = 199.5
+mag = 8.500, magCat = 4.600, magSample = 3.450, radiusSample = 441.6, magCentroid = 3.950, radiusCentroid = 441.6
+mag = 9.000, magCat = 4.600, magSample = 3.950, radiusSample = 977.2, magCentroid = 3.950, radiusCentroid = 977.2
+mag = 9.500, magCat = 4.600, magSample = 4.450, radiusSample = 2000.0, magCentroid = 4.450, radiusCentroid = 2000.0
+
+GUAM-MARIANAS: Page_Params:
+  magCat = 4.6
+  magCompFn = FnPage[capF=0.5, capG=0.25, capH=1.0]
+  magSample = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=3.95, deltaMax=5.05]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+mag = 4.000, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 4.500, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 5.000, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 5.500, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 6.000, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 6.500, magCat = 4.600, magSample = 2.950, radiusSample = 18.4, magCentroid = 3.950, radiusCentroid = 18.4
+mag = 7.000, magCat = 4.600, magSample = 2.950, radiusSample = 40.7, magCentroid = 3.950, radiusCentroid = 40.7
+mag = 7.500, magCat = 4.600, magSample = 2.950, radiusSample = 90.2, magCentroid = 3.950, radiusCentroid = 90.2
+mag = 8.000, magCat = 4.600, magSample = 2.950, radiusSample = 199.5, magCentroid = 3.950, radiusCentroid = 199.5
+mag = 8.500, magCat = 4.600, magSample = 3.450, radiusSample = 441.6, magCentroid = 3.950, radiusCentroid = 441.6
+mag = 9.000, magCat = 4.600, magSample = 3.950, radiusSample = 977.2, magCentroid = 3.950, radiusCentroid = 977.2
+mag = 9.500, magCat = 4.600, magSample = 4.450, radiusSample = 2000.0, magCentroid = 4.450, radiusCentroid = 2000.0
+
+AMERICAN-SAMOA: Page_Params:
+  magCat = 4.6
+  magCompFn = FnPage[capF=0.5, capG=0.25, capH=1.0]
+  magSample = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=3.95, deltaMax=5.05]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+mag = 4.000, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 4.500, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 5.000, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 5.500, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 6.000, magCat = 4.600, magSample = 2.950, radiusSample = 10.0, magCentroid = 3.950, radiusCentroid = 10.0
+mag = 6.500, magCat = 4.600, magSample = 2.950, radiusSample = 18.4, magCentroid = 3.950, radiusCentroid = 18.4
+mag = 7.000, magCat = 4.600, magSample = 2.950, radiusSample = 40.7, magCentroid = 3.950, radiusCentroid = 40.7
+mag = 7.500, magCat = 4.600, magSample = 2.950, radiusSample = 90.2, magCentroid = 3.950, radiusCentroid = 90.2
+mag = 8.000, magCat = 4.600, magSample = 2.950, radiusSample = 199.5, magCentroid = 3.950, radiusCentroid = 199.5
+mag = 8.500, magCat = 4.600, magSample = 3.450, radiusSample = 441.6, magCentroid = 3.950, radiusCentroid = 441.6
+mag = 9.000, magCat = 4.600, magSample = 3.950, radiusSample = 977.2, magCentroid = 3.950, radiusCentroid = 977.2
+mag = 9.500, magCat = 4.600, magSample = 4.450, radiusSample = 2000.0, magCentroid = 4.450, radiusCentroid = 2000.0
+
+CAL-SCSN: Page_Params:
+  magCat = 3.0
+  magCompFn = FnPage[capF=1.0, capG=4.5, capH=0.75]
+  magSample = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+mag = 4.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 4.500, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.500, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.500, magCat = 3.000, magSample = 2.950, radiusSample = 18.4, magCentroid = 2.950, radiusCentroid = 18.4
+mag = 7.000, magCat = 3.000, magSample = 2.950, radiusSample = 40.7, magCentroid = 2.950, radiusCentroid = 40.7
+mag = 7.500, magCat = 3.000, magSample = 2.950, radiusSample = 90.2, magCentroid = 2.950, radiusCentroid = 90.2
+mag = 8.000, magCat = 3.000, magSample = 2.950, radiusSample = 199.5, magCentroid = 2.950, radiusCentroid = 199.5
+mag = 8.500, magCat = 3.450, magSample = 3.450, radiusSample = 441.6, magCentroid = 3.450, radiusCentroid = 441.6
+mag = 9.000, magCat = 3.950, magSample = 3.950, radiusSample = 977.2, magCentroid = 3.950, radiusCentroid = 977.2
+mag = 9.500, magCat = 4.450, magSample = 4.450, radiusSample = 2000.0, magCentroid = 4.450, radiusCentroid = 2000.0
+
+CAL-NCSS: Page_Params:
+  magCat = 3.0
+  magCompFn = FnPage[capF=1.0, capG=4.5, capH=0.75]
+  magSample = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+mag = 4.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 4.500, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.500, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.500, magCat = 3.000, magSample = 2.950, radiusSample = 18.4, magCentroid = 2.950, radiusCentroid = 18.4
+mag = 7.000, magCat = 3.000, magSample = 2.950, radiusSample = 40.7, magCentroid = 2.950, radiusCentroid = 40.7
+mag = 7.500, magCat = 3.000, magSample = 2.950, radiusSample = 90.2, magCentroid = 2.950, radiusCentroid = 90.2
+mag = 8.000, magCat = 3.000, magSample = 2.950, radiusSample = 199.5, magCentroid = 2.950, radiusCentroid = 199.5
+mag = 8.500, magCat = 3.450, magSample = 3.450, radiusSample = 441.6, magCentroid = 3.450, radiusCentroid = 441.6
+mag = 9.000, magCat = 3.950, magSample = 3.950, radiusSample = 977.2, magCentroid = 3.950, radiusCentroid = 977.2
+mag = 9.500, magCat = 4.450, magSample = 4.450, radiusSample = 2000.0, magCentroid = 4.450, radiusCentroid = 2000.0
+
+CAL-MENDOCINO: Page_Params:
+  magCat = 3.0
+  magCompFn = FnPage[capF=1.0, capG=4.5, capH=0.75]
+  magSample = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+mag = 4.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 4.500, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.500, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.500, magCat = 3.000, magSample = 2.950, radiusSample = 18.4, magCentroid = 2.950, radiusCentroid = 18.4
+mag = 7.000, magCat = 3.000, magSample = 2.950, radiusSample = 40.7, magCentroid = 2.950, radiusCentroid = 40.7
+mag = 7.500, magCat = 3.000, magSample = 2.950, radiusSample = 90.2, magCentroid = 2.950, radiusCentroid = 90.2
+mag = 8.000, magCat = 3.000, magSample = 2.950, radiusSample = 199.5, magCentroid = 2.950, radiusCentroid = 199.5
+mag = 8.500, magCat = 3.450, magSample = 3.450, radiusSample = 441.6, magCentroid = 3.450, radiusCentroid = 441.6
+mag = 9.000, magCat = 3.950, magSample = 3.950, radiusSample = 977.2, magCentroid = 3.950, radiusCentroid = 977.2
+mag = 9.500, magCat = 4.450, magSample = 4.450, radiusSample = 2000.0, magCentroid = 4.450, radiusCentroid = 2000.0
+
+CAL-HYDROTHERMAL: Page_Params:
+  magCat = 3.0
+  magCompFn = FnPage[capF=1.0, capG=4.5, capH=0.75]
+  magSample = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+mag = 4.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 4.500, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.500, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.500, magCat = 3.000, magSample = 2.950, radiusSample = 18.4, magCentroid = 2.950, radiusCentroid = 18.4
+mag = 7.000, magCat = 3.000, magSample = 2.950, radiusSample = 40.7, magCentroid = 2.950, radiusCentroid = 40.7
+mag = 7.500, magCat = 3.000, magSample = 2.950, radiusSample = 90.2, magCentroid = 2.950, radiusCentroid = 90.2
+mag = 8.000, magCat = 3.000, magSample = 2.950, radiusSample = 199.5, magCentroid = 2.950, radiusCentroid = 199.5
+mag = 8.500, magCat = 3.450, magSample = 3.450, radiusSample = 441.6, magCentroid = 3.450, radiusCentroid = 441.6
+mag = 9.000, magCat = 3.950, magSample = 3.950, radiusSample = 977.2, magCentroid = 3.950, radiusCentroid = 977.2
+mag = 9.500, magCat = 4.450, magSample = 4.450, radiusSample = 2000.0, magCentroid = 4.450, radiusCentroid = 2000.0
+
+HAWAII: Page_Params:
+  magCat = 3.0
+  magCompFn = FnPage[capF=1.0, capG=4.5, capH=0.75]
+  magSample = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+mag = 4.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 4.500, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.500, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.000, magCat = 3.000, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.500, magCat = 3.000, magSample = 2.950, radiusSample = 18.4, magCentroid = 2.950, radiusCentroid = 18.4
+mag = 7.000, magCat = 3.000, magSample = 2.950, radiusSample = 40.7, magCentroid = 2.950, radiusCentroid = 40.7
+mag = 7.500, magCat = 3.000, magSample = 2.950, radiusSample = 90.2, magCentroid = 2.950, radiusCentroid = 90.2
+mag = 8.000, magCat = 3.000, magSample = 2.950, radiusSample = 199.5, magCentroid = 2.950, radiusCentroid = 199.5
+mag = 8.500, magCat = 3.450, magSample = 3.450, radiusSample = 441.6, magCentroid = 3.450, radiusCentroid = 441.6
+mag = 9.000, magCat = 3.950, magSample = 3.950, radiusSample = 977.2, magCentroid = 3.950, radiusCentroid = 977.2
+mag = 9.500, magCat = 4.450, magSample = 4.450, radiusSample = 2000.0, magCentroid = 4.450, radiusCentroid = 2000.0
+
+ALASKA: Page_Params:
+  magCat = 3.5
+  magCompFn = FnPage[capF=0.5, capG=0.25, capH=1.0]
+  magSample = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+mag = 4.000, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 4.500, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.000, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.500, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.000, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.500, magCat = 3.500, magSample = 2.950, radiusSample = 18.4, magCentroid = 2.950, radiusCentroid = 18.4
+mag = 7.000, magCat = 3.500, magSample = 2.950, radiusSample = 40.7, magCentroid = 2.950, radiusCentroid = 40.7
+mag = 7.500, magCat = 3.500, magSample = 2.950, radiusSample = 90.2, magCentroid = 2.950, radiusCentroid = 90.2
+mag = 8.000, magCat = 3.500, magSample = 2.950, radiusSample = 199.5, magCentroid = 2.950, radiusCentroid = 199.5
+mag = 8.500, magCat = 3.500, magSample = 3.450, radiusSample = 441.6, magCentroid = 3.450, radiusCentroid = 441.6
+mag = 9.000, magCat = 3.950, magSample = 3.950, radiusSample = 977.2, magCentroid = 3.950, radiusCentroid = 977.2
+mag = 9.500, magCat = 4.450, magSample = 4.450, radiusSample = 2000.0, magCentroid = 4.450, radiusCentroid = 2000.0
+
+PUERTO-RICO: Page_Params:
+  magCat = 3.5
+  magCompFn = FnPage[capF=0.5, capG=0.25, capH=1.0]
+  magSample = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+mag = 4.000, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 4.500, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.000, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.500, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.000, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.500, magCat = 3.500, magSample = 2.950, radiusSample = 18.4, magCentroid = 2.950, radiusCentroid = 18.4
+mag = 7.000, magCat = 3.500, magSample = 2.950, radiusSample = 40.7, magCentroid = 2.950, radiusCentroid = 40.7
+mag = 7.500, magCat = 3.500, magSample = 2.950, radiusSample = 90.2, magCentroid = 2.950, radiusCentroid = 90.2
+mag = 8.000, magCat = 3.500, magSample = 2.950, radiusSample = 199.5, magCentroid = 2.950, radiusCentroid = 199.5
+mag = 8.500, magCat = 3.500, magSample = 3.450, radiusSample = 441.6, magCentroid = 3.450, radiusCentroid = 441.6
+mag = 9.000, magCat = 3.950, magSample = 3.950, radiusSample = 977.2, magCentroid = 3.950, radiusCentroid = 977.2
+mag = 9.500, magCat = 4.450, magSample = 4.450, radiusSample = 2000.0, magCentroid = 4.450, radiusCentroid = 2000.0
+
+USA: Page_Params:
+  magCat = 3.5
+  magCompFn = FnPage[capF=0.5, capG=0.25, capH=1.0]
+  magSample = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=2.95, deltaMax=5.05]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+mag = 4.000, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 4.500, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.000, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 5.500, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.000, magCat = 3.500, magSample = 2.950, radiusSample = 10.0, magCentroid = 2.950, radiusCentroid = 10.0
+mag = 6.500, magCat = 3.500, magSample = 2.950, radiusSample = 18.4, magCentroid = 2.950, radiusCentroid = 18.4
+mag = 7.000, magCat = 3.500, magSample = 2.950, radiusSample = 40.7, magCentroid = 2.950, radiusCentroid = 40.7
+mag = 7.500, magCat = 3.500, magSample = 2.950, radiusSample = 90.2, magCentroid = 2.950, radiusCentroid = 90.2
+mag = 8.000, magCat = 3.500, magSample = 2.950, radiusSample = 199.5, magCentroid = 2.950, radiusCentroid = 199.5
+mag = 8.500, magCat = 3.500, magSample = 3.450, radiusSample = 441.6, magCentroid = 3.450, radiusCentroid = 441.6
+mag = 9.000, magCat = 3.950, magSample = 3.950, radiusSample = 977.2, magCentroid = 3.950, radiusCentroid = 977.2
+mag = 9.500, magCat = 4.450, magSample = 4.450, radiusSample = 2000.0, magCentroid = 4.450, radiusCentroid = 2000.0
+

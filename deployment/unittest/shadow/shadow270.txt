@@ -26,18 +26,13 @@ Count of events after filtering = 28
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 28
 AftershockStatsShadow.find_shadow: Found 28 potential shadowing events for mainshock us20003k7m
+AftershockStatsShadow.find_shadow: Found 6 candidate shadowing events for mainshock us20003k7m
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-15T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=2.89011&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2015-09-16T22:54:32.860Z
 Count of events received = 1187
 Count of events after filtering = 1186
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 1186
 AftershockStatsShadow.accum_from_comcat: Found 1186 aftershocks within 321.366 km of candidate event us20003k7a
-AftershockStatsShadow.find_shadow: Found 6 candidate shadowing events for mainshock us20003k7m
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-15T23:03:56.560Z&format=geojson&latitude=-31.75020&limit=20000&longitude=-71.74250&maxdepth=700.000&maxradius=0.69475&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2015-09-16T22:59:15.000Z
-Count of events received = 450
-Count of events after filtering = 450
-Total number of events returned = 450
-AftershockStatsShadow.find_shadow: Found 450 possible aftershocks within 77.252 km of mainshock us20003k7m
 AftershockStatsShadow.find_shadow: Mainshock us20003k7m is shadowed by event us20003k7a
 AftershockStatsShadow.find_shadow: Mainshock magnitude = 6.10, shadowing event magnitude = 8.30
 AftershockStatsShadow.find_shadow: Distance = 20.742 km, time offset = 0.007 days

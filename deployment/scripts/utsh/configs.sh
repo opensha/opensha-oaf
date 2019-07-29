@@ -16,6 +16,7 @@ runut magcomp01 rj.MagCompPage_ParametersFetch test1
 runut magcomp02 rj.MagCompPage_ParametersFetch test2
 runut magcomp03 rj.MagCompPage_ParametersFetch test3
 runut magcomp04 rj.MagCompPage_ParametersFetch test4
+runut magcomp05 rj.MagCompPage_ParametersFetch test5
 
 # Tests for Reasenberg-Jones configuration
 

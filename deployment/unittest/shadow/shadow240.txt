@@ -26,18 +26,13 @@ Count of events after filtering = 30
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 30
 AftershockStatsShadow.find_shadow: Found 30 potential shadowing events for mainshock usp000hucz
+AftershockStatsShadow.find_shadow: Found 2 candidate shadowing events for mainshock usp000hucz
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:34:11.530Z&format=geojson&latitude=-36.12200&limit=20000&longitude=-72.89800&maxdepth=700.000&maxradius=6.39609&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2010-02-27T06:34:11.530Z
 Count of events received = 2087
 Count of events after filtering = 2086
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 2086
 AftershockStatsShadow.accum_from_comcat: Found 2086 aftershocks within 711.214 km of candidate event official20100227063411530_30
-AftershockStatsShadow.find_shadow: Found 2 candidate shadowing events for mainshock usp000hucz
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2012-02-11T20:05:30.910Z&format=geojson&latitude=-37.02700&limit=20000&longitude=-72.95400&maxdepth=700.000&maxradius=0.91757&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2011-02-11T20:05:30.910Z
-Count of events received = 87
-Count of events after filtering = 87
-Total number of events returned = 87
-AftershockStatsShadow.find_shadow: Found 87 possible aftershocks within 102.029 km of mainshock usp000hucz
 AftershockStatsShadow.find_shadow: Mainshock usp000hucz is shadowed by event official20100227063411530_30
 AftershockStatsShadow.find_shadow: Mainshock magnitude = 6.10, shadowing event magnitude = 8.80
 AftershockStatsShadow.find_shadow: Distance = 100.756 km, time offset = 349.780 days

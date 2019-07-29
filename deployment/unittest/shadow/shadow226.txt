@@ -26,13 +26,13 @@ Count of events after filtering = 5
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 5
 AftershockStatsShadow.find_shadow: Found 5 potential shadowing events for mainshock usp000dcg9
+AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock usp000dcg9
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-12-23T14:59:04.410Z&format=geojson&latitude=-49.31200&limit=20000&longitude=161.34500&maxdepth=700.000&maxradius=2.10336&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2004-12-23T14:59:04.410Z
 Count of events received = 44
 Count of events after filtering = 43
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 43
 AftershockStatsShadow.accum_from_comcat: Found 43 aftershocks within 233.884 km of candidate event usp000db93
-AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock usp000dcg9
 AftershockStatsShadow.find_shadow: Mainshock usp000dcg9 is shadowed by event usp000db93
 AftershockStatsShadow.find_shadow: Mainshock magnitude = 6.10, shadowing event magnitude = 8.10
 AftershockStatsShadow.find_shadow: Distance = 154.341 km, time offset = 11.125 days
