@@ -880,6 +880,10 @@ public class ServerCmd {
 			return;
 		}
 
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
 		// Connect to MongoDB
 
 		try (
@@ -907,6 +911,10 @@ public class ServerCmd {
 			System.err.println ("ServerCmd : Invalid 'drop_indexes' subcommand");
 			return;
 		}
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
 
 		// Connect to MongoDB
 
@@ -936,6 +944,10 @@ public class ServerCmd {
 			return;
 		}
 
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
 		// Connect to MongoDB
 
 		try (
@@ -964,13 +976,17 @@ public class ServerCmd {
 			return;
 		}
 
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
 		// Connect to MongoDB
 
 		try (
 			MongoDBUtil mongo_instance = new MongoDBUtil();
 		){
 
-			// Drop the indexes
+			// Check for existence of all collections
 
 			DBEntity.check_all_collections (true);
 		}
@@ -993,6 +1009,10 @@ public class ServerCmd {
 		}
 
 		String filename = args[1];
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
 
 		try {
 
@@ -1047,6 +1067,10 @@ public class ServerCmd {
 		}
 
 		String filename = args[1];
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
 
 		try {
 
@@ -1104,6 +1128,10 @@ public class ServerCmd {
 
 		String filename = args[1];
 
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
 		try {
 
 			// Open the file and then connect to MongoDB
@@ -1158,6 +1186,10 @@ public class ServerCmd {
 
 		String filename = args[1];
 
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
 		try {
 
 			// Open the file and then connect to MongoDB
@@ -1193,6 +1225,233 @@ public class ServerCmd {
 		catch (Exception e) {
 			System.out.println ("Failed to restore database from file: " + filename);
 			e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_init_relay_mode - Initialize the relay mode, on the local server.
+
+	public static void cmd_init_relay_mode(String[] args) {
+
+		// 2 additional arguments
+
+		if (args.length != 3) {
+			System.err.println ("ServerCmd : Invalid 'init_relay_mode' subcommand");
+			return;
+		}
+
+		int relay_mode = RelayLink.convert_user_string_to_mode (args[1]);
+		if (relay_mode == 0) {
+			System.out.println ("Invalid relay mode: " + args[1]);
+			return;
+		}
+
+		int configured_primary;
+		try {
+			configured_primary = Integer.parseInt (args[2]);
+		} catch (NumberFormatException e) {
+			System.out.println ("Invalid primary server number: " + args[2]);
+			return;
+		}
+		if (!( configured_primary >= ServerConfigFile.SRVNUM_MIN && configured_primary <= ServerConfigFile.SRVNUM_MAX )) {
+			System.out.println ("Invalid primary server number: " + args[2]);
+			return;
+		}
+
+		// Construct the relay configuration
+
+		long time_now = ServerClock.get_time();
+
+		RelayConfig relay_config = new RelayConfig (time_now, relay_mode, configured_primary);
+
+		// Construct the server status structure
+
+		RiServerStatus sstat_payload = new RiServerStatus();
+		sstat_payload.setup (relay_config);
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Write the server status
+
+			long relay_time = time_now;
+			boolean f_force = true;
+
+			RelayItem relit = RelaySupport.static_submit_sstat_relay_item (relay_time, f_force, sstat_payload);
+
+			if (relit != null) {
+				System.out.println ("Initial server status was written successfully");
+			} else {
+				System.out.println ("Unable to write initial server status");
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_show_relay_status - Display the relay status, on a local or remote server.
+
+	public static void cmd_show_relay_status(String[] args) {
+
+		// 1 additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerCmd : Invalid 'show_relay_status' subcommand");
+			return;
+		}
+
+		int srvnum;
+		try {
+			srvnum = Integer.parseInt (args[1]);
+		} catch (NumberFormatException e) {
+			System.out.println ("Invalid server number: " + args[1]);
+			return;
+		}
+		if (!( (srvnum >= 0 && srvnum <= ServerConfigFile.SRVNUM_MAX) || srvnum == 9 )) {
+			System.out.println ("Invalid server number: " + args[1]);
+			return;
+		}
+
+		// Get list of database handles
+
+		ServerConfig server_config = new ServerConfig();
+		List<String> db_handles = server_config.get_server_db_handles();
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Loop over possible database handles
+
+		for (int n = 0; n < db_handles.size(); ++n) {
+			String db_handle = db_handles.get(n);
+
+			// If we want this one ...
+
+			if (n == srvnum || (srvnum == 9 && n >= ServerConfigFile.SRVNUM_MIN && n <= ServerConfigFile.SRVNUM_MAX)) {
+				System.out.println ("Fetching status for server " + n);
+
+				RiServerStatus sstat_payload = new RiServerStatus();
+				RelayItem relit = RelaySupport.get_remote_sstat_relay_item (db_handle, sstat_payload);
+			
+				if (relit == null) {
+					System.out.println ("Unable to fetch status for server " + n);
+				} else {
+					System.out.println (sstat_payload.toString());
+				}
+
+				System.out.println ();
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_change_relay_mode - Change the relay mode, on a running local or remote server.
+
+	public static void cmd_change_relay_mode(String[] args) {
+
+		// 3 additional arguments
+
+		if (args.length != 4) {
+			System.err.println ("ServerCmd : Invalid 'change_relay_mode' subcommand");
+			return;
+		}
+
+		int srvnum;
+		try {
+			srvnum = Integer.parseInt (args[1]);
+		} catch (NumberFormatException e) {
+			System.out.println ("Invalid server number: " + args[1]);
+			return;
+		}
+		if (!( (srvnum >= 0 && srvnum <= ServerConfigFile.SRVNUM_MAX) || srvnum == 9 )) {
+			System.out.println ("Invalid server number: " + args[1]);
+			return;
+		}
+
+		int relay_mode = RelayLink.convert_user_string_to_mode (args[2]);
+		if (relay_mode == 0) {
+			System.out.println ("Invalid relay mode: " + args[2]);
+			return;
+		}
+
+		int configured_primary;
+		try {
+			configured_primary = Integer.parseInt (args[3]);
+		} catch (NumberFormatException e) {
+			System.out.println ("Invalid primary server number: " + args[3]);
+			return;
+		}
+		if (!( configured_primary >= ServerConfigFile.SRVNUM_MIN && configured_primary <= ServerConfigFile.SRVNUM_MAX )) {
+			System.out.println ("Invalid primary server number: " + args[3]);
+			return;
+		}
+
+		// Construct the relay configuration
+
+		long time_now = ServerClock.get_time();
+
+		RelayConfig relay_config = new RelayConfig (time_now, relay_mode, configured_primary);
+
+		// Get list of database handles
+
+		ServerConfig server_config = new ServerConfig();
+		List<String> db_handles = server_config.get_server_db_handles();
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Loop over possible database handles
+
+		for (int n = 0; n < db_handles.size(); ++n) {
+			String db_handle = db_handles.get(n);
+
+			// If we want this one ...
+
+			if (n == srvnum || (srvnum == 9 && n >= ServerConfigFile.SRVNUM_MIN && n <= ServerConfigFile.SRVNUM_MAX)) {
+				System.out.println ("Sending relay mode to server " + n);
+
+				String event_id = ServerComponent.EVID_RELAY;
+
+				OpSetRelayMode payload = new OpSetRelayMode();
+				payload.setup (relay_config);
+
+				// Post the task
+
+				int opcode = TaskDispatcher.OPCODE_SET_RELAY_MODE;
+				int stage = 0;
+
+				long the_time = time_now;
+
+				boolean result = TaskDispatcher.post_remote_task (db_handle, event_id, the_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
+
+				if (result) {
+					System.out.println ("Successfully sent new relay mode to server " + n);
+				} else {
+					System.out.println ("Unable to send new relay mode to server " + n);
+				}
+
+				System.out.println ();
+			}
 		}
 
 		return;
@@ -1466,6 +1725,51 @@ public class ServerCmd {
 		case "restore_database_gzip":
 			try {
 				cmd_restore_database_gzip(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : init_relay_mode
+		// Command format:
+		//  init_relay_mode  relay_mode  configured_primary
+		// Initialize the relay mode and configured primary server number.
+		// The relay_mode can be: "solo", "watch", or "pair".
+		// The configured_primary can be: 1 or 2.
+
+		case "init_relay_mode":
+			try {
+				cmd_init_relay_mode(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : show_relay_status
+		// Command format:
+		//  show_relay_status  srvnum
+		// Display the relay status, on a local or remote server.
+		// The srvnum can be: 0 = local server, 1 or 2 = remote server, 9 = both remote servers.
+
+		case "show_relay_status":
+			try {
+				cmd_show_relay_status(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : change_relay_mode
+		// Command format:
+		//  change_relay_mode  srvnum  relay_mode  configured_primary
+		// Change the relay mode, on a running local or remote server.
+		// The srvnum can be: 0 = local server, 1 or 2 = remote server, 9 = both remote servers.
+		// The relay_mode can be: "solo", "watch", or "pair".
+		// The configured_primary can be: 1 or 2.
+
+		case "change_relay_mode":
+			try {
+				cmd_change_relay_mode(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

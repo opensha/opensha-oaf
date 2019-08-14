@@ -46,24 +46,46 @@ public class RelayThread implements Runnable {
 
 	// Relay thread status values.
 
-	public static final int RTSTAT_IDLE = 1;			// Thread is idle, initial state.
-	public static final int RTSTAT_STARTING = 2;		// Thread is in the process of starting.  [Active state]
-	public static final int RTSTAT_CONNECTING = 3;		// Thread is in the process of connecting to remote server.  [Active state]
-	public static final int RTSTAT_CONNECT_FAIL = 4;	// Thread stopped because it was never able to connect.
-	public static final int RTSTAT_RUNNING = 5;			// Thread is running normally.  [Active state]
-	public static final int RTSTAT_SHUTDOWN = 6;		// Thread shut down normally.
-	public static final int RTSTAT_CONNECT_LOSS = 7;	// Thread stopped because connection was lost or database issue.
-	public static final int RTSTAT_QUEUE_OVERFLOW = 8;	// Thread stopped because of queue overflow or internal error.
+	public static final int RTSTAT_IDLE = 1;			// Thread is idle (not running), initial state.
+	public static final int RTSTAT_WAITING = 2;			// Thread is waiting for comand to start.
+	public static final int RTSTAT_STARTING = 3;		// Thread is in the process of starting.  [Active state]
+	public static final int RTSTAT_CONNECTING = 4;		// Thread is in the process of connecting to remote server.  [Active state]
+	public static final int RTSTAT_CONNECT_FAIL = 5;	// Thread stopped because it was never able to connect.
+	public static final int RTSTAT_RUNNING = 6;			// Thread is running normally.  [Active state]
+	public static final int RTSTAT_SHUTDOWN = 7;		// Thread shut down normally.
+	public static final int RTSTAT_CONNECT_LOSS = 8;	// Thread stopped because connection was lost or database issue.
+	public static final int RTSTAT_QUEUE_OVERFLOW = 9;	// Thread stopped because of queue overflow or internal error.
+	public static final int RTSTAT_REMOTE_STATUS = 10;	// Thread stopped because remote status is missing or incompatible.
+
+	// Return a string describing a relay thread status.
+
+	public static String get_relay_status_as_string (int rtstat) {
+		switch (rtstat) {
+		case RTSTAT_IDLE: return "RTSTAT_IDLE";
+		case RTSTAT_WAITING: return "RTSTAT_WAITING";
+		case RTSTAT_STARTING: return "RTSTAT_STARTING";
+		case RTSTAT_CONNECTING: return "RTSTAT_CONNECTING";
+		case RTSTAT_CONNECT_FAIL: return "RTSTAT_CONNECT_FAIL";
+		case RTSTAT_RUNNING: return "RTSTAT_RUNNING";
+		case RTSTAT_SHUTDOWN: return "RTSTAT_SHUTDOWN";
+		case RTSTAT_CONNECT_LOSS: return "RTSTAT_CONNECT_LOSS";
+		case RTSTAT_QUEUE_OVERFLOW: return "RTSTAT_QUEUE_OVERFLOW";
+		case RTSTAT_REMOTE_STATUS: return "RTSTAT_REMOTE_STATUS";
+		}
+		return "RTSTAT_INVALID(" + rtstat + ")";
+	}
 
 	// Return true if the relay status is active (meaning that the thread has not exited).
 
 	public static boolean is_relay_active (int rtstat) {
 		switch (rtstat) {
 		case RTSTAT_IDLE:
+		case RTSTAT_WAITING:
 		case RTSTAT_CONNECT_FAIL:
 		case RTSTAT_SHUTDOWN:
 		case RTSTAT_CONNECT_LOSS:
 		case RTSTAT_QUEUE_OVERFLOW:
+		case RTSTAT_REMOTE_STATUS:
 			return false;
 		case RTSTAT_STARTING:
 		case RTSTAT_CONNECTING:
@@ -82,6 +104,21 @@ public class RelayThread implements Runnable {
 	public static final int FISTAT_CANCELED = 5;		// Fetch stopped because it was canceled.
 	public static final int FISTAT_IO_FAIL = 6;			// Fetch failed because of I/O error.
 	public static final int FISTAT_EXITED = 7;			// Fetch failed because thread exited.
+
+	// Return a string describing a fetch item status.
+
+	public static String get_fetch_status_as_string (int fistat) {
+		switch (fistat) {
+		case FISTAT_IDLE: return "FISTAT_IDLE";
+		case FISTAT_PENDING: return "FISTAT_PENDING";
+		case FISTAT_FETCHING: return "FISTAT_FETCHING";
+		case FISTAT_FINISHED: return "FISTAT_FINISHED";
+		case FISTAT_CANCELED: return "FISTAT_CANCELED";
+		case FISTAT_IO_FAIL: return "FISTAT_IO_FAIL";
+		case FISTAT_EXITED: return "FISTAT_EXITED";
+		}
+		return "FISTAT_INVALID(" + fistat + ")";
+	}
 
 	// Return true if the fetch status is active (meaning that the thread can undertake additional fetch actions).
 
@@ -108,23 +145,23 @@ public class RelayThread implements Runnable {
 
 	public static final int DEFAULT_MAX_QUEUE_SIZE = 10000;
 
-	// An exception that can be thrown to terminate the thread.
+	// An exception that can be thrown to shut down the thread.
 
-	public static class RelayTerminateException extends RuntimeException {
+	public static class RelayShutdownException extends RuntimeException {
 	
 		// The termination status
 
-		int term_relay_status;
+		int shutdown_relay_status;
 
 		// The termination exception, which can be null.
 
-		Exception term_relay_exception;
+		Exception shutdown_relay_exception;
 
 		// Constructor.
 
-		RelayTerminateException (int term_relay_status, Exception term_relay_exception) {
-			this.term_relay_status = term_relay_status;
-			this.term_relay_exception = term_relay_exception;
+		RelayShutdownException (int shutdown_relay_status, Exception shutdown_relay_exception) {
+			this.shutdown_relay_status = shutdown_relay_status;
+			this.shutdown_relay_exception = shutdown_relay_exception;
 		}
 	}
 
@@ -141,7 +178,7 @@ public class RelayThread implements Runnable {
 
 		//--- Parameters
 
-		// The database handle from which relay items are retrieved, or null to use the default database.
+		// The database handle from which relay items are retrieved, can be null or empty to use the default database.
 
 		private String ri_db_handle;
 
@@ -149,9 +186,17 @@ public class RelayThread implements Runnable {
 			return ri_db_handle;
 		}
 
-		public synchronized void set_ri_db_handle (String the_ri_db_handle) {
-			ri_db_handle = the_ri_db_handle;
-			return;
+		//  public synchronized void set_ri_db_handle (String the_ri_db_handle) {
+		//  	ri_db_handle = the_ri_db_handle;
+		//  	return;
+		//  }
+
+		// Flag indicating if remote server status must be checked when establishing connection.
+
+		private boolean ri_require_status;
+
+		public synchronized boolean get_ri_require_status () {
+			return ri_require_status;
 		}
 
 		// The polling interval when watching the change stream iterator, in milliseconds.
@@ -250,6 +295,9 @@ public class RelayThread implements Runnable {
 		//--- Relay thread status
 
 		// Relay status, one of the RTSTAT_XXXXX values.
+		// This can be modified only by the relay thread, with one exception:
+		// user code can set it to RTSTAT_STARTING, provided that it is not currently
+		// in active status and there is no termination request pending.
 
 		private int ri_relay_status;
 
@@ -276,17 +324,38 @@ public class RelayThread implements Runnable {
 		}
 
 		// Flag indicating that a shutdown request has been received.
+		// Shutdown means to close the connection to MongoDB, but leave the thread
+		// running so that it can be used to open a new connection.
+		// The flag is set when the user requests shutdown.
+		// Once set, it remains set until the user sends a new start command, or the thread terminates.
 
 		private boolean ri_shutdown_req;
 
-		public synchronized boolean get_ri_shutdown_req () {
-			return ri_shutdown_req;
-		}
+		//  public synchronized boolean get_ri_shutdown_req () {
+		//  	return ri_shutdown_req;
+		//  }
+		//  
+		//  public synchronized void set_ri_shutdown_req (boolean the_ri_shutdown_req) {
+		//  	ri_shutdown_req = the_ri_shutdown_req;
+		//  	return;
+		//  }
 
-		public synchronized void set_ri_shutdown_req (boolean the_ri_shutdown_req) {
-			ri_shutdown_req = the_ri_shutdown_req;
-			return;
-		}
+		// Flag indicating that a termination request has been received.
+		// Termination means to return from the thread's run function,
+		// so that the program can be exited cleanly.
+		// The flag is set when the user requests termination.
+		// Once set, it remains set until the thread is about to terminate.
+
+		private boolean ri_termination_req;
+
+		//  public synchronized boolean get_ri_termination_req () {
+		//  	return ri_termination_req;
+		//  }
+		//  
+		//  public synchronized void set_ri_termination_req (boolean the_ri_termination_req) {
+		//  	ri_termination_req = the_ri_termination_req;
+		//  	return;
+		//  }
 
 
 
@@ -391,6 +460,24 @@ public class RelayThread implements Runnable {
 			return;
 		}
 
+		// Number of items written during the fetch operation.
+
+		private int ri_fetch_item_count;
+
+		public synchronized int get_ri_fetch_item_count () {
+			return ri_fetch_item_count;
+		}
+
+		public synchronized void set_ri_fetch_item_count (int the_ri_fetch_item_count) {
+			ri_fetch_item_count = the_ri_fetch_item_count;
+			return;
+		}
+
+		public synchronized void increment_ri_fetch_item_count () {
+			++ri_fetch_item_count;
+			return;
+		}
+
 
 
 
@@ -413,6 +500,7 @@ public class RelayThread implements Runnable {
 			// Parameters
 
 			ri_db_handle = null;
+			ri_require_status = false;
 			ri_polling_interval = DEFAULT_POLLING_INTERVAL;
 			max_ri_queue_size = DEFAULT_MAX_QUEUE_SIZE;
 
@@ -425,6 +513,7 @@ public class RelayThread implements Runnable {
 			ri_relay_status = RTSTAT_IDLE;
 			ri_relay_exception = null;
 			ri_shutdown_req = false;
+			ri_termination_req = false;
 
 			// Fetch operation status
 
@@ -435,17 +524,26 @@ public class RelayThread implements Runnable {
 			ri_fetch_relay_time_hi = 0L;
 			ri_fetch_relay_id = null;
 			ri_fetch_cancel_req = false;
+			ri_fetch_item_count = 0;
 
 			return;
 		}
 
 
-		// Prepare to start thread.
-		// This should be called after setting up parameters, and before launching the thread.
-		// Returns true if preparation was successful, false if unsuccessful.
-		// Note: The function returns false if the thread is already active.
+		// Activate the thread, causing it to connect to MongoDB.
+		// Parameters:
+		//  db_handle = Database handle to use, can be null or empty to select the default database.
+		//  require_status = True to require acceptable remote server status.
+		// Returns true if activation was successful, false if unsuccessful.
+		// This should be called after setting up parameters.
+		// This may be called before or after the Thread object is created and started
+		// (this has to be true, because even if the Thread object is created and started first,
+		// the Thread object may not begin execution until after this call.)
+		// Note: The function returns false if the thread is already active, or a termination request is pending.
+		// The thread may be active if a previous shutdown request has not yet completed, in which case
+		// an appropriate action is to retry after a delay.
 
-		public synchronized boolean prepare () {
+		public synchronized boolean activate_thread (String db_handle, boolean require_status) {
 
 			// Error if thread is active.
 
@@ -453,11 +551,22 @@ public class RelayThread implements Runnable {
 				return false;
 			}
 
+			// Error if a termination request is pending
+
+			if (ri_termination_req) {
+				return false;
+			}
+
+			// Parameters
+
+			ri_db_handle = db_handle;
+			ri_require_status = require_status;
+
 			// Relay item queue
 
 			ri_queue = new ArrayDeque<RelayItem>();
 
-			// Relay thread status
+			// Relay thread status (note ri_termination_req has already been checked)
 
 			ri_relay_status = RTSTAT_STARTING;		// Thread is starting
 			ri_relay_exception = null;
@@ -472,7 +581,37 @@ public class RelayThread implements Runnable {
 			ri_fetch_relay_time_hi = 0L;
 			ri_fetch_relay_id = null;
 			ri_fetch_cancel_req = false;
+			ri_fetch_item_count = 0;
 
+			// Wake up the thread
+
+			notifyAll();
+
+			return true;
+		}
+
+
+		// Return true if the thread can be activated, false if not.
+		// Note: The function returns false if the thread is already active, or a termination request is pending.
+		// Note: If the thread can be activated, that state will persist until the user
+		// activates the thread or requests termination.
+
+		public synchronized boolean can_be_activated () {
+
+			// Can't activate if thread is active.
+
+			if (is_relay_active (ri_relay_status)) {
+				return false;
+			}
+
+			// Can't activate if a termination request is pending
+
+			if (ri_termination_req) {
+				return false;
+			}
+
+			// OK to activate
+			
 			return true;
 		}
 
@@ -483,7 +622,8 @@ public class RelayThread implements Runnable {
 
 
 		// Set relay thread exit status.
-		// This is intended to be called only from the relay thread, when the thread is exiting.
+		// This must be called from the relay thread, when the thread is exiting from the active state.
+		// Note: This function may be called only by the relay thread.
 
 		public synchronized void set_relay_exit_status (int relay_status, Exception relay_exception) {
 
@@ -503,11 +643,10 @@ public class RelayThread implements Runnable {
 
 			ri_queue = new ArrayDeque<RelayItem>();
 
-			// Set the relay status
+			// Set the relay status (note we don't change ri_shutdown_req or ri_termination_req)
 
 			ri_relay_status = relay_status;
 			ri_relay_exception = relay_exception;
-			ri_shutdown_req = false;
 
 			return;
 		}
@@ -515,6 +654,7 @@ public class RelayThread implements Runnable {
 
 		// Set fetch operation completion status.
 		// This is intended to be called only from the relay thread, when the fetch operation is ending.
+		// Note: This function may be called only by the relay thread.
 
 		public synchronized void set_fetch_completion_status (int fetch_status, Exception fetch_exception) {
 		
@@ -543,9 +683,9 @@ public class RelayThread implements Runnable {
 
 		public synchronized boolean request_fetch (MarshalWriter writer, long relay_time_lo, long relay_time_hi, String... relay_id) {
 
-			// Error if thread is not active.
+			// Error if a shutdown or termination request is pending
 
-			if (!( is_relay_active (ri_relay_status) )) {
+			if (ri_shutdown_req || ri_termination_req) {
 				return false;
 			}
 
@@ -553,6 +693,21 @@ public class RelayThread implements Runnable {
 
 			if (is_fetch_active (ri_fetch_status)) {
 				return false;
+			}
+
+			// If thread is not active, finish fetch immediately (indicates thread exited due to connection problem)
+
+			if (!( is_relay_active (ri_relay_status) )) {
+
+				ri_fetch_status = FISTAT_EXITED;
+				ri_fetch_exception = null;
+				ri_fetch_writer = null;
+				ri_fetch_relay_time_lo = 0L;
+				ri_fetch_relay_time_hi = 0L;
+				ri_fetch_relay_id = null;
+				ri_fetch_cancel_req = false;
+				ri_fetch_item_count = 0;
+				return true;
 			}
 
 			// Fetch operation status
@@ -568,8 +723,133 @@ public class RelayThread implements Runnable {
 				ri_fetch_relay_id = relay_id.clone();
 			}
 			ri_fetch_cancel_req = false;
+			ri_fetch_item_count = 0;
+
+			// Wake up the thread
+
+			notifyAll();
 		
 			return true;
+		}
+
+
+		// Wait until a start command is received.
+		// Returns true if successful, false if a termination request is active.
+		// If a termination request is found, it is cleared and the status is set to idle.
+		// Note: This function may be called only by the relay thread.
+		// Note: Upon a false return, the thread should immediately exit with no further actions.
+		// Note: This function attempts to return promptly if, while waiting, a start command
+		// or termination request is sent.
+
+		public synchronized boolean wait_until_start () {
+
+			// If the current status is idle, change it to waiting
+
+			if (ri_relay_status == RTSTAT_IDLE) {
+				ri_relay_status = RTSTAT_WAITING;
+			}
+
+			// Loop until termination request ...
+
+			while (!( ri_termination_req )) {
+
+				// If start command is found, return it
+
+				if (ri_relay_status == RTSTAT_STARTING) {
+					return true;
+				}
+
+				// Wait up to 30 seconds
+
+				try {
+					wait (30000L);
+				} catch (InterruptedException e) {
+				}
+			}
+
+			// Received termination request, restore idle state
+
+			// Relay item queue
+
+			ri_queue = new ArrayDeque<RelayItem>();
+
+			// Relay thread status
+
+			ri_relay_status = RTSTAT_IDLE;
+			ri_relay_exception = null;
+			ri_shutdown_req = false;
+			ri_termination_req = false;
+
+			// Fetch operation status
+
+			ri_fetch_status = FISTAT_IDLE;
+			ri_fetch_exception = null;
+			ri_fetch_writer = null;
+			ri_fetch_relay_time_lo = 0L;
+			ri_fetch_relay_time_hi = 0L;
+			ri_fetch_relay_id = null;
+			ri_fetch_cancel_req = false;
+			ri_fetch_item_count = 0;
+
+			return false;
+		}
+
+
+		// Wait while polling in active state.
+		// Parameters:
+		//  timeout = Requested timeout, in milliseconds, can be 0L for zero-duration timeout.
+		// If timeout is 0L, the function always returns immediately (this can be used to check
+		// for shutdown or termination request without incurring a delay).
+		// Note: This function may be called only by the relay thread.
+		// Note: This function should be called only in RTSTAT_RUNNING status.
+		// Note: This function attempts to return promptly if, while waiting, a shutdown
+		// or termination request is sent, or a fetch operation is started.
+
+		public synchronized void wait_during_poll (long timeout) {
+
+			// Don't wait if zero timeout, shutdown or termination request, or fetch operation
+
+			if (!( timeout <= 0L || ri_shutdown_req || ri_termination_req || ri_fetch_status == FISTAT_PENDING )) {
+
+				// Wait up to the requested timeout
+
+				try {
+					wait (timeout);
+				} catch (InterruptedException e) {
+				}
+			}
+
+			return;
+		}
+
+
+		// Check if a shutdown or termination request is pending.
+
+		public synchronized boolean is_exit_requested () {
+			if (ri_shutdown_req || ri_termination_req) {
+				return true;
+			}
+			return false;
+		}
+
+
+		// Request shutdown.
+		// Note: This function can be called even if the thread is not active, and
+		// even if the Java thread has not been created; in these cases it has no effect.
+
+		public synchronized void request_shutdown () {
+			ri_shutdown_req = true;
+			notifyAll();
+			return;
+		}
+
+
+		// Request termination.
+
+		public synchronized void request_termination () {
+			ri_termination_req = true;
+			notifyAll();
+			return;
 		}
 
 	}
@@ -596,12 +876,12 @@ public class RelayThread implements Runnable {
 
 
 	// Set the database handle from which relay items are retrieved.
-	// Can be null to select the default database.
+	// Can be null or empty to select the default database.
 
-	public void set_ri_db_handle (String the_ri_db_handle) {
-		sync_var.set_ri_db_handle (the_ri_db_handle);
-		return;
-	}
+	//  public void set_ri_db_handle (String the_ri_db_handle) {
+	//  	sync_var.set_ri_db_handle (the_ri_db_handle);
+	//  	return;
+	//  }
 
 
 	// Set the polling interval, in milliseconds.
@@ -650,10 +930,24 @@ public class RelayThread implements Runnable {
 
 
 	// Request relay thread shutdown.
+	// This closes the connection to MongoDB (if it is open), but leaves the
+	// thread running so it can be re-used for a new connection.
+	// Note: This function can be called even if the thread is not active, and
+	// even if the Java thread has not been created; in these cases it has no effect.
 
-	public void set_ri_shutdown_req () {
-		sync_var.set_ri_shutdown_req (true);
+	public void shutdown_relay_thread () {
+		sync_var.request_shutdown();
 		return;
+	}
+
+
+	// Return true if the thread can be activated, false if not.
+	// Note: The function returns false if the thread is already active, or a termination request is pending.
+	// Note: If the thread can be activated, that state will persist until the user
+	// activates the thread or requests termination.
+
+	public boolean can_be_started () {
+		return sync_var.can_be_activated();
 	}
 
 
@@ -682,6 +976,13 @@ public class RelayThread implements Runnable {
 	}
 
 
+	// Get the number of items written during the fetch operation.
+
+	public int get_ri_fetch_item_count () {
+		return sync_var.get_ri_fetch_item_count();
+	}
+
+
 	// Request a fetch operation.
 	// Parameters:
 	//  writer = Destination for fetch.
@@ -699,32 +1000,53 @@ public class RelayThread implements Runnable {
 	//--- Thread management
 
 
-	// Start the relay thread.
-	// Returns true if success, false if thread is not started.
-	// Note: The function throws an exception if a thread is already running.
+	// Activate the relay thread.
+	// Parameters:
+	//  db_handle = Database handle to use, can be null or empty to select the default database.
+	//  require_status = True to require acceptable remote server status.
+	// Returns true if success, false if thread is not activated.
+	// This function creates the Java thread if needed.
+	// Note: A false return indicates that the thread is already active or that
+	// a termination request is pending, perhaps because a previous shutdown or
+	// termination request has not yet completed.  An appropriate action is to
+	// retry after a delay.
 
-	public void start_relay_thread () {
-		if (relay_java_thread != null) {
-			throw new IllegalStateException ("RelayThread.start_relay_thread: Thread is already running");
+	public boolean start_relay_thread (String db_handle, boolean require_status) {
+
+		// If the Java thread is not allocated yet, do so now
+
+		if (relay_java_thread == null) {
+			if (get_ri_relay_status() != RTSTAT_IDLE) {
+				throw new IllegalStateException ("RelayThread.start_relay_thread: Thread does not exist, but is not in idle state");
+			}
+			relay_java_thread = new Thread (this);
+			relay_java_thread.start();
 		}
-		if (!( sync_var.prepare() )) {
-			throw new IllegalStateException ("RelayThread.start_relay_thread: Thread state is invalid");
-		}
-		relay_java_thread = new Thread (this);
-		relay_java_thread.start();
-		return;
+
+		// Activate the thread, if we can
+
+		return sync_var.activate_thread (db_handle, require_status);
 	}
 
 	
-	// Stop the relay thread.
-	// Performs no operation if the thread is already stopped.
+	// Terminate the relay thread.
+	// Performs no operation if the thread is already terminated.
 	// This function waits for the relay thread to die.
 
-	public void stop_relay_thread () {
+	public void terminate_relay_thread () {
 		Thread the_thread = relay_java_thread;
+
+		// If we have a Java thread ...
+
 		if (the_thread != null) {
+
+			// Terminate the thread
+
 			relay_java_thread = null;
-			sync_var.set_ri_shutdown_req (true);
+			sync_var.request_termination();
+
+			// Wait for the Java thread to die
+
 			while (the_thread.isAlive()) {
 				try {
 					the_thread.join();
@@ -732,19 +1054,20 @@ public class RelayThread implements Runnable {
 				}
 			}
 		}
+
 		return;
 	}
 
 
 	// The Sentinel class stops the relay thread when it is closed.
-	// It can be used in a try-with-resources statement to ensure the thread is stopped.
+	// It can be used in a try-with-resources statement to ensure the thread is terminated.
 	// Note that it may incur polling delay, because close() waits for the thread to die.
 	// There is no error if the thread is not running when the sentinel is closed.
 
 	public class Sentinel implements AutoCloseable {
 		@Override
 		public void close () {
-			stop_relay_thread();
+			terminate_relay_thread();
 			return;
 		}
 	}
@@ -893,9 +1216,36 @@ public class RelayThread implements Runnable {
 
 
 	// Run the relay thread.
+	// Note: On entry, the relay thread status should be RTSTAT_IDLE or RTSTAT_STARTING,
+	// depending on whether or not a start command has already been received.
 
 	@Override
 	public void run() {
+
+		// Loop until terminate request, wait for start command
+		// (At this point the relay thread status should be inactive, or else
+		// RTSTAT_STARTING if a start command has been received.)
+
+		while (sync_var.wait_until_start()) {
+
+			// Do polling operations, until thread becomes inactive
+
+			do_polling();
+		}
+
+		// Terminate request received, terminate the Thread
+
+		return;
+	}
+
+
+
+
+	// Do polling operations.
+	// This function should be called when the relay thread status is RTSTAT_STARTING.
+	// On return, the relay thread status must be inactive.
+
+	private void do_polling () {
 
 		// Flag indicates if we were ever connected
 
@@ -924,30 +1274,28 @@ public class RelayThread implements Runnable {
 				MongoDBUtil mongo_instance = new MongoDBUtil (conopt_connect, ddbopt, db_handle);
 			){
 
+				// Fetch remote server status, this also verifies the connection
+
+				get_check_remote_status (false);
+
 				// Set up a change stream iterator
 
 				try (
 					RecordIterator<RelayItem> csit = RelayItem.watch_relay_item_changes();
 				){
 
-					// Fetch remote server status, this also verifies the connection
+					// Fetch remote server status again, this ensures any further changes are visible through the change stream
 
-					RelayItem init_status = RelayItem.get_first_relay_item (RelayItem.DESCENDING, 0L, 0L, RelaySupport.RI_STATUS_ID);
-					if (init_status != null) {
-						sync_var.ri_queue_insert (init_status);
-						init_status = null;
-					}
-
-					// At this point, we might do a fetch to verify the connection, or fetch remote server status
+					get_check_remote_status (true);
 
 					// Set state indicating connection established
 
 					was_connected = true;
 					sync_var.set_ri_relay_status (RTSTAT_RUNNING);
 
-					// Loop until shutdown request or exception
+					// Loop until shutdown or termination request, or exception
 
-					while (!( sync_var.get_ri_shutdown_req() )) {
+					while (!( sync_var.is_exit_requested() )) {
 
 						//  // If there is something in the change stream iterator ...
 						//  
@@ -966,7 +1314,7 @@ public class RelayThread implements Runnable {
 						//  	// Otherwise, terminate with a queue full error
 						//  
 						//  	else {
-						//			throw new RelayTerminateException (RTSTAT_QUEUE_OVERFLOW, null);
+						//			throw new RelayShutdownException (RTSTAT_QUEUE_OVERFLOW, null);
 						//  	}
 						//  }
 
@@ -992,7 +1340,7 @@ public class RelayThread implements Runnable {
 						// Otherwise, delay to next polling time
 
 						else {
-							sleep_checked (sync_var.get_ri_polling_interval());
+							sync_var.wait_during_poll (sync_var.get_ri_polling_interval());
 						}
 
 					}	// end loop until shutdown
@@ -1003,10 +1351,10 @@ public class RelayThread implements Runnable {
 
 		}
 
-		// Exception indicates queue full or other internal error
+		// Exception indicates incompatible remote status, queue full, or other internal error
 
-		catch (RelayTerminateException e) {
-			sync_var.set_relay_exit_status (e.term_relay_status, e.term_relay_exception);
+		catch (RelayShutdownException e) {
+			sync_var.set_relay_exit_status (e.shutdown_relay_status, e.shutdown_relay_exception);
 			return;
 		}
 
@@ -1030,6 +1378,55 @@ public class RelayThread implements Runnable {
 
 
 
+	// Get and check the remote server status.
+	// Parameters:
+	//  f_enqueue = True to put the remote server status relay item on the queue.
+	// Check for connectability if so requested, and throws an exception if not connectable.
+
+	private void get_check_remote_status (boolean f_enqueue) {
+
+		// Get the server status relay item
+
+		RelayItem relit = RelayItem.get_first_relay_item (RelayItem.DESCENDING, 0L, 0L, RelaySupport.RI_STATUS_ID);
+
+		// If we got it ...
+
+		if (relit != null) {
+
+			// Get the payload
+
+			RiServerStatus sstat_payload = new RiServerStatus();
+			sstat_payload.unmarshal_relay (relit);
+
+			// Check remote status compatibility if requested
+
+			if (sync_var.get_ri_require_status()) {
+				if (!( sstat_payload.is_connectable() )) {
+					throw new RelayShutdownException (RTSTAT_REMOTE_STATUS, null);
+				}
+			}
+
+			// Put the remote server status on the queue, if desired
+
+			if (f_enqueue) {
+				sync_var.ri_queue_insert (relit);
+			}
+		}
+
+		else {
+
+			// No remote status received, so fail if remote status compatibility is requested
+				
+			if (sync_var.get_ri_require_status()) {
+				throw new RelayShutdownException (RTSTAT_REMOTE_STATUS, null);
+			}
+		}
+	
+		return;
+	}
+
+
+
 
 	// Do a fetch operation.
 	// Parameters:
@@ -1038,6 +1435,7 @@ public class RelayThread implements Runnable {
 	// after checking that the change stream iterator has no data.
 	// On return, fetch status is inactive.
 	// An exception should be treated as a connection failure.
+	// In case of exception, the caller is responsible for inactivating the fetch status.
 
 	private void do_fetch (RecordIterator<RelayItem> csit) {
 
@@ -1080,6 +1478,10 @@ public class RelayThread implements Runnable {
 					return;
 				}
 
+				// Count an item stored
+
+				sync_var.increment_ri_fetch_item_count();
+
 				// Handle cancel request
 
 				if (sync_var.get_ri_fetch_cancel_req()) {
@@ -1087,9 +1489,9 @@ public class RelayThread implements Runnable {
 					return;
 				}
 
-				// Handle shutdown request
+				// Handle shutdown or termination request
 
-				if (sync_var.get_ri_shutdown_req()) {
+				if (sync_var.is_exit_requested()) {
 					sync_var.set_fetch_completion_status (FISTAT_EXITED, null);
 					return;
 				}
@@ -1125,84 +1527,84 @@ public class RelayThread implements Runnable {
 				}
 			}
 
-			// Write a null item to mark end-of-file
-
-			try {
-				RelayItem.marshal_poly (sync_var.get_ri_fetch_writer(), null, null);
-			}
-
-			// Handle exception during write
-
-			catch (Exception e) {
-				sync_var.set_fetch_completion_status (FISTAT_IO_FAIL, e);
-				return;
-			}
-
-			// Successful completion
-
-			sync_var.set_fetch_completion_status (FISTAT_FINISHED, null);
 		}
-						
-		return;
-	}
 
+		// Write a null item to mark end-of-file
 
+		try {
+			RelayItem.marshal_poly (sync_var.get_ri_fetch_writer(), null, null);
+		}
 
+		// Handle exception during write
 
-	// Sleep for given amount of time, in milliseconds, but wake early in case of shutdown request.
-
-	private void sleep_checked (long delay) {
-
-		// Handle zero or negative delay
-
-		if (delay <= 0L) {
+		catch (Exception e) {
+			sync_var.set_fetch_completion_status (FISTAT_IO_FAIL, e);
 			return;
 		}
 
-		// Quantum of delay
+		// Successful completion
 
-		long quantum = 15000L;			// 15 seconds
-
-		// Number of intervals
-
-		long n = (delay + quantum - 1L) / quantum;
-
-		// Length of each interval
-
-		long m = delay / n;
-
-		// Number of intervals that need to be longer
-
-		long k = delay % n;
-
-		// Loop over intervals
-
-		for (long i = 0L; i < n; ++i) {
-		
-			// If shutdown requested, exit
-
-			if (sync_var.get_ri_shutdown_req()) {
-				break;
-			}
-
-			// Get current delay interval
-
-			long interval = m;
-			if (i < k) {
-				++interval;
-			}
-
-			// Sleep for this interval
-
-			try {
-				Thread.sleep (interval);
-			} catch (InterruptedException e) {
-			}
-
-		}
-
+		sync_var.set_fetch_completion_status (FISTAT_FINISHED, null);
 		return;
 	}
+
+
+
+
+	//  // Sleep for given amount of time, in milliseconds, but wake early in case of shutdown request.
+	//  
+	//  private void sleep_checked (long delay) {
+	//  
+	//  	// Handle zero or negative delay
+	//  
+	//  	if (delay <= 0L) {
+	//  		return;
+	//  	}
+	//  
+	//  	// Quantum of delay
+	//  
+	//  	long quantum = 15000L;			// 15 seconds
+	//  
+	//  	// Number of intervals
+	//  
+	//  	long n = (delay + quantum - 1L) / quantum;
+	//  
+	//  	// Length of each interval
+	//  
+	//  	long m = delay / n;
+	//  
+	//  	// Number of intervals that need to be longer
+	//  
+	//  	long k = delay % n;
+	//  
+	//  	// Loop over intervals
+	//  
+	//  	for (long i = 0L; i < n; ++i) {
+	//  	
+	//  		// If shutdown or termination requested, exit
+	//  
+	//  		if (sync_var.is_exit_requested()) {
+	//  			break;
+	//  		}
+	//  
+	//  		// Get current delay interval
+	//  
+	//  		long interval = m;
+	//  		if (i < k) {
+	//  			++interval;
+	//  		}
+	//  
+	//  		// Sleep for this interval
+	//  
+	//  		try {
+	//  			Thread.sleep (interval);
+	//  		} catch (InterruptedException e) {
+	//  		}
+	//  
+	//  	}
+	//  
+	//  	return;
+	//  }
 
 
 

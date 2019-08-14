@@ -847,6 +847,105 @@ public class LogSupport extends ServerComponent {
 
 
 
+	// Report analyst selection relay item set.
+	// op = Operation code:
+	//  RIOP_SAVE = 1 = Locally-generated relay item saved.
+	//  RIOP_STALE = 2 = Locally-generated relay item is stale.
+	//  RIOP_COPY = 3 = Remote relay item saved.
+	//  RIOP_DELETE = 4 = Relay item deleted.
+
+	public void report_ansel_relay_set (int op, String event_id, long relay_time, RiAnalystSelection riansel) {
+
+		String name = "RELAY-ANSEL-SET-UNKNOWN";
+
+		switch (op) {
+		case RIOP_SAVE: name = "RELAY-ANSEL-SAVE"; break;
+		case RIOP_STALE: name = "RELAY-ANSEL-STALE"; break;
+		case RIOP_COPY: name = "RELAY-ANSEL-COPY"; break;
+		case RIOP_DELETE: name = "RELAY-ANSEL-DELETE"; break;
+		}
+
+		report_action (name,
+					event_id,
+					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time)
+					);
+		return;
+	}
+
+
+
+
+	// Report server status relay item set.
+	// op = Operation code:
+	//  RIOP_SAVE = 1 = Locally-generated relay item saved.
+	//  RIOP_STALE = 2 = Locally-generated relay item is stale.
+	//  RIOP_COPY = 3 = Remote relay item saved.
+	//  RIOP_DELETE = 4 = Relay item deleted.
+
+	public void report_sstat_relay_set (int op, long relay_time, RiServerStatus sstat) {
+
+		String name = "SRV-STAT-SET-UNKNOWN";
+
+		switch (op) {
+		case RIOP_SAVE: name = "SRV-STAT-SAVE"; break;
+		case RIOP_STALE: name = "SRV-STAT-STALE"; break;
+		case RIOP_COPY: name = "SRV-STAT-COPY"; break;
+		case RIOP_DELETE: name = "SRV-STAT-DELETE"; break;
+		}
+
+		report_action (name,
+					sstat.get_server_number_as_string (),
+					sstat.get_relay_mode_as_string (),
+					sstat.get_configured_primary_as_string (),
+					sstat.get_link_state_as_string (),
+					sstat.get_primary_state_as_string (),
+					"heartbeat = " + sstat.get_heartbeat_time_as_string(),
+					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time)
+					);
+		return;
+	}
+
+
+
+
+	// Report relay sync begin.
+
+	public void report_relay_sync_begin (long lookback) {
+		report_action ("RELAY-SYNC-BEGIN",
+					"lookback = " + SimpleUtils.duration_to_string_2 (lookback)
+					);
+		return;
+	}
+
+
+
+
+	// Report relay sync copy.
+
+	public void report_relay_sync_copy (int item_count) {
+		report_action ("RELAY-SYNC-COPY",
+					"item_count = " + item_count
+					);
+		return;
+	}
+
+
+
+
+	// Report relay sync end.
+
+	public void report_relay_sync_end (int items_processed, int items_copied, long next_sync_time) {
+		report_action ("RELAY-SYNC-END",
+					"items_processed = " + items_processed,
+					"items_copied = " + items_copied,
+					"next_sync_time = " + SimpleUtils.time_raw_and_string (next_sync_time)
+					);
+		return;
+	}
+
+
+
+
 	// Report successful PDL delete of all OAF products for an event.
 
 	public void report_pdl_delete_ok (String event_id) {

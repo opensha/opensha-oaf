@@ -97,10 +97,22 @@ public class ServerConfig {
 		return param_set.mongo_config;
 	}
 
-	// ActiveMQ host name or IP address.
+	// Name used to manage the server.
 
 	public String get_server_name() {
 		return param_set.server_name;
+	}
+
+	// Number of this server, 1 or 2.
+
+	public int get_server_number() {
+		return param_set.server_number;
+	}
+
+	// List of server database handles, 0 = local, 1 = server #1, 2 = server #2.
+
+	public List<String> get_server_db_handles() {
+		return param_set.server_db_handles;
 	}
 
 	// Pattern for AAFS console log filenames, in the format of SimpleDateFormat, or "" if none.

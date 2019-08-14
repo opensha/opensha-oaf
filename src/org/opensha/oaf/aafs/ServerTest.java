@@ -491,6 +491,10 @@ public class ServerTest {
 
 		TaskDispatcher dispatcher = new TaskDispatcher();
 
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
 		// Post the shutdown task
 
 		boolean result = dispatcher.post_shutdown ("ServerTest");
@@ -4062,7 +4066,10 @@ public class ServerTest {
 			try (
 				RelayThread.Sentinel rtsent = relay_thread.make_sentinel();
 			){
-				relay_thread.start_relay_thread();
+				if (!( relay_thread.start_relay_thread ("", false) )) {
+					System.out.println ("Relay thread failed to start");
+					return;
+				}
 
 				// Wait 3 seconds to make sure it's in effect
 
@@ -4160,7 +4167,10 @@ public class ServerTest {
 			try (
 				RelayThread.Sentinel rtsent = relay_thread.make_sentinel();
 			){
-				relay_thread.start_relay_thread();
+				if (!( relay_thread.start_relay_thread ("", false) )) {
+					System.out.println ("Relay thread failed to start");
+					return;
+				}
 
 				// Wait 3 seconds to make sure it's in effect
 
@@ -4186,6 +4196,9 @@ public class ServerTest {
 				System.out.println ("Begin relay thread fetch operation");
 
 				List<RelayItem> fi_list = relay_thread.run_fetch_and_sort (0L, 0L);
+
+				int item_count = relay_thread.get_ri_fetch_item_count();
+				System.out.println ("Fetch operation item count = " + item_count);
 
 				for (RelayItem fi_relit : fi_list) {
 					System.out.println (fi_relit.dumpString());
@@ -4216,6 +4229,11 @@ public class ServerTest {
 
 		long n_cycles = Long.parseLong(args[1]);
 
+		// Get the remote database handle for this server
+
+		ServerConfig server_config = new ServerConfig();
+		String remote_db_handle = server_config.get_server_db_handles().get (server_config.get_server_number());
+
 		// Connect to MongoDB
 
 		try (
@@ -4230,7 +4248,10 @@ public class ServerTest {
 			try (
 				RelayThread.Sentinel rtsent = relay_thread.make_sentinel();
 			){
-				relay_thread.start_relay_thread();
+				if (!( relay_thread.start_relay_thread (remote_db_handle, false) )) {
+					System.out.println ("Relay thread failed to start");
+					return;
+				}
 
 				// Wait 3 seconds to make sure it's in effect
 
@@ -4242,6 +4263,31 @@ public class ServerTest {
 				// Loop over cycles, and items within a cycle, adding 3 new items each cycle
 
 				for (long cycle = 1L; cycle <= n_cycles; ++cycle) {
+
+					// Every 4 cycles, stop and restart the relay thread
+
+					if (cycle % 4L == 0L) {
+
+						relay_thread.shutdown_relay_thread();
+
+						try {
+							Thread.sleep (3000L);
+						} catch (InterruptedException e) {
+						}
+
+						if (!( relay_thread.start_relay_thread (remote_db_handle, false) )) {
+							System.out.println ("Relay thread failed to start, cycle = " + cycle);
+							return;
+						}
+
+						try {
+							Thread.sleep (3000L);
+						} catch (InterruptedException e) {
+						}
+					}
+
+					// Write the relay items for this cycle
+
 					for (long item = cycle * 2L - 1L; item <= cycle * 5L; ++item) {
 					
 						RelayItem relit;
@@ -4328,6 +4374,10 @@ public class ServerTest {
 			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
 		}
 
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
 		// Connect to MongoDB
 
 		try (
@@ -4389,6 +4439,10 @@ public class ServerTest {
 		}
 
 		String[] event_ids = Arrays.copyOfRange (args, 1, args.length);
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
 
 		// Connect to MongoDB
 
@@ -4522,6 +4576,10 @@ public class ServerTest {
 			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
 		}
 
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
 		// Connect to MongoDB
 
 		try (
@@ -4584,6 +4642,10 @@ public class ServerTest {
 
 		String[] event_ids = Arrays.copyOfRange (args, 1, args.length);
 
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
 		// Connect to MongoDB
 
 		try (
@@ -4641,6 +4703,10 @@ public class ServerTest {
 		}
 
 		String[] event_ids = Arrays.copyOfRange (args, 1, args.length);
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
 
 		// Connect to MongoDB
 
@@ -4738,6 +4804,10 @@ public class ServerTest {
 			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
 		}
 
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
 		// Connect to MongoDB
 
 		try (
@@ -4798,6 +4868,10 @@ public class ServerTest {
 		}
 
 		String[] event_ids = Arrays.copyOfRange (args, 1, args.length);
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
 
 		// Connect to MongoDB
 
@@ -5285,6 +5359,123 @@ public class ServerTest {
 			}
 				
 			System.out.println ("Number of tasks canceled = " + n_cancel);
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #89 - Run the relay link.
+
+	public static void test89(String[] args) throws Exception {
+
+		// 2 additional arguments
+
+		if (args.length != 3) {
+			System.err.println ("ServerTest : Invalid 'test89' or 'run_relay_link' subcommand");
+			return;
+		}
+
+		String logfile = args[1];		// can be "-" for none
+		boolean f_prist = Boolean.parseBoolean (args[2]);	// true = run primary state change, false = not
+
+		String my_logfile = null;
+		if (!( logfile.equals ("-") )) {
+			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
+		}
+
+		// Get a task dispatcher and server group
+
+		TaskDispatcher dispatcher = new TaskDispatcher();
+		ServerGroup sg = dispatcher.get_server_group();
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Connect to MongoDB
+
+		try (
+			RelayLink.LinkSentinel rl_sentinel = sg.relay_link.make_link_sentinel();
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+			TimeSplitOutputStream sum_tsop = TimeSplitOutputStream.make_tsop (my_logfile, 0L);
+		){
+
+			// Install the log file
+
+			dispatcher.set_summary_log_tsop (sum_tsop);
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Initialize relay link
+
+			sg.relay_link.init_relay_link();
+
+			// Display status
+
+			String loc_stat = sg.relay_link.get_local_status_summary();
+			String rem_stat = sg.relay_link.get_remote_status_summary();
+
+			System.out.println (loc_stat);
+			System.out.println (rem_stat);
+
+			// Loop until shutdown request
+
+			while (!( TaskDispatcher.test_check_for_shutdown() )) {
+
+				// Wait 3 seconds
+
+				try {
+					Thread.sleep (3000L);
+				} catch (InterruptedException e) {
+				}
+
+				// Set up task context
+
+				dispatcher.setup_task_context();
+
+				// Poll the relay link
+
+				if (f_prist) {
+					sg.relay_link.poll_relay_link();
+				} else {
+					sg.relay_link.poll_relay_link_no_prist();
+				}
+
+				// Display status if it has changed
+
+				String new_loc_stat = sg.relay_link.get_local_status_summary();
+				String new_rem_stat = sg.relay_link.get_remote_status_summary();
+
+				if (!( new_loc_stat.equals(loc_stat) && new_rem_stat.equals(rem_stat) )) {
+
+					loc_stat = new_loc_stat;
+					rem_stat = new_rem_stat;
+
+					System.out.println (loc_stat);
+					System.out.println (rem_stat);
+				}
+			}
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Shut down relay link
+
+			sg.relay_link.shutdown_relay_link();
+
+			// Display status
+
+			loc_stat = sg.relay_link.get_local_status_summary();
+			rem_stat = sg.relay_link.get_remote_status_summary();
+
+			System.out.println (loc_stat);
+			System.out.println (rem_stat);
 		}
 
 		return;
@@ -6805,6 +6996,23 @@ public class ServerTest {
 
 			try {
 				test88(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #89
+		// Command format:
+		//  test89  logfile  f_primary
+		// Use timeline support to change the PDL mode.
+		// The logfile can be "-" for none.
+
+		if (args[0].equalsIgnoreCase ("test89") || args[0].equalsIgnoreCase ("run_relay_link")) {
+
+			try {
+				test89(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

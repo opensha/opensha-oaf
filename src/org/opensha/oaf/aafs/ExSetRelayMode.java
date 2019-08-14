@@ -22,10 +22,10 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.commons.geo.Location;
 
 /**
- * Execute task: Start cleaning up old forecasts in PDL.
- * Author: Michael Barall 07/03/2019.
+ * Execute task: Set server relay mode.
+ * Author: Michael Barall 08/10/2019.
  */
-public class ExCleanupPDLStart extends ServerExecTask {
+public class ExSetRelayMode extends ServerExecTask {
 
 
 	//----- Task execution -----
@@ -38,15 +38,15 @@ public class ExCleanupPDLStart extends ServerExecTask {
 
 	@Override
 	public int exec_task (PendingTask task) {
-		return exec_cleanup_pdl_start (task);
+		return exec_set_relay_mode (task);
 	}
 
 
 
 
-	// Start cleaning up old forecasts in PDL.
+	// Set server relay mode.
 
-	private int exec_cleanup_pdl_start (PendingTask task) {
+	private int exec_set_relay_mode (PendingTask task) {
 
 		// Check for cleanup blocked
 		
@@ -56,7 +56,7 @@ public class ExCleanupPDLStart extends ServerExecTask {
 
 		//--- Get payload
 
-		OpCleanupPDLStart payload = new OpCleanupPDLStart();
+		OpSetRelayMode payload = new OpSetRelayMode();
 
 		try {
 			payload.unmarshal_task (task);
@@ -72,11 +72,11 @@ public class ExCleanupPDLStart extends ServerExecTask {
 			return RESCODE_TASK_CORRUPT;
 		}
 
-		//--- Poll status
+		//--- Relay link
 
-		// Enable cleanup
+		// Set relay mode
 
-		sg.cleanup_sup.set_cleanup_enabled();
+		sg.relay_link.set_server_relay_mode (payload.relay_config);
 
 		//--- Final steps
 
@@ -93,6 +93,6 @@ public class ExCleanupPDLStart extends ServerExecTask {
 
 	// Default constructor.
 
-	public ExCleanupPDLStart () {}
+	public ExSetRelayMode () {}
 
 }

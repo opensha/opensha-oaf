@@ -34,6 +34,8 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  *	"mongo_config" = { Structure giving MongoDB configuration, see MongoDBConfig.java.
  *   }
  *  "server_name" = String giving the name used to manage the server.
+ *  "server_number" = Integer giving number of this server, 1 or 2.
+ *  "server_db_handles" = [ Array giving server database handles, 0 = local, 1 = server #1, 2 = server #2 ]
  *	"log_con_aafs" = String giving pattern for AAFS console log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"log_con_intake" = String giving pattern for intake console log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"log_con_control" = String giving pattern for control console log filenames, in the format of SimpleDateFormat, or "" if none.
@@ -81,6 +83,17 @@ public class ServerConfigFile {
 	// Name used to manage the server.
 
 	public String server_name;
+
+	// Number of this server, 1 or 2.
+
+	public static final int SRVNUM_MIN = 1;
+	public static final int SRVNUM_MAX = 2;
+
+	public int server_number;
+
+	// List of server database handles, 0 = local, 1 = server #1, 2 = server #2.
+
+	public ArrayList<String> server_db_handles;
 
 	// Pattern for AAFS console log filenames, in the format of SimpleDateFormat, or "" if none.
 
@@ -200,6 +213,8 @@ public class ServerConfigFile {
 	public void clear () {
 		mongo_config = null;
 		server_name = "";
+		server_number = 0;
+		server_db_handles = new ArrayList<String>();
 		log_con_aafs = "";
 		log_con_intake = "";
 		log_con_control = "";
@@ -242,6 +257,22 @@ public class ServerConfigFile {
 
 		if (!( server_name != null && server_name.trim().length() > 0 )) {
 			throw new InvariantViolationException ("ServerConfigFile: Invalid server_name: " + ((server_name == null) ? "<null>" : server_name));
+		}
+
+		if (!( server_number >= SRVNUM_MIN && server_number <= SRVNUM_MAX )) {
+			throw new InvariantViolationException ("ServerConfigFile: Invalid server_number: " + server_number);
+		}
+
+		if (!( server_db_handles != null )) {
+			throw new InvariantViolationException ("ServerConfigFile: server_db_handles list is null");
+		}
+		if (!( server_db_handles.size() == 3 )) {
+			throw new InvariantViolationException ("ServerConfigFile: server_db_handles list has wrong size, size = " + server_db_handles.size());
+		}
+		for (String s : server_db_handles) {
+			if (!( s != null && s.trim().length() > 0 )) {
+				throw new InvariantViolationException ("ServerConfigFile: Invalid server_db_handles entry: " + ((s == null) ? "<null>" : s));
+			}
 		}
 
 		if (!( log_con_aafs != null && (log_con_aafs.isEmpty() || TimeSplitOutputStream.is_valid_pattern(log_con_aafs)) )) {
@@ -369,6 +400,15 @@ public class ServerConfigFile {
 		result.append ("}" + "\n");
 
 		result.append ("server_name = " + ((server_name == null) ? "<null>" : server_name) + "\n");
+
+		result.append ("server_number = " + server_number + "\n");
+
+		result.append ("server_db_handles = [" + "\n");
+		for (String s : server_db_handles) {
+			result.append ("  " + s + "\n");
+		}
+		result.append ("]" + "\n");
+
 		result.append ("log_con_aafs = " + ((log_con_aafs == null) ? "<null>" : log_con_aafs) + "\n");
 		result.append ("log_con_intake = " + ((log_con_intake == null) ? "<null>" : log_con_intake) + "\n");
 		result.append ("log_con_control = " + ((log_con_control == null) ? "<null>" : log_con_control) + "\n");
@@ -658,6 +698,8 @@ public class ServerConfigFile {
 		mongo_config.marshal    (writer, "mongo_config"                        );
 
 		writer.marshalString    (        "server_name"      , server_name      );
+		writer.marshalInt       (        "server_number"    , server_number    );
+		marshal_string_coll     (writer, "server_db_handles", server_db_handles);
 		writer.marshalString    (        "log_con_aafs"     , log_con_aafs     );
 		writer.marshalString    (        "log_con_intake"   , log_con_intake   );
 		writer.marshalString    (        "log_con_control"  , log_con_control  );
@@ -698,6 +740,9 @@ public class ServerConfigFile {
 		mongo_config      = new MongoDBConfig         (reader, "mongo_config"     );
 
 		server_name       = reader.unmarshalString    (        "server_name"      );
+		server_number     = reader.unmarshalInt       (        "server_number"    );
+		server_db_handles = new ArrayList<String>();
+		unmarshal_string_coll                         (reader, "server_db_handles", server_db_handles);
 		log_con_aafs      = reader.unmarshalString    (        "log_con_aafs"     );
 		log_con_intake    = reader.unmarshalString    (        "log_con_intake"   );
 		log_con_control   = reader.unmarshalString    (        "log_con_control"  );

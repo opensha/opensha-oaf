@@ -61,7 +61,7 @@ public class RelaySupport extends ServerComponent {
 
 	// The prefix used for server status relay items.
 
-	public static final String RI_STATUS_PREFIX = "=";
+	// public static final String RI_STATUS_PREFIX = "=";
 
 	// The prefix used for PDL completion relay items.
 
@@ -83,9 +83,9 @@ public class RelaySupport extends ServerComponent {
 	// Classify a relay item id
 
 	public static int classify_relay_id (String relay_id) {
-		if (relay_id.startsWith (RI_STATUS_PREFIX)) {
-			return RITYPE_SERVER_STATUS;
-		}
+		//  if (relay_id.startsWith (RI_STATUS_PREFIX)) {
+		//  	return RITYPE_SERVER_STATUS;
+		//  }
 		if (relay_id.startsWith (RI_PDL_PREFIX)) {
 			return RITYPE_PDL_COMPLETION;
 		}
@@ -98,27 +98,30 @@ public class RelaySupport extends ServerComponent {
 		if (relay_id.startsWith (RI_ANALYST_PREFIX)) {
 			return RITYPE_ANALYST_SELECTION;
 		}
+		if (relay_id.equals (RI_STATUS_ID)) {
+			return RITYPE_SERVER_STATUS;
+		}
 		return RITYPE_UNKNOWN;
 	}
 
 
 
 
-	// Convert a machine name to a server status relay id.
-
-	public static String machine_name_to_status_relay_id (String machine_name) {
-		return RI_STATUS_PREFIX + machine_name;
-	}
-
-	// Convert a server status relay id to a machine name.
-
-	public static String status_relay_id_to_machine_name (String relay_id) {
-		if (!( relay_id.startsWith (RI_STATUS_PREFIX) )) {
-			throw new IllegalArgumentException("RelaySupport.status_relay_id_to_machine_name: Invalid relay ID supplied: " + relay_id);
-		}
-
-		return relay_id.substring (RI_STATUS_PREFIX.length());
-	}
+	//  // Convert a machine name to a server status relay id.
+	//  
+	//  public static String machine_name_to_status_relay_id (String machine_name) {
+	//  	return RI_STATUS_PREFIX + machine_name;
+	//  }
+	//  
+	//  // Convert a server status relay id to a machine name.
+	//  
+	//  public static String status_relay_id_to_machine_name (String relay_id) {
+	//  	if (!( relay_id.startsWith (RI_STATUS_PREFIX) )) {
+	//  		throw new IllegalArgumentException("RelaySupport.status_relay_id_to_machine_name: Invalid relay ID supplied: " + relay_id);
+	//  	}
+	//  
+	//  	return relay_id.substring (RI_STATUS_PREFIX.length());
+	//  }
 
 
 
@@ -270,16 +273,6 @@ public class RelaySupport extends ServerComponent {
 
 		return relay_id.substring (RI_ANALYST_PREFIX.length());
 	}
-
-
-
-
-	//----- Thread management -----
-
-
-	// The thread for pulling relay items from the partner server.
-
-	private RelayThread relay_thread;
 
 
 
@@ -593,14 +586,151 @@ public class RelaySupport extends ServerComponent {
 
 
 
+	//----- Server status relay item support -----
+
+
+
+
+	// Submit a server status relay item.
+	// Parmeters:
+	//  relay_time = Time of this server status.
+	//  f_force = True to force this item to be written, increasing the relay time if needed.
+	//  f_log = True to write log entry.
+	//  sstat_payload = Server status payload.
+	// Returns the new RelayItem if it was added to the database.
+	// Returns null if not added to the database (because a newer one alreay exists).
+
+	public RelayItem submit_sstat_relay_item (long relay_time, boolean f_force, boolean f_log,
+				RiServerStatus sstat_payload) {
+
+		RelayItem result = RelayItem.submit_relay_item (
+			RelaySupport.RI_STATUS_ID,						// relay_id
+			relay_time,										// relay_time
+			sstat_payload.marshal_relay(),					// details
+			f_force,										// f_force
+			0L);											// relay_stamp
+
+		if (f_log) {
+			int log_op = ((result == null) ? LogSupport.RIOP_STALE : LogSupport.RIOP_SAVE);
+			long log_relay_time = ((result == null) ? relay_time : (result.get_relay_time()));
+			sg.log_sup.report_sstat_relay_set (log_op, log_relay_time, sstat_payload);
+		}
+	
+		return result;
+	}
+
+
+
+	// Get a server status relay item.
+	// Parameters:
+	//  sstat_payload = Receives the server status payload, can be null if not needed.
+	// Returns the server status relay item, or null if none is found.
+	// An exception is thrown if the payload is corrupted.
+
+	public RelayItem get_sstat_relay_item (RiServerStatus sstat_payload) {
+
+		RelayItem relit = RelayItem.get_first_relay_item (RelayItem.DESCENDING, 0L, 0L, RelaySupport.RI_STATUS_ID);
+
+		if (relit != null && sstat_payload != null) {
+			sstat_payload.unmarshal_relay (relit);
+		}
+
+		return relit;
+	}
+
+
+
+
+	// Submit a server status relay item -- static version.
+	// Parmeters:
+	//  relay_time = Time of this server status.
+	//  f_force = True to force this item to be written, increasing the relay time if needed.
+	//  sstat_payload = Server status payload.
+	// Returns the new RelayItem if it was added to the database.
+	// Returns null if not added to the database (because a newer one alreay exists).
+
+	public static RelayItem static_submit_sstat_relay_item (long relay_time, boolean f_force,
+				RiServerStatus sstat_payload) {
+
+		RelayItem result = RelayItem.submit_relay_item (
+			RelaySupport.RI_STATUS_ID,						// relay_id
+			relay_time,										// relay_time
+			sstat_payload.marshal_relay(),					// details
+			f_force,										// f_force
+			0L);											// relay_stamp
+	
+		return result;
+	}
+
+
+
+	// Get a server status relay item -- static version.
+	// Parameters:
+	//  sstat_payload = Receives the server status payload, can be null if not needed.
+	// Returns the server status relay item, or null if none is found.
+	// An exception is thrown if the payload is corrupted.
+
+	public static RelayItem static_get_sstat_relay_item (RiServerStatus sstat_payload) {
+
+		RelayItem relit = RelayItem.get_first_relay_item (RelayItem.DESCENDING, 0L, 0L, RelaySupport.RI_STATUS_ID);
+
+		if (relit != null && sstat_payload != null) {
+			sstat_payload.unmarshal_relay (relit);
+		}
+
+		return relit;
+	}
+
+
+
+
+	// Get a server status relay item from a remote server.
+	// Parameters:
+	//  db_handle = Database handle, can be null or empty for default database.
+	//  sstat_payload = Receives the server status payload, can be null if not needed.
+	// Returns the server status relay item, or null if none is found.
+	// Exceptions are caught within this function.
+
+	public static RelayItem get_remote_sstat_relay_item (String db_handle, RiServerStatus sstat_payload) {
+
+		RelayItem relit = null;
+
+		// Connect to MongoDB
+
+		int conopt = MongoDBUtil.CONOPT_CONNECT;
+
+		int ddbopt = MongoDBUtil.DDBOPT_SAVE_SET;
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil (conopt, ddbopt, db_handle);
+		){
+
+			// Get the relay item
+
+			relit = static_get_sstat_relay_item (sstat_payload);
+
+		// Abnormal return
+
+		} catch (Exception e) {
+			relit = null;
+			e.printStackTrace();
+		} catch (Throwable e) {
+			relit = null;
+			e.printStackTrace();
+		}
+
+		return relit;
+	}
+
+
+
+
 	//----- Construction -----
 
 
 	// Default constructor.
 
 	public RelaySupport () {
-
-		relay_thread = new RelayThread();
 
 	}
 
@@ -611,8 +741,6 @@ public class RelaySupport extends ServerComponent {
 	@Override
 	public void setup (ServerGroup the_sg) {
 		super.setup (the_sg);
-
-		relay_thread.setup();
 
 		return;
 	}

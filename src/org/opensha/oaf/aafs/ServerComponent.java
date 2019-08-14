@@ -37,7 +37,8 @@ public class ServerComponent {
 	public static final int OPCODE_NEXT_TIMELINE_OP = 18;	// Issue next delayed operation for a timeline
 	public static final int OPCODE_CLEANUP_PDL_START = 19;	// Start cleaning up old forecasts in PDL
 	public static final int OPCODE_CLEANUP_PDL_STOP = 20;	// Stop cleaning up old forecasts in PDL
-	public static final int OPCODE_MAX = 20;				// Maximum allowed opcode
+	public static final int OPCODE_SET_RELAY_MODE = 21;		// Set server relay mode
+	public static final int OPCODE_MAX = 21;				// Maximum allowed opcode
 
 	// Return a string describing an opcode.
 
@@ -63,6 +64,7 @@ public class ServerComponent {
 		case OPCODE_NEXT_TIMELINE_OP: return "OPCODE_NEXT_TIMELINE_OP";
 		case OPCODE_CLEANUP_PDL_START: return "OPCODE_CLEANUP_PDL_START";
 		case OPCODE_CLEANUP_PDL_STOP: return "OPCODE_CLEANUP_PDL_STOP";
+		case OPCODE_SET_RELAY_MODE: return "OPCODE_SET_RELAY_MODE";
 		}
 		return "OPCODE_INVALID(" + x + ")";
 	}
@@ -228,6 +230,8 @@ public class ServerComponent {
 	public static final String EVID_POLL = "===poll===";	// Used for polling tasks
 
 	public static final String EVID_CLEANUP = "===cleanup===";	// Used for cleanup tasks
+
+	public static final String EVID_RELAY = "===relay===";	// Used for server relay tasks
 
 
 

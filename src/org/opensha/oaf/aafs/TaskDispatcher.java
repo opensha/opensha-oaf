@@ -495,6 +495,64 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 
 
+	/**
+	 * post_remote_task - Post a task to a remote database.
+	 * @param db_handle = Database handle for the task, can be null or empty for default database.
+	 * @param event_id = Event associated with this task, or "" if none. Cannot be null.
+	 * @param sched_time = Time at which task should execute, in milliseconds
+	 *                     since the epoch. Must be positive.
+	 * @param submit_time = Time at which the task is submitted, in milliseconds
+	 *                      since the epoch. Must be positive.
+	 * @param submit_id = Person or entity submitting this task. Cannot be empty or null.
+	 * @param opcode = Operation code used to dispatch the task.
+	 * @param stage = Stage number, user-defined, effectively an extension of the opcode.
+	 * @param details = Further details of this task. Can be null if there are none.
+	 * @return
+	 * Returns true if task is successfully posted, false if error.
+	 * This function connects to MongoDB, puts the task on the queue, and then
+	 * disconnects from MongoDB.
+	 * If already connected to MongoDB, then use PendingTask.submit_task instead.
+	 */
+	public static boolean post_remote_task (String db_handle, String event_id, long sched_time, long submit_time,
+								String submit_id, int opcode, int stage, MarshalWriter details) {
+
+		boolean result = true;
+
+		// Connect to MongoDB
+
+		int conopt = MongoDBUtil.CONOPT_CONNECT;
+
+		int ddbopt = MongoDBUtil.DDBOPT_SAVE_SET;
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil (conopt, ddbopt, db_handle);
+		){
+
+			// Post the command
+
+			PendingTask.submit_task (event_id, sched_time, submit_time,
+									submit_id, opcode, stage, details);
+
+			// Normal return
+
+			result = true;
+
+		// Abnormal return
+
+		} catch (Exception e) {
+			result = false;
+			e.printStackTrace();
+		} catch (Throwable e) {
+			result = false;
+			e.printStackTrace();
+		}
+
+		return result;
+	}
+
+
+
+
 	//----- Task dispatching functions -----
 
 
@@ -1100,6 +1158,31 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 		boolean did_work = exec_idle_time();
 
 		return did_work;
+	}
+
+
+
+
+	// Test if there is a shutdown command on the task queue.
+	// If there are any shutdown commands, they are deleted, and the return value is true.
+	// If there are no shutdown commands, the return value is false.
+	// There must be an established connection to MongoDB.
+	// This is a test function.
+
+	public static boolean test_check_for_shutdown () {
+
+		boolean result = false;
+
+		List<PendingTask> shutdown_tasks = PendingTask.get_task_entry_range (0L, 0L, EVID_SHUTDOWN, PendingTask.UNSORTED);
+
+		for (PendingTask shutdown_task : shutdown_tasks) {
+			if (shutdown_task.get_opcode() == OPCODE_SHUTDOWN) {
+				result = true;
+				PendingTask.delete_task (shutdown_task);
+			}
+		}
+	
+		return result;
 	}
 
 }

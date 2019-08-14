@@ -38,15 +38,15 @@ public class ExCleanupPDLStop extends ServerExecTask {
 
 	@Override
 	public int exec_task (PendingTask task) {
-		return exec_poll_comcat_stop (task);
+		return exec_cleanup_pdl_stop (task);
 	}
 
 
 
 
-	// Stop Comcat polling.
+	// Stop cleaning up old forecasts in PDL.
 
-	private int exec_poll_comcat_stop (PendingTask task) {
+	private int exec_cleanup_pdl_stop (PendingTask task) {
 
 		//--- Get payload
 
