@@ -2,6 +2,7 @@ relit241 aafs.ServerTest relit_thread_dump
 Begin relay thread item queue
 End relay thread item queue
 Begin relay thread fetch operation
+Fetch operation item count = 5
 RelayItem
 	id: 54ac4cd00000000000000003
 	relay_time: 10100

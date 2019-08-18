@@ -7,7 +7,7 @@ apply from: '../opensha-commons/build-common.gradle'
 dependencies {
 
     /* for OAF */
-    compileAndResource 'org.mongodb:mongodb-driver-sync:3.10.1'
+    compileAndResource 'org.mongodb:mongodb-driver-sync:3.11.0'
  
     /* no remote repo */
     compileOnly files('lib/ProductClient.jar')
