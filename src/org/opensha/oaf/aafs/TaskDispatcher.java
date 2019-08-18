@@ -81,6 +81,9 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 	public static final int STATE_WAITING         = 4;	// Waiting for next task.
 	public static final int STATE_POLLING         = 5;	// Polling queue.
 	public static final int STATE_SHUTDOWN        = 6;	// Normal shutdown.
+	public static final int STATE_IDLE_TIME       = 7;	// Performing idle time (background) operations.
+	public static final int STATE_RELAY_LINK_INIT = 8;	// Initializing the relay link.
+	public static final int STATE_RELAY_LINK_POLL = 9;	// Polling the relay link.
 
 	// get_dispatcher_state - Get the task dispatcher state.
 	// Note: This should only be called after the dispatcher exits.
@@ -89,6 +92,24 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 	public int get_dispatcher_state () {
 		return dispatcher_state;
+	}
+
+	// Return a string describing a dispatcher state.
+
+	public static String get_dispatcher_state_as_string (int state) {
+		switch (state) {
+		case STATE_INITIAL: return "STATE_INITIAL";
+		case STATE_FIRST_CONNECT: return "STATE_FIRST_CONNECT";
+		case STATE_RECONNECTING: return "STATE_RECONNECTING";
+		case STATE_PROCESSING: return "STATE_PROCESSING";
+		case STATE_WAITING: return "STATE_WAITING";
+		case STATE_POLLING: return "STATE_POLLING";
+		case STATE_SHUTDOWN: return "STATE_SHUTDOWN";
+		case STATE_IDLE_TIME: return "STATE_IDLE_TIME";
+		case STATE_RELAY_LINK_INIT: return "STATE_RELAY_LINK_INIT";
+		case STATE_RELAY_LINK_POLL: return "STATE_RELAY_LINK_POLL";
+		}
+		return "STATE_INVALID(" + state + ")";
 	}
 
 
@@ -142,6 +163,18 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 	public ActionConfig get_action_config () {
 		return dispatcher_action_config;
+	}
+
+
+
+
+	// Refresh the task context variables.
+
+	private void refresh_task_context () {
+		dispatcher_time = ServerClock.get_time();
+		dispatcher_true_time = ServerClock.get_true_time();
+		dispatcher_action_config = new ActionConfig();
+		return;
 	}
 
 
@@ -257,7 +290,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 	// The polling delay, in milliseconds.
 
-	private long polling_delay = 30000L;			// 30 seconds
+	private long polling_delay = 15000L;			// 15 seconds
 
 	// The minimum polling delay, in milliseconds.
 
@@ -553,6 +586,30 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 
 
+	// Test if there is a shutdown command on the task queue.
+	// If there are any shutdown commands, they are deleted, and the return value is true.
+	// If there are no shutdown commands, the return value is false.
+	// There must be an established connection to MongoDB.
+
+	public static boolean delete_all_shutdown_tasks () {
+
+		boolean result = false;
+
+		List<PendingTask> shutdown_tasks = PendingTask.get_task_entry_range (0L, 0L, EVID_SHUTDOWN, PendingTask.UNSORTED);
+
+		for (PendingTask shutdown_task : shutdown_tasks) {
+			if (shutdown_task.get_opcode() == OPCODE_SHUTDOWN) {
+				result = true;
+				PendingTask.delete_task (shutdown_task);
+			}
+		}
+	
+		return result;
+	}
+
+
+
+
 	//----- Task dispatching functions -----
 
 
@@ -593,6 +650,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 			// Connect to MongoDB
 
 			try (
+				RelayLink.LinkSentinel rl_sentinel = sg.relay_link.make_link_sentinel();
 				MongoDBUtil mongo_instance = new MongoDBUtil (conopt_outer, ddbopt, null);
 			){
 
@@ -604,13 +662,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 				
 					// Remove any shutdown commands from the task queue
 
-					List<PendingTask> shutdown_tasks = PendingTask.get_task_entry_range (0L, 0L, EVID_SHUTDOWN, PendingTask.UNSORTED);
-
-					for (PendingTask shutdown_task : shutdown_tasks) {
-						if (shutdown_task.get_opcode() == OPCODE_SHUTDOWN) {
-							PendingTask.delete_task (shutdown_task);
-						}
-					}
+					delete_all_shutdown_tasks();
 
 					// Initialize Comcat polling, begin disabled
 
@@ -625,9 +677,59 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 					sg.log_sup.report_dispatcher_restart ();
 				}
 
+				// State = relay link initialization
+
+				dispatcher_state = STATE_RELAY_LINK_INIT;
+
+				// Get task time and configuration
+
+				refresh_task_context();
+
+				// Initialize relay link, wait for primary status to be determined
+
+				sg.relay_link.init_relay_link();
+				sg.relay_link.poll_relay_link();
+
+				while (sg.relay_link.is_prist_initializing()) {
+
+					// Wait a bit
+
+					try {
+						Thread.sleep(polling_delay);
+					} catch (InterruptedException e) {
+					}
+
+					// Check for shutdown command
+
+					if (delete_all_shutdown_tasks()) {
+						dispatcher_state = STATE_SHUTDOWN;
+						break;
+					}
+
+					// Get task time and configuration
+
+					refresh_task_context();
+
+					// Poll the relay link
+				
+					sg.relay_link.poll_relay_link();
+				}
+
 				// Polling loop, continue until shutdown or exception
 
 				while (dispatcher_state != STATE_SHUTDOWN) {
+
+					// State = relay link poll
+
+					dispatcher_state = STATE_RELAY_LINK_POLL;
+
+					// Get task time and configuration
+
+					refresh_task_context();
+
+					// Poll the relay link
+
+					sg.relay_link.poll_relay_link();
 
 					// State = polling
 
@@ -635,9 +737,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 					// Get task time and configuration
 
-					dispatcher_time = ServerClock.get_time();
-					dispatcher_true_time = ServerClock.get_true_time();
-					dispatcher_action_config = new ActionConfig();
+					refresh_task_context();
 
 					// Record the dispatcher active time
 
@@ -703,13 +803,17 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 					if (f_idle) {
 
-						// State = waiting
+						// State = idle time
 
-						dispatcher_state = STATE_WAITING;
+						dispatcher_state = STATE_IDLE_TIME;
 
 						// Execute idle time operations
 
 						exec_idle_time();
+
+						// State = waiting
+
+						dispatcher_state = STATE_WAITING;
 
 						// Get polling delay, allowing for time consumed by idle time operations
 
@@ -728,6 +832,10 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 						}
 					}
 				}
+
+				// Shut down the relay link
+
+				sg.relay_link.shutdown_relay_link();
 
 			// Operation failed with exception
 
@@ -1170,19 +1278,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 	// This is a test function.
 
 	public static boolean test_check_for_shutdown () {
-
-		boolean result = false;
-
-		List<PendingTask> shutdown_tasks = PendingTask.get_task_entry_range (0L, 0L, EVID_SHUTDOWN, PendingTask.UNSORTED);
-
-		for (PendingTask shutdown_task : shutdown_tasks) {
-			if (shutdown_task.get_opcode() == OPCODE_SHUTDOWN) {
-				result = true;
-				PendingTask.delete_task (shutdown_task);
-			}
-		}
-	
-		return result;
+		return delete_all_shutdown_tasks();
 	}
 
 }

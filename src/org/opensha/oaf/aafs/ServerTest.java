@@ -468,7 +468,7 @@ public class ServerTest {
 
 		// Display final status
 
-		System.out.println ("Dispatcher final state: " + dispatcher.get_dispatcher_state());
+		System.out.println ("Dispatcher final state: " + TaskDispatcher.get_dispatcher_state_as_string (dispatcher.get_dispatcher_state()));
 
 		return;
 	}

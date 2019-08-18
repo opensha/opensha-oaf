@@ -114,7 +114,7 @@ public class ServerCmd {
 				if (dispatcher_state == TaskDispatcher.STATE_SHUTDOWN) {
 					System.out.println ("AAFS server exited normally at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
 				} else {
-					System.out.println ("Server exited abnormally at " + SimpleUtils.time_to_string (ServerClock.get_true_time()) + ", final state code = " + dispatcher_state);
+					System.out.println ("Server exited abnormally at " + SimpleUtils.time_to_string (ServerClock.get_true_time()) + ", final state code = " + TaskDispatcher.get_dispatcher_state_as_string (dispatcher_state));
 				}
 
 			}
@@ -494,7 +494,7 @@ public class ServerCmd {
 				if (dispatcher_state == TaskDispatcher.STATE_SHUTDOWN) {
 					System.out.println ("AAFS server exited normally at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
 				} else {
-					System.out.println ("Server exited abnormally at " + SimpleUtils.time_to_string (ServerClock.get_true_time()) + ", final state code = " + dispatcher_state);
+					System.out.println ("Server exited abnormally at " + SimpleUtils.time_to_string (ServerClock.get_true_time()) + ", final state code = " + TaskDispatcher.get_dispatcher_state_as_string (dispatcher_state));
 				}
 
 			}

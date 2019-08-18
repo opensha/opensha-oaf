@@ -345,6 +345,50 @@ public class RelayLink extends ServerComponent {
 
 
 
+	// Change the status in the database to shutdown state.
+	// Also updates the fixed fields in the server status.
+
+	private void shutdown_db_status (long time_now) {
+
+		// Get server status from database
+
+		RiServerStatus sstat_payload = new RiServerStatus();
+		RelayItem sstat_item = sg.relay_sup.get_sstat_relay_item (sstat_payload);
+
+		// If we got it, fill in fixed fields and shutdown state
+
+		if (sstat_item != null) {
+			sstat_payload.fill_fixed_info();
+			sstat_payload.fill_shutdown_state();
+		}
+
+		// Otherwise, initialize to default (solo primary)
+
+		else {
+
+			// Use a very small mode_timestamp so the configuration can be overriden by any new one
+
+			sstat_payload.setup (new RelayConfig (1L));
+		}
+		
+		// Store the status
+
+		long relay_time = time_now;
+		boolean f_force = true;
+		boolean f_log = true;
+
+		sg.relay_sup.submit_sstat_relay_item (
+			time_now,						// relay_time
+			true,							// f_force
+			true,							// f_log
+			sstat_payload);					// sstat_payload
+	
+		return;
+	}
+
+
+
+
 	//=====[ Server Information ]=====
 
 
@@ -570,9 +614,9 @@ public class RelayLink extends ServerComponent {
 		// communicate with a partner server.  This state is set when the
 		// server is configured to run in standalone mode.
 	public static final int LINK_DISCONNECTED			= 103;
-		// There is no connection to a partner server, and the relay thread
-		// does not exist.  This is the initial state for a server in watch
-		// or pair mode.  On entry to this state, a timer is set for when the
+		// There is no connection to a partner server, and the relay thread does
+		// not exist or is shut down.  This is the initial state for a server in
+		// watch or pair mode.  On entry to this state, a timer is set for when the
 		// next connection attempt will be made, which is "now" at initial entry,
 		// or after a retry interval if this state is entered due to loss of
 		// connection.  Receipt of a new configuration also sets the timer to
@@ -2288,6 +2332,12 @@ public class RelayLink extends ServerComponent {
 
 				local_status.fill_shutdown_state();
 			}
+
+			// Make certain that the relay thread is terminated in all cases
+			// (Extra calls to terminate the thread are ignored.)
+
+			relay_thread.terminate_relay_thread();
+
 			return;
 		}
 	}
@@ -2382,7 +2432,7 @@ public class RelayLink extends ServerComponent {
 
 
 	// Initialize the relay link.
-	// This must be called before anything else (except the sentinel).
+	// This must be called before anything else (except the sentinel and init_db_status()).
 	// This needs to be called after connecting to MongoDB.
 	// Note: This does not determine the initial primary or secondary state.
 	// You can use poll_until_primary_known to wait for primary state to be determined.
@@ -2459,6 +2509,18 @@ public class RelayLink extends ServerComponent {
 
 
 
+	// Return true if primary state is being negotiated.
+
+	public boolean is_prist_initializing () {
+		if (local_status != null && get_primary_state() == PRIST_INITIALIZING) {
+			return true;
+		}
+		return false;
+	}
+
+
+
+
 	// Shut down the relay link.
 	// This performs an orderly shutdown.
 	// This must be called while still connected to MongoDB.
@@ -2503,6 +2565,26 @@ public class RelayLink extends ServerComponent {
 			return true;
 		}
 		return false;
+	}
+
+
+
+
+	// Initialize the status in the database to shutdown state.
+	// Also updates the fixed fields in the server status.
+	// Note: This may be called only before initialization.
+
+	public void init_db_status () {
+
+		// Get the current time
+
+		long time_now = ServerClock.get_time();
+
+		// Change status in the database to shutdown state
+
+		shutdown_db_status (time_now);
+	
+		return;
 	}
 
 

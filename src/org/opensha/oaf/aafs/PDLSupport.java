@@ -306,9 +306,13 @@ public class PDLSupport extends ServerComponent {
 			return false;
 		}
 
-		// For now, just assume primary
+		// Get the primary mode from the relay link
 
-		return true;
+		return sg.relay_link.is_primary_state();
+
+		//  // For now, just assume primary
+		//  
+		//  return true;
 	}
 
 

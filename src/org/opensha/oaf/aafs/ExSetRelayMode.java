@@ -48,12 +48,6 @@ public class ExSetRelayMode extends ServerExecTask {
 
 	private int exec_set_relay_mode (PendingTask task) {
 
-		// Check for cleanup blocked
-		
-		if ((new ServerConfig()).get_is_poll_intake_blocked()) {
-			return RESCODE_DELETE_INTAKE_BLOCKED;
-		}
-
 		//--- Get payload
 
 		OpSetRelayMode payload = new OpSetRelayMode();

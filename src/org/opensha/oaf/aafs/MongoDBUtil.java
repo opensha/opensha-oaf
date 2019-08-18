@@ -120,6 +120,51 @@ public class MongoDBUtil implements AutoCloseable {
 
 
 
+	// Return true if the content for this thread is null (not allocated yet).
+
+	private static boolean is_mongo_content_null () {
+
+		// Get thread-local value
+
+		MongoDBContent mongo_content = cached_mongo_content.get();
+
+		if (mongo_content == null) {
+			return true;
+		}
+
+		return false;
+	}
+
+
+
+
+	// Close the content for this thread and discard it, if it exists.
+
+	private static void close_mongo_content () {
+
+		// Get thread-local value
+
+		MongoDBContent mongo_content = cached_mongo_content.get();
+
+		// If created ...
+
+		if (mongo_content != null) {
+
+			// Discard it
+		
+			cached_mongo_content.set (null);
+
+			// Close it
+
+			mongo_content.close();
+		}
+	
+		return;
+	}
+
+
+
+
 	//----- Application access RAII -----
 
 
@@ -166,6 +211,10 @@ public class MongoDBUtil implements AutoCloseable {
 
 	private String eff_db_handle;
 
+	// Flag which indicates if the content was null at the time this object was created.
+
+	private boolean f_content_null;
+
 
 
 
@@ -192,6 +241,44 @@ public class MongoDBUtil implements AutoCloseable {
 
 		def_conopt = conopt;
 		return;
+	}
+
+
+
+
+	// Undo-able content allocation.
+
+	public class UndoAlloc implements AutoCloseable {
+
+		// Flag indicates if undo is desired.
+
+		public boolean f_undo;
+
+		// Turn off undo, to keep the connection.
+
+		public void keep () {
+			f_undo = false;
+		}
+		
+		// Constructor argument specifies if this is setup (true) or tear-down (false).
+
+		public UndoAlloc (boolean f_make) {
+			f_undo = true;
+		}
+
+		// Close content during close, if requested.
+
+		@Override
+		public void close () {
+			if (f_undo) {
+				f_undo = false;
+				if (f_content_null) {
+					close_mongo_content();
+				}
+			}
+
+			return;
+		}
 	}
 
 
@@ -352,6 +439,10 @@ public class MongoDBUtil implements AutoCloseable {
 		this.conopt = conopt;
 		this.ddbopt = ddbopt;
 
+		// Save flag indicating if content is null at entry
+
+		f_content_null = is_mongo_content_null();
+
 		// Save default database handle
 
 		MongoDBContent mongo_content = get_mongo_content();
@@ -367,19 +458,31 @@ public class MongoDBUtil implements AutoCloseable {
 		// Do requested connections
 
 		switch (this.conopt) {
+			case CONOPT_NONE:
+				try (
+					UndoAlloc undo_alloc = new UndoAlloc (true);
+				) {
+					undo_alloc.keep();
+				}
+				break;
+
 			case CONOPT_CONNECT:
 				try (
+					UndoAlloc undo_alloc = new UndoAlloc (true);
 					UndoConnect undo_connect = new UndoConnect (true);
 				) {
+					undo_alloc.keep();
 					undo_connect.keep();
 				}
 				break;
 
 			case CONOPT_SESSION:
 				try (
+					UndoAlloc undo_alloc = new UndoAlloc (true);
 					UndoConnect undo_connect = new UndoConnect (true);
 					UndoSession undo_session = new UndoSession (true);
 				) {
+					undo_alloc.keep();
 					undo_connect.keep();
 					undo_session.keep();
 				}
@@ -387,10 +490,12 @@ public class MongoDBUtil implements AutoCloseable {
 
 			case CONOPT_TRANSACT_COMMIT:
 				try (
+					UndoAlloc undo_alloc = new UndoAlloc (true);
 					UndoConnect undo_connect = new UndoConnect (true);
 					UndoSession undo_session = new UndoSession (true);
 					UndoTransact undo_transact = new UndoTransact (true, true);
 				) {
+					undo_alloc.keep();
 					undo_connect.keep();
 					undo_session.keep();
 					undo_transact.keep();
@@ -399,10 +504,12 @@ public class MongoDBUtil implements AutoCloseable {
 
 			case CONOPT_TRANSACT_ABORT:
 				try (
+					UndoAlloc undo_alloc = new UndoAlloc (true);
 					UndoConnect undo_connect = new UndoConnect (true);
 					UndoSession undo_session = new UndoSession (true);
 					UndoTransact undo_transact = new UndoTransact (true, false);
 				) {
+					undo_alloc.keep();
 					undo_connect.keep();
 					undo_session.keep();
 					undo_transact.keep();
@@ -451,8 +558,16 @@ public class MongoDBUtil implements AutoCloseable {
 		// Do requested disconnections
 
 		switch (this.conopt) {
+			case CONOPT_NONE:
+				try (
+					UndoAlloc undo_alloc = new UndoAlloc (false);
+				) {
+				}
+				break;
+
 			case CONOPT_CONNECT:
 				try (
+					UndoAlloc undo_alloc = new UndoAlloc (false);
 					UndoConnect undo_connect = new UndoConnect (false);
 				) {
 				}
@@ -460,6 +575,7 @@ public class MongoDBUtil implements AutoCloseable {
 
 			case CONOPT_SESSION:
 				try (
+					UndoAlloc undo_alloc = new UndoAlloc (false);
 					UndoConnect undo_connect = new UndoConnect (false);
 					UndoSession undo_session = new UndoSession (false);
 				) {
@@ -468,6 +584,7 @@ public class MongoDBUtil implements AutoCloseable {
 
 			case CONOPT_TRANSACT_COMMIT:
 				try (
+					UndoAlloc undo_alloc = new UndoAlloc (false);
 					UndoConnect undo_connect = new UndoConnect (false);
 					UndoSession undo_session = new UndoSession (false);
 					UndoTransact undo_transact = new UndoTransact (false, false);
@@ -477,6 +594,7 @@ public class MongoDBUtil implements AutoCloseable {
 
 			case CONOPT_TRANSACT_ABORT:
 				try (
+					UndoAlloc undo_alloc = new UndoAlloc (false);
 					UndoConnect undo_connect = new UndoConnect (false);
 					UndoSession undo_session = new UndoSession (false);
 					UndoTransact undo_transact = new UndoTransact (false, false);
