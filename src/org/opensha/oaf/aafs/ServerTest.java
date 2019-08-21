@@ -5386,14 +5386,14 @@ public class ServerTest {
 			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
 		}
 
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
 		// Get a task dispatcher and server group
 
 		TaskDispatcher dispatcher = new TaskDispatcher();
 		ServerGroup sg = dispatcher.get_server_group();
-
-		// Turn off excessive log messages
-
-		MongoDBLogControl.disable_excessive();
 
 		// Connect to MongoDB
 
@@ -7006,7 +7006,7 @@ public class ServerTest {
 		// Subcommand : Test #89
 		// Command format:
 		//  test89  logfile  f_primary
-		// Use timeline support to change the PDL mode.
+		// Run the relay link.
 		// The logfile can be "-" for none.
 
 		if (args[0].equalsIgnoreCase ("test89") || args[0].equalsIgnoreCase ("run_relay_link")) {

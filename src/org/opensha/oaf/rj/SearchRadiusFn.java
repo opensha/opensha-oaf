@@ -109,6 +109,32 @@ public abstract class SearchRadiusFn {
 
 
 
+	//----- Support methods -----
+
+
+	// Get the default Wells and Coppersmith radius multiplier value to be inserted into the GUI.
+
+	public double getDefaultGUIRadiusMult () {
+		return 1.0;
+	}
+
+
+	// Get the default minimum radius value to be inserted into the GUI.
+
+	public double getDefaultGUIRadiusMin () {
+		return 0.0;
+	}
+
+
+	// Get the default maximum radius value to be inserted into the GUI.
+
+	public double getDefaultGUIRadiusMax () {
+		return 0.0;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.

@@ -139,6 +139,26 @@ public class MagCompPage_Parameters {
 		return radiusCentroid.getRadius (magMain);
 	}
 
+
+	// Functions to return the functions for sample magnitude and radius.
+
+	public SearchMagFn get_fcn_magSample () {
+		return magSample;
+	}
+
+	public SearchRadiusFn get_fcn_radiusSample () {
+		return radiusSample;
+	}
+
+	public SearchMagFn get_fcn_magCentroid () {
+		return magCentroid;
+	}
+
+	public SearchRadiusFn get_fcn_radiusCentroid () {
+		return radiusCentroid;
+	}
+
+
 	@Override
 	public String toString() {
 		return "Page_Params:" + "\n"

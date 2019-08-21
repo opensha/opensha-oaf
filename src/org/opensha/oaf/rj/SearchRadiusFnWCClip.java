@@ -142,6 +142,35 @@ public class SearchRadiusFnWCClip extends SearchRadiusFn {
 
 
 
+	//----- Support methods -----
+
+
+	// Get the default Wells and Coppersmith radius multiplier value to be inserted into the GUI.
+
+	@Override
+	public double getDefaultGUIRadiusMult () {
+		return radiusMult;
+	}
+
+
+	// Get the default minimum radius value to be inserted into the GUI.
+
+	@Override
+	public double getDefaultGUIRadiusMin () {
+		return radiusMin;
+	}
+
+
+	// Get the default maximum radius value to be inserted into the GUI.
+
+	@Override
+	public double getDefaultGUIRadiusMax () {
+		return radiusMax;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.
