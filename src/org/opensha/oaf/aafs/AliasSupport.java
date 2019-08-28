@@ -1728,6 +1728,46 @@ public class AliasSupport extends ServerComponent {
 
 
 
+
+	// Given a timeline ID, find the corresponding Comcat IDs.
+	// Parameters:
+	//  timeline_id = Timeline ID to search for.
+	// Returns an array containing the Comcat IDs, with the primary ID listed first.
+	// Returns null if the timeline ID is not found.
+	// Returns an empty array if the timeline ID is found, but has no Comcat IDs
+	// (which can occur if there are Comcat deletions or merges).
+	// Note: This function does not call Comcat nor make any changes to the database,
+	// it is strictly a database query.
+
+	public String[] get_comcat_ids_for_timeline_id (String timeline_id) {
+
+		// Get the alias family for this timeline ID
+
+		AliasFamily alfam = AliasFamily.get_recent_alias_family (0L, 0L, timeline_id, null, null);
+
+		if (alfam == null) {
+			return null;
+		}
+
+		// Read it into an alias assignment list
+
+		AliasAssignmentList db_aalist = alfam.get_assignments();
+
+		// Find the assignment for our timeline ID
+
+		AliasAssignment db_aa = db_aalist.get_assignment_for_timeline_id (timeline_id);
+
+		if (db_aa == null) {
+			return null;
+		}
+	
+		// Return the Comcat IDs
+
+		return db_aa.get_comcat_ids_as_array();
+	}
+
+
+
 	
 	//----- Construction -----
 

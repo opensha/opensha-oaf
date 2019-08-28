@@ -80,6 +80,12 @@ public class ExIntakeSync extends ServerExecTask {
 					tstatus.set_analyst_data (payload.analyst_options);
 				}
 
+				//  // Otherwise, update the analyst options from relay items (already done in open_timeline)
+				//  
+				//  else {
+				//  	sg.timeline_sup.update_analyst_options_from_relay (tstatus);
+				//  }
+
 				// Write the new timeline entry
 
 				sg.timeline_sup.append_timeline (task, tstatus);
@@ -157,6 +163,12 @@ public class ExIntakeSync extends ServerExecTask {
 
 		if (payload.analyst_options != null) {
 			tstatus.set_analyst_data (payload.analyst_options);
+		}
+
+		// Otherwise, update the analyst options from relay items
+
+		else {
+			sg.timeline_sup.update_analyst_options_from_relay (tstatus);
 		}
 
 		// Write the new timeline entry

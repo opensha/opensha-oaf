@@ -48,12 +48,9 @@ public class RiPDLRemoval extends DBPayload {
 
 	public int riprem_reason;
 
-	// If associated with a forecast, this is the time lag in milliseconds since the mainshock.
-	// The value -1L is used if no forecast lag is available.
-	// Note: An offset is added when the object is serialized, so that the
-	// JSON-encoded form of this object has fixed length.
+	// Forecast stamp, which identifies the forecast.  Cannot be null.
 
-	public long riprem_forecast_lag;
+	public ForecastStamp riprem_forecast_stamp;
 
 	// The time when it was determined that the OAF product can be deleted.
 	// Note: An offset is added when the object is serialized, so that the
@@ -90,13 +87,10 @@ public class RiPDLRemoval extends DBPayload {
 		return "RIPREM_REAS_INVALID(" + riprem_reason + ")";
 	}
 
-	// Return a friendly string representation of ripdl_forecast_lag.
+	// Return a friendly string representation of riprem_forecast_stamp.
 
-	public String get_riprem_forecast_lag_as_string () {
-		if (riprem_forecast_lag <= 0L) {
-			return String.valueOf (riprem_forecast_lag);
-		}
-		return SimpleUtils.duration_to_string_2 (riprem_forecast_lag);
+	public String get_riprem_forecast_stamp_as_string () {
+		return riprem_forecast_stamp.get_friendly_string();
 	}
 
 	// Return a friendly string representation of ripdl_update_time.
@@ -137,9 +131,9 @@ public class RiPDLRemoval extends DBPayload {
 
 	// Set up the contents.
 
-	public void setup (int the_riprem_reason, long the_riprem_forecast_lag, long the_riprem_remove_time) {
+	public void setup (int the_riprem_reason, ForecastStamp the_riprem_forecast_stamp, long the_riprem_remove_time) {
 		riprem_reason = the_riprem_reason;
-		riprem_forecast_lag = the_riprem_forecast_lag;
+		riprem_forecast_stamp = the_riprem_forecast_stamp;
 		riprem_remove_time = the_riprem_remove_time;
 		return;
 	}
@@ -152,6 +146,7 @@ public class RiPDLRemoval extends DBPayload {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 60001;
+	private static final int MARSHAL_VER_2 = 60002;
 
 	private static final String M_VERSION_NAME = "RiPDLRemoval";
 
@@ -162,7 +157,9 @@ public class RiPDLRemoval extends DBPayload {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Superclass
 
@@ -170,9 +167,27 @@ public class RiPDLRemoval extends DBPayload {
 
 		// Contents
 
-		writer.marshalInt  ("riprem_reason"      , riprem_reason      );
-		writer.marshalLong ("riprem_forecast_lag", riprem_forecast_lag + OFFSERL);
-		writer.marshalLong ("riprem_remove_time" , riprem_remove_time  + OFFSERL);
+		switch (ver) {
+
+		case MARSHAL_VER_1: {
+
+			long riprem_forecast_lag = riprem_forecast_stamp.get_forecast_lag();
+
+			writer.marshalInt  ("riprem_reason"      , riprem_reason      );
+			writer.marshalLong ("riprem_forecast_lag", riprem_forecast_lag + OFFSERL);
+			writer.marshalLong ("riprem_remove_time" , riprem_remove_time  + OFFSERL);
+
+			}
+			break;
+
+		case MARSHAL_VER_2:
+
+			writer.marshalInt     (        "riprem_reason"        , riprem_reason        );
+			ForecastStamp.marshal (writer, "riprem_forecast_stamp", riprem_forecast_stamp);
+			writer.marshalLong    (        "riprem_remove_time"   , riprem_remove_time    + OFFSERL);
+
+			break;
+		}
 
 		return;
 	}
@@ -184,7 +199,7 @@ public class RiPDLRemoval extends DBPayload {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Superclass
 
@@ -192,9 +207,29 @@ public class RiPDLRemoval extends DBPayload {
 
 		// Contents
 
-		riprem_reason       = reader.unmarshalInt  ("riprem_reason"      , RIPREM_REAS_MIN, RIPREM_REAS_MAX);
-		riprem_forecast_lag = reader.unmarshalLong ("riprem_forecast_lag") - OFFSERL;
-		riprem_remove_time  = reader.unmarshalLong ("riprem_remove_time" ) - OFFSERL;
+		switch (ver) {
+
+		case MARSHAL_VER_1: {
+
+			long riprem_forecast_lag;
+
+			riprem_reason       = reader.unmarshalInt  ("riprem_reason"      , RIPREM_REAS_MIN, RIPREM_REAS_MAX);
+			riprem_forecast_lag = reader.unmarshalLong ("riprem_forecast_lag") - OFFSERL;
+			riprem_remove_time  = reader.unmarshalLong ("riprem_remove_time" ) - OFFSERL;
+
+			riprem_forecast_stamp = new ForecastStamp (riprem_forecast_lag);
+
+			}
+			break;
+
+		case MARSHAL_VER_2:
+
+			riprem_reason         = reader.unmarshalInt     (        "riprem_reason"        , RIPREM_REAS_MIN, RIPREM_REAS_MAX);
+			riprem_forecast_stamp = ForecastStamp.unmarshal (reader, "riprem_forecast_stamp");
+			riprem_remove_time    = reader.unmarshalLong    (        "riprem_remove_time"   ) - OFFSERL;
+
+			break;
+		}
 
 		return;
 	}

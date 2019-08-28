@@ -72,7 +72,7 @@ public class ExGeneratePDLReport extends ServerExecTask {
 			sg.task_disp.set_display_taskres_log ("TASK-INFO: PDL report command is canceled:\n"
 				+ "event_id = " + task.get_event_id() + "\n"
 				+ "payload.action_time = " + payload.action_time + "\n"
-				+ "payload.last_forecast_lag = " + payload.last_forecast_lag);
+				+ "payload.last_forecast_stamp = " + payload.last_forecast_stamp.get_friendly_string());
 
 			sg.timeline_sup.next_auto_timeline (tstatus);
 			return RESCODE_PDL_CANCELED;
@@ -96,14 +96,14 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		// Check state matches the command
 
 		if (!( payload.action_time == tstatus.action_time
-			&& payload.last_forecast_lag == tstatus.last_forecast_lag )) {
+			&& payload.last_forecast_stamp.is_equal_to (tstatus.last_forecast_stamp) )) {
 		
 			sg.task_disp.set_display_taskres_log ("TASK-ERR: Timeline entry state does not match task:\n"
 				+ "event_id = " + task.get_event_id() + "\n"
 				+ "payload.action_time = " + payload.action_time + "\n"
 				+ "tstatus.action_time = " + tstatus.action_time + "\n"
-				+ "payload.last_forecast_lag = " + payload.last_forecast_lag + "\n"
-				+ "tstatus.last_forecast_lag = " + tstatus.last_forecast_lag);
+				+ "payload.last_forecast_stamp = " + payload.last_forecast_stamp.get_friendly_string() + "\n"
+				+ "tstatus.last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string());
 
 			sg.timeline_sup.next_auto_timeline (tstatus);
 			return RESCODE_TIMELINE_TASK_MISMATCH;
@@ -147,7 +147,7 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		
 			sg.task_disp.set_display_taskres_log ("TASK-ERR: PDL report failed because unable to find forecast in timeline:\n"
 				+ "event_id = " + tstatus.event_id + "\n"
-				+ "last_forecast_lag = " + tstatus.last_forecast_lag);
+				+ "last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string());
 
 			// Write the new timeline entry
 
@@ -175,7 +175,7 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		
 			sg.task_disp.set_display_taskres_log ("TASK-ERR: PDL report failed because unable to interpret forecast in timeline:\n"
 				+ "event_id = " + tstatus.event_id + "\n"
-				+ "last_forecast_lag = " + tstatus.last_forecast_lag + "\n"
+				+ "last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string() + "\n"
 				+ "Stack trace:\n" + SimpleUtils.getStackTraceAsString(e));
 
 			// Write the new timeline entry
@@ -207,7 +207,7 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		
 				sg.task_disp.set_display_taskres_log ("TASK-ERR: PDL report failed because unable to find catalog:\n"
 					+ "event_id = " + tstatus.event_id + "\n"
-					+ "last_forecast_lag = " + tstatus.last_forecast_lag);
+					+ "last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string());
 
 				// Write the new timeline entry
 
@@ -231,7 +231,7 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		
 				sg.task_disp.set_display_taskres_log ("TASK-ERR: PDL report failed because of catalog parameter mismatch:\n"
 					+ "event_id = " + tstatus.event_id + "\n"
-					+ "last_forecast_lag = " + tstatus.last_forecast_lag + "\n"
+					+ "last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string() + "\n"
 					+ "catalog event_id = " + pdl_catsnap.get_event_id() + "\n"
 					+ "timeline event_id = " + pdl_tstatus.event_id + "\n"
 					+ "catalog start_time = " + pdl_catsnap.get_start_time() + "\n"
@@ -266,7 +266,7 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		
 				sg.task_disp.set_display_taskres_log ("TASK-ERR: PDL report failed because unable to interpret catalog:\n"
 					+ "event_id = " + tstatus.event_id + "\n"
-					+ "last_forecast_lag = " + tstatus.last_forecast_lag + "\n"
+					+ "last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string() + "\n"
 					+ "Stack trace:\n" + SimpleUtils.getStackTraceAsString(e));
 
 				// Write the new timeline entry
@@ -293,7 +293,7 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		
 			sg.task_disp.set_display_taskres_log ("TASK-INFO: PDL report has already been sent:\n"
 				+ "event_id = " + tstatus.event_id + "\n"
-				+ "last_forecast_lag = " + tstatus.last_forecast_lag);
+				+ "last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string());
 
 			sg.log_sup.report_pdl_sent_already (tstatus);
 
@@ -314,7 +314,7 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		
 			sg.task_disp.set_display_taskres_log ("TASK-INFO: PDL report not sent from secondary server:\n"
 				+ "event_id = " + tstatus.event_id + "\n"
-				+ "last_forecast_lag = " + tstatus.last_forecast_lag);
+				+ "last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string());
 
 			sg.log_sup.report_pdl_not_sent_secondary (tstatus);
 
@@ -364,7 +364,7 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		
 			sg.task_disp.set_display_taskres_log ("TASK-ERR: Unable to send forecast report to PDL:\n"
 				+ "event_id = " + tstatus.event_id + "\n"
-				+ "last_forecast_lag = " + tstatus.last_forecast_lag + "\n"
+				+ "last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string() + "\n"
 				+ "Stack trace:\n" + SimpleUtils.getStackTraceAsString(e));
 
 			// Write the new timeline entry
@@ -389,7 +389,7 @@ public class ExGeneratePDLReport extends ServerExecTask {
 			sg.task_disp.get_time(),								// relay_time
 			true,													// f_force
 			RiPDLCompletion.RIPDL_ACT_FORECAST_PDL,					// ripdl_action
-			tstatus.last_forecast_lag,								// ripdl_forecast_lag
+			pdl_tstatus.last_forecast_stamp,						// ripdl_forecast_stamp
 			sg.task_disp.get_time()									// ripdl_update_time
 		);
 

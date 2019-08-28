@@ -118,6 +118,10 @@ public class ExAliasSplit extends ServerExecTask {
 
 		sg.timeline_sup.append_timeline (task, tstatus);
 
+		// Update the analyst options from relay items
+
+		sg.timeline_sup.update_analyst_options_from_relay (tstatus);
+
 		// Log the task
 
 		return RESCODE_SUCCESS;

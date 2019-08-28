@@ -358,10 +358,11 @@ public class TimelineStatus extends DBPayload {
 
 	//----- Scheduling data -----
 
-	// Time lag at which the last forecast occured, in milliseconds since the mainshock.
-	// The value is -1L if there have been no prior forecasts.
+	// Forecast stamp which identifies the last forecast issued.
+	// The value is new ForecastStamp() if there have been no prior forecasts.
+	// This is always non-null.
 
-	public long last_forecast_lag;
+	public ForecastStamp last_forecast_stamp;
 
 
 
@@ -396,7 +397,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = other.forecast_params;
 		forecast_results    = other.forecast_results;
 
-		last_forecast_lag   = other.last_forecast_lag;
+		last_forecast_stamp = other.last_forecast_stamp;
 		return;
 	}
 
@@ -614,6 +615,12 @@ public class TimelineStatus extends DBPayload {
 		return true;
 	}
 
+	// Return the lag of the last forecast, or -1L if there is no last forecast.
+
+	public long get_last_forecast_lag () {
+		return last_forecast_stamp.get_forecast_lag();
+	}
+
 
 
 
@@ -669,7 +676,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = null;
 		forecast_results    = null;
 
-		last_forecast_lag   = -1L;
+		last_forecast_stamp = new ForecastStamp();
 		return;
 	}
 
@@ -696,7 +703,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = null;
 		forecast_results    = null;
 
-		//last_forecast_lag   = kept;
+		//last_forecast_stamp   = kept;
 		return;
 	}
 
@@ -723,7 +730,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = null;
 		forecast_results    = null;
 
-		//last_forecast_lag   = kept;
+		//last_forecast_stamp   = kept;
 		return;
 	}
 
@@ -758,7 +765,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = null;
 		forecast_results    = null;
 
-		//last_forecast_lag   = kept;
+		//last_forecast_stamp   = kept;
 
 		analyst_options.extra_forecast_lag = -1L;
 		return;
@@ -779,6 +786,8 @@ public class TimelineStatus extends DBPayload {
 	// Note: shadowing_event_id is set to "".
 	//
 	// Note: analyst_options.extra_forecast_lag is set to -1L, consuming any analyst forecast request.
+	//
+	// Note: last_forecast_stamp is set from the_forecast_params.forecast_lag and analyst_options.
 
 	public void set_state_forecast (long the_entry_time, ActionConfig action_config,
 			ForecastMainshock the_forecast_mainshock, ForecastParameters the_forecast_params, ForecastResults the_forecast_results) {
@@ -808,7 +817,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = the_forecast_params;
 		forecast_results    = the_forecast_results;
 
-		last_forecast_lag   = the_forecast_params.forecast_lag;
+		last_forecast_stamp = new ForecastStamp (the_forecast_params.forecast_lag, analyst_options);
 
 		analyst_options.extra_forecast_lag = -1L;
 		return;
@@ -829,6 +838,8 @@ public class TimelineStatus extends DBPayload {
 	// Note: shadowing_event_id is set to "" if the event is not shadowed.
 	//
 	// Note: analyst_options.extra_forecast_lag is set to -1L, consuming any analyst forecast request.
+	//
+	// Note: last_forecast_stamp is set from the_forecast_lag and analyst_options.
 
 	public void set_state_skipped (long the_entry_time, ActionConfig action_config,
 			ForecastMainshock the_forecast_mainshock, long the_forecast_lag, int the_fc_result, String the_shadowing_event_id) {
@@ -856,7 +867,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = null;
 		forecast_results    = null;
 
-		last_forecast_lag   = the_forecast_lag;
+		last_forecast_stamp = new ForecastStamp (the_forecast_lag, analyst_options);
 
 		analyst_options.extra_forecast_lag = -1L;
 		return;
@@ -893,7 +904,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = null;
 		forecast_results    = null;
 
-		//last_forecast_lag   = kept;
+		//last_forecast_stamp   = kept;
 		return;
 	}
 
@@ -924,7 +935,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = null;
 		forecast_results    = null;
 
-		//last_forecast_lag   = kept;
+		//last_forecast_stamp   = kept;
 		return;
 	}
 
@@ -953,7 +964,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = null;
 		forecast_results    = null;
 
-		//last_forecast_lag   = kept;
+		//last_forecast_stamp   = kept;
 		return;
 	}
 
@@ -985,7 +996,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = null;
 		forecast_results    = null;
 
-		//last_forecast_lag   = kept;
+		//last_forecast_stamp   = kept;
 		return;
 	}
 
@@ -1018,7 +1029,7 @@ public class TimelineStatus extends DBPayload {
 		forecast_params     = null;
 		forecast_results    = null;
 
-		last_forecast_lag   = -1L;
+		last_forecast_stamp = new ForecastStamp();
 		return;
 	}
 
@@ -1031,6 +1042,7 @@ public class TimelineStatus extends DBPayload {
 
 	private static final int MARSHAL_VER_1 = 27001;
 	private static final int MARSHAL_VER_2 = 27002;
+	private static final int MARSHAL_VER_3 = 27003;
 
 	private static final String M_VERSION_NAME = "TimelineStatus";
 
@@ -1041,7 +1053,7 @@ public class TimelineStatus extends DBPayload {
 
 		// Version
 
-		int ver = MARSHAL_VER_2;
+		int ver = MARSHAL_VER_3;
 		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Superclass
@@ -1055,7 +1067,7 @@ public class TimelineStatus extends DBPayload {
 		default:
 			throw new MarshalException ("TimelineStatus.do_marshal: Unknown version number: " + ver);
 
-		case MARSHAL_VER_1:
+		case MARSHAL_VER_1: {
 
 			writer.marshalLong                      ("entry_time"         , entry_time         );
 			writer.marshalInt                       ("fc_origin"          , fc_origin          );
@@ -1070,11 +1082,13 @@ public class TimelineStatus extends DBPayload {
 			ForecastParameters.marshal_poly (writer, "forecast_params"    , forecast_params    );
 			ForecastResults.marshal_poly    (writer, "forecast_results"   , forecast_results   );
 
+			long last_forecast_lag = last_forecast_stamp.get_forecast_lag();
 			writer.marshalLong                      ("last_forecast_lag"  , last_forecast_lag  );
 
+			}
 			break;
 
-		case MARSHAL_VER_2:
+		case MARSHAL_VER_2: {
 
 			writer.marshalLong                      ("entry_time"         , entry_time         );
 			writer.marshalInt                       ("fc_origin"          , fc_origin          );
@@ -1089,7 +1103,30 @@ public class TimelineStatus extends DBPayload {
 			ForecastParameters.marshal_poly (writer, "forecast_params"    , forecast_params    );
 			ForecastResults.marshal_poly    (writer, "forecast_results"   , forecast_results   );
 
+			long last_forecast_lag = last_forecast_stamp.get_forecast_lag();
 			writer.marshalLong                      ("last_forecast_lag"  , last_forecast_lag  );
+
+			writer.marshalString                    ("pdl_product_code"   , pdl_product_code   );
+
+			}
+			break;
+
+		case MARSHAL_VER_3:
+
+			writer.marshalLong                      ("entry_time"         , entry_time         );
+			writer.marshalInt                       ("fc_origin"          , fc_origin          );
+			writer.marshalInt                       ("fc_status"          , fc_status          );
+			writer.marshalInt                       ("pdl_status"         , pdl_status         );
+			writer.marshalInt                       ("fc_result"          , fc_result          );
+			writer.marshalString                    ("shadowing_event_id" , shadowing_event_id );
+
+			AnalystOptions.marshal_poly     (writer, "analyst_options"    , analyst_options    );
+
+			ForecastMainshock.marshal_poly  (writer, "forecast_mainshock" , forecast_mainshock );
+			ForecastParameters.marshal_poly (writer, "forecast_params"    , forecast_params    );
+			ForecastResults.marshal_poly    (writer, "forecast_results"   , forecast_results   );
+
+			ForecastStamp.marshal           (writer, "last_forecast_stamp", last_forecast_stamp);
 
 			writer.marshalString                    ("pdl_product_code"   , pdl_product_code   );
 
@@ -1106,7 +1143,7 @@ public class TimelineStatus extends DBPayload {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Superclass
 
@@ -1119,7 +1156,7 @@ public class TimelineStatus extends DBPayload {
 		default:
 			throw new MarshalException ("TimelineStatus.do_umarshal: Unknown version number: " + ver);
 
-		case MARSHAL_VER_1:
+		case MARSHAL_VER_1: {
 
 			entry_time          = reader.unmarshalLong                      ("entry_time"         );
 			fc_origin           = reader.unmarshalInt                       ("fc_origin"          , FCORIG_MIN, FCORIG_MAX);
@@ -1134,13 +1171,16 @@ public class TimelineStatus extends DBPayload {
 			forecast_params     = ForecastParameters.unmarshal_poly (reader, "forecast_params"    );
 			forecast_results    = ForecastResults.unmarshal_poly    (reader, "forecast_results"   );
 
+			long last_forecast_lag;
 			last_forecast_lag   = reader.unmarshalLong                      ("last_forecast_lag"  );
+			last_forecast_stamp = new ForecastStamp (last_forecast_lag);
 
 			pdl_product_code = "";
 
+			}
 			break;
 
-		case MARSHAL_VER_2:
+		case MARSHAL_VER_2: {
 
 			entry_time          = reader.unmarshalLong                      ("entry_time"         );
 			fc_origin           = reader.unmarshalInt                       ("fc_origin"          , FCORIG_MIN, FCORIG_MAX);
@@ -1155,7 +1195,31 @@ public class TimelineStatus extends DBPayload {
 			forecast_params     = ForecastParameters.unmarshal_poly (reader, "forecast_params"    );
 			forecast_results    = ForecastResults.unmarshal_poly    (reader, "forecast_results"   );
 
+			long last_forecast_lag;
 			last_forecast_lag   = reader.unmarshalLong                      ("last_forecast_lag"  );
+			last_forecast_stamp = new ForecastStamp (last_forecast_lag);
+
+			pdl_product_code    = reader.unmarshalString                    ("pdl_product_code"   );
+
+			}
+			break;
+
+		case MARSHAL_VER_3:
+
+			entry_time          = reader.unmarshalLong                      ("entry_time"         );
+			fc_origin           = reader.unmarshalInt                       ("fc_origin"          , FCORIG_MIN, FCORIG_MAX);
+			fc_status           = reader.unmarshalInt                       ("fc_status"          , FCSTAT_MIN, FCSTAT_MAX);
+			pdl_status          = reader.unmarshalInt                       ("pdl_status"         , PDLSTAT_MIN, PDLSTAT_MAX);
+			fc_result           = reader.unmarshalInt                       ("fc_result"          , FCRES_MIN, FCRES_MAX);
+			shadowing_event_id  = reader.unmarshalString                    ("shadowing_event_id" );
+
+			analyst_options     = AnalystOptions.unmarshal_poly     (reader, "analyst_options"    );
+
+			forecast_mainshock  = ForecastMainshock.unmarshal_poly  (reader, "forecast_mainshock" );
+			forecast_params     = ForecastParameters.unmarshal_poly (reader, "forecast_params"    );
+			forecast_results    = ForecastResults.unmarshal_poly    (reader, "forecast_results"   );
+
+			last_forecast_stamp = ForecastStamp.unmarshal           (reader, "last_forecast_stamp");
 
 			pdl_product_code    = reader.unmarshalString                    ("pdl_product_code"   );
 

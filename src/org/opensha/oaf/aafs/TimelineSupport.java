@@ -9,6 +9,7 @@ import org.opensha.oaf.aafs.entity.LogEntry;
 import org.opensha.oaf.aafs.entity.CatalogSnapshot;
 import org.opensha.oaf.aafs.entity.TimelineEntry;
 import org.opensha.oaf.aafs.entity.AliasFamily;
+import org.opensha.oaf.aafs.entity.RelayItem;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -149,6 +150,10 @@ public class TimelineSupport extends ServerComponent {
 				if ( (!(tstatus.has_catalog_snapshot())) || catsnap != null ) {
 
 					//--- Complete the pending task
+
+					// Update the analyst options from relay items
+
+					update_analyst_options_from_relay (tstatus);
 				
 					// Remove any delayed commands
 
@@ -208,6 +213,10 @@ public class TimelineSupport extends ServerComponent {
 				return RESCODE_TIMELINE_CORRUPT;
 			}
 
+			// Update the analyst options from relay items
+
+			update_analyst_options_from_relay (tstatus);
+
 			// If the current task is not a delayed task, re-issue any delayed task for the current timeline entry
 
 			switch (task.get_opcode()) {
@@ -251,6 +260,10 @@ public class TimelineSupport extends ServerComponent {
 			display_timeline_corrupt (tentry, task, e);
 			return RESCODE_TIMELINE_CORRUPT;
 		}
+
+		// Update the analyst options from relay items
+
+		update_analyst_options_from_relay (tstatus);
 
 		// Found timeline entry
 
@@ -525,12 +538,12 @@ public class TimelineSupport extends ServerComponent {
 			// Minimum lag is 0L if this is the first forecast,
 			// otherwise it is a minimum spacing after the last lag
 
-			if (tstatus.last_forecast_lag < 0L) {
+			if (tstatus.get_last_forecast_lag() < 0L) {
 				min_lag = 0L;
 				min_extra_lag = 0L;
 			} else {
-				min_lag = tstatus.last_forecast_lag + sg.task_disp.get_action_config().get_forecast_min_gap();
-				min_extra_lag = tstatus.last_forecast_lag;
+				min_lag = tstatus.get_last_forecast_lag() + sg.task_disp.get_action_config().get_forecast_min_gap();
+				min_extra_lag = tstatus.get_last_forecast_lag();
 			}
 
 			// Get next forecast lag from configured schedule
@@ -630,9 +643,9 @@ public class TimelineSupport extends ServerComponent {
 				// staleness test is applied only after the last forecast.  Without "else" the staleness
 				// test is applied to every forecast.
 
-				else if (tstatus.last_forecast_lag >= 0L) {
+				else if (tstatus.get_last_forecast_lag() >= 0L) {
 					pdl_time_ceiling = Math.min (pdl_time_ceiling,
-						tstatus.forecast_mainshock.mainshock_time + tstatus.last_forecast_lag + sg.task_disp.get_action_config().get_forecast_max_delay());
+						tstatus.forecast_mainshock.mainshock_time + tstatus.get_last_forecast_lag() + sg.task_disp.get_action_config().get_forecast_max_delay());
 				}
 
 				// Kill the PDL retry if it would not occur before the time ceiling
@@ -685,7 +698,7 @@ public class TimelineSupport extends ServerComponent {
 			OpGeneratePDLReport pdl_payload = new OpGeneratePDLReport();
 			pdl_payload.setup (
 				tstatus.action_time,										// the_action_time
-				tstatus.last_forecast_lag,									// the_last_forecast_lag
+				tstatus.last_forecast_stamp,								// the_last_forecast_stamp
 				sg.task_disp.get_time(),									// the_base_pdl_time
 				tstatus.forecast_mainshock.mainshock_time);					// the_mainshock_time
 
@@ -718,7 +731,7 @@ public class TimelineSupport extends ServerComponent {
 			OpGenerateForecast forecast_payload = new OpGenerateForecast();
 			forecast_payload.setup (
 				tstatus.action_time,											// the_action_time
-				tstatus.last_forecast_lag,										// the_last_forecast_lag
+				tstatus.last_forecast_stamp,									// the_last_forecast_stamp
 				next_forecast_lag,												// the_next_forecast_lag
 				tstatus.forecast_mainshock.mainshock_time,						// the_mainshock_time
 				forecast_pdl_relay_ids);										// the_pdl_relay_ids
@@ -752,7 +765,7 @@ public class TimelineSupport extends ServerComponent {
 
 			if (next_pdl_lag >= 0L) {	// if PDL report desired, only possible on a secondary server with tstatus.is_pdl_retry_state() == true
 				expire_pdl_relay_ids = tstatus.forecast_mainshock.get_confirm_relay_ids();
-				expire_sched_time = tstatus.forecast_mainshock.mainshock_time + tstatus.last_forecast_lag + sg.task_disp.get_action_config().get_forecast_max_delay();
+				expire_sched_time = tstatus.forecast_mainshock.mainshock_time + tstatus.get_last_forecast_lag() + sg.task_disp.get_action_config().get_forecast_max_delay();
 				expire_mainshock_time = tstatus.forecast_mainshock.mainshock_time;
 			} else {
 				expire_pdl_relay_ids = new String[0];
@@ -763,7 +776,7 @@ public class TimelineSupport extends ServerComponent {
 			OpGenerateExpire expire_payload = new OpGenerateExpire();
 			expire_payload.setup (
 				tstatus.action_time,									// the_action_time
-				tstatus.last_forecast_lag,								// the_last_forecast_lag
+				tstatus.last_forecast_stamp,							// the_last_forecast_stamp
 				expire_mainshock_time,									// the_mainshock_time
 				expire_pdl_relay_ids);									// the_pdl_relay_ids
 
@@ -895,7 +908,7 @@ public class TimelineSupport extends ServerComponent {
 	// Parameters:
 	//  tstatus = Timeline status.
 	// Returns true if there is a relay item indicating that a PDL operation
-	// has occured at equal or later forecast lag than tstatus.last_forecast_lag.
+	// has occured at equal or later lag (accounting for analyst options) than tstatus.last_forecast_stamp.
 	// Note: This function attempts to be conservative, returning true only if it
 	// is certain that a PDL operation has been sent.  It cannot eliminate the
 	// possibility that it may return false even if a PDL operation has been sent.
@@ -905,15 +918,11 @@ public class TimelineSupport extends ServerComponent {
 		// Only do this check if the timeline is in a state that requires a PDL report
 		// (This may be unnecessary because callers have probably already checked is_pdl_retry_state())
 
-		if (tstatus.is_pdl_retry_state() && tstatus.last_forecast_lag >= 0L) {		// the check on last_forecast_lag should be unnecessary
-		
-			// Get the most recent forecast lag from the relay items, note it is -1L if none
+		if (tstatus.is_pdl_retry_state() && tstatus.get_last_forecast_lag() >= 0L) {		// the check on last_forecast_lag should be unnecessary
 
-			long relay_forecast_lag = sg.relay_sup.get_pdl_prem_forecast_lag (tstatus.forecast_mainshock.get_confirm_relay_ids());
+			// If there are relay items that confirm the last forecast, then consider it confirmed
 
-			// If it's equal or later to ours, then consider it confirmed
-
-			if (relay_forecast_lag >= tstatus.last_forecast_lag) {
+			if (sg.relay_sup.is_pdl_prem_confirmation_of (tstatus.last_forecast_stamp, tstatus.forecast_mainshock.get_confirm_relay_ids())) {
 				return true;
 			}
 		}
@@ -1020,15 +1029,11 @@ public class TimelineSupport extends ServerComponent {
 
 						// If the last forecast was not sent to PDL ...
 
-						if (payload.last_forecast_lag >= 0L && payload.pdl_relay_ids.length > 0) {
-						
-							// Get the most recent forecast lag from the relay items, note it is -1L if none
+						if (payload.get_last_forecast_lag() >= 0L && payload.pdl_relay_ids.length > 0) {
 
-							long relay_forecast_lag = sg.relay_sup.get_pdl_prem_forecast_lag (payload.pdl_relay_ids);
+							// If there are no relay items that confirm the last forecast ...
 
-							// If it's earlier than ours, then consider it not confirmed
-
-							if (relay_forecast_lag < payload.last_forecast_lag) {
+							if (!( sg.relay_sup.is_pdl_prem_confirmation_of (payload.last_forecast_stamp, payload.pdl_relay_ids) )) {
 
 								// Put this task on the list to be canceled
 
@@ -1061,15 +1066,11 @@ public class TimelineSupport extends ServerComponent {
 
 						// If the last forecast was not sent to PDL ...
 
-						if (payload.last_forecast_lag >= 0L && payload.pdl_relay_ids.length > 0) {
-						
-							// Get the most recent forecast lag from the relay items, note it is -1L if none
+						if (payload.get_last_forecast_lag() >= 0L && payload.pdl_relay_ids.length > 0) {
 
-							long relay_forecast_lag = sg.relay_sup.get_pdl_prem_forecast_lag (payload.pdl_relay_ids);
+							// If there are no relay items that confirm the last forecast ...
 
-							// If it's earlier than ours, then consider it not confirmed
-
-							if (relay_forecast_lag < payload.last_forecast_lag) {
+							if (!( sg.relay_sup.is_pdl_prem_confirmation_of (payload.last_forecast_stamp, payload.pdl_relay_ids) )) {
 
 								// Put this task on the list to be canceled
 
@@ -1090,7 +1091,7 @@ public class TimelineSupport extends ServerComponent {
 
 		// Increment between cancels
 
-		long cancel_time_increment = 20000L;		// 20 seconds
+		long cancel_time_increment = 10000L;		// 10 seconds
 
 		// Initial execution time
 
@@ -1121,7 +1122,7 @@ public class TimelineSupport extends ServerComponent {
 	// Set the timeline to correct state for a secondary server.
 	// Returns the number of tasks canceled.
 	// Currently, this scans the task queue, looking for any PDL report task (which can only exist
-	// issued if this was a primary server at the time the task was issued).  The task is canceled,
+	// if this was a primary server at the time the task was issued).  The task is canceled,
 	// which permits the next forecast or expire command to be issued.
 	// Note: This function should be called during idle time processing.
 
@@ -1180,7 +1181,7 @@ public class TimelineSupport extends ServerComponent {
 
 		// Increment between cancels
 
-		long cancel_time_increment = 20000L;		// 20 seconds
+		long cancel_time_increment = 10000L;		// 10 seconds
 
 		// Initial execution time
 
@@ -1203,6 +1204,107 @@ public class TimelineSupport extends ServerComponent {
 		sg.log_sup.report_timeline_to_secondary (tasks_to_cancel.size());
 
 		return tasks_to_cancel.size();
+	}
+
+
+
+
+	// Get analyst options from relay items, for the given timeline id.
+	// Returns the analyst options.
+	// Returns null if no analyst options are available, which may be because:
+	// - The timeline id is unknown.
+	// - There are currently no Comcat ids assigned to the timeline.
+	// - There is no analyst selection relay item for any of the Comcat ids.
+	// - The most recent analyst selection relay item does not contain analyst options.
+	// Note: The returned AnalystOptions object is newly allocated.
+
+	public AnalystOptions get_analyst_options_from_relay (String timeline_id) {
+
+		// Get the current list of Comcat ids for this timeline
+
+		String[] comcat_ids = sg.alias_sup.get_comcat_ids_for_timeline_id (timeline_id);
+
+		// If none, then return null
+
+		if (comcat_ids == null || comcat_ids.length == 0) {
+			return null;
+		}
+
+		// Get the most recent analyst intervention relay item
+
+		RelayItem relit = sg.relay_sup.get_ansel_first_relay_item (comcat_ids);
+
+		// If none, then return null
+
+		if (relit == null) {
+			return null;
+		}
+
+		// Get the analyst selection payload, if exception then return null
+
+		RiAnalystSelection payload = new RiAnalystSelection();
+		try {
+			payload.unmarshal_relay (relit);
+		} catch (Exception e) {
+			return null;
+		}
+
+		// Return the analyst options from the payload, which could be null
+
+		return payload.analyst_options;
+	}
+
+
+
+
+	// Update analyst options with the latest options in the relay items.
+	// Parameters:
+	//  tstatus = Timeline status, with timeline id in tstatus.event_id.
+	// Returns true if analyst options were changed.
+	// Note: tstatus.event_id is set if open_timeline() returns with timeline exists,
+	// or if tstatus.set_state_track() has been called.
+	// Design note: Replacing this function with a no-operation will make analyst options
+	// be strictly inherited within the timeline (which was the original design).
+	
+	public boolean update_analyst_options_from_relay (TimelineStatus tstatus) {
+
+		// If the timeline has no analyst options (happens only for error state), then no changes
+
+		if (tstatus.analyst_options == null) {
+			return false;
+		}
+
+		// Get the timeline id
+
+		String timeline_id = tstatus.event_id;
+
+		// Get the analyst options from relay items
+
+		AnalystOptions new_analyst_options = get_analyst_options_from_relay (timeline_id);
+
+		// If none, use default options
+
+		if (new_analyst_options == null) {
+			new_analyst_options = new AnalystOptions();
+		}
+
+		// If the analyst time is the same, consider it unchanged
+
+		boolean result = true;
+
+		if (new_analyst_options.analyst_time == tstatus.analyst_options.analyst_time) {
+			result = false;
+		}
+
+		// Preserve the extra forecast lag
+
+		new_analyst_options.extra_forecast_lag = tstatus.analyst_options.extra_forecast_lag;
+
+		// Insert the new analyst options
+
+		tstatus.analyst_options = new_analyst_options;
+
+		return result;
 	}
 
 

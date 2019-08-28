@@ -4401,7 +4401,7 @@ public class ServerTest {
 			// Call relay support
 
 			RelayItem relit = sg.relay_sup.submit_pdl_relay_item (event_id, relay_time, f_force,
-				ripdl_action, ripdl_forecast_lag, ripdl_update_time);
+				ripdl_action, new ForecastStamp (ripdl_forecast_lag), ripdl_update_time);
 
 			// Display result
 
@@ -4416,7 +4416,7 @@ public class ServerTest {
 				payload.unmarshal_relay (relit);
 				System.out.println ("RiPDLCompletion");
 				System.out.println ("\tripdl_action = " + payload.ripdl_action + " (" + payload.get_ripdl_action_as_string() + ")");
-				System.out.println ("\tripdl_forecast_lag = " + payload.get_ripdl_forecast_lag_as_string());
+				System.out.println ("\tripdl_forecast_stamp = " + payload.get_ripdl_forecast_stamp_as_string());
 				System.out.println ("\tripdl_update_time = " + payload.get_ripdl_update_time_as_string());
 			}
 		}
@@ -4477,7 +4477,7 @@ public class ServerTest {
 					payload.unmarshal_relay (relit);
 					System.out.println ("RiPDLCompletion");
 					System.out.println ("\tripdl_action = " + payload.ripdl_action + " (" + payload.get_ripdl_action_as_string() + ")");
-					System.out.println ("\tripdl_forecast_lag = " + payload.get_ripdl_forecast_lag_as_string());
+					System.out.println ("\tripdl_forecast_stamp = " + payload.get_ripdl_forecast_stamp_as_string());
 					System.out.println ("\tripdl_update_time = " + payload.get_ripdl_update_time_as_string());
 				}
 			}
@@ -4543,7 +4543,7 @@ public class ServerTest {
 
 			// Call pdl support
 
-			sg.pdl_sup.delete_oaf_products (fcmain, riprem_reason, riprem_forecast_lag);
+			sg.pdl_sup.delete_oaf_products (fcmain, riprem_reason, new ForecastStamp (riprem_forecast_lag));
 		}
 
 		return;
@@ -4603,7 +4603,7 @@ public class ServerTest {
 			// Call relay support
 
 			RelayItem relit = sg.relay_sup.submit_prem_relay_item (event_id, relay_time, f_force,
-				riprem_reason, riprem_forecast_lag, riprem_remove_time);
+				riprem_reason, new ForecastStamp (riprem_forecast_lag), riprem_remove_time);
 
 			// Display result
 
@@ -4618,7 +4618,7 @@ public class ServerTest {
 				payload.unmarshal_relay (relit);
 				System.out.println ("RiPDLRemoval");
 				System.out.println ("\triprem_reason = " + payload.riprem_reason + " (" + payload.get_riprem_reason_as_string() + ")");
-				System.out.println ("\triprem_forecast_lag = " + payload.get_riprem_forecast_lag_as_string());
+				System.out.println ("\triprem_forecast_stamp = " + payload.get_riprem_forecast_stamp_as_string());
 				System.out.println ("\triprem_remove_time = " + payload.get_riprem_remove_time_as_string());
 			}
 		}
@@ -4679,7 +4679,7 @@ public class ServerTest {
 					payload.unmarshal_relay (relit);
 					System.out.println ("RiPDLRemoval");
 					System.out.println ("\triprem_reason = " + payload.riprem_reason + " (" + payload.get_riprem_reason_as_string() + ")");
-					System.out.println ("\triprem_forecast_lag = " + payload.get_riprem_forecast_lag_as_string());
+					System.out.println ("\triprem_forecast_stamp = " + payload.get_riprem_forecast_stamp_as_string());
 					System.out.println ("\triprem_remove_time = " + payload.get_riprem_remove_time_as_string());
 				}
 			}
@@ -4745,7 +4745,7 @@ public class ServerTest {
 						payload.unmarshal_relay (relit);
 						System.out.println ("RiPDLCompletion");
 						System.out.println ("\tripdl_action = " + payload.ripdl_action + " (" + payload.get_ripdl_action_as_string() + ")");
-						System.out.println ("\tripdl_forecast_lag = " + payload.get_ripdl_forecast_lag_as_string());
+						System.out.println ("\tripdl_forecast_stamp = " + payload.get_ripdl_forecast_stamp_as_string());
 						System.out.println ("\tripdl_update_time = " + payload.get_ripdl_update_time_as_string());
 					}
 					break;
@@ -4756,7 +4756,7 @@ public class ServerTest {
 						payload.unmarshal_relay (relit);
 						System.out.println ("RiPDLRemoval");
 						System.out.println ("\triprem_reason = " + payload.riprem_reason + " (" + payload.get_riprem_reason_as_string() + ")");
-						System.out.println ("\triprem_forecast_lag = " + payload.get_riprem_forecast_lag_as_string());
+						System.out.println ("\triprem_forecast_stamp = " + payload.get_riprem_forecast_stamp_as_string());
 						System.out.println ("\triprem_remove_time = " + payload.get_riprem_remove_time_as_string());
 					}
 					break;
@@ -5476,6 +5476,177 @@ public class ServerTest {
 
 			System.out.println (loc_stat);
 			System.out.println (rem_stat);
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #90 - Use relay support to submit an analyst selection relay item.
+
+	public static void test90(String[] args) throws Exception {
+
+		// 8 additional arguments
+
+		if (args.length != 9) {
+			System.err.println ("ServerTest : Invalid 'test90' or 'rsup_ansel_submit' subcommand");
+			return;
+		}
+
+		String logfile = args[1];		// can be "-" for none
+		String event_id = args[2];
+		long relay_time = Long.parseLong (args[3]);
+		long relay_stamp = Long.parseLong (args[4]);
+		boolean f_force = Boolean.parseBoolean (args[5]);
+		int state_change = Integer.parseInt (args[6]);
+		boolean f_create_timeline = Boolean.parseBoolean (args[7]);
+		long analyst_time = Long.parseLong (args[8]);
+
+		String my_logfile = null;
+		if (!( logfile.equals ("-") )) {
+			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
+		}
+
+		AnalystOptions analyst_options = null;
+		if (analyst_time >= 0L) {
+			analyst_options = new AnalystOptions();
+			analyst_options.analyst_time = analyst_time;
+		}
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+			TimeSplitOutputStream sum_tsop = TimeSplitOutputStream.make_tsop (my_logfile, 0L);
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Install the log file
+
+			dispatcher.set_summary_log_tsop (sum_tsop);
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Call relay support
+
+			RelayItem relit = sg.relay_sup.submit_ansel_relay_item (event_id, relay_time, relay_stamp, f_force,
+				state_change, f_create_timeline, analyst_options);
+
+			// Display result
+
+			if (relit == null) {
+				System.out.println ("submit_ansel_relay_item returned null");
+			} else {
+				System.out.println (relit.dumpString());
+
+				// Unmarshal the payload and display it
+
+				RiAnalystSelection payload = new RiAnalystSelection();
+				payload.unmarshal_relay (relit);
+				System.out.println ("RiAnalystSelection");
+				System.out.println ("\tstate_change = " + payload.state_change + " (" + payload.get_state_change_as_string() + ")");
+				System.out.println ("\tf_create_timeline = " + payload.f_create_timeline);
+				System.out.println ("\tanalyst_time = " + payload.get_analyst_time_as_string());
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Test #91 - Use relay support to get analyst selection relay items.
+
+	public static void test91(String[] args) throws Exception {
+
+		// 1 or more additional arguments
+
+		if (args.length < 2) {
+			System.err.println ("ServerTest : Invalid 'test91' or 'rsup_ansel_get' subcommand");
+			return;
+		}
+
+		String[] event_ids = Arrays.copyOfRange (args, 1, args.length);
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Set up task context
+
+			dispatcher.setup_task_context();
+
+			// Call relay support
+
+			System.out.println ("Retrieving list of items");
+
+			List<RelayItem> relits = sg.relay_sup.get_ansel_relay_items (event_ids);
+
+			// Display result
+
+			if (relits.isEmpty()) {
+				System.out.println ("get_ansel_relay_items returned an empty list");
+			} else {
+				for (RelayItem relit : relits) {
+					System.out.println (relit.dumpString());
+
+					// Unmarshal the payload and display it
+
+					RiAnalystSelection payload = new RiAnalystSelection();
+					payload.unmarshal_relay (relit);
+					System.out.println ("RiAnalystSelection");
+					System.out.println ("\tstate_change = " + payload.state_change + " (" + payload.get_state_change_as_string() + ")");
+					System.out.println ("\tf_create_timeline = " + payload.f_create_timeline);
+					System.out.println ("\tanalyst_time = " + payload.get_analyst_time_as_string());
+				}
+			}
+
+			// Call relay support
+
+			System.out.println ("Retrieving most recent");
+
+			RelayItem first_relit = sg.relay_sup.get_ansel_first_relay_item (event_ids);
+
+			// Display result
+
+			if (first_relit == null) {
+				System.out.println ("get_ansel_first_relay_item returned null");
+			} else {
+				System.out.println (first_relit.dumpString());
+
+				// Unmarshal the payload and display it
+
+				RiAnalystSelection payload = new RiAnalystSelection();
+				payload.unmarshal_relay (first_relit);
+				System.out.println ("RiAnalystSelection");
+				System.out.println ("\tstate_change = " + payload.state_change + " (" + payload.get_state_change_as_string() + ")");
+				System.out.println ("\tf_create_timeline = " + payload.f_create_timeline);
+				System.out.println ("\tanalyst_time = " + payload.get_analyst_time_as_string());
+			}
 		}
 
 		return;
@@ -7013,6 +7184,42 @@ public class ServerTest {
 
 			try {
 				test89(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #90
+		// Command format:
+		//  test90  logfile  event_id  relay_time  relay_stamp  f_force  state_change  f_create_timeline  analyst_time
+		// Use relay support to submit a pdl completion relay item.
+		// Then display the item that was written.
+		// The logfile can be "-" for none.
+		// If analyst_time < 0L then null analyst_options are used.
+
+		if (args[0].equalsIgnoreCase ("test90") || args[0].equalsIgnoreCase ("rsup_ansel_submit")) {
+
+			try {
+				test90(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #91
+		// Command format:
+		//  test91  event_id...
+		// Use relay support to get pdl completion relay items.
+		// Then display the returned items, sorted most recent first.
+
+		if (args[0].equalsIgnoreCase ("test91") || args[0].equalsIgnoreCase ("rsup_ansel_get")) {
+
+			try {
+				test91(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

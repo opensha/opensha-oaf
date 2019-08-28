@@ -22,10 +22,11 @@ public class OpGeneratePDLReport extends DBPayload {
 
 	public long action_time;
 
-	// Time lag at which the last forecast occured, in milliseconds since the mainshock.
-	// The value is -1L if there have been no prior forecasts.
+	// Forecast stamp which identifies the last forecast issued.
+	// The contained forecast lag can be -1L if there have been no prior forecasts.
+	// This is always non-null.
 
-	public long last_forecast_lag;
+	public ForecastStamp last_forecast_stamp;
 
 	// Time of the first attempt to send report to PDL, in milliseconds since the epoch.
 
@@ -50,12 +51,23 @@ public class OpGeneratePDLReport extends DBPayload {
 
 	// Set up the contents.
 
-	public void setup (long the_action_time, long the_last_forecast_lag, long the_base_pdl_time, long the_mainshock_time) {
+	public void setup (long the_action_time, ForecastStamp the_last_forecast_stamp, long the_base_pdl_time, long the_mainshock_time) {
 		action_time = the_action_time;
-		last_forecast_lag = the_last_forecast_lag;
+		last_forecast_stamp = the_last_forecast_stamp;
 		base_pdl_time = the_base_pdl_time;
 		mainshock_time = the_mainshock_time;
 		return;
+	}
+
+
+
+
+	//----- Service functions -----
+
+	// Return the lag of the last forecast, or -1L if there is no last forecast.
+
+	public long get_last_forecast_lag () {
+		return last_forecast_stamp.get_forecast_lag();
 	}
 
 
@@ -67,6 +79,7 @@ public class OpGeneratePDLReport extends DBPayload {
 
 	private static final int MARSHAL_VER_1 = 29001;
 	private static final int MARSHAL_VER_2 = 29002;
+	private static final int MARSHAL_VER_3 = 29003;
 
 	private static final String M_VERSION_NAME = "OpGeneratePDLReport";
 
@@ -77,7 +90,7 @@ public class OpGeneratePDLReport extends DBPayload {
 
 		// Version
 
-		int ver = MARSHAL_VER_2;
+		int ver = MARSHAL_VER_3;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -89,20 +102,35 @@ public class OpGeneratePDLReport extends DBPayload {
 
 		switch (ver) {
 
-		case MARSHAL_VER_1:
+		case MARSHAL_VER_1: {
+
+			long last_forecast_lag = last_forecast_stamp.get_forecast_lag();
 
 			writer.marshalLong ("action_time"      , action_time      );
 			writer.marshalLong ("last_forecast_lag", last_forecast_lag);
 			writer.marshalLong ("base_pdl_time"    , base_pdl_time    );
 
+			}
 			break;
 
-		case MARSHAL_VER_2:
+		case MARSHAL_VER_2: {
+
+			long last_forecast_lag = last_forecast_stamp.get_forecast_lag();
 
 			writer.marshalLong ("action_time"      , action_time      );
 			writer.marshalLong ("last_forecast_lag", last_forecast_lag);
 			writer.marshalLong ("base_pdl_time"    , base_pdl_time    );
 			writer.marshalLong ("mainshock_time"   , mainshock_time   );
+
+			}
+			break;
+
+		case MARSHAL_VER_3:
+
+			writer.marshalLong    ("action_time"      , action_time      );
+			ForecastStamp.marshal (writer, "last_forecast_stamp", last_forecast_stamp);
+			writer.marshalLong    ("base_pdl_time"    , base_pdl_time    );
+			writer.marshalLong    ("mainshock_time"   , mainshock_time   );
 
 			break;
 		}
@@ -117,7 +145,7 @@ public class OpGeneratePDLReport extends DBPayload {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Superclass
 
@@ -127,7 +155,9 @@ public class OpGeneratePDLReport extends DBPayload {
 
 		switch (ver) {
 
-		case MARSHAL_VER_1:
+		case MARSHAL_VER_1: {
+
+			long last_forecast_lag;
 
 			action_time       = reader.unmarshalLong ("action_time"      );
 			last_forecast_lag = reader.unmarshalLong ("last_forecast_lag");
@@ -135,14 +165,31 @@ public class OpGeneratePDLReport extends DBPayload {
 			
 			mainshock_time = 0L;
 
+			last_forecast_stamp = new ForecastStamp (last_forecast_lag);
+
+			}
 			break;
 
-		case MARSHAL_VER_2:
+		case MARSHAL_VER_2: {
+
+			long last_forecast_lag;
 
 			action_time       = reader.unmarshalLong ("action_time"      );
 			last_forecast_lag = reader.unmarshalLong ("last_forecast_lag");
 			base_pdl_time     = reader.unmarshalLong ("base_pdl_time"    );
 			mainshock_time    = reader.unmarshalLong ("mainshock_time"   );
+
+			last_forecast_stamp = new ForecastStamp (last_forecast_lag);
+
+			}
+			break;
+
+		case MARSHAL_VER_3:
+
+			action_time         = reader.unmarshalLong    ("action_time"      );
+			last_forecast_stamp = ForecastStamp.unmarshal (reader, "last_forecast_stamp");
+			base_pdl_time       = reader.unmarshalLong    ("base_pdl_time"    );
+			mainshock_time      = reader.unmarshalLong    ("mainshock_time"   );
 
 			break;
 		}

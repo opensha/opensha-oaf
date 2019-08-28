@@ -196,7 +196,7 @@ public class PDLSupport extends ServerComponent {
 	// Parameters:
 	//  fcmain = Forecast mainshock structure, already filled in.
 	//  riprem_reason = Relay item action code, from RiPDLRemoval.RIPREM_REAS_XXXXX.
-	//  riprem_forecast_lag = Forecast lag for this action, or -1L if unknown.
+	//  riprem_forecast_stamp = Forecast stamp for this action, contained forecast lag can be -1L if unknown.
 	// If a forecast lag is supplied, then the removal time is equal to the mainshock time
 	//  plus the forecast lag.  Otherwise, the removel time is the current time.
 	// If this is a primary machine, then this function:
@@ -210,7 +210,7 @@ public class PDLSupport extends ServerComponent {
 	//  to the database before attempting the PDL deletion, so following an exception the
 	//  cleanup process should eventually finish the deletion.
 
-	public void delete_oaf_products (ForecastMainshock fcmain, int riprem_reason, long riprem_forecast_lag) {
+	public void delete_oaf_products (ForecastMainshock fcmain, int riprem_reason, ForecastStamp riprem_forecast_stamp) {
 
 		// If this is not primary, then do nothing
 
@@ -225,13 +225,13 @@ public class PDLSupport extends ServerComponent {
 		boolean f_force = false;
 
 		long riprem_remove_time;
-		if (riprem_forecast_lag < 0L) {
+		if (riprem_forecast_stamp.get_forecast_lag() < 0L) {
 			riprem_remove_time = sg.task_disp.get_time();
 		} else {
-			riprem_remove_time = fcmain.mainshock_time + riprem_forecast_lag;
+			riprem_remove_time = fcmain.mainshock_time + riprem_forecast_stamp.get_forecast_lag();
 		}
 
-		RelayItem relit = sg.relay_sup.submit_prem_relay_item (event_id, relay_time, f_force, riprem_reason, riprem_forecast_lag, riprem_remove_time);
+		RelayItem relit = sg.relay_sup.submit_prem_relay_item (event_id, relay_time, f_force, riprem_reason, riprem_forecast_stamp, riprem_remove_time);
 	
 		// Delete the old OAF products
 

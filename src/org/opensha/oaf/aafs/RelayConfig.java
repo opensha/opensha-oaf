@@ -27,15 +27,15 @@ public class RelayConfig {
 	// Note: An offset is added when the object is serialized, so that the
 	// JSON-encoded form of this object has fixed length.
 
-	public long mode_timestamp;
+	private long mode_timestamp;
 
 	// Configured relay mode, see RelayLink.RMODE_XXXXX.
 
-	public int relay_mode;
+	private int relay_mode;
 
 	// Configured primary server number.
 
-	public int configured_primary;
+	private int configured_primary;
 
 
 

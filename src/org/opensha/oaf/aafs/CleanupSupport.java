@@ -411,8 +411,9 @@ public class CleanupSupport extends ServerComponent {
 					time_now,									// relay_time
 					true,										// f_force
 					RiPDLCompletion.RIPDL_ACT_CLEANUP_FIND,		// ripdl_action
-					-1L,										// ripdl_forecast_lag
-					update_time);								// ripdl_update_time
+					new ForecastStamp(),						// ripdl_forecast_stamp
+					update_time									// ripdl_update_time
+				);
 			}
 			catch (Exception e) {
 				throw new DBException ("Database error while doing cleanup for event: " + query_id, e);
@@ -429,7 +430,8 @@ public class CleanupSupport extends ServerComponent {
 					time_now,									// relay_time
 					true,										// f_force
 					RiPDLForeign.RIPFRN_STAT_FOREIGN,			// ripfrn_status
-					time_now);									// ripfrn_detect_time
+					time_now									// ripfrn_detect_time
+				);
 			}
 			catch (Exception e) {
 				throw new DBException ("Database error while doing cleanup for event: " + query_id, e);

@@ -293,7 +293,7 @@ public class LogSupport extends ServerComponent {
 						tstatus.forecast_mainshock.mainshock_lon,
 						tstatus.forecast_mainshock.mainshock_depth),
 					String.format ("lag = %.3f days",
-						((double)(tstatus.last_forecast_lag))/ComcatOAFAccessor.day_millis)
+						((double)(tstatus.get_last_forecast_lag()))/ComcatOAFAccessor.day_millis)
 				);
 			}
 		}
@@ -777,7 +777,7 @@ public class LogSupport extends ServerComponent {
 					event_id,
 					ripdl.get_ripdl_action_as_string (),
 					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time),
-					"forecast_lag = " + ripdl.get_ripdl_forecast_lag_as_string(),
+					"forecast_stamp = " + ripdl.get_ripdl_forecast_stamp_as_string(),
 					"update_time = " + ripdl.get_ripdl_update_time_as_string()
 					);
 		return;
@@ -808,7 +808,7 @@ public class LogSupport extends ServerComponent {
 					event_id,
 					riprem.get_riprem_reason_as_string (),
 					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time),
-					"forecast_lag = " + riprem.get_riprem_forecast_lag_as_string(),
+					"forecast_stamp = " + riprem.get_riprem_forecast_stamp_as_string(),
 					"remove_time = " + riprem.get_riprem_remove_time_as_string()
 					);
 		return;
@@ -867,7 +867,10 @@ public class LogSupport extends ServerComponent {
 
 		report_action (name,
 					event_id,
-					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time)
+					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time),
+					riansel.get_state_change_as_string(),
+					"f_create_timeline = " + riansel.f_create_timeline,
+					"analyst_time = " + riansel.get_analyst_time_as_string()
 					);
 		return;
 	}

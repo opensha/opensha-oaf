@@ -48,12 +48,9 @@ public class RiPDLCompletion extends DBPayload {
 
 	public int ripdl_action;
 
-	// If associated with a forecast, this is the time lag in milliseconds since the mainshock.
-	// The value -1L is used if no forecast lag is available.
-	// Note: An offset is added when the object is serialized, so that the
-	// JSON-encoded form of this object has fixed length.
+	// Forecast stamp, which identifies the forecast.  Cannot be null.
 
-	public long ripdl_forecast_lag;
+	public ForecastStamp ripdl_forecast_stamp;
 
 	// The update time associated with the OAF product.
 	// It may vary slightly from the update time in PDL due to clock skew.
@@ -83,13 +80,10 @@ public class RiPDLCompletion extends DBPayload {
 		return "RIPDL_ACT_INVALID(" + ripdl_action + ")";
 	}
 
-	// Return a friendly string representation of ripdl_forecast_lag.
+	// Return a friendly string representation of ripdl_forecast_stamp.
 
-	public String get_ripdl_forecast_lag_as_string () {
-		if (ripdl_forecast_lag <= 0L) {
-			return String.valueOf (ripdl_forecast_lag);
-		}
-		return SimpleUtils.duration_to_string_2 (ripdl_forecast_lag);
+	public String get_ripdl_forecast_stamp_as_string () {
+		return ripdl_forecast_stamp.get_friendly_string();
 	}
 
 	// Return a friendly string representation of ripdl_update_time.
@@ -130,9 +124,9 @@ public class RiPDLCompletion extends DBPayload {
 
 	// Set up the contents.
 
-	public void setup (int the_ripdl_action, long the_ripdl_forecast_lag, long the_ripdl_update_time) {
+	public void setup (int the_ripdl_action, ForecastStamp the_ripdl_forecast_stamp, long the_ripdl_update_time) {
 		ripdl_action = the_ripdl_action;
-		ripdl_forecast_lag = the_ripdl_forecast_lag;
+		ripdl_forecast_stamp = the_ripdl_forecast_stamp;
 		ripdl_update_time = the_ripdl_update_time;
 		return;
 	}
@@ -145,6 +139,7 @@ public class RiPDLCompletion extends DBPayload {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 56001;
+	private static final int MARSHAL_VER_2 = 56002;
 
 	private static final String M_VERSION_NAME = "RiPDLCompletion";
 
@@ -155,7 +150,9 @@ public class RiPDLCompletion extends DBPayload {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Superclass
 
@@ -163,9 +160,27 @@ public class RiPDLCompletion extends DBPayload {
 
 		// Contents
 
-		writer.marshalInt  ("ripdl_action"      , ripdl_action      );
-		writer.marshalLong ("ripdl_forecast_lag", ripdl_forecast_lag + OFFSERL);
-		writer.marshalLong ("ripdl_update_time" , ripdl_update_time  + OFFSERL);
+		switch (ver) {
+
+		case MARSHAL_VER_1: {
+
+			long ripdl_forecast_lag = ripdl_forecast_stamp.get_forecast_lag();
+
+			writer.marshalInt  ("ripdl_action"      , ripdl_action      );
+			writer.marshalLong ("ripdl_forecast_lag", ripdl_forecast_lag + OFFSERL);
+			writer.marshalLong ("ripdl_update_time" , ripdl_update_time  + OFFSERL);
+
+			}
+			break;
+
+		case MARSHAL_VER_2:
+
+			writer.marshalInt     (        "ripdl_action"        , ripdl_action        );
+			ForecastStamp.marshal (writer, "ripdl_forecast_stamp", ripdl_forecast_stamp);
+			writer.marshalLong    (        "ripdl_update_time"   , ripdl_update_time    + OFFSERL);
+
+			break;
+		}
 
 		return;
 	}
@@ -177,7 +192,7 @@ public class RiPDLCompletion extends DBPayload {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Superclass
 
@@ -185,9 +200,29 @@ public class RiPDLCompletion extends DBPayload {
 
 		// Contents
 
-		ripdl_action       = reader.unmarshalInt  ("ripdl_action"      , RIPDL_ACT_MIN, RIPDL_ACT_MAX);
-		ripdl_forecast_lag = reader.unmarshalLong ("ripdl_forecast_lag") - OFFSERL;
-		ripdl_update_time  = reader.unmarshalLong ("ripdl_update_time" ) - OFFSERL;
+		switch (ver) {
+
+		case MARSHAL_VER_1: {
+
+			long ripdl_forecast_lag;
+
+			ripdl_action       = reader.unmarshalInt  ("ripdl_action"      , RIPDL_ACT_MIN, RIPDL_ACT_MAX);
+			ripdl_forecast_lag = reader.unmarshalLong ("ripdl_forecast_lag") - OFFSERL;
+			ripdl_update_time  = reader.unmarshalLong ("ripdl_update_time" ) - OFFSERL;
+
+			ripdl_forecast_stamp = new ForecastStamp (ripdl_forecast_lag);
+
+			}
+			break;
+
+		case MARSHAL_VER_2:
+
+			ripdl_action         = reader.unmarshalInt     (        "ripdl_action"        , RIPDL_ACT_MIN, RIPDL_ACT_MAX);
+			ripdl_forecast_stamp = ForecastStamp.unmarshal (reader, "ripdl_forecast_stamp");
+			ripdl_update_time    = reader.unmarshalLong    (        "ripdl_update_time"   ) - OFFSERL;
+
+			break;
+		}
 
 		return;
 	}

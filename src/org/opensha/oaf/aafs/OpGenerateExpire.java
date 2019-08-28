@@ -24,10 +24,11 @@ public class OpGenerateExpire extends DBPayload {
 
 	public long action_time;
 
-	// Time lag at which the last forecast occured, in milliseconds since the mainshock.
-	// The value is -1L if there have been no prior forecasts.
+	// Forecast stamp which identifies the last forecast issued.
+	// The contained forecast lag can be -1L if there have been no prior forecasts.
+	// This is always non-null.
 
-	public long last_forecast_lag;
+	public ForecastStamp last_forecast_stamp;
 
 	// Time at which the mainshock occurred, in milliseconds since the epoch.
 	// Can be 0L if not available when command is issued, or if this object was unmarshaled from old version 1.
@@ -54,9 +55,9 @@ public class OpGenerateExpire extends DBPayload {
 
 	// Set up the contents.
 
-	public void setup (long the_action_time, long the_last_forecast_lag, long the_mainshock_time, String... the_pdl_relay_ids) {
+	public void setup (long the_action_time, ForecastStamp the_last_forecast_stamp, long the_mainshock_time, String... the_pdl_relay_ids) {
 		action_time = the_action_time;
-		last_forecast_lag = the_last_forecast_lag;
+		last_forecast_stamp = the_last_forecast_stamp;
 		mainshock_time = the_mainshock_time;
 
 		if (the_pdl_relay_ids == null) {
@@ -71,12 +72,24 @@ public class OpGenerateExpire extends DBPayload {
 
 
 
+	//----- Service functions -----
+
+	// Return the lag of the last forecast, or -1L if there is no last forecast.
+
+	public long get_last_forecast_lag () {
+		return last_forecast_stamp.get_forecast_lag();
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 30001;
 	private static final int MARSHAL_VER_2 = 30002;
+	private static final int MARSHAL_VER_3 = 30003;
 
 	private static final String M_VERSION_NAME = "OpGenerateExpire";
 
@@ -87,7 +100,7 @@ public class OpGenerateExpire extends DBPayload {
 
 		// Version
 
-		int ver = MARSHAL_VER_2;
+		int ver = MARSHAL_VER_3;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -99,17 +112,32 @@ public class OpGenerateExpire extends DBPayload {
 
 		switch (ver) {
 
-		case MARSHAL_VER_1:
+		case MARSHAL_VER_1: {
+
+			long last_forecast_lag = last_forecast_stamp.get_forecast_lag();
 
 			writer.marshalLong ("action_time"      , action_time      );
 			writer.marshalLong ("last_forecast_lag", last_forecast_lag);
 
+			}
 			break;
 
-		case MARSHAL_VER_2:
+		case MARSHAL_VER_2: {
+
+			long last_forecast_lag = last_forecast_stamp.get_forecast_lag();
 
 			writer.marshalLong        ("action_time"      , action_time      );
 			writer.marshalLong        ("last_forecast_lag", last_forecast_lag);
+			writer.marshalLong        ("mainshock_time"   , mainshock_time   );
+			writer.marshalStringArray ("pdl_relay_ids"    , pdl_relay_ids    );
+
+			}
+			break;
+
+		case MARSHAL_VER_3:
+
+			writer.marshalLong        ("action_time"      , action_time      );
+			ForecastStamp.marshal     (writer, "last_forecast_stamp", last_forecast_stamp);
 			writer.marshalLong        ("mainshock_time"   , mainshock_time   );
 			writer.marshalStringArray ("pdl_relay_ids"    , pdl_relay_ids    );
 
@@ -126,7 +154,7 @@ public class OpGenerateExpire extends DBPayload {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Superclass
 
@@ -136,7 +164,9 @@ public class OpGenerateExpire extends DBPayload {
 
 		switch (ver) {
 
-		case MARSHAL_VER_1:
+		case MARSHAL_VER_1: {
+
+			long last_forecast_lag;
 
 			action_time       = reader.unmarshalLong ("action_time"      );
 			last_forecast_lag = reader.unmarshalLong ("last_forecast_lag");
@@ -144,14 +174,31 @@ public class OpGenerateExpire extends DBPayload {
 			mainshock_time = 0L;
 			pdl_relay_ids = new String[0];
 
+			last_forecast_stamp = new ForecastStamp (last_forecast_lag);
+
+			}
 			break;
 
-		case MARSHAL_VER_2:
+		case MARSHAL_VER_2: {
+
+			long last_forecast_lag;
 
 			action_time       = reader.unmarshalLong        ("action_time"      );
 			last_forecast_lag = reader.unmarshalLong        ("last_forecast_lag");
 			mainshock_time    = reader.unmarshalLong        ("mainshock_time"   );
 			pdl_relay_ids     = reader.unmarshalStringArray ("pdl_relay_ids"    );
+
+			last_forecast_stamp = new ForecastStamp (last_forecast_lag);
+
+			}
+			break;
+
+		case MARSHAL_VER_3:
+
+			action_time         = reader.unmarshalLong        ("action_time"      );
+			last_forecast_stamp = ForecastStamp.unmarshal     (reader, "last_forecast_stamp");
+			mainshock_time      = reader.unmarshalLong        ("mainshock_time"   );
+			pdl_relay_ids       = reader.unmarshalStringArray ("pdl_relay_ids"    );
 
 			break;
 		}

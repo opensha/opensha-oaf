@@ -288,7 +288,7 @@ public class RelaySupport extends ServerComponent {
 	//  relay_time = Time of this PDL action.
 	//  f_force = True to force this item to be written, increasing the relay time if needed.
 	//  ripdl_action = Action code, see RIPDL_ACT_XXXXX in class RiPDLCompletion.
-	//  ripdl_forecast_lag = Forecast lag, or -1L if unknown or none.
+	//  ripdl_forecast_stamp = Forecast stamp, which identifies the forecast.
 	//  ripdl_update_time = Update time associated with the OAF product.
 	// Returns the new RelayItem if it was added to the database.
 	// Returns null if not added to the database (because a newer one alreay exists).
@@ -296,10 +296,10 @@ public class RelaySupport extends ServerComponent {
 	// associated, that is, the eventsource + eventsourcecode from the PDL send operation.
 
 	public RelayItem submit_pdl_relay_item (String event_id, long relay_time, boolean f_force,
-				int ripdl_action, long ripdl_forecast_lag, long ripdl_update_time) {
+				int ripdl_action, ForecastStamp ripdl_forecast_stamp, long ripdl_update_time) {
 		
 		RiPDLCompletion ripdl_payload = new RiPDLCompletion();
-		ripdl_payload.setup (ripdl_action, ripdl_forecast_lag, ripdl_update_time);
+		ripdl_payload.setup (ripdl_action, ripdl_forecast_stamp, ripdl_update_time);
 
 		RelayItem result = RelayItem.submit_relay_item (
 			event_id_to_pdl_relay_id (event_id),			// relay_id
@@ -346,7 +346,7 @@ public class RelaySupport extends ServerComponent {
 	//  relay_time = Time of this PDL action.
 	//  f_force = True to force this item to be written, increasing the relay time if needed.
 	//  riprem_reason = Reason code, see RIPREM_REAS_XXXXX in class RiPDLRemoval.
-	//  riprem_forecast_lag = Forecast lag, or -1L if unknown or none.
+	//  riprem_forecast_stamp = Forecast stamp, which identifies the forecast.
 	//  riprem_remove_time = Time when it was determined that the OAF product can be deleted.
 	// Returns the new RelayItem if it was added to the database.
 	// Returns null if not added to the database (because a newer one alreay exists).
@@ -354,10 +354,10 @@ public class RelaySupport extends ServerComponent {
 	// associated, that is, the eventsource + eventsourcecode.
 
 	public RelayItem submit_prem_relay_item (String event_id, long relay_time, boolean f_force,
-				int riprem_reason, long riprem_forecast_lag, long riprem_remove_time) {
+				int riprem_reason, ForecastStamp riprem_forecast_stamp, long riprem_remove_time) {
 		
 		RiPDLRemoval riprem_payload = new RiPDLRemoval();
-		riprem_payload.setup (riprem_reason, riprem_forecast_lag, riprem_remove_time);
+		riprem_payload.setup (riprem_reason, riprem_forecast_stamp, riprem_remove_time);
 
 		RelayItem result = RelayItem.submit_relay_item (
 			event_id_to_prem_relay_id (event_id),			// relay_id
@@ -517,7 +517,7 @@ public class RelaySupport extends ServerComponent {
 				RiPDLCompletion payload = new RiPDLCompletion();
 				payload.unmarshal_relay (relit);
 
-				forecast_lag = Math.max (forecast_lag, payload.ripdl_forecast_lag);
+				forecast_lag = Math.max (forecast_lag, payload.ripdl_forecast_stamp.get_forecast_lag());
 
 			}
 			break;
@@ -560,7 +560,7 @@ public class RelaySupport extends ServerComponent {
 				RiPDLCompletion payload = new RiPDLCompletion();
 				payload.unmarshal_relay (relit);
 
-				forecast_lag = Math.max (forecast_lag, payload.ripdl_forecast_lag);
+				forecast_lag = Math.max (forecast_lag, payload.ripdl_forecast_stamp.get_forecast_lag());
 
 			}
 			break;
@@ -570,7 +570,7 @@ public class RelaySupport extends ServerComponent {
 				RiPDLRemoval payload = new RiPDLRemoval();
 				payload.unmarshal_relay (relit);
 
-				forecast_lag = Math.max (forecast_lag, payload.riprem_forecast_lag);
+				forecast_lag = Math.max (forecast_lag, payload.riprem_forecast_stamp.get_forecast_lag());
 
 			}
 			break;
@@ -581,6 +581,64 @@ public class RelaySupport extends ServerComponent {
 		// Return the forecast lag
 
 		return forecast_lag;
+	}
+
+
+
+	// Test if any PDL completion or removal relay item confirms that a forecast was issued.
+	// Parameters:
+	//  forecast_stamp = Forecast stamp which identifies the proposed forecast, must have lag >= 0.
+	//  event_ids = Event ids to search for.
+	// Examines the PDL completion and removal relay items for the given event_ids,
+	// and returns true if any of the relay items contains a forecast stamp which
+	// is a confirmation of the given forecast_stamp.
+	// Returns false if no relay item is found, or if no event_ids are supplied, or
+	// if no relay item contains a forecast stamp with lag >= 0.
+	// Note: Roughly speaking, this function returns true if any relay item mentions
+	// a forecast which is the same as, or later than, forecast_stamp.
+
+	public boolean is_pdl_prem_confirmation_of (ForecastStamp forecast_stamp, String... event_ids) {
+
+		// Get PDL completion and removal relay items
+
+		List<RelayItem> relits = get_pdl_and_prem_relay_items (event_ids);
+
+		// Scan for confirming item
+
+		for (RelayItem relit : relits) {
+
+			// Unmarshal the payload and check if it confirms the forecast
+
+			switch (RelaySupport.classify_relay_id (relit.get_relay_id())) {
+
+			case RelaySupport.RITYPE_PDL_COMPLETION:
+			{
+				RiPDLCompletion payload = new RiPDLCompletion();
+				payload.unmarshal_relay (relit);
+
+				if (payload.ripdl_forecast_stamp.is_confirmation_of (forecast_stamp)) {
+					return true;
+				}
+			}
+			break;
+
+			case RelaySupport.RITYPE_PDL_REMOVAL:
+			{
+				RiPDLRemoval payload = new RiPDLRemoval();
+				payload.unmarshal_relay (relit);
+
+				if (payload.riprem_forecast_stamp.is_confirmation_of (forecast_stamp)) {
+					return true;
+				}
+			}
+			break;
+
+			}
+		}
+
+		// Return forecast not confirmed
+
+		return false;
 	}
 
 
@@ -721,6 +779,105 @@ public class RelaySupport extends ServerComponent {
 
 		return relit;
 	}
+
+
+
+
+	//----- Analyst selection relay item support -----
+
+
+
+
+	// Submit an analyst selection relay item.
+	// Parmeters:
+	//  event_id = Event id for the analyst selection (this function handles the conversion).
+	//  relay_time = Time of this analyst selection.
+	//  relay_stamp = Origin stamp for this relay item, >= 0L means send to partner server.
+	//  f_force = True to force this item to be written, increasing the relay time if needed.
+	//  state_change = State change, see OpAnalystIntervene.ASREQ_XXXX.
+	//  f_create_timeline = True to create timeline if it doesn't exist.
+	//  analyst_options = Parameters supplied by the analyst, or null if none.
+	// Returns the new RelayItem if it was added to the database.
+	// Returns null if not added to the database (because a newer one alreay exists).
+	// Remark: The appropriate event id to use is the authoritative Comcat id.
+
+	public RelayItem submit_ansel_relay_item (String event_id, long relay_time, long relay_stamp, boolean f_force,
+				int state_change, boolean f_create_timeline, AnalystOptions analyst_options) {
+		
+		RiAnalystSelection ansel_payload = new RiAnalystSelection();
+		ansel_payload.setup (state_change, f_create_timeline, analyst_options);
+
+		RelayItem result = RelayItem.submit_relay_item (
+			event_id_to_analyst_relay_id (event_id),		// relay_id
+			relay_time,										// relay_time
+			ansel_payload.marshal_relay(),					// details
+			f_force,										// f_force
+			relay_stamp);									// relay_stamp
+
+		if (relay_stamp >= 0L || result != null) {
+			int log_op = ((relay_stamp >= 0L) ? ((result == null) ? LogSupport.RIOP_STALE : LogSupport.RIOP_SAVE) : LogSupport.RIOP_COPY);
+			long log_relay_time = ((result == null) ? relay_time : (result.get_relay_time()));
+			sg.log_sup.report_ansel_relay_set (log_op, event_id, log_relay_time, ansel_payload);
+		}
+	
+		return result;
+	}
+
+
+
+	// Get analyst selection relay items.
+	// Parameters:
+	//  event_ids = Event ids to search for (this function handles the conversion).
+	// Returns the list of matching relay items, sorted newest relay item first.
+	// Returns an empty list if no relay item is found, or if no event ids are supplied.
+
+	public List<RelayItem> get_ansel_relay_items (String... event_ids) {
+		if (event_ids == null || event_ids.length == 0) {
+			return new ArrayList<RelayItem>();
+		}
+		String[] relay_ids = event_ids_to_analyst_relay_ids (event_ids);
+		List<RelayItem> result = RelayItem.get_relay_item_range (RelayItem.DESCENDING, 0L, 0L, relay_ids);
+		return result;
+	}
+
+
+
+	// Get the most recent analyst selection relay item.
+	// Parameters:
+	//  event_ids = Event ids to search for (this function handles the conversion).
+	// Returns the newest matching relay item.
+	// Returns null if no relay item is found, or if no event ids are supplied.
+	// Implementation note: It is necessary to retrieve the full list and sort or scan it,
+	// so a repeatable selection is made among items with the same relay_time.
+
+	public RelayItem get_ansel_first_relay_item (String... event_ids) {
+		List<RelayItem> relits = get_ansel_relay_items (event_ids);
+		RelayItem result = null;
+		for (RelayItem relit : relits) {
+			if (result == null || RelayItem.compare (result, relit) < 0) {
+				result = relit;
+			}
+		}
+		return result;
+	}
+
+	//  public RelayItem get_ansel_first_relay_item (String... event_ids) {
+	//  	List<RelayItem> relits = get_ansel_relay_items (event_ids);
+	//  	if (relits.isEmpty()) {
+	//  		return null;
+	//  	}
+	//  	relits.sort (new RelayItem.DescendingComparator());
+	//  	return relits.get(0);
+	//  }
+
+	//  public RelayItem get_ansel_first_relay_item (String... event_ids) {
+	//  	if (event_ids == null || event_ids.length == 0) {
+	//  		return null;
+	//  	}
+	//  	String[] relay_ids = event_ids_to_analyst_relay_ids (event_ids);
+	//  	RelayItem result = RelayItem.get_first_relay_item (RelayItem.DESCENDING, 0L, 0L, relay_ids);
+	//  	return result;
+	//  }
 
 
 

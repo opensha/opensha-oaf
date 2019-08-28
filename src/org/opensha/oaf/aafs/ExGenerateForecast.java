@@ -78,11 +78,31 @@ public class ExGenerateForecast extends ServerExecTask {
 				+ "event_id = " + task.get_event_id() + "\n"
 				+ "payload.action_time = " + payload.action_time + "\n"
 				+ "payload.next_forecast_lag = " + payload.next_forecast_lag + "\n"
-				+ "payload.last_forecast_lag = " + payload.last_forecast_lag);
+				+ "payload.last_forecast_stamp = " + payload.last_forecast_stamp.get_friendly_string());
 
 			sg.timeline_sup.next_auto_timeline (tstatus);
 			return RESCODE_FORECAST_CANCELED;
 		}
+
+		//--- Mainshock
+
+		// Get mainshock parameters
+
+		ForecastMainshock fcmain = new ForecastMainshock();
+
+		try {
+			sg.alias_sup.get_mainshock_for_timeline_id_generate (task.get_event_id(), fcmain);
+		}
+
+		// An exception here triggers a ComCat retry
+
+		catch (ComcatException e) {
+			return sg.timeline_sup.process_timeline_comcat_retry (task, tstatus, e);
+		}
+
+		// Update the analyst options from relay items
+
+		sg.timeline_sup.update_analyst_options_from_relay (tstatus);
 
 		//--- Timeline state check
 
@@ -106,7 +126,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 		if (!( payload.action_time == tstatus.action_time
 			&& payload.next_forecast_lag == next_forecast_lag
-			&& payload.last_forecast_lag == tstatus.last_forecast_lag )) {
+			&& payload.last_forecast_stamp.is_equal_to (tstatus.last_forecast_stamp) )) {
 		
 			sg.task_disp.set_display_taskres_log ("TASK-ERR: Timeline entry state does not match task:\n"
 				+ "event_id = " + task.get_event_id() + "\n"
@@ -114,27 +134,11 @@ public class ExGenerateForecast extends ServerExecTask {
 				+ "tstatus.action_time = " + tstatus.action_time + "\n"
 				+ "payload.next_forecast_lag = " + payload.next_forecast_lag + "\n"
 				+ "next_forecast_lag = " + next_forecast_lag + "\n"
-				+ "payload.last_forecast_lag = " + payload.last_forecast_lag + "\n"
-				+ "tstatus.last_forecast_lag = " + tstatus.last_forecast_lag);
+				+ "payload.last_forecast_stamp = " + payload.last_forecast_stamp.get_friendly_string() + "\n"
+				+ "tstatus.last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string());
 
 			sg.timeline_sup.next_auto_timeline (tstatus);
 			return RESCODE_TIMELINE_TASK_MISMATCH;
-		}
-
-		//--- Mainshock
-
-		// Get mainshock parameters
-
-		ForecastMainshock fcmain = new ForecastMainshock();
-
-		try {
-			sg.alias_sup.get_mainshock_for_timeline_id_generate (task.get_event_id(), fcmain);
-		}
-
-		// An exception here triggers a ComCat retry
-
-		catch (ComcatException e) {
-			return sg.timeline_sup.process_timeline_comcat_retry (task, tstatus, e);
 		}
 
 		//--- Premature forecasts
@@ -267,7 +271,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 			// Delete OAF products and write relay item
 
-			sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_ANALYST, next_forecast_lag);
+			sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_ANALYST, tstatus.last_forecast_stamp);
 
 			// Write the new timeline entry
 
@@ -343,7 +347,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 				// Delete OAF products and write relay item
 
-				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_INTAKE, next_forecast_lag);
+				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_INTAKE, tstatus.last_forecast_stamp);
 
 				// Write the new timeline entry
 
@@ -460,7 +464,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 				// Delete OAF products and write relay item
 
-				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_SHADOWED, next_forecast_lag);
+				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_SHADOWED, tstatus.last_forecast_stamp);
 
 				// Write the new timeline entry
 
@@ -560,7 +564,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 					// Delete OAF products and write relay item
 
-					sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_FORESHOCK, next_forecast_lag);
+					sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_FORESHOCK, tstatus.last_forecast_stamp);
 
 					// Write the new timeline entry
 
@@ -629,7 +633,7 @@ public class ExGenerateForecast extends ServerExecTask {
 		
 				sg.task_disp.display_taskinfo ("TASK-INFO: PDL report has already been sent:\n"
 					+ "event_id = " + tstatus.event_id + "\n"
-					+ "last_forecast_lag = " + tstatus.last_forecast_lag);
+					+ "last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string());
 
 				sg.log_sup.report_pdl_sent_already (tstatus);
 
@@ -642,7 +646,7 @@ public class ExGenerateForecast extends ServerExecTask {
 		
 				sg.task_disp.set_display_taskres_log ("TASK-INFO: PDL report not sent from secondary server:\n"
 					+ "event_id = " + tstatus.event_id + "\n"
-					+ "last_forecast_lag = " + tstatus.last_forecast_lag);
+					+ "last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string());
 
 				sg.log_sup.report_pdl_not_sent_secondary (tstatus);
 
@@ -681,7 +685,7 @@ public class ExGenerateForecast extends ServerExecTask {
 		
 						sg.task_disp.display_taskinfo ("TASK-ERR: Unable to send forecast report to PDL:\n"
 							+ "event_id = " + tstatus.event_id + "\n"
-							+ "last_forecast_lag = " + tstatus.last_forecast_lag + "\n"
+							+ "last_forecast_stamp = " + tstatus.last_forecast_stamp.get_friendly_string() + "\n"
 							+ "Stack trace:\n" + SimpleUtils.getStackTraceAsString(e));
 					}
 				}
@@ -700,7 +704,7 @@ public class ExGenerateForecast extends ServerExecTask {
 						sg.task_disp.get_time(),								// relay_time
 						true,													// f_force
 						RiPDLCompletion.RIPDL_ACT_FORECAST_PDL,					// ripdl_action
-						tstatus.last_forecast_lag,								// ripdl_forecast_lag
+						tstatus.last_forecast_stamp,							// ripdl_forecast_stamp
 						sg.task_disp.get_time()									// ripdl_update_time
 					);
 				}

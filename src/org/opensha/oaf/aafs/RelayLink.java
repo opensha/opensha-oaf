@@ -2072,6 +2072,59 @@ public class RelayLink extends ServerComponent {
 		// In watch mode, just return configured primary state
 
 		case RMODE_WATCH:
+			if (get_primary_state() == PRIST_INITIALIZING) {
+
+				// Come here in watch mode during initialization
+
+				// If configured primary ...
+
+				if (local_status.is_configured_primary()) {
+
+					//>>> Watch mode, configured primary, running as initializing
+
+					// If the partner server is known to be dead or synced, start as primary
+
+					if (is_remote_known_dead_or_synced (time_now)) {
+						return PRIST_PRIMARY;
+					}
+
+					// If initialization timeout expired, force start as primary
+
+					if (time_now > get_start_time() + prist_init_timeout && is_link_conn_or_disc()) {
+						return PRIST_PRIMARY;
+					}
+
+					// Otherwise, stay in initialization
+
+					return PRIST_INITIALIZING;
+				}
+
+				//>>> Watch mode, configured secondary, running as initializing
+
+				// Otherwise we are configured secondary ...
+				// If the partner server is known to be dead, start as secondary
+
+				if (is_remote_known_dead (time_now)) {
+					return PRIST_SECONDARY;
+					//return PRIST_PRIMARY;
+				}
+
+				// If the partner server is known to be alive and synced, start as secondary
+
+				if (is_remote_known_alive_and_synced (time_now)) {
+					return PRIST_SECONDARY;
+				}
+
+				// If initialization timeout expired, force start as secondary
+
+				if (time_now > get_start_time() + prist_init_timeout && is_link_conn_or_disc()) {
+					return PRIST_SECONDARY;
+				}
+
+				// Otherwise, stay in initialization
+
+				return PRIST_INITIALIZING;
+			}
 			return ( local_status.is_configured_primary() ? PRIST_PRIMARY : PRIST_SECONDARY );
 
 		// In pair mode, continue ...
