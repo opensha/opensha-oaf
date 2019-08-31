@@ -29,6 +29,15 @@ import org.opensha.oaf.aafs.entity.DBEntity;
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.oaf.rj.RJ_AftershockModel_SequenceSpecific;
+import org.opensha.oaf.rj.GenericRJ_Parameters;
+import org.opensha.oaf.rj.GenericRJ_ParametersFetch;
+import org.opensha.oaf.rj.MagCompPage_Parameters;
+import org.opensha.oaf.rj.MagCompPage_ParametersFetch;
+import org.opensha.oaf.rj.OAFTectonicRegime;
+import org.opensha.oaf.rj.SeqSpecRJ_Parameters;
+import org.opensha.oaf.rj.MagCompFn;
+import org.opensha.oaf.rj.SearchMagFn;
+import org.opensha.oaf.rj.SearchRadiusFn;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -40,6 +49,9 @@ import org.opensha.oaf.util.MarshalImpDataWriter;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TimeSplitOutputStream;
 import org.opensha.oaf.util.ConsoleRedirector;
+
+import org.opensha.oaf.comcat.ComcatOAFAccessor;
+import org.opensha.commons.data.comcat.ComcatException;
 
 
 /**
@@ -88,6 +100,7 @@ public class AnalystCLI {
 	public static final int CST_CONFIRM			= 28;		// confirm results
 	public static final int CST_FORECAST		= 29;		// generate forecasts for this event
 	public static final int CST_FC_SEL			= 30;		// fc_sel
+	public static final int CST_INJ_TEXT		= 31;		// inj_text
 
 
 	// Discrete responses.
@@ -108,6 +121,7 @@ public class AnalystCLI {
 	public static final int RES_OK				=  1;		// Success
 	public static final int RES_BACK			=  2;		// Go back
 	public static final int RES_RESTART			=  3;		// Start over
+	public static final int RES_CANCEL			=  4;		// Cancel
 
 
 	// Command strings.
@@ -122,6 +136,8 @@ public class AnalystCLI {
 	public static final String CS_BACK_2		= "b";
 	public static final String CS_RESTART_1		= "restart";
 	public static final String CS_RESTART_2		= "r";
+	public static final String CS_CANCEL_1		= "cancel";
+	public static final String CS_CANCEL_2		= "c";
 
 
 
@@ -154,11 +170,16 @@ public class AnalystCLI {
 
 	// Mainshock parameters.
 
-	ForecastMainshock fcmain;
+	private ForecastMainshock fcmain;
 
-	// Forecast parameters.
+	// The original forecast parameters.
 
-	ForecastParameters fcparams;
+	private ForecastParameters fcparams;
+
+	// The resulting analyst options.
+	// Note: This is guaranteed to have non-null analyst_params.
+
+	private AnalystOptions analyst_options;
 
 
 
@@ -166,6 +187,8 @@ public class AnalystCLI {
 	// A class that holds a set of analyst selections.
 
 	public static class Selection {
+
+		//--- Analyst selections ---
 
 		// Forecast selection (DVAL_NO, DVAL_YES, DVAL_AUTO).
 
@@ -209,10 +232,38 @@ public class AnalystCLI {
 		public double min_radius;
 		public double max_radius;
 
+		// Injectable text, "" for none.
+
+		public String inj_text;
+
+
+		//--- Additional variables ---
+
+		// The original parameters.
+
+		public ForecastParameters original_fcparams;
+
+		// The original mainshock info.
+
+		public ForecastMainshock original_fcmain;
+
+
+
+
+		//--- Selection functions ---
+
+
+
+
 		// Set the values from forecast parameters.
 		// Returns true if success, false if it cannot be done.
 
-		public boolean set_from_fcparams (ForecastParameters fcparams) {
+		public boolean set_from_fcparams (ForecastParameters fcparams, ForecastMainshock fcmain) {
+
+			// Save original parameters
+
+			original_fcparams = fcparams;
+			original_fcmain = fcmain;
 
 			// Forecast selection (DVAL_NO, DVAL_YES, DVAL_AUTO).
 
@@ -255,9 +306,16 @@ public class AnalystCLI {
 			wc_mult = fcparams.mag_comp_params.get_fcn_radiusSample().getDefaultGUIRadiusMult();
 			min_radius = fcparams.mag_comp_params.get_fcn_radiusSample().getDefaultGUIRadiusMin();
 			max_radius = fcparams.mag_comp_params.get_fcn_radiusSample().getDefaultGUIRadiusMax();
+
+			// Injectable text
+
+			inj_text = fcparams.get_eff_injectable_text("");
 		
 			return true;
 		}
+
+
+
 
 		// Display the selections
 
@@ -334,9 +392,180 @@ public class AnalystCLI {
 				System.out.println ("radius maximum = " + max_radius);
 			}
 
+			// Injectable text
+			
+			System.out.println ("injectable text = " + inj_text);
+
 			System.out.println();
 
 			return;
+		}
+
+
+
+
+		// Make the new magnitude of completeness parameters.
+
+		public MagCompPage_Parameters make_mag_comp_params () {
+
+			MagCompFn magCompFn = MagCompFn.makePage (capF, capG, capH);
+			SearchMagFn magSample = original_fcparams.mag_comp_params.get_fcn_magSample();
+			SearchRadiusFn radiusSample = SearchRadiusFn.makeWCClip (wc_mult, min_radius, max_radius);
+			SearchMagFn magCentroid = original_fcparams.mag_comp_params.get_fcn_magCentroid();
+			SearchRadiusFn radiusCentroid = SearchRadiusFn.makeWCClip (wc_mult, min_radius, max_radius);
+
+			MagCompPage_Parameters result = new MagCompPage_Parameters (
+				magCat,
+				magCompFn,
+				magSample,
+				radiusSample,
+				magCentroid,
+				radiusCentroid
+			);
+		
+			return result;
+		}
+
+
+
+
+		// Make the new sequence specific parameters.
+
+		public SeqSpecRJ_Parameters make_seq_spec_params () {
+
+			SeqSpecRJ_Parameters result = new SeqSpecRJ_Parameters (
+				b,
+				min_a,
+				max_a,
+				num_a,
+				min_p,
+				max_p,
+				num_p,
+				min_c,
+				max_c,
+				num_c
+			);
+
+			return result;
+		}
+
+
+
+
+		// Make the new forecast parameters.
+
+		public ForecastParameters make_new_fcparams () {
+
+			ForecastParameters new_fcparams = new ForecastParameters();
+			new_fcparams.setup_all_default();
+
+			if (fc_sel == DVAL_NO) {
+				return new_fcparams;
+			}
+
+			new_fcparams.set_analyst_control_params (
+				ForecastParameters.CALC_METH_AUTO_PDL,		// generic_calc_meth
+				ForecastParameters.CALC_METH_AUTO_PDL,		// seq_spec_calc_meth,
+				ForecastParameters.CALC_METH_AUTO_PDL,		// bayesian_calc_meth,
+				inj_text.isEmpty() ? ForecastParameters.INJ_TXT_USE_DEFAULT : inj_text
+			);
+
+			new_fcparams.set_analyst_mag_comp_params (
+				true,										// mag_comp_avail
+				original_fcparams.mag_comp_regime,			// mag_comp_regime
+				make_mag_comp_params()						// mag_comp_params
+			);
+
+			new_fcparams.set_analyst_seq_spec_params (
+				true,										// seq_spec_avail
+				make_seq_spec_params()						// seq_spec_params
+			);
+		
+			return new_fcparams;
+		}
+
+
+
+
+		// Make the new analyst options.
+
+		public AnalystOptions make_new_analyst_options () {
+
+			// Action configuration
+
+			ActionConfig action_config = new ActionConfig();
+
+			// The first forecast lag, note is is a multiple of 1 second
+
+			long first_forecast_lag = action_config.get_next_forecast_lag (0L);
+			if (first_forecast_lag < 0L) {
+				first_forecast_lag = 0L;
+			}
+
+			// Time now
+
+			long time_now = System.currentTimeMillis();
+
+			// The forecast lag that would cause a forecast to be issued now,
+			// as a multiple of 1 seconds, but after the first forecast
+
+			long current_lag = action_config.floor_unit_lag (
+					time_now - (original_fcmain.mainshock_time
+								+ action_config.get_comcat_clock_skew()
+								+ action_config.get_comcat_origin_skew()),
+					first_forecast_lag + 1000L);
+
+			// Parameters that vary based on forecast selection
+		
+			long extra_forecast_lag;
+			int intake_option;
+			int shadow_option;
+
+			switch (fc_sel) {
+
+			case DVAL_NO:
+				extra_forecast_lag = -1L;
+				intake_option = AnalystOptions.OPT_INTAKE_BLOCK;
+				shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
+				break;
+
+			case DVAL_YES:
+				extra_forecast_lag = current_lag;
+				intake_option = AnalystOptions.OPT_INTAKE_IGNORE;
+				shadow_option = AnalystOptions.OPT_SHADOW_IGNORE;
+				break;
+
+			default:
+				extra_forecast_lag = current_lag;
+				intake_option = AnalystOptions.OPT_INTAKE_NORMAL;
+				shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
+				break;
+			}
+
+			// Other parameters
+
+			String analyst_id = "";
+			String analyst_remark = "";
+			long analyst_time = time_now;
+			ForecastParameters analyst_params = make_new_fcparams();
+			long max_forecast_lag = 0L;
+
+			// Create the analyst options
+
+			AnalystOptions anopt = new AnalystOptions();
+
+			anopt.setup (
+				analyst_id,
+				analyst_remark,
+				analyst_time,
+				analyst_params,
+				extra_forecast_lag,
+				max_forecast_lag,
+				intake_option,
+				shadow_option
+			);
+
+			return anopt;
 		}
 	}
 
@@ -399,6 +628,10 @@ public class AnalystCLI {
 
 			if (line.equalsIgnoreCase (CS_RESTART_1) || line.equalsIgnoreCase (CS_RESTART_2)) {
 				return RES_RESTART;
+			}
+
+			if (line.equalsIgnoreCase (CS_CANCEL_1) || line.equalsIgnoreCase (CS_CANCEL_2)) {
+				return RES_CANCEL;
 			}
 
 			// Attempt conversion to integer
@@ -489,6 +722,10 @@ public class AnalystCLI {
 				return RES_RESTART;
 			}
 
+			if (line.equalsIgnoreCase (CS_CANCEL_1) || line.equalsIgnoreCase (CS_CANCEL_2)) {
+				return RES_CANCEL;
+			}
+
 			// Attempt conversion to double
 
 			try {
@@ -559,6 +796,10 @@ public class AnalystCLI {
 
 			if (line.equalsIgnoreCase (CS_RESTART_1) || line.equalsIgnoreCase (CS_RESTART_2)) {
 				return RES_RESTART;
+			}
+
+			if (line.equalsIgnoreCase (CS_CANCEL_1) || line.equalsIgnoreCase (CS_CANCEL_2)) {
+				return RES_CANCEL;
 			}
 
 			// Got a string
@@ -652,6 +893,10 @@ public class AnalystCLI {
 				return RES_RESTART;
 			}
 
+			if (line.equalsIgnoreCase (CS_CANCEL_1) || line.equalsIgnoreCase (CS_CANCEL_2)) {
+				return RES_CANCEL;
+			}
+
 			// Check for allowed responses
 
 			if (f_yes) {
@@ -724,7 +969,7 @@ public class AnalystCLI {
 
 		cur_sel = new Selection();
 
-		if (!( cur_sel.set_from_fcparams (fcparams) )) {
+		if (!( cur_sel.set_from_fcparams (fcparams, fcmain) )) {
 			System.out.println ("Cannot determine default parameters for event " + event_id);
 			return false;
 		}
@@ -732,6 +977,7 @@ public class AnalystCLI {
 		// Display the event info
 
 		System.out.println ();
+		System.out.println ("mainshock_event_id = " + fcmain.mainshock_event_id);
 		System.out.println ("mainshock_time = " + SimpleUtils.time_raw_and_string(fcmain.mainshock_time));
 		System.out.println ("mainshock_mag = " + fcmain.mainshock_mag);
 		System.out.println ("mainshock_lat = " + fcmain.mainshock_lat);
@@ -746,6 +992,14 @@ public class AnalystCLI {
 
 
 	// Get the analyst selections.
+	// Returns true if user completed all selections.
+	// Returns false if user elected not to continue.
+	// Upon a true return:
+	//  cur_sel = The selection object.
+	//  event_id = The event id entered by the user.
+	//  fcmain = The mainshock parameters.
+	//  fcparams = The original parameters for the event.
+	//  analyst_options = The analyst options constructed from the user's inputs.
 
 	public boolean get_selections () {
 
@@ -783,6 +1037,8 @@ public class AnalystCLI {
 				case RES_RESTART:
 					cst = CST_EVENT_ID;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					event_id = value_string;
 					if (!( fetch_event_info() )) {
@@ -804,6 +1060,8 @@ public class AnalystCLI {
 				case RES_RESTART:
 					cst = CST_EVENT_ID;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					if (value_int == DVAL_NO) {
 						cst = CST_EVENT_ID;
@@ -817,13 +1075,15 @@ public class AnalystCLI {
 			// Forecast generation
 
 			case CST_FC_SEL:
-				switch (read_yna_from_user ("Generate forecasts for this event?", true, true, true, cur_sel.fc_sel)) {
+				switch (read_yna_from_user ("Generate forecasts for event " + event_id + "?", true, true, true, cur_sel.fc_sel)) {
 				case RES_BACK:
 					cst = CST_EVENT_ID;
 					break;
 				case RES_RESTART:
 					cst = CST_EVENT_ID;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.fc_sel = value_int;
 					if (cur_sel.fc_sel == DVAL_NO) {
@@ -843,8 +1103,10 @@ public class AnalystCLI {
 					cst = CST_FC_SEL;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.b = value_real;
 					cst = CST_NUM_A;
@@ -861,8 +1123,10 @@ public class AnalystCLI {
 					cst = CST_B;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.num_a = value_int;
 					if (cur_sel.num_a == 1) {
@@ -880,8 +1144,10 @@ public class AnalystCLI {
 					cst = CST_NUM_A;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.min_a = value_real;
 					cur_sel.max_a = value_real;
@@ -896,8 +1162,10 @@ public class AnalystCLI {
 					cst = CST_NUM_A;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.min_a = value_real;
 					cst = CST_MAX_A;
@@ -911,8 +1179,10 @@ public class AnalystCLI {
 					cst = CST_MIN_A;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.max_a = value_real;
 					cst = CST_NUM_P;
@@ -929,8 +1199,10 @@ public class AnalystCLI {
 					cst = CST_NUM_A;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.num_p = value_int;
 					if (cur_sel.num_p == 1) {
@@ -948,8 +1220,10 @@ public class AnalystCLI {
 					cst = CST_NUM_P;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.min_p = value_real;
 					cur_sel.max_p = value_real;
@@ -964,8 +1238,10 @@ public class AnalystCLI {
 					cst = CST_NUM_P;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.min_p = value_real;
 					cst = CST_MAX_P;
@@ -979,8 +1255,10 @@ public class AnalystCLI {
 					cst = CST_MIN_P;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.max_p = value_real;
 					cst = CST_NUM_C;
@@ -997,8 +1275,10 @@ public class AnalystCLI {
 					cst = CST_NUM_P;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.num_c = value_int;
 					if (cur_sel.num_c == 1) {
@@ -1016,8 +1296,10 @@ public class AnalystCLI {
 					cst = CST_NUM_C;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.min_c = value_real;
 					cur_sel.max_c = value_real;
@@ -1032,8 +1314,10 @@ public class AnalystCLI {
 					cst = CST_NUM_C;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.min_c = value_real;
 					cst = CST_MAX_C;
@@ -1047,8 +1331,10 @@ public class AnalystCLI {
 					cst = CST_MIN_C;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.max_c = value_real;
 					cst = CST_MAG_CAT;
@@ -1064,8 +1350,10 @@ public class AnalystCLI {
 					cst = CST_NUM_C;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.magCat = value_real;
 					cst = CST_CAP_F;
@@ -1081,8 +1369,10 @@ public class AnalystCLI {
 					cst = CST_MAG_CAT;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.capF = value_real;
 					cst = CST_CAP_G;
@@ -1098,8 +1388,10 @@ public class AnalystCLI {
 					cst = CST_CAP_F;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.capG = value_real;
 					cst = CST_CAP_H;
@@ -1115,8 +1407,10 @@ public class AnalystCLI {
 					cst = CST_CAP_G;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.capH = value_real;
 					cst = CST_WC_MULT;
@@ -1132,8 +1426,10 @@ public class AnalystCLI {
 					cst = CST_CAP_H;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.wc_mult = value_real;
 					if (cur_sel.wc_mult <= 1.0e-20) {
@@ -1151,12 +1447,14 @@ public class AnalystCLI {
 					cst = CST_WC_MULT;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.min_radius = value_real;
 					cur_sel.max_radius = value_real;
-					cst = CST_REVIEW;
+					cst = CST_INJ_TEXT;
 					break;
 				}
 				break;
@@ -1167,8 +1465,10 @@ public class AnalystCLI {
 					cst = CST_WC_MULT;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.min_radius = value_real;
 					cst = CST_RAD_MAX;
@@ -1182,10 +1482,31 @@ public class AnalystCLI {
 					cst = CST_RAD_MIN;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					cur_sel.max_radius = value_real;
+					cst = CST_INJ_TEXT;
+					break;
+				}
+				break;
+
+			// Injectable text
+
+			case CST_INJ_TEXT:
+				switch (read_string_from_user ("Injectable text", null)) {
+				case RES_BACK:
+					cst = CST_WC_MULT;
+					break;
+				case RES_RESTART:
+					cst = CST_FC_SEL;
+					break;
+				case RES_CANCEL:
+					return false;
+				default:
+					cur_sel.inj_text = value_string;
 					cst = CST_REVIEW;
 					break;
 				}
@@ -1196,13 +1517,15 @@ public class AnalystCLI {
 			case CST_REVIEW:
 				System.out.println ("Review selections");
 				cur_sel.display_selections();
-				switch (read_yna_from_user ("Continue with these selections?", true, true, false, DVAL_YES)) {
+				switch (read_yna_from_user ("Continue with these selections?", true, true, false, null)) {
 				case RES_BACK:
-					cst = CST_FC_SEL;
+					cst = CST_INJ_TEXT;
 					break;
 				case RES_RESTART:
-					cst = CST_EVENT_ID;
+					cst = CST_FC_SEL;
 					break;
+				case RES_CANCEL:
+					return false;
 				default:
 					if (value_int == DVAL_NO) {
 						cst = CST_FC_SEL;
@@ -1213,13 +1536,52 @@ public class AnalystCLI {
 				}
 				break;
 
-			//TODO - Send selections to servers
-
 			}	// end switch on state
 
 		}	// end loop until exit state
 
+		System.out.println ();
+
+		// Construct the analyst parameters
+
+		analyst_options = cur_sel.make_new_analyst_options();
+
 		return true;
+	}
+
+
+
+
+	// Get the user's event id.
+	// Note: Generally you should use the authoritative id from fcmain.
+
+	public String get_event_id () {
+		return event_id;
+	}
+
+
+	// Get the mainshock parameters.
+
+	public ForecastMainshock get_fcmain () {
+		return fcmain;
+	}
+
+
+	// Get the resulting analyst options.
+
+	public AnalystOptions get_analyst_options () {
+		return analyst_options;
+	}
+
+
+	// Make an analyst selection relay item.
+
+	public RelayItem build_ansel_relay_item () {
+		return RelaySupport.build_ansel_relay_item (
+				fcmain.mainshock_event_id,
+				(cur_sel.fc_sel == DVAL_NO) ? OpAnalystIntervene.ASREQ_NONE : OpAnalystIntervene.ASREQ_START,
+				true,
+				analyst_options);
 	}
 
 
@@ -1229,14 +1591,171 @@ public class AnalystCLI {
 	
 	public static void main(String[] args) {
 
-		// Allocate the object
+		// There needs to be at least one argument, which is the subcommand
 
-		AnalystCLI analyst_cli = new AnalystCLI();
+		if (args.length < 1) {
+			System.err.println ("AnalystCLI : Missing subcommand");
+			return;
+		}
 
-		// Run it
 
-		analyst_cli.get_selections();
 
+
+		// Subcommand : Test #1
+		// Command format:
+		//  test1
+		// Request parameter selections from user, and display the resulting mainshock info and analyst options.
+
+		if (args[0].equalsIgnoreCase ("test1")) {
+
+			// No additional argument
+
+			if (args.length != 1) {
+				System.err.println ("AnalystCLI : Invalid 'test1' subcommand");
+				return;
+			}
+
+			// Allocate the object
+
+			AnalystCLI analyst_cli = new AnalystCLI();
+
+			// Run it
+
+			boolean selres = analyst_cli.get_selections();
+
+			if (!( selres )) {
+				System.out.println ("AnalystCLI.get_selections returned false");
+				return;
+			}
+
+			// Display the mainshock info
+
+			System.out.println (analyst_cli.get_fcmain().toString());
+			System.out.println();
+
+			// Display the analyst options
+
+			System.out.println (analyst_cli.get_analyst_options().toString());
+			System.out.println();
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2
+		// Request parameter selections from user, and display the resulting mainshock info and analyst options.
+		// Then get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then put everything in a ForecastData object, and display it.
+		// Then convert to JSON, and display the JSON.
+		// [[Then read from JSON, and display it (including rebuilt transient data).]]
+		// Note: This is adapted from test #2 in ForecastData.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// No additional argument
+
+			if (args.length != 1) {
+				System.err.println ("AnalystCLI : Invalid 'test2' subcommand");
+				return;
+			}
+
+			// Allocate the object
+
+			AnalystCLI analyst_cli = new AnalystCLI();
+
+			// Run it
+
+			boolean selres = analyst_cli.get_selections();
+
+			if (!( selres )) {
+				System.out.println ("AnalystCLI.get_selections returned false");
+				return;
+			}
+
+			// Display the mainshock info
+
+			ForecastMainshock the_fcmain = analyst_cli.get_fcmain();
+			System.out.println (the_fcmain.toString());
+			System.out.println();
+
+			// Display the analyst options
+
+			AnalystOptions the_analyst_options = analyst_cli.get_analyst_options();
+			System.out.println (the_analyst_options.toString());
+
+			// Set the forecast time to be 7 days after the mainshock
+
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, the_fcmain, the_analyst_options.analyst_params);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			// Get results
+
+			String the_injectable_text = params.get_eff_injectable_text (
+					(new ActionConfig()).get_def_injectable_text());
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (the_fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, the_injectable_text, the_fcmain, params, true);
+
+			// Select report for PDL, if any
+
+			results.pick_pdl_model();
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (results.toString());
+
+			// Construct the forecast data
+
+			long ctime = System.currentTimeMillis();
+
+			ForecastData fcdata = new ForecastData();
+			fcdata.set_data (ctime, the_fcmain, params, results, the_analyst_options);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (fcdata.toString());
+
+			// Convert to JSON
+
+			String json_string = fcdata.to_json();
+
+			System.out.println ("");
+			System.out.println (json_string);
+
+			// Read from JSON
+
+			//  ForecastData fcdata2 = new ForecastData();
+			//  fcdata2.from_json (json_string);
+			//  
+			//  System.out.println ("");
+			//  System.out.println (fcdata2.toString());
+
+			return;
+		}
+
+
+
+
+		// Unrecognized subcommand.
+
+		System.err.println ("AnalystCLI : Unrecognized subcommand : " + args[0]);
 		return;
+
 	}
 }

@@ -772,12 +772,16 @@ public class ForecastResults {
 			}
 		}
 
-		//if (seq_spec_result_avail) {
-		//	if (seq_spec_json.length() > 0 && seq_spec_summary.get_numAftershocks() >= 1) {
-		//		seq_spec_pdl = true;
-		//		return seq_spec_json;
-		//	}
-		//}
+		// This section was previously commented out, to disallow sequence specific.
+		// Perhaps the fully automatic mode should never send sequence specific to PDL,
+		// however it is required for analyst-supplied parameters.
+
+		if (seq_spec_result_avail) {
+			if (seq_spec_json.length() > 0 && seq_spec_summary.get_numAftershocks() >= 1) {
+				seq_spec_pdl = true;
+				return seq_spec_json;
+			}
+		}
 
 		if (generic_result_avail) {
 			if (generic_json.length() > 0) {

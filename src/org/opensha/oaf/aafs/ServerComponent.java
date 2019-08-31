@@ -38,7 +38,8 @@ public class ServerComponent {
 	public static final int OPCODE_CLEANUP_PDL_START = 19;	// Start cleaning up old forecasts in PDL
 	public static final int OPCODE_CLEANUP_PDL_STOP = 20;	// Stop cleaning up old forecasts in PDL
 	public static final int OPCODE_SET_RELAY_MODE = 21;		// Set server relay mode
-	public static final int OPCODE_MAX = 21;				// Maximum allowed opcode
+	public static final int OPCODE_ANALYST_SELECTION = 22;	// Analyst selection of options
+	public static final int OPCODE_MAX = 22;				// Maximum allowed opcode
 
 	// Return a string describing an opcode.
 
@@ -65,6 +66,7 @@ public class ServerComponent {
 		case OPCODE_CLEANUP_PDL_START: return "OPCODE_CLEANUP_PDL_START";
 		case OPCODE_CLEANUP_PDL_STOP: return "OPCODE_CLEANUP_PDL_STOP";
 		case OPCODE_SET_RELAY_MODE: return "OPCODE_SET_RELAY_MODE";
+		case OPCODE_ANALYST_SELECTION: return "OPCODE_ANALYST_SELECTION";
 		}
 		return "OPCODE_INVALID(" + x + ")";
 	}
@@ -128,7 +130,9 @@ public class ServerComponent {
 	public static final int RESCODE_PDL_CANCELED = 39;				// PDL send canceled due to secondary-to-primary transition
 	public static final int RESCODE_EXPIRE_CANCELED = 40;			// Expire operation canceled due to secondary-to-primary transition
 	public static final int RESCODE_PDL_CONFIRMED = 41;				// PDL operation on other server is confirmed
-	public static final int RESCODE_MAX_NORMAL = 41;				// Maximum known normal result code
+	public static final int RESCODE_ANALYST_OPTIONS_STALE = 42;		// Analyst options were already set or superseded
+	public static final int RESCODE_ANALYST_OPTIONS_BAD = 43;		// Analyst options are invalid
+	public static final int RESCODE_MAX_NORMAL = 43;				// Maximum known normal result code
 
 	public static final int RESCODE_DELETE = 101;					// Delete current task (without logging it)
 	public static final int RESCODE_DELETE_TIMELINE_EXISTS = 102;	// Delete current task (without logging it), because timeline already exists
@@ -193,6 +197,8 @@ public class ServerComponent {
 		case RESCODE_PDL_CANCELED: return "RESCODE_PDL_CANCELED";
 		case RESCODE_EXPIRE_CANCELED: return "RESCODE_EXPIRE_CANCELED";
 		case RESCODE_PDL_CONFIRMED: return "RESCODE_PDL_CONFIRMED";
+		case RESCODE_ANALYST_OPTIONS_STALE: return "RESCODE_ANALYST_OPTIONS_STALE";
+		case RESCODE_ANALYST_OPTIONS_BAD: return "RESCODE_ANALYST_OPTIONS_BAD";
 
 		case RESCODE_DELETE: return "RESCODE_DELETE";
 		case RESCODE_DELETE_TIMELINE_EXISTS: return "RESCODE_DELETE_TIMELINE_EXISTS";

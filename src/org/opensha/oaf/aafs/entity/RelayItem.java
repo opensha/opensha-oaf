@@ -1259,4 +1259,33 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 		return result;
 	}
 
+	// Marshal object, polymorphic, to a JSON string.
+
+	public static String marshal_json_poly (RelayItem obj) {
+
+		MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+		marshal_poly (writer, null, obj);
+
+		if (!( writer.check_write_complete() )) {
+			throw new MarshalException ("RelayItem.marshal_json_poly: Writer reports writing not complete");
+		}
+
+		String json_string = writer.get_json_string();
+		return json_string;
+	}
+
+	// Unmarshal object, polymorphic, from a JSON string.
+
+	public static RelayItem unmarshal_json_poly (String json_string) {
+
+		MarshalImpJsonReader reader = new MarshalImpJsonReader (json_string);
+		RelayItem result = unmarshal_poly (reader, null);
+
+		if (!( reader.check_read_complete() )) {
+			throw new MarshalException ("RelayItem.unmarshal_json_poly: Reader reports reading not complete");
+		}
+
+		return result;
+	}
+
 }

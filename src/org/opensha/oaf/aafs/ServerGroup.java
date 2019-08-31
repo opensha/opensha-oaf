@@ -158,6 +158,7 @@ public class ServerGroup extends ServerComponent {
 		dispatch_table[OPCODE_CLEANUP_PDL_START] = new ExCleanupPDLStart();
 		dispatch_table[OPCODE_CLEANUP_PDL_STOP ] = new ExCleanupPDLStop();
 		dispatch_table[OPCODE_SET_RELAY_MODE   ] = new ExSetRelayMode();
+		dispatch_table[OPCODE_ANALYST_SELECTION] = new ExAnalystSelection();
 
 		for (int i = 0; i <= OPCODE_MAX; ++i) {
 			if (dispatch_table[i] != null) {

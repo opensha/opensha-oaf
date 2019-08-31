@@ -647,6 +647,17 @@ public class TimelineStatus extends DBPayload {
 		return;
 	}
 
+	// Merge a value for the extra forecast lag.
+	// Note: Merge is done using max, so that an extra forecast is generated
+	// whether either the new or old value requests it.
+
+	public void merge_extra_forecast_lag (long the_extra_forecast_lag) {
+		if (analyst_options != null) {
+			analyst_options.extra_forecast_lag = Math.max (analyst_options.extra_forecast_lag, the_extra_forecast_lag);
+		}
+		return;
+	}
+
 
 
 

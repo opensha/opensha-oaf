@@ -751,6 +751,7 @@ public class LogSupport extends ServerComponent {
 	public static final int RIOP_STALE = 2;				// 2 = Locally-generated relay item is stale.
 	public static final int RIOP_COPY = 3;				// 3 = Remote relay item saved.
 	public static final int RIOP_DELETE = 4;			// 4 = Relay item deleted.
+	public static final int RIOP_COPY_TASK = 5;			// 5 = Remote relay item saved into a task.
 
 
 
@@ -853,6 +854,7 @@ public class LogSupport extends ServerComponent {
 	//  RIOP_STALE = 2 = Locally-generated relay item is stale.
 	//  RIOP_COPY = 3 = Remote relay item saved.
 	//  RIOP_DELETE = 4 = Relay item deleted.
+	//  RIOP_COPY_TASK = 5 = Remote relay item saved into a task.
 
 	public void report_ansel_relay_set (int op, String event_id, long relay_time, RiAnalystSelection riansel) {
 
@@ -863,6 +865,7 @@ public class LogSupport extends ServerComponent {
 		case RIOP_STALE: name = "RELAY-ANSEL-STALE"; break;
 		case RIOP_COPY: name = "RELAY-ANSEL-COPY"; break;
 		case RIOP_DELETE: name = "RELAY-ANSEL-DELETE"; break;
+		case RIOP_COPY_TASK: name = "RELAY-ANSEL-COPY-TASK"; break;
 		}
 
 		report_action (name,

@@ -94,6 +94,21 @@ public class ForecastParameters {
 		return;
 	}
 
+	// Set control parameters to analyst values.
+
+	public void set_analyst_control_params (
+			int the_generic_calc_meth,
+			int the_seq_spec_calc_meth,
+			int the_bayesian_calc_meth,
+			String the_injectable_text
+	) {
+		generic_calc_meth  = the_generic_calc_meth;
+		seq_spec_calc_meth = the_seq_spec_calc_meth;
+		bayesian_calc_meth = the_bayesian_calc_meth;
+		injectable_text    = the_injectable_text;
+		return;
+	}
+
 	// Fetch control parameters.
 
 	public void fetch_control_params (ForecastMainshock fcmain, ForecastParameters prior_params) {
@@ -154,6 +169,20 @@ public class ForecastParameters {
 	public void set_default_generic_params () {
 		generic_regime = null;
 		generic_params = null;
+		return;
+	}
+
+	// Set generic parameters to analyst values.
+
+	public void set_analyst_generic_params (
+			boolean the_generic_avail,
+			String the_generic_regime,
+			GenericRJ_Parameters the_generic_params
+	) {
+		generic_fetch_meth = FETCH_METH_ANALYST;
+		generic_avail = the_generic_avail;
+		generic_regime = the_generic_regime;
+		generic_params = the_generic_params;
 		return;
 	}
 
@@ -239,6 +268,20 @@ public class ForecastParameters {
 		return;
 	}
 
+	// Set magnitude of completeness parameters to analyst values.
+
+	public void set_analyst_mag_comp_params (
+			boolean the_mag_comp_avail,
+			String the_mag_comp_regime,
+			MagCompPage_Parameters the_mag_comp_params
+	) {
+		mag_comp_fetch_meth = FETCH_METH_ANALYST;
+		mag_comp_avail = the_mag_comp_avail;
+		mag_comp_regime = the_mag_comp_regime;
+		mag_comp_params = the_mag_comp_params;
+		return;
+	}
+
 	// Fetch magnitude of completeness parameters.
 	// Note: Mainshock parameters must be fetched first.
 
@@ -311,6 +354,18 @@ public class ForecastParameters {
 
 	public void set_default_seq_spec_params () {
 		seq_spec_params = null;
+		return;
+	}
+
+	// Set sequence specific parameters to analyst values.
+
+	public void set_analyst_seq_spec_params (
+			boolean the_seq_spec_avail,
+			SeqSpecRJ_Parameters the_seq_spec_params
+	) {
+		seq_spec_fetch_meth = FETCH_METH_ANALYST;
+		seq_spec_avail = the_seq_spec_avail;
+		seq_spec_params = the_seq_spec_params;
 		return;
 	}
 
@@ -408,6 +463,28 @@ public class ForecastParameters {
 		min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
 		max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 		min_mag = -10.0;
+		return;
+	}
+
+	// Set aftershock search parameters to analyst values.
+
+	public void set_analystt_aftershock_search_params (
+		boolean the_aftershock_search_avail,
+		SphRegion the_aftershock_search_region,
+		double the_min_days,
+		double the_max_days,
+		double the_min_depth,
+		double the_max_depth,
+		double the_min_mag
+	) {
+		aftershock_search_fetch_meth = FETCH_METH_ANALYST;
+		aftershock_search_avail = the_aftershock_search_avail;
+		aftershock_search_region = the_aftershock_search_region;
+		min_days = the_min_days;
+		max_days = the_max_days;
+		min_depth = the_min_depth;
+		max_depth = the_max_depth;
+		min_mag = the_min_mag;
 		return;
 	}
 

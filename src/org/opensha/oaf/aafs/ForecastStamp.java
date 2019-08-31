@@ -94,18 +94,37 @@ public class ForecastStamp {
 
 
 
-	// Return true this forecast is considered to confirm the other forecast.
-	// Note: Confirmation means that one of the following two conditions is satisfied:
-	// - this.forecast_lag > other.forecast_lag
-	// - this.forecast_lag == other.forecast_lag and this.analyst_time >= other.analyst_time
-	// The intent is that if this forecast has occurred, and it confirms the other forecase,
+	//  // Return true if this forecast is considered to confirm the other forecast.
+	//  // Note: Confirmation means that one of the following two conditions is satisfied:
+	//  // - this.forecast_lag > other.forecast_lag
+	//  // - this.forecast_lag == other.forecast_lag and this.analyst_time >= other.analyst_time
+	//  // The intent is that if this forecast has occurred, and it confirms the other forecast,
+	//  // then the other forecast need not be generated.
+	//  
+	//  public boolean is_confirmation_of (ForecastStamp other) {
+	//  	if (forecast_lag > other.forecast_lag) {
+	//  		return true;
+	//  	}
+	//  	if (forecast_lag == other.forecast_lag && analyst_time >= other.analyst_time) {
+	//  		return true;
+	//  	}
+	//  	return false;
+	//  }
+
+
+
+
+	// Return true if this forecast is considered to confirm the other forecast.
+	// Note: Confirmation means that both of the following two conditions are satisfied:
+	// - this.forecast_lag >= other.forecast_lag
+	// - this.analyst_time >= other.analyst_time
+	// The intent is that if this forecast has occurred, and it confirms the other forecast,
 	// then the other forecast need not be generated.
+	// We have adopted a very conservative criterion to minimize the chance of a forecast
+	// with stale analyst options not being updated.
 
 	public boolean is_confirmation_of (ForecastStamp other) {
-		if (forecast_lag > other.forecast_lag) {
-			return true;
-		}
-		if (forecast_lag == other.forecast_lag && analyst_time >= other.analyst_time) {
+		if (forecast_lag >= other.forecast_lag && analyst_time >= other.analyst_time) {
 			return true;
 		}
 		return false;

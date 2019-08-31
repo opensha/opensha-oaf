@@ -697,7 +697,7 @@ public class RelayLink extends ServerComponent {
 	// in which case the appropriate action is to disconnect.
 	// An exception is thrown if there is a problem with the local database.
 
-	private int copy_remote_relay_item (RelayItem relit) {
+	private int copy_remote_relay_item (RelayItem relit, long time_now) {
 
 		// Switch on relay item type, and unmarshal its payload; unknown types are dropped
 
@@ -780,9 +780,32 @@ public class RelayLink extends ServerComponent {
 
 		case RelaySupport.RITYPE_ANALYST_SELECTION:
 		{
-			RiAnalystSelection payload = new RiAnalystSelection();
+			//  RiAnalystSelection payload = new RiAnalystSelection();
+			//  try {
+			//  	payload.unmarshal_relay (relit);
+			//  } catch (Exception e) {
+			//  	return -1;
+			//  }
+			//  
+			//  // Set the work flag
+			//  
+			//  set_did_work();
+			//  
+			//  // Attempt insertion into local database
+			//  
+			//  if (RelayItem.submit_relay_item (relit, false, -1L) > 0) {
+			//  	int log_op = LogSupport.RIOP_COPY;
+			//  	String event_id = RelaySupport.analyst_relay_id_to_event_id (relit.get_relay_id());
+			//  	long log_relay_time = relit.get_relay_time();
+			//  	sg.log_sup.report_ansel_relay_set (log_op, event_id, log_relay_time, payload);
+			//  	return 1;
+			//  }
+
+			// Construct the task payload (note it retains relit)
+
+			OpAnalystSelection task_payload = new OpAnalystSelection();
 			try {
-				payload.unmarshal_relay (relit);
+				task_payload.setup (relit, -1L, OpAnalystSelection.RWOPT_WRITE_NEW);
 			} catch (Exception e) {
 				return -1;
 			}
@@ -791,13 +814,25 @@ public class RelayLink extends ServerComponent {
 
 			set_did_work();
 
-			// Attempt insertion into local database
+			// If the relay item could be inserted into the database ...
 
-			if (RelayItem.submit_relay_item (relit, false, -1L) > 0) {
-				int log_op = LogSupport.RIOP_COPY;
-				String event_id = RelaySupport.analyst_relay_id_to_event_id (relit.get_relay_id());
+			if (RelayItem.check_relay_item (relit, false) > 0) {
+
+				// Submit the task
+
+				PendingTask.submit_task (
+					task_payload.event_id,										// event id
+					relit.get_relay_time(),										// sched_time
+					time_now,													// submit_time
+					"RelayLink",												// submit_id
+					OPCODE_ANALYST_SELECTION,									// opcode
+					0,															// stage (must be 0 here!)
+					task_payload.marshal_task());								// details
+			
+				int log_op = LogSupport.RIOP_COPY_TASK;
+				String event_id = task_payload.event_id;
 				long log_relay_time = relit.get_relay_time();
-				sg.log_sup.report_ansel_relay_set (log_op, event_id, log_relay_time, payload);
+				sg.log_sup.report_ansel_relay_set (log_op, event_id, log_relay_time, task_payload.ansel_payload);
 				return 1;
 			}
 		}
@@ -841,7 +876,7 @@ public class RelayLink extends ServerComponent {
 	// in which case the appropriate action is to disconnect.
 	// An exception is thrown if there is a problem with the local database.
 
-	private int copy_queued_relay_items () {
+	private int copy_queued_relay_items (long time_now) {
 	
 		// Number of items copied
 
@@ -863,7 +898,7 @@ public class RelayLink extends ServerComponent {
 
 			// Copy the item, if possible
 
-			int n = copy_remote_relay_item (relit);
+			int n = copy_remote_relay_item (relit, time_now);
 
 			// Stop if error
 
@@ -1016,7 +1051,7 @@ public class RelayLink extends ServerComponent {
 
 				// Copy the item, if possible
 
-				int n = copy_remote_relay_item (relit);
+				int n = copy_remote_relay_item (relit, time_now);
 
 				// Stop if error
 
@@ -1032,7 +1067,7 @@ public class RelayLink extends ServerComponent {
 
 				// Now process any items on the queue
 
-				if (copy_queued_relay_items() < 0) {
+				if (copy_queued_relay_items(time_now) < 0) {
 					return -1;
 				}
 			}
@@ -1533,7 +1568,7 @@ public class RelayLink extends ServerComponent {
 
 		// Process any items on the queue
 
-		if (copy_queued_relay_items() < 0) {
+		if (copy_queued_relay_items(time_now) < 0) {
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1598,7 +1633,7 @@ public class RelayLink extends ServerComponent {
 
 		// Process any items on the queue
 
-		if (copy_queued_relay_items() < 0) {
+		if (copy_queued_relay_items(time_now) < 0) {
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1639,7 +1674,7 @@ public class RelayLink extends ServerComponent {
 
 		// Process any items on the queue
 
-		if (copy_queued_relay_items() < 0) {
+		if (copy_queued_relay_items(time_now) < 0) {
 			set_link_disconnected (time_now);
 			return;
 		}

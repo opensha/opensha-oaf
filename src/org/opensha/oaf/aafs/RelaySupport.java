@@ -37,7 +37,7 @@ public class RelaySupport extends ServerComponent {
 
 	// Return a string describing a relay item type.
 
-	public String get_ritype_as_string (int x) {
+	public static String get_ritype_as_string (int x) {
 		switch (x) {
 		case RITYPE_UNKNOWN: return "RITYPE_UNKNOWN";
 		case RITYPE_SERVER_STATUS: return "RITYPE_SERVER_STATUS";
@@ -825,6 +825,95 @@ public class RelaySupport extends ServerComponent {
 
 
 
+
+	// Build an analyst selection relay item.
+	// Parmeters:
+	//  event_id = Event id for the analyst selection (this function handles the conversion).
+	//  state_change = State change, see OpAnalystIntervene.ASREQ_XXXX.
+	//  f_create_timeline = True to create timeline if it doesn't exist.
+	//  analyst_options = Parameters supplied by the analyst, must be non-null.
+	// Returns the new RelayItem.
+	// The relay_time is taken from analyst_options.analyst_time.
+	// Remark: The appropriate event id to use is the authoritative Comcat id.
+	// Note: This is intended to produce a relay item suitable for use in OpAnalystSelection.
+
+	public static RelayItem build_ansel_relay_item (String event_id,
+				int state_change, boolean f_create_timeline, AnalystOptions analyst_options) {
+		
+		RiAnalystSelection ansel_payload = new RiAnalystSelection();
+		ansel_payload.setup (state_change, f_create_timeline, analyst_options);
+
+		RelayItem result = RelayItem.build_relay_item (
+			event_id_to_analyst_relay_id (event_id),		// relay_id
+			analyst_options.analyst_time,					// relay_time
+			ansel_payload.marshal_relay());					// details
+	
+		return result;
+	}
+
+
+
+
+	// Submit an analyst selection relay item.
+	// Parmeters:
+	//  relit = Relay item containing an analyst selection (see OpAnalystSelection for requirements).
+	//  relay_stamp = Origin stamp for this relay item, >= 0L means send to partner server.
+	//  f_force = True to force this item to be written, increasing the relay time if needed.
+	//  ansel_payload = Analyst selection payload, or null if unknown.
+	//  event_id = Event id for the analyst selection (as a Comcat id), or null if unknown.
+	// This function first tests if there is an existing relay item with the same relay_id.
+	// If there is no existing relay item, then:
+	//  - relit.id is filled with a new object id (overwriting relit.id).
+	//  - relit.relay_stamp is filled with the supplied relay_stamp (overwriting it).
+	//  - relit is written to the database.
+	//  - The function returns 2.
+	// If there is an existing relay item, then:
+	//  - relit.id is filled with the object id of the existing item (overwriting relit.id).
+	//  - relit.relay_stamp is filled with the supplied relay_stamp (overwriting it).
+	//  - If f_force is true, then relit.relay_time is adjusted, if necessary, so it is
+	//    larger then the value of relay_time in the existing item.
+	//  - If relit equals the existing item, then return 0.
+	//  - If relit is earlier than the existing item, then return -1.
+	//  - Otherwise (relit is later then the existing item):
+	//    - Update the existing item with the value of relit.
+	//    - The function returns 1.
+	// Note that a return value > 0 means a new item was inserted or an existing item was updated.
+	// Note: ansel_payload and event_id are used for writing the log entry.
+	// Note: This is intended to write a relay item contained in OpAnalystSelection.
+
+	public int submit_ansel_relay_item (RelayItem relit, long relay_stamp, boolean f_force,
+				RiAnalystSelection ansel_payload, String event_id) {
+
+		if (ansel_payload == null) {
+			ansel_payload = new RiAnalystSelection();
+			ansel_payload.unmarshal_relay (relit);
+		}
+
+		if (event_id == null) {
+			event_id = RelaySupport.analyst_relay_id_to_event_id (relit.get_relay_id());
+		}
+
+		int result = RelayItem.submit_relay_item (
+			relit,											// relit
+			f_force,										// f_force
+			relay_stamp);									// relay_stamp
+
+		//  if (relay_stamp >= 0L || result > 0) {
+		//  	int log_op = ((relay_stamp >= 0L) ? ((result <= 0) ? LogSupport.RIOP_STALE : LogSupport.RIOP_SAVE) : LogSupport.RIOP_COPY);
+		//  	long log_relay_time = relit.get_relay_time();
+		//  	sg.log_sup.report_ansel_relay_set (log_op, event_id, log_relay_time, ansel_payload);
+		//  }
+
+		int log_op = ((result <= 0) ? LogSupport.RIOP_STALE : ((relay_stamp >= 0L) ? LogSupport.RIOP_SAVE : LogSupport.RIOP_COPY));
+		long log_relay_time = relit.get_relay_time();
+		sg.log_sup.report_ansel_relay_set (log_op, event_id, log_relay_time, ansel_payload);
+	
+		return result;
+	}
+
+
+
+
 	// Get analyst selection relay items.
 	// Parameters:
 	//  event_ids = Event ids to search for (this function handles the conversion).
@@ -839,6 +928,7 @@ public class RelaySupport extends ServerComponent {
 		List<RelayItem> result = RelayItem.get_relay_item_range (RelayItem.DESCENDING, 0L, 0L, relay_ids);
 		return result;
 	}
+
 
 
 
