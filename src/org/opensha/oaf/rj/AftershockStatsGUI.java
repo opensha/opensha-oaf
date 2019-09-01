@@ -120,6 +120,7 @@ import org.opensha.oaf.util.GUICalcProgressBar;
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.PDLCmd;
+import org.opensha.oaf.aafs.ServerCmd;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
@@ -2868,6 +2869,66 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	}
 	
 	public static void main(String[] args) {
+
+		// The GUI accepts certain server management commands.
+		// These redirect to the corresponding commands in ServerCmd.
+
+		if (args.length >= 1) {
+
+			// Subcommand : server_health
+			// Command format:
+			//  server_health
+			// Display the server health, on the two running servers.
+
+			if (args[0].equalsIgnoreCase ("server_health")) {
+
+				if (args.length != 1) {
+					System.out.println ("AftershockStatsGUI : Invalid 'server_health' subcommand");
+					return;
+				}
+
+				String[] my_args = new String[2];
+				my_args[0] = "server_health";
+				my_args[1] = "9";
+
+				try {
+					ServerCmd.cmd_server_health (my_args);
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.out.println ();
+					System.out.println ("AftershockStatsGUI : The 'server_health' subcommand failed with an exception");
+				}
+				return;
+			}
+
+			// Subcommand : analyst_cli
+			// Command format:
+			//  analyst_cli
+			// Run the analyst CLI, and send the selected options to the two running servers.
+
+			if (args[0].equalsIgnoreCase ("analyst_cli")) {
+
+				if (args.length != 1) {
+					System.out.println ("AftershockStatsGUI : Invalid 'analyst_cli' subcommand");
+					return;
+				}
+
+				String[] my_args = new String[2];
+				my_args[0] = "change_analyst_cli";
+				my_args[1] = "9";
+
+				try {
+					ServerCmd.cmd_change_analyst_cli (my_args);
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.out.println ();
+					System.out.println ("AftershockStatsGUI : The 'analyst_cli' subcommand failed with an exception");
+				}
+				return;
+			}
+
+		}
+
 
 		// The GUI accepts command-line arguments for configuring PDL access.
 		// Complete details are in PDLCmd.java.

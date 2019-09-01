@@ -4493,9 +4493,9 @@ public class ServerTest {
 
 	public static void test76(String[] args) throws Exception {
 
-		// 4 additional arguments
+		// 5 or 6 additional arguments
 
-		if (args.length != 5) {
+		if (args.length != 6 && args.length != 7) {
 			System.err.println ("ServerTest : Invalid 'test76' or 'psup_delete_oaf' subcommand");
 			return;
 		}
@@ -4504,16 +4504,45 @@ public class ServerTest {
 		String event_id = args[2];
 		int riprem_reason = Integer.parseInt (args[3]);
 		long riprem_forecast_lag = Long.parseLong (args[4]);
+		int pdl_enable = Integer.parseInt (args[5]);
+		String pdl_key_filename = null;
+		if (args.length >= 7) {
+			pdl_key_filename = args[6];
+		}
 
 		String my_logfile = null;
 		if (!( logfile.equals ("-") )) {
 			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
 		}
 
-		// Direct operation to PDL-Development
+		//  // Direct operation to PDL-Development
+		//  
+		//  ServerConfig server_config = new ServerConfig();
+		//  server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DEV;
+
+		// Set the PDL enable code
+
+		if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+			System.out.println ("Invalid pdl_enable = " + pdl_enable);
+			return;
+		}
 
 		ServerConfig server_config = new ServerConfig();
-		server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DEV;
+		server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+		if (pdl_key_filename != null) {
+
+			if (!( (new File (pdl_key_filename)).canRead() )) {
+				System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+				return;
+			}
+
+			server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+		}
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
 
 		// Connect to MongoDB
 
@@ -5243,9 +5272,9 @@ public class ServerTest {
 
 	public static void test87(String[] args) throws Exception {
 
-		// 4 additional arguments
+		// 4 or 5 additional arguments
 
-		if (args.length != 5) {
+		if (args.length != 5 && args.length != 6) {
 			System.err.println ("ServerTest : Invalid 'test87' or 'exec_next_task' subcommand");
 			return;
 		}
@@ -5254,6 +5283,10 @@ public class ServerTest {
 		int pdl_enable = Integer.parseInt (args[2]);
 		int pdl_mode = Integer.parseInt (args[3]);	// 0 = normal, 1 = force primary, 2 = force secondary
 		boolean f_adjust_time = Boolean.parseBoolean (args[4]);
+		String pdl_key_filename = null;
+		if (args.length >= 6) {
+			pdl_key_filename = args[5];
+		}
 
 		String my_logfile = null;
 		if (!( logfile.equals ("-") )) {
@@ -5274,6 +5307,20 @@ public class ServerTest {
 
 		ServerConfig server_config = new ServerConfig();
 		server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+		if (pdl_key_filename != null) {
+
+			if (!( (new File (pdl_key_filename)).canRead() )) {
+				System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+				return;
+			}
+
+			server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+		}
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
 
 		// Open the summary log file
 
@@ -6951,7 +6998,7 @@ public class ServerTest {
 
 		// Subcommand : Test #76
 		// Command format:
-		//  test76  logfile  event_id  riprem_reason  riprem_forecast_lag
+		//  test76  logfile  event_id  riprem_reason  riprem_forecast_lag  pdl_enable  [pdl_key_filename]
 		// Use pdl support to delete OAF products.
 		// The logfile can be "-" for none.
 
@@ -7141,7 +7188,7 @@ public class ServerTest {
 
 		// Subcommand : Test #87
 		// Command format:
-		//  test87  logfile  pdl_enable  pdl_mode  f_adjust_time
+		//  test87  logfile  pdl_enable  pdl_mode  f_adjust_time  [pdl_key_filename]
 		// Execute the next task, with support for PDL and logging.
 		// The logfile can be "-" for none.
 		// The pdl_mode can be: 0 = normal, 1 = force primary, 2 = force secondary.

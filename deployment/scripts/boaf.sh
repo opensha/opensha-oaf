@@ -12,10 +12,17 @@
 #
 # clean - Delete all compiled files.
 #
-# compile - Compile the OpenSHA code.
+# compile - Compile the OpenSHA code to create AAFS.
 #           After compiling, you must run the pack operation to produce a runnable jar file.
 #
 # pack - Package the AAFS jar file.
+#
+# compilegui - Compile the OpenSHA code to create the aftershock GUI.
+#              This produces the generic GUI.
+#
+# packgui - Package the GUI jar file, and bundle with private configuration.
+#           After the 'packgui' keyword comes the GUI date in form YYYY_MM_DD, followed by the
+#           name of the private configuration file.  The produces the production GUI.
 #
 # deploy - Copy the AAFS jar file and required libraries into /opt/aafs/oefjava.
 #
@@ -245,6 +252,39 @@ case "$1" in
         fi
         ;;
 
+    compilegui)
+        cd opensha-oaf
+        ./gradlew appOAFJar
+        cd ..
+        ls opensha-oaf/build/libs
+        ;;
+
+    packgui)
+        if [ -f opensha-oaf/build/libs/AftershockGUI-current-$2.jar ]; then
+            cd opensha-oaf/build/libs
+            if [ -d gtmp ]; then
+                rm -r gtmp
+            fi
+            if [ -f AftershockGUI-production-$2.jar ]; then
+                rm AftershockGUI-production-$2.jar
+            fi
+            mkdir gtmp
+            cd gtmp
+            unzip -uoq ../AftershockGUI-current-$2.jar
+            cd ..
+            cd ../../..
+            if [ -f opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json ]; then
+                rm opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
+            fi
+			cp -pi "$3" opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
+            cd opensha-oaf/build/libs
+            jar -cf AftershockGUI-production-$2.jar -C gtmp .
+            cd ../../..
+        else
+            echo "GUI has not been compiled yet"
+        fi
+        ;;
+
     deploy)
         if [ -f opensha-oaf/build/libs/oefjava.jar ]; then
             makenewdir /opt/aafs/oefjava
@@ -313,7 +353,7 @@ case "$1" in
         ;;
 
     *)
-        echo "Usage: boaf.sh {clone|update|clean|compile|pack|deploy|deploycfg|diffcfg|diffcfgc|run|runcfg|runaafs|runany}"
+        echo "Usage: boaf.sh {clone|update|clean|compile|pack|compilegui|packgui|deploy|deploycfg|diffcfg|diffcfgc|run|runcfg|runaafs|runany}"
         exit 1
         ;;
 esac

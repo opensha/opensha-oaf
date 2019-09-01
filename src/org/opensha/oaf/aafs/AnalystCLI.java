@@ -101,6 +101,7 @@ public class AnalystCLI {
 	public static final int CST_FORECAST		= 29;		// generate forecasts for this event
 	public static final int CST_FC_SEL			= 30;		// fc_sel
 	public static final int CST_INJ_TEXT		= 31;		// inj_text
+	public static final int CST_FC_CUSTOM		= 32;		// fc_custom
 
 
 	// Discrete responses.
@@ -122,6 +123,7 @@ public class AnalystCLI {
 	public static final int RES_BACK			=  2;		// Go back
 	public static final int RES_RESTART			=  3;		// Start over
 	public static final int RES_CANCEL			=  4;		// Cancel
+	public static final int RES_MODIFY			=  5;		// Modify
 
 
 	// Command strings.
@@ -138,6 +140,8 @@ public class AnalystCLI {
 	public static final String CS_RESTART_2		= "r";
 	public static final String CS_CANCEL_1		= "cancel";
 	public static final String CS_CANCEL_2		= "c";
+	public static final String CS_MODIFY_1		= "modify";
+	public static final String CS_MODIFY_2		= "m";
 
 
 
@@ -193,6 +197,10 @@ public class AnalystCLI {
 		// Forecast selection (DVAL_NO, DVAL_YES, DVAL_AUTO).
 
 		public int fc_sel;
+
+		// Custom parameter option (DVAL_NO, DVAL_YES)
+
+		public int fc_custom;
 
 		// b-value.
 
@@ -338,6 +346,19 @@ public class AnalystCLI {
 				break;
 			}
 
+			// Custom parameters
+
+			switch (fc_custom) {
+			case DVAL_YES:
+				System.out.println ("custom parameters = " + CS_YES_1);
+				break;
+			case DVAL_NO:
+				System.out.println ("custom parameters = " + CS_NO_1);
+				System.out.println ("injectable text = " + inj_text);
+				System.out.println();
+				return;
+			}
+
 			// b-value
 
 			System.out.println ("b-value = " + b);
@@ -465,10 +486,14 @@ public class AnalystCLI {
 
 			new_fcparams.set_analyst_control_params (
 				ForecastParameters.CALC_METH_AUTO_PDL,		// generic_calc_meth
-				ForecastParameters.CALC_METH_AUTO_PDL,		// seq_spec_calc_meth,
-				ForecastParameters.CALC_METH_AUTO_PDL,		// bayesian_calc_meth,
+				ForecastParameters.CALC_METH_AUTO_PDL,		// seq_spec_calc_meth
+				ForecastParameters.CALC_METH_AUTO_PDL,		// bayesian_calc_meth
 				inj_text.isEmpty() ? ForecastParameters.INJ_TXT_USE_DEFAULT : inj_text
 			);
+
+			if (fc_custom == DVAL_NO) {
+				return new_fcparams;
+			}
 
 			new_fcparams.set_analyst_mag_comp_params (
 				true,										// mag_comp_avail
@@ -634,6 +659,10 @@ public class AnalystCLI {
 				return RES_CANCEL;
 			}
 
+			if (line.equalsIgnoreCase (CS_MODIFY_1) || line.equalsIgnoreCase (CS_MODIFY_2)) {
+				return RES_MODIFY;
+			}
+
 			// Attempt conversion to integer
 
 			try {
@@ -726,6 +755,10 @@ public class AnalystCLI {
 				return RES_CANCEL;
 			}
 
+			if (line.equalsIgnoreCase (CS_MODIFY_1) || line.equalsIgnoreCase (CS_MODIFY_2)) {
+				return RES_MODIFY;
+			}
+
 			// Attempt conversion to double
 
 			try {
@@ -750,11 +783,14 @@ public class AnalystCLI {
 
 	// Read a string from the user.
 
-	private int read_string_from_user (String prompt, String default_value) {
+	private int read_string_from_user (String prompt, boolean f_blank_ok, String default_value) {
 
 		// Create my prompt by appending default value
 
 		String my_prompt = prompt;
+		if (f_blank_ok && default_value != null && (!(default_value.isEmpty()))) {
+			my_prompt = my_prompt + " (enter space to erase default)";
+		}
 		if (default_value != null) {
 			my_prompt = my_prompt + " [" + default_value + "]";
 		}
@@ -769,7 +805,11 @@ public class AnalystCLI {
 
 			// Get response
 
-			String line = scanner.nextLine().trim();
+			String line = scanner.nextLine();
+
+			if (!( f_blank_ok )) {
+				line = line.trim();
+			}
 
 			// If empty ...
 
@@ -784,8 +824,14 @@ public class AnalystCLI {
 
 				// Otherwise, prompt the user
 
-				System.out.println ("Please enter a value");
-				continue;
+				if (!( f_blank_ok )) {
+					System.out.println ("Please enter a value");
+					continue;
+				}
+			}
+
+			if (f_blank_ok) {
+				line = line.trim();
 			}
 
 			// Check for back and restart
@@ -800,6 +846,10 @@ public class AnalystCLI {
 
 			if (line.equalsIgnoreCase (CS_CANCEL_1) || line.equalsIgnoreCase (CS_CANCEL_2)) {
 				return RES_CANCEL;
+			}
+
+			if (line.equalsIgnoreCase (CS_MODIFY_1) || line.equalsIgnoreCase (CS_MODIFY_2)) {
+				return RES_MODIFY;
 			}
 
 			// Got a string
@@ -895,6 +945,10 @@ public class AnalystCLI {
 
 			if (line.equalsIgnoreCase (CS_CANCEL_1) || line.equalsIgnoreCase (CS_CANCEL_2)) {
 				return RES_CANCEL;
+			}
+
+			if (line.equalsIgnoreCase (CS_MODIFY_1) || line.equalsIgnoreCase (CS_MODIFY_2)) {
+				return RES_MODIFY;
 			}
 
 			// Check for allowed responses
@@ -1022,6 +1076,14 @@ public class AnalystCLI {
 
 		int max_grid = MAX_GRID_POINTS_SINGLE;
 
+		// Signon
+
+		System.out.println ("Use '" + CS_CANCEL_2 + "' or '" + CS_CANCEL_1 + "' to cancel this operation");
+		System.out.println ("Use '" + CS_BACK_2 + "' or '" + CS_BACK_1 + "' to back up to the previous item");
+		System.out.println ("Use '" + CS_MODIFY_2 + "' or '" + CS_MODIFY_1 + "' to review and modify your entries");
+		System.out.println ("Use '" + CS_RESTART_2 + "' or '" + CS_RESTART_1 + "' to start over from the beginning");
+		System.out.println ();
+
 		// Loop until Exit
 
 		while (cst != CST_EXIT) {
@@ -1030,11 +1092,14 @@ public class AnalystCLI {
 			// Request event id
 
 			case CST_EVENT_ID:
-				switch (read_string_from_user ("Enter event ID", null)) {
+				switch (read_string_from_user ("Enter event ID", false, null)) {
 				case RES_BACK:
 					cst = CST_EVENT_ID;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_EVENT_ID;
 					break;
 				case RES_CANCEL:
@@ -1060,6 +1125,9 @@ public class AnalystCLI {
 				case RES_RESTART:
 					cst = CST_EVENT_ID;
 					break;
+				case RES_MODIFY:
+					cst = CST_EVENT_ID;
+					break;
 				case RES_CANCEL:
 					return false;
 				default:
@@ -1082,12 +1150,41 @@ public class AnalystCLI {
 				case RES_RESTART:
 					cst = CST_EVENT_ID;
 					break;
+				case RES_MODIFY:
+					cst = CST_FC_SEL;
+					break;
 				case RES_CANCEL:
 					return false;
 				default:
 					cur_sel.fc_sel = value_int;
 					if (cur_sel.fc_sel == DVAL_NO) {
 						cst = CST_REVIEW;
+					} else {
+						cst = CST_FC_CUSTOM;
+					}
+					break;
+				}
+				break;
+
+			// Custom parameters
+
+			case CST_FC_CUSTOM:
+				switch (read_yna_from_user ("Use custom parameters?", true, true, false, DVAL_YES)) {
+				case RES_BACK:
+					cst = CST_FC_SEL;
+					break;
+				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
+					cst = CST_FC_SEL;
+					break;
+				case RES_CANCEL:
+					return false;
+				default:
+					cur_sel.fc_custom = value_int;
+					if (cur_sel.fc_custom == DVAL_NO) {
+						cst = CST_INJ_TEXT;
 					} else {
 						cst = CST_B;
 					}
@@ -1100,9 +1197,12 @@ public class AnalystCLI {
 			case CST_B:
 				switch (read_real_from_user ("b-value", cur_sel.b)) {
 				case RES_BACK:
-					cst = CST_FC_SEL;
+					cst = CST_FC_CUSTOM;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1123,6 +1223,9 @@ public class AnalystCLI {
 					cst = CST_B;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1144,6 +1247,9 @@ public class AnalystCLI {
 					cst = CST_NUM_A;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1162,6 +1268,9 @@ public class AnalystCLI {
 					cst = CST_NUM_A;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1179,6 +1288,9 @@ public class AnalystCLI {
 					cst = CST_MIN_A;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1199,6 +1311,9 @@ public class AnalystCLI {
 					cst = CST_NUM_A;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1220,6 +1335,9 @@ public class AnalystCLI {
 					cst = CST_NUM_P;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1238,6 +1356,9 @@ public class AnalystCLI {
 					cst = CST_NUM_P;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1255,6 +1376,9 @@ public class AnalystCLI {
 					cst = CST_MIN_P;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1275,6 +1399,9 @@ public class AnalystCLI {
 					cst = CST_NUM_P;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1296,6 +1423,9 @@ public class AnalystCLI {
 					cst = CST_NUM_C;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1314,6 +1444,9 @@ public class AnalystCLI {
 					cst = CST_NUM_C;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1331,6 +1464,9 @@ public class AnalystCLI {
 					cst = CST_MIN_C;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1350,6 +1486,9 @@ public class AnalystCLI {
 					cst = CST_NUM_C;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1369,6 +1508,9 @@ public class AnalystCLI {
 					cst = CST_MAG_CAT;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1388,6 +1530,9 @@ public class AnalystCLI {
 					cst = CST_CAP_F;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1407,6 +1552,9 @@ public class AnalystCLI {
 					cst = CST_CAP_G;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1426,6 +1574,9 @@ public class AnalystCLI {
 					cst = CST_CAP_H;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1447,6 +1598,9 @@ public class AnalystCLI {
 					cst = CST_WC_MULT;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1465,6 +1619,9 @@ public class AnalystCLI {
 					cst = CST_WC_MULT;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1482,6 +1639,9 @@ public class AnalystCLI {
 					cst = CST_RAD_MIN;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1496,11 +1656,18 @@ public class AnalystCLI {
 			// Injectable text
 
 			case CST_INJ_TEXT:
-				switch (read_string_from_user ("Injectable text", null)) {
+				switch (read_string_from_user ("Injectable text", true, cur_sel.inj_text)) {
 				case RES_BACK:
-					cst = CST_WC_MULT;
+					if (cur_sel.fc_custom == DVAL_NO) {
+						cst = CST_FC_CUSTOM;
+					} else {
+						cst = CST_WC_MULT;
+					}
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:
@@ -1515,6 +1682,7 @@ public class AnalystCLI {
 			// Review seelctions
 
 			case CST_REVIEW:
+				System.out.println ();
 				System.out.println ("Review selections");
 				cur_sel.display_selections();
 				switch (read_yna_from_user ("Continue with these selections?", true, true, false, null)) {
@@ -1522,6 +1690,9 @@ public class AnalystCLI {
 					cst = CST_INJ_TEXT;
 					break;
 				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
 					cst = CST_FC_SEL;
 					break;
 				case RES_CANCEL:

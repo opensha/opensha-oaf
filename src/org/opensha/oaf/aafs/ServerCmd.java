@@ -1460,6 +1460,256 @@ public class ServerCmd {
 
 
 
+	// cmd_server_health - Display server health, on a local or remote server.
+
+	public static void cmd_server_health(String[] args) {
+
+		// 1 additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerCmd : Invalid 'server_health' subcommand");
+			return;
+		}
+
+		int srvnum;
+		try {
+			srvnum = Integer.parseInt (args[1]);
+		} catch (NumberFormatException e) {
+			System.out.println ("Invalid server number: " + args[1]);
+			return;
+		}
+		if (!( (srvnum >= 0 && srvnum <= ServerConfigFile.SRVNUM_MAX) || srvnum == 9 )) {
+			System.out.println ("Invalid server number: " + args[1]);
+			return;
+		}
+
+		// Buffer to construct result
+
+		StringBuilder sb = new StringBuilder();
+
+		// Get list of database handles
+
+		ServerConfig server_config = new ServerConfig();
+		List<String> db_handles = server_config.get_server_db_handles();
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Loop over possible database handles
+
+		for (int n = 0; n < db_handles.size(); ++n) {
+			String db_handle = db_handles.get(n);
+
+			// If we want this one ...
+
+			if (n == srvnum || (srvnum == 9 && n >= ServerConfigFile.SRVNUM_MIN && n <= ServerConfigFile.SRVNUM_MAX)) {
+				System.out.println ();
+				System.out.println ("Fetching status for server " + n);
+
+				RiServerStatus sstat_payload = new RiServerStatus();
+				RelayItem relit = RelaySupport.get_remote_sstat_relay_item (db_handle, sstat_payload);
+			
+				if (relit == null
+					|| sstat_payload.primary_state == RelayLink.PRIST_SHUTDOWN
+					|| sstat_payload.heartbeat_time < System.currentTimeMillis() - 2700000L /* 45 minutes */ ) {
+					sb.append ("Server " + n + " is DEAD" + "\n");
+
+				} else {
+					sb.append ("Server " + n + " is ALIVE, ");
+					switch (sstat_payload.primary_state) {
+					case RelayLink.PRIST_PRIMARY:
+						sb.append ("Primary");
+						break;
+					case RelayLink.PRIST_SECONDARY:
+						sb.append ("Secondary");
+						break;
+					case RelayLink.PRIST_INITIALIZING:
+						sb.append ("Initializing");
+						break;
+					}
+					sb.append (", last heartbeat = " + sstat_payload.get_heartbeat_time_as_string() + "\n");
+				}
+			}
+		}
+
+		// Display result
+
+		System.out.println ();
+		System.out.println (sb.toString());
+
+		return;
+	}
+
+
+
+
+	// cmd_init_analyst_cli - Initialize analyst options on the local server, using the analyst CLI.
+
+	public static void cmd_init_analyst_cli(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerCmd : Invalid 'init_analyst_cli' subcommand");
+			return;
+		}
+
+		// Allocate the CLI
+
+		AnalystCLI analyst_cli = new AnalystCLI();
+
+		// Run it
+
+		boolean selres = analyst_cli.get_selections();
+
+		if (!( selres )) {
+			System.out.println ("Operation canceled");
+			return;
+		}
+
+		// Build the analyst selection relay item
+
+		RelayItem relit = analyst_cli.build_ansel_relay_item();
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Connect to MongoDB
+
+		try (
+			MongoDBUtil mongo_instance = new MongoDBUtil();
+		){
+
+			// Write the analyst selection relay item
+
+			boolean f_force = false;
+			long relay_stamp = 0L;
+
+			// Note the following can change relit.id and relit.relay_stamp, but no other fields
+			// (if f_force were true, then relit.relay_time could also be changed)
+
+			int chkres = RelayItem.submit_relay_item (relit, f_force, relay_stamp);
+
+			if (chkres > 0) {
+				System.out.println ("Initial analyst options were written successfully");
+			} else if (chkres == 0) {
+				System.out.println ("The same initial analyst options were previously written");
+			} else {
+				System.out.println ("Unable to write initial analyst options");
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_change_analyst_cli - Change the analyst options, on a running local or remote server, using the analyst CLI.
+
+	public static void cmd_change_analyst_cli(String[] args) {
+
+		// 1 additional argument
+
+		if (args.length != 2) {
+			System.err.println ("ServerCmd : Invalid 'change_analyst_cli' subcommand");
+			return;
+		}
+
+		int srvnum;
+		try {
+			srvnum = Integer.parseInt (args[1]);
+		} catch (NumberFormatException e) {
+			System.out.println ("Invalid server number: " + args[1]);
+			return;
+		}
+		if (!( (srvnum >= 0 && srvnum <= ServerConfigFile.SRVNUM_MAX) || srvnum == 9 )) {
+			System.out.println ("Invalid server number: " + args[1]);
+			return;
+		}
+
+		// Allocate the CLI
+
+		AnalystCLI analyst_cli = new AnalystCLI();
+
+		// Run it
+
+		boolean selres = analyst_cli.get_selections();
+
+		if (!( selres )) {
+			System.out.println ("Operation canceled");
+			return;
+		}
+
+		// Build the analyst selection relay item
+
+		RelayItem relit = analyst_cli.build_ansel_relay_item();
+
+		// Get current time
+
+		long time_now = ServerClock.get_time();
+		boolean f_success = false;
+
+		// Get list of database handles
+
+		ServerConfig server_config = new ServerConfig();
+		List<String> db_handles = server_config.get_server_db_handles();
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Loop over possible database handles
+
+		for (int n = 0; n < db_handles.size(); ++n) {
+			String db_handle = db_handles.get(n);
+
+			// If we want this one ...
+
+			if (n == srvnum || (srvnum == 9 && n >= ServerConfigFile.SRVNUM_MIN && n <= ServerConfigFile.SRVNUM_MAX)) {
+				System.out.println ("Sending analyst options to server " + n);
+
+				long relay_stamp = 0L;
+				int relay_write_option = OpAnalystSelection.RWOPT_WRITE_NEW;
+
+				OpAnalystSelection payload = new OpAnalystSelection();
+				payload.setup (relit, relay_stamp, relay_write_option);
+
+				// Post the task
+
+				String event_id = payload.event_id;
+				int opcode = TaskDispatcher.OPCODE_ANALYST_SELECTION;
+				int stage = 0;
+
+				long the_time = time_now;
+
+				boolean result = TaskDispatcher.post_remote_task (db_handle, event_id, the_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
+
+				if (result) {
+					f_success = true;
+					System.out.println ("Successfully sent new analyst options to server " + n);
+				} else {
+					System.out.println ("Unable to send new analyst options to server " + n);
+				}
+
+				System.out.println ();
+			}
+		}
+
+		if (f_success) {
+			System.out.println ("The operation was successful");
+		} else {
+			System.out.println ("The operation was not successful");
+		}
+
+		return;
+	}
+
+
+
+
 	// Entry point.
 	
 	public static void main(String[] args) {
@@ -1770,6 +2020,48 @@ public class ServerCmd {
 		case "change_relay_mode":
 			try {
 				cmd_change_relay_mode(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : server_health
+		// Command format:
+		//  server_health  srvnum
+		// Display the server health, on a local or remote server.
+		// The srvnum can be: 0 = local server, 1 or 2 = remote server, 9 = both remote servers.
+
+		case "server_health":
+			try {
+				cmd_server_health(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : init_analyst_cli
+		// Command format:
+		//  init_analyst_cli
+		// Initialize analyst options on the local server, using the analyst CLI.
+		// This is intended to be used when the server is not running (but MongoDB is started).
+
+		case "init_analyst_cli":
+			try {
+				cmd_init_analyst_cli(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : change_analyst_cli
+		// Command format:
+		//  change_analyst_cli  srvnum
+		// Change the analyst options, on a running local or remote server, using the analyst CLI.
+		// The srvnum can be: 0 = local server, 1 or 2 = remote server, 9 = both remote servers.
+
+		case "change_analyst_cli":
+			try {
+				cmd_change_analyst_cli(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
