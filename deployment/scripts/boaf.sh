@@ -18,11 +18,11 @@
 # pack - Package the AAFS jar file.
 #
 # compilegui - Compile the OpenSHA code to create the aftershock GUI.
-#              This produces the generic GUI.
+#              This creates the generic GUI.
 #
 # packgui - Package the GUI jar file, and bundle with private configuration.
 #           After the 'packgui' keyword comes the GUI date in form YYYY_MM_DD, followed by the
-#           name of the private configuration file.  The produces the production GUI.
+#           name of the private configuration file.  This creates the production GUI.
 #
 # deploy - Copy the AAFS jar file and required libraries into /opt/aafs/oefjava.
 #
@@ -265,8 +265,8 @@ case "$1" in
             if [ -d gtmp ]; then
                 rm -r gtmp
             fi
-            if [ -f AftershockGUI-production-$2.jar ]; then
-                rm AftershockGUI-production-$2.jar
+            if [ -f AftershockGUI-prod-$2.jar ]; then
+                rm AftershockGUI-prod-$2.jar
             fi
             mkdir gtmp
             cd gtmp
@@ -276,9 +276,9 @@ case "$1" in
             if [ -f opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json ]; then
                 rm opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
             fi
-			cp -pi "$3" opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
+            cp -pi "$3" opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
             cd opensha-oaf/build/libs
-            jar -cf AftershockGUI-production-$2.jar -C gtmp .
+            jar -cf AftershockGUI-prod-$2.jar -C gtmp .
             cd ../../..
         else
             echo "GUI has not been compiled yet"

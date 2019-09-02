@@ -293,15 +293,24 @@ public class ExAnalystSelection extends ServerExecTask {
 				return RESCODE_ANALYST_OPTIONS_BAD;
 			}
 
-			// Attempt to write the relay item into the database
+			// Display the payload
 
-			int anres = sg.relay_sup.submit_ansel_relay_item (payload.ansel_relit, payload.relay_stamp, false,
-				payload.ansel_payload, payload.event_id);
+			System.out.println (payload.toString());
 
-			// If not written, then this task is a duplicate
+			// If we want to write relay item ...
 
-			if (anres <= 0) {
-				return RESCODE_ANALYST_OPTIONS_STALE;
+			if (payload.relay_write_option == OpAnalystSelection.RWOPT_WRITE_NEW) {
+
+				// Attempt to write the relay item into the database
+
+				int anres = sg.relay_sup.submit_ansel_relay_item (payload.ansel_relit, payload.relay_stamp, false,
+					payload.ansel_payload, payload.event_id);
+
+				// If not written, then this task is a duplicate
+
+				if (anres <= 0) {
+					return RESCODE_ANALYST_OPTIONS_STALE;
+				}
 			}
 		}
 

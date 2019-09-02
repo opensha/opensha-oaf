@@ -84,6 +84,23 @@ public class RiAnalystSelection extends DBPayload {
 	}
 
 
+	// Display our contents
+
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("RiAnalystSelection:" + "\n");
+
+		result.append ("state_change = " + get_state_change_as_string() + "\n");
+		result.append ("f_create_timeline = " + f_create_timeline + "\n");
+		result.append ("analyst_time = " + get_analyst_time_as_string() + "\n");
+		result.append ("analyst_options = " + ((analyst_options == null) ? "null\n" : analyst_options.toString()));
+
+		return result.toString();
+	}
+
+
 
 
 	//----- Marshaling -----

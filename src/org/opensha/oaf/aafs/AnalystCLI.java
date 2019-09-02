@@ -113,8 +113,8 @@ public class AnalystCLI {
 
 	// Maximum number of grid points.
 
-	public static int MAX_GRID_POINTS_SINGLE	=  1000;
-	public static int MAX_GRID_POINTS_TOTAL		= 10000;
+	public static int MAX_GRID_POINTS_SINGLE	=   1000;
+	public static int MAX_GRID_POINTS_TOTAL		= 100000;
 
 
 	// Operation result codes.

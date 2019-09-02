@@ -150,6 +150,23 @@ public class OpAnalystSelection extends DBPayload {
 	}
 
 
+	// Display our contents
+
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OpAnalystSelection:" + "\n");
+
+		result.append ("relay_stamp = " + relay_stamp + "\n");
+		result.append ("relay_write_option = " + get_rwopt_as_string (relay_write_option) + "\n");
+		result.append ("event_id = " + ((event_id == null) ? "null" : event_id) + "\n");
+		result.append ("ansel_payload = " + ((ansel_payload == null) ? "null\n" : ansel_payload.toString()));
+
+		return result.toString();
+	}
+
+
 
 
 	//----- Marshaling -----
