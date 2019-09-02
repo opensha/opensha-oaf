@@ -278,7 +278,7 @@ case "$1" in
             fi
             cp -pi "$3" opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
             cd opensha-oaf/build/libs
-            jar -cf AftershockGUI-prod-$2.jar -C gtmp .
+            jar -cfe AftershockGUI-prod-$2.jar org.opensha.oaf.rj.AftershockStatsGUI -C gtmp .
             cd ../../..
         else
             echo "GUI has not been compiled yet"
