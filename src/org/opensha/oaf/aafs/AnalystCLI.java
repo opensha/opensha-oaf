@@ -549,7 +549,8 @@ public class AnalystCLI {
 			switch (fc_sel) {
 
 			case DVAL_NO:
-				extra_forecast_lag = -1L;
+				//extra_forecast_lag = -1L;
+				extra_forecast_lag = current_lag;	// needed so any existing forecast is removed promptly
 				intake_option = AnalystOptions.OPT_INTAKE_BLOCK;
 				shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
 				break;

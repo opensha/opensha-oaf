@@ -34,6 +34,14 @@ public class AnalystOptions {
 	public String analyst_remark = "";
 
 	// Time at which analyst reviewed this event, in milliseconds since the epoch, or 0L if none.
+	// Note: For analyst options passed through relay items (see ExAnalystSelection), analyst_time
+	// must equal relay_time and therefore must be non-zero.
+	// Note: System default analyst options have analyst_time == 0L.
+	// Note: At present, if a timeline contains analyst options with analyst_time == 0L and
+	// there are no analyst selection relay items for the timeline, then the timeline's
+	// analyst options are not overwritten by the relay code (see TimelineSupport.update_analyst_options_from_relay).
+	// So, if no relay items are used, then analyst_time == 0L indicates that analyst options
+	// are to be inherited within the timeline.
 
 	public long analyst_time = 0L;
 
@@ -46,8 +54,13 @@ public class AnalystOptions {
 	// Time lag at which an extra forecast is requested, in milliseconds since the mainshock.
 	// The value is -1L if there has been no extra forecast requested.
 	// The value 0L can be used to request an extra forecast as soon as possible.
-	// In a timeline, this is set to -1L when any forecast is issued, meaning that the request is considered
-	// to be granted when any forecast is issued.
+	// Note: In an analyst intervention, this should be close to the current time to request
+	// a forecast, or -1L if no forecast is requested.  The value 0L will request a forecast
+	// as soon as possible, but it will be a forecast as of approximately the last scheduled
+	// forecast time rather than now.
+	// Note: In a timeline, if this is not -1L then it is like an extra forecast in the
+	// schedule.  Its value is increased whenever new analyst options are received that
+	// request a forecast.  It never decreases.
 
 	public long extra_forecast_lag = -1L;
 

@@ -83,9 +83,9 @@ public class ExAnalystSelection extends ServerExecTask {
 			
 				tstatus.set_fc_status (TimelineStatus.FCSTAT_ACTIVE_NORMAL);
 
-				// Merge any requested extra forecast
-
-				tstatus.merge_extra_forecast_lag (payload.ansel_payload.analyst_options.extra_forecast_lag);
+				//  // Merge any requested extra forecast
+				//  
+				//  tstatus.merge_extra_forecast_lag (payload.ansel_payload.analyst_options.extra_forecast_lag);
 
 				// Write the new timeline entry
 
@@ -108,9 +108,9 @@ public class ExAnalystSelection extends ServerExecTask {
 			
 				tstatus.set_fc_status (TimelineStatus.FCSTAT_STOP_ANALYST);
 
-				// Merge any requested extra forecast
-
-				tstatus.merge_extra_forecast_lag (payload.ansel_payload.analyst_options.extra_forecast_lag);
+				//  // Merge any requested extra forecast
+				//  
+				//  tstatus.merge_extra_forecast_lag (payload.ansel_payload.analyst_options.extra_forecast_lag);
 
 				// Write the new timeline entry
 
@@ -133,9 +133,9 @@ public class ExAnalystSelection extends ServerExecTask {
 			
 				tstatus.set_fc_status (TimelineStatus.FCSTAT_STOP_WITHDRAWN);
 
-				// Merge any requested extra forecast
-
-				tstatus.merge_extra_forecast_lag (payload.ansel_payload.analyst_options.extra_forecast_lag);
+				//  // Merge any requested extra forecast
+				//  
+				//  tstatus.merge_extra_forecast_lag (payload.ansel_payload.analyst_options.extra_forecast_lag);
 
 				// Write the new timeline entry
 
@@ -154,9 +154,9 @@ public class ExAnalystSelection extends ServerExecTask {
 			
 				tstatus.set_state_analyst_intervention (sg.task_disp.get_time());
 
-				// Merge any requested extra forecast
-
-				tstatus.merge_extra_forecast_lag (payload.ansel_payload.analyst_options.extra_forecast_lag);
+				//  // Merge any requested extra forecast
+				//  
+				//  tstatus.merge_extra_forecast_lag (payload.ansel_payload.analyst_options.extra_forecast_lag);
 
 				// Write the new timeline entry
 
@@ -233,9 +233,9 @@ public class ExAnalystSelection extends ServerExecTask {
 
 		sg.timeline_sup.update_analyst_options_from_relay (tstatus);
 
-		// Merge any requested extra forecast
-
-		tstatus.merge_extra_forecast_lag (payload.ansel_payload.analyst_options.extra_forecast_lag);
+		//  // Merge any requested extra forecast
+		//  
+		//  tstatus.merge_extra_forecast_lag (payload.ansel_payload.analyst_options.extra_forecast_lag);
 
 		// Write the new timeline entry
 

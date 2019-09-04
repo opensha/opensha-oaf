@@ -525,6 +525,23 @@ public class TimelineSupport extends ServerComponent {
 	// Note: This does not consider the possibility of a PDL report.
 
 	public long get_next_forecast_lag (TimelineStatus tstatus) {
+		return get_next_forecast_lag (tstatus, tstatus.get_last_forecast_lag());
+	}
+
+
+
+
+	// Determine the next forecast lag for a timeline entry.
+	// Parameters:
+	//  tstatus = Timeline status.
+	//  last_forecast_lag = Lag for prior forecast, or -1L if no prior forecast.
+	// Returns -1L if there is no next forecast lag greater than last_forecast_lag.
+	// If there is a next forecast lag greater than last_forecast_lag, the return value is
+	// positive and a multiple of the lag unit.
+	// Note: Forecast lag is relative to the mainshock origin time.
+	// Note: This does not consider the possibility of a PDL report.
+
+	public long get_next_forecast_lag (TimelineStatus tstatus, long last_forecast_lag) {
 
 		long next_forecast_lag = -1L;
 
@@ -532,18 +549,19 @@ public class TimelineSupport extends ServerComponent {
 
 		if (tstatus.is_forecast_state()) {
 
-			long min_lag;
-			long min_extra_lag;
+			long min_lag;				// returned scheduled forecast lag must be >= min_lag
+			long min_extra_lag;			// returned extra forecast lag must be >= min_extra_lag
 
 			// Minimum lag is 0L if this is the first forecast,
-			// otherwise it is a minimum spacing after the last lag
+			// otherwise it is a minimum spacing after the last lag;
+			// extra lags are not subject to minimum spacing requirement
 
-			if (tstatus.get_last_forecast_lag() < 0L) {
+			if (last_forecast_lag < 0L) {
 				min_lag = 0L;
 				min_extra_lag = 0L;
 			} else {
-				min_lag = tstatus.get_last_forecast_lag() + sg.task_disp.get_action_config().get_forecast_min_gap();
-				min_extra_lag = tstatus.get_last_forecast_lag();
+				min_lag = last_forecast_lag + sg.task_disp.get_action_config().get_forecast_min_gap();
+				min_extra_lag = last_forecast_lag + 1L;
 			}
 
 			// Get next forecast lag from configured schedule
@@ -556,12 +574,13 @@ public class TimelineSupport extends ServerComponent {
 			
 				// Use the requested extra forecast lag, if any
 
-				if (tstatus.analyst_options.extra_forecast_lag >= 0L) {
+				if (tstatus.analyst_options.extra_forecast_lag >= min_extra_lag) {
 
-					// Make sure the value is a multiple of the lag unit, and greater than the last lag
+					// Make sure the value is a multiple of the lag unit, and greater than the last lag (if any), and positive,
+					// and not less than the supplied extra_forecast_lag (the last condition is required to avoid an infinite loop)
 
 					next_forecast_lag = 
-						sg.task_disp.get_action_config().floor_unit_lag (tstatus.analyst_options.extra_forecast_lag, min_extra_lag);
+						sg.task_disp.get_action_config().ceil_unit_lag (tstatus.analyst_options.extra_forecast_lag, 0L);
 				} else {
 					next_forecast_lag = -1L;
 				}
@@ -573,12 +592,12 @@ public class TimelineSupport extends ServerComponent {
 			
 				// If there is a requested extra forecast lag ...
 
-				if (tstatus.analyst_options.extra_forecast_lag >= 0L) {
+				if (tstatus.analyst_options.extra_forecast_lag >= min_extra_lag) {
 
 					// Use the smaller of the scheduled and extra lags
 
 					next_forecast_lag = Math.min (next_forecast_lag,
-						sg.task_disp.get_action_config().floor_unit_lag (tstatus.analyst_options.extra_forecast_lag, min_extra_lag));
+						sg.task_disp.get_action_config().ceil_unit_lag (tstatus.analyst_options.extra_forecast_lag, 0L));
 				}
 			}
 		}
@@ -587,6 +606,82 @@ public class TimelineSupport extends ServerComponent {
 
 		return next_forecast_lag;
 	}
+
+
+
+
+//	// Determine the next forecast lag for a timeline entry.
+//	// Parameters:
+//	//  tstatus = Timeline status.
+//	// Returns -1L if there is no next forecast lag.
+//	// If there is a next forecast lag, the return value is
+//	// positive and a multiple of the lag unit.
+//	// Note: Forecast lag is relative to the mainshock origin time.
+//	// Note: This does not consider the possibility of a PDL report.
+//
+//	public long get_next_forecast_lag (TimelineStatus tstatus) {
+//
+//		long next_forecast_lag = -1L;
+//
+//		// If the timeline state requests a forecast ...
+//
+//		if (tstatus.is_forecast_state()) {
+//
+//			long min_lag;
+//			long min_extra_lag;
+//
+//			// Minimum lag is 0L if this is the first forecast,
+//			// otherwise it is a minimum spacing after the last lag
+//
+//			if (tstatus.get_last_forecast_lag() < 0L) {
+//				min_lag = 0L;
+//				min_extra_lag = 0L;
+//			} else {
+//				min_lag = tstatus.get_last_forecast_lag() + sg.task_disp.get_action_config().get_forecast_min_gap();
+//				min_extra_lag = tstatus.get_last_forecast_lag();
+//			}
+//
+//			// Get next forecast lag from configured schedule
+//
+//			next_forecast_lag = sg.task_disp.get_action_config().get_next_forecast_lag (min_lag, tstatus.analyst_options.max_forecast_lag);
+//
+//			// If no next forecast lag on the configured schedule ...
+//
+//			if (next_forecast_lag < 0L) {
+//			
+//				// Use the requested extra forecast lag, if any
+//
+//				if (tstatus.analyst_options.extra_forecast_lag >= 0L) {
+//
+//					// Make sure the value is a multiple of the lag unit, and greater than the last lag
+//
+//					next_forecast_lag = 
+//						sg.task_disp.get_action_config().floor_unit_lag (tstatus.analyst_options.extra_forecast_lag, min_extra_lag);
+//				} else {
+//					next_forecast_lag = -1L;
+//				}
+//			}
+//
+//			// Otherwise, we have a forecast lag from the schedule ...
+//
+//			else {
+//			
+//				// If there is a requested extra forecast lag ...
+//
+//				if (tstatus.analyst_options.extra_forecast_lag >= 0L) {
+//
+//					// Use the smaller of the scheduled and extra lags
+//
+//					next_forecast_lag = Math.min (next_forecast_lag,
+//						sg.task_disp.get_action_config().floor_unit_lag (tstatus.analyst_options.extra_forecast_lag, min_extra_lag));
+//				}
+//			}
+//		}
+//
+//		// Return next lag
+//
+//		return next_forecast_lag;
+//	}
 
 
 
@@ -1282,30 +1377,80 @@ public class TimelineSupport extends ServerComponent {
 
 		AnalystOptions new_analyst_options = get_analyst_options_from_relay (timeline_id);
 
-		// If none, use default options
+		// If none ...
 
 		if (new_analyst_options == null) {
+
+			// If the timeline's analyst options have analyst_time == 0L then no change.  This permits
+			// analyst_time == 0L to indicate that analyst options should not be touched by relay code
+			// if no relay items exist, meaning that they are inherited within the timeline.
+
+			if (tstatus.analyst_options.analyst_time == 0L) {
+				return false;
+			}
+
+			// Here, no relay item exists but the timeline contains analyst options that came from
+			// a relay item.  (This can only happen in case of a Comcat split or deletion.)
+			// We restore system default options.
+
 			new_analyst_options = new AnalystOptions();
 		}
 
-		// If the analyst time is the same, consider it unchanged
+		// If the new options are the same as the old, then no action.
+		// (We use the function in ForecastStamp to ensure this test is consistent with the
+		// matching test used by ForecastStamp.)
 
-		boolean result = true;
-
-		if (new_analyst_options.analyst_time == tstatus.analyst_options.analyst_time) {
-			result = false;
+		if (ForecastStamp.are_same_options (new_analyst_options, tstatus.analyst_options)) {
+			return false;
 		}
 
-		// Preserve the extra forecast lag
+		// Insert the new analyst options, adjusting extra_forecast_lag if needed
 
-		new_analyst_options.extra_forecast_lag = tstatus.analyst_options.extra_forecast_lag;
+		tstatus.set_analyst_data_2 (new_analyst_options);
 
-		// Insert the new analyst options
-
-		tstatus.analyst_options = new_analyst_options;
-
-		return result;
+		return true;
 	}
+	
+//	public boolean update_analyst_options_from_relay (TimelineStatus tstatus) {
+//
+//		// If the timeline has no analyst options (happens only for error state), then no changes
+//
+//		if (tstatus.analyst_options == null) {
+//			return false;
+//		}
+//
+//		// Get the timeline id
+//
+//		String timeline_id = tstatus.event_id;
+//
+//		// Get the analyst options from relay items
+//
+//		AnalystOptions new_analyst_options = get_analyst_options_from_relay (timeline_id);
+//
+//		// If none, use default options
+//
+//		if (new_analyst_options == null) {
+//			new_analyst_options = new AnalystOptions();
+//		}
+//
+//		// If the analyst time is the same, consider it unchanged
+//
+//		boolean result = true;
+//
+//		if (new_analyst_options.analyst_time == tstatus.analyst_options.analyst_time) {
+//			result = false;
+//		}
+//
+//		// Preserve the extra forecast lag
+//
+//		new_analyst_options.extra_forecast_lag = tstatus.analyst_options.extra_forecast_lag;
+//
+//		// Insert the new analyst options
+//
+//		tstatus.analyst_options = new_analyst_options;
+//
+//		return result;
+//	}
 
 
 

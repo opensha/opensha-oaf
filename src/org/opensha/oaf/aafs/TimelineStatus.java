@@ -532,7 +532,7 @@ public class TimelineStatus extends DBPayload {
 
 	// Return true if this timeline is in a state that an analyst can
 	// withdraw by changing fc_status (with or without updating analyst data).
-	// Note: Upon changing fc_status to FCSTAT_STOP_WITHDRAWN, it is recommended
+	// [Removed] Note: Upon changing fc_status to FCSTAT_STOP_WITHDRAWN, it is recommended
 	// to also set analyst_options.extra_forecast_lag = -1L.
 
 	public boolean can_analyst_withdraw () {
@@ -647,15 +647,92 @@ public class TimelineStatus extends DBPayload {
 		return;
 	}
 
-	// Merge a value for the extra forecast lag.
-	// Note: Merge is done using max, so that an extra forecast is generated
-	// whether either the new or old value requests it.
+	// Set the analyst data variables.
+	// This version enforces the rule that analyst_options.extra_forecast_lag must be
+	// non-decreasing, and that a new extra forecast request must have lag after
+	// the last forecast lag.
+	// Note: This function may modify new_analyst_options.
+	// Note: The intent is that this will eventually replace set_analyst_data().
 
-	public void merge_extra_forecast_lag (long the_extra_forecast_lag) {
-		if (analyst_options != null) {
-			analyst_options.extra_forecast_lag = Math.max (analyst_options.extra_forecast_lag, the_extra_forecast_lag);
+	public void set_analyst_data_2 (AnalystOptions new_analyst_options) {
+
+		// The new value of extra_forecast_lag, can be -1L if none requested
+
+		long new_extra_forecast_lag;
+
+		if (analyst_options == null) {
+			new_extra_forecast_lag = -1L;
+		} else {
+			new_extra_forecast_lag = analyst_options.extra_forecast_lag;
 		}
+
+		// If the new options are requesting an extra forecast ...
+
+		if (new_analyst_options.extra_forecast_lag >= 0L) {
+
+			// Force the extra forecast lag to be non-decreasing
+
+			new_extra_forecast_lag = Math.max (new_extra_forecast_lag, new_analyst_options.extra_forecast_lag);
+
+			// If there is a prior forecast, also force it to be after the prior forecast lag,
+			// otherwise force it to be greater than 0
+
+			if (get_last_forecast_lag() >= 0L) {
+				new_extra_forecast_lag = Math.max (new_extra_forecast_lag, get_last_forecast_lag() + 1L);
+			} else {
+				new_extra_forecast_lag = Math.max (new_extra_forecast_lag, 1L);
+			}
+		}
+
+		// Insert new value into the new options
+
+		new_analyst_options.extra_forecast_lag = new_extra_forecast_lag;
+
+		// Establish the new options
+
+		analyst_options = new_analyst_options;
 		return;
+	}
+
+	// Return true if there is an extra forecast pending.
+	// Note: This only examine analyst_options.extra_forecast_lag and does not
+	// consider the timeline state.
+
+	public boolean is_extra_forecast_pending () {
+		if (analyst_options != null) {
+
+			// If no prior forecast, any positive extra lag is OK;
+			// otherwise, the extra lag must be greater then the prior lag
+
+			if (get_last_forecast_lag() < 0L) {
+				if (analyst_options.extra_forecast_lag >= 0L) {
+					return true;
+				}
+			} else {
+				if (analyst_options.extra_forecast_lag > get_last_forecast_lag()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	//  // Merge a value for the extra forecast lag.
+	//  // Note: Merge is done using max, so that an extra forecast is generated
+	//  // whether either the new or old value requests it.
+	//  
+	//  public void merge_extra_forecast_lag (long the_extra_forecast_lag) {
+	//  	if (analyst_options != null) {
+	//  		analyst_options.extra_forecast_lag = Math.max (analyst_options.extra_forecast_lag, the_extra_forecast_lag);
+	//  	}
+	//  	return;
+	//  }
+
+	// Return true if our forecast stamp was constructed from our current analyst options.
+	// A false return indicates that analyst options have changed since the last forecast.
+
+	public boolean is_stamp_from_options () {
+		return last_forecast_stamp.is_from_options (analyst_options);
 	}
 
 
@@ -747,7 +824,7 @@ public class TimelineStatus extends DBPayload {
 
 	// Set the state to withdrawn.
 	//
-	// Note: analyst_options.extra_forecast_lag is set to -1L, consuming any analyst forecast request.
+	// [Removed] Note: analyst_options.extra_forecast_lag is set to -1L, consuming any analyst forecast request.
 	//
 	// Note: the_forecast_mainshock can be null, in which case the previous values are kept.
 
@@ -778,7 +855,7 @@ public class TimelineStatus extends DBPayload {
 
 		//last_forecast_stamp   = kept;
 
-		analyst_options.extra_forecast_lag = -1L;
+		//analyst_options.extra_forecast_lag = -1L;
 		return;
 	}
 
@@ -796,7 +873,7 @@ public class TimelineStatus extends DBPayload {
 	//
 	// Note: shadowing_event_id is set to "".
 	//
-	// Note: analyst_options.extra_forecast_lag is set to -1L, consuming any analyst forecast request.
+	// [Removed] Note: analyst_options.extra_forecast_lag is set to -1L, consuming any analyst forecast request.
 	//
 	// Note: last_forecast_stamp is set from the_forecast_params.forecast_lag and analyst_options.
 
@@ -830,7 +907,7 @@ public class TimelineStatus extends DBPayload {
 
 		last_forecast_stamp = new ForecastStamp (the_forecast_params.forecast_lag, analyst_options);
 
-		analyst_options.extra_forecast_lag = -1L;
+		//analyst_options.extra_forecast_lag = -1L;
 		return;
 	}
 
@@ -848,7 +925,7 @@ public class TimelineStatus extends DBPayload {
 	//
 	// Note: shadowing_event_id is set to "" if the event is not shadowed.
 	//
-	// Note: analyst_options.extra_forecast_lag is set to -1L, consuming any analyst forecast request.
+	// [Removed] Note: analyst_options.extra_forecast_lag is set to -1L, consuming any analyst forecast request.
 	//
 	// Note: last_forecast_stamp is set from the_forecast_lag and analyst_options.
 
@@ -880,7 +957,7 @@ public class TimelineStatus extends DBPayload {
 
 		last_forecast_stamp = new ForecastStamp (the_forecast_lag, analyst_options);
 
-		analyst_options.extra_forecast_lag = -1L;
+		//analyst_options.extra_forecast_lag = -1L;
 		return;
 	}
 
@@ -983,7 +1060,7 @@ public class TimelineStatus extends DBPayload {
 	//
 	// Note: Sets pdl_status to PDLSTAT_NONE.
 	//
-	// Note: The caller may use set_fc_status(), set_pdl_status(), and set_analyst_data()
+	// Note: The caller may use set_fc_status(), set_pdl_status(), and set_analyst_data()/set_analyst_data_2()
 	// to make changes to forecast status, PDL status, and analyst data.
 
 	public void set_state_analyst_intervention (long the_entry_time) {
@@ -1015,7 +1092,7 @@ public class TimelineStatus extends DBPayload {
 	//
 	// Note: Sets pdl_status to PDLSTAT_NONE.
 	//
-	// Note: The caller may use set_fc_status(), set_pdl_status(), and set_analyst_data()
+	// Note: The caller may use set_fc_status(), set_pdl_status(), and set_analyst_data()/set_analyst_data_2()
 	// to make changes to forecast status, PDL status, and analyst data.
 
 	public void set_state_track (long the_entry_time, ActionConfig action_config,

@@ -15,9 +15,17 @@ import org.opensha.oaf.util.SimpleUtils;
  * This object is guaranteed to contain a forecast lag, which can be retrieved.
  * Other than that, the object should be regarded as opaque.
  *
- * This object has two uses:
+ * This object has several uses:
  * - To identify when two forecasts are the same.
  * - To identify when one forecast can be considered to confirm another forecast.
+ * - To determine if analyst options have changed since a forecast was issued.
+ * - To determine if two sets of analyst options are the same.
+ *
+ * Implementation note: We assume that two different sets of analyst-supplied
+ * options have different values of analyst_time, and so analyst_time can identify
+ * a set of options uniquely.  Zero analyst_time should only be encountered for
+ * the system default analyst options.  Although null analyst options should not
+ * be encountered, we use analyst_time == -1L to represent null analyst options.
  */
 public class ForecastStamp {
 
@@ -125,6 +133,53 @@ public class ForecastStamp {
 
 	public boolean is_confirmation_of (ForecastStamp other) {
 		if (forecast_lag >= other.forecast_lag && analyst_time >= other.analyst_time) {
+			return true;
+		}
+		return false;
+	}
+
+
+
+
+	// Return true if this stamp was constructed from the given options.
+	// Implementation note: We assume different options have different analyst_time.
+
+	public boolean is_from_options (AnalystOptions analyst_options) {
+		if (analyst_options == null) {
+			if (analyst_time == -1L) {
+				return true;
+			}
+		} else {
+			if (analyst_time == analyst_options.analyst_time) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+
+
+	// Return true if the two sets of analyst options are the same.
+	// Implementation note: We assume different options have different analyst_time.
+
+	public static boolean are_same_options (AnalystOptions analyst_options_1, AnalystOptions analyst_options_2) {
+
+		long analyst_time_1;
+		if (analyst_options_1 == null) {
+			analyst_time_1 = -1L;
+		} else {
+			analyst_time_1 = analyst_options_1.analyst_time;
+		}
+
+		long analyst_time_2;
+		if (analyst_options_2 == null) {
+			analyst_time_2 = -1L;
+		} else {
+			analyst_time_2 = analyst_options_2.analyst_time;
+		}
+
+		if (analyst_time_1 == analyst_time_2) {
 			return true;
 		}
 		return false;

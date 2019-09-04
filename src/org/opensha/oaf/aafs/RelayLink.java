@@ -819,10 +819,12 @@ public class RelayLink extends ServerComponent {
 			if (RelayItem.check_relay_item (relit, false) > 0) {
 
 				// Submit the task
+				// (Scheduled time is set early so following resynchronization it will
+				// execute ahead of any queued forecast or intake tasks)
 
 				PendingTask.submit_task (
 					task_payload.event_id,										// event id
-					relit.get_relay_time(),										// sched_time
+					Math.max (relit.get_relay_time() - DURATION_YEAR, EXEC_TIME_SHUTDOWN + 1000L),		// sched_time
 					time_now,													// submit_time
 					"RelayLink",												// submit_id
 					OPCODE_ANALYST_SELECTION,									// opcode
@@ -2137,12 +2139,20 @@ public class RelayLink extends ServerComponent {
 				//>>> Watch mode, configured secondary, running as initializing
 
 				// Otherwise we are configured secondary ...
-				// If the partner server is known to be dead, start as secondary
 
-				if (is_remote_known_dead (time_now)) {
-					return PRIST_SECONDARY;
-					//return PRIST_PRIMARY;
-				}
+				// When in watch mode and configured secondary, do not exit from
+				// initialization until synchronized with the partner server, no
+				// matter how long it takes.  This mode can then be used to restart
+				// one server of a pair during maintenance, in a way that it does
+				// not process any forecasts until after resynchronizing.  A shutdown
+				// task can be used to end the wait if synchronization fails.
+
+				//  // If the partner server is known to be dead, start as secondary
+				//  
+				//  if (is_remote_known_dead (time_now)) {
+				//  	return PRIST_SECONDARY;
+				//  	//return PRIST_PRIMARY;
+				//  }
 
 				// If the partner server is known to be alive and synced, start as secondary
 
@@ -2150,11 +2160,11 @@ public class RelayLink extends ServerComponent {
 					return PRIST_SECONDARY;
 				}
 
-				// If initialization timeout expired, force start as secondary
-
-				if (time_now > get_start_time() + prist_init_timeout && is_link_conn_or_disc()) {
-					return PRIST_SECONDARY;
-				}
+				//  // If initialization timeout expired, force start as secondary
+				//  
+				//  if (time_now > get_start_time() + prist_init_timeout && is_link_conn_or_disc()) {
+				//  	return PRIST_SECONDARY;
+				//  }
 
 				// Otherwise, stay in initialization
 

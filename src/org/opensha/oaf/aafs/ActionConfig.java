@@ -596,6 +596,21 @@ public class ActionConfig {
 		return x - (x % UNIT_LAG);
 	}
 
+	// Given a lag value, round it up to a multiple of the lag unit (which is 1 second).
+	// Note: Assumes lag >= 0L.
+
+	public long ceil_unit_lag (long lag) {
+		long x = lag + UNIT_LAG - 1L;
+		return x - (x % UNIT_LAG);
+	}
+
+	// Same, except make the return value greater than prior_lag.
+
+	public long ceil_unit_lag (long lag, long prior_lag) {
+		long x = Math.max (lag + UNIT_LAG - 1L, prior_lag + UNIT_LAG);
+		return x - (x % UNIT_LAG);
+	}
+
 
 	//----- Parameter modification -----
 

@@ -166,9 +166,11 @@ public class ExGenerateForecast extends ServerExecTask {
 
 				// Possible forecast lag
 
-				long possible_min_lag = next_forecast_lag + sg.task_disp.get_action_config().get_forecast_min_gap();
-				long possible_forecast_lag = sg.task_disp.get_action_config().get_next_forecast_lag (
-										possible_min_lag, tstatus.analyst_options.max_forecast_lag);
+				//long possible_min_lag = next_forecast_lag + sg.task_disp.get_action_config().get_forecast_min_gap();
+				//long possible_forecast_lag = sg.task_disp.get_action_config().get_next_forecast_lag (
+				//						possible_min_lag, tstatus.analyst_options.max_forecast_lag);
+
+				long possible_forecast_lag = sg.timeline_sup.get_next_forecast_lag (tstatus, next_forecast_lag);
 
 				// Stop if reached end of forecast lags
 
@@ -195,9 +197,11 @@ public class ExGenerateForecast extends ServerExecTask {
 
 			// Possible forecast lag
 
-			long possible_min_lag = next_forecast_lag + sg.task_disp.get_action_config().get_forecast_min_gap();
-			long possible_forecast_lag = sg.task_disp.get_action_config().get_next_forecast_lag (
-									possible_min_lag, tstatus.analyst_options.max_forecast_lag);
+			//long possible_min_lag = next_forecast_lag + sg.task_disp.get_action_config().get_forecast_min_gap();
+			//long possible_forecast_lag = sg.task_disp.get_action_config().get_next_forecast_lag (
+			//						possible_min_lag, tstatus.analyst_options.max_forecast_lag);
+
+			long possible_forecast_lag = sg.timeline_sup.get_next_forecast_lag (tstatus, next_forecast_lag);
 
 			// If there is another forecast lag ...
 
