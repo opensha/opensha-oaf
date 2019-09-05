@@ -39,7 +39,7 @@ import com.google.common.base.Preconditions;
 
 public class ETAS_ComcatAccessor {
 	
-		private static final boolean D = false;
+		private static final boolean D = true;
 		
 		protected EventWebService service;
 		
@@ -547,7 +547,7 @@ public class ETAS_ComcatAccessor {
 					faultTrace = new FaultTrace("Shakemap Source");
 
 					for (String line : lines){
-						if (line.charAt(0) != '#' && line.charAt(0) != '>'){
+						if (!line.isEmpty() && line.charAt(0) != '#' && line.charAt(0) != '>'){
 							String[] splitAll = line.split(" ");
 							String[] split = new String[3];
 							

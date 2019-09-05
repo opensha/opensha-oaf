@@ -34,7 +34,7 @@ import com.google.common.base.Stopwatch;
 
 public class ETAScatalog {
 
-	private final static boolean D = false; //debug
+	private final static boolean D = true; //debug
 	
 	double[] ams_vec, a_vec, p_vec, c_vec;
 	double[][][][] likelihood;

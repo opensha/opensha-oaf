@@ -294,7 +294,7 @@ public class GriddedInterpGMPE_Calc {
 					initialMessageString = "...";
 					
 					// if the time estimate is more than 20 seconds, ask if user wants to quit
-					if (!userWarned && timeEstimate > 30 && promptForLongCalc) { // only the first time around and if it'll take more than a minute
+					if (!userWarned && (timeEstimate < 0 || timeEstimate > 30) && promptForLongCalc) { // only the first time around and if it'll take more than a minute
 						userWarned = true;
 						// launch a dialog as a new thread
 //						String message = "It will take approximately " + Math.round(timeEstimate) + " seconds to complete each map at this resolution.\n"

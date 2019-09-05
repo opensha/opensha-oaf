@@ -34,7 +34,7 @@ public class GenericETAS_ParametersFetch {
 		
 		dataMap = Maps.newHashMap();
 
-		URL paramsURL = GenericETAS_ParametersFetch.class.getResource("resources/vdEGenericETASParams_080518.csv"); //updated CALIFORNIA added Mref, Mmax, columns 
+		URL paramsURL = GenericETAS_ParametersFetch.class.getResource("resources/vdEGenericETASParams_080919.csv"); //uses global covariance matrix for all regions 
 		
 		if(D) System.out.println(paramsURL);
 		

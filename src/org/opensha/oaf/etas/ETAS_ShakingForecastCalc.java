@@ -116,7 +116,7 @@ public class ETAS_ShakingForecastCalc {
 		if (vs30Provider != null) {
 			try {
 				vs30s = vs30Provider.getValues(calcRegion.getNodeList());
-			} catch(UnknownHostException e) {
+			} catch(Exception e) {
 				System.out.println("Could not retrieve global DEM for estimating site effects. Proceeding without site effects.");
 			}
 		}

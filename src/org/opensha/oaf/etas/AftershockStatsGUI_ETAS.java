@@ -130,7 +130,7 @@ import java.awt.event.WindowListener;
 
 public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeListener {
 		
-	private GregorianCalendar expirationDate = new GregorianCalendar(2019, 3, 1);
+	private GregorianCalendar expirationDate = new GregorianCalendar(2020, 0, 1);
 	
 	public AftershockStatsGUI_ETAS(String... args) {
 		checkArguments(args);
@@ -908,8 +908,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		mapGridSpacingParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
 		mapPlotParams.addParameter(mapGridSpacingParam);
 		
-		mapScaleParam  = new DoubleParameter("Scale", 0.5d, 10d, new Double(1));
-		mapScaleParam.setInfo("Factor by which to extend the map region beyond the aftershock zone");
+		mapScaleParam  = new DoubleParameter("Scale", 1d, 10d, new Double(5));
+		mapScaleParam.setInfo("Map scale in fault lengths");
 		mapScaleParam.addParameterChangeListener(this);
 		mapScaleParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
 		mapPlotParams.addParameter(mapScaleParam);
@@ -1072,6 +1072,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, Double.POSITIVE_INFINITY);
 		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, Double.POSITIVE_INFINITY);
 		
+		numberSimsParam = new IntegerParameter("number of ETAS simulations", 10000);
+			
 		// these are inside region editor
 		regionTypeParam = new EnumParameter<AftershockStatsGUI_ETAS.RegionType>(
 				"Aftershock Zone Type", EnumSet.allOf(RegionType.class), RegionType.CIRCULAR_WC94, null);
@@ -1128,7 +1130,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		mapLevelParam = new DoubleParameter("Level", 1d, 100d, new Double(10) );
 		mapPOEParam = new DoubleParameter("POE (%)", 0, 99.9, new Double(10));
 		mapGridSpacingParam = new DoubleParameter("\u0394 (km)", 1, 1000, new Double(10d));
-		mapScaleParam  = new DoubleParameter("Scale", 0.5d, 10d, new Double(1));
+		mapScaleParam  = new DoubleParameter("Scale", 1d, 10d, new Double(5));
 		workingDir = new File(System.getProperty("user.home"));
 		accessor = new ETAS_ComcatAccessor();
 		quickForecastButton = new ButtonParameter("Forecast using default settings", "Quick Forecast");
@@ -3433,7 +3435,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						final FitSourceType fitType = fitSourceTypeParam.getValue();
 						
 						if (fitType == FitSourceType.SHAKEMAP){
-								faultTrace = accessor.fetchShakemapSource(eventIDParam.getValue());
+								// get the source for the biggest earthquake? Or the one specified by the eventID? Hmmm... 
+								// ...needs to be the biggest event, because source will be scaled to size of biggest event!
+								faultTrace = accessor.fetchShakemapSource(largestShock.getEventId());
+//								faultTrace = accessor.fetchShakemapSource(eventIDParam.getValue());
 								if(faultTrace == null){
 									System.out.println("...ShakeMap finite source not available. Fitting early aftershocks...");
 									// no shakemap, fit early aftershocks
@@ -3520,7 +3525,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		CalcStep tipStep; //define later
 
 		if (!changeListenerEnabled || param.getValue() == null) {
-			if(D)	System.out.println("Suppressing refresh for " + param.getName());
+			if(D)	System.out.println("Suppressing refresh for " + param.getName() + " (changeListener disabled)");
+		} else if (param.getValue() == null) {
+			if(D)	System.out.println("Suppressing refresh for " + param.getName() + " (value is null)");
 		} else {
 			if(verbose) System.out.println("Updating " + param.getName());
 			// putting this in as a safegaurd
@@ -4612,6 +4619,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private void plotRateModel2D(CalcProgressBar progress){
 			
 			double spacing = mapGridSpacingParam.getValue()/111.111; 	// grid spacing in degrees
+			double scale = mapScaleParam.getValue();
 			double stressDrop = 2.0; 	//MPa
 			double mainshockFitDuration = dataEndTimeParam.getValue(); //days
 			Double minDays = forecastStartTimeParam.getValue();
@@ -4638,7 +4646,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			}
 
 			// calculate rate for one day -- the minimum, so that we can scale up probabilities from small to large
-			forecastRateModel = rateModel2D.calculateRateModel(ForecastDuration.DAY.duration, spacing, stressDrop, mainshockFitDuration, fitType, faultTrace);
+			forecastRateModel = rateModel2D.calculateRateModel(ForecastDuration.DAY.duration, scale, spacing/4, stressDrop, mainshockFitDuration, fitType, faultTrace);
 			//compute rate sum for checking
 			double referenceRate = 0;
 			for (int j = 0; j < forecastRateModel.size(); j++){
@@ -5267,10 +5275,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		 */
 		// set up an expanded region, based on user-specified range factor
 		double currentRadius = 111.111*(rateModel.getRegion().getMaxLat() - rateModel.getRegion().getMinLat())/2d;
-		double calcSpacing = rateModel.getRegion().getSpacing()*mapScaleParam.getValue()*2;		
-		SphRegionCircle newRegion = new SphRegionCircle(new SphLatLon(getCentroid()), currentRadius*mapScaleParam.getValue());
+		
+//		double calcSpacing = rateModel.getRegion().getSpacing()*mapScaleParam.getValue()*2;
+		double calcSpacing = rateModel.getRegion().getSpacing()*4; //the factor of four here gets back to the actual spacing parameter
+		
+//		SphRegionCircle newRegion = new SphRegionCircle(new SphLatLon(getCentroid()), currentRadius*mapScaleParam.getValue());
+		SphRegionCircle newRegion = new SphRegionCircle(new SphLatLon(getCentroid()), currentRadius);
 		GriddedRegion calcRegion = new GriddedRegion(new Region(new Location(newRegion.getMaxLat(), newRegion.getMaxLon()),
 				new Location(newRegion.getMinLat(), newRegion.getMinLon())), calcSpacing, null);
+//		GriddedRegion calcRegion = rateModel.getRegion();
 		
 		if(D) System.out.println("currentRadius: " + currentRadius + " mapScale: " + mapScaleParam.getValue() + " calcSpacing: " + calcSpacing);
 		//this is what is in the old code
@@ -6043,7 +6056,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		if (bayesianModel != null)
 			bayesianModel = null;
 		
-		
+		if (D) System.out.println("Resetting model");
 		amsValParam.setValue(null);
 		amsValParam.getEditor().refreshParamEditor();
 		aValParam.setValue(null);
@@ -6052,7 +6065,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		pValParam.getEditor().refreshParamEditor();
 		cValParam.setValue(null);
 		cValParam.getEditor().refreshParamEditor();
+		if (D) System.out.println("Done resetting model");
 		
+		if (D) System.out.println("Setting focus");
 		if(!commandLine) {
 			tabbedPane.setForegroundAt(pdf_tab_index, new Color(128,128,128));
 			tabbedPane.setEnabledAt(pdf_tab_index, false);
@@ -6066,6 +6081,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			tabbedPane.setForegroundAt(forecast_map_tab_index, new Color(128,128,128));
 			tabbedPane.setEnabledAt(forecast_map_tab_index, false);
 		}
+		if (D) System.out.println("Done setting focus");
 
 //		tabbedPane.setSelectedIndex(mag_num_tab_index); //make sure to look away first!
 		
@@ -6159,7 +6175,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	}
 
 	private void setEnableParamsPostAftershockParams(boolean enabled) {
-		
+		if(D) System.out.println("Begin setEnableParamsPostAftershockParams");
 		if (enabled) {
 			computeAftershockForecastButton.setButtonText("Run Specific Forecast");
 			computeAftershockForecastButton.setInfo("Compute aftershock forecast using parameters estimated for this sequence");
@@ -6183,6 +6199,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //		if (!enabled){
 //			seqSpecModel = null;
 //		}
+		if(D) System.out.println("Finished setEnableParamsPostAftershockParams");
 	}
 	
 	private void setEnableParamsPostForecast(boolean enabled) {
@@ -6461,7 +6478,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		String welcomeMessage = "This a Beta version of the Aftershock Forecaster software. Get the latest version from www.caltech.edu/~nvandere/AftershockForecaster.\n"
 				+ "The Beta version will expire " + formatter.format(expirationDate.getTime()) + String.format(" (%d days remaining).", (int) -elapsedDays);
 
-		tipText.add(welcomeMessage + "\n\n>> Welcome to the aftershock forecaster. Enter a USGS event ID to get started. (e.g: us2000cifa)");
+		tipText.add(welcomeMessage + "\n\n>> Welcome to the aftershock forecaster. Enter a USGS event ID to get started. (e.g: us20002926)");
 		tipText.add(">> Specify a forecast start time and duration. Then click \"Fetch Data\" to retrieve the catalog\n  ...or click \"Quick Forecast\" to run the entire forecast automatically with default settings.");
 		tipText.add(">> Click \"Compute Model Fit\" to compute sequence-specific model\n  ...or go straight to \"Run Generic Forecast\" to get a generic forecast for this region.");
 		tipText.add(">> Click \"Compute Model Fit\" to compute sequence-specific model\n  ...or click \"Render\" to get a generic aftershock rate map.");

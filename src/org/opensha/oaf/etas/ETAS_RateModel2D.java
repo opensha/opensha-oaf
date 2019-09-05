@@ -32,20 +32,21 @@ public class ETAS_RateModel2D {
 		this.forecastModel = forecastModel;
 	}
 	
-	public ETAS_RateModel2D(ETAS_AftershockModel forecastModel, double plotDuration, double spacing, double stressDrop, double mainshockFitDuration, String fitType, FaultTrace faultTrace){
+	public ETAS_RateModel2D(ETAS_AftershockModel forecastModel, double plotDuration, double scale, double spacing, double stressDrop, double mainshockFitDuration, String fitType, FaultTrace faultTrace){
 		this.forecastModel = forecastModel;
-		this.rateModel = calculateRateModel( plotDuration, spacing, stressDrop,  mainshockFitDuration,  fitType,  faultTrace);
+//		this.rateModel = calculateRateModel( plotDuration, scale, spacing, stressDrop,  mainshockFitDuration,  fitType,  faultTrace);
+		this.rateModel = calculateRateModel( plotDuration, scale, spacing, stressDrop,  mainshockFitDuration,  fitType,  faultTrace);
 	}
 	
 	/**
 	 * Returns a 2d grid of earthquake rates based on epicenters. 
 	 * 
 	 */
-	public GriddedGeoDataSet calculateRateModel(double plotDuration, double spacing, double stressDrop, double mainshockFitDuration, String fitType, FaultTrace faultTrace){
+	public GriddedGeoDataSet calculateRateModel(double plotDuration, double scale, double spacing, double stressDrop, double mainshockFitDuration, String fitType, FaultTrace faultTrace){
 
 		// TODO: assign these parameters somewhere, rather than hardcoded.
 		double seismogenicDepth = 10;	//in km
-		double mapSizeInRuptureLengths = 10;
+		double mapSizeInRuptureLengths = scale;
 		double minMapDistance = 40;	
 		double forecastMaxDays = forecastModel.getForecastMinDays() + plotDuration;
 		double maxDeltaMag = 3.0;	//minimum aftershock magnitude that contributes to rate estmate

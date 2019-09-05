@@ -20,7 +20,7 @@ import com.google.common.primitives.Doubles;
  */
 public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel {
 	
-	Boolean D = true;	// debug flag
+	Boolean D = false;	// debug flag
 	private boolean fitMSProductivity;
 	private volatile boolean stopRequested;
 	private volatile boolean pauseRequested;
