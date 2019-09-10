@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -160,8 +161,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				e.printStackTrace();
 			}
 		}
-		else
+		else {
+			// try setting the default locale to US to see if we can avoid comma problames
+			Locale.setDefault(Locale.US);
 			createAndShowGUI();
+		}
 	}
     
 	private boolean D; //debug
