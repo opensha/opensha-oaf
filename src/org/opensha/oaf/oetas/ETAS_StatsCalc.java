@@ -20,21 +20,36 @@ import com.google.common.collect.Lists;
  * @author field
  * @author van der Elst
  *
+ * Additional modifications: Michael Barall 09/23/2019.
+ *
  */
 public class ETAS_StatsCalc {
 	
+	// The number of milliseconds per year (365.25 days), as a double.
+
 	public final static double MILLISEC_PER_YEAR = 1000*60*60*24*365.25;
+
+	// The number of milliseconds per day, as a long.
+
 	public final static long MILLISEC_PER_DAY = 1000*60*60*24;
+
+	// Flag enabled debug output.
 	
 	private static final boolean D = false;
 
 	
-	/**
-	 * This does not check for negative values
-	 * @param mainShock
-	 * @param aftershockList
-	 * @return
-	 */
+
+
+	// Compute time since the mainshock for a list of aftershocks, in days.
+	// Parameters:
+	//  mainShock = The mainshock.
+	//  aftershockList = List of aftershocks.
+	// Returns an array with length equal to the size of aftershockList.
+	// The i-th element of the returned array is the time interval from the mainshock
+	// to the i-th aftershock, in days, as a double.
+	// Note: Aftershocks occurring before the mainshock are permitted, and the
+	// corresponding time interval is negative.
+
 	public static double[] getDaysSinceMainShockArray(ObsEqkRupture mainShock, ObsEqkRupList aftershockList) {
 		double[] relativeEventTimesDays = new double[aftershockList.size()];
 		for(int i=0; i<aftershockList.size();i++) {
@@ -46,6 +61,19 @@ public class ETAS_StatsCalc {
 	
 
 	
+
+	// Compute an array of equally-spaced values in a specified range.
+	// Parameters:
+	//  min = Lower end of range.
+	//  max = Upper end of range.
+	//  npts = Number of points in range.
+	// Returns an array with length equal to npts.  The first element of the
+	// array equals min, the last element equals max, and the remaining elements
+	// are equally spaced between min and max in ascending order.
+	// Note: It is permissible to have min > max, in which case the returned
+	// list is in descending order.
+	// Note: npts >= 2 is required.
+
 	public static double[] linspace(double min, double max, int npts){
 		double[] vec = new double[npts];
 		double dx = (max-min)/(npts-1);
@@ -55,6 +83,23 @@ public class ETAS_StatsCalc {
 		vec[npts-1] = max;
 		return vec;
 	}
+
+	
+
+
+	// Compute an array of logarithmically-spaced values in a specified range.
+	// Parameters:
+	//  min = Lower end of range.
+	//  max = Upper end of range.
+	//  npts = Number of points in range.
+	// Returns an array with length equal to npts.  The first element of the
+	// array equals min, the last element equals max, and the remaining elements
+	// are logarithmically spaced between min and max, in ascending order
+	// (i.e., the ratios between successive elements are equal).
+	// Note: It is permissible to have min > max, in which case the returned
+	// list is in descending order.
+	// Note: min > 0 and max > 0 are required.
+	// Note: npts >= 2 is required.
 	
 	public static double[] logspace(double min, double max, int npts){
 		double[] vec = new double[npts];
@@ -70,6 +115,16 @@ public class ETAS_StatsCalc {
 		return vec;
 	}
 	
+
+
+
+	// Compute the centroid of the aftershocks.
+	// Parameters:
+	//  mainshock = The mainshock.
+	//  aftershocks = List of aftershocks.
+	// Returns a Location giving the centroid of the aftershocks.
+	// TODO: Replace with the spherical geometry version.
+
     public static Location getCentroid(ObsEqkRupture mainshock, ObsEqkRupList aftershocks) {
 		// now works across prime meridian
 		List<Location> locs = Lists.newArrayList(mainshock.getHypocenterLocation());
@@ -97,7 +152,7 @@ public class ETAS_StatsCalc {
 	}
 
     /** returns radius in km for magnitude and stressDrop in MPa 
-     * 
+     * TODO: Where does the formula come from?
      */
     public static double magnitude2radius(double magnitude, double stressDrop){
     	double r = Math.pow( 7.0/16.0, 1.0/3.0 ) * Math.pow(10.0, 0.5*magnitude - 1.0/3.0*Math.log10(stressDrop) - 2.0);
@@ -106,6 +161,7 @@ public class ETAS_StatsCalc {
 	}
     
     /** returns magnitude for radius in km and stressDrop in MPa
+     * TODO: Where does the formula come from?
      * 
      */
     public static double radius2magnitude(double radius, double stressDrop){

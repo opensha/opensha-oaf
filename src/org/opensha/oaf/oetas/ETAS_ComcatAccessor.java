@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Locale;
 
 import org.json.simple.JSONArray;
 import org.apache.commons.io.IOUtils;
@@ -185,8 +186,8 @@ public class ETAS_ComcatAccessor {
 			EventQuery query = new EventQuery();
 			
 			Preconditions.checkState(minDepth < maxDepth, "Min depth must be less than max depth");
-			query.setMinDepth(new BigDecimal(String.format("%.3f", minDepth)));
-			query.setMaxDepth(new BigDecimal(String.format("%.3f", maxDepth)));
+			query.setMinDepth(new BigDecimal(String.format(Locale.US, "%.3f", minDepth)));
+			query.setMaxDepth(new BigDecimal(String.format(Locale.US, "%.3f", maxDepth)));
 			
 			Preconditions.checkState(minDays <= maxDays, "Min days cannot be larger than max days");
 			// time zones shouldn't be an issue since we're just adding to the original catalog time, whatever
@@ -205,10 +206,10 @@ public class ETAS_ComcatAccessor {
 			// west of the date line are handled correctly
 			boolean mainshockLonWrapped = mainshock.getHypocenterLocation().getLongitude() > 90;
 			
-			query.setMinLatitude(new BigDecimal(String.format("%.5f", region.getMinLat())));
-			query.setMaxLatitude(new BigDecimal(String.format("%.5f", region.getMaxLat())));
-			query.setMinLongitude(new BigDecimal(String.format("%.5f", region.getMinLon())));
-			query.setMaxLongitude(new BigDecimal(String.format("%.5f", region.getMaxLon())));
+			query.setMinLatitude(new BigDecimal(String.format(Locale.US, "%.5f", region.getMinLat())));
+			query.setMaxLatitude(new BigDecimal(String.format(Locale.US, "%.5f", region.getMaxLat())));
+			query.setMinLongitude(new BigDecimal(String.format(Locale.US, "%.5f", region.getMinLon())));
+			query.setMaxLongitude(new BigDecimal(String.format(Locale.US, "%.5f", region.getMaxLon())));
 			query.setLimit(20000);
 			List<JsonEvent> events;
 			int count=20000;
@@ -297,8 +298,8 @@ public class ETAS_ComcatAccessor {
 			EventQuery query = new EventQuery();
 			
 			Preconditions.checkState(minDepth < maxDepth, "Min depth must be less than max depth");
-			query.setMinDepth(new BigDecimal(String.format("%.3f", minDepth)));
-			query.setMaxDepth(new BigDecimal(String.format("%.3f", maxDepth)));
+			query.setMinDepth(new BigDecimal(String.format(Locale.US, "%.3f", minDepth)));
+			query.setMaxDepth(new BigDecimal(String.format(Locale.US, "%.3f", maxDepth)));
 			
 			Preconditions.checkState(minDays <= maxDays, "Min days cannot be greater than max days");
 			// time zones shouldn't be an issue since we're just adding to the original catalog time, whatever
@@ -316,18 +317,18 @@ public class ETAS_ComcatAccessor {
 			// If the region is a circle, use Comcat's circle query
 
 			if (region.isCircular()) {
-				query.setLatitude(new BigDecimal(String.format("%.5f", region.getCircleCenter().get_lat())));
-				query.setLongitude(new BigDecimal(String.format("%.5f", region.getCircleCenter().get_lon())));
-				query.setMaxRadius(new BigDecimal(String.format("%.5f", region.getCircleRadiusDeg())));
+				query.setLatitude(new BigDecimal(String.format(Locale.US, "%.5f", region.getCircleCenter().get_lat())));
+				query.setLongitude(new BigDecimal(String.format(Locale.US, "%.5f", region.getCircleCenter().get_lon())));
+				query.setMaxRadius(new BigDecimal(String.format(Locale.US, "%.5f", region.getCircleRadiusDeg())));
 			}
 
 			// Otherwise, use Comcat's rectangle query to search the bounding box of the region
 
 			else {
-				query.setMinLatitude(new BigDecimal(String.format("%.5f", region.getMinLat())));
-				query.setMaxLatitude(new BigDecimal(String.format("%.5f", region.getMaxLat())));
-				query.setMinLongitude(new BigDecimal(String.format("%.5f", region.getMinLon())));
-				query.setMaxLongitude(new BigDecimal(String.format("%.5f", region.getMaxLon())));
+				query.setMinLatitude(new BigDecimal(String.format(Locale.US, "%.5f", region.getMinLat())));
+				query.setMaxLatitude(new BigDecimal(String.format(Locale.US, "%.5f", region.getMaxLat())));
+				query.setMinLongitude(new BigDecimal(String.format(Locale.US, "%.5f", region.getMinLon())));
+				query.setMaxLongitude(new BigDecimal(String.format(Locale.US, "%.5f", region.getMaxLon())));
 			}
 
 			query.setLimit(20000);

@@ -131,7 +131,7 @@ import java.awt.event.WindowListener;
 
 public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeListener {
 		
-	private GregorianCalendar expirationDate = new GregorianCalendar(2020, 0, 1);
+	//  private GregorianCalendar expirationDate = new GregorianCalendar(2020, 0, 1);
 	
 	public AftershockStatsGUI_ETAS(String... args) {
 		checkArguments(args);
@@ -139,19 +139,19 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		if (devMode) System.out.println("Warning: Running in development mode."
 				+ "This mode is untested and will probably give a bad forecast if not crash outright.");
 		
-		if (!devMode) {
-			//check for expired software
-			SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy");
-			formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
-			double elapsedDays = (double) (System.currentTimeMillis() - expirationDate.getTimeInMillis())/ETAS_StatsCalc.MILLISEC_PER_DAY;
-			
-			if (elapsedDays > 0) {
-				String message = "The Beta version expired on " + formatter.format(expirationDate.getTime()) + ".\n Go get the latest version from www.caltech.edu/~nvandere/AftershockForecaster/.";
-				System.out.println(message);
-				JOptionPane.showMessageDialog(null, message, "Beta version expired", JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-		}
+		//  if (!devMode) {
+		//  	//check for expired software
+		//  	SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy");
+		//  	formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
+		//  	double elapsedDays = (double) (System.currentTimeMillis() - expirationDate.getTimeInMillis())/ETAS_StatsCalc.MILLISEC_PER_DAY;
+		//  	
+		//  	if (elapsedDays > 0) {
+		//  		String message = "The Beta version expired on " + formatter.format(expirationDate.getTime()) + ".\n Go get the latest version from www.caltech.edu/~nvandere/AftershockForecaster/.";
+		//  		System.out.println(message);
+		//  		JOptionPane.showMessageDialog(null, message, "Beta version expired", JOptionPane.ERROR_MESSAGE);
+		//  		return;
+		//  	}
+		//  }
 		
 		if (eventID != null && forecastStartTime != null) {
 			try {
@@ -163,7 +163,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 		else {
 			// try setting the default locale to US to see if we can avoid comma problames
-			Locale.setDefault(Locale.US);
+			// Locale.setDefault(Locale.US);
 			createAndShowGUI();
 		}
 	}
@@ -6475,12 +6475,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			tipText = new ArrayList<String>();
 		}
 		
-		SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy");
-		formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
-		double elapsedDays = (double) (System.currentTimeMillis() - expirationDate.getTimeInMillis())/ETAS_StatsCalc.MILLISEC_PER_DAY;
+		//  SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy");
+		//  formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
+		//  double elapsedDays = (double) (System.currentTimeMillis() - expirationDate.getTimeInMillis())/ETAS_StatsCalc.MILLISEC_PER_DAY;
+		//  
+		//  String welcomeMessage = "This a Beta version of the Aftershock Forecaster software. Get the latest version from www.caltech.edu/~nvandere/AftershockForecaster.\n"
+		//  		+ "The Beta version will expire " + formatter.format(expirationDate.getTime()) + String.format(" (%d days remaining).", (int) -elapsedDays);
 		
-		String welcomeMessage = "This a Beta version of the Aftershock Forecaster software. Get the latest version from www.caltech.edu/~nvandere/AftershockForecaster.\n"
-				+ "The Beta version will expire " + formatter.format(expirationDate.getTime()) + String.format(" (%d days remaining).", (int) -elapsedDays);
+		String welcomeMessage = "This a Beta version of the Aftershock Forecaster software.";
 
 		tipText.add(welcomeMessage + "\n\n>> Welcome to the aftershock forecaster. Enter a USGS event ID to get started. (e.g: us20002926)");
 		tipText.add(">> Specify a forecast start time and duration. Then click \"Fetch Data\" to retrieve the catalog\n  ...or click \"Quick Forecast\" to run the entire forecast automatically with default settings.");
@@ -6533,9 +6535,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //
 //					observedFractile[i][j] = fracLessThanOrEqual - Math.random()*fracEqual;
 
-					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[%.0f] \t%5.4f \t[%5.4f]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], observedNumber[i][j], probability[i][j], observedFractile[i][j]));
+					outputString.append(String.format(Locale.US, "%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[%.0f] \t%5.4f \t[%5.4f]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], observedNumber[i][j], probability[i][j], observedFractile[i][j]));
 				} else {
-					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[-] \t%5.4f \t[-]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], probability[i][j]));
+					outputString.append(String.format(Locale.US, "%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[-] \t%5.4f \t[-]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], probability[i][j]));
 				}
 			}
 		}
@@ -6558,15 +6560,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //
 //					observedFractile[i][j] = fracLessThanOrEqual - Math.random()*fracEqual;
 
-					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[%.0f] \t%5.4f \t[%5.4f]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], observedNumber[i][j], probability[i][j], observedFractile[i][j]));
+					outputString.append(String.format(Locale.US, "%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[%.0f] \t%5.4f \t[%5.4f]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], observedNumber[i][j], probability[i][j], observedFractile[i][j]));
 				} else {
-					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[-] \t%5.4f \t[-]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], probability[i][j]));
+					outputString.append(String.format(Locale.US, "%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[-] \t%5.4f \t[-]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], probability[i][j]));
 				}
 			}
 		}
 		
 		String headerString = "";
-		File outFile = new File(workingDir + "/Forecasts/validationC0_" + String.format("%2.1f", dataEndTimeParam.getValue()) + "/" + eventID + ".forecast");
+		File outFile = new File(workingDir + "/Forecasts/validationC0_" + String.format(Locale.US, "%2.1f", dataEndTimeParam.getValue()) + "/" + eventID + ".forecast");
 		FileWriter fw = null;
 		try {
 			fw = new FileWriter(outFile);

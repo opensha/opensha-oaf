@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Arrays;
+import java.util.Locale;
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
@@ -466,19 +467,19 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				sb.append (String.format(": starttime=%s", Instant.ofEpochMilli(startTime).toString()));
 				sb.append (String.format(", endtime=%s", Instant.ofEpochMilli(endTime).toString()));
 				if (region.isCircular()) {
-					sb.append (String.format(", latitude=%.5f", region.getCircleCenterLat()));
-					sb.append (String.format(", longitude=%.5f", region.getCircleCenterLon()));
-					sb.append (String.format(", maxradius=%.5f", region.getCircleRadiusDeg()));
+					sb.append (String.format(Locale.US, ", latitude=%.5f", region.getCircleCenterLat()));
+					sb.append (String.format(Locale.US, ", longitude=%.5f", region.getCircleCenterLon()));
+					sb.append (String.format(Locale.US, ", maxradius=%.5f", region.getCircleRadiusDeg()));
 				}
 				else {
-					sb.append (String.format(", minlatitude=%.5f", region.getMinLat()));
-					sb.append (String.format(", maxlatitude=%.5f", region.getMaxLat()));
-					sb.append (String.format(", minlongitude=%.5f", region.getMinLon()));
-					sb.append (String.format(", maxlongitude=%.5f", region.getMaxLon()));
+					sb.append (String.format(Locale.US, ", minlatitude=%.5f", region.getMinLat()));
+					sb.append (String.format(Locale.US, ", maxlatitude=%.5f", region.getMaxLat()));
+					sb.append (String.format(Locale.US, ", minlongitude=%.5f", region.getMinLon()));
+					sb.append (String.format(Locale.US, ", maxlongitude=%.5f", region.getMaxLon()));
 				}
-				sb.append (String.format(", mindepth=%.3f", minDepth));
-				sb.append (String.format(", maxdepth=%.3f", maxDepth));
-				sb.append (String.format(", minmagnitude=%.3f", minMag));
+				sb.append (String.format(Locale.US, ", mindepth=%.3f", minDepth));
+				sb.append (String.format(Locale.US, ", maxdepth=%.3f", maxDepth));
+				sb.append (String.format(Locale.US, ", minmagnitude=%.3f", minMag));
 				System.out.println (sb.toString());
 			}
 
@@ -1974,6 +1975,193 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 				System.out.println ();
 				System.out.println (GeoJsonUtils.jsonObjectToString (accessor.get_last_geojson()));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #16
+		// Command format:
+		//  test16
+		// This displays numbers formatted in different locales in various ways.
+		// This is to help with internationalizing the Comcat accessor.
+
+		if (args[0].equalsIgnoreCase ("test16")) {
+
+			// No additional arguments
+
+			if (args.length != 1) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test16' subcommand");
+				return;
+			}
+
+			// List of locale language tags
+
+			String[] lang_tags = new String[7];
+			lang_tags[0] = "default";
+			lang_tags[1] = "en-US";
+			lang_tags[2] = "da-DK";
+			lang_tags[3] = "es-ES";
+			lang_tags[4] = "fr-FR";
+			lang_tags[5] = "sk-SK";
+			lang_tags[6] = "ja-JP";
+
+			// Numbers to format
+
+			double[] values = new double[6];
+			values[0] = 1234.56;
+			values[1] = -1234.56;
+			values[2] = 123456e20;
+			values[3] = -123456e20;
+			values[4] = 123456e-20;
+			values[5] = -123456e-20;
+
+			// Loop over locales
+
+			for (String lang_tag : lang_tags) {
+
+				// Display name and set the default locale
+
+				System.out.println();
+				System.out.println ("Locale: " + lang_tag);
+				if (!( lang_tag.equals ("default") )) {
+					Locale.setDefault (Locale.forLanguageTag (lang_tag));
+				}
+
+				// Loop over values
+
+				for (double value : values) {
+
+					// Format in various ways
+
+					String s1 = "" + value;
+					String s2 = Double.toString (value);
+					String s3 = String.format ("%.5f", value);
+					String s4 = String.format ("%.12e", value);
+					String s5 = String.format (Locale.US, "%.5f", value);
+					String s6 = String.format (Locale.US, "%.12e", value);
+					String s7 = (new BigDecimal (value)).toString();
+
+					System.out.println (s1 + "  " + s2 + "  " + s3 + "  " + s4 + "  " + s5 + "  " + s6 + "  " + s7);
+				}
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #17
+		// Command format:
+		//  test17  event_id  min_days  max_days  radius_km  min_mag  limit_per_call  lang_tag
+		// Fetch information for an event, and display it.
+		// Then fetch the event list for a circle surrounding the hypocenter,
+		// for the specified interval in days after the origin time,
+		// excluding the event itself.
+		// The adjustable limit per call can test the multi-fetch logic.
+		// The lang_tag specifies the default locale, and can test function in various locales.
+		// The lang_tag can be "default" to leave the default locale unchanged.
+		// Same as test #2 except with the lang_tag argument added.
+
+		if (args[0].equalsIgnoreCase ("test17")) {
+
+			// Seven additional arguments
+
+			if (args.length != 8) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test17' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				double min_days = Double.parseDouble (args[2]);
+				double max_days = Double.parseDouble (args[3]);
+				double radius_km = Double.parseDouble (args[4]);
+				double min_mag = Double.parseDouble (args[5]);
+				int limit_per_call = Integer.parseInt(args[6]);
+				String lang_tag = args[7];
+
+				// Set the selected default locale
+
+				System.out.println ("Locale: " + lang_tag);
+				if (!( lang_tag.equals ("default") )) {
+					Locale.setDefault (Locale.forLanguageTag (lang_tag));
+				}
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+				long rup_time = rup.getOriginTime();
+				Location hypo = rup.getHypocenterLocation();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				// Say hello
+
+				System.out.println ("Fetching event list");
+				System.out.println ("min_days = " + min_days);
+				System.out.println ("max_days = " + max_days);
+				System.out.println ("radius_km = " + radius_km);
+				System.out.println ("min_mag = " + min_mag);
+				System.out.println ("limit_per_call = " + limit_per_call);
+
+				// Construct the Region
+
+				SphRegionCircle region = new SphRegionCircle (new SphLatLon(hypo), radius_km);
+
+				// Calculate the times
+
+				long startTime = rup_time + (long)(min_days*day_millis);
+				long endTime = rup_time + (long)(max_days*day_millis);
+
+				// Call Comcat
+
+				double minDepth = DEFAULT_MIN_DEPTH;
+				double maxDepth = DEFAULT_MAX_DEPTH;
+				boolean wrapLon = false;
+				boolean extendedInfo = false;
+				int max_calls = 0;
+
+				ObsEqkRupList rup_list = accessor.fetchEventList (rup_event_id, startTime, endTime,
+						minDepth, maxDepth, region, wrapLon, extendedInfo,
+						min_mag, limit_per_call, max_calls);
+
+				// Display the information
+
+				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
+
+				int n_status = accessor.get_http_status_count();
+				for (int i = 0; i < n_status; ++i) {
+					System.out.println ("http_status[" + i + "] = " + accessor.get_http_status_code(i));
+				}
 
 			} catch (Exception e) {
 				e.printStackTrace();
