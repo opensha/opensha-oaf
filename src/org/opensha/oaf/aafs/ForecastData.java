@@ -1,5 +1,15 @@
 package org.opensha.oaf.aafs;
 
+import java.io.File;
+import java.io.Reader;
+import java.io.FileReader;
+import java.io.BufferedReader;
+import java.io.Writer;
+import java.io.FileWriter;
+import java.io.BufferedWriter;
+import java.io.Closeable;
+import java.io.IOException;
+
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
@@ -195,6 +205,124 @@ public class ForecastData {
 		unmarshal (reader, null);
 		reader.check_read_complete ();
 		return this;
+	}
+
+
+
+
+	// Convert to JSON file.
+
+	public void to_json_file (String filename) {
+
+		try (
+			BufferedWriter file_writer = new BufferedWriter (new FileWriter (filename));
+		){
+			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+			marshal (writer, null);
+			writer.check_write_complete ();
+			writer.write_json_file (file_writer);
+		}
+		catch (IOException e) {
+			throw new MarshalException ("ForecastData: I/O error while writing JSON file: " + filename, e);
+		}
+
+		return;
+	}
+
+
+
+
+	// Set contents from JSON file.
+	// Note: This also rebuilds transient data.
+
+	public ForecastData from_json_file (String filename) {
+
+		try (
+			BufferedReader file_reader = new BufferedReader (new FileReader (filename));
+		){
+			MarshalImpJsonReader reader = new MarshalImpJsonReader (file_reader);
+			unmarshal (reader, null);
+			reader.check_read_complete ();
+			rebuild_data();
+		}
+		catch (IOException e) {
+			throw new MarshalException ("ForecastData: I/O error while reading JSON file: " + filename, e);
+		}
+
+		return this;
+	}
+
+
+
+
+	// Set contents from JSON file.
+	// Note: This does not rebuild transient data.
+
+	public ForecastData from_json_file_no_rebuild (String filename) {
+
+		try (
+			BufferedReader file_reader = new BufferedReader (new FileReader (filename));
+		){
+			MarshalImpJsonReader reader = new MarshalImpJsonReader (file_reader);
+			unmarshal (reader, null);
+			reader.check_read_complete ();
+		}
+		catch (IOException e) {
+			throw new MarshalException ("ForecastData: I/O error while reading JSON file: " + filename, e);
+		}
+
+		return this;
+	}
+
+
+
+
+	// Set variables for standard format.
+	// Note: This is the default.
+
+	public void set_standard_format () {
+		if (catalog != null) {
+			catalog.set_standard_format();
+		}
+		return;
+	}
+
+
+
+
+	// Set variables for friendly format.
+
+	public void set_friendly_format () {
+		if (catalog != null) {
+			catalog.set_friendly_format (mainshock);
+		}
+		return;
+	}
+
+
+
+
+	// Convert a JSON file to friendly format.
+
+	public static ForecastData convert_json_file_to_friendly (String in_filename, String out_filename) {
+		ForecastData fcdata = new ForecastData();
+		fcdata.from_json_file_no_rebuild (in_filename);
+		fcdata.set_friendly_format();
+		fcdata.to_json_file (out_filename);
+		return fcdata;
+	}
+
+
+
+
+	// Convert a JSON file to standard format.
+
+	public static ForecastData convert_json_file_to_standard (String in_filename, String out_filename) {
+		ForecastData fcdata = new ForecastData();
+		fcdata.from_json_file_no_rebuild (in_filename);
+		fcdata.set_standard_format();
+		fcdata.to_json_file (out_filename);
+		return fcdata;
 	}
 
 
@@ -925,6 +1053,334 @@ public class ForecastData {
 			// Send the product, true means it is text
 
 			PDLSender.sendProduct(product, true);
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  event_id
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then put everything in a ForecastData object, set friendly format, and display it.
+		// Then convert to JSON, and display the JSON.
+		// Then read from JSON, and display it (including rebuilt transient data).
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("ForecastData : Invalid 'test5' subcommand");
+				return;
+			}
+
+			String the_event_id = args[1];
+
+			// Fetch just the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Set the forecast time to be 7 days after the mainshock
+
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "", fcmain, params, true);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (results.toString());
+
+			// Construct the forecast data
+
+			AnalystOptions fc_analyst = new AnalystOptions();
+			long ctime = System.currentTimeMillis();
+
+			ForecastData fcdata = new ForecastData();
+			fcdata.set_data (ctime, fcmain, params, results, fc_analyst);
+
+			// Set friendly format
+
+			fcdata.set_friendly_format();
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (fcdata.toString());
+
+			// Convert to JSON
+
+			String json_string = fcdata.to_json();
+
+			System.out.println ("");
+			System.out.println (json_string);
+
+			// Read from JSON
+
+			ForecastData fcdata2 = new ForecastData();
+			fcdata2.from_json (json_string);
+
+			System.out.println ("");
+			System.out.println (fcdata2.toString());
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6  event_id  filename
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then put everything in a ForecastData object, and display it.
+		// Then write to JSON file.
+		// Then read from JSON file, and display it (including rebuilt transient data).
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// Two additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("ForecastData : Invalid 'test6' subcommand");
+				return;
+			}
+
+			String the_event_id = args[1];
+			String filename = args[2];
+
+			// Fetch just the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Set the forecast time to be 7 days after the mainshock
+
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "", fcmain, params, true);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (results.toString());
+
+			// Construct the forecast data
+
+			AnalystOptions fc_analyst = new AnalystOptions();
+			long ctime = System.currentTimeMillis();
+
+			ForecastData fcdata = new ForecastData();
+			fcdata.set_data (ctime, fcmain, params, results, fc_analyst);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (fcdata.toString());
+
+			// Write to JSON file
+
+			fcdata.to_json_file (filename);
+
+			// Read from JSON file
+
+			ForecastData fcdata2 = new ForecastData();
+			fcdata2.from_json_file (filename);
+
+			System.out.println ("");
+			System.out.println (fcdata2.toString());
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  event_id  filename
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then put everything in a ForecastData object, set friendly format, and display it.
+		// Then write to JSON file.
+		// Then read from JSON file, and display it (including rebuilt transient data).
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// Two additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("ForecastData : Invalid 'test7' subcommand");
+				return;
+			}
+
+			String the_event_id = args[1];
+			String filename = args[2];
+
+			// Fetch just the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Set the forecast time to be 7 days after the mainshock
+
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "", fcmain, params, true);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (results.toString());
+
+			// Construct the forecast data
+
+			AnalystOptions fc_analyst = new AnalystOptions();
+			long ctime = System.currentTimeMillis();
+
+			ForecastData fcdata = new ForecastData();
+			fcdata.set_data (ctime, fcmain, params, results, fc_analyst);
+
+			// Set friendly format
+
+			fcdata.set_friendly_format();
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (fcdata.toString());
+
+			// Write to JSON file
+
+			fcdata.to_json_file (filename);
+
+			// Read from JSON file
+
+			ForecastData fcdata2 = new ForecastData();
+			fcdata2.from_json_file (filename);
+
+			System.out.println ("");
+			System.out.println (fcdata2.toString());
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #8
+		// Command format:
+		//  test8  in_filename  out_filename
+		// Convert a JSON file to friendly format.
+		// Display the ForecastData object.
+
+		if (args[0].equalsIgnoreCase ("test8")) {
+
+			// Two additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("ForecastData : Invalid 'test8' subcommand");
+				return;
+			}
+
+			String in_filename = args[1];
+			String out_filename = args[2];
+
+			// Convert to friendly format
+
+			ForecastData fcdata = ForecastData.convert_json_file_to_friendly (in_filename, out_filename);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (fcdata.toString());
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #9
+		// Command format:
+		//  test9  in_filename  out_filename
+		// Convert a JSON file to standard format.
+		// Display the ForecastData object.
+
+		if (args[0].equalsIgnoreCase ("test9")) {
+
+			// Two additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("ForecastData : Invalid 'test9' subcommand");
+				return;
+			}
+
+			String in_filename = args[1];
+			String out_filename = args[2];
+
+			// Convert to standard format
+
+			ForecastData fcdata = ForecastData.convert_json_file_to_standard (in_filename, out_filename);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (fcdata.toString());
 
 			return;
 		}
