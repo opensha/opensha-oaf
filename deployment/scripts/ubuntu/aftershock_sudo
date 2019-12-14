@@ -1,0 +1,3 @@
+%aftershock ALL=NOPASSWD: /usr/sbin/service mongod start
+%aftershock ALL=NOPASSWD: /usr/sbin/service mongod stop
+
