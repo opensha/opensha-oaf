@@ -510,6 +510,26 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 		}
 	}
 
+	/**
+	 * Unmarshal a float.
+	 */
+	@Override
+	public float unmarshalFloat (String name) {
+		current_context_read.check_name (name);
+		try {
+			if (f_store_names && name != null) {
+				String w = data_in.readUTF();
+				if (!( name.equals(w) ))
+				{
+					throw new MarshalException ("Unmarshal field name mismatch: expected = " + name + ", got = " + w);
+				}
+			}
+			return data_in.readFloat();
+		} catch (IOException e) {
+			throw new MarshalException ("MarshalImpDataReader: I/O exception", e);
+		}
+	}
+
 	//----- Construction -----
 
 	/**

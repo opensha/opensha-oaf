@@ -463,6 +463,23 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		return;
 	}
 
+	/**
+	 * Marshal a float.
+	 */
+	@Override
+	public void marshalFloat (String name, float x) {
+		current_context_write.check_name (name);
+		try {
+			if (f_store_names && name != null) {
+				data_out.writeUTF (name);
+			}
+			data_out.writeFloat (x);
+		} catch (IOException e) {
+			throw new MarshalException ("MarshalImpDataWriter: I/O exception", e);
+		}
+		return;
+	}
+
 	//----- Construction -----
 
 	/**

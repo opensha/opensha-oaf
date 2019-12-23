@@ -35,6 +35,12 @@ public class OERupture {
 
 	public double k_prod;
 
+	// Parent rupture number.
+	// The index number of the parent rupture, within the prior generation.
+	// The value -1 indicates no parent.
+
+	public int rup_parent;
+
 	// Rupture location.
 	// This is measured in a planar (x,y) coordinate system, in kilometers.
 	// The origin and map projection are unspecified; typically an azimuthal equidistant
@@ -55,11 +61,12 @@ public class OERupture {
 	// Clear to default values.
 
 	public void clear () {
-		t_day = 0.0;
-		rup_mag = 0.0;
-		k_prod = 0.0;
-		x_km = 0.0;
-		y_km = 0.0;
+		t_day      = 0.0;
+		rup_mag    = 0.0;
+		k_prod     = 0.0;
+		rup_parent = -1;
+		x_km       = 0.0;
+		y_km       = 0.0;
 		return;
 	}
 
@@ -77,13 +84,14 @@ public class OERupture {
 
 	// Set the values, for temporal ETAS.
 
-	public void set (double t_day, double rup_mag, double k_prod) {
-		this.t_day = t_day;
-		this.rup_mag = rup_mag;
-		this.k_prod = k_prod;
-		x_km = 0.0;
-		y_km = 0.0;
-		return;
+	public OERupture set (double t_day, double rup_mag, double k_prod, int rup_parent) {
+		this.t_day      = t_day;
+		this.rup_mag    = rup_mag;
+		this.k_prod     = k_prod;
+		this.rup_parent = rup_parent;
+		this.x_km       = 0.0;
+		this.y_km       = 0.0;
+		return this;
 	}
 
 
@@ -91,13 +99,56 @@ public class OERupture {
 
 	// Set the values, for spatial ETAS.
 
-	public void set (double t_day, double rup_mag, double k_prod, double x_km, double y_km) {
-		this.t_day = t_day;
-		this.rup_mag = rup_mag;
-		this.k_prod = k_prod;
-		this.x_km = x_km;
-		this.y_km = y_km;
-		return;
+	public OERupture set (double t_day, double rup_mag, double k_prod, int rup_parent, double x_km, double y_km) {
+		this.t_day      = t_day;
+		this.rup_mag    = rup_mag;
+		this.k_prod     = k_prod;
+		this.rup_parent = rup_parent;
+		this.x_km       = x_km;
+		this.y_km       = y_km;
+		return this;
+	}
+
+
+
+
+	// Display our contents.
+
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OERupture:" + "\n");
+
+		result.append ("t_day = " + t_day + "\n");
+		result.append ("rup_mag = " + rup_mag + "\n");
+		result.append ("k_prod = " + k_prod + "\n");
+		result.append ("rup_parent = " + rup_parent + "\n");
+		result.append ("x_km = " + x_km + "\n");
+		result.append ("y_km = " + y_km + "\n");
+
+		return result.toString();
+	}
+
+
+
+
+	// Produce a one-line string containing our contents (not newline-terminated).
+
+	public String one_line_string () {
+		return String.format ("t=%.5f, mag=%.3f, k=%.4e, parent=%d, x=%.3f, y=%.3f",
+			t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
+	}
+
+
+
+
+	// Produce a one-line string containing our contents (not newline-terminated).
+	// This version prepends an index.
+
+	public String one_line_string (int j_rup) {
+		return String.format ("%d: t=%.5f, mag=%.3f, k=%.4e, parent=%d, x=%.3f, y=%.3f",
+			j_rup, t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
 	}
 
 
@@ -109,11 +160,12 @@ public class OERupture {
 
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
-		writer.marshalDouble ("t_day", t_day);
-		writer.marshalDouble ("rup_mag", rup_mag);
-		writer.marshalDouble ("k_prod", k_prod);
-		writer.marshalDouble ("x_km", x_km);
-		writer.marshalDouble ("y_km", y_km);
+		writer.marshalDouble ("t_day"     , t_day     );
+		writer.marshalDouble ("rup_mag"   , rup_mag   );
+		writer.marshalDouble ("k_prod"    , k_prod    );
+		writer.marshalInt    ("rup_parent", rup_parent);
+		writer.marshalDouble ("x_km"      , x_km      );
+		writer.marshalDouble ("y_km"      , y_km      );
 		writer.marshalMapEnd ();
 		return;
 	}
@@ -122,12 +174,54 @@ public class OERupture {
 
 	public OERupture unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
-		t_day = reader.unmarshalDouble ("t_day");
-		rup_mag = reader.unmarshalDouble ("rup_mag");
-		k_prod = reader.unmarshalDouble ("k_prod");
-		x_km = reader.unmarshalDouble ("x_km");
-		y_km = reader.unmarshalDouble ("y_km");
+		t_day      = reader.unmarshalDouble ("t_day"     );
+		rup_mag    = reader.unmarshalDouble ("rup_mag"   );
+		k_prod     = reader.unmarshalDouble ("k_prod"    );
+		rup_parent = reader.unmarshalInt    ("rup_parent");
+		x_km       = reader.unmarshalDouble ("x_km"      );
+		y_km       = reader.unmarshalDouble ("y_km"      );
 		reader.unmarshalMapEnd ();
+		return this;
+	}
+
+
+
+
+	//----- Testing -----
+
+
+
+
+	// Check if two ruptures are identical.
+	// Note: This is primarily for testing.
+
+	public boolean check_rup_equal (OERupture other) {
+		if (
+			   this.t_day      == other.t_day
+			&& this.rup_mag    == other.rup_mag
+			&& this.k_prod     == other.k_prod
+			&& this.rup_parent == other.rup_parent
+			&& this.x_km       == other.x_km
+			&& this.y_km       == other.y_km
+		) {
+			return true;
+		}
+		return false;
+	}
+
+
+
+
+	// Set to plausible random values.
+	// Note: This is primarily for testing.
+
+	public OERupture set_to_random (OERandomGenerator rangen) {
+		this.t_day      = rangen.uniform_sample (0.0, 3650.0);
+		this.rup_mag    = rangen.uniform_sample (3.0, 9.0);
+		this.k_prod     = Math.pow (10.0, rangen.uniform_sample (-5.0, 5.0));
+		this.rup_parent = rangen.uniform_int_sample (-1, 500);
+		this.x_km       = rangen.uniform_sample (-2000.0, 2000.0);
+		this.y_km       = rangen.uniform_sample (-2000.0, 2000.0);
 		return this;
 	}
 

@@ -113,6 +113,14 @@ public interface MarshalReader {
 	}
 
 	/**
+	 * Unmarshal a float.
+	 */
+	public default float unmarshalFloat (String name) {
+		double x = unmarshalDouble (name);
+		return (float)x;
+	}
+
+	/**
 	 * Unmarshal a JSON string.  (Null strings are not allowed.)
 	 * The string must contain a JSON object or array, or be an empty string.
 	 * For JSON storage, the string is merged into the JSON instead of being
@@ -257,6 +265,39 @@ public interface MarshalReader {
 	}
 
 	/**
+	 * Unmarshal a float array.
+	 */
+	public default float[] unmarshalFloatArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		float[] x = new float[n];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalFloat (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	public default float[][] unmarshalFloat2DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		float[][] x = new float[n][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalFloatArray (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	public default float[][][] unmarshalFloat3DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		float[][][] x = new float[n][][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalFloat2DArray (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	/**
 	 * Unmarshal a long collection.
 	 */
 	public default void unmarshalLongCollection (String name, Collection<Long> x) {
@@ -299,6 +340,18 @@ public interface MarshalReader {
 		int n = unmarshalArrayBegin (name);
 		for (int i = 0; i < n; ++i) {
 			x.add (new Integer (unmarshalInt (null)));
+		}
+		unmarshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Unmarshal a float collection.
+	 */
+	public default void unmarshalFloatCollection (String name, Collection<Float> x) {
+		int n = unmarshalArrayBegin (name);
+		for (int i = 0; i < n; ++i) {
+			x.add (new Float (unmarshalFloat (null)));
 		}
 		unmarshalArrayEnd ();
 		return;

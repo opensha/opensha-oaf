@@ -13,6 +13,8 @@ import cern.jet.random.tdouble.DoubleUniform;
 
 import org.opensha.oaf.util.TestMode;
 
+import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;	// natural logarithm of 10
+
 
 
 
@@ -200,6 +202,96 @@ public class OERandomGenerator {
 		}
 
 		return u;
+	}
+
+
+
+
+	// Sample from an integer-valued uniform distribution.
+	// Parameters:
+	//  i1 = Lower limit.
+	//  i2 = Upper limit, must satisfy i1 <= i2.
+	// Note: Because random number resolution is typically 32 bits,
+	// very large ranges of integers may have individual probabilites
+	// noticeably different than uniform.
+
+	public int uniform_int_sample (int i1, int i2) {
+		double u = gen_uniform.nextDoubleFromTo (((double)i1) - 0.5, ((double)i2) + 0.5);
+
+		// Convert to integer and force result to lie between i1 and i2
+
+		long v = Math.round (u);
+
+		if (v > (long)i2) {
+			v = (long)i2;
+		}
+		if (v < (long)i1) {
+			v = (long)i1;
+		}
+
+		return (int)v;
+	}
+
+
+
+
+	// Pick an element given the cumulative probability density.
+	// Parameters:
+	//  x = Array of cumulative probability values, x[i] = P(v <= i).
+	//  len = Length of array (uses x[0] through x[len-1]).
+	//  u = Random number uniformly distributed between 0 and 1.
+	// Returns an integer v such that 0 <= v < len, where the probability
+	// of choosing v is proportional to x[v] - x[v-1] (for this purpose,
+	// x[-1] is taken to be zero).
+	// Requires 0 <= x[0] <= x[1] <= ... <= x[len-1].
+	// Note that if there is a run of array elements with the same cumulative
+	// probability, only the first element in the run can be chosen.
+	// Note that x need not be normalized (that is, x[len-1] need not equal 1).
+
+	// Implementation notes: Works by binary search.
+	// The cutoff value is cut = x[len-1] * u.
+	// The search indices lo and hi are maintained so that
+	// x[lo] < cut and x[hi] >= cut.
+	//
+	// We use max(u, 1e-16) because otherwise u == 0.0 and x[0] == 0.0 would
+	// cause the algorithm to incorrectly return 0.
+
+	public static int cumulative_pick (double[] x, int len, double u) {
+		int lo = -1;
+		int hi = len - 1;
+		double cut = x[hi] * Math.max(u, 1.0e-16);
+
+		while (hi - lo > 1) {
+			int mid = (hi + lo) / 2;
+			if (x[mid] < cut) {
+				lo = mid;
+			} else {
+				hi = mid;
+			}
+		}
+
+		return hi;
+	}
+
+
+
+
+	// Sample an element given the cumulative probability density.
+	// Parameters:
+	//  x = Array of cumulative probability values, x[i] = P(v <= i).
+	//  len = Length of array (uses x[0] through x[len-1]).
+	//  u = Random number uniformly distributed between 0 and 1.
+	// Returns an integer v such that 0 <= v < len, where the probability
+	// of choosing v is proportional to x[v] - x[v-1] (for this purpose,
+	// x[-1] is taken to be zero).
+	// Requires 0 <= x[0] <= x[1] <= ... <= x[len-1].
+	// Note that if there is a run of array elements with the same cumulative
+	// probability, only the first element in the run can be chosen.
+	// Note that x need not be normalized (that is, x[len-1] need not equal 1).
+
+	public int cumulative_sample (double[] x, int len) {
+		double u = uniform_sample (0.0, 1.0);
+		return cumulative_pick (x, len, u);
 	}
 
 
@@ -520,7 +612,7 @@ public class OERandomGenerator {
 	// beta = b*log(10)
 
 	public static double gr_rate (double b, double mref, double m1, double m2) {
-		double beta = 2.3025850929940457 * b;	// log(10) * b
+		double beta = C_LOG_10 * b;	// log(10) * b
 
 		// Calculate directly, using expm1 to avoid cancellation when
 		// m1 and m2 are almost equal.
@@ -551,7 +643,7 @@ public class OERandomGenerator {
 	// beta = b*log(10)
 
 	public static double gr_inv_rate (double b, double mref, double m2, double rate) {
-		double beta = 2.3025850929940457 * b;	// log(10) * b
+		double beta = C_LOG_10 * b;	// log(10) * b
 
 		// Calculate directly
 
@@ -585,7 +677,7 @@ public class OERandomGenerator {
 	// beta = b*log(10)
 
 	public static double gr_rescale (double b, double m1, double m2, double u) {
-		double beta = 2.3025850929940457 * b;	// log(10) * b
+		double beta = C_LOG_10 * b;	// log(10) * b
 
 		// Calculate directly, using expm1 and log1p to avoid cancellation
 

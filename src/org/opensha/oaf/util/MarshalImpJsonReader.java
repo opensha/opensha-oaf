@@ -472,6 +472,21 @@ public class MarshalImpJsonReader implements MarshalReader {
 	}
 
 	/**
+	 * Unmarshal a float.
+	 */
+	@Override
+	public float unmarshalFloat (String name) {
+		Object o = current_context_read.check_name (name);
+		if (o == null) {
+			throw new MarshalException ("Unmarshal float found null data: name = " + ((name == null) ? "null" : name));		
+		}
+		if (!( o instanceof Number )) {
+			throw new MarshalException ("Unmarshal float found non-numeric data type: name = " + ((name == null) ? "null" : name));
+		}
+		return ((Number)o).floatValue();
+	}
+
+	/**
 	 * Unmarshal a JSON string.  (Null strings are not allowed.)
 	 * The string must contain a JSON object or array, or be an empty string.
 	 * For JSON storage, the string is merged into the JSON instead of being

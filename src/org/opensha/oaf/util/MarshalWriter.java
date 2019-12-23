@@ -60,6 +60,14 @@ public interface MarshalWriter {
 	}
 
 	/**
+	 * Marshal a float.
+	 */
+	public default void marshalFloat (String name, float x) {
+		marshalDouble (name, (double)x);
+		return;
+	}
+
+	/**
 	 * Marshal a JSON string.  (Null strings are not allowed.)
 	 * The string must contain a JSON object or array, or be an empty string.
 	 * For JSON storage, the string is merged into the JSON instead of being
@@ -205,6 +213,39 @@ public interface MarshalWriter {
 	}
 
 	/**
+	 * Marshal a float array.
+	 */
+	public default void marshalFloatArray (String name, float[] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalFloat (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalFloat2DArray (String name, float[][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalFloatArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalFloat3DArray (String name, float[][][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalFloat2DArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
 	 * Marshal a long collection.
 	 */
 	public default void marshalLongCollection (String name, Collection<Long> x) {
@@ -251,6 +292,19 @@ public interface MarshalWriter {
 		marshalArrayBegin (name, n);
 		for (Integer y : x) {
 			 marshalInt (null, y.intValue());
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	/**
+	 * Marshal a float collection.
+	 */
+	public default void marshalFloatCollection (String name, Collection<Float> x) {
+		int n = x.size();
+		marshalArrayBegin (name, n);
+		for (Float y : x) {
+			 marshalFloat (null, y.floatValue());
 		}
 		marshalArrayEnd ();
 		return;
