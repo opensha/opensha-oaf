@@ -56,4 +56,82 @@ public interface OECatalogView {
 
 	public void get_rup (int i_gen, int j_rup, OERupture rup);
 
+	// Construct a string that summarizes the catalog contents.
+	// This displays the catalog size and generation count,
+	// parameters, and info for each generation.
+
+	public default String summary_and_gen_list_string() {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OECatalogView:" + "\n");
+
+		// Size and generation count
+
+		int the_size = size();
+		int gen_count = get_gen_count();
+		result.append ("size = "      + the_size  + "\n");
+		result.append ("gen_count = " + gen_count + "\n");
+
+		// Catalog parameters
+
+		OECatalogParams cat_params = new OECatalogParams();
+		get_cat_params (cat_params);
+		result.append (cat_params.toString());
+
+		// List of generation info
+
+		OEGenerationInfo gen_info = new OEGenerationInfo();
+		for (int i_gen = 0; i_gen < gen_count; ++i_gen) {
+			int gen_size = get_gen_size (i_gen);
+			get_gen_info (i_gen, gen_info);
+			result.append (gen_info.one_line_string (i_gen, gen_size) + "\n");
+		}
+
+		return result.toString();
+	}
+
+	// Construct a string that dumps the entire catalog contents.
+	// Caution: This can be very large!
+
+	public default String dump_to_string() {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OECatalogView:" + "\n");
+
+		// Size and generation count
+
+		int the_size = size();
+		int gen_count = get_gen_count();
+		result.append ("size = "      + the_size  + "\n");
+		result.append ("gen_count = " + gen_count + "\n");
+
+		// Catalog parameters
+
+		OECatalogParams cat_params = new OECatalogParams();
+		get_cat_params (cat_params);
+		result.append (cat_params.toString());
+
+		// List of generation info
+
+		OEGenerationInfo gen_info = new OEGenerationInfo();
+		for (int i_gen = 0; i_gen < gen_count; ++i_gen) {
+			int gen_size = get_gen_size (i_gen);
+			get_gen_info (i_gen, gen_info);
+			result.append (gen_info.one_line_string (i_gen, gen_size) + "\n");
+		}
+
+		// Ruptures
+
+		OERupture rup = new OERupture();
+		for (int i_gen = 0; i_gen < gen_count; ++i_gen) {
+			int gen_size = get_gen_size (i_gen);
+			for (int j_rup = 0; j_rup < gen_size; ++j_rup) {
+				get_rup (i_gen, j_rup, rup);
+				result.append (rup.one_line_string (i_gen, j_rup) + "\n");
+			}
+		}
+
+		return result.toString();
+	}
+
 }

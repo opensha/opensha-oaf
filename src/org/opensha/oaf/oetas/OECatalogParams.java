@@ -470,4 +470,40 @@ public class OECatalogParams {
 		return this;
 	}
 
+
+
+
+	// Set to typical values, with some user-adjustable parameters.
+	// Note: This is primarily for testing.
+
+	public OECatalogParams set_to_typical (
+		double a,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		int gen_size_target,
+		int gen_count_max
+	) {
+		this.a               = a;
+		this.p               = p;
+		this.c               = c;
+		this.b               = b;
+		this.alpha           = alpha;
+		this.mref            = 3.0;
+		this.msup            = 9.5;
+		this.tbegin          = 1.0;
+		this.tend            = 366.0;
+		this.teps            = 0.00001;
+		this.mag_min_sim     = 3.0;
+		this.mag_max_sim     = 9.5;
+		this.mag_min_lo      = 2.0;
+		this.mag_min_hi      = 6.0;
+		this.mag_max_lo      = 9.5;
+		this.mag_max_hi      = 9.5;
+		this.gen_size_target = gen_size_target;
+		this.gen_count_max   = gen_count_max;
+		return this;
+	}
+
 }

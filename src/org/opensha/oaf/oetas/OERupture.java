@@ -154,6 +154,17 @@ public class OERupture {
 
 
 
+	// Produce a one-line string containing our contents (not newline-terminated).
+	// This version prepends two indexes.
+
+	public String one_line_string (int i_gen, int j_rup) {
+		return String.format ("%d, %d: t=%.5f, mag=%.3f, k=%.4e, parent=%d, x=%.3f, y=%.3f",
+			i_gen, j_rup, t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal object.

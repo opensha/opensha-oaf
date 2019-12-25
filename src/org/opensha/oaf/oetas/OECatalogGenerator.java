@@ -409,7 +409,7 @@ public class OECatalogGenerator {
 					// Assign a productivity to this child
 
 					next_rup.k_prod = OEStatsCalc.calc_k_corr (
-						cur_rup.rup_mag,		// m0
+						next_rup.rup_mag,		// m0
 						cat_params,				// cat_params
 						next_gen_info			// gen_info
 						);
@@ -471,6 +471,610 @@ public class OECatalogGenerator {
 		// Return number of generations
 
 		return cat_builder.get_gen_count();
+	}
+
+
+
+
+	//----- Testing -----
+
+
+
+
+	public static void main(String[] args) {
+
+		// There needs to be at least one argument, which is the subcommand
+
+		if (args.length < 1) {
+			System.err.println ("OECatalogStorage : Missing subcommand");
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #1
+		// Command format:
+		//  test1  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main
+		// Build a catalog with the given parameters.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then display the catalog summary and generation list.
+
+		if (args[0].equalsIgnoreCase ("test1")) {
+
+			// 8 additional arguments
+
+			if (args.length != 9) {
+				System.err.println ("OECatalogStorage : Invalid 'test1' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				int gen_size_target = Integer.parseInt (args[6]);
+				int gen_count_max = Integer.parseInt (args[7]);
+				double mag_main = Double.parseDouble (args[8]);
+
+				// Say hello
+
+				System.out.println ("Generating catalog with given parameters");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("gen_size_target = " + gen_size_target);
+				System.out.println ("gen_count_max = " + gen_count_max);
+				System.out.println ("mag_main = " + mag_main);
+
+				// Get the random number generator
+
+				OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+
+				// Allocate the storage
+
+				OECatalogStorage cat_storage = new OECatalogStorage();
+
+				// Set up catalog parameters
+
+				double a = 0.0;			// for the moment
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_typical (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					gen_size_target,
+					gen_count_max
+				);
+
+				// Compute productivity "a" for the given branch ratio
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				a = OEStatsCalc.calc_inv_branch_ratio (n, test_cat_params);
+				test_cat_params.a = a;
+				System.out.println ("a = " + a);
+
+				// Recompute branch ratio to check it agrees with input
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Begin the catalog
+
+				System.out.println ();
+				System.out.println ("Generating catalog...");
+
+				cat_storage.begin_catalog (test_cat_params);
+
+				// Begin the first generation
+
+				OEGenerationInfo test_gen_info = (new OEGenerationInfo()).set (
+					test_cat_params.mref,	// gen_mag_min
+					test_cat_params.msup	// gen_mag_max
+				);
+
+				cat_storage.begin_generation (test_gen_info);
+
+				// Insert the mainshock rupture
+
+				OERupture mainshock_rup = new OERupture();
+
+				double k_prod = OEStatsCalc.calc_k_corr (
+					mag_main,			// m0
+					test_cat_params,	// cat_params
+					test_gen_info		// gen_info
+				);
+
+				mainshock_rup.set (
+					0.0,			// t_day
+					mag_main,		// rup_mag
+					k_prod,			// k_prod
+					-1,				// rup_parent
+					0.0,			// x_km
+					0.0				// y_km
+				);
+
+				cat_storage.add_rup (mainshock_rup);
+
+				// End the first generation
+
+				cat_storage.end_generation();
+
+				// Make the catalog generator
+				
+				OECatalogGenerator cat_generator = new OECatalogGenerator();
+				cat_generator.setup (rangen, cat_storage, true);
+
+				// Calculate all generations and end the catalog
+
+				cat_generator.calc_all_gen();
+
+				// Display catalog summary and generation list
+
+				System.out.println ();
+				System.out.println ("Catalog summary...");
+				System.out.println ();
+				System.out.println (cat_storage.summary_and_gen_list_string());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main
+		// Build a catalog with the given parameters.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then display the catalog summary and generation list.
+		// Same as test #1 except does not allow the minimum magnitude to be adjusted.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 8 additional arguments
+
+			if (args.length != 9) {
+				System.err.println ("OECatalogStorage : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				int gen_size_target = Integer.parseInt (args[6]);
+				int gen_count_max = Integer.parseInt (args[7]);
+				double mag_main = Double.parseDouble (args[8]);
+
+				// Say hello
+
+				System.out.println ("Generating catalog with given parameters");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("gen_size_target = " + gen_size_target);
+				System.out.println ("gen_count_max = " + gen_count_max);
+				System.out.println ("mag_main = " + mag_main);
+
+				// Get the random number generator
+
+				OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+
+				// Allocate the storage
+
+				OECatalogStorage cat_storage = new OECatalogStorage();
+
+				// Set up catalog parameters
+
+				double a = 0.0;			// for the moment
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_typical (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					gen_size_target,
+					gen_count_max
+				);
+
+				// Compute productivity "a" for the given branch ratio
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				a = OEStatsCalc.calc_inv_branch_ratio (n, test_cat_params);
+				test_cat_params.a = a;
+				System.out.println ("a = " + a);
+
+				// Recompute branch ratio to check it agrees with input
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Prevent minimum magnitude adjustment
+
+				test_cat_params.mag_min_lo = test_cat_params.mag_min_sim;
+				test_cat_params.mag_min_hi = test_cat_params.mag_min_sim;
+
+				// Begin the catalog
+
+				System.out.println ();
+				System.out.println ("Generating catalog...");
+
+				cat_storage.begin_catalog (test_cat_params);
+
+				// Begin the first generation
+
+				OEGenerationInfo test_gen_info = (new OEGenerationInfo()).set (
+					test_cat_params.mref,	// gen_mag_min
+					test_cat_params.msup	// gen_mag_max
+				);
+
+				cat_storage.begin_generation (test_gen_info);
+
+				// Insert the mainshock rupture
+
+				OERupture mainshock_rup = new OERupture();
+
+				double k_prod = OEStatsCalc.calc_k_corr (
+					mag_main,			// m0
+					test_cat_params,	// cat_params
+					test_gen_info		// gen_info
+				);
+
+				mainshock_rup.set (
+					0.0,			// t_day
+					mag_main,		// rup_mag
+					k_prod,			// k_prod
+					-1,				// rup_parent
+					0.0,			// x_km
+					0.0				// y_km
+				);
+
+				cat_storage.add_rup (mainshock_rup);
+
+				// End the first generation
+
+				cat_storage.end_generation();
+
+				// Make the catalog generator
+				
+				OECatalogGenerator cat_generator = new OECatalogGenerator();
+				cat_generator.setup (rangen, cat_storage, true);
+
+				// Calculate all generations and end the catalog
+
+				cat_generator.calc_all_gen();
+
+				// Display catalog summary and generation list
+
+				System.out.println ();
+				System.out.println ("Catalog summary...");
+				System.out.println ();
+				System.out.println (cat_storage.summary_and_gen_list_string());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main
+		// Build a catalog with the given parameters.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then display the catalog summary and generation list.
+		// Same as test #1 except dumps the entire catalog.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// 8 additional arguments
+
+			if (args.length != 9) {
+				System.err.println ("OECatalogStorage : Invalid 'test3' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				int gen_size_target = Integer.parseInt (args[6]);
+				int gen_count_max = Integer.parseInt (args[7]);
+				double mag_main = Double.parseDouble (args[8]);
+
+				// Say hello
+
+				System.out.println ("Generating catalog with given parameters");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("gen_size_target = " + gen_size_target);
+				System.out.println ("gen_count_max = " + gen_count_max);
+				System.out.println ("mag_main = " + mag_main);
+
+				// Get the random number generator
+
+				OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+
+				// Allocate the storage
+
+				OECatalogStorage cat_storage = new OECatalogStorage();
+
+				// Set up catalog parameters
+
+				double a = 0.0;			// for the moment
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_typical (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					gen_size_target,
+					gen_count_max
+				);
+
+				// Compute productivity "a" for the given branch ratio
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				a = OEStatsCalc.calc_inv_branch_ratio (n, test_cat_params);
+				test_cat_params.a = a;
+				System.out.println ("a = " + a);
+
+				// Recompute branch ratio to check it agrees with input
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Begin the catalog
+
+				System.out.println ();
+				System.out.println ("Generating catalog...");
+
+				cat_storage.begin_catalog (test_cat_params);
+
+				// Begin the first generation
+
+				OEGenerationInfo test_gen_info = (new OEGenerationInfo()).set (
+					test_cat_params.mref,	// gen_mag_min
+					test_cat_params.msup	// gen_mag_max
+				);
+
+				cat_storage.begin_generation (test_gen_info);
+
+				// Insert the mainshock rupture
+
+				OERupture mainshock_rup = new OERupture();
+
+				double k_prod = OEStatsCalc.calc_k_corr (
+					mag_main,			// m0
+					test_cat_params,	// cat_params
+					test_gen_info		// gen_info
+				);
+
+				mainshock_rup.set (
+					0.0,			// t_day
+					mag_main,		// rup_mag
+					k_prod,			// k_prod
+					-1,				// rup_parent
+					0.0,			// x_km
+					0.0				// y_km
+				);
+
+				cat_storage.add_rup (mainshock_rup);
+
+				// End the first generation
+
+				cat_storage.end_generation();
+
+				// Make the catalog generator
+				
+				OECatalogGenerator cat_generator = new OECatalogGenerator();
+				cat_generator.setup (rangen, cat_storage, true);
+
+				// Calculate all generations and end the catalog
+
+				cat_generator.calc_all_gen();
+
+				// Dump the catalog
+
+				System.out.println ();
+				System.out.println ("Catalog dump...");
+				System.out.println ();
+				System.out.println (cat_storage.dump_to_string());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main
+		// Build a catalog with the given parameters.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then display the catalog summary and generation list.
+		// Same as test #2 except dumps the entire catalog.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// 8 additional arguments
+
+			if (args.length != 9) {
+				System.err.println ("OECatalogStorage : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				int gen_size_target = Integer.parseInt (args[6]);
+				int gen_count_max = Integer.parseInt (args[7]);
+				double mag_main = Double.parseDouble (args[8]);
+
+				// Say hello
+
+				System.out.println ("Generating catalog with given parameters");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("gen_size_target = " + gen_size_target);
+				System.out.println ("gen_count_max = " + gen_count_max);
+				System.out.println ("mag_main = " + mag_main);
+
+				// Get the random number generator
+
+				OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+
+				// Allocate the storage
+
+				OECatalogStorage cat_storage = new OECatalogStorage();
+
+				// Set up catalog parameters
+
+				double a = 0.0;			// for the moment
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_typical (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					gen_size_target,
+					gen_count_max
+				);
+
+				// Compute productivity "a" for the given branch ratio
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				a = OEStatsCalc.calc_inv_branch_ratio (n, test_cat_params);
+				test_cat_params.a = a;
+				System.out.println ("a = " + a);
+
+				// Recompute branch ratio to check it agrees with input
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Prevent minimum magnitude adjustment
+
+				test_cat_params.mag_min_lo = test_cat_params.mag_min_sim;
+				test_cat_params.mag_min_hi = test_cat_params.mag_min_sim;
+
+				// Begin the catalog
+
+				System.out.println ();
+				System.out.println ("Generating catalog...");
+
+				cat_storage.begin_catalog (test_cat_params);
+
+				// Begin the first generation
+
+				OEGenerationInfo test_gen_info = (new OEGenerationInfo()).set (
+					test_cat_params.mref,	// gen_mag_min
+					test_cat_params.msup	// gen_mag_max
+				);
+
+				cat_storage.begin_generation (test_gen_info);
+
+				// Insert the mainshock rupture
+
+				OERupture mainshock_rup = new OERupture();
+
+				double k_prod = OEStatsCalc.calc_k_corr (
+					mag_main,			// m0
+					test_cat_params,	// cat_params
+					test_gen_info		// gen_info
+				);
+
+				mainshock_rup.set (
+					0.0,			// t_day
+					mag_main,		// rup_mag
+					k_prod,			// k_prod
+					-1,				// rup_parent
+					0.0,			// x_km
+					0.0				// y_km
+				);
+
+				cat_storage.add_rup (mainshock_rup);
+
+				// End the first generation
+
+				cat_storage.end_generation();
+
+				// Make the catalog generator
+				
+				OECatalogGenerator cat_generator = new OECatalogGenerator();
+				cat_generator.setup (rangen, cat_storage, true);
+
+				// Calculate all generations and end the catalog
+
+				cat_generator.calc_all_gen();
+
+				// Dump the catalog
+
+				System.out.println ();
+				System.out.println ("Catalog dump...");
+				System.out.println ();
+				System.out.println (cat_storage.dump_to_string());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Unrecognized subcommand.
+
+		System.err.println ("OECatalogStorage : Unrecognized subcommand : " + args[0]);
+		return;
+
 	}
 
 }

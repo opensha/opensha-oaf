@@ -56,6 +56,17 @@ public interface OECatalogBuilder extends OECatalogView {
 
 	// public void get_rup (int i_gen, int j_rup, OERupture rup);		// inherited
 
+	// Construct a string that summarizes the catalog contents.
+	// This displays the catalog size and generation count,
+	// parameters, and info for each generation.
+
+	// public default String summary_and_gen_list_string();		// inherited
+
+	// Construct a string that dumps the entire catalog contents.
+	// Caution: This can be very large!
+
+	// public default String dump_to_string();		// inherited
+
 
 	//----- Methods for catalog construction -----
 

@@ -813,7 +813,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 				// Say hello
 
-				System.out.println ("Generating uniform random numbers");
+				System.out.println ("Generating catalog with random data");
 				System.out.println ("test_gen_count = " + test_gen_count);
 				System.out.println ("test_gen_size = " + test_gen_size);
 
@@ -890,6 +890,235 @@ public class OECatalogStorage implements OECatalogBuilder {
 				// End the catalog
 
 				cat_storage.end_catalog();
+
+				// Begin catalog check
+
+				System.out.println ();
+				System.out.println ("Checking catalog...");
+
+				// Structures for output and comparison
+
+				OECatalogParams out_cat_params = new OECatalogParams();
+				int out_size;
+				int out_gen_count;
+				int out_gen_size;
+				OEGenerationInfo out_gen_info = new OEGenerationInfo();
+				OERupture out_rup = new OERupture();
+				OERupture cmp_rup = new OERupture();
+
+				// Error count
+
+				int err_count = 0;
+
+				// Check catalog parameters
+
+				cat_storage.get_cat_params (out_cat_params);
+				if (!( out_cat_params.check_param_equal(in_cat_params) )) {
+					System.out.println ("MISMATCH for catalog parameters");
+					System.out.println ("Expected: " + in_cat_params.toString());
+					System.out.println ("Got: " + out_cat_params.toString());
+					++err_count;
+				}
+
+				// Check catalog total size
+
+				out_size = cat_storage.size();
+				if (!( out_size == in_size )) {
+					System.out.println ("MISMATCH for catalog total size");
+					System.out.println ("Expected: " + in_size);
+					System.out.println ("Got: " + out_size);
+					++err_count;
+				}
+
+				// Check catalog generation count
+
+				out_gen_count = cat_storage.get_gen_count();
+				if (!( out_gen_count == test_gen_count )) {
+					System.out.println ("MISMATCH for catalog generation count");
+					System.out.println ("Expected: " + test_gen_count);
+					System.out.println ("Got: " + out_gen_count);
+					++err_count;
+				}
+
+				// Loop over generations
+
+				for (int i_gen = 0; i_gen < test_gen_count; ++i_gen) {
+
+					// Check catalog generation size
+
+					out_gen_size = cat_storage.get_gen_size (i_gen);
+					if (!( out_gen_size == in_gen_size[i_gen] )) {
+						System.out.println ("MISMATCH for generation " + i_gen + " size");
+						System.out.println ("Expected: " + in_gen_size[i_gen]);
+						System.out.println ("Got: " + out_gen_size);
+						++err_count;
+					}
+
+					// Check catalog generation information
+
+					cat_storage.get_gen_info (i_gen, out_gen_info);	
+					if (!( out_gen_info.check_gen_equal(in_gen_info[i_gen]) )) {
+						System.out.println ("MISMATCH for generation " + i_gen + " information");
+						System.out.println ("Expected: " + in_gen_info[i_gen].one_line_string());
+						System.out.println ("Got: " + out_gen_info.one_line_string());
+						++err_count;
+					}
+
+					if (err_count >= 10) {
+						System.out.println ("Early termination, error count = " + err_count);
+						return;
+					}
+
+					// Loop over ruptures
+
+					for (int j_rup = 0; j_rup < in_gen_size[i_gen]; ++j_rup) {
+
+						// Check catalog rupture
+
+						cat_storage.get_rup (i_gen, j_rup, out_rup);
+						test_trunc_rup_as_if_stored (in_rup[i_gen][j_rup], cmp_rup);
+						if (!( out_rup.check_rup_equal(cmp_rup) )) {
+							System.out.println ("MISMATCH for generation " + i_gen + " rupture " + j_rup);
+							System.out.println ("Original: " + in_rup[i_gen][j_rup].one_line_string());
+							System.out.println ("Expected: " + cmp_rup.one_line_string());
+							System.out.println ("Got: " + out_rup.one_line_string());
+							++err_count;
+							if (err_count >= 10) {
+								System.out.println ("Early termination, error count = " + err_count);
+								return;
+							}
+						}
+					}
+				}
+
+				// Final result
+
+				System.out.println ();
+				System.out.println ("Error count = " + err_count);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  test_gen_count  test_gen_size
+		// Build a catalog with test_gen_count generations.
+		// Each generation has a mean of test_gen_size ruptures, but varies randomly.
+		// Ruptures are generated randomly.
+		// Then, display the catalog summary and generation list.
+		// Then, scan the catalog and compare to the data used to build it.
+		// Note: Same as test #1 with the addition of the catalog summary and generation list,
+		// and with generation size selected using a Poisson distribution.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("OECatalogStorage : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				int test_gen_count = Integer.parseInt (args[1]);
+				int test_gen_size = Integer.parseInt (args[2]);
+
+				// Say hello
+
+				System.out.println ("Generating catalog with random data");
+				System.out.println ("test_gen_count = " + test_gen_count);
+				System.out.println ("test_gen_size = " + test_gen_size);
+
+				// Get the random number generator
+
+				OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+
+				// Allocate the storage
+
+				OECatalogStorage cat_storage = new OECatalogStorage();
+
+				// Input catalog parameters
+
+				OECatalogParams in_cat_params = (new OECatalogParams()).set_to_random (rangen);
+				System.out.println ();
+				System.out.println (in_cat_params.toString());
+
+				// Begin the catalog
+
+				cat_storage.begin_catalog (in_cat_params);
+
+				// Input parameters for size, generation size, generation info, and rupture
+
+				int in_size = 0;
+				int[] in_gen_size = new int[test_gen_count];
+				OEGenerationInfo[] in_gen_info = new OEGenerationInfo[test_gen_count];
+				OERupture[][] in_rup = new OERupture[test_gen_count][];
+
+				// Loop over generations
+
+				for (int i_gen = 0; i_gen < test_gen_count; ++i_gen) {
+				
+					// Select a size for this generation
+
+					//in_gen_size[i_gen] = rangen.uniform_int_sample (test_gen_size/2 + 1, 3*test_gen_size/2 + 1);
+					in_gen_size[i_gen] = rangen.poisson_sample ((double)test_gen_size);
+
+					in_size += in_gen_size[i_gen];
+					in_rup[i_gen] = new OERupture[in_gen_size[i_gen]];
+
+					// Input generation info
+
+					in_gen_info[i_gen] = (new OEGenerationInfo()).set_to_random (rangen);
+
+					if (i_gen < 5) {
+						System.out.println ();
+						System.out.println (in_gen_info[i_gen].one_line_string (i_gen, in_gen_size[i_gen]));
+					}
+
+					// Begin the generation
+
+					cat_storage.begin_generation (in_gen_info[i_gen]);
+
+					// Loop over ruptures
+
+					for (int j_rup = 0; j_rup < in_gen_size[i_gen]; ++j_rup) {
+					
+						// Input rupture
+
+						in_rup[i_gen][j_rup] = (new OERupture()).set_to_random (rangen);
+
+						if (i_gen < 5 && j_rup < 10) {
+							System.out.println (in_rup[i_gen][j_rup].one_line_string (j_rup));
+						}
+
+						// Insert rupture into catalog
+
+						cat_storage.add_rup (in_rup[i_gen][j_rup]);
+					}
+
+					// End the generation
+
+					cat_storage.end_generation();
+				}
+
+				// End the catalog
+
+				cat_storage.end_catalog();
+
+				// Display catalog summary and generation list
+
+				System.out.println ();
+				System.out.println ("Catalog summary...");
+				System.out.println ();
+				System.out.println (cat_storage.summary_and_gen_list_string());
 
 				// Begin catalog check
 
