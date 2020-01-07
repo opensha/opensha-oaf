@@ -33,4 +33,35 @@ public class OEConstants {
 
 	public static final double C_LOG_10 = 2.3025850929940457;
 
+	// A postive magnitude larger than any possible magnitude.
+	// Note: Chosen to be exactly representable in typical floating point
+	// implementations, and in the encoding of CompactEqkRupList.
+
+	public static final double NO_MAG_POS = 11.875;
+
+	// Use x >= NO_MAG_POS_CHECK to check if x contains NO_MAG_POS.
+
+	public static final double NO_MAG_POS_CHECK = 11.75;
+
+	// A negative magnitude smaller than any possible magnitude.
+	// Note: Chosen to be exactly representable in typical floating point
+	// implementations, and in the encoding of CompactEqkRupList.
+
+	public static final double NO_MAG_NEG = -11.875;
+
+	// Use x <= NO_MAG_NEG_CHECK to check if x contains NO_MAG_NEG.
+
+	public static final double NO_MAG_NEG_CHECK = -11.75;
+
+	// An Omori rate so extremely small it is considered to be zero.
+	// Note: This is used to avoid divide-by-zero in formulas that have an
+	// Omori rate in the denominator; it does not mean that rates larger
+	// than this are considered significant.
+	
+	public static final double TINY_OMORI_RATE = 1.0e-150;
+
+	// An expected count of earthquakes small enough to treat as zero.
+
+	public static final double SMALL_EXPECTED_COUNT = 0.001;
+
 }

@@ -376,4 +376,55 @@ public class OEStatsCalc {
 
 
 
+	// Convert an array into cumulative values.
+	// Parameters:
+	//  x = Array to convert.
+	//  f_up = True to accumulate upwards (values are increasing),
+	//         false to accumulate downwards (values are decreasing).
+
+	public static void cumulate_real (double[] x, boolean f_up) {
+		int len = x.length;
+		if (len >= 2) {
+			if (f_up) {
+				double total = x[0];
+				for (int n = 1; n < len; ++n) {
+					total += x[n];
+					x[n] = total;
+				}
+			}
+			else {
+				double total = x[len-1];
+				for (int n = len-2; n >= 0; --n) {
+					total += x[n];
+					x[n] = total;
+				}
+			}
+		}
+		return;
+	}
+
+	public static void cumulate_int (int[] x, boolean f_up) {
+		int len = x.length;
+		if (len >= 2) {
+			if (f_up) {
+				int total = x[0];
+				for (int n = 1; n < len; ++n) {
+					total += x[n];
+					x[n] = total;
+				}
+			}
+			else {
+				int total = x[len-1];
+				for (int n = len-2; n >= 0; --n) {
+					total += x[n];
+					x[n] = total;
+				}
+			}
+		}
+		return;
+	}
+
+
+
+
 }

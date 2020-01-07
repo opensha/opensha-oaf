@@ -1,8 +1,7 @@
 package org.opensha.oaf.oetas;
 
-import org.opensha.oaf.util.MarshalReader;
-import org.opensha.oaf.util.MarshalWriter;
-import org.opensha.oaf.util.MarshalException;
+import static org.opensha.oaf.oetas.OEConstants.TINY_OMORI_RATE;
+import static org.opensha.oaf.oetas.OEConstants.SMALL_EXPECTED_COUNT;
 
 
 // Class for generating an Operational ETAS catalog.
@@ -297,7 +296,7 @@ public class OECatalogGenerator {
 		// (Note that OERandomGenerator.gr_inv_rate will not overflow even if
 		// the requested rate is very large, because its return is logarithmic)
 
-		if (total_omori_rate < 1.0e-150) {
+		if (total_omori_rate < TINY_OMORI_RATE) {
 			return 0;
 		}
 
@@ -337,7 +336,7 @@ public class OECatalogGenerator {
 
 		// Very small expected counts are treated as zero
 
-		if (expected_count < 0.001) {
+		if (expected_count < SMALL_EXPECTED_COUNT) {
 			return 0;
 		}
 

@@ -117,6 +117,13 @@ public class OECatalogParams {
 	public double mag_max_lo;
 	public double mag_max_hi;
 
+	// The magnitude epsilon.
+	// This is the change in magnitude bounds that is considered to be insignificant.
+	// The value "eps" should be large enough so "mag+eps" is distinct from "eps",
+	// in single-precision floating-point, for any encountered magnitude "mag".
+
+	public double mag_eps;
+
 	// The target generation size.
 
 	public int gen_size_target;
@@ -152,6 +159,7 @@ public class OECatalogParams {
 		mag_min_hi      = 0.0;
 		mag_max_lo      = 0.0;
 		mag_max_hi      = 0.0;
+		mag_eps         = 0.0;
 		gen_size_target = 0;
 		gen_count_max   = 0;
 		return;
@@ -188,6 +196,7 @@ public class OECatalogParams {
 		double mag_min_hi,
 		double mag_max_lo,
 		double mag_max_hi,
+		double mag_eps,
 		int gen_size_target,
 		int gen_count_max
 	) {
@@ -207,6 +216,7 @@ public class OECatalogParams {
 		this.mag_min_hi      = mag_min_hi;
 		this.mag_max_lo      = mag_max_lo;
 		this.mag_max_hi      = mag_max_hi;
+		this.mag_eps         = mag_eps;
 		this.gen_size_target = gen_size_target;
 		this.gen_count_max   = gen_count_max;
 		return this;
@@ -234,6 +244,7 @@ public class OECatalogParams {
 		this.mag_min_hi      = other.mag_min_hi;
 		this.mag_max_lo      = other.mag_max_lo;
 		this.mag_max_hi      = other.mag_max_hi;
+		this.mag_eps         = other.mag_eps;
 		this.gen_size_target = other.gen_size_target;
 		this.gen_count_max   = other.gen_count_max;
 		return this;
@@ -266,6 +277,7 @@ public class OECatalogParams {
 		result.append ("mag_min_hi = "      + mag_min_hi      + "\n");
 		result.append ("mag_max_lo = "      + mag_max_lo      + "\n");
 		result.append ("mag_max_hi = "      + mag_max_hi      + "\n");
+		result.append ("mag_eps = "         + mag_eps         + "\n");
 		result.append ("gen_size_target = " + gen_size_target + "\n");
 		result.append ("gen_count_max = "   + gen_count_max   + "\n");
 
@@ -315,6 +327,7 @@ public class OECatalogParams {
 			writer.marshalDouble ("mag_min_hi"     , mag_min_hi     );
 			writer.marshalDouble ("mag_max_lo"     , mag_max_lo     );
 			writer.marshalDouble ("mag_max_hi"     , mag_max_hi     );
+			writer.marshalDouble ("mag_eps"        , mag_eps        );
 			writer.marshalInt    ("gen_size_target", gen_size_target);
 			writer.marshalInt    ("gen_count_max"  , gen_count_max  );
 
@@ -356,6 +369,7 @@ public class OECatalogParams {
 			mag_min_hi      = reader.unmarshalDouble ("mag_min_hi"     );
 			mag_max_lo      = reader.unmarshalDouble ("mag_max_lo"     );
 			mag_max_hi      = reader.unmarshalDouble ("mag_max_hi"     );
+			mag_eps         = reader.unmarshalDouble ("mag_eps"        );
 			gen_size_target = reader.unmarshalInt    ("gen_size_target");
 			gen_count_max   = reader.unmarshalInt    ("gen_count_max"  );
 
@@ -433,6 +447,7 @@ public class OECatalogParams {
 			&& this.mag_min_hi      == other.mag_min_hi     
 			&& this.mag_max_lo      == other.mag_max_lo     
 			&& this.mag_max_hi      == other.mag_max_hi     
+			&& this.mag_eps         == other.mag_eps     
 			&& this.gen_size_target == other.gen_size_target
 			&& this.gen_count_max   == other.gen_count_max  
 		) {
@@ -465,6 +480,7 @@ public class OECatalogParams {
 		this.mag_min_hi      = 6.0;
 		this.mag_max_lo      = 9.5;
 		this.mag_max_hi      = 9.5;
+		this.mag_eps         = 0.0002;
 		this.gen_size_target = rangen.uniform_int_sample (200, 500);
 		this.gen_count_max   = rangen.uniform_int_sample (50, 150);
 		return this;
@@ -501,6 +517,7 @@ public class OECatalogParams {
 		this.mag_min_hi      = 6.0;
 		this.mag_max_lo      = 9.5;
 		this.mag_max_hi      = 9.5;
+		this.mag_eps         = 0.0002;
 		this.gen_size_target = gen_size_target;
 		this.gen_count_max   = gen_count_max;
 		return this;
