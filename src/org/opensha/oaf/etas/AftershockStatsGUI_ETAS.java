@@ -131,15 +131,16 @@ import java.awt.event.WindowListener;
 
 public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeListener {
 		
-	private GregorianCalendar expirationDate = new GregorianCalendar(2020, 0, 1);
+	private GregorianCalendar expirationDate = new GregorianCalendar(2021, 0, 1);
 	
 	public AftershockStatsGUI_ETAS(String... args) {
 		checkArguments(args);
-		if (D) System.out.println("verbose = " + verbose + ", debug = " + D);
+		if (D) System.out.println("verbose = " + verbose + ", debug = " + D + 
+				", override Expiration = " + overrideExpiry);
 		if (devMode) System.out.println("Warning: Running in development mode."
 				+ "This mode is untested and will probably give a bad forecast if not crash outright.");
 		
-		if (!devMode) {
+		if (!devMode && !overrideExpiry) {
 			//check for expired software
 			SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy");
 			formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
@@ -170,6 +171,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
     
 	private boolean D; //debug
 	private boolean devMode;
+	private boolean overrideExpiry;
 	private boolean verbose;
 	private boolean commandLine = false;
 	private boolean validate;
@@ -6255,33 +6257,6 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		Preconditions.checkState(Doubles.isFinite(value), name+" must be finite: %s", value);
 	}
 
-	private void checkArguments(String... args){
-		//set defaults
-		verbose = false;
-		devMode = false;
-		D = false;
-		validate = false;
-		
-		//check for arguments
-		for(int i = 0; i < args.length; i++) {
-			String argument = args[i];
-			if(verbose) System.out.println(argument);
-			if (argument.contains("verbose")) verbose = true;
-			if (argument.contains("expert")) devMode = true;
-			if (argument.contains("debug")) D = true;
-			if (argument.contains("validate")) validate = true;
-			if (argument.contains("eventID")) {
-				i++;
-				eventID = args[i];
-				commandLine = true;
-			}
-			if (argument.contains("forecastStartTime")) {
-				i++;
-				forecastStartTime = Double.parseDouble(args[i]);
-			}
-		}
-	}
-	
 	private Location getCentroid() {
 		return ETAS_StatsCalc.getCentroid(mainshock, aftershocks);
 	}
@@ -6599,6 +6574,35 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	}
 	
 	
+	private void checkArguments(String... args){
+		//set defaults
+		verbose = false;
+		devMode = false;
+		D = false;
+		validate = false;
+		overrideExpiry = false;
+		
+		//check for arguments
+		for(int i = 0; i < args.length; i++) {
+			String argument = args[i];
+			if(verbose) System.out.println(argument);
+			if (argument.contains("verbose")) verbose = true;
+			if (argument.contains("expert")) devMode = true;
+			if (argument.contains("debug")) D = true;
+			if (argument.contains("validate")) validate = true;
+			if (argument.contains("override")) overrideExpiry = true;
+			if (argument.contains("eventID")) {
+				i++;
+				eventID = args[i];
+				commandLine = true;
+			}
+			if (argument.contains("forecastStartTime")) {
+				i++;
+				forecastStartTime = Double.parseDouble(args[i]);
+			}
+		}
+	}
+
 	public static void main(String... args) {
 		
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
