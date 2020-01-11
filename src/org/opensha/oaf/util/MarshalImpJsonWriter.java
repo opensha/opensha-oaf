@@ -420,6 +420,15 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 	}
 
 	/**
+	 * Marshal a float.
+	 */
+	@Override
+	public void marshalFloat (String name, float x) {
+		current_context_write.check_name (name, new Float(x));
+		return;
+	}
+
+	/**
 	 * Marshal a JSON string.  (Null strings are not allowed.)
 	 * The string must contain a JSON object or array, or be an empty string.
 	 * For JSON storage, the string is merged into the JSON instead of being

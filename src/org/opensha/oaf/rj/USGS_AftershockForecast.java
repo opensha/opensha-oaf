@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.Date;
+import java.util.Locale;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -208,7 +209,7 @@ public class USGS_AftershockForecast {
 				if (poissonProb < 1.0e-12) {
 					poissonProb = 0.0;	// fewer than 4 significant digits available
 				} else {
-					poissonProb = Double.parseDouble (String.format ("%.3e", poissonProb));	// limit to 4 significant digits
+					poissonProb = Double.parseDouble (String.format (Locale.US, "%.3e", poissonProb));	// limit to 4 significant digits
 				}
 
 				probs.put(duration, minMag, poissonProb);
@@ -351,7 +352,7 @@ public class USGS_AftershockForecast {
 	public static double dparm_round (double value) {
 		double result = value;
 		try {
-			result = Double.parseDouble (String.format ("%.2e", value));	// limit to 3 significant digits
+			result = Double.parseDouble (String.format (Locale.US, "%.2e", value));	// limit to 3 significant digits
 		} catch (Exception e) {
 			result = value;
 		}

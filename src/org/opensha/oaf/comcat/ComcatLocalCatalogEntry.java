@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Comparator;
+import java.util.Locale;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -404,7 +405,7 @@ public class ComcatLocalCatalogEntry {
 
 		// Format the string
 
-		String s = String.format ("%s %7.3f %8.3f %6.1f %5.2f",
+		String s = String.format (Locale.US, "%s %7.3f %8.3f %6.1f %5.2f",
 					t3, rup_lat, rup_lon, rup_depth, rup_mag);
 
 		return s;

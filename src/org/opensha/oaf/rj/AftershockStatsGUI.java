@@ -2927,6 +2927,34 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 				return;
 			}
 
+			// Subcommand : fcdata_convert
+			// Command format:
+			//  fcdata_convert  in_filename  out_filename
+			// Convert a forecast data file from the website/database JSON
+			// format to a friendly human-understandable JSON format.
+
+			if (args[0].equalsIgnoreCase ("fcdata_convert")) {
+
+				if (args.length != 3) {
+					System.out.println ("AftershockStatsGUI : Invalid 'fcdata_convert' subcommand");
+					return;
+				}
+
+				String[] my_args = new String[3];
+				my_args[0] = "fcdata_convert";
+				my_args[1] = args[1];
+				my_args[2] = args[2];
+
+				try {
+					ServerCmd.cmd_fcdata_convert (my_args);
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.out.println ();
+					System.out.println ("AftershockStatsGUI : The 'fcdata_convert' subcommand failed with an exception");
+				}
+				return;
+			}
+
 		}
 
 
@@ -2967,7 +2995,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		int lo = 0;
 		boolean f_config = true;
 		boolean f_send = true;
-		int pdl_default = ServerConfigFile.PDLOPT_DEV;
+		int pdl_default = ServerConfigFile.PDLOPT_NONE;
 
 		boolean consumed = PDLCmd.exec_pdl_cmd (args, lo, f_config, f_send, pdl_default);
 

@@ -318,7 +318,7 @@ public class LogSupport extends ServerComponent {
 	// Report intake region selection.
 
 	public void report_intake_region (String event_id, IntakeSphRegion intake_region) {
-		report_action ("FORECAST-REQUEST",
+		report_action ("INTAKE-PASSED",
 					event_id,
 					"intake_region = " + intake_region.get_name());
 		return;

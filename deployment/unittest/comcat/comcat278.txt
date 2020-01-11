@@ -9,14 +9,14 @@ rup_mag = 9.1
 rup_lat = 38.297
 rup_lon = 142.373
 rup_depth = 29.0
-description = near the east coast of Honshu, Japan
+description = 2011 Great Tohoku Earthquake, Japan
 ids = ,usc0001xgp,usp000hvnu,choy20110311054623,official20110311054624120_30,duputel201103110546a,atlas20110311054624,iscgem16461282,
 net = official
 code = 20110311054624120_30
 
 http_status = 200
 EI Map: code = 20110311054624120_30
-EI Map: description = near the east coast of Honshu, Japan
+EI Map: description = 2011 Great Tohoku Earthquake, Japan
 EI Map: ids = ,usc0001xgp,usp000hvnu,choy20110311054623,official20110311054624120_30,duputel201103110546a,atlas20110311054624,iscgem16461282,
 EI Map: net = official
 ID List: official20110311054624120_30

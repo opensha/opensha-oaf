@@ -1710,6 +1710,32 @@ public class ServerCmd {
 
 
 
+	// cmd_fcdata_convert - Convert a forecast data download file to friendly format.
+
+	public static void cmd_fcdata_convert(String[] args) {
+
+		// 2 additional arguments
+
+		if (args.length != 3) {
+			System.err.println ("ServerCmd : Invalid 'fcdata_convert' subcommand");
+			return;
+		}
+
+		String in_filename = args[1];
+		String out_filename = args[2];
+
+		// Convert to friendly format
+
+		ForecastData fcdata = ForecastData.convert_json_file_to_friendly (in_filename, out_filename);
+
+		System.out.println ("The conversion was successful");
+
+		return;
+	}
+
+
+
+
 	// Entry point.
 	
 	public static void main(String[] args) {
@@ -2062,6 +2088,20 @@ public class ServerCmd {
 		case "change_analyst_cli":
 			try {
 				cmd_change_analyst_cli(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : fcdata_convert
+		// Command format:
+		//  fcdata_convert  in_filename  out_filename
+		// Convert a forecast data file from the website/database JSON
+		// format to a friendly human-understandable JSON format.
+
+		case "fcdata_convert":
+			try {
+				cmd_fcdata_convert(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.time.Instant;
 import java.time.Duration;
+import java.util.Locale;
 
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 
@@ -240,25 +241,25 @@ public class SimpleUtils {
 		result.append ("time = " + time_to_string (event_time));
 
 		if (event_mag > -99.0 && event_mag < 99.0) {
-			result.append (String.format(", mag = %.3f", event_mag));
+			result.append (String.format(Locale.US, ", mag = %.3f", event_mag));
 		} else {
 			result.append (", mag = " + event_mag);
 		}
 
 		if (event_lat > -999.0 && event_lat < 999.0) {
-			result.append (String.format(", lat = %.5f", event_lat));
+			result.append (String.format(Locale.US, ", lat = %.5f", event_lat));
 		} else {
 			result.append (", lat = " + event_lat);
 		}
 
 		if (event_lon > -999.0 && event_lon < 999.0) {
-			result.append (String.format(", lon = %.5f", event_lon));
+			result.append (String.format(Locale.US, ", lon = %.5f", event_lon));
 		} else {
 			result.append (", lon = " + event_lon);
 		}
 
 		if (event_depth > -9999.0 && event_depth < 9999.0) {
-			result.append (String.format(", depth = %.3f", event_depth));
+			result.append (String.format(Locale.US, ", depth = %.3f", event_depth));
 		} else {
 			result.append (", depth = " + event_depth);
 		}
