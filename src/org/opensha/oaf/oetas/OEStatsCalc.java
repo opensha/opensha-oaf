@@ -1,5 +1,7 @@
 package org.opensha.oaf.oetas;
 
+import java.util.Arrays;
+
 import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;	// natural logarithm of 10
 
 
@@ -382,7 +384,7 @@ public class OEStatsCalc {
 	//  f_up = True to accumulate upwards (values are increasing),
 	//         false to accumulate downwards (values are decreasing).
 
-	public static void cumulate_real (double[] x, boolean f_up) {
+	public static void cumulate_array (double[] x, boolean f_up) {
 		int len = x.length;
 		if (len >= 2) {
 			if (f_up) {
@@ -403,7 +405,8 @@ public class OEStatsCalc {
 		return;
 	}
 
-	public static void cumulate_int (int[] x, boolean f_up) {
+
+	public static void cumulate_array (int[] x, boolean f_up) {
 		int len = x.length;
 		if (len >= 2) {
 			if (f_up) {
@@ -422,6 +425,331 @@ public class OEStatsCalc {
 			}
 		}
 		return;
+	}
+
+
+
+
+	// Convert a 2D array into cumulative values.
+	// Parameters:
+	//  x = 2D array to convert.  The array must be rectangular,
+	//      that is, each second-level array must have the same length.
+	//  f_up_1 = True to accumulate upwards in the first index
+	//           (values increase with increasing first index),
+	//           false to accumulate downwards in the first index
+	//           (values decrease with increasing first index).
+	//  f_up_2 = True to accumulate upwards in the second index
+	//           (values increase with increasing second index),
+	//           false to accumulate downwards in the second index
+	//           (values decrease with increasing second index).
+
+	public static void cumulate_2d_array (double[][] x, boolean f_up_1, boolean f_up_2) {
+
+		// Get the array dimensions, and make sure they are non-zero
+
+		int len_1 = x.length;
+		if (len_1 > 0) {
+			int len_2 = x[0].length;
+			if (len_2 > 0) {
+
+				// Switch on the directions
+
+				if (f_up_1) {
+					if (f_up_2) {
+
+						// Index 1 up, index 2 up
+
+						double total = x[0][0];
+						for (int n = 1; n < len_2; ++n) {
+							total += x[0][n];
+							x[0][n] = total;
+						}
+
+						for (int m = 1; m < len_1; ++m) {
+							total = x[m][0];
+							x[m][0] = total + x[m-1][0];
+							for (int n = 1; n < len_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 up, index 2 down
+
+						double total = x[0][len_2 - 1];
+						for (int n = len_2 - 2; n >= 0; --n) {
+							total += x[0][n];
+							x[0][n] = total;
+						}
+
+						for (int m = 1; m < len_1; ++m) {
+							total = x[m][len_2 - 1];
+							x[m][len_2 - 1] = total + x[m-1][len_2 - 1];
+							for (int n = len_2 - 2; n >= 0; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					}
+				} else {
+					if (f_up_2) {
+
+						// Index 1 down, index 2 up
+
+						double total = x[len_1 - 1][0];
+						for (int n = 1; n < len_2; ++n) {
+							total += x[len_1 - 1][n];
+							x[len_1 - 1][n] = total;
+						}
+
+						for (int m = len_1 - 2; m >= 0; --m) {
+							total = x[m][0];
+							x[m][0] = total + x[m+1][0];
+							for (int n = 1; n < len_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 down, index 2 down
+
+						double total = x[len_1 - 1][len_2 - 1];
+						for (int n = len_2 - 2; n >= 0; --n) {
+							total += x[len_1 - 1][n];
+							x[len_1 - 1][n] = total;
+						}
+
+						for (int m = len_1 - 2; m >= 0; --m) {
+							total = x[m][len_2 - 1];
+							x[m][len_2 - 1] = total + x[m+1][len_2 - 1];
+							for (int n = len_2 - 2; n >= 0; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					}
+				}
+			}
+		}
+
+		return;
+	}
+
+
+	public static void cumulate_2d_array (int[][] x, boolean f_up_1, boolean f_up_2) {
+
+		// Get the array dimensions, and make sure they are non-zero
+
+		int len_1 = x.length;
+		if (len_1 > 0) {
+			int len_2 = x[0].length;
+			if (len_2 > 0) {
+
+				// Switch on the directions
+
+				if (f_up_1) {
+					if (f_up_2) {
+
+						// Index 1 up, index 2 up
+
+						int total = x[0][0];
+						for (int n = 1; n < len_2; ++n) {
+							total += x[0][n];
+							x[0][n] = total;
+						}
+
+						for (int m = 1; m < len_1; ++m) {
+							total = x[m][0];
+							x[m][0] = total + x[m-1][0];
+							for (int n = 1; n < len_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 up, index 2 down
+
+						int total = x[0][len_2 - 1];
+						for (int n = len_2 - 2; n >= 0; --n) {
+							total += x[0][n];
+							x[0][n] = total;
+						}
+
+						for (int m = 1; m < len_1; ++m) {
+							total = x[m][len_2 - 1];
+							x[m][len_2 - 1] = total + x[m-1][len_2 - 1];
+							for (int n = len_2 - 2; n >= 0; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					}
+				} else {
+					if (f_up_2) {
+
+						// Index 1 down, index 2 up
+
+						int total = x[len_1 - 1][0];
+						for (int n = 1; n < len_2; ++n) {
+							total += x[len_1 - 1][n];
+							x[len_1 - 1][n] = total;
+						}
+
+						for (int m = len_1 - 2; m >= 0; --m) {
+							total = x[m][0];
+							x[m][0] = total + x[m+1][0];
+							for (int n = 1; n < len_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 down, index 2 down
+
+						int total = x[len_1 - 1][len_2 - 1];
+						for (int n = len_2 - 2; n >= 0; --n) {
+							total += x[len_1 - 1][n];
+							x[len_1 - 1][n] = total;
+						}
+
+						for (int m = len_1 - 2; m >= 0; --m) {
+							total = x[m][len_2 - 1];
+							x[m][len_2 - 1] = total + x[m+1][len_2 - 1];
+							for (int n = len_2 - 2; n >= 0; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					}
+				}
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Sort each column in an array, into ascending order.
+	// Parameters:
+	//  x = Array to sort.
+	//  lo = Lower index within each column, inclusive.
+	//  hi = Upper index within each column, exclusive.
+	// Each array column is a one-dimensional array obtained by fixing
+	// all array indexes except the last array index.  Within each column,
+	// elements lo (inclusive) through hi (exclusive) are sorted into
+	// ascending order.  (That is, the sort applies to column elements n
+	// such that lo <= n < hi.)
+
+	public static void sort_each_array_column (double[][] x, int lo, int hi) {
+		if (hi - lo > 1) {
+			for (int m = 0; m < x.length; ++m) {
+				Arrays.sort (x[m], lo, hi);
+			}
+		}
+		return;
+	}
+
+
+	public static void sort_each_array_column (int[][] x, int lo, int hi) {
+		if (hi - lo > 1) {
+			for (int m = 0; m < x.length; ++m) {
+				Arrays.sort (x[m], lo, hi);
+			}
+		}
+		return;
+	}
+
+
+	public static void sort_each_array_column (double[][][] x, int lo, int hi) {
+		if (hi - lo > 1) {
+			for (int m = 0; m < x.length; ++m) {
+				for (int n = 0; n < x[m].length; ++n) {
+					Arrays.sort (x[m][n], lo, hi);
+				}
+			}
+		}
+		return;
+	}
+
+
+	public static void sort_each_array_column (int[][][] x, int lo, int hi) {
+		if (hi - lo > 1) {
+			for (int m = 0; m < x.length; ++m) {
+				for (int n = 0; n < x[m].length; ++n) {
+					Arrays.sort (x[m][n], lo, hi);
+				}
+			}
+		}
+		return;
+	}
+
+
+
+
+	// Index into each column in an array.
+	// Parameters:
+	//  x = Array to use.
+	//  index = Index number.
+	// Returns an array, with one less dimension than x, where each element
+	// is the element at the given index in the corresponding column.
+	// If y denotes the result array, then if x is 2-dimensional:
+	//  y[i] = x[i][index]
+	// If x is 3-dimensional:
+	//  y[i][j] = x[i][j][index]
+
+	public static double[] index_each_array_column (double[][] x, int index) {
+		double[] result = new double[x.length];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = x[m][index];
+		}
+		return result;
+	}
+
+
+	public static int[] index_each_array_column (int[][] x, int index) {
+		int[] result = new int[x.length];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = x[m][index];
+		}
+		return result;
+	}
+
+
+	public static double[][] index_each_array_column (double[][][] x, int index) {
+		double[][] result = new double[x.length][];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = new double[x[m].length];
+			for (int n = 0; n < x[m].length; ++n) {
+				result[m][n] = x[m][n][index];
+			}
+		}
+		return result;
+	}
+
+
+	public static int[][] index_each_array_column (int[][][] x, int index) {
+		int[][] result = new int[x.length][];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = new int[x[m].length];
+			for (int n = 0; n < x[m].length; ++n) {
+				result[m][n] = x[m][n][index];
+			}
+		}
+		return result;
 	}
 
 

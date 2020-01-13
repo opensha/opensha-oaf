@@ -184,6 +184,37 @@ public class OERandomGenerator {
 
 
 
+	// Sample from a Poisson distribution, with sanity checking.
+	// Parameters:
+	//  mean = The mean of the Poisson distribution.
+	// Note: The Poisson distribution in principle is unbounded.
+	// Code using the Poisson distribution may fail if the return
+	// value is extremely large, so this function clips the Poisson
+	// distribution at about 10 sigma.  Note that the standard
+	// deviation of the Poisson distribution is the square root
+	// of the mean.  I do not know the largest value that can be
+	// returned by nextInt().
+
+	public int poisson_sample_checked (double mean) {
+
+		// Evaluate the Poisson distribution
+
+		int x = gen_poisson.nextInt (mean);
+
+		// Get the cap as approximately the mean plus 10 sigma;
+		// the extra +1.0 below ensures that the result is not
+		// forced to zero when the mean is small
+
+		int cap = (int)Math.round(mean + 10.0*Math.sqrt(mean + 1.0));
+
+		// Return the capped value
+
+		return Math.min(x, cap);
+	}
+
+
+
+
 	// Sample from a uniform distribution.
 	// Parameters:
 	//  u1 = Lower limit.
