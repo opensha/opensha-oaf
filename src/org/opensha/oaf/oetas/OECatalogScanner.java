@@ -327,6 +327,10 @@ public class OECatalogScanner {
 			consumer.end_catalog (comm);
 		}
 
+		// Forget retained objects
+
+		comm.forget();
+
 		return;
 	}
 
@@ -424,7 +428,7 @@ public class OECatalogScanner {
 		// The number of sterile ruptures is a Poisson random variable
 		// with the expected value
 
-		int sterile_rup_count = comm.rangen.poisson_sample (expected_count);
+		int sterile_rup_count = comm.rangen.poisson_sample_checked (expected_count);
 
 		// If it's zero, we're done
 

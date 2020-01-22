@@ -343,7 +343,7 @@ public class OECatalogGenerator {
 		// The size of the next generation is a Poisson random variable
 		// with the expected value
 
-		int next_gen_size = rangen.poisson_sample (expected_count);
+		int next_gen_size = rangen.poisson_sample_checked (expected_count);
 
 		// If it's zero, we're done
 
