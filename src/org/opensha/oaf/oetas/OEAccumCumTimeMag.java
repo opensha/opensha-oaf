@@ -2025,6 +2025,114 @@ public class OEAccumCumTimeMag implements OECatalogAccumulator {
 
 
 
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main  tbegin  infill_meth  num_cats
+		//         mag_min_sim  mag_max_sim  mag_min_lo  mag_min_hi
+		// Build a catalog with the given parameters.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then display the catalog summary and generation list.
+		// Same as test #1 and #2 except with control over the magnitude ranges.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// 15 additional arguments
+
+			if (args.length != 16) {
+				System.err.println ("OEAccumCumTimeMag : Invalid 'test3' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				int gen_size_target = Integer.parseInt (args[6]);
+				int gen_count_max = Integer.parseInt (args[7]);
+				double mag_main = Double.parseDouble (args[8]);
+				double the_tbegin = Double.parseDouble (args[9]);
+				int the_infill_meth = Integer.parseInt (args[10]);
+				int num_cats = Integer.parseInt (args[11]);
+				double the_mag_min_sim = Double.parseDouble (args[12]);
+				double the_mag_max_sim = Double.parseDouble (args[13]);
+				double the_mag_min_lo = Double.parseDouble (args[14]);
+				double the_mag_min_hi = Double.parseDouble (args[15]);
+
+				// Say hello
+
+				System.out.println ("Generating catalog with given parameters");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("gen_size_target = " + gen_size_target);
+				System.out.println ("gen_count_max = " + gen_count_max);
+				System.out.println ("mag_main = " + mag_main);
+				System.out.println ("the_tbegin = " + the_tbegin);
+				System.out.println ("the_infill_meth = " + the_infill_meth);
+				System.out.println ("num_cats = " + num_cats);
+				System.out.println ("the_mag_min_sim = " + the_mag_min_sim);
+				System.out.println ("the_mag_max_sim = " + the_mag_max_sim);
+				System.out.println ("the_mag_min_lo = " + the_mag_min_lo);
+				System.out.println ("the_mag_min_hi = " + the_mag_min_hi);
+
+				// Set up catalog parameters
+
+				double a = 0.0;			// for the moment
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_typical (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					gen_size_target,
+					gen_count_max
+				);
+
+				// Compute productivity "a" for the given branch ratio
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				a = OEStatsCalc.calc_inv_branch_ratio (n, test_cat_params);
+				test_cat_params.a = a;
+				System.out.println ("a = " + a);
+
+				// Recompute branch ratio to check it agrees with input
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Adjust forecast time
+
+				test_cat_params.tbegin = the_tbegin;
+				test_cat_params.tend = the_tbegin + 365.0;
+
+				// Set magnitude tanges
+
+				test_cat_params.mag_min_sim = the_mag_min_sim;
+				test_cat_params.mag_max_sim = the_mag_max_sim;
+				test_cat_params.mag_min_lo = the_mag_min_lo;
+				test_cat_params.mag_min_hi = the_mag_min_hi;
+
+				// Do the test run
+
+				typical_test_run (test_cat_params, mag_main, the_infill_meth, num_cats);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
 		// Unrecognized subcommand.
 
 		System.err.println ("OEAccumCumTimeMag : Unrecognized subcommand : " + args[0]);
