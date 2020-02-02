@@ -134,7 +134,7 @@ public class OECatalogScanner {
 	// Parameters:
 	//  accumulators = One or more accumulators to receive the scan.
 
-	public void setup (OECatalogAccumulator... accumulators) {
+	public void setup (OEEnsembleAccumulator... accumulators) {
 
 		// Obtain a list of consumers
 
@@ -163,7 +163,7 @@ public class OECatalogScanner {
 	// Open all the catalog consumers.
 	// Perform any setup needed to begin consuming a catalog.
 	// Note: All the accumulators must be in an appropriate state for their consumers
-	// to be opened (e.g., OECatalogAccumulator.begin_accumulation() has been called).
+	// to be opened (e.g., OEEnsembleAccumulator.begin_accumulation() has been called).
 
 	public void open () {
 	

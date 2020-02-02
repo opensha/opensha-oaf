@@ -1,6 +1,7 @@
 package org.opensha.oaf.oetas;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -26,7 +27,7 @@ import static org.opensha.oaf.oetas.OEConstants.INFILL_METH_MAX;
 // n-th element of each column.  After accumulation, each bin is sorted,
 // so that fractiles may be extracted.
 
-public class OEAccumCumTimeMag implements OECatalogAccumulator {
+public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 	//----- Control variables -----
 
@@ -1179,7 +1180,7 @@ public class OEAccumCumTimeMag implements OECatalogAccumulator {
 
 
 
-	//----- Implementation of OECatalogAccumulator -----
+	//----- Implementation of OEEnsembleAccumulator -----
 
 
 
@@ -1469,7 +1470,7 @@ public class OEAccumCumTimeMag implements OECatalogAccumulator {
 
 	// Marshal version number.
 
-	private static final int MARSHAL_VER_1 = 75001;
+	private static final int MARSHAL_VER_1 = 77001;
 
 	private static final String M_VERSION_NAME = "OEAccumCumTimeMag";
 
@@ -1712,12 +1713,12 @@ public class OEAccumCumTimeMag implements OECatalogAccumulator {
 
 		// Create the array of accumulators
 
-		OECatalogAccumulator[] accumulators = new OECatalogAccumulator[1];
+		OEEnsembleAccumulator[] accumulators = new OEEnsembleAccumulator[1];
 		accumulators[0] = time_mag_accum;
 
 		// Begin accumulation, passing the number of catalogs
 
-		for (OECatalogAccumulator accumulator : accumulators) {
+		for (OEEnsembleAccumulator accumulator : accumulators) {
 			accumulator.begin_accumulation (num_cats);
 		}
 
@@ -1811,9 +1812,105 @@ public class OEAccumCumTimeMag implements OECatalogAccumulator {
 
 		// End accumulation
 
-		for (OECatalogAccumulator accumulator : accumulators) {
+		for (OEEnsembleAccumulator accumulator : accumulators) {
 			accumulator.end_accumulation ();
 		}
+
+		// Display results
+
+		System.out.println (time_mag_accum.typical_test_outputs_to_string());
+
+		return;
+	}
+
+
+
+
+	// Perform a typical test run, multi-threaded version.
+	// Parameters:
+	//  test_cat_params = Catalog parameters.
+	//  mag_main = Mainshock magnitude.
+	//  the_infill_meth = Infill method to use.
+	//  num_cats = Number of catalogs to run.
+	//  num_threads = Number of threads to use.
+	//  max_runtime = Maximum running time allowed.
+	// All catalogs use the same parameters, and are seeded with
+	// a single earthquake.
+
+	public static void typical_test_run_mt (OECatalogParams test_cat_params, double mag_main, int the_infill_meth, int num_cats, int num_threads, long max_runtime) {
+
+		// Say hello
+
+		System.out.println ();
+		System.out.println ("Generating " + num_cats + " catalogs");
+		System.out.println ("Using " + num_threads + " threads");
+		System.out.println ("With " + max_runtime + " maximum runtime");
+		System.out.println ();
+
+		// Make the accumulator and set up the bins
+
+		OEAccumCumTimeMag time_mag_accum = new OEAccumCumTimeMag();
+		time_mag_accum.typical_test_setup (the_infill_meth, test_cat_params.tbegin);
+
+		// Create the list of accumulators
+
+		ArrayList<OEEnsembleAccumulator> accumulators = new ArrayList<OEEnsembleAccumulator>();
+		accumulators.add (time_mag_accum);
+
+		// Create the first generation info
+
+		OEGenerationInfo test_gen_info = (new OEGenerationInfo()).set (
+			test_cat_params.mref,	// gen_mag_min
+			test_cat_params.msup	// gen_mag_max
+		);
+
+		// Create the mainshock rupture
+
+		OERupture mainshock_rup = new OERupture();
+
+		double k_prod = OEStatsCalc.calc_k_corr (
+			mag_main,			// m0
+			test_cat_params,	// cat_params
+			test_gen_info		// gen_info
+		);
+
+		mainshock_rup.set (
+			0.0,			// t_day
+			mag_main,		// rup_mag
+			k_prod,			// k_prod
+			-1,				// rup_parent
+			0.0,			// x_km
+			0.0				// y_km
+		);
+
+		// Create the list of seed ruptures
+
+		ArrayList<OERupture> seed_ruptures = new ArrayList<OERupture>();
+		seed_ruptures.add (mainshock_rup);
+
+		// Create the initializer
+
+		OEInitFixedState initializer = new OEInitFixedState();
+		initializer.setup (test_cat_params, test_gen_info, seed_ruptures);
+
+		// Set up the ensemble parameters
+
+		OEEnsembleParams ensemble_params = new OEEnsembleParams();
+
+		ensemble_params.set (
+			initializer,		// initializer
+			accumulators,		// accumulators
+			num_cats			// num_catalogs
+		);
+
+		// Create the ensemble generator
+
+		OEEnsembleGenerator ensemble_generator = new OEEnsembleGenerator();
+
+		// Generate the catalogs
+
+		long progress_time = 10000L;
+		ensemble_generator.generate_all_catalogs (ensemble_params, num_threads, max_runtime, progress_time);
 
 		// Display results
 
@@ -1842,7 +1939,7 @@ public class OEAccumCumTimeMag implements OECatalogAccumulator {
 		//  test1  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main  tbegin  infill_meth  num_cats
 		// Build a catalog with the given parameters.
 		// The "n" is the branch ratio; "a" is computed from it.
-		// Then display the catalog summary and generation list.
+		// Then display the accumulated fractiles and probability of occurrence.
 
 		if (args[0].equalsIgnoreCase ("test1")) {
 
@@ -1934,7 +2031,7 @@ public class OEAccumCumTimeMag implements OECatalogAccumulator {
 		// Build a catalog with the given parameters.
 		// The "n" is the branch ratio; "a" is computed from it.
 		// Then display the catalog summary and generation list.
-		// Same as test #1 except does not allow the minimum magnitude to be adjusted.
+		// Then display the accumulated fractiles and probability of occurrence.
 
 		if (args[0].equalsIgnoreCase ("test2")) {
 
@@ -2031,7 +2128,7 @@ public class OEAccumCumTimeMag implements OECatalogAccumulator {
 		//         mag_min_sim  mag_max_sim  mag_min_lo  mag_min_hi
 		// Build a catalog with the given parameters.
 		// The "n" is the branch ratio; "a" is computed from it.
-		// Then display the catalog summary and generation list.
+		// Then display the accumulated fractiles and probability of occurrence.
 		// Same as test #1 and #2 except with control over the magnitude ranges.
 
 		if (args[0].equalsIgnoreCase ("test3")) {
@@ -2122,6 +2219,119 @@ public class OEAccumCumTimeMag implements OECatalogAccumulator {
 				// Do the test run
 
 				typical_test_run (test_cat_params, mag_main, the_infill_meth, num_cats);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main  tbegin  infill_meth  num_cats
+		//         mag_min_sim  mag_max_sim  mag_min_lo  mag_min_hi  num_threads  max_runtime
+		// Build a catalog with the given parameter, using multiple threads.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then display the accumulated fractiles and probability of occurrence.
+		// Note that max_runtime must be -1 if no runtime limit is desired.
+		// Same as test #3 except with multiple threads.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// 17 additional arguments
+
+			if (args.length != 18) {
+				System.err.println ("OEAccumCumTimeMag : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				int gen_size_target = Integer.parseInt (args[6]);
+				int gen_count_max = Integer.parseInt (args[7]);
+				double mag_main = Double.parseDouble (args[8]);
+				double the_tbegin = Double.parseDouble (args[9]);
+				int the_infill_meth = Integer.parseInt (args[10]);
+				int num_cats = Integer.parseInt (args[11]);
+				double the_mag_min_sim = Double.parseDouble (args[12]);
+				double the_mag_max_sim = Double.parseDouble (args[13]);
+				double the_mag_min_lo = Double.parseDouble (args[14]);
+				double the_mag_min_hi = Double.parseDouble (args[15]);
+				int num_threads = Integer.parseInt (args[16]);
+				long max_runtime = Long.parseLong (args[17]);
+
+				// Say hello
+
+				System.out.println ("Generating catalog with given parameters");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("gen_size_target = " + gen_size_target);
+				System.out.println ("gen_count_max = " + gen_count_max);
+				System.out.println ("mag_main = " + mag_main);
+				System.out.println ("the_tbegin = " + the_tbegin);
+				System.out.println ("the_infill_meth = " + the_infill_meth);
+				System.out.println ("num_cats = " + num_cats);
+				System.out.println ("the_mag_min_sim = " + the_mag_min_sim);
+				System.out.println ("the_mag_max_sim = " + the_mag_max_sim);
+				System.out.println ("the_mag_min_lo = " + the_mag_min_lo);
+				System.out.println ("the_mag_min_hi = " + the_mag_min_hi);
+				System.out.println ("num_threads = " + num_threads);
+				System.out.println ("max_runtime = " + max_runtime);
+
+				// Set up catalog parameters
+
+				double a = 0.0;			// for the moment
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_typical (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					gen_size_target,
+					gen_count_max
+				);
+
+				// Compute productivity "a" for the given branch ratio
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				a = OEStatsCalc.calc_inv_branch_ratio (n, test_cat_params);
+				test_cat_params.a = a;
+				System.out.println ("a = " + a);
+
+				// Recompute branch ratio to check it agrees with input
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Adjust forecast time
+
+				test_cat_params.tbegin = the_tbegin;
+				test_cat_params.tend = the_tbegin + 365.0;
+
+				// Set magnitude tanges
+
+				test_cat_params.mag_min_sim = the_mag_min_sim;
+				test_cat_params.mag_max_sim = the_mag_max_sim;
+				test_cat_params.mag_min_lo = the_mag_min_lo;
+				test_cat_params.mag_min_hi = the_mag_min_hi;
+
+				// Do the test run
+
+				typical_test_run_mt (test_cat_params, mag_main, the_infill_meth, num_cats, num_threads, max_runtime);
 
 			} catch (Exception e) {
 				e.printStackTrace();

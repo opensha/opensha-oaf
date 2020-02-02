@@ -58,6 +58,17 @@ public class OEGenerationInfo {
 
 
 
+	// Copy all values from the other object.
+
+	public OEGenerationInfo copy_from (OEGenerationInfo other) {
+		this.gen_mag_min = other.gen_mag_min;
+		this.gen_mag_max = other.gen_mag_max;
+		return this;
+	}
+
+
+
+
 	// Display our contents.
 
 	@Override
@@ -98,12 +109,69 @@ public class OEGenerationInfo {
 
 	//----- Marshaling -----
 
+	// Marshal version number.
+
+	private static final int MARSHAL_VER_1 = 78001;
+
+	private static final String M_VERSION_NAME = "OEGenerationInfo";
+
+	// Marshal object, internal.
+
+	private void do_marshal (MarshalWriter writer) {
+
+		// Version
+
+		int ver = MARSHAL_VER_1;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
+
+		// Contents
+
+		switch (ver) {
+
+		case MARSHAL_VER_1: {
+
+			writer.marshalDouble ("gen_mag_min", gen_mag_min);
+			writer.marshalDouble ("gen_mag_max", gen_mag_max);
+
+		}
+		break;
+
+		}
+
+		return;
+	}
+
+	// Unmarshal object, internal.
+
+	private void do_umarshal (MarshalReader reader) {
+	
+		// Version
+
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+
+		// Contents
+
+		switch (ver) {
+
+		case MARSHAL_VER_1: {
+
+			gen_mag_min = reader.unmarshalDouble ("gen_mag_min");
+			gen_mag_max = reader.unmarshalDouble ("gen_mag_max");
+
+		}
+		break;
+
+		}
+
+		return;
+	}
+
 	// Marshal object.
 
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
-		writer.marshalDouble ("gen_mag_min", gen_mag_min);
-		writer.marshalDouble ("gen_mag_max", gen_mag_max);
+		do_marshal (writer);
 		writer.marshalMapEnd ();
 		return;
 	}
@@ -112,10 +180,28 @@ public class OEGenerationInfo {
 
 	public OEGenerationInfo unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
-		gen_mag_min = reader.unmarshalDouble ("gen_mag_min");
-		gen_mag_max = reader.unmarshalDouble ("gen_mag_max");
+		do_umarshal (reader);
 		reader.unmarshalMapEnd ();
 		return this;
+	}
+
+	// Marshal object.
+
+	public static void static_marshal (MarshalWriter writer, String name, OEGenerationInfo gen_info) {
+		writer.marshalMapBegin (name);
+		gen_info.do_marshal (writer);
+		writer.marshalMapEnd ();
+		return;
+	}
+
+	// Unmarshal object.
+
+	public static OEGenerationInfo static_unmarshal (MarshalReader reader, String name) {
+		OEGenerationInfo gen_info = new OEGenerationInfo();
+		reader.unmarshalMapBegin (name);
+		gen_info.do_umarshal (reader);
+		reader.unmarshalMapEnd ();
+		return gen_info;
 	}
 
 
