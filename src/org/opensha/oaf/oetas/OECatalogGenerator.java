@@ -480,6 +480,84 @@ public class OECatalogGenerator {
 
 
 
+	// Generate a simple catalog, seeded with a single mainshock.
+	// Parameters:
+	//  test_cat_params = Catalog parameters.
+	//  mag_main = Mainshock magnitude.
+	// Returns the resulting catalog.
+
+	public static OECatalogStorage gen_simple_catalog (OECatalogParams test_cat_params, double mag_main) {
+
+		// Get the random number generator
+
+		OERandomGenerator the_rangen = OERandomGenerator.get_thread_rangen();
+
+		// Allocate the storage (which is also the builder)
+
+		OECatalogStorage cat_storage = new OECatalogStorage();
+
+		// Allocate a generator
+
+		OECatalogGenerator cat_generator = new OECatalogGenerator();
+
+		// Begin the catalog
+
+		cat_storage.begin_catalog (test_cat_params);
+
+		// Begin the first generation
+
+		OEGenerationInfo test_gen_info = (new OEGenerationInfo()).set (
+			test_cat_params.mref,	// gen_mag_min
+			test_cat_params.msup	// gen_mag_max
+		);
+
+		cat_storage.begin_generation (test_gen_info);
+
+		// Insert the mainshock rupture
+
+		OERupture mainshock_rup = new OERupture();
+
+		double k_prod = OEStatsCalc.calc_k_corr (
+			mag_main,			// m0
+			test_cat_params,	// cat_params
+			test_gen_info		// gen_info
+		);
+
+		mainshock_rup.set (
+			0.0,			// t_day
+			mag_main,		// rup_mag
+			k_prod,			// k_prod
+			-1,				// rup_parent
+			0.0,			// x_km
+			0.0				// y_km
+		);
+
+		cat_storage.add_rup (mainshock_rup);
+
+		// End the first generation
+
+		cat_storage.end_generation();
+
+		// Set up the catalog generator
+				
+		cat_generator.setup (the_rangen, cat_storage, false);
+
+		// Calculate all generations and end the catalog
+
+		cat_generator.calc_all_gen();
+
+		// Tell the generator to forget the catalog
+
+		cat_generator.forget();
+
+		// Return the catalog
+
+		return cat_storage;
+	}
+
+
+
+
 	public static void main(String[] args) {
 
 		// There needs to be at least one argument, which is the subcommand
