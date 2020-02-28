@@ -34,12 +34,17 @@ import org.json.simple.parser.ParseException;
 //import gov.usgs.earthquake.event.JsonUtil;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
+import org.opensha.commons.geo.Location;
+import org.opensha.commons.geo.LocationList;
+import org.opensha.commons.geo.GeoTools;
 
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.SphRegionWorld;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
+
+import org.opensha.oaf.pdl.PDLProductFile;
 
 import gov.usgs.earthquake.event.JsonEvent;
 
@@ -149,7 +154,8 @@ public class ComcatProduct {
 
 	public static class ProductFile {
 	
-		// Mime type ("contentType" in the product).
+		// MIME type ("contentType" in the product).
+		// Note: See PDLProductFile for common MIME types.
 
 		public String contentType;
 
@@ -567,6 +573,9 @@ public class ComcatProduct {
 				lines.add (line);
 			}
 		}
+		catch (IOException e) {
+			throw new ComcatException ("ComcatProduct.read_all_lines_from_url: I/O error reading from URL: " + url_spec);
+		}
 		catch (Exception e) {
 			throw new ComcatException ("ComcatProduct.read_all_lines_from_url: Error reading from URL: " + url_spec);
 		}
@@ -595,6 +604,186 @@ public class ComcatProduct {
 		// Read from the URL
 
 		return read_all_lines_from_url (product_file.url);
+	}
+
+
+
+
+	// Read a JSON object from a URL.
+	// Parameters:
+	//  url_spec = String to parse as a URL.
+	// Returns a JSONObject containing the contents of the file.
+	// Returns null if the file does not contain a valid JSON object.
+	// Throws ComcatException if any error.
+	// Note: This should only be used for URLs obtained from Comcat
+	// (e.g., in the contents section of a product).  Any error that
+	// occurs is properly considered to be a Comcat error.
+
+	public static JSONObject read_json_obj_from_url (String url_spec) {
+		JSONObject result = null;
+		try (
+			BufferedReader br = new BufferedReader (new InputStreamReader (
+				(new URL (url_spec)).openStream(), StandardCharsets.UTF_8 ));
+		){
+			Object o = JSONValue.parseWithException (br);
+			if (o != null) {
+				if (o instanceof JSONObject) {
+					result = (JSONObject) o;
+				}
+			}
+		}
+		catch (ParseException e) {
+			result = null;
+		}
+		catch (IOException e) {
+			throw new ComcatException ("ComcatProduct.read_json_obj_from_url: I/O error reading from URL: " + url_spec);
+		}
+		catch (Exception e) {
+			throw new ComcatException ("ComcatProduct.read_json_obj_from_url: Error reading from URL: " + url_spec);
+		}
+		return result;
+	}
+
+
+
+
+	// Read a JSON object from a content file.
+	// Parameters:
+	//  filename = Filename to read (from contents).
+	// Returns a JSONObject containing the contents of the file.
+	// Returns null if the file does not contain a valid JSON object.
+	// Returns null if the file is not in the contents list.
+	// Throws ComcatException if any error.
+
+	public JSONObject read_json_obj_from_contents (String filename) {
+	
+		// Get the URL from the contents list.
+
+		ProductFile product_file = productFiles.get (filename);
+		if (product_file == null) {
+			return null;
+		}
+
+		// Read from the URL
+
+		return read_json_obj_from_url (product_file.url);
+	}
+
+
+
+
+	// Make a Location object for the given latitude, longitude, depth(km).
+	// Returns the Location object.
+	// Throws exception if the arguments are invalid.
+	// This function is permissive, in that:
+	//  * Latitude slightly out-of-range -90 to +90 is coerced into range.
+	//  * Longitude can range from -360 to +360 (even through Location only accepts
+	//    -180 to +360); longitude slightly out-of-range is coerced into range;
+	//    and all longitudes are coerced into range -180 to +180.
+	//  * Depth is coerced into range 0 to 700 (with no limit).
+	// Note: The purpose of permissiveness is to avoid spurious errors when coordinates are
+	// sligtly out-of-range due to imprecise conversions (degrees/radians, or double/string).
+
+	public static Location permissive_make_loc (double lat, double lon, double depth) {
+
+		if (lat < -90.001 || lat > 90.001) {
+			throw new IllegalArgumentException ("ComcatProduct.permissive_make_loc: Invalid latitude: lat lon depth = " + lat + " " + lon + " " + depth);
+		}
+		if (lat > 90.0) {
+			lat = 90.0;
+		}
+		if (lat < -90.0) {
+			lat = -90.0;
+		}
+
+		if (lon < -360.001 || lon > 360.001) {
+			throw new IllegalArgumentException ("ComcatProduct.permissive_make_loc: Invalid longitude: lat lon depth = " + lat + " " + lon + " " + depth);
+		}
+		if (lon > 180.0) {
+			lon -= 360.0;
+		}
+		if (lon < -180.0) {
+			lon += 360.0;
+		}
+
+		if (depth < 0.0) {
+			depth = 0.0;
+		}
+		if (depth > GeoTools.DEPTH_MAX) {
+			depth = GeoTools.DEPTH_MAX;
+		}
+
+		return new Location (lat, lon, depth);
+	}
+
+
+
+
+	// Make a Location object for the given latitude, longitude, depth(km), given as Double.
+	// Returns the Location object.
+	// Throws exception if the arguments are invalid.
+	// This function is permissive, in that:
+	//  * Latitude slightly out-of-range -90 to +90 is coerced into range.
+	//  * Longitude can range from -360 to +360 (even through Location only accepts
+	//    -180 to +360); longitude slightly out-of-range is coerced into range;
+	//    and all longitudes are coerced into range -180 to +180.
+	//  * Depth is coerced into range 0 to 700 (with no limit).
+	// Note: The purpose of permissiveness is to avoid spurious errors when coordinates are
+	// sligtly out-of-range due to imprecise conversions (degrees/radians, or double/string).
+
+	public static Location permissive_make_loc_from_obj (Double lat, Double lon, Double depth) {
+
+		if (lat == null || lon == null || depth == null) {
+			throw new IllegalArgumentException ("ComcatProduct.permissive_make_loc: Missing coordinates: lat lon depth = "
+				+ ((lat == null) ? "null" : lat.toString()) + " "
+				+ ((lon == null) ? "null" : lon.toString()) + " "
+				+ ((depth == null) ? "null" : depth.toString()) );
+		}
+
+		return permissive_make_loc (lat.doubleValue(), lon.doubleValue(), depth.doubleValue());
+	}
+
+
+
+
+	// Make a Location object for the given latitude, longitude, depth(km), given as String.
+	// Returns the Location object.
+	// Throws exception if the arguments are invalid.
+	// This function is permissive, in that:
+	//  * Latitude slightly out-of-range -90 to +90 is coerced into range.
+	//  * Longitude can range from -360 to +360 (even through Location only accepts
+	//    -180 to +360); longitude slightly out-of-range is coerced into range;
+	//    and all longitudes are coerced into range -180 to +180.
+	//  * Depth is coerced into range 0 to 700 (with no limit).
+	// Note: The purpose of permissiveness is to avoid spurious errors when coordinates are
+	// sligtly out-of-range due to imprecise conversions (degrees/radians, or double/string).
+
+	public static Location permissive_make_loc_from_string (String lat, String lon, String depth) {
+
+		if (lat == null || lon == null || depth == null) {
+			throw new IllegalArgumentException ("ComcatProduct.permissive_make_loc_from_string: Missing coordinates: lat lon depth = '"
+				+ ((lat == null) ? "null" : lat) + "' '"
+				+ ((lon == null) ? "null" : lon) + "' '"
+				+ ((depth == null) ? "null" : depth) + "'" );
+		}
+
+		double r_lat;
+		double r_lon;
+		double r_depth;
+
+		try {
+			r_lat = Double.parseDouble (lat);
+			r_lon = Double.parseDouble (lon);
+			r_depth = Double.parseDouble (depth);
+		}
+		catch (Exception e) {
+			throw new IllegalArgumentException ("ComcatProduct.permissive_make_loc_from_string: Malformed coordinates: lat lon depth = '"
+				+ ((lat == null) ? "null" : lat) + "' '"
+				+ ((lon == null) ? "null" : lon) + "' '"
+				+ ((depth == null) ? "null" : depth) + "'", e);
+		}
+
+		return permissive_make_loc (r_lat, r_lon, r_depth);
 	}
 
 
@@ -803,15 +992,15 @@ public class ComcatProduct {
 
 				// Get the product list
 
-				//  List<ComcatProduct> oaf_product_list = make_list_from_gj (accessor.get_last_geojson(), delete_ok);
+				//  List<ComcatProduct> product_list = make_list_from_gj (accessor.get_last_geojson(), delete_ok);
 
-				List<ComcatProduct> oaf_product_list = make_list_from_gj (product_type, accessor.get_last_geojson(), delete_ok);
+				List<ComcatProduct> product_list = make_list_from_gj (product_type, accessor.get_last_geojson(), delete_ok);
 
-				for (int k = 0; k < oaf_product_list.size(); ++k) {
+				for (int k = 0; k < product_list.size(); ++k) {
 					System.out.println ();
 					System.out.println ("Product " + k);
-					System.out.println (oaf_product_list.get(k).toString());
-					System.out.println ("Summary: " + oaf_product_list.get(k).summary_string());
+					System.out.println (product_list.get(k).toString());
+					System.out.println ("Summary: " + product_list.get(k).summary_string());
 				}
 
 			} catch (Exception e) {
@@ -1019,7 +1208,7 @@ public class ComcatProduct {
 
 				if (preferred_product != null) {
 					for (String fname : preferred_product.productFiles.keySet()) {
-						if (preferred_product.productFiles.get(fname).contentType.equals ("text/plain")) {
+						if (preferred_product.productFiles.get(fname).contentType.equals (PDLProductFile.TEXT_PLAIN)) {
 							List<String> lines = preferred_product.read_all_lines_from_contents (fname);
 							System.out.println ();
 							int nlines = lines.size();

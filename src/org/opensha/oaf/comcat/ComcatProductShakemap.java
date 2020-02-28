@@ -44,6 +44,8 @@ import org.opensha.oaf.util.SphRegionWorld;
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 
+import org.opensha.oaf.pdl.PDLProductFile;
+
 import gov.usgs.earthquake.event.JsonEvent;
 
 
@@ -102,7 +104,7 @@ public class ComcatProductShakemap extends ComcatProduct {
 			return false;
 		}
 
-		// For shakemap, the fault filename ends in "fault.txt"
+		// For shakemap, the fault filename ends in "fault.txt" or "rupture.json"
 		// (There should only be one such file, but if there is more than one
 		// then we use the lexicographically first so as to have a repeatable result)
 
@@ -111,7 +113,7 @@ public class ComcatProductShakemap extends ComcatProduct {
 		if (!( isDelete )) {
 
 			for (String filename : productFiles.keySet()) {
-				if (filename.endsWith ("fault.txt")) {
+				if (filename.endsWith ("fault.txt") || filename.endsWith ("rupture.json")) {
 					if (faultFilename == null || filename.compareTo (faultFilename) < 0) {
 						faultFilename = filename;
 					}
@@ -276,12 +278,63 @@ public class ComcatProductShakemap extends ComcatProduct {
 		if (faultFilename == null || faultFilename.isEmpty()) {
 			return null;
 		}
+	
+		// Get the file info from the contents list.
+
+		ProductFile product_file = productFiles.get (faultFilename);
+		if (product_file == null) {
+			return null;
+		}
+
+		// Read text file ...
+
+		if (product_file.contentType.equals (PDLProductFile.TEXT_PLAIN)) {
+			return parse_finite_fault_text_from_url (product_file.url);
+		}
+
+		// Read json file ...
+
+		if (product_file.contentType.equals (PDLProductFile.APPLICATION_JSON)) {
+			return parse_finite_fault_json_from_url (product_file.url);
+		}
+
+		// Accept octet-stream as text file if the filename ends in .txt ...
+
+		if (product_file.contentType.equals (PDLProductFile.APPLICATION_OCTET_STREAM) && faultFilename.endsWith (".txt")) {
+			return parse_finite_fault_text_from_url (product_file.url);
+		}
+
+		// Accept octet-stream as json file if the filename ends in .json ...
+
+		if (product_file.contentType.equals (PDLProductFile.APPLICATION_OCTET_STREAM) && faultFilename.endsWith (".json")) {
+			return parse_finite_fault_json_from_url (product_file.url);
+		}
+
+		// Unknown file type
+
+		return null;
+	}
+
+
+
+
+	// Parse a finite fault file, in text format, from a URL.
+	// Returns a list of lists of Location.
+	// Each top-level list entry is a polygon in 3D defining part of the fault surface.
+	// The size of the top-level list is the number of polygons.
+	// Each second-level list entry is one vertex of a polygon.
+	// The size of a second-level list is the number of vertices in the polygon plus 1,
+	// because the initial vertex is repeated at the end of the list.
+	// The return is null if the file is successfully read but does not parse.
+	// Throws ComcatException if there is an error reading the file.
+
+	public static List<LocationList> parse_finite_fault_text_from_url (String url_spec) {
 
 		// Read all the lines of the file
 
-		List<String> lines = read_all_lines_from_contents (faultFilename);
+		List<String> lines = read_all_lines_from_url (url_spec);
 
-		if (lines == null) {
+		if (lines == null) {		// should never happen
 			return null;
 		}
 
@@ -324,38 +377,7 @@ public class ComcatProductShakemap extends ComcatProduct {
 						return null;
 					}
 
-					double lat = Double.parseDouble (words[0]);
-					double lon = Double.parseDouble (words[1]);
-					double depth = Double.parseDouble (words[2]);
-
-					if (lat < -90.001 || lat > 90.001) {
-						return null;
-					}
-					if (lat > 90.0) {
-						lat = 90.0;
-					}
-					if (lat < -90.0) {
-						lat = -90.0;
-					}
-
-					if (lon < -360.001 || lon > 360.001) {
-						return null;
-					}
-					if (lon > 180.0) {
-						lon -= 360.0;
-					}
-					if (lon < -180.0) {
-						lon += 360.0;
-					}
-
-					if (depth < 0.0) {
-						depth = 0.0;
-					}
-					if (depth > GeoTools.DEPTH_MAX) {
-						depth = GeoTools.DEPTH_MAX;
-					}
-
-					Location loc = new Location (lat, lon, depth);
+					Location loc = permissive_make_loc_from_string (words[0], words[1], words[2]);
 
 					if (sublist == null) {
 						sublist = new LocationList();
@@ -374,6 +396,173 @@ public class ComcatProductShakemap extends ComcatProduct {
 		if (sublist != null) {
 			result.add (sublist);
 			sublist = null;
+		}
+	
+		return result;
+	}
+
+
+
+
+	// Parse a finite fault file, in json format, from a URL.
+	// Returns a list of lists of Location.
+	// Each top-level list entry is a polygon in 3D defining part of the fault surface.
+	// The size of the top-level list is the number of polygons.
+	// Each second-level list entry is one vertex of a polygon.
+	// The size of a second-level list is the number of vertices in the polygon plus 1,
+	// because the initial vertex is repeated at the end of the list.
+	// The return is null if the file is successfully read but does not parse.
+	// Throws ComcatException if there is an error reading the file.
+
+	public static List<LocationList> parse_finite_fault_json_from_url (String url_spec) {
+
+		// Read the json file
+
+		JSONObject file = read_json_obj_from_url (url_spec);
+
+		if (file == null) {		// means the JSON parse failed
+			//System.out.println ("JSON parse failed");
+			return null;
+		}
+
+		// The result list
+
+		ArrayList<LocationList> result = new ArrayList<LocationList>();
+
+		// Get the array of features
+
+		JSONArray features = GeoJsonUtils.getJsonArray (file, "features");
+
+		if (features == null) {
+			//System.out.println ("Failed to find 'features' array");
+			return null;
+		}
+
+		// Loop over features ...
+
+		for (int m = 0; m < features.size(); ++m) {
+
+			// Get the geometry type
+
+			String geom_type = GeoJsonUtils.getString (features, m, "geometry", "type");
+
+			// If it's multi-polygon (the expected type) ...
+
+			if (geom_type != null && geom_type.equals ("MultiPolygon")) {
+
+				// Get the array of polygons
+
+				JSONArray polygons = GeoJsonUtils.getJsonArray (features, m, "geometry", "coordinates", 0);
+
+				if (polygons == null) {
+					//System.out.println ("Failed to find 'polygons' array");
+					return null;
+				}
+
+				// Loop over polygons ...
+
+				for (int k = 0; k < polygons.size(); ++k) {
+				
+					// Get the polygon
+
+					JSONArray polygon = GeoJsonUtils.getJsonArray (polygons, k);
+
+					if (polygon == null) {
+						//System.out.println ("Failed to find 'polygon' array");
+						return null;
+					}
+
+					// Read the polygon
+
+					try {
+						result.add (parse_polygon_from_json_array (polygon));
+					}
+					catch (Exception e) {
+						//System.out.println ("Polygon parse error");
+						//System.out.println (SimpleUtils.getStackTraceAsString(e));
+						return null;
+					}
+				}
+			}
+
+			// If it's polygon ...
+
+			else if (geom_type != null && geom_type.equals ("Polygon")) {
+				
+				// Get the polygon
+
+				JSONArray polygon = GeoJsonUtils.getJsonArray (features, m, "geometry", "coordinates", 0);
+
+				if (polygon == null) {
+					//System.out.println ("Failed to find 'polygon' array");
+					return null;
+				}
+
+				// Read the polygon
+
+				try {
+					result.add (parse_polygon_from_json_array (polygon));
+				}
+				catch (Exception e) {
+					//System.out.println ("Polygon parse error");
+					//System.out.println (SimpleUtils.getStackTraceAsString(e));
+					return null;
+				}
+			}
+		}
+	
+		return result;
+	}
+
+
+
+
+	// Parse a polygon from a JSON array.
+	// Parameters:
+	//  arr = A JSON array, in which each element is a subarray, each of which
+	//        contains three numbers (not strings), which are lon lat depth(km).
+	// Returns a list of Location, containing the vertices of the polygon.
+	// Throws an exception if any error.
+	// Note: This function never returns null.
+	// Note: It is expected that the first and last vertices are the same,
+	// although this function does not check it.
+
+	private static LocationList parse_polygon_from_json_array (JSONArray arr) {
+		if (arr == null) {
+			throw new IllegalArgumentException ("ComcatProductShakemap.parse_polygon_from_json_array: Missing array.");
+		}
+
+		// The resulting list
+
+		LocationList result = new LocationList();
+
+		// Loop over subarrays
+
+		for (int k = 0; k < arr.size(); ++k) {
+		
+			// Get the subarray, which should have 3 elements
+
+			JSONArray subarr = GeoJsonUtils.getJsonArray (arr, k);
+			if (subarr == null) {
+				throw new IllegalArgumentException ("ComcatProductShakemap.parse_polygon_from_json_array: Missing sub-array.");
+			}
+			if (subarr.size() != 3) {
+				throw new IllegalArgumentException ("ComcatProductShakemap.parse_polygon_from_json_array: Sub-array does not have 3 elements.");
+			}
+
+			// Extract coordinates from sub-array
+
+			Double lon = GeoJsonUtils.getDouble (subarr, 0);
+			Double lat = GeoJsonUtils.getDouble (subarr, 1);
+			Double depth = GeoJsonUtils.getDouble (subarr, 2);
+
+			// Construct the Location object
+
+			Location loc = permissive_make_loc_from_obj (lat, lon, depth);
+
+			// Add to the list
+
+			result.add (loc);
 		}
 	
 		return result;
@@ -585,15 +774,15 @@ public class ComcatProductShakemap extends ComcatProduct {
 
 				// Get the product list
 
-				List<ComcatProductShakemap> oaf_product_list = make_list_from_gj (accessor.get_last_geojson(), delete_ok);
+				List<ComcatProductShakemap> product_list = make_list_from_gj (accessor.get_last_geojson(), delete_ok);
 
-				//  List<ComcatProductShakemap> oaf_product_list = make_list_from_gj (product_type, accessor.get_last_geojson(), delete_ok);
+				//  List<ComcatProductShakemap> product_list = make_list_from_gj (product_type, accessor.get_last_geojson(), delete_ok);
 
-				for (int k = 0; k < oaf_product_list.size(); ++k) {
+				for (int k = 0; k < product_list.size(); ++k) {
 					System.out.println ();
 					System.out.println ("Product " + k);
-					System.out.println (oaf_product_list.get(k).toString());
-					System.out.println ("Summary: " + oaf_product_list.get(k).summary_string());
+					System.out.println (product_list.get(k).toString());
+					System.out.println ("Summary: " + product_list.get(k).summary_string());
 				}
 
 			} catch (Exception e) {
@@ -802,7 +991,7 @@ public class ComcatProductShakemap extends ComcatProduct {
 
 				if (preferred_product != null) {
 					for (String fname : preferred_product.productFiles.keySet()) {
-						if (preferred_product.productFiles.get(fname).contentType.equals ("text/plain")) {
+						if (preferred_product.productFiles.get(fname).contentType.equals (PDLProductFile.TEXT_PLAIN)) {
 							List<String> lines = preferred_product.read_all_lines_from_contents (fname);
 							System.out.println ();
 							int nlines = lines.size();
@@ -824,6 +1013,127 @@ public class ComcatProductShakemap extends ComcatProduct {
 
 				if (preferred_product != null) {
 					List<LocationList> finite_fault = preferred_product.parse_finite_fault();
+					System.out.println ();
+					if (finite_fault == null) {
+						System.out.println ("Finite fault file: None");
+					} else {
+						System.out.println ("Finite fault file:");
+						for (LocationList loc_list : finite_fault) {
+							System.out.println ();
+							for (Location loc : loc_list) {
+								System.out.println (loc.getLatitude() + " " + loc.getLongitude() + " " + loc.getDepth());
+							}
+						}
+					}
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  f_use_prod  f_use_feed  event_id  superseded  delete_ok  [product_type]
+		// Fetch information for an event, and display it.
+		// Then construct the list of products for the event, and display it.
+		// Display the finite fault for each product.
+		// Same as test #2 except with addition of finite fault.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// Additional arguments
+
+			if (args.length != 6 && args.length != 7) {
+				System.err.println ("ComcatProductShakemap : Invalid 'test5' subcommand");
+				return;
+			}
+
+			boolean f_use_prod = Boolean.parseBoolean (args[1]);
+			boolean f_use_feed = Boolean.parseBoolean (args[2]);
+			String event_id = args[3];
+			boolean superseded = Boolean.parseBoolean (args[4]);
+			boolean delete_ok = Boolean.parseBoolean (args[5]);
+
+			String product_type = default_product_type;
+			if (args.length >= 7) {
+				product_type = args[6];
+				if (!( is_valid_product_type (product_type) )) {
+					System.out.println ("Invalid product_type: " + product_type);
+					System.out.println ("Continuing anyway ...");
+					System.out.println ("");
+				}
+			}
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+				System.out.println ("f_use_prod: " + f_use_prod);
+				System.out.println ("f_use_feed: " + f_use_feed);
+				System.out.println ("superseded: " + superseded);
+				System.out.println ("delete_ok: " + delete_ok);
+				System.out.println ("product_type: " + product_type);
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod, f_use_feed);
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true, superseded);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				// Get the product list
+
+				List<ComcatProductShakemap> product_list = make_list_from_gj (accessor.get_last_geojson(), delete_ok);
+
+				//  List<ComcatProductShakemap> product_list = make_list_from_gj (product_type, accessor.get_last_geojson(), delete_ok);
+
+				for (int k = 0; k < product_list.size(); ++k) {
+					System.out.println ();
+					System.out.println ("Product " + k);
+					System.out.println (product_list.get(k).toString());
+					System.out.println ("Summary: " + product_list.get(k).summary_string());
+
+					// Get the finite fault
+
+					List<LocationList> finite_fault = product_list.get(k).parse_finite_fault();
 					System.out.println ();
 					if (finite_fault == null) {
 						System.out.println ("Finite fault file: None");

@@ -41,6 +41,8 @@ import org.opensha.oaf.util.SphRegionWorld;
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 
+import org.opensha.oaf.pdl.PDLProductFile;
+
 import gov.usgs.earthquake.event.JsonEvent;
 
 
@@ -446,15 +448,15 @@ public class ComcatProductOaf extends ComcatProduct {
 
 				// Get the product list
 
-				List<ComcatProductOaf> oaf_product_list = make_list_from_gj (accessor.get_last_geojson(), delete_ok);
+				List<ComcatProductOaf> product_list = make_list_from_gj (accessor.get_last_geojson(), delete_ok);
 
-				//  List<ComcatProductOaf> oaf_product_list = make_list_from_gj (product_type, accessor.get_last_geojson(), delete_ok);
+				//  List<ComcatProductOaf> product_list = make_list_from_gj (product_type, accessor.get_last_geojson(), delete_ok);
 
-				for (int k = 0; k < oaf_product_list.size(); ++k) {
+				for (int k = 0; k < product_list.size(); ++k) {
 					System.out.println ();
 					System.out.println ("Product " + k);
-					System.out.println (oaf_product_list.get(k).toString());
-					System.out.println ("Summary: " + oaf_product_list.get(k).summary_string());
+					System.out.println (product_list.get(k).toString());
+					System.out.println ("Summary: " + product_list.get(k).summary_string());
 				}
 
 			} catch (Exception e) {
@@ -662,7 +664,7 @@ public class ComcatProductOaf extends ComcatProduct {
 
 				if (preferred_product != null) {
 					for (String fname : preferred_product.productFiles.keySet()) {
-						if (preferred_product.productFiles.get(fname).contentType.equals ("text/plain")) {
+						if (preferred_product.productFiles.get(fname).contentType.equals (PDLProductFile.TEXT_PLAIN)) {
 							List<String> lines = preferred_product.read_all_lines_from_contents (fname);
 							System.out.println ();
 							int nlines = lines.size();
