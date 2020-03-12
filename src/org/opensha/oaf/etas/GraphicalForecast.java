@@ -26,7 +26,7 @@ import scratch.UCERF3.erf.utils.ProbabilityModelsCalc;
 
 public class GraphicalForecast{
 
-	private static boolean D = false;
+	private static boolean D = true;
 	
 	private String location = "somewhere";
 	private double lat0 = -33.333;
@@ -595,6 +595,118 @@ public class GraphicalForecast{
 		}
 	}
 
+	// Build a json summary that can be sent to PDL
+	public void writeSummaryJson(File outputFile) {
+		StringBuilder jsonString = new StringBuilder();
+		
+		long startTimeMillis = System.currentTimeMillis();
+		long expireTimeMillis = startTimeMillis + (long)3.1573603746e10;
+		
+		int num3s = aftershockModel.aftershockList.getRupsAboveMag(2.99d).size();
+		int num5s = aftershockModel.aftershockList.getRupsAboveMag(4.99d).size();
+		int num6s = aftershockModel.aftershockList.getRupsAboveMag(5.99d).size();
+		int num7s = aftershockModel.aftershockList.getRupsAboveMag(6.99d).size();
+		
+		double foreshockProbability;
+		
+		GregorianCalendar forecastEndDate = new GregorianCalendar();
+		
+		
+		//header
+		jsonString.append(""
+				+ "{\"creationTime\":" + startTimeMillis + ","
+				+ "\"expireTime\":" + expireTimeMillis + ","
+				+ "\"advisoryTimeFrame\":" + "\"1 Week\"" + ","
+				+ "\"template\":\"Mainshock\","
+				+ "\"injectableText\":\"\","
+				);
+
+		//observations
+		jsonString.append(""
+				+ "\"observations\":[{\"magnitude\":3.0,\"count\":" + num3s 
+				+ "},{\"magnitude\":5.0,\"count\":" + num5s 
+				+ "},{\"magnitude\":6.0,\"count\":" + num6s
+				+ "},{\"magnitude\":7.0,\"count\":" + num7s 
+				+ "}],"
+				);
+		
+		//model
+		jsonString.append(""
+				+ "\"model\":{\"name\":\"Epidemic-Type aftershock model (Bayesian Combination)\",\"reference\":\"#url\",\"parameters\":{" 
+				+ "\"ams\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_ams())
+				+ ",\"a\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_a()) 
+				+ ",\"b\":" + String.format("%3.2f", aftershockModel.get_b()) 
+				+ ",\"magMain\":" + String.format("%2.1f", aftershockModel.getMainShockMag()) 
+				+ ",\"p\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_p()) 
+				+ ",\"c\":" + String.format("%5.4f", aftershockModel.getMaxLikelihood_c())
+				+ ",\"Mc\":" + String.format("%2.1f", aftershockModel.magComplete)
+				+ "}},\"forecast\":["
+				);
+		
+		String[] durString = new String[]{"\"1 Day\"","\"1 Week\"","\"1 Month\"","\"1 Year\""};
+		for (int j = 0; j<predictionIntervals.length; j++){
+			forecastEndDate.setTimeInMillis(forecastStartDate.getTimeInMillis() + (long) (predictionIntervals[j]*ETAS_StatsCalc.MILLISEC_PER_DAY));
+			foreshockProbability = aftershockModel.getProbabilityWithAleatory(aftershockModel.getMainShockMag(),
+					aftershockModel.getForecastMinDays(), aftershockModel.getForecastMinDays() + predictionIntervals[j]);
+			
+			
+			jsonString.append(""
+					+ "{\"timeStart\":" + forecastStartDate.getTimeInMillis() 
+					+ ",\"timeEnd\":" + forecastEndDate.getTimeInMillis()
+					+ ",\"label\":" + durString[j] 
+							+ ",\"bins\":["
+					);
+			
+			for (int i = 0; i < predictionMagnitudes.length; i++) {
+				double mag = predictionMagnitudes[i];
+
+				if (mag == 3 || mag == 5 || mag == 6 || mag == 7) {
+					jsonString.append(""
+							+ "{\"magnitude\":" + String.format("%2.1f", mag)
+							+ ",\"p95minimum\":" + String.format("%d", (int) number[i][j][1])
+							+ ",\"p95maximum\":" + String.format("%d", (int) number[i][j][2])
+							+ ",\"probability\":" + String.format("%5.4f",probability[i][j])
+							+ "}");
+					if (mag < 7) jsonString.append(",");
+				}
+			}
+			
+			jsonString.append(""
+					+ "],\"aboveMainshockMag\":{"
+					+ "\"magnitude\":" + String.format("%2.1f", aftershockModel.getMainShockMag())
+					+ ",\"probability\":" + String.format("%5.4f", foreshockProbability)
+					+ "}}"
+					);
+			if (j < predictionIntervals.length - 1) jsonString.append(",");
+		}
+		jsonString.append("]}");
+		if(D) System.out.println(jsonString);
+			
+		//write to a file
+		FileWriter fw;
+		try {
+			fw = new FileWriter(outputFile, false);
+		} catch (IOException e1) {
+			//				e1.printStackTrace();
+			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+			return;
+		}
+
+		try {
+			fw.append(jsonString);
+		} catch (IOException e) {
+			//					e.printStackTrace();
+			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+		}
+
+		try {
+			fw.close();
+		} catch (IOException e) {
+			//				e.printStackTrace();
+			System.err.println("Problem closing file.");
+		}
+	}
+	
 	
 	// Build an html document for displaying the advisory
 	public void writeHTML(File outputFile){
@@ -737,7 +849,7 @@ public class GraphicalForecast{
 				+"                                <table>\n"
 				+"                                    <tr><th class=\"forecastHeader\" style=\"width:60px\"></th> </tr>\n"
 		);
-		if (predictionIntervals.length < 4)
+//		if (predictionIntervals.length < 4) //code is set up to issue one day bar graph only if the forecast max interval is set to one month. Commenting out for Puerto Rico Earthquake  
 			probTableString.append("                                     <tr><th class=\"forecastBar\">Day</th></tr>\n");
 		if (predictionIntervals.length > 1)	
 			probTableString.append("                                     <tr><th class=\"forecastBar\">Week</th></tr>\n");
@@ -765,8 +877,8 @@ public class GraphicalForecast{
 		//generate forecast table
 		int maxRow = predictionIntervals.length;
 		int minRow = 0;
-		if (predictionIntervals.length == 4)
-				minRow = 1;
+//		if (predictionIntervals.length == 4) //commented out for PR earthquake
+//				minRow = 1;
 		
 		for (int j = minRow; j<maxRow; j++){
 			probTableString.append(""
@@ -1132,6 +1244,7 @@ public class GraphicalForecast{
 		try{
 			gf.writeHTML(new File(System.getenv("HOME") + "/example_forecast.html"));
 			gf.writeHTMLTable(new File(System.getenv("HOME") + "/Table.html"));
+			gf.writeSummaryJson(new File(System.getenv("HOME") + "/forecast.json"));
 		}catch(Exception e){
 			e.printStackTrace();
 		}

@@ -392,6 +392,7 @@ public class ETAScatalog {
 		String initialMessageString = "Generating parameter sets. ";
 		//truncate likelihood based on criticality
 		double cumSum = 0;
+		
 		for(h = 0; h < num_ams; h++ ){
 			for(i = 0; i < num_a; i++ ){
 				for(j = 0; j < num_p; j++ ){
@@ -399,9 +400,11 @@ public class ETAScatalog {
 						nbranch = ETAS_StatsCalc.calculateBranchingRatio(a_vec[i], p_vec[j], c_vec[k], alpha, b, forecastEnd, Mc, maxMag);
 						if(nbranch < 1)
 							cumSum += likelihoodTrunc[h][i][j][k];
-						else
+						else {
 							likelihoodTrunc[h][i][j][k] = 0;
-
+						
+						}
+						
 						// run the timer to see how long this is going to take
 						toc = watch.elapsed(TimeUnit.SECONDS);
 						if(toc > warnTime){
@@ -417,6 +420,9 @@ public class ETAScatalog {
 			}
 		}	// else {
 		watch.stop();
+		
+		
+		
 		//renormalize the random vector to match the likelihood sum
 		for(int n = 0; n < nsamples; n++) uRand[n] /= cumSum;
 		
@@ -450,9 +456,17 @@ public class ETAScatalog {
 	}
 	
 	private double assignMagnitude(double b, double minMag, double Mmax){
+//		double u = Math.random();
+//		double mag = minMag - Math.log10(1.0 - u*(1.0 - Math.pow(10, -b*(Mmax-minMag))))/b;
+//		return mag;
+		
 		double u = Math.random();
-		double mag = minMag - Math.log10(1.0 - u*(1.0 - Math.pow(10, -b*(Mmax-minMag))))/b;
-		return mag;
+		double mag = minMag - 1/b*Math.log10(u);
+		
+		if(mag>Mmax)
+			return Mmax;
+		else
+			return mag;
 	}
 	
 	private double assignTime(double t0, double tmin, double tmax, double p, double c){

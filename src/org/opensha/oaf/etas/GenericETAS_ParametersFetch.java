@@ -65,6 +65,10 @@ public class GenericETAS_ParametersFetch {
 				double bValue = Double.parseDouble(csv.get(row, 13));
 				double refMag = Double.parseDouble(csv.get(row, 14));
 				double maxMag = Double.parseDouble(csv.get(row, 15));
+				
+				//this line put in for simulating PR sequence
+				maxMag = 7.05d;
+//				System.err.println("Using 7.1 as maximum magnitude for PR simulation.");
 
 //				double cValue = Math.pow(10, log_cValue);
 				// due to memory concerns, we're replacing the generic c-value with the global average c-value

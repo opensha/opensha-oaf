@@ -171,6 +171,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
     
 	private boolean D; //debug
 	private boolean devMode;
+	private boolean prMode; //this is for creating the duration product for Puerto Rico
 	private boolean overrideExpiry;
 	private boolean verbose;
 	private boolean commandLine = false;
@@ -211,7 +212,28 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		YEAR("Year",366d),
 		MONTH("Month",31d),
 		WEEK("Week", 7d),
-		DAY("Day",1d);
+		DAY("Day",1d),
+		YEAR2("2Year",2*366d),
+		YEAR3("3Year",3*366d),
+		YEAR4("4Year",4*366d),
+		YEAR5("5Year",5*366d),
+		YEAR6("6Year",6*366),
+		YEAR7("7Year",7*366),
+		YEAR8("8Year",8*366),
+		YEAR9("9Year",9*366),
+		YEAR10("10Year",10*366),
+		YEAR11("11Year",11*366),
+		YEAR12("12Year",12*366),
+		YEAR13("13Year",13*366),
+		YEAR14("14Year",14*366),
+		YEAR15("15Year",15*366),
+		YEAR16("16Year",16*366),
+		YEAR17("17Year",17*366),
+		YEAR18("18Year",18*366),
+		YEAR19("19Year",19*366),
+		YEAR20("20Year",20*366),
+		YEAR22("21Year",22*366),
+		YEAR23("22Year",23*366);
 		
 		private double duration;
 		private String name;
@@ -521,7 +543,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		mapPlotParams = new ParameterList();
 		publishAdvisoryParams = new ParameterList();
 		
-		eventIDParam = new StringParameter("USGS Event ID", "");
+		eventIDParam = new StringParameter("USGS Event ID", "us70006vll");
 //		eventIDParam.setValue(null);
 		eventIDParam.setInfo("the event ID can be found in the event page URL for specific earthquakes at https://earthquake.usgs.gov/earthquakes/");
 		eventIDParam.addParameterChangeListener(this);
@@ -697,13 +719,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		
 		
 		
-		if (!devMode){
-			bParam.getEditor().setEnabled(devMode);
-			setEnabledStyle(bParam, false);
-		
-//			mcParam.getEditor().setEnabled(devMode); // leave this one editable
-			magPrecisionParam.getEditor().setEnabled(devMode);
-		}
+//		if (!devMode){
+//			bParam.getEditor().setEnabled(devMode);
+//			setEnabledStyle(bParam, false);
+//		
+////			mcParam.getEditor().setEnabled(devMode); // leave this one editable
+//			magPrecisionParam.getEditor().setEnabled(devMode);
+//		}
 		
 		outputParams.addParameter(mcParam);
 		outputParams.addParameter(bParam);
@@ -1902,7 +1924,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		genericModel = new ETAS_AftershockModel_Generic(mainshock, aftershocks, genericParams, 
 				dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
 				forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), mcParam.getValue(),
-				9.5, 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(), validate);
+				genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(), validate);
 
 	} //end setupGUI
 	
@@ -3680,11 +3702,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 			} else if (param == forecastStartTimeParam) {
 //				if(verbose) System.out.println("Updating forecast start time");
-				setEnableParamsPostFetch(false);
+				if(!prMode) {
+					setEnableParamsPostFetch(false);
+				}
 
 				try{
-					dataEndTimeParam.setValue(forecastStartTimeParam.getValue());
-					dataEndTimeParam.getEditor().refreshParamEditor();	
+					if(!prMode) {
+						dataEndTimeParam.setValue(forecastStartTimeParam.getValue());
+						dataEndTimeParam.getEditor().refreshParamEditor();
+					}
 					forecastEndTimeParam.setValue(forecastStartTimeParam.getValue() + forecastDurationParam.getValue().getValueNumeric());
 					forecastEndTimeParam.getEditor().refreshParamEditor();
 					
@@ -3699,6 +3725,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				} finally {
 				}
 				refreshTimeWindowEditor();
+				
+				
 
 			} else if (param == regionTypeParam || param == regionCenterTypeParam) {
 //				if(verbose) System.out.println("Updating regionType");
@@ -4601,8 +4629,17 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				if(D) System.out.println("maxMag: " + maxMag + " largestShockMag: " + largestShock.getMag());
 				double[] minMags = ETAS_StatsCalc.linspace(minMag, maxMag, nMags);
 				
-				ETAS_USGS_AftershockForecast forecast = new ETAS_USGS_AftershockForecast(model, minMags, eventDate, startDate, forecastEndTimeParam.getValue());
-				JTable jTable = new JTable(forecast.getTableModel());
+				JTable jTable;
+				if(prMode) {
+					ETAS_USGS_AftershockForecastPR forecast = new ETAS_USGS_AftershockForecastPR(model, minMags, eventDate, startDate, forecastEndTimeParam.getValue());
+					jTable = new JTable(forecast.getTableModel());
+					System.err.println("Using incremental probabilities in table for PR sequence");
+				} else {
+					ETAS_USGS_AftershockForecast forecast = new ETAS_USGS_AftershockForecast(model, minMags, eventDate, startDate, forecastEndTimeParam.getValue());
+					jTable = new JTable(forecast.getTableModel());
+				}
+				
+//				JTable jTable = new JTable(forecast.getTableModel());
 				jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(Font.BOLD));
 				
 				forecastTablePane.addTab(name, jTable);
@@ -5676,6 +5713,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				System.err.println("Couldn't save forecast Table to: " + tableFile);
 			}
 			
+			//output a json that can be sent to PDL
+			String jsonFile = outFile.getParent() + "/" + "forecast.json";
+			try {
+				System.out.println("Saving forecast summary to: " + jsonFile);
+				graphForecast.writeSummaryJson(new File(jsonFile));
+			} catch (Exception e) {
+				System.err.println("Couldn't save forecast summary to: " + jsonFile);
+				e.printStackTrace();
+			}
 			
 			// print selected figures: Expected number distributions
 			for (int i = 0; i < aftershockExpectedNumGraph.size(); i++){
@@ -6119,10 +6165,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		// these used to be enabled after computing b but we now allow the user to just use default B
 		
 		mcParam.getEditor().setEnabled(enabled);
-		if (!enabled || (enabled && devMode)){
+//		if (!enabled || (enabled && devMode)){
 			bParam.getEditor().setEnabled(enabled);
 			magPrecisionParam.getEditor().setEnabled(enabled);
-		}
+//		}
 		
 		amsValRangeParam.getEditor().setEnabled(enabled);
 		amsValNumParam.getEditor().setEnabled(enabled);
@@ -6581,6 +6627,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		D = false;
 		validate = false;
 		overrideExpiry = false;
+		prMode = false;
 		
 		//check for arguments
 		for(int i = 0; i < args.length; i++) {
@@ -6591,6 +6638,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			if (argument.contains("debug")) D = true;
 			if (argument.contains("validate")) validate = true;
 			if (argument.contains("override")) overrideExpiry = true;
+			if (argument.contains("pr")) prMode = true;
 			if (argument.contains("eventID")) {
 				i++;
 				eventID = args[i];
