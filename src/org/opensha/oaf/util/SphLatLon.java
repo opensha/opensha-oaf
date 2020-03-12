@@ -241,6 +241,20 @@ public class SphLatLon {
 	}
 
 	/**
+	 * Version that accepts two latitude/longitude pairs in degrees.
+	 */
+	public static double angle_rad (double lat1, double lon1, double lat2, double lon2) {
+		double lat1_rad = lat1 * TO_RAD;
+		double lat2_rad = lat2 * TO_RAD;
+		double sinDlatBy2 = Math.sin((lat2_rad - lat1_rad) / 2.0);
+		double sinDlonBy2 = Math.sin((lon2 * TO_RAD - lon1 * TO_RAD) / 2.0);
+		// half length of chord connecting points
+		double c = (sinDlatBy2 * sinDlatBy2) +
+			(Math.cos(lat1_rad) * Math.cos(lat2_rad) * sinDlonBy2 * sinDlonBy2);
+		return 2.0 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+	}
+
+	/**
 	 * Calculates the great circle surface distance between two
 	 * points using the haversine formula for computing the
 	 * angle between two points.
@@ -269,6 +283,13 @@ public class SphLatLon {
 	}
 
 	/**
+	 * Version that accepts two latitude/longitude pairs in degrees.
+	 */
+	public static double horzDistance (double lat1, double lon1, double lat2, double lon2) {
+		return EARTH_RADIUS_MEAN * angle_rad (lat1, lon1, lat2, lon2);
+	}
+
+	/**
 	 * Convert horizontal distance to radians.
 	 */
 	public static double distance_to_rad (double distance) {
@@ -293,6 +314,7 @@ public class SphLatLon {
 	 * @param dist_rad = Angular distance traveled, in radians.
 	 * @return
 	 * Returns the ending point.
+	 * Note: Correctly handles angles with any value (angular range is not restricted).
 	 */
 	public static SphLatLon gc_travel_rad (double lat_rad, double lon_rad, double az_rad, double dist_rad) {
 
@@ -331,9 +353,253 @@ public class SphLatLon {
 	 * @param dist_km = Distance traveled, in kilometers.
 	 * @return
 	 * Returns the ending point.
+	 * Note: Correctly handles angles with any value (angular range is not restricted).
 	 */
 	public static SphLatLon gc_travel_km (double lat_rad, double lon_rad, double az_rad, double dist_km) {
 		return gc_travel_rad (lat_rad, lon_rad, az_rad, dist_km / EARTH_RADIUS_MEAN);
+	}
+
+	/**
+	 * Computes the initial azimuth (bearing) when moving from one point to another.
+	 * See http://www.edwilliams.org/avform.htm Aviation Formulary for source.
+	 * Result is returned in radians over the interval 0 to 2*pi.
+	 * Note: Derived from code in LocationUtils.java.
+	 * 
+	 * @param p1 = The first point.
+	 * @param p2 = The second point.
+	 * @return
+	 * Returns the azimuth (bearing) from p1 to p2 in radians, from 0 to 2*pi (0 = north, pi/2 = east).
+	 * Note: Correctly handles angles with any value (angular range is not restricted).
+	 */
+	public static double azimuth_rad (SphLatLon p1, SphLatLon p2) {
+
+		double lat1_rad = p1.get_lat_rad();
+		double lat2_rad = p2.get_lat_rad();
+
+		double cosLat1 = Math.cos(lat1_rad);
+		double cosLat2 = Math.cos(lat2_rad);
+
+		double sinLat1 = Math.sin(lat1_rad);
+		double sinLat2 = Math.sin(lat2_rad);
+
+		// If either point lies within ~ 1 cm of the N or S pole, force 0 or pi return
+
+		if (Math.abs(cosLat1) < 1.745e-8 || Math.abs(cosLat2) < 1.745e-8) {
+			return ((sinLat1 > sinLat2) ? PI : 0); // N : S pole
+		}
+
+		// For start or end points other than the poles
+
+		double dLon = p2.get_lon_rad() - p1.get_lon_rad();
+
+		double azRad = Math.atan2(Math.sin(dLon) * cosLat2,
+			cosLat1 * sinLat2 - sinLat1 * cosLat2 * Math.cos(dLon));
+
+		if (azRad < 0.0) {
+			azRad += TWOPI;
+		}
+
+		return azRad;
+	}
+
+	/**
+	 * Version that accepts two Location.
+	 */
+	public static double azimuth_rad (Location p1, Location p2) {
+
+		double lat1_rad = p1.getLatRad();
+		double lat2_rad = p2.getLatRad();
+
+		double cosLat1 = Math.cos(lat1_rad);
+		double cosLat2 = Math.cos(lat2_rad);
+
+		double sinLat1 = Math.sin(lat1_rad);
+		double sinLat2 = Math.sin(lat2_rad);
+
+		// If either point lies within ~ 1 cm of the N or S pole, force 0 or pi return
+
+		if (Math.abs(cosLat1) < 1.745e-8 || Math.abs(cosLat2) < 1.745e-8) {
+			return ((sinLat1 > sinLat2) ? PI : 0); // N : S pole
+		}
+
+		// For start or end points other than the poles
+
+		double dLon = p2.getLonRad() - p1.getLonRad();
+
+		double azRad = Math.atan2(Math.sin(dLon) * cosLat2,
+			cosLat1 * sinLat2 - sinLat1 * cosLat2 * Math.cos(dLon));
+
+		if (azRad < 0.0) {
+			azRad += TWOPI;
+		}
+
+		return azRad;
+	}
+
+	/**
+	 * Version that accepts one SphLatLon and one Location.
+	 */
+	public static double azimuth_rad (SphLatLon p1, Location p2) {
+
+		double lat1_rad = p1.get_lat_rad();
+		double lat2_rad = p2.getLatRad();
+
+		double cosLat1 = Math.cos(lat1_rad);
+		double cosLat2 = Math.cos(lat2_rad);
+
+		double sinLat1 = Math.sin(lat1_rad);
+		double sinLat2 = Math.sin(lat2_rad);
+
+		// If either point lies within ~ 1 cm of the N or S pole, force 0 or pi return
+
+		if (Math.abs(cosLat1) < 1.745e-8 || Math.abs(cosLat2) < 1.745e-8) {
+			return ((sinLat1 > sinLat2) ? PI : 0); // N : S pole
+		}
+
+		// For start or end points other than the poles
+
+		double dLon = p2.getLonRad() - p1.get_lon_rad();
+
+		double azRad = Math.atan2(Math.sin(dLon) * cosLat2,
+			cosLat1 * sinLat2 - sinLat1 * cosLat2 * Math.cos(dLon));
+
+		if (azRad < 0.0) {
+			azRad += TWOPI;
+		}
+
+		return azRad;
+	}
+
+	/**
+	 * Version that accepts one SphLatLon and latitude/longitude in degrees.
+	 */
+	public static double azimuth_rad (SphLatLon p1, double lat, double lon) {
+
+		double lat1_rad = p1.get_lat_rad();
+		double lat2_rad = lat * TO_RAD;
+
+		double cosLat1 = Math.cos(lat1_rad);
+		double cosLat2 = Math.cos(lat2_rad);
+
+		double sinLat1 = Math.sin(lat1_rad);
+		double sinLat2 = Math.sin(lat2_rad);
+
+		// If either point lies within ~ 1 cm of the N or S pole, force 0 or pi return
+
+		if (Math.abs(cosLat1) < 1.745e-8 || Math.abs(cosLat2) < 1.745e-8) {
+			return ((sinLat1 > sinLat2) ? PI : 0); // N : S pole
+		}
+
+		// For start or end points other than the poles
+
+		double dLon = lon * TO_RAD - p1.get_lon_rad();
+
+		double azRad = Math.atan2(Math.sin(dLon) * cosLat2,
+			cosLat1 * sinLat2 - sinLat1 * cosLat2 * Math.cos(dLon));
+
+		if (azRad < 0.0) {
+			azRad += TWOPI;
+		}
+
+		return azRad;
+	}
+
+	/**
+	 * Version that accepts two latitude/longitude pairs in degrees.
+	 */
+	public static double azimuth_rad (double lat1, double lon1, double lat2, double lon2) {
+
+		double lat1_rad = lat1 * TO_RAD;
+		double lat2_rad = lat2 * TO_RAD;
+
+		double cosLat1 = Math.cos(lat1_rad);
+		double cosLat2 = Math.cos(lat2_rad);
+
+		double sinLat1 = Math.sin(lat1_rad);
+		double sinLat2 = Math.sin(lat2_rad);
+
+		// If either point lies within ~ 1 cm of the N or S pole, force 0 or pi return
+
+		if (Math.abs(cosLat1) < 1.745e-8 || Math.abs(cosLat2) < 1.745e-8) {
+			return ((sinLat1 > sinLat2) ? PI : 0); // N : S pole
+		}
+
+		// For start or end points other than the poles
+
+		double dLon = lon2 * TO_RAD - lon1 * TO_RAD;
+
+		double azRad = Math.atan2(Math.sin(dLon) * cosLat2,
+			cosLat1 * sinLat2 - sinLat1 * cosLat2 * Math.cos(dLon));
+
+		if (azRad < 0.0) {
+			azRad += TWOPI;
+		}
+
+		return azRad;
+	}
+
+	/**
+	 * Computes the initial azimuth (bearing) when moving from one point to another.
+	 * See http://www.edwilliams.org/avform.htm Aviation Formulary for source.
+	 * Result is returned in degrees over the interval 0 to 360.
+	 * Note: Derived from code in LocationUtils.java.
+	 * 
+	 * @param p1 = The first point.
+	 * @param p2 = The second point.
+	 * @return
+	 * Returns the azimuth (bearing) from p1 to p2 in degrees, from 0 to 360 (0 = north, 90 = east).
+	 * Note: Correctly handles angles with any value (angular range is not restricted).
+	 */
+	public static double azimuth_deg (SphLatLon p1, SphLatLon p2) {
+		double az_deg = azimuth_rad (p1, p2) * TO_DEG;
+		if (az_deg > 360.0) {
+			az_deg -= 360.0;
+		}
+		return az_deg;
+	}
+
+	/**
+	 * Version that accepts two Location.
+	 */
+	public static double azimuth_deg (Location p1, Location p2) {
+		double az_deg = azimuth_rad (p1, p2) * TO_DEG;
+		if (az_deg > 360.0) {
+			az_deg -= 360.0;
+		}
+		return az_deg;
+	}
+
+	/**
+	 * Version that accepts one SphLatLon and one Location.
+	 */
+	public static double azimuth_deg (SphLatLon p1, Location p2) {
+		double az_deg = azimuth_rad (p1, p2) * TO_DEG;
+		if (az_deg > 360.0) {
+			az_deg -= 360.0;
+		}
+		return az_deg;
+	}
+
+	/**
+	 * Version that accepts one SphLatLon and latitude/longitude in degrees.
+	 */
+	public static double azimuth_deg (SphLatLon p1, double lat, double lon) {
+		double az_deg = azimuth_rad (p1, lat, lon) * TO_DEG;
+		if (az_deg > 360.0) {
+			az_deg -= 360.0;
+		}
+		return az_deg;
+	}
+
+	/**
+	 * Version that accepts two latitude/longitude pairs in degrees.
+	 */
+	public static double azimuth_deg (double lat1, double lon1, double lat2, double lon2) {
+		double az_deg = azimuth_rad (lat1, lon1, lat2, lon2) * TO_DEG;
+		if (az_deg > 360.0) {
+			az_deg -= 360.0;
+		}
+		return az_deg;
 	}
 
 

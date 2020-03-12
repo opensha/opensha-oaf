@@ -249,4 +249,14 @@ public class OECatalogScanComm {
 		return;
 	}
 
+
+
+
+	// Forget retained objects.
+
+	public void forget () {
+		rangen = null;
+		return;
+	}
+
 }

@@ -244,7 +244,12 @@ public class PDLSupport extends ServerComponent {
 			boolean isReviewed = false;
 			long cutoff_time = 0L;
 
-			delres = PDLCodeChooserOaf.deleteOldOafProducts (null, geojson, f_gj_prod, queryID, isReviewed, cutoff_time);
+			long reviewed_time = 0L;
+			if (riprem_reason == RiPDLRemoval.RIPREM_REAS_SKIPPED_ANALYST) {
+				reviewed_time = 1L;		// for analyst, don't delete reviewed products
+			}
+
+			delres = PDLCodeChooserOaf.deleteOldOafProducts_v2 (null, geojson, f_gj_prod, queryID, isReviewed, cutoff_time, reviewed_time);
 
 		} catch (Exception e) {
 

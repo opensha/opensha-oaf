@@ -134,7 +134,7 @@ public class OECatalogScanner {
 	// Parameters:
 	//  accumulators = One or more accumulators to receive the scan.
 
-	public void setup (OECatalogAccumulator... accumulators) {
+	public void setup (OEEnsembleAccumulator... accumulators) {
 
 		// Obtain a list of consumers
 
@@ -163,7 +163,7 @@ public class OECatalogScanner {
 	// Open all the catalog consumers.
 	// Perform any setup needed to begin consuming a catalog.
 	// Note: All the accumulators must be in an appropriate state for their consumers
-	// to be opened (e.g., OECatalogAccumulator.begin_accumulation() has been called).
+	// to be opened (e.g., OEEnsembleAccumulator.begin_accumulation() has been called).
 
 	public void open () {
 	
@@ -327,6 +327,10 @@ public class OECatalogScanner {
 			consumer.end_catalog (comm);
 		}
 
+		// Forget retained objects
+
+		comm.forget();
+
 		return;
 	}
 
@@ -424,7 +428,7 @@ public class OECatalogScanner {
 		// The number of sterile ruptures is a Poisson random variable
 		// with the expected value
 
-		int sterile_rup_count = comm.rangen.poisson_sample (expected_count);
+		int sterile_rup_count = comm.rangen.poisson_sample_checked (expected_count);
 
 		// If it's zero, we're done
 

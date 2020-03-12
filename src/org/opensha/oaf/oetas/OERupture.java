@@ -167,16 +167,77 @@ public class OERupture {
 
 	//----- Marshaling -----
 
+	// Marshal version number.
+
+	private static final int MARSHAL_VER_1 = 79001;
+
+	private static final String M_VERSION_NAME = "OERupture";
+
+	// Marshal object, internal.
+
+	private void do_marshal (MarshalWriter writer) {
+
+		// Version
+
+		int ver = MARSHAL_VER_1;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
+
+		// Contents
+
+		switch (ver) {
+
+		case MARSHAL_VER_1: {
+
+			writer.marshalDouble ("t_day"     , t_day     );
+			writer.marshalDouble ("rup_mag"   , rup_mag   );
+			writer.marshalDouble ("k_prod"    , k_prod    );
+			writer.marshalInt    ("rup_parent", rup_parent);
+			writer.marshalDouble ("x_km"      , x_km      );
+			writer.marshalDouble ("y_km"      , y_km      );
+
+		}
+		break;
+
+		}
+
+		return;
+	}
+
+	// Unmarshal object, internal.
+
+	private void do_umarshal (MarshalReader reader) {
+	
+		// Version
+
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+
+		// Contents
+
+		switch (ver) {
+
+		case MARSHAL_VER_1: {
+
+			t_day      = reader.unmarshalDouble ("t_day"     );
+			rup_mag    = reader.unmarshalDouble ("rup_mag"   );
+			k_prod     = reader.unmarshalDouble ("k_prod"    );
+			rup_parent = reader.unmarshalInt    ("rup_parent");
+			x_km       = reader.unmarshalDouble ("x_km"      );
+			y_km       = reader.unmarshalDouble ("y_km"      );
+
+		}
+		break;
+
+		}
+
+		return;
+	}
+
 	// Marshal object.
 
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
-		writer.marshalDouble ("t_day"     , t_day     );
-		writer.marshalDouble ("rup_mag"   , rup_mag   );
-		writer.marshalDouble ("k_prod"    , k_prod    );
-		writer.marshalInt    ("rup_parent", rup_parent);
-		writer.marshalDouble ("x_km"      , x_km      );
-		writer.marshalDouble ("y_km"      , y_km      );
+		do_marshal (writer);
 		writer.marshalMapEnd ();
 		return;
 	}
@@ -185,14 +246,52 @@ public class OERupture {
 
 	public OERupture unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
-		t_day      = reader.unmarshalDouble ("t_day"     );
-		rup_mag    = reader.unmarshalDouble ("rup_mag"   );
-		k_prod     = reader.unmarshalDouble ("k_prod"    );
-		rup_parent = reader.unmarshalInt    ("rup_parent");
-		x_km       = reader.unmarshalDouble ("x_km"      );
-		y_km       = reader.unmarshalDouble ("y_km"      );
+		do_umarshal (reader);
 		reader.unmarshalMapEnd ();
 		return this;
+	}
+
+	// Marshal object.
+
+	public static void static_marshal (MarshalWriter writer, String name, OERupture rup) {
+		writer.marshalMapBegin (name);
+		rup.do_marshal (writer);
+		writer.marshalMapEnd ();
+		return;
+	}
+
+	// Unmarshal object.
+
+	public static OERupture static_unmarshal (MarshalReader reader, String name) {
+		OERupture rup = new OERupture();
+		reader.unmarshalMapBegin (name);
+		rup.do_umarshal (reader);
+		reader.unmarshalMapEnd ();
+		return rup;
+	}
+
+	// Marshal an array of objects.
+
+	public static void marshal_array (MarshalWriter writer, String name, OERupture[] x) {
+		int n = x.length;
+		writer.marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			static_marshal (writer, null, x[i]);
+		}
+		writer.marshalArrayEnd ();
+		return;
+	}
+
+	// Unmarshal an array of objects.
+
+	public static OERupture[] unmarshal_array (MarshalReader reader, String name) {
+		int n = reader.unmarshalArrayBegin (name);
+		OERupture[] x = new OERupture[n];
+		for (int i = 0; i < n; ++i) {
+			x[i] = static_unmarshal (reader, null);
+		}
+		reader.unmarshalArrayEnd ();
+		return x;
 	}
 
 

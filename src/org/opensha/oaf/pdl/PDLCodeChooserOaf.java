@@ -399,6 +399,8 @@ public class PDLCodeChooserOaf {
 	//  error.  It is recommended that any exception be considered a transient condition.
 	// Note: To be deleted, the update time of the most recent product (from our source)
 	//  must be stricly less than cutoff_time (if cutoff_time > 0L).
+	// Note: If the return value is > 0L and if cutoff_time > 0L, then it is guaranteed
+	//  that the return value is >= cutoff_time.
 
 	public static final long DOOP_DELETED = 0L;
 		// One or more OAF products were deleted.
@@ -552,13 +554,214 @@ public class PDLCodeChooserOaf {
 
 		if (cutoff_time > 0L) {
 			if (oafProducts.get(ix_recent).updateTime >= cutoff_time) {
-				return oafProducts.get(ix_recent).updateTime;	// note this must be positive
+				return oafProducts.get(ix_recent).updateTime;	// note this must be positive and >= cutoff_time
 			}
 		}
 
 		// Delete all OAF products from our source
 
 		deleteOafProducts (oafProducts, -1, event_net, event_code, isReviewed);
+		return DOOP_DELETED;
+	}
+
+
+
+
+	// Delete old OAF products associated with an event.
+	// Parameters:
+	//  f_prod = True to read from prod-Comcat, false to read from dev-Comcat,
+	//           null to read from the configured PDL destination.
+	//  geojson = GeoJSON for the event, or null if not available.  If not supplied,
+	//   or if f_gj_prod does not correspond to the PDL destination, then this
+	//   function retrieves the geojson from Comcat.
+	//  f_gj_prod = True if geojson was retrieved from Comcat-production, false if it
+	//   was retrieved from Comcat-development.  This is only used if geojson is non-null.
+	//  queryID = Event ID used to query Comcat.  This is used only if geojson is null,
+	//   or if f_gj_prod does not correspond to the PDL destination.
+	//  isReviewed = True to set reviewed flag on the delete products.
+	//  cutoff_time = Cutoff time in milliseconds since the epoch, or 0L if none.
+	//  reviewed_time = Reviewed product time in milliseconds since the epoch, or 0L if none.
+	// Returns 0L (== DOOP_DELETED) if one or more products were deleted.
+	// Returns > 0L if no product was deleted because the most recent product was
+	//  updated at or after the cutoff time.  In this case, the return value is the
+	//  time that the most recent product (from our source) was updated.
+	// Returns < 0L if no product was deleted for some other reason.  In this case,
+	//  the return value is one of the DOOP_XXXXX return codes.
+	// If cutoff_time > 0L, then all products are deleted if the most recent product
+	//  was updated before cutoff_time.  If cutoff_time == 0L then all products are
+	//  deleted unconditionally.
+	// If reviewed_time > 0L, and there is a reviewed product (from our source) updated
+	//  on or after reviewed_time, then the most recent reviewed product is treated
+	//  as a foreign product.  In particular, it is never deleted, and if there are
+	//  no other products to delete then the return is DOOP_FOREIGN.
+	// Note: Throws ComcatException if Comcat access error.  Throws Exception if PDL
+	//  error.  It is recommended that any exception be considered a transient condition.
+	// Note: To be deleted, the update time of the most recent product (from our source)
+	//  must be stricly less than cutoff_time (if cutoff_time > 0L).
+	// Note: If the return value is > 0L and if cutoff_time > 0L, then it is guaranteed
+	//  that the return value is >= cutoff_time.
+	// Note: Calling deleteOldOafProducts_v2 with reviewed_time == 0L has the same
+	//  effect as calling deleteOldOafProducts.
+
+	public static long deleteOldOafProducts_v2 (Boolean f_prod,
+			JSONObject geojson, boolean f_gj_prod, String queryID,
+			boolean isReviewed, long cutoff_time, long reviewed_time) throws Exception {
+
+		// Server configuration
+
+		ServerConfig server_config = new ServerConfig();
+
+		// Get flag indicating if we should read back products from production
+
+		boolean f_use_prod = server_config.get_is_pdl_readback_prod();
+
+		if (f_prod != null) {
+			f_use_prod = f_prod.booleanValue();
+		}
+
+		// Get the geojson, reading from Comcat if necessary
+
+		JSONObject my_geojson = geojson;
+
+		if (f_gj_prod != f_use_prod) {
+			my_geojson = null;
+		}
+
+		if (my_geojson == null) {
+		
+			// Get the accessor
+
+			ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod);
+
+			// Try to retrieve the event
+
+			ObsEqkRupture rup = accessor.fetchEvent (queryID, false, true);
+
+			// If not found, nothing to delete
+
+			if (rup == null) {
+				return DOOP_NOT_FOUND;
+			}
+
+			// Get the geojson from the fetch (must allow for the possibility this is null)
+
+			my_geojson = accessor.get_last_geojson();
+		}
+
+		// If no geojson, nothing to delete
+
+		if (my_geojson == null) {
+			return DOOP_NO_GEOJSON;
+		}
+
+		// Need to have event net, code, ids, and time
+
+		String event_net = GeoJsonUtils.getNet (my_geojson);
+		String event_code = GeoJsonUtils.getCode (my_geojson);
+		String event_ids = GeoJsonUtils.getIds (my_geojson);
+		Date event_time = GeoJsonUtils.getTime (my_geojson);
+
+		if ( event_net == null || event_net.isEmpty() 
+			|| event_code == null || event_code.isEmpty()
+			|| event_ids == null || event_ids.isEmpty() || event_time == null ) {
+			
+			return DOOP_INCOMPLETE;
+		}
+
+		// Get the list of IDs for this event, with the authorative id first
+
+		List<String> idlist = ComcatOAFAccessor.idsToList (event_ids, event_net + event_code);
+
+		// Get the list of OAF products
+
+		List<ComcatOAFProduct> oafProducts = ComcatOAFProduct.make_list_from_gj (my_geojson);
+
+		// If no OAF products, nothing to delete
+
+		if (oafProducts.isEmpty()) {
+			return DOOP_NO_PRODUCTS;
+		}
+
+		// Index of the most recent product, with correct source
+
+		int ix_recent = -1;
+
+		// Index of the most recent product, with correct source and valid code
+
+		int ix_valid = -1;
+
+		// Index of reviewed product to be treated as foreign
+
+		int ix_reviewed = -1;
+
+		// Count of products with our source
+
+		int count_our_products = 0;
+
+		// Loop over products to find indexes ...
+
+		for (int k = 0; k < oafProducts.size(); ++k) {
+			ComcatOAFProduct oafProduct = oafProducts.get (k);
+
+			// If the product is for our source ...
+
+			if (oafProduct.sourceID.equals (server_config.get_pdl_oaf_source())) {
+
+				// Update most recent product
+
+				if (ix_recent == -1 || oafProduct.updateTime > oafProducts.get(ix_recent).updateTime) {
+					ix_recent = k;
+				}
+
+				// Count it
+
+				++count_our_products;
+
+				// Check for reviewed product that could be treated as foreign
+
+				if (reviewed_time > 0L && oafProduct.isReviewed && oafProduct.updateTime >= reviewed_time) {
+					if (ix_reviewed == -1 || oafProduct.updateTime > oafProducts.get(ix_reviewed).updateTime) {
+						ix_reviewed = k;
+					}
+				}
+
+				// If the product has a valid code ...
+
+				if (idlist.contains (oafProduct.eventID)) {
+
+					// Update most recent product with valid code
+
+					if (ix_valid == -1 || oafProduct.updateTime > oafProducts.get(ix_valid).updateTime) {
+						ix_valid = k;
+					}
+				}
+			}
+		}
+
+		// If no products for our source, nothing to delete
+
+		if (ix_recent == -1) {
+			return DOOP_FOREIGN;
+		}
+
+		// If the only product for our source is a reviewed product treated as foreign, nothing to delete
+
+		if (ix_reviewed != -1 && count_our_products == 1) {
+			return DOOP_FOREIGN;
+		}
+
+		// If not too old, nothing to delete
+
+		if (cutoff_time > 0L) {
+			if (oafProducts.get(ix_recent).updateTime >= cutoff_time) {
+				return oafProducts.get(ix_recent).updateTime;	// note this must be positive and >= cutoff_time
+			}
+		}
+
+		// Delete all OAF products from our source, keeping any reviewed product treated as foreign
+
+		//deleteOafProducts (oafProducts, -1, event_net, event_code, isReviewed);
+		deleteOafProducts (oafProducts, ix_reviewed, event_net, event_code, isReviewed);
 		return DOOP_DELETED;
 	}
 
@@ -927,6 +1130,83 @@ public class PDLCodeChooserOaf {
 
 				long result = PDLCodeChooserOaf.deleteOldOafProducts (null,
 					geojson, f_gj_prod, query_id, isReviewed, cutoff_time);
+
+				// Display result
+
+				if (result > 0L) {
+					System.out.println ("PDLCodeChooserOaf.deleteOldOafProducts returned: " + SimpleUtils.time_raw_and_string(result));
+				} else {
+					System.out.println ("PDLCodeChooserOaf.deleteOldOafProducts returned: " + result);
+				}
+			}
+
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  pdl_enable  query_id  isReviewed  cutoff_time  reviewed_time
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Then call deleteOldOafProducts and display the result.
+		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+		// Times before 1970-01-01 are converted to zero.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// 5 additional arguments
+
+			if (args.length != 6) {
+				System.err.println ("PDLCodeChooserOaf : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				String query_id = args[2];
+				boolean isReviewed = Boolean.parseBoolean (args[3]);
+				long cutoff_time = SimpleUtils.string_to_time (args[4]);
+				if (cutoff_time < 0L) {
+					cutoff_time = 0L;
+				}
+				long reviewed_time = SimpleUtils.string_to_time (args[5]);
+				if (reviewed_time < 0L) {
+					reviewed_time = 0L;
+				}
+
+				// Set the PDL enable code
+
+				if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+					System.out.println ("Invalid pdl_enable = " + pdl_enable);
+					return;
+				}
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+				// Say hello
+
+				System.out.println ("PDL enable: " + pdl_enable);
+				System.out.println ("Query ID: " + query_id);
+				System.out.println ("Review status: " + isReviewed);
+				System.out.println ("Cutoff time: " + SimpleUtils.time_raw_and_string(cutoff_time));
+				System.out.println ("Reviewed time: " + SimpleUtils.time_raw_and_string(reviewed_time));
+				System.out.println ("");
+
+				// Make the call
+
+				JSONObject geojson = null;
+				boolean f_gj_prod = true;
+
+				long result = PDLCodeChooserOaf.deleteOldOafProducts_v2 (null,
+					geojson, f_gj_prod, query_id, isReviewed, cutoff_time, reviewed_time);
 
 				// Display result
 

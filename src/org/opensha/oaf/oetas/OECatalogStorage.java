@@ -394,6 +394,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 	// This method clears the internal data structures and sets up
 	// an empty catalog with zero generations.
 	// Note: This allows re-using a catalog object to generate a new catalog.
+	// Note: This function does not retain cat_params; it copies the contents.
 
 	@Override
 	public void begin_catalog (OECatalogParams cat_params) {
@@ -426,6 +427,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 	//  gen_info = Structure containing the generation information to set.
 	// This method increments the number of generations, and creates a
 	// new empty generation.
+	// Note: This function does not retain gen_info; it copies the contents.
 
 	@Override
 	public void begin_generation (OEGenerationInfo gen_info) {
@@ -469,7 +471,9 @@ public class OECatalogStorage implements OECatalogBuilder {
 	// Parameters:
 	//  rup = Structure containing the rupture information to set.
 	// Note: Ruptures can only be added to the generation currently being built.
+	// Note: This function does not retain rup; it copies the contents.
 
+	@Override
 	public void add_rup (OERupture rup) {
 
 		// Get the index of the new rupture, and break it into block and offset

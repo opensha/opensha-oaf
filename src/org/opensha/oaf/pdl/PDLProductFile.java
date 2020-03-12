@@ -126,6 +126,13 @@ public class PDLProductFile {
 	public static final String IMAGE_PNG = "image/png";
 	public static final String IMAGE_GIF = "image/gif";
 
+	public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
+	public static final String APPLICATION_POSTSCRIPT = "application/postscript";
+	public static final String APPLICATION_X_TEX = "application/x-tex";
+	public static final String IMAGE_TIFF = "image/tiff";
+	public static final String TEXT_CSS = "text/css";
+	public static final String TEXT_XML = "text/xml";		// alias for application/xml
+
 	// The filename for contents.xml
 
 	public static final String CONTENTS_XML = "contents.xml";

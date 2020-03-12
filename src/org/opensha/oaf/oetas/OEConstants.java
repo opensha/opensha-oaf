@@ -64,4 +64,25 @@ public class OEConstants {
 
 	public static final double SMALL_EXPECTED_COUNT = 0.001;
 
+	// Methods for infilling event counts below the minimum simulated magnitude.
+
+	public static final int INFILL_METH_MIN		= 1;
+	public static final int INFILL_METH_NONE	= 1;	// No infill, use exactly as simulated
+	public static final int INFILL_METH_SCALE	= 2;	// Scale up, using G-R relation
+	public static final int INFILL_METH_POISSON	= 3;	// Use Poisson random var applied to expected rate
+	public static final int INFILL_METH_STERILE	= 4;	// Generate sterile ruptures
+	public static final int INFILL_METH_MAX		= 4;
+
+	// Return a string describing the infill method.
+
+	public static String get_infill_method_as_string (int infill_meth) {
+		switch (infill_meth) {
+		case INFILL_METH_NONE: return "INFILL_METH_NONE";
+		case INFILL_METH_SCALE: return "INFILL_METH_SCALE";
+		case INFILL_METH_POISSON: return "INFILL_METH_POISSON";
+		case INFILL_METH_STERILE: return "INFILL_METH_STERILE";
+		}
+		return "INFILL_METH_INVALID(" + infill_meth + ")";
+	}
+
 }

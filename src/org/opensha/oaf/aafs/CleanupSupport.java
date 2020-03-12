@@ -288,6 +288,162 @@ public class CleanupSupport extends ServerComponent {
 
 
 
+	// Return value for is_cleanup_needed_v2.
+
+	public static class icnv2_retval {
+	
+		// Cutoff time, must be >= -1L.
+		// If == -1L, then no cleanup is needed.  (Should be checked as < 0L.)
+		// If > 0L, then cleanup is needed.  If there is no product (from our source)
+		//  with update time >= cutoff_time, then all the products should be deleted.
+		// If == 0L, then cleanup is needed.  All products (from our source) should be
+		//  deleted.  However, this option is currently not used.
+
+		public long cutoff_time;
+
+		// Reviewed time, must be >= 0L.
+		// If == 0L, then reviewed products receive no special treatment.
+		// If > 0L, and there is a reviewed product with update time >= reviewed time,
+		//  then the most recent such product should not be deleted, and instead should
+		//  be treated as a foreign product.
+
+		public long reviewed_time;
+
+		// Construct and initialize.
+
+		public icnv2_retval (long the_cutoff_time, long the_reviewed_time) {
+			cutoff_time = the_cutoff_time;
+			reviewed_time = the_reviewed_time;
+		}
+	}
+
+
+
+
+	// Check if cleanup is needed for an event, version 2.
+	// Parameters:
+	//  time_now = Current time, in milliseconds since the epoch.
+	//  comcat_ids = Set of Comcat event ids to check.
+	// Returns an icnv2_retval structure.
+	// Note: An exception should be considered a database error.
+	// Note: This may be called from a task execution function, or from an idle time function.
+
+	public icnv2_retval is_cleanup_needed_v2 (long time_now, String... comcat_ids) {
+
+		// Must supply at least one id
+
+		if (comcat_ids == null || comcat_ids.length == 0) {
+			throw new IllegalArgumentException ("CleanupSupport.is_cleanup_needed_v2 - No Comcat ids supplied");
+		}
+
+		// Action configuration
+
+		ActionConfig action_config = new ActionConfig();
+
+		// Get all PDL completion, removal, and foreign relay items for any of the Comcat ids
+
+		List<RelayItem> relits = sg.relay_sup.get_pdl_prem_pfrn_relay_items (comcat_ids);
+
+		// Accumulate the most recent completion, foreign, and removal times
+
+		long completion_time = 0L;
+		long foreign_time = 0L;
+		long removal_time = 0L;
+
+		long reviewed_time = 0L;
+
+		for (RelayItem relit : relits) {
+
+			// Unmarshal the payload and accumulate
+
+			switch (RelaySupport.classify_relay_id (relit.get_relay_id())) {
+
+			case RelaySupport.RITYPE_PDL_COMPLETION:
+			{
+				RiPDLCompletion payload = new RiPDLCompletion();
+				payload.unmarshal_relay (relit);
+
+				completion_time = Math.max (completion_time, payload.ripdl_update_time);
+
+			}
+			break;
+
+			case RelaySupport.RITYPE_PDL_REMOVAL:
+			{
+				RiPDLRemoval payload = new RiPDLRemoval();
+				payload.unmarshal_relay (relit);
+
+				// If this is a new maximum, activate special treatment for reviewed
+				// products if it is an analyst request
+
+				if (payload.riprem_remove_time > removal_time) {
+					if (payload.riprem_reason == RiPDLRemoval.RIPREM_REAS_SKIPPED_ANALYST) {
+						reviewed_time = 1L;
+					} else {
+						reviewed_time = 0L;					
+					}
+				}
+
+				removal_time = Math.max (removal_time, payload.riprem_remove_time);
+
+			}
+			break;
+
+			case RelaySupport.RITYPE_PDL_FOREIGN:
+			{
+				RiPDLForeign payload = new RiPDLForeign();
+				payload.unmarshal_relay (relit);
+
+				foreign_time = Math.max (foreign_time, payload.ripfrn_detect_time);
+
+			}
+			break;
+
+			}
+		}
+
+		// No cleanup if a known PDL forecast is unexpired and not removed
+		// Note: A completion_time does not count if it is strictly less than removal_time.
+		// This corresponds to the relationship between update time and cutoff time in
+		// PDLCodeChooserOaf.deleteOldOafProducts.  This correspondence is required so that,
+		// if removal_time is used as the cutoff time, and deleteOldOafProducts finds an OAF
+		// product that does not satisfy the cutoff (and hence is not deleted), then the
+		// the completion_time gets updated to a value >= removal_time and hence is not
+		// blocked on the next call to this function, avoiding repeated checks of the event.
+
+		if (completion_time > 0L
+			&& completion_time >= removal_time
+			&& completion_time + action_config.get_removal_forecast_age()
+				+ action_config.get_removal_update_skew() >= time_now) {
+
+			return new icnv2_retval (-1L, 0L);
+		}
+
+		// No cleanup if soon after a foreign forecast was seen
+
+		if (foreign_time > 0L
+			&& foreign_time >= removal_time
+			&& foreign_time + action_config.get_removal_foreign_block() >= time_now) {
+
+			return new icnv2_retval (-1L, 0L);
+		}
+
+		// Cutoff time based on expiration
+
+		long cutoff_time = Math.max (1L, time_now - action_config.get_removal_forecast_age());
+
+		// Cutoff time based on removal
+
+		if (removal_time > 0L) {
+			cutoff_time = Math.max (cutoff_time, removal_time);
+		}
+
+		return new icnv2_retval (cutoff_time, reviewed_time);
+	}
+
+
+
+
 	// Perform cleanup for an event.
 	// Parameters:
 	//  query_id = ID to use for querying Comcat.
@@ -378,10 +534,10 @@ public class CleanupSupport extends ServerComponent {
 
 		// Get the cutoff time, check if cleanup is needed
 
-		long cutoff_time;
+		icnv2_retval icnret;
 
 		try {
-			cutoff_time = is_cleanup_needed (time_now, comcat_ids);
+			icnret = is_cleanup_needed_v2 (time_now, comcat_ids);
 		}
 
 		catch (Exception e) {
@@ -390,7 +546,7 @@ public class CleanupSupport extends ServerComponent {
 
 		// If no cutoff time, nothing to do
 
-		if (cutoff_time < 0L) {
+		if (icnret.cutoff_time < 0L) {
 			return PDLCodeChooserOaf.DOOP_BLOCKED;
 		}
 
@@ -398,8 +554,8 @@ public class CleanupSupport extends ServerComponent {
 
 		boolean isReviewed = false;
 
-		long update_time = PDLCodeChooserOaf.deleteOldOafProducts (f_use_prod,
-			my_geojson, f_use_prod, query_id, isReviewed, cutoff_time);
+		long update_time = PDLCodeChooserOaf.deleteOldOafProducts_v2 (f_use_prod,
+			my_geojson, f_use_prod, query_id, isReviewed, icnret.cutoff_time, icnret.reviewed_time);
 
 		// If nothing deleted due to unexpired OAF product (from our source),
 		// write a relay item to defer further checks until its expiration time
@@ -520,10 +676,10 @@ public class CleanupSupport extends ServerComponent {
 
 				// Get the cutoff time, check if cleanup is needed
 
-				long cutoff_time;
+				icnv2_retval icnret;
 
 				try {
-					cutoff_time = is_cleanup_needed (time_now, comcat_ids);
+					icnret = is_cleanup_needed_v2 (time_now, comcat_ids);
 				}
 
 				catch (Exception e) {
@@ -532,7 +688,7 @@ public class CleanupSupport extends ServerComponent {
 
 				// If no cutoff time, skip
 
-				if (cutoff_time < 0L) {
+				if (icnret.cutoff_time < 0L) {
 					return 0;
 				}
 

@@ -184,6 +184,37 @@ public class OERandomGenerator {
 
 
 
+	// Sample from a Poisson distribution, with sanity checking.
+	// Parameters:
+	//  mean = The mean of the Poisson distribution.
+	// Note: The Poisson distribution in principle is unbounded.
+	// Code using the Poisson distribution may fail if the return
+	// value is extremely large, so this function clips the Poisson
+	// distribution at about 10 sigma.  Note that the standard
+	// deviation of the Poisson distribution is the square root
+	// of the mean.  I do not know the largest value that can be
+	// returned by nextInt().
+
+	public int poisson_sample_checked (double mean) {
+
+		// Evaluate the Poisson distribution
+
+		int x = gen_poisson.nextInt (mean);
+
+		// Get the cap as approximately the mean plus 10 sigma;
+		// the extra +1.0 below ensures that the result is not
+		// forced to zero when the mean is small
+
+		int cap = (int)Math.round(mean + 10.0*Math.sqrt(mean + 1.0));
+
+		// Return the capped value
+
+		return Math.min(x, cap);
+	}
+
+
+
+
 	// Sample from a uniform distribution.
 	// Parameters:
 	//  u1 = Lower limit.
@@ -618,6 +649,46 @@ public class OERandomGenerator {
 		// m1 and m2 are almost equal.
 
 		return -Math.exp(-beta*(m1 - mref))*Math.expm1(-beta*(m2 - m1));
+	}
+
+
+
+
+	// Return the ratio between two Gutenberg-Richter expected rates.
+	// Parameters:
+	//  b = Gutenberg-Richter b parameter.
+	//  sm1 = Source range lower magnitude.
+	//  sm2 = Source range upper magnitude, must satisfy sm2 > sm1.
+	//  tm1 = Target range lower magnitude.
+	//  tm2 = Target range upper magnitude, must satisfy tm2 >= tm1.
+	// Returns Integral(tm1, tm2, (10^(-b*m))*dm) / Integral(sm1, sm2, (10^(-b*m))*dm).
+	// If the return value is r, then the expected rate in the target range
+	// equals r times the expected rate in the source range.
+	// Note that if sm2 --> infinity and tm2 --> infinity then r --> 10^(-b*(tm2 - sm2))
+	// which is the classic G-R relation with no upper bound.
+	// Note: tm2 == tm1 returns zero, but sm2 == sm1 triggers divide-by-zero.
+	// Note: By comparison to the formulas for gr_rate, we have canceled out the
+	// common factor b*log(10)*10^(b*mref) from both integrals.
+
+	// Implementation note: The value is
+	//
+	// (10^(-b*tm1) - 10^(-b*tm2)) / (10^(-b*sm1) - 10^(-b*sm2))
+	//
+	// The value may be written
+	//
+	// exp(-beta*(tm1 - sm1)) * (1 - exp(-beta*(tm2 - tm1))) / (1 - exp(-beta*(sm2 - sm1)))
+	//
+	// where
+	//
+	// beta = b*log(10)
+
+	public static double gr_ratio_rate (double b, double sm1, double sm2, double tm1, double tm2) {
+		double beta = C_LOG_10 * b;	// log(10) * b
+
+		// Calculate directly, using expm1 to avoid cancellation when
+		// sm1 and sm2 are almost equal, or tm1 and tm2 are almost equal.
+
+		return Math.exp(-beta*(tm1 - sm1)) * Math.expm1(-beta*(tm2 - tm1)) / Math.expm1(-beta*(sm2 - sm1));
 	}
 
 
