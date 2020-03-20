@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta content="en-us" http-equiv="Content-Language">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<title>OAF Software Installation</title>
+<style type="text/css">
+.auto-style1 {
+	border-style: solid;
+	border-width: 4px;
+    border-collapse: separate;
+    border-spacing: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>OAF Software Installation</h1>
+<h2>Michael Barall<br>03/19/2020</h2>
+<p>&nbsp;</p>
+<h2>1. Introduction</h2>
+<p>OAF is Operational Aftershock Forecasting. It generates forecasts of future 
+aftershocks, given what is known about the mainshock, the aftershock sequence 
+that has occurred so far, and the general properties of the region where the 
+mainshock occurred.</p>
+<p>OAF software exists in two forms:</p>
+<ul>
+	<li>An automatic system, which monitors data coming in from seismic 
+	networks, generates forecasts automatically, and transmits the forecasts to 
+	a USGS website where they are available to the public.</li>
+	<li>A GUI, which an analyst can use to prepare forecasts manually.</li>
+</ul>
+<p>The automatic system is called AAFS, for Automatic Aftershock Forecasting 
+System.</p>
+<p>This document describes the installation of AAFS.</p>
+<p>&nbsp;</p>
+<h2>2. System Setup.</h2>
+<p>2.1. These installation instructions are for the following operating systems:</p>
+<ul>
+	<li>Centos 7</li>
+	<li>Amazon Linux 2</li>
+	<li>Ubuntu 18.04 LTS</li>
+</ul>
+<p>Most of the installation procedure is the same for each operating 
+system. Where there are differences, they are indicated. For example, a section 
+that applies only to Centos is marked [Centos only].</p>
+<p>&nbsp;</p>
+<p>2.2. The AAFS software is designed to run in a dedicated VM or dedicated 
+server.</p>
+<p>&nbsp;</p>
+<p>2.3. An AAFS system includes the following software components:</p>
+<ul>
+	<li><b>OpenSHA</b>. This USGS software package is called Open Seismic Hazard 
+	Assessment and is written in the Java programming language. The OAF software 
+	is included within OpenSHA. See <a href="http://www.opensha.org/">http://www.opensha.org/</a> and
+	<a href="https://github.com/opensha">https://github.com/opensha</a>.<br>&nbsp;</li>
+	<li><b>MongoDB</b>. This is database software. AAFS runs on MongoDB 
+	Community Edition, which is free software. See
+	<a href="https://www.mongodb.com/">https://www.mongodb.com/</a>.<br>&nbsp;</li>
+	<li><b>Java</b>. A Java language distribution is required to run the OAF 
+	Java code. For production, we recommend OpenJDK (<a href="https://openjdk.java.net/">https://openjdk.java.net/</a>). 
+	It is also possible to use the Oracle JDK, or Amazon Corretto (<a href="https://aws.amazon.com/corretto/">https://aws.amazon.com/corretto/</a>). 
+	Note that the Oracle JDK cannot be used for production unless you purchase a 
+	license from Oracle.<br>&nbsp;</li>
+	<li><b>PDL Listener</b>. The PDL listener receives notifications from USGS 
+	about earthquakes. See <a href="https://github.com/usgs/pdl">https://github.com/usgs/pdl</a>.</li>
+</ul>
+<p>&nbsp;</p>
+<p>2.4. The following is the recommended directory structure:</p>
+<table class="auto-style1">
+	<tr>
+		<td>/data/aafs</td>
+		<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td>Main AAFS data directory</td>
+	</tr>
+	<tr>
+		<td>/data/aafs/logs</td>
+		<td>&nbsp;</td>
+		<td>AAFS log files</td>
+	</tr>
+	<tr>
+		<td>/data/aafs/mongodata</td>
+		<td>&nbsp;</td>
+		<td>MongoDB data files</td>
+	</tr>
+	<tr>
+		<td>/data/aafs/mongolog</td>
+		<td>&nbsp;</td>
+		<td>MongoDB log files</td>
+	</tr>
+	<tr>
+		<td>/data/aafs/pdldata</td>
+		<td>&nbsp;</td>
+		<td>PDL listener data files</td>
+	</tr>
+	<tr>
+		<td>/data/aafs/pids</td>
+		<td>&nbsp;</td>
+		<td>Process identifiers</td>
+	</tr>
+	<tr>
+		<td>/opt/aafs</td>
+		<td>&nbsp;</td>
+		<td>Main AAFS code directory</td>
+	</tr>
+	<tr>
+		<td>/opt/aafs/intake</td>
+		<td>&nbsp;</td>
+		<td>PDL listener configuration files and scripts</td>
+	</tr>
+	<tr>
+		<td>/opt/aafs/key</td>
+		<td>&nbsp;</td>
+		<td>PDL product signing key</td>
+	</tr>
+	<tr>
+		<td>/opt/aafs/oafcfg</td>
+		<td>&nbsp;</td>
+		<td>OAF configuration files</td>
+	</tr>
+	<tr>
+		<td>/opt/aafs/oefjava</td>
+		<td>&nbsp;</td>
+		<td>OAF Java program code</td>
+	</tr>
+	<tr>
+		<td>/usr/local/java</td>
+		<td>&nbsp;</td>
+		<td>Java distribution</td>
+	</tr>
+	<tr>
+		<td>~/opensha</td>
+		<td>&nbsp;</td>
+		<td>OpenSHA source code</td>
+	</tr>
+	<tr>
+		<td>~/opensha/selcfg</td>
+		<td>&nbsp;</td>
+		<td>Used on Centos for SELinux configuration</td>
+	</tr>
+</table>
+<p>&nbsp;If you wish to place data files in a separate disk volume or disk 
+partition, we recommend mounting the volume or partition onto /data. Or, if 
+that's not possible, then set up /data as a link to the desired location.</p>
+<p>&nbsp;</p>
+<p>2.5. For Centos and Ubuntu, create a user account to run the OAF software. It 
+is recommended that the user be named 'aftershock', and that the user's group 
+also be named 'aftershock', although any desired name can be used. This account 
+should have sudo privileges.<br><br>For Amazon, you can run the OAF software in 
+the default 'ec2-user' account.</p>
+<p>&nbsp;</p>
+<p>2.6. You need to know your computer's IP address. You should be able to 
+display the IP address with:</p>
+<pre>$ hostname -I</pre>
+<p>If that doesn't work, try:</p>
+<pre>$ ip address</pre>
+<p>&nbsp;</p>
+<p>2.7. The AAFS software can run in either of two configurations:</p>
+<ul>
+	<li><b>Single-Server Configuration</b>. In single-server configuration, the 
+	software runs on one computer or VM. It obtains earthquake information from 
+	Comcat, generates forecasts, and publishes the forecasts to PDL.<br>&nbsp;</li>
+	<li><b>Dual-Server Configuration</b>. The dual-server configuration provides 
+	redundancy against hardware failures and network outages. The software runs 
+	on two computers or VMs, which maintain constant communication with each 
+	other. Both servers are fully functional, obtaining earthquake information 
+	from Comcat and generating forecasts. One server is designated as 
+	primary, and the other as secondary. Only the primary server publishes its 
+	forecasts to PDL. If the primary server fails, then the secondary server 
+	automatically steps up and becomes the primary server. The dual-server 
+	configuration also makes it possible to maintain continuous operation while 
+	installing software and operating system updates, since each server can be 
+	shut down and updated while the other server continues to operate.</li>
+</ul>
+<p>Remark: In the dual-server configuration, each server has its own separate 
+database. We have chosen not to configure MongoDB to run as a distributed 
+database. Instead, each server runs MongoDB as a single-server replica set.</p>
+<p>&nbsp;</p>
+<p>2.8. You will need to select various names and passwords for the 
+installation.</p>
+<p>In a dual-server configuration, it is strongly recommended that you use the 
+same names and passwords on both servers (except for the replica set names and 
+server names). However, the software does permit 
+the use of different names and passwords if you so desire. For conciseness, 
+this document assumes that a dual-server configuration uses the same names 
+and passwords on both servers.</p>
+<p>Most of the names and passwords are for MongoDB, as shown in the following 
+table. We have assigned a mnemonic to each of them, which we use in this 
+document.</p>
+<table class="auto-style1">
+	<tr>
+		<td>MONGO_ADMIN_USER</td>
+		<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td>MongoDB administrative username. This username is used to perform 
+		administrative functions, such as creating accounts. This username 
+		should have full access to perform any and all administrative tasks. 
+		This username must have the "admin" database as its authentication 
+		database.</td>
+	</tr>
+	<tr>
+		<td>MONGO_ADMIN_PASS</td>
+		<td>&nbsp;</td>
+		<td>Password for MONGO_ADMIN_USER.</td>
+	</tr>
+	<tr>
+		<td>MONGO_NAME</td>
+		<td>&nbsp;</td>
+		<td>Name of the MongoDB database that is used for storing AAFS data.</td>
+	</tr>
+	<tr>
+		<td>MONGO_USER</td>
+		<td>&nbsp;</td>
+		<td>MongoDB username. The AAFS software uses this username to log in to 
+		MongoDB. This username must have full access to the database identified 
+		by MONGO_NAME (but does not need to have the ability to perform 
+		administrative tasks). This username must also have MONGO_NAME as its 
+		authentication database.</td>
+	</tr>
+	<tr>
+		<td>MONGO_PASS</td>
+		<td>&nbsp;</td>
+		<td>Password for MONGO_USER.</td>
+	</tr>
+	<tr>
+		<td>MONGO_REP_SET_1</td>
+		<td>&nbsp;</td>
+		<td>MongoDB replica set name for server #1 (in the dual-server 
+		configuration) or for the only server (in the single-server 
+		configuration). This is the name of the MongoDB installation. We 
+		recommend choosing a name that consists of lowercase letters and digits, 
+		that starts with a letter.</td>
+	</tr>
+	<tr>
+		<td>MONGO_REP_SET_2</td>
+		<td>&nbsp;</td>
+		<td>MongoDB replica set name for server #2 (in the dual-server 
+		configuration). <b>In the dual-server configuration, the two servers 
+		MUST have different replica set names</b>.</td>
+	</tr>
+	<tr>
+		<td>PDL_OPTION</td>
+		<td>&nbsp;</td>
+		<td>Selects the destination for forecasts. It can 
+		have one of three values:<br>* "none" -- Do not send forecasts to PDL.<br>
+		* "dev" -- 
+		Send forecasts to PDL development servers.<br>* keyfile_name -- Send forecasts to PDL 
+		production servers. When sending to production servers, the value of PDL_OPTION is the name of the 
+		cryptographic key file that is used to sign forecasts. The file must be 
+		installed in the directory /opt/aafs/key. (For example, if PDL_OPTION is 
+		"mypdlkey" then the cryptographic key file is /opt/aafs/key/mypdlkey.)</td>
+	</tr>
+	<tr>
+		<td>SERVER_IP_1</td>
+		<td>&nbsp;</td>
+		<td>The IP address (or DNS name) assigned to server #1 (in the 
+		dual-server configuration) or to the only server (in the single-server 
+		configuration). In a single-server configuration, this can be 127.0.0.1; 
+		however, in a production single-server system we recommend using the 
+		actual IP address.</td>
+	</tr>
+	<tr>
+		<td>SERVER_IP_2</td>
+		<td>&nbsp;</td>
+		<td>The IP address (or DNS name) assigned to server #2 (in the 
+		dual-server configuration).</td>
+	</tr>
+	<tr>
+		<td>SERVER_NAME_1</td>
+		<td>&nbsp;</td>
+		<td>The name assigned to server #1 (in the dual-server configuration) or 
+		to the only server (in the single-server configuration). This name is 
+		not currently used, but might be used in the future.</td>
+	</tr>
+	<tr>
+		<td>SERVER_NAME_2</td>
+		<td>&nbsp;</td>
+		<td>The name assigned to server #2 (in the dual-server configuration). 
+		In the dual-server configuration, the two servers must have different 
+		names.</td>
+	</tr>
+</table>
+<p>The AAFS software comes pre-configured with default values for some names and 
+passwords, as shown in the following table. If you set up MongoDB to use default 
+names and passwords, then you can run AAFS out-of-the-box in single-server mode 
+without doing any configuration. <i>This should only be done on a development 
+system that is not accessible from the Internet. A production system should 
+never use default names and passwords</i>.</p>
+<table class="auto-style1">
+	<tr>
+		<td>MONGO_NAME</td>
+		<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td>usgs</td>
+	</tr>
+	<tr>
+		<td>MONGO_USER</td>
+		<td>&nbsp;</td>
+		<td>usgs</td>
+	</tr>
+	<tr>
+		<td>MONGO_PASS</td>
+		<td>&nbsp;</td>
+		<td>usgs</td>
+	</tr>
+	<tr>
+		<td>MONGO_REP_SET_1</td>
+		<td>&nbsp;</td>
+		<td>rs0</td>
+	</tr>
+	<tr>
+		<td>PDL_OPTION</td>
+		<td>&nbsp;</td>
+		<td>none</td>
+	</tr>
+	<tr>
+		<td>SERVER_IP_1</td>
+		<td>&nbsp;</td>
+		<td>127.0.0.1</td>
+	</tr>
+	<tr>
+		<td>SERVER_NAME_1</td>
+		<td>&nbsp;</td>
+		<td>test</td>
+	</tr>
+</table>
+<p>&nbsp;</p>
+<p>2.9. Firewall requirement.</p>
+<p>AAFS should <i>always</i> be installed behind an Internet firewall. Even with 
+the use of strong passwords, the MongoDB interfaces are not considered adequate to be 
+directly connected to the public Internet.</p>
+<p>MongoDB listens for incoming TCP connections on port 27017. So, the firewall 
+must permit the server to receive incoming TCP connections to port 27017 from 
+any computer that you want to use to run analyst tools or other management 
+software. Also, in a dual-server configuration, each server must be able to 
+receive incoming TCP connections to port 27017 from the other server. However,
+<i>do not</i> configure the firewall to allow incoming TCP connections to port 
+27017 from the entire Internet.</p>
+<p>&nbsp;</p>
+<h2>3. Install Required Packages [Centos and Amazon]</h2>
+<p>Perform the following steps to install required packages on Centos or Amazon. 
+See the next section for installing required packages on Ubuntu.</p>
+<p>3.1. Update the operating system:</p>
+<pre>$ sudo yum update</pre>
+<p>Remark: If kernel updates are installed, then you need to reboot the system 
+for the kernel updates to take effect. On Centos, use the following command to 
+reboot:</p>
+<pre>$ sudo shutdown -r now</pre>
+<p>On Amazon, use the EC2 control panel to reboot the system.</p>
+<p>&nbsp;</p>
+<p>3.2. Install the vim editor [Centos only]:</p>
+<pre>$ sudo yum install vim-enhanced</pre>
+<p>After this, you should be able to launch the editor by typing 'vim'. You may 
+also install any other editor of your choosing. On Amazon, vim is pre-installed.</p>
+<p>&nbsp;</p>
+<p>3.3 Install program development tools:</p>
+<pre>$ sudo yum groupinstall "Development Tools"</pre>
+<p>After this, you should have git, g++, gfortran, and a variety of other tools.</p>
+<p>&nbsp;</p>
+<p>3.4. Install the wget utility [Centos only]:</p>
+<pre>$ sudo yum install wget</pre>
+<p>The wget utility is used to download files from the Internet. On Amazon, wget 
+is pre-installed.</p>
+<p>&nbsp;</p>
+<h2>4. Install Required Packages [Ubuntu]</h2>
+<p>Perform the following steps to install required packages on Ubuntu. See the 
+previous section for installing required packages on Centos or Amazon.</p>
+<p>4.1. Update the operating system:</p>
+<pre>$ sudo apt-get update
+$ sudo apt-get upgrade</pre>
+<p>&nbsp;</p>
+<p>4.2. Install the vim editor:</p>
+<pre>$ sudo apt-get install vim</pre>
+<p>After this, you should be able to launch the editor by typing 'vim'. You may 
+also install any other editor of your choosing.</p>
+<p>&nbsp;</p>
+<p>4.3 Install program development tools:</p>
+<pre>$ sudo apt-get install build-essential</pre>
+<p>After this, you should have g++, gfortran, and a variety of other tools.</p>
+<p>&nbsp;</p>
+<p>4.4. Install the git utility:</p>
+<pre>$ sudo apt-get install git</pre>
+<p>The git utility is used to download files from Github (among other things).</p>
+<p>Remark: On Ubuntu, the wget utility is pre-installed.</p>
+<p>&nbsp;</p>
+<h2>5. Create Required Directories</h2>
+<p>These steps create the AAFS code and data directories. The instructions 
+assume that for Centos and Ubuntu, AAFS runs in a user account named 
+'aftershock'; while for Amazon, AAFS runs in the default 'ec2-user' account.</p>
+<p>5.1. Create the directory for code, scripts, and configuration files.</p>
+<p>You probably already have a directory called /opt, but if you don't then 
+create it:</p>
+<pre>$ cd /
+$ sudo mkdir opt</pre>
+<p>Create the top-level OAF code directory: [Centos and Ubuntu]</p>
+<pre>$ cd /opt
+$ sudo mkdir aafs
+$ sudo chown aftershock: aafs</pre>
+<p>Create the top-level OAF code directory: [Amazon]</p>
+<pre>$ cd /opt
+$ sudo mkdir aafs
+$ sudo chown ec2-user: aafs</pre>
+<p>Additional directories under /opt/aafs will be created later.</p>
+<p>&nbsp;</p>
+<p>5.2. Create the data directories.</p>
+<p>If you don't have a directory called /data, then create it:</p>
+<pre>$ cd /
+$ sudo mkdir data</pre>
+<p>Create the top-level OAF data directory: [Centos and Ubuntu]</p>
+<pre>$ cd /data
+$ sudo mkdir aafs
+$ sudo chown aftershock: aafs</pre>
+<p>Create the top-level OAF data directory: [Amazon]</p>
+<pre>$ cd /data
+$ sudo mkdir aafs
+$ sudo chown ec2-user: aafs</pre>
+<p>Then create the second-level data directories:</p>
+<pre>$ cd aafs
+$ mkdir mongodata
+$ mkdir mongolog
+$ mkdir logs
+$ mkdir pdldata
+$ mkdir pids</pre>
+<p>&nbsp;</p>
+<h2>6. Download the OAF Code</h2>
+<p>OAF is part of OpenSHA, so we will be downloading most of the OpenSHA code.</p>
+<p>6.1. Create a directory for downloading and compiling OpenSHA.</p>
+<pre>$ cd ~
+$ mkdir opensha
+$ cd opensha</pre>
+<p>&nbsp;</p>
+<p>6.2. Download the OAF build script.</p>
+<pre>$ wget https://github.com/opensha/opensha-oaf/raw/master/deployment/scripts/boaf.sh
+$ chmod 755 boaf.sh</pre>
+<p>Note: If you are working inside the USGS network, then the wget command may 
+fail due to network security restrictions. Should this occur, try issuing the 
+commands in the following form. This should <i>not</i> occur if you are using an 
+Amazon VM in the USGS cloud.</p>
+<pre>$ wget --no-check-certificate https://github.com/opensha/opensha-oaf/raw/master/deployment/scripts/boaf.sh
+$ chmod 755 boaf.sh</pre>
+<p>&nbsp;</p>
+<p>6.3. Download the OpenSHA code.</p>
+<pre>$ ./boaf.sh clone</pre>
+<p>Note: If you are working inside the USGS network, then the download may fail 
+due to network security restrictions. Should this occur, try issuing the 
+following command, and then try the download again. This should <i>not</i> occur 
+if you are using an Amazon VM in the USGS cloud.</p>
+<pre>$ export GIT_SSL_NO_VERIFY=true</pre>
+<p>&nbsp;</p>
+<p>6.4. (Future) Update the OpenSHA code.</p>
+<p>When the time comes to obtain an updated version of the OpenSHA code, use 
+this command:</p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh update</pre>
+<p>The command only downloads files that have changed. If the script boaf.sh 
+itself has changed, then you should also copy it into ~/opensha:</p>
+<pre>$ cp -p opensha-oaf/deployment/scripts/boaf.sh .</pre>
+<p>Note: If you are working inside the USGS network, then the update may fail 
+due to network security restrictions. Should this occur, try issuing the 
+following command, and then try the update again. This should <i>not</i> occur 
+if you are using an Amazon VM in the USGS cloud.</p>
+<pre>$ export GIT_SSL_NO_VERIFY=true</pre>
+<p>&nbsp;</p>
+<h2>7. Install Java</h2>
+<p>These instructions are written for installing OpenJDK. However, it should be 
+possible to install the Oracle JDK or Amazon Corretto in exactly the same way.</p>
+<p>7.1. Create a directory to use for downloading.</p>
+<pre>$ cd ~
+$ mkdir setup
+$ cd setup</pre>
+<p>&nbsp;</p>
+<p>7.2. Download the Java distribution tar file.</p>
+<p>Note: The URL below is for an older version of OpenJDK, and is merely an 
+example. Refer to <a href="https://openjdk.java.net/">https://openjdk.java.net/</a> 
+to obtain the URL for the current version of OpenJDK. You can also use the 
+appropriate URL for Oracle JDK or Amazon Corretto.</p>
+<pre>$ wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz</pre>
+<p>Note: If you are working inside the USGS network, then the wget command may 
+fail due to network security restrictions. Should this occur, try issuing the 
+command in the following form. This should <i>not</i> occur if you are using an 
+Amazon VM in the USGS cloud.</p>
+<pre>$ wget --no-check-certificate https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz</pre>
+<p>&nbsp;</p>
+<p>7.3. Create the directory to hold Java.</p>
+<pre>$ cd /usr/local
+$ sudo mkdir java
+$ cd java</pre>
+<p>&nbsp;</p>
+<p>7.4. Copy the OpenJDK distribution.</p>
+<p>Note: In the following command, replace the filename with the actual name of 
+the Java distribution.</p>
+<pre>$ sudo cp ~/setup/openjdk-11.0.2_linux-x64_bin.tar.gz .</pre>
+<p>&nbsp;</p>
+<p>7.5. Extract the Java files.</p>
+<p>Note: In the following command, replace the filename with the actual name of 
+the Java distribution.</p>
+<pre>$ sudo tar --strip-components 1 -zxvf openjdk-11.0.2_linux-x64_bin.tar.gz</pre>
+<p>Note: At this point the .tar.gz file could be deleted from /usr/loca/java. It 
+can be kept so that it is clear which Java version is installed.</p>
+<p>&nbsp;</p>
+<p>7.6. Make Java available in /usr/bin.</p>
+<pre>$ cd /usr/bin
+$ sudo ln -s /usr/local/java/bin/java java</pre>
+<p>&nbsp;</p>
+<p>7.7. Add Java to the PATH and set the JAVA_HOME environment variable.</p>
+<p>For Centos:</p>
+<pre>$ cd /etc/profile.d
+$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/centos/javapath.sh .</pre>
+<p>For Amazon:</p>
+<pre>$ cd /etc/profile.d
+$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/amazon/javapath.sh .</pre>
+<p>For Ubuntu:</p>
+<pre>$ cd /etc/profile.d
+$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/ubuntu/javapath.sh .</pre>
+<p>Note: You need to log out and log back in for this change to take effect. 
+(This does not require a server restart, merely a log out / log in.)</p>
+<p>&nbsp;</p>
+<p>7.8. (Future) Update Java.</p>
+<p>When the time comes to update the version of Java, all you have to do is 
+delete the entire contents of /usr/local/java, download the new distribution as 
+in 7.2., then copy and extract it as in 7.4 and 7.5.</p>
+<p>&nbsp;</p>
+<h2>8. Install MongoDB [Centos]</h2>
+<p>These instructions are specifically for installing MongoDB 4.2 on Centos 7. 
+They also apply to point releases like 4.2.1, 4.2.2, etc. Later versions (such 
+as 4.4) will require a different .repo file, but should otherwise be quite 
+similar to install.</p>
+<p>For the most current instructions for installing on Centos, see:
+<a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-red-hat/">
+https://docs.mongodb.com/manual/tutorial/install-mongodb-on-red-hat/</a>.</p>
+<p>8.1. Register MongoDB with yum.</p>
+<pre>$ cd /etc/yum.repos.d
+$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/centos/mongodb-org-4.2.repo .</pre>
+<p>&nbsp;</p>
+<p>8.2. Download and install MongoDB.</p>
+<pre>$ sudo yum install mongodb-org</pre>
+<p>Note: When new versions of MongoDB are released, yum will install the 
+updates. At some point it will be necessary to install a new .repo file when 
+there is a significant version change, such as from 4.2 to 4.4.</p>
+<p>&nbsp;</p>
+<p>8.3. Set up the data and log directories.</p>
+<p>By default, MongoDB on Centos has:</p>
+<ul>
+	<li>Data files in directory /var/lib/mongo.</li>
+	<li>Log files in directory /var/log/mongodb.</li>
+	<li>Configuration file /etc/mongod.conf.</li>
+</ul>
+<p>The MongoDB installer creates the data and log directories, with user:group 
+equal to mongod:mongod. The installer also creates a default configuration file.</p>
+<p>We will place data files in /data/aafs/mongodata, and log files in /data/aafs/mongolog.</p>
+<p>Use the following commands to change ownership of the data and log 
+directories, so they are accessible to the MongoDB process.</p>
+<pre>$ cd /data/aafs
+$ sudo chown -R mongod:mongod mongodata
+$ sudo chown -R mongod:mongod mongolog</pre>
+<p>&nbsp;</p>
+<p>8.4. Configure SELinux.</p>
+<p>SELinux is a set of security enhancements for Linux, which are built-in to 
+Centos. If SELinux is running in "enforcing mode", then additional steps are 
+required to enable access to the data and log directories. For further 
+information see:
+<a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-red-hat/">
+https://docs.mongodb.com/manual/tutorial/install-mongodb-on-red-hat/</a>.</p>
+<p>To check if SELinux is in enforcing mode:</p>
+<pre>$ getenforce</pre>
+<p>The 'getenforce' command should produce one of the following three outputs:</p>
+<ul>
+	<li>If the mode is 'Disabled' then you do not need to configure SELinux, and 
+	you can skip ahead to step 8.5.</li>
+	<li>If the mode is 'Permissive' then we recommend that you configure SELinux, 
+	although MongoDB can run even if you don't.</li>
+	<li>If the mode is 'Enforcing' then you must configure SELinux, otherwise 
+	MongoDB won't run.</li>
+</ul>
+<p>The commands in this section are complicated and arcane, so be sure to enter 
+them exactly as shown.</p>
+<p>First, check if the program 'checkmodule' is installed on your system:</p>
+<pre>$ which checkmodule</pre>
+<p>If not installed, issue the following command to install it:</p>
+<pre>$ sudo yum install checkpolicy</pre>
+<p>Next, check if the programs 'semanage' and 'semodule_package' are installed 
+on your system:</p>
+<pre>$ which semanage
+$ which semodule_package</pre>
+<p>If they are not installed, issue the following command to install them:</p>
+<pre>$ sudo yum install policycoreutils-python</pre>
+<p>Enable access to certain system resources:</p>
+<pre>$ cd ~/opensha
+$ mkdir selcfg
+$ cd selcfg
+$ cp ~/opensha/opensha-oaf/deployment/scripts/centos/mongodb_cgroup_memory.te .
+$ checkmodule -M -m -o mongodb_cgroup_memory.mod mongodb_cgroup_memory.te
+$ semodule_package -o mongodb_cgroup_memory.pp -m mongodb_cgroup_memory.mod
+$ sudo semodule -i mongodb_cgroup_memory.pp</pre>
+<p>Enable access to the data directory:</p>
+<pre>$ sudo semanage fcontext -a -t mongod_var_lib_t '/data/aafs/mongodata.*'
+$ sudo chcon -Rv -u system_u -t mongod_var_lib_t '/data/aafs/mongodata'
+$ sudo restorecon -R -v '/data/aafs/mongodata'</pre>
+<p>Enable access to the log directory:</p>
+<pre>$ sudo semanage fcontext -a -t mongod_log_t '/data/aafs/mongolog.*'
+$ sudo chcon -Rv -u system_u -t mongod_log_t '/data/aafs/mongolog'
+$ sudo restorecon -R -v '/data/aafs/mongolog'</pre>
+<p>We will use the default port 27017. The MongoDB installer automatically 
+configured SELinux to allow access to port 27017. If you wanted to use a 
+different port, then you would need to give the following command to enable 
+access to the port:</p>
+<pre>$ sudo semanage port -a -t mongod_port_t -p tcp &lt;portnumber&gt;</pre>
+<p>Now check the SELinux configuration:</p>
+<pre>$ cd /data/aafs
+$ ls -Z</pre>
+<p>The MongoDB data and log directories should appear similar to this:</p>
+<pre>drwxr-xr-x. mongod mongod system_u:object_r:mongod_var_lib_t:s0 mongodata
+drwxr-xr-x. mongod mongod system_u:object_r:mongod_log_t:s0 mongolog</pre>
+<p>&nbsp;</p>
+<p>8.5. Open the MongoDB port in the firewall.</p>
+<p>Most Centos 7 distributions have a built-in firewall. In order for MongoDB to 
+work, it is necessary to open TCP port 27017 in the firewall.</p>
+<p>First, use this command to check if the firewall is running:</p>
+<pre>$ sudo firewall-cmd --state</pre>
+<p>If the output is 'running' then the firewall is running and you need to open 
+the port as described here. If the firewall is not running, you can skip ahead 
+to section 8.6.</p>
+<p>To enable external access to MongoDB:</p>
+<pre>$ sudo firewall-cmd --permanent --zone=public --add-port=27017/tcp</pre>
+<p>Then restart the firewall with:</p>
+<pre>$ sudo firewall-cmd --reload</pre>
+<p>Note: The --permanent option makes the setting survive reboots.</p>
+<p>Note: To list all open ports:</p>
+<pre>$ sudo firewall-cmd --list-all</pre>
+<p>The list should include 'ports: 27017/tcp'.</p>
+<p>Note: If you ever want to close the port, do this:</p>
+<pre>$ sudo firewall-cmd --permanent --zone=public --remove-port=27017/tcp</pre>
+<p>Remark: Opening the port in this way allows Centos to accept incoming TCP 
+connections to port 27017 from anywhere. Make sure that the server is behind a 
+network firewall that limits incoming TCP connections to trusted sources.</p>
+<p>&nbsp;</p>
+<p>8.6. Enable MongoDB startup and shutdown without 
+password.</p>
+<p>By default, you need to type a sudo password every time you start or stop 
+MongoDB. Use the following commands to eliminate the need to type a password:</p>
+<pre>$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/centos/aftershock_sudo /etc/sudoers.d
+$ sudo chmod 440 /etc/sudoers.d/aftershock_sudo</pre>
+<p>Note: The supplied file aftershock_sudo enables any member of the 
+'aftershock' group to start and stop MongoDB without the need to enter a 
+password. If you are running the AAFS software in a user account named 
+'aftershock', as recommended, then this should be correct.</p>
+<p>Note: If the user name is not 'aftershock' then you will need to create your 
+own file to install into /etc/sudoers.d. For example, if the user name is 'myuser' 
+with group 'myuser', then create a file called 'myuser_sudo' with the following 
+contents:</p>
+<pre>%myuser ALL=NOPASSWD: /usr/sbin/service mongod start
+%myuser ALL=NOPASSWD: /usr/sbin/service mongod stop</pre>
+<p>The % sign means to grant access to all users in the group 'myuser'. If you 
+want to grant access just to the user 'myuser' then remove the % signs. After 
+creating the file, copy it to /etc/sudoers.d. The name of the file is not 
+important, but the permissions should be set to 440.</p>
+<p>&nbsp;</p>
+<h2>9. Install MongoDB [Amazon]</h2>
+<p>These instructions are specifically for installing MongoDB 4.2 on Amazon 
+Linux 2. 
+They also apply to point releases like 4.2.1, 4.2.2, etc. Later versions (such 
+as 4.4) will require a different .repo file, but should otherwise be quite 
+similar to install.</p>
+<p>For the most current instructions for installing on Amazon, see:
+<a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-amazon/">
+https://docs.mongodb.com/manual/tutorial/install-mongodb-on-amazon/</a>.</p>
+<p>9.1. Register MongoDB with yum.</p>
+<pre>$ cd /etc/yum.repos.d
+$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/amazon/mongodb-org-4.2.repo .</pre>
+<p>&nbsp;</p>
+<p>9.2. Download and install MongoDB.</p>
+<pre>$ sudo yum install mongodb-org</pre>
+<p>Note: When new versions of MongoDB are released, yum will install the 
+updates. At some point it will be necessary to install a new .repo file when 
+there is a significant version change, such as from 4.2 to 4.4.</p>
+<p>&nbsp;</p>
+<p>9.3. Set up the data and log directories.</p>
+<p>By default, MongoDB on Amazon has:</p>
+<ul>
+	<li>Data files in directory /var/lib/mongo.</li>
+	<li>Log files in directory /var/log/mongodb.</li>
+	<li>Configuration file /etc/mongod.conf.</li>
+</ul>
+<p>The MongoDB installer creates the data and log directories, with user:group 
+equal to mongod:mongod. The installer also creates a default configuration file.</p>
+<p>We will place data files in /data/aafs/mongodata, and log files in /data/aafs/mongolog.</p>
+<p>Use the following commands to change ownership of the data and log 
+directories, so they are accessible to the MongoDB process.</p>
+<pre>$ cd /data/aafs
+$ sudo chown -R mongod:mongod mongodata
+$ sudo chown -R mongod:mongod mongolog</pre>
+<p>&nbsp;</p>
+<p>9.4. Set up security groups to allow access to the MongoDB port.</p>
+<p>In Amazon EC2, security groups play the role of a network firewall. Security 
+groups control and limit the Internet traffic that can reach a VM.</p>
+<p>MongoDB listens for incoming TCP connections on port 27017. You must set up 
+security groups to allow incoming TCP connections to port 27017 from any 
+computer that you plan to use to run analyst tools or other management software. 
+In a dual-server configuration, you must also set up security groups to allow 
+each server to accept incoming TCP connections to port 27017 from the other 
+server.</p>
+<p>However, you should <i>not</i> allow incoming TCP connections to port 27017 
+from everywhere on the Internet.</p>
+<p>It is beyond the scope of this document to describe in detail how to set up 
+Amazon EC2 security groups. You may refer to the Amazon EC2 documentation.</p>
+<p>&nbsp;</p>
+<h2>10. Install MongoDB [Ubuntu]</h2>
+<p>These instructions are specifically for installing MongoDB 4.2 on Ubuntu 
+18.04 LTS. 
+They also apply to point releases like 4.2.1, 4.2.2, etc. Later versions (such 
+as 4.4) will require a different public key and .list file, but should otherwise be quite 
+similar to install.</p>
+<p>For the most current instructions for installing on Ubuntu, see:
+<a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/">
+https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/</a>.</p>
+<p>Note: Do not install the 'mongodb' package provided by Ubuntu. You should 
+install the 'mongodb-org' package described here.</p>
+<p>10.1. Import the public key.</p>
+<pre>$ wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | sudo apt-key add -</pre>
+<p>The operation should respond with an OK.</p>
+<p>&nbsp;</p>
+<p>10.2. Create a list file</p>
+<pre>$ echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.2.list</pre>
+<p>Note: The name 'bionic' refers specifically to Ubuntu version 18.04. If you 
+are using a different version of Ubuntu, you need to substitute the appropriate 
+name for that version. Note that MongoDB only provides official support for LTS 
+versions of Ubuntu.</p>
+<p>&nbsp;</p>
+<p>10.3. Reload the local package database.</p>
+<pre>$ sudo apt-get update</pre>
+<p>&nbsp;</p>
+<p>10.4. Download and install MongoDB.</p>
+<pre>$ sudo apt-get install mongodb-org</pre>
+<p>Note: When new versions of MongoDB are relased, Ubuntu will install the 
+updates. At some point it may be necessary to install a new public key and list 
+file when there is a major version change.</p>
+<p>&nbsp;</p>
+<p>10.5. Set up the data and log directories.</p>
+<p>By default, MongoDB on Ubuntu has:</p>
+<ul>
+	<li>&nbsp;Data files in /var/lib/mongodb.</li>
+	<li>Log files in /var/log/mongodb.</li>
+	<li>Configuration file /etc/mongod.conf.</li>
+</ul>
+<p>The MongoDB installer creates the data and log directories, with user:group 
+equal to mongodb:mongodb. The installer also creates a default configuration file.</p>
+<p>We will place data files in /data/aafs/mongodata, and log files in /data/aafs/mongolog.</p>
+<p>Use the following commands to change ownership of the data and log 
+directories, so they are accessible to the MongoDB process.</p>
+<pre>$ cd /data/aafs
+$ sudo chown -R mongodb:mongodb mongodata
+$ sudo chown -R mongodb:mongodb mongolog</pre>
+<p>&nbsp;</p>
+<p>10.6. Enable MongoDB startup and shutdown without 
+password.</p>
+<p>By default, you need to type a sudo password every time you start or stop 
+MongoDB. Use the following commands to eliminate the need to type a password:</p>
+<pre>$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/ubuntu/aftershock_sudo /etc/sudoers.d
+$ sudo chmod 440 /etc/sudoers.d/aftershock_sudo</pre>
+<p>Note: The supplied file aftershock_sudo enables any member of the 
+'aftershock' group to start and stop MongoDB without the need to enter a 
+password. If you are running the AAFS software in a user account named 
+'aftershock', as recommended, then this should be correct.</p>
+<p>Note: If the user name is not 'aftershock' then you will need to create your 
+own file to install into /etc/sudoers.d. For example, if the user name is 'myuser' 
+with group 'myuser', then create a file called 'myuser_sudo' with the following 
+contents:</p>
+<pre>%myuser ALL=NOPASSWD: /usr/sbin/service mongod start
+%myuser ALL=NOPASSWD: /usr/sbin/service mongod stop</pre>
+<p>The % sign means to grant access to all users in the group 'myuser'. If you 
+want to grant access just to the user 'myuser' then remove the % signs. After 
+creating the file, copy it to /etc/sudoers.d. The name of the file is not 
+important, but the permissions should be set to 440.</p>
+<p>&nbsp;</p>
+<h2>11. Configure MongoDB</h2>
+<p>The MongoDB configuration file is /etc/mongod.conf. You configure MongoDB by 
+editing the configuration file.</p>
+<p>In this section, we use some of the symbols defined in section 2.8. You can 
+recognize them because they are in all capital letters. When you see one of 
+those symbols, replace it with the actual value for your installation.</p>
+<p>11.1. Edit 
+the configuration file.</p>
+<p>We save the default configuration file, then edit 
+it. These commands save the default configuration file as mongod_0.conf.</p>
+<pre>$ cd /etc
+$ sudo cp -pi mongod.conf mongod_0.conf
+$ su$ sudo vim mongod.conf</pre>
+<p>(You may use an editor different from vim if you prefer.)</p>
+<p>Note: If you ever want to restore the default configuration file, <i>do not</i><b>
+</b>delete mongod.conf and then rename mongod_0.conf to mongod.conf. Doing so 
+may not maintain the correct file permissions, especially if SELinux is running 
+on your system. Instead, open mongod.conf in a text editor and then copy and paste the contents of 
+mongod_0.conf into it.</p>
+<p>The configuration file contains a number of 
+sections. Each section begins with a keyword that starts in column 1.
+Succeeding lines in a section each begin in column 3 (that is, with two leading 
+spaces). Comment lines begin with '#'. Empty sections have the keyword 
+commented out. You must un-comment the keyword when adding lines to an empty 
+section. Documentation of configuration file options is available at:
+<a href="https://docs.mongodb.com/manual/reference/configuration-options/">https://docs.mongodb.com/manual/reference/configuration-options/</a></p>
+<p>Change the 'storage' section to specify the data file location. (Do not change any 
+other lines in the 'storage' section.)</p>
+<pre>storage:
+  dbPath: /data/aafs/mongodata</pre>
+<p>Change the 'systemLog' section to specify the log file location. (Do not 
+change any other lines in the 'systemLog' section.)</p>
+<pre>systemLog:
+  path: /data/aafs/mongolog/mongod.log</pre>
+<p>Change the 'net' section to include the 
+server's IP address. (You probably just need to append the IP address to the bindIp 
+line.) For server #1 in a dual-server configuration, or for the only server in a 
+single-server configuration:</p>
+<pre>net:
+  port: 2701
+  bindIp: 127.0.0.1,SERVER_IP_1</pre>
+<p>For server #2 in a dual-server configuration:</p>
+<pre>net:
+  port: 27017
+  bindIp: 127.0.0.1,SERVER_IP_2</pre>
+<p>Change the 
+'replication' section to specify the server's replica set name. (You probably 
+need to uncomment the 'replication' line and add the 'replSetName' line.) For 
+server #1 in a dual-server configuration, or for the only server in a 
+single-server configuration:</p>
+<pre>replication:
+  replSetName: "MONGO_REP_SET_1"</pre>
+<p>For server #2 in a dual-server configuration:</p>
+<pre>replication:
+  replSetName: "MONGO_REP_SET_2"</pre>
+<p>Notice that the replica set name must be enclosed in quotes.</p>
+<p>Change the 'security' section 
+to enable user authentication. (You probably need to uncomment the 'security' 
+line and add the 'authorization' line.)</p>
+<pre>security:
+  authorization: enabled</pre>
+<p>Add a 'setParameter' section at the end of the file to adjust the database 
+transaction timeout.</p>
+<pre>setParameter:
+  transactionLifetimeLimitSeconds: 1200</pre>
+<p>&nbsp;</p>
+<p>11.2. Example configuration file.</p>
+<p>Here is an example of a complete MongoDB configuration file. For this 
+example, we pretend that the server's IP address is 123.45.67.89, and that the 
+replica set name is 'rstest'. Notice that the configuration file contents might 
+change in different versions of MongoDB.</p>
+<pre># mongod.conf
+
+# for documentation of all options, see:
+#   http://docs.mongodb.org/manual/reference/configuration-options/
+
+# where to write logging data.
+systemLog:
+  destination: file
+  logAppend: true
+  path: /data/aafs/mongolog/mongod.log
+
+# Where and how to store data.
+storage:
+  dbPath: /data/aafs/mongodata
+  journal:
+    enabled: true
+#  engine:
+#  wiredTiger:
+
+# how the process runs
+processManagement:
+  fork: true  # fork and run in background
+  pidFilePath: /var/run/mongodb/mongod.pid  # location of pidfile
+  timeZoneInfo: /usr/share/zoneinfo
+
+# network interfaces
+net:
+  port: 27017
+  bindIp: 127.0.0.1,123.45.67.89  # Enter 0.0.0.0,:: to bind to all IPv4 and IPv6 addresses or, alternatively, use the net.bindIpAll setting.
+
+security:
+  authorization: enabled
+
+#operationProfiling:
+
+replication:
+  replSetName: "rstest"
+
+#sharding:
+
+## Enterprise-Only Options
+
+#auditLog:
+
+#snmp:
+
+setParameter:
+  transactionLifetimeLimitSeconds: 1200
+</pre>
+<p>&nbsp;</p>
+<p>11.3. Test MongoDB.</p>
+<p>We are now ready to test MongoDB to verify that it is able to run.</p>
+<p>Start MongoDB:</p>
+<pre>$ sudo /usr/sbin/service mongod start</pre>
+<p>Note: 
+The above command should not ask for a password.</p>
+<p>Check that the mongod daemon 
+process is running:</p>
+<pre>$ ps -eF | grep mongo</pre>
+<p>In the output, you should see a line showing that the mongod process is 
+running.</p>
+<p>Examine the MongoDB log file at 
+/data/aafs/mongolog/mongod.log. (You may need to use sudo to examine the 
+file.) There should be a line like this:</p>
+<pre>[initandlisten] waiting for connections on port &lt;port&gt;</pre>
+<p>Stop MongoDB:</p>
+<pre>$ sudo /usr/sbin/service mongod stop</pre>
+<p>Note: The above command should not ask for a password.</p>
+<p>&nbsp;</p>
+<h2>12. Set up MongoDB</h2>
+<p>To finish setting up MongoDB, you need to initialize the replica set, create 
+user accounts, and create the database that AAFS will use. This is done using 
+the 'mongo' program that was installed as part of MondoDB.</p>
+<p>In this section, we use some of the symbols defined in section 2.8. You can 
+recognize them because they are in all capital letters. When you see one of 
+those symbols, replace it with the actual value for your installation.</p>
+<p>12.1. Start MongoDB.</p>
+<pre>$ sudo /usr/sbin/service mongod start</pre>
+<p>Note: 
+The above command should not ask for a password.</p>
+<p>&nbsp;</p>
+<p>12.2. Start the MongoDB shell.</p>
+<pre>$ mongo</pre>
+<p>There should be messages indicating that 
+the shell has connected to MongoDB.</p>
+<p>&nbsp;</p>
+<p>12.3. Initiate the replica set.</p>
+<pre>&gt; rs.initiate()</pre>
+<p>There will likely be a message: "No configuration 
+specified. Using a default configuration for the set"</p>
+<p>The mongo shell 
+prompt will likely change to something like 'repset:SECONDARY'. The word 
+SECONDARY means that the replica set is still initializing itself. When 
+complete, the prompt will change to something like 'repset:PRIMARY'. (Press 
+Enter to refresh the prompt, as it will not change by itself.)</p>
+<p>Important: The command rs.initiate() should 
+only be run <b>once</b>, <b>ever</b>.</p>
+<p>&nbsp;</p>
+<p>12.4. Create the user for MongoDB 
+administration.</p>
+<p>Create a user MONGO_ADMIN_USER in the database 'admin' with 
+permission to administer MongoDB.</p>
+<pre>&gt; use admin
+&gt; db.createUser({user:"MONGO_ADMIN_USER", pwd:"MONGO_ADMIN_PASS", roles:[{role:"userAdminAnyDatabase", db:"admin"},{role:"clusterAdmin", db:"admin"}]})</pre>
+<p>Be careful to get 
+the punctuation exactly right. Make sure to replace MONGO_ADMIN_USER and MONGO_ADMIN_PASS 
+with the actual username and password you want to use, and enclose them in 
+quotes as shown.</p>
+<p>Now authenticate as 
+the administrative user:</p>
+<pre>&gt; use admin
+&gt; db.auth("MONGO_ADMIN_USER", "MONGO_ADMIN_PASS")</pre>
+<p>The result should be '1'. If the result is '0' then 
+authentication failed.</p>
+<p>Confirm the user creation by listing all users in 
+the 'admin' database:</p>
+<pre>&gt; use admin
+&gt; db.getUsers()</pre>
+<p>Note: You don't need to keep repeating the 'use' command. Once you select a 
+database, mongo remembers you selection. You only need to issue a new 'use' 
+command when you want to switch to a different database. We show repeated 'use' 
+commands in this document for ease of reference.</p>
+<p>&nbsp;</p>
+<p>12.5. 
+(Optional) Display replica set configuration.</p>
+<pre>&gt; rs.conf()</pre>
+<p>The result should show a 1-element replica set.</p>
+<p>&nbsp;</p>
+<p>12.6. (Optional) Display replica set status.</p>
+<pre>&gt; rs.status()</pre>
+<p>&nbsp;</p>
+<p>12.7. Create the user for MongoDB database access.</p>
+<p>Create a user MONGO_USER in the database MONGO_NAME with 
+permission to read and write the database.</p>
+<pre>&gt; use MONGO_NAME
+&gt; db.createUser({user:"MONGO_USER", pwd:"MONGO_PASS", roles:[{role:"dbOwner", db:"MONGO_NAME"}]})</pre>
+<p>Be careful to get 
+the punctuation exactly right. Make sure to replace MONGO_NAME with the actual 
+database name you want to use (enclosed in quotes in the 'createUser' command 
+but not in the 'use' command). Make sure to replace MONGO_USER and MONGO_PASS 
+with the actual username and password you want to use, and enclose them in 
+quotes as shown.</p>
+<p>Note that this is the user that the OAF software uses to 
+access the database.</p>
+<p>Confirm the user creation by listing all users in 
+the MONGO_NAME database:</p>
+<pre>&gt; use MONGO_NAME
+&gt; db.getUsers()</pre>
+<p>Now authenticate 
+as the MONGO_USER user:</p>
+<pre>&gt; use MONGO_NAME
+&gt; db.auth("MONGO_USER", "MONGO_PASS")</pre>
+<p>The result should be '1'. If the result is '0' then authentication failed.</p>
+<p>&nbsp;</p>
+<p>12.8. Exit from the MongoDB shell.</p>
+<pre>&gt; quit()</pre>
+<p>&nbsp;</p>
+<p>12.9. Stop MongoDB.</p>
+<pre>$ sudo /usr/sbin/service mongod stop</pre>
+<p>Note: This command 
+should not ask for a password.</p>
+<p>&nbsp;</p>
+<h2>13. Configure the OAF Software</h2>
+<p>13.1. Copy configuration files and scripts into position.</p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh deploycfg</pre>
+<p>This operation creates the following directories:</p>
+<table class="auto-style1">
+	<tr>
+		<td>/opt/aafs/intake</td>
+		<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td>PDL listener configuration files and scripts</td>
+	</tr>
+	<tr>
+		<td>/opt/aafs/key</td>
+		<td>&nbsp;</td>
+		<td>PDL product signing key</td>
+	</tr>
+	<tr>
+		<td>/opt/aafs/oafcfg</td>
+		<td>&nbsp;</td>
+		<td>OAF configuration files</td>
+	</tr>
+	<tr>
+		<td>/opt/aafs/oefjava</td>
+		<td>&nbsp;</td>
+		<td>OAF Java program code</td>
+	</tr>
+	</table>
+<p>It then copies all the configuration files and scripts into the appropriate 
+directories.</p>
+<p>If there are existing configuration files and scripts, it 
+warns you before making changes.</p>
+<p>The default configuration files contain default parameters as described in 
+section 2.8. These could be used to run AAFS on a development system, with no 
+further configuration needed. For a production system (or a development system 
+with non-default parameters), you must complete the following configuration 
+steps.</p>
+<p>&nbsp;</p>
+<p>13.2. Copy the PDL signing key.</p>
+<p>If you are signing PDL products, then copy the private key file into /opt/aafs/key.
+It is a good practice (but not a requirement) to set its file permissions to 
+600.</p>
+<p>&nbsp;</p>
+<p>13.3. Configure the server.</p>
+<p>The server 
+configuration file is /opt/aafs/oafcfg/ServerConfig.json. It is possible to 
+adjust many parameters by editing the file, including server addresses, MongoDB 
+options, usernames, passwords, PDL/Comcat options, and log file locations. 
+However, we have provided scripts that generate a correct server configuration 
+file for most installations.</p>
+<p>In this section, we use some of the symbols defined in section 2.8. You can 
+recognize them because they are in all capital letters. When you see one of 
+those symbols, replace it with the actual value for your installation.</p>
+<p><b>For a single-server installation:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_server_solo SERVER_IP_1 MONGO_REP_SET_1 MONGO_NAME MONGO_USER MONGO_PASS SERVER_NAME_1 PDL_OPTION</pre>
+<p><b>For server #1 in a dual-server installation:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_server_1 SERVER_IP_1 MONGO_REP_SET_1 SERVER_IP_2 MONGO_REP_SET_2 MONGO_NAME MONGO_USER MONGO_PASS SERVER_NAME_1 PDL_OPTION</pre>
+<p><b>For server #2 in a dual-server installation:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_server_2 SERVER_IP_1 MONGO_REP_SET_1 SERVER_IP_2 MONGO_REP_SET_2 MONGO_NAME MONGO_USER MONGO_PASS SERVER_NAME_2 PDL_OPTION</pre>
+<p><b>To restore the default (development-server) configuration:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_server_dev</pre>
+<p>In all cases, the configuration is stored into /opt/aafs/oafcfg/ServerConfig.json.
+</p>
+<p>&nbsp;</p>
+<p>13.4. Configure actions</p>
+<p>The action 
+configuration file is /opt/aafs/oafcfg/ActionConfig.json. It is possible to 
+adjust many parameters by editing the file, including geographic regions, 
+threshold magnitudes, the forecast schedule, polling intervals, earthquake 
+shadowing parameters, etc. However, we have provided two files that are 
+sufficient for most installations:</p>
+<ul>
+	<li>The default (development) action configuration, which accepts 
+	earthquakes of magnitude 5 or larger world-wide, plus earthquakes of 
+	magnitude 4 or larger in the United States (including outlying territories).</li>
+	<li>The USA action configuration, which accepts earthquakes of magnitude 5 
+	or larger in the United States (including outlying territories, but 
+	excluding Hawaii).</li>
+</ul>
+<p><b>To set the USA action configuration:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_action_usa</pre>
+<p><b>To restore the default (development) action configuration:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_action_dev</pre>
+<p>In all cases, the configuration is stored into /opt/aafs/oafcfg/ActionConfig.json. </p>
+<p>&nbsp;</p>
+<h2>14. Compile the OAF Software</h2>
+<p>14.1. Run the Java compiler and package the software.</p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh compile
+$ ./boaf.sh pack</pre>
+<p>Note: The first time you compile the software, there may be a long delay as 
+Gradle is downloaded and installed. Gradle is a program that controls the 
+software build process. Subsequent compilations will be much faster.</p>
+<p>&nbsp;</p>
+<p>14.2. Deploy the OAF software.</p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh deploy</pre>
+<p>The operation copies the OAF executable files into /opt/aafs/oafcfg.</p>
+<p>&nbsp;</p>
+<p>14.3 (Optional) Build the generic aftershock GUI.</p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh compilegui</pre>
+<p>The generic aftershock GUI is a graphical Java program that can be used to 
+interactively generate forecasts and experiment with adjusting model parameters.</p>
+<p>The resulting Java program is located in ~/opensha/opensha-oaf/build/libs and 
+has a name similar to AftershockGUI-current-YYYY_MM_DD.jar, where YYYY_MM_DD is 
+the current date.</p>
+<p>&nbsp;</p>
+<p>14.4 (Optional) Build the production aftershock GUI.</p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_packgui YYYY_MM_DD SERVER_IP_1 MONGO_REP_SET_1 SERVER_IP_2 MONGO_REP_SET_2 MONGO_NAME MONGO_USER MONGO_PASS</pre>
+<p>In the above command, replace YYYY_MM_DD with the current date (the date that 
+appears in the filename of the generic aftershock GUI), and the other parameters 
+with the values indicated in section 2.8. For a single-server configuration, you 
+can make SERVER_IP_2 and MONGO_REP_SET_2 the same as SERVER_IP_1 and 
+MONGO_REP_SET_1.</p>
+<p>Note that you need to build the generic GUI before you can build the 
+production GUI.</p>
+<p>The production aftershock GUI is the same as the generic GUI, with the 
+additional ability to communicate with the AAFS servers.</p>
+<p>&nbsp;</p>
+<p>14.5. (Future) Re-compile the software.</p>
+<p>When you obtain an updated version of OpenSHA, you can compile and deploy the 
+new version by repeating 14.1 through 14.4 above.</p>
+<p>By default, when you recompile the software, only the portion that has 
+changed is compiled. If you want to completely erase the old version, and 
+recompile everything from scratch, the use the following command before 
+compiling:</p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh clean</pre>
+<p>Recompiling from scratch is recommended after installing a new version of 
+Java, or if there have been major changes or re-factoring in the OpenSHA 
+software.</p>
+<p>&nbsp;</p>
+<h2>15. Initialize the OAF Database</h2>
+<p>15.1. Create the database tables and indexes.</p>
+<pre>$ cd /opt/aafs
+$ ./aafs.sh initdb</pre>
+<p>You should see a series of messages saying that the program is connecting to 
+MongoDB, then that it is creating indexes, then that it is closing the 
+connection to MongoDB.</p>
+<p>In particular, look for the following message: "All indexes were created 
+successfully." If this message appears, then the operation was successful.</p>
+<p>This operation takes about one minute to run.</p>
+<p>Note: This operation should only be run <b>once</b>, <b>ever</b>. (However, 
+if you run it again it will do no harm.)</p>
+<p>&nbsp;</p>
+<p>15.2. Initialize dual-server mode.</p>
+<p>In a dual-server configuration, you must write database entries in both 
+servers to select dual-server operation and the initial primary server.</p>
+<p>First, on each server, start MongoDB as follows:</p>
+<pre>$ cd /opt/aafs
+$ ./aafs-svc.sh start</pre>
+<p>Then, on each server, set the dual-server mode. (The number at the end 
+selects the primary server, and can be 1 or 2. The command as shown selects 
+server #1 as the primary server.)</p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh runaafs aafs.ServerCmd init_relay_mode pair 1</pre>
+<p>At this point, each server should be able to see the other. To test this, run 
+this command on each server:</p>
+<pre>$ ./boaf.sh runaafs aafs.ServerCmd show_relay_status 9</pre>
+<p>The number 9 means to display status info for both servers. (It can also be 1 
+or 2 to select server #1 or #2 respectively, or 0 to select the local server.) 
+The output should be similar to:</p>
+<pre>Fetching status for server 1
+info: N1, V1.0.1145, C101, start = 0 (1970-01-01 00:00:00 UTC)
+config: RMODE_PAIR, P1, timestamp = 1576392921417 (2019-12-15 06:55:21 UTC)
+state: LINK_SHUTDOWN, PRIST_SHUTDOWN, heartbeat = 0 (1970-01-01 00:00:00 UTC)
+
+Fetching status for server 2
+info: N2, V1.0.1145, C101, start = 0 (1970-01-01 00:00:00 UTC)
+config: RMODE_PAIR, P1, timestamp = 1576392924993 (2019-12-15 06:55:24 UTC)
+state: LINK_SHUTDOWN, PRIST_SHUTDOWN, heartbeat = 0 (1970-01-01 00:00:00 UTC)</pre>
+<p>Then, on each server, stop MongoDB as follows:</p>
+<pre>$ cd /opt/aafs
+$ ./aafs-svc.sh stop</pre>
+<p>&nbsp;</p>
+<h2>16. Starting and Stopping AAFS</h2>
+<p>16.1. To start AAFS - Single-server mode.</p>
+<pre>$ cd /opt/aafs
+$ ./aafs.sh start</pre>
+<p>The operation starts MongoDB, then starts the OAF software, then starts the 
+PDL listener, and then starts Comcat polling.</p>
+<p>Startup takes approximately two minutes.</p>
+<p>&nbsp;</p>
+<p>16.2. To start AAFS - Dual-server mode.</p>
+<p>To start in dual-server mode, first start MongoDB on both servers. Then start 
+the AAFS application on both servers, primary server first.</p>
+<p>On each server, start MongoDB as follows.</p>
+<pre>$ cd /opt/aafs
+$ ./aafs-svc.sh start</pre>
+<p>Then, on each server, start the AAFS application as follows. Do this on the 
+primary server first; then do this on the secondary server.</p>
+<pre>$ cd /opt/aafs
+$ ./aafs-app.sh start</pre>
+<p>&nbsp;</p>
+<p>16.3. To stop AAFS - Single-server mode.</p>
+<pre>$ cd /opt/aafs
+$ ./aafs.sh stop</pre>
+<p>The operation stops the PDL listener, then stops the OAF software, and then 
+stops MongoDB.</p>
+<p>Shutdown takes approximately two minutes.</p>
+<p>&nbsp;</p>
+<p>16.4. To stop AAFS - Dual-server mode.</p>
+<p>To stop in dual-server mode, first stop the AAFS application on both servers, 
+secondary server first. Then stop MongoDB on both servers.</p>
+<p>On each server, stop the AAFS application as follows. Do this on the 
+secondary server first; then wait 5 minutes; then do this on the primary server.</p>
+<pre>$ cd /opt/aafs
+$ ./aafs-app.sh stop</pre>
+<p>Then, on each server, stop MongoDB as follows.</p>
+<pre>$ cd /opt/aafs
+$ ./aafs-svc.sh stop</pre>
+<p>&nbsp;</p>
+<p>16.5. To check if AAFS is running.</p>
+<pre>$ ps -eF | grep java</pre>
+<p>If AAFS is running, you should see two java processes running: one that is 
+executing /opt/aafs/oefjava/oefjava.jar, and one that is executing /opt/aafs/oefjava/ProductClient.jar. 
+Occasionally there may be a second process also executing /opt/aafs/oefjava/oefjava.jar.</p>
+<p>If you recently compiled the code, there may also be a java process for 
+Gradle.</p>
+<p>&nbsp;</p>
+<p>16.6. To monitor the AAFS logs.</p>
+<pre>$ cd /data/aafs/logs</pre>
+<p>The summary log is typically the most useful. It has a name like 
+2019-03-02-summary.log. New log files are started every day (in UTC). Log files 
+for each month are placed in a separate directory.</p>
+<p>&nbsp;</p>
+
+</body>
+
+</html>
