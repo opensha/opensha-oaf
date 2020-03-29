@@ -475,6 +475,7 @@ case "$1" in
         copycfg opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
         copycfg opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
         copycfg opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
+        copyscr opensha-oaf/deployment/scripts/aafs/moaf.sh /opt/aafs/moaf.sh
         copyscr opensha-oaf/deployment/scripts/aafs/aafs.sh /opt/aafs/aafs.sh
         copyscr opensha-oaf/deployment/scripts/aafs/aafs-app.sh /opt/aafs/aafs-app.sh
         copyscr opensha-oaf/deployment/scripts/aafs/aafs-svc.sh /opt/aafs/aafs-svc.sh
@@ -668,7 +669,7 @@ case "$1" in
         echo "  boaf.sh diffcfg"
         echo "Same as diffcfg except forces the use of colored text when displaying changes:"
         echo "  boaf.sh diffcfgc"
-        echo "Create a server configuration file for a single-server configuration"
+        echo "Create a server configuration file for a single-server configuration:"
         echo "  boaf.sh config_server_solo SRVIP1 REPSET1 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
         echo "Create a server configuration file for server #1 in a dual-server configuration:"
         echo "  boaf.sh config_server_1 SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT"

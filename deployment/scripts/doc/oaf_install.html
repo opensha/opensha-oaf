@@ -18,7 +18,7 @@
 <body>
 
 <h1>OAF Software Installation</h1>
-<h2>Michael Barall<br>03/19/2020</h2>
+<h2>Michael Barall<br>03/28/2020</h2>
 <p>&nbsp;</p>
 <h2>1. Introduction</h2>
 <p>OAF is Operational Aftershock Forecasting. It generates forecasts of future 
@@ -655,6 +655,12 @@ want to grant access just to the user 'myuser' then remove the % signs. After
 creating the file, copy it to /etc/sudoers.d. The name of the file is not 
 important, but the permissions should be set to 440.</p>
 <p>&nbsp;</p>
+<p>8.7. (Optional) Install MongoDB Compass Community Edition.</p>
+<p>Compass is a GUI program that lets you examine and modify MongoDB databases. 
+It is not installed on the server, but rather, is installed on your workstation. 
+To obtain Compass, go to: <a href="https://docs.mongodb.com/compass/current/">
+https://docs.mongodb.com/compass/current/</a></p>
+<p>&nbsp;</p>
 <h2>9. Install MongoDB [Amazon]</h2>
 <p>These instructions are specifically for installing MongoDB 4.2 on Amazon 
 Linux 2. 
@@ -703,6 +709,23 @@ server.</p>
 from everywhere on the Internet.</p>
 <p>It is beyond the scope of this document to describe in detail how to set up 
 Amazon EC2 security groups. You may refer to the Amazon EC2 documentation.</p>
+<p>Notes for USGS installations: You can assign a security group to allow access 
+to port 27017 from within the internal USGS network. If you are in the ESC 
+(Earthquake Science Center) subnet, you can use the security group 
+"OAF-Security-Group-Internal-MongoDB". If you are in a different subnet, you may 
+have to create this security group yourself; you can find the required rules in 
+the USGS gitlab repository "CHS-Custom-Infrastructure/ESC/ESC". Additionally, if 
+you are installing a dual-server configuration and both servers are in Amazon 
+EC2, then you also need to assign security groups that allow each server to 
+access port 27017 on the other server. The required security groups are "csr-MongoDB-Source-SecurityGroup" 
+and "csr-MongoDB-SecurityGroup"; these security groups are CHS-managed and so 
+they should be available to you.</p>
+<p>&nbsp;</p>
+<p>9.5. (Optional) Install MongoDB Compass Community Edition.</p>
+<p>Compass is a GUI program that lets you examine and modify MongoDB databases. 
+It is not installed on the server, but rather, is installed on your workstation. 
+To obtain Compass, go to: <a href="https://docs.mongodb.com/compass/current/">
+https://docs.mongodb.com/compass/current/</a></p>
 <p>&nbsp;</p>
 <h2>10. Install MongoDB [Ubuntu]</h2>
 <p>These instructions are specifically for installing MongoDB 4.2 on Ubuntu 
@@ -772,6 +795,12 @@ want to grant access just to the user 'myuser' then remove the % signs. After
 creating the file, copy it to /etc/sudoers.d. The name of the file is not 
 important, but the permissions should be set to 440.</p>
 <p>&nbsp;</p>
+<p>10.7. (Optional) Install MongoDB Compass Community Edition.</p>
+<p>Compass is a GUI program that lets you examine and modify MongoDB databases. 
+It is not installed on the server, but rather, is installed on your workstation. 
+To obtain Compass, go to: <a href="https://docs.mongodb.com/compass/current/">
+https://docs.mongodb.com/compass/current/</a></p>
+<p>&nbsp;</p>
 <h2>11. Configure MongoDB</h2>
 <p>The MongoDB configuration file is /etc/mongod.conf. You configure MongoDB by 
 editing the configuration file.</p>
@@ -784,7 +813,7 @@ the configuration file.</p>
 it. These commands save the default configuration file as mongod_0.conf.</p>
 <pre>$ cd /etc
 $ sudo cp -pi mongod.conf mongod_0.conf
-$ su$ sudo vim mongod.conf</pre>
+$ sudo vim mongod.conf</pre>
 <p>(You may use an editor different from vim if you prefer.)</p>
 <p>Note: If you ever want to restore the default configuration file, <i>do not</i><b>
 </b>delete mongod.conf and then rename mongod_0.conf to mongod.conf. Doing so 
@@ -962,7 +991,7 @@ the 'admin' database:</p>
 <pre>&gt; use admin
 &gt; db.getUsers()</pre>
 <p>Note: You don't need to keep repeating the 'use' command. Once you select a 
-database, mongo remembers you selection. You only need to issue a new 'use' 
+database, mongo remembers your selection. You only need to issue a new 'use' 
 command when you want to switch to a different database. We show repeated 'use' 
 commands in this document for ease of reference.</p>
 <p>&nbsp;</p>
@@ -1046,6 +1075,8 @@ steps.</p>
 <p>If you are signing PDL products, then copy the private key file into /opt/aafs/key.
 It is a good practice (but not a requirement) to set its file permissions to 
 600.</p>
+<p>Note for USGS installations: PDL key files are available in the USGS gitlab 
+private repository "oaf/analyst-tools".</p>
 <p>&nbsp;</p>
 <p>13.3. Configure the server.</p>
 <p>The server 
@@ -1103,6 +1134,19 @@ $ ./boaf.sh pack</pre>
 <p>Note: The first time you compile the software, there may be a long delay as 
 Gradle is downloaded and installed. Gradle is a program that controls the 
 software build process. Subsequent compilations will be much faster.</p>
+<p>Note: If you are working inside the USGS network, then Gradle may 
+fail due to network security restrictions. This should <i>not</i> occur if you are using an 
+Amazon VM in the USGS cloud. We have been unable to find any workaround for this 
+problem. If Gradle doesn't work for you, then you need to compile the OAF 
+software on a computer located outside the USGS network, or in an Amazon VM. 
+Then, copy the resulting jar file to your server. The jar file is called 
+oefjava.jar, and is located in directory ~/opensha/opensha-oaf/build/libs. Make 
+sure that you place oefjava.jar into directory ~/opensha/opensha-oaf/build/libs 
+on your server (you may have to create the directory). If you want to compile 
+the generic GUI (section 14.3 below), that also needs to be done outside the 
+USGS network or in Amazon, and you need to copy the GUI jar file from ~/opensha/opensha-oaf/build/libs 
+to your server. Once the generic GUI is in place, you can create the production 
+GUI (section 14.4) on your server inside the USGS network.</p>
 <p>&nbsp;</p>
 <p>14.2. Deploy the OAF software.</p>
 <pre>$ cd ~/opensha
@@ -1126,6 +1170,9 @@ appears in the filename of the generic aftershock GUI), and the other parameters
 with the values indicated in section 2.8. For a single-server configuration, you 
 can make SERVER_IP_2 and MONGO_REP_SET_2 the same as SERVER_IP_1 and 
 MONGO_REP_SET_1.</p>
+<p>The resulting Java program is located in ~/opensha/opensha-oaf/build/libs and 
+has a name similar to AftershockGUI-prod-YYYY_MM_DD.jar, where YYYY_MM_DD is 
+the current date.</p>
 <p>Note that you need to build the generic GUI before you can build the 
 production GUI.</p>
 <p>The production aftershock GUI is the same as the generic GUI, with the 
@@ -1146,31 +1193,38 @@ software.</p>
 <p>&nbsp;</p>
 <h2>15. Initialize the OAF Database</h2>
 <p>15.1. Create the database tables and indexes.</p>
+<p>First, start MongoDB as follows:</p>
 <pre>$ cd /opt/aafs
-$ ./aafs.sh initdb</pre>
-<p>You should see a series of messages saying that the program is connecting to 
-MongoDB, then that it is creating indexes, then that it is closing the 
-connection to MongoDB.</p>
+$ ./moaf.sh start_mongo</pre>
+<p>Then, initialize the database.</p>
+<pre>$ cd /opt/aafs
+$ ./moaf.sh initdb</pre>
+<p>You should see a series of messages saying that the program is creating 
+indexes.</p>
 <p>In particular, look for the following message: "All indexes were created 
 successfully." If this message appears, then the operation was successful.</p>
 <p>This operation takes about one minute to run.</p>
 <p>Note: This operation should only be run <b>once</b>, <b>ever</b>. (However, 
 if you run it again it will do no harm.)</p>
+<p>Finally, stop MongoDB:</p>
+<pre>$ cd /opt/aafs
+$ ./moaf.sh stop_mongo</pre>
 <p>&nbsp;</p>
 <p>15.2. Initialize dual-server mode.</p>
 <p>In a dual-server configuration, you must write database entries in both 
 servers to select dual-server operation and the initial primary server.</p>
 <p>First, on each server, start MongoDB as follows:</p>
 <pre>$ cd /opt/aafs
-$ ./aafs-svc.sh start</pre>
+$ ./moaf.sh start_mongo</pre>
 <p>Then, on each server, set the dual-server mode. (The number at the end 
 selects the primary server, and can be 1 or 2. The command as shown selects 
 server #1 as the primary server.)</p>
-<pre>$ cd ~/opensha
-$ ./boaf.sh runaafs aafs.ServerCmd init_relay_mode pair 1</pre>
+<pre>$ cd /opt/aafs
+$ ./moaf.sh init_relay_mode pair 1</pre>
 <p>At this point, each server should be able to see the other. To test this, run 
 this command on each server:</p>
-<pre>$ ./boaf.sh runaafs aafs.ServerCmd show_relay_status 9</pre>
+<pre>$ cd /opt/aafs
+$ ./moaf.sh show_relay_status 9</pre>
 <p>The number 9 means to display status info for both servers. (It can also be 1 
 or 2 to select server #1 or #2 respectively, or 0 to select the local server.) 
 The output should be similar to:</p>
@@ -1185,12 +1239,12 @@ config: RMODE_PAIR, P1, timestamp = 1576392924993 (2019-12-15 06:55:24 UTC)
 state: LINK_SHUTDOWN, PRIST_SHUTDOWN, heartbeat = 0 (1970-01-01 00:00:00 UTC)</pre>
 <p>Then, on each server, stop MongoDB as follows:</p>
 <pre>$ cd /opt/aafs
-$ ./aafs-svc.sh stop</pre>
+$ ./moaf.sh stop_mongo</pre>
 <p>&nbsp;</p>
 <h2>16. Starting and Stopping AAFS</h2>
 <p>16.1. To start AAFS - Single-server mode.</p>
 <pre>$ cd /opt/aafs
-$ ./aafs.sh start</pre>
+$ ./moaf.sh start_all</pre>
 <p>The operation starts MongoDB, then starts the OAF software, then starts the 
 PDL listener, and then starts Comcat polling.</p>
 <p>Startup takes approximately two minutes.</p>
@@ -1200,15 +1254,15 @@ PDL listener, and then starts Comcat polling.</p>
 the AAFS application on both servers, primary server first.</p>
 <p>On each server, start MongoDB as follows.</p>
 <pre>$ cd /opt/aafs
-$ ./aafs-svc.sh start</pre>
+$ ./moaf.sh start_mongo</pre>
 <p>Then, on each server, start the AAFS application as follows. Do this on the 
 primary server first; then do this on the secondary server.</p>
 <pre>$ cd /opt/aafs
-$ ./aafs-app.sh start</pre>
+$ ./moaf.sh start_aafs</pre>
 <p>&nbsp;</p>
 <p>16.3. To stop AAFS - Single-server mode.</p>
 <pre>$ cd /opt/aafs
-$ ./aafs.sh stop</pre>
+$ ./moaf.sh stop_all</pre>
 <p>The operation stops the PDL listener, then stops the OAF software, and then 
 stops MongoDB.</p>
 <p>Shutdown takes approximately two minutes.</p>
@@ -1219,18 +1273,15 @@ secondary server first. Then stop MongoDB on both servers.</p>
 <p>On each server, stop the AAFS application as follows. Do this on the 
 secondary server first; then wait 5 minutes; then do this on the primary server.</p>
 <pre>$ cd /opt/aafs
-$ ./aafs-app.sh stop</pre>
+$ ./moaf.sh stop_aafs</pre>
 <p>Then, on each server, stop MongoDB as follows.</p>
 <pre>$ cd /opt/aafs
-$ ./aafs-svc.sh stop</pre>
+$ ./moaf.sh stop_mongo</pre>
 <p>&nbsp;</p>
 <p>16.5. To check if AAFS is running.</p>
-<pre>$ ps -eF | grep java</pre>
-<p>If AAFS is running, you should see two java processes running: one that is 
-executing /opt/aafs/oefjava/oefjava.jar, and one that is executing /opt/aafs/oefjava/ProductClient.jar. 
-Occasionally there may be a second process also executing /opt/aafs/oefjava/oefjava.jar.</p>
-<p>If you recently compiled the code, there may also be a java process for 
-Gradle.</p>
+<pre>$ cd /opt/aafs
+$ ./moaf.sh check_running</pre>
+<p>The command tells you if AAFS is running, and if MongoDB is running.</p>
 <p>&nbsp;</p>
 <p>16.6. To monitor the AAFS logs.</p>
 <pre>$ cd /data/aafs/logs</pre>
