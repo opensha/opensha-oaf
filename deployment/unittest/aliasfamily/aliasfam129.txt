@@ -15,4 +15,5 @@ mainshock_lat = 38.2151667
 mainshock_lon = -122.3123333
 mainshock_depth = 11.12
 timeline_id = .nc72282711
+mainshock_geojson is available
 

@@ -14,4 +14,5 @@ mainshock_mag = 5.3
 mainshock_lat = 19.3983333
 mainshock_lon = -155.2726667
 mainshock_depth = 0.28
+mainshock_geojson is available
 
