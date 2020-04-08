@@ -653,6 +653,128 @@ public class RelayLink extends ServerComponent {
 		return "LINK_INVALID(" + state + ")";
 	}
 
+	// Test if user string matches the link state.
+	// Parameters:
+	//  s = User string.
+	//  v_link_state = Link state value to test.
+	// Returns one of the following:
+	//  -1 = Invalid user string.
+	//  0 = Not a match.
+	//  1 = Match.
+	// Note: If check_user_string_link_state returns true for the user string,
+	// then this function will return 0 or 1.
+
+	public static int test_user_string_link_state (String s, int v_link_state) {
+		int result = -1;
+
+		// Interpret string as one of a few special values
+
+		if (s.equalsIgnoreCase ("any")) {
+			result = 1;
+		}
+		else if (s.equalsIgnoreCase ("unlinked")) {
+			switch (v_link_state) {
+			case LINK_SHUTDOWN:
+			case LINK_SOLO:
+			case LINK_DISCONNECTED:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+		else if (s.equalsIgnoreCase ("linking")) {
+			switch (v_link_state) {
+			case LINK_CALLING:
+			case LINK_INITIAL_SYNC:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+		else if (s.equalsIgnoreCase ("linked")) {
+			switch (v_link_state) {
+			case LINK_CONNECTED:
+			case LINK_RESYNC:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+		else if (s.equalsIgnoreCase ("shutdown")) {
+			switch (v_link_state) {
+			case LINK_SHUTDOWN:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+		else if (s.equalsIgnoreCase ("solo")) {
+			switch (v_link_state) {
+			case LINK_SOLO:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+		else if (s.equalsIgnoreCase ("disconnected")) {
+			switch (v_link_state) {
+			case LINK_DISCONNECTED:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+	
+		return result;
+	}
+
+	// Check for valid user string for matching the configured primary.
+	// Parameters:
+	//  s = User string.
+	// Returns true if valid, false if not.
+
+	public static boolean check_user_string_link_state (String s) {
+		boolean result = false;
+
+		// Interpret string as one of a few special values
+
+		if (s.equalsIgnoreCase ("any")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("unlinked")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("linking")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("linked")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("shutdown")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("solo")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("disconnected")) {
+			result = true;
+		}
+	
+		return result;
+	}
+
 
 
 
@@ -1849,6 +1971,235 @@ public class RelayLink extends ServerComponent {
 		return 0;
 	}
 
+	// Test if user string matches the relay mode.
+	// Parameters:
+	//  s = User string.
+	//  v_relay_mode = Relay mode value to test.
+	// Returns one of the following:
+	//  -1 = Invalid user string.
+	//  0 = Not a match.
+	//  1 = Match.
+	// Note: If check_user_string_relay_mode returns true for the user string,
+	// then this function will return 0 or 1.
+	// Note: Any string acceptable to convert_user_string_to_mode() must be accepted here.
+
+	public static int test_user_string_relay_mode (String s, int v_relay_mode) {
+		int result = -1;
+
+		// Interpret string as one of a few special values
+
+		if (s.equalsIgnoreCase ("any")) {
+			result = 1;
+		}
+		else if (s.equalsIgnoreCase ("solo")) {
+			switch (v_relay_mode) {
+			case RMODE_SOLO:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+		else if (s.equalsIgnoreCase ("watch")) {
+			switch (v_relay_mode) {
+			case RMODE_WATCH:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+		else if (s.equalsIgnoreCase ("pair")) {
+			switch (v_relay_mode) {
+			case RMODE_PAIR:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+	
+		return result;
+	}
+
+	// Check for valid user string for matching the configured primary.
+	// Parameters:
+	//  s = User string.
+	// Returns true if valid, false if not.
+	// Note: Any string acceptable to convert_user_string_to_mode() must be accepted here.
+
+	public static boolean check_user_string_relay_mode (String s) {
+		boolean result = false;
+
+		// Interpret string as one of a few special values
+
+		if (s.equalsIgnoreCase ("any")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("solo")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("watch")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("pair")) {
+			result = true;
+		}
+	
+		return result;
+	}
+
+	// Convert a user string to a server number.
+	// Parameters:
+	//  s = User string.
+	//  f_0_ok = True if return value can be 0.
+	//  f_9_ok = True if return value can be 9.
+	// Returns one of the following:
+	//  -1 = Invalid string.
+	//  0 = Local server (accessed through handle 0).
+	//  SRVNUM_MIN through SRVNUM_MAX (1 or 2) = Selected remote server.
+	//  9 = All servers.
+
+	public static int convert_user_string_to_server_number (String s, boolean f_0_ok, boolean f_9_ok) {
+		int srvnum = -1;
+
+		// Interpret string as an integer, or one of a few special values
+
+		if (s.equalsIgnoreCase ("this")) {
+			srvnum = (new ServerConfig()).get_server_number();
+		}
+		else if (s.equalsIgnoreCase ("other")) {
+			srvnum = (new ServerConfig()).get_partner_server_number();
+		}
+		else if (s.equalsIgnoreCase ("both")) {
+			srvnum = 9;
+		}
+		else if (s.equalsIgnoreCase ("local")) {
+			srvnum = 0;
+		}
+		else {
+			try {
+				srvnum = Integer.parseInt (s);
+			} catch (NumberFormatException e) {
+				srvnum = -1;
+			}
+		}
+
+		// Check for valid result
+
+		if (!(
+			(srvnum >= ServerConfigFile.SRVNUM_MIN && srvnum <= ServerConfigFile.SRVNUM_MAX)
+			|| (f_0_ok && srvnum == 0)
+			|| (f_9_ok && srvnum == 9)
+		)) {
+			srvnum = -1;
+		}
+	
+		return srvnum;
+	}
+
+	// Convert a user string to a configured primary.
+	// Parameters:
+	//  s = User string.
+	// Returns one of the following:
+	//  -1 = Invalid string.
+	//  SRVNUM_MIN through SRVNUM_MAX (1 or 2) = Selected remote server.
+
+	public static int convert_user_string_to_configured_primary (String s) {
+		return convert_user_string_to_server_number (s, false, false);
+	}
+
+	// Test if user string matches the configured primary.
+	// Parameters:
+	//  s = User string.
+	//  v_configured_primary = Configured primary value to test.
+	// Returns one of the following:
+	//  -1 = Invalid user string.
+	//  0 = Not a match.
+	//  1 = Match.
+	// Note: If check_user_string_configured_primary returns true for the user string,
+	// then this function will return 0 or 1.
+	// Note: Any string acceptable to convert_user_string_to_configured_primary()
+	// must be accepted here.
+
+	public static int test_user_string_configured_primary (String s, int v_configured_primary) {
+		int result = -1;
+
+		// Interpret string as an integer, or one of a few special values
+
+		if (s.equalsIgnoreCase ("any")) {
+			result = 1;
+		}
+		else if (s.equalsIgnoreCase ("this")) {
+			if (v_configured_primary == (new ServerConfig()).get_server_number()) {
+				result = 1;
+			} else {
+				result = 0;
+			}
+		}
+		else if (s.equalsIgnoreCase ("other")) {
+			if (v_configured_primary == (new ServerConfig()).get_partner_server_number()) {
+				result = 1;
+			} else {
+				result = 0;
+			}
+		}
+		else {
+			try {
+				int srvnum = Integer.parseInt (s);
+				if (srvnum >= ServerConfigFile.SRVNUM_MIN && srvnum <= ServerConfigFile.SRVNUM_MAX) {
+					if (v_configured_primary == srvnum) {
+						result = 1;
+					} else {
+						result = 0;
+					}
+				}
+			} catch (NumberFormatException e) {
+				result = -1;
+			}
+		}
+	
+		return result;
+	}
+
+	// Check for valid user string for matching the configured primary.
+	// Parameters:
+	//  s = User string.
+	// Returns true if valid, false if not.
+	// Note: Any string acceptable to convert_user_string_to_configured_primary()
+	// must be accepted here.
+
+	public static boolean check_user_string_configured_primary (String s) {
+		boolean result = false;
+
+		// Interpret string as an integer, or one of a few special values
+
+		if (s.equalsIgnoreCase ("any")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("this")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("other")) {
+			result = true;
+		}
+		else {
+			try {
+				int srvnum = Integer.parseInt (s);
+				if (srvnum >= ServerConfigFile.SRVNUM_MIN && srvnum <= ServerConfigFile.SRVNUM_MAX) {
+					result = true;
+				}
+			} catch (NumberFormatException e) {
+				result = false;
+			}
+		}
+	
+		return result;
+	}
+
 
 
 
@@ -2034,6 +2385,112 @@ public class RelayLink extends ServerComponent {
 		case PRIST_SHUTDOWN: return "PRIST_SHUTDOWN";
 		}
 		return "PRIST_INVALID(" + state + ")";
+	}
+
+	// Test if user string matches the primary state.
+	// Parameters:
+	//  s = User string.
+	//  v_primary_state = Primary state value to test.
+	// Returns one of the following:
+	//  -1 = Invalid user string.
+	//  0 = Not a match.
+	//  1 = Match.
+	// Note: If check_user_string_primary_state returns true for the user string,
+	// then this function will return 0 or 1.
+
+	public static int test_user_string_primary_state (String s, int v_primary_state) {
+		int result = -1;
+
+		// Interpret string as one of a few special values
+
+		if (s.equalsIgnoreCase ("any")) {
+			result = 1;
+		}
+		else if (s.equalsIgnoreCase ("primary")) {
+			switch (v_primary_state) {
+			case PRIST_PRIMARY:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+		else if (s.equalsIgnoreCase ("secondary")) {
+			switch (v_primary_state) {
+			case PRIST_SECONDARY:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+		else if (s.equalsIgnoreCase ("initializing")) {
+			switch (v_primary_state) {
+			case PRIST_INITIALIZING:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+		else if (s.equalsIgnoreCase ("shutdown")) {
+			switch (v_primary_state) {
+			case PRIST_SHUTDOWN:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+		else if (s.equalsIgnoreCase ("initialized")) {
+			switch (v_primary_state) {
+			case PRIST_PRIMARY:
+			case PRIST_SECONDARY:
+				result = 1;
+				break;
+			default:
+				result = 0;
+				break;
+			}
+		}
+	
+		return result;
+	}
+
+	// Check for valid user string for matching the primary state.
+	// Parameters:
+	//  s = User string.
+	// Returns true if valid, false if not.
+
+	public static boolean check_user_string_primary_state (String s) {
+		boolean result = false;
+
+		// Interpret string as one of a few special values
+
+		if (s.equalsIgnoreCase ("any")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("primary")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("secondary")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("initializing")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("shutdown")) {
+			result = true;
+		}
+		else if (s.equalsIgnoreCase ("initialized")) {
+			result = true;
+		}
+	
+		return result;
 	}
 
 

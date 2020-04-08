@@ -1250,14 +1250,8 @@ public class ServerCmd {
 			return;
 		}
 
-		int configured_primary;
-		try {
-			configured_primary = Integer.parseInt (args[2]);
-		} catch (NumberFormatException e) {
-			System.out.println ("Invalid primary server number: " + args[2]);
-			return;
-		}
-		if (!( configured_primary >= ServerConfigFile.SRVNUM_MIN && configured_primary <= ServerConfigFile.SRVNUM_MAX )) {
+		int configured_primary = RelayLink.convert_user_string_to_configured_primary (args[2]);
+		if (configured_primary < 0) {
 			System.out.println ("Invalid primary server number: " + args[2]);
 			return;
 		}
@@ -1314,14 +1308,8 @@ public class ServerCmd {
 			return;
 		}
 
-		int srvnum;
-		try {
-			srvnum = Integer.parseInt (args[1]);
-		} catch (NumberFormatException e) {
-			System.out.println ("Invalid server number: " + args[1]);
-			return;
-		}
-		if (!( (srvnum >= 0 && srvnum <= ServerConfigFile.SRVNUM_MAX) || srvnum == 9 )) {
+		int srvnum = RelayLink.convert_user_string_to_server_number (args[1], true, true);
+		if (srvnum < 0) {
 			System.out.println ("Invalid server number: " + args[1]);
 			return;
 		}
@@ -1375,14 +1363,8 @@ public class ServerCmd {
 			return;
 		}
 
-		int srvnum;
-		try {
-			srvnum = Integer.parseInt (args[1]);
-		} catch (NumberFormatException e) {
-			System.out.println ("Invalid server number: " + args[1]);
-			return;
-		}
-		if (!( (srvnum >= 0 && srvnum <= ServerConfigFile.SRVNUM_MAX) || srvnum == 9 )) {
+		int srvnum = RelayLink.convert_user_string_to_server_number (args[1], true, true);
+		if (srvnum < 0) {
 			System.out.println ("Invalid server number: " + args[1]);
 			return;
 		}
@@ -1393,14 +1375,8 @@ public class ServerCmd {
 			return;
 		}
 
-		int configured_primary;
-		try {
-			configured_primary = Integer.parseInt (args[3]);
-		} catch (NumberFormatException e) {
-			System.out.println ("Invalid primary server number: " + args[3]);
-			return;
-		}
-		if (!( configured_primary >= ServerConfigFile.SRVNUM_MIN && configured_primary <= ServerConfigFile.SRVNUM_MAX )) {
+		int configured_primary = RelayLink.convert_user_string_to_configured_primary (args[3]);
+		if (configured_primary < 0) {
 			System.out.println ("Invalid primary server number: " + args[3]);
 			return;
 		}
@@ -1471,14 +1447,8 @@ public class ServerCmd {
 			return;
 		}
 
-		int srvnum;
-		try {
-			srvnum = Integer.parseInt (args[1]);
-		} catch (NumberFormatException e) {
-			System.out.println ("Invalid server number: " + args[1]);
-			return;
-		}
-		if (!( (srvnum >= 0 && srvnum <= ServerConfigFile.SRVNUM_MAX) || srvnum == 9 )) {
+		int srvnum = RelayLink.convert_user_string_to_server_number (args[1], true, true);
+		if (srvnum < 0) {
 			System.out.println ("Invalid server number: " + args[1]);
 			return;
 		}
@@ -1618,14 +1588,8 @@ public class ServerCmd {
 			return;
 		}
 
-		int srvnum;
-		try {
-			srvnum = Integer.parseInt (args[1]);
-		} catch (NumberFormatException e) {
-			System.out.println ("Invalid server number: " + args[1]);
-			return;
-		}
-		if (!( (srvnum >= 0 && srvnum <= ServerConfigFile.SRVNUM_MAX) || srvnum == 9 )) {
+		int srvnum = RelayLink.convert_user_string_to_server_number (args[1], true, true);
+		if (srvnum < 0) {
 			System.out.println ("Invalid server number: " + args[1]);
 			return;
 		}
@@ -1729,6 +1693,98 @@ public class ServerCmd {
 		ForecastData fcdata = ForecastData.convert_json_file_to_friendly (in_filename, out_filename);
 
 		System.out.println ("The conversion was successful");
+
+		return;
+	}
+
+
+
+
+	// cmd_wait_relay_status - Wait for the relay status, on a local or remote server.
+
+	public static void cmd_wait_relay_status(String[] args) {
+
+		// 5 additional arguments
+
+		if (args.length != 6) {
+			System.err.println ("ServerCmd : Invalid 'wait_relay_status' subcommand");
+			return;
+		}
+
+		int srvnum = RelayLink.convert_user_string_to_server_number (args[1], true, true);
+		if (srvnum < 0) {
+			System.out.println ("Invalid server number: " + args[1]);
+			return;
+		}
+
+		String s_relay_mode = args[2];
+		if (!( RelayLink.check_user_string_relay_mode (s_relay_mode) )) {
+			System.out.println ("Invalid relay mode: " + args[2]);
+			return;
+		}
+
+		String s_configured_primary = args[3];
+		if (!( RelayLink.check_user_string_configured_primary (s_configured_primary) )) {
+			System.out.println ("Invalid configured primary: " + args[3]);
+			return;
+		}
+
+		String s_link_state = args[4];
+		if (!( RelayLink.check_user_string_link_state (s_link_state) )) {
+			System.out.println ("Invalid link state: " + args[4]);
+			return;
+		}
+
+		String s_primary_state = args[5];
+		if (!( RelayLink.check_user_string_primary_state (s_primary_state) )) {
+			System.out.println ("Invalid primary state: " + args[5]);
+			return;
+		}
+
+		// Get list of database handles
+
+		ServerConfig server_config = new ServerConfig();
+		List<String> db_handles = server_config.get_server_db_handles();
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Loop over possible database handles
+
+		for (int n = 0; n < db_handles.size(); ++n) {
+			String db_handle = db_handles.get(n);
+
+			// If we want this one ...
+
+			if (n == srvnum || (srvnum == 9 && n >= ServerConfigFile.SRVNUM_MIN && n <= ServerConfigFile.SRVNUM_MAX)) {
+				System.out.print ("Waiting for server " + n + " ...");
+
+				boolean f_waiting = true;
+				while (f_waiting) {
+
+					RiServerStatus sstat_payload = new RiServerStatus();
+					RelayItem relit = RelaySupport.get_remote_sstat_relay_item (db_handle, sstat_payload);
+			
+					if (relit == null) {
+						System.out.println ();
+						System.out.println ("Unable to fetch status for server " + n);
+						f_waiting = false;
+					} else {
+						if (sstat_payload.test_user_string_match (s_link_state, s_relay_mode, s_configured_primary, s_primary_state)) {
+							System.out.println ();
+							f_waiting = false;
+						} else {
+							try {
+								Thread.sleep (5000L);	// wait 5 seconds
+							} catch (InterruptedException e) {
+							}
+							System.out.print (".");
+						}
+					}
+				}
+			}
+		}
 
 		return;
 	}
@@ -2011,7 +2067,7 @@ public class ServerCmd {
 		//  init_relay_mode  relay_mode  configured_primary
 		// Initialize the relay mode and configured primary server number.
 		// The relay_mode can be: "solo", "watch", or "pair".
-		// The configured_primary can be: 1 or 2.
+		// The configured_primary can be: 1, 2, "this", or "other".
 
 		case "init_relay_mode":
 			try {
@@ -2025,7 +2081,7 @@ public class ServerCmd {
 		// Command format:
 		//  show_relay_status  srvnum
 		// Display the relay status, on a local or remote server.
-		// The srvnum can be: 0 = local server, 1 or 2 = remote server, 9 = both remote servers.
+		// The srvnum can be: 0 or "local" = local server; 1, 2, "this", or "other" = remote server; 9 or "both" = both remote servers.
 
 		case "show_relay_status":
 			try {
@@ -2039,9 +2095,9 @@ public class ServerCmd {
 		// Command format:
 		//  change_relay_mode  srvnum  relay_mode  configured_primary
 		// Change the relay mode, on a running local or remote server.
-		// The srvnum can be: 0 = local server, 1 or 2 = remote server, 9 = both remote servers.
+		// The srvnum can be: 0 or "local" = local server; 1, 2, "this", or "other" = remote server; 9 or "both" = both remote servers.
 		// The relay_mode can be: "solo", "watch", or "pair".
-		// The configured_primary can be: 1 or 2.
+		// The configured_primary can be: 1, 2, "this", or "other".
 
 		case "change_relay_mode":
 			try {
@@ -2055,7 +2111,7 @@ public class ServerCmd {
 		// Command format:
 		//  server_health  srvnum
 		// Display the server health, on a local or remote server.
-		// The srvnum can be: 0 = local server, 1 or 2 = remote server, 9 = both remote servers.
+		// The srvnum can be: 0 or "local" = local server; 1, 2, "this", or "other" = remote server; 9 or "both" = both remote servers.
 
 		case "server_health":
 			try {
@@ -2083,7 +2139,7 @@ public class ServerCmd {
 		// Command format:
 		//  change_analyst_cli  srvnum
 		// Change the analyst options, on a running local or remote server, using the analyst CLI.
-		// The srvnum can be: 0 = local server, 1 or 2 = remote server, 9 = both remote servers.
+		// The srvnum can be: 0 or "local" = local server; 1, 2, "this", or "other" = remote server; 9 or "both" = both remote servers.
 
 		case "change_analyst_cli":
 			try {
@@ -2102,6 +2158,24 @@ public class ServerCmd {
 		case "fcdata_convert":
 			try {
 				cmd_fcdata_convert(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : wait_relay_status
+		// Command format:
+		//  wait_relay_status  srvnum  relay_mode  configured_primary  link_state  primary_state
+		// Wait for the relay status, on a local or remote server.
+		// The srvnum can be: 0 or "local" = local server; 1, 2, "this", or "other" = remote server; 9 or "both" = both remote servers.
+		// The relay_mode can be: "any", "solo", "watch", or "pair".
+		// The configured_primary can be: "any", 1, 2, "this", or "other".
+		// The link_state can be:  "any", "unlinked", "linking", "linked", "shutdown", "solo", or "disconnected".
+		// The primary_state can be:  "any", "primary", "secondary", "initializing", "shutdown", or "initialized".
+
+		case "wait_relay_status":
+			try {
+				cmd_wait_relay_status(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

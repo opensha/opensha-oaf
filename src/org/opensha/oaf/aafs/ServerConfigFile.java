@@ -581,6 +581,13 @@ public class ServerConfigFile {
 		return result;
 	}
 
+	// Return the number of the partner server, 1 or 2.
+
+	public int get_partner_server_number () {
+		int result = 3 - server_number;
+		return result;
+	}
+
 
 
 

@@ -51,7 +51,42 @@ mongo_config = {
         coll_name = timeline
         access_level = 2
   hosts[1]:
-    host_handle = partner
+    host_handle = oaf1
+    write_concern = majority+journaled
+    read_concern = majority
+    read_preference = primary
+    retry_writes = 
+    connection_mode = 
+    cluster_type = 
+    replica_set_name = rs0
+    connection_string = 
+    username = usgs
+    auth_db = usgs
+    password = usgs
+    session_level = 2
+    causal_consistency = 
+    transact_write_concern = majority+journaled
+    transact_read_concern = snapshot
+    transact_read_preference = primary
+    transact_retries = 0
+    commit_retries = 0
+    addresses[0]:
+      host_name = 127.0.0.1
+      host_port = 27017
+    databases[0]:
+      db_handle = oaf1-usgs
+      db_name = usgs
+      write_concern = majority+journaled
+      read_concern = majority
+      read_preference = primary
+      collections[0]:
+        coll_name = relay
+        access_level = 0
+      collections[1]:
+        coll_name = tasks
+        access_level = 2
+  hosts[2]:
+    host_handle = oaf2
     write_concern = majority+journaled
     read_concern = majority
     read_preference = primary
@@ -74,7 +109,7 @@ mongo_config = {
       host_name = 127.0.0.1
       host_port = 27017
     databases[0]:
-      db_handle = partner-usgs
+      db_handle = oaf2-usgs
       db_name = usgs2
       write_concern = majority+journaled
       read_concern = majority
@@ -82,8 +117,17 @@ mongo_config = {
       collections[0]:
         coll_name = relay
         access_level = 0
+      collections[1]:
+        coll_name = tasks
+        access_level = 2
 }
 server_name = test
+server_number = 1
+server_db_handles = [
+  local-usgs
+  oaf1-usgs
+  oaf2-usgs
+]
 log_con_aafs = '/data/aafs/logs/'yyyy-MM'/'yyyy-MM-dd'-aafs.log'
 log_con_intake = '/data/aafs/logs/'yyyy-MM'/'yyyy-MM-dd'-intake.log'
 log_con_control = '/data/aafs/logs/'yyyy-MM'/'yyyy-MM-dd'-control.log'

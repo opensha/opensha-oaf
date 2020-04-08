@@ -109,6 +109,12 @@ public class ServerConfig {
 		return param_set.server_number;
 	}
 
+	// Return the number of the partner server, 1 or 2.
+
+	public int get_partner_server_number () {
+		return param_set.get_partner_server_number();
+	}
+
 	// List of server database handles, 0 = local, 1 = server #1, 2 = server #2.
 
 	public List<String> get_server_db_handles() {
@@ -365,6 +371,8 @@ public class ServerConfig {
 			System.out.println("mongo_config = {\n" + server_config.get_mongo_config().toString("  ") + "}");
 
 			System.out.println("server_name = " + server_config.get_server_name());
+			System.out.println("server_number = " + server_config.get_server_number());
+			System.out.println("partner_server_number = " + server_config.get_partner_server_number());
 			System.out.println("log_con_aafs = " + server_config.get_log_con_aafs());
 			System.out.println("log_con_intake = " + server_config.get_log_con_intake());
 			System.out.println("log_con_control = " + server_config.get_log_con_control());

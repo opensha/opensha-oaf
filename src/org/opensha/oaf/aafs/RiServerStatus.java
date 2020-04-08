@@ -224,6 +224,54 @@ public class RiServerStatus extends DBPayload {
 	}
 
 
+	// Test if the state matches the user strings.
+	// Parameters:
+	//  s_link_state = Link state to test (see RelayLink.test_user_string_link_state()).
+	//  s_relay_mode = Relay mode to test (see RelayLink.test_user_string_relay_mode()).
+	//  s_configured_primary = Configured primary to test (see RelayLink.test_user_string_configured_primary()).
+	//  s_primary_state = Primary state to test (see RelayLink.test_user_string_primary_state()).
+	// Returns true if state matches, false if not.
+	// Throws IllegalArgumentException if any string is invalid.
+
+	public boolean test_user_string_match (String s_link_state, String s_relay_mode, String s_configured_primary, String s_primary_state) {
+	
+		// Link state
+
+		int r_link_state = RelayLink.test_user_string_link_state (s_link_state, link_state);
+		if (r_link_state < 0) {
+			throw new IllegalArgumentException ("RiServerStatus.test_user_string_match: Invalid link state selection: " + s_link_state);
+		}
+	
+		// Relay mode
+
+		int r_relay_mode = RelayLink.test_user_string_relay_mode (s_relay_mode, relay_config.get_relay_mode());
+		if (r_relay_mode < 0) {
+			throw new IllegalArgumentException ("RiServerStatus.test_user_string_match: Invalid relay mode selection: " + s_relay_mode);
+		}
+	
+		// Configured primary
+
+		int r_configured_primary = RelayLink.test_user_string_configured_primary (s_configured_primary, relay_config.get_configured_primary());
+		if (r_configured_primary < 0) {
+			throw new IllegalArgumentException ("RiServerStatus.test_user_string_match: Invalid configured primary selection: " + s_configured_primary);
+		}
+	
+		// Primary state
+
+		int r_primary_state = RelayLink.test_user_string_primary_state (s_primary_state, primary_state);
+		if (r_primary_state < 0) {
+			throw new IllegalArgumentException ("RiServerStatus.test_user_string_match: Invalid primary state selection: " + s_primary_state);
+		}
+
+		// Get result
+
+		if (r_link_state > 0 && r_relay_mode > 0 && r_configured_primary > 0 && r_primary_state > 0) {
+			return true;
+		}
+		return false;
+	}
+
+
 	// Convert to string.
 	// The string produced does not have a final newline.
 
