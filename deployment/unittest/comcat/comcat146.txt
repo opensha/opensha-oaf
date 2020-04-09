@@ -2,6 +2,8 @@ comcat146 comcat.ComcatOAFAccessor test10 gcmt20150425061126 -0.001 1.0 200.0 3.
 Fetching event: gcmt20150425061126
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/gcmt20150425061126.geojson
 Count of events received = 1
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = us20002926
 rup_time = 1429942285950 (2015-04-25 06:11:25 UTC)

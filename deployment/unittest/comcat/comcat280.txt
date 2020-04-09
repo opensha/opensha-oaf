@@ -2,6 +2,8 @@ comcat280 comcat.ComcatOAFAccessor test7 true true usp000hvnu
 Fetching event: usp000hvnu
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000hvnu.geojson
 Count of events received = 1
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/official20110311054624120_30.geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = official20110311054624120_30
 rup_time = 1299822384120 (2011-03-11 05:46:24 UTC)
@@ -26,4 +28,4 @@ ID List: choy20110311054623
 ID List: duputel201103110546a
 ID List: atlas20110311054624
 ID List: iscgem16461282
-URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000hvnu.geojson
+URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/official20110311054624120_30.geojson

@@ -487,6 +487,15 @@ public class AliasAssignmentList {
 	}
 
 
+	// Remove the given ID from the set of absent IDs.
+	// Note: No checking is done, and nothing is done if the ID is not in the set.
+
+	public void remove_absent_id (String id) {
+		all_absent_ids.remove (id);
+		return;
+	}
+
+
 	//----- Matching -----
 
 

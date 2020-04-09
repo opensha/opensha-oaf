@@ -6,6 +6,8 @@ https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/bad2.geojson
 Count of events received = 0
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/atlas20150425061125.geojson
 Count of events received = 1
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson
+Count of events received = 1
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/bad3.geojson
 Count of events received = 0
 Alias: Merges from Comcat = 1, IDs processed = 5

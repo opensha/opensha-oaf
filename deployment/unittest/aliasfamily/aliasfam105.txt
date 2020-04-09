@@ -1,6 +1,8 @@
 aliasfam105 aafs.ServerTest alias_get_event_info at00nat3ek
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/at00nat3ek.geojson
 Count of events received = 1
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc72282711.geojson
+Count of events received = 1
 result code = RESCODE_ALIAS_NEW_EVENT
 ForecastMainshock:
 query_event_id = at00nat3ek

@@ -2,6 +2,8 @@ comcat228 comcat.ComcatOAFAccessor test1 us1000h4p4
 Fetching event: us1000h4p4
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us1000h4p4.geojson
 Count of events received = 1
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us1000h3p4.geojson
+Count of events received = 1
 Null return from fetchEvent
 http_status = 200
-URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us1000h4p4.geojson
+URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us1000h3p4.geojson

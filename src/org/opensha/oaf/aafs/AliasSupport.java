@@ -282,7 +282,13 @@ public class AliasSupport extends ServerComponent {
 					for (Iterator<String> it = new_assigment.get_comcat_id_iterator(); it.hasNext(); ) {
 						String id2 = it.next();
 						if (assignments.contains_absent_id (id2)) {
-							throw new ComcatConflictException ("AliasSupport.merge_from_comcat: Encountered absent ID: " + id2);
+
+							// Note: Originally we considered it an error to receive a (probably secondary) ID which returns nothing
+							// when queried (although the error was only discovered if the ID was received after it was already queried).
+							// However this can occur in rare cases, so now we just remove the ID from the list of absent IDs.
+
+							//throw new ComcatConflictException ("AliasSupport.merge_from_comcat: Encountered absent ID: " + id2);
+							assignments.remove_absent_id (id2);
 						}
 						out_queue.add (id2);
 					}

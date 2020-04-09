@@ -1,8 +1,12 @@
 aliasfam192 aafs.ServerTest alias_get_timeline_info .a
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/gcmt20150425061126.geojson
 Count of events received = 1
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson
+Count of events received = 1
 Alias: Update for timeline ID = .a
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/at00nat3ek.geojson
+Count of events received = 1
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc72282711.geojson
 Count of events received = 1
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/bad1.geojson
 Count of events received = 0

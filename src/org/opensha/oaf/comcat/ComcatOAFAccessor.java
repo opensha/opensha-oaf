@@ -85,6 +85,17 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 	//protected int local_http_status;
 
+	// The geojson returned from the last fetchEvent, or null if none.
+
+	//protected JsonEvent last_geojson;
+
+	// Indicates if queries to a secondary id should be refetched using the primary id.
+	// Note: When an event has multiple ids, on rare occasions Comcat may return different
+	// responses for different ids.  An application that cares can set this to true, so
+	// that responses always come from queries on the primary id.  (Default is false.)
+
+	//protected boolean refetch_secondary;
+
 	// Simulated error rate, or 0.0 if none.
 	// Simulated errors are generated with this probability.
 
@@ -321,6 +332,10 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 		//
 		//last_geojson = null;
 
+		// Refetch queries on secondary ids
+
+		refetch_secondary = true;
+
 		// If we're using program configuration ...
 
 		if (f_use_config) {
@@ -448,7 +463,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 		// Check the visitor
 
 		if (visitor == null) {
-			throw new IllegalArgumentException ("ComcatAccessor.visitEventList: No visitor supplied");
+			throw new IllegalArgumentException ("ComcatOAFAccessor.visitEventList: No visitor supplied");
 		}
 
 		// Test for simulated error

@@ -2,6 +2,8 @@ comcat145 comcat.ComcatOAFAccessor test7 true false gcmt20150425061126
 Fetching event: gcmt20150425061126
 https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=gcmt20150425061126&format=geojson
 Count of events received = 1
+https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=us20002926&format=geojson
+Count of events received = 1
 ObsEqkRupture:
 rup_event_id = us20002926
 rup_time = 1429942285950 (2015-04-25 06:11:25 UTC)
@@ -22,4 +24,4 @@ EI Map: net = us
 ID List: us20002926
 ID List: gcmt20150425061126
 ID List: atlas20150425061125
-URL = https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=gcmt20150425061126&format=geojson
+URL = https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=us20002926&format=geojson

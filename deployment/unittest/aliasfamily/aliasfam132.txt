@@ -1,6 +1,8 @@
 aliasfam132 aafs.ServerTest alias_get_event_info atlas20140824102044
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/atlas20140824102044.geojson
 Count of events received = 1
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc72282711.geojson
+Count of events received = 1
 result code = RESCODE_SUCCESS
 ForecastMainshock:
 query_event_id = atlas20140824102044
