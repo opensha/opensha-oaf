@@ -438,9 +438,9 @@ public class AnalystCLI {
 			MagCompPage_Parameters result = new MagCompPage_Parameters (
 				magCat,
 				magCompFn,
-				magSample,
+				magSample.makeForAnalystMagCat (magCat),
 				radiusSample,
-				magCentroid,
+				magCentroid.makeForAnalystMagCat (magCat),
 				radiusCentroid
 			);
 		

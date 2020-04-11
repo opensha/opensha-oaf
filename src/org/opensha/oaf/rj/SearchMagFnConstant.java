@@ -12,6 +12,8 @@ import org.opensha.oaf.util.MarshalException;
  * This class represents a magnitude that is constant.
  * This is useful for special values (-10.0 for no minimum magnitude in Comcat searches,
  * 10.0 to bypass the centroid search.)
+ *
+ * Objects of this class are immutable and pure (have no internal state).
  */
 public class SearchMagFnConstant extends SearchMagFn {
 
@@ -37,6 +39,22 @@ public class SearchMagFnConstant extends SearchMagFn {
 	@Override
 	public double getMag (double magMain) {
 		return mag;
+	}
+
+
+	// Make a new function, taking into account an analyst-supplied magCat.
+	// Parameters:
+	//  magCat = Analyst-supplied magCat.
+	// The purpose is to handle cases where an analyst has reduced magCat to
+	// below the predefined search magnitude.
+	// The return value can be this object, if it is suitable.
+
+	@Override
+	public SearchMagFn makeForAnalystMagCat (double magCat) {
+		if (mag < -9.0 || mag > 9.9) {
+			return this;	// no change if magnitude has one of the special values
+		}
+		return new SearchMagFnConstant (Math.min (mag, magCat));
 	}
 
 

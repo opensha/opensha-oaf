@@ -13,17 +13,19 @@ import org.opensha.oaf.comcat.ComcatOAFAccessor;
  *
  * This abstract class represents a magnitude-dependent search magnitude,
  * which is used to search for aftershocks.
+ *
+ * Objects of this class are immutable and pure (have no internal state).
  */
 public abstract class SearchMagFn {
 
 	//----- Evaluation -----
 
 
-	// The magnitude value that indicates no lower limit.
+	// The magnitude value that indicates no lower limit (values < -9.0 mean no lower limit).
 
 	public static final double NO_MIN_MAG = ComcatOAFAccessor.COMCAT_NO_MIN_MAG;	// = -10.0
 
-	// The magnitude value that indicates to skip the centroid search.
+	// The magnitude value that indicates to skip the centroid search (values > 9.9 mean no centroid search).
 
 	public static final double SKIP_CENTROID = 10.0;
 
@@ -36,6 +38,16 @@ public abstract class SearchMagFn {
 	 * A return value <= NO_MIN_MAG means no lower limit (not recommended).
 	 */
 	public abstract double getMag (double magMain);
+
+
+	// Make a new function, taking into account an analyst-supplied magCat.
+	// Parameters:
+	//  magCat = Analyst-supplied magCat.
+	// The purpose is to handle cases where an analyst has reduced magCat to
+	// below the predefined search magnitude.
+	// The return value can be this object, if it is suitable.
+
+	public abstract SearchMagFn makeForAnalystMagCat (double magCat);
 
 
 
