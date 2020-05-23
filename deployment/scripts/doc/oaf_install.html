@@ -18,7 +18,7 @@
 <body>
 
 <h1>OAF Software Installation</h1>
-<h2>Michael Barall<br>03/28/2020</h2>
+<h2>Michael Barall<br>05/23/2020</h2>
 <p>&nbsp;</p>
 <h2>1. Introduction</h2>
 <p>OAF is Operational Aftershock Forecasting. It generates forecasts of future 
@@ -34,9 +34,27 @@ mainshock occurred.</p>
 </ul>
 <p>The automatic system is called AAFS, for Automatic Aftershock Forecasting 
 System.</p>
-<p>This document describes the installation of AAFS.</p>
+<p>This document describes the installation of AAFS. The topics covered include:</p>
+<ol>
+	<li>Introduction</li>
+	<li>System Setup</li>
+	<li>Install Required Packages [Centos and Amazon]</li>
+	<li>Install Required Packages [Ubuntu]</li>
+	<li>Create Required Directories</li>
+	<li>Download the OAF Code</li>
+	<li>Install Java</li>
+	<li>Install MongoDB [Centos]</li>
+	<li>Install MongoDB [Amazon]</li>
+	<li>Install MongoDB [Ubuntu]</li>
+	<li>Configure MongoDB</li>
+	<li>Set up MongoDB</li>
+	<li>Configure the OAF Software</li>
+	<li>Compile the OAF Software</li>
+	<li>Initialize the OAF Database</li>
+	<li>Starting and Stopping AAFS</li>
+</ol>
 <p>&nbsp;</p>
-<h2>2. System Setup.</h2>
+<h2>2. System Setup</h2>
 <p>2.1. These installation instructions are for the following operating systems:</p>
 <ul>
 	<li>Centos 7</li>
@@ -191,58 +209,58 @@ table. We have assigned a mnemonic to each of them, which we use in this
 document.</p>
 <table class="auto-style1">
 	<tr>
-		<td>MONGO_ADMIN_USER</td>
-		<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		<td>MongoDB administrative username. This username is used to perform 
+		<td valign="top">MONGO_ADMIN_USER</td>
+		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td valign="top">MongoDB administrative username. This username is used to perform 
 		administrative functions, such as creating accounts. This username 
 		should have full access to perform any and all administrative tasks. 
 		This username must have the "admin" database as its authentication 
 		database.</td>
 	</tr>
 	<tr>
-		<td>MONGO_ADMIN_PASS</td>
-		<td>&nbsp;</td>
-		<td>Password for MONGO_ADMIN_USER.</td>
+		<td valign="top">MONGO_ADMIN_PASS</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Password for MONGO_ADMIN_USER.</td>
 	</tr>
 	<tr>
-		<td>MONGO_NAME</td>
-		<td>&nbsp;</td>
-		<td>Name of the MongoDB database that is used for storing AAFS data.</td>
+		<td valign="top">MONGO_NAME</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Name of the MongoDB database that is used for storing AAFS data.</td>
 	</tr>
 	<tr>
-		<td>MONGO_USER</td>
-		<td>&nbsp;</td>
-		<td>MongoDB username. The AAFS software uses this username to log in to 
+		<td valign="top">MONGO_USER</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">MongoDB username. The AAFS software uses this username to log in to 
 		MongoDB. This username must have full access to the database identified 
 		by MONGO_NAME (but does not need to have the ability to perform 
 		administrative tasks). This username must also have MONGO_NAME as its 
 		authentication database.</td>
 	</tr>
 	<tr>
-		<td>MONGO_PASS</td>
-		<td>&nbsp;</td>
-		<td>Password for MONGO_USER.</td>
+		<td valign="top">MONGO_PASS</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Password for MONGO_USER.</td>
 	</tr>
 	<tr>
-		<td>MONGO_REP_SET_1</td>
-		<td>&nbsp;</td>
-		<td>MongoDB replica set name for server #1 (in the dual-server 
+		<td valign="top">MONGO_REP_SET_1</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">MongoDB replica set name for server #1 (in the dual-server 
 		configuration) or for the only server (in the single-server 
 		configuration). This is the name of the MongoDB installation. We 
 		recommend choosing a name that consists of lowercase letters and digits, 
 		that starts with a letter.</td>
 	</tr>
 	<tr>
-		<td>MONGO_REP_SET_2</td>
-		<td>&nbsp;</td>
-		<td>MongoDB replica set name for server #2 (in the dual-server 
+		<td valign="top">MONGO_REP_SET_2</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">MongoDB replica set name for server #2 (in the dual-server 
 		configuration). <b>In the dual-server configuration, the two servers 
 		MUST have different replica set names</b>.</td>
 	</tr>
 	<tr>
-		<td>PDL_OPTION</td>
-		<td>&nbsp;</td>
-		<td>Selects the destination for forecasts. It can 
+		<td valign="top">PDL_OPTION</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Selects the destination for forecasts. It can 
 		have one of three values:<br>* "none" -- Do not send forecasts to PDL.<br>
 		* "dev" -- 
 		Send forecasts to PDL development servers.<br>* keyfile_name -- Send forecasts to PDL 
@@ -252,31 +270,31 @@ document.</p>
 		"mypdlkey" then the cryptographic key file is /opt/aafs/key/mypdlkey.)</td>
 	</tr>
 	<tr>
-		<td>SERVER_IP_1</td>
-		<td>&nbsp;</td>
-		<td>The IP address (or DNS name) assigned to server #1 (in the 
+		<td valign="top">SERVER_IP_1</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">The IP address (or DNS name) assigned to server #1 (in the 
 		dual-server configuration) or to the only server (in the single-server 
 		configuration). In a single-server configuration, this can be 127.0.0.1; 
 		however, in a production single-server system we recommend using the 
 		actual IP address.</td>
 	</tr>
 	<tr>
-		<td>SERVER_IP_2</td>
-		<td>&nbsp;</td>
-		<td>The IP address (or DNS name) assigned to server #2 (in the 
+		<td valign="top">SERVER_IP_2</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">The IP address (or DNS name) assigned to server #2 (in the 
 		dual-server configuration).</td>
 	</tr>
 	<tr>
-		<td>SERVER_NAME_1</td>
-		<td>&nbsp;</td>
-		<td>The name assigned to server #1 (in the dual-server configuration) or 
+		<td valign="top">SERVER_NAME_1</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">The name assigned to server #1 (in the dual-server configuration) or 
 		to the only server (in the single-server configuration). This name is 
 		not currently used, but might be used in the future.</td>
 	</tr>
 	<tr>
-		<td>SERVER_NAME_2</td>
-		<td>&nbsp;</td>
-		<td>The name assigned to server #2 (in the dual-server configuration). 
+		<td valign="top">SERVER_NAME_2</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">The name assigned to server #2 (in the dual-server configuration). 
 		In the dual-server configuration, the two servers must have different 
 		names.</td>
 	</tr>
@@ -1288,6 +1306,12 @@ $ ./moaf.sh check_running</pre>
 <p>The summary log is typically the most useful. It has a name like 
 2019-03-02-summary.log. New log files are started every day (in UTC). Log files 
 for each month are placed in a separate directory.</p>
+<p>&nbsp;</p>
+<p>16.7. Next steps.</p>
+<p>Refer to the OAF Server Management document for information about managing 
+the OAF servers, including information about starting and stopping the servers, 
+checking server status, backing up the servers, managing server relay, and 
+setting analyst parameters.</p>
 <p>&nbsp;</p>
 
 </body>

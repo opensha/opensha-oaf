@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta content="en-us" http-equiv="Content-Language">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<title>OAF Server Management</title>
+<style type="text/css">
+.auto-style1 {
+	border-style: solid;
+	border-width: 4px;
+    border-collapse: separate;
+    border-spacing: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>OAF Server Management</h1>
+<h2>Michael Barall<br>05/23/2020</h2>
+<p>&nbsp;</p>
+<h2>1. Introduction</h2>
+<p>This document describes functions that you can use to manage the OAF servers. 
+The topics covered include:</p>
+<ol>
+	<li>Introduction</li>
+	<li>Status Commands</li>
+	<li>Commands for Starting and Stopping</li>
+	<li>Commands to Manage the Database</li>
+	<li>Commands to Manage Server Relay (for Dual-Server Configurations)</li>
+	<li>Commands to Adjust Analyst Parameters</li>
+</ol>
+<p>Refer to the OAF Software Installation document for information about setting 
+up the OAF servers. This document assumes that the OAF software has been 
+installed and the servers have been set up.</p>
+<p>&nbsp;</p>
+<p>1.1. OAF includes a script file that provides functions for managing the OAF 
+servers. The script file is called moaf.sh, and is installed in the directory 
+/opt/aafs. To invoke a management function, you should change to the directory 
+/opt/aafs and then invoke moaf.sh. The moaf.sh command line consists of a 
+keyword, possibly followed by one or more additional parameters. For example, to 
+display the software version number you would give the command:</p>
+<pre>$ cd /opt/aafs
+$ ./moaf.sh show_version</pre>
+<p>Here the keyword is show_version, and there are no additional parameters.</p>
+<p>From here on, we will not show the "cd /opt/aafs" line, but you do need to 
+change to the directory /opt/aafs before running moaf.sh.</p>
+<p>&nbsp;</p>
+<p>1.2. An OAF system consists of two major components:</p>
+<ul>
+	<li><b>MongoDB</b>. This is database software. The MongoDB database stores 
+	information about the earthquakes that are being followed, the forecasts 
+	that have been issued, the tasks that are waiting to be performed, and other 
+	things..<br>&nbsp;</li>
+	<li><b>The Automatic Aftershock Forecasting System (AAFS)</b>. This is the 
+	USGS software that watches for earthquakes, generates forecasts, and sends 
+	the forecasts to be displayed on the USGS website.</li>
+</ul>
+<p>AAFS itself contains sub-components, but the scripts let you treat AAFS as a 
+single entity.</p>
+<p>&nbsp;</p>
+<p>1.3. The AAFS software can run in either of two configurations:</p>
+<ul>
+	<li><b>Single-Server Configuration</b>. In single-server configuration, the 
+	software runs on one computer or VM. It obtains earthquake information from 
+	Comcat, generates forecasts, and publishes the forecasts to PDL.<br>&nbsp;</li>
+	<li><b>Dual-Server Configuration</b>. The dual-server configuration provides 
+	redundancy against hardware failures and network outages. The software runs 
+	on two computers or VMs, which maintain constant communication with each 
+	other. Both servers are fully functional, obtaining earthquake information 
+	from Comcat and generating forecasts. One server is designated as 
+	primary, and the other as secondary. Only the primary server publishes its 
+	forecasts to PDL. If the primary server fails, then the secondary server 
+	automatically steps up and becomes the primary server. The dual-server 
+	configuration also makes it possible to maintain continuous operation while 
+	installing software and operating system updates, since each server can be 
+	shut down and updated while the other server continues to operate.</li>
+</ul>
+<p>Remark: In the dual-server configuration, each server has its own separate 
+database. We have chosen not to configure MongoDB to run as a distributed 
+database. Instead, each server runs MongoDB as a single-server replica set.</p>
+<p>&nbsp;</p>
+<h2>2. Status Commands</h2>
+<p><b>2.1. Check if MongoDB and the AAFS application are currently running.</b></p>
+<pre>$ ./moaf.sh check_running</pre>
+<p>The command output says if MongoDB is currently running, and if AAFS is 
+currently running.</p>
+<p>&nbsp;</p>
+<p><b>2.2. Display version information about the installed AAFS software.</b></p>
+<pre>$ ./moaf.sh show_version</pre>
+<p>The command output shows the version number of the installed AAFS software.</p>
+<p>To use this command, neither AAFS nor MongoDB needs to be started.</p>
+<p>&nbsp;</p>
+<h2>3. Commands for Starting and Stopping</h2>
+<p>To start, you must first start MongoDB, and then start AAFS. Likewise, to 
+stop, you must first stop AAFS and then stop MongoDB. The commands in this 
+section can start and stop MongoDB and AAFS separately or together.</p>
+<p>&nbsp;</p>
+<p><b>3.1. Start MongoDB.</b></p>
+<pre>$ ./moaf.sh start_mongo</pre>
+<p>If MongoDB is already started, then this command performs no operation.</p>
+<p>&nbsp;</p>
+<p><b>3.2. Stop MongoDB.</b></p>
+<pre>$ ./moaf.sh stop_mongo</pre>
+<p>If MongoDB is already stopped, then this command performs no operation.</p>
+<p>&nbsp;</p>
+<p><b>3.3. Start AAFS.</b></p>
+<pre>$ ./moaf.sh start_aafs</pre>
+<p>If AAFS is already started, then this command performs no operation.</p>
+<p>Requirement: MongoDB must already be started.</p>
+<p>&nbsp;</p>
+<p><b>3.4. Stop AAFS.</b></p>
+<pre>$ ./moaf.sh stop_aafs</pre>
+<p>If AAFS is already stopped, then this command performs no operation.</p>
+<p>This command does not stop MongoDB.</p>
+<p>&nbsp;</p>
+<p><b>3.5. Start MongoDB, and then start AAFS.</b></p>
+<pre>$ ./moaf.sh start_all</pre>
+<p>If AAFS is already started, then this command performs no operation.</p>
+<p>If MongoDB is already started, then this command just starts AAFS.</p>
+<p>&nbsp;</p>
+<p><b>3.6. Stop AAFS, and then stop MongoDB.</b></p>
+<pre>$ ./moaf.sh stop_all</pre>
+<p>If AAFS is already stopped, then this command just stops MongoDB.</p>
+<p>If both AAFS and MongoDB are already stopped, then this command performs no 
+operation.</p>
+<p>&nbsp;</p>
+<p><b>3.7. Start AAFS, without starting the intake processes (PDL and polling).</b></p>
+<pre>$ ./moaf.sh start_aafs_no_intake</pre>
+<p>This command is intended to be used for debug and test. It starts AAFS in a 
+mode where it does not watch for new earthquakes, but continues to generate 
+forecasts for any earthquakes it already knows about.</p>
+<p>If AAFS is already started, then this command performs no operation.</p>
+<p>Requirement: MongoDB must already be started.</p>
+<p>&nbsp;</p>
+<p><b>3.8. Stop AAFS, assuming that there is no intake process running (PDL).</b></p>
+<pre>$ ./moaf.sh stop_aafs</pre>
+<p>This command is intended to be used for debug and test. If AAFS is started 
+with the "start_aafs_no_intake" command, then this command should be used to 
+stop AAFS.</p>
+<p>If AAFS is already stopped, then this command performs no operation.</p>
+<p>This command does not stop MongoDB.</p>
+<p>&nbsp;</p>
+<h2>4. Commands to Manage the Database</h2>
+<p>The commands in this section can be used to manage the MongoDB database, for 
+example, to initialize or back up the database.</p>
+<p>&nbsp;</p>
+<p><b>4.1. Initialize the database.</b></p>
+<pre>$ ./moaf.sh initdb</pre>
+<p>This command creates the database collections and indexes that AAFS needs. You 
+should run this command once when setting up a new installation, or after 
+erasing the the database to start fresh.</p>
+<p>Requirement: MongoDB must be started, and AAFS must <i>not</i> be started.</p>
+<p>&nbsp;</p>
+<p><b>4.2. Delete the existing database indexes, and build new indexes.</b></p>
+<pre>$ ./moaf.sh rebuild_indexes</pre>
+<p>This command does not delete any data. You can use this command if the 
+database indexes become corrupted (which we have never observed to happen), or 
+if a new software version requires a different set of indexes (which has not 
+happened yet).</p>
+<p>Requirement: MongoDB must be started, and AAFS must <i>not</i> be started.</p>
+<p>&nbsp;</p>
+<p><b>4.3. Check if the database collections required by AAFS exist.</b></p>
+<pre>$ ./moaf.sh check_collections</pre>
+<p>The command output indicates if the required database collections exist. The 
+collections are created by the "initdb" command, or by restoring a database from 
+backup.</p>
+<p>Requirement: MongoDB must be started, and AAFS must <i>not</i> be started.</p>
+<p>&nbsp;</p>
+<p><b>4.4. Make a backup of the entire database, and write it to a file.</b></p>
+<pre>$ ./moaf.sh backup_database &lt;filename&gt;</pre>
+<p>&lt;filename&gt; is the name of the file. If the file already exists, you are 
+prompted on whether or not to overwrite it.</p>
+<p>Requirement: MongoDB must be started, and AAFS must <i>not</i> be started.</p>
+<p>&nbsp;</p>
+<p><b>4.5. Make a backup of the entire database, compress it, and write it to a 
+file.</b></p>
+<pre>$ ./moaf.sh backup_database_gzip &lt;filename&gt;</pre>
+<p>&lt;filename&gt; is the name of the file. If the file already exists, you are 
+prompted on whether or not to overwrite it.</p>
+<p>This command performs the same function as "backup_database" except that the 
+output file is also compressed with gzip. Compression typically reduces the file 
+size by 90%.</p>
+<p>Requirement: MongoDB must be started, and AAFS must <i>not</i> be started.</p>
+<p>&nbsp;</p>
+<p><b>4.6. Restore the entire database from a file.</b></p>
+<pre>$ ./moaf.sh restore_database &lt;filename&gt;</pre>
+<p>&lt;filename&gt; is the name of the file. The file must have been created by the "backup_database" 
+command.</p>
+<p>When running this command, the database must be completely empty, either 
+because it is a new installation of MongoDB, or because you erased the database.</p>
+<p>This command also creates the database collections and indexes required by 
+AAFS. So, you should <i>not</i> use the "initdb" command before running this 
+command.</p>
+<p>It is possible to backup the database from one server, and restore it to a 
+different server. You might do this if you are replacing a server.</p>
+<p>In a dual-server system, the database contains the server mode (<i>e.g.</i>, 
+primary or secondary, watch or pair). So, the restored database contains the 
+mode that was in effect when the database was backed up. After restoring the 
+database, it is recommended that you use the "init_relay_mode" command to set 
+the desired server mode, before starting the AAFS software.</p>
+<p>Requirement: MongoDB must be started, and AAFS must <i>not</i> be started.</p>
+<p>&nbsp;</p>
+<p><b>4.7. Restore the entire database from a compressed file.</b></p>
+<pre>$ ./moaf.sh restore_database_gzip &lt;filename&gt;</pre>
+<p>&lt;filename&gt; is the name of the file. The file must have been created by the 
+"backup_database_gzip" command.</p>
+<p>When running this command, the database must be completely empty, either 
+because it is a new installation of MongoDB, or because you erased the database.</p>
+<p>This command also creates the database collections and indexes required by 
+AAFS. So, you should <i>not</i> use the "initdb" command before running this 
+command.</p>
+<p>It is possible to backup the database from one server, and restore it to a 
+different server. You might do this if you are replacing a server.</p>
+<p>In a dual-server system, the database contains the server mode (<i>e.g.</i>, 
+primary or secondary, watch or pair). So, the restored database contains the 
+mode that was in effect when the database was backed up. After restoring the 
+database, it is recommended that you use the "init_relay_mode" command to set 
+the desired server mode, before starting the AAFS software.</p>
+<p>Requirement: MongoDB must be started, and AAFS must <i>not</i> be started.</p>
+<p>&nbsp;</p>
+<p><b>4.8. Erase the entire database from MongoDB.</b></p>
+<pre>$ ./moaf.sh erase_database_this_is_irreversible</pre>
+<p>This action cannot be undone.</p>
+<p>After erasing the database, you need to initialize it with the "initdb" 
+command, or restore the database from a backup.</p>
+<p>Requirement: MongoDB must be started, and AAFS must <i>not</i> be started.</p>
+<p>&nbsp;</p>
+<h2>5. Commands to Manage Server Relay (for Dual-Server Configurations)</h2>
+<p>In a dual-server configuration, data is continually relayed between the 
+two servers in order to keep them synchronized. The commands in this section 
+control the relay of data between the two servers.</p>
+<p>In a dual-server configuration, one server is designated as server #1, and 
+the other server is designated as server #2. This is done when the servers are 
+configured during installation. Many of the commands in this section let you 
+refer to the two servers either as "1" and "2", or as "this" and "other". As you 
+would expect, "this" refers to the server on which you run the command. Also, 
+some commands let you use "9" or "both" to refer to both servers.</p>
+<p>&nbsp;</p>
+<p><b>5.1. Initialize the server relay mode.</b></p>
+<pre>$ ./moaf.sh init_relay_mode &lt;relay_mode&gt; &lt;configured_primary&gt;</pre>
+<p>This command is used primarily in dual-server configurations. It sets the 
+initial relay mode that AAFS will assume when it starts.</p>
+<p>This command works by writing the initial server relay mode into the 
+database. When AAFS is started, it reads the initial mode from the database.</p>
+<p>&lt;relay_mode&gt; is the desired mode. It can have one of three values, as shown 
+in the table:</p>
+<table class="auto-style1">
+	<tr>
+		<td valign="top">solo</td>
+		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td valign="top">AAFS operates in single-server mode. This is the 
+		default.</td>
+	</tr>
+	<tr>
+		<td valign="top">pair</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">AAFS operates in dual-server mode. Each server 
+		continuously monitors the other, to remain synchronized. Only the 
+		primary server sends forecasts to PDL. If the primary server goes 
+		off-line, then the secondary server automatically steps up to become 
+		primary and begins sending forecasts to PDL.</td>
+	</tr>
+	<tr>
+		<td valign="top">watch</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">AAFS operates in dual-server mode. Each server 
+		continuously monitors the other, to remain synchronized. Only the 
+		primary server sends forecasts to PDL. Unlike pair mode, there is no 
+		automatic switching between secondary and primary; each server operates 
+		as configured. This is useful for maintenance procedures where it is 
+		helpful to control each server's primary/secondary status.</td>
+	</tr>
+	</table>
+<p>&lt;configured_primary&gt; selects which server is primary. It can have one of four 
+values, as shown in the table:</p>
+<table class="auto-style1">
+	<tr>
+		<td valign="top">1</td>
+		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td valign="top">Server #1 is the primary server.</td>
+	</tr>
+	<tr>
+		<td valign="top">2</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Server #2 is the primary server.</td>
+	</tr>
+	<tr>
+		<td valign="top">this</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">This server is the primary server. It is the same as 
+		"1" or "2", depending on whether this server is server #1 or server #2.</td>
+	</tr>
+	<tr>
+		<td valign="top">other</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">The other server is the primary server, in a 
+		dual-server configuration. It is the same as "1" or "2", depending on 
+		whether this server is server #1 or server #2.</td>
+	</tr>
+	</table>
+<p>In a single-server configuration, the server is considered to be server #1.</p>
+<p>Requirement: MongoDB must be started, and AAFS must <i>not</i> be started.</p>
+<p>&nbsp;</p>
+<p><b>5.2. Change the server relay mode in a running system.</b></p>
+<pre>$ ./moaf.sh change_relay_mode &lt;srvnum&gt; &lt;relay_mode&gt; &lt;configured_primary&gt;</pre>
+<p>This command is used primarily in dual-server configurations. It changes the 
+relay mode while AAFS is running.</p>
+<p>This command works by writing a change request into the database. When AAFS 
+sees the change request, it changes its relay mode. This usually happens in 
+about 15 seconds, but sometimes takes longer.</p>
+<p>Notice that the relay mode does not change instantaneously. The command waits 
+for acknowledgement that the mode has changed. You can use the "show_relay_status" 
+command to confirm the change has taken effect.</p>
+<p>&lt;srvnum&gt; is the server to which you are sending the change request. It can 
+have one of six values, as shown in the table:</p>
+<table class="auto-style1">
+	<tr>
+		<td valign="top">1</td>
+		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td valign="top">Send the change request to server #1 in a dual-server 
+		configuration, or to the only server in a single-server configuration.</td>
+	</tr>
+	<tr>
+		<td valign="top">2</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the change request to server #2 in a dual-server 
+		configuration.</td>
+	</tr>
+	<tr>
+		<td valign="top">9</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the change request to both servers in a 
+		dual-server configuration. In a dual-server configuration, it is 
+		recommended that you send the change request to both servers. (If you 
+		only send the change request to one server, the change is automatically 
+		relayed to the other server, however, sending directly to both servers 
+		is preferred.)</td>
+	</tr>
+	<tr>
+		<td valign="top">this</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the change request to this server. It is the same 
+		as "1" or "2", depending on whether this server is server #1 or server 
+		#2.</td>
+	</tr>
+	<tr>
+		<td valign="top">other</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the change request to the other server, in a 
+		dual-server configuration. It is the same as "1" or "2", depending on 
+		whether this server is server #1 or server #2.</td>
+	</tr>
+	<tr>
+		<td valign="top">both</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the change request to both servers in a 
+		dual-server configuration. It is the same as "9".</td>
+	</tr>
+	</table>
+<p>&lt;relay_mode&gt; is the desired mode. It can have one of three values, as shown 
+in the table:</p>
+<table class="auto-style1">
+	<tr>
+		<td valign="top">solo</td>
+		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td valign="top">AAFS operates in single-server mode. This is the 
+		default.</td>
+	</tr>
+	<tr>
+		<td valign="top">pair</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">AAFS operates in dual-server mode. Each server 
+		continuously monitors the other, to remain synchronized. Only the 
+		primary server sends forecasts to PDL. If the primary server goes 
+		off-line, then the secondary server automatically steps up to become 
+		primary and begins sending forecasts to PDL.</td>
+	</tr>
+	<tr>
+		<td valign="top">watch</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">AAFS operates in dual-server mode. Each server 
+		continuously monitors the other, to remain synchronized. Only the 
+		primary server sends forecasts to PDL. Unlike pair mode, there is no 
+		automatic switching between secondary and primary; each server operates 
+		as configured. This is useful for maintenance procedures where it is 
+		helpful to control each server's primary/secondary status.</td>
+	</tr>
+	</table>
+<p>&lt;configured_primary&gt; selects which server is primary. It can have one of four 
+values, as shown in the table:</p>
+<table class="auto-style1">
+	<tr>
+		<td valign="top">1</td>
+		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td valign="top">Server #1 is the primary server.</td>
+	</tr>
+	<tr>
+		<td valign="top">2</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Server #2 is the primary server.</td>
+	</tr>
+	<tr>
+		<td valign="top">this</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">This server is the primary server. It is the same as 
+		"1" or "2", depending on whether this server is server #1 or server #2.</td>
+	</tr>
+	<tr>
+		<td valign="top">other</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">The other server is the primary server, in a 
+		dual-server configuration. It is the same as "1" or "2", depending on 
+		whether this server is server #1 or server #2.</td>
+	</tr>
+	</table>
+<p>In a single-server configuration, the server is considered to be server #1.</p>
+<p>Requirement: AAFS must be started.</p>
+<p>&nbsp;</p>
+<p><b>5.3. Display the server relay status.</b></p>
+<pre>$ ./moaf.sh show_relay_status &lt;srvnum&gt;</pre>
+<p>This command is used primarily in dual-server configurations.</p>
+<p>This command works by reading status information from the database. So, it 
+can be used regardless of whether or not AAFS is running, but it requires that 
+MongoDB be running.</p>
+<p>&lt;srvnum&gt; is the server to which you are sending the status request. It can 
+have one of six values, as shown in the table:</p>
+<table class="auto-style1">
+	<tr>
+		<td valign="top">1</td>
+		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td valign="top">Send the status request to server #1 in a dual-server 
+		configuration, or to the only server in a single-server configuration.</td>
+	</tr>
+	<tr>
+		<td valign="top">2</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the status request to server #2 in a dual-server 
+		configuration.</td>
+	</tr>
+	<tr>
+		<td valign="top">9</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the status request to both servers in a 
+		dual-server configuration. In this case, the command first displays the 
+		status of server #1, and then displays the status of server #2.</td>
+	</tr>
+	<tr>
+		<td valign="top">this</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the status request to this server. It is the same 
+		as "1" or "2", depending on whether this server is server #1 or server 
+		#2.</td>
+	</tr>
+	<tr>
+		<td valign="top">other</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the status request to the other server, in a 
+		dual-server configuration. It is the same as "1" or "2", depending on 
+		whether this server is server #1 or server #2.</td>
+	</tr>
+	<tr>
+		<td valign="top">both</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the status request to both servers in a 
+		dual-server configuration. It is the same as "9".</td>
+	</tr>
+	</table>
+<p>In a single-server configuration, the server is considered to be server #1.</p>
+<p>The status information consists of three lines.</p>
+<ol>
+	<li>The first line shows server information. It includes:<br>&nbsp;<ul>
+		<li>The server number, "N1" for server #1, or "N2" for server #2.<br>&nbsp;</li>
+		<li>The AAFS software version number, for example "V1.0.1145".<br>&nbsp;</li>
+		<li>The relay communication protocol number, for example "C101".<br>&nbsp;</li>
+		<li>The time that the server was started.<br>&nbsp;</li>
+	</ul>
+	</li>
+	<li>The second line shows the server configuration. It includes:<br>&nbsp;<ul>
+		<li>The configured relay mode, which can be:<ul>
+			<li>"RMODE_SOLO" - solo mode.</li>
+			<li>"RMODE_PAIR" - pair mode.</li>
+			<li>"RMODE_WATCH" - watch mode.<br>&nbsp;</li>
+		</ul>
+		</li>
+		<li>The configured primary server, "P1" for server #1, or "P2" for 
+		server #2.<br>&nbsp;</li>
+		<li>The time at which the configuration was established.<br>&nbsp;</li>
+	</ul>
+	</li>
+	<li>The third line shows the current server state. It includes:<br>&nbsp;<ul>
+		<li>The current link status, which can be:<ul>
+			<li>"LINK_SHUTDOWN" - AAFS is not running.</li>
+			<li>"LINK_SOLO" - AAFS is running in single-server mode, and so 
+			there is no connection to another server.</li>
+			<li>"LINK_DISCONNECTED" - AAFS running in dual-server mode, and 
+			there is currently no connection to the other server.</li>
+			<li>"LINK_CALLING" - AAFS is running in dual-server mode, and the 
+			server is currently attempting to contact the other server.</li>
+			<li>"LINK_INITIAL_SYNC" - AAFS is running in dual-server mode, and 
+			the server has just made contact with the other server and is 
+			performing an initial synchronization.</li>
+			<li>"LINK_CONNECTED" - AAFS is running in dual-server mode, and 
+			there is a normal connection established with the other server.</li>
+			<li>"LINK_RESYNC" - AAFS is running in dual-server mode, there is a 
+			normal connection established with the other server, and the server 
+			is currently re-synchronizing. It is normal for the servers to 
+			re-synchronize periodically. Note that either LINK_CONNECTED or 
+			LINK_RESYNC indicates that a normal connection has been established 
+			(but LINK_INITIAL_SYNC does not).<br>&nbsp;</li>
+		</ul>
+		</li>
+		<li>The current primary selection status, which can be:<ul>
+			<li>"PRIST_PRIMARY" - The server is currently running as a primary 
+			server.</li>
+			<li>"PRIST_SECONDARY" - The server is currently running as a 
+			secondary server.</li>
+			<li>"PRIST_INITIALIZING" - The server is currently 
+			initializing and has not yet selected if it is primary or secondary.</li>
+			<li>"PRIST_SHUTDOWN" - The server is currently shut down.<br>&nbsp;</li>
+		</ul>
+		</li>
+		<li>The time of the last server heartbeat. Heartbeats normally 
+		occur every five minutes, but can be longer if the server is busy. The 
+		heartbeat is considered stale if it is 45 minutes old.</li>
+	</ul>
+	</li>
+</ol>
+<p>Here is an example of the command output on a dual-server configuration:</p>
+<pre>$ ./moaf.sh show_relay_status both
+
+Fetching status for server 1
+info: N1, V1.0.1164, C101, start = 1579069648506 (2020-01-15 06:27:28 UTC)
+config: RMODE_PAIR, P1, timestamp = 1579069951438 (2020-01-15 06:32:31 UTC)
+state: LINK_CONNECTED, PRIST_PRIMARY, heartbeat = 1585470118804 (2020-03-29 08:21:58 UTC)
+
+Fetching status for server 2
+info: N2, V1.0.1164, C101, start = 1579069819588 (2020-01-15 06:30:19 UTC)
+config: RMODE_PAIR, P1, timestamp = 1579069951438 (2020-01-15 06:32:31 UTC)
+state: LINK_CONNECTED, PRIST_SECONDARY, heartbeat = 1585470269206 (2020-03-29 08:24:29 UTC)</pre>
+<p>Requirement: MongoDB must be started.</p>
+<p>&nbsp;</p>
+<p><b>5.4. Set this server to be the secondary server in a dual-server 
+configuration, and then stop AAFS.</b></p>
+<pre>$ ./moaf.sh stop_secondary_aafs</pre>
+<p>This command switches the relay mode to "watch other" (which makes this 
+server secondary and the other server primary), then waits for both servers to 
+acknowledge the change, then stops AAFS, and then waits for the other server to 
+acknowledge that it has seen this server shut down.</p>
+<p>The intent is that this command can be used to stop one server in a 
+dual-server configuration, while the other server continues to operate as the 
+primary server. It should only be used when both servers are operating normally.</p>
+<p>Refer to section 5.6 for example usage.</p>
+<p>If AAFS is already stopped, then this command performs no operation.</p>
+<p>This command does not stop MongoDB.</p>
+<p>&nbsp;</p>
+<p><b>5.5. Start AAFS, on the secondary server in a dual-server configuration.</b></p>
+<pre>$ ./moaf.sh start_secondary_aafs</pre>
+<p>The intent is that this command can be used to restart a server that was 
+stopped with the "stop_secondary_aafs" command. This command does not change the 
+relay mode, so it is still "watch other". You should use "change_relay_mode" to 
+restore the normal "pair 1" mode.</p>
+<p>Refer to section 5.6 for example usage.</p>
+<p>If AAFS is already started, then this command performs no operation.</p>
+<p>Requirement: MongoDB must already be started.</p>
+<p>&nbsp;</p>
+<p><b>5.6. Example: Updating Servers While Maintaining Continuous Operation.</b></p>
+<p>Using the commands in this section, in a dual-server configuration, it is 
+possible to shut down the servers one at a time to perform updates -- operating 
+system updates, MongoDB updates, OAF software updates, and AAFS configuration 
+changes. While one server is being updated, the other server continues to 
+operate, sending forecasts to PDL. The following steps show how to do this.</p>
+<p>Step 1: Log in to server #1.</p>
+<p>Step 2: Switch the relay mode to "watch other", which forces the other server 
+to be the primary server, and then stop AAFS:</p>
+<pre>$ ./moaf.sh stop_secondary_aafs</pre>
+<p>Step 3: If you have not backed up the database in a while, now is a good time 
+to do so:</p>
+<pre>$ ./moaf.sh backup_database_gzip &lt;filename&gt;</pre>
+<p>Step 4: Stop MongoDB:</p>
+<pre>$ ./moaf.sh stop_mongo</pre>
+<p>Step 5: Perform whatever updates or configuration changes you need to 
+perform.</p>
+<p>Step 6: Start MongoDB:</p>
+<pre>$ ./moaf.sh start_mongo</pre>
+<p>Step 7: Start AAFS, while keeping the relay mode as "watch other":</p>
+<pre>$ ./moaf.sh start_secondary_aafs</pre>
+<p>Step 8: Log in to server #2, then repeat steps 2 through 7 to update server 
+#2.</p>
+<p>Step 9: Restore the normal "pair 1" relay mode (this command can be given on 
+either server):</p>
+<pre>$ ./moaf.sh change_relay_mode both pair 1</pre>
+<p>&nbsp;</p>
+<h2>6. Commands to Adjust Analyst Parameters</h2>
+<p>Most forecasts are generated using parameters that are given in the OAF 
+server configuration. However, an analyst can intervene and specify that, for a 
+given earthquake, different parameters should be used.</p>
+<p>Analyst-supplied parameters are entered using a command line interface (CLI). 
+The CLI works by asking a series of questions. After all the questions are 
+answered, the CLI sends the analyst-supplied parameters to the OAF server(s).</p>
+<p>There are three ways to invoke the CLI:</p>
+<ul>
+	<li>Log in to a server, and use the command "init_analyst_cli".&nbsp; This 
+	lets you supply analyst parameters before starting AAFS.</li>
+	<li>Log in to a server, and use the command "analyst_cli". This lets you 
+	supply analyst parameters while AAFS is running.</li>
+	<li>Run the production GUI with command-line parameter "analyst_cli". This 
+	lets you supply analyst parameters remotely, while AAFS is running, from any 
+	computer that has Java installed and is able to communicate with the OAF 
+	servers.</li>
+</ul>
+<p>The CLI works the same way, no matter how you invoke it. It asks a series of 
+questions, and you type your responses. Most questions have a default response, 
+which is shown in square brackets. For example, [y] would indicate that the 
+default response is "y" or "yes". You can accept the default response simply by 
+pressing Enter (without typing anything else). In addition, at any time you can 
+enter one of the following special responses:</p>
+<ul>
+	<li>Enter "c" or "cancel" to immediately exit from the CLI without sending 
+	anything to the OAF server(s).</li>
+	<li>Enter "b" or "back" to go back to the previous question, so you can 
+	change your answer.</li>
+	<li>Enter "r" or "restart" to abandon the current operation and start over, 
+	beginning with selecting the event ID.</li>
+	<li>Enter "m" or "modify" to review and edit the information you have 
+	entered for the current event ID.</li>
+</ul>
+<p>For all questions (except the event ID), the response is case-insensitive, 
+which means that you can use uppercase and lowercase letters interchangeably.</p>
+<p>The CLI asks the following questions:</p>
+<ol>
+	<li>Enter, and confirm, the event ID. If an earthquake has multiple IDs, it 
+	is best if you use the authoritative ID.<br>&nbsp;</li>
+	<li>Specify if you want to generate forecasts for this event.<ul>
+		<li>Enter "a" or "auto" to let the OAF server automatically decide 
+		whether to generate forecasts, based on its configuration. This is the 
+		default.</li>
+		<li>Enter "y" or "yes" to generate forecasts for this event (even if OAF 
+		would not normally generate forecasts, <i>e.g.</i>, because its 
+		magnitude is small or because it is shadowed).</li>
+		<li>Enter "n" or "no" to <i>not</i> generate forecasts for this event 
+		(even if OAF would normally generate forecasts), and to remove any 
+		existing forecast from the website. If you make this selection, all 
+		succeeding questions are skipped, until the final confirmation.<br>&nbsp;</li>
+	</ul>
+	</li>
+	<li>Specify if you want to enter custom parameters for this event.<ul>
+		<li>Enter "y" or "yes" if you want to enter custom parameters.</li>
+		<li>Enter "n" or "no" if you do not want to enter custom parameters. If 
+		you make this selection, then the succeeding questions are skipped, 
+		until the question for injectable text. (So you can enter injectable 
+		text without having to enter any parameter values.)<br>&nbsp;</li>
+	</ul>
+	</li>
+	<li>Enter the b-value, which is the Gutenberg-Richter parameter.<br>&nbsp;</li>
+	<li>Enter the a-value, or the range of a-values, that you want to use for 
+	the productivity. First, the CLI asks for the count of a-values.<ul>
+		<li>If you want to specify a single value, enter a count of 1, and then 
+		the CLI asks for the value.</li>
+		<li>If you want to specify a range of values, enter the desired count 
+		(greater than 1), and then the CLI asks for the minimum and maximum 
+		values.<br>&nbsp;</li>
+	</ul>
+	</li>
+	<li>Enter the p-value, or the range of p-values, that you want to use for 
+	the Omori exponent. First, the CLI asks for the count of p-values.<ul>
+		<li>If you want to specify a single value, enter a count of 1, and then 
+		the CLI asks for the value.</li>
+		<li>If you want to specify a range of values, enter the desired count 
+		(greater than 1), and then the CLI asks for the minimum and maximum 
+		values.<br>&nbsp;</li>
+	</ul>
+	</li>
+	<li>Enter the c-value, or the range of c-values, that you want to use for 
+	the Omori offset. The c-value is given in days. First, the CLI asks for the 
+	count of c-values.<ul>
+		<li>If you want to specify a single value, enter a count of 1, and then 
+		the CLI asks for the value.</li>
+		<li>If you want to specify a range of values, enter the desired count 
+		(greater than 1), and then the CLI asks for the minimum and maximum 
+		values. Note: The counts of a-values, p-values, and c-values must be 
+		chosen so that their product does not exceed 100,000. The CLI enforces 
+		this rule.<br>&nbsp;</li>
+	</ul>
+	</li>
+	<li>Enter the catalog magnitude of completeness.<br>&nbsp;</li>
+	<li>Enter the F-value, G-value, and H-value that determine the 
+	time-dependent magnitude of completeness. Note: If you don't want to have a 
+	time-dependent magnitude of completeness (instead relying just on the 
+	catalog magnitude of completeness), then enter 100 as the value of G (you 
+	still need to enter values for F and H, but they ignored).<br>&nbsp;</li>
+	<li>Specify the radius used to search for aftershocks. You can specify it 
+	either as a multiple of the Wells and Coppersmith (W&amp;C) radius, or as an 
+	absolute radius in kilometers. First, the CLI asks for the W&amp;C multiplier.<ul>
+		<li>If you want to use a multiple of the W&amp;C radius, enter the 
+		multiplier. For example, enter 1.5 to use 1.5 times the W&amp;C radius. The 
+		default is 1.0. Then, the CLI asks you to enter the minimum and maximum 
+		allowed radius (in kilometers), which you can use to prevent the radius 
+		from becoming too small or two large.</li>
+		<li>If you want to specify an absolute radius, enter 0. Then, the CLI 
+		asks for the absolute radius in kilometers.<br>&nbsp;</li>
+	</ul>
+	</li>
+	<li>Enter the injectable text. This text, if it is non-empty, appears on the 
+	event webpage. Note: If the prompt includes a non-empty default value for 
+	the injectable text, then pressing Enter (without typing anything else) 
+	accepts the default value. In this case, if you want to change the 
+	injectable text to be empty, then type a single space and press Enter.<br>&nbsp;</li>
+	<li>Decide if you want to send the analyst parameters to the OAF server(s). 
+	The CLI lists all your selections, and then prompts for your response.<ul>
+		<li>Enter "y" or "yes" to send the analyst parameters to the OAF 
+		server(s).</li>
+		<li>Enter "n" or "no" if you not want to send the analyst parameters to 
+		the OAF servers. In this case, the CLI goes back and lets you 
+		individually review and edit the parameter values.</li>
+	</ul>
+	</li>
+</ol>
+<p>When you send analyst parameters to running OAF server(s), a new forecast is 
+generated as soon as possible. This ensures that the website is updated to 
+reflect the new parameter values.</p>
+<p>&nbsp;</p>
+<p><b>6.1. Initialize analyst parameters for an earthquake.</b></p>
+<pre>$ ./moaf.sh init_analyst_cli</pre>
+<p>&nbsp;This command launches the analyst CLI, and then writes the analyst 
+parameters into the database on this server. When AAFS is started, it uses these 
+parameters the next time it generates AAFS forecast for the earthquake.</p>
+<p>This command may be used before starting a server to ensure that all 
+forecasts use the analyst parameters. Note that this command by itself does not 
+guarantee that a forecast is generated soon; it only ensures that whenever the 
+next forecast is generated it will use the analyst parameters. To generate a new 
+forecast promptly, you need to send analyst parameters to a running system, such 
+as by the "analyst_cli" command, or by the GUI.</p>
+<p>Requirement: MongoDB must be started, and AAFS must <i>not</i> be started.</p>
+<p>&nbsp;</p>
+<p><b>6.2. Change analyst parameters in a running system.</b></p>
+<pre>$ ./moaf.sh analyst_cli &lt;srvnum&gt;</pre>
+<p>This command launches the analyst CLI to obtain parameters, and then writes a 
+change request into the database. When AAFS sees the change request, it changes 
+the analyst parameters for the earthquake, and possibly schedules a forecast. 
+This usually happens in about 15 seconds, but sometimes takes longer.</p>
+<p>&lt;srvnum&gt; is the server to which you are sending the change request. It can 
+have one of six values, as shown in the table:</p>
+<table class="auto-style1">
+	<tr>
+		<td valign="top">1</td>
+		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td valign="top">Send the change request to server #1 in a dual-server 
+		configuration, or to the only server in a single-server configuration.</td>
+	</tr>
+	<tr>
+		<td valign="top">2</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the change request to server #2 in a dual-server 
+		configuration.</td>
+	</tr>
+	<tr>
+		<td valign="top">9</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the change request to both servers in a 
+		dual-server configuration. In a dual-server configuration, it is 
+		recommended that you send the change request to both servers. (If you 
+		only send the change request to one server, the change is automatically 
+		relayed to the other server, however, sending directly to both servers 
+		is preferred.).</td>
+	</tr>
+	<tr>
+		<td valign="top">this</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the change request to this server. It is the same 
+		as "1" or "2", depending on whether this server is server #1 or server 
+		#2.</td>
+	</tr>
+	<tr>
+		<td valign="top">other</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the change request to the other server, in a 
+		dual-server configuration. It is the same as "1" or "2", depending on 
+		whether this server is server #1 or server #2.</td>
+	</tr>
+	<tr>
+		<td valign="top">both</td>
+		<td valign="top">&nbsp;</td>
+		<td valign="top">Send the change request to both servers in a 
+		dual-server configuration. It is the same as "9".</td>
+	</tr>
+	</table>
+<p>In a single-server configuration, the server is considered to be server #1.</p>
+<p>Requirement: AAFS must be started.</p>
+<p>&nbsp;</p>
+
+</body>
+
+</html>
