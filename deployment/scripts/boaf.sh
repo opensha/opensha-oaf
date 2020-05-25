@@ -51,6 +51,11 @@
 #     It is assumed that DBNAME is both the data storage database and authentication database.
 #     The server configuration file is written to /opt/aafs/oafcfg/ServerConfig.json.
 #
+# config_file_server_solo - Create a server configuration file for a single-server configuration.
+#     After the 'config_file_server_solo' keyword comes the following parameters:
+#       FILENAME  SRVIP1  REPSET1  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT
+#     Same as 'config_server_solo' except the configuration file is written to FILENAME.
+#
 # config_server_1 - Create a server configuration file for server #1 in a dual-server configuration.
 #     After the 'config_server_1' keyword comes the following parameters:
 #       SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT
@@ -72,6 +77,11 @@
 #     The two servers MUST have different replica set names.
 #     It is assumed that both servers use the same database name, username, and password.
 #     The server configuration file is written to /opt/aafs/oafcfg/ServerConfig.json.
+#
+# config_file_server_1 - Create a server configuration file for server #1 in a dual-server configuration.
+#     After the 'config_file_server_1' keyword comes the following parameters:
+#       FILENAME  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT
+#     Same as 'config_server_1' except the configuration file is written to FILENAME.
 #
 # config_server_2 - Create a server configuration file for server #2 in a dual-server configuration.
 #     After the 'config_server_2' keyword comes the following parameters:
@@ -95,16 +105,36 @@
 #     It is assumed that both servers use the same database name, username, and password.
 #     The server configuration file is written to /opt/aafs/oafcfg/ServerConfig.json.
 #
+# config_file_server_2 - Create a server configuration file for server #2 in a dual-server configuration.
+#     After the 'config_file_server_2' keyword comes the following parameters:
+#       FILENAME  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT
+#     Same as 'config_server_2' except the configuration file is written to FILENAME.
+#
 # config_server_dev - Install a server configuration file for a development server in single-server configuration.
 #     This restores the default server configuration, which is intended for development.
 #     The server configuration file is written to /opt/aafs/oafcfg/ServerConfig.json.
 #
+# config_file_server_dev - Write a server configuration file for a development server in single-server configuration.
+#     After the 'config_file_server_dev' keyword comes the following parameters:
+#       FILENAME
+#     Same as 'config_server_dev' except the configuration file is written to FILENAME.
+#
 # config_action_usa - Install an action configuration file that accepts earthquakes only from the US.
 #     The action configuration file is written to /opt/aafs/oafcfg/ActionConfig.json.
+#
+# config_file_action_usa - Write an action configuration file that accepts earthquakes only from the US.
+#     After the 'config_file_action_usa' keyword comes the following parameters:
+#       FILENAME
+#     Same as 'config_action_usa' except the configuration file is written to FILENAME.
 #
 # config_action_dev - Install an action configuration file that accepts earthquakes world-wide.
 #     This restores the default action configuration, which is intended for development.
 #     The action configuration file is written to /opt/aafs/oafcfg/ActionConfig.json.
+#
+# config_file_action_dev - Write an action configuration file that accepts earthquakes world-wide.
+#     After the 'config_file_action_dev' keyword comes the following parameters:
+#       FILENAME
+#     Same as 'config_action_dev' except the configuration file is written to FILENAME.
 #
 # config_packgui - Configure and package the production GUI.
 #     After the 'config_packgui' keyword comes the following parameters:
@@ -123,6 +153,11 @@
 #     For a dual-server configuration, it is assumed that both servers use the same database name, username, and password.
 #     This works by modifying the generic GUI, so the generic must already be built and up-to-date.
 #     The server configuration is bound into the production GUI.
+#
+# config_file_packgui - Write a server configuration file for the production GUI.
+#     After the 'config_file_packgui' keyword comes the following parameters:
+#       FILENAME  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS
+#     Same as 'config_packgui' except the configuration file is written to FILENAME.
 #
 # run - Run a class in the org.opensha.oaf package, using the compiled-in configuration.
 #       After the 'run' keyword comes the name of the class (without the 'org.opensha.oaf.'
@@ -250,6 +285,39 @@ copyover () {
 makenewdir () {
     if [ ! -d "$1" ]; then
         mkdir "$1"
+    fi
+}
+
+
+
+
+# Function to check if a file exists and, if so, ask user if it is OK to overwrite the file.
+# Sets WRITEISOK to "Y" if OK to write, "N" if not OK to write.
+# $1 = File.
+
+isfilewriteok () {
+    if [ -f "$1" ]; then
+        # File exists
+        while true; do
+            read -p "Overwrite $1 (y/n)? " -n 1 -r
+            echo
+            case "$REPLY" in
+                y|Y)
+                    WRITEISOK="Y"
+                    break
+                    ;;
+                n|N)
+                    WRITEISOK="N"
+                    break
+                    ;;
+                *)
+                    echo "Please reply y or n"
+                    ;;
+            esac
+        done
+    else
+        # File does not exist
+        WRITEISOK="Y"
     fi
 }
 
@@ -519,6 +587,27 @@ case "$1" in
         fi
         ;;
 
+    config_file_server_solo)
+        isfilewriteok "$2"
+        if [ "$WRITEISOK" == "Y" ]; then
+            echo "Writing file $2 ..."
+            SRVIP1="${3}"
+            REPSET1="${4}"
+            DBNAME="${5}"
+            DBUSER="${6}"
+            DBPASS="${7}"
+            SRVNAME="${8}"
+            PDLOPT="${9}"
+            copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json "$2"    \
+            "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$SRVIP1" "$SRVIP1" "$SRVNAME" "1" "$PDLOPT"
+        else
+            echo "Operation aborted"
+        fi
+        ;;
+
     config_server_1)
         if [ -d /opt/aafs/oafcfg ]; then
             SRVIP1="${2}"
@@ -537,6 +626,29 @@ case "$1" in
             "$SRVIP1" "$SRVIP2" "$SRVNAME" "1" "$PDLOPT"
         else
             echo "Configuration directory /opt/aafs/oafcfg has not been created yet"
+        fi
+        ;;
+
+    config_file_server_1)
+        isfilewriteok "$2"
+        if [ "$WRITEISOK" == "Y" ]; then
+            echo "Writing file $2 ..."
+            SRVIP1="${3}"
+            REPSET1="${4}"
+            SRVIP2="${5}"
+            REPSET2="${6}"
+            DBNAME="${7}"
+            DBUSER="${8}"
+            DBPASS="${9}"
+            SRVNAME="${10}"
+            PDLOPT="${11}"
+            copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json "$2"    \
+            "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$SRVIP1" "$SRVIP2" "$SRVNAME" "1" "$PDLOPT"
+        else
+            echo "Operation aborted"
         fi
         ;;
 
@@ -561,11 +673,44 @@ case "$1" in
         fi
         ;;
 
+    config_file_server_2)
+        isfilewriteok "$2"
+        if [ "$WRITEISOK" == "Y" ]; then
+            echo "Writing file $2 ..."
+            SRVIP1="${3}"
+            REPSET1="${4}"
+            SRVIP2="${5}"
+            REPSET2="${6}"
+            DBNAME="${7}"
+            DBUSER="${8}"
+            DBPASS="${9}"
+            SRVNAME="${10}"
+            PDLOPT="${11}"
+            copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json "$2"    \
+            "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$SRVIP1" "$SRVIP2" "$SRVNAME" "2" "$PDLOPT"
+        else
+            echo "Operation aborted"
+        fi
+        ;;
+
     config_server_dev)
         if [ -d /opt/aafs/oafcfg ]; then
             copycfg opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
         else
             echo "Configuration directory /opt/aafs/oafcfg has not been created yet"
+        fi
+        ;;
+
+    config_file_server_dev)
+        isfilewriteok "$2"
+        if [ "$WRITEISOK" == "Y" ]; then
+            echo "Writing file $2 ..."
+            copyover opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json "$2"
+        else
+            echo "Operation aborted"
         fi
         ;;
 
@@ -577,11 +722,31 @@ case "$1" in
         fi
         ;;
 
+    config_file_action_usa)
+        isfilewriteok "$2"
+        if [ "$WRITEISOK" == "Y" ]; then
+            echo "Writing file $2 ..."
+            copyover opensha-oaf/deployment/scripts/prodcfg/ActionConfig_usa.json "$2"
+        else
+            echo "Operation aborted"
+        fi
+        ;;
+
     config_action_dev)
         if [ -d /opt/aafs/oafcfg ]; then
             copycfg opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
         else
             echo "Configuration directory /opt/aafs/oafcfg has not been created yet"
+        fi
+        ;;
+
+    config_file_action_dev)
+        isfilewriteok "$2"
+        if [ "$WRITEISOK" == "Y" ]; then
+            echo "Writing file $2 ..."
+            copyover opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json "$2"
+        else
+            echo "Operation aborted"
         fi
         ;;
 
@@ -622,6 +787,27 @@ case "$1" in
         fi
         ;;
 
+    config_file_packgui)
+        isfilewriteok "$2"
+        if [ "$WRITEISOK" == "Y" ]; then
+            echo "Writing file $2 ..."
+            SRVIP1="${3}"
+            REPSET1="${4}"
+            SRVIP2="${5}"
+            REPSET2="${6}"
+            DBNAME="${7}"
+            DBUSER="${8}"
+            DBPASS="${9}"
+            copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json "$2"     \
+            "rs0" "usgs" "usgs" "usgs" "usgs"    \
+            "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$SRVIP1" "$SRVIP2" "test" "1" "none"
+        else
+            echo "Operation aborted"
+        fi
+        ;;
+
     run)
         JCLASS="org.opensha.oaf.$2"
         shift 2
@@ -659,8 +845,8 @@ case "$1" in
         echo "  boaf.sh pack"
         echo "Compile the OpenSHA code to create the generic aftershock GUI:"
         echo "  boaf.sh compilegui"
-        echo "Package the GUI jar file, and bundle with private configuration:"
-        echo "  boaf.sh packgui GUIDATE CONFIGFILE"
+        echo "Package the GUI jar file, and bundle with private server configuration file:"
+        echo "  boaf.sh packgui GUIDATE FILENAME"
         echo "Copy the AAFS jar file and required libraries into /opt/aafs/oefjava:"
         echo "  boaf.sh deploy"
         echo "Copy the AAFS configuration files and scripts into /opt/aafs and its subdirectories:"
@@ -671,18 +857,32 @@ case "$1" in
         echo "  boaf.sh diffcfgc"
         echo "Create a server configuration file for a single-server configuration:"
         echo "  boaf.sh config_server_solo SRVIP1 REPSET1 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
+        echo "Create and save a server configuration file for a single-server configuration:"
+        echo "  boaf.sh config_file_server_solo FILENAME SRVIP1 REPSET1 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
         echo "Create a server configuration file for server #1 in a dual-server configuration:"
         echo "  boaf.sh config_server_1 SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
+        echo "Create and save a server configuration file for server #1 in a dual-server configuration:"
+        echo "  boaf.sh config_file_server_1 FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
         echo "Create a server configuration file for server #2 in a dual-server configuration:"
         echo "  boaf.sh config_server_2 SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
+        echo "Create and save a server configuration file for server #2 in a dual-server configuration:"
+        echo "  boaf.sh config_file_server_2 FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
         echo "Install a server configuration file for a development server in single-server configuration:"
         echo "  boaf.sh config_server_dev"
+        echo "Write a server configuration file for a development server in single-server configuration:"
+        echo "  boaf.sh config_file_server_dev FILENAME"
         echo "Install an action configuration file that accepts earthquakes only from the US:"
         echo "  boaf.sh config_action_usa"
+        echo "Write an action configuration file that accepts earthquakes only from the US:"
+        echo "  boaf.sh config_file_action_usa FILENAME"
         echo "Install an action configuration file that accepts earthquakes world-wide:"
         echo "  boaf.sh config_action_dev"
+        echo "Write an action configuration file that accepts earthquakes world-wide:"
+        echo "  boaf.sh config_file_action_dev FILENAME"
         echo "Configure and package the production GUI:"
         echo "  boaf.sh config_packgui GUIDATE SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS"
+        echo "Create and save a server configuration file for the production GUI:"
+        echo "  boaf.sh config_file_packgui FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS"
         echo "Run a class in the org.opensha.oaf package, using the compiled-in configuration:"
         echo "  boaf.sh run CLASSNAME [PARAMETER...]"
         echo "Run a class in the org.opensha.oaf package, reading configuration from ./oafcfg:"

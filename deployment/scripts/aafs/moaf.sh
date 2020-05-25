@@ -90,7 +90,7 @@
 #
 #     Make a backup of the entire database, and write it to a file.
 #
-#     <filename> is the name of the file.  If the file already exists, You
+#     <filename> is the name of the file.  If the file already exists, you
 #     are prompted on whether or not to overwrite it.
 #
 #     You must start MongoDB before running this command.
@@ -100,7 +100,7 @@
 #
 #     Make a backup of the entire database, compress it, and write it to a file.
 #
-#     <filename> is the name of the file.  If the file already exists, You
+#     <filename> is the name of the file.  If the file already exists, you
 #     are prompted on whether or not to overwrite it.
 #
 #     You must start MongoDB before running this command.
@@ -280,29 +280,26 @@
 #     So, it can be used regardless of whether or not AAFS is running, but
 #     it requires that MongoDB be running.
 #
-#     <srvnum> is the server to which you are sending the change request.
+#     <srvnum> is the server to which you are sending the status request.
 #     It can have one of eight values:
 #
-#       0 - Send the change request to the local server (the server on which you
+#       0 - Send the status request to the local server (the server on which you
 #           are running the command).
 #
-#       1 - Send the change request to server #1 in a dual-server configuration,
+#       1 - Send the status request to server #1 in a dual-server configuration,
 #           or to the only server in a single-server configuration.
 #
-#       2 - Send the change request to server #2 in a dual-server configuration.
+#       2 - Send the status request to server #2 in a dual-server configuration.
 #
-#       9 - Send the change request to both servers in a dual-server configuration.
-#           In a dual-server configuration, it is recommended that you send the
-#           change request to both servers.  (If you only send the change request
-#           to one server, the change is automatically relayed to the other server,
-#           however, sending directly to both servers is preferred.)
+#       9 - Send the status request to both servers in a dual-server configuration.
+#           The command first obtains status from server #1, and then from server #2.
 #
 #       local - Same as 0.
 #
-#       this - Send the change request to this server.  It is the same as 1 or 2,
+#       this - Send the status request to this server.  It is the same as 1 or 2,
 #              depending on whether this server is server #1 or server #2.
 #
-#       other - Send the change request to the other server, in a dual-server
+#       other - Send the status request to the other server, in a dual-server
 #               configuration.  It is the same as 1 or 2, depending on whether
 #               this server is server #1 or server #2.
 #
@@ -395,6 +392,7 @@
 #     forecast for the earthquake.
 #
 #     This command may be used before starting a server to ensure that all forecasts
+#     for the earthquake use the analyst-selected parameters.
 #
 #     You must start MongoDB before running this command.
 #     You cannot run this command while AAFS is running.
