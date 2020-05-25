@@ -18,7 +18,7 @@
 <body>
 
 <h1>OAF Server Management</h1>
-<h2>Michael Barall<br>05/23/2020</h2>
+<h2>Michael Barall<br>05/24/2020</h2>
 <p>&nbsp;</p>
 <h2>1. Introduction</h2>
 <p>This document describes functions that you can use to manage the OAF servers. 
@@ -135,7 +135,7 @@ forecasts for any earthquakes it already knows about.</p>
 <p>Requirement: MongoDB must already be started.</p>
 <p>&nbsp;</p>
 <p><b>3.8. Stop AAFS, assuming that there is no intake process running (PDL).</b></p>
-<pre>$ ./moaf.sh stop_aafs</pre>
+<pre>$ ./moaf.sh stop_aafs_no_intake</pre>
 <p>This command is intended to be used for debug and test. If AAFS is started 
 with the "start_aafs_no_intake" command, then this command should be used to 
 stop AAFS.</p>
@@ -238,7 +238,7 @@ refer to the two servers either as "1" and "2", or as "this" and "other". As you
 would expect, "this" refers to the server on which you run the command. Also, 
 some commands let you use "9" or "both" to refer to both servers.</p>
 <p>&nbsp;</p>
-<p><b>5.1. Initialize the server relay mode.</b></p>
+<p><b>5.1. Initialize the server relay mode (before starting AAFS).</b></p>
 <pre>$ ./moaf.sh init_relay_mode &lt;relay_mode&gt; &lt;configured_primary&gt;</pre>
 <p>This command is used primarily in dual-server configurations. It sets the 
 initial relay mode that AAFS will assume when it starts.</p>
@@ -332,8 +332,9 @@ have one of six values, as shown in the table:</p>
 		<td valign="top">9</td>
 		<td valign="top">&nbsp;</td>
 		<td valign="top">Send the change request to both servers in a 
-		dual-server configuration. In a dual-server configuration, it is 
-		recommended that you send the change request to both servers. (If you 
+		dual-server configuration. The command waits for both servers to 
+		acknowledge the change. (In a dual-server configuration, it is 
+		recommended that you send the change request to both servers. If you 
 		only send the change request to one server, the change is automatically 
 		relayed to the other server, however, sending directly to both servers 
 		is preferred.)</td>
@@ -697,7 +698,7 @@ which means that you can use uppercase and lowercase letters interchangeably.</p
 		multiplier. For example, enter 1.5 to use 1.5 times the W&amp;C radius. The 
 		default is 1.0. Then, the CLI asks you to enter the minimum and maximum 
 		allowed radius (in kilometers), which you can use to prevent the radius 
-		from becoming too small or two large.</li>
+		from becoming too small or too large.</li>
 		<li>If you want to specify an absolute radius, enter 0. Then, the CLI 
 		asks for the absolute radius in kilometers.<br>&nbsp;</li>
 	</ul>
@@ -723,7 +724,7 @@ reflect the new parameter values.</p>
 <p>&nbsp;</p>
 <p><b>6.1. Initialize analyst parameters for an earthquake.</b></p>
 <pre>$ ./moaf.sh init_analyst_cli</pre>
-<p>&nbsp;This command launches the analyst CLI, and then writes the analyst 
+<p>This command launches the analyst CLI, and then writes the analyst 
 parameters into the database on this server. When AAFS is started, it uses these 
 parameters the next time it generates AAFS forecast for the earthquake.</p>
 <p>This command may be used before starting a server to ensure that all 

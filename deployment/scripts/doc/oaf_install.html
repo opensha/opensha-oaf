@@ -18,7 +18,7 @@
 <body>
 
 <h1>OAF Software Installation</h1>
-<h2>Michael Barall<br>05/23/2020</h2>
+<h2>Michael Barall<br>05/24/2020</h2>
 <p>&nbsp;</p>
 <h2>1. Introduction</h2>
 <p>OAF is Operational Aftershock Forecasting. It generates forecasts of future 
@@ -1118,10 +1118,30 @@ $ ./boaf.sh config_server_2 SERVER_IP_1 MONGO_REP_SET_1 SERVER_IP_2 MONGO_REP_SE
 <p><b>To restore the default (development-server) configuration:</b></p>
 <pre>$ cd ~/opensha
 $ ./boaf.sh config_server_dev</pre>
-<p>In all cases, the configuration is stored into /opt/aafs/oafcfg/ServerConfig.json.
-</p>
+<p>In all cases, the configuration is stored into /opt/aafs/oafcfg/ServerConfig.json.</p>
 <p>&nbsp;</p>
-<p>13.4. Configure actions</p>
+<p>13.3.1. Configure the server - Alternate method.</p>
+<p>The commands given in the previous section write the server configuration 
+directly into /opt/aafs/oafcfg/ServerConfig.json. In this section, we give 
+commands that write the server configuration into a JSON file of your choice. 
+Later, you can manually copy the configuration file into /opt/aafs/oafcfg/ServerConfig.json. 
+You might do this, for example, to create a configuration file to use on another 
+computer, or to make a starting point for manually editing the file.</p>
+<p><b>For a single-server installation:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_file_server_solo &lt;filename&gt; SERVER_IP_1 MONGO_REP_SET_1 MONGO_NAME MONGO_USER MONGO_PASS SERVER_NAME_1 PDL_OPTION</pre>
+<p><b>For server #1 in a dual-server installation:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_file_server_1 &lt;filename&gt; SERVER_IP_1 MONGO_REP_SET_1 SERVER_IP_2 MONGO_REP_SET_2 MONGO_NAME MONGO_USER MONGO_PASS SERVER_NAME_1 PDL_OPTION</pre>
+<p><b>For server #2 in a dual-server installation:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_file_server_2 &lt;filename&gt; SERVER_IP_1 MONGO_REP_SET_1 SERVER_IP_2 MONGO_REP_SET_2 MONGO_NAME MONGO_USER MONGO_PASS SERVER_NAME_2 PDL_OPTION</pre>
+<p><b>For the default (development-server) configuration:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_file_server_dev &lt;filename&gt;</pre>
+<p>In all cases, the configuration is stored into&nbsp; &lt;filename&gt;.</p>
+<p>&nbsp;</p>
+<p>13.4. Configure actions.</p>
 <p>The action 
 configuration file is /opt/aafs/oafcfg/ActionConfig.json. It is possible to 
 adjust many parameters by editing the file, including geographic regions, 
@@ -1142,7 +1162,20 @@ $ ./boaf.sh config_action_usa</pre>
 <p><b>To restore the default (development) action configuration:</b></p>
 <pre>$ cd ~/opensha
 $ ./boaf.sh config_action_dev</pre>
-<p>In all cases, the configuration is stored into /opt/aafs/oafcfg/ActionConfig.json. </p>
+<p>In all cases, the configuration is stored into /opt/aafs/oafcfg/ActionConfig.json.</p>
+<p>&nbsp;</p>
+<p>13.4.1. Configure actions - Alternate method.</p>
+<p>The commands given in the previous section write the action configuration 
+directly into /opt/aafs/oafcfg/ActionConfig.json. In this section, we give 
+commands that write the action configuration into a JSON file of your choice. 
+Later, you can manually copy the configuration file into /opt/aafs/oafcfg/ActionConfig.json.</p>
+<p><b>For set the USA action configuration:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_file_action_usa &lt;filename&gt;</pre>
+<p><b>For the default (development) action configuration:</b></p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_file_action_dev &lt;filename&gt;</pre>
+<p>In all cases, the configuration is stored into &lt;filename&gt;.</p>
 <p>&nbsp;</p>
 <h2>14. Compile the OAF Software</h2>
 <p>14.1. Run the Java compiler and package the software.</p>
@@ -1171,7 +1204,7 @@ GUI (section 14.4) on your server inside the USGS network.</p>
 $ ./boaf.sh deploy</pre>
 <p>The operation copies the OAF executable files into /opt/aafs/oafcfg.</p>
 <p>&nbsp;</p>
-<p>14.3 (Optional) Build the generic aftershock GUI.</p>
+<p>14.3. (Optional) Build the generic aftershock GUI.</p>
 <pre>$ cd ~/opensha
 $ ./boaf.sh compilegui</pre>
 <p>The generic aftershock GUI is a graphical Java program that can be used to 
@@ -1180,7 +1213,7 @@ interactively generate forecasts and experiment with adjusting model parameters.
 has a name similar to AftershockGUI-current-YYYY_MM_DD.jar, where YYYY_MM_DD is 
 the current date.</p>
 <p>&nbsp;</p>
-<p>14.4 (Optional) Build the production aftershock GUI.</p>
+<p>14.4. (Optional) Build the production aftershock GUI.</p>
 <pre>$ cd ~/opensha
 $ ./boaf.sh config_packgui YYYY_MM_DD SERVER_IP_1 MONGO_REP_SET_1 SERVER_IP_2 MONGO_REP_SET_2 MONGO_NAME MONGO_USER MONGO_PASS</pre>
 <p>In the above command, replace YYYY_MM_DD with the current date (the date that 
@@ -1188,6 +1221,36 @@ appears in the filename of the generic aftershock GUI), and the other parameters
 with the values indicated in section 2.8. For a single-server configuration, you 
 can make SERVER_IP_2 and MONGO_REP_SET_2 the same as SERVER_IP_1 and 
 MONGO_REP_SET_1.</p>
+<p>The resulting Java program is located in ~/opensha/opensha-oaf/build/libs and 
+has a name similar to AftershockGUI-prod-YYYY_MM_DD.jar, where YYYY_MM_DD is 
+the current date.</p>
+<p>Note that you need to build the generic GUI before you can build the 
+production GUI.</p>
+<p>The production aftershock GUI is the same as the generic GUI, with the 
+additional ability to communicate with the AAFS servers.</p>
+<p>&nbsp;</p>
+<p>14.4.1. (Optional) Build the production aftershock GUI - Alternate method.</p>
+<p>The command given in the previous section binds the server configuration 
+directly into the production GUI. In this section, we give a command that writes 
+the server configuration into a JSON file of your choice. Later, you can build 
+the production GUI from the JSON file. You might do this, for example, to avoid 
+having to enter the server parameters every time you update the OAF software 
+(provided that the software update has not changed the format of the server 
+configuration file).</p>
+<p>To create a server configuration file to use in the production GUI:</p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh config_file_packgui &lt;filename&gt; SERVER_IP_1 MONGO_REP_SET_1 SERVER_IP_2 MONGO_REP_SET_2 MONGO_NAME MONGO_USER MONGO_PASS</pre>
+<p>In the above command, replace &lt;filename&gt; with the name of the JSON file you 
+want to create, and the other parameters 
+with the values indicated in section 2.8. For a single-server configuration, you 
+can make SERVER_IP_2 and MONGO_REP_SET_2 the same as SERVER_IP_1 and 
+MONGO_REP_SET_1.</p>
+<p>Later, use this command to build the production GUI:</p>
+<pre>$ cd ~/opensha
+$ ./boaf.sh packgui YYYY_MM_DD &lt;filename&gt;</pre>
+<p>In the above command, replace YYYY_MM_DD with the current date (the date that 
+appears in the filename of the generic aftershock GUI), and replace &lt;filename&gt; 
+with the name of the JSON file that contains the server configuration.</p>
 <p>The resulting Java program is located in ~/opensha/opensha-oaf/build/libs and 
 has a name similar to AftershockGUI-prod-YYYY_MM_DD.jar, where YYYY_MM_DD is 
 the current date.</p>
@@ -1236,7 +1299,8 @@ servers to select dual-server operation and the initial primary server.</p>
 $ ./moaf.sh start_mongo</pre>
 <p>Then, on each server, set the dual-server mode. (The number at the end 
 selects the primary server, and can be 1 or 2. The command as shown selects 
-server #1 as the primary server.)</p>
+server #1 as the primary server. See the OAF Server Management document for more 
+details.)</p>
 <pre>$ cd /opt/aafs
 $ ./moaf.sh init_relay_mode pair 1</pre>
 <p>At this point, each server should be able to see the other. To test this, run 
@@ -1244,7 +1308,8 @@ this command on each server:</p>
 <pre>$ cd /opt/aafs
 $ ./moaf.sh show_relay_status 9</pre>
 <p>The number 9 means to display status info for both servers. (It can also be 1 
-or 2 to select server #1 or #2 respectively, or 0 to select the local server.) 
+or 2 to select server #1 or #2 respectively; see the OAF Server Management 
+document for more details.) 
 The output should be similar to:</p>
 <pre>Fetching status for server 1
 info: N1, V1.0.1145, C101, start = 0 (1970-01-01 00:00:00 UTC)
