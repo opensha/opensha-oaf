@@ -614,10 +614,16 @@ public class ForecastParameters {
 //
 //	public String def_injectable_text = null;
 
+//	The lag for the next scheduled forecast, or 0L if unknown, or -1L if none.
+//	Note: This parameter is not marshaled/unmarshaled.
+
+	public long next_scheduled_lag = 0L;
+
 	// Set transient parameters to default.
 
 	public void set_default_transient_params () {
 //		def_injectable_text = null;
+		next_scheduled_lag = 0L;
 		return;
 	}
 
@@ -744,6 +750,7 @@ public class ForecastParameters {
 //		if (def_injectable_text != null) {
 //			result.append ("def_injectable_text = " + def_injectable_text + "\n");
 //		}
+		result.append ("next_scheduled_lag = " + next_scheduled_lag + "\n");
 
 		return result.toString();
 	}

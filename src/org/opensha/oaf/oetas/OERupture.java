@@ -1,5 +1,7 @@
 package org.opensha.oaf.oetas;
 
+import java.util.Comparator;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -161,6 +163,63 @@ public class OERupture {
 		return String.format ("%d, %d: t=%.5f, mag=%.3f, k=%.4e, parent=%d, x=%.3f, y=%.3f",
 			i_gen, j_rup, t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
 	}
+
+
+
+
+	// Comparator to sort by ascending time, and then by descending magnitude.
+
+	public static class TimeAscMagDescComparator implements Comparator<OERupture> {
+	
+		// Compares its two arguments for order. Returns a negative integer, zero, or a positive
+		// integer as the first argument is less than, equal to, or greater than the second.
+
+		@Override
+		public int compare (OERupture rup1, OERupture rup2) {
+
+			// Order by time, earliest first
+
+			int result = Double.compare (rup1.t_day, rup2.t_day);
+
+			if (result == 0) {
+
+				// Order by magnitude, largest first
+
+				result = Double.compare (rup2.rup_mag, rup1.rup_mag);
+			}
+
+			return result;
+		}
+	}
+
+
+
+
+	// Comparator to sort by descending magnitude, and then by descending time.
+
+	public static class MagDescTimeDescComparator implements Comparator<OERupture> {
+	
+		// Compares its two arguments for order. Returns a negative integer, zero, or a positive
+		// integer as the first argument is less than, equal to, or greater than the second.
+
+		@Override
+		public int compare (OERupture rup1, OERupture rup2) {
+
+			// Order by magnitude, largest first
+
+			int result = Double.compare (rup2.rup_mag, rup1.rup_mag);
+
+			if (result == 0) {
+
+				// Order by time, latest first
+
+				result = Double.compare (rup2.t_day, rup1.t_day);
+			}
+
+			return result;
+		}
+	}
+
 
 
 

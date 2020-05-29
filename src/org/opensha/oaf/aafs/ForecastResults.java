@@ -382,6 +382,14 @@ public class ForecastResults {
 			}
 			forecast.setInjectableText (the_injectable_text);
 
+			if (params.next_scheduled_lag > 0L) {
+				forecast.setNextForecastMillis (mainshock.getOriginTime() + params.next_scheduled_lag);
+			} else if (params.next_scheduled_lag < 0L) {
+				forecast.setNextForecastMillis (-1L);
+			} else {
+				forecast.setNextForecastMillis (0L);
+			}
+
 			// Get the JSON String
 
 			generic_json = forecast.buildJSONString(result_time);
@@ -516,6 +524,14 @@ public class ForecastResults {
 				the_injectable_text = null;		// convention for USGS_AftershockForecast
 			}
 			forecast.setInjectableText (the_injectable_text);
+
+			if (params.next_scheduled_lag > 0L) {
+				forecast.setNextForecastMillis (mainshock.getOriginTime() + params.next_scheduled_lag);
+			} else if (params.next_scheduled_lag < 0L) {
+				forecast.setNextForecastMillis (-1L);
+			} else {
+				forecast.setNextForecastMillis (0L);
+			}
 
 			// Get the JSON String
 
@@ -652,6 +668,14 @@ public class ForecastResults {
 				the_injectable_text = null;		// convention for USGS_AftershockForecast
 			}
 			forecast.setInjectableText (the_injectable_text);
+
+			if (params.next_scheduled_lag > 0L) {
+				forecast.setNextForecastMillis (mainshock.getOriginTime() + params.next_scheduled_lag);
+			} else if (params.next_scheduled_lag < 0L) {
+				forecast.setNextForecastMillis (-1L);
+			} else {
+				forecast.setNextForecastMillis (0L);
+			}
 
 			// Get the JSON String
 

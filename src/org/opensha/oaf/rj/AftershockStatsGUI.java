@@ -144,6 +144,12 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	// (which is the default) uses the authoritative event ID retrieved from Comcat.
 
 	private boolean pdlUseEventIDParam = false;
+
+	// Setting this flag true makes the tables include M4.
+	// This is obsolete now that the standard tables include M4, but we retain it
+	// as an example of how to include an alternative set of magnitudes.
+
+	private boolean include_m4 = false;
 	
 	/*
 	 * Data parameters
@@ -2058,8 +2064,20 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			
 				if (progress != null)
 					progress.updateProgress(i, models.size(), "Calculating "+name+"...");
+
+				USGS_AftershockForecast forecast;
+				if (include_m4) {
+					double[] min_mags = new double[5];
+					min_mags[0] = 3.0;
+					min_mags[1] = 4.0;
+					min_mags[2] = 5.0;
+					min_mags[3] = 6.0;
+					min_mags[4] = 7.0;
+					forecast = new USGS_AftershockForecast(model, aftershocks, min_mags, eventDate, startDate);
+				} else {
+					forecast = new USGS_AftershockForecast(model, aftershocks, eventDate, startDate);
+				}
 			
-				USGS_AftershockForecast forecast = new USGS_AftershockForecast(model, aftershocks, eventDate, startDate);
 				forecasts.add(forecast);
 				System.out.println("Took "+watch.elapsed(TimeUnit.SECONDS)+"s to compute aftershock table for "+name);
 				watch.stop();

@@ -37,7 +37,7 @@ import org.opensha.oaf.aafs.ServerConfig;
 
 public class USGS_AftershockForecast {
 	
-	private static final double[] min_mags_default = { 3d, 5d, 6d, 7d };
+	private static final double[] min_mags_default = { 3d, 4d, 5d, 6d, 7d };
 	private static final double fractile_lower = 0.025;
 	private static final double fractile_upper = 0.975;
 	private static final double mag_bin_half_width_default = 0.05;
@@ -115,12 +115,20 @@ public class USGS_AftershockForecast {
 	
 	// custom text which can be added
 	private String injectableText = null;
+
+	// the time of the next scheduled forecast, or 0L if unknown, or -1L if no more forecasts are scheduled
+	private long nextForecastMillis = 0L;
 	
 	private Template template = Template.MAINSOCK;
 	
 	public USGS_AftershockForecast(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks,
 			Instant eventDate, Instant startDate) {
 		this(model, aftershocks, min_mags_default, eventDate, startDate, true, mag_bin_half_width_default);
+	}
+	
+	public USGS_AftershockForecast(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
+			Instant eventDate, Instant startDate) {
+		this(model, aftershocks, minMags, eventDate, startDate, true, mag_bin_half_width_default);
 	}
 	
 	public USGS_AftershockForecast(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
@@ -230,6 +238,10 @@ public class USGS_AftershockForecast {
 		this.injectableText = injectableText;
 	}
 	
+	public void setNextForecastMillis(long nextForecastMillis) {
+		this.nextForecastMillis = nextForecastMillis;
+	}
+	
 	public boolean isIncludeProbAboveMainshock() {
 		return includeProbAboveMainshock;
 	}
@@ -252,6 +264,10 @@ public class USGS_AftershockForecast {
 
 	public String getInjectableText() {
 		return injectableText;
+	}
+
+	public long getNextForecastMillis() {
+		return nextForecastMillis;
 	}
 
 	private static String[] headers = {"Time Window For Analysis", "Magnitude Range",

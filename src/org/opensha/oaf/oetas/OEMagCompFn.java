@@ -28,7 +28,7 @@ public abstract class OEMagCompFn {
 	// Note: This function does not define the origin of time.
 	// Note: The returned value must be >= the value returned by get_mag_cat().
 	// It is expected that as t_days becomes large, the returned value
-	// equals or approachesthe value returned by get_mag_cat()
+	// equals or approaches the value returned by get_mag_cat()
 
 	public abstract double get_mag_completeness (double t_days);
 
