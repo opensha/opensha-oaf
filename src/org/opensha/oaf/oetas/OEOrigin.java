@@ -16,6 +16,8 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.LocationUtils;
 
+import org.opensha.oaf.oetas.fit.OEMagCompFn;
+
 import static org.opensha.oaf.oetas.OEConstants.C_MILLIS_PER_DAY;
 
 import static org.opensha.commons.geo.GeoTools.TO_DEG;

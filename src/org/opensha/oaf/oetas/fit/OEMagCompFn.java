@@ -1,4 +1,4 @@
-package org.opensha.oaf.oetas;
+package org.opensha.oaf.oetas.fit;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
