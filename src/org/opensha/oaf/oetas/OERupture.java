@@ -85,6 +85,7 @@ public class OERupture {
 
 
 	// Set the values, for temporal ETAS.
+	// Return this object.
 
 	public OERupture set (double t_day, double rup_mag, double k_prod, int rup_parent) {
 		this.t_day      = t_day;
@@ -100,6 +101,7 @@ public class OERupture {
 
 
 	// Set the values, for spatial ETAS.
+	// Return this object.
 
 	public OERupture set (double t_day, double rup_mag, double k_prod, int rup_parent, double x_km, double y_km) {
 		this.t_day      = t_day;
@@ -108,6 +110,22 @@ public class OERupture {
 		this.rup_parent = rup_parent;
 		this.x_km       = x_km;
 		this.y_km       = y_km;
+		return this;
+	}
+
+
+
+
+	// Copy the values from the other object.
+	// Return this object.
+
+	public OERupture copy_from (OERupture other) {
+		this.t_day      = other.t_day;
+		this.rup_mag    = other.rup_mag;
+		this.k_prod     = other.k_prod;
+		this.rup_parent = other.rup_parent;
+		this.x_km       = other.x_km;
+		this.y_km       = other.y_km;
 		return this;
 	}
 

@@ -72,6 +72,7 @@ public abstract class OEMagCompFn {
 
 
 	// Construct a function which is defined by F,G,H parameters.
+	// This funnction is a placeholder.
 
 	public static OEMagCompFn makeFGH (double magCat, double capF, double capG, double capH) {
 		return new OEMagCompFnFGH (magCat, capF, capG, capH);
@@ -90,6 +91,14 @@ public abstract class OEMagCompFn {
 	}
 
 
+	// Construct a function which is defined by F,G,H parameters for multiple earthquakes.
+	// This funnction is a placeholder.
+
+	public static OEMagCompFn makeMultiFGH (double magCat, double capF, double capG, double capH) {
+		return new OEMagCompFnMultiFGH (magCat, capF, capG, capH);
+	}
+
+
 
 
 	//----- Marshaling -----
@@ -105,6 +114,7 @@ public abstract class OEMagCompFn {
 	protected static final int MARSHAL_NULL = 81000;
 	protected static final int MARSHAL_CONSTANT = 82001;
 	protected static final int MARSHAL_FGH = 83001;
+	protected static final int MARSHAL_MULTIFGH = 89001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
@@ -205,6 +215,11 @@ public abstract class OEMagCompFn {
 
 		case MARSHAL_FGH:
 			result = new OEMagCompFnFGH();
+			result.do_umarshal (reader);
+			break;
+
+		case MARSHAL_MULTIFGH:
+			result = new OEMagCompFnMultiFGH();
 			result.do_umarshal (reader);
 			break;
 		}

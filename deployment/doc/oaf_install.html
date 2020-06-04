@@ -18,7 +18,7 @@
 <body>
 
 <h1>OAF Software Installation</h1>
-<h2>Michael Barall<br>05/24/2020</h2>
+<h2>Michael Barall<br>06/03/2020</h2>
 <p>&nbsp;</p>
 <h2>1. Introduction</h2>
 <p>OAF is Operational Aftershock Forecasting. It generates forecasts of future 
@@ -159,7 +159,7 @@ server.</p>
 		<td>Used on Centos for SELinux configuration</td>
 	</tr>
 </table>
-<p>&nbsp;If you wish to place data files in a separate disk volume or disk 
+<p>If you wish to place data files in a separate disk volume or disk 
 partition, we recommend mounting the volume or partition onto /data. Or, if 
 that's not possible, then set up /data as a link to the desired location.</p>
 <p>&nbsp;</p>
@@ -1202,7 +1202,9 @@ GUI (section 14.4) on your server inside the USGS network.</p>
 <p>14.2. Deploy the OAF software.</p>
 <pre>$ cd ~/opensha
 $ ./boaf.sh deploy</pre>
-<p>The operation copies the OAF executable files into /opt/aafs/oafcfg.</p>
+<p>The operation copies the OAF executable files into /opt/aafs/oefjava.</p>
+<p>Note: This operation does not overwrite or alter any of the installed 
+configuration files. It only copies the Java executable files.</p>
 <p>&nbsp;</p>
 <p>14.3. (Optional) Build the generic aftershock GUI.</p>
 <pre>$ cd ~/opensha

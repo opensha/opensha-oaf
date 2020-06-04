@@ -495,6 +495,13 @@ public class ExGenerateForecast extends ServerExecTask {
 				tstatus.analyst_options.max_forecast_lag										// max_lag
 			);
 
+			if (forecast_params.next_scheduled_lag > 0L) {
+				forecast_params.next_scheduled_lag += (
+					sg.task_disp.get_action_config().get_comcat_clock_skew()
+					+ sg.task_disp.get_action_config().get_comcat_origin_skew()
+				);
+			}
+
 			long advisory_lag;
 
 			if (next_forecast_lag >= sg.task_disp.get_action_config().get_advisory_dur_year()) {
