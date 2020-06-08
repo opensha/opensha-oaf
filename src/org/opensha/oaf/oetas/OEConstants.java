@@ -53,6 +53,15 @@ public class OEConstants {
 
 	public static final double NO_MAG_NEG_CHECK = -11.75;
 
+	// A time value or difference much larger than any actual value, in days.
+	// (But still much smaller than the range of double.)
+
+	public static final double HUGE_TIME_DAYS = 1.0e+20;
+
+	// The logarithm base 10 of HUGE_TIME_DAYS.
+
+	public static final double LOG10_HUGE_TIME_DAYS = 20;
+
 	// An Omori rate so extremely small it is considered to be zero.
 	// Note: This is used to avoid divide-by-zero in formulas that have an
 	// Omori rate in the denominator; it does not mean that rates larger

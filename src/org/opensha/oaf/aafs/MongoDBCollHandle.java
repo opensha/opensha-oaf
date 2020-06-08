@@ -52,7 +52,7 @@ import com.mongodb.connection.ClusterType;
 import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.UpdateDescription;
-import com.mongodb.client.model.changestream.ChangeStreamLevel;
+//import com.mongodb.client.model.changestream.ChangeStreamLevel;	// removed in driver version 4.0
 import com.mongodb.client.model.changestream.FullDocument;
 import com.mongodb.client.model.changestream.OperationType;
 

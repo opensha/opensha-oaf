@@ -1051,15 +1051,31 @@ public class MongoDBUtil implements AutoCloseable {
 
 	private static int sim_key_counter = 0;
 
+//	private static synchronized ObjectId make_repeatable_object_id (long the_time) {
+//		++sim_key_counter;
+//
+//		Date date = new Date (the_time);
+//		int machineIdentifier = sim_key_counter / 16777216;
+//		short processIdentifier = (short)0;
+//		int counter = sim_key_counter % 16777216;
+//
+//		return new ObjectId (date, machineIdentifier, processIdentifier, counter);
+//	}
+
+	// Implementation note: As of MongoDB Java driver 4.0, the ObjectId constructor used
+	// above is removed.  We now construct the ObjectId from a hex string.
+
 	private static synchronized ObjectId make_repeatable_object_id (long the_time) {
 		++sim_key_counter;
 
-		Date date = new Date (the_time);
-		int machineIdentifier = sim_key_counter / 16777216;
-		short processIdentifier = (short)0;
-		int counter = sim_key_counter % 16777216;
+		long timestamp = (the_time / 1000L) & 0xffffffffL;
+		int machineIdentifier = (sim_key_counter & 0x7f000000) / 16777216;
+		int processIdentifier = 0;
+		int counter = sim_key_counter & 0x00ffffff;
 
-		return new ObjectId (date, machineIdentifier, processIdentifier, counter);
+		String hexstring = String.format ("%08x%06x%04x%06x", timestamp, machineIdentifier, processIdentifier, counter);
+
+		return new ObjectId (hexstring);
 	}
 
 

@@ -1,8 +1,20 @@
 package org.opensha.oaf.oetas.fit;
 
+import org.opensha.oaf.oetas.OERupture;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeMap;
+import java.util.List;
+
+import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;				// natural log of 10
+import static org.opensha.oaf.oetas.OEConstants.C_MILLIS_PER_DAY;		// milliseconds per day
+import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS;			// very large time value
+import static org.opensha.oaf.oetas.OEConstants.LOG10_HUGE_TIME_DAYS;	// log10 of very large time value
 
 
 /**
@@ -26,6 +38,50 @@ import org.opensha.oaf.util.MarshalException;
  * In practice, the function would be built from only a few of the largest earthquakes.
  *
  * At present this is a place-holder class, to be implemented later.
+ *
+ * ==================================
+ *
+ * The Helmstetter formula for magnitude of completeness following an earthquake is:
+ *
+ * Mc(t) = F * M0 - G - H * log10(t - t0)
+ *
+ * Here the earthquake has magnitude M0 and occurs at time t0, and F, G, and H are parameters.
+ *
+ * Typical California parameters are F = 1.00, G = 4.50, H = 0.75.
+ * Typical World parameters are F = 0.50, G = 0.25, H = 1.00.
+ *
+ * Let Mcat be the catalog magnitude of completeness at normal times.
+ * The time-dependent magnitude of completeness is clipped below at Mcat, so implicitly:
+ *
+ * Mc(t) = max (F * M0 - G - H * log10(t - t0), Mcat)
+ *
+ * This formula equals Mcat for all time t >= tc, where the time of completeness tc is:
+ *
+ * tc = t0 + 10^((F * M0 - G - Mcat) / H)
+ *
+ * Also, the time-dependent magnitude of completeness is clipped above at M0, so implicitly:
+ *
+ * Mc(t) = min (max (F * M0 - G - H * log10(t - t0), Mcat), M0)
+ *
+ * This formula equals M0 for time t0 <= t <= tf, where the falloff time tf is:
+ *
+ * tf = t0 + 10^(((F - 1) * M0 - G) / H)
+ *
+ * When there are multiple earthquakes, the overall magnitude of completeness is taken to be
+ * the maximum of the individual magnitudes of completeness.
+ *
+ * ==================================
+ *
+ * Abstract model.
+ *
+ * For efficient evaluation, the overall magnitude of completeness function is constructed
+ * as a piecewise function, with a simple formula within each piece. To construct the maximum
+ * of multiple functions, it is necessary to find function intersections, to partition time
+ * into intervals where a single function is the maximum within each interval.  The algorithm
+ * employed here is designed to work with functions that satisfy certain abstract properties.
+ * 
+ *
+ *
  */
 public class OEMagCompFnMultiFGH extends OEMagCompFn {
 
@@ -41,6 +97,20 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 	private double capF;
 	private double capG;
 	private double capH;
+
+	// Beginning and end of the time range of interest, in days.
+
+	private double t_range_begin;
+	private double t_range_end;
+
+	// Amount by which time range is expanded to allow for rounding errors, in days.
+
+	private static final double T_RANGE_EXPAND = 1.0;
+
+
+
+
+	//----- Data structures -----
 
 
 
@@ -71,6 +141,92 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 	@Override
 	public double get_mag_cat () {
 		return magCat;
+	}
+
+
+
+
+	//----- Building -----
+
+
+
+
+	// Nested class used during building to represent one rupture.
+
+	protected static class BldRupture {
+
+		// Rupture time, in days.
+
+		public double b_t_day;
+
+		// Rupture magnitude.
+
+		public double b_rup_mag;
+
+		// The time of completeness, when the magnitude of completeness reaches magCat; in days.
+
+		public double b_t_comp;
+
+		// The falloff time, when the magnitude of completeness falls below the rupture magnitude; in days.
+		// Note: It is guaranteed that b_t_fall <= b_t_comp.
+
+		public double b_t_fall;
+
+		// Expiration time, when the magnitude of completeness falls below an earlier earthquake, in days.
+
+		public double b_t_expire;
+	}
+
+
+
+
+	// Factory function to make a BldRupture, from an OERupture.
+
+	protected BldRupture make_BldRupture (OERupture rup) {
+		BldRupture bld_rup = new BldRupture ();
+		bld_rup.b_t_day = rup.t_day;
+		bld_rup.b_rup_mag = rup.rup_mag;
+
+		bld_rup.b_t_comp = bld_rup.b_t_day + Math.pow (10.0, Math.min (LOG10_HUGE_TIME_DAYS, (capF * bld_rup.b_rup_mag - capG - magCat) / capH));
+		bld_rup.b_t_fall = Math.min (bld_rup.b_t_comp, bld_rup.b_t_day + Math.pow (10.0, Math.min (LOG10_HUGE_TIME_DAYS, (capF * bld_rup.b_rup_mag - capG - bld_rup.b_rup_mag) / capH)));
+		
+		return bld_rup;
+	}
+
+
+
+
+	// Factory function to make a BldRupture, which evaluates to magCat.
+
+	protected BldRupture make_BldRupture () {
+		BldRupture bld_rup = new BldRupture ();
+		bld_rup.b_t_day = -(HUGE_TIME_DAYS * 2.0);
+		bld_rup.b_rup_mag = magCat;
+		bld_rup.b_t_comp = (HUGE_TIME_DAYS * 2.0);
+		bld_rup.b_t_fall = (HUGE_TIME_DAYS * 2.0);
+		return bld_rup;
+	}
+
+
+
+
+	// Inner class to build the function.
+
+	protected class MFGHBuilder {
+
+		// List of active ruptures.
+		// An active rupture has magnitude and expiration time both strictly greater than any later event.
+
+		private BldRupture[] active;
+
+		// Beginning and end+1 of the list of open ruptures witin the open_rup array.
+
+		private int active_begin;
+		private int active_end;
+	
+
+
+
 	}
 
 
