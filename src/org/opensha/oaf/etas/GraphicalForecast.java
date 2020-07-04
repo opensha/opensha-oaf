@@ -616,7 +616,7 @@ public class GraphicalForecast{
 		jsonString.append(""
 				+ "{\"creationTime\":" + startTimeMillis + ","
 				+ "\"expireTime\":" + expireTimeMillis + ","
-				+ "\"advisoryTimeFrame\":" + "\"1 Week\"" + ","
+				+ "\"advisoryTimeFrame\":" + "\"1 Month\"" + ","
 				+ "\"template\":\"Mainshock\","
 				+ "\"injectableText\":\"\","
 				);
@@ -660,7 +660,7 @@ public class GraphicalForecast{
 			for (int i = 0; i < predictionMagnitudes.length; i++) {
 				double mag = predictionMagnitudes[i];
 
-				if (mag == 3 || mag == 5 || mag == 6 || mag == 7) {
+				if (2.99 < mag || mag < 7.01) { //added M4s NvdE 7/3/2020
 					jsonString.append(""
 							+ "{\"magnitude\":" + String.format("%2.1f", mag)
 							+ ",\"p95minimum\":" + String.format("%d", (int) number[i][j][1])

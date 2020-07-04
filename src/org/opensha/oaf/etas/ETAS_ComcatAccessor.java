@@ -39,7 +39,7 @@ import com.google.common.base.Preconditions;
 
 public class ETAS_ComcatAccessor {
 	
-		private static final boolean D = true;
+		private static final boolean D = false;
 		
 		protected EventWebService service;
 		
@@ -84,6 +84,7 @@ public class ETAS_ComcatAccessor {
 			
 			JsonEvent event = events.get(0);
 //			printJSON(event);
+			if(D) System.out.println("0 " + event);
 			
 			return eventToObsRup(event);
 		}
@@ -362,10 +363,24 @@ public class ETAS_ComcatAccessor {
 				if(D) System.out.println(count);
 
 				if (count > 0) {
+					int countLabel = 0; 
+					
 					for (JsonEvent event : events) {
-						ObsEqkRupture rup = eventToObsRup(event, wrapLon);
+						
+						// returning a null on the parameters of event pr2020007012
+						countLabel++;
+						if(D) System.out.println(countLabel + " " + event);
+						
+						ObsEqkRupture rup = new ObsEqkRupture(); 
+						try {
+							rup = eventToObsRup(event, wrapLon);
+						} catch (Exception e) {
+							if(D) System.err.println(countLabel + " " + event);
+						}
+						
 						if (rup !=null)
 							rups.add(rup);
+						
 					}
 				}
 				rups.sortByOriginTime();
