@@ -3594,6 +3594,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				
 				numberSimsParam.setValue(30000);
 				numberSimsParam.getEditor().refreshParamEditor();
+				
+				intensityTypeParam.setValue(IntensityType.NONE);
+				intensityTypeParam.getEditor().refreshParamEditor();
+				
 			}
 		}, true);
 		
