@@ -391,7 +391,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 
 			if (time_count > 0) {
 				if (time <= a_time[time_count - 1]) {
-					throw new IllegalArgumentException ("OEMagCompFnMultiFGH.AbstractBuilder.add_interval - Time out-of-order: time = " + time + ", last time = " + a_time[time_count - 1]);
+					throw new IllegalArgumentException ("OEMagCompFnMultiFGH.MemoryBuilder.add_interval - Time out-of-order: time = " + time + ", last time = " + a_time[time_count - 1]);
 				}
 			}
 		
@@ -1339,7 +1339,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 	@Override
 	public String toString() {
 		
-		return "FnFGH[magCat=" + magCat
+		return "FnMultiFGH[magCat=" + magCat
 		+ ", capF=" + capF
 		+ ", capG=" + capG
 		+ ", capH=" + capH
@@ -1632,7 +1632,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 
 		if (args[0].equalsIgnoreCase ("test1")) {
 
-			// 8 additional arguments
+			// 11 or more additional arguments
 
 			if (!( args.length >= 12 && args.length % 2 == 0 )) {
 				System.err.println ("OEMagCompFnMultiFGH : Invalid 'test1' subcommand");

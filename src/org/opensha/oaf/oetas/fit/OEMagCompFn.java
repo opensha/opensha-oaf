@@ -110,6 +110,13 @@ public abstract class OEMagCompFn {
 	}
 
 
+	// Construct a function which is defined by discrete values on a sequence of intervals.
+
+	public static OEMagCompFn makeDisc (double magCat, double[] mag_time_array, double mag_eps) {
+		return new OEMagCompFnDisc (magCat, mag_time_array, mag_eps);
+	}
+
+
 
 
 	//----- Marshaling -----
@@ -126,6 +133,7 @@ public abstract class OEMagCompFn {
 	protected static final int MARSHAL_CONSTANT = 82001;
 	protected static final int MARSHAL_FGH = 83001;
 	protected static final int MARSHAL_MULTIFGH = 89001;
+	protected static final int MARSHAL_DISC = 90001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
@@ -231,6 +239,11 @@ public abstract class OEMagCompFn {
 
 		case MARSHAL_MULTIFGH:
 			result = new OEMagCompFnMultiFGH();
+			result.do_umarshal (reader);
+			break;
+
+		case MARSHAL_DISC:
+			result = new OEMagCompFnDisc();
 			result.do_umarshal (reader);
 			break;
 		}
