@@ -1,5 +1,9 @@
 package org.opensha.oaf.oetas.fit;
 
+import java.util.Collection;
+
+import org.opensha.oaf.oetas.OERupture;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -92,10 +96,17 @@ public abstract class OEMagCompFn {
 
 
 	// Construct a function which is defined by F,G,H parameters for multiple earthquakes.
-	// This funnction is a placeholder.
 
-	public static OEMagCompFn makeMultiFGH (double magCat, double capF, double capG, double capH) {
-		return new OEMagCompFnMultiFGH (magCat, capF, capG, capH);
+	public static OEMagCompFn makeMultiFGH (double magCat, double capF, double capG, double capH,
+											double t_range_begin, double t_range_end,
+											Collection<OERupture> rup_list,
+											Collection<OERupture> accept_list, Collection<OERupture> reject_list,
+											double eligible_mag, int eligible_count) {
+		return new OEMagCompFnMultiFGH (magCat, capF, capG, capH,
+										t_range_begin, t_range_end,
+										rup_list,
+										accept_list, reject_list,
+										eligible_mag, eligible_count);
 	}
 
 

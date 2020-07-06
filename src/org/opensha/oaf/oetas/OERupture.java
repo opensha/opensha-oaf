@@ -1,6 +1,7 @@
 package org.opensha.oaf.oetas;
 
 import java.util.Comparator;
+import java.util.Collection;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -116,6 +117,22 @@ public class OERupture {
 
 
 
+	// Set the values, time and magnitude only.
+	// Return this object.
+
+	public OERupture set (double t_day, double rup_mag) {
+		this.t_day      = t_day;
+		this.rup_mag    = rup_mag;
+		this.k_prod     = 0.0;
+		this.rup_parent = -1;
+		this.x_km       = 0.0;
+		this.y_km       = 0.0;
+		return this;
+	}
+
+
+
+
 	// Copy the values from the other object.
 	// Return this object.
 
@@ -185,6 +202,15 @@ public class OERupture {
 
 
 
+	// Produce a one-line string containing unrounded time and magnitude (not newline-terminated).
+
+	public String u_time_mag_string () {
+		return "t = " + t_day + ", mag = " + rup_mag;
+	}
+
+
+
+
 	// Comparator to sort by ascending time, and then by descending magnitude.
 
 	public static class TimeAscMagDescComparator implements Comparator<OERupture> {
@@ -236,6 +262,34 @@ public class OERupture {
 
 			return result;
 		}
+	}
+
+
+
+
+	// Fill a list of ruptures with ruptures created from the given times and magnitudes.
+	// Parameters:
+	//  rup_list = List (or Collection) to receive the ruptures.
+	//  time_mag_array = Array with N pairs of elements.  In each pair, the first
+	//                   element is time in days, the second element is magnitude.
+	//                   It is an error if this array has an odd number of elements.
+
+	public static void make_time_mag_list (Collection<OERupture> rup_list, double[] time_mag_array) {
+	
+		// Require even number of elements
+
+		if (time_mag_array.length % 2 != 0) {
+			throw new IllegalArgumentException ("OERupture.make_time_mag_list: Odd array length: length = " + time_mag_array.length);
+		}
+
+		// Add to list
+
+		for (int n = 0; n < time_mag_array.length; n += 2) {
+			OERupture rup = (new OERupture()).set (time_mag_array[n], time_mag_array[n+1]);
+			rup_list.add (rup);
+		}
+
+		return;
 	}
 
 
