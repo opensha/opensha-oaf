@@ -16,6 +16,8 @@ import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;				// natural log of 1
 import static org.opensha.oaf.oetas.OEConstants.C_MILLIS_PER_DAY;		// milliseconds per day
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG;				// negative mag smaller than any possible mag
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG_CHECK;		// use x <= NO_MAG_NEG_CHECK to check for NO_MAG_NEG
+import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS;				// positive mag larger than any possible mag
+import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS_CHECK;		// use x >= NO_MAG_POS_CHECK to check for NO_MAG_POS
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS;			// very large time value
 import static org.opensha.oaf.oetas.OEConstants.LOG10_HUGE_TIME_DAYS;	// log10 of very large time value
 
@@ -719,45 +721,122 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 	//  bld_rup = Rupture.
 	//  t = Time.
 	//  mag = Magnitude.
-	// Returns true if mag is >= the function value at time t.
-	// Returns false if mag is < the function value at time t.
+	// If mag is >= the function value at time t, then return the function value at time t.
+	//  In this case, it is guaranteed that the return value is <= mag.
+	// If mag is < the function value at time t, then return NO_MAG_POS.
+	//  Check for this condition with the test x >= NO_MAG_POS_CHECK.
 	// Note: This routine considers the upper cutoff (at bld_rup.b_rup_mag) but not the
 	// lower cutoff (at magCat).  The reason is that the skyline algorithm enforces the
 	// lower cutoff.
 
-	protected boolean satisfies_BldRupture (BldRupture bld_rup, double t, double mag) {
+	protected double satisfies_BldRupture (BldRupture bld_rup, double t, double mag) {
+
+		double result;
 
 		// Get the difference in time (t - t0)
 
 		double t_delta = t - bld_rup.b_t_day;
 
-		// Get the difference in magnitudes (mag - M0)
+		// If magnitude is at least the rupture magnitude (mag >= M0), then function is satisfied ...
 
-		double mag_delta = mag - bld_rup.b_rup_mag;
+		if (mag >= bld_rup.b_rup_mag) {
 
-		// If positive (mag >= M0), then function is satisfied
+			// If before the falloff time, the function value is the magnitude
 
-		if (mag_delta >= 0.0) {
-			return true;
+			if (t <= bld_rup.b_t_fall) {
+				result = bld_rup.b_rup_mag;
+			}
+
+			// Otherwise, the function value is the log
+
+			else {
+				// (We now know that t_delta is a finite (not vanishingly small) value)
+
+				result = capF * bld_rup.b_rup_mag - capG - capH * Math.log10(t_delta);
+
+				// Force result to not exceed mag, in case of rounding errors
+
+				if (mag < result) {
+					result = mag;
+				}
+			}
 		}
 
-		// Otherwise (mag < M), if before the falloff time, then the function is not satisfied
+		// Otherwise (mag < M), we need to compare with the function ...
 
-		if (t <= bld_rup.b_t_fall) {
-			return false;
+		else {
+
+			// If before the falloff time, then the function is not satisfied
+
+			if (t <= bld_rup.b_t_fall) {
+				result = NO_MAG_POS;
+			}
+
+			// Otherwise, if >= magnitude of completeness for bld_rup, then the function is satisfied
+
+			else {
+				// (We now know that t_delta is a finite (not vanishingly small) value)
+
+				result = capF * bld_rup.b_rup_mag - capG - capH * Math.log10(t_delta);
+
+				// If below magnitude of completeness, then not satisfied
+
+				if (mag < result) {
+					result = NO_MAG_POS;
+				}
+			}
 		}
 
-		// (We now know that t_delta is a finite (not vanishingly small) value)
-		// If >= magnitude of completeness for bld_rup, then the function is satisfied
-
-		if (mag >= capF * bld_rup.b_rup_mag - capG - capH * Math.log10(t_delta)) {
-			return true;
-		}
-
-		// Otherwise, not satisfied
-
-		return false;
+		return result;
 	}
+
+
+
+
+//	// Determine if a magnitude is >= the function value for a BldRupture.
+//	// Parameters:
+//	//  bld_rup = Rupture.
+//	//  t = Time.
+//	//  mag = Magnitude.
+//	// Returns true if mag is >= the function value at time t.
+//	// Returns false if mag is < the function value at time t.
+//	// Note: This routine considers the upper cutoff (at bld_rup.b_rup_mag) but not the
+//	// lower cutoff (at magCat).  The reason is that the skyline algorithm enforces the
+//	// lower cutoff.
+//
+//	protected boolean satisfies_BldRupture (BldRupture bld_rup, double t, double mag) {
+//
+//		// Get the difference in time (t - t0)
+//
+//		double t_delta = t - bld_rup.b_t_day;
+//
+//		// Get the difference in magnitudes (mag - M0)
+//
+//		double mag_delta = mag - bld_rup.b_rup_mag;
+//
+//		// If positive (mag >= M0), then function is satisfied
+//
+//		if (mag_delta >= 0.0) {
+//			return true;
+//		}
+//
+//		// Otherwise (mag < M), if before the falloff time, then the function is not satisfied
+//
+//		if (t <= bld_rup.b_t_fall) {
+//			return false;
+//		}
+//
+//		// (We now know that t_delta is a finite (not vanishingly small) value)
+//		// If >= magnitude of completeness for bld_rup, then the function is satisfied
+//
+//		if (mag >= capF * bld_rup.b_rup_mag - capG - capH * Math.log10(t_delta)) {
+//			return true;
+//		}
+//
+//		// Otherwise, not satisfied
+//
+//		return false;
+//	}
 
 
 
@@ -1139,14 +1218,16 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 		//  t_day = Rupture time in days.
 		//  rup_mag = Rupture magnitude.
 		//  f_eligible = True if rupture is eligible to participate in the skyline.
-		// Returns true if the rupure is accepted (magnitude is at least the current magnitude
-		//  of completeness, and time is within the allowed range).
-		// Returns false if rupture is not accepted.
+		// If the rupure is accepted (magnitude is at least the current magnitude of
+		//  completeness, and time is within the allowed range), then return the current
+		//  magnitude of completeness.
+		// If the rupture is not accepted, then return NO_MAG_POS.
+		//  Check for this condition with the test x >= NO_MAG_POS_CHECK.
 		// Note: Calling with f_eligible false can be used to check if a rupture is above the
 		//  current magnitude of completeness without using it in the skyline construction.
 		// Note: Ruptures must be offered in non-decreasing order of time.
 
-		public boolean offer_rupture (double t_day, double rup_mag, boolean f_eligible) {
+		public double offer_rupture (double t_day, double rup_mag, boolean f_eligible) {
 
 			// Filter by time and magCat
 
@@ -1154,7 +1235,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 				&& t_day < get_sky_t_max()
 				&& rup_mag >= magCat )) {
 				
-				return false;
+				return NO_MAG_POS;
 			}
 
 			// Advance to requested time
@@ -1167,9 +1248,12 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 
 			// If not satisfying magnitude of completeness, return not accepted
 
+			double mag_comp = magCat;
+
 			if (bld_rup != null) {
-				if (!( satisfies_BldRupture (bld_rup, t_day, rup_mag) )) {
-					return false;
+				mag_comp = satisfies_BldRupture (bld_rup, t_day, rup_mag);
+				if (mag_comp >= NO_MAG_POS_CHECK) {
+					return NO_MAG_POS;
 				}
 			}
 
@@ -1195,10 +1279,79 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 
 			// Return accepted
 
-			return true;
+			return mag_comp;
 		}
 
 	}
+
+
+
+
+//		// Offer a new rupture.
+//		// Parameters:
+//		//  t_day = Rupture time in days.
+//		//  rup_mag = Rupture magnitude.
+//		//  f_eligible = True if rupture is eligible to participate in the skyline.
+//		// Returns true if the rupure is accepted (magnitude is at least the current magnitude
+//		//  of completeness, and time is within the allowed range).
+//		// Returns false if rupture is not accepted.
+//		// Note: Calling with f_eligible false can be used to check if a rupture is above the
+//		//  current magnitude of completeness without using it in the skyline construction.
+//		// Note: Ruptures must be offered in non-decreasing order of time.
+//
+//		public boolean offer_rupture (double t_day, double rup_mag, boolean f_eligible) {
+//
+//			// Filter by time and magCat
+//
+//			if (!( t_day > get_sky_t_min()
+//				&& t_day < get_sky_t_max()
+//				&& rup_mag >= magCat )) {
+//				
+//				return false;
+//			}
+//
+//			// Advance to requested time
+//
+//			advance_time (t_day);
+//
+//			// Get the current rupture, or null if magCat
+//
+//			BldRupture bld_rup = get_current_rup();
+//
+//			// If not satisfying magnitude of completeness, return not accepted
+//
+//			if (bld_rup != null) {
+//				if (!( satisfies_BldRupture (bld_rup, t_day, rup_mag) )) {
+//					return false;
+//				}
+//			}
+//
+//			// If eligible ...
+//
+//			if (f_eligible) {
+//
+//				// Allocate and set up a rupture object
+//
+//				bld_rup = alloc_bld_rup();
+//				fill_BldRupture (bld_rup, t_day, rup_mag);
+//
+//				// Supply it to the superclass
+//
+//				boolean f_retained = supply_rup (bld_rup);
+//
+//				// If rupture was not retained, we can reuse the object
+//
+//				if (!( f_retained )) {
+//					free_bld_rup (bld_rup);
+//				}
+//			}
+//
+//			// Return accepted
+//
+//			return true;
+//		}
+//
+//	}
 
 
 
@@ -1216,6 +1369,8 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 	//  eligible_mag = Minimum magnitude for eligible ruptures, or NO_MAG_NEG if none.
 	//  eligible_count = Maximum number of eligible ruptures, or 0 if no limit (limit is flexible).
 	// Note: All parameters must be already set up.
+	// Note: In each OERupture object, the k_prod field is set equal to the pre-existing magnitude
+	//  of completeness if the rupture is accepted, or NO_MAG_POS if the rupture is rejected.
 
 	public void build_from_rup_list (Collection<OERupture> rup_list, Collection<OERupture> accept_list, Collection<OERupture> reject_list, double eligible_mag, int eligible_count) {
 	
@@ -1264,11 +1419,11 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 
 			// Offer rupture to skyline, check if it is above mag of completeness
 
-			boolean f_accepted = sky_builder.offer_rupture (t_day, rup_mag, f_eligible);
+			rup.k_prod = sky_builder.offer_rupture (t_day, rup_mag, f_eligible);
 
 			// Add rupture to accepted or rejected list
 
-			if (f_accepted) {
+			if (rup.k_prod < NO_MAG_POS_CHECK) {
 				if (accept_list != null) {
 					accept_list.add (rup);
 				}
@@ -1277,6 +1432,22 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 					reject_list.add (rup);
 				}
 			}
+
+//			// Offer rupture to skyline, check if it is above mag of completeness
+//
+//			boolean f_accepted = sky_builder.offer_rupture (t_day, rup_mag, f_eligible);
+//
+//			// Add rupture to accepted or rejected list
+//
+//			if (f_accepted) {
+//				if (accept_list != null) {
+//					accept_list.add (rup);
+//				}
+//			} else {
+//				if (reject_list != null) {
+//					reject_list.add (rup);
+//				}
+//			}
 		}
 
 		// Finish the skyline
@@ -1706,7 +1877,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 				//System.out.println ();
 				System.out.println ("accept_list:");
 				for (OERupture rup : accept_list) {
-					System.out.println ("  " + rup.u_time_mag_string());
+					System.out.println ("  " + rup.u_time_mag_mc_string());
 				}
 
 				System.out.println ();

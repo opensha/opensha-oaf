@@ -200,14 +200,31 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 		protected double mag_eps;
 
+		// The difference between times which are indistinguishable.
+		// If times for successive intervals differ by this amount or less,
+		// then the prior interval is discarded and the new interval begins
+		// at the earlier time.  Must be >= 0.
+
+		protected double time_eps;
+
 
 		// Set up the arrays.
 
-		public void setup_arrays (double mag_eps) {
+		public void setup_arrays (double mag_eps, double time_eps) {
+
+			// Check arguments
+
+			if (!( time_eps >= 0.0 )) {
+				throw new IllegalArgumentException ("OEMagCompFnDisc.MemoryBuilder.setup_arrays - Invalid time epsilon: time_eps = " + time_eps);
+			}
 
 			// Save magnitude epsilon
 
 			this.mag_eps = mag_eps;
+
+			// Save time epsilon
+
+			this.time_eps = time_eps;
 
 			// Default capacity, in number of times
 
@@ -261,11 +278,19 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 		private void add_interval (double time, double mag) {
 
-			// Check for increasing time
+			// Check for increasing time, and for time within epsilon
 
 			if (time_count > 0) {
-				if (time <= a_time[time_count - 1]) {
+
+				double delta_t = time - a_time[time_count - 1];
+
+				if (delta_t < 0.0) {
 					throw new IllegalArgumentException ("OEMagCompFnDisc.MemoryBuilder.add_interval - Time out-of-order: time = " + time + ", last time = " + a_time[time_count - 1]);
+				}
+
+				if (delta_t <= time_eps) {
+					a_mag[time_count] = mag;
+					return;
 				}
 			}
 
@@ -362,13 +387,14 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 	// Build from an array of magnitudes and times.
 	// Parameters:
 	//  mag_time_array = Array containing magnitudes and times.
-	//  mag_eps = The difference between magnitudes which are indistinguishable.
+	//  mag_eps = The difference between magnitudes which are indistinguishable, if < 0 then none.
+	//  time_eps = The difference between times which are indistinguishable, must be >= 0.
 	// Note: All parameters must be already set up.
 	// Note: For N intervals, mag_time_array contains 2*N-1 elements, which are:
 	//   M0  t0  M1  t1  M2  t2  ...  M(N-2)  t(N-2)  M(N-1)
 	// Times must be in strictly increasing order.
 
-	public void build_from_mag_time_array (double[] mag_time_array, double mag_eps) {
+	public void build_from_mag_time_array (double[] mag_time_array, double mag_eps, double time_eps) {
 
 		// Check the array has an odd number of elements
 
@@ -382,7 +408,7 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 		// Set it up
 
-		memory_builder.setup_arrays (mag_eps);
+		memory_builder.setup_arrays (mag_eps, time_eps);
 
 		// Set the first interval
 
@@ -418,7 +444,7 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 	// Construct from given parameters.
 
-	public OEMagCompFnDisc (double magCat, double[] mag_time_array, double mag_eps) {
+	public OEMagCompFnDisc (double magCat, double[] mag_time_array, double mag_eps, double time_eps) {
 
 		// Save parameters
 
@@ -426,7 +452,7 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 		// Generate the function
 
-		build_from_mag_time_array (mag_time_array, mag_eps);
+		build_from_mag_time_array (mag_time_array, mag_eps, time_eps);
 	}
 
 
@@ -548,7 +574,8 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 			try {
 
 				double mag_eps = 0.0;
-				build_from_mag_time_array (mag_time_array, mag_eps);
+				double time_eps = 0.0;
+				build_from_mag_time_array (mag_time_array, mag_eps, time_eps);
 			}
 			catch (Exception e) {
 				throw new MarshalException ("OEMagCompFnDisc.do_umarshal: Unable to construct function from given magnitudes and times", e);
@@ -640,6 +667,11 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 			result = new OEMagCompFnDisc();
 			result.do_umarshal (reader);
 			break;
+
+		case MARSHAL_DISCFGH:
+			result = new OEMagCompFnDiscFGH();
+			result.do_umarshal (reader);
+			break;
 		}
 
 		reader.unmarshalMapEnd ();
@@ -669,16 +701,16 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 		// Subcommand : Test #1
 		// Command format:
-		//  test1  magCat  query_time  query_delta  query_count  mag_eps  mag  [time  mag]...
+		//  test1  magCat  query_time  query_delta  query_count  mag_eps  time_eps  mag  [time  mag]...
 		// Build a function with the given parameters and rupture list.
 		// Perform queries at the specified set of times.
 		// Display detailed results.
 
 		if (args[0].equalsIgnoreCase ("test1")) {
 
-			// 6 or more additional arguments
+			// 7 or more additional arguments
 
-			if (!( args.length >= 7 && args.length % 2 == 1 )) {
+			if (!( args.length >= 8 && args.length % 2 == 0 )) {
 				System.err.println ("OEMagCompFnDisc : Invalid 'test1' subcommand");
 				return;
 			}
@@ -690,10 +722,11 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 				double query_delta = Double.parseDouble (args[3]);
 				int query_count = Integer.parseInt (args[4]);
 				double mag_eps = Double.parseDouble (args[5]);
+				double time_eps = Double.parseDouble (args[6]);
 
-				double[] mag_time_array = new double[args.length - 6];
+				double[] mag_time_array = new double[args.length - 7];
 				for (int ntm = 0; ntm < mag_time_array.length; ++ntm) {
-					mag_time_array[ntm] = Double.parseDouble (args[ntm + 6]);
+					mag_time_array[ntm] = Double.parseDouble (args[ntm + 7]);
 				}
 
 				// Say hello
@@ -704,6 +737,7 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 				System.out.println ("query_delta = " + query_delta);
 				System.out.println ("query_count = " + query_count);
 				System.out.println ("mag_eps = " + mag_eps);
+				System.out.println ("time_eps = " + time_eps);
 
 				System.out.println ("mag_time_array:");
 				System.out.println ("  mag = " + mag_time_array[0]);
@@ -713,7 +747,7 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 				// Make the magnitude of completeness function
 
-				OEMagCompFnDisc mag_comp_fn = new OEMagCompFnDisc (magCat, mag_time_array, mag_eps);
+				OEMagCompFnDisc mag_comp_fn = new OEMagCompFnDisc (magCat, mag_time_array, mag_eps, time_eps);
 
 				System.out.println ();
 				System.out.println (mag_comp_fn.dump_string());

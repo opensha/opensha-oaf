@@ -211,6 +211,16 @@ public class OERupture {
 
 
 
+	// Produce a one-line string containing unrounded time, magnitude, and magnitude of completeness (not newline-terminated).
+	// Note: The k_prod field is assumed to contain magnitude of completeness.
+
+	public String u_time_mag_mc_string () {
+		return "t = " + t_day + ", mag = " + rup_mag + ", mc = " + k_prod;
+	}
+
+
+
+
 	// Comparator to sort by ascending time, and then by descending magnitude.
 
 	public static class TimeAscMagDescComparator implements Comparator<OERupture> {

@@ -112,8 +112,27 @@ public abstract class OEMagCompFn {
 
 	// Construct a function which is defined by discrete values on a sequence of intervals.
 
-	public static OEMagCompFn makeDisc (double magCat, double[] mag_time_array, double mag_eps) {
-		return new OEMagCompFnDisc (magCat, mag_time_array, mag_eps);
+	public static OEMagCompFn makeDisc (double magCat, double[] mag_time_array, double mag_eps, double time_eps) {
+		return new OEMagCompFnDisc (magCat, mag_time_array, mag_eps, time_eps);
+	}
+
+
+	// Construct a discrete function which is defined by F,G,H parameters for multiple earthquakes.
+
+	public static OEMagCompFn makeDiscFGH (double magCat, double capF, double capG, double capH,
+											double t_range_begin, double t_range_end,
+											Collection<OERupture> rup_list,
+											Collection<OERupture> accept_list, Collection<OERupture> reject_list,
+											double eligible_mag, int eligible_count,
+											double mag_eps, double time_eps,
+											double disc_base, double disc_delta, double disc_round, double disc_gap) {
+		return new OEMagCompFnDiscFGH (magCat, capF, capG, capH,
+										t_range_begin, t_range_end,
+										rup_list,
+										accept_list, reject_list,
+										eligible_mag, eligible_count,
+										mag_eps, time_eps,
+										disc_base, disc_delta, disc_round, disc_gap);
 	}
 
 
@@ -134,6 +153,7 @@ public abstract class OEMagCompFn {
 	protected static final int MARSHAL_FGH = 83001;
 	protected static final int MARSHAL_MULTIFGH = 89001;
 	protected static final int MARSHAL_DISC = 90001;
+	protected static final int MARSHAL_DISCFGH = 91001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
@@ -244,6 +264,11 @@ public abstract class OEMagCompFn {
 
 		case MARSHAL_DISC:
 			result = new OEMagCompFnDisc();
+			result.do_umarshal (reader);
+			break;
+
+		case MARSHAL_DISCFGH:
+			result = new OEMagCompFnDiscFGH();
 			result.do_umarshal (reader);
 			break;
 		}
