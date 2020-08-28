@@ -58,6 +58,10 @@ public class OEConstants {
 
 	public static final double HUGE_TIME_DAYS = 1.0e+20;
 
+	// Use x >= HUGE_TIME_DAYS_CHECK to check if x contains HUGE_TIME_DAYS.
+
+	public static final double HUGE_TIME_DAYS_CHECK = 0.99e+20;
+
 	// The logarithm base 10 of HUGE_TIME_DAYS.
 
 	public static final double LOG10_HUGE_TIME_DAYS = 20;

@@ -19,6 +19,7 @@ import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG_CHECK;		// use x <= N
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS;				// positive mag larger than any possible mag
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS_CHECK;		// use x >= NO_MAG_POS_CHECK to check for NO_MAG_POS
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS;			// very large time value
+import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS_CHECK;	// use x >= HUGE_TIME_DAYS_CHECK to check for HUGE_TIME_DAYS
 import static org.opensha.oaf.oetas.OEConstants.LOG10_HUGE_TIME_DAYS;	// log10 of very large time value
 
 
@@ -217,7 +218,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 	//   by a_time[n-1] < t <= a_time[n].
 	//
 	// * If the function is constant in the interval, then a_mag[n] is the constant value,
-	//   and a_t0[n] is HUGE_TIME_DAYS*2.0.  (This allows the test a_t0[n] < HUGE_TIME_DAYS
+	//   and a_t0[n] is HUGE_TIME_DAYS.  (This allows the test a_t0[n] < HUGE_TIME_DAYS_CHECK
 	//   to decide if the function is constant or logarithmic).
 	//
 	// * If the function is logarithmic in the interval, then the function value is
@@ -235,7 +236,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 
 	private double[] a_mag;
 
-	// Array of length N, containing HUGE_TIME_DAYS*2.0 for a constant function,
+	// Array of length N, containing HUGE_TIME_DAYS for a constant function,
 	// or the origin time for a logarithmic function.
 
 	private double [] a_t0;
@@ -264,7 +265,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 
 		// Log function
 
-		if (a_t0[n] < HUGE_TIME_DAYS) {
+		if (a_t0[n] < HUGE_TIME_DAYS_CHECK) {
 			result.append("log: mag = ").append(a_mag[n]).append(", t0 = ").append(a_t0[n]);
 		}
 
@@ -313,7 +314,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 
 		// If this is a constant function, return it
 
-		if (a_t0[hi] >= HUGE_TIME_DAYS) {
+		if (a_t0[hi] >= HUGE_TIME_DAYS_CHECK) {
 			return a_mag[hi];
 		}
 
@@ -379,7 +380,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 
 			last_was_magCat = true;
 			a_mag[0] = magCat;
-			a_t0[0] = HUGE_TIME_DAYS * 2.0;
+			a_t0[0] = HUGE_TIME_DAYS;
 
 			return;
 		}
@@ -433,7 +434,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 			// Add it if the previous interval is not a magCat interval
 
 			if (!( last_was_magCat )) {
-				add_interval (time, magCat, HUGE_TIME_DAYS * 2.0);
+				add_interval (time, magCat, HUGE_TIME_DAYS);
 				last_was_magCat = true;
 			}
 		
@@ -444,7 +445,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 		// Add a constant interval.
 
 		public void add_interval_constant (double time, double mag) {
-			add_interval (time, mag, HUGE_TIME_DAYS * 2.0);
+			add_interval (time, mag, HUGE_TIME_DAYS);
 			last_was_magCat = false;
 			return;
 		}

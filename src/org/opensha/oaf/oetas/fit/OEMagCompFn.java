@@ -112,27 +112,33 @@ public abstract class OEMagCompFn {
 
 	// Construct a function which is defined by discrete values on a sequence of intervals.
 
-	public static OEMagCompFn makeDisc (double magCat, double[] mag_time_array, double mag_eps, double time_eps) {
+	public static OEMagCompFnDisc makeDisc (double magCat, double[] mag_time_array, double mag_eps, double time_eps) {
 		return new OEMagCompFnDisc (magCat, mag_time_array, mag_eps, time_eps);
+	}
+
+	public static OEMagCompFnDisc makeDisc (double magCat, double[] mag_time_array, double mag_eps, double time_eps,
+							OEMagCompFnDisc.SplitFn split_fn, double[] tsplit_array, boolean[] dlbase_array) {
+		return new OEMagCompFnDisc (magCat, mag_time_array, mag_eps, time_eps,
+										split_fn, tsplit_array, dlbase_array);
 	}
 
 
 	// Construct a discrete function which is defined by F,G,H parameters for multiple earthquakes.
 
-	public static OEMagCompFn makeDiscFGH (double magCat, double capF, double capG, double capH,
+	public static OEMagCompFnDisc makeDiscFGH (double magCat, double capF, double capG, double capH,
 											double t_range_begin, double t_range_end,
 											Collection<OERupture> rup_list,
 											Collection<OERupture> accept_list, Collection<OERupture> reject_list,
 											double eligible_mag, int eligible_count,
 											double mag_eps, double time_eps,
-											double disc_base, double disc_delta, double disc_round, double disc_gap) {
+											double disc_base, double disc_delta, double disc_round, double disc_gap, OEMagCompFnDisc.SplitFn split_fn) {
 		return new OEMagCompFnDiscFGH (magCat, capF, capG, capH,
 										t_range_begin, t_range_end,
 										rup_list,
 										accept_list, reject_list,
 										eligible_mag, eligible_count,
 										mag_eps, time_eps,
-										disc_base, disc_delta, disc_round, disc_gap);
+										disc_base, disc_delta, disc_round, disc_gap, split_fn);
 	}
 
 

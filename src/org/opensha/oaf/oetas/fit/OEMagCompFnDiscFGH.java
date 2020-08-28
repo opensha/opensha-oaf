@@ -19,6 +19,7 @@ import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG_CHECK;		// use x <= N
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS;				// positive mag larger than any possible mag
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS_CHECK;		// use x >= NO_MAG_POS_CHECK to check for NO_MAG_POS
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS;			// very large time value
+import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS_CHECK;	// use x >= HUGE_TIME_DAYS_CHECK to check for HUGE_TIME_DAYS
 import static org.opensha.oaf.oetas.OEConstants.LOG10_HUGE_TIME_DAYS;	// log10 of very large time value
 
 
@@ -317,6 +318,15 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		// A BldRupture object that can be reused, or null if none.
 
 		protected BldRupture reusable_bld_rup;
+
+		// The common splitting function to use for our split times.
+
+		protected OEMagCompFnDisc.SplitFn common_split_fn;
+
+		// Flags indicating if splits are needed at the beginning and end of the time range.
+
+		protected boolean f_need_begin_split;
+		protected boolean f_need_end_split;
 
 		// The list of discete values that the log functions can assume.
 		// These are listed in increasing order.
@@ -1338,9 +1348,10 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		//  disc_delta = Discretization delta between discrete values.  See make_disc_even().
 		//  disc_round = Discretization rounding option for cutoffs: 0.0 = floor, 0.5 = nearest, 1.0 = ceiling.  See make_disc_even().
 		//  the_disc_gap = Minimum gap between magCat and any other constant values (magnitudes and discretized log values).  See set_disc_options().
+		//  split_fn = Splitting function, or null to disable all splitting.
 		// Note: All parameters in the top-level class must be already set up.
 
-		public void setup_skyline (double mag_eps, double time_eps, double disc_base, double disc_delta, double disc_round, double the_disc_gap) {
+		public void setup_skyline (double mag_eps, double time_eps, double disc_base, double disc_delta, double disc_round, double the_disc_gap, OEMagCompFnDisc.SplitFn split_fn) {
 		
 			// Set up the superclass, using null for the initial rupture
 
@@ -1353,11 +1364,24 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 			// Allocate and set up the memory builder
 
 			memory_builder = new MemoryBuilder();
-			memory_builder.setup_arrays (mag_eps, time_eps);
+			memory_builder.setup_arrays (mag_eps, time_eps, split_fn != null);
 
 			// Indicate no reuseable BldRupture
 
 			reusable_bld_rup = null;
+
+			// Save the splitting function
+
+			common_split_fn = split_fn;
+
+			// Set initial splitting function
+
+			memory_builder.first_split_fn (common_split_fn);
+
+			// Indicate we need splits at beginning and end of time range
+
+			f_need_begin_split = true;
+			f_need_end_split = true;
 
 			// Set up the discretization tables
 
@@ -1376,7 +1400,21 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		// Finish constructing the skyline.
 
 		public void finish_up_skyline () {
-		
+
+			// If need beginning split, do the split now
+
+			if (f_need_begin_split) {
+				memory_builder.add_split (Math.max (t_range_begin, get_current_time()), null);
+				f_need_begin_split = false;
+			}
+
+			// If need ending split, do the split now
+
+			if (f_need_end_split) {
+				memory_builder.add_split (Math.max (t_range_end, get_current_time()), null);
+				f_need_end_split = false;
+			}
+
 			// Finish up the superclass.
 
 			finish_up();
@@ -1425,6 +1463,28 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				return NO_MAG_POS;
 			}
 
+			// Get the time epsilon
+
+			double time_eps = memory_builder.get_time_eps();
+
+			// If need beginning split, and our time is past the beginning, do the split now
+
+			if (f_need_begin_split) {
+				if (t_day > t_range_begin + time_eps) {
+					memory_builder.add_split (Math.max (t_range_begin, get_current_time()), null);
+					f_need_begin_split = false;
+				}
+			}
+
+			// If need ending split, and our time is past the ending, do the split now
+
+			if (f_need_end_split) {
+				if (t_day > t_range_end + time_eps) {
+					memory_builder.add_split (Math.max (t_range_end, get_current_time()), null);
+					f_need_end_split = false;
+				}
+			}
+
 			// Advance to requested time
 
 			advance_time (t_day);
@@ -1457,6 +1517,26 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 				if (f_retained) {
 					f_retained = supply_rup (bld_rup);
+				}
+
+				// If rupture was retained, create a split at the rupture time, with a splitting function
+
+				if (f_retained) {
+					memory_builder.add_split (t_day, common_split_fn);
+
+					// Clear split flags that this split satisfies
+
+					if (f_need_begin_split) {
+						if (t_day >= t_range_begin - time_eps) {
+							f_need_begin_split = false;
+						}
+					}
+
+					if (f_need_end_split) {
+						if (t_day > t_range_end - time_eps) {
+							f_need_end_split = false;
+						}
+					}
 				}
 
 				// If rupture was not retained, we can reuse the object
@@ -1494,12 +1574,13 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 	//  disc_delta = Discretization delta between discrete values.  See make_disc_even().
 	//  disc_round = Discretization rounding option for cutoffs: 0.0 = floor, 0.5 = nearest, 1.0 = ceiling.  See make_disc_even().
 	//  disc_gap = Minimum gap between magCat and any other constant values (magnitudes and discretized log values).  See set_disc_options().
+	//  split_fn = Splitting function, or null to disable all splitting.
 	// Note: All parameters must be already set up.
 	// Note: In each OERupture object, the k_prod field is set equal to the pre-existing magnitude
 	//  of completeness if the rupture is accepted, or NO_MAG_POS if the rupture is rejected.
 
 	public void build_from_rup_list (Collection<OERupture> rup_list, Collection<OERupture> accept_list, Collection<OERupture> reject_list, double eligible_mag, int eligible_count,
-									double mag_eps, double time_eps, double disc_base, double disc_delta, double disc_round, double disc_gap) {
+									double mag_eps, double time_eps, double disc_base, double disc_delta, double disc_round, double disc_gap, OEMagCompFnDisc.SplitFn split_fn) {
 	
 		// Copy the given list so we can sort it
 
@@ -1532,7 +1613,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 		// Set it up
 
-		sky_builder.setup_skyline (mag_eps, time_eps, disc_base, disc_delta, disc_round, disc_gap);
+		sky_builder.setup_skyline (mag_eps, time_eps, disc_base, disc_delta, disc_round, disc_gap, split_fn);
 
 		// Loop over ruptures ...
 
@@ -1591,7 +1672,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 								Collection<OERupture> accept_list, Collection<OERupture> reject_list,
 								double eligible_mag, int eligible_count,
 								double mag_eps, double time_eps,
-								double disc_base, double disc_delta, double disc_round, double disc_gap) {
+								double disc_base, double disc_delta, double disc_round, double disc_gap, OEMagCompFnDisc.SplitFn split_fn) {
 
 		// Save parameters
 
@@ -1612,7 +1693,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 		// Generate the function with the skyline algorithm
 
-		build_from_rup_list (rup_list, accept_list, reject_list, eligible_mag, eligible_count, mag_eps, time_eps, disc_base, disc_delta, disc_round, disc_gap);
+		build_from_rup_list (rup_list, accept_list, reject_list, eligible_mag, eligible_count, mag_eps, time_eps, disc_base, disc_delta, disc_round, disc_gap, split_fn);
 	}
 
 
@@ -1771,7 +1852,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				// Make the OERupture objects with given times and magnitudes
 
 				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-				OERupture.make_time_mag_list (rup_list,time_mag_array);
+				OERupture.make_time_mag_list (rup_list, time_mag_array);
 
 				// Generate the function with the skyline algorithm
 
@@ -1779,7 +1860,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				Collection<OERupture> reject_list = null;
 				double eligible_mag = NO_MAG_NEG;
 				int eligible_count = 0;
-				build_from_rup_list (rup_list, accept_list, reject_list, eligible_mag, eligible_count, mag_eps, time_eps, disc_base, disc_delta, disc_round, disc_gap);
+				build_from_rup_list (rup_list, accept_list, reject_list, eligible_mag, eligible_count, mag_eps, time_eps, disc_base, disc_delta, disc_round, disc_gap, null);
 			}
 			catch (Exception e) {
 				throw new MarshalException ("OEMagCompFnDiscFGH.do_umarshal: Unable to construct skyline function from given ruptures", e);
@@ -2002,7 +2083,156 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 								accept_list, reject_list,
 								eligible_mag, eligible_count,
 								mag_eps, time_eps,
-								disc_base, disc_delta, disc_round, disc_gap);
+								disc_base, disc_delta, disc_round, disc_gap, null);
+
+				System.out.println ();
+				System.out.println (mag_comp_fn.dump_string());
+
+				//System.out.println ();
+				System.out.println ("accept_list:");
+				for (OERupture rup : accept_list) {
+					System.out.println ("  " + rup.u_time_mag_mc_string());
+				}
+
+				System.out.println ();
+				System.out.println ("reject_list:");
+				for (OERupture rup : reject_list) {
+					System.out.println ("  " + rup.u_time_mag_string());
+				}
+
+				// Do queries
+
+				System.out.println ();
+				System.out.println ("queries:");
+
+				for (int nq = 0; nq < query_count; ++nq) {
+					double t = query_time + nq * query_delta;
+					double mc = mag_comp_fn.get_mag_completeness (t);
+					System.out.println ("  t = " + t + ", mc = " + mc);
+				}
+
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  magCat  capF  capG  capH  t_range_begin  t_range_end  eligible_mag  eligible_count
+		//         mag_eps  time_eps  disc_base  disc_delta  disc_round  disc_gap
+		//         query_time  query_delta  query_count 
+		//         durlim_ratio  durlim_min  durlim_max
+		//        [t_day  rup_mag]...
+		// Build a function with the given parameters and rupture list.
+		// Perform queries at the specified set of times.
+		// Display detailed results.
+		// This version does splitting.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 17 or more additional arguments
+
+			if (!( args.length >= 21 && args.length % 2 == 1 )) {
+				System.err.println ("OEMagCompFnDiscFGH : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				double magCat = Double.parseDouble (args[1]);
+				double capF = Double.parseDouble (args[2]);
+				double capG = Double.parseDouble (args[3]);
+				double capH = Double.parseDouble (args[4]);
+				double t_range_begin = Double.parseDouble (args[5]);
+				double t_range_end = Double.parseDouble (args[6]);
+				double eligible_mag = Double.parseDouble (args[7]);
+				int eligible_count = Integer.parseInt (args[8]);
+
+				double mag_eps = Double.parseDouble (args[9]);
+				double time_eps = Double.parseDouble (args[10]);
+				double disc_base = Double.parseDouble (args[11]);
+				double disc_delta = Double.parseDouble (args[12]);
+				double disc_round = Double.parseDouble (args[13]);
+				double disc_gap = Double.parseDouble (args[14]);
+
+				double query_time = Double.parseDouble (args[15]);
+				double query_delta = Double.parseDouble (args[16]);
+				int query_count = Integer.parseInt (args[17]);
+
+				double durlim_ratio = Double.parseDouble (args[18]);
+				double durlim_min = Double.parseDouble (args[19]);
+				double durlim_max = Double.parseDouble (args[20]);
+
+				double[] time_mag_array = new double[args.length - 21];
+				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + 21]);
+				}
+
+				// Say hello
+
+				System.out.println ("Generating magnitude of completeness function");
+				System.out.println ("magCat = " + magCat);
+				System.out.println ("capF = " + capF);
+				System.out.println ("capG = " + capG);
+				System.out.println ("capH = " + capH);
+				System.out.println ("t_range_begin = " + t_range_begin);
+				System.out.println ("t_range_end = " + t_range_end);
+				System.out.println ("eligible_mag = " + eligible_mag);
+				System.out.println ("eligible_count = " + eligible_count);
+
+				System.out.println ("mag_eps = " + mag_eps);
+				System.out.println ("time_eps = " + time_eps);
+				System.out.println ("disc_base = " + disc_base);
+				System.out.println ("disc_delta = " + disc_delta);
+				System.out.println ("disc_round = " + disc_round);
+				System.out.println ("disc_gap = " + disc_gap);
+
+				System.out.println ("query_time = " + query_time);
+				System.out.println ("query_delta = " + query_delta);
+				System.out.println ("query_count = " + query_count);
+
+				System.out.println ("durlim_ratio = " + durlim_ratio);
+				System.out.println ("durlim_min = " + durlim_min);
+				System.out.println ("durlim_max = " + durlim_max);
+
+				System.out.println ("time_mag_array:");
+				for (int ntm = 0; ntm < time_mag_array.length; ntm += 2) {
+					System.out.println ("  time = " + time_mag_array[ntm] + ", mag = " + time_mag_array[ntm + 1]);
+				}
+
+				// Make the rupture list
+
+				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+				OERupture.make_time_mag_list (rup_list, time_mag_array);
+
+				System.out.println ();
+				System.out.println ("rup_list:");
+				for (OERupture rup : rup_list) {
+					System.out.println ("  " + rup.u_time_mag_string());
+				}
+
+				// Make time-splitting function
+
+				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
+
+				// Make the magnitude of completeness function
+
+				ArrayList<OERupture> accept_list = new ArrayList<OERupture>();
+				ArrayList<OERupture> reject_list = new ArrayList<OERupture>();
+
+				OEMagCompFnDiscFGH mag_comp_fn = new OEMagCompFnDiscFGH (magCat, capF, capG, capH,
+								t_range_begin, t_range_end,
+								rup_list,
+								accept_list, reject_list,
+								eligible_mag, eligible_count,
+								mag_eps, time_eps,
+								disc_base, disc_delta, disc_round, disc_gap, split_fn);
 
 				System.out.println ();
 				System.out.println (mag_comp_fn.dump_string());

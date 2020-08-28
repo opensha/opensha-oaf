@@ -17,6 +17,7 @@ import static org.opensha.oaf.oetas.OEConstants.C_MILLIS_PER_DAY;		// millisecon
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG;				// negative mag smaller than any possible mag
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG_CHECK;		// use x <= NO_MAG_NEG_CHECK to check for NO_MAG_NEG
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS;			// very large time value
+import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS_CHECK;	// use x >= HUGE_TIME_DAYS_CHECK to check for HUGE_TIME_DAYS
 import static org.opensha.oaf.oetas.OEConstants.LOG10_HUGE_TIME_DAYS;	// log10 of very large time value
 
 
@@ -176,12 +177,128 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 
 
+	// Nested abstract class to define a splitting function.
+	// Supplying an object of this class enables splitting.
+	// Extending this class permits specification of maximum interval duration.
+
+	public static abstract class SplitFn {
+
+		// Get the duration limit.
+		// Parameters:
+		//  tsplit = Most recent split time, in days, can be -HUGE_TIME_DAYS if none.
+		//  tstart = Start time of interval, in days.
+		// Returns the maximum allowed duration of the interval.
+		// Can return HUGE_TIME_DAYS if there is no upper limit.
+
+		public abstract double get_durlim (double tsplit, double tstart);
+	}
+
+
+
+
+	// Splitting function with constant duration limit.
+	// A large constant value can be used to obtain no upper limit.
+
+	public static class SplitFnConstant extends SplitFn {
+
+		// The duration limit, must be >= 0, can be HUGE_TIME_DAYS for no limit.
+
+		private double durlim;
+
+		// Get the duration limit.
+		// Parameters:
+		//  tsplit = Most recent split time, in days, can be -HUGE_TIME_DAYS if none.
+		//  tstart = Start time of interval, in days.
+		// Returns the maximum allowed duration of the interval.
+		// Can return HUGE_TIME_DAYS if there is no upper limit.
+
+		@Override
+		public double get_durlim (double tsplit, double tstart) {
+			return durlim;
+		}
+
+		// Construct a function with a very large constant value.
+
+		public SplitFnConstant () {
+			durlim = HUGE_TIME_DAYS;
+		}
+
+		// Construct a function with the given constant value.
+
+		public SplitFnConstant (double durlim) {
+			if (!( durlim > 0.0 )) {
+				throw new IllegalArgumentException ("OEMagCompFnDisc.SplitFnConstant - Invalid constructor argument: durlim = " + durlim);
+			}
+			this.durlim = durlim;
+		}
+	}
+
+
+
+
+	// Splitting function where duration limit is a ratio of the time since
+	// the most recent split time.
+
+	public static class SplitFnRatio extends SplitFn {
+
+		// Duration limit ratio, minimum, and maximum.
+		// These are used to calculate the maximum allowed duration of an interval according to
+		// min(durlim_max, max (durlim_min, durlim_ratio*(t - tsplit)))
+		// where t is the start of the interval and tsplit is the most recent split time.
+
+		// Duration limit ratio, must be >= 0.
+
+		private double durlim_ratio;
+
+		// Duration limit minimum, must be > 0.
+
+		private double durlim_min;
+
+		// Duration limit maximum, must be >= durlim_min.
+
+		private double durlim_max;
+
+		// Get the duration limit.
+		// Parameters:
+		//  tsplit = Most recent split time, in days, can be -HUGE_TIME_DAYS if none.
+		//  tstart = Start time of interval, in days.
+		// Returns the maximum allowed duration of the interval.
+		// Can return HUGE_TIME_DAYS if there is no upper limit.
+
+		@Override
+		public double get_durlim (double tsplit, double tstart) {
+			if (tsplit <= -HUGE_TIME_DAYS_CHECK) {
+				return durlim_max;
+			}
+			return Math.min(durlim_max, Math.max (durlim_min, durlim_ratio*(tstart - tsplit)));
+		}
+
+		// Construct a function with the given constant parameters.
+
+		public SplitFnRatio (double durlim_ratio, double durlim_min, double durlim_max) {
+			if (!( durlim_ratio >= 0.0
+				&& durlim_min > 0.0 
+				&& durlim_max >= durlim_min )) {
+				throw new IllegalArgumentException ("OEMagCompFnDisc.SplitFnRatio - Invalid constructor argument: durlim_ratio = " + durlim_ratio + ", durlim_min = " + durlim_min + ", durlim_max = " + durlim_max);
+			}
+			this.durlim_ratio = durlim_ratio;
+			this.durlim_min = durlim_min;
+			this.durlim_max = durlim_max;
+		}
+	}
+
+
+
+
 	// Inner class to manage memory.
 	// The user must begin by calling setup_arrays.
-	// Then, the user calls the various add_interval methods.
+	// Then, the user calls the various add_interval and add_split methods.
 	// Then, the user must call finish_up_arrays to put the arrays into final form.
 
 	protected class MemoryBuilder {
+
+
+		//--- Basic parameters and variables for interval construction
 
 		// The current number of times, separating intervals.
 
@@ -207,10 +324,80 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 		protected double time_eps;
 
+		// The last time supplied by the user, or -HUGE_TIME_DAYS if none.
+
+		protected double last_user_time;
+
+
+		//--- Parameters and variables for interval splitting
+
+		// True to enable splitting.
+
+		protected boolean f_enable_split;
+
+		// Array of split times.
+		// If an interval spans a split time, it is split so the final intervals do not span a split time.
+		// Split times must be in increasing order.
+
+		protected double[] a_split_time;
+
+		// Array of splitting functions for the split times.
+		// Null means to continue using the prior splitting function.
+
+		protected SplitFn[] a_split_fn;
+
+		// The current number of split times.
+
+		protected int split_count;
+
+		// The index of the next split time waiting to be used.
+		// If split_index == split_count then there is no split time waiting to be used.
+		// If split_index > 0 then a_split_time[split_index - 1] is the last split time used.
+
+		protected int split_index;
+
+
+		//--- Variables for holding the most recent pending interval
+
+		// True if we are currently holding an interval.
+
+		protected boolean pend_full;
+
+		// The time of the pending interval.
+
+		protected double pend_time;
+
+		// The magnitude of the pending interval.
+
+		protected double pend_mag;
+
+		// True if the pending interval is a split time.
+
+		protected boolean pend_is_split;
+
+		// The splitting function for this split time, or null to continue using the prior function (only used if pend_is_split is true).
+
+		protected SplitFn pend_split_fn;
+
+		// The currently active splitting function, or null if none.
+
+		protected SplitFn active_split_fn;
+
+		// The base time for the currently active splitting function, or -HUGE_TIME_DAYS for unspecified.
+
+		protected double active_split_time;
+
+
+
+
+		//--- Setup functions
+
+
+
 
 		// Set up the arrays.
 
-		public void setup_arrays (double mag_eps, double time_eps) {
+		public void setup_arrays (double mag_eps, double time_eps, boolean f_enable_split) {
 
 			// Check arguments
 
@@ -226,6 +413,10 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 			this.time_eps = time_eps;
 
+			// Save flat to enable splitting
+
+			this.f_enable_split = f_enable_split;
+
 			// Default capacity, in number of times
 
 			int default_capacity = 16;
@@ -238,14 +429,40 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 			// No times yet
 
 			time_count = 0;
+			last_user_time = -HUGE_TIME_DAYS;
 
 			// Insert an initial magCat interval
 
 			last_was_magCat = true;
 			a_mag[0] = magCat;
 
+			// Allocate array of split times
+
+			a_split_time = new double[default_capacity];
+			a_split_fn = new SplitFn[default_capacity];
+
+			// No split times yet
+
+			split_count = 0;
+			split_index = 0;
+
+			// No pending interval
+
+			pend_full = false;
+			pend_time = 0.0;
+			pend_mag = 0.0;
+			pend_is_split = false;
+			pend_split_fn = null;
+
+			// No active splitting function
+
+			active_split_fn = null;
+			active_split_time = -HUGE_TIME_DAYS;
+
 			return;
 		}
+
+
 
 
 		// Set the magnitude for the first interval.
@@ -274,30 +491,225 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 		}
 
 
+
+
+		// Set the splitting function for the first interval.
+		// This will be used if the first interval is not a split with its own splitting function.
+		// This version of the function sets the base time to the distant past.
+
+		public void first_split_fn (SplitFn split_fn) {
+		
+			// Error if not at the first interval
+
+			if (time_count > 0) {
+				throw new IllegalStateException ("OEMagCompFnDisc.MemoryBuilder.first_split_fn - Already after first interval");
+			}
+
+			// Set splitting function for first interval
+
+			if (f_enable_split) {
+				active_split_fn = split_fn;
+				active_split_time = -HUGE_TIME_DAYS;
+			}
+			return;
+		}
+
+
+
+
+		// Set the splitting function for the first interval.
+		// This will be used if the first interval is not a split with its own splitting function.
+		// This version of the function sets the base time to the supplied split time.
+
+		public void first_split_fn (SplitFn split_fn, double tsplit) {
+		
+			// Error if not at the first interval
+
+			if (time_count > 0) {
+				throw new IllegalStateException ("OEMagCompFnDisc.MemoryBuilder.first_split_fn - Already after first interval");
+			}
+
+			// Set splitting function for first interval
+
+			if (f_enable_split) {
+				active_split_fn = split_fn;
+				active_split_time = tsplit;
+			}
+			return;
+		}
+
+
+
+
+		// Get the time epsilon.
+
+		public double get_time_eps () {
+			return time_eps;
+		}
+
+
+
+
+		// Get the magnitude epsilon.
+
+		public double get_mag_eps () {
+			return mag_eps;
+		}
+
+
+
+
+		//--- Functions for accessing the list of split times
+
+
+
+
+		// Return true if using split times.
+
+		public boolean is_using_split_times () {
+			return f_enable_split;
+		}
+
+
+
+
+		// Add a split time, expanding the array if needed.
+		// Split times must be added in non-decreasing order.
+		// Duplicate split times are discarded.
+		// Split times can be added during construction, but to be effective a split time
+		// must be added before creating an interval whose start time is greater than the split time.
+		// If split times are not being used, it is OK to call this function but
+		// the split times have no effect.
+
+		public void add_split (double time, SplitFn split_fn) {
+
+			// If we are using split times ...
+
+			if (f_enable_split) {
+
+				// Check for increasing time, and for duplicate time
+
+				if (split_count > 0) {
+
+					double delta_t = time - a_split_time[split_count - 1];
+
+					if (delta_t < 0.0) {
+						throw new IllegalArgumentException ("OEMagCompFnDisc.MemoryBuilder.add_split - Split time out-of-order: time = " + time + ", last split time = " + a_split_time[split_count - 1]);
+					}
+
+					// If duplicate time, merge the splitting functions
+
+					if (delta_t <= 0.0) {
+						if (split_fn != null) {
+							a_split_fn[split_count - 1] = split_fn;
+						}
+						return;
+					}
+				}
+		
+				// Expand array if needed
+
+				if (split_count >= a_split_time.length) {
+
+					// Calculate new capacity required
+
+					int default_capacity = 16;
+					int new_capacity = Math.max (default_capacity, a_split_time.length) * 2;
+
+					// Reallocate array
+
+					a_split_time = Arrays.copyOf (a_split_time, new_capacity);
+					a_split_fn = Arrays.copyOf (a_split_fn, new_capacity);
+				}
+
+				// Insert the new interval
+
+				a_split_time[split_count] = time;
+				a_split_fn[split_count] = split_fn;
+
+				// Count it
+
+				++split_count;
+			}
+
+			return;
+		}
+
+
+
+
+		// Return true if there is an unconsumed split time available.
+		// It is guaranteed this returns false if not using split times.
+
+		private boolean has_split () {
+			return split_index < split_count;
+		}
+
+
+
+
+		// Get the first unconsumed split time.
+
+		private double get_split_time () {
+			if (split_index >= split_count) {
+				throw new IllegalStateException ("OEMagCompFnDisc.MemoryBuilder.get_split_time - No split time available");
+			}
+			return a_split_time[split_index];
+		}
+
+
+
+
+		// Get the splitting function for the first unconsumed split time, or null to continue using the prior function.
+
+		private SplitFn get_split_fn () {
+			if (split_index >= split_count) {
+				throw new IllegalStateException ("OEMagCompFnDisc.MemoryBuilder.get_split_fn - No split time available");
+			}
+			return a_split_fn[split_index];
+		}
+
+
+
+
+		// Consume the first unconsumed split time.
+
+		private void consume_split () {
+			if (split_index >= split_count) {
+				throw new IllegalStateException ("OEMagCompFnDisc.MemoryBuilder.consume_split - No split time available");
+			}
+			++split_index;
+			return;
+		}
+
+
+
+
+		//--- Functions for adding intervals to the arrays
+
+
+
+
 		// Add an interval, expanding the arrays if needed.
 
-		private void add_interval (double time, double mag) {
+		private void append_interval (double time, double mag) {
 
-			// Check for increasing time, and for time within epsilon
+			// Check for increasing time, and for duplicate time
 
 			if (time_count > 0) {
 
 				double delta_t = time - a_time[time_count - 1];
 
 				if (delta_t < 0.0) {
-					throw new IllegalArgumentException ("OEMagCompFnDisc.MemoryBuilder.add_interval - Time out-of-order: time = " + time + ", last time = " + a_time[time_count - 1]);
+					throw new IllegalArgumentException ("OEMagCompFnDisc.MemoryBuilder.append_interval - Time out-of-order: time = " + time + ", last time = " + a_time[time_count - 1]);
 				}
 
-				if (delta_t <= time_eps) {
+				// If duplicate time, just change the magnitude in the existing interval
+
+				if (delta_t <= 0.0) {
 					a_mag[time_count] = mag;
 					return;
 				}
-			}
-
-			// Check for combinable interval
-
-			if (Math.abs (mag - a_mag[time_count]) <= mag_eps) {
-				return;
 			}
 		
 			// Expand arrays if needed
@@ -327,6 +739,493 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 		}
 
 
+
+
+		// Split the current interval, by appending a new interval with the same magnitude.
+
+		private void split_interval (double time) {
+			append_interval (time, a_mag[time_count]);
+			return;
+		}
+
+
+
+
+		// Get the magnitude of the last interval.
+
+		private double get_last_interval_mag () {
+			return a_mag[time_count];
+		}
+
+
+
+
+		//--- Function for splitting intervals by length
+
+
+
+
+		// Split the current interval if needed to comply with duration limit.
+		// Note: All newly created intervals have start time < time.
+
+		private void split_for_durlim (double time) {
+
+			// If we are using duration limits, and there is a start time available ...
+
+			if (active_split_fn != null && time_count > 0) {
+
+				// Loop until all splits are done ...
+
+				for (;;) {
+
+					// Start time of current interval
+
+					double start_time = a_time[time_count - 1];
+
+					// Duration we would like to create
+
+					double delta_t = time - start_time;
+
+					// (At this point we might throw an exception if delta_t < 0.0)
+
+					// Duration limit, based on elapsed time since the most recently-used split time
+
+					double durlim = Math.max(time_eps, active_split_fn.get_durlim (active_split_time, start_time));
+				
+					// If limit exceeds delta, we're done
+
+					if (durlim >= delta_t) {
+						break;
+					}
+
+					// Otherwise, if limit exceeds half of delta, split the interval at its midpoint and stop
+
+					else if (durlim >= 0.5 * delta_t) {
+						split_interval (0.5 * delta_t + start_time);
+						break;
+					}
+
+					// Otherwise, split the interval at the duration limit and continue splitting
+
+					else {
+						split_interval (durlim + start_time);
+					}
+				}
+			}
+
+			return;
+		}
+
+
+
+
+		//--- Functions for the pending interval
+
+
+
+
+		// Flush the pending interval, if we have one.
+
+		private void pend_flush () {
+		
+			// If there is a pending interval ...
+
+			if (pend_full) {
+
+				// Split current interval as needed to satisfy duration limit, if any
+
+				split_for_durlim (pend_time);
+
+				// Append the new interval
+			
+				append_interval (pend_time, pend_mag);
+
+				// If this contains a split time with a splitting function, it becomes the new active splitting function
+
+				if (pend_is_split && pend_split_fn != null) {
+					active_split_fn = pend_split_fn;
+					active_split_time = pend_time;
+				}
+
+				// No pending interval
+
+				pend_full = false;
+			}
+
+			return;
+		}
+
+
+
+
+		// Set the pending interval.
+		// Parameters:
+		//  time = Start time of the interval.
+		//  mag = Magnitude of the interval.
+		//  is_split = True if this time is a splitting time.
+		//  split_fn = Associated splitting function, or null to continue using the prior function (must be null if is_split is false).
+		// If there is an existing pending interval, it is flushed.
+
+		private void pend_flush_and_set (double time, double mag, boolean is_split, SplitFn split_fn) {
+			pend_flush();
+			pend_time = time;
+			pend_mag = mag;
+			pend_is_split = is_split;
+			pend_split_fn = split_fn;
+			pend_full = true;
+			return;
+		}
+
+
+
+
+		// Set the pending interval.
+		// Parameters:
+		//  time = Start time of the interval.
+		//  mag = Magnitude of the interval.
+		//  is_split = True if this time is a splitting time.
+		//  split_fn = Associated splitting function, or null to continue using the prior function (must be null if is_split is false).
+		// If there is an existing pending interval, it is overwritten without being flushed.
+
+		private void pend_set_no_flush (double time, double mag, boolean is_split, SplitFn split_fn) {
+			pend_time = time;
+			pend_mag = mag;
+			pend_is_split = is_split;
+			pend_split_fn = split_fn;
+			pend_full = true;
+			return;
+		}
+
+
+
+
+		// Change the time of the pending interval.
+		// Parameters:
+		//  time = Start time of the interval.
+		//  is_split = True if this time is a splitting time.
+		//  split_fn = Associated splitting function, or null to continue using the prior function (must be null if is_split is false).
+		// There must be an existing pending interval.
+		// The existing magnitude is retained.
+		// The result is a split time if either is_split is true or the existing interval is a split time.
+
+		private void pend_adjust_time (double time, boolean is_split, SplitFn split_fn) {
+
+			// Error if no pending interval
+
+			if (!( pend_full )) {
+				throw new IllegalStateException ("OEMagCompFnDisc.MemoryBuilder.pend_adjust_time - No pending interval available");
+			}
+
+			// Change time
+
+			pend_time = time;
+			if (is_split) {
+				pend_is_split = true;
+				if (split_fn != null) {
+					pend_split_fn = split_fn;
+				}
+			}
+			return;
+		}
+
+
+
+
+		// Split the pending interval at the given time.
+		// Parameters:
+		//  time = Start time of the interval.
+		//  is_split = True if this time is a splitting time.
+		//  split_fn = Associated splitting function, or null to continue using the prior function (must be null if is_split is false).
+		// If there is a pending interval, it is flushed.
+		// The magnitude is retained from the prior interval.
+		// This function can be used regardless of whether or not there is a pending interval.
+
+		private void pend_flush_and_split (double time, boolean is_split, SplitFn split_fn) {
+			pend_flush();
+			pend_time = time;
+			pend_mag = get_last_interval_mag();
+			pend_is_split = is_split;
+			pend_split_fn = split_fn;
+			pend_full = true;
+			return;
+		}
+
+
+
+
+		// Change the magnitude of the pending interval.
+		// Parameters:
+		//  mag = Magnitude of the interval.
+		// There must be an existing pending interval.
+		// The time and splitting are retained from the existing pending interval.
+
+		private void pend_adjust_mag (double mag) {
+
+			// Error if no pending interval
+
+			if (!( pend_full )) {
+				throw new IllegalStateException ("OEMagCompFnDisc.MemoryBuilder.pend_adjust_mag - No pending interval available");
+			}
+
+			// Change magnitude
+
+			pend_mag = mag;
+			return;
+		}
+
+
+
+
+		// Adjust the split flags of the pending interval.
+		// Parameters:
+		//  is_split = True if this time is a splitting time.
+		//  split_fn = Associated splitting function, or null to continue using the prior function (must be null if is_split is false).
+		// There must be an existing pending interval.
+		// The time and magnitude are retained from the existing pending interval.
+		// The result is a split time if either is_split is true or the existing interval is a split time.
+
+		private void pend_adjust_split (boolean is_split, SplitFn split_fn) {
+
+			// Error if no pending interval
+
+			if (!( pend_full )) {
+				throw new IllegalStateException ("OEMagCompFnDisc.MemoryBuilder.pend_adjust_split - No pending interval available");
+			}
+
+			// Change aplit
+
+			if (is_split) {
+				pend_is_split = true;
+				if (split_fn != null) {
+					pend_split_fn = split_fn;
+				}
+			}
+			return;
+		}
+
+
+
+
+		//--- Function to insert split times
+
+
+
+
+		// Split the current interval if needed to obey split times.
+		// Parameters:
+		//  time = Start time of the interval we want to create.
+		// Note: All newly created intervals have start time < time.
+		// Note: After this call, the next available split time, if any, will be >= time.
+		// Note: This may be called with time equal to a very large value to flush out all split times.
+
+		private void split_for_split (double time) {
+
+			// While there are split times waiting to be used ...
+
+			while (has_split()) {
+
+				// The next split time
+
+				double tsplit = get_split_time();
+				SplitFn split_fn = get_split_fn();
+
+				// If the end of our interval, stop
+
+				if (tsplit >= time) {
+					break;
+				}
+
+				// If there is a pending interval ...
+
+				if (pend_full) {
+
+					// If the pending interval is a split ...
+
+					if (pend_is_split) {
+
+						// If later than pending interval (should always be true), write the new split time, otherwise drop the new split time
+
+						if (tsplit > pend_time) {
+							pend_flush_and_split (tsplit, true, split_fn);
+						}
+					}
+
+					// Otherwise, pending interval is not a split ...
+
+					else {
+
+						// Time difference from pending interval to split
+
+						double delta_t = tsplit - pend_time;
+
+						// If before the pending time (should never happen) ...
+
+						if (delta_t < 0.0) {
+						
+							// If within eplison, convert pending interval to a split, otherwise drop the new split time
+
+							if (delta_t >= -time_eps) {
+								pend_adjust_split (true, split_fn);
+							}
+						}
+
+						// Otherwise, split is after pending time ...
+
+						else {
+
+							// If within epsilon, snap the pending interval to the split time
+
+							if (delta_t <= time_eps) {
+								pend_adjust_time (tsplit, true, split_fn);
+							}
+
+							// Otherwise, write the split time
+
+							else {
+								pend_flush_and_split (tsplit, true, split_fn);
+							}
+						}
+					}
+				}
+
+				// Otherwise, no pending interval, so just write the split time
+
+				else {
+					pend_flush_and_split (tsplit, true, split_fn);
+				}
+
+				// Consume the split time
+
+				consume_split();
+			}
+
+			return;
+		}
+
+
+
+
+		//--- Functions for user-supplied intervals
+
+
+
+
+		// Add an interval, expanding the arrays if needed.
+
+		private void add_interval (double time, double mag) {
+
+			// Check for non-decreasing time
+
+			if (time < last_user_time) {
+				throw new IllegalArgumentException ("OEMagCompFnDisc.MemoryBuilder.add_interval - Time out-of-order: time = " + time + ", last time = " + last_user_time);
+			}
+
+			last_user_time = time;
+
+			// If there is a pending interval ...
+
+			if (pend_full) {
+
+				// If there is a pending interval with a later or equal time, just update the magnitude
+				// (Only happens if an earlier interval was snapped forward to a later split time)
+
+				if (pend_time >= time) {
+					pend_adjust_mag (mag);
+					return;
+				}
+
+				// If magnitude matches within epsilon, drop the interval
+			
+				if (Math.abs (pend_mag - mag) <= mag_eps) {
+					return;
+				}
+			}
+
+			// Insert any split times from before our time
+
+			split_for_split (time);
+
+			// If there is a split time after our time ...
+
+			if (has_split()) {
+
+				// The next split time, which will be later than our time
+
+				double tsplit = get_split_time();
+				SplitFn split_fn = get_split_fn();
+
+				// If it is in range for this interval to snap to the next split time ...
+
+				if (tsplit - time <= time_eps) {
+
+					// If there is a pending interval ...
+
+					if (pend_full) {
+
+						// If the pending interval is a split ...
+
+						if (pend_is_split) {
+
+							// If we are closer to the pending interval ...
+
+							if (time - pend_time <= tsplit - time) {
+							
+								// Snap to the pending interval by updating its magnitude, do not consume the next split time
+
+								pend_adjust_mag (mag);
+								return;
+							}
+						}
+
+						// Otherwise the pending interval is not a split ...
+
+						else {
+
+							// If the pending interval is also in range to snap to the next split time ...
+
+							if (tsplit - pend_time <= time_eps) {
+							
+								// Snap both by overwriting with our magnitude and next split time, and consume it
+
+								pend_set_no_flush (tsplit, mag, true, split_fn);
+								consume_split();
+								return;
+							}
+						}
+					}
+							
+					// Snap to the next split by setting interval with our magnitude and next split time, and consume it
+
+					pend_flush_and_set (tsplit, mag, true, split_fn);
+					consume_split();
+					return;
+				}
+			}
+
+			// If there is a pending interval ...
+
+			if (pend_full) {
+
+				// If we are in range to snap to the pending interval ...
+
+				if (time - pend_time <= time_eps) {
+							
+					// Snap to the pending interval by updating its magnitude
+
+					pend_adjust_mag (mag);
+					return;
+				}
+			}
+
+			// Write the pending interval
+
+			pend_flush_and_set (time, mag, false, null);
+			return;
+		}
+
+
+
+
 		// Add a magCat interval.
 
 		public void add_interval_magCat (double time) {
@@ -340,6 +1239,8 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 		
 			return;
 		}
+
+
 
 
 		// Add a constant interval.
@@ -361,9 +1262,24 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 		}
 
 
+
+
+		//--- Function to finish
+
+
+
+
 		// Finish up the arrays, by truncating to the exact length needed.
 
 		public void finish_up_arrays () {
+
+			// Flush any remaining split times
+
+			split_for_split (HUGE_TIME_DAYS);
+
+			// Flush any pending interval
+
+			pend_flush();
 		
 			// If arrays have extra space, trim them
 
@@ -408,7 +1324,73 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 		// Set it up
 
-		memory_builder.setup_arrays (mag_eps, time_eps);
+		memory_builder.setup_arrays (mag_eps, time_eps, false);
+
+		// Set the first interval
+
+		memory_builder.first_interval (mag_time_array[0]);
+
+		// Set succeeding intervals
+
+		for (int n = 1; n < mag_time_array.length; n += 2) {
+			memory_builder.add_interval_constant (mag_time_array[n], mag_time_array[n + 1]);
+		}
+
+		// Finish the arrays
+
+		memory_builder.finish_up_arrays();
+
+		return;
+	}
+
+
+
+
+	// Build from an array of magnitudes and times.
+	// Parameters:
+	//  mag_time_array = Array containing magnitudes and times.
+	//  mag_eps = The difference between magnitudes which are indistinguishable, if < 0 then none.
+	//  time_eps = The difference between times which are indistinguishable, must be >= 0.
+	//  split_fn = Duration limit splitting function, if null then no splitting.
+	//  tsplit_array = Array of split times.
+	//  dlbase_array = Array of duration limit base flags, true means to apply the splitting function.
+	// Note: All parameters must be already set up.
+	// Note: For N intervals, mag_time_array contains 2*N-1 elements, which are:
+	//   M0  t0  M1  t1  M2  t2  ...  M(N-2)  t(N-2)  M(N-1)
+	// Times must be in strictly increasing order.
+
+	public void build_from_mag_time_array (double[] mag_time_array, double mag_eps, double time_eps,
+											SplitFn split_fn, double[] tsplit_array, boolean[] dlbase_array) {
+
+		// Check the array has an odd number of elements
+
+		if (mag_time_array.length % 2 == 0) {
+			throw new IllegalArgumentException ("OEMagCompFnDisc.build_from_mag_time_array - Magnitude-time array length is even: length = " + mag_time_array.length);
+		}
+
+		// Check the split time and duration limit base arrays have the same number of elements
+
+		if (tsplit_array.length != dlbase_array.length) {
+			throw new IllegalArgumentException ("OEMagCompFnDisc.build_from_mag_time_array - Time split arrays have different length: tsplit_array.length = " + tsplit_array.length + ", dlbase_array.length = " + dlbase_array.length);
+		}
+
+		// Make the memory builder
+
+		MemoryBuilder memory_builder = new MemoryBuilder();
+
+		// Set it up
+
+		memory_builder.setup_arrays (mag_eps, time_eps, split_fn != null);
+
+		// Set split times
+
+		for (int m = 0; m < tsplit_array.length; ++ m) {
+			SplitFn the_split_fn = null;
+			if (dlbase_array[m]) {
+				the_split_fn = split_fn;
+			}
+			memory_builder.add_split (tsplit_array[m], the_split_fn);
+		}
 
 		// Set the first interval
 
@@ -438,6 +1420,24 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 	// Default constructor does nothing.
 
 	public OEMagCompFnDisc () {}
+
+
+
+
+	// Construct from given parameters.
+
+	public OEMagCompFnDisc (double magCat, double[] mag_time_array, double mag_eps, double time_eps,
+							SplitFn split_fn, double[] tsplit_array, boolean[] dlbase_array) {
+
+		// Save parameters
+
+		this.magCat = magCat;
+
+		// Generate the function
+
+		build_from_mag_time_array (mag_time_array, mag_eps, time_eps,
+									split_fn, tsplit_array, dlbase_array);
+	}
 
 
 
@@ -748,6 +1748,118 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 				// Make the magnitude of completeness function
 
 				OEMagCompFnDisc mag_comp_fn = new OEMagCompFnDisc (magCat, mag_time_array, mag_eps, time_eps);
+
+				System.out.println ();
+				System.out.println (mag_comp_fn.dump_string());
+
+				// Do queries
+
+				//System.out.println ();
+				System.out.println ("queries:");
+
+				for (int nq = 0; nq < query_count; ++nq) {
+					double t = query_time + nq * query_delta;
+					double mc = mag_comp_fn.get_mag_completeness (t);
+					System.out.println ("  t = " + t + ", mc = " + mc);
+				}
+
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  magCat  query_time  query_delta  query_count  mag_eps  time_eps
+		//         durlim_ratio  durlim_min  durlim_max
+		//         split_count  [tsplit  dlbase]  mag  [time  mag]...
+		// Build a function with the given parameters, rupture list, and splitting.
+		// Perform queries at the specified set of times.
+		// Display detailed results.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 11 or more additional arguments
+
+			if (!( args.length >= 12 && args.length % 2 == 0 )) {
+				System.err.println ("OEMagCompFnDisc : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				double magCat = Double.parseDouble (args[1]);
+				double query_time = Double.parseDouble (args[2]);
+				double query_delta = Double.parseDouble (args[3]);
+				int query_count = Integer.parseInt (args[4]);
+				double mag_eps = Double.parseDouble (args[5]);
+				double time_eps = Double.parseDouble (args[6]);
+
+				double durlim_ratio = Double.parseDouble (args[7]);
+				double durlim_min = Double.parseDouble (args[8]);
+				double durlim_max = Double.parseDouble (args[9]);
+
+				int split_count = Integer.parseInt (args[10]);
+				double[] tsplit_array = new double[split_count];
+				boolean[] dlbase_array = new boolean[split_count];
+
+				if (!( args.length >= split_count*2 + 12 )) {
+					System.err.println ("OEMagCompFnDisc : Invalid 'test2' subcommand: Insufficient length for time-splitting arrays");
+				}
+
+				for (int ntm = 0; ntm < tsplit_array.length; ++ntm) {
+					tsplit_array[ntm] = Double.parseDouble (args[ntm*2 + 11]);
+					dlbase_array[ntm] = Boolean.parseBoolean (args[ntm*2 + 12]);
+				}
+
+				if (!( (args.length - (split_count*2 + 11)) % 2 == 1 )) {
+					System.err.println ("OEMagCompFnDisc : Invalid 'test2' subcommand: Invalid length for time-magnitude array");
+				}
+
+				double[] mag_time_array = new double[args.length - (split_count*2 + 11)];
+				for (int ntm = 0; ntm < mag_time_array.length; ++ntm) {
+					mag_time_array[ntm] = Double.parseDouble (args[ntm + (split_count*2 + 11)]);
+				}
+
+				// Say hello
+
+				System.out.println ("Generating discrete magnitude of completeness function");
+				System.out.println ("magCat = " + magCat);
+				System.out.println ("query_time = " + query_time);
+				System.out.println ("query_delta = " + query_delta);
+				System.out.println ("query_count = " + query_count);
+				System.out.println ("mag_eps = " + mag_eps);
+				System.out.println ("time_eps = " + time_eps);
+				System.out.println ("durlim_ratio = " + durlim_ratio);
+				System.out.println ("durlim_min = " + durlim_min);
+				System.out.println ("durlim_max = " + durlim_max);
+				System.out.println ("split_count = " + split_count);
+
+				System.out.println ("time-split arrays:");
+				for (int ntm = 0; ntm < tsplit_array.length; ++ntm) {
+					System.out.println ("  tsplit = " + tsplit_array[ntm] + ", dlbase = " + dlbase_array[ntm]);
+				}
+
+				System.out.println ("mag_time_array:");
+				System.out.println ("  mag = " + mag_time_array[0]);
+				for (int ntm = 1; ntm < mag_time_array.length; ntm += 2) {
+					System.out.println ("  time = " + mag_time_array[ntm] + ", mag = " + mag_time_array[ntm + 1]);
+				}
+
+				// Make time-splitting function
+
+				SplitFn split_fn = new SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
+
+				// Make the magnitude of completeness function
+
+				OEMagCompFnDisc mag_comp_fn = new OEMagCompFnDisc (magCat, mag_time_array, mag_eps, time_eps,
+																	split_fn, tsplit_array, dlbase_array);
 
 				System.out.println ();
 				System.out.println (mag_comp_fn.dump_string());
