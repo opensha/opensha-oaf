@@ -1340,6 +1340,20 @@ public class ServerCmd {
 					System.out.println ("Unable to fetch status for server " + n);
 				} else {
 					System.out.println (sstat_payload.toString());
+
+					if (sstat_payload.heartbeat_time != 0L) {
+						long age = System.currentTimeMillis() - sstat_payload.heartbeat_time;
+						if (age > RelayLink.get_heartbeat_stale()) {
+							long days = age / SimpleUtils.DAY_MILLIS;
+							long hours = (age / SimpleUtils.HOUR_MILLIS) % 24L;
+							long minutes = (age / SimpleUtils.MINUTE_MILLIS) % 60L;
+							if (days != 0L) {
+								System.out.println (String.format ("Heartbeat is STALE, age = %d-%02d:%02d", days, hours, minutes));
+							} else {
+								System.out.println (String.format ("Heartbeat is STALE, age = %d:%02d", hours, minutes));
+							}
+						}
+					}
 				}
 
 				System.out.println ();
@@ -1482,7 +1496,7 @@ public class ServerCmd {
 			
 				if (relit == null
 					|| sstat_payload.primary_state == RelayLink.PRIST_SHUTDOWN
-					|| sstat_payload.heartbeat_time < System.currentTimeMillis() - 2700000L /* 45 minutes */ ) {
+					|| sstat_payload.heartbeat_time < System.currentTimeMillis() - RelayLink.get_heartbeat_stale() ) {
 					sb.append ("Server " + n + " is DEAD" + "\n");
 
 				} else {

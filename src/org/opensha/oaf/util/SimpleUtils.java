@@ -86,6 +86,20 @@ public class SimpleUtils {
 
 
 
+	// Given a time (in milliseconds after the epoch), produce a string which
+	// is its numerical value followed by the human-readable form in parentheses.
+	// Except that if the_time <= the_cutoff, then include only the numerical value.
+
+	public static String time_raw_and_string_with_cutoff (long the_time, long the_cutoff) {
+		if (the_time <= the_cutoff) {
+			return Long.toString (the_time);
+		}
+		return time_raw_and_string (the_time);
+	}
+
+
+
+
 	// Convert a time (in milliseconds after the epoch) to a parseable string.
 	// The result can be understood by string_to_time().
 

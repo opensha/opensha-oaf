@@ -905,6 +905,7 @@ public class LogSupport extends ServerComponent {
 					sstat.get_configured_primary_as_string (),
 					sstat.get_link_state_as_string (),
 					sstat.get_primary_state_as_string (),
+					sstat.get_inferred_state_as_string (),
 					"heartbeat = " + sstat.get_heartbeat_time_as_string(),
 					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time)
 					);

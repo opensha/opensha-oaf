@@ -51,7 +51,7 @@ public class RelayLink extends ServerComponent {
 
 	// The time after which heartbeat is considered stale, in milliseconds.
 
-	public long heartbeat_stale = 2700000L;				// 45 minutes
+	public long heartbeat_stale = 1800000L;				// 30 minutes
 
 	// The short retry interval for repeating calls, in milliseconds.
 
@@ -106,6 +106,13 @@ public class RelayLink extends ServerComponent {
 	public long prist_init_timeout = 600000L;		// 10 minutes
 
 
+
+
+	// Get the time after which heartbeat is considered stale, in milliseconds.
+
+	public static long get_heartbeat_stale () {
+		return 1800000L;				// 30 minutes
+	}
 
 
 
@@ -345,46 +352,46 @@ public class RelayLink extends ServerComponent {
 
 
 
-	// Change the status in the database to shutdown state.
-	// Also updates the fixed fields in the server status.
-
-	private void shutdown_db_status (long time_now) {
-
-		// Get server status from database
-
-		RiServerStatus sstat_payload = new RiServerStatus();
-		RelayItem sstat_item = sg.relay_sup.get_sstat_relay_item (sstat_payload);
-
-		// If we got it, fill in fixed fields and shutdown state
-
-		if (sstat_item != null) {
-			sstat_payload.fill_fixed_info();
-			sstat_payload.fill_shutdown_state();
-		}
-
-		// Otherwise, initialize to default (solo primary)
-
-		else {
-
-			// Use a very small mode_timestamp so the configuration can be overriden by any new one
-
-			sstat_payload.setup (new RelayConfig (1L));
-		}
-		
-		// Store the status
-
-		long relay_time = time_now;
-		boolean f_force = true;
-		boolean f_log = true;
-
-		sg.relay_sup.submit_sstat_relay_item (
-			time_now,						// relay_time
-			true,							// f_force
-			true,							// f_log
-			sstat_payload);					// sstat_payload
-	
-		return;
-	}
+//	// Change the status in the database to shutdown state.
+//	// Also updates the fixed fields in the server status.
+//
+//	private void shutdown_db_status (long time_now) {
+//
+//		// Get server status from database
+//
+//		RiServerStatus sstat_payload = new RiServerStatus();
+//		RelayItem sstat_item = sg.relay_sup.get_sstat_relay_item (sstat_payload);
+//
+//		// If we got it, fill in fixed fields and shutdown state
+//
+//		if (sstat_item != null) {
+//			sstat_payload.fill_fixed_info();
+//			sstat_payload.fill_shutdown_state();
+//		}
+//
+//		// Otherwise, initialize to default (solo primary)
+//
+//		else {
+//
+//			// Use a very small mode_timestamp so the configuration can be overriden by any new one
+//
+//			sstat_payload.setup (new RelayConfig (1L));
+//		}
+//		
+//		// Store the status
+//
+//		long relay_time = time_now;
+//		boolean f_force = true;
+//		boolean f_log = true;
+//
+//		sg.relay_sup.submit_sstat_relay_item (
+//			time_now,						// relay_time
+//			true,							// f_force
+//			true,							// f_log
+//			sstat_payload);					// sstat_payload
+//	
+//		return;
+//	}
 
 
 
@@ -549,6 +556,10 @@ public class RelayLink extends ServerComponent {
 
 	// private int local_status.link_state;
 
+	// The inferred remote server state, see ISR_XXXXX.
+
+	// private int local_status.inferred_state;
+
 	// The thread for pulling relay items from the partner server.
 	// Null if no thread currently exists.
 
@@ -580,6 +591,14 @@ public class RelayLink extends ServerComponent {
 	//   A value > call_retry_loss_conn + 1 means connection is lost or unobtainable.
 
 	private long link_call_retry_count;
+
+	// The result of the last failed call attempt, one of the ISR_XXXX values.
+	// It contains the reason why the call failed.
+	// It is ISR_DEAD_NOT_CALLABLE if no call has occurred since initialization,
+	// or re-initialization, or if the most recent call succeeded.
+	// It should be set to ISR_DEAD_NOT_CALLABLE whenever link_call_retry_count is set to zero.
+
+	private int link_failed_call_reason;
 
 	// The time at which the next resync will occur, or 0L if not set yet.
 
@@ -778,6 +797,91 @@ public class RelayLink extends ServerComponent {
 
 
 
+	// Inferred remote state values. (Always 3 digits)
+
+	public static final int ISR_MIN						= 101;
+	public static final int ISR_NONE					= 101;
+		// There is no information about the remote server state, because
+		// this server in a state which does not obtain remote server
+		// information (shutdown or solo).
+	public static final int ISR_OK						= 102;
+		// The remote server is inferred to have a normal connection with
+		// this server.
+	public static final int ISR_NOT_SUPPLIED			= 103;
+		// The server status read from the database does not contain an
+		// inferred remote state.
+	public static final int ISR_LISTENING				= 104;
+		// The remote server is inferred to be listening for an incoming
+		// connection.
+		// This is reported during the first few attempts to establish or
+		// re-establish a connection.
+	public static final int ISR_DEAD_UNREACHABLE		= 105;
+		// The remote server is inferred to be dead because it is
+		// unreachable, or not running MongoDB, or unable to accept a
+		// connection to MongoDB.
+		// This can be reported after the first few attempts to establish
+		// or re-establish a connection.
+	public static final int ISR_DEAD_BAD_STATE			= 106;
+		// The remote server is inferred to be dead because it is in a
+		// state that prevents this server from connecting to it
+		// (see RiServerStatus.is_connectable()).
+		// This can be reported after the first few attempts to establish
+		// or re-establish a connection.
+	public static final int ISR_DEAD_BAD_SYNC_DATA		= 107;
+		// The remote server is inferred to be dead because its database
+		// contents does not allow this server to complete synchronization.
+		// This can be reported after the first few attempts to establish
+		// or re-establish a connection.
+	public static final int ISR_DEAD_NOT_CALLABLE		= 108;
+		// The remote server is inferred to be dead because attempts to
+		// call it failed for an unspecified reason.
+		// This can be reported after the first few attempts to establish
+		// or re-establish a connection.
+	public static final int ISR_DEAD_STALE_HEARTBEAT	= 109;
+		// The remote server is inferred to be dead because it has a stale
+		// heartbeat.
+		// This can be reported when this server is connected to the remote
+		// server, or performing initial sync or re-sync.
+	public static final int ISR_UNSYNCED_MODE			= 110;
+		// The remote server is inferred to not be synced with this server
+		// because it has a different relay configuration.
+		// This can be reported when this server is connected to the remote
+		// server, or performing initial sync or re-sync.
+	public static final int ISR_NOT_CONNECTED			= 111;
+		// The remote server is inferred to not be connected with this server
+		// because of its link status (disconnected, calling, initial sync).
+		// This can be reported when this server is connected to the remote
+		// server, or performing initial sync or re-sync.
+	public static final int ISR_UNAVAILABLE				= 112;
+		// Information about the remote server is unexpectedly not available.
+		// This can be reported when this server is connected to the remote
+		// server, or performing initial sync or re-sync.
+	public static final int ISR_MAX						= 112;
+
+
+	// Return a string describing an inferred remote state.
+
+	public static String get_inferred_state_as_string (int state) {
+		switch (state) {
+		case ISR_NONE: return "ISR_NONE";
+		case ISR_OK: return "ISR_OK";
+		case ISR_NOT_SUPPLIED: return "ISR_NOT_SUPPLIED";
+		case ISR_LISTENING: return "ISR_LISTENING";
+		case ISR_DEAD_UNREACHABLE: return "ISR_DEAD_UNREACHABLE";
+		case ISR_DEAD_BAD_STATE: return "ISR_DEAD_BAD_STATE";
+		case ISR_DEAD_BAD_SYNC_DATA: return "ISR_DEAD_BAD_SYNC_DATA";
+		case ISR_DEAD_NOT_CALLABLE: return "ISR_DEAD_NOT_CALLABLE";
+		case ISR_DEAD_STALE_HEARTBEAT: return "ISR_DEAD_STALE_HEARTBEAT";
+		case ISR_UNSYNCED_MODE: return "ISR_UNSYNCED_MODE";
+		case ISR_NOT_CONNECTED: return "ISR_NOT_CONNECTED";
+		case ISR_UNAVAILABLE: return "ISR_UNAVAILABLE";
+		}
+		return "ISR_UNKNOWN(" + state + ")";
+	}
+
+
+
+
 	//----- Link status functions -----
 
 
@@ -796,6 +900,28 @@ public class RelayLink extends ServerComponent {
 	private boolean set_link_state (int new_link_state) {
 		if (local_status.link_state != new_link_state) {
 			local_status.link_state = new_link_state;
+			set_status_changed();
+			return true;
+		}
+		return false;
+	}
+
+
+
+
+	// Get the current inferred state.
+
+	private int get_inferred_state () {
+		return local_status.inferred_state;
+	}
+
+	// Set the inferred state.
+	// The change flag is set if state is changed.
+	// Returns true if state changed.
+
+	private boolean set_inferred_state (int new_inferred_state) {
+		if (local_status.inferred_state != new_inferred_state) {
+			local_status.inferred_state = new_inferred_state;
 			set_status_changed();
 			return true;
 		}
@@ -1385,10 +1511,12 @@ public class RelayLink extends ServerComponent {
 
 		link_next_call_time = 0L;
 		link_call_retry_count = 0L;
+		link_failed_call_reason = ISR_DEAD_NOT_CALLABLE;
 
 		// Establish shutdown state
 
 		set_link_state (LINK_SHUTDOWN);
+		set_inferred_state (ISR_NONE);
 		return;
 	}
 
@@ -1399,7 +1527,7 @@ public class RelayLink extends ServerComponent {
 
 	private void ensure_link_active (long time_now) {
 
-		// Change state if currenlty shutdown or solo
+		// Change state if currently shutdown or solo
 
 		switch (get_link_state()) {
 		case LINK_SHUTDOWN:
@@ -1426,6 +1554,7 @@ public class RelayLink extends ServerComponent {
 
 		link_next_call_time = 0L;
 		link_call_retry_count = 0L;
+		link_failed_call_reason = ISR_DEAD_NOT_CALLABLE;
 	
 		return;
 	}
@@ -1463,6 +1592,7 @@ public class RelayLink extends ServerComponent {
 
 		link_next_call_time = 0L;
 		link_call_retry_count = 0L;
+		link_failed_call_reason = ISR_DEAD_NOT_CALLABLE;
 
 		// Establish shutdown state
 
@@ -1502,6 +1632,7 @@ public class RelayLink extends ServerComponent {
 
 		link_next_call_time = 0L;
 		link_call_retry_count = 0L;
+		link_failed_call_reason = ISR_DEAD_NOT_CALLABLE;
 
 		// Establish solo state
 
@@ -1617,6 +1748,15 @@ public class RelayLink extends ServerComponent {
 		// If the connect attempt has failed, go back to disconnected state
 
 		if (!( RelayThread.is_relay_active (rtstat) )) {
+			if (rtstat == RelayThread.RTSTAT_REMOTE_STATUS) {
+				link_failed_call_reason = ISR_DEAD_BAD_STATE;
+			}
+			else if (rtstat == RelayThread.RTSTAT_REMOTE_NO_STATUS) {
+				link_failed_call_reason = ISR_DEAD_BAD_SYNC_DATA;
+			}
+			else {
+				link_failed_call_reason = ISR_DEAD_UNREACHABLE;
+			}
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1634,6 +1774,7 @@ public class RelayLink extends ServerComponent {
 		// If nothing in queue, assume failure and go back to disconnected state
 
 		if (relit == null) {
+			link_failed_call_reason = ISR_DEAD_BAD_SYNC_DATA;
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1641,6 +1782,7 @@ public class RelayLink extends ServerComponent {
 		// If item is not server status, assume failure and go back to disconnected state
 
 		if (!( relit.get_relay_id().equals (RelaySupport.RI_STATUS_ID) )) {
+			link_failed_call_reason = ISR_DEAD_BAD_SYNC_DATA;
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1651,6 +1793,7 @@ public class RelayLink extends ServerComponent {
 		try {
 			sstat_payload.unmarshal_relay (relit);
 		} catch (Exception e) {
+			link_failed_call_reason = ISR_DEAD_BAD_SYNC_DATA;
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1658,6 +1801,7 @@ public class RelayLink extends ServerComponent {
 		// If not connectable, go back to disconnected state
 
 		if (!( sstat_payload.is_connectable() )) {
+			link_failed_call_reason = ISR_DEAD_BAD_STATE;
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1673,6 +1817,7 @@ public class RelayLink extends ServerComponent {
 
 		if (!( link_fetch_begin (time_now) )) {
 
+			link_failed_call_reason = ISR_DEAD_BAD_SYNC_DATA;
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1693,6 +1838,7 @@ public class RelayLink extends ServerComponent {
 		// Process any items on the queue
 
 		if (copy_queued_relay_items(time_now) < 0) {
+			link_failed_call_reason = ISR_DEAD_BAD_SYNC_DATA;
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1708,6 +1854,7 @@ public class RelayLink extends ServerComponent {
 		// If it did not finish normally ...
 
 		if (fetch_status != RelayThread.FISTAT_FINISHED) {
+			link_failed_call_reason = ISR_DEAD_BAD_SYNC_DATA;
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1715,6 +1862,7 @@ public class RelayLink extends ServerComponent {
 		// End the fetch operation, handle error
 
 		if (link_fetch_end (time_now) < 0) {
+			link_failed_call_reason = ISR_DEAD_BAD_SYNC_DATA;
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1722,6 +1870,7 @@ public class RelayLink extends ServerComponent {
 		// If the remote status is not connectable ...
 
 		if (!( remote_status.is_connectable() )) {
+			link_failed_call_reason = ISR_DEAD_BAD_STATE;
 			set_link_disconnected (time_now);
 			return;
 		}
@@ -1730,6 +1879,7 @@ public class RelayLink extends ServerComponent {
 
 		link_next_call_time = 0L;
 		link_call_retry_count = 0L;
+		link_failed_call_reason = ISR_DEAD_NOT_CALLABLE;
 
 		// Change to the connected state
 
@@ -1892,6 +2042,70 @@ public class RelayLink extends ServerComponent {
 			poll_link_resync (time_now);
 			break;
 
+		}
+
+		return;
+	}
+
+
+
+
+	// Poll inferred state.
+
+	private void poll_inferred (long time_now) {
+
+		// Switch according to current link state
+
+		switch (get_link_state()) {
+
+		default:
+			throw new IllegalStateException ("Invalid link state: " + get_link_state_as_string (get_link_state()));
+
+		// In shutdown or solo state, no information about remote server
+		
+		case LINK_SHUTDOWN:
+		case LINK_SOLO:
+			set_inferred_state (ISR_NONE);
+			break;
+
+		// In disconnected or calling state, supply reason last call failed if the call has failed
+		// enough times to qualify as loss of connection, otherwise infer remote server is listening
+
+		case LINK_DISCONNECTED:
+		case LINK_CALLING:
+			if (link_call_retry_count > call_retry_loss_conn + 1) {
+				set_inferred_state (link_failed_call_reason);
+			} else {
+				set_inferred_state (ISR_LISTENING);
+			}
+			break;
+
+		// In initial sync, connected, or resync state ...
+
+		case LINK_INITIAL_SYNC:
+		case LINK_CONNECTED:
+		case LINK_RESYNC:
+			// If no remote status (should never happen), unavailable
+			if (remote_status == null) {
+				set_inferred_state (ISR_UNAVAILABLE);
+			}
+			// Check for stale heartbeat
+			else if (!( remote_status.heartbeat_time >= time_now - heartbeat_stale )) {
+				set_inferred_state (ISR_DEAD_STALE_HEARTBEAT);
+			}
+			// Check for relay configuration mismatch
+			else if (!( local_status.is_same_relay_config (remote_status) )) {
+				set_inferred_state (ISR_UNSYNCED_MODE);
+			}
+			// Check for remote server not connected
+			else if (!( remote_status.link_state == LINK_CONNECTED || remote_status.link_state == LINK_RESYNC )) {
+				set_inferred_state (ISR_NOT_CONNECTED);
+			}
+			// Otherwise, connection is OK
+			else {
+				set_inferred_state (ISR_OK);
+			}
+			break;
 		}
 
 		return;
@@ -2936,6 +3150,10 @@ public class RelayLink extends ServerComponent {
 
 			set_link_state_for_mode (time_now);
 
+			// Poll inferred remote server state
+
+			poll_inferred (time_now);
+
 			// Store status into database
 
 			store_local_status (time_now);
@@ -2973,6 +3191,10 @@ public class RelayLink extends ServerComponent {
 		// Poll the primary state, switch between primary or secondary if needed
 
 		poll_prist (time_now);
+
+		// Poll inferred remote server state
+
+		poll_inferred (time_now);
 
 		// Store local status, if it changed
 
@@ -3013,6 +3235,10 @@ public class RelayLink extends ServerComponent {
 		// Initialize the primary state
 
 		init_prist (time_now);
+
+		// Poll inferred remote server state
+
+		poll_inferred (time_now);
 
 		// Store local status (it will always have changed)
 
@@ -3125,22 +3351,22 @@ public class RelayLink extends ServerComponent {
 
 
 
-	// Initialize the status in the database to shutdown state.
-	// Also updates the fixed fields in the server status.
-	// Note: This may be called only before initialization.
-
-	public void init_db_status () {
-
-		// Get the current time
-
-		long time_now = ServerClock.get_time();
-
-		// Change status in the database to shutdown state
-
-		shutdown_db_status (time_now);
-	
-		return;
-	}
+//	// Initialize the status in the database to shutdown state.
+//	// Also updates the fixed fields in the server status.
+//	// Note: This may be called only before initialization.
+//
+//	public void init_db_status () {
+//
+//		// Get the current time
+//
+//		long time_now = ServerClock.get_time();
+//
+//		// Change status in the database to shutdown state
+//
+//		shutdown_db_status (time_now);
+//	
+//		return;
+//	}
 
 
 
@@ -3176,6 +3402,10 @@ public class RelayLink extends ServerComponent {
 		//  // Poll the primary state, switch between primary or secondary if needed
 		//  
 		//  poll_prist (time_now);
+
+		// Poll inferred remote server state
+
+		poll_inferred (time_now);
 
 		// Store local status, if it changed
 
@@ -3266,8 +3496,11 @@ public class RelayLink extends ServerComponent {
 
 		fetch_output_buffer = null;
 		fetch_writer = null;
+
 		link_next_call_time = 0L;
 		link_call_retry_count = 0L;
+		link_failed_call_reason = ISR_DEAD_NOT_CALLABLE;
+
 		link_next_resync_time = 0L;
 		link_resync_cycle_counter = 0;
 	

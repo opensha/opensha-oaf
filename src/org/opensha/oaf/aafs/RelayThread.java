@@ -55,7 +55,8 @@ public class RelayThread implements Runnable {
 	public static final int RTSTAT_SHUTDOWN = 7;		// Thread shut down normally.
 	public static final int RTSTAT_CONNECT_LOSS = 8;	// Thread stopped because connection was lost or database issue.
 	public static final int RTSTAT_QUEUE_OVERFLOW = 9;	// Thread stopped because of queue overflow or internal error.
-	public static final int RTSTAT_REMOTE_STATUS = 10;	// Thread stopped because remote status is missing or incompatible.
+	public static final int RTSTAT_REMOTE_STATUS = 10;	// Thread stopped because remote status is incompatible.
+	public static final int RTSTAT_REMOTE_NO_STATUS = 11;	// Thread stopped because remote status is missing.
 
 	// Return a string describing a relay thread status.
 
@@ -71,6 +72,7 @@ public class RelayThread implements Runnable {
 		case RTSTAT_CONNECT_LOSS: return "RTSTAT_CONNECT_LOSS";
 		case RTSTAT_QUEUE_OVERFLOW: return "RTSTAT_QUEUE_OVERFLOW";
 		case RTSTAT_REMOTE_STATUS: return "RTSTAT_REMOTE_STATUS";
+		case RTSTAT_REMOTE_NO_STATUS: return "RTSTAT_REMOTE_NO_STATUS";
 		}
 		return "RTSTAT_INVALID(" + rtstat + ")";
 	}
@@ -86,6 +88,7 @@ public class RelayThread implements Runnable {
 		case RTSTAT_CONNECT_LOSS:
 		case RTSTAT_QUEUE_OVERFLOW:
 		case RTSTAT_REMOTE_STATUS:
+		case RTSTAT_REMOTE_NO_STATUS:
 			return false;
 		case RTSTAT_STARTING:
 		case RTSTAT_CONNECTING:
@@ -1418,7 +1421,7 @@ public class RelayThread implements Runnable {
 			// No remote status received, so fail if remote status compatibility is requested
 				
 			if (sync_var.get_ri_require_status()) {
-				throw new RelayShutdownException (RTSTAT_REMOTE_STATUS, null);
+				throw new RelayShutdownException (RTSTAT_REMOTE_NO_STATUS, null);
 			}
 		}
 	

@@ -105,6 +105,15 @@ public class RiServerStatus extends DBPayload {
 
 
 
+	//----- Inferred state -----
+
+	// The inferred remote server state, see RelayLink.IST_XXXXX.
+
+	public int inferred_state;
+
+
+
+
 	//----- Service functions -----
 
 	// Check if we can connect to remote server with this status.
@@ -168,7 +177,7 @@ public class RiServerStatus extends DBPayload {
 	// Get the heartbeat time as a string.
 
 	public String get_heartbeat_time_as_string () {
-		return SimpleUtils.time_raw_and_string (heartbeat_time);
+		return SimpleUtils.time_raw_and_string_with_cutoff (heartbeat_time, 0L);
 	}
 
 
@@ -182,7 +191,7 @@ public class RiServerStatus extends DBPayload {
 	// Get the mode timestamp as a string.
 
 	public String get_mode_timestamp_as_string () {
-		return SimpleUtils.time_raw_and_string (relay_config.get_mode_timestamp());
+		return SimpleUtils.time_raw_and_string_with_cutoff (relay_config.get_mode_timestamp(), 1000L);
 	}
 
 
@@ -220,7 +229,14 @@ public class RiServerStatus extends DBPayload {
 	// Get the start time as a string.
 
 	public String get_start_time_as_string () {
-		return SimpleUtils.time_raw_and_string (start_time);
+		return SimpleUtils.time_raw_and_string_with_cutoff (start_time, 0L);
+	}
+
+
+	// Get the inferred state as a string.
+
+	public String get_inferred_state_as_string () {
+		return RelayLink.get_inferred_state_as_string (inferred_state);
 	}
 
 
@@ -302,6 +318,8 @@ public class RiServerStatus extends DBPayload {
 		result.append (get_link_state_as_string());
 		result.append (", ");
 		result.append (get_primary_state_as_string());
+		result.append (", ");
+		result.append (get_inferred_state_as_string());
 		result.append (", heartbeat = ");
 		result.append (get_heartbeat_time_as_string());
 
@@ -324,6 +342,8 @@ public class RiServerStatus extends DBPayload {
 		result.append (get_link_state_as_string());
 		result.append (", ");
 		result.append (get_primary_state_as_string());
+		result.append (", ");
+		result.append (get_inferred_state_as_string());
 		result.append (", heartbeat = ");
 		result.append (get_heartbeat_time_as_string());
 
@@ -361,6 +381,7 @@ public class RiServerStatus extends DBPayload {
 		link_state = RelayLink.LINK_SHUTDOWN;
 		primary_state = RelayLink.PRIST_SHUTDOWN;
 		start_time = 0L;
+		inferred_state = RelayLink.ISR_NONE;
 		return;
 	}
 
@@ -422,6 +443,7 @@ public class RiServerStatus extends DBPayload {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 58001;
+	private static final int MARSHAL_VER_2 = 58002;
 
 	private static final String M_VERSION_NAME = "RiServerStatus";
 
@@ -440,7 +462,9 @@ public class RiServerStatus extends DBPayload {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Superclass
 
@@ -448,21 +472,50 @@ public class RiServerStatus extends DBPayload {
 
 		// Contents
 
-		writer.marshalInt  ("sw_major_version"  , sw_major_version  + OFFSER);
-		writer.marshalInt  ("sw_minor_version"  , sw_minor_version  + OFFSER);
-		writer.marshalInt  ("sw_build"          , sw_build          + OFFSER);
+		switch (ver) {
 
-		writer.marshalInt  ("protocol_version"  , protocol_version  );
-		writer.marshalInt  ("server_number"     , server_number     );
+		case MARSHAL_VER_1:
 
-		writer.marshalLong ("heartbeat_time"    , heartbeat_time    + OFFSERL);
+			writer.marshalInt  ("sw_major_version"  , sw_major_version  + OFFSER);
+			writer.marshalInt  ("sw_minor_version"  , sw_minor_version  + OFFSER);
+			writer.marshalInt  ("sw_build"          , sw_build          + OFFSER);
 
-		writer.marshalInt  ("link_state"        , link_state        );
+			writer.marshalInt  ("protocol_version"  , protocol_version  );
+			writer.marshalInt  ("server_number"     , server_number     );
 
-		RelayConfig.marshal (writer, "relay_config", relay_config);
+			writer.marshalLong ("heartbeat_time"    , heartbeat_time    + OFFSERL);
 
-		writer.marshalInt  ("primary_state"     , primary_state     );
-		writer.marshalLong ("start_time"        , start_time        + OFFSERL);
+			writer.marshalInt  ("link_state"        , link_state        );
+
+			RelayConfig.marshal (writer, "relay_config", relay_config);
+
+			writer.marshalInt  ("primary_state"     , primary_state     );
+			writer.marshalLong ("start_time"        , start_time        + OFFSERL);
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			writer.marshalInt  ("sw_major_version"  , sw_major_version  + OFFSER);
+			writer.marshalInt  ("sw_minor_version"  , sw_minor_version  + OFFSER);
+			writer.marshalInt  ("sw_build"          , sw_build          + OFFSER);
+
+			writer.marshalInt  ("protocol_version"  , protocol_version  );
+			writer.marshalInt  ("server_number"     , server_number     );
+
+			writer.marshalLong ("heartbeat_time"    , heartbeat_time    + OFFSERL);
+
+			writer.marshalInt  ("link_state"        , link_state        );
+
+			RelayConfig.marshal (writer, "relay_config", relay_config);
+
+			writer.marshalInt  ("primary_state"     , primary_state     );
+			writer.marshalLong ("start_time"        , start_time        + OFFSERL);
+
+			writer.marshalInt  ("inferred_state"    , inferred_state    );
+
+			break;
+		}
 
 		return;
 	}
@@ -474,7 +527,7 @@ public class RiServerStatus extends DBPayload {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Superclass
 
@@ -482,21 +535,53 @@ public class RiServerStatus extends DBPayload {
 
 		// Contents
 
-		sw_major_version   = reader.unmarshalInt  ("sw_major_version"  ) - OFFSER;
-		sw_minor_version   = reader.unmarshalInt  ("sw_minor_version"  ) - OFFSER;
-		sw_build           = reader.unmarshalInt  ("sw_build"          ) - OFFSER;
+		switch (ver) {
 
-		protocol_version   = reader.unmarshalInt  ("protocol_version"  );
-		server_number      = reader.unmarshalInt  ("server_number"     , ServerConfigFile.SRVNUM_MIN, ServerConfigFile.SRVNUM_MAX);
+		case MARSHAL_VER_1:
 
-		heartbeat_time     = reader.unmarshalLong ("heartbeat_time"    ) - OFFSERL;
+			sw_major_version   = reader.unmarshalInt  ("sw_major_version"  ) - OFFSER;
+			sw_minor_version   = reader.unmarshalInt  ("sw_minor_version"  ) - OFFSER;
+			sw_build           = reader.unmarshalInt  ("sw_build"          ) - OFFSER;
 
-		link_state         = reader.unmarshalInt  ("link_state"        , RelayLink.LINK_MIN, RelayLink.LINK_MAX);
+			protocol_version   = reader.unmarshalInt  ("protocol_version"  );
+			server_number      = reader.unmarshalInt  ("server_number"     , ServerConfigFile.SRVNUM_MIN, ServerConfigFile.SRVNUM_MAX);
 
-		relay_config       = RelayConfig.unmarshal (reader, "relay_config");
+			heartbeat_time     = reader.unmarshalLong ("heartbeat_time"    ) - OFFSERL;
 
-		primary_state      = reader.unmarshalInt  ("primary_state"     , RelayLink.PRIST_MIN, RelayLink.PRIST_MAX);
-		start_time         = reader.unmarshalLong ("start_time"        ) - OFFSERL;
+			link_state         = reader.unmarshalInt  ("link_state"        , RelayLink.LINK_MIN, RelayLink.LINK_MAX);
+
+			relay_config       = RelayConfig.unmarshal (reader, "relay_config");
+
+			primary_state      = reader.unmarshalInt  ("primary_state"     , RelayLink.PRIST_MIN, RelayLink.PRIST_MAX);
+			start_time         = reader.unmarshalLong ("start_time"        ) - OFFSERL;
+
+			inferred_state     = RelayLink.ISR_NOT_SUPPLIED;
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			sw_major_version   = reader.unmarshalInt  ("sw_major_version"  ) - OFFSER;
+			sw_minor_version   = reader.unmarshalInt  ("sw_minor_version"  ) - OFFSER;
+			sw_build           = reader.unmarshalInt  ("sw_build"          ) - OFFSER;
+
+			protocol_version   = reader.unmarshalInt  ("protocol_version"  );
+			server_number      = reader.unmarshalInt  ("server_number"     , ServerConfigFile.SRVNUM_MIN, ServerConfigFile.SRVNUM_MAX);
+
+			heartbeat_time     = reader.unmarshalLong ("heartbeat_time"    ) - OFFSERL;
+
+			link_state         = reader.unmarshalInt  ("link_state"        , RelayLink.LINK_MIN, RelayLink.LINK_MAX);
+
+			relay_config       = RelayConfig.unmarshal (reader, "relay_config");
+
+			primary_state      = reader.unmarshalInt  ("primary_state"     , RelayLink.PRIST_MIN, RelayLink.PRIST_MAX);
+			start_time         = reader.unmarshalLong ("start_time"        ) - OFFSERL;
+
+			//inferred_state     = reader.unmarshalInt  ("inferred_state"    , RelayLink.IST_MIN, RelayLink.IST_MAX);
+			inferred_state     = reader.unmarshalInt  ("inferred_state"    );
+
+			break;
+		}
 
 		return;
 	}
