@@ -473,7 +473,7 @@ have one of six values, as shown in the table:</p>
 <ol>
 	<li>The first line shows server information. It includes:<br>&nbsp;<ul>
 		<li>The server number, "N1" for server #1, or "N2" for server #2.<br>&nbsp;</li>
-		<li>The AAFS software version number, for example "V1.0.1145".<br>&nbsp;</li>
+		<li>The AAFS software version number, for example "V1.0.1232".<br>&nbsp;</li>
 		<li>The relay communication protocol number, for example "C101".<br>&nbsp;</li>
 		<li>The time that the server was started.<br>&nbsp;</li>
 	</ul>
@@ -522,9 +522,52 @@ have one of six values, as shown in the table:</p>
 			<li>"PRIST_SHUTDOWN" - The server is currently shut down.<br>&nbsp;</li>
 		</ul>
 		</li>
+		<li>The inferred status of the remote (other) server, which can be:<ul>
+			<li>"ISR_NONE" - No information is available about the other server,
+                because this server is shut down or running in solo mode.</li>
+			<li>"ISR_OK" - The other server appears to have a normal connection
+                with this server. This is the usual inferred status in a
+                dual-server configuration.</li>
+			<li>"ISR_NOT_SUPPLIED" - Inferred status is not available in the database
+                (this should not occur if running up-to-date AAFS software).</li>
+			<li>"ISR_LISTENING" - The other server is presumed to be listening
+                for a call from this server. This is the inferred status during
+                the first few attempts to establish or re-establish a connection
+                to the other server.</li>
+			<li>"ISR_DEAD_UNREACHABLE" - The other server is inferred to be dead,
+                because it is unable to accept a connection. This may indicate that
+                there is a network problem; or that the other server is down; or that
+                MongoDB on the other server is not running or in a bad state; or that
+                the other server&#39;s database is uninitialized or corrupted; or that
+                the MongoDB username and password are incorrect.</li>
+			<li>"ISR_DEAD_BAD_STATE" - The other server is inferred to be dead, because
+                it is in a state that disallows incoming connections. For example, this
+                may indicate that AAFS on the other server is shut down or running in
+                solo mode.</li>
+			<li>"ISR_DEAD_BAD_SYNC_DATA" - The other server is inferred to be dead,
+                because it cannot supply the data needed for this server to synchronize
+                with it.</li>
+			<li>"ISR_DEAD_NOT_CALLABLE" - The other server is inferred to be dead,
+                because attempts to establish a connection with it have failed for
+                an unspecified reason (this should not occur).</li>
+			<li>"ISR_DEAD_STALE_HEARTBEAT" - The other server is inferred to be dead,
+                because its heartbeat is stale (more than 30 minutes old).</li>
+			<li>"ISR_UNSYNCED_MODE" - The other server is inferred to not be synchronized
+                with this server, because it is running in a different mode than this
+                server. It is normal for this to appear briefly when servers are commanded
+                to change mode, but it should quickly return to ISR_OK as the servers
+                re-synchronize.</li>
+			<li>"ISR_NOT_CONNECTED" - The other server is inferred to not be connected
+                and synchronized with this server, because its link status is disconnected,
+                calling, or initial sync.</li>
+			<li>"ISR_UNAVAILABLE" - Information about the other server is unexpectedly not
+                available (this should not occur).<br>&nbsp;</li>
+		</ul>
+		</li>
 		<li>The time of the last server heartbeat. Heartbeats normally 
 		occur every five minutes, but can be longer if the server is busy. The 
-		heartbeat is considered stale if it is 45 minutes old.</li>
+		heartbeat is considered stale if it is 30 minutes old. If the heartbeat is stale,
+        then the command displays a warning message.</li>
 	</ul>
 	</li>
 </ol>
@@ -532,14 +575,14 @@ have one of six values, as shown in the table:</p>
 <pre>$ ./moaf.sh show_relay_status both
 
 Fetching status for server 1
-info: N1, V1.0.1164, C101, start = 1579069648506 (2020-01-15 06:27:28 UTC)
+info: N1, V1.0.1232, C101, start = 1579069648506 (2020-01-15 06:27:28 UTC)
 config: RMODE_PAIR, P1, timestamp = 1579069951438 (2020-01-15 06:32:31 UTC)
-state: LINK_CONNECTED, PRIST_PRIMARY, heartbeat = 1585470118804 (2020-03-29 08:21:58 UTC)
+state: LINK_CONNECTED, PRIST_PRIMARY, ISR_OK, heartbeat = 1585470118804 (2020-03-29 08:21:58 UTC)
 
 Fetching status for server 2
-info: N2, V1.0.1164, C101, start = 1579069819588 (2020-01-15 06:30:19 UTC)
+info: N2, V1.0.1232, C101, start = 1579069819588 (2020-01-15 06:30:19 UTC)
 config: RMODE_PAIR, P1, timestamp = 1579069951438 (2020-01-15 06:32:31 UTC)
-state: LINK_CONNECTED, PRIST_SECONDARY, heartbeat = 1585470269206 (2020-03-29 08:24:29 UTC)</pre>
+state: LINK_CONNECTED, PRIST_SECONDARY, ISR_OK, heartbeat = 1585470269206 (2020-03-29 08:24:29 UTC)</pre>
 <p>Requirement: MongoDB must be started.</p>
 <p>&nbsp;</p>
 <p><b>5.4. Set this server to be the secondary server in a dual-server 
@@ -592,6 +635,94 @@ perform.</p>
 <p>Step 9: Restore the normal "pair 1" relay mode (this command can be given on 
 either server):</p>
 <pre>$ ./moaf.sh change_relay_mode both pair 1</pre>
+<p>&nbsp;</p>
+<p><b>5.7. Example: Installing an Incompatible Software Update.</b></p>
+<p>Occasionally, there is an update of the AAFS software which is incompatible with the prior version,
+in the sense that a server running the old version cannot communicate with a server running the new
+version. When installing such an update, it is necessary to briefly take both servers off-line,
+so it is not possible to maintain continuous operation. The following steps show how to do this with
+minimum down-time, typically about 10 to 15 minutes.</p>
+<p>Before starting, download and compile the new software version on both servers.
+Refer to the installation document for details. Typically, this is done with the commands:</p>
+<pre>$ # On both servers
+$ cd ~/opensha
+$ ./boaf.sh update
+$ ./boaf.sh clean
+$ ./boaf.sh compile
+$ ./boaf.sh pack</pre>
+<p>If there are any other updates required, such as creating updated configuration files,
+you should do that now so they are ready to go when you are updating the servers.</p>
+<p>Step 1: Log in to the secondary server.</p>
+<p>Step 2: Switch the relay mode to "watch other", which forces the other (primary) server 
+to remain as the primary server, and then stop AAFS on the secondary server:</p>
+<pre>$ # On the secondary server
+$ ./moaf.sh stop_secondary_aafs</pre>
+<p>Step 3: If you have not backed up the database in a while, now is a good time 
+to do so:</p>
+<pre>$ # On the secondary server
+$ ./moaf.sh backup_database_gzip &lt;filename&gt;</pre>
+<p>Step 4: Install the new software version on the secondary server:</p>
+<pre>$ # On the secondary server
+$ cd ~/opensha
+$ ./boaf.sh deploy</pre>
+<p>Step 5: If any other updates are needed on the secondary server, install them now.
+Note that MongoDB is still running; you can stop and then re-start MongoDB if necessary.</p>
+<p>Step 6: Log in to the primary server.</p>
+<p>Step 7: Stop AAFS on the primary server:</p>
+<pre>$ # On the primary server
+$ ./moaf.sh stop_aafs</pre>
+<p>Step 8: If you have not backed up the database in a while, now is a good time 
+to do so:</p>
+<pre>$ # On the primary server
+$ ./moaf.sh backup_database_gzip &lt;filename&gt;</pre>
+<p>Step 9: Install the new software version on the primary server:</p>
+<pre>$ # On the primary server
+$ cd ~/opensha
+$ ./boaf.sh deploy</pre>
+<p>Step 10: If any other updates are needed on the primary server, install them now.
+Note that MongoDB is still running; you can stop and then re-start MongoDB if necessary.</p>
+<p>Step 11: Start AAFS on the primary server:</p>
+<pre>$ # On the primary server
+$ ./moaf.sh start_aafs</pre>
+<p>Step 12: Log in to the secondary server.</p>
+<p>Step 13: Start AAFS on the secondary server, while keeping the relay mode as "watch other":</p>
+<pre>$ # On the secondary server
+$ ./moaf.sh start_secondary_aafs</pre>
+<p>Step 11: Restore the normal "pair 1" relay mode (this command can be given on 
+either server):</p>
+<pre>$ # On either server
+$ ./moaf.sh change_relay_mode both pair 1</pre>
+<p>&nbsp;</p>
+<p><b>5.8. Example: Recovering from a Power Failure or Server Crash.</b></p>
+<p>When a server goes off-line because of a power failure or crash, the other server automatically
+takes over as the primary server (if it is not already the primary server). When the failed server
+is restarted, it does <em>not</em> automatically restart the AAFS software. The AAFS software is
+intended to be started manually, to ensure that it when it starts there is someone watching to check that
+it is operating properly. (If you really want the AAFS software to start automatically, you can do so
+with one of the standard methods to make Linux software start automatically.)</p>
+<p>After a power failure or crash, use the following steps to restart AAFS on the failed server.</p>
+<p>Step 1: Log in to the failed server.</p>
+<p>Step 2: Check if MongoDB is running (it may have restarted itself automatically):</p>
+<pre>$ ./moaf.sh check_running</pre>
+<p>Step 3: If MongoDB is not running, then start it:</p>
+<pre>$ ./moaf.sh start_mongo</pre>
+<p>Step 4: Set the failed server to start up in &quot;watch other&quot; mode, to ensure it cannot
+become the primary server:</p>
+<pre>$ ./moaf.sh init_relay_mode watch other</pre>
+<p>Step 5: Set the other (good) server to &quot;watch other&quot; mode, so it remains the primary server.</p>
+<pre>$ ./moaf.sh change_relay_mode other watch other</pre>
+<p>Note that it is necessary to set the &quot;watch other&quot; mode in two separate commands,
+because &quot;init_relay_mode&quot; only works on a server that is not running AAFS, while
+&quot;change_relay_mode&quot; only works for a server that is running AAFS.</p>
+<p>Step 6: Start AAFS on the failed server:</p>
+<pre>$ ./moaf.sh start_aafs</pre>
+<p>Step 7: Wait an hour to ensure that the failed server has time to become fully synchronized and
+to discover all earthquakes that occurred while it was down. (If the failed server has been down for more
+than 72 hours, it is recommended that you wait a day.)</p>
+<p>Step 8: Restore the normal "pair 1" relay mode (this command can be given on 
+either server):</p>
+<pre>$ # On either server
+$ ./moaf.sh change_relay_mode both pair 1</pre>
 <p>&nbsp;</p>
 <h2>6. Commands to Adjust Analyst Parameters</h2>
 <p>Most forecasts are generated using parameters that are given in the OAF 
