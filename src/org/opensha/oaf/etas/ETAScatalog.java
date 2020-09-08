@@ -293,9 +293,9 @@ public class ETAScatalog {
 		
 		double c;
 		if (validate) { //forecasts cataloged earthquakes (rather than felt)
-//			double k = Math.pow(10, ams_vec[(int)(ams_vec.length/2)] + alpha*(mag - minMagLimit));
-//			c = c_sample*Math.pow(k, 1d/p_sample);
-//			if (c < c_sample)
+			double k = Math.pow(10, ams_vec[(int)(ams_vec.length/2)] + alpha*(mag - minMagLimit));
+			c = c_sample*Math.pow(k, 1d/p_sample);
+			if (c < c_sample)
 				c = c_sample;
 		} else
 			c = c_sample;

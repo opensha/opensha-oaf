@@ -1879,7 +1879,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				String regimeName = regime_table.get_strec_name(mainshock.getHypocenterLocation().getLatitude(), mainshock.getHypocenterLocation().getLongitude());
 				regime = TectonicRegime.forName(regimeName);
 			} else {
-				regime = TectonicRegime.GLOBAL_AVERAGE;
+//				regime = TectonicRegime.GLOBAL_AVERAGE;
+				// use actual regime
+				String regimeName = regime_table.get_strec_name(mainshock.getHypocenterLocation().getLatitude(), mainshock.getHypocenterLocation().getLongitude());
+				regime = TectonicRegime.forName(regimeName);
+
 			}
 					
 		} catch (RuntimeException e) {

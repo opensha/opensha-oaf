@@ -72,6 +72,9 @@ public class GraphicalForecast{
 	private String forecastHorizon;
 	private String spatialForecastInterval = "week";
 	
+//	private String[] MMIcolors = {"#abe0ff", "#81fff3", "#aaff63", "#ffd100", "#ff5700", "#800000", "#800000"};
+//	private String[] MMIcolors = {"#82F9FB", "#7EFBDF", "#95F879", "#FDCA2C", "#EC2516", "#C81E11", "#800000"};
+	private String[] MMIcolors = {"#abe0ff", "#81fff3", "#aaff63", "#ffd100", "#EC2516", "#800000", "#800000"};
 	
 	private HashMap<String, String> tags = new HashMap<String, String>();
 
@@ -82,7 +85,7 @@ public class GraphicalForecast{
 		number = new double[predictionMagnitudes.length][predictionIntervals.length][3];
 		probability = new double[predictionMagnitudes.length][predictionIntervals.length];
 		
-		predictionIntervals = new double[] {DAY,WEEK,MONTH};
+//		predictionIntervals = new double[] {DAY,WEEK,MONTH};
 		
 		switch (predictionIntervals.length) {
 			case 1:
@@ -729,7 +732,6 @@ public class GraphicalForecast{
 		
 		double barWidth = 50;
 		double barPadding = 2;
-		String[] colors = new String[]{"#abe0ff","#81fff3","#aaff63","#ffd100","#ff5700","#800000","#800000"};
 		String[][] tableTags = new String[][]{{"P1_DA","P2_DA","P3_DA","P4_DA","P5_DA","P6_DA","P7_DA"},
 				{"P1_WK","P2_WK","P3_WK","P4_WK","P5_WK","P6_WK","P7_WK"},
 				{"P1_MO","P2_MO","P3_MO","P4_MO","P5_MO","P6_MO","P7_MO"},
@@ -836,7 +838,8 @@ public class GraphicalForecast{
 				+"        </div>\n"
 				+"\n"
 				+"		  <!-- Forecast table with probabilities of different magnitudes -->\n"
-				+"        <table style=\"width:650px;margin-left:60px;margin-right:100px\"><!-- Table of Probabilities -->\n"
+//				+"        <table style=\"width:650px;margin-left:60px;margin-right:100px\"><!-- Table of Probabilities -->\n"
+				+"        <table style=\"width:750px;margin-left:25px;margin-right:25px\"><!-- Table of Probabilities -->\n"
 				+"            <tr>\n"
 				+"                <td>\n"
 				+"                    <table>\n"
@@ -884,7 +887,7 @@ public class GraphicalForecast{
 			probTableString.append(""
 					+"                                    <tr class = \"forecastRow\">\n");
 
-			for (int i = 0; i<colors.length; i++){
+			for (int i = 0; i<MMIcolors.length; i++){
 				double probVal = probability[i][j];
 				double height = barHeight*probVal;
 				String probStr = tags.get(tableTags[j][i]); 
@@ -895,7 +898,7 @@ public class GraphicalForecast{
 				probTableString.append(""
 						+"                                        <td class=\"forecastValue\">\n"
 						+"												<svg class=\"forecastBar\">\n"
-						+"													<rect class = \"forecastBox\" y=\"" + (int) (barHeight - (int) height) + "px\" height=\"" + ((int) height) + "px\" width=\"" + barWidth + "px\" fill=\""+colors[i]+"\" />\n"
+						+"													<rect class = \"forecastBox\" y=\"" + (int) (barHeight - (int) height) + "px\" height=\"" + ((int) height) + "px\" width=\"" + barWidth + "px\" fill=\""+MMIcolors[i]+"\" />\n"
 						+"													<text class = \"forecastBoxText\" x=\"25px\" y=" + String.format("\"%.0fpx\"", yVal) + ">"+probStr+"</text>\n"
 						+"												</svg>\n"
 						+"                                        </td>\n"
@@ -916,55 +919,55 @@ public class GraphicalForecast{
 				+"                    <!-- MMI key-->\n"
 				+"                    <table>\n"
 				+"                        <tr><td style=\"height:23px\"></td></tr>\n"
-				+"                        <tr><td class=\"forecast\">Key to colors</td></tr>\n"
+				+"                        <tr><td class=\"forecast\">Key to colors*</td></tr>\n"
 				+"                        <tr><td>\n"
 				+"                            <table class=\"forecastKey\" style=\"border:1px solid #dddddd;\">\n"
 				+"                                <tr style=\"font-weight:bold\">\n"
 				+"                                    <th style=\"width:30px; font-weight:bold\"></th>\n"
 				+"                                    <th style=\"width:70px; font-weight:bold\">peak MMI</th>\n"
-				+"                                    <th style=\"width:70px; font-weight:bold\">Potential Shaking</th>\n"
-				+"                                    <th style=\"width:70px; font-weight:bold\">Potential Damage*</th>\n"
+				+"                                    <th style=\"width:120px; font-weight:bold\">Potential Shaking</th>\n"
+				+"                                    <th style=\"width:120px; font-weight:bold\">Potential Damage</th>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"#abe0ff\"/></svg></td>\n"
-				+"                                    <td>II-III</td>\n"
-				+"                                    <td>weak</td>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[0] + "\"/></svg></td>\n"
+				+"                                    <td>II-IV</td>\n"
+				+"                                    <td>weak - light</td>\n"
 				+"                                    <td>none</td>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"#81fff3\"/></svg></td>\n"
-				+"                                    <td>III-IV</td>\n"
-				+"                                    <td>light</td>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[1] + "\"/></svg></td>\n"
+				+"                                    <td>III-V</td>\n"
+				+"                                    <td>weak - moderate</td>\n"
 				+"                                    <td>very light</td>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"#aaff63\"/></svg></td>\n"
-				+"                                    <td>IV-V</td>\n"
-				+"                                    <td>moderate</td>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[2] + "\"/></svg></td>\n"
+				+"                                    <td>V-VII</td>\n"
+				+"                                    <td>moderate - strong</td>\n"
 				+"                                    <td>light</td>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"#ffd100\"/></svg></td>\n"
-				+"                                    <td>V-VII</td>\n"
-				+"                                    <td>strong</td>\n"
-				+"                                    <td>moderate</td>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[3] + "\"/></svg></td>\n"
+				+"                                    <td>VI-VIII</td>\n"
+				+"                                    <td>strong - severe</td>\n"
+				+"                                    <td>moderate - heavy</td>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"#ff5700\"/></svg></td>\n"
-				+"                                    <td>VIII-IX</td>\n"
-				+"                                    <td>severe</td>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[4] + "\"/></svg></td>\n"
+				+"                                    <td>VIII-X</td>\n"
+				+"                                    <td>severe - violent</td>\n"
 				+"                                    <td>heavy</td>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"#800000\"/></svg></td>\n"
-				+"                                    <td>IX-X</td>\n"
-				+"                                    <td>violent</td>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[5] + "\"/></svg></td>\n"
+				+"                                    <td>X+</td>\n"
+				+"                                    <td>violent - extreme</td>\n"
 				+"                                    <td>very heavy</td>\n"
 				+"                                </tr>\n"
 				+"                            </table>\n"
 				+"                        </td></tr>\n"
 				+"                    </table>\n"
-				+"						<p class=\"forecastKey\" style=\"font-size:10px\">*Damage may be higher in vulnerable structures</p>\n"
+				+"						<p class=\"forecastKey\" style=\"font-size:10px\">*Legend gives typical shaking and intensity levels for the forecast magnitudes. Actual shaking is affected by many factors, and damage may be higher in vulnerable structures.</p>\n"
 				+"                </td>\n"
 				+"            </tr>\n"
 				+"        </table>\n\n");
@@ -1244,7 +1247,7 @@ public class GraphicalForecast{
 		try{
 			gf.writeHTML(new File(System.getenv("HOME") + "/example_forecast.html"));
 			gf.writeHTMLTable(new File(System.getenv("HOME") + "/Table.html"));
-			gf.writeSummaryJson(new File(System.getenv("HOME") + "/forecast.json"));
+//			gf.writeSummaryJson(new File(System.getenv("HOME") + "/forecast.json"));
 		}catch(Exception e){
 			e.printStackTrace();
 		}
