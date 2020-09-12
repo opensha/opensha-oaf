@@ -35,7 +35,7 @@ import org.opensha.sha.gui.infoTools.CalcProgressBar;
  */
 public class ETAS_AftershockModel_Generic extends ETAS_AftershockModel {
 	
-	private static Boolean D=true;	// debug flag
+	private static Boolean D=false;	// debug flag
 	
 	private double[][] covariance;
 	private double[][] covInverse;

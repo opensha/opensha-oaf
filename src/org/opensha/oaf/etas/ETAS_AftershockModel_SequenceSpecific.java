@@ -20,7 +20,7 @@ import com.google.common.primitives.Doubles;
  */
 public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel {
 	
-	Boolean D = false;	// debug flag
+	Boolean D = true;	// debug flag
 	private boolean fitMSProductivity;
 	private volatile boolean stopRequested;
 	private volatile boolean pauseRequested;
@@ -142,7 +142,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 		} else { 
 			getLikelihoodMatrixGridFast();
 		}
-		
+		 
 		if (D) {
 			System.out.println("getMaxLikelihood_ams()="+getMaxLikelihood_ams());
 			System.out.println("getMaxLikelihood_a()="+getMaxLikelihood_a());

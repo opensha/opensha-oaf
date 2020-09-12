@@ -290,16 +290,16 @@ public class ETAScatalog {
 		float newMag;
 		float newTime;
 		double prod;
-		
+		 
 		double c;
-		if (validate) { //forecasts cataloged earthquakes (rather than felt)
-			double k = Math.pow(10, ams_vec[(int)(ams_vec.length/2)] + alpha*(mag - minMagLimit));
-			c = c_sample*Math.pow(k, 1d/p_sample);
-			if (c < c_sample)
+		if (validate) { //forecasts cataloged earthquakes (rather than felt) -- disabled.
+//			double k2 = Math.pow(10, a_sample + alpha*(mag - minMagLimit));
+//			c = c_sample*Math.pow(k2, 1d/p_sample);
+//			if (c < c_sample)
 				c = c_sample;
+			
 		} else
 			c = c_sample;
-		
 		
 		//calculate productivity of this quake
 		if (ngen == 1) {
@@ -339,6 +339,7 @@ public class ETAScatalog {
 			if(D) System.out.println("n = " + ETAS_StatsCalc.calculateBranchingRatio(a_sample, p_sample, c, alpha, b, forecastEnd, minMagLimit, maxMagLimit)
 					+ " a=" + a_sample + " p=" + p_sample + " c=" + c +" (" + c_sample + ")" + " al=" + alpha + " b=" + b + " T=" + forecastEnd + " Mmin=" + minMagLimit + " Mmax=" + maxMagLimit);
 		}
+
 		return newEqList;
 		
 	}
@@ -623,4 +624,5 @@ public class ETAScatalog {
 		return numM;
 	}
 	
+	private double getMeanAms() { return ams_vec[(int)(ams_vec.length/2)]; }
 }
