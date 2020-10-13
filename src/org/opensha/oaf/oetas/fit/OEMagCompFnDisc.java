@@ -92,8 +92,9 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 
 	// Get the number of intervals.
+	// This is one more than the number of times.
 
-	protected int get_interval_count () {
+	public final int get_interval_count () {
 		if (a_mag == null) {
 			return 0;
 		}
@@ -103,7 +104,7 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 	// Create a string describing the n-th interval.
 
-	protected String get_interval_string (int n) {
+	public String get_interval_string (int n) {
 		StringBuilder result = new StringBuilder();
 
 		// Interval start time, but not on the first interval which starts at -infinity
@@ -117,6 +118,73 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 		result.append("constant: mag = ").append(a_mag[n]);
 	
 		return result.toString();
+	}
+
+
+	// Get the n-th time, for 0 <= n < interval_count-1.
+
+	public final double get_time (int n) {
+		return a_time[n];
+	}
+
+
+	// Get the n-th magnitude, for 0 <= n < interval_count.
+	// Note: Intervals of finite duration have 1 <= n < interval_count-1.
+	// For interval n, the start time is get_time(n-1) and the end time is get_time(n).
+
+	public final double get_mag (int n) {
+		return a_mag[n];
+	}
+
+
+	// Get the index of the interval that contains the given time.
+	// Parameters:
+	//  t_days = Time since the origin, in days.
+	// Returns the value of n such that get_time(n-1) < t_days <= get_time(n),
+	// which means that get_mag(n) is the magnitude of completeness at time t_days.
+	// The returned n satisfies 0 <= n < interval_count.
+	// (For purposes of this definition, pretend that get_time(-1) == -infinity
+	// and get_time(interval_count-1) == +infinity.)
+
+	public final int get_interval_index (double t_days) {
+
+		// Binary search to find the interval
+
+		int lo = -1;				// implicitly, a_time[-1] = -infinity
+		int hi = a_time.length;		// implicitly, a_time[length] = +infinity
+
+		// Search, maintaining the condition a_time[lo] < t_days <= a_time[hi]
+
+		while (hi - lo > 1) {
+			int mid = (hi + lo)/2;
+			if (a_time[mid] < t_days) {
+				lo = mid;
+			} else {
+				hi = mid;
+			}
+		}
+
+		// Return the interval index
+
+		return hi;
+	}
+
+
+	// Get the index of the time that is closest to the given time.
+	// Parameters:
+	//  t_days = Time since the origin, in days.
+	// Returns the value of n that minimizes abs(t_days - get_time(n)).
+	// The returned n satisfies 0 <= n < interval_count-1.
+	// Note: For times t1 < t2, the range of intervals that most closely
+	// fits the range of times from t1 to t2 is intervals of index n where
+	// get_closest_time_index(t1) < n <= get_closest_time_index(t2).
+
+	public final int get_closest_time_index (double t_days) {
+		int n = get_interval_index (t_days);
+		if (n == a_time.length || (n != 0 && (t_days - a_time[n-1] < a_time[n] - t_days))) {
+			--n;
+		}
+		return n;
 	}
 
 
@@ -177,6 +245,17 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 
 
 
+	// Marshal type codes for splitting functions.
+
+	protected static final int MARSHAL_SPLITFN_NULL = 90100;
+	protected static final int MARSHAL_SPLITFN_CONSTANT = 90101;
+	protected static final int MARSHAL_SPLITFN_RATIO = 90102;
+
+	//protected static final String M_TYPE_NAME = "ClassType";	// inherited
+
+
+
+
 	// Nested abstract class to define a splitting function.
 	// Supplying an object of this class enables splitting.
 	// Extending this class permits specification of maximum interval duration.
@@ -191,6 +270,18 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 		// Can return HUGE_TIME_DAYS if there is no upper limit.
 
 		public abstract double get_durlim (double tsplit, double tstart);
+
+		// Return true if this function equals the other function.
+
+		public abstract boolean equals_fn (SplitFn other);
+
+		// Get the type code.
+
+		public abstract int get_marshal_splitfn_type ();
+
+		// Marshal object.
+
+		public abstract void do_marshal_splitfn (MarshalWriter writer);
 	}
 
 
@@ -230,6 +321,49 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 				throw new IllegalArgumentException ("OEMagCompFnDisc.SplitFnConstant - Invalid constructor argument: durlim = " + durlim);
 			}
 			this.durlim = durlim;
+		}
+
+		// Display a one-line summary.
+
+		@Override
+		public String toString() {
+			return "SplitFnConstant: durlim = " + durlim;
+		}
+
+		// Return true if this function equals the other function.
+
+		@Override
+		public boolean equals_fn (SplitFn other) {
+			if (other != null) {
+				if (other instanceof SplitFnConstant) {
+					SplitFnConstant o = (SplitFnConstant)other;
+					if (this.durlim == o.durlim) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		// Get the type code.
+
+		@Override
+		public int get_marshal_splitfn_type () {
+			return MARSHAL_SPLITFN_CONSTANT;
+		}
+
+		// Marshal object.
+
+		@Override
+		public void do_marshal_splitfn (MarshalWriter writer) {
+			writer.marshalDouble ("durlim", durlim);
+			return;
+		}
+
+		// Unmarshal object.
+
+		public SplitFnConstant (MarshalReader reader) {
+			durlim = reader.unmarshalDouble ("durlim");
 		}
 	}
 
@@ -285,6 +419,125 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 			this.durlim_min = durlim_min;
 			this.durlim_max = durlim_max;
 		}
+
+		// Display a one-line summary.
+
+		@Override
+		public String toString() {
+			return "SplitFnRatio: durlim_ratio = " + durlim_ratio + ", durlim_min = " + durlim_min + ", durlim_max = " + durlim_max;
+		}
+
+		// Return true if this function equals the other function.
+
+		@Override
+		public boolean equals_fn (SplitFn other) {
+			if (other != null) {
+				if (other instanceof SplitFnRatio) {
+					SplitFnRatio o = (SplitFnRatio)other;
+					if (this.durlim_ratio == o.durlim_ratio
+						&& this.durlim_min == o.durlim_min
+						&& this.durlim_max == o.durlim_max) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		// Get the type code.
+
+		@Override
+		public int get_marshal_splitfn_type () {
+			return MARSHAL_SPLITFN_RATIO;
+		}
+
+		// Marshal object.
+
+		@Override
+		public void do_marshal_splitfn (MarshalWriter writer) {
+			writer.marshalDouble ("durlim_ratio", durlim_ratio);
+			writer.marshalDouble ("durlim_min", durlim_min);
+			writer.marshalDouble ("durlim_max", durlim_max);
+			return;
+		}
+
+		// Unmarshal object.
+
+		public SplitFnRatio (MarshalReader reader) {
+			durlim_ratio = reader.unmarshalDouble ("durlim_ratio");
+			durlim_min = reader.unmarshalDouble ("durlim_min");
+			durlim_max = reader.unmarshalDouble ("durlim_max");
+		}
+	}
+
+
+
+
+	// Return true if the two split-function objects are equal.
+
+	public static boolean equals_splitfn (SplitFn f1, SplitFn f2) {
+		if (f1 == null) {
+			return (f2 == null);
+		}
+		return f1.equals_fn (f2);
+	}
+
+
+
+
+	// Marshal split-function object, polymorphic.
+
+	public static void marshal_splitfn_poly (MarshalWriter writer, String name, SplitFn obj) {
+
+		writer.marshalMapBegin (name);
+
+		if (obj == null) {
+			writer.marshalInt (M_TYPE_NAME, MARSHAL_SPLITFN_NULL);
+		} else {
+			writer.marshalInt (M_TYPE_NAME, obj.get_marshal_splitfn_type());
+			obj.do_marshal_splitfn (writer);
+		}
+
+		writer.marshalMapEnd ();
+
+		return;
+	}
+
+
+
+
+	// Unmarshal split-function object, polymorphic.
+
+	public static SplitFn unmarshal_splitfn_poly (MarshalReader reader, String name) {
+		SplitFn result;
+
+		reader.unmarshalMapBegin (name);
+	
+		// Switch according to type
+
+		int type = reader.unmarshalInt (M_TYPE_NAME);
+
+		switch (type) {
+
+		default:
+			throw new MarshalException ("OEMagCompFnDisc.SplitFn.unmarshal_splitfn_poly: Unknown class type code: type = " + type);
+
+		case MARSHAL_SPLITFN_NULL:
+			result = null;
+			break;
+
+		case MARSHAL_SPLITFN_CONSTANT:
+			result = new SplitFnConstant (reader);
+			break;
+
+		case MARSHAL_SPLITFN_RATIO:
+			result = new SplitFnRatio (reader);
+			break;
+		}
+
+		reader.unmarshalMapEnd ();
+
+		return result;
 	}
 
 

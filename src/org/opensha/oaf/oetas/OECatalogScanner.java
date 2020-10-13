@@ -7,7 +7,7 @@ import static org.opensha.oaf.oetas.OEConstants.SMALL_EXPECTED_COUNT;
 // Class for scanning an Operational ETAS catalog and sending it to a set of accumulators.
 // Author: Michael Barall 12/31/2019.
 
-public class OECatalogScanner {
+public class OECatalogScanner implements OECatalogExaminer {
 
 	//----- Workspace -----
 
@@ -513,6 +513,37 @@ public class OECatalogScanner {
 		// Return the number of sterile earthquakes
 
 		return sterile_rup_count;
+	}
+
+
+
+
+	//----- Implementation of OECatalogExaminer -----
+
+
+
+
+	// Examine the catalog.
+	// Parameters:
+	//  view = Catalog view.
+	//  rangen = Random number generator to use.
+
+	@Override
+	public void examine_cat (OECatalogView view, OERandomGenerator rangen) {
+		
+		// Open the consumers
+
+		open();
+
+		// Scan the catalog
+
+		scan (view, rangen);
+
+		// Close the consumers
+
+		close();
+	
+		return;
 	}
 
 

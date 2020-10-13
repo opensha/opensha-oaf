@@ -35,12 +35,14 @@ public class OERupture {
 	// from which this earthquake is drawn.  For the first generation, k also
 	// subsumes the mainshock productivity ams, and any correction for magnitude
 	// of completeness.
+	// Note: When used in rupture history, this field can contain magnitude of completeness.
 
 	public double k_prod;
 
 	// Parent rupture number.
 	// The index number of the parent rupture, within the prior generation.
 	// The value -1 indicates no parent.
+	// Note: When used in rupture history, this field can contain rupture category.
 
 	public int rup_parent;
 
@@ -211,11 +213,45 @@ public class OERupture {
 
 
 
+	// Produce a one-line string containing unrounded time, magnitude, and productivity (not newline-terminated).
+
+	public String u_time_mag_prod_string () {
+		return "t = " + t_day + ", mag = " + rup_mag + ", k_prod = " + k_prod;
+	}
+
+
+
+
 	// Produce a one-line string containing unrounded time, magnitude, and magnitude of completeness (not newline-terminated).
 	// Note: The k_prod field is assumed to contain magnitude of completeness.
 
 	public String u_time_mag_mc_string () {
 		return "t = " + t_day + ", mag = " + rup_mag + ", mc = " + k_prod;
+	}
+
+
+
+
+	// Produce a one-line string containing our contents (not newline-terminated).
+	// Note: The k_prod field is assumed to contain magnitude of completeness.
+	// Note: The parent field is assumed to contain a rupture category.
+	// Versions are provided that prepend one or two indexes.
+
+	public String one_line_mc_cat_string () {
+		return String.format ("t=%.5f, mag=%.3f, mc=%.3f, cat=%d, x=%.3f, y=%.3f",
+			t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
+	}
+
+
+	public String one_line_mc_cat_string (int j) {
+		return String.format ("%d: t=%.5f, mag=%.3f, mc=%.3f, cat=%d, x=%.3f, y=%.3f",
+			j, t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
+	}
+
+
+	public String one_line_mc_cat_string (int i, int j) {
+		return String.format ("%d, %d: t=%.5f, mag=%.3f, mc=%.3f, cat=%d, x=%.3f, y=%.3f",
+			i, j, t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
 	}
 
 

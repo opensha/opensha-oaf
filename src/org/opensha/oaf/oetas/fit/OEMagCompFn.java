@@ -131,14 +131,25 @@ public abstract class OEMagCompFn {
 											Collection<OERupture> accept_list, Collection<OERupture> reject_list,
 											double eligible_mag, int eligible_count,
 											double mag_eps, double time_eps,
-											double disc_base, double disc_delta, double disc_round, double disc_gap, OEMagCompFnDisc.SplitFn split_fn) {
+											double disc_base, double disc_delta, double disc_round, double disc_gap, OEMagCompFnDisc.SplitFn split_fn,
+											int mag_cat_count, double division_mag, int division_count) {
 		return new OEMagCompFnDiscFGH (magCat, capF, capG, capH,
 										t_range_begin, t_range_end,
 										rup_list,
 										accept_list, reject_list,
 										eligible_mag, eligible_count,
 										mag_eps, time_eps,
-										disc_base, disc_delta, disc_round, disc_gap, split_fn);
+										disc_base, disc_delta, disc_round, disc_gap, split_fn,
+										mag_cat_count, division_mag, division_count);
+	}
+
+
+	// Construct a discrete function which is defined by F,G,H parameters for multiple earthquakes.
+
+	public static OEMagCompFnDisc makeDiscFGH (OEDiscFGHParams params, Collection<OERupture> rup_list,
+								Collection<OERupture> accept_list, Collection<OERupture> reject_list) {
+		return new OEMagCompFnDiscFGH (params, rup_list,
+										accept_list, reject_list);
 	}
 
 

@@ -1,5 +1,7 @@
 package org.opensha.oaf.oetas;
 
+import java.util.Collection;
+
 
 // Interface to provide access to a catalog of Operational ETAS ruptures.
 // Author: Michael Barall 11/03/2019.
@@ -132,6 +134,30 @@ public interface OECatalogView {
 		}
 
 		return result.toString();
+	}
+
+	// Dump the entire catalog contents into a collection of OERupture objects.
+	// Note: The OERupture objects are newly allocated.
+	// Note: The ordering of the ruptures is unspecified.
+
+	public default void dump_to_collection (Collection<OERupture> coll) {
+
+		// Generation count
+
+		final int gen_count = get_gen_count();
+
+		// Ruptures
+
+		for (int i_gen = 0; i_gen < gen_count; ++i_gen) {
+			final int gen_size = get_gen_size (i_gen);
+			for (int j_rup = 0; j_rup < gen_size; ++j_rup) {
+				OERupture rup = new OERupture();
+				get_rup (i_gen, j_rup, rup);
+				coll.add (rup);
+			}
+		}
+
+		return;
 	}
 
 }

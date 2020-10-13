@@ -1081,6 +1081,162 @@ public class OERandomGenerator {
 
 
 
+	// Omori-extended self double integral evaluation.
+	// Parameters:
+	//  p = Omori exponent p parameter.
+	//  c = Omori offset c parmeter, must satisfy c > 0.
+	//  sr = Source and target time range in days, must satisfy c + sr > 0, prefereably sr >= 0.
+	// Returns the double integral:
+	//   Integral(s = 0, s = sr; t = s, t = sr; (c + t - s)^(-p) * dt * ds)
+	//
+	// Note: When integrating the effect of an extended source from s1 to s2
+	// on itself as a target, with s1 <= s2, use
+	//   sr = s2 - s1
+	//
+	// Implementation notes:
+	// With q = 2 - p, the integral is:
+	//
+	//   (c^q) * ((1 + sr/c)^q - q*sr/c - 1) / (q*(q - 1))
+	//
+	// When sr/c is small, this formula can suffer from cancellation.
+	// This case is handled with a Taylor expansion in powers of sr/c.
+
+	public static double omext_self_double_integral (double p, double c, double sr) {
+
+		// Relative size of time range
+
+		final double sdc = sr/c;
+
+		// Exponent from double integral
+
+		final double q2 = 2.0 - p;
+
+		// If the relative time range is small ...
+
+		if (sdc * sdc <= 1.0e-4) {
+		
+			// Use a Taylor expansion, accurate to about 10 digits
+
+			return Math.pow(c, q2) * (((((3.0 + p)*sdc - 6.0)*(2.0 + p)*sdc + 30.0)*(1.0 + p)*sdc - 120.0)*p*sdc + 360.0)*sdc*sdc / 720.0;
+		}
+
+		// Exponent from single integral
+
+		final double q1 = 1.0 - p;
+
+		// For large p, q1 is non-zero, but q2 might be zero
+
+		if (p > 1.5) {
+		
+			// Expand with terms that cancel out 1/q2
+
+			return (Math.pow(c, q2) / q1) * (expm1dx(q2, Math.log1p(sdc)) - sdc);
+		}
+
+		// For small p, q2 is non-zero, but q1 might be zero, so expand with terms that cancel out 1/q1
+
+		return (Math.pow(c, q2) / q2) * ((1.0 + sdc)*expm1dx(q1, Math.log1p(sdc)) - sdc);
+	}
+
+
+
+
+	// Omori-extended self double density integral evaluation.
+	// Parameters:
+	//  p = Omori exponent p parameter.
+	//  c = Omori offset c parmeter, must satisfy c > 0.
+	//  sr = Source and target time range in days, must satisfy c + sr > 0, prefereably sr >= 0.
+	// Returns the double integral:
+	//   Integral(s = 0, s = sr; t = s, t = sr; (c + t - s)^(-p) * dt * ds) / sr
+
+	public static double omext_self_double_density_integral (double p, double c, double sr) {
+
+		// Relative size of time range
+
+		final double sdc = sr/c;
+
+		// Exponent from double integral
+
+		final double q2 = 2.0 - p;
+
+		// Exponent from single integral
+
+		final double q1 = 1.0 - p;
+
+		// If the relative time range is small ...
+
+		if (sdc * sdc <= 1.0e-4) {
+		
+			// Use a Taylor expansion, accurate to about 10 digits
+
+			return Math.pow(c, q1) * (((((3.0 + p)*sdc - 6.0)*(2.0 + p)*sdc + 30.0)*(1.0 + p)*sdc - 120.0)*p*sdc + 360.0)*sdc / 720.0;
+		}
+
+		// For large p, q1 is non-zero, but q2 might be zero
+
+		if (p > 1.5) {
+		
+			// Expand with terms that cancel out 1/q2
+
+			return (Math.pow(c, q1) / q1) * (expm1dx(q2, Math.log1p(sdc)) - sdc) / sdc;
+		}
+
+		// For small p, q2 is non-zero, but q1 might be zero, so expand with terms that cancel out 1/q1
+
+		return (Math.pow(c, q1) / q2) * ((1.0 + sdc)*expm1dx(q1, Math.log1p(sdc)) - sdc) / sdc;
+	}
+
+
+
+
+	// Omori-extended self double density-square integral evaluation.
+	// Parameters:
+	//  p = Omori exponent p parameter.
+	//  c = Omori offset c parmeter, must satisfy c > 0.
+	//  sr = Source and target time range in days, must satisfy c + sr > 0, prefereably sr >= 0.
+	// Returns the double integral:
+	//   Integral(s = 0, s = sr; t = s, t = sr; (c + t - s)^(-p) * dt * ds) / (sr^2)
+
+	public static double omext_self_double_density_sq_integral (double p, double c, double sr) {
+
+		// Relative size of time range
+
+		final double sdc = sr/c;
+
+		// If the relative time range is small ...
+
+		if (sdc * sdc <= 1.0e-4) {
+		
+			// Use a Taylor expansion, accurate to about 10 digits
+
+			return Math.pow(c, -p) * (((((3.0 + p)*sdc - 6.0)*(2.0 + p)*sdc + 30.0)*(1.0 + p)*sdc - 120.0)*p*sdc + 360.0) / 720.0;
+		}
+
+		// Exponent from double integral
+
+		final double q2 = 2.0 - p;
+
+		// Exponent from single integral
+
+		final double q1 = 1.0 - p;
+
+		// For large p, q1 is non-zero, but q2 might be zero
+
+		if (p > 1.5) {
+		
+			// Expand with terms that cancel out 1/q2
+
+			return (Math.pow(c, -p) / q1) * (expm1dx(q2, Math.log1p(sdc)) - sdc) / (sdc*sdc);
+		}
+
+		// For small p, q2 is non-zero, but q1 might be zero, so expand with terms that cancel out 1/q1
+
+		return (Math.pow(c, -p) / q2) * ((1.0 + sdc)*expm1dx(q1, Math.log1p(sdc)) - sdc) / (sdc*sdc);
+	}
+
+
+
+
 	// Calculate an Omori-extended rate for a point source and extended target.
 	// Parameters:
 	//  p = Omori p parameter.
@@ -1434,6 +1590,56 @@ public class OERandomGenerator {
 			result = test_omext_single_integral (p, w, sr);
 		} else {
 			result = test_omext_double_integral (p, w, sr, tr) / tr;
+		}
+		return result;
+	}
+
+
+
+
+	// Direct calculation of Omori-extended self double integral.
+
+	private static double test_omext_self_double_integral (double p, double c, double sr) {
+		double result;
+		double q1 = 1.0 - p;
+		double q2 = 2.0 - p;
+		double sdc = sr/c;
+		if (q1 == 0.0) {
+			result = c * ((1.0 + sdc)*Math.log(1.0 + sdc) - sdc);
+		} else if (q2 == 0.0) {
+			result = sdc - Math.log(1.0 + sdc);
+		} else {
+			result = Math.pow(c, q2) * (Math.pow(1.0 + sdc, q2) - q2*sdc - 1.0) / (q1*q2);
+		}
+		return result;
+	}
+
+
+
+
+	// Direct calculation of Omori-extended double density integral.
+
+	private static double test_omext_self_double_density_integral (double p, double c, double sr) {
+		double result;
+		if (sr == 0.0) {
+			result = 0.0;
+		} else {
+			result = test_omext_self_double_integral (p, c, sr) / sr;
+		}
+		return result;
+	}
+
+
+
+
+	// Direct calculation of Omori-extended double density-square integral.
+
+	private static double test_omext_self_double_density_sq_integral (double p, double c, double sr) {
+		double result;
+		if (sr == 0.0) {
+			result = Math.pow(c, -p) / 2.0;
+		} else {
+			result = test_omext_self_double_integral (p, c, sr) / (sr*sr);
 		}
 		return result;
 	}
@@ -2384,6 +2590,345 @@ public class OERandomGenerator {
 				for (double p : pval) {
 					double rate = omext_double_density_integral (p, w, sr, tr);
 					double comp = test_omext_double_density_integral (p, w, sr, tr);
+					System.out.println (p + "   " + rate + "   " + comp);
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #14
+		// Command format:
+		//  test14  c  sr
+		// Omori-extended self double integral for various values of p.
+
+		if (args[0].equalsIgnoreCase ("test14")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("OERandomGenerator : Invalid 'test14' subcommand");
+				return;
+			}
+
+			try {
+
+				double c = Double.parseDouble (args[1]);
+				double sr = Double.parseDouble (args[2]);
+
+				// Say hello
+
+				System.out.println ("Calculating Omori-extended self double integral");
+				System.out.println ("c = " + c);
+				System.out.println ("sr = " + sr);
+
+				// Values of p
+
+				double[] pval = {
+					0.5,
+					0.6,
+					0.7,
+					0.8,
+					0.9,
+					0.99,
+					0.999,
+					0.9999,
+					0.99999,
+					0.999999,
+					0.9999999,
+					0.99999999,
+					0.999999999,
+					0.9999999999,
+					0.99999999999,
+					0.999999999999,
+					1.0,
+					1.000000000001,
+					1.00000000001,
+					1.0000000001,
+					1.000000001,
+					1.00000001,
+					1.0000001,
+					1.000001,
+					1.00001,
+					1.0001,
+					1.001,
+					1.01,
+					1.1,
+					1.2,
+					1.3,
+					1.4,
+					1.5,
+					1.6,
+					1.7,
+					1.8,
+					1.9,
+					1.99,
+					1.999,
+					1.9999,
+					1.99999,
+					1.999999,
+					1.9999999,
+					1.99999999,
+					1.999999999,
+					1.9999999999,
+					1.99999999999,
+					1.999999999999,
+					2.0,
+					2.000000000001,
+					2.00000000001,
+					2.0000000001,
+					2.000000001,
+					2.00000001,
+					2.0000001,
+					2.000001,
+					2.00001,
+					2.0001,
+					2.001,
+					2.01,
+					2.1,
+					2.2,
+					2.3,
+					2.4,
+					2.5
+				};
+
+				// Output the values
+
+				for (double p : pval) {
+					double rate = omext_self_double_integral (p, c, sr);
+					double comp = test_omext_self_double_integral (p, c, sr);
+					System.out.println (p + "   " + rate + "   " + comp);
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #15
+		// Command format:
+		//  test15  c  sr
+		// Omori-extended self double integral for various values of p.
+
+		if (args[0].equalsIgnoreCase ("test15")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("OERandomGenerator : Invalid 'test15' subcommand");
+				return;
+			}
+
+			try {
+
+				double c = Double.parseDouble (args[1]);
+				double sr = Double.parseDouble (args[2]);
+
+				// Say hello
+
+				System.out.println ("Calculating Omori-extended self double density integral");
+				System.out.println ("c = " + c);
+				System.out.println ("sr = " + sr);
+
+				// Values of p
+
+				double[] pval = {
+					0.5,
+					0.6,
+					0.7,
+					0.8,
+					0.9,
+					0.99,
+					0.999,
+					0.9999,
+					0.99999,
+					0.999999,
+					0.9999999,
+					0.99999999,
+					0.999999999,
+					0.9999999999,
+					0.99999999999,
+					0.999999999999,
+					1.0,
+					1.000000000001,
+					1.00000000001,
+					1.0000000001,
+					1.000000001,
+					1.00000001,
+					1.0000001,
+					1.000001,
+					1.00001,
+					1.0001,
+					1.001,
+					1.01,
+					1.1,
+					1.2,
+					1.3,
+					1.4,
+					1.5,
+					1.6,
+					1.7,
+					1.8,
+					1.9,
+					1.99,
+					1.999,
+					1.9999,
+					1.99999,
+					1.999999,
+					1.9999999,
+					1.99999999,
+					1.999999999,
+					1.9999999999,
+					1.99999999999,
+					1.999999999999,
+					2.0,
+					2.000000000001,
+					2.00000000001,
+					2.0000000001,
+					2.000000001,
+					2.00000001,
+					2.0000001,
+					2.000001,
+					2.00001,
+					2.0001,
+					2.001,
+					2.01,
+					2.1,
+					2.2,
+					2.3,
+					2.4,
+					2.5
+				};
+
+				// Output the values
+
+				for (double p : pval) {
+					double rate = omext_self_double_density_integral (p, c, sr);
+					double comp = test_omext_self_double_density_integral (p, c, sr);
+					System.out.println (p + "   " + rate + "   " + comp);
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #16
+		// Command format:
+		//  test16  c  sr
+		// Omori-extended self double integral for various values of p.
+
+		if (args[0].equalsIgnoreCase ("test16")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("OERandomGenerator : Invalid 'test16' subcommand");
+				return;
+			}
+
+			try {
+
+				double c = Double.parseDouble (args[1]);
+				double sr = Double.parseDouble (args[2]);
+
+				// Say hello
+
+				System.out.println ("Calculating Omori-extended self double density-square integral");
+				System.out.println ("c = " + c);
+				System.out.println ("sr = " + sr);
+
+				// Values of p
+
+				double[] pval = {
+					0.5,
+					0.6,
+					0.7,
+					0.8,
+					0.9,
+					0.99,
+					0.999,
+					0.9999,
+					0.99999,
+					0.999999,
+					0.9999999,
+					0.99999999,
+					0.999999999,
+					0.9999999999,
+					0.99999999999,
+					0.999999999999,
+					1.0,
+					1.000000000001,
+					1.00000000001,
+					1.0000000001,
+					1.000000001,
+					1.00000001,
+					1.0000001,
+					1.000001,
+					1.00001,
+					1.0001,
+					1.001,
+					1.01,
+					1.1,
+					1.2,
+					1.3,
+					1.4,
+					1.5,
+					1.6,
+					1.7,
+					1.8,
+					1.9,
+					1.99,
+					1.999,
+					1.9999,
+					1.99999,
+					1.999999,
+					1.9999999,
+					1.99999999,
+					1.999999999,
+					1.9999999999,
+					1.99999999999,
+					1.999999999999,
+					2.0,
+					2.000000000001,
+					2.00000000001,
+					2.0000000001,
+					2.000000001,
+					2.00000001,
+					2.0000001,
+					2.000001,
+					2.00001,
+					2.0001,
+					2.001,
+					2.01,
+					2.1,
+					2.2,
+					2.3,
+					2.4,
+					2.5
+				};
+
+				// Output the values
+
+				for (double p : pval) {
+					double rate = omext_self_double_density_sq_integral (p, c, sr);
+					double comp = test_omext_self_double_density_sq_integral (p, c, sr);
 					System.out.println (p + "   " + rate + "   " + comp);
 				}
 

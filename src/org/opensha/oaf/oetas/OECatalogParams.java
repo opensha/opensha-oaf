@@ -91,6 +91,9 @@ public class OECatalogParams {
 
 	// The time epsilon, in days.
 	// This is the minimum considered time between earthquakes.
+	// Note: The current use of teps is to determine when a time interval or
+	// time bin is short enough that it is not necessary to generate or infill
+	// any aftershocks in it.
 
 	public double teps;
 
@@ -121,10 +124,17 @@ public class OECatalogParams {
 	// This is the change in magnitude bounds that is considered to be insignificant.
 	// The value "eps" should be large enough so "mag+eps" is distinct from "eps",
 	// in single-precision floating-point, for any encountered magnitude "mag".
+	// Note: The current use of mag_eps is to determine when a magnitude bin is so
+	// small that it is not necessary to infill any aftershocks in the bin.
 
 	public double mag_eps;
 
 	// The target generation size.
+	// Note: In each generation, the minimum magnitude is adjusted so that the
+	// expected number of aftershocks is equal to gen_size_target, but within the
+	// range mag_min_lo to mag_min_hi.  If mag_min_lo == mag_min_sim == mag_min_hi,
+	// then the minimum magnitude is held fixed at mag_min_sim, but gen_size_target
+	// must still be set to a reasonable value.
 
 	public int gen_size_target;
 
@@ -520,6 +530,103 @@ public class OECatalogParams {
 		this.mag_eps         = 0.0002;
 		this.gen_size_target = gen_size_target;
 		this.gen_count_max   = gen_count_max;
+		return this;
+	}
+
+
+
+
+	// Set to values for simulation within a fixed magnitude range.
+	// Parameters:
+	//  a = Productivity parameter.
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter, in days.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Minimum magnitude, also the reference magnitude and min mag for parameter definition.
+	//  msup = Maximum magnitude, also the max mag for parameter definition.
+	//  tbegin = Beginning time for which earthquakes are generated, in days.
+	//  tend = Ending time for which earthquakes are generated, in days.
+
+	public OECatalogParams set_to_fixed_mag (
+		double a,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		double mref,
+		double msup,
+		double tbegin,
+		double tend
+	) {
+		this.a               = a;
+		this.p               = p;
+		this.c               = c;
+		this.b               = b;
+		this.alpha           = alpha;
+		this.mref            = mref;
+		this.msup            = msup;
+		this.tbegin          = tbegin;
+		this.tend            = tend;
+		this.teps            = OEConstants.GEN_TIME_EPS;
+		this.mag_min_sim     = mref;
+		this.mag_max_sim     = msup;
+		this.mag_min_lo      = mref;
+		this.mag_min_hi      = mref;
+		this.mag_max_lo      = msup;
+		this.mag_max_hi      = msup;
+		this.mag_eps         = OEConstants.GEN_MAG_EPS;
+		this.gen_size_target = 100;
+		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
+		return this;
+	}
+
+
+
+
+	// Set to values for simulation within a fixed magnitude range.
+	// The productivity is specified as a branch ratio.
+	// Parameters:
+	//  n = Branch ratio, as computed for these parameters.
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter, in days.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Minimum magnitude, also the reference magnitude and min mag for parameter definition.
+	//  msup = Maximum magnitude, also the max mag for parameter definition.
+	//  tbegin = Beginning time for which earthquakes are generated, in days.
+	//  tend = Ending time for which earthquakes are generated, in days.
+
+	public OECatalogParams set_to_fixed_mag_br (
+		double n,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		double mref,
+		double msup,
+		double tbegin,
+		double tend
+	) {
+		this.a               = OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tend - tbegin);
+		this.p               = p;
+		this.c               = c;
+		this.b               = b;
+		this.alpha           = alpha;
+		this.mref            = mref;
+		this.msup            = msup;
+		this.tbegin          = tbegin;
+		this.tend            = tend;
+		this.teps            = OEConstants.GEN_TIME_EPS;
+		this.mag_min_sim     = mref;
+		this.mag_max_sim     = msup;
+		this.mag_min_lo      = mref;
+		this.mag_min_hi      = mref;
+		this.mag_max_lo      = msup;
+		this.mag_max_hi      = msup;
+		this.mag_eps         = OEConstants.GEN_MAG_EPS;
+		this.gen_size_target = 100;
+		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		return this;
 	}
 

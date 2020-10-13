@@ -1291,9 +1291,98 @@ public class OEStatsCalc {
 
 
 
+	// Return the minimum value of an array.
+	// Parameters:
+	//  x = Array to search.
+	//  ix = Array to receive index(es) where minimum is found, or null if not desired.
+	// Returns Double.MAX_VALUE if array is empty.
+	// The length of ix is equal to the number of dimensions of x.
+	// If ix is non-null, it is filled with the index(es) where the minimum is located.
+
+	public static double find_array_min (final double[] x, final int[] ix) {
+		double result = Double.MAX_VALUE;
+		int ix0 = -1;
+		for (int m = 0; m < x.length; ++m) {
+			if (x[m] < result) {
+				result = x[m];
+				ix0 = m;
+			}
+		}
+		if (ix != null) {
+			ix[0] = ix0;
+		}
+		return result;
+	}
+
+
+	public static double find_array_min (final double[][] x, final int[] ix) {
+		double result = Double.MAX_VALUE;
+		int ix0 = -1;
+		int ix1 = -1;
+		for (int m = 0; m < x.length; ++m) {
+			final double[] row = x[m];
+			for (int n = 0; n < row.length; ++n) {
+				if (row[n] < result) {
+					result = row[n];
+					ix0 = m;
+					ix1 = n;
+				}
+			}
+		}
+		if (ix != null) {
+			ix[0] = ix0;
+			ix[1] = ix1;
+		}
+		return result;
+	}
 
 
 
+
+	// Return the maximum value of an array.
+	// Parameters:
+	//  x = Array to search.
+	//  ix = Array to receive index(es) where maximum is found, or null if not desired.
+	// Returns -Double.MAX_VALUE if array is empty.
+	// The length of ix is equal to the number of dimensions of x.
+	// If ix is non-null, it is filled with the index(es) where the maximum is located.
+
+	public static double find_array_max (final double[] x, final int[] ix) {
+		double result = -Double.MAX_VALUE;
+		int ix0 = -1;
+		for (int m = 0; m < x.length; ++m) {
+			if (x[m] > result) {
+				result = x[m];
+				ix0 = m;
+			}
+		}
+		if (ix != null) {
+			ix[0] = ix0;
+		}
+		return result;
+	}
+
+
+	public static double find_array_max (final double[][] x, final int[] ix) {
+		double result = -Double.MAX_VALUE;
+		int ix0 = -1;
+		int ix1 = -1;
+		for (int m = 0; m < x.length; ++m) {
+			final double[] row = x[m];
+			for (int n = 0; n < row.length; ++n) {
+				if (row[n] > result) {
+					result = row[n];
+					ix0 = m;
+					ix1 = n;
+				}
+			}
+		}
+		if (ix != null) {
+			ix[0] = ix0;
+			ix[1] = ix1;
+		}
+		return result;
+	}
 
 
 

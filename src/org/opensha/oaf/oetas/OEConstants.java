@@ -66,6 +66,13 @@ public class OEConstants {
 
 	public static final double LOG10_HUGE_TIME_DAYS = 20;
 
+	// A duration so extremely small it is considered to be zero.
+	// Note: This is used to avoid divide-by-zero in formulas that have a
+	// duration in the denominator; it does not mean that durations larger
+	// than this are considered significant.
+	
+	public static final double TINY_DURATION_DAYS = 1.0e-150;
+
 	// An Omori rate so extremely small it is considered to be zero.
 	// Note: This is used to avoid divide-by-zero in formulas that have an
 	// Omori rate in the denominator; it does not mean that rates larger
@@ -96,6 +103,90 @@ public class OEConstants {
 		case INFILL_METH_STERILE: return "INFILL_METH_STERILE";
 		}
 		return "INFILL_METH_INVALID(" + infill_meth + ")";
+	}
+
+	// Negligably small time interval, in days, when generating catalogs.
+
+	public static final double GEN_TIME_EPS = 0.00001;
+
+	// Negligably small magnitude interval, when generating catalogs.
+
+	public static final double GEN_MAG_EPS = 0.0002;
+
+	// Negligably small time interval, in days, when fitting parameters.
+
+	public static final double FIT_TIME_EPS = 1.0e-7;
+
+	// Negligably small magnitude interval, when fitting parameters.
+
+	public static final double FIT_MAG_EPS = 0.001;
+
+	// Default maximum number of generations, when generating catalogs.
+
+	public static final int DEF_MAX_GEN_COUNT = 100;
+
+	// Options for common Helmstetter parameters.
+
+	public static final int HELM_PARAM_MIN   = 1;
+	public static final int HELM_PARAM_NONE  = 1;	// No Helmstetter incompleteness
+	public static final int HELM_PARAM_WORLD = 2;	// World values: F = 0.50, G = 0.25, H = 1.00
+	public static final int HELM_PARAM_CAL   = 3;	// California values: F = 1.00, G = 4.50, H = 0.75
+	public static final int HELM_PARAM_MAX   = 3;
+
+	// Functions to obtain Helmstetter parameters.
+
+	public static double helm_capF (int helm_param) {
+		double capF;
+		switch (helm_param) {
+		default:
+			throw new IllegalArgumentException ("OEConstants.helm_capF: Invalid Helmstetter option: helm_param = " + helm_param);
+		case HELM_PARAM_NONE:
+			capF = 0.50;
+			break;
+		case HELM_PARAM_WORLD:
+			capF = 0.50;
+			break;
+		case HELM_PARAM_CAL:
+			capF = 1.00;
+			break;
+		}
+		return capF;
+	}
+
+	public static double helm_capG (int helm_param) {
+		double capG;
+		switch (helm_param) {
+		default:
+			throw new IllegalArgumentException ("OEConstants.helm_capG: Invalid Helmstetter option: helm_param = " + helm_param);
+		case HELM_PARAM_NONE:
+			capG = 100.0;
+			break;
+		case HELM_PARAM_WORLD:
+			capG = 0.25;
+			break;
+		case HELM_PARAM_CAL:
+			capG = 4.50;
+			break;
+		}
+		return capG;
+	}
+
+	public static double helm_capH (int helm_param) {
+		double capH;
+		switch (helm_param) {
+		default:
+			throw new IllegalArgumentException ("OEConstants.helm_capH: Invalid Helmstetter option: helm_param = " + helm_param);
+		case HELM_PARAM_NONE:
+			capH = 1.00;
+			break;
+		case HELM_PARAM_WORLD:
+			capH = 1.00;
+			break;
+		case HELM_PARAM_CAL:
+			capH = 0.75;
+			break;
+		}
+		return capH;
 	}
 
 }
