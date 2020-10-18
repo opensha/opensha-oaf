@@ -9,6 +9,9 @@ package org.opensha.oaf.oetas;
 //
 // Threading: If multiple objects are used by different threads, then
 // the implementation must supply appropriate synchronization.
+//
+// Note: This interface does not specify whether an examiner can be used
+// repeatedly to examine multiple catalogs in succession.
 
 public interface OECatalogExaminer {
 
