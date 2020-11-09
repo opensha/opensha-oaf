@@ -5,6 +5,11 @@ import java.util.List;
 import java.util.Collection;
 import java.util.Arrays;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 import org.opensha.oaf.oetas.OECatalogBuilder;
 import org.opensha.oaf.oetas.OECatalogExaminer;
 import org.opensha.oaf.oetas.OECatalogGenerator;
@@ -21,6 +26,11 @@ import org.opensha.oaf.oetas.OEInitFixedState;
 import org.opensha.oaf.oetas.OERandomGenerator;
 import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OEStatsCalc;
+
+import org.opensha.oaf.util.AutoExecutorService;
+import org.opensha.oaf.util.SimpleThreadManager;
+import org.opensha.oaf.util.SimpleThreadTarget;
+import org.opensha.oaf.util.SimpleUtils;
 
 
 // Tests of parameter fitting methods.
@@ -408,8 +418,8 @@ public class OEFitTest {
 
 
 	// Use the fitting code to generate and display an a-ams likelihood grid.
-	// a-values have the form cat_params.a * a_range[i].
-	// ams-values have the form cat_params.a * ams_range[i].
+	// a-values have the form cat_params.a + log10(a_range[i]).  So the powers of ten are (10^cat_params.a) * a_range[i].
+	// ams-values have the form cat_params.a + log10(ams_range[i]).  So the powers of ten are (10^cat_params.a) * ams_range[i].
 
 	public static void fit_a_ams_like_grid (
 		OEDiscHistory history, OECatalogParams cat_params, boolean f_intervals, int lmr_opt,
@@ -570,8 +580,8 @@ public class OEFitTest {
 
 
 	// Use the fitting code to generate and display an a-value likelihood vector and an a-ams likelihood grid.
-	// a-values have the form cat_params.a * a_range[i].
-	// ams-values have the form cat_params.a * ams_range[i].
+	// a-values have the form cat_params.a + log10(a_range[i]).  So the powers of ten are (10^cat_params.a) * a_range[i].
+	// ams-values have the form cat_params.a + log10(ams_range[i]).  So the powers of ten are (10^cat_params.a) * ams_range[i].
 
 	public static void fit_a_ams_like_vec_grid (
 		OEDiscHistory history, OECatalogParams cat_params, boolean f_intervals, int lmr_opt,
@@ -683,8 +693,8 @@ public class OEFitTest {
 
 
 	// Use the fitting code to find maximum-likelihood values for an a-value likelihood vector and an a-ams likelihood grid.
-	// a-values have the form cat_params.a * a_range[i].
-	// ams-values have the form cat_params.a * ams_range[i].
+	// a-values have the form cat_params.a + log10(a_range[i]).  So the powers of ten are (10^cat_params.a) * a_range[i].
+	// ams-values have the form cat_params.a + log10(ams_range[i]).  So the powers of ten are (10^cat_params.a) * ams_range[i].
 	// ix_vec is a one-element array that returns the MLE index into a_range, for the case of a == ams.
 	// ix_grid is a two-element array that returns the MLE indexes into a_range and ams_range.
 
@@ -778,6 +788,385 @@ public class OEFitTest {
 		fitter = null;
 
 		return;
+	}
+
+
+
+
+	// Class to use fitting to for a, ams, p, and c; version 1.
+	
+	public static class MLE_fit_a_ams_p_c_v1 implements SimpleThreadTarget {
+
+		// --- Input parameters ---
+
+		// Catalog history.
+
+		public OEDiscHistory history;
+
+		// Catalog parameters.
+
+		public OECatalogParams cat_params;
+
+		// Interval option.
+
+		public boolean f_intervals;
+
+		// Log-likelihood magnitude range option.
+
+		public int lmr_opt;
+
+		// Range of a-values.
+		// a-values are a_base + log10(a_range[aix]).
+
+		public double[] a_range;
+
+		// Range of ams-values.
+		// ams-values are a_base + log10(ams_range[amsix]).
+
+		public double[] ams_range;
+
+		// Range of p-values.
+		// p-values are cat_params.p + p_range[pix].
+
+		public double[] p_range;
+
+		// Range of c-values.
+		// c-values are cat_params.c * c_range[cix].
+
+		public double[] c_range;
+
+		// Set the input parameters.
+
+		public void setup (
+			OEDiscHistory history,
+			OECatalogParams cat_params,
+			boolean f_intervals,
+			int lmr_opt,
+			double[] a_range,
+			double[] ams_range,
+			double[] p_range,
+			double[] c_range
+		) {
+			this.history     = history;
+			this.cat_params  = cat_params;
+			this.f_intervals = f_intervals;
+			this.lmr_opt     = lmr_opt;
+			this.a_range     = a_range;
+			this.ams_range   = ams_range;
+			this.p_range     = p_range;
+			this.c_range     = c_range;
+			return;
+		}
+
+		//--- Output parameters ---
+
+		// The value of a_base for each p,c combination.
+		// The indexing is a_base[cix][pix].
+		// The value a_base is:
+		//   cat_params.a + log10(I(cat_params.p, cat_params.c) / I(p, c))
+		// where here we define
+		//   I(p, c) = Integral(0, cat_params.tend - cat_params.tbegin, ((t+c)^(-p))*dt)
+		// This choice causes each value of a_base to correspond to the same branch ratio, because
+		//   10^a_base * I(p, c) == 10^cat_params.a * I(cat_params.p, cat_params.c)
+
+		public double[][] a_base;
+
+		// Log-likelihood values under the constraint a == ams.
+		// The indexing is like_vec[cix][pix][aix].
+
+		public double [][][] like_vec;
+
+		// Log-likelihood values.
+		// The indexing is like_vec[cix][pix][aix][amsix].
+
+		public double [][][][] like_grid;
+
+		// Calculate the Omori scale factor used for a_base.
+		// This is I(p, c) as described above.
+
+		private double calc_omori_scale (double p, double c) {
+			return OERandomGenerator.omori_rate (p, c, 0.0, cat_params.tend - cat_params.tbegin);
+		}
+
+		//--- Internal variables ---
+
+		// Parameter fitter, shared by all threads.
+
+		private OEDiscExtFit fitter;
+
+		// Magnitude-exponent handle, shared by all threads.
+
+		private OEDiscExtFit.MagExponentHandle mexp;
+
+		//--- Work units ---
+
+		// Work unit.
+		// Note: This could be a static class.
+
+		private class WorkUnit {
+		
+			// The p-index.
+
+			public int pix;
+
+			// The c-index.
+
+			public int cix;
+
+			// Constructor sets up the work unit.
+
+			public WorkUnit (int pix, int cix) {
+				this.pix = pix;
+				this.cix = cix;
+			}
+		}
+
+		// List of work units.
+
+		private ArrayList<WorkUnit> work_units;
+
+		// Current index into the list of work units.
+
+		private int work_unit_index;
+
+		// Get the next work unit.
+		// Returns null if no more work.
+
+		private synchronized WorkUnit get_work_unit () {
+			if (work_unit_index >= work_units.size()) {
+				return null;
+			}
+			return work_units.get (work_unit_index++);
+		}
+
+		// Get the work unit index.
+
+		private synchronized int get_work_unit_index () {
+			return work_unit_index;
+		}
+
+		// Get the total number of work units.
+
+		private synchronized int get_work_unit_count () {
+			return work_units.size();
+		}
+
+		//--- Log-likelihood calculation ---
+
+		// Entry point for a thread.
+		// Parameters:
+		//  thread_manager = The thread manager.
+		//  thread_number = The thread number, which ranges from 0 to the number of
+		//                  threads in the pool minus 1.
+		// Threading: This function is called by all the threads in the pool, and
+		// so must be thread-safe and use any needed synchronization.
+
+		@Override
+		public void thread_entry (SimpleThreadManager thread_manager, int thread_number) throws Exception {
+
+			// Allocate the per-thread data structures and obtain their handles
+
+			try (
+				OEDiscExtFit.OmoriMatrixHandle omat = fitter.make_OmoriMatrixHandle();
+				OEDiscExtFit.PairMagOmoriHandle pmom = fitter.make_PairMagOmoriHandle();
+				OEDiscExtFit.AValueProdHandle avpr = fitter.make_AValueProdHandle();
+			) {
+
+				// Loop until prompt termination is requested
+
+				while (!( thread_manager.get_req_termination() )) {
+
+					// Get next work unit, end loop if none
+
+					WorkUnit work_unit = get_work_unit();
+					if (work_unit == null) {
+						break;
+					}
+
+					// Get p and c indexes and values
+
+					int pix = work_unit.pix;
+					int cix = work_unit.cix;
+
+					double p = cat_params.p + p_range[pix];
+					double c = cat_params.c * c_range[cix];
+
+					// Get scaled a-value
+
+					double a_scaled = cat_params.a + Math.log10(calc_omori_scale(cat_params.p, cat_params.c) / calc_omori_scale(p, c));
+					a_base[cix][pix] = a_scaled;
+
+					// Build the Omori matrix data structures
+
+					omat.omat_build (p, c);
+
+					// Build the magnitude-Omori pair data structures
+
+					pmom.pmom_build (mexp, omat);
+
+					// Likelihood base values
+
+					double base_ten_a_q = Math.pow(10.0, a_scaled) * mexp.get_q_correction();
+					double base_ten_ams_q = Math.pow(10.0, a_scaled) * mexp.get_q_correction();
+
+					// Likelihood vector
+
+					double[] vec = like_vec[cix][pix];
+
+					// Likelihood matrix
+
+					double[][] grid = like_grid[cix][pix];
+
+					// Loop over a-values
+
+					for (int aix = 0; aix < a_range.length; ++aix) {
+
+						double ten_a_q = base_ten_a_q * a_range[aix];
+
+						// Build the a-value-productivity data structures
+
+						double ten_aint_q = ten_a_q;
+
+						avpr.avpr_build (pmom, ten_aint_q);
+
+						// Compute the log-likelihood for vector
+
+						vec[aix] = avpr.avpr_calc_log_like (ten_a_q, ten_a_q);
+
+						// Loop over ams-values
+
+						for (int amsix = 0; amsix < ams_range.length; ++amsix) {
+				
+							double ten_ams_q = base_ten_ams_q * ams_range[amsix];
+
+							// Compute the log-likelihood for grid
+
+							grid[aix][amsix] = avpr.avpr_calc_log_like (ten_a_q, ten_ams_q);
+						}
+					}
+				}
+			}
+
+			return;
+		}
+
+		// Show the current state.
+
+		private void show_state (long start_time) {
+			long elapsed_time = System.currentTimeMillis() - start_time;
+			String s_elapsed_time = String.format ("%.3f", ((double)elapsed_time)/1000.0);
+			System.out.println ("Time = " + s_elapsed_time + ", work units = " + get_work_unit_index() + " of " + get_work_unit_count());
+			return;
+		}
+
+		// Calculate the log-likelihood values, using multiple threads.
+		// Parameters:
+		//  num_threads = Number of threads to use, can be -1 to use default number of threads.
+		//  max_runtime = Maximum runtime requested, in milliseconds, can be -1L for no limit.
+		//  progress_time = Time interval for progress messages, in milliseconds, can be -1L for no progress messages.
+		// Returns true if success, false if abort or timeout.
+	
+		public boolean calc_prime_count (int num_threads, long max_runtime, long progress_time) {
+
+			boolean result = false;
+
+			// Allocate arrays for the output parameters
+
+			a_base = new double[c_range.length][p_range.length];
+			like_vec = new double[c_range.length][p_range.length][a_range.length];
+			like_grid = new double[c_range.length][p_range.length][a_range.length][ams_range.length];
+
+			// Create the work units
+
+			work_units = new ArrayList<WorkUnit>();
+			work_unit_index = 0;
+
+			for (int cix = 0; cix < c_range.length; ++cix) {
+				for (int pix = 0; pix < p_range.length; ++pix) {
+					work_units.add (new WorkUnit (pix, cix));
+				}
+			}
+
+			// Create the fitter
+
+			fitter = new OEDiscExtFit();
+
+			boolean f_likelihood = true;
+			int i_start_rup = history.i_mainshock;
+			fitter.dfit_build (history, cat_params, f_intervals, f_likelihood, lmr_opt, i_start_rup);
+
+			// Allocate the executor and global data structures
+
+			try (
+				AutoExecutorService auto_executor = new AutoExecutorService (num_threads);
+				OEDiscExtFit.MagExponentHandle my_mexp = fitter.make_MagExponentHandle();
+			){
+
+				// Save global data structures
+
+				mexp = my_mexp;
+
+				// Build the magnitude-exponent data structures
+
+				mexp.mexp_build (cat_params.b, cat_params.alpha);
+
+				// Display executor info
+
+				System.out.println ();
+				System.out.println (auto_executor.toString());
+				System.out.println ();
+
+				// Make the thread manager
+
+				SimpleThreadManager thread_manager = new SimpleThreadManager();
+
+				// Launch the threads
+
+				thread_manager.launch_threads (this, auto_executor);
+
+				// Get the start time
+
+				long start_time = thread_manager.get_start_time();
+
+				// Loop until terminated
+
+				while (!( thread_manager.await_termination (max_runtime, progress_time) )) {
+
+					// Display progress message
+
+					show_state (start_time);
+				}
+
+				// Check for thread abort
+
+				if (thread_manager.is_abort()) {
+					System.out.println ("Stopped because of thread abort");
+					System.out.println (thread_manager.get_abort_message_string());
+				}
+
+				// Otherwise, check for timeout
+
+				else if (thread_manager.is_timeout()) {
+					System.out.println ("Stopped because of timeout");
+				}
+
+				// Otherwise, normal termination
+
+				else {
+					System.out.println ("Normal termination");
+					result = true;
+				}
+
+				// Show final state
+					
+				show_state (start_time);
+			}
+
+			// Return the success flag
+
+			return result;
+		}
+
 	}
 
 

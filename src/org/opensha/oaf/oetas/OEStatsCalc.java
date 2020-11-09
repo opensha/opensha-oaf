@@ -236,6 +236,9 @@ public class OEStatsCalc {
 	//   W(x) = (exp(x) - 1)/x
 	//
 	//   v = log(10) * (alpha - b)
+	//
+	// Note that the branch ratio depends only on the magnitude interval magint = msup - mref,
+	// and not on the values of mref and msup separately.
 
 	public static double calc_branch_ratio (
 		double a,
@@ -1337,6 +1340,68 @@ public class OEStatsCalc {
 	}
 
 
+	public static double find_array_min (final double[][][] x, final int[] ix) {
+		double result = Double.MAX_VALUE;
+		int ix0 = -1;
+		int ix1 = -1;
+		int ix2 = -1;
+		for (int m = 0; m < x.length; ++m) {
+			final double[][] x1 = x[m];
+			for (int m1 = 0; m1 < x1.length; ++m1) {
+				final double[] x2 = x1[m1];
+				for (int m2 = 0; m2 < x2.length; ++m2) {
+					if (x2[m2] < result) {
+						result = x2[m2];
+						ix0 = m;
+						ix1 = m1;
+						ix2 = m2;
+					}
+				}
+			}
+		}
+		if (ix != null) {
+			ix[0] = ix0;
+			ix[1] = ix1;
+			ix[2] = ix2;
+		}
+		return result;
+	}
+
+
+	public static double find_array_min (final double[][][][] x, final int[] ix) {
+		double result = Double.MAX_VALUE;
+		int ix0 = -1;
+		int ix1 = -1;
+		int ix2 = -1;
+		int ix3 = -1;
+		for (int m = 0; m < x.length; ++m) {
+			final double[][][] x1 = x[m];
+			for (int m1 = 0; m1 < x1.length; ++m1) {
+				final double[][] x2 = x1[m1];
+				for (int m2 = 0; m2 < x2.length; ++m2) {
+					final double[] x3 = x2[m2];
+					for (int m3 = 0; m3 < x3.length; ++m3) {
+						if (x3[m3] < result) {
+							result = x3[m3];
+							ix0 = m;
+							ix1 = m1;
+							ix2 = m2;
+							ix3 = m3;
+						}
+					}
+				}
+			}
+		}
+		if (ix != null) {
+			ix[0] = ix0;
+			ix[1] = ix1;
+			ix[2] = ix2;
+			ix[3] = ix3;
+		}
+		return result;
+	}
+
+
 
 
 	// Return the maximum value of an array.
@@ -1380,6 +1445,68 @@ public class OEStatsCalc {
 		if (ix != null) {
 			ix[0] = ix0;
 			ix[1] = ix1;
+		}
+		return result;
+	}
+
+
+	public static double find_array_max (final double[][][] x, final int[] ix) {
+		double result = -Double.MAX_VALUE;
+		int ix0 = -1;
+		int ix1 = -1;
+		int ix2 = -1;
+		for (int m = 0; m < x.length; ++m) {
+			final double[][] x1 = x[m];
+			for (int m1 = 0; m1 < x1.length; ++m1) {
+				final double[] x2 = x1[m1];
+				for (int m2 = 0; m2 < x2.length; ++m2) {
+					if (x2[m2] > result) {
+						result = x2[m2];
+						ix0 = m;
+						ix1 = m1;
+						ix2 = m2;
+					}
+				}
+			}
+		}
+		if (ix != null) {
+			ix[0] = ix0;
+			ix[1] = ix1;
+			ix[2] = ix2;
+		}
+		return result;
+	}
+
+
+	public static double find_array_max (final double[][][][] x, final int[] ix) {
+		double result = -Double.MAX_VALUE;
+		int ix0 = -1;
+		int ix1 = -1;
+		int ix2 = -1;
+		int ix3 = -1;
+		for (int m = 0; m < x.length; ++m) {
+			final double[][][] x1 = x[m];
+			for (int m1 = 0; m1 < x1.length; ++m1) {
+				final double[][] x2 = x1[m1];
+				for (int m2 = 0; m2 < x2.length; ++m2) {
+					final double[] x3 = x2[m2];
+					for (int m3 = 0; m3 < x3.length; ++m3) {
+						if (x3[m3] > result) {
+							result = x3[m3];
+							ix0 = m;
+							ix1 = m1;
+							ix2 = m2;
+							ix3 = m3;
+						}
+					}
+				}
+			}
+		}
+		if (ix != null) {
+			ix[0] = ix0;
+			ix[1] = ix1;
+			ix[2] = ix2;
+			ix[3] = ix3;
 		}
 		return result;
 	}

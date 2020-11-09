@@ -27,8 +27,15 @@ public class AutoExecutorService implements AutoCloseable {
 
 	// The number of threads used to create the executor service.
 	// If 0, the executor service has no fixed limit on number of threads.
+	// This value is always >= 0.
 
 	private int num_threads;
+
+	// Special values for number of threads
+
+	public static final int AESNUM_SINGLE = 1;			// allow a single thread
+	public static final int AESNUM_UNLIMITED = 0;		// allow an unlimited number of threads
+	public static final int AESNUM_DEFAULT = -1;		// use the default number, as determined by get_default_num_threads
 
 	// Timeout for the orderly shutdown, in milliseconds, must be > 0L or one of the special values below.
 
@@ -169,6 +176,18 @@ public class AutoExecutorService implements AutoCloseable {
 	//----- Construction -----
 
 
+	// Return true if a number of threads value is valid.
+
+	private static boolean is_valid_num_threads (int num_threads) {
+		if (   num_threads >= 0
+			|| num_threads == AESNUM_DEFAULT
+		) {
+			return true;
+		}
+		return false;
+	}
+
+
 	// Return true if a timeout value is valid.
 
 	private static boolean is_valid_timeout (long timeout) {
@@ -188,7 +207,8 @@ public class AutoExecutorService implements AutoCloseable {
 	//  num_threads = Number of threads to use for executor:
 	//    > 1 = Use a pool with a fixed number of threads.
 	//    1 = Use a single background thread.
-	//    0 = use a pool that caches an unlimited number of threads.
+	//    0 = Use a pool that caches an unlimited number of threads.
+	//    -1 = Use the default number of threads, as determined by get_default_num_threads.
 	//  timeout_orderly = Timeout for orderly shutdown, in milliseconds; must be > 0L or one of the special values above.
 	//  timeout_abrupt = Timeout for abrupt shutdown, in milliseconds; must be > 0L or one of the special values above.
 
@@ -201,7 +221,7 @@ public class AutoExecutorService implements AutoCloseable {
 		this.timeout_orderly = timeout_orderly;
 		this.timeout_abrupt = timeout_abrupt;
 
-		if (!( num_threads >= 0 )) {
+		if (!( is_valid_num_threads (num_threads) )) {
 			throw new IllegalArgumentException ("AutoExecutorService: Invalid number of threads: " + num_threads);
 		}
 
@@ -213,15 +233,21 @@ public class AutoExecutorService implements AutoCloseable {
 			throw new IllegalArgumentException ("AutoExecutorService: Invalid abrupt shutdown timeout: " + timeout_abrupt);
 		}
 
+		// Handle special thread numbers
+
+		if (this.num_threads == AESNUM_DEFAULT) {
+			this.num_threads = get_default_num_threads();
+		}
+
 		// Create the executor
 
-		if (this.num_threads == 0) {
+		if (this.num_threads == AESNUM_UNLIMITED) {
 			
 			// Executor with unlimited number of threads
 
 			executor_service = Executors.newCachedThreadPool ();
 
-		} else if (this.num_threads == 1) {
+		} else if (this.num_threads == AESNUM_SINGLE) {
 		
 			// Executor with a single background thread
 
@@ -234,6 +260,33 @@ public class AutoExecutorService implements AutoCloseable {
 			executor_service = Executors.newFixedThreadPool (this.num_threads);
 
 		}
+	}
+
+
+	// Make an object holding an executor, with default timeouts.
+	// Parameters:
+	//  num_threads = Number of threads to use for executor:
+	//    > 1 = Use a pool with a fixed number of threads.
+	//    1 = Use a single background thread.
+	//    0 = Use a pool that caches an unlimited number of threads.
+	//    -1 = Use the default number of threads, as determined by get_default_num_threads.
+	// The defaults are:
+	//  Timeout for orderly shutdown = 30 seconds.
+	//  Timeout for abrupt shutdown = AESTO_NO_WAIT, do not wait for termination.
+
+	public AutoExecutorService (int num_threads) {
+		this (num_threads, 30000L, AESTO_NO_WAIT);
+	}
+
+
+	// Make an object holding an executor, with default number of threads and timeouts.
+	// The defaults are:
+	//  Number of threads = default as determined by get_default_num_threads.
+	//  Timeout for orderly shutdown = 30 seconds.
+	//  Timeout for abrupt shutdown = AESTO_NO_WAIT, do not wait for termination.
+
+	public AutoExecutorService () {
+		this (AESNUM_DEFAULT, 30000L, AESTO_NO_WAIT);
 	}
 
 
@@ -322,6 +375,185 @@ public class AutoExecutorService implements AutoCloseable {
 
 	public long get_timeout_abrupt () {
 		return timeout_abrupt;
+	}
+
+
+
+
+	//----- Configuration -----
+
+
+	// Get the default number of threads.
+	// Note: Currently this looks for the environment variable AAFS_NUM_THREADS,
+	// which should be an integer >= 1.  If not found, or if its value is invalid,
+	// then the value of Runtime.availableProcessors is used.
+	// Note: The return value is always > 0.
+	// Note: This behavior is not guaranteed to remain the same in future version.
+
+	public static int get_default_num_threads () {
+
+		// Try the environment variable AAFS_NUM_THREADS
+
+		try {
+			String var = System.getenv ("AAFS_NUM_THREADS");
+			if (var != null) {
+				var = var.trim();
+				if (var.length() > 0) {
+					int val = Integer.parseInt (var);
+					if (val > 0) {
+						return val;
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			// fall thru
+		}
+
+		// Try Runtime.availableProcessors
+
+		try {
+			int val = Runtime.getRuntime().availableProcessors();
+			if (val > 0) {
+				return val;
+			}
+		}
+		catch (Exception e) {
+			// fall thru
+		}
+
+		// No information available, just return 1
+
+		return 1;
+	}
+
+
+	// Convert a number of threads to a string.
+
+	public static String num_threads_to_string (int num) {
+		String result;
+		if (num == AESNUM_SINGLE) {
+			result = Integer.toString (num) + " (AESNUM_SINGLE)";
+		}
+		else if (num == AESNUM_UNLIMITED) {
+			result = Integer.toString (num) + " (AESNUM_UNLIMITED)";
+		}
+		else if (num == AESNUM_DEFAULT) {
+			result = Integer.toString (num) + " (AESNUM_DEFAULT)";
+		}
+		else if (num < 0) {
+			result = Integer.toString (num) + " (INVALID)";
+		}
+		else {
+			result = Integer.toString (num);
+		}
+		return result;
+	}
+
+
+	// Convert a timeout value to a string.
+
+	public static String timeout_to_string (long timeout) {
+		String result;
+		if (timeout == AESTO_FOREVER) {
+			result = Long.toString (timeout) + " (AESTO_FOREVER)";
+		}
+		else if (timeout == AESTO_NO_WAIT) {
+			result = Long.toString (timeout) + " (AESTO_NO_WAIT)";
+		}
+		else if (timeout == AESTO_NO_SHUT) {
+			result = Long.toString (timeout) + " (AESTO_NO_SHUT)";
+		}
+		else if (timeout <= 0L) {
+			result = Long.toString (timeout) + " (INVALID)";
+		}
+		else {
+			result = Long.toString (timeout);
+		}
+		return result;
+	}
+
+
+	// Display the contents of this executor service.
+
+	@Override
+	public String toString () {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("AutoExecutorService:" + "\n");
+
+		if (executor_service == null) {
+			result.append ("executor_service = " + "<null>" + "\n");
+		} else {
+			result.append ("executor_service = " + executor_service.getClass().getName() + "\n");
+		}
+
+		result.append ("num_threads = " + num_threads_to_string (num_threads) + "\n");
+
+		result.append ("timeout_orderly = " + timeout_to_string (timeout_orderly) + "\n");
+
+		result.append ("timeout_abrupt = " + timeout_to_string (timeout_abrupt) + "\n");
+
+		return result.toString();
+	}
+
+
+
+
+	//----- Testing -----
+
+
+
+
+	public static void main(String[] args) {
+
+		// There needs to be at least one argument, which is the subcommand
+
+		if (args.length < 1) {
+			System.err.println ("AutoExecutorService : Missing subcommand");
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #1
+		// Command format:
+		//  test1
+		// Create an executor, and display its information.
+
+		if (args[0].equalsIgnoreCase ("test1")) {
+
+			// 0 additional arguments
+
+			if (!( args.length == 1 )) {
+				System.err.println ("AutoExecutorService : Invalid 'test1' subcommand");
+				return;
+			}
+
+			try {
+
+				try (
+					AutoExecutorService auto_executor = new AutoExecutorService();
+				) {
+					System.out.println (auto_executor.toString());
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Unrecognized subcommand.
+
+		System.err.println ("AutoExecutorService : Unrecognized subcommand : " + args[0]);
+		return;
+
 	}
 
 }
