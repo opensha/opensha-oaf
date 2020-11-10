@@ -553,7 +553,7 @@ public class SimpleThreadManager {
 
 
 
-	// Class to count the number of primes less than max_n.
+	// Class to count the number of primes less than or equal to max_n.
 	// (This is by far not the fastest algorithm, it is just a test of multithreading.)
 
 	private static class PrimeCounter implements SimpleThreadTarget {
