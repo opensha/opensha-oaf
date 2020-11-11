@@ -465,9 +465,13 @@ case "$1" in
             if [ -f oefjava.jar ]; then
                 rm oefjava.jar
             fi
+            if [ -f opensha-oaf-oaf-fixed.jar ]; then
+                rm opensha-oaf-oaf-fixed.jar
+            fi
+            zip -q -F opensha-oaf-oaf.jar --out opensha-oaf-oaf-fixed.jar
             mkdir otmp
             cd otmp
-            unzip -uoq ../opensha-oaf-oaf.jar
+            unzip -uoq ../opensha-oaf-oaf-fixed.jar
             if [ -f META-INF/MANIFEST.MF ]; then
                 rm META-INF/MANIFEST.MF
             fi
@@ -507,9 +511,13 @@ case "$1" in
             if [ -f AftershockGUI-prod-$2.jar ]; then
                 rm AftershockGUI-prod-$2.jar
             fi
+            if [ -f AftershockGUI-current-$2-fixed.jar ]; then
+                rm AftershockGUI-current-$2-fixed.jar
+            fi
+            zip -q -F AftershockGUI-current-$2.jar --out AftershockGUI-current-$2-fixed.jar
             mkdir gtmp
             cd gtmp
-            unzip -uoq ../AftershockGUI-current-$2.jar
+            unzip -uoq ../AftershockGUI-current-$2-fixed.jar
             cd ..
             cd ../../..
             if [ -f opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json ]; then
@@ -759,9 +767,13 @@ case "$1" in
             if [ -f AftershockGUI-prod-$2.jar ]; then
                 rm AftershockGUI-prod-$2.jar
             fi
+            if [ -f AftershockGUI-current-$2-fixed.jar ]; then
+                rm AftershockGUI-current-$2-fixed.jar
+            fi
+            zip -q -F AftershockGUI-current-$2.jar --out AftershockGUI-current-$2-fixed.jar
             mkdir gtmp
             cd gtmp
-            unzip -uoq ../AftershockGUI-current-$2.jar
+            unzip -uoq ../AftershockGUI-current-$2-fixed.jar
             cd ..
             cd ../../..
             if [ -f opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json ]; then
