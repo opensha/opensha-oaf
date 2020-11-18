@@ -190,14 +190,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 	//this is needed to prevent long processing times/overloaded memory. If more than MAX_EARTHQUAKE_NUMBER aftershocks are retrieved from ComCat,
 	//the magnitude of completeness is increased to the size of the nth largest aftershock. Must be > 0  or you'll get a nullPoitnerException down the line.
-	private final static int MAX_EARTHQUAKE_NUMBER = 1000; 
-	
 	
 	/*
 	 * Data parameters
 	 */
 	private static final long serialVersionUID = 1L;
 	
+	private IntegerParameter maxCatalogNumberParam;
 	private IntegerParameter numberSimsParam;
 	
 	private StringParameter eventIDParam;
@@ -549,8 +548,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		mapPlotParams = new ParameterList();
 		publishAdvisoryParams = new ParameterList();
 		
-		
-		
+	
 		eventIDParam = new StringParameter("USGS Event ID");
 		if(prForecastMode || prReportMode) 
 			eventIDParam.setValue("us70006vll");
@@ -668,6 +666,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		regionCenterTypeParam.setInfo("Different ways to select the aftershock zone center");
 		regionCenterTypeParam.addParameterChangeListener(this);
 		
+		maxCatalogNumberParam = new IntegerParameter("Max Aftershock Number");
+		maxCatalogNumberParam.setValue(1000);
+		maxCatalogNumberParam.setInfo("Maximum number of aftershocks to use in the analysis. Mc will be automatically adjusted if necessary.");
+				
 		regionList = new ParameterList();
 		
 		regionEditParam = new ParameterListParameter("Edit Aftershock Zone", regionList);
@@ -1308,6 +1310,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		
 		regionList.addParameter(minDepthParam);
 		regionList.addParameter(maxDepthParam);
+		regionList.addParameter(maxCatalogNumberParam);
 		
 		regionEditParam.getEditor().refreshParamEditor();
 	} 
@@ -1662,12 +1665,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				}
 				
 				// limit the catalog to MAX_EARTHQUAKE_NUMBER by changing the mc
-				if (aftershocks.size() > MAX_EARTHQUAKE_NUMBER){
+				if (aftershocks.size() > maxCatalogNumberParam.getValue()){
 					System.out.println("Found " + aftershocks.size() + " aftershocks. " + 
-							" Keeping only the " + MAX_EARTHQUAKE_NUMBER + " largest.");
+							" Keeping only the " + maxCatalogNumberParam.getValue() + " largest.");
 					double[] magnitudes = ETAS_StatsCalc.getAftershockMags(aftershocks);
 					Arrays.sort(magnitudes);
-					double newMc = magnitudes[aftershocks.size() - MAX_EARTHQUAKE_NUMBER];
+					double newMc = magnitudes[aftershocks.size() - maxCatalogNumberParam.getValue()];
 					aftershocks = aftershocks.getRupsAboveMag(newMc);
 				}
 				
@@ -1929,6 +1932,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //		else
 			setMagComplete();
 
+		// the prSequence is hyper productive, and supercritical. an adjustment to the Mmax.
+		if (prForecastMode) {
+			genericParams.maxMag = 7.05;
+		}
 		
 		resetFitConstraints(genericParams);
 		updateForecastTimes();
@@ -3621,9 +3628,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				System.out.println("Configuring for Puerto Rico forecast update...");
 				setMagComplete(3.5);
 
-				amsValRangeParam.setValue(new Range(-1.9, -1.0));
+				amsValRangeParam.setValue(new Range(-2.3, -1.2));
 				amsValRangeParam.getEditor().refreshParamEditor();
-				amsValNumParam.setValue(31);
+				amsValNumParam.setValue(21);
 				amsValNumParam.getEditor().refreshParamEditor();
 				
 				aValRangeParam.setValue(new Range(-2.3, -1.8));
@@ -3631,9 +3638,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				aValNumParam.setValue(21);
 				aValNumParam.getEditor().refreshParamEditor();
 				
-				pValRangeParam.setValue(new Range(0.5, 1.2));
+				pValRangeParam.setValue(new Range(0.8, 1.2));
 				pValRangeParam.getEditor().refreshParamEditor();
-				pValNumParam.setValue(30);
+				pValNumParam.setValue(21);
 				pValNumParam.getEditor().refreshParamEditor();
 				
 				cValRangeParam.setValue(new Range(1e-4, 1e-1));

@@ -440,7 +440,12 @@ public class ETAS_RateModel2D {
 
 		double p = forecastModel.getMaxLikelihood_p();
 		double c = forecastModel.getMaxLikelihood_c();
-		double timeIntegral = 1d/(1d - p) * ( Math.pow(te - t0 + c, 1d-p) - Math.pow(ts - t0 + c, 1d-p) );  
+		
+		double timeIntegral;
+		if (Math.abs(1-p) < 1e-6)
+			timeIntegral = Math.log(te - t0 + c) - Math.log(ts - t0 + c);
+		else
+			timeIntegral = 1d/(1d - p) * ( Math.pow(te - t0 + c, 1d-p) - Math.pow(ts - t0 + c, 1d-p) );
 		//        
 		double rate = productivity *  timeIntegral * spatialDecay;
 
@@ -467,7 +472,11 @@ public class ETAS_RateModel2D {
 		// compute time integral
 		p = forecastModel.getMaxLikelihood_p();
 		c = forecastModel.getMaxLikelihood_c();
-		timeIntegral = 1d/(1d - p) * ( Math.pow(te - t0 + c, 1d-p) - Math.pow(ts - t0 + c, 1d-p) );  
+
+		if (Math.abs(1-p) < 1e-6)
+			timeIntegral = Math.log(te - t0 + c) - Math.log(ts - t0 + c);
+		else
+			timeIntegral = 1d/(1d - p) * ( Math.pow(te - t0 + c, 1d-p) - Math.pow(ts - t0 + c, 1d-p) );
 
 		// compute productivity for this event
 		productivity = Math.pow(10d, forecastModel.getMaxLikelihood_a() + 1d*(mag0 - forecastModel.magComplete));

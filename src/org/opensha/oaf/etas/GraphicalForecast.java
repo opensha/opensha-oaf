@@ -1087,7 +1087,7 @@ public class GraphicalForecast{
 				+"                            </table>\n"
 				+"                        </td></tr>\n"
 				+"                    </table>\n"
-				+"						<p class=\"forecastKey\" style=\"font-size:10px\">*Legend gives typical shaking and intensity levels for the forecast magnitudes. Actual shaking is affected by many factors, and damage may be higher in vulnerable structures.</p>\n"
+				+"						<p class=\"forecastKey\" style=\"font-size:10px\">*This table gives typical shaking and intensity levels for the forecast magnitudes. Actual shaking is affected by many factors, and damage may be higher in vulnerable structures.</p>\n"
 				+"                </td>\n"
 				+"            </tr>\n"
 				+"        </table>\n\n");

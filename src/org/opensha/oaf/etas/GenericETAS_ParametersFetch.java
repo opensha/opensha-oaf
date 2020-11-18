@@ -67,7 +67,7 @@ public class GenericETAS_ParametersFetch {
 				double maxMag = Double.parseDouble(csv.get(row, 15));
 				
 				//this line put in for simulating PR sequence
-				maxMag = 7.05d;
+//				maxMag = 7.05d;
 //				System.err.println("Using 7.1 as maximum magnitude for PR simulation.");
 
 //				double cValue = Math.pow(10, log_cValue);
@@ -76,7 +76,6 @@ public class GenericETAS_ParametersFetch {
 				
 				double pValue_sigma = Math.sqrt(covpp*numSequences);	//this needs to be replaced with a real estimate
 				// due to memory concerns, we're replacing logcValue_sigma with a value that makes 3*sigma value equal to -5, 0
-//				double logcValue_sigma = Math.sqrt(covcc*numSequences);		//this needs to be replaced with a real estimate
 				double logcValue_sigma = 0.8333;		//this needs to be replaced with a real estimate
 				
 				double bValue_sigma = 0.1;//this needs to be replaced with a real estimate

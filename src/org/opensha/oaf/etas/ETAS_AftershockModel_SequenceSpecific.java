@@ -276,7 +276,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 				
 				//compute total number at end of fit window for mainshock (unscaled by a)
 				c = c0*Math.pow(kc*productivityMS,1/p);
-				if (p == 1){
+				if ( Math.abs(1-p) < 1e-6 ){
 					timeIntegralMS = Math.log(dataEndTimeDays + c) - Math.log(tStartIntegration + c);
 				} else {
 					timeIntegralMS = (Math.pow(dataEndTimeDays + c, 1-p) - Math.pow(tStartIntegration + c, 1-p)) / (1-p);
@@ -304,7 +304,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 					//compute total number at end of fit window due to this aftershock (unscaled by a)
 					c = c0*Math.pow(kc*productivityAS[i],1/p);
 					if(relativeEventTimes[i] < dataEndTimeDays){
-						if(p == 1){
+						if(Math.abs(1-p) < 1e-6){
 							timeIntegral = Math.log(dataEndTimeDays - relativeEventTimes[i] + c) - Math.log(tStartIntegration - relativeEventTimes[i] + c); 
 						} else {
 							timeIntegral = (Math.pow(dataEndTimeDays - relativeEventTimes[i] + c, 1-p) - Math.pow(tStartIntegration - relativeEventTimes[i] + c, 1-p)) / (1-p);
@@ -527,7 +527,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 				
 				
 				//compute total number at end of fit window for mainshock (unscaled by a)
-				if (p == 1){
+				if (Math.abs(1-p) < 1e-6){
 					timeIntegralMS = Math.log(dataEndTimeDays + c) - Math.log(tStartIntegration + c);
 				} else {
 					timeIntegralMS = (Math.pow(dataEndTimeDays + c, 1-p) - Math.pow(tStartIntegration + c, 1-p)) / (1-p);
@@ -551,7 +551,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 					
 					//compute total number at end of fit window due to this aftershock (unscaled by a)
 					if(relativeEventTimes[i] < dataEndTimeDays){
-						if(p == 1){
+						if(Math.abs(1-p) < 1e-6){
 							timeIntegral = Math.log(dataEndTimeDays - relativeEventTimes[i] + c) - Math.log(tStartIntegration - relativeEventTimes[i] + c); 
 						} else {
 							timeIntegral = (Math.pow(dataEndTimeDays - relativeEventTimes[i] + c, 1-p) - Math.pow(tStartIntegration - relativeEventTimes[i] + c, 1-p)) / (1-p);
@@ -784,7 +784,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 //						tStartIntegration = timeCompleteMS;
 //
 //						//compute total number at end of fit window for mainshock 
-//						if (p == 1)
+//						if (Math.abs(1-p) < 1e-6)
 //							timeIntegral = kms*productivityMS * (Math.log(dataEndTimeDays + c) - Math.log(tStartIntegration + c));
 //						else
 //							timeIntegral = kms*productivityMS * (Math.pow(dataEndTimeDays + c, 1d-p) - Math.pow(tStartIntegration + c, 1d-p)) / (1d-p);
@@ -797,7 +797,7 @@ public class ETAS_AftershockModel_SequenceSpecific extends ETAS_AftershockModel 
 //							// start either at event time or complete time
 //							tStartIntegration = Math.max(timeCompleteMS, relativeEventTimes[i]);
 //
-//							if (p == 1)
+//							if (Math.abs(1-p) < 1e-6)
 //								timeIntegral = k*productivityAS[i] * (Math.log(dataEndTimeDays - relativeEventTimes[i] + c) - Math.log(tStartIntegration - relativeEventTimes[i] + c));
 //							else
 //								timeIntegral = k*productivityAS[i] * (Math.pow(dataEndTimeDays - relativeEventTimes[i] + c, 1d-p) - Math.pow(tStartIntegration  - relativeEventTimes[i] + c, 1d-p)) / (1d-p);

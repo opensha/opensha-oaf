@@ -498,13 +498,13 @@ public abstract class ETAS_AftershockModel {
 		if (timeDependentMc) {
 			kc = Math.pow(10, ac-ams);
 			cms = c*Math.pow(k*kc,1d/p);
-			if (p == 1) {
+			if (Math.abs(1-p) < 1e-6) {
 				timeIntegral = Math.log(tMaxDays + cms) - Math.log(tMinDays + cms);
 			} else {
 				timeIntegral = (Math.pow(tMaxDays + cms, 1d-p) - Math.pow(tMinDays + cms, 1d-p)) / (1d-p);
 			}
 		} else {
-			if (p == 1) 
+			if (Math.abs(1-p) < 1e-6) 
 				timeIntegral = Math.log(tMaxDays + c) - Math.log(tMinDays + c);
 			else
 				timeIntegral = (Math.pow(tMaxDays + c, 1d-p) - Math.pow(tMinDays + c, 1d-p)) / (1d-p);
@@ -524,14 +524,14 @@ public abstract class ETAS_AftershockModel {
 			if(relativeTimeAftershocks[i] <= tMaxDays){
 				if (timeDependentMc) {
 					cms = c*Math.pow(kc*productivity[i],1d/p);
-					if(p == 1) {
+					if(Math.abs(1-p) < 1e-6) {
 						timeIntegral = Math.log(tMaxDays - relativeTimeAftershocks[i] + cms) - Math.log(cms); 
 					} else {
 						timeIntegral = (Math.pow(tMaxDays - relativeTimeAftershocks[i] + cms, 1d-p) - Math.pow(cms, 1d-p)) / (1d-p);
 					}
 					Ntot += productivity[i]*timeIntegral;	//aftershock Contributions
 				} else {
-					if(p == 1)
+					if(Math.abs(1-p) < 1e-6)
 						timeIntegral = Math.log(tMaxDays - relativeTimeAftershocks[i] + c) - Math.log(c); 
 					else
 						timeIntegral = (Math.pow(tMaxDays - relativeTimeAftershocks[i] + c, 1d-p) - Math.pow(c, 1d-p)) / (1d-p);

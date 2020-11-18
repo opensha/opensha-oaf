@@ -96,6 +96,7 @@ public class ETAScatalog {
 		double[][] paramList;
 		if(nSims>0){
 			//get the list of parameters to supply to each simulation
+			
 			paramList = sampleParams(nSims, maxMagLimit);
 			
 			
@@ -123,10 +124,11 @@ public class ETAScatalog {
 				c_sample = params[3];
 				
 				if (D && Math.floorMod(i, nSims/10) == 0) System.out.println("Parameter set " + i + ": " + ams_sample + " " + a_sample + " " + p_sample + " " + c_sample);
-
+//				if (D) System.out.println("Parameter set " + i + ": " + ams_sample + " " + a_sample + " " + p_sample + " " + c_sample);
+				
 				// Currently sets the first event as mainshock and adjusts magnitude
 				// todo step1: change magnitude of LARGEST earthquake
-				// todo step2: depending on the total number of vents, adjust N-largest magnitudes
+				// todo step2: depending on the total number of events, adjust N-largest magnitudes
 				ObsEqkRupture simulationMainshock = (ObsEqkRupture) mainshock.clone();
 				simulationMainshock.setMag(mainshock.getMag() + (ams_sample - a_sample));
 
@@ -349,12 +351,19 @@ public class ETAScatalog {
 		
 		double unscaledProductivity;
 		
-		if(t < forecastStart)
-			unscaledProductivity = Math.pow(10,a_sample)/(1-p)*( Math.pow(forecastEnd - t + c, 1-p) - Math.pow(forecastStart - t + c, 1-p) );
-		else if(t < forecastEnd)
-			unscaledProductivity = Math.pow(10,a_sample)/(1-p)*( Math.pow(forecastEnd - t + c, 1-p) - Math.pow(c, 1-p) );
-		else
+		if(t < forecastStart) {
+			if (Math.abs(1-p) < 1e-6)
+				unscaledProductivity = Math.pow(10,a_sample)*( Math.log(forecastEnd - t + c) - Math.log(forecastStart - t + c) );
+			else
+				unscaledProductivity = Math.pow(10,a_sample)/(1-p)*( Math.pow(forecastEnd - t + c, 1-p) - Math.pow(forecastStart - t + c, 1-p) );
+		} else if (t < forecastEnd) {
+			if (Math.abs(1-p) < 1e-6)
+				unscaledProductivity = Math.pow(10,a_sample)*( Math.log(forecastEnd - t + c) - Math.log(t + c) );
+			else
+				unscaledProductivity = Math.pow(10,a_sample)/(1-p)*( Math.pow(forecastEnd - t + c, 1-p) - Math.pow(c, 1-p) );
+		} else {
 			unscaledProductivity = 0;
+		}
 		
 		double prod = unscaledProductivity * Math.pow(10,(alpha*(mag-refMag)));
 		return prod;
@@ -472,23 +481,42 @@ public class ETAScatalog {
 	
 	private double assignTime(double t0, double tmin, double tmax, double p, double c){
 		
-		 double u=Math.random();
+		 double u = Math.random();
 		 double a1, a2, a3;
 		 double t;
 		 
-		 if(t0 < tmin){
-			 a1= Math.pow(tmax - t0 + c, 1d-p);
-			 a2= Math.pow(tmin - t0 + c, 1d-p);
-		 } else if(t0 < tmax) {
-			 a1= Math.pow(tmax - t0 + c, 1d-p);
-			 a2= Math.pow(c, 1d-p);
-		 } else {
-			 a1= Double.NaN;
-			 a2= Double.NaN;
-		 }
+		 if (Math.abs(1-p) < 1e-6) {
+
+			 if(t0 < tmin){
+				 a1= Math.log(tmax - t0 + c);
+				 a2= Math.log(tmin - t0 + c);
+			 } else if(t0 < tmax) {
+				 a1= Math.log(tmax - t0 + c);
+				 a2= Math.log(c);
+			 } else {
+				 a1= Double.NaN;
+				 a2= Double.NaN;
+			 }
+
+			 a3 = u*a1 + (1d-u)*a2;
+			 t = Math.exp(a3) - c + t0;
 			 
-		 a3 = u*a1 + (1d-u)*a2;
-		 t = Math.pow(a3, 1d/(1d-p)) - c + t0;
+		 } else {
+			 if(t0 < tmin){
+				 a1= Math.pow(tmax - t0 + c, 1d-p);
+				 a2= Math.pow(tmin - t0 + c, 1d-p);
+			 } else if(t0 < tmax) {
+				 a1= Math.pow(tmax - t0 + c, 1d-p);
+				 a2= Math.pow(c, 1d-p);
+			 } else {
+				 a1= Double.NaN;
+				 a2= Double.NaN;
+			 }
+
+			 a3 = u*a1 + (1d-u)*a2;
+			 t = Math.pow(a3, 1d/(1d-p)) - c + t0;
+		 }
+		 
 
 		 return t;
 	}

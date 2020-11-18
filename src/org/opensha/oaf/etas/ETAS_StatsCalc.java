@@ -385,7 +385,7 @@ public class ETAS_StatsCalc {
    
     double K0;
     double n;
-	if (p == 1)
+	if (Math.abs(1-p) < 1e-6)
 		K0 = Math.pow(10, a) * ( Math.log(tMax + c) - Math.log(c) );
 	else
 		K0 = Math.pow(10, a)/(1-p) * ( Math.pow(tMax + c, 1-p) - Math.pow(c, 1-p) );
