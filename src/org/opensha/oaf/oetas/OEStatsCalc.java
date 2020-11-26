@@ -1513,4 +1513,194 @@ public class OEStatsCalc {
 
 
 
+
+	// Make a deep copy of an array.
+	// Parameters:
+	//  x = Array to copy.
+	// Returns an array, with the same extents as x, with the same contents.
+	// This is a deep copy.
+
+	public static double[] array_copy (final double[] x) {
+		final int c0 = x.length;
+		final double[] r0 = new double[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = x[m0];
+		}
+		return r0;
+	}
+
+	public static int[] array_copy (final int[] x) {
+		final int c0 = x.length;
+		final int[] r0 = new int[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = x[m0];
+		}
+		return r0;
+	}
+
+	public static double[][] array_copy (final double[][] x) {
+		final int c0 = x.length;
+		final double[][] r0 = new double[c0][];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final double[] x1 = x[m0];
+			final int c1 = x1.length;
+			final double[] r1 = new double[c1];
+			r0[m0] = r1;
+			for (int m1 = 0; m1 < c1; ++m1) {
+				r1[m1] = x1[m1];
+			}
+		}
+		return r0;
+	}
+
+	public static int[][] array_copy (final int[][] x) {
+		final int c0 = x.length;
+		final int[][] r0 = new int[c0][];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final int[] x1 = x[m0];
+			final int c1 = x1.length;
+			final int[] r1 = new int[c1];
+			r0[m0] = r1;
+			for (int m1 = 0; m1 < c1; ++m1) {
+				r1[m1] = x1[m1];
+			}
+		}
+		return r0;
+	}
+
+
+
+
+	// Make a deep copy of an array, and take log10 of each element
+	// Parameters:
+	//  x = Array to copy and apply Math.log10.
+	// Returns an array, with the same extents as x, with log10 applied to the contents.
+	// This is a deep copy.
+
+	public static double[] array_copy_log10 (final double[] x) {
+		final int c0 = x.length;
+		final double[] r0 = new double[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = Math.log10(x[m0]);
+		}
+		return r0;
+	}
+
+	public static double[][] array_copy_log10 (final double[][] x) {
+		final int c0 = x.length;
+		final double[][] r0 = new double[c0][];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final double[] x1 = x[m0];
+			final int c1 = x1.length;
+			final double[] r1 = new double[c1];
+			r0[m0] = r1;
+			for (int m1 = 0; m1 < c1; ++m1) {
+				r1[m1] = Math.log10(x1[m1]);
+			}
+		}
+		return r0;
+	}
+
+
+
+
+	// Make a deep copy of an array, and take log of each element
+	// Parameters:
+	//  x = Array to copy and apply Math.log.
+	// Returns an array, with the same extents as x, with log applied to the contents.
+	// This is a deep copy.
+
+	public static double[] array_copy_log (final double[] x) {
+		final int c0 = x.length;
+		final double[] r0 = new double[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = Math.log(x[m0]);
+		}
+		return r0;
+	}
+
+	public static double[][] array_copy_log (final double[][] x) {
+		final int c0 = x.length;
+		final double[][] r0 = new double[c0][];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final double[] x1 = x[m0];
+			final int c1 = x1.length;
+			final double[] r1 = new double[c1];
+			r0[m0] = r1;
+			for (int m1 = 0; m1 < c1; ++m1) {
+				r1[m1] = Math.log(x1[m1]);
+			}
+		}
+		return r0;
+	}
+
+
+
+
+	// Make a deep copy of an array, and take exp of each element
+	// Parameters:
+	//  x = Array to copy and apply Math.exp.
+	// Returns an array, with the same extents as x, with exp applied to the contents.
+	// This is a deep copy.
+
+	public static double[] array_copy_exp (final double[] x) {
+		final int c0 = x.length;
+		final double[] r0 = new double[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = Math.exp(x[m0]);
+		}
+		return r0;
+	}
+
+	public static double[][] array_copy_exp (final double[][] x) {
+		final int c0 = x.length;
+		final double[][] r0 = new double[c0][];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final double[] x1 = x[m0];
+			final int c1 = x1.length;
+			final double[] r1 = new double[c1];
+			r0[m0] = r1;
+			for (int m1 = 0; m1 < c1; ++m1) {
+				r1[m1] = Math.exp(x1[m1]);
+			}
+		}
+		return r0;
+	}
+
+
+
+
+	// Make a deep copy of an array, and take power of 10 to each element
+	// Parameters:
+	//  x = Array to copy and apply Math.pow(10.0, *).
+	// Returns an array, with the same extents as x, with pow(10.0, *) applied to the contents.
+	// This is a deep copy.
+
+	public static double[] array_copy_exp10 (final double[] x) {
+		final int c0 = x.length;
+		final double[] r0 = new double[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = Math.pow(10.0, x[m0]);
+		}
+		return r0;
+	}
+
+	public static double[][] array_copy_exp10 (final double[][] x) {
+		final int c0 = x.length;
+		final double[][] r0 = new double[c0][];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final double[] x1 = x[m0];
+			final int c1 = x1.length;
+			final double[] r1 = new double[c1];
+			r0[m0] = r1;
+			for (int m1 = 0; m1 < c1; ++m1) {
+				r1[m1] = Math.pow(10.0, x1[m1]);
+			}
+		}
+		return r0;
+	}
+
+
+
+
 }

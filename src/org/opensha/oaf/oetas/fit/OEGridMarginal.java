@@ -11,6 +11,10 @@ import org.opensha.oaf.oetas.OEStatsCalc;
 
 // Class to compute and store marginals for a grid of likelihoods.
 // Author: Michael Barall 11/14/2020.
+//
+// To use this class, create an object and then use one of the provided
+// functions to compute the marginals for a grid.  A single object can
+// be used for multiple grids.
 
 public class OEGridMarginal {
 
@@ -116,6 +120,15 @@ public class OEGridMarginal {
 
 	public double[][][][] marginal_2d_probability;
 
+	// The indexes for the mode of each marginal 2D probability distribution.
+	// Dimensionality: marginal_2d_mode_index[n_vars][n_vars][2]
+	// If n1 < n2 then marginal_2d_mode_index[n1][n2] is non-null; otherwise it is null.
+	// This is because we only need one marginal for each unique pair of variables.
+	// For each n1 < n2, marginal_2d_mode_index[n1][n2] maximizes the value of
+	// marginal_2d_probability[n1][n2][marginal_2d_mode_index[n1][n2][0]][marginal_2d_mode_index[n1][n2][1]].
+
+	public int[][][] marginal_2d_mode_index;
+
 
 
 
@@ -192,6 +205,22 @@ public class OEGridMarginal {
 			}
 		}
 
+		marginal_2d_mode_index = new int[n_vars][][];
+		for (int n1 = 0; n1 < n_vars; ++n1) {
+			marginal_2d_mode_index[n1] = new int[n_vars][];
+			for (int n2 = 0; n2 < n_vars; ++n2) {
+				if (n1 < n2) {
+					marginal_2d_mode_index[n1][n2] = new int[2];
+					for (int i = 0; i < 2; ++i) {
+						marginal_2d_mode_index[n1][n2][i] = -1;
+					}
+				}
+				else {
+					marginal_2d_mode_index[n1][n2] = null;
+				}
+			}
+		}
+
 		return;
 	}
 
@@ -207,15 +236,19 @@ public class OEGridMarginal {
 		// Calculate the modes
 
 		for (int n = 0; n < n_vars; ++n) {
-			int j = 0;
-			double x = marginal_probability[n][0];
-			for (int i = 1; i < n_values[n]; ++i) {
-				if (x < marginal_probability[n][i]) {
-					j = i;
-					x = marginal_probability[n][i];
+			int[] j = new int[1];
+			OEStatsCalc.find_array_max (marginal_probability[n], j);
+			marginal_mode_index[n] = j[0];
+		}
+
+		// Calculate the 2D modes
+
+		for (int n1 = 0; n1 < n_vars; ++n1) {
+			for (int n2 = 0; n2 < n_vars; ++n2) {
+				if (n1 < n2) {
+					OEStatsCalc.find_array_max (marginal_2d_probability[n1][n2], marginal_2d_mode_index[n1][n2]);
 				}
 			}
-			marginal_mode_index[n] = j;
 		}
 
 		// Apply min probability to marginal
@@ -265,12 +298,13 @@ public class OEGridMarginal {
 
 
 
-	// Compute marginals from a grid of log-likelihoods.
+	// Compute marginals from a grid of log-likelihoods or probabilities.
 	// Parameters:
-	//  grid = Grid of log-likelihood values.
+	//  grid = Grid of probabilities or log-likelihood values.
+	//  f_has_prob = True if grid contains probabilities, false if grid contains log-likelihood values.
 	//  f_convert = True to convert grid entries to (unnormalized) probabilities.
 
-	public void marginals_from_log_like (double[][][][] grid, boolean f_convert) {
+	public void marginals_from_grid (double[][][][] grid, boolean f_has_prob, boolean f_convert) {
 
 		// Set up 4-dimensional grid description
 		
@@ -293,10 +327,17 @@ public class OEGridMarginal {
 
 		alloc_marginal();
 
-		// Get the maximum likelihood value, which is needed to convert to probabilities
+		// Get the maximum grid entry value
 	
-		peak_probability = 1.0;
-		final double max_like = OEStatsCalc.find_array_max (grid, peak_indexes);
+		final double max_grid_entry = OEStatsCalc.find_array_max (grid, peak_indexes);
+
+		// Get the maximum probability value in the entire grid
+
+		if (f_has_prob) {
+			peak_probability = max_grid_entry;
+		} else {
+			peak_probability = 1.0;
+		}
 
 		// Loop over all grid elements
 
@@ -310,7 +351,13 @@ public class OEGridMarginal {
 
 						// Convert grid element to probability
 
-						double prob = Math.exp(grid[i0][i1][i2][i3] - max_like);
+						double prob;
+
+						if (f_has_prob) {
+							prob = grid[i0][i1][i2][i3];
+						} else {
+							prob = Math.exp(grid[i0][i1][i2][i3] - max_grid_entry);
+						}
 
 						if (prob < min_probability) {
 							prob = 0.0;
@@ -392,12 +439,13 @@ public class OEGridMarginal {
 
 
 
-	// Compute marginals from a grid of log-likelihoods.
+	// Compute marginals from a grid of log-likelihoods or probabilities.
 	// Parameters:
-	//  grid = Grid of log-likelihood values.
+	//  grid = Grid of probabilities or log-likelihood values.
+	//  f_has_prob = True if grid contains probabilities, false if grid contains log-likelihood values.
 	//  f_convert = True to convert grid entries to (unnormalized) probabilities.
 
-	public void marginals_from_log_like (double[][][] grid, boolean f_convert) {
+	public void marginals_from_grid (double[][][] grid, boolean f_has_prob, boolean f_convert) {
 
 		// Set up 3-dimensional grid description
 		
@@ -418,10 +466,17 @@ public class OEGridMarginal {
 
 		alloc_marginal();
 
-		// Get the maximum likelihood value, which is needed to convert to probabilities
+		// Get the maximum grid entry value
 	
-		peak_probability = 1.0;
-		final double max_like = OEStatsCalc.find_array_max (grid, peak_indexes);
+		final double max_grid_entry = OEStatsCalc.find_array_max (grid, peak_indexes);
+
+		// Get the maximum probability value in the entire grid
+
+		if (f_has_prob) {
+			peak_probability = max_grid_entry;
+		} else {
+			peak_probability = 1.0;
+		}
 
 		// Loop over all grid elements
 
@@ -433,7 +488,13 @@ public class OEGridMarginal {
 
 					// Convert grid element to probability
 
-					double prob = Math.exp(grid[i0][i1][i2] - max_like);
+					double prob;
+
+					if (f_has_prob) {
+						prob = grid[i0][i1][i2];
+					} else {
+						prob = Math.exp(grid[i0][i1][i2] - max_grid_entry);
+					}
 
 					if (prob < min_probability) {
 						prob = 0.0;
@@ -498,12 +559,13 @@ public class OEGridMarginal {
 
 
 
-	// Compute marginals from a grid of log-likelihoods.
+	// Compute marginals from a grid of log-likelihoods or probabilities.
 	// Parameters:
-	//  grid = Grid of log-likelihood values.
+	//  grid = Grid of probabilities or log-likelihood values.
+	//  f_has_prob = True if grid contains probabilities, false if grid contains log-likelihood values.
 	//  f_convert = True to convert grid entries to (unnormalized) probabilities.
 
-	public void marginals_from_log_like (double[][] grid, boolean f_convert) {
+	public void marginals_from_grid (double[][] grid, boolean f_has_prob, boolean f_convert) {
 
 		// Set up 2-dimensional grid description
 		
@@ -522,10 +584,17 @@ public class OEGridMarginal {
 
 		alloc_marginal();
 
-		// Get the maximum likelihood value, which is needed to convert to probabilities
+		// Get the maximum grid entry value
 	
-		peak_probability = 1.0;
-		final double max_like = OEStatsCalc.find_array_max (grid, peak_indexes);
+		final double max_grid_entry = OEStatsCalc.find_array_max (grid, peak_indexes);
+
+		// Get the maximum probability value in the entire grid
+
+		if (f_has_prob) {
+			peak_probability = max_grid_entry;
+		} else {
+			peak_probability = 1.0;
+		}
 
 		// Loop over all grid elements
 
@@ -533,46 +602,52 @@ public class OEGridMarginal {
 			double tot1 = 0.0;
 			for (int i1 = 0; i1 < v1; ++i1) {
 
-					// Convert grid element to probability
+				// Convert grid element to probability
 
-					double prob = Math.exp(grid[i0][i1] - max_like);
+				double prob;
 
-					if (prob < min_probability) {
-						prob = 0.0;
-					}
+				if (f_has_prob) {
+					prob = grid[i0][i1];
+				} else {
+					prob = Math.exp(grid[i0][i1] - max_grid_entry);
+				}
 
-					// If converting the grid, save it back
+				if (prob < min_probability) {
+					prob = 0.0;
+				}
 
-					if (f_convert) {
-						grid[i0][i1] = prob;
-					}
+				// If converting the grid, save it back
 
-					// Add to total probability
+				if (f_convert) {
+					grid[i0][i1] = prob;
+				}
 
-					tot1 += prob;
+				// Add to total probability
 
-					// Add to the marginal probability for each variable
+				tot1 += prob;
 
-					marginal_probability[0][i0] += prob;
-					marginal_probability[1][i1] += prob;
+				// Add to the marginal probability for each variable
 
-					// Add to the marginal peak for each variable
+				marginal_probability[0][i0] += prob;
+				marginal_probability[1][i1] += prob;
 
-					if (marginal_peak_probability[0][i0] < prob) {
-						marginal_peak_probability[0][i0] = prob;
-						marginal_peak_indexes[0][i0][0] = i0;
-						marginal_peak_indexes[0][i0][1] = i1;
-					}
+				// Add to the marginal peak for each variable
 
-					if (marginal_peak_probability[1][i1] < prob) {
-						marginal_peak_probability[1][i1] = prob;
-						marginal_peak_indexes[1][i1][0] = i0;
-						marginal_peak_indexes[1][i1][1] = i1;
-					}
+				if (marginal_peak_probability[0][i0] < prob) {
+					marginal_peak_probability[0][i0] = prob;
+					marginal_peak_indexes[0][i0][0] = i0;
+					marginal_peak_indexes[0][i0][1] = i1;
+				}
 
-					// Add to the marginal 2D probability for each pair of variables
+				if (marginal_peak_probability[1][i1] < prob) {
+					marginal_peak_probability[1][i1] = prob;
+					marginal_peak_indexes[1][i1][0] = i0;
+					marginal_peak_indexes[1][i1][1] = i1;
+				}
 
-					marginal_2d_probability[0][1][i0][i1] += prob;
+				// Add to the marginal 2D probability for each pair of variables
+
+				marginal_2d_probability[0][1][i0][i1] += prob;
 			}
 			total_probability += tot1;
 		}
@@ -607,6 +682,7 @@ public class OEGridMarginal {
 		marginal_peak_probability = null;
 		marginal_peak_indexes = null;
 		marginal_2d_probability = null;
+		marginal_2d_mode_index = null;
 
 		return;
 	}
@@ -632,13 +708,297 @@ public class OEGridMarginal {
 		result.append ("OEGridMarginal:" + "\n");
 
 		result.append ("n_vars = "              + n_vars                               + "\n");
-		result.append ("n_values = "            + Arrays.toString(n_values)            + "\n");
-		result.append ("min_probability = "     + min_probability                      + "\n");
-		result.append ("peak_probability = "    + peak_probability                     + "\n");
-		result.append ("peak_indexes = "        + Arrays.toString(peak_indexes)        + "\n");
-		result.append ("total_probability = "   + total_probability                    + "\n");
-		result.append ("marginal_mode_index = " + Arrays.toString(marginal_mode_index) + "\n");
 
+		if (n_vars > 0) {
+			result.append ("n_values = "            + Arrays.toString(n_values)            + "\n");
+			result.append ("min_probability = "     + min_probability                      + "\n");
+			result.append ("peak_probability = "    + peak_probability                     + "\n");
+			result.append ("peak_indexes = "        + Arrays.toString(peak_indexes)        + "\n");
+			result.append ("total_probability = "   + total_probability                    + "\n");
+			result.append ("marginal_mode_index = " + Arrays.toString(marginal_mode_index) + "\n");
+
+			for (int n1 = 0; n1 < n_vars; ++n1) {
+				for (int n2 = 0; n2 < n_vars; ++n2) {
+					if (n1 < n2) {
+						result.append ("marginal_2d_mode_index[" + n1 + "][" + n2 + "] = " + Arrays.toString(marginal_2d_mode_index[n1][n2]) + "\n");
+					}
+				}
+			}
+		}
+
+		return result.toString();
+	}
+
+
+
+
+	//----- Convenience functions -----
+
+
+
+
+	// Make a string that contains a portion of a marginal probability distribution.
+	// Parameters:
+	//  n = Variable number (0 thru n_vars-1).
+	//  max_els = Maximum number of elements to include.
+	// Returns a string containing a sequential section of the marginal probability
+	// distribution of the n-th variable.  If max_els is less than the number
+	// of values of the n-th variable, then a section is chosen centered on the mode.
+	// The number of elements included is els = min(max_els, n_values[n]), and
+	// the length of the string is 10*els - 1.  Each element is displayed as a
+	// floating-point number, and are separated by a single space.
+
+	public String marginal_probability_as_string (int n, int max_els) {
+		StringBuilder result = new StringBuilder();
+	
+		// Get the lower and upper limits to include
+
+		int lo = Math.max (0, Math.min (n_values[n] - max_els, marginal_mode_index[n] - ((max_els - 1)/2)));
+		int hi = Math.min (lo + max_els, n_values[n]);
+
+		// Make the string
+
+		for (int i = lo; i < hi; ++i) {
+			if (i > lo) {
+				result.append (" ");
+			}
+			result.append (String.format ("%.3e", marginal_probability[n][i]));
+		}
+
+		return result.toString();
+	}
+
+
+
+
+	// Make a string that contains a portion of a marginal 2D probability distribution.
+	// Parameters:
+	//  n1 = Variable number (0 thru n_vars-1), for rows of the table.
+	//  n2 = Variable number (0 thru n_vars-1), for columns of the table.
+	//  max_els1 = Maximum number of elements to include for variable n1 = maximum number of rows.
+	//  max_els2 = Maximum number of elements to include for variable n2 = maximum number of columns.
+	//  prefix = Prefix for the start of the string.
+	//  infix = Infix inserted between lines (usually "\n").
+	//  suffix = Suffix for the end of the string (often "\n", but might be "").
+	// Returns a string containing a section of the table of the marginal 2D probability
+	// distribution of the n1-th and n2-th variables.  If max_els# is less than the number
+	// of values of the n#-th variable, then a section is chosen centered on the mode.
+	// The number of elements included is els# = min(max_els#, n_values[n#]).
+	// The length of each row is 10*els2 - 1 characters, not counting the prefix, infix, and suffix.
+	// Each element is displayed as a floating-point number, and are separated by a single space.
+
+	public String marginal_2d_probability_as_string (int n1, int n2, int max_els1, int max_els2, String prefix, String infix, String suffix) {
+		StringBuilder result = new StringBuilder();
+	
+		// Get the lower and upper limits to include
+
+		int lo1 = Math.max (0, Math.min (n_values[n1] - max_els1, marginal_mode_index[n1] - ((max_els1 - 1)/2)));
+		int hi1 = Math.min (lo1 + max_els1, n_values[n1]);
+
+		int lo2 = Math.max (0, Math.min (n_values[n2] - max_els2, marginal_mode_index[n2] - ((max_els2 - 1)/2)));
+		int hi2 = Math.min (lo2 + max_els2, n_values[n2]);
+
+		// Make the string
+
+		result.append (prefix);
+		for (int i1 = lo1; i1 < hi1; ++i1) {
+			if (i1 > lo1) {
+				result.append (infix);
+			}
+			for (int i2 = lo2; i2 < hi2; ++i2) {
+				if (i2 > lo2) {
+					result.append (" ");
+				}
+				result.append (String.format ("%.3e", (n1 < n2) ? marginal_2d_probability[n1][n2][i1][i2] : marginal_2d_probability[n2][n1][i2][i1]));
+
+			}
+		}
+		result.append (suffix);
+
+		return result.toString();
+	}
+
+
+	// Make a string that contains a portion of a marginal 2D probability distribution.
+	// This version supplies default strings, so each line ends with linefeed.
+
+	public String marginal_2d_probability_as_string (int n1, int n2, int max_els1, int max_els2) {
+		return marginal_2d_probability_as_string (n1, n2, max_els1, max_els2, "", "\n", "\n");
+	}
+
+
+
+
+	// Make a string that contains a portion of a marginal probability distribution.
+	// Parameters:
+	//  n = Variable number (0 thru n_vars-1).
+	//  max_els = Maximum number of elements to include.
+	//  prefix = Prefix for the start of the string.
+	//  infix = Infix inserted between lines (usually "\n").
+	//  suffix = Suffix for the end of the string (often "\n", but might be "").
+	// Returns a string containing a sequential section of the marginal probability
+	// distribution of the n-th variable, on multiple lines.  The first line contains
+	// values from the marginal probability (same as marginal_probability_as_string()).
+	// The second line contains the corresponding marginal peak probability.  The next
+	// n_vars lines contain the correspoinding peak indexes.
+	// If max_els is less than the number of values of the n-th variable, then a
+	// section is chosen centered on the mode.  The number of elements included is
+	// els = min(max_els, n_values[n]), and the length of each line is 10*els - 1.
+	// Each probability is displayed as a floating-point number, and are separated
+	// by a single space.
+
+	public String marginal_probability_and_peak_as_string (int n, int max_els, String prefix, String infix, String suffix) {
+		StringBuilder result = new StringBuilder();
+	
+		// Get the lower and upper limits to include
+
+		int lo = Math.max (0, Math.min (n_values[n] - max_els, marginal_mode_index[n] - ((max_els - 1)/2)));
+		int hi = Math.min (lo + max_els, n_values[n]);
+
+		// Marginal probability
+
+		result.append (prefix);
+
+		for (int i = lo; i < hi; ++i) {
+			if (i > lo) {
+				result.append (" ");
+			}
+			result.append (String.format ("%.3e", marginal_probability[n][i]));
+		}
+
+		// Marginal peak probability
+
+		result.append (infix);
+
+		for (int i = lo; i < hi; ++i) {
+			if (i > lo) {
+				result.append (" ");
+			}
+			result.append (String.format ("%.3e", marginal_peak_probability[n][i]));
+		}
+
+		// Marginal peak indexes
+
+		for (int m = 0; m < n_vars; ++m) {
+			result.append (infix);
+			for (int i = lo; i < hi; ++i) {
+				if (i > lo) {
+					result.append (" ");
+				}
+				result.append (String.format ("%9d", marginal_peak_indexes[n][i][m]));
+			}
+		}
+
+		result.append (suffix);
+
+		return result.toString();
+	}
+
+
+	// Make a string that contains a portion of a marginal probability distribution.
+	// This version supplies default strings, so each line ends with linefeed.
+
+	public String marginal_probability_and_peak_as_string (int n, int max_els) {
+		return marginal_probability_and_peak_as_string (n, max_els, "", "\n", "\n");
+	}
+
+
+
+
+	// Calculate means, variances, and covariances.
+	// Parameters:
+	//  range = Variable values.  range[n][i] is the i-th value of the n-th variable.
+	//  mean = Array of length n_vars, to receive the means.
+	//  covariance = 2D array of length n_vars x n_vars, to receive the covariance matrix.
+
+	public void calc_mean_covariance (double[][] range, double[] mean, double[][] covariance) {
+
+		// Calculate means and variances
+
+		for (int n = 0; n < n_vars; ++n) {
+
+			double mean_acc = 0.0;
+			for (int i = 0; i < n_values[n]; ++i) {
+				mean_acc += (range[n][i] * marginal_probability[n][i]);
+			}
+			mean_acc = mean_acc / total_probability;
+			mean[n] = mean_acc;
+
+			double var_acc = 0.0;
+			for (int i = 0; i < n_values[n]; ++i) {
+				double dev = range[n][i] - mean_acc;
+				var_acc += (dev * dev * marginal_probability[n][i]);
+			}
+			covariance[n][n] = var_acc / total_probability;
+		}
+
+		// Calculate covariances
+
+		for (int n1 = 0; n1 < n_vars; ++n1) {
+			for (int n2 = 0; n2 < n_vars; ++n2) {
+				if (n1 < n2) {
+					double cov_acc = 0.0;
+					for (int i1 = 0; i1 < n_values[n1]; ++i1) {
+						double dev1 = range[n1][i1] - mean[n1];
+						for (int i2 = 0; i2 < n_values[n2]; ++i2) {
+							double dev2 = range[n2][i2] - mean[n2];
+							cov_acc += (dev1 * dev2 * marginal_2d_probability[n1][n2][i1][i2]);
+						}
+					}
+					cov_acc = cov_acc / total_probability;
+					covariance[n1][n2] = cov_acc;
+					covariance[n2][n1] = cov_acc;
+				}
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Make a string containing means, standard deviations, and covariances.
+	// Parameters:
+	//  mean = Array of length n_vars, containing the means.
+	//  covariance = 2D array of length n_vars x n_vars, containing the covariance matrix.
+	// Returns a string that contains first the means, then the standard deviations,
+	// then the covariances.  Means and standard deviations are ordered by variable number [n].
+	// Covariances are ordered by [n1][n2] where n1 < n2 and n2 increases most rapidly.
+	// Each value is displayed as a floating-point number with 3 digits after the decimal point.
+
+	public String mean_coveriance_as_string (double[] mean, double[][] covariance) {
+		StringBuilder result = new StringBuilder();
+
+		// Means
+
+		for (int n = 0; n < n_vars; ++n) {
+			if (n != 0) {
+				result.append (" ");
+			}
+			result.append (String.format ("% .3e", mean[n]));
+		}
+
+		// Standard deviations
+
+		result.append (" :");
+
+		for (int n = 0; n < n_vars; ++n) {
+			result.append (String.format (" % .3e", Math.sqrt(covariance[n][n])));
+		}
+
+		// Covariances
+
+		result.append (" :");
+
+		for (int n1 = 0; n1 < n_vars; ++n1) {
+			for (int n2 = 0; n2 < n_vars; ++n2) {
+				if (n1 < n2) {
+					result.append (String.format (" % .3e", covariance[n1][n2]));
+				}
+			}
+		}
+	
 		return result.toString();
 	}
 
@@ -688,6 +1048,14 @@ public class OEGridMarginal {
 				}
 			}
 
+			for (int n1 = 0; n1 < n_vars; ++n1) {
+				for (int n2 = 0; n2 < n_vars; ++n2) {
+					if (n1 < n2) {
+						writer.marshalIntArray ("marginal_2d_mode_index." + n1 + "." + n2, marginal_2d_mode_index[n1][n2]);
+					}
+				}
+			}
+
 		}
 		break;
 
@@ -730,6 +1098,19 @@ public class OEGridMarginal {
 					}
 					else {
 						marginal_2d_probability[n1][n2] = null;
+					}
+				}
+			}
+
+			marginal_2d_mode_index = new int[n_vars][][];
+			for (int n1 = 0; n1 < n_vars; ++n1) {
+				marginal_2d_mode_index[n1] = new int[n_vars][];
+				for (int n2 = 0; n2 < n_vars; ++n2) {
+					if (n1 < n2) {
+						marginal_2d_mode_index[n1][n2] = reader.unmarshalIntArray ("marginal_2d_mode_index." + n1 + "." + n2);
+					}
+					else {
+						marginal_2d_mode_index[n1][n2] = null;
 					}
 				}
 			}
