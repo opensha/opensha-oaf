@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.AutoExecutorService;
 
 import static org.opensha.oaf.oetas.OEConstants.INFILL_METH_MIN;
 import static org.opensha.oaf.oetas.OEConstants.INFILL_METH_NONE;
@@ -212,7 +213,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		
 			// Zero the counts
 
-			OEStatsCalc.zero_array (csr_counts);
+			OEArraysCalc.zero_array (csr_counts);
 
 			// Mark it open
 
@@ -237,7 +238,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		
 				// Cumulate the counts: time upward, magnitude downward
 
-				OEStatsCalc.cumulate_2d_array (csr_counts, true, false);
+				OEArraysCalc.cumulate_2d_array (csr_counts, true, false);
 
 				// Get the index for this catalog
 
@@ -253,7 +254,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 				// Store our counts into the accumulator
 
-				OEStatsCalc.set_each_array_column (acc_counts, catix, csr_counts);
+				OEArraysCalc.set_each_array_column (acc_counts, catix, csr_counts);
 			}
 
 			return;
@@ -335,7 +336,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			// Find the time bin for this rupture,
 			// -1 if before the first bin, time_bins if after the last bin
 
-			int time_ix = OEStatsCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
+			int time_ix = OEArraysCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
 
 			if (time_ix < 0 || time_ix >= time_bins) {
 				return;
@@ -344,7 +345,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			// Find the magnitude bin for this rupture,
 			// -1 if before the first bin, mag_bins if after the last bin
 
-			int mag_ix = OEStatsCalc.bsearch_array (mag_values, comm.rup.rup_mag) - 1;
+			int mag_ix = OEArraysCalc.bsearch_array (mag_values, comm.rup.rup_mag) - 1;
 
 			if (mag_ix < 0 || mag_ix >= mag_bins) {
 				return;
@@ -418,7 +419,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		
 			// Zero the counts
 
-			OEStatsCalc.zero_array (csr_counts);
+			OEArraysCalc.zero_array (csr_counts);
 
 			// Mark it open
 
@@ -443,7 +444,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		
 				// Cumulate the counts: time upward, magnitude downward
 
-				OEStatsCalc.cumulate_2d_array (csr_counts, true, false);
+				OEArraysCalc.cumulate_2d_array (csr_counts, true, false);
 
 				// Get the index for this catalog
 
@@ -459,7 +460,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 				// Store our counts into the accumulator
 
-				OEStatsCalc.set_each_array_column (acc_counts, catix, csr_counts);
+				OEArraysCalc.set_each_array_column (acc_counts, catix, csr_counts);
 			}
 
 			return;
@@ -522,13 +523,13 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		
 			// Zero the counts for the current generation
 
-			OEStatsCalc.zero_array (cur_gen_counts);
+			OEArraysCalc.zero_array (cur_gen_counts);
 
 			// Get the range of magnitude bins that require infill
 			// (the offset by mag_eps avoids near-zero-range infill);
 			// note this is based on the min mag of the current generation
 
-			infill_mag_bin_hi = Math.min (OEStatsCalc.bsearch_array (
+			infill_mag_bin_hi = Math.min (OEArraysCalc.bsearch_array (
 						mag_values, comm.gen_info.gen_mag_min - comm.cat_params.mag_eps), mag_bins);
 
 			return;
@@ -577,7 +578,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			// Find the time bin for this rupture,
 			// -1 if before the first bin, time_bins if after the last bin
 
-			int time_ix = OEStatsCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
+			int time_ix = OEArraysCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
 
 			if (time_ix < 0 || time_ix >= time_bins) {
 				return;
@@ -590,7 +591,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			// Find the magnitude bin for this rupture,
 			// -1 if before the first bin, mag_bins if after the last bin
 
-			int mag_ix = OEStatsCalc.bsearch_array (mag_values, comm.rup.rup_mag) - 1;
+			int mag_ix = OEArraysCalc.bsearch_array (mag_values, comm.rup.rup_mag) - 1;
 
 			if (mag_ix < 0 || mag_ix >= mag_bins) {
 				return;
@@ -683,8 +684,8 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		
 			// Zero the counts and expected values
 
-			OEStatsCalc.zero_array (csr_counts);
-			OEStatsCalc.zero_array (csr_expected);
+			OEArraysCalc.zero_array (csr_counts);
+			OEArraysCalc.zero_array (csr_expected);
 
 			// Mark it open
 
@@ -709,7 +710,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		
 				// Cumulate the counts: time upward, magnitude downward
 
-				OEStatsCalc.cumulate_2d_array (csr_counts, true, false);
+				OEArraysCalc.cumulate_2d_array (csr_counts, true, false);
 
 				// Get the index for this catalog
 
@@ -725,7 +726,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 				// Store our counts into the accumulator
 
-				OEStatsCalc.set_each_array_column (acc_counts, catix, csr_counts);
+				OEArraysCalc.set_each_array_column (acc_counts, catix, csr_counts);
 			}
 
 			return;
@@ -752,7 +753,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 			// Increase each count by a Poisson random value
 
-			OEStatsCalc.add_poisson_array (comm.rangen, csr_counts, csr_expected);
+			OEArraysCalc.add_poisson_array (comm.rangen, csr_counts, csr_expected);
 
 			return;
 		}
@@ -766,7 +767,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		
 			// Zero the rates for the current generation
 
-			OEStatsCalc.zero_array (cur_gen_rates);
+			OEArraysCalc.zero_array (cur_gen_rates);
 
 			// Get the range of magnitude bins that require infill
 			// (the offset by mag_eps avoids near-zero-range infill);
@@ -775,7 +776,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			if (comm.f_final_gen) {
 				infill_mag_bin_hi = 0;
 			} else {
-				infill_mag_bin_hi = Math.min (OEStatsCalc.bsearch_array (
+				infill_mag_bin_hi = Math.min (OEArraysCalc.bsearch_array (
 							mag_values, comm.next_gen_info.gen_mag_min - comm.cat_params.mag_eps), mag_bins);
 			}
 
@@ -822,7 +823,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			// Find the time bin for this rupture,
 			// -1 if before the first bin, time_bins if after the last bin
 
-			int time_ix = OEStatsCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
+			int time_ix = OEArraysCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
 
 			// If infilling, add the rate for each time bin after the rupture
 
@@ -851,7 +852,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		
 			// Zero the rates for the current generation
 
-			OEStatsCalc.zero_array (cur_gen_rates);
+			OEArraysCalc.zero_array (cur_gen_rates);
 
 			// Get the range of magnitude bins that require infill
 			// (the offset by mag_eps avoids near-zero-range infill);
@@ -860,7 +861,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			if (comm.f_final_gen) {
 				infill_mag_bin_hi = 0;
 			} else {
-				infill_mag_bin_hi = Math.min (OEStatsCalc.bsearch_array (
+				infill_mag_bin_hi = Math.min (OEArraysCalc.bsearch_array (
 							mag_values, comm.next_gen_info.gen_mag_min - comm.cat_params.mag_eps), mag_bins);
 			}
 
@@ -907,7 +908,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			// Find the time bin for this rupture,
 			// -1 if before the first bin, time_bins if after the last bin
 
-			int time_ix = OEStatsCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
+			int time_ix = OEArraysCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
 
 			// If infilling, add the rate for each time bin after the rupture
 
@@ -931,7 +932,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			// Find the magnitude bin for this rupture,
 			// -1 if before the first bin, mag_bins if after the last bin
 
-			int mag_ix = OEStatsCalc.bsearch_array (mag_values, comm.rup.rup_mag) - 1;
+			int mag_ix = OEArraysCalc.bsearch_array (mag_values, comm.rup.rup_mag) - 1;
 
 			if (mag_ix < 0 || mag_ix >= mag_bins) {
 				return;
@@ -993,7 +994,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		
 			// Zero the counts
 
-			OEStatsCalc.zero_array (csr_counts);
+			OEArraysCalc.zero_array (csr_counts);
 
 			// Mark it open
 
@@ -1018,7 +1019,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		
 				// Cumulate the counts: time upward, magnitude downward
 
-				OEStatsCalc.cumulate_2d_array (csr_counts, true, false);
+				OEArraysCalc.cumulate_2d_array (csr_counts, true, false);
 
 				// Get the index for this catalog
 
@@ -1034,7 +1035,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 				// Store our counts into the accumulator
 
-				OEStatsCalc.set_each_array_column (acc_counts, catix, csr_counts);
+				OEArraysCalc.set_each_array_column (acc_counts, catix, csr_counts);
 			}
 
 			return;
@@ -1121,7 +1122,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			// Find the time bin for this rupture,
 			// -1 if before the first bin, time_bins if after the last bin
 
-			int time_ix = OEStatsCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
+			int time_ix = OEArraysCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
 
 			if (time_ix < 0 || time_ix >= time_bins) {
 				return;
@@ -1130,7 +1131,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			// Find the magnitude bin for this rupture,
 			// -1 if before the first bin, mag_bins if after the last bin
 
-			int mag_ix = OEStatsCalc.bsearch_array (mag_values, comm.rup.rup_mag) - 1;
+			int mag_ix = OEArraysCalc.bsearch_array (mag_values, comm.rup.rup_mag) - 1;
 
 			if (mag_ix < 0 || mag_ix >= mag_bins) {
 				return;
@@ -1153,7 +1154,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			// Find the time bin for this rupture,
 			// -1 if before the first bin, time_bins if after the last bin
 
-			int time_ix = OEStatsCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
+			int time_ix = OEArraysCalc.bsearch_array (time_values, comm.rup.t_day) - 1;
 
 			if (time_ix < 0 || time_ix >= time_bins) {
 				return;
@@ -1162,7 +1163,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			// Find the magnitude bin for this rupture,
 			// -1 if before the first bin, mag_bins if after the last bin
 
-			int mag_ix = OEStatsCalc.bsearch_array (mag_values, comm.rup.rup_mag) - 1;
+			int mag_ix = OEArraysCalc.bsearch_array (mag_values, comm.rup.rup_mag) - 1;
 
 			if (mag_ix < 0 || mag_ix >= mag_bins) {
 				return;
@@ -1281,7 +1282,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 		if (capacity > acc_capacity) {
 			acc_capacity = capacity;
-			OEStatsCalc.resize_each_array_column (acc_counts, acc_capacity);
+			OEArraysCalc.resize_each_array_column (acc_counts, acc_capacity);
 		}
 
 		return;
@@ -1302,7 +1303,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 	
 		// Sort each column, so fractiles are available
 
-		OEStatsCalc.sort_each_array_column (acc_counts, 0, acc_size);
+		OEArraysCalc.sort_each_array_column (acc_counts, 0, acc_size);
 
 		return;
 	}
@@ -1375,7 +1376,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		if (n >= acc_size) {
 			n = acc_size - 1;
 		}
-		return OEStatsCalc.get_each_array_column (acc_counts, n);
+		return OEArraysCalc.get_each_array_column (acc_counts, n);
 	}
 
 
@@ -1388,7 +1389,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 	// at least one rupture occurs.
 
 	public double[][] get_prob_occur_array () {
-		return OEStatsCalc.probex_each_array_column (acc_counts, 0, 0, acc_size);
+		return OEArraysCalc.probex_each_array_column (acc_counts, 0, 0, acc_size);
 	}
 
 
@@ -1832,7 +1833,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 	//  mag_main = Mainshock magnitude.
 	//  the_infill_meth = Infill method to use.
 	//  num_cats = Number of catalogs to run.
-	//  num_threads = Number of threads to use.
+	//  num_threads = Number of threads to use, can be -1 for default number of threads.
 	//  max_runtime = Maximum running time allowed.
 	// All catalogs use the same parameters, and are seeded with
 	// a single earthquake.
@@ -1841,9 +1842,14 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 		// Say hello
 
+		int actual_num_threads = num_threads;
+		if (actual_num_threads == AutoExecutorService.AESNUM_DEFAULT) {
+			actual_num_threads = AutoExecutorService.get_default_num_threads();
+		}
+
 		System.out.println ();
 		System.out.println ("Generating " + num_cats + " catalogs");
-		System.out.println ("Using " + num_threads + " threads");
+		System.out.println ("Using " + actual_num_threads + " threads");
 		System.out.println ("With " + max_runtime + " maximum runtime");
 		System.out.println ();
 

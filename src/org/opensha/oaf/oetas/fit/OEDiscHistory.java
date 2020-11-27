@@ -45,7 +45,7 @@ import static org.opensha.oaf.oetas.OEConstants.TINY_DURATION_DAYS;		// an extre
 //
 //   v = log(10) * (alpha - b)
 //
-// In OERandomGenerator there is an implementation of W called expm1dx.
+// In OEOmoriCalc there is an implementation of W called expm1dx.
 //
 // MAGNITUDE RANGES
 //

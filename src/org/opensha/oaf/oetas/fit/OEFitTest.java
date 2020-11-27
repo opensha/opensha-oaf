@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.opensha.oaf.oetas.OEArraysCalc;
 import org.opensha.oaf.oetas.OECatalogBuilder;
 import org.opensha.oaf.oetas.OECatalogExaminer;
 import org.opensha.oaf.oetas.OECatalogGenerator;
@@ -393,7 +394,7 @@ public class OEFitTest {
 		// Find the maximum value in the grid
 
 		int[] ix = new int[2];
-		double max_like = OEStatsCalc.find_array_max (grid, ix);
+		double max_like = OEArraysCalc.find_array_max (grid, ix);
 
 		result.append (String.format("max_like = %.7e at a_range[%d] = %.3e and ams_range[%d] = %.3e",
 				max_like, ix[0], a_range[ix[0]], ix[1], ams_range[ix[1]]));
@@ -546,7 +547,7 @@ public class OEFitTest {
 		// Find the maximum value in the vector
 
 		int[] ix_v = new int[1];
-		double max_like_v = OEStatsCalc.find_array_max (vec, ix_v);
+		double max_like_v = OEArraysCalc.find_array_max (vec, ix_v);
 
 		result.append (String.format("vector: max_like = %.7e at a_range[%d] = %.3e",
 				max_like_v, ix_v[0], a_range[ix_v[0]]));
@@ -555,7 +556,7 @@ public class OEFitTest {
 		// Find the maximum value in the grid
 
 		int[] ix = new int[2];
-		double max_like = OEStatsCalc.find_array_max (grid, ix);
+		double max_like = OEArraysCalc.find_array_max (grid, ix);
 
 		result.append (String.format("grid: max_like = %.7e at a_range[%d] = %.3e and ams_range[%d] = %.3e",
 				max_like, ix[0], a_range[ix[0]], ix[1], ams_range[ix[1]]));
@@ -604,7 +605,7 @@ public class OEFitTest {
 		// Find the maximum value in the vector
 
 		int[] ix_v = new int[3];
-		double max_like_v = OEStatsCalc.find_array_max (vec, ix_v);
+		double max_like_v = OEArraysCalc.find_array_max (vec, ix_v);
 
 		result.append (String.format("vector: max_like = %.7e at c_range[%d] = %.3e, p_range[%d] = %.3e, a_range[%d] = %.3e",
 				max_like_v, ix_v[0], c_range[ix_v[0]], ix_v[1], p_range[ix_v[1]], ix_v[2], a_range[ix_v[2]]));
@@ -613,7 +614,7 @@ public class OEFitTest {
 		// Find the maximum value in the grid
 
 		int[] ix = new int[4];
-		double max_like = OEStatsCalc.find_array_max (grid, ix);
+		double max_like = OEArraysCalc.find_array_max (grid, ix);
 
 		result.append (String.format("grid: max_like = %.7e at c_range[%d] = %.3e, p_range[%d] = %.3e, a_range[%d] = %.3e, ams_range[%d] = %.3e",
 				max_like, ix[0], c_range[ix[0]], ix[1], p_range[ix[1]], ix[2], a_range[ix[2]], ix[3], ams_range[ix[3]]));
@@ -853,11 +854,11 @@ public class OEFitTest {
 
 			// Find the maximum value in the vector
 
-			double max_like_vec = OEStatsCalc.find_array_max (vec, ix_vec);
+			double max_like_vec = OEArraysCalc.find_array_max (vec, ix_vec);
 
 			// Find the maximum value in the grid
 
-			double max_like_grid = OEStatsCalc.find_array_max (grid, ix_grid);
+			double max_like_grid = OEArraysCalc.find_array_max (grid, ix_grid);
 		}
 
 		// Discard the fitter
@@ -1355,11 +1356,11 @@ public class OEFitTest {
 
 		// Find the maximum value in the vector
 
-		double max_like_v = OEStatsCalc.find_array_max (multi_fitter.like_vec, ix_vec);
+		double max_like_v = OEArraysCalc.find_array_max (multi_fitter.like_vec, ix_vec);
 
 		// Find the maximum value in the grid
 
-		double max_like = OEStatsCalc.find_array_max (multi_fitter.like_grid, ix_grid);
+		double max_like = OEArraysCalc.find_array_max (multi_fitter.like_grid, ix_grid);
 
 		// Discard the fitter
 
@@ -3354,10 +3355,10 @@ public class OEFitTest {
 				// Ranges we will use for means and covariances
 
 				double[][] range_cpa = new double[4][];
-				range_cpa[0] = OEStatsCalc.array_copy_log10 (c_range);
-				range_cpa[1] = OEStatsCalc.array_copy (p_range);
-				range_cpa[2] = OEStatsCalc.array_copy_log10 (a_range);
-				range_cpa[3] = OEStatsCalc.array_copy_log10 (ams_range);
+				range_cpa[0] = OEArraysCalc.array_copy_log10 (c_range);
+				range_cpa[1] = OEArraysCalc.array_copy (p_range);
+				range_cpa[2] = OEArraysCalc.array_copy_log10 (a_range);
+				range_cpa[3] = OEArraysCalc.array_copy_log10 (ams_range);
 
 				// Marginals
 
@@ -3714,10 +3715,10 @@ public class OEFitTest {
 				// Ranges we will use for means and covariances
 
 				double[][] range_cpa = new double[4][];
-				range_cpa[0] = OEStatsCalc.array_copy_log10 (c_range);
-				range_cpa[1] = OEStatsCalc.array_copy (p_range);
-				range_cpa[2] = OEStatsCalc.array_copy_log10 (a_range);
-				range_cpa[3] = OEStatsCalc.array_copy_log10 (ams_range);
+				range_cpa[0] = OEArraysCalc.array_copy_log10 (c_range);
+				range_cpa[1] = OEArraysCalc.array_copy (p_range);
+				range_cpa[2] = OEArraysCalc.array_copy_log10 (a_range);
+				range_cpa[3] = OEArraysCalc.array_copy_log10 (ams_range);
 
 				// Marginals
 

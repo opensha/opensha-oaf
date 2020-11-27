@@ -6,6 +6,7 @@ import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
 
+import org.opensha.oaf.oetas.OEArraysCalc;
 import org.opensha.oaf.oetas.OEStatsCalc;
 
 
@@ -237,7 +238,7 @@ public class OEGridMarginal {
 
 		for (int n = 0; n < n_vars; ++n) {
 			int[] j = new int[1];
-			OEStatsCalc.find_array_max (marginal_probability[n], j);
+			OEArraysCalc.find_array_max (marginal_probability[n], j);
 			marginal_mode_index[n] = j[0];
 		}
 
@@ -246,7 +247,7 @@ public class OEGridMarginal {
 		for (int n1 = 0; n1 < n_vars; ++n1) {
 			for (int n2 = 0; n2 < n_vars; ++n2) {
 				if (n1 < n2) {
-					OEStatsCalc.find_array_max (marginal_2d_probability[n1][n2], marginal_2d_mode_index[n1][n2]);
+					OEArraysCalc.find_array_max (marginal_2d_probability[n1][n2], marginal_2d_mode_index[n1][n2]);
 				}
 			}
 		}
@@ -329,7 +330,7 @@ public class OEGridMarginal {
 
 		// Get the maximum grid entry value
 	
-		final double max_grid_entry = OEStatsCalc.find_array_max (grid, peak_indexes);
+		final double max_grid_entry = OEArraysCalc.find_array_max (grid, peak_indexes);
 
 		// Get the maximum probability value in the entire grid
 
@@ -468,7 +469,7 @@ public class OEGridMarginal {
 
 		// Get the maximum grid entry value
 	
-		final double max_grid_entry = OEStatsCalc.find_array_max (grid, peak_indexes);
+		final double max_grid_entry = OEArraysCalc.find_array_max (grid, peak_indexes);
 
 		// Get the maximum probability value in the entire grid
 
@@ -586,7 +587,7 @@ public class OEGridMarginal {
 
 		// Get the maximum grid entry value
 	
-		final double max_grid_entry = OEStatsCalc.find_array_max (grid, peak_indexes);
+		final double max_grid_entry = OEArraysCalc.find_array_max (grid, peak_indexes);
 
 		// Get the maximum probability value in the entire grid
 

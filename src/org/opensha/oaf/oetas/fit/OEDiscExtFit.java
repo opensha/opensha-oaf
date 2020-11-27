@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.Arrays;
 
 import org.opensha.oaf.oetas.OERupture;
-import org.opensha.oaf.oetas.OERandomGenerator;
+import org.opensha.oaf.oetas.OEOmoriCalc;
 import org.opensha.oaf.oetas.OECatalogParams;
 
 import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;				// natural logarithm of 10
@@ -45,7 +45,7 @@ import static org.opensha.oaf.oetas.OEConstants.LOG10_HUGE_TIME_DAYS;	// log10 o
 //
 //   v = log(10) * (alpha - b)
 //
-// In OERandomGenerator there is an implementation of W called expm1dx.
+// In OEOmoriCalc there is an implementation of W called expm1dx.
 //
 // MAGNITUDE RANGES
 //
@@ -258,7 +258,7 @@ public class OEDiscExtFit {
 
 	// Calculate W(x, y) = (exp(y*x) - 1)/x
 	// The function avoids cancellation and divide-by-zero.
-	// (Same code as OERandomGenerator.expm1dx, reproduced here for readability.)
+	// (Same code as OEOmoriCalc.expm1dx, reproduced here for readability.)
 
 	public static double calc_w (double x, double y) {
 		final double yx = y*x;
@@ -1247,7 +1247,7 @@ public class OEDiscExtFit {
 
 					// Omori value
 				
-					omat_row[i_s_int] = OERandomGenerator.omext_single_integral (p, t_plus_c - s2, s2 - s1);
+					omat_row[i_s_int] = OEOmoriCalc.omext_single_integral (p, t_plus_c - s2, s2 - s1);
 				}
 			}
 
@@ -1391,7 +1391,7 @@ public class OEDiscExtFit {
 
 					// Omori value
 				
-					omat_row[i_s_rup] = OERandomGenerator.omext_single_density_integral (p, t1_plus_c - s, t2_minus_t1);
+					omat_row[i_s_rup] = OEOmoriCalc.omext_single_density_integral (p, t1_plus_c - s, t2_minus_t1);
 				}
 			}
 
@@ -1557,12 +1557,12 @@ public class OEDiscExtFit {
 
 					// Omori value
 				
-					omat_row[i_s_int] = OERandomGenerator.omext_double_density_integral (p, t1_plus_c - s2, s2 - s1, t2_minus_t1);
+					omat_row[i_s_int] = OEOmoriCalc.omext_double_density_integral (p, t1_plus_c - s2, s2 - s1, t2_minus_t1);
 				}
 
 				// Build the self entry
 
-				omat_self_int_src[i_t_int] = OERandomGenerator.omext_self_double_density_integral (p, c, t2_minus_t1);
+				omat_self_int_src[i_t_int] = OEOmoriCalc.omext_self_double_density_integral (p, c, t2_minus_t1);
 			}
 
 			return;
