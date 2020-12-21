@@ -1,0 +1,813 @@
+fcrj107 aafs.ForecastResults test4 us20002926 30.0
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson
+Count of events received = 1
+
+ForecastMainshock:
+query_event_id = us20002926
+mainshock_avail = true
+mainshock_event_id = us20002926
+mainshock_network = us
+mainshock_code = 20002926
+mainshock_id_list = [us20002926, gcmt20150425061126, atlas20150425061125]
+mainshock_time = 1429942285950 (2015-04-25 06:11:25 UTC)
+mainshock_mag = 7.8
+mainshock_lat = 28.2305
+mainshock_lon = 84.7314
+mainshock_depth = 8.22
+mainshock_geojson is available
+
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-05-25T06:11:25.950Z&format=geojson&latitude=28.23050&limit=20000&longitude=84.73140&maxdepth=700.000&maxradius=1.30591&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2015-04-25T06:11:25.950Z
+Count of events received = 182
+Count of events after filtering = 181
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 181
+Centroid: 27.80665, 85.52246 (90.835 km from epicenter)
+
+ForecastParameters:
+forecast_lag = 2592000000
+generic_calc_meth = 0
+seq_spec_calc_meth = 0
+bayesian_calc_meth = 0
+injectable_text = use-default
+generic_fetch_meth = 0
+generic_avail = true
+generic_regime = ACR (deep)
+generic_params = RJ_Params[a=-2.13, aSigma=0.52, aSigma0=0.49, aSigma1=250.0, b=1.0, p=0.98, c=0.018, aMin=-4.5, aMax=-0.5, aDelta=0.01]
+mag_comp_fetch_meth = 0
+mag_comp_avail = true
+mag_comp_regime = WORLD
+mag_comp_params = Page_Params:
+  magCat = 4.6
+  magCompFn = FnPage[capF=0.5, capG=0.25, capH=1.0]
+  magSample = FnFloor[mag=2.95, deltaMax=5.0]
+  radiusSample = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+  magCentroid = FnFloor[mag=3.95, deltaMax=5.0]
+  radiusCentroid = FnWCClip[radiusMult=1.0, radiusMin=10.0, radiusMax=2000.0]
+seq_spec_fetch_meth = 0
+seq_spec_avail = true
+seq_spec_params = SQ_Params[b=1.0, min_a=-4.5, max_a=-0.5, num_a=401, min_p=0.98, max_p=0.98, num_p=1, min_c=0.018, max_c=0.018, num_c=1]
+aftershock_search_fetch_meth = 0
+aftershock_search_avail = true
+aftershock_search_region = SphRegionCircle:
+plot_wrap = false
+min_lat = 26.50073960688084
+max_lat = 29.11256735900432
+min_lon = 84.04602561131998
+max_lon = 86.99889333444915
+center_lat = 27.80665348294258
+center_lon = 85.52245947288456
+radius = 145.21116175877404
+min_days = 0.0
+max_days = 30.0
+min_depth = 0.0
+max_depth = 700.0
+min_mag = 2.95
+next_scheduled_lag = 0
+
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-05-25T06:11:25.950Z&format=geojson&latitude=27.80665&limit=20000&longitude=85.52246&maxdepth=700.000&maxradius=1.30591&mindepth=0.000&minmagnitude=2.950&orderby=time&starttime=2015-04-25T06:11:25.950Z
+Count of events received = 243
+Count of events after filtering = 242
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 242
+b=1.000  magMain=7.800  apcTot=401  apcSup=347
+a: like=-2.130  mean=-2.131  sdev=0.4897  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=54  hi=401
+p: like=0.9800  mean=0.9800  sdev=0.000  min=0.9800  max=0.9800  delta=0.000  num=1  lo=0  hi=1
+c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
+mean_a=-2.130  sigma_a=0.4910
+Start date: 5/25/15 7:00 AM
+1 Day end date: 5/26/15 7:00 AM
+M>=5 mean = 0.306483
+M>=5 median = 0.162002
+M>=5 2.5 Percentile = 0.0177015
+M>=5 97.5 Percentile = 1.47438
+1 Week end date: 6/1/15 7:00 AM
+M>=5 mean = 1.96398
+M>=5 median = 1.03813
+M>=5 2.5 Percentile = 0.113433
+M>=5 97.5 Percentile = 9.44798
+1 Month end date: 6/24/15 7:00 AM
+M>=5 mean = 6.52464
+M>=5 median = 3.44883
+M>=5 2.5 Percentile = 0.376842
+M>=5 97.5 Percentile = 31.3877
+1 Year end date: 5/24/16 7:00 AM
+M>=5 mean = 24.7434
+M>=5 median = 13.0790
+M>=5 2.5 Percentile = 1.42910
+M>=5 97.5 Percentile = 119.031
+b=1.000  magMain=7.800  apcTot=401  apcSup=46
+a: like=-2.230  mean=-2.238  sdev=0.05778  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=202  hi=248
+p: like=0.9800  mean=0.9800  sdev=0.000  min=0.9800  max=0.9800  delta=0.000  num=1  lo=0  hi=1
+c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
+magCompFn=FnPage[capF=0.5, capG=0.25, capH=1.0]  magCat=4.600  tStart=0.0000000  tEnd=30.000000  nEvents=57
+Start date: 5/25/15 7:00 AM
+1 Day end date: 5/26/15 7:00 AM
+M>=5 mean = 0.128992
+M>=5 median = 0.126774
+M>=5 2.5 Percentile = 0.0966077
+M>=5 97.5 Percentile = 0.162778
+1 Week end date: 6/1/15 7:00 AM
+M>=5 mean = 0.826597
+M>=5 median = 0.812382
+M>=5 2.5 Percentile = 0.619074
+M>=5 97.5 Percentile = 1.04310
+1 Month end date: 6/24/15 7:00 AM
+M>=5 mean = 2.74609
+M>=5 median = 2.69886
+M>=5 2.5 Percentile = 2.05666
+M>=5 97.5 Percentile = 3.46534
+1 Year end date: 5/24/16 7:00 AM
+M>=5 mean = 10.4140
+M>=5 median = 10.2349
+M>=5 2.5 Percentile = 7.79946
+M>=5 97.5 Percentile = 13.1416
+b=1.000  magMain=7.800  apcTot=401  apcSup=45
+a: like=-2.230  mean=-2.236  sdev=0.05728  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=203  hi=248
+p: like=0.9800  mean=0.9800  sdev=0.000  min=0.9800  max=0.9800  delta=0.000  num=1  lo=0  hi=1
+c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
+Start date: 5/25/15 7:00 AM
+1 Day end date: 5/26/15 7:00 AM
+M>=5 mean = 0.129427
+M>=5 median = 0.127207
+M>=5 2.5 Percentile = 0.0971374
+M>=5 97.5 Percentile = 0.163007
+1 Week end date: 6/1/15 7:00 AM
+M>=5 mean = 0.829384
+M>=5 median = 0.815156
+M>=5 2.5 Percentile = 0.622468
+M>=5 97.5 Percentile = 1.04457
+1 Month end date: 6/24/15 7:00 AM
+M>=5 mean = 2.75534
+M>=5 median = 2.70807
+M>=5 2.5 Percentile = 2.06794
+M>=5 97.5 Percentile = 3.47021
+1 Year end date: 5/24/16 7:00 AM
+M>=5 mean = 10.4491
+M>=5 median = 10.2698
+M>=5 2.5 Percentile = 7.84223
+M>=5 97.5 Percentile = 13.1601
+
+ForecastResults:
+result_time = 1432534285950
+advisory_lag = 2592000000
+injectable_text = 
+catalog_result_avail = true
+catalog_start_time = 1429942285950
+catalog_end_time = 1432534285950
+catalog_eqk_count = 242
+catalog_max_mag = 7.3
+catalog_max_event_id = us20002ejl
+catalog_aftershocks = available
+catalog_comcat_aftershocks = available
+generic_result_avail = true
+generic_summary:
+b                    = 1.0
+magMain              = 7.8
+min_a                = -4.5
+max_a                = -0.5
+delta_a              = 0.01
+num_a                = 401
+min_p                = 0.98
+max_p                = 0.98
+delta_p              = 0.0
+num_p                = 1
+min_c                = 0.018
+max_c                = 0.018
+delta_c              = 0.0
+num_c                = 1
+apc_total_size       = 401
+apc_support_size     = 347
+apc_support_total    = 0.999907600939813
+apc_max_tail_element = 7.255067881479389E-6
+a_support_lo         = 54
+a_support_hi         = 401
+p_support_lo         = 0
+p_support_hi         = 1
+c_support_lo         = 0
+c_support_hi         = 1
+stat_a_mean          = -2.1307646270403295
+stat_a_sdev          = 0.489727717990652
+stat_a_like          = -2.13
+stat_p_mean          = 0.98
+stat_p_sdev          = 0.0
+stat_p_like          = 0.98
+stat_c_mean          = 0.018
+stat_c_sdev          = 0.0
+stat_c_like          = 0.018
+mean_a               = -2.13
+sigma_a              = 0.4910097333508657
+generic_json = {"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Generic)","reference":"#url","parameters":{"a":-2.13,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.49,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":0,"p95maximum":151,"probability":0.9864},{"magnitude":4.0,"p95minimum":0,"p95maximum":16,"probability":0.7288},{"magnitude":5.0,"p95minimum":0,"p95maximum":3,"probability":0.2171},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.02926},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.00305}],"aboveMainshockMag":{"magnitude":7.8,"probability":4.854E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":11,"p95maximum":960,"probability":0.9999},{"magnitude":4.0,"p95minimum":0,"p95maximum":97,"probability":0.9704},{"magnitude":5.0,"p95minimum":0,"p95maximum":11,"probability":0.626},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.154},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.01906}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.003097}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":38,"p95maximum":3187,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":320,"probability":0.9972},{"magnitude":5.0,"p95minimum":0,"p95maximum":33,"probability":0.8676},{"magnitude":6.0,"p95minimum":0,"p95maximum":5,"probability":0.3616},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.05941}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01018}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":144,"p95maximum":12082,"probability":1.0},{"magnitude":4.0,"p95minimum":14,"p95maximum":1209,"probability":0.9999},{"magnitude":5.0,"p95minimum":0,"p95maximum":122,"probability":0.98},{"magnitude":6.0,"p95minimum":0,"p95maximum":13,"probability":0.6807},{"magnitude":7.0,"p95minimum":0,"p95maximum":3,"probability":0.1847}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.03699}}]}
+generic_pdl = false
+generic_model = available
+seq_spec_result_avail = true
+seq_spec_summary:
+b                    = 1.0
+magMain              = 7.8
+min_a                = -4.5
+max_a                = -0.5
+delta_a              = 0.01
+num_a                = 401
+min_p                = 0.98
+max_p                = 0.98
+delta_p              = 0.0
+num_p                = 1
+min_c                = 0.018
+max_c                = 0.018
+delta_c              = 0.0
+num_c                = 1
+apc_total_size       = 401
+apc_support_size     = 46
+apc_support_total    = 0.9999271373700589
+apc_max_tail_element = 1.892696859260513E-5
+a_support_lo         = 202
+a_support_hi         = 248
+p_support_lo         = 0
+p_support_hi         = 1
+c_support_lo         = 0
+c_support_hi         = 1
+stat_a_mean          = -2.2379589466895804
+stat_a_sdev          = 0.05777692436206821
+stat_a_like          = -2.23
+stat_p_mean          = 0.98
+stat_p_sdev          = 0.0
+stat_p_like          = 0.98
+stat_c_mean          = 0.018
+stat_c_sdev          = 0.0
+stat_c_like          = 0.018
+magCompFn            = FnPage[capF=0.5, capG=0.25, capH=1.0]
+magCat               = 4.6
+dataStartTimeDays    = 0.0
+dataEndTimeDays      = 30.0
+numAftershocks       = 57
+seq_spec_json = {"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Sequence Specific)","reference":"#url","parameters":{"a":-2.23,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.0578,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":6,"p95maximum":22,"probability":1.0},{"magnitude":4.0,"p95minimum":0,"p95maximum":5,"probability":0.7207},{"magnitude":5.0,"p95minimum":0,"p95maximum":2,"probability":0.1209},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.01281},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.001289}],"aboveMainshockMag":{"magnitude":7.8,"probability":2.044E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":57,"p95maximum":113,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":15,"probability":0.9996},{"magnitude":5.0,"p95minimum":0,"p95maximum":4,"probability":0.5599},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.07928},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.008231}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.001309}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":202,"p95maximum":358,"probability":1.0},{"magnitude":4.0,"p95minimum":16,"p95maximum":41,"probability":1.0},{"magnitude":5.0,"p95minimum":0,"p95maximum":7,"probability":0.9316},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.2396},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.02708}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.004343}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":783,"p95maximum":1337,"probability":1.0},{"magnitude":4.0,"p95minimum":73,"p95maximum":140,"probability":1.0},{"magnitude":5.0,"p95minimum":5,"p95maximum":18,"probability":0.9999},{"magnitude":6.0,"p95minimum":0,"p95maximum":4,"probability":0.6437},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.09882}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01637}}]}
+seq_spec_pdl = false
+seq_spec_model = available
+bayesian_result_avail = true
+bayesian_summary:
+b                    = 1.0
+magMain              = 7.8
+min_a                = -4.5
+max_a                = -0.5
+delta_a              = 0.01
+num_a                = 401
+min_p                = 0.98
+max_p                = 0.98
+delta_p              = 0.0
+num_p                = 1
+min_c                = 0.018
+max_c                = 0.018
+delta_c              = 0.0
+num_c                = 1
+apc_total_size       = 401
+apc_support_size     = 45
+apc_support_total    = 0.9999094813428726
+apc_max_tail_element = 2.692593019726061E-5
+a_support_lo         = 203
+a_support_hi         = 248
+p_support_lo         = 0
+p_support_hi         = 1
+c_support_lo         = 0
+c_support_hi         = 1
+stat_a_mean          = -2.236435604322522
+stat_a_sdev          = 0.05727851991564907
+stat_a_like          = -2.23
+stat_p_mean          = 0.98
+stat_p_sdev          = 0.0
+stat_p_like          = 0.98
+stat_c_mean          = 0.018
+stat_c_sdev          = 0.0
+stat_c_like          = 0.018
+bayesian_json = {"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Bayesian Combination)","reference":"#url","parameters":{"a":-2.23,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.0573,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":6,"p95maximum":22,"probability":1.0},{"magnitude":4.0,"p95minimum":0,"p95maximum":5,"probability":0.722},{"magnitude":5.0,"p95minimum":0,"p95maximum":2,"probability":0.1213},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.01286},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.001293}],"aboveMainshockMag":{"magnitude":7.8,"probability":2.051E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":57,"p95maximum":113,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":15,"probability":0.9996},{"magnitude":5.0,"p95minimum":0,"p95maximum":4,"probability":0.5611},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.07954},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.008259}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.001314}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":203,"p95maximum":359,"probability":1.0},{"magnitude":4.0,"p95minimum":16,"p95maximum":41,"probability":1.0},{"magnitude":5.0,"p95minimum":0,"p95maximum":7,"probability":0.9323},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.2403},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.02717}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.004357}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":787,"p95maximum":1339,"probability":1.0},{"magnitude":4.0,"p95minimum":74,"p95maximum":141,"probability":1.0},{"magnitude":5.0,"p95minimum":5,"p95maximum":18,"probability":0.9999},{"magnitude":6.0,"p95minimum":0,"p95maximum":4,"probability":0.645},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.09913}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01642}}]}
+bayesian_pdl = false
+bayesian_model = available
+
+
+{"ClassType":23001,"ForecastResults":23001,"result_time":1432534285950,"advisory_lag":2592000000,"injectable_text":"","catalog_result_avail":true,"catalog_start_time":1429942285950,"catalog_end_time":1432534285950,"catalog_eqk_count":242,"catalog_max_mag":7.3,"catalog_max_event_id":"us20002ejl","generic_result_avail":true,"generic_summary":{"RJ_Summary_Generic":5001,"RJ_Summary":4001,"b":1.0,"magMain":7.8,"min_a":-4.5,"max_a":-0.5,"delta_a":0.01,"num_a":401,"min_p":0.98,"max_p":0.98,"delta_p":0.0,"num_p":1,"min_c":0.018,"max_c":0.018,"delta_c":0.0,"num_c":1,"apc_total_size":401,"apc_support_size":347,"apc_support_total":0.999907600939813,"apc_max_tail_element":7.255067881479389E-6,"a_support_lo":54,"a_support_hi":401,"p_support_lo":0,"p_support_hi":1,"c_support_lo":0,"c_support_hi":1,"stat_a_mean":-2.1307646270403295,"stat_a_sdev":0.489727717990652,"stat_a_like":-2.13,"stat_p_mean":0.98,"stat_p_sdev":0.0,"stat_p_like":0.98,"stat_c_mean":0.018,"stat_c_sdev":0.0,"stat_c_like":0.018,"mean_a":-2.13,"sigma_a":0.4910097333508657},"generic_json":{"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Generic)","reference":"#url","parameters":{"a":-2.13,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.49,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":0,"p95maximum":151,"probability":0.9864},{"magnitude":4.0,"p95minimum":0,"p95maximum":16,"probability":0.7288},{"magnitude":5.0,"p95minimum":0,"p95maximum":3,"probability":0.2171},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.02926},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.00305}],"aboveMainshockMag":{"magnitude":7.8,"probability":4.854E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":11,"p95maximum":960,"probability":0.9999},{"magnitude":4.0,"p95minimum":0,"p95maximum":97,"probability":0.9704},{"magnitude":5.0,"p95minimum":0,"p95maximum":11,"probability":0.626},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.154},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.01906}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.003097}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":38,"p95maximum":3187,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":320,"probability":0.9972},{"magnitude":5.0,"p95minimum":0,"p95maximum":33,"probability":0.8676},{"magnitude":6.0,"p95minimum":0,"p95maximum":5,"probability":0.3616},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.05941}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01018}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":144,"p95maximum":12082,"probability":1.0},{"magnitude":4.0,"p95minimum":14,"p95maximum":1209,"probability":0.9999},{"magnitude":5.0,"p95minimum":0,"p95maximum":122,"probability":0.98},{"magnitude":6.0,"p95minimum":0,"p95maximum":13,"probability":0.6807},{"magnitude":7.0,"p95minimum":0,"p95maximum":3,"probability":0.1847}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.03699}}]},"generic_pdl":false,"seq_spec_result_avail":true,"seq_spec_summary":{"RJ_Summary_SequenceSpecific":7002,"RJ_Summary":4001,"b":1.0,"magMain":7.8,"min_a":-4.5,"max_a":-0.5,"delta_a":0.01,"num_a":401,"min_p":0.98,"max_p":0.98,"delta_p":0.0,"num_p":1,"min_c":0.018,"max_c":0.018,"delta_c":0.0,"num_c":1,"apc_total_size":401,"apc_support_size":46,"apc_support_total":0.9999271373700589,"apc_max_tail_element":1.892696859260513E-5,"a_support_lo":202,"a_support_hi":248,"p_support_lo":0,"p_support_hi":1,"c_support_lo":0,"c_support_hi":1,"stat_a_mean":-2.2379589466895804,"stat_a_sdev":0.05777692436206821,"stat_a_like":-2.23,"stat_p_mean":0.98,"stat_p_sdev":0.0,"stat_p_like":0.98,"stat_c_mean":0.018,"stat_c_sdev":0.0,"stat_c_like":0.018,"magCompFn":{"ClassType":53001,"MagCompFnPage":53001,"MagCompFn":51001,"capF":0.5,"capG":0.25,"capH":1.0},"magCat":4.6,"dataStartTimeDays":0.0,"dataEndTimeDays":30.0,"numAftershocks":57},"seq_spec_json":{"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Sequence Specific)","reference":"#url","parameters":{"a":-2.23,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.0578,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":6,"p95maximum":22,"probability":1.0},{"magnitude":4.0,"p95minimum":0,"p95maximum":5,"probability":0.7207},{"magnitude":5.0,"p95minimum":0,"p95maximum":2,"probability":0.1209},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.01281},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.001289}],"aboveMainshockMag":{"magnitude":7.8,"probability":2.044E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":57,"p95maximum":113,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":15,"probability":0.9996},{"magnitude":5.0,"p95minimum":0,"p95maximum":4,"probability":0.5599},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.07928},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.008231}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.001309}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":202,"p95maximum":358,"probability":1.0},{"magnitude":4.0,"p95minimum":16,"p95maximum":41,"probability":1.0},{"magnitude":5.0,"p95minimum":0,"p95maximum":7,"probability":0.9316},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.2396},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.02708}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.004343}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":783,"p95maximum":1337,"probability":1.0},{"magnitude":4.0,"p95minimum":73,"p95maximum":140,"probability":1.0},{"magnitude":5.0,"p95minimum":5,"p95maximum":18,"probability":0.9999},{"magnitude":6.0,"p95minimum":0,"p95maximum":4,"probability":0.6437},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.09882}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01637}}]},"seq_spec_pdl":false,"bayesian_result_avail":true,"bayesian_summary":{"RJ_Summary_Bayesian":6001,"RJ_Summary":4001,"b":1.0,"magMain":7.8,"min_a":-4.5,"max_a":-0.5,"delta_a":0.01,"num_a":401,"min_p":0.98,"max_p":0.98,"delta_p":0.0,"num_p":1,"min_c":0.018,"max_c":0.018,"delta_c":0.0,"num_c":1,"apc_total_size":401,"apc_support_size":45,"apc_support_total":0.9999094813428726,"apc_max_tail_element":2.692593019726061E-5,"a_support_lo":203,"a_support_hi":248,"p_support_lo":0,"p_support_hi":1,"c_support_lo":0,"c_support_hi":1,"stat_a_mean":-2.236435604322522,"stat_a_sdev":0.05727851991564907,"stat_a_like":-2.23,"stat_p_mean":0.98,"stat_p_sdev":0.0,"stat_p_like":0.98,"stat_c_mean":0.018,"stat_c_sdev":0.0,"stat_c_like":0.018},"bayesian_json":{"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Bayesian Combination)","reference":"#url","parameters":{"a":-2.23,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.0573,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":6,"p95maximum":22,"probability":1.0},{"magnitude":4.0,"p95minimum":0,"p95maximum":5,"probability":0.722},{"magnitude":5.0,"p95minimum":0,"p95maximum":2,"probability":0.1213},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.01286},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.001293}],"aboveMainshockMag":{"magnitude":7.8,"probability":2.051E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":57,"p95maximum":113,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":15,"probability":0.9996},{"magnitude":5.0,"p95minimum":0,"p95maximum":4,"probability":0.5611},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.07954},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.008259}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.001314}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":203,"p95maximum":359,"probability":1.0},{"magnitude":4.0,"p95minimum":16,"p95maximum":41,"probability":1.0},{"magnitude":5.0,"p95minimum":0,"p95maximum":7,"probability":0.9323},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.2403},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.02717}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.004357}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":787,"p95maximum":1339,"probability":1.0},{"magnitude":4.0,"p95minimum":74,"p95maximum":141,"probability":1.0},{"magnitude":5.0,"p95minimum":5,"p95maximum":18,"probability":0.9999},{"magnitude":6.0,"p95minimum":0,"p95maximum":4,"probability":0.645},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.09913}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01642}}]},"bayesian_pdl":false}
+
+ForecastResults:
+result_time = 1432534285950
+advisory_lag = 2592000000
+injectable_text = 
+catalog_result_avail = true
+catalog_start_time = 1429942285950
+catalog_end_time = 1432534285950
+catalog_eqk_count = 242
+catalog_max_mag = 7.3
+catalog_max_event_id = us20002ejl
+catalog_aftershocks = null
+catalog_comcat_aftershocks = null
+generic_result_avail = true
+generic_summary:
+b                    = 1.0
+magMain              = 7.8
+min_a                = -4.5
+max_a                = -0.5
+delta_a              = 0.01
+num_a                = 401
+min_p                = 0.98
+max_p                = 0.98
+delta_p              = 0.0
+num_p                = 1
+min_c                = 0.018
+max_c                = 0.018
+delta_c              = 0.0
+num_c                = 1
+apc_total_size       = 401
+apc_support_size     = 347
+apc_support_total    = 0.999907600939813
+apc_max_tail_element = 7.255067881479389E-6
+a_support_lo         = 54
+a_support_hi         = 401
+p_support_lo         = 0
+p_support_hi         = 1
+c_support_lo         = 0
+c_support_hi         = 1
+stat_a_mean          = -2.1307646270403295
+stat_a_sdev          = 0.489727717990652
+stat_a_like          = -2.13
+stat_p_mean          = 0.98
+stat_p_sdev          = 0.0
+stat_p_like          = 0.98
+stat_c_mean          = 0.018
+stat_c_sdev          = 0.0
+stat_c_like          = 0.018
+mean_a               = -2.13
+sigma_a              = 0.4910097333508657
+generic_json = {"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Generic)","reference":"#url","parameters":{"a":-2.13,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.49,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":0,"p95maximum":151,"probability":0.9864},{"magnitude":4.0,"p95minimum":0,"p95maximum":16,"probability":0.7288},{"magnitude":5.0,"p95minimum":0,"p95maximum":3,"probability":0.2171},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.02926},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.00305}],"aboveMainshockMag":{"magnitude":7.8,"probability":4.854E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":11,"p95maximum":960,"probability":0.9999},{"magnitude":4.0,"p95minimum":0,"p95maximum":97,"probability":0.9704},{"magnitude":5.0,"p95minimum":0,"p95maximum":11,"probability":0.626},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.154},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.01906}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.003097}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":38,"p95maximum":3187,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":320,"probability":0.9972},{"magnitude":5.0,"p95minimum":0,"p95maximum":33,"probability":0.8676},{"magnitude":6.0,"p95minimum":0,"p95maximum":5,"probability":0.3616},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.05941}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01018}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":144,"p95maximum":12082,"probability":1.0},{"magnitude":4.0,"p95minimum":14,"p95maximum":1209,"probability":0.9999},{"magnitude":5.0,"p95minimum":0,"p95maximum":122,"probability":0.98},{"magnitude":6.0,"p95minimum":0,"p95maximum":13,"probability":0.6807},{"magnitude":7.0,"p95minimum":0,"p95maximum":3,"probability":0.1847}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.03699}}]}
+generic_pdl = false
+generic_model = null
+seq_spec_result_avail = true
+seq_spec_summary:
+b                    = 1.0
+magMain              = 7.8
+min_a                = -4.5
+max_a                = -0.5
+delta_a              = 0.01
+num_a                = 401
+min_p                = 0.98
+max_p                = 0.98
+delta_p              = 0.0
+num_p                = 1
+min_c                = 0.018
+max_c                = 0.018
+delta_c              = 0.0
+num_c                = 1
+apc_total_size       = 401
+apc_support_size     = 46
+apc_support_total    = 0.9999271373700589
+apc_max_tail_element = 1.892696859260513E-5
+a_support_lo         = 202
+a_support_hi         = 248
+p_support_lo         = 0
+p_support_hi         = 1
+c_support_lo         = 0
+c_support_hi         = 1
+stat_a_mean          = -2.2379589466895804
+stat_a_sdev          = 0.05777692436206821
+stat_a_like          = -2.23
+stat_p_mean          = 0.98
+stat_p_sdev          = 0.0
+stat_p_like          = 0.98
+stat_c_mean          = 0.018
+stat_c_sdev          = 0.0
+stat_c_like          = 0.018
+magCompFn            = FnPage[capF=0.5, capG=0.25, capH=1.0]
+magCat               = 4.6
+dataStartTimeDays    = 0.0
+dataEndTimeDays      = 30.0
+numAftershocks       = 57
+seq_spec_json = {"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Sequence Specific)","reference":"#url","parameters":{"a":-2.23,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.0578,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":6,"p95maximum":22,"probability":1.0},{"magnitude":4.0,"p95minimum":0,"p95maximum":5,"probability":0.7207},{"magnitude":5.0,"p95minimum":0,"p95maximum":2,"probability":0.1209},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.01281},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.001289}],"aboveMainshockMag":{"magnitude":7.8,"probability":2.044E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":57,"p95maximum":113,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":15,"probability":0.9996},{"magnitude":5.0,"p95minimum":0,"p95maximum":4,"probability":0.5599},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.07928},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.008231}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.001309}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":202,"p95maximum":358,"probability":1.0},{"magnitude":4.0,"p95minimum":16,"p95maximum":41,"probability":1.0},{"magnitude":5.0,"p95minimum":0,"p95maximum":7,"probability":0.9316},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.2396},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.02708}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.004343}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":783,"p95maximum":1337,"probability":1.0},{"magnitude":4.0,"p95minimum":73,"p95maximum":140,"probability":1.0},{"magnitude":5.0,"p95minimum":5,"p95maximum":18,"probability":0.9999},{"magnitude":6.0,"p95minimum":0,"p95maximum":4,"probability":0.6437},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.09882}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01637}}]}
+seq_spec_pdl = false
+seq_spec_model = null
+bayesian_result_avail = true
+bayesian_summary:
+b                    = 1.0
+magMain              = 7.8
+min_a                = -4.5
+max_a                = -0.5
+delta_a              = 0.01
+num_a                = 401
+min_p                = 0.98
+max_p                = 0.98
+delta_p              = 0.0
+num_p                = 1
+min_c                = 0.018
+max_c                = 0.018
+delta_c              = 0.0
+num_c                = 1
+apc_total_size       = 401
+apc_support_size     = 45
+apc_support_total    = 0.9999094813428726
+apc_max_tail_element = 2.692593019726061E-5
+a_support_lo         = 203
+a_support_hi         = 248
+p_support_lo         = 0
+p_support_hi         = 1
+c_support_lo         = 0
+c_support_hi         = 1
+stat_a_mean          = -2.236435604322522
+stat_a_sdev          = 0.05727851991564907
+stat_a_like          = -2.23
+stat_p_mean          = 0.98
+stat_p_sdev          = 0.0
+stat_p_like          = 0.98
+stat_c_mean          = 0.018
+stat_c_sdev          = 0.0
+stat_c_like          = 0.018
+bayesian_json = {"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Bayesian Combination)","reference":"#url","parameters":{"a":-2.23,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.0573,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":6,"p95maximum":22,"probability":1.0},{"magnitude":4.0,"p95minimum":0,"p95maximum":5,"probability":0.722},{"magnitude":5.0,"p95minimum":0,"p95maximum":2,"probability":0.1213},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.01286},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.001293}],"aboveMainshockMag":{"magnitude":7.8,"probability":2.051E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":57,"p95maximum":113,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":15,"probability":0.9996},{"magnitude":5.0,"p95minimum":0,"p95maximum":4,"probability":0.5611},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.07954},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.008259}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.001314}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":203,"p95maximum":359,"probability":1.0},{"magnitude":4.0,"p95minimum":16,"p95maximum":41,"probability":1.0},{"magnitude":5.0,"p95minimum":0,"p95maximum":7,"probability":0.9323},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.2403},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.02717}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.004357}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":787,"p95maximum":1339,"probability":1.0},{"magnitude":4.0,"p95minimum":74,"p95maximum":141,"probability":1.0},{"magnitude":5.0,"p95minimum":5,"p95maximum":18,"probability":0.9999},{"magnitude":6.0,"p95minimum":0,"p95maximum":4,"probability":0.645},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.09913}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01642}}]}
+bayesian_pdl = false
+bayesian_model = null
+
+b=1.000  magMain=7.800  apcTot=401  apcSup=347
+a: like=-2.130  mean=-2.131  sdev=0.4897  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=54  hi=401
+p: like=0.9800  mean=0.9800  sdev=0.000  min=0.9800  max=0.9800  delta=0.000  num=1  lo=0  hi=1
+c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
+mean_a=-2.130  sigma_a=0.4910
+b=1.000  magMain=7.800  apcTot=401  apcSup=46
+a: like=-2.230  mean=-2.238  sdev=0.05778  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=202  hi=248
+p: like=0.9800  mean=0.9800  sdev=0.000  min=0.9800  max=0.9800  delta=0.000  num=1  lo=0  hi=1
+c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
+magCompFn=FnPage[capF=0.5, capG=0.25, capH=1.0]  magCat=4.600  tStart=0.0000000  tEnd=30.000000  nEvents=57
+b=1.000  magMain=7.800  apcTot=401  apcSup=45
+a: like=-2.230  mean=-2.236  sdev=0.05728  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=203  hi=248
+p: like=0.9800  mean=0.9800  sdev=0.000  min=0.9800  max=0.9800  delta=0.000  num=1  lo=0  hi=1
+c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
+
+ForecastResults:
+result_time = 1432534285950
+advisory_lag = 2592000000
+injectable_text = 
+catalog_result_avail = true
+catalog_start_time = 1429942285950
+catalog_end_time = 1432534285950
+catalog_eqk_count = 242
+catalog_max_mag = 7.3
+catalog_max_event_id = us20002ejl
+catalog_aftershocks = available
+catalog_comcat_aftershocks = null
+generic_result_avail = true
+generic_summary:
+b                    = 1.0
+magMain              = 7.8
+min_a                = -4.5
+max_a                = -0.5
+delta_a              = 0.01
+num_a                = 401
+min_p                = 0.98
+max_p                = 0.98
+delta_p              = 0.0
+num_p                = 1
+min_c                = 0.018
+max_c                = 0.018
+delta_c              = 0.0
+num_c                = 1
+apc_total_size       = 401
+apc_support_size     = 347
+apc_support_total    = 0.999907600939813
+apc_max_tail_element = 7.255067881479389E-6
+a_support_lo         = 54
+a_support_hi         = 401
+p_support_lo         = 0
+p_support_hi         = 1
+c_support_lo         = 0
+c_support_hi         = 1
+stat_a_mean          = -2.1307646270403295
+stat_a_sdev          = 0.489727717990652
+stat_a_like          = -2.13
+stat_p_mean          = 0.98
+stat_p_sdev          = 0.0
+stat_p_like          = 0.98
+stat_c_mean          = 0.018
+stat_c_sdev          = 0.0
+stat_c_like          = 0.018
+mean_a               = -2.13
+sigma_a              = 0.4910097333508657
+generic_json = {"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Generic)","reference":"#url","parameters":{"a":-2.13,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.49,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":0,"p95maximum":151,"probability":0.9864},{"magnitude":4.0,"p95minimum":0,"p95maximum":16,"probability":0.7288},{"magnitude":5.0,"p95minimum":0,"p95maximum":3,"probability":0.2171},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.02926},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.00305}],"aboveMainshockMag":{"magnitude":7.8,"probability":4.854E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":11,"p95maximum":960,"probability":0.9999},{"magnitude":4.0,"p95minimum":0,"p95maximum":97,"probability":0.9704},{"magnitude":5.0,"p95minimum":0,"p95maximum":11,"probability":0.626},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.154},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.01906}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.003097}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":38,"p95maximum":3187,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":320,"probability":0.9972},{"magnitude":5.0,"p95minimum":0,"p95maximum":33,"probability":0.8676},{"magnitude":6.0,"p95minimum":0,"p95maximum":5,"probability":0.3616},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.05941}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01018}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":144,"p95maximum":12082,"probability":1.0},{"magnitude":4.0,"p95minimum":14,"p95maximum":1209,"probability":0.9999},{"magnitude":5.0,"p95minimum":0,"p95maximum":122,"probability":0.98},{"magnitude":6.0,"p95minimum":0,"p95maximum":13,"probability":0.6807},{"magnitude":7.0,"p95minimum":0,"p95maximum":3,"probability":0.1847}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.03699}}]}
+generic_pdl = false
+generic_model = available
+seq_spec_result_avail = true
+seq_spec_summary:
+b                    = 1.0
+magMain              = 7.8
+min_a                = -4.5
+max_a                = -0.5
+delta_a              = 0.01
+num_a                = 401
+min_p                = 0.98
+max_p                = 0.98
+delta_p              = 0.0
+num_p                = 1
+min_c                = 0.018
+max_c                = 0.018
+delta_c              = 0.0
+num_c                = 1
+apc_total_size       = 401
+apc_support_size     = 46
+apc_support_total    = 0.9999271373700589
+apc_max_tail_element = 1.892696859260513E-5
+a_support_lo         = 202
+a_support_hi         = 248
+p_support_lo         = 0
+p_support_hi         = 1
+c_support_lo         = 0
+c_support_hi         = 1
+stat_a_mean          = -2.2379589466895804
+stat_a_sdev          = 0.05777692436206821
+stat_a_like          = -2.23
+stat_p_mean          = 0.98
+stat_p_sdev          = 0.0
+stat_p_like          = 0.98
+stat_c_mean          = 0.018
+stat_c_sdev          = 0.0
+stat_c_like          = 0.018
+magCompFn            = FnPage[capF=0.5, capG=0.25, capH=1.0]
+magCat               = 4.6
+dataStartTimeDays    = 0.0
+dataEndTimeDays      = 30.0
+numAftershocks       = 57
+seq_spec_json = {"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Sequence Specific)","reference":"#url","parameters":{"a":-2.23,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.0578,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":6,"p95maximum":22,"probability":1.0},{"magnitude":4.0,"p95minimum":0,"p95maximum":5,"probability":0.7207},{"magnitude":5.0,"p95minimum":0,"p95maximum":2,"probability":0.1209},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.01281},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.001289}],"aboveMainshockMag":{"magnitude":7.8,"probability":2.044E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":57,"p95maximum":113,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":15,"probability":0.9996},{"magnitude":5.0,"p95minimum":0,"p95maximum":4,"probability":0.5599},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.07928},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.008231}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.001309}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":202,"p95maximum":358,"probability":1.0},{"magnitude":4.0,"p95minimum":16,"p95maximum":41,"probability":1.0},{"magnitude":5.0,"p95minimum":0,"p95maximum":7,"probability":0.9316},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.2396},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.02708}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.004343}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":783,"p95maximum":1337,"probability":1.0},{"magnitude":4.0,"p95minimum":73,"p95maximum":140,"probability":1.0},{"magnitude":5.0,"p95minimum":5,"p95maximum":18,"probability":0.9999},{"magnitude":6.0,"p95minimum":0,"p95maximum":4,"probability":0.6437},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.09882}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01637}}]}
+seq_spec_pdl = false
+seq_spec_model = available
+bayesian_result_avail = true
+bayesian_summary:
+b                    = 1.0
+magMain              = 7.8
+min_a                = -4.5
+max_a                = -0.5
+delta_a              = 0.01
+num_a                = 401
+min_p                = 0.98
+max_p                = 0.98
+delta_p              = 0.0
+num_p                = 1
+min_c                = 0.018
+max_c                = 0.018
+delta_c              = 0.0
+num_c                = 1
+apc_total_size       = 401
+apc_support_size     = 45
+apc_support_total    = 0.9999094813428726
+apc_max_tail_element = 2.692593019726061E-5
+a_support_lo         = 203
+a_support_hi         = 248
+p_support_lo         = 0
+p_support_hi         = 1
+c_support_lo         = 0
+c_support_hi         = 1
+stat_a_mean          = -2.236435604322522
+stat_a_sdev          = 0.05727851991564907
+stat_a_like          = -2.23
+stat_p_mean          = 0.98
+stat_p_sdev          = 0.0
+stat_p_like          = 0.98
+stat_c_mean          = 0.018
+stat_c_sdev          = 0.0
+stat_c_like          = 0.018
+bayesian_json = {"creationTime":1432534285950,"expireTime":1464073200000,"advisoryTimeFrame":"1 Month","template":"Mainshock","injectableText":"","observations":[{"magnitude":3.0,"count":242},{"magnitude":4.0,"count":236},{"magnitude":5.0,"count":29},{"magnitude":6.0,"count":5},{"magnitude":7.0,"count":1}],"model":{"name":"Reasenberg-Jones (1989, 1994) aftershock model (Bayesian Combination)","reference":"#url","parameters":{"a":-2.23,"b":1.0,"magMain":7.8,"p":0.98,"c":0.018,"aSigma":0.0573,"pSigma":0.0}},"forecast":[{"timeStart":1432537200000,"timeEnd":1432623600000,"label":"1 Day","bins":[{"magnitude":3.0,"p95minimum":6,"p95maximum":22,"probability":1.0},{"magnitude":4.0,"p95minimum":0,"p95maximum":5,"probability":0.722},{"magnitude":5.0,"p95minimum":0,"p95maximum":2,"probability":0.1213},{"magnitude":6.0,"p95minimum":0,"p95maximum":0,"probability":0.01286},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.001293}],"aboveMainshockMag":{"magnitude":7.8,"probability":2.051E-4}},{"timeStart":1432537200000,"timeEnd":1433142000000,"label":"1 Week","bins":[{"magnitude":3.0,"p95minimum":57,"p95maximum":113,"probability":1.0},{"magnitude":4.0,"p95minimum":3,"p95maximum":15,"probability":0.9996},{"magnitude":5.0,"p95minimum":0,"p95maximum":4,"probability":0.5611},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.07954},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.008259}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.001314}},{"timeStart":1432537200000,"timeEnd":1435129200000,"label":"1 Month","bins":[{"magnitude":3.0,"p95minimum":203,"p95maximum":359,"probability":1.0},{"magnitude":4.0,"p95minimum":16,"p95maximum":41,"probability":1.0},{"magnitude":5.0,"p95minimum":0,"p95maximum":7,"probability":0.9323},{"magnitude":6.0,"p95minimum":0,"p95maximum":2,"probability":0.2403},{"magnitude":7.0,"p95minimum":0,"p95maximum":0,"probability":0.02717}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.004357}},{"timeStart":1432537200000,"timeEnd":1464073200000,"label":"1 Year","bins":[{"magnitude":3.0,"p95minimum":787,"p95maximum":1339,"probability":1.0},{"magnitude":4.0,"p95minimum":74,"p95maximum":141,"probability":1.0},{"magnitude":5.0,"p95minimum":5,"p95maximum":18,"probability":0.9999},{"magnitude":6.0,"p95minimum":0,"p95maximum":4,"probability":0.645},{"magnitude":7.0,"p95minimum":0,"p95maximum":2,"probability":0.09913}],"aboveMainshockMag":{"magnitude":7.8,"probability":0.01642}}]}
+bayesian_pdl = false
+bayesian_model = available
+
+
+Saved catalog size = 242
+0: time = 2015-04-25 06:15:22 UTC, mag = 6.100, lat = 27.62850, lon = 85.53980, depth = 10.000
+1: time = 2015-04-25 06:18:10 UTC, mag = 5.600, lat = 27.68570, lon = 86.02130, depth = 10.000
+2: time = 2015-04-25 06:20:40 UTC, mag = 5.400, lat = 28.20460, lon = 84.49200, depth = 10.000
+3: time = 2015-04-25 06:22:02 UTC, mag = 5.100, lat = 27.80060, lon = 85.11410, depth = 10.000
+4: time = 2015-04-25 06:25:55 UTC, mag = 5.000, lat = 27.68700, lon = 85.58540, depth = 10.000
+5: time = 2015-04-25 06:28:05 UTC, mag = 4.800, lat = 27.70060, lon = 85.50430, depth = 10.000
+6: time = 2015-04-25 06:29:46 UTC, mag = 4.700, lat = 27.84780, lon = 85.07170, depth = 10.000
+7: time = 2015-04-25 06:32:48 UTC, mag = 4.600, lat = 27.72440, lon = 85.94790, depth = 10.000
+8: time = 2015-04-25 06:37:58 UTC, mag = 5.100, lat = 27.74350, lon = 85.83020, depth = 10.000
+9: time = 2015-04-25 06:44:39 UTC, mag = 4.600, lat = 27.58620, lon = 85.50120, depth = 10.000
+10: time = 2015-04-25 06:45:21 UTC, mag = 6.600, lat = 28.22440, lon = 84.82160, depth = 10.000
+11: time = 2015-04-25 06:53:42 UTC, mag = 5.000, lat = 27.67200, lon = 85.20090, depth = 10.000
+12: time = 2015-04-25 06:56:33 UTC, mag = 5.500, lat = 27.88220, lon = 85.75050, depth = 10.000
+13: time = 2015-04-25 06:58:27 UTC, mag = 5.100, lat = 27.72190, lon = 86.00610, depth = 10.000
+14: time = 2015-04-25 07:03:09 UTC, mag = 4.400, lat = 27.41730, lon = 86.02370, depth = 10.000
+15: time = 2015-04-25 07:03:49 UTC, mag = 4.400, lat = 27.96400, lon = 84.68430, depth = 10.000
+16: time = 2015-04-25 07:05:00 UTC, mag = 4.200, lat = 28.02900, lon = 85.36820, depth = 10.000
+17: time = 2015-04-25 07:05:28 UTC, mag = 4.300, lat = 27.94820, lon = 85.58370, depth = 10.000
+18: time = 2015-04-25 07:07:59 UTC, mag = 4.900, lat = 27.78790, lon = 85.91400, depth = 10.000
+19: time = 2015-04-25 07:13:44 UTC, mag = 4.800, lat = 27.61500, lon = 85.73070, depth = 10.000
+20: time = 2015-04-25 07:16:55 UTC, mag = 4.700, lat = 27.88180, lon = 85.67910, depth = 10.000
+21: time = 2015-04-25 07:20:24 UTC, mag = 4.000, lat = 27.75740, lon = 85.34050, depth = 10.000
+22: time = 2015-04-25 07:22:55 UTC, mag = 4.200, lat = 27.88540, lon = 85.84780, depth = 10.000
+23: time = 2015-04-25 07:23:38 UTC, mag = 4.400, lat = 27.80530, lon = 85.89240, depth = 10.000
+24: time = 2015-04-25 07:33:47 UTC, mag = 4.300, lat = 27.68910, lon = 84.99180, depth = 10.000
+25: time = 2015-04-25 07:34:55 UTC, mag = 4.300, lat = 27.96330, lon = 85.60990, depth = 10.000
+26: time = 2015-04-25 07:39:33 UTC, mag = 4.500, lat = 27.68210, lon = 85.73830, depth = 10.000
+27: time = 2015-04-25 07:47:01 UTC, mag = 5.000, lat = 27.81720, lon = 85.59550, depth = 10.000
+28: time = 2015-04-25 07:55:44 UTC, mag = 4.400, lat = 27.84600, lon = 85.48750, depth = 10.000
+29: time = 2015-04-25 07:59:14 UTC, mag = 4.400, lat = 27.84260, lon = 85.76760, depth = 10.000
+30: time = 2015-04-25 08:05:37 UTC, mag = 4.600, lat = 27.81320, lon = 85.79430, depth = 10.000
+31: time = 2015-04-25 08:16:59 UTC, mag = 4.900, lat = 27.70140, lon = 85.75630, depth = 10.000
+32: time = 2015-04-25 08:20:11 UTC, mag = 4.700, lat = 27.85490, lon = 85.79310, depth = 10.000
+33: time = 2015-04-25 08:20:48 UTC, mag = 4.900, lat = 27.64290, lon = 85.16000, depth = 10.000
+34: time = 2015-04-25 08:22:47 UTC, mag = 4.600, lat = 27.81660, lon = 85.56660, depth = 10.000
+35: time = 2015-04-25 08:29:24 UTC, mag = 5.000, lat = 27.93510, lon = 84.62180, depth = 10.000
+36: time = 2015-04-25 08:31:32 UTC, mag = 4.600, lat = 27.67080, lon = 85.95390, depth = 10.000
+37: time = 2015-04-25 08:36:05 UTC, mag = 4.200, lat = 27.72920, lon = 85.17270, depth = 10.000
+38: time = 2015-04-25 08:49:09 UTC, mag = 4.400, lat = 27.74040, lon = 84.88930, depth = 10.000
+39: time = 2015-04-25 08:55:55 UTC, mag = 5.300, lat = 27.58660, lon = 85.50580, depth = 10.000
+40: time = 2015-04-25 09:01:51 UTC, mag = 4.400, lat = 27.80840, lon = 85.07180, depth = 10.000
+41: time = 2015-04-25 09:03:14 UTC, mag = 4.800, lat = 27.87430, lon = 85.34260, depth = 10.000
+42: time = 2015-04-25 09:22:36 UTC, mag = 4.700, lat = 27.71920, lon = 85.75030, depth = 10.000
+43: time = 2015-04-25 09:28:00 UTC, mag = 4.400, lat = 28.00610, lon = 85.31040, depth = 10.000
+44: time = 2015-04-25 09:30:29 UTC, mag = 4.900, lat = 27.99450, lon = 85.52090, depth = 10.000
+45: time = 2015-04-25 09:43:00 UTC, mag = 4.400, lat = 28.06680, lon = 84.88420, depth = 10.000
+46: time = 2015-04-25 09:53:32 UTC, mag = 4.000, lat = 27.53260, lon = 85.72550, depth = 10.000
+47: time = 2015-04-25 10:10:32 UTC, mag = 4.200, lat = 28.28380, lon = 84.72550, depth = 10.000
+48: time = 2015-04-25 10:23:17 UTC, mag = 4.400, lat = 27.79990, lon = 85.80350, depth = 10.000
+49: time = 2015-04-25 10:40:13 UTC, mag = 4.100, lat = 27.77040, lon = 85.83220, depth = 10.000
+50: time = 2015-04-25 10:40:35 UTC, mag = 4.800, lat = 27.60330, lon = 85.95650, depth = 10.000
+51: time = 2015-04-25 10:50:45 UTC, mag = 4.200, lat = 28.14470, lon = 84.62370, depth = 10.000
+52: time = 2015-04-25 10:52:00 UTC, mag = 4.000, lat = 27.50750, lon = 85.63040, depth = 10.000
+53: time = 2015-04-25 10:53:43 UTC, mag = 4.600, lat = 27.80610, lon = 85.88420, depth = 10.000
+54: time = 2015-04-25 11:05:01 UTC, mag = 4.200, lat = 27.93300, lon = 85.54710, depth = 10.000
+55: time = 2015-04-25 11:15:18 UTC, mag = 4.000, lat = 27.60210, lon = 86.05050, depth = 10.000
+56: time = 2015-04-25 11:18:30 UTC, mag = 4.400, lat = 27.49230, lon = 86.00580, depth = 10.000
+57: time = 2015-04-25 11:23:47 UTC, mag = 4.500, lat = 27.64830, lon = 85.43090, depth = 10.000
+58: time = 2015-04-25 11:41:47 UTC, mag = 4.200, lat = 28.05960, lon = 85.05660, depth = 10.000
+59: time = 2015-04-25 12:01:10 UTC, mag = 4.200, lat = 27.86380, lon = 85.92550, depth = 10.000
+60: time = 2015-04-25 12:12:14 UTC, mag = 4.300, lat = 27.66450, lon = 85.89540, depth = 10.000
+61: time = 2015-04-25 12:17:54 UTC, mag = 4.500, lat = 27.92610, lon = 85.44900, depth = 10.000
+62: time = 2015-04-25 12:39:52 UTC, mag = 4.000, lat = 27.48440, lon = 86.09520, depth = 10.000
+63: time = 2015-04-25 12:44:05 UTC, mag = 5.200, lat = 28.09790, lon = 84.55940, depth = 10.000
+64: time = 2015-04-25 13:29:31 UTC, mag = 4.300, lat = 27.80550, lon = 85.79090, depth = 10.000
+65: time = 2015-04-25 13:30:28 UTC, mag = 4.600, lat = 28.07680, lon = 85.03780, depth = 10.000
+66: time = 2015-04-25 13:36:14 UTC, mag = 4.700, lat = 27.72660, lon = 85.98260, depth = 10.000
+67: time = 2015-04-25 14:10:03 UTC, mag = 4.600, lat = 27.71090, lon = 85.87480, depth = 10.000
+68: time = 2015-04-25 16:27:21 UTC, mag = 4.900, lat = 27.86950, lon = 85.63590, depth = 10.000
+69: time = 2015-04-25 17:42:50 UTC, mag = 5.100, lat = 28.23800, lon = 85.82900, depth = 10.000
+70: time = 2015-04-25 17:46:17 UTC, mag = 4.500, lat = 28.21390, lon = 86.10720, depth = 35.260
+71: time = 2015-04-25 18:58:34 UTC, mag = 4.200, lat = 27.63760, lon = 85.35010, depth = 14.200
+72: time = 2015-04-25 20:07:01 UTC, mag = 4.400, lat = 27.97540, lon = 84.52820, depth = 10.000
+73: time = 2015-04-25 20:32:48 UTC, mag = 4.400, lat = 27.64370, lon = 85.92410, depth = 10.000
+74: time = 2015-04-25 21:07:20 UTC, mag = 4.600, lat = 27.76570, lon = 85.81140, depth = 23.880
+75: time = 2015-04-25 23:12:52 UTC, mag = 4.000, lat = 27.60380, lon = 86.08730, depth = 9.210
+76: time = 2015-04-25 23:16:15 UTC, mag = 5.100, lat = 27.79930, lon = 84.87150, depth = 13.610
+77: time = 2015-04-25 23:41:53 UTC, mag = 4.500, lat = 27.66780, lon = 86.07260, depth = 15.680
+78: time = 2015-04-25 23:55:46 UTC, mag = 4.100, lat = 27.60980, lon = 85.83540, depth = 6.570
+79: time = 2015-04-26 02:02:07 UTC, mag = 4.200, lat = 27.59360, lon = 85.44240, depth = 10.000
+80: time = 2015-04-26 02:33:26 UTC, mag = 4.100, lat = 27.62570, lon = 86.05310, depth = 10.000
+81: time = 2015-04-26 02:48:39 UTC, mag = 4.500, lat = 28.22720, lon = 84.58580, depth = 10.000
+82: time = 2015-04-26 03:21:36 UTC, mag = 4.300, lat = 27.46900, lon = 85.56240, depth = 10.000
+83: time = 2015-04-26 04:40:16 UTC, mag = 4.000, lat = 28.17240, lon = 84.66990, depth = 10.000
+84: time = 2015-04-26 04:50:29 UTC, mag = 4.100, lat = 28.02810, lon = 85.35950, depth = 10.000
+85: time = 2015-04-26 04:58:40 UTC, mag = 4.500, lat = 27.99660, lon = 84.70820, depth = 10.000
+86: time = 2015-04-26 07:09:10 UTC, mag = 6.700, lat = 27.77110, lon = 86.01730, depth = 22.910
+87: time = 2015-04-26 07:26:04 UTC, mag = 4.900, lat = 27.70040, lon = 85.91360, depth = 10.000
+88: time = 2015-04-26 07:36:26 UTC, mag = 4.700, lat = 27.75550, lon = 85.98220, depth = 10.000
+89: time = 2015-04-26 07:43:17 UTC, mag = 4.300, lat = 27.03360, lon = 85.98630, depth = 10.000
+90: time = 2015-04-26 07:50:26 UTC, mag = 4.200, lat = 27.73250, lon = 86.00780, depth = 10.000
+91: time = 2015-04-26 08:10:37 UTC, mag = 4.300, lat = 27.80720, lon = 85.78100, depth = 10.000
+92: time = 2015-04-26 08:22:12 UTC, mag = 4.400, lat = 28.01190, lon = 85.84490, depth = 10.000
+93: time = 2015-04-26 08:40:55 UTC, mag = 4.600, lat = 27.73070, lon = 85.85400, depth = 10.000
+94: time = 2015-04-26 08:46:17 UTC, mag = 4.400, lat = 27.92320, lon = 85.80320, depth = 10.000
+95: time = 2015-04-26 09:42:03 UTC, mag = 4.300, lat = 27.44220, lon = 85.93710, depth = 10.000
+96: time = 2015-04-26 12:34:41 UTC, mag = 4.000, lat = 27.56830, lon = 85.71790, depth = 8.420
+97: time = 2015-04-26 13:11:15 UTC, mag = 4.500, lat = 27.81120, lon = 85.40880, depth = 10.000
+98: time = 2015-04-26 14:44:50 UTC, mag = 4.500, lat = 27.68600, lon = 85.96570, depth = 10.000
+99: time = 2015-04-26 14:57:04 UTC, mag = 4.300, lat = 28.12230, lon = 84.64640, depth = 10.000
+100: time = 2015-04-26 16:26:06 UTC, mag = 5.000, lat = 27.82970, lon = 85.86500, depth = 14.000
+101: time = 2015-04-26 18:06:31 UTC, mag = 4.200, lat = 27.75790, lon = 85.36860, depth = 10.000
+102: time = 2015-04-26 18:54:49 UTC, mag = 4.400, lat = 27.98880, lon = 84.76450, depth = 10.000
+103: time = 2015-04-26 20:39:20 UTC, mag = 4.300, lat = 27.88040, lon = 85.78130, depth = 10.000
+104: time = 2015-04-26 22:32:34 UTC, mag = 4.600, lat = 27.52980, lon = 85.67510, depth = 10.000
+105: time = 2015-04-27 00:39:16 UTC, mag = 4.100, lat = 27.67940, lon = 84.95790, depth = 10.000
+106: time = 2015-04-27 01:15:51 UTC, mag = 4.300, lat = 27.45650, lon = 85.78180, depth = 10.000
+107: time = 2015-04-27 04:14:44 UTC, mag = 4.100, lat = 27.93520, lon = 84.72510, depth = 10.000
+108: time = 2015-04-27 06:00:00 UTC, mag = 4.000, lat = 27.83470, lon = 86.13730, depth = 10.000
+109: time = 2015-04-27 13:17:47 UTC, mag = 4.300, lat = 28.02310, lon = 84.58290, depth = 19.520
+110: time = 2015-04-27 14:42:39 UTC, mag = 4.300, lat = 27.68020, lon = 85.60850, depth = 10.000
+111: time = 2015-04-27 14:57:00 UTC, mag = 4.000, lat = 27.80650, lon = 85.88550, depth = 10.000
+112: time = 2015-04-27 15:51:46 UTC, mag = 4.300, lat = 27.67280, lon = 85.12120, depth = 10.000
+113: time = 2015-04-27 18:59:57 UTC, mag = 4.800, lat = 28.00660, lon = 84.68200, depth = 21.350
+114: time = 2015-04-27 21:14:57 UTC, mag = 3.700, lat = 27.84020, lon = 85.40080, depth = 10.000
+115: time = 2015-04-27 21:27:41 UTC, mag = 4.200, lat = 27.84100, lon = 85.78770, depth = 10.000
+116: time = 2015-04-27 23:20:28 UTC, mag = 4.200, lat = 27.96410, lon = 85.28210, depth = 10.000
+117: time = 2015-04-28 21:44:23 UTC, mag = 4.100, lat = 27.95770, lon = 85.88170, depth = 10.000
+118: time = 2015-04-29 09:39:14 UTC, mag = 4.200, lat = 27.74490, lon = 84.56400, depth = 10.000
+119: time = 2015-04-29 11:27:45 UTC, mag = 4.600, lat = 27.86400, lon = 85.40860, depth = 10.000
+120: time = 2015-04-29 17:16:14 UTC, mag = 4.100, lat = 28.08380, lon = 84.67600, depth = 18.760
+121: time = 2015-04-29 17:16:33 UTC, mag = 4.400, lat = 27.86770, lon = 85.70310, depth = 10.000
+122: time = 2015-04-30 00:37:10 UTC, mag = 4.300, lat = 27.90570, lon = 84.66640, depth = 10.000
+123: time = 2015-04-30 17:34:37 UTC, mag = 3.800, lat = 28.21190, lon = 85.80710, depth = 10.000
+124: time = 2015-05-01 04:39:19 UTC, mag = 4.000, lat = 28.53010, lon = 86.23970, depth = 10.000
+125: time = 2015-05-01 18:47:16 UTC, mag = 4.100, lat = 27.72490, lon = 84.63290, depth = 10.000
+126: time = 2015-05-01 22:10:09 UTC, mag = 4.000, lat = 27.60720, lon = 85.57590, depth = 10.000
+127: time = 2015-05-02 00:10:49 UTC, mag = 4.000, lat = 27.38020, lon = 85.17750, depth = 10.000
+128: time = 2015-05-02 01:03:10 UTC, mag = 4.000, lat = 27.77510, lon = 85.90420, depth = 10.000
+129: time = 2015-05-02 03:47:03 UTC, mag = 4.000, lat = 27.79720, lon = 85.35320, depth = 10.000
+130: time = 2015-05-02 05:35:46 UTC, mag = 4.900, lat = 28.31430, lon = 84.65760, depth = 10.000
+131: time = 2015-05-02 09:41:16 UTC, mag = 4.200, lat = 27.91710, lon = 85.36900, depth = 10.000
+132: time = 2015-05-02 15:16:18 UTC, mag = 4.300, lat = 27.65450, lon = 85.94940, depth = 10.000
+133: time = 2015-05-02 21:44:09 UTC, mag = 4.300, lat = 27.63950, lon = 85.93240, depth = 10.000
+134: time = 2015-05-03 02:15:26 UTC, mag = 4.000, lat = 27.76650, lon = 84.60050, depth = 10.000
+135: time = 2015-05-03 11:35:11 UTC, mag = 4.300, lat = 27.69990, lon = 84.93310, depth = 10.000
+136: time = 2015-05-03 23:14:15 UTC, mag = 4.200, lat = 27.73490, lon = 85.87910, depth = 10.000
+137: time = 2015-05-04 01:15:07 UTC, mag = 4.500, lat = 27.63260, lon = 85.97460, depth = 10.000
+138: time = 2015-05-04 08:50:00 UTC, mag = 4.000, lat = 27.92600, lon = 86.17040, depth = 10.000
+139: time = 2015-05-04 12:17:13 UTC, mag = 4.100, lat = 27.78640, lon = 86.00970, depth = 10.000
+140: time = 2015-05-04 14:19:03 UTC, mag = 4.200, lat = 27.81470, lon = 85.90360, depth = 10.000
+141: time = 2015-05-05 10:38:47 UTC, mag = 4.100, lat = 27.72260, lon = 85.98670, depth = 10.000
+142: time = 2015-05-05 11:15:40 UTC, mag = 4.100, lat = 27.69620, lon = 85.95350, depth = 10.000
+143: time = 2015-05-06 15:13:19 UTC, mag = 3.800, lat = 27.63480, lon = 85.58610, depth = 10.000
+144: time = 2015-05-06 21:56:28 UTC, mag = 3.500, lat = 27.59650, lon = 85.16610, depth = 10.000
+145: time = 2015-05-07 16:30:47 UTC, mag = 3.400, lat = 27.81410, lon = 85.48690, depth = 10.000
+146: time = 2015-05-08 00:32:33 UTC, mag = 4.900, lat = 27.64180, lon = 85.97900, depth = 11.560
+147: time = 2015-05-08 07:47:54 UTC, mag = 4.200, lat = 27.86680, lon = 85.95910, depth = 10.000
+148: time = 2015-05-08 21:23:27 UTC, mag = 4.000, lat = 27.96340, lon = 85.02590, depth = 10.000
+149: time = 2015-05-10 00:49:52 UTC, mag = 4.000, lat = 27.77760, lon = 86.00100, depth = 10.000
+150: time = 2015-05-10 09:38:32 UTC, mag = 4.300, lat = 27.44850, lon = 85.58580, depth = 10.000
+151: time = 2015-05-11 03:20:36 UTC, mag = 4.000, lat = 28.00710, lon = 85.82700, depth = 10.000
+152: time = 2015-05-11 14:50:59 UTC, mag = 4.300, lat = 27.93260, lon = 85.93660, depth = 10.000
+153: time = 2015-05-11 14:52:40 UTC, mag = 4.300, lat = 27.75890, lon = 85.78900, depth = 10.000
+154: time = 2015-05-12 07:05:19 UTC, mag = 7.300, lat = 27.80870, lon = 86.06550, depth = 15.000
+155: time = 2015-05-12 07:17:20 UTC, mag = 5.500, lat = 27.71410, lon = 86.21770, depth = 13.010
+156: time = 2015-05-12 07:20:47 UTC, mag = 4.900, lat = 27.30730, lon = 86.23690, depth = 10.000
+157: time = 2015-05-12 07:22:15 UTC, mag = 4.800, lat = 27.57960, lon = 86.23380, depth = 10.000
+158: time = 2015-05-12 07:23:32 UTC, mag = 5.000, lat = 27.55890, lon = 86.25660, depth = 10.000
+159: time = 2015-05-12 07:33:09 UTC, mag = 4.100, lat = 27.74770, lon = 86.00990, depth = 10.000
+160: time = 2015-05-12 07:34:22 UTC, mag = 5.400, lat = 27.74580, lon = 86.24490, depth = 10.000
+161: time = 2015-05-12 07:36:54 UTC, mag = 6.300, lat = 27.62500, lon = 86.16170, depth = 15.000
+162: time = 2015-05-12 07:43:17 UTC, mag = 4.900, lat = 27.65210, lon = 86.23870, depth = 11.770
+163: time = 2015-05-12 07:47:46 UTC, mag = 4.900, lat = 27.55790, lon = 86.03900, depth = 10.000
+164: time = 2015-05-12 07:48:51 UTC, mag = 4.900, lat = 27.72240, lon = 86.25760, depth = 10.000
+165: time = 2015-05-12 07:57:17 UTC, mag = 4.500, lat = 27.73510, lon = 86.55540, depth = 10.000
+166: time = 2015-05-12 08:05:25 UTC, mag = 4.200, lat = 27.91980, lon = 86.13870, depth = 10.000
+167: time = 2015-05-12 08:06:05 UTC, mag = 5.000, lat = 27.72210, lon = 86.01610, depth = 15.000
+168: time = 2015-05-12 08:11:22 UTC, mag = 4.300, lat = 27.46540, lon = 85.73060, depth = 10.000
+169: time = 2015-05-12 08:13:54 UTC, mag = 5.100, lat = 27.76290, lon = 85.75740, depth = 15.000
+170: time = 2015-05-12 08:21:10 UTC, mag = 5.200, lat = 27.72980, lon = 86.13160, depth = 15.000
+171: time = 2015-05-12 08:24:24 UTC, mag = 4.800, lat = 27.74860, lon = 86.06920, depth = 10.000
+172: time = 2015-05-12 08:34:24 UTC, mag = 4.300, lat = 28.18770, lon = 86.01430, depth = 16.340
+173: time = 2015-05-12 08:35:36 UTC, mag = 4.400, lat = 27.70420, lon = 86.21080, depth = 10.000
+174: time = 2015-05-12 08:39:07 UTC, mag = 4.000, lat = 27.74310, lon = 86.01000, depth = 10.000
+175: time = 2015-05-12 08:51:32 UTC, mag = 4.300, lat = 27.64690, lon = 86.21380, depth = 10.000
+176: time = 2015-05-12 08:52:30 UTC, mag = 4.000, lat = 28.00840, lon = 86.33580, depth = 10.000
+177: time = 2015-05-12 08:59:39 UTC, mag = 4.500, lat = 27.77290, lon = 86.19500, depth = 10.000
+178: time = 2015-05-12 09:02:09 UTC, mag = 4.600, lat = 27.73180, lon = 86.06720, depth = 10.000
+179: time = 2015-05-12 09:38:19 UTC, mag = 4.500, lat = 27.66580, lon = 86.25050, depth = 10.000
+180: time = 2015-05-12 09:44:38 UTC, mag = 4.200, lat = 27.76170, lon = 85.93010, depth = 10.000
+181: time = 2015-05-12 10:15:07 UTC, mag = 4.300, lat = 27.71720, lon = 86.17340, depth = 10.000
+182: time = 2015-05-12 10:31:00 UTC, mag = 4.400, lat = 27.68960, lon = 85.91580, depth = 10.010
+183: time = 2015-05-12 10:35:39 UTC, mag = 4.500, lat = 27.66060, lon = 86.08490, depth = 10.000
+184: time = 2015-05-12 10:40:07 UTC, mag = 4.600, lat = 27.79870, lon = 86.40440, depth = 10.000
+185: time = 2015-05-12 10:41:32 UTC, mag = 4.500, lat = 27.71600, lon = 86.27460, depth = 10.000
+186: time = 2015-05-12 10:42:22 UTC, mag = 4.000, lat = 27.47650, lon = 86.34050, depth = 10.000
+187: time = 2015-05-12 10:53:22 UTC, mag = 4.000, lat = 27.73050, lon = 86.19900, depth = 10.000
+188: time = 2015-05-12 11:06:34 UTC, mag = 4.200, lat = 27.64140, lon = 86.20330, depth = 10.000
+189: time = 2015-05-12 11:13:21 UTC, mag = 4.100, lat = 27.82020, lon = 85.98200, depth = 10.000
+190: time = 2015-05-12 11:21:30 UTC, mag = 4.400, lat = 27.68380, lon = 86.13690, depth = 10.000
+191: time = 2015-05-12 11:58:12 UTC, mag = 4.300, lat = 27.69360, lon = 85.90180, depth = 10.000
+192: time = 2015-05-12 12:28:22 UTC, mag = 4.500, lat = 27.67510, lon = 85.99310, depth = 10.000
+193: time = 2015-05-12 13:02:17 UTC, mag = 4.000, lat = 27.64060, lon = 85.80620, depth = 10.000
+194: time = 2015-05-12 13:08:10 UTC, mag = 4.400, lat = 27.61320, lon = 85.98960, depth = 10.000
+195: time = 2015-05-12 13:10:40 UTC, mag = 4.100, lat = 27.87280, lon = 85.95110, depth = 10.610
+196: time = 2015-05-12 13:25:25 UTC, mag = 4.200, lat = 27.65160, lon = 86.16320, depth = 7.900
+197: time = 2015-05-12 13:43:17 UTC, mag = 4.400, lat = 27.74610, lon = 85.90160, depth = 10.000
+198: time = 2015-05-12 13:47:05 UTC, mag = 4.400, lat = 27.73210, lon = 85.89750, depth = 10.000
+199: time = 2015-05-12 13:58:57 UTC, mag = 4.500, lat = 27.60130, lon = 86.26590, depth = 10.000
+200: time = 2015-05-12 15:28:19 UTC, mag = 4.400, lat = 27.72100, lon = 86.26020, depth = 10.000
+201: time = 2015-05-12 15:32:25 UTC, mag = 4.200, lat = 27.78660, lon = 86.08080, depth = 10.000
+202: time = 2015-05-12 15:59:46 UTC, mag = 4.400, lat = 27.64850, lon = 86.29710, depth = 10.000
+203: time = 2015-05-12 16:15:14 UTC, mag = 4.000, lat = 27.74110, lon = 86.22110, depth = 10.000
+204: time = 2015-05-12 16:32:09 UTC, mag = 4.000, lat = 27.61700, lon = 86.23070, depth = 10.000
+205: time = 2015-05-12 16:55:22 UTC, mag = 4.400, lat = 27.71200, lon = 85.94180, depth = 6.540
+206: time = 2015-05-12 17:28:39 UTC, mag = 4.800, lat = 27.49890, lon = 86.12660, depth = 10.000
+207: time = 2015-05-12 18:49:05 UTC, mag = 4.000, lat = 27.71700, lon = 86.25140, depth = 15.680
+208: time = 2015-05-12 18:51:44 UTC, mag = 4.100, lat = 27.64560, lon = 86.29400, depth = 11.230
+209: time = 2015-05-12 19:34:59 UTC, mag = 4.300, lat = 27.64320, lon = 86.15840, depth = 10.930
+210: time = 2015-05-12 19:37:40 UTC, mag = 4.500, lat = 27.68680, lon = 86.13080, depth = 8.520
+211: time = 2015-05-12 20:22:16 UTC, mag = 4.300, lat = 27.58580, lon = 85.14130, depth = 13.350
+212: time = 2015-05-12 20:44:28 UTC, mag = 4.000, lat = 27.91520, lon = 86.23890, depth = 5.360
+213: time = 2015-05-12 21:25:11 UTC, mag = 5.200, lat = 27.78300, lon = 84.63840, depth = 10.000
+214: time = 2015-05-12 21:57:14 UTC, mag = 4.000, lat = 27.80320, lon = 86.00340, depth = 10.000
+215: time = 2015-05-13 02:23:10 UTC, mag = 4.100, lat = 27.66950, lon = 86.23150, depth = 10.000
+216: time = 2015-05-13 02:43:47 UTC, mag = 4.100, lat = 27.62480, lon = 86.32990, depth = 10.000
+217: time = 2015-05-13 06:26:07 UTC, mag = 4.700, lat = 27.65390, lon = 86.15570, depth = 10.000
+218: time = 2015-05-13 06:37:30 UTC, mag = 4.500, lat = 27.75820, lon = 86.13790, depth = 10.000
+219: time = 2015-05-13 06:53:00 UTC, mag = 4.800, lat = 27.72010, lon = 86.18910, depth = 10.000
+220: time = 2015-05-13 09:52:27 UTC, mag = 4.200, lat = 27.76660, lon = 86.30840, depth = 10.000
+221: time = 2015-05-13 10:59:41 UTC, mag = 4.200, lat = 27.80140, lon = 86.03800, depth = 10.000
+222: time = 2015-05-13 21:38:06 UTC, mag = 5.000, lat = 27.71990, lon = 86.05030, depth = 8.380
+223: time = 2015-05-14 03:07:38 UTC, mag = 4.400, lat = 27.67130, lon = 86.15150, depth = 10.000
+224: time = 2015-05-14 14:36:39 UTC, mag = 3.900, lat = 28.11480, lon = 85.39940, depth = 10.000
+225: time = 2015-05-15 01:42:42 UTC, mag = 4.900, lat = 27.97190, lon = 84.74990, depth = 10.000
+226: time = 2015-05-16 00:46:06 UTC, mag = 4.100, lat = 28.00740, lon = 84.51870, depth = 10.000
+227: time = 2015-05-16 03:39:26 UTC, mag = 4.700, lat = 27.63860, lon = 85.71300, depth = 10.000
+228: time = 2015-05-16 03:50:21 UTC, mag = 4.200, lat = 27.47510, lon = 85.16530, depth = 10.000
+229: time = 2015-05-16 11:34:09 UTC, mag = 5.500, lat = 27.56030, lon = 86.07340, depth = 7.000
+230: time = 2015-05-16 20:02:53 UTC, mag = 4.100, lat = 28.00940, lon = 84.69780, depth = 10.000
+231: time = 2015-05-16 23:15:26 UTC, mag = 4.400, lat = 27.68040, lon = 85.95140, depth = 10.000
+232: time = 2015-05-17 05:45:38 UTC, mag = 4.300, lat = 27.57770, lon = 85.82390, depth = 10.000
+233: time = 2015-05-18 12:42:09 UTC, mag = 4.100, lat = 27.94380, lon = 84.69970, depth = 10.000
+234: time = 2015-05-18 22:49:50 UTC, mag = 4.400, lat = 27.58670, lon = 85.89250, depth = 10.000
+235: time = 2015-05-19 10:59:30 UTC, mag = 4.200, lat = 27.77220, lon = 85.86800, depth = 10.000
+236: time = 2015-05-20 09:02:32 UTC, mag = 4.600, lat = 27.32310, lon = 85.04830, depth = 10.000
+237: time = 2015-05-21 09:11:55 UTC, mag = 4.000, lat = 27.81730, lon = 85.20900, depth = 10.000
+238: time = 2015-05-22 10:59:33 UTC, mag = 4.700, lat = 27.95550, lon = 84.96710, depth = 10.000
+239: time = 2015-05-22 11:45:47 UTC, mag = 4.300, lat = 27.54380, lon = 86.05110, depth = 10.000
+240: time = 2015-05-22 13:04:05 UTC, mag = 4.100, lat = 27.66350, lon = 85.69360, depth = 10.000
+241: time = 2015-05-24 21:38:40 UTC, mag = 4.400, lat = 28.02710, lon = 84.67340, depth = 10.000
