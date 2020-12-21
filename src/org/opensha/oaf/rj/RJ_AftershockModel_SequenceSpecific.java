@@ -307,7 +307,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			// Get time since the mainshock in days, skip it if it is outside our time interval
 
 			double timeSinceMainDays = (double)(rup.getOriginTime()-mainShock.getOriginTime()) / (double)AftershockStatsCalc.MILLISEC_PER_DAY;
-			if(timeSinceMainDays < dataStartTimeDays || timeSinceMainDays > dataEndTimeDays) { // not necessary if list already filtered
+			if(timeSinceMainDays < 0.0 || timeSinceMainDays < dataStartTimeDays || timeSinceMainDays > dataEndTimeDays) { // not necessary if list already filtered
 				continue;
 			}
 
@@ -328,7 +328,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 			}
 		}
 
-		// Now loop over p and a
+		// Now loop over p and a and c
 
 		for(int pIndex=0;pIndex<num_p;pIndex++) {
 			double p = get_p(pIndex);

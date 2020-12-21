@@ -157,10 +157,26 @@ public class USGS_AftershockForecast {
 		
 		// calculate number of observations for each bin
 		aftershockCounts = new int[minMags.length];
+
+//		for (int m=0; m<minMags.length; m++) {
+//			for (ObsEqkRupture eq : aftershocks) {
+//				if (eq.getMag() >= minMags[m] - mag_bin_half_width) {
+//					aftershockCounts[m]++;
+//				}
+//			}
+//		}
+
 		for (int m=0; m<minMags.length; m++) {
-			for (ObsEqkRupture eq : aftershocks) {
-				if (eq.getMag() >= minMags[m] - mag_bin_half_width) {
-					aftershockCounts[m]++;
+			aftershockCounts[m] = 0;
+		}
+		long event_time = eventDate.toEpochMilli();
+		for (ObsEqkRupture eq : aftershocks) {
+			// ignore events that occurred before the mainshock
+			if (eq.getOriginTime() >= event_time) {
+				for (int m=0; m<minMags.length; m++) {
+					if (eq.getMag() >= minMags[m] - mag_bin_half_width) {
+						aftershockCounts[m]++;
+					}
 				}
 			}
 		}

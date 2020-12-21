@@ -143,6 +143,15 @@ public class ForecastParameters {
 		return result;
 	}
 
+	// Set flags to suppress all R&J forecasts.
+
+	public void set_rj_suppress () {
+		generic_calc_meth = CALC_METH_SUPPRESS;
+		seq_spec_calc_meth = CALC_METH_SUPPRESS;
+		bayesian_calc_meth = CALC_METH_SUPPRESS;
+		return;
+	}
+
 
 	//----- R&J generic parameters -----
 
@@ -567,6 +576,11 @@ public class ForecastParameters {
 
 		min_mag = sample_min_mag;
 
+		// Time range used for centroid
+
+		double centroid_min_days = Math.max (min_days, 0.0);
+		double centroid_max_days = max_days;
+
 		// Retrieve list of aftershocks in the initial region
 
 		ObsEqkRupList aftershocks;
@@ -576,7 +590,7 @@ public class ForecastParameters {
 		} else {
 			try {
 				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
-				aftershocks = accessor.fetchAftershocks(fcmain.get_eqk_rupture(), min_days, max_days, min_depth, max_depth, initial_region, initial_region.getPlotWrap(), centroid_min_mag);
+				aftershocks = accessor.fetchAftershocks(fcmain.get_eqk_rupture(), centroid_min_days, centroid_max_days, min_depth, max_depth, initial_region, initial_region.getPlotWrap(), centroid_min_mag);
 			} catch (Exception e) {
 				throw new RuntimeException("ForecastParameters.fetch_aftershock_search_region: Comcat exception", e);
 			}

@@ -2,6 +2,7 @@ package org.opensha.oaf.aafs;
 
 //import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Collections;
 
 import java.time.Instant;
 
@@ -13,6 +14,8 @@ import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
+import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.ObsEqkRupMinTimeComparator;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
@@ -54,6 +57,30 @@ public class ForecastResults {
 	public static final long ADVISORY_LAG_WEEK  = 604800000L;	// 1 week = 7 days
 	public static final long ADVISORY_LAG_MONTH = 2592000000L;	// 1 month = 30 days
 	public static final long ADVISORY_LAG_YEAR  = 31536000000L;	// 1 year = 365 days
+
+	// Convert a forecast lag into an advisory lag, using the ActionConfig thresholds.
+
+	public static long forecast_lag_to_advisory_lag (long the_forecast_lag, ActionConfig action_config) {
+		long the_advisory_lag;
+
+		if (the_forecast_lag >= action_config.get_advisory_dur_year()) {
+			the_advisory_lag = ADVISORY_LAG_YEAR;
+		} else if (the_forecast_lag >= action_config.get_advisory_dur_month()) {
+			the_advisory_lag = ADVISORY_LAG_MONTH;
+		} else if (the_forecast_lag >= action_config.get_advisory_dur_week()) {
+			the_advisory_lag = ADVISORY_LAG_WEEK;
+		} else {
+			the_advisory_lag = ADVISORY_LAG_DAY;
+		}
+		
+		return the_advisory_lag;
+	}
+
+	// Convert a forecast lag to a flag indicating if sequence specific results should be calculated.
+
+	public static boolean forecast_lag_to_f_seq_spec (long the_forecast_lag, ActionConfig action_config) {
+		return the_forecast_lag >= action_config.get_seq_spec_min_lag();
+	}
 
 
 	//----- Root parameters -----
@@ -167,7 +194,8 @@ public class ForecastResults {
 				double mag = rup.getMag();
 				if (mag > catalog_max_mag) {
 					catalog_max_mag = mag;
-					catalog_max_event_id = rup.getEventId();
+					//catalog_max_event_id = rup.getEventId();
+					set_cmei_fsev (rup.getEventId(), rup.getOriginTime() < eventTime);
 				}
 			}
 		}
@@ -259,7 +287,8 @@ public class ForecastResults {
 				double mag = rup.getMag();
 				if (mag > catalog_max_mag) {
 					catalog_max_mag = mag;
-					catalog_max_event_id = rup.getEventId();
+					//catalog_max_event_id = rup.getEventId();
+					set_cmei_fsev (rup.getEventId(), rup.getOriginTime() < eventTime);
 				}
 			}
 		}
@@ -298,6 +327,48 @@ public class ForecastResults {
 		}
 
 		return;
+	}
+
+
+	// Prefix applied to event name to indicate it is a foreshock.
+
+	public static final String FSEV_PREFIX = "-";
+
+	// Construct an event name, possibly containing a foreshock prefix.
+
+	public static String make_fsev (String event_id, boolean f_foreshock) {
+		return f_foreshock ? (FSEV_PREFIX + event_id) : event_id;
+	}
+
+	// Extract the event id from an event name that may contain a foreshock prefix.
+
+	public static String extract_fsev_event_id (String fsev) {
+		return (fsev.startsWith (FSEV_PREFIX)) ? (fsev.substring (FSEV_PREFIX.length())) : fsev;
+	}
+
+	// Extract the foreshock flag from an event name that may contain a foreshock prefix.
+
+	public static boolean extract_fsev_f_foreshock (String fsev) {
+		return fsev.startsWith (FSEV_PREFIX);
+	}
+
+	// Set catalog_max_event_id to an event name, possibly containing a foreshock prefix.
+
+	public void set_cmei_fsev (String event_id, boolean f_foreshock) {
+		catalog_max_event_id = make_fsev (event_id, f_foreshock);
+		return;
+	}
+
+	// Extract the event id from catalog_max_event_id, which may contain a foreshock prefix.
+
+	public String extract_cmei_event_id () {
+		return extract_fsev_event_id (catalog_max_event_id);
+	}
+
+	// Extract the foreshock flag from catalog_max_event_id, which may contain a foreshock prefix.
+
+	public boolean extract_cmei_f_foreshock () {
+		return extract_fsev_f_foreshock (catalog_max_event_id);
 	}
 
 
@@ -1100,6 +1171,9 @@ public class ForecastResults {
 			return;
 		}
 
+
+
+
 		// Subcommand : Test #1
 		// Command format:
 		//  test1  event_id
@@ -1115,42 +1189,51 @@ public class ForecastResults {
 				return;
 			}
 
-			String the_event_id = args[1];
+			try {
 
-			// Fetch just the mainshock info
+				String the_event_id = args[1];
 
-			ForecastMainshock fcmain = new ForecastMainshock();
-			fcmain.setup_mainshock_only (the_event_id);
+				// Fetch just the mainshock info
 
-			System.out.println ("");
-			System.out.println (fcmain.toString());
+				ForecastMainshock fcmain = new ForecastMainshock();
+				fcmain.setup_mainshock_only (the_event_id);
 
-			// Set the forecast time to be 7 days after the mainshock
+				System.out.println ("");
+				System.out.println (fcmain.toString());
 
-			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+				// Set the forecast time to be 7 days after the mainshock
 
-			// Get parameters
+				long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
 
-			ForecastParameters params = new ForecastParameters();
-			params.fetch_all_params (the_forecast_lag, fcmain, null);
+				// Get parameters
 
-			// Display them
+				ForecastParameters params = new ForecastParameters();
+				params.fetch_all_params (the_forecast_lag, fcmain, null);
 
-			System.out.println ("");
-			System.out.println (params.toString());
+				// Display them
 
-			// Get results
+				System.out.println ("");
+				System.out.println (params.toString());
 
-			ForecastResults results = new ForecastResults();
-			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ADVISORY_LAG_WEEK, "test1 injectable.", fcmain, params, true);
+				// Get results
 
-			// Display them
+				ForecastResults results = new ForecastResults();
+				results.calc_all (fcmain.mainshock_time + the_forecast_lag, ADVISORY_LAG_WEEK, "test1 injectable.", fcmain, params, true);
 
-			System.out.println ("");
-			System.out.println (results.toString());
+				// Display them
+
+				System.out.println ("");
+				System.out.println (results.toString());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 
 			return;
 		}
+
+
+
 
 		// Subcommand : Test #2
 		// Command format:
@@ -1170,74 +1253,286 @@ public class ForecastResults {
 				return;
 			}
 
-			String the_event_id = args[1];
+			try {
 
-			// Fetch just the mainshock info
+				String the_event_id = args[1];
 
-			ForecastMainshock fcmain = new ForecastMainshock();
-			fcmain.setup_mainshock_only (the_event_id);
+				// Fetch just the mainshock info
 
-			System.out.println ("");
-			System.out.println (fcmain.toString());
+				ForecastMainshock fcmain = new ForecastMainshock();
+				fcmain.setup_mainshock_only (the_event_id);
 
-			// Set the forecast time to be 7 days after the mainshock
+				System.out.println ("");
+				System.out.println (fcmain.toString());
 
-			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+				// Set the forecast time to be 7 days after the mainshock
 
-			// Get parameters
+				long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
 
-			ForecastParameters params = new ForecastParameters();
-			params.fetch_all_params (the_forecast_lag, fcmain, null);
+				// Get parameters
 
-			// Display them
+				ForecastParameters params = new ForecastParameters();
+				params.fetch_all_params (the_forecast_lag, fcmain, null);
 
-			System.out.println ("");
-			System.out.println (params.toString());
+				// Display them
 
-			// Get results
+				System.out.println ("");
+				System.out.println (params.toString());
 
-			ForecastResults results = new ForecastResults();
-			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ADVISORY_LAG_WEEK, "", fcmain, params, true);
+				// Get results
 
-			// Display them
+				ForecastResults results = new ForecastResults();
+				results.calc_all (fcmain.mainshock_time + the_forecast_lag, ADVISORY_LAG_WEEK, "", fcmain, params, true);
 
-			System.out.println ("");
-			System.out.println (results.toString());
+				// Display them
 
-			// Save catalog
+				System.out.println ("");
+				System.out.println (results.toString());
 
-			CompactEqkRupList saved_catalog_aftershocks = results.catalog_aftershocks;
+				// Save catalog
 
-			// Marshal to JSON
+				CompactEqkRupList saved_catalog_aftershocks = results.catalog_aftershocks;
 
-			MarshalImpJsonWriter store = new MarshalImpJsonWriter();
-			ForecastResults.marshal_poly (store, null, results);
-			store.check_write_complete ();
-			String json_string = store.get_json_string();
+				// Marshal to JSON
 
-			System.out.println ("");
-			System.out.println (json_string);
+				MarshalImpJsonWriter store = new MarshalImpJsonWriter();
+				ForecastResults.marshal_poly (store, null, results);
+				store.check_write_complete ();
+				String json_string = store.get_json_string();
 
-			// Unmarshal from JSON
+				System.out.println ("");
+				System.out.println (json_string);
+
+				// Unmarshal from JSON
 			
-			results = null;
+				results = null;
 
-			MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
-			results = ForecastResults.unmarshal_poly (retrieve, null);
-			retrieve.check_read_complete ();
+				MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
+				results = ForecastResults.unmarshal_poly (retrieve, null);
+				retrieve.check_read_complete ();
 
-			System.out.println ("");
-			System.out.println (results.toString());
+				System.out.println ("");
+				System.out.println (results.toString());
 
-			// Rebuild transient data
+				// Rebuild transient data
 
-			results.rebuild_all (fcmain, params, saved_catalog_aftershocks);
+				results.rebuild_all (fcmain, params, saved_catalog_aftershocks);
 
-			System.out.println ("");
-			System.out.println (results.toString());
+				System.out.println ("");
+				System.out.println (results.toString());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 
 			return;
 		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  event_id  lag_days
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("ForecastResults : Invalid 'test3' subcommand");
+				return;
+			}
+
+			try {
+
+				String the_event_id = args[1];
+				double lag_days = Double.parseDouble (args[2]);
+
+				// Fetch just the mainshock info
+
+				ForecastMainshock fcmain = new ForecastMainshock();
+				fcmain.setup_mainshock_only (the_event_id);
+
+				System.out.println ("");
+				System.out.println (fcmain.toString());
+
+				// Set the forecast time to be lag_days days after the mainshock
+
+				long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * lag_days);
+
+				// Get the advisory lag
+
+				ActionConfig action_config = new ActionConfig();
+
+				long advisory_lag;
+
+				if (the_forecast_lag >= action_config.get_advisory_dur_year()) {
+					advisory_lag = ADVISORY_LAG_YEAR;
+				} else if (the_forecast_lag >= action_config.get_advisory_dur_month()) {
+					advisory_lag = ADVISORY_LAG_MONTH;
+				} else if (the_forecast_lag >= action_config.get_advisory_dur_week()) {
+					advisory_lag = ADVISORY_LAG_WEEK;
+				} else {
+					advisory_lag = ADVISORY_LAG_DAY;
+				}
+
+				// Get parameters
+
+				ForecastParameters params = new ForecastParameters();
+				params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+				// Display them
+
+				System.out.println ("");
+				System.out.println (params.toString());
+
+				// Get results
+
+				ForecastResults results = new ForecastResults();
+				results.calc_all (fcmain.mainshock_time + the_forecast_lag, advisory_lag, "test3 injectable.", fcmain, params, the_forecast_lag >= action_config.get_seq_spec_min_lag());
+
+				// Display them
+
+				System.out.println ("");
+				System.out.println (results.toString());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  event_id  lag_days
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then marshal to JSON, and display the JSON.
+		// Then unmarshal, and display the unmarshaled results.
+		// Then rebuild transient data, and display the results.
+		// Then display the stored catalog.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("ForecastResults : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				String the_event_id = args[1];
+				double lag_days = Double.parseDouble (args[2]);
+
+				// Fetch just the mainshock info
+
+				ForecastMainshock fcmain = new ForecastMainshock();
+				fcmain.setup_mainshock_only (the_event_id);
+
+				System.out.println ("");
+				System.out.println (fcmain.toString());
+
+				// Set the forecast time to be lag_days days after the mainshock
+
+				long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * lag_days);
+
+				// Get the advisory lag
+
+				ActionConfig action_config = new ActionConfig();
+				long the_advisory_lag = forecast_lag_to_advisory_lag (the_forecast_lag, action_config);
+
+				// Get parameters
+
+				ForecastParameters params = new ForecastParameters();
+				params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+				// Display them
+
+				System.out.println ("");
+				System.out.println (params.toString());
+
+				// Get results
+
+				ForecastResults results = new ForecastResults();
+				results.calc_all (fcmain.mainshock_time + the_forecast_lag, the_advisory_lag, "", fcmain, params, forecast_lag_to_f_seq_spec (the_forecast_lag, action_config));
+
+				// Display them
+
+				System.out.println ("");
+				System.out.println (results.toString());
+
+				// Save catalog
+
+				CompactEqkRupList saved_catalog_aftershocks = results.catalog_aftershocks;
+
+				// Marshal to JSON
+
+				MarshalImpJsonWriter store = new MarshalImpJsonWriter();
+				ForecastResults.marshal_poly (store, null, results);
+				store.check_write_complete ();
+				String json_string = store.get_json_string();
+
+				System.out.println ("");
+				System.out.println (json_string);
+
+				// Unmarshal from JSON
+			
+				results = null;
+
+				MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
+				results = ForecastResults.unmarshal_poly (retrieve, null);
+				retrieve.check_read_complete ();
+
+				System.out.println ("");
+				System.out.println (results.toString());
+
+				// Rebuild transient data
+
+				results.rebuild_all (fcmain, params, saved_catalog_aftershocks);
+
+				System.out.println ("");
+				System.out.println (results.toString());
+
+				// Display the catalog, in increasing order by time
+
+				ObsEqkRupList rup_list = saved_catalog_aftershocks.as_ObsEqkRupList();
+				Collections.sort (rup_list, new ObsEqkRupMinTimeComparator());
+
+				System.out.println ("");
+				System.out.println ("Saved catalog size = " + rup_list.size());
+
+				int n = 0;
+				for (ObsEqkRupture r : rup_list) {
+					long r_time = r.getOriginTime();
+					double r_mag = r.getMag();
+					Location r_hypo = r.getHypocenterLocation();
+					double r_lat = r_hypo.getLatitude();
+					double r_lon = r_hypo.getLongitude();
+					double r_depth = r_hypo.getDepth();
+
+					String event_info = SimpleUtils.event_info_one_line (r_time, r_mag, r_lat, r_lon, r_depth);
+					System.out.println (n + ": " + event_info);
+					++n;
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
 
 		// Unrecognized subcommand.
 
