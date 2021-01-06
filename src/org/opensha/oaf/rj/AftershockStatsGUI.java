@@ -101,7 +101,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.common.primitives.Doubles;
-import com.lowagie.text.Font;
+import java.awt.Font;
 
 import gov.usgs.earthquake.product.Product;
 import scratch.UCERF3.erf.utils.ProbabilityModelsCalc;
