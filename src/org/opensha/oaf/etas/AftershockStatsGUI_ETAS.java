@@ -140,19 +140,20 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		if (devMode) System.out.println("Warning: Running in development mode."
 				+ "This mode is untested and will probably give a bad forecast if not crash outright.");
 		
-		if (!devMode && !overrideExpiry) {
-			//check for expired software
-			SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy");
-			formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
-			double elapsedDays = (double) (System.currentTimeMillis() - expirationDate.getTimeInMillis())/ETAS_StatsCalc.MILLISEC_PER_DAY;
-			
-			if (elapsedDays > 0) {
-				String message = "The Beta version expired on " + formatter.format(expirationDate.getTime()) + ".\n Go get the latest version from www.caltech.edu/~nvandere/AftershockForecaster/.";
-				System.out.println(message);
-				JOptionPane.showMessageDialog(null, message, "Beta version expired", JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-		}
+// Expiration Disabled as of 2021.01.28 NJV		
+//		if (!devMode && !overrideExpiry) {
+//			//check for expired software
+//			SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy");
+//			formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
+//			double elapsedDays = (double) (System.currentTimeMillis() - expirationDate.getTimeInMillis())/ETAS_StatsCalc.MILLISEC_PER_DAY;
+//			
+//			if (elapsedDays > 0) {
+//				String message = "The Beta version expired on " + formatter.format(expirationDate.getTime()) + ".\n Go get the latest version from www.caltech.edu/~nvandere/AftershockForecaster/.";
+//				System.out.println(message);
+//				JOptionPane.showMessageDialog(null, message, "Beta version expired", JOptionPane.ERROR_MESSAGE);
+//				return;
+//			}
+//		}
 		
 		if (eventID != null && forecastStartTime != null) {
 			try {
@@ -366,7 +367,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private DoubleParameter cValParam;
 	private DoubleParameter bParam;
 	private DoubleParameter alphaParam;
-	
+		
 	private DoubleParameter mapLevelParam;
 	private DoubleParameter mapScaleParam;	
 	private DoubleParameter mapGridSpacingParam;
@@ -1079,7 +1080,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		setVisible(true);
 		
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setTitle("Aftershock Forecaster (Beta)");
+		setTitle("Aftershock Forecaster (v2021.01.28)");
 		setLocationRelativeTo(null);
 		
 		workingDir = new File(System.getProperty("user.home"));
@@ -6687,9 +6688,19 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
 		double elapsedDays = (double) (System.currentTimeMillis() - expirationDate.getTimeInMillis())/ETAS_StatsCalc.MILLISEC_PER_DAY;
 		
-		String welcomeMessage = "This a Beta version of the Aftershock Forecaster software. Get the latest version from www.caltech.edu/~nvandere/AftershockForecaster.\n"
-				+ "The Beta version will expire " + formatter.format(expirationDate.getTime()) + String.format(" (%d days remaining).", (int) -elapsedDays);
-
+//		String welcomeMessage = "This a Beta version of the Aftershock Forecaster software. Get the latest version from www.caltech.edu/~nvandere/AftershockForecaster.\n"
+//				+ "The Beta version will expire " + formatter.format(expirationDate.getTime()) + String.format(" (%d days remaining).", (int) -elapsedDays);
+		String welcomeMessage =   "----------------------------------------------------------------------------------------\n"
+								+ "   This software is designed to streamline the analysis of aftershock sequences and the    \n"
+								+ "   generation of aftershock forecasts using an Epidemic-Type Aftershock Sequence model.    \n"
+								+ "   It gives probabilities of aftershocks based on typical sequences which do not consti-   \n"
+								+ "   tute a prediction for any particular sequence. Even very low-probability events can     \n"  
+								+ "   and do occur, and planning must this into account. This software cannot substitute for  \n"
+								+ "   expert asseessment. Use of this software implies your understanding of these limitat-   \n"
+								+ "   ions, and acceptance of these terms. For inquiries contact nvanderelst@usgs.gov.        \n"
+								+ "----------------------------------------------------------------------------------------";
+								
+		
 		tipText.add(welcomeMessage + "\n\n>> Welcome to the aftershock forecaster. Enter a USGS event ID to get started. (e.g: us20002926)");
 		tipText.add(">> Specify a forecast start time and duration. Then click \"Fetch Data\" to retrieve the catalog\n  ...or click \"Quick Forecast\" to run the entire forecast automatically with default settings.");
 		tipText.add(">> Click \"Compute Model Fit\" to compute sequence-specific model\n  ...or go straight to \"Run Generic Forecast\" to get a generic forecast for this region.");
