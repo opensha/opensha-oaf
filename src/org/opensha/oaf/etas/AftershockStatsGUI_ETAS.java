@@ -6697,7 +6697,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 								+ "   tute a prediction for any particular sequence. Even very low-probability events can     \n"  
 								+ "   and do occur, and planning must this into account. This software cannot substitute for  \n"
 								+ "   expert asseessment. Use of this software implies your understanding of these limitat-   \n"
-								+ "   ions, and acceptance of these terms. For inquiries contact nvanderelst@usgs.gov.        \n"
+								+ "   ions, and acceptance of these terms.                                                    \n"
+								+ "   Find the lastest version at https://www.its.caltech.edu/~nvandere/AftershockForecaster  \n"
 								+ "----------------------------------------------------------------------------------------";
 								
 		
