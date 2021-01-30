@@ -6691,14 +6691,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //		String welcomeMessage = "This a Beta version of the Aftershock Forecaster software. Get the latest version from www.caltech.edu/~nvandere/AftershockForecaster.\n"
 //				+ "The Beta version will expire " + formatter.format(expirationDate.getTime()) + String.format(" (%d days remaining).", (int) -elapsedDays);
 		String welcomeMessage =   "----------------------------------------------------------------------------------------\n"
-								+ "   This software is designed to streamline the analysis of aftershock sequences and the    \n"
-								+ "   generation of aftershock forecasts using an Epidemic-Type Aftershock Sequence model.    \n"
-								+ "   It gives probabilities of aftershocks based on typical sequences which do not consti-   \n"
-								+ "   tute a prediction for any particular sequence. Even very low-probability events can     \n"  
-								+ "   and do occur, and planning must this into account. This software cannot substitute for  \n"
-								+ "   expert asseessment. Use of this software implies your understanding of these limitat-   \n"
-								+ "   ions, and acceptance of these terms.                                                    \n"
-								+ "   Find the lastest version at https://www.its.caltech.edu/~nvandere/AftershockForecaster  \n"
+								+ "   This software is designed to streamline the analysis of aftershock sequences and the\n"
+								+ "   generation of aftershock forecasts using an Epidemic-Type Aftershock Sequence model.\n"
+								+ "   It gives probabilities of aftershocks based on typical sequences. These probabilties\n"
+								+ "   do not constitute a prediction for any particular sequence. Even very low-probability\n"
+								+ "   events can and do occur, and planning must take this into account. This software can-\n"
+								+ "   not substitute for expert assessment. Use of this software implies your understanding\n"
+								+ "   of these limitations, and acceptance of these terms.\n"
+								+ "   Find the latest version at https://www.its.caltech.edu/~nvandere/AftershockForecaster\n"
 								+ "----------------------------------------------------------------------------------------";
 								
 		
