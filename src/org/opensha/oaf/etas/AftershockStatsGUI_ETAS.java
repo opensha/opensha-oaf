@@ -198,6 +198,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private static final long serialVersionUID = 1L;
 	
 	private IntegerParameter maxCatalogNumberParam;
+//	private IntegerParameter duplicateEventThresholdParam;
 	private IntegerParameter numberSimsParam;
 	
 	private StringParameter eventIDParam;
@@ -551,9 +552,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		
 	
 		eventIDParam = new StringParameter("USGS Event ID");
-		if(prForecastMode || prReportMode) 
+		if(prForecastMode || prReportMode) {
 			eventIDParam.setValue("us70006vll");
-		else
+		} else
 			eventIDParam.setValue(null);
 		
 		eventIDParam.setInfo("the event ID can be found in the event page URL for specific earthquakes at https://earthquake.usgs.gov/earthquakes/");
@@ -603,6 +604,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		
 		timeWindow = new ParameterList(); 
 		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, new Double(0d));
+		
+		if(prForecastMode || prReportMode) {
+			dataStartTimeParam.setValue(2d/24d/3600d);
+		} 
+		
 		dataStartTimeParam.setUnits("Days");
 		dataStartTimeParam.setInfo("Relative to main shock origin time");
 		dataStartTimeParam.addParameterChangeListener(this);
@@ -670,7 +676,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		maxCatalogNumberParam = new IntegerParameter("Max Aftershock Number");
 		maxCatalogNumberParam.setValue(1000);
 		maxCatalogNumberParam.setInfo("Maximum number of aftershocks to use in the analysis. Mc will be automatically adjusted if necessary.");
-				
+		
+//		duplicateEventThresholdParam = new IntegerParameter("Minimum aftershock time (ms)");
+//		duplicateEventThresholdParam.setValue(2000);
+//		duplicateEventThresholdParam.setInfo("Set the minimum time after the mainshock in milliseconds, to avoid multiple mainshock solutions showing up as aftershocks");
+		
 		regionList = new ParameterList();
 		
 		regionEditParam = new ParameterListParameter("Edit Aftershock Zone", regionList);
@@ -1110,13 +1120,19 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		forecastDurationParam = new EnumParameter<ForecastDuration>(
 				"Forecast Duration", EnumSet.allOf(ForecastDuration.class), ForecastDuration.YEAR, null);
 		plotAllDurationsParam = new BooleanParameter("Plot Week/Month/Year", true);	
-		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, new Double(0d));
+		
+		if (prForecastMode)
+			dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, new Double(2d/24d/3600d));
+		else
+			dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, new Double(0d));
 		
 		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, Double.POSITIVE_INFINITY);
 		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, Double.POSITIVE_INFINITY);
 		
 		numberSimsParam = new IntegerParameter("number of ETAS simulations", 10000);
-			
+		maxCatalogNumberParam = new IntegerParameter("Max Aftershock Number", 1000);
+//		duplicateEventThresholdParam = new IntegerParameter("Max Aftershock Number", 2000);
+		
 		// these are inside region editor
 		regionTypeParam = new EnumParameter<AftershockStatsGUI_ETAS.RegionType>(
 				"Aftershock Zone Type", EnumSet.allOf(RegionType.class), RegionType.CIRCULAR_WC94, null);
@@ -1180,6 +1196,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 		eventIDParam.setValue(eventID);
 		forecastStartTimeParam.setValue(forecastStartTime);
+		if(forecastStartTime < dataStartTimeParam.getValue()) {
+			dataStartTimeParam.setValue(forecastStartTime);
+			dataStartTimeParam.getEditor().refreshParamEditor();
+		}
 
 		// run the forecast!
 		parameterChange(new ParameterChangeEvent(quickForecastButton, quickForecastButton.getName(), quickForecastButton.getValue(),  quickForecastButton.getValue()));
@@ -1312,6 +1332,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		regionList.addParameter(minDepthParam);
 		regionList.addParameter(maxDepthParam);
 		regionList.addParameter(maxCatalogNumberParam);
+		regionList.addParameter(dataStartTimeParam);
 		
 		regionEditParam.getEditor().refreshParamEditor();
 	} 
@@ -1619,15 +1640,16 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					region = buildRegion(mainshock, mainshock.getHypocenterLocation());
 					aftershocks = accessor.fetchAftershocks(mainshock, dataMinDays, dataMaxDays, minDepth, maxDepth, region, region.getPlotWrap());
 
-					// filter out duplicate events
-					Iterator<ObsEqkRupture> asIter = aftershocks.iterator();
-					while(asIter.hasNext()) {
-						ObsEqkRupture eq = asIter.next();
-						if (eq.getOriginTime() - mainshock.getOriginTime() < 1e3) {
-							asIter.remove();
-							System.out.println("Removed an M" + eq.getMag() + " aftershock within 1 second of the mainshock." );
-						}
-					}
+//					// filter out duplicate events
+//					Iterator<ObsEqkRupture> asIter = aftershocks.iterator();
+//					while(asIter.hasNext()) {
+//						ObsEqkRupture eq = asIter.next();
+//						if (D) System.out.println(eq.getOriginTime() + " " + mainshock.getOriginTime() + " " + (eq.getOriginTime() - mainshock.getOriginTime()));
+//						if (eq.getOriginTime() - mainshock.getOriginTime() < duplicateEventThresholdParam.getValue()) {
+//							asIter.remove();
+//							System.out.println("Removed an M" + eq.getMag() + " aftershock within " + String.format("%.1f", duplicateEventThresholdParam.getValue()/1000d) + " second(s) of the mainshock." );
+//						}
+//					}
 					
 					ObsEqkRupList bigAftershocks = aftershocks.getRupsAboveMag(mainshock.getMag());
 					largestShock = mainshock;
@@ -1786,7 +1808,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 		}
 
-		forecastStartTimeParam.setValue(round(forecastStartDays));
+//		forecastStartTimeParam.setValue(round(forecastStartDays)); //why round?
+		forecastStartTimeParam.setValue(forecastStartDays);
+		if (forecastStartTimeParam.getValue() < dataStartTimeParam.getValue()) {
+			dataStartTimeParam.setValue(forecastStartTimeParam.getValue());
+			dataStartTimeParam.getEditor().refreshParamEditor();
+		}
 		forecastStartTimeParam.getEditor().refreshParamEditor();
 	
 		if (mainshock != null) {
@@ -1798,7 +1825,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			dateStartString.getEditor().refreshParamEditor();
 		}
 		
-		forecastEndTimeParam.setValue(round(forecastStartDays + forecastDurationParam.getValue().getValueNumeric()));
+//		forecastEndTimeParam.setValue(round(forecastStartDays + forecastDurationParam.getValue().getValueNumeric()));
+		forecastEndTimeParam.setValue((forecastStartDays + forecastDurationParam.getValue().getValueNumeric()));
 		forecastEndTimeParam.getEditor().refreshParamEditor();
 
 		//check for data end time greater than current time and set to current time if smaller
@@ -3183,10 +3211,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			@Override
 			public void run() {
 				// set the data window to 0 - now, forecast time to now - one month
-				dataStartTimeParam.setValue(0);
-				if (dataEndTimeParam.getValue() == null)
+//				dataStartTimeParam.setValue(0);
+				if (dataEndTimeParam.getValue() == null) {
 					dataEndTimeParam.setValue(dataEndTimeParam.getMax());
-				
+				}
 				fetchEvents();
 				if (mainshock == null) stopRequested=true;
 			}
@@ -3628,7 +3656,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 				System.out.println("Configuring for Puerto Rico forecast update...");
 				setMagComplete(3.5);
-
+				
 				amsValRangeParam.setValue(new Range(-2.3, -1.2));
 				amsValRangeParam.getEditor().refreshParamEditor();
 				amsValNumParam.setValue(21);
@@ -3835,7 +3863,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				if(nowBoolean.getValue()) {
 					if (mainshock != null) {
 						forecastStartTimeParam.setValue( (double) (System.currentTimeMillis() - mainshock.getOriginTime())/ETAS_StatsCalc.MILLISEC_PER_DAY);
+						if (forecastStartTimeParam.getValue() < dataStartTimeParam.getValue()) {
+							dataStartTimeParam.setValue(forecastStartTimeParam.getValue());
+							dataStartTimeParam.getEditor().refreshParamEditor();
+						}
 						forecastStartTimeParam.getEditor().refreshParamEditor();
+						
 					}
 					DateFormat df = new SimpleDateFormat();
 					dateStartString.setValue(df.format(System.currentTimeMillis()));
@@ -3863,6 +3896,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 			} else if (param == forecastStartTimeParam) {
 //				if(verbose) System.out.println("Updating forecast start time");
+				if (forecastStartTimeParam.getValue() < dataStartTimeParam.getValue()) {
+					dataStartTimeParam.setValue(forecastStartTimeParam.getValue());
+					dataStartTimeParam.getEditor().refreshParamEditor();
+				}
+
 				if(!prReportMode) {
 					setEnableParamsPostFetch(false);
 				}

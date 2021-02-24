@@ -57,6 +57,7 @@ public class OgataMagFreqDist{
 		double logBayesLike;
 		double B3 = Math.log(1d/Math.sqrt(2*Math.PI)/bPrior_sigma);
 
+		
 		for (int j = 0; j < b_span.length; j++){
 			double B = b_span[j]*Math.log(10);
 			double logB = Math.log(B); 
