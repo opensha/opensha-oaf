@@ -181,8 +181,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private boolean validate;
 	private boolean mcFixed;
 	private boolean bFixed;
+	private boolean dataStartFixed;
 	private double mcFixedValue;
 	private double bFixedValue;
+	private double dataStartFixedValue;
 	private volatile boolean changeListenerEnabled = true;
 	private boolean tipsOn = true;
 	private File workingDir;
@@ -605,8 +607,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		timeWindow = new ParameterList(); 
 		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, new Double(0d));
 		
-		if(prForecastMode || prReportMode) {
-			dataStartTimeParam.setValue(2d/24d/3600d);
+//		if(prForecastMode || prReportMode) {
+		if(dataStartFixed) {
+			dataStartTimeParam.setValue(dataStartFixedValue);
 		} 
 		
 		dataStartTimeParam.setUnits("Days");
@@ -1121,8 +1124,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				"Forecast Duration", EnumSet.allOf(ForecastDuration.class), ForecastDuration.YEAR, null);
 		plotAllDurationsParam = new BooleanParameter("Plot Week/Month/Year", true);	
 		
-		if (prForecastMode)
-			dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, new Double(2d/24d/3600d));
+		if (dataStartFixed)
+			dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, new Double(dataStartFixedValue));
 		else
 			dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, new Double(0d));
 		
@@ -3657,27 +3660,32 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				System.out.println("Configuring for Puerto Rico forecast update...");
 				setMagComplete(3.5);
 				
-				amsValRangeParam.setValue(new Range(-2.3, -1.2));
+//				amsValRangeParam.setValue(new Range(-2.3, -1.2));
+				amsValRangeParam.setValue(new Range(-3.0, -1.2));
 				amsValRangeParam.getEditor().refreshParamEditor();
-				amsValNumParam.setValue(21);
+				amsValNumParam.setValue(31);
 				amsValNumParam.getEditor().refreshParamEditor();
 				
-				aValRangeParam.setValue(new Range(-2.3, -1.8));
+//				aValRangeParam.setValue(new Range(-2.3, -1.8));
+				aValRangeParam.setValue(new Range(-3.0, -1.8));
 				aValRangeParam.getEditor().refreshParamEditor();
-				aValNumParam.setValue(21);
+				aValNumParam.setValue(31);
 				aValNumParam.getEditor().refreshParamEditor();
 				
-				pValRangeParam.setValue(new Range(0.8, 1.2));
+//				pValRangeParam.setValue(new Range(0.8, 1.2));
+				pValRangeParam.setValue(new Range(0.7, 1.2));
 				pValRangeParam.getEditor().refreshParamEditor();
-				pValNumParam.setValue(21);
+				pValNumParam.setValue(31);
 				pValNumParam.getEditor().refreshParamEditor();
 				
+//				cValRangeParam.setValue(new Range(1e-4, 1e-1));
 				cValRangeParam.setValue(new Range(1e-4, 1e-1));
 				cValRangeParam.getEditor().refreshParamEditor();
-				cValNumParam.setValue(21);
+				cValNumParam.setValue(31);
 				cValNumParam.getEditor().refreshParamEditor();
 				
-				numberSimsParam.setValue(30000);
+//				numberSimsParam.setValue(30000);
+				numberSimsParam.setValue(10000);
 				numberSimsParam.getEditor().refreshParamEditor();
 				
 				intensityTypeParam.setValue(IntensityType.NONE);
@@ -6205,7 +6213,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			quickForecastButton.getEditor().refreshParamEditor();
 		}
 		
-		dataStartTimeParam.getEditor().setEnabled(!now);
+//		dataStartTimeParam.getEditor().setEnabled(!now);
 		dataEndTimeParam.getEditor().setEnabled(!now);
 		forecastStartTimeParam.getEditor().setEnabled(!now);
 		
@@ -6901,6 +6909,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		prReportMode = false;
 		prForecastMode = false;
 		mcFixed = false;
+		dataStartFixed = false;
 		
 		//check for arguments
 		for(int i = 0; i < args.length; i++) {
@@ -6933,6 +6942,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				bFixedValue = Double.parseDouble(args[i]);
 				bFixed = true;
 			}
+			
+			if (argument.contentEquals("-dataStart")) {
+				i++;
+				dataStartFixedValue = Double.parseDouble(args[i]);
+				dataStartFixed = true;
+			}
+			
 			
 		}
 	}
