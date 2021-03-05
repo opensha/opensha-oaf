@@ -1946,8 +1946,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		
 		amsValRangeParam.setValue(new Range(round(genericParams.get_a()-3*genericParams.get_aSigma(),2), round(genericParams.get_a()+3*genericParams.get_aSigma(),2)));
 		aValRangeParam.setValue(new Range(round(genericParams.get_a()-3*genericParams.get_aSigma(),2), round(genericParams.get_a()+3*genericParams.get_aSigma(),2)));
-		pValRangeParam.setValue(new Range(round(genericParams.get_p()-3*genericParams.get_pSigma(),2), round(genericParams.get_p()+3*genericParams.get_pSigma(),2)));
-		cValRangeParam.setValue(new Range(round(genericParams.get_c()/Math.pow(10, 3*genericParams.get_logcSigma()),sigDigits), Math.min(1, round(genericParams.get_c()*Math.pow(10, 3*genericParams.get_logcSigma()),sigDigits))));
+		
+		// watch out for p<0
+		double minp = genericParams.get_p()-3*genericParams.get_pSigma();
+		pValRangeParam.setValue(new Range(Math.min(0.01, round(minp,2)), round(genericParams.get_p()+3*genericParams.get_pSigma(),2)));
+		
+		// watch out for c < 1e-5
+		double minc = genericParams.get_c()/Math.pow(10, 3*genericParams.get_logcSigma());
+		cValRangeParam.setValue(new Range(Math.min(1e-5, round(minc,sigDigits)),
+				Math.min(1, round(genericParams.get_c()*Math.pow(10, 3*genericParams.get_logcSigma()),sigDigits))));
 		
 		bParam.setValue(round(genericParams.get_b(),2));
 //		if(!commandLine)
@@ -2529,7 +2536,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			cmlNumGraph.setPlotSpec(spec);
 		
 		setupGP(cmlNumGraph);
-		cmlNumGraph.setY_AxisRange(1d, Math.max(maxY,1)*1.1);
+		cmlNumGraph.setY_AxisRange(0d, Math.max(maxY,1)*1.1);
 		
 		if(D) System.out.println("... end plotCumulativeNum");
 	}
@@ -3414,6 +3421,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				int cNum = cValNumParam.getValue();
 				validateRange(cRange, cNum, "c-value");
 				
+				System.out.println("cRange: " + cRange);
+				System.out.println("cmin: " + cRange.getLowerBound());
+				
 				Double mc = mcParam.getValue();
 				validateParameter(mc, "Mc");
 								
@@ -3661,9 +3671,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				setMagComplete(3.5);
 				
 //				amsValRangeParam.setValue(new Range(-2.3, -1.2));
-				amsValRangeParam.setValue(new Range(-3.0, -1.2));
+				amsValRangeParam.setValue(new Range(-3.0, -0.8));
 				amsValRangeParam.getEditor().refreshParamEditor();
-				amsValNumParam.setValue(31);
+				amsValNumParam.setValue(51);
 				amsValNumParam.getEditor().refreshParamEditor();
 				
 //				aValRangeParam.setValue(new Range(-2.3, -1.8));
@@ -3684,8 +3694,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				cValNumParam.setValue(31);
 				cValNumParam.getEditor().refreshParamEditor();
 				
-//				numberSimsParam.setValue(30000);
-				numberSimsParam.setValue(10000);
+				numberSimsParam.setValue(30000);
+//				numberSimsParam.setValue(10000);
 				numberSimsParam.getEditor().refreshParamEditor();
 				
 				intensityTypeParam.setValue(IntensityType.NONE);
@@ -6230,21 +6240,23 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	
 	private void resetFitConstraints(GenericETAS_Parameters params){
 		if(verbose)System.out.println("Updating fit constraints based on new generic params...");
-
-		boolean restrictParameters = false; 
+		// this was put in to try to prevent unstable results from going unnoticed, but it is overly restrictive
+		
+//		boolean restrictParameters = false; 
 		
 		double new_ams = params.get_ams();
 		double new_a = params.get_a();
-		double new_p = params.get_p();
-		double new_c = params.get_c();
+//		double new_p = params.get_p();
+//		double new_c = params.get_c();
 			
 		//correct the a-value if Mc is not the same as refMag
 		double refMag = params.get_refMag();
 		double maxMag = params.get_maxMag();
 		double mc = mcParam.getValue();
 			
-		new_ams += Math.log10((maxMag - refMag)/(maxMag - mc));
-		new_a += Math.log10((maxMag - refMag)/(maxMag - mc));
+		double aAdjustmentForMc = Math.log10((maxMag - refMag)/(maxMag - mc));
+		new_ams += aAdjustmentForMc;
+		new_a += aAdjustmentForMc;
 		
 		double min_ams = amsValRangeParam.getValue().getLowerBound();
 		double max_ams = amsValRangeParam.getValue().getUpperBound();
@@ -6252,79 +6264,61 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		double min_a = aValRangeParam.getValue().getLowerBound();
 		double max_a = aValRangeParam.getValue().getUpperBound();
 		
+		amsValRangeParam.setValue(new Range(min_ams + aAdjustmentForMc, max_ams + aAdjustmentForMc));
+		amsValRangeParam.getEditor().refreshParamEditor();
+
+		aValRangeParam.setValue(new Range(min_a + aAdjustmentForMc, max_a + aAdjustmentForMc));
+		aValRangeParam.getEditor().refreshParamEditor();
+
+		
+		//make sure there is not a negative p value.
 		double min_p = pValRangeParam.getValue().getLowerBound();
-		if (min_p < 0.25)
-			min_p = 0.25;
-				
+		if (min_p < 0.1)
+			min_p = 0.1;
 		double max_p = pValRangeParam.getValue().getUpperBound();
-		if (max_p > 2)
-			max_p = 2;
+		pValRangeParam.setValue(new Range(min_p, max_p));
+		pValRangeParam.getEditor().refreshParamEditor();
+		pValNumParam.getEditor().refreshParamEditor();
 		
+		//make sure the generic parameter setting didn't result in a nan or something too small for the computer
 		double min_c = cValRangeParam.getValue().getLowerBound();
-		if (min_c <= 1e-5)
+		if (Double.isNaN(min_c) || min_c < 1e-5)
 			min_c = 1e-5;
-		
 		double max_c = cValRangeParam.getValue().getUpperBound();
-		if(max_c > 1)
-			max_c = 1;
-		if(max_c < min_c)
-			max_c = min_c;
+		cValRangeParam.setValue(new Range(min_c, max_c));
+		cValRangeParam.getEditor().refreshParamEditor();
+		cValNumParam.getEditor().refreshParamEditor();
 		
-		// reset the b-value and Mc //no, do this in set magComplete()
-//		bParam.setValue(params.get_b());
-//		bParam.getEditor().refreshParamEditor();
-//		mcParam.setValue(mc);
-//		mcParam.getEditor().refreshParamEditor();
+//		
+//		double max_c = cValRangeParam.getValue().getUpperBound();
+//		if(max_c > 1)
+//			max_c = 1;
+//		if(max_c < min_c)
+//			max_c = min_c;
 		
 		// recenter the ranges around the new parameter values
-		amsValRangeParam.setValue(new Range(round(new_ams - (max_ams - min_ams)/2,2), round(new_ams + (max_ams - min_ams)/2,2)));
-		amsValRangeParam.getEditor().refreshParamEditor();
-		
-		if(restrictParameters && !devMode && aftershocks.getRupsAboveMag(mc).size() < 10){
-			aValRangeParam.setValue(new Range(round(new_a,2), round(new_a,2)));
-			aValRangeParam.getEditor().refreshParamEditor();
-			aValNumParam.setValue(1);
-			aValNumParam.getEditor().refreshParamEditor();
-			aValRangeParam.getEditor().setEnabled(false);
-			aValNumParam.getEditor().setEnabled(false);
-		} else {	
-			aValRangeParam.setValue(new Range(round(new_a - (max_a - min_a)/2,2), round(new_a + (max_a - min_a)/2,2)));
-			aValRangeParam.getEditor().refreshParamEditor();
-			aValNumParam.getEditor().refreshParamEditor();
-			aValRangeParam.getEditor().setEnabled(true);
-			aValNumParam.getEditor().setEnabled(true);
-		}
-		
-		if(restrictParameters && !devMode && aftershocks.getRupsAboveMag(mc).size() < 20){
-			pValRangeParam.setValue(new Range(round(new_p,2), round(new_p,2)));
-			pValRangeParam.getEditor().refreshParamEditor();
-			pValNumParam.setValue(1);
-			pValNumParam.getEditor().refreshParamEditor();
-			pValNumParam.getEditor().setEnabled(false);
-			pValRangeParam.getEditor().setEnabled(false);
-		} else {
-			pValRangeParam.setValue(new Range(round(new_p - (max_p - min_p)/2,2), round(new_p + (max_p - min_p)/2,2)));
-			pValRangeParam.getEditor().refreshParamEditor();
-			pValNumParam.getEditor().refreshParamEditor();
-			pValNumParam.getEditor().setEnabled(true);
-			pValRangeParam.getEditor().setEnabled(true);
-		}
+//		amsValRangeParam.setValue(new Range(round(new_ams - (max_ams - min_ams)/2,2), round(new_ams + (max_ams - min_ams)/2,2)));
+//		amsValRangeParam.getEditor().refreshParamEditor();
+//
+//		aValRangeParam.setValue(new Range(round(new_a - (max_a - min_a)/2,2), round(new_a + (max_a - min_a)/2,2)));
+//		aValRangeParam.getEditor().refreshParamEditor();
+//		aValRangeParam.getEditor().setEnabled(true);
+//
+//		aValNumParam.getEditor().refreshParamEditor();
+//		aValNumParam.getEditor().setEnabled(true);	
 
-		if(restrictParameters && !devMode && aftershocks.getRupsAboveMag(mc).size() < 30){
-			cValRangeParam.setValue(new Range(round(new_c,6), round(new_c,6)));
-			cValRangeParam.getEditor().refreshParamEditor();
-			cValNumParam.setValue(1);
-			cValNumParam.getEditor().refreshParamEditor();
-			cValNumParam.getEditor().setEnabled(false);
-			cValRangeParam.getEditor().setEnabled(false);
-		} else {
-			cValRangeParam.setValue(new Range(round(new_c / Math.sqrt(max_c/min_c),6), round(new_c * Math.sqrt(max_c/min_c),6)));
-			cValRangeParam.getEditor().refreshParamEditor();
-			cValNumParam.getEditor().refreshParamEditor();
-			cValNumParam.getEditor().setEnabled(true);
-			cValRangeParam.getEditor().setEnabled(true);
-		}
-
+//		pValRangeParam.setValue(new Range(min_p, max_p));
+//		pValRangeParam.getEditor().refreshParamEditor();
+//		pValNumParam.getEditor().refreshParamEditor();
+//		pValNumParam.getEditor().setEnabled(true);
+//		pValRangeParam.getEditor().setEnabled(true);
+//
+//		cValRangeParam.setValue(new Range(round(new_c / Math.sqrt(max_c/min_c),6), round(new_c * Math.sqrt(max_c/min_c),6)));
+//		cValRangeParam.getEditor().refreshParamEditor();
+//		cValNumParam.getEditor().refreshParamEditor();
+//		cValNumParam.getEditor().setEnabled(true);
+//		cValRangeParam.getEditor().setEnabled(true);
+		
 		
 		// checks ranges and updates the num parameter based on the range
 		updateRangeParams(amsValRangeParam, amsValNumParam, 51);
@@ -6333,12 +6327,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		updateRangeParams(cValRangeParam, cValNumParam, 51);
 		
 		//clear the sequence specific and Bayesian fits
-//		if (seqSpecModel != null)
-//			seqSpecModel = null;
-		if (bayesianModel != null)
-			bayesianModel = null;
-		
 		if (D) System.out.println("Resetting model");
+		if (bayesianModel != null) bayesianModel = null;
 		amsValParam.setValue(null);
 		amsValParam.getEditor().refreshParamEditor();
 		aValParam.setValue(null);

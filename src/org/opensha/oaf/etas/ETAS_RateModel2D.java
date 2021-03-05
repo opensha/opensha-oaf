@@ -96,6 +96,14 @@ public class ETAS_RateModel2D {
 			lonmax = lon0 + mainshockRadius*mapSizeInRuptureLengths/geomFactor/111.111;
 		}
 		
+		//if the lattitude is going to go below -180, push everything up 360
+		if (latmin < -180) {
+			latmin += 360;
+			latmax += 360;
+		}
+			
+		
+		
 		GriddedRegion griddedRegion = new GriddedRegion(new Location(latmin, lonmin),
 				new Location(latmax, lonmax), spacing, null);
 		GriddedGeoDataSet gridData = new GriddedGeoDataSet(griddedRegion, false);
