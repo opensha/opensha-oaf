@@ -1088,6 +1088,10 @@ public class MongoDBConfig {
 		public String get_db_name () {
 			return db_name;
 		}
+
+		public String get_db_name_trimmed () {
+			return ((db_name == null) ? "" : db_name.trim());
+		}
 	
 		// Write concern.
 
@@ -1342,6 +1346,10 @@ public class MongoDBConfig {
 
 		public String get_replica_set_name () {
 			return replica_set_name;
+		}
+
+		public String get_replica_set_name_trimmed () {
+			return ((replica_set_name == null) ? "" : replica_set_name.trim());
 		}
 	
 		// Connection string.
@@ -1990,6 +1998,28 @@ public class MongoDBConfig {
 		}
 			
 		return;
+	}
+
+	// Get the database resource string for a given database handle.
+	// Returns an empty string if the database handle is not found.
+	// Note: If two database handles return the same string, then they
+	// refer to the same resource.  If two database handles return
+	// different strings, there is a high probability that they refer
+	// to different resources.  For MongoDB, we define the resource
+	// string to be "replica_set_name/db_name".  A resource string has
+	// no programmatic meaning.
+
+	public String get_resource_string (String the_db_handle) {
+
+		for (HostConfig host_config : hosts) {
+			for (DatabaseConfig database_config : host_config.get_databases()) {
+				if (the_db_handle.equals (database_config.get_db_handle())) {
+					return host_config.get_replica_set_name_trimmed() + "/" + database_config.get_db_name_trimmed();
+				}
+			}
+		}
+
+		return "";
 	}
 
 	// Display our contents.

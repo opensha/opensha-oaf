@@ -24,6 +24,7 @@ import org.opensha.oaf.oetas.OEDiscreteRange;
 import org.opensha.oaf.oetas.OEEnsembleInitializer;
 import org.opensha.oaf.oetas.OEGenerationInfo;
 import org.opensha.oaf.oetas.OEInitFixedState;
+import org.opensha.oaf.oetas.OEOrigin;
 import org.opensha.oaf.oetas.OERandomGenerator;
 import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OEStatsCalc;
@@ -32,6 +33,19 @@ import org.opensha.oaf.util.AutoExecutorService;
 import org.opensha.oaf.util.SimpleThreadManager;
 import org.opensha.oaf.util.SimpleThreadTarget;
 import org.opensha.oaf.util.SimpleUtils;
+
+import org.opensha.oaf.aafs.ActionConfig;
+import org.opensha.oaf.aafs.ForecastMainshock;
+import org.opensha.oaf.aafs.ForecastParameters;
+import org.opensha.oaf.aafs.ForecastResults;
+
+import org.opensha.oaf.comcat.ComcatOAFAccessor;
+
+import org.opensha.oaf.rj.CompactEqkRupList;
+
+import org.opensha.commons.geo.Location;
+import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
+import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 
 
 // Tests of parameter fitting methods.
@@ -1423,6 +1437,115 @@ public class OEFitTest {
 		// Discard the fitter
 
 		multi_fitter = null;
+
+		return;
+	}
+
+
+
+
+	// Fetch the mainshock data and aftershock catalog, given an event id.
+	// Parameters:
+	//  event_id = Event id of the mainshock.
+	//  start_lag_days = Catalog start time in days since the mainshock (typically <= 0).
+	//  forecast_lag_days = Catalog end time in days since the mainshock.
+	//  fcmain = Receives the mainshock information.
+	//  fcparams = Receives the forecast parameters, with R&J forecasts suppressed.
+	//  fcresults = Receives the forecast results, including the catalog.
+	//  f_verbose = True to display the mainshock, parameters, and results.
+	// Note: On return, fcresults.catalog_aftershocks contains the catalog as a CompactEqkRupList.
+
+	public static void fetch_mainshock_and_catalog (
+		String event_id, double start_lag_days, double forecast_lag_days,
+		ForecastMainshock fcmain, ForecastParameters fcparams, ForecastResults fcresults,
+		boolean f_verbose
+	) {
+
+		// Fetch just the mainshock info
+
+		fcmain.setup_mainshock_only (event_id);
+
+		if (f_verbose) {
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+		}
+
+		// Set the start time and forecast time to be the given number of days after the mainshock
+
+		long the_start_lag = Math.round(ComcatOAFAccessor.day_millis * start_lag_days);
+		long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * forecast_lag_days);
+
+		// Get the advisory lag
+
+		ActionConfig action_config = new ActionConfig();
+		long the_advisory_lag = ForecastResults.forecast_lag_to_advisory_lag (the_forecast_lag, action_config);
+
+		// Get parameters, suppressing R&J forecasts
+
+		fcparams.fetch_all_params (the_forecast_lag, fcmain, null, the_start_lag);
+		fcparams.set_rj_suppress();
+
+		if (f_verbose) {
+			System.out.println ("");
+			System.out.println (fcparams.toString());
+		}
+
+		// Get results
+
+		fcresults.calc_all (fcmain.mainshock_time + the_forecast_lag, the_advisory_lag, "", fcmain, fcparams, ForecastResults.forecast_lag_to_f_seq_spec (the_forecast_lag, action_config));
+	
+		if (f_verbose) {
+			System.out.println ("");
+			System.out.println (fcresults.toString());
+		}
+
+		return;
+	}
+
+
+
+
+	// Fetch the ETAS rupture list, given an event id.
+	// Parameters:
+	//  event_id = Event id of the mainshock.
+	//  start_lag_days = Catalog start time in days since the mainshock (typically <= 0).
+	//  forecast_lag_days = Catalog end time in days since the mainshock.
+	//  fcmain = Receives the mainshock information.
+	//  fcparams = Receives the forecast parameters, with R&J forecasts suppressed.
+	//  fcresults = Receives the forecast results, including the catalog.
+	//  oeorigin = Receives the ETAS origin.
+	//  rup_list = Receives the ETAS rupture list.
+	//  f_verbose = True to display the mainshock, parameters, R&J results, and ETAS origin.
+	// Note: The mainshock is included in the rupture list (whether or not it lies within the catalog time range).
+
+	public static void fetch_etas_rup_list (
+		String event_id, double start_lag_days, double forecast_lag_days,
+		ForecastMainshock fcmain, ForecastParameters fcparams, ForecastResults fcresults,
+		OEOrigin oe_origin, Collection<OERupture> rup_list,
+		boolean f_verbose
+	) {
+
+		// Fetch the mainshock data and aftershock catalog
+
+		fetch_mainshock_and_catalog (
+			event_id, start_lag_days, forecast_lag_days,
+			fcmain, fcparams, fcresults,
+			f_verbose
+		);
+
+		// Set the origin to the mainshock
+
+		oe_origin.set_from_mainshock (fcmain);
+
+		if (f_verbose) {
+			System.out.println ("");
+			System.out.println (oe_origin.toString());
+		}
+
+		// Convert the compact catalog
+
+		CompactEqkRupList compact_cat = fcresults.catalog_aftershocks;
+		oe_origin.convert_compact_cat_to_etas_list (rup_list, compact_cat, fcmain);
 
 		return;
 	}
@@ -3743,6 +3866,510 @@ public class OEFitTest {
 					OEDiscHistory history = new OEDiscHistory();
 
 					history.build_from_fgh (hist_params, rup_list);
+
+					// Get the marginals
+
+					marg_c_p_a_ams_like_vec_grid (history, cat_params, f_intervals, lmr_opt,
+						a_range, ams_range, p_range, c_range, marg_vec, marg_grid);
+
+					// Display line, derived from global MLE
+
+					int[] ix_vec = marg_vec.peak_indexes;
+					int[] ix_grid = marg_grid.peak_indexes;
+
+					System.out.println (String.format (
+						"%6d  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f %6d %6d %6d %6d %6d %6d %6d %6d %6d %6d",
+						i_cat,
+						Math.log10 (c_range[ix_vec[0]]),
+						            p_range[ix_vec[1]],
+						Math.log10 (a_range[ix_vec[2]]),
+						Math.log10 (c_range[ix_grid[0]]),
+						            p_range[ix_grid[1]],
+						Math.log10 (a_range[ix_grid[2]]),
+						Math.log10 (ams_range[ix_grid[3]]),
+						Math.log10 (ams_range[ix_grid[3]]) - Math.log10 (a_range[ix_grid[2]]),
+						ix_vec[0],
+						ix_vec[1],
+						ix_vec[2],
+						ix_grid[0],
+						ix_grid[1],
+						ix_grid[2],
+						ix_grid[3],
+						rup_list.size(),
+						history.rupture_count,
+						history.interval_count
+					));
+
+					// Display line, derived from marginal mode
+
+					ix_vec = marg_vec.marginal_mode_index;
+					ix_grid = marg_grid.marginal_mode_index;
+
+					System.out.println (String.format (
+						"%6d  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f %6d %6d %6d %6d %6d %6d %6d %6d %6d %6d",
+						i_cat,
+						Math.log10 (c_range[ix_vec[0]]),
+						            p_range[ix_vec[1]],
+						Math.log10 (a_range[ix_vec[2]]),
+						Math.log10 (c_range[ix_grid[0]]),
+						            p_range[ix_grid[1]],
+						Math.log10 (a_range[ix_grid[2]]),
+						Math.log10 (ams_range[ix_grid[3]]),
+						Math.log10 (ams_range[ix_grid[3]]) - Math.log10 (a_range[ix_grid[2]]),
+						ix_vec[0],
+						ix_vec[1],
+						ix_vec[2],
+						ix_grid[0],
+						ix_grid[1],
+						ix_grid[2],
+						ix_grid[3],
+						rup_list.size(),
+						history.rupture_count,
+						history.interval_count
+					));
+
+					// Display vector marginal probabilities
+
+					String prefix = String.format ("%6d  ", i_cat);
+					String infix = "\n" + prefix;
+					String suffix = "";
+
+					int max_els = 19;
+
+					System.out.println (marg_vec.marginal_probability_and_peak_as_string (0, max_els, prefix, infix, suffix));
+
+					System.out.println (marg_vec.marginal_probability_and_peak_as_string (1, max_els, prefix, infix, suffix));
+
+					System.out.println (marg_vec.marginal_probability_and_peak_as_string (2, max_els, prefix, infix, suffix));
+
+					// Display grid marginal probabilities
+
+					System.out.println (marg_grid.marginal_probability_and_peak_as_string (0, max_els, prefix, infix, suffix));
+
+					System.out.println (marg_grid.marginal_probability_and_peak_as_string (1, max_els, prefix, infix, suffix));
+
+					System.out.println (marg_grid.marginal_probability_and_peak_as_string (2, max_els, prefix, infix, suffix));
+
+					System.out.println (marg_grid.marginal_probability_and_peak_as_string (3, max_els, prefix, infix, suffix));
+
+					// Means and covariances
+
+					double[] mean_vec = new double[3];
+					double[][] cov_vec = new double[3][3];
+
+					double[] mean_grid = new double[4];
+					double[][] cov_grid = new double[4][4];
+
+					marg_vec.calc_mean_covariance (range_cpa, mean_vec, cov_vec);
+					marg_grid.calc_mean_covariance (range_cpa, mean_grid, cov_grid);
+
+					System.out.println (String.format (
+						"%6d  %s",
+						i_cat,
+						marg_vec.mean_coveriance_as_string (mean_vec, cov_vec)
+					));
+
+					System.out.println (String.format (
+						"%6d  %s",
+						i_cat,
+						marg_grid.mean_coveriance_as_string (mean_grid, cov_grid)
+					));
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #14
+		// Command format:
+		//  test14  event_id  start_lag_days  forecast_lag_days
+		// Read the earthquake catalog for a given event id.
+		// The start and end times are given in days relative to the time of the mainshock.
+		// Use the R&J forecast code, but with the forecasts suppressed.
+		// Display mainshock info, R&J forecast parameters, and R&J results.
+		// List the aftershock catalog.
+
+		if (args[0].equalsIgnoreCase ("test14")) {
+
+			// 3 or more additional arguments
+
+			if (!( args.length == 4 )) {
+				System.err.println ("OEFitTest : Invalid 'test14' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				double start_lag_days = Double.parseDouble (args[2]);
+				double forecast_lag_days = Double.parseDouble (args[3]);
+
+				// Say hello
+
+				System.out.println ("Reading mainshock info and catalog");
+				System.out.println ("event_id = " + event_id);
+				System.out.println ("start_lag_days = " + start_lag_days);
+				System.out.println ("forecast_lag_days = " + forecast_lag_days);
+
+				// Fetch the mainshock data and aftershock catalog
+
+				ForecastMainshock fcmain = new ForecastMainshock();
+				ForecastParameters fcparams = new ForecastParameters();
+				ForecastResults fcresults = new ForecastResults();
+
+				boolean f_verbose = true;
+
+				fetch_mainshock_and_catalog (
+					event_id, start_lag_days, forecast_lag_days,
+					fcmain, fcparams, fcresults,
+					f_verbose
+				);
+
+				// Display the catalog, using the element access functions
+
+				CompactEqkRupList fccat = fcresults.catalog_aftershocks;
+				int eqk_count = fccat.get_eqk_count();
+
+				System.out.println ("");
+				System.out.println ("Aftershock count = " + eqk_count);
+
+				for (int n = 0; n < eqk_count; ++n) {
+					long r_time = fccat.get_time(n);
+					double r_mag = fccat.get_mag(n);
+					double r_lat = fccat.get_lat(n);
+					double r_lon = fccat.get_unwrapped_lon(n);
+					double r_depth = fccat.get_depth(n);
+
+					String event_info = SimpleUtils.event_info_one_line (r_time, r_mag, r_lat, r_lon, r_depth);
+					System.out.println (n + ": " + event_info);
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #15
+		// Command format:
+		//  test15  event_id  start_lag_days  forecast_lag_days
+		// Read the ETAS rupture catalog for a given event id.
+		// The start and end times are given in days relative to the time of the mainshock.
+		// Use the R&J forecast code, but with the forecasts suppressed.
+		// Display mainshock info, R&J forecast parameters, R&J results, and ETAS origin.
+		// List the ETAS rupture catalog.
+
+		if (args[0].equalsIgnoreCase ("test15")) {
+
+			// 3 or more additional arguments
+
+			if (!( args.length == 4 )) {
+				System.err.println ("OEFitTest : Invalid 'test15' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				double start_lag_days = Double.parseDouble (args[2]);
+				double forecast_lag_days = Double.parseDouble (args[3]);
+
+				// Say hello
+
+				System.out.println ("Reading ETAS rupture list");
+				System.out.println ("event_id = " + event_id);
+				System.out.println ("start_lag_days = " + start_lag_days);
+				System.out.println ("forecast_lag_days = " + forecast_lag_days);
+
+				// Fetch the ETAS rupture list
+
+				ForecastMainshock fcmain = new ForecastMainshock();
+				ForecastParameters fcparams = new ForecastParameters();
+				ForecastResults fcresults = new ForecastResults();
+				OEOrigin oe_origin = new OEOrigin();
+				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+
+				boolean f_verbose = true;
+
+				fetch_etas_rup_list (
+					event_id, start_lag_days, forecast_lag_days,
+					fcmain, fcparams, fcresults,
+					oe_origin, rup_list,
+					f_verbose
+				);
+
+				// Display the catalog
+
+				int eqk_count = rup_list.size();
+
+				System.out.println ("");
+				System.out.println ("Rupture count = " + eqk_count);
+
+				int n = 0;
+				for (OERupture rup : rup_list) {
+					String rup_info = rup.one_line_string (n);
+					System.out.println (rup_info);
+					++n;
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #16
+		// Command format:
+		//  test16  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//          magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
+		//          durlim_ratio  durlim_min  durlim_max
+		//          f_intervals  lmr_opt
+		//          event_id
+		// Note that this is the same as test #13 except with a catalog retrieved from Comcat.
+		// Note that the parameters are the same as for test #13 except that the catalog
+		// seed parameters are replaced by the event ID.
+		// Note that this function uses the multi-threaded code.
+		// Retrieve the aftershock catalog from Comcat.
+		// Then construct a history containing the catalog.
+		// Then use the history to generate maximum likelihood estimates for a c/p/a vector and a c/p/a/ams grid with the fitting code.
+		// Then write a series of lines.
+		// Line 1 contains 19 values, based on the global maximum likelihood estimate:
+		//  catalog number
+		//  log(ccon) - log(ctrue)
+		//  pcon - ptrue
+		//  acon - atrue
+		//  log(c) - log(ctrue)
+		//  p - ptrue
+		//  a - atrue
+		//  ams - atrue
+		//  ams - a
+		//  ccon index (vector)
+		//  pcon index (vector)
+		//  acon index (vector)
+		//  c index (grid)
+		//  p index (grid)
+		//  a index (grid)
+		//  ams index (grid)
+		//  catalog rupture count
+		//  history rupture count
+		//  history interval count
+		// Line 2 is the same, except based on the mode of each marginal distribution.
+		// Lines 3 - 17 contain a segment of the marginal probability distributions for c/p/a respectively, under the constraint a == ams.
+		//  For each variable, this consists of one line of marginal probabilities,
+		//  then one line with the corresponding marginal peak probabilities, then
+		//  three lines with the corresponding marginal peak indexes in order c/p/a.
+		// Lines 18 - 41 contain a segment of the marginal probability distributions for c/p/a/ams respectively.
+		//  For each variable, this consists of one line of marginal probabilities,
+		//  then one line with the corresponding marginal peak probabilities, then
+		//  four lines with the corresponding marginal peak indexes in order c/p/a/ams.
+		// Line 42 contains mean log(ccon), pcon, acon; then std dev; then cov log(ccon)/pcon, log(ccon)/acon, pcon/acon.
+		// Line 43 contains mean log(c), p, a, ams; then std dev; then cov log(c)/p, log(c)/a, log(c)/ams, p/a, p/ams, a/ams.
+		// (In lines 42 and 43, the values are the deviations from true values.)
+
+		if (args[0].equalsIgnoreCase ("test16")) {
+
+			// 21 additional arguments
+
+			if (!( args.length == 22 )) {
+				System.err.println ("OEFitTest : Invalid 'test16' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				double mref = Double.parseDouble (args[6]);
+				double msup = Double.parseDouble (args[7]);
+				double tbegin = Double.parseDouble (args[8]);
+				double tend = Double.parseDouble (args[9]);
+
+				double magCat = Double.parseDouble (args[10]);
+				int helm_param = Integer.parseInt (args[11]);
+				double disc_delta = Double.parseDouble (args[12]);
+				int mag_cat_count = Integer.parseInt (args[13]);
+				double eligible_mag = Double.parseDouble (args[14]);
+				int eligible_count = Integer.parseInt (args[15]);
+
+				double durlim_ratio = Double.parseDouble (args[16]);
+				double durlim_min = Double.parseDouble (args[17]);
+				double durlim_max = Double.parseDouble (args[18]);
+
+				boolean f_intervals = Boolean.parseBoolean (args[19]);
+				int lmr_opt = Integer.parseInt (args[20]);
+
+				String event_id = args[21];
+
+				// Echo the command line
+
+				StringBuilder argecho = new StringBuilder();
+				argecho.append ("# ");
+				argecho.append ("oetas.fit.OEFitTest");
+				for (int iarg = 0; iarg < args.length; ++iarg) {
+					argecho.append (" ");
+					argecho.append (args[iarg]);
+				}
+				System.out.println (argecho.toString());
+				System.out.println ("#");
+
+				// Say hello
+
+				System.out.println ("# Retrieving aftershock catalog, and generating list of maximum likelihood estimates and marginals for c/p/a/ams");
+				System.out.println ("# n = " + n);
+				System.out.println ("# p = " + p);
+				System.out.println ("# c = " + c);
+				System.out.println ("# b = " + b);
+				System.out.println ("# alpha = " + alpha);
+				System.out.println ("# mref = " + mref);
+				System.out.println ("# msup = " + msup);
+				System.out.println ("# tbegin = " + tbegin);
+				System.out.println ("# tend = " + tend);
+
+				System.out.println ("# magCat = " + magCat);
+				System.out.println ("# helm_param = " + helm_param);
+				System.out.println ("# disc_delta = " + disc_delta);
+				System.out.println ("# mag_cat_count = " + mag_cat_count);
+				System.out.println ("# eligible_mag = " + eligible_mag);
+				System.out.println ("# eligible_count = " + eligible_count);
+
+				System.out.println ("# durlim_ratio = " + durlim_ratio);
+				System.out.println ("# durlim_min = " + durlim_min);
+				System.out.println ("# durlim_max = " + durlim_max);
+
+				System.out.println ("# f_intervals = " + f_intervals);
+				System.out.println ("# lmr_opt = " + lmr_opt);
+
+				System.out.println ("# event_id = " + event_id);
+
+				System.out.println ("#");
+
+				// Verbose flag
+
+				boolean f_verbose = true;
+
+				// Make the catalog parameters
+
+				OECatalogParams cat_params = (new OECatalogParams()).set_to_fixed_mag_br (
+					n,		// n
+					p,		// p
+					c,		// c
+					b,		// b
+					alpha,	// alpha
+					mref,	// mref
+					msup,	// msup
+					tbegin,	// tbegin
+					tend	// tend
+				);
+
+				if (f_verbose) {
+					System.out.println (cat_params.toString());
+				}
+
+				// Make time-splitting function
+
+				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
+
+				// Make the history parameters
+
+				OEDiscFGHParams hist_params = new OEDiscFGHParams();
+
+				hist_params.set_sim_history_typical (
+					magCat,			// magCat
+					helm_param,		// helm_param
+					tbegin,			// t_range_begin
+					tend,			// t_range_end
+					disc_delta,		// disc_delta
+					mag_cat_count,	// mag_cat_count
+					eligible_mag,	// eligible_mag
+					eligible_count,	// eligible_count
+					split_fn		// split_fn
+				);
+
+				if (f_verbose) {
+					System.out.println (hist_params.toString());
+				}
+
+				// Parameter ranges
+
+				//double[] a_range = (OEDiscreteRange.makeLog (51, Math.sqrt(0.1), Math.sqrt(10.0))).get_range_array();
+				//double[] ams_range = (OEDiscreteRange.makeLog (51, Math.sqrt(0.1), Math.sqrt(10.0))).get_range_array();
+
+				double[] a_range = (OEDiscreteRange.makeLog (51, 0.1, 10.0)).get_range_array();
+				double[] ams_range = (OEDiscreteRange.makeLog (51, 0.1, 10.0)).get_range_array();
+				double[] p_range = (OEDiscreteRange.makeLinear (31, -0.3, 0.3)).get_range_array();
+				double[] c_range = (OEDiscreteRange.makeLog (17, 0.01, 100.0)).get_range_array();
+
+				// Ranges we will use for means and covariances
+
+				double[][] range_cpa = new double[4][];
+				range_cpa[0] = OEArraysCalc.array_copy_log10 (c_range);
+				range_cpa[1] = OEArraysCalc.array_copy (p_range);
+				range_cpa[2] = OEArraysCalc.array_copy_log10 (a_range);
+				range_cpa[3] = OEArraysCalc.array_copy_log10 (ams_range);
+
+				// Marginals
+
+				OEGridMarginal marg_vec = new OEGridMarginal();
+				OEGridMarginal marg_grid = new OEGridMarginal();
+
+				// Loop over catalogs ...
+
+				int num_cat = 1;
+
+				for (int i_cat = 0; i_cat < num_cat; ++i_cat) {
+
+					// Time range for rupture list
+
+					double start_lag_days = tbegin;
+					double forecast_lag_days = tend;
+
+					// Fetch the ETAS rupture list
+
+					ForecastMainshock fcmain = new ForecastMainshock();
+					ForecastParameters fcparams = new ForecastParameters();
+					ForecastResults fcresults = new ForecastResults();
+					OEOrigin oe_origin = new OEOrigin();
+					ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+
+					fetch_etas_rup_list (
+						event_id, start_lag_days, forecast_lag_days,
+						fcmain, fcparams, fcresults,
+						oe_origin, rup_list,
+						f_verbose
+					);
+
+					// Make a history
+
+					OEDiscHistory history = new OEDiscHistory();
+
+					history.build_from_fgh (hist_params, rup_list);
+					
+					//System.out.println (history.dump_string());
+					//if (fcmain.mainshock_avail) {	// avoids unreachable code error
+					//	return;
+					//}
+
+					if (f_verbose) {
+						System.out.println (history.toString());
+						System.out.println ();
+					}
 
 					// Get the marginals
 

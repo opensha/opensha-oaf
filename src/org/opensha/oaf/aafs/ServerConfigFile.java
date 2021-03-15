@@ -405,7 +405,7 @@ public class ServerConfigFile {
 
 		result.append ("server_db_handles = [" + "\n");
 		for (String s : server_db_handles) {
-			result.append ("  " + s + "\n");
+			result.append ("  " + s + " ==> " + mongo_config.get_resource_string(s) + "\n");
 		}
 		result.append ("]" + "\n");
 
@@ -586,6 +586,23 @@ public class ServerConfigFile {
 	public int get_partner_server_number () {
 		int result = 3 - server_number;
 		return result;
+	}
+
+	// Return true if this is a dual-server configuration.
+	// We return true if there are at least 2 remote server database handles,
+	// and if the resource string of the second handle is non-blank and
+	// different from the resource string of the first handle.
+	// (The resource string of the first handle should not be blank.)
+
+	public boolean is_dual_server () {
+		if (server_db_handles.size() >= 3) {
+			String s1 = mongo_config.get_resource_string (server_db_handles.get(1));
+			String s2 = mongo_config.get_resource_string (server_db_handles.get(2));
+			if (s2.length() > 0 && !(s1.equals(s2))) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 

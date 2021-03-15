@@ -2,6 +2,7 @@ package org.opensha.oaf.oetas;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Locale;
 
 import org.opensha.oaf.util.MarshalReader;
@@ -19,6 +20,11 @@ import org.opensha.commons.geo.LocationUtils;
 import org.opensha.oaf.oetas.fit.OEMagCompFn;
 
 import static org.opensha.oaf.oetas.OEConstants.C_MILLIS_PER_DAY;
+
+import org.opensha.oaf.aafs.ForecastMainshock;
+import org.opensha.oaf.aafs.ForecastResults;
+
+import org.opensha.oaf.rj.CompactEqkRupList;
 
 import static org.opensha.commons.geo.GeoTools.TO_DEG;
 import static org.opensha.commons.geo.GeoTools.TO_RAD;
@@ -130,6 +136,28 @@ public class OEOrigin {
 		result.append ("origin_depth = " + origin_depth + "\n");
 
 		return result.toString();
+	}
+
+
+
+
+	// Set all values to place the origin at the given mainshock.
+
+	public OEOrigin set_from_mainshock (ForecastMainshock fcmain) {
+	
+		// Check that mainshock is available
+
+		if (!( fcmain.mainshock_avail )) {
+			throw new IllegalArgumentException ("OEOrigin.set_from_mainshock - No mainshock available");
+		}
+
+		// Set values
+
+		this.origin_time  = fcmain.mainshock_time;
+		this.origin_lat   = fcmain.mainshock_lat;
+		this.origin_lon   = fcmain.mainshock_lon;
+		this.origin_depth = fcmain.mainshock_depth;
+		return this;
 	}
 
 
@@ -350,6 +378,124 @@ public class OEOrigin {
 		// Write the file
 
 		ext_cat.write_to_file (filename);
+
+		return;
+	}
+
+
+
+
+	// Convert from observed rupture to ETAS rupture.
+	// Parameters:
+	//  obs_time = Observed rupture time, in milliseconds since the epoch.
+	//  rup_mag = Observed rupture magnitude.
+	//  obs_lat = Observed rupture latitude, in degrees.
+	//  obs_lon = Observed rupture longitude, in degrees.
+	//  etas_rup = Structure to receive ETAS rupture.
+	// Note: The productivity is set to zero, and the parent is set to -1.
+
+	public void convert_obs_to_etas (long obs_time, double rup_mag, double obs_lat, double obs_lon, OERupture etas_rup) {
+		double t_day = ((double)(obs_time - origin_time)) / C_MILLIS_PER_DAY;
+		double k_prod = 0.0;
+		int rup_parent = -1;
+
+		double x_km;
+		double y_km;
+
+		double r_km = SphLatLon.horzDistance (origin_lat, origin_lon, obs_lat, obs_lon);
+		if (r_km <= 1.0e-5) {
+			x_km = 0.0;
+			y_km = 0.0;
+		} else {
+			double az_rad = SphLatLon.azimuth_rad (origin_lat, origin_lon, obs_lat, obs_lon);
+			x_km = r_km * Math.sin (az_rad);
+			y_km = r_km * Math.cos (az_rad);
+		}
+
+		etas_rup.set (t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
+		return;
+	}
+
+
+
+
+	// Convert from compact rupture to ETAS rupture.
+	// Parameters:
+	//  compact_cat = Compact rupture catalog.
+	//  n = Index number of rupture within the catalog.
+	//  etas_rup = Structure to receive ETAS rupture.
+	// Note: The productivity is set to zero, and the parent is set to -1.
+
+	public void convert_compact_to_etas (CompactEqkRupList compact_cat, int n, OERupture etas_rup) {
+		convert_obs_to_etas (
+			compact_cat.get_time(n),
+			compact_cat.get_mag(n),
+			compact_cat.get_lat(n),
+			compact_cat.get_unwrapped_lon(n),
+			etas_rup
+		);
+		return;
+	}
+
+
+
+
+	// Convert from mainshock rupture to ETAS rupture.
+	// Parameters:
+	//  fcmain = Mainshock.
+	//  etas_rup = Structure to receive ETAS rupture.
+	// Note: The productivity is set to zero, and the parent is set to -1.
+
+	public void convert_mainshock_to_etas (ForecastMainshock fcmain, OERupture etas_rup) {
+
+		if (!( fcmain.mainshock_avail )) {
+			throw new IllegalArgumentException ("OEOrigin.convert_mainshock_to_etas - No mainshock available");
+		}
+
+		convert_obs_to_etas (
+			fcmain.mainshock_time,
+			fcmain.mainshock_mag,
+			fcmain.mainshock_lat,
+			fcmain.mainshock_lon,
+			etas_rup
+		);
+		return;
+	}
+
+
+
+	// Convert a compact catalog to a list of ETAS ruptures.
+	// Parameters:
+	//  rup_list = Receives the list of ruptures.
+	//  compact_cat = Compact rupture catalog.
+	//  fcmain = Mainshock, can be null or not-available, can be omitted.
+	// Adds a list of ETAS ruptures to rup_list.
+	// If fcmain is non-null and available, then the mainshock is added to the list.
+	// The ordering of the returned list is not specified.
+
+	public void convert_compact_cat_to_etas_list (Collection<OERupture> rup_list, CompactEqkRupList compact_cat) {
+		convert_compact_cat_to_etas_list (rup_list, compact_cat, null);
+		return;
+	}
+
+	public void convert_compact_cat_to_etas_list (Collection<OERupture> rup_list, CompactEqkRupList compact_cat, ForecastMainshock fcmain) {
+
+		// Loop over catalog, adding each earthquake to the list
+
+		int eqk_count = compact_cat.get_eqk_count();
+		for (int n = 0; n < eqk_count; ++n) {
+			OERupture etas_rup = new OERupture();
+			convert_compact_to_etas (compact_cat, n, etas_rup);
+			rup_list.add (etas_rup);
+		}
+
+		// If the mainshock is supplied, add it to the list
+
+		if (fcmain != null && fcmain.mainshock_avail) {
+			OERupture etas_rup = new OERupture();
+			convert_mainshock_to_etas (fcmain, etas_rup);
+			rup_list.add (etas_rup);
+		}
 
 		return;
 	}

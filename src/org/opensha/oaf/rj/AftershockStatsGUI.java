@@ -119,8 +119,7 @@ import org.opensha.oaf.util.GUICalcProgressBar;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
-import org.opensha.oaf.aafs.PDLCmd;
-import org.opensha.oaf.aafs.ServerCmd;
+import org.opensha.oaf.aafs.GUICmd;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
@@ -2888,134 +2887,12 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	
 	public static void main(String[] args) {
 
-		// The GUI accepts certain server management commands.
-		// These redirect to the corresponding commands in ServerCmd.
+		// The GUI accepts certain command-line options and commands.
+		// They are documented in GUICmd.
 
-		if (args.length >= 1) {
+		String caller_name = "AftershockStatsGUI";
 
-			// Subcommand : server_health
-			// Command format:
-			//  server_health
-			// Display the server health, on the two running servers.
-
-			if (args[0].equalsIgnoreCase ("server_health")) {
-
-				if (args.length != 1) {
-					System.out.println ("AftershockStatsGUI : Invalid 'server_health' subcommand");
-					return;
-				}
-
-				String[] my_args = new String[2];
-				my_args[0] = "server_health";
-				my_args[1] = "9";
-
-				try {
-					ServerCmd.cmd_server_health (my_args);
-				} catch (Exception e) {
-					e.printStackTrace();
-					System.out.println ();
-					System.out.println ("AftershockStatsGUI : The 'server_health' subcommand failed with an exception");
-				}
-				return;
-			}
-
-			// Subcommand : analyst_cli
-			// Command format:
-			//  analyst_cli
-			// Run the analyst CLI, and send the selected options to the two running servers.
-
-			if (args[0].equalsIgnoreCase ("analyst_cli")) {
-
-				if (args.length != 1) {
-					System.out.println ("AftershockStatsGUI : Invalid 'analyst_cli' subcommand");
-					return;
-				}
-
-				String[] my_args = new String[2];
-				my_args[0] = "change_analyst_cli";
-				my_args[1] = "9";
-
-				try {
-					ServerCmd.cmd_change_analyst_cli (my_args);
-				} catch (Exception e) {
-					e.printStackTrace();
-					System.out.println ();
-					System.out.println ("AftershockStatsGUI : The 'analyst_cli' subcommand failed with an exception");
-				}
-				return;
-			}
-
-			// Subcommand : fcdata_convert
-			// Command format:
-			//  fcdata_convert  in_filename  out_filename
-			// Convert a forecast data file from the website/database JSON
-			// format to a friendly human-understandable JSON format.
-
-			if (args[0].equalsIgnoreCase ("fcdata_convert")) {
-
-				if (args.length != 3) {
-					System.out.println ("AftershockStatsGUI : Invalid 'fcdata_convert' subcommand");
-					return;
-				}
-
-				String[] my_args = new String[3];
-				my_args[0] = "fcdata_convert";
-				my_args[1] = args[1];
-				my_args[2] = args[2];
-
-				try {
-					ServerCmd.cmd_fcdata_convert (my_args);
-				} catch (Exception e) {
-					e.printStackTrace();
-					System.out.println ();
-					System.out.println ("AftershockStatsGUI : The 'fcdata_convert' subcommand failed with an exception");
-				}
-				return;
-			}
-
-		}
-
-
-		// The GUI accepts command-line arguments for configuring PDL access.
-		// Complete details are in PDLCmd.java.
-		//
-		// To select the PDL destination, use one of these:
-		// --pdl=dryrun
-		// --pdl=dev
-		// --pdl=prod
-		// If the --pdl option is not specified, the default is --pdl=dev.
-		//
-		// To specify a PDL key file, use:
-		// --privateKey=PRIVATEKEYFILE
-		// If the --privateKey option is not specified, then products are sent unsigned.
-		//
-		// If you want to delete a product, then in addition to the above you should also include all of these:
-		// --delete
-		// --code=PRODUCTCODE
-		// --eventsource=EVENTNETWORK
-		// --eventsourcecode=EVENTCODE
-		// The value of --code identifies the product that is to be deleted.  The value of --code is typically an event ID.
-		// The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
-		// these determine which event page displays the product.
-		// When deleting a product, the delete is sent to PDL and the program exits without launching the GUI.
-		//
-		// If you have a JSON file, then you can send it as a product by including:
-		// --update=JSONFILENAME
-		// --code=PRODUCTCODE
-		// --eventsource=EVENTNETWORK
-		// --eventsourcecode=EVENTCODE
-		// The value of --code identifies the product that is to be sent.  The value of --code is typically an event ID.
-		// The product replaces any prior product that was sent with the same --code.
-		// The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
-		// these determine which event page displays the product.
-		// When sending a product, the product is sent to PDL and the program exits without launching the GUI.
-
-		int lo = 0;
-		boolean f_config = true;
-		boolean f_send = true;
-		int pdl_default = ServerConfigFile.PDLOPT_NONE;
-
-		boolean consumed = PDLCmd.exec_pdl_cmd (args, lo, f_config, f_send, pdl_default);
+		boolean consumed = GUICmd.exec_gui_cmd (args, caller_name);
 
 		if (consumed) {
 			return;

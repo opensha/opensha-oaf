@@ -150,31 +150,31 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 
 	// get_eqk_count - Number of earthquakes.
 
-	public int get_eqk_count () {
+	public final int get_eqk_count () {
 		return eqk_count;
 	}
 
 	// get_capacity - The allocated size of the arrays.
 
-	public int get_capacity () {
+	public final int get_capacity () {
 		return capacity;
 	}
 
 	// get_lat_lon_depth_list - Compressed latitude, longitude, and depth for each earthquake.
 
-	public long[] get_lat_lon_depth_list () {
+	public final long[] get_lat_lon_depth_list () {
 		return lat_lon_depth_list;
 	}
 
 	// get_mag_time_list - Compressed magnitude and time for each earthquake.
 
-	public long[] get_mag_time_list () {
+	public final long[] get_mag_time_list () {
 		return mag_time_list;
 	}
 
 	// as_ObsEqkRupList - Convert to ObsEqkRupList and return it.
 
-	public ObsEqkRupList as_ObsEqkRupList () {
+	public final ObsEqkRupList as_ObsEqkRupList () {
 		ObsEqkRupList rups = new ObsEqkRupList();
 		for (int index = 0; index < eqk_count; ++index) {
 			rups.add (extract_rupture (null, lat_lon_depth_list[index], mag_time_list[index]));
@@ -324,6 +324,63 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 	public static ObsEqkRupture extract_rupture (String eventId, long lat_lon_depth, long mag_time) {
 		return new ObsEqkRupture(eventId, extract_time (mag_time), 
 						extract_location (lat_lon_depth), extract_mag (mag_time));
+	}
+
+
+
+
+	//----- Element access functions -----
+
+	// extract_unwrapped_lon - Extract longitude, coerced to lie between -180.0 and +180.0.
+
+	public static double extract_unwrapped_lon (long lat_lon_depth) {
+
+		double lon = extract_lon (lat_lon_depth);
+
+		if (lon < -180.0) {
+			lon += 360.0;
+		}
+		else if (lon > 180.0) {
+			lon -= 360.0;
+		}
+
+		return lon;
+	}
+
+	// get_lat - Get the latitude of the n-th element in the list.
+
+	public final double get_lat (int n) {
+		return extract_lat (lat_lon_depth_list[n]);
+	}
+
+	// get_lon - Get the longitude of the n-th element in the list.
+
+	public final double get_lon (int n) {
+		return extract_lon (lat_lon_depth_list[n]);
+	}
+
+	// get_unwrapped_lon - Get the longitude of the n-th element in the list, coerced to lie between -180.0 and +180.0.
+
+	public final double get_unwrapped_lon (int n) {
+		return extract_unwrapped_lon (lat_lon_depth_list[n]);
+	}
+
+	// get_depth - Get the longitude of the n-th element in the list.
+
+	public final double get_depth (int n) {
+		return extract_depth (lat_lon_depth_list[n]);
+	}
+
+	// get_mag - Get the magnitude of the n-th element in the list.
+
+	public final double get_mag (int n) {
+		return extract_mag (mag_time_list[n]);
+	}
+
+	// get_time - Get the time of the n-th element in the list.
+
+	public final long get_time (int n) {
+		return extract_time (mag_time_list[n]);
 	}
 
 
