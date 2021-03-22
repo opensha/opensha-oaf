@@ -18,10 +18,11 @@
 # pack - Package the AAFS jar file.
 #
 # compilegui - Compile the OpenSHA code to create the aftershock GUI.
+#              After the 'compilegui' keyword comes the GUI date in form YYYY_MM_DD (or tag).
 #              This creates the generic GUI.
 #
 # packgui - Package the GUI jar file, and bundle with private configuration.
-#           After the 'packgui' keyword comes the GUI date in form YYYY_MM_DD, followed by the
+#           After the 'packgui' keyword comes the GUI date in form YYYY_MM_DD (or tag), followed by the
 #           name of the private server configuration file.  This creates the production GUI.
 #
 # deploy - Copy the AAFS jar file and required libraries into /opt/aafs/oefjava.
@@ -29,9 +30,17 @@
 # deploycfg - Copy the AAFS configuration files and scripts into /opt/aafs and its subdirectories.
 #             The user is prompted before any existing file in /opt/aafs is changed.
 #
+# updatecfg - Copy the AAFS configuration files and scripts into /opt/aafs and its subdirectories,
+#             preserving any existing server configuration file and action configuration file.
+#             Other existing files are overwritten without prompting.
+#
 # diffcfg - Use git diff to compare the configuration files in /opt/aafs to the originals.
 #
 # diffcfgc - Same as diffcfg except forces the use of colored text when displaying changes.
+#
+# erase_config_server - Erase any existing server configuration file from /opt/aafs/oafcfg.
+#
+# erase_config_action - Erase any existing action configuration file from /opt/aafs/oafcfg.
 #
 # config_server_solo - Create a server configuration file for a single-server configuration.
 #     After the 'config_server_solo' keyword comes the following parameters:
@@ -140,7 +149,7 @@
 #     After the 'config_packgui' keyword comes the following parameters:
 #       GUIDATE  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS
 #     Where:
-#       GUIDATE = GUI date in form YYYY_MM_DD.
+#       GUIDATE = GUI date in form YYYY_MM_DD (or tag).
 #       SRVIP1 = Server IP address for server #1.
 #       REPSET1 = MongoDB replica set name for server #1.
 #       SRVIP2 = Server IP address for server #2.
@@ -279,12 +288,64 @@ copyover () {
 
 
 
+# Function to copy a file, if the destination file does not already exist.
+# $1 = Source file.
+# $2 = Destination file.
+
+copynewfile () {
+    if [ ! -f "$2" ]; then
+        cp -pi "$1" "$2"
+    fi
+}
+
+
+
+
+# Function to copy a script file, overwriting any existing file.
+# $1 = Source file.
+# $2 = Destination file.
+
+replacescr () {
+    if [ -f "$2" ]; then
+        rm "$2"
+    fi
+    cp -pi "$1" "$2"
+    chmod 755 "$2"
+}
+
+
+
+
+# Function to remove a file, if the file exists.
+# $1 = File.
+
+rmexistingfile () {
+    if [ -f "$1" ]; then
+        rm "$1"
+    fi
+}
+
+
+
+
 # Function to make a directory, if the directory does not exist.
 # $1 = Directory.
 
 makenewdir () {
     if [ ! -d "$1" ]; then
         mkdir "$1"
+    fi
+}
+
+
+
+
+# Function to remove a directory, if the directory exists.
+# $1 = File.
+
+rmexistingdir () {
+    if [ -d "$1" ]; then
+        rm -r "$1"
     fi
 }
 
@@ -407,6 +468,11 @@ copysubsrv () {
 case "$1" in
 
     clone)
+        rmexistingdir opensha-commons
+        rmexistingdir opensha-core
+        rmexistingdir opensha-ucerf3
+        rmexistingdir opensha-apps
+        rmexistingdir opensha-oaf
         git clone https://github.com/opensha/opensha-commons
         git clone https://github.com/opensha/opensha-core
         git clone https://github.com/opensha/opensha-ucerf3
@@ -433,21 +499,11 @@ case "$1" in
         ;;
 
     clean)
-        if [ -d opensha-commons/build ]; then
-            rm -r opensha-commons/build
-        fi
-        if [ -d opensha-core/build ]; then
-            rm -r opensha-core/build
-        fi
-        if [ -d opensha-ucerf3/build ]; then
-            rm -r opensha-ucerf3/build
-        fi
-        if [ -d opensha-apps/build ]; then
-            rm -r opensha-apps/build
-        fi
-        if [ -d opensha-oaf/build ]; then
-            rm -r opensha-oaf/build
-        fi
+        rmexistingdir opensha-commons/build
+        rmexistingdir opensha-core/build
+        rmexistingdir opensha-ucerf3/build
+        rmexistingdir opensha-apps/build
+        rmexistingdir opensha-oaf/build
         ;;
 
     compile)
@@ -459,34 +515,18 @@ case "$1" in
     pack)
         if [ -f opensha-oaf/build/libs/opensha-oaf-oaf.jar ]; then
             cd opensha-oaf/build/libs
-            if [ -d otmp ]; then
-                rm -r otmp
-            fi
-            if [ -f oefjava.jar ]; then
-                rm oefjava.jar
-            fi
-            if [ -f opensha-oaf-oaf-fixed.jar ]; then
-                rm opensha-oaf-oaf-fixed.jar
-            fi
+            rmexistingdir otmp
+            rmexistingfile oefjava.jar
+            rmexistingfile opensha-oaf-oaf-fixed.jar
             zip -q -F opensha-oaf-oaf.jar --out opensha-oaf-oaf-fixed.jar
             mkdir otmp
             cd otmp
             unzip -uoq ../opensha-oaf-oaf-fixed.jar
-            if [ -f META-INF/MANIFEST.MF ]; then
-                rm META-INF/MANIFEST.MF
-            fi
-            if [ -f META-INF/BCKEY.DSA ]; then
-                rm META-INF/BCKEY.DSA
-            fi
-            if [ -f META-INF/BCKEY.SF ]; then
-                rm META-INF/BCKEY.SF
-            fi
-            if [ -f META-INF/IDRSIG.DSA ]; then
-                rm META-INF/IDRSIG.DSA
-            fi
-            if [ -f META-INF/IDRSIG.SF ]; then
-                rm META-INF/IDRSIG.SF
-            fi
+            rmexistingfile META-INF/MANIFEST.MF
+            rmexistingfile META-INF/BCKEY.DSA
+            rmexistingfile META-INF/BCKEY.SF
+            rmexistingfile META-INF/IDRSIG.DSA
+            rmexistingfile META-INF/IDRSIG.SF
             cd ..
             jar -cf oefjava.jar -C otmp .
             cd ../../..
@@ -499,30 +539,25 @@ case "$1" in
         cd opensha-oaf
         ./gradlew appOAFJar
         cd ..
-        ls opensha-oaf/build/libs
+        if [ -f opensha-oaf/build/libs/AftershockGUI-current.jar ]; then
+            rmexistingfile opensha-oaf/build/libs/AftershockGUI-current-$2.jar
+            mv opensha-oaf/build/libs/AftershockGUI-current.jar opensha-oaf/build/libs/AftershockGUI-current-$2.jar
+        fi
         ;;
 
     packgui)
         if [ -f opensha-oaf/build/libs/AftershockGUI-current-$2.jar ]; then
             cd opensha-oaf/build/libs
-            if [ -d gtmp ]; then
-                rm -r gtmp
-            fi
-            if [ -f AftershockGUI-prod-$2.jar ]; then
-                rm AftershockGUI-prod-$2.jar
-            fi
-            if [ -f AftershockGUI-current-$2-fixed.jar ]; then
-                rm AftershockGUI-current-$2-fixed.jar
-            fi
+            rmexistingdir gtmp
+            rmexistingfile AftershockGUI-prod-$2.jar
+            rmexistingfile AftershockGUI-current-$2-fixed.jar
             zip -q -F AftershockGUI-current-$2.jar --out AftershockGUI-current-$2-fixed.jar
             mkdir gtmp
             cd gtmp
             unzip -uoq ../AftershockGUI-current-$2-fixed.jar
             cd ..
             cd ../../..
-            if [ -f opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json ]; then
-                rm opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
-            fi
+            rmexistingfile opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
             cp -pi "$3" opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
             cd opensha-oaf/build/libs
             jar -cfe AftershockGUI-prod-$2.jar org.opensha.oaf.rj.AftershockStatsGUI -C gtmp .
@@ -552,12 +587,24 @@ case "$1" in
         copycfg opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
         copycfg opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
         copyscr opensha-oaf/deployment/scripts/aafs/moaf.sh /opt/aafs/moaf.sh
-        copyscr opensha-oaf/deployment/scripts/aafs/aafs.sh /opt/aafs/aafs.sh
-        copyscr opensha-oaf/deployment/scripts/aafs/aafs-app.sh /opt/aafs/aafs-app.sh
-        copyscr opensha-oaf/deployment/scripts/aafs/aafs-svc.sh /opt/aafs/aafs-svc.sh
         copyscr opensha-oaf/deployment/scripts/aafs/intake/init.sh /opt/aafs/intake/init.sh
         copyscr opensha-oaf/deployment/scripts/aafs/intake/listener.sh /opt/aafs/intake/listener.sh
         copycfg opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
+        ;;
+
+    updatecfg)
+        makenewdir /opt/aafs/oefjava
+        makenewdir /opt/aafs/oafcfg
+        makenewdir /opt/aafs/intake
+        makenewdir /opt/aafs/key
+        copynewfile opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
+        copynewfile opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
+        copyover opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
+        copyover opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
+        replacescr opensha-oaf/deployment/scripts/aafs/moaf.sh /opt/aafs/moaf.sh
+        replacescr opensha-oaf/deployment/scripts/aafs/intake/init.sh /opt/aafs/intake/init.sh
+        replacescr opensha-oaf/deployment/scripts/aafs/intake/listener.sh /opt/aafs/intake/listener.sh
+        copyover opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
         ;;
 
     diffcfg)
@@ -574,6 +621,14 @@ case "$1" in
         git diff --color opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
         git diff --color opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
         git diff --color opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
+        ;;
+
+    erase_config_server)
+        rmexistingfile /opt/aafs/oafcfg/ServerConfig.json
+        ;;
+
+    erase_config_action)
+        rmexistingfile /opt/aafs/oafcfg/ActionConfig.json
         ;;
 
     config_server_solo)
@@ -761,24 +816,16 @@ case "$1" in
     config_packgui)
         if [ -f opensha-oaf/build/libs/AftershockGUI-current-$2.jar ]; then
             cd opensha-oaf/build/libs
-            if [ -d gtmp ]; then
-                rm -r gtmp
-            fi
-            if [ -f AftershockGUI-prod-$2.jar ]; then
-                rm AftershockGUI-prod-$2.jar
-            fi
-            if [ -f AftershockGUI-current-$2-fixed.jar ]; then
-                rm AftershockGUI-current-$2-fixed.jar
-            fi
+            rmexistingdir gtmp
+            rmexistingfile AftershockGUI-prod-$2.jar
+            rmexistingfile AftershockGUI-current-$2-fixed.jar
             zip -q -F AftershockGUI-current-$2.jar --out AftershockGUI-current-$2-fixed.jar
             mkdir gtmp
             cd gtmp
             unzip -uoq ../AftershockGUI-current-$2-fixed.jar
             cd ..
             cd ../../..
-            if [ -f opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json ]; then
-                rm opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
-            fi
+            rmexistingfile opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
             SRVIP1="${3}"
             REPSET1="${4}"
             SRVIP2="${5}"
@@ -863,10 +910,16 @@ case "$1" in
         echo "  boaf.sh deploy"
         echo "Copy the AAFS configuration files and scripts into /opt/aafs and its subdirectories:"
         echo "  boaf.sh deploycfg"
+        echo "Update the AAFS configuration files and scripts, preserving server and action configuration files:"
+        echo "  boaf.sh updatecfg"
         echo "Use git diff to compare the configuration files in /opt/aafs to the originals:"
         echo "  boaf.sh diffcfg"
         echo "Same as diffcfg except forces the use of colored text when displaying changes:"
         echo "  boaf.sh diffcfgc"
+        echo "Erase any existing server configuration file from /opt/aafs/oafcfg:"
+        echo "  boaf.sh erase_config_server"
+        echo "Erase any existing action configuration file from /opt/aafs/oafcfg:"
+        echo "  boaf.sh erase_config_action"
         echo "Create a server configuration file for a single-server configuration:"
         echo "  boaf.sh config_server_solo SRVIP1 REPSET1 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
         echo "Create and save a server configuration file for a single-server configuration:"

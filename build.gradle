@@ -20,7 +20,7 @@ dependencies {
 }
 
 task appOAFJar(type: Jar) {
-    baseName = 'AftershockGUI-current-'+getDate()
+    baseName = 'AftershockGUI-current'
     from { configurations.compileAndResource.collect {
         it.isDirectory() ? it : zipTree(it).matching {
             exclude { it.path.contains('META-INF') }
