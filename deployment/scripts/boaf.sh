@@ -903,7 +903,7 @@ case "$1" in
         echo "Package the AAFS jar file:"
         echo "  boaf.sh pack"
         echo "Compile the OpenSHA code to create the generic aftershock GUI:"
-        echo "  boaf.sh compilegui"
+        echo "  boaf.sh compilegui GUIDATE"
         echo "Package the GUI jar file, and bundle with private server configuration file:"
         echo "  boaf.sh packgui GUIDATE FILENAME"
         echo "Copy the AAFS jar file and required libraries into /opt/aafs/oefjava:"
