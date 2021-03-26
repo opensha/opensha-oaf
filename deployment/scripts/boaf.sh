@@ -345,7 +345,7 @@ makenewdir () {
 
 rmexistingdir () {
     if [ -d "$1" ]; then
-        rm -r "$1"
+        rm -rf "$1"
     fi
 }
 
