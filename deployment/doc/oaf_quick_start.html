@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta content="en-us" http-equiv="Content-Language">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<title>OAF Quick Start</title>
+<style type="text/css">
+.auto-style1 {
+	border-style: solid;
+	border-width: 4px;
+    border-collapse: separate;
+    border-spacing: 6px;
+}
+    .auto-style2 {
+        text-decoration: underline;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>OAF Quick Start</h1>
+<h2>Michael Barall<br>03/29/2021</h2>
+<p>&nbsp;</p>
+<h2>1. Introduction</h2>
+<p>This document is intended to help you get started quickly in running OAF. It explains how to install, start, stop, and update the OAF software. The topics covered include:</p>
+    <ol>
+        <li>Introduction</li>
+        <li>OAF Overview</li>
+        <li>System Requirements</li>
+        <li>Installing OAF</li>
+        <li>Starting, Stopping, Monitoring, and Updating AAFS</li>
+    </ol>
+    <p>
+        There are two other documents that describe the operation of OAF in more detail:</p>
+    <ul>
+        <li><strong>oaf_install.html </strong>contains detailed step-by-step installation instructions.<br>&nbsp;</li>
+        <li><strong>oaf_manage.html</strong> describes the functions that are available to manage an OAF system.</li>
+    </ul>
+    <p>In this document, we use a quick-start script to streamline the installation process, and describe only the most common managment activities.</p>
+<p>&nbsp;</p>
+<h2>2. OAF Overview</h2>
+<p><strong>2.1. Purpose.</strong></p>
+    <p>OAF is Operational Aftershock Forecasting. It generates forecasts of future 
+aftershocks, given what is known about the mainshock, the aftershock sequence 
+that has occurred so far, and the general properties of the region where the 
+mainshock occurred.</p>
+<p>OAF software exists in two forms:</p>
+<ul>
+	<li><strong>An automatic system</strong>, which monitors data coming in from seismic 
+	networks, generates forecasts automatically, and transmits the forecasts to 
+	a USGS website where they are available to the public.<br>&nbsp;</li>
+	<li><strong>A GUI</strong>, which an analyst can use to prepare forecasts manually. There are two forms of the GUI: a generic GUI that operates independently, and a production GUI which can interact with the automatic system.</li>
+</ul>
+<p>The automatic system is called AAFS, for Automatic Aftershock Forecasting 
+System.</p>
+<p>&nbsp;</p>
+    <p><strong>2.2. AAFS Components.</strong></p>
+    <p>&nbsp;An AAFS system includes the following software components:</p>
+<ul>
+	<li><b>OpenSHA</b>. This USGS software package is called Open Seismic Hazard 
+	Assessment and is written in the Java programming language. The OAF software 
+	is included within OpenSHA. See <a href="http://www.opensha.org/">http://www.opensha.org/</a> and
+	<a href="https://github.com/opensha">https://github.com/opensha</a>.<br>&nbsp;</li>
+	<li><b>MongoDB</b>. This is database software. AAFS runs on MongoDB 
+	Community Edition, which is free software. See
+	<a href="https://www.mongodb.com/">https://www.mongodb.com/</a>.<br>&nbsp;</li>
+	<li><b>Java</b>. A Java language distribution is required to run the OAF 
+	Java code. We currently recommend Amazon Corretto 11 (<a href="https://aws.amazon.com/corretto/">https://aws.amazon.com/corretto/</a>). Alternatively, you can use OpenJDK (<a href="https://openjdk.java.net/">https://openjdk.java.net/</a>).<br>&nbsp;</li>
+	<li><b>PDL Listener</b>. The PDL listener receives notifications from USGS 
+	about earthquakes. See <a href="https://github.com/usgs/pdl">https://github.com/usgs/pdl</a>.</li>
+</ul>
+<p>The quick-start script, described in this document, installs and configures all the components.</p>
+    <p>&nbsp;</p>
+<p><strong>2.3. AAFS Configurations.</strong></p>
+    <p>&nbsp;The AAFS software can run in either of two configurations:</p>
+<ul>
+	<li><b>Single-Server Configuration</b>. In single-server configuration, the 
+	software runs on one computer or VM. It obtains earthquake information from 
+	Comcat, generates forecasts, and publishes the forecasts to PDL.<br>&nbsp;</li>
+	<li><b>Dual-Server Configuration</b>. The dual-server configuration provides 
+	redundancy against hardware failures and network outages. The software runs 
+	on two computers or VMs, which maintain constant communication with each 
+	other. Both servers are fully functional, obtaining earthquake information 
+	from Comcat and generating forecasts. One server is designated as 
+	primary, and the other as secondary. Only the primary server publishes its 
+	forecasts to PDL. If the primary server fails, then the secondary server 
+	automatically steps up and becomes the primary server. The dual-server 
+	configuration also makes it possible to maintain continuous operation while 
+	installing software and operating system updates, since each server can be 
+	shut down and updated while the other server continues to operate.</li>
+</ul>
+<p>&nbsp;</p>
+<h2>3. System Requirements</h2>
+<p><strong>3.1. Operating Environment.</strong></p>
+    <p>&nbsp;The AAFS software is designed to run in a dedicated VM or dedicated 
+server.</p>
+    <p>&nbsp;The supported operating systems are:</p>
+    <ul>
+        <li>Amazon Linux 2.</li>
+        <li>Centos 7.</li>
+        <li>Ubuntu 20.04 LTS.</li>
+    </ul>
+    <p>
+        &nbsp;</p>
+    <p>
+        <strong>3.2. Select a User Account.</strong></p>
+    <p>
+        Select a user account to use for installing and running the OAF software. The user account must have sudo privileges.</p>
+    <p>
+        If you are running in an Amazon EC2, you can use the default user account (&quot;ec2-user&quot; for Amazon Linux 2, &quot;centos&quot; for Centos 7, or &quot;ubuntu&quot; for Ubuntu 20.04).</p>
+    <p>
+        If you are running on a physical server, create a user account with sudo privileges. We suggest naming the account &quot;aftershock&quot; but you can use any name.</p>
+    <p>
+        You will log in to this account whenver you install or manage OAF.</p>
+    <p>
+        &nbsp;</p>
+    <p>
+        <strong>3.3. Update the Operating System.</strong></p>
+    <p>
+        Before starting, update your operating system.</p>
+    <p>
+        For Amazon or Centos, do this:</p>
+<pre>$ sudo yum update</pre>
+<p>For Ubuntu, do this:</p>
+<pre>$ sudo apt-get update
+$ sudo apt-get upgrade</pre>
+<p>After updating the operating system, you should reboot. If you are running in an Amazon EC2, use the Amazon control panel to reboot. If you are running on a physical server, you can reboot by doing this:</p>
+<pre>$ sudo shutdown -r now</pre>
+    <p>&nbsp;</p>
+    <p><strong>3.4. Data Location.</strong></p>
+    <p>The OAF software stores its data under the directory /data. The quick-start script creates /data if it does not already exist.</p>
+    <p>If you want the data to be stored in a separate disk volume, the simplest approach is to mount the disk volume onto /data. If that is not practical, you can mount the disk volume wherever you want, and make /data be a link to the disk volume mount point.</p>
+    <p>&nbsp;</p>
+    <p><strong>3.5. Firewall Requirements.</strong></p>
+    <p>&nbsp;A server should always be behind a firewall.</p>
+    <p>The firewall needs to be adjusted so that the server can accept incoming connections to TCP port 27017 from any computer that you use to control or manage the server. Also, in a dual-server configuration, each server needs to accept incoming connections to TCP port 27017 from the other server. However, it is not recommended that you accept incoming connections to TCP port 27017 from everywhere on the Internet.</p>
+    <p>In Amazon EC2, you open ports by setting up security groups. It is beyond the scope of this document to explain EC2 security groups. (Note to USGS users: There are CloudFormation templates for the required security groups in the OAF GitLab repository.)</p>
+    <p>On a physical server, you may need to adjust the operating system&#39;s built-in firewall, and/or an external firewall. Your local IT support may be able to help. The following two subsections give basic commands for managing the built-in firewall for Centos or Ubuntu on a physical server.</p>
+    <p><strong>3.5.1. Centos Firewall</strong></p>
+    <p>This subsection applies only to Centos 7 on a physical server.</p>
+    <p>On Centos 7, the built-in firewall is enabled by default. To check if the firewall is active in your system:</p>
+<pre>$ sudo systemctl status firewalld</pre>
+    <p>The resulting output should contain either &#39;Active: active&#39; (usually in green text) or else &#39;Active: inactive&#39; (usually in white text). If it is active, then check to see if it is running:</p>
+<pre>$ sudo firewall-cmd --state</pre>
+<p>If the output is &#39;running&#39; then the firewall is running and you need to open the port as described here. To open port 27017:</p>
+<pre>$ sudo firewall-cmd --permanent --zone=public --add-port=27017/tcp</pre>
+<p>Then restart the firewall with:</p>
+<pre>$ sudo firewall-cmd --reload</pre>
+<p>Note: The --permanent option makes the setting survive reboots.</p>
+<p>Note: To list all open ports:</p>
+<pre>$ sudo firewall-cmd --list-all</pre>
+<p>The list should include 'ports: 27017/tcp'.</p>
+    <p>Remark: Opening the port in this way allows Centos to accept incoming TCP 
+connections to port 27017 from anywhere. Ideally, the server is behind a 
+network firewall that limits incoming TCP connections to trusted sources. Alternatively, there are more advanced options in &quot;firewall-cmd&quot; that you can use to limit access to trusted sources.</p>
+    <p><strong>3.5.2. Ubuntu Firewall</strong></p>
+    <p>This subsection applies only to Ubuntu 20.04 on a physical server.</p>
+    <p>On Ubuntu 20.04, the built-in firewall is disabled by default. To check if the firewall is active in your system:</p>
+<pre>$ sudo systemctl status ufw</pre>
+    <p>The resulting output should contain either &#39;Active: active&#39; (usually in green text) or else &#39;Active: inactive&#39; (usually in white text). If it is active, then check to see if it is enabled:</p>
+<pre>$ sudo ufw status</pre>
+<p>If the output says &#39;Status: active&#39; then you need to open the port as described here. To open port 27017:</p>
+<pre>$ sudo ufw allow 27017/tcp</pre>
+<p>Note: To list all open ports:</p>
+<pre>$ sudo ufw status</pre>
+<p>The list should include '27017/tcp'.</p>
+    <p>Remark: Opening the port in this way allows Ubuntu to accept incoming TCP 
+connections to port 27017 from anywhere. Ideally, the server is behind a 
+network firewall that limits incoming TCP connections to trusted sources. Alternatively, there are more advanced options in &quot;ufw&quot; that you can use to limit access to trusted sources.</p>
+    <p>&nbsp;</p>
+<h2>4. Installing OAF</h2>
+    <p>Follow these step-by-step instructions to install and configure OAF on a fresh computer or VM.</p>
+    <p>&nbsp;</p>
+    <p><strong>4.1. Download the Quick-Start Script and Configuration Template.</strong></p>
+<pre>$ cd ~
+$ mkdir opensha
+$ cd opensha
+$ wget https://github.com/opensha/opensha-oaf/raw/master/deployment/scripts/oaf_config.sh
+$ wget https://github.com/opensha/opensha-oaf/raw/master/deployment/scripts/aoaf.sh
+$ chmod 755 aoaf.sh</pre>
+<p>&nbsp;</p>
+    <p><strong>4.2. Edit the Configuration Template.</strong></p>
+    <p>The configuration template is oaf_config.sh. It contains a series of parameters that describe the configuration of the OAF software. You need to edit the file and insert the appropriate parameter values.</p>
+    <p>Each parameter appears in the template as a name followed by an equal sign, like this:</p>
+<pre>THE_OS_VERSION=</pre>
+    <p>You supply a value by inserting the value immediately after the equal sign, enclosed in quotes, like this:</p>
+<pre>THE_OS_VERSION=&quot;amazonlinux2&quot;</pre>
+    <p>Some parameters are optional, in which case you can leave them blank. To leave a parameer blank, do not insert anything after the equal sign.</p>
+    <p>The following table describes the parameters.</p>
+<table class="auto-style1">
+	<tr>
+		<td style="vertical-align: top">THE_OS_VERSION</td>
+		<td style="vertical-align: top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td style="vertical-align: top">Operating system option. Must be one of:<br />
+            * &quot;amazonlinux2&quot; -- Amazon Linux 2.<br />
+            * &quot;ubuntu2004&quot; -- Ubuntu 20.04 LTS.<br />
+            * &quot;centos7&quot; -- Centos 7.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">CPU_CORE_COUNT</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Number of CPU cores to use for computationally-intensive code. If blank or 0, then a default value is obtained from the Java VM.<br />
+            Note: The default value supplied by the Java VM is usually incorrect.<br />
+            Note: In Amazon EC2, the number of cores is usually one-half of the number of vCPUs.<br />
+            Note: This parameter is not used by the current Reasenberg &amp; Jones code, but will be used by future ETAS code.<br />
+            Note: If you have a large number of cores (say, 16 or more), then you may want to supply a value 1 or 2 less than the available number of cores, to leave some computational headroom for the Java garbage collector and system activities.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">JAVA_SOURCE</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Source from which to obtain Java. If it begins with &quot;/&quot; or &quot;~&quot;, it is the name of a file that contains the Java distribution. Otherwise, it is a URL from which Java is downloaded. In either case, it should be a path with the last component ending in .tar.gz. It is OK to leave JAVA_SOURCE blank, in which case the quick-start script automatically uses the latest version of Amazon Corretto 11.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">JAVA_CERT_FILE</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Digital certificate file to install in Java. Usually you should leave it blank. If you are behind an enterprise firewall that requires a digital certificate to send encrypted traffic through the firewall, then use JAVA_CERT_FILE to supply the digital certificate.<br />
+            (Note to USGS users: On a physical server, you should install the DOI root certificate.)</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">MONGO_BIND_IP</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The IP address that MongoDB should use to listen for external connections. Usually you can leave it blank, in which case the quick-start script obtains the IP address from SERVER_IP_1 or SERVER_IP_2 below. If you choose to specify an address, it must be one of:<br />
+            * &quot;127.0.0.1&quot; -- Listen only to localhost (that is, no external connections are accepted).<br />
+            * &quot;0.0.0.0&quot; -- Listen to all available IP addresses.<br />
+            * An IP address -- Listen to the specified IP address, in addition to localhost.<br />
+            * A comma-separated list of IP addresses -- Listen to all the listed IP addresses, in addition to localhost (the list should not include the localhost address 127.0.0.1).<br />
+            Note: MONGO_BIND_IP cannot be blank if the relevant value of SERVER_IP_1 or SERVER_IP_2 is a DNS name (rather than a numerical IP address).</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">SERVER_OPTION</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Server option. Must be one of:<br />
+            * &quot;primary&quot; -- Server #1 in a dual-server configuration.<br />
+            * &quot;secondary&quot; -- Server #2 in a dual-server configuration.<br />
+            * &quot;solo&quot; -- A single-server configuration.<br />
+            * &quot;dev&quot; -- A development server in single-server configuration with default usernames and passwords.<br />
+            Note: In a dual-server configuration, all the following parameters should have the same values on both servers.<br />
+            Note: If you select &quot;dev&quot;, then all the following parameters except ACTION_OPTION and SERVER_IP_1 are ignored, and default values are used for the ignored parameters.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">ACTION_OPTION</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Action option. Must be one of:<br />
+            * &quot;usa&quot; -- Generate forecasts for the United States<br />
+            * &quot;dev&quot; -- Development settings, which generate forecasts for the world.<br />
+            Note: The quick-start script does not allow &quot;dev&quot; if you are sending forecasts to PDL.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">MONGO_ADMIN_USER</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">MongoDB administrative username. This username is used to perform 
+		administrative functions, such as creating accounts. It will be created in the &quot;admin&quot; database with full access to all administrative tasks. It should consist of lowercase letters and digits, starting with a letter.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">MONGO_ADMIN_PASS</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Password for MONGO_ADMIN_USER.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">MONGO_NAME</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Name of the MongoDB database that is used for storing AAFS data. It should consist of lowercase letters and digits, starting with a letter.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">MONGO_USER</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">MongoDB username. The AAFS software uses this username to log in to 
+		MongoDB. It will be created in the MONGO_NAME database with full access to all database operation. It should consist of lowercase letters and digits, starting with a letter.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">MONGO_PASS</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Password for MONGO_USER.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">MONGO_REP_SET_1</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">MongoDB replica set name for server #1 (in the dual-server 
+		configuration) or for the only server (in the single-server 
+		configuration). This is the name of the MongoDB installation. It should consist of lowercase letters and digits, 
+		    starting with a letter.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">MONGO_REP_SET_2</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">MongoDB replica set name for server #2 (in the dual-server 
+		configuration), which should consist of lowercase letters and digits, starting with a letter. <b>In the dual-server configuration, the two servers 
+		MUST have different replica set names</b>. In the single-server configuration, MONGO_REP_SET_2 must be blank.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">PDL_OPTION</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Selects the destination for forecasts. It can 
+		have one of three values:<br>* "none" -- Do not send forecasts to PDL.<br>
+		* "dev" -- 
+		Send forecasts to PDL development servers.<br>* keyfile_name -- Send forecasts to PDL 
+		production servers. The value of PDL_OPTION is the name of the 
+		cryptographic key file that is used to sign forecasts. The file must be 
+		installed in the directory /opt/aafs/key. (For example, if PDL_OPTION is 
+		"mypdlkey" then the cryptographic key file is /opt/aafs/key/mypdlkey.)<br />
+            Note: The quick-start script does not install the key file. You must install the key file manually after installing and configuring the OAF software.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">SERVER_IP_1</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The IP address (or DNS name) assigned to server #1 (in the 
+		dual-server configuration) or to the only server (in the single-server 
+		configuration).<br />
+            Note: For server #1 (in the dual-server configuration) or the only server (in the single-server configuration), SERVER_IP_1 can be blank, in which case it defaults to &quot;$(hostname -I)&quot; which should be the local IP address.<br />
+            Note: For server #2 (in the dual-server configuration), SERVER_IP_1 cannot be blank.<br />
+            Note: In a single-server configuration, this can be 127.0.0.1; 
+		however, we recommend using the 
+		actual IP address.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">SERVER_IP_2</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The IP address (or DNS name) assigned to server #2 (in the 
+		dual-server configuration).<br />
+            Note: For server #1 (in the dual-server configuration), SERVER_IP_2 cannot be blank.<br />
+            Note: For server #2 (in the dual-server configuration), SERVER_IP_2 can be blank, in which case it defaults to &quot;$(hostname -I)&quot; which should be the local IP address.<br />
+            Note: In the single-server configuration, SERVER_IP_2 must be blank.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">SERVER_NAME_1</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The name assigned to server #1 (in the dual-server configuration) or 
+		to the only server (in the single-server configuration).<br />
+            Note: SERVER_NAME_1 cannot be blank.<br />
+            Note: This name is 
+		not currently used, but might be used in the future.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">SERVER_NAME_2</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The name assigned to server #2 (in the dual-server configuration).<br />
+            Note: 
+		In the dual-server configuration, SERVER_NAME_2 cannot be blank, and must be different than SERVER_NAME_1.<br />
+            Note: In the single-server configuration, SERVER_NAME_2 must be blank.<br />
+            Note: This name is 
+		not currently used, but might be used in the future.</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top">GUI_DATE</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The date or tag to include in the GUI filename. By convention, this is a date in the form YYYY_MM_DD, but it can be anything you want.<br />
+            Note: If you leave GUI_DATE blank, it defaults to the current date in the form YYYY_MM_DD.<br />
+            Note: GUI_DATE must not contain any spaces.<br />
+            </td>
+	</tr>
+</table>
+    <p>&nbsp;</p>
+    <p><strong>4.3. Install Required Packages and Java.</strong></p>
+<pre>$ cd ~/opensha
+$ ./aoaf prepare_system</pre>
+    <p>This command installs a few packages for the operating system, and then installs Java. It uses the JAVA_SOURCE parameter in oaf_config.sh to locate the Java distribution.</p>
+    <p>Note: Do not install Java through your operating system&#39;s package manager. The OAF scripts depend on Java being installed in a particular way.</p>
+    <p>After running this command, you need to log out and log in again, or else reboot the computer.</p>
+    <p>&nbsp;</p>
+    <p><strong>4.4. Install the OAF Software and MongoDB.</strong></p>
+<pre>$ cd ~/opensha
+$ ./aoaf install_oaf</pre>
+    <p>This command installs and configures both the OAF software and MongoDB. It downloads the OAF software from Github, downloads MongoDB from its repository, configures both OAF and MongoDB according to the parameter values in oaf_config.sh, and compiles the OAF software.</p>
+    <p>After running this command, you should reboot the system.</p>
+    <p>Note: This command creates both the automatic system (AAFS) and the two GUIs. The automatic system is installed in /opt/aafs. The GUIs are in ~/opensha/opensha-oaf/build/libs.</p>
+    <p>&nbsp;</p>
+    <p><strong>4.5. Initialize the OAF Database.</strong></p>
+    <p>There are two ways to initialize the database:</p>
+    <ul>
+        <li>If you are setting up a <em>new</em> server, then you initialize the database by creating an empty database.<br>&nbsp;</li>
+        <li>If you are setting up a <em>replacement</em> server, which is intended to replace an existing server, then you initialize the database by restoring a backup. (You create the backup by backing up the database of the existing server, as described in section 5.3, or by techniques described in oaf_manage.html.)</li>
+    </ul>
+    <p>
+        Follow the instructions below to initialize the database, that are appropriate for your situation.</p>
+    <p><strong><span class="auto-style2">Case 1</span>: A new single-server configuration.</strong></p>
+    <p>Create an empty database with the command:</p>
+<pre>$ cd ~/opensha
+$ ./aoaf initialize_oaf solo 1</pre>
+    <p>The parameters &quot;solo 1&quot; set the operating mode for a single-server configuration.</p>
+    <p>After you initialize the database, you can start AAFS as shown in section 5.1.</p>
+    <p><strong><span class="auto-style2">Case 2</span>: Replacing the server in a single-server configuration.</strong></p>
+    <p>Restore a database backup with the command:</p>
+<pre>$ cd ~/opensha
+$ ./aoaf restore_oaf &lt;backup_filename&gt; solo 1</pre>
+    <p>The &lt;backup_filename&gt; is the file that contains a backup of the database from the original server. It can be created as described in section 5.3, or by techniques described in oaf_manage.html.</p>
+    <p>The parameters &quot;solo 1&quot; set the operating mode for a single-server configuration.</p>
+    <p>After you initialize the database, you can start AAFS as shown in section 5.1.</p>
+    <p><strong><span class="auto-style2">Case 3</span>: A new dual-server configuration.</strong></p>
+    <p>Create an empty database with the command:</p>
+<pre>$ cd ~/opensha
+$ ./aoaf initialize_oaf pair 1</pre>
+    <p>The parameters &quot;pair 1&quot; set the normal operating mode for a dual-server configuration, where server #1 is the primary server, and server #2 is a secondary server that automatically steps up and becomes primary in the event that server #1 fails.</p>
+    <p>After you initialize the database on both servers, you can start AAFS on both servers as shown in section 5.1.</p>
+    <p><strong><span class="auto-style2">Case 4</span>: Replacing both servers in a dual-server configuration.</strong></p>
+    <p>Restore a database backup with the command:</p>
+<pre>$ cd ~/opensha
+$ ./aoaf restore_oaf &lt;backup_filename&gt; pair 1</pre>
+    <p>The &lt;backup_filename&gt; is the file that contains a backup of the database from the corresponding original server. It can be created as described in section 5.3, or by techniques described in oaf_manage.html.</p>
+    <p>The parameters &quot;pair 1&quot; set the normal operating mode for a dual-server configuration, where server #1 is the primary server, and server #2 is a secondary server that automatically steps up and becomes primary in the event that server #1 fails.</p>
+    <p>After you initialize the database on both servers, you can start AAFS on both servers as shown in section 5.1.</p>
+    <p><strong><span class="auto-style2">Case 5</span>: Replacing one server in a dual-server configuration.</strong></p>
+    <p>Restore a database backup with the command:</p>
+<pre>$ cd ~/opensha
+$ ./aoaf restore_oaf &lt;backup_filename&gt; watch other</pre>
+    <p>The &lt;backup_filename&gt; is the file that contains a backup of the database from the corresponding original server. It can be created as described in section 5.3, or by techniques described in oaf_manage.html.</p>
+    <p>The parameters &quot;watch other&quot; set an operating mode that forces the replacement server to operate as a secondary server. This ensures that the replacement server cannot become a primary server prematurely.</p>
+    <p>After you initialize the database on the replacment server, you can start AAFS on the replacement server as shown in section 5.7. When reading section 5.7, treat the replacement server as if it was forced off-line by a failure.</p>
+    <p>&nbsp;</p>
+<h2>5. Starting, Stopping, Monitoring, and Updating AAFS</h2>
+    <p>5<strong>.1. Starting AAFS.</strong></p>
+    <p>To start AAFS:</p>
+<pre>$ cd /opt/aafs
+$ ./moaf.sh start_all</pre>
+<p>The operation starts MongoDB, then starts the OAF software, then starts the 
+PDL listener, and then starts Comcat polling.</p>
+<p>Startup takes approximately two minutes.</p>
+<p>In a dual-server configuration, start the primary server first, then start the secondary server.</p>
+    <p>&nbsp;</p>
+    <p><strong>5.2. Stopping AAFS.</strong></p>
+    <p>To stop AAFS:</p>
+<pre>$ cd /opt/aafs
+$ ./moaf.sh stop_all</pre>
+<p>The operation stops the PDL listener, then stops the OAF software, and then 
+stops MongoDB.</p>
+<p>Shutdown takes approximately two minutes.</p>
+<p>In a dual-server configuration, stop the secondary server first, then stop the primary server.</p>
+    <p><strong>Note: If you want to stop AAFS for the purpose of installing updates and then re-starting it, do not stop it in this way. Instead, use the commands described in section 5.3 below.</strong></p>
+    <p>&nbsp;</p>
+    <p><strong>5.3. Updating AAFS.</strong></p>
+    <p>These commands allow you to stop and then re-start AAFS, so that you can:</p>
+    <ul>
+        <li>Make a backup of the OAF database, if desired.</li>
+        <li>Update Java, if desired.</li>
+        <li>Update the OAF software, if desired.</li>
+        <li>Update the operating system and other installed software, if desired.</li>
+        <li>Reboot the computer, if needed.</li>
+    </ul>
+    <p>In a dual-server configuration, you can update the servers one at a time, so that there is always a server running.</p>
+    <p><span class="auto-style2">Step 1</span>: To stop AAFS and MongoDB, and begin the process of performing updates, use this command:</p>
+<pre>$ cd ~/opensha
+$ ./aoaf.sh stop_aafs_for_update &lt;java_option&gt; &lt;oaf_option&gt; &lt;backup_filename&gt;</pre>
+<p>In this command:</p>
+    <ul>
+        <li>The &lt;java_option&gt; specifies whether or not to update Java. It must be &quot;java&quot; to update Java, or &quot;nojava&quot; to skip the Java update.<br>&nbsp;</li>
+        <li>The &lt;oaf_option&gt; specifies whether or not to update the OAF software. It must be &quot;oaf&quot; to update the OAF software, or &quot;nooaf&quot; to skip the OAF software update.<br>&nbsp;</li>
+        <li>The OAF database is backed up into the file specified by &lt;backup_filename&gt;. To skip the database backup, use &quot;nobackup&quot; as the filename. It is conventional to store database backups in the directory /data/aafs/backup, but you can put them anywhere you want. This command will not overwrite an existing database backup file.</li>
+    </ul>
+    <p>
+        <span class="auto-style2">Step 2</span>: After running the above command, you can update the operating system and perform any other updates, and you can reboot if needed.</p>
+    <p>
+        <span class="auto-style2">Step 3</span>: After all updates are completed, use this command to re-start AAFS:</p>
+<pre>$ cd ~/opensha
+$ ./aoaf.sh start_aafs_after_update</pre>
+    <p><span class="auto-style2">Step 4</span>: In a dual-server configuration, you should now go to the other server, and repeat steps 1-3 to update the other server.</p>
+    <p><span class="auto-style2">Step 5</span>: In a dual-server configuration, after updating both servers, go to one of the servers (either one will do) and use the following command to return the servers to their normal mode of operation:</p>
+<pre>$ cd ~/opensha
+$ ./aoaf.sh resume_normal_mode</pre>
+    <p>&nbsp;</p>
+    <p><strong>5.4. Checking if AAFS is running.</strong></p>
+<p>To check if AAFS is running.</p>
+<pre>$ cd /opt/aafs
+$ ./moaf.sh check_running</pre>
+<p>The command tells you if AAFS is running, and if MongoDB is running.</p>
+    <p>&nbsp;</p>
+    <p><strong>5.5. Displaying Connection Status for a Dual-Server Configuration.</strong></p>
+    <p>In a dual-server configuration, you can display detailed connection status by running this command on either server:</p>
+<pre>$ cd /opt/aafs
+$ ./moaf.sh show_relay_status both</pre>
+    <p>Here is an example of the output, which shows status information for each of the two servers:</p>
+    <pre>Fetching status for server 1
+info: N1, V1.0.1232, C101, start = 1579069648506 (2020-01-15 06:27:28 UTC)
+config: RMODE_PAIR, P1, timestamp = 1579069951438 (2020-01-15 06:32:31 UTC)
+state: LINK_CONNECTED, PRIST_PRIMARY, ISR_OK, heartbeat = 1585470118804 (2020-03-29 08:21:58 UTC)
+
+Fetching status for server 2
+info: N2, V1.0.1232, C101, start = 1579069819588 (2020-01-15 06:30:19 UTC)
+config: RMODE_PAIR, P1, timestamp = 1579069951438 (2020-01-15 06:32:31 UTC)
+state: LINK_CONNECTED, PRIST_SECONDARY, ISR_OK, heartbeat = 1585470269206 (2020-03-29 08:24:29 UTC)</pre>
+<p>Complete documentation is available in oaf_manage.html, but here we give a quick summary:</p>
+    <ul>
+        <li>LINK_CONNECTED or LINK_RESYNC indicates that the server has a normal connection to the other server. Any other LINK value indicates that the servers are initializing or shut down, or that there is a problem.<br>&nbsp;</li>
+        <li>PRIST_PRIMARY means that the server is currently operating as a primary server. PRIST_SECONDARY means that the server is currently operating as a secondary server. Normally, one server operates as primary while the other operates as secondary; if this is not the case then there is a problem. Other PRIST values indicate that the server is initializing or shut down.<br>&nbsp;</li>
+        <li>ISR_OK indicates that the servers are properly synchronized. ISR_UNSYNCED_MODE may appear briefly in some circumstances. Any other ISR value indicates that the servers are initializing or shut down, or that there is a problem.<br>&nbsp;</li>
+        <li>The &quot;heartbeat&quot; is the last time that AAFS generated a heartbeat. There will be a warning message if the heartbeat is more than 30 minutes old, which may indicate that AAFS is not running. This may happen if a server goes off-line due to a power failure or crash, and then later comes back on-line.<br>&nbsp;</li>
+        <li>RMODE_PAIR indicates that the servers are in their normal mode, where the secondary automatically takes over sending forecasts if the primary fails. RMODE_WATCH would indicate that the secondary will not automatically take over if the primary fails; this should appear only while you are performing server updates.<br>&nbsp;</li>
+        <li>P1 indicates that server #1 is configured as the primary server, which is the normal configuration. P2 would indicate that server #2 is configured as the primary server.</li>
+    </ul>
+    <p>Note: The production GUI can display this same status information remotely, without needing to log in to one of the servers.</p>
+    <p>&nbsp;</p>
+    <p><strong>5.6 Monitoring the AAFS Logs.</strong></p>
+    <p>AAFS writes a comprehensive set of log files, documenting its operation. To monitor the logs, begin here:</p>
+<pre>$ cd /data/aafs/logs</pre>
+    <p>New log files are started every day (in UTC). Log files for each month are placed in a separate directory. For example, log files for March, 2021, are in /data/aafs/logs/2021-03.</p>
+    <p>There are three or four log files for each day:</p>
+    <ul>
+        <li>The <em>summary log</em> is usually the most useful log file. It contains one line for each action taken by the AAFS software, providing a comprehensive record of everything the software does. It also contains details of any error that occurs while communicating with Comcat or PDL.<br>&nbsp;</li>
+        <li>The <em>aafs log</em> captures the standard output from the AAFS software. It contains additional information about some operations, such as details of forecasts that are generated, and the parameters used for Comcat searches.<br>&nbsp;</li>
+        <li>The <em>intake log</em> contains one line for each earthquake that is reported by the PDL listener. Most are immediately dropped due to their (small) magnitude or location.<br>&nbsp;</li>
+        <li>The <em>control log</em> records actions taken during AAFS startup and shutdown. This log is not present if AAFS was not started or stopped during a given day.</li>
+    </ul>
+    <p>&nbsp;</p>
+<p><b>5.7. Recovering from a Power Failure or Server Crash.</b></p>
+<p>If a server goes off-line because of a power failure or crash, the AAFS software does <em>not</em> automatically re-start when the server comes back on-line. You need to restart AAFS manually.</p>
+    <p>In a single-server configuration, you can simply start AAFS as shown in section 5.1. Likewise, in a dual-server configuration, if <em>both</em> servers went off-line, you can start AAFS on both servers as shown in section 5.1.</p>
+    <p>In a dual-server configuration, if <em>one</em> server goes off-line, then the other server automatically takes over as the primary server (if it is not already the primary server). In this situation, use the following steps to restart AAFS on the failed server.</p>
+<p><span class="auto-style2">Step 1</span>: Log in to the failed server.</p>
+<p><span class="auto-style2">Step 2</span>: Start MongoDB on the failed server:</p>
+<pre>$ cd /opt/aafs
+$ ./moaf.sh start_mongo</pre>
+<p><span class="auto-style2">Step 3</span>: Set the failed server so that it cannot
+become the primary server:</p>
+<pre>$ ./moaf.sh init_relay_mode watch other
+$ ./moaf.sh change_relay_mode other watch other</pre>
+<p><span class="auto-style2">Step 4</span>: Start AAFS on the failed server:</p>
+<pre>$ ./moaf.sh start_secondary_aafs</pre>
+<p><span class="auto-style2">Step 5</span>: Wait an hour to ensure that the failed server has time to become fully synchronized and
+to discover all earthquakes that occurred while it was down. (If the failed server has been down for more
+than 72 hours, it is recommended that you wait a day.) Note that during this time, if the other server should fail, then this server will <em>not</em> step up and become a primary server.</p>
+<p><span class="auto-style2">Step 6</span>: Restore the normal "pair 1" relay mode (this command can be given on 
+either server):</p>
+<pre>$ # On either server
+$ ./moaf.sh change_relay_mode both pair 1</pre>
+    <p>This last commad restores the ability of the secondary server to automatically become primary should the primary server fail.</p>
+    <p>&nbsp;</p>
+
+</body>
+
+</html>

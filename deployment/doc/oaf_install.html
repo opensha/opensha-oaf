@@ -18,7 +18,7 @@
 <body>
 
 <h1>OAF Software Installation</h1>
-<h2>Michael Barall<br>06/03/2020</h2>
+<h2>Michael Barall<br>03/29/2021</h2>
 <p>&nbsp;</p>
 <h2>1. Introduction</h2>
 <p>OAF is Operational Aftershock Forecasting. It generates forecasts of future 
@@ -59,7 +59,7 @@ System.</p>
 <ul>
 	<li>Centos 7</li>
 	<li>Amazon Linux 2</li>
-	<li>Ubuntu 18.04 LTS</li>
+	<li>Ubuntu 18.04 LTS or 20.04 LTS</li>
 </ul>
 <p>Most of the installation procedure is the same for each operating 
 system. Where there are differences, they are indicated. For example, a section 
@@ -78,9 +78,7 @@ server.</p>
 	Community Edition, which is free software. See
 	<a href="https://www.mongodb.com/">https://www.mongodb.com/</a>.<br>&nbsp;</li>
 	<li><b>Java</b>. A Java language distribution is required to run the OAF 
-	Java code. For production, we recommend OpenJDK (<a href="https://openjdk.java.net/">https://openjdk.java.net/</a>). 
-	It is also possible to use the Oracle JDK, or Amazon Corretto (<a href="https://aws.amazon.com/corretto/">https://aws.amazon.com/corretto/</a>). 
-	Note that the Oracle JDK cannot be used for production unless you purchase a 
+	Java code. We currently recommend Amazon Corretto 11 (<a href="https://aws.amazon.com/corretto/">https://aws.amazon.com/corretto/</a>). Alternatively, you can use OpenJDK (<a href="https://openjdk.java.net/">https://openjdk.java.net/</a>); you should select the latest General Availability release. It is also possible to use the Oracle JDK, but note that using the Oracle JDK may require you to purchase a 
 	license from Oracle.<br>&nbsp;</li>
 	<li><b>PDL Listener</b>. The PDL listener receives notifications from USGS 
 	about earthquakes. See <a href="https://github.com/usgs/pdl">https://github.com/usgs/pdl</a>.</li>
@@ -92,6 +90,11 @@ server.</p>
 		<td>/data/aafs</td>
 		<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
 		<td>Main AAFS data directory</td>
+	</tr>
+	<tr>
+		<td>/data/aafs/backup</td>
+		<td>&nbsp;</td>
+		<td>Database backups</td>
 	</tr>
 	<tr>
 		<td>/data/aafs/logs</td>
@@ -156,7 +159,7 @@ server.</p>
 	<tr>
 		<td>~/opensha/selcfg</td>
 		<td>&nbsp;</td>
-		<td>Used on Centos for SELinux configuration</td>
+		<td>Used for temporary files during installation</td>
 	</tr>
 </table>
 <p>If you wish to place data files in a separate disk volume or disk 
@@ -209,58 +212,58 @@ table. We have assigned a mnemonic to each of them, which we use in this
 document.</p>
 <table class="auto-style1">
 	<tr>
-		<td valign="top">MONGO_ADMIN_USER</td>
-		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		<td valign="top">MongoDB administrative username. This username is used to perform 
+		<td style="vertical-align: top">MONGO_ADMIN_USER</td>
+		<td style="vertical-align: top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td style="vertical-align: top">MongoDB administrative username. This username is used to perform 
 		administrative functions, such as creating accounts. This username 
 		should have full access to perform any and all administrative tasks. 
 		This username must have the "admin" database as its authentication 
 		database.</td>
 	</tr>
 	<tr>
-		<td valign="top">MONGO_ADMIN_PASS</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Password for MONGO_ADMIN_USER.</td>
+		<td style="vertical-align: top">MONGO_ADMIN_PASS</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Password for MONGO_ADMIN_USER.</td>
 	</tr>
 	<tr>
-		<td valign="top">MONGO_NAME</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Name of the MongoDB database that is used for storing AAFS data.</td>
+		<td style="vertical-align: top">MONGO_NAME</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Name of the MongoDB database that is used for storing AAFS data.</td>
 	</tr>
 	<tr>
-		<td valign="top">MONGO_USER</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">MongoDB username. The AAFS software uses this username to log in to 
+		<td style="vertical-align: top">MONGO_USER</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">MongoDB username. The AAFS software uses this username to log in to 
 		MongoDB. This username must have full access to the database identified 
 		by MONGO_NAME (but does not need to have the ability to perform 
 		administrative tasks). This username must also have MONGO_NAME as its 
 		authentication database.</td>
 	</tr>
 	<tr>
-		<td valign="top">MONGO_PASS</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Password for MONGO_USER.</td>
+		<td style="vertical-align: top">MONGO_PASS</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Password for MONGO_USER.</td>
 	</tr>
 	<tr>
-		<td valign="top">MONGO_REP_SET_1</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">MongoDB replica set name for server #1 (in the dual-server 
+		<td style="vertical-align: top">MONGO_REP_SET_1</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">MongoDB replica set name for server #1 (in the dual-server 
 		configuration) or for the only server (in the single-server 
 		configuration). This is the name of the MongoDB installation. We 
 		recommend choosing a name that consists of lowercase letters and digits, 
 		that starts with a letter.</td>
 	</tr>
 	<tr>
-		<td valign="top">MONGO_REP_SET_2</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">MongoDB replica set name for server #2 (in the dual-server 
+		<td style="vertical-align: top">MONGO_REP_SET_2</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">MongoDB replica set name for server #2 (in the dual-server 
 		configuration). <b>In the dual-server configuration, the two servers 
 		MUST have different replica set names</b>.</td>
 	</tr>
 	<tr>
-		<td valign="top">PDL_OPTION</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Selects the destination for forecasts. It can 
+		<td style="vertical-align: top">PDL_OPTION</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Selects the destination for forecasts. It can 
 		have one of three values:<br>* "none" -- Do not send forecasts to PDL.<br>
 		* "dev" -- 
 		Send forecasts to PDL development servers.<br>* keyfile_name -- Send forecasts to PDL 
@@ -270,31 +273,31 @@ document.</p>
 		"mypdlkey" then the cryptographic key file is /opt/aafs/key/mypdlkey.)</td>
 	</tr>
 	<tr>
-		<td valign="top">SERVER_IP_1</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">The IP address (or DNS name) assigned to server #1 (in the 
+		<td style="vertical-align: top">SERVER_IP_1</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The IP address (or DNS name) assigned to server #1 (in the 
 		dual-server configuration) or to the only server (in the single-server 
 		configuration). In a single-server configuration, this can be 127.0.0.1; 
 		however, in a production single-server system we recommend using the 
 		actual IP address.</td>
 	</tr>
 	<tr>
-		<td valign="top">SERVER_IP_2</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">The IP address (or DNS name) assigned to server #2 (in the 
+		<td style="vertical-align: top">SERVER_IP_2</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The IP address (or DNS name) assigned to server #2 (in the 
 		dual-server configuration).</td>
 	</tr>
 	<tr>
-		<td valign="top">SERVER_NAME_1</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">The name assigned to server #1 (in the dual-server configuration) or 
+		<td style="vertical-align: top">SERVER_NAME_1</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The name assigned to server #1 (in the dual-server configuration) or 
 		to the only server (in the single-server configuration). This name is 
 		not currently used, but might be used in the future.</td>
 	</tr>
 	<tr>
-		<td valign="top">SERVER_NAME_2</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">The name assigned to server #2 (in the dual-server configuration). 
+		<td style="vertical-align: top">SERVER_NAME_2</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The name assigned to server #2 (in the dual-server configuration). 
 		In the dual-server configuration, the two servers must have different 
 		names.</td>
 	</tr>
@@ -386,6 +389,10 @@ previous section for installing required packages on Centos or Amazon.</p>
 <p>4.1. Update the operating system:</p>
 <pre>$ sudo apt-get update
 $ sudo apt-get upgrade</pre>
+<p>Remark: If kernel updates are installed, then you need to reboot the system 
+for the kernel updates to take effect. Use the following command to 
+reboot:</p>
+<pre>$ sudo shutdown -r now</pre>
 <p>&nbsp;</p>
 <p>4.2. Install the vim editor:</p>
 <pre>$ sudo apt-get install vim</pre>
@@ -438,7 +445,8 @@ $ mkdir mongodata
 $ mkdir mongolog
 $ mkdir logs
 $ mkdir pdldata
-$ mkdir pids</pre>
+$ mkdir pids
+$ mkdir backup</pre>
 <p>&nbsp;</p>
 <h2>6. Download the OAF Code</h2>
 <p>OAF is part of OpenSHA, so we will be downloading most of the OpenSHA code.</p>
@@ -480,47 +488,49 @@ if you are using an Amazon VM in the USGS cloud.</p>
 <pre>$ export GIT_SSL_NO_VERIFY=true</pre>
 <p>&nbsp;</p>
 <h2>7. Install Java</h2>
-<p>These instructions are written for installing OpenJDK. However, it should be 
-possible to install the Oracle JDK or Amazon Corretto in exactly the same way.</p>
+<p>These instructions are written for installing Amazon Corretto or OpenJDK. However, it should be 
+possible to install the Oracle JDK in exactly the same way.</p>
+    <p>Note: Please do not install Java through your operating system&#39;s package manager (yum or apt-get), because the OAF scripts assume that Java is installed in the manner described here.</p>
 <p>7.1. Create a directory to use for downloading.</p>
 <pre>$ cd ~
 $ mkdir setup
 $ cd setup</pre>
 <p>&nbsp;</p>
 <p>7.2. Download the Java distribution tar file.</p>
-<p>Note: The URL below is for an older version of OpenJDK, and is merely an 
-example. Refer to <a href="https://openjdk.java.net/">https://openjdk.java.net/</a> 
-to obtain the URL for the current version of OpenJDK. You can also use the 
-appropriate URL for Oracle JDK or Amazon Corretto.</p>
-<pre>$ wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz</pre>
-<p>Note: If you are working inside the USGS network, then the wget command may 
-fail due to network security restrictions. Should this occur, try issuing the 
-command in the following form. This should <i>not</i> occur if you are using an 
-Amazon VM in the USGS cloud.</p>
-<pre>$ wget --no-check-certificate https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz</pre>
+<p>Use the following command to download the latest version of Amazon Corretto 11:</p>
+<pre>$ wget https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz</pre>
+<p>You can also use other versions of Corretto (<a href="https://aws.amazon.com/corretto/">https://aws.amazon.com/corretto/</a>). If you prefer to use OpenJDK (<a href="https://openjdk.java.net/">https://openjdk.java.net/</a>), then replace the URL with the URL for the current General Availability version of OpenJDK.</p>
+    <p>Note: If you are behind an enterprise firewall, then the wget command may 
+fail due to network security restrictions. Such problems can usually be fixed by installing a digital certificate on your computer; contact your IT support for assistance. If this is not possible, then try issuing the command in the following form.</p>
+<pre>$ wget --no-check-certificate https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz</pre>
 <p>&nbsp;</p>
 <p>7.3. Create the directory to hold Java.</p>
 <pre>$ cd /usr/local
 $ sudo mkdir java
 $ cd java</pre>
 <p>&nbsp;</p>
-<p>7.4. Copy the OpenJDK distribution.</p>
+<p>7.4. Copy the Java distribution.</p>
 <p>Note: In the following command, replace the filename with the actual name of 
 the Java distribution.</p>
-<pre>$ sudo cp ~/setup/openjdk-11.0.2_linux-x64_bin.tar.gz .</pre>
+<pre>$ sudo cp ~/setup/amazon-corretto-11-x64-linux-jdk.tar.gz .</pre>
 <p>&nbsp;</p>
 <p>7.5. Extract the Java files.</p>
 <p>Note: In the following command, replace the filename with the actual name of 
 the Java distribution.</p>
-<pre>$ sudo tar --strip-components 1 -zxvf openjdk-11.0.2_linux-x64_bin.tar.gz</pre>
+<pre>$ sudo tar --strip-components 1 -zxvf amazon-corretto-11-x64-linux-jdk.tar.gz</pre>
 <p>Note: At this point the .tar.gz file could be deleted from /usr/loca/java. It 
 can be kept so that it is clear which Java version is installed.</p>
 <p>&nbsp;</p>
-<p>7.6. Make Java available in /usr/bin.</p>
+<p>7.6. Install digital certificate, if required.</p>
+<p>If you are behind an enterprise firewall, then it might be necessary to install a digital certificate into Java. The digital certificate makes it possible for encrypted traffic to pass through the firewall. If you don&#39;t know whether you need a digital certificate, then you can skip this step, and do it later if you have trouble accessing websites that use the https protocol. To install a digital certificate: </p>
+<pre>$ sudo /usr/local/java/bin/keytool -importcert -noprompt -keystore /usr/local/java/lib/security/cacerts -storepass changeit -alias &quot;oafjavacert&quot; -file CERT_FILE</pre>
+<p>Replace CERT_FILE with the name of a file that contains the digital certificate. The file name usually ends in .cer. Contact your IT support to obtain the file. (The alias name &quot;oafjavacert&quot; is an arbitrary name we are assiging to the digital certificate; it could be anything.)</p>
+    <p>&nbsp;</p>
+<p>7.7. Make Java available in /usr/bin.</p>
 <pre>$ cd /usr/bin
 $ sudo ln -s /usr/local/java/bin/java java</pre>
 <p>&nbsp;</p>
-<p>7.7. Add Java to the PATH and set the JAVA_HOME environment variable.</p>
+<p>7.8. Add Java to the PATH and set the JAVA_HOME environment variable.</p>
 <p>For Centos:</p>
 <pre>$ cd /etc/profile.d
 $ sudo cp ~/opensha/opensha-oaf/deployment/scripts/centos/javapath.sh .</pre>
@@ -533,20 +543,24 @@ $ sudo cp ~/opensha/opensha-oaf/deployment/scripts/ubuntu/javapath.sh .</pre>
 <p>Note: You need to log out and log back in for this change to take effect. 
 (This does not require a server restart, merely a log out / log in.)</p>
 <p>&nbsp;</p>
-<p>7.8. (Future) Update Java.</p>
+<p>7.9. (Future) Update Java.</p>
 <p>When the time comes to update the version of Java, all you have to do is 
 delete the entire contents of /usr/local/java, download the new distribution as 
-in 7.2., then copy and extract it as in 7.4 and 7.5.</p>
+in 7.2., then copy and extract it as in 7.4 and 7.5, and if necessary install a digital certificate as in 7.6.</p>
 <p>&nbsp;</p>
 <h2>8. Install MongoDB [Centos]</h2>
-<p>These instructions are specifically for installing MongoDB 4.2 on Centos 7. 
-They also apply to point releases like 4.2.1, 4.2.2, etc. Later versions (such 
-as 4.4) will require a different .repo file, but should otherwise be quite 
+<p>These instructions are specifically for installing MongoDB 4.4 or 4.2 on Centos 7. 
+They also apply to point releases like 4.4.1, 4.4.2, etc. Later versions (such 
+as 4.6) will require a different .repo file, but should otherwise be quite 
 similar to install.</p>
 <p>For the most current instructions for installing on Centos, see:
 <a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-red-hat/">
 https://docs.mongodb.com/manual/tutorial/install-mongodb-on-red-hat/</a>.</p>
 <p>8.1. Register MongoDB with yum.</p>
+    <p>For MongoDB 4.4, use:</p>
+<pre>$ cd /etc/yum.repos.d
+$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/centos/mongodb-org-4.4.repo .</pre>
+    <p>For MongoDB 4.2, use:</p>
 <pre>$ cd /etc/yum.repos.d
 $ sudo cp ~/opensha/opensha-oaf/deployment/scripts/centos/mongodb-org-4.2.repo .</pre>
 <p>&nbsp;</p>
@@ -680,15 +694,19 @@ To obtain Compass, go to: <a href="https://docs.mongodb.com/compass/current/">
 https://docs.mongodb.com/compass/current/</a></p>
 <p>&nbsp;</p>
 <h2>9. Install MongoDB [Amazon]</h2>
-<p>These instructions are specifically for installing MongoDB 4.2 on Amazon 
+<p>These instructions are specifically for installing MongoDB 4.4 or 4.2 on Amazon 
 Linux 2. 
-They also apply to point releases like 4.2.1, 4.2.2, etc. Later versions (such 
-as 4.4) will require a different .repo file, but should otherwise be quite 
+They also apply to point releases like 4.4.1, 4.4.2, etc. Later versions (such 
+as 4.6) will require a different .repo file, but should otherwise be quite 
 similar to install.</p>
 <p>For the most current instructions for installing on Amazon, see:
 <a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-amazon/">
 https://docs.mongodb.com/manual/tutorial/install-mongodb-on-amazon/</a>.</p>
 <p>9.1. Register MongoDB with yum.</p>
+    <p>For MongoDB 4.4, use:</p>
+<pre>$ cd /etc/yum.repos.d
+$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/amazon/mongodb-org-4.4.repo .</pre>
+    <p>For MongoDB 4.2, use:</p>
 <pre>$ cd /etc/yum.repos.d
 $ sudo cp ~/opensha/opensha-oaf/deployment/scripts/amazon/mongodb-org-4.2.repo .</pre>
 <p>&nbsp;</p>
@@ -727,17 +745,7 @@ server.</p>
 from everywhere on the Internet.</p>
 <p>It is beyond the scope of this document to describe in detail how to set up 
 Amazon EC2 security groups. You may refer to the Amazon EC2 documentation.</p>
-<p>Notes for USGS installations: You can assign a security group to allow access 
-to port 27017 from within the internal USGS network. If you are in the ESC 
-(Earthquake Science Center) subnet, you can use the security group 
-"OAF-Security-Group-Internal-MongoDB". If you are in a different subnet, you may 
-have to create this security group yourself; you can find the required rules in 
-the USGS gitlab repository "CHS-Custom-Infrastructure/ESC/ESC". Additionally, if 
-you are installing a dual-server configuration and both servers are in Amazon 
-EC2, then you also need to assign security groups that allow each server to 
-access port 27017 on the other server. The required security groups are "csr-MongoDB-Source-SecurityGroup" 
-and "csr-MongoDB-SecurityGroup"; these security groups are CHS-managed and so 
-they should be available to you.</p>
+<p>Notes for USGS installations: You can assign a security group to allow access to port 27017 from within the internal USGS network, and from other EC2 instances. A CloudFormation template to create the required security group will be available in the OAF GitLab repository.</p>
 <p>&nbsp;</p>
 <p>9.5. (Optional) Install MongoDB Compass Community Edition.</p>
 <p>Compass is a GUI program that lets you examine and modify MongoDB databases. 
@@ -746,10 +754,10 @@ To obtain Compass, go to: <a href="https://docs.mongodb.com/compass/current/">
 https://docs.mongodb.com/compass/current/</a></p>
 <p>&nbsp;</p>
 <h2>10. Install MongoDB [Ubuntu]</h2>
-<p>These instructions are specifically for installing MongoDB 4.2 on Ubuntu 
+<p>These instructions are specifically for installing MongoDB 4.4 on Ubuntu 20.04 LTS or 18.04 LTS; or for installing MongoDB 4.2 on Ubuntu 
 18.04 LTS. 
-They also apply to point releases like 4.2.1, 4.2.2, etc. Later versions (such 
-as 4.4) will require a different public key and .list file, but should otherwise be quite 
+They also apply to point releases like 4.4.1, 4.4.2, etc. Later versions (such 
+as 4.6) will require a different public key and .list file, but should otherwise be quite 
 similar to install.</p>
 <p>For the most current instructions for installing on Ubuntu, see:
 <a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/">
@@ -757,12 +765,20 @@ https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/</a>.</p>
 <p>Note: Do not install the 'mongodb' package provided by Ubuntu. You should 
 install the 'mongodb-org' package described here.</p>
 <p>10.1. Import the public key.</p>
+    <p>For MongoDB 4.4, use:</p>
+<pre>$ wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -</pre>
+    <p>For MongoDB 4.2, use:</p>
 <pre>$ wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | sudo apt-key add -</pre>
 <p>The operation should respond with an OK.</p>
 <p>&nbsp;</p>
-<p>10.2. Create a list file</p>
+<p>10.2. Create a list file.</p>
+    <p>For installing MongoDB 4.4 on Ubuntu 20.04:</p>
+<pre>$ echo &quot;deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse&quot; | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list</pre>
+    <p>For installing MongoDB 4.4 on Ubuntu 18.04:</p>
+<pre>$ echo &quot;deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.4 multiverse&quot; | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list</pre>
+    <p>For installing MongoDB 4.2 on Ubuntu 18.04:</p>
 <pre>$ echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.2.list</pre>
-<p>Note: The name 'bionic' refers specifically to Ubuntu version 18.04. If you 
+<p>Note: The name 'bionic' refers specifically to Ubuntu version 18.04, and the name &#39;focal&#39; refers specifically to Ubuntu version 20.04. If you 
 are using a different version of Ubuntu, you need to substitute the appropriate 
 name for that version. Note that MongoDB only provides official support for LTS 
 versions of Ubuntu.</p>
@@ -779,7 +795,7 @@ file when there is a major version change.</p>
 <p>10.5. Set up the data and log directories.</p>
 <p>By default, MongoDB on Ubuntu has:</p>
 <ul>
-	<li>&nbsp;Data files in /var/lib/mongodb.</li>
+	<li>Data files in /var/lib/mongodb.</li>
 	<li>Log files in /var/log/mongodb.</li>
 	<li>Configuration file /etc/mongod.conf.</li>
 </ul>
@@ -825,6 +841,19 @@ editing the configuration file.</p>
 <p>In this section, we use some of the symbols defined in section 2.8. You can 
 recognize them because they are in all capital letters. When you see one of 
 those symbols, replace it with the actual value for your installation.</p>
+    <p>11.1. Create a keyfile.</p>
+    <p>For Amazon and Centos:</p>
+<pre>$ cd /etc
+$ echo &quot;oafmongorepsetkey&quot; | sudo tee mongod_key.yaml
+$ sudo chmod 400 mongod_key.yaml
+$ sudo chown mongod:mongod mongod_key.yaml</pre>
+    <p>For Ubuntu:</p>
+<pre>$ cd /etc
+$ echo &quot;oafmongorepsetkey&quot; | sudo tee mongod_key.yaml
+$ sudo chmod 400 mongod_key.yaml
+$ sudo chown mongodb:mongodb mongod_key.yaml</pre>
+    <p>Note that the key does not need to be secret, so you can create the keyfile exactly as shown.</p>
+    <p>&nbsp;</p>
 <p>11.1. Edit 
 the configuration file.</p>
 <p>We save the default configuration file, then edit 
@@ -858,7 +887,7 @@ server's IP address. (You probably just need to append the IP address to the bin
 line.) For server #1 in a dual-server configuration, or for the only server in a 
 single-server configuration:</p>
 <pre>net:
-  port: 2701
+  port: 27017
   bindIp: 127.0.0.1,SERVER_IP_1</pre>
 <p>For server #2 in a dual-server configuration:</p>
 <pre>net:
@@ -879,8 +908,10 @@ single-server configuration:</p>
 to enable user authentication. (You probably need to uncomment the 'security' 
 line and add the 'authorization' line.)</p>
 <pre>security:
-  authorization: enabled</pre>
-<p>Add a 'setParameter' section at the end of the file to adjust the database 
+  authorization: enabled
+  keyFile: /etc/mongod_key.yaml</pre>
+<p>(Note that the &quot;keyFile&quot; line is not required in MongoDB 4.2, but is required in MongoDB 4.4.)</p>
+    <p>Add a 'setParameter' section at the end of the file to adjust the database 
 transaction timeout.</p>
 <pre>setParameter:
   transactionLifetimeLimitSeconds: 1200</pre>
@@ -922,6 +953,7 @@ net:
 
 security:
   authorization: enabled
+  keyFile: /etc/mongod_key.yaml
 
 #operationProfiling:
 
@@ -1093,8 +1125,7 @@ steps.</p>
 <p>If you are signing PDL products, then copy the private key file into /opt/aafs/key.
 It is a good practice (but not a requirement) to set its file permissions to 
 600.</p>
-<p>Note for USGS installations: PDL key files are available in the USGS gitlab 
-private repository "oaf/analyst-tools".</p>
+<p>Note for USGS installations: PDL key files are available in the OAF GitLab repository.</p>
 <p>&nbsp;</p>
 <p>13.3. Configure the server.</p>
 <p>The server 
@@ -1185,20 +1216,8 @@ $ ./boaf.sh pack</pre>
 <p>Note: The first time you compile the software, there may be a long delay as 
 Gradle is downloaded and installed. Gradle is a program that controls the 
 software build process. Subsequent compilations will be much faster.</p>
-<p>Note: If you are working inside the USGS network, then Gradle may 
-fail due to network security restrictions. This should <i>not</i> occur if you are using an 
-Amazon VM in the USGS cloud. We have been unable to find any workaround for this 
-problem. If Gradle doesn't work for you, then you need to compile the OAF 
-software on a computer located outside the USGS network, or in an Amazon VM. 
-Then, copy the resulting jar file to your server. The jar file is called 
-oefjava.jar, and is located in directory ~/opensha/opensha-oaf/build/libs. Make 
-sure that you place oefjava.jar into directory ~/opensha/opensha-oaf/build/libs 
-on your server (you may have to create the directory). If you want to compile 
-the generic GUI (section 14.3 below), that also needs to be done outside the 
-USGS network or in Amazon, and you need to copy the GUI jar file from ~/opensha/opensha-oaf/build/libs 
-to your server. Once the generic GUI is in place, you can create the production 
-GUI (section 14.4) on your server inside the USGS network.</p>
-<p>&nbsp;</p>
+    <p>Note: If you are behind an enterprise firewall, then Gradle may fail due to network security restrictions. Such problems can usually be fixed by installing a digital certificate into Java, as described in section 7.6 above; contact your IT support for assistance. If this is not possible, then the only alternative is to compile the OAF software on a computer outside your enterprise network. If you want to compile the generic GUI (section 14.3 below), that also needs to be done outside the enterprise network. Then, copy directory ~/opensha/opensha-oaf/build/libs to your server.</p>
+<pre>&nbsp;</pre>
 <p>14.2. Deploy the OAF software.</p>
 <pre>$ cd ~/opensha
 $ ./boaf.sh deploy</pre>
@@ -1208,24 +1227,21 @@ configuration files. It only copies the Java executable files.</p>
 <p>&nbsp;</p>
 <p>14.3. (Optional) Build the generic aftershock GUI.</p>
 <pre>$ cd ~/opensha
-$ ./boaf.sh compilegui</pre>
-<p>The generic aftershock GUI is a graphical Java program that can be used to 
+$ ./boaf.sh compilegui YYYY_MM_DD</pre>
+<p>In the above command, replace YYYY_MM_DD with the date you want to assign to the GUI. The date becomes part of the GUI filename. (Although shown as YYYY_MM_DD, it does not need to be a date; you can use any string you want to use to identify the GUI version.) If you want the current date, you can use &quot;$(date +%Y_%m_%d)&quot;.</p>
+    <p>The generic aftershock GUI is a graphical Java program that can be used to 
 interactively generate forecasts and experiment with adjusting model parameters.</p>
 <p>The resulting Java program is located in ~/opensha/opensha-oaf/build/libs and 
-has a name similar to AftershockGUI-current-YYYY_MM_DD.jar, where YYYY_MM_DD is 
-the current date.</p>
+has a name similar to AftershockGUI-current-YYYY_MM_DD.jar.</p>
 <p>&nbsp;</p>
 <p>14.4. (Optional) Build the production aftershock GUI.</p>
 <pre>$ cd ~/opensha
 $ ./boaf.sh config_packgui YYYY_MM_DD SERVER_IP_1 MONGO_REP_SET_1 SERVER_IP_2 MONGO_REP_SET_2 MONGO_NAME MONGO_USER MONGO_PASS</pre>
-<p>In the above command, replace YYYY_MM_DD with the current date (the date that 
-appears in the filename of the generic aftershock GUI), and the other parameters 
+<p>In the above command, replace YYYY_MM_DD with the same date (or string) that was used to build the generic GUI, and the other parameters 
 with the values indicated in section 2.8. For a single-server configuration, you 
 can make SERVER_IP_2 and MONGO_REP_SET_2 the same as SERVER_IP_1 and 
 MONGO_REP_SET_1.</p>
-<p>The resulting Java program is located in ~/opensha/opensha-oaf/build/libs and 
-has a name similar to AftershockGUI-prod-YYYY_MM_DD.jar, where YYYY_MM_DD is 
-the current date.</p>
+<p>The resulting Java program is located in ~/opensha/opensha-oaf/build/libs and has a name similar to AftershockGUI-prod-YYYY_MM_DD.jar.</p>
 <p>Note that you need to build the generic GUI before you can build the 
 production GUI.</p>
 <p>The production aftershock GUI is the same as the generic GUI, with the 
@@ -1250,12 +1266,10 @@ MONGO_REP_SET_1.</p>
 <p>Later, use this command to build the production GUI:</p>
 <pre>$ cd ~/opensha
 $ ./boaf.sh packgui YYYY_MM_DD &lt;filename&gt;</pre>
-<p>In the above command, replace YYYY_MM_DD with the current date (the date that 
-appears in the filename of the generic aftershock GUI), and replace &lt;filename&gt; 
+<p>In the above command, replace YYYY_MM_DD with the same date (or string) that was used to build the generic GUI, and replace &lt;filename&gt; 
 with the name of the JSON file that contains the server configuration.</p>
 <p>The resulting Java program is located in ~/opensha/opensha-oaf/build/libs and 
-has a name similar to AftershockGUI-prod-YYYY_MM_DD.jar, where YYYY_MM_DD is 
-the current date.</p>
+has a name similar to AftershockGUI-prod-YYYY_MM_DD.jar.</p>
 <p>Note that you need to build the generic GUI before you can build the 
 production GUI.</p>
 <p>The production aftershock GUI is the same as the generic GUI, with the 

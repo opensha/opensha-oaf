@@ -248,24 +248,24 @@ database. When AAFS is started, it reads the initial mode from the database.</p>
 in the table:</p>
 <table class="auto-style1">
 	<tr>
-		<td valign="top">solo</td>
-		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		<td valign="top">AAFS operates in single-server mode. This is the 
+		<td style="vertical-align: top">solo</td>
+		<td style="vertical-align: top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td style="vertical-align: top">AAFS operates in single-server mode. This is the 
 		default.</td>
 	</tr>
 	<tr>
-		<td valign="top">pair</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">AAFS operates in dual-server mode. Each server 
+		<td style="vertical-align: top">pair</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">AAFS operates in dual-server mode. Each server 
 		continuously monitors the other, to remain synchronized. Only the 
 		primary server sends forecasts to PDL. If the primary server goes 
 		off-line, then the secondary server automatically steps up to become 
 		primary and begins sending forecasts to PDL.</td>
 	</tr>
 	<tr>
-		<td valign="top">watch</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">AAFS operates in dual-server mode. Each server 
+		<td style="vertical-align: top">watch</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">AAFS operates in dual-server mode. Each server 
 		continuously monitors the other, to remain synchronized. Only the 
 		primary server sends forecasts to PDL. Unlike pair mode, there is no 
 		automatic switching between secondary and primary; each server operates 
@@ -277,25 +277,25 @@ in the table:</p>
 values, as shown in the table:</p>
 <table class="auto-style1">
 	<tr>
-		<td valign="top">1</td>
-		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		<td valign="top">Server #1 is the primary server.</td>
+		<td style="vertical-align: top">1</td>
+		<td style="vertical-align: top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td style="vertical-align: top">Server #1 is the primary server.</td>
 	</tr>
 	<tr>
-		<td valign="top">2</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Server #2 is the primary server.</td>
+		<td style="vertical-align: top">2</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Server #2 is the primary server.</td>
 	</tr>
 	<tr>
-		<td valign="top">this</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">This server is the primary server. It is the same as 
+		<td style="vertical-align: top">this</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">This server is the primary server. It is the same as 
 		"1" or "2", depending on whether this server is server #1 or server #2.</td>
 	</tr>
 	<tr>
-		<td valign="top">other</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">The other server is the primary server, in a 
+		<td style="vertical-align: top">other</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The other server is the primary server, in a 
 		dual-server configuration. It is the same as "1" or "2", depending on 
 		whether this server is server #1 or server #2.</td>
 	</tr>
@@ -317,21 +317,21 @@ command to confirm the change has taken effect.</p>
 have one of six values, as shown in the table:</p>
 <table class="auto-style1">
 	<tr>
-		<td valign="top">1</td>
-		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		<td valign="top">Send the change request to server #1 in a dual-server 
+		<td style="vertical-align: top">1</td>
+		<td style="vertical-align: top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to server #1 in a dual-server 
 		configuration, or to the only server in a single-server configuration.</td>
 	</tr>
 	<tr>
-		<td valign="top">2</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the change request to server #2 in a dual-server 
+		<td style="vertical-align: top">2</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to server #2 in a dual-server 
 		configuration.</td>
 	</tr>
 	<tr>
-		<td valign="top">9</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the change request to both servers in a 
+		<td style="vertical-align: top">9</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to both servers in a 
 		dual-server configuration. The command waits for both servers to 
 		acknowledge the change. (In a dual-server configuration, it is 
 		recommended that you send the change request to both servers. If you 
@@ -340,23 +340,23 @@ have one of six values, as shown in the table:</p>
 		is preferred.)</td>
 	</tr>
 	<tr>
-		<td valign="top">this</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the change request to this server. It is the same 
+		<td style="vertical-align: top">this</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to this server. It is the same 
 		as "1" or "2", depending on whether this server is server #1 or server 
 		#2.</td>
 	</tr>
 	<tr>
-		<td valign="top">other</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the change request to the other server, in a 
+		<td style="vertical-align: top">other</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to the other server, in a 
 		dual-server configuration. It is the same as "1" or "2", depending on 
 		whether this server is server #1 or server #2.</td>
 	</tr>
 	<tr>
-		<td valign="top">both</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the change request to both servers in a 
+		<td style="vertical-align: top">both</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to both servers in a 
 		dual-server configuration. It is the same as "9".</td>
 	</tr>
 	</table>
@@ -364,24 +364,24 @@ have one of six values, as shown in the table:</p>
 in the table:</p>
 <table class="auto-style1">
 	<tr>
-		<td valign="top">solo</td>
-		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		<td valign="top">AAFS operates in single-server mode. This is the 
+		<td style="vertical-align: top">solo</td>
+		<td style="vertical-align: top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td style="vertical-align: top">AAFS operates in single-server mode. This is the 
 		default.</td>
 	</tr>
 	<tr>
-		<td valign="top">pair</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">AAFS operates in dual-server mode. Each server 
+		<td style="vertical-align: top">pair</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">AAFS operates in dual-server mode. Each server 
 		continuously monitors the other, to remain synchronized. Only the 
 		primary server sends forecasts to PDL. If the primary server goes 
 		off-line, then the secondary server automatically steps up to become 
 		primary and begins sending forecasts to PDL.</td>
 	</tr>
 	<tr>
-		<td valign="top">watch</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">AAFS operates in dual-server mode. Each server 
+		<td style="vertical-align: top">watch</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">AAFS operates in dual-server mode. Each server 
 		continuously monitors the other, to remain synchronized. Only the 
 		primary server sends forecasts to PDL. Unlike pair mode, there is no 
 		automatic switching between secondary and primary; each server operates 
@@ -393,25 +393,25 @@ in the table:</p>
 values, as shown in the table:</p>
 <table class="auto-style1">
 	<tr>
-		<td valign="top">1</td>
-		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		<td valign="top">Server #1 is the primary server.</td>
+		<td style="vertical-align: top">1</td>
+		<td style="vertical-align: top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td style="vertical-align: top">Server #1 is the primary server.</td>
 	</tr>
 	<tr>
-		<td valign="top">2</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Server #2 is the primary server.</td>
+		<td style="vertical-align: top">2</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Server #2 is the primary server.</td>
 	</tr>
 	<tr>
-		<td valign="top">this</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">This server is the primary server. It is the same as 
+		<td style="vertical-align: top">this</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">This server is the primary server. It is the same as 
 		"1" or "2", depending on whether this server is server #1 or server #2.</td>
 	</tr>
 	<tr>
-		<td valign="top">other</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">The other server is the primary server, in a 
+		<td style="vertical-align: top">other</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">The other server is the primary server, in a 
 		dual-server configuration. It is the same as "1" or "2", depending on 
 		whether this server is server #1 or server #2.</td>
 	</tr>
@@ -429,42 +429,42 @@ MongoDB be running.</p>
 have one of six values, as shown in the table:</p>
 <table class="auto-style1">
 	<tr>
-		<td valign="top">1</td>
-		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		<td valign="top">Send the status request to server #1 in a dual-server 
+		<td style="vertical-align: top">1</td>
+		<td style="vertical-align: top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td style="vertical-align: top">Send the status request to server #1 in a dual-server 
 		configuration, or to the only server in a single-server configuration.</td>
 	</tr>
 	<tr>
-		<td valign="top">2</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the status request to server #2 in a dual-server 
+		<td style="vertical-align: top">2</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the status request to server #2 in a dual-server 
 		configuration.</td>
 	</tr>
 	<tr>
-		<td valign="top">9</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the status request to both servers in a 
+		<td style="vertical-align: top">9</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the status request to both servers in a 
 		dual-server configuration. In this case, the command first displays the 
 		status of server #1, and then displays the status of server #2.</td>
 	</tr>
 	<tr>
-		<td valign="top">this</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the status request to this server. It is the same 
+		<td style="vertical-align: top">this</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the status request to this server. It is the same 
 		as "1" or "2", depending on whether this server is server #1 or server 
 		#2.</td>
 	</tr>
 	<tr>
-		<td valign="top">other</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the status request to the other server, in a 
+		<td style="vertical-align: top">other</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the status request to the other server, in a 
 		dual-server configuration. It is the same as "1" or "2", depending on 
 		whether this server is server #1 or server #2.</td>
 	</tr>
 	<tr>
-		<td valign="top">both</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the status request to both servers in a 
+		<td style="vertical-align: top">both</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the status request to both servers in a 
 		dual-server configuration. It is the same as "9".</td>
 	</tr>
 	</table>
@@ -876,21 +876,21 @@ This usually happens in about 15 seconds, but sometimes takes longer.</p>
 have one of six values, as shown in the table:</p>
 <table class="auto-style1">
 	<tr>
-		<td valign="top">1</td>
-		<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		<td valign="top">Send the change request to server #1 in a dual-server 
+		<td style="vertical-align: top">1</td>
+		<td style="vertical-align: top">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to server #1 in a dual-server 
 		configuration, or to the only server in a single-server configuration.</td>
 	</tr>
 	<tr>
-		<td valign="top">2</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the change request to server #2 in a dual-server 
+		<td style="vertical-align: top">2</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to server #2 in a dual-server 
 		configuration.</td>
 	</tr>
 	<tr>
-		<td valign="top">9</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the change request to both servers in a 
+		<td style="vertical-align: top">9</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to both servers in a 
 		dual-server configuration. In a dual-server configuration, it is 
 		recommended that you send the change request to both servers. (If you 
 		only send the change request to one server, the change is automatically 
@@ -898,23 +898,23 @@ have one of six values, as shown in the table:</p>
 		is preferred.).</td>
 	</tr>
 	<tr>
-		<td valign="top">this</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the change request to this server. It is the same 
+		<td style="vertical-align: top">this</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to this server. It is the same 
 		as "1" or "2", depending on whether this server is server #1 or server 
 		#2.</td>
 	</tr>
 	<tr>
-		<td valign="top">other</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the change request to the other server, in a 
+		<td style="vertical-align: top">other</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to the other server, in a 
 		dual-server configuration. It is the same as "1" or "2", depending on 
 		whether this server is server #1 or server #2.</td>
 	</tr>
 	<tr>
-		<td valign="top">both</td>
-		<td valign="top">&nbsp;</td>
-		<td valign="top">Send the change request to both servers in a 
+		<td style="vertical-align: top">both</td>
+		<td style="vertical-align: top">&nbsp;</td>
+		<td style="vertical-align: top">Send the change request to both servers in a 
 		dual-server configuration. It is the same as "9".</td>
 	</tr>
 	</table>
