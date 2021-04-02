@@ -11,9 +11,9 @@
 # You can use the following command to download this file from Github:
 # wget https://github.com/opensha/opensha-oaf/raw/master/deployment/scripts/oaf_config.sh
 
-# You can use these command to download the script aoaf.h from Github:
+# You can use these commands to download the script aoaf.h from Github:
 # wget https://github.com/opensha/opensha-oaf/raw/master/deployment/scripts/aoaf.sh
-# chmod 755 boaf.sh
+# chmod 755 aoaf.sh
 
 
 

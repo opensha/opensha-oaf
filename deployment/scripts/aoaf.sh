@@ -32,6 +32,10 @@
 #     Initialize the OAF database.
 #     After running this command, you should be able to launch the AAFS software.
 #
+#     Normally, this command is given as "initialize_oaf pair 1" for a dual-server
+#     configuration, or "initialize_oaf solo 1" for a single-server configuration,
+#     when creating a new installation.
+#
 #     <relay_mode> is the desired mode.  It can have one of three values:
 #
 #       solo - AAFS operates in single-server mode.
@@ -77,7 +81,8 @@
 #     or to replace one server with another.
 #
 #     <filename> is the name of a file that contains a database backup.  It must
-#     have been created with the "moaf.sh backup_database_gzip" command.
+#     have been created with the "stop_aafs_for_update" command, or with the
+#     "moaf.sh backup_database_gzip" command.
 #
 #     <relay_mode> and <configured_primary> are the same as above.
 
@@ -93,7 +98,16 @@
 #
 # reconfigure_oaf
 #
-#     Reconfigure the OAF software, without updating it.
+#     Reconfigure the OAF software, without updating or rebuilding it.
+#
+#     This command does not update configuration information stored in the GUI.
+#     You can use "rebuild_gui" to do that.
+#
+# rebuild_gui
+#
+#     Rebuild the GUI, without updating or rebuilding OAF.
+#
+#     This command can be executed while AAFS and MongoDB are running.
 #
 # update_java
 #
@@ -107,6 +121,40 @@
 #     Create a new MongoDB configuration file.  This command can be used to
 #     change the MongoDB configuration file when needed because of updates to
 #     the OAF software or to MongoDB itself.
+
+# COMMANDS FOR UPDATING THE SYSTEM
+#
+# stop_aafs_for_update  <java_option>  <oaf_option>  <backup_filename>
+#
+#     Stop AAFS and MongoDB, so that updates can be performed.
+#
+#     The java_option specifies whether or not to update Java.  It must be
+#     "java" to update Java, or "nojava" to skip the Java update.
+#
+#     The oaf_option specifies whether or not to update the OAF software.  It must be
+#     "oaf" to update the OAF software, or "nooaf" to skip the OAF software update.
+#
+#     The OAF database is backed up into the file specified by backup_filename.
+#     To skip the database backup, use "nobackup" as the filename.
+#
+#     After running this command, you can update the operating system and perform
+#     any other updates, and you can reboot if needed.
+#
+#     After completing all updates, use "start_aafs_after_update" to re-start AAFS.
+#
+# start_aafs_after_update
+#
+#     Re-start AAFS and MongoDB after performing updates.
+#
+#     In a dual-server configuration, after running this command you should update
+#     the other server if you have not already done so.  After both servers are
+#     updated, use "resume_normal_mode" on one of the servers to resume the normal
+#     "pair 1" mode of operation.
+#
+# resume_normal_mode
+#
+#     In a dual-server configuration, use this command to resotre the normal
+#     "pair 1" mode of operation after both servers have been updated.
 
 
 
@@ -122,6 +170,17 @@
 
 q_is_mongo_running () {
     pgrep mongod >/dev/null 2>&1
+}
+
+
+
+
+# Function to test if AAFS is running.
+# There are no arguments.
+# Return value is 0 if AAFS is running, non-zero if not.
+
+q_is_aafs_running () {
+    ps -eF | grep -q "/opt/aafs/oefjava/[o]efjava"
 }
 
 
@@ -347,6 +406,7 @@ q_load_oaf_config () {
     if [ "${JAVA_SOURCE:0:1}" == "/" ]; then
         my_IS_JAVA_FILE_SOURCE="$val_YES"
     elif [ "${JAVA_SOURCE:0:1}" == "~" ]; then
+        JAVA_SOURCE="${JAVA_SOURCE/#~\//$HOME/}"
         my_IS_JAVA_FILE_SOURCE="$val_YES"
     else
         my_IS_JAVA_FILE_SOURCE="$val_NO"
@@ -362,6 +422,9 @@ q_load_oaf_config () {
     fi
 
     if [ -n "$JAVA_CERT_FILE" ]; then
+        if [ "${JAVA_CERT_FILE:0:1}" == "~" ]; then
+            JAVA_CERT_FILE="${JAVA_CERT_FILE/#~\//$HOME/}"
+        fi
         if [ ! -f "$JAVA_CERT_FILE" ]; then
             echo "Cannot find Java certificate file: JAVA_CERT_FILE = $JAVA_CERT_FILE"
             exit 1
@@ -796,7 +859,7 @@ q_install_java () {
     # Install digital certificate if needed
 
     if [ -n "$JAVA_CERT_FILE" ]; then
-        sudo /usr/local/java/bin/keytool -keystore /usr/local/java/lib/security/cacerts -storepass changeit -alias "oafjavacert" -import -file "$JAVA_CERT_FILE"
+        sudo /usr/local/java/bin/keytool -importcert -noprompt -keystore /usr/local/java/lib/security/cacerts -storepass changeit -alias "oafjavacert" -file "$JAVA_CERT_FILE"
     fi
 
     # Insert a link to Java in /usr/bin, if it was not already done
@@ -1286,6 +1349,34 @@ q_compile_oaf () {
 
 
 
+# Rebuild the GUI.
+
+q_rebuild_gui () {
+    echo "Rebuilding GUI..."
+
+    rm opensha-oaf/build/libs/AftershockGUI*
+
+    # Build the generic GUI
+
+    echo "Building generic GUI..."
+
+    ./boaf.sh compilegui "$GUI_DATE"
+
+    # Build the production GUI
+
+    echo "Building production GUI..."
+
+    if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
+        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS"
+    else
+        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS"
+    fi
+
+}
+
+
+
+
 # Validate the relay mode.
 # $1 = relay mode.
 # $2 = configured primary.
@@ -1509,6 +1600,133 @@ q_restore_oaf_database () {
 
 
 
+# Stop AAFS in preparation for an update, and optionally back up the database.
+# $1 = backup filename, or "nobackup" to skip the backup.
+
+q_stop_aafs_for_update () {
+    echo "Stopping AAFS for update..."
+
+    # Check that AAFS is running
+
+    if q_is_aafs_running ; then
+        :
+    else
+        echo "AAFS is not running"
+        exit 1
+    fi
+
+    # If a backup file is specified, check it does not already exist and is writeable
+
+    if [ -z "$1" ]; then
+        echo "Backup filename is not specified."
+        echo "You must supply a filename for the database backup, or use \"nobackup\" to skip the backup."
+        exit 1
+    fi
+    if [ "$1" != "nobackup" ]; then
+        if [ -a "$1" ]; then
+            echo "Backup file already exists: $1"
+            echo "This function cannot replace an existing backup file."
+            exit 1
+        fi
+        if touch "$1" ; then
+            rm "$1"
+        else
+            echo "Cannot create backup file: $1"
+            exit 1
+        fi
+    fi
+
+    # Stop AAFS
+
+    if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
+        cd /opt/aafs
+        ./moaf.sh stop_secondary_aafs
+        cd -
+    else
+        cd /opt/aafs
+        ./moaf.sh stop_aafs
+        cd -
+    fi
+
+    # Back up the database
+
+    if [ "$1" != "nobackup" ]; then
+        cd /opt/aafs
+        ./moaf.sh backup_database_gzip "$1"
+        cd -
+    fi
+
+    # Stop MongoDB
+
+    cd /opt/aafs
+    ./moaf.sh stop_mongo
+    cd -
+
+    echo "Pausing 10 seconds..."
+    sleep 10
+
+}
+
+
+
+
+# Start AAFS after performing an update.
+
+q_start_aafs_after_update () {
+    echo "Starting AAFS after update..."
+
+    # Start MongoDB
+
+    cd /opt/aafs
+    ./moaf.sh start_mongo
+    cd -
+
+    # Start AAFS
+
+    if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
+        cd /opt/aafs
+        ./moaf.sh start_secondary_aafs
+        cd -
+    else
+        cd /opt/aafs
+        ./moaf.sh start_aafs
+        cd -
+    fi
+
+}
+
+
+
+
+# Resume normal mode after update.
+
+q_resume_normal_mode () {
+    echo "Resuming normal mode after update..."
+
+    # Check that AAFS is running
+
+    if q_is_aafs_running ; then
+        :
+    else
+        echo "AAFS is not running"
+        exit 1
+    fi
+
+    # Set normal relay mode
+
+    if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
+        cd /opt/aafs
+        ./moaf.sh change_relay_mode both pair 1
+        cd -
+    else
+        echo "Single-server configurations are always in normal mode"
+    fi
+
+}
+
+
+
+
 case "$1" in
 
     test_load_oaf_config)
@@ -1651,6 +1869,12 @@ case "$1" in
         echo "Test - Compiled OAF"
         ;;
 
+    test_rebuild_gui)
+        q_load_oaf_config
+        q_rebuild_gui
+        echo "Test - Rebuilt GUI"
+        ;;
+
     # $2 = relay mode.
     # $3 = configured primary
     test_validate_relay_mode)
@@ -1674,6 +1898,25 @@ case "$1" in
         q_load_oaf_config
         q_restore_oaf_database "$2" "$3" "$4"
         echo "Test - Restored OAF database"
+        ;;
+
+    # $2 = Backup filename, or "nobackup" to skip backup.
+    test_stop_aafs_for_update)
+        q_load_oaf_config
+        q_stop_aafs_for_update "$2"
+        echo "Test - Stopped AAFS for update"
+        ;;
+
+    test_start_aafs_after_update)
+        q_load_oaf_config
+        q_start_aafs_after_update
+        echo "Test - Started AAFS after update"
+        ;;
+
+    test_resume_normal_mode)
+        q_load_oaf_config
+        q_resume_normal_mode
+        echo "Test - Resumed normal mode after update"
         ;;
 
     test_check_pdl_key_file)
@@ -1834,6 +2077,18 @@ case "$1" in
 
 
 
+    rebuild_gui)
+        q_load_oaf_config
+        q_rebuild_gui
+        echo ""
+        echo "********************"
+        echo ""
+        echo "Completed rebuilding GUI."
+        ;;
+
+
+
+
     update_java)
         if q_is_mongo_running ; then
             echo "Please shut down AAFS and MongoDB before attempting to update Java."
@@ -1876,6 +2131,97 @@ case "$1" in
 
 
 
+    # $2 = "java" to update Java, or "nojava" to skip the Java update.
+    # $3 = "oaf" to update OAF software, or "nooaf" to skip the OAF software update.
+    # $4 = Backup filename, or "nobackup" to skip the backup.
+    stop_aafs_for_update)
+        if [ "$2" == "java" ]; then
+            :
+        elif [ "$2" == "nojava" ]; then
+            :
+        else
+            echo "The Java option must be \"java\" to update Java, or \"nojava\" to skip the Java update."
+            exit 1
+        fi
+        if [ "$3" == "oaf" ]; then
+            :
+        elif [ "$3" == "nooaf" ]; then
+            :
+        else
+            echo "The OAF option must be \"oaf\" to update the OAF software, or \"nooaf\" to skip the OAF software update."
+            exit 1
+        fi
+        if [ -z "$4" ]; then
+            echo "Backup filename is not specified."
+            echo "You must supply a filename for the database backup, or use \"nobackup\" to skip the backup."
+            exit 1
+        fi
+        q_load_oaf_config
+        q_stop_aafs_for_update "$4"
+        if [ "$2" == "java" ]; then
+            q_install_java
+        fi
+        if [ "$3" == "oaf" ]; then
+            q_update_opensha
+            q_configure_oaf
+            q_compile_oaf
+        fi
+        echo ""
+        echo "********************"
+        echo ""
+        echo "AAFS and MongoDB have been stopped."
+        if [ "$4" != "nobackup" ]; then
+            echo "The OAF database has been backed up to: $4"
+        fi
+        if [ "$2" == "java" ]; then
+            echo "Java has been updated."
+        fi
+        if [ "$3" == "oaf" ]; then
+            echo "The OAF software has been updated, and the updated version is installed and configured."
+        fi
+        echo ""
+        echo "You can now update the operating system, and do any other needed updates."
+        echo "Then, you can reboot the system if needed."
+        echo ""
+        echo "After completing all updates, use \"start_aafs_after_update\" to re-start AAFS and MongoDB."
+        ;;
+
+
+
+
+    start_aafs_after_update)
+        q_load_oaf_config
+        q_start_aafs_after_update
+        echo ""
+        echo "********************"
+        echo ""
+        echo "AAFS and MongoDB have been re-started."
+        echo ""
+        if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
+            echo "You should now update the other server, if you have not already done so."
+            echo ""
+            echo "After both servers are updated, use \"resume_normal_mode\" to resume normal operation."
+            echo "(You only need to run \"resume_normal_mode\" on one of the servers. Either server will do.)"
+        else
+            echo "Completed update."
+        fi
+        ;;
+
+
+
+
+    resume_normal_mode)
+        q_load_oaf_config
+        q_resume_normal_mode
+        echo ""
+        echo "********************"
+        echo ""
+        echo "Resumed normal mode of operation."
+        ;;
+
+
+
+
     help)
         echo "Install required packages and Java:"
         echo "  aoaf.sh prepare_system"
@@ -1889,12 +2235,20 @@ case "$1" in
         echo "  aoaf.sh update_oaf"
         echo "Install and configure a fresh copy of the OAF software:"
         echo "  aoaf.sh freshen_oaf"
-        echo "Reconfigure the OAF software (without updating it):"
+        echo "Reconfigure the OAF software (without updating or rebuilding it):"
         echo "  aoaf.sh reconfigure_oaf"
+        echo "Rebuild the GUI (without updating or rebuilding OAF):"
+        echo "  aoaf.sh rebuild_gui"
         echo "Update or re-install Java:"
         echo "  aoaf.sh update_java"
         echo "Update the MongoDB configuration file:"
         echo "  aoaf.sh reconfigure_mongo"
+        echo "Stop AAFS and MongoDB, so that updates can be performed:"
+        echo "  aoaf.sh stop_aafs_for_update  <java_option>  <oaf_option>  <backup_filename>"
+        echo "Re-start AAFS and MongoDB after performing updates:"
+        echo "  aoaf.sh start_aafs_after_update"
+        echo "Resume normal operation of a dual-server configuration after updating:"
+        echo "  aoaf.sh resume_normal_mode"
         ;;
 
 
