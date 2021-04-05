@@ -830,7 +830,7 @@ q_install_java () {
         fi
         cd "$val_TEMP_WORK_DIR"
         wget "$JAVA_SOURCE"
-        cd -
+        cd - >/dev/null
         if [ ! -f "$val_TEMP_WORK_DIR/$my_JAVA_FILE_BASENAME" ]; then
             echo "Failed to obtain Java distribution: $my_JAVA_FILE_BASENAME"
             echo "Java download was attempted from: $JAVA_SOURCE"
@@ -849,7 +849,7 @@ q_install_java () {
 
     cd /usr/local/java
     sudo tar --strip-components 1 -zxvf "$my_JAVA_FILE_BASENAME"
-    cd -
+    cd - >/dev/null
 
     if [ ! -f /usr/local/java/bin/java ]; then
         echo "Failed to obtain Java executable"
@@ -867,7 +867,7 @@ q_install_java () {
     if [ ! -f /usr/bin/java ]; then
         cd /usr/bin
         sudo ln -s /usr/local/java/bin/java java
-        cd -
+        cd - >/dev/null
     fi
 
     # Add Java to the PATH and JAVA_HOME, if it was not already done
@@ -1067,7 +1067,7 @@ q_install_mongo () {
         sudo chcon -Rv -u system_u -t mongod_log_t '/data/aafs/mongolog'
         sudo restorecon -R -v '/data/aafs/mongolog'
 
-        cd -
+        cd - >/dev/null
 
     fi
 
@@ -1501,13 +1501,13 @@ q_init_oaf_database () {
 
     cd /opt/aafs
     ./moaf.sh initdb
-    cd -
+    cd - >/dev/null
 
     # Initialize the relay mode
 
     cd /opt/aafs
     ./moaf.sh init_relay_mode "$1" "$2"
-    cd -
+    cd - >/dev/null
 
     # Stop MongoDB
 
@@ -1578,15 +1578,13 @@ q_restore_oaf_database () {
 
     # Restore the database
 
-    cd /opt/aafs
-    ./moaf.sh restore_database_gzip "$1"
-    cd -
+    /opt/aafs/moaf.sh restore_database_gzip "$1"
 
     # Initialize the relay mode
 
     cd /opt/aafs
     ./moaf.sh init_relay_mode "$2" "$3"
-    cd -
+    cd - >/dev/null
 
     # Stop MongoDB
 
@@ -1641,26 +1639,24 @@ q_stop_aafs_for_update () {
     if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
         cd /opt/aafs
         ./moaf.sh stop_secondary_aafs
-        cd -
+        cd - >/dev/null
     else
         cd /opt/aafs
         ./moaf.sh stop_aafs
-        cd -
+        cd - >/dev/null
     fi
 
     # Back up the database
 
     if [ "$1" != "nobackup" ]; then
-        cd /opt/aafs
-        ./moaf.sh backup_database_gzip "$1"
-        cd -
+        /opt/aafs/moaf.sh backup_database_gzip "$1"
     fi
 
     # Stop MongoDB
 
     cd /opt/aafs
     ./moaf.sh stop_mongo
-    cd -
+    cd - >/dev/null
 
     echo "Pausing 10 seconds..."
     sleep 10
@@ -1679,18 +1675,18 @@ q_start_aafs_after_update () {
 
     cd /opt/aafs
     ./moaf.sh start_mongo
-    cd -
+    cd - >/dev/null
 
     # Start AAFS
 
     if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
         cd /opt/aafs
         ./moaf.sh start_secondary_aafs
-        cd -
+        cd - >/dev/null
     else
         cd /opt/aafs
         ./moaf.sh start_aafs
-        cd -
+        cd - >/dev/null
     fi
 
 }
@@ -1717,7 +1713,7 @@ q_resume_normal_mode () {
     if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
         cd /opt/aafs
         ./moaf.sh change_relay_mode both pair 1
-        cd -
+        cd - >/dev/null
     else
         echo "Single-server configurations are always in normal mode"
     fi
