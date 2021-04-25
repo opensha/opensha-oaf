@@ -185,6 +185,14 @@ public class MagCompFnPage extends MagCompFn {
 	}
 
 
+	// Return true if the function is a constant, always equal to magCat.
+
+	@Override
+	public boolean is_constant () {
+		return false;
+	}
+
+
 
 
 	//----- Marshaling -----

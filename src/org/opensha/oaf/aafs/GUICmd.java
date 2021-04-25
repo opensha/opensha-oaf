@@ -119,6 +119,13 @@ package org.opensha.oaf.aafs;
 public class GUICmd {
 
 
+	// Flag indicating if GUI debug mode is requested.
+
+	public static boolean f_gui_debug = false;
+
+
+
+
 	// Execute GUI command line.
 	// Parameters:
 	//  args = Command line parameters.
@@ -127,8 +134,11 @@ public class GUICmd {
 	// Returns true if the command has been consumed.
 	// Returns false if the command has not been consumed. This may indicate that
 	//  configuration options are changed, e.g., by updating ServerConfig.
+	// After return, f_gui_debug can be examined to check for GUI debug mode.
 
 	public static boolean exec_gui_cmd (String[] args, String caller_name) {
+
+		f_gui_debug = false;
 	
 		// Check arguments
 
@@ -289,6 +299,17 @@ public class GUICmd {
 		boolean f_config = true;
 		boolean f_send = true;
 		int pdl_default = ServerConfigFile.PDLOPT_NONE;
+
+		// Check for debug request
+
+		if (args.length > lo) {
+			if (args[lo].equalsIgnoreCase ("debug")) {
+				f_gui_debug = true;
+				++lo;
+			}
+		}
+
+		// Now process PDL options
 
 		boolean consumed = PDLCmd.exec_pdl_cmd (args, lo, f_config, f_send, pdl_default);
 

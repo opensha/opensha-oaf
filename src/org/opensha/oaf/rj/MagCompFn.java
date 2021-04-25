@@ -209,6 +209,11 @@ public abstract class MagCompFn {
 	}
 
 
+	// Return true if the function is a constant, always equal to magCat.
+
+	public abstract boolean is_constant ();
+
+
 
 
 	//----- Marshaling -----

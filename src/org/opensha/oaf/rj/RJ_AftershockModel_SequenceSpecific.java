@@ -94,6 +94,21 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 
 
+	// Get the magnitude of completeness function.
+
+	public MagCompFn get_magCompFn () {
+		return magCompFn;
+	}
+
+
+	// Get the catalog magnitude of completeness.
+
+	public double get_magCat () {
+		return magCat;
+	}
+
+
+
 	
 	/**
 	 * Use this constructor to initialize from parameter holders.

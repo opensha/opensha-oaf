@@ -31,12 +31,12 @@ task appOAFJar(type: Jar) {
             exclude { it.path.contains('META-INF') }
         }
     }}
-	manifest {
-    	attributes(
-			'Class-Path': configurations.compileAndResource.collect { it.getName() }.join(' '),
-			'Main-Class': 'org.opensha.oaf.rj.AftershockStatsGUI'
-		)
-	}
+    manifest {
+        attributes(
+            'Class-Path': configurations.compileAndResource.collect { it.getName() }.join(' '),
+            'Main-Class': 'org.opensha.oaf.rj.gui.RJGUITop'
+        )
+    }
     with jar
 }
 
@@ -52,12 +52,12 @@ task appOAF_ETAS_Jar(type: Jar) {
             exclude { it.path.contains('META-INF') }
         }
     }}
-	manifest {
-    	attributes(
-			'Class-Path': configurations.compileAndResource.collect { it.getName() }.join(' '),
-			'Main-Class': 'org.opensha.oaf.etas.AftershockStatsGUI_ETAS'
-		)
-	}
+    manifest {
+        attributes(
+            'Class-Path': configurations.compileAndResource.collect { it.getName() }.join(' '),
+            'Main-Class': 'org.opensha.oaf.etas.AftershockStatsGUI_ETAS'
+        )
+    }
     with jar
 }
 

@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.File;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -113,6 +114,13 @@ public class GUIExternalCatalog {
 
 	public long latest_origin_time;
 
+	// The earliest origin time of any aftershock.
+	// On input, it is set to the earliest origin time of any aftershock,
+	// or Long.MAX_VALUE if there are no aftershocks.
+	// On output, it is not used.
+
+	public long earliest_origin_time;
+
 
 
 
@@ -159,7 +167,7 @@ public class GUIExternalCatalog {
 	// Design note: The use of (float) to limit output precision is not desireable,
 	// but we retain it because the GUI code works this way.
 	
-	private static String getCatalogLine (ObsEqkRupture rup) {
+	public static String getCatalogLine (ObsEqkRupture rup) {
 		StringBuilder sb = new StringBuilder();
 		Location hypoLoc = rup.getHypocenterLocation();
 		sb.append(catDateFormat.format(rup.getOriginTimeCal().getTime())).append("\t");
@@ -178,7 +186,7 @@ public class GUIExternalCatalog {
 	// Throws an exception if parsing error.
 	// Note: An event ID is generated from the rupture time and magnitude.
 	
-	private static ObsEqkRupture fromCatalogLine (String line) {
+	public static ObsEqkRupture fromCatalogLine (String line) {
 		ObsEqkRupture result;
 
 		try {
@@ -251,10 +259,25 @@ public class GUIExternalCatalog {
 	//  aftershock_list = List to which aftershocks are appended, or null.
 	// The aftershock_list parameter can be used to select the desired type
 	// of list; if null, then ObsEqkRupList is used.
-	// On entry, lines must contains a list of all lines in the file.
 	// Throws an exception if I/O or parse error.
 
 	public void read_from_file (String filename, List<ObsEqkRupture> aftershock_list) {
+		read_from_file (new File(filename), aftershock_list);
+		return;
+	}
+
+
+
+
+	// Read the catalog from a file.
+	// Parameters:
+	//  the_file = File to read.
+	//  aftershock_list = List to which aftershocks are appended, or null.
+	// The aftershock_list parameter can be used to select the desired type
+	// of list; if null, then ObsEqkRupList is used.
+	// Throws an exception if I/O or parse error.
+
+	public void read_from_file (File the_file, List<ObsEqkRupture> aftershock_list) {
 
 		// Save or allocate the aftershock list
 
@@ -276,14 +299,15 @@ public class GUIExternalCatalog {
 
 		catalog_max_days = 0.0;
 
-		// The latest origin time of any aftershock
+		// The latest and earliest origin time of any aftershock
 
 		latest_origin_time = Long.MIN_VALUE;
+		earliest_origin_time = Long.MAX_VALUE;
 
 		// Open the file ...
 
 		try (
-			BufferedReader br = new BufferedReader (new FileReader (filename));
+			BufferedReader br = new BufferedReader (new FileReader (the_file));
 		){
 
 			// State variable: 0 = initial state, 1 = previous line was mainshock line 1
@@ -384,9 +408,10 @@ public class GUIExternalCatalog {
 						ObsEqkRupture rup = fromCatalogLine (line);
 						aftershocks.add (rup);
 
-						// Accumulate the latest origin time
+						// Accumulate the latest and ealiest origin time
 
 						latest_origin_time = Math.max (latest_origin_time, rup.getOriginTime());
+						earliest_origin_time = Math.min (earliest_origin_time, rup.getOriginTime());
 
 					} catch (Exception e) {
 						throw new IllegalArgumentException ("GUIExternalCatalog.read_from_file: Error parsing aftershock line: " + line);
@@ -395,10 +420,10 @@ public class GUIExternalCatalog {
 			}
 		}
 		catch (IOException e) {
-			throw new RuntimeException ("GUIExternalCatalog.read_from_file: I/O error reading catalog file: " + filename, e);
+			throw new RuntimeException ("GUIExternalCatalog.read_from_file: I/O error reading catalog file: " + the_file.getPath(), e);
 		}
 		catch (Exception e) {
-			throw new RuntimeException ("GUIExternalCatalog.read_from_file: Parsing error reading catalog file: " + filename, e);
+			throw new RuntimeException ("GUIExternalCatalog.read_from_file: Parsing error reading catalog file: " + the_file.getPath(), e);
 		}
 
 		// If there is no header, but there is a mainshock, and we got at least one aftershock...
@@ -430,11 +455,26 @@ public class GUIExternalCatalog {
 	// It is recommended that the list be sorted by time.
 
 	public void write_to_file (String filename) {
+		write_to_file (new File(filename));
+		return;
+	}
+
+
+
+
+	// Write the catalog to a file.
+	// Parameters:
+	//  the_file = File to write.
+	// Throws an exception if I/O or other error.
+	// Note: This function writes aftershocks in the order they appear in the list.
+	// It is recommended that the list be sorted by time.
+
+	public void write_to_file (File the_file) {
 
 		// Open the file ...
 
 		try (
-			BufferedWriter bw = new BufferedWriter (new FileWriter (filename));
+			BufferedWriter bw = new BufferedWriter (new FileWriter (the_file));
 		){
 
 			// Write the header string, if desired
@@ -471,13 +511,67 @@ public class GUIExternalCatalog {
 			}
 		}
 		catch (IOException e) {
-			throw new RuntimeException ("GUIExternalCatalog.write_to_file: I/O error writing catalog file: " + filename, e);
+			throw new RuntimeException ("GUIExternalCatalog.write_to_file: I/O error writing catalog file: " + the_file.getPath(), e);
 		}
 		catch (Exception e) {
-			throw new RuntimeException ("GUIExternalCatalog.write_to_file: Error writing catalog file: " + filename, e);
+			throw new RuntimeException ("GUIExternalCatalog.write_to_file: Error writing catalog file: " + the_file.getPath(), e);
 		}
 	
 		return;
+	}
+
+
+
+
+	// Write the catalog to a string.
+	// Returns a string containing the entire catalog.
+	// Throws an exception if error.
+	// Note: This function writes aftershocks in the order they appear in the list.
+	// It is recommended that the list be sorted by time.
+
+	public String write_to_string () {
+		StringBuilder sb = new StringBuilder();
+
+		try {
+
+			// Write the header string, if desired
+
+			if (catalog_event_id != null) {
+				String headerString = "# Header: eventID " + catalog_event_id + " dataEndTime " + catalog_max_days;  
+				sb.append (headerString);
+				sb.append ("\n");
+			}
+
+			// Write columns
+
+			String columnString = "# Year\tMonth\tDay\tHour\tMinute\tSec\tLat\tLon\tDepth\tMagnitude";
+			sb.append (columnString);
+			sb.append ("\n");
+
+			// Write the mainshock, if desired
+
+			if (mainshock != null) {
+				String mainString1 = "# Main Shock:";
+				String mainString2 = "# " + getCatalogLine(mainshock);
+				sb.append (mainString1);
+				sb.append ("\n");
+				sb.append (mainString2);
+				sb.append ("\n");
+			}
+
+			// Write the aftershocks
+
+			for (ObsEqkRupture rup : aftershocks) {
+				String asString = getCatalogLine(rup);
+				sb.append (asString);
+				sb.append ("\n");
+			}
+		}
+		catch (Exception e) {
+			throw new RuntimeException ("GUIExternalCatalog.write_to_string: Error writing catalog file", e);
+		}
+	
+		return sb.toString();
 	}
 
 
@@ -505,6 +599,30 @@ public class GUIExternalCatalog {
 		this.catalog_max_days = catalog_max_days;
 
 		latest_origin_time = Long.MIN_VALUE;
+		earliest_origin_time = Long.MAX_VALUE;
+		return;
+	}
+
+
+
+
+	// Set up the catalog, before writing.
+	// Parameters:
+	//  aftershocks = List of aftershocks.
+	//  mainshock = Mainshock, or null if no mainshock should be written.
+	// Note: This function retains the passed-in objects.
+	// Note: This function can be used if no hearder line is desired.
+
+	public void setup_catalog (
+		List<ObsEqkRupture> aftershocks,
+		ObsEqkRupture mainshock
+	) {
+		setup_catalog (
+			aftershocks,
+			mainshock,
+			null,
+			0.0
+		);
 		return;
 	}
 

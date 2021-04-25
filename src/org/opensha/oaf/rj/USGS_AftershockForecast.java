@@ -31,7 +31,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 
-import scratch.UCERF3.erf.utils.ProbabilityModelsCalc;
+//import scratch.UCERF3.erf.utils.ProbabilityModelsCalc;
+import org.opensha.oaf.comcat.ComcatOAFAccessor;
 
 import org.opensha.oaf.aafs.ServerConfig;
 
@@ -241,9 +242,9 @@ public class USGS_AftershockForecast {
 		}
 	}
 	
-	static double getDateDelta(Instant start, Instant end) {
+	public static double getDateDelta(Instant start, Instant end) {
 		long diff = end.toEpochMilli() - start.toEpochMilli();
-		return (double)diff/(double)ProbabilityModelsCalc.MILLISEC_PER_DAY;
+		return ((double)diff)/ComcatOAFAccessor.day_millis;
 	}
 	
 	public void setAdvisoryDuration(Duration advisoryDuration) {
