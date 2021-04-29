@@ -24,6 +24,11 @@ public abstract class SearchRadiusFn {
 	public static final double MAX_RADIUS = 20000.0;
 
 
+	// The minimum allowed search radius (recommended).
+
+	public static final double MIN_RADIUS = 1.0e-6;
+
+
 	/**
 	 * Calculate the magnitude-dependent search radius, in km.
 	 * @param magMain = Magnitude of mainshock.
@@ -75,6 +80,15 @@ public abstract class SearchRadiusFn {
 	 */
 	public static SearchRadiusFn makeWC (double radiusMult) {
 		return new SearchRadiusFnWCClip (radiusMult, 0.0, 0.0);
+	}
+
+
+	/**
+	 * Construct a function which is a constant radius.
+	 * @param radius = Radius.
+	 */
+	public static SearchRadiusFn makeConstant (double radius) {
+		return new SearchRadiusFnWCClip (0.0, radius, radius);
 	}
 
 

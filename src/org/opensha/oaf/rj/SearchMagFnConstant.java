@@ -51,10 +51,26 @@ public class SearchMagFnConstant extends SearchMagFn {
 
 	@Override
 	public SearchMagFn makeForAnalystMagCat (double magCat) {
-		if (mag < -9.0 || mag > 9.9) {
+		if (mag < NO_MIN_MAG_TEST || mag > SKIP_CENTROID_TEST) {
 			return this;	// no change if magnitude has one of the special values
 		}
 		return new SearchMagFnConstant (Math.min (mag, magCat));
+	}
+
+
+	// Make a new function, with any minimum magnitude removed.
+	// The return value can be this object, if it is suitable.
+	// If this object returns the skip centroid special value,
+	// then the returned object should also return the skip centroid
+	// special value.
+	// The purpose is for the GUI to be able to retrieve all aftershocks.
+
+	@Override
+	public SearchMagFn makeRemovedMinMag () {
+		if (mag < NO_MIN_MAG_TEST || mag > SKIP_CENTROID_TEST) {
+			return this;	// no change if magnitude has one of the special values
+		}
+		return makeNoMinMag();
 	}
 
 

@@ -77,7 +77,7 @@ public class SearchRadiusFnWCClip extends SearchRadiusFn {
 
 		// Apply the multiplier and clip to range
 
-		return Math.min (eff_max, Math.max (radiusMin, wc_radius * radiusMult));
+		return Math.min (eff_max, Math.max (Math.max (MIN_RADIUS, radiusMin), wc_radius * radiusMult));
 	}
 
 

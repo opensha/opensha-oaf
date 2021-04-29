@@ -105,9 +105,13 @@ public class RJGUIComponent {
 	// Enumeration of Region Type, for the search region.
 	
 	public enum RegionType {
-		CIRCULAR("Circular"),
-		CIRCULAR_WC94("WC 1994 Circular"),
-		RECTANGULAR("Rectangular");
+		STANDARD("Standard"),
+		CENTROID_WC_CIRCLE("Centroid WC Circle"),
+		CENTROID_CIRCLE("Centroid Circle"),
+		EPICENTER_WC_CIRCLE("Epicenter WC Circle"),
+		EPICENTER_CIRCLE("Epicenter Circle"),
+		CUSTOM_CIRCLE("Custom Circle"),
+		CUSTOM_RECTANGLE("Custom Rectangle");
 		
 		private String name;
 		
@@ -119,23 +123,19 @@ public class RJGUIComponent {
 		public String toString() {
 			return name;
 		}
-		
-		public boolean isCircular() {
-			return this == CIRCULAR_WC94 || this == CIRCULAR;
-		}
 	}
 
 
-	// Enumeration of Region Center Type, for the search region.
+	// Enumeration of automatic system enable.
 	
-	public enum RegionCenterType {
-		EPICENTER("Epicenter"),
-		SPECIFIED("Custom Location"),
-		CENTROID("Two Step Average Loc");
+	public enum AutoEnable {
+		NORMAL("Normal"),
+		ENABLE("Enable"),
+		DISABLE("Disable");
 		
 		private String name;
 		
-		private RegionCenterType(String name) {
+		private AutoEnable(String name) {
 			this.name = name;
 		}
 		

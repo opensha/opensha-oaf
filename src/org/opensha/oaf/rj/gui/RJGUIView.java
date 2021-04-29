@@ -1968,6 +1968,17 @@ public class RJGUIView extends RJGUIComponent {
 
 
 
+	// Set the view to the console window.
+	// This can be called in any state.
+
+	public void view_show_console () throws GUIEDTException {
+		tabbedPane.setSelectedComponent(consoleScroll);
+		return;
+	}
+
+
+
+
 	//----- Construction -----
 
 

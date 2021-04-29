@@ -300,6 +300,42 @@ public class ForecastMainshock {
 		return;
 	}
 
+	// Set up a local mainshock (which has no network or code, and may have no event ID).
+
+	public void setup_local_mainshock (ObsEqkRupture rup) {
+		query_event_id = "";
+		mainshock_avail = true;
+		mainshock_event_id = ((rup.getEventId() == null) ? "" : rup.getEventId());
+		mainshock_network = "";
+		mainshock_code = "";
+		mainshock_id_list = new String[1];
+		mainshock_id_list[0] = mainshock_event_id;
+
+		mainshock_time = rup.getOriginTime();
+		mainshock_mag = rup.getMag();
+		Location hypo = rup.getHypocenterLocation();
+		mainshock_lat = hypo.getLatitude();
+		mainshock_lon = hypo.getLongitude();
+		mainshock_depth = hypo.getDepth();
+
+		if (mainshock_lon > 180.0) {
+			mainshock_lon -= 360.0;
+		}
+		if (mainshock_lon < -180.0) {
+			mainshock_lon = 180.0;
+		}
+
+		if (mainshock_lat > 90.0) {
+			mainshock_lat = 90.0;
+		}
+		else if (mainshock_lat < -90.0) {
+			mainshock_lat = -90.0;
+		}
+
+		mainshock_geojson = null;
+		return;
+	}
+
 	// Copy from another object.
 
 	public void copy_from (ForecastMainshock other) {

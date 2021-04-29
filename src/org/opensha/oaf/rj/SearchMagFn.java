@@ -25,9 +25,17 @@ public abstract class SearchMagFn {
 
 	public static final double NO_MIN_MAG = ComcatOAFAccessor.COMCAT_NO_MIN_MAG;	// = -10.0
 
+	// Magnitudes less than this mean no lower limit.
+
+	public static final double NO_MIN_MAG_TEST = -9.0;
+
 	// The magnitude value that indicates to skip the centroid search (values > 9.9 mean no centroid search).
 
 	public static final double SKIP_CENTROID = 10.0;
+
+	// Magnitudes greater than this indicate to skip the centroid search.
+
+	public static final double SKIP_CENTROID_TEST = 9.9;
 
 
 	/**
@@ -48,6 +56,16 @@ public abstract class SearchMagFn {
 	// The return value can be this object, if it is suitable.
 
 	public abstract SearchMagFn makeForAnalystMagCat (double magCat);
+
+
+	// Make a new function, with any minimum magnitude removed.
+	// The return value can be this object, if it is suitable.
+	// If this object returns the skip centroid special value,
+	// then the returned object should also return the skip centroid
+	// special value.
+	// The purpose is for the GUI to be able to retrieve all aftershocks.
+
+	public abstract SearchMagFn makeRemovedMinMag ();
 
 
 

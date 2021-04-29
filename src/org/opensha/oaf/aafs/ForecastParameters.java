@@ -21,6 +21,7 @@ import org.opensha.oaf.rj.GenericRJ_ParametersFetch;
 import org.opensha.oaf.rj.MagCompPage_Parameters;
 import org.opensha.oaf.rj.MagCompPage_ParametersFetch;
 import org.opensha.oaf.rj.OAFTectonicRegime;
+import org.opensha.oaf.rj.SearchMagFn;
 import org.opensha.oaf.rj.SeqSpecRJ_Parameters;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -91,6 +92,16 @@ public class ForecastParameters {
 		seq_spec_calc_meth = CALC_METH_AUTO_PDL;
 		bayesian_calc_meth = CALC_METH_AUTO_PDL;
 		injectable_text = INJ_TXT_USE_DEFAULT;
+		return;
+	}
+
+	// Copy control parameters from the other object.
+
+	public void copy_control_params_from (ForecastParameters other) {
+		generic_calc_meth = other.generic_calc_meth;
+		seq_spec_calc_meth = other.seq_spec_calc_meth;
+		bayesian_calc_meth = other.bayesian_calc_meth;
+		injectable_text = other.injectable_text;
 		return;
 	}
 
@@ -178,6 +189,15 @@ public class ForecastParameters {
 	public void set_default_generic_params () {
 		generic_regime = null;
 		generic_params = null;
+		return;
+	}
+
+	// Copy generic parameters from the other object.
+	// Note: GenericRJ_Parameters is an immutable object.
+
+	public void copy_generic_params_from (ForecastParameters other) {
+		generic_regime = other.generic_regime;
+		generic_params = other.generic_params;
 		return;
 	}
 
@@ -277,6 +297,15 @@ public class ForecastParameters {
 		return;
 	}
 
+	// Copy magnitude of completeness parameters from the other object.
+	// Note: MagCompPage_Parameters is an immutable object.
+
+	public void copy_mag_comp_params_from (ForecastParameters other) {
+		mag_comp_regime = other.mag_comp_regime;
+		mag_comp_params = other.mag_comp_params;
+		return;
+	}
+
 	// Set magnitude of completeness parameters to analyst values.
 
 	public void set_analyst_mag_comp_params (
@@ -366,6 +395,14 @@ public class ForecastParameters {
 		return;
 	}
 
+	// Copy sequence specific parameters from the other object.
+	// Note: SeqSpecRJ_Parameters is an immutable object.
+
+	public void copy_seq_spec_params_from (ForecastParameters other) {
+		seq_spec_params = other.seq_spec_params;
+		return;
+	}
+
 	// Set sequence specific parameters to analyst values.
 
 	public void set_analyst_seq_spec_params (
@@ -446,7 +483,7 @@ public class ForecastParameters {
 	public double min_days = 0.0;
 
 	// Maximum search time, in days after the mainshock.
-	// Note: This get set to the current time, even if there are analyst-supplied values.
+	// Note: This typically gets set to the current time, even if there are analyst-supplied values.
 
 	public double max_days = 0.0;
 
@@ -475,9 +512,22 @@ public class ForecastParameters {
 		return;
 	}
 
+	// Copy aftershock search parameters from the other object.
+	// Note: SphRegion is an immutable object.
+
+	public void copy_aftershock_search_params_from (ForecastParameters other) {
+		aftershock_search_region = other.aftershock_search_region;
+		min_days = other.min_days;
+		max_days = other.max_days;
+		min_depth = other.min_depth;
+		max_depth = other.max_depth;
+		min_mag = other.min_mag;
+		return;
+	}
+
 	// Set aftershock search parameters to analyst values.
 
-	public void set_analystt_aftershock_search_params (
+	public void set_analyst_aftershock_search_params (
 		boolean the_aftershock_search_avail,
 		SphRegion the_aftershock_search_region,
 		double the_min_days,
@@ -517,6 +567,28 @@ public class ForecastParameters {
 		// Analyst, copy from prior parameters
 
 		case FETCH_METH_ANALYST:
+
+			// If analyst wants it to be available, set region using defaults
+
+			if (prior_params.aftershock_search_avail) {
+
+				set_aftershock_search_region (
+					fcmain,
+					the_start_lag,
+					forecast_lag,
+					prior_params.aftershock_search_region,
+					prior_params.min_days,
+					prior_params.max_days,
+					prior_params.min_depth,
+					prior_params.max_depth,
+					prior_params.min_mag
+				);
+
+				return;
+			}
+
+			// Otherwise, just copy values
+
 			aftershock_search_avail = prior_params.aftershock_search_avail;
 			aftershock_search_region = prior_params.aftershock_search_region;
 			min_days = prior_params.min_days;
@@ -555,10 +627,6 @@ public class ForecastParameters {
 		double centroid_min_mag = mag_comp_params.get_magCentroid (fcmain.mainshock_mag);
 		double centroid_radius = mag_comp_params.get_radiusCentroid (fcmain.mainshock_mag);
 
-		// The initial region is a circle centered at the epicenter
-
-		SphRegion initial_region = SphRegion.makeCircle (fcmain.get_sph_eqk_location(), centroid_radius);
-
 		// Time range used for sampling aftershocks, in days since the mainshock
 
 		//min_days = 0.0;
@@ -576,18 +644,25 @@ public class ForecastParameters {
 
 		min_mag = sample_min_mag;
 
-		// Time range used for centroid
-
-		double centroid_min_days = Math.max (min_days, 0.0);
-		double centroid_max_days = max_days;
-
 		// Retrieve list of aftershocks in the initial region
 
 		ObsEqkRupList aftershocks;
 
-		if (centroid_min_mag > 9.9) {
+		if (centroid_min_mag > SearchMagFn.SKIP_CENTROID_TEST) {
 			aftershocks = new ObsEqkRupList();
 		} else {
+
+			// The initial region is a circle centered at the epicenter
+
+			SphRegion initial_region = SphRegion.makeCircle (fcmain.get_sph_eqk_location(), centroid_radius);
+
+			// Time range used for centroid
+
+			double centroid_min_days = Math.max (min_days, 0.0);
+			double centroid_max_days = max_days;
+
+			// Call Comcat for centroid calculation
+
 			try {
 				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 				aftershocks = accessor.fetchAftershocks(fcmain.get_eqk_rupture(), centroid_min_days, centroid_max_days, min_depth, max_depth, initial_region, initial_region.getPlotWrap(), centroid_min_mag);
@@ -620,6 +695,146 @@ public class ForecastParameters {
 		return;
 	}
 
+	// Directly set the aftershock search region.
+	// All aftershock parameters can be defaulted.
+	// Note: the_start_lag is used only if the_min_days is defaulted.
+	// Note: the_forecast_lag is used only if the_max_days is defaulted.
+
+	public static final double SEARCH_PARAM_OMIT = 1.0e9;		// Value to indicate parameter omitted
+	private static final double SEARCH_PARAM_TEST = 0.9e9;		// Value to test parameter omitted
+
+	public void set_aftershock_search_region (
+		ForecastMainshock fcmain,
+		long the_start_lag,
+		long the_forecast_lag,
+		SphRegion the_aftershock_search_region,
+		double the_min_days,
+		double the_max_days,
+		double the_min_depth,
+		double the_max_depth,
+		double the_min_mag
+	) {
+
+		// Time range used for sampling aftershocks, in days since the mainshock
+
+		if (the_min_days < SEARCH_PARAM_TEST) {
+			min_days = the_min_days;
+		} else {
+			//min_days = 0.0;
+			min_days = ((double)the_start_lag)/ComcatOAFAccessor.day_millis;
+		}
+
+		if (the_max_days < SEARCH_PARAM_TEST) {
+			max_days = the_max_days;
+		} else {
+			//max_days = ((double)System.currentTimeMillis())/ComcatOAFAccessor.day_millis;
+			max_days = ((double)the_forecast_lag)/ComcatOAFAccessor.day_millis;		// the function parameter, not the field
+		}
+
+		// Depth range used for sampling aftershocks, in kilometers
+
+		if (the_min_depth < SEARCH_PARAM_TEST) {
+			min_depth = the_min_depth;
+		} else {
+			min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+		}
+
+		if (the_max_depth < SEARCH_PARAM_TEST) {
+			max_depth = the_max_depth;
+		} else {
+			max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+		}
+
+		// Minimum magnitude used for sampling aftershocks
+
+		if (the_min_mag < SEARCH_PARAM_TEST) {
+			min_mag = the_min_mag;
+		} else {
+
+			// If we don't have mainshock and magnitude of completeness parameters, then we can't fetch aftershock search parameters
+
+			if (!( fcmain.mainshock_avail && mag_comp_avail )) {
+				aftershock_search_avail = false;
+				set_default_aftershock_search_params();
+				return;
+			}
+
+			min_mag = mag_comp_params.get_magSample (fcmain.mainshock_mag);
+		}
+
+		// The search region
+
+		if (the_aftershock_search_region != null) {
+			aftershock_search_region = the_aftershock_search_region;
+		} else {
+
+			// If we don't have mainshock and magnitude of completeness parameters, then we can't fetch aftershock search parameters
+
+			if (!( fcmain.mainshock_avail && mag_comp_avail )) {
+				aftershock_search_avail = false;
+				set_default_aftershock_search_params();
+				return;
+			}
+
+			// Get minimum magnitude and radius parameters
+
+			double sample_radius = mag_comp_params.get_radiusSample (fcmain.mainshock_mag);
+
+			double centroid_min_mag = mag_comp_params.get_magCentroid (fcmain.mainshock_mag);
+			double centroid_radius = mag_comp_params.get_radiusCentroid (fcmain.mainshock_mag);
+
+			// Retrieve list of aftershocks in the initial region
+
+			ObsEqkRupList aftershocks;
+
+			if (centroid_min_mag > SearchMagFn.SKIP_CENTROID_TEST) {
+				aftershocks = new ObsEqkRupList();
+			} else {
+
+				// The initial region is a circle centered at the epicenter
+
+				SphRegion initial_region = SphRegion.makeCircle (fcmain.get_sph_eqk_location(), centroid_radius);
+
+				// Time range used for centroid
+
+				double centroid_min_days = Math.max (min_days, 0.0);
+				double centroid_max_days = max_days;
+
+				// Call Comcat for centroid calculation
+
+				try {
+					ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+					aftershocks = accessor.fetchAftershocks(fcmain.get_eqk_rupture(), centroid_min_days, centroid_max_days, min_depth, max_depth, initial_region, initial_region.getPlotWrap(), centroid_min_mag);
+				} catch (Exception e) {
+					throw new RuntimeException("ForecastParameters.fetch_aftershock_search_region: Comcat exception", e);
+				}
+			}
+
+			// Center of search region
+
+			Location centroid;
+
+			// If no aftershocks, use the hypocenter location
+
+			if (aftershocks.isEmpty()) {
+				centroid = fcmain.get_eqk_location();
+			}
+
+			// Otherwise, use the centroid of the aftershocks
+
+			else {
+				centroid = AftershockStatsCalc.getSphCentroid(fcmain.get_eqk_rupture(), aftershocks);
+			}
+
+			// Search region is a circle centered at the centroid (or hypocenter if no aftershocks)
+			
+			aftershock_search_region = SphRegion.makeCircle (new SphLatLon(centroid), sample_radius);
+		}
+
+		aftershock_search_avail = true;
+		return;
+	}
+
 
 	//----- Transient parameters -----
 
@@ -638,6 +853,14 @@ public class ForecastParameters {
 	public void set_default_transient_params () {
 //		def_injectable_text = null;
 		next_scheduled_lag = 0L;
+		return;
+	}
+
+	// Copy transient parameters from the other object.
+
+	public void copy_transient_params_from (ForecastParameters other) {
+//		def_injectable_text = other.def_injectable_text;
+		next_scheduled_lag = other.next_scheduled_lag;
 		return;
 	}
 
@@ -686,6 +909,28 @@ public class ForecastParameters {
 		return;
 	}
 
+	// Fetch the forecast parameters (not including search region or forecast lag).
+	// Return true if all forecast parameters successfully fetched.
+	// This operation is useful for analyst options and GUI.
+	// Note: This does not do any Comcat calls.
+	
+	public boolean fetch_forecast_params (ForecastMainshock fcmain, ForecastParameters prior_params) {
+		fetch_control_params (fcmain, prior_params);
+		fetch_generic_params (fcmain, prior_params);
+		fetch_mag_comp_params (fcmain, prior_params);
+		fetch_seq_spec_params (fcmain, prior_params);
+
+		return generic_avail && mag_comp_avail && seq_spec_avail;
+	}
+
+	// Set the forecast lag.
+	// This operation is useful for setting the end time of Comcat fetch when finding centroid.
+
+	//  public void set_forecast_lag (long the_forecast_lag) {
+	//  	forecast_lag = the_forecast_lag;
+	//  	return;
+	//  }
+
 	// Set everything to default.
 	// This is a useful starting point for setting up analyst parameters.
 
@@ -711,6 +956,34 @@ public class ForecastParameters {
 		set_default_aftershock_search_params();
 
 		set_default_transient_params();
+	
+		return;
+	}
+
+	// Copy everything from the other object.
+
+	public void copy_from (ForecastParameters other) {
+		forecast_lag = other.forecast_lag;
+
+		copy_control_params_from (other);
+
+		generic_fetch_meth = other.generic_fetch_meth;
+		generic_avail = other.generic_avail;
+		copy_generic_params_from (other);
+
+		mag_comp_fetch_meth = other.mag_comp_fetch_meth;
+		mag_comp_avail = other.mag_comp_avail;
+		copy_mag_comp_params_from (other);
+
+		seq_spec_fetch_meth = other.seq_spec_fetch_meth;
+		seq_spec_avail = other.seq_spec_avail;
+		copy_seq_spec_params_from (other);
+
+		aftershock_search_fetch_meth = other.aftershock_search_fetch_meth;
+		aftershock_search_avail = other.aftershock_search_avail;
+		copy_aftershock_search_params_from (other);
+
+		copy_transient_params_from (other);
 	
 		return;
 	}

@@ -39,6 +39,7 @@ import org.opensha.oaf.util.MarshalImpDataWriter;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TimeSplitOutputStream;
 import org.opensha.oaf.util.ConsoleRedirector;
+import org.opensha.oaf.util.GUICalcProgressBar;
 
 
 /**
@@ -1366,6 +1367,70 @@ public class ServerCmd {
 
 
 
+	// gui_show_relay_status - Display the relay status, for use within a GUI.
+
+	public static void gui_show_relay_status (GUICalcProgressBar progress) {
+
+		// Get list of database handles
+
+		ServerConfig server_config = new ServerConfig();
+		List<String> db_handles = server_config.get_server_db_handles();
+
+		// Server number
+
+		int srvnum = server_config.is_dual_server() ? 9 : 1;
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Loop over possible database handles
+
+		for (int n = 0; n < db_handles.size(); ++n) {
+			String db_handle = db_handles.get(n);
+
+			// If we want this one ...
+
+			if (n == srvnum || (srvnum == 9 && n >= ServerConfigFile.SRVNUM_MIN && n <= ServerConfigFile.SRVNUM_MAX)) {
+				System.out.println ("Fetching status for server " + n);
+
+				if (progress != null) {
+					progress.setIndeterminate(true, "Fetching status for server " + n + "...");
+				}
+
+				RiServerStatus sstat_payload = new RiServerStatus();
+				RelayItem relit = RelaySupport.get_remote_sstat_relay_item (db_handle, sstat_payload);
+			
+				if (relit == null) {
+					System.out.println ("Unable to fetch status for server " + n);
+				} else {
+					System.out.println (sstat_payload.toString());
+
+					if (sstat_payload.heartbeat_time != 0L) {
+						long age = System.currentTimeMillis() - sstat_payload.heartbeat_time;
+						if (age > RelayLink.get_heartbeat_stale()) {
+							long days = age / SimpleUtils.DAY_MILLIS;
+							long hours = (age / SimpleUtils.HOUR_MILLIS) % 24L;
+							long minutes = (age / SimpleUtils.MINUTE_MILLIS) % 60L;
+							if (days != 0L) {
+								System.out.println (String.format ("Heartbeat is STALE, age = %d-%02d:%02d", days, hours, minutes));
+							} else {
+								System.out.println (String.format ("Heartbeat is STALE, age = %d:%02d", hours, minutes));
+							}
+						}
+					}
+				}
+
+				System.out.println ();
+			}
+		}
+
+		return;
+	}
+
+
+
+
 	// cmd_change_relay_mode - Change the relay mode, on a running local or remote server.
 
 	public static void cmd_change_relay_mode(String[] args) {
@@ -1683,6 +1748,97 @@ public class ServerCmd {
 		}
 
 		return;
+	}
+
+
+
+
+	// gui_send_analyst_opts - Send analyst options, for use within a GUI.
+	// Parameters:
+	//  progress = Destination for progress message, or null.
+	//  the_event_id = Event ID to send for.
+	//  f_disable = True to disable forecasts for this event ID.
+	//  analyst_options = Analyst options to send.
+	// Returns true if success, false if cannot send to any server.
+
+	public static boolean gui_send_analyst_opts(GUICalcProgressBar progress,
+			String the_event_id, boolean f_disable, AnalystOptions analyst_options) {
+
+		// Build the analyst selection relay item
+
+		RelayItem relit = RelaySupport.build_ansel_relay_item (
+			the_event_id,
+			f_disable ? OpAnalystIntervene.ASREQ_NONE : OpAnalystIntervene.ASREQ_START,
+			true,
+			analyst_options
+		);
+
+		// Get current time
+
+		long time_now = ServerClock.get_time();
+		boolean f_success = false;
+
+		// Get list of database handles
+
+		ServerConfig server_config = new ServerConfig();
+		List<String> db_handles = server_config.get_server_db_handles();
+
+		// Server number
+
+		int srvnum = server_config.is_dual_server() ? 9 : 1;
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Loop over possible database handles
+
+		for (int n = 0; n < db_handles.size(); ++n) {
+			String db_handle = db_handles.get(n);
+
+			// If we want this one ...
+
+			if (n == srvnum || (srvnum == 9 && n >= ServerConfigFile.SRVNUM_MIN && n <= ServerConfigFile.SRVNUM_MAX)) {
+				System.out.println ("Sending analyst options to server " + n);
+
+				if (progress != null) {
+					progress.setIndeterminate(true, "Sending analyst options to server " + n + "...");
+				}
+
+				long relay_stamp = 0L;
+				int relay_write_option = OpAnalystSelection.RWOPT_WRITE_NEW;
+
+				OpAnalystSelection payload = new OpAnalystSelection();
+				payload.setup (relit, relay_stamp, relay_write_option);
+
+				// Post the task
+
+				String event_id = payload.event_id;
+				int opcode = TaskDispatcher.OPCODE_ANALYST_SELECTION;
+				int stage = 0;
+
+				long the_time = time_now;
+
+				boolean result = TaskDispatcher.post_remote_task (db_handle, event_id, the_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
+
+				if (result) {
+					f_success = true;
+					System.out.println ("Successfully sent new analyst options to server " + n);
+				} else {
+					System.out.println ("Unable to send new analyst options to server " + n);
+				}
+
+				System.out.println ();
+			}
+		}
+
+		if (f_success) {
+			System.out.println ("The operation was successful");
+		} else {
+			System.out.println ("The operation was not successful");
+		}
+
+		return f_success;
 	}
 
 

@@ -184,7 +184,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter init_dataStartTimeParam () throws GUIEDTException {
 		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
 		dataStartTimeParam.setUnits("Days");
-		dataStartTimeParam.setInfo("Relative to main shock origin time");
+		dataStartTimeParam.setInfo("Data start relative to main shock origin time");
 		dataStartTimeParam.addParameterChangeListener(this);
 		return dataStartTimeParam;
 	}
@@ -197,7 +197,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter init_dataEndTimeParam () throws GUIEDTException {
 		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, 36500d, new Double(7d));
 		dataEndTimeParam.setUnits("Days");
-		dataEndTimeParam.setInfo("Relative to main shock origin time");
+		dataEndTimeParam.setInfo("Data end relative to main shock origin time");
 		dataEndTimeParam.addParameterChangeListener(this);
 		return dataEndTimeParam;
 	}
@@ -209,8 +209,8 @@ public class RJGUIController extends RJGUIListener {
 
 	private EnumParameter<RegionType> init_regionTypeParam () throws GUIEDTException {
 		regionTypeParam = new EnumParameter<RegionType>(
-				"Region Type", EnumSet.allOf(RegionType.class), RegionType.CIRCULAR_WC94, null);
-		regionTypeParam.setInfo("For collecting aftershocks");
+				"Region Type", EnumSet.allOf(RegionType.class), RegionType.STANDARD, null);
+		regionTypeParam.setInfo("Type of region for collecting aftershocks");
 		regionTypeParam.addParameterChangeListener(this);
 		return regionTypeParam;
 	}
@@ -225,42 +225,73 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter maxLonParam;		// Maximum longitude; appears when Region Type is Rectangular
 	private DoubleParameter minDepthParam;		// Minimum depth; always appears
 	private DoubleParameter maxDepthParam;		// Maximum depth; always appears
-	private EnumParameter<RegionCenterType> regionCenterTypeParam;	// Region center type; appears when Region Type is Circular or WC 1994 Circular
-	private LocationParameter regionCenterLocParam;	// Region center location; a pop-up; appears when Region Type is Circular or WC 1994 Circular and Region Center Type is Custom Location
+	private DoubleParameter wcMultiplierParam;	// Wells and Coppersmith multiplier; appears for WC regions
+	private DoubleParameter minRadiusParam;		// Minimum radius; appears for WC regions
+	private DoubleParameter maxRadiusParam;		// Maximum radius; appears for WC regions
+	private DoubleParameter centerLatParam;		// Circle center latitude; appears for custom circle
+	private DoubleParameter centerLonParam;		// Circle center longitude; appears for custom circle
 	
 	private ParameterList regionList;			// List of parameters in the Edit Region pop-up
 	private ParameterListParameter regionEditParam;
 	
 
-	private void updateRegionParamList (RegionType type, RegionCenterType centerType) throws GUIEDTException {
+	private void updateRegionParamList (RegionType type) throws GUIEDTException {
 		regionList.clear();
 		
 		switch (type) {
-		case CIRCULAR:
-			regionList.addParameter(radiusParam);
-			break;
-		case CIRCULAR_WC94:
+
+		case STANDARD:
 			// do nothing
 			break;
-		case RECTANGULAR:
+
+		case CENTROID_WC_CIRCLE:
+			regionList.addParameter(wcMultiplierParam);
+			regionList.addParameter(minRadiusParam);
+			regionList.addParameter(maxRadiusParam);
+			regionList.addParameter(minDepthParam);
+			regionList.addParameter(maxDepthParam);
+			break;
+
+		case CENTROID_CIRCLE:
+			regionList.addParameter(radiusParam);
+			regionList.addParameter(minDepthParam);
+			regionList.addParameter(maxDepthParam);
+			break;
+
+		case EPICENTER_WC_CIRCLE:
+			regionList.addParameter(wcMultiplierParam);
+			regionList.addParameter(minRadiusParam);
+			regionList.addParameter(maxRadiusParam);
+			regionList.addParameter(minDepthParam);
+			regionList.addParameter(maxDepthParam);
+			break;
+
+		case EPICENTER_CIRCLE:
+			regionList.addParameter(radiusParam);
+			regionList.addParameter(minDepthParam);
+			regionList.addParameter(maxDepthParam);
+			break;
+
+		case CUSTOM_CIRCLE:
+			regionList.addParameter(radiusParam);
+			regionList.addParameter(centerLatParam);
+			regionList.addParameter(centerLonParam);
+			regionList.addParameter(minDepthParam);
+			regionList.addParameter(maxDepthParam);
+			break;
+
+		case CUSTOM_RECTANGLE:
 			regionList.addParameter(minLatParam);
 			regionList.addParameter(maxLatParam);
 			regionList.addParameter(minLonParam);
 			regionList.addParameter(maxLonParam);
+			regionList.addParameter(minDepthParam);
+			regionList.addParameter(maxDepthParam);
 			break;
 
 		default:
 			throw new IllegalStateException("Unknown region type: " + type);
 		}
-		
-		if (type == RegionType.CIRCULAR || type == RegionType.CIRCULAR_WC94) {
-			regionList.addParameter(regionCenterTypeParam);
-			if (centerType == RegionCenterType.SPECIFIED)
-				regionList.addParameter(regionCenterLocParam);
-		}
-		
-		regionList.addParameter(minDepthParam);
-		regionList.addParameter(maxDepthParam);
 		
 		regionEditParam.getEditor().refreshParamEditor();
 	}
@@ -269,25 +300,51 @@ public class RJGUIController extends RJGUIListener {
 	private ParameterListParameter init_regionEditParam () throws GUIEDTException {
 		radiusParam = new DoubleParameter("Radius", 0d, 20000d, new Double(20d));
 		radiusParam.setUnits("km");
+		radiusParam.setInfo("Radius of circular region");
+
 		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, new Double(32d));
+		minLatParam.setInfo("Minimum latitude of rectangular region");
+
 		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, new Double(36d));
+		maxLatParam.setInfo("Maximum latitude of rectangular region");
+
 		minLonParam = new DoubleParameter("Min Lon", -180d, 180d, new Double(32d));
+		minLonParam.setInfo("Minimum longitude of rectangular region");
+
 		maxLonParam = new DoubleParameter("Max Lon", -180d, 180d, new Double(36d));
+		maxLonParam.setInfo("Maximum longitude of rectangular region");
+
 		minDepthParam = new DoubleParameter("Min Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MIN_DEPTH));
 		minDepthParam.setUnits("km");
+		minDepthParam.setInfo("Minimum depth of region");
+		
 		maxDepthParam = new DoubleParameter("Max Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MAX_DEPTH));
 		maxDepthParam.setUnits("km");
-		regionCenterTypeParam = new EnumParameter<RegionCenterType>(
-				"Region Center", EnumSet.allOf(RegionCenterType.class), RegionCenterType.CENTROID, null);
-		regionCenterLocParam = new LocationParameter("Region Center Location");
-		regionCenterTypeParam.addParameterChangeListener(this);
+		maxDepthParam.setInfo("Maximum depth of region");
+		
+		wcMultiplierParam = new DoubleParameter("WC Multiplier", 0d, 100d, new Double(1d));
+		wcMultiplierParam.setInfo("Multiplier for WC radius");
+
+		minRadiusParam = new DoubleParameter("Min Radius", 0d, 20000d, new Double(10d));
+		minRadiusParam.setUnits("km");
+		minRadiusParam.setInfo("Minimum radius of circular region");
+		
+		maxRadiusParam = new DoubleParameter("Max Radius", 0d, 20000d, new Double(2000d));
+		maxRadiusParam.setUnits("km");
+		maxRadiusParam.setInfo("Maximum radius of circular region");
+		
+		centerLatParam = new DoubleParameter("Center Lat", -90d, 90d, new Double(34d));
+		centerLatParam.setInfo("Latitude of center of circular region");
+
+		centerLonParam = new DoubleParameter("Center Lon", -180d, 180d, new Double(34d));
+		centerLonParam.setInfo("Longitude of center of circular region");
 		
 		regionList = new ParameterList();
 		regionEditParam = new ParameterListParameter("Edit Region", regionList);
 		regionEditParam.setInfo("To set more constraints");
 		regionEditParam.addParameterChangeListener(this);
 
-		updateRegionParamList(regionTypeParam.getValue(), regionCenterTypeParam.getValue());
+		updateRegionParamList(regionTypeParam.getValue());
 
 		return regionEditParam;
 	}
@@ -299,7 +356,7 @@ public class RJGUIController extends RJGUIListener {
 
 	private ButtonParameter init_fetchButton () throws GUIEDTException {
 		fetchButton = new ButtonParameter("USGS Event Webservice", "Fetch Data");
-		fetchButton.setInfo("From USGS ComCat");
+		fetchButton.setInfo("Fetch data from USGS ComCat");
 		fetchButton.addParameterChangeListener(this);
 		return fetchButton;
 	}
@@ -312,7 +369,7 @@ public class RJGUIController extends RJGUIListener {
 
 	private ButtonParameter init_loadCatalogButton () throws GUIEDTException {
 		loadCatalogButton = new ButtonParameter("External Catalog", "Load Catalog");
-		loadCatalogButton.setInfo("Load catalog in 10 column format");
+		loadCatalogButton.setInfo("Load catalog from file in 10 column format");
 		loadCatalogButton.addParameterChangeListener(this);
 		return loadCatalogButton;
 	}
@@ -320,12 +377,12 @@ public class RJGUIController extends RJGUIListener {
 
 	// Save Catalog button.
 
-	private JFileChooser saveCatalogChooser;		// the file chooser dialog, lazy-allocated
+	private JFileChooser saveCatalogChooser = null;		// the file chooser dialog, lazy-allocated
 	private ButtonParameter saveCatalogButton;
 
 	private ButtonParameter init_saveCatalogButton () throws GUIEDTException {
 		saveCatalogButton = new ButtonParameter("Aftershock Catalog", "Save Catalog");
-		saveCatalogButton.setInfo("Save catalog in 10 column format");
+		saveCatalogButton.setInfo("Save catalog to file in 10 column format");
 		saveCatalogButton.addParameterChangeListener(this);
 		return saveCatalogButton;
 	}
@@ -341,7 +398,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter init_mcParam () throws GUIEDTException {
 		mcParam = new DoubleParameter("Mc For Sequence", 0d, 9d);
 		mcParam.getConstraint().setNullAllowed(true);
-		mcParam.setInfo("Default is Mmaxc+0.5, but user can specify other");
+		mcParam.setInfo("Default is Mmaxc+0.5, but user can modify");
 		mcParam.addParameterChangeListener(this);
 		return mcParam;
 	}
@@ -606,6 +663,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter init_forecastStartTimeParam () throws GUIEDTException {
 		forecastStartTimeParam = new DoubleParameter("Forecast Start Time", 0d, 36500d, new Double(0d));
 		forecastStartTimeParam.setUnits("Days");
+		forecastStartTimeParam.setInfo("Forecast start relative to main shock origin time");
 		forecastStartTimeParam.addParameterChangeListener(this);
 		return forecastStartTimeParam;
 	}
@@ -619,6 +677,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter init_forecastEndTimeParam () throws GUIEDTException {
 		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, 36500d, new Double(7d));
 		forecastEndTimeParam.setUnits("Days");
+		forecastEndTimeParam.setInfo("Forecast end relative to main shock origin time");
 		forecastEndTimeParam.addParameterChangeListener(this);
 		return forecastEndTimeParam;
 	}
@@ -632,6 +691,76 @@ public class RJGUIController extends RJGUIListener {
 		computeAftershockForecastButton = new ButtonParameter("Aftershock Forecast", "Compute");
 		computeAftershockForecastButton.addParameterChangeListener(this);
 		return computeAftershockForecastButton;
+	}
+
+
+	// Fetch Server Status button.
+
+	private ButtonParameter fetchServerStatusButton;
+
+	private ButtonParameter init_fetchServerStatusButton () throws GUIEDTException {
+		fetchServerStatusButton = new ButtonParameter("AAFS Server", "Fetch Status");
+		fetchServerStatusButton.addParameterChangeListener(this);
+		return fetchServerStatusButton;
+	}
+
+
+	// Automatic forecast enable; dropdown containing an enumeration to select automatic enable option.
+
+	private EnumParameter<AutoEnable> autoEnableParam;
+
+	private EnumParameter<AutoEnable> init_autoEnableParam () throws GUIEDTException {
+		autoEnableParam = new EnumParameter<AutoEnable>(
+				"Automatic Forecasts", EnumSet.allOf(AutoEnable.class), AutoEnable.NORMAL, null);
+		autoEnableParam.setInfo("Controls whether the automatic system generates forecasts");
+		autoEnableParam.addParameterChangeListener(this);
+		return autoEnableParam;
+	}
+
+
+	// Option to supply custom parameters to automatic system; check box.
+	// Default is obtained from generic parameters when the data is loaded (typically true).
+
+	private BooleanParameter useCustomParamsParam;
+
+	private BooleanParameter init_useCustomParamsParam () throws GUIEDTException {
+		useCustomParamsParam = new BooleanParameter("Use custom parameters", true);
+		useCustomParamsParam.addParameterChangeListener(this);
+		return useCustomParamsParam;
+	}
+
+
+	// Set Injectable Text button.
+
+	private ButtonParameter setInjTextButton;
+
+	private ButtonParameter init_setInjTextButton () throws GUIEDTException {
+		setInjTextButton = new ButtonParameter("Injectable Text", "Set Text");
+		setInjTextButton.addParameterChangeListener(this);
+		return setInjTextButton;
+	}
+
+
+	// Export Analyst Options button.
+
+	private JFileChooser exportAnalystOptionsChooser = null;		// the file chooser dialog, lazy-allocated
+	private ButtonParameter exportAnalystOptionsButton;
+
+	private ButtonParameter init_exportAnalystOptionsButton () throws GUIEDTException {
+		exportAnalystOptionsButton = new ButtonParameter("Export Analyst Options", "Export to JSON");
+		exportAnalystOptionsButton.addParameterChangeListener(this);
+		return exportAnalystOptionsButton;
+	}
+
+
+	// Fetch Server Status button.
+
+	private ButtonParameter sendAnalystOptionsButton;
+
+	private ButtonParameter init_sendAnalystOptionsButton () throws GUIEDTException {
+		sendAnalystOptionsButton = new ButtonParameter("Send Analyst Options", "Send to Server");
+		sendAnalystOptionsButton.addParameterChangeListener(this);
+		return sendAnalystOptionsButton;
 	}
 
 
@@ -738,6 +867,18 @@ public class RJGUIController extends RJGUIListener {
 		fitParams.addParameter(init_forecastEndTimeParam());
 		
 		fitParams.addParameter(init_computeAftershockForecastButton());
+		
+		fitParams.addParameter(init_fetchServerStatusButton());
+		
+		fitParams.addParameter(init_autoEnableParam());
+		
+		fitParams.addParameter(init_useCustomParamsParam());
+		
+		fitParams.addParameter(init_setInjTextButton());
+		
+		fitParams.addParameter(init_exportAnalystOptionsButton());
+		
+		fitParams.addParameter(init_sendAnalystOptionsButton());
 
 		// Create the container
 
@@ -763,6 +904,7 @@ public class RJGUIController extends RJGUIListener {
 		add_symbol (dataStartTimeParam , "dataStartTimeParam");
 		add_symbol (dataEndTimeParam , "dataEndTimeParam");
 		add_symbol (regionTypeParam , "regionTypeParam");
+
 		add_symbol (radiusParam , "radiusParam");
 		add_symbol (minLatParam , "minLatParam");
 		add_symbol (maxLatParam , "maxLatParam");
@@ -770,14 +912,17 @@ public class RJGUIController extends RJGUIListener {
 		add_symbol (maxLonParam , "maxLonParam");
 		add_symbol (minDepthParam , "minDepthParam");
 		add_symbol (maxDepthParam , "maxDepthParam");
-		add_symbol (regionCenterTypeParam , "regionCenterTypeParam");
-		add_symbol (regionCenterLocParam , "regionCenterLocParam");
+		add_symbol (wcMultiplierParam , "wcMultiplierParam");
+		add_symbol (minRadiusParam , "minRadiusParam");
+		add_symbol (maxRadiusParam , "maxRadiusParam");
+		add_symbol (centerLatParam , "centerLatParam");
+		add_symbol (centerLonParam , "centerLonParam");
+
 		add_symbol (regionList , "regionList");
 		add_symbol (regionEditParam , "regionEditParam");
 		add_symbol (fetchButton , "fetchButton");
 		add_symbol (loadCatalogChooser , "loadCatalogChooser");
 		add_symbol (loadCatalogButton , "loadCatalogButton");
-		add_symbol (saveCatalogChooser , "saveCatalogChooser");
 		add_symbol (saveCatalogButton , "saveCatalogButton");
 		add_symbol (mcParam , "mcParam");
 		add_symbol (magPrecisionParam , "magPrecisionParam");
@@ -804,6 +949,13 @@ public class RJGUIController extends RJGUIListener {
 		add_symbol (forecastStartTimeNowParam , "forecastStartTimeNowParam");
 		add_symbol (computeAftershockForecastButton , "computeAftershockForecastButton");
 
+		add_symbol (fetchServerStatusButton , "fetchServerStatusButton");
+		add_symbol (autoEnableParam , "autoEnableParam");
+		add_symbol (useCustomParamsParam , "useCustomParamsParam");
+		add_symbol (setInjTextButton , "setInjTextButton");
+		add_symbol (exportAnalystOptionsButton , "exportAnalystOptionsButton");
+		add_symbol (sendAnalystOptionsButton , "sendAnalystOptionsButton");
+
 		add_symbol (dataEditor , "dataEditor");
 		add_symbol (fitEditor , "fitEditor");
 
@@ -823,12 +975,14 @@ public class RJGUIController extends RJGUIListener {
 	//  f_catalog = Catalog is available.
 	//  f_params = Aftershock parameters are available.
 	//  f_forecast = Forecast is available.
+	//  f_edit_region = Edit region option is available.
 	//  f_time_dep_mc = Time dependent parameters are being used.
+	//  f_fetched = Catalog is available, and data was fetched from Comcat.
 	// Note: Controls are enabled by default, so controls that are always
 	// enabled do not need to be mentioned.
 	// Note: Also clears some controls, according to the supplied parameters.
 
-	private void adjust_enable (boolean f_catalog, boolean f_params, boolean f_forecast, boolean f_time_dep_mc) throws GUIEDTException {
+	private void adjust_enable (boolean f_catalog, boolean f_params, boolean f_forecast, boolean f_edit_region, boolean f_time_dep_mc, boolean f_fetched) throws GUIEDTException {
 
 		// Data parameters that are always enabled
 
@@ -836,7 +990,7 @@ public class RJGUIController extends RJGUIListener {
 		enableParam(dataStartTimeParam, true);
 		enableParam(dataEndTimeParam, true);
 		enableParam(regionTypeParam, true);
-		enableParam(regionEditParam, true);
+		enableParam(regionEditParam, f_edit_region);
 		enableParam(fetchButton, true);
 		enableParam(loadCatalogButton, true);
 
@@ -882,6 +1036,20 @@ public class RJGUIController extends RJGUIListener {
 		enableParam(forecastEndTimeParam, f_catalog && f_params);
 		enableParam(computeAftershockForecastButton, f_catalog && f_params);
 
+		// Analyst parameters
+
+		enableParam(fetchServerStatusButton, true);
+		enableParam(autoEnableParam, f_catalog && f_params && f_fetched);
+		enableParam(useCustomParamsParam, f_catalog && f_params && f_fetched);
+		enableParam(setInjTextButton, f_catalog && f_params && f_fetched);
+		enableParam(exportAnalystOptionsButton, f_catalog && f_params && f_fetched);
+		enableParam(sendAnalystOptionsButton, f_catalog && f_params && f_fetched);
+
+		if (!( f_catalog && f_params && f_fetched )) {
+			updateParam(autoEnableParam, AutoEnable.NORMAL);
+			updateParam(useCustomParamsParam, true);
+		}
+
 		// Data parameters that are cleared when there is no catalog loaded
 
 		if (!( f_catalog )) {
@@ -924,8 +1092,10 @@ public class RJGUIController extends RJGUIListener {
 		boolean f_catalog = gui_model.modstate_has_catalog();
 		boolean f_params = gui_model.modstate_has_aftershock_params();
 		boolean f_forecast = gui_model.modstate_has_forecast();
+		boolean f_edit_region = (validParam(regionTypeParam) != RegionType.STANDARD);
 		boolean f_time_dep_mc = validParam(timeDepMcParam);
-		adjust_enable (f_catalog, f_params, f_forecast, f_time_dep_mc);
+		boolean f_fetched = gui_model.modstate_has_catalog() && gui_model.get_has_fetched_catalog();
+		adjust_enable (f_catalog, f_params, f_forecast, f_edit_region, f_time_dep_mc, f_fetched);
 		return;
 	}
 
@@ -1111,8 +1281,11 @@ public class RJGUIController extends RJGUIListener {
 		public double x_maxLonParam;		// Maximum longitude; appears when Region Type is Rectangular
 		public double x_minDepthParam;		// Minimum depth; always appears
 		public double x_maxDepthParam;		// Maximum depth; always appears
-		public RegionCenterType x_regionCenterTypeParam;	// Region center type; appears when Region Type is Circular or WC 1994 Circular
-		public Location x_regionCenterLocParam;	// Region center location; appears when Region Type is Circular or WC 1994 Circular and Region Center Type is Custom Location
+		public double x_wcMultiplierParam;	// Wells and Coppersmith multiplier; appears for WC regions
+		public double x_minRadiusParam;		// Minimum radius; appears for WC regions
+		public double x_maxRadiusParam;		// Maximum radius; appears for WC regions
+		public double x_centerLatParam;		// Circle center latitude; appears for custom circle
+		public double x_centerLonParam;		// Circle center longitude; appears for custom circle
 
 		// Mc for sequence, can be null.
 
@@ -1236,22 +1409,60 @@ public class RJGUIController extends RJGUIListener {
 
 			if (f_fetch) {
 				x_regionTypeParam = validParam(regionTypeParam);
-				if (x_regionTypeParam == RegionType.CIRCULAR) {
+		
+				switch (x_regionTypeParam) {
+
+				case STANDARD:
+					// do nothing
+					break;
+
+				case CENTROID_WC_CIRCLE:
+					x_wcMultiplierParam = validParam(wcMultiplierParam);
+					x_minRadiusParam = validParam(minRadiusParam);
+					x_maxRadiusParam = validParam(maxRadiusParam);
+					x_minDepthParam = validParam(minDepthParam);
+					x_maxDepthParam = validParam(maxDepthParam);
+					break;
+
+				case CENTROID_CIRCLE:
 					x_radiusParam = validParam(radiusParam);
-				}
-				if (x_regionTypeParam == RegionType.RECTANGULAR) {
+					x_minDepthParam = validParam(minDepthParam);
+					x_maxDepthParam = validParam(maxDepthParam);
+					break;
+
+				case EPICENTER_WC_CIRCLE:
+					x_wcMultiplierParam = validParam(wcMultiplierParam);
+					x_minRadiusParam = validParam(minRadiusParam);
+					x_maxRadiusParam = validParam(maxRadiusParam);
+					x_minDepthParam = validParam(minDepthParam);
+					x_maxDepthParam = validParam(maxDepthParam);
+					break;
+
+				case EPICENTER_CIRCLE:
+					x_radiusParam = validParam(radiusParam);
+					x_minDepthParam = validParam(minDepthParam);
+					x_maxDepthParam = validParam(maxDepthParam);
+					break;
+
+				case CUSTOM_CIRCLE:
+					x_radiusParam = validParam(radiusParam);
+					x_centerLatParam = validParam(centerLatParam);
+					x_centerLonParam = validParam(centerLonParam);
+					x_minDepthParam = validParam(minDepthParam);
+					x_maxDepthParam = validParam(maxDepthParam);
+					break;
+
+				case CUSTOM_RECTANGLE:
 					x_minLatParam = validParam(minLatParam);
 					x_maxLatParam = validParam(maxLatParam);
 					x_minLonParam = validParam(minLonParam);
 					x_maxLonParam = validParam(maxLonParam);
-				}
-				x_minDepthParam = validParam(minDepthParam);
-				x_maxDepthParam = validParam(maxDepthParam);
-				if (x_regionTypeParam == RegionType.CIRCULAR || x_regionTypeParam == RegionType.CIRCULAR_WC94) {
-					x_regionCenterTypeParam = validParam(regionCenterTypeParam);
-					if (x_regionCenterTypeParam == RegionCenterType.SPECIFIED) {
-						x_regionCenterLocParam = validParam(regionCenterLocParam);
-					}
+					x_minDepthParam = validParam(minDepthParam);
+					x_maxDepthParam = validParam(maxDepthParam);
+					break;
+
+				default:
+					throw new IllegalStateException("Unknown region type: " + x_regionTypeParam);
 				}
 			}
 
@@ -1325,19 +1536,17 @@ public class RJGUIController extends RJGUIListener {
 	private void post_fetch_param_update () throws GUIEDTException {
 
 		// Initialize aftershock parameters from the model or parameters
-		// Note: The a-value parameters are taken from the generic model instead of the
-		// generic parameters, because the model can slightly alter the a-value parameters.
 
-		updateParam(aValRangeParam, new Range(gui_model.get_genericModel().getMin_a(), gui_model.get_genericModel().getMax_a()));
-		updateParam(aValNumParam, gui_model.get_genericModel().getNum_a());
-		updateParam(pValRangeParam, new Range(gui_model.get_genericParams().get_pValue(), gui_model.get_genericParams().get_pValue()));
-		updateParam(pValNumParam, 1);
-		updateParam(cValRangeParam, new Range(gui_model.get_genericParams().get_cValue(), gui_model.get_genericParams().get_cValue()));
-		updateParam(cValNumParam, 1);
+		updateParam(aValRangeParam, new Range(gui_model.get_seqSpecParams().get_min_a(), gui_model.get_seqSpecParams().get_max_a()));
+		updateParam(aValNumParam, gui_model.get_seqSpecParams().get_num_a());
+		updateParam(pValRangeParam, new Range(gui_model.get_seqSpecParams().get_min_p(), gui_model.get_seqSpecParams().get_max_p()));
+		updateParam(pValNumParam, gui_model.get_seqSpecParams().get_num_p());
+		updateParam(cValRangeParam, new Range(gui_model.get_seqSpecParams().get_min_c(), gui_model.get_seqSpecParams().get_max_c()));
+		updateParam(cValNumParam, gui_model.get_seqSpecParams().get_num_c());
 
-		//updateParam(bParam, gui_model.get_genericModel().get_b());		// done in the model
+		//updateParam(bParam, gui_model.get_seqSpecParams().get_b());		// done in the model
 
-		updateParam(timeDepMcParam, gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapG() <= 99.999);
+		updateParam(timeDepMcParam, !(gui_model.get_magCompParams().get_magCompFn().is_constant()));
 		updateParam(fParam, gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapF());
 		updateParam(gParam, gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapG());
 		updateParam(hParam, gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapH());
@@ -1345,6 +1554,31 @@ public class RJGUIController extends RJGUIListener {
 
 		return;
 	}
+
+
+//	private void post_fetch_param_update () throws GUIEDTException {
+//
+//		// Initialize aftershock parameters from the model or parameters
+//		// Note: The a-value parameters are taken from the generic model instead of the
+//		// generic parameters, because the model can slightly alter the a-value parameters.
+//
+//		updateParam(aValRangeParam, new Range(gui_model.get_genericModel().getMin_a(), gui_model.get_genericModel().getMax_a()));
+//		updateParam(aValNumParam, gui_model.get_genericModel().getNum_a());
+//		updateParam(pValRangeParam, new Range(gui_model.get_genericParams().get_pValue(), gui_model.get_genericParams().get_pValue()));
+//		updateParam(pValNumParam, 1);
+//		updateParam(cValRangeParam, new Range(gui_model.get_genericParams().get_cValue(), gui_model.get_genericParams().get_cValue()));
+//		updateParam(cValNumParam, 1);
+//
+//		//updateParam(bParam, gui_model.get_genericModel().get_b());		// done in the model
+//
+//		updateParam(timeDepMcParam, gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapG() <= 99.999);
+//		updateParam(fParam, gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapF());
+//		updateParam(gParam, gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapG());
+//		updateParam(hParam, gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapH());
+//		updateParam(mCatParam, gui_model.get_magCompParams().get_magCat());
+//
+//		return;
+//	}
 
 
 
@@ -1594,6 +1828,77 @@ public class RJGUIController extends RJGUIListener {
 
 
 
+	//----- Parameter handling for analyst options -----
+
+
+
+
+	// Class to view relevant parameters.
+	// This class holds copies of the parameters.
+
+	public static class XferAnalystView {
+
+		// Forecast start time, in days since the mainshock.
+
+		public AutoEnable x_autoEnableParam;	// parameter value, checked for validity
+
+		// Forecast start time, in days since the mainshock.
+
+		public boolean x_useCustomParamsParam;	// parameter value, checked for validity
+	}
+
+
+
+
+	// Class to view or modify relevant parameters.
+	// Modifications act on the copies of parameters, hence EDT is not required.
+
+	public static abstract class XferAnalystMod extends XferAnalystView {
+
+	}
+
+
+
+
+	// Transfer parameters for catalog fetch or load.
+
+	public class XferAnalystImpl extends XferAnalystMod {
+
+
+		// Load values.
+
+		public XferAnalystImpl xfer_load () {
+
+			// Forecast start and end time
+
+			x_autoEnableParam = validParam(autoEnableParam);
+
+			x_useCustomParamsParam = validParam(useCustomParamsParam);
+
+			return this;
+		}
+
+
+		// Store modified values back into the parameters.
+
+		public void xfer_store () throws GUIEDTException {
+			return;
+		}
+	}
+
+
+
+
+	// Update parameters after analyst options.
+
+	private void post_analyst_update () throws GUIEDTException {
+
+		return;
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -1653,13 +1958,13 @@ public class RJGUIController extends RJGUIListener {
 			}
 
 
-		// Region type, region center type.
-		// - Update the edit region dialog, to include the controls for the selected region or center type.
+		// Region type.
+		// - Update the edit region dialog, to include the controls for the selected region type.
 		// - Dump any catalog that has been fetched.
 
-		} else if (param == regionTypeParam || param == regionCenterTypeParam) {
-			updateRegionParamList(validParam(regionTypeParam), validParam(regionCenterTypeParam));
-			if (filter_state(MODSTATE_INITIAL)) {
+		} else if (param == regionTypeParam) {
+			updateRegionParamList(validParam(regionTypeParam));
+			if (filter_state(MODSTATE_INITIAL, FILTOPT_REPAINT)) {
 				return;
 			}
 
@@ -2050,6 +2355,208 @@ public class RJGUIController extends RJGUIListener {
 			}, true);
 			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2, postComputeStep);
 			new Thread(run).start();
+
+
+		// Button to fetch server status.
+		// - In backgound:
+		//   1. Switch view to the console.
+		//   2. Fetch server status.
+
+		} else if (param == fetchServerStatusButton) {
+
+			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
+			GUICalcStep computeStep_1 = new GUICalcStep("Fetching AAFS server status", "...", new GUIEDTRunnable() {
+						
+				@Override
+				public void run_in_edt() throws GUIEDTException {
+					gui_view.view_show_console();
+				}
+			}, true);
+			GUICalcStep computeStep_2 = new GUICalcStep("Fetching AAFS server status", "...", new Runnable() {
+						
+				@Override
+				public void run() {
+					gui_model.fetchServerStatus(progress);
+				}
+			}, gui_top.get_forceWorkerEDT());
+			GUICalcStep postComputeStep = new GUICalcStep("Fetching AAFS server status", "...", new GUIEDTRunnable() {
+						
+				@Override
+				public void run_in_edt() throws GUIEDTException {
+					gui_view.view_show_console();
+				}
+			}, true);
+			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2, postComputeStep);
+			new Thread(run).start();
+
+
+		// Drop-down to select automatic forecast enable.
+
+		} else if (param == autoEnableParam) {
+			if (filter_state(MODSTATE_PARAMETERS, FILTOPT_TEST)) {
+				return;
+			}
+			if (!( gui_model.get_has_fetched_catalog() )) {
+				return;
+			}
+
+
+		// Boolean to select whether to use custom parameters.
+
+		} else if (param == useCustomParamsParam) {
+			if (filter_state(MODSTATE_PARAMETERS, FILTOPT_TEST)) {
+				return;
+			}
+			if (!( gui_model.get_has_fetched_catalog() )) {
+				return;
+			}
+
+
+		// Button to edit Injectable text.
+		// - Pop up a dialog box to edit the text.
+
+		} else if (param == setInjTextButton) {
+			if (filter_state(MODSTATE_PARAMETERS, FILTOPT_TEST)) {
+				return;
+			}
+			if (!( gui_model.get_has_fetched_catalog() )) {
+				return;
+			}
+
+			//  // Show a dialog containing the existing injectable text
+			//  
+			//  String prevText = gui_model.get_analyst_inj_text();
+			//  if (prevText == null) {	// should never happen
+			//  	prevText = "";
+			//  }
+			//  JTextArea area = new JTextArea(prevText);
+			//  Dimension size = new Dimension(300, 200);
+			//  area.setPreferredSize(size);
+			//  area.setMinimumSize(size);
+			//  area.setLineWrap(true);
+			//  area.setWrapStyleWord(true);
+			//  int ret = JOptionPane.showConfirmDialog(gui_top.get_top_window(), area, "Set Injectable Text", JOptionPane.OK_CANCEL_OPTION);
+
+			// Show a dialog containing the existing injectable text
+
+			String prevText = gui_model.get_analyst_inj_text();
+			if (prevText == null) {	// should never happen
+				prevText = "";
+			}
+			JTextArea area = new JTextArea(prevText);
+			JScrollPane scroll = new JScrollPane(area);
+			Dimension size = new Dimension(600, 200);
+			scroll.setPreferredSize(size);
+			scroll.setMinimumSize(size);
+			scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+			area.setLineWrap(true);
+			area.setWrapStyleWord(true);
+			int ret = JOptionPane.showConfirmDialog(gui_top.get_top_window(), scroll, "Set Injectable Text", JOptionPane.OK_CANCEL_OPTION);
+
+			// If user entered new text, store it
+
+			if (ret == JOptionPane.OK_OPTION) {
+				String text = area.getText().trim();
+				gui_model.setAnalystInjText(text);
+			}
+
+
+		// Export analyst options button.
+		// - Display the file chooser.
+		// - Write the analyst options.
+
+		} else if (param == exportAnalystOptionsButton) {
+			if (filter_state(MODSTATE_PARAMETERS, FILTOPT_TEST)) {
+				return;
+			}
+			if (exportAnalystOptionsChooser == null) {
+				exportAnalystOptionsChooser = new JFileChooser();
+			}
+			int ret = exportAnalystOptionsChooser.showSaveDialog(gui_top.get_top_window());
+			if (ret == JFileChooser.APPROVE_OPTION) {
+				try {
+					File file = exportAnalystOptionsChooser.getSelectedFile();
+					final XferAnalystImpl xfer_analyst_impl = new XferAnalystImpl();
+					xfer_analyst_impl.xfer_load();
+					gui_model.exportAnalystOptions (xfer_analyst_impl, file);
+					xfer_analyst_impl.xfer_store();
+				} catch (Exception e) {
+					e.printStackTrace();
+					JOptionPane.showMessageDialog(gui_top.get_top_window(), e.getMessage(),
+							"Error Exporting Analyst Options", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+
+
+		// Button to send analyst options to server.
+		// - Ask user for confirmation.
+		// - In backgound:
+		//   1. Send analyst options to server.
+		//   2. Pop up a dialog box to report the result.
+
+		} else if (param == sendAnalystOptionsButton) {
+			if (filter_state(MODSTATE_PARAMETERS, FILTOPT_TEST)) {
+				return;
+			}
+			if (exportAnalystOptionsChooser == null) {
+				exportAnalystOptionsChooser = new JFileChooser();
+			}
+
+			// Ask user for confirmation
+
+			String userInput = JOptionPane.showInputDialog(gui_top.get_top_window(), "Type \"AAFS\" and press OK to send analyst options to server", "Confirm sending analyst options", JOptionPane.PLAIN_MESSAGE);
+				
+			// User canceled, or did not enter correct text
+				
+			if (userInput == null || !(userInput.equals("AAFS"))) {
+				JOptionPane.showMessageDialog(gui_top.get_top_window(), "Canceled: Analyst options have NOT been sent to server", "Send canceled", JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+
+			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
+			final XferAnalystImpl xfer_analyst_impl = new XferAnalystImpl();
+			final boolean[] send_success = new boolean[1];
+			send_success[0] = false;
+			final Exception[] send_exception = new Exception[1];
+			send_exception[0] = null;
+			GUICalcStep computeStep_1 = new GUICalcStep("Sending analyst options to AAFS server", "...", new GUIEDTRunnable() {
+						
+				@Override
+				public void run_in_edt() throws GUIEDTException {
+					xfer_analyst_impl.xfer_load();
+				}
+			}, true);
+			GUICalcStep computeStep_2 = new GUICalcStep("Sending analyst options to AAFS server", "...", new Runnable() {
+						
+				@Override
+				public void run() {
+					try {
+						send_success[0] = gui_model.sendAnalystOptions(progress, xfer_analyst_impl);
+					} catch (Exception e) {
+						send_exception[0] = e;
+					}
+				}
+			}, gui_top.get_forceWorkerEDT());
+			GUICalcStep postComputeStep = new GUICalcStep("Sending analyst options to AAFS server", "...", new GUIEDTRunnable() {
+						
+				@Override
+				public void run_in_edt() throws GUIEDTException {
+					xfer_analyst_impl.xfer_store();
+					if (send_exception[0] != null) {
+						send_exception[0].printStackTrace();
+						String message = ClassUtils.getClassNameWithoutPackage(send_exception[0].getClass())+ ": " + send_exception[0].getMessage();
+						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send failed", JOptionPane.ERROR_MESSAGE);
+					} else if (send_success[0]) {
+						JOptionPane.showMessageDialog(gui_top.get_top_window(), "Success: Analyst options have been successfully sent to server", "Send succeeded", JOptionPane.INFORMATION_MESSAGE);
+					} else {
+						String message = "Error: Unable to send analyst options to any server";
+						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send failed", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			}, true);
+			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2, postComputeStep);
+			new Thread(run).start();
+
 
 		}
 

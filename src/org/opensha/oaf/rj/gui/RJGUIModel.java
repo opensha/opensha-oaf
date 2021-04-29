@@ -147,6 +147,16 @@ import org.opensha.oaf.comcat.ComcatOAFProduct;
 
 import org.json.simple.JSONObject;
 
+import java.io.BufferedWriter;
+
+import org.opensha.oaf.aafs.ForecastMainshock;
+import org.opensha.oaf.aafs.ForecastParameters;
+import org.opensha.oaf.aafs.ServerCmd;
+import org.opensha.oaf.aafs.AnalystOptions;
+import org.opensha.oaf.aafs.ActionConfig;
+
+import org.opensha.oaf.util.MarshalImpJsonWriter;
+
 
 // Reasenberg & Jones GUI - Model implementation.
 // Michael Barall 03/15/2021
@@ -340,21 +350,63 @@ public class RJGUIModel extends RJGUIComponent {
 	//----- Model data structures -----
 
 
-	// Comcat accessor.
-	
-	private ComcatOAFAccessor accessor;
+	// The mainshock structure.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	private ForecastMainshock fcmain;
+
+	// The AAFS parameters for the mainshock.
+	// This contains all default parameters for the mainshock, except the search region.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	private ForecastParameters aafs_fcparams;
+
+	// The parameters used during the fetch operation.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	private ForecastParameters fetch_fcparams;
+
+	// Custom search region, or null if none.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	private SphRegion custom_search_region;
+
+	// Analyst injectable text, or null if none.
+	// Available when model state >= MODSTATE_CATALOG.
+	// An empty string means no injectable text.
+
+	private String analyst_inj_text;
+
+	public final String get_analyst_inj_text () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to RJGUIModel.analyst_inj_text while in state " + cur_modstate_string());
+		}
+		return analyst_inj_text;
+	}
+
+	// True if the stored catalog is fetched from Comcat.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	private boolean has_fetched_catalog;
+
+	public final boolean get_has_fetched_catalog () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to RJGUIModel.has_fetched_catalog while in state " + cur_modstate_string());
+		}
+		return has_fetched_catalog;
+	}
+
+
 
 	// The search region, or null if none.
 	// It is null if a catalog is loaded from a file.
 	// Available when model state >= MODSTATE_CATALOG.
-	
-	private SphRegion cur_region;
 
 	public final SphRegion get_cur_region () {
 		if (!( modstate >= MODSTATE_CATALOG )) {
 			throw new IllegalStateException ("Access to RJGUIModel.cur_region while in state " + cur_modstate_string());
 		}
-		return cur_region;
+		return fetch_fcparams.aftershock_search_region;
 	}
 
 	// The mainshock.
@@ -397,15 +449,12 @@ public class RJGUIModel extends RJGUIComponent {
 
 	// The generic parameters for the mainshock.
 	// Available when model state >= MODSTATE_CATALOG.
-	
-	private GenericRJ_ParametersFetch genericFetch = null;
-	private GenericRJ_Parameters genericParams = null;
 
 	public final GenericRJ_Parameters get_genericParams () {
 		if (!( modstate >= MODSTATE_CATALOG )) {
 			throw new IllegalStateException ("Access to RJGUIModel.genericParams while in state " + cur_modstate_string());
 		}
-		return genericParams;
+		return aafs_fcparams.generic_params;
 	}
 
 	// The generic model for the mainshock.
@@ -422,15 +471,22 @@ public class RJGUIModel extends RJGUIComponent {
 
 	// The magnitude-of-completeness parameters for the mainshock.
 	// Available when model state >= MODSTATE_CATALOG.
-	
-	private MagCompPage_ParametersFetch magCompFetch = null;
-	private MagCompPage_Parameters magCompParams = null;
 
 	public final MagCompPage_Parameters get_magCompParams () {
 		if (!( modstate >= MODSTATE_CATALOG )) {
 			throw new IllegalStateException ("Access to RJGUIModel.magCompParams while in state " + cur_modstate_string());
 		}
-		return magCompParams;
+		return aafs_fcparams.mag_comp_params;
+	}
+
+	// The sequence-specific parameters for the mainshock.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	public final SeqSpecRJ_Parameters get_seqSpecParams () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to RJGUIModel.seqSpecParams while in state " + cur_modstate_string());
+		}
+		return aafs_fcparams.seq_spec_params;
 	}
 
 	// The Bayesian model.
@@ -622,13 +678,18 @@ public class RJGUIModel extends RJGUIComponent {
 		// Structures not valid if we don't have a catalog
 
 		if (modstate < MODSTATE_CATALOG) {
-			cur_region = null;
+			fcmain = null;
+			aafs_fcparams = null;
+			fetch_fcparams = null;
+			custom_search_region = null;
+			analyst_inj_text = null;
+			has_fetched_catalog = false;
+
 			cur_mainshock = null;
 			cur_aftershocks = null;
-			genericParams = null;
 			genericModel = null;
-			magCompParams = null;
 			aftershockMND = null;
+			mnd_mmaxc = 0.0;
 		}
 
 		return;
@@ -695,24 +756,26 @@ public class RJGUIModel extends RJGUIComponent {
 
 		modstate = MODSTATE_INITIAL;
 
-		// Allocate the accessor for all operations
-
-		accessor = new ComcatOAFAccessor();
-
 		// No data structures yet
 
-		cur_region = null;
+		fcmain = null;
+		aafs_fcparams = null;
+		fetch_fcparams = null;
+		custom_search_region = null;
+		analyst_inj_text = null;
+		has_fetched_catalog = false;
+
 		cur_mainshock = null;
 		cur_aftershocks = null;
 		cur_model = null;
-		genericFetch = null;
-		genericParams = null;
 		genericModel = null;
-		magCompFetch = null;
-		magCompParams = null;
 		bayesianModel = null;
 		aftershockMND = null;
 		mnd_mmaxc = 0.0;
+
+		genericForecast = null;
+		seqSpecForecast = null;
+		bayesianForecast = null;
 
 		return;
 	}
@@ -746,163 +809,295 @@ public class RJGUIModel extends RJGUIComponent {
 		}
 		return daysLeftInDay;
 	}
-	
 
 
 
-	// Set the mainshock.
-	// Also fetch the generic and magnitude-of-completeness parameters,
-	// and make the generic model.
 
-	private void setMainshock(ObsEqkRupture the_mainshock) {
+	// Perform setup given the mainshock.
+	// On entry, fcmain and cur_mainshock both contain the mainshock.
+	// On return:
+	//  - aafs_fcparams contains the default forecast parameters.
+	//  - fetch_fcparams contains a copy of aafs_fcparams;
+	//    in particular, fetch_fcparams.aftershock_search_region == null.
+	//  - custom_search_region is null.
+	//  - analyst_inj_text is an empty string
+	//  - Generic model is computed.
 
-		// Save the mainshock
+	private void setup_for_mainshock (RJGUIController.XferCatalogMod xfer) {
 
-		cur_mainshock = the_mainshock;
+		// Display mainshock information
 
-		genericParams = null;
-		magCompParams = null;
+		System.out.println (fcmain.toString());
+
+		// Display list of OAF products for this mainshock
+
+		if (fcmain.mainshock_geojson != null) {
+			List<ComcatOAFProduct> oaf_product_list = ComcatOAFProduct.make_list_from_gj (fcmain.mainshock_geojson);
+			for (int k = 0; k < oaf_product_list.size(); ++k) {
+				System.out.println ("OAF product: " + oaf_product_list.get(k).summary_string());
+			}
+			if (oaf_product_list.size() > 0) {
+				System.out.println ();
+			}
+		}
+
+		// Set up aafs_fcparams to hold the forecast parameters
+
+		aafs_fcparams = new ForecastParameters();
 
 		try {
-
-			// Lazy-allocate the fetch objects
-
-			if (genericFetch == null) {
-				genericFetch = new GenericRJ_ParametersFetch();
+			if (!( aafs_fcparams.fetch_forecast_params (fcmain, null) )) {
+				throw new IllegalStateException ("RJGUIModel.setup_for_mainshock - Error fetching forecast params");
 			}
-			if (magCompFetch == null) {
-				magCompFetch = new MagCompPage_ParametersFetch();
-			}
-
-			// Get generic parameters for the mainshock
-			
-			System.out.println("Determining tectonic regime for generic parameters");
-			OAFTectonicRegime regime = genericFetch.getRegion(cur_mainshock.getHypocenterLocation());
-			Preconditions.checkNotNull(regime, "Regime not found or server error");
-			genericParams = genericFetch.get(regime);
-			Preconditions.checkNotNull(genericParams, "Generic params not found or server error");
-			System.out.println("Generic params for "+regime+": "+genericParams);
-			
-			// Get magnitude-of-completeness for the mainshock
-
-			System.out.println("Determining tectonic regime for magnitude-of-completeness parameters");
-			OAFTectonicRegime mc_regime = magCompFetch.getRegion(cur_mainshock.getHypocenterLocation());
-			Preconditions.checkNotNull(mc_regime, "Regime not found or server error");
-			magCompParams = magCompFetch.get(mc_regime);
-			Preconditions.checkNotNull(magCompParams, "Magnitude-of-completeness params not found or server error");
-			System.out.println("Magnitude-of-completeness params for "+mc_regime+": "+magCompParams);
-
-			// Make the generic RJ model
-
-			genericModel = new RJ_AftershockModel_Generic(cur_mainshock.getMag(), genericParams);
-
 		} catch (RuntimeException e) {
-			System.err.println("Error fetching generic or magnitude-of-completeness params");
-			throw new IllegalStateException ("RJGUIModel.setMainshock - Error fetching generic or magnitude-of-completeness params", e);
+			System.err.println ("Error fetching forecast params");
+			throw new IllegalStateException ("RJGUIModel.setup_for_mainshock - Error fetching forecast params", e);
 			//e.printStackTrace();
 			//genericParams = null;
 		}
+		
+		// Announce regimes and parameters
+
+		System.out.println ("Generic parameters for regime " + aafs_fcparams.generic_regime + ":");
+		System.out.println (aafs_fcparams.generic_params.toString());
+
+		System.out.println ("Magnitude-of-completeness parameters for regime " + aafs_fcparams.mag_comp_regime + ":");
+		System.out.println (aafs_fcparams.mag_comp_params.toString());
+
+		System.out.println ("Default sequence-specific parameters:");
+		System.out.println (aafs_fcparams.seq_spec_params.toString());
+
+		// Copy to fetch_fcparams
+
+		fetch_fcparams = new ForecastParameters();
+		fetch_fcparams.copy_from (aafs_fcparams);
+
+		// No custom search region
+
+		custom_search_region = null;
+
+		// No injectable text
+
+		analyst_inj_text = "";
+
+		// Make the generic RJ model
+
+		genericModel = new RJ_AftershockModel_Generic(fcmain.mainshock_mag, aafs_fcparams.generic_params);
 
 		// As a courtesy, spit out the decimal days remaining in the origin day
 
 		System.out.println("The mainshock occurred " + String.format("%.4f", getTimeRemainingInUTCDay()) + " days before midnight (UTC)\n");
 		return;
 	}
-	
-
-
-
-	// Find the centroid of the aftershock sequence.
-
-	private Location getCentroid () {
-		return AftershockStatsCalc.getSphCentroid(cur_mainshock, cur_aftershocks);
-	}
 
 
 
 
-	// Make the search region.
-	// Parameters:
-	//  xfer = Transfer object to read control parameters.
-	//  event = Event used to determine the epicenter location; in practice, the mainshock.
-	//  centroid = Center to use if the region is circular and the center type is CENTROID.
-	//  wc_radius = Radius to use if the region type is CIRCULAR_WC94.
-	// Returns the region.
-	// Note: The 2-step centroid algorithm can be done by calling this function twice,
-	// with centroid equal to the hypocenter on the first call.
-	// Note: The event longitude is adjusted, if necessary, so it lies inside the plotting
-	// domain of the search region (either -180 to 180 if it does not straddle the date line,
-	// or 0 to 360 if it does).  Adjustments are +/- 360 degrees.
-	
-	private SphRegion buildRegion (RJGUIController.XferCatalogView xfer, ObsEqkRupture event, Location centroid, double wc_radius) {
-		SphRegion result;
+	// Set up the search region.
+	// On return:
+	// - fetch_fcparams contains the search region and search parameters.
+	// - fetch_fcparams.mag_comp_params contains the magnitude of completeness
+	//   parameters, with the appropriate radius functions for the selected region,
+	//   and the magnitude functions set to no minimum.
+	// - xfer.x_dataEndTimeParam adjusted if necessary to limit fetch to before now.
 
-		RegionType type = xfer.x_regionTypeParam;
+	private void setup_search_region (RJGUIController.XferCatalogMod xfer) {
 
-		// If the region is a circle ...
+		// Time range for aftershock search
 		
-		if (type == RegionType.CIRCULAR || type == RegionType.CIRCULAR_WC94) {
+		double minDays = xfer.x_dataStartTimeParam;
+		double maxDays = xfer.x_dataEndTimeParam;
+		
+		long startTime = fcmain.mainshock_time + Math.round(minDays*ComcatOAFAccessor.day_millis);
+		long endTime = fcmain.mainshock_time + Math.round(maxDays*ComcatOAFAccessor.day_millis);
 
-			// Select either fixed radius or WC radius
+		// Check that start date is before current time
 
-			double radius;
-			if (type == RegionType.CIRCULAR) {
-				radius = xfer.x_radiusParam;
-			} else {
-				radius = wc_radius;
-				System.out.println("Using Wells & Coppersmith 94 Radius: " + String.format("%.3f", radius) + " km");
-			}
+		long time_now = System.currentTimeMillis();
+		
+		Preconditions.checkState(startTime < time_now, "Start time is after now!");
 
-			// Select circle center
-			
-			RegionCenterType centerType = xfer.x_regionCenterTypeParam;
-			Location loc;
-			if (centerType == RegionCenterType.EPICENTER)
-				loc = event.getHypocenterLocation();
-			else if (centerType == RegionCenterType.CENTROID)
-				loc = centroid;
-			else if (centerType == RegionCenterType.SPECIFIED)
-				loc = xfer.x_regionCenterLocParam;
-			else
-				throw new IllegalStateException("Unknown Region Center Type: "+centerType);
-			
-			// Return new Region(loc, radius);
+		// Check that end date is before current time, shrink the time range if not
+		
+		if (endTime > time_now) {
+			double calcMaxDays = (time_now - startTime)/ComcatOAFAccessor.day_millis;
+			System.out.println("WARNING: End time after current time. Setting max days to: " + calcMaxDays);
+			xfer.modify_dataEndTimeParam(calcMaxDays);
+			maxDays = xfer.x_dataEndTimeParam;
+		}
 
-			result = SphRegion.makeCircle (new SphLatLon(loc), radius);
+		// The magnitude-of-completeness parameters
 
-		// Otherwise, if the region is a rectangle ...
+		double magCat = fetch_fcparams.mag_comp_params.get_magCat();
+		MagCompFn magCompFn = fetch_fcparams.mag_comp_params.get_magCompFn();
+		SearchMagFn magSample = fetch_fcparams.mag_comp_params.get_fcn_magSample();
+		SearchRadiusFn radiusSample = fetch_fcparams.mag_comp_params.get_fcn_radiusSample();
+		SearchMagFn magCentroid = fetch_fcparams.mag_comp_params.get_fcn_magCentroid();
+		SearchRadiusFn radiusCentroid = fetch_fcparams.mag_comp_params.get_fcn_radiusCentroid();
 
-		} else  if (type == RegionType.RECTANGULAR) {
-			Location lower = new Location(xfer.x_minLatParam, xfer.x_minLonParam);
-			Location upper = new Location(xfer.x_maxLatParam, xfer.x_maxLonParam);
+		// No custom region
 
-			// Return new Region(lower, upper);
+		custom_search_region = null;
 
-			result = SphRegion.makeMercRectangle (new SphLatLon(lower), new SphLatLon(upper));
+		// Depth range for aftershock search, assume default
+		
+		double minDepth = ForecastParameters.SEARCH_PARAM_OMIT;
+		double maxDepth = ForecastParameters.SEARCH_PARAM_OMIT;
 
-		// Otherwise, unknown shape ...
+		// Minimum magnitude is default, set from the mag-of-comp parameters
 
-		} else {
-			throw new IllegalStateException("Unknown region type: "+type);
+		double min_mag = ForecastParameters.SEARCH_PARAM_OMIT;
+
+		// Switch on region type
+
+		switch (xfer.x_regionTypeParam) {
+
+		case STANDARD:
+
+			// Standard region, just change to no minimum magnitude
+
+			magSample = magSample.makeRemovedMinMag();
+			magCentroid = magCentroid.makeRemovedMinMag();
+			break;
+
+		case CENTROID_WC_CIRCLE:
+
+			// WC circle around centroid, set multiplier and limits, and no minimum magnitude
+
+			magSample = SearchMagFn.makeNoMinMag();
+			radiusSample = SearchRadiusFn.makeWCClip (
+				xfer.x_wcMultiplierParam,
+				xfer.x_minRadiusParam,
+				xfer.x_maxRadiusParam
+			);
+			magCentroid = SearchMagFn.makeNoMinMag();
+			radiusCentroid = SearchRadiusFn.makeWCClip (
+				xfer.x_wcMultiplierParam,
+				xfer.x_minRadiusParam,
+				xfer.x_maxRadiusParam
+			);
+			minDepth = xfer.x_minDepthParam;
+			maxDepth = xfer.x_maxDepthParam;
+			break;
+
+		case CENTROID_CIRCLE:
+
+			// Circle around centroid, set constant radius, and no minimum magnitude
+
+			magSample = SearchMagFn.makeNoMinMag();
+			radiusSample = SearchRadiusFn.makeConstant (xfer.x_radiusParam);
+			magCentroid = SearchMagFn.makeNoMinMag();
+			radiusCentroid = SearchRadiusFn.makeConstant (xfer.x_radiusParam);
+			minDepth = xfer.x_minDepthParam;
+			maxDepth = xfer.x_maxDepthParam;
+			break;
+
+		case EPICENTER_WC_CIRCLE:
+
+			// WC circle around epicenter, set multiplier and limits, and no minimum magnitude
+
+			magSample = SearchMagFn.makeNoMinMag();
+			radiusSample = SearchRadiusFn.makeWCClip (
+				xfer.x_wcMultiplierParam,
+				xfer.x_minRadiusParam,
+				xfer.x_maxRadiusParam
+			);
+			magCentroid = SearchMagFn.makeSkipCentroid();
+			radiusCentroid = SearchRadiusFn.makeConstant (0.0);
+			minDepth = xfer.x_minDepthParam;
+			maxDepth = xfer.x_maxDepthParam;
+			break;
+
+		case EPICENTER_CIRCLE:
+
+			// Circle around epicenter, set constant radius, and no minimum magnitude
+
+			magSample = SearchMagFn.makeNoMinMag();
+			radiusSample = SearchRadiusFn.makeConstant (xfer.x_radiusParam);
+			magCentroid = SearchMagFn.makeSkipCentroid();
+			radiusCentroid = SearchRadiusFn.makeConstant (0.0);
+			minDepth = xfer.x_minDepthParam;
+			maxDepth = xfer.x_maxDepthParam;
+			break;
+
+		case CUSTOM_CIRCLE:
+
+			// Custom circle, and no minimum magnitude
+
+			magSample = SearchMagFn.makeNoMinMag();
+			magCentroid = SearchMagFn.makeSkipCentroid();
+			custom_search_region = SphRegion.makeCircle (
+				new SphLatLon(xfer.x_centerLatParam, xfer.x_centerLonParam),
+				xfer.x_radiusParam
+			);
+			minDepth = xfer.x_minDepthParam;
+			maxDepth = xfer.x_maxDepthParam;
+			break;
+
+		case CUSTOM_RECTANGLE:
+
+			// Custom rectangle, and no minimum magnitude
+
+			magSample = SearchMagFn.makeNoMinMag();
+			magCentroid = SearchMagFn.makeSkipCentroid();
+			custom_search_region = SphRegion.makeMercRectangle (
+				new SphLatLon(xfer.x_minLatParam, xfer.x_minLonParam),
+				new SphLatLon(xfer.x_maxLatParam, xfer.x_maxLonParam)
+			);
+			minDepth = xfer.x_minDepthParam;
+			maxDepth = xfer.x_maxDepthParam;
+			break;
+
+		default:
+			throw new IllegalStateException("Unknown region type: " + xfer.x_regionTypeParam);
+		}
+
+		// Make revised magnitude-of-completeness parameters
+
+		fetch_fcparams.mag_comp_params = new MagCompPage_Parameters (
+			magCat,
+			magCompFn,
+			magSample,
+			radiusSample,
+			magCentroid,
+			radiusCentroid
+		);
+
+		// Make the search region
+
+		fetch_fcparams.set_aftershock_search_region (
+			fcmain,					// ForecastMainshock fcmain,
+			0L,						// long the_start_lag,
+			0L,						// long the_forecast_lag,
+			custom_search_region,	// SphRegion the_aftershock_search_region,
+			minDays,				// double the_min_days,
+			maxDays,				// double the_max_days,
+			minDepth,				// double the_min_depth,
+			maxDepth,				// double the_max_depth,
+			min_mag					// double the_min_mag
+		);
+
+		if (!( fetch_fcparams.aftershock_search_avail )) {
+			throw new IllegalStateException("Failed to build aftershock search region");
 		}
 
 		// If the event (i.e. cur_mainshock) is outside the plotting domain, change its
 		// hypocenter so it is inside the plotting domain
 
-		Location hypo = event.getHypocenterLocation();
-		if (result.getPlotWrap()) {
+		Location hypo = cur_mainshock.getHypocenterLocation();
+		if (fetch_fcparams.aftershock_search_region.getPlotWrap()) {
 			if (hypo.getLongitude() < 0.0) {
-				event.setHypocenterLocation (new Location (
+				cur_mainshock.setHypocenterLocation (new Location (
 					hypo.getLatitude(), hypo.getLongitude() + 360.0, hypo.getDepth() ));
 			}
 		} else {
 			if (hypo.getLongitude() > 180.0) {
-				event.setHypocenterLocation (new Location (
+				cur_mainshock.setHypocenterLocation (new Location (
 					hypo.getLatitude(), hypo.getLongitude() - 360.0, hypo.getDepth() ));
 			}
 		}
 
-		return result;
+		return;
 	}
 
 
@@ -932,7 +1127,7 @@ public class RJGUIModel extends RJGUIComponent {
 
 		// Set the default b-value from the generic parameters
 
-		xfer.modify_bParam(genericParams.get_bValue());
+		xfer.modify_bParam(aafs_fcparams.generic_params.get_bValue());
 
 		// Save the catalog parameters
 
@@ -958,6 +1153,10 @@ public class RJGUIModel extends RJGUIComponent {
 		System.out.println("Fetching Events");
 		cur_mainshock = null;
 
+		// Will be fetching from Comcat
+
+		has_fetched_catalog = true;
+
 		// See if the event ID is an alias, and change it if so
 
 		String xlatid = GUIEventAlias.query_alias_dict (xfer.x_eventIDParam);
@@ -966,84 +1165,37 @@ public class RJGUIModel extends RJGUIComponent {
 			xfer.modify_eventIDParam(xlatid);
 		}
 
-		// Fetch mainshock
+		// Fetch mainshock into our data structures
 		
 		String eventID = xfer.x_eventIDParam;
-		ObsEqkRupture my_mainshock = accessor.fetchEvent(eventID, false, true);	// need extended info for sending to PDL
-		Preconditions.checkState(my_mainshock != null, "Event not found: %s", eventID);
+		fcmain = new ForecastMainshock();
+		fcmain.setup_mainshock_poll (eventID);
+		Preconditions.checkState(fcmain.mainshock_avail, "Event not found: %s", eventID);
 
-		// Display mainshock location and information
+		cur_mainshock = fcmain.get_eqk_rupture();
 
-		System.out.println("Mainshock Location: "+my_mainshock.getHypocenterLocation());
-		System.out.println (ComcatOAFAccessor.rupToString (my_mainshock));
+		// Finish setting up the mainshock
 
-		// Display list of OAF products for this mainshock
+		setup_for_mainshock (xfer);
 
-		List<ComcatOAFProduct> oaf_product_list = ComcatOAFProduct.make_list_from_gj (accessor.get_last_geojson());
-		for (int k = 0; k < oaf_product_list.size(); ++k) {
-			System.out.println ("OAF product: " + oaf_product_list.get(k).summary_string());
-		}
-		if (oaf_product_list.size() > 0) {
-			System.out.println ();
-		}
+		// Make the search region
 
-		// Establish this as our mainshock
-		
-		setMainshock(my_mainshock);
+		setup_search_region (xfer);
 
-		// Depth range for aftershock search
-		
-		double minDepth = xfer.x_minDepthParam;
-		double maxDepth = xfer.x_maxDepthParam;
+		// Get the aftershocks
 
-		// Time range for aftershock search
-		
-		double minDays = xfer.x_dataStartTimeParam;
-		double maxDays = xfer.x_dataEndTimeParam;
-		
-		long eventTime = my_mainshock.getOriginTime();
-		long startTime = eventTime + (long)(minDays*ComcatOAFAccessor.day_millis);
-		long endTime = eventTime + (long)(maxDays*ComcatOAFAccessor.day_millis);
+		ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
-		// Check that start date is before current time
-
-		long time_now = System.currentTimeMillis();
-		
-		Preconditions.checkState(startTime < time_now, "Start time is after now!");
-
-		// Check that end date is before current time, shrink the time range if not
-		
-		if (endTime > time_now) {
-			double calcMaxDays = (time_now - startTime)/ComcatOAFAccessor.day_millis;
-			System.out.println("WARNING: End time after current time. Setting max days to: " + calcMaxDays);
-			xfer.modify_dataEndTimeParam(calcMaxDays);
-			maxDays = xfer.x_dataEndTimeParam;
-		}
-
-		// If we are doing the 2-step centroid algorithm ...
-		
-		if (xfer.x_regionTypeParam.isCircular()
-			&& xfer.x_regionCenterTypeParam == RegionCenterType.CENTROID) {
-
-			// First make circle around hypocenter to find the centroid, and find aftershocks within the circle
-
-			cur_region = buildRegion(xfer, my_mainshock, my_mainshock.getHypocenterLocation(), magCompParams.get_radiusCentroid(my_mainshock.getMag()));
-			
-			cur_aftershocks = accessor.fetchAftershocks(my_mainshock, minDays, maxDays, minDepth, maxDepth, cur_region, cur_region.getPlotWrap());
-			
-			// Now make circle around centroid, and find aftershocks within the circle
-
-			cur_region = buildRegion(xfer, my_mainshock, getCentroid(), magCompParams.get_radiusSample(my_mainshock.getMag()));
-				
-			cur_aftershocks = accessor.fetchAftershocks(my_mainshock, minDays, maxDays, minDepth, maxDepth, cur_region, cur_region.getPlotWrap());
-		
-		// Otherwise, make the region and find aftershocks within the region ...
-
-		} else {
-			cur_region = buildRegion(xfer, my_mainshock, null, magCompParams.get_radiusSample(my_mainshock.getMag()));
-			
-			cur_aftershocks = accessor.fetchAftershocks(my_mainshock, minDays, maxDays, minDepth, maxDepth, cur_region, cur_region.getPlotWrap());
-		}
+		cur_aftershocks = accessor.fetchAftershocks (
+			cur_mainshock,
+			fetch_fcparams.min_days,
+			fetch_fcparams.max_days,
+			fetch_fcparams.min_depth,
+			fetch_fcparams.max_depth,
+			fetch_fcparams.aftershock_search_region,
+			fetch_fcparams.aftershock_search_region.getPlotWrap(),
+			fetch_fcparams.min_mag
+		);
 
 		// Perform post-fetch actions
 
@@ -1063,47 +1215,14 @@ public class RJGUIModel extends RJGUIComponent {
 
 	public void loadCatalog(RJGUIController.XferCatalogMod xfer, File catalogFile) {
 
-		// Catalog time range
+		// Will not be fetching from Comcat
 
-		double minDays = xfer.x_dataStartTimeParam;
-		double maxDays = xfer.x_dataEndTimeParam;
+		has_fetched_catalog = false;
 
 		// List of aftershocks, and mainshock
 
 		ObsEqkRupList myAftershocks = new ObsEqkRupList();
 		ObsEqkRupture myMainshock = null;
-
-		//  // Read the entire file
-		//  
-		//  List<String> lines;
-		//  try {
-		//  	lines = Files.readLines(catalogFile, Charset.defaultCharset());
-		//  } catch (IOException e) {
-		//  	throw new RuntimeException ("RJGUIModel.loadCatalog - I/O error reading file: " + catalogFile.getPath(), e);
-		//  }
-		//  
-		//  // Process lines to get a list of aftershocks and a mainshock
-		//  
-		//  for (int i=0; i<lines.size(); i++) {
-		//  	String line = lines.get(i).trim();
-		//  	if (line.startsWith("#")) {
-		//  		if (line.toLowerCase().startsWith("# main")
-		//  				&& i < lines.size()-1 && lines.get(i+1).startsWith("#")) {
-		//  			// main shock on next line, starting with a #
-		//  			String mainshockLine = lines.get(i+1).substring(1).trim();
-		//  			System.out.println("Detected mainshock in file: "+mainshockLine);
-		//  			try {
-		//  				myMainshock = GUIExternalCatalog.fromCatalogLine(mainshockLine);
-		//  			} catch (Exception e) {
-		//  				System.err.println("Error loading mainshock");
-		//  			}
-		//  		}
-		//  		continue;
-		//  	}
-		//  	if (!line.isEmpty()) {
-		//  		myAftershocks.add(GUIExternalCatalog.fromCatalogLine(line));
-		//  	}
-		//  }
 
 		// Read the file
 
@@ -1113,11 +1232,33 @@ public class RJGUIModel extends RJGUIComponent {
 
 		// Display search result
 		
-		System.out.println("Loaded "+myAftershocks.size()+" aftershocks from file");
+		System.out.println("Loaded " + myAftershocks.size() + " aftershocks from file");
 
 		// Check to make sure we got a mainshock
 		
 		Preconditions.checkState(myMainshock != null, "Did not find mainshock in file");
+
+		// If we didn't get an event ID, set it
+
+		if (myMainshock.getEventId() == null || myMainshock.getEventId().isEmpty()) {
+			myMainshock.setEventId ("<custom>");
+		}
+
+		// Store mainshock into our data structures
+
+		cur_mainshock = myMainshock;
+
+		fcmain = new ForecastMainshock();
+		fcmain.setup_local_mainshock (cur_mainshock);
+
+		// Finish setting up the mainshock
+
+		setup_for_mainshock (xfer);
+
+		// Catalog time range
+
+		double minDays = xfer.x_dataStartTimeParam;
+		double maxDays = xfer.x_dataEndTimeParam;
 
 		// Here we need to trim the catalog to be only events that lie within the selected time interval
 		
@@ -1138,17 +1279,9 @@ public class RJGUIModel extends RJGUIComponent {
 
 		xfer.modify_eventIDParam("<custom>");
 
-		// Establish this as our mainshock
-		
-		setMainshock(myMainshock);
-
 		// Take the trimmed list of aftershocks as our aftershocks
 
 		cur_aftershocks = trimmedAftershocks;
-
-		// Indicate no region for plotting
-
-		cur_region = null;
 
 		// Perform post-fetch actions
 
@@ -1188,18 +1321,40 @@ public class RJGUIModel extends RJGUIComponent {
 									
 		double b = xfer.x_bParam;
 
+		// Save the sequence-specific parameters for possible use in analyst options
+
+		fetch_fcparams.seq_spec_params = new SeqSpecRJ_Parameters (
+			b,
+			aRange.getLowerBound(),
+			aRange.getUpperBound(),
+			aNum,
+			pRange.getLowerBound(),
+			pRange.getUpperBound(),
+			pNum,
+			cRange.getLowerBound(),
+			cRange.getUpperBound(),
+			cNum
+		);
+
+		// Magnitude of completeness info
+						
+		double mCat;
+
+		MagCompFn magCompFn;
+
 		// If doing time-dependent magnitude of completeness
 					
 		if (xfer.x_timeDepMcParam) {
+
 			double f = xfer.x_fParam;
 						
 			double g = xfer.x_gParam;
 						
 			double h = xfer.x_hParam;
 						
-			double mCat = xfer.x_mCatParam;
+			mCat = xfer.x_mCatParam;
 
-			MagCompFn magCompFn = MagCompFn.makePageOrConstant (f, g, h);
+			magCompFn = MagCompFn.makePageOrConstant (f, g, h);
 						
 			cur_model = new RJ_AftershockModel_SequenceSpecific(get_cur_mainshock(), get_cur_aftershocks(), mCat, magCompFn, b,
 					xfer.x_dataStartTimeParam, xfer.x_dataEndTimeParam,
@@ -1210,12 +1365,33 @@ public class RJGUIModel extends RJGUIComponent {
 		// Otherwise, time-independent magnitude of completeness
 
 		} else {
+						
+			mCat = mc;
+
+			magCompFn = MagCompFn.makeConstant();
+
 			cur_model = new RJ_AftershockModel_SequenceSpecific(get_cur_mainshock(), get_cur_aftershocks(), mc, b,
 					xfer.x_dataStartTimeParam, xfer.x_dataEndTimeParam,
 					aRange.getLowerBound(), aRange.getUpperBound(), aNum,
 					pRange.getLowerBound(), pRange.getUpperBound(), pNum,
 					cRange.getLowerBound(), cRange.getUpperBound(), cNum);
 		}
+
+		// Save the magnitude-of-completeness parameters for possible use in analyst options
+
+		SearchMagFn magSample = aafs_fcparams.mag_comp_params.get_fcn_magSample();	// the original value
+		SearchRadiusFn radiusSample = fetch_fcparams.mag_comp_params.get_fcn_radiusSample();
+		SearchMagFn magCentroid = aafs_fcparams.mag_comp_params.get_fcn_magCentroid();	// the original value
+		SearchRadiusFn radiusCentroid = fetch_fcparams.mag_comp_params.get_fcn_radiusCentroid();
+
+		fetch_fcparams.mag_comp_params = new MagCompPage_Parameters (
+			mCat,
+			magCompFn,
+			magSample.makeForAnalystMagCat (mCat),
+			radiusSample,
+			magCentroid.makeForAnalystMagCat (mCat),
+			radiusCentroid
+		);
 
 		// Make the Bayesian model if possible
 					
@@ -1333,6 +1509,241 @@ public class RJGUIModel extends RJGUIComponent {
 
 		return forecast;
 	}
+
+
+
+
+	//----- Functions for analyst operations -----
+
+
+
+
+	// Make the new forecast parameters for analyst options.
+	// See AnalystCLI.make_new_fcparams.
+
+	public ForecastParameters make_analyst_fcparams (RJGUIController.XferAnalystView xfer) {
+
+		ForecastParameters new_fcparams = new ForecastParameters();
+		new_fcparams.setup_all_default();
+
+		if (xfer.x_autoEnableParam == AutoEnable.DISABLE) {
+			return new_fcparams;
+		}
+
+		new_fcparams.set_analyst_control_params (
+			ForecastParameters.CALC_METH_AUTO_PDL,		// generic_calc_meth
+			ForecastParameters.CALC_METH_AUTO_PDL,		// seq_spec_calc_meth
+			ForecastParameters.CALC_METH_AUTO_PDL,		// bayesian_calc_meth
+			analyst_inj_text.isEmpty() ? ForecastParameters.INJ_TXT_USE_DEFAULT : analyst_inj_text
+		);
+
+		if (!( xfer.x_useCustomParamsParam )) {
+			return new_fcparams;
+		}
+
+		new_fcparams.set_analyst_mag_comp_params (
+			true,										// mag_comp_avail
+			aafs_fcparams.mag_comp_regime,				// mag_comp_regime
+			fetch_fcparams.mag_comp_params				// mag_comp_params
+		);
+
+		new_fcparams.set_analyst_seq_spec_params (
+			true,										// seq_spec_avail
+			fetch_fcparams.seq_spec_params				// seq_spec_params
+		);
+
+		if (custom_search_region == null) {
+			return new_fcparams;
+		}
+
+		new_fcparams.set_analyst_aftershock_search_params (
+			true,										// the_aftershock_search_avail
+			custom_search_region,						// the_aftershock_search_region
+			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_days
+			ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_days
+			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_depth
+			ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_depth
+			ForecastParameters.SEARCH_PARAM_OMIT		// the_min_mag
+		);
+		
+		return new_fcparams;
+	}
+
+
+
+
+	// Make the analyst options.
+	// See AnalystCLI.make_new_analyst_options.
+
+	public AnalystOptions make_analyst_options (RJGUIController.XferAnalystView xfer) {
+
+		// Action configuration
+
+		ActionConfig action_config = new ActionConfig();
+
+		// The first forecast lag, note is is a multiple of 1 second
+
+		long first_forecast_lag = action_config.get_next_forecast_lag (0L);
+		if (first_forecast_lag < 0L) {
+			first_forecast_lag = 0L;
+		}
+
+		// Time now
+
+		long time_now = System.currentTimeMillis();
+
+		// The forecast lag that would cause a forecast to be issued now,
+		// as a multiple of 1 seconds, but after the first forecast
+
+		long current_lag = action_config.floor_unit_lag (
+				time_now - (fcmain.mainshock_time
+							+ action_config.get_comcat_clock_skew()
+							+ action_config.get_comcat_origin_skew()),
+				first_forecast_lag + 1000L);
+
+		// Parameters that vary based on forecast selection
+		
+		long extra_forecast_lag;
+		int intake_option;
+		int shadow_option;
+
+		switch (xfer.x_autoEnableParam) {
+
+		case DISABLE:
+			//extra_forecast_lag = -1L;
+			extra_forecast_lag = current_lag;	// needed so any existing forecast is removed promptly
+			intake_option = AnalystOptions.OPT_INTAKE_BLOCK;
+			shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
+			break;
+
+		case ENABLE:
+			extra_forecast_lag = current_lag;
+			intake_option = AnalystOptions.OPT_INTAKE_IGNORE;
+			shadow_option = AnalystOptions.OPT_SHADOW_IGNORE;
+			break;
+
+		default:
+			extra_forecast_lag = current_lag;
+			intake_option = AnalystOptions.OPT_INTAKE_NORMAL;
+			shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
+			break;
+		}
+
+		// Other parameters
+
+		String analyst_id = "";
+		String analyst_remark = "";
+		long analyst_time = time_now;
+		ForecastParameters analyst_params = make_analyst_fcparams (xfer);
+		long max_forecast_lag = 0L;
+
+		// Create the analyst options
+
+		AnalystOptions anopt = new AnalystOptions();
+
+		anopt.setup (
+			analyst_id,
+			analyst_remark,
+			analyst_time,
+			analyst_params,
+			extra_forecast_lag,
+			max_forecast_lag,
+			intake_option,
+			shadow_option
+		);
+
+		return anopt;
+	}
+
+
+
+
+	// Fetch server status.
+	// This is called by the controller to fetch AAFS server status.
+
+	public void fetchServerStatus (GUICalcProgressBar progress) {
+
+		// Call the standard function in ServerCmd
+
+		try {
+			System.out.println ();
+			ServerCmd.gui_show_relay_status (progress);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println ();
+			System.out.println ("The server_status operation failed with an exception");
+		}
+
+		return;
+	}
+
+
+
+
+	// Set the analyst injectable text.
+	// Can be called when model state >= MODSTATE_PARAMETERS.
+
+	public void setAnalystInjText (String inj_text) {
+		analyst_inj_text = inj_text;
+		return;
+	}
+
+
+
+
+	// Export analyst options.
+	// Can be called when model state >= MODSTATE_PARAMETERS.
+
+	public void exportAnalystOptions (RJGUIController.XferAnalystView xfer, File the_file) throws IOException {
+
+		// Make the analyst options
+
+		AnalystOptions anopt = make_analyst_options (xfer);
+
+		// Marshal to JSON
+
+		MarshalImpJsonWriter store = new MarshalImpJsonWriter();
+		AnalystOptions.marshal_poly (store, null, anopt);
+		store.check_write_complete ();
+		String json_string = store.get_json_string();
+
+		// Write to file
+
+		try (
+			BufferedWriter bw = new BufferedWriter (new FileWriter (the_file));
+		){
+			bw.write (json_string);
+		}
+
+		return;
+	}
+
+
+
+
+	// Send analyst options to server.
+	// Can be called when model state >= MODSTATE_PARAMETERS.
+	// Returns true if success, false if unable to send to any server.
+
+	public boolean sendAnalystOptions (GUICalcProgressBar progress, RJGUIController.XferAnalystView xfer) {
+
+		// Make the analyst options
+
+		AnalystOptions anopt = make_analyst_options (xfer);
+
+		// Send to server
+
+		String event_id = fcmain.mainshock_event_id;
+		boolean f_disable = (xfer.x_autoEnableParam == AutoEnable.DISABLE);
+
+		boolean f_success = ServerCmd.gui_send_analyst_opts (progress, event_id, f_disable, anopt);
+
+		return f_success;
+	}
+
+
+
+
 
 
 
