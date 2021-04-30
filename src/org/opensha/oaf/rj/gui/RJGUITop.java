@@ -1,6 +1,9 @@
 package org.opensha.oaf.rj.gui;
 
 import java.awt.BorderLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Color;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
@@ -31,6 +34,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -148,6 +152,7 @@ import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
 import org.json.simple.JSONObject;
+
 
 
 // Reasenberg & Jones GUI - Top level window.
@@ -268,6 +273,45 @@ public class RJGUITop extends RJGUIComponent {
 
 
 
+	//----- Internal functions -----
+
+
+	// Make a panel that contains several components stacked.
+	// When the panel is enlarge vertically, the components maintain their relative heights.
+	// It is required that each component have a preferred size.
+
+	private JPanel stacked_comp_panel (JComponent... comp) {
+
+		// Make pane with a gridbag layout
+
+		JPanel pane = new JPanel(new GridBagLayout());
+
+		// Loop over components...
+
+		for (int i = 0; i < comp.length; ++i) {
+
+			// Make constraints
+
+			GridBagConstraints c = new GridBagConstraints();
+
+			c.gridx = 0;						// column
+			c.gridy = i;						// row
+			c.fill = GridBagConstraints.BOTH;	// make component fill its display area
+			c.weightx = 1.0;					// get all space when stretched horizontally
+			c.weighty = comp[i].getPreferredSize().getHeight();
+												// vertical space proportional to preferred height
+
+			// Add to the panel
+
+			pane.add(comp[i], c);
+		}
+
+		return pane;
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -285,9 +329,13 @@ public class RJGUITop extends RJGUIComponent {
 
 		top_window = new JFrame();
 
-		paramWidth = 250;
-		chartWidth = 800;
-		height = 900;
+		//paramWidth = 250;
+		//chartWidth = 800;
+		//height = 900;
+
+		paramWidth = 240;
+		chartWidth = 850;
+		height = 950;
 
 		consoleWidth = 600;
 		consoleHeight = 600;
@@ -322,14 +370,25 @@ public class RJGUITop extends RJGUIComponent {
 		// Fill in the top-level window
 		
 		JPanel mainPanel = new JPanel(new BorderLayout());
-		JPanel paramsPanel = new JPanel(new BorderLayout());
-		paramsPanel.add(gui_controller.get_dataEditor(), BorderLayout.WEST);
-		paramsPanel.add(gui_controller.get_fitEditor(), BorderLayout.EAST);
+
+		//JPanel paramsPanel = new JPanel(new BorderLayout());
+		//paramsPanel.add(gui_controller.get_dataEditor(), BorderLayout.WEST);
+		//paramsPanel.add(gui_controller.get_fitEditor(), BorderLayout.EAST);
+
+		JPanel paramsPanel = new JPanel(new GridLayout(1, 0));
+		paramsPanel.add(gui_controller.get_dataEditor());
+		paramsPanel.add(gui_controller.get_fitEditor());
+		//paramsPanel.add(gui_controller.get_fcastEditor());
+		paramsPanel.add(stacked_comp_panel(
+			gui_controller.get_fcastEditor(),
+			gui_controller.get_aafsEditor()
+		));
+
 		mainPanel.add(paramsPanel, BorderLayout.WEST);
 		mainPanel.add(gui_view.get_tabbedPane(), BorderLayout.CENTER);
 		
 		get_top_window().setContentPane(mainPanel);
-		get_top_window().setSize(get_paramWidth()*2 + get_chartWidth(), get_height());
+		get_top_window().setSize(get_paramWidth()*3 + get_chartWidth(), get_height());
 		get_top_window().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		get_top_window().setTitle("Aftershock Statistics GUI");
 		get_top_window().setLocationRelativeTo(null);

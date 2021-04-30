@@ -133,7 +133,7 @@ public class GUICalcProgressBar implements AutoCloseable {
 			}
 			else {
 				if (!( is_active )) {
-					throw new IllegalStateException("GUICalcProgressBar.write_queue: Progress bar is already initialized");
+					throw new IllegalStateException("GUICalcProgressBar.write_queue: Progress bar is not initialized");
 				}
 			}
 
@@ -190,6 +190,12 @@ public class GUICalcProgressBar implements AutoCloseable {
 		if (init_now) {
 			req_init();
 		}
+	}
+
+	// Get the owner.
+
+	public Component get_owner () {
+		return owner;
 	}
 
 	// Request initialization.

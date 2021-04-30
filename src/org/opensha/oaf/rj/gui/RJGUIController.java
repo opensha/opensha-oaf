@@ -368,7 +368,8 @@ public class RJGUIController extends RJGUIListener {
 	private ButtonParameter loadCatalogButton;
 
 	private ButtonParameter init_loadCatalogButton () throws GUIEDTException {
-		loadCatalogButton = new ButtonParameter("External Catalog", "Load Catalog");
+		loadCatalogChooser = null;
+		loadCatalogButton = new ButtonParameter("External Catalog", "Load Catalog...");
 		loadCatalogButton.setInfo("Load catalog from file in 10 column format");
 		loadCatalogButton.addParameterChangeListener(this);
 		return loadCatalogButton;
@@ -377,11 +378,12 @@ public class RJGUIController extends RJGUIListener {
 
 	// Save Catalog button.
 
-	private JFileChooser saveCatalogChooser = null;		// the file chooser dialog, lazy-allocated
+	private JFileChooser saveCatalogChooser;		// the file chooser dialog, lazy-allocated
 	private ButtonParameter saveCatalogButton;
 
 	private ButtonParameter init_saveCatalogButton () throws GUIEDTException {
-		saveCatalogButton = new ButtonParameter("Aftershock Catalog", "Save Catalog");
+		saveCatalogChooser = null;
+		saveCatalogButton = new ButtonParameter("Aftershock Catalog", "Save Catalog...");
 		saveCatalogButton.setInfo("Save catalog to file in 10 column format");
 		saveCatalogButton.addParameterChangeListener(this);
 		return saveCatalogButton;
@@ -735,7 +737,7 @@ public class RJGUIController extends RJGUIListener {
 	private ButtonParameter setInjTextButton;
 
 	private ButtonParameter init_setInjTextButton () throws GUIEDTException {
-		setInjTextButton = new ButtonParameter("Injectable Text", "Set Text");
+		setInjTextButton = new ButtonParameter("Injectable Text", "Set Text...");
 		setInjTextButton.addParameterChangeListener(this);
 		return setInjTextButton;
 	}
@@ -743,22 +745,23 @@ public class RJGUIController extends RJGUIListener {
 
 	// Export Analyst Options button.
 
-	private JFileChooser exportAnalystOptionsChooser = null;		// the file chooser dialog, lazy-allocated
+	private JFileChooser exportAnalystOptionsChooser;		// the file chooser dialog, lazy-allocated
 	private ButtonParameter exportAnalystOptionsButton;
 
 	private ButtonParameter init_exportAnalystOptionsButton () throws GUIEDTException {
-		exportAnalystOptionsButton = new ButtonParameter("Export Analyst Options", "Export to JSON");
+		exportAnalystOptionsChooser = null;
+		exportAnalystOptionsButton = new ButtonParameter("Export Analyst Options", "Export to JSON...");
 		exportAnalystOptionsButton.addParameterChangeListener(this);
 		return exportAnalystOptionsButton;
 	}
 
 
-	// Fetch Server Status button.
+	// Send Analyst Options to Server button.
 
 	private ButtonParameter sendAnalystOptionsButton;
 
 	private ButtonParameter init_sendAnalystOptionsButton () throws GUIEDTException {
-		sendAnalystOptionsButton = new ButtonParameter("Send Analyst Options", "Send to Server");
+		sendAnalystOptionsButton = new ButtonParameter("Send Analyst Options", "Send to Server...");
 		sendAnalystOptionsButton.addParameterChangeListener(this);
 		return sendAnalystOptionsButton;
 	}
@@ -818,7 +821,7 @@ public class RJGUIController extends RJGUIListener {
 
 	// Container for aftershock parameters.
 
-	ParameterListEditor fitEditor;
+	private ParameterListEditor fitEditor;
 
 	public final ParameterListEditor get_fitEditor () {
 		return fitEditor;
@@ -859,26 +862,6 @@ public class RJGUIController extends RJGUIListener {
 		fitParams.addParameter(init_pValParam());
 		
 		fitParams.addParameter(init_cValParam());
-		
-		fitParams.addParameter(init_forecastStartTimeNowParam());
-		
-		fitParams.addParameter(init_forecastStartTimeParam());
-		
-		fitParams.addParameter(init_forecastEndTimeParam());
-		
-		fitParams.addParameter(init_computeAftershockForecastButton());
-		
-		fitParams.addParameter(init_fetchServerStatusButton());
-		
-		fitParams.addParameter(init_autoEnableParam());
-		
-		fitParams.addParameter(init_useCustomParamsParam());
-		
-		fitParams.addParameter(init_setInjTextButton());
-		
-		fitParams.addParameter(init_exportAnalystOptionsButton());
-		
-		fitParams.addParameter(init_sendAnalystOptionsButton());
 
 		// Create the container
 
@@ -886,6 +869,80 @@ public class RJGUIController extends RJGUIListener {
 		fitEditor.setTitle("Aftershock Parameters");
 		fitEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), gui_top.get_height()));
 		return fitEditor;
+	}
+
+
+	// Container for forecast parameters.
+
+	private ParameterListEditor fcastEditor;
+
+	public final ParameterListEditor get_fcastEditor () {
+		return fcastEditor;
+	}
+
+	private int fcastEditorHeight;
+
+	private ParameterListEditor init_fcastEditor () throws GUIEDTException {
+
+		// Controls in the "Forecasts" column
+		
+		ParameterList fcastParams = new ParameterList();
+		
+		fcastParams.addParameter(init_forecastStartTimeNowParam());
+		
+		fcastParams.addParameter(init_forecastStartTimeParam());
+		
+		fcastParams.addParameter(init_forecastEndTimeParam());
+		
+		fcastParams.addParameter(init_computeAftershockForecastButton());
+
+		// Create the container
+
+		fcastEditorHeight = (gui_top.get_height() * 4) / 10;
+
+		fcastEditor = new ParameterListEditor(fcastParams);
+		fcastEditor.setTitle("Forecasts");
+		fcastEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), fcastEditorHeight));
+		return fcastEditor;
+	}
+
+
+	// Container for AAFS parameters.
+
+	private ParameterListEditor aafsEditor;
+
+	public final ParameterListEditor get_aafsEditor () {
+		return aafsEditor;
+	}
+
+	private int aafsEditorHeight;
+
+	private ParameterListEditor init_aafsEditor () throws GUIEDTException {
+
+		// Controls in the "Automatic System" column
+		
+		ParameterList aafsParams = new ParameterList();
+		
+		aafsParams.addParameter(init_fetchServerStatusButton());
+		
+		aafsParams.addParameter(init_autoEnableParam());
+		
+		aafsParams.addParameter(init_useCustomParamsParam());
+		
+		aafsParams.addParameter(init_setInjTextButton());
+		
+		aafsParams.addParameter(init_exportAnalystOptionsButton());
+		
+		aafsParams.addParameter(init_sendAnalystOptionsButton());
+
+		// Create the container
+
+		aafsEditorHeight = gui_top.get_height() - fcastEditorHeight;
+
+		aafsEditor = new ParameterListEditor(aafsParams);
+		aafsEditor.setTitle("Automatic System");
+		aafsEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), aafsEditorHeight));
+		return aafsEditor;
 	}
 
 
@@ -921,7 +978,6 @@ public class RJGUIController extends RJGUIListener {
 		add_symbol (regionList , "regionList");
 		add_symbol (regionEditParam , "regionEditParam");
 		add_symbol (fetchButton , "fetchButton");
-		add_symbol (loadCatalogChooser , "loadCatalogChooser");
 		add_symbol (loadCatalogButton , "loadCatalogButton");
 		add_symbol (saveCatalogButton , "saveCatalogButton");
 		add_symbol (mcParam , "mcParam");
@@ -958,6 +1014,8 @@ public class RJGUIController extends RJGUIListener {
 
 		add_symbol (dataEditor , "dataEditor");
 		add_symbol (fitEditor , "fitEditor");
+		add_symbol (fcastEditor , "fcastEditor");
+		add_symbol (aafsEditor , "aafsEditor");
 
 		return;
 	}
@@ -1923,6 +1981,11 @@ public class RJGUIController extends RJGUIListener {
 
 		init_fitEditor();
 
+		// Initialize the forecast/aafs column, top to bottom
+
+		init_fcastEditor();
+		init_aafsEditor();
+
 		// Set up the symbol table
 
 		setup_symbol_table();
@@ -2037,14 +2100,14 @@ public class RJGUIController extends RJGUIListener {
 				}
 				final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
 				final XferCatalogImpl xfer_catalog_impl = new XferCatalogImpl();
-				GUICalcStep loadStep_1 = new GUICalcStep("Loading events", "...", new GUIEDTRunnable() {
+				GUICalcStep loadStep_1 = new GUICalcStep("Loading Events", "...", new GUIEDTRunnable() {
 					
 						@Override
 						public void run_in_edt() throws GUIEDTException {
 							xfer_catalog_impl.xfer_load(false);
 						}
 					}, true);
-				GUICalcStep loadStep_2 = new GUICalcStep("Loading events", "...", new Runnable() {
+				GUICalcStep loadStep_2 = new GUICalcStep("Loading Events", "...", new Runnable() {
 						
 						@Override
 						public void run() {
@@ -2361,32 +2424,72 @@ public class RJGUIController extends RJGUIListener {
 		// - In backgound:
 		//   1. Switch view to the console.
 		//   2. Fetch server status.
+		//   3. Pop up a dialog box to report the result.
 
 		} else if (param == fetchServerStatusButton) {
 
 			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
-			GUICalcStep computeStep_1 = new GUICalcStep("Fetching AAFS server status", "...", new GUIEDTRunnable() {
+			final int[] status_success = new int[1];
+			status_success[0] = 0;
+			GUICalcStep computeStep_1 = new GUICalcStep("Fetching AAFS Server Status", "...", new GUIEDTRunnable() {
 						
 				@Override
 				public void run_in_edt() throws GUIEDTException {
 					gui_view.view_show_console();
 				}
 			}, true);
-			GUICalcStep computeStep_2 = new GUICalcStep("Fetching AAFS server status", "...", new Runnable() {
+			GUICalcStep computeStep_2 = new GUICalcStep("Fetching AAFS Server Status", "...", new Runnable() {
 						
 				@Override
 				public void run() {
-					gui_model.fetchServerStatus(progress);
+					status_success[0] = gui_model.fetchServerStatus(progress);
 				}
 			}, gui_top.get_forceWorkerEDT());
-			GUICalcStep postComputeStep = new GUICalcStep("Fetching AAFS server status", "...", new GUIEDTRunnable() {
+			Runnable postComputeStep = new GUIEDTRunnable() {
 						
 				@Override
 				public void run_in_edt() throws GUIEDTException {
-					gui_view.view_show_console();
+					String title = "Server Status";
+					String message;
+					int message_type;
+					int total = status_success[0]/1000;
+					int healthy = status_success[0]%1000;
+					if (total < 1) {
+						message = "Configuration error: No servers were contacted";
+						message_type = JOptionPane.ERROR_MESSAGE;
+					}
+					else if (healthy == total) {
+						switch (total) {
+						case 1: message = "The server is ALIVE"; break;
+						case 2: message = "Both servers are ALIVE"; break;
+						default: message = "All servers are ALIVE"; break;
+						}
+						message_type = JOptionPane.INFORMATION_MESSAGE;
+					}
+					else if (healthy == 0) {
+						switch (total) {
+						case 1: message = "The server is DEAD"; break;
+						case 2: message = "Both servers are DEAD"; break;
+						default: message = "All servers are DEAD"; break;
+						}
+						message_type = JOptionPane.ERROR_MESSAGE;
+					}
+					else {
+						switch (healthy) {
+						case 1: message = "1 server is ALIVE, and "; break;
+						default: message = healthy + " servers are ALIVE, and "; break;
+						}
+						switch (total - healthy) {
+						case 1: message = message + "1 server is DEAD"; break;
+						default: message = message + (total - healthy) + " servers are DEAD"; break;
+						}
+						message_type = JOptionPane.WARNING_MESSAGE;
+					}
+					JOptionPane.showMessageDialog(gui_top.get_top_window(), message, title, message_type);
 				}
-			}, true);
-			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2, postComputeStep);
+			};
+			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2);
+			run.set_reporter(postComputeStep);
 			new Thread(run).start();
 
 
@@ -2517,44 +2620,42 @@ public class RJGUIController extends RJGUIListener {
 			final XferAnalystImpl xfer_analyst_impl = new XferAnalystImpl();
 			final boolean[] send_success = new boolean[1];
 			send_success[0] = false;
-			final Exception[] send_exception = new Exception[1];
-			send_exception[0] = null;
-			GUICalcStep computeStep_1 = new GUICalcStep("Sending analyst options to AAFS server", "...", new GUIEDTRunnable() {
+			GUICalcStep computeStep_1 = new GUICalcStep("Sending Analyst Options to AAFS Server", "...", new GUIEDTRunnable() {
 						
 				@Override
 				public void run_in_edt() throws GUIEDTException {
 					xfer_analyst_impl.xfer_load();
 				}
 			}, true);
-			GUICalcStep computeStep_2 = new GUICalcStep("Sending analyst options to AAFS server", "...", new Runnable() {
+			GUICalcStep computeStep_2 = new GUICalcStep("Sending Analyst Options to AAFS Server", "...", new Runnable() {
 						
 				@Override
 				public void run() {
-					try {
-						send_success[0] = gui_model.sendAnalystOptions(progress, xfer_analyst_impl);
-					} catch (Exception e) {
-						send_exception[0] = e;
-					}
+					send_success[0] = gui_model.sendAnalystOptions(progress, xfer_analyst_impl);
 				}
 			}, gui_top.get_forceWorkerEDT());
-			GUICalcStep postComputeStep = new GUICalcStep("Sending analyst options to AAFS server", "...", new GUIEDTRunnable() {
+			GUICalcStep computeStep_3 = new GUICalcStep("Sending Analyst Options to AAFS Server", "...", new GUIEDTRunnable() {
 						
 				@Override
 				public void run_in_edt() throws GUIEDTException {
 					xfer_analyst_impl.xfer_store();
-					if (send_exception[0] != null) {
-						send_exception[0].printStackTrace();
-						String message = ClassUtils.getClassNameWithoutPackage(send_exception[0].getClass())+ ": " + send_exception[0].getMessage();
-						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send failed", JOptionPane.ERROR_MESSAGE);
-					} else if (send_success[0]) {
-						JOptionPane.showMessageDialog(gui_top.get_top_window(), "Success: Analyst options have been successfully sent to server", "Send succeeded", JOptionPane.INFORMATION_MESSAGE);
-					} else {
-						String message = "Error: Unable to send analyst options to any server";
-						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send failed", JOptionPane.ERROR_MESSAGE);
-					}
 				}
 			}, true);
-			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2, postComputeStep);
+			Runnable postComputeStep = new GUIEDTRunnable() {
+						
+				@Override
+				public void run_in_edt() throws GUIEDTException {
+					if (send_success[0]) {
+						String message = "Success: Analyst options have been successfully sent to server";
+						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send Succeeded", JOptionPane.INFORMATION_MESSAGE);
+					} else {
+						String message = "Error: Unable to send analyst options to any server";
+						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send Failed", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			};
+			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2, computeStep_3);
+			run.set_reporter(postComputeStep);
 			new Thread(run).start();
 
 

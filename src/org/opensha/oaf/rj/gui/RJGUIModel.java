@@ -1660,21 +1660,17 @@ public class RJGUIModel extends RJGUIComponent {
 
 	// Fetch server status.
 	// This is called by the controller to fetch AAFS server status.
+	// Returns 1000*T+H where T is the number of servers and H is the number that are healthy.
+	// An exception is thrown if the operation could not be performed.
 
-	public void fetchServerStatus (GUICalcProgressBar progress) {
+	public int fetchServerStatus (GUICalcProgressBar progress) {
 
 		// Call the standard function in ServerCmd
 
-		try {
-			System.out.println ();
-			ServerCmd.gui_show_relay_status (progress);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println ();
-			System.out.println ("The server_status operation failed with an exception");
-		}
+		System.out.println ();
+		int result = ServerCmd.gui_show_relay_status (progress);
 
-		return;
+		return result;
 	}
 
 
@@ -1693,6 +1689,7 @@ public class RJGUIModel extends RJGUIComponent {
 
 	// Export analyst options.
 	// Can be called when model state >= MODSTATE_PARAMETERS.
+	// An exception is thrown if the file could not be written.
 
 	public void exportAnalystOptions (RJGUIController.XferAnalystView xfer, File the_file) throws IOException {
 
@@ -1724,6 +1721,7 @@ public class RJGUIModel extends RJGUIComponent {
 	// Send analyst options to server.
 	// Can be called when model state >= MODSTATE_PARAMETERS.
 	// Returns true if success, false if unable to send to any server.
+	// An exception is thrown if the operation could not be performed.
 
 	public boolean sendAnalystOptions (GUICalcProgressBar progress, RJGUIController.XferAnalystView xfer) {
 

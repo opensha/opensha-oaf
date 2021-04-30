@@ -1368,8 +1368,10 @@ public class ServerCmd {
 
 
 	// gui_show_relay_status - Display the relay status, for use within a GUI.
+	// Returns 1000*T+H where T is the number of servers and H is the number that are healthy.
 
-	public static void gui_show_relay_status (GUICalcProgressBar progress) {
+	public static int gui_show_relay_status (GUICalcProgressBar progress) {
+		int result = 0;
 
 		// Get list of database handles
 
@@ -1398,6 +1400,8 @@ public class ServerCmd {
 					progress.setIndeterminate(true, "Fetching status for server " + n + "...");
 				}
 
+				result += 1000;
+
 				RiServerStatus sstat_payload = new RiServerStatus();
 				RelayItem relit = RelaySupport.get_remote_sstat_relay_item (db_handle, sstat_payload);
 			
@@ -1418,6 +1422,9 @@ public class ServerCmd {
 								System.out.println (String.format ("Heartbeat is STALE, age = %d:%02d", hours, minutes));
 							}
 						}
+						else if (sstat_payload.primary_state != RelayLink.PRIST_SHUTDOWN) {
+							++result;
+						}
 					}
 				}
 
@@ -1425,7 +1432,7 @@ public class ServerCmd {
 			}
 		}
 
-		return;
+		return result;
 	}
 
 

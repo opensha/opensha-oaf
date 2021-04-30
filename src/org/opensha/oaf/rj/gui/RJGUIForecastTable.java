@@ -168,7 +168,7 @@ public class RJGUIForecastTable extends RJGUIListener {
 	private ButtonParameter exportButton;
 
 	private ButtonParameter init_exportButton () throws GUIEDTException {
-		exportButton = new ButtonParameter("JSON", "Export JSON");
+		exportButton = new ButtonParameter("JSON", "Export JSON...");
 		exportButton.addParameterChangeListener(this);
 		return exportButton;
 	}
@@ -179,25 +179,25 @@ public class RJGUIForecastTable extends RJGUIListener {
 	private ButtonParameter publishButton;
 
 	private ButtonParameter init_publishButton () throws GUIEDTException {
-		String publish_forecast = "Publish Forecast (Dry Run)";
+		String publish_forecast = "Publish Forecast (Dry Run)...";
 		switch ((new ServerConfig()).get_pdl_enable()) {
 		case ServerConfigFile.PDLOPT_DEV:
-			publish_forecast = "Publish Forecast to PDL-Development";
+			publish_forecast = "Publish Forecast to PDL-Development...";
 			break;
 		case ServerConfigFile.PDLOPT_PROD:
-			publish_forecast = "Publish Forecast to PDL-PRODUCTION";
+			publish_forecast = "Publish Forecast to PDL-PRODUCTION...";
 			break;
 		case ServerConfigFile.PDLOPT_SIM_DEV:
-			publish_forecast = "Publish Forecast to PDL-Dev [SIMULATED]";
+			publish_forecast = "Publish Forecast to PDL-Dev [SIMULATED]...";
 			break;
 		case ServerConfigFile.PDLOPT_SIM_PROD:
-			publish_forecast = "Publish Forecast to PDL-PROD [SIMULATED]";
+			publish_forecast = "Publish Forecast to PDL-PROD [SIMULATED]...";
 			break;
 		case ServerConfigFile.PDLOPT_DOWN_DEV:
-			publish_forecast = "Publish Forecast to PDL-Dev [SIM DOWN]";
+			publish_forecast = "Publish Forecast to PDL-Dev [SIM DOWN]...";
 			break;
 		case ServerConfigFile.PDLOPT_DOWN_PROD:
-			publish_forecast = "Publish Forecast to PDL-PROD [SIM DOWN]";
+			publish_forecast = "Publish Forecast to PDL-PROD [SIM DOWN]...";
 			break;
 		}
 		//publishButton = new ButtonParameter("USGS PDL", "Publish Forecast");
@@ -247,7 +247,7 @@ public class RJGUIForecastTable extends RJGUIListener {
 	private ButtonParameter injectableTextButton;
 
 	private ButtonParameter init_injectableTextButton () throws GUIEDTException {
-		injectableTextButton = new ButtonParameter("Injectable Text", "Set text");
+		injectableTextButton = new ButtonParameter("Injectable Text", "Set text...");
 		injectableTextButton.addParameterChangeListener(this);
 		return injectableTextButton;
 	}

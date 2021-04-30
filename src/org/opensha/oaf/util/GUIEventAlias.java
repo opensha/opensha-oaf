@@ -13,6 +13,7 @@ import org.opensha.oaf.aafs.ForecastMainshock;
 // in place of the event ID.
 // Alias names are not case-sensitive, and spaces within the alias name
 // are ignored.
+// This list is for convenience only, and is not intended to be definitive.
 
 public class GUIEventAlias {
 
@@ -40,9 +41,13 @@ public class GUIEventAlias {
 	private static HashMap<String, String> build_alias_dict () {
 		HashMap<String, String> dict = new HashMap<String, String>();
 
+		dict.put ("aceh", "official20120411083836720_20");	// M 8.6 - off the west coast of northern Sumatra 2012-04-11 08:38:36 (UTC) 2.327N 93.063E 20.0 km depth
 		dict.put ("anchorage", "ak018fcnsk91");	// M 7.1 - 14km NNW of Anchorage, Alaska 2018-11-30 17:29:29 (UTC) 61.346N 149.955W 46.7 km depth
 		dict.put ("challis", "us70008jr5");	// M 6.5 - 70km W of Challis, Idaho 2020-03-31 23:52:30 (UTC) 44.465N 115.118W 12.1 km depth
+		dict.put ("elmayor", "ci14607652");	// M 7.2 - 12km SW of Delta, B.C., MX 2010-04-04 22:40:42 (UTC) 32.286N 115.295W 10.0 km depth
+		dict.put ("haiti", "usp000h60h");	// M 7.0 - Haiti region 2010-01-12 21:53:10 (UTC) 18.443N 72.571W 13.0 km depth
 		dict.put ("lonepine", "ci39493944");	// M 5.8 - 18km SSE of Lone Pine, CA 2020-06-24 17:40:49 (UTC) 36.447N 117.975W 4.7 km depth
+		dict.put ("magna", "uu60363602");	// M 5.7 - 4km NNW of Magna, Utah 2020-03-18 13:09:31 (UTC) 40.751N 112.078W 11.9 km depth
 		dict.put ("maule", "official20100227063411530_30");	// M 8.8 - offshore Bio-Bio, Chile 2010-02-27 06:34:11 (UTC) 36.122S 72.898W 22.9 km depth
 		dict.put ("montecristo", "nn00725272");	// M 6.5 - Monte Cristo Range, NV Earthquake 2020-05-15 11:03:27 (UTC) 38.169N 117.850W 2.7 km depth
 		dict.put ("montecristorange", "nn00725272");	// M 6.5 - Monte Cristo Range, NV Earthquake 2020-05-15 11:03:27 (UTC) 38.169N 117.850W 2.7 km depth
@@ -52,6 +57,7 @@ public class GUIEventAlias {
 		dict.put ("ridgecrest6", "ci38443183");	// M 6.4 - Ridgecrest Earthquake Sequence 2019-07-04 17:33:49 (UTC) 35.705N 117.504W 10.5 km depth
 		dict.put ("ridgecrest7", "ci38457511");	// M 7.1 - 2019 Ridgecrest Earthquake Sequence 2019-07-06 03:19:53 (UTC) 35.770N 117.599W 8.0 km depth
 		dict.put ("searlesvalley", "ci39462536");	// M 5.5 - 17km S of Searles Valley, CA 2020-06-04 01:32:11 (UTC) 35.615N 117.428W 8.4 km depth
+		dict.put ("sichuan", "usp000g650");	// M 7.9 - eastern Sichuan, China 2008-05-12 06:28:01 (UTC) 31.002N 103.322E 19.0 km depth
 		dict.put ("southnapa", "nc72282711");	// M 6.0 - South Napa 2014-08-24 10:20:44 (UTC) 38.215N 122.312W 11.1 km depth
 		dict.put ("sumatra", "official20041226005853450_30");	// M 9.1 - 2004 Sumatra - Andaman Islands Earthquake 2004-12-26 00:58:53 (UTC) 3.295N 95.982E 30.0 km depth
 		dict.put ("tohoku", "official20110311054624120_30");	// M 9.1 - 2011 Great Tohoku Earthquake, Japan 2011-03-11 05:46:24 (UTC) 38.297N 142.373E 29.0 km depth

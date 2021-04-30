@@ -7,6 +7,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.JOptionPane;
 
 import org.opensha.sha.gui.infoTools.CalcProgressBar;
+import org.opensha.commons.util.ClassUtils;
 
 
 /**
@@ -15,6 +16,10 @@ import org.opensha.sha.gui.infoTools.CalcProgressBar;
  */
 public class GUICalcRunnable implements Runnable {
 
+	// The owner of the progress monitor window, used as the owner of error dialogs; can be null.
+
+	private Component owner;
+
 	// The progress bar.
 
 	private GUICalcProgressBar progress_bar;
@@ -22,6 +27,10 @@ public class GUICalcRunnable implements Runnable {
 	// The calculation steps to perform.
 
 	private GUICalcStep[] steps;
+
+	// This is called in the EDT after the progress bar is removed, typically to report final status to the user.
+
+	private Runnable reporter;
 
 	// An exception that occurred, or null if none.
 		
@@ -34,15 +43,28 @@ public class GUICalcRunnable implements Runnable {
 	// To construct, specify the owner of the progress monitor window, and the calculation steps.
 		
 	public GUICalcRunnable(Component owner, GUICalcStep... calcSteps) {
+		this.owner = owner;
 		this.progress_bar = new GUICalcProgressBar (owner, "", "", false);
 		this.steps = calcSteps;
+		this.reporter = null;
 	}
 
 	// Or, you can pass in the progress bar.
 		
 	public GUICalcRunnable(GUICalcProgressBar progress_bar, GUICalcStep... calcSteps) {
+		this.owner = progress_bar.get_owner();
 		this.progress_bar = progress_bar;
 		this.steps = calcSteps;
+		this.reporter = null;
+	}
+
+	// Use this to set a final status reporter.
+	// Note: The reporter executes in the EDT and should be a simple task,
+	// typically just a call to showMessageDialog.
+
+	public void set_reporter (Runnable reporter) {
+		this.reporter = reporter;
+		return;
 	}
 
 	// This function runs in an application thread.
@@ -115,17 +137,43 @@ public class GUICalcRunnable implements Runnable {
 
 		if (exception != null) {
 			final String title = "Error " + curTitle;
-			exception.printStackTrace();
 			final String message = exception.getMessage();
+			//final String message = ClassUtils.getClassNameWithoutPackage(exception.getClass())+ ": " + exception.getMessage();
+			exception.printStackTrace();
 			try {
 				SwingUtilities.invokeAndWait(new Runnable() {
 					@Override
 					public void run() {
-						JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(owner, message, title, JOptionPane.ERROR_MESSAGE);
 					}
 				});
 			} catch (Exception e) {
 				System.err.println("Error displaying error message!");
+				e.printStackTrace();
+			}
+		}
+
+		// Otherwise, if there is a final status reporter, call it
+
+		else if (reporter != null) {
+			try {
+				final String savedCurTitle = curTitle;
+				SwingUtilities.invokeAndWait(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							reporter.run();
+						} catch (Throwable e) {
+							//String title = "Error Reporting Results"
+							String title = "Error " + savedCurTitle;
+							String message = e.getMessage();
+							e.printStackTrace();
+							JOptionPane.showMessageDialog(owner, message, title, JOptionPane.ERROR_MESSAGE);
+						}
+					}
+				});
+			} catch (Exception e) {
+				System.err.println("Error invoking final status reporter!");
 				e.printStackTrace();
 			}
 		}
