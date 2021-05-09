@@ -560,7 +560,7 @@ case "$1" in
             rmexistingfile opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
             cp -pi "$3" opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
             cd opensha-oaf/build/libs
-            jar -cfe AftershockGUI-prod-$2.jar org.opensha.oaf.rj.AftershockStatsGUI -C gtmp .
+            jar -cfe AftershockGUI-prod-$2.jar org.opensha.oaf.rj.gui.RJGUITop -C gtmp .
             cd ../../..
         else
             echo "GUI has not been compiled yet"
@@ -839,7 +839,7 @@ case "$1" in
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$SRVIP1" "$SRVIP2" "test" "1" "none"
             cd opensha-oaf/build/libs
-            jar -cfe AftershockGUI-prod-$2.jar org.opensha.oaf.rj.AftershockStatsGUI -C gtmp .
+            jar -cfe AftershockGUI-prod-$2.jar org.opensha.oaf.rj.gui.RJGUITop -C gtmp .
             cd ../../..
         else
             echo "GUI has not been compiled yet"
