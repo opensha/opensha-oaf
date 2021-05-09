@@ -20,7 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.opensha.commons.param.Parameter;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
-import scratch.UCERF3.erf.utils.ProbabilityModelsCalc;
+import org.opensha.oaf.comcat.ComcatOAFAccessor;
 
 // template SVG file
 
@@ -486,7 +486,7 @@ public class GraphicalForecast{
 	// return the time difference between two GregorianCalendar objects. why is this not a GregCal.method()?
 	private static double getDateDelta(GregorianCalendar start, GregorianCalendar end) {
 		long diff = end.getTimeInMillis() - start.getTimeInMillis();
-		return (double)diff/(double)ProbabilityModelsCalc.MILLISEC_PER_DAY;
+		return (double)diff/ComcatOAFAccessor.day_millis;
 	}
 	
 	public void writeHTMLTable(File outputFile){

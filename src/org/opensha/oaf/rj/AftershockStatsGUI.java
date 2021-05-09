@@ -104,7 +104,6 @@ import com.google.common.primitives.Doubles;
 import java.awt.Font;
 
 import gov.usgs.earthquake.product.Product;
-import scratch.UCERF3.erf.utils.ProbabilityModelsCalc;
 //import org.opensha.oaf.pdl.OAF_Publisher;
 import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 import org.opensha.oaf.pdl.PDLSender;
@@ -1977,7 +1976,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 	//  	Instant eventDate = Instant.ofEpochMilli(mainshock.getOriginTime());
 	//  	Double minDays = forecastStartTimeParam.getValue();
 	//  	validateParameter(minDays, "start time");
-	//  	double startTime = eventDate.toEpochMilli() + minDays*ProbabilityModelsCalc.MILLISEC_PER_DAY;
+	//  	double startTime = eventDate.toEpochMilli() + minDays*ComcatOAFAccessor.day_millis;
 	//  	Instant startDate = Instant.ofEpochMilli((long)startTime);
 	//  	
 	//  	for (int i=0; i<models.size(); i++) {
@@ -2053,7 +2052,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			Instant eventDate = Instant.ofEpochMilli(mainshock.getOriginTime());
 			Double minDays = forecastStartTimeParam.getValue();
 			validateParameter(minDays, "start time");
-			double startTime = eventDate.toEpochMilli() + minDays*ProbabilityModelsCalc.MILLISEC_PER_DAY;
+			double startTime = eventDate.toEpochMilli() + minDays*ComcatOAFAccessor.day_millis;
 			Instant startDate = Instant.ofEpochMilli((long)startTime);
 		
 			for (int i=0; i<models.size(); i++) {

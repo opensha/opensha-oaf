@@ -127,7 +127,6 @@ import com.google.common.primitives.Doubles;
 import java.awt.Font;
 
 import gov.usgs.earthquake.product.Product;
-//import scratch.UCERF3.erf.utils.ProbabilityModelsCalc;
 //import org.opensha.oaf.pdl.OAF_Publisher;
 import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 import org.opensha.oaf.pdl.PDLSender;

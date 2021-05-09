@@ -13,7 +13,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 
-import scratch.UCERF3.erf.utils.ProbabilityModelsCalc;
+import org.opensha.oaf.comcat.ComcatOAFAccessor;
 
 public class ETAS_USGS_AftershockForecast {
 	
@@ -161,7 +161,7 @@ public class ETAS_USGS_AftershockForecast {
 	
 	private static double getDateDelta(GregorianCalendar start, GregorianCalendar end) {
 		long diff = end.getTimeInMillis() - start.getTimeInMillis();
-		return (double)diff/(double)ProbabilityModelsCalc.MILLISEC_PER_DAY;
+		return (double)diff/ComcatOAFAccessor.day_millis;
 	}
 	
 	private static String[] headers = {"Forecast Interval", "Magnitude Range",

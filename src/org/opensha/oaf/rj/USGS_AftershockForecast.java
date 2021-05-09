@@ -31,7 +31,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 
-//import scratch.UCERF3.erf.utils.ProbabilityModelsCalc;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 
 import org.opensha.oaf.aafs.ServerConfig;
