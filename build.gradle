@@ -5,7 +5,7 @@
 apply plugin: 'java-library'
 
 ext {
-    parentProject = 'opensha-dev'
+    parentProject = 'opensha'
 }
 
 apply from: '../opensha/build-common.gradle'
@@ -24,47 +24,8 @@ dependencies {
     testImplementation 'junit:junit:4.12'
 }
 
-task appOAFJar(type: Jar) {
-    archiveBaseName = 'AftershockGUI-current'
-    from { configurations.apiResolvable.collect {
-        it.isDirectory() ? it : zipTree(it).matching {
-            exclude { it.path.contains('META-INF') }
-        }
-    }}
-    from { configurations.implResolvable.collect {
-        it.isDirectory() ? it : zipTree(it).matching {
-            exclude { it.path.contains('META-INF') }
-        }
-    }}
-    manifest {
-        attributes(
-            'Class-Path': configurations.apiResolvable.collect { it.getName() }.join(' '),
-            'Main-Class': 'org.opensha.oaf.rj.gui.RJGUITop'
-        )
-    }
-    with jar
-}
-
-task appOAF_ETAS_Jar(type: Jar) {
-    archiveBaseName = 'AftershockGUI_ETAS-current-'+getDate()
-    from { configurations.apiResolvable.collect {
-        it.isDirectory() ? it : zipTree(it).matching {
-            exclude { it.path.contains('META-INF') }
-        }
-    }}
-    from { configurations.implResolvable.collect {
-        it.isDirectory() ? it : zipTree(it).matching {
-            exclude { it.path.contains('META-INF') }
-        }
-    }}
-    manifest {
-        attributes(
-            'Class-Path': configurations.apiResolvable.collect { it.getName() }.join(' '),
-            'Main-Class': 'org.opensha.oaf.etas.AftershockStatsGUI_ETAS'
-        )
-    }
-    with jar
-}
+createAppTask("appOAFJar", "AftershockGUI-current", "org.opensha.oaf.rj.gui.RJGUITop")
+createAppTask("appOAF_ETAS_Jar", 'AftershockGUI_ETAS-current-'+getDate(), "org.opensha.oaf.etas.AftershockStatsGUI_ETAS")
 
 task oafJar(type: Jar) {
     archiveBaseName = project.name + '-oaf'
