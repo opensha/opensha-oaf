@@ -468,29 +468,44 @@ copysubsrv () {
 case "$1" in
 
     clone)
-        rmexistingdir opensha-commons
-        rmexistingdir opensha-core
-        rmexistingdir opensha-ucerf3
-        rmexistingdir opensha-apps
+        if [ -d opensha ]; then
+            if [ ! -d opensha/src ]; then
+                echo "Existing directory \"opensha\" does not appear to be a repository"
+                exit
+            fi
+        fi
+        if [ -d opensha-oaf ]; then
+            if [ ! -d opensha-oaf/src ]; then
+                echo "Existing directory \"opensha-oaf\" does not appear to be a repository"
+                exit
+            fi
+        fi
+        rmexistingdir opensha
         rmexistingdir opensha-oaf
-        git clone https://github.com/opensha/opensha-commons
-        git clone https://github.com/opensha/opensha-core
-        git clone https://github.com/opensha/opensha-ucerf3
-        git clone https://github.com/opensha/opensha-apps
+        git clone https://github.com/opensha/opensha
         git clone https://github.com/opensha/opensha-oaf
         ;;
 
     update)
-        cd opensha-commons
-        git pull origin master
-        cd ..
-        cd opensha-core
-        git pull origin master
-        cd ..
-        cd opensha-ucerf3
-        git pull origin master
-        cd ..
-        cd opensha-apps
+        if [ -d opensha ]; then
+            if [ ! -d opensha/src ]; then
+                echo "Existing directory \"opensha\" does not appear to be a repository"
+                exit
+            fi
+        else
+            echo "Directory \"opensha\" does not exist"
+            exit
+        fi
+        if [ -d opensha-oaf ]; then
+            if [ ! -d opensha-oaf/src ]; then
+                echo "Existing directory \"opensha-oaf\" does not appear to be a repository"
+                exit
+            fi
+        else
+            echo "Directory \"opensha-oaf\" does not exist"
+            exit
+        fi
+        cd opensha
         git pull origin master
         cd ..
         cd opensha-oaf
@@ -499,10 +514,25 @@ case "$1" in
         ;;
 
     clean)
-        rmexistingdir opensha-commons/build
-        rmexistingdir opensha-core/build
-        rmexistingdir opensha-ucerf3/build
-        rmexistingdir opensha-apps/build
+        if [ -d opensha ]; then
+            if [ ! -d opensha/src ]; then
+                echo "Existing directory \"opensha\" does not appear to be a repository"
+                exit
+            fi
+        else
+            echo "Directory \"opensha\" does not exist"
+            exit
+        fi
+        if [ -d opensha-oaf ]; then
+            if [ ! -d opensha-oaf/src ]; then
+                echo "Existing directory \"opensha-oaf\" does not appear to be a repository"
+                exit
+            fi
+        else
+            echo "Directory \"opensha-oaf\" does not exist"
+            exit
+        fi
+        rmexistingdir opensha/build
         rmexistingdir opensha-oaf/build
         ;;
 
@@ -582,10 +612,10 @@ case "$1" in
         makenewdir /opt/aafs/oafcfg
         makenewdir /opt/aafs/intake
         makenewdir /opt/aafs/key
-        copycfg opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
-        copycfg opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
-        copycfg opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
-        copycfg opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
+        copycfg opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
+        copycfg opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
+        copycfg opensha-oaf/src/main/resources/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
+        copycfg opensha-oaf/src/main/resources/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
         copyscr opensha-oaf/deployment/scripts/aafs/moaf.sh /opt/aafs/moaf.sh
         copyscr opensha-oaf/deployment/scripts/aafs/intake/init.sh /opt/aafs/intake/init.sh
         copyscr opensha-oaf/deployment/scripts/aafs/intake/listener.sh /opt/aafs/intake/listener.sh
@@ -597,10 +627,10 @@ case "$1" in
         makenewdir /opt/aafs/oafcfg
         makenewdir /opt/aafs/intake
         makenewdir /opt/aafs/key
-        copynewfile opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
-        copynewfile opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
-        copyover opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
-        copyover opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
+        copynewfile opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
+        copynewfile opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
+        copyover opensha-oaf/src/main/resources/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
+        copyover opensha-oaf/src/main/resources/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
         replacescr opensha-oaf/deployment/scripts/aafs/moaf.sh /opt/aafs/moaf.sh
         replacescr opensha-oaf/deployment/scripts/aafs/intake/init.sh /opt/aafs/intake/init.sh
         replacescr opensha-oaf/deployment/scripts/aafs/intake/listener.sh /opt/aafs/intake/listener.sh
@@ -608,18 +638,18 @@ case "$1" in
         ;;
 
     diffcfg)
-        git diff opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
-        git diff opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
-        git diff opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
-        git diff opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
+        git diff opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
+        git diff opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
+        git diff opensha-oaf/src/main/resources/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
+        git diff opensha-oaf/src/main/resources/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
         git diff opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
         ;;
 
     diffcfgc)
-        git diff --color opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
-        git diff --color opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
-        git diff --color opensha-oaf/src/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
-        git diff --color opensha-oaf/src/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
+        git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
+        git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
+        git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
+        git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
         git diff --color opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
         ;;
 
@@ -761,7 +791,7 @@ case "$1" in
 
     config_server_dev)
         if [ -d /opt/aafs/oafcfg ]; then
-            copycfg opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
+            copycfg opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ServerConfig.json /opt/aafs/oafcfg/ServerConfig.json
         else
             echo "Configuration directory /opt/aafs/oafcfg has not been created yet"
         fi
@@ -771,7 +801,7 @@ case "$1" in
         isfilewriteok "$2"
         if [ "$WRITEISOK" == "Y" ]; then
             echo "Writing file $2 ..."
-            copyover opensha-oaf/src/org/opensha/oaf/aafs/ServerConfig.json "$2"
+            copyover opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ServerConfig.json "$2"
         else
             echo "Operation aborted"
         fi
@@ -797,7 +827,7 @@ case "$1" in
 
     config_action_dev)
         if [ -d /opt/aafs/oafcfg ]; then
-            copycfg opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
+            copycfg opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ActionConfig.json /opt/aafs/oafcfg/ActionConfig.json
         else
             echo "Configuration directory /opt/aafs/oafcfg has not been created yet"
         fi
@@ -807,7 +837,7 @@ case "$1" in
         isfilewriteok "$2"
         if [ "$WRITEISOK" == "Y" ]; then
             echo "Writing file $2 ..."
-            copyover opensha-oaf/src/org/opensha/oaf/aafs/ActionConfig.json "$2"
+            copyover opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ActionConfig.json "$2"
         else
             echo "Operation aborted"
         fi
