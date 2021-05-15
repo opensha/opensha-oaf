@@ -459,9 +459,13 @@ public class RJGUIForecastTable extends RJGUIListener {
 				try {
 					//product = OAF_Publisher.createProduct(gui_model.get_cur_mainshock().getEventId(), forecast);
 					String jsonText = forecast.buildJSONString();
-					Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (gui_model.get_cur_mainshock(), ComcatOAFAccessor.EITMOPT_OMIT_NULL_EMPTY);
-					String eventNetwork = eimap.get (ComcatOAFAccessor.PARAM_NAME_NETWORK);
-					String eventCode = eimap.get (ComcatOAFAccessor.PARAM_NAME_CODE);
+
+					//Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (gui_model.get_cur_mainshock(), ComcatOAFAccessor.EITMOPT_OMIT_NULL_EMPTY);
+					//String eventNetwork = eimap.get (ComcatOAFAccessor.PARAM_NAME_NETWORK);
+					//String eventCode = eimap.get (ComcatOAFAccessor.PARAM_NAME_CODE);
+					String eventNetwork = gui_model.get_fcmain().mainshock_network;
+					String eventCode = gui_model.get_fcmain().mainshock_code;
+
 					String eventID = gui_model.get_cur_mainshock().getEventId();
 					if (gui_top.get_pdlUseEventIDParam()) {
 						eventID = gui_model.get_cat_eventIDParam();

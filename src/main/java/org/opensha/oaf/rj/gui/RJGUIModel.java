@@ -354,6 +354,13 @@ public class RJGUIModel extends RJGUIComponent {
 
 	private ForecastMainshock fcmain;
 
+	public final ForecastMainshock get_fcmain () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to RJGUIModel.fcmain while in state " + cur_modstate_string());
+		}
+		return fcmain;
+	}
+
 	// The AAFS parameters for the mainshock.
 	// This contains all default parameters for the mainshock, except the search region.
 	// Available when model state >= MODSTATE_CATALOG.
