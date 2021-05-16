@@ -5,20 +5,24 @@ Depends on the [upstream OpenSHA](https://github.com/opensha/opensha) project wh
 
 ```bash
 cd ~/opensha    # or whatever directory you choose
-git clone https://github.com/opensha/opensha.git
-git clone https://github.com/opensha/opensha-oaf.git
+git clone https://github.com/opensha/opensha
+git clone https://github.com/opensha/opensha-oaf
 ```
 
-To build the Reasenberg-Jones GUI:
+To build the Reasenberg-Jones GUI app:
 
 ```bash
+cd opensha-oaf
 ./gradlew appOAFJar
 ```
 
-To build the ETAS GUI:
+To build the ETAS GUI app:
 
 ```bash
+cd opensha-oaf
 ./gradlew appOAF_ETAS_Jar
 ```
+
+The GUI app jar file is created in opensha-oaf/build/libs.
 
 To build and manage the OAF server, refer to the documentation in [deployment/doc](deployment/doc).
