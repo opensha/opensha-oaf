@@ -39,17 +39,16 @@ void createOafAppTask(String taskName, String prefix, String mainClass) {
         // include compiled source from this project
         from sourceSets.main.allJava
         // include upstream project fat jar
-        from zipTree(file('../'+project.parentProject+'/build/libs/'+project.parentProject+'-all.jar'))
+        from zipTree(file('../'+project.parentProject+'/build/libs/'+project.parentProject+'-all.jar')).matching {
+            exclude { it.path.contains('META-INF') }
+        }
         // include PDL jar
-        from zipTree(file('lib/ProductClient.jar'))
-        // include OpenSHA version file
-        from(project(':opensha').projectDir) {
-            include 'build.version'
+        from zipTree(file('lib/ProductClient.jar')).matching {
+            exclude { it.path.contains('META-INF') }
         }
         // establish the startup class
         manifest {
             attributes(
-                'Class-Path': configurations.apiResolvable.collect { it.getName() }.join(' '),
                 'Main-Class': mainClass
             )
         }
@@ -78,7 +77,10 @@ void createOafServerTask(String taskName, String prefix) {
         // include compiled source from this project
         from sourceSets.main.allJava
         // include upstream project fat jar
-        from zipTree(file('../'+project.parentProject+'/build/libs/'+project.parentProject+'-all.jar'))
+        from zipTree(file('../'+project.parentProject+'/build/libs/'+project.parentProject+'-all.jar')).matching {
+            exclude { it.path.contains('META-INF') }
+            exclude 'build.version'
+        }
         with jar
     }
 }
