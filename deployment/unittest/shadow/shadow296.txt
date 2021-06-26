@@ -6,7 +6,7 @@ rup_event_id = usp000efw2
 rup_time = 1146433258440 (2006-04-30 21:40:58 UTC)
 rup_mag = 6.5
 rup_lat = -27.211
-rup_lon = -71.05600000000001
+rup_lon = -71.056
 rup_depth = 12.0
 
 find_shadow parameters:

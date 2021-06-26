@@ -9,8 +9,8 @@ rup_mag = 8.8
 rup_lat = -36.122
 rup_lon = -72.898
 rup_depth = 22.9
-description = offshore Bio-Bio, Chile
-ids = ,usp000h7rf,us2010tfan,choy20100227063411,gcmtc201002270634a,official20100227063411530_30,gcmt20100227063415,duputel201002270634a,atlas20100227063414,iscgem14340585,
+description = 36 km WNW of Quirihue, Chile
+ids = ,usp000h7rf,us2010tfan,choy20100227063411,gcmtc201002270634a,official20100227063411530_30,duputel201002270634a,gcmt20100227063415,atlas20100227063414,iscgem14340585,
 net = official
 code = 20100227063411530_30
 

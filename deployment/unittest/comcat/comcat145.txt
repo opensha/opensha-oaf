@@ -11,14 +11,14 @@ rup_mag = 7.8
 rup_lat = 28.2305
 rup_lon = 84.7314
 rup_depth = 8.22
-description = 36km E of Khudi, Nepal
+description = 67 km NNE of Bharatpur, Nepal
 ids = ,us20002926,gcmt20150425061126,atlas20150425061125,
 net = us
 code = 20002926
 
 http_status = 200
 EI Map: code = 20002926
-EI Map: description = 36km E of Khudi, Nepal
+EI Map: description = 67 km NNE of Bharatpur, Nepal
 EI Map: ids = ,us20002926,gcmt20150425061126,atlas20150425061125,
 EI Map: net = us
 ID List: us20002926

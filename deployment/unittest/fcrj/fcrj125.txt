@@ -12,7 +12,7 @@ mainshock_id_list = [us1000h3p4]
 mainshock_time = 1538128965250 (2018-09-28 10:02:45 UTC)
 mainshock_mag = 7.5
 mainshock_lat = -0.2559
-mainshock_lon = 119.84619999999998
+mainshock_lon = 119.8462
 mainshock_depth = 20.0
 mainshock_geojson is available
 
@@ -74,23 +74,23 @@ a: like=-2.470  mean=-2.470  sdev=0.5001  min=-4.500  max=-0.5000  delta=0.01000
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 mean_a=-2.470  sigma_a=0.5004
-Start date: 9/28/18 10:30 AM
-1 Day end date: 9/29/18 10:30 AM
+Start date: 9/28/18, 10:30 AM
+1 Day end date: 9/29/18, 10:30 AM
 M>=5 mean = 5.72126
 M>=5 median = 2.92436
 M>=5 2.5 Percentile = 0.306127
 M>=5 97.5 Percentile = 27.9357
-1 Week end date: 10/5/18 10:30 AM
+1 Week end date: 10/5/18, 10:30 AM
 M>=5 mean = 10.2023
 M>=5 median = 5.21481
 M>=5 2.5 Percentile = 0.545896
 M>=5 97.5 Percentile = 49.8159
-1 Month end date: 10/28/18 10:30 AM
+1 Month end date: 10/28/18, 10:30 AM
 M>=5 mean = 14.3546
 M>=5 median = 7.33720
 M>=5 2.5 Percentile = 0.768071
 M>=5 97.5 Percentile = 70.0905
-1 Year end date: 9/28/19 10:30 AM
+1 Year end date: 9/28/19, 10:30 AM
 M>=5 mean = 23.4334
 M>=5 median = 11.9778
 M>=5 2.5 Percentile = 1.25385

@@ -6,7 +6,7 @@ rup_event_id = usb000j4iz
 rup_time = 1376620265750 (2013-08-16 02:31:05 UTC)
 rup_mag = 6.5
 rup_lat = -41.734
-rup_lon = 174.15200000000002
+rup_lon = 174.152
 rup_depth = 8.2
 
 find_shadow parameters:

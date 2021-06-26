@@ -5,7 +5,7 @@ Count of events received = 1
 rup_event_id = usp000fphp
 rup_time = 1191145671970 (2007-09-30 09:47:51 UTC)
 rup_mag = 6.6
-rup_lat = -49.138000000000005
+rup_lat = -49.138
 rup_lon = 164.11
 rup_depth = 18.0
 
@@ -21,27 +21,27 @@ large_mag = 8.0
 
 Finding shadow:
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-09-29T09:47:51.970Z&format=geojson&latitude=-49.13800&limit=20000&longitude=164.11000&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.600&orderby=time&starttime=2006-09-30T09:47:51.970Z
-Count of events received = 7
-Count of events after filtering = 6
+Count of events received = 8
+Count of events after filtering = 7
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 6
-AftershockStatsShadow.find_shadow: Found 6 potential shadowing events for mainshock usp000fphp
-AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock usp000fphp
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-09-29T05:23:34.070Z&format=geojson&latitude=-49.13800&limit=20000&longitude=164.11000&maxdepth=700.000&maxradius=0.82473&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2007-09-30T05:23:34.070Z
-Count of events received = 35
-Count of events after filtering = 35
-Total number of events returned = 35
-AftershockStatsShadow.find_shadow: Found 35 possible aftershocks within 91.706 km of mainshock usp000fphp
-AftershockStatsShadow.find_shadow: Mainshock usp000fphp is shadowed by event usp000fpgq
+Total number of events returned = 7
+AftershockStatsShadow.find_shadow: Found 7 potential shadowing events for mainshock usp000fphp
+AftershockStatsShadow.find_shadow: Found 2 candidate shadowing events for mainshock usp000fphp
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-09-29T05:23:34.070Z&format=geojson&latitude=-49.13800&limit=20000&longitude=164.11000&maxdepth=700.000&maxradius=1.01386&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2007-09-30T05:23:34.000Z
+Count of events received = 37
+Count of events after filtering = 37
+Total number of events returned = 37
+AftershockStatsShadow.find_shadow: Found 37 possible aftershocks within 112.736 km of mainshock usp000fphp
+AftershockStatsShadow.find_shadow: Mainshock usp000fphp is shadowed by event duputel200709300523a
 AftershockStatsShadow.find_shadow: Mainshock magnitude = 6.60, shadowing event magnitude = 7.40
-AftershockStatsShadow.find_shadow: Distance = 14.793 km, time offset = 0.184 days
+AftershockStatsShadow.find_shadow: Distance = 35.823 km, time offset = 0.184 days
 
 Event is shadowed by:
-shadow_event_id = usp000fpgq
-shadow_time = 1191129814070 (2007-09-30 05:23:34 UTC)
+shadow_event_id = duputel200709300523a
+shadow_time = 1191129814000 (2007-09-30 05:23:34 UTC)
 shadow_mag = 7.4
-shadow_lat = -49.271
-shadow_lon = 164.115
-shadow_depth = 10.0
-separation_km = 14.793
+shadow_lat = -49.27
+shadow_lon = 163.6602
+shadow_depth = 11.5
+separation_km = 35.823
 separation_days = 0.184

@@ -40,7 +40,7 @@ Event is shadowed by:
 shadow_event_id = usp000jdhq
 shadow_time = 1326634819540 (2012-01-15 13:40:19 UTC)
 shadow_mag = 6.6
-shadow_lat = -60.94800000000001
+shadow_lat = -60.948
 shadow_lon = -56.113
 shadow_depth = 8.0
 separation_km = 10.856

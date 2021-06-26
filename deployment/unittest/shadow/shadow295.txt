@@ -5,7 +5,7 @@ Count of events received = 1
 rup_event_id = usc000fbl2
 rup_time = 1361534518200 (2013-02-22 12:01:58 UTC)
 rup_mag = 6.1
-rup_lat = -27.932000000000002
+rup_lat = -27.932
 rup_lon = -63.097
 rup_depth = 575.2
 
@@ -41,7 +41,7 @@ shadow_event_id = usp000jm15
 shadow_time = 1338181643450 (2012-05-28 05:07:23 UTC)
 shadow_mag = 6.7
 shadow_lat = -28.043
-shadow_lon = -63.093999999999994
+shadow_lon = -63.094
 shadow_depth = 586.9
 separation_km = 12.346
 separation_days = 270.288

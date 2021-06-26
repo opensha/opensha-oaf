@@ -5,8 +5,8 @@ Count of events received = 1
 rup_event_id = us10003vgt
 rup_time = 1446881503870 (2015-11-07 07:31:43 UTC)
 rup_mag = 6.8
-rup_lat = -30.879600000000003
-rup_lon = -71.45190000000001
+rup_lat = -30.8796
+rup_lon = -71.4519
 rup_depth = 46.0
 
 find_shadow parameters:

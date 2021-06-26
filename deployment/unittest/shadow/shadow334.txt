@@ -40,7 +40,7 @@ Event is shadowed by:
 shadow_event_id = usp000fp9t
 shadow_time = 1190943351970 (2007-09-28 01:35:51 UTC)
 shadow_mag = 6.5
-shadow_lat = -21.133000000000003
+shadow_lat = -21.133
 shadow_lon = 169.373
 shadow_depth = 10.0
 separation_km = 9.914

@@ -5,7 +5,7 @@ Count of events received = 1
 rup_event_id = usc000rnjw
 rup_time = 1404052369420 (2014-06-29 14:32:49 UTC)
 rup_mag = 6.0
-rup_lat = -55.35840000000001
+rup_lat = -55.3584
 rup_lon = -28.1075
 rup_depth = 10.0
 

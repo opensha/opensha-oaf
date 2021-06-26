@@ -40,7 +40,7 @@ Event is shadowed by:
 shadow_event_id = usc000rkg5
 shadow_time = 1403551155940 (2014-06-23 19:19:15 UTC)
 shadow_mag = 6.9
-shadow_lat = -29.977200000000003
+shadow_lat = -29.9772
 shadow_lon = -177.7247
 shadow_depth = 20.0
 separation_km = 11.990

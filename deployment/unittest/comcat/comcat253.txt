@@ -9,8 +9,8 @@ rup_mag = 8.3
 rup_lat = -31.5729
 rup_lon = -71.6744
 rup_depth = 22.44
-description = 48km W of Illapel, Chile
-ids = ,us20003k7a,gcmt20150916225432,gcmt20150916225433,at00nuskyv,pt15259054,atlas20150916225432,
+description = 48 km W of Illapel, Chile
+ids = ,us20003k7a,at00nuskyv,pt15259054,gcmt20150916225433,atlas20150916225432,
 net = us
 code = 20003k7a
 

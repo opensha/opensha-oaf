@@ -21,12 +21,28 @@ large_mag = 8.0
 
 Finding shadow:
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2007-05-03T15:26:40.290Z&format=geojson&latitude=-20.18700&limit=20000&longitude=-174.12300&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=8.000&orderby=time&starttime=2005-05-03T15:26:40.290Z
-Count of events received = 1
-Count of events after filtering = 0
+Count of events received = 2
+Count of events after filtering = 1
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 0
-AftershockStatsShadow.find_shadow: Found 0 potential shadowing events for mainshock usp000eg5g
-AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000eg5g
-AftershockStatsShadow.find_shadow: Mainshock usp000eg5g is not shadowed
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow: Found 1 potential shadowing events for mainshock usp000eg5g
+AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock usp000eg5g
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2007-05-03T15:26:40.000Z&format=geojson&latitude=-19.99000&limit=20000&longitude=-173.90690&maxdepth=700.000&maxradius=1.79438&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2006-05-03T15:26:40.000Z
+Count of events received = 321
+Count of events after filtering = 320
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 320
+AftershockStatsShadow.accum_from_comcat: Found 320 aftershocks within 199.526 km of candidate event duputel200605031527a
+AftershockStatsShadow.find_shadow: Mainshock usp000eg5g is shadowed by event duputel200605031527a
+AftershockStatsShadow.find_shadow: Mainshock magnitude = 8.00, shadowing event magnitude = 8.00
+AftershockStatsShadow.find_shadow: Distance = 31.450 km, time offset = 0.000 days
 
-Event is not shadowed
+Event is shadowed by:
+shadow_event_id = duputel200605031527a
+shadow_time = 1146670000000 (2006-05-03 15:26:40 UTC)
+shadow_mag = 8.0
+shadow_lat = -19.99
+shadow_lon = -173.9069
+shadow_depth = 60.5
+separation_km = 31.450
+separation_days = 0.000

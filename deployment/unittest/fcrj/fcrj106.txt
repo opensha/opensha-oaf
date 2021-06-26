@@ -74,23 +74,23 @@ a: like=-2.130  mean=-2.131  sdev=0.4897  min=-4.500  max=-0.5000  delta=0.01000
 p: like=0.9800  mean=0.9800  sdev=0.000  min=0.9800  max=0.9800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 mean_a=-2.130  sigma_a=0.4910
-Start date: 5/25/15 7:00 AM
-1 Day end date: 5/26/15 7:00 AM
+Start date: 5/25/15, 7:00 AM
+1 Day end date: 5/26/15, 7:00 AM
 M>=5 mean = 0.306483
 M>=5 median = 0.162002
 M>=5 2.5 Percentile = 0.0177015
 M>=5 97.5 Percentile = 1.47438
-1 Week end date: 6/1/15 7:00 AM
+1 Week end date: 6/1/15, 7:00 AM
 M>=5 mean = 1.96398
 M>=5 median = 1.03813
 M>=5 2.5 Percentile = 0.113433
 M>=5 97.5 Percentile = 9.44798
-1 Month end date: 6/24/15 7:00 AM
+1 Month end date: 6/24/15, 7:00 AM
 M>=5 mean = 6.52464
 M>=5 median = 3.44883
 M>=5 2.5 Percentile = 0.376842
 M>=5 97.5 Percentile = 31.3877
-1 Year end date: 5/24/16 7:00 AM
+1 Year end date: 5/24/16, 7:00 AM
 M>=5 mean = 24.7434
 M>=5 median = 13.0790
 M>=5 2.5 Percentile = 1.42910
@@ -100,23 +100,23 @@ a: like=-2.230  mean=-2.238  sdev=0.05778  min=-4.500  max=-0.5000  delta=0.0100
 p: like=0.9800  mean=0.9800  sdev=0.000  min=0.9800  max=0.9800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 magCompFn=FnPage[capF=0.5, capG=0.25, capH=1.0]  magCat=4.600  tStart=0.0000000  tEnd=30.000000  nEvents=57
-Start date: 5/25/15 7:00 AM
-1 Day end date: 5/26/15 7:00 AM
+Start date: 5/25/15, 7:00 AM
+1 Day end date: 5/26/15, 7:00 AM
 M>=5 mean = 0.128992
 M>=5 median = 0.126774
 M>=5 2.5 Percentile = 0.0966077
 M>=5 97.5 Percentile = 0.162778
-1 Week end date: 6/1/15 7:00 AM
+1 Week end date: 6/1/15, 7:00 AM
 M>=5 mean = 0.826597
 M>=5 median = 0.812382
 M>=5 2.5 Percentile = 0.619074
 M>=5 97.5 Percentile = 1.04310
-1 Month end date: 6/24/15 7:00 AM
+1 Month end date: 6/24/15, 7:00 AM
 M>=5 mean = 2.74609
 M>=5 median = 2.69886
 M>=5 2.5 Percentile = 2.05666
 M>=5 97.5 Percentile = 3.46534
-1 Year end date: 5/24/16 7:00 AM
+1 Year end date: 5/24/16, 7:00 AM
 M>=5 mean = 10.4140
 M>=5 median = 10.2349
 M>=5 2.5 Percentile = 7.79946
@@ -125,23 +125,23 @@ b=1.000  magMain=7.800  apcTot=401  apcSup=45
 a: like=-2.230  mean=-2.236  sdev=0.05728  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=203  hi=248
 p: like=0.9800  mean=0.9800  sdev=0.000  min=0.9800  max=0.9800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
-Start date: 5/25/15 7:00 AM
-1 Day end date: 5/26/15 7:00 AM
+Start date: 5/25/15, 7:00 AM
+1 Day end date: 5/26/15, 7:00 AM
 M>=5 mean = 0.129427
 M>=5 median = 0.127207
 M>=5 2.5 Percentile = 0.0971374
 M>=5 97.5 Percentile = 0.163007
-1 Week end date: 6/1/15 7:00 AM
+1 Week end date: 6/1/15, 7:00 AM
 M>=5 mean = 0.829384
 M>=5 median = 0.815156
 M>=5 2.5 Percentile = 0.622468
 M>=5 97.5 Percentile = 1.04457
-1 Month end date: 6/24/15 7:00 AM
+1 Month end date: 6/24/15, 7:00 AM
 M>=5 mean = 2.75534
 M>=5 median = 2.70807
 M>=5 2.5 Percentile = 2.06794
 M>=5 97.5 Percentile = 3.47021
-1 Year end date: 5/24/16 7:00 AM
+1 Year end date: 5/24/16, 7:00 AM
 M>=5 mean = 10.4491
 M>=5 median = 10.2698
 M>=5 2.5 Percentile = 7.84223

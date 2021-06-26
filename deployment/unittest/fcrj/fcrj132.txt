@@ -8,7 +8,7 @@ mainshock_avail = true
 mainshock_event_id = usc000rki5
 mainshock_network = us
 mainshock_code = c000rki5
-mainshock_id_list = [usc000rki5, ak11300221, at00n7n3cm, pt14174004, ak014803qfpr]
+mainshock_id_list = [usc000rki5, ak014803qfpr, ak11300221, at00n7n3cm, pt14174004]
 mainshock_time = 1403556789700 (2014-06-23 20:53:09 UTC)
 mainshock_mag = 7.9
 mainshock_lat = 51.8486
@@ -50,11 +50,11 @@ aftershock_search_fetch_meth = 0
 aftershock_search_avail = true
 aftershock_search_region = SphRegionCircle:
 plot_wrap = true
-min_lat = 50.32535766032396
-max_lat = 53.38693004697309
+min_lat = 50.32535766032395
+max_lat = 53.386930046973085
 min_lon = 175.68212902278714
 max_lon = 180.63998980873333
-center_lat = 51.856143853648526
+center_lat = 51.85614385364852
 center_lon = 178.16105941576023
 radius = 170.21585083949483
 min_days = 0.0
@@ -74,23 +74,23 @@ a: like=-2.470  mean=-2.470  sdev=0.4939  min=-4.500  max=-0.5000  delta=0.01000
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 mean_a=-2.470  sigma_a=0.4942
-Start date: 6/30/14 9:00 PM
-1 Day end date: 7/1/14 9:00 PM
+Start date: 6/30/14, 9:00 PM
+1 Day end date: 7/1/14, 9:00 PM
 M>=5 mean = 0.868559
 M>=5 median = 0.451177
 M>=5 2.5 Percentile = 0.0485717
 M>=5 97.5 Percentile = 4.19085
-1 Week end date: 7/7/14 9:00 PM
+1 Week end date: 7/7/14, 9:00 PM
 M>=5 mean = 4.66675
 M>=5 median = 2.42417
 M>=5 2.5 Percentile = 0.260975
 M>=5 97.5 Percentile = 22.5173
-1 Month end date: 7/30/14 9:00 PM
+1 Month end date: 7/30/14, 9:00 PM
 M>=5 mean = 11.9077
 M>=5 median = 6.18553
 M>=5 2.5 Percentile = 0.665906
 M>=5 97.5 Percentile = 57.4555
-1 Year end date: 6/30/15 9:00 PM
+1 Year end date: 6/30/15, 9:00 PM
 M>=5 mean = 32.9134
 M>=5 median = 17.0970
 M>=5 2.5 Percentile = 1.84059
@@ -100,23 +100,23 @@ a: like=-2.950  mean=-2.956  sdev=0.04421  min=-4.500  max=-0.5000  delta=0.0100
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 magCompFn=FnPage[capF=1.0, capG=4.5, capH=0.75]  magCat=3.500  tStart=0.0000000  tEnd=7.0000000  nEvents=97
-Start date: 6/30/14 9:00 PM
-1 Day end date: 7/1/14 9:00 PM
+Start date: 6/30/14, 9:00 PM
+1 Day end date: 7/1/14, 9:00 PM
 M>=5 mean = 0.149822
 M>=5 median = 0.147601
 M>=5 2.5 Percentile = 0.120140
 M>=5 97.5 Percentile = 0.179139
-1 Week end date: 7/7/14 9:00 PM
+1 Week end date: 7/7/14, 9:00 PM
 M>=5 mean = 0.804991
 M>=5 median = 0.793058
 M>=5 2.5 Percentile = 0.645510
 M>=5 97.5 Percentile = 0.962512
-1 Month end date: 7/30/14 9:00 PM
+1 Month end date: 7/30/14, 9:00 PM
 M>=5 mean = 2.05402
 M>=5 median = 2.02358
 M>=5 2.5 Percentile = 1.64709
 M>=5 97.5 Percentile = 2.45596
-1 Year end date: 6/30/15 9:00 PM
+1 Year end date: 6/30/15, 9:00 PM
 M>=5 mean = 5.67740
 M>=5 median = 5.59324
 M>=5 2.5 Percentile = 4.55262
@@ -125,23 +125,23 @@ b=1.000  magMain=7.900  apcTot=401  apcSup=35
 a: like=-2.950  mean=-2.952  sdev=0.04384  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=137  hi=172
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
-Start date: 6/30/14 9:00 PM
-1 Day end date: 7/1/14 9:00 PM
+Start date: 6/30/14, 9:00 PM
+1 Day end date: 7/1/14, 9:00 PM
 M>=5 mean = 0.151149
 M>=5 median = 0.148921
 M>=5 2.5 Percentile = 0.121314
 M>=5 97.5 Percentile = 0.180455
-1 Week end date: 7/7/14 9:00 PM
+1 Week end date: 7/7/14, 9:00 PM
 M>=5 mean = 0.812122
 M>=5 median = 0.800151
 M>=5 2.5 Percentile = 0.651819
 M>=5 97.5 Percentile = 0.969579
-1 Month end date: 7/30/14 9:00 PM
+1 Month end date: 7/30/14, 9:00 PM
 M>=5 mean = 2.07222
 M>=5 median = 2.04167
 M>=5 2.5 Percentile = 1.66319
 M>=5 97.5 Percentile = 2.47399
-1 Year end date: 6/30/15 9:00 PM
+1 Year end date: 6/30/15, 9:00 PM
 M>=5 mean = 5.72769
 M>=5 median = 5.64326
 M>=5 2.5 Percentile = 4.59711

@@ -12,7 +12,7 @@ mainshock_id_list = [nc10089897, ushis4137, usp0003y7s, atlas19890808081327]
 mainshock_time = 618567207390 (1989-08-08 08:13:27 UTC)
 mainshock_mag = 5.4
 mainshock_lat = 37.1481667
-mainshock_lon = -121.92683329999998
+mainshock_lon = -121.9268333
 mainshock_depth = 13.409
 mainshock_geojson is available
 
@@ -50,11 +50,11 @@ aftershock_search_fetch_meth = 0
 aftershock_search_avail = true
 aftershock_search_region = SphRegionCircle:
 plot_wrap = false
-min_lat = 37.06140182012492
-max_lat = 37.24126593804048
+min_lat = 37.061401820124914
+max_lat = 37.24126593804047
 min_lon = -122.04644215040857
 max_lon = -121.82077788571566
-center_lat = 37.1513338790827
+center_lat = 37.15133387908269
 center_lon = -121.93361001806211
 radius = 10.0
 min_days = 0.0
@@ -74,23 +74,23 @@ a: like=-2.640  mean=-2.640  sdev=0.4798  min=-4.500  max=-0.5000  delta=0.01000
 p: like=0.9600  mean=0.9600  sdev=0.000  min=0.9600  max=0.9600  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01200  mean=0.01200  sdev=0.000  min=0.01200  max=0.01200  delta=0.000  num=1  lo=0  hi=1
 mean_a=-2.640  sigma_a=0.4800
-Start date: 8/15/89 9:00 AM
-1 Day end date: 8/16/89 9:00 AM
+Start date: 8/15/89, 9:00 AM
+1 Day end date: 8/16/89, 9:00 AM
 M>=5 mean = 0.00151980
 M>=5 median = 0.000818670
 M>=5 2.5 Percentile = 9.39407e-05
 M>=5 97.5 Percentile = 0.00713379
-1 Week end date: 8/22/89 9:00 AM
+1 Week end date: 8/22/89, 9:00 AM
 M>=5 mean = 0.00798858
 M>=5 median = 0.00430321
 M>=5 2.5 Percentile = 0.000493784
 M>=5 97.5 Percentile = 0.0374976
-1 Month end date: 9/14/89 9:00 AM
+1 Month end date: 9/14/89, 9:00 AM
 M>=5 mean = 0.0195972
 M>=5 median = 0.0105564
 M>=5 2.5 Percentile = 0.00121133
 M>=5 97.5 Percentile = 0.0919872
-1 Year end date: 8/15/90 9:00 AM
+1 Year end date: 8/15/90, 9:00 AM
 M>=5 mean = 0.0490869
 M>=5 median = 0.0264416
 M>=5 2.5 Percentile = 0.00303412
@@ -100,23 +100,23 @@ a: like=-2.880  mean=-2.995  sdev=0.3442  min=-4.500  max=-0.5000  delta=0.01000
 p: like=0.9600  mean=0.9600  sdev=0.000  min=0.9600  max=0.9600  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01200  mean=0.01200  sdev=0.000  min=0.01200  max=0.01200  delta=0.000  num=1  lo=0  hi=1
 magCompFn=FnPage[capF=1.0, capG=4.5, capH=0.75]  magCat=3.000  tStart=0.0000000  tEnd=7.0000000  nEvents=2
-Start date: 8/15/89 9:00 AM
-1 Day end date: 8/16/89 9:00 AM
+Start date: 8/15/89, 9:00 AM
+1 Day end date: 8/16/89, 9:00 AM
 M>=5 mean = 0.000477305
 M>=5 median = 0.000396104
 M>=5 2.5 Percentile = 5.84102e-05
 M>=5 97.5 Percentile = 0.00131297
-1 Week end date: 8/22/89 9:00 AM
+1 Week end date: 8/22/89, 9:00 AM
 M>=5 mean = 0.00250888
 M>=5 median = 0.00208206
 M>=5 2.5 Percentile = 0.000307024
 M>=5 97.5 Percentile = 0.00690140
-1 Month end date: 9/14/89 9:00 AM
+1 Month end date: 9/14/89, 9:00 AM
 M>=5 mean = 0.00615465
 M>=5 median = 0.00510759
 M>=5 2.5 Percentile = 0.000753174
 M>=5 97.5 Percentile = 0.0169302
-1 Year end date: 8/15/90 9:00 AM
+1 Year end date: 8/15/90, 9:00 AM
 M>=5 mean = 0.0154161
 M>=5 median = 0.0127935
 M>=5 2.5 Percentile = 0.00188655
@@ -125,23 +125,23 @@ b=1.000  magMain=5.400  apcTot=401  apcSup=197
 a: like=-2.810  mean=-2.864  sdev=0.2510  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=46  hi=243
 p: like=0.9600  mean=0.9600  sdev=0.000  min=0.9600  max=0.9600  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01200  mean=0.01200  sdev=0.000  min=0.01200  max=0.01200  delta=0.000  num=1  lo=0  hi=1
-Start date: 8/15/89 9:00 AM
-1 Day end date: 8/16/89 9:00 AM
+Start date: 8/15/89, 9:00 AM
+1 Day end date: 8/16/89, 9:00 AM
 M>=5 mean = 0.000577638
 M>=5 median = 0.000507977
 M>=5 2.5 Percentile = 0.000141926
 M>=5 97.5 Percentile = 0.00135801
-1 Week end date: 8/22/89 9:00 AM
+1 Week end date: 8/22/89, 9:00 AM
 M>=5 mean = 0.00303626
 M>=5 median = 0.00267010
 M>=5 2.5 Percentile = 0.000746010
 M>=5 97.5 Percentile = 0.00713818
-1 Month end date: 9/14/89 9:00 AM
+1 Month end date: 9/14/89, 9:00 AM
 M>=5 mean = 0.00744841
 M>=5 median = 0.00655015
 M>=5 2.5 Percentile = 0.00183007
 M>=5 97.5 Percentile = 0.0175110
-1 Year end date: 8/15/90 9:00 AM
+1 Year end date: 8/15/90, 9:00 AM
 M>=5 mean = 0.0186567
 M>=5 median = 0.0164068
 M>=5 2.5 Percentile = 0.00458396

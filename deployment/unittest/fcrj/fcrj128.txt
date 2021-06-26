@@ -12,7 +12,7 @@ mainshock_id_list = [us1000h3p4]
 mainshock_time = 1538128965250 (2018-09-28 10:02:45 UTC)
 mainshock_mag = 7.5
 mainshock_lat = -0.2559
-mainshock_lon = 119.84619999999998
+mainshock_lon = 119.8462
 mainshock_depth = 20.0
 mainshock_geojson is available
 
@@ -74,23 +74,23 @@ a: like=-2.470  mean=-2.470  sdev=0.5001  min=-4.500  max=-0.5000  delta=0.01000
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 mean_a=-2.470  sigma_a=0.5004
-Start date: 10/28/18 11:00 AM
-1 Day end date: 10/29/18 11:00 AM
+Start date: 10/28/18, 11:00 AM
+1 Day end date: 10/29/18, 11:00 AM
 M>=5 mean = 0.102239
 M>=5 median = 0.0522581
 M>=5 2.5 Percentile = 0.00547047
 M>=5 97.5 Percentile = 0.499210
-1 Week end date: 11/4/18 11:00 AM
+1 Week end date: 11/4/18, 11:00 AM
 M>=5 mean = 0.660995
 M>=5 median = 0.337861
 M>=5 2.5 Percentile = 0.0353678
 M>=5 97.5 Percentile = 3.22750
-1 Month end date: 11/27/18 11:00 AM
+1 Month end date: 11/27/18, 11:00 AM
 M>=5 mean = 2.25024
 M>=5 median = 1.15019
 M>=5 2.5 Percentile = 0.120403
 M>=5 97.5 Percentile = 10.9875
-1 Year end date: 10/28/19 11:00 AM
+1 Year end date: 10/28/19, 11:00 AM
 M>=5 mean = 9.41077
 M>=5 median = 4.81021
 M>=5 2.5 Percentile = 0.503542
@@ -100,23 +100,23 @@ a: like=-2.330  mean=-2.335  sdev=0.08773  min=-4.500  max=-0.5000  delta=0.0100
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 magCompFn=FnPage[capF=0.5, capG=0.25, capH=1.0]  magCat=4.600  tStart=0.0000000  tEnd=30.000000  nEvents=25
-Start date: 10/28/18 11:00 AM
-1 Day end date: 10/29/18 11:00 AM
+Start date: 10/28/18, 11:00 AM
+1 Day end date: 10/29/18, 11:00 AM
 M>=5 mean = 0.0735672
 M>=5 median = 0.0717614
 M>=5 2.5 Percentile = 0.0470820
 M>=5 97.5 Percentile = 0.103919
-1 Week end date: 11/4/18 11:00 AM
+1 Week end date: 11/4/18, 11:00 AM
 M>=5 mean = 0.475629
 M>=5 median = 0.463954
 M>=5 2.5 Percentile = 0.304396
 M>=5 97.5 Percentile = 0.671858
-1 Month end date: 11/27/18 11:00 AM
+1 Month end date: 11/27/18, 11:00 AM
 M>=5 mean = 1.61919
 M>=5 median = 1.57945
 M>=5 2.5 Percentile = 1.03626
 M>=5 97.5 Percentile = 2.28722
-1 Year end date: 10/28/19 11:00 AM
+1 Year end date: 10/28/19, 11:00 AM
 M>=5 mean = 6.77165
 M>=5 median = 6.60543
 M>=5 2.5 Percentile = 4.33376
@@ -125,23 +125,23 @@ b=1.000  magMain=7.500  apcTot=401  apcSup=69
 a: like=-2.330  mean=-2.339  sdev=0.08676  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=179  hi=248
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
-Start date: 10/28/18 11:00 AM
-1 Day end date: 10/29/18 11:00 AM
+Start date: 10/28/18, 11:00 AM
+1 Day end date: 10/29/18, 11:00 AM
 M>=5 mean = 0.0728989
 M>=5 median = 0.0711134
 M>=5 2.5 Percentile = 0.0469144
 M>=5 97.5 Percentile = 0.102645
-1 Week end date: 11/4/18 11:00 AM
+1 Week end date: 11/4/18, 11:00 AM
 M>=5 mean = 0.471308
 M>=5 median = 0.459765
 M>=5 2.5 Percentile = 0.303312
 M>=5 97.5 Percentile = 0.663626
-1 Month end date: 11/27/18 11:00 AM
+1 Month end date: 11/27/18, 11:00 AM
 M>=5 mean = 1.60448
 M>=5 median = 1.56519
 M>=5 2.5 Percentile = 1.03257
 M>=5 97.5 Percentile = 2.25920
-1 Year end date: 10/28/19 11:00 AM
+1 Year end date: 10/28/19, 11:00 AM
 M>=5 mean = 6.71013
 M>=5 median = 6.54579
 M>=5 2.5 Percentile = 4.31834

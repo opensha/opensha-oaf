@@ -6,7 +6,7 @@ rup_event_id = nc10089897
 rup_time = 618567207390 (1989-08-08 08:13:27 UTC)
 rup_mag = 5.4
 rup_lat = 37.1481667
-rup_lon = -121.92683329999998
+rup_lon = -121.9268333
 rup_depth = 13.409
 
 find_shadow parameters:
@@ -21,17 +21,17 @@ large_mag = 8.0
 
 Finding shadow:
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1990-08-08T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=5.400&orderby=time&starttime=1988-08-08T08:13:27.390Z
-Count of events received = 17
-Count of events after filtering = 16
+Count of events received = 22
+Count of events after filtering = 21
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 16
-AftershockStatsShadow.find_shadow: Found 16 potential shadowing events for mainshock nc10089897
+Total number of events returned = 21
+AftershockStatsShadow.find_shadow: Found 21 potential shadowing events for mainshock nc10089897
 AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock nc10089897
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1990-08-08T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=0.43065&mindepth=0.000&minmagnitude=2.950&orderby=time&starttime=1989-10-18T00:04:15.190Z
-Count of events received = 257
-Count of events after filtering = 257
-Total number of events returned = 257
-AftershockStatsShadow.find_shadow: Found 257 possible aftershocks within 47.887 km of mainshock nc10089897
+Count of events received = 258
+Count of events after filtering = 258
+Total number of events returned = 258
+AftershockStatsShadow.find_shadow: Found 258 possible aftershocks within 47.887 km of mainshock nc10089897
 AftershockStatsShadow.find_shadow: Mainshock nc10089897 is shadowed by event nc216859
 AftershockStatsShadow.find_shadow: Mainshock magnitude = 5.40, shadowing event magnitude = 6.90
 AftershockStatsShadow.find_shadow: Distance = 13.133 km, time offset = -70.660 days

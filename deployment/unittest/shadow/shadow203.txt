@@ -6,7 +6,7 @@ rup_event_id = usp000bvcx
 rup_time = 1050591048580 (2003-04-17 14:50:48 UTC)
 rup_mag = 6.5
 rup_lat = -54.624
-rup_lon = 1.4320000000000002
+rup_lon = 1.432
 rup_depth = 10.0
 
 find_shadow parameters:

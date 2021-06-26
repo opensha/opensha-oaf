@@ -21,11 +21,11 @@ large_mag = 8.0
 
 Finding shadow:
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-01-30T04:54:50.570Z&format=geojson&latitude=-54.74000&limit=20000&longitude=146.29800&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.900&orderby=time&starttime=2006-01-30T04:54:50.570Z
-Count of events received = 2
-Count of events after filtering = 1
+Count of events received = 3
+Count of events after filtering = 2
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 1
-AftershockStatsShadow.find_shadow: Found 1 potential shadowing events for mainshock usp000f3xh
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow: Found 2 potential shadowing events for mainshock usp000f3xh
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000f3xh
 AftershockStatsShadow.find_shadow: Mainshock usp000f3xh is not shadowed
 

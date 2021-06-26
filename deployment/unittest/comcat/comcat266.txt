@@ -10,21 +10,22 @@ rup_lat = 37.0361667
 rup_lon = -121.8798333
 rup_depth = 17.214
 description = Loma Prieta, California Earthquake
-ids = ,nc216859,nclomaprie,choy19891018000415,gcmtm101889a,ushis4150,usp00040t8,iscgem389808,atlas19891018000415,
+ids = ,nc216859,nclomaprie,usp00040t8,choy19891018000415,gcmtm101889a,ushis4150,gcmt19891018000415,iscgem389808,atlas19891018000415,
 net = nc
 code = 216859
 
 http_status = 200
 EI Map: code = 216859
 EI Map: description = Loma Prieta, California Earthquake
-EI Map: ids = ,nc216859,nclomaprie,choy19891018000415,gcmtm101889a,ushis4150,usp00040t8,iscgem389808,atlas19891018000415,
+EI Map: ids = ,nc216859,nclomaprie,usp00040t8,choy19891018000415,gcmtm101889a,ushis4150,gcmt19891018000415,iscgem389808,atlas19891018000415,
 EI Map: net = nc
 ID List: nc216859
 ID List: nclomaprie
+ID List: usp00040t8
 ID List: choy19891018000415
 ID List: gcmtm101889a
 ID List: ushis4150
-ID List: usp00040t8
+ID List: gcmt19891018000415
 ID List: iscgem389808
 ID List: atlas19891018000415
 URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc216859.geojson

@@ -40,7 +40,7 @@ Event is shadowed by:
 shadow_event_id = usp000ba6m
 shadow_time = 1029755304310 (2002-08-19 11:08:24 UTC)
 shadow_mag = 7.7
-shadow_lat = -23.884000000000004
+shadow_lat = -23.884
 shadow_lon = 178.495
 shadow_depth = 675.4
 separation_km = 12.314

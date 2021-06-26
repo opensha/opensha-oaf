@@ -5,7 +5,7 @@ Count of events received = 1
 rup_event_id = usb000kxhr
 rup_time = 1384386347930 (2013-11-13 23:45:47 UTC)
 rup_mag = 6.1
-rup_lat = -60.281400000000005
+rup_lat = -60.2814
 rup_lon = -47.1233
 rup_depth = 11.07
 

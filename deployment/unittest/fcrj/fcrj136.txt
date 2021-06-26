@@ -8,7 +8,7 @@ mainshock_avail = true
 mainshock_event_id = us20003k7a
 mainshock_network = us
 mainshock_code = 20003k7a
-mainshock_id_list = [us20003k7a, gcmt20150916225432, gcmt20150916225433, at00nuskyv, pt15259054, atlas20150916225432]
+mainshock_id_list = [us20003k7a, at00nuskyv, pt15259054, gcmt20150916225433, atlas20150916225432]
 mainshock_time = 1442444072860 (2015-09-16 22:54:32 UTC)
 mainshock_mag = 8.3
 mainshock_lat = -31.5729
@@ -74,23 +74,23 @@ a: like=-2.470  mean=-2.470  sdev=0.4915  min=-4.500  max=-0.5000  delta=0.01000
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 mean_a=-2.470  sigma_a=0.4917
-Start date: 9/23/15 11:00 PM
-1 Day end date: 9/24/15 11:00 PM
+Start date: 9/23/15, 11:00 PM
+1 Day end date: 9/24/15, 11:00 PM
 M>=5 mean = 2.16788
 M>=5 median = 1.13343
 M>=5 2.5 Percentile = 0.123391
 M>=5 97.5 Percentile = 10.4097
-1 Week end date: 9/30/15 11:00 PM
+1 Week end date: 9/30/15, 11:00 PM
 M>=5 mean = 11.6477
 M>=5 median = 6.08971
 M>=5 2.5 Percentile = 0.662959
 M>=5 97.5 Percentile = 55.9298
-1 Month end date: 10/23/15 11:00 PM
+1 Month end date: 10/23/15, 11:00 PM
 M>=5 mean = 29.7195
 M>=5 median = 15.5381
 M>=5 2.5 Percentile = 1.69156
 M>=5 97.5 Percentile = 142.707
-1 Year end date: 9/22/16 11:00 PM
+1 Year end date: 9/22/16, 11:00 PM
 M>=5 mean = 82.1432
 M>=5 median = 42.9466
 M>=5 2.5 Percentile = 4.67540
@@ -100,23 +100,23 @@ a: like=-2.150  mean=-2.156  sdev=0.03588  min=-4.500  max=-0.5000  delta=0.0100
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 magCompFn=FnPage[capF=0.5, capG=0.25, capH=1.0]  magCat=4.600  tStart=0.0000000  tEnd=7.0000000  nEvents=147
-Start date: 9/23/15 11:00 PM
-1 Day end date: 9/24/15 11:00 PM
+Start date: 9/23/15, 11:00 PM
+1 Day end date: 9/24/15, 11:00 PM
 M>=5 mean = 2.36953
 M>=5 median = 2.33712
 M>=5 2.5 Percentile = 1.97782
 M>=5 97.5 Percentile = 2.73751
-1 Week end date: 9/30/15 11:00 PM
+1 Week end date: 9/30/15, 11:00 PM
 M>=5 mean = 12.7311
 M>=5 median = 12.5570
 M>=5 2.5 Percentile = 10.6265
 M>=5 97.5 Percentile = 14.7082
-1 Month end date: 10/23/15 11:00 PM
+1 Month end date: 10/23/15, 11:00 PM
 M>=5 mean = 32.4839
 M>=5 median = 32.0396
 M>=5 2.5 Percentile = 27.1140
 M>=5 97.5 Percentile = 37.5285
-1 Year end date: 9/22/16 11:00 PM
+1 Year end date: 9/22/16, 11:00 PM
 M>=5 mean = 89.7839
 M>=5 median = 88.5558
 M>=5 2.5 Percentile = 74.9417
@@ -125,23 +125,23 @@ b=1.000  magMain=8.300  apcTot=401  apcSup=28
 a: like=-2.160  mean=-2.158  sdev=0.03585  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=220  hi=248
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
-Start date: 9/23/15 11:00 PM
-1 Day end date: 9/24/15 11:00 PM
+Start date: 9/23/15, 11:00 PM
+1 Day end date: 9/24/15, 11:00 PM
 M>=5 mean = 2.36051
 M>=5 median = 2.32822
 M>=5 2.5 Percentile = 1.97012
 M>=5 97.5 Percentile = 2.72800
-1 Week end date: 9/30/15 11:00 PM
+1 Week end date: 9/30/15, 11:00 PM
 M>=5 mean = 12.6826
 M>=5 median = 12.5092
 M>=5 2.5 Percentile = 10.5851
 M>=5 97.5 Percentile = 14.6571
-1 Month end date: 10/23/15 11:00 PM
+1 Month end date: 10/23/15, 11:00 PM
 M>=5 mean = 32.3601
 M>=5 median = 31.9176
 M>=5 2.5 Percentile = 27.0083
 M>=5 97.5 Percentile = 37.3982
-1 Year end date: 9/22/16 11:00 PM
+1 Year end date: 9/22/16, 11:00 PM
 M>=5 mean = 89.4419
 M>=5 median = 88.2186
 M>=5 2.5 Percentile = 74.6497

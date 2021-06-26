@@ -5,7 +5,7 @@ Count of events received = 1
 rup_event_id = us10003x8t
 rup_time = 1447206878570 (2015-11-11 01:54:38 UTC)
 rup_mag = 6.9
-rup_lat = -29.506700000000002
+rup_lat = -29.5067
 rup_lon = -72.0068
 rup_depth = 12.0
 

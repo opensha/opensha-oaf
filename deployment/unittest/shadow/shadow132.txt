@@ -5,7 +5,7 @@ Count of events received = 1
 rup_event_id = usp000ge8h
 rup_time = 1218261708510 (2008-08-09 06:01:48 UTC)
 rup_mag = 6.5
-rup_lat = -60.647999999999996
+rup_lat = -60.648
 rup_lon = 153.771
 rup_depth = 10.0
 
@@ -21,11 +21,11 @@ large_mag = 8.0
 
 Finding shadow:
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2009-08-09T06:01:48.510Z&format=geojson&latitude=-60.64800&limit=20000&longitude=153.77100&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.500&orderby=time&starttime=2007-08-10T06:01:48.510Z
-Count of events received = 8
-Count of events after filtering = 7
+Count of events received = 9
+Count of events after filtering = 8
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 7
-AftershockStatsShadow.find_shadow: Found 7 potential shadowing events for mainshock usp000ge8h
+Total number of events returned = 8
+AftershockStatsShadow.find_shadow: Found 8 potential shadowing events for mainshock usp000ge8h
 AftershockStatsShadow.find_shadow: Found 0 candidate shadowing events for mainshock usp000ge8h
 AftershockStatsShadow.find_shadow: Mainshock usp000ge8h is not shadowed
 

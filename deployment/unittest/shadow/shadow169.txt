@@ -6,7 +6,7 @@ rup_event_id = usp000japr
 rup_time = 1321008097480 (2011-11-11 10:41:37 UTC)
 rup_mag = 6.0
 rup_lat = -55.981
-rup_lon = -124.43899999999998
+rup_lon = -124.439
 rup_depth = 10.0
 
 find_shadow parameters:

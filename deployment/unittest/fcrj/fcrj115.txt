@@ -74,23 +74,23 @@ a: like=-2.640  mean=-2.640  sdev=0.4798  min=-4.500  max=-0.5000  delta=0.01000
 p: like=0.9600  mean=0.9600  sdev=0.000  min=0.9600  max=0.9600  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01200  mean=0.01200  sdev=0.000  min=0.01200  max=0.01200  delta=0.000  num=1  lo=0  hi=1
 mean_a=-2.640  sigma_a=0.4800
-Start date: 8/24/14 10:50 AM
-1 Day end date: 8/25/14 10:50 AM
+Start date: 8/24/14, 10:50 AM
+1 Day end date: 8/25/14, 10:50 AM
 M>=5 mean = 0.142582
 M>=5 median = 0.0768050
 M>=5 2.5 Percentile = 0.00881321
 M>=5 97.5 Percentile = 0.669269
-1 Week end date: 8/31/14 10:50 AM
+1 Week end date: 8/31/14, 10:50 AM
 M>=5 mean = 0.230492
 M>=5 median = 0.124159
 M>=5 2.5 Percentile = 0.0142470
 M>=5 97.5 Percentile = 1.08191
-1 Month end date: 9/23/14 10:50 AM
+1 Month end date: 9/23/14, 10:50 AM
 M>=5 mean = 0.301638
 M>=5 median = 0.162483
 M>=5 2.5 Percentile = 0.0186446
 M>=5 97.5 Percentile = 1.41586
-1 Year end date: 8/24/15 10:50 AM
+1 Year end date: 8/24/15, 10:50 AM
 M>=5 mean = 0.434140
 M>=5 median = 0.233858
 M>=5 2.5 Percentile = 0.0268348

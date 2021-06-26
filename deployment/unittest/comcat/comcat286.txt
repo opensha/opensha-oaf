@@ -9,14 +9,14 @@ rup_mag = 7.1
 rup_lat = 38.276
 rup_lon = 141.588
 rup_depth = 42.0
-description = near the east coast of Honshu, Japan
+description = 29 km ESE of Ishinomaki, Japan
 ids = ,usc0002ksa,atlas20110407143200,atlas20110407143243,usp000hzf6,choy20110407143243,duputel201104071432a,iscgem16413596,
 net = us
 code = p000hzf6
 
 http_status = 200
 EI Map: code = p000hzf6
-EI Map: description = near the east coast of Honshu, Japan
+EI Map: description = 29 km ESE of Ishinomaki, Japan
 EI Map: ids = ,usc0002ksa,atlas20110407143200,atlas20110407143243,usp000hzf6,choy20110407143243,duputel201104071432a,iscgem16413596,
 EI Map: net = us
 ID List: usp000hzf6

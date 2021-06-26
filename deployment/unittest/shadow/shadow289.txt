@@ -5,7 +5,7 @@ Count of events received = 1
 rup_event_id = usp000j4f4
 rup_time = 1310223747240 (2011-07-09 15:02:27 UTC)
 rup_mag = 6.0
-rup_lat = -29.337000000000003
+rup_lat = -29.337
 rup_lon = -177.051
 rup_depth = 14.0
 
@@ -40,7 +40,7 @@ Event is shadowed by:
 shadow_event_id = usp000j48h
 shadow_time = 1309978998260 (2011-07-06 19:03:18 UTC)
 shadow_mag = 7.6
-shadow_lat = -29.539000000000005
+shadow_lat = -29.539
 shadow_lon = -176.34
 shadow_depth = 17.0
 separation_km = 72.423

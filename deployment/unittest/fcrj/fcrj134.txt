@@ -8,7 +8,7 @@ mainshock_avail = true
 mainshock_event_id = official20100227063411530_30
 mainshock_network = official
 mainshock_code = 20100227063411530_30
-mainshock_id_list = [official20100227063411530_30, usp000h7rf, us2010tfan, choy20100227063411, gcmtc201002270634a, gcmt20100227063415, duputel201002270634a, atlas20100227063414, iscgem14340585]
+mainshock_id_list = [official20100227063411530_30, usp000h7rf, us2010tfan, choy20100227063411, gcmtc201002270634a, duputel201002270634a, gcmt20100227063415, atlas20100227063414, iscgem14340585]
 mainshock_time = 1267252451530 (2010-02-27 06:34:11 UTC)
 mainshock_mag = 8.8
 mainshock_lat = -36.122
@@ -74,23 +74,23 @@ a: like=-2.470  mean=-2.470  sdev=0.4903  min=-4.500  max=-0.5000  delta=0.01000
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 mean_a=-2.470  sigma_a=0.4905
-Start date: 3/6/10 7:00 AM
-1 Day end date: 3/7/10 7:00 AM
+Start date: 3/6/10, 7:00 AM
+1 Day end date: 3/7/10, 7:00 AM
 M>=5 mean = 6.82482
 M>=5 median = 3.57830
 M>=5 2.5 Percentile = 0.391565
 M>=5 97.5 Percentile = 32.7000
-1 Week end date: 3/13/10 7:00 AM
+1 Week end date: 3/13/10, 7:00 AM
 M>=5 mean = 36.6828
 M>=5 median = 19.2330
 M>=5 2.5 Percentile = 2.10463
 M>=5 97.5 Percentile = 175.760
-1 Month end date: 4/5/10 7:00 AM
+1 Month end date: 4/5/10, 7:00 AM
 M>=5 mean = 93.6378
 M>=5 median = 49.0950
 M>=5 2.5 Percentile = 5.37234
 M>=5 97.5 Percentile = 448.651
-1 Year end date: 3/6/11 7:00 AM
+1 Year end date: 3/6/11, 7:00 AM
 M>=5 mean = 258.928
 M>=5 median = 135.758
 M>=5 2.5 Percentile = 14.8557
@@ -100,23 +100,23 @@ a: like=-2.170  mean=-2.173  sdev=0.02154  min=-4.500  max=-0.5000  delta=0.0100
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 magCompFn=FnPage[capF=0.5, capG=0.25, capH=1.0]  magCat=4.600  tStart=0.0000000  tEnd=7.0000000  nEvents=407
-Start date: 3/6/10 7:00 AM
-1 Day end date: 3/7/10 7:00 AM
+Start date: 3/6/10, 7:00 AM
+1 Day end date: 3/7/10, 7:00 AM
 M>=5 mean = 7.18741
 M>=5 median = 7.10016
 M>=5 2.5 Percentile = 6.43689
 M>=5 97.5 Percentile = 7.82578
-1 Week end date: 3/13/10 7:00 AM
+1 Week end date: 3/13/10, 7:00 AM
 M>=5 mean = 38.6316
 M>=5 median = 38.1627
 M>=5 2.5 Percentile = 34.5977
 M>=5 97.5 Percentile = 42.0628
-1 Month end date: 4/5/10 7:00 AM
+1 Month end date: 4/5/10, 7:00 AM
 M>=5 mean = 98.6126
 M>=5 median = 97.4156
 M>=5 2.5 Percentile = 88.3153
 M>=5 97.5 Percentile = 107.371
-1 Year end date: 3/6/11 7:00 AM
+1 Year end date: 3/6/11, 7:00 AM
 M>=5 mean = 272.685
 M>=5 median = 269.375
 M>=5 2.5 Percentile = 244.211
@@ -125,23 +125,23 @@ b=1.000  magMain=8.800  apcTot=401  apcSup=17
 a: like=-2.170  mean=-2.173  sdev=0.02153  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=224  hi=241
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
-Start date: 3/6/10 7:00 AM
-1 Day end date: 3/7/10 7:00 AM
+Start date: 3/6/10, 7:00 AM
+1 Day end date: 3/7/10, 7:00 AM
 M>=5 mean = 7.17784
 M>=5 median = 7.09077
 M>=5 2.5 Percentile = 6.42508
 M>=5 97.5 Percentile = 7.81369
-1 Week end date: 3/13/10 7:00 AM
+1 Week end date: 3/13/10, 7:00 AM
 M>=5 mean = 38.5802
 M>=5 median = 38.1122
 M>=5 2.5 Percentile = 34.5342
 M>=5 97.5 Percentile = 41.9979
-1 Month end date: 4/5/10 7:00 AM
+1 Month end date: 4/5/10, 7:00 AM
 M>=5 mean = 98.4814
 M>=5 median = 97.2866
 M>=5 2.5 Percentile = 88.1533
 M>=5 97.5 Percentile = 107.205
-1 Year end date: 3/6/11 7:00 AM
+1 Year end date: 3/6/11, 7:00 AM
 M>=5 mean = 272.322
 M>=5 median = 269.018
 M>=5 2.5 Percentile = 243.763

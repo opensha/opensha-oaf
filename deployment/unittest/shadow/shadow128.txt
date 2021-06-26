@@ -5,7 +5,7 @@ Count of events received = 1
 rup_event_id = usp000j4yz
 rup_time = 1310736362950 (2011-07-15 13:26:02 UTC)
 rup_mag = 6.1
-rup_lat = -60.76200000000001
+rup_lat = -60.762
 rup_lon = -23.523
 rup_depth = 10.0
 

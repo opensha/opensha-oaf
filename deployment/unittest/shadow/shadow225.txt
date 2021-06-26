@@ -5,7 +5,7 @@ Count of events received = 1
 rup_event_id = usb000tpuw
 rup_time = 1424124053590 (2015-02-16 22:00:53 UTC)
 rup_mag = 6.2
-rup_lat = -55.52000000000001
+rup_lat = -55.52
 rup_lon = -28.2591
 rup_depth = 13.0
 
