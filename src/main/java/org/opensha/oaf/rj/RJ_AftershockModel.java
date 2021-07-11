@@ -1065,54 +1065,68 @@ public abstract class RJ_AftershockModel {
 
 		// get the maximum expected num, which we will use to set the maximum num in the distribution function
 //System.out.print("\tworking on M "+mag+"\nunm="+numMag5_DistributionFunc.size()+"\n");
-		double maxExpNum = numMag5_DistributionFunc.getMaxX()*Math.pow(10d, b*(5-mag));
+		double maxExpNum = numMag5_DistributionFunc.getMaxX()*Math.pow(10d, b*(5.0 - mag));
+
+		if (maxExpNum > 10000000.0) {	// should never matter for sensible data
+			maxExpNum = 10000000.0;
+		}
 
 //		PoissonDistribution poissDist = new PoissonDistribution(maxExpNum);
 		PoissonDistribution poissDist = new PoissonDistribution(null, maxExpNum, PoissonDistribution.DEFAULT_EPSILON, PoissonDistribution.DEFAULT_MAX_ITERATIONS);
 		int maxAleatoryNum = poissDist.inverseCumulativeProbability(0.999);
 		
-		HistogramFunction cumDistFunc = new HistogramFunction(0d, (double)maxAleatoryNum,maxAleatoryNum+1);
-		double[] distFunc = new double[cumDistFunc.size()];
-		double totWt=0;
+		double[] distFunc = new double[maxAleatoryNum + 1];
+		double totWt = 0.0;
+		for(int j = 0; j < distFunc.length; j++) {
+			distFunc[j] = 0.0;
+		}
+
+		// Stack the Poisson probability distributions, weighted by likelihoods
 		
-		for(int i=0;i<numMag5_DistributionFunc.size();i++) {
-//System.out.print(", "+i);
-			double expNum = numMag5_DistributionFunc.getX(i)*Math.pow(10d, b*(5-mag));
+		for(int i = 0; i < numMag5_DistributionFunc.size(); i++) {
+			double expNum = numMag5_DistributionFunc.getX(i)*Math.pow(10d, b*(5.0 - mag));
 			double wt = numMag5_DistributionFunc.getY(i);
 //			poissDist = new PoissonDistribution(expNum);
 			poissDist = new PoissonDistribution(null, expNum, PoissonDistribution.DEFAULT_EPSILON, PoissonDistribution.DEFAULT_MAX_ITERATIONS);
-			totWt+=wt;
+			totWt += wt;
 			
 			int minLoopVal = poissDist.inverseCumulativeProbability(0.0001);
 			int maxLoopVal = poissDist.inverseCumulativeProbability(0.9999);
-			if(maxLoopVal>cumDistFunc.size()-1)
-				maxLoopVal=cumDistFunc.size()-1;
-			if(minLoopVal < 0)
+			if(maxLoopVal > distFunc.length - 1) {
+				maxLoopVal = distFunc.length - 1;
+			}
+			if(minLoopVal < 0) {
 				minLoopVal = 0;
-			for(int j=minLoopVal;j<=maxLoopVal;j++) {
+			}
+			for(int j = minLoopVal; j <= maxLoopVal; j++) {
 				distFunc[j] += poissDist.probability(j)*wt;
 			}
-			
-		}
-		double sum=0;
-		for(int j=0;j<distFunc.length;j++) {
-			sum+=distFunc[j];
-			cumDistFunc.set(j,sum);
-		}
-//System.out.print("\n");
-		double[] fractValArray = new double[fractileArray.length];
-		for(int i=0;i<fractileArray.length;i++) {
-			double fractVal = (int)Math.round(cumDistFunc.getClosestXtoY(fractileArray[i]));
-			if(cumDistFunc.getY(fractVal)<fractVal)
-				fractVal += 1;	// this is how PoissonDistribution class does it	
-			fractValArray[i]=fractVal;
 		}
 
-		
-//		System.out.println("totWt="+totWt);
-//		System.out.println("cumDistFunc.getMaxY()="+cumDistFunc.getMaxY());
-//		System.out.println("fractVal="+fractVal+"\tfractile="+fractile);
-//		GraphWindow graph = new GraphWindow(cumDistFunc, "cumDistFunc"); 
+		// Convert to a cumulative distribution
+
+		double sum = 0.0;
+		for(int j = 0; j < distFunc.length; j++) {
+			sum += distFunc[j];
+			distFunc[j] = sum;
+		}
+
+		// Get the fractiles, using binary search
+
+		double[] fractValArray = new double[fractileArray.length];
+		for(int i = 0; i < fractileArray.length; i++) {
+			int lo = -1;
+			int hi = distFunc.length;
+			while (hi - lo > 1) {
+				int mid = (lo + hi) / 2;
+				if (distFunc[mid] >= fractileArray[i]) {
+					hi = mid;		// preserve the condition distFunc[hi] >= fractile
+				} else {
+					lo = mid;
+				}
+			}
+			fractValArray[i] = (double)hi;
+		}
 
 		return fractValArray;
 	}
