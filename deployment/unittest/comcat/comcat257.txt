@@ -10,18 +10,21 @@ rup_lat = -20.187
 rup_lon = -174.123
 rup_depth = 55.0
 description = 47 km SSE of Pangai, Tonga
-ids = ,iscgem10698255,usp000eg5g,choy20060503152640,gcmtc200605031527a,gcmt20060503152640,
+ids = ,iscgem10698255,us2006mgas,usp000eg5g,duputel200605031527a,choy20060503152640,gcmtc200605031527a,gcmt20060503152640,atlas20060503152640,
 net = us
 code = p000eg5g
 
 http_status = 200
 EI Map: code = p000eg5g
 EI Map: description = 47 km SSE of Pangai, Tonga
-EI Map: ids = ,iscgem10698255,usp000eg5g,choy20060503152640,gcmtc200605031527a,gcmt20060503152640,
+EI Map: ids = ,iscgem10698255,us2006mgas,usp000eg5g,duputel200605031527a,choy20060503152640,gcmtc200605031527a,gcmt20060503152640,atlas20060503152640,
 EI Map: net = us
 ID List: usp000eg5g
 ID List: iscgem10698255
+ID List: us2006mgas
+ID List: duputel200605031527a
 ID List: choy20060503152640
 ID List: gcmtc200605031527a
 ID List: gcmt20060503152640
+ID List: atlas20060503152640
 URL = https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=usp000eg5g&format=geojson

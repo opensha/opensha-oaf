@@ -10,7 +10,7 @@ rup_lat = -20.187
 rup_lon = -174.123
 rup_depth = 55.0
 description = 47 km SSE of Pangai, Tonga
-ids = ,iscgem10698255,usp000eg5g,choy20060503152640,gcmtc200605031527a,gcmt20060503152640,
+ids = ,iscgem10698255,us2006mgas,usp000eg5g,duputel200605031527a,choy20060503152640,gcmtc200605031527a,gcmt20060503152640,atlas20060503152640,
 net = us
 code = p000eg5g
 
@@ -22,11 +22,11 @@ radius_km = 100.0
 min_mag = 3.5
 limit_per_call = 0
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2007-05-03T15:26:40.290Z&format=geojson&latitude=-20.18700&limit=20000&longitude=-174.12300&maxdepth=700.000&maxradius=0.89932&mindepth=0.000&minmagnitude=3.500&orderby=time&starttime=2006-05-03T15:25:13.890Z
-Count of events received = 207
-Count of events after filtering = 206
+Count of events received = 206
+Count of events after filtering = 205
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 206
-Events returned by fetchEventList = 206
+Total number of events returned = 205
+Events returned by fetchEventList = 205
 http_status[0] = 200
 List of events returned by fetchEventList:
 0: usp000faj5 (time = 2007-04-25 04:05:00 UTC, mag = 4.500, lat = -19.74300, lon = -174.11900, depth = 26.100)
@@ -234,4 +234,3 @@ List of events returned by fetchEventList:
 202: usp000eg5k (time = 2006-05-03 16:14:49 UTC, mag = 4.300, lat = -20.33700, lon = -173.79900, depth = 37.300)
 203: usp000eg5j (time = 2006-05-03 16:07:51 UTC, mag = 5.000, lat = -20.59000, lon = -174.20300, depth = 35.000)
 204: usp000eg5h (time = 2006-05-03 15:54:58 UTC, mag = 5.200, lat = -20.59500, lon = -174.06700, depth = 30.500)
-205: duputel200605031527a (time = 2006-05-03 15:26:40 UTC, mag = 8.000, lat = -19.99000, lon = -173.90690, depth = 60.500)
