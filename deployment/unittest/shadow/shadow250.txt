@@ -20,14 +20,14 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2013-01-22T16:04:52.980Z&format=geojson&latitude=-36.40900&limit=20000&longitude=-73.03000&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&orderby=time&starttime=2011-01-23T16:04:52.980Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2013-01-22T16:04:52.980Z&format=geojson&latitude=-36.40900&limit=20000&longitude=-73.03000&maxdepth=700.000&maxradius=17.98641&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2011-01-23T16:04:52.980Z
 Count of events received = 15
 Count of events after filtering = 14
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 14
 AftershockStatsShadow.find_shadow: Found 14 potential shadowing events for mainshock usp000jdvv
 AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock usp000jdvv
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2012-02-11T20:05:30.910Z&format=geojson&latitude=-36.40900&limit=20000&longitude=-73.03000&maxdepth=700.000&maxradius=0.37036&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2011-02-11T20:05:30.910Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2012-02-11T20:05:30.910Z&format=geojson&latitude=-36.40900&limit=20000&longitude=-73.03000&maxdepth=700.000&maxradius=0.37036&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2011-02-11T20:05:30.910Z
 Count of events received = 30
 Count of events after filtering = 30
 Total number of events returned = 30

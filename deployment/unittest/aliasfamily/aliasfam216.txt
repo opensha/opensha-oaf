@@ -36,7 +36,7 @@ mainshock_id_list = [us1000h3p4]
 mainshock_time = 1538128965250 (2018-09-28 10:02:45 UTC)
 mainshock_mag = 7.5
 mainshock_lat = -0.2559
-mainshock_lon = 119.84619999999998
+mainshock_lon = 119.8462
 mainshock_depth = 20.0
 timeline_id = .a
 mainshock_geojson is available

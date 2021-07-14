@@ -20,28 +20,28 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2009-04-26T23:34:49.390Z&format=geojson&latitude=-49.09100&limit=20000&longitude=164.11700&maxdepth=700.000&maxradius=17.98641&mindepth=0.000&minmagnitude=6.100&orderby=time&starttime=2007-04-27T23:34:49.390Z
-Count of events received = 13
-Count of events after filtering = 12
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2009-04-26T23:34:49.390Z&format=geojson&latitude=-49.09100&limit=20000&longitude=164.11700&maxdepth=700.000&maxradius=17.98641&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2007-04-27T23:34:49.390Z
+Count of events received = 12
+Count of events after filtering = 11
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 12
-AftershockStatsShadow.find_shadow: Found 12 potential shadowing events for mainshock usp000g4y1
-AftershockStatsShadow.find_shadow: Found 3 candidate shadowing events for mainshock usp000g4y1
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-09-29T09:47:51.970Z&format=geojson&latitude=-49.09100&limit=20000&longitude=164.11700&maxdepth=700.000&maxradius=1.03984&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2007-09-30T05:23:34.000Z
-Count of events received = 37
-Count of events after filtering = 37
-Total number of events returned = 37
-AftershockStatsShadow.find_shadow: Found 37 possible aftershocks within 115.625 km of mainshock usp000g4y1
-AftershockStatsShadow.find_shadow: Mainshock usp000g4y1 is shadowed by event duputel200709300523a
+Total number of events returned = 11
+AftershockStatsShadow.find_shadow: Found 11 potential shadowing events for mainshock usp000g4y1
+AftershockStatsShadow.find_shadow: Found 2 candidate shadowing events for mainshock usp000g4y1
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-09-29T09:47:51.970Z&format=geojson&latitude=-49.09100&limit=20000&longitude=164.11700&maxdepth=700.000&maxradius=0.87170&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2007-09-30T05:23:34.070Z
+Count of events received = 35
+Count of events after filtering = 35
+Total number of events returned = 35
+AftershockStatsShadow.find_shadow: Found 35 possible aftershocks within 96.929 km of mainshock usp000g4y1
+AftershockStatsShadow.find_shadow: Mainshock usp000g4y1 is shadowed by event usp000fpgq
 AftershockStatsShadow.find_shadow: Mainshock magnitude = 6.10, shadowing event magnitude = 7.40
-AftershockStatsShadow.find_shadow: Distance = 38.712 km, time offset = 209.758 days
+AftershockStatsShadow.find_shadow: Distance = 20.016 km, time offset = 209.758 days
 
 Event is shadowed by:
-shadow_event_id = duputel200709300523a
-shadow_time = 1191129814000 (2007-09-30 05:23:34 UTC)
+shadow_event_id = usp000fpgq
+shadow_time = 1191129814070 (2007-09-30 05:23:34 UTC)
 shadow_mag = 7.4
-shadow_lat = -49.27
-shadow_lon = 163.6602
-shadow_depth = 11.5
-separation_km = 38.712
+shadow_lat = -49.271
+shadow_lon = 164.115
+shadow_depth = 10.0
+separation_km = 20.016
 separation_days = 209.758

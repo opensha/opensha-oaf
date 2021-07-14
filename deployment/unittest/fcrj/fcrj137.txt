@@ -16,7 +16,7 @@ mainshock_lon = -71.6744
 mainshock_depth = 22.44
 mainshock_geojson is available
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-09-23T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=2.89011&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2015-09-16T22:54:32.860Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-09-23T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=2.89011&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2015-09-16T22:54:32.860Z
 Count of events received = 501
 Count of events after filtering = 500
 Events filtered due to conversion = 0, location = 0, id = 1
@@ -59,12 +59,12 @@ center_lon = -71.99426383296398
 radius = 321.3660538640318
 min_days = 0.0
 max_days = 7.0
-min_depth = 0.0
+min_depth = -5.0
 max_depth = 700.0
 min_mag = 3.3000000000000007
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-09-23T22:54:32.860Z&format=geojson&latitude=-31.25194&limit=20000&longitude=-71.99426&maxdepth=700.000&maxradius=2.89011&mindepth=0.000&minmagnitude=3.300&orderby=time&starttime=2015-09-16T22:54:32.860Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-09-23T22:54:32.860Z&format=geojson&latitude=-31.25194&limit=20000&longitude=-71.99426&maxdepth=700.000&maxradius=2.89011&mindepth=-5.000&minmagnitude=3.300&orderby=time&starttime=2015-09-16T22:54:32.860Z
 Count of events received = 514
 Count of events after filtering = 513
 Events filtered due to conversion = 0, location = 0, id = 1

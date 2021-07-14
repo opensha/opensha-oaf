@@ -23,14 +23,14 @@ max_days = 30.0
 radius_km = 200.0
 min_mag = 3.5
 limit_per_call = 100
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-05-25T06:11:25.950Z&format=geojson&latitude=28.23050&limit=100&longitude=84.73140&maxdepth=700.000&maxradius=1.79864&mindepth=0.000&minmagnitude=3.500&orderby=time&starttime=2015-04-25T06:09:59.550Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-05-25T06:11:25.950Z&format=geojson&latitude=28.23050&limit=100&longitude=84.73140&maxdepth=700.000&maxradius=1.79864&mindepth=-5.000&minmagnitude=3.500&orderby=time&starttime=2015-04-25T06:09:59.550Z
 Count of events received = 100
 Count of events after filtering = 100
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-05-05T10:39:47.120Z&format=geojson&latitude=28.23050&limit=100&longitude=84.73140&maxdepth=700.000&maxradius=1.79864&mindepth=0.000&minmagnitude=3.500&orderby=time&starttime=2015-04-25T06:09:59.550Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-05-05T10:39:47.120Z&format=geojson&latitude=28.23050&limit=100&longitude=84.73140&maxdepth=700.000&maxradius=1.79864&mindepth=-5.000&minmagnitude=3.500&orderby=time&starttime=2015-04-25T06:09:59.550Z
 Count of events received = 100
 Count of events after filtering = 99
 Events filtered due to conversion = 0, location = 0, id = 1
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-25T09:23:36.900Z&format=geojson&latitude=28.23050&limit=100&longitude=84.73140&maxdepth=700.000&maxradius=1.79864&mindepth=0.000&minmagnitude=3.500&orderby=time&starttime=2015-04-25T06:09:59.550Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-25T09:23:36.900Z&format=geojson&latitude=28.23050&limit=100&longitude=84.73140&maxdepth=700.000&maxradius=1.79864&mindepth=-5.000&minmagnitude=3.500&orderby=time&starttime=2015-04-25T06:09:59.550Z
 Count of events received = 44
 Count of events after filtering = 42
 Events filtered due to conversion = 0, location = 0, id = 2

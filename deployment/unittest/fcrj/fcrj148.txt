@@ -16,7 +16,7 @@ mainshock_lon = 141.588
 mainshock_depth = 42.0
 mainshock_geojson is available
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-04-14T14:32:43.290Z&format=geojson&latitude=38.27600&limit=20000&longitude=141.58800&maxdepth=700.000&maxradius=0.42945&mindepth=0.000&minmagnitude=3.950&orderby=time&starttime=2011-04-07T14:32:43.290Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-04-14T14:32:43.290Z&format=geojson&latitude=38.27600&limit=20000&longitude=141.58800&maxdepth=700.000&maxradius=0.42945&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2011-04-07T14:32:43.290Z
 Count of events received = 16
 Count of events after filtering = 15
 Events filtered due to conversion = 0, location = 0, id = 1
@@ -59,12 +59,12 @@ center_lon = 141.80228423283083
 radius = 47.75292736576897
 min_days = 0.0
 max_days = 7.0
-min_depth = 0.0
+min_depth = -5.0
 max_depth = 700.0
 min_mag = 2.95
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-04-14T14:32:43.290Z&format=geojson&latitude=38.36541&limit=20000&longitude=141.80228&maxdepth=700.000&maxradius=0.42945&mindepth=0.000&minmagnitude=2.950&orderby=time&starttime=2011-04-07T14:32:43.290Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-04-14T14:32:43.290Z&format=geojson&latitude=38.36541&limit=20000&longitude=141.80228&maxdepth=700.000&maxradius=0.42945&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2011-04-07T14:32:43.290Z
 Count of events received = 21
 Count of events after filtering = 20
 Events filtered due to conversion = 0, location = 0, id = 1
