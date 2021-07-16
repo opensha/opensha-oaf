@@ -731,6 +731,24 @@ public class RJGUIController extends RJGUIListener {
 	}
 
 
+	// Forecast duration, in days since the mainshock; edit box containing a number.
+	// Default is obtained from the action configuratin, typically 365.0.
+
+	private DoubleParameter forecastDurationParam;
+
+	private DoubleParameter init_forecastDurationParam () throws GUIEDTException {
+		double duration_min = gui_model.get_min_fc_duration_days();
+		double duration_max = gui_model.get_max_fc_duration_days();
+		double duration_def = gui_model.get_def_fc_duration_days();
+
+		forecastDurationParam = new DoubleParameter("Forecast Duration", duration_min, duration_max, new Double(duration_def));
+		forecastDurationParam.setUnits("Days");
+		forecastDurationParam.setInfo("Forecast duration relative to main shock origin time");
+		forecastDurationParam.addParameterChangeListener(this);
+		return forecastDurationParam;
+	}
+
+
 	// Set Injectable Text button.
 
 	private ButtonParameter setInjTextButton;
@@ -897,7 +915,7 @@ public class RJGUIController extends RJGUIListener {
 
 		// Create the container
 
-		fcastEditorHeight = (gui_top.get_height() * 4) / 10;
+		fcastEditorHeight = (gui_top.get_height() * 4) / 11;
 
 		fcastEditor = new ParameterListEditor(fcastParams);
 		fcastEditor.setTitle("Forecasts");
@@ -927,6 +945,8 @@ public class RJGUIController extends RJGUIListener {
 		aafsParams.addParameter(init_autoEnableParam());
 		
 		aafsParams.addParameter(init_useCustomParamsParam());
+		
+		aafsParams.addParameter(init_forecastDurationParam());
 		
 		aafsParams.addParameter(init_setInjTextButton());
 		
@@ -1007,6 +1027,7 @@ public class RJGUIController extends RJGUIListener {
 		add_symbol (fetchServerStatusButton , "fetchServerStatusButton");
 		add_symbol (autoEnableParam , "autoEnableParam");
 		add_symbol (useCustomParamsParam , "useCustomParamsParam");
+		add_symbol (forecastDurationParam , "forecastDurationParam");
 		add_symbol (setInjTextButton , "setInjTextButton");
 		add_symbol (exportAnalystOptionsButton , "exportAnalystOptionsButton");
 		add_symbol (sendAnalystOptionsButton , "sendAnalystOptionsButton");
@@ -1098,6 +1119,7 @@ public class RJGUIController extends RJGUIListener {
 		enableParam(fetchServerStatusButton, true);
 		enableParam(autoEnableParam, f_catalog && f_params && f_fetched);
 		enableParam(useCustomParamsParam, f_catalog && f_params && f_fetched);
+		enableParam(forecastDurationParam, f_catalog && f_params && f_fetched);
 		enableParam(setInjTextButton, f_catalog && f_params && f_fetched);
 		enableParam(exportAnalystOptionsButton, f_catalog && f_params && f_fetched);
 		enableParam(sendAnalystOptionsButton, f_catalog && f_params && f_fetched);
@@ -1105,6 +1127,7 @@ public class RJGUIController extends RJGUIListener {
 		if (!( f_catalog && f_params && f_fetched )) {
 			updateParam(autoEnableParam, AutoEnable.NORMAL);
 			updateParam(useCustomParamsParam, true);
+			updateParam(forecastDurationParam, gui_model.get_def_fc_duration_days());
 		}
 
 		// Data parameters that are cleared when there is no catalog loaded
@@ -1895,13 +1918,17 @@ public class RJGUIController extends RJGUIListener {
 
 	public static class XferAnalystView {
 
-		// Forecast start time, in days since the mainshock.
+		// Forecast generation option.
 
 		public AutoEnable x_autoEnableParam;	// parameter value, checked for validity
 
-		// Forecast start time, in days since the mainshock.
+		// Flag to use custom parameters.
 
 		public boolean x_useCustomParamsParam;	// parameter value, checked for validity
+
+		// Forecast duration, in days since the mainshock.
+
+		public double x_forecastDuration;		// parameter value, checked for validity
 	}
 
 
@@ -1926,11 +1953,17 @@ public class RJGUIController extends RJGUIListener {
 
 		public XferAnalystImpl xfer_load () {
 
-			// Forecast start and end time
+			// Forecast generation option.
 
 			x_autoEnableParam = validParam(autoEnableParam);
+		
+			// Flag to use custom parameters.
 
 			x_useCustomParamsParam = validParam(useCustomParamsParam);
+
+			// Forecast duration, in days since the mainshock.
+
+			x_forecastDuration = validParam(forecastDurationParam);
 
 			return this;
 		}

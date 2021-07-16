@@ -332,4 +332,171 @@ public class SimpleUtils {
 
 
 
+//	// Convert a string in ISO-8601 format to time (in milliseconds after the epoch).
+//	// An example is 2011-12-03T10:15:30Z.
+//	// This function also accepts the following special values:
+//	// "now" -- The current system time, or the test time if a test is in progress.
+//	// A string of digit with optional minus sign -- The time obtained by converting to long.
+//	// Throws an exception if the string cannot be parsed.
+//
+//	public static long special_string_to_time (String s) {
+//		if (s.equals("now")) {
+//			return get_system_time();
+//		}
+//		if (s.matches("-?\\d+")) {
+//			return Long.parseLong (s);
+//		}
+//		return string_to_time(s);
+//	}
+
+
+
+
+	// Convert a string in ISO-8601 format to time (in milliseconds after the epoch).
+	// An example is 2011-12-03T10:15:30Z.
+	// This function also accepts the a string of digits with otional sign,
+	// which it treats as a number of milliseconds since the epoch.
+	// Throws an exception if the string cannot be parsed.
+
+	public static long string_or_number_to_time (String s) {
+		if (s.matches("[+-]?\\d+")) {
+			return Long.parseLong(s);
+		}
+		return string_to_time(s);
+	}
+
+
+
+
+	// Convert a string in ISO-8601 format to time (in milliseconds after the epoch).
+	// An example is 2011-12-03T10:15:30Z.
+	// This function also accepts the a string of digits with otional sign,
+	// which it treats as a number of milliseconds since the epoch.
+	// This function also accepts "now" to return the current time acording to currentTimeMillis.
+	// Throws an exception if the string cannot be parsed.
+
+	public static long string_or_number_or_now_to_time (String s) {
+		if (s.equals("now")) {
+			return System.currentTimeMillis();
+		}
+		if (s.matches("[+-]?\\d+")) {
+			return Long.parseLong(s);
+		}
+		return string_to_time(s);
+	}
+
+
+
+
+	//----- Testing -----
+
+
+
+
+	public static void main(String[] args) {
+
+		// There needs to be at least one argument, which is the subcommand
+
+		if (args.length < 1) {
+			System.err.println ("SimpleUtils : Missing subcommand");
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #1
+		// Command format:
+		//  test1  string
+		// Test the operation of string_or_number_to_time.
+
+		if (args[0].equalsIgnoreCase ("test1")) {
+
+			// 1 additional arguments
+
+			if (!( args.length == 2 )) {
+				System.err.println ("SimpleUtils : Invalid 'test1' subcommand");
+				return;
+			}
+
+			try {
+
+				String s = args[1];
+
+				// Say hello
+
+				System.out.println ("Converting time using string_or_number_to_time");
+				System.out.println ("s = " + s);
+
+				// Convert
+
+				long time = string_or_number_to_time(s);
+
+				// Display result
+
+				System.out.println();
+				System.out.println ("time = " + time_raw_and_string(time));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  string
+		// Test the operation of string_or_number_or_now_to_time.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 1 additional arguments
+
+			if (!( args.length == 2 )) {
+				System.err.println ("SimpleUtils : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				String s = args[1];
+
+				// Say hello
+
+				System.out.println ("Converting time using string_or_number_or_now_to_time");
+				System.out.println ("s = " + s);
+
+				// Convert
+
+				long time = string_or_number_or_now_to_time(s);
+
+				// Display result
+
+				System.out.println();
+				System.out.println ("time = " + time_raw_and_string(time));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Unrecognized subcommand.
+
+		System.err.println ("SimpleUtils : Unrecognized subcommand : " + args[0]);
+		return;
+
+	}
+
+
+
+
 }

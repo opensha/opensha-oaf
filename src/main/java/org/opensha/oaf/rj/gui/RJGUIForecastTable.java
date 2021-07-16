@@ -409,6 +409,14 @@ public class RJGUIForecastTable extends RJGUIListener {
 			if (ret == JFileChooser.APPROVE_OPTION) {
 				File file = chooser.getSelectedFile();
 
+				// Set injectable text
+
+				String injText = gui_model.get_analyst_inj_text();
+				if (injText != null && injText.length() == 0) {
+					injText = null;
+				}
+				forecast.setInjectableText(injText);
+
 				// Convert forecast to JSON string, display error message if it fails
 
 				String jsonText = null;
@@ -453,6 +461,14 @@ public class RJGUIForecastTable extends RJGUIListener {
 
 			} else {
 				Product product = null;
+
+				// Set injectable text
+
+				String injText = gui_model.get_analyst_inj_text();
+				if (injText != null && injText.length() == 0) {
+					injText = null;
+				}
+				forecast.setInjectableText(injText);
 
 				// Build the PDL product, display error message if it failed
 
@@ -563,26 +579,50 @@ public class RJGUIForecastTable extends RJGUIListener {
 
 		} else if (event.getParameter() == injectableTextButton) {
 
-			// Show a dialog containing the existing injectable text
+			//  // Show a dialog containing the existing injectable text
+			//  
+			//  String prevText = forecast.getInjectableText();
+			//  if (prevText == null)
+			//  	prevText = "";
+			//  JTextArea area = new JTextArea(prevText);
+			//  Dimension size = new Dimension(300, 200);
+			//  area.setPreferredSize(size);
+			//  area.setMinimumSize(size);
+			//  area.setLineWrap(true);
+			//  area.setWrapStyleWord(true);
+			//  int ret = JOptionPane.showConfirmDialog(my_panel, area, "Set Injectable Text", JOptionPane.OK_CANCEL_OPTION);
+			//  
+			//  // If user entered new text, store it in the forecast
+			//  
+			//  if (ret == JOptionPane.OK_OPTION) {
+			//  	String text = area.getText().trim();
+			//  	if (text.length() == 0)
+			//  		text = null;
+			//  	forecast.setInjectableText(text);
+			//  }
 
-			String prevText = forecast.getInjectableText();
-			if (prevText == null)
+			// Show a dialog containing the existing injectable text
+			// (Same code as in RJGUIController.)
+
+			String prevText = gui_model.get_analyst_inj_text();
+			if (prevText == null) {	// should never happen
 				prevText = "";
+			}
 			JTextArea area = new JTextArea(prevText);
-			Dimension size = new Dimension(300, 200);
-			area.setPreferredSize(size);
-			area.setMinimumSize(size);
+			JScrollPane scroll = new JScrollPane(area);
+			Dimension size = new Dimension(600, 200);
+			scroll.setPreferredSize(size);
+			scroll.setMinimumSize(size);
+			scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 			area.setLineWrap(true);
 			area.setWrapStyleWord(true);
-			int ret = JOptionPane.showConfirmDialog(my_panel, area, "Set Injectable Text", JOptionPane.OK_CANCEL_OPTION);
+			int ret = JOptionPane.showConfirmDialog(gui_top.get_top_window(), scroll, "Set Injectable Text", JOptionPane.OK_CANCEL_OPTION);
 
-			// If user entered new text, store it in the forecast
+			// If user entered new text, store it
 
 			if (ret == JOptionPane.OK_OPTION) {
 				String text = area.getText().trim();
-				if (text.length() == 0)
-					text = null;
-				forecast.setInjectableText(text);
+				gui_model.setAnalystInjText(text);
 			}
 		}
 

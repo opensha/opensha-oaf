@@ -512,6 +512,8 @@ public class TimelineStatus extends DBPayload {
 		case FCSTAT_ACTIVE_INTAKE:
 		case FCSTAT_STOP_ANALYST:
 		case FCSTAT_STOP_WITHDRAWN:
+		case FCSTAT_STOP_EXPIRED:		// supports extending an already-expired timeline
+		case FCSTAT_STOP_SHADOWED:		// supports restarting a shadowed timeline
 			return true;
 		}
 		return false;
@@ -525,6 +527,8 @@ public class TimelineStatus extends DBPayload {
 		case FCSTAT_ACTIVE_NORMAL:
 		case FCSTAT_ACTIVE_INTAKE:
 		case FCSTAT_STOP_WITHDRAWN:
+		case FCSTAT_STOP_EXPIRED:		// supports extending an already-expired timeline
+		case FCSTAT_STOP_SHADOWED:		// supports restarting a shadowed timeline
 			return true;
 		}
 		return false;
@@ -540,6 +544,8 @@ public class TimelineStatus extends DBPayload {
 		case FCSTAT_ACTIVE_NORMAL:
 		case FCSTAT_ACTIVE_INTAKE:
 		case FCSTAT_STOP_ANALYST:
+		case FCSTAT_STOP_EXPIRED:		// supports extending an already-expired timeline
+		case FCSTAT_STOP_SHADOWED:		// supports restarting a shadowed timeline
 			return true;
 		}
 		return false;
@@ -554,6 +560,8 @@ public class TimelineStatus extends DBPayload {
 		case FCSTAT_ACTIVE_INTAKE:
 		case FCSTAT_STOP_ANALYST:
 		case FCSTAT_STOP_WITHDRAWN:
+		case FCSTAT_STOP_EXPIRED:		// supports extending an already-expired timeline
+		case FCSTAT_STOP_SHADOWED:		// supports restarting a shadowed timeline
 			return true;
 		}
 		return false;
@@ -796,6 +804,9 @@ public class TimelineStatus extends DBPayload {
 	}
 
 	// Set the state to shadowed.
+	//
+	// Note: Currently not used.  The system continues attempting to generate forecasts
+	// for a shadowed event, so that the shadowing criterion is periodically re-checked.
 
 	public void set_state_shadowed (long the_entry_time, int the_fc_result, String the_shadowing_event_id) {
 

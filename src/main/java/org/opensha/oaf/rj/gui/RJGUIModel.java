@@ -153,8 +153,10 @@ import org.opensha.oaf.aafs.ForecastParameters;
 import org.opensha.oaf.aafs.ServerCmd;
 import org.opensha.oaf.aafs.AnalystOptions;
 import org.opensha.oaf.aafs.ActionConfig;
+import org.opensha.oaf.aafs.ServerClock;
 
 import org.opensha.oaf.util.MarshalImpJsonWriter;
+import org.opensha.oaf.util.SimpleUtils;
 
 
 // Reasenberg & Jones GUI - Model implementation.
@@ -571,6 +573,35 @@ public class RJGUIModel extends RJGUIComponent {
 
 
 
+	// Minimum, default, and maximum forecast duration.
+
+	private long min_fc_duration;
+	private long def_fc_duration;
+	private long max_fc_duration;
+
+	public double get_min_fc_duration_days () {
+		if (min_fc_duration % SimpleUtils.DAY_MILLIS == 0L) {
+			return (double)(min_fc_duration / SimpleUtils.DAY_MILLIS);
+		}
+		return ((double)min_fc_duration) / SimpleUtils.DAY_MILLIS_D;
+	}
+
+	public double get_def_fc_duration_days () {
+		if (def_fc_duration % SimpleUtils.DAY_MILLIS == 0L) {
+			return (double)(def_fc_duration / SimpleUtils.DAY_MILLIS);
+		}
+		return ((double)def_fc_duration) / SimpleUtils.DAY_MILLIS_D;
+	}
+
+	public double get_max_fc_duration_days () {
+		if (max_fc_duration % SimpleUtils.DAY_MILLIS == 0L) {
+			return (double)(max_fc_duration / SimpleUtils.DAY_MILLIS);
+		}
+		return ((double)max_fc_duration) / SimpleUtils.DAY_MILLIS_D;
+	}
+
+
+
 
 	//----- Controller parameters for the model -----
 
@@ -783,6 +814,14 @@ public class RJGUIModel extends RJGUIComponent {
 		seqSpecForecast = null;
 		bayesianForecast = null;
 
+		// Get info from the configuration
+
+		ActionConfig action_config = new ActionConfig();
+
+		def_fc_duration = action_config.get_def_max_forecast_lag();
+		max_fc_duration = action_config.get_extended_max_forecast_lag();
+		min_fc_duration = Math.min (SimpleUtils.DAY_MILLIS, def_fc_duration);
+
 		return;
 	}
 
@@ -919,7 +958,7 @@ public class RJGUIModel extends RJGUIComponent {
 
 		// Check that start date is before current time
 
-		long time_now = System.currentTimeMillis();
+		long time_now = System.currentTimeMillis();		// must be the actual system time, not ServerClock
 		
 		Preconditions.checkState(startTime < time_now, "Start time is after now!");
 
@@ -1596,7 +1635,7 @@ public class RJGUIModel extends RJGUIComponent {
 
 		// Time now
 
-		long time_now = System.currentTimeMillis();
+		long time_now = ServerClock.get_time();
 
 		// The forecast lag that would cause a forecast to be issued now,
 		// as a multiple of 1 seconds, but after the first forecast
@@ -1641,7 +1680,17 @@ public class RJGUIModel extends RJGUIComponent {
 		String analyst_remark = "";
 		long analyst_time = time_now;
 		ForecastParameters analyst_params = make_analyst_fcparams (xfer);
-		long max_forecast_lag = 0L;
+
+		long max_forecast_lag = Math.round (xfer.x_forecastDuration * SimpleUtils.DAY_MILLIS_D);
+		if (max_forecast_lag >= def_fc_duration - 1000L && max_forecast_lag <= def_fc_duration + 1000L) {
+			max_forecast_lag = 0L;
+		}
+		else if (max_forecast_lag >= max_fc_duration - 1000L) {
+			max_forecast_lag = max_fc_duration;
+		}
+		else if (max_forecast_lag <= min_fc_duration + 1000L) {
+			max_forecast_lag = min_fc_duration;
+		}
 
 		// Create the analyst options
 

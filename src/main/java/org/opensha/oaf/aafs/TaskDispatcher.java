@@ -902,6 +902,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 	 * run_next_task - Run the next task.
 	 * @param f_verbose = True to display the task to System.out.
 	 * @param f_adjust_time = True to adjust time to the apparent exeuction time of the task.
+	 * @param cutoff_time = Maximum allowed exeuction time of the task, defaults to far future.
 	 * @return
 	 * Returns true if task is executed, false if task queue is empty.
 	 * This function connects to MongoDB, executes the next task on the queue, and then
@@ -909,6 +910,11 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 	 * This function also sets the clock to the task execution time.
 	 */
 	public boolean run_next_task (boolean f_verbose, boolean f_adjust_time) {
+		long cutoff_time = EXEC_TIME_FAR_FUTURE;
+		return run_next_task (f_verbose, f_adjust_time, cutoff_time);
+	}
+
+	public boolean run_next_task (boolean f_verbose, boolean f_adjust_time, long cutoff_time) {
 
 		boolean result = true;
 
@@ -938,7 +944,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 			// Get the next task on the pending queue, and activate it
 
-			long cutoff_time = EXEC_TIME_FAR_FUTURE;
+			//long cutoff_time = EXEC_TIME_FAR_FUTURE;
 			boolean f_idle = true;
 			task = null;
 
@@ -1215,12 +1221,14 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 	public void setup_task_context () {
 
-		dispatcher_time = TestMode.get_test_time();
-		dispatcher_true_time = dispatcher_time;
-		if (dispatcher_time <= 0L) {
-			dispatcher_time = ServerClock.get_time();
-			dispatcher_true_time = ServerClock.get_true_time();
-		}
+		//  dispatcher_time = TestMode.get_app_time();
+		//  dispatcher_true_time = dispatcher_time;
+		//  if (dispatcher_time <= 0L) {
+		//  	dispatcher_time = ServerClock.get_time();
+		//  	dispatcher_true_time = ServerClock.get_true_time();
+		//  }
+		dispatcher_time = ServerClock.get_time();
+		dispatcher_true_time = ServerClock.get_true_time();
 
 		dispatcher_action_config = new ActionConfig();
 
@@ -1254,12 +1262,14 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 	public boolean test_exec_idle_time () {
 
-		dispatcher_time = TestMode.get_test_time();
-		dispatcher_true_time = dispatcher_time;
-		if (dispatcher_time <= 0L) {
-			dispatcher_time = ServerClock.get_time();
-			dispatcher_true_time = ServerClock.get_true_time();
-		}
+		//  dispatcher_time = TestMode.get_app_time();
+		//  dispatcher_true_time = dispatcher_time;
+		//  if (dispatcher_time <= 0L) {
+		//  	dispatcher_time = ServerClock.get_time();
+		//  	dispatcher_true_time = ServerClock.get_true_time();
+		//  }
+		dispatcher_time = ServerClock.get_time();
+		dispatcher_true_time = ServerClock.get_true_time();
 
 		dispatcher_action_config = new ActionConfig();
 	

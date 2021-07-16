@@ -43,6 +43,7 @@ public class GUIEventAlias {
 
 		dict.put ("aceh", "official20120411083836720_20");	// M 8.6 - off the west coast of northern Sumatra 2012-04-11 08:38:36 (UTC) 2.327N 93.063E 20.0 km depth
 		dict.put ("anchorage", "ak018fcnsk91");	// M 7.1 - 14km NNW of Anchorage, Alaska 2018-11-30 17:29:29 (UTC) 61.346N 149.955W 46.7 km depth
+		dict.put ("antelopevalley", "nc73584926");	// M 6.0 - Antelope Valley, CA 2021-07-08 22:49:48 (UTC) 38.508N 119.500W 7.5 km depth
 		dict.put ("challis", "us70008jr5");	// M 6.5 - 70km W of Challis, Idaho 2020-03-31 23:52:30 (UTC) 44.465N 115.118W 12.1 km depth
 		dict.put ("elmayor", "ci14607652");	// M 7.2 - 12km SW of Delta, B.C., MX 2010-04-04 22:40:42 (UTC) 32.286N 115.295W 10.0 km depth
 		dict.put ("haiti", "usp000h60h");	// M 7.0 - Haiti region 2010-01-12 21:53:10 (UTC) 18.443N 72.571W 13.0 km depth

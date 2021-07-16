@@ -529,7 +529,7 @@ public class AnalystCLI {
 
 			// Time now
 
-			long time_now = System.currentTimeMillis();
+			long time_now = ServerClock.get_time();
 
 			// The forecast lag that would cause a forecast to be issued now,
 			// as a multiple of 1 seconds, but after the first forecast

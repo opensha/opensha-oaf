@@ -40,6 +40,7 @@ import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TimeSplitOutputStream;
 import org.opensha.oaf.util.ConsoleRedirector;
 import org.opensha.oaf.util.GUICalcProgressBar;
+import org.opensha.oaf.util.TestMode;
 
 
 /**
@@ -1343,7 +1344,7 @@ public class ServerCmd {
 					System.out.println (sstat_payload.toString());
 
 					if (sstat_payload.heartbeat_time != 0L) {
-						long age = System.currentTimeMillis() - sstat_payload.heartbeat_time;
+						long age = ServerClock.get_time() - sstat_payload.heartbeat_time;
 						if (age > RelayLink.get_heartbeat_stale()) {
 							long days = age / SimpleUtils.DAY_MILLIS;
 							long hours = (age / SimpleUtils.HOUR_MILLIS) % 24L;
@@ -1411,7 +1412,7 @@ public class ServerCmd {
 					System.out.println (sstat_payload.toString());
 
 					if (sstat_payload.heartbeat_time != 0L) {
-						long age = System.currentTimeMillis() - sstat_payload.heartbeat_time;
+						long age = ServerClock.get_time() - sstat_payload.heartbeat_time;
 						if (age > RelayLink.get_heartbeat_stale()) {
 							long days = age / SimpleUtils.DAY_MILLIS;
 							long hours = (age / SimpleUtils.HOUR_MILLIS) % 24L;
@@ -1568,7 +1569,7 @@ public class ServerCmd {
 			
 				if (relit == null
 					|| sstat_payload.primary_state == RelayLink.PRIST_SHUTDOWN
-					|| sstat_payload.heartbeat_time < System.currentTimeMillis() - RelayLink.get_heartbeat_stale() ) {
+					|| sstat_payload.heartbeat_time < ServerClock.get_time() - RelayLink.get_heartbeat_stale() ) {
 					sb.append ("Server " + n + " is DEAD" + "\n");
 
 				} else {
@@ -1979,6 +1980,13 @@ public class ServerCmd {
 			System.err.println ("ServerCmd : Missing subcommand");
 			return;
 		}
+
+		// Establish app or test mode time
+
+		//  long my_app_time = TestMode.get_app_time();
+		//  if (my_app_time > 0L) {
+		//  	ServerClock.freeze_time (my_app_time);
+		//  }
 
 		switch (args[0].toLowerCase()) {
 

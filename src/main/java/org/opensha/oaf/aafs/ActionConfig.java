@@ -562,6 +562,16 @@ public class ActionConfig {
 		return result;
 	}
 
+	// Get the extended maximum forecast lag.
+	// The returned value is always >= def_max_forecast_lag.
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_extended_max_forecast_lag () {
+		long result = param_set.forecast_lags.get (param_set.forecast_lags.size() - 1);
+		result = Math.max (result, param_set.def_max_forecast_lag);
+		return result;
+	}
+
 
 	//----- Service functions -----
 

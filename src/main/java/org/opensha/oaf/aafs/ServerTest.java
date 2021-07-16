@@ -5702,6 +5702,118 @@ public class ServerTest {
 
 
 
+	// Test #92 - Execute multiple tasks, with support for PDL and logging, until the given cutoff time.
+
+	public static void test92(String[] args) throws Exception {
+
+		// 5 or 6 additional arguments
+
+		if (args.length != 6 && args.length != 7) {
+			System.err.println ("ServerTest : Invalid 'test92' or 'exec_tasks_until' subcommand");
+			return;
+		}
+
+		long cutoff_time = SimpleUtils.string_or_number_or_now_to_time (args[1]);		// ISO-8601 time, or number of milliseconds since epoch, or "now"
+		String logfile = args[2];		// can be "-" for none
+		int pdl_enable = Integer.parseInt (args[3]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
+		int pdl_mode = Integer.parseInt (args[4]);	// 0 = normal, 1 = force primary, 2 = force secondary
+		boolean f_force_first = Boolean.parseBoolean (args[5]);
+		String pdl_key_filename = null;
+		if (args.length >= 7) {
+			pdl_key_filename = args[6];
+		}
+
+		String my_logfile = null;
+		if (!( logfile.equals ("-") )) {
+			my_logfile = "'" + logfile + "'";		// makes this literal, so time is not substituted
+		}
+
+		if (pdl_mode < 0 || pdl_mode > 2) {
+			System.out.println ("Invalid pdl_mode = " + pdl_mode);
+			return;
+		}
+
+		// Set the PDL enable code
+
+		if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+			System.out.println ("Invalid pdl_enable = " + pdl_enable);
+			return;
+		}
+
+		ServerConfig server_config = new ServerConfig();
+		server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+		if (pdl_key_filename != null) {
+
+			if (!( (new File (pdl_key_filename)).canRead() )) {
+				System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+				return;
+			}
+
+			server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+		}
+
+		// Turn off excessive log messages
+
+		MongoDBLogControl.disable_excessive();
+
+		// Open the summary log file
+
+		try (
+			TimeSplitOutputStream sum_tsop = TimeSplitOutputStream.make_tsop (my_logfile, 0L);
+		){
+
+			// Get a task dispatcher and server group
+
+			TaskDispatcher dispatcher = new TaskDispatcher();
+			ServerGroup sg = dispatcher.get_server_group();
+
+			// Install the log file
+
+			dispatcher.set_summary_log_tsop (sum_tsop);
+
+			// Set the PDL mode
+
+			sg.pdl_sup.set_force_primary (pdl_mode);
+
+			// Run the first task if requested
+
+			boolean f_verbose = true;
+			boolean f_adjust_time = true;
+
+			boolean f_running = true;
+
+			if (f_force_first) {
+				System.out.println (ServerComponent.LOG_SEPARATOR_LINE);
+				f_running = dispatcher.run_next_task (f_verbose, f_adjust_time);
+			}
+
+			// Process special cutoff time values
+
+			if (cutoff_time == -1L) {
+				cutoff_time = ServerComponent.EXEC_TIME_MAX_PROMPT;
+			} 
+			else if (cutoff_time == -2L) {
+				cutoff_time = ServerClock.get_time();
+			}
+			else if (cutoff_time == -3L) {
+				cutoff_time = ServerComponent.EXEC_TIME_FAR_FUTURE;
+			}
+
+			// Run tasks until cutoff time is reached
+
+			while (f_running) {
+				System.out.println (ServerComponent.LOG_SEPARATOR_LINE);
+				f_running = dispatcher.run_next_task (f_verbose, f_adjust_time, cutoff_time);
+			}
+		}
+
+		return;
+	}
+
+
+
+
 	// Test dispatcher.
 	
 	public static void main(String[] args) {
@@ -5720,12 +5832,12 @@ public class ServerTest {
 			MongoDBUtil.set_def_conopt (my_conopt);
 		}
 
-		// Establish test mode time
+		// Establish app or test mode time
 
-		long my_test_time = TestMode.get_test_time();
-		if (my_test_time > 0L) {
-			ServerClock.freeze_time (my_test_time);
-		}
+		//  long my_app_time = TestMode.get_app_time();
+		//  if (my_app_time > 0L) {
+		//  	ServerClock.freeze_time (my_app_time);
+		//  }
 
 		// Subcommand : Test #1
 		// Command format:
@@ -7267,6 +7379,33 @@ public class ServerTest {
 
 			try {
 				test91(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #92
+		// Command format:
+		//  test92  cutoff_time  logfile  pdl_enable  pdl_mode  f_force_first  [pdl_key_filename]
+		// Execute multiple tasks, with support for PDL and logging, until the given cutoff time.
+		// The logfile can be "-" for none.
+		// The pdl_enable can be: 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod,
+		// 5 = down dev, 6 = down prod (see ServerConfigFile).
+		// The pdl_mode can be: 0 = normal, 1 = force primary, 2 = force secondary.
+		// If f_force_first is true, the first task is executed even if it is after the cutoff time.
+		// The time can be in ISO-8601 format (like 2011-12-03T10:15:30Z), or an integer giving milliseconds
+		// since the epoch, or "now" to select the current time (according to System.currentTimeMillis).
+		// The time can also be -1 to select the latest prompt execution time, or -2 to select the
+		// time according to SystemClock.get_time (after the first task if f_force_first is true),
+		// or -3 to select a time far in the future.
+		// Note: An application time can be set to select a start time.
+
+		if (args[0].equalsIgnoreCase ("test92") || args[0].equalsIgnoreCase ("exec_tasks_until")) {
+
+			try {
+				test92(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

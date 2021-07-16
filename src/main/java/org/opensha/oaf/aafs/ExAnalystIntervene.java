@@ -16,8 +16,11 @@ import org.opensha.commons.data.comcat.ComcatException;
 import org.opensha.oaf.rj.CompactEqkRupList;
 
 /**
- * Execute task: Shutdown.
+ * Execute task: Analyst intervention.
  * Author: Michael Barall 06/25/2018.
+ *
+ * Note: This task is not used, although there is a test function to invoke it.
+ * ExAnalystSelection is used instead.
  */
 public class ExAnalystIntervene extends ServerExecTask {
 

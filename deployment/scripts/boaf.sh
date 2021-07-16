@@ -188,6 +188,11 @@
 #         After the 'run' keyword comes the application time (as either number of milliseconds
 #         since the epoch, or ISO-8601 format), then the name of the class (without the
 #         'org.opensha.oaf.' prefix), followed by any command-line parameters for the class.
+#
+# runtestat - Run a class in the org.opensha.oaf package, using the compiled-in configuration, in test mode at a given time.
+#             After the 'run' keyword comes the test mode time (as either number of milliseconds
+#             since the epoch, or ISO-8601 format), then the name of the class (without the
+#             'org.opensha.oaf.' prefix), followed by any command-line parameters for the class.
 
 
 
@@ -933,6 +938,13 @@ case "$1" in
         java "-Dapptime=$APPTIME" -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
         ;;
 
+    runtestat)
+        TESTTIME="$2"
+        JCLASS="org.opensha.oaf.$3"
+        shift 3
+        java "-Dtesttime=$TESTTIME" -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
     help)
         echo "Clone the OpenSHA repositories into the current directory:"
         echo "  boaf.sh clone"
@@ -1000,6 +1012,8 @@ case "$1" in
         echo "  boaf.sh runany FULLCLASSNAME [PARAMETER...]"
         echo "Run a class in the org.opensha.oaf package, using the compiled-in configuration, at a given time:"
         echo "  boaf.sh runat apptime CLASSNAME [PARAMETER...]"
+        echo "Run a class in the org.opensha.oaf package, using the compiled-in configuration, in test mode at a given time:"
+        echo "  boaf.sh runtestat testtime CLASSNAME [PARAMETER...]"
         ;;
 
     *)

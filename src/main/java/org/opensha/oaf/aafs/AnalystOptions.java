@@ -61,6 +61,11 @@ public class AnalystOptions {
 	// Note: In a timeline, if this is not -1L then it is like an extra forecast in the
 	// schedule.  Its value is increased whenever new analyst options are received that
 	// request a forecast.  It never decreases.
+	// Note: An analyst intervention should always have an AnalystOptions with a positive
+	// extra_forecast_lag.  Receipt of an analyst intervention causes the server to abandon
+	// any forecast in progress (e.g., a forecast requiring a PDL retry).  A positive
+	// extra_forecast_lag ensures that the server promptly initiates a new forecast attempt
+	// to replace any abandoned forecast.
 
 	public long extra_forecast_lag = -1L;
 
