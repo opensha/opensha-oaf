@@ -26,6 +26,8 @@ import org.opensha.commons.param.editor.ParameterEditor;
  * This is extended from the OpenSHA version in that it permits setting various text
  * strings and overriding the remembered dialog size and position, as well as positioning
  * the dialog over the GUI window instead of the top left corner of the screen.
+ * It also properly supports modeless dialogs, fixes a number of issues, and includes
+ * an option to print debugging messages.
  */
 
 public class GUIParameterListParameter extends AbstractParameter<ParameterList> {

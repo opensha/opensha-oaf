@@ -41,15 +41,8 @@ import org.opensha.commons.param.editor.impl.ParameterListEditor;
  * This is extended from the OpenSHA version in that it permits setting various text
  * strings and overriding the remembered dialog size and position, as well as positioning
  * the dialog over the GUI window instead of the top left corner of the screen.
- *
- * Issue: This editor does not receive notification when the dialog is closed via the X
- * in the upper right.  In this case, the contained parameters have been modified but
- * there is no notification fired from this parameter.  Assuming the GUI code does not
- * depend on the notification from this parameter, the result is that closing the dialog
- * via the X has the same effect as pressing the close button.  It might be better if
- * closing via the X left all parameters unchanged (even if they have been modified by
- * the user) (in which case there probably should also be a cancel button), but there
- * is not a convenient mechanism to do so.
+ * It also properly supports modeless dialogs, fixes a number of issues, and includes
+ * an option to print debugging messages.
  */
 
 
