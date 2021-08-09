@@ -13,7 +13,7 @@ apply from: '../opensha/build-common.gradle'
 dependencies {
 
     /* for OAF */
-    api 'org.mongodb:mongodb-driver-sync:4.2.2'
+    api 'org.mongodb:mongodb-driver-sync:4.3.1'
  
     /* no remote repo */
     implementation files('lib/ProductClient.jar')
@@ -97,6 +97,7 @@ ext {
 
 createOafAppTask("appOAFJar", "AftershockGUI-current", "org.opensha.oaf.rj.gui.RJGUITop")
 createOafAppTask("appOAF_ETAS_Jar", 'AftershockGUI_ETAS-current-'+getDate(), "org.opensha.oaf.etas.AftershockStatsGUI_ETAS")
+createOafAppTask("appOETASJar", "AftershockOETAS-current", "org.opensha.oaf.oetas.gui.OEGUITop")
 
 // OAF server task
 
