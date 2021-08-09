@@ -28,9 +28,14 @@ import org.opensha.commons.param.editor.ParameterEditor;
  * the dialog over the GUI window instead of the top left corner of the screen.
  * It also properly supports modeless dialogs, fixes a number of issues, and includes
  * an option to print debugging messages.
+ *
+ * The parameters appearing within the dialog can be changed in two ways: by creating a new
+ * ParameterList and passing it to setValue(); or by changing the contents of the existing
+ * ParameterList.  Either way, call refreshParamEditor on the editor to activate the new list;
+ * if the dialog is open the call repaints the dialog.
  */
 
-public class GUIParameterListParameter extends AbstractParameter<ParameterList> {
+public class GUIParameterListParameter extends AbstractParameter<ParameterList> implements GUIDialogParameter {
 
 
 	/**
@@ -70,6 +75,7 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	// Null means to use a default string, which is the name of the parameter.
 	// (An empty dialog title is permitted.)
 	// This is examined at the time the dialog box is created.
+	// If changed while the dialog is open, call refreshParamEditor on the editor to refresh the on-screen text.
 
 	protected String dialogTitleText = null;
 
@@ -109,6 +115,7 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	// The button text that appears at the bottom of the dialog.
 	// Null or empty means to use a default string, which is "Update " concatenated with the name of the parameter.
 	// This is examined at the time the dialog box is created.
+	// If changed while the dialog is open, call refreshParamEditor on the editor to refresh the on-screen text.
 
 	protected String okButtonText = null;
 
@@ -129,6 +136,7 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	// Null means to use default dimensions.
 	// If not called, the dimensions and position are remembered from the last time
 	// the dialog box was created, or default if it was never created.
+	// If called while the dialog is open, call refreshParamEditor on the editor to resize the on-screen dialog.
 	
 	public void setDialogDimensions(Dimension dialogDims) {
 		((GUIParameterListParameterEditor)getEditor()).setDialogDimensions(dialogDims);
@@ -146,6 +154,11 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 
 	protected boolean modalDialog = true;
 
+	@Override
+	public boolean getModalDialog () {
+		return modalDialog;
+	}
+
 
 	// True to emit trace messages.
 	// This is set only during construction.
@@ -155,23 +168,30 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 
 	// The termination code, typically indicating why the dialog was closed.
 
-	public static final int TERMCODE_NONE = 0;		// No termination code
-	public static final int TERMCODE_OPEN = 1;		// Dialog is currently open
-	public static final int TERMCODE_CLOSED = 2;	// Closed dialog using X at upper right
-	public static final int TERMCODE_OK = 3;		// Pressed OK or similar
-	//public static final int TERMCODE_CANCEL = 4;	// Pressed Cancel or similar
-	//public static final int TERMCODE_YES = 5;		// Pressed Yes or similar
-	//public static final int TERMCODE_NO = 6;		// Pressed No or similar
-	public static final int TERMCODE_USER = 100;	// User-defined termination code
+	protected int dialogTermCode = GUIDialogParameter.TERMCODE_NONE;
 
-	protected int dialogTermCode = TERMCODE_NONE;
-
+	@Override
 	public int getDialogTermCode () {
 		return dialogTermCode;
 	}
 
 	public void setDialogTermCode (int the_dialogTermCode) {
 		dialogTermCode = the_dialogTermCode;
+		return;
+	}
+
+
+	// The status code, indicating the current dialog state.
+
+	protected int dialogStatus = GUIDialogParameter.DLGSTAT_NONE;
+
+	@Override
+	public int getDialogStatus () {
+		return dialogStatus;
+	}
+
+	public void setDialogStatus (int the_dialogStatus) {
+		dialogStatus = the_dialogStatus;
 		return;
 	}
 
@@ -382,19 +402,22 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 
 
 	// Open the dialog.
-	// Returns true if the dialog was created, false if not (because it already exists).
-	// If a modal dialog is created, this does not return until the dialog is closed (at
-	// which time the termination code will have been set, but it is not clear if the
-	// change notification is guaranteed to have been sent).
+	// Returns true if the dialog was created, false if not (because it is open or in the process of closing).
+	// If a modal dialog is created, this does not return until the dialog begins the process of closing
+	// (at which time the termination code will be available).
 
+	@Override
 	public boolean openDialog () {
 		return ((GUIParameterListParameterEditor)getEditor()).openDialog();
 	}
 
 
 	// Close the dialog, and set the termination code.
-	// Return true if dialog closed, false if not open or already disposed.
+	// Return true if success, false if not open or already in the process of closing.
+	// Upon return, the dialog will have begun the process of closing, and may or may not be closed.
+	// The termination code will available through getDialogTermCode.
 
+	@Override
 	public boolean closeDialog (int the_dialogTermCode) {
 		return ((GUIParameterListParameterEditor)getEditor()).closeDialog (the_dialogTermCode);
 	}

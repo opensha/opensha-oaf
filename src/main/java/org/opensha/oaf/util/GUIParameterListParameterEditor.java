@@ -7,17 +7,20 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ListIterator;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.WindowConstants;
+import javax.swing.SwingUtilities;
 
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.param.ParameterList;
@@ -80,6 +83,9 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 
 	// Set if the dialog has already been disposed.
 	protected boolean frameDisposed = false;
+
+	// Set if a resize command was received while the dialog is open, but not processed yet.
+	protected boolean pendingResize = false;
 	
 	// Set to display this parameter as a button that opens a dialog.
 	private boolean useButton = true;
@@ -95,6 +101,9 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 
 	// The parameters that we are currently watching, or null if none.
 	private ArrayList<Parameter<?>> watchedParams = null;
+
+	// The parameters that we are currently watching, that are dialogs, or null if none.
+	private ArrayList<GUIDialogParameter> watchedDialogParams = null;
 
 
 
@@ -119,6 +128,8 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 
 
 	// Update all listeners.
+	// Note: This function allocates new objects for watchedParams and watchedDialogParams,
+	// so we don't retain pointers to parameters that are no longer in use.
 
 	protected void updateListeners (ParameterList paramList) {
 
@@ -129,13 +140,66 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 		// Add listeners for the parameters currently in the list
 
 		watchedParams = new ArrayList<Parameter<?>>();
+		watchedDialogParams = new ArrayList<GUIDialogParameter>();
+
 		ListIterator<Parameter<?>> it = paramList.getParametersIterator();
 		while(it.hasNext()) {
+
+			// Add a listener for the parameter
+
 			Parameter<?> param = it.next();
 			param.addParameterChangeListener(this);
 			watchedParams.add(param);
+
+			// If the parameter is a dialog, add to the list
+
+			if (param instanceof GUIDialogParameter) {
+				watchedDialogParams.add ((GUIDialogParameter)param);
+			}
 		}
 
+		return;
+	}
+
+
+
+
+	// Close open dialogs.
+	// Parameters:
+	//  params = List of dialog parameters to close, can be null if none.
+	//  excluded = List of dialog parameters not to close, or null if none.
+	//  termCode = Termination code to use when closing dialogs.
+
+	protected static void closeOpenDialogs (ArrayList<GUIDialogParameter> params, ArrayList<GUIDialogParameter> excluded, final int termCode) {
+		if (params != null) {
+			for (final GUIDialogParameter param : params) {
+
+				// Check if this parameter is excluded
+				// We use a linear search because typically the list of excluded dialogs is very small
+
+				boolean ok = true;
+				if (excluded != null) {
+					for (GUIDialogParameter x_param : excluded) {
+						if (x_param == param) {
+							ok = false;
+							break;
+						}
+					}
+				}
+
+				// If close is needed, do it asynchronously
+
+				if (ok) {
+					if (param.getDialogStatus() == GUIDialogParameter.DLGSTAT_OPEN) {
+						SwingUtilities.invokeLater(new Runnable() {
+							@Override public void run() {
+								param.closeDialog(termCode);
+							}
+						});
+					}
+				}
+			}
+		}
 		return;
 	}
 
@@ -159,10 +223,24 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 
 
 	// Set dialog size for the next time it is opened.
+	// If called while the dialog is open, call refreshParamEditor to resize the on-screen dialog.
 	
 	public void setDialogDimensions(Dimension dialogDims) {
-		this.dialogDims = dialogDims;
-		this.dialogPosition = null;
+
+		// If the dialog is displayed, treat it as a pending resize with no change in position
+
+		if (frame != null && !frameDisposed) {
+			this.dialogDims = dialogDims;
+			pendingResize = true;
+		}
+
+		// Otherwise, save the new size and force to default position
+
+		else {
+			this.dialogDims = dialogDims;
+			this.dialogPosition = null;
+		}
+
 		return;
 	}
 
@@ -173,9 +251,23 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 	 */
 	@Override
 	public void setEnabled(boolean isEnabled) {
-		this.editor.setEnabled(isEnabled);
 		if (useButton) {
 			this.button.setEnabled(isEnabled);
+		} else {
+			this.editor.setEnabled(isEnabled);
+		}
+
+		// If disabling while dialog is open, close the dialog
+
+		if (!( isEnabled )) {
+			if (frame != null) {
+
+				if (D) {
+					System.out.println ("$$$$$ GUIParameterListParameterEditor (" + getParameter().getName() + "): Parameter disabled while dialog is open");
+				}
+
+				doCloseDialog (GUIDialogParameter.TERMCODE_DISABLED);
+			}
 		}
 		return;
 	}
@@ -269,14 +361,28 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 		parameterChangeFlag = false;
 		armFireChangeFlag = false;
 		frameDisposed = false;
+		pendingResize = false;
+
+		// Set dialog status
+
+		((GUIParameterListParameter)getParameter()).setDialogStatus(GUIDialogParameter.DLGSTAT_OPEN);
 
 		// Initialize termination code
 
-		((GUIParameterListParameter)getParameter()).setDialogTermCode(GUIParameterListParameter.TERMCODE_OPEN);
+		((GUIParameterListParameter)getParameter()).setDialogTermCode(GUIDialogParameter.TERMCODE_OPEN);
 
 		// Set up the dialog box
 
-		frame = new JDialog();
+		Window owner = null;
+		if (button != null) {
+			owner = SwingUtilities.windowForComponent(button);
+		}
+		if (owner != null) {
+			frame = new JDialog(owner);
+		} else {
+			frame = new JDialog();
+		}
+
 		frame.setModal(modal);
 		frame.setSize(dialogDims);
 		if (dialogPosition != null) {
@@ -393,10 +499,23 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 
 			((GUIParameterListParameter)getParameter()).setDialogTermCode(the_dialogTermCode);
 
+			// Set dialog status
+
+			((GUIParameterListParameter)getParameter()).setDialogStatus(GUIDialogParameter.DLGSTAT_CLOSING);
+
 			// Save the dialog size and position
 
-			dialogDims = frame.getSize();
-			dialogPosition = frame.getLocation();
+			if (pendingResize) {
+				pendingResize = false;
+				dialogPosition = null;	// force to default position as if resize occurred while dialog is closed
+			} else {
+				dialogDims = frame.getSize();
+				dialogPosition = frame.getLocation();
+			}
+
+			// Close any open secondary dialogs
+
+			closeOpenDialogs (watchedDialogParams, null, GUIDialogParameter.TERMCODE_PARENT);
 
 			// Dispose of the dialog
 
@@ -441,7 +560,7 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 				System.out.println ("$$$$$ GUIParameterListParameterEditor (" + getParameter().getName() + "): OK button pressed");
 			}
 
-			doCloseDialog (GUIParameterListParameter.TERMCODE_OK);
+			doCloseDialog (GUIDialogParameter.TERMCODE_OK);
 		}
 		return;
 	}
@@ -458,7 +577,7 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 				System.out.println ("$$$$$ GUIParameterListParameterEditor (" + getParameter().getName() + "): Close window clicked");
 			}
 
-			doCloseDialog (GUIParameterListParameter.TERMCODE_CLOSED);
+			doCloseDialog (GUIDialogParameter.TERMCODE_CLOSED);
 		}
 		return;
 	}
@@ -471,9 +590,51 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 	protected void frame_windowClosed(WindowEvent e) {
 		if (frame != null) {
 
-			if (D) {
-				System.out.println ("$$$$$ GUIParameterListParameterEditor (" + getParameter().getName() + "): Window closed");
+			// If we didn't call dispose ...
+
+			if (!( frameDisposed )) {
+
+				if (D) {
+					System.out.println ("$$$$$ GUIParameterListParameterEditor (" + getParameter().getName() + "): Window closed by system");
+				}
+
+				// Enable parameter change notifiction to be fired
+
+				armFireChangeFlag = true;
+
+				// Indicate dialog disposed
+
+				frameDisposed = true;
+
+				// Save the termination code
+
+				((GUIParameterListParameter)getParameter()).setDialogTermCode(GUIDialogParameter.TERMCODE_SYSTEM);
+
+				// Save the dialog size and position
+
+				if (pendingResize) {
+					pendingResize = false;
+					dialogPosition = null;	// force to default position as if resize occurred while dialog is closed
+				} else {
+					dialogDims = frame.getSize();
+					dialogPosition = frame.getLocation();
+				}
+
+				// Close any open secondary dialogs
+
+				closeOpenDialogs (watchedDialogParams, null, GUIDialogParameter.TERMCODE_PARENT);
+
+			} else {
+
+				if (D) {
+					System.out.println ("$$$$$ GUIParameterListParameterEditor (" + getParameter().getName() + "): Window closed");
+				}
+
 			}
+
+			// Set dialog status
+
+			((GUIParameterListParameter)getParameter()).setDialogStatus(GUIDialogParameter.DLGSTAT_CLOSED);
 
 			// If any parameters have changed, send a notification
 			// Note: This must be done in the window-closed handler, and not earlier.
@@ -481,12 +642,19 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 			// if the user edits a parameter and then closes the dialog by clicking the X
 			// while the parameter still has focus.
 
-			//ParameterList paramList = editor.getParameterList();
 			if (parameterChangeFlag && armFireChangeFlag) {
-				Parameter<ParameterList> param = getParameter();
+				final Parameter<ParameterList> param = getParameter();
+				//ParameterList paramList = editor.getParameterList();
 				//param.setValue(paramList);
 				// this is needed because although the list hasn't changed, values inside of it have.
-				param.firePropertyChange(new ParameterChangeEvent(param, param.getName(), param.getValue(), param.getValue()));
+
+				//param.firePropertyChange(new ParameterChangeEvent(param, param.getName(), param.getValue(), param.getValue()));
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override public void run() {
+						param.firePropertyChange(new ParameterChangeEvent(param, param.getName(), param.getValue(), param.getValue()));
+					}
+				});
+				
 				parameterChangeFlag = false;
 				armFireChangeFlag = false;
 			}
@@ -494,6 +662,7 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 			ok_button = null;
 			frame = null;
 		}
+
 		return;
 	}
 
@@ -519,6 +688,7 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 
 		// Set up listeners for parameters in the list, and set them as the independent parameters
 
+		ArrayList<GUIDialogParameter> old_watchedDialogParams = watchedDialogParams;
 		ParameterList paramList = getParameter().getValue();
 		getParameter().setIndependentParameters(paramList);
 		updateListeners(paramList);
@@ -533,6 +703,29 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 		// If the dialog is displayed, repaint it
 
 		if (frame != null && !frameDisposed) {
+
+			// Set text in dialog
+
+			frame.setTitle(((GUIParameterListParameter)getParameter()).getDialogTitleText());
+			if (ok_button != null) {
+				ok_button.setText(((GUIParameterListParameter)getParameter()).getOkButtonText());
+			}
+
+			// Resize dialog if requested
+
+			if (pendingResize) {
+				pendingResize = false;
+				if (!( dialogDims == null || dialogDims.width < 60 || dialogDims.height < 60 )) {
+					frame.setSize(dialogDims);
+				}
+			}
+
+			// Close any open secondary dialogs that were removed from the dialog
+
+			closeOpenDialogs (old_watchedDialogParams, watchedDialogParams, GUIDialogParameter.TERMCODE_REMOVED);
+
+			// And repaint the dialog
+
 			frame.repaint();
 		}
 		
@@ -560,6 +753,7 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 
 		// Set up listeners for parameters in the list, and set them as the independent parameters
 
+		ArrayList<GUIDialogParameter> old_watchedDialogParams = watchedDialogParams;
 		ParameterList paramList = getParameter().getValue();
 		getParameter().setIndependentParameters(paramList);
 		updateListeners(paramList);
@@ -577,6 +771,27 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 		// If the dialog is displayed, repaint it
 
 		if (frame != null && !frameDisposed) {
+
+			// Set text in dialog
+
+			frame.setTitle(((GUIParameterListParameter)getParameter()).getDialogTitleText());
+			if (ok_button != null) {
+				ok_button.setText(((GUIParameterListParameter)getParameter()).getOkButtonText());
+			}
+
+			// Resize dialog if requested
+
+			if (pendingResize) {
+				pendingResize = false;
+				frame.setSize(dialogDims);
+			}
+
+			// Close any open secondary dialogs that were removed from the dialog
+
+			closeOpenDialogs (old_watchedDialogParams, watchedDialogParams, GUIDialogParameter.TERMCODE_REMOVED);
+
+			// And repaint the dialog
+
 			frame.repaint();
 		}
 		
