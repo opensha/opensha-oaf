@@ -21,7 +21,7 @@
 <body>
 
 <h1>OAF Quick Start</h1>
-<h2>Michael Barall<br>03/29/2021</h2>
+<h2>Michael Barall<br>08/11/2021</h2>
 <p>&nbsp;</p>
 <h2>1. Introduction</h2>
 <p>This document is intended to help you get started quickly in running OAF. It explains how to install, start, stop, and update the OAF software. The topics covered include:</p>
@@ -57,7 +57,7 @@ mainshock occurred.</p>
 System.</p>
 <p>&nbsp;</p>
     <p><strong>2.2. AAFS Components.</strong></p>
-    <p>&nbsp;An AAFS system includes the following software components:</p>
+    <p>An AAFS system includes the following software components:</p>
 <ul>
 	<li><b>OpenSHA</b>. This USGS software package is called Open Seismic Hazard 
 	Assessment and is written in the Java programming language. The OAF software 
@@ -74,7 +74,7 @@ System.</p>
 <p>The quick-start script, described in this document, installs and configures all the components.</p>
     <p>&nbsp;</p>
 <p><strong>2.3. AAFS Configurations.</strong></p>
-    <p>&nbsp;The AAFS software can run in either of two configurations:</p>
+    <p>The AAFS software can run in either of two configurations:</p>
 <ul>
 	<li><b>Single-Server Configuration</b>. In single-server configuration, the 
 	software runs on one computer or VM. It obtains earthquake information from 
@@ -94,14 +94,15 @@ System.</p>
 <p>&nbsp;</p>
 <h2>3. System Requirements</h2>
 <p><strong>3.1. Operating Environment.</strong></p>
-    <p>&nbsp;The AAFS software is designed to run in a dedicated VM or dedicated 
+    <p>The AAFS software is designed to run in a dedicated VM or dedicated 
 server.</p>
-    <p>&nbsp;The supported operating systems are:</p>
+    <p>The supported operating systems are:</p>
     <ul>
         <li>Amazon Linux 2.</li>
         <li>Centos 7.</li>
         <li>Ubuntu 20.04 LTS.</li>
     </ul>
+    <p>The software can run on either x64 architecture (which is used by Intel and AMD processors), or ARM architecture (which is used by Amazon Graviton processors). All three operating systems are supported on x64. However, only Amazon Linux 2 is supported on ARM.</p>
     <p>
         &nbsp;</p>
     <p>
@@ -202,8 +203,10 @@ $ chmod 755 aoaf.sh</pre>
 		<td style="vertical-align: top">CPU_CORE_COUNT</td>
 		<td style="vertical-align: top">&nbsp;</td>
 		<td style="vertical-align: top">Number of CPU cores to use for computationally-intensive code. If blank or 0, then a default value is obtained from the Java VM.<br />
-            Note: The default value supplied by the Java VM is usually incorrect.<br />
-            Note: In Amazon EC2, the number of cores is usually one-half of the number of vCPUs.<br />
+            Note: This value should reflect the number of physical cores available, not the number of threads.<br />
+            Note: The default value supplied by the Java VM is often incorrect.<br />
+            Note: In Amazon EC2, for Intel and AMD processors, the number of cores is usually one-half of the number of vCPUs.<br />
+            Note: In Amazon EC2, for Graviton processors, the number of cores is usually equal to the number of vCPUs.<br />
             Note: This parameter is not used by the current Reasenberg &amp; Jones code, but will be used by future ETAS code.<br />
             Note: If you have a large number of cores (say, 16 or more), then you may want to supply a value 1 or 2 less than the available number of cores, to leave some computational headroom for the Java garbage collector and system activities.</td>
 	</tr>

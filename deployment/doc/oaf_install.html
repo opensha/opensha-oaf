@@ -18,7 +18,7 @@
 <body>
 
 <h1>OAF Software Installation</h1>
-<h2>Michael Barall<br>03/29/2021</h2>
+<h2>Michael Barall<br>08/11/2021</h2>
 <p>&nbsp;</p>
 <h2>1. Introduction</h2>
 <p>OAF is Operational Aftershock Forecasting. It generates forecasts of future 
@@ -53,17 +53,19 @@ System.</p>
 	<li>Initialize the OAF Database</li>
 	<li>Starting and Stopping AAFS</li>
 </ol>
-<p>&nbsp;</p>
+<p>Note that there is a quick-start procedure that lets you install the OAF software quickly without going through all the steps described in this document. Refer to <strong>oaf_install.html</strong> for a description of the quick-start procedure.</p>
+    <p>&nbsp;</p>
 <h2>2. System Setup</h2>
 <p>2.1. These installation instructions are for the following operating systems:</p>
 <ul>
 	<li>Centos 7</li>
 	<li>Amazon Linux 2</li>
-	<li>Ubuntu 18.04 LTS or 20.04 LTS</li>
+	<li>Ubuntu 20.04 LTS</li>
 </ul>
 <p>Most of the installation procedure is the same for each operating 
 system. Where there are differences, they are indicated. For example, a section 
 that applies only to Centos is marked [Centos only].</p>
+    <p>The software can run on either x64 architecture (which is used by Intel and AMD processors), or ARM architecture (which is used by Amazon Graviton processors). All three operating systems are supported on x64. However, only Amazon Linux 2 is supported on ARM.</p>
 <p>&nbsp;</p>
 <p>2.2. The AAFS software is designed to run in a dedicated VM or dedicated 
 server.</p>
@@ -503,7 +505,9 @@ $ cd setup</pre>
     <p>Note: If you are behind an enterprise firewall, then the wget command may 
 fail due to network security restrictions. Such problems can usually be fixed by installing a digital certificate on your computer; contact your IT support for assistance. If this is not possible, then try issuing the command in the following form.</p>
 <pre>$ wget --no-check-certificate https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz</pre>
-<p>&nbsp;</p>
+<p>Note: If you are running on ARM, then dowload the latest ARM version of Amazon Corretto 11 like this:</p>
+<pre>$ wget https://corretto.aws/downloads/latest/amazon-corretto-11-aarch64-linux-jdk.tar.gz</pre>
+    <p>&nbsp;</p>
 <p>7.3. Create the directory to hold Java.</p>
 <pre>$ cd /usr/local
 $ sudo mkdir java
@@ -549,26 +553,23 @@ delete the entire contents of /usr/local/java, download the new distribution as
 in 7.2., then copy and extract it as in 7.4 and 7.5, and if necessary install a digital certificate as in 7.6.</p>
 <p>&nbsp;</p>
 <h2>8. Install MongoDB [Centos]</h2>
-<p>These instructions are specifically for installing MongoDB 4.4 or 4.2 on Centos 7. 
-They also apply to point releases like 4.4.1, 4.4.2, etc. Later versions (such 
-as 4.6) will require a different .repo file, but should otherwise be quite 
+<p>These instructions are specifically for installing MongoDB 5.0 on Centos 7. 
+They also apply to point releases like 5.0.1, 5.0.2, etc. Later versions (such 
+as 5.2) will require a different .repo file, but should otherwise be quite 
 similar to install.</p>
 <p>For the most current instructions for installing on Centos, see:
 <a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-red-hat/">
 https://docs.mongodb.com/manual/tutorial/install-mongodb-on-red-hat/</a>.</p>
 <p>8.1. Register MongoDB with yum.</p>
-    <p>For MongoDB 4.4, use:</p>
 <pre>$ cd /etc/yum.repos.d
-$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/centos/mongodb-org-4.4.repo .</pre>
-    <p>For MongoDB 4.2, use:</p>
-<pre>$ cd /etc/yum.repos.d
-$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/centos/mongodb-org-4.2.repo .</pre>
+$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/centos/mongodb-org-5.0.repo .</pre>
 <p>&nbsp;</p>
 <p>8.2. Download and install MongoDB.</p>
-<pre>$ sudo yum install mongodb-org</pre>
+<pre>$ sudo yum install mongodb-org
+$ sudo yum install mongodb-mongosh</pre>
 <p>Note: When new versions of MongoDB are released, yum will install the 
 updates. At some point it will be necessary to install a new .repo file when 
-there is a significant version change, such as from 4.2 to 4.4.</p>
+there is a significant version change, such as from 5.0 to 5.2.</p>
 <p>&nbsp;</p>
 <p>8.3. Set up the data and log directories.</p>
 <p>By default, MongoDB on Centos has:</p>
@@ -623,7 +624,11 @@ $ cd selcfg
 $ cp ~/opensha/opensha-oaf/deployment/scripts/centos/mongodb_cgroup_memory.te .
 $ checkmodule -M -m -o mongodb_cgroup_memory.mod mongodb_cgroup_memory.te
 $ semodule_package -o mongodb_cgroup_memory.pp -m mongodb_cgroup_memory.mod
-$ sudo semodule -i mongodb_cgroup_memory.pp</pre>
+$ sudo semodule -i mongodb_cgroup_memory.pp
+$ cp ~/opensha/opensha-oaf/deployment/scripts/centos/mongodb_proc_net.te .
+$ checkmodule -M -m -o mongodb_proc_net.mod mongodb_proc_net.te
+$ semodule_package -o mongodb_proc_net.pp -m mongodb_proc_net.mod
+$ sudo semodule -i mongodb_proc_net.pp</pre>
 <p>Enable access to the data directory:</p>
 <pre>$ sudo semanage fcontext -a -t mongod_var_lib_t '/data/aafs/mongodata.*'
 $ sudo chcon -Rv -u system_u -t mongod_var_lib_t '/data/aafs/mongodata'
@@ -694,29 +699,36 @@ To obtain Compass, go to: <a href="https://docs.mongodb.com/compass/current/">
 https://docs.mongodb.com/compass/current/</a></p>
 <p>&nbsp;</p>
 <h2>9. Install MongoDB [Amazon]</h2>
-<p>These instructions are specifically for installing MongoDB 4.4 or 4.2 on Amazon 
+<p>These instructions are specifically for installing MongoDB 5.0 on Amazon 
 Linux 2. 
-They also apply to point releases like 4.4.1, 4.4.2, etc. Later versions (such 
-as 4.6) will require a different .repo file, but should otherwise be quite 
+They also apply to point releases like 5.0.1, 5.0.2, etc. Later versions (such 
+as 5.2) will require a different .repo file, but should otherwise be quite 
 similar to install.</p>
 <p>For the most current instructions for installing on Amazon, see:
 <a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-amazon/">
 https://docs.mongodb.com/manual/tutorial/install-mongodb-on-amazon/</a>.</p>
 <p>9.1. Register MongoDB with yum.</p>
-    <p>For MongoDB 4.4, use:</p>
+<p>For x64 architecture (which is used by Intel and AMD processors), use:</p>
 <pre>$ cd /etc/yum.repos.d
-$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/amazon/mongodb-org-4.4.repo .</pre>
-    <p>For MongoDB 4.2, use:</p>
+$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/amazon/mongodb-org-5.0.repo .</pre>
+<p>For ARM architecture (which is used by Amazon Graviton processors), use:</p>
 <pre>$ cd /etc/yum.repos.d
-$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/amazon/mongodb-org-4.2.repo .</pre>
+$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/amazon/mongodb-org-5.0.arm.repo mongodb-org-5.0.repo
+$ sudo cp ~/opensha/opensha-oaf/deployment/scripts/amazon/mongodb-database-tools-4.4.arm.repo mongodb-database-tools-4.4.repo
+</pre>
 <p>&nbsp;</p>
-<p>9.2. Download and install MongoDB.</p>
-<pre>$ sudo yum install mongodb-org</pre>
+<p>9.2. Download and install MongoDB database tools [ARM only].</p>
+<p><em>Only if you are on ARM architecture</em>, use:</p>
+<pre>$ sudo yum install mongodb-database-tools</pre>
+<p>&nbsp;</p>
+<p>9.3. Download and install MongoDB.</p>
+<pre>$ sudo yum install mongodb-org
+$ sudo yum install mongodb-mongosh</pre>
 <p>Note: When new versions of MongoDB are released, yum will install the 
 updates. At some point it will be necessary to install a new .repo file when 
-there is a significant version change, such as from 4.2 to 4.4.</p>
+there is a significant version change, such as from 5.0 to 5.2.</p>
 <p>&nbsp;</p>
-<p>9.3. Set up the data and log directories.</p>
+<p>9.4. Set up the data and log directories.</p>
 <p>By default, MongoDB on Amazon has:</p>
 <ul>
 	<li>Data files in directory /var/lib/mongo.</li>
@@ -732,7 +744,7 @@ directories, so they are accessible to the MongoDB process.</p>
 $ sudo chown -R mongod:mongod mongodata
 $ sudo chown -R mongod:mongod mongolog</pre>
 <p>&nbsp;</p>
-<p>9.4. Set up security groups to allow access to the MongoDB port.</p>
+<p>9.5. Set up security groups to allow access to the MongoDB port.</p>
 <p>In Amazon EC2, security groups play the role of a network firewall. Security 
 groups control and limit the Internet traffic that can reach a VM.</p>
 <p>MongoDB listens for incoming TCP connections on port 27017. You must set up 
@@ -747,17 +759,16 @@ from everywhere on the Internet.</p>
 Amazon EC2 security groups. You may refer to the Amazon EC2 documentation.</p>
 <p>Notes for USGS installations: You can assign a security group to allow access to port 27017 from within the internal USGS network, and from other EC2 instances. A CloudFormation template to create the required security group will be available in the OAF GitLab repository.</p>
 <p>&nbsp;</p>
-<p>9.5. (Optional) Install MongoDB Compass Community Edition.</p>
+<p>9.6. (Optional) Install MongoDB Compass Community Edition.</p>
 <p>Compass is a GUI program that lets you examine and modify MongoDB databases. 
 It is not installed on the server, but rather, is installed on your workstation. 
 To obtain Compass, go to: <a href="https://docs.mongodb.com/compass/current/">
 https://docs.mongodb.com/compass/current/</a></p>
 <p>&nbsp;</p>
 <h2>10. Install MongoDB [Ubuntu]</h2>
-<p>These instructions are specifically for installing MongoDB 4.4 on Ubuntu 20.04 LTS or 18.04 LTS; or for installing MongoDB 4.2 on Ubuntu 
-18.04 LTS. 
-They also apply to point releases like 4.4.1, 4.4.2, etc. Later versions (such 
-as 4.6) will require a different public key and .list file, but should otherwise be quite 
+<p>These instructions are specifically for installing MongoDB 5.0 on Ubuntu 20.04 LTS. 
+They also apply to point releases like 5.0.1, 5.0.2, etc. Later versions (such 
+as 5.2) will require a different public key and .list file, but should otherwise be quite 
 similar to install.</p>
 <p>For the most current instructions for installing on Ubuntu, see:
 <a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/">
@@ -765,20 +776,12 @@ https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/</a>.</p>
 <p>Note: Do not install the 'mongodb' package provided by Ubuntu. You should 
 install the 'mongodb-org' package described here.</p>
 <p>10.1. Import the public key.</p>
-    <p>For MongoDB 4.4, use:</p>
-<pre>$ wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -</pre>
-    <p>For MongoDB 4.2, use:</p>
-<pre>$ wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | sudo apt-key add -</pre>
+<pre>$ wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -</pre>
 <p>The operation should respond with an OK.</p>
 <p>&nbsp;</p>
 <p>10.2. Create a list file.</p>
-    <p>For installing MongoDB 4.4 on Ubuntu 20.04:</p>
-<pre>$ echo &quot;deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse&quot; | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list</pre>
-    <p>For installing MongoDB 4.4 on Ubuntu 18.04:</p>
-<pre>$ echo &quot;deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.4 multiverse&quot; | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list</pre>
-    <p>For installing MongoDB 4.2 on Ubuntu 18.04:</p>
-<pre>$ echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.2.list</pre>
-<p>Note: The name 'bionic' refers specifically to Ubuntu version 18.04, and the name &#39;focal&#39; refers specifically to Ubuntu version 20.04. If you 
+<pre>$ echo &quot;deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse&quot; | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list</pre>
+    <p>Note: The name &#39;focal&#39; refers specifically to Ubuntu version 20.04 LTS. If you 
 are using a different version of Ubuntu, you need to substitute the appropriate 
 name for that version. Note that MongoDB only provides official support for LTS 
 versions of Ubuntu.</p>
@@ -787,7 +790,8 @@ versions of Ubuntu.</p>
 <pre>$ sudo apt-get update</pre>
 <p>&nbsp;</p>
 <p>10.4. Download and install MongoDB.</p>
-<pre>$ sudo apt-get install mongodb-org</pre>
+<pre>$ sudo apt-get install mongodb-org
+$ sudo apt-get install mongodb-mongosh</pre>
 <p>Note: When new versions of MongoDB are relased, Ubuntu will install the 
 updates. At some point it may be necessary to install a new public key and list 
 file when there is a major version change.</p>
@@ -910,7 +914,6 @@ line and add the 'authorization' line.)</p>
 <pre>security:
   authorization: enabled
   keyFile: /etc/mongod_key.yaml</pre>
-<p>(Note that the &quot;keyFile&quot; line is not required in MongoDB 4.2, but is required in MongoDB 4.4.)</p>
     <p>Add a 'setParameter' section at the end of the file to adjust the database 
 transaction timeout.</p>
 <pre>setParameter:
@@ -994,7 +997,7 @@ file.) There should be a line like this:</p>
 <h2>12. Set up MongoDB</h2>
 <p>To finish setting up MongoDB, you need to initialize the replica set, create 
 user accounts, and create the database that AAFS will use. This is done using 
-the 'mongo' program that was installed as part of MondoDB.</p>
+the 'mongosh' program that was installed as part of MondoDB.</p>
 <p>In this section, we use some of the symbols defined in section 2.8. You can 
 recognize them because they are in all capital letters. When you see one of 
 those symbols, replace it with the actual value for your installation.</p>
@@ -1004,7 +1007,7 @@ those symbols, replace it with the actual value for your installation.</p>
 The above command should not ask for a password.</p>
 <p>&nbsp;</p>
 <p>12.2. Start the MongoDB shell.</p>
-<pre>$ mongo</pre>
+<pre>$ mongosh</pre>
 <p>There should be messages indicating that 
 the shell has connected to MongoDB.</p>
 <p>&nbsp;</p>
@@ -1012,10 +1015,7 @@ the shell has connected to MongoDB.</p>
 <pre>&gt; rs.initiate()</pre>
 <p>There will likely be a message: "No configuration 
 specified. Using a default configuration for the set"</p>
-<p>The mongo shell 
-prompt will likely change to something like 'repset:SECONDARY'. The word 
-SECONDARY means that the replica set is still initializing itself. When 
-complete, the prompt will change to something like 'repset:PRIMARY'. (Press 
+<p>When the initialization is complete, the mongo shell prompt will change to include the word &#39;primary&#39;. Wait for this to occur; it should only take a few seconds. (Press 
 Enter to refresh the prompt, as it will not change by itself.)</p>
 <p>Important: The command rs.initiate() should 
 only be run <b>once</b>, <b>ever</b>.</p>
@@ -1041,7 +1041,7 @@ the 'admin' database:</p>
 <pre>&gt; use admin
 &gt; db.getUsers()</pre>
 <p>Note: You don't need to keep repeating the 'use' command. Once you select a 
-database, mongo remembers your selection. You only need to issue a new 'use' 
+database, mongosh remembers your selection. You only need to issue a new 'use' 
 command when you want to switch to a different database. We show repeated 'use' 
 commands in this document for ease of reference.</p>
 <p>&nbsp;</p>
