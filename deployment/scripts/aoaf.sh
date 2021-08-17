@@ -129,17 +129,29 @@
 #
 # upgrade_mongo_42_to_44
 #
-#     Upgrade an existing installation of MongoDB 4.2 (or 4.0) to 4.4.
+#     Upgrade an existing installation of MongoDB 4.2 to 4.4.
 #     This command registers the upgraded MongoDB with the OS package manager.
 #     After running this command, you need to do an OS update to complete the
 #     MongoDB upgrade.
 #
-# upgrade_mongo_4x_to_50
+# set_mongo_compatibility_to_44
 #
-#     Upgrade an existing installation of MongoDB 4.X to 5.0.
+#     After upgrading an existing installation of MongoDB 4.2 to 4.4, and
+#     checking that the new version is operating successfully, use this
+#     command to set the MongoDB feature compatibility version to 4.4.
+#
+# upgrade_mongo_44_to_50
+#
+#     Upgrade an existing installation of MongoDB 4.4 to 5.0.
 #     This command registers the upgraded MongoDB with the OS package manager.
 #     After running this command, you need to do an OS update to complete the
 #     MongoDB upgrade.
+#
+# set_mongo_compatibility_to_50
+#
+#     After upgrading an existing installation of MongoDB 4.4 to 5.0, and
+#     checking that the new version is operating successfully, use this
+#     command to set the MongoDB feature compatibility version to 5.0.
 
 # COMMANDS FOR UPDATING THE SYSTEM
 #
@@ -1302,11 +1314,11 @@ q_install_mongo () {
 
 
 
-# Upgrade MongoDB, version 4.0 or 4.2 to 4.4.
+# Upgrade MongoDB, version 4.2 to 4.4.
 # This updates the package registry and selinux, but does not do the actual installation.
 
 q_upgrade_mongo_42_to_44 () {
-    echo "Upgrading MongoDB 4.2 (or 4.0) to 5.4..."
+    echo "Upgrading MongoDB 4.2 to 4.4..."
 
     # Check if MongoDB is installed and not running
 
@@ -1355,11 +1367,11 @@ q_upgrade_mongo_42_to_44 () {
 
 
 
-# Upgrade MongoDB, version 4.X to 5.0.
+# Upgrade MongoDB, version 4.4 to 5.0.
 # This updates the package registry and selinux, but does not do the actual installation.
 
-q_upgrade_mongo_4x_to_50 () {
-    echo "Upgrading MongoDB 4.X to 5.0..."
+q_upgrade_mongo_44_to_50 () {
+    echo "Upgrading MongoDB 4.4 to 5.0..."
 
     # Check if MongoDB is installed and not running
 
@@ -1452,7 +1464,7 @@ q_upgrade_mongo_4x_to_50 () {
             exit 1
         fi
 
-        # Enable access to system resources, that were not needed in 4.X
+        # Enable access to system resources, that were not needed in 4.4
 
         q_ensure_temp_work_dir
         cd "$val_TEMP_WORK_DIR"
@@ -1677,6 +1689,92 @@ q_setup_mongo () {
     echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_setup_3"
 
     mongosh < "$val_TEMP_WORK_DIR/mongo_setup_3"
+
+    # Stop MongoDB
+
+    q_do_stop_mongo
+
+    echo "Pausing 10 seconds..."
+    sleep 10
+
+}
+
+
+
+
+# Set MongoDB feature compatibility version to 4.4.
+
+q_set_mongo_compatibility_to_44 () {
+    echo "Setting MongoDB feature compatibility version to 4.4..."
+
+    # Start MongoDB
+
+    q_do_start_mongo
+
+    echo "Pausing 15 seconds..."
+    sleep 15
+
+    if q_is_mongo_running ; then
+        :
+    else
+        echo "MongoDB failed to start"
+        exit 1
+    fi
+
+    # Set the feature compatibility version
+
+    echo "use admin" > "$val_TEMP_WORK_DIR/mongo_fcv_44"
+    echo "db.auth("'"'"$MONGO_ADMIN_USER"'"'", "'"'"$MONGO_ADMIN_PASS"'"'")" >> "$val_TEMP_WORK_DIR/mongo_fcv_44"
+    echo "db.adminCommand( { setFeatureCompatibilityVersion: "'"'"4.4"'"'" } )" >> "$val_TEMP_WORK_DIR/mongo_fcv_44"
+    echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_fcv_44"
+
+    mongo < "$val_TEMP_WORK_DIR/mongo_fcv_44"
+
+    echo "Pausing 30 seconds..."
+    sleep 30
+
+    # Stop MongoDB
+
+    q_do_stop_mongo
+
+    echo "Pausing 10 seconds..."
+    sleep 10
+
+}
+
+
+
+
+# Set MongoDB feature compatibility version to 5.0.
+
+q_set_mongo_compatibility_to_50 () {
+    echo "Setting MongoDB feature compatibility version to 5.0..."
+
+    # Start MongoDB
+
+    q_do_start_mongo
+
+    echo "Pausing 15 seconds..."
+    sleep 15
+
+    if q_is_mongo_running ; then
+        :
+    else
+        echo "MongoDB failed to start"
+        exit 1
+    fi
+
+    # Set the feature compatibility version
+
+    echo "use admin" > "$val_TEMP_WORK_DIR/mongo_fcv_50"
+    echo "db.auth("'"'"$MONGO_ADMIN_USER"'"'", "'"'"$MONGO_ADMIN_PASS"'"'")" >> "$val_TEMP_WORK_DIR/mongo_fcv_50"
+    echo "db.adminCommand( { setFeatureCompatibilityVersion: "'"'"5.0"'"'" } )" >> "$val_TEMP_WORK_DIR/mongo_fcv_50"
+    echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_fcv_50"
+
+    mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_50"
+
+    echo "Pausing 30 seconds..."
+    sleep 30
 
     # Stop MongoDB
 
@@ -2329,6 +2427,18 @@ case "$1" in
         echo "Test - Set up MongoDB 4.X"
         ;;
 
+    test_set_mongo_compatibility_to_44)
+        q_load_oaf_config
+        q_set_mongo_compatibility_to_44
+        echo "Test - Set MongoDB feature compatibility version to 4.4"
+        ;;
+
+    test_set_mongo_compatibility_to_50)
+        q_load_oaf_config
+        q_set_mongo_compatibility_to_50
+        echo "Test - Set MongoDB feature compatibility version to 5.0"
+        ;;
+
     test_configure_oaf)
         q_load_oaf_config
         q_configure_oaf
@@ -2647,12 +2757,31 @@ case "$1" in
         echo ""
         echo "MongoDB 4.4 has been registered with the operating system."
         echo "To complete the MongoDB upgrade, you need to perform an operating system update."
+        echo ""
+        echo "After MongoDB 4.4 is running successfully, use \"set_mongo_compatibility_to_44\""
+        echo "to enable MongoDB 4.4 features."
         ;;
 
 
 
 
-    upgrade_mongo_4x_to_50)
+    set_mongo_compatibility_to_44)
+        if q_is_mongo_running ; then
+            echo "Please shut down AAFS and MongoDB before attempting to set MongoDB compatibility."
+            exit 1
+        fi
+        q_load_oaf_config
+        q_set_mongo_compatibility_to_44
+        echo ""
+        echo "********************"
+        echo ""
+        echo "MongoDB feature compatibility version has been set to 4.4."
+        ;;
+
+
+
+
+    upgrade_mongo_44_to_50)
         if q_is_mongo_running ; then
             echo "Please shut down AAFS and MongoDB before attempting to upgrade MongoDB."
             exit 1
@@ -2663,13 +2792,32 @@ case "$1" in
             echo "To upgrade MongoDB, the original configuration file must be available in: $my_MONGO_CONF_BACKUP"
             exit 1
         fi
-        q_upgrade_mongo_4x_to_50
+        q_upgrade_mongo_44_to_50
         q_configure_mongo
         echo ""
         echo "********************"
         echo ""
         echo "MongoDB 5.0 has been registered with the operating system."
         echo "To complete the MongoDB upgrade, you need to perform an operating system update."
+        echo ""
+        echo "After MongoDB 5.0 is running successfully, use \"set_mongo_compatibility_to_50\""
+        echo "to enable MongoDB 5.0 features."
+        ;;
+
+
+
+
+    set_mongo_compatibility_to_50)
+        if q_is_mongo_running ; then
+            echo "Please shut down AAFS and MongoDB before attempting to set MongoDB compatibility."
+            exit 1
+        fi
+        q_load_oaf_config
+        q_set_mongo_compatibility_to_50
+        echo ""
+        echo "********************"
+        echo ""
+        echo "MongoDB feature compatibility version has been set to 5.0."
         ;;
 
 
@@ -2789,10 +2937,14 @@ case "$1" in
         echo "  aoaf.sh update_java"
         echo "Update the MongoDB configuration file:"
         echo "  aoaf.sh reconfigure_mongo"
-        echo "Upgrade an existing installation of MongoDB 4.2 (or 4.0) to 4.4:"
+        echo "Upgrade an existing installation of MongoDB 4.2 to 4.4:"
         echo "  aoaf.sh upgrade_mongo_42_to_44"
-        echo "Upgrade an existing installation of MongoDB 4.X to 5.0:"
-        echo "  aoaf.sh upgrade_mongo_4x_to_50"
+        echo "Set MongoDB compatibility version to 4.4:"
+        echo "  aoaf.sh set_mongo_compatibility_to_44"
+        echo "Upgrade an existing installation of MongoDB 4.4 to 5.0:"
+        echo "  aoaf.sh upgrade_mongo_44_to_50"
+        echo "Set MongoDB compatibility version to 5.0:"
+        echo "  aoaf.sh set_mongo_compatibility_to_50"
         echo "Stop AAFS and MongoDB, so that updates can be performed:"
         echo "  aoaf.sh stop_aafs_for_update  <java_option>  <oaf_option>  <backup_filename>"
         echo "Re-start AAFS and MongoDB after performing updates:"
