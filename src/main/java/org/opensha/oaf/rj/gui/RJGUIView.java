@@ -1865,6 +1865,7 @@ public class RJGUIView extends RJGUIComponent {
 		// Plots for computing a forecast
 
 		case MODSTATE_FORECAST:
+			plotCumulativeNum();	// re-plot because time range is changed
 			plotEAMFD();
 			plotAFTable();
 			tabbedPane.setSelectedComponent(aftershockExpectedGraph);

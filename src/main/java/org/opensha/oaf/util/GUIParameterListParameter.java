@@ -2,6 +2,7 @@ package org.opensha.oaf.util;
 
 import java.util.ListIterator;
 
+import java.awt.Color;
 import java.awt.Dimension;
 
 import org.dom4j.Element;
@@ -112,12 +113,14 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	}
 
 
-	// The button text that appears at the bottom of the dialog.
-	// Null or empty means to use a default string, which is "Update " concatenated with the name of the parameter.
+	// The OK button text that appears at the bottom of the dialog.
+	// Null means not to display the button.
+	// Empty means to use a default string, which is "Update " concatenated with the name of the parameter.
 	// This is examined at the time the dialog box is created.
 	// If changed while the dialog is open, call refreshParamEditor on the editor to refresh the on-screen text.
+	// (However, the button cannot be added or removed while the dialog is open.)
 
-	protected String okButtonText = null;
+	protected String okButtonText = "";
 
 	public String getOkButtonText () {
 		if (okButtonText == null || okButtonText.isEmpty()) {
@@ -129,6 +132,36 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	public void setOkButtonText (String the_okButtonText) {
 		okButtonText = the_okButtonText;
 		return;
+	}
+
+	public boolean useOkButton () {
+		return (okButtonText != null);
+	}
+
+
+	// The CANCEL button text that appears at the bottom of the dialog.
+	// Null means not to display the button.
+	// Empty means to use a default string, which is "Cancel".
+	// This is examined at the time the dialog box is created.
+	// If changed while the dialog is open, call refreshParamEditor on the editor to refresh the on-screen text.
+	// (However, the button cannot be added or removed while the dialog is open.)
+
+	protected String cancelButtonText = null;
+
+	public String getCancelButtonText () {
+		if (cancelButtonText == null || cancelButtonText.isEmpty()) {
+			return "Cancel";
+		}
+		return cancelButtonText;
+	}
+
+	public void setCancelButtonText (String the_cancelButtonText) {
+		cancelButtonText = the_cancelButtonText;
+		return;
+	}
+
+	public boolean useCancelButton () {
+		return (cancelButtonText != null);
 	}
 
 
@@ -166,6 +199,51 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	protected boolean enableTrace = false;
 
 
+	// The foreground (text) color for the activation button, null for default.
+	// This is only examined when the button is created.
+
+	protected Color buttonForeground = null;
+
+	public Color getButtonForeground () {
+		return buttonForeground;
+	}
+
+	public void setButtonForeground (Color color) {
+		buttonForeground = color;
+		return;
+	}
+
+
+	// The foreground (text) color for the OK button, null for default.
+	// This is only examined when the button is created.
+
+	protected Color okButtonForeground = null;
+
+	public Color getOkButtonForeground () {
+		return okButtonForeground;
+	}
+
+	public void setOkButtonForeground (Color color) {
+		okButtonForeground = color;
+		return;
+	}
+
+
+	// The foreground (text) color for the cancel button, null for default.
+	// This is only examined when the button is created.
+
+	protected Color cancelButtonForeground = null;
+
+	public Color getCancelButtonForeground () {
+		return cancelButtonForeground;
+	}
+
+	public void setCancelButtonForeground (Color color) {
+		cancelButtonForeground = color;
+		return;
+	}
+
+
 	// The termination code, typically indicating why the dialog was closed.
 
 	protected int dialogTermCode = GUIDialogParameter.TERMCODE_NONE;
@@ -194,6 +272,7 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 		dialogStatus = the_dialogStatus;
 		return;
 	}
+
 
 
 
@@ -232,20 +311,25 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	 * @param  the_buttonText  Text to appear on the button, null or empty uses name.
 	 * @param  the_dialogTitleText  Text to appear on dialog title, null uses name.
 	 * @param  the_listTitleText  Text to appear at top of list, null uses "Set "+name.
-	 * @param  the_buttonText  Text to appear on dialog OK button, null or empty uses "Update "+name.
+	 * @param  the_okButtonText  Text to appear on dialog OK button, null omits the button, empty uses "Update "+name.
+	 * @param  the_cancelButtonText  Text to appear on dialog CANCEL button, null omits the button, empty uses "Cancel".
 	 * @param  the_modalDialog  True to use a modal dialog (the normal usage).
 	 * @param  the_enableTrace  True to emit trace messages for debugging.
 	 */
 	public GUIParameterListParameter(String name, ParameterList paramList, String the_buttonText,
 			String the_dialogTitleText, String the_listTitleText, String the_okButtonText,
-			boolean the_modalDialog, boolean the_enableTrace){
+			String the_cancelButtonText, boolean the_modalDialog, boolean the_enableTrace){
 		super(name,null,null,paramList);
 		buttonText = the_buttonText;
 		dialogTitleText = the_dialogTitleText;
 		listTitleText = the_listTitleText;
 		okButtonText = the_okButtonText;
+		cancelButtonText = the_cancelButtonText;
 		modalDialog = the_modalDialog;
 		enableTrace = the_enableTrace;
+		buttonForeground = null;
+		okButtonForeground = null;
+		cancelButtonForeground = null;
 		//setting the independent Param List for this parameter
 		setIndependentParameters(paramList);
 	}
@@ -298,8 +382,8 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	 */
 	public void setValue( ParameterList value ) throws ParameterException {
 
-		ListIterator it  = value.getParametersIterator();
-		super.setValue(value );
+		//ListIterator it  = value.getParametersIterator();
+		super.setValue(value);
 		//setting the independent Param List for this parameter
 		this.setIndependentParameters(value);
 	}
@@ -347,9 +431,27 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	public Object clone(){
 
 		GUIParameterListParameter param = null;
-		if( value == null ) param = new GUIParameterListParameter( name);
-		else param = new GUIParameterListParameter(name,(ParameterList)value);
-		if( param == null ) return null;
+		if (value == null) {
+			param = new GUIParameterListParameter(name);
+		}
+		else {
+			param = new GUIParameterListParameter(name, (ParameterList)value);
+		}
+		if (param == null) {
+			return null;
+		}
+		param.buttonText = buttonText;
+		param.dialogTitleText = dialogTitleText;
+		param.listTitleText = listTitleText;
+		param.okButtonText = okButtonText;
+		param.cancelButtonText = cancelButtonText;
+		param.modalDialog = modalDialog;
+		param.enableTrace = enableTrace;
+		param.buttonForeground = buttonForeground;
+		param.okButtonForeground = okButtonForeground;
+		param.cancelButtonForeground = cancelButtonForeground;
+		param.dialogTermCode = dialogTermCode;
+		param.dialogStatus = dialogStatus;
 		param.editable = true;
 		return param;
 	}

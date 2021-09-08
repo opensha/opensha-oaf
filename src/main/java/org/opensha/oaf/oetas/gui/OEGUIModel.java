@@ -90,6 +90,7 @@ import org.opensha.oaf.util.GUIEDTException;
 import org.opensha.oaf.util.GUIEDTRunnable;
 import org.opensha.oaf.util.GUIEventAlias;
 import org.opensha.oaf.util.GUIExternalCatalog;
+import org.opensha.oaf.util.AutoExecutorService;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
@@ -112,10 +113,10 @@ import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.SimpleUtils;
 
 
-// Reasenberg & Jones GUI - Model implementation.
+// Operational ETAS GUI - Model implementation.
 // Michael Barall 03/15/2021
 //
-// GUI for working with the Reasenberg & Jones model.
+// GUI for working with the operational ETAS model.
 //
 // The GUI follows the model-view-controller design pattern.
 // This class is the model.
@@ -395,6 +396,7 @@ public class OEGUIModel extends OEGUIComponent {
 		return cur_aftershocks;
 	}
 
+
 	// The sequence-specific model.
 	// Available when model state >= MODSTATE_CATALOG.
 	// It is non-null when state >= MODSTATE_PARAMETERS.
@@ -595,7 +597,20 @@ public class OEGUIModel extends OEGUIComponent {
 		return cat_dataEndTimeParam;
 	}
 
+	// Mc for sequence, for the catalog, when first loaded.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	private double cat_load_mcParam;
+
+	public final double get_cat_load_mcParam () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.cat_load_mcParam while in state " + cur_modstate_string());
+		}
+		return cat_load_mcParam;
+	}
+
 	// Mc for sequence, for the catalog.
+	// Initially the same as cat_load_mcParam, but can be changed by the user.
 	// Available when model state >= MODSTATE_CATALOG.
 
 	private double cat_mcParam;
@@ -607,7 +622,20 @@ public class OEGUIModel extends OEGUIComponent {
 		return cat_mcParam;
 	}
 
+	// b-value, for the catalog, when first loaded.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	private double cat_load_bParam;
+
+	public final double get_cat_load_bParam () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.cat_load_bParam while in state " + cur_modstate_string());
+		}
+		return cat_load_bParam;
+	}
+
 	// b-value, for the catalog.
+	// Initially the same as cat_load_bParam, but can be changed by the user.
 	// Available when model state >= MODSTATE_CATALOG.
 
 	private double cat_bParam;
@@ -897,14 +925,14 @@ public class OEGUIModel extends OEGUIComponent {
 	// - fetch_fcparams.mag_comp_params contains the magnitude of completeness
 	//   parameters, with the appropriate radius functions for the selected region,
 	//   and the magnitude functions set to no minimum.
-	// - xfer.x_dataEndTimeParam adjusted if necessary to limit fetch to before now.
+	// - xfer.x_dataSource.x_dataEndTimeParam adjusted if necessary to limit fetch to before now.
 
 	private void setup_search_region (OEGUIController.XferCatalogMod xfer) {
 
 		// Time range for aftershock search
 		
-		double minDays = xfer.x_dataStartTimeParam;
-		double maxDays = xfer.x_dataEndTimeParam;
+		double minDays = xfer.x_dataSource.x_dataStartTimeParam;
+		double maxDays = xfer.x_dataSource.x_dataEndTimeParam;
 		
 		long startTime = fcmain.mainshock_time + Math.round(minDays*ComcatOAFAccessor.day_millis);
 		long endTime = fcmain.mainshock_time + Math.round(maxDays*ComcatOAFAccessor.day_millis);
@@ -920,8 +948,8 @@ public class OEGUIModel extends OEGUIComponent {
 		if (endTime > time_now) {
 			double calcMaxDays = (time_now - startTime)/ComcatOAFAccessor.day_millis;
 			System.out.println("WARNING: End time after current time. Setting max days to: " + calcMaxDays);
-			xfer.modify_dataEndTimeParam(calcMaxDays);
-			maxDays = xfer.x_dataEndTimeParam;
+			xfer.x_dataSource.modify_dataEndTimeParam(calcMaxDays);
+			maxDays = xfer.x_dataSource.x_dataEndTimeParam;
 		}
 
 		// The magnitude-of-completeness parameters
@@ -948,7 +976,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Switch on region type
 
-		switch (xfer.x_regionTypeParam) {
+		switch (xfer.x_dataSource.x_region.x_regionTypeParam) {
 
 		case STANDARD:
 
@@ -964,18 +992,18 @@ public class OEGUIModel extends OEGUIComponent {
 
 			magSample = SearchMagFn.makeNoMinMag();
 			radiusSample = SearchRadiusFn.makeWCClip (
-				xfer.x_wcMultiplierParam,
-				xfer.x_minRadiusParam,
-				xfer.x_maxRadiusParam
+				xfer.x_dataSource.x_region.x_wcMultiplierParam,
+				xfer.x_dataSource.x_region.x_minRadiusParam,
+				xfer.x_dataSource.x_region.x_maxRadiusParam
 			);
 			magCentroid = SearchMagFn.makeNoMinMag();
 			radiusCentroid = SearchRadiusFn.makeWCClip (
-				xfer.x_wcMultiplierParam,
-				xfer.x_minRadiusParam,
-				xfer.x_maxRadiusParam
+				xfer.x_dataSource.x_region.x_wcMultiplierParam,
+				xfer.x_dataSource.x_region.x_minRadiusParam,
+				xfer.x_dataSource.x_region.x_maxRadiusParam
 			);
-			minDepth = xfer.x_minDepthParam;
-			maxDepth = xfer.x_maxDepthParam;
+			minDepth = xfer.x_dataSource.x_region.x_minDepthParam;
+			maxDepth = xfer.x_dataSource.x_region.x_maxDepthParam;
 			break;
 
 		case CENTROID_CIRCLE:
@@ -983,11 +1011,11 @@ public class OEGUIModel extends OEGUIComponent {
 			// Circle around centroid, set constant radius, and no minimum magnitude
 
 			magSample = SearchMagFn.makeNoMinMag();
-			radiusSample = SearchRadiusFn.makeConstant (xfer.x_radiusParam);
+			radiusSample = SearchRadiusFn.makeConstant (xfer.x_dataSource.x_region.x_radiusParam);
 			magCentroid = SearchMagFn.makeNoMinMag();
-			radiusCentroid = SearchRadiusFn.makeConstant (xfer.x_radiusParam);
-			minDepth = xfer.x_minDepthParam;
-			maxDepth = xfer.x_maxDepthParam;
+			radiusCentroid = SearchRadiusFn.makeConstant (xfer.x_dataSource.x_region.x_radiusParam);
+			minDepth = xfer.x_dataSource.x_region.x_minDepthParam;
+			maxDepth = xfer.x_dataSource.x_region.x_maxDepthParam;
 			break;
 
 		case EPICENTER_WC_CIRCLE:
@@ -996,14 +1024,14 @@ public class OEGUIModel extends OEGUIComponent {
 
 			magSample = SearchMagFn.makeNoMinMag();
 			radiusSample = SearchRadiusFn.makeWCClip (
-				xfer.x_wcMultiplierParam,
-				xfer.x_minRadiusParam,
-				xfer.x_maxRadiusParam
+				xfer.x_dataSource.x_region.x_wcMultiplierParam,
+				xfer.x_dataSource.x_region.x_minRadiusParam,
+				xfer.x_dataSource.x_region.x_maxRadiusParam
 			);
 			magCentroid = SearchMagFn.makeSkipCentroid();
 			radiusCentroid = SearchRadiusFn.makeConstant (0.0);
-			minDepth = xfer.x_minDepthParam;
-			maxDepth = xfer.x_maxDepthParam;
+			minDepth = xfer.x_dataSource.x_region.x_minDepthParam;
+			maxDepth = xfer.x_dataSource.x_region.x_maxDepthParam;
 			break;
 
 		case EPICENTER_CIRCLE:
@@ -1011,11 +1039,11 @@ public class OEGUIModel extends OEGUIComponent {
 			// Circle around epicenter, set constant radius, and no minimum magnitude
 
 			magSample = SearchMagFn.makeNoMinMag();
-			radiusSample = SearchRadiusFn.makeConstant (xfer.x_radiusParam);
+			radiusSample = SearchRadiusFn.makeConstant (xfer.x_dataSource.x_region.x_radiusParam);
 			magCentroid = SearchMagFn.makeSkipCentroid();
 			radiusCentroid = SearchRadiusFn.makeConstant (0.0);
-			minDepth = xfer.x_minDepthParam;
-			maxDepth = xfer.x_maxDepthParam;
+			minDepth = xfer.x_dataSource.x_region.x_minDepthParam;
+			maxDepth = xfer.x_dataSource.x_region.x_maxDepthParam;
 			break;
 
 		case CUSTOM_CIRCLE:
@@ -1025,11 +1053,11 @@ public class OEGUIModel extends OEGUIComponent {
 			magSample = SearchMagFn.makeNoMinMag();
 			magCentroid = SearchMagFn.makeSkipCentroid();
 			custom_search_region = SphRegion.makeCircle (
-				new SphLatLon(xfer.x_centerLatParam, xfer.x_centerLonParam),
-				xfer.x_radiusParam
+				new SphLatLon(xfer.x_dataSource.x_region.x_centerLatParam, xfer.x_dataSource.x_region.x_centerLonParam),
+				xfer.x_dataSource.x_region.x_radiusParam
 			);
-			minDepth = xfer.x_minDepthParam;
-			maxDepth = xfer.x_maxDepthParam;
+			minDepth = xfer.x_dataSource.x_region.x_minDepthParam;
+			maxDepth = xfer.x_dataSource.x_region.x_maxDepthParam;
 			break;
 
 		case CUSTOM_RECTANGLE:
@@ -1039,15 +1067,15 @@ public class OEGUIModel extends OEGUIComponent {
 			magSample = SearchMagFn.makeNoMinMag();
 			magCentroid = SearchMagFn.makeSkipCentroid();
 			custom_search_region = SphRegion.makeMercRectangle (
-				new SphLatLon(xfer.x_minLatParam, xfer.x_minLonParam),
-				new SphLatLon(xfer.x_maxLatParam, xfer.x_maxLonParam)
+				new SphLatLon(xfer.x_dataSource.x_region.x_minLatParam, xfer.x_dataSource.x_region.x_minLonParam),
+				new SphLatLon(xfer.x_dataSource.x_region.x_maxLatParam, xfer.x_dataSource.x_region.x_maxLonParam)
 			);
-			minDepth = xfer.x_minDepthParam;
-			maxDepth = xfer.x_maxDepthParam;
+			minDepth = xfer.x_dataSource.x_region.x_minDepthParam;
+			maxDepth = xfer.x_dataSource.x_region.x_maxDepthParam;
 			break;
 
 		default:
-			throw new IllegalStateException("Unknown region type: " + xfer.x_regionTypeParam);
+			throw new IllegalStateException("Unknown region type: " + xfer.x_dataSource.x_region.x_regionTypeParam);
 		}
 
 		// Make revised magnitude-of-completeness parameters
@@ -1121,19 +1149,19 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Set the default magnitude of completeness to the peak of the mag-num distribution, plus 0.5 magnitude
 
-		xfer.modify_mcParam(mnd_mmaxc + 0.5);
+		cat_load_mcParam = mnd_mmaxc + 0.5;
 
 		// Set the default b-value from the generic parameters
 
-		xfer.modify_bParam(aafs_fcparams.generic_params.get_bValue());
+		cat_load_bParam = aafs_fcparams.generic_params.get_bValue();
 
 		// Save the catalog parameters
 
-		cat_eventIDParam = xfer.x_eventIDParam;
-		cat_dataStartTimeParam = xfer.x_dataStartTimeParam;
-		cat_dataEndTimeParam = xfer.x_dataEndTimeParam;
-		cat_mcParam = xfer.x_mcParam;	// won't be null because it was set just above
-		cat_bParam = xfer.x_bParam;		// won't be null because it was set just above
+		cat_eventIDParam = xfer.x_dataSource.x_eventIDParam;
+		cat_dataStartTimeParam = xfer.x_dataSource.x_dataStartTimeParam;
+		cat_dataEndTimeParam = xfer.x_dataSource.x_dataEndTimeParam;
+		cat_mcParam = cat_load_mcParam;
+		cat_bParam = cat_load_bParam;
 
 		return;
 	}
@@ -1157,15 +1185,15 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// See if the event ID is an alias, and change it if so
 
-		String xlatid = GUIEventAlias.query_alias_dict (xfer.x_eventIDParam);
+		String xlatid = GUIEventAlias.query_alias_dict (xfer.x_dataSource.x_eventIDParam);
 		if (xlatid != null) {
-			System.out.println("Translating Event ID: " + xfer.x_eventIDParam + " -> " + xlatid);
-			xfer.modify_eventIDParam(xlatid);
+			System.out.println("Translating Event ID: " + xfer.x_dataSource.x_eventIDParam + " -> " + xlatid);
+			xfer.x_dataSource.modify_eventIDParam(xlatid);
 		}
 
 		// Fetch mainshock into our data structures
 		
-		String eventID = xfer.x_eventIDParam;
+		String eventID = xfer.x_dataSource.x_eventIDParam;
 		fcmain = new ForecastMainshock();
 		fcmain.setup_mainshock_poll (eventID);
 		Preconditions.checkState(fcmain.mainshock_avail, "Event not found: %s", eventID);
@@ -1255,8 +1283,8 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Catalog time range
 
-		double minDays = xfer.x_dataStartTimeParam;
-		double maxDays = xfer.x_dataEndTimeParam;
+		double minDays = xfer.x_dataSource.x_dataStartTimeParam;
+		double maxDays = xfer.x_dataSource.x_dataEndTimeParam;
 
 		// Here we need to trim the catalog to be only events that lie within the selected time interval
 		
@@ -1275,7 +1303,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Establish name of custom mainshock
 
-		xfer.modify_eventIDParam("<custom>");
+		xfer.x_dataSource.modify_eventIDParam("<custom>");
 
 		// Take the trimmed list of aftershocks as our aftershocks
 
@@ -1305,19 +1333,21 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Get sequence-specific parameters
 
-		Range aRange = xfer.x_aValRangeParam;
-		int aNum = xfer.x_aValNumParam;
+		Range aRange = xfer.x_rjValue.x_aValRangeParam;
+		int aNum = xfer.x_rjValue.x_aValNumParam;
 		//validateRange(aRange, aNum, "a-value");
-		Range pRange = xfer.x_pValRangeParam;
-		int pNum = xfer.x_pValNumParam;
+		Range pRange = xfer.x_rjValue.x_pValRangeParam;
+		int pNum = xfer.x_rjValue.x_pValNumParam;
 		//validateRange(pRange, pNum, "p-value");
-		Range cRange = xfer.x_cValRangeParam;
-		int cNum = xfer.x_cValNumParam;
+		Range cRange = xfer.x_rjValue.x_cValRangeParam;
+		int cNum = xfer.x_rjValue.x_cValNumParam;
 		//validateRange(cRange, cNum, "c-value");
 					
-		double mc = xfer.x_mcParam;
+		double mc = xfer.x_commonValue.x_mcParam;
+		//double mc = cat_mcParam;
 									
-		double b = xfer.x_bParam;
+		double b = xfer.x_commonValue.x_bParam;
+		//double b = cat_bParam;
 
 		// Save the sequence-specific parameters for possible use in analyst options
 
@@ -1342,20 +1372,20 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// If doing time-dependent magnitude of completeness
 					
-		if (xfer.x_timeDepMcParam) {
+		if (xfer.x_commonValue.x_timeDepMcParam) {
 
-			double f = xfer.x_fParam;
+			double f = xfer.x_commonValue.x_fParam;
 						
-			double g = xfer.x_gParam;
+			double g = xfer.x_commonValue.x_gParam;
 						
-			double h = xfer.x_hParam;
+			double h = xfer.x_commonValue.x_hParam;
 						
-			mCat = xfer.x_mCatParam;
+			mCat = xfer.x_commonValue.x_mCatParam;
 
 			magCompFn = MagCompFn.makePageOrConstant (f, g, h);
 						
 			cur_model = new RJ_AftershockModel_SequenceSpecific(get_cur_mainshock(), get_cur_aftershocks(), mCat, magCompFn, b,
-					xfer.x_dataStartTimeParam, xfer.x_dataEndTimeParam,
+					cat_dataStartTimeParam, cat_dataEndTimeParam,
 					aRange.getLowerBound(), aRange.getUpperBound(), aNum,
 					pRange.getLowerBound(), pRange.getUpperBound(), pNum,
 					cRange.getLowerBound(), cRange.getUpperBound(), cNum);
@@ -1369,7 +1399,7 @@ public class OEGUIModel extends OEGUIComponent {
 			magCompFn = MagCompFn.makeConstant();
 
 			cur_model = new RJ_AftershockModel_SequenceSpecific(get_cur_mainshock(), get_cur_aftershocks(), mc, b,
-					xfer.x_dataStartTimeParam, xfer.x_dataEndTimeParam,
+					cat_dataStartTimeParam, cat_dataEndTimeParam,
 					aRange.getLowerBound(), aRange.getUpperBound(), aNum,
 					pRange.getLowerBound(), pRange.getUpperBound(), pNum,
 					cRange.getLowerBound(), cRange.getUpperBound(), cNum);
@@ -1404,10 +1434,10 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Save the catalog parameters (we should already have these values)
 
-		cat_dataStartTimeParam = xfer.x_dataStartTimeParam;
-		cat_dataEndTimeParam = xfer.x_dataEndTimeParam;
-		cat_mcParam = xfer.x_mcParam;
-		cat_bParam = xfer.x_bParam;
+		//cat_dataStartTimeParam = xfer.x_dataSource.x_dataStartTimeParam;
+		//cat_dataEndTimeParam = xfer.x_dataSource.x_dataEndTimeParam;
+		cat_mcParam = xfer.x_commonValue.x_mcParam;
+		cat_bParam = xfer.x_commonValue.x_bParam;
 
 		return;
 	}
@@ -1429,8 +1459,8 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Save the catalog parameters
 
-		cat_forecastStartTimeParam = xfer.x_forecastStartTimeParam;
-		cat_forecastEndTimeParam = xfer.x_forecastEndTimeParam;
+		cat_forecastStartTimeParam = xfer.x_fcValue.x_forecastStartTimeParam;
+		cat_forecastEndTimeParam = xfer.x_fcValue.x_forecastEndTimeParam;
 
 		// Compute the aftershock forecasts
 
@@ -1519,7 +1549,7 @@ public class OEGUIModel extends OEGUIComponent {
 	// Make the new forecast parameters for analyst options.
 	// See AnalystCLI.make_new_fcparams.
 
-	public ForecastParameters make_analyst_fcparams (OEGUIController.XferAnalystView xfer) {
+	public ForecastParameters make_analyst_fcparams (OEGUISubAnalyst.XferAnalystView xfer) {
 
 		ForecastParameters new_fcparams = new ForecastParameters();
 		new_fcparams.setup_all_default();
@@ -1573,7 +1603,7 @@ public class OEGUIModel extends OEGUIComponent {
 	// Make the analyst options.
 	// See AnalystCLI.make_new_analyst_options.
 
-	public AnalystOptions make_analyst_options (OEGUIController.XferAnalystView xfer) {
+	public AnalystOptions make_analyst_options (OEGUISubAnalyst.XferAnalystView xfer) {
 
 		// Action configuration
 
@@ -1699,7 +1729,7 @@ public class OEGUIModel extends OEGUIComponent {
 	// Can be called when model state >= MODSTATE_PARAMETERS.
 	// An exception is thrown if the file could not be written.
 
-	public void exportAnalystOptions (OEGUIController.XferAnalystView xfer, File the_file) throws IOException {
+	public void exportAnalystOptions (OEGUISubAnalyst.XferAnalystView xfer, File the_file) throws IOException {
 
 		// Make the analyst options
 
@@ -1731,7 +1761,7 @@ public class OEGUIModel extends OEGUIComponent {
 	// Returns true if success, false if unable to send to any server.
 	// An exception is thrown if the operation could not be performed.
 
-	public boolean sendAnalystOptions (GUICalcProgressBar progress, OEGUIController.XferAnalystView xfer) {
+	public boolean sendAnalystOptions (GUICalcProgressBar progress, OEGUISubAnalyst.XferAnalystView xfer) {
 
 		// Make the analyst options
 
@@ -1747,6 +1777,71 @@ public class OEGUIModel extends OEGUIComponent {
 		return f_success;
 	}
 
+
+
+
+	//----- Functions for system information -----
+
+
+
+
+	// Get system information.
+
+	public String get_system_information () {
+
+		StringBuilder sb = new StringBuilder();
+		int section_count = 0;
+
+		// RJ parameter values
+
+		if (modstate >= MODSTATE_PARAMETERS) {
+			if (section_count > 0) {
+				sb.append ("\n");
+			}
+			++section_count;
+
+			sb.append ("Fitted RJ Parameters\n");
+			sb.append ("a = " + get_cur_model().getMaxLikelihood_a() + "\n");
+			sb.append ("p = " + get_cur_model().getMaxLikelihood_p() + "\n");
+			sb.append ("c = " + get_cur_model().getMaxLikelihood_c() + "\n");
+		}
+
+		// Memory
+
+		if (section_count > 0) {
+			sb.append ("\n");
+		}
+		++section_count;
+
+		sb.append ("Memory Usage\n");
+		long max_memory = Runtime.getRuntime().maxMemory();
+		long total_memory = Runtime.getRuntime().totalMemory();
+		long free_memory = Runtime.getRuntime().freeMemory();
+
+		long used_memory = total_memory - free_memory;
+
+		if (max_memory == Long.MAX_VALUE) {
+			sb.append ("max_memory = unlimited\n");
+		} else {
+			sb.append ("max_memory = " + (max_memory / 1048576L) + " M\n");
+		}
+			
+		sb.append ("total_memory = " + (total_memory / 1048576L) + " M\n");
+		sb.append ("free_memory = " + (free_memory / 1048576L) + " M\n");
+		sb.append ("used_memory = " + (used_memory / 1048576L) + " M\n");
+
+		// Processor
+
+		if (section_count > 0) {
+			sb.append ("\n");
+		}
+		++section_count;
+
+		sb.append ("Processor\n");
+		sb.append ("num_threads = " + AutoExecutorService.get_default_num_threads() + "\n");
+
+		return sb.toString();
+	}
 
 
 

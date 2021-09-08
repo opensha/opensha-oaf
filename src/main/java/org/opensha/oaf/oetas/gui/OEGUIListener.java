@@ -35,6 +35,8 @@ import org.opensha.oaf.util.GUIEDTException;
 import org.opensha.oaf.util.GUIEDTRunnable;
 import org.opensha.oaf.util.GUIEventAlias;
 import org.opensha.oaf.util.GUIExternalCatalog;
+import org.opensha.oaf.util.SharedCounter;
+import org.opensha.oaf.util.SharedCounterAutoInc;
 
 
 // Reasenberg & Jones GUI - Common listener class.
@@ -52,18 +54,36 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 
 
 
-	//----- Debugging support -----
+	//----- Debugging support, and parameter groups -----
 
 
 	// Symbol table.
 
 	protected IdentityHashMap<Object, String> symbol_table;
 
+	// Parameter group table.
+
+	protected IdentityHashMap<Object, Integer> parmgrp_table;
+
+	// Value to use for no parameter group.
+
+	protected static final int PARMGRP_NONE = 0;
+
 	// Add symbol.
 
 	protected synchronized void add_symbol (Object ptr, String symbol) {
+		add_symbol (ptr, symbol, PARMGRP_NONE);
+		return;
+	}
+
+	protected synchronized void add_symbol (Object ptr, String symbol, int parmgrp) {
 		if (ptr != null) {
-			symbol_table.put (ptr, symbol);
+			if (symbol != null) {
+				symbol_table.put (ptr, symbol);
+			}
+			if (parmgrp != PARMGRP_NONE) {
+				parmgrp_table.put (ptr, parmgrp);
+			}
 		}
 		return;
 	}
@@ -94,9 +114,41 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 			if (symbol == null || symbol.isEmpty()) {
 				symbol = "<unknown>";
 			}
-			symbol = symbol + " [" + ptr.getClass().getName() + "]";
+			int parmgrp = PARMGRP_NONE;
+			Integer x = parmgrp_table.get (ptr);
+			if (x != null) {
+				parmgrp = x;
+			}
+			symbol = symbol + " (" + parmgrp + ") [" + ptr.getClass().getSimpleName() + "]";
 		}
 		return symbol;
+	}
+
+	// Get parameter group for an object.
+
+	protected synchronized int get_parmgrp (Object ptr) {
+		int parmgrp;
+		if (ptr == null) {
+			parmgrp = PARMGRP_NONE;
+		} else {
+			Integer x = parmgrp_table.get (ptr);
+			if (x == null) {
+				parmgrp = PARMGRP_NONE;
+			} else {
+				parmgrp = x;
+			}
+		}
+		return parmgrp;
+	}
+
+	// Register a parameter.
+	// This function adds this object as a parameter change listener,
+	// and sets the symbol name and parameter group.
+
+	protected void register_param (Parameter<?> param, String symbol, int parmgrp) {
+		param.addParameterChangeListener(this);
+		add_symbol (param, symbol, parmgrp);
+		return;
 	}
 
 
@@ -193,7 +245,7 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 	protected <E> boolean updateParam (Parameter<E> param, E value) throws GUIEDTException, ConstraintException, ParameterException {
 		boolean result = true;
 		try (
-			ChangeBlock change_block = new ChangeBlock();
+			SharedCounterAutoInc change_block = new SharedCounterAutoInc (change_block_count);
 		){
 			E old_value = param.getValue();
 			param.setValue (value);
@@ -233,9 +285,39 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 
 	public OEGUIListener () {
 
+		parent_listener = null;
+
 		// Allocate the symbol table
 
 		symbol_table = new IdentityHashMap<Object, String>();
+		parmgrp_table = new IdentityHashMap<Object, Integer>();
+
+		// Allocate shared counters
+
+		change_block_count = new SharedCounter();
+		change_depth_count = new SharedCounter();
+	}
+
+
+	// Constructor, for a sub-listener.
+
+	public OEGUIListener (OEGUIListener parent) {
+
+		parent_listener = parent;
+
+		// Get linkage to the top-level components from the parent
+
+		link_components (parent);
+
+		// Allocate the symbol table
+
+		symbol_table = new IdentityHashMap<Object, String>();
+		parmgrp_table = new IdentityHashMap<Object, Integer>();
+
+		// Allocate shared counters, sharing with the parent
+
+		change_block_count = parent.change_block_count;
+		change_depth_count = parent.change_depth_count;
 	}
 
 
@@ -244,61 +326,19 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 	//----- Parameter change actions ------
 
 
+	// The parent listener for a sub-listener, or null if none.
+
+	protected OEGUIListener parent_listener;
 
 
 	// Mechanism for blocking calls to parameterChange.
 
-	private int change_block_count = 0;
-
-	protected class ChangeBlock implements AutoCloseable {
-
-		ChangeBlock () {
-			if (!( SwingUtilities.isEventDispatchThread() )) {
-				throw new IllegalStateException("OEGUIListener.ChangeBlock called while not on the event dispatch thread!");
-			}
-			synchronized (OEGUIListener.this) {
-				++change_block_count;
-			}
-		}
-
-		@Override
-		public void close() {
-			synchronized (OEGUIListener.this) {
-				--change_block_count;
-			}
-			return;
-		}
-	}
-
-
+	private SharedCounter change_block_count;
 
 
 	// Mechanism for depth of calls to parameterChange.
 
-	private int change_depth_count = 0;
-
-	protected class ChangeDepth implements AutoCloseable {
-
-		public int my_change_depth_count;
-
-		ChangeDepth () {
-			if (!( SwingUtilities.isEventDispatchThread() )) {
-				throw new IllegalStateException("OEGUIListener.ChangeDepth called while not on the event dispatch thread!");
-			}
-			synchronized (OEGUIListener.this) {
-				++change_depth_count;
-				my_change_depth_count = change_depth_count;
-			}
-		}
-
-		@Override
-		public void close() {
-			synchronized (OEGUIListener.this) {
-				--change_depth_count;
-			}
-			return;
-		}
-	}
+	private SharedCounter change_depth_count;
 
 
 
@@ -326,13 +366,11 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 		// Just return if notifications are blocked
 		// (It is OK if depth > 1 here)
 
-		synchronized (this) {
-			if (change_block_count != 0) {
-				if (gui_top.get_trace_events()) {
-					System.out.println ("@@@@@ Blocked notification: " + get_symbol_and_type (event.getParameter()));
-				}
-				return;
+		if (change_block_count.get_count() != 0) {
+			if (gui_top.get_trace_events()) {
+				System.out.println ("@@@@@ Blocked notification: " + get_symbol_and_type (event.getParameter()));
 			}
+			return;
 		}
 
 		// Invoke the change function, knowing that we are on the EDT
@@ -342,11 +380,11 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 		}
 
 		try (
-			ChangeDepth change_depth = new ChangeDepth ();
+			SharedCounterAutoInc change_depth = new SharedCounterAutoInc (change_depth_count);
 		){
-			if (change_depth.my_change_depth_count > 1) {
+			if (change_depth.get_saved_count() > 1) {
 				if (gui_top.get_trace_events()) {
-					System.out.println ("@@@@@ !!!!! Notification depth = " + change_depth.my_change_depth_count + " : " + get_symbol_and_type (event.getParameter()));
+					System.out.println ("@@@@@ !!!!! Notification depth = " + change_depth.get_saved_count() + " : " + get_symbol_and_type (event.getParameter()));
 				}
 			}
 

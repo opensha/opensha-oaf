@@ -20,13 +20,13 @@ public interface GUIDialogParameter {
 
 	public static final int TERMCODE_NONE = 0;		// No termination code (dialog never shown)
 	public static final int TERMCODE_OPEN = 1;		// Dialog is currently open
-	public static final int TERMCODE_CLOSED = 2;	// Closed dialog using X at upper right
+	public static final int TERMCODE_CLOSED = 2;	// Closed dialog using X at upper right (or Alt+F4 on some systems)
 	public static final int TERMCODE_SYSTEM = 3;	// Dialog closed by system
 	public static final int TERMCODE_PARENT = 4;	// Closed because parent dialog was closed
 	public static final int TERMCODE_REMOVED = 5;	// Closed because it was removed from parent dialog
 	public static final int TERMCODE_DISABLED = 6;	// Closed because parameter was disabled
 	public static final int TERMCODE_OK = 10;		// User pressed OK or similar
-	//public static final int TERMCODE_CANCEL = 11;	// User pressed Cancel or similar
+	public static final int TERMCODE_CANCEL = 11;	// User pressed Cancel or similar
 	//public static final int TERMCODE_YES = 12;		// User pressed Yes or similar
 	//public static final int TERMCODE_NO = 13;		// User pressed No or similar
 	public static final int TERMCODE_USER = 100;	// User-defined termination code

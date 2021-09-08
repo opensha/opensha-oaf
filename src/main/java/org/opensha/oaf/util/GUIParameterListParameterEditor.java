@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.BorderLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Window;
@@ -19,6 +20,7 @@ import java.util.IdentityHashMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 import javax.swing.SwingUtilities;
 
@@ -72,8 +74,11 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 	// Instance for the framee to show the all parameters in this editor.
 	protected JDialog frame = null;
 
-	// The button that closes the dialog.
+	// The button that closes the dialog, with OK, or null if not allocated.
 	protected JButton ok_button = null;
+
+	// The button that closes the dialog, with CANCEL, or null if not allocated.
+	protected JButton cancel_button = null;
 
 	// Set if a parameter has been changed.
 	protected boolean parameterChangeFlag = false;
@@ -411,19 +416,64 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 		frame.getContentPane().add(editor,new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0
 				,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 0, 0));
 
-		// Add button to update the parameters and close the dialog
+		// Button to update the parameters and close the dialog
 
-		ok_button = new JButton();
-		ok_button.setText(((GUIParameterListParameter)getParameter()).getOkButtonText());
-		ok_button.setForeground(new Color(80,80,133));
-		ok_button.addActionListener(new ActionListener() {
-			@Override public void actionPerformed(ActionEvent e) {
-				button_actionPerformed(e);
-				return;
+		ok_button = null;
+		if (((GUIParameterListParameter)getParameter()).useOkButton()) {
+			ok_button = new JButton();
+			ok_button.setText(((GUIParameterListParameter)getParameter()).getOkButtonText());
+			Color fg = ((GUIParameterListParameter)getParameter()).getOkButtonForeground();
+			if (fg != null) {
+				ok_button.setForeground(fg);
+			} else {
+				ok_button.setForeground(new Color(80,80,133));
 			}
-		});
-		frame.getContentPane().add(ok_button,new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
-				,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
+			ok_button.addActionListener(new ActionListener() {
+				@Override public void actionPerformed(ActionEvent e) {
+					button_actionPerformed(e);
+					return;
+				}
+			});
+		}
+
+		// Button to cancel the operation and close the dialog
+
+		cancel_button = null;
+		if (((GUIParameterListParameter)getParameter()).useCancelButton()) {
+			cancel_button = new JButton();
+			cancel_button.setText(((GUIParameterListParameter)getParameter()).getCancelButtonText());
+			Color fg = ((GUIParameterListParameter)getParameter()).getCancelButtonForeground();
+			if (fg != null) {
+				cancel_button.setForeground(fg);
+			} else {
+				cancel_button.setForeground(new Color(80,80,133));
+			}
+			cancel_button.addActionListener(new ActionListener() {
+				@Override public void actionPerformed(ActionEvent e) {
+					cancel_actionPerformed(e);
+					return;
+				}
+			});
+		}
+
+		// Add 0, 1, or 2 buttons
+
+		if (ok_button != null && cancel_button != null) {
+			JPanel button_panel = new JPanel();
+			button_panel.setLayout(new BorderLayout(8, 0));
+			button_panel.add (ok_button, BorderLayout.WEST);
+			button_panel.add (cancel_button, BorderLayout.EAST);
+			frame.getContentPane().add(button_panel,new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
+					,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
+		}
+		else if (ok_button != null) {
+			frame.getContentPane().add(ok_button,new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
+					,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
+		}
+		else if (cancel_button != null) {
+			frame.getContentPane().add(cancel_button,new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
+					,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
+		}
 
 		// Make the dialog visible
 
@@ -550,7 +600,7 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 
 
 	/**
-	 * This function is called when user clicks the button to update the parameters.
+	 * This function is called when user clicks the OK button to update the parameters.
 	 * @param e
 	 */
 	protected void button_actionPerformed(ActionEvent e) {
@@ -561,6 +611,23 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 			}
 
 			doCloseDialog (GUIDialogParameter.TERMCODE_OK);
+		}
+		return;
+	}
+
+
+	/**
+	 * This function is called when user clicks the CANCEL button to cancel the operation.
+	 * @param e
+	 */
+	protected void cancel_actionPerformed(ActionEvent e) {
+		if (frame != null) {
+
+			if (D) {
+				System.out.println ("$$$$$ GUIParameterListParameterEditor (" + getParameter().getName() + "): CANCEL button pressed");
+			}
+
+			doCloseDialog (GUIDialogParameter.TERMCODE_CANCEL);
 		}
 		return;
 	}
@@ -660,6 +727,7 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 			}
 
 			ok_button = null;
+			cancel_button = null;
 			frame = null;
 		}
 
@@ -710,6 +778,9 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 			if (ok_button != null) {
 				ok_button.setText(((GUIParameterListParameter)getParameter()).getOkButtonText());
 			}
+			if (cancel_button != null) {
+				cancel_button.setText(((GUIParameterListParameter)getParameter()).getCancelButtonText());
+			}
 
 			// Resize dialog if requested
 
@@ -734,6 +805,10 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 		if (useButton) {
 			//button = new JButton(getParameter().getName());
 			button = new JButton(((GUIParameterListParameter)getParameter()).getButtonText());
+			Color fg = ((GUIParameterListParameter)getParameter()).getButtonForeground();
+			if (fg != null) {
+				button.setForeground(fg);
+			}
 			button.addActionListener(this);
 			return button;
 		}
@@ -778,6 +853,9 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 			if (ok_button != null) {
 				ok_button.setText(((GUIParameterListParameter)getParameter()).getOkButtonText());
 			}
+			if (cancel_button != null) {
+				cancel_button.setText(((GUIParameterListParameter)getParameter()).getCancelButtonText());
+			}
 
 			// Resize dialog if requested
 
@@ -801,6 +879,10 @@ public class GUIParameterListParameterEditor extends AbstractParameterEditor<Par
 			if (button == null) {
 				//button = new JButton(getParameter().getName());
 				button = new JButton(((GUIParameterListParameter)getParameter()).getButtonText());
+				Color fg = ((GUIParameterListParameter)getParameter()).getButtonForeground();
+				if (fg != null) {
+					button.setForeground(fg);
+				}
 				button.addActionListener(this);
 			} else {
 				//button.setText(getParameter().getName());

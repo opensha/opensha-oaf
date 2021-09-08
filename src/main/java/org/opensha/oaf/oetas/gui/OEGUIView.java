@@ -180,6 +180,9 @@ public class OEGUIView extends OEGUIComponent {
 
 	private JScrollPane consoleScroll;				// Console window [MODSTATE_INITIAL]
 
+	private JTextArea infoText;						// System information window [MODSTATE_INITIAL]
+	private JScrollPane infoTextPane;				// This is the component added to the tabbed pane.
+
 	private GraphWidget epicenterGraph;				// Map of aftershock epicenters [MODSTATE_CATALOG]
 
 	private GraphWidget magNumGraph;				// Plot of number vs magnitude, re-plottable [MODSTATE_CATALOG]
@@ -212,6 +215,9 @@ public class OEGUIView extends OEGUIComponent {
 
 		consoleScroll = null;
 
+		infoText = null;
+		infoTextPane = null;
+
 		epicenterGraph = null;
 
 		magNumGraph = null;
@@ -243,6 +249,14 @@ public class OEGUIView extends OEGUIComponent {
 		text.setCaretPosition(text.getText().length());
 
 		tabbedPane.addTab("Console", null, consoleScroll, "View Console");
+
+		// Plot the system information
+
+		plotInfoText();
+
+		// Make sure the console window is displayed
+
+		tabbedPane.setSelectedComponent(consoleScroll);
 
 		return tabbedPane;
 	}
@@ -450,6 +464,66 @@ public class OEGUIView extends OEGUIComponent {
 				chars.add(new PlotCurveCharacterstics(sym, size, c));
 			}
 		}
+	}
+
+
+
+
+	//----- System information text tab -----
+
+
+
+
+	// Plot the system information.
+	// This routine can re-plot an existing tab.
+	// Can be called in any model state.
+	
+	private void plotInfoText() throws GUIEDTException {
+
+		if (gui_top.get_trace_events()) {
+			System.out.println ("@@@@@ Entry: OEGUIView.plotInfoText, tab count = " + tabbedPane.getTabCount());
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		// Get info from model
+
+		sb.append (gui_model.get_system_information());
+
+		// Create or modify the text pane
+
+		if (infoText == null) {
+			infoText = new JTextArea(sb.toString());
+			infoText.setEditable(false);
+			infoTextPane = new JScrollPane(infoText);
+			tabbedPane.addTab("Information", null, infoTextPane, "System Information");
+		} else {
+			infoText.setText(sb.toString());
+		}
+		return;
+	}
+
+
+
+
+	// Remove the system information text.
+	// Performs no operation if the system information text is not currently in the tabbed pane.
+
+	private void removeInfoText () throws GUIEDTException {
+		tabbedPane.remove(infoTextPane);
+		infoText = null;
+		infoTextPane = null;
+		return;
+	}
+
+
+
+
+	// Get the system information text from the tab.
+	// Must be called after the system information text has been displayed.
+
+	public String get_info_text () throws GUIEDTException {
+		return infoText.getText();
 	}
 
 
@@ -1865,11 +1939,16 @@ public class OEGUIView extends OEGUIComponent {
 		// Plots for computing a forecast
 
 		case MODSTATE_FORECAST:
+			plotCumulativeNum();	// re-plot because time range is changed
 			plotEAMFD();
 			plotAFTable();
 			tabbedPane.setSelectedComponent(aftershockExpectedGraph);
 			break;
 		}
+
+		// Always plot the system information
+
+		plotInfoText();
 
 		return;
 	}
@@ -1915,6 +1994,10 @@ public class OEGUIView extends OEGUIComponent {
 			removeAftershockHypocs();
 		}
 
+		// Always plot the system information
+
+		plotInfoText();
+
 		//TODO: Set selected component (maybe)
 
 		return;
@@ -1943,6 +2026,10 @@ public class OEGUIView extends OEGUIComponent {
 			plotCumulativeNum();
 		}
 
+		// Always plot the system information
+
+		plotInfoText();
+
 		return;
 	}
 
@@ -1960,6 +2047,10 @@ public class OEGUIView extends OEGUIComponent {
 			plotMFDs();
 			tabbedPane.setSelectedComponent(magNumGraph);
 		}
+
+		// Always plot the system information
+
+		plotInfoText();
 
 		return;
 	}

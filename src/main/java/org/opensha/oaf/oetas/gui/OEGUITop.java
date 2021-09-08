@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.geom.Point2D;
+import java.awt.Component;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -272,11 +273,174 @@ public class OEGUITop extends OEGUIComponent {
 
 
 	// Recommended dialog dimensions for pop-up parameter list, for a given number of parameters.
+	// f_button_row is true if there is a row of buttons at the bottom of the dialog.
+	// The optional num_seps is the number of separators.
 
-	public final Dimension get_dialog_dims (int num_params) {
-		int w = 300;
-		int h = Math.min(height, Math.max(3, num_params) * 60 + 160);
+	public final Dimension get_dialog_dims (int num_params, boolean f_button_row) {
+		//int w = 300;
+		int w = paramWidth + 8;
+		int h = Math.min(height, Math.max(3, num_params) * 60 + (f_button_row ? 160 : 130));
 		return new Dimension (w, h);
+	}
+
+	public final Dimension get_dialog_dims (int num_params, boolean f_button_row, int num_seps) {
+		//int w = 300;
+		int w = paramWidth + 8;
+		int h = Math.min(height, (Math.max(3, num_params) * 60) + (num_seps * 12) + (f_button_row ? 160 : 130));
+		return new Dimension (w, h);
+	}
+
+
+	// Get the highlight color for buttons.
+
+	public Color get_button_highlight () {
+		return new Color(128, 0, 0);
+	}
+
+
+	// Get the color for separators (can be null for system default).
+
+	public Color get_separator_color () {
+		//return new Color(0, 128, 32);
+		return new Color(200, 200, 255);
+	}
+
+
+
+
+	//----- File chooser support -----
+
+
+	// The file chooser directory.
+
+	private File fileChooserDirectory;
+
+	public final File get_fileChooserDirectory () throws GUIEDTException {
+		return fileChooserDirectory;
+	}
+
+	public final void set_fileChooserDirectory (File the_fileChooserDirectory) throws GUIEDTException {
+		fileChooserDirectory = the_fileChooserDirectory;
+		return;
+	}
+
+
+	// Show the open file dialog.
+	// Return the selected file, or null if no selection is made.
+
+	public File showOpenFileDialog (Parameter<?> parent_param) throws GUIEDTException {
+		JFileChooser chooser = new JFileChooser();
+		chooser.setCurrentDirectory (get_fileChooserDirectory());
+		Component chooserParent = null;
+		if (parent_param != null) {
+			chooserParent = parent_param.getEditor().getComponent();
+			if (chooserParent != null) {
+				chooserParent = SwingUtilities.windowForComponent (chooserParent);
+			}
+		}
+		if (chooserParent == null) {
+			chooserParent = get_top_window();
+		}
+		int ret = chooser.showOpenDialog (chooserParent);
+		File file = null;
+		if (ret == JFileChooser.APPROVE_OPTION) {
+			file = chooser.getSelectedFile();
+			set_fileChooserDirectory (chooser.getCurrentDirectory());
+		}
+		return file;
+	}
+
+
+	// Show the save file dialog.
+	// Return the selected file, or null if no selection is made.
+
+	public File showSaveFileDialog (Parameter<?> parent_param) throws GUIEDTException {
+		JFileChooser chooser = new JFileChooser();
+		chooser.setCurrentDirectory (get_fileChooserDirectory());
+		Component chooserParent = null;
+		if (parent_param != null) {
+			chooserParent = parent_param.getEditor().getComponent();
+			if (chooserParent != null) {
+				chooserParent = SwingUtilities.windowForComponent (chooserParent);
+			}
+		}
+		if (chooserParent == null) {
+			chooserParent = get_top_window();
+		}
+		int ret = chooser.showSaveDialog (chooserParent);
+		File file = null;
+		if (ret == JFileChooser.APPROVE_OPTION) {
+			file = chooser.getSelectedFile();
+			set_fileChooserDirectory (chooser.getCurrentDirectory());
+		}
+		return file;
+	}
+
+
+	// Show a file selection dialog with custom text on the approve button.
+	// Return the selected file, or null if no selection is made.
+
+	public File showSelectFileDialog (Parameter<?> parent_param, String button_text) throws GUIEDTException {
+		JFileChooser chooser = new JFileChooser();
+		chooser.setCurrentDirectory (get_fileChooserDirectory());
+		Component chooserParent = null;
+		if (parent_param != null) {
+			chooserParent = parent_param.getEditor().getComponent();
+			if (chooserParent != null) {
+				chooserParent = SwingUtilities.windowForComponent (chooserParent);
+			}
+		}
+		if (chooserParent == null) {
+			chooserParent = get_top_window();
+		}
+		int ret = chooser.showDialog (chooserParent, button_text);
+		File file = null;
+		if (ret == JFileChooser.APPROVE_OPTION) {
+			file = chooser.getSelectedFile();
+			set_fileChooserDirectory (chooser.getCurrentDirectory());
+		}
+		return file;
+	}
+
+
+
+
+	//----- Additional support -----
+
+
+	// Load transfer parameters, displaying an error message if needed.
+	// Returns true if successful, false if there was an error.
+
+	public boolean call_xfer_load (OEGUIXferCommon xfer, final String error_title) throws GUIEDTException {
+		boolean result = true;
+
+		// Do the load
+
+		try {
+			xfer.xfer_load();
+		}
+
+		// Exception indicates an error
+
+		catch (Exception e) {
+			result = false;
+			final Component owner = get_top_window();
+			final String message = e.getMessage();
+			//final String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+ ": " + e.getMessage();
+			//e.printStackTrace();
+			if (get_trace_events()) {
+				System.out.println ("Error loading transfer parameters");
+				e.printStackTrace();
+			}
+			try {
+				JOptionPane.showMessageDialog(owner, message, error_title, JOptionPane.ERROR_MESSAGE);
+			} catch (Exception e2) {
+				System.err.println("Error displaying error message!");
+				e2.printStackTrace();
+			}
+		}
+
+		return result;
 	}
 
 
@@ -353,6 +517,12 @@ public class OEGUITop extends OEGUIComponent {
 		consoleWidth = 600;
 		consoleHeight = 600;
 
+		int paramColumns = 2;
+
+		// Initialize file chooser directory to the current directory
+
+		fileChooserDirectory = new File(System.getProperty("user.dir"));
+
 		// Allocate the components
 
 		gui_top = this;
@@ -388,20 +558,31 @@ public class OEGUITop extends OEGUIComponent {
 		//paramsPanel.add(gui_controller.get_dataEditor(), BorderLayout.WEST);
 		//paramsPanel.add(gui_controller.get_fitEditor(), BorderLayout.EAST);
 
+		//JPanel paramsPanel = new JPanel(new GridLayout(1, 0));
+		//paramsPanel.add(gui_controller.get_dataEditor());
+		//paramsPanel.add(gui_controller.get_fitEditor());
+		////paramsPanel.add(gui_controller.get_fcastEditor());
+		//paramsPanel.add(stacked_comp_panel(
+		//	gui_controller.get_fcastEditor(),
+		//	gui_controller.get_aafsEditor()
+		//));
+
 		JPanel paramsPanel = new JPanel(new GridLayout(1, 0));
-		paramsPanel.add(gui_controller.get_dataEditor());
-		paramsPanel.add(gui_controller.get_fitEditor());
-		//paramsPanel.add(gui_controller.get_fcastEditor());
 		paramsPanel.add(stacked_comp_panel(
-			gui_controller.get_fcastEditor(),
-			gui_controller.get_aafsEditor()
+			gui_controller.get_dataEditor(),
+			gui_controller.get_fitEditor(),
+			gui_controller.get_fcastEditor()
+		));
+		paramsPanel.add(stacked_comp_panel(
+			gui_controller.get_aafsEditor(),
+			gui_controller.get_fillerEditor()
 		));
 
 		mainPanel.add(paramsPanel, BorderLayout.WEST);
 		mainPanel.add(gui_view.get_tabbedPane(), BorderLayout.CENTER);
 		
 		get_top_window().setContentPane(mainPanel);
-		get_top_window().setSize(get_paramWidth()*3 + get_chartWidth(), get_height());
+		get_top_window().setSize(get_paramWidth()*paramColumns + get_chartWidth(), get_height());
 		get_top_window().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		get_top_window().setTitle("Aftershock Statistics GUI");
 		get_top_window().setLocationRelativeTo(null);
