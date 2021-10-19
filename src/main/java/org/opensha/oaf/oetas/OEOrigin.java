@@ -11,6 +11,9 @@ import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.GUIExternalCatalog;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.catalog.AbsoluteTimeLocation;
+import org.opensha.oaf.util.catalog.RelativeTimeLocation;
+import org.opensha.oaf.util.catalog.AbsRelTimeLocConverter;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -39,8 +42,11 @@ import static org.opensha.commons.geo.GeoTools.TO_RAD;
 //
 // This class is used to specify the origin, allowing conversion between catalog
 // coordinates and real-world coordinates.
+//
+// This class also is used for general conversions between absolute and relative
+// times and locations.
 
-public class OEOrigin {
+public class OEOrigin implements AbsRelTimeLocConverter {
 
 	//----- Origin -----
 
@@ -109,6 +115,23 @@ public class OEOrigin {
 
 
 
+	// Constructor that sets all values.
+
+	public OEOrigin (
+		long origin_time,
+		double origin_lat,
+		double origin_lon,
+		double origin_depth
+	) {
+		this.origin_time  = origin_time;
+		this.origin_lat   = origin_lat;
+		this.origin_lon   = origin_lon;
+		this.origin_depth = origin_depth;
+	}
+
+
+
+
 	// Copy all values from the other object.
 
 	public OEOrigin copy_from (OEOrigin other) {
@@ -130,7 +153,7 @@ public class OEOrigin {
 
 		result.append ("OEOrigin:" + "\n");
 
-		result.append ("origin_time = "  + origin_time  + "\n");
+		result.append ("origin_time = "  + origin_time + " (" + SimpleUtils.time_to_parseable_string(origin_time) + ")"  + "\n");
 		result.append ("origin_lat = "   + origin_lat   + "\n");
 		result.append ("origin_lon = "   + origin_lon   + "\n");
 		result.append ("origin_depth = " + origin_depth + "\n");
@@ -157,6 +180,72 @@ public class OEOrigin {
 		this.origin_lat   = fcmain.mainshock_lat;
 		this.origin_lon   = fcmain.mainshock_lon;
 		this.origin_depth = fcmain.mainshock_depth;
+		return this;
+	}
+
+
+
+
+	// Set all values to place the origin at the given mainshock, horizontally only.
+
+	public OEOrigin set_from_mainshock_horz (ForecastMainshock fcmain) {
+	
+		// Check that mainshock is available
+
+		if (!( fcmain.mainshock_avail )) {
+			throw new IllegalArgumentException ("OEOrigin.set_from_mainshock - No mainshock available");
+		}
+
+		// Set values
+
+		this.origin_time  = fcmain.mainshock_time;
+		this.origin_lat   = fcmain.mainshock_lat;
+		this.origin_lon   = fcmain.mainshock_lon;
+		this.origin_depth = 0.0;
+		return this;
+	}
+
+
+
+
+	// Set all values to place the origin at the given rupture.
+
+	public OEOrigin set_from_rupture (ObsEqkRupture rup) {
+
+		// Set values
+
+		origin_time  = rup.getOriginTime();
+		Location hypo = rup.getHypocenterLocation();
+		origin_lat   = hypo.getLatitude();
+		origin_lon   = hypo.getLongitude();
+		origin_depth = hypo.getDepth();
+
+		if (origin_lon > 180.0) {
+			origin_lon -= 360.0;		// force longitude into range -180 to +180.
+		}
+
+		return this;
+	}
+
+
+
+
+	// Set all values to place the origin at the given rupture, horizontally only.
+
+	public OEOrigin set_from_rupture_horz (ObsEqkRupture rup) {
+
+		// Set values
+
+		origin_time  = rup.getOriginTime();
+		Location hypo = rup.getHypocenterLocation();
+		origin_lat   = hypo.getLatitude();
+		origin_lon   = hypo.getLongitude();
+		origin_depth = 0.0;
+
+		if (origin_lon > 180.0) {
+			origin_lon -= 360.0;		// force longitude into range -180 to +180.
+		}
+
 		return this;
 	}
 
@@ -503,6 +592,64 @@ public class OEOrigin {
 
 
 
+	// Convert from absolute to relative time and location.
+	// Parameters:
+	//	abs_tloc = Absolute time and location.
+	//	rel_tloc = Receives relative time and location.
+
+	@Override
+	public void convert_abs_to_rel (AbsoluteTimeLocation abs_tloc, RelativeTimeLocation rel_tloc) {
+
+		rel_tloc.rel_t_day = ((double)(abs_tloc.abs_time - origin_time)) / C_MILLIS_PER_DAY;
+
+		double r_km = SphLatLon.horzDistance (origin_lat, origin_lon, abs_tloc.abs_lat, abs_tloc.abs_lon);
+		if (r_km <= 1.0e-5) {
+			rel_tloc.rel_x_km = 0.0;
+			rel_tloc.rel_y_km = 0.0;
+		} else {
+			double az_rad = SphLatLon.azimuth_rad (origin_lat, origin_lon, abs_tloc.abs_lat, abs_tloc.abs_lon);
+			rel_tloc.rel_x_km = r_km * Math.sin (az_rad);
+			rel_tloc.rel_y_km = r_km * Math.cos (az_rad);
+		}
+
+		rel_tloc.rel_d_km = abs_tloc.abs_depth - origin_depth;
+
+		return;
+	}
+
+
+
+
+	// Convert from relative to absolute time and location.
+	// Parameters:
+	//	rel_tloc = Relative time and location.
+	//	abs_tloc = Receives absolute time and location.
+
+	@Override
+	public void convert_rel_to_abs (RelativeTimeLocation rel_tloc, AbsoluteTimeLocation abs_tloc) {
+
+		double rel_millis = rel_tloc.rel_t_day * C_MILLIS_PER_DAY;
+		abs_tloc.abs_time = Math.round(rel_millis) + origin_time;
+
+		double dist_km = Math.sqrt (rel_tloc.rel_x_km * rel_tloc.rel_x_km + rel_tloc.rel_y_km * rel_tloc.rel_y_km);
+		if (dist_km <= 1.0e-5) {
+			abs_tloc.abs_lat = origin_lat;
+			abs_tloc.abs_lon = origin_lon;
+		} else {
+			double az_rad = Math.atan2 (rel_tloc.rel_x_km, rel_tloc.rel_y_km);
+			SphLatLon p = SphLatLon.gc_travel_km (origin_lat * TO_RAD, origin_lon * TO_RAD, az_rad, dist_km);
+			abs_tloc.abs_lat = p.get_lat();
+			abs_tloc.abs_lon = p.get_lon();
+		}
+
+		abs_tloc.abs_depth = rel_tloc.rel_d_km + origin_depth;
+
+		return;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.
@@ -791,6 +938,220 @@ public class OEOrigin {
 					cat_max_days,					// catalog_max_days
 					filename						// filename
 				);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  org_time  org_lat  org_lon  org_depth
+		//         abs_time  abs_lat  abs_lon  abs_depth
+		// Create an absolute time and location object, and display it.
+		// Convert to relative time and location, and display it.
+		// Convert back to absolute time and location, and display it.
+		// Note: org_time and abs_time can be given as a number of milliseconds since the epoch,
+		// or in ISO-8601 format (like 2011-12-03T10:15:30Z), or "now".
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 8 additional arguments
+
+			if (args.length != 9) {
+				System.err.println ("OEOrigin : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try 
+			{
+				long org_time = SimpleUtils.string_or_number_or_now_to_time (args[1]);
+				double org_lat = Double.parseDouble (args[2]);
+				double org_lon = Double.parseDouble (args[3]);
+				double org_depth = Double.parseDouble (args[4]);
+
+				long abs_time = SimpleUtils.string_or_number_or_now_to_time (args[5]);
+				double abs_lat = Double.parseDouble (args[6]);
+				double abs_lon = Double.parseDouble (args[7]);
+				double abs_depth = Double.parseDouble (args[8]);
+
+				// Say hello
+
+				System.out.println ("Converting absolute to relative time and location");
+				System.out.println ("org_time = " + SimpleUtils.time_raw_and_string (org_time));
+				System.out.println ("org_lat = " + org_lat);
+				System.out.println ("org_lon = " + org_lon);
+				System.out.println ("org_depth = " + org_depth);
+				System.out.println ("abs_time = " + SimpleUtils.time_raw_and_string (abs_time));
+				System.out.println ("abs_lat = " + abs_lat);
+				System.out.println ("abs_lon = " + abs_lon);
+				System.out.println ("abs_depth = " + abs_depth);
+
+				// Make the origin
+
+				OEOrigin origin = new OEOrigin();
+				origin.set (
+					org_time,
+					org_lat,
+					org_lon,
+					org_depth
+				);
+
+				System.out.println();
+				System.out.println (origin.toString());
+
+				// Make the absolute time and location
+
+				AbsoluteTimeLocation abs_tloc = new AbsoluteTimeLocation();
+				abs_tloc.set (
+					abs_time,
+					abs_lat,
+					abs_lon,
+					abs_depth
+				);
+
+				System.out.println();
+				System.out.println (abs_tloc.toString());
+				System.out.println();
+				System.out.println (abs_tloc.value_string());
+				System.out.println();
+				System.out.println (abs_tloc.one_line_string());
+
+				// Convert to relative time and location
+
+				RelativeTimeLocation rel_tloc = new RelativeTimeLocation();
+				origin.convert_abs_to_rel (abs_tloc, rel_tloc);
+
+				System.out.println();
+				System.out.println (rel_tloc.toString());
+				System.out.println();
+				System.out.println (rel_tloc.value_string());
+				System.out.println();
+				System.out.println (rel_tloc.one_line_string());
+
+				// Convert to absolute time and location
+
+				AbsoluteTimeLocation abs_tloc2 = new AbsoluteTimeLocation();
+				origin.convert_rel_to_abs (rel_tloc, abs_tloc2);
+
+				System.out.println();
+				System.out.println (abs_tloc2.toString());
+				System.out.println();
+				System.out.println (abs_tloc2.value_string());
+				System.out.println();
+				System.out.println (abs_tloc2.one_line_string());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  org_time  org_lat  org_lon  org_depth
+		//         rel_t_day  rel_x_km  rel_y_km  rel_d_km
+		// Create an absolute time and location object, and display it.
+		// Convert to relative time and location, and display it.
+		// Convert back to absolute time and location, and display it.
+		// Note: org_time and rel_t_day can be given as a number of milliseconds since the epoch,
+		// or in ISO-8601 format (like 2011-12-03T10:15:30Z), or "now".
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// 8 additional arguments
+
+			if (args.length != 9) {
+				System.err.println ("OEOrigin : Invalid 'test3' subcommand");
+				return;
+			}
+
+			try 
+			{
+				long org_time = SimpleUtils.string_or_number_or_now_to_time (args[1]);
+				double org_lat = Double.parseDouble (args[2]);
+				double org_lon = Double.parseDouble (args[3]);
+				double org_depth = Double.parseDouble (args[4]);
+
+				double rel_t_day = Double.parseDouble (args[5]);
+				double rel_x_km = Double.parseDouble (args[6]);
+				double rel_y_km = Double.parseDouble (args[7]);
+				double rel_d_km = Double.parseDouble (args[8]);
+
+				// Say hello
+
+				System.out.println ("Converting relative to absolute time and location");
+				System.out.println ("org_time = " + SimpleUtils.time_raw_and_string (org_time));
+				System.out.println ("org_lat = " + org_lat);
+				System.out.println ("org_lon = " + org_lon);
+				System.out.println ("org_depth = " + org_depth);
+				System.out.println ("rel_t_day = " + rel_t_day);
+				System.out.println ("rel_x_km = " + rel_x_km);
+				System.out.println ("rel_y_km = " + rel_y_km);
+				System.out.println ("rel_d_km = " + rel_d_km);
+
+				// Make the origin
+
+				OEOrigin origin = new OEOrigin();
+				origin.set (
+					org_time,
+					org_lat,
+					org_lon,
+					org_depth
+				);
+
+				System.out.println();
+				System.out.println (origin.toString());
+
+				// Make the relative time and location
+
+				RelativeTimeLocation rel_tloc = new RelativeTimeLocation();
+				rel_tloc.set (
+					rel_t_day,
+					rel_x_km,
+					rel_y_km,
+					rel_d_km
+				);
+
+				System.out.println();
+				System.out.println (rel_tloc.toString());
+				System.out.println();
+				System.out.println (rel_tloc.value_string());
+				System.out.println();
+				System.out.println (rel_tloc.one_line_string());
+
+				// Convert to absolute time and location
+
+				AbsoluteTimeLocation abs_tloc = new AbsoluteTimeLocation();
+				origin.convert_rel_to_abs (rel_tloc, abs_tloc);
+
+				System.out.println();
+				System.out.println (abs_tloc.toString());
+				System.out.println();
+				System.out.println (abs_tloc.value_string());
+				System.out.println();
+				System.out.println (abs_tloc.one_line_string());
+
+				// Convert to relative time and location
+
+				RelativeTimeLocation rel_tloc2 = new RelativeTimeLocation();
+				origin.convert_abs_to_rel (abs_tloc, rel_tloc2);
+
+				System.out.println();
+				System.out.println (rel_tloc2.toString());
+				System.out.println();
+				System.out.println (rel_tloc2.value_string());
+				System.out.println();
+				System.out.println (rel_tloc2.one_line_string());
 
 			} catch (Exception e) {
 				e.printStackTrace();
