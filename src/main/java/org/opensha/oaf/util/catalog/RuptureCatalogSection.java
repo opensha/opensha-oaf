@@ -29,21 +29,20 @@ public class RuptureCatalogSection {
 	// Parent of this section, or null if there is no parent.
 	// This is set during construction and cannot be modified.
 	// Note: Although a parent link opens up the possibiity of a tree
-	// of sections and subsections, in practice we expect just two
-	// levels of section: one that spans the entire file and has a
-	// default name, and one level of sections within the file that
-	// are each considered a subsection of the file.
+	// of sections and subsections, in practice we expect just three
+	// levels of section:
+	// - A root section, which is the top level and is not written to
+	//   or read from the file.  It holds user-supplied settings.
+	// - A default section, whose parent is the root section. it
+	//   represents settings that apply at file scope, and can be
+	//   inherited by the data sections.
+	// - Data sections, all of which have the default section as parent.
 
 	private RuptureCatalogSection parent;
 
 	public final RuptureCatalogSection get_parent () {
 		return parent;
 	}
-
-
-	// Default section name.
-
-	public static final String DEFAULT_SECTION_NAME = "default";
 
 
 	// Name of the section.
@@ -60,6 +59,58 @@ public class RuptureCatalogSection {
 	// Valid names consist of letters, digits, and underscores, and begin with a letter or underscore.
 
 	private static final Pattern section_name_pattern = Pattern.compile ("[a-zA-Z_][a-zA-Z0-9_]*");
+
+
+	// Return true if the argument is a valid section name.
+	// Note: Returns false if the argument has leading or trailing white space.
+
+	public static boolean is_valid_section_name (String the_name) {
+		return section_name_pattern.matcher(the_name).matches();
+	}
+
+
+
+
+	//----- Common section names -----
+
+
+	// Root section name.
+
+	public static final String SECTION_NAME_ROOT = "root";
+
+	// Default section name.
+
+	public static final String SECTION_NAME_DEFAULT = "default";
+
+	// Mainshock section name.
+
+	public static final String SECTION_NAME_MAINSHOCK = "mainshock";
+
+	// Aftershock section name.
+
+	public static final String SECTION_NAME_AFTERSHOCK = "aftershock";
+
+
+
+
+	//----- Section convenience functions -----
+
+
+	// Return true if this is the root section.
+	// Note: Test is done by checking the name.
+
+	public final boolean is_root_section () {
+		return name.equals (SECTION_NAME_ROOT);
+	}
+
+
+	// Return true if this is the root section.
+	// Note: Test is done by checking the name.
+
+	public final boolean is_default_section () {
+		return name.equals (SECTION_NAME_DEFAULT);
+	}
+
 
 
 
@@ -131,6 +182,22 @@ public class RuptureCatalogSection {
 	private static final Pattern definition_value_pattern = Pattern.compile ("\\S(?:[^\\n\\r]*\\S)?");
 
 
+	// Return true if the argument is a valid definition name.
+	// Note: Returns false if the argument has leading or trailing white space.
+
+	public static boolean is_valid_definition_name (String def_name) {
+		return definition_name_pattern.matcher(def_name).matches();
+	}
+
+
+	// Return true if the argument is a valid definition value.
+	// Note: Returns false if the argument has leading or trailing white space.
+
+	public static boolean is_valid_definition_value (String def_value) {
+		return definition_value_pattern.matcher(def_value).matches();
+	}
+
+
 	// Known definition names.
 
 	public static final String def_name_wrapLon = "wrapLon";	// The wrapLon parameter.
@@ -140,7 +207,7 @@ public class RuptureCatalogSection {
 	// Each definition has a name for a key, and an arbitrary string for a value.
 	// LinkedHashMap is used to preserve the ordering.
 
-	private static final LinkedHashMap<String, String> definition_map = new LinkedHashMap<String, String>();
+	private final LinkedHashMap<String, String> definition_map = new LinkedHashMap<String, String>();
 
 
 	// Add a <name, value> pair to the dictionary of definitions in this section.
@@ -152,13 +219,13 @@ public class RuptureCatalogSection {
 		if (f_locked) {
 			throw new IllegalStateException ("RuptureCatalogSection.add_definition: Section is already locked: section = " + name);
 		}
-		if (!( definition_name_pattern.matcher(def_name).matches() )) {
+		if (!( is_valid_definition_name (def_name) )) {
 			throw new IllegalArgumentException ("RuptureCatalogSection.add_definition: Invalid definition name: section = " + name + ", def_name = " + def_name);
 		}
 		if (def_value == null || def_value.isEmpty()) {
 			definition_map.remove (def_name);
 		} else {
-			if (!( definition_value_pattern.matcher(def_value).matches() )) {
+			if (!( is_valid_definition_value (def_value) )) {
 				throw new IllegalArgumentException ("RuptureCatalogSection.add_definition: Invalid definition value: section = " + name + ", def_name = " + def_name + ", def_value = " + def_value);
 			}
 			definition_map.put (def_name, def_value);
@@ -194,6 +261,295 @@ public class RuptureCatalogSection {
 
 	public final Iterator<Map.Entry<String, String>> get_definition_iterator () {
 		return definition_map.entrySet().iterator();
+	}
+
+
+
+
+	//----- Convenience functions for definitions -----
+
+
+	// Return true if there is a definition for the given name, including in the parent.
+
+	public final boolean contains_definition (String def_name) {
+		if (definition_map.containsKey (def_name)) {
+			return true;
+		}
+		if (parent != null) {
+			return parent.contains_definition (def_name);
+		}
+		return false;
+	}
+
+
+	// Add a definition for a double.
+
+	public final void add_definition_double (String def_name, double value) {
+		String def_value = String.valueOf (value);
+		add_definition (def_name, def_value);
+		return;
+	}
+
+
+	// Get a definition as a double.
+	// If not found, then try to get a definition from the parent section, recursively.
+	// If still not found, return the default value if provided, else throw an exception.
+
+	public final double get_definition_double (String def_name, double default_value) {
+		double result;
+
+		// Get from collection, including parent
+
+		String def_value = get_inherit_definition (def_name);
+		if (def_value == null) {
+			return default_value;
+		}
+
+		// Perform the conversion
+
+		try {
+			result = Double.parseDouble (def_value);
+		} catch (Exception e) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_double : Parse error: name = " + def_name + ", value = " + def_value, e);
+		}
+
+		return result;
+	}
+
+
+	public final double get_definition_double (String def_name) {
+		double result;
+
+		// Get from collection, including parent
+
+		String def_value = get_inherit_definition (def_name);
+		if (def_value == null) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_double : Definition not found: name = " + def_name);
+		}
+
+		// Perform the conversion
+
+		try {
+			result = Double.parseDouble (def_value);
+		} catch (Exception e) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_double : Parse error: name = " + def_name + ", value = " + def_value, e);
+		}
+
+		return result;
+	}
+
+
+	// Add a definition for an int.
+
+	public final void add_definition_int (String def_name, int value) {
+		String def_value = String.valueOf (value);
+		add_definition (def_name, def_value);
+		return;
+	}
+
+
+	// Get a definition as an int.
+	// If not found, then try to get a definition from the parent section, recursively.
+	// If still not found, return the default value if provided, else throw an exception.
+
+	public final int get_definition_int (String def_name, int default_value) {
+		int result;
+
+		// Get from collection, including parent
+
+		String def_value = get_inherit_definition (def_name);
+		if (def_value == null) {
+			return default_value;
+		}
+
+		// Perform the conversion
+
+		try {
+			result = Integer.parseInt (def_value);
+		} catch (Exception e) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_int : Parse error: name = " + def_name + ", value = " + def_value, e);
+		}
+
+		return result;
+	}
+
+
+	public final int get_definition_int (String def_name) {
+		int result;
+
+		// Get from collection, including parent
+
+		String def_value = get_inherit_definition (def_name);
+		if (def_value == null) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_int : Definition not found: name = " + def_name);
+		}
+
+		// Perform the conversion
+
+		try {
+			result = Integer.parseInt (def_value);
+		} catch (Exception e) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_int : Parse error: name = " + def_name + ", value = " + def_value, e);
+		}
+
+		return result;
+	}
+
+
+	// Add a definition for a long.
+
+	public final void add_definition_long (String def_name, long value) {
+		String def_value = String.valueOf (value);
+		add_definition (def_name, def_value);
+		return;
+	}
+
+
+	// Get a definition as a long.
+	// If not found, then try to get a definition from the parent section, recursively.
+	// If still not found, return the default value if provided, else throw an exception.
+
+	public final long get_definition_long (String def_name, long default_value) {
+		long result;
+
+		// Get from collection, including parent
+
+		String def_value = get_inherit_definition (def_name);
+		if (def_value == null) {
+			return default_value;
+		}
+
+		// Perform the conversion
+
+		try {
+			result = Long.parseLong (def_value);
+		} catch (Exception e) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_long : Parse error: name = " + def_name + ", value = " + def_value, e);
+		}
+
+		return result;
+	}
+
+
+	public final long get_definition_long (String def_name) {
+		long result;
+
+		// Get from collection, including parent
+
+		String def_value = get_inherit_definition (def_name);
+		if (def_value == null) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_long : Definition not found: name = " + def_name);
+		}
+
+		// Perform the conversion
+
+		try {
+			result = Long.parseLong (def_value);
+		} catch (Exception e) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_long : Parse error: name = " + def_name + ", value = " + def_value, e);
+		}
+
+		return result;
+	}
+
+
+	// Add a definition for a boolean.
+
+	public final void add_definition_boolean (String def_name, boolean value) {
+		String def_value = String.valueOf (value);
+		add_definition (def_name, def_value);
+		return;
+	}
+
+
+	// Get a definition as a boolean.
+	// If not found, then try to get a definition from the parent section, recursively.
+	// If still not found, return the default value if provided, else throw an exception.
+
+	public final boolean get_definition_boolean (String def_name, boolean default_value) {
+		boolean result;
+
+		// Get from collection, including parent
+
+		String def_value = get_inherit_definition (def_name);
+		if (def_value == null) {
+			return default_value;
+		}
+
+		// Perform the conversion
+
+		try {
+			result = Boolean.parseBoolean (def_value);
+		} catch (Exception e) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_boolean : Parse error: name = " + def_name + ", value = " + def_value, e);
+		}
+
+		return result;
+	}
+
+
+	public final boolean get_definition_boolean (String def_name) {
+		boolean result;
+
+		// Get from collection, including parent
+
+		String def_value = get_inherit_definition (def_name);
+		if (def_value == null) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_boolean : Definition not found: name = " + def_name);
+		}
+
+		// Perform the conversion
+
+		try {
+			result = Boolean.parseBoolean (def_value);
+		} catch (Exception e) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_boolean : Parse error: name = " + def_name + ", value = " + def_value, e);
+		}
+
+		return result;
+	}
+
+
+	// Add a definition for a string.
+
+	public final void add_definition_string (String def_name, String value) {
+		String def_value = value;
+		add_definition (def_name, def_value);
+		return;
+	}
+
+
+	// Get a definition as a string.
+	// If not found, then try to get a definition from the parent section, recursively.
+	// If still not found, return the default value if provided, else throw an exception.
+
+	public final String get_definition_string (String def_name, String default_value) {
+
+		// Get from collection, including parent
+
+		String def_value = get_inherit_definition (def_name);
+		if (def_value == null) {
+			return default_value;
+		}
+
+		// Return it
+
+		return def_value;
+	}
+
+
+	public final String get_definition_string (String def_name) {
+
+		// Get from collection, including parent
+
+		String def_value = get_inherit_definition (def_name);
+		if (def_value == null) {
+			throw new RuntimeException ("RuptureCatalogSection.get_definition_string : Definition not found: name = " + def_name);
+		}
+
+		// Return it
+
+		return def_value;
 	}
 
 
@@ -418,14 +774,14 @@ public class RuptureCatalogSection {
 	private int max_ruptures = -1;
 
 
-	// Get the maximum number of ruptures allowed in this section.
+	// Get the maximum number of ruptures allowed in this section, or -1 for no limit.
 
 	public final int get_max_ruptures () {
 		return max_ruptures;
 	}
 
 
-	// Set the maximum number of ruptures allowed in this section.
+	// Set the maximum number of ruptures allowed in this section, or -1 for no limit.
 	// It is an error to call this function after the section is locked.
 
 	public final RuptureCatalogSection set_max_ruptures (int the_max_ruptures) {
@@ -458,17 +814,6 @@ public class RuptureCatalogSection {
 	}
 
 
-	// Add a rupture from an ObsEqkRupture object.
-	// The supplied rup object is not retained.
-
-	public final void add_eqk_rupture (ObsEqkRupture rup) {
-		RuptureFormatter rf = new RuptureFormatter();
-		rf.set_eqk_rupture (rup);
-		add_rupture (rf);
-		return;
-	}
-
-
 	// Get the number of ruptures.
 
 	public final int get_rupture_list_size () {
@@ -492,20 +837,91 @@ public class RuptureCatalogSection {
 
 
 
+	//----- Convenience functions for ruptures -----
+
+
+	// Add a rupture from an ObsEqkRupture object.
+	// The supplied rup object is not retained.
+
+	public final void add_eqk_rupture (ObsEqkRupture rup) {
+		RuptureFormatter rf = new RuptureFormatter();
+		rf.set_eqk_rupture (rup);
+		add_rupture (rf);
+		return;
+	}
+
+
+	// Get the n-th rupture as an ObsEqkRupture object.
+	// Longitude range is 0 to +360 if wrapLon is true, -180 to +180 if wrapLon is false.
+	// The contained absolute/relative converter is used.
+
+	public final ObsEqkRupture get_eqk_rupture (int n, boolean wrapLon) {
+		ObsEqkRupture result;
+		RuptureFormatter rf = get_rupture (n);
+		try {
+			result = rf.get_eqk_rupture (wrapLon, abs_rel_conv);
+		} catch (Exception e) {
+			String error_id = rf.get_error_id();
+			if (error_id == null) {
+				throw new RuntimeException ("RuptureCatalogSection.get_eqk_rupture: Conversion error reading rupture: n = " + n, e);
+			}
+			throw new RuntimeException ("RuptureCatalogSection.get_eqk_rupture: Conversion error reading rupture: n = " + n + ", id = " + error_id, e);
+		}
+		return result;
+	}
+
+
+	// Add all the ruptures from a list of ObsEqkRupture objects.
+	// The supplied rup objects are not retained.
+
+	public final void add_eqk_rupture_list (List<ObsEqkRupture> rup_list) {
+		for (ObsEqkRupture rup : rup_list) {
+			RuptureFormatter rf = new RuptureFormatter();
+			rf.set_eqk_rupture (rup);
+			add_rupture (rf);
+		}
+		return;
+	}
+
+
+	// Add all the ruptures to a list of ObsEqkRupture objects.
+	// Longitude range is 0 to +360 if wrapLon is true, -180 to +180 if wrapLon is false.
+	// The contained absolute/relative converter is used.
+
+	public final void get_eqk_rupture_list (List<ObsEqkRupture> rup_list, boolean wrapLon) {
+		int n = 0;
+		for (RuptureFormatter rf : rupture_list) {
+			ObsEqkRupture result;
+			try {
+				result = rf.get_eqk_rupture (wrapLon, abs_rel_conv);
+			} catch (Exception e) {
+				String error_id = rf.get_error_id();
+				if (error_id == null) {
+					throw new RuntimeException ("RuptureCatalogSection.get_eqk_rupture_list: Conversion error reading rupture: n = " + n, e);
+				}
+				throw new RuntimeException ("RuptureCatalogSection.get_eqk_rupture_list: Conversion error reading rupture: n = " + n + ", id = " + error_id, e);
+			}
+			rup_list.add (result);
+			++n;
+		}
+		return;
+	}
+
+
+
+
 	//----- Construction -----
 
 
 	// Constructor specifies name and parent.
 
 	public RuptureCatalogSection (RuptureCatalogSection the_parent, String the_name) {
-		parent = the_parent;
-		name = the_name;
-
-		// Check for a valid name
-
-		if (!( section_name_pattern.matcher(the_name).matches() )) {
+		if (!( is_valid_section_name (the_name) )) {
 			throw new IllegalArgumentException ("RuptureCatalogSection: Invalid section name: name = " + the_name);
 		}
+
+		parent = the_parent;
+		name = the_name;
 	}
 
 
@@ -625,6 +1041,9 @@ public class RuptureCatalogSection {
 	//  f_section_line = True to write the section control line.
 
 	public void write_section (Consumer<String> dest, SectionFormat fmt, boolean f_section_line) {
+
+		// Flag is true if we have not seen any ruptures yet
+
 		boolean f_first_rupture = true;
 
 		// Write the section line
@@ -677,6 +1096,9 @@ public class RuptureCatalogSection {
 	// Note: The section is automatically locked when the first rupture is read.
 
 	public String read_section (Supplier<String> src, SectionFormat fmt) {
+
+		// Flag is true if we have not seen any ruptures yet
+
 		boolean f_first_rupture = true;
 
 		// Read lines until end of file

@@ -131,9 +131,9 @@ public class RuptureLineFormatterFactory {
 
 		if (args[0].equalsIgnoreCase ("test1")) {
 
-			// 1 additional arguments
+			// 0 additional arguments
 
-			if (!( args.length == 2 )) {
+			if (!( args.length == 1 )) {
 				System.err.println ("RuptureLineFormatterFactory : Invalid 'test1' subcommand");
 				return;
 			}

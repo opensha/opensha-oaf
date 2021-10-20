@@ -303,6 +303,19 @@ public class RuptureFormatter {
 		return;
 	}
 
+	// Get an identification string to use in error messages, or null if none available.
+
+	public final String get_error_id () {
+		String result = null;
+		if (!( eqk_strs.eqk_event_id == null || eqk_strs.eqk_event_id.trim().isEmpty() )) {
+			result = eqk_strs.eqk_event_id.trim();
+		}
+		else if (!( eqk_strs.eqk_id_list == null || eqk_strs.eqk_id_list.length == 0 || eqk_strs.eqk_id_list[0] == null || eqk_strs.eqk_id_list[0].trim().isEmpty() )) {
+			result = eqk_strs.eqk_id_list[0].trim();
+		}
+		return result;
+	}
+
 
 
 
