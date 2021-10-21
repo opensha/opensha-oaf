@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -63,6 +66,14 @@ public class RuptureCatalogFile {
 
 	private boolean f_auto_section = false;
 
+	// True if sections created automatically can be split during input.
+
+	private boolean f_auto_input_splittable = false;
+
+	// List of definition names allowed during input of automatically created sections, or null if no restriction.
+
+	private ArrayList<String> auto_input_allowed_def_names = null;
+
 	// True if section line is written for default section.
 
 	private boolean f_default_section_line = false;
@@ -70,6 +81,11 @@ public class RuptureCatalogFile {
 	// Format for writing sections.
 
 	private RuptureCatalogSection.SectionFormat section_format = null;
+
+	// Name of the next section to read, or null if end of file.
+	// Initial value is the default section, which applies at file scope.
+
+	private String next_input_section = RuptureCatalogSection.SECTION_NAME_DEFAULT;
 
 
 	// Make a new section.
@@ -132,9 +148,49 @@ public class RuptureCatalogFile {
 
 
 	// Set flag indicating if sections can be automatically created when reading a file.
+	// Default is false.
 
 	public final RuptureCatalogFile set_auto_section (boolean the_f_auto_section) {
 		f_auto_section = the_f_auto_section;
+		return this;
+	}
+
+
+	// Set flag indicating if sections created automatically can be split during input.
+	// Default is false.
+
+	public final RuptureCatalogFile set_auto_input_splittable (boolean the_f_auto_input_splittable) {
+		f_auto_input_splittable = the_f_auto_input_splittable;
+		return this;
+	}
+
+
+	// Set the definition names that are allowed during input of automatically created sections, or null if no restriction.
+	// Default is that all names are allowed.
+	// The names can be supplied as a collection, as an array, or as arguments to the call.
+	// Note: Calling with no arguments disallows all definitions during input of automatically created sections.
+
+	public final RuptureCatalogFile set_allowed_def_names (Collection<String> allowed_def_names) {
+		if (allowed_def_names == null) {
+			auto_input_allowed_def_names = null;
+		}
+		else {
+			auto_input_allowed_def_names = new ArrayList<String> (allowed_def_names);
+		}
+		return this;
+	}
+
+
+	public final RuptureCatalogFile set_allowed_def_names (String... allowed_def_names) {
+		if (allowed_def_names == null) {
+			auto_input_allowed_def_names = null;
+		}
+		else {
+			auto_input_allowed_def_names = new ArrayList<String> ();
+			for (String s : allowed_def_names) {
+				auto_input_allowed_def_names.add (s);
+			}
+		}
 		return this;
 	}
 
@@ -302,24 +358,80 @@ public class RuptureCatalogFile {
 
 
 
+	// Read the next section.
+	// Parameters:
+	//  src = Source.
+	// Returns the name of the section that was just read.
+	// Returns null if end of file.
+	// Note: If this is the first read call, then this function reads the default section.
+	// Note: Be aware that the section read may be a continuation of a
+	// previously-read section, unless the section is marked as non-splittable.
+	// Note: Performs no operation if already at end of file.
+
+	public String read_next_section (Supplier<String> src) {
+
+		// Read one section, if not end of file
+
+		String result = next_input_section;
+
+		if (next_input_section != null) {
+			//RuptureCatalogSection rcs = get_or_add_section (next_input_section, f_auto_section);
+			RuptureCatalogSection rcs = get_section (next_input_section);
+			if (rcs == null) {
+				if (f_auto_section) {
+					rcs = add_section (next_input_section);
+					rcs.set_input_splittable (f_auto_input_splittable);
+					rcs.set_allowed_def_names (auto_input_allowed_def_names);
+				} else {
+					throw new RuntimeException ("RuptureCatalogFile.read_next_section: Section not found and section creation is not allowed, section name = " + next_input_section);
+				}
+			}
+			next_input_section = rcs.read_section (src, section_format);
+		}
+
+		// Return the section name we just read
+
+		return result;
+	}
+
+
+
+
+	// Get the name of the next section that will be read by read_next_section, or null if at end of file.
+	// Note: The name returned may refer to a section that does not exist.
+
+	public String get_next_input_section () {
+		return next_input_section;
+	}
+
+
+
+
+	// Return true if there is a section remaining to read.
+
+	public boolean has_next_input_section () {
+		return next_input_section != null;
+	}
+
+
+
+
 	// Read all sections.
 	// Parameters:
 	//  src = Source.
+	// Note: If this is called after read_next_section, it reads all remaining sections.
 
-	public String read_all_sections (Supplier<String> src) {
+	public void read_all_sections (Supplier<String> src) {
 
-		// Read sections until end of file, starting with the default section
+		// Read sections until end of file
 
-		String section_name = RuptureCatalogSection.SECTION_NAME_DEFAULT;
-
-		while (section_name != null) {
-			RuptureCatalogSection rcs = get_or_add_section (section_name, f_auto_section);
-			section_name = rcs.read_section (src, section_format);
+		while (has_next_input_section()) {
+			read_next_section (src);
 		}
 
 		// Reached end of file
 
-		return null;
+		return;
 	}
 
 
@@ -493,7 +605,11 @@ public class RuptureCatalogFile {
 				try (
 					LineConsumerFile lcf = new LineConsumerFile (sw);
 				){
-					rcf.write_all_sections (lcf);
+					try {
+						rcf.write_all_sections (lcf);
+					} catch (Exception e) {
+						throw new RuntimeException ("Error writing file: " + lcf.error_locus(), e);
+					}
 				}
 
 				// Show the String
@@ -523,7 +639,11 @@ public class RuptureCatalogFile {
 				try (
 					LineSupplierFile lsf = new LineSupplierFile (new StringReader (file_text));
 				){
-					rcf_2.read_all_sections (lsf);
+					try {
+						rcf_2.read_all_sections (lsf);
+					} catch (Exception e) {
+						throw new RuntimeException ("Error reading file: " + lsf.error_locus(), e);
+					}
 				}
 
 				file_text = null;
@@ -594,7 +714,477 @@ public class RuptureCatalogFile {
 				try (
 					LineConsumerFile lcf = new LineConsumerFile (sw_2);
 				){
-					rcf_2.write_all_sections (lcf);
+					try {
+						rcf_2.write_all_sections (lcf);
+					} catch (Exception e) {
+						throw new RuntimeException ("Error writing file: " + lcf.error_locus(), e);
+					}
+				}
+
+				// Show the String
+
+				String file_text_2 = sw_2.toString();
+
+				System.out.println();
+				System.out.println("***** File Text Re-Written");
+
+				System.out.println();
+				System.out.println(file_text_2);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  mainshock_event_id  [aftershock_event_id]...
+		// Read the mainshock from Comcat, and display it.
+		// Read the aftershock list from Comcat, and display it.
+		// Store into a RuptureCatalogFile object.
+		// Write to a string with GUI observed line format, and display it.
+		// Display the string.
+		// Read into a new RuptureCatalogFile object.
+		// Obtain mainshock and aftershock list, and display them.
+		// Write back out into a new string, and display it.
+		// Note: Same as test #1 except using the GUI observed format.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 1 or more additional arguments
+
+			if (!( args.length >= 2 )) {
+				System.err.println ("RuptureCatalogFile : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				String mainshock_event_id = args[1];
+				int num_aftershock = args.length - 2;
+				String[] aftershock_event_ids = new String[num_aftershock];
+				for (int i = 0; i < num_aftershock; ++i) {
+					aftershock_event_ids[i] = args[i + 2];
+				}
+
+				// Say hello
+
+				System.out.println ("Testing file write and read with GUI observed format.");
+				System.out.println ("mainshock_event_id = " + mainshock_event_id);
+				System.out.println ("aftershock_event_ids = " + String.join (" ", aftershock_event_ids));
+
+				// Load mainshock from Comcat
+
+				System.out.println();
+				System.out.println("***** Mainshock");
+
+				boolean wrapLon = false;
+				boolean extendedInfo = true;
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+				ObsEqkRupture mainshock_rup = accessor.fetchEvent (mainshock_event_id, wrapLon, extendedInfo);
+
+				System.out.println();
+				System.out.println(ComcatOAFAccessor.rupToString (mainshock_rup));
+
+				// Make the origin object
+
+				OEOrigin origin = (new OEOrigin()).set_from_rupture_horz(mainshock_rup);
+
+				System.out.println();
+				System.out.println(origin.toString());
+
+				// Make a line formatter.
+
+				RuptureLineFormatGUIObserved line_fmt = (new RuptureLineFormatGUIObserved()).set_abs_rel_conv(origin);
+
+				System.out.println();
+				System.out.println(line_fmt.show_format_info());
+
+				// Load aftershocks from Comcat
+
+				System.out.println();
+				System.out.println("***** Aftershocks");
+
+				ArrayList<ObsEqkRupture> aftershock_list = new ArrayList<ObsEqkRupture>();
+
+				for (String id : aftershock_event_ids) {
+					aftershock_list.add (accessor.fetchEvent (id, wrapLon, extendedInfo));
+				}
+
+				for (ObsEqkRupture rup : aftershock_list) {
+					System.out.println();
+					System.out.println(ComcatOAFAccessor.rupToString (rup));
+				}
+
+				// Set up the catalog file
+
+				RuptureCatalogFile rcf = new RuptureCatalogFile();
+
+				RuptureCatalogSection rcs = rcf.get_root_section();
+				rcs.add_comment (" Comment for root section.");
+				rcs.add_definition_string ("root_var1", "Value should not appear");
+				rcs.add_definition_double ("root_var2", 3.14159);
+				rcs.lock_section();
+
+				rcs = rcf.get_default_section();
+				rcs.add_comment (" Comment for default section.");
+				rcs.add_definition_string ("def_var1", "Value should appear");
+				rcs.add_definition_double ("def_var2", 2.71828);
+				rcs.set_abs_rel_conv (origin, true, false);
+				rcs.set_line_formatter (line_fmt, true, false);
+				rcs.lock_section();
+
+				rcs = rcf.add_section (RuptureCatalogSection.SECTION_NAME_MAINSHOCK);
+				rcs.set_max_ruptures(1);
+				rcs.lock_section();
+				rcs.add_eqk_rupture (mainshock_rup);
+
+				rcs = rcf.add_section (RuptureCatalogSection.SECTION_NAME_AFTERSHOCK);
+				rcs.add_comment (" Comment for aftershock section.");
+				rcs.add_comment (" Another comment for aftershock section.");
+				rcs.add_definition_string ("as_var1", "Values for aftershock");
+				rcs.add_definition_double ("as_var2", 1.4142);
+				rcs.lock_section();
+				rcs.add_eqk_rupture_list (aftershock_list);
+
+				// Read definitions from default section
+
+				System.out.println();
+				System.out.println("***** Definitions From Default Section");
+
+				rcs = rcf.get_default_section();
+
+				System.out.println();
+				System.out.println("root_var1" + " --> " + rcs.get_definition_string ("root_var1", "not found"));
+				System.out.println("root_var2" + " --> " + rcs.get_definition_double ("root_var2", -1000.0));
+				System.out.println("def_var1" + " --> " + rcs.get_definition_string ("def_var1", "not found"));
+				System.out.println("def_var2" + " --> " + rcs.get_definition_double ("def_var2", -1000.0));
+				System.out.println("as_var1" + " --> " + rcs.get_definition_string ("as_var1", "not found"));
+				System.out.println("as_var2" + " --> " + rcs.get_definition_double ("as_var2", -1000.0));
+				System.out.println("no_var1" + " --> " + rcs.get_definition_string ("no_var1", "not found"));
+				System.out.println("no_var2" + " --> " + rcs.get_definition_double ("no_var2", -1000.0));
+
+				// Read definitions from aftershock section
+
+				System.out.println();
+				System.out.println("***** Definitions From Aftershock Section");
+
+				rcs = rcf.req_section (RuptureCatalogSection.SECTION_NAME_AFTERSHOCK);
+
+				System.out.println();
+				System.out.println("root_var1" + " --> " + rcs.get_definition_string ("root_var1", "not found"));
+				System.out.println("root_var2" + " --> " + rcs.get_definition_double ("root_var2", -1000.0));
+				System.out.println("def_var1" + " --> " + rcs.get_definition_string ("def_var1", "not found"));
+				System.out.println("def_var2" + " --> " + rcs.get_definition_double ("def_var2", -1000.0));
+				System.out.println("as_var1" + " --> " + rcs.get_definition_string ("as_var1", "not found"));
+				System.out.println("as_var2" + " --> " + rcs.get_definition_double ("as_var2", -1000.0));
+				System.out.println("no_var1" + " --> " + rcs.get_definition_string ("no_var1", "not found"));
+				System.out.println("no_var2" + " --> " + rcs.get_definition_double ("no_var2", -1000.0));
+
+				// Write the file to a string
+
+				StringWriter sw = new StringWriter();
+				try (
+					LineConsumerFile lcf = new LineConsumerFile (sw);
+				){
+					try {
+						rcf.write_all_sections (lcf);
+					} catch (Exception e) {
+						throw new RuntimeException ("Error writing file: " + lcf.error_locus(), e);
+					}
+				}
+
+				// Show the String
+
+				String file_text = sw.toString();
+
+				System.out.println();
+				System.out.println("***** File Text");
+
+				System.out.println();
+				System.out.println(file_text);
+
+				// Make a new file for input
+
+				rcf = null;
+				rcs = null;
+				sw = null;
+
+				RuptureCatalogFile rcf_2 = new RuptureCatalogFile();
+				rcf_2.set_auto_section (true);
+
+				RuptureCatalogSection rcs_2 = rcf_2.add_section (RuptureCatalogSection.SECTION_NAME_MAINSHOCK);
+				rcs_2.set_max_ruptures(1);
+
+				// Read the file from a string
+
+				try (
+					LineSupplierFile lsf = new LineSupplierFile (new StringReader (file_text));
+				){
+					try {
+						rcf_2.read_all_sections (lsf);
+					} catch (Exception e) {
+						throw new RuntimeException ("Error reading file: " + lsf.error_locus(), e);
+					}
+				}
+
+				file_text = null;
+
+				// Read the mainshock
+
+				System.out.println();
+				System.out.println("***** Mainshock Read-In");
+
+				rcs_2 = rcf_2.req_section (RuptureCatalogSection.SECTION_NAME_MAINSHOCK);
+				ObsEqkRupture mainshock_rup_2 = rcs_2.get_eqk_rupture (0, wrapLon);
+
+				System.out.println();
+				System.out.println(ComcatOAFAccessor.rupToString (mainshock_rup_2));
+
+				// Read the aftershocks
+
+				System.out.println();
+				System.out.println("***** Aftershocks Read-In");
+
+				ArrayList<ObsEqkRupture> aftershock_list_2 = new ArrayList<ObsEqkRupture>();
+
+				rcs_2 = rcf_2.req_section (RuptureCatalogSection.SECTION_NAME_AFTERSHOCK);
+				rcs_2.get_eqk_rupture_list (aftershock_list_2, wrapLon);
+
+				for (ObsEqkRupture rup : aftershock_list_2) {
+					System.out.println();
+					System.out.println(ComcatOAFAccessor.rupToString (rup));
+				}
+
+				// Read definitions from default section
+
+				System.out.println();
+				System.out.println("***** Definitions From Default Section, Re-Read");
+
+				rcs_2 = rcf_2.get_default_section();
+
+				System.out.println();
+				System.out.println("root_var1" + " --> " + rcs_2.get_definition_string ("root_var1", "not found"));
+				System.out.println("root_var2" + " --> " + rcs_2.get_definition_double ("root_var2", -1000.0));
+				System.out.println("def_var1" + " --> " + rcs_2.get_definition_string ("def_var1", "not found"));
+				System.out.println("def_var2" + " --> " + rcs_2.get_definition_double ("def_var2", -1000.0));
+				System.out.println("as_var1" + " --> " + rcs_2.get_definition_string ("as_var1", "not found"));
+				System.out.println("as_var2" + " --> " + rcs_2.get_definition_double ("as_var2", -1000.0));
+				System.out.println("no_var1" + " --> " + rcs_2.get_definition_string ("no_var1", "not found"));
+				System.out.println("no_var2" + " --> " + rcs_2.get_definition_double ("no_var2", -1000.0));
+
+				// Read definitions from aftershock section
+
+				System.out.println();
+				System.out.println("***** Definitions From Aftershock Section, Re-Read");
+
+				rcs_2 = rcf_2.req_section (RuptureCatalogSection.SECTION_NAME_AFTERSHOCK);
+
+				System.out.println();
+				System.out.println("root_var1" + " --> " + rcs_2.get_definition_string ("root_var1", "not found"));
+				System.out.println("root_var2" + " --> " + rcs_2.get_definition_double ("root_var2", -1000.0));
+				System.out.println("def_var1" + " --> " + rcs_2.get_definition_string ("def_var1", "not found"));
+				System.out.println("def_var2" + " --> " + rcs_2.get_definition_double ("def_var2", -1000.0));
+				System.out.println("as_var1" + " --> " + rcs_2.get_definition_string ("as_var1", "not found"));
+				System.out.println("as_var2" + " --> " + rcs_2.get_definition_double ("as_var2", -1000.0));
+				System.out.println("no_var1" + " --> " + rcs_2.get_definition_string ("no_var1", "not found"));
+				System.out.println("no_var2" + " --> " + rcs_2.get_definition_double ("no_var2", -1000.0));
+
+				// Write the file to a string
+
+				StringWriter sw_2 = new StringWriter();
+				try (
+					LineConsumerFile lcf = new LineConsumerFile (sw_2);
+				){
+					try {
+						rcf_2.write_all_sections (lcf);
+					} catch (Exception e) {
+						throw new RuntimeException ("Error writing file: " + lcf.error_locus(), e);
+					}
+				}
+
+				// Show the String
+
+				String file_text_2 = sw_2.toString();
+
+				System.out.println();
+				System.out.println("***** File Text Re-Written");
+
+				System.out.println();
+				System.out.println(file_text_2);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  earthquake_event_id...
+		// Read the earthquake list from Comcat, and display it.
+		// Store into a RuptureCatalogFile object.
+		// Write to a string with local catalog line format, and display it.
+		// Display the string.
+		// Read into a new RuptureCatalogFile object.
+		// Obtain earthquake list, and display them.
+		// Write back out into a new string, and display it.
+		// Note: Unlike tests #1 and #2, all earthquakes are stored in the
+		// default section, and there are no comments or definitions, and no origin.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// 1 or more additional arguments
+
+			if (!( args.length >= 2 )) {
+				System.err.println ("RuptureCatalogFile : Invalid 'test3' subcommand");
+				return;
+			}
+
+			try {
+
+				int num_earthquake = args.length - 1;
+				String[] earthquake_event_ids = new String[num_earthquake];
+				for (int i = 0; i < num_earthquake; ++i) {
+					earthquake_event_ids[i] = args[i + 1];
+				}
+
+				// Say hello
+
+				System.out.println ("Testing file write and read with local catalog format.");
+				System.out.println ("earthquake_event_ids = " + String.join (" ", earthquake_event_ids));
+
+				// Preliminaries
+
+				System.out.println();
+				System.out.println("***** Preliminaries");
+
+				boolean wrapLon = false;
+				boolean extendedInfo = true;
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Make a line formatter.
+
+				RuptureLineFormatLocalCatalog line_fmt = new RuptureLineFormatLocalCatalog();
+
+				System.out.println();
+				System.out.println(line_fmt.show_format_info());
+
+				// Load earthquakes from Comcat
+
+				System.out.println();
+				System.out.println("***** Earthquakes");
+
+				ArrayList<ObsEqkRupture> earthquake_list = new ArrayList<ObsEqkRupture>();
+
+				for (String id : earthquake_event_ids) {
+					earthquake_list.add (accessor.fetchEvent (id, wrapLon, extendedInfo));
+				}
+
+				for (ObsEqkRupture rup : earthquake_list) {
+					System.out.println();
+					System.out.println(ComcatOAFAccessor.rupToString (rup));
+				}
+
+				// Set up the catalog file
+
+				RuptureCatalogFile rcf = new RuptureCatalogFile();
+
+				RuptureCatalogSection rcs = rcf.get_root_section();
+				rcs.lock_section();
+
+				rcs = rcf.get_default_section();
+				rcs.set_line_formatter (line_fmt, false, false);
+				rcs.lock_section();
+				rcs.add_eqk_rupture_list (earthquake_list);
+
+				// Write the file to a string
+
+				StringWriter sw = new StringWriter();
+				try (
+					LineConsumerFile lcf = new LineConsumerFile (sw);
+				){
+					try {
+						rcf.write_all_sections (lcf);
+					} catch (Exception e) {
+						throw new RuntimeException ("Error writing file: " + lcf.error_locus(), e);
+					}
+				}
+
+				// Show the String
+
+				String file_text = sw.toString();
+
+				System.out.println();
+				System.out.println("***** File Text");
+
+				System.out.println();
+				System.out.println(file_text);
+
+				// Make a new file for input
+
+				rcf = null;
+				rcs = null;
+				sw = null;
+
+				RuptureCatalogFile rcf_2 = new RuptureCatalogFile();
+				rcf_2.set_auto_section (false);
+
+				RuptureCatalogSection rcs_2 = rcf_2.get_default_section ();
+				rcs_2.set_line_formatter (line_fmt, false, false);
+				rcs_2.lock_section();
+
+				// Read the file from a string
+
+				try (
+					LineSupplierFile lsf = new LineSupplierFile (new StringReader (file_text));
+				){
+					try {
+						rcf_2.read_all_sections (lsf);
+					} catch (Exception e) {
+						throw new RuntimeException ("Error reading file: " + lsf.error_locus(), e);
+					}
+				}
+
+				file_text = null;
+
+				// Read the earthquakes
+
+				System.out.println();
+				System.out.println("***** Earthquakes Read-In");
+
+				ArrayList<ObsEqkRupture> earthquake_list_2 = new ArrayList<ObsEqkRupture>();
+
+				rcs_2 = rcf_2.get_default_section ();
+				rcs_2.get_eqk_rupture_list (earthquake_list_2, wrapLon);
+
+				for (ObsEqkRupture rup : earthquake_list_2) {
+					System.out.println();
+					System.out.println(ComcatOAFAccessor.rupToString (rup));
+				}
+
+				// Write the file to a string
+
+				StringWriter sw_2 = new StringWriter();
+				try (
+					LineConsumerFile lcf = new LineConsumerFile (sw_2);
+				){
+					try {
+						rcf_2.write_all_sections (lcf);
+					} catch (Exception e) {
+						throw new RuntimeException ("Error writing file: " + lcf.error_locus(), e);
+					}
 				}
 
 				// Show the String

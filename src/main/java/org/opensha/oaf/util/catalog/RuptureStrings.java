@@ -215,7 +215,7 @@ public class RuptureStrings {
 		case IDMISS_EMPTY:
 			return new String[0];
 		case IDMISS_EXCEPT:
-			throw new IllegalArgumentException ("RuptureStrings.check_valid_id_array: Missing id");
+			throw new IllegalArgumentException ("RuptureStrings.check_valid_id_array: Missing id array");
 		}
 		throw new IllegalArgumentException ("RuptureStrings.check_valid_id_array: Invalid missing ID option: idmiss = " + idmiss);
 	}
@@ -700,6 +700,56 @@ public class RuptureStrings {
 
 	public final String get_coerce_id_list (String sep, String prefix, String suffix, int idmiss) {
 		return id_array_to_string (eqk_id_list, sep, prefix, suffix, idmiss);
+	}
+
+
+	// Set coerced id list, and also set the event_id.
+	// If string array is missing (null or empty), take the action selected by idmiss = IDMISS_XXXX.
+	// If string array is missing and no exception is thrown, set the event id to null.
+
+	public final void set_coerce_id_list_with_event_id (String[] id_list, int idmiss) {
+		set_coerce_id_list (id_list, idmiss);
+		if (eqk_id_list != null && eqk_id_list.length > 0) {
+			eqk_event_id = eqk_id_list[0];
+		} else {
+			eqk_event_id = null;
+		}
+		return;
+	}
+
+
+	// Get coerced id list, with event_id as a fallback.
+	// If string array is missing (null or empty), make a one-element array containing the event id.
+	// If the string array and event id are both available, check that the first element
+	// of the array equals the event id, and throw an exception if they don't agree.
+	// If the string array and event id are both missing, take the action selected by idmiss = IDMISS_XXXX.
+
+	public final String[] get_coerce_id_list_with_event_id (int idmiss) {
+		String[] id_list = get_coerce_id_list (IDMISS_NULL);
+		String event_id = get_coerce_event_id (IDMISS_NULL);
+
+		if (id_list != null) {
+			if (event_id != null) {
+				if (!( event_id.equals (id_list[0]) )) {
+					throw new IllegalArgumentException ("RuptureStrings.get_coerce_id_list_with_event_id: Inconsistency between event_id and id_list: event_id = " + event_id + ", id_list[0] = " + id_list[0]);
+				}
+			}
+			return id_list;
+		}
+		if (event_id != null) {
+			id_list = new String[1];
+			id_list[0] = event_id;
+			return id_list;
+		}
+		switch (idmiss) {
+		case IDMISS_NULL:
+			return null;
+		case IDMISS_EMPTY:
+			return new String[0];
+		case IDMISS_EXCEPT:
+			throw new IllegalArgumentException ("RuptureStrings.get_coerce_id_list_with_event_id: Neither id_list nor event_id are available");
+		}
+		throw new IllegalArgumentException ("RuptureStrings.get_coerce_id_list_with_event_id: Invalid missing ID option: idmiss = " + idmiss);
 	}
 
 

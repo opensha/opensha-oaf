@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -111,6 +114,70 @@ public class RuptureCatalogSection {
 		return name.equals (SECTION_NAME_DEFAULT);
 	}
 
+
+
+
+	//----- Input options -----
+
+
+	// True if this section has been seen during input.
+
+	private boolean f_input_seen = false;
+
+	// True if this section can be split during input.
+
+	private boolean f_input_splittable = false;
+
+	// Set of definition names that are allowed during input, or null if no restriction.
+	// Note: This has no effect on definitions added programmatically.
+
+	private HashSet<String> input_allowed_def_names = null;
+
+
+	// Get flag indicating if this section has been seen during input.
+
+	public final boolean is_input_seen () {
+		return f_input_seen;
+	}
+
+
+	// Set flag indicating if this section can be split during input.
+	// Default is that the section cannot be split.
+
+	public final RuptureCatalogSection set_input_splittable (boolean f_splittable) {
+		f_input_splittable = f_splittable;
+		return this;
+	}
+
+
+	// Set the definition names that are allowed during input, or null if no restriction.
+	// Default is that all names are allowed.
+	// The names can be supplied as a collection, as an array, or as arguments to the call.
+	// Note: Calling with no arguments disallows all definitions during input.
+
+	public final RuptureCatalogSection set_allowed_def_names (Collection<String> allowed_def_names) {
+		if (allowed_def_names == null) {
+			input_allowed_def_names = null;
+		}
+		else {
+			input_allowed_def_names = new HashSet<String> (allowed_def_names);
+		}
+		return this;
+	}
+
+
+	public final RuptureCatalogSection set_allowed_def_names (String... allowed_def_names) {
+		if (allowed_def_names == null) {
+			input_allowed_def_names = null;
+		}
+		else {
+			input_allowed_def_names = new HashSet<String> ();
+			for (String s : allowed_def_names) {
+				input_allowed_def_names.add (s);
+			}
+		}
+		return this;
+	}
 
 
 
@@ -1090,12 +1157,22 @@ public class RuptureCatalogSection {
 	// Returns null if reached end of file, or the name of the next section in the file.
 	// The function reads until it finds a section line with a different section name,
 	// or until it reaches end of file.
-	// Note: Sections in the file are considered to be open, that is, a section can be
-	// split over multiple blocks of lines.  So, this function can be used to continue
+	// Note: Sections in the file are open if they are splittable, which allows them to
+	// be split over multiple blocks of lines.  So, this function can be used to continue
 	// reading a partially-read section, and there is no check for completeness.
 	// Note: The section is automatically locked when the first rupture is read.
 
 	public String read_section (Supplier<String> src, SectionFormat fmt) {
+
+		// If this section has been seen before, check if it is splittable
+
+		if (f_input_seen) {
+			if (!( f_input_splittable )) {
+				throw new RuntimeException ("RuptureCatalogSection.read_section: Section has already been seen during input: section name = " + name);
+			}
+		}
+
+		f_input_seen = true;
 
 		// Flag is true if we have not seen any ruptures yet
 
@@ -1128,9 +1205,22 @@ public class RuptureCatalogSection {
 				Matcher matcher = fmt.definition_pattern.matcher (line);
 				if (matcher.matches()) {
 
+					// Get definition name and value
+
+					String def_name = matcher.group(1);
+					String def_value = matcher.group(2);
+
+					// Check if this definition is allowed
+
+					if (input_allowed_def_names != null) {
+						if (!( input_allowed_def_names.contains (def_name) )) {
+							throw new RuntimeException ("RuptureCatalogSection.read_section: Disallowed definition name in file: section name = " + name + ", line = " + line);
+						}
+					}
+
 					// Add the definition
 
-					add_definition (matcher.group(1), matcher.group(2));
+					add_definition (def_name, def_value);
 					continue;
 				}
 

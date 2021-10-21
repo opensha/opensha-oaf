@@ -194,6 +194,21 @@ public abstract class RuptureLineFormatBase {
 	}
 
 
+	// ID list, as an array of strings, with event id
+	// Format: If id list is not available, use event id to construct a one-element list.
+	// Format: If id list and event id are both available, check event id is the first element in the id list.
+	// Parse: Set event id equal to the first element in the id list.
+
+	protected String[] format_id_list_with_event_id (RuptureFormatter rf, int idmiss) {
+		return rf.eqk_strs.get_coerce_id_list_with_event_id (idmiss);
+	}
+
+	protected void parse_id_list_with_event_id (RuptureFormatter rf, String[] x, int idmiss) {
+		rf.eqk_strs.set_coerce_id_list_with_event_id (x, idmiss);
+		return;
+	}
+
+
 	// Magnitude
 
 	protected FormatDoubleInfo fdi_mag = null;
