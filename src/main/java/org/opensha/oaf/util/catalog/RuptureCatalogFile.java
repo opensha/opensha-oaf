@@ -74,6 +74,14 @@ public class RuptureCatalogFile {
 
 	private ArrayList<String> auto_input_allowed_def_names = null;
 
+	// True if absolute/relative converter is allowed during input of automatically created sections.
+
+	private boolean f_auto_input_abs_rel_conv = true;
+
+	// True if line formatter is allowed during input of automatically created sections.
+
+	private boolean f_auto_input_line_formatter = true;
+
 	// True if section line is written for default section.
 
 	private boolean f_default_section_line = false;
@@ -191,6 +199,24 @@ public class RuptureCatalogFile {
 				auto_input_allowed_def_names.add (s);
 			}
 		}
+		return this;
+	}
+
+
+	// Set flag indicating if absolute/relative converter is allowed during input of automatically created sections.
+	// Default is true.
+
+	public final RuptureCatalogFile set_auto_input_abs_rel_conv (boolean f_allowed) {
+		f_auto_input_abs_rel_conv = f_allowed;
+		return this;
+	}
+
+
+	// Set flag indicating if line formatter is allowed during input of automatically created sections.
+	// Default is true.
+
+	public final RuptureCatalogFile set_auto_input_line_formatter (boolean f_allowed) {
+		f_auto_input_line_formatter = f_allowed;
 		return this;
 	}
 
@@ -382,6 +408,8 @@ public class RuptureCatalogFile {
 					rcs = add_section (next_input_section);
 					rcs.set_input_splittable (f_auto_input_splittable);
 					rcs.set_allowed_def_names (auto_input_allowed_def_names);
+					rcs.set_input_abs_rel_conv (f_auto_input_abs_rel_conv);
+					rcs.set_input_line_formatter (f_auto_input_line_formatter);
 				} else {
 					throw new RuntimeException ("RuptureCatalogFile.read_next_section: Section not found and section creation is not allowed, section name = " + next_input_section);
 				}
@@ -432,6 +460,66 @@ public class RuptureCatalogFile {
 		// Reached end of file
 
 		return;
+	}
+
+
+
+
+	//----- Convenience functions -----
+
+
+
+
+	// Set up a mainshock section.
+	// Add a mainshock section under the default section, and set it to have a
+	// maximum of 1 rupture, not splittable, with no definitons, converter, or formatter.
+	// Also locks the section.
+	// Returns the section that was created.
+
+	public RuptureCatalogSection setup_mainshock_section () {
+		RuptureCatalogSection rcs = add_section (RuptureCatalogSection.SECTION_NAME_MAINSHOCK);
+		rcs.set_max_ruptures (1);
+		rcs.set_input_splittable (false);
+		rcs.set_allowed_def_names (new ArrayList<String>());
+		rcs.set_input_abs_rel_conv (false);
+		rcs.set_input_line_formatter (false);
+		rcs.lock_section();
+		return rcs;
+	}
+
+
+	// Get the mainshock section.
+	// Throws an exception if the mainshock section does not exist.
+
+	public RuptureCatalogSection req_mainshock_section () {
+		return req_section (RuptureCatalogSection.SECTION_NAME_MAINSHOCK);
+	}
+
+
+
+
+	// Set up an aftershock section.
+	// Add an aftershock section under the default section, and set it to be
+	// not splittable, with no definitons, converter, or formatter.
+	// Also locks the section.
+	// Returns the section that was created.
+
+	public RuptureCatalogSection setup_aftershock_section () {
+		RuptureCatalogSection rcs = add_section (RuptureCatalogSection.SECTION_NAME_AFTERSHOCK);
+		rcs.set_input_splittable (false);
+		rcs.set_allowed_def_names (new ArrayList<String>());
+		rcs.set_input_abs_rel_conv (false);
+		rcs.set_input_line_formatter (false);
+		rcs.lock_section();
+		return rcs;
+	}
+
+
+	// Get the aftershock section.
+	// Throws an exception if the aftershock section does not exist.
+
+	public RuptureCatalogSection req_aftershock_section () {
+		return req_section (RuptureCatalogSection.SECTION_NAME_AFTERSHOCK);
 	}
 
 

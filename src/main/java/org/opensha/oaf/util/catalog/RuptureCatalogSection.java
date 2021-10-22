@@ -133,6 +133,14 @@ public class RuptureCatalogSection {
 
 	private HashSet<String> input_allowed_def_names = null;
 
+	// True if absolute/relative converter is allowed during input.
+
+	private boolean f_input_abs_rel_conv = true;
+
+	// True if line formatter is allowed during input.
+
+	private boolean f_input_line_formatter = true;
+
 
 	// Get flag indicating if this section has been seen during input.
 
@@ -176,6 +184,24 @@ public class RuptureCatalogSection {
 				input_allowed_def_names.add (s);
 			}
 		}
+		return this;
+	}
+
+
+	// Set flag indicating if absolute/relative converter is allowed during input.
+	// Default is true.
+
+	public final RuptureCatalogSection set_input_abs_rel_conv (boolean f_allowed) {
+		f_input_abs_rel_conv = f_allowed;
+		return this;
+	}
+
+
+	// Set flag indicating if line formatter is allowed during input.
+	// Default is true.
+
+	public final RuptureCatalogSection set_input_line_formatter (boolean f_allowed) {
+		f_input_line_formatter = f_allowed;
 		return this;
 	}
 
@@ -267,7 +293,11 @@ public class RuptureCatalogSection {
 
 	// Known definition names.
 
-	public static final String def_name_wrapLon = "wrapLon";	// The wrapLon parameter.
+	public static final String DEF_NAME_WRAP_LON = "wrap_lon";		// The wrapLon parameter.
+
+	public static final String DEF_NAME_TIME_START = "time_start";	// The timeStart parameter.
+
+	public static final String DEF_NAME_TIME_END = "time_end";		// The timeEnd parameter.
 
 
 	// The definitions for this section.
@@ -625,19 +655,19 @@ public class RuptureCatalogSection {
 	//----- Absolute/relative converter -----
 
 
-	// The definition key used for specifying a line formatter.
-
-	public static final String ABS_REL_CONV_KEY = "coordinate_transform";
-
-
 	// The absolute/relative converter, or null if none.
 
 	private AbsRelTimeLocConverter abs_rel_conv = null;
 
 
-	// True if non-null abs_rel_conv can be overridden by a definition.
-	// If true, and there is a definition at the time the section is locked,
-	// then the definition replaces the value of abs_rel_conv.
+	// The absolute/relative converter description, or null if none.
+
+	private String abs_rel_conv_description = null;
+
+
+	// True if non-null abs_rel_conv can be overridden by a description.
+	// If true, and there is a description at the time the section is locked,
+	// then the description replaces the value of abs_rel_conv.
 
 	private boolean f_default_abs_rel_conv = false;
 
@@ -649,29 +679,56 @@ public class RuptureCatalogSection {
 	}
 
 
+	// Get the absolute/relative converter description, or null if none.
+
+	public final String get_abs_rel_conv_description () {
+		return abs_rel_conv_description;
+	}
+
+
 	// Set the absolute/relative converter.
 	// Parameters:
 	//  the_abs_rel_conv = Converter object, can be null.
-	//  f_define = True to also write a definition.
-	//  f_default = True if converter can be overridden by a definition.
+	//  f_describe = True to also write a descrption.
+	//  f_default = True if converter can be overridden by a description.
 	// This can only be called if the section is not locked.
-	// Note: f_define and f_default should not both be true.
+	// Note: f_describe and f_default should not both be true.
 
-	public final void set_abs_rel_conv (AbsRelTimeLocConverter the_abs_rel_conv, boolean f_define, boolean f_default) {
+	public final void set_abs_rel_conv (AbsRelTimeLocConverter the_abs_rel_conv, boolean f_describe, boolean f_default) {
 		if (f_locked) {
 			throw new IllegalStateException ("RuptureCatalogSection.set_abs_rel_conv: Section is already locked: section = " + name);
 		}
 		abs_rel_conv = the_abs_rel_conv;
 		f_default_abs_rel_conv = f_default;
 
-		// If desired, write a definition, or remove definition if converter is null
+		// If desired, write a descrption, or remove descrption if converter is null
 
-		if (f_define) {
+		if (f_describe) {
 			if (abs_rel_conv == null) {
-				add_definition (ABS_REL_CONV_KEY, null);
+				abs_rel_conv_description = null;
 			} else {
-				add_definition (ABS_REL_CONV_KEY, AbsRelTimeLocConverterFactory.describe_abs_rel_conv (abs_rel_conv));
+				abs_rel_conv_description = AbsRelTimeLocConverterFactory.describe_abs_rel_conv (abs_rel_conv);
 			}
+		}
+		return;
+	}
+
+
+	// Set the absolute/relative converter description.
+	// If non-null and non-empty, the description must be valid as a definition value.
+	// This can only be called if the section is not locked.
+
+	public final void set_abs_rel_conv_description (String description) {
+		if (f_locked) {
+			throw new IllegalStateException ("RuptureCatalogSection.set_abs_rel_conv_description: Section is already locked: section = " + name);
+		}
+		if (description == null || description.isEmpty()) {
+			abs_rel_conv_description = null;
+		} else {
+			if (!( is_valid_definition_value (description) )) {
+				throw new IllegalArgumentException ("RuptureCatalogSection.set_abs_rel_conv_description: Invalid absolute/relative converter description: section = " + name + ", description = " + description);
+			}
+			abs_rel_conv_description = description;
 		}
 		return;
 	}
@@ -682,20 +739,17 @@ public class RuptureCatalogSection {
 
 	private final void lock_abs_rel_conv () {
 
-		// If there is no converter, or it can be overridden by a definition ...
+		// If there is no converter, or it can be overridden by a description ...
 
 		if (abs_rel_conv == null || f_default_abs_rel_conv) {
 
-			// If we have a definition, use it
+			// If we have a description, use it
 
-			String abs_rel_description = get_definition (ABS_REL_CONV_KEY);
-
-			if (abs_rel_description != null) {
-
+			if (abs_rel_conv_description != null) {
 				try {
-					abs_rel_conv = AbsRelTimeLocConverterFactory.make_abs_rel_conv (abs_rel_description);
+					abs_rel_conv = AbsRelTimeLocConverterFactory.make_abs_rel_conv (abs_rel_conv_description);
 				} catch (Exception e) {
-					throw new RuntimeException ("RuptureCatalogSection.lock_abs_rel_conv: Error making absolute/relative converter: section = " + name + ", definition = " + abs_rel_description, e);
+					throw new RuntimeException ("RuptureCatalogSection.lock_abs_rel_conv: Error making absolute/relative converter: section = " + name + ", definition = " + abs_rel_conv_description, e);
 				}
 			}
 		}
@@ -715,19 +769,19 @@ public class RuptureCatalogSection {
 	//----- Line formatter -----
 
 
-	// The definition key used for specifying a line formatter.
-
-	public static final String LINE_FORMATTER_KEY = "line_format";
-
-
 	// The line formatter for this section, or null if none.
 
 	private RuptureLineFormatter line_formatter = null;
 
 
-	// True if non-null line_formatter can be overridden by a definition.
-	// If true, and there is a definition at the time the section is locked,
-	// then the definition replaces the value of line_formatter.
+	// The line formatter description, or null if none.
+
+	private String line_formatter_description = null;
+
+
+	// True if non-null line_formatter can be overridden by a description.
+	// If true, and there is a description at the time the section is locked,
+	// then the description replaces the value of line_formatter.
 
 	private boolean f_default_line_formatter = false;
 
@@ -739,32 +793,59 @@ public class RuptureCatalogSection {
 	}
 
 
+	// Get the line formatter description, or null if none.
+
+	public final String get_line_formatter_description () {
+		return line_formatter_description;
+	}
+
+
 	// Set the line formatter.
 	// Parameters:
 	//  the_line_formatter = Formatter object, can be null.
-	//  f_define = True to also write a definition.
-	//  f_default = True if formatter can be overridden by a definition.
+	//  f_describe = True to also write a description.
+	//  f_default = True if formatter can be overridden by a description.
 	// This can only be called if the section is not locked.
-	// Note: f_define and f_default should not both be true.
+	// Note: f_describe and f_default should not both be true.
 	// Note: If the line formatter holds an absolute/relative converter, it should
 	// be the same one set by set_abs_rel_conv; and set_abs_rel_conv should be called
 	// before this function.
 
-	public final void set_line_formatter (RuptureLineFormatter the_line_formatter, boolean f_define, boolean f_default) {
+	public final void set_line_formatter (RuptureLineFormatter the_line_formatter, boolean f_describe, boolean f_default) {
 		if (f_locked) {
 			throw new IllegalStateException ("RuptureCatalogSection.set_line_formatter: Section is already locked: section = " + name);
 		}
 		line_formatter = the_line_formatter;
 		f_default_line_formatter = f_default;
 
-		// If desired, write a definition, or remove definition if formatter is null
+		// If desired, write a description, or remove description if formatter is null
 
-		if (f_define) {
+		if (f_describe) {
 			if (line_formatter == null) {
-				add_definition (LINE_FORMATTER_KEY, null);
+				line_formatter_description = null;
 			} else {
-				add_definition (LINE_FORMATTER_KEY, RuptureLineFormatterFactory.describe_line_formatter (line_formatter));
+				line_formatter_description = RuptureLineFormatterFactory.describe_line_formatter (line_formatter);
 			}
+		}
+		return;
+	}
+
+
+	// Set the line formatter description.
+	// If non-null and non-empty, the description must be valid as a definition value.
+	// This can only be called if the section is not locked.
+
+	public final void set_line_formatter_description (String description) {
+		if (f_locked) {
+			throw new IllegalStateException ("RuptureCatalogSection.set_line_formatter_description: Section is already locked: section = " + name);
+		}
+		if (description == null || description.isEmpty()) {
+			line_formatter_description = null;
+		} else {
+			if (!( is_valid_definition_value (description) )) {
+				throw new IllegalArgumentException ("RuptureCatalogSection.set_line_formatter_description: Invalid line formatter description: section = " + name + ", description = " + description);
+			}
+			line_formatter_description = description;
 		}
 		return;
 	}
@@ -776,20 +857,17 @@ public class RuptureCatalogSection {
 
 	private final void lock_line_formatter () {
 
-		// If there is no formatter, or it can be overridden by a definition ...
+		// If there is no formatter, or it can be overridden by a description ...
 
 		if (line_formatter == null || f_default_line_formatter) {
 
-			// If we have a definition, use it
+			// If we have a description, use it
 
-			String line_fmt_description = get_definition (LINE_FORMATTER_KEY);
-
-			if (line_fmt_description != null) {
-
+			if (line_formatter_description != null) {
 				try {
-					line_formatter = RuptureLineFormatterFactory.make_line_formatter (line_fmt_description, abs_rel_conv);
+					line_formatter = RuptureLineFormatterFactory.make_line_formatter (line_formatter_description, abs_rel_conv);
 				} catch (Exception e) {
-					throw new RuntimeException ("RuptureCatalogSection.lock_line_formatter: Error making line formatter: section = " + name + ", definition = " + line_fmt_description, e);
+					throw new RuntimeException ("RuptureCatalogSection.lock_line_formatter: Error making line formatter: section = " + name + ", description = " + line_formatter_description, e);
 				}
 			}
 		}
@@ -814,7 +892,7 @@ public class RuptureCatalogSection {
 	private final ArrayList<String> comment_list = new ArrayList<String>();
 
 
-	// Add a comment to the list of ruptures.
+	// Add a comment to the list of comments.
 
 	public final void add_comment (String comment) {
 		comment_list.add (comment);
@@ -826,6 +904,36 @@ public class RuptureCatalogSection {
 
 	public final Iterator<String> get_comment_iterator () {
 		return comment_list.iterator();
+	}
+
+
+	// Erase all the comments.
+
+	public final void clear_comments () {
+		comment_list.clear();
+		return;
+	}
+
+
+	// Add all comments from the collection to the list of comments.
+	// If the argument is null, perform no operation.
+
+	public final void add_all_comments (Collection<String> comments) {
+		if (comments != null) {
+			comment_list.addAll (comments);
+		}
+		return;
+	}
+
+
+	// Add all comments from the list of comments to the collection.
+	// If the argument is null, perform no operation.
+
+	public final void get_all_comments (Collection<String> comments) {
+		if (comments != null) {
+			comments.addAll (comment_list);
+		}
+		return;
 	}
 
 
@@ -1029,6 +1137,27 @@ public class RuptureCatalogSection {
 
 		public Pattern definition_pattern;
 
+		// Format that is used (in String.format) to make a conversion line.
+		// The first (and only) argument is the absolute/relative converter description.
+
+		public String conversion_fmt;
+
+		// Pattern that is used to parse a conversion line.
+		// Capture group 1 is the absolute/relative converter description.
+
+		public Pattern conversion_pattern;
+
+		// Format that is used (in String.format) to make a format line.
+		// The first (and only) argument is the line formatter description.
+
+		public String format_fmt;
+
+		// Pattern that is used to parse a format line.
+		// Capture group 1 is the line formatter description.
+
+		public Pattern format_pattern;
+
+
 
 		// Constructor - Make an empty format.
 
@@ -1039,6 +1168,10 @@ public class RuptureCatalogSection {
 			section_pattern = null;
 			definition_fmt = null;
 			definition_pattern = null;
+			conversion_fmt = null;
+			conversion_pattern = null;
+			format_fmt = null;
+			format_pattern = null;
 		}
 
 
@@ -1050,7 +1183,11 @@ public class RuptureCatalogSection {
 			String section_fmt,
 			Pattern section_pattern,
 			String definition_fmt,
-			Pattern definition_pattern
+			Pattern definition_pattern,
+			String conversion_fmt,
+			Pattern conversion_pattern,
+			String format_fmt,
+			Pattern format_pattern
 		) {
 			this.comment_prefix = comment_prefix;
 			this.control_prefix = control_prefix;
@@ -1058,6 +1195,10 @@ public class RuptureCatalogSection {
 			this.section_pattern = section_pattern;
 			this.definition_fmt = definition_fmt;
 			this.definition_pattern = definition_pattern;
+			this.conversion_fmt = conversion_fmt;
+			this.conversion_pattern = conversion_pattern;
+			this.format_fmt = format_fmt;
+			this.format_pattern = format_pattern;
 		}
 
 
@@ -1069,7 +1210,11 @@ public class RuptureCatalogSection {
 			String section_fmt,
 			Pattern section_pattern,
 			String definition_fmt,
-			Pattern definition_pattern
+			Pattern definition_pattern,
+			String conversion_fmt,
+			Pattern conversion_pattern,
+			String format_fmt,
+			Pattern format_pattern
 		) {
 			this.comment_prefix = comment_prefix;
 			this.control_prefix = control_prefix;
@@ -1077,6 +1222,10 @@ public class RuptureCatalogSection {
 			this.section_pattern = section_pattern;
 			this.definition_fmt = definition_fmt;
 			this.definition_pattern = definition_pattern;
+			this.conversion_fmt = conversion_fmt;
+			this.conversion_pattern = conversion_pattern;
+			this.format_fmt = format_fmt;
+			this.format_pattern = format_pattern;
 		}
 	}
 
@@ -1088,10 +1237,14 @@ public class RuptureCatalogSection {
 	private static final SectionFormat common_format = new SectionFormat (
 		"#",
 		":",
-		":section: %s",
-		Pattern.compile ("[ \\t]*:[ \\t]*section[ \\t]*:[ \\t]*([a-zA-Z_][a-zA-Z0-9_]*)[ \\t]*"),
+		":begin: %s",
+		Pattern.compile ("[ \\t]*:[ \\t]*begin[ \\t]*:[ \\t]*([a-zA-Z_][a-zA-Z0-9_]*)[ \\t]*"),
 		":define: %s = %s",
-		Pattern.compile ("[ \\t]*:[ \\t]*define[ \\t]*:[ \\t]*([a-zA-Z_][a-zA-Z0-9_]*)[ \\t]*=[ \\t]*(\\S(?:[^\\n\\r]*\\S)?)[ \\t]*")
+		Pattern.compile ("[ \\t]*:[ \\t]*define[ \\t]*:[ \\t]*([a-zA-Z_][a-zA-Z0-9_]*)[ \\t]*=[ \\t]*(\\S(?:[^\\n\\r]*\\S)?)[ \\t]*"),
+		":convert: %s",
+		Pattern.compile ("[ \\t]*:[ \\t]*convert[ \\t]*:[ \\t]*(\\S(?:[^\\n\\r]*\\S)?)[ \\t]*"),
+		":format: %s",
+		Pattern.compile ("[ \\t]*:[ \\t]*format[ \\t]*:[ \\t]*(\\S(?:[^\\n\\r]*\\S)?)[ \\t]*")
 	);
 
 	public static SectionFormat get_common_format () {
@@ -1123,6 +1276,18 @@ public class RuptureCatalogSection {
 
 		for (Iterator<String> it = get_comment_iterator(); it.hasNext(); ) {
 			dest.accept (fmt.comment_prefix + it.next());
+		}
+
+		// Write the conversion line
+
+		if (get_abs_rel_conv_description() != null) {
+			dest.accept (String.format (fmt.conversion_fmt, get_abs_rel_conv_description()));
+		}
+
+		// Write the format line
+
+		if (get_line_formatter_description() != null) {
+			dest.accept (String.format (fmt.format_fmt, get_line_formatter_description()));
 		}
 
 		// Write the definitions
@@ -1235,6 +1400,40 @@ public class RuptureCatalogSection {
 					if (!( matched_name.equals(name) )) {
 						return matched_name;
 					}
+					continue;
+				}
+
+				// Try to match a conversion line
+
+				matcher = fmt.conversion_pattern.matcher (line);
+				if (matcher.matches()) {
+
+					// Check if conversion line is allowed
+
+					if (!( f_input_abs_rel_conv )) {
+						throw new RuntimeException ("RuptureCatalogSection.read_section: Disallowed conversion description in file: section name = " + name + ", line = " + line);
+					}
+
+					// Save the converter description
+
+					set_abs_rel_conv_description (matcher.group(1));
+					continue;
+				}
+
+				// Try to match a format line
+
+				matcher = fmt.format_pattern.matcher (line);
+				if (matcher.matches()) {
+
+					// Check if format line is allowed
+
+					if (!( f_input_line_formatter )) {
+						throw new RuntimeException ("RuptureCatalogSection.read_section: Disallowed format description in file: section name = " + name + ", line = " + line);
+					}
+
+					// Save the formatter description
+
+					set_line_formatter_description (matcher.group(1));
 					continue;
 				}
 

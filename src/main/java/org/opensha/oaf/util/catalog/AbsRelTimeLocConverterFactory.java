@@ -23,7 +23,7 @@ public class AbsRelTimeLocConverterFactory {
 
 	// Identifiers for known types.
 
-	public static final String ABS_REL_OEORIGIN_TEXT = "etas_origin";
+	public static final String ABS_REL_OEORIGIN_TEXT = "origin";
 	public static final String ABS_REL_OEORIGIN_CLASS = "org.opensha.oaf.oetas.OEOrigin";
 
 
