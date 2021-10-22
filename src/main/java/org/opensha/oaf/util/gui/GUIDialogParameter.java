@@ -1,4 +1,4 @@
-package org.opensha.oaf.util;
+package org.opensha.oaf.util.gui;
 
 /**
  * Interface for parameters that display a dialog box.

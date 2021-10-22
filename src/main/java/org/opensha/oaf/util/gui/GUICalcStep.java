@@ -1,4 +1,4 @@
-package org.opensha.oaf.util;
+package org.opensha.oaf.util.gui;
 
 /**
  * One calculation step in a series.

@@ -8,7 +8,7 @@ import java.util.Locale;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
-import org.opensha.oaf.util.GUIExternalCatalog;
+import org.opensha.oaf.util.gui.GUIExternalCatalog;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.catalog.AbsoluteTimeLocation;

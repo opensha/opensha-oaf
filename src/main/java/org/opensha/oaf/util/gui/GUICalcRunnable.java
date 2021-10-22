@@ -1,4 +1,4 @@
-package org.opensha.oaf.util;
+package org.opensha.oaf.util.gui;
 
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;

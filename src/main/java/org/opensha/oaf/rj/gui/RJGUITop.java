@@ -134,14 +134,14 @@ import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
-import org.opensha.oaf.util.GUIConsoleWindow;
-import org.opensha.oaf.util.GUICalcStep;
-import org.opensha.oaf.util.GUICalcRunnable;
-import org.opensha.oaf.util.GUICalcProgressBar;
-import org.opensha.oaf.util.GUIEDTException;
-import org.opensha.oaf.util.GUIEDTRunnable;
-import org.opensha.oaf.util.GUIEventAlias;
-import org.opensha.oaf.util.GUIExternalCatalog;
+import org.opensha.oaf.util.gui.GUIConsoleWindow;
+import org.opensha.oaf.util.gui.GUICalcStep;
+import org.opensha.oaf.util.gui.GUICalcRunnable;
+import org.opensha.oaf.util.gui.GUICalcProgressBar;
+import org.opensha.oaf.util.gui.GUIEDTException;
+import org.opensha.oaf.util.gui.GUIEDTRunnable;
+import org.opensha.oaf.util.gui.GUIEventAlias;
+import org.opensha.oaf.util.gui.GUIExternalCatalog;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;

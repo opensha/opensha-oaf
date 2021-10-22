@@ -1,4 +1,4 @@
-package org.opensha.oaf.util;
+package org.opensha.oaf.util.gui;
 
 import javax.swing.SwingUtilities;
 

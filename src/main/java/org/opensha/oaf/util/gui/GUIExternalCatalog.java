@@ -1,4 +1,4 @@
-package org.opensha.oaf.util;
+package org.opensha.oaf.util.gui;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -20,6 +20,8 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.LocationUtils;
+
+import org.opensha.oaf.util.ObsEqkRupMinTimeComparator;
 
 
 /**

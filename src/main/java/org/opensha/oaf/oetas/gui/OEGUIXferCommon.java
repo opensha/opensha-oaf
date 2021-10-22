@@ -1,6 +1,6 @@
 package org.opensha.oaf.oetas.gui;
 
-import org.opensha.oaf.util.GUIEDTException;
+import org.opensha.oaf.util.gui.GUIEDTException;
 
 
 // Operational ETAS GUI - Common functions for transfer structures.

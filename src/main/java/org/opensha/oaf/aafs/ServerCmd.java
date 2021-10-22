@@ -39,7 +39,7 @@ import org.opensha.oaf.util.MarshalImpDataWriter;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TimeSplitOutputStream;
 import org.opensha.oaf.util.ConsoleRedirector;
-import org.opensha.oaf.util.GUICalcProgressBar;
+import org.opensha.oaf.util.gui.GUICalcProgressBar;
 import org.opensha.oaf.util.TestMode;
 
 

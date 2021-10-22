@@ -1,4 +1,4 @@
-package org.opensha.oaf.util;
+package org.opensha.oaf.util.gui;
 
 /**
  * Checked exception class that indicates a function must execute in the event dispatch thread (EDT).
