@@ -295,9 +295,9 @@ public class RuptureCatalogSection {
 
 	public static final String DEF_NAME_WRAP_LON = "wrap_lon";		// The wrapLon parameter.
 
-	public static final String DEF_NAME_TIME_START = "time_start";	// The timeStart parameter.
+	public static final String DEF_NAME_START_TIME = "start_time";	// The timeStart parameter.
 
-	public static final String DEF_NAME_TIME_END = "time_end";		// The timeEnd parameter.
+	public static final String DEF_NAME_END_TIME = "end_time";		// The timeEnd parameter.
 
 
 	// The definitions for this section.
@@ -1080,6 +1080,29 @@ public class RuptureCatalogSection {
 			++n;
 		}
 		return;
+	}
+
+
+	// Convert an ObsEqkRupture to a string, and then back to an ObsEqkRupture.
+	// Parameters:
+	//  rup = Rupture to convert.
+	//  the_line_fmt = Line formatter used to format and then parse the string.
+	//  wrapLon = True to produce longitude in the range 0 to +360, false for -180 to +180.
+	//  the_abs_rel_conv = Converter used to convert relative to absolute coordinates
+	//    when producing the final result (after parsing the string).  If no such
+	//    conversion is needed (e.g., because the line formater produces absolute
+	//    time and location), then the_abs_rel_conv is ignored and can be null.
+	// This function can be used to determine how the rupture will appear if it is
+	// written to a file and then read back in.
+
+	public static ObsEqkRupture round_trip_eqk_rupture (ObsEqkRupture rup, RuptureLineFormatter the_line_fmt, boolean wrapLon, AbsRelTimeLocConverter the_abs_rel_conv) {
+		RuptureFormatter rf_1 = new RuptureFormatter();
+		rf_1.set_eqk_rupture (rup);
+		String line = the_line_fmt.format_line (rf_1);
+		RuptureFormatter rf_2 = new RuptureFormatter();
+		the_line_fmt.parse_line (rf_2, line);
+		ObsEqkRupture result = rf_2.get_eqk_rupture (wrapLon, the_abs_rel_conv);
+		return result;
 	}
 
 

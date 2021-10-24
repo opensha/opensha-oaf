@@ -144,6 +144,13 @@ import org.opensha.oaf.aafs.GUICmd;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import org.opensha.oaf.util.LineConsumerFile;
+import org.opensha.oaf.util.LineSupplierFile;
+
 import org.json.simple.JSONObject;
 
 
@@ -165,15 +172,15 @@ public class OEGUIView extends OEGUIComponent {
 
 	// Index numbers for tabs. [Deprecated]
 
-	private static final int console_tab_index = 0;
-	private static final int epicenter_tab_index = 1;
-	private static final int mag_num_tab_index = 2;
-	private static final int mag_time_tab_index = 3;
-	private static final int cml_num_tab_index = 4;
-	private static final int catalog_tab_index = 5;
-	private static final int pdf_tab_index = 6;
-	private static final int aftershock_expected_index = 7;
-	private static final int forecast_table_tab_index = 8;
+	//private static final int console_tab_index = 0;
+	//private static final int epicenter_tab_index = 1;
+	//private static final int mag_num_tab_index = 2;
+	//private static final int mag_time_tab_index = 3;
+	//private static final int cml_num_tab_index = 4;
+	//private static final int catalog_tab_index = 5;
+	//private static final int pdf_tab_index = 6;
+	//private static final int aftershock_expected_index = 7;
+	//private static final int forecast_table_tab_index = 8;
 
 
 	// Components for tabs.
@@ -1312,6 +1319,53 @@ public class OEGUIView extends OEGUIComponent {
 
 
 
+	//  // Plot the current catalog.
+	//  // This routine can re-plot an existing tab.
+	//  // Must be called with model state >= MODSTATE_CATALOG.
+	//  
+	//  private void plotCatalogText() throws GUIEDTException {
+	//  
+	//  	if (gui_top.get_trace_events()) {
+	//  		System.out.println ("@@@@@ Entry: OEGUIView.plotCatalogText, tab count = " + tabbedPane.getTabCount());
+	//  	}
+	//  
+	//  	if (!( gui_model.modstate_has_catalog() )) {
+	//  		throw new IllegalStateException ("OEGUIView.plotCatalogText - Invalid model state: " + gui_model.cur_modstate_string());
+	//  	}
+	//  
+	//  	StringBuilder sb = new StringBuilder();
+	//  
+	//  	// Header line
+	//  
+	//  	sb.append("# Year\tMonth\tDay\tHour\tMinute\tSec\tLat\tLon\tDepth\tMagnitude\n");
+	//  	
+	//  	// Mainshock
+	//  	
+	//  	sb.append("# Main Shock:\n");
+	//  	sb.append("# ").append(GUIExternalCatalog.getCatalogLine(gui_model.get_cur_mainshock())).append("\n");
+	//  	
+	//  	// Aftershocks
+	//  	
+	//  	for (ObsEqkRupture rup : gui_model.get_cur_aftershocks()) {
+	//  		sb.append(GUIExternalCatalog.getCatalogLine(rup)).append("\n");
+	//  	}
+	//  
+	//  	// Create or modify the text pane
+	//  
+	//  	if (catalogText == null) {
+	//  		catalogText = new JTextArea(sb.toString());
+	//  		catalogText.setEditable(false);
+	//  		catalogTextPane = new JScrollPane(catalogText);
+	//  		tabbedPane.addTab("Catalog", null, catalogTextPane, "Aftershock Catalog");
+	//  	} else {
+	//  		catalogText.setText(sb.toString());
+	//  	}
+	//  	return;
+	//  }
+
+
+
+
 	// Plot the current catalog.
 	// This routine can re-plot an existing tab.
 	// Must be called with model state >= MODSTATE_CATALOG.
@@ -1326,32 +1380,29 @@ public class OEGUIView extends OEGUIComponent {
 			throw new IllegalStateException ("OEGUIView.plotCatalogText - Invalid model state: " + gui_model.cur_modstate_string());
 		}
 
-		StringBuilder sb = new StringBuilder();
+		// Write the file to a string
 
-		// Header line
-
-		sb.append("# Year\tMonth\tDay\tHour\tMinute\tSec\tLat\tLon\tDepth\tMagnitude\n");
-		
-		// Mainshock
-		
-		sb.append("# Main Shock:\n");
-		sb.append("# ").append(GUIExternalCatalog.getCatalogLine(gui_model.get_cur_mainshock())).append("\n");
-		
-		// Aftershocks
-		
-		for (ObsEqkRupture rup : gui_model.get_cur_aftershocks()) {
-			sb.append(GUIExternalCatalog.getCatalogLine(rup)).append("\n");
+		StringWriter sw = new StringWriter();
+		try (
+			LineConsumerFile lcf = new LineConsumerFile (sw);
+		){
+			try {
+				gui_model.saveCatalog (lcf);
+			} catch (Exception e) {
+				throw new RuntimeException ("Error writing catalog file: " + lcf.error_locus(), e);
+			}
 		}
 
 		// Create or modify the text pane
 
 		if (catalogText == null) {
-			catalogText = new JTextArea(sb.toString());
+			catalogText = new JTextArea(sw.toString());
 			catalogText.setEditable(false);
+			catalogText.setFont(new Font("monospaced", Font.PLAIN, 12));
 			catalogTextPane = new JScrollPane(catalogText);
 			tabbedPane.addTab("Catalog", null, catalogTextPane, "Aftershock Catalog");
 		} else {
-			catalogText.setText(sb.toString());
+			catalogText.setText(sw.toString());
 		}
 		return;
 	}

@@ -35,7 +35,8 @@ import static org.opensha.oaf.util.catalog.AbsoluteTimeLocation.LON_RANGE_FULL;
 // Line formatter for GUI observed catalog, 7-column format.
 // Author: Michael Barall 10/11/2021.
 //
-// Each line has 10 fields, as follows.  Fields are separated with a single space.
+// Each line has 10 fields, as follows.  Fields are separated with a two spaces.
+// (It is hard for a user to read the file if only a single space is used.)
 //
 //  <YYYY-MM-DD> <HH:MM:SS> <Lat> <Lon> <Depth> <Magnitude> <Event ID>
 //
@@ -50,10 +51,15 @@ import static org.opensha.oaf.util.catalog.AbsoluteTimeLocation.LON_RANGE_FULL;
 
 public class RuptureLineFormatGUIObserved extends RuptureLineFormatBase implements RuptureLineFormatter {
 
+	// Separator between fields, it must be entirely spaces and tabs.
+
+	private String separator;
+
 	// Constructor sets up formatting.
 
 	public RuptureLineFormatGUIObserved () {
-		setup_time ("yyyy-MM-dd HH:mm:ss");
+		separator = "  ";
+		setup_time ("yyyy-MM-dd" + separator + "HH:mm:ss");
 		setup_lat ("f", 5, true, false, true);
 		setup_lon ("f", 5, true, false, true);
 		setup_depth ("f", 3, true, false, true);
@@ -97,18 +103,18 @@ public class RuptureLineFormatGUIObserved extends RuptureLineFormatBase implemen
 			// Format parameters
 
 			sb.append (format_time (rf));
-			sb.append (" ");
+			sb.append (separator);
 			sb.append (format_lat (rf));
-			sb.append (" ");
+			sb.append (separator);
 			sb.append (format_lon (rf));
-			sb.append (" ");
+			sb.append (separator);
 			sb.append (format_depth (rf));
-			sb.append (" ");
+			sb.append (separator);
 			sb.append (format_mag (rf));
 
 			String event_id = format_event_id (rf, IDMISS_NULL);
 			if (event_id != null) {
-				sb.append (" ");
+				sb.append (separator);
 				sb.append (event_id);
 			}
 		}
@@ -138,7 +144,7 @@ public class RuptureLineFormatGUIObserved extends RuptureLineFormatBase implemen
 			StringBuilder sb_time = new StringBuilder();
 			for (int n = 0; n < fti_time.field_words; ++n) {
 				if (n > 0) {
-					sb_time.append (" ");
+					sb_time.append (separator);
 				}
 				sb_time.append (get_word_array_next (IDMISS_EXCEPT));
 			}

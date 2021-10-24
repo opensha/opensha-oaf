@@ -112,6 +112,19 @@ import org.opensha.oaf.aafs.ServerClock;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.SimpleUtils;
 
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import org.opensha.oaf.util.catalog.RuptureCatalogFile;
+import org.opensha.oaf.util.catalog.RuptureCatalogSection;
+import org.opensha.oaf.util.catalog.AbsRelTimeLocConverter;
+import org.opensha.oaf.util.catalog.RuptureLineFormatter;
+import org.opensha.oaf.util.catalog.RuptureLineFormatGUIObserved;
+import org.opensha.oaf.util.LineConsumerFile;
+import org.opensha.oaf.util.LineSupplierFile;
+import org.opensha.oaf.oetas.OEOrigin;
+
 
 // Operational ETAS GUI - Model implementation.
 // Michael Barall 03/15/2021
@@ -394,6 +407,18 @@ public class OEGUIModel extends OEGUIComponent {
 			throw new IllegalStateException ("Access to OEGUIModel.cur_aftershocks while in state " + cur_modstate_string());
 		}
 		return cur_aftershocks;
+	}
+
+	// Wrap-longitude flag, true if longitudes are 0 to +360, false if they are -180 to +180.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	private boolean cur_wrapLon;
+
+	public final boolean get_cur_wrapLon () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.cur_wrapLon while in state " + cur_modstate_string());
+		}
+		return cur_wrapLon;
 	}
 
 
@@ -705,6 +730,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 			cur_mainshock = null;
 			cur_aftershocks = null;
+			cur_wrapLon = false;
 			genericModel = null;
 			aftershockMND = null;
 			mnd_mmaxc = 0.0;
@@ -785,6 +811,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		cur_mainshock = null;
 		cur_aftershocks = null;
+		cur_wrapLon = false;
 		cur_model = null;
 		genericModel = null;
 		bayesianModel = null;
@@ -1212,6 +1239,8 @@ public class OEGUIModel extends OEGUIComponent {
 
 		ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
+		cur_wrapLon = fetch_fcparams.aftershock_search_region.getPlotWrap();
+
 		cur_aftershocks = accessor.fetchAftershocks (
 			cur_mainshock,
 			fetch_fcparams.min_days,
@@ -1219,7 +1248,7 @@ public class OEGUIModel extends OEGUIComponent {
 			fetch_fcparams.min_depth,
 			fetch_fcparams.max_depth,
 			fetch_fcparams.aftershock_search_region,
-			fetch_fcparams.aftershock_search_region.getPlotWrap(),
+			cur_wrapLon,
 			fetch_fcparams.min_mag
 		);
 
@@ -1233,13 +1262,101 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+	//  // Load catalog from a file.
+	//  // Parameters:
+	//  //  xfer = Transfer object to read/modify control parameters.
+	//  //  catalogFile = File to read from.
+	//  // This is called by the controller to initiate catalog load.
+	//  
+	//  public void loadCatalog(OEGUIController.XferCatalogMod xfer, File catalogFile) {
+	//  
+	//  	// Will not be fetching from Comcat
+	//  
+	//  	has_fetched_catalog = false;
+	//  
+	//  	// List of aftershocks, and mainshock
+	//  
+	//  	ObsEqkRupList myAftershocks = new ObsEqkRupList();
+	//  	ObsEqkRupture myMainshock = null;
+	//  
+	//  	// Read the file
+	//  
+	//  	GUIExternalCatalog ext_cat = new GUIExternalCatalog();
+	//  	ext_cat.read_from_file (catalogFile, myAftershocks);
+	//  	myMainshock = ext_cat.mainshock;
+	//  
+	//  	// Display search result
+	//  	
+	//  	System.out.println("Loaded " + myAftershocks.size() + " aftershocks from file");
+	//  
+	//  	// Check to make sure we got a mainshock
+	//  	
+	//  	Preconditions.checkState(myMainshock != null, "Did not find mainshock in file");
+	//  
+	//  	// If we didn't get an event ID, set it
+	//  
+	//  	if (myMainshock.getEventId() == null || myMainshock.getEventId().isEmpty()) {
+	//  		myMainshock.setEventId ("<custom>");
+	//  	}
+	//  
+	//  	// Store mainshock into our data structures
+	//  
+	//  	cur_mainshock = myMainshock;
+	//  
+	//  	fcmain = new ForecastMainshock();
+	//  	fcmain.setup_local_mainshock (cur_mainshock);
+	//  
+	//  	// Finish setting up the mainshock
+	//  
+	//  	setup_for_mainshock (xfer);
+	//  
+	//  	// Catalog time range
+	//  
+	//  	double minDays = xfer.x_dataSource.x_dataStartTimeParam;
+	//  	double maxDays = xfer.x_dataSource.x_dataEndTimeParam;
+	//  
+	//  	// Here we need to trim the catalog to be only events that lie within the selected time interval
+	//  	
+	//  	ObsEqkRupList trimmedAftershocks = new ObsEqkRupList();
+	//  	long eventTime = myMainshock.getOriginTime();
+	//  	long startTime = eventTime + (long)(minDays*ComcatOAFAccessor.day_millis);
+	//  	long endTime = eventTime + (long)(maxDays*ComcatOAFAccessor.day_millis);
+	//  	for (ObsEqkRupture as : myAftershocks) {
+	//  		long asTime = as.getOriginTime();
+	//  		if (asTime >= startTime && asTime <= endTime) {
+	//  			trimmedAftershocks.add(as);
+	//  		}
+	//  	}
+	//  	
+	//  	System.out.println("Found " + trimmedAftershocks.size() + " aftershocks between selected start and end times");
+	//  
+	//  	// Establish name of custom mainshock
+	//  
+	//  	xfer.x_dataSource.modify_eventIDParam("<custom>");
+	//  
+	//  	// Take the trimmed list of aftershocks as our aftershocks
+	//  
+	//  	cur_wrapLon = false;		// not really correct
+	//  
+	//  	cur_aftershocks = trimmedAftershocks;
+	//  
+	//  	// Perform post-fetch actions
+	//  
+	//  	postFetchActions (xfer);
+	//  
+	//  	return;
+	//  }
+	
+
+
+
 	// Load catalog from a file.
 	// Parameters:
 	//  xfer = Transfer object to read/modify control parameters.
-	//  catalogFile = File to read from.
+	//  src = Source to read lines from the file.
 	// This is called by the controller to initiate catalog load.
 
-	public void loadCatalog(OEGUIController.XferCatalogMod xfer, File catalogFile) {
+	public void loadCatalog (OEGUIController.XferCatalogMod xfer, Supplier<String> src) {
 
 		// Will not be fetching from Comcat
 
@@ -1250,24 +1367,69 @@ public class OEGUIModel extends OEGUIComponent {
 		ObsEqkRupList myAftershocks = new ObsEqkRupList();
 		ObsEqkRupture myMainshock = null;
 
+		// Use GUI observed line format as the default format, with no default converter
+
+		RuptureLineFormatGUIObserved line_fmt = new RuptureLineFormatGUIObserved();
+
+		// Make the catalog file, no auto section creation
+
+		RuptureCatalogFile rcf = new RuptureCatalogFile();
+		rcf.set_auto_section (false);
+
+		// In default section, set default line formatter, and no ruptures allowed, not locked
+
+		RuptureCatalogSection rcs = rcf.get_default_section();
+		rcs.set_line_formatter (line_fmt, false, true);
+		rcs.set_max_ruptures (0);
+
+		// Set up mainshock section, maximum 1 rupture, not locked
+
+		rcs = rcf.setup_mainshock_section();
+		rcs.set_max_ruptures (1);
+
+		// Set up aftershock section, not locked
+
+		rcs = rcf.setup_aftershock_section();
+
 		// Read the file
 
-		GUIExternalCatalog ext_cat = new GUIExternalCatalog();
-		ext_cat.read_from_file (catalogFile, myAftershocks);
-		myMainshock = ext_cat.mainshock;
+		rcf.read_all_sections (src);
+
+		// Get parameters from default section
+
+		rcs = rcf.get_default_section();
+
+		if (rcs.contains_definition (RuptureCatalogSection.DEF_NAME_START_TIME)) {
+			xfer.x_dataSource.modify_dataStartTimeParam (rcs.get_definition_double (RuptureCatalogSection.DEF_NAME_START_TIME));
+		}
+
+		if (rcs.contains_definition (RuptureCatalogSection.DEF_NAME_END_TIME)) {
+			xfer.x_dataSource.modify_dataEndTimeParam (rcs.get_definition_double (RuptureCatalogSection.DEF_NAME_END_TIME));
+		}
+
+		boolean wrapLon = rcs.get_definition_boolean (RuptureCatalogSection.DEF_NAME_WRAP_LON, false);
+
+		// Get the mainshock
+
+		rcs = rcf.req_mainshock_section();
+		if (rcs.get_rupture_list_size() != 1) {
+			throw new RuntimeException ("Did not find mainshock in file");
+		}
+		myMainshock = rcs.get_eqk_rupture (0, wrapLon);
+
+		// Get the aftershock list
+
+		rcs = rcf.req_aftershock_section();
+		rcs.get_eqk_rupture_list (myAftershocks, wrapLon);
 
 		// Display search result
 		
 		System.out.println("Loaded " + myAftershocks.size() + " aftershocks from file");
 
-		// Check to make sure we got a mainshock
-		
-		Preconditions.checkState(myMainshock != null, "Did not find mainshock in file");
-
 		// If we didn't get an event ID, set it
 
 		if (myMainshock.getEventId() == null || myMainshock.getEventId().isEmpty()) {
-			myMainshock.setEventId ("<custom>");
+			myMainshock.setEventId ("__custom");
 		}
 
 		// Store mainshock into our data structures
@@ -1301,11 +1463,13 @@ public class OEGUIModel extends OEGUIComponent {
 		
 		System.out.println("Found " + trimmedAftershocks.size() + " aftershocks between selected start and end times");
 
-		// Establish name of custom mainshock
+		// Establish name of mainshock
 
-		xfer.x_dataSource.modify_eventIDParam("<custom>");
+		xfer.x_dataSource.modify_eventIDParam (myMainshock.getEventId());
 
 		// Take the trimmed list of aftershocks as our aftershocks
+
+		cur_wrapLon = wrapLon;
 
 		cur_aftershocks = trimmedAftershocks;
 
@@ -1313,6 +1477,69 @@ public class OEGUIModel extends OEGUIComponent {
 
 		postFetchActions (xfer);
 
+		return;
+	}
+
+
+
+
+	// Save the catalog to a file.
+	// Parameters:
+	//  dest = Destination to write the lines of the catalog.
+
+	public void saveCatalog (Consumer<String> dest) {
+
+		if (!( modstate_has_catalog() )) {
+			throw new IllegalStateException ("OEGUIModel.saveCatalog - Invalid model state: " + cur_modstate_string());
+		}
+
+		// Use GUI observed line format
+
+		RuptureLineFormatGUIObserved line_fmt = new RuptureLineFormatGUIObserved();
+
+		// Set origin in file at mainshock location, for the mainshock as it will appear after it is loaded from file
+
+		OEOrigin origin = (new OEOrigin()).set_from_rupture_horz (
+			RuptureCatalogSection.round_trip_eqk_rupture (get_cur_mainshock(), line_fmt, false, null)
+		);
+
+		// Set origin in line formatter at our mainshock location
+
+		OEOrigin line_fmt_origin = (new OEOrigin()).set_from_rupture_horz (get_cur_mainshock());
+		line_fmt.set_abs_rel_conv (line_fmt_origin);
+
+		// Make the catalog file, no auto section creation
+
+		RuptureCatalogFile rcf = new RuptureCatalogFile();
+		rcf.set_auto_section (false);
+
+		// In default section, set origin, line formatter, and parameters, and no ruptures allowed
+
+		RuptureCatalogSection rcs = rcf.get_default_section();
+		rcs.set_abs_rel_conv (origin, true, false);
+		rcs.set_line_formatter (line_fmt, true, false);
+		rcs.add_definition_double (RuptureCatalogSection.DEF_NAME_START_TIME, get_cat_dataStartTimeParam());
+		rcs.add_definition_double (RuptureCatalogSection.DEF_NAME_END_TIME, get_cat_dataEndTimeParam());
+		rcs.add_definition_boolean (RuptureCatalogSection.DEF_NAME_WRAP_LON, get_cur_wrapLon());
+		rcs.set_max_ruptures (0);
+		rcs.lock_section();
+
+		// Set up mainshock section, maximum 1 rupture
+
+		rcs = rcf.setup_mainshock_section();
+		rcs.set_max_ruptures (1);
+		rcs.lock_section();
+		rcs.add_eqk_rupture (get_cur_mainshock());
+
+		// Set up aftershock section
+
+		rcs = rcf.setup_aftershock_section();
+		rcs.lock_section();
+		rcs.add_eqk_rupture_list (get_cur_aftershocks());
+
+		// Write the file
+
+		rcf.write_all_sections (dest);
 		return;
 	}
 

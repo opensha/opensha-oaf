@@ -146,6 +146,11 @@ import org.opensha.oaf.aafs.GUICmd;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import org.opensha.oaf.util.LineConsumerFile;
+import org.opensha.oaf.util.LineSupplierFile;
+
 import org.json.simple.JSONObject;
 
 
@@ -1278,7 +1283,20 @@ public class OEGUIController extends OEGUIListener {
 						
 						@Override
 						public void run() {
-							gui_model.loadCatalog(xfer_catalog_impl, new File (xfer_catalog_impl.x_dataSource.x_catalogFileParam));
+
+							//gui_model.loadCatalog(xfer_catalog_impl, new File (xfer_catalog_impl.x_dataSource.x_catalogFileParam));
+
+							File file = new File (xfer_catalog_impl.x_dataSource.x_catalogFileParam);
+							try (
+								LineSupplierFile lsf = new LineSupplierFile (file);
+							){
+								try {
+									gui_model.loadCatalog (xfer_catalog_impl, lsf);
+								} catch (Exception e) {
+									throw new RuntimeException ("Error reading catalog file: " + lsf.error_locus(), e);
+								}
+							}
+
 						}
 					}, gui_top.get_forceWorkerEDT());
 
@@ -1353,20 +1371,37 @@ public class OEGUIController extends OEGUIListener {
 				return;
 			}
 
+			//  // Write catalog
+			//  
+			//  try {
+			//  	GUIExternalCatalog ext_cat = new GUIExternalCatalog();
+			//  	ext_cat.setup_catalog (
+			//  		gui_model.get_cur_aftershocks(),
+			//  		gui_model.get_cur_mainshock()
+			//  	);
+			//  	ext_cat.write_to_file (file);
+			//  } catch (Exception e) {
+			//  	e.printStackTrace();
+			//  	JOptionPane.showMessageDialog(gui_top.get_top_window(), e.getMessage(),
+			//  			"Error Saving Catalog", JOptionPane.ERROR_MESSAGE);
+			//  }
+
 			// Write catalog
 
-			try {
-				GUIExternalCatalog ext_cat = new GUIExternalCatalog();
-				ext_cat.setup_catalog (
-					gui_model.get_cur_aftershocks(),
-					gui_model.get_cur_mainshock()
-				);
-				ext_cat.write_to_file (file);
+			try (
+				LineConsumerFile lcf = new LineConsumerFile (file);
+			){
+				try {
+					gui_model.saveCatalog (lcf);
+				} catch (Exception e) {
+					throw new RuntimeException ("Error writing catalog file: " + lcf.error_locus(), e);
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 				JOptionPane.showMessageDialog(gui_top.get_top_window(), e.getMessage(),
 						"Error Saving Catalog", JOptionPane.ERROR_MESSAGE);
 			}
+
 		}
 		break;
 

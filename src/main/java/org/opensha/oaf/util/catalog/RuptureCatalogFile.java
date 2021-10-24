@@ -473,7 +473,7 @@ public class RuptureCatalogFile {
 	// Set up a mainshock section.
 	// Add a mainshock section under the default section, and set it to have a
 	// maximum of 1 rupture, not splittable, with no definitons, converter, or formatter.
-	// Also locks the section.
+	// Does not lock the section.
 	// Returns the section that was created.
 
 	public RuptureCatalogSection setup_mainshock_section () {
@@ -483,7 +483,6 @@ public class RuptureCatalogFile {
 		rcs.set_allowed_def_names (new ArrayList<String>());
 		rcs.set_input_abs_rel_conv (false);
 		rcs.set_input_line_formatter (false);
-		rcs.lock_section();
 		return rcs;
 	}
 
@@ -501,7 +500,7 @@ public class RuptureCatalogFile {
 	// Set up an aftershock section.
 	// Add an aftershock section under the default section, and set it to be
 	// not splittable, with no definitons, converter, or formatter.
-	// Also locks the section.
+	// Does not lock the section.
 	// Returns the section that was created.
 
 	public RuptureCatalogSection setup_aftershock_section () {
@@ -510,7 +509,6 @@ public class RuptureCatalogFile {
 		rcs.set_allowed_def_names (new ArrayList<String>());
 		rcs.set_input_abs_rel_conv (false);
 		rcs.set_input_line_formatter (false);
-		rcs.lock_section();
 		return rcs;
 	}
 
