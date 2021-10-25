@@ -474,6 +474,71 @@ public abstract class RuptureLineFormatBase {
 
 
 
+	//--- Additional convenience functions -----
+
+	// Place a column heading within a field, and append to the string.
+	// Parameters:
+	//  sb = Builder that is constructing the string.
+	//  heading = Text to use for the heading.
+	//  field width = Width, or 0 if unknown.  The heading is padded with spaces to this width.
+	//  justification = Justification of heading within field: -1 = left justify, 0 = center, 1 = right justify.
+	//  prefix_len = Length of prefix that will be pre-pended to the resulting text, or 0 if none.
+	//  f_last_field = True if this is the last field in the line, so do not write padding on right.
+	// If the heading length exceeds field_width - prefix_len, then the resulting text
+	// exceeds the field width, which may cause headings to be mis-aligned.
+
+	protected void append_column_heading (StringBuilder sb, String heading, int field_width, int justification, int prefix_len, boolean f_last_field) {
+
+		// Calculate the number of spaces to pad on the left and right, to center the heading.
+
+		int pad_left = 0;
+		int pad_right = 0;
+		if (field_width > 0) {
+			int total_padding = field_width - heading.length();
+			if (total_padding > 0) {
+				if (justification < 0) {
+					pad_right = total_padding;
+				} else if (justification > 0) {
+					pad_left = total_padding;
+				} else {
+					pad_left = total_padding / 2;
+					pad_right = total_padding - pad_left;
+				}
+			}
+		}
+
+		// Adjust for prefix
+
+		if (prefix_len > 0) {
+			pad_left -= prefix_len;
+			if (pad_left < 0) {
+				pad_right += pad_left;
+				pad_left = 0;
+				if (pad_right > 0 || f_last_field) {
+					--pad_right;
+					++pad_left;
+				}
+			}
+		}
+
+		// Write the padded heading
+
+		for (int i = 0; i < pad_left; ++i) {
+			sb.append (" ");
+		}
+		sb.append (heading);
+		if (!( f_last_field )) {
+			for (int i = 0; i < pad_right; ++i) {
+				sb.append (" ");
+			}
+		}
+
+		return;
+	}
+
+
+
+
 	//--- Information display ---
 
 	// Display internal formatting information.

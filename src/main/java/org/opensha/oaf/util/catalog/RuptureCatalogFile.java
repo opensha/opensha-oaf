@@ -237,6 +237,20 @@ public class RuptureCatalogFile {
 	}
 
 
+	// Get the section format.
+
+	public final RuptureCatalogSection.SectionFormat get_section_format () {
+		return section_format;
+	}
+
+
+	// Get the prefix that is used for comment lines.
+
+	public final String get_comment_prefix () {
+		return section_format.comment_prefix;
+	}
+
+
 	// Get the named section.
 	// Return null if section does not exist.
 

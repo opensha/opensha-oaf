@@ -820,6 +820,13 @@ public class SimpleUtils {
 
 	private static final Pattern whitesp_trim_pattern = Pattern.compile ("[\\x00-\\x20]+");
 
+	// Pattern used to trim trailing white space.
+	// This recognizes a string that has trailing white space (as defined by String.trim).
+	// If a match, then capture group 1 is the string with white space removed.
+	// Note: A Pattern is an immutable object that can be used by multiple threads.
+
+	private static final Pattern trailsp_trim_pattern = Pattern.compile ("((?:.*[^\\x00-\\x20])?)[\\x00-\\x20]+");
+
 
 
 
@@ -853,6 +860,20 @@ public class SimpleUtils {
 
 	public static String[] split_around_trim (String s) {
 		return whitesp_trim_pattern.split(s);
+	}
+
+
+
+
+	// Remove trailing white spaces from a string, as defined for String.trim.
+	// Note that leading white space is retained.
+
+	public static String trim_trailing (String s) {
+		Matcher matcher = trailsp_trim_pattern.matcher (s);
+		if (matcher.matches()) {
+			return matcher.group(1);
+		}
+		return s;
 	}
 
 

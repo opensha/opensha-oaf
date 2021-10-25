@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.EnumSet;
 //import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -1513,6 +1514,11 @@ public class OEGUIModel extends OEGUIComponent {
 		RuptureCatalogFile rcf = new RuptureCatalogFile();
 		rcf.set_auto_section (false);
 
+		// Get the comment block to identify columns
+
+		ArrayList<String> comment_block = new ArrayList<String>();
+		line_fmt.get_comment_block (comment_block, rcf.get_comment_prefix().length());
+
 		// In default section, set origin, line formatter, and parameters, and no ruptures allowed
 
 		RuptureCatalogSection rcs = rcf.get_default_section();
@@ -1528,12 +1534,14 @@ public class OEGUIModel extends OEGUIComponent {
 
 		rcs = rcf.setup_mainshock_section();
 		rcs.set_max_ruptures (1);
+		rcs.add_all_comments (comment_block);
 		rcs.lock_section();
 		rcs.add_eqk_rupture (get_cur_mainshock());
 
 		// Set up aftershock section
 
 		rcs = rcf.setup_aftershock_section();
+		rcs.add_all_comments (comment_block);
 		rcs.lock_section();
 		rcs.add_eqk_rupture_list (get_cur_aftershocks());
 
