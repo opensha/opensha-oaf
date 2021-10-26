@@ -677,10 +677,11 @@ public class ComcatLocalCatalog {
 		// Visit each event
 
 		String productType = null;
+		boolean includeDeleted = false;
 
 		visitEventList (visitor, exclude_id, startTime, endTime,
 			minDepth, maxDepth, region, wrapLon, extendedInfo,
-			minMag, productType);
+			minMag, productType, includeDeleted);
 
 		// Return the list
 		
@@ -703,13 +704,14 @@ public class ComcatLocalCatalog {
 	 * @param extendedInfo = True to return extended information, see eventToObsRup below.
 	 * @param minMag = Minimum magnitude, or -10.0 for no minimum.
 	 * @param productType = Required product type, or null if none (ignored).
+	 * @param includeDeleted = True to return deleted events, or events where the required product was deleted.
 	 * @return
 	 * Returns the result code from the last call to the visitor.
 	 * Note: As a special case, if endTime == startTime, then the end time is the current time.
 	 */
 	public int visitEventList (ComcatVisitor visitor, String exclude_id, long startTime, long endTime,
 			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, boolean extendedInfo,
-			double minMag, String productType) {
+			double minMag, String productType, boolean includeDeleted) {
 
 		// Check the visitor
 

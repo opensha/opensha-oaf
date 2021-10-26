@@ -492,11 +492,12 @@ public class ComcatProduct {
 	//  maxDepth = Maximum depth, in km.
 	//  region = Region to search.
 	//  minMag = Minimum magnitude.
+	//  includeDeleted = True to include deleted events and events where all products were deleted.
 	// Returns a list of event IDs that contain an OAF product.
 
 	public static List<String> findProductEvents (String product_type, Boolean f_prod,
 			long startTime, long endTime, double minDepth, double maxDepth, ComcatRegion region,
-			double minMag) {
+			double minMag, boolean includeDeleted) {
 
 		// Server configuration
 
@@ -542,7 +543,7 @@ public class ComcatProduct {
 
 		int visit_result = accessor.visitEventList (visitor, rup_event_id, startTime, endTime,
 				minDepth, maxDepth, region, wrapLon, extendedInfo,
-				minMag, productType);
+				minMag, productType, includeDeleted);
 
 		System.out.println ("Count of events with '" + product_type + "' products = " + eventList.size());
 
@@ -1070,14 +1071,16 @@ public class ComcatProduct {
 				SphRegionWorld region = new SphRegionWorld ();
 				double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
 				double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+		
+				boolean includeDeleted = false;
 
 				//  List<String> eventList = findProductEvents (null,
 				//  	startTime, endTime, minDepth, maxDepth, region,
-				//  	minMag);
+				//  	minMag, includeDeleted);
 
 				List<String> eventList = findProductEvents (product_type, null,
 					startTime, endTime, minDepth, maxDepth, region,
-					minMag);
+					minMag, includeDeleted);
 
 				// Display the number of items returned
 
@@ -1227,6 +1230,104 @@ public class ComcatProduct {
 				}
 
 			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  pdl_enable  start_time  end_time  min_mag  include_deleted  [product_type]
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Then call findProductEvents and display the result.
+		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+		// Same as test #3 with the include_deleted option added.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// Additional arguments
+
+			if (args.length != 6 && args.length != 7) {
+				System.err.println ("ComcatProduct : Invalid 'test5' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				long startTime = SimpleUtils.string_to_time (args[2]);
+				long endTime = SimpleUtils.string_to_time (args[3]);
+				double minMag = Double.parseDouble (args[4]);
+				boolean includeDeleted = Boolean.parseBoolean (args[5]);
+
+				String product_type = default_product_type;
+				if (args.length >= 7) {
+					product_type = args[6];
+					if (!( is_valid_product_type (product_type) )) {
+						System.out.println ("Invalid product_type: " + product_type);
+						System.out.println ("Continuing anyway ...");
+						System.out.println ("");
+					}
+				}
+
+				// Set the PDL enable code
+
+				if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+					System.out.println ("Invalid pdl_enable = " + pdl_enable);
+					return;
+				}
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+				// Say hello
+
+				System.out.println ("PDL enable: " + pdl_enable);
+				System.out.println ("Start time: " + SimpleUtils.time_to_string(startTime));
+				System.out.println ("End time: " + SimpleUtils.time_to_string(endTime));
+				System.out.println ("Minimum magnitude: " + minMag);
+				System.out.println ("include_deleted: " + includeDeleted);
+				System.out.println ("product_type: " + product_type);
+				System.out.println ("");
+
+				// Make the call
+
+				SphRegionWorld region = new SphRegionWorld ();
+				double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+				double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+
+				//  List<String> eventList = findProductEvents (null,
+				//  	startTime, endTime, minDepth, maxDepth, region,
+				//  	minMag, includeDeleted);
+
+				List<String> eventList = findProductEvents (product_type, null,
+					startTime, endTime, minDepth, maxDepth, region,
+					minMag, includeDeleted);
+
+				// Display the number of items returned
+
+				System.out.println ("Number of items returned by findProductEvents: " + eventList.size());
+
+				// Display the list, up to a maximum size
+
+				int nmax = 100;
+				int n = Math.min (nmax, eventList.size());
+
+				for (int i = 0; i < n; ++i) {
+					System.out.println (eventList.get(i));
+				}
+
+				if (n < eventList.size()) {
+					System.out.println ("Plus " + (eventList.size() - n) + " more");
+				}
+
+			}
+
+			catch (Exception e) {
 				e.printStackTrace();
 			}
 

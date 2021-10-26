@@ -441,6 +441,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 	 * @param extendedInfo = True to return extended information, see eventToObsRup below.
 	 * @param minMag = Minimum magnitude, or -10.0 for no minimum.
 	 * @param productType = Required product type, or null if none.
+	 * @param includeDeleted = True to return deleted events, or events where the required product was deleted.
 	 * @param limit_per_call = Maximum number of events to fetch in a single call to Comcat, or 0 for default.
 	 * @param max_calls = Maximum number of calls to ComCat, or 0 for default.
 	 * @return
@@ -453,7 +454,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 	@Override
 	public int visitEventList (ComcatVisitor visitor, String exclude_id, long startTime, long endTime,
 			double minDepth, double maxDepth, ComcatRegion region, boolean wrapLon, boolean extendedInfo,
-			double minMag, String productType, int limit_per_call, int max_calls) {
+			double minMag, String productType, boolean includeDeleted, int limit_per_call, int max_calls) {
 
 		// Initialize HTTP statuses
 
@@ -501,7 +502,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 			// Do the local query
 
 			int result = local_catalog.visitEventList (visitor, exclude_id, startTime, endTime,
-				minDepth, maxDepth, region, wrapLon, extendedInfo, minMag, productType);
+				minDepth, maxDepth, region, wrapLon, extendedInfo, minMag, productType, includeDeleted);
 
 			// Set up resulting HTTP status
 
@@ -514,7 +515,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 
 		return super.visitEventList (visitor, exclude_id, startTime, endTime,
 			minDepth, maxDepth, region, wrapLon, extendedInfo,
-			minMag, productType, limit_per_call, max_calls);
+			minMag, productType, includeDeleted, limit_per_call, max_calls);
 	}
 
 
@@ -1901,9 +1902,11 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 				boolean extendedInfo = false;
 				int max_calls = 0;
 
+				boolean includeDeleted = false;
+
 				accessor.visitEventList (visitor, rup_event_id, startTime, endTime,
 					minDepth, maxDepth, region, wrapLon, extendedInfo,
-					min_mag, product_type, limit_per_call, max_calls);
+					min_mag, product_type, includeDeleted, limit_per_call, max_calls);
 
 				// Display the information
 

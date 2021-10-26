@@ -713,10 +713,11 @@ public class CleanupSupport extends ServerComponent {
 		double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 
 		String productType = server_config.get_pdl_oaf_type();
+		boolean includeDeleted = false;
 
 		int visit_result = accessor.visitEventList (visitor, rup_event_id, startTime, endTime,
 				minDepth, maxDepth, region, wrapLon, extendedInfo,
-				minMag, productType);
+				minMag, productType, includeDeleted);
 
 		System.out.println ("Count of events with OAF products = " + count[1] + ", events needing cleanup = " + count[0]);
 

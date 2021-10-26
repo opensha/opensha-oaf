@@ -337,11 +337,12 @@ public class ComcatOAFProduct {
 	//  maxDepth = Maximum depth, in km.
 	//  region = Region to search.
 	//  minMag = Minimum magnitude.
+	//  includeDeleted = True to include deleted events and events where all products were deleted.
 	// Returns a list of event IDs that contain an OAF product.
 
 	public static List<String> findOAFEvents (Boolean f_prod,
 			long startTime, long endTime, double minDepth, double maxDepth, ComcatRegion region,
-			double minMag) {
+			double minMag, boolean includeDeleted) {
 
 		// Server configuration
 
@@ -387,7 +388,7 @@ public class ComcatOAFProduct {
 
 		int visit_result = accessor.visitEventList (visitor, rup_event_id, startTime, endTime,
 				minDepth, maxDepth, region, wrapLon, extendedInfo,
-				minMag, productType);
+				minMag, productType, includeDeleted);
 
 		System.out.println ("Count of events with OAF products = " + eventList.size());
 
@@ -586,7 +587,7 @@ public class ComcatOAFProduct {
 		// Subcommand : Test #3
 		// Command format:
 		//  test3  pdl_enable  start_time  end_time  min_mag
-		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile) (0 = none, 1 = dev, 2 = prod, ...).
 		// Then call findOAFEvents and display the result.
 		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
 
@@ -630,9 +631,94 @@ public class ComcatOAFProduct {
 				double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
 				double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 
+				boolean includeDeleted = false;
+
 				List<String> eventList = findOAFEvents (null,
 					startTime, endTime, minDepth, maxDepth, region,
-					minMag);
+					minMag, includeDeleted);
+
+				// Display the number of items returned
+
+				System.out.println ("Number of items returned by findOAFEvents: " + eventList.size());
+
+				// Display the list, up to a maximum size
+
+				int nmax = 100;
+				int n = Math.min (nmax, eventList.size());
+
+				for (int i = 0; i < n; ++i) {
+					System.out.println (eventList.get(i));
+				}
+
+				if (n < eventList.size()) {
+					System.out.println ("Plus " + (eventList.size() - n) + " more");
+				}
+
+			}
+
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  pdl_enable  start_time  end_time  min_mag  include_deleted
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile) (0 = none, 1 = dev, 2 = prod, ...).
+		// Then call findOAFEvents and display the result.
+		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+		// Same as test #3 with the include_deleted flag added.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// 5 additional arguments
+
+			if (args.length != 6) {
+				System.err.println ("ComcatOAFProduct : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				long startTime = SimpleUtils.string_to_time (args[2]);
+				long endTime = SimpleUtils.string_to_time (args[3]);
+				double minMag = Double.parseDouble (args[4]);
+				boolean includeDeleted = Boolean.parseBoolean (args[5]);
+
+				// Set the PDL enable code
+
+				if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+					System.out.println ("Invalid pdl_enable = " + pdl_enable);
+					return;
+				}
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+				// Say hello
+
+				System.out.println ("PDL enable: " + pdl_enable);
+				System.out.println ("Start time: " + SimpleUtils.time_to_string(startTime));
+				System.out.println ("End time: " + SimpleUtils.time_to_string(endTime));
+				System.out.println ("Minimum magnitude: " + minMag);
+				System.out.println ("include_deleted: " + includeDeleted);
+				System.out.println ("");
+
+				// Make the call
+
+				SphRegionWorld region = new SphRegionWorld ();
+				double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+				double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+
+				List<String> eventList = findOAFEvents (null,
+					startTime, endTime, minDepth, maxDepth, region,
+					minMag, includeDeleted);
 
 				// Display the number of items returned
 
