@@ -26,7 +26,7 @@ import javax.swing.SwingUtilities;
 
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.param.ParameterList;
-import org.opensha.commons.param.editor.AbstractParameterEditor;
+//import org.opensha.commons.param.editor.AbstractParameterEditor;
 import org.opensha.commons.param.event.ParameterChangeEvent;
 import org.opensha.commons.param.event.ParameterChangeListener;
 //import org.opensha.commons.param.impl.ParameterListParameter;
@@ -51,7 +51,7 @@ import org.opensha.commons.param.editor.impl.ParameterListEditor;
  */
 
 
-public class GUIParameterListParameterEditor extends AbstractParameterEditor<ParameterList> implements
+public class GUIParameterListParameterEditor extends GUIAbstractParameterEditor<ParameterList> implements
 	ActionListener, ParameterChangeListener {
 
 	/**

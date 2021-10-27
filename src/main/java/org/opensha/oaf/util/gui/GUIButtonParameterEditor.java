@@ -8,12 +8,12 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 
 import org.opensha.commons.param.Parameter;
-import org.opensha.commons.param.editor.AbstractParameterEditor;
+//import org.opensha.commons.param.editor.AbstractParameterEditor;
 
 // ButtonParameterEditor extended to support setting the color of the button.
 // Michael Barall 09/03/2021
 
-public class GUIButtonParameterEditor extends AbstractParameterEditor<Integer> implements ActionListener {
+public class GUIButtonParameterEditor extends GUIAbstractParameterEditor<Integer> implements ActionListener {
 
 	/**
 	 * 
@@ -24,6 +24,7 @@ public class GUIButtonParameterEditor extends AbstractParameterEditor<Integer> i
 
 	public GUIButtonParameterEditor(GUIButtonParameter buttonParameter) {
 		super(buttonParameter);
+		refreshParamEditor();
 	}
 
 	@Override
@@ -38,22 +39,21 @@ public class GUIButtonParameterEditor extends AbstractParameterEditor<Integer> i
 
 	@Override
 	protected JComponent buildWidget() {
-		if (button == null) {
-			button = new JButton();
-			button.addActionListener(this);
-			GUIButtonParameter buttonParam = (GUIButtonParameter)getParameter();
-			Color fg = buttonParam.getButtonForeground();
-			Color bg = buttonParam.getButtonBackground();
-			if (fg != null) {
-				button.setForeground(fg);
-			}
-			if (bg != null) {
-				button.setBackground(bg);
-				button.setOpaque(true);
-				button.setBorderPainted(false);
-			}
+		button = new JButton();
+		button.addActionListener(this);
+		GUIButtonParameter buttonParam = (GUIButtonParameter)getParameter();
+		Color fg = buttonParam.getButtonForeground();
+		Color bg = buttonParam.getButtonBackground();
+		if (fg != null) {
+			button.setForeground(fg);
 		}
-		return updateWidget();
+		if (bg != null) {
+			button.setBackground(bg);
+			button.setOpaque(true);
+			button.setBorderPainted(false);
+		}
+		button.setText(buttonParam.getButtonText());
+		return button;
 	}
 
 	@Override

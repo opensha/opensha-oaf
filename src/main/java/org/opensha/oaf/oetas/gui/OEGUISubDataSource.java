@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -139,6 +140,7 @@ import org.opensha.oaf.util.gui.GUIEDTRunnable;
 import org.opensha.oaf.util.gui.GUIEventAlias;
 import org.opensha.oaf.util.gui.GUIExternalCatalog;
 import org.opensha.oaf.util.gui.GUIParameterListParameter;
+import org.opensha.oaf.util.gui.GUIDropdownParameter;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
@@ -169,6 +171,8 @@ public class OEGUISubDataSource extends OEGUIListener {
 	private static final int PARMGRP_DATA_SOURCE_EDIT = 303;	// Button to open the data source edit dialog
 
 	private static final int PARMGRP_CATALOG_FILE_BROWSE = 304;	// Button to browse for catalog filename
+
+	private static final int PARMGRP_FC_PROD_POPULATE = 305;	// Button to populate list of forecasts
 
 
 	//----- Sub-controllers -----
@@ -265,6 +269,55 @@ public class OEGUISubDataSource extends OEGUIListener {
 		return browseCatalogFileButton;
 	}
 
+	// Populate forecast list button.
+
+	private ButtonParameter populateForecastListButton;
+
+	private ButtonParameter init_populateForecastListButton () throws GUIEDTException {
+		populateForecastListButton = new ButtonParameter("Populate Forecast List", "Populate...");
+		populateForecastListButton.setInfo("Fetch list of available forecasts");
+		register_param (populateForecastListButton, "populateForecastListButton", PARMGRP_FC_PROD_POPULATE);
+		return populateForecastListButton;
+	}
+
+	// Forecast list dropdown -- Holds a list of AvailableForecast objects.
+
+	public static class AvailableForecast {
+		public String label;
+
+		@Override
+		public String toString () {
+			return label;
+		}
+
+		public AvailableForecast (String label) {
+			this.label = label;
+		}
+	}
+
+	private ArrayList<AvailableForecast> forecastList;
+
+	private GUIDropdownParameter forecastListDropdown;
+
+	private GUIDropdownParameter init_forecastListDropdown () throws GUIEDTException {
+		forecastList = new ArrayList<AvailableForecast>();
+		forecastListDropdown = new GUIDropdownParameter(
+				"Available Forecasts", forecastList, GUIDropdownParameter.DROPDOWN_INDEX_EXTRA, "--- Empty ---");
+		forecastListDropdown.setInfo("List of forecasts for the selected earthquake");
+		register_param (forecastListDropdown, "forecastListDropdown", PARMGRP_DATA_SOURCE_PARAM);
+		return forecastListDropdown;
+	}
+
+	private void refresh_forecastListDropdown () throws GUIEDTException {
+		if (forecastList.isEmpty()) {
+			forecastListDropdown.modify_dropdown (forecastList, GUIDropdownParameter.DROPDOWN_INDEX_EXTRA, "--- Empty ---");
+		} else {
+			forecastListDropdown.modify_dropdown (forecastList, 0, null);
+		}
+		forecastListDropdown.getEditor().refreshParamEditor();
+		return;
+	}
+
 	// Initialize all dialog parameters
 
 	private void init_dataSourceDialogParam () throws GUIEDTException {
@@ -272,6 +325,8 @@ public class OEGUISubDataSource extends OEGUIListener {
 		init_dataEndTimeParam();
 		init_catalogFileParam();
 		init_browseCatalogFileButton();
+		init_populateForecastListButton();
+		init_forecastListDropdown();
 
 		return;
 	}
@@ -311,8 +366,10 @@ public class OEGUISubDataSource extends OEGUIListener {
 			break;
 
 		case LAST_FORECAST:
-			dataSourceEditParam.setListTitleText ("Last Forecast");
+			dataSourceEditParam.setListTitleText ("Forecast");
 			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(0, f_button_row));
+			dataSourceList.addParameter(populateForecastListButton);
+			dataSourceList.addParameter(forecastListDropdown);
 			break;
 
 		case RJ_SIMULATION:
@@ -764,6 +821,27 @@ public class OEGUISubDataSource extends OEGUIListener {
 				updateParam(catalogFileParam, filename);
 				report_data_source_change();
 			}
+		}
+		break;
+
+
+		// Populate forecast list button.
+		// - Fetch available forecasts from Comcat, and populate the dropdown.
+
+		case PARMGRP_FC_PROD_POPULATE: {
+			if (!( f_sub_enable )) {
+				return;
+			}
+
+			// As a test, just put a few items in the list
+
+			forecastList = new ArrayList<AvailableForecast>();
+			forecastList.add (new AvailableForecast ("Forecast 1"));
+			forecastList.add (new AvailableForecast ("Forecast 2"));
+			forecastList.add (new AvailableForecast ("Forecast 3"));
+			forecastList.add (new AvailableForecast ("Forecast 4"));
+			forecastList.add (new AvailableForecast ("Forecast 5"));
+			refresh_forecastListDropdown();
 		}
 		break;
 
