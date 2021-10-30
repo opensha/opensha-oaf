@@ -22,6 +22,7 @@ import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.LocationUtils;
 
 import org.opensha.oaf.util.ObsEqkRupMinTimeComparator;
+import org.opensha.oaf.util.catalog.EventIDGenerator;
 
 
 /**
@@ -205,7 +206,7 @@ public class GUIExternalCatalog {
 			double mag = Double.parseDouble(split[9]);
 			Location hypoLoc = new Location(lat, lon, depth);
 		
-			String eventId = dateStr.replaceAll("\t", "_")+"_M"+(float)mag;
+			String eventId = EventIDGenerator.generate_id();
 			long originTimeInMillis = date.getTime();
 		
 			result = new ObsEqkRupture(eventId, originTimeInMillis, hypoLoc, mag);

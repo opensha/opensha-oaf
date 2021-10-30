@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.catalog.EventIDGenerator;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
@@ -113,7 +114,7 @@ public class RuptureLineFormatGUIObserved extends RuptureLineFormatBase implemen
 			sb.append (separator);
 
 			String event_id = format_event_id (rf, IDMISS_NULL);
-			if (event_id != null) {
+			if (event_id != null && !(EventIDGenerator.is_generated_id (event_id))) {
 				sb.append (format_mag (rf));
 				sb.append (separator);
 				sb.append (event_id);
@@ -164,7 +165,7 @@ public class RuptureLineFormatGUIObserved extends RuptureLineFormatBase implemen
 			if (word_array_has_next()) {
 				parse_event_id (rf, get_word_array_next (IDMISS_EXCEPT), IDMISS_EXCEPT);
 			} else {
-				parse_event_id (rf, "T" + rf.abs_tloc.abs_time + "_M" + String.format (Locale.US, "%.4f", rf.get_eqk_mag()), IDMISS_EXCEPT);
+				parse_event_id (rf, EventIDGenerator.generate_id(), IDMISS_EXCEPT);
 			}
 
 			// Check that all words were used

@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.catalog.EventIDGenerator;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
@@ -151,7 +152,7 @@ public class RuptureLineFormatGUILegacy extends RuptureLineFormatBase implements
 
 			// Fabricate an event id from the time and magnitude
 
-			parse_event_id (rf, "T" + rf.abs_tloc.abs_time + "_M" + String.format (Locale.US, "%.4f", rf.get_eqk_mag()), IDMISS_EXCEPT);
+			parse_event_id (rf, EventIDGenerator.generate_id(), IDMISS_EXCEPT);
 		}
 		catch (Exception e) {
 			throw new RuntimeException ("RuptureLineFormatGUILegacy.parse_line: Error parsing line: line = " + line, e);

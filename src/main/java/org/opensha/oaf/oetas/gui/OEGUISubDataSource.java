@@ -23,6 +23,7 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -131,6 +132,7 @@ import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
+import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.gui.GUIConsoleWindow;
 import org.opensha.oaf.util.gui.GUICalcStep;
 import org.opensha.oaf.util.gui.GUICalcRunnable;
@@ -145,8 +147,10 @@ import org.opensha.oaf.util.gui.GUIDropdownParameter;
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.GUICmd;
+import org.opensha.oaf.aafs.ForecastData;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
+import org.opensha.oaf.comcat.ComcatProductOaf;
 
 import org.json.simple.JSONObject;
 
@@ -173,6 +177,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 	private static final int PARMGRP_CATALOG_FILE_BROWSE = 304;	// Button to browse for catalog filename
 
 	private static final int PARMGRP_FC_PROD_POPULATE = 305;	// Button to populate list of forecasts
+	private static final int PARMGRP_FC_INC_SUPERSEDED = 306;	// Checkbox to include superseded forecasts
 
 
 	//----- Sub-controllers -----
@@ -280,22 +285,54 @@ public class OEGUISubDataSource extends OEGUIListener {
 		return populateForecastListButton;
 	}
 
+	// Option to include superseded products; default true; check box.
+
+	private BooleanParameter includeSupersededParam;
+
+	private BooleanParameter init_includeSupersededParam () throws GUIEDTException {
+		includeSupersededParam = new BooleanParameter("Include superseded", true);
+		register_param (includeSupersededParam, "includeSupersededParam", PARMGRP_FC_INC_SUPERSEDED);
+		return includeSupersededParam;
+	}
+
+
+
+
 	// Forecast list dropdown -- Holds a list of AvailableForecast objects.
+
+	// Items that appear in the dropdown list.
 
 	public static class AvailableForecast {
 		public String label;
+		public long time;
+		public ComcatProductOaf oaf_product;
 
 		@Override
 		public String toString () {
 			return label;
 		}
 
-		public AvailableForecast (String label) {
-			this.label = label;
+		public AvailableForecast (ComcatProductOaf oaf_product) {
+			this.oaf_product = oaf_product;
+			this.time = oaf_product.updateTime;
+			this.label = SimpleUtils.time_to_string_no_z (oaf_product.updateTime);
 		}
 	}
 
+	// Comparator to sort list in decreasing order by time, latest first.
+
+	public static class AvailableForecastComparator implements Comparator<AvailableForecast> {
+		@Override
+		public int compare (AvailableForecast prod1, AvailableForecast prod2) {
+			return Long.compare (prod2.time, prod1.time);
+		}
+	}
+
+	// The list that appears in the dropdown.
+
 	private ArrayList<AvailableForecast> forecastList;
+
+	// The dropdown paramter.
 
 	private GUIDropdownParameter forecastListDropdown;
 
@@ -318,6 +355,17 @@ public class OEGUISubDataSource extends OEGUIListener {
 		return;
 	}
 
+	private void clear_forecastListDropdown () throws GUIEDTException {
+		if (!( forecastList.isEmpty() )) {
+			forecastList = new ArrayList<AvailableForecast>();
+			refresh_forecastListDropdown();
+		}
+		return;
+	}
+
+
+
+
 	// Initialize all dialog parameters
 
 	private void init_dataSourceDialogParam () throws GUIEDTException {
@@ -326,6 +374,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 		init_catalogFileParam();
 		init_browseCatalogFileButton();
 		init_populateForecastListButton();
+		init_includeSupersededParam();
 		init_forecastListDropdown();
 
 		return;
@@ -367,8 +416,9 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		case LAST_FORECAST:
 			dataSourceEditParam.setListTitleText ("Forecast");
-			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(0, f_button_row));
+			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(3, f_button_row));
 			dataSourceList.addParameter(populateForecastListButton);
+			dataSourceList.addParameter(includeSupersededParam);
 			dataSourceList.addParameter(forecastListDropdown);
 			break;
 
@@ -627,6 +677,118 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 
 
+	//----- Parameter transfer, to populate the list of forecasts -----
+
+
+
+
+	// Class to view or modify relevant parameters.
+	// This class holds copies of the parameters, and so may be accessed on any thread.
+	// Modification functions change the copy, and are not immediately written back to parameters.
+
+	public static abstract class XferForecastPopulateView {
+
+		public DataSource x_dataSourceTypeParam;	// Data source type
+
+		// Event ID. [COMCAT, LAST_FORECAST]  (can be modified for any type)
+
+		public String x_eventIDParam;				// parameter value, checked for validity
+		public abstract void modify_eventIDParam (String x);
+
+		// Option to include superseded products.
+
+		public boolean x_includeSuperseded;			// parameter value, checked for validity
+
+		// Get the implementation class.
+
+		public abstract XferForecastPopulateImpl xfer_get_impl ();
+	}
+
+
+
+
+	// Implementation class to transfer parameters.
+
+	public class XferForecastPopulateImpl extends XferForecastPopulateView implements OEGUIXferCommon {
+
+		// Get the implementation class.
+
+		@Override
+		public XferForecastPopulateImpl xfer_get_impl () {
+			return this;
+		}
+
+		// Constructor, ensure clean state.
+
+		public XferForecastPopulateImpl () {
+			internal_clean();
+		}
+
+		// Event ID.
+
+		private boolean dirty_eventIDParam;	// true if needs to be written back
+
+		@Override
+		public void modify_eventIDParam (String x) {
+			x_eventIDParam = x;
+			dirty_eventIDParam = true;
+		}
+
+
+		// Clear all dirty-value flags.
+
+		private void internal_clean () {
+			dirty_eventIDParam = false;
+			return;
+		}
+
+		@Override
+		public void xfer_clean () {
+			internal_clean();
+			return;
+		}
+
+
+		// Load values.
+
+		@Override
+		public XferForecastPopulateImpl xfer_load () {
+
+			// Clean state
+
+			xfer_clean();
+
+			// Event ID.
+				
+			x_eventIDParam = validParam(eventIDParam);
+
+			// Option to include superseded products
+
+			x_includeSuperseded = validParam(includeSupersededParam);
+
+			return this;
+		}
+
+
+		// Store modified values back into the parameters.
+
+		@Override
+		public void xfer_store () throws GUIEDTException {
+
+			// Event ID
+
+			if (dirty_eventIDParam) {
+				dirty_eventIDParam = false;
+				updateParam(eventIDParam, x_eventIDParam);
+			}
+
+			return;
+		}
+	}
+
+
+
+
 	//----- Client interface -----
 
 
@@ -729,8 +891,11 @@ public class OEGUISubDataSource extends OEGUIListener {
 			break;
 
 		case LAST_FORECAST:
-			if (definedParam(eventIDParam)) {
-				result = true;
+			if (definedParam(eventIDParam) && !(forecastList.isEmpty())) {
+				int selected = validParam(forecastListDropdown);
+				if (selected > 0) {
+					result = true;
+				}
 			}
 			break;
 
@@ -825,23 +990,162 @@ public class OEGUISubDataSource extends OEGUIListener {
 		break;
 
 
+		// Include superseded product checkbox.
+		// - Clear the dropdown list.
+		// - Report to top-level controller.
+
+		case PARMGRP_FC_INC_SUPERSEDED: {
+			if (!( f_sub_enable )) {
+				return;
+			}
+			clear_forecastListDropdown();
+			report_data_source_change();
+		}
+		break;
+
+
 		// Populate forecast list button.
+		// - Clear the dropdown list.
+		// - Report to top-level controller.
 		// - Fetch available forecasts from Comcat, and populate the dropdown.
 
 		case PARMGRP_FC_PROD_POPULATE: {
 			if (!( f_sub_enable )) {
 				return;
 			}
+			clear_forecastListDropdown();
+			report_data_source_change();
 
-			// As a test, just put a few items in the list
+			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
+			final XferForecastPopulateImpl xfer_fc_populate_impl = new XferForecastPopulateImpl();
 
-			forecastList = new ArrayList<AvailableForecast>();
-			forecastList.add (new AvailableForecast ("Forecast 1"));
-			forecastList.add (new AvailableForecast ("Forecast 2"));
-			forecastList.add (new AvailableForecast ("Forecast 3"));
-			forecastList.add (new AvailableForecast ("Forecast 4"));
-			forecastList.add (new AvailableForecast ("Forecast 5"));
-			refresh_forecastListDropdown();
+			// Load the forecast populate parameters
+
+			if (!( gui_top.call_xfer_load (xfer_fc_populate_impl, "Incorrect parameters for fecthing forecasts") )) {
+				return;
+			}
+
+			// Number of events received, or -1 if error
+
+			final int[] received = new int[1];
+			received[0] = -1;
+
+			// The new list we will build
+
+			final ArrayList<AvailableForecast> newForecastList = new ArrayList<AvailableForecast>();
+
+			// Call Comcat to get list of forecasts
+
+			GUICalcStep fetchStep_1 = new GUICalcStep("Fetching Forecasts",
+				"Contacting USGS ComCat. This is occasionally slow. "
+				+ "If it fails, trying again often works.", new Runnable() {
+						
+				@Override
+				public void run() {
+
+					// See if the event ID is an alias, and change it if so
+
+					String xlatid = GUIEventAlias.query_alias_dict (xfer_fc_populate_impl.x_eventIDParam);
+					if (xlatid != null) {
+						System.out.println("Translating Event ID: " + xfer_fc_populate_impl.x_eventIDParam + " -> " + xlatid);
+						xfer_fc_populate_impl.modify_eventIDParam(xlatid);
+					}
+
+					// Get the event id
+
+					String event_id = xfer_fc_populate_impl.x_eventIDParam;
+
+					// Get the superseded flag
+
+					boolean f_superseded = xfer_fc_populate_impl.x_includeSuperseded;
+
+					// Get the event information
+
+					ComcatOAFAccessor accessor = new ComcatOAFAccessor ();
+					ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true, f_superseded);
+
+					if (rup == null) {
+						throw new RuntimeException ("Earthquake not found: id = " + event_id);
+					}
+
+					// Get the list of products
+
+					boolean delete_ok = false;
+					List<ComcatProductOaf> product_list = ComcatProductOaf.make_list_from_gj (accessor.get_last_geojson(), delete_ok);
+
+					// Save products that have a ForecastData file
+
+					for (ComcatProductOaf prod : product_list) {
+						if (prod.productFiles.containsKey (ForecastData.FORECAST_DATA_FILENAME)) {
+							newForecastList.add (new AvailableForecast (prod));
+						}
+					}
+
+					// Sort the list into decreasing order by time (latest first)
+
+					newForecastList.sort (new AvailableForecastComparator());
+
+					// Set number of events received, this indicates success
+
+					received[0] = newForecastList.size();
+				}
+			}, gui_top.get_forceWorkerEDT());
+
+			// Populate dropdown list
+
+			GUICalcStep fetchStep_2 = new GUICalcStep("Populating List", "...", new GUIEDTRunnable() {
+						
+				@Override
+				public void run_in_edt() throws GUIEDTException {
+
+					// Store back changed parameters
+
+					xfer_fc_populate_impl.xfer_store();
+
+					// If we received some forecasts, update the list
+
+					if (received[0] > 0) {
+						forecastList = newForecastList;
+						refresh_forecastListDropdown();
+					}
+				}
+			}, true);
+
+			// Display number received
+
+			Runnable postFetchStep = new GUIEDTRunnable() {
+						
+				@Override
+				public void run_in_edt() throws GUIEDTException {
+					String title = "Available Forecasts";
+					String message;
+					int message_type;
+
+					if (received[0] < 0) {
+						message = "Error occurred while attempting to retrieve forecasts";
+						message_type = JOptionPane.ERROR_MESSAGE;
+					}
+					else if (received[0] == 0) {
+						message = "No forecasts with a download file were found";
+						message_type = JOptionPane.WARNING_MESSAGE;
+					}
+					else if (received[0] == 1) {
+						message = "Found 1 forecast with a download file";
+						message_type = JOptionPane.INFORMATION_MESSAGE;
+					}
+					else {
+						message = "Found " + received[0] + " forecasts with a download file";
+						message_type = JOptionPane.INFORMATION_MESSAGE;
+					}
+					JOptionPane.showMessageDialog(gui_top.get_top_window(), message, title, message_type);
+				}
+			};
+
+			// Run in threads
+
+			GUICalcRunnable run = new GUICalcRunnable(progress, fetchStep_1, fetchStep_2);
+			run.set_reporter(postFetchStep);
+			new Thread(run).start();
 		}
 		break;
 
