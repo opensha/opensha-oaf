@@ -31,7 +31,7 @@ import org.opensha.oaf.aafs.ForecastParameters;
 import org.opensha.oaf.aafs.ForecastResults;
 
 import org.opensha.oaf.util.SimpleUtils;
-import org.opensha.oaf.util.ObsEqkRupMinTimeComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupMinTimeComparator;
 
 
 /**

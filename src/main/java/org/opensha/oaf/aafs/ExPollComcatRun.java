@@ -14,7 +14,7 @@ import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
-import org.opensha.oaf.util.ObsEqkRupMaxTimeComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupMaxTimeComparator;
 
 import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;

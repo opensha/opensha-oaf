@@ -1,4 +1,4 @@
-package org.opensha.oaf.util;
+package org.opensha.oaf.util.catalog;
 
 import java.util.Comparator;
 

@@ -21,7 +21,7 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.LocationUtils;
 
-import org.opensha.oaf.util.ObsEqkRupMinTimeComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupMinTimeComparator;
 import org.opensha.oaf.util.catalog.EventIDGenerator;
 
 

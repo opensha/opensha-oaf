@@ -49,7 +49,7 @@ import org.opensha.oaf.util.SphLatLon;
 //import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SphRegionCircle;
 import org.opensha.oaf.util.SimpleUtils;
-import org.opensha.oaf.util.ObsEqkRupMaxTimeComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupMaxTimeComparator;
 
 import org.opensha.oaf.rj.AftershockVerbose;
 import org.opensha.oaf.aafs.ServerConfig;

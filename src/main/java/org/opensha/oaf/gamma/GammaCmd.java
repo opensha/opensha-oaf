@@ -39,11 +39,11 @@ import org.opensha.oaf.util.SphRegionWorld;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SphRegionCircle;
-import org.opensha.oaf.util.ObsEqkRupEventIdComparator;
-import org.opensha.oaf.util.ObsEqkRupMaxMagComparator;
-import org.opensha.oaf.util.ObsEqkRupMaxTimeComparator;
-import org.opensha.oaf.util.ObsEqkRupMinMagComparator;
-import org.opensha.oaf.util.ObsEqkRupMinTimeComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupEventIdComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupMaxMagComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupMaxTimeComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupMinMagComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupMinTimeComparator;
 
 import org.opensha.oaf.aafs.ActionConfig;
 import org.opensha.oaf.aafs.ServerComponent;

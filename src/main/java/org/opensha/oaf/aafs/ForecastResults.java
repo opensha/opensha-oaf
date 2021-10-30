@@ -15,7 +15,7 @@ import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SimpleUtils;
-import org.opensha.oaf.util.ObsEqkRupMinTimeComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupMinTimeComparator;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;

@@ -30,7 +30,7 @@ import org.opensha.oaf.util.SphRegionWorld;
 import org.opensha.oaf.util.SphLatLon;
 //import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SphRegionCircle;
-import org.opensha.oaf.util.ObsEqkRupMaxTimeComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupMaxTimeComparator;
 
 import org.opensha.commons.data.comcat.ComcatRegion;
 import org.opensha.commons.data.comcat.ComcatVisitor;

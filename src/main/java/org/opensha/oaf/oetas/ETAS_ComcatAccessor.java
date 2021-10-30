@@ -5,7 +5,7 @@ import gov.usgs.earthquake.event.EventWebService;
 import gov.usgs.earthquake.event.Format;
 import gov.usgs.earthquake.event.JsonEvent;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
-import org.opensha.oaf.util.ObsEqkRupEventIdComparator;
+import org.opensha.oaf.util.catalog.ObsEqkRupEventIdComparator;
 import org.opensha.oaf.util.SphRegion;
 
 import java.io.FileNotFoundException;
