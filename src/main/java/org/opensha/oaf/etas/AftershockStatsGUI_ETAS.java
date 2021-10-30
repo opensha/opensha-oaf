@@ -47,11 +47,11 @@ import org.opensha.commons.data.function.DefaultXY_DataSet;
 import org.opensha.commons.data.function.DiscretizedFunc;
 import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
 import org.opensha.commons.data.function.HistogramFunction;
-import org.opensha.commons.data.function.UncertainArbDiscDataset;
 import org.opensha.commons.data.function.XY_DataSet;
 import org.opensha.commons.data.function.XY_DatasetBinner;
 import org.opensha.commons.data.siteData.impl.TectonicRegime;
 import org.opensha.commons.data.siteData.impl.WaldAllenGlobalVs30;
+import org.opensha.commons.data.uncertainty.UncertainArbDiscFunc;
 import org.opensha.commons.data.xyz.EvenlyDiscrXYZ_DataSet;
 import org.opensha.commons.data.xyz.GriddedGeoDataSet;
 import org.opensha.commons.geo.GeoTools;
@@ -2473,7 +2473,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				chars.add(new PlotCurveCharacterstics(PlotLineType.SOLID, 1f, generic_color));
 				upper.setName("");
 
-				UncertainArbDiscDataset uncertainFunc = new UncertainArbDiscDataset(expected, lower, upper);
+				UncertainArbDiscFunc uncertainFunc = new UncertainArbDiscFunc(expected, lower, upper);
 				funcs.add(uncertainFunc);
 				uncertainFunc.setName("Generic forecast");
 				PlotLineType plt = PlotLineType.SHADED_UNCERTAIN;
@@ -2510,7 +2510,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				chars.add(new PlotCurveCharacterstics(PlotLineType.SOLID, 1f, bayesian_color));
 				upper.setName("");
 
-				UncertainArbDiscDataset uncertainFunc = new UncertainArbDiscDataset(expected, lower, upper);
+				UncertainArbDiscFunc uncertainFunc = new UncertainArbDiscFunc(expected, lower, upper);
 				funcs.add(uncertainFunc);
 				uncertainFunc.setName("95% uncertainty range");
 				PlotLineType plt = PlotLineType.SHADED_UNCERTAIN;
@@ -4654,7 +4654,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
  						EvenlyDiscretizedFunc[] fractilesFuncs = forecast.get(0);
  						EvenlyDiscretizedFunc magPDFfunc = forecast.get(1)[0];
 						
-						UncertainArbDiscDataset uncertainFunc = new UncertainArbDiscDataset(fractilesFuncs[1], fractilesFuncs[0], fractilesFuncs[2]);
+						UncertainArbDiscFunc uncertainFunc = new UncertainArbDiscFunc(fractilesFuncs[1], fractilesFuncs[0], fractilesFuncs[2]);
 
 //						EvenlyDiscretizedFunc magPDFfunc = model.getMagnitudePDFwithAleatoryVariability(minMag, maxMag, numMag, minDays, maxDays);
 						magPDFfunc.scale(100d);
