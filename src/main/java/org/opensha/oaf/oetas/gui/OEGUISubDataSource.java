@@ -253,6 +253,16 @@ public class OEGUISubDataSource extends OEGUIListener {
 		return dataEndTimeParam;
 	}
 
+	// Option to use analyst options when fetching from Comcat; default true; check box.
+
+	private BooleanParameter useAnalystOptionsParam;
+
+	private BooleanParameter init_useAnalystOptionsParam () throws GUIEDTException {
+		useAnalystOptionsParam = new BooleanParameter("Use analyst options", true);
+		register_param (useAnalystOptionsParam, "useAnalystOptionsParam", PARMGRP_DATA_SOURCE_PARAM);
+		return useAnalystOptionsParam;
+	}
+
 	// Catalog file; edit box containing a string.
 
 	private StringParameter catalogFileParam;
@@ -385,6 +395,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 	private void init_dataSourceDialogParam () throws GUIEDTException {
 		init_dataStartTimeParam();
 		init_dataEndTimeParam();
+		init_useAnalystOptionsParam();
 		init_catalogFileParam();
 		init_browseCatalogFileButton();
 		init_populateForecastListButton();
@@ -412,9 +423,10 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		case COMCAT:
 			dataSourceEditParam.setListTitleText ("Comcat");
-			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(4, f_button_row));
+			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(5, f_button_row));
 			dataSourceList.addParameter(dataStartTimeParam);
 			dataSourceList.addParameter(dataEndTimeParam);
+			dataSourceList.addParameter(useAnalystOptionsParam);
 			dataSourceList.addParameter(sub_ctl_region.get_regionTypeParam());
 			dataSourceList.addParameter(sub_ctl_region.get_regionEditParam());
 			break;
@@ -529,6 +541,10 @@ public class OEGUISubDataSource extends OEGUIListener {
 		public double x_dataEndTimeParam;			// parameter value, checked for validity
 		public abstract void modify_dataEndTimeParam (double x);
 
+		// Option to use analyst options when fetching from Comcat. [COMCAT, CATALOG_FILE (forced false)]
+
+		public boolean x_useAnalystOptionsParam;	// parameter value, checked for validity
+
 		// Search region. [COMCAT]
 
 		public OEGUISubRegion.XferRegionView x_region;	// Region parameters
@@ -640,12 +656,14 @@ public class OEGUISubDataSource extends OEGUIListener {
 				x_eventIDParam = validParam(eventIDParam);
 				x_dataStartTimeParam = validParam(dataStartTimeParam);
 				x_dataEndTimeParam = validParam(dataEndTimeParam);
+				x_useAnalystOptionsParam = validParam(useAnalystOptionsParam);
 				x_region.xfer_get_impl().xfer_load();
 				break;
 
 			case CATALOG_FILE:
 				x_dataStartTimeParam = validParam(dataStartTimeParam);
 				x_dataEndTimeParam = validParam(dataEndTimeParam);
+				x_useAnalystOptionsParam = false;
 				x_catalogFileParam = validParam(catalogFileParam);
 				break;
 

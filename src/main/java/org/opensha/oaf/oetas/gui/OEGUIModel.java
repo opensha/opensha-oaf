@@ -877,8 +877,8 @@ public class OEGUIModel extends OEGUIComponent {
 	//  - aafs_fcparams contains the default forecast parameters.
 	//  - fetch_fcparams contains a copy of aafs_fcparams;
 	//    in particular, fetch_fcparams.aftershock_search_region == null.
-	//  - custom_search_region is null.
-	//  - analyst_inj_text is an empty string
+	//  - custom_search_region is the current analyst-supplied region, or null if none.
+	//  - analyst_inj_text is the current analyst-supplied text, or an empty string if none.
 	//  - Generic model is computed.
 
 	private void setup_for_mainshock (OEGUIController.XferCatalogMod xfer) {
@@ -887,15 +887,58 @@ public class OEGUIModel extends OEGUIComponent {
 
 		System.out.println (fcmain.toString());
 
+		// Analyst-supplied forecast parameters, or null if none
+
+		ForecastParameters analyst_fcparms = null;
+
 		// Display list of OAF products for this mainshock
 
 		if (fcmain.mainshock_geojson != null) {
+
+			// Most recent product, or null if none
+
+			ComcatProductOaf oaf_product = null;
+
+			// Loop to display all products and find the most recent
+
 			List<ComcatProductOaf> oaf_product_list = ComcatProductOaf.make_list_from_gj (fcmain.mainshock_geojson);
 			for (int k = 0; k < oaf_product_list.size(); ++k) {
 				System.out.println ("OAF product: " + oaf_product_list.get(k).summary_string());
+				if (oaf_product == null || oaf_product.updateTime < oaf_product_list.get(k).updateTime) {
+					oaf_product = oaf_product_list.get(k);
+				}
 			}
 			if (oaf_product_list.size() > 0) {
 				System.out.println ();
+			}
+
+			// If we want to use analyst options ...
+
+			if (xfer.x_dataSource.x_useAnalystOptionsParam) {
+
+				// If the most recent product contains a ForecastData file ...
+
+				if (oaf_product.contains_file (ForecastData.FORECAST_DATA_FILENAME)) {
+
+					// Get the download file
+
+					ForecastData dlf = new ForecastData();
+
+					try {
+						String s = oaf_product.read_string_from_contents (ForecastData.FORECAST_DATA_FILENAME);
+						dlf.from_json_no_rebuild (s);
+					}
+					catch (Exception e) {
+						throw new RuntimeException ("Error: Unable to read download file from Comcat", e);
+					}
+
+					// If there are analyst-supplied parameters, save them
+
+					if (dlf.analyst.analyst_params != null) {
+						analyst_fcparms = dlf.analyst.analyst_params;
+						System.out.println ("Using analyst-supplied parameters");
+					}
+				}
 			}
 		}
 
@@ -904,7 +947,7 @@ public class OEGUIModel extends OEGUIComponent {
 		aafs_fcparams = new ForecastParameters();
 
 		try {
-			if (!( aafs_fcparams.fetch_forecast_params (fcmain, null) )) {
+			if (!( aafs_fcparams.fetch_forecast_params (fcmain, analyst_fcparms) )) {
 				throw new IllegalStateException ("OEGUIModel.setup_for_mainshock - Error fetching forecast params");
 			}
 		} catch (RuntimeException e) {
@@ -930,13 +973,21 @@ public class OEGUIModel extends OEGUIComponent {
 		fetch_fcparams = new ForecastParameters();
 		fetch_fcparams.copy_from (aafs_fcparams);
 
-		// No custom search region
+		// No custom search region, or analyst-supplied custom search region
 
 		custom_search_region = null;
 
-		// No injectable text
+		if (analyst_fcparms != null && analyst_fcparms.aftershock_search_avail) {
+			custom_search_region = analyst_fcparms.aftershock_search_region;
+		}
+
+		// No injectable text, or effective analyst-supplied text
 
 		analyst_inj_text = "";
+
+		if (analyst_fcparms != null) {
+			analyst_inj_text = analyst_fcparms.get_eff_injectable_text ("");
+		}
 
 		// Make the generic RJ model
 
@@ -1002,8 +1053,8 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Make the generic RJ model
 		// Note: Compare to ForecastResults.rebuild_generic_results, this is how the generic
-		// model is rebuilt when the download file is loades.  Probably we could just use
-		// the generic model in the download file.
+		// model is rebuilt when the download file is loades.  (Probably we could just use
+		// the generic model in the download file, if the download file is rebuilts when loaded).
 
 		genericModel = new RJ_AftershockModel_Generic(fcmain.mainshock_mag, aafs_fcparams.generic_params);
 
@@ -1014,6 +1065,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 	// Set up the search region.
+	// On entry, setup_for_mainshock(xfer) has been called.
 	// On return:
 	// - fetch_fcparams contains the search region and search parameters.
 	// - fetch_fcparams.mag_comp_params contains the magnitude of completeness
@@ -1055,10 +1107,6 @@ public class OEGUIModel extends OEGUIComponent {
 		SearchMagFn magCentroid = fetch_fcparams.mag_comp_params.get_fcn_magCentroid();
 		SearchRadiusFn radiusCentroid = fetch_fcparams.mag_comp_params.get_fcn_radiusCentroid();
 
-		// No custom region
-
-		custom_search_region = null;
-
 		// Depth range for aftershock search, assume default
 		
 		double minDepth = ForecastParameters.SEARCH_PARAM_OMIT;
@@ -1069,6 +1117,7 @@ public class OEGUIModel extends OEGUIComponent {
 		double min_mag = ForecastParameters.SEARCH_PARAM_OMIT;
 
 		// Switch on region type
+		// Note: Any region type other than STANDARD overrides an analyst-supplied region
 
 		switch (xfer.x_dataSource.x_region.x_regionTypeParam) {
 
@@ -1078,6 +1127,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 			magSample = magSample.makeRemovedMinMag();
 			magCentroid = magCentroid.makeRemovedMinMag();
+			// Keep the existing custom_search_region
 			break;
 
 		case CENTROID_WC_CIRCLE:
@@ -1096,6 +1146,7 @@ public class OEGUIModel extends OEGUIComponent {
 				xfer.x_dataSource.x_region.x_minRadiusParam,
 				xfer.x_dataSource.x_region.x_maxRadiusParam
 			);
+			custom_search_region = null;
 			minDepth = xfer.x_dataSource.x_region.x_minDepthParam;
 			maxDepth = xfer.x_dataSource.x_region.x_maxDepthParam;
 			break;
@@ -1108,6 +1159,7 @@ public class OEGUIModel extends OEGUIComponent {
 			radiusSample = SearchRadiusFn.makeConstant (xfer.x_dataSource.x_region.x_radiusParam);
 			magCentroid = SearchMagFn.makeNoMinMag();
 			radiusCentroid = SearchRadiusFn.makeConstant (xfer.x_dataSource.x_region.x_radiusParam);
+			custom_search_region = null;
 			minDepth = xfer.x_dataSource.x_region.x_minDepthParam;
 			maxDepth = xfer.x_dataSource.x_region.x_maxDepthParam;
 			break;
@@ -1124,6 +1176,7 @@ public class OEGUIModel extends OEGUIComponent {
 			);
 			magCentroid = SearchMagFn.makeSkipCentroid();
 			radiusCentroid = SearchRadiusFn.makeConstant (0.0);
+			custom_search_region = null;
 			minDepth = xfer.x_dataSource.x_region.x_minDepthParam;
 			maxDepth = xfer.x_dataSource.x_region.x_maxDepthParam;
 			break;
@@ -1136,6 +1189,7 @@ public class OEGUIModel extends OEGUIComponent {
 			radiusSample = SearchRadiusFn.makeConstant (xfer.x_dataSource.x_region.x_radiusParam);
 			magCentroid = SearchMagFn.makeSkipCentroid();
 			radiusCentroid = SearchRadiusFn.makeConstant (0.0);
+			custom_search_region = null;
 			minDepth = xfer.x_dataSource.x_region.x_minDepthParam;
 			maxDepth = xfer.x_dataSource.x_region.x_maxDepthParam;
 			break;
@@ -1697,7 +1751,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		try {
 			String s = oaf_product.read_string_from_contents (ForecastData.FORECAST_DATA_FILENAME);
-			dlf.from_json (s);
+			dlf.from_json_no_rebuild (s);
 		}
 		catch (Exception e) {
 			throw new RuntimeException ("Error: Unable to read download file from Comcat", e);
