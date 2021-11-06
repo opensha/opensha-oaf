@@ -9,10 +9,15 @@ import java.math.BigDecimal;
 
 import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URLConnection;
+import java.net.HttpURLConnection;
 
 import java.io.IOException;
 import java.io.BufferedReader;
+import java.io.StringReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
 import org.opensha.commons.data.comcat.ComcatRegion;
@@ -117,6 +122,27 @@ public class ComcatProduct {
 
 
 
+	// Product file connection timeout, in milliseconds.
+	// Use 0 for no timeout, or -1 for the system default.
+	// Note: See java.net.URLConnection for information on timeouts.
+
+	public static final int PRODFILE_CONNECT_TIMEOUT = 15000;		// 15 seconds
+
+	// Product file read timeout, in milliseconds.
+	// Use 0 for no timeout, or -1 for the system default.
+	// Note: See java.net.URLConnection for information on timeouts.
+	// Note: The system default is apparently 0, meaing no timeout, but on rare
+	// occasions the use of 0 can cause the program to hang in an infinite wait.
+
+	public static final int PRODFILE_READ_TIMEOUT = 30000;			// 30 seconds
+
+	// Maximum length we accept for a product file.
+
+	public static final long PRODFILE_MAX_LENGTH = 134217728L;		// 128 MB
+
+
+
+
 	// Flag indicating if this is a delete product (derived from "status" in the product).
 
 	public boolean isDelete;
@@ -162,6 +188,18 @@ public class ComcatProduct {
 		// URL to file ("url" in the product).
 
 		public String url;
+
+		// Last modified time ("lastModified" in the product), or -1L if not available.
+
+		public long lastModified;
+
+		// Length of file ("length" in the product), or -1L if not available.
+
+		public long length;
+
+		// SHA256 for the file ("sha256" in the product), or null if not available.
+
+		public String sha256;
 	}
 
 	// Map of product files (empty if this is a delete product) ("contents" in the product).
@@ -171,6 +209,34 @@ public class ComcatProduct {
 	// Map of property strings (empty if this is a delete product) ("properties" in the product).
 
 	public HashMap<String, String> propertyStrings;
+
+	// Information for in-line text, null if no in-line text.
+	// The url is null.  The contentType may be null or an invalid MIME type.
+
+	public ProductFile inlineFile;
+
+
+
+
+	// Return true if the product contains the given file.
+
+	public boolean contains_file (String filename) {
+		return productFiles.containsKey (filename);
+	}
+
+
+
+
+	// Return true if the product contains the given property.
+
+	public boolean contains_property (String property_name) {
+		return propertyStrings.containsKey (property_name);
+	}
+
+
+
+
+	//----- Functions for reading products -----
 
 
 
@@ -252,11 +318,48 @@ public class ComcatProduct {
 		// In-line text
 
 		inlineText = null;
+		inlineFile = null;
 
 		if (!( isDelete )) {
 
 			inlineText = GeoJsonUtils.getString (gj_product, "contents", "", "bytes");
 
+			if (inlineText != null) {
+				inlineFile = new ProductFile();
+
+				// MIME type, null if not available
+
+				inlineFile.contentType = GeoJsonUtils.getString (gj_product, "contents", "", "contentType");
+
+				// File URL
+
+				inlineFile.url = null;
+
+				// Modified time, -1L if not available
+
+				Long ftime = GeoJsonUtils.getLong (gj_product, "contents", "", "lastModified");
+				if (ftime == null) {
+					inlineFile.lastModified = -1L;
+				} else {
+					inlineFile.lastModified = ftime;
+				}
+
+				// Length, -1L if not available
+
+				Long flen = GeoJsonUtils.getLong (gj_product, "contents", "", "length");
+				if (flen == null) {
+					inlineFile.length = -1L;
+				} else {
+					inlineFile.length = flen;
+					if (inlineFile.length < 0L) {
+						inlineFile.length = -1L;
+					}
+				}
+
+				// SHA256, null if not available
+
+				inlineFile.sha256 = GeoJsonUtils.getString (gj_product, "contents", "", "sha256");
+			}
 		}
 
 		// Contents
@@ -289,6 +392,31 @@ public class ComcatProduct {
 							the_file.url = GeoJsonUtils.getString (gj_contents, filename, "url");
 
 							if (!( the_file.url == null || the_file.url.isEmpty() )) {
+
+								// Modified time, -1L if not available
+
+								Long ftime = GeoJsonUtils.getLong (gj_contents, filename, "lastModified");
+								if (ftime == null) {
+									the_file.lastModified = -1L;
+								} else {
+									the_file.lastModified = ftime;
+								}
+
+								// Length, -1L if not available
+
+								Long flen = GeoJsonUtils.getLong (gj_contents, filename, "length");
+								if (flen == null) {
+									the_file.length = -1L;
+								} else {
+									the_file.length = flen;
+									if (the_file.length < 0L) {
+										the_file.length = -1L;
+									}
+								}
+
+								// SHA256, null if not available
+
+								the_file.sha256 = GeoJsonUtils.getString (gj_contents, filename, "sha256");
 
 								// Add to the map
 
@@ -387,7 +515,7 @@ public class ComcatProduct {
 
 
 
-	// Make a list products from a GeoJson event.
+	// Make a list of products from a GeoJson event.
 	//  product_type = Type of product.
 	//  event = GeoJson containing the event.
 	//  delete_ok = True if delete products are OK, false if not (defaults to false if omitted).
@@ -432,6 +560,23 @@ public class ComcatProduct {
 
 
 
+	// Return the given string, or "<null>" if it is null.
+
+	protected final String str_or_null (String s) {
+		if (s == null) {
+			return "<null>";
+		}
+		return s;
+	}
+
+
+
+
+	//----- Functions for displaying the product -----
+
+
+
+
 	// Make a string representation.
 
 	@Override
@@ -447,6 +592,13 @@ public class ComcatProduct {
 		if (inlineText != null) {
 			sb.append ("inlineText = " + inlineText + "\n");
 		}
+		if (inlineFile != null) {
+			sb.append ("inlineFile" + ":" + "\n");
+			sb.append ("  contentType = " + str_or_null(inlineFile.contentType) + "\n");
+			sb.append ("  lastModified = " + inlineFile.lastModified + "\n");
+			sb.append ("  length = " + inlineFile.length + "\n");
+			sb.append ("  sha256 = " + str_or_null(inlineFile.sha256) + "\n");
+		}
 		for (String propname : propertyStrings.keySet()) {
 			sb.append ("prop/" + propname + " = " + propertyStrings.get (propname) + "\n");
 		}
@@ -455,6 +607,9 @@ public class ComcatProduct {
 			ProductFile the_file = productFiles.get (filename);
 			sb.append ("  contentType = " + the_file.contentType + "\n");
 			sb.append ("  url = " + the_file.url + "\n");
+			sb.append ("  lastModified = " + the_file.lastModified + "\n");
+			sb.append ("  length = " + the_file.length + "\n");
+			sb.append ("  sha256 = " + str_or_null(the_file.sha256) + "\n");
 		}
 		return sb.toString();
 	}
@@ -477,6 +632,11 @@ public class ComcatProduct {
 		sb.append (", time = " + SimpleUtils.time_raw_and_string (updateTime));
 		return sb.toString();
 	}
+
+
+
+
+	//----- Functions for finding products in Comcat -----
 
 
 
@@ -555,7 +715,12 @@ public class ComcatProduct {
 
 
 
-	// Read all the lines of text from a URL.
+	//----- Functions for access to content files -----
+
+
+
+
+	// Open an input stream from a URL.
 	// Parameters:
 	//  url_spec = String to parse as a URL.
 	// Returns a list of strings containing the lines of the file.
@@ -563,24 +728,257 @@ public class ComcatProduct {
 	// Note: This should only be used for URLs obtained from Comcat
 	// (e.g., in the contents section of a product).  Any error that
 	// occurs is properly considered to be a Comcat error.
+	// Note: ComcatContentFileException indicates an error that is
+	// likely to be permanent, and therefore should not be retried.
+	// Important: The caller must close the stream!  The use of
+	// try-with-resources is highly recommended.
 
-	public static List<String> read_all_lines_from_url (String url_spec) {
-		ArrayList<String> lines = new ArrayList<String>();
-		try (
-			BufferedReader br = new BufferedReader (new InputStreamReader (
-				(new URL (url_spec)).openStream(), StandardCharsets.UTF_8 ));
-		){
-			for (String line = br.readLine(); line != null; line = br.readLine()) {
-				lines.add (line);
-			}
-		}
-		catch (IOException e) {
-			throw new ComcatException ("ComcatProduct.read_all_lines_from_url: I/O error reading from URL: " + url_spec);
+	public static InputStream open_stream_for_url (String url_spec) throws IOException {
+
+		// Construct the URL
+		// Throws MalformedURLException (subclass of IOException) if error in forming URL.
+
+		URL url = null;
+		try {
+			url = new URL (url_spec);
 		}
 		catch (Exception e) {
-			throw new ComcatException ("ComcatProduct.read_all_lines_from_url: Error reading from URL: " + url_spec);
+			throw new ComcatContentFileException ("Malformed URL for access to Comcat content file (this is a permanent failure): URL = " + url_spec, e);
 		}
-		return lines;
+
+		// Create a connection.
+		// This is a local operation that does not call out to the network.
+		// Throws IOException if there is a problem.
+		// The object returned should be an HttpURLConnection (subclass of URLConnection).
+
+		URLConnection conn = url.openConnection();
+
+		// Here we could call conn.addRequestProperty() to add properties.
+
+		// Set the timeouts, if desired.
+
+		if (PRODFILE_CONNECT_TIMEOUT >= 0) {
+			conn.setConnectTimeout (PRODFILE_CONNECT_TIMEOUT);
+		}
+
+		if (PRODFILE_READ_TIMEOUT >= 0) {
+			conn.setReadTimeout (PRODFILE_READ_TIMEOUT);
+		}
+
+		// Connect to Comcat.
+		// Throws SocketTimeoutException (subclass of IOException) if timeout trying to establish connection.
+		// Throws IOException if there is some other problem.
+
+		conn.connect();
+
+		// Here is where we can examine the HTTP status code.
+		// The connection should be an HTTP connection.
+
+		if (conn instanceof HttpURLConnection) {
+			HttpURLConnection http_conn = (HttpURLConnection)conn;
+
+			// This is the HTTP status code
+
+			int http_status_code = http_conn.getResponseCode();
+
+			switch (http_status_code) {
+			
+			case HttpURLConnection.HTTP_OK:				// 200 = OK
+			case HttpURLConnection.HTTP_PARTIAL:		// 206 = Partial content
+			case -1:									// -1 = unknown status (getResponseCode returns -1 if it can't determine the status code)
+				break;									// continue
+			
+			case HttpURLConnection.HTTP_BAD_REQUEST:	// 400 = Bad request
+			case HttpURLConnection.HTTP_FORBIDDEN:		// 403 = Forbidden
+			case HttpURLConnection.HTTP_NOT_FOUND:		// 404 = Not found
+			case HttpURLConnection.HTTP_GONE:			// 410 = Gone
+			case HttpURLConnection.HTTP_REQ_TOO_LONG:	// 414 = Request-URI too long
+				throw new ComcatContentFileException ("Access to Comcat content file failed with HTTP status code " + http_status_code + " (this is a permanent failure), URL = " + url_spec);
+
+			default:									// any other status code is an error
+				throw new IOException ("Access to Comcat content file failed with HTTP status code " + http_status_code + ", URL = " + url_spec);
+			}
+		}
+
+		// Open the stream
+
+		return conn.getInputStream();
+	}
+
+
+
+
+	// Read all the bytes from a URL into a buffer.
+	// Parameters:
+	//  url_spec = String to parse as a URL.
+	//  expected_length = Expected number of bytes, or -1L if not specified.
+	//  maximum_length = Maximum allowed number of bytes, or -1L if not specified.
+	// Returns a buffer containing all the bytes of the URL.
+	// Note: ComcatContentFileException indicates an error that is
+	// likely to be permanent, and therefore should not be retried.
+	// Note: Throws ComcatContentFileException if number of bytes received
+	// is greater than maximum, or not equal to expected.
+
+	public static ByteArrayOutputStream read_byte_buffer_from_url (String url_spec, long expected_length, long maximum_length) throws IOException {
+		ByteArrayOutputStream result = new ByteArrayOutputStream();
+
+		// Check for expected length longer than maximum length
+
+		if (expected_length >= 0L && maximum_length >= 0L && expected_length > maximum_length) {
+			throw new ComcatContentFileException ("Comcat content file expected length (" + expected_length + ") exceeds maximum length (" + maximum_length + "), URL = " + url_spec);
+		}
+
+		// Open the input stream
+
+		try (
+			InputStream stream =  open_stream_for_url (url_spec);
+		){
+			long total_length = 0L;
+			byte[] buffer = new byte[1048576];		// 1 MB
+
+			// Loop, reading data one buffer at a time
+
+			for (int length = stream.read(buffer); length > 0; length = stream.read(buffer)) {
+
+				// Check total length against limits
+
+				total_length += ((long)length);
+				if (expected_length >= 0L && total_length > expected_length) {
+					throw new ComcatContentFileException ("Comcat content file length exceeds expected length (" + expected_length + "), URL = " + url_spec);
+				}
+				if (maximum_length >= 0L && total_length > maximum_length) {
+					throw new ComcatContentFileException ("Comcat content file length exceeds maximum length (" + maximum_length + "), URL = " + url_spec);
+				}
+
+				// Write the data into the result buffer
+
+				result.write(buffer, 0, length);
+			}
+
+			// Check final length against expected length
+
+			if (expected_length >= 0L && total_length != expected_length) {
+				throw new ComcatContentFileException ("Comcat content file length (" + total_length + ") differs from expected length (" + expected_length + "), URL = " + url_spec);
+			}
+		}
+
+		return result;
+	}
+
+
+
+
+	// Read all the bytes from a URL into a byte array.
+	// Parameters:
+	//  url_spec = String to parse as a URL.
+	//  expected_length = Expected number of bytes, or -1L if not specified.
+	//  maximum_length = Maximum allowed number of bytes, or -1L if not specified.
+	// Returns a byte array containing all the bytes of the URL.
+	// Note: ComcatContentFileException indicates an error that is
+	// likely to be permanent, and therefore should not be retried.
+	// Note: Throws ComcatContentFileException if number of bytes received
+	// is greater than maximum, or not equal to expected.
+
+	public static byte[] read_all_bytes_from_url (String url_spec, long expected_length, long maximum_length) throws IOException {
+		return read_byte_buffer_from_url (url_spec, expected_length, maximum_length).toByteArray();
+	}
+
+
+
+
+	// Read all the bytes from a URL into a string.
+	// Parameters:
+	//  url_spec = String to parse as a URL.
+	//  expected_length = Expected number of bytes, or -1L if not specified.
+	//  maximum_length = Maximum allowed number of bytes, or -1L if not specified.
+	// Returns a string containing the entire contents of the URL.
+	// Note: ComcatContentFileException indicates an error that is
+	// likely to be permanent, and therefore should not be retried.
+	// Note: Throws ComcatContentFileException if number of bytes received
+	// is greater than maximum, or not equal to expected.
+	// Note: Counts refer to the number of bytes, which is not necessarity equal
+	// to the number of characters.
+
+	public static String read_string_from_url (String url_spec, long expected_length, long maximum_length) throws IOException {
+		return read_byte_buffer_from_url (url_spec, expected_length, maximum_length).toString(StandardCharsets.UTF_8);
+	}
+
+
+
+
+	// Read all the bytes from a content file into a byte array.
+	// Parameters:
+	//  filename = Filename to read (from contents).
+	// Returns a byte array containing all the bytes of the URL.
+	// Note: ComcatUnrecoverableException indicates an error that is
+	// likely to be permanent, and therefore should not be retried.
+
+	public byte[] read_all_bytes_from_contents (String filename) {
+	
+		// Get the URL from the contents list.
+
+		ProductFile product_file = productFiles.get (filename);
+		if (product_file == null) {
+			throw new ComcatUnrecoverableException ("ComcatProduct.read_all_bytes_from_contents: Content file is not present in the product, filename = " + filename);
+		}
+
+		// Read from the URL
+
+		byte[] result;
+
+		try {
+			result = read_all_bytes_from_url (product_file.url, product_file.length, PRODFILE_MAX_LENGTH);
+		}
+		catch (ComcatContentFileException e) {
+			throw new ComcatUnrecoverableException ("ComcatProduct.read_all_bytes_from_contents: Unrecoverable error reading from content file, filename = " + filename, e);
+		}
+		catch (IOException e) {
+			throw new ComcatException ("ComcatProduct.read_all_bytes_from_contents: I/O error reading from content file, filename = " + filename, e);
+		}
+		catch (Exception e) {
+			throw new ComcatException ("ComcatProduct.read_all_bytes_from_contents: Error reading from content file, filename = " + filename, e);
+		}
+
+		return result;
+	}
+
+
+
+
+	// Read all the bytes from a content file into a string.
+	// Parameters:
+	//  filename = Filename to read (from contents).
+	// Returns a string containing the entire contents of the URL.
+	// Note: ComcatUnrecoverableException indicates an error that is
+	// likely to be permanent, and therefore should not be retried.
+
+	public String read_string_from_contents (String filename) {
+	
+		// Get the URL from the contents list.
+
+		ProductFile product_file = productFiles.get (filename);
+		if (product_file == null) {
+			throw new ComcatUnrecoverableException ("ComcatProduct.read_string_from_contents: Content file is not present in the product, filename = " + filename);
+		}
+
+		// Read from the URL
+
+		String result;
+
+		try {
+			result = read_string_from_url (product_file.url, product_file.length, PRODFILE_MAX_LENGTH);
+		}
+		catch (ComcatContentFileException e) {
+			throw new ComcatUnrecoverableException ("ComcatProduct.read_string_from_contents: Unrecoverable error reading from content file, filename = " + filename, e);
+		}
+		catch (IOException e) {
+			throw new ComcatException ("ComcatProduct.read_string_from_contents: I/O error reading from content file, filename = " + filename, e);
+		}
+		catch (Exception e) {
+			throw new ComcatException ("ComcatProduct.read_string_from_contents: Error reading from content file, filename = " + filename, e);
+		}
+
+		return result;
 	}
 
 
@@ -590,59 +988,40 @@ public class ComcatProduct {
 	// Parameters:
 	//  filename = Filename to read (from contents).
 	// Returns a list of strings containing the lines of the file.
-	// Throws ComcatException if any read error.
-	// Returns null if the file is not in the contents list.
+	// Throws ComcatException if any error.
+	// Note: ComcatUnrecoverableException indicates an error that is
+	// likely to be permanent, and therefore should not be retried.
+	//
+	// Implementation note: We read the entire file into a string and
+	// then break it into lines, rather than break the file into lines
+	// on-the-fly as it is read, to enable error checking that depends
+	// on having the entire file in memory.
 
 	public List<String> read_all_lines_from_contents (String filename) {
-	
-		// Get the URL from the contents list.
 
-		ProductFile product_file = productFiles.get (filename);
-		if (product_file == null) {
-			return null;
-		}
+		// Get the contents as a string
 
-		// Read from the URL
+		String s = read_string_from_contents (filename);
 
-		return read_all_lines_from_url (product_file.url);
-	}
+		// Break the contents into lines
 
+		ArrayList<String> lines = new ArrayList<String>();
 
-
-
-	// Read a JSON object from a URL.
-	// Parameters:
-	//  url_spec = String to parse as a URL.
-	// Returns a JSONObject containing the contents of the file.
-	// Returns null if the file does not contain a valid JSON object.
-	// Throws ComcatException if any error.
-	// Note: This should only be used for URLs obtained from Comcat
-	// (e.g., in the contents section of a product).  Any error that
-	// occurs is properly considered to be a Comcat error.
-
-	public static JSONObject read_json_obj_from_url (String url_spec) {
-		JSONObject result = null;
 		try (
-			BufferedReader br = new BufferedReader (new InputStreamReader (
-				(new URL (url_spec)).openStream(), StandardCharsets.UTF_8 ));
+			BufferedReader br = new BufferedReader (new StringReader (s));
 		){
-			Object o = JSONValue.parseWithException (br);
-			if (o != null) {
-				if (o instanceof JSONObject) {
-					result = (JSONObject) o;
-				}
+			for (String line = br.readLine(); line != null; line = br.readLine()) {
+				lines.add (line);
 			}
 		}
-		catch (ParseException e) {
-			result = null;
-		}
 		catch (IOException e) {
-			throw new ComcatException ("ComcatProduct.read_json_obj_from_url: I/O error reading from URL: " + url_spec);
+			throw new ComcatUnrecoverableException ("ComcatProduct.read_all_lines_from_contents: I/O error splitting file contents into lines, filename = " + filename, e);
 		}
 		catch (Exception e) {
-			throw new ComcatException ("ComcatProduct.read_json_obj_from_url: Error reading from URL: " + url_spec);
+			throw new ComcatUnrecoverableException ("ComcatProduct.read_all_lines_from_contents: Error splitting file contents into lines, filename = " + filename, e);
 		}
-		return result;
+
+		return lines;
 	}
 
 
@@ -652,23 +1031,48 @@ public class ComcatProduct {
 	// Parameters:
 	//  filename = Filename to read (from contents).
 	// Returns a JSONObject containing the contents of the file.
-	// Returns null if the file does not contain a valid JSON object.
-	// Returns null if the file is not in the contents list.
+	// Returns null if the file is read successfully, but does not parse as a JSON object.
 	// Throws ComcatException if any error.
+	// Note: ComcatUnrecoverableException indicates an error that is
+	// likely to be permanent, and therefore should not be retried.
+	//
+	// Implementation note: We read the entire file into a string and
+	// then parse it as JSON, rather than parse the file as JSON
+	// on-the-fly as it is read, to enable error checking that depends
+	// on having the entire file in memory.
 
 	public JSONObject read_json_obj_from_contents (String filename) {
-	
-		// Get the URL from the contents list.
 
-		ProductFile product_file = productFiles.get (filename);
-		if (product_file == null) {
-			return null;
+		// Get the contents as a string
+
+		String s = read_string_from_contents (filename);
+
+		// Scan the string to form a JSON object
+
+		JSONObject result = null;
+
+		try {
+			Object o = JSONValue.parseWithException (s);
+			if (o != null) {
+				if (o instanceof JSONObject) {
+					result = (JSONObject) o;
+				}
+			}
+		}
+		catch (ParseException e) {
+			result = null;
+		}
+		catch (Exception e) {
+			result = null;
 		}
 
-		// Read from the URL
-
-		return read_json_obj_from_url (product_file.url);
+		return result;
 	}
+
+
+
+
+	//----- Utility functions -----
 
 
 
@@ -1017,7 +1421,7 @@ public class ComcatProduct {
 		// Subcommand : Test #3
 		// Command format:
 		//  test3  pdl_enable  start_time  end_time  min_mag  [product_type]
-		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile) (0 = none, 1 = dev, 2 = prod, ...).
 		// Then call findProductEvents and display the result.
 		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
 
@@ -1240,19 +1644,25 @@ public class ComcatProduct {
 
 
 		// Subcommand : Test #5
+		// Skipped.
+
+
+
+
+		// Subcommand : Test #6
 		// Command format:
-		//  test5  pdl_enable  start_time  end_time  min_mag  include_deleted  [product_type]
-		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		//  test6  pdl_enable  start_time  end_time  min_mag  include_deleted  [product_type]
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile) (0 = none, 1 = dev, 2 = prod, ...).
 		// Then call findProductEvents and display the result.
 		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
 		// Same as test #3 with the include_deleted option added.
 
-		if (args[0].equalsIgnoreCase ("test5")) {
+		if (args[0].equalsIgnoreCase ("test6")) {
 
 			// Additional arguments
 
 			if (args.length != 6 && args.length != 7) {
-				System.err.println ("ComcatProduct : Invalid 'test5' subcommand");
+				System.err.println ("ComcatProduct : Invalid 'test6' subcommand");
 				return;
 			}
 
@@ -1328,6 +1738,127 @@ public class ComcatProduct {
 			}
 
 			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  f_use_prod  f_use_feed  event_id  filename  [product_type]
+		// Fetch information for an event, and display it.
+		// Then construct the preferred product for the event, and display it.
+		// Then display any text files in the contents.
+		// Same as test #4 except user can select a file to display.
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// Additional arguments
+
+			if (args.length != 5 && args.length != 6) {
+				System.err.println ("ComcatProduct : Invalid 'test7' subcommand");
+				return;
+			}
+
+			try {
+
+				boolean f_use_prod = Boolean.parseBoolean (args[1]);
+				boolean f_use_feed = Boolean.parseBoolean (args[2]);
+				String event_id = args[3];
+				String filename = args[4];
+
+				String product_type = default_product_type;
+				if (args.length >= 6) {
+					product_type = args[5];
+					if (!( is_valid_product_type (product_type) )) {
+						System.out.println ("Invalid product_type: " + product_type);
+						System.out.println ("Continuing anyway ...");
+						System.out.println ("");
+					}
+				}
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+				System.out.println ("f_use_prod: " + f_use_prod);
+				System.out.println ("f_use_feed: " + f_use_feed);
+				System.out.println ("filename: " + filename);
+				System.out.println ("product_type: " + product_type);
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod, f_use_feed);
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				// Get the preferred product
+
+				//  ComcatProduct preferred_product = make_preferred_from_gj (accessor.get_last_geojson());
+
+				ComcatProduct preferred_product = make_preferred_from_gj (product_type, accessor.get_last_geojson());
+
+				if (preferred_product == null) {
+					System.out.println ();
+					System.out.println ("Preferred product = None");
+				}
+
+				else {
+					System.out.println ();
+					System.out.println ("Preferred product:" );
+					System.out.println (preferred_product.toString());
+					System.out.println ("Summary: " + preferred_product.summary_string());
+				}
+
+				// See if product contains our filename
+					
+				boolean f_contains_file = preferred_product.contains_file (filename);
+				System.out.println ();
+				System.out.println ("Contains file: " + f_contains_file);
+
+				// Read file contents as a string
+
+				String file_contents = preferred_product.read_string_from_contents (filename);
+
+				System.out.println ();
+				System.out.println (file_contents);
+
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 

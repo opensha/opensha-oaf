@@ -163,7 +163,7 @@ public class ComcatProductOaf extends ComcatProduct {
 
 
 
-	// Make a list products from a GeoJson event.
+	// Make a list of products from a GeoJson event.
 	//  event = GeoJson containing the event.
 	//  delete_ok = True if delete products are OK, false if not (defaults to false if omitted).
 	// Returns empty list if products do not exist, or if data missing or mis-formatted.
@@ -696,19 +696,25 @@ public class ComcatProductOaf extends ComcatProduct {
 
 
 		// Subcommand : Test #5
+		// Skipped.
+
+
+
+
+		// Subcommand : Test #6
 		// Command format:
-		//  test5  pdl_enable  start_time  end_time  min_mag  include_deleted  [product_type]
+		//  test6  pdl_enable  start_time  end_time  min_mag  include_deleted  [product_type]
 		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
 		// Then call findProductEvents and display the result.
 		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
 		// Same as test #3 with the include_deleted option added.
 
-		if (args[0].equalsIgnoreCase ("test5")) {
+		if (args[0].equalsIgnoreCase ("test6")) {
 
 			// Additional arguments
 
 			if (args.length != 6 && args.length != 7) {
-				System.err.println ("ComcatProductOaf : Invalid 'test5' subcommand");
+				System.err.println ("ComcatProductOaf : Invalid 'test6' subcommand");
 				return;
 			}
 
@@ -784,6 +790,127 @@ public class ComcatProductOaf extends ComcatProduct {
 			}
 
 			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  f_use_prod  f_use_feed  event_id  filename  [product_type]
+		// Fetch information for an event, and display it.
+		// Then construct the preferred product for the event, and display it.
+		// Then display any text files in the contents.
+		// Same as test #4 except user can select a file to display.
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// Additional arguments
+
+			if (args.length != 5 && args.length != 6) {
+				System.err.println ("ComcatProductOaf : Invalid 'test7' subcommand");
+				return;
+			}
+
+			try {
+
+				boolean f_use_prod = Boolean.parseBoolean (args[1]);
+				boolean f_use_feed = Boolean.parseBoolean (args[2]);
+				String event_id = args[3];
+				String filename = args[4];
+
+				String product_type = default_product_type;
+				if (args.length >= 6) {
+					product_type = args[5];
+					if (!( is_valid_product_type (product_type) )) {
+						System.out.println ("Invalid product_type: " + product_type);
+						System.out.println ("Continuing anyway ...");
+						System.out.println ("");
+					}
+				}
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+				System.out.println ("f_use_prod: " + f_use_prod);
+				System.out.println ("f_use_feed: " + f_use_feed);
+				System.out.println ("filename: " + filename);
+				System.out.println ("product_type: " + product_type);
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod, f_use_feed);
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				// Get the preferred product
+
+				ComcatProductOaf preferred_product = make_preferred_from_gj (accessor.get_last_geojson());
+
+				//  ComcatProductOaf preferred_product = make_preferred_from_gj (product_type, accessor.get_last_geojson());
+
+				if (preferred_product == null) {
+					System.out.println ();
+					System.out.println ("Preferred product = None");
+				}
+
+				else {
+					System.out.println ();
+					System.out.println ("Preferred product:" );
+					System.out.println (preferred_product.toString());
+					System.out.println ("Summary: " + preferred_product.summary_string());
+				}
+
+				// See if product contains our filename
+					
+				boolean f_contains_file = preferred_product.contains_file (filename);
+				System.out.println ();
+				System.out.println ("Contains file: " + f_contains_file);
+
+				// Read file contents as a string
+
+				String file_contents = preferred_product.read_string_from_contents (filename);
+
+				System.out.println ();
+				System.out.println (file_contents);
+
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
