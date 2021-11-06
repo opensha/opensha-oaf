@@ -97,7 +97,9 @@ import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.GUICmd;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
-import org.opensha.oaf.comcat.ComcatOAFProduct;
+//import org.opensha.oaf.comcat.ComcatOAFProduct;
+import org.opensha.oaf.comcat.ComcatProduct;
+import org.opensha.oaf.comcat.ComcatProductOaf;
 
 import org.json.simple.JSONObject;
 
@@ -109,6 +111,7 @@ import org.opensha.oaf.aafs.ServerCmd;
 import org.opensha.oaf.aafs.AnalystOptions;
 import org.opensha.oaf.aafs.ActionConfig;
 import org.opensha.oaf.aafs.ServerClock;
+import org.opensha.oaf.aafs.ForecastData;
 
 import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.SimpleUtils;
@@ -122,6 +125,7 @@ import org.opensha.oaf.util.catalog.RuptureCatalogSection;
 import org.opensha.oaf.util.catalog.AbsRelTimeLocConverter;
 import org.opensha.oaf.util.catalog.RuptureLineFormatter;
 import org.opensha.oaf.util.catalog.RuptureLineFormatGUIObserved;
+import org.opensha.oaf.util.catalog.EventIDGenerator;
 import org.opensha.oaf.util.LineConsumerFile;
 import org.opensha.oaf.util.LineSupplierFile;
 import org.opensha.oaf.oetas.OEOrigin;
@@ -886,7 +890,7 @@ public class OEGUIModel extends OEGUIComponent {
 		// Display list of OAF products for this mainshock
 
 		if (fcmain.mainshock_geojson != null) {
-			List<ComcatOAFProduct> oaf_product_list = ComcatOAFProduct.make_list_from_gj (fcmain.mainshock_geojson);
+			List<ComcatProductOaf> oaf_product_list = ComcatProductOaf.make_list_from_gj (fcmain.mainshock_geojson);
 			for (int k = 0; k < oaf_product_list.size(); ++k) {
 				System.out.println ("OAF product: " + oaf_product_list.get(k).summary_string());
 			}
@@ -941,6 +945,68 @@ public class OEGUIModel extends OEGUIComponent {
 		// As a courtesy, spit out the decimal days remaining in the origin day
 
 		System.out.println("The mainshock occurred " + String.format("%.4f", getTimeRemainingInUTCDay()) + " days before midnight (UTC)\n");
+		return;
+	}
+
+
+
+
+	// Perform setup given the mainshock and a download file
+	// On entry, fcmain and cur_mainshock both contain the mainshock.
+	// On return:
+	//  - aafs_fcparams contains the default forecast parameters, from the download file.
+	//  - fetch_fcparams contains a copy of aafs_fcparams;
+	//    in particular, fetch_fcparams.aftershock_search_region contains the search region.
+	//  - custom_search_region is the analyst-specified search region, or null if none.
+	//  - analyst_inj_text is the effective injectable text from the download file, or empty string if none
+	//  - Generic model is computed.
+	// Note: This function should not be followed by a call to setup_search_region.
+
+	private void setup_for_mainshock (OEGUIController.XferCatalogMod xfer, ForecastData dlf) {
+
+		// Display mainshock information
+
+		System.out.println (fcmain.toString());
+
+		// Set up aafs_fcparams to hold the forecast parameters
+
+		aafs_fcparams = new ForecastParameters();
+		aafs_fcparams.copy_from (dlf.parameters);
+		
+		// Announce regimes and parameters
+
+		System.out.println ("Generic parameters for regime " + aafs_fcparams.generic_regime + " used in forecast:");
+		System.out.println (aafs_fcparams.generic_params.toString());
+
+		System.out.println ("Magnitude-of-completeness parameters for regime " + aafs_fcparams.mag_comp_regime + " used in forecast:");
+		System.out.println (aafs_fcparams.mag_comp_params.toString());
+
+		System.out.println ("Sequence-specific parameters used in forecast:");
+		System.out.println (aafs_fcparams.seq_spec_params.toString());
+
+		// Copy to fetch_fcparams
+
+		fetch_fcparams = new ForecastParameters();
+		fetch_fcparams.copy_from (aafs_fcparams);
+
+		// Analyst-specified custom search region, or null if none
+
+		custom_search_region = null;
+		if (dlf.analyst.analyst_params != null && dlf.analyst.analyst_params.aftershock_search_avail) {
+			custom_search_region = dlf.analyst.analyst_params.aftershock_search_region;
+		}
+
+		// Effective injectable text
+
+		analyst_inj_text = aafs_fcparams.get_eff_injectable_text ("");
+
+		// Make the generic RJ model
+		// Note: Compare to ForecastResults.rebuild_generic_results, this is how the generic
+		// model is rebuilt when the download file is loades.  Probably we could just use
+		// the generic model in the download file.
+
+		genericModel = new RJ_AftershockModel_Generic(fcmain.mainshock_mag, aafs_fcparams.generic_params);
+
 		return;
 	}
 
@@ -1548,6 +1614,162 @@ public class OEGUIModel extends OEGUIComponent {
 		// Write the file
 
 		rcf.write_all_sections (dest);
+		return;
+	}
+	
+
+
+
+	// Load catalog from a published forecast.
+	// Parameters:
+	//  xfer = Transfer object to read/modify control parameters.
+	// This is called by the controller to initiate catalog load from a published forecast.
+
+	public void loadCatFromForecast (OEGUIController.XferCatalogMod xfer) {
+
+		// Indicate if we are fetching from Comcat; controls whether server ops are allowed
+
+		//has_fetched_catalog = false;
+		has_fetched_catalog = true;
+
+		// See if the event ID is an alias, and change it if so
+
+		String xlatid = GUIEventAlias.query_alias_dict (xfer.x_dataSource.x_eventIDParam);
+		if (xlatid != null) {
+			System.out.println("Translating Event ID: " + xfer.x_dataSource.x_eventIDParam + " -> " + xlatid);
+			xfer.x_dataSource.modify_eventIDParam(xlatid);
+		}
+
+		// The OAF product
+
+		ComcatProductOaf oaf_product = xfer.x_dataSource.x_oaf_product;
+
+		// If we want the current product for our event ...
+
+		if (oaf_product == null) {
+
+			// Get the event id
+
+			String event_id = xfer.x_dataSource.x_eventIDParam;
+
+			// Get the superseded flag
+
+			boolean f_superseded = false;
+
+			// Get the event information
+
+			ComcatOAFAccessor accessor = new ComcatOAFAccessor ();
+			ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true, f_superseded);
+
+			if (rup == null) {
+				throw new RuntimeException ("Earthquake not found: id = " + event_id);
+			}
+
+			// Get the list of products
+
+			boolean delete_ok = false;
+			List<ComcatProductOaf> product_list = ComcatProductOaf.make_list_from_gj (accessor.get_last_geojson(), delete_ok);
+
+			// Find the most recent product with a ForecastData file (should only be one product in list)
+
+			for (ComcatProductOaf prod : product_list) {
+				if (prod.contains_file (ForecastData.FORECAST_DATA_FILENAME)) {
+					if (oaf_product == null || oaf_product.updateTime < prod.updateTime) {
+						oaf_product = prod;
+					}
+				}
+			}
+
+			// Exception if no product available
+
+			if (oaf_product == null) {
+				throw new RuntimeException ("No forecast with a download file was found");
+			}
+		}
+
+		// Tell user which forecast we are using
+
+		System.out.println ("Using forecast for earthquake " + xfer.x_dataSource.x_eventIDParam + " issued at " + SimpleUtils.time_to_string (oaf_product.updateTime));
+
+		// Get the download file
+
+		ForecastData dlf = new ForecastData();
+
+		try {
+			String s = oaf_product.read_string_from_contents (ForecastData.FORECAST_DATA_FILENAME);
+			dlf.from_json (s);
+		}
+		catch (Exception e) {
+			throw new RuntimeException ("Error: Unable to read download file from Comcat", e);
+		}
+
+		if (!( dlf.mainshock.mainshock_avail )) {
+			throw new RuntimeException ("Error: Download file does not contain a mainshock");
+		}
+
+		if (!( dlf.parameters.aftershock_search_avail
+			&& dlf.parameters.aftershock_search_region != null
+		)) {
+			throw new RuntimeException ("Error: Download file does not contain a search region");
+		}
+
+		// Get the catalog
+
+		CompactEqkRupList cat = dlf.catalog.get_rupture_list();
+		if (cat == null) {
+			throw new RuntimeException ("Error: Download file does not contain a catalog");
+		}
+
+		// Get the catalog time range, in days since the mainshock
+
+		xfer.x_dataSource.modify_dataStartTimeParam (dlf.parameters.min_days);
+		xfer.x_dataSource.modify_dataEndTimeParam (dlf.parameters.max_days);
+
+		// Get wrap longitude flag from the search region
+
+		boolean wrapLon = dlf.parameters.aftershock_search_region.getPlotWrap();
+
+		// List of aftershocks, and mainshock
+
+		ObsEqkRupList myAftershocks = new ObsEqkRupList();
+		ObsEqkRupture myMainshock = null;
+
+		// Get the mainshock
+
+		myMainshock = dlf.mainshock.get_eqk_rupture_wrapped (wrapLon);
+
+		// Get the aftershock list
+
+		int neqk = cat.get_eqk_count();
+		for (int index = 0; index < neqk; ++index) {
+			myAftershocks.add (cat.get_wrapped (index, EventIDGenerator.generate_id(), wrapLon));
+		}
+
+		// Display catalog result
+		
+		System.out.println("Loaded " + myAftershocks.size() + " aftershocks from published forecast");
+
+		// Store mainshock into our data structures
+
+		cur_mainshock = myMainshock;
+
+		fcmain = new ForecastMainshock();
+		fcmain.copy_from (dlf.mainshock);
+
+		// Finish setting up the mainshock
+
+		setup_for_mainshock (xfer, dlf);
+
+		// Store aftershock list into our data structures
+
+		cur_wrapLon = wrapLon;
+
+		cur_aftershocks = myAftershocks;
+
+		// Perform post-fetch actions
+
+		postFetchActions (xfer);
+
 		return;
 	}
 

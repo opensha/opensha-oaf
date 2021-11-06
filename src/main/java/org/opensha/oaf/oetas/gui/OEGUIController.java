@@ -1136,8 +1136,8 @@ public class OEGUIController extends OEGUIListener {
 			fetchButton.setButtonText ("Load Catalog");
 			break;
 
-		case LAST_FORECAST:
-			fetchButton.setButtonText ("Fetch Data");
+		case PUBLISHED_FORECAST:
+			fetchButton.setButtonText ("Fetch Forecast");
 			break;
 
 		case RJ_SIMULATION:
@@ -1320,10 +1320,38 @@ public class OEGUIController extends OEGUIListener {
 			break;
 
 
-			// Retrieve catalog from last forecast
+			// Retrieve catalog from published forecast
 
-			case LAST_FORECAST: {
-				JOptionPane.showMessageDialog(gui_top.get_top_window(), "Fetch catalog from last forecast is not supported yet", "Unsupported Operation", JOptionPane.ERROR_MESSAGE);
+			case PUBLISHED_FORECAST: {
+
+				// Call model to fetch from Comcat
+
+				GUICalcStep fetchStep_1 = new GUICalcStep("Fetching Data From Forecast",
+					"Contacting USGS ComCat Webservice. This is occasionally slow. "
+					+ "If it fails, trying again often works.", new Runnable() {
+						
+					@Override
+					public void run() {
+						gui_model.loadCatFromForecast (xfer_catalog_impl);
+					}
+				}, gui_top.get_forceWorkerEDT());
+
+				// Store back transfer parameters, update model state, and create plots
+
+				GUICalcStep postFetchPlotStep = new GUICalcStep("Plotting Events/Data", "...", new GUIEDTRunnable() {
+						
+					@Override
+					public void run_in_edt() throws GUIEDTException {
+						xfer_catalog_impl.xfer_store();
+						advance_state(MODSTATE_CATALOG);
+						post_fetch_param_update();
+					}
+				}, true);
+
+				// Run in threads
+
+				GUICalcRunnable run = new GUICalcRunnable(progress, fetchStep_1, postFetchPlotStep);
+				new Thread(run).start();
 			}
 			break;
 

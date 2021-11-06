@@ -158,6 +158,19 @@ public class ForecastMainshock {
 		return new Location (mainshock_lat, mainshock_lon, mainshock_depth);
 	}
 
+	// Get location from mainshock parameters, with longitude wrapping.
+	// If wrapLon is true, longitude is between 0 and 360; if wrapLon is false, longitude is between -180 and 180.
+
+	public Location get_eqk_location_wrapped (boolean wrapLon) {
+		double lon = mainshock_lon;
+		if (wrapLon) {
+			if (lon < 0.0) {
+				lon += 360.0;
+			}
+		}
+		return new Location (mainshock_lat, lon, mainshock_depth);
+	}
+
 	// Get spherical location from mainshock parameters.
 
 	public SphLatLon get_sph_eqk_location () {
@@ -168,6 +181,13 @@ public class ForecastMainshock {
 
 	public ObsEqkRupture get_eqk_rupture () {
 		return new ObsEqkRupture (mainshock_event_id, mainshock_time, get_eqk_location(), mainshock_mag);
+	}
+
+	// Get rupture information from mainshock parameters, with longitude wrapping.
+	// If wrapLon is true, longitude is between 0 and 360; if wrapLon is false, longitude is between -180 and 180.
+
+	public ObsEqkRupture get_eqk_rupture_wrapped (boolean wrapLon) {
+		return new ObsEqkRupture (mainshock_event_id, mainshock_time, get_eqk_location_wrapped(wrapLon), mainshock_mag);
 	}
 
 	// Fetch mainshock parameters.

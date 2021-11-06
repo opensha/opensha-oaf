@@ -179,6 +179,8 @@ public class OEGUISubDataSource extends OEGUIListener {
 	private static final int PARMGRP_FC_PROD_POPULATE = 305;	// Button to populate list of forecasts
 	private static final int PARMGRP_FC_INC_SUPERSEDED = 306;	// Checkbox to include superseded forecasts
 
+	private static final int PARMGRP_EVENT_ID_PARAM = 307;		// Event ID parameter
+
 
 	//----- Sub-controllers -----
 
@@ -203,7 +205,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 		eventIDParam = new StringParameter("USGS Event ID");
 		eventIDParam.setValue("");
 		eventIDParam.setInfo("Get IDs from https://earthquake.usgs.gov/earthquakes/");
-		register_param (eventIDParam, "eventIDParam", PARMGRP_DATA_SOURCE_PARAM);
+		register_param (eventIDParam, "eventIDParam", PARMGRP_EVENT_ID_PARAM);
 		return eventIDParam;
 	}
 
@@ -332,14 +334,19 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 	private ArrayList<AvailableForecast> forecastList;
 
+	// The event ID that was queried to produce the list, or null if none.
+
+	private String forecastListEventID;
+
 	// The dropdown paramter.
 
 	private GUIDropdownParameter forecastListDropdown;
 
 	private GUIDropdownParameter init_forecastListDropdown () throws GUIEDTException {
 		forecastList = new ArrayList<AvailableForecast>();
+		forecastListEventID = null;
 		forecastListDropdown = new GUIDropdownParameter(
-				"Available Forecasts", forecastList, GUIDropdownParameter.DROPDOWN_INDEX_EXTRA, "--- Empty ---");
+				"Available Forecasts", forecastList, GUIDropdownParameter.DROPDOWN_INDEX_EXTRA, "Use current forecast");
 		forecastListDropdown.setInfo("List of forecasts for the selected earthquake");
 		register_param (forecastListDropdown, "forecastListDropdown", PARMGRP_DATA_SOURCE_PARAM);
 		return forecastListDropdown;
@@ -347,7 +354,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 	private void refresh_forecastListDropdown () throws GUIEDTException {
 		if (forecastList.isEmpty()) {
-			forecastListDropdown.modify_dropdown (forecastList, GUIDropdownParameter.DROPDOWN_INDEX_EXTRA, "--- Empty ---");
+			forecastListDropdown.modify_dropdown (forecastList, GUIDropdownParameter.DROPDOWN_INDEX_EXTRA, (forecastListEventID == null) ? "Use current forecast" : "No forecasts found");
 		} else {
 			forecastListDropdown.modify_dropdown (forecastList, 0, null);
 		}
@@ -356,11 +363,18 @@ public class OEGUISubDataSource extends OEGUIListener {
 	}
 
 	private void clear_forecastListDropdown () throws GUIEDTException {
-		if (!( forecastList.isEmpty() )) {
+		if (!( forecastList.isEmpty() && forecastListEventID == null )) {
 			forecastList = new ArrayList<AvailableForecast>();
+			forecastListEventID = null;
 			refresh_forecastListDropdown();
 		}
 		return;
+	}
+
+	// Return true if the forecast list dropdown is populated for the event in the event ID textbox.
+
+	private boolean is_dropdown_list_current () {
+		return (forecastListEventID != null) && definedParam(eventIDParam) && validParam(eventIDParam).equals(forecastListEventID);
 	}
 
 
@@ -414,8 +428,8 @@ public class OEGUISubDataSource extends OEGUIListener {
 			dataSourceList.addParameter(dataEndTimeParam);
 			break;
 
-		case LAST_FORECAST:
-			dataSourceEditParam.setListTitleText ("Forecast");
+		case PUBLISHED_FORECAST:
+			dataSourceEditParam.setListTitleText ("Published Forecast");
 			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(3, f_button_row));
 			dataSourceList.addParameter(populateForecastListButton);
 			dataSourceList.addParameter(includeSupersededParam);
@@ -500,7 +514,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		public DataSource x_dataSourceTypeParam;	// Data source type
 
-		// Event ID. [COMCAT, LAST_FORECAST]  (can be modified for any type)
+		// Event ID. [COMCAT, PUBLISHED_FORECAST]  (can be modified for any type)
 
 		public String x_eventIDParam;				// parameter value, checked for validity
 		public abstract void modify_eventIDParam (String x);
@@ -522,6 +536,11 @@ public class OEGUISubDataSource extends OEGUIListener {
 		// Catalog file. [CATALOG_FILE]
 
 		public String x_catalogFileParam;			// parameter value, checked for validity
+
+		// OAF product, for retrieving published forecast.  [PUBLISHED_FORECAST]
+		// If null, use the current product for the given event ID.
+
+		public ComcatProductOaf x_oaf_product;
 
 		// Get the implementation class.
 
@@ -579,6 +598,10 @@ public class OEGUISubDataSource extends OEGUIListener {
 			dirty_dataEndTimeParam = true;
 		}
 
+		// Flag indicating that forecast list needs to be cleared.
+
+		private boolean f_clear_forecastListDropdown;
+
 
 		// Clear all dirty-value flags.
 
@@ -586,6 +609,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 			dirty_eventIDParam = false;
 			dirty_dataStartTimeParam = false;
 			dirty_dataEndTimeParam = false;
+			f_clear_forecastListDropdown = false;
 			return;
 		}
 
@@ -625,8 +649,16 @@ public class OEGUISubDataSource extends OEGUIListener {
 				x_catalogFileParam = validParam(catalogFileParam);
 				break;
 
-			case LAST_FORECAST:
+			case PUBLISHED_FORECAST:
 				x_eventIDParam = validParam(eventIDParam);
+				x_oaf_product = null;
+				if (is_dropdown_list_current()) {
+					int fcix = validParam(forecastListDropdown);
+					if (fcix < 0 || fcix >= forecastList.size()) {
+						throw new IllegalStateException("Invalid forecast list dropdown selection: " + fcix);
+					}
+					x_oaf_product = forecastList.get(fcix).oaf_product;
+				}
 				break;
 
 			case RJ_SIMULATION:
@@ -667,11 +699,19 @@ public class OEGUISubDataSource extends OEGUIListener {
 				updateParam(dataEndTimeParam, x_dataEndTimeParam);
 			}
 
+			// Forecast list
+
+			if (f_clear_forecastListDropdown) {
+				f_clear_forecastListDropdown = false;
+				clear_forecastListDropdown();
+			}
+
 			// Region
 
 			x_region.xfer_get_impl().xfer_store();
 			return;
 		}
+
 	}
 
 
@@ -690,7 +730,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		public DataSource x_dataSourceTypeParam;	// Data source type
 
-		// Event ID. [COMCAT, LAST_FORECAST]  (can be modified for any type)
+		// Event ID.  (can be modified for any type)
 
 		public String x_eventIDParam;				// parameter value, checked for validity
 		public abstract void modify_eventIDParam (String x);
@@ -890,8 +930,8 @@ public class OEGUISubDataSource extends OEGUIListener {
 			}
 			break;
 
-		case LAST_FORECAST:
-			if (definedParam(eventIDParam) && !(forecastList.isEmpty())) {
+		case PUBLISHED_FORECAST:
+			if (definedParam(eventIDParam) && !( forecastList.isEmpty() && forecastListEventID != null )) {
 				int selected = validParam(forecastListDropdown);
 				if (selected > 0) {
 					result = true;
@@ -938,6 +978,22 @@ public class OEGUISubDataSource extends OEGUIListener {
 		case PARMGRP_DATA_SOURCE_PARAM: {
 			if (!( f_sub_enable )) {
 				return;
+			}
+			report_data_source_change();
+		}
+		break;
+
+
+		// Event ID parameter.
+		// - Clear the forecast list dropdown, unless it contains a list for the current event ID.
+		// - Report to top-level controller.
+
+		case PARMGRP_EVENT_ID_PARAM: {
+			if (!( f_sub_enable )) {
+				return;
+			}
+			if (!( is_dropdown_list_current() )) {
+				clear_forecastListDropdown();
 			}
 			report_data_source_change();
 		}
@@ -1076,7 +1132,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 					// Save products that have a ForecastData file
 
 					for (ComcatProductOaf prod : product_list) {
-						if (prod.productFiles.containsKey (ForecastData.FORECAST_DATA_FILENAME)) {
+						if (prod.contains_file (ForecastData.FORECAST_DATA_FILENAME)) {
 							newForecastList.add (new AvailableForecast (prod));
 						}
 					}
@@ -1102,10 +1158,11 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 					xfer_fc_populate_impl.xfer_store();
 
-					// If we received some forecasts, update the list
+					// If success, update the list
 
-					if (received[0] > 0) {
+					if (received[0] >= 0) {
 						forecastList = newForecastList;
+						forecastListEventID = xfer_fc_populate_impl.x_eventIDParam;
 						refresh_forecastListDropdown();
 					}
 				}

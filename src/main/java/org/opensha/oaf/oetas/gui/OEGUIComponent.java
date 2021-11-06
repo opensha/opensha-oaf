@@ -107,7 +107,7 @@ public class OEGUIComponent {
 	public enum DataSource {
 		COMCAT("Comcat"),
 		CATALOG_FILE("Catalog File"),
-		LAST_FORECAST("Last Forecast"),
+		PUBLISHED_FORECAST("Published Forecast"),
 		RJ_SIMULATION("RJ Simulation"),
 		ETAS_SIMULATION("ETAS Simulation");
 		

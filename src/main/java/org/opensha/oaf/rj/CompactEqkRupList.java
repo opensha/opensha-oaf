@@ -248,6 +248,33 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 		return ( (double)(((lat_lon_depth >> LON_SHIFT) & LON_MASK) - LON_OFFSET) ) / LON_SCALE;
 	}
 
+	// extract_lon_wrapped - Extract longitude, with longitude wrapping.
+	// If wrapLon is true, longitude is between 0 and 360; if wrapLon is false, longitude is between -180 and 180.
+
+	public static double extract_lon_wrapped (long lat_lon_depth, boolean wrapLon) {
+
+		if (lat_lon_depth == 0L) {
+			return 0.0;
+		}
+
+		double lon = ( (double)(((lat_lon_depth >> LON_SHIFT) & LON_MASK) - LON_OFFSET) ) / LON_SCALE;
+
+		if (wrapLon) {
+			if (lon < 0.0) {
+				lon += 360.0;
+			}
+		} else {
+			if (lon > 180.0) {
+				lon -= 360.0;
+			}
+			if (lon < -180.0) {
+				lon += 360.0;
+			}
+		}
+
+		return lon;
+	}
+
 	// extract_depth - Extract depth.
 
 	public static double extract_depth (long lat_lon_depth) {
@@ -270,6 +297,35 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 		double lat = ( (double)((lat_lon_depth & LAT_MASK) - LAT_OFFSET) ) / LAT_SCALE;
 		double lon = ( (double)(((lat_lon_depth >> LON_SHIFT) & LON_MASK) - LON_OFFSET) ) / LON_SCALE;
 		double depth = ( (double)(((lat_lon_depth >> DEPTH_SHIFT) & DEPTH_MASK) - DEPTH_OFFSET) ) / DEPTH_SCALE;
+
+		return new Location(lat, lon, depth);
+	}
+
+	// extract_location_wrapped - Extract location (returns null if lat_lon_depth is zero), with longitude wrapping.
+	// If wrapLon is true, longitude is between 0 and 360; if wrapLon is false, longitude is between -180 and 180.
+
+	public static Location extract_location_wrapped (long lat_lon_depth, boolean wrapLon) {
+
+		if (lat_lon_depth == 0L) {
+			return null;
+		}
+
+		double lat = ( (double)((lat_lon_depth & LAT_MASK) - LAT_OFFSET) ) / LAT_SCALE;
+		double lon = ( (double)(((lat_lon_depth >> LON_SHIFT) & LON_MASK) - LON_OFFSET) ) / LON_SCALE;
+		double depth = ( (double)(((lat_lon_depth >> DEPTH_SHIFT) & DEPTH_MASK) - DEPTH_OFFSET) ) / DEPTH_SCALE;
+
+		if (wrapLon) {
+			if (lon < 0.0) {
+				lon += 360.0;
+			}
+		} else {
+			if (lon > 180.0) {
+				lon -= 360.0;
+			}
+			if (lon < -180.0) {
+				lon += 360.0;
+			}
+		}
 
 		return new Location(lat, lon, depth);
 	}
@@ -324,6 +380,14 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 	public static ObsEqkRupture extract_rupture (String eventId, long lat_lon_depth, long mag_time) {
 		return new ObsEqkRupture(eventId, extract_time (mag_time), 
 						extract_location (lat_lon_depth), extract_mag (mag_time));
+	}
+
+	// extract_rupture_wrapped - Extract all values into a rupture, with longitude wrapping.
+	// If wrapLon is true, longitude is between 0 and 360; if wrapLon is false, longitude is between -180 and 180.
+
+	public static ObsEqkRupture extract_rupture_wrapped (String eventId, long lat_lon_depth, long mag_time, boolean wrapLon) {
+		return new ObsEqkRupture(eventId, extract_time (mag_time), 
+						extract_location_wrapped (lat_lon_depth, wrapLon), extract_mag (mag_time));
 	}
 
 
@@ -403,6 +467,16 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 			throw new IndexOutOfBoundsException("CompactEqkRupList.get: Invalid index: index = " + index + ", size = " + eqk_count);
 		}
 		return extract_rupture (null, lat_lon_depth_list[index], mag_time_list[index]);
+	}
+
+	// get_wrapped - Returns the element at the specified position in this list, with longitude wrapping.
+	// If wrapLon is true, longitude is between 0 and 360; if wrapLon is false, longitude is between -180 and 180.
+
+	public ObsEqkRupture get_wrapped (int index, String eventId, boolean wrapLon) {
+		if (!( index >= 0 && index < eqk_count )) {
+			throw new IndexOutOfBoundsException("CompactEqkRupList.get_wrapped: Invalid index: index = " + index + ", size = " + eqk_count);
+		}
+		return extract_rupture_wrapped (eventId, lat_lon_depth_list[index], mag_time_list[index], wrapLon);
 	}
 
 	// set - Replaces the element at the specified position in this list with the specified element (optional operation).
