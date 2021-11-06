@@ -13,7 +13,7 @@ apply from: '../opensha/build-common.gradle'
 dependencies {
 
     /* for OAF */
-    api 'org.mongodb:mongodb-driver-sync:4.3.1'
+    api 'org.mongodb:mongodb-driver-sync:4.3.3'
  
     /* no remote repo */
     implementation files('lib/ProductClient.jar')
