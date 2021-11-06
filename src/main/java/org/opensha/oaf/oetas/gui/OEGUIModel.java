@@ -918,7 +918,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 				// If the most recent product contains a ForecastData file ...
 
-				if (oaf_product.contains_file (ForecastData.FORECAST_DATA_FILENAME)) {
+				if (oaf_product != null && oaf_product.contains_file (ForecastData.FORECAST_DATA_FILENAME)) {
 
 					// Get the download file
 
