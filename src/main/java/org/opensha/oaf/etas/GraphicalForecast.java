@@ -24,14 +24,21 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
 public class GraphicalForecast{
 
-	private static boolean D = false;
+	private static boolean D = true;
 	
-	private String location = "somewhere";
-	private double lat0 = -33.333;
-	private double lon0 = -123.333;
-	private double mag0 = 9.9;
-	private double depth0 = 0.0;
-	private double tPredStart = 0.67;
+	// initialize with dummy values for prototyping
+	private String location = "13 km SE of Scenariotown";
+	private double lat0 = 18;
+	private double lon0 = -67;
+	private double mag0 = 6.4;
+	
+	private double mapRadiusDeg = 0.5;
+	
+	private double aftershockRadiusKM;
+	
+	
+	private double depth0 = 9.0;
+	private double tPredStart = 1.0;
 	private GregorianCalendar forecastStartDate = new GregorianCalendar();
 	private GregorianCalendar eventDate = new GregorianCalendar();
 	private String msName = "MS_NAME";
@@ -43,24 +50,26 @@ public class GraphicalForecast{
 	private String shakeMapURL = null;
 	private String eventURL = "#";
 	
-	
-	
 	private final static int DAY = 1;
 	private final static int WEEK = 7;
 	private final static int MONTH = 31;
 	private final static int YEAR = 366;
-		
-	
+			
 	//	parameters for word wrap algorithm and text summary
 	private boolean smartRoundPercentages = true;   //give rounded range of probabilities?
 	private double feltMag = 3;  //% magnitude to use for calculating number of 'felt' earthquakes
+	private double headlineMag = 5.0;   // magnitude to use for headline magnitude (one number forecast)
 	private double damageMag = 6.0;   // magnitude to use for damaging earthquake
+	private double pHeadline_display = 0;
 	private double pDamage_display = 0;
 	private double[] nfelt_display = new double[3];
-	
-	
-	private double[] predictionMagnitudes = new double[]{3,4,5,6,7,8,9};
+	private double pScenario1;
+	private double pScenario2;
+	private double pScenario3;
+
+	private double[] predictionMagnitudes = new double[]{3,4,5,6,7,8};
 	private double[] predictionIntervals = new double[]{DAY,WEEK,MONTH,YEAR}; //day,week,month,year
+	private int preferredForecastInterval = 1; //week
 	
 //	private String[] predictionIntervalStrings = new String[]{"day","week","month","year"}; //day,week,month,year
 	private double[][][] number;  //dimensions: [predMag][predInterval][range: exp, lower, upper];
@@ -68,22 +77,28 @@ public class GraphicalForecast{
 	private double[][] probability;
 	private String[][] probString;
 	private String forecastHorizon;
-	private String spatialForecastInterval = "week";
+		
 	
-//	private String[] MMIcolors = {"#abe0ff", "#81fff3", "#aaff63", "#ffd100", "#ff5700", "#800000", "#800000"};
-//	private String[] MMIcolors = {"#82F9FB", "#7EFBDF", "#95F879", "#FDCA2C", "#EC2516", "#C81E11", "#800000"};
-	private String[] MMIcolors = {"#abe0ff", "#81fff3", "#aaff63", "#ffd100", "#EC2516", "#800000", "#800000"};
-	
+	private String[] MMIcolors = {"#abe0ff", "#81fff3", "#aaff63", "#ffd100", "#EC2516", "#800000"};
 	private HashMap<String, String> tags = new HashMap<String, String>();
 
+	
+	
 	public GraphicalForecast(){
-		// run with dummy data. This is all made up.
-		eventDate.set(1980, 3, 4, 11, 59, 59); //dummy values
+		// run with dummy data. This is all made up for debugging.
+		location = "13 km SE of Scenariotown";
+		lat0 = 18;
+		lon0 = -67;
+		mag0 = 7.4;
+		aftershockRadiusKM = 120;
+		depth0 = 9.0;
+		tPredStart = 1.0;
+		mapRadiusDeg = 0.5;
+		eventDate.set(2020, 0, 7, 06, 30, 46); //dummy values
+		
 		
 		number = new double[predictionMagnitudes.length][predictionIntervals.length][3];
 		probability = new double[predictionMagnitudes.length][predictionIntervals.length];
-		
-//		predictionIntervals = new double[] {DAY,WEEK,MONTH};
 		
 		switch (predictionIntervals.length) {
 			case 1:
@@ -103,16 +118,14 @@ public class GraphicalForecast{
 				break;
 		}
 		
-		
-		spatialForecastInterval = forecastHorizon;
-		
+		setPreferredForecastInterval(2); //month
 		
 		double[] fractiles = new double[3];
 		
-		double baseRate = 1000; //dummy values
+		double baseRate = 100; //dummy values
 		for (int i = 0; i < predictionMagnitudes.length; i++){
 			for (int j = 0; j < predictionIntervals.length; j++){
-				double rate = baseRate*(j+1d)/Math.pow(10d, i) ; //dummy values
+				double rate = baseRate*(Math.pow(2.0,(j-1d))/Math.pow(10d, i)) ; //dummy values
 				probability[i][j] = 1 - Math.exp( -rate ); //dummy values
 				
 				fractiles[0] = rate; //dummy values
@@ -128,6 +141,7 @@ public class GraphicalForecast{
 		// do weekly probabilities of felt and damaging quakes
 		double rate = baseRate*(1+1d)/Math.pow(10d, 3); //dummy values
 		pDamage_display = 1 - Math.exp( -rate ); //dummy values
+		pHeadline_display = 1 - Math.exp( -11.0*rate ); //dummy values
 		
 		rate = baseRate*(1+1d)/Math.pow(10d, 0); //dummy values
 		fractiles[0] = rate; //dummy values
@@ -138,6 +152,10 @@ public class GraphicalForecast{
 		nfelt_display[1] = Math.max(fractiles[1],0); //dummy values
 		nfelt_display[2] = Math.max(fractiles[2],1); //dummy values
 		
+		//set scenario probabilities
+		pScenario1 = 0.97;
+		pScenario2 = 0.03;
+		pScenario3 = 0.004;
 	}
 	
 	public GraphicalForecast(File outFile, ETAS_AftershockModel aftershockModel, GregorianCalendar eventDate,
@@ -169,6 +187,7 @@ public class GraphicalForecast{
 		this.depth0 = aftershockModel.mainShock.getHypocenterLocation().getDepth();
 		this.tPredStart = getDateDelta(eventDate, forecastStartDate);
 		this.b = aftershockModel.get_b();
+		setPreferredForecastInterval(2);
 		
 	}
 
@@ -204,25 +223,21 @@ public class GraphicalForecast{
 			}
 		}
 		
-		// do weekly probabilities of felt and damaging quakes
-		if (predictionIntervals.length > 1) {
-			tMaxDays = tMinDays + WEEK;
-			spatialForecastInterval = "week";
-		} else { 
-			tMaxDays = tMinDays + DAY;
-			spatialForecastInterval = "day";
-		}
+		// do probabilities of felt and damaging quakes
+		if (preferredForecastInterval > predictionIntervals.length)
+			preferredForecastInterval = predictionIntervals.length-1;
+		
+		tMaxDays = tMinDays + predictionIntervals[preferredForecastInterval];
 		
 		pDamage_display = aftershockModel.getProbabilityWithAleatory(damageMag, tMinDays, tMaxDays);
+		pHeadline_display = aftershockModel.getProbabilityWithAleatory(headlineMag, tMinDays, tMaxDays);
 		fractiles = aftershockModel.getCumNumFractileWithAleatory(calcFractiles, feltMag, tMinDays, tMaxDays);
 		nfelt_display[0] = Math.max(fractiles[0],0);
 		nfelt_display[1] = Math.max(fractiles[1],0);
 		nfelt_display[2] = Math.max(fractiles[2],0);
 
 		processForecastStrings();
-		
 		setForecastHorizon();
-		
 		assignForecastStrings();
 		
 //		writeHTML(outFile); //call it explicitly
@@ -275,6 +290,10 @@ public class GraphicalForecast{
 	
 	// Set all the variable bits of text 
 	private void assignForecastStrings(){
+		
+		tags.put("DISCLAIMER", "For Internal US Government Use Only");
+		
+		
 		if (predictionIntervals.length > 0) {
 			tags.put("N1_DA", numberString[0][0]);
 			tags.put("P1_DA", probString[0][0]);
@@ -288,8 +307,8 @@ public class GraphicalForecast{
 			tags.put("P5_DA", probString[4][0]);
 			tags.put("N6_DA", numberString[5][0]);
 			tags.put("P6_DA", probString[5][0]);
-			tags.put("N7_DA", numberString[6][0]);
-			tags.put("P7_DA", probString[6][0]);
+//			tags.put("N7_DA", numberString[6][0]);
+//			tags.put("P7_DA", probString[6][0]);
 		} 
 		if (predictionIntervals.length > 1) {
 			tags.put("N1_WK", numberString[0][1]);
@@ -304,8 +323,8 @@ public class GraphicalForecast{
 			tags.put("P5_WK", probString[4][1]);
 			tags.put("N6_WK", numberString[5][1]);
 			tags.put("P6_WK", probString[5][1]);
-			tags.put("N7_WK", numberString[6][1]);
-			tags.put("P7_WK", probString[6][1]);
+//			tags.put("N7_WK", numberString[6][1]);
+//			tags.put("P7_WK", probString[6][1]);
 		}
 		if (predictionIntervals.length > 2) {
 			tags.put("N1_MO", numberString[0][2]);
@@ -320,8 +339,8 @@ public class GraphicalForecast{
 			tags.put("P5_MO", probString[4][2]);
 			tags.put("N6_MO", numberString[5][2]);
 			tags.put("P6_MO", probString[5][2]);
-			tags.put("N7_MO", numberString[6][2]);
-			tags.put("P7_MO", probString[6][2]);
+//			tags.put("N7_MO", numberString[6][2]);
+//			tags.put("P7_MO", probString[6][2]);
 		}
 		if (predictionIntervals.length > 3) {
 			tags.put("N1_YR", numberString[0][3]);
@@ -336,8 +355,8 @@ public class GraphicalForecast{
 			tags.put("P5_YR", probString[4][3]);
 			tags.put("N6_YR", numberString[5][3]);
 			tags.put("P6_YR", probString[5][3]);
-			tags.put("N7_YR", numberString[6][3]);
-			tags.put("P7_YR", probString[6][3]);
+//			tags.put("N7_YR", numberString[6][3]);
+//			tags.put("P7_YR", probString[6][3]);
 		}
 		
 //		tags.put("M1_R", String.format("%2.1f", predictionMagnitudes[0]));
@@ -349,8 +368,10 @@ public class GraphicalForecast{
 		if (smartRoundPercentages) {
 			if (pDamage_display < 0.001)
 				tags.put("PDAMAGE_DISP", "much less than 1");
-			else if (pDamage_display < 0.01)
+			else if (pDamage_display < 0.005)
 				tags.put("PDAMAGE_DISP", "less than 1");
+			else if (pDamage_display < 0.01)
+				tags.put("PDAMAGE_DISP", "around 1");
 			else if (pDamage_display < 0.05)
 				tags.put("PDAMAGE_DISP", "1-5");
 			else if (pDamage_display < 0.95)
@@ -362,6 +383,7 @@ public class GraphicalForecast{
 				tags.put("PDAMAGE_DISP", "greater than 99");
 			else
 				tags.put("PDAMAGE_DISP", "NaN");
+			
 		} else {
 			String formatStr;
 			if (pDamage_display < 0.01)
@@ -370,17 +392,36 @@ public class GraphicalForecast{
 				formatStr = "%1.0f";
 			tags.put("PDAMAGE_DISP", String.format(formatStr, pDamage_display*100));
 		}
-
-		// spatial forecast time interval
-		if (spatialForecastInterval.equals("day"))
-			tags.put("F_PLOT_T", "1");
-		else if (spatialForecastInterval.equals("week"))
-			tags.put("F_PLOT_T", "7");
-		else if (spatialForecastInterval.equals("month"))
-			tags.put("F_PLOT_T", "31");
-		else if (spatialForecastInterval.equals("year"))
-			tags.put("F_PLOT_T", "365");
-	
+		
+		if (pHeadline_display < 0.0005)
+			tags.put("PHEADLINE_DISP", "<0.1");
+		else if (pHeadline_display < 0.01) 
+			tags.put("PHEADLINE_DISP", String.format("%2.1f", pHeadline_display*100));
+		else if (pHeadline_display < 0.995)
+			tags.put("PHEADLINE_DISP", String.format( "%1.0f", pHeadline_display*100));
+		else if (pHeadline_display <= 1.0) 
+			tags.put("PHEADLINE_DISP", ">99");
+		else 
+			tags.put("PHEADLINE_DISP", "NaN");
+		
+		if (D) System.out.println(preferredForecastInterval);
+		
+		switch (preferredForecastInterval) {
+			case 0:
+				tags.put("FORECAST_INTERVAL", "day");
+				break;
+			case 1:
+				tags.put("FORECAST_INTERVAL", "week");
+				break;
+			case 2:
+				tags.put("FORECAST_INTERVAL", "month");
+				break;
+			default:
+				tags.put("FORECAST_INTERVAL", "year");
+				break;
+		}
+		
+		
 		//	lat lon of mainshock
 		String degSym = "&deg;";
 		String tag;
@@ -399,7 +440,7 @@ public class GraphicalForecast{
 		tags.put("MS_LON", String.format("%4.3f" + tag, Math.abs(lon0)));
 	
 		//		construct descriptive text
-		SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy, HH:mm:ss");  
+		SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy, HH:mm");  
 		formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 		
 		tags.put("MS_MAG", String.format("M%2.1f", mag0));
@@ -417,8 +458,16 @@ public class GraphicalForecast{
 		String MS_LOC = location;
 		String F_START_REL_DAYS = String.format("%2.1f", tPredStart);
 		String DAMAGE_MAG = String.format("%.0f",  damageMag);
+		String HEADLINE_MAG = String.format("%.0f",  headlineMag);
+		String FELT_MAG = String.format("%.0f",  feltMag);
 		String F_HORIZON = forecastHorizon;
 		String DAYS;
+		
+		tags.put("MS_LOC", location);
+		tags.put("DAMAGE_MAG", DAMAGE_MAG);
+		tags.put("FELT_MAG", FELT_MAG);
+		tags.put("HEADLINE_MAG", HEADLINE_MAG);
+		tags.put("F_HORIZON", forecastHorizon);
 		
 		if (tPredStart == 1)
 		    DAYS = "day";
@@ -428,12 +477,73 @@ public class GraphicalForecast{
 		String DESCRIPTIVE_TEXT = 
 		    "An earthquake of magnitude " + tags.get("MS_MAG") + " occurred " + F_START_REL_DAYS + " " + DAYS + " ago " + MS_LOC + ". " +
 		    "More earthquakes than usual will continue to occur in the area, decreasing " +
-		    "in frequency over the following " + F_HORIZON + " or longer. During the next " + spatialForecastInterval +
+		    "in frequency over the following " + F_HORIZON + " or longer. During the next " + tags.get("FORECAST_INTERVAL") +
 		    " there are likely to be " + tags.get("NFELT_DISP") + " aftershocks large enough to be felt locally, " +
 		    "and there is a " + tags.get("PDAMAGE_DISP") + "% chance of at least one damaging M" + DAMAGE_MAG + " (or larger) aftershock." +
 		    " The earthquake rate may be re-invigorated in response to large aftershocks, should they occur. ";
 		
 		tags.put("DESCRIPTIVE_TEXT", DESCRIPTIVE_TEXT);
+	
+		String BULLET_TEXT1 = "Expect more earthquakes in and around the area currently affected by aftershocks.";
+		String BULLET_TEXT2 = "Over the next " + tags.get("FORECAST_INTERVAL") +  " there may be " + tags.get("NFELT_DISP") + 
+				" aftershocks of M" + FELT_MAG + " or larger, which could be felt nearby.";
+		String BULLET_TEXT3 = "Over the next " + tags.get("FORECAST_INTERVAL") +  " there is a " + tags.get("PDAMAGE_DISP") + 
+				"% chance of at least one damaging M" + DAMAGE_MAG + " (or larger) aftershock.";
+		String BULLET_TEXT4 = "Aftershock rates will decrease over time, but may remain elevated over the following year or longer.";
+		String BULLET_TEXT5 = "This forecast will be updated as the sequences progresses and more information becomes available.";
+		
+		tags.put("BULLET_TEXT1", BULLET_TEXT1);
+		tags.put("BULLET_TEXT2", BULLET_TEXT2);
+		tags.put("BULLET_TEXT3", BULLET_TEXT3);
+		tags.put("BULLET_TEXT4", BULLET_TEXT4);
+		tags.put("BULLET_TEXT5", BULLET_TEXT5);
+		
+		double geomFactor = Math.cos(lat0*Math.PI/180.0);
+		double minLat = lat0 - mapRadiusDeg; 
+		double maxLat = lat0 + mapRadiusDeg;
+		double minLon = lon0 - mapRadiusDeg/geomFactor;
+		double maxLon = lon0 + mapRadiusDeg/geomFactor;
+		
+		GregorianCalendar forecastEndDate = new GregorianCalendar();
+	
+		forecastEndDate.setTimeInMillis(forecastStartDate.getTimeInMillis() + (long) (predictionIntervals[preferredForecastInterval]*ETAS_StatsCalc.MILLISEC_PER_DAY));
+		
+		formatter=new SimpleDateFormat("YYYY-MM-dd HH:mm:ss.SSS");  
+		formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+		
+		String DATE_START_SEARCH = formatter.format(eventDate.getTime());
+		System.out.println(DATE_START_SEARCH);
+		char[] dateStart = DATE_START_SEARCH.toCharArray();		
+		dateStart[10]='T';
+		
+		String DATE_END_SEARCH = formatter.format(forecastEndDate.getTime());
+		char[] dateEnd = DATE_END_SEARCH.toCharArray();		
+		dateEnd[10]='T';
+
+		
+		
+		String mapLink = "\"https://earthquake.usgs.gov/earthquakes/map/?"
+		+ "extent=" + String.format("%4.4f", minLat) + "," + String.format("%4.4f", minLon) + "&amp;"
+		+ "extent=" + String.format("%4.4f", maxLat) + "," + String.format("%4.4f", maxLon) + "&amp;"
+		+ "range=search&amp;"
+			+ "baseLayer=terrain&amp;"
+			+ "timeZone=utc&amp;"
+			+ "list=false&amp;"
+			+ "search=%7B%22"
+				+ "name%22:%22" + msName + "%22,%22"
+				+ "params%22:%7B%22"
+				+ "endtime%22:%22" +  String.copyValueOf(dateEnd) + "Z%22,%22"
+				+ "latitude%22:" + lat0 + ",%22"
+				+ "longitude%22:" + lon0 + ",%22"
+				+ "maxradiuskm%22:" + aftershockRadiusKM + ",%22"
+				+ "minmagnitude%22:" + feltMag + ",%22"
+				+ "starttime%22:%22" + String.copyValueOf(dateStart) + "Z%22%7D%7D\"";
+	
+		tags.put("MAP_LINK", mapLink);
+		if (D) System.out.println(mapLink);
+		
+		
+		
 	}
 	
 	public void setFeltMag(double mag){
@@ -450,6 +560,41 @@ public class GraphicalForecast{
 
 	public double getDamageMag(){
 		return damageMag;
+	}
+
+	public void setHeadlineMag(int mag){
+		this.headlineMag = mag;
+	}
+
+	public double getHeadlineMag(){
+		return headlineMag;
+	}
+
+	public void setAftershockRadiusKM(double r){
+		this.aftershockRadiusKM = r;
+	}
+
+	public double getAftershockRadiusKM(){
+		return aftershockRadiusKM;
+	
+	}
+	
+	public void setPreferredForecastInterval(int interval){
+		if (interval < 4)
+			this.preferredForecastInterval = interval;
+		else
+			this.preferredForecastInterval = 3;
+	}
+
+	public int getPreferredForecastInterval(){
+		return preferredForecastInterval;
+	}
+	public void setMapRadiusDeg(double deg){
+		this.mapRadiusDeg = deg;
+	}
+
+	public double getMapRadiusDeg(){
+		return mapRadiusDeg;
 	}
 
 //	This is disabled until the rest of the code can accomodate a flexible magnitude range
@@ -503,14 +648,21 @@ public class GraphicalForecast{
 		        +"			.tfElem2 {font-size:14px; border:0px solid gray; border-collapse:collapse; padding:1px; margin:0; text-align:center}\n"
 		        +"			.tfElem1 {font-size:14px; background-color:#eeeeee; border-collapse:collapse; padding:1px; margin:0; text-align:center}\n"
 		        +" 			.tableFootnote {font-size:12px;text-align:right;}\n"
+		        +"			.forecastHeader {font-weight:bold; padding:4px; width:50px}\n"
 		        +"		</style>\n"
 		        +"	</head>\n"
 		        +"	<body>\n");
 
 		//generate forecast table
 		tableString.append(""
-				+" 	<table class=\"tableForecast\" style=\"width:525px\">\n"
-				+"		<tr class=\"forecastHeader\"><th style=\"font-weight:bold; padding:4px\">Forecast Interval</th><th style=\"font-weight:bold\">Magnitude</th><th style=\"font-weight:bold\">Number</th><th style=\"font-weight:bold\">Number Range</th><th style=\"font-weight:bold\">Probability</th></tr>\n"
+				+" 	<table class=\"tableForecast\">\n"
+				+"		<tr class=\"forecastHeader\">\n"
+				+ "			<th style=\"width:150px; padding:4px\">Forecast Interval</th>\n"
+				+ "			<th style=\"width:75px; padding:4px\">Magnitude M</th>\n"
+				+ "			<th style=\"width:75px; padding:4px\">Expected Number</th>\n"
+				+ "			<th style=\"width:150px; padding:4px\">Possible Number (95% confidence)</th>\n"
+				+ "			<th style=\"width:100px; padding:4px\">Probability of at least one</th>\n"
+				+ "		</tr>\n"
 				+"		<tr><td colspan=\"5\"></td></tr>\n");
 			
 		String DATE_START = tags.get("F_START_ABS");
@@ -534,12 +686,14 @@ public class GraphicalForecast{
 		int maxMag = Math.max(minMag + 3, Math.min(9, (int) Math.ceil(maxObsMag + 0.5)));
 		if(D) System.out.println("maxMag: " + maxMag + " largestShockMag: " + maxObsMag);
 
+		int numTableEntries = (maxMag - minMag) + 1;
+		
 		String[] durString = new String[]{"Day","Week","Month","Year"};
 		for (int j = 0; j<predictionIntervals.length; j++){
 			forecastEndDate.setTimeInMillis(forecastStartDate.getTimeInMillis() + (long) (predictionIntervals[j]*ETAS_StatsCalc.MILLISEC_PER_DAY));
 			DATE_END = formatter.format(forecastEndDate.getTime());
 			tableString.append(""
-					+"		<tr class=\"tfElem2\"><td rowspan=\"5\"><div style=\"font-weight:bold;display:inline\">1 " + durString[j]
+					+"		<tr class=\"tfElem2\"><td rowspan=\"" + numTableEntries + "\"><div style=\"font-weight:bold;display:inline\">1 " + durString[j]
 			 		+"		</div><br>"+ DATE_START +"<br>through<br>"+ DATE_END +"</td>\n");
 			 		
 			int n = 0;
@@ -547,10 +701,12 @@ public class GraphicalForecast{
 				String classStr = (Math.floorMod(n, 2) == 0)?"tfElem1":"tfElem2";
 				int mag = (int) predictionMagnitudes[i];
 //				if( mag == 3 || i >= predictionMagnitudes.length-4) {//always plot the M3s and then the last four
-				if (mag == 3 || (mag > 3 && mag > maxMag - 4 && mag <= maxMag)) {
+//				if (mag == 3 || (mag > 3 && mag > maxMag - 4 && mag <= maxMag)) {
+				if (mag >= 3 && mag <= maxMag) {
+				
 					tableString.append(""
-							+" 		<td class=\""+ classStr +"\">"
-							+ "M ≥ " + mag + "</td><td class=\""+ classStr +"\">"
+							+" 		<td class=\""+ classStr +"\" styly=\"width:50px\">"
+							+ "M &#8805 " + mag + "</td><td class=\""+ classStr +"\">"
 							+ Math.round(number[i][j][0]) + "</td><td class=\""+ classStr +"\">"
 							+ numberRange(number[i][j][1], number[i][j][2]) +"</td><td class=\""+ classStr +"\">"
 							+ ((probability[i][j] >= 0.001)?probString[i][j]:"<0.1%") +"</td></tr>\n");
@@ -558,12 +714,10 @@ public class GraphicalForecast{
 					n++;
 				}
 			}
-			while(n++ <= 5) {
-				if (n == 6 && j == predictionIntervals.length - 1) 
-					tableString.append("<tr><td colspan=\"5\" class=\"tableFootnote\">*Earthquake possible but with low probability</td><tr>\n");
-				else
-					tableString.append("	<tr><td colspan=\"5\"><br></td></tr>\n");
-			}
+			if (j == predictionIntervals.length - 1)
+				tableString.append("<tr><td colspan=\"5\" class=\"tableFootnote\">*Earthquake possible but with low probability</td><tr>\n");
+			else
+				tableString.append("	<tr><td colspan=\"5\"><br></td></tr>\n");
 				
 		}
 		tableString.append(""
@@ -621,33 +775,39 @@ public class GraphicalForecast{
 		
 		//header
 		jsonString.append(""
-				+ "{\"creationTime\":" + startTimeMillis + ","
-				+ "\"expireTime\":" + expireTimeMillis + ","
-				+ "\"advisoryTimeFrame\":" + "\"1 Month\"" + ","
-				+ "\"template\":\"Mainshock\","
-				+ "\"injectableText\":\"\","
+				+ "{\n"
+				+ "\"creationTime\":" + startTimeMillis + ",\n"
+				+ "\"expireTime\":" + expireTimeMillis + ",\n"
+				+ "\"advisoryTimeFrame\":" + "\"1 Month\"" + ",\n"
+				+ "\"template\":\"Mainshock\",\n"
+				+ "\"injectableText\":\"\",\n"
 				);
 
 		//observations
 		jsonString.append(""
-				+ "\"observations\":[{\"magnitude\":3.0,\"count\":" + num3s 
-				+ "},{\"magnitude\":5.0,\"count\":" + num5s 
-				+ "},{\"magnitude\":6.0,\"count\":" + num6s
-				+ "},{\"magnitude\":7.0,\"count\":" + num7s 
-				+ "}],"
+				+ "\"observations\":["
+				+ "\n\t{\"magnitude\":3.0,\"count\":" + num3s 
+				+ "},\n\t{\"magnitude\":5.0,\"count\":" + num5s 
+				+ "},\n\t{\"magnitude\":6.0,\"count\":" + num6s
+				+ "},\n\t{\"magnitude\":7.0,\"count\":" + num7s 
+				+ "}\n\t],\n"
 				);
 		 
 		//model
 		jsonString.append(""
-				+ "\"model\":{\"name\":\"Epidemic-Type aftershock model (Bayesian Combination)\",\"reference\":\"#url\",\"parameters\":{" 
-				+ "\"ams\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_ams())
-				+ ",\"a\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_a()) 
-				+ ",\"b\":" + String.format("%3.2f", aftershockModel.get_b()) 
-				+ ",\"magMain\":" + String.format("%2.1f", aftershockModel.getMainShockMag()) 
-				+ ",\"p\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_p()) 
-				+ ",\"c\":" + String.format("%5.4f", aftershockModel.getMaxLikelihood_c())
-				+ ",\"Mc\":" + String.format("%2.1f", aftershockModel.magComplete)
-				+ "}},\"forecast\":["
+				+ "\"model\":{"
+				+ "\n\t\"name\":\"Epidemic-Type aftershock model (Bayesian Combination)\","
+				+ "\n\t\"reference\":\"#url\","
+				+ "\n\t\"parameters\":{" 
+				+ "\n\t\t\"ams\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_ams())
+				+ ",\n\t\t\"a\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_a()) 
+				+ ",\n\t\t\"b\":" + String.format("%3.2f", aftershockModel.get_b()) 
+				+ ",\n\t\t\"magMain\":" + String.format("%2.1f", aftershockModel.getMainShockMag()) 
+				+ ",\n\t\t\"p\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_p()) 
+				+ ",\n\t\t\"c\":" + String.format("%5.4f", aftershockModel.getMaxLikelihood_c())
+				+ ",\n\t\t\"Mc\":" + String.format("%2.1f", aftershockModel.magComplete)
+				+ "\n\t\t}\n\t},\n" 
+				+ "\"forecast\":["
 				);
 		
 		String[] durString = new String[]{"\"1 Day\"","\"1 Week\"","\"1 Month\"","\"1 Year\""};
@@ -658,10 +818,10 @@ public class GraphicalForecast{
 			
 			
 			jsonString.append(""
-					+ "{\"timeStart\":" + forecastStartDate.getTimeInMillis() 
-					+ ",\"timeEnd\":" + forecastEndDate.getTimeInMillis()
-					+ ",\"label\":" + durString[j] 
-							+ ",\"bins\":["
+					+ "\n\t{\"timeStart\":" + forecastStartDate.getTimeInMillis() 
+					+ ",\n\t\"timeEnd\":" + forecastEndDate.getTimeInMillis()
+					+ ",\n\t\"label\":" + durString[j] 
+					+ ",\n\t\"bins\":["
 					);
 			
 			for (int i = 0; i < predictionMagnitudes.length; i++) {
@@ -669,24 +829,24 @@ public class GraphicalForecast{
 
 				if (2.99 < mag && mag < 7.01) { //added M4s NvdE 7/3/2020
 					jsonString.append(""
-							+ "{\"magnitude\":" + String.format("%2.1f", mag)
-							+ ",\"p95minimum\":" + String.format("%d", (int) number[i][j][1])
-							+ ",\"p95maximum\":" + String.format("%d", (int) number[i][j][2])
-							+ ",\"probability\":" + String.format("%5.4f",probability[i][j])
-							+ "}");
+							+ "\n\t\t{\"magnitude\":" + String.format("%2.1f", mag)
+							+ ",\n\t\t\"p95minimum\":" + String.format("%d", (int) number[i][j][1])
+							+ ",\n\t\t\"p95maximum\":" + String.format("%d", (int) number[i][j][2])
+							+ ",\n\t\t\"probability\":" + String.format("%5.4f",probability[i][j])
+							+ "\n\t\t}");
 					if (mag < 7) jsonString.append(",");
 				}
 			}
 			
 			jsonString.append(""
-					+ "],\"aboveMainshockMag\":{"
-					+ "\"magnitude\":" + String.format("%2.1f", aftershockModel.getMainShockMag())
-					+ ",\"probability\":" + String.format("%5.4f", foreshockProbability)
-					+ "}}"
+					+ "],\n\t\t\"aboveMainshockMag\":{"
+					+ "\n\t\t\"magnitude\":" + String.format("%2.1f", aftershockModel.getMainShockMag())
+					+ ",\n\t\t\"probability\":" + String.format("%5.4f", foreshockProbability)
+					+ "\n\t\t}\n\t}"
 					);
 			if (j < predictionIntervals.length - 1) jsonString.append(",");
 		}
-		jsonString.append("]}");
+		jsonString.append("\n\t]\n}");
 		if(D) System.out.println(jsonString);
 			
 		//write to a file
@@ -828,9 +988,652 @@ public class GraphicalForecast{
 		System.err.println("Problem closing file.");
 	}
 }
+
+	public String getScenarioText() {
+		// write some scenario text, responsive to the mainshock magnitude
+		double tMinDays = getDateDelta(eventDate, forecastStartDate);
+		double tMaxDays;
+
+		// do weekly probabilities of felt and damaging quakes
+		if (preferredForecastInterval > predictionIntervals.length)
+			preferredForecastInterval = predictionIntervals.length;
+		
+		tMaxDays = tMinDays + predictionIntervals[preferredForecastInterval];
+		
+		double mag1, mag2;
+		if (mag0 > 5.9999) {
+			mag1 = 6;
+			mag2 = 7;
+		} else {
+			mag1 = 5;
+			mag2 = 6;
+		}
 	
-	// Build an html document for displaying the advisory
+		if (D) System.out.println(mag2 + " " + tMinDays + " " + tMaxDays);
+		if (aftershockModel != null) {
+			//set scenario probabilities based on magitudes and probabilities
+			pScenario3 = aftershockModel.getProbabilityWithAleatory(mag2, tMinDays, tMaxDays);
+			pScenario2 = aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays) - pScenario3;
+			pScenario1 = 1 - aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays);
+		}
+		
+		//"SCENARIO_ONE_PROB"
+		if (pScenario1 < 0.005)
+			tags.put("SCENARIO_ONE_PROB", "<1");
+		else if (pScenario1 < 0.995)
+			tags.put("SCENARIO_ONE_PROB", String.format( "%1.0f", pScenario1*100));
+		else if (pScenario1 <= 1.0) 
+			tags.put("SCENARIO_ONE_PROB", ">99");
+		else 
+			tags.put("SCENARIO_ONE_PROB", "NaN");
+		//"SCENARIO_TWO_PROB"
+		if (pScenario2 < 0.005)
+			tags.put("SCENARIO_TWO_PROB", "<1");
+		else if (pScenario2 < 0.995)
+			tags.put("SCENARIO_TWO_PROB", String.format( "%1.0f", pScenario2*100));
+		else if (pScenario2 <= 1.0) 
+			tags.put("SCENARIO_TWO_PROB", ">99");
+		else 
+			tags.put("SCENARIO_TWO_PROB", "NaN");
+		//"SCENARIO_ONE_PROB"
+		if (pScenario3 < 0.005)
+			tags.put("SCENARIO_THREE_PROB", "<1");
+		else if (pScenario3 < 0.995)
+			tags.put("SCENARIO_THREE_PROB", String.format( "%1.0f", pScenario3*100));
+		else if (pScenario3 <= 1.0) 
+			tags.put("SCENARIO_THREE_PROB", ">99");
+		else 
+			tags.put("SCENARIO_THREE_PROB", "NaN");
+
+		String scenario1 = new String();
+		String scenario2 = new String();
+		String scenario3 = new String();
+		
+		if (mag0 > 6.9999) {
+			// <6 / 6 - Mmain / Mmain+;
+			scenario1 = "The most likely scenario is that aftershocks will continue to decrease in "
+					+ "frequency with no aftershocks larger than M6 within the next " 
+					+ tags.get("FORECAST_INTERVAL") 
+					+ ". Moderately sized aftershocks (M5 and larger) "
+					+ "could cause localized damage, particularly in weak structures. Smaller magnitude "
+					+ "earthquakes (M3 and M4) may be felt by people close to the epicenters.";
+			
+			scenario2 = "A less likely scenario would include one or more aftershocks larger than M6, but with"
+					+ " none larger than the " + tags.get("MS_MAG") + " mainshock."
+					+ " Aftershocks of this size could cause additional damage and temporarily re-energize"
+					+ " the aftershock sequence. These aftershocks would most likely affect the area already"
+					+ " impacted by the mainshock.";
+			
+			scenario3 = "The least likely scenario is that the sequence could generate an aftershock of the same"
+					+ " size or even larger than the " + tags.get("MS_MAG") + " mainshock. While this is a very "
+					+ "small probability, such an earthquake would affect communities both in and adjacent to the"
+					+ " areas already impacted by the mainshock. Such an earthquake would likely trigger an "
+					+ "aftershock sequence of its own.";
+			
+		} else if (mag0  > 5.9999) {
+			// <6 / 6 - 7 / 7+;
+			scenario1 = "The most likely scenario is that aftershocks will continue to decrease in "
+					+ "frequency with no aftershocks larger than M6 within the next "
+					+ tags.get("FORECAST_INTERVAL") 
+					+ ". Moderately sized aftershocks (M5 and larger) "
+					+ "could cause localized damage, particularly in weak structures. Smaller magnitude "
+					+ "earthquakes (M3 and M4) may be felt by people close to the epicenters.";
+			
+			scenario2 = "A less likely scenario would include one or more aftershocks between M6 and M7."
+					+ " Aftershocks of this size could cause additional damage and temporarily re-energize"
+					+ " the aftershock sequence. These aftershocks would most likely affect the area in and adjacent to the areas already"
+					+ " impacted by the mainshock.";
+			
+			scenario3 = "The least likely scenario is that the sequence could generate an aftershock larger than M7. While this is a very "
+					+ "small probability, such an earthquake would have considerable impact on communities in and adjacent to"
+					+ " areas already impacted by the mainshock. Such an earthquake would likely trigger an "
+					+ "aftershock sequence of its own.";
+		} else {
+			scenario1 = "The most likely scenario is that aftershocks will continue to decrease in "
+					+ "frequency with no aftershocks larger than M5 within the next " 
+					+ tags.get("FORECAST_INTERVAL")
+					+ ". Smaller magnitude earthquakes (M3 and M4) may be felt by people close to the epicenters.";
+			
+			scenario2 = "A less likely scenario would include one or more aftershocks between M5 and M6."
+					+ " Aftershocks of this size could cause additional damage and temporarily re-energize"
+					+ " the aftershock sequence. These aftershocks would most likely affect the area in and adjacent to areas already"
+					+ " impacted by the mainshock.";
+			
+			scenario3 = "The least likely scenario is that the sequence could generate an earthquake larger than M6. While this is a very "
+					+ "small probability, such an earthquake would affect communities both in and adjacent to the"
+					+ " areas already impacted by the mainshock, and would likely trigger an aftershock sequence of its own.";
+		}
+		
+		StringBuilder outputString = new StringBuilder();
+		outputString.append("<!-- Scenarios -->\n"
+				+ "  <div>\n"
+				+ "	  <span class=\"disclaimer\">" + tags.get("DISCLAIMER") + "</span>\n"
+				+ "    		<h1>Aftershock Sequence Scenarios</h1>\n"
+				+ "    <div>\n"
+				+ "      These are three likely scenarios for how the aftershock sequence will evolve <br>\n"
+				+ "      over the next <span style=\"font-weight:bold\">" + tags.get("FORECAST_INTERVAL") + "</span> starting " + tags.get("F_START_ABS")+ " (UTC)</span>\n"
+				+ "    </div>\n"
+				+ "    <table>\n"
+				+ "      <tr class=\"h_scenario\">\n"
+				+ "        <td colspan=\"2\">\n"
+				+ "          Scenario One (Most likely)\n"
+				+ "        </td>\n"
+				+ "      </tr>\n"
+				+ "      <tr >\n"
+				+ "        <td class=\"scenario_probability\">" + tags.get("SCENARIO_ONE_PROB") + "%</td>\n"
+				+ "        <td class=\"scenario_text\">" + scenario1 + "</td>\n"
+				+ "      </tr>\n"
+				+ "      <tr class=\"h_scenario\">\n"
+				+ "        <td colspan=\"2\">\n"
+				+ "			Scenario Two (Less likely)\n"
+				+ "        </td>\n"
+				+ "      </tr>\n"
+				+ "      <tr>\n"
+				+ "        <td class=\"scenario_probability\">"  + tags.get("SCENARIO_TWO_PROB") +  "%</td>\n"
+				+ "        <td class=\"scenario_text\">" + scenario2 + "</td>\n"
+				+ "      </tr>\n"
+				+ "      <tr class=\"h_scenario\">\n"
+				+ "        <td colspan=\"2\">\n"
+				+ "          Scenario Three (Least likely)\n"
+				+ "        </td>\n"
+				+ "      </tr>\n"
+				+ "      <tr>\n"
+				+ "        <td class=\"scenario_probability\">"  + tags.get("SCENARIO_THREE_PROB") +  "%</td>\n"
+				+ "        <td class=\"scenario_text\">" + scenario3 + "</td>\n"
+				+ "      </tr>\n"
+				+ "    </table>\n"
+				+ "  </div>\n"
+				+ "  <br>");
+		
+		return outputString.toString();
+	}
+	
+	
+	
+	// Build an html document for displaying the advisory, new style for BHA
 	public void writeHTML(File outputFile){
+
+		StringBuilder outputString = new StringBuilder();
+		StringBuilder headString = new StringBuilder();
+		StringBuilder infoString = new StringBuilder();
+
+		headString.append(""
+				+"    <!DOCTYPE html>\n"
+				+"	  <html>\n"
+				+"    <head>\n"
+				+" 		<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\">\n"
+				+" 		<meta name=\"source\" content=\"USGS AftershockForecaster\">\n"
+				+"		<meta name=\"software-version\" content=\"2021-10-01\">\n"
+				+"		<meta name=\"software-version-date\" content=\"2021-10-01\">\n"
+				+"		<meta name=\"advisory-generated-date\" content=\"" + tags.get("V_DATE") + "\">\n"
+				+"		<meta name=\"disclaimer\" content=\"This advisory was generated using softare developed on the OpenSHA platform by the\n"
+				+"			US Geological Survey and the US-AID Bureau of Humanitarian Assistance. The forecast probabilities provided herein\n"
+				+"		    describe the distribution of outcomes of past aftershock sequences, but any sequence can present surprises.\n "
+				+"			This forecast for internal US Government use only. Requests for information regarding this forecast may be directed\n"
+				+ "			to the Bureau of Humanitarian Assistance.\">\n"
+				+"		<meta name=\"OpenSHA\" content=\"www.opensha.org/apps\">\n"
+				+"		<link rel=\"stylesheet\" href=\"BHAforecast.css\">\n"
+				+"		<title>Aftershock Advisory and Forecast</title>\n"
+				+"		</head>\n"
+				+"");
+
+		infoString.append(""
+				+ "  <body>\n"
+				+ "  <!-- title disclaimer and logos -->\n"
+				+ "  <div>\n"
+				+ "    <table class=\"header\">\n"
+				+ "      <tr>\n"
+				+ "        <td class=\"leftLogo\"><img src=\"USAID_logo.png\" alt=\"\" class=\"logo\"></td>\n"
+				+ "        <td><span class=\"disclaimer\">" + tags.get("DISCLAIMER") + "</span>\n"
+				+ "				<br><h1>Aftershock Advisory and Forecast</h1></td>\n"
+				+ "        <td class=\"rightLogo\"><img src=\"USGS_logo.png\" alt=\"\" class=\"logo\"></td>\n"
+				+ "      </tr>\n"
+				+ "    </table>\n"
+				+ "  </div>\n"
+				+"");
+
+		infoString.append("  <!-- single number summary -->\n"
+				+ "  <div>\n"
+				+ "    <table class=\"headline\"> \n"
+				+ "      <tr><td><span>As of <span class=\"bold\">"
+				+ tags.get("F_START_ABS") +" (UTC)" 
+				+ "</span> there is a</span></td></tr>\n"
+				+ "      <tr><td class=\"headline_text\"><span class=\"one_number\">"
+				+ tags.get("PHEADLINE_DISP")
+				+"%</span> chance of an <span class=\"one_number\">"
+				+"M" + tags.get("HEADLINE_MAG")
+				+"</span> or larger within the next <span class=\"one_number\">"
+				+ tags.get("FORECAST_INTERVAL")
+				+"</span></td></tr>\n"
+				+ "      <tr><td>in and around the area currently affected by aftershocks.</td></tr>\n"
+				+ "    </table>\n"
+				+ "  </div><br>\n"
+				+ "");
+
+		infoString.append("  <!-- Mainshock and forecast information -->\n"
+				+ "  <div>\n"
+				+ "    <table class=\"mainshock_information\">\n"
+				+ "      <tr>\n"
+				+ "        <td style=\"text-align:left\">Mainshock Magnitude: "
+				+ tags.get("MS_MAG") + "</td>\n"
+				+ "        <td style=\"text-align:right\">Location: "
+				+ tags.get("MS_LOC") + "</td>\n"
+				+ "      </tr>\n"
+				+ "    </table>\n"
+				+ "    <table class=\"mainshock_information\">\n"
+				+ "      <tr>\n"
+				+ "        <td style=\"text-align:left\">Mainshock Date: "
+				+ tags.get("MS_DATETIME") + "</td>\n"
+				+ "        <td style=\"text-align:right\">Forecast last updated: "
+				+ tags.get("V_DATE") + " UTC</td>\n"
+				+ "      </tr>\n"
+				+ "    </table>\n"
+				+ "  </div>\n"
+				+ "");
+
+		infoString.append("	<!-- Descriptive forecast -->\n"
+				+ "  <div>\n"
+				+ "    <ul>\n"
+				+ "      <li>"+ tags.get("BULLET_TEXT1") + "</li>\n"
+				+ "      <li>"+ tags.get("BULLET_TEXT2") + "</li>\n"
+				+ "      <!-- <li>"+ tags.get("BULLET_TEXT3") + "</li> -->\n" 
+				+ "      <li>"+ tags.get("BULLET_TEXT4") + "</li>\n"
+				+ "      <li>"+ tags.get("BULLET_TEXT5") + "</li>\n"
+				+ "    </ul>\n"
+				+ "  </div><br>\n"
+				+ "");
+
+		infoString.append("  <!-- graphical summary frame holder-->\n"
+				+ "  <div>\n"
+				+ "		<iframe class=\"graphical_forecast\" src=\"graphical_forecast.html\"></iframe>\n"
+				+ "  </div>\n"
+				+ "");
+
+		infoString.append("  <!--Aftershock Map-->\n"
+				+ "    <!--    map legend       -->\n"
+				+ "    <div class=\"map_legend\">\n"
+				+ "       Aftershocks so far. "
+				+ "		  Colors indicate aftershocks that have occurred within the past \n"
+				+ "       <span class=\"red\">hour</span>, \n"
+				+ "       <span class=\"orange\">day</span>, \n"
+				+ "       <span class=\"yellow\">week</span>, \n"
+				+ "       <span class=\"white\">month</span>, or \n"
+				+ "       <span class=\"gray\">earlier</span>.\n"
+				+ "       Future aftershocks will most likely affect the area already affected by the mainshock and the aftershocks so far.\n"
+				+ "    </div>\n"
+				+ "  <div class=\"map\">\n"
+				+ "    <a href=" + tags.get("MAP_LINK") + ">\n"
+				+ "    	<img class=\"map\" src=\"aftershock_map.png\" width=700 alt=\"Follow this link, take a 2:1 screenshot, save locally as aftershock_map.png\">\n"
+				+ "    </a>\n"
+				+ "  </div>\n"
+				+ "  <br>\n"
+				+ "");
+		
+		infoString.append(getScenarioText());
+		
+		infoString.append("<!-- Table of probabilities -->\n"
+				+ "  <div>\n"
+				+ "    <span class=\"disclaimer\">" +  tags.get("DISCLAIMER") + "</span>\n"
+				+ "    <br>\n"
+				+ "    <h1>Aftershock Forecast Table</h1><iframe class=\"forecast_table\" src=\"Table.html\"></iframe>\n"
+				+ "  </div><br>\n"
+				+ "  <br>");
+		
+		String imageStr = new String();
+		switch (preferredForecastInterval) {
+		case 0:
+			imageStr = "shakingday.png";
+			break;
+		case 1:
+			imageStr = "shakingweek.png";
+			break;
+		case 2:
+			imageStr = "shakingmonth.png";
+			break;
+		default:
+			imageStr = "shakingyear.png";
+			break;
+		}
+		
+		infoString.append("  <!-- Shaking Map -->\n"
+				+ "  <div class=\"shaking_forecast\">\n"
+				+ "    <span class=\"disclaimer\">" + tags.get("DISCLAIMER") + "</span>\n"
+				+ "    <br>\n"
+				+ "    <h1>Aftershock Shaking Forecast</h1>\n"
+				+ "    <p style=\"margin-top:5px\">For forecast starting: " + tags.get("F_START_ABS") + " (UTC)</p><img width=\"800\" src=\""+ imageStr + "\" alt=\"Shaking Forecast\">\n"
+				+ "    <div class=\"shaking_forecast_legend\">\n"
+				+ "      Small gray circles indicate locations of past aftershocks in this sequence.\n"
+				+ "      Contour lines (if shown) give the chance of experiencing potentially damaging ground motions \n"
+				+ "      (exceeding level VI on the Modified Mercalli Intensity scale).\n"
+				+ "    </div>\n"
+				+ "  </div>");
+		
+		infoString.append("</body></html>\n");
+		
+		outputString.append(headString);
+		outputString.append(infoString);
+		
+		// write file
+		FileWriter fw;
+		try {
+			fw = new FileWriter(outputFile, false);
+		} catch (IOException e1) {
+			//				e1.printStackTrace();
+			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+			return;
+		}
+
+		try {
+			fw.append(outputString);
+		} catch (IOException e) {
+			//					e.printStackTrace();
+			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+		}
+		
+		try {
+			fw.close();
+		} catch (IOException e) {
+			//				e.printStackTrace();
+			System.err.println("Problem closing file.");
+		}
+
+	}
+
+	public void writeCSS(File outputFile) {
+		// the css file for the new HTML document for BHA
+		
+		StringBuilder outputString = new StringBuilder();
+		outputString.append("body {font-family:helvetica; background-color: white; page-break-inside:avoid}\n"
+				+ "h1 {color:black; font-family:helvetica; font-size:20pt; margin:0; text-align:center}\n"
+				+ "h2 {color:black; font-family:helvetica; font-size:14pt; margin:0; text-align:center}\n"
+				+ "h3 {color:black; font-family:helvetica; font-size:12pt; margin:0}\n"
+				+ "th {font-weight:normal}\n"
+				+ "tr {padding:0px}\n"
+				+ "td {padding:0px}\n"
+				+ "	\n"
+				+ "ul {margin-bottom:0px; font-size:12pt; width:800px; text-align:justify}\n"
+				+ "li {margin-bottom:3pt; font-weight:normal}\n"
+				+ "	\n"
+				+ "img.logo {max-height:40px; max-width:175px}\n"
+				+ "table.header {width:800px}\n"
+				+ "table.headline {width:800px; border:4px solid #116441; text-align:center; font-family:helvetica;}\n"
+				+ "\n"
+				+ "iframe.graphical_forecast  {width:800px;height:275px;border:none;text-align:center}\n"
+				+ "table.graphical_forecast {width:700px;margin-left:50px;margin-right:0px}\n"
+				+ "table.mainshock_information {width:800px; font-weight:normal; color:#333333}\n"
+				+ "\n"
+				+ "\n"
+				+ "span.one_number {color:#116441; font-family:helvetica; font-size:28pt; margin:0px}\n"
+				+ "span.bold {font-weight:bold}\n"
+				+ "\n"
+				+ "div {max-width:800px; border-collapse:collapse; text-align:center}\n"
+				+ "div.map {text-align:center; width:700px; margin-left:50px}\n"
+				+ "img.map {height:400px}\n"
+				+ "div.map_legend {background-color:#A4C1DC; width:700px; margin-left:50px; margin-bottom:0px; font-size:10pt}\n"
+				+ "div.shaking_forecast {width:800px;margin-left:0px}\n"
+				+ "div.shaking_forecast_legend {font-size:12pt; background-color:#ffffff; width:800px; \n"
+				+ "	text-align:center; margin-left:0px}\n"
+				+ ".forecast_table {width:550px;min-height:600px;border:none;text-align:center}\n"
+				+ "\n"
+				+ "span.red {color:red}\n"
+				+ "span.orange {color:orange}\n"
+				+ "span.yellow {color:yellow}\n"
+				+ "span.white {color:white}\n"
+				+ "span.gray {color:gray}\n"
+				+ "\n"
+				+ "tr.forecastRow {border:1px solid #bbbbbb; border-collapse:collapse; padding-top:1px;}\n"
+				+ "\n"
+				+ "td.MMIkey {vertical-align:top}\n"
+				+ "table.MMIkeyHeader {border:1px solid #bbbbbb;}\n"
+				+ "tr.bold {font-weight:bold}\n"
+				+ "th.wide {width:145px; font-weight:bold}\n"
+				+ "th.narrow {width:50px; font-weight:bold}\n"
+				+ "td.emptyKey {height:23px}\n"
+				+ "\n"
+				+ "\n"
+				+ ".leftLogo {width:175px; text-align:left}\n"
+				+ ".rightLogo {width:175px; text-align:right}\n"
+				+ ".disclaimer {color:#ff6666;text-align:center;margin-bottom:5px}\n"
+				+ ".headline_text {color:black; font-size:24pt;}\n"
+				+ "\n"
+				+ ".forecast { font-size:14px; border:0px solid gray; border-collapse:collapse; margin:0; text-align:center}\n"
+				+ ".forecastHeader { font-size:16px; border:0px solid gray; border-collapse:collapse; text-align:center; vertical-align:center; font-weight:normal; height:20px;}\n"
+				+ ".forecastValue { font-size:12px; border:0px solid gray; border-collapse:collapse; text-align:center; margin:0; vertical-align:bottom; color:#666666;}\n"
+				+ ".forecastKey { font-size:12px; border:0px solid gray; border-collapse:collapse; text-align:center; margin:0; vertical-align:bottom; padding:0px}\n"
+				+ ".forecastKeySmall { font-size:10px; border:0px solid gray; border-collapse:collapse; text-align:center; margin:0; vertical-align:bottom; padding:0px}\n"
+				+ ".forecastBar { height:40px; width:50px; padding-top:1px;}\n"
+				+ ".forecastBox {stroke-width:0px; x:2px; width:46px}\n"
+				+ ".forecastBoxText {text-anchor:middle; fill:#666666;}\n"
+				+ ".key {width:30px;height:12px}\n"
+				+ ".hgov {color:#dd1111; font-family:helvetica; font-size:14pt; margin:0}\n"
+				+ ".scenario_probability {text-align:center; width:100px; height:60px; color:black; background:#eeeeee; font-family:helvetica; font-size:28pt; vertical-align:center; margin-right:5px; margin-left:0px}\n"
+				+ ".scenario_text {text-align:justify; vertical-align:top}\n"
+				+ ".h_scenario {color:black; background:#ffffff; height:30px; text-align:left; font-weight:bold; \n"
+				+ "	font-family:helvetica; font-size:12pt; margin:0; vertical-align:bottom}\n"
+				+ "\n"
+				+ "");
+		
+		// write file
+		FileWriter fw;
+		try {
+			fw = new FileWriter(outputFile, false);
+		} catch (IOException e1) {
+			//				e1.printStackTrace();
+			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+			return;
+		}
+
+		try {
+			fw.append(outputString);
+		} catch (IOException e) {
+			//					e.printStackTrace();
+			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+		}
+
+		try {
+			fw.close();
+		} catch (IOException e) {
+			//				e.printStackTrace();
+			System.err.println("Problem closing file.");
+		}
+	}
+	
+	
+	public void writeBarGraphHTML(File outputFile) {
+		StringBuilder outputString = new StringBuilder();
+		StringBuilder probTableString = new StringBuilder();
+		StringBuilder keyString = new StringBuilder();
+		
+		//parameters for the svg table
+		double barHeight = 40;
+		if(predictionIntervals.length==3)
+			barHeight = 50;
+		else if(predictionIntervals.length==2)
+			barHeight = 60;
+		else if(predictionIntervals.length==1)
+			barHeight = 120;
+
+		double barWidth = 50;
+
+		String[][] tableTags = new String[][]{{"P1_DA","P2_DA","P3_DA","P4_DA","P5_DA","P6_DA"},
+			{"P1_WK","P2_WK","P3_WK","P4_WK","P5_WK","P6_WK"},
+			{"P1_MO","P2_MO","P3_MO","P4_MO","P5_MO","P6_MO"},
+			{"P1_YR","P2_YR","P3_YR","P4_YR","P5_YR","P6_YR"}};
+
+		probTableString.append("<!DOCTYPE html>\n"
+				+ "<html>\n"
+				+ "<head>\n"
+				+ "	<title>Aftershock Forecast Bar Graph</title>\n"
+				+ "	<link rel=\"stylesheet\" href=\"BHAforecast.css\">\n"
+				+ "</head>\n"
+				+ "<body>");
+		
+		
+
+		probTableString.append("  <!-- Graphical summary -->\n"
+				+ "  <div>\n"
+				+ "    <h2>Aftershock Forecast starting " + tags.get("F_START_ABS") +  " (UTC)</h2>\n"
+				+ "  </div>\n"
+				+ "  <table class = \"graphical_forecast\">\n"
+				+ "    <!-- Table of Probabilities -->\n"
+				+ "    <tr>\n"
+				+ "      <td>\n"
+				+ "        <table>\n"
+				+ "          <tr>\n"
+				+ "            <th></th>\n"
+				+ "            <th class=\"forecast\">Chance of an aftershock larger than:</th>\n"
+				+ "          </tr>\n"
+				+ "          <tr>\n"
+				+ "            <td>\n"
+				+ "              <table>\n"
+				+ "                <tr>"
+				+ "                  <th class=\"forecastHeader\"></th>\n"
+				+ "                </tr>\n"
+				+ "");
+
+		probTableString.append("			<tr><th class=\"forecastBar\">Day</th></tr>\n");
+		if (predictionIntervals.length > 1)	
+			probTableString.append("			<tr><th class=\"forecastBar\">Week</th></tr>\n");
+		if (predictionIntervals.length > 2)
+			probTableString.append("			<tr><th class=\"forecastBar\">Month</th></tr>\n");
+		if (predictionIntervals.length > 3)
+			probTableString.append("			<tr><th class=\"forecastBar\">Year</th></tr>\n");
+		
+		probTableString.append(""
+				+"				</table>\n"
+				+"            </td>\n"
+				+"            <td>\n"
+				+"              <table class=\"forecast\">\n"
+				+"                <tr>\n"
+				+"  				 <th class=\"forecastHeader\">M3</th>\n"
+				+"                   <th class=\"forecastHeader\">M4</th>\n"
+				+"                	 <th class=\"forecastHeader\">M5</th>\n"
+				+"                   <th class=\"forecastHeader\">M6</th>\n"
+				+"                   <th class=\"forecastHeader\">M7</th>\n"
+				+"                   <th class=\"forecastHeader\">M8</th>\n"
+				+"                </tr>\n"
+				+"");
+		
+		//generate forecast table
+		int maxRow = predictionIntervals.length;
+		int minRow = 0;
+		//				if (predictionIntervals.length == 4) //commented out for PR earthquake
+		//						minRow = 1;
+
+		for (int j = minRow; j<maxRow; j++){
+			probTableString.append(""
+					+"                                    <tr class = \"forecastRow\">\n");
+
+			for (int i = 0; i<MMIcolors.length; i++){
+				double probVal = probability[i][j];
+				double height = barHeight*probVal;
+				String probStr = tags.get(tableTags[j][i]); 
+				double yVal;
+				if (probVal > 0.50) yVal = 11 + barHeight*(1 - probVal);
+				else yVal = barHeight*(1 - probVal) - 3;
+
+				probTableString.append(""
+						+"                                        <td class=\"forecastValue\">\n"
+						+"												<svg class=\"forecastBar\">\n"
+						+"													<rect class = \"forecastBox\" y=\"" + (int) (barHeight - (int) height) + "px\" height=\"" + ((int) height) + "px\" width=\"" + barWidth + "px\" fill=\""+MMIcolors[i]+"\" />\n"
+						+"													<text class = \"forecastBoxText\" x=\"25px\" y=" + String.format("\"%.0fpx\"", yVal) + ">"+probStr+"</text>\n"
+						+"												</svg>\n"
+						+"                                        </td>\n"
+						);
+			}
+			probTableString.append(""
+					+"                                    </tr>\n");
+		}
+
+		probTableString.append(""
+				+"                                </table>\n"
+				+"                            </td>\n"
+				+"                        </tr>\n"
+				+"                    </table>\n"
+				+"                </td>\n\n");
+
+		keyString.append("               <td class=\"MMIkey\">\n"
+				+"                    <!-- MMI key-->\n"
+				+"                    <table>\n"
+				+"                        <tr><td class=\"emptyKey\"></td></tr>\n"
+				+"                        <tr><td class=\"forecast\">Key to colors*</td></tr>\n"
+				+"                        <tr><td>\n"
+				+"                            <table class=\"forecastKey MMIkeyHeader\">\n"
+				+"                                <tr class=\"bold\">\n"
+				+"                                    <th class=\"narrow bold\"></th>\n"
+				+"                                    <th class=\"wide bold\">Potential Shaking</th>\n"
+				+"                                    <th class=\"wide bold\">Potential Damage</th>\n"
+				+"                                </tr>\n"
+				+"                                <tr>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[0] + "\"/></svg></td>\n"
+				+"                                    <td>weak - light</td>\n"
+				+"                                    <td>none</td>\n"
+				+"                                </tr>\n"
+				+"                                <tr>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[1] + "\"/></svg></td>\n"
+				+"                                    <td>weak - moderate</td>\n"
+				+"                                    <td>very light</td>\n"
+				+"                                </tr>\n"
+				+"                                <tr>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[2] + "\"/></svg></td>\n"
+				+"                                    <td>moderate - strong</td>\n"
+				+"                                    <td>light - moderate</td>\n"
+				+"                                </tr>\n"
+				+"                                <tr>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[3] + "\"/></svg></td>\n"
+				+"                                    <td>strong - severe</td>\n"
+				+"                                    <td>moderate - heavy</td>\n"
+				+"                                </tr>\n"
+				+"                                <tr>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[4] + "\"/></svg></td>\n"
+				+"                                    <td>severe - violent</td>\n"
+				+"                                    <td>heavy</td>\n"
+				+"                                </tr>\n"
+				+"                                <tr>\n"
+				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[5] + "\"/></svg></td>\n"
+				+"                                    <td>violent - extreme</td>\n"
+				+"                                    <td>very heavy</td>\n"
+				+"                                </tr>\n"
+				+"                            </table>\n"
+				+"                        </td></tr>\n"
+				+"                    </table>\n"
+				+"						<p class=\"forecastKey\" style=\"font-size:10px\">*This table gives typical peak shaking and intensity levels associated with the forecast magnitudes. Actual shaking is affected by many factors, and damage may be higher in vulnerable structures.</p>\n"
+				+"                </td>\n"
+				+"            </tr>\n"
+				+"        </table>\n\n");
+		outputString.append(probTableString);
+		outputString.append(keyString);
+
+
+				
+		// write file
+		FileWriter fw;
+		try {
+			fw = new FileWriter(outputFile, false);
+		} catch (IOException e1) {
+			//				e1.printStackTrace();
+			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+			return;
+		}
+
+		try {
+			fw.append(outputString);
+		} catch (IOException e) {
+			//					e.printStackTrace();
+			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+		}
+
+		try {
+			fw.close();
+		} catch (IOException e) {
+			//				e.printStackTrace();
+			System.err.println("Problem closing file.");
+		}
+	}
+		
+		
+	// Build an html document for displaying the advisory
+	public void writeHTMLclassic(File outputFile){
 	
 		StringBuilder outputString = new StringBuilder();
 	
@@ -850,10 +1653,15 @@ public class GraphicalForecast{
 		
 		double barWidth = 50;
 		double barPadding = 2;
-		String[][] tableTags = new String[][]{{"P1_DA","P2_DA","P3_DA","P4_DA","P5_DA","P6_DA","P7_DA"},
-				{"P1_WK","P2_WK","P3_WK","P4_WK","P5_WK","P6_WK","P7_WK"},
-				{"P1_MO","P2_MO","P3_MO","P4_MO","P5_MO","P6_MO","P7_MO"},
-				{"P1_YR","P2_YR","P3_YR","P4_YR","P5_YR","P6_YR","P7_YR"}};
+//		String[][] tableTags = new String[][]{{"P1_DA","P2_DA","P3_DA","P4_DA","P5_DA","P6_DA","P7_DA"},
+//				{"P1_WK","P2_WK","P3_WK","P4_WK","P5_WK","P6_WK","P7_WK"},
+//				{"P1_MO","P2_MO","P3_MO","P4_MO","P5_MO","P6_MO","P7_MO"},
+//				{"P1_YR","P2_YR","P3_YR","P4_YR","P5_YR","P6_YR","P7_YR"}};
+		String[][] tableTags = new String[][]{{"P1_DA","P2_DA","P3_DA","P4_DA","P5_DA","P6_DA"},
+				{"P1_WK","P2_WK","P3_WK","P4_WK","P5_WK","P6_WK"},
+				{"P1_MO","P2_MO","P3_MO","P4_MO","P5_MO","P6_MO"},
+				{"P1_YR","P2_YR","P3_YR","P4_YR","P5_YR","P6_YR"}};
+		
 					
 		
 		headString.append(""
@@ -866,7 +1674,7 @@ public class GraphicalForecast{
 				+"		<meta name=\"software-version-date\" content=\"2018-05-01\">\n"
 				+"		<meta name=\"advisory-generated-date\" content=\"" + tags.get("V_DATE") + "\">\n"
 				+"		<meta name=\"disclaimer\" content=\"This advisory was generated using softare developed on the OpenSHA platform by the\n"
-				+"			US Geological Survey and the US-AID Office of Foreign Disaster Assistance. The information provided in this document\n"
+				+"			US Geological Survey and the US-AID Bureau of Humanitarian Assistance. The information provided in this document\n"
 				+"			is not an official statement of the US Geological Survey or any other US Government Entity.\">\n"
 				+"		<meta name=\"OpenSHA\" content=\"www.opensha.org/apps\">\n"
 				+"        <style>\n"
@@ -957,13 +1765,19 @@ public class GraphicalForecast{
 				+"\n"
 				+"		  <!-- Forecast table with probabilities of different magnitudes -->\n"
 //				+"        <table style=\"width:650px;margin-left:60px;margin-right:100px\"><!-- Table of Probabilities -->\n"
-				+"        <table style=\"width:750px;margin-left:25px;margin-right:25px\"><!-- Table of Probabilities -->\n"
+				+"        <table style=\"width:700px;margin-left:25px;margin-right:50px\"><!-- Table of Probabilities -->\n"
 				+"            <tr>\n"
+			    +"				  <td>\n"
+                +"					<p style=\"text-align:center;font-size:14px\">\n"
+                +"					<br>\n"
+                +" 					Over the next:\n"
+                +" 					</p>\n"
+                +"	      		  </td>\n"
 				+"                <td>\n"
 				+"                    <table>\n"
 				+"                        <tr>\n"
 				+"                            <th></th>\n"
-				+"                            <th class=\"forecast\">Probability of at least one aftershock larger than:</th>\n"
+				+"                            <th class=\"forecast\">Chance of at least one aftershock larger than:</th>\n"
 				+"                        </tr>\n"
 				+"                        <tr>\n"
 				+"                            <td>\n"
@@ -989,7 +1803,7 @@ public class GraphicalForecast{
 				+"                                        <th class=\"forecastHeader\">M6</th>\n"
 				+"                                        <th class=\"forecastHeader\">M7</th>\n"
 				+"                                        <th class=\"forecastHeader\">M8</th>\n"
-				+"                                        <th class=\"forecastHeader\">M9</th>\n"
+//				+"                                        <th class=\"forecastHeader\">M9</th>\n"
 				+"                                    </tr>\n"
 				+"                                    \n");
 
@@ -1041,51 +1855,51 @@ public class GraphicalForecast{
 				+"                        <tr><td>\n"
 				+"                            <table class=\"forecastKey\" style=\"border:1px solid #dddddd;\">\n"
 				+"                                <tr style=\"font-weight:bold\">\n"
-				+"                                    <th style=\"width:30px; font-weight:bold\"></th>\n"
-				+"                                    <th style=\"width:70px; font-weight:bold\">peak MMI</th>\n"
-				+"                                    <th style=\"width:120px; font-weight:bold\">Potential Shaking</th>\n"
-				+"                                    <th style=\"width:120px; font-weight:bold\">Potential Damage</th>\n"
+				+"                                    <th style=\"width:50px; font-weight:bold\"></th>\n"
+//				+"                                    <th style=\"width:70px; font-weight:bold\">peak MMI</th>\n"
+				+"                                    <th style=\"width:145px; font-weight:bold\">Potential Shaking</th>\n"
+				+"                                    <th style=\"width:145px; font-weight:bold\">Potential Damage</th>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
 				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[0] + "\"/></svg></td>\n"
-				+"                                    <td>II-IV</td>\n"
+//				+"                                    <td>II-IV</td>\n"
 				+"                                    <td>weak - light</td>\n"
 				+"                                    <td>none</td>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
 				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[1] + "\"/></svg></td>\n"
-				+"                                    <td>III-V</td>\n"
+//				+"                                    <td>III-V</td>\n"
 				+"                                    <td>weak - moderate</td>\n"
 				+"                                    <td>very light</td>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
 				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[2] + "\"/></svg></td>\n"
-				+"                                    <td>V-VII</td>\n"
+//				+"                                    <td>V-VII</td>\n"
 				+"                                    <td>moderate - strong</td>\n"
-				+"                                    <td>light</td>\n"
+				+"                                    <td>light - moderate</td>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
 				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[3] + "\"/></svg></td>\n"
-				+"                                    <td>VI-VIII</td>\n"
+//				+"                                    <td>VI-VIII</td>\n"
 				+"                                    <td>strong - severe</td>\n"
 				+"                                    <td>moderate - heavy</td>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
 				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[4] + "\"/></svg></td>\n"
-				+"                                    <td>VIII-X</td>\n"
+//				+"                                    <td>VIII-X</td>\n"
 				+"                                    <td>severe - violent</td>\n"
 				+"                                    <td>heavy</td>\n"
 				+"                                </tr>\n"
 				+"                                <tr>\n"
 				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[5] + "\"/></svg></td>\n"
-				+"                                    <td>X+</td>\n"
+//				+"                                    <td>X+</td>\n"
 				+"                                    <td>violent - extreme</td>\n"
 				+"                                    <td>very heavy</td>\n"
 				+"                                </tr>\n"
 				+"                            </table>\n"
 				+"                        </td></tr>\n"
 				+"                    </table>\n"
-				+"						<p class=\"forecastKey\" style=\"font-size:10px\">*This table gives typical shaking and intensity levels for the forecast magnitudes. Actual shaking is affected by many factors, and damage may be higher in vulnerable structures.</p>\n"
+				+"						<p class=\"forecastKey\" style=\"font-size:10px\">*This table gives typical peak shaking and intensity levels associated with the forecast magnitudes. Actual shaking is affected by many factors, and damage may be higher in vulnerable structures.</p>\n"
 				+"                </td>\n"
 				+"            </tr>\n"
 				+"        </table>\n\n");
@@ -1365,7 +2179,10 @@ public class GraphicalForecast{
 		try{
 			gf.writeHTML(new File(System.getenv("HOME") + "/example_forecast.html"));
 			gf.writeHTMLTable(new File(System.getenv("HOME") + "/Table.html"));
+			gf.writeBarGraphHTML(new File(System.getenv("HOME") + "/graphical_forecast.html"));
+			gf.writeCSS(new File(System.getenv("HOME") + "/BHAforecast.css"));
 //			gf.writeSummaryJson(new File(System.getenv("HOME") + "/forecast.json"));
+			
 		}catch(Exception e){
 			e.printStackTrace();
 		}

@@ -136,7 +136,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	public AftershockStatsGUI_ETAS(String... args) {
 		checkArguments(args);
 		if (D) System.out.println("verbose = " + verbose + ", debug = " + D + 
-				", override Expiration = " + overrideExpiry);
+				", override = " + overrideExpiry);
 		if (devMode) System.out.println("Warning: Running in development mode."
 				+ "This mode is untested and will probably give a bad forecast if not crash outright.");
 		
@@ -154,6 +154,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //				return;
 //			}
 //		}
+		
+		if (!overrideExpiry) {
+				String message = "This version of the AftershockForecasting software is for information only; the forecast summary document will not be generated.";
+				System.out.println(message);
+				
+		}
 		
 		if (eventID != null && forecastStartTime != null) {
 			try {
@@ -221,28 +227,28 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		YEAR("Year",366d),
 		MONTH("Month",31d),
 		WEEK("Week", 7d),
-		DAY("Day",1d),
-		YEAR2("2Year",2*366d),
-		YEAR3("3Year",3*366d),
-		YEAR4("4Year",4*366d),
-		YEAR5("5Year",5*366d),
-		YEAR6("6Year",6*366),
-		YEAR7("7Year",7*366),
-		YEAR8("8Year",8*366),
-		YEAR9("9Year",9*366),
-		YEAR10("10Year",10*366),
-		YEAR11("11Year",11*366),
-		YEAR12("12Year",12*366),
-		YEAR13("13Year",13*366),
-		YEAR14("14Year",14*366),
-		YEAR15("15Year",15*366),
-		YEAR16("16Year",16*366),
-		YEAR17("17Year",17*366),
-		YEAR18("18Year",18*366),
-		YEAR19("19Year",19*366),
-		YEAR20("20Year",20*366),
-		YEAR22("21Year",22*366),
-		YEAR23("22Year",23*366);
+		DAY("Day",1d);
+//		YEAR2("2Year",2*366d),
+//		YEAR3("3Year",3*366d),
+//		YEAR4("4Year",4*366d),
+//		YEAR5("5Year",5*366d),
+//		YEAR6("6Year",6*366),
+//		YEAR7("7Year",7*366),
+//		YEAR8("8Year",8*366),
+//		YEAR9("9Year",9*366),
+//		YEAR10("10Year",10*366),
+//		YEAR11("11Year",11*366),
+//		YEAR12("12Year",12*366),
+//		YEAR13("13Year",13*366),
+//		YEAR14("14Year",14*366),
+//		YEAR15("15Year",15*366),
+//		YEAR16("16Year",16*366),
+//		YEAR17("17Year",17*366),
+//		YEAR18("18Year",18*366),
+//		YEAR19("19Year",19*366),
+//		YEAR20("20Year",20*366),
+//		YEAR22("21Year",22*366),
+//		YEAR23("22Year",23*366);
 		
 		private double duration;
 		private String name;
@@ -352,6 +358,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	
 	private RangeParameter amsValRangeParam;
 	private IntegerParameter amsValNumParam;
+	private RangeParameter muValRangeParam;
+	private IntegerParameter muValNumParam;
 	private RangeParameter aValRangeParam;
 	private IntegerParameter aValNumParam;
 	private RangeParameter pValRangeParam;
@@ -359,11 +367,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private RangeParameter cValRangeParam;
 	private IntegerParameter cValNumParam;
 	
+	
 	private BooleanParameter timeDepMcParam;
 	private DoubleParameter rmaxParam;
 
 	private ButtonParameter computeAftershockParamsButton;
 	
+	private DoubleParameter muDurationParam;
+	private DoubleParameter muValParam;
 	private DoubleParameter amsValParam;
 	private DoubleParameter aValParam;
 	private DoubleParameter pValParam;
@@ -448,6 +459,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 	}
 	private EnumParameter<FitSourceType> fitSourceTypeParam;	
+	
+	private EnumParameter<ForecastDuration> advisoryDurationParam;
 	
 	private ButtonParameter publishAdvisoryButton;
 	
@@ -583,13 +596,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		
 //		forecastDurationParam = new DoubleParameter("Forecast Duration", 0d, 366, new Double(366d));
 //		forecastDurationParam.setUnits("Days");
-//		forecastDurationParam.setInfo("Forecast duration realative to forecast start time");
+//		forecastDurationParam.setInfo("Forecast duration relative to forecast start time");
 //		forecastDurationParam.addParameterChangeListener(this);
 //		forecastParams.addParameter(forecastDurationParam);
 		
 		forecastDurationParam = new EnumParameter<ForecastDuration>(
 				"Forecast Duration", EnumSet.allOf(ForecastDuration.class), ForecastDuration.YEAR, null);
-		forecastDurationParam.setInfo("Choose tectonic regime. ACR = active continental region, SCR = stable continental region, SOR = stable oceanic region, SZ = subduction zone");
+		forecastDurationParam.setInfo("Maximum computed forecast duration relative to forecast start time");
 		forecastDurationParam.addParameterChangeListener(this);
 		forecastParams.addParameter(forecastDurationParam);
 
@@ -692,6 +705,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		regionEditParam.getEditor().setEditorBorder(BorderFactory.createLineBorder(Color.black, 1));
 		dataParams.addParameter(regionEditParam);
 		
+		/* make this display more useful labels */
+		tectonicRegimeParam = new EnumParameter<TectonicRegime>(
+				"Tectonic Regime", EnumSet.allOf(TectonicRegime.class), TectonicRegime.GLOBAL_AVERAGE, null);
+		tectonicRegimeParam.setInfo("Choose tectonic regime. ACR = active continental region, SCR = stable continental region, SOR = stable oceanic region, SZ = subduction zone");
+		tectonicRegimeParam.addParameterChangeListener(this);
+//		fitParams.addParameter(tectonicRegimeParam); //put this in the data window to make some room
+		dataParams.addParameter(tectonicRegimeParam);
+		
 		fetchButton = new ButtonParameter("USGS Event Webservice", "Fetch Data");
 		fetchButton.setInfo("Download aftershocks from USGS ComCat");
 		fetchButton.addParameterChangeListener(this);
@@ -771,17 +792,18 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		alphaParam.addParameterChangeListener(this);
 //		dataParams.addParameter(alphaParam);
 		
-		/* make this display more useful labels */
-		tectonicRegimeParam = new EnumParameter<TectonicRegime>(
-				"Tectonic Regime", EnumSet.allOf(TectonicRegime.class), TectonicRegime.GLOBAL_AVERAGE, null);
-		tectonicRegimeParam.setInfo("Choose tectonic regime. ACR = active continental region, SCR = stable continental region, SOR = stable oceanic region, SZ = subduction zone");
-		tectonicRegimeParam.addParameterChangeListener(this);
-		fitParams.addParameter(tectonicRegimeParam);
-		
 		
 		//these are inside constraint editor
 		fitMSProductivityParam = new BooleanParameter("Fit MS Productivity", true);
 		fitMSProductivityParam.addParameterChangeListener(this);
+		
+		muValRangeParam = new RangeParameter("mu-value range", new Range(0, 100));
+		muValRangeParam.setInfo("Specify background rate parameter range.");
+		muValRangeParam.addParameterChangeListener(this);
+		
+		muDurationParam= new DoubleParameter("mu duration", 0.0);
+		muValRangeParam.setInfo("Specify duration of non-zero background rate (days).");
+		muValRangeParam.addParameterChangeListener(this);
 		
 		amsValRangeParam = new RangeParameter("ams-value range", new Range(-4.0, -1));
 		amsValRangeParam.setInfo("Specify mainshock productivity parameter range.");
@@ -829,8 +851,6 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		numberSimsParam.setValue(10000);
 		numberSimsParam.setInfo("Set the number of ETAS stochastic catalogs. Higher numbers produce more accurate estimates, but require more memory and processor time.");
 		
-		
-		
 		constraintList = new ParameterList();
 		if(devMode) constraintList.addParameter(fitMSProductivityParam);
 		constraintList.addParameter(timeDepMcParam);
@@ -842,6 +862,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		constraintList.addParameter(pValNumParam);
 		constraintList.addParameter(cValRangeParam);
 		constraintList.addParameter(cValNumParam);
+//		constraintList.addParameter(muValRangeParam);
+//		constraintList.addParameter(muDurationParam);
 		constraintList.addParameter(numberSimsParam);
 		if(devMode) constraintList.addParameter(rmaxParam);
 				
@@ -863,7 +885,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		amsValParam = new DoubleParameter("ams", new Double(0d));
 		amsValParam.setInfo("Mainshock direct productivity parameter");
 		amsValParam.setValue(null);
-		
+	
 		amsValParam.addParameterChangeListener(this);
 		amsValParam.getEditor().getComponent().setMinimumSize(null);
 		amsValParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
@@ -897,6 +919,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		setEnabledStyle(cValParam, false);
 		outputParams.addParameter(cValParam);
 
+		muValParam = new DoubleParameter("mu", 0d);
+		muValParam.setValue(null);
+		muValParam.setInfo("background rate #/day");
+		muValParam.addParameterChangeListener(this);
+		muValParam.getEditor().getComponent().setMinimumSize(null);
+		muValParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
+		setEnabledStyle(muValParam, false);
+		outputParams.addParameter(muValParam);
+		
 		computeAftershockForecastButton = new ButtonParameter("Aftershock Forecast", "Run Generic Forecast");
 		computeAftershockForecastButton.setInfo("Compute aftershock forecast using typical parameters");
 		computeAftershockForecastButton.addParameterChangeListener(this);
@@ -970,10 +1001,18 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		mapScaleParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
 		mapPlotParams.addParameter(mapScaleParam);
 		
+		
+		advisoryDurationParam = new EnumParameter<ForecastDuration>(
+				"Advisory Duration", EnumSet.allOf(ForecastDuration.class), ForecastDuration.WEEK, null);
+		advisoryDurationParam.setInfo("Duration to emphasize in the published forecast advisory.");
+		
+		
 		publishAdvisoryButton = new ButtonParameter("Publish Advisory", "Publish");
 		publishAdvisoryButton.addParameterChangeListener(this);
 		publishAdvisoryButton.setInfo("Create and save forecast summary documents");
 		publishAdvisoryButton.getEditor().setEditorBorder(BorderFactory.createLineBorder(Color.black, 1));
+		
+		publishAdvisoryParams.addParameter(advisoryDurationParam);
 		publishAdvisoryParams.addParameter(publishAdvisoryButton);
 		
 		ConsoleWindow console = new ConsoleWindow(true);
@@ -1002,13 +1041,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		mapPlotEditor = new ParameterListEditor(mapPlotParams);
 		publishAdvisoryEditor = new ParameterListEditor(publishAdvisoryParams);
 		
-		forecastEditor.setPreferredSize(new Dimension(paramWidth, (int) (height/10d*(5 + 0.0))));
-		dataEditor.setPreferredSize(new Dimension(paramWidth, (int) (height/10d*(5 + 0.0))));
+		forecastEditor.setPreferredSize(new Dimension(paramWidth, (int) (height/10d*(4.8 + 0.0))));
+		dataEditor.setPreferredSize(new Dimension(paramWidth, (int) (height/10d*(5.2 + 0.0))));
 		
 		mfdEditor.setPreferredSize(new Dimension(paramWidth, (int) (height/10d*(1 + 0.0))));
-		fitEditor.setPreferredSize(new Dimension(paramWidth, (int) (height/10d*(4.3 + 0.0))));
-		mapEditor.setPreferredSize(new Dimension(paramWidth, (int) (height/10d*(4.7 + 0.0))));
-		publishAdvisoryEditor.setPreferredSize(new Dimension(paramWidth, (int)(height/10d*(1 + 0.0))));
+		fitEditor.setPreferredSize(new Dimension(paramWidth, (int) (height/10d*(3.6 + 0.0))));
+		mapEditor.setPreferredSize(new Dimension(paramWidth, (int) (height/10d*(4.6 + 0.0))));
+		publishAdvisoryEditor.setPreferredSize(new Dimension(paramWidth, (int)(height/10d*(1.9 + 0.0))));
 		
 		outputEditor.setPreferredSize(new Dimension((int) (paramWidth/4d), (int) (height/11d * 7)));
 		mapPlotEditor.setPreferredSize(new Dimension((int) (paramWidth/4d), (int) (height/11d * 4)));
@@ -4275,7 +4314,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				updateRangeParams(cValRangeParam, cValNumParam, 51);
 				setEnableParamsPostAftershockParams(false);
 				setEnableParamsPostComputeB(false);
-
+			
+			} else if (param == muValRangeParam || param == muValNumParam) {
+				
+				updateRangeParams(muValRangeParam, muValNumParam, 51);
+				setEnableParamsPostAftershockParams(false);
+				setEnableParamsPostComputeB(false);
+				
 			} else if (param == timeDepMcParam) {
 				if(verbose) System.out.println("Time-dependent Mc = " + timeDepMcParam.getValue());
 				setEnableParamsPostAftershockParams(false);
@@ -4654,7 +4699,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
  						EvenlyDiscretizedFunc[] fractilesFuncs = forecast.get(0);
  						EvenlyDiscretizedFunc magPDFfunc = forecast.get(1)[0];
 						
-						UncertainArbDiscFunc uncertainFunc = new UncertainArbDiscFunc(fractilesFuncs[1], fractilesFuncs[0], fractilesFuncs[2]);
+ 						UncertainArbDiscFunc uncertainFunc = new UncertainArbDiscFunc(fractilesFuncs[1], fractilesFuncs[0], fractilesFuncs[2]);
 
 //						EvenlyDiscretizedFunc magPDFfunc = model.getMagnitudePDFwithAleatoryVariability(minMag, maxMag, numMag, minDays, maxDays);
 						magPDFfunc.scale(100d);
@@ -5937,6 +5982,28 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					break;
 			}
 			GraphicalForecast graphForecast = new GraphicalForecast(outFile, model, eventDate, startDate, numberOfIntervals);
+			
+			int advisoryDurationIndex;
+			switch (advisoryDurationParam.getValue()) {
+				case YEAR:
+					advisoryDurationIndex = 3;
+					break;
+				case MONTH:
+					advisoryDurationIndex = 2;
+					break;
+				case WEEK:
+					advisoryDurationIndex = 1;
+					break;
+				case DAY:
+					advisoryDurationIndex = 0;
+					break;
+				default:
+					advisoryDurationIndex = 1; //weeek defaut
+					break;
+			}	
+			graphForecast.setPreferredForecastInterval(advisoryDurationIndex);
+			graphForecast.setAftershockRadiusKM(radiusParam.getValue());
+			graphForecast.setMapRadiusDeg(radiusParam.getValue() * mapScaleParam.getValue()/3 / 111.111);
 			graphForecast.setShakeMapURL(shakeMapURL);
 			graphForecast.constructForecast();
 			graphForecast.writeHTML(outFile);
@@ -5948,6 +6015,26 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				graphForecast.writeHTMLTable(new File(tableFile));
 			} catch (Exception e) {
 				System.err.println("Couldn't save forecast Table to: " + tableFile);
+			}
+
+			//print the bar graph file
+			String barFile = outFile.getParent() + "/" + "graphical_forecast.html";
+			try {
+				System.out.println("Saving bar graph to: " + barFile);
+				graphForecast.writeBarGraphHTML(new File(barFile));
+			} catch (Exception e) {
+				System.err.println("Couldn't save bar graph to: " + barFile);
+				e.printStackTrace();
+			}
+
+			//print the css file
+			String cssFile = outFile.getParent() + "/" + "BHAforecast.css";
+			try {
+				System.out.println("Saving css file to: " + cssFile);
+				graphForecast.writeCSS(new File(cssFile));
+			} catch (Exception e) {
+				System.err.println("Couldn't save css file to: " + cssFile);
+				e.printStackTrace();
 			}
 			
 			//output a json that can be sent to PDL
@@ -6046,7 +6133,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			}
 			
 			
-			//write a blank logo to the output directory
+			//write logos to the output directory
 			// load the data
 			String pngFile = "Logo.png";
 			InputStream logoIS = GraphicalForecast.class.getResourceAsStream("resources/" + pngFile);
@@ -6063,6 +6150,40 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			} else {
 				System.err.println("Couldn't locate file: " + pngFile);
 			}
+			
+			
+			pngFile = "USAID_logo.png";
+			logoIS = GraphicalForecast.class.getResourceAsStream("resources/" + pngFile);
+			if (logoIS != null){
+			
+				File destination = new File(outFile.getParent() + "/" + pngFile);
+
+				try {
+					FileUtils.copyInputStreamToFile(logoIS, destination);
+				} catch (IOException e) {
+				    e.printStackTrace();
+					System.err.println("Couldn't copy: " + pngFile + " to file: " + destination);
+				}
+			} else {
+				System.err.println("Couldn't locate file: " + pngFile);
+			}
+
+			pngFile = "USGS_logo.png";
+			logoIS = GraphicalForecast.class.getResourceAsStream("resources/" + pngFile);
+			if (logoIS != null){
+			
+				File destination = new File(outFile.getParent() + "/" + pngFile);
+
+				try {
+					FileUtils.copyInputStreamToFile(logoIS, destination);
+				} catch (IOException e) {
+				    e.printStackTrace();
+					System.err.println("Couldn't copy: " + pngFile + " to file: " + destination);
+				}
+			} else {
+				System.err.println("Couldn't locate file: " + pngFile);
+			}
+			
 			
 		}
 	}
@@ -6492,8 +6613,17 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	}
 	
 	private void setEnableParamsPostRender(boolean enabled) {
-		publishAdvisoryButton.getEditor().setEnabled(enabled);
-		publishAdvisoryButton.getEditor().refreshParamEditor();
+		
+		if (!overrideExpiry) {	
+			publishAdvisoryButton.getEditor().setEnabled(false);
+			publishAdvisoryButton.getEditor().refreshParamEditor();
+
+			String message = "This version of the AftershockForecasting software is for information only; the forecast summary document will not be generated.";
+			System.out.println(message);
+		} else {
+			publishAdvisoryButton.getEditor().setEnabled(enabled);
+			publishAdvisoryButton.getEditor().refreshParamEditor();
+		}
 		
 		if (!enabled) {
 			//reset the map curves if any
