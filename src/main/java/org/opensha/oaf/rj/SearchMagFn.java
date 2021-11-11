@@ -68,6 +68,20 @@ public abstract class SearchMagFn {
 	public abstract SearchMagFn makeRemovedMinMag ();
 
 
+	// Make a new function, with any minimum magnitude adjusted or removed.
+	// The return value can be this object, if it is suitable.
+	// If this object returns the skip centroid special value,
+	// then the returned object should also return the skip centroid
+	// special value.
+	// If min_mag is NO_MIN_MAG, then remove any minimum magnitude,
+	// the same as makeRemovedMinMag with no arguments.  Otherwise,
+	// set the minimum magnitude to min_mag.
+	// The purpose is for the GUI to be able to retrieve all aftershocks
+	// with magnitude >= min_mag.
+
+	public abstract SearchMagFn makeRemovedMinMag (double min_mag);
+
+
 
 
 
@@ -116,6 +130,20 @@ public abstract class SearchMagFn {
 	 */
 	public static SearchMagFn makeNoMinMag () {
 		return new SearchMagFnConstant (NO_MIN_MAG);
+	}
+
+
+	/**
+	 * Construct a function which is a constant.
+	 * If mag is NO_MIN_MAG, the function returns no minimum magnitude,
+	 * the same as makeNoMinMag with no argument.  Otherwise, the function
+	 * returns the constant magnitude mag.
+	 */
+	public static SearchMagFn makeNoMinMag (double mag) {
+		if (mag < NO_MIN_MAG_TEST) {
+			return new SearchMagFnConstant (NO_MIN_MAG);
+		}
+		return new SearchMagFnConstant (mag);
 	}
 
 

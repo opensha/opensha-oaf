@@ -181,6 +181,8 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 	private static final int PARMGRP_EVENT_ID_PARAM = 307;		// Event ID parameter
 
+	private static final int PARMGRP_DATA_ENABLE_PARAM = 308;	// Data source parameters, that also change enable state
+
 
 	//----- Sub-controllers -----
 
@@ -230,27 +232,140 @@ public class OEGUISubDataSource extends OEGUIListener {
 	// Data source dialog: parameters within the dialog to select data source options.
 
 	// Data start time, in days since the mainshock; edit box containing a number.
+	// We provide a separate one for each data source type.
 
-	private DoubleParameter dataStartTimeParam;
+	private DoubleParameter dataStartTimeParam_comcat;
+	private DoubleParameter dataStartTimeParam_catalog;
+	private DoubleParameter dataStartTimeParam_forecast;
+	private DoubleParameter dataStartTimeParam_rj_sim;
+	private DoubleParameter dataStartTimeParam_etas_sim;
 
-	private DoubleParameter init_dataStartTimeParam () throws GUIEDTException {
-		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
-		dataStartTimeParam.setUnits("Days");
-		dataStartTimeParam.setInfo("Data start relative to main shock origin time");
-		register_param (dataStartTimeParam, "dataStartTimeParam", PARMGRP_DATA_SOURCE_PARAM);
-		return dataStartTimeParam;
+	private void init_dataStartTimeParam () throws GUIEDTException {
+
+		dataStartTimeParam_comcat = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam_comcat.setUnits("Days");
+		dataStartTimeParam_comcat.setInfo("Data start relative to mainshock origin time");
+		register_param (dataStartTimeParam_comcat, "dataStartTimeParam_comcat", PARMGRP_DATA_SOURCE_PARAM);
+
+		dataStartTimeParam_catalog = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam_catalog.setUnits("Days");
+		dataStartTimeParam_catalog.setInfo("Data start relative to mainshock origin time");
+		register_param (dataStartTimeParam_catalog, "dataStartTimeParam_catalog", PARMGRP_DATA_SOURCE_PARAM);
+
+		dataStartTimeParam_forecast = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam_forecast.setUnits("Days");
+		dataStartTimeParam_forecast.setInfo("Data start relative to mainshock origin time");
+		register_param (dataStartTimeParam_forecast, "dataStartTimeParam_forecast", PARMGRP_DATA_SOURCE_PARAM);
+
+		dataStartTimeParam_rj_sim = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam_rj_sim.setUnits("Days");
+		dataStartTimeParam_rj_sim.setInfo("Data start relative to mainshock origin time");
+		register_param (dataStartTimeParam_rj_sim, "dataStartTimeParam_rj_sim", PARMGRP_DATA_SOURCE_PARAM);
+
+		dataStartTimeParam_etas_sim = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam_etas_sim.setUnits("Days");
+		dataStartTimeParam_etas_sim.setInfo("Data start relative to mainshock origin time");
+		register_param (dataStartTimeParam_etas_sim, "dataStartTimeParam_etas_sim", PARMGRP_DATA_SOURCE_PARAM);
+
+		return;
+	}
+
+	private DoubleParameter get_dataStartTimeParam (DataSource type) {
+		DoubleParameter result;
+		switch (type) {
+		case COMCAT:             result = dataStartTimeParam_comcat;   break;
+		case CATALOG_FILE:       result = dataStartTimeParam_catalog;  break;
+		case PUBLISHED_FORECAST: result = dataStartTimeParam_forecast; break;
+		case RJ_SIMULATION:      result = dataStartTimeParam_rj_sim;   break;
+		case ETAS_SIMULATION:    result = dataStartTimeParam_etas_sim; break;
+		default:
+			throw new IllegalStateException("Unknown data source type: " + type);
+		}
+		return result;
 	}
 
 	// Data end time, in days since the mainshock; edit box containing a number.
+	// We provide a separate one for each data source type.
 
-	private DoubleParameter dataEndTimeParam;
+	private DoubleParameter dataEndTimeParam_comcat;
+	private DoubleParameter dataEndTimeParam_catalog;
+	private DoubleParameter dataEndTimeParam_forecast;
+	private DoubleParameter dataEndTimeParam_rj_sim;
+	private DoubleParameter dataEndTimeParam_etas_sim;
 
-	private DoubleParameter init_dataEndTimeParam () throws GUIEDTException {
-		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, 36500d, new Double(7d));
-		dataEndTimeParam.setUnits("Days");
-		dataEndTimeParam.setInfo("Data end relative to main shock origin time");
-		register_param (dataEndTimeParam, "dataEndTimeParam", PARMGRP_DATA_SOURCE_PARAM);
-		return dataEndTimeParam;
+	private void init_dataEndTimeParam () throws GUIEDTException {
+
+		dataEndTimeParam_comcat = new DoubleParameter("Data End Time", 0d, 36500d, new Double(7d));
+		dataEndTimeParam_comcat.setUnits("Days");
+		dataEndTimeParam_comcat.setInfo("Data end relative to mainshock origin time");
+		register_param (dataEndTimeParam_comcat, "dataEndTimeParam_comcat", PARMGRP_DATA_SOURCE_PARAM);
+
+		dataEndTimeParam_catalog = new DoubleParameter("Data End Time", 0d, 36500d, new Double(0d));
+		dataEndTimeParam_catalog.setUnits("Days");
+		dataEndTimeParam_catalog.setInfo("Data end relative to mainshock origin time");
+		register_param (dataEndTimeParam_catalog, "dataEndTimeParam_catalog", PARMGRP_DATA_SOURCE_PARAM);
+
+		dataEndTimeParam_forecast = new DoubleParameter("Data End Time", 0d, 36500d, new Double(0d));
+		dataEndTimeParam_forecast.setUnits("Days");
+		dataEndTimeParam_forecast.setInfo("Data end relative to mainshock origin time");
+		register_param (dataEndTimeParam_forecast, "dataEndTimeParam_forecast", PARMGRP_DATA_SOURCE_PARAM);
+
+		dataEndTimeParam_rj_sim = new DoubleParameter("Data End Time", 0d, 36500d, new Double(7d));
+		dataEndTimeParam_rj_sim.setUnits("Days");
+		dataEndTimeParam_rj_sim.setInfo("Data end relative to mainshock origin time");
+		register_param (dataEndTimeParam_rj_sim, "dataEndTimeParam_rj_sim", PARMGRP_DATA_SOURCE_PARAM);
+
+		dataEndTimeParam_etas_sim = new DoubleParameter("Data End Time", 0d, 36500d, new Double(7d));
+		dataEndTimeParam_etas_sim.setUnits("Days");
+		dataEndTimeParam_etas_sim.setInfo("Data end relative to mainshock origin time");
+		register_param (dataEndTimeParam_etas_sim, "dataEndTimeParam_etas_sim", PARMGRP_DATA_SOURCE_PARAM);
+
+		return;
+	}
+
+	private DoubleParameter get_dataEndTimeParam (DataSource type) {
+		DoubleParameter result;
+		switch (type) {
+		case COMCAT:             result = dataEndTimeParam_comcat;   break;
+		case CATALOG_FILE:       result = dataEndTimeParam_catalog;  break;
+		case PUBLISHED_FORECAST: result = dataEndTimeParam_forecast; break;
+		case RJ_SIMULATION:      result = dataEndTimeParam_rj_sim;   break;
+		case ETAS_SIMULATION:    result = dataEndTimeParam_etas_sim; break;
+		default:
+			throw new IllegalStateException("Unknown data source type: " + type);
+		}
+		return result;
+	}
+
+	// Minimum magnitude to use when fetching from Comcat; edit box containing a number.
+
+	private DoubleParameter minMagFetchParam;
+
+	private DoubleParameter init_minMagFetchParam () throws GUIEDTException {
+		minMagFetchParam = new DoubleParameter("Minimum magnitude", -8d, 9d, new Double(1d));
+		minMagFetchParam.setInfo("Minimum magnitude when fetching data from Comcat");
+		register_param (minMagFetchParam, "minMagFetchParam", PARMGRP_DATA_SOURCE_PARAM);
+		return minMagFetchParam;
+	}
+
+	// Option to use minimum magnitude when fetching from Comcat; default true; check box.
+
+	private BooleanParameter useMinMagFetchParam;
+
+	private BooleanParameter init_useMinMagFetchParam () throws GUIEDTException {
+		useMinMagFetchParam = new BooleanParameter("Use minimum magnitude", true);
+		register_param (useMinMagFetchParam, "useMinMagFetchParam", PARMGRP_DATA_ENABLE_PARAM);
+		return useMinMagFetchParam;
+	}
+
+	// Option to use start and end time when fetching from Comcat; default true; check box.
+
+	private BooleanParameter useStartEndTimeParam;
+
+	private BooleanParameter init_useStartEndTimeParam () throws GUIEDTException {
+		useStartEndTimeParam = new BooleanParameter("Use start and end times", false);
+		register_param (useStartEndTimeParam, "useStartEndTimeParam", PARMGRP_DATA_ENABLE_PARAM);
+		return useStartEndTimeParam;
 	}
 
 	// Option to use analyst options when fetching from Comcat; default true; check box.
@@ -395,6 +510,9 @@ public class OEGUISubDataSource extends OEGUIListener {
 	private void init_dataSourceDialogParam () throws GUIEDTException {
 		init_dataStartTimeParam();
 		init_dataEndTimeParam();
+		init_minMagFetchParam();
+		init_useMinMagFetchParam();
+		init_useStartEndTimeParam();
 		init_useAnalystOptionsParam();
 		init_catalogFileParam();
 		init_browseCatalogFileButton();
@@ -423,9 +541,12 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		case COMCAT:
 			dataSourceEditParam.setListTitleText ("Comcat");
-			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(5, f_button_row));
-			dataSourceList.addParameter(dataStartTimeParam);
-			dataSourceList.addParameter(dataEndTimeParam);
+			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(8, f_button_row));
+			dataSourceList.addParameter(useStartEndTimeParam);
+			dataSourceList.addParameter(get_dataStartTimeParam (type));
+			dataSourceList.addParameter(get_dataEndTimeParam (type));
+			dataSourceList.addParameter(useMinMagFetchParam);
+			dataSourceList.addParameter(minMagFetchParam);
 			dataSourceList.addParameter(useAnalystOptionsParam);
 			dataSourceList.addParameter(sub_ctl_region.get_regionTypeParam());
 			dataSourceList.addParameter(sub_ctl_region.get_regionEditParam());
@@ -436,26 +557,32 @@ public class OEGUISubDataSource extends OEGUIListener {
 			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(4, f_button_row));
 			dataSourceList.addParameter(catalogFileParam);
 			dataSourceList.addParameter(browseCatalogFileButton);
-			dataSourceList.addParameter(dataStartTimeParam);
-			dataSourceList.addParameter(dataEndTimeParam);
+			dataSourceList.addParameter(get_dataStartTimeParam (type));
+			dataSourceList.addParameter(get_dataEndTimeParam (type));
 			break;
 
 		case PUBLISHED_FORECAST:
 			dataSourceEditParam.setListTitleText ("Published Forecast");
-			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(3, f_button_row));
+			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(5, f_button_row));
 			dataSourceList.addParameter(populateForecastListButton);
 			dataSourceList.addParameter(includeSupersededParam);
 			dataSourceList.addParameter(forecastListDropdown);
+			dataSourceList.addParameter(get_dataStartTimeParam (type));
+			dataSourceList.addParameter(get_dataEndTimeParam (type));
 			break;
 
 		case RJ_SIMULATION:
 			dataSourceEditParam.setListTitleText ("RJ Simulation");
-			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(0, f_button_row));
+			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(2, f_button_row));
+			dataSourceList.addParameter(get_dataStartTimeParam (type));
+			dataSourceList.addParameter(get_dataEndTimeParam (type));
 			break;
 
 		case ETAS_SIMULATION:
 			dataSourceEditParam.setListTitleText ("ETAS Simulation");
-			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(0, f_button_row));
+			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(2, f_button_row));
+			dataSourceList.addParameter(get_dataStartTimeParam (type));
+			dataSourceList.addParameter(get_dataEndTimeParam (type));
 			break;
 
 		default:
@@ -507,6 +634,40 @@ public class OEGUISubDataSource extends OEGUIListener {
 		enableParam(dataSourceTypeParam, f_sub_enable);
 		enableParam(dataSourceEditParam, f_edit);
 		sub_ctl_region.sub_region_enable (f_sub_enable);
+
+		DataSource type = validParam(dataSourceTypeParam);
+		switch (type) {
+
+		case COMCAT:
+			enableParam(get_dataStartTimeParam (type), validParam(useStartEndTimeParam));
+			enableParam(get_dataEndTimeParam (type), validParam(useStartEndTimeParam));
+			enableParam(minMagFetchParam, validParam(useMinMagFetchParam));
+			break;
+			
+		case CATALOG_FILE:
+			enableParam(get_dataStartTimeParam (type), false);
+			enableParam(get_dataEndTimeParam (type), false);
+			break;
+
+		case PUBLISHED_FORECAST:
+			enableParam(get_dataStartTimeParam (type), false);
+			enableParam(get_dataEndTimeParam (type), false);
+			break;
+
+		case RJ_SIMULATION:
+			enableParam(get_dataStartTimeParam (type), true);
+			enableParam(get_dataEndTimeParam (type), true);
+			break;
+
+		case ETAS_SIMULATION:
+			enableParam(get_dataStartTimeParam (type), true);
+			enableParam(get_dataEndTimeParam (type), true);
+			break;
+
+		default:
+			throw new IllegalStateException("Unknown data source type: " + type);
+		}
+
 		return;
 	}
 
@@ -540,6 +701,18 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		public double x_dataEndTimeParam;			// parameter value, checked for validity
 		public abstract void modify_dataEndTimeParam (double x);
+
+		// Minimum magnitude to use when fetching from Comcat. [COMCAT]
+
+		public double x_minMagFetchParam;			// parameter value, checked for validity
+
+		// Option to use minimum magnitude when fetching from Comcat. [COMCAT]
+
+		public boolean x_useMinMagFetchParam;		// parameter value, checked for validity
+
+		// Option to use start and end time when fetching from Comcat. [COMCAT]
+
+		public boolean x_useStartEndTimeParam;		// parameter value, checked for validity
 
 		// Option to use analyst options when fetching from Comcat. [COMCAT, CATALOG_FILE (forced false)]
 
@@ -654,21 +827,26 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 			case COMCAT:
 				x_eventIDParam = validParam(eventIDParam);
-				x_dataStartTimeParam = validParam(dataStartTimeParam);
-				x_dataEndTimeParam = validParam(dataEndTimeParam);
+				x_dataStartTimeParam = validParam(get_dataStartTimeParam (x_dataSourceTypeParam));
+				x_dataEndTimeParam = validParam(get_dataEndTimeParam (x_dataSourceTypeParam));
+				x_minMagFetchParam = validParam(minMagFetchParam);
+				x_useMinMagFetchParam = validParam(useMinMagFetchParam);
+				x_useStartEndTimeParam = validParam(useStartEndTimeParam);
 				x_useAnalystOptionsParam = validParam(useAnalystOptionsParam);
 				x_region.xfer_get_impl().xfer_load();
 				break;
 
 			case CATALOG_FILE:
-				x_dataStartTimeParam = validParam(dataStartTimeParam);
-				x_dataEndTimeParam = validParam(dataEndTimeParam);
+				x_dataStartTimeParam = validParam(get_dataStartTimeParam (x_dataSourceTypeParam));
+				x_dataEndTimeParam = validParam(get_dataEndTimeParam (x_dataSourceTypeParam));
 				x_useAnalystOptionsParam = false;
 				x_catalogFileParam = validParam(catalogFileParam);
 				break;
 
 			case PUBLISHED_FORECAST:
 				x_eventIDParam = validParam(eventIDParam);
+				x_dataStartTimeParam = validParam(get_dataStartTimeParam (x_dataSourceTypeParam));
+				x_dataEndTimeParam = validParam(get_dataEndTimeParam (x_dataSourceTypeParam));
 				x_oaf_product = null;
 				if (is_dropdown_list_current()) {
 					int fcix = validParam(forecastListDropdown);
@@ -680,9 +858,13 @@ public class OEGUISubDataSource extends OEGUIListener {
 				break;
 
 			case RJ_SIMULATION:
+				x_dataStartTimeParam = validParam(get_dataStartTimeParam (x_dataSourceTypeParam));
+				x_dataEndTimeParam = validParam(get_dataEndTimeParam (x_dataSourceTypeParam));
 				break;
 
 			case ETAS_SIMULATION:
+				x_dataStartTimeParam = validParam(get_dataStartTimeParam (x_dataSourceTypeParam));
+				x_dataEndTimeParam = validParam(get_dataEndTimeParam (x_dataSourceTypeParam));
 				break;
 
 			default:
@@ -709,12 +891,12 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 			if (dirty_dataStartTimeParam) {
 				dirty_dataStartTimeParam = false;
-				updateParam(dataStartTimeParam, x_dataStartTimeParam);
+				updateParam(get_dataStartTimeParam (x_dataSourceTypeParam), x_dataStartTimeParam);
 			}
 
 			if (dirty_dataEndTimeParam) {
 				dirty_dataEndTimeParam = false;
-				updateParam(dataEndTimeParam, x_dataEndTimeParam);
+				updateParam(get_dataEndTimeParam (x_dataSourceTypeParam), x_dataEndTimeParam);
 			}
 
 			// Forecast list
@@ -997,6 +1179,20 @@ public class OEGUISubDataSource extends OEGUIListener {
 			if (!( f_sub_enable )) {
 				return;
 			}
+			report_data_source_change();
+		}
+		break;
+
+
+		// Data source parameters, that also change enable state of our controls.
+		// - Enable or disable our controls.
+		// - Report to top-level controller.
+
+		case PARMGRP_DATA_ENABLE_PARAM: {
+			if (!( f_sub_enable )) {
+				return;
+			}
+			adjust_enable();
 			report_data_source_change();
 		}
 		break;

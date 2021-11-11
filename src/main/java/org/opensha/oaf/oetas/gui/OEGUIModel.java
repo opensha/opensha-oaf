@@ -1077,24 +1077,53 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Time range for aftershock search
 		
-		double minDays = xfer.x_dataSource.x_dataStartTimeParam;
-		double maxDays = xfer.x_dataSource.x_dataEndTimeParam;
-		
-		long startTime = fcmain.mainshock_time + Math.round(minDays*ComcatOAFAccessor.day_millis);
-		long endTime = fcmain.mainshock_time + Math.round(maxDays*ComcatOAFAccessor.day_millis);
+		double minDays;
+		double maxDays;
 
-		// Check that start date is before current time
+		// If we are using user-supplied time range ...
 
-		long time_now = System.currentTimeMillis();		// must be the actual system time, not ServerClock
-		
-		Preconditions.checkState(startTime < time_now, "Start time is after now!");
+		if (xfer.x_dataSource.x_useStartEndTimeParam) {
 
-		// Check that end date is before current time, shrink the time range if not
+			// User-supplied time range
 		
-		if (endTime > time_now) {
-			double calcMaxDays = (time_now - startTime)/ComcatOAFAccessor.day_millis;
-			System.out.println("WARNING: End time after current time. Setting max days to: " + calcMaxDays);
+			minDays = xfer.x_dataSource.x_dataStartTimeParam;
+			maxDays = xfer.x_dataSource.x_dataEndTimeParam;
+		
+			long startTime = fcmain.mainshock_time + Math.round(minDays*ComcatOAFAccessor.day_millis);
+			long endTime = fcmain.mainshock_time + Math.round(maxDays*ComcatOAFAccessor.day_millis);
+
+			// Check that start date is before current time
+
+			long time_now = System.currentTimeMillis();		// must be the actual system time, not ServerClock
+		
+			Preconditions.checkState(startTime < time_now, "Start time is after now!");
+
+			// Check that end date is before current time, shrink the time range if not
+		
+			if (endTime > time_now) {
+				double calcMaxDays = (time_now - startTime)/ComcatOAFAccessor.day_millis;
+				System.out.println("WARNING: End time after current time. Setting max days to: " + calcMaxDays);
+				xfer.x_dataSource.modify_dataEndTimeParam(calcMaxDays);
+				maxDays = xfer.x_dataSource.x_dataEndTimeParam;
+			}
+		}
+
+		// Otherwise, default time range is mainshock to now ...
+
+		else {
+
+			// Start at mainshock time
+
+			xfer.x_dataSource.modify_dataStartTimeParam(0.0);
+
+			// End at now
+
+			long time_now = System.currentTimeMillis();		// must be the actual system time, not ServerClock
+			double calcMaxDays = (time_now - fcmain.mainshock_time)/ComcatOAFAccessor.day_millis;
+			Preconditions.checkState(calcMaxDays > 0.00005, "Mainshock time is after now!");
 			xfer.x_dataSource.modify_dataEndTimeParam(calcMaxDays);
+		
+			minDays = xfer.x_dataSource.x_dataStartTimeParam;
 			maxDays = xfer.x_dataSource.x_dataEndTimeParam;
 		}
 
@@ -1116,6 +1145,13 @@ public class OEGUIModel extends OEGUIComponent {
 
 		double min_mag = ForecastParameters.SEARCH_PARAM_OMIT;
 
+		// Minimum magnitude to use for search, user-supplied or none
+
+		double search_min_mag = SearchMagFn.NO_MIN_MAG;
+		if (xfer.x_dataSource.x_useMinMagFetchParam) {
+			search_min_mag = xfer.x_dataSource.x_minMagFetchParam;
+		}
+
 		// Switch on region type
 		// Note: Any region type other than STANDARD overrides an analyst-supplied region
 
@@ -1123,24 +1159,24 @@ public class OEGUIModel extends OEGUIComponent {
 
 		case STANDARD:
 
-			// Standard region, just change to no minimum magnitude
+			// Standard region, just change to selected or no minimum magnitude
 
-			magSample = magSample.makeRemovedMinMag();
-			magCentroid = magCentroid.makeRemovedMinMag();
+			magSample = magSample.makeRemovedMinMag(search_min_mag);
+			magCentroid = magCentroid.makeRemovedMinMag(search_min_mag);
 			// Keep the existing custom_search_region
 			break;
 
 		case CENTROID_WC_CIRCLE:
 
-			// WC circle around centroid, set multiplier and limits, and no minimum magnitude
+			// WC circle around centroid, set multiplier and limits, and selected or no minimum magnitude
 
-			magSample = SearchMagFn.makeNoMinMag();
+			magSample = SearchMagFn.makeNoMinMag(search_min_mag);
 			radiusSample = SearchRadiusFn.makeWCClip (
 				xfer.x_dataSource.x_region.x_wcMultiplierParam,
 				xfer.x_dataSource.x_region.x_minRadiusParam,
 				xfer.x_dataSource.x_region.x_maxRadiusParam
 			);
-			magCentroid = SearchMagFn.makeNoMinMag();
+			magCentroid = SearchMagFn.makeNoMinMag(search_min_mag);
 			radiusCentroid = SearchRadiusFn.makeWCClip (
 				xfer.x_dataSource.x_region.x_wcMultiplierParam,
 				xfer.x_dataSource.x_region.x_minRadiusParam,
@@ -1153,11 +1189,11 @@ public class OEGUIModel extends OEGUIComponent {
 
 		case CENTROID_CIRCLE:
 
-			// Circle around centroid, set constant radius, and no minimum magnitude
+			// Circle around centroid, set constant radius, and selected or no minimum magnitude
 
-			magSample = SearchMagFn.makeNoMinMag();
+			magSample = SearchMagFn.makeNoMinMag(search_min_mag);
 			radiusSample = SearchRadiusFn.makeConstant (xfer.x_dataSource.x_region.x_radiusParam);
-			magCentroid = SearchMagFn.makeNoMinMag();
+			magCentroid = SearchMagFn.makeNoMinMag(search_min_mag);
 			radiusCentroid = SearchRadiusFn.makeConstant (xfer.x_dataSource.x_region.x_radiusParam);
 			custom_search_region = null;
 			minDepth = xfer.x_dataSource.x_region.x_minDepthParam;
@@ -1166,9 +1202,9 @@ public class OEGUIModel extends OEGUIComponent {
 
 		case EPICENTER_WC_CIRCLE:
 
-			// WC circle around epicenter, set multiplier and limits, and no minimum magnitude
+			// WC circle around epicenter, set multiplier and limits, and selected or no minimum magnitude
 
-			magSample = SearchMagFn.makeNoMinMag();
+			magSample = SearchMagFn.makeNoMinMag(search_min_mag);
 			radiusSample = SearchRadiusFn.makeWCClip (
 				xfer.x_dataSource.x_region.x_wcMultiplierParam,
 				xfer.x_dataSource.x_region.x_minRadiusParam,
@@ -1183,9 +1219,9 @@ public class OEGUIModel extends OEGUIComponent {
 
 		case EPICENTER_CIRCLE:
 
-			// Circle around epicenter, set constant radius, and no minimum magnitude
+			// Circle around epicenter, set constant radius, and selected or no minimum magnitude
 
-			magSample = SearchMagFn.makeNoMinMag();
+			magSample = SearchMagFn.makeNoMinMag(search_min_mag);
 			radiusSample = SearchRadiusFn.makeConstant (xfer.x_dataSource.x_region.x_radiusParam);
 			magCentroid = SearchMagFn.makeSkipCentroid();
 			radiusCentroid = SearchRadiusFn.makeConstant (0.0);
@@ -1196,9 +1232,9 @@ public class OEGUIModel extends OEGUIComponent {
 
 		case CUSTOM_CIRCLE:
 
-			// Custom circle, and no minimum magnitude
+			// Custom circle, and selected or no minimum magnitude
 
-			magSample = SearchMagFn.makeNoMinMag();
+			magSample = SearchMagFn.makeNoMinMag(search_min_mag);
 			magCentroid = SearchMagFn.makeSkipCentroid();
 			custom_search_region = SphRegion.makeCircle (
 				new SphLatLon(xfer.x_dataSource.x_region.x_centerLatParam, xfer.x_dataSource.x_region.x_centerLonParam),
@@ -1210,9 +1246,9 @@ public class OEGUIModel extends OEGUIComponent {
 
 		case CUSTOM_RECTANGLE:
 
-			// Custom rectangle, and no minimum magnitude
+			// Custom rectangle, and selected or no minimum magnitude
 
-			magSample = SearchMagFn.makeNoMinMag();
+			magSample = SearchMagFn.makeNoMinMag(search_min_mag);
 			magCentroid = SearchMagFn.makeSkipCentroid();
 			custom_search_region = SphRegion.makeMercRectangle (
 				new SphLatLon(xfer.x_dataSource.x_region.x_minLatParam, xfer.x_dataSource.x_region.x_minLonParam),

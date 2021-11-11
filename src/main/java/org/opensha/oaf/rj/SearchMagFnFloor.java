@@ -95,6 +95,29 @@ public class SearchMagFnFloor extends SearchMagFn {
 	}
 
 
+	// Make a new function, with any minimum magnitude adjusted or removed.
+	// The return value can be this object, if it is suitable.
+	// If this object returns the skip centroid special value,
+	// then the returned object should also return the skip centroid
+	// special value.
+	// If min_mag is NO_MIN_MAG, then remove any minimum magnitude,
+	// the same as makeRemovedMinMag with no arguments.  Otherwise,
+	// set the minimum magnitude to min_mag.
+	// The purpose is for the GUI to be able to retrieve all aftershocks
+	// with magnitude >= min_mag.
+
+	@Override
+	public SearchMagFn makeRemovedMinMag (double min_mag) {
+		if (mag > SKIP_CENTROID_TEST) {
+			return this;	// no change if magnitude has one of the special values
+		}
+		if (min_mag < NO_MIN_MAG_TEST) {
+			return makeNoMinMag();
+		}
+		return makeFloor (min_mag);
+	}
+
+
 
 
 	//----- Construction -----
