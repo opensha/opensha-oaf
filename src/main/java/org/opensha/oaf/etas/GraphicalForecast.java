@@ -1,5 +1,6 @@
 package org.opensha.oaf.etas;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.io.File;
 import java.io.FileWriter;
@@ -67,6 +68,10 @@ public class GraphicalForecast{
 	private double pScenario2;
 	private double pScenario3;
 
+	private Color scenarioOneColor;
+	private Color scenarioTwoColor;
+	private Color scenarioThreeColor;
+		
 	private double[] predictionMagnitudes = new double[]{3,4,5,6,7,8};
 	private double[] predictionIntervals = new double[]{DAY,WEEK,MONTH,YEAR}; //day,week,month,year
 	private int preferredForecastInterval = 1; //week
@@ -544,6 +549,11 @@ public class GraphicalForecast{
 		
 		
 		
+		
+		
+		
+		
+		
 	}
 	
 	public void setFeltMag(double mag){
@@ -1001,7 +1011,10 @@ public class GraphicalForecast{
 		tMaxDays = tMinDays + predictionIntervals[preferredForecastInterval];
 		
 		double mag1, mag2;
-		if (mag0 > 5.9999) {
+		if (mag0 > 6.9999) {
+			mag1 = 6;
+			mag2 = mag0;
+		} else if (mag0 > 5.9999) {
 			mag1 = 6;
 			mag2 = 7;
 		} else {
@@ -1011,11 +1024,27 @@ public class GraphicalForecast{
 	
 		if (D) System.out.println(mag2 + " " + tMinDays + " " + tMaxDays);
 		if (aftershockModel != null) {
-			//set scenario probabilities based on magitudes and probabilities
+			//set scenario probabilities based on magnitudes and probabilities
 			pScenario3 = aftershockModel.getProbabilityWithAleatory(mag2, tMinDays, tMaxDays);
 			pScenario2 = aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays) - pScenario3;
 			pScenario1 = 1 - aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays);
 		}
+		// set scenario box colors/saturations
+		int RGBvals;
+		float[] HSBvals = new float[3];
+		HSBvals = Color.RGBtoHSB(170,  255, 99, HSBvals);  
+		RGBvals = Color.HSBtoRGB(HSBvals[0], (float)pScenario1, HSBvals[2]); //  (HSBvals[0], (float)pScenario1, HSBvals[2]); 
+		scenarioOneColor = new Color(RGBvals);
+		
+//		"#aaff63", "#ffd100", "#EC2516"
+		HSBvals = Color.RGBtoHSB(253,  16, 0, HSBvals);  
+		RGBvals = Color.HSBtoRGB(HSBvals[0], (float)pScenario2, HSBvals[2]); //  (HSBvals[0], (float)pScenario1, HSBvals[2]); 
+		scenarioTwoColor = new Color(RGBvals);
+		
+		HSBvals = Color.RGBtoHSB(194,  81, 6, HSBvals);  
+		RGBvals = Color.HSBtoRGB(HSBvals[0], (float)pScenario3, HSBvals[2]); //  (HSBvals[0], (float)pScenario1, HSBvals[2]); 
+		scenarioThreeColor = new Color(RGBvals);
+		
 		
 		//"SCENARIO_ONE_PROB"
 		if (pScenario1 < 0.005)
@@ -1106,7 +1135,7 @@ public class GraphicalForecast{
 		
 		StringBuilder outputString = new StringBuilder();
 		outputString.append("<!-- Scenarios -->\n"
-				+ "  <div>\n"
+				+ "  <div class=\"break\">\n"
 				+ "	  <span class=\"disclaimer\">" + tags.get("DISCLAIMER") + "</span>\n"
 				+ "    		<h1>Aftershock Sequence Scenarios</h1>\n"
 				+ "    <div>\n"
@@ -1252,8 +1281,7 @@ public class GraphicalForecast{
 		infoString.append("  <!--Aftershock Map-->\n"
 				+ "    <!--    map legend       -->\n"
 				+ "    <div class=\"map_legend\">\n"
-				+ "       Aftershocks so far. "
-				+ "		  Colors indicate aftershocks that have occurred within the past \n"
+				+ "       Aftershocks so far. Colors indicate aftershocks that have occurred within the past \n"
 				+ "       <span class=\"red\">hour</span>, \n"
 				+ "       <span class=\"orange\">day</span>, \n"
 				+ "       <span class=\"yellow\">week</span>, \n"
@@ -1276,8 +1304,7 @@ public class GraphicalForecast{
 				+ "    <span class=\"disclaimer\">" +  tags.get("DISCLAIMER") + "</span>\n"
 				+ "    <br>\n"
 				+ "    <h1>Aftershock Forecast Table</h1><iframe class=\"forecast_table\" src=\"Table.html\"></iframe>\n"
-				+ "  </div><br>\n"
-				+ "  <br>");
+				+ "  </div>");
 		
 		String imageStr = new String();
 		switch (preferredForecastInterval) {
@@ -1296,9 +1323,8 @@ public class GraphicalForecast{
 		}
 		
 		infoString.append("  <!-- Shaking Map -->\n"
-				+ "  <div class=\"shaking_forecast\">\n"
+				+ "  <div class=\"shaking_forecast break\">\n"
 				+ "    <span class=\"disclaimer\">" + tags.get("DISCLAIMER") + "</span>\n"
-				+ "    <br>\n"
 				+ "    <h1>Aftershock Shaking Forecast</h1>\n"
 				+ "    <p style=\"margin-top:5px\">For forecast starting: " + tags.get("F_START_ABS") + " (UTC)</p><img width=\"800\" src=\""+ imageStr + "\" alt=\"Shaking Forecast\">\n"
 				+ "    <div class=\"shaking_forecast_legend\">\n"
@@ -1371,10 +1397,10 @@ public class GraphicalForecast{
 				+ "img.map {min-height:50px;max-width:700px;max-height:400px}\n"
 				+ "div.map_legend {background-color:#A4C1DC; width:700px; margin-left:50px; margin-bottom:0px; font-size:10pt}\n"
 				+ "div.shaking_forecast {width:800px;margin-left:0px}\n"
-				+ "div.shaking_forecast_legend {font-size:12pt; background-color:#ffffff; width:800px; \n"
+				+ "div.shaking_forecast_legend {font-size:11pt; background-color:#ffffff; width:800px; \n"
 				+ "	text-align:center; margin-left:0px}\n"
 				+ ".forecast_table {width:550px;min-height:600px;border:none;text-align:center}\n"
-				+ "\n"
+				+ ".break {page-break-before:always; page-break-after:avoid}\n"
 				+ "span.red {color:red}\n"
 				+ "span.orange {color:orange}\n"
 				+ "span.yellow {color:yellow}\n"
@@ -1406,8 +1432,9 @@ public class GraphicalForecast{
 				+ ".forecastBoxText {text-anchor:middle; fill:#666666;}\n"
 				+ ".key {width:30px;height:12px}\n"
 				+ ".hgov {color:#dd1111; font-family:helvetica; font-size:14pt; margin:0}\n"
-				+ ".scenario_probability {text-align:center; width:100px; height:60px; color:black; background:#eeeeee; font-family:helvetica; font-size:28pt; vertical-align:center; margin-right:5px; margin-left:0px}\n"
-				+ ".scenario_text {text-align:justify; vertical-align:top}\n"
+				+ ".scenario_probability {text-align:center; width:100px; height:60px; color:black; background:#eeeeee;\n"
+				+ "		font-family:helvetica; font-size:28pt; vertical-align:center; margin-right:5px; margin-left:0px}\n"
+				+ ".scenario_text {text-align:justify; vertical-align:top; font-size:11pt}\n"
 				+ ".h_scenario {color:black; background:#ffffff; height:30px; text-align:left; font-weight:bold; \n"
 				+ "	font-family:helvetica; font-size:12pt; margin:0; vertical-align:bottom}\n"
 				+ "\n"
