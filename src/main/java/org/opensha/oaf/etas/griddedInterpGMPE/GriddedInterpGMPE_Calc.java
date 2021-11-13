@@ -1,61 +1,34 @@
 package org.opensha.oaf.etas.griddedInterpGMPE;
 
-import java.awt.Color;
 import java.awt.geom.Point2D;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import org.jfree.data.Range;
 import org.opensha.commons.data.Site;
 import org.opensha.commons.data.function.ArbitrarilyDiscretizedFunc;
 import org.opensha.commons.data.function.DiscretizedFunc;
 import org.opensha.commons.data.function.LightFixedXFunc;
-import org.opensha.commons.data.siteData.impl.WaldAllenGlobalVs30;
-import org.opensha.commons.data.xyz.ArbDiscrGeoDataSet;
 import org.opensha.commons.data.xyz.GeoDataSet;
-import org.opensha.commons.data.xyz.GriddedGeoDataSet;
 import org.opensha.commons.exceptions.WarningException;
-import org.opensha.commons.geo.GriddedRegion;
 import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.LocationUtils;
-import org.opensha.commons.geo.Region;
-import org.opensha.commons.gui.plot.GraphWindow;
-import org.opensha.commons.gui.plot.PlotCurveCharacterstics;
-import org.opensha.commons.gui.plot.PlotLineType;
-import org.opensha.commons.gui.plot.PlotSpec;
-import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZGraphPanel;
-import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotSpec;
-import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
-import org.opensha.commons.param.Parameter;
-import org.opensha.commons.util.cpt.CPT;
-import org.opensha.sha.calc.HazardCurveCalculator;
-import org.opensha.sha.earthquake.ERF;
 import org.opensha.sha.earthquake.EqkRupture;
 import org.opensha.sha.earthquake.ProbEqkRupture;
 import org.opensha.sha.earthquake.rupForecastImpl.PointSource13b;
-import org.opensha.sha.gui.infoTools.IMT_Info;
-import org.opensha.sha.imr.AttenRelRef;
 import org.opensha.sha.imr.ScalarIMR;
-import org.opensha.sha.imr.param.IntensityMeasureParams.PGV_Param;
-import org.opensha.sha.imr.param.SiteParams.Vs30_Param;
 import org.opensha.sha.magdist.GutenbergRichterMagFreqDist;
 import org.opensha.sha.magdist.IncrementalMagFreqDist;
 import org.opensha.sha.util.FocalMech;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
-
-import org.opensha.oaf.etas.ETAS_ShakingForecastCalc;
 
 public class GriddedInterpGMPE_Calc {
 	

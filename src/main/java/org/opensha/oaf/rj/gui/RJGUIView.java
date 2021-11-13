@@ -1,48 +1,19 @@
 package org.opensha.oaf.rj.gui;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dialog.ModalityType;
-import java.awt.Dimension;
 import java.awt.geom.Point2D;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.text.DecimalFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.EnumSet;
 //import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
-import java.util.ArrayDeque;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
-
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
 
 import org.jfree.chart.title.PaintScaleLegend;
-import org.jfree.data.Range;
 import org.jfree.chart.ui.RectangleEdge;
+import org.jfree.data.Range;
 import org.opensha.commons.data.function.ArbitrarilyDiscretizedFunc;
 import org.opensha.commons.data.function.DefaultXY_DataSet;
 import org.opensha.commons.data.function.DiscretizedFunc;
@@ -50,31 +21,10 @@ import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
 import org.opensha.commons.data.function.HistogramFunction;
 import org.opensha.commons.data.function.XY_DataSet;
 import org.opensha.commons.data.function.XY_DatasetBinner;
-
-import org.opensha.oaf.rj.AftershockStatsCalc;
-import org.opensha.oaf.rj.CompactEqkRupList;
-import org.opensha.oaf.rj.GenericRJ_Parameters;
-import org.opensha.oaf.rj.GenericRJ_ParametersFetch;
-import org.opensha.oaf.rj.MagCompFn;
-import org.opensha.oaf.rj.MagCompPage_Parameters;
-import org.opensha.oaf.rj.MagCompPage_ParametersFetch;
-import org.opensha.oaf.rj.OAFTectonicRegime;
-import org.opensha.oaf.rj.RJ_AftershockModel;
-import org.opensha.oaf.rj.RJ_AftershockModel_Bayesian;
-import org.opensha.oaf.rj.RJ_AftershockModel_Generic;
-import org.opensha.oaf.rj.RJ_AftershockModel_SequenceSpecific;
-import org.opensha.oaf.rj.SearchMagFn;
-import org.opensha.oaf.rj.SearchRadiusFn;
-import org.opensha.oaf.rj.SeqSpecRJ_Parameters;
-import org.opensha.oaf.rj.USGS_AftershockForecast;
-import org.opensha.oaf.rj.USGS_AftershockForecast.Duration;
-import org.opensha.oaf.rj.USGS_AftershockForecast.Template;
-
 import org.opensha.commons.data.xyz.EvenlyDiscrXYZ_DataSet;
-import org.opensha.commons.exceptions.ConstraintException;
-import org.opensha.commons.exceptions.ParameterException;
 import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.LocationUtils;
+import org.opensha.commons.gui.plot.GraphPanel;
 //import org.opensha.commons.geo.Region;
 //import org.opensha.commons.gui.ConsoleWindow;
 import org.opensha.commons.gui.plot.GraphWidget;
@@ -83,30 +33,19 @@ import org.opensha.commons.gui.plot.PlotElement;
 import org.opensha.commons.gui.plot.PlotLineType;
 import org.opensha.commons.gui.plot.PlotSpec;
 import org.opensha.commons.gui.plot.PlotSymbol;
-import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZGraphPanel;
 import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotSpec;
 import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
-import org.opensha.commons.param.Parameter;
-import org.opensha.commons.param.ParameterList;
-import org.opensha.commons.param.editor.impl.GriddedParameterListEditor;
-import org.opensha.commons.param.editor.impl.ParameterListEditor;
-import org.opensha.commons.param.event.ParameterChangeEvent;
-import org.opensha.commons.param.event.ParameterChangeListener;
-import org.opensha.commons.param.impl.BooleanParameter;
-import org.opensha.commons.param.impl.ButtonParameter;
-import org.opensha.commons.param.impl.DoubleParameter;
-import org.opensha.commons.param.impl.EnumParameter;
-import org.opensha.commons.param.impl.IntegerParameter;
-import org.opensha.commons.param.impl.LocationParameter;
-import org.opensha.commons.param.impl.ParameterListParameter;
-import org.opensha.commons.param.impl.RangeParameter;
-import org.opensha.commons.param.impl.StringParameter;
-import org.opensha.commons.util.ClassUtils;
 import org.opensha.commons.util.DataUtils.MinMaxAveTracker;
 import org.opensha.commons.util.ExceptionUtils;
 import org.opensha.commons.util.cpt.CPT;
-import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
-import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupListCalc;
+import org.opensha.oaf.comcat.ComcatOAFAccessor;
+import org.opensha.oaf.rj.MagCompFn;
+import org.opensha.oaf.rj.RJ_AftershockModel;
+import org.opensha.oaf.rj.USGS_AftershockForecast;
+import org.opensha.oaf.util.gui.GUICalcProgressBar;
+import org.opensha.oaf.util.gui.GUIConsoleWindow;
+import org.opensha.oaf.util.gui.GUIEDTException;
+import org.opensha.oaf.util.gui.GUIExternalCatalog;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.faultSurface.FaultTrace;
 import org.opensha.sha.faultSurface.RuptureSurface;
@@ -115,36 +54,8 @@ import org.opensha.sha.magdist.GutenbergRichterMagFreqDist;
 import org.opensha.sha.magdist.IncrementalMagFreqDist;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 import com.google.common.primitives.Doubles;
-import java.awt.Font;
-
-import gov.usgs.earthquake.product.Product;
-//import org.opensha.oaf.pdl.OAF_Publisher;
-import org.opensha.oaf.pdl.PDLProductBuilderOaf;
-import org.opensha.oaf.pdl.PDLSender;
-import org.opensha.oaf.pdl.PDLCodeChooserOaf;
-
-import org.opensha.oaf.util.SphLatLon;
-import org.opensha.oaf.util.SphRegion;
-import org.opensha.oaf.util.gui.GUIConsoleWindow;
-import org.opensha.oaf.util.gui.GUICalcStep;
-import org.opensha.oaf.util.gui.GUICalcRunnable;
-import org.opensha.oaf.util.gui.GUICalcProgressBar;
-import org.opensha.oaf.util.gui.GUIEDTException;
-import org.opensha.oaf.util.gui.GUIEDTRunnable;
-import org.opensha.oaf.util.gui.GUIEventAlias;
-import org.opensha.oaf.util.gui.GUIExternalCatalog;
-
-import org.opensha.oaf.aafs.ServerConfig;
-import org.opensha.oaf.aafs.ServerConfigFile;
-import org.opensha.oaf.aafs.GUICmd;
-import org.opensha.oaf.comcat.ComcatOAFAccessor;
-import org.opensha.oaf.comcat.ComcatOAFProduct;
-
-import org.json.simple.JSONObject;
 
 
 // Reasenberg & Jones GUI - View implementation.
@@ -559,7 +470,7 @@ public class RJGUIView extends RJGUIComponent {
 			double cptInc = 0d;
 			if ((timeCPT.getMaxValue() - timeCPT.getMinValue()) < 10)
 				cptInc = 1d;
-			subtitle = XYZGraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
 					cptInc, RectangleEdge.RIGHT);
 
 		// Otherwise, no colors ...
@@ -969,7 +880,7 @@ public class RJGUIView extends RJGUIComponent {
 			
 			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, my_distCPT, "dist", my_distFunc, PlotSymbol.FILLED_CIRCLE);
 			
-			subtitle = XYZGraphPanel.getLegendForCPT(my_distCPT, "Distance (km)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(my_distCPT, "Distance (km)", axisLabelFontSize, tickLabelFontSize,
 					0d, RectangleEdge.RIGHT);
 		} else {
 			XY_DataSet[] magBinnedFuncs = XY_DatasetBinner.bin(points, mags, my_magSizeFunc);
@@ -1464,14 +1375,15 @@ public class RJGUIView extends RJGUIComponent {
 		
 		XYZPlotSpec spec = new XYZPlotSpec(pdf, cpt, title, name1, name2, "Density");
 		
-		XYZGraphPanel xyzGP = new XYZGraphPanel();
-		pdfGraphsPane.addTab(name1+" vs "+name2, null, xyzGP);
+		GraphWidget widget = new GraphWidget(spec);
+		setupGP(widget);
+		pdfGraphsPane.addTab(name1+" vs "+name2, null, widget);
 
 		// Draw the PDF
 
 		double xDelta = pdf.getGridSpacingX();
 		double yDelta = pdf.getGridSpacingY();
-		xyzGP.drawPlot(spec, false, false,
+		widget.setAxisRange(
 				new Range(pdf.getMinX()-0.5*xDelta, pdf.getMaxX()+0.5*xDelta),
 				new Range(pdf.getMinY()-0.5*yDelta, pdf.getMaxY()+0.5*yDelta));
 

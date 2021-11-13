@@ -68,7 +68,6 @@ import org.opensha.commons.gui.plot.PlotLineType;
 import org.opensha.commons.gui.plot.PlotPreferences;
 import org.opensha.commons.gui.plot.PlotSpec;
 import org.opensha.commons.gui.plot.PlotSymbol;
-import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZGraphPanel;
 import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotSpec;
 import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
 import org.opensha.commons.param.AbstractParameter;
@@ -2018,7 +2017,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				double cptInc = 0d;
 				if ((timeCPT.getMaxValue() - timeCPT.getMinValue()) < 10)
 					cptInc = 1d;
-				subtitle = XYZGraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
+				subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
 						cptInc, RectangleEdge.RIGHT);
 			} else {
 				XY_DataSet[] aftershockDatasets = XY_DatasetBinner.bin(points, mags, magSizeFunc);
@@ -2239,7 +2238,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, distCPT, "dist", distFunc, PlotSymbol.FILLED_CIRCLE);
 			
-			subtitle = XYZGraphPanel.getLegendForCPT(distCPT, "Distance (km)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(distCPT, "Distance (km)", axisLabelFontSize, tickLabelFontSize,
 					0d, RectangleEdge.RIGHT);
 		} else {
 			XY_DataSet[] magBinnedFuncs = XY_DatasetBinner.bin(points, mags, magSizeFunc);
@@ -2848,19 +2847,19 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		CPT cpt = getDistCPT().rescale(pdf.getMinZ(), pdf.getMaxZ());
 		
 		XYZPlotSpec spec = new XYZPlotSpec(pdf, cpt, title, name1, name2, "Density");
-		PlotPreferences prefs = XYZGraphPanel.getDefaultPrefs();
 	
-		XYZGraphPanel xyzGP = new XYZGraphPanel(prefs);
-		xyzGP.setPreferredSize(new Dimension(chartWidth, chartHeight));
+		GraphWidget widget = new GraphWidget(spec);
+		setupGP(widget);
+		widget.setPreferredSize(new Dimension(chartWidth, chartHeight));
 		
-		pdfGraphsPane.addTab(name1+" vs "+name2, null, xyzGP);
+		pdfGraphsPane.addTab(name1+" vs "+name2, null, widget);
 		double xDelta = pdf.getGridSpacingX();
 		double yDelta = pdf.getGridSpacingY();
-		xyzGP.drawPlot(spec, false, false,
+		widget.setAxisRange(
 				new Range(pdf.getMinX()-0.5*xDelta, pdf.getMaxX()+0.5*xDelta),
 				new Range(pdf.getMinY()-0.5*yDelta, pdf.getMaxY()+0.5*yDelta));
 		
-		Component graphComponent = xyzGP.getComponent(0);
+		Component graphComponent = widget.getComponent(0);
 		graphComponent.setPreferredSize(new Dimension(chartWidth-100,chartHeight-60-100));
 		
 	}
@@ -4898,7 +4897,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						
 						spec.setPlotAnnotations(cityLabels);
 						
-						PaintScaleLegend subtitle = XYZGraphPanel.getLegendForCPT(cpt, "Number", axisLabelFontSize, tickLabelFontSize,
+						PaintScaleLegend subtitle = GraphPanel.getLegendForCPT(cpt, "Number", axisLabelFontSize, tickLabelFontSize,
 					             0, RectangleEdge.RIGHT);
 						if (subtitle != null)
 						spec.addSubtitle(subtitle);
@@ -5093,7 +5092,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							cptAxisLabel = cptUnits;
 						}
 
-						PaintScaleLegend subtitle = XYZGraphPanel.getLegendForCPT(cpt2, cptAxisLabel, axisLabelFontSize, tickLabelFontSize,
+						PaintScaleLegend subtitle = GraphPanel.getLegendForCPT(cpt2, cptAxisLabel, axisLabelFontSize, tickLabelFontSize,
 								0, RectangleEdge.RIGHT);
 						if (subtitle != null)
 							spec.addSubtitle(subtitle);

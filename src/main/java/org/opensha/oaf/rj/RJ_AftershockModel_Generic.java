@@ -1,27 +1,7 @@
 package org.opensha.oaf.rj;
 
-import java.awt.Color;
-import java.io.IOException;
-import java.util.ArrayList;
-
-import org.jfree.data.Range;
-import org.opensha.commons.data.function.ArbDiscrEmpiricalDistFunc;
-import org.opensha.commons.data.function.ArbitrarilyDiscretizedFunc;
 import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
-import org.opensha.commons.data.function.HistogramFunction;
-import org.opensha.commons.data.xyz.EvenlyDiscrXYZ_DataSet;
 import org.opensha.commons.geo.Location;
-import org.opensha.commons.gui.plot.GraphWindow;
-import org.opensha.commons.gui.plot.PlotCurveCharacterstics;
-import org.opensha.commons.gui.plot.PlotLineType;
-import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotSpec;
-import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotWindow;
-import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
-import org.opensha.commons.util.cpt.CPT;
-import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
-import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
-import org.opensha.sha.magdist.ArbIncrementalMagFreqDist;
-import org.opensha.sha.magdist.GutenbergRichterMagFreqDist;
 
 
 /**
