@@ -24,7 +24,6 @@ import org.opensha.commons.data.xyz.GriddedGeoDataSet;
 import org.opensha.commons.geo.GriddedRegion;
 import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.Region;
-import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZGraphPanel;
 import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotSpec;
 import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
 import org.opensha.commons.param.Parameter;
@@ -300,7 +299,7 @@ public class ETAS_ShakingForecastCalc {
 //		Range yRange = new Range(calcRegion.getMinGridLat()-0.5*calcRegion.getLatSpacing(),
 //				calcRegion.getMaxGridLat()+0.5*calcRegion.getLatSpacing());
 //		
-//		xyzGP.drawPlot(spec, false, false, xRange, yRange);
+//		xyzGP.drawGraphPanel(spec, false, false, xRange, yRange);
 //		
 //		JFrame frame = new JFrame("");
 //		frame.setContentPane(xyzGP);

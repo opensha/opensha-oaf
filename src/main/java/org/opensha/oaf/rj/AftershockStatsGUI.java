@@ -59,13 +59,13 @@ import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.LocationUtils;
 //import org.opensha.commons.geo.Region;
 //import org.opensha.commons.gui.ConsoleWindow;
+import org.opensha.commons.gui.plot.GraphPanel;
 import org.opensha.commons.gui.plot.GraphWidget;
 import org.opensha.commons.gui.plot.PlotCurveCharacterstics;
 import org.opensha.commons.gui.plot.PlotElement;
 import org.opensha.commons.gui.plot.PlotLineType;
 import org.opensha.commons.gui.plot.PlotSpec;
 import org.opensha.commons.gui.plot.PlotSymbol;
-import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZGraphPanel;
 import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotSpec;
 import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
 import org.opensha.commons.param.Parameter;
@@ -987,7 +987,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			double cptInc = 0d;
 			if ((timeCPT.getMaxValue() - timeCPT.getMinValue()) < 10)
 				cptInc = 1d;
-			subtitle = XYZGraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
 					cptInc, RectangleEdge.RIGHT);
 		} else {
 			XY_DataSet[] aftershockDatasets = XY_DatasetBinner.bin(points, mags, magSizeFunc);
@@ -1276,7 +1276,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			
 			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, distCPT, "dist", distFunc, PlotSymbol.FILLED_CIRCLE);
 			
-			subtitle = XYZGraphPanel.getLegendForCPT(distCPT, "Distance (km)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(distCPT, "Distance (km)", axisLabelFontSize, tickLabelFontSize,
 					0d, RectangleEdge.RIGHT);
 		} else {
 			XY_DataSet[] magBinnedFuncs = XY_DatasetBinner.bin(points, mags, magSizeFunc);
@@ -1652,13 +1652,17 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		
 		XYZPlotSpec spec = new XYZPlotSpec(pdf, cpt, title, name1, name2, "Density");
 		
-		XYZGraphPanel xyzGP = new XYZGraphPanel();
-		pdfGraphsPane.addTab(name1+" vs "+name2, null, xyzGP);
+		//XYZGraphPanel xyzGP = new XYZGraphPanel();
+		//pdfGraphsPane.addTab(name1+" vs "+name2, null, xyzGP);
+		GraphWidget widget = new GraphWidget(spec);
+		setupGP(widget);
+
 		double xDelta = pdf.getGridSpacingX();
 		double yDelta = pdf.getGridSpacingY();
-		xyzGP.drawPlot(spec, false, false,
+		widget.setAxisRange(
 				new Range(pdf.getMinX()-0.5*xDelta, pdf.getMaxX()+0.5*xDelta),
 				new Range(pdf.getMinY()-0.5*yDelta, pdf.getMaxY()+0.5*yDelta));
+		pdfGraphsPane.addTab(name1+" vs "+name2, null, widget);
 	}
 	
 	//  private void plotExpectedAfershockMFDs(GUICalcProgressBar progress) {
