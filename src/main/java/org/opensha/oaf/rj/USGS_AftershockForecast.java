@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -118,6 +120,10 @@ public class USGS_AftershockForecast {
 
 	// the time of the next scheduled forecast, or 0L if unknown, or -1L if no more forecasts are scheduled
 	private long nextForecastMillis = 0L;
+
+	// Additional parameters to be displayed on the Model tab, or null if none.
+	// Each value in the map should be Number (or subclass thereof), String, or Boolean.
+	private LinkedHashMap<String, Object> userParamMap = null;
 	
 	private Template template = Template.MAINSOCK;
 	
@@ -256,6 +262,14 @@ public class USGS_AftershockForecast {
 	
 	public void setNextForecastMillis(long nextForecastMillis) {
 		this.nextForecastMillis = nextForecastMillis;
+	}
+	
+	public void setUserParamMap(Map<String, Object> userParamMap) {
+		if (userParamMap == null || userParamMap.isEmpty()) {
+			this.userParamMap = null;
+		} else {
+			this.userParamMap = new LinkedHashMap<String, Object> (userParamMap);
+		}
 	}
 	
 	public boolean isIncludeProbAboveMainshock() {
@@ -462,6 +476,12 @@ public class USGS_AftershockForecast {
 			modelParams.put("c", dparm_round (model.getMaxLikelihood_c()));
 			modelParams.put("aSigma", dparm_round (model.getStdDev_a()));
 			modelParams.put("pSigma", dparm_round (model.getStdDev_p()));
+
+			if (userParamMap != null) {
+				for (Map.Entry<String, Object> entry : userParamMap.entrySet()) {
+					modelParams.put(entry.getKey(), entry.getValue());
+				}
+			}
 		}
 		modelJSON.put("parameters", modelParams);
 		json.put("model", modelJSON);

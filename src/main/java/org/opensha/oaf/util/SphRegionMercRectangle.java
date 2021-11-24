@@ -2,6 +2,7 @@ package org.opensha.oaf.util;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.opensha.commons.geo.Region;
 import org.opensha.commons.geo.Location;
@@ -197,6 +198,21 @@ public class SphRegionMercRectangle extends SphRegion {
 		+ "max_lat = " + max_lat + "\n"
 		+ "min_lon = " + min_lon + "\n"
 		+ "max_lon = " + max_lon;
+	}
+
+
+	// Get parameters that can be displayed to the user.
+	// Parameters:
+	//  userParamMap = Map of parameters, which this function adds to.
+	// Each value in the map should be Number (or subclass thereof), String, or Boolean.
+
+	@Override
+	public void get_display_params (Map<String, Object> userParamMap) {
+		userParamMap.put ("regionSouthLat", SimpleUtils.round_double_via_string ("%.4f", min_lat));
+		userParamMap.put ("regionNorthLat", SimpleUtils.round_double_via_string ("%.4f", max_lat));
+		userParamMap.put ("regionWestLon", SimpleUtils.round_double_via_string ("%.4f", (min_lon > 180.0) ? (min_lon - 360.0) : min_lon));
+		userParamMap.put ("regionEastLon", SimpleUtils.round_double_via_string ("%.4f", (max_lon > 180.0) ? (max_lon - 360.0) : max_lon));
+		return;
 	}
 
 

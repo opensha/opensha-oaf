@@ -2,6 +2,7 @@ package org.opensha.oaf.util;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.opensha.commons.geo.Region;
 import org.opensha.commons.geo.Location;
@@ -288,6 +289,14 @@ public abstract class SphRegion implements ComcatRegion {
 		+ "min_lon = " + min_lon + "\n"
 		+ "max_lon = " + max_lon;
 	}
+
+
+	// Get parameters that can be displayed to the user.
+	// Parameters:
+	//  userParamMap = Map of parameters, which this function adds to.
+	// Each value in the map should be Number (or subclass thereof), String, or Boolean.
+
+	public abstract void get_display_params (Map<String, Object> userParamMap);
 
 
 

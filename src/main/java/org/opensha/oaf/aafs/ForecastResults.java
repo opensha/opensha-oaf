@@ -3,6 +3,8 @@ package org.opensha.oaf.aafs;
 //import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Collections;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 import java.time.Instant;
 
@@ -461,6 +463,12 @@ public class ForecastResults {
 				forecast.setNextForecastMillis (0L);
 			}
 
+			LinkedHashMap<String, Object> userParamMap = new LinkedHashMap<String, Object>();
+			if (params.aftershock_search_avail && params.aftershock_search_region != null) {
+				params.aftershock_search_region.get_display_params (userParamMap);
+			}
+			forecast.setUserParamMap (userParamMap);
+
 			// Get the JSON String
 
 			generic_json = forecast.buildJSONString(result_time);
@@ -603,6 +611,12 @@ public class ForecastResults {
 			} else {
 				forecast.setNextForecastMillis (0L);
 			}
+
+			LinkedHashMap<String, Object> userParamMap = new LinkedHashMap<String, Object>();
+			if (params.aftershock_search_avail && params.aftershock_search_region != null) {
+				params.aftershock_search_region.get_display_params (userParamMap);
+			}
+			forecast.setUserParamMap (userParamMap);
 
 			// Get the JSON String
 
@@ -747,6 +761,12 @@ public class ForecastResults {
 			} else {
 				forecast.setNextForecastMillis (0L);
 			}
+
+			LinkedHashMap<String, Object> userParamMap = new LinkedHashMap<String, Object>();
+			if (params.aftershock_search_avail && params.aftershock_search_region != null) {
+				params.aftershock_search_region.get_display_params (userParamMap);
+			}
+			forecast.setUserParamMap (userParamMap);
 
 			// Get the JSON String
 

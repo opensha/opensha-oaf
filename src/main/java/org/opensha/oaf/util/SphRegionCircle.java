@@ -2,6 +2,7 @@ package org.opensha.oaf.util;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.opensha.commons.geo.Region;
 import org.opensha.commons.geo.Location;
@@ -281,6 +282,20 @@ public class SphRegionCircle extends SphRegion {
 		+ "center_lat = " + center.get_lat() + "\n"
 		+ "center_lon = " + center.get_lon() + "\n"
 		+ "radius = " + radius;
+	}
+
+
+	// Get parameters that can be displayed to the user.
+	// Parameters:
+	//  userParamMap = Map of parameters, which this function adds to.
+	// Each value in the map should be Number (or subclass thereof), String, or Boolean.
+
+	@Override
+	public void get_display_params (Map<String, Object> userParamMap) {
+		userParamMap.put ("regionCenterLat", SimpleUtils.round_double_via_string ("%.4f", center.get_lat()));
+		userParamMap.put ("regionCenterLon", SimpleUtils.round_double_via_string ("%.4f", center.get_lon()));
+		userParamMap.put ("regionRadius", SimpleUtils.round_double_via_string ("%.2f", radius));
+		return;
 	}
 
 

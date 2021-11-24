@@ -2,6 +2,7 @@ package org.opensha.oaf.util;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.opensha.commons.geo.Region;
 import org.opensha.commons.geo.Location;
@@ -323,6 +324,22 @@ public class SphRegionMercPolygon extends SphRegion {
 		+ "min_lon = " + min_lon + "\n"
 		+ "max_lon = " + max_lon + "\n"
 		+ "vertex_list size = " + vertex_list.size();
+	}
+
+
+	// Get parameters that can be displayed to the user.
+	// Parameters:
+	//  userParamMap = Map of parameters, which this function adds to.
+	// Each value in the map should be Number (or subclass thereof), String, or Boolean.
+
+	@Override
+	public void get_display_params (Map<String, Object> userParamMap) {
+		for (int n = 0; n < vertex_list.size(); ++n) {
+			SphLatLon vertex = vertex_list.get(n);
+			userParamMap.put ("regionLat" + n, SimpleUtils.round_double_via_string ("%.4f", vertex.get_lat()));
+			userParamMap.put ("regionLon" + n, SimpleUtils.round_double_via_string ("%.4f", vertex.get_lon()));
+		}
+		return;
 	}
 
 

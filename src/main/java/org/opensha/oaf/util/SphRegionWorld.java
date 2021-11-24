@@ -2,6 +2,7 @@ package org.opensha.oaf.util;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.opensha.commons.geo.Region;
 import org.opensha.commons.geo.Location;
@@ -166,6 +167,21 @@ public class SphRegionWorld extends SphRegion {
 		+ "max_lat = " + max_lat + "\n"
 		+ "min_lon = " + min_lon + "\n"
 		+ "max_lon = " + max_lon;
+	}
+
+
+	// Get parameters that can be displayed to the user.
+	// Parameters:
+	//  userParamMap = Map of parameters, which this function adds to.
+	// Each value in the map should be Number (or subclass thereof), String, or Boolean.
+
+	@Override
+	public void get_display_params (Map<String, Object> userParamMap) {
+		userParamMap.put ("regionSouthLat", min_lat);
+		userParamMap.put ("regionNorthLat", max_lat);
+		userParamMap.put ("regionWestLon", min_lon);
+		userParamMap.put ("regionEastLon", max_lon);
+		return;
 	}
 
 
