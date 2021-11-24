@@ -334,10 +334,12 @@ public class SphRegionMercPolygon extends SphRegion {
 
 	@Override
 	public void get_display_params (Map<String, Object> userParamMap) {
+		userParamMap.put ("regionType", "polygon");
+		userParamMap.put ("regionVertexCount", vertex_list.size());
 		for (int n = 0; n < vertex_list.size(); ++n) {
 			SphLatLon vertex = vertex_list.get(n);
-			userParamMap.put ("regionLat" + n, SimpleUtils.round_double_via_string ("%.4f", vertex.get_lat()));
-			userParamMap.put ("regionLon" + n, SimpleUtils.round_double_via_string ("%.4f", vertex.get_lon()));
+			userParamMap.put ("regionVertex" + n + "Lat", SimpleUtils.round_double_via_string ("%.4f", vertex.get_lat()));
+			userParamMap.put ("regionVertex" + n + "Lon", SimpleUtils.round_double_via_string ("%.4f", vertex.get_lon()));
 		}
 		return;
 	}

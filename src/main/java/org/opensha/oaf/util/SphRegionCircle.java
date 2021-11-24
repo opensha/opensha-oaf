@@ -292,6 +292,7 @@ public class SphRegionCircle extends SphRegion {
 
 	@Override
 	public void get_display_params (Map<String, Object> userParamMap) {
+		userParamMap.put ("regionType", "circle");
 		userParamMap.put ("regionCenterLat", SimpleUtils.round_double_via_string ("%.4f", center.get_lat()));
 		userParamMap.put ("regionCenterLon", SimpleUtils.round_double_via_string ("%.4f", center.get_lon()));
 		userParamMap.put ("regionRadius", SimpleUtils.round_double_via_string ("%.2f", radius));
