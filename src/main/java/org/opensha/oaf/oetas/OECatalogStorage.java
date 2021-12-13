@@ -33,6 +33,32 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	private OECatalogParams cat_params;
 
+	// Time at which the catalog stops, defaults to HUGE_TIME_DAYS.
+
+	private double cat_stop_time;
+
+	// Catalog result code, defaults to CAT_RESULT_OK.
+
+	private int cat_result_code;
+
+
+	// Initialize the per-catlog storage, except the catalog parameters.
+
+	private void init_cat () {
+		cat_stop_time = OEConstants.HUGE_TIME_DAYS;
+		cat_result_code = OEConstants.CAT_RESULT_OK;
+		return;
+	}
+
+
+	// Re-initialize the per-catlog storage, except the catalog parameters.
+
+	private void re_init_cat () {
+		cat_stop_time = OEConstants.HUGE_TIME_DAYS;
+		cat_result_code = OEConstants.CAT_RESULT_OK;
+		return;
+	}
+
 
 
 
@@ -258,6 +284,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	public void clear () {
 		cat_params.clear();
+		init_cat();
 		init_gen();
 		init_rup();
 		return;
@@ -280,6 +307,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 	// Previously-allocated memory is retained and re-used.
 
 	public void re_init () {
+		re_init_cat();
 		re_init_gen();
 		re_init_rup();
 		return;
@@ -362,7 +390,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 	//  rup = Structure to receive the rupture information.
 
 	@Override
-	public void get_rup (int i_gen, int j_rup, OERupture rup) {
+	public void get_rup_full (int i_gen, int j_rup, OERupture rup) {
 		int index = gen_start[i_gen] + j_rup;
 
 		int block = index >> RUP_BLOCK_SHIFT;
@@ -379,6 +407,99 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 		return;
 	}
+
+
+
+
+	// Get the time of the j-th rupture in the i-th generation in the catalog.
+	// Parameters:
+	//  i_gen = Generation number.
+	//  j_rup = Rupture number, within the generation.
+	//  rup = Structure to receive the rupture information.
+	// This function fills in rup.t_day.
+	// Other fields may or may not be modified.
+
+	@Override
+	public void get_rup_time (int i_gen, int j_rup, final OERupture rup) {
+		int index = gen_start[i_gen] + j_rup;
+
+		rup.t_day = t_day[index >> RUP_BLOCK_SHIFT][index & RUP_BLOCK_MASK];
+
+		return;
+	}
+
+
+
+
+	// Get the time and productivity of the j-th rupture in the i-th generation in the catalog.
+	// Parameters:
+	//  i_gen = Generation number.
+	//  j_rup = Rupture number, within the generation.
+	//  rup = Structure to receive the rupture information.
+	// This function fills in rup.t_day and rup.k_prod.
+	// Other fields may or may not be modified.
+
+	@Override
+	public void get_rup_time_prod (int i_gen, int j_rup, final OERupture rup) {
+		int index = gen_start[i_gen] + j_rup;
+
+		int block = index >> RUP_BLOCK_SHIFT;
+		int offset = index & RUP_BLOCK_MASK;
+
+		rup.t_day = t_day[block][offset];
+		rup.k_prod = (double)(k_prod[block][offset]);
+
+		return;
+	}
+
+
+
+
+	// Get the time and location of the j-th rupture in the i-th generation in the catalog.
+	// Parameters:
+	//  i_gen = Generation number.
+	//  j_rup = Rupture number, within the generation.
+	//  rup = Structure to receive the rupture information.
+	// This function fills in rup.t_day, rup.x_km, and rup.y_km.
+	// Other fields may or may not be modified.
+
+	@Override
+	public void get_rup_time_x_y (int i_gen, int j_rup, final OERupture rup) {
+		int index = gen_start[i_gen] + j_rup;
+
+		int block = index >> RUP_BLOCK_SHIFT;
+		int offset = index & RUP_BLOCK_MASK;
+
+		rup.t_day = t_day[block][offset];
+		rup.x_km = (double)(x_km[block][offset]);
+		rup.y_km = (double)(y_km[block][offset]);
+
+		return;
+	}
+
+
+
+
+	// Get the time at which the catalog stops.
+	// The return value need not satisfy stop_time <= cat_params.tend; however,
+	// the catalog does not extend past cat_params.tend regardless of stop_time.
+	// If stop_time < cat_params.tend, then the catalog ended before the full time interval.
+
+	@Override
+	public double get_cat_stop_time () {
+		return cat_stop_time;
+	}
+
+
+
+
+	// Get the catalog result code, CAT_RESULT_OK indicates success.
+
+	@Override
+	public int get_cat_result_code () {
+		return cat_result_code;
+	}
+
 
 
 
@@ -416,6 +537,13 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	@Override
 	public void end_catalog () {
+
+		// Remove any trailing zero-size generations, but not the seed generation
+
+		while (gen_count > 1 && gen_size[gen_count - 1] == 0) {
+			--gen_count;
+		}
+
 		return;
 	}
 
@@ -501,6 +629,31 @@ public class OECatalogStorage implements OECatalogBuilder {
 		x_km[block][offset] = (float)(rup.x_km);
 		y_km[block][offset] = (float)(rup.y_km);
 
+		return;
+	}
+
+
+
+
+	// Set the time at which the catalog stops.
+	// Defaults to HUGE_TIME_DAYS if it is never set.
+	// If stop_time < cat_params.tend, then the catalog ended before the full time interval.
+
+	@Override
+	public void set_cat_stop_time (double stop_time) {
+		cat_stop_time = stop_time;
+		return;
+	}
+
+
+
+
+	// Set the catalog result code, CAT_RESULT_OK indicates success.
+	// Defaults to CAT_RESULT_OK if it is never set.
+
+	@Override
+	public void set_cat_result_code (int result_code) {
+		cat_result_code = result_code;
 		return;
 	}
 
@@ -646,6 +799,9 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 			cat_params.marshal (writer, "cat_params");
 
+			writer.marshalDouble ("cat_stop_time", cat_stop_time);
+			writer.marshalInt ("cat_result_code", cat_result_code);
+
 			writer.marshalInt ("gen_count", gen_count);
 
 			marshal_gen_array (writer, "gen_start"  , gen_start  );
@@ -687,6 +843,9 @@ public class OECatalogStorage implements OECatalogBuilder {
 			re_init();
 
 			cat_params.unmarshal (reader, "cat_params");
+
+			cat_stop_time = reader.unmarshalDouble ("cat_stop_time");
+			cat_result_code = reader.unmarshalInt ("cat_result_code");
 
 			gen_count = reader.unmarshalInt ("gen_count");
 			ensure_capacity_gen();
@@ -979,7 +1138,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 						// Check catalog rupture
 
-						cat_storage.get_rup (i_gen, j_rup, out_rup);
+						cat_storage.get_rup_full (i_gen, j_rup, out_rup);
 						test_trunc_rup_as_if_stored (in_rup[i_gen][j_rup], cmp_rup);
 						if (!( out_rup.check_rup_equal(cmp_rup) )) {
 							System.out.println ("MISMATCH for generation " + i_gen + " rupture " + j_rup);
@@ -1208,7 +1367,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 						// Check catalog rupture
 
-						cat_storage.get_rup (i_gen, j_rup, out_rup);
+						cat_storage.get_rup_full (i_gen, j_rup, out_rup);
 						test_trunc_rup_as_if_stored (in_rup[i_gen][j_rup], cmp_rup);
 						if (!( out_rup.check_rup_equal(cmp_rup) )) {
 							System.out.println ("MISMATCH for generation " + i_gen + " rupture " + j_rup);

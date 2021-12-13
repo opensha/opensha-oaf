@@ -655,7 +655,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 						// Check catalog rupture
 
-						cat_storage.get_rup (i_gen, j_rup, out_rup);
+						cat_storage.get_rup_full (i_gen, j_rup, out_rup);
 						OECatalogStorage.test_trunc_rup_as_if_stored (in_rup[i_gen][j_rup], cmp_rup);
 						if (!( out_rup.check_rup_equal(cmp_rup) )) {
 							System.out.println ("MISMATCH for generation " + i_gen + " rupture " + j_rup);

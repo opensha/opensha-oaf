@@ -56,7 +56,51 @@ public interface OECatalogView {
 	//  j_rup = Rupture number, within the generation.
 	//  rup = Structure to receive the rupture information.
 
-	public void get_rup (int i_gen, int j_rup, OERupture rup);
+	public void get_rup_full (int i_gen, int j_rup, OERupture rup);
+
+	// Get the time of the j-th rupture in the i-th generation in the catalog.
+	// Parameters:
+	//  i_gen = Generation number.
+	//  j_rup = Rupture number, within the generation.
+	//  rup = Structure to receive the rupture information.
+	// This function fills in rup.t_day.
+	// Other fields may or may not be modified.
+
+	public void get_rup_time (int i_gen, int j_rup, OERupture rup);
+
+	// Get the time and productivity of the j-th rupture in the i-th generation in the catalog.
+	// Parameters:
+	//  i_gen = Generation number.
+	//  j_rup = Rupture number, within the generation.
+	//  rup = Structure to receive the rupture information.
+	// This function fills in rup.t_day and rup.k_prod.
+	// Other fields may or may not be modified.
+
+	public void get_rup_time_prod (int i_gen, int j_rup, OERupture rup);
+
+	// Get the time and location of the j-th rupture in the i-th generation in the catalog.
+	// Parameters:
+	//  i_gen = Generation number.
+	//  j_rup = Rupture number, within the generation.
+	//  rup = Structure to receive the rupture information.
+	// This function fills in rup.t_day, rup.x_km, and rup.y_km.
+	// Other fields may or may not be modified.
+
+	public void get_rup_time_x_y (int i_gen, int j_rup, OERupture rup);
+
+	// Get the time at which the catalog stops.
+	// The return value need not satisfy stop_time <= cat_params.tend; however,
+	// the catalog does not extend past cat_params.tend regardless of stop_time.
+	// If stop_time < cat_params.tend, then the catalog ended before the full time interval.
+
+	public double get_cat_stop_time ();
+
+	// Get the catalog result code, CAT_RESULT_OK indicates success.
+
+	public int get_cat_result_code ();
+
+
+
 
 	// Construct a string that summarizes the catalog contents.
 	// This displays the catalog size and generation count,
@@ -66,6 +110,11 @@ public interface OECatalogView {
 		StringBuilder result = new StringBuilder();
 
 		result.append ("OECatalogView:" + "\n");
+
+		// Catalog globals
+
+		result.append ("cat_result_code = " + get_cat_result_code()  + "\n");
+		result.append ("cat_stop_time = " + get_cat_stop_time()  + "\n");
 
 		// Size and generation count
 
@@ -100,6 +149,11 @@ public interface OECatalogView {
 
 		result.append ("OECatalogView:" + "\n");
 
+		// Catalog globals
+
+		result.append ("cat_result_code = " + get_cat_result_code()  + "\n");
+		result.append ("cat_stop_time = " + get_cat_stop_time()  + "\n");
+
 		// Size and generation count
 
 		int the_size = size();
@@ -128,7 +182,7 @@ public interface OECatalogView {
 		for (int i_gen = 0; i_gen < gen_count; ++i_gen) {
 			int gen_size = get_gen_size (i_gen);
 			for (int j_rup = 0; j_rup < gen_size; ++j_rup) {
-				get_rup (i_gen, j_rup, rup);
+				get_rup_full (i_gen, j_rup, rup);
 				result.append (rup.one_line_string (i_gen, j_rup) + "\n");
 			}
 		}
@@ -152,7 +206,7 @@ public interface OECatalogView {
 			final int gen_size = get_gen_size (i_gen);
 			for (int j_rup = 0; j_rup < gen_size; ++j_rup) {
 				OERupture rup = new OERupture();
-				get_rup (i_gen, j_rup, rup);
+				get_rup_full (i_gen, j_rup, rup);
 				coll.add (rup);
 			}
 		}

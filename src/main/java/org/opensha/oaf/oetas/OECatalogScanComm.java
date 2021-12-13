@@ -100,6 +100,9 @@ public class OECatalogScanComm {
 
 	// The current rupture number.
 	// Rupture 0 is the first rupture within the generation.
+	// Note: Consumers should not make any assumptions about the rupture indexing
+	// scheme, or the order in which ruptures are presented.  Indexes may be
+	// out-of-order and non-contiguous.
 
 	public int j_rup;
 
@@ -245,7 +248,7 @@ public class OECatalogScanComm {
 
 		// Get rupture info
 
-		view.get_rup (i_gen, j_rup, rup);
+		view.get_rup_full (i_gen, j_rup, rup);
 		return;
 	}
 

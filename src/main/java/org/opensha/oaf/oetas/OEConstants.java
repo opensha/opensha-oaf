@@ -125,6 +125,21 @@ public class OEConstants {
 
 	public static final int DEF_MAX_GEN_COUNT = 100;
 
+	// Default maximum number of ruptures in a catalog, when generating catalogs; 0 if none.
+
+	public static final int DEF_MAX_CAT_SIZE = 5000000;
+
+	// Default magnitude excess for selecting stop time, when generating catalogs; 0.0 if none.
+
+	public static final double DEF_MAG_EXCESS = 4.0;
+
+	// Catalog result codes.
+
+	public static final int CAT_RESULT_OK = 0;				// Success
+	public static final int CAT_RESULT_CAT_TOO_LARGE = 1;	// Catalog is too large
+	public static final int CAT_RESULT_TOO_MANY_GEN = 2;	// Catalog has too many generations
+	public static final int CAT_RESULT_GEN_TOO_LARGE = 3;	// Generation is too large
+
 	// Options for common Helmstetter parameters.
 
 	public static final int HELM_PARAM_MIN   = 1;

@@ -54,7 +54,49 @@ public interface OECatalogBuilder extends OECatalogView {
 	//  j_rup = Rupture number, within the generation.
 	//  rup = Structure to receive the rupture information.
 
-	// public void get_rup (int i_gen, int j_rup, OERupture rup);		// inherited
+	// public void get_rup_full (int i_gen, int j_rup, OERupture rup);		// inherited
+
+	// Get the time of the j-th rupture in the i-th generation in the catalog.
+	// Parameters:
+	//  i_gen = Generation number.
+	//  j_rup = Rupture number, within the generation.
+	//  rup = Structure to receive the rupture information.
+	// This function fills in rup.t_day.
+	// Other fields may or may not be modified.
+
+	// public void get_rup_time (int i_gen, int j_rup, OERupture rup);		// inherited
+
+	// Get the time and productivity of the j-th rupture in the i-th generation in the catalog.
+	// Parameters:
+	//  i_gen = Generation number.
+	//  j_rup = Rupture number, within the generation.
+	//  rup = Structure to receive the rupture information.
+	// This function fills in rup.t_day and rup.k_prod.
+	// Other fields may or may not be modified.
+
+	// public void get_rup_time_prod (int i_gen, int j_rup, OERupture rup);		// inherited
+
+	// Get the time and location of the j-th rupture in the i-th generation in the catalog.
+	// Parameters:
+	//  i_gen = Generation number.
+	//  j_rup = Rupture number, within the generation.
+	//  rup = Structure to receive the rupture information.
+	// This function fills in rup.t_day, rup.x_km, and rup.y_km.
+	// Other fields may or may not be modified.
+
+	// public void get_rup_time_x_y (int i_gen, int j_rup, OERupture rup);		// inherited
+
+	// Get the time at which the catalog stops.
+	// The return value need not satisfy stop_time <= cat_params.tend; however,
+	// the catalog does not extend past cat_params.tend regardless of stop_time.
+	// If stop_time < cat_params.tend, then the catalog ended before the full time interval.
+
+	// public double get_cat_stop_time ();		// inherited
+
+	// Get the catalog result code, CAT_RESULT_OK indicates success.
+
+	// public int get_cat_result_code ();		// inherited
+
 
 	// Construct a string that summarizes the catalog contents.
 	// This displays the catalog size and generation count,
@@ -104,5 +146,16 @@ public interface OECatalogBuilder extends OECatalogView {
 	// Note: This function does not retain rup; it copies the contents.
 
 	public void add_rup (OERupture rup);
+
+	// Set the time at which the catalog stops.
+	// Defaults to HUGE_TIME_DAYS if it is never set.
+	// If stop_time < cat_params.tend, then the catalog ended before the full time interval.
+
+	public void set_cat_stop_time (double stop_time);
+
+	// Set the catalog result code, CAT_RESULT_OK indicates success.
+	// Defaults to CAT_RESULT_OK if it is never set.
+
+	public void set_cat_result_code (int result_code);
 
 }

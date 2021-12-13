@@ -654,6 +654,40 @@ public class OERandomGenerator {
 
 
 
+	// Return a Gutenberg-Richter expected rate, with unbounded range.
+	// Parameters:
+	//  b = Gutenberg-Richter b parameter.
+	//  mref = Reference magnitude.
+	//  m1 = Lower magnitude.
+	// Returns Integral(m1, infinity, (b*log(10)*10^(-b*(m - mref)))*dm).
+	// Take note of the factor b*log(10) in the return value definition,
+	// which indicates the integrand is a rate per unit magnitude.
+	// Note that if m1 == mref, then rate --> 1.
+	// Note: This is the same as gr_rate with m2 = infinity.
+
+	// Implementation note: The value is
+	//
+	// 10^(-b*(m1-mref))
+	//
+	// The value may be written
+	//
+	// exp(-beta*(m1 - mref))
+	//
+	// where
+	//
+	// beta = b*log(10)
+
+	public static double gr_rate_unbounded (double b, double mref, double m1) {
+		double beta = C_LOG_10 * b;	// log(10) * b
+
+		// Calculate directly.
+
+		return Math.exp(-beta*(m1 - mref));
+	}
+
+
+
+
 	// Return the ratio between two Gutenberg-Richter expected rates.
 	// Parameters:
 	//  b = Gutenberg-Richter b parameter.
@@ -664,7 +698,7 @@ public class OERandomGenerator {
 	// Returns Integral(tm1, tm2, (10^(-b*m))*dm) / Integral(sm1, sm2, (10^(-b*m))*dm).
 	// If the return value is r, then the expected rate in the target range
 	// equals r times the expected rate in the source range.
-	// Note that if sm2 --> infinity and tm2 --> infinity then r --> 10^(-b*(tm2 - sm2))
+	// Note that if sm2 --> infinity and tm2 --> infinity then r --> 10^(-b*(tm1 - sm1))
 	// which is the classic G-R relation with no upper bound.
 	// Note: tm2 == tm1 returns zero, but sm2 == sm1 triggers divide-by-zero.
 	// Note: By comparison to the formulas for gr_rate, we have canceled out the
@@ -689,6 +723,46 @@ public class OERandomGenerator {
 		// sm1 and sm2 are almost equal, or tm1 and tm2 are almost equal.
 
 		return Math.exp(-beta*(tm1 - sm1)) * Math.expm1(-beta*(tm2 - tm1)) / Math.expm1(-beta*(sm2 - sm1));
+	}
+
+
+
+
+	// Return the ratio between two Gutenberg-Richter expected rates, with unbounded target range.
+	// Parameters:
+	//  b = Gutenberg-Richter b parameter.
+	//  sm1 = Source range lower magnitude.
+	//  sm2 = Source range upper magnitude, must satisfy sm2 > sm1.
+	//  tm1 = Target range lower magnitude.
+	// Returns Integral(tm1, infinity, (10^(-b*m))*dm) / Integral(sm1, sm2, (10^(-b*m))*dm).
+	// If the return value is r, then the expected rate in the target range
+	// equals r times the expected rate in the source range.
+	// Note that if sm2 --> infinity then r --> 10^(-b*(tm1 - sm1))
+	// which is the classic G-R relation with no upper bound.
+	// Note: sm2 == sm1 triggers divide-by-zero.
+	// Note: By comparison to the formulas for gr_rate, we have canceled out the
+	// common factor b*log(10)*10^(b*mref) from both integrals.
+	// Note: This is the same as gr_ratio_rate with tm2 = infinity.
+
+	// Implementation note: The value is
+	//
+	// (10^(-b*tm1)) / (10^(-b*sm1) - 10^(-b*sm2))
+	//
+	// The value may be written
+	//
+	// exp(-beta*(tm1 - sm1)) / (1 - exp(-beta*(sm2 - sm1)))
+	//
+	// where
+	//
+	// beta = b*log(10)
+
+	public static double gr_ratio_rate_unb_target (double b, double sm1, double sm2, double tm1) {
+		double beta = C_LOG_10 * b;	// log(10) * b
+
+		// Calculate directly, using expm1 to avoid cancellation when
+		// sm1 and sm2 are almost equal.
+
+		return -Math.exp(-beta*(tm1 - sm1)) / Math.expm1(-beta*(sm2 - sm1));
 	}
 
 

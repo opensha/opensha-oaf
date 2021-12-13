@@ -43,6 +43,7 @@ public class OERupture {
 	// The index number of the parent rupture, within the prior generation.
 	// The value -1 indicates no parent.
 	// Note: When used in rupture history, this field can contain rupture category.
+	// Note: This field is now considered optional, which a generator may or may not produce.
 
 	public int rup_parent;
 
@@ -58,6 +59,20 @@ public class OERupture {
 
 
 
+	//----- Constants -----
+
+
+
+
+	// Special values that can be used in the rup_parent field (all are negative).
+
+	public static final int RUPPAR_SEED = -1;		// Rupture belongs to seed generation.
+	public static final int RUPPAR_UNKNOWN = -2;	// Parent rupture is unknown.
+	public static final int RUPPAR_DELETED = -3;	// Rupture is deleted from catalog.
+
+
+
+
 	//----- Construction -----
 
 
@@ -65,11 +80,11 @@ public class OERupture {
 
 	// Clear to default values.
 
-	public void clear () {
+	public final void clear () {
 		t_day      = 0.0;
 		rup_mag    = 0.0;
 		k_prod     = 0.0;
-		rup_parent = -1;
+		rup_parent = RUPPAR_SEED;
 		x_km       = 0.0;
 		y_km       = 0.0;
 		return;
@@ -90,7 +105,7 @@ public class OERupture {
 	// Set the values, for temporal ETAS.
 	// Return this object.
 
-	public OERupture set (double t_day, double rup_mag, double k_prod, int rup_parent) {
+	public final OERupture set (double t_day, double rup_mag, double k_prod, int rup_parent) {
 		this.t_day      = t_day;
 		this.rup_mag    = rup_mag;
 		this.k_prod     = k_prod;
@@ -106,7 +121,7 @@ public class OERupture {
 	// Set the values, for spatial ETAS.
 	// Return this object.
 
-	public OERupture set (double t_day, double rup_mag, double k_prod, int rup_parent, double x_km, double y_km) {
+	public final OERupture set (double t_day, double rup_mag, double k_prod, int rup_parent, double x_km, double y_km) {
 		this.t_day      = t_day;
 		this.rup_mag    = rup_mag;
 		this.k_prod     = k_prod;
@@ -122,11 +137,11 @@ public class OERupture {
 	// Set the values, time and magnitude only.
 	// Return this object.
 
-	public OERupture set (double t_day, double rup_mag) {
+	public final OERupture set (double t_day, double rup_mag) {
 		this.t_day      = t_day;
 		this.rup_mag    = rup_mag;
 		this.k_prod     = 0.0;
-		this.rup_parent = -1;
+		this.rup_parent = RUPPAR_SEED;
 		this.x_km       = 0.0;
 		this.y_km       = 0.0;
 		return this;
@@ -138,7 +153,7 @@ public class OERupture {
 	// Copy the values from the other object.
 	// Return this object.
 
-	public OERupture copy_from (OERupture other) {
+	public final OERupture copy_from (OERupture other) {
 		this.t_day      = other.t_day;
 		this.rup_mag    = other.rup_mag;
 		this.k_prod     = other.k_prod;
@@ -174,7 +189,7 @@ public class OERupture {
 
 	// Produce a one-line string containing our contents (not newline-terminated).
 
-	public String one_line_string () {
+	public final String one_line_string () {
 		return String.format ("t=%.5f, mag=%.3f, k=%.4e, parent=%d, x=%.3f, y=%.3f",
 			t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
 	}
@@ -185,7 +200,7 @@ public class OERupture {
 	// Produce a one-line string containing our contents (not newline-terminated).
 	// This version prepends an index.
 
-	public String one_line_string (int j_rup) {
+	public final String one_line_string (int j_rup) {
 		return String.format ("%d: t=%.5f, mag=%.3f, k=%.4e, parent=%d, x=%.3f, y=%.3f",
 			j_rup, t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
 	}
@@ -196,7 +211,7 @@ public class OERupture {
 	// Produce a one-line string containing our contents (not newline-terminated).
 	// This version prepends two indexes.
 
-	public String one_line_string (int i_gen, int j_rup) {
+	public final String one_line_string (int i_gen, int j_rup) {
 		return String.format ("%d, %d: t=%.5f, mag=%.3f, k=%.4e, parent=%d, x=%.3f, y=%.3f",
 			i_gen, j_rup, t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
 	}
@@ -206,7 +221,7 @@ public class OERupture {
 
 	// Produce a one-line string containing unrounded time and magnitude (not newline-terminated).
 
-	public String u_time_mag_string () {
+	public final String u_time_mag_string () {
 		return "t = " + t_day + ", mag = " + rup_mag;
 	}
 
@@ -215,7 +230,7 @@ public class OERupture {
 
 	// Produce a one-line string containing unrounded time, magnitude, and productivity (not newline-terminated).
 
-	public String u_time_mag_prod_string () {
+	public final String u_time_mag_prod_string () {
 		return "t = " + t_day + ", mag = " + rup_mag + ", k_prod = " + k_prod;
 	}
 
@@ -225,7 +240,7 @@ public class OERupture {
 	// Produce a one-line string containing unrounded time, magnitude, and magnitude of completeness (not newline-terminated).
 	// Note: The k_prod field is assumed to contain magnitude of completeness.
 
-	public String u_time_mag_mc_string () {
+	public final String u_time_mag_mc_string () {
 		return "t = " + t_day + ", mag = " + rup_mag + ", mc = " + k_prod;
 	}
 
@@ -237,19 +252,19 @@ public class OERupture {
 	// Note: The parent field is assumed to contain a rupture category.
 	// Versions are provided that prepend one or two indexes.
 
-	public String one_line_mc_cat_string () {
+	public final String one_line_mc_cat_string () {
 		return String.format ("t=%.5f, mag=%.3f, mc=%.3f, cat=%d, x=%.3f, y=%.3f",
 			t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
 	}
 
 
-	public String one_line_mc_cat_string (int j) {
+	public final String one_line_mc_cat_string (int j) {
 		return String.format ("%d: t=%.5f, mag=%.3f, mc=%.3f, cat=%d, x=%.3f, y=%.3f",
 			j, t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
 	}
 
 
-	public String one_line_mc_cat_string (int i, int j) {
+	public final String one_line_mc_cat_string (int i, int j) {
 		return String.format ("%d, %d: t=%.5f, mag=%.3f, mc=%.3f, cat=%d, x=%.3f, y=%.3f",
 			i, j, t_day, rup_mag, k_prod, rup_parent, x_km, y_km);
 	}
@@ -482,7 +497,7 @@ public class OERupture {
 	// Check if two ruptures are identical.
 	// Note: This is primarily for testing.
 
-	public boolean check_rup_equal (OERupture other) {
+	public final boolean check_rup_equal (OERupture other) {
 		if (
 			   this.t_day      == other.t_day
 			&& this.rup_mag    == other.rup_mag
@@ -502,7 +517,7 @@ public class OERupture {
 	// Set to plausible random values.
 	// Note: This is primarily for testing.
 
-	public OERupture set_to_random (OERandomGenerator rangen) {
+	public final OERupture set_to_random (OERandomGenerator rangen) {
 		this.t_day      = rangen.uniform_sample (0.0, 3650.0);
 		this.rup_mag    = rangen.uniform_sample (3.0, 9.0);
 		this.k_prod     = Math.pow (10.0, rangen.uniform_sample (-5.0, 5.0));

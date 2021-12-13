@@ -142,6 +142,19 @@ public class OECatalogParams {
 
 	public int gen_count_max;
 
+	// The maximum number of ruptures in a catalog, or 0 if no limit.
+	// Note: This is likely a soft limit, with catalog size allowed to exceed this
+	// but eventually be stopped if size continues to increased.
+
+	public int max_cat_size;
+
+	// The magnitude excess, or 0.0 if none.
+	// If positive, then a generator can produce ruptures with magnitudes between
+	// mag_max_sim and mag_max_sim + mag_excess, and stop the simulation at the
+	// time of the first such rupture.
+
+	public double mag_excess;
+
 
 
 
@@ -152,7 +165,7 @@ public class OECatalogParams {
 
 	// Clear to default values.
 
-	public void clear () {
+	public final void clear () {
 		a               = 0.0;
 		p               = 0.0;
 		c               = 0.0;
@@ -172,6 +185,8 @@ public class OECatalogParams {
 		mag_eps         = 0.0;
 		gen_size_target = 0;
 		gen_count_max   = 0;
+		max_cat_size    = 0;
+		mag_excess      = 0.0;
 		return;
 	}
 
@@ -189,7 +204,7 @@ public class OECatalogParams {
 
 	// Set all values.
 
-	public OECatalogParams set (
+	public final OECatalogParams set (
 		double a,
 		double p,
 		double c,
@@ -208,7 +223,9 @@ public class OECatalogParams {
 		double mag_max_hi,
 		double mag_eps,
 		int gen_size_target,
-		int gen_count_max
+		int gen_count_max,
+		int max_cat_size,
+		double mag_excess
 	) {
 		this.a               = a;
 		this.p               = p;
@@ -229,6 +246,8 @@ public class OECatalogParams {
 		this.mag_eps         = mag_eps;
 		this.gen_size_target = gen_size_target;
 		this.gen_count_max   = gen_count_max;
+		this.max_cat_size    = max_cat_size;
+		this.mag_excess      = mag_excess;
 		return this;
 	}
 
@@ -237,7 +256,7 @@ public class OECatalogParams {
 
 	// Copy all values from the other object.
 
-	public OECatalogParams copy_from (OECatalogParams other) {
+	public final OECatalogParams copy_from (OECatalogParams other) {
 		this.a               = other.a;
 		this.p               = other.p;
 		this.c               = other.c;
@@ -257,6 +276,8 @@ public class OECatalogParams {
 		this.mag_eps         = other.mag_eps;
 		this.gen_size_target = other.gen_size_target;
 		this.gen_count_max   = other.gen_count_max;
+		this.max_cat_size    = other.max_cat_size;
+		this.mag_excess      = other.mag_excess;
 		return this;
 	}
 
@@ -290,6 +311,8 @@ public class OECatalogParams {
 		result.append ("mag_eps = "         + mag_eps         + "\n");
 		result.append ("gen_size_target = " + gen_size_target + "\n");
 		result.append ("gen_count_max = "   + gen_count_max   + "\n");
+		result.append ("max_cat_size = "    + max_cat_size    + "\n");
+		result.append ("mag_excess = "      + mag_excess      + "\n");
 
 		return result.toString();
 	}
@@ -340,6 +363,8 @@ public class OECatalogParams {
 			writer.marshalDouble ("mag_eps"        , mag_eps        );
 			writer.marshalInt    ("gen_size_target", gen_size_target);
 			writer.marshalInt    ("gen_count_max"  , gen_count_max  );
+			writer.marshalInt    ("max_cat_size"   , max_cat_size   );
+			writer.marshalDouble ("mag_excess"     , mag_excess     );
 
 		}
 		break;
@@ -382,6 +407,8 @@ public class OECatalogParams {
 			mag_eps         = reader.unmarshalDouble ("mag_eps"        );
 			gen_size_target = reader.unmarshalInt    ("gen_size_target");
 			gen_count_max   = reader.unmarshalInt    ("gen_count_max"  );
+			max_cat_size    = reader.unmarshalInt    ("max_cat_size"   );
+			mag_excess      = reader.unmarshalDouble ("mag_excess"     );
 
 		}
 		break;
@@ -439,7 +466,7 @@ public class OECatalogParams {
 	// Check if two catalog parameter structures are identical.
 	// Note: This is primarily for testing.
 
-	public boolean check_param_equal (OECatalogParams other) {
+	public final boolean check_param_equal (OECatalogParams other) {
 		if (
 			   this.a               == other.a              
 			&& this.p               == other.p              
@@ -460,6 +487,8 @@ public class OECatalogParams {
 			&& this.mag_eps         == other.mag_eps     
 			&& this.gen_size_target == other.gen_size_target
 			&& this.gen_count_max   == other.gen_count_max  
+			&& this.max_cat_size    == other.max_cat_size  
+			&& this.mag_excess      == other.mag_excess  
 		) {
 			return true;
 		}
@@ -473,7 +502,7 @@ public class OECatalogParams {
 	// Note: Not all values are actually randomized.
 	// Note: This is primarily for testing.
 
-	public OECatalogParams set_to_random (OERandomGenerator rangen) {
+	public final OECatalogParams set_to_random (OERandomGenerator rangen) {
 		this.a               = rangen.uniform_sample (-5.0, 2.0);
 		this.p               = rangen.uniform_sample (0.8, 1.2);
 		this.c               = rangen.uniform_sample (0.001, 0.02);
@@ -493,6 +522,8 @@ public class OECatalogParams {
 		this.mag_eps         = 0.0002;
 		this.gen_size_target = rangen.uniform_int_sample (200, 500);
 		this.gen_count_max   = rangen.uniform_int_sample (50, 150);
+		this.max_cat_size    = 0;
+		this.mag_excess      = 0.0;
 		return this;
 	}
 
@@ -502,7 +533,7 @@ public class OECatalogParams {
 	// Set to typical values, with some user-adjustable parameters.
 	// Note: This is primarily for testing.
 
-	public OECatalogParams set_to_typical (
+	public final OECatalogParams set_to_typical (
 		double a,
 		double p,
 		double c,
@@ -530,6 +561,8 @@ public class OECatalogParams {
 		this.mag_eps         = 0.0002;
 		this.gen_size_target = gen_size_target;
 		this.gen_count_max   = gen_count_max;
+		this.max_cat_size    = 0;
+		this.mag_excess      = 0.0;
 		return this;
 	}
 
@@ -548,7 +581,7 @@ public class OECatalogParams {
 	//  tbegin = Beginning time for which earthquakes are generated, in days.
 	//  tend = Ending time for which earthquakes are generated, in days.
 
-	public OECatalogParams set_to_fixed_mag (
+	public final OECatalogParams set_to_fixed_mag (
 		double a,
 		double p,
 		double c,
@@ -578,6 +611,8 @@ public class OECatalogParams {
 		this.mag_eps         = OEConstants.GEN_MAG_EPS;
 		this.gen_size_target = 100;
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
+		this.max_cat_size    = OEConstants.DEF_MAX_CAT_SIZE;
+		this.mag_excess      = OEConstants.DEF_MAG_EXCESS;
 		return this;
 	}
 
@@ -597,7 +632,7 @@ public class OECatalogParams {
 	//  tbegin = Beginning time for which earthquakes are generated, in days.
 	//  tend = Ending time for which earthquakes are generated, in days.
 
-	public OECatalogParams set_to_fixed_mag_br (
+	public final OECatalogParams set_to_fixed_mag_br (
 		double n,
 		double p,
 		double c,
@@ -627,6 +662,8 @@ public class OECatalogParams {
 		this.mag_eps         = OEConstants.GEN_MAG_EPS;
 		this.gen_size_target = 100;
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
+		this.max_cat_size    = OEConstants.DEF_MAX_CAT_SIZE;
+		this.mag_excess      = OEConstants.DEF_MAG_EXCESS;
 		return this;
 	}
 

@@ -379,9 +379,9 @@ public class OECatalogScanner implements OECatalogExaminer {
 
 		for (int cur_j_rup = 0; cur_j_rup < cur_gen_size; ++cur_j_rup) {
 
-			// Get the rupture in the current generation
+			// Get the rupture in the current generation, time and productivity
 
-			view.get_rup (cur_i_gen, cur_j_rup, cur_rup);
+			view.get_rup_time_prod (cur_i_gen, cur_j_rup, cur_rup);
 
 			// Calculate its expected rate in the forecast interval
 
@@ -457,9 +457,9 @@ public class OECatalogScanner implements OECatalogExaminer {
 			int child_count = work_child_count[cur_j_rup];
 			if (child_count > 0) {
 
-				// Get the rupture in the current generation
+				// Get the rupture in the current generation, time and location
 
-				view.get_rup (cur_i_gen, cur_j_rup, cur_rup);
+				view.get_rup_time_x_y (cur_i_gen, cur_j_rup, cur_rup);
 
 				// Loop over children
 

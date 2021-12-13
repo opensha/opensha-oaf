@@ -3,6 +3,8 @@ package org.opensha.oaf.oetas;
 import static org.opensha.oaf.oetas.OEConstants.TINY_OMORI_RATE;
 import static org.opensha.oaf.oetas.OEConstants.SMALL_EXPECTED_COUNT;
 
+import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
+
 
 // Class for generating an Operational ETAS catalog.
 // Author: Michael Barall 12/04/2019.
@@ -209,6 +211,67 @@ public class OECatalogGenerator {
 
 
 
+	// Find the time up to which the catalog is already complete.
+	// This is the earliest time in the last non-empty generation, except it
+	// is the start time if the last non-empty generation is the seed generation.
+	// However, it is not later than the stop time.
+	// Note: This should not be called while a generation is open.
+
+	private double find_time_completed () {
+
+		// Latest time we can report is stop time
+
+		double result = cat_builder.get_cat_stop_time();
+
+		// Check generations from last to first
+
+		int cur_i_gen = cat_builder.get_gen_count();
+
+		for (;;) {
+			--cur_i_gen;
+
+			// Stop if at seed generation, and use the start time
+
+			if (cur_i_gen <= 0) {
+				result = Math.min (result, cat_params.tbegin);
+				break;
+			}
+
+			// Get the size of the current generation
+
+			int cur_gen_size = cat_builder.get_gen_size (cur_i_gen);
+
+			// If it's non-empty ...
+
+			if (cur_gen_size > 0) {
+
+				// Scan the current generation ...
+
+				for (int cur_j_rup = 0; cur_j_rup < cur_gen_size; ++cur_j_rup) {
+
+					// Get the rupture, time only, in the current generation
+
+					cat_builder.get_rup_time (cur_i_gen, cur_j_rup, cur_rup);
+
+					// Accumulate the time
+
+					if (cur_rup.t_day < result) {
+						result = cur_rup.t_day;
+					}
+				}
+
+				// Stop
+
+				break;
+			}
+		}
+
+		return result;
+	}
+
+
+
+
 	// Calculate the next generation.
 	// Returns the number of earthquakes in the new generation.
 	// If the return value is zero, then no generation was added,
@@ -217,6 +280,371 @@ public class OECatalogGenerator {
 	// setup), you must create the first generation to seed the catalog.
 
 	public int calc_next_gen () {
+
+		// The next generation number is the current number of generations
+
+		int next_i_gen = cat_builder.get_gen_count();
+
+		// The current generation number is the last generation in the catalog
+
+		int cur_i_gen = next_i_gen - 1;
+
+		// Get information for the current generation
+
+		cat_builder.get_gen_info (cur_i_gen, cur_gen_info);
+
+		// Initialize information for the next generation
+
+		next_gen_info.clear();
+
+		// Get the size of the current generation
+
+		int cur_gen_size = cat_builder.get_gen_size (cur_i_gen);
+
+		// It shouldn't be zero, but if it is, don't create another one
+
+		if (cur_gen_size == 0) {
+			return 0;
+		}
+
+		// Ensure workspace arrays are large enough for the current generation
+
+		if (cur_gen_size > workspace_capacity) {
+			do {
+				workspace_capacity = workspace_capacity * 2;
+			} while (cur_gen_size > workspace_capacity);
+
+			work_omori_rate = new double[workspace_capacity];
+			work_child_count = new int[workspace_capacity];
+		}
+
+		// The effective end time is the stop time, but not after the configured end time
+
+		double eff_tend = Math.min (cat_params.tend, cat_builder.get_cat_stop_time());
+
+		// Stop if the effective end time is before the configured start time, within epsilon
+
+		if (eff_tend <= cat_params.tbegin + cat_params.teps) {
+			return 0;
+		}
+
+		//--- Determine the Omori rate for each rupture, and the size and minimum magnitude of the next generation
+
+		// Scan the current generation ...
+
+		double total_omori_rate = 0.0;
+
+		for (int cur_j_rup = 0; cur_j_rup < cur_gen_size; ++cur_j_rup) {
+
+			// Get the rupture in the current generation, time and productivity only
+
+			cat_builder.get_rup_time_prod (cur_i_gen, cur_j_rup, cur_rup);
+
+			// Calculate its expected rate in the forecast interval
+			// Note omori_rate_shifted returns zero if t0 > t2 - teps
+
+			double omori_rate = cur_rup.k_prod * OERandomGenerator.omori_rate_shifted (
+				cat_params.p,			// p
+				cat_params.c,			// c
+				cur_rup.t_day,			// t0
+				cat_params.teps,		// teps
+				cat_params.tbegin,		// t1
+				eff_tend				// t2
+				);
+
+			// Accumulate the total
+
+			total_omori_rate += omori_rate;
+			work_omori_rate[cur_j_rup] = total_omori_rate;
+
+			// Initialize child count
+
+			work_child_count[cur_j_rup] = 0;
+		}
+
+		// To avoid divide-by-zero, stop if total rate is extremely small
+		// (Note that OERandomGenerator.gr_inv_rate will not overflow even if
+		// the requested rate is very large, because its return is logarithmic)
+
+		if (total_omori_rate < TINY_OMORI_RATE) {
+			return 0;
+		}
+
+		// Get expected count and magnitude range for next generation,
+		// adjusted so that the expected size of the next generation
+		// equals the target size
+
+		double expected_count = (double)(cat_params.gen_size_target);
+		double next_mag_min = OERandomGenerator.gr_inv_rate (
+			cat_params.b,						// b
+			cat_params.mref,					// mref
+			cat_params.mag_max_sim,				// m2
+			expected_count / total_omori_rate	// rate
+			);
+
+		// If min magnitude is outside allowable range, bring it into range
+
+		if (next_mag_min < cat_params.mag_min_lo) {
+			next_mag_min = cat_params.mag_min_lo;
+			expected_count = total_omori_rate * OERandomGenerator.gr_rate (
+				cat_params.b,					// b
+				cat_params.mref,				// mref
+				next_mag_min,					// m1
+				cat_params.mag_max_sim			// m2
+				);
+		}
+
+		else if (next_mag_min > cat_params.mag_min_hi) {
+			next_mag_min = cat_params.mag_min_hi;
+			expected_count = total_omori_rate * OERandomGenerator.gr_rate (
+				cat_params.b,					// b
+				cat_params.mref,				// mref
+				next_mag_min,					// m1
+				cat_params.mag_max_sim			// m2
+				);
+		}
+
+		// Very small expected counts are treated as zero
+
+		if (expected_count < SMALL_EXPECTED_COUNT) {
+			return 0;
+		}
+
+		// If the generation is too large ...
+
+		if (cat_params.max_cat_size > 0 && expected_count > (double)(cat_params.max_cat_size)) {
+			cat_builder.set_cat_stop_time (find_time_completed());
+			cat_builder.set_cat_result_code (OEConstants.CAT_RESULT_GEN_TOO_LARGE);
+			return 0;
+		}
+
+		// The size of the next generation is a Poisson random variable
+		// with the expected value
+
+		int next_gen_size = rangen.poisson_sample_checked (expected_count);
+
+		// If it's zero, we're done
+
+		if (next_gen_size <= 0) {
+			return 0;
+		}
+
+		// If the catalog is too large ...
+
+		if (cat_params.max_cat_size > 0 && cat_builder.size() > cat_params.max_cat_size) {
+			cat_builder.set_cat_stop_time (find_time_completed());
+			cat_builder.set_cat_result_code (OEConstants.CAT_RESULT_CAT_TOO_LARGE);
+			return 0;
+		}
+
+		// If there are too many generations ...
+
+		if (cat_params.gen_count_max > 0 && next_i_gen >= cat_params.gen_count_max) {
+			cat_builder.set_cat_stop_time (find_time_completed());
+			cat_builder.set_cat_result_code (OEConstants.CAT_RESULT_TOO_MANY_GEN);
+			return 0;
+		}
+
+		//--- Determine stop time as minimum time of child ruptures above our maximum magnitude
+
+		// The stop time we use to discard generated ruptures
+
+		double stop_time = eff_tend;
+		double stop_time_minus_epsilon = stop_time - cat_params.teps;
+
+		// If we are checking for early termination ...
+
+		if (cat_params.mag_excess > cat_params.mag_eps) {
+
+			// Get the expected number of ruptures to check, using the ratio of
+			// the G-R rates for our magnitude range and for the above-max magnitude range
+			// (stopping occurs when there would be a simulated aftershock with
+			// above-max magnitude).
+
+			double expected_stop_checks;
+
+			// If unbounded above-max magnitude range ...
+
+			if (cat_params.mag_excess >= OEConstants.NO_MAG_POS_CHECK) {
+				expected_stop_checks = expected_count * OERandomGenerator.gr_ratio_rate_unb_target (
+					cat_params.b,									// b
+					next_mag_min,									// sm1
+					cat_params.mag_max_sim,							// sm2
+					cat_params.mag_max_sim							// tm1
+					);
+			}
+
+			// Otherwise, bounded above-max magnitude range ...
+
+			else {
+				expected_stop_checks = expected_count * OERandomGenerator.gr_ratio_rate (
+					cat_params.b,									// b
+					next_mag_min,									// sm1
+					cat_params.mag_max_sim,							// sm2
+					cat_params.mag_max_sim,							// tm1
+					cat_params.mag_max_sim + cat_params.mag_excess	// tm2
+					);
+			}
+
+			// The the number of stop checks is a Poisson random variable
+			// with the expected value
+
+			int stop_check_count = rangen.poisson_sample_checked (expected_stop_checks);
+
+			// Distribute the child earthquakes over the possible parents
+			// with probability proportional to each parent's expected rate
+
+			for (int n = 0; n < stop_check_count; ++n) {
+				int i_parent = rangen.cumulative_sample (work_omori_rate, cur_gen_size);
+
+				// Get the rupture, time only, in the current generation
+
+				cat_builder.get_rup_time (cur_i_gen, i_parent, cur_rup);
+
+				// If the rupture is more than epsilon before the stop time ...
+
+				if (cur_rup.t_day < stop_time_minus_epsilon) {
+				
+					// Assign a time to this child
+
+					next_rup.t_day = rangen.omori_sample_shifted (
+						cat_params.p,			// p
+						cat_params.c,			// c
+						cur_rup.t_day,			// t0
+						cat_params.tbegin,		// t1
+						eff_tend				// t2
+						);
+
+					// If it's a new earliest stop time, save it
+
+					if (next_rup.t_day < stop_time) {
+						stop_time = next_rup.t_day;
+						stop_time_minus_epsilon = stop_time - cat_params.teps;
+						cat_builder.set_cat_stop_time (stop_time);
+					}
+				}
+			}
+		}
+
+		//--- Generate child earthquakes in the next generation
+
+		// Distribute the child earthquakes over the possible parents
+		// with probability proportional to each parent's expected rate
+
+		for (int n = 0; n < next_gen_size; ++n) {
+			int i_parent = rangen.cumulative_sample (work_omori_rate, cur_gen_size);
+			work_child_count[i_parent]++;
+		}
+
+		// Set up generation info for the next generation
+
+		next_gen_info.set (
+			next_mag_min,				// gen_mag_min,
+			cat_params.mag_max_sim		// gen_mag_max
+			);
+
+		// Begin a new generation
+
+		cat_builder.begin_generation (next_gen_info);
+
+		// Actual generation size
+
+		int actual_gen_size = 0;
+
+		// Scan the current generation ...
+
+		for (int cur_j_rup = 0; cur_j_rup < cur_gen_size; ++cur_j_rup) {
+
+			// Get the child count, and check it's non-zero
+
+			int child_count = work_child_count[cur_j_rup];
+			if (child_count > 0) {
+
+				// Get the rupture in the current generation, time and location only
+
+				cat_builder.get_rup_time_x_y (cur_i_gen, cur_j_rup, cur_rup);
+
+				// If the rupture is more than epsilon before the stop time ...
+
+				if (cur_rup.t_day < stop_time_minus_epsilon) {
+
+					// Loop over children
+
+					for (int n = 0; n < child_count; ++n) {
+				
+						// Assign a time to this child
+
+						next_rup.t_day = rangen.omori_sample_shifted (
+							cat_params.p,			// p
+							cat_params.c,			// c
+							cur_rup.t_day,			// t0
+							cat_params.tbegin,		// t1
+							eff_tend				// t2
+							);
+
+						// If the child time is before the stop time ...
+
+						if (next_rup.t_day < stop_time) {
+
+							// Assign a magnitude to this child
+
+							next_rup.rup_mag = rangen.gr_sample (
+								cat_params.b,				// b
+								next_gen_info.gen_mag_min,	// m1
+								next_gen_info.gen_mag_max	// m2
+								);
+
+							// Assign a productivity to this child
+
+							next_rup.k_prod = OEStatsCalc.calc_k_corr (
+								next_rup.rup_mag,		// m0
+								cat_params,				// cat_params
+								next_gen_info			// gen_info
+								);
+
+							// Assign a parent to this child
+
+							next_rup.rup_parent = cur_j_rup;
+
+							// Assign coordinates to this child
+							// (Since this is temporal ETAS, just copy the parent coordinates)
+
+							next_rup.x_km = cur_rup.x_km;
+							next_rup.y_km = cur_rup.y_km;
+
+							// Save the rupture
+
+							cat_builder.add_rup (next_rup);
+
+							// Count it
+
+							++actual_gen_size;
+						}
+					}
+				}
+			}
+		}
+
+		// End the generation
+
+		cat_builder.end_generation ();
+
+		// Return the size of the new generation
+
+		return actual_gen_size;
+	}
+
+
+
+
+	// Calculate the next generation.  [Original version]
+	// Returns the number of earthquakes in the new generation.
+	// If the return value is zero, then no generation was added,
+	// and the catalog has reached its end.
+	// Note: Before calling this function for the first time (after calling
+	// setup), you must create the first generation to seed the catalog.
+
+	public int calc_next_gen_original () {
 
 		// The next generation number is the current number of generations
 
@@ -267,9 +695,9 @@ public class OECatalogGenerator {
 
 		for (int cur_j_rup = 0; cur_j_rup < cur_gen_size; ++cur_j_rup) {
 
-			// Get the rupture in the current generation
+			// Get the rupture in the current generation, time and productivity
 
-			cat_builder.get_rup (cur_i_gen, cur_j_rup, cur_rup);
+			cat_builder.get_rup_time_prod (cur_i_gen, cur_j_rup, cur_rup);
 
 			// Calculate its expected rate in the forecast interval
 
@@ -379,9 +807,9 @@ public class OECatalogGenerator {
 			int child_count = work_child_count[cur_j_rup];
 			if (child_count > 0) {
 
-				// Get the rupture in the current generation
+				// Get the rupture in the current generation, time and location
 
-				cat_builder.get_rup (cur_i_gen, cur_j_rup, cur_rup);
+				cat_builder.get_rup_time_x_y (cur_i_gen, cur_j_rup, cur_rup);
 
 				// Loop over children
 
@@ -527,7 +955,7 @@ public class OECatalogGenerator {
 			0.0,			// t_day
 			mag_main,		// rup_mag
 			k_prod,			// k_prod
-			-1,				// rup_parent
+			RUPPAR_SEED,	// rup_parent
 			0.0,			// x_km
 			0.0				// y_km
 		);
@@ -690,7 +1118,7 @@ public class OECatalogGenerator {
 					0.0,			// t_day
 					mag_main,		// rup_mag
 					k_prod,			// k_prod
-					-1,				// rup_parent
+					RUPPAR_SEED,	// rup_parent
 					0.0,			// x_km
 					0.0				// y_km
 				);
@@ -837,7 +1265,7 @@ public class OECatalogGenerator {
 					0.0,			// t_day
 					mag_main,		// rup_mag
 					k_prod,			// k_prod
-					-1,				// rup_parent
+					RUPPAR_SEED,	// rup_parent
 					0.0,			// x_km
 					0.0				// y_km
 				);
@@ -979,7 +1407,7 @@ public class OECatalogGenerator {
 					0.0,			// t_day
 					mag_main,		// rup_mag
 					k_prod,			// k_prod
-					-1,				// rup_parent
+					RUPPAR_SEED,	// rup_parent
 					0.0,			// x_km
 					0.0				// y_km
 				);
@@ -1126,7 +1554,7 @@ public class OECatalogGenerator {
 					0.0,			// t_day
 					mag_main,		// rup_mag
 					k_prod,			// k_prod
-					-1,				// rup_parent
+					RUPPAR_SEED,	// rup_parent
 					0.0,			// x_km
 					0.0				// y_km
 				);
@@ -1291,7 +1719,7 @@ public class OECatalogGenerator {
 					0.0,			// t_day
 					mag_main,		// rup_mag
 					k_prod,			// k_prod
-					-1,				// rup_parent
+					RUPPAR_SEED,	// rup_parent
 					0.0,			// x_km
 					0.0				// y_km
 				);
@@ -1456,7 +1884,7 @@ public class OECatalogGenerator {
 					0.0,			// t_day
 					mag_main,		// rup_mag
 					k_prod,			// k_prod
-					-1,				// rup_parent
+					RUPPAR_SEED,	// rup_parent
 					0.0,			// x_km
 					0.0				// y_km
 				);

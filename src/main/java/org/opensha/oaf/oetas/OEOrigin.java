@@ -24,6 +24,8 @@ import org.opensha.oaf.oetas.fit.OEMagCompFn;
 
 import static org.opensha.oaf.oetas.OEConstants.C_MILLIS_PER_DAY;
 
+import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
+
 import org.opensha.oaf.aafs.ForecastMainshock;
 import org.opensha.oaf.aafs.ForecastResults;
 
@@ -261,13 +263,13 @@ public class OEOrigin implements AbsRelTimeLocConverter {
 	// Parameters:
 	//  obs_rup = Observed rupture.
 	//  etas_rup = Structure to receive ETAS rupture.
-	// Note: The productivity is set to zero, and the parent is set to -1.
+	// Note: The productivity is set to zero, and the parent is set to RUPPAR_SEED == -1.
 
 	public void convert_obs_to_etas (ObsEqkRupture obs_rup, OERupture etas_rup) {
 		double t_day = ((double)(obs_rup.getOriginTime() - origin_time)) / C_MILLIS_PER_DAY;
 		double rup_mag = obs_rup.getMag();
 		double k_prod = 0.0;
-		int rup_parent = -1;
+		int rup_parent = RUPPAR_SEED;
 
 		double x_km;
 		double y_km;
@@ -375,7 +377,7 @@ public class OEOrigin implements AbsRelTimeLocConverter {
 
 				// Get the rupture
 
-				etas_cat.get_rup (i_gen, j_rup, etas_rup);
+				etas_cat.get_rup_full (i_gen, j_rup, etas_rup);
 
 				// If filter condition is satisfied ...
 
@@ -449,7 +451,7 @@ public class OEOrigin implements AbsRelTimeLocConverter {
 
 		if (i_mainshock >= 0) {
 			OERupture etas_rup = new OERupture();
-			etas_cat.get_rup (0, i_mainshock, etas_rup);
+			etas_cat.get_rup_full (0, i_mainshock, etas_rup);
 			mainshock = convert_etas_to_obs (etas_rup, catalog_event_id);
 		};
 
@@ -481,12 +483,12 @@ public class OEOrigin implements AbsRelTimeLocConverter {
 	//  obs_lat = Observed rupture latitude, in degrees.
 	//  obs_lon = Observed rupture longitude, in degrees.
 	//  etas_rup = Structure to receive ETAS rupture.
-	// Note: The productivity is set to zero, and the parent is set to -1.
+	// Note: The productivity is set to zero, and the parent is set to RUPPAR_SEED == -1.
 
 	public void convert_obs_to_etas (long obs_time, double rup_mag, double obs_lat, double obs_lon, OERupture etas_rup) {
 		double t_day = ((double)(obs_time - origin_time)) / C_MILLIS_PER_DAY;
 		double k_prod = 0.0;
-		int rup_parent = -1;
+		int rup_parent = RUPPAR_SEED;
 
 		double x_km;
 		double y_km;

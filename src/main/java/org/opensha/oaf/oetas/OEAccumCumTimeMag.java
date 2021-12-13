@@ -15,6 +15,8 @@ import static org.opensha.oaf.oetas.OEConstants.INFILL_METH_POISSON;
 import static org.opensha.oaf.oetas.OEConstants.INFILL_METH_STERILE;
 import static org.opensha.oaf.oetas.OEConstants.INFILL_METH_MAX;
 
+import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
+
 
 // Operational ETAS catalog accumulator for a cumulative time/magnitude grid.
 // Author: Michael Barall 01/18/2020.
@@ -1771,7 +1773,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 				0.0,			// t_day
 				mag_main,		// rup_mag
 				k_prod,			// k_prod
-				-1,				// rup_parent
+				RUPPAR_SEED,	// rup_parent
 				0.0,			// x_km
 				0.0				// y_km
 			);
@@ -1884,7 +1886,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			0.0,			// t_day
 			mag_main,		// rup_mag
 			k_prod,			// k_prod
-			-1,				// rup_parent
+			RUPPAR_SEED,	// rup_parent
 			0.0,			// x_km
 			0.0				// y_km
 		);
