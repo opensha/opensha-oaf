@@ -169,8 +169,8 @@
   "log_summary": "'/data/aafs/logs/'yyyy-MM'/'yyyy-MM-dd'-summary.log'",
   "comcat_url": "https://earthquake.usgs.gov/fdsnws/event/1/",
   "feed_url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/",
-  "comcat_dev_url": "https://dev-earthquake.cr.usgs.gov/fdsnws/event/1/",
-  "feed_dev_url": "https://dev-earthquake.cr.usgs.gov/earthquakes/feed/v1.0/detail/",
+  "comcat_dev_url": "https://staging-earthquake.usgs.gov/fdsnws/event/1/",
+  "feed_dev_url": "https://staging-earthquake.usgs.gov/earthquakes/feed/v1.0/detail/",
   "comcat_err_rate": 0.0,
   "comcat_exclude": [],
   "locat_bins": 0,
@@ -187,11 +187,6 @@
   "pdl_dev_senders": [
     {
       "host": "dev01-pdl01.cr.usgs.gov",
-      "port": 11235,
-      "connectTimeout": 15000
-    },
-    {
-      "host": "dev02-pdl01.cr.usgs.gov",
       "port": 11235,
       "connectTimeout": 15000
     }
