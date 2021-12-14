@@ -2,6 +2,7 @@ package org.opensha.oaf.pdl;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
 
 
 
@@ -9,6 +10,8 @@ import java.util.ArrayList;
 /**
  * Used to build a contents.xml file to include in a PDL product.
  * Author: Michael Barall 12/13/2021.
+ *
+ * This class can also, optionally, store the contents of all the files.
  *
  * In order for files to appear in the download section of the event page,
  * you have to supply a contents.xml file, with MIME type application/xml.
@@ -66,6 +69,10 @@ public class PDLContentsXmlBuilder {
 
 		public String mime_type;
 
+		// The file contents, or null if not supplied.
+
+		PDLProductFile file_contents;
+
 		// Constructor, given the filename and mime type.
 
 		public file_info (String filename, String mime_type) {
@@ -77,6 +84,22 @@ public class PDLContentsXmlBuilder {
 			}
 			this.filename = filename;
 			this.mime_type = mime_type;
+			this.file_contents = null;
+			return;
+		}
+
+		// Constructor, given the filename, mime type, and contents.
+
+		public file_info (String filename, String mime_type, PDLProductFile file_contents) {
+			if (filename == null || filename.isEmpty()) {
+				throw new IllegalArgumentException ("PDLContentsXmlBuilder.file_info.file_info: Filename is not specified");
+			}
+			if (mime_type == null || mime_type.isEmpty()) {
+				throw new IllegalArgumentException ("PDLContentsXmlBuilder.file_info.file_info: MIME type is not specified");
+			}
+			this.filename = filename;
+			this.mime_type = mime_type;
+			this.file_contents = file_contents;
 			return;
 		}
 
@@ -84,6 +107,15 @@ public class PDLContentsXmlBuilder {
 
 		public void append_string (StringBuilder sb) {
 			sb.append ("    <format href=\"" + filename + "\" type=\"" + mime_type + "\" />\n");
+			return;
+		}
+
+		// Append file contents to the collection.
+
+		public void append_contents (Collection<PDLProductFile> contents) {
+			if (file_contents != null) {
+				contents.add (file_contents);
+			}
 			return;
 		}
 	}
@@ -150,6 +182,15 @@ public class PDLContentsXmlBuilder {
 			sb.append ("  </file>\n");
 			return;
 		}
+
+		// Append file contents to the collection.
+
+		public void append_contents (Collection<PDLProductFile> contents) {
+			for (file_info file : files) {
+				file.append_contents (contents);
+			}
+			return;
+		}
 	}
 
 
@@ -196,7 +237,69 @@ public class PDLContentsXmlBuilder {
 		if (sections.isEmpty()) {
 			throw new IllegalStateException ("PDLContentsXmlBuilder.add_file: Attempt to add a file when there is no current section");
 		}
+		if (filename == null || filename.isEmpty()) {
+			throw new IllegalArgumentException ("PDLContentsXmlBuilder.add_file: Filename is not specified");
+		}
+		if (mime_type == null || mime_type.isEmpty()) {
+			throw new IllegalArgumentException ("PDLContentsXmlBuilder.add_file: MIME type is not specified");
+		}
 		sections.get(sections.size() - 1).add_file (new file_info (filename, mime_type));
+		return;
+	}
+
+
+
+
+	// Add a file to the current section.
+	// Parameters:
+	//  filename = The filename, cannot be null or blank.
+	//  mime_type = The mime type, cannot be null or blank.
+	//  file_contents = The file contents, or null if not supplied.
+	// Note: Various mime types are defined in PDLProductFile.
+
+	public void add_file (String filename, String mime_type, PDLProductFile file_contents) {
+		if (sections.isEmpty()) {
+			throw new IllegalStateException ("PDLContentsXmlBuilder.add_file: Attempt to add a file when there is no current section");
+		}
+		if (filename == null || filename.isEmpty()) {
+			throw new IllegalArgumentException ("PDLContentsXmlBuilder.add_file: Filename is not specified");
+		}
+		if (mime_type == null || mime_type.isEmpty()) {
+			throw new IllegalArgumentException ("PDLContentsXmlBuilder.add_file: MIME type is not specified");
+		}
+		sections.get(sections.size() - 1).add_file (new file_info (filename, mime_type, file_contents));
+		return;
+	}
+
+
+
+
+	// Add a file to the current section.
+	// Parameters:
+	//  filename = The filename, cannot be null or blank.
+	//  mime_type = The mime type, cannot be null or blank.
+	//  bytes = The file contents, cannot be null.
+	// Note: Various mime types are defined in PDLProductFile.
+
+	public void add_file (String filename, String mime_type, byte[] bytes) {
+		PDLProductFile file_contents = (new PDLProductFile()).set_bytes (bytes, filename, mime_type);
+		add_file (filename, mime_type, file_contents);
+		return;
+	}
+
+
+
+
+	// Add a file to the current section.
+	// Parameters:
+	//  filename = The filename, cannot be null or blank.
+	//  mime_type = The mime type, cannot be null or blank.
+	//  text = The file contents, cannot be null.
+	// Note: Various mime types are defined in PDLProductFile.
+
+	public void add_file (String filename, String mime_type, String text) {
+		PDLProductFile file_contents = (new PDLProductFile()).set_bytes (text, filename, mime_type);
+		add_file (filename, mime_type, file_contents);
 		return;
 	}
 
@@ -227,6 +330,32 @@ public class PDLContentsXmlBuilder {
 	public PDLProductFile make_product_file_contents_xml () {
 		return (new PDLProductFile()).set_bytes (
 			toString(), PDLProductFile.CONTENTS_XML, PDLProductFile.APPLICATION_XML);
+	}
+
+
+
+
+	// Append all file contents to the collection.
+	// The contents.xml itself is the first element added to the collection.
+	// Then, other file contents are added in the order they were added here.
+
+	public void append_all_contents (Collection<PDLProductFile> contents) {
+		contents.add (make_product_file_contents_xml());
+		for (section_info section : sections) {
+			section.append_contents (contents);
+		}
+		return;
+	}
+
+
+
+
+	// Make an array containing all the file contents.
+
+	public PDLProductFile[] make_product_file_array () {
+		ArrayList<PDLProductFile> contents = new ArrayList<PDLProductFile>();
+		append_all_contents (contents);
+		return contents.toArray (new PDLProductFile[0]);
 	}
 
 
@@ -282,6 +411,10 @@ public class PDLContentsXmlBuilder {
 				// Make the product file, just to see it goes without exception
 
 				PDLProductFile product_file = content_builder.make_product_file_contents_xml();
+
+				// Make the product file array, just to see it goes without exception
+
+				PDLProductFile[] product_file_array = content_builder.make_product_file_array();
 
 			} catch (Exception e) {
 				e.printStackTrace();
