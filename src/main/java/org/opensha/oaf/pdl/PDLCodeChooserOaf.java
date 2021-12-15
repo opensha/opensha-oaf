@@ -5,7 +5,8 @@ import java.util.List;
 import java.util.Date;
 
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
-import org.opensha.oaf.comcat.ComcatOAFProduct;
+//import org.opensha.oaf.comcat.ComcatOAFProduct;
+import org.opensha.oaf.comcat.ComcatProductOaf;
 import org.opensha.oaf.comcat.GeoJsonUtils;
 import org.opensha.commons.data.comcat.ComcatException;
 
@@ -95,7 +96,7 @@ public class PDLCodeChooserOaf {
 	// Otherwise, the product is deleted using the code from within the product.
 	// Throws an exception in case of error.
 
-	public static void deleteOafProduct (ComcatOAFProduct oafProduct,
+	public static void deleteOafProduct (ComcatProductOaf oafProduct,
 			String eventNetwork, String eventCode, boolean isReviewed) throws Exception {
 
 		// If not our source ID, do nothing
@@ -149,7 +150,7 @@ public class PDLCodeChooserOaf {
 	// first product first could permit another about-to-be-deleted product to
 	// briefly appear on the event page.
 
-	public static void deleteOafProducts (List<ComcatOAFProduct> oafProducts, int keep,
+	public static void deleteOafProducts (List<ComcatProductOaf> oafProducts, int keep,
 			String eventNetwork, String eventCode, boolean isReviewed) throws Exception {
 
 		// Delete products from last to first
@@ -255,7 +256,7 @@ public class PDLCodeChooserOaf {
 
 		// Get the list of OAF products
 
-		List<ComcatOAFProduct> oafProducts = ComcatOAFProduct.make_list_from_gj (my_geojson);
+		List<ComcatProductOaf> oafProducts = ComcatProductOaf.make_list_from_gj (my_geojson);
 
 		// Index of the most recent product, with correct source
 
@@ -272,7 +273,7 @@ public class PDLCodeChooserOaf {
 		// Loop over products to find indexes ...
 
 		for (int k = 0; k < oafProducts.size(); ++k) {
-			ComcatOAFProduct oafProduct = oafProducts.get (k);
+			ComcatProductOaf oafProduct = oafProducts.get (k);
 
 			// If the product is for our source ...
 
@@ -500,7 +501,7 @@ public class PDLCodeChooserOaf {
 
 		// Get the list of OAF products
 
-		List<ComcatOAFProduct> oafProducts = ComcatOAFProduct.make_list_from_gj (my_geojson);
+		List<ComcatProductOaf> oafProducts = ComcatProductOaf.make_list_from_gj (my_geojson);
 
 		// If no OAF products, nothing to delete
 
@@ -519,7 +520,7 @@ public class PDLCodeChooserOaf {
 		// Loop over products to find indexes ...
 
 		for (int k = 0; k < oafProducts.size(); ++k) {
-			ComcatOAFProduct oafProduct = oafProducts.get (k);
+			ComcatProductOaf oafProduct = oafProducts.get (k);
 
 			// If the product is for our source ...
 
@@ -674,7 +675,7 @@ public class PDLCodeChooserOaf {
 
 		// Get the list of OAF products
 
-		List<ComcatOAFProduct> oafProducts = ComcatOAFProduct.make_list_from_gj (my_geojson);
+		List<ComcatProductOaf> oafProducts = ComcatProductOaf.make_list_from_gj (my_geojson);
 
 		// If no OAF products, nothing to delete
 
@@ -701,7 +702,7 @@ public class PDLCodeChooserOaf {
 		// Loop over products to find indexes ...
 
 		for (int k = 0; k < oafProducts.size(); ++k) {
-			ComcatOAFProduct oafProduct = oafProducts.get (k);
+			ComcatProductOaf oafProduct = oafProducts.get (k);
 
 			// If the product is for our source ...
 
@@ -891,7 +892,7 @@ public class PDLCodeChooserOaf {
 
 		// Get the list of OAF products
 
-		List<ComcatOAFProduct> oafProducts = ComcatOAFProduct.make_list_from_gj (my_geojson);
+		List<ComcatProductOaf> oafProducts = ComcatProductOaf.make_list_from_gj (my_geojson);
 
 		// Index of the most recent product, with correct source
 
@@ -904,7 +905,7 @@ public class PDLCodeChooserOaf {
 		// Loop over products to find indexes ...
 
 		for (int k = 0; k < oafProducts.size(); ++k) {
-			ComcatOAFProduct oafProduct = oafProducts.get (k);
+			ComcatProductOaf oafProduct = oafProducts.get (k);
 
 			// If the product is for our source ...
 

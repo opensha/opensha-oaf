@@ -50,7 +50,7 @@ import gov.usgs.earthquake.event.JsonEvent;
  * A Comcat OAF product, as retrieved from Comcat.
  * Author: Michael Barall 02/25/2020.
  *
- * This class may eventually replace the older ComcatOAFProduct.
+ * This class replaces the deprecated ComcatOAFProduct.
  * It inherits from the common ComcatProduct class.
  *
  * In this class, the variable inlineText contains the JSON forecast.

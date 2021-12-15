@@ -141,7 +141,8 @@ import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.GUICmd;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
-import org.opensha.oaf.comcat.ComcatOAFProduct;
+//import org.opensha.oaf.comcat.ComcatOAFProduct;
+import org.opensha.oaf.comcat.ComcatProductOaf;
 
 import org.json.simple.JSONObject;
 
@@ -876,7 +877,7 @@ public class RJGUIModel extends RJGUIComponent {
 		// Display list of OAF products for this mainshock
 
 		if (fcmain.mainshock_geojson != null) {
-			List<ComcatOAFProduct> oaf_product_list = ComcatOAFProduct.make_list_from_gj (fcmain.mainshock_geojson);
+			List<ComcatProductOaf> oaf_product_list = ComcatProductOaf.make_list_from_gj (fcmain.mainshock_geojson);
 			for (int k = 0; k < oaf_product_list.size(); ++k) {
 				System.out.println ("OAF product: " + oaf_product_list.get(k).summary_string());
 			}
