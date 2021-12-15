@@ -36,7 +36,7 @@ public class PDLProductBuilderOaf {
 	 * @param eventNetwork = Network identifier for the event (for example, "us").
 	 * @param eventCode = Network code for the event (for example, "10006jv5").
 	 * @param isReviewed = True if this product has been reviewed.
-	 * @param jsonText = JSON text that contains the product.
+	 * @param jsonText = JSON text that contains the product, can be null or empty if no inline product is required.
 	 * @param modifiedTime = Modification time, in milliseconds since the epoch, or 0L if none.
 	 * @param productFiles = An optional list of additional product files to attach.
 	 * Note: At present, modifiedTime is ignored, and the time is always set to "now".
@@ -95,9 +95,10 @@ public class PDLProductBuilderOaf {
 		if (eventCode == null || eventCode.isEmpty()) {
 			throw new IllegalArgumentException ("PDLProductBuilderOaf: Event network code is not specified");
 		}
-		if (jsonText == null || jsonText.isEmpty()) {
-			throw new IllegalArgumentException ("PDLProductBuilderOaf: JSON text for product content is not specified");
-		}
+
+		//if (jsonText == null || jsonText.isEmpty()) {
+		//	throw new IllegalArgumentException ("PDLProductBuilderOaf: JSON text for product content is not specified");
+		//}
 
 		// Announce it
 
@@ -139,9 +140,11 @@ public class PDLProductBuilderOaf {
 
 		attachPropertiesToProduct (product, eventNetwork, eventCode, isReviewed);
 
-		// Attach content
+		// Attach content, if inline content is requested
 
-		attachByteContentToProduct (product, jsonText, modifiedTime);
+		if (!( jsonText == null || jsonText.isEmpty() )) {
+			attachByteContentToProduct (product, jsonText, modifiedTime);
+		}
 
 		// Attach any additional product files
 

@@ -100,14 +100,15 @@ public class ComcatProductOaf extends ComcatProduct {
 		}
 
 		// For OAF, there must be in-line text for a non-delete product
+		// (We now allow OAF products with no in-line text)
 
-		if (!( isDelete )) {
-
-			if (inlineText == null || inlineText.isEmpty()) {
-				return false;
-			}
-
-		}
+		//if (!( isDelete )) {
+		//
+		//	if (inlineText == null || inlineText.isEmpty()) {
+		//		return false;
+		//	}
+		//
+		//}
 
 		return true;
 	}

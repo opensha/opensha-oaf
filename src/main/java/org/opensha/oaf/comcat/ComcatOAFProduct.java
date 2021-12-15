@@ -37,6 +37,7 @@ import gov.usgs.earthquake.event.JsonEvent;
 
 
 /**
+ * [DEPRECATED - Replaced by ComcatProductOaf]
  * An OAF product, as retrieved from Comcat.
  * Author: Michael Barall 12/06/2018.
  */
@@ -70,7 +71,7 @@ public class ComcatOAFProduct {
 	
 	public long updateTime;
 	
-	// JSON text that contains the product (null if this is a delete product).
+	// JSON text that contains the product (null if this is a delete product)(null or empty if no inline product).
 	
 	public String jsonText;
 
@@ -166,9 +167,10 @@ public class ComcatOAFProduct {
 		if (!( isDelete )) {
 
 			jsonText = GeoJsonUtils.getString (gj_product, "contents", "", "bytes");
-			if (jsonText == null || jsonText.isEmpty()) {
-				return false;
-			}
+
+			//if (jsonText == null || jsonText.isEmpty()) {
+			//	return false;
+			//}
 
 		}
 
