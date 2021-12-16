@@ -27,6 +27,7 @@ import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 import org.opensha.oaf.pdl.PDLSender;
 import gov.usgs.earthquake.product.Product;
 import org.opensha.oaf.pdl.PDLCodeChooserOaf;
+import org.opensha.oaf.pdl.PDLContentsXmlBuilder;
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
@@ -338,43 +339,52 @@ public class ForecastData {
 	public static final String FORECAST_DATA_FILENAME = "forecast_data.json";
 
 
+	// Append the forecast data file to PDL contents.
 
-
-	// Make a contents.xml file for PDL.
-
-	public String make_contents_xml () {
-		StringBuilder result = new StringBuilder();
-
-		result.append ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-		result.append ("<contents>\n");
-		result.append ("  <file title=\"Forecast Data\" id=\"forecastData\">\n");
-		result.append ("    <caption><![CDATA[Technical data and parameters used to compute the forecast]]></caption>\n");
-		result.append ("    <format href=\"" + FORECAST_DATA_FILENAME + "\" type=\"application/json\" />\n");
-		result.append ("  </file>\n");
-		result.append ("</contents>\n");
-		
-		return result.toString();
+	public static void attach_forecast_data (PDLContentsXmlBuilder content_builder, String text) {
+		content_builder.begin_section ("Forecast Data", "forecastData", "Technical data and parameters used to compute the forecast");
+		content_builder.add_file (FORECAST_DATA_FILENAME, PDLProductFile.APPLICATION_JSON, text);
+		return;
 	}
 
 
 
 
-	// Make the PDL product file for contents.xml.
+//	// Make a contents.xml file for PDL.
+//
+//	public String make_contents_xml () {
+//		StringBuilder result = new StringBuilder();
+//
+//		result.append ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+//		result.append ("<contents>\n");
+//		result.append ("  <file title=\"Forecast Data\" id=\"forecastData\">\n");
+//		result.append ("    <caption><![CDATA[Technical data and parameters used to compute the forecast]]></caption>\n");
+//		result.append ("    <format href=\"" + FORECAST_DATA_FILENAME + "\" type=\"application/json\" />\n");
+//		result.append ("  </file>\n");
+//		result.append ("</contents>\n");
+//		
+//		return result.toString();
+//	}
 
-	public PDLProductFile make_product_file_contents_xml () {
-		return (new PDLProductFile()).set_bytes (
-			make_contents_xml(), PDLProductFile.CONTENTS_XML, PDLProductFile.APPLICATION_XML);
-	}
+
+
+
+//	// Make the PDL product file for contents.xml.
+//
+//	public PDLProductFile make_product_file_contents_xml () {
+//		return (new PDLProductFile()).set_bytes (
+//			make_contents_xml(), PDLProductFile.CONTENTS_XML, PDLProductFile.APPLICATION_XML);
+//	}
 
 
 
 
-	// Make the PDL product file for forecast data.
-
-	public PDLProductFile make_product_file_forecast_data () {
-		return (new PDLProductFile()).set_bytes (
-			to_json(), FORECAST_DATA_FILENAME, PDLProductFile.APPLICATION_JSON);
-	}
+//	// Make the PDL product file for forecast data.
+//
+//	public PDLProductFile make_product_file_forecast_data () {
+//		return (new PDLProductFile()).set_bytes (
+//			to_json(), FORECAST_DATA_FILENAME, PDLProductFile.APPLICATION_JSON);
+//	}
 
 
 
@@ -441,23 +451,36 @@ public class ForecastData {
 			return null;
 		}
 
-		// Save the chosed code
+		// Save the chosen code
 
 		pdl_event_id = chosenCode;
 
-		// The contents.xml file
+		// The content builder
 
-		PDLProductFile file_contents_xml = make_product_file_contents_xml();
+		PDLContentsXmlBuilder content_builder = new PDLContentsXmlBuilder();
 
-		// The forecast data file
+		// If we want forecast.json, attach it
 
-		PDLProductFile file_forecast_data = make_product_file_forecast_data();
+		if (PDLProductBuilderOaf.use_forecast_json()) {
+			PDLProductBuilderOaf.attach_forecast (content_builder, jsonText);
+		}
+
+		// Attach the forecast data file
+
+		attach_forecast_data (content_builder, to_json());
+
+		// Get the inline text
+
+		String inlineText = null;
+		if (PDLProductBuilderOaf.use_inline_text()) {
+			inlineText = jsonText;
+		}
 
 		// Build the product
 
 		Product product = PDLProductBuilderOaf.createProduct (
-			chosenCode, eventNetwork, eventCode, isReviewed, jsonText, modifiedTime,
-			file_contents_xml, file_forecast_data);
+			chosenCode, eventNetwork, eventCode, isReviewed, inlineText, modifiedTime,
+			content_builder.make_product_file_array());
 	
 		return product;
 	}

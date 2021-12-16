@@ -42,6 +42,11 @@ public class PDLProductBuilderOaf {
 	 * Note: At present, modifiedTime is ignored, and the time is always set to "now".
 	 * @return
 	 *     The product that was created
+	 * Note: If there are no attached files, then this is requesting a minimal product.
+	 * In this case, jsonText must be non-null and non-empty.  Furthermore, if use_forecast_json()
+	 * is true, then this function creates the forecast.json and calls itself recursively.
+	 * Note: If there are attached files, then the caller is responsible for examining
+	 * use_forecast_json and use_inline_text() and setting arguments appropriately.
 	 */
 	public static Product createProduct (String eventID, String eventNetwork, String eventCode,
 			boolean isReviewed, String jsonText, long modifiedTime, PDLProductFile... productFiles) throws Exception {
@@ -96,9 +101,39 @@ public class PDLProductBuilderOaf {
 			throw new IllegalArgumentException ("PDLProductBuilderOaf: Event network code is not specified");
 		}
 
-		//if (jsonText == null || jsonText.isEmpty()) {
-		//	throw new IllegalArgumentException ("PDLProductBuilderOaf: JSON text for product content is not specified");
-		//}
+		// If requesting a minimal product ...
+
+		if (productFiles.length == 0) {
+
+			// Check we have forecast text
+
+			if (jsonText == null || jsonText.isEmpty()) {
+				throw new IllegalArgumentException ("PDLProductBuilderOaf: JSON text for product content is not specified");
+			}
+
+			// If we need to create forecast.json ...
+
+			if (use_forecast_json()) {
+
+				// Build the forecast.json and associated contents.xml
+
+				PDLContentsXmlBuilder content_builder = new PDLContentsXmlBuilder();
+				attach_forecast (content_builder, jsonText);
+
+				// Get the inline text
+
+				String inlineText = null;
+				if (use_inline_text()) {
+					inlineText = jsonText;
+				}
+
+				// Recursive call to create the product
+
+				return createProduct (
+					eventID, eventNetwork, eventCode, isReviewed, inlineText, modifiedTime,
+					content_builder.make_product_file_array());
+			}
+		}
 
 		// Announce it
 
@@ -461,6 +496,36 @@ public class PDLProductBuilderOaf {
 		}
 
 		return;
+	}
+
+
+
+
+	// Filename that we use for the forecast.
+
+	public static final String FORECAST_FILENAME = "forecast.json";
+
+
+	// Append the forecast file to PDL contents.
+
+	public static void attach_forecast (PDLContentsXmlBuilder content_builder, String text) {
+		content_builder.begin_section ("Machine-Readable Forecast", "forecast", "The forecast in a machine-readable format");
+		content_builder.add_file (FORECAST_FILENAME, PDLProductFile.APPLICATION_JSON, text);
+		return;
+	}
+
+
+	// Return true if OAF products should include forecast.json.
+
+	public static boolean use_forecast_json () {
+		return true;
+	}
+
+
+	// Return true if OAF products should include inline text.
+
+	public static boolean use_inline_text () {
+		return true;
 	}
 
 }
