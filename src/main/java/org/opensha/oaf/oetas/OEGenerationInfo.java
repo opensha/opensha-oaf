@@ -107,6 +107,17 @@ public class OEGenerationInfo {
 
 
 
+	// Produce a one-line string containing our contents (not newline-terminated).
+	// This version prepends an index, size, and valid size.
+
+	public String one_line_string (int i_gen, int gen_size, int gen_valid_size) {
+		return String.format ("%d: size=%d, valid_size=%d, mag_min=%.3f, mag_max=%.3f",
+			i_gen, gen_size, gen_valid_size, gen_mag_min, gen_mag_max);
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.

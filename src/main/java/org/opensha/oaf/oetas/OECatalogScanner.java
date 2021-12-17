@@ -263,10 +263,15 @@ public class OECatalogScanner implements OECatalogExaminer {
 
 			comm.setup_rup_from_view (view, j_rup);
 
-			// Pass seed rupture to the consumers
+			// If it is a valid rupture (before the stop time) ...
 
-			for (OECatalogConsumer consumer : consumers) {
-				consumer.next_seed_rup (comm);
+			if (comm.f_valid_rup) {
+
+				// Pass seed rupture to the consumers
+
+				for (OECatalogConsumer consumer : consumers) {
+					consumer.next_seed_rup (comm);
+				}
 			}
 		}
 
@@ -298,10 +303,15 @@ public class OECatalogScanner implements OECatalogExaminer {
 
 				comm.setup_rup_from_view (view, j_rup);
 
-				// Pass rupture to the consumers
+				// If it is a valid rupture (before the stop time) ...
 
-				for (OECatalogConsumer consumer : consumers) {
-					consumer.next_rup (comm);
+				if (comm.f_valid_rup) {
+
+					// Pass rupture to the consumers
+
+					for (OECatalogConsumer consumer : consumers) {
+						consumer.next_rup (comm);
+					}
 				}
 			}
 
@@ -373,6 +383,18 @@ public class OECatalogScanner implements OECatalogExaminer {
 			work_child_count = new int[workspace_capacity];
 		}
 
+		// The effective end time is the stop time, but not after the configured end time
+
+		double eff_tend = Math.min (comm.cat_params.tend, comm.cat_stop_time);
+
+		// Stop if the effective end time is before the configured start time, within epsilon
+
+		if (eff_tend <= comm.cat_params.tbegin + comm.cat_params.teps) {
+			return 0;
+		}
+
+		//--- Determine the Omori rate for each rupture
+
 		// Scan the current generation ...
 
 		double total_omori_rate = 0.0;
@@ -384,6 +406,7 @@ public class OECatalogScanner implements OECatalogExaminer {
 			view.get_rup_time_prod (cur_i_gen, cur_j_rup, cur_rup);
 
 			// Calculate its expected rate in the forecast interval
+			// Note omori_rate_shifted returns zero if t0 > t2 - teps
 
 			double omori_rate = cur_rup.k_prod * OERandomGenerator.omori_rate_shifted (
 				comm.cat_params.p,			// p
@@ -391,7 +414,7 @@ public class OECatalogScanner implements OECatalogExaminer {
 				cur_rup.t_day,				// t0
 				comm.cat_params.teps,		// teps
 				comm.cat_params.tbegin,		// t1
-				comm.cat_params.tend		// t2
+				eff_tend					// t2
 				);
 
 			// Accumulate the total
@@ -436,6 +459,12 @@ public class OECatalogScanner implements OECatalogExaminer {
 			return 0;
 		}
 
+		//--- Generate child earthquakes
+
+		// The stop time we use to discard generated ruptures
+
+		double stop_time_minus_epsilon = eff_tend - comm.cat_params.teps;
+
 		// Distribute the child earthquakes over the possible parents
 		// with probability proportional to each parent's expected rate
 
@@ -461,51 +490,56 @@ public class OECatalogScanner implements OECatalogExaminer {
 
 				view.get_rup_time_x_y (cur_i_gen, cur_j_rup, cur_rup);
 
-				// Loop over children
+				// If the rupture is more than epsilon before the stop time ...
 
-				for (int n = 0; n < child_count; ++n) {
+				if (cur_rup.t_day < stop_time_minus_epsilon) {
+
+					// Loop over children
+
+					for (int n = 0; n < child_count; ++n) {
 				
-					// Assign a time to this child
+						// Assign a time to this child
 
-					comm.rup.t_day = comm.rangen.omori_sample_shifted (
-						comm.cat_params.p,			// p
-						comm.cat_params.c,			// c
-						cur_rup.t_day,				// t0
-						comm.cat_params.tbegin,		// t1
-						comm.cat_params.tend		// t2
-						);
+						comm.rup.t_day = comm.rangen.omori_sample_shifted (
+							comm.cat_params.p,			// p
+							comm.cat_params.c,			// c
+							cur_rup.t_day,				// t0
+							comm.cat_params.tbegin,		// t1
+							eff_tend					// t2
+							);
 
-					// Assign a magnitude to this child
+						// Assign a magnitude to this child
 
-					comm.rup.rup_mag = comm.rangen.gr_sample (
-						comm.cat_params.b,			// b
-						comm.sterile_mag,			// m1
-						comm.gen_info.gen_mag_min	// m2
-						);
+						comm.rup.rup_mag = comm.rangen.gr_sample (
+							comm.cat_params.b,			// b
+							comm.sterile_mag,			// m1
+							comm.gen_info.gen_mag_min	// m2
+							);
 
-					// Assign a productivity to this child, zero for sterile
+						// Assign a productivity to this child, zero for sterile
 
-					comm.rup.k_prod = 0.0;
+						comm.rup.k_prod = 0.0;
 
-					// Assign a parent to this child
+						// Assign a parent to this child
 
-					comm.rup.rup_parent = cur_j_rup;
+						comm.rup.rup_parent = cur_j_rup;
 
-					// Assign coordinates to this child
-					// (Since this is temporal ETAS, just copy the parent coordinates)
+						// Assign coordinates to this child
+						// (Since this is temporal ETAS, just copy the parent coordinates)
 
-					comm.rup.x_km = cur_rup.x_km;
-					comm.rup.y_km = cur_rup.y_km;
+						comm.rup.x_km = cur_rup.x_km;
+						comm.rup.y_km = cur_rup.y_km;
 
-					// Pass rupture to the consumers
+						// Pass rupture to the consumers
 
-					for (OECatalogConsumer consumer : consumers) {
-						consumer.next_sterile_rup (comm);
+						for (OECatalogConsumer consumer : consumers) {
+							consumer.next_sterile_rup (comm);
+						}
+
+						// Advance sterile rupture index
+
+						comm.j_rup++;
 					}
-
-					// Advance sterile rupture index
-
-					comm.j_rup++;
 				}
 			}
 		}

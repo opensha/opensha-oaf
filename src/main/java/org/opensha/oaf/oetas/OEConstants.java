@@ -135,10 +135,37 @@ public class OEConstants {
 
 	// Catalog result codes.
 
+	public static final int CAT_RESULT_MIN = 0;				// Must be 0 so these can be used as array indexes
 	public static final int CAT_RESULT_OK = 0;				// Success
-	public static final int CAT_RESULT_CAT_TOO_LARGE = 1;	// Catalog is too large
-	public static final int CAT_RESULT_TOO_MANY_GEN = 2;	// Catalog has too many generations
-	public static final int CAT_RESULT_GEN_TOO_LARGE = 3;	// Generation is too large
+	public static final int CAT_RESULT_EARLY_STOP = 1;		// Success, but catalog stopped before end time
+	public static final int CAT_RESULT_CAT_TOO_LARGE = 2;	// Catalog is too large
+	public static final int CAT_RESULT_TOO_MANY_GEN = 3;	// Catalog has too many generations
+	public static final int CAT_RESULT_GEN_TOO_LARGE = 4;	// Generation is too large
+	public static final int CAT_RESULT_MAX = 4;
+
+	// Return true if the result code indicates success
+
+	public static boolean is_cat_result_success (int cat_result) {
+		switch (cat_result) {
+		case CAT_RESULT_OK:
+		case CAT_RESULT_EARLY_STOP:
+			return true;
+		}
+		return false;
+	}
+
+	// Return a string identifying the result code
+
+	public static String cat_result_to_string (int cat_result) {
+		switch (cat_result) {
+		case CAT_RESULT_OK: return "CAT_RESULT_OK";
+		case CAT_RESULT_EARLY_STOP: return "CAT_RESULT_EARLY_STOP";
+		case CAT_RESULT_CAT_TOO_LARGE: return "CAT_RESULT_CAT_TOO_LARGE";
+		case CAT_RESULT_TOO_MANY_GEN: return "CAT_RESULT_TOO_MANY_GEN";
+		case CAT_RESULT_GEN_TOO_LARGE: return "CAT_RESULT_GEN_TOO_LARGE";
+		}
+		return "CAT_RESULT_INVALID(" + cat_result + ")";
+	}
 
 	// Options for common Helmstetter parameters.
 

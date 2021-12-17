@@ -31,6 +31,11 @@ public interface OECatalogBuilder extends OECatalogView {
 
 	// public int size ();		// inherited
 
+	// Get the total number of ruptures in the catalog before the stop time.
+	// This cannot be called until after the catalog is fully built.
+
+	// public int valid_size ();		// inherited
+
 	// Get the number of generations in the catalog.
 
 	// public int get_gen_count ();		// inherited
@@ -40,6 +45,13 @@ public interface OECatalogBuilder extends OECatalogView {
 	//  i_gen = Generation number.
 
 	// public int get_gen_size (int i_gen);		// inherited
+
+	// Get the number of ruptures in the i-th generation before the stop time.
+	// Parameters:
+	//  i_gen = Generation number.
+	// This cannot be called until after the catalog is fully built.
+
+	// public int get_gen_valid_size (int i_gen);		// inherited
 
 	// Get information about the i-th generation in the catalog.
 	// Parameters:
@@ -93,7 +105,7 @@ public interface OECatalogBuilder extends OECatalogView {
 
 	// public double get_cat_stop_time ();		// inherited
 
-	// Get the catalog result code, CAT_RESULT_OK indicates success.
+	// Get the catalog result code, see OEConstants.CAT_RESULT_XXXX.
 
 	// public int get_cat_result_code ();		// inherited
 

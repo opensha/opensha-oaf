@@ -521,6 +521,7 @@ public class OECatalogGenerator {
 						stop_time = next_rup.t_day;
 						stop_time_minus_epsilon = stop_time - cat_params.teps;
 						cat_builder.set_cat_stop_time (stop_time);
+						cat_builder.set_cat_result_code (OEConstants.CAT_RESULT_EARLY_STOP);
 					}
 				}
 			}

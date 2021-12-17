@@ -84,6 +84,10 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	private int[] gen_size;
 
+	// Per-generation array containing the number of ruptures in the generation before the stop time.
+
+	private int[] gen_valid_size;
+
 	// Per-generation array containing the minimum magnitude for the generation.
 
 	private double[] gen_mag_min;
@@ -100,6 +104,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 		gen_capacity = INIT_GEN_CAPACITY;
 		gen_start = new int[INIT_GEN_CAPACITY];
 		gen_size = new int[INIT_GEN_CAPACITY];
+		gen_valid_size = new int[INIT_GEN_CAPACITY];
 		gen_mag_min = new double[INIT_GEN_CAPACITY];
 		gen_mag_max = new double[INIT_GEN_CAPACITY];
 		return;
@@ -135,6 +140,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 			gen_start = Arrays.copyOf (gen_start, gen_capacity);
 			gen_size = Arrays.copyOf (gen_size, gen_capacity);
+			gen_valid_size = Arrays.copyOf (gen_valid_size, gen_capacity);
 			gen_mag_min = Arrays.copyOf (gen_mag_min, gen_capacity);
 			gen_mag_max = Arrays.copyOf (gen_mag_max, gen_capacity);
 		}
@@ -150,6 +156,10 @@ public class OECatalogStorage implements OECatalogBuilder {
 	// The current total number of ruptures.
 
 	private int rup_count;
+
+	// The current total number of ruptures before the stop time.
+
+	private int rup_valid_count;
 
 	// The number of blocks currently allocated.
 
@@ -199,6 +209,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	private void init_rup () {
 		rup_count = 0;
+		rup_valid_count = 0;
 		rup_block_count = 0;
 		rup_block_capacity = INIT_RUP_BLOCK_COUNT;
 		t_day = new double[INIT_RUP_BLOCK_COUNT][];
@@ -215,6 +226,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	private void re_init_rup () {
 		rup_count = 0;
+		rup_valid_count = 0;
 		return;
 	}
 
@@ -344,6 +356,17 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 
 
+	// Get the total number of ruptures in the catalog before the stop time.
+	// This cannot be called until after the catalog is fully built.
+
+	@Override
+	public int valid_size () {
+		return rup_valid_count;
+	}
+
+
+
+
 	// Get the number of generations in the catalog.
 
 	@Override
@@ -361,6 +384,19 @@ public class OECatalogStorage implements OECatalogBuilder {
 	@Override
 	public int get_gen_size (int i_gen) {
 		return gen_size[i_gen];
+	}
+
+
+
+
+	// Get the number of ruptures in the i-th generation before the stop time.
+	// Parameters:
+	//  i_gen = Generation number.
+	// This cannot be called until after the catalog is fully built.
+
+	@Override
+	public int get_gen_valid_size (int i_gen) {
+		return gen_valid_size[i_gen];
 	}
 
 
@@ -493,7 +529,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 
 
-	// Get the catalog result code, CAT_RESULT_OK indicates success.
+	// Get the catalog result code, see OEConstants.CAT_RESULT_XXXX.
 
 	@Override
 	public int get_cat_result_code () {
@@ -544,6 +580,65 @@ public class OECatalogStorage implements OECatalogBuilder {
 			--gen_count;
 		}
 
+		// Assume all ruptures are valid
+
+		rup_valid_count = rup_count;
+
+		// If stop time is before end time, then the catalog ended early ...
+
+		if (cat_stop_time < cat_params.tend) {
+
+			// Initialize count
+
+			rup_valid_count = 0;
+
+			// Loop over generations
+
+			for (int i_gen = 0; i_gen < gen_count; ++i_gen) {
+
+				// Initialize count for this generation
+
+				int count = 0;
+
+				// Index for start of generation
+
+				int start_index = gen_start[i_gen];
+
+				int start_block = start_index >> RUP_BLOCK_SHIFT;
+				int start_offset = start_index & RUP_BLOCK_MASK;
+
+				// Index for end of generation
+
+				int end_index = gen_start[i_gen] + gen_size[i_gen];
+
+				int end_block = end_index >> RUP_BLOCK_SHIFT;
+				int end_offset = end_index & RUP_BLOCK_MASK;
+
+				// Loop over blocks within generation
+
+				for (int block = start_block; block <= end_block; ++block) {
+
+					// Loop over entries within block
+
+					int lo = ((block > start_block) ? 0 : start_offset);
+					int hi = ((block < end_block) ? RUP_BLOCK_SIZE : end_offset);
+					for (int offset = lo; offset < hi; ++offset) {
+
+						// If before stop time, count it
+
+						if (t_day[block][offset] < cat_stop_time) {
+							++count;
+						}
+					}
+				}
+
+				// Save count
+
+				gen_valid_size[i_gen] = count;
+				rup_valid_count += count;
+			}
+		}
+
 		return;
 	}
 
@@ -573,6 +668,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 		gen_start[i_gen] = rup_count;
 		gen_size[i_gen] = 0;
+		gen_valid_size[i_gen] = 0;
 
 		// Save generation information
 
@@ -589,6 +685,14 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	@Override
 	public void end_generation () {
+
+		// Get the index of the new generation
+
+		int i_gen = gen_count - 1;
+
+		// Assume valid size equals size
+
+		gen_valid_size[i_gen] = gen_size[i_gen];
 		return;
 	}
 
@@ -804,12 +908,14 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 			writer.marshalInt ("gen_count", gen_count);
 
-			marshal_gen_array (writer, "gen_start"  , gen_start  );
-			marshal_gen_array (writer, "gen_size"   , gen_size   );
-			marshal_gen_array (writer, "gen_mag_min", gen_mag_min);
-			marshal_gen_array (writer, "gen_mag_max", gen_mag_max);
+			marshal_gen_array (writer, "gen_start"     , gen_start     );
+			marshal_gen_array (writer, "gen_size"      , gen_size      );
+			marshal_gen_array (writer, "gen_valid_size", gen_valid_size);
+			marshal_gen_array (writer, "gen_mag_min"   , gen_mag_min   );
+			marshal_gen_array (writer, "gen_mag_max"   , gen_mag_max   );
 
-			writer.marshalInt ("rup_count", rup_count);
+			writer.marshalInt ("rup_count"      , rup_count      );
+			writer.marshalInt ("rup_valid_count", rup_valid_count);
 
 			marshal_rup_array (writer, "t_day"      , t_day      );
 			marshal_rup_array (writer, "rup_mag"    , rup_mag    );
@@ -850,12 +956,14 @@ public class OECatalogStorage implements OECatalogBuilder {
 			gen_count = reader.unmarshalInt ("gen_count");
 			ensure_capacity_gen();
 
-			unmarshal_gen_array (reader, "gen_start"  , gen_start  );
-			unmarshal_gen_array (reader, "gen_size"   , gen_size   );
-			unmarshal_gen_array (reader, "gen_mag_min", gen_mag_min);
-			unmarshal_gen_array (reader, "gen_mag_max", gen_mag_max);
+			unmarshal_gen_array (reader, "gen_start"     , gen_start     );
+			unmarshal_gen_array (reader, "gen_size"      , gen_size      );
+			unmarshal_gen_array (reader, "gen_valid_size", gen_valid_size);
+			unmarshal_gen_array (reader, "gen_mag_min"   , gen_mag_min   );
+			unmarshal_gen_array (reader, "gen_mag_max"   , gen_mag_max   );
 
-			rup_count = reader.unmarshalInt ("rup_count");
+			rup_count       = reader.unmarshalInt ("rup_count"      );
+			rup_valid_count = reader.unmarshalInt ("rup_valid_count");
 			ensure_capacity_rup();
 
 			unmarshal_rup_array (reader, "t_day"      , t_day      );

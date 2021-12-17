@@ -32,6 +32,30 @@ public class OECatalogScanComm {
 
 	public OERandomGenerator rangen;
 
+	// Time at which the catalog stops, defaults to HUGE_TIME_DAYS.
+
+	public double cat_stop_time;
+
+	// True if the stop time is earlier than cat_params.tend.
+
+	public boolean f_early_stop;
+
+	// Catalog result code, defaults to CAT_RESULT_OK.
+
+	public int cat_result_code;
+
+	// True if this catalog is considered successful.
+
+	public boolean f_result_success;
+
+	// Number of ruptures in the catalog.
+
+	public int cat_size;
+
+	// Number of ruptures in the catalog before the stop time.
+
+	public int cat_valid_size;
+
 
 	//----- Per-generation data -----
 
@@ -47,6 +71,10 @@ public class OECatalogScanComm {
 	// Size of the current generation.
 
 	public int gen_size;
+
+	// Size of the current generation, number of ruptures before the stop time.
+
+	public int gen_valid_size;
 
 	// Information for the current generation.
 
@@ -110,6 +138,10 @@ public class OECatalogScanComm {
 
 	public OERupture rup;
 
+	// True if the rupture is before the stop time.
+
+	public boolean f_valid_rup;
+
 
 
 
@@ -143,16 +175,26 @@ public class OECatalogScanComm {
 
 		result.append ("cat_params = " + cat_params.toString());
 
+		result.append ("Per-catalog data:" + "\n");
+		result.append ("cat_stop_time = " + cat_stop_time + "\n");
+		result.append ("f_early_stop = " + f_early_stop + "\n");
+		result.append ("cat_result_code = " + cat_result_code + "\n");
+		result.append ("f_result_success = " + f_result_success + "\n");
+		result.append ("cat_size = " + cat_size + "\n");
+		result.append ("cat_valid_size = " + cat_valid_size + "\n");
+
 		result.append ("Per-generation data:" + "\n");
 		result.append ("i_gen = " + i_gen + "\n");
 		result.append ("f_final_gen = " + f_final_gen + "\n");
 		result.append ("gen_size = " + gen_size + "\n");
+		result.append ("gen_valid_size = " + gen_valid_size + "\n");
 		result.append ("gen_info = " + gen_info.one_line_string() + "\n");
 		result.append ("sterile_mag = " + sterile_mag + "\n");
 
 		result.append ("Per-rupture data:" + "\n");
 		result.append ("j_rup = " + j_rup + "\n");
 		result.append ("rup = " + rup.one_line_string() + "\n");
+		result.append ("f_valid_rup = " + f_valid_rup + "\n");
 
 		return result.toString();
 	}
@@ -178,6 +220,21 @@ public class OECatalogScanComm {
 		// Save the random number generator
 
 		rangen = the_rangen;
+
+		// Get catalog results
+
+		cat_stop_time = view.get_cat_stop_time();
+		f_early_stop = false;
+		if (cat_stop_time < cat_params.tend) {
+			f_early_stop = true;
+		}
+
+		cat_result_code = view.get_cat_result_code();
+		f_result_success = OEConstants.is_cat_result_success (cat_result_code);
+
+		cat_size = view.size();
+		cat_valid_size = view.valid_size();
+
 		return;
 	}
 
@@ -198,6 +255,7 @@ public class OECatalogScanComm {
 		// Get size and info for the current generation
 
 		gen_size = view.get_gen_size (i_gen);
+		gen_valid_size = view.get_gen_valid_size (i_gen);
 		view.get_gen_info (i_gen, gen_info);
 
 		// If this is the final generation ...
@@ -249,6 +307,10 @@ public class OECatalogScanComm {
 		// Get rupture info
 
 		view.get_rup_full (i_gen, j_rup, rup);
+
+		// Valid if it is before the stop time
+
+		f_valid_rup = (rup.t_day < cat_stop_time);
 		return;
 	}
 

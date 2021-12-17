@@ -33,6 +33,11 @@ public interface OECatalogView {
 
 	public int size ();
 
+	// Get the total number of ruptures in the catalog before the stop time.
+	// This cannot be called until after the catalog is fully built.
+
+	public int valid_size ();
+
 	// Get the number of generations in the catalog.
 
 	public int get_gen_count ();
@@ -42,6 +47,13 @@ public interface OECatalogView {
 	//  i_gen = Generation number.
 
 	public int get_gen_size (int i_gen);
+
+	// Get the number of ruptures in the i-th generation before the stop time.
+	// Parameters:
+	//  i_gen = Generation number.
+	// This cannot be called until after the catalog is fully built.
+
+	public int get_gen_valid_size (int i_gen);
 
 	// Get information about the i-th generation in the catalog.
 	// Parameters:
@@ -95,7 +107,7 @@ public interface OECatalogView {
 
 	public double get_cat_stop_time ();
 
-	// Get the catalog result code, CAT_RESULT_OK indicates success.
+	// Get the catalog result code, see OEConstants.CAT_RESULT_XXXX.
 
 	public int get_cat_result_code ();
 
@@ -119,9 +131,11 @@ public interface OECatalogView {
 		// Size and generation count
 
 		int the_size = size();
+		int the_valid_size = valid_size();
 		int gen_count = get_gen_count();
-		result.append ("size = "      + the_size  + "\n");
-		result.append ("gen_count = " + gen_count + "\n");
+		result.append ("size = "       + the_size       + "\n");
+		result.append ("valid_size = " + the_valid_size + "\n");
+		result.append ("gen_count = "  + gen_count      + "\n");
 
 		// Catalog parameters
 
@@ -134,8 +148,9 @@ public interface OECatalogView {
 		OEGenerationInfo gen_info = new OEGenerationInfo();
 		for (int i_gen = 0; i_gen < gen_count; ++i_gen) {
 			int gen_size = get_gen_size (i_gen);
+			int gen_valid_size = get_gen_valid_size (i_gen);
 			get_gen_info (i_gen, gen_info);
-			result.append (gen_info.one_line_string (i_gen, gen_size) + "\n");
+			result.append (gen_info.one_line_string (i_gen, gen_size, gen_valid_size) + "\n");
 		}
 
 		return result.toString();
@@ -151,15 +166,17 @@ public interface OECatalogView {
 
 		// Catalog globals
 
-		result.append ("cat_result_code = " + get_cat_result_code()  + "\n");
-		result.append ("cat_stop_time = " + get_cat_stop_time()  + "\n");
+		result.append ("cat_result_code = " + get_cat_result_code() + "\n");
+		result.append ("cat_stop_time = "   + get_cat_stop_time()   + "\n");
 
 		// Size and generation count
 
 		int the_size = size();
+		int the_valid_size = valid_size();
 		int gen_count = get_gen_count();
-		result.append ("size = "      + the_size  + "\n");
-		result.append ("gen_count = " + gen_count + "\n");
+		result.append ("size = "       + the_size       + "\n");
+		result.append ("valid_size = " + the_valid_size + "\n");
+		result.append ("gen_count = "  + gen_count      + "\n");
 
 		// Catalog parameters
 
@@ -172,8 +189,9 @@ public interface OECatalogView {
 		OEGenerationInfo gen_info = new OEGenerationInfo();
 		for (int i_gen = 0; i_gen < gen_count; ++i_gen) {
 			int gen_size = get_gen_size (i_gen);
+			int gen_valid_size = get_gen_valid_size (i_gen);
 			get_gen_info (i_gen, gen_info);
-			result.append (gen_info.one_line_string (i_gen, gen_size) + "\n");
+			result.append (gen_info.one_line_string (i_gen, gen_size, gen_valid_size) + "\n");
 		}
 
 		// Ruptures
