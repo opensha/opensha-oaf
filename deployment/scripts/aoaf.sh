@@ -966,6 +966,45 @@ q_check_java () {
 
 
 
+# Configure Java DNS setting.
+
+q_configure_java_dns () {
+    echo "Configuring Java DNS..."
+
+    # The standard location of java.security for Java 11 and higher, and a backup filename
+
+    my_JAVA_SEC_FILE="/usr/local/java/conf/security/java.security"
+    my_JAVA_SEC_BACKUP="/usr/local/java/conf/security/java.security.bak"
+
+    # Only do this if the file exists
+
+    if [ -f "$my_JAVA_SEC_FILE" ]; then
+
+        # Save the original java.security file, if not previously saved
+
+        if [ ! -f "$my_JAVA_SEC_BACKUP" ]; then
+            sudo cp -pi "$my_JAVA_SEC_FILE" "$my_JAVA_SEC_BACKUP"
+        fi
+
+        # Make file edits, starting with the original file
+
+        q_ensure_temp_work_dir
+
+        cat "$my_JAVA_SEC_BACKUP"    \
+        | sed 's|^ *# *networkaddress\.cache\.ttl *=.*$|networkaddress.cache.ttl=60|'    \
+        | sed 's|^ *networkaddress\.cache\.ttl *= *-.*$|networkaddress.cache.ttl=60|'    \
+        > "$val_TEMP_WORK_DIR/java.security.tmp"
+
+        sudo cp "$val_TEMP_WORK_DIR/java.security.tmp" "$my_JAVA_SEC_FILE"
+    else
+        echo "Cannot configure Java DNS because java.security file is not found"
+    fi
+
+}
+
+
+
+
 # Install MongoDB, version 4.4.
 
 q_install_mongo_44 () {
@@ -2379,6 +2418,12 @@ case "$1" in
         echo "Test - Installed Java"
         ;;
 
+    test_configure_java_dns)
+        q_load_oaf_config
+        q_configure_java_dns
+        echo "Test - Configured Java DNS"
+        ;;
+
     test_create_dirs)
         q_load_oaf_config
         q_create_dirs
@@ -2514,6 +2559,7 @@ case "$1" in
         q_load_oaf_config
         q_install_packages
         q_install_java
+        q_configure_java_dns
         echo ""
         echo "********************"
         echo ""
@@ -2705,6 +2751,7 @@ case "$1" in
         q_load_oaf_config
         my_ORIGINAL_JAVA_HOME="$JAVA_HOME"
         q_install_java
+        q_configure_java_dns
         echo ""
         echo "********************"
         echo ""
@@ -2852,6 +2899,7 @@ case "$1" in
         q_stop_aafs_for_update "$4"
         if [ "$2" == "java" ]; then
             q_install_java
+            q_configure_java_dns
         fi
         if [ "$3" == "oaf" ]; then
             q_update_opensha
