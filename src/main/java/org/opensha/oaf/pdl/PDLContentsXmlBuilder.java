@@ -71,7 +71,7 @@ public class PDLContentsXmlBuilder {
 
 		// The file contents, or null if not supplied.
 
-		PDLProductFile file_contents;
+		public PDLProductFile file_contents;
 
 		// Constructor, given the filename and mime type.
 
