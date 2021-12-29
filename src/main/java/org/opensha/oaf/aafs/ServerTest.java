@@ -40,6 +40,9 @@ import org.opensha.oaf.util.TimeSplitOutputStream;
 import org.opensha.oaf.util.ConsoleRedirector;
 import org.opensha.oaf.util.TestMode;
 
+import org.opensha.oaf.util.health.HealthMonitor;
+import org.opensha.oaf.util.health.SimpleHealthCounter;
+
 import gov.usgs.earthquake.product.Product;
 import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 import org.opensha.oaf.pdl.PDLSender;
@@ -6533,6 +6536,29 @@ public class ServerTest {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+
+			return;
+		}
+
+		// Subcommand : Test #41h
+		// Command format:
+		//  test41h  eventID  eventNetwork  eventCode
+		// Delete a product from PDL-Development.
+		// Note this always uses PDL-Development regardless of the ServerConfig setting.
+		// Same as test #41 except installs a health monitor and displays the result.
+
+		if (args[0].equalsIgnoreCase ("test41h") || args[0].equalsIgnoreCase ("pdl_dev_delete_h")) {
+
+			PDLSender.set_pdl_health_monitor (new SimpleHealthCounter());
+
+			try {
+				test41(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			System.out.println ();
+			System.out.println (PDLSender.get_pdl_health_monitor().toString());
 
 			return;
 		}

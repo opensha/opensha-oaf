@@ -1,6 +1,6 @@
 package org.opensha.oaf.comcat;
 
-//import gov.usgs.earthquake.event.EventQuery;
+import gov.usgs.earthquake.event.EventQuery;
 //import gov.usgs.earthquake.event.EventWebService;
 //import gov.usgs.earthquake.event.Format;
 //import gov.usgs.earthquake.event.JsonEvent;
@@ -50,6 +50,8 @@ import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegionCircle;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.catalog.ObsEqkRupMaxTimeComparator;
+import org.opensha.oaf.util.health.HealthMonitor;
+import org.opensha.oaf.util.health.SimpleHealthCounter;
 
 import org.opensha.oaf.rj.AftershockVerbose;
 import org.opensha.oaf.aafs.ServerConfig;
@@ -118,6 +120,20 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 	// This is used to detect if different filenames are selected.
 
 	protected static String[] cached_locat_filenames = null;
+
+	// The health monitor for the Comcat service, or null if none is installed.
+	// Note: Always use the get/set functions to ensure proper synchronization.
+
+	private static HealthMonitor comcat_health_monitor = null;
+
+	public static synchronized HealthMonitor get_comcat_health_monitor () {
+		return comcat_health_monitor;
+	}
+
+	public static synchronized void set_comcat_health_monitor (HealthMonitor the_comcat_health_monitor) {
+		comcat_health_monitor = the_comcat_health_monitor;
+		return;
+	}
 
 
 
@@ -516,6 +532,57 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 		return super.visitEventList (visitor, exclude_id, startTime, endTime,
 			minDepth, maxDepth, region, wrapLon, extendedInfo,
 			minMag, productType, includeDeleted, limit_per_call, max_calls);
+	}
+	
+
+
+
+	/**
+	 * Send a query to Comcat and return the matching list of events.
+	 * @param query = Query to perform.
+	 * @return
+	 * Returns a list of events matching the query.
+	 * If nothing matches the query, returns an empty list.
+	 * The return is never null.
+	 * If there is an error, throws ComcatException.
+	 * The operation's HTTP status is added to the list of status codes.
+	 *
+	 * Implementation note:
+	 * This override has two purposes:
+	 * 1. Convert ComcatException to ComcatQueryException, which allows client code
+	 *    to distinguish between communication failures and other problems with Comcat.
+	 * 2. Make success and failure calls to the health monitor, if one is installed.
+	 */
+	@Override
+	protected List<JsonEvent> getEventsFromComcat (EventQuery query) {
+		List<JsonEvent> events = null;
+		HealthMonitor health_monitor = get_comcat_health_monitor();
+
+		// Perform Comcat query
+
+		try {
+			events = super.getEventsFromComcat (query);
+		}
+
+		// If failure, report failure, and re-throw as a query exception with the same message
+
+		catch (ComcatException e) {
+			String message = e.getMessage();
+			if (message == null) {
+				message = "ComcatOAFAccessor: Comcat query error";
+			}
+			if (health_monitor != null) {
+				health_monitor.report_failure();
+			}
+			throw new ComcatQueryException (message, e);
+		}
+
+		// Report success
+
+		if (health_monitor != null) {
+			health_monitor.report_success();
+		}
+		return events;
 	}
 
 
@@ -2184,6 +2251,90 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #18
+		// Command format:
+		//  test18  event_id
+		// Fetch information for an event, and display it.
+		// Then display the geojson for the event.
+		// Same as test #5, except it installs a health monitor and displays the result.
+
+		if (args[0].equalsIgnoreCase ("test18")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("ComcatOAFAccessor : Invalid 'test18' subcommand");
+				return;
+			}
+
+			String event_id = args[1];
+
+			// Install health monitor
+
+			set_comcat_health_monitor (new SimpleHealthCounter());
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+				}
+
+				else {
+					System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+					String rup_event_id = rup.getEventId();
+
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+
+					Map<String, String> eimap = extendedInfoToMap (rup, EITMOPT_NULL_TO_EMPTY);
+
+					for (String key : eimap.keySet()) {
+						System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+					}
+
+					List<String> idlist = idsToList (eimap.get (PARAM_NAME_IDLIST), rup_event_id);
+
+					for (String id : idlist) {
+						System.out.println ("ID List: " + id);
+					}
+
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+					System.out.println ();
+					System.out.println (GeoJsonUtils.jsonObjectToString (accessor.get_last_geojson()));
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			// Display health monitor result, note we do this after any possible exception
+
+			System.out.println ();
+			System.out.println (get_comcat_health_monitor().toString());
 
 			return;
 		}

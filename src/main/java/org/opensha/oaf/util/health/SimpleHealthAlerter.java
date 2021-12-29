@@ -1,5 +1,7 @@
 package org.opensha.oaf.util.health;
 
+import org.opensha.oaf.util.SimpleUtils;
+
 
 // Monitors the health of a subsystem, with simple alerting rules.
 // Author: Michael Barall 12/27/2020.
@@ -104,6 +106,25 @@ public class SimpleHealthAlerter implements HealthMonitor {
 		failure_time = 0L;
 		failure_count = 0L;
 		return;
+	}
+
+
+
+
+	// Make a string containing the state.
+
+	@Override
+	public synchronized String toString () {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append ("SimpleHealthAlerter:\n");
+		for (int n = 0; n < rule_timeout.length; ++n) {
+			sb.append ("Rule " + n + ": count = " + rule_count[n] + ", timeout = " + SimpleUtils.duration_raw_and_string_2 (rule_timeout[n]) + "\n");
+		}
+		sb.append ("failure_time = " + SimpleUtils.time_raw_and_string_with_cutoff (failure_time, 0L) + "\n");
+		sb.append ("failure_count = " + failure_count + "\n");
+		
+		return sb.toString();
 	}
 
 
@@ -332,13 +353,17 @@ public class SimpleHealthAlerter implements HealthMonitor {
 
 				SimpleHealthAlerter monitor = new SimpleHealthAlerter (0L, 12L, 2L * hour, 6L, day, 2L);
 
+				System.out.println ();
+				System.out.println (monitor.toString());
+
 				// Test 15 failures at 1-minute intervals, starting at base time
 
 				String result1 = test_alert_indications (monitor, 15, base_time, minute, alert_times);
 
-				System.out.println ();
 				System.out.println ("15 failures at 1-minute intervals, starting at base time");
 				System.out.println (result1);
+
+				System.out.println (monitor.toString());
 
 				// Success report
 
@@ -347,13 +372,17 @@ public class SimpleHealthAlerter implements HealthMonitor {
 				System.out.println ("1 success");
 				System.out.println (alert_indications_at_times (monitor, -1, alert_times));
 
+				System.out.println ();
+				System.out.println (monitor.toString());
+
 				// Test 15 failures at (-1)-minute intervals, starting at base time + 7 minutes
 
 				String result2 = test_alert_indications (monitor, 15, base_time + (7L * minute), -minute, alert_times);
 
-				System.out.println ();
 				System.out.println ("15 failures at (-1)-minute intervals, starting at base time + 7 minutes");
 				System.out.println (result2);
+
+				System.out.println (monitor.toString());
 
 				// Reset
 
@@ -362,13 +391,17 @@ public class SimpleHealthAlerter implements HealthMonitor {
 				System.out.println ("reset");
 				System.out.println (alert_indications_at_times (monitor, -1, alert_times));
 
+				System.out.println ();
+				System.out.println (monitor.toString());
+
 				// Test 15 failures at current time
 
 				String result3 = test_alert_indications (monitor, 15, 0L, 0L, alert_times);
 
-				System.out.println ();
 				System.out.println ("15 failures at current time");
 				System.out.println (result3);
+
+				System.out.println (monitor.toString());
 
 				// Success report at current time
 
@@ -376,6 +409,9 @@ public class SimpleHealthAlerter implements HealthMonitor {
 
 				System.out.println ("1 success at current time");
 				System.out.println (alert_indications_at_times (monitor, -1, alert_times));
+
+				System.out.println ();
+				System.out.println (monitor.toString());
 
 			} catch (Exception e) {
 				e.printStackTrace();

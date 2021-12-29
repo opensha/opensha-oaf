@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.List;
 
 import org.opensha.oaf.aafs.ServerConfig;
+import org.opensha.oaf.util.health.HealthMonitor;
 
 
 
@@ -73,6 +74,23 @@ public class PDLSender {
 
 
 
+
+	// The health monitor for the PDL service, or null if none is installed.
+	// Note: Always use the get/set functions to ensure proper synchronization.
+
+	private static HealthMonitor pdl_health_monitor = null;
+
+	public static synchronized HealthMonitor get_pdl_health_monitor () {
+		return pdl_health_monitor;
+	}
+
+	public static synchronized void set_pdl_health_monitor (HealthMonitor the_pdl_health_monitor) {
+		pdl_health_monitor = the_pdl_health_monitor;
+		return;
+	}
+
+
+
 	
 	// Sign the product.
 	// Parameters:
@@ -104,7 +122,7 @@ public class PDLSender {
 		// Signing failed
 
 		catch (Exception e) {
-			throw new RuntimeException("PDLSender: Unable to sign PDL product", e);
+			throw new PDLSigningException ("PDLSender: Unable to sign PDL product", e);
 		}
 
 		return;
@@ -147,6 +165,10 @@ public class PDLSender {
 		if (sender_count == 0) {
 			return;
 		}
+
+		// Get the health monitor, or null if none
+
+		HealthMonitor health_monitor = get_pdl_health_monitor();
 
 		// Get the current time
 
@@ -224,7 +246,10 @@ public class PDLSender {
 				// If we have tried all available senders without success, throw
 
 				if (success_index == -1 && (i + 1) == sender_count) {
-					throw new RuntimeException("PDLSender: Unable to send PDL product to any destination", e);
+					if (health_monitor != null) {
+						health_monitor.report_failure (time_now);
+					}
+					throw new PDLSendException ("PDLSender: Unable to send PDL product to any destination", e);
 				}
 			}
 
@@ -239,6 +264,10 @@ public class PDLSender {
 
 		if (success_index != -1) {
 			set_last_sender_index (success_index, time_now);
+		}
+
+		if (health_monitor != null) {
+			health_monitor.report_success (time_now);
 		}
 
 		return;
@@ -271,6 +300,10 @@ public class PDLSender {
 		if (sender_count == 0) {
 			return;
 		}
+
+		// Get the health monitor, or null if none
+
+		HealthMonitor health_monitor = get_pdl_health_monitor();
 
 		// Get the current time
 
@@ -350,7 +383,10 @@ public class PDLSender {
 				// If we have tried all available senders, throw
 
 				if (current_index == first_index) {
-					throw new RuntimeException("PDLSender: Unable to send PDL product to any destination", e);
+					if (health_monitor != null) {
+						health_monitor.report_failure (time_now);
+					}
+					throw new PDLSendException ("PDLSender: Unable to send PDL product to any destination", e);
 				}
 			}
 		}
@@ -358,6 +394,10 @@ public class PDLSender {
 		// Save the index of the successful sender
 
 		set_last_sender_index (current_index, time_now);
+
+		if (health_monitor != null) {
+			health_monitor.report_success (time_now);
+		}
 
 		return;
 	}
