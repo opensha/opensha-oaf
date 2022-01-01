@@ -114,6 +114,15 @@ public class RiServerStatus extends DBPayload {
 
 
 
+	//----- Health status -----
+
+	// The subsystem health status flags, see HealthSupport.HS_XXXXX.
+
+	public long health_status;
+
+
+
+
 	//----- Service functions -----
 
 	// Check if we can connect to remote server with this status.
@@ -126,7 +135,7 @@ public class RiServerStatus extends DBPayload {
 			return false;
 		}
 
-		// Note that stale heartbeat does not prevent connection
+		// Note that stale heartbeat or bad health does not prevent connection
 
 		// Can't connect if link state is shutdown or solo
 		// (This test could possibly be omitted, given the tests on relay mode and primary state)
@@ -240,6 +249,20 @@ public class RiServerStatus extends DBPayload {
 	}
 
 
+	// Get the health status as a short string.
+
+	public String get_health_status_as_short_string () {
+		return HealthSupport.hs_short_summary (health_status);
+	}
+
+
+	// Get the health status as a long string.
+
+	public String get_health_status_as_long_string () {
+		return HealthSupport.hs_long_summary (health_status);
+	}
+
+
 	// Test if the state matches the user strings.
 	// Parameters:
 	//  s_link_state = Link state to test (see RelayLink.test_user_string_link_state()).
@@ -320,6 +343,8 @@ public class RiServerStatus extends DBPayload {
 		result.append (get_primary_state_as_string());
 		result.append (", ");
 		result.append (get_inferred_state_as_string());
+		result.append (", ");
+		result.append (get_health_status_as_short_string());
 		result.append (", heartbeat = ");
 		result.append (get_heartbeat_time_as_string());
 
@@ -344,6 +369,8 @@ public class RiServerStatus extends DBPayload {
 		result.append (get_primary_state_as_string());
 		result.append (", ");
 		result.append (get_inferred_state_as_string());
+		result.append (", ");
+		result.append (get_health_status_as_short_string());
 		result.append (", heartbeat = ");
 		result.append (get_heartbeat_time_as_string());
 
@@ -382,6 +409,7 @@ public class RiServerStatus extends DBPayload {
 		primary_state = RelayLink.PRIST_SHUTDOWN;
 		start_time = 0L;
 		inferred_state = RelayLink.ISR_NONE;
+		health_status = HealthSupport.HS_NOT_AVAILABLE;
 		return;
 	}
 
@@ -444,6 +472,7 @@ public class RiServerStatus extends DBPayload {
 
 	private static final int MARSHAL_VER_1 = 58001;
 	private static final int MARSHAL_VER_2 = 58002;
+	private static final int MARSHAL_VER_3 = 58003;
 
 	private static final String M_VERSION_NAME = "RiServerStatus";
 
@@ -462,7 +491,7 @@ public class RiServerStatus extends DBPayload {
 
 		// Version
 
-		int ver = MARSHAL_VER_2;
+		int ver = MARSHAL_VER_3;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -515,6 +544,30 @@ public class RiServerStatus extends DBPayload {
 			writer.marshalInt  ("inferred_state"    , inferred_state    );
 
 			break;
+
+		case MARSHAL_VER_3:
+
+			writer.marshalInt  ("sw_major_version"  , sw_major_version  + OFFSER);
+			writer.marshalInt  ("sw_minor_version"  , sw_minor_version  + OFFSER);
+			writer.marshalInt  ("sw_build"          , sw_build          + OFFSER);
+
+			writer.marshalInt  ("protocol_version"  , protocol_version  );
+			writer.marshalInt  ("server_number"     , server_number     );
+
+			writer.marshalLong ("heartbeat_time"    , heartbeat_time    + OFFSERL);
+
+			writer.marshalInt  ("link_state"        , link_state        );
+
+			RelayConfig.marshal (writer, "relay_config", relay_config);
+
+			writer.marshalInt  ("primary_state"     , primary_state     );
+			writer.marshalLong ("start_time"        , start_time        + OFFSERL);
+
+			writer.marshalInt  ("inferred_state"    , inferred_state    );
+
+			writer.marshalLong ("health_status"     , health_status     + OFFSERL);
+
+			break;
 		}
 
 		return;
@@ -527,7 +580,7 @@ public class RiServerStatus extends DBPayload {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Superclass
 
@@ -557,6 +610,8 @@ public class RiServerStatus extends DBPayload {
 
 			inferred_state     = RelayLink.ISR_NOT_SUPPLIED;
 
+			health_status      = HealthSupport.HS_NOT_AVAILABLE;
+
 			break;
 
 		case MARSHAL_VER_2:
@@ -577,8 +632,33 @@ public class RiServerStatus extends DBPayload {
 			primary_state      = reader.unmarshalInt  ("primary_state"     , RelayLink.PRIST_MIN, RelayLink.PRIST_MAX);
 			start_time         = reader.unmarshalLong ("start_time"        ) - OFFSERL;
 
-			//inferred_state     = reader.unmarshalInt  ("inferred_state"    , RelayLink.IST_MIN, RelayLink.IST_MAX);
 			inferred_state     = reader.unmarshalInt  ("inferred_state"    );
+
+			health_status      = HealthSupport.HS_NOT_AVAILABLE;
+
+			break;
+
+		case MARSHAL_VER_3:
+
+			sw_major_version   = reader.unmarshalInt  ("sw_major_version"  ) - OFFSER;
+			sw_minor_version   = reader.unmarshalInt  ("sw_minor_version"  ) - OFFSER;
+			sw_build           = reader.unmarshalInt  ("sw_build"          ) - OFFSER;
+
+			protocol_version   = reader.unmarshalInt  ("protocol_version"  );
+			server_number      = reader.unmarshalInt  ("server_number"     , ServerConfigFile.SRVNUM_MIN, ServerConfigFile.SRVNUM_MAX);
+
+			heartbeat_time     = reader.unmarshalLong ("heartbeat_time"    ) - OFFSERL;
+
+			link_state         = reader.unmarshalInt  ("link_state"        , RelayLink.LINK_MIN, RelayLink.LINK_MAX);
+
+			relay_config       = RelayConfig.unmarshal (reader, "relay_config");
+
+			primary_state      = reader.unmarshalInt  ("primary_state"     , RelayLink.PRIST_MIN, RelayLink.PRIST_MAX);
+			start_time         = reader.unmarshalLong ("start_time"        ) - OFFSERL;
+
+			inferred_state     = reader.unmarshalInt  ("inferred_state"    );
+
+			health_status      = reader.unmarshalLong ("health_status"     ) - OFFSERL;
 
 			break;
 		}

@@ -52,6 +52,10 @@ public class ServerGroup extends ServerComponent {
 
 	public CleanupSupport cleanup_sup;
 
+	// Health support.
+
+	public HealthSupport health_sup;
+
 	// Relay link management.
 
 	public RelayLink relay_link;
@@ -78,6 +82,7 @@ public class ServerGroup extends ServerComponent {
 		this.poll_sup       = null;
 		this.relay_sup      = null;
 		this.cleanup_sup    = null;
+		this.health_sup     = null;
 		this.relay_link     = null;
 
 		this.dispatch_table = null;
@@ -125,6 +130,9 @@ public class ServerGroup extends ServerComponent {
 
 		this.cleanup_sup    = new CleanupSupport();
 		this.cleanup_sup.setup (this);
+
+		this.health_sup     = new HealthSupport();
+		this.health_sup.setup (this);
 
 		this.relay_link     = new RelayLink();
 		this.relay_link.setup (this);

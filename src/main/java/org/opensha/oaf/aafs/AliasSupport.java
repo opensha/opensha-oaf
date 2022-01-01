@@ -26,6 +26,7 @@ import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.commons.data.comcat.ComcatException;
+import org.opensha.oaf.comcat.ComcatQueryException;
 import org.opensha.oaf.comcat.ComcatConflictException;
 import org.opensha.oaf.comcat.ComcatRemovedException;
 
@@ -394,6 +395,9 @@ public class AliasSupport extends ServerComponent {
 			}
 			catch (ComcatConflictException e) {
 				throw new ComcatConflictException ("AliasSupport.dual_merge_database_comcat: Comcat error while merging", e);
+			}
+			catch (ComcatQueryException e) {
+				throw new ComcatQueryException ("AliasSupport.dual_merge_database_comcat: Comcat error while merging", e);
 			}
 			catch (ComcatException e) {
 				throw new ComcatException ("AliasSupport.dual_merge_database_comcat: Comcat error while merging", e);
@@ -1173,7 +1177,7 @@ public class AliasSupport extends ServerComponent {
 	// - Calculate the family time.
 	// - Create tasks for new, revived, and stopped timelines, so timeline status can be updated.
 	// - Write cc_assignments to the database as the new family.
-	// The function throws ComcatException if the operation fails due to a problem accessing
+	// The function throws ComcatException or ComcatQueryException if the operation fails due to a problem accessing
 	// Comcat (in which case the function should be retried later).  Any other exception
 	// likely indicates a problem with the database.
 
@@ -1334,7 +1338,7 @@ public class AliasSupport extends ServerComponent {
 	//    agree with the current aliases, fcmain.timeline_id contains the timeline ID.
 	//  RESCODE_ALIAS_TIMELINE_NOT_FOUND - The timeline ID is not in the alias database.
 	//  RESCODE_ALIAS_STOPPED - The timeline ID refers to a stopped timeline.
-	// The function throws ComcatException or ComcatConflictException if the operation
+	// The function throws ComcatException or ComcatQueryException or ComcatConflictException if the operation
 	//  cannot be completed due to a problem with Comcat.
 	// Any other exception may indicate a problem with the database.
 	//
@@ -1549,7 +1553,7 @@ public class AliasSupport extends ServerComponent {
 	//  RESCODE_ALIAS_EVENT_NOT_IN_COMCAT - The event ID is not known to Comcat.
 	//  RESCODE_ALIAS_NEW_EVENT - The event ID is not in the alias database, mainshock
 	//    parameters are in fcmain.
-	// The function throws ComcatException or ComcatConflictException if the operation
+	// The function throws ComcatException or ComcatQueryException or ComcatConflictException if the operation
 	//  cannot be completed due to a problem with Comcat.
 	// Any other exception may indicate a problem with the database.
 	//

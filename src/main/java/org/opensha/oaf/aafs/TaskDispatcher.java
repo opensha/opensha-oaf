@@ -681,6 +681,10 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 				dispatcher_state = STATE_RELAY_LINK_INIT;
 
+				// Enable subsystem health monitoring
+
+				sg.health_sup.enable_health_status();
+
 				// Get task time and configuration
 
 				refresh_task_context();
@@ -836,6 +840,10 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 				// Shut down the relay link
 
 				sg.relay_link.shutdown_relay_link();
+
+				// Disable subsystem health monitoring
+
+				sg.health_sup.disable_health_status();
 
 			// Operation failed with exception
 

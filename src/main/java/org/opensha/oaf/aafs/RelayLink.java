@@ -290,6 +290,10 @@ public class RelayLink extends ServerComponent {
 			// Update heartbeat time
 
 			insert_heartbeat_time (time_now);
+
+			// Update health status
+
+			insert_health_status (time_now);
 		
 			// Store the local status
 
@@ -536,6 +540,29 @@ public class RelayLink extends ServerComponent {
 
 	private void insert_heartbeat_time (long time_now) {
 		local_status.heartbeat_time = time_now;
+		return;
+	}
+
+
+
+
+	//----- Health status functions -----
+
+
+
+
+	// The subsystem health status flags, see HealthSupport.HS_XXXXX.
+	// This field is updated whenever the local status is written to the database.
+
+	// private long local_status.health_status;
+
+
+
+
+	// Insert the current health status into the health status field.
+
+	private void insert_health_status (long time_now) {
+		local_status.health_status = sg.health_sup.get_health_status (time_now);
 		return;
 	}
 
@@ -856,7 +883,12 @@ public class RelayLink extends ServerComponent {
 		// Information about the remote server is unexpectedly not available.
 		// This can be reported when this server is connected to the remote
 		// server, or performing initial sync or re-sync.
-	public static final int ISR_MAX						= 112;
+	public static final int ISR_DEAD_BAD_HEALTH			= 113;
+		// The remote server is inferred to be dead because it has a bad
+		// health status.
+		// This can be reported when this server is connected to the remote
+		// server, or performing initial sync or re-sync.
+	public static final int ISR_MAX						= 113;
 
 
 	// Return a string describing an inferred remote state.
@@ -875,6 +907,7 @@ public class RelayLink extends ServerComponent {
 		case ISR_UNSYNCED_MODE: return "ISR_UNSYNCED_MODE";
 		case ISR_NOT_CONNECTED: return "ISR_NOT_CONNECTED";
 		case ISR_UNAVAILABLE: return "ISR_UNAVAILABLE";
+		case ISR_DEAD_BAD_HEALTH: return "ISR_DEAD_BAD_HEALTH";
 		}
 		return "ISR_UNKNOWN(" + state + ")";
 	}
@@ -1346,7 +1379,7 @@ public class RelayLink extends ServerComponent {
 	// Return true if the remote server is known to be dead.
 	// This means one of the following:
 	//  Link state is disconnected, and there have been enough call retries to qualify as loss of connection.
-	//  Link state is connected, and the remote heartbeat is stale.
+	//  Link state is connected, and the remote heartbeat is stale or the remote server is in bad health.
 	// Note we do not attempt to make a determination in other link states,
 	// because they are transient states.
 
@@ -1367,9 +1400,10 @@ public class RelayLink extends ServerComponent {
 
 		case LINK_CONNECTED:
 
-			// If it is not the case that the partner has a current heartbeat, consider it dead
+			// If it is not the case that the partner has a current heartbeat and good health, consider it dead
 
-			if (!( remote_status.heartbeat_time >= time_now - heartbeat_stale )) {
+			if (!( remote_status.heartbeat_time >= time_now - heartbeat_stale
+				&& HealthSupport.hs_good_status (remote_status.health_status) )) {
 				return true;
 			}
 			break;
@@ -1389,6 +1423,7 @@ public class RelayLink extends ServerComponent {
 	//  The remote status contains the same relay configuration as local status.
 	//  The remote heartbeat is not stale.
 	// Note we do not attempt to make a determination in other link states.
+	// Note that this function does not look at the remote server health status.
 
 	private boolean is_remote_known_alive_and_synced (long time_now) {
 	
@@ -1422,6 +1457,7 @@ public class RelayLink extends ServerComponent {
 	//  Link state is connected, and the remote status contains the same relay configuration as local status.
 	// Note we do not attempt to make a determination if the partner is dead in other link states,
 	// because they are transient states.
+	// Note that this function does not look at the remote server health status.
 
 	private boolean is_remote_known_dead_or_synced (long time_now) {
 	
@@ -2092,6 +2128,10 @@ public class RelayLink extends ServerComponent {
 			// Check for stale heartbeat
 			else if (!( remote_status.heartbeat_time >= time_now - heartbeat_stale )) {
 				set_inferred_state (ISR_DEAD_STALE_HEARTBEAT);
+			}
+			// Check for bad health
+			else if (!( HealthSupport.hs_good_status (remote_status.health_status) )) {
+				set_inferred_state (ISR_DEAD_BAD_HEALTH);
 			}
 			// Check for relay configuration mismatch
 			else if (!( local_status.is_same_relay_config (remote_status) )) {
@@ -2874,6 +2914,12 @@ public class RelayLink extends ServerComponent {
 			//>>> Pair mode, configured secondary, running as primary
 
 			// Otherwise we are configured secondary ...
+			// If the partner server is known to be dead, stay in primary
+
+			if (is_remote_known_dead (time_now)) {
+				return PRIST_PRIMARY;
+			}
+
 			// If the partner server is known to be alive and synced, step down to secondary
 
 			if (is_remote_known_alive_and_synced (time_now)) {

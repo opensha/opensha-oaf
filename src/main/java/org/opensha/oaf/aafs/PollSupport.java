@@ -18,6 +18,7 @@ import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.catalog.ObsEqkRupMaxTimeComparator;
+import org.opensha.oaf.util.health.HealthMonitor;
 
 import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
@@ -451,6 +452,8 @@ public class PollSupport extends ServerComponent {
 
 		ObsEqkRupList potentials = null;
 
+		HealthMonitor health_monitor = sg.health_sup.get_poll_health_monitor();
+
 		try {
 			potentials = accessor.fetchEventList (exclude_id,
 					search_time_lo, search_time_hi,
@@ -467,6 +470,10 @@ public class PollSupport extends ServerComponent {
 
 			// Say goodbye
 
+			if (health_monitor != null) {
+				health_monitor.report_failure();
+			}
+
 			if (f_verbose) {
 				System.out.println ("Poll failed due to Comcat exception");
 				System.out.println ("COMCAT-POLL-END");
@@ -475,6 +482,10 @@ public class PollSupport extends ServerComponent {
 			sg.log_sup.report_comcat_poll_end (get_next_poll_time());
 
 			return result;
+		}
+
+		if (health_monitor != null) {
+			health_monitor.report_success();
 		}
 
 		double poll_lookback_days = ((double)poll_lookback) / ((double)DURATION_DAY);
