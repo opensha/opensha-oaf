@@ -444,6 +444,17 @@ public class RiServerStatus extends DBPayload {
 	}
 
 
+	// Return true if this object and the other object have a congruent relay configuration.
+	// Congruent relay configurations are the same except possibly for the timestamp.
+
+	public boolean is_congruent_relay_config (RiServerStatus other) {
+		if (relay_config.is_congruent_to (other.relay_config)) {
+			return true;
+		}
+		return false;
+	}
+
+
 	// Set up the contents, as shutdown with default relay configuration, which is solo primary.
 
 	//  public void setup () {

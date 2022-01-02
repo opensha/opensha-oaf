@@ -44,40 +44,40 @@ public class RelayConfig {
 
 	// Get the timestamp for this configuration.
 
-	public long get_mode_timestamp () {
+	public final long get_mode_timestamp () {
 		return mode_timestamp;
 	}
 
 	// Get the configured relay mode, see RelayLink.RMODE_XXXXX.
 
-	public int get_relay_mode () {
+	public final int get_relay_mode () {
 		return relay_mode;
 	}
 
 	// Get the configured primary server number.
 
-	public int get_configured_primary () {
+	public final int get_configured_primary () {
 		return configured_primary;
 	}
 
 
 	// Get the timestamp as a string.
 
-	public String get_mode_timestamp_as_string () {
+	public final String get_mode_timestamp_as_string () {
 		return SimpleUtils.time_raw_and_string (mode_timestamp);
 	}
 
 
 	// Get the configured relay mode as a string.
 
-	public String get_relay_mode_as_string () {
+	public final String get_relay_mode_as_string () {
 		return RelayLink.get_relay_mode_as_string (relay_mode);
 	}
 
 
 	// Get the configured primary server number as a string.
 
-	public String get_configured_primary_as_string () {
+	public final String get_configured_primary_as_string () {
 		return "P" + configured_primary;
 	}
 
@@ -114,6 +114,21 @@ public class RelayConfig {
 	public boolean is_equal_to (RelayConfig other) {
 		if (mode_timestamp == other.mode_timestamp
 			&& relay_mode == other.relay_mode
+			&& configured_primary == other.configured_primary) {
+
+			return true;
+		}
+		return false;
+	}
+
+
+
+
+	// Return true if two relay configurations are congruent.
+	// Congruent relay configurations are the same except possibly for the timestamp.
+
+	public boolean is_congruent_to (RelayConfig other) {
+		if (relay_mode == other.relay_mode
 			&& configured_primary == other.configured_primary) {
 
 			return true;

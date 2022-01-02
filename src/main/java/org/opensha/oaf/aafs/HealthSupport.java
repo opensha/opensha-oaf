@@ -33,7 +33,7 @@ public class HealthSupport extends ServerComponent {
 
 	// The bits that currently have known interpretations.
 
-	public static final long HS_KNOWN_BITS		= 0x0000000000F03L;
+	public static final long HS_KNOWN_BITS		= 0x0000000000F0FL;
 
 	// Indicates that health monitoring is active.
 	// Note: If this bit is zero, clients should assume OK status.
@@ -46,6 +46,19 @@ public class HealthSupport extends ServerComponent {
 	// Note: This bit must be zero if HS_ACTIVE is zero.
 
 	public static final long HS_ALERT			= 0x0000000000002L;
+
+	// Indicates that a health status warning is in progress.
+	// Note: When a warning is in progress, this bit is set in addtion to other
+	// bits that specify the cause(s) of the alert.
+	// Note: This bit must be zero if HS_ACTIVE is zero.
+
+	public static final long HS_WARNING			= 0x0000000000004L;
+
+	// Indicates that a health status alert is in progress,
+	// and it has been reported repeatedly for a period of time.
+	// Note: This bit must be zero if HS_ACTIVE is zero.
+
+	public static final long HS_PERSISTENT		= 0x0000000000008L;
 
 	// An alert for Comcat, indicating an inability to communicate with Comcat.
 
@@ -80,24 +93,46 @@ public class HealthSupport extends ServerComponent {
 
 
 
-	// Produce a short summary of the status flags.
+	// Return true if the status flags indicate no statu issues.
+	// A false return indicates that the server needs attention from the user.
 
-	public static String hs_short_summary (long hs) {
-		if ((hs & HS_ALERT) == 0L) {
-			if (hs == 0L) {
-				return "HS_NONE";
-			}
-			if (hs == HS_ACTIVE) {
-				return "HS_OK";
-			}
-			return String.format ("HS_OK 0x%X", hs);
-		}
-		return String.format ("HS_ALERT 0x%X", hs);
+	public static boolean hs_clean_status (long hs) {
+		return (hs & (HS_ALERT | HS_WARNING)) == 0L;
 	}
 
 
 
-	// Produce a list of alert causes.
+
+	// Return true if the status flags indicate a persistent alert state.
+
+	public static boolean hs_persistent_alert (long hs) {
+		return (hs & (HS_ALERT | HS_PERSISTENT)) == (HS_ALERT | HS_PERSISTENT);
+	}
+
+
+
+
+	// Produce a short summary of the status flags.
+
+	public static String hs_short_summary (long hs) {
+		if ((hs & HS_ALERT) != 0L) {
+			return String.format ("HS_ALERT 0x%X", hs);
+		}
+		if ((hs & HS_WARNING) != 0L) {
+			return String.format ("HS_WARNING 0x%X", hs);
+		}
+		if (hs == 0L) {
+			return "HS_NONE";
+		}
+		if (hs == HS_ACTIVE) {
+			return "HS_OK";
+		}
+		return String.format ("HS_OK 0x%X", hs);
+	}
+
+
+
+	// Produce a list of alert causes and flags.
 	// Parameters:
 	//  hs = Status code.
 	//  prefix = String to insert before the first cause.
@@ -109,6 +144,12 @@ public class HealthSupport extends ServerComponent {
 		StringBuilder sb = new StringBuilder();
 
 		boolean f_first = true;
+
+		if ((hs & HS_PERSISTENT) != 0L) {
+			sb.append (f_first ? prefix : infix);
+			sb.append ("PERSISTENT");
+			f_first = false;
+		}
 
 		if ((hs & HS_COMCAT) != 0L) {
 			sb.append (f_first ? prefix : infix);
@@ -163,16 +204,19 @@ public class HealthSupport extends ServerComponent {
 	// If an alert is in progress, the result lists the alert cause(s).
 
 	public static String hs_long_summary (long hs) {
-		if ((hs & HS_ALERT) == 0L) {
-			if (hs == 0L) {
-				return "HS_NONE";
-			}
-			if (hs == HS_ACTIVE) {
-				return "HS_OK";
-			}
-			return String.format ("HS_OK 0x%X", hs);
+		if ((hs & HS_ALERT) != 0L) {
+			return String.format ("HS_ALERT 0x%X%s", hs, hs_alert_causes (hs, " ", "", " ", ""));
 		}
-		return String.format ("HS_ALERT 0x%X%s", hs, hs_alert_causes (hs, " ", "", " ", ""));
+		if ((hs & HS_WARNING) != 0L) {
+			return String.format ("HS_WARNING 0x%X%s", hs, hs_alert_causes (hs, " ", "", " ", ""));
+		}
+		if (hs == 0L) {
+			return "HS_NONE";
+		}
+		if (hs == HS_ACTIVE) {
+			return "HS_OK";
+		}
+		return String.format ("HS_OK 0x%X", hs);
 	}
 
 
@@ -183,16 +227,19 @@ public class HealthSupport extends ServerComponent {
 	// If an alert is in progress, the result lists the alert cause(s).
 
 	public static String hs_user_alert (long hs) {
-		if ((hs & HS_ALERT) == 0L) {
-			if (hs == 0L) {
-				return "Health status = NONE";
-			}
-			if (hs == HS_ACTIVE) {
-				return "Health status = OK";
-			}
-			return String.format ("Health status = OK, code = 0x%X", hs);
+		if ((hs & HS_ALERT) != 0L) {
+			return String.format ("Health status = ALERT, code = 0x%X%s", hs, hs_alert_causes (hs, ", cause = ", "", " ", ""));
 		}
-		return String.format ("Health status = ALERT, code = 0x%X%s", hs, hs_alert_causes (hs, ", cause = ", "", " ", ""));
+		if ((hs & HS_WARNING) != 0L) {
+			return String.format ("Health status = WARNING, code = 0x%X%s", hs, hs_alert_causes (hs, ", cause = ", "", " ", ""));
+		}
+		if (hs == 0L) {
+			return "Health status = NONE";
+		}
+		if (hs == HS_ACTIVE) {
+			return "Health status = OK";
+		}
+		return String.format ("Health status = OK, code = 0x%X", hs);
 	}
 
 
@@ -217,6 +264,11 @@ public class HealthSupport extends ServerComponent {
 	public HealthMonitor get_poll_health_monitor () {
 		return poll_health_monitor;
 	}
+
+
+	// Health monitor for persistent alerts, or null if none.
+
+	private HealthMonitor persistent_health_monitor;
 
 
 
@@ -270,6 +322,13 @@ public class HealthSupport extends ServerComponent {
 		poll_alert_rules[3] = 2L;
 		poll_health_monitor = new SimpleHealthAlerter (poll_alert_rules);
 
+		// Persistent
+
+		long[] persistent_alert_rules = new long[2];
+		persistent_alert_rules[0] = 30L * minute;
+		persistent_alert_rules[1] = 3L;
+		persistent_health_monitor = new SimpleHealthAlerter (persistent_alert_rules);
+
 		return;
 	}
 
@@ -295,6 +354,10 @@ public class HealthSupport extends ServerComponent {
 		// Poll
 
 		poll_health_monitor = null;
+
+		// Persistent
+
+		persistent_health_monitor = null;
 
 		return;
 	}
@@ -329,7 +392,7 @@ public class HealthSupport extends ServerComponent {
 		if (pdl_health_monitor != null) {
 			if (is_primary) {
 				if (pdl_health_monitor.check_alert (time_now)) {
-					status |= (HS_PDL | HS_ALERT);
+					status |= (HS_PDL | HS_WARNING);
 				}
 			} else {
 				pdl_health_monitor.reset_monitor();
@@ -348,7 +411,20 @@ public class HealthSupport extends ServerComponent {
 
 		if (poll_health_monitor != null) {
 			if (poll_health_monitor.check_alert (time_now)) {
-				status |= (HS_POLL | HS_ALERT);
+				status |= (HS_POLL | HS_WARNING);
+			}
+		}
+
+		// Persistent
+
+		if (persistent_health_monitor != null) {
+			if ((status & HS_ALERT) != 0L) {
+				persistent_health_monitor.report_failure (time_now);
+				if (persistent_health_monitor.check_alert (time_now)) {
+					status |= HS_PERSISTENT;
+				}
+			} else {
+				persistent_health_monitor.report_success (time_now);
 			}
 		}
 
@@ -386,6 +462,12 @@ public class HealthSupport extends ServerComponent {
 
 		if (poll_health_monitor != null) {
 			poll_health_monitor.reset_monitor();
+		}
+
+		// Persistent
+
+		if (persistent_health_monitor != null) {
+			persistent_health_monitor.reset_monitor();
 		}
 
 		return;
@@ -495,6 +577,7 @@ public class HealthSupport extends ServerComponent {
 
 		forecast_health_monitor = null;
 		poll_health_monitor = null;
+		persistent_health_monitor = null;
 
 		f_heath_status_enabled = false;
 	}
@@ -509,6 +592,7 @@ public class HealthSupport extends ServerComponent {
 
 		forecast_health_monitor = null;
 		poll_health_monitor = null;
+		persistent_health_monitor = null;
 
 		f_heath_status_enabled = false;
 
@@ -544,6 +628,10 @@ public class HealthSupport extends ServerComponent {
 		sb.append ("\n");
 		sb.append ("hs_good_status = " + hs_good_status (hs));
 		sb.append ("\n");
+		sb.append ("hs_clean_status = " + hs_clean_status (hs));
+		sb.append ("\n");
+		sb.append ("hs_persistent_alert = " + hs_persistent_alert (hs));
+		sb.append ("\n");
 		sb.append (hs_short_summary (hs));
 		sb.append ("\n");
 		sb.append (hs_long_summary (hs));
@@ -562,6 +650,18 @@ public class HealthSupport extends ServerComponent {
 	protected static String test_show_status (HealthSupport hsup, long time_now, boolean is_primary) {
 		long hs = hsup.get_health_status (time_now, is_primary);
 		return test_show_status (hs);
+	}
+
+
+
+
+	// Subroutine to request status multiple times.
+
+	protected static void test_multi_status (HealthSupport hsup, int count, long time_now, boolean is_primary) {
+		for (int n = 0; n < count; ++n) {
+			hsup.get_health_status (time_now, is_primary);
+		}
+		return;
 	}
 
 
@@ -599,10 +699,11 @@ public class HealthSupport extends ServerComponent {
 
 				System.out.println ("Testing health status functions for HealthSupport");
 
-				// Time now and one day ago
+				// Time now and one day ago and one day in the future
 
 				long time_now = System.currentTimeMillis();
 				long day_ago = time_now - 86400000L;
+				long day_future = time_now + 86400000L;
 
 				// Number of failures to use to trigger alert
 
@@ -669,6 +770,42 @@ public class HealthSupport extends ServerComponent {
 
 				System.out.println ("Invalid - Comcat only");
 				System.out.println (test_show_status (HS_COMCAT));
+
+				// Enable
+
+				hsup.enable_health_status();
+
+				System.out.println ("Enable");
+				System.out.println (test_show_status (hsup, time_now, true));
+
+				// Test for persistent triggering
+
+				test_multi_failure (hsup.poll_health_monitor, fail_count, day_ago);
+
+				System.out.println ("Poll failure - expect warning");
+				System.out.println (test_show_status (hsup, time_now, true));
+
+				test_multi_status (hsup, fail_count, time_now, true);
+
+				System.out.println ("Multiple status calls");
+				System.out.println (test_show_status (hsup, day_future, true));
+
+				test_multi_failure (ComcatOAFAccessor.get_comcat_health_monitor(), fail_count, day_ago);
+
+				System.out.println ("Comcat failure - expect alert");
+				System.out.println (test_show_status (hsup, time_now, true));
+
+				test_multi_status (hsup, fail_count, time_now, true);
+
+				System.out.println ("Multiple status calls");
+				System.out.println (test_show_status (hsup, day_future, true));
+
+				// Disable
+
+				hsup.disable_health_status();
+
+				System.out.println ("Disable");
+				System.out.println (test_show_status (hsup, time_now, true));
 
 			} catch (Exception e) {
 				e.printStackTrace();

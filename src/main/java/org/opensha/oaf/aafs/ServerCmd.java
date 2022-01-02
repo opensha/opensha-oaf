@@ -1355,7 +1355,7 @@ public class ServerCmd {
 								System.out.println (String.format ("Heartbeat is STALE, age = %d:%02d", hours, minutes));
 							}
 						}
-						if (!( HealthSupport.hs_good_status (sstat_payload.health_status) )) {
+						if (!( HealthSupport.hs_clean_status (sstat_payload.health_status) )) {
 							System.out.println (HealthSupport.hs_user_alert (sstat_payload.health_status));
 						}
 					}
@@ -1425,15 +1425,18 @@ public class ServerCmd {
 							} else {
 								System.out.println (String.format ("Heartbeat is STALE, age = %d:%02d", hours, minutes));
 							}
-							if (!( HealthSupport.hs_good_status (sstat_payload.health_status) )) {
+							if (!( HealthSupport.hs_clean_status (sstat_payload.health_status) )) {
 								System.out.println (HealthSupport.hs_user_alert (sstat_payload.health_status));
 							}
-						}
-						else if (!( HealthSupport.hs_good_status (sstat_payload.health_status) )) {
-							System.out.println (HealthSupport.hs_user_alert (sstat_payload.health_status));
-						}
-						else if (sstat_payload.primary_state != RelayLink.PRIST_SHUTDOWN) {
-							++result;
+						} else {
+							if (!( HealthSupport.hs_clean_status (sstat_payload.health_status) )) {
+								System.out.println (HealthSupport.hs_user_alert (sstat_payload.health_status));
+							}
+							if (HealthSupport.hs_good_status (sstat_payload.health_status)) {
+								if (sstat_payload.primary_state != RelayLink.PRIST_SHUTDOWN) {
+									++result;
+								}
+							}
 						}
 					}
 				}

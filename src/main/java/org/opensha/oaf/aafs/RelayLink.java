@@ -1379,9 +1379,12 @@ public class RelayLink extends ServerComponent {
 	// Return true if the remote server is known to be dead.
 	// This means one of the following:
 	//  Link state is disconnected, and there have been enough call retries to qualify as loss of connection.
-	//  Link state is connected, and the remote heartbeat is stale or the remote server is in bad health.
+	//  Link state is connected (or resync), and the remote heartbeat is stale or the remote server is in bad health.
 	// Note we do not attempt to make a determination in other link states,
 	// because they are transient states.
+	//
+	// Application: A true return means that a pair-mode server, configured secondary, should
+	// transition to primary (if running as secondary or initializing) or remain as primary.
 
 	private boolean is_remote_known_dead (long time_now) {
 	
@@ -1399,6 +1402,7 @@ public class RelayLink extends ServerComponent {
 			break;
 
 		case LINK_CONNECTED:
+		case LINK_RESYNC:
 
 			// If it is not the case that the partner has a current heartbeat and good health, consider it dead
 
@@ -1419,11 +1423,18 @@ public class RelayLink extends ServerComponent {
 
 	// Return true if the remote server is known to be alive and synced.
 	// This means all of the following:
-	//  Link state is connected.
+	//  Link state is connected (or resync).
 	//  The remote status contains the same relay configuration as local status.
 	//  The remote heartbeat is not stale.
 	// Note we do not attempt to make a determination in other link states.
 	// Note that this function does not look at the remote server health status.
+	//
+	// Application: A true return means that a pair-mode server, configured secondary,
+	// running as primary or initializing, should transition to secondary (after
+	// checking that is_remote_known_dead returns false).
+	//
+	// Application: A true return means that a watch-mode server, configured secondary,
+	// during initialization, should transition to secondary.
 
 	private boolean is_remote_known_alive_and_synced (long time_now) {
 	
@@ -1432,6 +1443,7 @@ public class RelayLink extends ServerComponent {
 		switch (get_link_state()) {
 
 		case LINK_CONNECTED:
+		case LINK_RESYNC:
 
 			// If partner has the same configuration and a current heartbeat, consider it alive and synced
 
@@ -1453,11 +1465,18 @@ public class RelayLink extends ServerComponent {
 	// Return true if the remote server is known to be dead or synced.
 	// This means one of the following:
 	//  Link state is disconnected, and there have been enough call retries to qualify as loss of connection.
-	//  Link state is connected, and the remote heartbeat is stale.
-	//  Link state is connected, and the remote status contains the same relay configuration as local status.
+	//  Link state is connected (or resync), and the remote heartbeat is stale.
+	//  Link state is connected (or resync), and the remote status contains the same relay configuration as local status.
 	// Note we do not attempt to make a determination if the partner is dead in other link states,
 	// because they are transient states.
 	// Note that this function does not look at the remote server health status.
+	//
+	// Application: A true return means that a pair-mode server, configured primary,
+	// running as secondary or initializing, should transition to primary (if running as
+	// secondary, after checking that is_remote_known_forced_to_primary returns false).
+	//
+	// Application: A true return means that a watch-mode server, configured primary,
+	// during initialization, should transition to primary.
 
 	private boolean is_remote_known_dead_or_synced (long time_now) {
 	
@@ -1475,6 +1494,7 @@ public class RelayLink extends ServerComponent {
 			break;
 
 		case LINK_CONNECTED:
+		case LINK_RESYNC:
 
 			// If it is not the case that the partner has a current heartbeat, consider it dead
 
@@ -1498,7 +1518,13 @@ public class RelayLink extends ServerComponent {
 
 
 
-	// Return true if the link is in the connected or disconnected state.
+	// Return true if the link is in the connected (or resync) or disconnected state.
+	//
+	// Application: A true return means that a pair-mode server, during initialization,
+	// can transition to its configured mode at the end of the initialization timeout.
+	//
+	// Application: A true return means that a watch-mode server, configured primary,
+	// during initialization, can transition to primary at the end of the initialization timeout.
 
 	private boolean is_link_conn_or_disc () {
 	
@@ -1508,6 +1534,7 @@ public class RelayLink extends ServerComponent {
 
 		case LINK_DISCONNECTED:
 		case LINK_CONNECTED:
+		case LINK_RESYNC:
 			return true;
 		}
 
@@ -2797,6 +2824,51 @@ public class RelayLink extends ServerComponent {
 
 
 
+	// Return true if the remote server is known to be forced to run as primary.
+	// This means all of the following:
+	//  Link state is connected (or resync).
+	//  The remote status contains a congruent relay configuration to local status.
+	//  The remote link state is connected (or resync).
+	//  The remote is running as primary.
+	//  The remote heartbeat is not stale.
+	//  The remote health status is good.
+	//  The local health status is persistently bad.
+	//
+	// Application: A true return means that a pair-mode server, configured primary,
+	// running as primary or secondary, should transition to secondary or remain as secondary.
+
+	private boolean is_remote_known_forced_to_primary (long time_now) {
+	
+		// Switch on link state
+
+		switch (get_link_state()) {
+
+		case LINK_CONNECTED:
+		case LINK_RESYNC:
+
+			// If partner has a congruent configuration, is connected (or resync), is running as primary,
+			// has current heartbeat and good health, and local server is in persistently bad health
+
+			if (local_status.is_congruent_relay_config (remote_status)				// remote server has congruent relay configuration
+				&& remote_status.primary_state == PRIST_PRIMARY						// remote server is running as primary
+				&& (remote_status.link_state == LINK_CONNECTED || remote_status.link_state == LINK_RESYNC)	// remote server is connected (or resync)
+				&& remote_status.heartbeat_time >= time_now - heartbeat_stale		// remote heartbeat is not stale
+				&& HealthSupport.hs_good_status (remote_status.health_status)		// remote health status is good
+				&& HealthSupport.hs_persistent_alert (local_status.health_status)	// local health status is persistently bad
+				) {
+
+				return true;
+			}
+		}
+
+		// In all other case, we don't know that it's forced to primary
+
+		return false;
+	}
+
+
+
+
 	// Get the next primary state.
 	// Return value is:
 	//  PRIST_PRIMARY if this server should be running in primary state.
@@ -2902,11 +2974,19 @@ public class RelayLink extends ServerComponent {
 
 		case PRIST_PRIMARY:
 
-			// If configured primary, continue to be primary
+			// If configured primary...
 
 			if (local_status.is_configured_primary()) {
 
 				//>>> Pair mode, configured primary, running as primary
+
+				// If the partner server is known to be forced to run as primary, step down to secondary
+
+				if (is_remote_known_forced_to_primary (time_now)) {
+					return PRIST_SECONDARY;
+				}
+
+				// Otherwise, stay in primary
 
 				return PRIST_PRIMARY;
 			}
@@ -2939,6 +3019,12 @@ public class RelayLink extends ServerComponent {
 			if (local_status.is_configured_primary()) {
 
 				//>>> Pair mode, configured primary, running as secondary
+
+				// If the partner server is known to be forced to run as primary, stay in secondary
+
+				if (is_remote_known_forced_to_primary (time_now)) {
+					return PRIST_SECONDARY;
+				}
 
 				// If the partner server is known to be dead or synced, step up to primary
 
