@@ -167,6 +167,9 @@ public class ServerGroup extends ServerComponent {
 		dispatch_table[OPCODE_CLEANUP_PDL_STOP ] = new ExCleanupPDLStop();
 		dispatch_table[OPCODE_SET_RELAY_MODE   ] = new ExSetRelayMode();
 		dispatch_table[OPCODE_ANALYST_SELECTION] = new ExAnalystSelection();
+		dispatch_table[OPCODE_HEALTH_MON_RESET ] = new ExHealthMonitorReset();
+		dispatch_table[OPCODE_HEALTH_MON_START ] = new ExHealthMonitorStart();
+		dispatch_table[OPCODE_HEALTH_MON_STOP  ] = new ExHealthMonitorStop();
 
 		for (int i = 0; i <= OPCODE_MAX; ++i) {
 			if (dispatch_table[i] != null) {

@@ -5,6 +5,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Collections;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+
+import org.opensha.oaf.util.TimeSplitOutputStream;
+
 import org.opensha.oaf.util.health.HealthMonitor;
 import org.opensha.oaf.util.health.SimpleHealthCounter;
 import org.opensha.oaf.util.health.SimpleHealthAlerter;
@@ -33,7 +40,7 @@ public class HealthSupport extends ServerComponent {
 
 	// The bits that currently have known interpretations.
 
-	public static final long HS_KNOWN_BITS		= 0x0000000000F0FL;
+	public static final long HS_KNOWN_BITS		= 0x0000000001F0FL;
 
 	// Indicates that health monitoring is active.
 	// Note: If this bit is zero, clients should assume OK status.
@@ -49,16 +56,17 @@ public class HealthSupport extends ServerComponent {
 
 	// Indicates that a health status warning is in progress.
 	// Note: When a warning is in progress, this bit is set in addtion to other
-	// bits that specify the cause(s) of the alert.
+	// bits that specify the cause(s) of the warning.
 	// Note: This bit must be zero if HS_ACTIVE is zero.
 
 	public static final long HS_WARNING			= 0x0000000000004L;
 
-	// Indicates that a health status alert is in progress,
-	// and it has been reported repeatedly for a period of time.
+	// Indicates that health status information is available.
+	// Note: When information is available, this bit is set in addtion to other
+	// bits that specify the cause(s) of the information.
 	// Note: This bit must be zero if HS_ACTIVE is zero.
 
-	public static final long HS_PERSISTENT		= 0x0000000000008L;
+	public static final long HS_INFO			= 0x0000000000008L;
 
 	// An alert for Comcat, indicating an inability to communicate with Comcat.
 
@@ -75,6 +83,10 @@ public class HealthSupport extends ServerComponent {
 	// An alert for polling, indicating an inability to perform Comcat polls.
 
 	public static final long HS_POLL			= 0x0000000000800L;
+
+	// An alert for intake, indicating not receiving intake from PDL.
+
+	public static final long HS_INTAKE			= 0x0000000001000L;
 
 	// Value to use for status not available.
 
@@ -93,20 +105,23 @@ public class HealthSupport extends ServerComponent {
 
 
 
-	// Return true if the status flags indicate no statu issues.
-	// A false return indicates that the server needs attention from the user.
+	// Return true if the status flags indicate no status issues.
+	// A false return indicates that when server status is displayed to the user,
+	// a message should be displayed highlighting the health status.
 
 	public static boolean hs_clean_status (long hs) {
-		return (hs & (HS_ALERT | HS_WARNING)) == 0L;
+		return (hs & (HS_ALERT | HS_WARNING | HS_INFO)) == 0L;
 	}
 
 
 
 
-	// Return true if the status flags indicate a persistent alert state.
+	// Return true if the status flags indicate a primary server can step down to secondary.
+	// A false return indicates that the server should not step down.
+	// Note: If this function returns true, then hs_good_status must return false.
 
-	public static boolean hs_persistent_alert (long hs) {
-		return (hs & (HS_ALERT | HS_PERSISTENT)) == (HS_ALERT | HS_PERSISTENT);
+	public static boolean hs_step_down_ok (long hs) {
+		return (hs & HS_ALERT) != 0L;
 	}
 
 
@@ -120,6 +135,9 @@ public class HealthSupport extends ServerComponent {
 		}
 		if ((hs & HS_WARNING) != 0L) {
 			return String.format ("HS_WARNING 0x%X", hs);
+		}
+		if ((hs & HS_INFO) != 0L) {
+			return String.format ("HS_INFO 0x%X", hs);
 		}
 		if (hs == 0L) {
 			return "HS_NONE";
@@ -145,12 +163,6 @@ public class HealthSupport extends ServerComponent {
 
 		boolean f_first = true;
 
-		if ((hs & HS_PERSISTENT) != 0L) {
-			sb.append (f_first ? prefix : infix);
-			sb.append ("PERSISTENT");
-			f_first = false;
-		}
-
 		if ((hs & HS_COMCAT) != 0L) {
 			sb.append (f_first ? prefix : infix);
 			sb.append ("COMCAT");
@@ -172,6 +184,12 @@ public class HealthSupport extends ServerComponent {
 		if ((hs & HS_POLL) != 0L) {
 			sb.append (f_first ? prefix : infix);
 			sb.append ("POLL");
+			f_first = false;
+		}
+
+		if ((hs & HS_INTAKE) != 0L) {
+			sb.append (f_first ? prefix : infix);
+			sb.append ("INTAKE");
 			f_first = false;
 		}
 
@@ -201,7 +219,7 @@ public class HealthSupport extends ServerComponent {
 
 	// Produce a long summary of the status flags.
 	// The summary is a single line, and does not end with newline.
-	// If an alert is in progress, the result lists the alert cause(s).
+	// If an alert or warning is in progress, or information is available, the result lists the cause(s).
 
 	public static String hs_long_summary (long hs) {
 		if ((hs & HS_ALERT) != 0L) {
@@ -209,6 +227,9 @@ public class HealthSupport extends ServerComponent {
 		}
 		if ((hs & HS_WARNING) != 0L) {
 			return String.format ("HS_WARNING 0x%X%s", hs, hs_alert_causes (hs, " ", "", " ", ""));
+		}
+		if ((hs & HS_INFO) != 0L) {
+			return String.format ("HS_INFO 0x%X%s", hs, hs_alert_causes (hs, " ", "", " ", ""));
 		}
 		if (hs == 0L) {
 			return "HS_NONE";
@@ -224,7 +245,7 @@ public class HealthSupport extends ServerComponent {
 
 	// Produce a user alert of the status flags.
 	// The user alert is a single line, and does not end with newline.
-	// If an alert is in progress, the result lists the alert cause(s).
+	// If an alert or warning is in progress, or information is available, the result lists the cause(s).
 
 	public static String hs_user_alert (long hs) {
 		if ((hs & HS_ALERT) != 0L) {
@@ -232,6 +253,9 @@ public class HealthSupport extends ServerComponent {
 		}
 		if ((hs & HS_WARNING) != 0L) {
 			return String.format ("Health status = WARNING, code = 0x%X%s", hs, hs_alert_causes (hs, ", cause = ", "", " ", ""));
+		}
+		if ((hs & HS_INFO) != 0L) {
+			return String.format ("Health status =	INFO, code = 0x%X%s", hs, hs_alert_causes (hs, ", cause = ", "", " ", ""));
 		}
 		if (hs == 0L) {
 			return "Health status = NONE";
@@ -266,9 +290,13 @@ public class HealthSupport extends ServerComponent {
 	}
 
 
-	// Health monitor for persistent alerts, or null if none.
+	// Health monitor for intake, or null if none.
 
-	private HealthMonitor persistent_health_monitor;
+	private HealthMonitor intake_health_monitor;
+
+	public HealthMonitor get_intake_health_monitor () {
+		return intake_health_monitor;
+	}
 
 
 
@@ -315,19 +343,17 @@ public class HealthSupport extends ServerComponent {
 
 		// Poll
 
-		long[] poll_alert_rules = new long[4];
+		long[] poll_alert_rules = new long[2];
 		poll_alert_rules[0] = 1L * hour;
-		poll_alert_rules[1] = 6L;
-		poll_alert_rules[2] = 3L * hour;
-		poll_alert_rules[3] = 2L;
+		poll_alert_rules[1] = 4L;
 		poll_health_monitor = new SimpleHealthAlerter (poll_alert_rules);
 
-		// Persistent
+		// Intake
 
-		long[] persistent_alert_rules = new long[2];
-		persistent_alert_rules[0] = 30L * minute;
-		persistent_alert_rules[1] = 3L;
-		persistent_health_monitor = new SimpleHealthAlerter (persistent_alert_rules);
+		long[] intake_alert_rules = new long[2];
+		intake_alert_rules[0] = 1L * hour;
+		intake_alert_rules[1] = 4L;
+		intake_health_monitor = new SimpleHealthAlerter (intake_alert_rules);
 
 		return;
 	}
@@ -355,9 +381,9 @@ public class HealthSupport extends ServerComponent {
 
 		poll_health_monitor = null;
 
-		// Persistent
+		// Intake
 
-		persistent_health_monitor = null;
+		intake_health_monitor = null;
 
 		return;
 	}
@@ -368,13 +394,13 @@ public class HealthSupport extends ServerComponent {
 	// Check health monitors, and get the status flags.
 	// Parameters:
 	//  time_now = Time at which to check the health monitors, cannot be zero.
-	//  is_primary = True if this machine is primary for sending to PDL.
+	//  f_pdl_mon = True to enable normal monitoring of PDL.
 	// Returns:
 	//  HS_ACTIVE set.
-	//  HS_ALERT set if any health monitor is alerting.
+	//  HS_ALERT, HS_WARNING, or HS_INFO set if any health monitor is alerting.
 	//  Flags for individual alert sources are set.
 
-	private long check_health_monitors (long time_now, boolean is_primary) {
+	private long check_health_monitors (long time_now, boolean f_pdl_mon) {
 		long status = HS_ACTIVE;
 
 		// Comcat
@@ -390,14 +416,28 @@ public class HealthSupport extends ServerComponent {
 
 		HealthMonitor pdl_health_monitor = PDLSender.get_pdl_health_monitor ();
 		if (pdl_health_monitor != null) {
-			if (is_primary) {
-				if (pdl_health_monitor.check_alert (time_now)) {
-					status |= (HS_PDL | HS_WARNING);
-				}
-			} else {
-				pdl_health_monitor.reset_monitor();
+			if (pdl_health_monitor.check_alert (time_now)) {
+				status |= (HS_PDL | HS_ALERT);
 			}
 		}
+
+		// Originally, the PDL monitor was reset if this machine is not primary, because
+		// otherwise a PDL alert can never be cleared while the machine is not primary.
+		// However, this made it impossible for a machine configured as primary to step
+		// down to secondary.
+		//
+		// We now allow a PDL alert to continue indefinitely on a machine that is not primary,
+		// until it is manually reset.  This may be reconsidered in the future.
+
+		//if (pdl_health_monitor != null) {
+		//	if (f_pdl_mon) {
+		//		if (pdl_health_monitor.check_alert (time_now)) {
+		//			status |= (HS_PDL | HS_WARNING);
+		//		}
+		//	} else {
+		//		pdl_health_monitor.reset_monitor();
+		//	}
+		//}
 
 		// Forecast
 
@@ -415,16 +455,11 @@ public class HealthSupport extends ServerComponent {
 			}
 		}
 
-		// Persistent
+		// Intake
 
-		if (persistent_health_monitor != null) {
-			if ((status & HS_ALERT) != 0L) {
-				persistent_health_monitor.report_failure (time_now);
-				if (persistent_health_monitor.check_alert (time_now)) {
-					status |= HS_PERSISTENT;
-				}
-			} else {
-				persistent_health_monitor.report_success (time_now);
+		if (intake_health_monitor != null) {
+			if (intake_health_monitor.check_alert (time_now)) {
+				status |= (HS_INTAKE | HS_WARNING);
 			}
 		}
 
@@ -464,10 +499,10 @@ public class HealthSupport extends ServerComponent {
 			poll_health_monitor.reset_monitor();
 		}
 
-		// Persistent
+		// Intake
 
-		if (persistent_health_monitor != null) {
-			persistent_health_monitor.reset_monitor();
+		if (intake_health_monitor != null) {
+			intake_health_monitor.reset_monitor();
 		}
 
 		return;
@@ -495,7 +530,8 @@ public class HealthSupport extends ServerComponent {
 		// If enabled, check the health monitors
 
 		if (f_heath_status_enabled) {
-			hs = check_health_monitors (time_now, sg.pdl_sup.is_pdl_primary());
+			//hs = check_health_monitors (time_now, sg.pdl_sup.is_pdl_primary());
+			hs = check_health_monitors (time_now, true);
 		}
 
 		return hs;
@@ -505,15 +541,15 @@ public class HealthSupport extends ServerComponent {
 	// Get the current health status.
 	// Parameters:
 	//  time_now = Time at which to check the health monitors, cannot be zero.
-	//  is_primary = True if this machine is primary for sending to PDL.
+	//  f_pdl_mon = True to enable normal monitoring of PDL.
 
-	public long get_health_status (long time_now, boolean is_primary) {
+	public long get_health_status (long time_now, boolean f_pdl_mon) {
 		long hs = HS_NOT_AVAILABLE;
 
 		// If enabled, check the health monitors
 
 		if (f_heath_status_enabled) {
-			hs = check_health_monitors (time_now, is_primary);
+			hs = check_health_monitors (time_now, f_pdl_mon);
 		}
 
 		return hs;
@@ -568,6 +604,17 @@ public class HealthSupport extends ServerComponent {
 
 
 
+	// Delete all health monitoring tasks (the health monitoring reset/start/stop tasks).
+	// The currently active task is deleted, if it is a health monitoring task.
+
+	public void delete_all_existing_health_monitoring_tasks () {
+		sg.task_sup.delete_all_tasks_for_event (EVID_HEALTH, OPCODE_HEALTH_MON_RESET, OPCODE_HEALTH_MON_START, OPCODE_HEALTH_MON_STOP);
+		return;
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -577,7 +624,7 @@ public class HealthSupport extends ServerComponent {
 
 		forecast_health_monitor = null;
 		poll_health_monitor = null;
-		persistent_health_monitor = null;
+		intake_health_monitor = null;
 
 		f_heath_status_enabled = false;
 	}
@@ -592,11 +639,142 @@ public class HealthSupport extends ServerComponent {
 
 		forecast_health_monitor = null;
 		poll_health_monitor = null;
-		persistent_health_monitor = null;
+		intake_health_monitor = null;
 
 		f_heath_status_enabled = false;
 
 		return;
+	}
+
+
+
+
+	//----- Additional health check functions -----
+
+
+
+
+	// Check if PDL intake is active.
+	// Parameters:
+	//  f_verbose = True to enable output to standard out.
+	// Returns: 1 if PDL intake active, -1 if PDL intake not active, 0 if check was bypassed.
+	// Implementation note: We do this by seeing if the modification time
+	// on the intake log file is current.
+	// Note: This function is called from the polling code, so the check is
+	// done at the polling rate and only if polling is enabled.
+
+	public int check_pdl_intake_active (boolean f_verbose) {
+
+		// The health monitor we use for reporting
+
+		HealthMonitor health_monitor = get_intake_health_monitor();
+		if (health_monitor == null) {
+			if (f_verbose) {
+				System.out.println ("PDL-INTAKE-CHECK: Bypassed - No health monitor");
+			}
+			return 0;
+		}
+
+		// Get the lookback time (eventually this should come from ActionConfig)
+
+		long intake_lookback_time = 2700000L;		// 45 minutes
+
+		// Current time; we use the system clock because we are comparing to the file system time
+
+		long time_now = System.currentTimeMillis();
+
+		// Get the intake filename pattern, or "" if none
+
+		String filename_pattern = (new ServerConfig()).get_log_con_intake();
+
+		// Get the expected current filename, or null if none
+
+		String filename = TimeSplitOutputStream.make_expected_filename (filename_pattern, time_now);
+		if (filename == null || filename.isEmpty()) {
+			if (f_verbose) {
+				System.out.println ("PDL-INTAKE-CHECK: Bypassed - Cannot obtain current filename");
+			}
+			return 0;
+		}
+
+		// Get the file modification time, or 0L if not available
+
+		long modification_time = 0L;
+		try {
+			Path path = Paths.get (filename);
+			FileTime file_time = Files.getLastModifiedTime (path);
+			if (file_time != null) {
+				modification_time = file_time.toMillis();
+			}
+		} catch (Exception e) {
+			modification_time = 0L;
+		}
+
+		// Check if modification time is current and report the result
+
+		if (modification_time != 0L) {
+			if (modification_time + intake_lookback_time >= time_now) {
+				if (f_verbose) {
+					System.out.println ("PDL-INTAKE-CHECK: Success - Good date for file " + filename);
+				}
+				health_monitor.report_success();
+				return 1;
+			} else {
+				if (f_verbose) {
+					System.out.println ("PDL-INTAKE-CHECK: Failure - Stale date for file " + filename);
+				}
+				health_monitor.report_failure();
+				return -1;
+			}
+		}
+
+		// In case filename just changed, try the filename at the start of the lookback time
+
+		String early_filename = TimeSplitOutputStream.make_expected_filename (filename_pattern, time_now - intake_lookback_time);
+		if (early_filename == null || early_filename.isEmpty() || early_filename.equals (filename)) {
+			if (f_verbose) {
+				System.out.println ("PDL-INTAKE-CHECK: Failure - No date for file " + filename);
+			}
+			health_monitor.report_failure();
+			return -1;
+		}
+
+		// Get the file modification time, or 0L if not available
+
+		modification_time = 0L;
+		try {
+			Path path = Paths.get (early_filename);
+			FileTime file_time = Files.getLastModifiedTime (path);
+			if (file_time != null) {
+				modification_time = file_time.toMillis();
+			}
+		} catch (Exception e) {
+			modification_time = 0L;
+		}
+
+		// Check if modification time is current and report the result
+
+		if (modification_time != 0L) {
+			if (modification_time + intake_lookback_time >= time_now) {
+				if (f_verbose) {
+					System.out.println ("PDL-INTAKE-CHECK: Success - Good date for file " + early_filename);
+				}
+				health_monitor.report_success();
+				return 1;
+			} else {
+				if (f_verbose) {
+					System.out.println ("PDL-INTAKE-CHECK: Failure - Stale date for file " + early_filename);
+				}
+				health_monitor.report_failure();
+				return -1;
+			}
+		}
+		if (f_verbose) {
+			System.out.println ("PDL-INTAKE-CHECK: Failure - No date for file " + filename);
+			System.out.println ("PDL-INTAKE-CHECK: Failure - No date for file " + early_filename);
+		}
+		health_monitor.report_failure();
+		return -1;
 	}
 
 
@@ -630,7 +808,7 @@ public class HealthSupport extends ServerComponent {
 		sb.append ("\n");
 		sb.append ("hs_clean_status = " + hs_clean_status (hs));
 		sb.append ("\n");
-		sb.append ("hs_persistent_alert = " + hs_persistent_alert (hs));
+		sb.append ("hs_step_down_ok = " + hs_step_down_ok (hs));
 		sb.append ("\n");
 		sb.append (hs_short_summary (hs));
 		sb.append ("\n");
@@ -647,8 +825,8 @@ public class HealthSupport extends ServerComponent {
 
 	// Subroutine to display health status as hex, short string, long string, and user alert.
 
-	protected static String test_show_status (HealthSupport hsup, long time_now, boolean is_primary) {
-		long hs = hsup.get_health_status (time_now, is_primary);
+	protected static String test_show_status (HealthSupport hsup, long time_now, boolean f_pdl_mon) {
+		long hs = hsup.get_health_status (time_now, f_pdl_mon);
 		return test_show_status (hs);
 	}
 
@@ -657,9 +835,9 @@ public class HealthSupport extends ServerComponent {
 
 	// Subroutine to request status multiple times.
 
-	protected static void test_multi_status (HealthSupport hsup, int count, long time_now, boolean is_primary) {
+	protected static void test_multi_status (HealthSupport hsup, int count, long time_now, boolean f_pdl_mon) {
 		for (int n = 0; n < count; ++n) {
-			hsup.get_health_status (time_now, is_primary);
+			hsup.get_health_status (time_now, f_pdl_mon);
 		}
 		return;
 	}
@@ -748,6 +926,11 @@ public class HealthSupport extends ServerComponent {
 				System.out.println ("Poll failure");
 				System.out.println (test_show_status (hsup, time_now, true));
 
+				test_multi_failure (hsup.intake_health_monitor, fail_count, day_ago);
+
+				System.out.println ("Intake failure");
+				System.out.println (test_show_status (hsup, time_now, true));
+
 				// Show for secondary PDL
 
 				System.out.println ("PDL secondary");
@@ -768,6 +951,12 @@ public class HealthSupport extends ServerComponent {
 				System.out.println ("Invalid - alert only");
 				System.out.println (test_show_status (HS_ALERT));
 
+				System.out.println ("Invalid - warning only");
+				System.out.println (test_show_status (HS_WARNING));
+
+				System.out.println ("Invalid - info only");
+				System.out.println (test_show_status (HS_INFO));
+
 				System.out.println ("Invalid - Comcat only");
 				System.out.println (test_show_status (HS_COMCAT));
 
@@ -778,7 +967,7 @@ public class HealthSupport extends ServerComponent {
 				System.out.println ("Enable");
 				System.out.println (test_show_status (hsup, time_now, true));
 
-				// Test for persistent triggering
+				// Test for warnings and reset
 
 				test_multi_failure (hsup.poll_health_monitor, fail_count, day_ago);
 
@@ -800,12 +989,86 @@ public class HealthSupport extends ServerComponent {
 				System.out.println ("Multiple status calls");
 				System.out.println (test_show_status (hsup, day_future, true));
 
+				hsup.reset_health_status();
+
+				System.out.println ("Reset");
+				System.out.println (test_show_status (hsup, day_future, true));
+
+				test_multi_failure (hsup.intake_health_monitor, fail_count, day_ago);
+
+				System.out.println ("Intake failure - expect warning");
+				System.out.println (test_show_status (hsup, time_now, true));
+
+				// PDL-only failure
+
+				hsup.reset_health_status();
+
+				System.out.println ("Reset");
+				System.out.println (test_show_status (hsup, day_future, true));
+
+				test_multi_failure (PDLSender.get_pdl_health_monitor(), fail_count, day_ago);
+
+				System.out.println ("PDL-only failure");
+				System.out.println (test_show_status (hsup, time_now, true));
+
+				System.out.println ("PDL-only secondary");
+				System.out.println (test_show_status (hsup, time_now, false));
+
 				// Disable
 
 				hsup.disable_health_status();
 
 				System.out.println ("Disable");
 				System.out.println (test_show_status (hsup, time_now, true));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2
+		// Test the PDL intake activity check.
+		// Note: Before running this test, set up the intake log file as desired.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 0 additional arguments
+
+			if (!( args.length == 1 )) {
+				System.err.println ("HealthSupport : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Testing PDL intake activity check");
+
+				// Make a health support object
+
+				HealthSupport hsup = new HealthSupport();
+
+				// Insert an intake health monitor
+
+				hsup.intake_health_monitor = new SimpleHealthCounter();
+
+				// Run the check
+
+				System.out.println ();
+				hsup.check_pdl_intake_active (true);
+
+				// Display the monitor state
+
+				System.out.println ();
+				System.out.println (hsup.intake_health_monitor.toString());
 
 			} catch (Exception e) {
 				e.printStackTrace();

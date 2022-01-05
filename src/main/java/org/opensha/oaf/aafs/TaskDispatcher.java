@@ -663,6 +663,10 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 					// Remove any shutdown commands from the task queue
 
 					delete_all_shutdown_tasks();
+				
+					// Remove any health monitoring commands from the task queue
+
+					sg.health_sup.delete_all_existing_health_monitoring_tasks();
 
 					// Initialize Comcat polling, begin disabled
 
@@ -1192,6 +1196,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 		case RESCODE_STAGE_TIMELINE_ID:
 		case RESCODE_STAGE_TOO_SOON:
 		case RESCODE_STAGE_REPEATING_TASK:
+		case RESCODE_STAGE_COMCAT_QUERY_RETRY:
 
 			// Display message
 

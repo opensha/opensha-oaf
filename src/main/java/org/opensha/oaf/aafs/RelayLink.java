@@ -105,6 +105,10 @@ public class RelayLink extends ServerComponent {
 
 	public long prist_init_timeout = 600000L;		// 10 minutes
 
+	// Timeout for primary state step-down timeout.
+
+	public long prist_step_down_timeout = 900000L;		// 15 minutes
+
 
 
 
@@ -2635,6 +2639,11 @@ public class RelayLink extends ServerComponent {
 	// private long local_status.start_time;
 
 
+	// Time at which conditions for step-down were first satisfied, or 0L if none.
+
+	private long first_step_down_time;
+
+
 
 
 	//----- Primary states -----
@@ -2656,7 +2665,7 @@ public class RelayLink extends ServerComponent {
 	public static final int PRIST_MAX					= 104;
 
 
-	// Return a string describing a relay mode.
+	// Return a string describing a primary state.
 
 	public static String get_primary_state_as_string (int state) {
 		switch (state) {
@@ -2774,6 +2783,13 @@ public class RelayLink extends ServerComponent {
 		return result;
 	}
 
+	// Clear the time at which conditions for step-down were first satisfied.
+
+	private void clear_first_step_down_time () {
+		first_step_down_time = 0L;
+		return;
+	}
+
 
 
 
@@ -2832,7 +2848,10 @@ public class RelayLink extends ServerComponent {
 	//  The remote is running as primary.
 	//  The remote heartbeat is not stale.
 	//  The remote health status is good.
-	//  The local health status is persistently bad.
+	//  The local health status is bad.
+	//  The above conditions have existed for at least the step-down timeout.
+	// Note: If is_remote_known_dead would return true, then this function must return false.
+	// Note: This function updates first_step_down_time as needed.
 	//
 	// Application: A true return means that a pair-mode server, configured primary,
 	// running as primary or secondary, should transition to secondary or remain as secondary.
@@ -2854,15 +2873,22 @@ public class RelayLink extends ServerComponent {
 				&& (remote_status.link_state == LINK_CONNECTED || remote_status.link_state == LINK_RESYNC)	// remote server is connected (or resync)
 				&& remote_status.heartbeat_time >= time_now - heartbeat_stale		// remote heartbeat is not stale
 				&& HealthSupport.hs_good_status (remote_status.health_status)		// remote health status is good
-				&& HealthSupport.hs_persistent_alert (local_status.health_status)	// local health status is persistently bad
+				&& HealthSupport.hs_step_down_ok (local_status.health_status)		// local health status is bad and permits step down
 				) {
 
-				return true;
+				if (first_step_down_time == 0L) {
+					first_step_down_time = time_now;
+				} else if (time_now >= first_step_down_time + prist_step_down_timeout) {
+					return true;
+				}
+
+				return false;
 			}
 		}
 
 		// In all other case, we don't know that it's forced to primary
 
+		clear_first_step_down_time();
 		return false;
 	}
 
@@ -2887,11 +2913,13 @@ public class RelayLink extends ServerComponent {
 		// In solo mode, just return configured primary state
 
 		case RMODE_SOLO:
+			clear_first_step_down_time();
 			return ( local_status.is_configured_primary() ? PRIST_PRIMARY : PRIST_SECONDARY );
 		
 		// In watch mode, just return configured primary state
 
 		case RMODE_WATCH:
+			clear_first_step_down_time();
 			if (get_primary_state() == PRIST_INITIALIZING) {
 
 				// Come here in watch mode during initialization
@@ -2994,6 +3022,9 @@ public class RelayLink extends ServerComponent {
 			//>>> Pair mode, configured secondary, running as primary
 
 			// Otherwise we are configured secondary ...
+
+			clear_first_step_down_time();
+
 			// If the partner server is known to be dead, stay in primary
 
 			if (is_remote_known_dead (time_now)) {
@@ -3040,6 +3071,9 @@ public class RelayLink extends ServerComponent {
 			//>>> Pair mode, configured secondary, running as secondary
 
 			// Otherwise we are configured secondary ...
+
+			clear_first_step_down_time();
+
 			// If the partner server is known to be dead, step up to primary
 
 			if (is_remote_known_dead (time_now)) {
@@ -3059,6 +3093,8 @@ public class RelayLink extends ServerComponent {
 		// Come here in pair mode during initialization
 
 		// If configured primary ...
+
+		clear_first_step_down_time();
 
 		if (local_status.is_configured_primary()) {
 
@@ -3174,6 +3210,10 @@ public class RelayLink extends ServerComponent {
 
 		set_start_time (time_now);
 
+		// Clear the first step-down time
+
+		clear_first_step_down_time();
+
 		return;
 	}
 
@@ -3192,6 +3232,10 @@ public class RelayLink extends ServerComponent {
 		// Set the start time
 
 		set_start_time (0L);
+
+		// Clear the first step-down time
+
+		clear_first_step_down_time();
 
 		return;
 	}

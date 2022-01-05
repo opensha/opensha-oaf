@@ -493,4 +493,30 @@ public class TimeSplitOutputStream extends FilterOutputStream {
 		return true;
 	}
 
+
+
+
+	// Make the filename that the stream is expected to use.
+	// Parameters:
+	//  the_filename_pattern = The pattern used to generate a filename, in the format of SimpleDateFormat.
+	//  the_time = Current time, in milliseconds since the epoch.
+	// Return the filename, or null if the filename could not be generated.
+	// Note: This function catches all exceptions; any exception produces a null return.
+
+	public static String make_expected_filename (String the_filename_pattern, long the_time) {
+		if (the_filename_pattern == null || the_filename_pattern.isEmpty()) {
+			return null;
+		}
+
+		String result = null;
+		try {
+			SimpleDateFormat the_fmt = new SimpleDateFormat (the_filename_pattern);
+			the_fmt.setTimeZone (TimeZone.getTimeZone ("UTC"));
+			result = the_fmt.format (new Date (the_time));
+		} catch (Exception e) {
+			result = null;
+		}
+		return result;
+	}
+
 }

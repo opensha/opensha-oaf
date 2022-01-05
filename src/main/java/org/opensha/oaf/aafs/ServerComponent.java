@@ -39,7 +39,10 @@ public class ServerComponent {
 	public static final int OPCODE_CLEANUP_PDL_STOP = 20;	// Stop cleaning up old forecasts in PDL
 	public static final int OPCODE_SET_RELAY_MODE = 21;		// Set server relay mode
 	public static final int OPCODE_ANALYST_SELECTION = 22;	// Analyst selection of options
-	public static final int OPCODE_MAX = 22;				// Maximum allowed opcode
+	public static final int OPCODE_HEALTH_MON_RESET = 23;	// Reset health monitoring
+	public static final int OPCODE_HEALTH_MON_START = 24;	// Start health monitoring
+	public static final int OPCODE_HEALTH_MON_STOP = 25;	// Stop health monitoring
+	public static final int OPCODE_MAX = 25;				// Maximum allowed opcode
 
 	// Return a string describing an opcode.
 
@@ -67,6 +70,9 @@ public class ServerComponent {
 		case OPCODE_CLEANUP_PDL_STOP: return "OPCODE_CLEANUP_PDL_STOP";
 		case OPCODE_SET_RELAY_MODE: return "OPCODE_SET_RELAY_MODE";
 		case OPCODE_ANALYST_SELECTION: return "OPCODE_ANALYST_SELECTION";
+		case OPCODE_HEALTH_MON_RESET: return "OPCODE_HEALTH_MON_RESET";
+		case OPCODE_HEALTH_MON_START: return "OPCODE_HEALTH_MON_START";
+		case OPCODE_HEALTH_MON_STOP: return "OPCODE_HEALTH_MON_STOP";
 		}
 		return "OPCODE_INVALID(" + x + ")";
 	}
@@ -132,7 +138,10 @@ public class ServerComponent {
 	public static final int RESCODE_PDL_CONFIRMED = 41;				// PDL operation on other server is confirmed
 	public static final int RESCODE_ANALYST_OPTIONS_STALE = 42;		// Analyst options were already set or superseded
 	public static final int RESCODE_ANALYST_OPTIONS_BAD = 43;		// Analyst options are invalid
-	public static final int RESCODE_MAX_NORMAL = 43;				// Maximum known normal result code
+	public static final int RESCODE_TIMELINE_COMCAT_QUERY_FAIL = 44;	// Timeline stopped due to ComCat query failure
+	public static final int RESCODE_INTAKE_COMCAT_QUERY_FAIL = 45;	// Event intake failed due to ComCat query failure
+	public static final int RESCODE_FORECAST_PDL_SEND_FAIL = 46;	// Forecast generated successfully but PDL send failed
+	public static final int RESCODE_MAX_NORMAL = 46;				// Maximum known normal result code
 
 	public static final int RESCODE_DELETE = 101;					// Delete current task (without logging it)
 	public static final int RESCODE_DELETE_TIMELINE_EXISTS = 102;	// Delete current task (without logging it), because timeline already exists
@@ -150,6 +159,7 @@ public class ServerComponent {
 	public static final int RESCODE_STAGE_TIMELINE_ID = 205;		// Stage current task (execute it again), to insert timeline ID
 	public static final int RESCODE_STAGE_TOO_SOON = 206;			// Stage current task (execute it again), because it is too soon for the operation
 	public static final int RESCODE_STAGE_REPEATING_TASK = 207;		// Stage current task (execute it again), because it is a repeating task
+	public static final int RESCODE_STAGE_COMCAT_QUERY_RETRY = 208;	// Stage current task (execute it again), to retry a failed Comcat query operation
 
 
 	// Return a string describing a result code.
@@ -199,6 +209,9 @@ public class ServerComponent {
 		case RESCODE_PDL_CONFIRMED: return "RESCODE_PDL_CONFIRMED";
 		case RESCODE_ANALYST_OPTIONS_STALE: return "RESCODE_ANALYST_OPTIONS_STALE";
 		case RESCODE_ANALYST_OPTIONS_BAD: return "RESCODE_ANALYST_OPTIONS_BAD";
+		case RESCODE_TIMELINE_COMCAT_QUERY_FAIL: return "RESCODE_TIMELINE_COMCAT_QUERY_FAIL";
+		case RESCODE_INTAKE_COMCAT_QUERY_FAIL: return "RESCODE_INTAKE_COMCAT_QUERY_FAIL";
+		case RESCODE_FORECAST_PDL_SEND_FAIL: return "RESCODE_FORECAST_PDL_SEND_FAIL";
 
 		case RESCODE_DELETE: return "RESCODE_DELETE";
 		case RESCODE_DELETE_TIMELINE_EXISTS: return "RESCODE_DELETE_TIMELINE_EXISTS";
@@ -216,6 +229,7 @@ public class ServerComponent {
 		case RESCODE_STAGE_TIMELINE_ID: return "RESCODE_STAGE_TIMELINE_ID";
 		case RESCODE_STAGE_TOO_SOON: return "RESCODE_STAGE_TOO_SOON";
 		case RESCODE_STAGE_REPEATING_TASK: return "RESCODE_STAGE_REPEATING_TASK";
+		case RESCODE_STAGE_COMCAT_QUERY_RETRY: return "RESCODE_STAGE_COMCAT_QUERY_RETRY";
 		}
 		return "RESCODE_INVALID(" + x + ")";
 	}
@@ -238,6 +252,8 @@ public class ServerComponent {
 	public static final String EVID_CLEANUP = "===cleanup===";	// Used for cleanup tasks
 
 	public static final String EVID_RELAY = "===relay===";	// Used for server relay tasks
+
+	public static final String EVID_HEALTH = "===health===";	// Used for health monitoring tasks
 
 
 

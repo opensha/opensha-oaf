@@ -1425,18 +1425,15 @@ public class ServerCmd {
 							} else {
 								System.out.println (String.format ("Heartbeat is STALE, age = %d:%02d", hours, minutes));
 							}
-							if (!( HealthSupport.hs_clean_status (sstat_payload.health_status) )) {
-								System.out.println (HealthSupport.hs_user_alert (sstat_payload.health_status));
-							}
 						} else {
-							if (!( HealthSupport.hs_clean_status (sstat_payload.health_status) )) {
-								System.out.println (HealthSupport.hs_user_alert (sstat_payload.health_status));
-							}
 							if (HealthSupport.hs_good_status (sstat_payload.health_status)) {
 								if (sstat_payload.primary_state != RelayLink.PRIST_SHUTDOWN) {
 									++result;
 								}
 							}
+						}
+						if (!( HealthSupport.hs_clean_status (sstat_payload.health_status) )) {
+							System.out.println (HealthSupport.hs_user_alert (sstat_payload.health_status));
 						}
 					}
 				}
@@ -1983,6 +1980,252 @@ public class ServerCmd {
 
 
 
+	// cmd_reset_health_monitor - Tell the server to reset health monitoring.
+
+	public static void cmd_reset_health_monitor(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerCmd : Invalid 'reset_health_monitor' subcommand");
+			return;
+		}
+
+		// Get current time
+
+		long start_time = ServerClock.get_true_time();
+
+		try (
+
+			// Console redirection and log
+
+			TimeSplitOutputStream con_tsop = TimeSplitOutputStream.make_tsop (
+										(new ServerConfig()).get_log_con_control(), start_time);
+			ConsoleRedirector con_red = ConsoleRedirector.make_redirector (con_tsop, false, false);
+			Closeable auto_out = TimeSplitOutputStream.add_auto_upstream (con_tsop,
+										ConsoleRedirector.get_new_out (con_red));
+			Closeable auto_err = TimeSplitOutputStream.add_auto_upstream (con_tsop,
+										ConsoleRedirector.get_new_err (con_red));
+
+		){
+
+			try {
+
+				String event_id = ServerComponent.EVID_HEALTH;
+
+				OpHealthMonitorReset payload = new OpHealthMonitorReset();
+				payload.setup ();
+
+				// Say hello
+
+				System.out.println (ServerComponent.LOG_SEPARATOR_LINE);
+				System.out.println ("Sending command to reset health monitoring at " + SimpleUtils.time_to_string (start_time));
+
+				// Post the task
+
+				int opcode = TaskDispatcher.OPCODE_HEALTH_MON_RESET;
+				int stage = 0;
+
+				long the_time = ServerClock.get_time();
+
+				boolean result = TaskDispatcher.post_task (event_id, the_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
+
+				// Display result
+
+				if (result) {
+					System.out.println ("Command to reset health monitoring was sent to AAFS server at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+					System.out.println ("It takes about 30 seconds for the command to take effect.");
+				} else {
+					System.out.println ("Unable to send AAFS server command to stop polling Comcat at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+				}
+
+			}
+
+			// Report any uncaught exceptions
+
+			catch (Exception e) {
+				System.out.println ("Command to reset health monitoring had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+				e.printStackTrace();
+			}
+		}
+
+		// Report any uncaught exceptions
+
+		catch (Exception e) {
+			System.out.println ("Command to reset health monitoring had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+			e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_start_health_monitor - Tell the server to start health monitoring.
+
+	public static void cmd_start_health_monitor(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerCmd : Invalid 'start_health_monitor' subcommand");
+			return;
+		}
+
+		// Get current time
+
+		long start_time = ServerClock.get_true_time();
+
+		try (
+
+			// Console redirection and log
+
+			TimeSplitOutputStream con_tsop = TimeSplitOutputStream.make_tsop (
+										(new ServerConfig()).get_log_con_control(), start_time);
+			ConsoleRedirector con_red = ConsoleRedirector.make_redirector (con_tsop, false, false);
+			Closeable auto_out = TimeSplitOutputStream.add_auto_upstream (con_tsop,
+										ConsoleRedirector.get_new_out (con_red));
+			Closeable auto_err = TimeSplitOutputStream.add_auto_upstream (con_tsop,
+										ConsoleRedirector.get_new_err (con_red));
+
+		){
+
+			try {
+
+				String event_id = ServerComponent.EVID_HEALTH;
+
+				OpHealthMonitorStart payload = new OpHealthMonitorStart();
+				payload.setup ();
+
+				// Say hello
+
+				System.out.println (ServerComponent.LOG_SEPARATOR_LINE);
+				System.out.println ("Sending command to start health monitoring at " + SimpleUtils.time_to_string (start_time));
+
+				// Post the task
+
+				int opcode = TaskDispatcher.OPCODE_HEALTH_MON_START;
+				int stage = 0;
+
+				long the_time = ServerClock.get_time();
+
+				boolean result = TaskDispatcher.post_task (event_id, the_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
+
+				// Display result
+
+				if (result) {
+					System.out.println ("Command to start health monitoring was sent to AAFS server at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+					System.out.println ("It takes about 30 seconds for the command to take effect.");
+				} else {
+					System.out.println ("Unable to send AAFS server command to stop polling Comcat at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+				}
+
+			}
+
+			// Report any uncaught exceptions
+
+			catch (Exception e) {
+				System.out.println ("Command to start health monitoring had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+				e.printStackTrace();
+			}
+		}
+
+		// Report any uncaught exceptions
+
+		catch (Exception e) {
+			System.out.println ("Command to start health monitoring had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+			e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
+	// cmd_stop_health_monitor - Tell the server to stop health monitoring.
+
+	public static void cmd_stop_health_monitor(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerCmd : Invalid 'stop_health_monitor' subcommand");
+			return;
+		}
+
+		// Get current time
+
+		long start_time = ServerClock.get_true_time();
+
+		try (
+
+			// Console redirection and log
+
+			TimeSplitOutputStream con_tsop = TimeSplitOutputStream.make_tsop (
+										(new ServerConfig()).get_log_con_control(), start_time);
+			ConsoleRedirector con_red = ConsoleRedirector.make_redirector (con_tsop, false, false);
+			Closeable auto_out = TimeSplitOutputStream.add_auto_upstream (con_tsop,
+										ConsoleRedirector.get_new_out (con_red));
+			Closeable auto_err = TimeSplitOutputStream.add_auto_upstream (con_tsop,
+										ConsoleRedirector.get_new_err (con_red));
+
+		){
+
+			try {
+
+				String event_id = ServerComponent.EVID_HEALTH;
+
+				OpHealthMonitorStop payload = new OpHealthMonitorStop();
+				payload.setup ();
+
+				// Say hello
+
+				System.out.println (ServerComponent.LOG_SEPARATOR_LINE);
+				System.out.println ("Sending command to stop health monitoring at " + SimpleUtils.time_to_string (start_time));
+
+				// Post the task
+
+				int opcode = TaskDispatcher.OPCODE_HEALTH_MON_STOP;
+				int stage = 0;
+
+				long the_time = ServerClock.get_time();
+
+				boolean result = TaskDispatcher.post_task (event_id, the_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
+
+				// Display result
+
+				if (result) {
+					System.out.println ("Command to stop health monitoring was sent to AAFS server at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+					System.out.println ("It takes about 30 seconds for the command to take effect.");
+				} else {
+					System.out.println ("Unable to send AAFS server command to stop polling Comcat at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+				}
+
+			}
+
+			// Report any uncaught exceptions
+
+			catch (Exception e) {
+				System.out.println ("Command to stop health monitoring had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+				e.printStackTrace();
+			}
+		}
+
+		// Report any uncaught exceptions
+
+		catch (Exception e) {
+			System.out.println ("Command to stop health monitoring had an uncaught exception at " + SimpleUtils.time_to_string (ServerClock.get_true_time()));
+			e.printStackTrace();
+		}
+
+		return;
+	}
+
+
+
+
 	// Entry point.
 	
 	public static void main(String[] args) {
@@ -2374,6 +2617,45 @@ public class ServerCmd {
 		case "wait_relay_status":
 			try {
 				cmd_wait_relay_status(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : reset_health_monitor
+		// Command format:
+		//  reset_health_monitor
+		// Post a command to reset health monitoring.
+
+		case "reset_health_monitor":
+			try {
+				cmd_reset_health_monitor(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : start_health_monitor
+		// Command format:
+		//  start_health_monitor
+		// Post a command to start health monitoring.
+
+		case "start_health_monitor":
+			try {
+				cmd_start_health_monitor(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : stop_health_monitor
+		// Command format:
+		//  stop_health_monitor
+		// Post a command to stop health monitoring.
+
+		case "stop_health_monitor":
+			try {
+				cmd_stop_health_monitor(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

@@ -30,6 +30,7 @@ import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 import org.opensha.oaf.comcat.GeoJsonUtils;
+import org.opensha.oaf.comcat.ComcatQueryException;
 import org.opensha.commons.data.comcat.ComcatException;
 import org.opensha.commons.data.comcat.ComcatVisitor;
 
@@ -501,6 +502,9 @@ public class CleanupSupport extends ServerComponent {
 			my_geojson = accessor.get_last_geojson();
 		}
 
+		catch (ComcatQueryException e) {
+			throw new ComcatQueryException ("Comcat error while doing cleanup for event: " + query_id, e);
+		}
 		catch (Exception e) {
 			throw new ComcatException ("Comcat error while doing cleanup for event: " + query_id, e);
 		}

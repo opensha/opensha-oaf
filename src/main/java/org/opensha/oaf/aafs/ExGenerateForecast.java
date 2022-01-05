@@ -631,6 +631,8 @@ public class ExGenerateForecast extends ServerExecTask {
 
 		// If a PDL report is requested based on state ...
 
+		boolean f_pdl_send_fail = false;
+
 		if (tstatus.is_pdl_retry_state()) {
 
 			// Get the next PDL report lag, or -1 if none, assuming the report begins now
@@ -687,6 +689,8 @@ public class ExGenerateForecast extends ServerExecTask {
 
 				catch (Exception e) {
 
+					f_pdl_send_fail = true;
+
 					sg.log_sup.report_pdl_send_exception (tstatus, e);
 
 					// Get time of PDL retry
@@ -734,6 +738,10 @@ public class ExGenerateForecast extends ServerExecTask {
 		sg.timeline_sup.append_timeline (task, tstatus, 0L);
 
 		// Log the task
+
+		if (f_pdl_send_fail) {
+			return RESCODE_FORECAST_PDL_SEND_FAIL;
+		}
 
 		return RESCODE_SUCCESS;
 	}

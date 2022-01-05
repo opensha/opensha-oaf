@@ -17,6 +17,7 @@ import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
+import org.opensha.oaf.comcat.ComcatQueryException;
 import org.opensha.commons.data.comcat.ComcatException;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -204,6 +205,8 @@ public class ForecastMainshock {
 			ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 			rup = accessor.fetchEvent(query_event_id, false, true);		// request extended info
 			my_geojson = accessor.get_last_geojson();
+		} catch (ComcatQueryException e) {
+			throw new ComcatQueryException ("ForecastMainshock.fetch_mainshock_params: Comcat exception: query_event_id = " + ((query_event_id == null) ? "null" : query_event_id), e);
 		} catch (Exception e) {
 			throw new ComcatException ("ForecastMainshock.fetch_mainshock_params: Comcat exception: query_event_id = " + ((query_event_id == null) ? "null" : query_event_id), e);
 		}

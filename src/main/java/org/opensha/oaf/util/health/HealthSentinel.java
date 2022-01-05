@@ -13,7 +13,7 @@ package org.opensha.oaf.util.health;
 // then a report is sent to the HealthMonitor.
 //
 // Note that try-with-resources makes it unnecessary for the monitored
-// function to catch adn re-throw all exceptions just to send failure reports.
+// function to catch and re-throw all exceptions just to send failure reports.
 //
 // This object can also hold a time of occurrence to use in the reports.
 //

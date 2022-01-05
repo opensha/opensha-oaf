@@ -410,6 +410,10 @@ public class PollSupport extends ServerComponent {
 
 		result = true;
 
+		// Check that PDL intake is active
+
+		sg.health_sup.check_pdl_intake_active (f_verbose);
+
 		// Get lookback depending on whether it is a short or long poll
 
 		long poll_lookback;

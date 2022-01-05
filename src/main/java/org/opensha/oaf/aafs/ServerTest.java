@@ -5817,6 +5817,111 @@ public class ServerTest {
 
 
 
+	// Test #93 - Post a task to reset health monitoring.
+
+	public static void test93(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerTest : Invalid 'test93' subcommand");
+			return;
+		}
+
+		String event_id = ServerComponent.EVID_HEALTH;
+
+		OpHealthMonitorReset payload = new OpHealthMonitorReset();
+		payload.setup ();
+
+		// Post the task
+
+		int opcode = TaskDispatcher.OPCODE_HEALTH_MON_RESET;
+		int stage = 0;
+
+		long the_time = ServerClock.get_time();
+
+		boolean result = TaskDispatcher.post_task (event_id, the_time, the_time, "ServerTest", opcode, stage, payload.marshal_task());
+
+		// Display result
+
+		System.out.println ("Post health monitor reset result: " + result);
+
+		return;
+	}
+
+
+
+
+	// Test #94 - Post a task to start health monitoring.
+
+	public static void test94(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerTest : Invalid 'test94' subcommand");
+			return;
+		}
+
+		String event_id = ServerComponent.EVID_HEALTH;
+
+		OpHealthMonitorStart payload = new OpHealthMonitorStart();
+		payload.setup ();
+
+		// Post the task
+
+		int opcode = TaskDispatcher.OPCODE_HEALTH_MON_START;
+		int stage = 0;
+
+		long the_time = ServerClock.get_time();
+
+		boolean result = TaskDispatcher.post_task (event_id, the_time, the_time, "ServerTest", opcode, stage, payload.marshal_task());
+
+		// Display result
+
+		System.out.println ("Post health monitor reset result: " + result);
+
+		return;
+	}
+
+
+
+
+	// Test #95 - Post a task to stop health monitoring.
+
+	public static void test95(String[] args) {
+
+		// No additional arguments
+
+		if (args.length != 1) {
+			System.err.println ("ServerTest : Invalid 'test95' subcommand");
+			return;
+		}
+
+		String event_id = ServerComponent.EVID_HEALTH;
+
+		OpHealthMonitorStop payload = new OpHealthMonitorStop();
+		payload.setup ();
+
+		// Post the task
+
+		int opcode = TaskDispatcher.OPCODE_HEALTH_MON_STOP;
+		int stage = 0;
+
+		long the_time = ServerClock.get_time();
+
+		boolean result = TaskDispatcher.post_task (event_id, the_time, the_time, "ServerTest", opcode, stage, payload.marshal_task());
+
+		// Display result
+
+		System.out.println ("Post health monitor reset result: " + result);
+
+		return;
+	}
+
+
+
+
 	// Test dispatcher.
 	
 	public static void main(String[] args) {
@@ -7432,6 +7537,54 @@ public class ServerTest {
 
 			try {
 				test92(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #93
+		// Command format:
+		//  test93
+		// Post a task to reset health monitoring.
+
+		if (args[0].equalsIgnoreCase ("test93")) {
+
+			try {
+				test93(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #94
+		// Command format:
+		//  test94
+		// Post a task to start health monitoring.
+
+		if (args[0].equalsIgnoreCase ("test94")) {
+
+			try {
+				test94(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #95
+		// Command format:
+		//  test95
+		// Post a task to reset health monitoring.
+
+		if (args[0].equalsIgnoreCase ("test95")) {
+
+			try {
+				test95(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

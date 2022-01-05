@@ -173,10 +173,10 @@ public class ExIntakePDL extends ServerExecTask {
 	// Convert event ID to timeline ID for an intake PDL command.
 	// Returns values:
 	//  RESCODE_SUCCESS = The task already contains a timeline ID.
-	//  RESCODE_STAGE_TIMELINE_ID or RESCODE_STAGE_COMCAT_RETRY = The task is being staged
+	//  RESCODE_STAGE_TIMELINE_ID or RESCODE_STAGE_COMCAT_RETRY or RESCODE_STAGE_COMCAT_QUERY_RETRY = The task is being staged
 	//    for retry, either to start over with a timeline ID in place of an event ID, or
 	//    to retry a failed Comcat operation.
-	//  RESCODE_INTAKE_COMCAT_FAIL = Comcat retries exhausted, the command has failed.
+	//  RESCODE_INTAKE_COMCAT_FAIL or RESCODE_INTAKE_COMCAT_QUERY_FAIL = Comcat retries exhausted, the command has failed.
 	//  RESCODE_DELETE_INTAKE_FILTERED = The task should be deleted without being logged.
 	//  RESCODE_TASK_CORRUPT = The task payload is corrupted.
 	// Note: This function is the same as TimelineSupport.intake_event_id_to_timeline_id,

@@ -18,6 +18,7 @@ import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.commons.data.comcat.ComcatException;
 import org.opensha.oaf.comcat.ComcatConflictException;
 import org.opensha.oaf.comcat.ComcatRemovedException;
+import org.opensha.oaf.comcat.ComcatQueryException;
 import org.opensha.oaf.rj.CompactEqkRupList;
 
 /**
@@ -376,8 +377,8 @@ public class TimelineSupport extends ServerComponent {
 	// Stage the task to retry the Comcat operation.
 	// If retries are exhausted, then fail the operation.
 	// Return values:
-	//  RESCODE_STAGE_COMCAT_RETRY = The task is being staged for retry.
-	//  RESCODE_TIMELINE_COMCAT_FAIL = Retries exhausted, the timeline is stopped in Comcat fail state.
+	//  RESCODE_STAGE_COMCAT_RETRY or RESCODE_STAGE_COMCAT_QUERY_RETRY = The task is being staged for retry.
+	//  RESCODE_TIMELINE_COMCAT_FAIL or RESCODE_TIMELINE_COMCAT_QUERY_FAIL = Retries exhausted, the timeline is stopped in Comcat fail state.
 	//  RESCODE_TIMELINE_EVENT_REMOVED = Retries exhausted, event deleted or merged in Comcat, timeline is in withdrawn state.
 
 	public int process_timeline_comcat_retry (PendingTask task, TimelineStatus tstatus, Exception e) {
@@ -409,7 +410,7 @@ public class TimelineSupport extends ServerComponent {
 					Math.max (task.get_sched_time(), sg.task_disp.get_time() - last_comcat_retry_lag) + next_comcat_retry_lag,
 					sg.task_disp.get_action_config().lag_to_int (next_comcat_retry_lag));
 
-			return RESCODE_STAGE_COMCAT_RETRY;
+			return (e instanceof ComcatQueryException) ? RESCODE_STAGE_COMCAT_QUERY_RETRY : RESCODE_STAGE_COMCAT_RETRY;
 		}
 
 		// Retries exhausted, process the error and log the task
@@ -420,7 +421,7 @@ public class TimelineSupport extends ServerComponent {
 		}
 
 		process_timeline_comcat_fail (task, tstatus, e);
-		return RESCODE_TIMELINE_COMCAT_FAIL;
+		return (e instanceof ComcatQueryException) ? RESCODE_TIMELINE_COMCAT_QUERY_FAIL : RESCODE_TIMELINE_COMCAT_FAIL;
 	}
 
 
@@ -901,8 +902,8 @@ public class TimelineSupport extends ServerComponent {
 
 	// Set up Comcat retry for an intake command, while processing a Comcat exception.
 	// Return values:
-	//  RESCODE_STAGE_COMCAT_RETRY = The task is being staged for retry.
-	//  RESCODE_INTAKE_COMCAT_FAIL = Retries exhausted, the task has failed.
+	//  RESCODE_STAGE_COMCAT_RETRY or RESCODE_STAGE_COMCAT_QUERY_RETRY = The task is being staged for retry.
+	//  RESCODE_INTAKE_COMCAT_FAIL or RESCODE_INTAKE_COMCAT_QUERY_FAIL = Retries exhausted, the task has failed.
 
 	public int intake_setup_comcat_retry (PendingTask task, ComcatException e) {
 
@@ -926,7 +927,7 @@ public class TimelineSupport extends ServerComponent {
 		if (next_comcat_intake_lag >= 0L) {
 			sg.task_disp.set_taskres_stage (task.get_sched_time() + next_comcat_intake_lag,
 								sg.task_disp.get_action_config().lag_to_int (next_comcat_intake_lag));
-			return RESCODE_STAGE_COMCAT_RETRY;
+			return (e instanceof ComcatQueryException) ? RESCODE_STAGE_COMCAT_QUERY_RETRY : RESCODE_STAGE_COMCAT_RETRY;
 		}
 
 		// Retries exhausted, display the error and log the task
@@ -936,7 +937,7 @@ public class TimelineSupport extends ServerComponent {
 			+ "event_id = " + task.get_event_id() + "\n"
 			+ "Stack trace:\n" + SimpleUtils.getStackTraceAsString(e));
 
-		return RESCODE_INTAKE_COMCAT_FAIL;
+		return (e instanceof ComcatQueryException) ? RESCODE_INTAKE_COMCAT_QUERY_FAIL : RESCODE_INTAKE_COMCAT_FAIL;
 	}
 
 
@@ -945,10 +946,10 @@ public class TimelineSupport extends ServerComponent {
 	// Convert event ID to timeline ID for an intake command.
 	// Returns values:
 	//  RESCODE_SUCCESS = The task already contains a timeline ID.
-	//  RESCODE_STAGE_TIMELINE_ID or RESCODE_STAGE_COMCAT_RETRY = The task is being staged
+	//  RESCODE_STAGE_TIMELINE_ID or RESCODE_STAGE_COMCAT_RETRY or RESCODE_STAGE_COMCAT_QUERY_RETRY = The task is being staged
 	//    for retry, either to start over with a timeline ID in place of an event ID, or
 	//    to retry a failed Comcat operation.
-	//  RESCODE_INTAKE_COMCAT_FAIL = Comcat retries exhausted, the command has failed.
+	//  RESCODE_INTAKE_COMCAT_FAIL or RESCODE_INTAKE_COMCAT_QUERY_FAIL = Comcat retries exhausted, the command has failed.
 	//  RESCODE_ALIAS_EVENT_NOT_IN_COMCAT = The event ID is not in Comcat.
 
 	public int intake_event_id_to_timeline_id (PendingTask task) {

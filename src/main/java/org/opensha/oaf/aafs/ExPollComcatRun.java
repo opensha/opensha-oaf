@@ -18,6 +18,7 @@ import org.opensha.oaf.util.catalog.ObsEqkRupMaxTimeComparator;
 
 import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
+import org.opensha.oaf.comcat.ComcatQueryException;
 import org.opensha.commons.data.comcat.ComcatException;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -152,7 +153,7 @@ public class ExPollComcatRun extends ServerExecTask {
 			sg.task_disp.set_taskres_stage (sg.task_disp.get_time()
 								+ sg.task_disp.get_action_config().get_poll_short_period(),
 								task.get_stage());
-			return RESCODE_STAGE_COMCAT_RETRY;
+			return (e instanceof ComcatQueryException) ? RESCODE_STAGE_COMCAT_QUERY_RETRY : RESCODE_STAGE_COMCAT_RETRY;
 		}
 
 		double poll_lookback_days = ((double)poll_lookback) / ((double)DURATION_DAY);
