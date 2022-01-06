@@ -317,16 +317,16 @@ public class HealthSupport extends ServerComponent {
 		// Comcat
 
 		long[] comcat_alert_rules = new long[4];
-		comcat_alert_rules[0] = 1L * hour;
+		comcat_alert_rules[0] = 45L * minute;
 		comcat_alert_rules[1] = 10L;
 		comcat_alert_rules[2] = 3L * hour;
-		comcat_alert_rules[3] = 2L;
+		comcat_alert_rules[3] = 3L;
 		ComcatOAFAccessor.set_comcat_health_monitor (new SimpleHealthAlerter (comcat_alert_rules));
 
 		// PDL
 
 		long[] pdl_alert_rules = new long[4];
-		pdl_alert_rules[0] = 1L * hour;
+		pdl_alert_rules[0] = 45L * minute;
 		pdl_alert_rules[1] = 6L;
 		pdl_alert_rules[2] = 3L * hour;
 		pdl_alert_rules[3] = 2L;
@@ -351,8 +351,8 @@ public class HealthSupport extends ServerComponent {
 		// Intake
 
 		long[] intake_alert_rules = new long[2];
-		intake_alert_rules[0] = 1L * hour;
-		intake_alert_rules[1] = 4L;
+		intake_alert_rules[0] = 45L * minute;
+		intake_alert_rules[1] = 3L;
 		intake_health_monitor = new SimpleHealthAlerter (intake_alert_rules);
 
 		return;

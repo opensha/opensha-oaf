@@ -107,7 +107,7 @@ public class RelayLink extends ServerComponent {
 
 	// Timeout for primary state step-down timeout.
 
-	public long prist_step_down_timeout = 900000L;		// 15 minutes
+	public long prist_step_down_timeout = 600000L;		// 10 minutes
 
 
 

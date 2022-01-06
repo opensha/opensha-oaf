@@ -5879,7 +5879,7 @@ public class ServerTest {
 
 		// Display result
 
-		System.out.println ("Post health monitor reset result: " + result);
+		System.out.println ("Post health monitor start result: " + result);
 
 		return;
 	}
@@ -5914,7 +5914,7 @@ public class ServerTest {
 
 		// Display result
 
-		System.out.println ("Post health monitor reset result: " + result);
+		System.out.println ("Post health monitor stop result: " + result);
 
 		return;
 	}
