@@ -84,6 +84,8 @@ public class ComcatProduct {
 	public static final String PRODTYPE_POSTER = "poster";
 	public static final String PRODTYPE_SCITECH_LINK = "scitech-link";
 	public static final String PRODTYPE_SHAKEMAP = "shakemap";
+	public static final String PRODTYPE_EVENT_SEQUENCE = "event-sequence";
+	public static final String PRODTYPE_EVENT_SEQUENCE_TEXT = "event-sequence-text";
 
 
 	// Return true if the given product type is valid for this class.
@@ -108,6 +110,8 @@ public class ComcatProduct {
 			case PRODTYPE_POSTER:
 			case PRODTYPE_SCITECH_LINK:
 			case PRODTYPE_SHAKEMAP:
+			case PRODTYPE_EVENT_SEQUENCE:
+			case PRODTYPE_EVENT_SEQUENCE_TEXT:
 				return true;
 		}
 		return false;

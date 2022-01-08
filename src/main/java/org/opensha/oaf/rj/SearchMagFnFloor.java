@@ -165,7 +165,7 @@ public class SearchMagFnFloor extends SearchMagFn {
 	@Override
 	public double getLegacyMag () {
 		if (deltaMax > 0.001) {
-			throw new MarshalException ("SearchMagFn.getLegacyRadius: Function is not of legacy format.");
+			throw new MarshalException ("SearchMagFnFloor.getLegacyMag: Function is not of legacy format.");
 		}
 		return mag;
 	}

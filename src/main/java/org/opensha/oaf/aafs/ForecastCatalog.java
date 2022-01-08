@@ -384,7 +384,7 @@ public class ForecastCatalog {
 		switch (ver) {
 
 		default:
-			throw new MarshalException ("ForecastData.do_marshal: Unknown version number: " + ver);
+			throw new MarshalException ("ForecastCatalog.do_marshal: Unknown version number: " + ver);
 
 		case MARSHAL_VER_1:
 
@@ -419,7 +419,7 @@ public class ForecastCatalog {
 		switch (ver) {
 
 		default:
-			throw new MarshalException ("ForecastData.do_umarshal: Unknown version number: " + ver);
+			throw new MarshalException ("ForecastCatalog.do_umarshal: Unknown version number: " + ver);
 
 		case MARSHAL_VER_1:
 

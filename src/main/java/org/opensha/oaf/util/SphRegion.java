@@ -259,6 +259,14 @@ public abstract class SphRegion implements ComcatRegion {
 	}
 
 	/**
+	 * If this is a circular region on the sphere, then get the radius in kilometers.
+	 * The returned value ranges from 0 to one-half of the earth's circumference.
+	 */
+	public double getCircleRadiusKm() {
+		throw new UnsupportedOperationException ("The region is not a circle");
+	}
+
+	/**
 	 * Return true if this region is the entire world.
 	 * If this function returns true, then the region is exactly the box
 	 * given by min_lat, etc., and that box has latitude -90 to +90

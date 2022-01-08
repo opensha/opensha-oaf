@@ -162,6 +162,15 @@ public class SphRegionCircle extends SphRegion {
 		return Math.min (180.0, SphLatLon.distance_to_deg (radius));
 	}
 
+	/**
+	 * If this is a circular region on the sphere, then get the radius in kilometers.
+	 * The returned value ranges from 0 to one-half of the earth's circumference.
+	 */
+	@Override
+	public double getCircleRadiusKm() {
+		return radius;
+	}
+
 
 
 
