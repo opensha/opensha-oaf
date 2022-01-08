@@ -42,6 +42,7 @@ public class USGS_AftershockForecast {
 	private static final double[] min_mags_default = { 3d, 4d, 5d, 6d, 7d };
 	private static final double fractile_lower = 0.025;
 	private static final double fractile_upper = 0.975;
+	private static final double fractile_median = 0.500;
 	private static final double mag_bin_half_width_default = 0.05;
 
 	//  private static final long[] sdround_thresholds = {86400000L, 259200000L, 604800000L};
@@ -111,6 +112,7 @@ public class USGS_AftershockForecast {
 	private double[] calcMags;
 	private Table<Duration, Double, Double> numEventsLower;
 	private Table<Duration, Double, Double> numEventsUpper;
+	private Table<Duration, Double, Double> numEventsMedian;
 	private Table<Duration, Double, Double> probs;
 	
 	private boolean includeProbAboveMainshock;
@@ -189,13 +191,14 @@ public class USGS_AftershockForecast {
 		
 		numEventsLower = HashBasedTable.create();
 		numEventsUpper = HashBasedTable.create();
+		numEventsMedian = HashBasedTable.create();
 		probs = HashBasedTable.create();
 		
 		durations = Duration.values();
 		advisoryDuration = Duration.ONE_WEEK;
 		endDates = new Instant[durations.length];
 		
-		double[] calcFractiles = {fractile_lower, fractile_upper};
+		double[] calcFractiles = {fractile_lower, fractile_upper, fractile_median};
 		
 		calcMags = minMags;
 		if (includeProbAboveMainshock) {
@@ -230,6 +233,7 @@ public class USGS_AftershockForecast {
 				
 				numEventsLower.put(duration, minMag, fractiles[0]);
 				numEventsUpper.put(duration, minMag, fractiles[1]);
+				numEventsMedian.put(duration, minMag, fractiles[2]);
 //				double rate = model.getModalNumEvents(minMag, tMinDays, tMaxDays);
 
 //				double expectedVal = model.getModalNumEvents(minMag, tMinDays, tMaxDays);
@@ -351,9 +355,10 @@ public class USGS_AftershockForecast {
 					} else if (columnIndex == 2) {
 						int lower = (int)(numEventsLower.get(durations[d], mag)+0.5);
 						int upper = (int)(numEventsUpper.get(durations[d], mag)+0.5);
+						int median = (int)(numEventsMedian.get(durations[d], mag)+0.5);
 						if (upper == 0)
 							return "*";
-						return lower+" to "+upper;
+						return lower + " to " + upper + ", median " + median;
 					} else if (columnIndex == 3) {
 						int prob = (int)(100d*probs.get(durations[d], mag) + 0.5);
 						if (prob == 0)
@@ -503,10 +508,12 @@ public class USGS_AftershockForecast {
 					magBin.put("p95minimum", -1L);
 					magBin.put("p95maximum", -1L);
 					magBin.put("probability", -1.0);
+					magBin.put("median", -1L);
 				} else {
 					magBin.put("p95minimum", Math.round(numEventsLower.get(durations[i], minMags[m])));
 					magBin.put("p95maximum", Math.round(numEventsUpper.get(durations[i], minMags[m])));
 					magBin.put("probability", probs.get(durations[i], minMags[m]));
+					magBin.put("median", Math.round(numEventsMedian.get(durations[i], minMags[m])));
 				}
 				magBins.add(magBin);
 			}
@@ -528,6 +535,21 @@ public class USGS_AftershockForecast {
 			forecastsJSON.add(forecastJSON);
 		}
 		json.put("forecast", forecastsJSON);
+
+		// Next forecast time, if unknown then add advisory duration to the start time, and round up to whole number of minutes
+
+		long next_forecast_time = nextForecastMillis;
+		if (next_forecast_time < 0L) {		// if forecast will not be updated
+			next_forecast_time = -1L;
+		} else {
+			if (next_forecast_time == 0L) {	// if time unknown
+				next_forecast_time = advisoryDuration.getEndDate(startDate).toEpochMilli();
+			}
+			long minute = 60000L;			// one minute in milliseconds
+			long time_in_minutes = (next_forecast_time + minute - 1L) / minute;
+			next_forecast_time = time_in_minutes * minute;
+		}
+		json.put("nextForecastTime", next_forecast_time);
 		
 		return json;
 	}
