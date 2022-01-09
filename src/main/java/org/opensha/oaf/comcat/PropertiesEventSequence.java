@@ -4,6 +4,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+import java.time.Instant;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalImpJsonReader;
@@ -58,12 +63,14 @@ public class PropertiesEventSequence {
 	// Properties for the event-sequence product.
 	// (In addition to the standard properties "eventsource" and "eventsourcecode".)
 	//
-	// Note: The three time properties, originally "eventtime", "starttime",
-	// and "endtime", are now hyphenated.  The original names have special
-	// significance to PDL, and the products do not appear in Comcat if those
-	// names are used.
+	// Note: The three property names "eventtime", "starttime", and "endtime"
+	// have special significance to PDL.  If their values are not a time in
+	// ISO-8601 format, then the products do not appear in Comcat.  So, if time
+	// is represented as number of mulliseconds (EVS_TIME_ISO_8601 = false),
+	// then these names should be changed to "event-time", "start-time", and
+	// "end-time" respectively.
 
-	public static final String EVS_NAME_EVENT_TIME = "event-time";
+	public static final String EVS_NAME_EVENT_TIME = "eventtime";
 	public static final String EVS_NAME_REGION_TYPE = "region-type";
 	public static final String EVS_NAME_CIRCLE_LONGITUDE = "circle-longitude";
 	public static final String EVS_NAME_CIRCLE_LATITUDE = "circle-latitude";
@@ -72,8 +79,8 @@ public class PropertiesEventSequence {
 	public static final String EVS_NAME_MIN_LATITUDE = "minimum-latitude";
 	public static final String EVS_NAME_MAX_LONGITUDE = "maximum-longitude";
 	public static final String EVS_NAME_MIN_LONGITUDE = "minimum-longitude";
-	public static final String EVS_NAME_START_TIME = "start-time";
-	public static final String EVS_NAME_END_TIME = "end-time";
+	public static final String EVS_NAME_START_TIME = "starttime";
+	public static final String EVS_NAME_END_TIME = "endtime";
 	public static final String EVS_NAME_TITLE = "title";
 
 	// Known property values for the event-sequence product.
@@ -95,6 +102,10 @@ public class PropertiesEventSequence {
 	public static final boolean EVS_OPTIONAL_EVENT = false;			// eventsource and eventsourcecode
 	public static final boolean EVS_OPTIONAL_EVENT_TIME = true;		// eventtime
 	public static final boolean EVS_OPTIONAL_BOUNDS = false;		// the four rectangle bounds (if region is not rectangle)
+
+	// Flag for time format
+
+	public static final boolean EVS_TIME_ISO_8601 = true;			// true for ISO-8601 format, false for number of milliseconds
 
 
 
@@ -262,6 +273,38 @@ public class PropertiesEventSequence {
 
 
 
+	// Subroutine to convert time from long to string.
+	// The converted form should have millisecond precision.
+	
+	private static SimpleDateFormat t2sDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+	private static final TimeZone utc = TimeZone.getTimeZone("UTC");
+	static {
+		t2sDateFormat.setTimeZone(utc);
+	}
+
+	private String evs_time_to_string (long x) {
+		if (EVS_TIME_ISO_8601) {
+			return t2sDateFormat.format (new Date(x));
+		}
+		return Long.toString(x);
+	}
+
+
+
+
+	// Subroutine to convert time from string to long.
+	// Throws exception if conversion cannot be done.
+
+	private long evs_string_to_time (String s) {
+		if (EVS_TIME_ISO_8601) {
+			return Instant.parse(s).toEpochMilli();
+		}
+		return Long.parseLong(s);
+	}
+
+
+
+
 	// Set or clear the network identifier for the event, false return indicates bad value.
 
 	public final boolean set_eventNetwork (String s) {
@@ -304,7 +347,7 @@ public class PropertiesEventSequence {
 
 	public final boolean set_event_time (long x) {
 		event_time = x;
-		s_event_time = Long.toString(x);
+		s_event_time = evs_time_to_string(x);
 		return true;
 	}
 
@@ -314,7 +357,7 @@ public class PropertiesEventSequence {
 			return EVS_OPTIONAL_EVENT_TIME;
 		}
 		try {
-			event_time = Long.parseLong(s);
+			event_time = evs_string_to_time(s);
 		} catch (Exception e) {
 			clear_event_time();
 			return false;
@@ -627,7 +670,7 @@ public class PropertiesEventSequence {
 
 	public final boolean set_start_time (long x) {
 		start_time = x;
-		s_start_time = Long.toString(x);
+		s_start_time = evs_time_to_string(x);
 		return true;
 	}
 
@@ -637,7 +680,7 @@ public class PropertiesEventSequence {
 			return false;
 		}
 		try {
-			start_time = Long.parseLong(s);
+			start_time = evs_string_to_time(s);
 		} catch (Exception e) {
 			clear_start_time();
 			return false;
@@ -669,7 +712,7 @@ public class PropertiesEventSequence {
 
 	public final boolean set_end_time (long x) {
 		end_time = x;
-		s_end_time = Long.toString(x);
+		s_end_time = evs_time_to_string(x);
 		return true;
 	}
 
@@ -679,7 +722,7 @@ public class PropertiesEventSequence {
 			return true;
 		}
 		try {
-			end_time = Long.parseLong(s);
+			end_time = evs_string_to_time(s);
 		} catch (Exception e) {
 			clear_end_time();
 			return false;
