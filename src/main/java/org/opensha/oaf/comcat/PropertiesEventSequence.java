@@ -15,12 +15,21 @@ import org.opensha.oaf.util.SphRegion;
 
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 
+import org.opensha.oaf.pdl.PDLProductBuilderEventSequence;
+import org.opensha.oaf.pdl.PDLSender;
+
+import org.opensha.oaf.aafs.ServerConfig;
+import org.opensha.oaf.aafs.ServerConfigFile;
+import org.opensha.oaf.aafs.VersionInfo;
+
 import org.opensha.commons.geo.GeoTools;
 import org.opensha.commons.geo.Location;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
 import org.json.simple.JSONObject;
+
+import gov.usgs.earthquake.product.Product;
 
 
 // Properties for an event sequence product.
@@ -37,6 +46,9 @@ import org.json.simple.JSONObject;
 // If an empty string is supplied as a property value, it is converted to null.
 // When marshalled, null strings are stored as empty strings.
 //
+// This can be used for a delete product, in which case only the network identifier
+// and network code are filled in.
+//
 // This should be regarded as preliminary.
 
 public class PropertiesEventSequence {
@@ -45,8 +57,13 @@ public class PropertiesEventSequence {
 
 	// Properties for the event-sequence product.
 	// (In addition to the standard properties "eventsource" and "eventsourcecode".)
+	//
+	// Note: The three time properties, originally "eventtime", "starttime",
+	// and "endtime", are now hyphenated.  The original names have special
+	// significance to PDL, and the products do not appear in Comcat if those
+	// names are used.
 
-	public static final String EVS_NAME_EVENT_TIME = "eventtime";
+	public static final String EVS_NAME_EVENT_TIME = "event-time";
 	public static final String EVS_NAME_REGION_TYPE = "region-type";
 	public static final String EVS_NAME_CIRCLE_LONGITUDE = "circle-longitude";
 	public static final String EVS_NAME_CIRCLE_LATITUDE = "circle-latitude";
@@ -55,8 +72,8 @@ public class PropertiesEventSequence {
 	public static final String EVS_NAME_MIN_LATITUDE = "minimum-latitude";
 	public static final String EVS_NAME_MAX_LONGITUDE = "maximum-longitude";
 	public static final String EVS_NAME_MIN_LONGITUDE = "minimum-longitude";
-	public static final String EVS_NAME_START_TIME = "starttime";
-	public static final String EVS_NAME_END_TIME = "endtime";
+	public static final String EVS_NAME_START_TIME = "start-time";
+	public static final String EVS_NAME_END_TIME = "end-time";
 	public static final String EVS_NAME_TITLE = "title";
 
 	// Known property values for the event-sequence product.
@@ -128,7 +145,8 @@ public class PropertiesEventSequence {
 	//--- Region selection.
 
 	// The region type, should be "circle" or "rectangle" ("properties/region-type" in the product).
-	// Must be non-null and have one of the values "circle" or "rectangle".
+	// For a normal product, must be non-null and have one of the values "circle" or "rectangle".
+	// For a delete product, this is null.
 
 	public String region_type;
 
@@ -336,6 +354,19 @@ public class PropertiesEventSequence {
 
 	public final boolean set_region_rectangle () {
 		region_type = EVS_REGION_TYPE_RECTANGLE;
+		return true;
+	}
+
+	public final boolean set_region_type_allow_null (String s) {
+		if (s == null || s.isEmpty()) {
+			clear_region_type();
+			return true;
+		}
+		if (!( s.equals(EVS_REGION_TYPE_CIRCLE) || s.equals(EVS_REGION_TYPE_RECTANGLE) )) {
+			clear_region_type();
+			return false;
+		}
+		region_type = s;
 		return true;
 	}
 
@@ -737,6 +768,15 @@ public class PropertiesEventSequence {
 			}
 		}
 
+		// Region type
+
+		if (!( region_type != null )) {
+			return "Region type is not specified";
+		}
+		if (!( is_region_circle() || is_region_rectangle() )) {
+			return "Region type is invalid";
+		}
+
 		// Circle
 
 		if (is_region_circle()) {
@@ -795,6 +835,83 @@ public class PropertiesEventSequence {
 
 		if (!( title != null )) {
 			return "Title is not specified";
+		}
+
+		// All OK
+
+		return null;
+	}
+
+
+
+
+	// Check the object invariant, for constructing a delete product.
+	// Returns null if OK, error message if invariant violated.
+	// Note: This function assumes the object was created by starting clear
+	// and then calling setter functions above.  So it does not check for
+	// every possible error.
+
+	public String check_invariant_for_delete () {
+
+		// Associated mainshock event
+
+		if (EVS_OPTIONAL_EVENT) {
+			if (!( (eventNetwork != null && eventCode != null) 
+				|| (eventNetwork == null && eventCode == null) )) {
+				return "Only one of network identifier and network code is specified";
+			}
+		} else {
+			if (!( eventNetwork != null && eventCode != null )) {
+				return "Network identifier and network code are not specified";
+			}
+		}
+
+		// Event time
+
+		if (!( s_event_time == null )) {
+			return "Event time is specified, but this is a delete product";
+		}
+
+		// Region type
+
+		if (!( region_type == null )) {
+			return "Region type is specified, but this is a delete product";
+		}
+
+		// Circle
+
+		if (!( s_circle_longitude == null
+			&& s_circle_latitude == null
+			&& s_circle_radius_km == null )) {
+			return "Circle parameters are specified, but this is a delete product";
+		}
+
+		// Rectangle
+
+		if (!( s_maximum_latitude == null
+			&& s_minimum_latitude == null
+			&& s_maximum_longitude == null
+			&& s_minimum_longitude == null )) {
+			return "Rectangle parameters are specified, but this is a delete product";
+		}
+
+		// Start time
+
+		if (!( s_start_time == null )) {
+			return "Start time is specified, but this is a delete product";
+		}
+
+		// End time
+
+		if (!( s_end_time == null )) {
+			return "End time is specified, but this is a delete product";
+		}
+
+
+		// Title
+
+		if (!( title == null )) {
+			return "Title is specified, but this is a delete product";
 		}
 
 		// All OK
@@ -1041,6 +1158,39 @@ public class PropertiesEventSequence {
 
 
 
+	// Read contents from a product GeoJson, for a delete product.
+	// Parameters:
+	//  gj_product = GeoJson containing the product.
+	// Returns true if success, false if data missing or mis-formatted.
+
+	public boolean read_from_product_gj_for_delete (JSONObject gj_product) {
+
+		clear();
+
+		// Event network
+
+		if (!( set_eventNetwork (GeoJsonUtils.getString (gj_product, "properties", "eventsource")) )) {
+			return false;
+		}
+
+		// Event network code
+
+		if (!( set_eventCode (GeoJsonUtils.getString (gj_product, "properties", "eventsourcecode")) )) {
+			return false;
+		}
+
+		// Check invariant
+
+		if (check_invariant_for_delete() != null) {
+			return false;
+		}
+
+		return true;
+	}
+
+
+
+
 	// Subroutine to put a string into a map if it is non-null.
 
 	private void put_if_non_null (Map<String, String> properties, String name, String s) {
@@ -1083,28 +1233,32 @@ public class PropertiesEventSequence {
 
 		// Circle
 
-		if (is_region_circle()) {
+		if (region_type != null) {
+			if (is_region_circle()) {
 
-			put_if_non_null (properties, EVS_NAME_CIRCLE_LONGITUDE, s_circle_longitude);
+				put_if_non_null (properties, EVS_NAME_CIRCLE_LONGITUDE, s_circle_longitude);
 
-			put_if_non_null (properties, EVS_NAME_CIRCLE_LATITUDE, s_circle_latitude);
+				put_if_non_null (properties, EVS_NAME_CIRCLE_LATITUDE, s_circle_latitude);
 
-			put_if_non_null (properties, EVS_NAME_CIRCLE_RADIUS_KM, s_circle_radius_km);
+				put_if_non_null (properties, EVS_NAME_CIRCLE_RADIUS_KM, s_circle_radius_km);
 
+			}
 		}
 
 		// Rectangle
 
-		if (is_region_rectangle() || (!EVS_OPTIONAL_BOUNDS)) {
+		if (region_type != null) {
+			if (is_region_rectangle() || (!EVS_OPTIONAL_BOUNDS)) {
 
-			put_if_non_null (properties, EVS_NAME_MAX_LATITUDE, s_maximum_latitude);
+				put_if_non_null (properties, EVS_NAME_MAX_LATITUDE, s_maximum_latitude);
 
-			put_if_non_null (properties, EVS_NAME_MIN_LATITUDE, s_minimum_latitude);
+				put_if_non_null (properties, EVS_NAME_MIN_LATITUDE, s_minimum_latitude);
 
-			put_if_non_null (properties, EVS_NAME_MAX_LONGITUDE, s_maximum_longitude);
+				put_if_non_null (properties, EVS_NAME_MAX_LONGITUDE, s_maximum_longitude);
 
-			put_if_non_null (properties, EVS_NAME_MIN_LONGITUDE, s_minimum_longitude);
+				put_if_non_null (properties, EVS_NAME_MIN_LONGITUDE, s_minimum_longitude);
 
+			}
 		}
 
 		// Start time
@@ -1179,6 +1333,42 @@ public class PropertiesEventSequence {
 		//	return false;
 		//}
 		if (!( set_title_from_event_title (s) )) {
+			return false;
+		}
+
+		return true;
+	}
+
+
+
+
+	// Set from an event GeoJson, for a delete product.
+	// Parameters:
+	//  gj_event = GeoJson containing the event.
+	// Returns true if success, false if data missing or mis-formatted.
+	// This function sets the following properties:
+	//  eventNetwork
+	//  eventCode
+
+	public boolean set_from_event_gj_for_delete (JSONObject gj_event) {
+
+		// Event network
+
+		String s = GeoJsonUtils.getString (gj_event, "properties", "net");
+		if (s == null || s.isEmpty()) {
+			return false;
+		}
+		if (!( set_eventNetwork (s) )) {
+			return false;
+		}
+
+		// Event network code
+
+		s = GeoJsonUtils.getString (gj_event, "properties", "code");
+		if (s == null || s.isEmpty()) {
+			return false;
+		}
+		if (!( set_eventCode (s) )) {
 			return false;
 		}
 
@@ -1291,7 +1481,8 @@ public class PropertiesEventSequence {
 
 	// Marshal version number.
 
-	private static final int MARSHAL_VER_1 = 98001;
+	private static final int MARSHAL_VER_1 = 98001;		// For normal product
+	private static final int MARSHAL_VER_2 = 98002;		// For delete product
 
 	private static final String M_VERSION_NAME = "PropertiesEventSequence";
 
@@ -1314,7 +1505,7 @@ public class PropertiesEventSequence {
 
 		// Version
 
-		int ver = MARSHAL_VER_1;
+		int ver = ((region_type != null) ? MARSHAL_VER_1 : MARSHAL_VER_2);
 		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Contents
@@ -1348,6 +1539,13 @@ public class PropertiesEventSequence {
 			marshal_string_or_null (writer, "title", title);
 
 			break;
+
+		case MARSHAL_VER_2:
+
+			marshal_string_or_null (writer, "eventNetwork", eventNetwork);
+			marshal_string_or_null (writer, "eventCode", eventCode);
+
+			break;
 		}
 	
 		return;
@@ -1359,7 +1557,7 @@ public class PropertiesEventSequence {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
@@ -1445,6 +1643,27 @@ public class PropertiesEventSequence {
 			}
 
 			s = check_invariant();
+			if (s != null) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Invariant violation: " + s);
+			}
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			clear();
+
+			s = reader.unmarshalString ("eventNetwork");
+			if (!( set_eventNetwork(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad eventNetwork: " + s);
+			}
+
+			s = reader.unmarshalString ("eventCode");
+			if (!( set_eventCode(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad eventCode: " + s);
+			}
+
+			s = check_invariant_for_delete();
 			if (s != null) {
 				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Invariant violation: " + s);
 			}
@@ -1611,6 +1830,36 @@ public class PropertiesEventSequence {
 
 		if (inv != null) {
 			throw new IllegalArgumentException ("PropertiesEventSequence.test_make_for_mainshock: Invariant check failed: " + inv);
+		}
+
+		return props;
+	}
+
+
+
+
+	// Make event sequence properties for a mainshock, for a delete product, for testing purposes.
+	// Parameters:
+	//  gj_event = Geojson for mainshock.
+	// Returns the event sequence properties.
+	// Throws exception if error.
+
+	public static PropertiesEventSequence test_make_for_mainshock_for_delete (JSONObject gj_event) {
+
+		PropertiesEventSequence props = new PropertiesEventSequence();
+
+		// Set properties for mainshock
+
+		if (!( props.set_from_event_gj_for_delete (gj_event) )) {
+			throw new IllegalArgumentException ("PropertiesEventSequence.test_make_for_mainshock_for_delete: Failed to set properties for mainshock");
+		}
+
+		// Check invariant
+
+		String inv = props.check_invariant_for_delete();
+
+		if (inv != null) {
+			throw new IllegalArgumentException ("PropertiesEventSequence.test_make_for_mainshock_for_delete: Invariant check failed: " + inv);
 		}
 
 		return props;
@@ -1851,6 +2100,483 @@ public class PropertiesEventSequence {
 				// Display the property map
 
 				System.out.println (props2.property_map_to_string (isReviewed));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  event_id  isReviewed
+		// See test_make_for_mainshock_for_delete for parameter description.
+		// Fetch information for an event, for a delete product, and display it.
+		// Then construct a properties object and display it.
+		// Then display the resulting property map.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("PropertiesEventSequence : Invalid 'test3' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				boolean isReviewed = Boolean.parseBoolean (args[2]);
+
+				// Say hello
+
+				System.out.println ("Constructing event sequence properties for event, for a delete product");
+				System.out.println ("event_id: " + event_id);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				System.out.println ("Fetching event: " + event_id);
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+
+				// Build event sequence properties
+
+				JSONObject gj_event = accessor.get_last_geojson();
+
+				PropertiesEventSequence props = test_make_for_mainshock_for_delete (gj_event);
+
+				// Display the contents
+
+				System.out.println (props.toString());
+
+				// Display the property map
+
+				System.out.println (props.property_map_to_string (isReviewed));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  event_id  isReviewed
+		// See test_make_for_mainshock_for_delete for parameter description.
+		// Fetch information for an event, for a delete product, and display it.
+		// Then construct a properties object and display it.
+		// Then display the resulting property map.
+		// Then marshal to JSON, and display the JSON.
+		// Then unmarshal, and display the unmarshaled info.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("PropertiesEventSequence : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				boolean isReviewed = Boolean.parseBoolean (args[2]);
+
+				// Say hello
+
+				System.out.println ("Constructing event sequence properties for event, for a delete product");
+				System.out.println ("event_id: " + event_id);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				System.out.println ("Fetching event: " + event_id);
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+
+				// Build event sequence properties
+
+				JSONObject gj_event = accessor.get_last_geojson();
+
+				PropertiesEventSequence props = test_make_for_mainshock_for_delete (gj_event);
+
+				// Display the contents
+
+				System.out.println (props.toString());
+
+				// Display the property map
+
+				System.out.println (props.property_map_to_string (isReviewed));
+
+				// Marshal to JSON
+
+				MarshalImpJsonWriter store = new MarshalImpJsonWriter();
+				PropertiesEventSequence.marshal_poly (store, null, props);
+				store.check_write_complete ();
+				String json_string = store.get_json_string();
+
+				System.out.println ("");
+				System.out.println (json_string);
+				System.out.println ("");
+
+				// Unmarshal from JSON
+			
+				PropertiesEventSequence props2 = null;
+
+				MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
+				props2 = PropertiesEventSequence.unmarshal_poly (retrieve, null);
+				retrieve.check_read_complete ();
+
+				// Display the contents
+
+				System.out.println (props2.toString());
+
+				// Display the property map
+
+				System.out.println (props2.property_map_to_string (isReviewed));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  event_id  f_circle  radius_km  start_delta_days  end_delta_days  isReviewed  pdl_code
+		// See test_make_for_mainshock for parameter description
+		// Fetch information for an event, and display it.
+		// Then construct a properties object and display it.
+		// Then display the resulting property map.
+		// Then build the product and send it to PDL-development using the specified code.
+		// Same as test #1 except it sends the product to PDL-development.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// 7 additional arguments
+
+			if (args.length != 8) {
+				System.err.println ("PropertiesEventSequence : Invalid 'test5' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				boolean f_circle = Boolean.parseBoolean (args[2]);
+				double radius_km = Double.parseDouble (args[3]);
+				double start_delta_days = Double.parseDouble (args[4]);
+				double end_delta_days = Double.parseDouble (args[5]);
+				boolean isReviewed = Boolean.parseBoolean (args[6]);
+				String pdl_code = args[7];
+
+				// Say hello
+
+				System.out.println ("Constructing event sequence properties for event");
+				System.out.println ("event_id: " + event_id);
+				System.out.println ("f_circle: " + f_circle);
+				System.out.println ("radius_km: " + radius_km);
+				System.out.println ("start_delta_days: " + start_delta_days);
+				System.out.println ("end_delta_days: " + end_delta_days);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("pdl_code: " + pdl_code);
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				System.out.println ("Fetching event: " + event_id);
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+
+				// Build event sequence properties
+
+				JSONObject gj_event = accessor.get_last_geojson();
+
+				PropertiesEventSequence props = test_make_for_mainshock (gj_event, f_circle, radius_km, start_delta_days, end_delta_days);
+
+				// Display the contents
+
+				System.out.println (props.toString());
+
+				// Display the property map
+
+				System.out.println (props.property_map_to_string (isReviewed));
+
+				// Direct operation to PDL-Development
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DEV;
+
+				// Make the PDL product
+
+				Map<String, String> extra_properties = new LinkedHashMap<String, String>();
+				extra_properties.put ("generated-by", VersionInfo.get_one_line_version());
+
+				String jsonText = null;
+				long modifiedTime = 0L;
+
+				Product product = PDLProductBuilderEventSequence.createProduct (
+					pdl_code, props, extra_properties, isReviewed, jsonText, modifiedTime);
+
+				// Stop if unable to create product
+
+				if (product == null) {
+					System.out.println ("PDLProductBuilderEventSequence.createProduct returned null");
+					return;
+				}
+
+				// Sign the product
+
+				PDLSender.signProduct(product);
+
+				// Send the product, true means it is text
+
+				PDLSender.sendProduct(product, true);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6  event_id  isReviewed  pdl_code
+		// See test_make_for_mainshock_for_delete for parameter description.
+		// Fetch information for an event, for a delete product, and display it.
+		// Then construct a properties object and display it.
+		// Then display the resulting property map.
+		// Then build the delete product and send it to PDL-development using the specified code.
+		// Same as test #3 except it sends the deletion product to PDL-development.
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// 3 additional arguments
+
+			if (args.length != 4) {
+				System.err.println ("PropertiesEventSequence : Invalid 'test5' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				boolean isReviewed = Boolean.parseBoolean (args[2]);
+				String pdl_code = args[3];
+
+				// Say hello
+
+				System.out.println ("Constructing event sequence properties for event, for a delete product");
+				System.out.println ("event_id: " + event_id);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("pdl_code: " + pdl_code);
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				System.out.println ("Fetching event: " + event_id);
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+
+				// Build event sequence properties
+
+				JSONObject gj_event = accessor.get_last_geojson();
+
+				PropertiesEventSequence props = test_make_for_mainshock_for_delete (gj_event);
+
+				// Display the contents
+
+				System.out.println (props.toString());
+
+				// Display the property map
+
+				System.out.println (props.property_map_to_string (isReviewed));
+
+				// Direct operation to PDL-Development
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DEV;
+
+				// Make the PDL delete product
+
+				Map<String, String> extra_properties = null;
+
+				long modifiedTime = 0L;
+
+				Product product = PDLProductBuilderEventSequence.createDeletionProduct (
+					pdl_code, props, extra_properties, isReviewed, modifiedTime);
+
+				// Stop if unable to create product
+
+				if (product == null) {
+					System.out.println ("PDLProductBuilderEventSequence.createDeletionProduct returned null");
+					return;
+				}
+
+				// Sign the product
+
+				PDLSender.signProduct(product);
+
+				// Send the product, true means it is text
+
+				PDLSender.sendProduct(product, true);
 
 			} catch (Exception e) {
 				e.printStackTrace();
