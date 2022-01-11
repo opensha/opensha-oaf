@@ -16,12 +16,12 @@ mainshock_lon = -71.6744
 mainshock_depth = 22.44
 mainshock_geojson is available
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-09-23T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=2.89011&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2015-09-16T22:54:32.860Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-09-23T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=2.89206&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2015-09-16T22:54:32.860Z
 Count of events received = 501
 Count of events after filtering = 500
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 500
-Centroid: -31.25194, -71.99426 (46.852 km from epicenter)
+Centroid: -31.25194, -71.99426 (46.820 km from epicenter)
 
 ForecastParameters:
 forecast_lag = 604800000
@@ -50,10 +50,10 @@ aftershock_search_fetch_meth = 0
 aftershock_search_avail = true
 aftershock_search_region = SphRegionCircle:
 plot_wrap = false
-min_lat = -34.142051765629816
-max_lat = -28.361829585004156
-min_lon = -75.37545740077067
-max_lon = -68.61307026515729
+min_lat = -34.144003795043695
+max_lat = -28.35987755559028
+min_lon = -75.37774183150195
+max_lon = -68.61078583442601
 center_lat = -31.251940675316987
 center_lon = -71.99426383296398
 radius = 321.3660538640318
@@ -64,7 +64,7 @@ max_depth = 700.0
 min_mag = 3.3000000000000007
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-09-23T22:54:32.860Z&format=geojson&latitude=-31.25194&limit=20000&longitude=-71.99426&maxdepth=700.000&maxradius=2.89011&mindepth=-5.000&minmagnitude=3.300&orderby=time&starttime=2015-09-16T22:54:32.860Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-09-23T22:54:32.860Z&format=geojson&latitude=-31.25194&limit=20000&longitude=-71.99426&maxdepth=700.000&maxradius=2.89206&mindepth=-5.000&minmagnitude=3.300&orderby=time&starttime=2015-09-16T22:54:32.860Z
 Count of events received = 514
 Count of events after filtering = 513
 Events filtered due to conversion = 0, location = 0, id = 1

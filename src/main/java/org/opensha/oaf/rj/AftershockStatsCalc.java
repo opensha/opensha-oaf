@@ -29,7 +29,7 @@ import org.opensha.commons.gui.plot.PlotLineType;
 import org.opensha.commons.gui.plot.PlotSymbol;
 import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotSpec;
 import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
-import org.opensha.commons.util.FaultUtils;
+//import org.opensha.commons.util.FaultUtils;
 import org.opensha.commons.util.cpt.CPT;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -44,6 +44,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.SphLatLon;
 
 /**
  * @author field
@@ -1344,39 +1345,39 @@ public class AftershockStatsCalc {
 
 	
 
-	// [DEPRECATED]
-	public static Location getCentroid(ObsEqkRupture mainshock, List<ObsEqkRupture> aftershocks) {
-		// now works across prime meridian
-		List<Location> locs = Lists.newArrayList(mainshock.getHypocenterLocation());
-		for (ObsEqkRupture aftershock : aftershocks)
-			locs.add(aftershock.getHypocenterLocation());
-		List<Double> lats = Lists.newArrayList();
-		List<Double> lons = Lists.newArrayList();
-		for (Location loc : locs) {
-			lats.add(loc.getLatitude());
-			lons.add(loc.getLongitude());
-		}
-		double lat = FaultUtils.getAngleAverage(lats);
-		while (lat > 90)
-			lat -= 360;
-		double lon = FaultUtils.getAngleAverage(lons);
-//		System.out.println("Mainshock loc: "+mainshock.getHypocenterLocation());
-//		System.out.println("Orig centroid lon: "+lon);
-		while (lon > 180)
-			lon -= 360;
-		// now make sure longitude is in the same domain as the input event
-		if (Math.abs(lon - mainshock.getHypocenterLocation().getLongitude()) > 270)
-			lon += 360;
-		Location centroid = new Location(lat, lon);
-		double dist = LocationUtils.horzDistanceFast(mainshock.getHypocenterLocation(), centroid);
-
-		boolean f_verbose = AftershockVerbose.get_verbose_mode();
-		if (f_verbose) {
-			System.out.println("Centroid: "+(float)lat+", "+(float)lon+" ("+(float)dist+" km from epicenter)");
-		}
-
-		return centroid;
-	}
+//	// [DEPRECATED]
+//	public static Location getCentroid(ObsEqkRupture mainshock, List<ObsEqkRupture> aftershocks) {
+//		// now works across prime meridian
+//		List<Location> locs = Lists.newArrayList(mainshock.getHypocenterLocation());
+//		for (ObsEqkRupture aftershock : aftershocks)
+//			locs.add(aftershock.getHypocenterLocation());
+//		List<Double> lats = Lists.newArrayList();
+//		List<Double> lons = Lists.newArrayList();
+//		for (Location loc : locs) {
+//			lats.add(loc.getLatitude());
+//			lons.add(loc.getLongitude());
+//		}
+//		double lat = FaultUtils.getAngleAverage(lats);
+//		while (lat > 90)
+//			lat -= 360;
+//		double lon = FaultUtils.getAngleAverage(lons);
+////		System.out.println("Mainshock loc: "+mainshock.getHypocenterLocation());
+////		System.out.println("Orig centroid lon: "+lon);
+//		while (lon > 180)
+//			lon -= 360;
+//		// now make sure longitude is in the same domain as the input event
+//		if (Math.abs(lon - mainshock.getHypocenterLocation().getLongitude()) > 270)
+//			lon += 360;
+//		Location centroid = new Location(lat, lon);
+//		double dist = SphLatLon.horzDistanceFast(mainshock.getHypocenterLocation(), centroid);
+//
+//		boolean f_verbose = AftershockVerbose.get_verbose_mode();
+//		if (f_verbose) {
+//			System.out.println("Centroid: "+(float)lat+", "+(float)lon+" ("+(float)dist+" km from epicenter)");
+//		}
+//
+//		return centroid;
+//	}
 
 
 	
@@ -1438,7 +1439,7 @@ public class AftershockStatsCalc {
 		// Centroid
 
 		Location centroid = new Location (lat, lon);
-		double dist = LocationUtils.horzDistance (mainshock.getHypocenterLocation(), centroid);
+		double dist = SphLatLon.horzDistance (mainshock.getHypocenterLocation(), centroid);
 
 		boolean f_verbose = AftershockVerbose.get_verbose_mode();
 		if (f_verbose) {

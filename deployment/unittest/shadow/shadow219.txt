@@ -20,21 +20,21 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-11-13T23:45:47.930Z&format=geojson&latitude=-60.28140&limit=20000&longitude=-47.12330&maxdepth=700.000&maxradius=17.98641&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2012-11-13T23:45:47.930Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-11-13T23:45:47.930Z&format=geojson&latitude=-60.28140&limit=20000&longitude=-47.12330&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2012-11-13T23:45:47.930Z
 Count of events received = 10
 Count of events after filtering = 9
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 9
 AftershockStatsShadow.find_shadow: Found 9 potential shadowing events for mainshock usb000kxhr
 AftershockStatsShadow.find_shadow: Found 2 candidate shadowing events for mainshock usb000kxhr
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-11-13T23:45:47.930Z&format=geojson&latitude=-60.28140&limit=20000&longitude=-47.12330&maxdepth=700.000&maxradius=1.47222&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2013-11-16T03:34:31.230Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-11-13T23:45:47.930Z&format=geojson&latitude=-60.28140&limit=20000&longitude=-47.12330&maxdepth=700.000&maxradius=1.47297&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2013-11-16T03:34:31.230Z
 Count of events received = 182
 Count of events after filtering = 182
 Total number of events returned = 182
-AftershockStatsShadow.find_shadow: Found 182 possible aftershocks within 163.704 km of mainshock usb000kxhr
+AftershockStatsShadow.find_shadow: Found 182 possible aftershocks within 163.677 km of mainshock usb000kxhr
 AftershockStatsShadow.find_shadow: Mainshock usb000kxhr is shadowed by event usb000l0gq
 AftershockStatsShadow.find_shadow: Mainshock magnitude = 6.10, shadowing event magnitude = 7.70
-AftershockStatsShadow.find_shadow: Distance = 39.824 km, time offset = -3.388 days
+AftershockStatsShadow.find_shadow: Distance = 39.797 km, time offset = -3.388 days
 
 Event is shadowed by:
 shadow_event_id = usb000l0gq
@@ -43,5 +43,5 @@ shadow_mag = 7.7
 shadow_lat = -60.2738
 shadow_lon = -46.4011
 shadow_depth = 10.0
-separation_km = 39.824
+separation_km = 39.797
 separation_days = -3.388

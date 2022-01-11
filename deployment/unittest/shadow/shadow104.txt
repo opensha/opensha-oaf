@@ -20,7 +20,7 @@ centroid_mag_floor = 2.5
 large_mag = 8.0
 
 Finding shadow:
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:34:11.530Z&format=geojson&latitude=-36.12200&limit=20000&longitude=-72.89800&maxdepth=700.000&maxradius=17.98641&mindepth=-5.000&minmagnitude=8.800&orderby=time&starttime=2009-02-27T06:34:11.530Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:34:11.530Z&format=geojson&latitude=-36.12200&limit=20000&longitude=-72.89800&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=8.800&orderby=time&starttime=2009-02-27T06:34:11.530Z
 Count of events received = 1
 Count of events after filtering = 0
 Events filtered due to conversion = 0, location = 0, id = 1

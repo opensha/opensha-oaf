@@ -189,6 +189,13 @@ public class SphLatLon {
 
 	//----- Spherical geometry -----
 
+
+	// Earth radius used by Comcat for comverting between km and degrees.
+	// Note: Comcat uses exactly 111.12 km per degree.
+
+	public static final double EARTH_RADIUS_COMCAT = 111.12 * Math.toDegrees(1.0);
+
+
 	/**
 	 * Calculates the angle between two points using the haversine formula.
 	 * http://en.wikipedia.org/wiki/Haversine_formula
@@ -209,7 +216,7 @@ public class SphLatLon {
 		// half length of chord connecting points
 		double c = (sinDlatBy2 * sinDlatBy2) +
 			(Math.cos(lat1) * Math.cos(lat2) * sinDlonBy2 * sinDlonBy2);
-		return 2.0 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+		return 2.0 * Math.atan2(Math.sqrt(c), Math.sqrt(1.0 - c));
 	}
 
 	/**
@@ -223,7 +230,7 @@ public class SphLatLon {
 		// half length of chord connecting points
 		double c = (sinDlatBy2 * sinDlatBy2) +
 			(Math.cos(lat1) * Math.cos(lat2) * sinDlonBy2 * sinDlonBy2);
-		return 2.0 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+		return 2.0 * Math.atan2(Math.sqrt(c), Math.sqrt(1.0 - c));
 	}
 
 	/**
@@ -237,7 +244,7 @@ public class SphLatLon {
 		// half length of chord connecting points
 		double c = (sinDlatBy2 * sinDlatBy2) +
 			(Math.cos(lat1) * Math.cos(lat2) * sinDlonBy2 * sinDlonBy2);
-		return 2.0 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+		return 2.0 * Math.atan2(Math.sqrt(c), Math.sqrt(1.0 - c));
 	}
 
 	/**
@@ -251,7 +258,7 @@ public class SphLatLon {
 		// half length of chord connecting points
 		double c = (sinDlatBy2 * sinDlatBy2) +
 			(Math.cos(lat1_rad) * Math.cos(lat2_rad) * sinDlonBy2 * sinDlonBy2);
-		return 2.0 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+		return 2.0 * Math.atan2(Math.sqrt(c), Math.sqrt(1.0 - c));
 	}
 
 	/**
@@ -265,42 +272,42 @@ public class SphLatLon {
 	 * @return the distance between the points in km
 	 */
 	public static double horzDistance (SphLatLon p1, SphLatLon p2) {
-		return EARTH_RADIUS_MEAN * angle_rad (p1, p2);
+		return EARTH_RADIUS_COMCAT * angle_rad (p1, p2);
 	}
 
 	/**
 	 * Version that accepts one SphLatLon and one Location.
 	 */
 	public static double horzDistance (SphLatLon p1, Location p2) {
-		return EARTH_RADIUS_MEAN * angle_rad (p1, p2);
+		return EARTH_RADIUS_COMCAT * angle_rad (p1, p2);
 	}
 
 	/**
 	 * Version that accepts one SphLatLon and latitude/longitude in degrees.
 	 */
 	public static double horzDistance (SphLatLon p1, double lat, double lon) {
-		return EARTH_RADIUS_MEAN * angle_rad (p1, lat, lon);
+		return EARTH_RADIUS_COMCAT * angle_rad (p1, lat, lon);
 	}
 
 	/**
 	 * Version that accepts two latitude/longitude pairs in degrees.
 	 */
 	public static double horzDistance (double lat1, double lon1, double lat2, double lon2) {
-		return EARTH_RADIUS_MEAN * angle_rad (lat1, lon1, lat2, lon2);
+		return EARTH_RADIUS_COMCAT * angle_rad (lat1, lon1, lat2, lon2);
 	}
 
 	/**
 	 * Convert horizontal distance to radians.
 	 */
 	public static double distance_to_rad (double distance) {
-		return distance / EARTH_RADIUS_MEAN;
+		return distance / EARTH_RADIUS_COMCAT;
 	}
 
 	/**
 	 * Convert horizontal distance to degrees.
 	 */
 	public static double distance_to_deg (double distance) {
-		return (distance / EARTH_RADIUS_MEAN) * TO_DEG;
+		return (distance / EARTH_RADIUS_COMCAT) * TO_DEG;
 	}
 
 	/**
@@ -356,7 +363,7 @@ public class SphLatLon {
 	 * Note: Correctly handles angles with any value (angular range is not restricted).
 	 */
 	public static SphLatLon gc_travel_km (double lat_rad, double lon_rad, double az_rad, double dist_km) {
-		return gc_travel_rad (lat_rad, lon_rad, az_rad, dist_km / EARTH_RADIUS_MEAN);
+		return gc_travel_rad (lat_rad, lon_rad, az_rad, dist_km / EARTH_RADIUS_COMCAT);
 	}
 
 	/**
@@ -605,6 +612,73 @@ public class SphLatLon {
 
 
 
+
+	/**
+	 * Version that accepts two Location points.
+	 *
+	 * Note: Same code as in LocationUtils.java, duplicated so we can change the radius.
+	 */
+	public static double angle_rad (Location p1, Location p2) {
+		double lat1 = p1.getLatRad();
+		double lat2 = p2.getLatRad();
+		double sinDlatBy2 = Math.sin((lat2 - lat1) / 2.0);
+		double sinDlonBy2 = Math.sin((p2.getLonRad() - p1.getLonRad()) / 2.0);
+		// half length of chord connecting points
+		double c = (sinDlatBy2 * sinDlatBy2) +
+			(Math.cos(lat1) * Math.cos(lat2) * sinDlonBy2 * sinDlonBy2);
+		return 2.0 * Math.atan2(Math.sqrt(c), Math.sqrt(1.0 - c));
+	}
+
+	/**
+	 * Calculates the great circle surface distance between two
+	 * Location points using the Haversine formula for computing the
+	 * angle between two points. For a faster, but less accurate implementation
+	 * at large separations, see horzDistanceFast(Location, Location).
+	 *
+	 * Note: Same code as in LocationUtils.java, duplicated so we can change the radius.
+	 * 
+	 * @param p1 the first Location point
+	 * @param p2 the second Location point
+	 * @return the distance between the points in km
+	 */
+	public static double horzDistance (Location p1, Location p2) {
+		return EARTH_RADIUS_COMCAT * angle_rad (p1, p2);
+	}
+
+	/**
+	 * Calculates approximate distance between two Location points. This
+	 * method is about 2 orders of magnitude faster than
+	 * horzDistance(), but is imprecise at large distances. Method
+	 * uses the latitudinal and longitudinal differences between the points as
+	 * the sides of a right triangle. The longitudinal distance is scaled by the
+	 * cosine of the mean latitude.
+	 * 
+	 * Note: This method does NOT support values spanning
+	 * +/- 180 degrees and fails where the numeric angle exceeds 180 degrees.
+	 * Convert data to the 0-360 degree interval or use
+	 * horzDistance() in such instances.
+	 *
+	 * Note: Same code as in LocationUtils.java, duplicated so we can change the radius.
+	 * 
+	 * @param p1 the first Location point
+	 * @param p2 the second Location point
+	 * @return the distance between the points in km
+	 */
+	public static double horzDistanceFast (Location p1, Location p2) {
+		// modified from J. Zechar:
+		// calculates distance between two points, using formula
+		// as specifed by P. Shebalin via email 5.8.2004
+		double lat1 = p1.getLatRad();
+		double lat2 = p2.getLatRad();
+		double dLat = lat1 - lat2;
+		double dLon = (p1.getLonRad() - p2.getLonRad()) *
+			Math.cos((lat1 + lat2) * 0.5);
+		return EARTH_RADIUS_COMCAT * Math.sqrt((dLat * dLat) + (dLon * dLon));
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal object.
@@ -653,4 +727,144 @@ public class SphLatLon {
 		reader.unmarshalArrayEnd ();
 		return obj_list;
 	}
+
+
+
+
+	//----- Testing -----
+
+
+
+
+	public static void main(String[] args) {
+
+		// There needs to be at least one argument, which is the subcommand
+
+		if (args.length < 1) {
+			System.err.println ("SphLatLon : Missing subcommand");
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #1
+		// Command format:
+		//  test1  lat1  lon1  lat2  lon2
+		// Compute the distance and azimuth between two given points.
+
+		if (args[0].equalsIgnoreCase ("test1")) {
+
+			// 4 additional arguments
+
+			if (!( args.length == 5 )) {
+				System.err.println ("SphLatLon : Invalid 'test1' subcommand");
+				return;
+			}
+
+			try {
+
+				double lat1 = Double.parseDouble (args[1]);
+				double lon1 = Double.parseDouble (args[2]);
+				double lat2 = Double.parseDouble (args[3]);
+				double lon2 = Double.parseDouble (args[4]);
+
+				// Say hello
+
+				System.out.println ("Computing distance and azimuth");
+				System.out.println ("lat1 = " + lat1);
+				System.out.println ("lon1 = " + lon1);
+				System.out.println ("lat2 = " + lat2);
+				System.out.println ("lon2 = " + lon2);
+
+				// Make the points
+
+				SphLatLon p1 = new SphLatLon (lat1, lon1);
+				SphLatLon p2 = new SphLatLon (lat2, lon2);
+
+				// Angle between the two points
+
+				System.out.println();
+				System.out.println ("Angle in degrees = " + angle_rad (p1, p2) * TO_DEG);
+
+				// Distance between the two points
+
+				System.out.println();
+				System.out.println ("Distance in km = " + horzDistance (p1, p2));
+
+				// Azimuth between the two points
+
+				System.out.println();
+				System.out.println ("Azimuth in degrees = " + azimuth_deg (p1, p2));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2
+		// Display the values of some constants.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 0 additional arguments
+
+			if (!( args.length == 1 )) {
+				System.err.println ("SphLatLon : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Displaying some constants");
+
+				// Constants to display
+
+				System.out.println();
+				System.out.println ("EARTH_RADIUS_MEAN = " + EARTH_RADIUS_MEAN);
+
+				System.out.println();
+				System.out.println ("EARTH_RADIUS_COMCAT = " + EARTH_RADIUS_COMCAT);
+
+				System.out.println();
+				System.out.println ("TO_DEG = " + TO_DEG);
+
+				System.out.println();
+				System.out.println ("TO_RAD = " + TO_RAD);
+
+				System.out.println();
+				System.out.println ("PI = " + PI);
+
+				System.out.println();
+				System.out.println ("TWOPI = " + TWOPI);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Unrecognized subcommand.
+
+		System.err.println ("SphLatLon : Unrecognized subcommand : " + args[0]);
+		return;
+
+	}
+
+
+
+
 }

@@ -1031,7 +1031,7 @@ public class OEGUIView extends OEGUIComponent {
 			
 			for (int i=0; i<gui_model.get_cur_aftershocks().size(); i++) {
 				ObsEqkRupture aftershock = gui_model.get_cur_aftershocks().get(i);
-				dists.add(LocationUtils.horzDistanceFast(gui_model.get_cur_mainshock().getHypocenterLocation(), aftershock.getHypocenterLocation()));
+				dists.add(SphLatLon.horzDistanceFast(gui_model.get_cur_mainshock().getHypocenterLocation(), aftershock.getHypocenterLocation()));
 			}
 
 			// Histogram of distances

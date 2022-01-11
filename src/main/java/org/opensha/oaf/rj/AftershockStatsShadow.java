@@ -479,7 +479,7 @@ public class AftershockStatsShadow {
 
 				// Get the distance to the mainshock
 
-				double dist = LocationUtils.horzDistance (mainshock_hypo, potential_hypo);
+				double dist = SphLatLon.horzDistance (mainshock_hypo, potential_hypo);
 
 				// If the potential is close enough to the mainshock so it could possibly shadow it ...
 
@@ -560,13 +560,13 @@ public class AftershockStatsShadow {
 
 			// If the centroid is within the sample radius of the mainshock, then it's shadowing the mainshock
 
-			if (LocationUtils.horzDistance (mainshock_hypo, centroid) <= candidate.sample_radius) {
+			if (SphLatLon.horzDistance (mainshock_hypo, centroid) <= candidate.sample_radius) {
 
 				// Return the largest-magnitude event that shadows the mainshock
 
 				CandidateShadow best_candidate = candidate;
 
-				double best_distance = LocationUtils.horzDistance (mainshock_hypo, best_candidate.candidate_hypo);
+				double best_distance = SphLatLon.horzDistance (mainshock_hypo, best_candidate.candidate_hypo);
 				double best_time_offset = ((double)(mainshock_time - best_candidate.candidate_time))/ComcatOAFAccessor.day_millis;
 
 				if (separation != null) {
@@ -638,7 +638,7 @@ public class AftershockStatsShadow {
 					if (   aftershock_time >= candidate.centroid_time_lo
 						&& aftershock_time <= candidate.centroid_time_hi
 						&& aftershock_mag >= candidate.centroid_min_mag
-						&& LocationUtils.horzDistance (aftershock_hypo, candidate.candidate_hypo) <= candidate.centroid_radius
+						&& SphLatLon.horzDistance (aftershock_hypo, candidate.candidate_hypo) <= candidate.centroid_radius
 						&& (!( aftershock_event_id.equals (candidate.candidate_event_id) )) ) {
 
 						// Add to the centroid accumulators
@@ -662,13 +662,13 @@ public class AftershockStatsShadow {
 
 			// If the centroid is within the sample radius of the mainshock, then it's shadowing the mainshock
 
-			if (LocationUtils.horzDistance (mainshock_hypo, centroid) <= candidate.sample_radius) {
+			if (SphLatLon.horzDistance (mainshock_hypo, centroid) <= candidate.sample_radius) {
 
 				// Return the largest-magnitude event that shadows the mainshock
 
 				CandidateShadow best_candidate = candidate;
 
-				double best_distance = LocationUtils.horzDistance (mainshock_hypo, best_candidate.candidate_hypo);
+				double best_distance = SphLatLon.horzDistance (mainshock_hypo, best_candidate.candidate_hypo);
 				double best_time_offset = ((double)(mainshock_time - best_candidate.candidate_time))/ComcatOAFAccessor.day_millis;
 
 				if (separation != null) {

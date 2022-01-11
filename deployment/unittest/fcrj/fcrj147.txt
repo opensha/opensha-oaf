@@ -18,12 +18,12 @@ mainshock_lon = 142.373
 mainshock_depth = 29.0
 mainshock_geojson is available
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-18T05:46:24.120Z&format=geojson&latitude=38.29700&limit=20000&longitude=142.37300&maxdepth=700.000&maxradius=10.30183&mindepth=-5.000&minmagnitude=4.100&orderby=time&starttime=2011-03-11T05:46:24.120Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-18T05:46:24.120Z&format=geojson&latitude=38.29700&limit=20000&longitude=142.37300&maxdepth=700.000&maxradius=10.30879&mindepth=-5.000&minmagnitude=4.100&orderby=time&starttime=2011-03-11T05:46:24.120Z
 Count of events received = 1946
 Count of events after filtering = 1945
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 1945
-Centroid: 37.49041, 142.73144 (95.044 km from epicenter)
+Centroid: 37.49041, 142.73144 (94.979 km from epicenter)
 
 ForecastParameters:
 forecast_lag = 604800000
@@ -52,10 +52,10 @@ aftershock_search_fetch_meth = 0
 aftershock_search_avail = true
 aftershock_search_region = SphRegionCircle:
 plot_wrap = false
-min_lat = 27.188577234061135
-max_lat = 47.792244711456426
-min_lon = 129.70585881427573
-max_lon = 155.75701472528712
+min_lat = 27.181619203090563
+max_lat = 47.799202742427
+min_lon = 129.69700297725478
+max_lon = 155.76587056230807
 center_lat = 37.49041097275878
 center_lon = 142.73143676978142
 radius = 1145.5129414455325
@@ -66,7 +66,7 @@ max_depth = 700.0
 min_mag = 4.1
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-18T05:46:24.120Z&format=geojson&latitude=37.49041&limit=20000&longitude=142.73144&maxdepth=700.000&maxradius=10.30183&mindepth=-5.000&minmagnitude=4.100&orderby=time&starttime=2011-03-11T05:46:24.120Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-03-18T05:46:24.120Z&format=geojson&latitude=37.49041&limit=20000&longitude=142.73144&maxdepth=700.000&maxradius=10.30879&mindepth=-5.000&minmagnitude=4.100&orderby=time&starttime=2011-03-11T05:46:24.120Z
 Count of events received = 1946
 Count of events after filtering = 1945
 Events filtered due to conversion = 0, location = 0, id = 1

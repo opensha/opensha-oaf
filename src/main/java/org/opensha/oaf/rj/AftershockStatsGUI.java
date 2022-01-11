@@ -1266,7 +1266,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			
 			for (int i=0; i<aftershocks.size(); i++) {
 				ObsEqkRupture aftershock = aftershocks.get(i);
-				dists.add(LocationUtils.horzDistanceFast(mainshock.getHypocenterLocation(), aftershock.getHypocenterLocation()));
+				dists.add(SphLatLon.horzDistanceFast(mainshock.getHypocenterLocation(), aftershock.getHypocenterLocation()));
 			}
 			
 			EvenlyDiscretizedFunc distFunc = getDistFunc();

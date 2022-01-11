@@ -16,12 +16,12 @@ mainshock_lon = -121.8798333
 mainshock_depth = 17.214
 mainshock_geojson is available
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-10-25T00:04:15.190Z&format=geojson&latitude=37.03617&limit=20000&longitude=-121.87983&maxdepth=700.000&maxradius=0.31255&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=1989-10-18T00:04:15.190Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-10-25T00:04:15.190Z&format=geojson&latitude=37.03617&limit=20000&longitude=-121.87983&maxdepth=700.000&maxradius=0.31276&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=1989-10-18T00:04:15.190Z
 Count of events received = 179
 Count of events after filtering = 178
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 178
-Centroid: 37.06823, -121.85576 (4.156 km from epicenter)
+Centroid: 37.06823, -121.85576 (4.154 km from epicenter)
 
 ForecastParameters:
 forecast_lag = 604800000
@@ -50,10 +50,10 @@ aftershock_search_fetch_meth = 0
 aftershock_search_avail = true
 aftershock_search_region = SphRegionCircle:
 plot_wrap = false
-min_lat = 36.755685768647986
-max_lat = 37.38077861986539
-min_lon = -122.24746747917347
-max_lon = -121.46406063865818
+min_lat = 36.755474669559774
+max_lat = 37.3809897189536
+min_lon = -122.24773204372012
+max_lon = -121.46379607411153
 center_lat = 37.06823219425669
 center_lon = -121.85576405891582
 radius = 34.753616144320574
@@ -64,7 +64,7 @@ max_depth = 700.0
 min_mag = 2.45
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-10-25T00:04:15.190Z&format=geojson&latitude=37.06823&limit=20000&longitude=-121.85576&maxdepth=700.000&maxradius=0.31255&mindepth=-5.000&minmagnitude=2.450&orderby=time&starttime=1989-10-18T00:04:15.190Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-10-25T00:04:15.190Z&format=geojson&latitude=37.06823&limit=20000&longitude=-121.85576&maxdepth=700.000&maxradius=0.31276&mindepth=-5.000&minmagnitude=2.450&orderby=time&starttime=1989-10-18T00:04:15.190Z
 Count of events received = 348
 Count of events after filtering = 347
 Events filtered due to conversion = 0, location = 0, id = 1

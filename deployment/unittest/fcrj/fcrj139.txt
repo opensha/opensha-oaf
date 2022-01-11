@@ -16,12 +16,12 @@ mainshock_lon = -174.123
 mainshock_depth = 55.0
 mainshock_geojson is available
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2006-05-10T15:26:40.290Z&format=geojson&latitude=-20.18700&limit=20000&longitude=-174.12300&maxdepth=700.000&maxradius=1.79438&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2006-05-03T15:26:40.290Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2006-05-10T15:26:40.290Z&format=geojson&latitude=-20.18700&limit=20000&longitude=-174.12300&maxdepth=700.000&maxradius=1.79559&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2006-05-03T15:26:40.290Z
 Count of events received = 110
 Count of events after filtering = 109
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 109
-Centroid: -20.40275, -174.16695 (24.424 km from epicenter)
+Centroid: -20.40275, -174.16695 (24.408 km from epicenter)
 
 ForecastParameters:
 forecast_lag = 604800000
@@ -50,10 +50,10 @@ aftershock_search_fetch_meth = 0
 aftershock_search_avail = true
 aftershock_search_region = SphRegionCircle:
 plot_wrap = false
-min_lat = -22.197128942770302
-max_lat = -18.608367979850062
-min_lon = -176.0814743669402
-max_lon = -172.2524173374639
+min_lat = -22.198340897387286
+max_lat = -18.607156025233078
+min_lon = -176.08276753014957
+max_lon = -172.25112417425453
 center_lat = -20.402748461310182
 center_lon = -174.16694585220205
 radius = 199.52623149688768
@@ -64,7 +64,7 @@ max_depth = 700.0
 min_mag = 3.0
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2006-05-10T15:26:40.290Z&format=geojson&latitude=-20.40275&limit=20000&longitude=-174.16695&maxdepth=700.000&maxradius=1.79438&mindepth=-5.000&minmagnitude=3.000&orderby=time&starttime=2006-05-03T15:26:40.290Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2006-05-10T15:26:40.290Z&format=geojson&latitude=-20.40275&limit=20000&longitude=-174.16695&maxdepth=700.000&maxradius=1.79559&mindepth=-5.000&minmagnitude=3.000&orderby=time&starttime=2006-05-03T15:26:40.290Z
 Count of events received = 110
 Count of events after filtering = 109
 Events filtered due to conversion = 0, location = 0, id = 1

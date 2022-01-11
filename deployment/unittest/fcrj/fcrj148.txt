@@ -16,12 +16,12 @@ mainshock_lon = 141.588
 mainshock_depth = 42.0
 mainshock_geojson is available
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-04-14T14:32:43.290Z&format=geojson&latitude=38.27600&limit=20000&longitude=141.58800&maxdepth=700.000&maxradius=0.42945&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2011-04-07T14:32:43.290Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-04-14T14:32:43.290Z&format=geojson&latitude=38.27600&limit=20000&longitude=141.58800&maxdepth=700.000&maxradius=0.42974&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2011-04-07T14:32:43.290Z
 Count of events received = 16
 Count of events after filtering = 15
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 15
-Centroid: 38.36541, 141.80228 (21.173 km from epicenter)
+Centroid: 38.36541, 141.80228 (21.159 km from epicenter)
 
 ForecastParameters:
 forecast_lag = 604800000
@@ -50,10 +50,10 @@ aftershock_search_fetch_meth = 0
 aftershock_search_avail = true
 aftershock_search_region = SphRegionCircle:
 plot_wrap = false
-min_lat = 37.93595764143982
-max_lat = 38.794861457292775
-min_lon = 141.25455845282846
-max_lon = 142.3500100128332
+min_lat = 37.93566758243173
+max_lat = 38.79515151630086
+min_lon = 141.25418850532117
+max_lon = 142.3503799603405
 center_lat = 38.3654095493663
 center_lon = 141.80228423283083
 radius = 47.75292736576897
@@ -64,7 +64,7 @@ max_depth = 700.0
 min_mag = 2.95
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-04-14T14:32:43.290Z&format=geojson&latitude=38.36541&limit=20000&longitude=141.80228&maxdepth=700.000&maxradius=0.42945&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2011-04-07T14:32:43.290Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-04-14T14:32:43.290Z&format=geojson&latitude=38.36541&limit=20000&longitude=141.80228&maxdepth=700.000&maxradius=0.42974&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2011-04-07T14:32:43.290Z
 Count of events received = 21
 Count of events after filtering = 20
 Events filtered due to conversion = 0, location = 0, id = 1

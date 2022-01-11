@@ -21,7 +21,7 @@ max_days = 365.0
 radius_km = 100.0
 min_mag = 3.5
 limit_per_call = 0
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1990-10-18T00:04:15.190Z&format=geojson&latitude=37.03617&limit=20000&longitude=-121.87983&maxdepth=700.000&maxradius=0.89932&mindepth=-5.000&minmagnitude=3.500&orderby=time&starttime=1989-10-18T00:02:48.790Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1990-10-18T00:04:15.190Z&format=geojson&latitude=37.03617&limit=20000&longitude=-121.87983&maxdepth=700.000&maxradius=0.89993&mindepth=-5.000&minmagnitude=3.500&orderby=time&starttime=1989-10-18T00:02:48.790Z
 Count of events received = 134
 Count of events after filtering = 133
 Events filtered due to conversion = 0, location = 0, id = 1

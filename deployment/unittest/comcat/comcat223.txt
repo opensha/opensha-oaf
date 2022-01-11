@@ -21,7 +21,7 @@ max_days = 1.0
 radius_km = 100.0
 min_mag = 3.5
 limit_per_call = 0
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-08-25T10:20:44.070Z&format=geojson&latitude=38.21517&limit=20000&longitude=-122.31233&maxdepth=700.000&maxradius=0.89932&mindepth=-5.000&minmagnitude=3.500&orderby=time&starttime=2014-08-25T07:56:44.070Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-08-25T10:20:44.070Z&format=geojson&latitude=38.21517&limit=20000&longitude=-122.31233&maxdepth=700.000&maxradius=0.89993&mindepth=-5.000&minmagnitude=3.500&orderby=time&starttime=2014-08-25T07:56:44.070Z
 Count of events received = 0
 Count of events after filtering = 0
 Total number of events returned = 0

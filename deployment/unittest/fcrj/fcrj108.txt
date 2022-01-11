@@ -16,12 +16,12 @@ mainshock_lon = 84.7314
 mainshock_depth = 8.22
 mainshock_geojson is available
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-02-19T06:11:25.950Z&format=geojson&latitude=28.23050&limit=20000&longitude=84.73140&maxdepth=700.000&maxradius=1.30591&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2015-04-25T06:11:25.950Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-02-19T06:11:25.950Z&format=geojson&latitude=28.23050&limit=20000&longitude=84.73140&maxdepth=700.000&maxradius=1.30680&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2015-04-25T06:11:25.950Z
 Count of events received = 223
 Count of events after filtering = 222
 Events filtered due to conversion = 0, location = 0, id = 1
 Total number of events returned = 222
-Centroid: 27.82317, 85.51264 (89.060 km from epicenter)
+Centroid: 27.82317, 85.51264 (88.999 km from epicenter)
 
 ForecastParameters:
 forecast_lag = 25920000000
@@ -50,10 +50,10 @@ aftershock_search_fetch_meth = 0
 aftershock_search_avail = true
 aftershock_search_region = SphRegionCircle:
 plot_wrap = false
-min_lat = 26.517258063568736
-max_lat = 29.129085815692218
-min_lon = 84.03598167394675
-max_lon = 86.98929866195935
+min_lat = 26.516376027474482
+max_lat = 29.12996785178647
+min_lon = 84.03498426590103
+max_lon = 86.99029607000507
 center_lat = 27.823171939630477
 center_lon = 85.51264016795305
 radius = 145.21116175877404
@@ -64,7 +64,7 @@ max_depth = 700.0
 min_mag = 2.95
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-02-19T06:11:25.950Z&format=geojson&latitude=27.82317&limit=20000&longitude=85.51264&maxdepth=700.000&maxradius=1.30591&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2015-04-25T06:11:25.950Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-02-19T06:11:25.950Z&format=geojson&latitude=27.82317&limit=20000&longitude=85.51264&maxdepth=700.000&maxradius=1.30680&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2015-04-25T06:11:25.950Z
 Count of events received = 296
 Count of events after filtering = 295
 Events filtered due to conversion = 0, location = 0, id = 1

@@ -16,7 +16,7 @@ mainshock_lon = -121.9268333
 mainshock_depth = 13.409
 mainshock_geojson is available
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-08-15T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=0.08993&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=1989-08-08T08:13:27.390Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-08-15T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=0.08999&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=1989-08-08T08:13:27.390Z
 Count of events received = 3
 Count of events after filtering = 2
 Events filtered due to conversion = 0, location = 0, id = 1
@@ -50,10 +50,10 @@ aftershock_search_fetch_meth = 0
 aftershock_search_avail = true
 aftershock_search_region = SphRegionCircle:
 plot_wrap = false
-min_lat = 37.061401820124914
-max_lat = 37.24126593804047
-min_lon = -122.04644215040857
-max_lon = -121.82077788571566
+min_lat = 37.061341078506736
+max_lat = 37.24132667965865
+min_lon = -122.04651835915564
+max_lon = -121.82070167696858
 center_lat = 37.15133387908269
 center_lon = -121.93361001806211
 radius = 10.0
@@ -64,7 +64,7 @@ max_depth = 700.0
 min_mag = 2.45
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-08-15T08:13:27.390Z&format=geojson&latitude=37.15133&limit=20000&longitude=-121.93361&maxdepth=700.000&maxradius=0.08993&mindepth=-5.000&minmagnitude=2.450&orderby=time&starttime=1989-08-08T08:13:27.390Z
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-08-15T08:13:27.390Z&format=geojson&latitude=37.15133&limit=20000&longitude=-121.93361&maxdepth=700.000&maxradius=0.08999&mindepth=-5.000&minmagnitude=2.450&orderby=time&starttime=1989-08-08T08:13:27.390Z
 Count of events received = 4
 Count of events after filtering = 3
 Events filtered due to conversion = 0, location = 0, id = 1
