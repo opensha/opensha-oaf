@@ -37,6 +37,9 @@ import org.opensha.oaf.comcat.ComcatOAFAccessor;
 
 import org.opensha.oaf.aafs.ServerConfig;
 
+import org.opensha.oaf.util.SimpleUtils;
+
+
 public class USGS_AftershockForecast {
 	
 	private static final double[] min_mags_default = { 3d, 4d, 5d, 6d, 7d };
@@ -360,12 +363,24 @@ public class USGS_AftershockForecast {
 							return "*";
 						return lower + " to " + upper + ", median " + median;
 					} else if (columnIndex == 3) {
-						int prob = (int)(100d*probs.get(durations[d], mag) + 0.5);
-						if (prob == 0)
-							return "*";
-						else if (prob == 100)
-							return ">99 %";
-						return prob+" %";
+
+						double prob = 100.0 * probs.get(durations[d], mag);
+						String probFormatted;
+						if (prob < 1.0e-6 && prob > 0.0) {
+							probFormatted = SimpleUtils.double_to_string ("%.2e", prob);
+						} else {
+							double probRounded = SimpleUtils.round_double_via_string ("%.2e", prob);
+							probFormatted = SimpleUtils.double_to_string_trailz ("%.8f", SimpleUtils.TRAILZ_REMOVE, probRounded);
+						}
+						return probFormatted + " %";
+
+						//int prob = (int)(100d*probs.get(durations[d], mag) + 0.5);
+						//if (prob == 0)
+						//	return "*";
+						//else if (prob == 100)
+						//	return ">99 %";
+						//return prob+" %";
+
 					}
 				}
 				
