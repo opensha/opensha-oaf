@@ -970,7 +970,7 @@ public class ForecastData {
 
 		// Subcommand : Test #4
 		// Command format:
-		//  test4  pdl_enable  event_id  isReviewed
+		//  test4  pdl_enable  event_id  isReviewed  [pdl_key_filename]
 		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
 		// Get parameters for the event, and display them.
 		// Then get results for the event, and display them.
@@ -979,16 +979,20 @@ public class ForecastData {
 
 		if (args[0].equalsIgnoreCase ("test4")) {
 
-			// Three additional arguments
+			// 3 or 4 additional arguments
 
-			if (args.length != 4) {
+			if (args.length != 4 && args.length != 5) {
 				System.err.println ("ForecastData : Invalid 'test4' subcommand");
 				return;
 			}
 
-			int pdl_enable = Integer.parseInt (args[1]);
+			int pdl_enable = Integer.parseInt (args[1]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
 			String the_event_id = args[2];
 			Boolean isReviewed = Boolean.parseBoolean (args[3]);
+			String pdl_key_filename = null;
+			if (args.length >= 5) {
+				pdl_key_filename = args[4];
+			}
 
 			// Set the PDL enable code
 
@@ -999,6 +1003,16 @@ public class ForecastData {
 
 			ServerConfig server_config = new ServerConfig();
 			server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+			if (pdl_key_filename != null) {
+
+				if (!( (new File (pdl_key_filename)).canRead() )) {
+					System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+					return;
+				}
+
+				server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+			}
 
 			// Fetch just the mainshock info
 

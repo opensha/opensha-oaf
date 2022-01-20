@@ -4507,7 +4507,7 @@ public class ServerTest {
 		String event_id = args[2];
 		int riprem_reason = Integer.parseInt (args[3]);
 		long riprem_forecast_lag = Long.parseLong (args[4]);
-		int pdl_enable = Integer.parseInt (args[5]);
+		int pdl_enable = Integer.parseInt (args[5]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
 		String pdl_key_filename = null;
 		if (args.length >= 7) {
 			pdl_key_filename = args[6];
@@ -4962,7 +4962,7 @@ public class ServerTest {
 		}
 
 		String logfile = args[1];		// can be "-" for none
-		int pdl_enable = Integer.parseInt (args[2]);
+		int pdl_enable = Integer.parseInt (args[2]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
 		long time_now = SimpleUtils.string_to_time (args[3]);
 		long startTime = SimpleUtils.string_to_time (args[4]);
 		long endTime = SimpleUtils.string_to_time (args[5]);
@@ -5042,7 +5042,7 @@ public class ServerTest {
 		}
 
 		String logfile = args[1];		// can be "-" for none
-		int pdl_enable = Integer.parseInt (args[2]);
+		int pdl_enable = Integer.parseInt (args[2]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
 		long time_now = SimpleUtils.string_to_time (args[3]);
 		String event_id = args[4];
 
@@ -5180,7 +5180,7 @@ public class ServerTest {
 		}
 
 		String logfile = args[1];		// can be "-" for none
-		int pdl_enable = Integer.parseInt (args[2]);
+		int pdl_enable = Integer.parseInt (args[2]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
 		long startTime = SimpleUtils.string_to_time (args[3]);
 		long endTime = SimpleUtils.string_to_time (args[4]);
 		double minMag = Double.parseDouble (args[5]);
@@ -5283,7 +5283,7 @@ public class ServerTest {
 		}
 
 		String logfile = args[1];		// can be "-" for none
-		int pdl_enable = Integer.parseInt (args[2]);
+		int pdl_enable = Integer.parseInt (args[2]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
 		int pdl_mode = Integer.parseInt (args[3]);	// 0 = normal, 1 = force primary, 2 = force secondary
 		boolean f_adjust_time = Boolean.parseBoolean (args[4]);
 		String pdl_key_filename = null;
@@ -5915,6 +5915,68 @@ public class ServerTest {
 		// Display result
 
 		System.out.println ("Post health monitor stop result: " + result);
+
+		return;
+	}
+
+
+
+
+	// Test #96 - Delete a product from PDL.
+
+	public static void test96(String[] args) throws Exception {
+
+		// 4 or 5 additional arguments
+
+		if (args.length != 5 && args.length != 6) {
+			System.err.println ("ServerTest : Invalid 'test96' or 'pdl_x_delete' subcommand");
+			return;
+		}
+
+		String eventID = args[1];
+		String eventNetwork = args[2];
+		String eventCode = args[3];
+		int pdl_enable = Integer.parseInt (args[4]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
+		String pdl_key_filename = null;
+		if (args.length >= 6) {
+			pdl_key_filename = args[5];
+		}
+
+		//  // Direct operation to PDL-Development
+		//  
+		//  ServerConfig server_config = new ServerConfig();
+		//  server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DEV;
+
+		// Set the PDL enable code
+
+		if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+			System.out.println ("Invalid pdl_enable = " + pdl_enable);
+			return;
+		}
+
+		ServerConfig server_config = new ServerConfig();
+		server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+		if (pdl_key_filename != null) {
+
+			if (!( (new File (pdl_key_filename)).canRead() )) {
+				System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+				return;
+			}
+
+			server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+		}
+
+		// Construct the deletion product
+
+		boolean isReviewed = false;
+		long modifiedTime = 0L;
+		Product product = PDLProductBuilderOaf.createDeletionProduct (eventID, eventNetwork, eventCode, isReviewed, modifiedTime);
+
+		// Send to PDL
+
+		PDLSender.signProduct(product);
+		PDLSender.sendProduct(product, true);
 
 		return;
 	}
@@ -7585,6 +7647,22 @@ public class ServerTest {
 
 			try {
 				test95(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #96
+		// Command format:
+		//  test96  eventID  eventNetwork  eventCode  pdl_enable  [pdl_key_filename]
+		// Delete a product from PDL.
+
+		if (args[0].equalsIgnoreCase ("test96") || args[0].equalsIgnoreCase ("pdl_x_delete")) {
+
+			try {
+				test96(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
