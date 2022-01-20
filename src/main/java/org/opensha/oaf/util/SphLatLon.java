@@ -108,13 +108,13 @@ public class SphLatLon {
 
 	// Get latitude.
 
-	public double get_lat () {
+	public final double get_lat () {
 		return lat;
 	}
 
 	// Get longitude.
 
-	public double get_lon () {
+	public final double get_lon () {
 		return lon;
 	}
 
@@ -122,19 +122,19 @@ public class SphLatLon {
 	// If f_wrap_lon is true, the result lies between 0 and +360.
 	// If f_wrap_lon is false, the result lies between -180 and +180.
 
-	public double get_lon (boolean f_wrap_lon) {
+	public final double get_lon (boolean f_wrap_lon) {
 		return (f_wrap_lon && lon < 0.0) ? (lon + 360.0) : lon;
 	}
 
 	// Get latitude, in radians.
 
-	public double get_lat_rad () {
+	public final double get_lat_rad () {
 		return lat * TO_RAD;
 	}
 
 	// Get longitude, in radians.
 
-	public double get_lon_rad () {
+	public final double get_lon_rad () {
 		return lon * TO_RAD;
 	}
 
@@ -142,7 +142,7 @@ public class SphLatLon {
 	// If f_wrap_lon is true, the result lies between 0 and +360.
 	// If f_wrap_lon is false, the result lies between -180 and +180.
 
-	public double get_lon_rad (boolean f_wrap_lon) {
+	public final double get_lon_rad (boolean f_wrap_lon) {
 		return ((f_wrap_lon && lon < 0.0) ? (lon + 360.0) : lon) * TO_RAD;
 	}
 
@@ -153,7 +153,7 @@ public class SphLatLon {
 
 	// Get location.
 
-	public Location get_location () {
+	public final Location get_location () {
 		return new Location (get_lat(), get_lon());
 	}
 
@@ -161,7 +161,7 @@ public class SphLatLon {
 	// If f_wrap_lon is true, the longitude lies between 0 and +360.
 	// If f_wrap_lon is false, the longitude lies between -180 and +180.
 
-	public Location get_location (boolean f_wrap_lon) {
+	public final Location get_location (boolean f_wrap_lon) {
 		return new Location (get_lat(), get_lon(f_wrap_lon));
 	}
 
