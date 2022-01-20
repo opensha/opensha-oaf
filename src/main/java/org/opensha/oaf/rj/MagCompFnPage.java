@@ -1,8 +1,11 @@
 package org.opensha.oaf.rj;
 
+import java.util.Map;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.SimpleUtils;
 
 
 /**
@@ -112,6 +115,22 @@ public class MagCompFnPage extends MagCompFn {
 		+ ", capG=" + capG
 		+ ", capH=" + capH
 		+ "]";
+	}
+
+
+	// Get parameters that can be displayed to the user.
+	// Parameters:
+	//  userParamMap = Map of parameters, which this function adds to.
+	//  magCat = Magnitude of completeness when there has not been a mainshock.
+	// Each value in the map should be Number (or subclass thereof), String, or Boolean.
+
+	@Override
+	public void get_display_params (Map<String, Object> userParamMap, double magCat) {
+		userParamMap.put ("Mcat", SimpleUtils.round_double_via_string ("%.2f", magCat));
+		userParamMap.put ("F", capF);
+		userParamMap.put ("G", capG);
+		userParamMap.put ("H", capH);
+		return;
 	}
 
 

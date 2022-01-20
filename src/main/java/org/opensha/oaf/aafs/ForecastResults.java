@@ -463,7 +463,13 @@ public class ForecastResults {
 				forecast.setNextForecastMillis (0L);
 			}
 
+			// Add parameters for magnitude of completeness and search region
+
 			LinkedHashMap<String, Object> userParamMap = new LinkedHashMap<String, Object>();
+			if (params.mag_comp_avail && params.mag_comp_params != null) {
+				params.mag_comp_params.get_magCompFn().get_display_params (
+					userParamMap, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
+			}
 			if (params.aftershock_search_avail && params.aftershock_search_region != null) {
 				params.aftershock_search_region.get_display_params (userParamMap);
 			}
@@ -612,7 +618,13 @@ public class ForecastResults {
 				forecast.setNextForecastMillis (0L);
 			}
 
+			// Add parameters for magnitude of completeness and search region
+
 			LinkedHashMap<String, Object> userParamMap = new LinkedHashMap<String, Object>();
+			if (params.mag_comp_avail && params.mag_comp_params != null) {
+				params.mag_comp_params.get_magCompFn().get_display_params (
+					userParamMap, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
+			}
 			if (params.aftershock_search_avail && params.aftershock_search_region != null) {
 				params.aftershock_search_region.get_display_params (userParamMap);
 			}
@@ -762,7 +774,13 @@ public class ForecastResults {
 				forecast.setNextForecastMillis (0L);
 			}
 
+			// Add parameters for magnitude of completeness and search region
+
 			LinkedHashMap<String, Object> userParamMap = new LinkedHashMap<String, Object>();
+			if (params.mag_comp_avail && params.mag_comp_params != null) {
+				params.mag_comp_params.get_magCompFn().get_display_params (
+					userParamMap, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
+			}
 			if (params.aftershock_search_avail && params.aftershock_search_region != null) {
 				params.aftershock_search_region.get_display_params (userParamMap);
 			}
