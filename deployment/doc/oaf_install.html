@@ -1335,12 +1335,12 @@ The output should be similar to:</p>
 <pre>Fetching status for server 1
 info: N1, V1.0.1232, C101, start = 0
 config: RMODE_PAIR, P1, timestamp = 1576392921417 (2019-12-15 06:55:21 UTC)
-state: LINK_SHUTDOWN, PRIST_SHUTDOWN, ISR_NONE, heartbeat = 0
+state: LINK_SHUTDOWN, PRIST_SHUTDOWN, ISR_NONE, HS_NONE, heartbeat = 0
 
 Fetching status for server 2
 info: N2, V1.0.1232, C101, start = 0
 config: RMODE_PAIR, P1, timestamp = 1576392924993 (2019-12-15 06:55:24 UTC)
-state: LINK_SHUTDOWN, PRIST_SHUTDOWN, ISR_NONE, heartbeat = 0</pre>
+state: LINK_SHUTDOWN, PRIST_SHUTDOWN, ISR_NONE, HS_NONE, heartbeat = 0</pre>
 <p>Then, on each server, stop MongoDB as follows:</p>
 <pre>$ cd /opt/aafs
 $ ./moaf.sh stop_mongo</pre>
