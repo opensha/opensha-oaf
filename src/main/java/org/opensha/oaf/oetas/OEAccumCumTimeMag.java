@@ -1320,42 +1320,42 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 	// Get the number of time bins.
 
-	public int get_time_bins () {
+	public final int get_time_bins () {
 		return time_bins;
 	}
 
 
 	// Get the number of magnitude bins.
 
-	public int get_mag_bins () {
+	public final int get_mag_bins () {
 		return mag_bins;
 	}
 
 
 	// Get a time value.
 
-	public double get_time_value (int n) {
+	public final double get_time_value (int n) {
 		return time_values[n];
 	}
 
 
 	// Get a magnitude value.
 
-	public double get_mag_value (int n) {
+	public final double get_mag_value (int n) {
 		return mag_values[n];
 	}
 
 
 	// Get the capacity.
 
-	public int get_capacity () {
+	public final int get_capacity () {
 		return acc_capacity;
 	}
 
 
 	// Get the size, which is the number of catalogs accumulated.
 
-	public int get_size () {
+	public final int get_size () {
 		return acc_size;
 	}
 
@@ -1370,7 +1370,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 	// Each value is an integer N, such that the probability of N or fewer
 	// ruptures is approximately equal to fractile.
 
-	public int[][] get_fractile_array (double fractile) {
+	public final int[][] get_fractile_array (double fractile) {
 		int n = (int)Math.round (((double)(acc_size - 1)) * fractile);
 		if (n < 0) {
 			n = 0;
@@ -1390,7 +1390,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 	// Each value is a real number v, such that v is the probability that
 	// at least one rupture occurs.
 
-	public double[][] get_prob_occur_array () {
+	public final double[][] get_prob_occur_array () {
 		return OEArraysCalc.probex_each_array_column (acc_counts, 0, 0, acc_size);
 	}
 
@@ -1406,7 +1406,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 	//  10 cols for time/value
 	//  2 cols spacer ...
 
-	public String fractile_array_to_string (int[][] fractile_array) {
+	public final String fractile_array_to_string (int[][] fractile_array) {
 		StringBuilder result = new StringBuilder();
 
 		// Header line
@@ -1442,7 +1442,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 	//  10 cols for time/value
 	//  2 cols spacer ...
 
-	public String prob_occur_array_to_string (double[][] prob_occur_array) {
+	public final String prob_occur_array_to_string (double[][] prob_occur_array) {
 		StringBuilder result = new StringBuilder();
 
 		// Header line
@@ -1606,14 +1606,15 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		the_time_values[3] = tbegin + 30.0;
 		the_time_values[4] = tbegin + 365.0;
 
-		// Make magnitude array for 3, 5, 6, 7
+		// Make magnitude array for 3, 4, 5, 6, 7
 
-		double[] the_mag_values = new double[5];
+		double[] the_mag_values = new double[6];
 		the_mag_values[0] = 3.0;
-		the_mag_values[1] = 5.0;
-		the_mag_values[2] = 6.0;
-		the_mag_values[3] = 7.0;
-		the_mag_values[4] = 10.0;
+		the_mag_values[1] = 4.0;
+		the_mag_values[2] = 5.0;
+		the_mag_values[3] = 6.0;
+		the_mag_values[4] = 7.0;
+		the_mag_values[5] = 10.0;
 
 		// Do the setup
 
