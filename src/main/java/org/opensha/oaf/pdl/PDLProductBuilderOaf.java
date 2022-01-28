@@ -525,7 +525,7 @@ public class PDLProductBuilderOaf {
 	// Return true if OAF products should include inline text.
 
 	public static boolean use_inline_text () {
-		return true;
+		return false;
 	}
 
 }
