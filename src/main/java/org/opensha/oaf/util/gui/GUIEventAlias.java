@@ -47,6 +47,9 @@ public class GUIEventAlias {
 		dict.put ("challis", "us70008jr5");	// M 6.5 - 70km W of Challis, Idaho 2020-03-31 23:52:30 (UTC) 44.465N 115.118W 12.1 km depth
 		dict.put ("elmayor", "ci14607652");	// M 7.2 - 12km SW of Delta, B.C., MX 2010-04-04 22:40:42 (UTC) 32.286N 115.295W 10.0 km depth
 		dict.put ("haiti", "usp000h60h");	// M 7.0 - Haiti region 2010-01-12 21:53:10 (UTC) 18.443N 72.571W 13.0 km depth
+		dict.put ("kermadec", "us7000dflf");	// M 8.1 - Kermadec Islands, New Zealand 2021-03-04 19:28:33 (UTC) 29.723S 177.279W 28.9 km depth
+		dict.put ("kermadec8", "us7000dflf");	// M 8.1 - Kermadec Islands, New Zealand 2021-03-04 19:28:33 (UTC) 29.723S 177.279W 28.9 km depth
+		dict.put ("kermadec7", "us7000dfk3");	// M 7.4 - Kermadec Islands, New Zealand 2021-03-04 17:41:23 (UTC) 29.677S 177.840W 43.0 km depth
 		dict.put ("lonepine", "ci39493944");	// M 5.8 - 18km SSE of Lone Pine, CA 2020-06-24 17:40:49 (UTC) 36.447N 117.975W 4.7 km depth
 		dict.put ("magna", "uu60363602");	// M 5.7 - 4km NNW of Magna, Utah 2020-03-18 13:09:31 (UTC) 40.751N 112.078W 11.9 km depth
 		dict.put ("maule", "official20100227063411530_30");	// M 8.8 - offshore Bio-Bio, Chile 2010-02-27 06:34:11 (UTC) 36.122S 72.898W 22.9 km depth
@@ -54,6 +57,11 @@ public class GUIEventAlias {
 		dict.put ("montecristorange", "nn00725272");	// M 6.5 - Monte Cristo Range, NV Earthquake 2020-05-15 11:03:27 (UTC) 38.169N 117.850W 2.7 km depth
 		dict.put ("mineral", "se609212");	// M 5.8 - 14km SSE of Louisa, Virginia 2011-08-23 17:51:04 (UTC) 37.910N 77.936W 6.0 km depth
 		dict.put ("nepal", "us20002926");	// M 7.8 - 36km E of Khudi, Nepal 2015-04-25 06:11:25 (UTC) 28.231N 84.731E 8.2 km depth
+		dict.put ("nippes", "us6000f65h");	// M 7.2 - Nippes, Haiti 2021-08-14 12:29:08 (UTC) 18.434N 73.482W 10.0 km depth
+		dict.put ("perryville", "ak0219neiszm");	// M 8.2 - 99 km SE of Perryville, Alaska 2021-07-29 06:15:49 (UTC) 55.364N 157.888W 35.0 km depth
+		dict.put ("petrolia", "nc73666231");	// M 6.2 - 7km N of Petrolia, CA 2021-12-20 20:10:31 (UTC) 40.390N 124.298W 27.0 km depth
+		dict.put ("petrolia6", "nc73666231");	// M 6.2 - 7km N of Petrolia, CA 2021-12-20 20:10:31 (UTC) 40.390N 124.298W 27.0 km depth
+		dict.put ("petrolia5", "nc71127029");	// M 5.7 - 29km W of Petrolia, CA 2021-12-20 20:10:20 (UTC) 40.298N 124.626W 16.5 km depth
 		dict.put ("ridgecrest", "ci38457511");	// M 7.1 - 2019 Ridgecrest Earthquake Sequence 2019-07-06 03:19:53 (UTC) 35.770N 117.599W 8.0 km depth
 		dict.put ("ridgecrest6", "ci38443183");	// M 6.4 - Ridgecrest Earthquake Sequence 2019-07-04 17:33:49 (UTC) 35.705N 117.504W 10.5 km depth
 		dict.put ("ridgecrest7", "ci38457511");	// M 7.1 - 2019 Ridgecrest Earthquake Sequence 2019-07-06 03:19:53 (UTC) 35.770N 117.599W 8.0 km depth
