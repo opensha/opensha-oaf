@@ -104,9 +104,13 @@ public class PropertiesEventSequence {
 	public static final boolean EVS_OPTIONAL_EVENT_TIME = true;		// eventtime
 	public static final boolean EVS_OPTIONAL_BOUNDS = false;		// the four rectangle bounds (if region is not rectangle)
 
-	// Flag for time format
+	// Flag for time format.
 
 	public static final boolean EVS_TIME_ISO_8601 = true;			// true for ISO-8601 format, false for number of milliseconds
+
+	// Extra properties for the event-sequence product.
+
+	public static final String EVS_EXTRA_GENERATED_BY = "generated-by";
 
 
 

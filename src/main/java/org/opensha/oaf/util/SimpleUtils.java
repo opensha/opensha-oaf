@@ -45,6 +45,24 @@ public class SimpleUtils {
 	public static final double HOUR_MILLIS_D = 3600000.0;
 	public static final double DAY_MILLIS_D = 86400000.0;
 
+	// The number of milliseconds in a week.
+	// Note: A week is defined to be 7 days.
+
+	public static final long WEEK_MILLIS = 604800000L;
+	public static final double WEEK_MILLIS_D = 604800000.0;
+
+	// The number of milliseconds in a month.
+	// Note: A month is defined to be 30 days.
+
+	public static final long MONTH_MILLIS = 2592000000L;
+	public static final double MONTH_MILLIS_D = 2592000000.0;
+
+	// The number of milliseconds in a year.
+	// Note: A year is defined to be 365 days.
+
+	public static final long YEAR_MILLIS = 31536000000L;
+	public static final double YEAR_MILLIS_D = 31536000000.0;
+
 
 
 

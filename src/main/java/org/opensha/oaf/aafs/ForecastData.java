@@ -1,5 +1,8 @@
 package org.opensha.oaf.aafs;
 
+import java.util.Map;
+import java.util.LinkedHashMap;
+
 import java.io.File;
 import java.io.Reader;
 import java.io.FileReader;
@@ -28,6 +31,10 @@ import org.opensha.oaf.pdl.PDLSender;
 import gov.usgs.earthquake.product.Product;
 import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 import org.opensha.oaf.pdl.PDLContentsXmlBuilder;
+
+import org.opensha.oaf.util.SphRegion;
+import org.opensha.oaf.pdl.PDLProductBuilderEventSequence;
+import org.opensha.oaf.comcat.PropertiesEventSequence;
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
@@ -1418,6 +1425,206 @@ public class ForecastData {
 
 			System.out.println ("");
 			System.out.println (fcdata.toString());
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #10
+		// Command format:
+		//  test10  event_id  isReviewed  pdl_code  pdl_enable  [pdl_key_filename]
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Set the forecast lag to now.
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then put everything in a ForecastData object, and display it.
+		// Then construct the event-sequence properties, and display them.
+		// Then construct the event-sequence PDL product and send it to the selected PDL destination.
+		//
+		// The use of this test is to send prototype event-sequence products for development purposes.
+		// Event-sequence products can be deleted using PropertiesEventSequence test #8.
+		// The event-sequence time range is from 14 days before the mainshock, to 365 days after now.
+
+		if (args[0].equalsIgnoreCase ("test10")) {
+
+			// 4 or 5 additional arguments
+
+			if (args.length != 5 && args.length != 6) {
+				System.err.println ("ForecastData : Invalid 'test10' subcommand");
+				return;
+			}
+
+			String the_event_id = args[1];
+			Boolean isReviewed = Boolean.parseBoolean (args[2]);
+			String pdl_code = args[3];
+			int pdl_enable = Integer.parseInt (args[4]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
+			String pdl_key_filename = null;
+			if (args.length >= 6) {
+				pdl_key_filename = args[5];
+			}
+
+			// Set the PDL enable code
+
+			if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+				System.out.println ("Invalid pdl_enable = " + pdl_enable);
+				return;
+			}
+
+			ServerConfig server_config = new ServerConfig();
+			server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+			if (pdl_key_filename != null) {
+
+				if (!( (new File (pdl_key_filename)).canRead() )) {
+					System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+					return;
+				}
+
+				server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+			}
+
+			// Fetch just the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Set the forecast time to be now
+
+			long the_forecast_lag = System.currentTimeMillis() - fcmain.mainshock_time;
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "NOTE: This is a test, do not use this forecast.", fcmain, params, true);
+
+			// Select report for PDL, if any
+
+			results.pick_pdl_model();
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (results.toString());
+
+			// Construct the forecast data
+
+			AnalystOptions fc_analyst = new AnalystOptions();
+			long ctime = System.currentTimeMillis();
+
+			ForecastData fcdata = new ForecastData();
+			fcdata.set_data (ctime, fcmain, params, results, fc_analyst);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (fcdata.toString());
+			System.out.println ("");
+
+			// Make the event-sequence properties
+
+			PropertiesEventSequence evs_props = new PropertiesEventSequence();
+
+			// Set properties for mainshock
+
+			if (!( evs_props.set_from_event_gj (fcmain.mainshock_geojson) )) {
+				System.out.println ("Failed to set event-sequence properties for mainshock");
+				return;
+			}
+
+			// Set start time to 14 days before mainshock
+
+			double start_delta_days = -14.0;
+
+			if (!( evs_props.set_relative_start_time_days (start_delta_days) )) {
+				System.out.println ("Failed to set relative start time for event-sequence properties");
+				return;
+			}
+
+			// Set end time to 365 days after forecast
+
+			double end_delta_days = (((double)(params.forecast_lag)) / SimpleUtils.DAY_MILLIS_D) + 365.0;
+
+			if (!( evs_props.set_relative_end_time_days (end_delta_days) )) {
+				System.out.println ("Failed to set relative end time for event-sequence properties");
+				return;
+			}
+
+			// Set the region
+
+			SphRegion sph_region = params.aftershock_search_region;
+
+			if (!( evs_props.set_region_from_sph (sph_region) )) {
+				System.out.println ("Failed to set region for event-sequence properties");
+				return;
+			}
+
+			// Check invariant
+
+			String evs_inv = evs_props.check_invariant();
+
+			if (evs_inv != null) {
+				System.out.println ("Invariant check failed for event-sequence properties: " + evs_inv);
+				return;
+			}
+
+			// Display the contents
+
+			System.out.println (evs_props.toString());
+			System.out.println ("");
+
+			// Display the property map
+
+			System.out.println (evs_props.property_map_to_string (isReviewed));
+			System.out.println ("");
+
+			// Make the PDL product
+
+			Map<String, String> extra_properties = new LinkedHashMap<String, String>();
+			extra_properties.put (PropertiesEventSequence.EVS_EXTRA_GENERATED_BY, VersionInfo.get_one_line_version());
+
+			String jsonText = null;
+			long modifiedTime = 0L;
+
+			Product product;
+
+			try {
+				product = PDLProductBuilderEventSequence.createProduct (
+					pdl_code, evs_props, extra_properties, isReviewed, jsonText, modifiedTime);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				return;
+			}
+
+			// Stop if unable to create product
+
+			if (product == null) {
+				System.out.println ("PDLProductBuilderEventSequence.createProduct returned null, indicating unable to create PDL product");
+				return;
+			}
+
+			// Sign the product
+
+			PDLSender.signProduct(product);
+
+			// Send the product, true means it is text
+
+			PDLSender.sendProduct(product, true);
 
 			return;
 		}
