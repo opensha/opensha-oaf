@@ -68,6 +68,57 @@ public class OEArraysCalc {
 
 
 
+	// Convert an array into cumulative values.
+	// Parameters:
+	//  x = Array to convert.
+	//  f_up = True to accumulate upwards (values are increasing),
+	//         false to accumulate downwards (values are decreasing).
+	//  begin = Beginning of range of array index to use, inclusive.
+	//  end = Ending of range of array index to use, exclusive.
+
+	public static void cumulate_array (double[] x, boolean f_up, int begin, int end) {
+		if (end >= begin + 2) {
+			if (f_up) {
+				double total = x[begin];
+				for (int n = begin + 1; n < end; ++n) {
+					total += x[n];
+					x[n] = total;
+				}
+			}
+			else {
+				double total = x[end - 1];
+				for (int n = end - 2; n >= begin; --n) {
+					total += x[n];
+					x[n] = total;
+				}
+			}
+		}
+		return;
+	}
+
+	public static void cumulate_array (int[] x, boolean f_up, int begin, int end) {
+		if (end >= begin + 2) {
+			if (f_up) {
+				int total = x[begin];
+				for (int n = begin+1; n < end; ++n) {
+					total += x[n];
+					x[n] = total;
+				}
+			}
+			else {
+				int total = x[end - 1];
+				for (int n = end - 2; n >= begin; --n) {
+					total += x[n];
+					x[n] = total;
+				}
+			}
+		}
+		return;
+	}
+
+
+
+
 	// Convert a 2D array into cumulative values.
 	// Parameters:
 	//  x = 2D array to convert.  The array must be rectangular,
@@ -262,6 +313,219 @@ public class OEArraysCalc {
 						}
 
 						for (int m = len_1 - 2; m >= 0; --m) {
+							total = x[m][len_2 - 1];
+							x[m][len_2 - 1] = total + x[m+1][len_2 - 1];
+							for (int n = len_2 - 2; n >= 0; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					}
+				}
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Convert a 2D array into cumulative values.
+	// Parameters:
+	//  x = 2D array to convert.  The array must be rectangular,
+	//      that is, each second-level array must have the same length.
+	//  f_up_1 = True to accumulate upwards in the first index
+	//           (values increase with increasing first index),
+	//           false to accumulate downwards in the first index
+	//           (values decrease with increasing first index).
+	//  f_up_2 = True to accumulate upwards in the second index
+	//           (values increase with increasing second index),
+	//           false to accumulate downwards in the second index
+	//           (values decrease with increasing second index).
+	//  begin_1 = Beginning of range of first array index to use, inclusive.
+	//  end_1 = Ending of range of first array index to use, exclusive.
+
+	public static void cumulate_2d_array (double[][] x, boolean f_up_1, boolean f_up_2, int begin_1, int end_1) {
+
+		// Get the array dimensions, and make sure they are non-zero
+
+		if (end_1 > begin_1) {
+			int len_2 = x[begin_1].length;
+			if (len_2 > 0) {
+
+				// Switch on the directions
+
+				if (f_up_1) {
+					if (f_up_2) {
+
+						// Index 1 up, index 2 up
+
+						double total = x[begin_1][0];
+						for (int n = 1; n < len_2; ++n) {
+							total += x[begin_1][n];
+							x[begin_1][n] = total;
+						}
+
+						for (int m = begin_1 + 1; m < end_1; ++m) {
+							total = x[m][0];
+							x[m][0] = total + x[m-1][0];
+							for (int n = 1; n < len_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 up, index 2 down
+
+						double total = x[begin_1][len_2 - 1];
+						for (int n = len_2 - 2; n >= 0; --n) {
+							total += x[begin_1][n];
+							x[begin_1][n] = total;
+						}
+
+						for (int m = begin_1 + 1; m < end_1; ++m) {
+							total = x[m][len_2 - 1];
+							x[m][len_2 - 1] = total + x[m-1][len_2 - 1];
+							for (int n = len_2 - 2; n >= 0; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					}
+				} else {
+					if (f_up_2) {
+
+						// Index 1 down, index 2 up
+
+						double total = x[end_1 - 1][0];
+						for (int n = 1; n < len_2; ++n) {
+							total += x[end_1 - 1][n];
+							x[end_1 - 1][n] = total;
+						}
+
+						for (int m = end_1 - 2; m >= begin_1; --m) {
+							total = x[m][0];
+							x[m][0] = total + x[m+1][0];
+							for (int n = 1; n < len_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 down, index 2 down
+
+						double total = x[end_1 - 1][len_2 - 1];
+						for (int n = len_2 - 2; n >= 0; --n) {
+							total += x[end_1 - 1][n];
+							x[end_1 - 1][n] = total;
+						}
+
+						for (int m = end_1 - 2; m >= begin_1; --m) {
+							total = x[m][len_2 - 1];
+							x[m][len_2 - 1] = total + x[m+1][len_2 - 1];
+							for (int n = len_2 - 2; n >= 0; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					}
+				}
+			}
+		}
+
+		return;
+	}
+
+
+	public static void cumulate_2d_array (int[][] x, boolean f_up_1, boolean f_up_2, int begin_1, int end_1) {
+
+		// Get the array dimensions, and make sure they are non-zero
+
+		if (end_1 > begin_1) {
+			int len_2 = x[begin_1].length;
+			if (len_2 > 0) {
+
+				// Switch on the directions
+
+				if (f_up_1) {
+					if (f_up_2) {
+
+						// Index 1 up, index 2 up
+
+						int total = x[begin_1][0];
+						for (int n = 1; n < len_2; ++n) {
+							total += x[begin_1][n];
+							x[begin_1][n] = total;
+						}
+
+						for (int m = begin_1 + 1; m < end_1; ++m) {
+							total = x[m][0];
+							x[m][0] = total + x[m-1][0];
+							for (int n = 1; n < len_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 up, index 2 down
+
+						int total = x[begin_1][len_2 - 1];
+						for (int n = len_2 - 2; n >= 0; --n) {
+							total += x[begin_1][n];
+							x[begin_1][n] = total;
+						}
+
+						for (int m = begin_1 + 1; m < end_1; ++m) {
+							total = x[m][len_2 - 1];
+							x[m][len_2 - 1] = total + x[m-1][len_2 - 1];
+							for (int n = len_2 - 2; n >= 0; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					}
+				} else {
+					if (f_up_2) {
+
+						// Index 1 down, index 2 up
+
+						int total = x[end_1 - 1][0];
+						for (int n = 1; n < len_2; ++n) {
+							total += x[end_1 - 1][n];
+							x[end_1 - 1][n] = total;
+						}
+
+						for (int m = end_1 - 2; m >= begin_1; --m) {
+							total = x[m][0];
+							x[m][0] = total + x[m+1][0];
+							for (int n = 1; n < len_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 down, index 2 down
+
+						int total = x[end_1 - 1][len_2 - 1];
+						for (int n = len_2 - 2; n >= 0; --n) {
+							total += x[end_1 - 1][n];
+							x[end_1 - 1][n] = total;
+						}
+
+						for (int m = end_1 - 2; m >= begin_1; --m) {
 							total = x[m][len_2 - 1];
 							x[m][len_2 - 1] = total + x[m+1][len_2 - 1];
 							for (int n = len_2 - 2; n >= 0; --n) {
@@ -558,14 +822,166 @@ public class OEArraysCalc {
 
 
 
+	// Set to zero all the elements an array.
+	// Parameters:
+	//  x = Array to use.
+	//  begin = Beginning of range of first or only array index to use, inclusive.
+	//  end = Ending of range of first or only array index to use, exclusive.
+
+	public static void zero_array (double[] x, int begin, int end) {
+		if (begin < end) {
+			Arrays.fill (x, begin, end, 0.0);
+		}
+		return;
+	}
+
+	public static void zero_array (int[] x, int begin, int end) {
+		if (begin < end) {
+			Arrays.fill (x, begin, end, 0);
+		}
+		return;
+	}
+
+	public static void zero_array (double[][] x, int begin, int end) {
+		for (int m = begin; m < end; ++m) {
+			Arrays.fill (x[m], 0.0);
+		}
+		return;
+	}
+
+	public static void zero_array (int[][] x, int begin, int end) {
+		for (int m = begin; m < end; ++m) {
+			Arrays.fill (x[m], 0);
+		}
+		return;
+	}
+
+	public static void zero_array (double[][][] x, int begin, int end) {
+		for (int m = begin; m < end; ++m) {
+			zero_array (x[m]);
+		}
+		return;
+	}
+
+	public static void zero_array (int[][][] x, int begin, int end) {
+		for (int m = begin; m < end; ++m) {
+			zero_array (x[m]);
+		}
+		return;
+	}
+
+
+
+
+	// Fill all the elements an array with a constant value.
+	// Parameters:
+	//  x = Array to use.
+	//  v = Value to fill.
+
+	public static void fill_array (double[] x, double v) {
+		Arrays.fill (x, v);
+		return;
+	}
+
+	public static void fill_array (int[] x, int v) {
+		Arrays.fill (x, v);
+		return;
+	}
+
+	public static void fill_array (double[][] x, double v) {
+		for (int m = 0; m < x.length; ++m) {
+			Arrays.fill (x[m], v);
+		}
+		return;
+	}
+
+	public static void fill_array (int[][] x, int v) {
+		for (int m = 0; m < x.length; ++m) {
+			Arrays.fill (x[m], v);
+		}
+		return;
+	}
+
+	public static void fill_array (double[][][] x, double v) {
+		for (int m = 0; m < x.length; ++m) {
+			fill_array (x[m], v);
+		}
+		return;
+	}
+
+	public static void fill_array (int[][][] x, int v) {
+		for (int m = 0; m < x.length; ++m) {
+			fill_array (x[m], v);
+		}
+		return;
+	}
+
+
+
+
+	// Fill all the elements an array with a constant value.
+	// Parameters:
+	//  x = Array to use.
+	//  begin = Beginning of range of first or only array index to use, inclusive.
+	//  end = Ending of range of first or only array index to use, exclusive.
+	//  v = Value to fill.
+
+	public static void fill_array (double[] x, int begin, int end, double v) {
+		if (begin < end) {
+			Arrays.fill (x, begin, end, v);
+		}
+		return;
+	}
+
+	public static void fill_array (int[] x, int begin, int end, int v) {
+		if (begin < end) {
+			Arrays.fill (x, begin, end, v);
+		}
+		return;
+	}
+
+	public static void fill_array (double[][] x, int begin, int end, double v) {
+		for (int m = begin; m < end; ++m) {
+			Arrays.fill (x[m], v);
+		}
+		return;
+	}
+
+	public static void fill_array (int[][] x, int begin, int end, int v) {
+		for (int m = begin; m < end; ++m) {
+			Arrays.fill (x[m], v);
+		}
+		return;
+	}
+
+	public static void fill_array (double[][][] x, int begin, int end, double v) {
+		for (int m = begin; m < end; ++m) {
+			fill_array (x[m], v);
+		}
+		return;
+	}
+
+	public static void fill_array (int[][][] x, int begin, int end, int v) {
+		for (int m = begin; m < end; ++m) {
+			fill_array (x[m], v);
+		}
+		return;
+	}
+
+
+
+
 	// Compute the average of an array.
 	// Parameters:
 	//  x = Array to average.
 	//  lo = Lower index, inclusive.
 	//  hi = Upper index, exclusive.
-	// Note: Requires hi > lo to avoid divide-by-zero.
+	// Note: If hi <= lo then return zero.
 
 	public static double array_average (int[] x, int lo, int hi) {
+		if (hi <= lo) {
+			return 0.0;
+		}
 		double total = 0.0;
 		for (int m = lo; m < hi; ++m) {
 			total += (double)(x[m]);
@@ -575,6 +991,9 @@ public class OEArraysCalc {
 
 
 	public static double array_average (double[] x, int lo, int hi) {
+		if (hi <= lo) {
+			return 0.0;
+		}
 		double total = 0.0;
 		for (int m = lo; m < hi; ++m) {
 			total += x[m];
@@ -657,6 +1076,58 @@ public class OEArraysCalc {
 //		}
 //		return result;
 //	}
+
+
+
+
+	// Average each column in an array.
+	// Parameters:
+	//  x = Array to use.
+	//  lo = Lower index within each column, inclusive, as an array of one dimension less than x.
+	//  hi = Upper index within each column, exclusive, as an array of one dimension less than x.
+	// Returns an array, with one less dimension than x, where each element
+	// is the average of the corresponding column.  Within each column,
+	// elements lo[..] (inclusive) through hi[..] (exclusive) are averaged.  (That is,
+	// the averaging applies to column elements n such that lo[..] <= n < hi[..].)
+	// If y denotes the result array, then if x is 2-dimensional:
+	//  y[i] = average(x[i][lo[i]], ... , x[i][hi[i]-1])
+	// If x is 3-dimensional:
+	//  y[i][j] = average(x[i][j][lo[i][j]], ... , x[i][j][hi[i][j]-1])
+
+	public static double[] average_each_array_column (double[][] x, int[] lo, int[] hi) {
+		double[] result = new double[x.length];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = array_average (x[m], lo[m], hi[m]);
+		}
+		return result;
+	}
+
+
+	public static double[] average_each_array_column (int[][] x, int[] lo, int[] hi) {
+		double[] result = new double[x.length];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = array_average (x[m], lo[m], hi[m]);
+		}
+		return result;
+	}
+
+
+	public static double[][] average_each_array_column (double[][][] x, int[][] lo, int[][] hi) {
+		double[][] result = new double[x.length][];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = average_each_array_column (x[m], lo[m], hi[m]);
+		}
+		return result;
+	}
+
+
+	public static double[][] average_each_array_column (int[][][] x, int[][] lo, int[][] hi) {
+		double[][] result = new double[x.length][];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = average_each_array_column (x[m], lo[m], hi[m]);
+		}
+		return result;
+	}
 
 
 
@@ -846,6 +1317,93 @@ public class OEArraysCalc {
 
 
 
+	// Binary search each column in an array.
+	// Parameters:
+	//  x = Array to use, where each column has been sorted into increasing order.
+	//  v = Value to search for
+	//  lo = Lower index within each column, inclusive, as an array of one dimension less than x.
+	//  hi = Upper index within each column, exclusive, as an array of one dimension less than x.
+	// Returns an array, with one less dimension than x, where each element
+	// is the result of a binary search of the corresponding column.  Specifically,
+	// for each column the result is an integer n such that
+	//  lo[..] <= n <= hi[..]
+	//  x[n-1] <= v < x[n]
+	// For the purpose of the last condition, x[lo[..]-1] == -infinity and x[hi[..]] == infinity.
+	// If y denotes the result array, then if x is 2-dimensional:
+	//  y[i] = bsearch(x[i][lo[i]], ... , x[i][hi[i]-1])
+	// If x is 3-dimensional:
+	//  y[i][j] = bsearch(x[i][j][lo[i][j]], ... , x[i][j][hi[i][j]-1])
+
+	public static int[] bsearch_each_array_column (double[][] x, double v, int[] lo, int[] hi) {
+		int[] result = new int[x.length];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = bsearch_array (x[m], v, lo[m], hi[m]);
+		}
+		return result;
+	}
+
+
+	public static int[] bsearch_each_array_column (int[][] x, int v, int[] lo, int[] hi) {
+		int[] result = new int[x.length];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = bsearch_array (x[m], v, lo[m], hi[m]);
+		}
+		return result;
+	}
+
+
+	public static int[][] bsearch_each_array_column (double[][][] x, double v, int[][] lo, int[][] hi) {
+		int[][] result = new int[x.length][];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = bsearch_each_array_column (x[m], v, lo[m], hi[m]);
+		}
+		return result;
+	}
+
+
+	public static int[][] bsearch_each_array_column (int[][][] x, int v, int[][] lo, int[][] hi) {
+		int[][] result = new int[x.length][];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = bsearch_each_array_column (x[m], v, lo[m], hi[m]);
+		}
+		return result;
+	}
+
+
+
+
+	// Probability of exceedence for an array.
+	// Parameters:
+	//  x = Array to use, which has been sorted into increasing order.
+	//  v = Value to search for
+	//  lo = Lower index, inclusive.
+	//  hi = Upper index, exclusive.
+	// Returns the probability that the array value exceeds v.  Specifically,
+	// the function finds an integer n such that
+	//  lo <= n <= hi
+	//  x[n-1] <= v < x[n]
+	// For the purpose of the last condition, x[lo-1] == -infinity and x[hi] == infinity.
+	// Then, the return value is (hi - n)/(hi - lo)
+	// If hi <= lo then the return value is zero.
+
+	public static double probex_array (double[] x, double v, int lo, int hi) {
+		if (hi <= lo) {
+			return 0.0;
+		}
+		return ((double)(hi - bsearch_array (x, v, lo, hi))) / ((double)(hi - lo));
+	}
+
+
+	public static double probex_array (int[] x, int v, int lo, int hi) {
+		if (hi <= lo) {
+			return 0.0;
+		}
+		return ((double)(hi - bsearch_array (x, v, lo, hi))) / ((double)(hi - lo));
+	}
+
+
+
+
 	// Probability of exceedence for each column in an array.
 	// Parameters:
 	//  x = Array to use, where each column has been sorted into increasing order.
@@ -854,16 +1412,21 @@ public class OEArraysCalc {
 	//  hi = Upper index within each column, exclusive.
 	// Returns an array, with one less dimension than x, where each element
 	// is a probability that the array value exceeds v.  Specifically,
-	// for each column  the function finds an integer n such that
+	// for each column the function finds an integer n such that
 	//  lo <= n <= hi
 	//  x[n-1] <= v < x[n]
 	// For the purpose of the last condition, x[lo-1] == -infinity and x[hi] == infinity.
 	// Then, the return value is (hi - n)/(hi - lo)
+	// If hi <= lo then the return value is zero.
 
 	public static double[] probex_each_array_column (double[][] x, double v, int lo, int hi) {
 		double[] result = new double[x.length];
 		for (int m = 0; m < x.length; ++m) {
-			result[m] = ((double)(hi - bsearch_array (x[m], v, lo, hi))) / ((double)(hi - lo));
+			if (hi <= lo) {
+				result[m] = 0.0;
+			} else {
+				result[m] = ((double)(hi - bsearch_array (x[m], v, lo, hi))) / ((double)(hi - lo));
+			}
 		}
 		return result;
 	}
@@ -872,7 +1435,11 @@ public class OEArraysCalc {
 	public static double[] probex_each_array_column (int[][] x, int v, int lo, int hi) {
 		double[] result = new double[x.length];
 		for (int m = 0; m < x.length; ++m) {
-			result[m] = ((double)(hi - bsearch_array (x[m], v, lo, hi))) / ((double)(hi - lo));
+			if (hi <= lo) {
+				result[m] = 0.0;
+			} else {
+				result[m] = ((double)(hi - bsearch_array (x[m], v, lo, hi))) / ((double)(hi - lo));
+			}
 		}
 		return result;
 	}
@@ -898,15 +1465,284 @@ public class OEArraysCalc {
 
 
 
+	// Probability of exceedence for each column in an array.
+	// Parameters:
+	//  x = Array to use, where each column has been sorted into increasing order.
+	//  v = Value to search for
+	//  lo = Lower index within each column, inclusive, as an array of one dimension less than x.
+	//  hi = Upper index within each column, exclusive, as an array of one dimension less than x.
+	// Returns an array, with one less dimension than x, where each element
+	// is a probability that the array value exceeds v.  Specifically,
+	// for each column the function finds an integer n such that
+	//  lo[..] <= n <= hi[..]
+	//  x[n-1] <= v < x[n]
+	// For the purpose of the last condition, x[lo[..]-1] == -infinity and x[hi[..]] == infinity.
+	// Then, the return value is (hi[..] - n)/(hi[..] - lo[..])
+	// If hi[..] <= lo[..] then the return value is zero.
+
+	public static double[] probex_each_array_column (double[][] x, double v, int[] lo, int[] hi) {
+		double[] result = new double[x.length];
+		for (int m = 0; m < x.length; ++m) {
+			int thi = hi[m];
+			int tlo = lo[m];
+			if (thi <= tlo) {
+				result[m] = 0.0;
+			} else {
+				result[m] = ((double)(thi - bsearch_array (x[m], v, tlo, thi))) / ((double)(thi - tlo));
+			}
+		}
+		return result;
+	}
+
+
+	public static double[] probex_each_array_column (int[][] x, int v, int[] lo, int[] hi) {
+		double[] result = new double[x.length];
+		for (int m = 0; m < x.length; ++m) {
+			final int thi = hi[m];
+			final int tlo = lo[m];
+			if (thi <= tlo) {
+				result[m] = 0.0;
+			} else {
+				result[m] = ((double)(thi - bsearch_array (x[m], v, tlo, thi))) / ((double)(thi - tlo));
+			}
+		}
+		return result;
+	}
+
+
+	public static double[][] probex_each_array_column (double[][][] x, double v, int[][] lo, int[][] hi) {
+		double[][] result = new double[x.length][];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = probex_each_array_column (x[m], v, lo[m], hi[m]);
+		}
+		return result;
+	}
+
+
+	public static double[][] probex_each_array_column (int[][][] x, int v, int[][] lo, int[][] hi) {
+		double[][] result = new double[x.length][];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = probex_each_array_column (x[m], v, lo[m], hi[m]);
+		}
+		return result;
+	}
+
+
+
+
+	// Fractile for an array.
+	// Parameters:
+	//  x = Array to use, which has been sorted into increasing order.
+	//  frac = Fractile to find, should be between 0.0 and 1.0.
+	//  lo = Lower index, inclusive.
+	//  hi = Upper index, exclusive.
+	// Returns a value v from the array, such that the probabilty that an array
+	// element is less than or equal to v is approximately equal to frac.
+	// If hi <= lo then the return value is zero.
+
+	public static double fractile_array (double[] x, double frac, int lo, int hi) {
+		if (hi <= lo) {
+			return 0.0;
+		}
+		int n = lo + (int)Math.round (((double)(hi - lo)) * frac - 0.5);
+		if (n < lo) {
+			n = lo;
+		}
+		else if (n >= hi) {
+			n = hi - 1;
+		}
+		return x[n];
+	}
+
+
+	public static int fractile_array (int[] x, double frac, int lo, int hi) {
+		if (hi <= lo) {
+			return 0;
+		}
+		int n = lo + (int)Math.round (((double)(hi - lo)) * frac - 0.5);
+		if (n < lo) {
+			n = lo;
+		}
+		else if (n >= hi) {
+			n = hi - 1;
+		}
+		return x[n];
+	}
+
+
+
+
+	// Fractile for each column in an array.
+	// Parameters:
+	//  x = Array to use, where each column has been sorted into increasing order.
+	//  frac = Fractile to find, should be between 0.0 and 1.0.
+	//  lo = Lower index within each column, inclusive.
+	//  hi = Upper index within each column, exclusive.
+	// Returns an array, with one less dimension than x, where each element
+	// is a value v from the array column, such that the probabilty that an array
+	// column element is less than or equal to v is approximately equal to frac.
+	// If hi <= lo then the return value is zero.
+
+	public static double[] fractile_each_array_column (double[][] x, double frac, int lo, int hi) {
+		if (hi <= lo) {
+			double[] result = new double[x.length];
+			Arrays.fill (result, 0.0);
+			return result;
+		}
+		int n = lo + (int)Math.round (((double)(hi - lo)) * frac - 0.5);
+		if (n < lo) {
+			n = lo;
+		}
+		else if (n >= hi) {
+			n = hi - 1;
+		}
+		return get_each_array_column (x, n);
+	}
+
+
+	public static int[] fractile_each_array_column (int[][] x, double frac, int lo, int hi) {
+		if (hi <= lo) {
+			int[] result = new int[x.length];
+			Arrays.fill (result, 0);
+			return result;
+		}
+		int n = lo + (int)Math.round (((double)(hi - lo)) * frac - 0.5);
+		if (n < lo) {
+			n = lo;
+		}
+		else if (n >= hi) {
+			n = hi - 1;
+		}
+		return get_each_array_column (x, n);
+	}
+
+
+	public static double[][] fractile_each_array_column (double[][][] x, double frac, int lo, int hi) {
+		if (hi <= lo) {
+			double[][] result = new double[x.length][];
+			for (int m = 0; m < x.length; ++m) {
+				result[m] = new double[x[m].length];
+				Arrays.fill (result[m], 0.0);
+			}
+			return result;
+		}
+		int n = lo + (int)Math.round (((double)(hi - lo)) * frac - 0.5);
+		if (n < lo) {
+			n = lo;
+		}
+		else if (n >= hi) {
+			n = hi - 1;
+		}
+		return get_each_array_column (x, n);
+	}
+
+
+	public static int[][] fractile_each_array_column (int[][][] x, double frac, int lo, int hi) {
+		if (hi <= lo) {
+			int[][] result = new int[x.length][];
+			for (int m = 0; m < x.length; ++m) {
+				result[m] = new int[x[m].length];
+				Arrays.fill (result[m], 0);
+			}
+			return result;
+		}
+		int n = lo + (int)Math.round (((double)(hi - lo)) * frac - 0.5);
+		if (n < lo) {
+			n = lo;
+		}
+		else if (n >= hi) {
+			n = hi - 1;
+		}
+		return get_each_array_column (x, n);
+	}
+
+
+
+
+	// Fractile for each column in an array.
+	// Parameters:
+	//  x = Array to use, where each column has been sorted into increasing order.
+	//  frac = Fractile to find, should be between 0.0 and 1.0.
+	//  lo = Lower index within each column, inclusive, as an array of one dimension less than x.
+	//  hi = Upper index within each column, exclusive, as an array of one dimension less than x.
+	// Returns an array, with one less dimension than x, where each element
+	// is a value v from the array column, such that the probabilty that an array
+	// column element is less than or equal to v is approximately equal to frac.
+	// If hi[..] <= lo[..] then the return value is zero.
+
+	public static double[] fractile_each_array_column (double[][] x, double frac, int[] lo, int[] hi) {
+		double[] result = new double[x.length];
+		for (int m = 0; m < x.length; ++m) {
+			int thi = hi[m];
+			int tlo = lo[m];
+			if (thi <= tlo) {
+				result[m] = 0.0;
+			} else {
+				int n = tlo + (int)Math.round (((double)(thi - tlo)) * frac - 0.5);
+				if (n < tlo) {
+					n = tlo;
+				}
+				else if (n >= thi) {
+					n = thi - 1;
+				}
+				result[m] = x[m][n];
+			}
+		}
+		return result;
+	}
+
+
+	public static int[] fractile_each_array_column (int[][] x, double frac, int[] lo, int[] hi) {
+		int[] result = new int[x.length];
+		for (int m = 0; m < x.length; ++m) {
+			final int thi = hi[m];
+			final int tlo = lo[m];
+			if (thi <= tlo) {
+				result[m] = 0;
+			} else {
+				int n = tlo + (int)Math.round (((double)(thi - tlo)) * frac - 0.5);
+				if (n < tlo) {
+					n = tlo;
+				}
+				else if (n >= thi) {
+					n = thi - 1;
+				}
+				result[m] = x[m][n];
+			}
+		}
+		return result;
+	}
+
+
+	public static double[][] fractile_each_array_column (double[][][] x, double frac, int[][] lo, int[][] hi) {
+		double[][] result = new double[x.length][];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = fractile_each_array_column (x[m], frac, lo[m], hi[m]);
+		}
+		return result;
+	}
+
+
+	public static int[][] fractile_each_array_column (int[][][] x, double frac, int[][] lo, int[][] hi) {
+		int[][] result = new int[x.length][];
+		for (int m = 0; m < x.length; ++m) {
+			result[m] = fractile_each_array_column (x[m], frac, lo[m], hi[m]);
+		}
+		return result;
+	}
+
+
+
+
 	// Add a Poisson random value to each element in an array.
 	// Parameters:
 	//  rangen = Random number generator.
 	//  x = Array to use.
 	//  mean = Array of mean values for the Poisson random variables.
 	// If x is 1-dimensional:
-	//  x[i] = Poisson(mean[i])
+	//  x[i] += Poisson(mean[i])
 	// If x is 2-dimensional:
-	//  x[i][j] = Poisson(mean[i][j])
+	//  x[i][j] += Poisson(mean[i][j])
 
 	public static void add_poisson_array (OERandomGenerator rangen, int[] x, double[] mean) {
 		for (int m = 0; m < x.length; ++m) {
@@ -920,6 +1756,38 @@ public class OEArraysCalc {
 
 	public static void add_poisson_array (OERandomGenerator rangen, int[][] x, double[][] mean) {
 		for (int m = 0; m < x.length; ++m) {
+			add_poisson_array (rangen, x[m], mean[m]);
+		}
+		return;
+	}
+
+
+
+
+	// Add a Poisson random value to each element in an array.
+	// Parameters:
+	//  rangen = Random number generator.
+	//  x = Array to use.
+	//  mean = Array of mean values for the Poisson random variables.
+	//  begin = Beginning of range of first or only array index to use, inclusive.
+	//  end = Ending of range of first or only array index to use, exclusive.
+	// If x is 1-dimensional:
+	//  x[i] += Poisson(mean[i])
+	// If x is 2-dimensional:
+	//  x[i][j] += Poisson(mean[i][j])
+
+	public static void add_poisson_array (OERandomGenerator rangen, int[] x, double[] mean, int begin, int end) {
+		for (int m = begin; m < end; ++m) {
+			if (mean[m] >= SMALL_EXPECTED_COUNT) {
+				x[m] += rangen.poisson_sample_checked (mean[m]);
+			}
+		}
+		return;
+	}
+
+
+	public static void add_poisson_array (OERandomGenerator rangen, int[][] x, double[][] mean, int begin, int end) {
+		for (int m = begin; m < end; ++m) {
 			add_poisson_array (rangen, x[m], mean[m]);
 		}
 		return;
