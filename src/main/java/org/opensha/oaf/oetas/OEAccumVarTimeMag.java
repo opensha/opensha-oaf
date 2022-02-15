@@ -46,6 +46,18 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 	private static final int OMIT_BIN = Integer.MAX_VALUE;
 
+	// The number of time bins that are used for reporting ruptures.
+
+	private int active_time_bins;
+
+	// The number of magnitude bins that are used for reporting ruptures.
+
+	private int active_mag_bins;
+
+	// True to drop catalogs that stop before the end of active_time_bins.
+
+	private boolean drop_short_cat;
+
 
 
 
@@ -189,6 +201,10 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 		time_values = Arrays.copyOf (the_time_values, the_time_values.length);
 		mag_values = Arrays.copyOf (the_mag_values, the_mag_values.length);
 
+		active_time_bins = time_bins;
+		active_mag_bins = mag_bins;
+		drop_short_cat = false;
+
 		// Empty accumulators
 
 		acc_capacity = 0;
@@ -235,7 +251,7 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 		protected int[][] csr_counts;
 
 		// The bin during which the catalog stops.
-		// Can be -1 if it stops before the first bin, time_bins if it stops after the last bin.
+		// Can be -1 if it stops before the first bin, active_time_bins if it stops after the last active bin.
 
 		protected int stop_time_bin;
 
@@ -299,13 +315,19 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 			// Calculate the bin during which the catalog stops
 			// (accepting a bin as complete if we get within epsilon of the bin's end time)
 
-			stop_time_bin = OEArraysCalc.bsearch_array (time_values, comm.cat_stop_time + comm.cat_params.teps) - 1;
+			stop_time_bin = OEArraysCalc.bsearch_array (time_values, comm.cat_stop_time + comm.cat_params.teps, 0, active_time_bins + 1) - 1;
 
 			// The number of time bins for which we count ruptures is by default
 			// the number of bins before the bin that contains the stop time
 			// (the number of bins for which the catalog reaches the end of the bin)
 
 			cat_time_bins = Math.max (stop_time_bin, 0);
+
+			// If dropping short catalogs, don't count any ruptures if the catalog doesn't fill all active bins
+
+			if (drop_short_cat && cat_time_bins < active_time_bins) {
+				cat_time_bins = 0;
+			}
 
 			// The number of time bins we report is by default the same.
 
@@ -470,11 +492,11 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 			}
 		
 			// Find the magnitude bin for this rupture,
-			// -1 if before the first bin, mag_bins if after the last bin
+			// -1 if before the first bin, active_mag_bins if after the last active bin
 
-			int mag_ix = OEArraysCalc.bsearch_array (mag_values, comm.rup.rup_mag) - 1;
+			int mag_ix = OEArraysCalc.bsearch_array (mag_values, comm.rup.rup_mag, 0, active_mag_bins + 1) - 1;
 
-			if (mag_ix < 0 || mag_ix >= mag_bins) {
+			if (mag_ix < 0 || mag_ix >= active_mag_bins) {
 				return time_ix;
 			}
 
@@ -538,7 +560,7 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 		protected int[] cur_gen_counts;
 
 		// The last magnitude bin + 1 that needs infill in the current generation.
-		// 0 if no infill needed, mag_bins if all bins need infill.
+		// 0 if no infill needed, active_mag_bins if all active bins need infill.
 
 		protected int infill_mag_bin_hi;
 
@@ -572,8 +594,8 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 			// (the offset by mag_eps avoids near-zero-range infill);
 			// note this is based on the min mag of the current generation
 
-			infill_mag_bin_hi = Math.min (OEArraysCalc.bsearch_array (
-						mag_values, comm.gen_info.gen_mag_min - comm.cat_params.mag_eps), mag_bins);
+			infill_mag_bin_hi = OEArraysCalc.bsearch_array (
+						mag_values, comm.gen_info.gen_mag_min - comm.cat_params.mag_eps, 0, active_mag_bins);
 
 			return;
 		}
@@ -667,7 +689,7 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 		private double[] cur_gen_rates;
 
 		// The last magnitude bin + 1 that needs infill in the current generation.
-		// 0 if no infill needed, mag_bins if all bins need infill.
+		// 0 if no infill needed, active_mag_bins if all active bins need infill.
 
 		private int infill_mag_bin_hi;
 
@@ -735,8 +757,8 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 			if (comm.f_final_gen) {
 				infill_mag_bin_hi = 0;
 			} else {
-				infill_mag_bin_hi = Math.min (OEArraysCalc.bsearch_array (
-							mag_values, comm.next_gen_info.gen_mag_min - comm.cat_params.mag_eps), mag_bins);
+				infill_mag_bin_hi = OEArraysCalc.bsearch_array (
+							mag_values, comm.next_gen_info.gen_mag_min - comm.cat_params.mag_eps, 0, active_mag_bins);
 			}
 
 			return;
@@ -820,8 +842,8 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 			if (comm.f_final_gen) {
 				infill_mag_bin_hi = 0;
 			} else {
-				infill_mag_bin_hi = Math.min (OEArraysCalc.bsearch_array (
-							mag_values, comm.next_gen_info.gen_mag_min - comm.cat_params.mag_eps), mag_bins);
+				infill_mag_bin_hi = OEArraysCalc.bsearch_array (
+							mag_values, comm.next_gen_info.gen_mag_min - comm.cat_params.mag_eps, 0, active_mag_bins);
 			}
 
 			return;
@@ -1318,19 +1340,22 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 		case MARSHAL_VER_1: {
 
-			writer.marshalInt         ("infill_meth"    , infill_meth    );
+			writer.marshalInt         ("infill_meth"     , infill_meth     );
+			writer.marshalInt         ("active_time_bins", active_time_bins);
+			writer.marshalInt         ("active_mag_bins" , active_mag_bins );
+			writer.marshalBoolean     ("drop_short_cat"  , drop_short_cat  );
 
-			writer.marshalInt         ("time_bins"      , time_bins      );
-			writer.marshalInt         ("mag_bins"       , mag_bins       );
-			writer.marshalDoubleArray ("time_values"    , time_values    );
-			writer.marshalDoubleArray ("mag_values"     , mag_values     );
+			writer.marshalInt         ("time_bins"       , time_bins       );
+			writer.marshalInt         ("mag_bins"        , mag_bins        );
+			writer.marshalDoubleArray ("time_values"     , time_values     );
+			writer.marshalDoubleArray ("mag_values"      , mag_values      );
 
-			writer.marshalInt         ("acc_capacity"   , acc_capacity   );
-			writer.marshalInt         ("acc_size"       , acc_size       );
-			writer.marshalInt3DArray  ("acc_counts"     , acc_counts     );
-			writer.marshalInt2DArray  ("acc_bin_zero"   , acc_bin_zero   );
-			writer.marshalInt2DArray  ("acc_bin_size"   , acc_bin_size   );
-			writer.marshalIntArray    ("acc_live_counts", acc_live_counts);
+			writer.marshalInt         ("acc_capacity"    , acc_capacity    );
+			writer.marshalInt         ("acc_size"        , acc_size        );
+			writer.marshalInt3DArray  ("acc_counts"      , acc_counts      );
+			writer.marshalInt2DArray  ("acc_bin_zero"    , acc_bin_zero    );
+			writer.marshalInt2DArray  ("acc_bin_size"    , acc_bin_size    );
+			writer.marshalIntArray    ("acc_live_counts" , acc_live_counts );
 
 		}
 		break;
@@ -1354,19 +1379,22 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 		case MARSHAL_VER_1: {
 
-			infill_meth     = reader.unmarshalInt         ("infill_meth"    );
+			infill_meth      = reader.unmarshalInt         ("infill_meth"     );
+			active_time_bins = reader.unmarshalInt         ("active_time_bins");
+			active_mag_bins  = reader.unmarshalInt         ("active_mag_bins" );
+			drop_short_cat   = reader.unmarshalBoolean     ("drop_short_cat"  );
 
-			time_bins       = reader.unmarshalInt         ("time_bins"      );
-			mag_bins        = reader.unmarshalInt         ("mag_bins"       );
-			time_values     = reader.unmarshalDoubleArray ("time_values"    );
-			mag_values      = reader.unmarshalDoubleArray ("mag_values"     );
+			time_bins       = reader.unmarshalInt          ("time_bins"       );
+			mag_bins        = reader.unmarshalInt          ("mag_bins"        );
+			time_values     = reader.unmarshalDoubleArray  ("time_values"     );
+			mag_values      = reader.unmarshalDoubleArray  ("mag_values"      );
 
-			acc_capacity    = reader.unmarshalInt         ("acc_capacity"   );
-			acc_size        = reader.unmarshalInt         ("acc_size"       );
-			acc_counts      = reader.unmarshalInt3DArray  ("acc_counts"     );
-			acc_bin_zero    = reader.unmarshalInt2DArray  ("acc_bin_zero"   );
-			acc_bin_size    = reader.unmarshalInt2DArray  ("acc_bin_size"   );
-			acc_live_counts = reader.unmarshalIntArray    ("acc_live_counts");
+			acc_capacity    = reader.unmarshalInt          ("acc_capacity"    );
+			acc_size        = reader.unmarshalInt          ("acc_size"        );
+			acc_counts      = reader.unmarshalInt3DArray   ("acc_counts"      );
+			acc_bin_zero    = reader.unmarshalInt2DArray   ("acc_bin_zero"    );
+			acc_bin_size    = reader.unmarshalInt2DArray   ("acc_bin_size"    );
+			acc_live_counts = reader.unmarshalIntArray     ("acc_live_counts" );
 
 		}
 		break;
