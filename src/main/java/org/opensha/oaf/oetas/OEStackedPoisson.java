@@ -31,8 +31,7 @@ import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;	// natural logarithm o
 // Also, it pre-computes and caches the probability distribution for a set of means,
 // which are also approximately logarithmically spaced.  Each cached distribution is
 // truncated at low and high values of its cumulative distribution.  When adding a
-// Poisson distribution, it uses the cached distribution with the closest mean.  An
-// exception is for means less than 1.0, which are calculated by formula.
+// Poisson distribution, it uses the cached distribution with the closest mean.
 //
 // Once an object of this class is created, you can create one or more accumulators.
 // Each accumulator can sum a set of Poisson distributions and calculate fractiles.
@@ -135,6 +134,7 @@ public class OEStackedPoisson {
 	// After that, the spacing increases approximately logarithmically.
 	// The last element is 10^value_decades.
 	// It is guaranteed to be at least 11 elements, beginning with 0 through 10.
+	// It is guaranteed that the spacing between adjacent elements is non-decreasing.
 
 	private int[] value_range;
 
@@ -144,11 +144,19 @@ public class OEStackedPoisson {
 	//   value_split[n] = (value_range[n] + value_range[n+1])/2
 	// and therefore
 	//   value_range[n] <= value_split[n] < value_range[n+1]
-	// Also define
+	// For the last element, one option is to define
 	//   value_split[value_range.length - 1] = value_range[value_range.length - 1]
 	// which is consistent with the above if we pretend that
 	//   value_range[value_range.length] = value_range[value_range.length - 1]
+	// Another option for the last element, which we currently use, is to define
+	//   value_split[value_range.length - 1] = value_range[value_range.length - 1]
+	//       + (value_range[value_range.length - 1] - value_range[value_range.length - 2])/2
+	// which is consistent with the above if we pretend that
+	//   value_range[value_range.length] = value_range[value_range.length - 1]
+	//       + (value_range[value_range.length - 1] - value_range[value_range.length - 2])
 	// It is guaranteed that the first 10 elements are 0 through 9.
+	// It is guaranteed that the spacing between adjacent elements is non-decreasing,
+	// except possibly for the spacing between the last two elements.
 	//
 	// For a given n, value_range[n] represents all Poisson values v satisfying
 	//   value_split[n-1] < v <= value_split[n]
@@ -494,7 +502,9 @@ public class OEStackedPoisson {
 		for (int k = 0; k < total_len - 1; ++k) {
 			value_split[k] = (value_range[k] + value_range[k + 1])/2;
 		}
-		value_split[total_len - 1] = value_range[total_len - 1];
+
+		//value_split[total_len - 1] = value_range[total_len - 1];
+		value_split[total_len - 1] = value_range[total_len - 1] + ((value_range[total_len - 1] - value_range[total_len - 2])/2);
 
 		return;
 	}
@@ -1666,7 +1676,7 @@ public class OEStackedPoisson {
 
 
 
-	// Add a shifted Poisson distribution to each accumulator in an array of accumulators.
+	// Add a point mass to each accumulator in an array of accumulators.
 	// Parameters:
 	//  dest = 1D or 2D array of accumulators.
 	//  value = 1D or 2D array, containing the value of the point mass, must be >= 0.
@@ -1979,6 +1989,76 @@ public class OEStackedPoisson {
 
 
 
+	// Test function to convert a 2D array to a string.
+
+	private static String test_display_array (int[][] x) {
+		StringBuilder result = new StringBuilder();
+
+		for (int m = 0; m < x.length; ++m) {
+			for (int n = 0; n < x[m].length; ++n) {
+				if (n != 0) {
+					result.append ("  ");
+				}
+				result.append (String.format ("%10d", x[m][n]));
+			}
+			result.append ("\n");
+		}
+
+		return result.toString();
+	}
+
+	private static String test_display_array (double[][] x) {
+		StringBuilder result = new StringBuilder();
+
+		for (int m = 0; m < x.length; ++m) {
+			for (int n = 0; n < x[m].length; ++n) {
+				if (n != 0) {
+					result.append ("  ");
+				}
+				result.append (String.format ("% .6e", x[m][n]));
+			}
+			result.append ("\n");
+		}
+
+		return result.toString();
+	}
+
+
+
+
+	// Test function to make an array of parameters.
+
+	private static int[][] test_make_parm_int_array (int rows, int cols, int v, int h_mult, int h_step, int v_mult, int v_step) {
+		int[][] x = new int[rows][cols];
+		x[0][0] = v;
+		for (int n = 1; n < cols; ++n) {
+			x[0][n] = x[0][n-1] * h_mult + h_step;
+		}
+		for (int m = 1; m < rows; ++m) {
+			for (int n = 0; n < cols; ++n) {
+				x[m][n] = x[m-1][n] * v_mult + v_step;
+			}
+		}
+		return x;
+	}
+
+	private static double[][] test_make_parm_double_array (int rows, int cols, double v, double h_mult, double h_step, double v_mult, double v_step) {
+		double[][] x = new double[rows][cols];
+		x[0][0] = v;
+		for (int n = 1; n < cols; ++n) {
+			x[0][n] = x[0][n-1] * h_mult + h_step;
+		}
+		for (int m = 1; m < rows; ++m) {
+			for (int n = 0; n < cols; ++n) {
+				x[m][n] = x[m-1][n] * v_mult + v_step;
+			}
+		}
+		return x;
+	}
+
+
+
+
 	public static void main(String[] args) {
 
 		// There needs to be at least one argument, which is the subcommand
@@ -2233,6 +2313,356 @@ public class OEStackedPoisson {
 						v = shift[j] + (int)Math.round(lambda[j]);
 					}
 					System.out.println (v + ":  cum_prob = " + accum.get_cum_prob(v) + ",  probex = " + accum.get_probex(v));
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  value_precision  mean_precision  f_full  [lambda  shift  weight]...
+		// Create a OEStackedPoisson object with the specified precisions.
+		// Display the summary string.
+		// Create an Accumulator object and add the supplied distributions.
+		// Display the detail string.
+		// Cumulate the accumulator.
+		// Display the detail string.
+		// Display various outputs and fractiles.
+		// Note: Use lambda = -1 to call the point mass functions (using shift as the value).
+		// Note: Use shift = -1 to call the unshifted Poisson functions.
+		// Note: Use weight = -1 to call the weight-less functions.
+		// Same as test #3, except that a separate accumulator is used for building distributions.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// 3 + 3*n additional arguments
+
+			if (!( args.length >= 4 && (args.length - 4) % 3 == 0 )) {
+				System.err.println ("OEStackedPoisson : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				double the_value_precision = Double.parseDouble (args[1]);
+				double the_mean_precision = Double.parseDouble (args[2]);
+				boolean f_full = Boolean.parseBoolean (args[3]);
+
+				int dist_start = 4;			// index where the first distribution begins
+				int num_dist = (args.length - dist_start) / 3;
+				double[] lambda = new double[num_dist];
+				int[] shift = new int[num_dist];
+				double[] weight = new double[num_dist];
+				for (int j = 0; j < num_dist; ++j) {
+					lambda[j] = Double.parseDouble (args[dist_start + (3 * j) + 0]);
+					shift[j] = Integer.parseInt (args[dist_start + (3 * j) + 1]);
+					weight[j] = Double.parseDouble (args[dist_start + (3 * j) + 2]);
+				}
+
+				// Say hello
+
+				System.out.println ("Creating OEStackedPoisson.Accumulator and adding some distributions from separate accumulators");
+				System.out.println ("value_precision = " + the_value_precision);
+				System.out.println ("mean_precision = " + the_mean_precision);
+				System.out.println ("f_full = " + f_full);
+				System.out.println ("num_dist = " + num_dist);
+				System.out.println ("num  lambda  shift  weight");
+				for (int j = 0; j < num_dist; ++j) {
+					System.out.println ("  " + j + "  " + lambda[j] + "  " + shift[j] + "  " + weight[j]);
+				}
+
+				// Create the object
+
+				OEStackedPoisson stkpois = new OEStackedPoisson (
+					the_value_precision,
+					the_mean_precision
+				);
+
+				// Display summary string
+
+				System.out.println ();
+				System.out.println (stkpois.summary_string());
+
+				// Create an accumulator
+
+				OEStackedPoisson.Accumulator accum = stkpois.make_accumulator();
+
+				// Create an accumulator for partial sums
+
+				OEStackedPoisson.Accumulator partial = stkpois.make_accumulator();
+
+				// Add the distributions
+
+				for (int j = 0; j < num_dist; ++j) {
+
+					partial.clear();
+
+					// Point mass case
+
+					if (lambda[j] < -0.5) {
+						if (weight[j] < -0.5) {
+							partial.add_point_mass (shift[j]);
+						} else {
+							partial.add_point_mass (shift[j], weight[j]);
+						}
+					}
+
+					// Unshifted Poisson case
+
+					else if (shift[j] < 0) {
+						if (weight[j] < -0.5) {
+							partial.add_poisson (lambda[j]);
+						} else {
+							partial.add_poisson (lambda[j], weight[j]);
+						}
+					}
+
+					// Shifted Poisson case
+
+					else {
+						if (weight[j] < -0.5) {
+							partial.add_shifted_poisson (lambda[j], shift[j]);
+						} else {
+							partial.add_shifted_poisson (lambda[j], shift[j], weight[j]);
+						}
+					}
+
+					// Combine into total accumulator
+
+					accum.combine_with (partial);
+				}
+
+				// Display accumulator detail string
+
+				System.out.println ();
+				System.out.println (accum.detail_acc_string(f_full));
+
+				// Cumulate the distribution
+
+				accum.cumulate();
+
+				// Display accumulator detail string
+
+				System.out.println ();
+				System.out.println (accum.detail_acc_string(f_full));
+
+				// Display probability of occurrence
+
+				System.out.println ();
+				System.out.println ("Probability of occurrence = " + accum.get_prob_occur());
+
+				// Get some fractiles
+
+				System.out.println ();
+				System.out.println ("Fractile  2.5% = " + accum.get_fractile (0.025));
+				System.out.println ("Fractile   25% = " + accum.get_fractile (0.25));
+				System.out.println ("Fractile   50% = " + accum.get_fractile (0.5));
+				System.out.println ("Fractile   75% = " + accum.get_fractile (0.75));
+				System.out.println ("Fractile 97.5% = " + accum.get_fractile (0.975));
+
+				// Get cumulative probability and probability of exceedence
+
+				System.out.println ();
+				for (int j = 0; j < num_dist; ++j) {
+					int v;
+					if (lambda[j] < -0.5) {
+						v = shift[j];
+					} else if (shift[j] < 0) {
+						v = (int)Math.round(lambda[j]);
+					} else {
+						v = shift[j] + (int)Math.round(lambda[j]);
+					}
+					System.out.println (v + ":  cum_prob = " + accum.get_cum_prob(v) + ",  probex = " + accum.get_probex(v));
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  value_precision  mean_precision  f_full  [lambda  shift  weight]...
+		// Create a OEStackedPoisson object with the specified precisions.
+		// Display the summary string.
+		// Create an Accumulator object and add the supplied distributions.
+		// Display the detail string.
+		// Cumulate the accumulator.
+		// Display the detail string.
+		// Display various outputs and fractiles.
+		// Note: Use lambda = -1 to call the point mass functions (using shift as the value).
+		// Note: Use shift = -1 to call the unshifted Poisson functions.
+		// Note: Use weight = -1 to call the weight-less functions.
+		// Similar to test #4, except using arrays of accumulators.  The test uses a 3-row by
+		// 5-column array.  Each lambda or shift is converted to an array by placing the given
+		// value in the upper left corner, filling the first row with multiples of the given
+		// value, and then filling succeeding rows by multiplying the prior row by 10.
+		// Only the accumulator in the upper left corner is displayed in detail.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// 3 + 3*n additional arguments
+
+			if (!( args.length >= 4 && (args.length - 4) % 3 == 0 )) {
+				System.err.println ("OEStackedPoisson : Invalid 'test5' subcommand");
+				return;
+			}
+
+			try {
+
+				double the_value_precision = Double.parseDouble (args[1]);
+				double the_mean_precision = Double.parseDouble (args[2]);
+				boolean f_full = Boolean.parseBoolean (args[3]);
+
+				int dist_start = 4;			// index where the first distribution begins
+				int num_dist = (args.length - dist_start) / 3;
+				double[] lambda = new double[num_dist];
+				int[] shift = new int[num_dist];
+				double[] weight = new double[num_dist];
+				for (int j = 0; j < num_dist; ++j) {
+					lambda[j] = Double.parseDouble (args[dist_start + (3 * j) + 0]);
+					shift[j] = Integer.parseInt (args[dist_start + (3 * j) + 1]);
+					weight[j] = Double.parseDouble (args[dist_start + (3 * j) + 2]);
+				}
+
+				// Say hello
+
+				System.out.println ("Creating OEStackedPoisson.Accumulator arrays and adding some distributions");
+				System.out.println ("value_precision = " + the_value_precision);
+				System.out.println ("mean_precision = " + the_mean_precision);
+				System.out.println ("f_full = " + f_full);
+				System.out.println ("num_dist = " + num_dist);
+				System.out.println ("num  lambda  shift  weight");
+				for (int j = 0; j < num_dist; ++j) {
+					System.out.println ("  " + j + "  " + lambda[j] + "  " + shift[j] + "  " + weight[j]);
+				}
+
+				// Create the object
+
+				OEStackedPoisson stkpois = new OEStackedPoisson (
+					the_value_precision,
+					the_mean_precision
+				);
+
+				// Display summary string
+
+				System.out.println ();
+				System.out.println (stkpois.summary_string());
+
+				// Create an accumulator array
+
+				final int rows = 3;
+				final int cols = 5;
+
+				OEStackedPoisson.Accumulator accum[][] = new OEStackedPoisson.Accumulator[rows][cols];
+				stkpois.make_acc_array (accum);
+
+				// Create an accumulator for partial sums
+
+				OEStackedPoisson.Accumulator partial[][] = new OEStackedPoisson.Accumulator[rows][cols];
+				stkpois.make_acc_array (partial);
+
+				// Add the distributions
+
+				for (int j = 0; j < num_dist; ++j) {
+
+					OEStackedPoisson.clear_acc_array (partial);
+
+					// Make lambda and shift arrays (which might not both be used)
+
+					double[][] lambda_array = test_make_parm_double_array (rows, cols, lambda[j], 1.0, lambda[j], 10.0, 0.0);
+					int[][] shift_array = test_make_parm_int_array (rows, cols, shift[j], 1, shift[j], 10, 0);
+
+					// Point mass case
+
+					if (lambda[j] < -0.5) {
+						if (weight[j] < -0.5) {
+							OEStackedPoisson.add_point_mass_acc_array (partial, shift_array);
+						} else {
+							OEStackedPoisson.add_point_mass_acc_array (partial, shift_array, weight[j]);
+						}
+					}
+
+					// Unshifted Poisson case
+
+					else if (shift[j] < 0) {
+						if (weight[j] < -0.5) {
+							OEStackedPoisson.add_poisson_acc_array (partial, lambda_array);
+						} else {
+							OEStackedPoisson.add_poisson_acc_array (partial, lambda_array, weight[j]);
+						}
+					}
+
+					// Shifted Poisson case
+
+					else {
+						if (weight[j] < -0.5) {
+							OEStackedPoisson.add_shifted_poisson_acc_array (partial, lambda_array, shift_array);
+						} else {
+							OEStackedPoisson.add_shifted_poisson_acc_array (partial, lambda_array, shift_array, weight[j]);
+						}
+					}
+
+					// Combine into total accumulator
+
+					OEStackedPoisson.combine_acc_array (accum, partial);
+				}
+
+				// Display accumulator detail string
+
+				System.out.println ();
+				System.out.println (accum[0][0].detail_acc_string(f_full));
+
+				// Cumulate the distribution
+
+				OEStackedPoisson.cumulate_acc_array (accum);
+
+				// Display accumulator detail string
+
+				System.out.println ();
+				System.out.println (accum[0][0].detail_acc_string(f_full));
+
+				// Display probability of occurrence
+
+				System.out.println ();
+				System.out.println ("Probability of occurrence:\n" + test_display_array (OEStackedPoisson.prob_occur_acc_array (accum)));
+
+				// Get some fractiles
+
+				System.out.println ();
+				System.out.println ("Fractile  2.5%:\n" + test_display_array (OEStackedPoisson.fractile_acc_array (accum, 0.025)));
+				System.out.println ("Fractile   25%:\n" + test_display_array (OEStackedPoisson.fractile_acc_array (accum, 0.25 )));
+				System.out.println ("Fractile   50%:\n" + test_display_array (OEStackedPoisson.fractile_acc_array (accum, 0.5  )));
+				System.out.println ("Fractile   75%:\n" + test_display_array (OEStackedPoisson.fractile_acc_array (accum, 0.75 )));
+				System.out.println ("Fractile 97.5%:\n" + test_display_array (OEStackedPoisson.fractile_acc_array (accum, 0.975)));
+
+				// Get cumulative probability and probability of exceedence
+
+				System.out.println ();
+				for (int j = 0; j < num_dist; ++j) {
+					int v;
+					if (lambda[j] < -0.5) {
+						v = shift[j];
+					} else if (shift[j] < 0) {
+						v = (int)Math.round(lambda[j]);
+					} else {
+						v = shift[j] + (int)Math.round(lambda[j]);
+					}
+					v *= 20;		// value for second row, second column
+					System.out.println ("Cumulative probability for " + v + ":\n" + test_display_array (OEStackedPoisson.cum_prob_acc_array (accum, v)));
+					System.out.println ("Probability of exceedence for " + v + ":\n" + test_display_array (OEStackedPoisson.probex_acc_array (accum, v)));
 				}
 
 			} catch (Exception e) {
