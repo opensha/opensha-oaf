@@ -8,6 +8,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.opensha.oaf.util.AutoExecutorService;
 import org.opensha.oaf.util.SimpleThreadManager;
@@ -35,7 +36,7 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 	// Get the ensemble parameters.
 
-	public OEEnsembleParams get_ensemble_params () {
+	public final OEEnsembleParams get_ensemble_params () {
 		return ensemble_params;
 	}
 
@@ -46,20 +47,23 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 	// The number of catalogs generated so far.
 
-	private int catalog_count;
+	private AtomicInteger catalog_count = new AtomicInteger();
 
 
 	// Get the next work unit.
 	// If there is more work to do, return the current catalog number and increment the catalog count.
 	// If there is no more work to do, return -1.
+	// Threading: This function is thread-safe.
 
-	private synchronized int get_work_unit () {
-		if (catalog_count >= ensemble_params.num_catalogs) {
-			return -1;
-		}
-		int result = catalog_count;
-		++catalog_count;
-		return result;
+	private int get_work_unit () {
+		int n;
+		do {
+			n = catalog_count.get();
+			if (n >= ensemble_params.num_catalogs) {
+				return -1;
+			}
+		} while (!( catalog_count.compareAndSet (n, n+1) ));
+		return n;
 	}
 
 
@@ -72,10 +76,10 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 	// Erase the contents.
 
-	public void clear () {
+	public final void clear () {
 		ensemble_params = null;
 
-		catalog_count = 0;
+		catalog_count.set(0);
 		return;
 	}
 
@@ -232,9 +236,10 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 	// Get the number of catalogs processed or being processed.
 	// This may be called while running to monitor progress,
 	// or after termination to obtain the number of catalogs generated.
+	// Threading: This function is thread-safe.
 
-	public synchronized int get_catalog_count () {
-		return catalog_count;
+	public final int get_catalog_count () {
+		return catalog_count.get();
 	}
 
 

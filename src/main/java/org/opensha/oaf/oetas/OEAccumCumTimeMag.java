@@ -3,6 +3,8 @@ package org.opensha.oaf.oetas;
 import java.util.Arrays;
 import java.util.ArrayList;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -73,7 +75,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 	private int acc_capacity;
 
-	// The current size of the accumulator, that is, the number of catalogs accumulated.
+	// The size of the accumulator, that is, the number of catalogs accumulated.
 
 	private int acc_size;
 
@@ -81,6 +83,25 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 	// Dimension: acc_counts[time_bins][mag_bins][acc_capacity]
 
 	private int[][][] acc_counts;
+
+
+	// The next catalog index to use.
+
+	private AtomicInteger acc_catix = new AtomicInteger();
+
+	// Get the next catalog index to use.
+	// Throw an exception if all capacity is exhausted.
+
+	private int get_acc_catix () {
+		int n;
+		do {
+			n = acc_catix.get();
+			if (n >= acc_capacity) {
+				throw new IllegalStateException ("OEAccumCumTimeMag.get_acc_catix: No room in accumulator");
+			}
+		} while (!( acc_catix.compareAndSet (n, n+1) ));
+		return n;
+	}
 
 
 
@@ -92,7 +113,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 	// Erase the contents.
 
-	public void clear () {
+	public final void clear () {
 		infill_meth = 0;
 
 		time_bins = 0;
@@ -102,6 +123,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 		acc_capacity = 0;
 		acc_size = 0;
+		acc_catix.set(0);
 		acc_counts = new int[0][0][0];
 
 		return;
@@ -167,6 +189,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 		acc_capacity = 0;
 		acc_size = 0;
+		acc_catix.set(0);
 		acc_counts = null;
 
 		return;
@@ -244,15 +267,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 				// Get the index for this catalog
 
-				int catix;
-
-				synchronized (OEAccumCumTimeMag.this) {
-					if (acc_size >= acc_capacity) {
-						throw new IllegalStateException ("OEAccumCumTimeMag.ConsumerNone.close: No room in accumulator");
-					}
-					catix = acc_size;
-					++acc_size;
-				}
+				int catix = get_acc_catix();
 
 				// Store our counts into the accumulator
 
@@ -450,15 +465,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 				// Get the index for this catalog
 
-				int catix;
-
-				synchronized (OEAccumCumTimeMag.this) {
-					if (acc_size >= acc_capacity) {
-						throw new IllegalStateException ("OEAccumCumTimeMag.ConsumerNone.close: No room in accumulator");
-					}
-					catix = acc_size;
-					++acc_size;
-				}
+				int catix = get_acc_catix();
 
 				// Store our counts into the accumulator
 
@@ -716,15 +723,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 				// Get the index for this catalog
 
-				int catix;
-
-				synchronized (OEAccumCumTimeMag.this) {
-					if (acc_size >= acc_capacity) {
-						throw new IllegalStateException ("OEAccumCumTimeMag.ConsumerNone.close: No room in accumulator");
-					}
-					catix = acc_size;
-					++acc_size;
-				}
+				int catix = get_acc_catix();
 
 				// Store our counts into the accumulator
 
@@ -1025,15 +1024,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 				// Get the index for this catalog
 
-				int catix;
-
-				synchronized (OEAccumCumTimeMag.this) {
-					if (acc_size >= acc_capacity) {
-						throw new IllegalStateException ("OEAccumCumTimeMag.ConsumerNone.close: No room in accumulator");
-					}
-					catix = acc_size;
-					++acc_size;
-				}
+				int catix = get_acc_catix();
 
 				// Store our counts into the accumulator
 
@@ -1261,6 +1252,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 		// Initialize the size
 
 		acc_size = 0;
+		acc_catix.set(0);
 		return;
 	}
 
@@ -1302,6 +1294,10 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 
 	@Override
 	public void end_accumulation () {
+
+		// Get the size
+
+		acc_size = acc_catix.get();
 	
 		// Sort each column, so fractiles are available
 
@@ -1537,6 +1533,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator {
 			acc_size     = reader.unmarshalInt         ("acc_size"    );
 			acc_counts   = reader.unmarshalInt3DArray  ("acc_counts"  );
 
+			acc_catix.set (acc_size);
 		}
 		break;
 

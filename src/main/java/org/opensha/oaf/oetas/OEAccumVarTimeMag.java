@@ -3,6 +3,8 @@ package org.opensha.oaf.oetas;
 import java.util.Arrays;
 import java.util.ArrayList;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -54,9 +56,9 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 	private int active_mag_bins;
 
-	// True to drop catalogs that stop before the end of active_time_bins.
+	// Minimum required stop time for a catalog.
 
-	private boolean drop_short_cat;
+	private double min_cat_stop_time;
 
 
 
@@ -93,7 +95,7 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 	private int acc_capacity;
 
-	// The current size of the accumulator, that is, the number of catalogs accumulated.
+	// The size of the accumulator, that is, the number of catalogs accumulated.
 
 	private int acc_size;
 
@@ -101,6 +103,11 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 	// Dimension: acc_counts[time_bins][mag_bins][acc_capacity]
 
 	private int[][][] acc_counts;
+
+	// The number of time bins that are being counted in each catalog.
+	// Dimension: acc_counted_bins[acc_capacity]
+
+	private int[] acc_counted_bins;
 
 	// An array containing zero for each bin, used as lower limit of column index.
 	// Dimension: acc_bin_zero[time_bins][mag_bins]
@@ -118,6 +125,25 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 	private int[] acc_live_counts;
 
 
+	// The next catalog index to use.
+
+	private AtomicInteger acc_catix = new AtomicInteger();
+
+	// Get the next catalog index to use.
+	// Throw an exception if all capacity is exhausted.
+
+	private int get_acc_catix () {
+		int n;
+		do {
+			n = acc_catix.get();
+			if (n >= acc_capacity) {
+				throw new IllegalStateException ("OEAccumVarTimeMag.get_acc_catix: No room in accumulator");
+			}
+		} while (!( acc_catix.compareAndSet (n, n+1) ));
+		return n;
+	}
+
+
 
 
 	//----- Construction -----
@@ -127,7 +153,7 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 	// Erase the contents.
 
-	public void clear () {
+	public final void clear () {
 		infill_meth = 0;
 
 		time_bins = 0;
@@ -137,7 +163,10 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 		acc_capacity = 0;
 		acc_size = 0;
+		acc_catix.set(0);
+
 		acc_counts = new int[0][0][0];
+		acc_counted_bins = new int[0];
 		acc_bin_zero = new int[0][0];
 		acc_bin_size = new int[0][0];
 		acc_live_counts = new int[0];
@@ -203,18 +232,20 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 		active_time_bins = time_bins;
 		active_mag_bins = mag_bins;
-		drop_short_cat = false;
+		min_cat_stop_time = time_values[0];
 
 		// Empty accumulators
 
 		acc_capacity = 0;
 		acc_size = 0;
+		acc_catix.set(0);
+
 		acc_counts = null;
+		acc_counted_bins = null;
 		acc_bin_zero = new int[time_bins][mag_bins];
 		OEArraysCalc.zero_array (acc_bin_zero);
 		acc_bin_size = null;
-		acc_live_counts = new int[time_bins];
-		OEArraysCalc.zero_array (acc_live_counts);
+		acc_live_counts = null;
 
 		return;
 	}
@@ -323,9 +354,12 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 			cat_time_bins = Math.max (stop_time_bin, 0);
 
-			// If dropping short catalogs, don't count any ruptures if the catalog doesn't fill all active bins
+			// Don't count any ruptures if the catalog does not achieve minimum required duration
+			// (The use of 0.5*teps ensures that if min_cat_stop_time is one of the time_values,
+			// then any catalog considered sufficiently long will have stop_time_bin to be at
+			// least the bin with min_cat_stop_time as its right endpoint.)
 
-			if (drop_short_cat && cat_time_bins < active_time_bins) {
+			if (comm.cat_stop_time + (0.5 * comm.cat_params.teps) < min_cat_stop_time) {
 				cat_time_bins = 0;
 			}
 
@@ -365,25 +399,13 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 				// Get the index for this catalog
 
-				int catix;
-
-				synchronized (OEAccumVarTimeMag.this) {
-					if (acc_size >= acc_capacity) {
-						throw new IllegalStateException ("OEAccumVarTimeMag.ConsumerNone.close: No room in accumulator");
-					}
-					catix = acc_size;
-					++acc_size;
-
-					// Also record the last bin in which we are live
-
-					if (stop_time_bin > 0) {
-						acc_live_counts[stop_time_bin - 1]++;
-					}
-				}
+				int catix = get_acc_catix();
 
 				// Store our counts into the accumulator
 
 				OEArraysCalc.set_each_array_column (acc_counts, catix, csr_counts);
+
+				acc_counted_bins[catix] = cat_time_bins;
 			}
 
 			return;
@@ -1061,13 +1083,15 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 		if (capacity > acc_capacity) {
 			acc_capacity = capacity;
 			acc_counts = new int[time_bins][mag_bins][acc_capacity];
+			acc_counted_bins = new int[acc_capacity];
 		}
 
 		// Initialize the counters
 
 		acc_size = 0;
+		acc_catix.set(0);
 		acc_bin_size = null;		// created during end_accumulation
-		OEArraysCalc.zero_array (acc_live_counts);
+		acc_live_counts = null;		// created during end_accumulation
 
 		return;
 	}
@@ -1093,6 +1117,7 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 		if (capacity > acc_capacity) {
 			acc_capacity = capacity;
 			OEArraysCalc.resize_each_array_column (acc_counts, acc_capacity);
+			acc_counted_bins = Arrays.copyOf (acc_counted_bins, acc_capacity);
 		}
 
 		return;
@@ -1110,6 +1135,10 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 	@Override
 	public void end_accumulation () {
+
+		// Get the size
+
+		acc_size = acc_catix.get();
 	
 		// Sort each column, so fractiles are available
 
@@ -1120,6 +1149,16 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 		acc_bin_size = OEArraysCalc.bsearch_each_array_column (acc_counts, OMIT_BIN - 1, 0, acc_size);
 
 		// Cumulate the number of live catalogs
+
+		acc_live_counts = new int[time_bins];
+		OEArraysCalc.zero_array (acc_live_counts);
+
+		for (int j = 0; j < acc_size; ++j) {
+			int n = acc_counted_bins[j];
+			if (n > 0) {
+				acc_live_counts[n - 1]++;
+			}
+		}
 
 		OEArraysCalc.cumulate_array (acc_live_counts, false) ;
 
@@ -1340,22 +1379,23 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 		case MARSHAL_VER_1: {
 
-			writer.marshalInt         ("infill_meth"     , infill_meth     );
-			writer.marshalInt         ("active_time_bins", active_time_bins);
-			writer.marshalInt         ("active_mag_bins" , active_mag_bins );
-			writer.marshalBoolean     ("drop_short_cat"  , drop_short_cat  );
+			writer.marshalInt         ("infill_meth"      , infill_meth      );
+			writer.marshalInt         ("active_time_bins" , active_time_bins );
+			writer.marshalInt         ("active_mag_bins"  , active_mag_bins  );
+			writer.marshalDouble      ("min_cat_stop_time", min_cat_stop_time);
 
-			writer.marshalInt         ("time_bins"       , time_bins       );
-			writer.marshalInt         ("mag_bins"        , mag_bins        );
-			writer.marshalDoubleArray ("time_values"     , time_values     );
-			writer.marshalDoubleArray ("mag_values"      , mag_values      );
+			writer.marshalInt         ("time_bins"        , time_bins        );
+			writer.marshalInt         ("mag_bins"         , mag_bins         );
+			writer.marshalDoubleArray ("time_values"      , time_values      );
+			writer.marshalDoubleArray ("mag_values"       , mag_values       );
 
-			writer.marshalInt         ("acc_capacity"    , acc_capacity    );
-			writer.marshalInt         ("acc_size"        , acc_size        );
-			writer.marshalInt3DArray  ("acc_counts"      , acc_counts      );
-			writer.marshalInt2DArray  ("acc_bin_zero"    , acc_bin_zero    );
-			writer.marshalInt2DArray  ("acc_bin_size"    , acc_bin_size    );
-			writer.marshalIntArray    ("acc_live_counts" , acc_live_counts );
+			writer.marshalInt         ("acc_capacity"     , acc_capacity     );
+			writer.marshalInt         ("acc_size"         , acc_size         );
+			writer.marshalInt3DArray  ("acc_counts"       , acc_counts       );
+			writer.marshalIntArray    ("acc_counted_bins" , acc_counted_bins );
+			writer.marshalInt2DArray  ("acc_bin_zero"     , acc_bin_zero     );
+			writer.marshalInt2DArray  ("acc_bin_size"     , acc_bin_size     );
+			writer.marshalIntArray    ("acc_live_counts"  , acc_live_counts  );
 
 		}
 		break;
@@ -1379,22 +1419,23 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 		case MARSHAL_VER_1: {
 
-			infill_meth      = reader.unmarshalInt         ("infill_meth"     );
-			active_time_bins = reader.unmarshalInt         ("active_time_bins");
-			active_mag_bins  = reader.unmarshalInt         ("active_mag_bins" );
-			drop_short_cat   = reader.unmarshalBoolean     ("drop_short_cat"  );
+			infill_meth       = reader.unmarshalInt          ("infill_meth"      );
+			active_time_bins  = reader.unmarshalInt          ("active_time_bins" );
+			active_mag_bins   = reader.unmarshalInt          ("active_mag_bins"  );
+			min_cat_stop_time = reader.unmarshalDouble       ("min_cat_stop_time");
 
-			time_bins       = reader.unmarshalInt          ("time_bins"       );
-			mag_bins        = reader.unmarshalInt          ("mag_bins"        );
-			time_values     = reader.unmarshalDoubleArray  ("time_values"     );
-			mag_values      = reader.unmarshalDoubleArray  ("mag_values"      );
+			time_bins         = reader.unmarshalInt          ("time_bins"        );
+			mag_bins          = reader.unmarshalInt          ("mag_bins"         );
+			time_values       = reader.unmarshalDoubleArray  ("time_values"      );
+			mag_values        = reader.unmarshalDoubleArray  ("mag_values"       );
 
-			acc_capacity    = reader.unmarshalInt          ("acc_capacity"    );
-			acc_size        = reader.unmarshalInt          ("acc_size"        );
-			acc_counts      = reader.unmarshalInt3DArray   ("acc_counts"      );
-			acc_bin_zero    = reader.unmarshalInt2DArray   ("acc_bin_zero"    );
-			acc_bin_size    = reader.unmarshalInt2DArray   ("acc_bin_size"    );
-			acc_live_counts = reader.unmarshalIntArray     ("acc_live_counts" );
+			acc_capacity      = reader.unmarshalInt          ("acc_capacity"     );
+			acc_size          = reader.unmarshalInt          ("acc_size"         );
+			acc_counts        = reader.unmarshalInt3DArray   ("acc_counts"       );
+			acc_counted_bins  = reader.unmarshalIntArray     ("acc_counted_bins" );
+			acc_bin_zero      = reader.unmarshalInt2DArray   ("acc_bin_zero"     );
+			acc_bin_size      = reader.unmarshalInt2DArray   ("acc_bin_size"     );
+			acc_live_counts   = reader.unmarshalIntArray     ("acc_live_counts"  );
 
 		}
 		break;

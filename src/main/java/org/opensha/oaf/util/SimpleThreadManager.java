@@ -8,6 +8,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
 
 // Class for managing a simple pool of threads.
 // Author: Michael Barall 11/06/2020.
@@ -64,17 +71,15 @@ public class SimpleThreadManager {
 	private CountDownLatch count_down_latch;
 
 	// Flag that can be set to request termination of all threads as soon as possible.
-	// After launching threads, access to this must be synchronized.
 	// It can be accessed simultaneously by multiple threads.
 
-	private boolean req_termination;
+	private AtomicBoolean req_termination = new AtomicBoolean();
 
 	// List of thread abort messages.
 	// Each message ends with a linefeed.
-	// After launching threads, access to this must be synchronized.
 	// It can be accessed simultaneously by multiple threads.
 
-	private ArrayList<String> abort_messages;
+	private ConcurrentLinkedQueue<String> abort_messages;
 
 
 	//----- Information retrieval -----
@@ -82,31 +87,35 @@ public class SimpleThreadManager {
 
 	// Get the number of threads that were launched.
 
-	public int get_num_threads () {
+	public final int get_num_threads () {
 		return num_threads;
 	}
 
 
 	// Get the time that threads were launched, in milliseconds since the epoch.
 
-	public long get_start_time () {
+	public final long get_start_time () {
 		return start_time;
 	}
 
 
 	// Return true if thread abort has occurred.
 	// If this returns true, then abort messages are available.
+	// Threading: Although this function is thread-safe, it is intended to be
+	// accessed after all threads have terminated.
 
-	public synchronized boolean is_abort () {
+	public final boolean is_abort () {
 		return !(abort_messages.isEmpty());
 	}
 
 
 	// Return true if timeout has been requested.
 	// We return true if prompt termination has been requested but no abort has occurred.
+	// Threading: Although this function is thread-safe, it is intended to be
+	// accessed after all threads have terminated.
 
-	public synchronized boolean is_timeout () {
-		return req_termination && abort_messages.isEmpty();
+	public final boolean is_timeout () {
+		return req_termination.get() && abort_messages.isEmpty();
 	}
 
 
@@ -114,9 +123,10 @@ public class SimpleThreadManager {
 
 
 	// Set a request to terminate all threads promptly.
+	// Threading: This function is thread-safe.
 
-	public synchronized void request_termination () {
-		req_termination = true;
+	public final void request_termination () {
+		req_termination.set (true);
 		return;
 	}
 
@@ -124,35 +134,22 @@ public class SimpleThreadManager {
 	// Return true if prompt termination has been requested.
 	// This may be called while running to monitor progress,
 	// or after termination to check if prompt termination occurred.
+	// Threading: This function is thread-safe.
 
-	public synchronized boolean get_req_termination () {
-		return req_termination;
+	public final boolean get_req_termination () {
+		return req_termination.get();
 	}
 
 
 	//----- Abort messages -----
 
 
-	// Get the number of abort messages.
-	// If nonzero, it means an exception occurred in one or more threads.
-
-	public synchronized int get_abort_message_count () {
-		return abort_messages.size();
-	}
-
-
-	// Get the n-th abort message.
-
-	public synchronized String get_abort_message (int n) {
-		return abort_messages.get (n);
-	}
-
-
 	// Add an abort message.
 	// If the message does not end in a linefeed, then a linefeed is appended.
 	// This also sets a request to terminate all threads promptly.
+	// Threading: This function is thread-safe.
 
-	public synchronized void add_abort_message (String message) {
+	public final void add_abort_message (String message) {
 		if (message == null) {
 			abort_messages.add ("<null message>\n");
 		} else if (message.trim().isEmpty()) {
@@ -162,7 +159,7 @@ public class SimpleThreadManager {
 		} else {
 			abort_messages.add (message + "\n");
 		}
-		req_termination = true;
+		req_termination.set (true);
 		return;
 	}
 
@@ -170,23 +167,26 @@ public class SimpleThreadManager {
 	// Add an abort message, constructed from the given exception.
 	// If the message does not end in a linefeed, then a linefeed is appended.
 	// This also sets a request to terminate all threads promptly.
+	// Threading: This function is thread-safe.
 
-	public void add_abort_message (Throwable e) {
+	public final void add_abort_message (Throwable e) {
 		add_abort_message (SimpleUtils.getStackTraceAsString (e));
 		return;
 	}
 
 
 	// Get a copy of the list of abort messages.
+	// Threading: This function is thread-safe.
 
-	public synchronized List<String> get_abort_message_list () {
+	public final List<String> get_abort_message_list () {
 		return new ArrayList<String> (abort_messages);
 	} 
 
 
 	// Get the abort messages as a single string.
+	// Threading: This function is thread-safe.
 
-	public String get_abort_message_string () {
+	public final String get_abort_message_string () {
 		List<String> messages = get_abort_message_list();
 		int count = messages.size();
 		StringBuilder result = new StringBuilder();
@@ -202,8 +202,9 @@ public class SimpleThreadManager {
 
 	// Display all the abort messages on System.out.
 	// Performs no operation if there are no abort messages.
+	// Threading: This function is thread-safe.
 
-	public void display_abort_messages () {
+	public final void display_abort_messages () {
 		List<String> messages = get_abort_message_list();
 		int count = messages.size();
 		for (int n = 0; n < count; ++n) {
@@ -222,12 +223,12 @@ public class SimpleThreadManager {
 
 	// Erase the contents.
 
-	public void clear () {
+	public final void clear () {
 		num_threads = 0;
 		start_time = 0L;
 		count_down_latch = null;
-		req_termination = false;
-		abort_messages = new ArrayList<String>();
+		req_termination.set (false);
+		abort_messages = new ConcurrentLinkedQueue<String>();
 		return;
 	}
 
@@ -358,8 +359,8 @@ public class SimpleThreadManager {
 		// Initialize communication variables
 
 		count_down_latch = new CountDownLatch (num_threads);
-		req_termination = false;
-		abort_messages = new ArrayList<String>();
+		req_termination.set (false);
+		abort_messages = new ConcurrentLinkedQueue<String>();
 
 		// Create and launch the threads
 
@@ -564,40 +565,47 @@ public class SimpleThreadManager {
 
 		// The n currently being tested.
 
-		private int current_n;
+		private AtomicInteger current_n = new AtomicInteger();;
 
 		// The number of primes found so far.
 
-		private int prime_count;
+		private AtomicInteger prime_count = new AtomicInteger();;
 
 		// Get the next work unit, which is the value of n to test for primality.
 		// Returns 0 if no more work.
+		// Threading: This function is thread-safe.
 
-		private synchronized int get_work_unit () {
-			if (current_n >= max_n) {
-				return 0;
-			}
-			++current_n;
-			return current_n;
+		private int get_work_unit () {
+			int n;
+			do {
+				n = current_n.get();
+				if (n >= max_n) {
+					return 0;
+				}
+			} while (!( current_n.compareAndSet (n, n+1) ));
+			return n+1;
 		}
 
 		// Count a prime.
+		// Threading: This function is thread-safe.
 
-		private synchronized void add_prime () {
-			++prime_count;
+		private void add_prime () {
+			prime_count.incrementAndGet();
 			return;
 		}
 
 		// Get the n currently being tested.
+		// Threading: This function is thread-safe.
 
-		private synchronized int get_current_n () {
-			return current_n;
+		private int get_current_n () {
+			return current_n.get();
 		}
 
 		// Get the number of primes found so far.
+		// Threading: This function is thread-safe.
 
-		private synchronized int get_prime_count () {
-			return prime_count;
+		private int get_prime_count () {
+			return prime_count.get();
 		}
 
 		// Entry point for a thread.
@@ -679,8 +687,8 @@ public class SimpleThreadManager {
 				// Initialize variables
 
 				this.max_n = max_n;
-				this.current_n = 1;
-				this.prime_count = 0;
+				this.current_n.set(1);
+				this.prime_count.set(0);
 
 				// Make the thread manager
 
