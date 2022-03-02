@@ -1628,6 +1628,15 @@ public class OEStackedPoisson {
 			return 1.0 - (prob_dist[value_ix] / total_weight);
 		}
 
+
+
+
+		// Get the total weight.
+
+		public final double get_total_weight () {
+			return total_weight;
+		}
+
 	}
 
 

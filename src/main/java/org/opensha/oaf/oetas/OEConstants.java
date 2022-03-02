@@ -84,14 +84,14 @@ public class OEConstants {
 
 	public static final double SMALL_EXPECTED_COUNT = 0.001;
 
-	// Methods for infilling event counts below the minimum simulated magnitude.
+	// Methods for infilling event counts below the simulated magnitude range.
 
-	public static final int INFILL_METH_MIN		= 1;
-	public static final int INFILL_METH_NONE	= 1;	// No infill, use exactly as simulated
-	public static final int INFILL_METH_SCALE	= 2;	// Scale up, using G-R relation
-	public static final int INFILL_METH_POISSON	= 3;	// Use Poisson random var applied to expected rate
-	public static final int INFILL_METH_STERILE	= 4;	// Generate sterile ruptures
-	public static final int INFILL_METH_MAX		= 4;
+	public static final int INFILL_METH_MIN			= 1;
+	public static final int INFILL_METH_NONE		= 1;	// No infill, use exactly as simulated
+	public static final int INFILL_METH_SCALE		= 2;	// Scale up, using G-R relation
+	public static final int INFILL_METH_POISSON		= 3;	// Use Poisson random var applied to expected rate
+	public static final int INFILL_METH_STERILE		= 4;	// Generate sterile ruptures
+	public static final int INFILL_METH_MAX			= 4;
 
 	// Return a string describing the infill method.
 
@@ -103,6 +103,131 @@ public class OEConstants {
 		case INFILL_METH_STERILE: return "INFILL_METH_STERILE";
 		}
 		return "INFILL_METH_INVALID(" + infill_meth + ")";
+	}
+
+	// Methods for magfilling event counts outside the simulated magnitude range.
+
+	public static final int MAGFILL_METH_MIN			= 1;
+	public static final int MAGFILL_METH_NONE			= 1;	// No magfill, use exactly as simulated
+	public static final int MAGFILL_METH_PDF_ONLY		= 2;	// Use probability distribution function with expected rate over entire mag range
+	public static final int MAGFILL_METH_PDF_HYBRID		= 3;	// Combine counts with a pdf derived from expected rate outside mag range
+	public static final int MAGFILL_METH_PDF_STERILE	= 4;	// Combine counts, sterile ruptures, and a pdf derived from expected rate above mag range
+	public static final int MAGFILL_METH_MAX			= 4;
+
+	// Return a string describing the magfill method.
+
+	public static String get_magfill_method_as_string (int magfill_meth) {
+		switch (magfill_meth) {
+		case MAGFILL_METH_NONE: return "MAGFILL_METH_NONE";
+		case MAGFILL_METH_PDF_ONLY: return "MAGFILL_METH_PDF_ONLY";
+		case MAGFILL_METH_PDF_HYBRID: return "MAGFILL_METH_PDF_HYBRID";
+		case MAGFILL_METH_PDF_STERILE: return "MAGFILL_METH_PDF_STERILE";
+		}
+		return "MAGFILL_METH_INVALID(" + magfill_meth + ")";
+	}
+
+	// Methods for outfilling event counts outside the simulated time range.
+
+	public static final int OUTFILL_METH_MIN		= 1;
+	public static final int OUTFILL_METH_NONE		= 1;	// No outfill, use exactly as simulated, zero-filling after end of simulation
+	public static final int OUTFILL_METH_OMIT		= 2;	// Do not participate in probability distributions after end of simulation
+	public static final int OUTFILL_METH_PDF_DIRECT	= 3;	// Use pdf derived from expected rate of direct aftershocks
+	public static final int OUTFILL_METH_MAX		= 3;
+
+	// Return a string describing the outfill method.
+
+	public static String get_outfill_method_as_string (int outfill_meth) {
+		switch (outfill_meth) {
+		case OUTFILL_METH_NONE: return "OUTFILL_METH_NONE";
+		case OUTFILL_METH_OMIT: return "OUTFILL_METH_OMIT";
+		case OUTFILL_METH_PDF_DIRECT: return "OUTFILL_METH_PDF_DIRECT";
+		}
+		return "OUTFILL_METH_INVALID(" + outfill_meth + ")";
+	}
+
+	// Methods for selecting which catalogs are sufficiently long and determining their time range..
+
+	public static final int CATLEN_METH_MIN			= 1;
+	public static final int CATLEN_METH_ANY			= 1;	// Any catalog length is acceptable
+	public static final int CATLEN_METH_ANY_CLIP	= 2;	// Any catalog length is acceptable, and clip to a full time bin
+	public static final int CATLEN_METH_RANGE		= 3;	// Catalog must cover all active time bins
+	public static final int CATLEN_METH_ENTIRE		= 4;	// Catalog must have reached simulation end time
+	public static final int CATLEN_METH_ENTIRE_CLIP	= 5;	// Catalog must have reached simulation end time, and clip to a full time bin
+	public static final int CATLEN_METH_MAX			= 5;
+
+	// Return a string describing the catlen method.
+
+	public static String get_catlen_method_as_string (int catlen_meth) {
+		switch (catlen_meth) {
+		case CATLEN_METH_ANY: return "CATLEN_METH_ANY";
+		case CATLEN_METH_ANY_CLIP: return "CATLEN_METH_ANY_CLIP";
+		case CATLEN_METH_RANGE: return "CATLEN_METH_RANGE";
+		case CATLEN_METH_ENTIRE: return "CATLEN_METH_ENTIRE";
+		case CATLEN_METH_ENTIRE_CLIP: return "CATLEN_METH_ENTIRE_CLIP";
+		}
+		return "CATLEN_METH_INVALID(" + catlen_meth + ")";
+	}
+
+	// Combine catalog length, outfill, and magfill methods into a single rate accumulation method.
+	// The combined form is three digits: catlen, outfill, magfill.
+
+	public static int make_rate_acc_meth (int catlen_meth, int outfill_meth, int magfill_meth) {
+		if (!( catlen_meth >= CATLEN_METH_MIN && catlen_meth <= CATLEN_METH_MAX )) {
+			throw new IllegalArgumentException ("OEConstants.make_rate_acc_meth: Invalid catalog length method: catlen_meth = " + catlen_meth);
+		}
+		if (!( outfill_meth >= OUTFILL_METH_MIN && outfill_meth <= OUTFILL_METH_MAX )) {
+			throw new IllegalArgumentException ("OEConstants.make_rate_acc_meth: Invalid outfill method: outfill_meth = " + outfill_meth);
+		}
+		if (!( magfill_meth >= MAGFILL_METH_MIN && magfill_meth <= MAGFILL_METH_MAX )) {
+			throw new IllegalArgumentException ("OEConstants.make_rate_acc_meth: Invalid magnitude fill method: magfill_meth = " + magfill_meth);
+		}
+		int rate_acc_meth = (catlen_meth * 100) + (outfill_meth * 10) + magfill_meth;
+		return rate_acc_meth;
+	}
+
+	// Extract catalog length, outfill, and magfill methods from a single rate accumulation method.
+
+	public static int extract_catlen_from_rate_acc (int rate_acc_meth) {
+		int catlen_meth = rate_acc_meth / 100;
+		if (!( catlen_meth >= CATLEN_METH_MIN && catlen_meth <= CATLEN_METH_MAX )) {
+			throw new IllegalArgumentException ("OEConstants.extract_catlen_from_rate_acc: Invalid catalog length method: rate_acc_meth = " + rate_acc_meth + ", catlen_meth = " + catlen_meth);
+		}
+		return catlen_meth;
+	}
+
+	public static int extract_outfill_from_rate_acc (int rate_acc_meth) {
+		int outfill_meth = (rate_acc_meth / 10) % 10;
+		if (!( outfill_meth >= OUTFILL_METH_MIN && outfill_meth <= OUTFILL_METH_MAX )) {
+			throw new IllegalArgumentException ("OEConstants.extract_outfill_from_rate_acc: Invalid outfill method: rate_acc_meth = " + rate_acc_meth + ", outfill_meth = " + outfill_meth);
+		}
+		return outfill_meth;
+	}
+
+	public static int extract_magfill_from_rate_acc (int rate_acc_meth) {
+		int magfill_meth = rate_acc_meth % 10;
+		if (!( magfill_meth >= MAGFILL_METH_MIN && magfill_meth <= MAGFILL_METH_MAX )) {
+			throw new IllegalArgumentException ("OEConstants.extract_magfill_from_rate_acc: Invalid magnitude fill method: rate_acc_meth = " + rate_acc_meth + ", magfill_meth = " + magfill_meth);
+		}
+		return magfill_meth;
+	}
+
+	// Validate rate accumulation method.
+	// Return true if valid, false if invalid.
+
+	public static boolean validate_rate_acc_meth (int rate_acc_meth) {
+		int catlen_meth = rate_acc_meth / 100;
+		if (!( catlen_meth >= CATLEN_METH_MIN && catlen_meth <= CATLEN_METH_MAX )) {
+			return false;
+		}
+		int outfill_meth = (rate_acc_meth / 10) % 10;
+		if (!( outfill_meth >= OUTFILL_METH_MIN && outfill_meth <= OUTFILL_METH_MAX )) {
+			return false;
+		}
+		int magfill_meth = rate_acc_meth % 10;
+		if (!( magfill_meth >= MAGFILL_METH_MIN && magfill_meth <= MAGFILL_METH_MAX )) {
+			return false;
+		}
+		return true;
 	}
 
 	// Negligably small time interval, in days, when generating catalogs.

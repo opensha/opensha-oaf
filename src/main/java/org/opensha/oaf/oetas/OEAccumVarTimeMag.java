@@ -343,10 +343,14 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 			OEArraysCalc.zero_array (csr_counts);
 
+			// The effective end time is the stop time, but not after the configured end time
+
+			double eff_tend = Math.min (comm.cat_params.tend, comm.cat_stop_time);
+
 			// Calculate the bin during which the catalog stops
 			// (accepting a bin as complete if we get within epsilon of the bin's end time)
 
-			stop_time_bin = OEArraysCalc.bsearch_array (time_values, comm.cat_stop_time + comm.cat_params.teps, 0, active_time_bins + 1) - 1;
+			stop_time_bin = OEArraysCalc.bsearch_array (time_values, eff_tend + comm.cat_params.teps, 0, active_time_bins + 1) - 1;
 
 			// The number of time bins for which we count ruptures is by default
 			// the number of bins before the bin that contains the stop time
@@ -359,7 +363,7 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 			// then any catalog considered sufficiently long will have stop_time_bin to be at
 			// least the bin with min_cat_stop_time as its right endpoint.)
 
-			if (comm.cat_stop_time + (0.5 * comm.cat_params.teps) < min_cat_stop_time) {
+			if (eff_tend + (0.5 * comm.cat_params.teps) < min_cat_stop_time) {
 				cat_time_bins = 0;
 			}
 

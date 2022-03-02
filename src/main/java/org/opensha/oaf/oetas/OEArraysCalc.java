@@ -545,6 +545,219 @@ public class OEArraysCalc {
 
 
 
+	// Convert a 2D array into cumulative values.
+	// Parameters:
+	//  x = 2D array to convert.  The array must be rectangular,
+	//      that is, each second-level array must have the same length.
+	//  f_up_1 = True to accumulate upwards in the first index
+	//           (values increase with increasing first index),
+	//           false to accumulate downwards in the first index
+	//           (values decrease with increasing first index).
+	//  f_up_2 = True to accumulate upwards in the second index
+	//           (values increase with increasing second index),
+	//           false to accumulate downwards in the second index
+	//           (values decrease with increasing second index).
+	//  begin_1 = Beginning of range of first array index to use, inclusive.
+	//  end_1 = Ending of range of first array index to use, exclusive.
+	//  begin_2 = Beginning of range of second array index to use, inclusive.
+	//  end_2 = Ending of range of second array index to use, exclusive.
+
+	public static void cumulate_2d_array (double[][] x, boolean f_up_1, boolean f_up_2, int begin_1, int end_1, int begin_2, int end_2) {
+
+		// Get the array dimensions, and make sure they are non-zero
+
+		if (end_1 > begin_1) {
+			if (end_2 > begin_2) {
+
+				// Switch on the directions
+
+				if (f_up_1) {
+					if (f_up_2) {
+
+						// Index 1 up, index 2 up
+
+						double total = x[begin_1][begin_2];
+						for (int n = begin_2 + 1; n < end_2; ++n) {
+							total += x[begin_1][n];
+							x[begin_1][n] = total;
+						}
+
+						for (int m = begin_1 + 1; m < end_1; ++m) {
+							total = x[m][begin_2];
+							x[m][begin_2] = total + x[m-1][begin_2];
+							for (int n = begin_2 + 1; n < end_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 up, index 2 down
+
+						double total = x[begin_1][end_2 - 1];
+						for (int n = end_2 - 2; n >= begin_2; --n) {
+							total += x[begin_1][n];
+							x[begin_1][n] = total;
+						}
+
+						for (int m = begin_1 + 1; m < end_1; ++m) {
+							total = x[m][end_2 - 1];
+							x[m][end_2 - 1] = total + x[m-1][end_2 - 1];
+							for (int n = end_2 - 2; n >= begin_2; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					}
+				} else {
+					if (f_up_2) {
+
+						// Index 1 down, index 2 up
+
+						double total = x[end_1 - 1][begin_2];
+						for (int n = begin_2 + 1; n < end_2; ++n) {
+							total += x[end_1 - 1][n];
+							x[end_1 - 1][n] = total;
+						}
+
+						for (int m = end_1 - 2; m >= begin_1; --m) {
+							total = x[m][begin_2];
+							x[m][begin_2] = total + x[m+1][begin_2];
+							for (int n = begin_2 + 1; n < end_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 down, index 2 down
+
+						double total = x[end_1 - 1][end_2 - 1];
+						for (int n = end_2 - 2; n >= begin_2; --n) {
+							total += x[end_1 - 1][n];
+							x[end_1 - 1][n] = total;
+						}
+
+						for (int m = end_1 - 2; m >= begin_1; --m) {
+							total = x[m][end_2 - 1];
+							x[m][end_2 - 1] = total + x[m+1][end_2 - 1];
+							for (int n = end_2 - 2; n >= begin_2; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					}
+				}
+			}
+		}
+
+		return;
+	}
+
+
+	public static void cumulate_2d_array (int[][] x, boolean f_up_1, boolean f_up_2, int begin_1, int end_1, int begin_2, int end_2) {
+
+		// Get the array dimensions, and make sure they are non-zero
+
+		if (end_1 > begin_1) {
+			if (end_2 > begin_2) {
+
+				// Switch on the directions
+
+				if (f_up_1) {
+					if (f_up_2) {
+
+						// Index 1 up, index 2 up
+
+						int total = x[begin_1][begin_2];
+						for (int n = begin_2 + 1; n < end_2; ++n) {
+							total += x[begin_1][n];
+							x[begin_1][n] = total;
+						}
+
+						for (int m = begin_1 + 1; m < end_1; ++m) {
+							total = x[m][begin_2];
+							x[m][begin_2] = total + x[m-1][begin_2];
+							for (int n = begin_2 + 1; n < end_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 up, index 2 down
+
+						int total = x[begin_1][end_2 - 1];
+						for (int n = end_2 - 2; n >= begin_2; --n) {
+							total += x[begin_1][n];
+							x[begin_1][n] = total;
+						}
+
+						for (int m = begin_1 + 1; m < end_1; ++m) {
+							total = x[m][end_2 - 1];
+							x[m][end_2 - 1] = total + x[m-1][end_2 - 1];
+							for (int n = end_2 - 2; n >= begin_2; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m-1][n];
+							}
+						}
+
+					}
+				} else {
+					if (f_up_2) {
+
+						// Index 1 down, index 2 up
+
+						int total = x[end_1 - 1][begin_2];
+						for (int n = begin_2 + 1; n < end_2; ++n) {
+							total += x[end_1 - 1][n];
+							x[end_1 - 1][n] = total;
+						}
+
+						for (int m = end_1 - 2; m >= begin_1; --m) {
+							total = x[m][begin_2];
+							x[m][begin_2] = total + x[m+1][begin_2];
+							for (int n = begin_2 + 1; n < end_2; ++n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					} else {
+
+						// Index 1 down, index 2 down
+
+						int total = x[end_1 - 1][end_2 - 1];
+						for (int n = end_2 - 2; n >= begin_2; --n) {
+							total += x[end_1 - 1][n];
+							x[end_1 - 1][n] = total;
+						}
+
+						for (int m = end_1 - 2; m >= begin_1; --m) {
+							total = x[m][end_2 - 1];
+							x[m][end_2 - 1] = total + x[m+1][end_2 - 1];
+							for (int n = end_2 - 2; n >= begin_2; --n) {
+								total += x[m][n];
+								x[m][n] = total + x[m+1][n];
+							}
+						}
+
+					}
+				}
+			}
+		}
+
+		return;
+	}
+
+
+
+
 	// Sort each column in an array, into ascending order.
 	// Parameters:
 	//  x = Array to sort.
