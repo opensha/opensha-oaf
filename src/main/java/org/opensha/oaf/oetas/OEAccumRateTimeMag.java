@@ -43,10 +43,11 @@ import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
 // time and magnitude.  Bins are cumulative, and include all ruptures at
 // earlier times and greater magnitudes.
 //
-// The contents of each bin is an array of stacked shifted Poisson
-// distributions.  Each catalog yields a shifted Poisson distribution for
-// each bin, where the Poisson mean is derived from expected aftershock
-// rates, and the Poisson shift is a count of events in the catalog.
+// Each bin contains stacked shifted Poisson distributions.  Each catalog
+// yields a shifted Poisson distribution for each bin, where the Poisson
+// mean is derived from expected aftershock rates, and the Poisson shift
+// is a count of events in the catalog.  The shifted Poisson distributions
+// are stacked by summing their probability density functions.
 
 public class OEAccumRateTimeMag implements OEEnsembleAccumulator {
 
@@ -80,7 +81,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator {
 
 	private boolean f_skip_last_gen_rate;
 
-	// Minimum required stop time for a catalog.
+	// Minimum required stop time for a catalog.  (Curently not used.)
 
 	private double min_cat_stop_time;
 

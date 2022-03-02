@@ -28,7 +28,7 @@ import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
 // earlier times and greater magnitudes.
 //
 // The contents of each bin is an array of rupture counts, one per catalog.
-// During accumulation, the counts for the n-th rupture are stored in the
+// During accumulation, the counts for the n-th catalog are stored in the
 // n-th element of each column.  After accumulation, each bin is sorted,
 // so that fractiles may be extracted.
 //
@@ -155,6 +155,9 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator {
 
 	public final void clear () {
 		infill_meth = 0;
+		active_time_bins = 0;
+		active_mag_bins = 0;
+		min_cat_stop_time = 0.0;
 
 		time_bins = 0;
 		mag_bins = 0;

@@ -28,7 +28,7 @@ import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
 // earlier times and greater magnitudes.
 //
 // The contents of each bin is an array of rupture counts, one per catalog.
-// During accumulation, the counts for the n-th rupture are stored in the
+// During accumulation, the counts for the n-th catalog are stored in the
 // n-th element of each column.  After accumulation, each bin is sorted,
 // so that fractiles may be extracted.
 
