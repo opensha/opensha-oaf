@@ -2,6 +2,9 @@ package org.opensha.oaf.rj;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 
 import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.opensha.commons.data.function.ArbDiscrEmpiricalDistFunc;
@@ -70,7 +73,7 @@ import org.opensha.sha.magdist.IncrementalMagFreqDist;
  * This is an abstract class.  The main job of a subclass is to supply the probability
  * distribution rho(a,p,c).
  */
-public abstract class RJ_AftershockModel {
+public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 
 	//----- Fields that must be set by the subclass -----
 
@@ -248,8 +251,14 @@ public abstract class RJ_AftershockModel {
 	
 	protected double get_c(int cIndex) {return min_c+cIndex*delta_c;}
 
+	// Return true if the model contains a mainshock magnitude.
+
+	@Override
+	public boolean hasMainShockMag() {return true;}
+
 	// Return the magnitude of the mainshock.
 	
+	@Override
 	public double getMainShockMag() {return magMain;}
 
 	// Return the Gutenberg-Richter b value.
@@ -425,7 +434,56 @@ public abstract class RJ_AftershockModel {
 	/**
 	 * Return the name of this model.
 	 */
+
+	@Override
 	public abstract String getModelName();
+
+
+
+
+	// Round a displayed parameter value to look "nice".
+
+	protected static double dparm_round (double value) {
+		double result = value;
+		try {
+			result = Double.parseDouble (String.format (Locale.US, "%.2e", value));	// limit to 3 significant digits
+		} catch (Exception e) {
+			result = value;
+		}
+		return result;
+	}
+
+
+
+
+	// Get the list of model parameters.
+	// The function returns a map, where each key is the name of a parameter, and
+	// each value is the value of the parameter.
+	// The return value can be null if there are no parameters.
+	//
+	// Note: Parameters are listed on the event page in the order that they are
+	// supplied by the iterator of the map.  It is therefore recommended to use a
+	// map such as LinkedHashMap to control the iteration order.
+	//
+	// Note: For consistency, it is recommended that parameter names use camelCase.
+	//
+	// Note: For floating-point parameter values, it is usually desireable to round
+	// values to a small number of significant digits.
+
+	@Override
+	public Map<String, Object> getModelParamMap () {
+		LinkedHashMap<String, Object> modelParams = new LinkedHashMap<String, Object>();
+
+		modelParams.put("a", dparm_round (getMaxLikelihood_a()));
+		modelParams.put("b", dparm_round (get_b()));
+		modelParams.put("magMain", dparm_round (getMainShockMag()));
+		modelParams.put("p", dparm_round (getMaxLikelihood_p()));
+		modelParams.put("c", dparm_round (getMaxLikelihood_c()));
+		modelParams.put("aSigma", dparm_round (getStdDev_a()));
+		modelParams.put("pSigma", dparm_round (getStdDev_p()));
+
+		return modelParams;
+	}
 
 	
 
@@ -1059,6 +1117,8 @@ public abstract class RJ_AftershockModel {
 	 * However, this constructor is apparently planned for removal from Apache Math 4.0,
 	 * so leave the original constructor commented-out in case it needs to be restored.
 	 */
+
+	@Override
 	public double[] getCumNumFractileWithAleatory(double[] fractileArray, double mag, double tMinDays, double tMaxDays) {
 		// compute the distribution for the expected num aftershocks with M >= 5 (which we will scale to other magnitudes)
 		computeNumMag5_DistributionFunc(tMinDays, tMaxDays);

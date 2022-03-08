@@ -101,7 +101,7 @@ public class USGS_AftershockForecast {
 		}
 	}
 	
-	private RJ_AftershockModel model;
+	private USGS_ForecastModel model;
 	
 	private int[] aftershockCounts;
 	
@@ -132,17 +132,17 @@ public class USGS_AftershockForecast {
 	
 	private Template template = Template.MAINSOCK;
 	
-	public USGS_AftershockForecast(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks,
+	public USGS_AftershockForecast(USGS_ForecastModel model, List<ObsEqkRupture> aftershocks,
 			Instant eventDate, Instant startDate) {
 		this(model, aftershocks, min_mags_default, eventDate, startDate, true, mag_bin_half_width_default);
 	}
 	
-	public USGS_AftershockForecast(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
+	public USGS_AftershockForecast(USGS_ForecastModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
 			Instant eventDate, Instant startDate) {
 		this(model, aftershocks, minMags, eventDate, startDate, true, mag_bin_half_width_default);
 	}
 	
-	public USGS_AftershockForecast(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
+	public USGS_AftershockForecast(USGS_ForecastModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
 			Instant eventDate, Instant startDate, boolean includeProbAboveMainshock, double mag_bin_half_width) {
 		compute(model, aftershocks, minMags, eventDate, startDate, includeProbAboveMainshock, mag_bin_half_width);
 	}
@@ -150,7 +150,7 @@ public class USGS_AftershockForecast {
 	private static final DateFormat df = new SimpleDateFormat();
 	private static final TimeZone utc = TimeZone.getTimeZone("UTC");
 	
-	private void compute(RJ_AftershockModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
+	private void compute(USGS_ForecastModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
 			Instant eventDate, Instant startDate, boolean includeProbAboveMainshock, double mag_bin_half_width) {
 		Preconditions.checkArgument(minMags.length > 0);
 
@@ -204,7 +204,7 @@ public class USGS_AftershockForecast {
 		double[] calcFractiles = {fractile_lower, fractile_upper, fractile_median};
 		
 		calcMags = minMags;
-		if (includeProbAboveMainshock) {
+		if (includeProbAboveMainshock && model.hasMainShockMag()) {
 			// also calculate for mainshock mag
 			calcMags = Arrays.copyOf(minMags, minMags.length+1);
 			calcMags[calcMags.length-1] = model.getMainShockMag();
@@ -478,24 +478,17 @@ public class USGS_AftershockForecast {
 		// MODEL
 		JSONOrderedObject modelJSON = new JSONOrderedObject();
 		modelJSON.put("name", model.getModelName());
-		modelJSON.put("reference", "#url");
+		modelJSON.put("reference", model.getModelReference());
 		JSONOrderedObject modelParams = new JSONOrderedObject();
 		if (is_blocked) {
-			modelParams.put("a", 0.0);
-			modelParams.put("b", 0.0);
-			modelParams.put("magMain", 0.0);
-			modelParams.put("p", 0.0);
-			modelParams.put("c", 0.0);
-			modelParams.put("aSigma", 0.0);
-			modelParams.put("pSigma", 0.0);
+			modelParams.put("test", "yes");
 		} else {
-			modelParams.put("a", dparm_round (model.getMaxLikelihood_a()));
-			modelParams.put("b", dparm_round (model.get_b()));
-			modelParams.put("magMain", dparm_round (model.getMainShockMag()));
-			modelParams.put("p", dparm_round (model.getMaxLikelihood_p()));
-			modelParams.put("c", dparm_round (model.getMaxLikelihood_c()));
-			modelParams.put("aSigma", dparm_round (model.getStdDev_a()));
-			modelParams.put("pSigma", dparm_round (model.getStdDev_p()));
+			Map<String, Object> modelParamMap = model.getModelParamMap();
+			if (modelParamMap != null) {
+				for (Map.Entry<String, Object> entry : modelParamMap.entrySet()) {
+					modelParams.put(entry.getKey(), entry.getValue());
+				}
+			}
 
 			if (userParamMap != null) {
 				for (Map.Entry<String, Object> entry : userParamMap.entrySet()) {
@@ -535,7 +528,7 @@ public class USGS_AftershockForecast {
 			
 			forecastJSON.put("bins", magBins);
 			
-			if (includeProbAboveMainshock) {
+			if (includeProbAboveMainshock && model.hasMainShockMag()) {
 				JSONOrderedObject magBin = new JSONOrderedObject();
 				double mainMag = model.getMainShockMag();
 				magBin.put("magnitude", mainMag);
