@@ -809,6 +809,8 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 	 * This function returns the weighted average of P(a,p,c) over all a/p/c triples,
 	 * which represents the epistemic uncertainty.
 	 */
+
+	@Override
 	public double getProbOneOrMoreEvents(double magMin, double tMinDays, double tMaxDays) {
 		double result = 0.0;
 
