@@ -331,6 +331,9 @@ public class SimpleThreadManager {
 	//  executor = The executor to use for launching the threads.
 	//  the_num_threads = The number of threads to use, must be > 0.
 	// This function launches one or more background threads.
+	// Memory consistency: Actions in the current thread prior to calling launch_threads
+	// happen-before the execution of thread_target begins.  This is guaranteed by the
+	// memory consistency properties of Executor.
 
 	public void launch_threads (SimpleThreadTarget thread_target, Executor executor, int the_num_threads) {
 
@@ -380,6 +383,9 @@ public class SimpleThreadManager {
 	//  executor = The executor to use for launching the threads.
 	// This function launches one or more background threads.
 	// The number of threads is the configured number of threads in the executor.
+	// Memory consistency: Actions in the current thread prior to calling launch_threads
+	// happen-before the execution of thread_target begins.  This is guaranteed by the
+	// memory consistency properties of Executor.
 
 	public void launch_threads (SimpleThreadTarget thread_target, AutoExecutorService executor) {
 
@@ -404,6 +410,9 @@ public class SimpleThreadManager {
 
 	// Check if all the threads have terminated.
 	// Returns true if terminated, false if not.
+	// Memory consistency: If the return value is true, then actions in thread_target
+	// happen-before this function returns.  This is guaranteed by the memory
+	// consistency properties of CountDownLatch.
 
 	public boolean is_terminated () {
 		boolean f_terminated = false;
@@ -427,6 +436,8 @@ public class SimpleThreadManager {
 
 
 	// Wait indefinitely for all threads to terminate.
+	// Memory consistency: Actions in thread_target happen-before this function
+	// returns.  This is guaranteed by the memory consistency properties of CountDownLatch.
 
 	public void await_termination () {
 		boolean f_waiting = true;
@@ -459,6 +470,9 @@ public class SimpleThreadManager {
 	//   If is_abort() is true, then one or more threads aborted, and there are abort messages available.
 	//   Otherwise, if is_timeout() is true, then threads were requested to terminate promptly, probably due to a timeout.
 	//   Otherwise, all threads terminated normally.
+	// Memory consistency: If the return value is true, then actions in thread_target
+	// happen-before this function returns.  This is guaranteed by the memory
+	// consistency properties of CountDownLatch.
 
 	public boolean await_termination (long max_runtime, long max_waittime) {
 
