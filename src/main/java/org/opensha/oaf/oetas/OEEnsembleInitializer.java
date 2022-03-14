@@ -45,4 +45,39 @@ public interface OEEnsembleInitializer {
 
 	public void end_initialization ();
 
+
+	//----- Ranging methods -----
+
+	// Return true if there is a mainshock magnitude available.
+	// Threading: No other thread should be accessing this object,
+	// and be either before calling begin_initialization() or after
+	// calling end_initialization().
+
+	public boolean has_mainshock_mag ();
+
+	// Return the mainshock magnitude available.
+	// Check has_mainshock_mag() before calling this function.
+	// Threading: No other thread should be accessing this object,
+	// and be either before calling begin_initialization() or after
+	// calling end_initialization().
+
+	public double get_mainshock_mag ();
+
+	// Get the time and magnitude range of the catalog simulations.
+	// The returned object is newly-allocated and not retained in this object.
+
+	public OECatalogRange get_range ();
+
+	// Get the initial time and magnitude range of the catalog simulations.
+	// The returned object is newly-allocated and not retained in this object.
+
+	public OECatalogRange get_initial_range ();
+
+	// Set the time and magnitude range to use for catalog simulations.
+	// The supplied OECatalogRange object is not retained.
+	// Note: This function allows adjusting time and magnitude ranges
+	// without the need to construct an entirely new initializer.
+
+	public void set_range (OECatalogRange range);
+
 }

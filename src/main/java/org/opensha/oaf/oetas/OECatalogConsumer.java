@@ -31,10 +31,31 @@ package org.opensha.oaf.oetas;
 // worker thread than the first use.
 //
 // Calls to open() and close() may be made by the same thread as the data methods,
-// or by a different thread (e.g., the main thread).  These methods generally need
-// to synchronize in order to access data structures within the accumulator.
-// So, it may be more efficient to call open() and close() in the main thread so
-// that worker threads don't need to block.
+// or by a different thread (e.g., the main thread).
+//
+// Memory consistency requirements: When consumers are used by multiple worker
+// threads, the following is required to ensure memory consistency.
+//  * Actions required to set up the accumulator must happen-before calls to the
+//    accumulator's make_consumer() and begin_accumulation() methods.
+//  * The call to the accumulator's begin_accumulation() method must happen-before
+//    the call to open().
+//  * The call to open() for a given catalog must happen-before the calls to any
+//    data methods for that catalog.
+//  * All calls to data methods for a given catalog must be made by the same thread.
+//  * The calls to data methods for a given catalog must happen-before the call to
+//    close() for that catalog.
+//  * If the consumer is re-used for another catalog, the call to close() must
+//    happen-before the call to open() for the next catalog.
+//  * The call to close() must happen-before the call to the accumulator's
+//    end_accumulation() method.
+//
+// A simple and recommended way to satisfy memory consistency requirements is to
+// call the accumulator's begin_accumulation() method before creating the worker
+// threads; then have each worker thread call the accumulator's make_consumer()
+// and begin_accumulation() methods, open(), close(), and data methods; and then
+// call the accumulator's end_accumulation() method after the worker threads are
+// all terminated.  (This presumes that worker thread creation and termination are
+// synchronized to the main thread; using SimpleThreadManager is one way to do it.)
 
 public interface OECatalogConsumer extends AutoCloseable {
 

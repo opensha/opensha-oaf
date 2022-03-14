@@ -23,6 +23,33 @@ package org.opensha.oaf.oetas;
 //
 // Calls to open() and close() may be made by the same thread as the data methods,
 // or by a different thread (e.g., the main thread).
+//
+// Memory consistency requirements: When seeders are used by multiple worker
+// threads, the following is required to ensure memory consistency.
+//  * Actions required to set up the initializer must happen-before calls to the
+//    initializer's make_seeder() and begin_initialization() methods.
+//  * The call to the initializer's begin_initialization() method must happen-before
+//    the call to open().
+//  * The call to open() for a given catalog must happen-before the calls to any
+//    data methods for that catalog.
+//  * All calls to data methods for a given catalog must be made by the same thread.
+//  * The calls to data methods for a given catalog must happen-before the call to
+//    close() for that catalog.
+//  * If the seeder is re-used for another catalog, the call to close() must
+//    happen-before the call to open() for the next catalog.
+//  * The call to close() must happen-before the call to the initializer's
+//    end_initialization() method.
+//  * If the initializer is re-used for another ensemble, the call to
+//    end_initialization() must happen-before the call to begin_initialization()
+//    for the next ensemble.
+//
+// A simple and recommended way to satisfy memory consistency requirements is to
+// call the initializer's begin_initialization() method before creating the worker
+// threads; then have each worker thread call the initializer's make_seeder()
+// and begin_initialization() methods, open(), close(), and data methods; and then
+// call the initializer's end_initialization() method after the worker threads are
+// all terminated.  (This presumes that worker thread creation and termination are
+// synchronized to the main thread; using SimpleThreadManager is one way to do it.)
 
 public interface OECatalogSeeder extends AutoCloseable {
 

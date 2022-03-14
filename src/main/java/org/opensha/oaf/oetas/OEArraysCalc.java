@@ -1348,14 +1348,14 @@ public class OEArraysCalc {
 	// Binary search an array.
 	// Parameters:
 	//  x = Array, must be sorted into increasing order.
-	//  v = Value to search for
+	//  v = Value to search for.
 	//  lo = Lower index, inclusive.
 	//  hi = Upper index, exclusive.
 	// Returns the integer n such that:
 	//  lo <= n <= hi
 	//  x[n-1] <= v < x[n]
 	// For the purpose of the last condition, x[lo-1] == -infinity and x[hi] == infinity.
-	// Note that x[n] is the first array element that ia greater than v.
+	// Note that x[n] is the first array element that is greater than v.
 
 	public static int bsearch_array (double[] x, double v, int lo, int hi) {
 	
@@ -1402,12 +1402,12 @@ public class OEArraysCalc {
 	// Binary search an array.
 	// Parameters:
 	//  x = Array, must be sorted into increasing order.
-	//  v = Value to search for
+	//  v = Value to search for.
 	// Returns the integer n such that:
 	//  0 <= n <= x.length
 	//  x[n-1] <= v < x[n]
 	// For the purpose of the last condition, x[-1] == -infinity and x[x.length] == infinity.
-	// Note that x[n] is the first array element that ia greater than v.
+	// Note that x[n] is the first array element that is greater than v.
 
 	public static int bsearch_array (double[] x, double v) {
 	
@@ -1454,7 +1454,7 @@ public class OEArraysCalc {
 	// Binary search each column in an array.
 	// Parameters:
 	//  x = Array to use, where each column has been sorted into increasing order.
-	//  v = Value to search for
+	//  v = Value to search for.
 	//  lo = Lower index within each column, inclusive.
 	//  hi = Upper index within each column, exclusive.
 	// Returns an array, with one less dimension than x, where each element
@@ -1533,7 +1533,7 @@ public class OEArraysCalc {
 	// Binary search each column in an array.
 	// Parameters:
 	//  x = Array to use, where each column has been sorted into increasing order.
-	//  v = Value to search for
+	//  v = Value to search for.
 	//  lo = Lower index within each column, inclusive, as an array of one dimension less than x.
 	//  hi = Upper index within each column, exclusive, as an array of one dimension less than x.
 	// Returns an array, with one less dimension than x, where each element
@@ -1585,10 +1585,198 @@ public class OEArraysCalc {
 
 
 
+	// Binary search an array to find an element.
+	// Parameters:
+	//  x = Array, must be sorted into increasing order.
+	//  v = Value to search for.
+	//  eps = Epsilon value.
+	//  lo = Lower index, inclusive.
+	//  hi = Upper index, exclusive.
+	// Returns the integer n such that:
+	//  lo <= n < hi
+	//  abs(v - x[n]) <= eps
+	// If there is more than one such integer, it is indeterminate which one is returned.
+	// If no such integer exists, then returns -1 - n where the integer n is such that:
+	//  lo <= n <= hi
+	//  x[n-1] <= v < x[n]
+	// For the purpose of the last condition, x[lo-1] == -infinity and x[hi] == infinity.
+	// Note that in this case x[n] is the first array element that is greater than v.
+
+	public static int bfind_array (double[] x, double v, double eps, int lo, int hi) {
+	
+		// Binary search algoritm, preserves the condition x[bslo] <= v < x[bshi]
+
+		int bslo = lo - 1;
+		int bshi = hi;
+
+		while (bshi - bslo > 1) {
+			int mid = (bshi + bslo) / 2;
+			if (v < x[mid]) {
+				bshi = mid;
+			} else {
+				bslo = mid;
+			}
+		}
+
+		// Check for match within epsilon
+
+		if (bshi > lo && (v - x[bshi - 1]) <= eps) {
+			return bshi - 1;
+		}
+		if (bshi < hi && (x[bshi] - v) <= eps) {
+			return bshi;
+		}
+
+		// Return negative value if no match
+
+		return (-1) - bshi;
+	}
+
+
+
+
+	// Binary search an array to find an element.
+	// Parameters:
+	//  x = Array, must be sorted into increasing order.
+	//  v = Value to search for.
+	//  eps = Epsilon value.
+	// Returns the integer n such that:
+	//  0 <= n < x.length
+	//  abs(v - x[n]) <= eps
+	// If there is more than one such integer, it is indeterminate which one is returned.
+	// If no such integer exists, then returns -1 - n where the integer n is such that:
+	//  0 <= n <= x.length
+	//  x[n-1] <= v < x[n]
+	// For the purpose of the last condition, x[-1] == -infinity and x[x.length] == infinity.
+	// Note that in this case x[n] is the first array element that is greater than v.
+
+	public static int bfind_array (double[] x, double v, double eps) {
+	
+		// Binary search algoritm, preserves the condition x[bslo] <= v < x[bshi]
+
+		int bslo = -1;
+		int bshi = x.length;
+
+		while (bshi - bslo > 1) {
+			int mid = (bshi + bslo) / 2;
+			if (v < x[mid]) {
+				bshi = mid;
+			} else {
+				bslo = mid;
+			}
+		}
+
+		// Check for match within epsilon
+
+		if (bshi > 0 && (v - x[bshi - 1]) <= eps) {
+			return bshi - 1;
+		}
+		if (bshi < x.length && (x[bshi] - v) <= eps) {
+			return bshi;
+		}
+
+		// Return negative value if no match
+
+		return (-1) - bshi;
+	}
+
+
+
+
+	// Binary search an array to find an element.
+	// Parameters:
+	//  x = Array, must be sorted into increasing order.
+	//  v = Value to search for.
+	//  lo = Lower index, inclusive.
+	//  hi = Upper index, exclusive.
+	// Returns the integer n such that:
+	//  lo <= n < hi
+	//  v == x[n]
+	// If there is more than one such integer, this function returns the greatest.
+	// If no such integer exists, then returns -1 - n where the integer n is such that:
+	//  lo <= n <= hi
+	//  x[n-1] <= v < x[n]
+	// For the purpose of the last condition, x[lo-1] == -infinity and x[hi] == infinity.
+	// Note that in this case x[n] is the first array element that is greater than v.
+
+	public static int bfind_array (int[] x, int v, int lo, int hi) {
+	
+		// Binary search algoritm, preserves the condition x[bslo] <= v < x[bshi]
+
+		int bslo = lo - 1;
+		int bshi = hi;
+
+		while (bshi - bslo > 1) {
+			int mid = (bshi + bslo) / 2;
+			if (v < x[mid]) {
+				bshi = mid;
+			} else {
+				bslo = mid;
+			}
+		}
+
+		// Check for match within epsilon
+
+		if (bshi > lo && v == x[bshi - 1]) {
+			return bshi - 1;
+		}
+
+		// Return negative value if no match
+
+		return (-1) - bshi;
+	}
+
+
+
+
+	// Binary search an array to find an element.
+	// Parameters:
+	//  x = Array, must be sorted into increasing order.
+	//  v = Value to search for.
+	// Returns the integer n such that:
+	//  0 <= n < x.length
+	//  v == x[n]
+	// If there is more than one such integer, this function returns the greatest.
+	// If no such integer exists, then returns -1 - n where the integer n is such that:
+	//  0 <= n <= x.length
+	//  x[n-1] <= v < x[n]
+	// For the purpose of the last condition, x[-1] == -infinity and x[x.length] == infinity.
+	// Note that in this case x[n] is the first array element that is greater than v.
+
+	public static int bfind_array (int[] x, int v) {
+	
+		// Binary search algoritm, preserves the condition x[bslo] <= v < x[bshi]
+
+		int bslo = -1;
+		int bshi = x.length;
+
+		while (bshi - bslo > 1) {
+			int mid = (bshi + bslo) / 2;
+			if (v < x[mid]) {
+				bshi = mid;
+			} else {
+				bslo = mid;
+			}
+		}
+
+		// Check for match within epsilon
+
+		if (bshi > 0 && v == x[bshi - 1]) {
+			return bshi - 1;
+		}
+
+		// Return negative value if no match
+
+		return (-1) - bshi;
+	}
+
+
+
+
 	// Probability of exceedence for an array.
 	// Parameters:
 	//  x = Array to use, which has been sorted into increasing order.
-	//  v = Value to search for
+	//  v = Value to search for.
 	//  lo = Lower index, inclusive.
 	//  hi = Upper index, exclusive.
 	// Returns the probability that the array value exceeds v.  Specifically,
@@ -1620,7 +1808,7 @@ public class OEArraysCalc {
 	// Probability of exceedence for each column in an array.
 	// Parameters:
 	//  x = Array to use, where each column has been sorted into increasing order.
-	//  v = Value to search for
+	//  v = Value to search for.
 	//  lo = Lower index within each column, inclusive.
 	//  hi = Upper index within each column, exclusive.
 	// Returns an array, with one less dimension than x, where each element
@@ -1681,7 +1869,7 @@ public class OEArraysCalc {
 	// Probability of exceedence for each column in an array.
 	// Parameters:
 	//  x = Array to use, where each column has been sorted into increasing order.
-	//  v = Value to search for
+	//  v = Value to search for.
 	//  lo = Lower index within each column, inclusive, as an array of one dimension less than x.
 	//  hi = Upper index within each column, exclusive, as an array of one dimension less than x.
 	// Returns an array, with one less dimension than x, where each element

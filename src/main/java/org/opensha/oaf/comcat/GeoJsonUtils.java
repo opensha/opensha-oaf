@@ -23,6 +23,8 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import org.opensha.oaf.util.JSONOrderedObject;
+
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
 
@@ -127,6 +129,22 @@ public class GeoJsonUtils {
 			sb.append ("\n");
 		}
 
+		// Handle ordered object (Map)
+
+		else if (o instanceof JSONOrderedObject) {
+			JSONOrderedObject m = (JSONOrderedObject) o;
+			sb.append ("{");
+			sb.append ("\n");
+			String new_prefix = prefix + "  ";
+			for (Object key : m.keySet()) {
+				Object val = m.get (key);
+				jsonObjectToString (sb, val, key.toString(), new_prefix);
+			}
+			sb.append (prefix);
+			sb.append ("}");
+			sb.append ("\n");
+		}
+
 		// Handle array (List)
 
 		else if (o instanceof JSONArray) {
@@ -171,7 +189,7 @@ public class GeoJsonUtils {
 
 		// Loop over characters in string
 
-    	int len = s.length();
+		int len = s.length();
 		for (int i = 0; i < len; ++i) {
 
 			// Switch on character

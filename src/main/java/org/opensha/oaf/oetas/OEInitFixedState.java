@@ -32,6 +32,14 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 	private OERupture[] ruptures;
 
+	// Original parameters for the catalog, from when the initializer was set up.
+
+	private OECatalogParams original_cat_params;
+
+	// Index into rupture list of mainshock, or -1 if no mainshock.
+
+	private int mainshock_index;
+
 
 
 
@@ -46,6 +54,8 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 		cat_params = null;
 		seed_gen_info = null;
 		ruptures = null;
+		original_cat_params = null;
+		mainshock_index = -1;
 		return;
 	}
 
@@ -81,6 +91,21 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 		cat_params = the_cat_params;
 		seed_gen_info = the_seed_gen_info;
 		ruptures = the_ruptures.toArray (new OERupture[0]);
+
+		original_cat_params = (new OECatalogParams()).copy_from (the_cat_params);
+
+		// Identify the mainshock as the largest, latest rupture
+
+		mainshock_index = -1;
+		for (int n = 0; n < ruptures.length; ++n) {
+			if (   mainshock_index == -1
+				|| ruptures[n].rup_mag > ruptures[mainshock_index].rup_mag
+				|| (   ruptures[n].rup_mag == ruptures[mainshock_index].rup_mag
+					&& ruptures[n].t_day > ruptures[mainshock_index].t_day )
+			) {
+				mainshock_index = n;
+			}
+		}
 
 		return;
 	}
@@ -242,6 +267,64 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 
 
+	// Return true if there is a mainshock magnitude available.
+	// Threading: No other thread should be accessing this object,
+	// and be either before calling begin_initialization() or after
+	// calling end_initialization().
+
+	public boolean has_mainshock_mag () {
+		return mainshock_index >= 0;
+	}
+
+
+
+
+	// Return the mainshock magnitude available.
+	// Check has_mainshock_mag() before calling this function.
+	// Threading: No other thread should be accessing this object,
+	// and be either before calling begin_initialization() or after
+	// calling end_initialization().
+
+	public double get_mainshock_mag () {
+		return ruptures[mainshock_index].rup_mag;
+	}
+
+
+
+
+	// Get the time and magnitude range of the catalog simulations.
+	// The returned object is newly-allocated and not retained in this object.
+
+	public OECatalogRange get_range () {
+		return cat_params.get_range();
+	}
+
+
+
+
+	// Get the initial time and magnitude range of the catalog simulations.
+	// The returned object is newly-allocated and not retained in this object.
+
+	public OECatalogRange get_initial_range () {
+		return original_cat_params.get_range();
+	}
+
+
+
+
+	// Set the time and magnitude range to use for catalog simulations.
+	// The supplied OECatalogRange object is not retained.
+	// Note: This function allows adjusting time and magnitude ranges
+	// without the need to construct an entirely new initializer.
+
+	public void set_range (OECatalogRange range) {
+		cat_params.set_range (range);
+		return;
+	}
+
+
+
+
 	//----- Readout functions -----
 
 
@@ -304,9 +387,11 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 		case MARSHAL_VER_1: {
 
-			OECatalogParams.static_marshal  (writer, "cat_params   ", cat_params   );
-			OEGenerationInfo.static_marshal (writer, "seed_gen_info", seed_gen_info);
-			OERupture.marshal_array         (writer, "ruptures"     , ruptures     );
+			OECatalogParams.static_marshal  (writer, "cat_params   "      , cat_params         );
+			OEGenerationInfo.static_marshal (writer, "seed_gen_info"      , seed_gen_info      );
+			OERupture.marshal_array         (writer, "ruptures"           , ruptures           );
+			OECatalogParams.static_marshal  (writer, "original_cat_params", original_cat_params);
+			writer.marshalInt               (        "mainshock_index"    , mainshock_index    );
 
 		}
 		break;
@@ -330,9 +415,11 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 		case MARSHAL_VER_1: {
 
-			cat_params    = OECatalogParams.static_unmarshal  (reader, "cat_params"   );
-			seed_gen_info = OEGenerationInfo.static_unmarshal (reader, "seed_gen_info");
-			ruptures      = OERupture.unmarshal_array         (reader, "ruptures"     );
+			cat_params          = OECatalogParams.static_unmarshal  (reader, "cat_params"         );
+			seed_gen_info       = OEGenerationInfo.static_unmarshal (reader, "seed_gen_info"      );
+			ruptures            = OERupture.unmarshal_array         (reader, "ruptures"           );
+			original_cat_params = OECatalogParams.static_unmarshal  (reader, "original_cat_params");
+			mainshock_index     = reader.unmarshalInt               (        "mainshock_index"    );
 
 		}
 		break;

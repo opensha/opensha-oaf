@@ -320,6 +320,41 @@ public class OECatalogParams {
 
 
 
+	// Return the time and magnitude range.
+	// The returned object is newly allocated.
+	// Note: Implicitly assumes the magnitude range is non-adjustable.
+
+	public final OECatalogRange get_range () {
+		return new OECatalogRange (
+			tbegin,
+			tend,
+			mag_min_sim,
+			mag_max_sim
+		);
+	}
+
+
+
+
+	// Set the time and magnitude range.
+	// The supplied object is not retained.
+	// Note: Produces a magnitude range that is non-adjustable.
+
+	public final void set_range (OECatalogRange range) {
+		this.tbegin          = range.tbegin;
+		this.tend            = range.tend;
+		this.mag_min_sim     = range.mag_min_sim;
+		this.mag_max_sim     = range.mag_max_sim;
+		this.mag_min_lo      = range.mag_min_sim;
+		this.mag_min_hi      = range.mag_min_sim;
+		this.mag_max_lo      = range.mag_max_sim;
+		this.mag_max_hi      = range.mag_max_sim;
+		return;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.

@@ -49,7 +49,7 @@ import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
 // is a count of events in the catalog.  The shifted Poisson distributions
 // are stacked by summing their probability density functions.
 
-public class OEAccumRateTimeMag implements OEEnsembleAccumulator {
+public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadoutTimeMag {
 
 	//----- Control variables -----
 
@@ -2162,7 +2162,9 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator {
 	// Each element corresponds to one bin (which is cumulative by definition).
 	// Each value is an integer N, such that the probability of N or fewer
 	// ruptures is approximately equal to fractile.
+	// Note: The returned array should be newly-allocated and not retained by this object.
 
+	@Override
 	public final int[][] get_fractile_array (double fractile) {
 		return total_acc.get_fractile (fractile);
 	}
@@ -2177,6 +2179,28 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator {
 	// at least one rupture occurs.
 
 	public final double[][] get_prob_occur_array () {
+		return total_acc.get_prob_occur();
+	}
+
+
+
+
+	// Get the probability of occurrence array.
+	// Parameters:
+	//  xcount = Number of ruptures to check, should be >= 0.
+	// Returns a 2D array with dimensions r[time_bins][mag_bins].
+	// Each element corresponds to one bin (which is cumulative by definition).
+	// Each value is a real number v, such that v is the probability that
+	// the number of ruptures that occur is greater than xcount.
+	// Note: Currently, implementations are only required to support xcount == 0,
+	// which gives the probability that at least one rupture occurs.
+	// Note: The returned array should be newly-allocated and not retained by this object.
+
+	@Override
+	public final double[][] get_prob_occur_array (int xcount) {
+		if (xcount != 0) {
+			throw new UnsupportedOperationException ("OEAccumRateTimeMag.get_prob_occur_array: Unsupported exceedence count: xcount = " + xcount);
+		}
 		return total_acc.get_prob_occur();
 	}
 
