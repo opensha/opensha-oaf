@@ -1365,6 +1365,341 @@ public class OEStackedPoisson {
 
 
 
+		// Add a Poisson distribution, with separate mean for probability of occurrence.
+		// Parameters:
+		//  lambda = The mean of the Poisson distribution, must be >= 0.
+		//  lam_occur = The mean of the Poisson distribution for probability of occurrence, must be >= 0.
+		//  weight = The weight, must be >= 0.0.  If omitted, 1.0 is assumed.
+
+		public final void add_split_poisson (double lambda, double lam_occur, double weight) {
+
+			// Record the total weight
+
+			total_weight += weight;
+
+			// Adjust the probability of occurrence
+
+			prob_occur -= (Math.expm1(-lam_occur) * weight);
+
+			// Find the index for the rounded mean
+
+			final int mean_ix = OEArraysCalc.bsearch_array (mean_split, lambda) - 1;
+
+			// If rounded mean is zero, just add probability to zero value
+
+			if (mean_ix < 0) {
+				prob_dist[0] += weight;
+
+				if (support_size == 0) {
+					support_size = 1;
+				}
+			}
+
+			// Otherwise, add the cached distribution
+
+			else {
+
+				// Cached Poisson distribution for this mean
+
+				final double[] cached_dist = cached_pdf[mean_ix];
+
+				// Index into values where the Poisson begins
+
+				int value_ix = cached_offset[mean_ix];
+
+				// The top value index
+				
+				final int value_ix_top = Math.min(value_ix + cached_dist.length, active_size);
+
+				// Add the cached distribution, with weight
+
+				for (int ix = 0; value_ix < value_ix_top; ++ix, ++value_ix) {
+					prob_dist[value_ix] += (cached_dist[ix] * weight);
+				}
+
+				// Adjust support if needed
+
+				if (support_size < value_ix_top) {
+					support_size = value_ix_top;
+				}
+			}
+
+			return;
+		}
+
+
+		public final void add_split_poisson (double lambda, double lam_occur) {
+
+			// Record the total weight
+
+			total_weight += 1.0;
+
+			// Adjust the probability of occurrence
+
+			prob_occur -= Math.expm1(-lam_occur);
+
+			// Find the index for the rounded mean
+
+			final int mean_ix = OEArraysCalc.bsearch_array (mean_split, lambda) - 1;
+
+			// If rounded mean is zero, just add probability to zero value
+
+			if (mean_ix < 0) {
+				prob_dist[0] += 1.0;
+
+				if (support_size == 0) {
+					support_size = 1;
+				}
+			}
+
+			// Otherwise, add the cached distribution
+
+			else {
+
+				// Cached Poisson distribution for this mean
+
+				final double[] cached_dist = cached_pdf[mean_ix];
+
+				// Index into values where the Poisson begins
+
+				int value_ix = cached_offset[mean_ix];
+
+				// The top value index
+				
+				final int value_ix_top = Math.min(value_ix + cached_dist.length, active_size);
+
+				// Add the cached distribution, with weight
+
+				for (int ix = 0; value_ix < value_ix_top; ++ix, ++value_ix) {
+					prob_dist[value_ix] += cached_dist[ix];
+				}
+
+				// Adjust support if needed
+
+				if (support_size < value_ix_top) {
+					support_size = value_ix_top;
+				}
+			}
+
+			return;
+		}
+
+
+
+
+		// Add a shifted Poisson distribution, with separate mean for probability of occurrence.
+		// Parameters:
+		//  lambda = The mean of the Poisson distribution, must be >= 0.
+		//  lam_occur = The mean of the Poisson distribution for probability of occurrence, must be >= 0.
+		//  shift = Shift to apply to Poisson distribution, must be >= 0.
+		//  weight = The weight, must be >= 0.0.  If omitted, 1.0 is assumed.
+
+		// Implementation note:  Each element of the cached Poisson distribution is
+		// applied to the value obtained by adding shift to the corresponding element
+		// of value_range.  Because each element of value_range actually represents
+		// the total probability over an interval of values, this introduces some error,
+		// due to the fact that a shifted interval may not match up to one of the
+		// unshifed intervals.  Because intervals are non-decreasing size, a shifted
+		// interval can overlap at most two unshifted intervals, which means that
+		// the error in applying probability can be at most one step in value_range.
+		// Note that there is no error in the initial part of value_range that
+		// consists of consecutive integers.
+
+		// If shift == 0 then this function peforms the same operation as add_poisson(lambda, weight).
+		// If lambda == 0 then this function performs the same operation as add_point_mass(shift, weight).
+
+		public final void add_shifted_split_poisson (double lambda, double lam_occur, int shift, double weight) {
+
+			// If the shift is zero, use the unshifted routine
+
+			if (shift == 0) {
+				add_split_poisson (lambda, lam_occur, weight);
+				return;
+			}
+
+			// Find the index for the rounded mean
+
+			int mean_ix = OEArraysCalc.bsearch_array (mean_split, lambda) - 1;
+
+			// If rounded mean is zero, treat it as a point mass
+
+			if (mean_ix < 0) {
+				add_point_mass (shift, weight);
+				return;
+			}
+
+			// Record the total weight
+
+			total_weight += weight;
+
+			// Probability of occurrence is 1.0 because shift > 0
+
+			prob_occur += weight;
+
+			// Cached Poisson distribution for this mean
+
+			final double[] cached_dist = cached_pdf[mean_ix];
+
+			// The value index offset for this mean
+
+			final int offset = cached_offset[mean_ix];
+
+			// The current value
+
+			int value = value_range[offset] + shift;
+
+			// Search to find the index for the current value
+
+			int value_ix = OEArraysCalc.bsearch_array (value_split, value - 1, 0, active_size);
+
+			// If within the active range ...
+
+			if (value_ix < active_size) {
+
+				// Add the first element of cached distribution
+
+				prob_dist[value_ix] += (cached_dist[0] * weight);
+
+				// Loop over remaining elements of cached distribution
+
+				for (int ix = 1; ix < cached_dist.length; ++ix) {
+
+					// New current value
+
+					value = value_range[ix + offset] + shift;
+
+					// If we need to step the value index ...
+
+					if (value > value_split[value_ix]) {
+						++value_ix;
+
+						// If reached end of active range, stop
+
+						if (value_ix >= active_size) {
+
+							// Adjust support if needed
+
+							if (support_size < active_size) {
+								support_size = active_size;
+							}
+
+							return;
+						}
+					}
+
+					// Add element of cached distribution
+
+					prob_dist[value_ix] += (cached_dist[ix] * weight);
+				}
+
+				// Adjust support if needed, value_ix contains the last element we wrote into
+
+				if (support_size <= value_ix) {
+					support_size = value_ix + 1;
+				}
+			}
+
+			return;
+		}
+
+
+		public final void add_shifted_split_poisson (double lambda, double lam_occur, int shift) {
+
+			// If the shift is zero, use the unshifted routine
+
+			if (shift == 0) {
+				add_split_poisson (lambda, lam_occur);
+				return;
+			}
+
+			// Find the index for the rounded mean
+
+			int mean_ix = OEArraysCalc.bsearch_array (mean_split, lambda) - 1;
+
+			// If rounded mean is zero, treat it as a point mass
+
+			if (mean_ix < 0) {
+				add_point_mass (shift);
+				return;
+			}
+
+			// Record the total weight
+
+			total_weight += 1.0;
+
+			// Probability of occurrence is 1.0 because shift > 0
+
+			prob_occur += 1.0;
+
+			// Cached Poisson distribution for this mean
+
+			final double[] cached_dist = cached_pdf[mean_ix];
+
+			// The value index offset for this mean
+
+			final int offset = cached_offset[mean_ix];
+
+			// The current value
+
+			int value = value_range[offset] + shift;
+
+			// Search to find the index for the current value
+
+			int value_ix = OEArraysCalc.bsearch_array (value_split, value - 1, 0, active_size);
+
+			// If within the active range ...
+
+			if (value_ix < active_size) {
+
+				// Add the first element of cached distribution
+
+				prob_dist[value_ix] += cached_dist[0];
+
+				// Loop over remaining elements of cached distribution
+
+				for (int ix = 1; ix < cached_dist.length; ++ix) {
+
+					// New current value
+
+					value = value_range[ix + offset] + shift;
+
+					// If we need to step the value index ...
+
+					if (value > value_split[value_ix]) {
+						++value_ix;
+
+						// If reached end of active range, stop
+
+						if (value_ix >= active_size) {
+
+							// Adjust support if needed
+
+							if (support_size < active_size) {
+								support_size = active_size;
+							}
+
+							return;
+						}
+					}
+
+					// Add element of cached distribution
+
+					prob_dist[value_ix] += cached_dist[ix];
+				}
+
+				// Adjust support if needed, value_ix contains the last element we wrote into
+
+				if (support_size <= value_ix) {
+					support_size = value_ix + 1;
+				}
+			}
+
+			return;
+		}
+
+
+
+
 		//--- Construction ---
 
 

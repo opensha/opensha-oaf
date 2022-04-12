@@ -1003,6 +1003,47 @@ public class OECatalogGenerator {
 
 
 
+	// A version of the random generator used for testing the effect of Poisson rupture counts.
+	// Function poisson_sample_checked is overridden to always return the mean.
+	// Function omori_sample_shifted is overridden to always return the earliest
+	// possible time for an aftershock.
+	// This eliminates most aleatory variability.
+
+	public static class TestNoPoissonRanGen extends TestBranchRatioRanGen {
+		@Override
+		public int poisson_sample_checked (double mean) {
+			return (int)Math.round (mean);
+		}
+	}
+
+
+
+
+	// Get a special version of the random generatot that places all aftershocks
+	// at the earliest possible time.
+	// It can also make Poisson calls always return the mean.
+	// The argument selects which random number generator to return.
+	// This function is primarily for testing.
+
+	public static final int MEAR_NORMAL = 0;	// return the normal per-thread random generator
+	public static final int MEAR_EARLY = 1;		// return the special version with all aftershocks as early as possible
+	public static final int MEAR_NO_POIS = 2;	// return the special version that additionally supplresses Poisson calls
+
+	public static OERandomGenerator make_early_as_rangen (int mear_opt) {
+		switch (mear_opt) {
+		case MEAR_NORMAL:
+			return OERandomGenerator.get_thread_rangen();
+		case MEAR_EARLY:
+			return new TestBranchRatioRanGen();
+		case MEAR_NO_POIS:
+			return new TestNoPoissonRanGen();
+		}
+		throw new IllegalArgumentException ("OECatalogGenerator.make_early_as_rangen: Invalid random generator option: mear_opt = " + mear_opt);
+	}
+
+
+
+
 	public static void main(String[] args) {
 
 		// There needs to be at least one argument, which is the subcommand
@@ -1911,6 +1952,340 @@ public class OECatalogGenerator {
 				System.out.println ("Catalog summary...");
 				System.out.println ();
 				System.out.println (cat_storage.summary_and_gen_list_string());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main  tbegin
+		//         mag_min_sim  mag_max_sim  mag_min_lo  mag_min_hi
+		// Build a catalog with the given parameters.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then display the catalog summary and generation list.
+		// Same as test #5 with additional information for each generation.
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// 13 additional arguments
+
+			if (args.length != 14) {
+				System.err.println ("OECatalogStorage : Invalid 'test7' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				int gen_size_target = Integer.parseInt (args[6]);
+				int gen_count_max = Integer.parseInt (args[7]);
+				double mag_main = Double.parseDouble (args[8]);
+				double the_tbegin = Double.parseDouble (args[9]);
+				double the_mag_min_sim = Double.parseDouble (args[10]);
+				double the_mag_max_sim = Double.parseDouble (args[11]);
+				double the_mag_min_lo = Double.parseDouble (args[12]);
+				double the_mag_min_hi = Double.parseDouble (args[13]);
+
+				// Say hello
+
+				System.out.println ("Generating catalog with given parameters");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("gen_size_target = " + gen_size_target);
+				System.out.println ("gen_count_max = " + gen_count_max);
+				System.out.println ("mag_main = " + mag_main);
+				System.out.println ("the_tbegin = " + the_tbegin);
+				System.out.println ("the_mag_min_sim = " + the_mag_min_sim);
+				System.out.println ("the_mag_max_sim = " + the_mag_max_sim);
+				System.out.println ("the_mag_min_lo = " + the_mag_min_lo);
+				System.out.println ("the_mag_min_hi = " + the_mag_min_hi);
+
+				// Get the random number generator
+
+				OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+
+				// Allocate the storage
+
+				OECatalogStorage cat_storage = new OECatalogStorage();
+
+				// Set up catalog parameters
+
+				double a = 0.0;			// for the moment
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_typical (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					gen_size_target,
+					gen_count_max
+				);
+
+				// Compute productivity "a" for the given branch ratio
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				a = OEStatsCalc.calc_inv_branch_ratio (n, test_cat_params);
+				test_cat_params.a = a;
+				System.out.println ("a = " + a);
+
+				// Recompute branch ratio to check it agrees with input
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Adjust forecast time
+
+				test_cat_params.tbegin = the_tbegin;
+				test_cat_params.tend = the_tbegin + 365.0;
+
+				// Set magnitude tanges
+
+				test_cat_params.mag_min_sim = the_mag_min_sim;
+				test_cat_params.mag_max_sim = the_mag_max_sim;
+				test_cat_params.mag_min_lo = the_mag_min_lo;
+				test_cat_params.mag_min_hi = the_mag_min_hi;
+
+				// Begin the catalog
+
+				System.out.println ();
+				System.out.println ("Generating catalog...");
+
+				cat_storage.begin_catalog (test_cat_params);
+
+				// Begin the first generation
+
+				OEGenerationInfo test_gen_info = (new OEGenerationInfo()).set (
+					test_cat_params.mref,	// gen_mag_min
+					test_cat_params.msup	// gen_mag_max
+				);
+
+				cat_storage.begin_generation (test_gen_info);
+
+				// Insert the mainshock rupture
+
+				OERupture mainshock_rup = new OERupture();
+
+				double k_prod = OEStatsCalc.calc_k_corr (
+					mag_main,			// m0
+					test_cat_params,	// cat_params
+					test_gen_info		// gen_info
+				);
+
+				mainshock_rup.set (
+					0.0,			// t_day
+					mag_main,		// rup_mag
+					k_prod,			// k_prod
+					RUPPAR_SEED,	// rup_parent
+					0.0,			// x_km
+					0.0				// y_km
+				);
+
+				cat_storage.add_rup (mainshock_rup);
+
+				// End the first generation
+
+				cat_storage.end_generation();
+
+				// Make the catalog generator
+				
+				OECatalogGenerator cat_generator = new OECatalogGenerator();
+				cat_generator.setup (rangen, cat_storage, true);
+
+				// Calculate all generations and end the catalog
+
+				cat_generator.calc_all_gen();
+
+				// Display catalog summary and generation list
+
+				System.out.println ();
+				System.out.println ("Catalog summary...");
+				System.out.println ();
+				System.out.println (cat_storage.summary_and_gen_list_string_2());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #8
+		// Command format:
+		//  test8  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main  tbegin
+		//         mag_min_sim  mag_max_sim  mag_min_lo  mag_min_hi  mear_opt
+		// Build a catalog with the given parameters.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then display the catalog summary and generation list.
+		// Same as test #6 with additional information for each generation.
+		// Same as test #7 with option for all aftershocks set to the earliest possible time.
+
+		if (args[0].equalsIgnoreCase ("test8")) {
+
+			// 14 additional arguments
+
+			if (args.length != 15) {
+				System.err.println ("OECatalogStorage : Invalid 'test8' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				int gen_size_target = Integer.parseInt (args[6]);
+				int gen_count_max = Integer.parseInt (args[7]);
+				double mag_main = Double.parseDouble (args[8]);
+				double the_tbegin = Double.parseDouble (args[9]);
+				double the_mag_min_sim = Double.parseDouble (args[10]);
+				double the_mag_max_sim = Double.parseDouble (args[11]);
+				double the_mag_min_lo = Double.parseDouble (args[12]);
+				double the_mag_min_hi = Double.parseDouble (args[13]);
+				int mear_opt = Integer.parseInt (args[14]);
+
+				// Say hello
+
+				System.out.println ("Generating catalog with given parameters, with early aftershocks");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("gen_size_target = " + gen_size_target);
+				System.out.println ("gen_count_max = " + gen_count_max);
+				System.out.println ("mag_main = " + mag_main);
+				System.out.println ("the_tbegin = " + the_tbegin);
+				System.out.println ("the_mag_min_sim = " + the_mag_min_sim);
+				System.out.println ("the_mag_max_sim = " + the_mag_max_sim);
+				System.out.println ("the_mag_min_lo = " + the_mag_min_lo);
+				System.out.println ("the_mag_min_hi = " + the_mag_min_hi);
+				System.out.println ("mear_opt = " + mear_opt);
+
+				// Get the random number generator
+
+				//OERandomGenerator rangen = new TestBranchRatioRanGen();
+				OERandomGenerator rangen = make_early_as_rangen (mear_opt);
+
+				// Allocate the storage
+
+				OECatalogStorage cat_storage = new OECatalogStorage();
+
+				// Set up catalog parameters
+
+				double a = 0.0;			// for the moment
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_typical (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					gen_size_target,
+					gen_count_max
+				);
+
+				// Compute productivity "a" for the given branch ratio
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				a = OEStatsCalc.calc_inv_branch_ratio (n, test_cat_params);
+				test_cat_params.a = a;
+				System.out.println ("a = " + a);
+
+				// Recompute branch ratio to check it agrees with input
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Adjust forecast time
+
+				test_cat_params.tbegin = the_tbegin;
+				test_cat_params.tend = the_tbegin + 365.0;
+
+				// Set magnitude tanges
+
+				test_cat_params.mag_min_sim = the_mag_min_sim;
+				test_cat_params.mag_max_sim = the_mag_max_sim;
+				test_cat_params.mag_min_lo = the_mag_min_lo;
+				test_cat_params.mag_min_hi = the_mag_min_hi;
+
+				// Begin the catalog
+
+				System.out.println ();
+				System.out.println ("Generating catalog...");
+
+				cat_storage.begin_catalog (test_cat_params);
+
+				// Begin the first generation
+
+				OEGenerationInfo test_gen_info = (new OEGenerationInfo()).set (
+					test_cat_params.mref,	// gen_mag_min
+					test_cat_params.msup	// gen_mag_max
+				);
+
+				cat_storage.begin_generation (test_gen_info);
+
+				// Insert the mainshock rupture
+
+				OERupture mainshock_rup = new OERupture();
+
+				double k_prod = OEStatsCalc.calc_k_corr (
+					mag_main,			// m0
+					test_cat_params,	// cat_params
+					test_gen_info		// gen_info
+				);
+
+				mainshock_rup.set (
+					0.0,			// t_day
+					mag_main,		// rup_mag
+					k_prod,			// k_prod
+					RUPPAR_SEED,	// rup_parent
+					0.0,			// x_km
+					0.0				// y_km
+				);
+
+				cat_storage.add_rup (mainshock_rup);
+
+				// End the first generation
+
+				cat_storage.end_generation();
+
+				// Make the catalog generator
+				
+				OECatalogGenerator cat_generator = new OECatalogGenerator();
+				cat_generator.setup (rangen, cat_storage, true);
+
+				// Calculate all generations and end the catalog
+
+				cat_generator.calc_all_gen();
+
+				// Display catalog summary and generation list
+
+				System.out.println ();
+				System.out.println ("Catalog summary...");
+				System.out.println ();
+				System.out.println (cat_storage.summary_and_gen_list_string_2());
 
 			} catch (Exception e) {
 				e.printStackTrace();

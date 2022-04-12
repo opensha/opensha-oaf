@@ -67,6 +67,12 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 	}
 
 
+	// True if thread abort has occurred.
+	// Threading: This may only be accessed from the main thread.
+
+	private boolean f_thread_abort;
+
+
 
 
 	//----- Construction -----
@@ -80,6 +86,7 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 		ensemble_params = null;
 
 		catalog_count.set(0);
+		f_thread_abort = false;
 		return;
 	}
 
@@ -245,6 +252,16 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 
 
+	// Return true if thread abort occurred during the last operation.
+	// Threading: This function may only be called from the main thread after termination.
+
+	public final boolean has_thread_abort () {
+		return f_thread_abort;
+	}
+
+
+
+
 	// Perform post-termination operations.
 	// This must be called after all threads are terminated to finish accumulation.
 
@@ -293,6 +310,10 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 		if (!( the_num_threads > 0 )) {
 			throw new IllegalArgumentException ("OEEnsembleGenerator.generate_all_catalogs: Invalid number of threads: " + the_num_threads);
 		}
+
+		// No thread abort
+
+		f_thread_abort = false;
 	
 		// Pre-launch operations
 
@@ -314,13 +335,14 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 			// Display progress message
 
 			if (progress_time >= 0L) {
-				System.out.println ("Generating " + get_catalog_count() + " ETAS catalogs so far in " + get_elapsed_time (start_time) + " seconds");
+				System.out.println ("Generating " + get_catalog_count() + " ETAS catalogs so far in " + get_elapsed_time (start_time) + " seconds using " + SimpleUtils.used_memory_string());
 			}
 		}
 
 		// Check for thread abort
 
 		if (thread_manager.is_abort()) {
+			f_thread_abort = true;
 			if (progress_time >= 0L) {
 				System.out.println ("Stopped because of thread abort in " + get_elapsed_time (start_time) + " seconds");
 				System.out.println (thread_manager.get_abort_message_string());

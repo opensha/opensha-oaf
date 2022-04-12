@@ -3,10 +3,14 @@ package org.opensha.oaf.oetas;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.SimpleUtils;
+
+import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
 
 
 // Operational ETAS catalog initializer for a fixed initial state.
@@ -75,7 +79,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 	// Parameters:
 	//  the_cat_params = The catalog parameters.
 	//  the_seed_gen_info = Information for the first (seed) generation.
-	//  the_ruptures = List of ruptures for the first generation
+	//  the_ruptures = List of ruptures for the first generation.
 	// Note: The function retains the passed-in structures.
 
 	public void setup (OECatalogParams the_cat_params, OEGenerationInfo the_seed_gen_info, List<OERupture> the_ruptures) {
@@ -107,6 +111,57 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 			}
 		}
 
+		return;
+	}
+
+
+
+
+	// Set up to begin seeding, for a single mainshock.
+	// Parameters:
+	//  the_cat_params = The catalog parameters.
+	//  mag_main = Mainshock magnitude.
+	//  t_main = Mainshock time, in days.
+	// Note: The function retains the passed-in parameter structure.
+	// Note: The magnitude range for the first (seed) generation is the_cat_params.mref to
+	// the_cat_params.msup, and that range is used to calculate mainshock productivity k.
+
+	public void setup_single (OECatalogParams the_cat_params, double mag_main, double t_main) {
+
+		// Create the first generation info
+
+		OEGenerationInfo the_seed_gen_info = (new OEGenerationInfo()).set (
+			the_cat_params.mref,	// gen_mag_min
+			the_cat_params.msup		// gen_mag_max
+		);
+
+		// Create the mainshock rupture
+
+		OERupture mainshock_rup = new OERupture();
+
+		double k_prod = OEStatsCalc.calc_k_corr (
+			mag_main,			// m0
+			the_cat_params,		// cat_params
+			the_seed_gen_info	// gen_info
+		);
+
+		mainshock_rup.set (
+			t_main,			// t_day
+			mag_main,		// rup_mag
+			k_prod,			// k_prod
+			RUPPAR_SEED,	// rup_parent
+			0.0,			// x_km
+			0.0				// y_km
+		);
+
+		// Create the list of seed ruptures
+
+		ArrayList<OERupture> the_ruptures = new ArrayList<OERupture>();
+		the_ruptures.add (mainshock_rup);
+
+		// Complete the setup
+
+		setup (the_cat_params, the_seed_gen_info, the_ruptures);
 		return;
 	}
 
@@ -272,6 +327,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 	// and be either before calling begin_initialization() or after
 	// calling end_initialization().
 
+	@Override
 	public boolean has_mainshock_mag () {
 		return mainshock_index >= 0;
 	}
@@ -279,12 +335,16 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 
 
-	// Return the mainshock magnitude available.
+	// Return the mainshock magnitude.
 	// Check has_mainshock_mag() before calling this function.
+	// Note: If has_mainshock_mag() returns false, then this function should
+	// return a scaling magnitude (e.g., largest earthquake in a swarm), which
+	// can be used for simulation ranging, but is not reported in the forecast.
 	// Threading: No other thread should be accessing this object,
 	// and be either before calling begin_initialization() or after
 	// calling end_initialization().
 
+	@Override
 	public double get_mainshock_mag () {
 		return ruptures[mainshock_index].rup_mag;
 	}
@@ -295,6 +355,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 	// Get the time and magnitude range of the catalog simulations.
 	// The returned object is newly-allocated and not retained in this object.
 
+	@Override
 	public OECatalogRange get_range () {
 		return cat_params.get_range();
 	}
@@ -305,6 +366,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 	// Get the initial time and magnitude range of the catalog simulations.
 	// The returned object is newly-allocated and not retained in this object.
 
+	@Override
 	public OECatalogRange get_initial_range () {
 		return original_cat_params.get_range();
 	}
@@ -317,8 +379,43 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 	// Note: This function allows adjusting time and magnitude ranges
 	// without the need to construct an entirely new initializer.
 
+	@Override
 	public void set_range (OECatalogRange range) {
 		cat_params.set_range (range);
+		return;
+	}
+
+
+
+
+	// Get the b-value used by the initializer.
+	// The purpose of this function is to obtain a b-value that can be used
+	// for adjusting the magnitude range in order to get a desired median
+	// or expected catalog size.
+
+	@Override
+	public double get_b_value () {
+		return cat_params.b;
+	}
+
+
+
+
+	// Get parameters that can be displayed to the user.
+	// Parameters:
+	//  paramMap = Map of parameters, which this function adds to.
+	// For consistency, it is recommended that parameter names use camelCase.
+	// Each value should be one of: Integer, Long, Double, Float, Boolean, or String.
+
+	@Override
+	public void get_display_params (Map<String, Object> paramMap) {
+		paramMap.put ("a", SimpleUtils.round_double_via_string ("%.2f", cat_params.a));
+		paramMap.put ("p", SimpleUtils.round_double_via_string ("%.2f", cat_params.p));
+		paramMap.put ("c", SimpleUtils.round_double_via_string ("%.2e", cat_params.c));
+		paramMap.put ("b", SimpleUtils.round_double_via_string ("%.2f", cat_params.b));
+		paramMap.put ("alpha", SimpleUtils.round_double_via_string ("%.2f", cat_params.alpha));
+		paramMap.put ("Mref", SimpleUtils.round_double_via_string ("%.2f", cat_params.mref));
+		paramMap.put ("Msup", SimpleUtils.round_double_via_string ("%.2f", cat_params.msup));
 		return;
 	}
 

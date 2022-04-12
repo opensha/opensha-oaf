@@ -1337,7 +1337,7 @@ public class OEAccumVarTimeMag implements OEEnsembleAccumulator, OEAccumReadoutT
 		for (int mag_ix = 0; mag_ix < mag_bins; ++mag_ix) {
 			result.append (String.format ("%7.3f", mag_values[mag_ix]));
 			for (int time_ix = 0; time_ix < time_bins; ++time_ix) {
-				result.append (String.format ("  %10.3f", prob_occur_array[time_ix][mag_ix] * 100.0));
+				result.append (String.format ("  %10.5f", prob_occur_array[time_ix][mag_ix] * 100.0));
 			}
 			result.append ("\n");
 		}

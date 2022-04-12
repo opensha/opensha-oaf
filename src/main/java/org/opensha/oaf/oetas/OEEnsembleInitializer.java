@@ -1,11 +1,26 @@
 package org.opensha.oaf.oetas;
 
+import java.util.Map;
+
 
 // Interface for initializing a set of catalogs of Operational ETAS ruptures.
 // Author: Michael Barall 01/26/2020.
 //
 // This interface is an object that can initialize the contents of multiple
 // realizations of an operational ETAS catalog.
+//
+// Repeatability requirement:  A single instance of OEEnsembleInitializer can
+// be used multiple times via repeated calls to begin_initialization and
+// end_initialization.  If this is done, then the initializer must behave as if
+// there is a pre-selected sequence of initial states, and each usage produces
+// an initial subsequence of that pre-selected sequence.  In a multi-threaded
+// usage, the assignment of initial states to threads need not be repeated,
+// however, the total set of all initial states produced by all threads must be
+// an initial subsequence.  In particular, if two usages initialize the same
+// number of catalogs, then the set of initial states in the two usages is
+// identical.  The purpose of this rule is to facilitate simulation ranging.
+// Note that the rule applies only to a single instance of OEEnsembleInitializer;
+// two separate instances need not produce the same sequence of initial states.
 
 public interface OEEnsembleInitializer {
 
@@ -55,8 +70,11 @@ public interface OEEnsembleInitializer {
 
 	public boolean has_mainshock_mag ();
 
-	// Return the mainshock magnitude available.
+	// Return the mainshock magnitude.
 	// Check has_mainshock_mag() before calling this function.
+	// Note: If has_mainshock_mag() returns false, then this function should
+	// return a scaling magnitude (e.g., largest earthquake in a swarm), which
+	// can be used for simulation ranging, but is not reported in the forecast.
 	// Threading: No other thread should be accessing this object,
 	// and be either before calling begin_initialization() or after
 	// calling end_initialization().
@@ -79,5 +97,20 @@ public interface OEEnsembleInitializer {
 	// without the need to construct an entirely new initializer.
 
 	public void set_range (OECatalogRange range);
+
+	// Get the b-value used by the initializer.
+	// The purpose of this function is to obtain a b-value that can be used
+	// for adjusting the magnitude range in order to get a desired median
+	// or expected catalog size.
+
+	public double get_b_value ();
+
+	// Get parameters that can be displayed to the user.
+	// Parameters:
+	//  paramMap = Map of parameters, which this function adds to.
+	// For consistency, it is recommended that parameter names use camelCase.
+	// Each value should be one of: Integer, Long, Double, Float, Boolean, or String.
+
+	public void get_display_params (Map<String, Object> paramMap);
 
 }

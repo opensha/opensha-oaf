@@ -49,6 +49,15 @@ import org.opensha.oaf.util.MarshalException;
 // magnitudes of the seed earthquakes; the definition of "k" shows that varying
 // either "a" or "m0" can achieve the same result.  For subsequent generations,
 // the fixed parameter "a" value is used.
+//
+// Note: There are three types of parameters.  Some parameters describe the
+// physical process being modeled:
+//   a, p, c, b, alpha, mref, msup
+// Some parameters define the time/magnitude range to simulate, and do not depend
+// on the details of the simulator (these are available in OECatalogRange):
+//   tbegin, tend, mag_min_sim, mag_max_sim, mag_excess
+// The remaining parameters control details of the simulator and are specific to
+// our simulator implementation.
 
 public class OECatalogParams {
 
@@ -329,7 +338,8 @@ public class OECatalogParams {
 			tbegin,
 			tend,
 			mag_min_sim,
-			mag_max_sim
+			mag_max_sim,
+			mag_excess
 		);
 	}
 
@@ -349,6 +359,7 @@ public class OECatalogParams {
 		this.mag_min_hi      = range.mag_min_sim;
 		this.mag_max_lo      = range.mag_max_sim;
 		this.mag_max_hi      = range.mag_max_sim;
+		this.mag_excess      = range.mag_excess;
 		return;
 	}
 

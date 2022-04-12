@@ -33,7 +33,7 @@ import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
 // Catalogs may have variable length, and there is an array to accumulate
 // the number of catalogs that terminate within or prior to each time bin.
 
-public class OEAccumSimRanging implements OEEnsembleAccumulator {
+public class OEAccumSimRanging implements OEEnsembleAccumulator, OEAccumReadoutRanging {
 
 	//----- Control variables -----
 
@@ -64,22 +64,6 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 
 
 
-
-	//---
-	// The number of magnitude bins.
-
-	private int mag_bins;
-
-	// The magnitude values.
-	// Dimension: mag_values[mag_bins + 1]
-	// Each time bin represents an interval between two successive magnitude values.
-	// Note: Typically the last magnitude is very large.  Its inclusion simplfies the code.
-
-	private double[] mag_values;
-
-
-
-
 	//----- Accumulators -----
 
 	// The current capacity of the accumulator.
@@ -94,6 +78,23 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 	// Dimension: acc_counts[time_bins][acc_capacity]
 
 	private int[][] acc_counts;
+
+	// The accumulated counts, with columns sorted.
+	// Dimension: acc_counts_sorted[time_bins][acc_size]
+	// Columns are lazy-allocated and sorted when needed for readout.
+
+	private int[][] acc_counts_sorted;
+
+	// The accumulated highest magnitudes.
+	// Dimension: acc_high_mags[time_bins][acc_capacity]
+
+	private double[][] acc_high_mags;
+
+	// The accumulated highest magnitudes, with columns sorted.
+	// Dimension: acc_high_mags[time_bins][acc_size]
+	// Columns are lazy-allocated and sorted when needed for readout.
+
+	private double[][] acc_high_mags_sorted;
 
 	// The number of time bins that are being counted in each catalog.
 	// Dimension: acc_counted_bins[acc_capacity]
@@ -155,6 +156,9 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 		acc_catix.set(0);
 
 		acc_counts = new int[0][0];
+		acc_counts_sorted = new int[0][0];
+		acc_high_mags = new double[0][0];
+		acc_high_mags_sorted = new double[0][0];
 		acc_counted_bins = new int[0];
 		acc_bin_zero = new int[0];
 		acc_bin_size = new int[0];
@@ -209,6 +213,9 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 		acc_catix.set(0);
 
 		acc_counts = null;
+		acc_counts_sorted = null;
+		acc_high_mags = null;
+		acc_high_mags_sorted = null;
 		acc_counted_bins = null;
 		acc_bin_zero = new int[time_bins];
 		OEArraysCalc.zero_array (acc_bin_zero);
@@ -248,6 +255,11 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 
 		protected int[] csr_counts;
 
+		// The accumulated highes magnitudes.
+		// Dimension: csr_high_mags[time_bins]
+
+		protected double[] csr_high_mags;
+
 		// The bin during which the catalog stops.
 		// Can be -1 if it stops before the first bin, active_time_bins if it stops after the last active bin.
 
@@ -271,6 +283,7 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 		protected ConsumerBase () {
 			f_open = false;
 			csr_counts = new int[time_bins];
+			csr_high_mags = new double[time_bins];
 			stop_time_bin = 0;
 			cat_time_bins = 0;
 			report_time_bins = 0;
@@ -309,6 +322,10 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 			// Zero the counts
 
 			OEArraysCalc.zero_array (csr_counts);
+
+			// Set the high magnitudes to a large negative value
+
+			OEArraysCalc.fill_array (csr_high_mags, OEConstants.INFINITE_MAG_NEG);
 
 			// The effective end time is the stop time, but not after the configured end time
 
@@ -359,14 +376,30 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 				// Fill omit value into time bins that we are not reporting
 
 				OEArraysCalc.fill_array (csr_counts, report_time_bins, time_bins, OMIT_BIN);
+		
+				// Cumulate the high magnitudes: time upward; for the reporting time bins
+
+				double high_mag = csr_high_mags[0];
+				for (int j = 1; j < report_time_bins; ++j) {
+					if (high_mag > csr_high_mags[j]) {
+						csr_high_mags[j] = high_mag;
+					} else {
+						high_mag = csr_high_mags[j];
+					}
+				}
+
+				// Fill large positive value into time bins that we are not reporting
+
+				OEArraysCalc.fill_array (csr_high_mags, report_time_bins, time_bins, OEConstants.INFINITE_MAG_POS);
 
 				// Get the index for this catalog
 
 				int catix = get_acc_catix();
 
-				// Store our counts into the accumulator
+				// Store our counts and high magnitudes into the accumulators
 
 				OEArraysCalc.set_each_array_column (acc_counts, catix, csr_counts);
+				OEArraysCalc.set_each_array_column (acc_high_mags, catix, csr_high_mags);
 
 				acc_counted_bins[catix] = cat_time_bins;
 			}
@@ -439,6 +472,13 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 			// For this accumulator, ruptures before the first bin are counted in the first bin
 
 			csr_counts[time_ix]++;
+
+			// Check if this is a new highest magnitude
+
+			if (comm.rup.rup_mag > csr_high_mags[time_ix]) {
+				csr_high_mags[time_ix] = comm.rup.rup_mag;
+			}
+
 			return;
 		}
 
@@ -506,6 +546,7 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 		if (capacity > acc_capacity) {
 			acc_capacity = capacity;
 			acc_counts = new int[time_bins][acc_capacity];
+			acc_high_mags = new double[time_bins][acc_capacity];
 			acc_counted_bins = new int[acc_capacity];
 		}
 
@@ -515,6 +556,11 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 		acc_catix.set(0);
 		acc_bin_size = null;		// created during end_accumulation
 		acc_stop_counts = null;		// created during end_accumulation
+
+		// Initialize the sorted accumulators for readout
+
+		acc_counts_sorted = null;		// created during end_accumulation
+		acc_high_mags_sorted = null;	// created during end_accumulation
 
 		return;
 	}
@@ -540,6 +586,7 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 		if (capacity > acc_capacity) {
 			acc_capacity = capacity;
 			OEArraysCalc.resize_each_array_column (acc_counts, acc_capacity);
+			OEArraysCalc.resize_each_array_column (acc_high_mags, acc_capacity);
 			acc_counted_bins = Arrays.copyOf (acc_counted_bins, acc_capacity);
 		}
 
@@ -566,6 +613,7 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 		//// Sort each column, so fractiles are available
 		//
 		//OEArraysCalc.sort_each_array_column (acc_counts, 0, acc_size);
+		//OEArraysCalc.sort_each_array_column (acc_high_mags, 0, acc_size);
 		//
 		//// Get the bin sizes by searching for the omit value in each column
 		//
@@ -588,7 +636,12 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 			}
 		}
 
-		OEArraysCalc.cumulate_array (acc_stop_counts, true) ;
+		OEArraysCalc.cumulate_array (acc_stop_counts, true);
+
+		// Allocate the readout arrays, top-level only
+
+		acc_counts_sorted = new int[time_bins][];
+		acc_high_mags_sorted = new double[time_bins][];
 
 		return;
 	}
@@ -642,13 +695,17 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 
 		if (x < 0) {
 
-			// Sort the column, so fractiles are available
+			// Copy and sort the column, so fractiles are available
 
-			Arrays.sort (acc_counts[n], 0, acc_size);
+			acc_counts_sorted[n] = Arrays.copyOf (acc_counts[n], acc_size);
+			acc_high_mags_sorted[n] = Arrays.copyOf (acc_high_mags[n], acc_size);
+
+			Arrays.sort (acc_counts_sorted[n], 0, acc_size);
+			Arrays.sort (acc_high_mags_sorted[n], 0, acc_size);
 
 			// Get the bin size by searching for the omit value in the column
 
-			x = OEArraysCalc.bsearch_array (acc_counts[n], OMIT_BIN - 1, 0, acc_size);
+			x = OEArraysCalc.bsearch_array (acc_counts_sorted[n], OMIT_BIN - 1, 0, acc_size);
 			acc_bin_size[n] = x;
 		}
 
@@ -665,10 +722,13 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 	// Returns an integer N, such that, among all catalogs that complete bin n,
 	// the probability that the catalog has N or fewer ruptures in bins 0 thru n
 	// (inclusive) is approximately equal to fractile.
+	// (Note that the appropriate bin number is often one less than the
+	// return value of get_survival_bins()).
 
+	@Override
 	public final int get_bin_fractile (int n, double fractile) {
 		int hi = get_bin_size (n);
-		return OEArraysCalc.fractile_array (acc_counts[n], fractile, 0, hi);
+		return OEArraysCalc.fractile_array (acc_counts_sorted[n], fractile, 0, hi);
 	}
 
 
@@ -678,14 +738,92 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 	// Parameters:
 	//  stop_fraction = Fraction of catalogs stopped, should be between 0.0 and 1.0.
 	// Returns an integer N, such that the fraction of catalogs that stop
-	// within the first N time bins is less than stop_fraction.
-	// So, less than stop_fraction catalogs stop before time_values[N].
-	// Returns active_time_bins if less that stop_fraction catalogs
+	// within the first N time bins is less than or equal to stop_fraction.
+	// So, no more than stop_fraction catalogs stop before time_values[N].
+	// Returns active_time_bins if no more than stop_fraction catalogs
 	// stop during the active time bins.
+	// (Here, time_values are the times that delimit the bins, and active_time_bins
+	// is the number of bins used, typically time_values.length - 1.)
 
+	@Override
 	public final int get_survival_bins (double stop_fraction) {
 		int v = (int)Math.round (((double)(acc_size)) * stop_fraction);
 		return OEArraysCalc.bsearch_array (acc_stop_counts, v, 0, active_time_bins);
+	}
+
+
+
+
+	// Get a fractile of a bin's highest magnitudes.
+	// Parameters:
+	//  n = Bin number.
+	//  fractile = Fractile to find, should be between 0.0 and 1.0.
+	//  f_total = True to get a fractile of the total number of catalogs,
+	//            false to get a fractile of the catalogs that complete bin n.
+	// Returns a magnitude M, such that, among all catalogs, the probability
+	// that the highest magnitude in the catalog is <= M in bins 0 thru n
+	// (inclusive) is approximately equal to fractile.
+	// If fractile is larger than the fraction of catalogs that complete bin n,
+	// then the return value is a large positive value (OEConstants.INFINITE_MAG_POS)
+	// because no actual magnitude is available for catalogs that terminate
+	// during or prior to bin n.
+	// If fractile is smaller than the fraction of catalogs that have at least
+	// one rupture by bin n, then the return value is a large negative value
+	// (OEConstants.INFINITE_MAG_NEG) because no actual magnitude is available.
+	// (Note that the appropriate bin number is often one less than the
+	// return value of get_survival_bins()).
+
+	@Override
+	public final double get_high_mag_fractile (int n, double fractile, boolean f_total) {
+		int hi = get_bin_size (n);	// needed to sort the bin
+		return OEArraysCalc.fractile_array (acc_high_mags_sorted[n], fractile, 0, f_total ? acc_size : hi);
+	}
+
+
+
+
+	// Get a fractile of a bin's highest magnitudes, using a second bin to select catalogs.
+	// Parameters:
+	//  n = Bin number.
+	//  fractile = Fractile to find, should be between 0.0 and 1.0.
+	//  n_sel = Bin used to select catalogs.
+	// Returns a magnitude M, such that, among all catalogs that survive at least
+	// to bin n_sel, the probability that the highest magnitude in the catalog
+	// is <= M in bins 0 thru n (inclusive) is approximately equal to fractile.
+	// If fractile is larger than the fraction of catalogs that complete bin n,
+	// then the return value is a large positive value (OEConstants.INFINITE_MAG_POS)
+	// because no actual magnitude is available for catalogs that terminate
+	// during or prior to bin n.
+	// If fractile is smaller than the fraction of catalogs that have at least
+	// one rupture by bin n, then the return value is a large negative value
+	// (OEConstants.INFINITE_MAG_NEG) because no actual magnitude is available.
+	// (Note that the appropriate bin number n_sel is often one less than the
+	// return value of get_survival_bins()).
+
+	@Override
+	public final double get_sel_high_mag_fractile (int n, double fractile, int n_sel) {
+
+		// Build an array containing the high magnitudes from the selected catalogs
+
+		double[] x = new double[acc_size];
+		int k = 0;
+		for (int j = 0; j < acc_size; ++j) {
+			if (acc_counts[n_sel][j] != OMIT_BIN) {
+				x[k] = acc_high_mags[n][j];
+				++k;
+			}
+		}
+
+		// If no catalogs
+
+		if (k == 0) {
+			return OEConstants.INFINITE_MAG_NEG;
+		}
+
+		// Sort and get the fractile
+
+		Arrays.sort (x, 0, k);
+		return OEArraysCalc.fractile_array (x, fractile, 0, k);
 	}
 
 
@@ -767,6 +905,28 @@ public class OEAccumSimRanging implements OEEnsembleAccumulator {
 				get_bin_fractile (n, 0.75),
 				get_bin_fractile (n, 0.95),
 				get_bin_fractile (n, 1.00)
+			));
+		}
+
+		result.append ("\n");
+
+		// High magnitudes
+
+		result.append ("High mags: index, time, bin size, fractiles 0%, 5%, 25%, 50%, 75%, 95%, 100%\n");
+		result.append ("\n");
+
+		for (int n = 0; n < time_bins; ++n) {
+			result.append (String.format ("%6d  %10.2f %10d %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n",
+				n,
+				time_values[n+1],
+				get_bin_size (n),
+				get_high_mag_fractile (n, 0.00, true),
+				get_high_mag_fractile (n, 0.05, true),
+				get_high_mag_fractile (n, 0.25, true),
+				get_high_mag_fractile (n, 0.50, true),
+				get_high_mag_fractile (n, 0.75, true),
+				get_high_mag_fractile (n, 0.95, true),
+				get_high_mag_fractile (n, 1.00, true)
 			));
 		}
 

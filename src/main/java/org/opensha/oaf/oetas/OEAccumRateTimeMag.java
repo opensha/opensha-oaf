@@ -17,6 +17,7 @@ import static org.opensha.oaf.oetas.OEConstants.MAGFILL_METH_NONE;
 import static org.opensha.oaf.oetas.OEConstants.MAGFILL_METH_PDF_ONLY;
 import static org.opensha.oaf.oetas.OEConstants.MAGFILL_METH_PDF_HYBRID;
 import static org.opensha.oaf.oetas.OEConstants.MAGFILL_METH_PDF_STERILE;
+import static org.opensha.oaf.oetas.OEConstants.MAGFILL_METH_PDF_CTU_HYBRID;
 import static org.opensha.oaf.oetas.OEConstants.MAGFILL_METH_MAX;
 
 import static org.opensha.oaf.oetas.OEConstants.OUTFILL_METH_MIN;
@@ -51,6 +52,19 @@ import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
 
 public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadoutTimeMag {
 
+	//----- Code options -----
+
+	// These options display expected number and count for each catalog for one time/magnitude bin 
+
+	//private static final boolean dbg_out = false;	// true to enable output
+	//private static final int dbg_time_ix = -1;		// time bin index, negative counts from end
+	//private static final int dbg_mag_ix = 0;		// magnitude bin index, negative counts from end
+
+	// Flag, true to accumulate catalog size distributions.
+
+	private static final boolean f_acc_cat_size = true;
+
+
 	//----- Control variables -----
 
 	// The stacked Poisson distribution cache.
@@ -84,6 +98,10 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 	// Minimum required stop time for a catalog.  (Curently not used.)
 
 	private double min_cat_stop_time;
+
+	// Proportional reduction (0.0 to 1.0) to apply to secondary productivity when computing upfill.
+
+	private double upfill_sec_reduce;
 
 
 
@@ -165,10 +183,19 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		public int[] acc_live_counts;
 
 		// The probability distributions.
-		// Dimension: partial_accum[time_bins][mag_bins]
+		// Dimension: acc_distribution[time_bins][mag_bins]
 		// There is a separate probability distribution for each time/magnitude bin.
 
 		public OEStackedPoisson.Accumulator[][] acc_distribution;
+
+		// The catalog size distributions.
+		// Dimension: acc_cat_size_dist[time_bins]
+		// For each time bin there is a distribution for the total number of ruptures
+		// occurring in the bin or in any earlier bin (but not before the first bin),
+		// regardless of rupture magnitude.
+		// This is null if catalog size distributions are not being accumulated.
+
+		public OEStackedPoisson.Accumulator[] acc_cat_size_dist;
 
 
 		//--- Construction ---
@@ -187,6 +214,13 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 			acc_distribution = new OEStackedPoisson.Accumulator[time_bins][mag_bins];
 			stacked_poisson.make_acc_array (acc_distribution);
+
+			if (f_acc_cat_size) {
+				acc_cat_size_dist = new OEStackedPoisson.Accumulator[time_bins];
+				stacked_poisson.make_acc_array (acc_cat_size_dist);
+			} else {
+				acc_cat_size_dist = null;
+			}
 		}
 
 
@@ -200,6 +234,10 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 			OEArraysCalc.zero_array (acc_live_counts);
 
 			stacked_poisson.clear_acc_array (acc_distribution);
+
+			if (f_acc_cat_size) {
+				stacked_poisson.clear_acc_array (acc_cat_size_dist);
+			}
 			return;
 		}
 
@@ -215,6 +253,9 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 				acc_live_counts[j] += other.acc_live_counts[j];
 			}
 			OEStackedPoisson.combine_acc_array (acc_distribution, other.acc_distribution);
+			if (f_acc_cat_size) {
+				OEStackedPoisson.combine_acc_array (acc_cat_size_dist, other.acc_cat_size_dist);
+			}
 			return;
 		}
 
@@ -224,6 +265,9 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		public final void cumulate () {
 			OEArraysCalc.cumulate_array (acc_live_counts, false) ;
 			OEStackedPoisson.cumulate_acc_array (acc_distribution);
+			if (f_acc_cat_size) {
+				OEStackedPoisson.cumulate_acc_array (acc_cat_size_dist);
+			}
 			return;
 		}
 
@@ -339,6 +383,103 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		}
 
 
+		// Add Poisson distributions to the distributions, with separate mean for probability of occurrence.
+		// Parameters:
+		//  time_bin_lo = Lower limit of time bin range, inclusive.
+		//  time_bin_hi = Upper limit of time bin range, exclusive.
+		//  mag_bin_lo = Lower limit of magnitude bin range, inclusive.
+		//  mag_bin_hi = Upper limit of magnitude bin range, exclusive.
+		//  lambda = Array containing the mean of each Poisson distribution, must be >= 0.
+		//  lam_occur = Array containing the mean of the Poisson distribution for probability of occurrence, must be >= 0.
+		//  weight = The weight, must be >= 0.0.  If omitted, 1.0 is assumed.
+		// The lambda and lam_occur arrays must have the dimension [time_bins][mag_bins].
+		// The same weight is used for all accumulators.
+
+		public void add_split_poisson (int time_bin_lo, int time_bin_hi, int mag_bin_lo, int mag_bin_hi, double[][] lambda, double[][] lam_occur, double weight) {
+			for (int time_ix = time_bin_lo; time_ix < time_bin_hi; ++time_ix) {
+				for (int mag_ix = mag_bin_lo; mag_ix < mag_bin_hi; ++mag_ix) {
+					acc_distribution[time_ix][mag_ix].add_split_poisson (lambda[time_ix][mag_ix], lam_occur[time_ix][mag_ix], weight);
+				}
+			}
+			return;
+		}
+
+
+		public void add_split_poisson (int time_bin_lo, int time_bin_hi, int mag_bin_lo, int mag_bin_hi, double[][] lambda, double[][] lam_occur) {
+			for (int time_ix = time_bin_lo; time_ix < time_bin_hi; ++time_ix) {
+				for (int mag_ix = mag_bin_lo; mag_ix < mag_bin_hi; ++mag_ix) {
+					acc_distribution[time_ix][mag_ix].add_split_poisson (lambda[time_ix][mag_ix], lam_occur[time_ix][mag_ix]);
+				}
+			}
+			return;
+		}
+
+
+		// Add shifted Poisson distributions to the distributions, with separate mean for probability of occurrence.
+		// Parameters:
+		//  time_bin_lo = Lower limit of time bin range, inclusive.
+		//  time_bin_hi = Upper limit of time bin range, exclusive.
+		//  mag_bin_lo = Lower limit of magnitude bin range, inclusive.
+		//  mag_bin_hi = Upper limit of magnitude bin range, exclusive.
+		//  lambda = Array containing the mean of each Poisson distribution, must be >= 0.
+		//  lam_occur = Array containing the mean of the Poisson distribution for probability of occurrence, must be >= 0.
+		//  shift = Array containing the shift to apply to each Poisson distribution, must be >= 0.
+		//  weight = The weight, must be >= 0.0.  If omitted, 1.0 is assumed.
+		// The lambda, lam_occur, and shift arrays must have the dimension [time_bins][mag_bins].
+		// The same weight is used for all accumulators.
+
+		public void add_shifted_split_poisson (int time_bin_lo, int time_bin_hi, int mag_bin_lo, int mag_bin_hi, double[][] lambda, double[][] lam_occur, int[][] shift, double weight) {
+			for (int time_ix = time_bin_lo; time_ix < time_bin_hi; ++time_ix) {
+				for (int mag_ix = mag_bin_lo; mag_ix < mag_bin_hi; ++mag_ix) {
+					acc_distribution[time_ix][mag_ix].add_shifted_split_poisson (lambda[time_ix][mag_ix], lam_occur[time_ix][mag_ix], shift[time_ix][mag_ix], weight);
+				}
+			}
+			return;
+		}
+
+
+		public void add_shifted_split_poisson (int time_bin_lo, int time_bin_hi, int mag_bin_lo, int mag_bin_hi, double[][] lambda, double[][] lam_occur, int[][] shift) {
+			for (int time_ix = time_bin_lo; time_ix < time_bin_hi; ++time_ix) {
+				for (int mag_ix = mag_bin_lo; mag_ix < mag_bin_hi; ++mag_ix) {
+					acc_distribution[time_ix][mag_ix].add_shifted_split_poisson (lambda[time_ix][mag_ix], lam_occur[time_ix][mag_ix], shift[time_ix][mag_ix]);
+				}
+			}
+			return;
+		}
+
+
+		// Add counts to the catalog size distributions.
+		// Parameters:
+		//  time_bin_lo = Lower limit of time bin range, inclusive.
+		//  time_bin_hi = Upper limit of time bin range, exclusive.
+		//  value = Array containing the rupture count.
+		//  weight = The weight, must be >= 0.0.  If omitted, 1.0 is assumed.
+		// The value array must have the dimension [time_bins].
+		// The same weight is used for all accumulators.
+		// Note: If catalog size distributions are not being accumulated, then
+		// this function performs no operation.
+
+		public void add_cat_size_info (int time_bin_lo, int time_bin_hi, int[] value, double weight) {
+			if (f_acc_cat_size) {
+				for (int time_ix = time_bin_lo; time_ix < time_bin_hi; ++time_ix) {
+					acc_cat_size_dist[time_ix].add_point_mass (value[time_ix], weight);
+				}
+			}
+			return;
+		}
+
+
+		public void add_cat_size_info (int time_bin_lo, int time_bin_hi, int[] value) {
+			if (f_acc_cat_size) {
+				for (int time_ix = time_bin_lo; time_ix < time_bin_hi; ++time_ix) {
+					acc_cat_size_dist[time_ix].add_point_mass (value[time_ix]);
+				}
+			}
+			return;
+		}
+
+
+
 		//--- Readout functions ---
 
 
@@ -379,6 +520,23 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 				}
 			}
 			return bin_size;
+		}
+
+
+
+		// Get a fractile for catalog size in each time bin.
+		// Parameters:
+		//  frac = Fractile to find, should be between 0.0 and 1.0.
+		// Returns a 1D array, of dimension r[time_bins].
+		// Each element contains a value whose catalog size cumulative distribution function is > frac.
+		// Note: The cumulate() function must have been called.
+		// Note: Returns null if catalog size information is not being accumulated.
+
+		public int[] get_cat_size_fractile (double frac) {
+			if (f_acc_cat_size) {
+				return OEStackedPoisson.fractile_acc_array (acc_cat_size_dist, frac);
+			}
+			return null;
 		}
 
 	}
@@ -459,6 +617,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		active_mag_bins = 0;
 		f_skip_last_gen_rate = false;
 		min_cat_stop_time = 0.0;
+		upfill_sec_reduce = 0.0;
 
 		time_bins = 0;
 		mag_bins = 0;
@@ -535,6 +694,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		active_mag_bins = mag_bins;
 		f_skip_last_gen_rate = false;
 		min_cat_stop_time = time_values[0];
+		upfill_sec_reduce = 0.0;
 
 		// Empty accumulators
 
@@ -542,6 +702,26 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		partial_acc_list = null;
 
 		return;
+	}
+
+
+
+
+	// Set the proportional reduction (0.0 to 1.0) to apply to secondary productivity when computing upfill.
+	// Note: This should be called after setup() if a non-zero value is desired.
+
+	public final void set_upfill_sec_reduce (double the_upfill_sec_reduce) {
+		upfill_sec_reduce = the_upfill_sec_reduce;
+		return;
+	}
+
+
+
+
+	// Get the proportional reduction (0.0 to 1.0) to apply to secondary productivity when computing outfill.
+
+	public final double get_upfill_sec_reduce () {
+		return upfill_sec_reduce;
 	}
 
 
@@ -601,12 +781,20 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		protected int[][] csr_counts;
 
 		// The accumulated expected values, for the entire catalog.
-		// Dimension: csr_counts[time_bins][mag_bins]
+		// Dimension: csr_expected[time_bins][mag_bins]
 		// Each bin contains the total expected number of ruptures.
 		// Depending on the fill option, this may exclude regions of
 		// the time/mag grid that are covered by csr_counts.
 
-		private double[][] csr_expected;
+		protected double[][] csr_expected;
+
+		// The accumulated expected values, for probability of occurence, for the entire catalog.
+		// Dimension: csr_exp_occur[time_bins][mag_bins]
+		// Each bin contains the total expected number of ruptures.
+		// Depending on the fill option, this may exclude regions of
+		// the time/mag grid that are covered by csr_counts.
+
+		protected double[][] csr_exp_occur;
 
 		// Rates for each time bin, to be used for outfill, for the entire catalog.
 		// Dimension: cat_outfill_rates[time_bins]
@@ -626,7 +814,15 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		// except the last (if skipping rate calculation in last generation), even
 		// if they do not lie within a magnitude bin.
 
-		private double[] cat_outfill_rates;
+		protected double[] cat_outfill_rates;
+
+		// Catalog size information for each time bin, for the entire catalog.
+		// Dimension: cat_size_info[time_bins]
+		// Each bin contains the number of ruptures (excluding seed and sterile ruptures)
+		// which occurred during the time bin (including ruptures that are not within
+		// any magnitude bin).
+
+		protected int[] cat_size_info;
 
 		//----- Accumulators, for the current generation -----
 
@@ -654,7 +850,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		// Note: Rates are derived from all (non-sterile) ruptures in the current
 		// generation, even if they do not lie within a magnitude bin.
 
-		private double[] cur_gen_rates;
+		protected double[] cur_gen_rates;
 
 		//----- Time ranges -----
 
@@ -735,7 +931,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 		protected boolean f_downfill;
 
-		// The last magnitude bin for downfilling in the current generation.
+		// The first magnitude bin for upfilling in the current generation.
 		// It satisfies:  0 <= upfill_first_mag_bin <= active_mag_bins
 		// This is set at the start of each generation because it depends on the next
 		// generation's magnitude range, and there is no upfilling in the last generation
@@ -760,10 +956,36 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 		protected boolean f_downfill_sterile;
 
+		// The first magnitude bin for ctufilling in the current generation.
+		// It satisfies:  0 <= ctufill_first_mag_bin <= active_mag_bins
+		// This is set at the start of each generation and it depends on the current
+		// generation's magnitude range.
+		// Note: ctufilling means using counts to upfill the probability of occurrence.
+
+		protected int ctufill_first_mag_bin;
+
+		// The minimum magnitude for ctufilling in the current generation.
+		// This magnitude must lie within ctufill_first_mag_bin (but not at the end of it).
+		// If not at the start of ctufill_last_mag_bin, then the first bin is a partial bin.
+		// This is set at the start of each generation, and is generally equal to the current
+		// generation's maximum magnitude if there is ctufilling.
+
+		protected double ctufill_min_mag;
+
+		// True if ctufilling in the current generation.
+		// If true, then it is required that ctufill_first_mag_bin < active_mag_bins.
+
+		protected boolean f_ctufill;
+
+		// True if probability of occurrence upfilling is done using counts
+		// (regardless of whether ctufilling is enabled in the current generation).
+
+		protected boolean f_ctufill_prob_occur;
+
 		//----- Reporting -----
 
 		// Number of time bins to report to the accumulator.
-		// This determines which portion of csr_counts and/or csr_expected are reported.
+		// This determines which portion of csr_counts and/or csr_expected, csr_exp_occur are reported.
 
 		protected int report_time_bins;
 
@@ -802,7 +1024,9 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 			OEArraysCalc.zero_array (csr_counts);
 			OEArraysCalc.zero_array (csr_expected);
+			OEArraysCalc.zero_array (csr_exp_occur);
 			OEArraysCalc.zero_array (cat_outfill_rates);
+			OEArraysCalc.zero_array (cat_size_info);
 
 			// The effective end time is the stop time, but not after the configured end time
 
@@ -1032,6 +1256,24 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 
 
+		// Get the minimum magnitude for the current generation.
+
+		protected final double get_cur_gen_mag_min (OECatalogScanComm comm) {
+			return comm.gen_info.gen_mag_min; 
+		}
+
+
+
+
+		// Get the maximum magnitude for the current generation.
+
+		protected final double get_cur_gen_mag_max (OECatalogScanComm comm) {
+			return comm.gen_info.gen_mag_max; 
+		}
+
+
+
+
 		// Set up the magnitude ranges at the start of a generation.
 		// This function sets up the magnitude range variables, plus f_infill_rates and f_outfill_rates.
 		// It also initializes the per-generation accumulators.
@@ -1066,6 +1308,11 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 				f_downfill_sterile = false;
 
+				ctufill_first_mag_bin = active_mag_bins;
+				ctufill_min_mag = mag_values[ctufill_first_mag_bin];
+				f_ctufill = false;
+				f_ctufill_prob_occur = false;
+
 				f_infill_rates = false;
 			}
 			break;
@@ -1099,6 +1346,13 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 				// No sterile ruptures
 
 				f_downfill_sterile = false;
+
+				// No ctufill
+
+				ctufill_first_mag_bin = active_mag_bins;
+				ctufill_min_mag = mag_values[ctufill_first_mag_bin];
+				f_ctufill = false;
+				f_ctufill_prob_occur = false;
 
 				// Need rates if we are downfilling
 
@@ -1165,6 +1419,13 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 				f_downfill_sterile = false;
 
+				// No ctufill
+
+				ctufill_first_mag_bin = active_mag_bins;
+				ctufill_min_mag = mag_values[ctufill_first_mag_bin];
+				f_ctufill = false;
+				f_ctufill_prob_occur = false;
+
 				// Need rates if we are downfilling or upfilling
 
 				f_infill_rates = (f_downfill || f_upfill);
@@ -1219,9 +1480,115 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 				f_downfill_sterile = true;
 
+				// No ctufill
+
+				ctufill_first_mag_bin = active_mag_bins;
+				ctufill_min_mag = mag_values[ctufill_first_mag_bin];
+				f_ctufill = false;
+				f_ctufill_prob_occur = false;
+
 				// Need rates if we are upfilling
 
 				f_infill_rates = f_upfill;
+			}
+			break;
+
+			// Combine counts with a pdf derived from expected rate outside magnitude range, with count-based upfill for probability of occurrence
+
+			case MAGFILL_METH_PDF_CTU_HYBRID: {
+
+				// If skipping generation or no infill, then no downfill or upfill
+
+				if (skip_gen_rate(comm) || infill_last_time_bin < 0) {
+					downfill_last_mag_bin = -1;
+					downfill_max_mag = mag_values[downfill_last_mag_bin + 1];
+					f_downfill = false;
+
+					upfill_first_mag_bin = active_mag_bins;
+					upfill_min_mag = mag_values[upfill_first_mag_bin];
+					f_upfill = false;
+				}
+
+				// Otherwise ...
+
+				else {
+
+					// Magnitude bin that contains the next generation's minimum magnitude
+					// -1 if before the first bin, active_mag_bins - 1 if in or after the last bin.
+					// If magnitude is slightly after the start of a bin, it is considered to be in the prior bin.
+
+					downfill_last_mag_bin = OEArraysCalc.bsearch_array (
+						mag_values, get_next_gen_mag_min(comm) - comm.cat_params.mag_eps, 0, active_mag_bins) - 1;
+
+					// No downfill if before the first bin, otherwise allow for possible partial bin
+
+					if (downfill_last_mag_bin < 0) {
+						downfill_max_mag = mag_values[downfill_last_mag_bin + 1];
+						f_downfill = false;
+					} else {
+						downfill_max_mag = Math.min (mag_values[downfill_last_mag_bin + 1], get_next_gen_mag_min(comm));
+						f_downfill = true;
+					}
+
+					// Magnitude bin that contains the next generation's maximum magnitude
+					// 0 if in or before the first bin, active_mag_bins if after the last bin.
+					// If magnitude is slightly before the end of a bin, it is considered to be in the next bin.
+
+					upfill_first_mag_bin = OEArraysCalc.bsearch_array (
+						mag_values, get_next_gen_mag_max(comm) + comm.cat_params.mag_eps, 1, active_mag_bins + 1) - 1;
+
+					// No upfill if after the last bin, otherwise allow for possible partial bin
+
+					if (upfill_first_mag_bin >= active_mag_bins) {
+						upfill_min_mag = mag_values[upfill_first_mag_bin];
+						f_upfill = false;
+					} else {
+						upfill_min_mag = Math.max (mag_values[upfill_first_mag_bin], get_next_gen_mag_max(comm));
+						f_upfill = true;
+					}
+				}
+
+				// No sterile ruptures
+
+				f_downfill_sterile = false;
+
+				// If seed generation or no infill, then no ctufill
+
+				if (comm.i_gen == 0 || infill_last_time_bin < 0) {
+					ctufill_first_mag_bin = active_mag_bins;
+					ctufill_min_mag = mag_values[ctufill_first_mag_bin];
+					f_ctufill = false;
+				}
+
+				// Otherwise ...
+
+				else {
+
+					// Magnitude bin that contains the current generation's maximum magnitude
+					// 0 if in or before the first bin, active_mag_bins if after the last bin.
+					// If magnitude is slightly before the end of a bin, it is considered to be in the next bin.
+
+					ctufill_first_mag_bin = OEArraysCalc.bsearch_array (
+						mag_values, get_cur_gen_mag_max(comm) + comm.cat_params.mag_eps, 1, active_mag_bins + 1) - 1;
+
+					// No ctufill if after the last bin, otherwise allow for possible partial bin
+
+					if (ctufill_first_mag_bin >= active_mag_bins) {
+						ctufill_min_mag = mag_values[ctufill_first_mag_bin];
+						f_ctufill = false;
+					} else {
+						ctufill_min_mag = Math.max (mag_values[ctufill_first_mag_bin], get_cur_gen_mag_max(comm));
+						f_ctufill = true;
+					}
+				}
+
+				// Use ctufill for probability of occurrence (even if no ctufill in this generation)
+
+				f_ctufill_prob_occur = true;
+
+				// Need rates if we are downfilling or upfilling
+
+				f_infill_rates = (f_downfill || f_upfill);
 			}
 			break;
 
@@ -1305,6 +1672,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 					for (int time_ix = 0; time_ix <= infill_last_time_bin; ++time_ix) {
 						csr_expected[time_ix][mag_ix] += (cur_gen_rates[time_ix] * mag_int);
+						csr_exp_occur[time_ix][mag_ix] += (cur_gen_rates[time_ix] * mag_int);
 					}
 				}
 
@@ -1323,12 +1691,23 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 				for (int time_ix = 0; time_ix <= infill_last_time_bin; ++time_ix) {
 					csr_expected[time_ix][downfill_last_mag_bin] += (cur_gen_rates[time_ix] * mag_int2);
+					csr_exp_occur[time_ix][downfill_last_mag_bin] += (cur_gen_rates[time_ix] * mag_int2);
 				}
 			}
 
 			// If upfill ...
 
 			if (f_upfill) {
+
+				// Upfill secondary reduction multiplier
+
+				double upfill_sec_mult = ((comm.i_gen == 0) ? 1.0 : (1.0 - upfill_sec_reduce));
+
+				// Zero if ctufill is being used for probability of occurrence
+
+				if (f_ctufill_prob_occur) {
+					upfill_sec_mult = 0.0;
+				}
 
 				// Possible partial magnitude bin
 			
@@ -1345,6 +1724,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 				for (int time_ix = 0; time_ix <= infill_last_time_bin; ++time_ix) {
 					csr_expected[time_ix][upfill_first_mag_bin] += (cur_gen_rates[time_ix] * mag_int2);
+					csr_exp_occur[time_ix][upfill_first_mag_bin] += (cur_gen_rates[time_ix] * mag_int2 * upfill_sec_mult);
 				}
 
 				// Loop over full magnitude bins needing upfill ...
@@ -1364,6 +1744,55 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 					for (int time_ix = 0; time_ix <= infill_last_time_bin; ++time_ix) {
 						csr_expected[time_ix][mag_ix] += (cur_gen_rates[time_ix] * mag_int);
+						csr_exp_occur[time_ix][mag_ix] += (cur_gen_rates[time_ix] * mag_int * upfill_sec_mult);
+					}
+				}
+			}
+
+			// If ctufill ...
+
+			if (f_ctufill) {
+
+				// ctufill secondary reduction multiplier
+
+				double ctufill_sec_mult = ((comm.i_gen <= 1) ? 1.0 : (1.0 - upfill_sec_reduce));
+
+				// Possible partial magnitude bin
+
+				// Get the Gutenberg-Richter ratio
+
+				double mag_ratio2 = OERandomGenerator.gr_ratio_rate (
+					comm.cat_params.b,						// b
+					get_cur_gen_mag_min (comm),				// sm1
+					get_cur_gen_mag_max (comm),				// sm2
+					ctufill_min_mag,						// tm1
+					mag_values[ctufill_first_mag_bin + 1]	// tm2
+				);
+
+				// Accumulate the rates within each infill time bin
+
+				for (int time_ix = 0; time_ix <= infill_last_time_bin; ++time_ix) {
+					csr_exp_occur[time_ix][ctufill_first_mag_bin] += (((double)(cur_gen_counts[time_ix])) * mag_ratio2 * ctufill_sec_mult);
+				}
+
+				// Loop over full magnitude bins needing ctufill ...
+
+				for (int mag_ix = ctufill_first_mag_bin + 1; mag_ix < active_mag_bins; ++mag_ix) {
+
+					// Get the Gutenberg-Richter ratio
+
+					double mag_ratio = OERandomGenerator.gr_ratio_rate (
+						comm.cat_params.b,						// b
+						get_cur_gen_mag_min (comm),				// sm1
+						get_cur_gen_mag_max (comm),				// sm2
+						mag_values[mag_ix],						// tm1
+						mag_values[mag_ix+1]					// tm2
+					);
+
+					// Accumulate the rates within each infill time bin
+
+					for (int time_ix = 0; time_ix <= infill_last_time_bin; ++time_ix) {
+						csr_exp_occur[time_ix][mag_ix] += (((double)(cur_gen_counts[time_ix])) * mag_ratio * ctufill_sec_mult);
 					}
 				}
 			}
@@ -1412,6 +1841,12 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 			// Combine counts, sterile ruptures, and a pdf derived from expected rate above mag range
 
 			case MAGFILL_METH_PDF_STERILE: {
+			}
+			break;
+
+			// Combine counts with a pdf derived from expected rate outside magnitude range, with count-based upfill for probability of occurrence
+
+			case MAGFILL_METH_PDF_CTU_HYBRID: {
 			}
 			break;
 
@@ -1473,6 +1908,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 						for (int time_ix = outfill_first_time_bin; time_ix < active_time_bins; ++time_ix) {
 							csr_expected[time_ix][mag_ix] += (cat_outfill_rates[time_ix] * mag_int);
+							csr_exp_occur[time_ix][mag_ix] += (cat_outfill_rates[time_ix] * mag_int);
 						}
 					}
 				}
@@ -1534,6 +1970,13 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 			f_downfill_sterile = false;
 
+			// No ctufill
+
+			ctufill_first_mag_bin = active_mag_bins;
+			ctufill_min_mag = mag_values[ctufill_first_mag_bin];
+			f_ctufill = false;
+			f_ctufill_prob_occur = false;
+
 			//--- Reporting
 
 			report_time_bins = 0;
@@ -1551,7 +1994,9 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 			csr_counts = new int[time_bins][mag_bins];
 			csr_expected = new double[time_bins][mag_bins];
+			csr_exp_occur = new double[time_bins][mag_bins];
 			cat_outfill_rates = new double[time_bins];
+			cat_size_info = new int[time_bins];
 
 			cur_gen_counts = new int[time_bins];
 			cur_gen_rates = new double[time_bins];
@@ -1642,6 +2087,11 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 				OEArraysCalc.cumulate_2d_array (csr_counts, true, false, 0, report_time_bins);
 				OEArraysCalc.cumulate_2d_array (csr_expected, true, false, 0, report_time_bins);
+				OEArraysCalc.cumulate_2d_array (csr_exp_occur, true, false, 0, report_time_bins);
+
+				// Cumulate the catalog size info: time upward
+
+				OEArraysCalc.cumulate_array (cat_size_info, true, 0, active_time_bins);
 
 				// Get an accumulator
 
@@ -1655,7 +2105,21 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 					// Accumulate shifted Poisson distributions
 
-					ens_accum.add_shifted_poisson (0, report_time_bins, 0, active_mag_bins, csr_expected, csr_counts);
+					ens_accum.add_shifted_split_poisson (0, report_time_bins, 0, active_mag_bins, csr_expected, csr_exp_occur, csr_counts);
+
+					// Accumulate catalog size information
+
+					ens_accum.add_cat_size_info (0, active_time_bins, cat_size_info);
+
+					// Dsiplay expected number and count for one time/magnitude bin, for debugging
+
+					//if (dbg_out) {
+					//	synchronized (OEAccumRateTimeMag.this) {
+					//		int t_ix = ((dbg_time_ix >= 0) ? (dbg_time_ix) : (active_time_bins + dbg_time_ix));
+					//		int m_ix = ((dbg_mag_ix >= 0) ? (dbg_mag_ix) : (active_mag_bins + dbg_mag_ix));
+					//		System.out.println (String.format ("%.3f  %.3f  %d", csr_expected[t_ix][m_ix], csr_exp_occur[t_ix][m_ix], csr_counts[t_ix][m_ix]));
+					//	}
+					//}
 				}
 			}
 
@@ -1928,6 +2392,10 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 			// Count the rupture within the current generation
 
 			cur_gen_counts[time_ix]++;
+
+			// Count the rupture within catalog size information
+
+			cat_size_info[time_ix]++;
 		
 			// Find the magnitude bin for this rupture,
 			// -1 if before the first bin, active_mag_bins if after the last active bin
@@ -2207,6 +2675,34 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 
 
+	// Return true if catalog size information is available.
+
+	@Override
+	public final boolean has_cat_size_info () {
+		return f_acc_cat_size;
+	}
+
+
+
+
+	// Get a fractile for catalog size information.
+	// Parameters:
+	//  fractile = Fractile to find, should be between 0.0 and 1.0.
+	// Returns a 1D array with dimensions r[time_bins].
+	// Each element corresponds to one time bin (which is cumulative by definition).
+	// Each value is an integer N, such that the probability of a catalog containing
+	// N or fewer ruptures is approximately equal to fractile.
+	// Note: The returned array should be newly-allocated and not retained by this object.
+	// Note: Returns null if catalog size information is not available.
+
+	@Override
+	public final int[] get_cat_size_fractile_array (double fractile) {
+		return total_acc.get_cat_size_fractile (fractile);
+	}
+
+
+
+
 	// Convert a fractile array to a string.
 	// Parameters:
 	//  fractile_array = Fractile array as returned by get_fractile_array().
@@ -2271,7 +2767,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		for (int mag_ix = 0; mag_ix < mag_bins; ++mag_ix) {
 			result.append (String.format ("%7.3f", mag_values[mag_ix]));
 			for (int time_ix = 0; time_ix < time_bins; ++time_ix) {
-				result.append (String.format ("  %10.3f", prob_occur_array[time_ix][mag_ix] * 100.0));
+				result.append (String.format ("  %10.5f", prob_occur_array[time_ix][mag_ix] * 100.0));
 			}
 			result.append ("\n");
 		}
@@ -2386,6 +2882,67 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		result.append ("\n");
 
 		result.append (fractile_array_to_string (get_bin_size_array()));
+
+		// If we have catalog size info ...
+
+		if (has_cat_size_info()) {
+
+			// Catalog size minimum
+
+			result.append ("\n");
+			result.append ("Catalog size (minimum)\n");
+			result.append ("\n");
+
+			result.append (live_count_array_to_string (get_cat_size_fractile_array (0.0)));
+
+			// Catalog size 2.5% fractile
+
+			result.append ("\n");
+			result.append ("Catalog size (2.5% fractile)\n");
+			result.append ("\n");
+
+			result.append (live_count_array_to_string (get_cat_size_fractile_array (0.025)));
+
+			// Catalog size 40% fractile
+
+			result.append ("\n");
+			result.append ("Catalog size (40% fractile)\n");
+			result.append ("\n");
+
+			result.append (live_count_array_to_string (get_cat_size_fractile_array (0.40)));
+
+			// Catalog size median
+
+			result.append ("\n");
+			result.append ("Catalog size (median)\n");
+			result.append ("\n");
+
+			result.append (live_count_array_to_string (get_cat_size_fractile_array (0.50)));
+
+			// Catalog size 60% fractile
+
+			result.append ("\n");
+			result.append ("Catalog size (60% fractile)\n");
+			result.append ("\n");
+
+			result.append (live_count_array_to_string (get_cat_size_fractile_array (0.60)));
+
+			// Catalog size 97.5% fractile
+
+			result.append ("\n");
+			result.append ("Catalog size (97.5% fractile)\n");
+			result.append ("\n");
+
+			result.append (live_count_array_to_string (get_cat_size_fractile_array (0.975)));
+
+			// Catalog size maximum
+
+			result.append ("\n");
+			result.append ("Catalog size (maximum)\n");
+			result.append ("\n");
+
+			result.append (live_count_array_to_string (get_cat_size_fractile_array (1.0)));
+		}
 
 		// 0% fractile (minimum over all catalogs)
 
@@ -2589,13 +3146,14 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 	//  test_cat_params = Catalog parameters.
 	//  mag_main = Mainshock magnitude.
 	//  rate_acc_meth = The rate accumulation method to use (see OEConstants.make_rate_acc_meth()).
+	//  the_upfill_sec_reduce = Proportional reducts to secondary upfill (0.0 to 1.0).
 	//  num_cats = Number of catalogs to run.
 	//  num_threads = Number of threads to use, can be -1 for default number of threads.
 	//  max_runtime = Maximum running time allowed.
 	// All catalogs use the same parameters, and are seeded with
 	// a single earthquake.
 
-	public static void typical_test_run_mt (OECatalogParams test_cat_params, double mag_main, int rate_acc_meth, int num_cats, int num_threads, long max_runtime) {
+	public static void typical_test_run_mt (OECatalogParams test_cat_params, double mag_main, int rate_acc_meth, double the_upfill_sec_reduce, int num_cats, int num_threads, long max_runtime) {
 
 		// Say hello
 
@@ -2614,6 +3172,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 		OEAccumRateTimeMag time_mag_accum = new OEAccumRateTimeMag();
 		time_mag_accum.typical_test_setup (rate_acc_meth, test_cat_params.tbegin);
+		time_mag_accum.set_upfill_sec_reduce (the_upfill_sec_reduce);
 
 		// Create the list of accumulators
 
@@ -3094,7 +3653,9 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 				// Do the test run
 
-				typical_test_run_mt (test_cat_params, mag_main, the_rate_acc_meth, num_cats, num_threads, max_runtime);
+				double the_upfill_sec_reduce = 0.0;
+
+				typical_test_run_mt (test_cat_params, mag_main, the_rate_acc_meth, the_upfill_sec_reduce, num_cats, num_threads, max_runtime);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -3323,7 +3884,9 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 				// Do the test run
 
-				typical_test_run_mt (test_cat_params, mag_main, the_rate_acc_meth, num_cats, num_threads, max_runtime);
+				double the_upfill_sec_reduce = 0.0;
+
+				typical_test_run_mt (test_cat_params, mag_main, the_rate_acc_meth, the_upfill_sec_reduce, num_cats, num_threads, max_runtime);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -3452,7 +4015,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		// Subcommand : Test #8
 		// Command format:
 		//  test8  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main  tbegin  rate_acc_meth  num_cats
-		//         mag_min_sim  mag_max_sim  mag_min_lo  mag_min_hi  mag_excess  num_threads  max_runtime
+		//         mag_min_sim  mag_max_sim  mag_min_lo  mag_min_hi  mag_excess  duration  num_threads  max_runtime
 		// Build a catalog with the given parameter, using multiple threads.
 		// The "n" is the branch ratio; "a" is computed from it.
 		// Then display the accumulated fractiles and probability of occurrence.
@@ -3556,7 +4119,130 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 				// Do the test run
 
-				typical_test_run_mt (test_cat_params, mag_main, the_rate_acc_meth, num_cats, num_threads, max_runtime);
+				double the_upfill_sec_reduce = 0.0;
+
+				typical_test_run_mt (test_cat_params, mag_main, the_rate_acc_meth, the_upfill_sec_reduce, num_cats, num_threads, max_runtime);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #10
+		// Command format:
+		//  test10  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main  tbegin  rate_acc_meth  num_cats
+		//         mag_min_sim  mag_max_sim  mag_min_lo  mag_min_hi  mag_excess  duration  upfill_sec_reduce  num_threads  max_runtime
+		// Build a catalog with the given parameter, using multiple threads.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then display the accumulated fractiles and probability of occurrence.
+		// Note that max_runtime must be -1 if no runtime limit is desired.
+		// Same as test #8 except allows setting upfill secondary reduction.
+
+		if (args[0].equalsIgnoreCase ("test10")) {
+
+			// 20 additional arguments
+
+			if (args.length != 21) {
+				System.err.println ("OEAccumRateTimeMag : Invalid 'test10' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				int gen_size_target = Integer.parseInt (args[6]);
+				int gen_count_max = Integer.parseInt (args[7]);
+				double mag_main = Double.parseDouble (args[8]);
+				double the_tbegin = Double.parseDouble (args[9]);
+				int the_rate_acc_meth = Integer.parseInt (args[10]);
+				int num_cats = Integer.parseInt (args[11]);
+				double the_mag_min_sim = Double.parseDouble (args[12]);
+				double the_mag_max_sim = Double.parseDouble (args[13]);
+				double the_mag_min_lo = Double.parseDouble (args[14]);
+				double the_mag_min_hi = Double.parseDouble (args[15]);
+				double the_mag_excess = Double.parseDouble (args[16]);
+				double duration = Double.parseDouble (args[17]);
+				double the_upfill_sec_reduce = Double.parseDouble (args[18]);
+				int num_threads = Integer.parseInt (args[19]);
+				long max_runtime = Long.parseLong (args[20]);
+
+				// Say hello
+
+				System.out.println ("Generating catalog with given parameters");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("gen_size_target = " + gen_size_target);
+				System.out.println ("gen_count_max = " + gen_count_max);
+				System.out.println ("mag_main = " + mag_main);
+				System.out.println ("the_tbegin = " + the_tbegin);
+				System.out.println ("the_rate_acc_meth = " + the_rate_acc_meth);
+				System.out.println ("num_cats = " + num_cats);
+				System.out.println ("the_mag_min_sim = " + the_mag_min_sim);
+				System.out.println ("the_mag_max_sim = " + the_mag_max_sim);
+				System.out.println ("the_mag_min_lo = " + the_mag_min_lo);
+				System.out.println ("the_mag_min_hi = " + the_mag_min_hi);
+				System.out.println ("the_mag_excess = " + the_mag_excess);
+				System.out.println ("duration = " + duration);
+				System.out.println ("the_upfill_sec_reduce = " + the_upfill_sec_reduce);
+				System.out.println ("num_threads = " + num_threads);
+				System.out.println ("max_runtime = " + max_runtime);
+
+				// Set up catalog parameters
+
+				double a = 0.0;			// for the moment
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_typical (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					gen_size_target,
+					gen_count_max
+				);
+
+				// Compute productivity "a" for the given branch ratio
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				a = OEStatsCalc.calc_inv_branch_ratio (n, test_cat_params);
+				test_cat_params.a = a;
+				System.out.println ("a = " + a);
+
+				// Recompute branch ratio to check it agrees with input
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Adjust forecast time
+
+				test_cat_params.tbegin = the_tbegin;
+				test_cat_params.tend = the_tbegin + duration;
+
+				// Set magnitude tanges and excess
+
+				test_cat_params.mag_min_sim = the_mag_min_sim;
+				test_cat_params.mag_max_sim = the_mag_max_sim;
+				test_cat_params.mag_min_lo = the_mag_min_lo;
+				test_cat_params.mag_min_hi = the_mag_min_hi;
+
+				test_cat_params.mag_excess = the_mag_excess;
+
+				// Do the test run
+
+				typical_test_run_mt (test_cat_params, mag_main, the_rate_acc_meth, the_upfill_sec_reduce, num_cats, num_threads, max_runtime);
 
 			} catch (Exception e) {
 				e.printStackTrace();

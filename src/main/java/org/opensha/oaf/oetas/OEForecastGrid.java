@@ -106,7 +106,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 	// The default size of the last magnitude bin.
 
-	public static final double DEF_MAG_EXCESS = 3.0;
+	public static final double DEF_MAG_HEADROOM = 3.0;
 
 	// The default size of a time bin used for catalog ranging, in days.
 
@@ -128,10 +128,6 @@ public class OEForecastGrid implements USGS_ForecastModel {
 	public static final String MNAME_GENERIC = "ETAS (Ogata, 1988) aftershock model (Generic)";
 	public static final String MNAME_SEQ_SPEC = "ETAS (Ogata, 1988) aftershock model (Sequence Specific)";
 	public static final String MNAME_BAYESIAN = "ETAS (Ogata, 1988) aftershock model (Bayesian Combination)";
-
-	// Model parameter keys
-
-	public static final String MKEY_MAG_MAIN = "magMain";
 
 	//--- Model results ---
 
@@ -155,6 +151,23 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 	protected double[][][] prob_occur_array;
 
+	// True if we have catalog size information.
+
+	protected boolean has_cat_size;
+
+	// The catalog size fractiles.
+	// This is sorted in increasing order.
+
+	protected double[] cat_size_fractile_values;
+
+	// The array of catalog sizes for each bin.
+	// Dimension: cat_size_array[cat_size_fractile_values.length][adv_time_values.length]
+	// Each element corresponds to one fractile and one time bin (which is cumulative by definition).
+	// Each value is an integer N, such that the probability of a catalog containing
+	// N or fewer ruptures is approximately equal to fractile.
+
+	protected int[][] cat_size_array;
+
 
 
 
@@ -169,7 +182,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 	// Throw an exception if magnitude is not acceptable.
 	// Note: The spacing between acceptable magnitudes must be at least 4 times OEConstants.GEN_MAG_EPS.
 
-	private double round_adv_mag (double mag) {
+	private static double round_adv_mag (double mag) {
 		double x = SimpleUtils.round_double_via_string ("%.3f", mag);
 		if (Math.abs(x - mag) > MATCH_MAG_EPS * 0.1) {
 			throw new IllegalArgumentException ("OEForecastGrid.round_adv_mag: Magnitude is not a multiple of 0.001: mag = " + mag);
@@ -190,13 +203,13 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 
 	// Round a mainshock magnitude.
-	// This is also used to round the magnitude excess.
+	// This is also used to round the magnitude headroom.
 	// We round to 2 decimal places.
 	// Note: Any possible return value must also be a possible return value of round_adv_mag.
 	// So for example, if round_adv_mag rounds to 3 decimal places, then this function could
 	// round to 1, 2, or 3 decimal places, but not 4 decimal places.
 
-	private double round_mainshock_mag (double mag) {
+	private static double round_mainshock_mag (double mag) {
 		return SimpleUtils.round_double_via_string ("%.2f", mag);
 	}
 
@@ -208,7 +221,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 	// Throw an exception if time is not acceptable.
 	// Note: The spacing between acceptable times must be at least 4 times OEConstants.GEN_TIME_EPS.
 
-	private double convert_adv_time (long millis) {
+	private static double convert_adv_time (long millis) {
 		if (millis % TIME_DELTA_MILLIS != 0L) {
 			throw new IllegalArgumentException ("OEForecastGrid.convert_adv_time: Time is not a multiple of 5 minutes: millis = " + millis);
 		}
@@ -233,7 +246,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 	// We require advisory fractiles to be multiples of 0.0001.
 	// Throw an exception if fractile is not acceptable.
 
-	private double round_adv_fractile (double frac) {
+	private static double round_adv_fractile (double frac) {
 		double x = SimpleUtils.round_double_via_string ("%.4f", frac);
 		if (Math.abs(x - frac) > MATCH_FRACTILE_EPS * 0.1) {
 			throw new IllegalArgumentException ("OEForecastGrid.round_adv_fractile: Fractile is not a multiple of 0.0001: frac = " + frac);
@@ -307,6 +320,9 @@ public class OEForecastGrid implements USGS_ForecastModel {
 		has_results = false;
 		fractile_array = null;
 		prob_occur_array = null;
+		has_cat_size = false;
+		cat_size_fractile_values = null;
+		cat_size_array = null;
 
 		return;
 	}
@@ -377,7 +393,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 		// Add mainshock magnitude parameter
 
-		model_params.put (MKEY_MAG_MAIN, rounded_mainshock_mag);
+		model_params.put (OEConstants.MKEY_MAG_MAIN, rounded_mainshock_mag);
 		return;
 	}
 
@@ -418,6 +434,9 @@ public class OEForecastGrid implements USGS_ForecastModel {
 		has_results = false;
 		fractile_array = null;
 		prob_occur_array = null;
+		has_cat_size = false;
+		cat_size_fractile_values = null;
+		cat_size_array = null;
 
 		return;
 	}
@@ -445,9 +464,21 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 
 	// Add a model parameter.
+	// The value should be one of: Integer, Long, Double, Float, Boolean, or String.
 
 	public final void add_model_param (String key, Object value) {
 		model_params.put (key, value);
+		return;
+	}
+
+
+
+
+	// Add all the model parameters in the supplied map.
+	// Each value should be one of: Integer, Long, Double, Float, Boolean, or String.
+
+	public final void add_model_param (Map<String, Object> params) {
+		model_params.putAll (params);
 		return;
 	}
 
@@ -488,6 +519,35 @@ public class OEForecastGrid implements USGS_ForecastModel {
 		// We have results
 
 		has_results = true;
+
+		// If the accumulator can provide catalog size information ...
+
+		if (accum.has_cat_size_info()) {
+
+			// Set up the list of catalog size fractiles
+
+			cat_size_fractile_values = new double[]{0.000, 0.025, 0.150, 0.400, 0.500, 0.600, 0.850, 0.975, 1.000};
+
+			// Get catalog size fractiles
+
+			cat_size_array = new int[cat_size_fractile_values.length][];
+			for (int csfr_ix = 0; csfr_ix < cat_size_fractile_values.length; ++csfr_ix) {
+				cat_size_array[csfr_ix] = accum.get_cat_size_fractile_array (cat_size_fractile_values[csfr_ix]);
+			}
+
+			// We have catalog size information
+
+			has_cat_size = true;
+		}
+
+		// Otherwise, no catalog size information ...
+
+		else {
+			has_cat_size = false;
+			cat_size_fractile_values = null;
+			cat_size_array = null;
+		}
+
 		return;
 	}
 
@@ -758,7 +818,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 	//  10 cols for time/value
 	//  2 cols spacer ...
 	// Note: The parameter can be any array of dimension double[adv_time_values.length][adv_merged_mag_values.length]
-	// where fixed-point display to 3 decimal places as percentages (data * 100) is appropriate.
+	// where fixed-point display to 5 decimal places as percentages (data * 100) is appropriate.
 
 	public final String prob_occur_array_to_string (double[][] prob_array) {
 		StringBuilder result = new StringBuilder();
@@ -781,7 +841,49 @@ public class OEForecastGrid implements USGS_ForecastModel {
 		for (int mag_ix = 0; mag_ix < mag_bins; ++mag_ix) {
 			result.append (String.format ("%7.3f", adv_merged_mag_values[mag_ix]));
 			for (int time_ix = 0; time_ix < time_bins; ++time_ix) {
-				result.append (String.format ("  %10.3f", prob_array[time_ix][mag_ix] * 100.0));
+				result.append (String.format ("  %10.5f", prob_array[time_ix][mag_ix] * 100.0));
+			}
+			result.append ("\n");
+		}
+
+		return result.toString();
+	}
+
+
+
+
+	// Convert a catalog size fractile array to a string.
+	// Parameters:
+	//  data_array = Data array.
+	// Table layout is:
+	//  7 cols for magnitude
+	//  2 cols spacer
+	//  10 cols for time/value
+	//  2 cols spacer ...
+	// Note: The parameter can be any array of dimension int[cat_size_fractile_values.length][adv_time_values.length].
+
+	public final String cat_size_fractile_array_to_string (int[][] data_array) {
+		StringBuilder result = new StringBuilder();
+
+		// Number of time and catalog size fractile bins
+
+		int time_bins = adv_time_values.length;
+		int csfr_bins = cat_size_fractile_values.length;
+
+		// Header line
+
+		result.append (" % \\ T ");
+		for (int time_ix = 0; time_ix < time_bins; ++time_ix) {
+			result.append (String.format ("  %10.3f", adv_time_values[time_ix]));
+		}
+		result.append ("\n");
+
+		// Data lines
+
+		for (int csfr_ix = 0; csfr_ix < csfr_bins; ++csfr_ix) {
+			result.append (String.format ("%7.3f", cat_size_fractile_values[csfr_ix] * 100.0));
+			for (int time_ix = 0; time_ix < time_bins; ++time_ix) {
+				result.append (String.format ("  %10d", cat_size_array[csfr_ix][time_ix]));
 			}
 			result.append ("\n");
 		}
@@ -920,12 +1022,62 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 		result.append ("has_results = " + has_results + "\n");
 		if (has_results) {
+			result.append ("has_cat_size = " + has_cat_size + "\n");
+			if (has_cat_size) {
+				result.append ("\n");
+				result.append ("Catalog sizes\n");
+				result.append (cat_size_fractile_array_to_string (cat_size_array));
+			}
 			for (int frac_ix = 0; frac_ix < adv_fractile_values.length; ++frac_ix) {
 				result.append ("\n");
 				result.append ("Fractile: " + adv_fractile_values[frac_ix] + "\n");
 				result.append (fractile_array_to_string (fractile_array[frac_ix]));
 			}
 			for (int xcnt_ix = 0; xcnt_ix < adv_xcount_values.length; ++xcnt_ix) {
+				result.append ("\n");
+				result.append ("Probability of exceeding: " + adv_xcount_values[xcnt_ix] + "\n");
+				result.append (prob_occur_array_to_string (prob_occur_array[xcnt_ix]));
+			}
+		}
+
+		return result.toString();
+	}
+
+
+
+
+	// Display a summary of our contents.
+
+	public String summary_string() {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("has_mainshock_mag = " + has_mainshock_mag + "\n");
+		result.append ("rounded_mainshock_mag = " + rounded_mainshock_mag + "\n");
+
+		result.append ("has_results = " + has_results + "\n");
+		if (has_results) {
+			result.append ("has_cat_size = " + has_cat_size + "\n");
+			if (has_cat_size) {
+				result.append ("\n");
+				result.append ("Catalog sizes\n");
+				result.append (cat_size_fractile_array_to_string (cat_size_array));
+			}
+			double[] summary_fractile_values = {0.025, 0.500, 0.975};	// these need to be elements of adv_fractile_values
+			for (double frac : summary_fractile_values) {
+				int frac_ix = OEArraysCalc.bfind_array (adv_fractile_values, frac, MATCH_FRACTILE_EPS);
+				if (frac_ix < 0) {
+					throw new USGS_ForecastException ("OEForecastGrid.summary_string: Unrecognized fractile: fractile = " + frac);
+				}
+				result.append ("\n");
+				result.append ("Fractile: " + adv_fractile_values[frac_ix] + "\n");
+				result.append (fractile_array_to_string (fractile_array[frac_ix]));
+			}
+			int[] summary_xcount_values = {0};	// these need to be elements of adv_xcount_values
+			for (int xcount : summary_xcount_values) {
+				int xcnt_ix = OEArraysCalc.bfind_array (adv_xcount_values, xcount);
+				if (xcnt_ix < 0) {
+					throw new USGS_ForecastException ("OEForecastGrid.summary_string: Unrecognized exceedence count: xcount = " + xcount);
+				}
 				result.append ("\n");
 				result.append ("Probability of exceeding: " + adv_xcount_values[xcnt_ix] + "\n");
 				result.append (prob_occur_array_to_string (prob_occur_array[xcnt_ix]));
@@ -965,19 +1117,19 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 	// Get the magnitude values that delimit the magnitude bins.
 	// Parameters:
-	//  mag_excess = Size of the last magnitude bin, if zero or omitted defaults to DEF_MAG_EXCESS.
+	//  mag_headroom = Size of the last magnitude bin, if zero or omitted defaults to DEF_MAG_HEADROOM.
 	// The returned value has dimension:  mag_values[mag_bins + 1]
 	// Here: mag_bins = adv_merged_mag_values.length
 	// Each magnitude bin represents an interval between two successive magnitude values.
 	// Note: Typically the last magnitude is very large.
 
-	public double[] get_mag_values (double mag_excess) {
+	public double[] get_mag_values (double mag_headroom) {
 
 		// Round size of last magnitude bin, and apply default
 
-		double rounded_mag_excess = round_mainshock_mag (mag_excess);
-		if (rounded_mag_excess < MATCH_MAG_EPS) {
-			rounded_mag_excess = round_mainshock_mag (DEF_MAG_EXCESS);
+		double rounded_mag_headroom = round_mainshock_mag (mag_headroom);
+		if (rounded_mag_headroom < MATCH_MAG_EPS) {
+			rounded_mag_headroom = round_mainshock_mag (DEF_MAG_HEADROOM);
 		}
 
 		// Construct magnitude array, appending a new highest magnitude
@@ -987,13 +1139,13 @@ public class OEForecastGrid implements USGS_ForecastModel {
 		for (int mag_ix = 0; mag_ix < mag_bins; ++mag_ix) {
 			mag_values[mag_ix] = adv_merged_mag_values[mag_ix];
 		}
-		mag_values[mag_bins] = adv_merged_mag_values[mag_bins - 1] + rounded_mag_excess;
+		mag_values[mag_bins] = adv_merged_mag_values[mag_bins - 1] + rounded_mag_headroom;
 		return mag_values;
 	}
 
 
 	public double[] get_mag_values () {
-		return get_mag_values (DEF_MAG_EXCESS);
+		return get_mag_values (DEF_MAG_HEADROOM);
 	}
 
 
@@ -1109,6 +1261,37 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 
 
+	// Get the configured end time, for a given start time, in days.
+	// Parameters:
+	//  tbegin = Start time of the first time bin, in days.
+	// The returned value is the end of the advisory time bins.
+
+	public static double get_config_tend (double tbegin) {
+
+		// Get action configuration
+
+		ActionConfig action_config = new ActionConfig();
+
+		// Get the largest advisory time value
+
+		long time_value_millis = 0L;
+		int count = action_config.get_adv_window_count();
+		for (int time_ix = 0; time_ix < count; ++time_ix) {
+			long millis = action_config.get_adv_window_end_off (time_ix);
+			if (time_value_millis < millis) {
+				time_value_millis = millis;
+			}
+		}
+
+		// Convert to days
+
+		double time_value = convert_adv_time (time_value_millis);
+		return tbegin + time_value;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.
@@ -1151,6 +1334,11 @@ public class OEForecastGrid implements USGS_ForecastModel {
 			if (has_results) {
 				writer.marshalInt3DArray ("fractile_array", fractile_array);
 				writer.marshalDouble3DArray ("prob_occur_array", prob_occur_array);
+				writer.marshalBoolean ("has_cat_size", has_cat_size);
+				if (has_cat_size) {
+					writer.marshalDoubleArray ("cat_size_fractile_values", cat_size_fractile_values);
+					writer.marshalInt2DArray ("cat_size_array", cat_size_array);
+				}
 			}
 
 		}
@@ -1195,9 +1383,20 @@ public class OEForecastGrid implements USGS_ForecastModel {
 			if (has_results) {
 				fractile_array = reader.unmarshalInt3DArray ("fractile_array");
 				prob_occur_array = reader.unmarshalDouble3DArray ("prob_occur_array");
+				has_cat_size = reader.unmarshalBoolean ("has_cat_size");
+				if (has_cat_size) {
+					cat_size_fractile_values = reader.unmarshalDoubleArray ("cat_size_fractile_values");
+					cat_size_array = reader.unmarshalInt2DArray ("cat_size_array");
+				} else {
+					cat_size_fractile_values = null;
+					cat_size_array = null;
+				}
 			} else {
 				fractile_array = null;
 				prob_occur_array = null;
+				has_cat_size = false;
+				cat_size_fractile_values = null;
+				cat_size_array = null;
 			}
 
 		}
@@ -1262,11 +1461,14 @@ public class OEForecastGrid implements USGS_ForecastModel {
 		private int time_bins;
 		private int mag_bins;
 
+		private boolean f_cat_size;
+
 		// Constructor accepts arrays of time and magnitude values.
 
-		public test_grid_readout (double[] time_values, double[] mag_values) {
+		public test_grid_readout (double[] time_values, double[] mag_values, boolean use_cat_size) {
 			time_bins = time_values.length - 1;
 			mag_bins = mag_values.length - 1;
+			f_cat_size = use_cat_size;
 		}
 
 
@@ -1322,6 +1524,36 @@ public class OEForecastGrid implements USGS_ForecastModel {
 			return result;
 		}
 
+
+		// Return true if catalog size information is available.
+
+		@Override
+		public boolean has_cat_size_info () {
+			return f_cat_size;
+		}
+
+
+		// Get a fractile for catalog size information.
+		// Parameters:
+		//  fractile = Fractile to find, should be between 0.0 and 1.0.
+		// Returns a 1D array with dimensions r[time_bins].
+		// Each element corresponds to one time bin (which is cumulative by definition).
+		// Each value is an integer N, such that the probability of a catalog containing
+		// N or fewer ruptures is approximately equal to fractile.
+		// Note: The returned array should be newly-allocated and not retained by this object.
+		// Note: Returns null if catalog size information is not available.
+
+		@Override
+		public int[] get_cat_size_fractile_array (double fractile) {
+			if (f_cat_size) {
+				int[] result = new int[time_bins];
+				for (int time_ix = 0; time_ix < time_bins; ++time_ix) {
+					result[time_ix] = (int)Math.round(10000.0 * (fractile + 1.0 + (double)time_ix));
+				}
+				return result;
+			}
+			return null;
+		}
 	}
 
 
@@ -1341,12 +1573,12 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 		// Subcommand : Test #1
 		// Command format:
-		//  test1  mag_main  tbegin  mag_excess  time_ranging_delta
+		//  test1  mag_main  tbegin  mag_headroom  time_ranging_delta
 		// Construct the forecast grid using the given mainshock magnitude, and display it.
 		// Construct and display the arrays for time value, mag values, and ranging time values.
 		// Marshal to JSON and display JSON text, then unmarshal and display the results.
 		// Use mag_main = 0.0 for no mainshock.
-		// Use mag_excess = 0.0 for default magnitude excess.
+		// Use mag_headroom = 0.0 for default magnitude headroom.
 		// Use time_ranging_delta = 0.0 for default time ranging bin target size.
 
 		if (args[0].equalsIgnoreCase ("test1")) {
@@ -1362,7 +1594,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 				double mag_main = Double.parseDouble (args[1]);
 				double tbegin = Double.parseDouble (args[2]);
-				double mag_excess = Double.parseDouble (args[3]);
+				double mag_headroom = Double.parseDouble (args[3]);
 				double time_ranging_delta = Double.parseDouble (args[4]);
 
 				// Say hello
@@ -1370,7 +1602,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 				System.out.println ("Constructing and displaying forecast grid");
 				System.out.println ("mag_main: " + mag_main);
 				System.out.println ("tbegin: " + tbegin);
-				System.out.println ("mag_excess: " + mag_excess);
+				System.out.println ("mag_headroom: " + mag_headroom);
 				System.out.println ("time_ranging_delta: " + time_ranging_delta);
 				System.out.println ();
 
@@ -1405,7 +1637,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 				System.out.println (array_to_one_per_line_string ("time_values", fcgrid.get_time_values (tbegin)));
 				System.out.println ();
 
-				System.out.println (array_to_one_per_line_string ("mag_values", fcgrid.get_mag_values (mag_excess)));
+				System.out.println (array_to_one_per_line_string ("mag_values", fcgrid.get_mag_values (mag_headroom)));
 				System.out.println ();
 
 				System.out.println (array_to_one_per_line_string ("ranging_time_values", fcgrid.get_ranging_time_values (tbegin, time_ranging_delta)));
@@ -1454,13 +1686,13 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 		// Subcommand : Test #2
 		// Command format:
-		//  test2  mag_main  tbegin  mag_excess  time_ranging_delta
+		//  test2  mag_main  tbegin  mag_headroom  time_ranging_delta
 		// Construct the forecast grid using the given mainshock magnitude, and display it.
 		// Construct and display the arrays for time value, mag values, and ranging time values.
 		// Add simulated forecast results and some model parameters, and display it.
 		// Marshal to JSON and display JSON text, then unmarshal and display the results.
 		// Use mag_main = 0.0 for no mainshock.
-		// Use mag_excess = 0.0 for default magnitude excess.
+		// Use mag_headroom = 0.0 for default magnitude headroom.
 		// Use time_ranging_delta = 0.0 for default time ranging bin target size.
 
 		if (args[0].equalsIgnoreCase ("test2")) {
@@ -1476,7 +1708,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 				double mag_main = Double.parseDouble (args[1]);
 				double tbegin = Double.parseDouble (args[2]);
-				double mag_excess = Double.parseDouble (args[3]);
+				double mag_headroom = Double.parseDouble (args[3]);
 				double time_ranging_delta = Double.parseDouble (args[4]);
 
 				// Say hello
@@ -1484,7 +1716,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 				System.out.println ("Constructing and displaying forecast grid, and adding simulated forecast");
 				System.out.println ("mag_main: " + mag_main);
 				System.out.println ("tbegin: " + tbegin);
-				System.out.println ("mag_excess: " + mag_excess);
+				System.out.println ("mag_headroom: " + mag_headroom);
 				System.out.println ("time_ranging_delta: " + time_ranging_delta);
 				System.out.println ();
 
@@ -1519,7 +1751,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 				System.out.println (array_to_one_per_line_string ("time_values", fcgrid.get_time_values (tbegin)));
 				System.out.println ();
 
-				System.out.println (array_to_one_per_line_string ("mag_values", fcgrid.get_mag_values (mag_excess)));
+				System.out.println (array_to_one_per_line_string ("mag_values", fcgrid.get_mag_values (mag_headroom)));
 				System.out.println ();
 
 				System.out.println (array_to_one_per_line_string ("ranging_time_values", fcgrid.get_ranging_time_values (tbegin, time_ranging_delta)));
@@ -1530,7 +1762,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 				System.out.println ("********** Forecast results **********");
 				System.out.println ();
 
-				test_grid_readout readout = new test_grid_readout (fcgrid.get_time_values (tbegin), fcgrid.get_mag_values (mag_excess));
+				test_grid_readout readout = new test_grid_readout (fcgrid.get_time_values (tbegin), fcgrid.get_mag_values (mag_headroom), true);
 				fcgrid.supply_results (readout);
 
 				fcgrid.add_model_param ("int", 17);
@@ -1586,13 +1818,13 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 		// Subcommand : Test #3
 		// Command format:
-		//  test3  mag_main  tbegin  mag_excess  time_ranging_delta
+		//  test3  mag_main  tbegin  mag_headroom  time_ranging_delta
 		// Construct the forecast grid using the given mainshock magnitude, and display it.
 		// Construct and display the arrays for time value, mag values, and ranging time values.
 		// Add simulated forecast results and some model parameters, and display it.
 		// Construct a USGS forecast, and display the JSON.
 		// Use mag_main = 0.0 for no mainshock.
-		// Use mag_excess = 0.0 for default magnitude excess.
+		// Use mag_headroom = 0.0 for default magnitude headroom.
 		// Use time_ranging_delta = 0.0 for default time ranging bin target size.
 
 		if (args[0].equalsIgnoreCase ("test3")) {
@@ -1608,7 +1840,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 				double mag_main = Double.parseDouble (args[1]);
 				double tbegin = Double.parseDouble (args[2]);
-				double mag_excess = Double.parseDouble (args[3]);
+				double mag_headroom = Double.parseDouble (args[3]);
 				double time_ranging_delta = Double.parseDouble (args[4]);
 
 				// Say hello
@@ -1616,7 +1848,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 				System.out.println ("Constructing and displaying forecast grid, and producing USGS forecast");
 				System.out.println ("mag_main: " + mag_main);
 				System.out.println ("tbegin: " + tbegin);
-				System.out.println ("mag_excess: " + mag_excess);
+				System.out.println ("mag_headroom: " + mag_headroom);
 				System.out.println ("time_ranging_delta: " + time_ranging_delta);
 				System.out.println ();
 
@@ -1651,7 +1883,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 				System.out.println (array_to_one_per_line_string ("time_values", fcgrid.get_time_values (tbegin)));
 				System.out.println ();
 
-				System.out.println (array_to_one_per_line_string ("mag_values", fcgrid.get_mag_values (mag_excess)));
+				System.out.println (array_to_one_per_line_string ("mag_values", fcgrid.get_mag_values (mag_headroom)));
 				System.out.println ();
 
 				System.out.println (array_to_one_per_line_string ("ranging_time_values", fcgrid.get_ranging_time_values (tbegin, time_ranging_delta)));
@@ -1662,7 +1894,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 				System.out.println ("********** Forecast results **********");
 				System.out.println ();
 
-				test_grid_readout readout = new test_grid_readout (fcgrid.get_time_values (tbegin), fcgrid.get_mag_values (mag_excess));
+				test_grid_readout readout = new test_grid_readout (fcgrid.get_time_values (tbegin), fcgrid.get_mag_values (mag_headroom), true);
 				fcgrid.supply_results (readout);
 
 				fcgrid.add_model_param ("int", 17);

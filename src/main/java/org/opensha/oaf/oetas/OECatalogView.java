@@ -156,6 +156,83 @@ public interface OECatalogView {
 		return result.toString();
 	}
 
+
+
+
+	// Construct a string that summarizes the catalog contents, version 2.
+	// This displays the catalog size and generation count,
+	// parameters, and info for each generation.
+	// This version adds actual rupture count and time/mag range for each generation.
+
+	public default String summary_and_gen_list_string_2() {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OECatalogView:" + "\n");
+
+		// Catalog globals
+
+		result.append ("cat_result_code = " + get_cat_result_code()  + "\n");
+		result.append ("cat_stop_time = " + get_cat_stop_time()  + "\n");
+
+		// Size and generation count
+
+		int the_size = size();
+		int the_valid_size = valid_size();
+		int gen_count = get_gen_count();
+		result.append ("size = "       + the_size       + "\n");
+		result.append ("valid_size = " + the_valid_size + "\n");
+		result.append ("gen_count = "  + gen_count      + "\n");
+
+		// Catalog parameters
+
+		OECatalogParams cat_params = new OECatalogParams();
+		get_cat_params (cat_params);
+		result.append (cat_params.toString());
+
+		// List of generation info
+
+		OEGenerationInfo gen_info = new OEGenerationInfo();
+		OERupture rup = new OERupture();
+		double stop_time = get_cat_stop_time();
+
+		for (int i_gen = 0; i_gen < gen_count; ++i_gen) {
+			int gen_size = get_gen_size (i_gen);
+			int gen_valid_size = get_gen_valid_size (i_gen);
+			get_gen_info (i_gen, gen_info);
+
+			int count = 0;
+			double t_lo = 0.0;
+			double t_hi = 0.0;
+			double mag_lo = 0.0;
+			double mag_hi = 0.0;
+
+			for (int j_rup = 0; j_rup < gen_size; ++j_rup) {
+				get_rup_full (i_gen, j_rup, rup);
+				if (rup.t_day <= stop_time) {
+					if (count == 0) {
+						t_lo = rup.t_day;
+						t_hi = rup.t_day;
+						mag_lo = rup.rup_mag;
+						mag_hi = rup.rup_mag;
+					} else {
+						t_lo = Math.min (t_lo, rup.t_day);
+						t_hi = Math.max (t_hi, rup.t_day);
+						mag_lo = Math.min (mag_lo, rup.rup_mag);
+						mag_hi = Math.max (mag_hi, rup.rup_mag);
+					}
+					++count;
+				}
+			}
+
+			result.append (gen_info.one_line_string (i_gen, gen_size, gen_valid_size, count, t_lo, t_hi, mag_lo, mag_hi) + "\n");
+		}
+
+		return result.toString();
+	}
+
+
+
+
 	// Construct a string that dumps the entire catalog contents.
 	// Caution: This can be very large!
 
@@ -207,6 +284,9 @@ public interface OECatalogView {
 
 		return result.toString();
 	}
+
+
+
 
 	// Dump the entire catalog contents into a collection of OERupture objects.
 	// Note: The OERupture objects are newly allocated.

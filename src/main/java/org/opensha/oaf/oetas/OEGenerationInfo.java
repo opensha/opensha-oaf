@@ -118,6 +118,18 @@ public class OEGenerationInfo {
 
 
 
+	// Produce a one-line string containing our contents (not newline-terminated).
+	// This version prepends an index, size, and valid size.
+	// Also appends count, lower and upper time, and lower and upper magnitude.
+
+	public String one_line_string (int i_gen, int gen_size, int gen_valid_size, int count, double t_lo, double t_hi, double mag_lo, double mag_hi) {
+		return String.format ("%d: size=%d, valid_size=%d, mag_min=%.3f, mag_max=%.3f, count=%d, t_lo=%.3f, t_hi=%.3f, mag_lo=%.3f, mag_hi=%.3f",
+			i_gen, gen_size, gen_valid_size, gen_mag_min, gen_mag_max, count, t_lo, t_hi, mag_lo, mag_hi);
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.

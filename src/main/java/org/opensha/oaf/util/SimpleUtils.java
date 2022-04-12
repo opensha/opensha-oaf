@@ -924,6 +924,75 @@ public class SimpleUtils {
 
 
 
+	// Create a string containing memory usage status.
+	// The resulting string has multiple lines, each termnated by linefeed.
+
+	public static String memory_status_string () {
+		StringBuilder sb = new StringBuilder();
+		long max_memory = Runtime.getRuntime().maxMemory();
+		long total_memory = Runtime.getRuntime().totalMemory();
+		long free_memory = Runtime.getRuntime().freeMemory();
+
+		long used_memory = total_memory - free_memory;
+
+		if (max_memory == Long.MAX_VALUE) {
+			sb.append ("max_memory = unlimited\n");
+		} else {
+			sb.append ("max_memory = " + (max_memory / 1048576L) + " M\n");
+		}
+			
+		sb.append ("total_memory = " + (total_memory / 1048576L) + " M\n");
+		sb.append ("free_memory = " + (free_memory / 1048576L) + " M\n");
+		sb.append ("used_memory = " + (used_memory / 1048576L) + " M\n");
+
+		return sb.toString();
+	}
+
+
+
+
+	// Create a one-line string containing memory usage status.
+	// The resulting string has a single line, not termnated by linefeed.
+
+	public static String one_line_memory_status_string () {
+		StringBuilder sb = new StringBuilder();
+		long max_memory = Runtime.getRuntime().maxMemory();
+		long total_memory = Runtime.getRuntime().totalMemory();
+		long free_memory = Runtime.getRuntime().freeMemory();
+
+		long used_memory = total_memory - free_memory;
+
+		if (max_memory == Long.MAX_VALUE) {
+			sb.append ("Memory: max = unlimited");
+		} else {
+			sb.append ("Memory: max = " + (max_memory / 1048576L) + " M");
+		}
+			
+		sb.append (", total = " + (total_memory / 1048576L) + " M");
+		sb.append (", free = " + (free_memory / 1048576L) + " M");
+		sb.append (", used = " + (used_memory / 1048576L) + " M");
+
+		return sb.toString();
+	}
+
+
+
+
+	// Create a containing the amount of used memory.
+	// The resulting string contains just a numerical value and unit, and is not termnated by linefeed.
+
+	public static String used_memory_string () {
+		long total_memory = Runtime.getRuntime().totalMemory();
+		long free_memory = Runtime.getRuntime().freeMemory();
+
+		long used_memory = total_memory - free_memory;
+
+		return (used_memory / 1048576L) + " M";
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -1111,6 +1180,53 @@ public class SimpleUtils {
 
 				System.out.println();
 				System.out.println ("decoded = \"" + s3 + "\"");
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5
+		// Test the operation of url_encode and url_decode.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// 0 additional arguments
+
+			if (!( args.length == 1 )) {
+				System.err.println ("SimpleUtils : Invalid 'test5' subcommand");
+				return;
+			}
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Test memory status functions");
+
+				// Memory status
+
+				System.out.println();
+				System.out.println ("Memory status:");
+				System.out.println (memory_status_string());
+
+				// One-line memory status
+
+				System.out.println ("One-line memory status:");
+				System.out.println (one_line_memory_status_string());
+
+				// Used memory
+
+				System.out.println();
+				System.out.println ("Used memory:");
+				System.out.println (used_memory_string());
 
 			} catch (Exception e) {
 				e.printStackTrace();

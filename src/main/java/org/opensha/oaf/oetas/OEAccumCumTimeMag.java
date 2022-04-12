@@ -1475,7 +1475,7 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator, OEAccumReadoutT
 		for (int mag_ix = 0; mag_ix < mag_bins; ++mag_ix) {
 			result.append (String.format ("%7.3f", mag_values[mag_ix]));
 			for (int time_ix = 0; time_ix < time_bins; ++time_ix) {
-				result.append (String.format ("  %10.3f", prob_occur_array[time_ix][mag_ix] * 100.0));
+				result.append (String.format ("  %10.5f", prob_occur_array[time_ix][mag_ix] * 100.0));
 			}
 			result.append ("\n");
 		}
@@ -1717,10 +1717,16 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator, OEAccumReadoutT
 	//  mag_main = Mainshock magnitude.
 	//  the_infill_meth = Infill method to use.
 	//  num_cats = Number of catalogs to run.
+	//  mear_opt = Optoin to use special random generator to place all aftershocks at the earliest possible time. Defaults to MEAR_NORMAL.
 	// All catalogs use the same parameters, and are seeded with
 	// a single earthquake.
 
 	public static void typical_test_run (OECatalogParams test_cat_params, double mag_main, int the_infill_meth, int num_cats) {
+		typical_test_run (test_cat_params, mag_main, the_infill_meth, num_cats, OECatalogGenerator.MEAR_NORMAL);
+		return;
+	}
+
+	public static void typical_test_run (OECatalogParams test_cat_params, double mag_main, int the_infill_meth, int num_cats, int mear_opt) {
 
 		// Say hello
 
@@ -1746,7 +1752,8 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator, OEAccumReadoutT
 
 		// Get the random number generator
 
-		OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+		//OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+		OERandomGenerator rangen = OECatalogGenerator.make_early_as_rangen (mear_opt);
 
 		// Create a scanner for our accumulators, which we re-use for each catalog
 
@@ -2359,6 +2366,116 @@ public class OEAccumCumTimeMag implements OEEnsembleAccumulator, OEAccumReadoutT
 				// Do the test run
 
 				typical_test_run_mt (test_cat_params, mag_main, the_infill_meth, num_cats, num_threads, max_runtime);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #9
+		// Command format:
+		//  test9  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main  tbegin  infill_meth  num_cats
+		//         mag_min_sim  mag_max_sim  mag_min_lo  mag_min_hi  mear_opt
+		// Build a catalog with the given parameters.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then display the accumulated fractiles and probability of occurrence.
+		// Same as test #3 except optionally puts all aftershocks at the earliest possible time.
+
+		if (args[0].equalsIgnoreCase ("test9")) {
+
+			// 16 additional arguments
+
+			if (args.length != 17) {
+				System.err.println ("OEAccumCumTimeMag : Invalid 'test9' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				int gen_size_target = Integer.parseInt (args[6]);
+				int gen_count_max = Integer.parseInt (args[7]);
+				double mag_main = Double.parseDouble (args[8]);
+				double the_tbegin = Double.parseDouble (args[9]);
+				int the_infill_meth = Integer.parseInt (args[10]);
+				int num_cats = Integer.parseInt (args[11]);
+				double the_mag_min_sim = Double.parseDouble (args[12]);
+				double the_mag_max_sim = Double.parseDouble (args[13]);
+				double the_mag_min_lo = Double.parseDouble (args[14]);
+				double the_mag_min_hi = Double.parseDouble (args[15]);
+				int mear_opt = Integer.parseInt (args[16]);
+
+				// Say hello
+
+				System.out.println ("Generating catalog with given parameters");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("gen_size_target = " + gen_size_target);
+				System.out.println ("gen_count_max = " + gen_count_max);
+				System.out.println ("mag_main = " + mag_main);
+				System.out.println ("the_tbegin = " + the_tbegin);
+				System.out.println ("the_infill_meth = " + the_infill_meth);
+				System.out.println ("num_cats = " + num_cats);
+				System.out.println ("the_mag_min_sim = " + the_mag_min_sim);
+				System.out.println ("the_mag_max_sim = " + the_mag_max_sim);
+				System.out.println ("the_mag_min_lo = " + the_mag_min_lo);
+				System.out.println ("the_mag_min_hi = " + the_mag_min_hi);
+				System.out.println ("mear_opt = " + mear_opt);
+
+				// Set up catalog parameters
+
+				double a = 0.0;			// for the moment
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_typical (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					gen_size_target,
+					gen_count_max
+				);
+
+				// Compute productivity "a" for the given branch ratio
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				a = OEStatsCalc.calc_inv_branch_ratio (n, test_cat_params);
+				test_cat_params.a = a;
+				System.out.println ("a = " + a);
+
+				// Recompute branch ratio to check it agrees with input
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Adjust forecast time
+
+				test_cat_params.tbegin = the_tbegin;
+				test_cat_params.tend = the_tbegin + 365.0;
+
+				// Set magnitude tanges
+
+				test_cat_params.mag_min_sim = the_mag_min_sim;
+				test_cat_params.mag_max_sim = the_mag_max_sim;
+				test_cat_params.mag_min_lo = the_mag_min_lo;
+				test_cat_params.mag_min_hi = the_mag_min_hi;
+
+				// Do the test run
+
+				typical_test_run (test_cat_params, mag_main, the_infill_meth, num_cats, mear_opt);
 
 			} catch (Exception e) {
 				e.printStackTrace();

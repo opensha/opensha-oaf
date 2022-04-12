@@ -798,6 +798,48 @@ public class OERandomGenerator {
 
 
 
+	// Invert a ratio between two Gutenberg-Richter expected rates.
+	// Parameters:
+	//  b = Gutenberg-Richter b parameter.
+	//  sm1 = Source range lower magnitude.
+	//  sm2 = Source range upper magnitude, typically sm2 > sm1.
+	//  tm2 = Target range upper magnitude.
+	//  r = Ratio of expected rates, must satisfy r > 0.
+	// Returns the value of tm1, a target range lower magnitude, so that
+	//   r == Integral(tm1, tm2, (10^(-b*m))*dm) / Integral(sm1, sm2, (10^(-b*m))*dm).
+	// Note: By comparison to the formulas for gr_rate, we have canceled out the
+	// common factor b*log(10)*10^(b*mref) from both integrals.
+	// Note: If sm2 > sm1 (the typical case), then there is always a solution
+	// for tm1 and it satisfies tm2 > tm1.
+	// Note: Setting sm1 > sm2 allows solving for the case where the upper rather
+	// than lower magnitude is adjusted, because a solution will have tm1 > tm2.
+	// However in this case, a solution is possible only for
+	//   r < 10^(-b*tm2) / (10^(-b*sm2) - 10^(-b*sm1))
+	// This condition is equivalent to the argument of log() below being positive.
+
+	// Implementation note: The ratio is
+	//
+	// r = (10^(-b*tm1) - 10^(-b*tm2)) / (10^(-b*sm1) - 10^(-b*sm2))
+	//
+	// The solution for tm1 can be written
+	//
+	// tm1 = tm2 - (1/beta) * log(exp(beta*(sm2 - sm1) - 1)*r*exp(beta*(tm2 - sm2)) + 1)
+	//
+	// where
+	//
+	// beta = b*log(10)
+
+	public static double gr_inv_ratio_rate (double b, double sm1, double sm2, double tm2, double r) {
+		double beta = C_LOG_10 * b;	// log(10) * b
+
+		// Calculate directly, using expm1 and log1p
+
+		return tm2 - ( Math.log1p( Math.expm1(beta*(sm2 - sm1)) * r * Math.exp(beta*(tm2 - sm2)) ) / beta );
+	}
+
+
+
+
 	// Rescale a magnitude value in a Gutenberg-Richter distribution.
 	// Parameters:
 	//  b = Gutenberg-Richter b parameter.

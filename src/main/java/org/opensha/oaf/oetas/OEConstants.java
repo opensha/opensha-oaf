@@ -33,6 +33,8 @@ public class OEConstants {
 
 	public static final double C_LOG_10 = 2.3025850929940457;
 
+
+
 	// A postive magnitude larger than any possible magnitude.
 	// Note: Chosen to be exactly representable in typical floating point
 	// implementations, and in the encoding of CompactEqkRupList.
@@ -53,6 +55,26 @@ public class OEConstants {
 
 	public static final double NO_MAG_NEG_CHECK = -11.75;
 
+
+
+	// A postive magnitude used to represent positive infinity.
+
+	public static final double INFINITE_MAG_POS = 99.9;
+
+	// Use x >= INFINITE_MAG_POS_CHECK to check if x contains INFINITE_MAG_POS.
+
+	public static final double INFINITE_MAG_POS_CHECK = 99.0;
+
+	// A negative magnitude used to represent negative infinity.
+
+	public static final double INFINITE_MAG_NEG = -99.9;
+
+	// Use x <= INFINITE_MAG_NEG_CHECK to check if x contains INFINITE_MAG_NEG.
+
+	public static final double INFINITE_MAG_NEG_CHECK = -99.0;
+
+
+
 	// A time value or difference much larger than any actual value, in days.
 	// (But still much smaller than the range of double.)
 
@@ -65,6 +87,8 @@ public class OEConstants {
 	// The logarithm base 10 of HUGE_TIME_DAYS.
 
 	public static final double LOG10_HUGE_TIME_DAYS = 20;
+
+
 
 	// A duration so extremely small it is considered to be zero.
 	// Note: This is used to avoid divide-by-zero in formulas that have a
@@ -83,6 +107,8 @@ public class OEConstants {
 	// An expected count of earthquakes small enough to treat as zero.
 
 	public static final double SMALL_EXPECTED_COUNT = 0.001;
+
+
 
 	// Methods for infilling event counts below the simulated magnitude range.
 
@@ -105,6 +131,8 @@ public class OEConstants {
 		return "INFILL_METH_INVALID(" + infill_meth + ")";
 	}
 
+
+
 	// Methods for magfilling event counts outside the simulated magnitude range.
 
 	public static final int MAGFILL_METH_MIN			= 1;
@@ -112,7 +140,8 @@ public class OEConstants {
 	public static final int MAGFILL_METH_PDF_ONLY		= 2;	// Use probability distribution function with expected rate over entire mag range
 	public static final int MAGFILL_METH_PDF_HYBRID		= 3;	// Combine counts with a pdf derived from expected rate outside mag range
 	public static final int MAGFILL_METH_PDF_STERILE	= 4;	// Combine counts, sterile ruptures, and a pdf derived from expected rate above mag range
-	public static final int MAGFILL_METH_MAX			= 4;
+	public static final int MAGFILL_METH_PDF_CTU_HYBRID	= 5;	// Combine counts with a pdf derived from expected rate outside mag range, with count-based upfill for probability of occurrence
+	public static final int MAGFILL_METH_MAX			= 5;
 
 	// Return a string describing the magfill method.
 
@@ -122,9 +151,12 @@ public class OEConstants {
 		case MAGFILL_METH_PDF_ONLY: return "MAGFILL_METH_PDF_ONLY";
 		case MAGFILL_METH_PDF_HYBRID: return "MAGFILL_METH_PDF_HYBRID";
 		case MAGFILL_METH_PDF_STERILE: return "MAGFILL_METH_PDF_STERILE";
+		case MAGFILL_METH_PDF_CTU_HYBRID: return "MAGFILL_METH_PDF_CTU_HYBRID";
 		}
 		return "MAGFILL_METH_INVALID(" + magfill_meth + ")";
 	}
+
+
 
 	// Methods for outfilling event counts outside the simulated time range.
 
@@ -144,6 +176,8 @@ public class OEConstants {
 		}
 		return "OUTFILL_METH_INVALID(" + outfill_meth + ")";
 	}
+
+
 
 	// Methods for selecting which catalogs are sufficiently long and determining their time range..
 
@@ -167,6 +201,8 @@ public class OEConstants {
 		}
 		return "CATLEN_METH_INVALID(" + catlen_meth + ")";
 	}
+
+
 
 	// Combine catalog length, outfill, and magfill methods into a single rate accumulation method.
 	// The combined form is three digits: catlen, outfill, magfill.
@@ -230,6 +266,37 @@ public class OEConstants {
 		return true;
 	}
 
+	// Return a string describing the rate accumulation method.
+
+	public static String get_rate_acc_meth_as_string (int rate_acc_meth) {
+		int catlen_meth = rate_acc_meth / 100;
+		int outfill_meth = (rate_acc_meth / 10) % 10;
+		int magfill_meth = rate_acc_meth % 10;
+		if (!( catlen_meth >= CATLEN_METH_MIN && catlen_meth <= CATLEN_METH_MAX
+			&& outfill_meth >= OUTFILL_METH_MIN && outfill_meth <= OUTFILL_METH_MAX
+			&& magfill_meth >= MAGFILL_METH_MIN && magfill_meth <= MAGFILL_METH_MAX
+		)) {
+			return "RATE_ACC_METH_INVALID(" + rate_acc_meth + ")";
+		}
+		return get_catlen_method_as_string (catlen_meth)
+				+ " + " + get_outfill_method_as_string (outfill_meth)
+				+ " + " + get_magfill_method_as_string (magfill_meth);
+	}
+
+
+
+	// Codes for selecting an accumulator
+
+	public static final int SEL_ACCUM_MIN				= 1;
+	public static final int SEL_ACCUM_NONE				= 1;	// No accumulator
+	public static final int SEL_ACCUM_CUM_TIME_MAG		= 2;	// OEAccumCumTimeMag
+	public static final int SEL_ACCUM_VAR_TIME_MAG		= 3;	// OEAccumVarTimeMag
+	public static final int SEL_ACCUM_RATE_TIME_MAG		= 4;	// OEAccumRateTimeMag
+	public static final int SEL_ACCUM_SIM_RANGING		= 5;	// OEAccumSimRanging
+	public static final int SEL_ACCUM_MAX				= 5;
+
+
+
 	// Negligably small time interval, in days, when generating catalogs.
 
 	public static final double GEN_TIME_EPS = 0.00001;
@@ -256,7 +323,9 @@ public class OEConstants {
 
 	// Default magnitude excess for selecting stop time, when generating catalogs; 0.0 if none.
 
-	public static final double DEF_MAG_EXCESS = 4.0;
+	public static final double DEF_MAG_EXCESS = 2.0;
+
+
 
 	// Catalog result codes.
 
@@ -291,6 +360,8 @@ public class OEConstants {
 		}
 		return "CAT_RESULT_INVALID(" + cat_result + ")";
 	}
+
+
 
 	// Options for common Helmstetter parameters.
 
@@ -355,5 +426,15 @@ public class OEConstants {
 		}
 		return capH;
 	}
+
+
+
+	// Model parameter keys
+
+	public static final String MKEY_MAG_MAIN = "magMain";
+	public static final String MKEY_SIM_COUNT = "simCount";
+	public static final String MKEY_SIM_DURATION = "simDuration";
+	public static final String MKEY_SIM_MAG_MIN = "simMagMin";
+	public static final String MKEY_SIM_MAG_MAX = "simMagMax";
 
 }

@@ -26,6 +26,13 @@ public class OECatalogRange {
 
 	public double mag_max_sim;
 
+	// The magnitude excess, or 0.0 if none.
+	// If positive, then a generator can produce ruptures with magnitudes between
+	// mag_max_sim and mag_max_sim + mag_excess, and stop the simulation at the
+	// time of the first such rupture.
+
+	public double mag_excess;
+
 
 
 
@@ -41,6 +48,7 @@ public class OECatalogRange {
 		tend            = 0.0;
 		mag_min_sim     = 0.0;
 		mag_max_sim     = 0.0;
+		mag_excess      = 0.0;
 		return;
 	}
 
@@ -62,12 +70,14 @@ public class OECatalogRange {
 		double tbegin,
 		double tend,
 		double mag_min_sim,
-		double mag_max_sim
+		double mag_max_sim,
+		double mag_excess
 	) {
 		this.tbegin          = tbegin;
 		this.tend            = tend;
 		this.mag_min_sim     = mag_min_sim;
 		this.mag_max_sim     = mag_max_sim;
+		this.mag_excess      = mag_excess;
 	}
 
 
@@ -79,12 +89,14 @@ public class OECatalogRange {
 		double tbegin,
 		double tend,
 		double mag_min_sim,
-		double mag_max_sim
+		double mag_max_sim,
+		double mag_excess
 	) {
 		this.tbegin          = tbegin;
 		this.tend            = tend;
 		this.mag_min_sim     = mag_min_sim;
 		this.mag_max_sim     = mag_max_sim;
+		this.mag_excess      = mag_excess;
 		return this;
 	}
 
@@ -98,6 +110,7 @@ public class OECatalogRange {
 		this.tend            = other.tend;
 		this.mag_min_sim     = other.mag_min_sim;
 		this.mag_max_sim     = other.mag_max_sim;
+		this.mag_excess      = other.mag_excess;
 		return this;
 	}
 
@@ -116,8 +129,71 @@ public class OECatalogRange {
 		result.append ("tend = "            + tend            + "\n");
 		result.append ("mag_min_sim = "     + mag_min_sim     + "\n");
 		result.append ("mag_max_sim = "     + mag_max_sim     + "\n");
+		result.append ("mag_excess = "      + mag_excess      + "\n");
 
 		return result.toString();
+	}
+
+
+
+
+	// Display our contents in a form used for progress reporting.
+
+	public final String progress_string() {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("tbegin = "      + tbegin                      + "\n");
+		result.append ("tend = "        + tend                        + "\n");
+		result.append ("duration = "    + (tend - tbegin)             + "\n");
+		result.append ("mag_min_sim = " + mag_min_sim                 + "\n");
+		result.append ("mag_max_sim = " + mag_max_sim                 + "\n");
+		result.append ("span = "        + (mag_max_sim - mag_min_sim) + "\n");
+		result.append ("mag_excess = "  + mag_excess                  + "\n");
+
+		return result.toString();
+	}
+
+
+
+
+	// Clip the end time to be no more than the supplied value.
+
+	public final void clip_tend (double max_tend) {
+		if (tend > max_tend) {
+			tend = max_tend;
+		}
+		return;
+	}
+
+
+
+
+	// Calculate the minimum magnitude that would change the expected rate by a desired ratio.
+	// Parameters:
+	//  b = Gutenberg-Richter b parameter.
+	//  r = Ratio of expected rates, must satisfy r > 0.
+	// Returns the minimum magnitude that would produce the desired change in rate.
+	// Note: The intended use is to rescale the minimum magnitude to change the
+	// size of generated catalogs; set r = new_size / old_size.
+
+	public final double calc_rescaled_min_mag (double b, double r) {
+		return OERandomGenerator.gr_inv_ratio_rate (b, mag_min_sim, mag_max_sim, mag_max_sim, r);
+	}
+
+
+
+
+	// Set the minimum magnitude to change the expected rate by a desired ratio.
+	// Parameters:
+	//  b = Gutenberg-Richter b parameter.
+	//  r = Ratio of expected rates, must satisfy r > 0.
+	// Sets the minimum magnitude that would produce the desired change in rate.
+	// Note: The intended use is to rescale the minimum magnitude to change the
+	// size of generated catalogs; set r = new_size / old_size.
+
+	public final void set_rescaled_min_mag (double b, double r) {
+		mag_min_sim = calc_rescaled_min_mag (b, r);
+		return;
 	}
 
 
@@ -151,6 +227,7 @@ public class OECatalogRange {
 			writer.marshalDouble ("tend"           , tend           );
 			writer.marshalDouble ("mag_min_sim"    , mag_min_sim    );
 			writer.marshalDouble ("mag_max_sim"    , mag_max_sim    );
+			writer.marshalDouble ("mag_excess"     , mag_excess     );
 
 		}
 		break;
@@ -178,6 +255,7 @@ public class OECatalogRange {
 			tend            = reader.unmarshalDouble ("tend"           );
 			mag_min_sim     = reader.unmarshalDouble ("mag_min_sim"    );
 			mag_max_sim     = reader.unmarshalDouble ("mag_max_sim"    );
+			mag_excess      = reader.unmarshalDouble ("mag_excess"     );
 
 		}
 		break;
@@ -241,6 +319,7 @@ public class OECatalogRange {
 			&& this.tend            == other.tend           
 			&& this.mag_min_sim     == other.mag_min_sim    
 			&& this.mag_max_sim     == other.mag_max_sim    
+			&& this.mag_excess      == other.mag_excess    
 		) {
 			return true;
 		}

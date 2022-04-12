@@ -42,4 +42,30 @@ public interface OEAccumReadoutTimeMag {
 
 	public double[][] get_prob_occur_array (int xcount);
 
+
+
+
+	// Return true if catalog size information is available.
+
+	public default boolean has_cat_size_info () {
+		return false;
+	}
+
+
+
+
+	// Get a fractile for catalog size information.
+	// Parameters:
+	//  fractile = Fractile to find, should be between 0.0 and 1.0.
+	// Returns a 1D array with dimensions r[time_bins].
+	// Each element corresponds to one time bin (which is cumulative by definition).
+	// Each value is an integer N, such that the probability of a catalog containing
+	// N or fewer ruptures is approximately equal to fractile.
+	// Note: The returned array should be newly-allocated and not retained by this object.
+	// Note: Returns null if catalog size information is not available.
+
+	public default int[] get_cat_size_fractile_array (double fractile) {
+		return null;
+	}
+
 }
