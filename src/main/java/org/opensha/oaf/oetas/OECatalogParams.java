@@ -212,6 +212,7 @@ public class OECatalogParams {
 
 
 	// Set all values.
+	// Returns this object.
 
 	public final OECatalogParams set (
 		double a,
@@ -264,6 +265,7 @@ public class OECatalogParams {
 
 
 	// Copy all values from the other object.
+	// Returns this object.
 
 	public final OECatalogParams copy_from (OECatalogParams other) {
 		this.a               = other.a;
@@ -577,6 +579,7 @@ public class OECatalogParams {
 
 
 	// Set to typical values, with some user-adjustable parameters.
+	// Returns this object.
 	// Note: This is primarily for testing.
 
 	public final OECatalogParams set_to_typical (
@@ -626,6 +629,7 @@ public class OECatalogParams {
 	//  msup = Maximum magnitude, also the max mag for parameter definition.
 	//  tbegin = Beginning time for which earthquakes are generated, in days.
 	//  tend = Ending time for which earthquakes are generated, in days.
+	// Returns this object.
 
 	public final OECatalogParams set_to_fixed_mag (
 		double a,
@@ -677,6 +681,7 @@ public class OECatalogParams {
 	//  msup = Maximum magnitude, also the max mag for parameter definition.
 	//  tbegin = Beginning time for which earthquakes are generated, in days.
 	//  tend = Ending time for which earthquakes are generated, in days.
+	// Returns this object.
 
 	public final OECatalogParams set_to_fixed_mag_br (
 		double n,
@@ -710,6 +715,21 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = OEConstants.DEF_MAX_CAT_SIZE;
 		this.mag_excess      = OEConstants.DEF_MAG_EXCESS;
+		return this;
+	}
+
+
+
+
+	// Set the branch ratio, leaving everything else unchanged.
+	// Parameters:
+	//  n = Branch ratio, as computed for these parameters.
+	// Returns this object.
+
+	public final OECatalogParams set_br (
+		double n
+	) {
+		this.a               = OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tend - tbegin);
 		return this;
 	}
 

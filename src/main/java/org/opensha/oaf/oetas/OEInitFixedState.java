@@ -168,6 +168,63 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 
 
+	// Set up to begin seeding, for a single mainshock, with specified mainshock branch ratio.
+	// Parameters:
+	//  the_cat_params = The catalog parameters.
+	//  mag_main = Mainshock magnitude.
+	//  t_main = Mainshock time, in days.
+	//  n_main = Mainshock branch ratio.
+	// Note: The function retains the passed-in parameter structure.
+	// Note: The magnitude range for the first (seed) generation is the_cat_params.mref to
+	// the_cat_params.msup, and that range is used to calculate mainshock productivity k.
+	// Note: Mainshock branch ratio is proportional to 10^ams where ams is mainshock productivity 'a'.
+
+	public void setup_single (OECatalogParams the_cat_params, double mag_main, double t_main, double n_main) {
+
+		// Create the first generation info
+
+		OEGenerationInfo the_seed_gen_info = (new OEGenerationInfo()).set (
+			the_cat_params.mref,	// gen_mag_min
+			the_cat_params.msup		// gen_mag_max
+		);
+
+		// Create a parameter structure with mainshock branch ratio
+
+		OECatalogParams main_cat_params = (new OECatalogParams()).copy_from(the_cat_params).set_br(n_main);
+
+		// Create the mainshock rupture
+
+		OERupture mainshock_rup = new OERupture();
+
+		double k_prod = OEStatsCalc.calc_k_corr (
+			mag_main,			// m0
+			main_cat_params,	// cat_params
+			the_seed_gen_info	// gen_info
+		);
+
+		mainshock_rup.set (
+			t_main,			// t_day
+			mag_main,		// rup_mag
+			k_prod,			// k_prod
+			RUPPAR_SEED,	// rup_parent
+			0.0,			// x_km
+			0.0				// y_km
+		);
+
+		// Create the list of seed ruptures
+
+		ArrayList<OERupture> the_ruptures = new ArrayList<OERupture>();
+		the_ruptures.add (mainshock_rup);
+
+		// Complete the setup
+
+		setup (the_cat_params, the_seed_gen_info, the_ruptures);
+		return;
+	}
+
+
+
+
 	//----- Seeders -----
 
 

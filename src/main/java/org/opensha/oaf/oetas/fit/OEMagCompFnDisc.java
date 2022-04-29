@@ -80,7 +80,7 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 	//   open at the left and closed at the right, so the n-th interval is defined
 	//   by a_time[n-1] < t <= a_time[n].
 	//
-	// * The function is constant in the interval, and a_mag[n].
+	// * The function is constant in the interval, and the function value is a_mag[n].
 
 	// Array of length N-1, containing the start time of each interval (after the first).
 
@@ -1563,7 +1563,7 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 	//   M0  t0  M1  t1  M2  t2  ...  M(N-2)  t(N-2)  M(N-1)
 	// Times must be in strictly increasing order.
 
-	public void build_from_mag_time_array (double[] mag_time_array, double mag_eps, double time_eps) {
+	public final void build_from_mag_time_array (double[] mag_time_array, double mag_eps, double time_eps) {
 
 		// Check the array has an odd number of elements
 
@@ -1612,7 +1612,7 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 	//   M0  t0  M1  t1  M2  t2  ...  M(N-2)  t(N-2)  M(N-1)
 	// Times must be in strictly increasing order.
 
-	public void build_from_mag_time_array (double[] mag_time_array, double mag_eps, double time_eps,
+	public final void build_from_mag_time_array (double[] mag_time_array, double mag_eps, double time_eps,
 											SplitFn split_fn, double[] tsplit_array, boolean[] dlbase_array) {
 
 		// Check the array has an odd number of elements

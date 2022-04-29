@@ -6,6 +6,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Collection;
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OEOmoriCalc;
@@ -313,6 +314,9 @@ public class OEDiscExtFit {
 
 		// Q = exp(v*(mref - mag_min)) * W(v, msup - mref) / W(v, mag_max - mag_min)
 		// where W(x, y) = (exp(x*y) - 1)/x
+		// Note: q_correction is not used within this code, because we always work with
+		// corrected productivities which are assumed to be of the form (10^a)*Q; it is
+		// provided for the convenience of callers.
 
 		private double q_correction;
 
@@ -620,7 +624,7 @@ public class OEDiscExtFit {
 
 		// Clear all variables.
 
-		public void clear () {
+		public final void clear () {
 			b = 0.0;
 			alpha = 0.0;
 
@@ -727,9 +731,9 @@ public class OEDiscExtFit {
 
 
 	// List of MagExponent objects available for re-use.
-	// Threading: Access must be synchronized to allow access from multiple threads.
+	// Threading: Allows access from multiple threads.
 
-	private ArrayDeque<MagExponent> mexp_list;
+	private ConcurrentLinkedDeque<MagExponent> mexp_list;
 
 	// Handle object to obtain or allocate a MagExponent.
 	// The handle should be created in a try-with-resources.
@@ -749,9 +753,7 @@ public class OEDiscExtFit {
 		// Constructor obtains or allocates the MagExponent.
 
 		public MagExponentHandle () {
-			synchronized (mexp_list) {
-				mexp = mexp_list.pollLast();
-			}
+			mexp = mexp_list.pollLast();
 			if (mexp == null) {
 				mexp = new MagExponent();
 			}
@@ -762,9 +764,7 @@ public class OEDiscExtFit {
 		@Override
 		public void close () {
 			if (mexp != null) {
-				synchronized (mexp_list) {
-					mexp_list.addLast (mexp);
-				}
+				mexp_list.addLast (mexp);
 				mexp = null;
 			}
 			return;
@@ -1675,7 +1675,7 @@ public class OEDiscExtFit {
 
 		// Clear all variables.
 
-		public void clear () {
+		public final void clear () {
 			p = 0.0;
 			c = 0.0;
 
@@ -1790,9 +1790,9 @@ public class OEDiscExtFit {
 
 
 	// List of OmoriMatrix objects available for re-use.
-	// Threading: Access must be synchronized to allow access from multiple threads.
+	// Threading: Allows access from multiple threads.
 
-	private ArrayDeque<OmoriMatrix> omat_list;
+	private ConcurrentLinkedDeque<OmoriMatrix> omat_list;
 
 	// Handle object to obtain or allocate an OmoriMatrix.
 	// The handle should be created in a try-with-resources.
@@ -1812,9 +1812,7 @@ public class OEDiscExtFit {
 		// Constructor obtains or allocates the OmoriMatrix.
 
 		public OmoriMatrixHandle () {
-			synchronized (omat_list) {
-				omat = omat_list.pollLast();
-			}
+			omat = omat_list.pollLast();
 			if (omat == null) {
 				omat = new OmoriMatrix();
 			}
@@ -1825,9 +1823,7 @@ public class OEDiscExtFit {
 		@Override
 		public void close () {
 			if (omat != null) {
-				synchronized (omat_list) {
-					omat_list.addLast (omat);
-				}
+				omat_list.addLast (omat);
 				omat = null;
 			}
 			return;
@@ -2007,7 +2003,7 @@ public class OEDiscExtFit {
 
 		// Clear all variables.
 
-		public void clear () {
+		public final void clear () {
 			mexp = null;
 			omat = null;
 
@@ -2126,9 +2122,9 @@ public class OEDiscExtFit {
 
 
 	// List of PairMagOmori objects available for re-use.
-	// Threading: Access must be synchronized to allow access from multiple threads.
+	// Threading: Allows access from multiple threads.
 
-	private ArrayDeque<PairMagOmori> pmom_list;
+	private ConcurrentLinkedDeque<PairMagOmori> pmom_list;
 
 	// Handle object to obtain or allocate n PairMagOmori.
 	// The handle should be created in a try-with-resources.
@@ -2148,9 +2144,7 @@ public class OEDiscExtFit {
 		// Constructor obtains or allocates the PairMagOmori.
 
 		public PairMagOmoriHandle () {
-			synchronized (pmom_list) {
-				pmom = pmom_list.pollLast();
-			}
+			pmom = pmom_list.pollLast();
 			if (pmom == null) {
 				pmom = new PairMagOmori();
 			}
@@ -2161,9 +2155,7 @@ public class OEDiscExtFit {
 		@Override
 		public void close () {
 			if (pmom != null) {
-				synchronized (pmom_list) {
-					pmom_list.addLast (pmom);
-				}
+				pmom_list.addLast (pmom);
 				pmom = null;
 			}
 			return;
@@ -2205,9 +2197,12 @@ public class OEDiscExtFit {
 
 
 
-	// Inner class to process particular pair of the (b, alpha) and (p, c) parameters.
-	// It contains vectors with pre-computed values that depend on both magnitudes and times,
-	// so these values can be re-used with multiple productivity parameters.
+	// Inner class to process particular pair of the (b, alpha) and (p, c) parameters,
+	// with a particular parameter ten_aint_q = (10^a)*Q used for calculating the
+	// productivity of intervals.
+	// It contains vectors with pre-computed values that depend on magnitudes, times,
+	// and interval productivity, so these values can be re-used with multiple
+	// rupture productivity parameter.
 	// Note: This class never modifies anything in the outer class, and so it is possible for
 	// different threads to simultaneously use different objects.
 
@@ -2443,7 +2438,7 @@ public class OEDiscExtFit {
 
 		// Clear all variables.
 
-		public void clear () {
+		public final void clear () {
 			pmom = null;
 
 			like_rup_targ_all_src = null;
@@ -2601,9 +2596,9 @@ public class OEDiscExtFit {
 
 
 	// List of AValueProd objects available for re-use.
-	// Threading: Access must be synchronized to allow access from multiple threads.
+	// Threading: Allows access from multiple threads.
 
-	private ArrayDeque<AValueProd> avpr_list;
+	private ConcurrentLinkedDeque<AValueProd> avpr_list;
 
 	// Handle object to obtain or allocate n AValueProd.
 	// The handle should be created in a try-with-resources.
@@ -2623,9 +2618,7 @@ public class OEDiscExtFit {
 		// Constructor obtains or allocates the AValueProd.
 
 		public AValueProdHandle () {
-			synchronized (avpr_list) {
-				avpr = avpr_list.pollLast();
-			}
+			avpr = avpr_list.pollLast();
 			if (avpr == null) {
 				avpr = new AValueProd();
 			}
@@ -2636,9 +2629,7 @@ public class OEDiscExtFit {
 		@Override
 		public void close () {
 			if (avpr != null) {
-				synchronized (avpr_list) {
-					avpr_list.addLast (avpr);
-				}
+				avpr_list.addLast (avpr);
 				avpr = null;
 			}
 			return;
@@ -2696,7 +2687,7 @@ public class OEDiscExtFit {
 
 	// Clear to default values.
 
-	public void clear () {
+	public final void clear () {
 
 		history = null;
 
@@ -2718,10 +2709,10 @@ public class OEDiscExtFit {
 		f_omat_int_targ_rup_src = true;
 		f_omat_int_targ_int_src = true;
 
-		mexp_list = new ArrayDeque<MagExponent>();
-		omat_list = new ArrayDeque<OmoriMatrix>();
-		pmom_list = new ArrayDeque<PairMagOmori>();
-		avpr_list = new ArrayDeque<AValueProd>();
+		mexp_list = new ConcurrentLinkedDeque<MagExponent>();
+		omat_list = new ConcurrentLinkedDeque<OmoriMatrix>();
+		pmom_list = new ConcurrentLinkedDeque<PairMagOmori>();
+		avpr_list = new ConcurrentLinkedDeque<AValueProd>();
 
 		return;
 	}

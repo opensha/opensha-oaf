@@ -918,7 +918,7 @@ public class OESimulator {
 		// f_prod chooses whether to use production or development simulation parameters.
 		// num_cats, target_size, accum_opt, and exceed_fraction can be zero to use default values.
 		// max_rel_mag and accum_param_1 have a default value of zero.
-		// Same as test #2 except allows setting range_max_rel_mag and range_exceed_fraction.
+		// Same as test #2 except allows setting range_max_rel_mag, range_exceed_fraction, and sim_accum_param_1.
 
 		if (args[0].equalsIgnoreCase ("test3")) {
 
@@ -998,6 +998,159 @@ public class OESimulator {
 
 				OEInitFixedState test_sim_initializer = new OEInitFixedState();
 				test_sim_initializer.setup_single (test_cat_params, mag_main, t_main);
+
+				// Create the simulation parameters
+
+				OESimulationParams test_sim_parameters = (new OESimulationParams()).set_to_typical (f_prod);
+
+				if (num_cats > 0) {
+					test_sim_parameters.sim_num_catalogs = Math.max (100, num_cats);
+					test_sim_parameters.range_num_catalogs = Math.max (100, num_cats/10);
+				}
+
+				if (target_size > 0) {
+					test_sim_parameters.range_target_size = Math.max (100, target_size);
+				}
+
+				if (accum_opt > 0) {
+					test_sim_parameters.sim_accum_option = accum_opt;
+				}
+
+				test_sim_parameters.range_max_rel_mag = max_rel_mag;
+
+				if (exceed_fraction > 0) {
+					test_sim_parameters.range_exceed_fraction = exceed_fraction;
+				}
+
+				test_sim_parameters.sim_accum_param_1 = accum_param_1;
+
+				// Create the executor
+
+				try (
+
+					// Create the executor
+
+					AutoExecutorService auto_executor = new AutoExecutorService();
+				){
+
+					// Run the simulation
+
+					OESimulator simulator = new OESimulator();
+
+					boolean sim_result = simulator.run_simulation (
+						test_sim_initializer,
+						test_sim_parameters,
+						auto_executor
+					);
+
+					// Display result
+
+					System.out.println ();
+					System.out.println ("sim_result = " + sim_result);
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  n  p  c  b  alpha  mag_main  tbegin  f_prod  num_cats  target_size  accum_opt
+		//         max_rel_mag  exceed_fraction  accum_param_1  n_main
+		// Build a catalog with the given parameter, using multiple threads.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then run the simulation.
+		// f_prod chooses whether to use production or development simulation parameters.
+		// num_cats, target_size, accum_opt, and exceed_fraction can be zero to use default values.
+		// max_rel_mag and accum_param_1 have a default value of zero.
+		// Same as test #3 except allows setting mainshock branch ration n_main.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// 15 additional arguments
+
+			if (args.length != 16) {
+				System.err.println ("OESimulator : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				double mag_main = Double.parseDouble (args[6]);
+				double tbegin = Double.parseDouble (args[7]);
+				boolean f_prod = Boolean.parseBoolean (args[8]);
+				int num_cats = Integer.parseInt (args[9]);
+				int target_size = Integer.parseInt (args[10]);
+				int accum_opt = Integer.parseInt (args[11]);
+				double max_rel_mag = Double.parseDouble (args[12]);
+				double exceed_fraction = Double.parseDouble (args[13]);
+				double accum_param_1 = Double.parseDouble (args[14]);
+				double n_main = Double.parseDouble (args[15]);
+
+				// Say hello
+
+				System.out.println ("Running simulation with given parameters");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("mag_main = " + mag_main);
+				System.out.println ("tbegin = " + tbegin);
+				System.out.println ("f_prod = " + f_prod);
+				System.out.println ("num_cats = " + num_cats);
+				System.out.println ("target_size = " + target_size);
+				System.out.println ("accum_opt = " + accum_opt);
+				System.out.println ("max_rel_mag = " + max_rel_mag);
+				System.out.println ("exceed_fraction = " + exceed_fraction);
+				System.out.println ("accum_param_1 = " + accum_param_1);
+				System.out.println ("n_main = " + n_main);
+
+				// Set up catalog parameters
+
+				double mref = 3.0;
+				double msup = 9.5;
+				double tend = OEForecastGrid.get_config_tend (tbegin);
+
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_br (
+					n,
+					p,
+					c,
+					b,
+					alpha,
+					mref,
+					msup,
+					tbegin,
+					tend
+				);
+
+				// Branch ratio checks
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				System.out.println ("a = " + test_cat_params.a);
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Create the initializer
+
+				double t_main = 0.0;
+
+				OEInitFixedState test_sim_initializer = new OEInitFixedState();
+				test_sim_initializer.setup_single (test_cat_params, mag_main, t_main, n_main);
 
 				// Create the simulation parameters
 
