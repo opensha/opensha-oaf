@@ -380,4 +380,318 @@ public class OEStatsCalc {
 
 
 
+	// Calculate the value of (10^a)*Q from the branch ratio.
+	// Parameters:
+	//  n = Branch ratio.
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Reference magnitude = minimum considered magnitude.
+	//  mag_min = Minimum magnitude.
+	//  mag_max = Maximum magnitude.
+	//  tint = Time interval.
+	// This function calculates the productivity "a" such that the branch ratio equals n,
+	// and returns the value of (10^a)*Q.
+	// Note: The result is proportinal to n.  So, if it is desired to compute (10^a)*Q
+	// for multiple values of the branch ratio, this can be done by calling this function
+	// with n == 1, and then multiplying the returned value by each value of the branch ratio.
+	//
+	// The correction factor Q is defined as
+	//
+	//   Q = exp(v*(mref - mag_min)) * ( W(v*(msup - mref)) * (msup - mref) ) / ( W(v*(mag_max - mag_min)) * (mag_max - mag_min) )
+	//
+	//   W(x) = (exp(x) - 1)/x
+	//
+	//   v = log(10) * (alpha - b)
+	//
+	// The branch ratio is
+	//
+	//   n = b * log(10) * 10^a * (msup - mref) * W(v*(msup - mref)) * Integral(0, tint, ((t+c)^(-p))*dt)
+	//
+	// Combining the above formulas
+	//
+	//  (10^a)*Q = n * exp(v*(mref - mag_min)) / ( W(v*(mag_max - mag_min)) * (mag_max - mag_min) * b * log(10) * Integral(0, tint, ((t+c)^(-p))*dt)  )
+
+	public static double calc_ten_a_q_from_branch_ratio (
+		double n,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		double mref,
+		double mag_min,
+		double mag_max,
+		double tint
+	) {
+
+		// Start with the G-R and Omori terms
+
+		double r = b * C_LOG_10 * OERandomGenerator.omori_rate (p, c, 0.0, tint);
+
+		// If the argument to W is very small, use the approximation W = 1
+
+		double v = C_LOG_10 * (alpha - b);
+		double delta_max_min = mag_max - mag_min;
+
+		if (Math.abs(v*delta_max_min) <= 1.0e-16) {
+			r = r * delta_max_min;
+		}
+
+		// Otherwise, use the formula for W
+
+		else {
+			r = r * Math.expm1(v*delta_max_min) / v;
+		}
+
+		// Return (10^a)*Q
+
+		return n * Math.exp(v*(mref - mag_min)) / r;
+	}
+
+
+
+
+	// Calculate the expected direct aftershock count.
+	// Parameters:
+	//  a = Productivity parameter.
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Reference magnitude = minimum considered magnitude.
+	//  msup = Maximum considered magnitude.
+	//  mag_min = Minimum magnitude.
+	//  mag_max = Maximum magnitude.
+	//  m0 = Earthquake (mainshock) magnitude.
+	//  t0 = Earthquake time (in days).
+	//  m1 = Start of magnitude interval.
+	//  m2 = End of magnitude interval.
+	//  t1 = Start of time interval.
+	//  t2 = End of time interval.
+	// Returns the expected number of earthquakes, between magnitudes m1 and m2,
+	// and between times t1 and t1, that are direct aftershocks of the mainshock.
+	// This function uses a corrected k value, under the assumption
+	// that the magnitude m0 is drawn from the range [mag_min, mag_max],
+	// but the "a" value is given for the range [mref, msup].
+	//
+	// The rate of direct aftershocks, per unit time, per unit magnitude, is
+	//
+	//   lambda(t, m) = k_corr * b * log(10) * (10^(-b*(m - mref))) * ((t-t0+c)^(-p))
+	//
+	//   k_corr = 10^(a + alpha*(m0 - mref)) * Q
+	//
+	// where Q is the correction factor defined above.
+	//
+	// The expected count of direct aftershocks is
+	//
+	//   count = Integral (m = m1, m = m2; t = t1, t = t2; lambda(t, m) * dt * dm)
+
+	public static double calc_expected_da_count (
+		double a,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		double mref,
+		double msup,
+		double mag_min,
+		double mag_max,
+		double m0,
+		double t0,
+		double m1,
+		double m2,
+		double t1,
+		double t2
+	) {
+
+		// Corrected productivity
+
+		double k_corr = calc_k_corr (
+			m0,
+			a,
+			b,
+			alpha,
+			mref,
+			msup,
+			mag_min,
+			mag_max
+		);
+
+		// Time integral
+
+		double time_int = OERandomGenerator.omori_rate_shifted (
+			p,
+			c,
+			t0,
+			0.0,
+			t1,
+			t2
+		);
+
+		// Magnitude integral
+
+		double mag_int = OERandomGenerator.gr_rate (
+			b,
+			mref,
+			m1,
+			m2
+		);
+
+		// Return the expected direct aftershock count
+
+		return k_corr * time_int * mag_int;
+	}
+
+
+
+
+	// Calculate the value of (10^a)*Q from the expected direct aftershock count.
+	// Parameters:
+	//  da_count = Expected direct aftershock count.
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Reference magnitude = minimum considered magnitude.
+	//  m0 = Earthquake (mainshock) magnitude.
+	//  t0 = Earthquake time (in days).
+	//  m1 = Start of magnitude interval.
+	//  m2 = End of magnitude interval.
+	//  t1 = Start of time interval.
+	//  t2 = End of time interval.
+	// Computes the value of (10^a)*Q so that da_count is the expected number of
+	// earthquakes, between magnitudes m1 and m2, and between times t1 and t1,
+	// that are direct aftershocks of the mainshock.
+	// This function assumes the use of a corrected k value.
+	// Caution: The function will cause divide-by-zero if the parameters are chosen
+	// so as to produce a zero expected direct aftershock count.
+	// Note: The result is proportinal to da_count.  So, if it is desired to compute (10^a)*Q
+	// for multiple values of the expected direct aftershock count, this can be done by calling
+	// this function with da_count == 1, and then multiplying the returned value by each value
+	// of the expected direct aftershock count.
+
+	public static double calc_ten_a_q_from_expected_da_count (
+		double da_count,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		double mref,
+		double m0,
+		double t0,
+		double m1,
+		double m2,
+		double t1,
+		double t2
+	) {
+
+		// Corrected productivity, excluding the factor of (10^a)*Q
+
+		double partial_k = Math.pow (10.0, alpha*(m0 - mref));
+
+		// Time integral
+
+		double time_int = OERandomGenerator.omori_rate_shifted (
+			p,
+			c,
+			t0,
+			0.0,
+			t1,
+			t2
+		);
+
+		// Magnitude integral
+
+		double mag_int = OERandomGenerator.gr_rate (
+			b,
+			mref,
+			m1,
+			m2
+		);
+
+		// Return (10^a)*Q
+
+		return da_count / (partial_k * time_int * mag_int);
+	}
+
+
+
+
+	// Calculate the correction factor "Q".
+	// Parameters:
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Reference magnitude = minimum considered magnitude.
+	//  msup = Maximum considered magnitude.
+	//  mag_min = Minimum magnitude.
+	//  mag_max = Maximum magnitude.
+	// Returns the value of Q, as defined above.
+
+	public static double calc_q_correction (
+		double b,
+		double alpha,
+		double mref,
+		double msup,
+		double mag_min,
+		double mag_max
+	) {
+
+		// The exponential (first) term in Q
+
+		double v = C_LOG_10 * (alpha - b);
+		double q = Math.exp(v*(mref - mag_min));
+
+		// If the arguments to W are very small, use the approximation W = 1
+
+		double delta_sup_ref = msup - mref;
+		double delta_max_min = mag_max - mag_min;
+
+		if (Math.max (Math.abs(v*delta_sup_ref), Math.abs(v*delta_max_min)) <= 1.0e-16) {
+			q = q * (delta_sup_ref / delta_max_min);
+		}
+
+		// Otherwise, use the formula for W, noting that the factor v cancels out in the fraction
+
+		else {
+			q = q * (Math.expm1(v*delta_sup_ref) / Math.expm1(v*delta_max_min));
+		}
+
+		// Return correction factor Q
+
+		return q;
+	}
+
+
+
+
+	// Calculate the earthquake (mainshock) magnitude from the corrected "k" productivity value.
+	// Parameters:
+	//  k_corr = Corrected "k" productivity value.
+	//  ten_a_q = Value of (10^a)*Q.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Reference magnitude = minimum considered magnitude.
+	// Returns the earthquake (mainshock) magnitude m0 which would produce the
+	// given corrected "k" productivity value.
+	// Note that the magnitude range is implicity in Q.
+	//
+	// The corrected k productivity value is
+	//
+	//   k_corr = 10^(a + alpha*(m0 - mref)) * Q
+
+	public static double calc_m0_from_k_corr (
+		double k_corr,
+		double ten_a_q,
+		double alpha,
+		double mref
+	) {
+
+		// Return m0
+
+		return (Math.log10(k_corr / ten_a_q) / alpha) + mref;
+	}
+
+
+
+
 }

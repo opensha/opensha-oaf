@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 
 import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OEOmoriCalc;
+import org.opensha.oaf.oetas.OEStatsCalc;
 import org.opensha.oaf.oetas.OECatalogParams;
 
 import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;				// natural logarithm of 10
@@ -2116,6 +2117,67 @@ public class OEDiscExtFit {
 			return result.toString();
 		}
 
+
+
+
+		//----- Readout -----
+
+
+
+
+		// Calculate the maximum-likelihood estimate of (10^ams)*Q, assuming no secondary triggering.
+		// This function calculates the mainshock productivity "ams" such that the expected
+		// number of ruptures equals the actual number, and returns the value of (10^ams)*Q,
+		// under the assumption that all ruptures are direct aftershocks of the mainshock(s).
+		// Note: The value of ten_ams_q may be more complicated if non-zero offsets for mainshocks are used.
+
+		public final double pmom_calc_direct_mle_ten_ams_q () {
+
+			// The number of ruptures, in case of zero use 0.1 to avoid returning zero
+
+			double nrup = Math.max (0.1, (double)(like_rup_end - like_rup_begin));
+
+			// The MLE makes the expected number of ruptures equal to nrup, assuming no secondary triggering
+			// Implementation note: See avpr_calc_log_like(), noting that if there is no
+			// secondary triggering then ten_a_q == 0 and ten_aint_q == 0, and therefore
+			// avpr.like_main_int_targ_all_src[0] == pmom.like_main_int_targ_rup_src[0].
+
+			double result = nrup / like_main_int_targ_rup_src[0];
+
+			return result;
+		}
+
+
+
+
+		// Calulcate the value of (10^a)*Q, given the branch ratio.
+		// Parameters:
+		//  n = Branch ratio.
+		//  tint = Time interval to use for the calculation.
+		// This function calculates the productivity "a" such that the branch ratio equals n,
+		// and returns the value of (10^a)*Q.
+		// Note: Typically tint == the maximum of get_like_time_interval() and some minimum time inteval.
+		// Note: The result is proportinal to n.  So, if it is desired to compute (10^a)*Q
+		// for multiple values of the branch ratio, this can be done by calling this function
+		// with n == 1, and then multiplying the returned value by each value of the branch ratio.
+
+		public final double pmom_calc_ten_a_q_from_branch_ratio (
+			double n,
+			double tint
+		) {
+			return OEStatsCalc.calc_ten_a_q_from_branch_ratio (
+				n,
+				omat.p,
+				omat.c,
+				mexp.b,
+				mexp.alpha,
+				mref,
+				mag_min,
+				mag_max,
+				tint
+			);
+		}
+
 	}
 
 
@@ -2179,6 +2241,39 @@ public class OEDiscExtFit {
 		@Override
 		public String toString() {
 			return pmom.toString();
+		}
+
+
+		// Calculate the maximum-likelihood estimate of (10^ams)*Q, assuming no secondary triggering.
+		// This function calculates the mainshock productivity "ams" such that the expected
+		// number of ruptures equals the actual number, and returns the value of (10^ams)*Q,
+		// under the assumption that all ruptures are direct aftershocks of the mainshock(s).
+		// Note: The value of ten_ams_q may be more complicated if non-zero offsets for mainshocks are used.
+
+		public final double pmom_calc_direct_mle_ten_ams_q () {
+			return pmom.pmom_calc_direct_mle_ten_ams_q();
+		}
+
+
+		// Calulcate the value of (10^a)*Q, given the branch ratio.
+		// Parameters:
+		//  n = Branch ratio.
+		//  tint = Time interval to use for the calculation.
+		// This function calculates the productivity "a" such that the branch ratio equals n,
+		// and returns the value of (10^a)*Q.
+		// Note: Typically tint == the maximum of get_like_time_interval() and some minimum time inteval.
+		// Note: The result is proportinal to n.  So, if it is desired to compute (10^a)*Q
+		// for multiple values of the branch ratio, this can be done by calling this function
+		// with n == 1, and then multiplying the returned value by each value of the branch ratio.
+
+		public final double pmom_calc_ten_a_q_from_branch_ratio (
+			double n,
+			double tint
+		) {
+			return pmom.pmom_calc_ten_a_q_from_branch_ratio (
+				n,
+				tint
+			);
 		}
 	
 	}
@@ -2590,6 +2685,46 @@ public class OEDiscExtFit {
 			return result;
 		}
 
+
+
+
+		// Get the unscaled productivity density for each interval, due to non-mainshocks.
+		// Returns a newly-allocated array with length == interval_count.
+		// Each element contains the unscaled productivity density for the corresponding interval.
+		// Multiply by the interval duration to get total productivity (not density).
+		// Multiply by (10^a)*Q to scale the productivity of the non-mainshock source ruptures.
+		// The two multiplications yield the productivity to use for seeding simulations.
+
+		public double[] avpr_get_unscaled_prod_density_int () {
+			final int interval_count = history.interval_count;
+
+			double[] result = new double[interval_count];
+			for (int j = 0; j < interval_count; ++j) {
+				result[j] = prod_int_targ_all_src[j];
+			}
+			return result;
+		}
+
+
+
+
+		// Get the unscaled productivity density for each interval, due to mainshocks.
+		// Returns a newly-allocated array with length == interval_count.
+		// Each element contains the unscaled productivity density for the corresponding interval.
+		// Multiply by the interval duration to get total productivity (not density).
+		// Multiply by (10^ams)*Q to scale the productivity of the mainshock source ruptures.
+		// The two multiplications yield the productivity to use for seeding simulations.
+
+		public double[] avpr_get_unscaled_prod_density_main_int () {
+			final int interval_count = history.interval_count;
+
+			double[] result = new double[interval_count];
+			for (int j = 0; j < interval_count; ++j) {
+				result[j] = prod_main_int_targ_all_src[j];
+			}
+			return result;
+		}
+
 	}
 
 
@@ -2666,6 +2801,30 @@ public class OEDiscExtFit {
 
 		public final double avpr_calc_log_like (final double ten_a_q, final double ten_ams_q) {
 			return avpr.avpr_calc_log_like (ten_a_q, ten_ams_q);
+		}
+
+
+		// Get the unscaled productivity density for each interval, due to non-mainshocks.
+		// Returns a newly-allocated array with length == interval_count.
+		// Each element contains the unscaled productivity density for the corresponding interval.
+		// Multiply by the interval duration to get total productivity (not density).
+		// Multiply by (10^a)*Q to scale the productivity of the non-mainshock source ruptures.
+		// The two multiplications yield the productivity to use for seeding simulations.
+
+		public final double[] avpr_get_unscaled_prod_density_int () {
+			return avpr.avpr_get_unscaled_prod_density_int();
+		}
+
+
+		// Get the unscaled productivity density for each interval, due to mainshocks.
+		// Returns a newly-allocated array with length == interval_count.
+		// Each element contains the unscaled productivity density for the corresponding interval.
+		// Multiply by the interval duration to get total productivity (not density).
+		// Multiply by (10^ams)*Q to scale the productivity of the mainshock source ruptures.
+		// The two multiplications yield the productivity to use for seeding simulations.
+
+		public final double[] avpr_get_unscaled_prod_density_main_int () {
+			return avpr.avpr_get_unscaled_prod_density_main_int();
 		}
 	
 	}
@@ -2825,6 +2984,16 @@ public class OEDiscExtFit {
 		result.append ("mag_max = "                + mag_max                + "\n");
 
 		return result.toString();
+	}
+
+
+
+
+	// Get the time interval used for calculating likelihood.
+
+	public final double get_like_time_interval () {
+		final double[] a_interval_time = history.a_interval_time;
+		return a_interval_time[like_int_end] - a_interval_time[like_int_begin];
 	}
 
 

@@ -264,6 +264,18 @@ public class OEDiscHistory {
 		return a_interval_time[interval_count];
 	}
 
+	// Get the duration of interval n, in days.
+
+	public final double get_intrval_duration (int n) {
+		return a_interval_time[n + 1] - a_interval_time[n];
+	}
+
+	// Get the midpoint of interval n, in days.
+
+	public final double get_intrval_midpoint (int n) {
+		return (a_interval_time[n + 1] + a_interval_time[n]) * 0.5;
+	}
+
 
 
 
