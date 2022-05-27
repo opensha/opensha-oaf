@@ -38,6 +38,11 @@ public class GUISeparatorParameter extends AbstractParameter<Integer> {
 	}
 
 	@Override
+	public boolean isEditorBuilt() {
+		return editor != null;
+	}
+
+	@Override
 	public Object clone() {
 		GUISeparatorParameter param = new GUISeparatorParameter(getName(), getSeparatorColor());
 		return param;

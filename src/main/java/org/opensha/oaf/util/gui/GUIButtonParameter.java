@@ -43,6 +43,11 @@ public class GUIButtonParameter extends AbstractParameter<Integer> {
 		}
 		return editor;
 	}
+
+	@Override
+	public boolean isEditorBuilt() {
+		return editor != null;
+	}
 	
 	public String getButtonText() {
 		return buttonText;

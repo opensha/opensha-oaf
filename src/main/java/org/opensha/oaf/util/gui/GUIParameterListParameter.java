@@ -475,6 +475,7 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	/**
 	 * Returns the name of the parameter class
 	 */
+	@Override
 	public String getType() {
 		String type = this.PARAM_TYPE;
 		return type;
@@ -486,6 +487,7 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	 * of the independent parameter instead).
 	 * @return String
 	 */
+	@Override
 	public String getMetadataString() {
 		return getDependentParamMetadataString();
 	}
@@ -495,11 +497,17 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 		return true;
 	}
 
+	@Override
 	public ParameterEditor<ParameterList> getEditor() {
 		if (paramEdit == null) {
 			paramEdit = new GUIParameterListParameterEditor(this, true, modalDialog, enableTrace);
 		}
 		return paramEdit;
+	}
+
+	@Override
+	public boolean isEditorBuilt() {
+		return paramEdit != null;
 	}
 
 

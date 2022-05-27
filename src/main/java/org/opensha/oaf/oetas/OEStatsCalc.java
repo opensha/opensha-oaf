@@ -393,7 +393,7 @@ public class OEStatsCalc {
 	//  tint = Time interval.
 	// This function calculates the productivity "a" such that the branch ratio equals n,
 	// and returns the value of (10^a)*Q.
-	// Note: The result is proportinal to n.  So, if it is desired to compute (10^a)*Q
+	// Note: The result is proportional to n.  So, if it is desired to compute (10^a)*Q
 	// for multiple values of the branch ratio, this can be done by calling this function
 	// with n == 1, and then multiplying the returned value by each value of the branch ratio.
 	//
@@ -412,6 +412,8 @@ public class OEStatsCalc {
 	// Combining the above formulas
 	//
 	//  (10^a)*Q = n * exp(v*(mref - mag_min)) / ( W(v*(mag_max - mag_min)) * (mag_max - mag_min) * b * log(10) * Integral(0, tint, ((t+c)^(-p))*dt)  )
+	//
+	// Notice that msup cancels out of the calculation.
 
 	public static double calc_ten_a_q_from_branch_ratio (
 		double n,
@@ -566,7 +568,7 @@ public class OEStatsCalc {
 	// This function assumes the use of a corrected k value.
 	// Caution: The function will cause divide-by-zero if the parameters are chosen
 	// so as to produce a zero expected direct aftershock count.
-	// Note: The result is proportinal to da_count.  So, if it is desired to compute (10^a)*Q
+	// Note: The result is proportional to da_count.  So, if it is desired to compute (10^a)*Q
 	// for multiple values of the expected direct aftershock count, this can be done by calling
 	// this function with da_count == 1, and then multiplying the returned value by each value
 	// of the expected direct aftershock count.
@@ -689,6 +691,172 @@ public class OEStatsCalc {
 		// Return m0
 
 		return (Math.log10(k_corr / ten_a_q) / alpha) + mref;
+	}
+
+
+
+
+	// Calculate a new value of "a" for a changed value of the reference magnitude.
+	// Parameters:
+	//  a_old = Productivity parameter, original value.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref_old = Reference magnitude, original value.
+	//  mref_new = Reference magnitude, new value.
+	// Returns a new value of "a", denoted a_new, such that the computed value
+	// of the intensity function "lambda" is unchanged when mref_new is used
+	// as the reference magnitude in place of mref_old.
+	// Note: The result is obtained by adding an offset to a_old.  So, if it is desired
+	// to compute a_new for multiple values of a_old, this can be done by calling the
+	// function with a_old == 0, and then adding the returned value to each value of a_old.
+	//
+	// The new value of "a" is:
+	//
+	//   a_new = a_old + (alpha - b) * (mref_new - mref_old)
+	//
+	// The formula is derived from the condition:
+	//
+	//   10^(a_old + alpha*(m0 - mref_old) - b*(m - mref_old)) == 10^(a_new + alpha*(m0 - mref_new) - b*(m - mref_new))
+
+	public static double calc_a_new_from_mref_new (
+		double a_old,
+		double b,
+		double alpha,
+		double mref_old,
+		double mref_new
+	) {
+		return a_old + ((alpha - b) * (mref_new - mref_old));
+	}
+
+
+
+
+	// Calculate the generalized factor "Q" for a magnitude range change.
+	// Parameters:
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref_old = Reference magnitude, original value.
+	//  mag_min_old = Minimum magnitude, original value.
+	//  mag_max_old = Maximum magnitude, original value.
+	//  mref_new = Reference magnitude, new value.
+	//  mag_min_new = Minimum magnitude, new value.
+	//  mag_max_new = Maximum magnitude, new value.
+	//
+	// Returns the generalized conversion factor Q_gen, defined as:
+	//
+	//   Q_gen = ((10^a_old)*Q_old) / ((10^a_new)*Q_new)
+	//
+	//   a_old = Productivity "a" defined on magnitude range [mref_old, msup_old].
+	//   Q_old = Conversion factor, to change from  [mref_old, msup_old] to  [mag_min_old, mag_max_old].
+	//   a_new = Productivity "a" defined on magnitude range [mref_new, msup_new].
+	//   Q_new = Conversion factor, to change from  [mref_new, msup_new] to  [mag_min_new, mag_max_new].
+	//
+	// The formula is:
+	//
+	//   Q_gen =   [ exp(v*(mref_new - mag_min_new)) * ( W(v*(mag_max_old - mag_min_old)) * (mag_max_old - mag_min_old) ) ]
+	//
+	//           / [ exp(v*(mref_old - mag_min_old)) * ( W(v*(mag_max_new - mag_min_new)) * (mag_max_new - mag_min_new) ) ]
+	//
+	//   W(x) = (exp(x) - 1)/x
+	//
+	//   v = log(10) * (alpha - b)
+	//
+	// Notice that if alpna == b then this reduces to
+	//
+	//   Q_gen = (mag_max_old - mag_min_old) / (mag_max_new - mag_min_new)
+	//
+	// Also notice that msup_old and msup_new do not appear in the formulas.
+	//
+	// This function can be used to convert productivity, which is scaled both
+	// according to reference magnitude and magnitude range.
+	// Typically this would apply to an "a" parameter used for secondary triggering.
+
+	public static double calc_q_gen_for_range_change (
+		double b,
+		double alpha,
+		double mref_old,
+		double mag_min_old,
+		double mag_max_old,
+		double mref_new,
+		double mag_min_new,
+		double mag_max_new
+	) {
+
+		// The exponential terms in Q_gen
+
+		double v = C_LOG_10 * (alpha - b);
+		double q = Math.exp(v*((mref_new - mag_min_new) - (mref_old - mag_min_old)));
+
+		// If the arguments to W are very small, use the approximation W = 1
+
+		double delta_max_min_old = mag_max_old - mag_min_old;
+		double delta_max_min_new = mag_max_new - mag_min_new;
+
+		if (Math.max (Math.abs(v*delta_max_min_old), Math.abs(v*delta_max_min_new)) <= 1.0e-16) {
+			q = q * (delta_max_min_old / delta_max_min_new);
+		}
+
+		// Otherwise, use the formula for W, noting that the factor v cancels out in the fraction
+
+		else {
+			q = q * (Math.expm1(v*delta_max_min_old) / Math.expm1(v*delta_max_min_new));
+		}
+
+		// Return generalized correction factor Q_gen
+
+		return q;
+	}
+
+
+
+
+	// Calculate the generalized factor "Q" for a reference magnitude change only.
+	// Parameters:
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref_old = Reference magnitude, original value.
+	//  mref_new = Reference magnitude, new value.
+	//
+	// Returns the generalized conversion factor Q_gen, defined as:
+	//
+	//   Q_gen = ((10^a_old)*Q_old) / ((10^a_new)*Q_new)
+	//
+	//   a_old = Productivity "a" defined on magnitude range [mref_old, msup_old].
+	//   Q_old = 1.
+	//   a_new = Productivity "a" defined on magnitude range [mref_new, msup_new].
+	//   Q_new = 1.
+	//
+	// The formula is:
+	//
+	//   Q_gen = exp(v*(mref_new - mref_old))
+	//
+	//   v = log(10) * (alpha - b)
+	//
+	// Notice that if alpna == b then this reduces to
+	//
+	//   Q_gen = 1
+	//
+	// Also notice that msup_old and msup_new do not appear in the formulas.
+	//
+	// This function can be used to convert productivity, which is scaled
+	// according to reference magnitude but NOT according to magnitude range.
+	// Typically this would apply to an "ams" parameter used for mainshock triggering.
+
+	public static double calc_q_gen_for_ref_mag_change (
+		double b,
+		double alpha,
+		double mref_old,
+		double mref_new
+	) {
+
+		// The exponential terms in Q_gen
+
+		double v = C_LOG_10 * (alpha - b);
+		double q = Math.exp(v*(mref_new - mref_old));
+
+		// Return generalized correction factor Q_gen
+
+		return q;
 	}
 
 

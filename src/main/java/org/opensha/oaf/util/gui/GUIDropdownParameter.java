@@ -178,6 +178,11 @@ public class GUIDropdownParameter extends AbstractParameter<Integer> {
 		return editor;
 	}
 
+	@Override
+	public boolean isEditorBuilt() {
+		return editor != null;
+	}
+
 
 
 	// Make a clone of this object.
