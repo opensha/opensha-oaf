@@ -1200,6 +1200,46 @@ public class ForecastResults {
 
 	//----- Testing -----
 
+
+
+
+	// Subroutine to display probability distribution for a model.
+	// The output is returned as a string.
+
+	private static String show_prob_dist (RJ_AftershockModel model, double mag, double start_time) {
+		StringBuilder result = new StringBuilder();
+
+		double[] pd_year = model.getDistFuncWithAleatory (mag, start_time, start_time + 365.0);
+		double[] pd_month = model.getDistFuncWithAleatory (mag, start_time, start_time + 30.0);
+		double[] pd_week = model.getDistFuncWithAleatory (mag, start_time, start_time + 7.0);
+		double[] pd_day = model.getDistFuncWithAleatory (mag, start_time, start_time + 1.0);
+
+		int len = 0;
+		len = Math.max (len, pd_year.length);
+		len = Math.max (len, pd_month.length);
+		len = Math.max (len, pd_week.length);
+		len = Math.max (len, pd_day.length);
+
+		len = Math.min (len, 500);		// max length we allow
+
+		for (int n = 0; n < len; ++n) {
+			result.append (String.format (
+				"%4d:  % .4e  % .4e  % .4e  % .4e\n",
+				n,
+				((n < pd_day.length) ? pd_day[n] : 0.0),
+				((n < pd_week.length) ? pd_week[n] : 0.0),
+				((n < pd_month.length) ? pd_month[n] : 0.0),
+				((n < pd_year.length) ? pd_year[n] : 0.0)
+			));
+		}
+
+		return result.toString();
+	}
+
+
+
+
+
 	public static void main(String[] args) {
 
 		// There needs to be at least one argument, which is the subcommand
@@ -1560,6 +1600,106 @@ public class ForecastResults {
 					String event_info = SimpleUtils.event_info_one_line (r_time, r_mag, r_lat, r_lon, r_depth);
 					System.out.println (n + ": " + event_info);
 					++n;
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  event_id  mag  start_time
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then, for each forecast, get the probability distribution for the given
+		// magnitude, starting at the given time in days, for day, week, month, and year,
+		// and display them.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// Three additional argument
+
+			if (args.length != 4) {
+				System.err.println ("ForecastResults : Invalid 'test5' subcommand");
+				return;
+			}
+
+			try {
+
+				String the_event_id = args[1];
+				double mag = Double.parseDouble (args[2]);
+				double start_time = Double.parseDouble (args[3]);
+
+				// Say hello
+
+				System.out.println ("Getting results and probability distributions");
+				System.out.println ("the_event_id = " + the_event_id);
+				System.out.println ("mag = " + mag);
+				System.out.println ("start_time = " + start_time);
+
+				// Fetch just the mainshock info
+
+				ForecastMainshock fcmain = new ForecastMainshock();
+				fcmain.setup_mainshock_only (the_event_id);
+
+				System.out.println ("");
+				System.out.println (fcmain.toString());
+
+				// Set the forecast time to be 7 days after the mainshock
+
+				long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+
+				// Get parameters
+
+				ForecastParameters params = new ForecastParameters();
+				params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+				// Display them
+
+				System.out.println ("");
+				System.out.println (params.toString());
+
+				// Get results
+
+				ForecastResults results = new ForecastResults();
+				results.calc_all (fcmain.mainshock_time + the_forecast_lag, ADVISORY_LAG_WEEK, "test1 injectable.", fcmain, params, true);
+
+				// Display them
+
+				System.out.println ("");
+				System.out.println (results.toString());
+
+				// Generic forecast probabilities
+
+				if (results.generic_result_avail) {
+					System.out.println ("");
+					System.out.println ("Generic forecast probability distribution");
+					System.out.println ("");
+					System.out.println (show_prob_dist (results.generic_model, mag, start_time));
+				}
+
+				// Sequence specific forecast probabilities
+
+				if (results.seq_spec_result_avail) {
+					System.out.println ("");
+					System.out.println ("Sequence specific forecast probability distribution");
+					System.out.println ("");
+					System.out.println (show_prob_dist (results.seq_spec_model, mag, start_time));
+				}
+
+				// Bayesian forecast probabilities
+
+				if (results.bayesian_result_avail) {
+					System.out.println ("");
+					System.out.println ("Bayesian forecast probability distribution");
+					System.out.println ("");
+					System.out.println (show_prob_dist (results.bayesian_model, mag, start_time));
 				}
 
 			} catch (Exception e) {
