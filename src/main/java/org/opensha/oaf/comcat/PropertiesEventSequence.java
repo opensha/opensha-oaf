@@ -23,6 +23,8 @@ import org.opensha.oaf.comcat.ComcatOAFAccessor;
 
 import org.opensha.oaf.pdl.PDLProductBuilderEventSequence;
 import org.opensha.oaf.pdl.PDLSender;
+import org.opensha.oaf.pdl.PDLProductBuilderEventSequenceText;
+import org.opensha.oaf.pdl.PDLProductFile;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
@@ -2643,7 +2645,7 @@ public class PropertiesEventSequence {
 		// Fetch information for an event, and display it.
 		// Then construct a properties object and display it.
 		// Then display the resulting property map.
-		// Then build the product and send it to PDL-development using the specified code.
+		// Then build the product and send it to PDL using the specified code.
 		// Same as test #1 and #5 except it sends the product to PDL.
 
 		if (args[0].equalsIgnoreCase ("test7")) {
@@ -2806,7 +2808,7 @@ public class PropertiesEventSequence {
 		// Fetch information for an event, for a delete product, and display it.
 		// Then construct a properties object and display it.
 		// Then display the resulting property map.
-		// Then build the delete product and send it to PDL-development using the specified code.
+		// Then build the delete product and send it to PDL using the specified code.
 		// Same as test #3 and #6 except it sends the deletion product to PDL.
 
 		if (args[0].equalsIgnoreCase ("test8")) {
@@ -2931,6 +2933,342 @@ public class PropertiesEventSequence {
 
 				if (product == null) {
 					System.out.println ("PDLProductBuilderEventSequence.createDeletionProduct returned null");
+					return;
+				}
+
+				// Sign the product
+
+				PDLSender.signProduct(product);
+
+				// Send the product, true means it is text
+
+				PDLSender.sendProduct(product, true);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #9
+		// Command format:
+		//  test9  event_id  disk_dirname  isReviewed  pdl_code  pdl_enable  [pdl_key_filename]
+		// See test_make_for_mainshock for parameter description
+		// Fetch information for an event, and display it.
+		// Then build a product file list by scanning the given disk directory, and display it.
+		// Then build an event-sequence-text product and send it to PDL using the specified code.
+		// Similar to test #7 except it sends an event-sequence-text product to PDL.
+
+		if (args[0].equalsIgnoreCase ("test9")) {
+
+			// 5 or 6 additional arguments
+
+			if (args.length != 6 && args.length != 7) {
+				System.err.println ("PropertiesEventSequence : Invalid 'test9' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				String disk_dirname = args[2];
+				boolean isReviewed = Boolean.parseBoolean (args[3]);
+				String pdl_code = args[4];
+				int pdl_enable = Integer.parseInt (args[5]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
+				String pdl_key_filename = null;
+				if (args.length >= 7) {
+					pdl_key_filename = args[6];
+				}
+
+				// Say hello
+
+				System.out.println ("Constructing event-sequence-text product for event, and sending to PDL");
+				System.out.println ("event_id: " + event_id);
+				System.out.println ("disk_dirname: " + disk_dirname);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("pdl_code: " + pdl_code);
+				System.out.println ("pdl_enable: " + pdl_enable);
+				System.out.println ("pdl_key_filename: " + ((pdl_key_filename == null) ? "<null>" : pdl_key_filename));
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				System.out.println ("Fetching event: " + event_id);
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+
+				// Get event network and event network code
+
+				JSONObject gj_event = accessor.get_last_geojson();
+
+				String eventNetwork = GeoJsonUtils.getString (gj_event, "properties", "net");
+				if (eventNetwork == null || eventNetwork.isEmpty()) {
+					throw new RuntimeException ("Unable to get event network");
+				}
+
+				String eventCode = GeoJsonUtils.getString (gj_event, "properties", "code");
+				if (eventCode == null || eventCode.isEmpty()) {
+					throw new RuntimeException ("Unable to get event network code");
+				}
+
+				System.out.println ("eventNetwork: " + eventNetwork);
+				System.out.println ("eventCode: " + eventCode);
+				System.out.println ();
+
+				// Build the file tree
+
+				String pdl_dirname = null;
+
+				Map<String, File> pdl_dir_tree = PDLProductFile.build_pdl_dir_tree (disk_dirname, pdl_dirname);
+
+				// Build the list of pdl files
+
+				List<PDLProductFile> pdl_file_list = PDLProductFile.build_file_list_from_tree (pdl_dir_tree);
+
+				// Convert list to array
+
+				PDLProductFile[] pdl_file_array = pdl_file_list.toArray (new PDLProductFile[0]);
+
+				System.out.println ("PDL file list");
+
+				for (PDLProductFile pdl_file : pdl_file_array) {
+					System.out.println (pdl_file.toString());
+				}
+
+				System.out.println ();
+
+				//  // Direct operation to PDL-Development
+				//  
+				//  ServerConfig server_config = new ServerConfig();
+				//  server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DEV;
+
+				// Set the PDL enable code
+
+				if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+					System.out.println ("Invalid pdl_enable = " + pdl_enable);
+					return;
+				}
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+				if (pdl_key_filename != null) {
+
+					if (!( (new File (pdl_key_filename)).canRead() )) {
+						System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+						return;
+					}
+
+					server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+				}
+
+				// Make the PDL product
+
+				Map<String, String> extra_properties = new LinkedHashMap<String, String>();
+				extra_properties.put ("generated-by", VersionInfo.get_one_line_version());
+
+				String jsonText = null;
+				long modifiedTime = 0L;
+
+				Product product = PDLProductBuilderEventSequenceText.createProduct (
+					pdl_code, eventNetwork, eventCode, extra_properties, isReviewed, jsonText, modifiedTime, pdl_file_array);
+
+				// Stop if unable to create product
+
+				if (product == null) {
+					System.out.println ("PDLProductBuilderEventSequenceText.createProduct returned null");
+					return;
+				}
+
+				// Sign the product
+
+				PDLSender.signProduct(product);
+
+				// Send the product, true means it is text
+
+				PDLSender.sendProduct(product, true);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #10
+		// Command format:
+		//  test10  event_id  isReviewed  pdl_code  pdl_enable  [pdl_key_filename]
+		// Fetch information for an event, for a delete product, and display it.
+		// Then build an event-sequence-text delete product and send it to PDL using the specified code.
+		// Similar to test #8 except it sends an event-sequence-text delete product to PDL.
+
+		if (args[0].equalsIgnoreCase ("test10")) {
+
+			// 4 or 5 additional arguments
+
+			if (args.length != 5 && args.length != 6) {
+				System.err.println ("PropertiesEventSequence : Invalid 'test10' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				boolean isReviewed = Boolean.parseBoolean (args[2]);
+				String pdl_code = args[3];
+				int pdl_enable = Integer.parseInt (args[4]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
+				String pdl_key_filename = null;
+				if (args.length >= 6) {
+					pdl_key_filename = args[5];
+				}
+
+				// Say hello
+
+				System.out.println ("Constructing event-sequence-text product for event, for a delete product, and sending to PDL");
+				System.out.println ("event_id: " + event_id);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("pdl_code: " + pdl_code);
+				System.out.println ("pdl_enable: " + pdl_enable);
+				System.out.println ("pdl_key_filename: " + ((pdl_key_filename == null) ? "<null>" : pdl_key_filename));
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				System.out.println ("Fetching event: " + event_id);
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+
+				// Get event network and event network code
+
+				JSONObject gj_event = accessor.get_last_geojson();
+
+				String eventNetwork = GeoJsonUtils.getString (gj_event, "properties", "net");
+				if (eventNetwork == null || eventNetwork.isEmpty()) {
+					throw new RuntimeException ("Unable to get event network");
+				}
+
+				String eventCode = GeoJsonUtils.getString (gj_event, "properties", "code");
+				if (eventCode == null || eventCode.isEmpty()) {
+					throw new RuntimeException ("Unable to get event network code");
+				}
+
+				System.out.println ("eventNetwork: " + eventNetwork);
+				System.out.println ("eventCode: " + eventCode);
+				System.out.println ();
+
+				//  // Direct operation to PDL-Development
+				//  
+				//  ServerConfig server_config = new ServerConfig();
+				//  server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DEV;
+
+				// Set the PDL enable code
+
+				if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+					System.out.println ("Invalid pdl_enable = " + pdl_enable);
+					return;
+				}
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+				if (pdl_key_filename != null) {
+
+					if (!( (new File (pdl_key_filename)).canRead() )) {
+						System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+						return;
+					}
+
+					server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+				}
+
+				// Make the PDL delete product
+
+				Map<String, String> extra_properties = null;
+
+				long modifiedTime = 0L;
+
+				Product product = PDLProductBuilderEventSequenceText.createDeletionProduct (
+					pdl_code, eventNetwork, eventCode, extra_properties, isReviewed, modifiedTime);
+
+				// Stop if unable to create product
+
+				if (product == null) {
+					System.out.println ("PDLProductBuilderEventSequenceText.createDeletionProduct returned null");
 					return;
 				}
 
