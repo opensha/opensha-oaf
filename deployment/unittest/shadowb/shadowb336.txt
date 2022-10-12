@@ -1,0 +1,50 @@
+shadowb336 rj.AftershockStatsShadow test2 usp000fqfm 365
+Fetching event: usp000fqfm
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000fqfm.geojson
+Count of events received = 1
+rup_event_id = usp000fqfm
+rup_time = 1192297553180 (2007-10-13 17:45:53 UTC)
+rup_mag = 6.1
+rup_lat = -21.23
+rup_lon = 169.195
+rup_depth = 37.0
+
+find_shadow_v2 parameters:
+time_now = 1223833553180 (2008-10-12 17:45:53 UTC)
+search_radius = 2000.0
+search_time_lo = 1160761553180 (2006-10-13 17:45:53 UTC)
+search_time_hi = 1223833553180 (2008-10-12 17:45:53 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-10-12T17:45:53.180Z&format=geojson&latitude=-21.23000&limit=20000&longitude=169.19500&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2006-10-13T17:45:53.180Z
+Count of events received = 61
+Count of events after filtering = 60
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 60
+AftershockStatsShadow.find_shadow_v2: Found 60 potential shadowing events for mainshock usp000fqfm
+AftershockStatsShadow.find_shadow_v2: Found 5 candidate shadowing events for mainshock usp000fqfm
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-09-27T01:35:51.970Z&format=geojson&latitude=-21.23000&limit=20000&longitude=169.19500&maxdepth=700.000&maxradius=1.06114&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2007-03-25T00:40:01.610Z
+Count of events received = 311
+Count of events after filtering = 311
+Total number of events returned = 311
+AftershockStatsShadow.find_shadow_v2: Found 311 possible aftershocks within 117.914 km of mainshock usp000fqfm
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000fqfm is shadowed by event usp000fp9t
+AftershockStatsShadow.find_shadow_v2: Mainshock magnitude = 6.10, shadowing event magnitude = 6.50
+AftershockStatsShadow.find_shadow_v2: Distance = 21.362 km, time offset = 15.674 days
+AftershockStatsShadow.find_shadow_v2: Mainshock is an aftershock of event usp000fp9t
+
+Event is shadowed by:
+shadow_event_id = usp000fp9t
+shadow_time = 1190943351970 (2007-09-28 01:35:51 UTC)
+shadow_mag = 6.5
+shadow_lat = -21.133
+shadow_lon = 169.373
+shadow_depth = 10.0
+separation_km = 21.362
+separation_days = 15.674
+seq_end_time_abs = 1192297553180 (2007-10-13 17:45:53 UTC)
+seq_end_time_rel_days = 0.000

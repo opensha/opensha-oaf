@@ -1,0 +1,32 @@
+shadowb137 rj.AftershockStatsShadow test2 usp000gw7m 365
+Fetching event: usp000gw7m
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000gw7m.geojson
+Count of events received = 1
+rup_event_id = usp000gw7m
+rup_time = 1239893826200 (2009-04-16 14:57:06 UTC)
+rup_mag = 6.7
+rup_lat = -60.203
+rup_lon = -26.858
+rup_depth = 20.0
+
+find_shadow_v2 parameters:
+time_now = 1271429826200 (2010-04-16 14:57:06 UTC)
+search_radius = 2000.0
+search_time_lo = 1208357826200 (2008-04-16 14:57:06 UTC)
+search_time_hi = 1271429826200 (2010-04-16 14:57:06 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2010-04-16T14:57:06.200Z&format=geojson&latitude=-60.20300&limit=20000&longitude=-26.85800&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.700&orderby=time&starttime=2008-04-16T14:57:06.200Z
+Count of events received = 3
+Count of events after filtering = 2
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow_v2: Found 2 potential shadowing events for mainshock usp000gw7m
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000gw7m
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000gw7m is not shadowed
+
+Event is not shadowed

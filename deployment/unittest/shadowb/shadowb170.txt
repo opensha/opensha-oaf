@@ -1,0 +1,32 @@
+shadowb170 rj.AftershockStatsShadow test2 usp000b326 365
+Fetching event: usp000b326
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000b326.geojson
+Count of events received = 1
+rup_event_id = usp000b326
+rup_time = 1019646000860 (2002-04-24 11:00:00 UTC)
+rup_mag = 6.2
+rup_lat = -56.135
+rup_lon = -122.312
+rup_depth = 10.0
+
+find_shadow_v2 parameters:
+time_now = 1051182000860 (2003-04-24 11:00:00 UTC)
+search_radius = 2000.0
+search_time_lo = 988110000860 (2001-04-24 11:00:00 UTC)
+search_time_hi = 1051182000860 (2003-04-24 11:00:00 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-04-24T11:00:00.860Z&format=geojson&latitude=-56.13500&limit=20000&longitude=-122.31200&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.200&orderby=time&starttime=2001-04-24T11:00:00.860Z
+Count of events received = 4
+Count of events after filtering = 3
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 3
+AftershockStatsShadow.find_shadow_v2: Found 3 potential shadowing events for mainshock usp000b326
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000b326
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000b326 is not shadowed
+
+Event is not shadowed

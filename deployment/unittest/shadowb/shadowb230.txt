@@ -1,0 +1,50 @@
+shadowb230 rj.AftershockStatsShadow test2 usp000cbvu 365
+Fetching event: usp000cbvu
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000cbvu.geojson
+Count of events received = 1
+rup_event_id = usp000cbvu
+rup_time = 1067751135720 (2003-11-02 05:32:15 UTC)
+rup_mag = 6.4
+rup_lat = -45.19
+rup_lon = 166.535
+rup_depth = 10.0
+
+find_shadow_v2 parameters:
+time_now = 1099287135720 (2004-11-01 05:32:15 UTC)
+search_radius = 2000.0
+search_time_lo = 1036215135720 (2002-11-02 05:32:15 UTC)
+search_time_hi = 1099287135720 (2004-11-01 05:32:15 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2004-11-01T05:32:15.720Z&format=geojson&latitude=-45.19000&limit=20000&longitude=166.53500&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.400&orderby=time&starttime=2002-11-02T05:32:15.720Z
+Count of events received = 2
+Count of events after filtering = 1
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v2: Found 1 potential shadowing events for mainshock usp000cbvu
+AftershockStatsShadow.find_shadow_v2: Found 1 candidate shadowing events for mainshock usp000cbvu
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2004-08-20T12:12:49.790Z&format=geojson&latitude=-45.19000&limit=20000&longitude=166.53500&maxdepth=700.000&maxradius=0.94179&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2003-08-21T12:12:49.790Z
+Count of events received = 159
+Count of events after filtering = 159
+Total number of events returned = 159
+AftershockStatsShadow.find_shadow_v2: Found 159 possible aftershocks within 104.651 km of mainshock usp000cbvu
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000cbvu is shadowed by event usp000c5h6
+AftershockStatsShadow.find_shadow_v2: Mainshock magnitude = 6.40, shadowing event magnitude = 7.20
+AftershockStatsShadow.find_shadow_v2: Distance = 48.676 km, time offset = 72.722 days
+AftershockStatsShadow.find_shadow_v2: Mainshock is an aftershock of event usp000c5h6
+
+Event is shadowed by:
+shadow_event_id = usp000c5h6
+shadow_time = 1061467969790 (2003-08-21 12:12:49 UTC)
+shadow_mag = 7.2
+shadow_lat = -45.104
+shadow_lon = 167.144
+shadow_depth = 28.0
+separation_km = 48.676
+separation_days = 72.722
+seq_end_time_abs = 1067751135720 (2003-11-02 05:32:15 UTC)
+seq_end_time_rel_days = 0.000

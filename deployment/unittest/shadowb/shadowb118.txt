@@ -1,0 +1,32 @@
+shadowb118 rj.AftershockStatsShadow test2 usc000rpfu 365
+Fetching event: usc000rpfu
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usc000rpfu.geojson
+Count of events received = 1
+rup_event_id = usc000rpfu
+rup_time = 1404280409200 (2014-07-02 05:53:29 UTC)
+rup_mag = 6.0
+rup_lat = -62.3014
+rup_lon = 155.1868
+rup_depth = 10.0
+
+find_shadow_v2 parameters:
+time_now = 1435816409200 (2015-07-02 05:53:29 UTC)
+search_radius = 2000.0
+search_time_lo = 1372744409200 (2013-07-02 05:53:29 UTC)
+search_time_hi = 1435816409200 (2015-07-02 05:53:29 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-07-02T05:53:29.200Z&format=geojson&latitude=-62.30140&limit=20000&longitude=155.18680&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.000&orderby=time&starttime=2013-07-02T05:53:29.200Z
+Count of events received = 3
+Count of events after filtering = 2
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow_v2: Found 2 potential shadowing events for mainshock usc000rpfu
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usc000rpfu
+AftershockStatsShadow.find_shadow_v2: Mainshock usc000rpfu is not shadowed
+
+Event is not shadowed

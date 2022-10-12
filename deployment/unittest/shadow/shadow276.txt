@@ -21,11 +21,11 @@ large_mag = 8.0
 
 Finding shadow:
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:51:17.650Z&format=geojson&latitude=-31.66300&limit=20000&longitude=-69.14100&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.000&orderby=time&starttime=2009-02-27T06:51:17.650Z
-Count of events received = 43
-Count of events after filtering = 42
+Count of events received = 42
+Count of events after filtering = 41
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 42
-AftershockStatsShadow.find_shadow: Found 42 potential shadowing events for mainshock usp000h7rj
+Total number of events returned = 41
+AftershockStatsShadow.find_shadow: Found 41 potential shadowing events for mainshock usp000h7rj
 AftershockStatsShadow.find_shadow: Found 1 candidate shadowing events for mainshock usp000h7rj
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-02-27T06:34:11.530Z&format=geojson&latitude=-36.12200&limit=20000&longitude=-72.89800&maxdepth=700.000&maxradius=6.40041&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2010-02-27T06:34:11.530Z
 Count of events received = 2087

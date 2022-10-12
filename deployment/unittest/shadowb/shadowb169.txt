@@ -1,0 +1,32 @@
+shadowb169 rj.AftershockStatsShadow test2 usp000japr 365
+Fetching event: usp000japr
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000japr.geojson
+Count of events received = 1
+rup_event_id = usp000japr
+rup_time = 1321008097480 (2011-11-11 10:41:37 UTC)
+rup_mag = 6.0
+rup_lat = -55.981
+rup_lon = -124.439
+rup_depth = 10.0
+
+find_shadow_v2 parameters:
+time_now = 1352544097480 (2012-11-10 10:41:37 UTC)
+search_radius = 2000.0
+search_time_lo = 1289472097480 (2010-11-11 10:41:37 UTC)
+search_time_hi = 1352544097480 (2012-11-10 10:41:37 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2012-11-10T10:41:37.480Z&format=geojson&latitude=-55.98100&limit=20000&longitude=-124.43900&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.000&orderby=time&starttime=2010-11-11T10:41:37.480Z
+Count of events received = 3
+Count of events after filtering = 2
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow_v2: Found 2 potential shadowing events for mainshock usp000japr
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000japr
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000japr is not shadowed
+
+Event is not shadowed

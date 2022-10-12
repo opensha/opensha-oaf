@@ -1,0 +1,32 @@
+shadowb150 rj.AftershockStatsShadow test2 usp000a7zr 365
+Fetching event: usp000a7zr
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000a7zr.geojson
+Count of events received = 1
+rup_event_id = usp000a7zr
+rup_time = 979895074560 (2001-01-19 09:04:34 UTC)
+rup_mag = 6.0
+rup_lat = -58.161
+rup_lon = -9.472
+rup_depth = 33.0
+
+find_shadow_v2 parameters:
+time_now = 1011431074560 (2002-01-19 09:04:34 UTC)
+search_radius = 2000.0
+search_time_lo = 948359074560 (2000-01-20 09:04:34 UTC)
+search_time_hi = 1011431074560 (2002-01-19 09:04:34 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2002-01-19T09:04:34.560Z&format=geojson&latitude=-58.16100&limit=20000&longitude=-9.47200&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.000&orderby=time&starttime=2000-01-20T09:04:34.560Z
+Count of events received = 4
+Count of events after filtering = 3
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 3
+AftershockStatsShadow.find_shadow_v2: Found 3 potential shadowing events for mainshock usp000a7zr
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000a7zr
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000a7zr is not shadowed
+
+Event is not shadowed

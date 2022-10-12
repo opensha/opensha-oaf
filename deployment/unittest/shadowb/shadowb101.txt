@@ -1,0 +1,34 @@
+shadowb101 rj.AftershockStatsShadow test2 gcmt20150425061126 365
+Fetching event: gcmt20150425061126
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/gcmt20150425061126.geojson
+Count of events received = 1
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson
+Count of events received = 1
+rup_event_id = us20002926
+rup_time = 1429942285950 (2015-04-25 06:11:25 UTC)
+rup_mag = 7.8
+rup_lat = 28.2305
+rup_lon = 84.7314
+rup_depth = 8.22
+
+find_shadow_v2 parameters:
+time_now = 1461478285950 (2016-04-24 06:11:25 UTC)
+search_radius = 2000.0
+search_time_lo = 1398406285950 (2014-04-25 06:11:25 UTC)
+search_time_hi = 1461478285950 (2016-04-24 06:11:25 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-04-24T06:11:25.950Z&format=geojson&latitude=28.23050&limit=20000&longitude=84.73140&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.800&orderby=time&starttime=2014-04-25T06:11:25.950Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v2: Found 0 potential shadowing events for mainshock us20002926
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock us20002926
+AftershockStatsShadow.find_shadow_v2: Mainshock us20002926 is not shadowed
+
+Event is not shadowed

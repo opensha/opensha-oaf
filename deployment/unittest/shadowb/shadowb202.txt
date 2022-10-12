@@ -1,0 +1,32 @@
+shadowb202 rj.AftershockStatsShadow test2 us10002aj3 365
+Fetching event: us10002aj3
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us10002aj3.geojson
+Count of events received = 1
+rup_event_id = us10002aj3
+rup_time = 1432049121080 (2015-05-19 15:25:21 UTC)
+rup_mag = 6.7
+rup_lat = -54.3312
+rup_lon = -132.1618
+rup_depth = 7.2
+
+find_shadow_v2 parameters:
+time_now = 1463585121080 (2016-05-18 15:25:21 UTC)
+search_radius = 2000.0
+search_time_lo = 1400513121080 (2014-05-19 15:25:21 UTC)
+search_time_hi = 1463585121080 (2016-05-18 15:25:21 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-05-18T15:25:21.080Z&format=geojson&latitude=-54.33120&limit=20000&longitude=-132.16180&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.700&orderby=time&starttime=2014-05-19T15:25:21.080Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v2: Found 0 potential shadowing events for mainshock us10002aj3
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock us10002aj3
+AftershockStatsShadow.find_shadow_v2: Mainshock us10002aj3 is not shadowed
+
+Event is not shadowed

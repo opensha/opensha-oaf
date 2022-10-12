@@ -1,0 +1,50 @@
+shadowb225 rj.AftershockStatsShadow test2 usb000tpuw 365
+Fetching event: usb000tpuw
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usb000tpuw.geojson
+Count of events received = 1
+rup_event_id = usb000tpuw
+rup_time = 1424124053590 (2015-02-16 22:00:53 UTC)
+rup_mag = 6.2
+rup_lat = -55.52
+rup_lon = -28.2591
+rup_depth = 13.0
+
+find_shadow_v2 parameters:
+time_now = 1455660053590 (2016-02-16 22:00:53 UTC)
+search_radius = 2000.0
+search_time_lo = 1392588053590 (2014-02-16 22:00:53 UTC)
+search_time_hi = 1455660053590 (2016-02-16 22:00:53 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-02-16T22:00:53.590Z&format=geojson&latitude=-55.52000&limit=20000&longitude=-28.25910&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.200&orderby=time&starttime=2014-02-16T22:00:53.590Z
+Count of events received = 3
+Count of events after filtering = 2
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow_v2: Found 2 potential shadowing events for mainshock usb000tpuw
+AftershockStatsShadow.find_shadow_v2: Found 1 candidate shadowing events for mainshock usb000tpuw
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-06-29T07:52:55.170Z&format=geojson&latitude=-55.52000&limit=20000&longitude=-28.25910&maxdepth=700.000&maxradius=0.39149&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2014-06-29T07:52:55.170Z
+Count of events received = 164
+Count of events after filtering = 164
+Total number of events returned = 164
+AftershockStatsShadow.find_shadow_v2: Found 164 possible aftershocks within 43.503 km of mainshock usb000tpuw
+AftershockStatsShadow.find_shadow_v2: Mainshock usb000tpuw is shadowed by event usc000rngj
+AftershockStatsShadow.find_shadow_v2: Mainshock magnitude = 6.20, shadowing event magnitude = 6.90
+AftershockStatsShadow.find_shadow_v2: Distance = 8.749 km, time offset = 232.589 days
+AftershockStatsShadow.find_shadow_v2: Mainshock is an aftershock of event usc000rngj
+
+Event is shadowed by:
+shadow_event_id = usc000rngj
+shadow_time = 1404028375170 (2014-06-29 07:52:55 UTC)
+shadow_mag = 6.9
+shadow_lat = -55.4703
+shadow_lon = -28.3669
+shadow_depth = 8.0
+separation_km = 8.749
+separation_days = 232.589
+seq_end_time_abs = 1424124053590 (2015-02-16 22:00:53 UTC)
+seq_end_time_rel_days = 0.000

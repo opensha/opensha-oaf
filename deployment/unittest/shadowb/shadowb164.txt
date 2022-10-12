@@ -1,0 +1,32 @@
+shadowb164 rj.AftershockStatsShadow test2 usp000hntb 365
+Fetching event: usp000hntb
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000hntb.geojson
+Count of events received = 1
+rup_event_id = usp000hntb
+rup_time = 1288451913070 (2010-10-30 15:18:33 UTC)
+rup_mag = 6.4
+rup_lat = -56.586
+rup_lon = -142.292
+rup_depth = 10.0
+
+find_shadow_v2 parameters:
+time_now = 1319987913070 (2011-10-30 15:18:33 UTC)
+search_radius = 2000.0
+search_time_lo = 1256915913070 (2009-10-30 15:18:33 UTC)
+search_time_hi = 1319987913070 (2011-10-30 15:18:33 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-10-30T15:18:33.070Z&format=geojson&latitude=-56.58600&limit=20000&longitude=-142.29200&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.400&orderby=time&starttime=2009-10-30T15:18:33.070Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v2: Found 0 potential shadowing events for mainshock usp000hntb
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000hntb
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000hntb is not shadowed
+
+Event is not shadowed

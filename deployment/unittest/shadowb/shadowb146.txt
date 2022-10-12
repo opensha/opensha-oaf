@@ -1,0 +1,32 @@
+shadowb146 rj.AftershockStatsShadow test2 usp000b90t 365
+Fetching event: usp000b90t
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000b90t.geojson
+Count of events received = 1
+rup_event_id = usp000b90t
+rup_time = 1028012107780 (2002-07-30 06:55:07 UTC)
+rup_mag = 6.2
+rup_lat = -57.889
+rup_lon = -23.242
+rup_depth = 33.0
+
+find_shadow_v2 parameters:
+time_now = 1059548107780 (2003-07-30 06:55:07 UTC)
+search_radius = 2000.0
+search_time_lo = 996476107780 (2001-07-30 06:55:07 UTC)
+search_time_hi = 1059548107780 (2003-07-30 06:55:07 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-07-30T06:55:07.780Z&format=geojson&latitude=-57.88900&limit=20000&longitude=-23.24200&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.200&orderby=time&starttime=2001-07-30T06:55:07.780Z
+Count of events received = 5
+Count of events after filtering = 4
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 4
+AftershockStatsShadow.find_shadow_v2: Found 4 potential shadowing events for mainshock usp000b90t
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000b90t
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000b90t is not shadowed
+
+Event is not shadowed

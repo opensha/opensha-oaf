@@ -1,0 +1,32 @@
+shadowb138 rj.AftershockStatsShadow test2 usp000g51j 365
+Fetching event: usp000g51j
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000g51j.geojson
+Count of events received = 1
+rup_event_id = usp000g51j
+rup_time = 1209398275280 (2008-04-28 15:57:55 UTC)
+rup_mag = 6.1
+rup_lat = -58.739
+rup_lon = -24.714
+rup_depth = 35.0
+
+find_shadow_v2 parameters:
+time_now = 1240934275280 (2009-04-28 15:57:55 UTC)
+search_radius = 2000.0
+search_time_lo = 1177862275280 (2007-04-29 15:57:55 UTC)
+search_time_hi = 1240934275280 (2009-04-28 15:57:55 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2009-04-28T15:57:55.280Z&format=geojson&latitude=-58.73900&limit=20000&longitude=-24.71400&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2007-04-29T15:57:55.280Z
+Count of events received = 7
+Count of events after filtering = 6
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 6
+AftershockStatsShadow.find_shadow_v2: Found 6 potential shadowing events for mainshock usp000g51j
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000g51j
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000g51j is not shadowed
+
+Event is not shadowed

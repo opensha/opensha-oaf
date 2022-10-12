@@ -1,0 +1,32 @@
+shadowb108 rj.AftershockStatsShadow test2 nc216859 365
+Fetching event: nc216859
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc216859.geojson
+Count of events received = 1
+rup_event_id = nc216859
+rup_time = 624672255190 (1989-10-18 00:04:15 UTC)
+rup_mag = 6.9
+rup_lat = 37.0361667
+rup_lon = -121.8798333
+rup_depth = 17.214
+
+find_shadow_v2 parameters:
+time_now = 656208255190 (1990-10-18 00:04:15 UTC)
+search_radius = 2000.0
+search_time_lo = 593136255190 (1988-10-18 00:04:15 UTC)
+search_time_hi = 656208255190 (1990-10-18 00:04:15 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1990-10-18T00:04:15.190Z&format=geojson&latitude=37.03617&limit=20000&longitude=-121.87983&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.900&orderby=time&starttime=1988-10-18T00:04:15.190Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v2: Found 0 potential shadowing events for mainshock nc216859
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock nc216859
+AftershockStatsShadow.find_shadow_v2: Mainshock nc216859 is not shadowed
+
+Event is not shadowed

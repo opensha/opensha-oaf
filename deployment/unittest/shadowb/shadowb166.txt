@@ -1,0 +1,32 @@
+shadowb166 rj.AftershockStatsShadow test2 usp000db7t 365
+Fetching event: usp000db7t
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000db7t.geojson
+Count of events received = 1
+rup_event_id = usp000db7t
+rup_time = 1103749419390 (2004-12-22 21:03:39 UTC)
+rup_mag = 6.1
+rup_lat = -55.942
+rup_lon = -124.997
+rup_depth = 10.0
+
+find_shadow_v2 parameters:
+time_now = 1135285419390 (2005-12-22 21:03:39 UTC)
+search_radius = 2000.0
+search_time_lo = 1072213419390 (2003-12-23 21:03:39 UTC)
+search_time_hi = 1135285419390 (2005-12-22 21:03:39 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-12-22T21:03:39.390Z&format=geojson&latitude=-55.94200&limit=20000&longitude=-124.99700&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2003-12-23T21:03:39.390Z
+Count of events received = 5
+Count of events after filtering = 4
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 4
+AftershockStatsShadow.find_shadow_v2: Found 4 potential shadowing events for mainshock usp000db7t
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000db7t
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000db7t is not shadowed
+
+Event is not shadowed

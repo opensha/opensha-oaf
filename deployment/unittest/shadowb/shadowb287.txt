@@ -1,0 +1,32 @@
+shadowb287 rj.AftershockStatsShadow test2 usb000kqnc 365
+Fetching event: usb000kqnc
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usb000kqnc.geojson
+Count of events received = 1
+rup_event_id = usb000kqnc
+rup_time = 1383260639720 (2013-10-31 23:03:59 UTC)
+rup_mag = 6.6
+rup_lat = -30.2921
+rup_lon = -71.5215
+rup_depth = 27.0
+
+find_shadow_v2 parameters:
+time_now = 1414796639720 (2014-10-31 23:03:59 UTC)
+search_radius = 2000.0
+search_time_lo = 1351724639720 (2012-10-31 23:03:59 UTC)
+search_time_hi = 1414796639720 (2014-10-31 23:03:59 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-10-31T23:03:59.720Z&format=geojson&latitude=-30.29210&limit=20000&longitude=-71.52150&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.600&orderby=time&starttime=2012-10-31T23:03:59.720Z
+Count of events received = 8
+Count of events after filtering = 7
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 7
+AftershockStatsShadow.find_shadow_v2: Found 7 potential shadowing events for mainshock usb000kqnc
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usb000kqnc
+AftershockStatsShadow.find_shadow_v2: Mainshock usb000kqnc is not shadowed
+
+Event is not shadowed

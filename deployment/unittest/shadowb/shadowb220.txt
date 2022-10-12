@@ -1,0 +1,50 @@
+shadowb220 rj.AftershockStatsShadow test2 usb000kznc 365
+Fetching event: usb000kznc
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usb000kznc.geojson
+Count of events received = 1
+rup_event_id = usb000kznc
+rup_time = 1384572871230 (2013-11-16 03:34:31 UTC)
+rup_mag = 6.9
+rup_lat = -60.2627
+rup_lon = -47.0621
+rup_depth = 9.97
+
+find_shadow_v2 parameters:
+time_now = 1416108871230 (2014-11-16 03:34:31 UTC)
+search_radius = 2000.0
+search_time_lo = 1353036871230 (2012-11-16 03:34:31 UTC)
+search_time_hi = 1416108871230 (2014-11-16 03:34:31 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-11-16T03:34:31.230Z&format=geojson&latitude=-60.26270&limit=20000&longitude=-47.06210&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.900&orderby=time&starttime=2012-11-16T03:34:31.230Z
+Count of events received = 5
+Count of events after filtering = 4
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 4
+AftershockStatsShadow.find_shadow_v2: Found 4 potential shadowing events for mainshock usb000kznc
+AftershockStatsShadow.find_shadow_v2: Found 1 candidate shadowing events for mainshock usb000kznc
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-11-16T03:34:31.230Z&format=geojson&latitude=-60.26270&limit=20000&longitude=-47.06210&maxdepth=700.000&maxradius=1.44283&mindepth=-5.000&minmagnitude=3.950&orderby=time&starttime=2013-11-17T09:04:55.530Z
+Count of events received = 138
+Count of events after filtering = 138
+Total number of events returned = 138
+AftershockStatsShadow.find_shadow_v2: Found 138 possible aftershocks within 160.327 km of mainshock usb000kznc
+AftershockStatsShadow.find_shadow_v2: Mainshock usb000kznc is shadowed by event usb000l0gq
+AftershockStatsShadow.find_shadow_v2: Mainshock magnitude = 6.90, shadowing event magnitude = 7.70
+AftershockStatsShadow.find_shadow_v2: Distance = 36.448 km, time offset = -1.229 days
+AftershockStatsShadow.find_shadow_v2: Mainshock is a foreshock of event usb000l0gq, relative time = 1.229 days
+
+Event is shadowed by:
+shadow_event_id = usb000l0gq
+shadow_time = 1384679095530 (2013-11-17 09:04:55 UTC)
+shadow_mag = 7.7
+shadow_lat = -60.2738
+shadow_lon = -46.4011
+shadow_depth = 10.0
+separation_km = 36.448
+separation_days = -1.229
+seq_end_time_abs = 1384679095530 (2013-11-17 09:04:55 UTC)
+seq_end_time_rel_days = 1.229

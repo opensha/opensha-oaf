@@ -1,0 +1,32 @@
+shadowb135 rj.AftershockStatsShadow test2 usp000h3er 365
+Fetching event: usp000h3er
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000h3er.geojson
+Count of events received = 1
+rup_event_id = usp000h3er
+rup_time = 1256601886230 (2009-10-27 00:04:46 UTC)
+rup_mag = 6.0
+rup_lat = -59.955
+rup_lon = -65.163
+rup_depth = 10.0
+
+find_shadow_v2 parameters:
+time_now = 1288137886230 (2010-10-27 00:04:46 UTC)
+search_radius = 2000.0
+search_time_lo = 1225065886230 (2008-10-27 00:04:46 UTC)
+search_time_hi = 1288137886230 (2010-10-27 00:04:46 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2010-10-27T00:04:46.230Z&format=geojson&latitude=-59.95500&limit=20000&longitude=-65.16300&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.000&orderby=time&starttime=2008-10-27T00:04:46.230Z
+Count of events received = 2
+Count of events after filtering = 1
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v2: Found 1 potential shadowing events for mainshock usp000h3er
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000h3er
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000h3er is not shadowed
+
+Event is not shadowed

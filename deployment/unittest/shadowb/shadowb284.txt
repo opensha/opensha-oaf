@@ -1,0 +1,32 @@
+shadowb284 rj.AftershockStatsShadow test2 usp000f3zy 365
+Fetching event: usp000f3zy
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000f3zy.geojson
+Count of events received = 1
+rup_event_id = usp000f3zy
+rup_time = 1170213352290 (2007-01-31 03:15:52 UTC)
+rup_mag = 6.5
+rup_lat = -29.776
+rup_lon = -178.002
+rup_depth = 34.0
+
+find_shadow_v2 parameters:
+time_now = 1201749352290 (2008-01-31 03:15:52 UTC)
+search_radius = 2000.0
+search_time_lo = 1138677352290 (2006-01-31 03:15:52 UTC)
+search_time_hi = 1201749352290 (2008-01-31 03:15:52 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-01-31T03:15:52.290Z&format=geojson&latitude=-29.77600&limit=20000&longitude=-178.00200&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.500&orderby=time&starttime=2006-01-31T03:15:52.290Z
+Count of events received = 17
+Count of events after filtering = 16
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 16
+AftershockStatsShadow.find_shadow_v2: Found 16 potential shadowing events for mainshock usp000f3zy
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000f3zy
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000f3zy is not shadowed
+
+Event is not shadowed

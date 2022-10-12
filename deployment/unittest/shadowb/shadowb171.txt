@@ -1,0 +1,32 @@
+shadowb171 rj.AftershockStatsShadow test2 usp000euve 365
+Fetching event: usp000euve
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000euve.geojson
+Count of events received = 1
+rup_event_id = usp000euve
+rup_time = 1160467371950 (2006-10-10 08:02:51 UTC)
+rup_mag = 6.0
+rup_lat = -56.101
+rup_lon = -122.373
+rup_depth = 10.0
+
+find_shadow_v2 parameters:
+time_now = 1192003371950 (2007-10-10 08:02:51 UTC)
+search_radius = 2000.0
+search_time_lo = 1128931371950 (2005-10-10 08:02:51 UTC)
+search_time_hi = 1192003371950 (2007-10-10 08:02:51 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2007-10-10T08:02:51.950Z&format=geojson&latitude=-56.10100&limit=20000&longitude=-122.37300&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.000&orderby=time&starttime=2005-10-10T08:02:51.950Z
+Count of events received = 6
+Count of events after filtering = 5
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 5
+AftershockStatsShadow.find_shadow_v2: Found 5 potential shadowing events for mainshock usp000euve
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000euve
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000euve is not shadowed
+
+Event is not shadowed

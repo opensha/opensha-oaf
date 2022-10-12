@@ -1,0 +1,32 @@
+shadowb124 rj.AftershockStatsShadow test2 usp000ebvn 365
+Fetching event: usp000ebvn
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000ebvn.geojson
+Count of events received = 1
+rup_event_id = usp000ebvn
+rup_time = 1141985538630 (2006-03-10 10:12:18 UTC)
+rup_mag = 6.1
+rup_lat = -60.419
+rup_lon = -46.505
+rup_depth = 10.0
+
+find_shadow_v2 parameters:
+time_now = 1173521538630 (2007-03-10 10:12:18 UTC)
+search_radius = 2000.0
+search_time_lo = 1110449538630 (2005-03-10 10:12:18 UTC)
+search_time_hi = 1173521538630 (2007-03-10 10:12:18 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2007-03-10T10:12:18.630Z&format=geojson&latitude=-60.41900&limit=20000&longitude=-46.50500&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2005-03-10T10:12:18.630Z
+Count of events received = 5
+Count of events after filtering = 4
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 4
+AftershockStatsShadow.find_shadow_v2: Found 4 potential shadowing events for mainshock usp000ebvn
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000ebvn
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000ebvn is not shadowed
+
+Event is not shadowed

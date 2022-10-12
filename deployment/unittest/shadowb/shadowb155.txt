@@ -1,0 +1,32 @@
+shadowb155 rj.AftershockStatsShadow test2 usc000mf4j 365
+Fetching event: usc000mf4j
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usc000mf4j.geojson
+Count of events received = 1
+rup_event_id = usc000mf4j
+rup_time = 1391227123990 (2014-02-01 03:58:43 UTC)
+rup_mag = 6.1
+rup_lat = -56.8269
+rup_lon = -27.3391
+rup_depth = 129.97
+
+find_shadow_v2 parameters:
+time_now = 1422763123990 (2015-02-01 03:58:43 UTC)
+search_radius = 2000.0
+search_time_lo = 1359691123990 (2013-02-01 03:58:43 UTC)
+search_time_hi = 1422763123990 (2015-02-01 03:58:43 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-02-01T03:58:43.990Z&format=geojson&latitude=-56.82690&limit=20000&longitude=-27.33910&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2013-02-01T03:58:43.990Z
+Count of events received = 10
+Count of events after filtering = 9
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 9
+AftershockStatsShadow.find_shadow_v2: Found 9 potential shadowing events for mainshock usc000mf4j
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usc000mf4j
+AftershockStatsShadow.find_shadow_v2: Mainshock usc000mf4j is not shadowed
+
+Event is not shadowed

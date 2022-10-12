@@ -1,0 +1,32 @@
+shadowb221 rj.AftershockStatsShadow test2 usp000bkuv 365
+Fetching event: usp000bkuv
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000bkuv.geojson
+Count of events received = 1
+rup_event_id = usp000bkuv
+rup_time = 1040099573070 (2002-12-17 04:32:53 UTC)
+rup_mag = 6.2
+rup_lat = -56.952
+rup_lon = -24.825
+rup_depth = 10.0
+
+find_shadow_v2 parameters:
+time_now = 1071635573070 (2003-12-17 04:32:53 UTC)
+search_radius = 2000.0
+search_time_lo = 1008563573070 (2001-12-17 04:32:53 UTC)
+search_time_hi = 1071635573070 (2003-12-17 04:32:53 UTC)
+centroid_rel_time_lo = 0
+centroid_rel_time_hi = 31536000000
+centroid_mag_floor = 2.5
+large_mag = 8.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-12-17T04:32:53.070Z&format=geojson&latitude=-56.95200&limit=20000&longitude=-24.82500&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=6.200&orderby=time&starttime=2001-12-17T04:32:53.070Z
+Count of events received = 6
+Count of events after filtering = 5
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 5
+AftershockStatsShadow.find_shadow_v2: Found 5 potential shadowing events for mainshock usp000bkuv
+AftershockStatsShadow.find_shadow_v2: Found 0 candidate shadowing events for mainshock usp000bkuv
+AftershockStatsShadow.find_shadow_v2: Mainshock usp000bkuv is not shadowed
+
+Event is not shadowed
