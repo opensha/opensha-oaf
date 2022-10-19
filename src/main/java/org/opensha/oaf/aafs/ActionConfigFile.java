@@ -60,6 +60,12 @@ import org.opensha.oaf.rj.OAFParameterSet;
  *  "removal_retry_period" = String giving retry interval for checking for forecasts that need to be removed from PDL, in java.time.Duration format.
  *  "removal_event_gap" = String giving gap between processing events with forecasts that may need to be removed from PDL, in java.time.Duration format.
  *  "removal_foreign_block" = String giving time after observing a foreign forecast that removal checks are suppressed, in java.time.Duration format.
+ *  [v2] "evseq_enable" = Option to enable event-sequence: 0 = disable, 1 = enable
+ *  [v2] "evseq_report" = Option for sending event-sequence reports to PDL by default: 0 = no report, 1 = send report.
+ *  [v2] "evseq_lookback" = String giving event-sequence lookback time, in java.time.Duration format.
+ *  [v2] "evseq_lookahead" = String giving event-sequence lookahead time, in java.time.Duration format.
+ *  [v2] "evseq_cap_min_dur" = String giving event-sequence minimum duration when capping, in java.time.Duration format.
+ *  [v2] "evseq_cap_gap" = String giving event-sequence gap before capping event, in java.time.Duration format.
  *  "def_injectable_text" = String giving default value of injectable text for PDL JSON files, or "" for none.
  *	"adv_min_mag_bins" = [ Array giving a list of minimum magnitudes for which forecasts are generated, in increasing order.
  *		element = Real value giving minimum magnitude for the bin.
@@ -273,6 +279,56 @@ public class ActionConfigFile {
 
 	public String def_injectable_text;
 
+	// Option to enable event-sequence products. [v2]
+
+	public static final int ESENA_MIN = 0;
+	public static final int ESENA_DISABLE = 0;		// Completely disable event-sequence products
+	public static final int ESENA_ENABLE = 1;		// Enable sending and deleting event-sequence products
+	public static final int ESENA_MAX = 1;
+
+	private static final int V1_EVSEQ_ENABLE = 0;	// Default value for v1 files
+
+	public int evseq_enable;
+
+	// Option to send event-sequence reports by default. [v2]
+
+	public static final int ESREP_MIN = 0;
+	public static final int ESREP_NO_REPORT = 0;	// Disable sending reports by default
+	public static final int ESREP_REPORT = 1;		// Enable sending reports by default
+	public static final int ESREP_MAX = 1;
+
+	private static final int V1_EVSEQ_REPORT = 1;	// Default value for v1 files
+
+	public int evseq_report;
+
+	// Time before mainshock when an event sequence begins. [v2]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	private static final long V1_EVSEQ_LOOKBACK = 2592000000L;	// Default value for v1 files = 30 days
+
+	public long evseq_lookback;
+
+	// Time after forecast when an event sequence ends. [v2]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	private static final long V1_EVSEQ_LOOKAHEAD = 31536000000L;	// Default value for v1 files = 365 days
+
+	public long evseq_lookahead;
+
+	// Minimum duration of an event sequence (after mainshock) when it is capped. [v2]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	private static final long V1_EVSEQ_CAP_MIN_DUR = 259200000L;	// Default value for v1 files = 3 days
+
+	public long evseq_cap_min_dur;
+
+	// Time before a capping event when an event sequence ends. [v2]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	private static final long V1_EVSEQ_CAP_GAP = 3600000L;	// Default value for v1 files = 1 hour
+
+	public long evseq_cap_gap;
+
 	// Minimum magnitude for advisory magnitude bins.  Must be in increasing order.
 
 	public ArrayList<Double> adv_min_mag_bins;
@@ -374,6 +430,12 @@ public class ActionConfigFile {
 		removal_event_gap = 0L;
 		removal_foreign_block = 0L;
 		def_injectable_text = "";
+		evseq_enable = ESENA_DISABLE;
+		evseq_report = ESREP_NO_REPORT;
+		evseq_lookback = 0L;
+		evseq_lookahead = 0L;
+		evseq_cap_min_dur = 0L;
+		evseq_cap_gap = 0L;
 		adv_min_mag_bins = new ArrayList<Double>();
 		adv_window_start_offs = new ArrayList<Long>();
 		adv_window_end_offs = new ArrayList<Long>();
@@ -532,6 +594,30 @@ public class ActionConfigFile {
 			throw new RuntimeException("ActionConfigFile: Invalid def_injectable_text: " + ((def_injectable_text == null) ? "null" : def_injectable_text));
 		}
 
+		if (!( evseq_enable >= ESENA_MIN && evseq_enable <= ESENA_MAX )) {
+			throw new RuntimeException("ActionConfigFile: Invalid evseq_enable: " + evseq_enable);
+		}
+
+		if (!( evseq_report >= ESREP_MIN && evseq_report <= ESREP_MAX )) {
+			throw new RuntimeException("ActionConfigFile: Invalid evseq_report: " + evseq_report);
+		}
+
+		if (!( is_valid_lag(evseq_lookback) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid evseq_lookback: " + evseq_lookback);
+		}
+
+		if (!( is_valid_lag(evseq_lookahead) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid evseq_lookahead: " + evseq_lookahead);
+		}
+
+		if (!( is_valid_lag(evseq_cap_min_dur) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid evseq_cap_min_dur: " + evseq_cap_min_dur);
+		}
+
+		if (!( is_valid_lag(evseq_cap_gap) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid evseq_cap_gap: " + evseq_cap_gap);
+		}
+
 		int n;
 		long min_lag;
 
@@ -681,6 +767,13 @@ public class ActionConfigFile {
 		result.append ("removal_event_gap = " + Duration.ofMillis(removal_event_gap).toString() + "\n");
 		result.append ("removal_foreign_block = " + Duration.ofMillis(removal_foreign_block).toString() + "\n");
 		result.append ("def_injectable_text = " + ((def_injectable_text == null) ? "null" : def_injectable_text) + "\n");
+
+		result.append ("evseq_enable = " + evseq_enable + "\n");
+		result.append ("evseq_report = " + evseq_report + "\n");
+		result.append ("evseq_lookback = " + Duration.ofMillis(evseq_lookback).toString() + "\n");
+		result.append ("evseq_lookahead = " + Duration.ofMillis(evseq_lookahead).toString() + "\n");
+		result.append ("evseq_cap_min_dur = " + Duration.ofMillis(evseq_cap_min_dur).toString() + "\n");
+		result.append ("evseq_cap_gap = " + Duration.ofMillis(evseq_cap_gap).toString() + "\n");
 
 		result.append ("adv_min_mag_bins = [" + "\n");
 		for (int i = 0; i < adv_min_mag_bins.size(); ++i) {
@@ -993,6 +1086,7 @@ public class ActionConfigFile {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 24001;
+	private static final int MARSHAL_VER_2 = 24002;
 
 	private static final String M_VERSION_NAME = "ActionConfigFile";
 
@@ -1141,58 +1235,126 @@ public class ActionConfigFile {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Contents
 
-		marshal_duration           (writer, "forecast_min_gap"     , forecast_min_gap     );
-		marshal_duration           (writer, "forecast_max_delay"   , forecast_max_delay   );
-		marshal_duration           (writer, "comcat_clock_skew"    , comcat_clock_skew    );
-		marshal_duration           (writer, "comcat_origin_skew"   , comcat_origin_skew   );
-		marshal_duration           (writer, "comcat_retry_min_gap" , comcat_retry_min_gap );
-		marshal_duration           (writer, "comcat_retry_missing" , comcat_retry_missing );
-		marshal_duration           (writer, "seq_spec_min_lag"     , seq_spec_min_lag     );
-		marshal_duration           (writer, "advisory_dur_week"    , advisory_dur_week    );
-		marshal_duration           (writer, "advisory_dur_month"   , advisory_dur_month   );
-		marshal_duration           (writer, "advisory_dur_year"    , advisory_dur_year    );
+		switch (ver) {
 
-		marshal_duration           (writer, "def_max_forecast_lag" , def_max_forecast_lag );
-		marshal_duration           (writer, "withdraw_forecast_lag", withdraw_forecast_lag);
-		writer.marshalInt          (        "stale_forecast_option", stale_forecast_option);
-		writer.marshalDouble       (        "shadow_search_radius" , shadow_search_radius );
-		marshal_duration           (writer, "shadow_lookback_time" , shadow_lookback_time );
-		writer.marshalDouble       (        "shadow_centroid_mag"  , shadow_centroid_mag  );
-		writer.marshalDouble       (        "shadow_large_mag"     , shadow_large_mag     );
-		marshal_duration           (writer, "poll_short_period"    , poll_short_period    );
-		marshal_duration           (writer, "poll_short_lookback"  , poll_short_lookback  );
-		marshal_duration           (writer, "poll_short_intake_gap", poll_short_intake_gap);
-		marshal_duration           (writer, "poll_long_period"     , poll_long_period     );
-		marshal_duration           (writer, "poll_long_lookback"   , poll_long_lookback   );
-		marshal_duration           (writer, "poll_long_intake_gap" , poll_long_intake_gap );
-		marshal_duration           (writer, "pdl_intake_max_age"   , pdl_intake_max_age   );
-		marshal_duration           (writer, "pdl_intake_max_future", pdl_intake_max_future);
-		marshal_duration           (writer, "removal_forecast_age" , removal_forecast_age );
-		marshal_duration           (writer, "removal_update_skew"  , removal_update_skew  );
-		marshal_duration           (writer, "removal_lookback_tmax", removal_lookback_tmax);
-		marshal_duration           (writer, "removal_lookback_tmin", removal_lookback_tmin);
-		writer.marshalDouble       (        "removal_lookback_mag" , removal_lookback_mag );
-		marshal_duration           (writer, "removal_check_period" , removal_check_period );
-		marshal_duration           (writer, "removal_retry_period" , removal_retry_period );
-		marshal_duration           (writer, "removal_event_gap"    , removal_event_gap    );
-		marshal_duration           (writer, "removal_foreign_block", removal_foreign_block);
-		writer.marshalString       (        "def_injectable_text"  , def_injectable_text  );
+		case MARSHAL_VER_1:
 
-		writer.marshalDoubleCollection     ("adv_min_mag_bins"     , adv_min_mag_bins     );
-		marshal_duration_list      (writer, "adv_window_start_offs", adv_window_start_offs);
-		marshal_duration_list      (writer, "adv_window_end_offs"  , adv_window_end_offs  );
-		writer.marshalStringCollection     ("adv_window_names"     , adv_window_names     );
+			marshal_duration           (writer, "forecast_min_gap"     , forecast_min_gap     );
+			marshal_duration           (writer, "forecast_max_delay"   , forecast_max_delay   );
+			marshal_duration           (writer, "comcat_clock_skew"    , comcat_clock_skew    );
+			marshal_duration           (writer, "comcat_origin_skew"   , comcat_origin_skew   );
+			marshal_duration           (writer, "comcat_retry_min_gap" , comcat_retry_min_gap );
+			marshal_duration           (writer, "comcat_retry_missing" , comcat_retry_missing );
+			marshal_duration           (writer, "seq_spec_min_lag"     , seq_spec_min_lag     );
+			marshal_duration           (writer, "advisory_dur_week"    , advisory_dur_week    );
+			marshal_duration           (writer, "advisory_dur_month"   , advisory_dur_month   );
+			marshal_duration           (writer, "advisory_dur_year"    , advisory_dur_year    );
 
-		marshal_duration_list      (writer, "forecast_lags"        , forecast_lags        );
-		marshal_duration_list      (writer, "comcat_retry_lags"    , comcat_retry_lags    );
-		marshal_duration_list      (writer, "comcat_intake_lags"   , comcat_intake_lags   );
-		marshal_duration_list      (writer, "pdl_report_retry_lags", pdl_report_retry_lags);
-		marshal_intake_region_list (writer, "pdl_intake_regions"   , pdl_intake_regions   );
+			marshal_duration           (writer, "def_max_forecast_lag" , def_max_forecast_lag );
+			marshal_duration           (writer, "withdraw_forecast_lag", withdraw_forecast_lag);
+			writer.marshalInt          (        "stale_forecast_option", stale_forecast_option);
+			writer.marshalDouble       (        "shadow_search_radius" , shadow_search_radius );
+			marshal_duration           (writer, "shadow_lookback_time" , shadow_lookback_time );
+			writer.marshalDouble       (        "shadow_centroid_mag"  , shadow_centroid_mag  );
+			writer.marshalDouble       (        "shadow_large_mag"     , shadow_large_mag     );
+			marshal_duration           (writer, "poll_short_period"    , poll_short_period    );
+			marshal_duration           (writer, "poll_short_lookback"  , poll_short_lookback  );
+			marshal_duration           (writer, "poll_short_intake_gap", poll_short_intake_gap);
+			marshal_duration           (writer, "poll_long_period"     , poll_long_period     );
+			marshal_duration           (writer, "poll_long_lookback"   , poll_long_lookback   );
+			marshal_duration           (writer, "poll_long_intake_gap" , poll_long_intake_gap );
+			marshal_duration           (writer, "pdl_intake_max_age"   , pdl_intake_max_age   );
+			marshal_duration           (writer, "pdl_intake_max_future", pdl_intake_max_future);
+			marshal_duration           (writer, "removal_forecast_age" , removal_forecast_age );
+			marshal_duration           (writer, "removal_update_skew"  , removal_update_skew  );
+			marshal_duration           (writer, "removal_lookback_tmax", removal_lookback_tmax);
+			marshal_duration           (writer, "removal_lookback_tmin", removal_lookback_tmin);
+			writer.marshalDouble       (        "removal_lookback_mag" , removal_lookback_mag );
+			marshal_duration           (writer, "removal_check_period" , removal_check_period );
+			marshal_duration           (writer, "removal_retry_period" , removal_retry_period );
+			marshal_duration           (writer, "removal_event_gap"    , removal_event_gap    );
+			marshal_duration           (writer, "removal_foreign_block", removal_foreign_block);
+			writer.marshalString       (        "def_injectable_text"  , def_injectable_text  );
+
+			writer.marshalDoubleCollection     ("adv_min_mag_bins"     , adv_min_mag_bins     );
+			marshal_duration_list      (writer, "adv_window_start_offs", adv_window_start_offs);
+			marshal_duration_list      (writer, "adv_window_end_offs"  , adv_window_end_offs  );
+			writer.marshalStringCollection     ("adv_window_names"     , adv_window_names     );
+
+			marshal_duration_list      (writer, "forecast_lags"        , forecast_lags        );
+			marshal_duration_list      (writer, "comcat_retry_lags"    , comcat_retry_lags    );
+			marshal_duration_list      (writer, "comcat_intake_lags"   , comcat_intake_lags   );
+			marshal_duration_list      (writer, "pdl_report_retry_lags", pdl_report_retry_lags);
+			marshal_intake_region_list (writer, "pdl_intake_regions"   , pdl_intake_regions   );
 	
+			break;
+
+		case MARSHAL_VER_2:
+
+			marshal_duration           (writer, "forecast_min_gap"     , forecast_min_gap     );
+			marshal_duration           (writer, "forecast_max_delay"   , forecast_max_delay   );
+			marshal_duration           (writer, "comcat_clock_skew"    , comcat_clock_skew    );
+			marshal_duration           (writer, "comcat_origin_skew"   , comcat_origin_skew   );
+			marshal_duration           (writer, "comcat_retry_min_gap" , comcat_retry_min_gap );
+			marshal_duration           (writer, "comcat_retry_missing" , comcat_retry_missing );
+			marshal_duration           (writer, "seq_spec_min_lag"     , seq_spec_min_lag     );
+			marshal_duration           (writer, "advisory_dur_week"    , advisory_dur_week    );
+			marshal_duration           (writer, "advisory_dur_month"   , advisory_dur_month   );
+			marshal_duration           (writer, "advisory_dur_year"    , advisory_dur_year    );
+
+			marshal_duration           (writer, "def_max_forecast_lag" , def_max_forecast_lag );
+			marshal_duration           (writer, "withdraw_forecast_lag", withdraw_forecast_lag);
+			writer.marshalInt          (        "stale_forecast_option", stale_forecast_option);
+			writer.marshalDouble       (        "shadow_search_radius" , shadow_search_radius );
+			marshal_duration           (writer, "shadow_lookback_time" , shadow_lookback_time );
+			writer.marshalDouble       (        "shadow_centroid_mag"  , shadow_centroid_mag  );
+			writer.marshalDouble       (        "shadow_large_mag"     , shadow_large_mag     );
+			marshal_duration           (writer, "poll_short_period"    , poll_short_period    );
+			marshal_duration           (writer, "poll_short_lookback"  , poll_short_lookback  );
+			marshal_duration           (writer, "poll_short_intake_gap", poll_short_intake_gap);
+			marshal_duration           (writer, "poll_long_period"     , poll_long_period     );
+			marshal_duration           (writer, "poll_long_lookback"   , poll_long_lookback   );
+			marshal_duration           (writer, "poll_long_intake_gap" , poll_long_intake_gap );
+			marshal_duration           (writer, "pdl_intake_max_age"   , pdl_intake_max_age   );
+			marshal_duration           (writer, "pdl_intake_max_future", pdl_intake_max_future);
+			marshal_duration           (writer, "removal_forecast_age" , removal_forecast_age );
+			marshal_duration           (writer, "removal_update_skew"  , removal_update_skew  );
+			marshal_duration           (writer, "removal_lookback_tmax", removal_lookback_tmax);
+			marshal_duration           (writer, "removal_lookback_tmin", removal_lookback_tmin);
+			writer.marshalDouble       (        "removal_lookback_mag" , removal_lookback_mag );
+			marshal_duration           (writer, "removal_check_period" , removal_check_period );
+			marshal_duration           (writer, "removal_retry_period" , removal_retry_period );
+			marshal_duration           (writer, "removal_event_gap"    , removal_event_gap    );
+			marshal_duration           (writer, "removal_foreign_block", removal_foreign_block);
+			writer.marshalString       (        "def_injectable_text"  , def_injectable_text  );
+
+			writer.marshalInt          (        "evseq_enable"         , evseq_enable         );
+			writer.marshalInt          (        "evseq_report"         , evseq_report         );
+			marshal_duration           (writer, "evseq_lookback"       , evseq_lookback       );
+			marshal_duration           (writer, "evseq_lookahead"      , evseq_lookahead      );
+			marshal_duration           (writer, "evseq_cap_min_dur"    , evseq_cap_min_dur    );
+			marshal_duration           (writer, "evseq_cap_gap"        , evseq_cap_gap        );
+
+			writer.marshalDoubleCollection     ("adv_min_mag_bins"     , adv_min_mag_bins     );
+			marshal_duration_list      (writer, "adv_window_start_offs", adv_window_start_offs);
+			marshal_duration_list      (writer, "adv_window_end_offs"  , adv_window_end_offs  );
+			writer.marshalStringCollection     ("adv_window_names"     , adv_window_names     );
+
+			marshal_duration_list      (writer, "forecast_lags"        , forecast_lags        );
+			marshal_duration_list      (writer, "comcat_retry_lags"    , comcat_retry_lags    );
+			marshal_duration_list      (writer, "comcat_intake_lags"   , comcat_intake_lags   );
+			marshal_duration_list      (writer, "pdl_report_retry_lags", pdl_report_retry_lags);
+			marshal_intake_region_list (writer, "pdl_intake_regions"   , pdl_intake_regions   );
+
+			break;
+		}
+
 		return;
 	}
 
@@ -1202,59 +1364,134 @@ public class ActionConfigFile {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
-		forecast_min_gap      = unmarshal_duration           (reader, "forecast_min_gap"     );
-		forecast_max_delay    = unmarshal_duration           (reader, "forecast_max_delay"   );
-		comcat_clock_skew     = unmarshal_duration           (reader, "comcat_clock_skew"    );
-		comcat_origin_skew    = unmarshal_duration           (reader, "comcat_origin_skew"   );
-		comcat_retry_min_gap  = unmarshal_duration           (reader, "comcat_retry_min_gap" );
-		comcat_retry_missing  = unmarshal_duration           (reader, "comcat_retry_missing" );
-		seq_spec_min_lag      = unmarshal_duration           (reader, "seq_spec_min_lag"     );
-		advisory_dur_week     = unmarshal_duration           (reader, "advisory_dur_week"    );
-		advisory_dur_month    = unmarshal_duration           (reader, "advisory_dur_month"   );
-		advisory_dur_year     = unmarshal_duration           (reader, "advisory_dur_year"    );
+		switch (ver) {
 
-		def_max_forecast_lag  = unmarshal_duration           (reader, "def_max_forecast_lag" );
-		withdraw_forecast_lag = unmarshal_duration           (reader, "withdraw_forecast_lag");
-		stale_forecast_option = reader.unmarshalInt          (        "stale_forecast_option");
-		shadow_search_radius  = reader.unmarshalDouble       (        "shadow_search_radius" );
-		shadow_lookback_time  = unmarshal_duration           (reader, "shadow_lookback_time" );
-		shadow_centroid_mag   = reader.unmarshalDouble       (        "shadow_centroid_mag"  );
-		shadow_large_mag      = reader.unmarshalDouble       (        "shadow_large_mag"     );
-		poll_short_period     = unmarshal_duration           (reader, "poll_short_period"    );
-		poll_short_lookback   = unmarshal_duration           (reader, "poll_short_lookback"  );
-		poll_short_intake_gap = unmarshal_duration           (reader, "poll_short_intake_gap");
-		poll_long_period      = unmarshal_duration           (reader, "poll_long_period"     );
-		poll_long_lookback    = unmarshal_duration           (reader, "poll_long_lookback"   );
-		poll_long_intake_gap  = unmarshal_duration           (reader, "poll_long_intake_gap" );
-		pdl_intake_max_age    = unmarshal_duration           (reader, "pdl_intake_max_age"   );
-		pdl_intake_max_future = unmarshal_duration           (reader, "pdl_intake_max_future");
-		removal_forecast_age  = unmarshal_duration           (reader, "removal_forecast_age" );
-		removal_update_skew   = unmarshal_duration           (reader, "removal_update_skew"  );
-		removal_lookback_tmax = unmarshal_duration           (reader, "removal_lookback_tmax");
-		removal_lookback_tmin = unmarshal_duration           (reader, "removal_lookback_tmin");
-		removal_lookback_mag  = reader.unmarshalDouble       (        "removal_lookback_mag" );
-		removal_check_period  = unmarshal_duration           (reader, "removal_check_period" );
-		removal_retry_period  = unmarshal_duration           (reader, "removal_retry_period" );
-		removal_event_gap     = unmarshal_duration           (reader, "removal_event_gap"    );
-		removal_foreign_block = unmarshal_duration           (reader, "removal_foreign_block");
-		def_injectable_text   = reader.unmarshalString       (        "def_injectable_text"  );
+		case MARSHAL_VER_1:
 
-		adv_min_mag_bins = new ArrayList<Double>();
-		reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
-		adv_window_start_offs = unmarshal_duration_list      (reader, "adv_window_start_offs");
-		adv_window_end_offs   = unmarshal_duration_list      (reader, "adv_window_end_offs"  );
-		adv_window_names = new ArrayList<String>();
-		reader.unmarshalStringCollection                     (        "adv_window_names"     , adv_window_names     );
+			forecast_min_gap      = unmarshal_duration           (reader, "forecast_min_gap"     );
+			forecast_max_delay    = unmarshal_duration           (reader, "forecast_max_delay"   );
+			comcat_clock_skew     = unmarshal_duration           (reader, "comcat_clock_skew"    );
+			comcat_origin_skew    = unmarshal_duration           (reader, "comcat_origin_skew"   );
+			comcat_retry_min_gap  = unmarshal_duration           (reader, "comcat_retry_min_gap" );
+			comcat_retry_missing  = unmarshal_duration           (reader, "comcat_retry_missing" );
+			seq_spec_min_lag      = unmarshal_duration           (reader, "seq_spec_min_lag"     );
+			advisory_dur_week     = unmarshal_duration           (reader, "advisory_dur_week"    );
+			advisory_dur_month    = unmarshal_duration           (reader, "advisory_dur_month"   );
+			advisory_dur_year     = unmarshal_duration           (reader, "advisory_dur_year"    );
 
-		forecast_lags         = unmarshal_duration_list      (reader, "forecast_lags"        );
-		comcat_retry_lags     = unmarshal_duration_list      (reader, "comcat_retry_lags"    );
-		comcat_intake_lags    = unmarshal_duration_list      (reader, "comcat_intake_lags"   );
-		pdl_report_retry_lags = unmarshal_duration_list      (reader, "pdl_report_retry_lags");
-		pdl_intake_regions    = unmarshal_intake_region_list (reader, "pdl_intake_regions"   );
+			def_max_forecast_lag  = unmarshal_duration           (reader, "def_max_forecast_lag" );
+			withdraw_forecast_lag = unmarshal_duration           (reader, "withdraw_forecast_lag");
+			stale_forecast_option = reader.unmarshalInt          (        "stale_forecast_option");
+			shadow_search_radius  = reader.unmarshalDouble       (        "shadow_search_radius" );
+			shadow_lookback_time  = unmarshal_duration           (reader, "shadow_lookback_time" );
+			shadow_centroid_mag   = reader.unmarshalDouble       (        "shadow_centroid_mag"  );
+			shadow_large_mag      = reader.unmarshalDouble       (        "shadow_large_mag"     );
+			poll_short_period     = unmarshal_duration           (reader, "poll_short_period"    );
+			poll_short_lookback   = unmarshal_duration           (reader, "poll_short_lookback"  );
+			poll_short_intake_gap = unmarshal_duration           (reader, "poll_short_intake_gap");
+			poll_long_period      = unmarshal_duration           (reader, "poll_long_period"     );
+			poll_long_lookback    = unmarshal_duration           (reader, "poll_long_lookback"   );
+			poll_long_intake_gap  = unmarshal_duration           (reader, "poll_long_intake_gap" );
+			pdl_intake_max_age    = unmarshal_duration           (reader, "pdl_intake_max_age"   );
+			pdl_intake_max_future = unmarshal_duration           (reader, "pdl_intake_max_future");
+			removal_forecast_age  = unmarshal_duration           (reader, "removal_forecast_age" );
+			removal_update_skew   = unmarshal_duration           (reader, "removal_update_skew"  );
+			removal_lookback_tmax = unmarshal_duration           (reader, "removal_lookback_tmax");
+			removal_lookback_tmin = unmarshal_duration           (reader, "removal_lookback_tmin");
+			removal_lookback_mag  = reader.unmarshalDouble       (        "removal_lookback_mag" );
+			removal_check_period  = unmarshal_duration           (reader, "removal_check_period" );
+			removal_retry_period  = unmarshal_duration           (reader, "removal_retry_period" );
+			removal_event_gap     = unmarshal_duration           (reader, "removal_event_gap"    );
+			removal_foreign_block = unmarshal_duration           (reader, "removal_foreign_block");
+			def_injectable_text   = reader.unmarshalString       (        "def_injectable_text"  );
+
+			evseq_enable          = V1_EVSEQ_ENABLE;
+			evseq_report          = V1_EVSEQ_REPORT;
+			evseq_lookback        = V1_EVSEQ_LOOKBACK;
+			evseq_lookahead       = V1_EVSEQ_LOOKAHEAD;
+			evseq_cap_min_dur     = V1_EVSEQ_CAP_MIN_DUR;
+			evseq_cap_gap         = V1_EVSEQ_CAP_GAP;
+
+			adv_min_mag_bins = new ArrayList<Double>();
+			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
+			adv_window_start_offs = unmarshal_duration_list      (reader, "adv_window_start_offs");
+			adv_window_end_offs   = unmarshal_duration_list      (reader, "adv_window_end_offs"  );
+			adv_window_names = new ArrayList<String>();
+			reader.unmarshalStringCollection                     (        "adv_window_names"     , adv_window_names     );
+
+			forecast_lags         = unmarshal_duration_list      (reader, "forecast_lags"        );
+			comcat_retry_lags     = unmarshal_duration_list      (reader, "comcat_retry_lags"    );
+			comcat_intake_lags    = unmarshal_duration_list      (reader, "comcat_intake_lags"   );
+			pdl_report_retry_lags = unmarshal_duration_list      (reader, "pdl_report_retry_lags");
+			pdl_intake_regions    = unmarshal_intake_region_list (reader, "pdl_intake_regions"   );
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			forecast_min_gap      = unmarshal_duration           (reader, "forecast_min_gap"     );
+			forecast_max_delay    = unmarshal_duration           (reader, "forecast_max_delay"   );
+			comcat_clock_skew     = unmarshal_duration           (reader, "comcat_clock_skew"    );
+			comcat_origin_skew    = unmarshal_duration           (reader, "comcat_origin_skew"   );
+			comcat_retry_min_gap  = unmarshal_duration           (reader, "comcat_retry_min_gap" );
+			comcat_retry_missing  = unmarshal_duration           (reader, "comcat_retry_missing" );
+			seq_spec_min_lag      = unmarshal_duration           (reader, "seq_spec_min_lag"     );
+			advisory_dur_week     = unmarshal_duration           (reader, "advisory_dur_week"    );
+			advisory_dur_month    = unmarshal_duration           (reader, "advisory_dur_month"   );
+			advisory_dur_year     = unmarshal_duration           (reader, "advisory_dur_year"    );
+
+			def_max_forecast_lag  = unmarshal_duration           (reader, "def_max_forecast_lag" );
+			withdraw_forecast_lag = unmarshal_duration           (reader, "withdraw_forecast_lag");
+			stale_forecast_option = reader.unmarshalInt          (        "stale_forecast_option");
+			shadow_search_radius  = reader.unmarshalDouble       (        "shadow_search_radius" );
+			shadow_lookback_time  = unmarshal_duration           (reader, "shadow_lookback_time" );
+			shadow_centroid_mag   = reader.unmarshalDouble       (        "shadow_centroid_mag"  );
+			shadow_large_mag      = reader.unmarshalDouble       (        "shadow_large_mag"     );
+			poll_short_period     = unmarshal_duration           (reader, "poll_short_period"    );
+			poll_short_lookback   = unmarshal_duration           (reader, "poll_short_lookback"  );
+			poll_short_intake_gap = unmarshal_duration           (reader, "poll_short_intake_gap");
+			poll_long_period      = unmarshal_duration           (reader, "poll_long_period"     );
+			poll_long_lookback    = unmarshal_duration           (reader, "poll_long_lookback"   );
+			poll_long_intake_gap  = unmarshal_duration           (reader, "poll_long_intake_gap" );
+			pdl_intake_max_age    = unmarshal_duration           (reader, "pdl_intake_max_age"   );
+			pdl_intake_max_future = unmarshal_duration           (reader, "pdl_intake_max_future");
+			removal_forecast_age  = unmarshal_duration           (reader, "removal_forecast_age" );
+			removal_update_skew   = unmarshal_duration           (reader, "removal_update_skew"  );
+			removal_lookback_tmax = unmarshal_duration           (reader, "removal_lookback_tmax");
+			removal_lookback_tmin = unmarshal_duration           (reader, "removal_lookback_tmin");
+			removal_lookback_mag  = reader.unmarshalDouble       (        "removal_lookback_mag" );
+			removal_check_period  = unmarshal_duration           (reader, "removal_check_period" );
+			removal_retry_period  = unmarshal_duration           (reader, "removal_retry_period" );
+			removal_event_gap     = unmarshal_duration           (reader, "removal_event_gap"    );
+			removal_foreign_block = unmarshal_duration           (reader, "removal_foreign_block");
+			def_injectable_text   = reader.unmarshalString       (        "def_injectable_text"  );
+
+			evseq_enable          = reader.unmarshalInt          (        "evseq_enable"         );
+			evseq_report          = reader.unmarshalInt          (        "evseq_report"         );
+			evseq_lookback        = unmarshal_duration           (reader, "evseq_lookback"       );
+			evseq_lookahead       = unmarshal_duration           (reader, "evseq_lookahead"      );
+			evseq_cap_min_dur     = unmarshal_duration           (reader, "evseq_cap_min_dur"    );
+			evseq_cap_gap         = unmarshal_duration           (reader, "evseq_cap_gap"        );
+
+			adv_min_mag_bins = new ArrayList<Double>();
+			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
+			adv_window_start_offs = unmarshal_duration_list      (reader, "adv_window_start_offs");
+			adv_window_end_offs   = unmarshal_duration_list      (reader, "adv_window_end_offs"  );
+			adv_window_names = new ArrayList<String>();
+			reader.unmarshalStringCollection                     (        "adv_window_names"     , adv_window_names     );
+
+			forecast_lags         = unmarshal_duration_list      (reader, "forecast_lags"        );
+			comcat_retry_lags     = unmarshal_duration_list      (reader, "comcat_retry_lags"    );
+			comcat_intake_lags    = unmarshal_duration_list      (reader, "comcat_intake_lags"   );
+			pdl_report_retry_lags = unmarshal_duration_list      (reader, "pdl_report_retry_lags");
+			pdl_intake_regions    = unmarshal_intake_region_list (reader, "pdl_intake_regions"   );
+
+			break;
+		}
 
 		// Error check
 

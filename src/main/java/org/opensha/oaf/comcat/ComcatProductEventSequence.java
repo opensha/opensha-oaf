@@ -78,6 +78,23 @@ public class ComcatProductEventSequence extends ComcatProduct {
 
 
 
+	// Return the generator, or null if no generator is specified.
+	// Note: An empty string is converted to null, so this never returns an empty string.
+
+	public String get_generator () {
+		String generator = null;
+		if (contains_property (PropertiesEventSequence.EVS_EXTRA_GENERATED_BY)) {
+			generator = propertyStrings.get (PropertiesEventSequence.EVS_EXTRA_GENERATED_BY);
+			if (generator != null && generator.isEmpty()) {
+				generator = null;
+			}
+		}
+		return generator;
+	}
+
+
+
+
 	// Read contents from a GeoJson product.
 	// Parameters:
 	//  gj_product = GeoJson containing the product.

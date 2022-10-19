@@ -757,6 +757,88 @@ public class PropertiesEventSequence {
 
 
 
+	// Return values from cap_end_time.
+
+	public static final int CET_UNCHANGED	= 0;		// the end time was not changed
+	public static final int CET_CAPPED		= 1;		// the end time was reduced (capped)
+	public static final int CET_INVALID		= 2;		// the new end time would be invalid (producing null sequence)
+
+	// Minimum duration of a capped sequence (an absolute minimum, the automatic system should impose a higher minimum)
+
+	private static final long CAP_MIN_DURATION = 60000L;	// 1 minute
+
+	// Cap the end time.
+	// Parameters:
+	//  cap_time = Sequence cap time, in milliseconds since the epoch.
+	// Returns CET_XXXX as above.
+	// If the cap time is at or after the current end time,
+	//  then leave the end time unchanged and return CET_UNCHANGED.
+	// Otherwise, if the cap time is before the current start time or event time plus 1 minute,
+	//  the leave the end time unchanged and return CET_INVALID.
+	// Otherwise, set the end time to the cap time and return CET_CAPPED.
+
+	public final int cap_end_time (long cap_time) {
+
+		// If after current end time, do nothing
+
+		if (has_end_time() && cap_time >= end_time) {
+			return CET_UNCHANGED;
+		}
+
+		// Check cap time would leave a sequence of at least 1 minute
+
+		if (cap_time < start_time + CAP_MIN_DURATION) {
+			return CET_INVALID;
+		}
+
+		if (has_event_time() && cap_time < event_time + CAP_MIN_DURATION) {
+			return CET_INVALID;
+		}
+
+		// Otherwise, set a new end time
+
+		set_end_time (cap_time);		// always returns true
+		return CET_CAPPED;
+	}
+
+	// Check if the end time can be capped.
+	// Parameters:
+	//  cap_time = Sequence cap time, in milliseconds since the epoch.
+	// Returns CET_XXXX as above.
+	// If the cap time is at or after the current end time, return CET_UNCHANGED.
+	// Otherwise, if the cap time is before the current start time or event time plus 1 minute, return CET_INVALID.
+	// Otherwise, return CET_CAPPED.
+	// Note: This function does not modify any properties.
+	// Note: It is guaranteed that a subsequent call to cap_end_time will have the same return value.
+	// Note: If the return is CET_CAPPED, then the end time can be capped by
+	//  calling set_end_time (cap_time), or by calling cap_end_time (cap_time).
+
+	public final int check_cap_end_time (long cap_time) {
+
+		// If after current end time, do nothing
+
+		if (has_end_time() && cap_time >= end_time) {
+			return CET_UNCHANGED;
+		}
+
+		// Check cap time would leave a sequence of at least 1 minute
+
+		if (cap_time < start_time + CAP_MIN_DURATION) {
+			return CET_INVALID;
+		}
+
+		if (has_event_time() && cap_time < event_time + CAP_MIN_DURATION) {
+			return CET_INVALID;
+		}
+
+		// Otherwise, we can cap the end time
+
+		return CET_CAPPED;
+	}
+
+
+
+
 	// Set or clear the title of the sequence, false return indicates bad value.
 
 	public final boolean set_title (String s) {
@@ -1005,10 +1087,53 @@ public class PropertiesEventSequence {
 
 
 
+
 	// Constructor makes an empty object.
 
 	public PropertiesEventSequence () {
 		clear();
+	}
+
+
+
+
+	// Copy the contents from another object.
+	// Returns this object.
+
+	public PropertiesEventSequence copy_from (PropertiesEventSequence other) {
+
+		eventNetwork		= other.eventNetwork;
+		eventCode			= other.eventCode;
+
+		event_time			= other.event_time;
+		s_event_time		= other.s_event_time;
+
+		region_type			= other.region_type;
+
+		circle_longitude	= other.circle_longitude;
+		s_circle_longitude	= other.s_circle_longitude;
+		circle_latitude		= other.circle_latitude;
+		s_circle_latitude	= other.s_circle_latitude;
+		circle_radius_km	= other.circle_radius_km;
+		s_circle_radius_km	= other.s_circle_radius_km;
+
+		maximum_latitude	= other.maximum_latitude;
+		s_maximum_latitude	= other.s_maximum_latitude;
+		minimum_latitude	= other.minimum_latitude;
+		s_minimum_latitude	= other.s_minimum_latitude;
+		maximum_longitude	= other.maximum_longitude;
+		s_maximum_longitude	= other.s_maximum_longitude;
+		minimum_longitude	= other.minimum_longitude;
+		s_minimum_longitude	= other.s_minimum_longitude;
+
+		start_time			= other.start_time;
+		s_start_time		= other.s_start_time;
+		end_time			= other.end_time;
+		s_end_time			= other.s_end_time;
+
+		title				= other.title;
+
+		return this;
 	}
 
 
@@ -1419,6 +1544,88 @@ public class PropertiesEventSequence {
 			return false;
 		}
 		if (!( set_eventCode (s) )) {
+			return false;
+		}
+
+		return true;
+	}
+
+
+
+
+	// Set up from an event network and code, for a delete product.
+	// Parameters:
+	//  the_eventNetwork = Network identifier for the event (for example, "us").
+	//  the_eventCode =  Network code for the event (for example, "10006jv5").
+	// Returns true if success, false if data missing or mis-formatted.
+	// Note: The network and code serve to identifiy the event to which the PDL product is attached.
+	// This function sets the following properties:
+	//  eventNetwork
+	//  eventCode
+	// Other properties are cleared, as needed for a delete product.
+
+	public boolean setup_from_event_network_and_code_for_delete (String the_eventNetwork, String the_eventCode) {
+
+		clear();
+
+		// Event network
+
+		if (the_eventNetwork == null || the_eventNetwork.isEmpty()) {
+			return false;
+		}
+		if (!( set_eventNetwork (the_eventNetwork) )) {
+			return false;
+		}
+
+		// Event network code
+
+		if (the_eventCode == null || the_eventCode.isEmpty()) {
+			return false;
+		}
+		if (!( set_eventCode (the_eventCode) )) {
+			return false;
+		}
+
+		// Check invariant
+
+		if (check_invariant_for_delete() != null) {
+			return false;
+		}
+
+		return true;
+	}
+
+
+
+
+	// Overwrite event network and code,.
+	// Parameters:
+	//  the_eventNetwork = Network identifier for the event (for example, "us").
+	//  the_eventCode =  Network code for the event (for example, "10006jv5").
+	// Returns true if success, false if data missing or mis-formatted.
+	// Note: The network and code serve to identifiy the event to which the PDL product is attached.
+	// This function sets the following properties:
+	//  eventNetwork
+	//  eventCode
+	// Other properties are unchanged.
+
+	public boolean overwrite_event_network_and_code (String the_eventNetwork, String the_eventCode) {
+
+		// Event network
+
+		if (the_eventNetwork == null || the_eventNetwork.isEmpty()) {
+			return false;
+		}
+		if (!( set_eventNetwork (the_eventNetwork) )) {
+			return false;
+		}
+
+		// Event network code
+
+		if (the_eventCode == null || the_eventCode.isEmpty()) {
+			return false;
+		}
+		if (!( set_eventCode (the_eventCode) )) {
 			return false;
 		}
 
@@ -2479,7 +2686,7 @@ public class PropertiesEventSequence {
 				// Make the PDL product
 
 				Map<String, String> extra_properties = new LinkedHashMap<String, String>();
-				extra_properties.put ("generated-by", VersionInfo.get_one_line_version());
+				extra_properties.put (PropertiesEventSequence.EVS_EXTRA_GENERATED_BY, VersionInfo.get_generator_name());
 
 				String jsonText = null;
 				long modifiedTime = 0L;
@@ -2768,7 +2975,7 @@ public class PropertiesEventSequence {
 				// Make the PDL product
 
 				Map<String, String> extra_properties = new LinkedHashMap<String, String>();
-				extra_properties.put ("generated-by", VersionInfo.get_one_line_version());
+				extra_properties.put (PropertiesEventSequence.EVS_EXTRA_GENERATED_BY, VersionInfo.get_generator_name());
 
 				String jsonText = null;
 				long modifiedTime = 0L;
@@ -3103,7 +3310,7 @@ public class PropertiesEventSequence {
 				// Make the PDL product
 
 				Map<String, String> extra_properties = new LinkedHashMap<String, String>();
-				extra_properties.put ("generated-by", VersionInfo.get_one_line_version());
+				extra_properties.put (PropertiesEventSequence.EVS_EXTRA_GENERATED_BY, VersionInfo.get_generator_name());
 
 				String jsonText = null;
 				long modifiedTime = 0L;

@@ -13,7 +13,7 @@ public class VersionInfo  {
 
 	// Program version.
 
-	public static final String program_version = "Version 1.00.1459 (10/11/2022)";
+	public static final String program_version = "Version 1.00.1463 (10/19/2022)";
 
 	// Program sponsor.
 
@@ -29,7 +29,7 @@ public class VersionInfo  {
 
 	// Build.
 
-	public static final int build = 1459;
+	public static final int build = 1463;
 
 
 
@@ -43,10 +43,17 @@ public class VersionInfo  {
 	}
 
 
-	// Get a one-line name and version
+	// Get a one-line name and version.
 
 	public static String get_one_line_version () {
 		return program_name + ", " + program_version;
+	}
+
+
+	// Get a one-line generator name and version.
+
+	public static String get_generator_name () {
+		return String.format ("%s %d.%02d.%04d", program_name, major_version, minor_version, build);
 	}
 
 }

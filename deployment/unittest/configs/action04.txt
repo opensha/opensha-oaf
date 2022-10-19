@@ -36,6 +36,12 @@ removal_retry_period = PT30M
 removal_event_gap = PT2M
 removal_foreign_block = PT720H
 def_injectable_text = 
+evseq_enable = 1
+evseq_report = 1
+evseq_lookback = PT720H
+evseq_lookahead = PT8760H
+evseq_cap_min_dur = PT72H
+evseq_cap_gap = PT1H
 adv_min_mag_bins = [
   0:  3.0
   1:  4.0
@@ -359,6 +365,8 @@ IntakeSphRegion
 
 skip_stale_forecasts = false
 omit_stale_forecasts = true
+is_evseq_enabled = true
+is_evseq_reported = true
 pdl_intake_region_min_min_mag = 4.0
 pdl_intake_region_min_intake_mag = 3.75
 max_adv_window_end_off = 31536000000

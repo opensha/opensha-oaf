@@ -1595,7 +1595,7 @@ public class ForecastData {
 			// Make the PDL product
 
 			Map<String, String> extra_properties = new LinkedHashMap<String, String>();
-			extra_properties.put (PropertiesEventSequence.EVS_EXTRA_GENERATED_BY, VersionInfo.get_one_line_version());
+			extra_properties.put (PropertiesEventSequence.EVS_EXTRA_GENERATED_BY, VersionInfo.get_generator_name());
 
 			String jsonText = null;
 			long modifiedTime = 0L;

@@ -22,7 +22,7 @@ import org.opensha.oaf.rj.OAFParameterSet;
  *
  * Parameters come from a configuration file, in the format of ActionConfigFile.
  */
-public class ActionConfig {
+public final class ActionConfig {
 
 	//----- Parameter set -----
 
@@ -352,6 +352,58 @@ public class ActionConfig {
 		return param_set.def_injectable_text;
 	}
 
+	// Get option to enable event-sequence products. [v2]
+
+	public int get_evseq_enable () {
+		return param_set.evseq_enable;
+	}
+
+	// Get flag, indicating if event-sequence products are enabled. [v2]
+
+	public boolean get_is_evseq_enabled () {
+		return param_set.evseq_enable == ActionConfigFile.ESENA_ENABLE;
+	}
+
+	// Get option to send event-sequence reports by default. [v2]
+
+	public int get_evseq_report () {
+		return param_set.evseq_report;
+	}
+
+	// Get flag, indicating if event-sequence reports are sent by default. [v2]
+
+	public boolean get_is_evseq_reported () {
+		return param_set.evseq_report == ActionConfigFile.ESREP_REPORT;
+	}
+
+	// Get time before mainshock when an event sequence begins. [v2]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_evseq_lookback () {
+		return param_set.evseq_lookback;
+	}
+
+	// Get time after forecast when an event sequence ends. [v2]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_evseq_lookahead () {
+		return param_set.evseq_lookahead;
+	}
+
+	// Get minimum duration of an event sequence (after mainshock) when it is capped. [v2]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_evseq_cap_min_dur () {
+		return param_set.evseq_cap_min_dur;
+	}
+
+	// Get time before a capping event when an event sequence ends. [v2]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_evseq_cap_gap () {
+		return param_set.evseq_cap_gap;
+	}
+
 	// Get the number of advisory magnitude bins.
 
 	public int get_adv_min_mag_bin_count () {
@@ -675,6 +727,8 @@ public class ActionConfig {
 			System.out.println ("");
 			System.out.println ("skip_stale_forecasts = " + action_config.get_skip_stale_forecasts());
 			System.out.println ("omit_stale_forecasts = " + action_config.get_omit_stale_forecasts());
+			System.out.println ("is_evseq_enabled = " + action_config.get_is_evseq_enabled());
+			System.out.println ("is_evseq_reported = " + action_config.get_is_evseq_reported());
 			System.out.println ("pdl_intake_region_min_min_mag = " + action_config.get_pdl_intake_region_min_min_mag());
 			System.out.println ("pdl_intake_region_min_intake_mag = " + action_config.get_pdl_intake_region_min_intake_mag());
 			System.out.println ("max_adv_window_end_off = " + action_config.get_max_adv_window_end_off());
