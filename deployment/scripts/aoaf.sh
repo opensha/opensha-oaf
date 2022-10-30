@@ -279,7 +279,7 @@ q_load_oaf_config () {
     val_OSTYPE_CENTOS="centos"
 
     # The local IP address, as returned by hostname.
-    # val_LOCAL_IP="$(hostname -I)"
+    # val_LOCAL_IP="$(hostname -I | cut -d' ' -f1)"
 
     # The local account, as returned by whoami.
     val_LOCAL_ACCOUNT="$(whoami)"
@@ -607,11 +607,11 @@ q_load_oaf_config () {
 
     if [ "$my_IS_SECONDARY_SERVER" == "$val_YES" ]; then
         if [ -z "$SERVER_IP_2" ]; then
-            SERVER_IP_2="$(hostname -I)"
+            SERVER_IP_2="$(hostname -I | cut -d' ' -f1)"
         fi
     else
         if [ -z "$SERVER_IP_1" ]; then
-            SERVER_IP_1="$(hostname -I)"
+            SERVER_IP_1="$(hostname -I | cut -d' ' -f1)"
         fi
     fi
 
@@ -1167,7 +1167,7 @@ q_install_mongo_44 () {
 
 # Install MongoDB, version 5.0.
 
-q_install_mongo () {
+q_install_mongo_50 () {
     echo "Installing MongoDB..."
 
     # Check if MongoDB is already installed
@@ -1200,7 +1200,7 @@ q_install_mongo () {
 
         sudo yum install -y mongodb-org
 
-        # Download and install the MongoDB shell
+        # Download and install the MongoDB shell (might already be installed)
 
         sudo yum install -y mongodb-mongosh
 
@@ -1222,7 +1222,7 @@ q_install_mongo () {
 
         sudo apt-get -y install mongodb-org
 
-        # Download and install the MongoDB shell
+        # Download and install the MongoDB shell (might already be installed)
 
         sudo apt-get -y install mongodb-mongosh
 
@@ -1244,7 +1244,195 @@ q_install_mongo () {
 
         sudo yum install -y mongodb-org
 
-        # Download and install the MongoDB shell
+        # Download and install the MongoDB shell (might already be installed)
+
+        sudo yum install -y mongodb-mongosh
+
+        # Enable MongoDB startup and shutdown without a password
+
+        q_ensure_temp_work_dir
+        echo "%${val_LOCAL_ACCOUNT} ALL=NOPASSWD: /usr/sbin/service mongod start" > "$val_TEMP_WORK_DIR/aftershock_sudo"
+        echo "%${val_LOCAL_ACCOUNT} ALL=NOPASSWD: /usr/sbin/service mongod stop" >> "$val_TEMP_WORK_DIR/aftershock_sudo"
+        sudo cp -f "$val_TEMP_WORK_DIR/aftershock_sudo" /etc/sudoers.d
+        sudo chmod 440 /etc/sudoers.d/aftershock_sudo
+
+    fi
+
+    if [ ! -f "$my_MONGO_CONF_FILE" ]; then
+        echo "MongoDB failed to install"
+        exit 1
+    fi
+
+    # If MongoDB is running now, stop it
+
+    echo "Pausing 20 seconds..."
+    sleep 20
+
+    if q_is_mongo_running ; then
+        q_do_stop_mongo
+
+        echo "Pausing 10 seconds..."
+        sleep 10
+    fi
+
+    # Change ownership of the MongoDB data and log directories
+
+    sudo chown -R "${my_MONGO_LOCAL_ACCOUNT}:${my_MONGO_LOCAL_ACCOUNT}" /data/aafs/mongodata
+    sudo chown -R "${my_MONGO_LOCAL_ACCOUNT}:${my_MONGO_LOCAL_ACCOUNT}" /data/aafs/mongolog
+
+    # If SELinux needs to be configured...
+
+    if [ "$my_IS_SELINUX" == "$val_YES" ]; then
+
+        # Install checkmodule if needed
+
+        if [ ! -f /usr/bin/checkmodule ]; then
+            sudo yum install -y checkpolicy
+        fi
+
+        if [ ! -f /usr/bin/checkmodule ]; then
+            echo "Failed to install checkmodule"
+            exit 1
+        fi
+
+        # Install semodule_package if needed
+
+        if [ ! -f /usr/bin/semodule_package ]; then
+            sudo yum install -y policycoreutils-python
+        fi
+
+        if [ ! -f /usr/bin/semodule_package ]; then
+            echo "Failed to install semodule_package"
+            exit 1
+        fi
+
+        # Install semanage if needed
+
+        if [ ! -f /usr/sbin/semanage ]; then
+            sudo yum install -y policycoreutils-python
+        fi
+
+        if [ ! -f /usr/sbin/semanage ]; then
+            echo "Failed to install semanage"
+            exit 1
+        fi
+
+        # Enable access to system resources
+
+        q_ensure_temp_work_dir
+        cd "$val_TEMP_WORK_DIR"
+
+        cp "$my_OS_SPECIFIC_PATH/mongodb_cgroup_memory.te" .
+        checkmodule -M -m -o mongodb_cgroup_memory.mod mongodb_cgroup_memory.te
+        semodule_package -o mongodb_cgroup_memory.pp -m mongodb_cgroup_memory.mod
+        sudo semodule -i mongodb_cgroup_memory.pp
+
+        cp "$my_OS_SPECIFIC_PATH/mongodb_proc_net.te" .
+        checkmodule -M -m -o mongodb_proc_net.mod mongodb_proc_net.te
+        semodule_package -o mongodb_proc_net.pp -m mongodb_proc_net.mod
+        sudo semodule -i mongodb_proc_net.pp
+
+        # Enable access to the data directory
+
+        sudo semanage fcontext -a -t mongod_var_lib_t '/data/aafs/mongodata.*'
+        sudo chcon -Rv -u system_u -t mongod_var_lib_t '/data/aafs/mongodata'
+        sudo restorecon -R -v '/data/aafs/mongodata'
+
+        # Enable access to the log directory
+
+        sudo semanage fcontext -a -t mongod_log_t '/data/aafs/mongolog.*'
+        sudo chcon -Rv -u system_u -t mongod_log_t '/data/aafs/mongolog'
+        sudo restorecon -R -v '/data/aafs/mongolog'
+
+        cd - >/dev/null
+
+    fi
+
+}
+
+
+
+
+# Install MongoDB, version 6.0.
+
+q_install_mongo () {
+    echo "Installing MongoDB..."
+
+    # Check if MongoDB is already installed
+
+    if [ -f "$my_MONGO_CONF_FILE" ]; then
+        echo "MongoDB is already installed"
+        exit 1
+    fi
+
+    # Operating-system specific installation
+
+    if [ "$my_OS_TYPE" == "$val_OSTYPE_AMAZON" ]; then
+
+        # Register MongoDB with yum
+
+        if [ "$my_ARM_ARCH" == "$val_YES" ]; then
+            sudo cp "$my_OS_SPECIFIC_PATH/mongodb-org-6.0.arm.repo" /etc/yum.repos.d/mongodb-org-6.0.repo
+        else
+            sudo cp "$my_OS_SPECIFIC_PATH/mongodb-org-6.0.repo" /etc/yum.repos.d/mongodb-org-6.0.repo
+        fi
+
+        # For ARM, download and install MongoDB database tools
+
+        ##if [ "$my_ARM_ARCH" == "$val_YES" ]; then
+        ##    sudo cp "$my_OS_SPECIFIC_PATH/mongodb-database-tools-4.4.arm.repo" /etc/yum.repos.d/mongodb-database-tools-4.4.repo
+        ##    sudo yum install -y mongodb-database-tools
+        ##fi
+
+        # Download and install
+
+        sudo yum install -y mongodb-org
+
+        # Download and install the MongoDB shell (might already be installed)
+
+        sudo yum install -y mongodb-mongosh
+
+    elif [ "$my_OS_TYPE" == "$val_OSTYPE_UBUNTU" ]; then
+
+        # Import the public key
+
+        wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+
+        # Create a list file
+
+        echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+
+        # Reload the local package database
+
+        sudo apt-get update
+
+        # Download and install MongoDB
+
+        sudo apt-get -y install mongodb-org
+
+        # Download and install the MongoDB shell (might already be installed)
+
+        sudo apt-get -y install mongodb-mongosh
+
+        # Enable MongoDB startup and shutdown without a password
+
+        q_ensure_temp_work_dir
+        echo "%${val_LOCAL_ACCOUNT} ALL=NOPASSWD: /usr/sbin/service mongod start" > "$val_TEMP_WORK_DIR/aftershock_sudo"
+        echo "%${val_LOCAL_ACCOUNT} ALL=NOPASSWD: /usr/sbin/service mongod stop" >> "$val_TEMP_WORK_DIR/aftershock_sudo"
+        sudo cp -f "$val_TEMP_WORK_DIR/aftershock_sudo" /etc/sudoers.d
+        sudo chmod 440 /etc/sudoers.d/aftershock_sudo
+
+    elif [ "$my_OS_TYPE" == "$val_OSTYPE_CENTOS" ]; then
+
+        # Register MongoDB with yum
+
+        sudo cp "$my_OS_SPECIFIC_PATH/mongodb-org-6.0.repo" /etc/yum.repos.d/mongodb-org-6.0.repo
+
+        # Download and install
+
+        sudo yum install -y mongodb-org
+
+        # Download and install the MongoDB shell (might already be installed)
 
         sudo yum install -y mongodb-mongosh
 
@@ -1522,6 +1710,59 @@ q_upgrade_mongo_44_to_50 () {
 
 
 
+# Upgrade MongoDB, version 5.0 to 6.0.
+# This updates the package registry and selinux, but does not do the actual installation.
+
+q_upgrade_mongo_50_to_60 () {
+    echo "Upgrading MongoDB 5.0 to 6.0..."
+
+    # Check if MongoDB is installed and not running
+
+    if [ ! -f "$my_MONGO_CONF_FILE" ]; then
+        echo "MongoDB is not installed"
+        exit 1
+    fi
+
+    if q_is_mongo_running ; then
+        echo "MongoDB is running, you need to stop it before you can upgrade"
+        exit 1
+    fi
+
+    # Operating-system specific installation
+
+    if [ "$my_OS_TYPE" == "$val_OSTYPE_AMAZON" ]; then
+
+        # Register MongoDB with yum
+
+        sudo cp "$my_OS_SPECIFIC_PATH/mongodb-org-6.0.repo" /etc/yum.repos.d/mongodb-org-6.0.repo
+
+    elif [ "$my_OS_TYPE" == "$val_OSTYPE_UBUNTU" ]; then
+
+        # Import the public key
+
+        wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+
+        # Create a list file
+
+        echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+
+        # Reload the local package database
+
+        sudo apt-get update
+
+    elif [ "$my_OS_TYPE" == "$val_OSTYPE_CENTOS" ]; then
+
+        # Register MongoDB with yum
+
+        sudo cp "$my_OS_SPECIFIC_PATH/mongodb-org-6.0.repo" /etc/yum.repos.d/mongodb-org-6.0.repo
+
+    fi
+
+}
+
+
+
+
 # Configure MongoDB by editing the configuration file.
 # This can also be used to change the MongoDB configuration.
 # This would work with MongoDB 4.2.
@@ -1675,7 +1916,7 @@ q_setup_mongo_4x () {
 
 
 
-# Set up MongoDB by creating the replica set and user accounts, for version 5.0.
+# Set up MongoDB by creating the replica set and user accounts, for version 5.0 and 6.0.
 # (Difference is using mongosh instead of mongo.)
 
 q_setup_mongo () {
@@ -1811,6 +2052,49 @@ q_set_mongo_compatibility_to_50 () {
     echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_fcv_50"
 
     mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_50"
+
+    echo "Pausing 30 seconds..."
+    sleep 30
+
+    # Stop MongoDB
+
+    q_do_stop_mongo
+
+    echo "Pausing 10 seconds..."
+    sleep 10
+
+}
+
+
+
+
+# Set MongoDB feature compatibility version to 6.0.
+
+q_set_mongo_compatibility_to_60 () {
+    echo "Setting MongoDB feature compatibility version to 6.0..."
+
+    # Start MongoDB
+
+    q_do_start_mongo
+
+    echo "Pausing 15 seconds..."
+    sleep 15
+
+    if q_is_mongo_running ; then
+        :
+    else
+        echo "MongoDB failed to start"
+        exit 1
+    fi
+
+    # Set the feature compatibility version
+
+    echo "use admin" > "$val_TEMP_WORK_DIR/mongo_fcv_60"
+    echo "db.auth("'"'"$MONGO_ADMIN_USER"'"'", "'"'"$MONGO_ADMIN_PASS"'"'")" >> "$val_TEMP_WORK_DIR/mongo_fcv_60"
+    echo "db.adminCommand( { setFeatureCompatibilityVersion: "'"'"6.0"'"'" } )" >> "$val_TEMP_WORK_DIR/mongo_fcv_60"
+    echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_fcv_60"
+
+    mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_60"
 
     echo "Pausing 30 seconds..."
     sleep 30
@@ -2454,6 +2738,12 @@ case "$1" in
         echo "Test - Installed MongoDB 4.4"
         ;;
 
+    test_install_mongo_50)
+        q_load_oaf_config
+        q_install_mongo_50
+        echo "Test - Installed MongoDB 5.0"
+        ;;
+
     test_configure_mongo)
         q_load_oaf_config
         q_configure_mongo
@@ -2482,6 +2772,12 @@ case "$1" in
         q_load_oaf_config
         q_set_mongo_compatibility_to_50
         echo "Test - Set MongoDB feature compatibility version to 5.0"
+        ;;
+
+    test_set_mongo_compatibility_to_60)
+        q_load_oaf_config
+        q_set_mongo_compatibility_to_60
+        echo "Test - Set MongoDB feature compatibility version to 6.0"
         ;;
 
     test_configure_oaf)
@@ -2605,6 +2901,32 @@ case "$1" in
         q_install_mongo_44
         q_configure_mongo
         q_setup_mongo_4x
+        q_configure_oaf
+        q_compile_oaf
+        echo ""
+        echo "********************"
+        echo ""
+        echo "The selected ACTION_OPTION is "'"'"$ACTION_OPTION"'"'
+        echo ""
+        q_check_pdl_key_file
+        echo ""
+        echo "Completed OAF installation."
+        echo "It is recommended that you reboot the system now."
+        echo "Then, use "'"'"initialize_oaf"'"'" to initialize the database, or "'"'"restore_oaf"'"'" to restore the database from a backup."
+        ;;
+
+
+
+
+    install_oaf_50)
+        q_load_oaf_config
+        q_check_installed
+        q_check_java
+        q_create_dirs
+        q_download_opensha
+        q_install_mongo_50
+        q_configure_mongo
+        q_setup_mongo
         q_configure_oaf
         q_compile_oaf
         echo ""
@@ -2870,6 +3192,48 @@ case "$1" in
 
 
 
+    upgrade_mongo_50_to_60)
+        if q_is_mongo_running ; then
+            echo "Please shut down AAFS and MongoDB before attempting to upgrade MongoDB."
+            exit 1
+        fi
+        q_load_oaf_config
+        if [ ! -f "$my_MONGO_CONF_BACKUP" ]; then
+            echo "Cannot find the MongoDB original configuration file: $my_MONGO_CONF_BACKUP"
+            echo "To upgrade MongoDB, the original configuration file must be available in: $my_MONGO_CONF_BACKUP"
+            exit 1
+        fi
+        q_upgrade_mongo_50_to_60
+        q_configure_mongo
+        echo ""
+        echo "********************"
+        echo ""
+        echo "MongoDB 6.0 has been registered with the operating system."
+        echo "To complete the MongoDB upgrade, you need to perform an operating system update."
+        echo ""
+        echo "After MongoDB 6.0 is running successfully, use \"set_mongo_compatibility_to_60\""
+        echo "to enable MongoDB 6.0 features."
+        ;;
+
+
+
+
+    set_mongo_compatibility_to_60)
+        if q_is_mongo_running ; then
+            echo "Please shut down AAFS and MongoDB before attempting to set MongoDB compatibility."
+            exit 1
+        fi
+        q_load_oaf_config
+        q_set_mongo_compatibility_to_60
+        echo ""
+        echo "********************"
+        echo ""
+        echo "MongoDB feature compatibility version has been set to 6.0."
+        ;;
+
+
+
+
     # $2 = "java" to update Java, or "nojava" to skip the Java update.
     # $3 = "oaf" to update OAF software, or "nooaf" to skip the OAF software update.
     # $4 = Backup filename, or "nobackup" to skip the backup.
@@ -2969,6 +3333,8 @@ case "$1" in
         echo "  aoaf.sh install_oaf"
         echo "Install and configure the OAF software and MongoDB 4.4:"
         echo "  aoaf.sh install_oaf_44"
+        echo "Install and configure the OAF software and MongoDB 5.0:"
+        echo "  aoaf.sh install_oaf_50"
         echo "Initialize the OAF database:"
         echo "  aoaf.sh initialize_oaf  <relay_mode>  <configured_primary>"
         echo "Restore the OAF database:"
@@ -2993,6 +3359,10 @@ case "$1" in
         echo "  aoaf.sh upgrade_mongo_44_to_50"
         echo "Set MongoDB compatibility version to 5.0:"
         echo "  aoaf.sh set_mongo_compatibility_to_50"
+        echo "Upgrade an existing installation of MongoDB 5.0 to 6.0:"
+        echo "  aoaf.sh upgrade_mongo_50_to_60"
+        echo "Set MongoDB compatibility version to 6.0:"
+        echo "  aoaf.sh set_mongo_compatibility_to_60"
         echo "Stop AAFS and MongoDB, so that updates can be performed:"
         echo "  aoaf.sh stop_aafs_for_update  <java_option>  <oaf_option>  <backup_filename>"
         echo "Re-start AAFS and MongoDB after performing updates:"
