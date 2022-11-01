@@ -2111,6 +2111,49 @@ q_set_mongo_compatibility_to_60 () {
 
 
 
+# Get MongoDB feature compatibility version, for 5.0 and later.
+
+q_get_mongo_compatibility () {
+    echo "Getting MongoDB feature compatibility version..."
+
+    # Start MongoDB
+
+    q_do_start_mongo
+
+    echo "Pausing 15 seconds..."
+    sleep 15
+
+    if q_is_mongo_running ; then
+        :
+    else
+        echo "MongoDB failed to start"
+        exit 1
+    fi
+
+    # Get the feature compatibility version
+
+    echo "use admin" > "$val_TEMP_WORK_DIR/mongo_fcv_get"
+    echo "db.auth("'"'"$MONGO_ADMIN_USER"'"'", "'"'"$MONGO_ADMIN_PASS"'"'")" >> "$val_TEMP_WORK_DIR/mongo_fcv_get"
+    echo "db.adminCommand( { getParameter: 1, featureCompatibilityVersion: 1 } )" >> "$val_TEMP_WORK_DIR/mongo_fcv_get"
+    echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_fcv_get"
+
+    mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_get"
+
+    echo "Pausing 5 seconds..."
+    sleep 5
+
+    # Stop MongoDB
+
+    q_do_stop_mongo
+
+    echo "Pausing 10 seconds..."
+    sleep 10
+
+}
+
+
+
+
 # Configure OAF by creating its configuration files.
 # This can also be used to update the OAF configuration.
 
@@ -2780,6 +2823,12 @@ case "$1" in
         echo "Test - Set MongoDB feature compatibility version to 6.0"
         ;;
 
+    test_get_mongo_compatibility)
+        q_load_oaf_config
+        q_get_mongo_compatibility
+        echo "Test - Get MongoDB feature compatibility version"
+        ;;
+
     test_configure_oaf)
         q_load_oaf_config
         q_configure_oaf
@@ -3234,6 +3283,22 @@ case "$1" in
 
 
 
+    get_mongo_compatibility)
+        if q_is_mongo_running ; then
+            echo "Please shut down AAFS and MongoDB before attempting to get MongoDB compatibility."
+            exit 1
+        fi
+        q_load_oaf_config
+        q_get_mongo_compatibility
+        echo ""
+        echo "********************"
+        echo ""
+        echo "MongoDB feature compatibility version has been displayed."
+        ;;
+
+
+
+
     # $2 = "java" to update Java, or "nojava" to skip the Java update.
     # $3 = "oaf" to update OAF software, or "nooaf" to skip the OAF software update.
     # $4 = Backup filename, or "nobackup" to skip the backup.
@@ -3363,6 +3428,8 @@ case "$1" in
         echo "  aoaf.sh upgrade_mongo_50_to_60"
         echo "Set MongoDB compatibility version to 6.0:"
         echo "  aoaf.sh set_mongo_compatibility_to_60"
+        echo "Get MongoDB compatibility version:"
+        echo "  aoaf.sh get_mongo_compatibility"
         echo "Stop AAFS and MongoDB, so that updates can be performed:"
         echo "  aoaf.sh stop_aafs_for_update  <java_option>  <oaf_option>  <backup_filename>"
         echo "Re-start AAFS and MongoDB after performing updates:"
