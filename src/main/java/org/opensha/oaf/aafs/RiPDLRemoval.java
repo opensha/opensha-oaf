@@ -12,6 +12,8 @@ import org.opensha.oaf.aafs.entity.TimelineEntry;
 import org.opensha.oaf.aafs.entity.AliasFamily;
 import org.opensha.oaf.aafs.entity.RelayItem;
 
+import org.opensha.oaf.pdl.PDLCodeChooserEventSequence;
+
 
 /**
  * Relay item payload for removal of forecasts from PDL.
@@ -58,6 +60,13 @@ public class RiPDLRemoval extends DBPayload {
 
 	public long riprem_remove_time;
 
+	// The cap time for the event-sequence product. [v3]
+	// Can be one of the special values defined in PDLCodeChooserEventSequence.
+	// Note: An offset is added when the object is serialized, so that the
+	// JSON-encoded form of this object has fixed length.
+
+	public long riprem_cap_time;
+
 	// Reason codes, which are possible values of riprem_reason.
 
 	public static final int RIPREM_REAS_MIN					= 101;
@@ -93,10 +102,16 @@ public class RiPDLRemoval extends DBPayload {
 		return riprem_forecast_stamp.get_friendly_string();
 	}
 
-	// Return a friendly string representation of ripdl_update_time.
+	// Return a friendly string representation of riprem_remove_time.
 
 	public String get_riprem_remove_time_as_string () {
 		return SimpleUtils.time_raw_and_string (riprem_remove_time);
+	}
+
+	// Return a friendly string representation of riprem_cap_time.
+
+	public String get_riprem_cap_time_as_string () {
+		return PDLCodeChooserEventSequence.cap_time_raw_and_string (riprem_cap_time);
 	}
 
 	// Return true if this item is expired.
@@ -131,10 +146,19 @@ public class RiPDLRemoval extends DBPayload {
 
 	// Set up the contents.
 
-	public void setup (int the_riprem_reason, ForecastStamp the_riprem_forecast_stamp, long the_riprem_remove_time) {
+//	public void setup (int the_riprem_reason, ForecastStamp the_riprem_forecast_stamp, long the_riprem_remove_time) {	// EVSTBD
+//		riprem_reason = the_riprem_reason;
+//		riprem_forecast_stamp = the_riprem_forecast_stamp;
+//		riprem_remove_time = the_riprem_remove_time;
+//		riprem_cap_time = PDLCodeChooserEventSequence.CAP_TIME_NOP;
+//		return;
+//	}
+
+	public void setup (int the_riprem_reason, ForecastStamp the_riprem_forecast_stamp, long the_riprem_remove_time, long the_riprem_cap_time) {
 		riprem_reason = the_riprem_reason;
 		riprem_forecast_stamp = the_riprem_forecast_stamp;
 		riprem_remove_time = the_riprem_remove_time;
+		riprem_cap_time = the_riprem_cap_time;
 		return;
 	}
 
@@ -147,6 +171,7 @@ public class RiPDLRemoval extends DBPayload {
 
 	private static final int MARSHAL_VER_1 = 60001;
 	private static final int MARSHAL_VER_2 = 60002;
+	private static final int MARSHAL_VER_3 = 60003;
 
 	private static final String M_VERSION_NAME = "RiPDLRemoval";
 
@@ -157,7 +182,7 @@ public class RiPDLRemoval extends DBPayload {
 
 		// Version
 
-		int ver = MARSHAL_VER_2;
+		int ver = MARSHAL_VER_3;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -187,6 +212,15 @@ public class RiPDLRemoval extends DBPayload {
 			writer.marshalLong    (        "riprem_remove_time"   , riprem_remove_time    + OFFSERL);
 
 			break;
+
+		case MARSHAL_VER_3:
+
+			writer.marshalInt     (        "riprem_reason"        , riprem_reason        );
+			ForecastStamp.marshal (writer, "riprem_forecast_stamp", riprem_forecast_stamp);
+			writer.marshalLong    (        "riprem_remove_time"   , riprem_remove_time    + OFFSERL);
+			writer.marshalLong    (        "riprem_cap_time"      , riprem_cap_time       + OFFSERL);
+
+			break;
 		}
 
 		return;
@@ -199,7 +233,7 @@ public class RiPDLRemoval extends DBPayload {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Superclass
 
@@ -219,6 +253,8 @@ public class RiPDLRemoval extends DBPayload {
 
 			riprem_forecast_stamp = new ForecastStamp (riprem_forecast_lag);
 
+			riprem_cap_time = PDLCodeChooserEventSequence.CAP_TIME_NOP;
+
 			}
 			break;
 
@@ -227,6 +263,17 @@ public class RiPDLRemoval extends DBPayload {
 			riprem_reason         = reader.unmarshalInt     (        "riprem_reason"        , RIPREM_REAS_MIN, RIPREM_REAS_MAX);
 			riprem_forecast_stamp = ForecastStamp.unmarshal (reader, "riprem_forecast_stamp");
 			riprem_remove_time    = reader.unmarshalLong    (        "riprem_remove_time"   ) - OFFSERL;
+
+			riprem_cap_time = PDLCodeChooserEventSequence.CAP_TIME_NOP;
+
+			break;
+
+		case MARSHAL_VER_3:
+
+			riprem_reason         = reader.unmarshalInt     (        "riprem_reason"        , RIPREM_REAS_MIN, RIPREM_REAS_MAX);
+			riprem_forecast_stamp = ForecastStamp.unmarshal (reader, "riprem_forecast_stamp");
+			riprem_remove_time    = reader.unmarshalLong    (        "riprem_remove_time"   ) - OFFSERL;
+			riprem_cap_time       = reader.unmarshalLong    (        "riprem_cap_time"      ) - OFFSERL;
 
 			break;
 		}

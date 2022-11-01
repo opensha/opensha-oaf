@@ -14,6 +14,8 @@ import org.opensha.oaf.util.MarshalImpJsonWriter;
 
 import org.opensha.oaf.rj.OAFParameterSet;
 
+import org.opensha.oaf.pdl.PDLCodeChooserEventSequence;
+
 /**
  * Configuration for AAFS server actions.
  * Author: Michael Barall 04/29/2018.
@@ -358,6 +360,10 @@ public final class ActionConfig {
 		return param_set.evseq_enable;
 	}
 
+	public String get_evseq_enable_as_string () {
+		return ActionConfigFile.get_esena_as_string (get_evseq_enable());
+	}
+
 	// Get flag, indicating if event-sequence products are enabled. [v2]
 
 	public boolean get_is_evseq_enabled () {
@@ -370,9 +376,13 @@ public final class ActionConfig {
 		return param_set.evseq_report;
 	}
 
+	public String get_evseq_report_as_string () {
+		return ActionConfigFile.get_esrep_as_string (get_evseq_report());
+	}
+
 	// Get flag, indicating if event-sequence reports are sent by default. [v2]
 
-	public boolean get_is_evseq_reported () {
+	private boolean get_is_evseq_reported () {
 		return param_set.evseq_report == ActionConfigFile.ESREP_REPORT;
 	}
 
@@ -622,6 +632,43 @@ public final class ActionConfig {
 		long result = param_set.forecast_lags.get (param_set.forecast_lags.size() - 1);
 		result = Math.max (result, param_set.def_max_forecast_lag);
 		return result;
+	}
+
+	// Get the event-sequence cap time to use when a forecast is blocked.
+	// Parameters:
+	//  report = Report option, ESREP_XXXXX.
+
+	public long get_cap_time_for_block (int report) {
+		if (get_is_evseq_enabled()) {
+			switch (report) {
+			case ActionConfigFile.ESREP_REPORT:
+			case ActionConfigFile.ESREP_DELETE:
+				return PDLCodeChooserEventSequence.CAP_TIME_DELETE;
+			}
+		}
+		return PDLCodeChooserEventSequence.CAP_TIME_NOP;
+	}
+
+	// Get the event-sequence cap time to use when a forecast is shadowed.
+	// Parameters:
+	//  report = Report option, ESREP_XXXXX.
+	//  mainshock_time = Time of the mainshock, in milliseconds.
+	//  shadow_time = Time of the shadowing event, in milliseconds.
+
+	public long get_cap_time_for_shadow (int report, long mainshock_time, long shadow_time) {
+		if (get_is_evseq_enabled()) {
+			switch (report) {
+			case ActionConfigFile.ESREP_REPORT:
+				long cap_time = PDLCodeChooserEventSequence.nudge_cap_time (shadow_time - get_evseq_cap_gap());
+				if (cap_time >= mainshock_time + get_evseq_cap_min_dur()) {
+					return cap_time;
+				}
+				return PDLCodeChooserEventSequence.CAP_TIME_DELETE;
+			case ActionConfigFile.ESREP_DELETE:
+				return PDLCodeChooserEventSequence.CAP_TIME_DELETE;
+			}
+		}
+		return PDLCodeChooserEventSequence.CAP_TIME_NOP;
 	}
 
 

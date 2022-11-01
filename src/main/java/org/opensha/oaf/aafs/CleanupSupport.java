@@ -24,6 +24,7 @@ import org.opensha.oaf.util.SphRegionWorld;
 import org.opensha.oaf.util.catalog.ObsEqkRupMaxTimeComparator;
 
 import org.opensha.oaf.pdl.PDLCodeChooserOaf;
+import org.opensha.oaf.pdl.PDLCodeChooserEventSequence;
 
 import org.opensha.oaf.rj.CompactEqkRupList;
 
@@ -310,11 +311,28 @@ public class CleanupSupport extends ServerComponent {
 
 		public long reviewed_time;
 
+		// Cap time to use for event-sequence products.
+
+		public long cap_time;
+
+		// Flag to keep reviewed event-sequence products.
+
+		public boolean f_keep_reviewed;
+
 		// Construct and initialize.
 
 		public icnv2_retval (long the_cutoff_time, long the_reviewed_time) {
 			cutoff_time = the_cutoff_time;
 			reviewed_time = the_reviewed_time;
+			cap_time = PDLCodeChooserEventSequence.CAP_TIME_NOP;
+			f_keep_reviewed = false;
+		}
+
+		public icnv2_retval (long the_cutoff_time, long the_reviewed_time, long the_cap_time, boolean the_f_keep_reviewed) {
+			cutoff_time = the_cutoff_time;
+			reviewed_time = the_reviewed_time;
+			cap_time = the_cap_time;
+			f_keep_reviewed = the_f_keep_reviewed;
 		}
 	}
 
@@ -353,6 +371,9 @@ public class CleanupSupport extends ServerComponent {
 
 		long reviewed_time = 0L;
 
+		long cap_time = PDLCodeChooserEventSequence.CAP_TIME_NOP;
+		boolean f_keep_reviewed = false; 
+
 		for (RelayItem relit : relits) {
 
 			// Unmarshal the payload and accumulate
@@ -376,13 +397,17 @@ public class CleanupSupport extends ServerComponent {
 
 				// If this is a new maximum, activate special treatment for reviewed
 				// products if it is an analyst request
+				// Also get info for capping event-sequence products
 
 				if (payload.riprem_remove_time > removal_time) {
 					if (payload.riprem_reason == RiPDLRemoval.RIPREM_REAS_SKIPPED_ANALYST) {
 						reviewed_time = 1L;
+						f_keep_reviewed = true;
 					} else {
-						reviewed_time = 0L;					
+						reviewed_time = 0L;	
+						f_keep_reviewed = false;
 					}
+					cap_time = payload.riprem_cap_time;
 				}
 
 				removal_time = Math.max (removal_time, payload.riprem_remove_time);
@@ -439,6 +464,12 @@ public class CleanupSupport extends ServerComponent {
 			cutoff_time = Math.max (cutoff_time, removal_time);
 		}
 
+		// If removal is the most recent operation, use its cap time to delete event-sequence products
+
+		if (removal_time > 0L && removal_time > completion_time) {
+			return new icnv2_retval (cutoff_time, reviewed_time, cap_time, f_keep_reviewed);
+		}
+
 		return new icnv2_retval (cutoff_time, reviewed_time);
 	}
 
@@ -449,6 +480,8 @@ public class CleanupSupport extends ServerComponent {
 	// Parameters:
 	//  query_id = ID to use for querying Comcat.
 	//  time_now = Current time, in milliseconds since the epoch.
+	//  evseq_res = If not null, returns the result from calling
+	//    PDLCodeChooserEventSequence.deleteOldEventSequenceProducts, if it is called.
 	// Returns 0L (== PDLCodeChooserOaf.DOOP_DELETED) if one or more products were deleted.
 	// Returns > 0L if no product was deleted because the most recent product was
 	//  updated at or after the cutoff time.  In this case, the return value is the
@@ -463,7 +496,11 @@ public class CleanupSupport extends ServerComponent {
 	// Any other exception can be regarded as a PDL error.
 	// Note: This may be called from a task execution function, or from an idle time function.
 
-	public long cleanup_event (String query_id, long time_now) throws Exception {
+	public long cleanup_event (String query_id, long time_now, EventSequenceResult evseq_res) throws Exception {
+
+		if (evseq_res != null) {
+			evseq_res.clear();
+		}
 
 		// Server configuration
 
@@ -557,9 +594,29 @@ public class CleanupSupport extends ServerComponent {
 		// Attempt to delete old OAF products
 
 		boolean isReviewed = false;
+		PDLCodeChooserOaf.DeleteOafOp del_op = new PDLCodeChooserOaf.DeleteOafOp();
 
-		long update_time = PDLCodeChooserOaf.deleteOldOafProducts_v2 (f_use_prod,
-			my_geojson, f_use_prod, query_id, isReviewed, icnret.cutoff_time, icnret.reviewed_time);
+		long update_time = PDLCodeChooserOaf.checkDeleteOldOafProducts_v2 (f_use_prod,
+			my_geojson, f_use_prod, query_id, isReviewed, icnret.cutoff_time, icnret.reviewed_time, del_op);
+
+		// If we are going to delete something, and event-sequence products are enabled,
+		// and cap time is not no-operation, then delete event-sequence products
+
+		if (update_time == PDLCodeChooserOaf.DOOP_DELETED
+			&& action_config.get_is_evseq_enabled()
+			&& icnret.cap_time != PDLCodeChooserEventSequence.CAP_TIME_NOP) {
+
+			int doesp = PDLCodeChooserEventSequence.deleteOldEventSequenceProducts (f_use_prod,
+				my_geojson, f_use_prod, query_id, isReviewed, icnret.cap_time, icnret.f_keep_reviewed);
+
+			if (evseq_res != null) {
+				evseq_res.set_for_delete (query_id, doesp, icnret.cap_time);
+			}
+		}
+
+		// Now delete the OAF products
+
+		del_op.do_delete();
 
 		// If nothing deleted due to unexpired OAF product (from our source),
 		// write a relay item to defer further checks until its expiration time
@@ -924,9 +981,10 @@ public class CleanupSupport extends ServerComponent {
 			// Clean up the event
 
 			long doop;
+			EventSequenceResult evseq_res = new EventSequenceResult();
 
 			try {
-				doop = cleanup_event (event_id, time_now);
+				doop = cleanup_event (event_id, time_now, evseq_res);
 			}
 
 			// Database exceptions are propagated
@@ -990,11 +1048,26 @@ public class CleanupSupport extends ServerComponent {
 				return true;
 			}
 
+			// Log event-sequence deletion
+
+			if (evseq_res.doesp == PDLCodeChooserEventSequence.DOESP_DELETED) {
+				if (f_verbose) {
+					System.out.println ("CLEANUP-EVENT-INFO: Deleted event-sequence product from PDL, event_id = " + event_id);
+				}
+				evseq_res.write_log (sg);
+			}
+			if (evseq_res.doesp == PDLCodeChooserEventSequence.DOESP_CAPPED) {
+				if (f_verbose) {
+					System.out.println ("CLEANUP-EVENT-INFO: Capped event-sequence product from PDL, event_id = " + event_id + ", cap_time = " + PDLCodeChooserEventSequence.cap_time_raw_and_string (evseq_res.cap_time));
+				}
+				evseq_res.write_log (sg);
+			}
+
 			// Log successful deletion, if we deleted something
 
 			if (doop == PDLCodeChooserOaf.DOOP_DELETED) {
 				if (f_verbose) {
-					System.out.println ("CLEANUP-EVENT-INFO: Deleted product from PDL, event_id = " + event_id);
+					System.out.println ("CLEANUP-EVENT-INFO: Deleted oaf product from PDL, event_id = " + event_id);
 				}
 				sg.log_sup.report_pdl_delete_ok (event_id);
 			}

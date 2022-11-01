@@ -3,6 +3,8 @@ package org.opensha.oaf.aafs;
 import java.util.List;
 import java.util.Set;
 
+import java.io.File;
+
 import org.opensha.oaf.rj.OAFParameterSet;
 
 import org.opensha.oaf.pdl.PDLSenderConfig;
@@ -15,7 +17,7 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  *
  * Parameters come from a configuration file, in the format of ServerConfigFile.
  */
-public class ServerConfig {
+public final class ServerConfig {
 
 	//----- Parameter set -----
 
@@ -247,6 +249,10 @@ public class ServerConfig {
 		return param_set.pdl_enable;
 	}
 
+	public String get_pdl_enable_as_string () {
+		return ServerConfigFile.get_pdlopt_as_string (get_pdl_enable());
+	}
+
 	// PDL signing key filename, can be empty string for none.
 
 	public String get_pdl_key_filename() {
@@ -307,6 +313,116 @@ public class ServerConfig {
 
 	public ServerConfigFile get_server_config_file () {
 		return param_set;
+	}
+
+
+
+
+	// Set the operational mode for PDL and event-sequence.
+	// Parameters:
+	//  opmode = Desired operational mode.
+	//    The ones digit selects the PDL destination:
+	//      0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
+	//    The tens digit selects the event-sequence configuration:
+	//      00 = default, 10 = report, 20 = delete, 30 = no report, 40 = disable
+	//  key_filename = PDL signing key filename.
+	//    If null, blank, "-", or omitted, the default is not changed.
+	// Throws an exception if invalid arguments.
+	// Note: This function is for testing purposes.
+	// Note: The mode is reset to default if the server or action configuration file is reloaded.
+
+	public static void set_opmode (int opmode) {
+		set_opmode (opmode, null);
+		return;
+	}
+
+	public static void set_opmode (int opmode, String key_filename) {
+
+		ServerConfig server_config = new ServerConfig();
+		ActionConfig action_config = new ActionConfig();
+
+		// PDL option
+
+		int pdlopt = opmode % 10;
+		if (!( pdlopt >= ServerConfigFile.PDLOPT_MIN && pdlopt <= ServerConfigFile.PDLOPT_MAX )) {
+			throw new IllegalArgumentException ("ServerConfig.set_opmode: Invalid mode (PDL): opmode = " + opmode);
+		}
+			
+		server_config.get_server_config_file().pdl_enable = pdlopt;
+
+		// Event-sequence option
+
+		int evsopt = opmode - pdlopt;
+		boolean set_evsopt = false;
+		int esena = -1;
+		int esrep = -1;
+		switch (evsopt) {
+		case 0:
+			break;
+		case 10:
+			set_evsopt = true;
+			esena = ActionConfigFile.ESENA_ENABLE;
+			esrep = ActionConfigFile.ESREP_REPORT;
+			break;
+		case 20:
+			set_evsopt = true;
+			esena = ActionConfigFile.ESENA_ENABLE;
+			esrep = ActionConfigFile.ESREP_DELETE;
+			break;
+		case 30:
+			set_evsopt = true;
+			esena = ActionConfigFile.ESENA_ENABLE;
+			esrep = ActionConfigFile.ESREP_NO_REPORT;
+			break;
+		case 40:
+			set_evsopt = true;
+			esena = ActionConfigFile.ESENA_DISABLE;
+			esrep = ActionConfigFile.ESREP_REPORT;
+			break;
+		default:
+			throw new IllegalArgumentException ("ServerConfig.set_opmode: Invalid mode (event-sequence): opmode = " + opmode);
+		}
+
+		if (set_evsopt) {
+			action_config.get_action_config_file().evseq_enable = esena;
+			action_config.get_action_config_file().evseq_report = esrep;
+		}
+
+		// PDL key file
+
+		if (!( key_filename == null || key_filename.isEmpty() || key_filename.equals("-") )) {
+
+			if (!( (new File (key_filename)).canRead() )) {
+				throw new IllegalArgumentException ("ServerConfig.set_opmode: Unreadable PDL key filename: key_filename = " + key_filename);
+			}
+
+			server_config.get_server_config_file().pdl_key_filename = key_filename;
+		}
+
+		return;
+	}
+
+
+
+
+	// Get a string describing the current operational mode.
+
+	public static String get_opmode_as_string () {
+		StringBuilder result = new StringBuilder();
+
+		ServerConfig server_config = new ServerConfig();
+		ActionConfig action_config = new ActionConfig();
+
+		result.append ("pdl_enable = " + server_config.get_pdl_enable_as_string());
+		result.append (", evseq_enable = " + action_config.get_evseq_enable_as_string());
+		result.append (", evseq_report = " + action_config.get_evseq_report_as_string());
+
+		String key_filename = server_config.get_pdl_key_filename();
+		if (!( key_filename == null || key_filename.isEmpty() || key_filename.equals("-") )) {
+			result.append (", pdl_key_filename = " + key_filename);
+		}
+
+		return result.toString();
 	}
 
 

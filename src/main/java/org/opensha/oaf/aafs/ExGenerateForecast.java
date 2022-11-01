@@ -275,7 +275,8 @@ public class ExGenerateForecast extends ServerExecTask {
 
 			// Delete OAF products and write relay item
 
-			sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_ANALYST, tstatus.last_forecast_stamp);
+			sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_ANALYST, tstatus.last_forecast_stamp,
+						EventSequenceParameters.get_cap_time_for_block (fcmain, tstatus.analyst_options.analyst_params));
 
 			// Write the new timeline entry
 
@@ -351,7 +352,8 @@ public class ExGenerateForecast extends ServerExecTask {
 
 				// Delete OAF products and write relay item
 
-				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_INTAKE, tstatus.last_forecast_stamp);
+				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_INTAKE, tstatus.last_forecast_stamp,
+							EventSequenceParameters.get_cap_time_for_block (fcmain, tstatus.analyst_options.analyst_params));
 
 				// Write the new timeline entry
 
@@ -408,16 +410,17 @@ public class ExGenerateForecast extends ServerExecTask {
 			double centroid_mag_floor = sg.task_disp.get_action_config().get_shadow_centroid_mag();
 			double large_mag = sg.task_disp.get_action_config().get_shadow_large_mag();
 			double[] separation = new double[2];
+			long[] seq_end_time = new long[2];
 
 			// Run find_shadow
 
 			ObsEqkRupture shadow;
 
 			try {
-				shadow = AftershockStatsShadow.find_shadow (rup, time_now,
+				shadow = AftershockStatsShadow.find_shadow_v2 (rup, time_now,
 					search_radius, search_time_lo, search_time_hi,
 					centroid_rel_time_lo, centroid_rel_time_hi,
-					centroid_mag_floor, large_mag, separation);
+					centroid_mag_floor, large_mag, separation, seq_end_time);
 			}
 
 			// An exception here triggers a ComCat retry
@@ -468,7 +471,8 @@ public class ExGenerateForecast extends ServerExecTask {
 
 				// Delete OAF products and write relay item
 
-				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_SHADOWED, tstatus.last_forecast_stamp);
+				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_SHADOWED, tstatus.last_forecast_stamp,
+					EventSequenceParameters.get_cap_time_for_shadow (fcmain, tstatus.analyst_options.analyst_params, seq_end_time[0]));
 
 				// Write the new timeline entry
 
@@ -548,6 +552,25 @@ public class ExGenerateForecast extends ServerExecTask {
 
 				if (tstatus.analyst_options.is_shadow_normal()) {
 
+					// Compute the shadow time, which is the time of the earliest aftershock whose magnitude is
+					// larger than the mainshock; use the mainshock time if we don't find one
+
+					int shadow_count = 0;
+					long shadow_time = fcmain.mainshock_time;
+
+					if (forecast_results.catalog_comcat_aftershocks != null) {	// should always be non-null
+						for (ObsEqkRupture rup : forecast_results.catalog_comcat_aftershocks) {
+							double rup_mag = rup.getMag();
+							long rup_time = rup.getOriginTime();
+							if (rup_mag > fcmain.mainshock_mag || (rup_mag == fcmain.mainshock_mag && rup_time > fcmain.mainshock_time)) {
+								if (shadow_count == 0 || shadow_time > rup_time) {
+									shadow_time = rup_time;
+								}
+								++shadow_count;
+							}
+						}
+					}
+
 					// Insert skip into timeline status
 
 					tstatus.set_state_skipped (sg.task_disp.get_time(), sg.task_disp.get_action_config(),
@@ -580,7 +603,8 @@ public class ExGenerateForecast extends ServerExecTask {
 
 					// Delete OAF products and write relay item
 
-					sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_FORESHOCK, tstatus.last_forecast_stamp);
+					sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_FORESHOCK, tstatus.last_forecast_stamp,
+						EventSequenceParameters.get_cap_time_for_shadow (fcmain, tstatus.analyst_options.analyst_params, shadow_time));
 
 					// Write the new timeline entry
 
@@ -678,9 +702,10 @@ public class ExGenerateForecast extends ServerExecTask {
 				// Attempt to send the report
 
 				String productCode = null;
+				EventSequenceResult evseq_res = new EventSequenceResult();
 
 				try {
-					productCode = sg.pdl_sup.send_pdl_report (tstatus);
+					productCode = sg.pdl_sup.send_pdl_report (evseq_res, tstatus);
 					tstatus.set_pdl_status ((productCode == null) ? TimelineStatus.PDLSTAT_CONFLICT : TimelineStatus.PDLSTAT_SUCCESS);
 					new_next_pdl_lag = -1L;
 				}
@@ -691,6 +716,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 					f_pdl_send_fail = true;
 
+					evseq_res.write_log (sg);
 					sg.log_sup.report_pdl_send_exception (tstatus, e);
 
 					// Get time of PDL retry
@@ -711,6 +737,7 @@ public class ExGenerateForecast extends ServerExecTask {
 				}
 
 				if (tstatus.is_pdl_send_successful()) {
+					evseq_res.write_log (sg);
 					if (productCode == null) {
 						sg.log_sup.report_pdl_send_conflict (tstatus);
 					} else {

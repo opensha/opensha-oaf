@@ -61,7 +61,7 @@ import org.opensha.oaf.rj.OAFParameterSet;
  *  "removal_event_gap" = String giving gap between processing events with forecasts that may need to be removed from PDL, in java.time.Duration format.
  *  "removal_foreign_block" = String giving time after observing a foreign forecast that removal checks are suppressed, in java.time.Duration format.
  *  [v2] "evseq_enable" = Option to enable event-sequence: 0 = disable, 1 = enable
- *  [v2] "evseq_report" = Option for sending event-sequence reports to PDL by default: 0 = no report, 1 = send report.
+ *  [v2] "evseq_report" = Option for sending event-sequence reports to PDL by default: 0 = no report, 1 = send report, 2 = delete report.
  *  [v2] "evseq_lookback" = String giving event-sequence lookback time, in java.time.Duration format.
  *  [v2] "evseq_lookahead" = String giving event-sequence lookahead time, in java.time.Duration format.
  *  [v2] "evseq_cap_min_dur" = String giving event-sequence minimum duration when capping, in java.time.Duration format.
@@ -295,7 +295,10 @@ public class ActionConfigFile {
 	public static final int ESREP_MIN = 0;
 	public static final int ESREP_NO_REPORT = 0;	// Disable sending reports by default
 	public static final int ESREP_REPORT = 1;		// Enable sending reports by default
-	public static final int ESREP_MAX = 1;
+	public static final int ESREP_DELETE = 2;		// Delete existing reports by default
+	public static final int ESREP_MAX = 2;
+
+	public static final int DEFAULT_EVSEQ_REPORT = 1;	// Default value for forecast parameters
 
 	private static final int V1_EVSEQ_REPORT = 1;	// Default value for v1 files
 
@@ -303,6 +306,10 @@ public class ActionConfigFile {
 
 	// Time before mainshock when an event sequence begins. [v2]
 	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public static final long DEFAULT_EVSEQ_LOOKBACK = 2592000000L;	// Default value for forecast parameters = 30 days
+	public static final long REC_MIN_EVSEQ_LOOKBACK = 60000L;		// Recommended minimum value for forecast parameters = 1 minute
+	public static final long REC_MAX_EVSEQ_LOOKBACK = 315360000000L;	// Recommended maximum value for forecast parameters = 10 years
 
 	private static final long V1_EVSEQ_LOOKBACK = 2592000000L;	// Default value for v1 files = 30 days
 
@@ -1076,6 +1083,37 @@ public class ActionConfigFile {
 		}
 
 		return mag;
+	}
+
+
+
+
+	// Return a string describing an event-sequence enable value.
+
+	public static String get_esena_as_string (int esena) {
+
+		switch (esena) {
+		case ESENA_DISABLE: return "ESENA_DISABLE";
+		case ESENA_ENABLE: return "ESENA_ENABLE";
+		}
+
+		return "ESENA_INVALID(" + esena + ")";
+	}
+
+
+
+
+	// Return a string describing an event-sequence reporting option value.
+
+	public static String get_esrep_as_string (int esrep) {
+
+		switch (esrep) {
+		case ESREP_NO_REPORT: return "ESREP_NO_REPORT";
+		case ESREP_REPORT: return "ESREP_REPORT";
+		case ESREP_DELETE: return "ESREP_DELETE";
+		}
+
+		return "ESREP_INVALID(" + esrep + ")";
 	}
 
 

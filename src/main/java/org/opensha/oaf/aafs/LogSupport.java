@@ -24,6 +24,8 @@ import org.opensha.oaf.comcat.ComcatRemovedException;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 
 import org.opensha.oaf.pdl.PDLCodeChooserOaf;
+import org.opensha.oaf.pdl.PDLCodeChooserEventSequence;
+import org.opensha.oaf.comcat.PropertiesEventSequence;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -598,6 +600,34 @@ public class LogSupport extends ServerComponent {
 
 
 
+	// Report successful PDL send of an event-sequence product.
+
+	public void report_evseq_send_ok (TimelineStatus tstatus, String productCode, long start_time, long end_time) {
+		report_action ("EVSEQ-SEND-OK",
+					"eventID = " + sg.alias_sup.timeline_id_to_pdl_code (tstatus.event_id),
+					"start_time = " + SimpleUtils.time_raw_and_string (start_time),
+					"end_time = " + SimpleUtils.time_raw_and_string (end_time),
+					"productCode = " + productCode,
+					"eventNetwork = " + tstatus.forecast_mainshock.mainshock_network,
+					"eventCode = " + tstatus.forecast_mainshock.mainshock_code);
+		return;
+	}
+
+	public void report_evseq_send_ok (String event_id, PropertiesEventSequence props, String pdl_code) {
+		report_action ("EVSEQ-SEND-OK",
+					"eventID = " + event_id,
+					"start_time = " + props.s_start_time,
+					"end_time = " + ((props.has_end_time()) ? props.s_end_time : "unbounded"),
+					"event_time = " + ((props.has_event_time()) ? props.s_event_time : "omitted"),
+					"productCode = " + pdl_code,
+					"eventNetwork = " + props.eventNetwork,
+					"eventCode = " + props.eventCode);
+		return;
+	}
+
+
+
+
 	// Report Comcat poll done.
 
 	public void report_comcat_poll_done (long poll_lookback, int count_no_timeline, int count_withdrawn_timeline) {
@@ -810,7 +840,8 @@ public class LogSupport extends ServerComponent {
 					riprem.get_riprem_reason_as_string (),
 					"relay_time = " + SimpleUtils.time_raw_and_string (relay_time),
 					"forecast_stamp = " + riprem.get_riprem_forecast_stamp_as_string(),
-					"remove_time = " + riprem.get_riprem_remove_time_as_string()
+					"remove_time = " + riprem.get_riprem_remove_time_as_string(),
+					"cap_time = " + riprem.get_riprem_cap_time_as_string()
 					);
 		return;
 	}
@@ -971,6 +1002,35 @@ public class LogSupport extends ServerComponent {
 		report_action ("PDL-DELETE-EXCEPTION",
 					"eventID = " + event_id);
 		report_exception (e);
+		return;
+	}
+
+
+
+
+	// Report successful PDL delete of all event-sequence products for an event.
+
+	public void report_evseq_delete_ok (String event_id) {
+		report_action ("EVSEQ-DELETE-OK",
+					"eventID = " + event_id);
+		return;
+	}
+
+
+
+
+	// Report successful PDL capping of an event-sequence product for an event.
+
+	public void report_evseq_cap_ok (String event_id, long cap_time) {
+		report_action ("EVSEQ-CAP-OK",
+					"eventID = " + event_id,
+					"cap_time = " + PDLCodeChooserEventSequence.cap_time_raw_and_string (cap_time));
+		return;
+	}
+
+	public void report_evseq_cap_ok (String event_id) {
+		report_action ("EVSEQ-CAP-OK",
+					"eventID = " + event_id);
 		return;
 	}
 

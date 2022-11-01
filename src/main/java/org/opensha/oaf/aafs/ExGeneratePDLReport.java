@@ -326,15 +326,17 @@ public class ExGeneratePDLReport extends ServerExecTask {
 		// Attempt to send the report
 
 		String productCode = null;
+		EventSequenceResult evseq_res = new EventSequenceResult();
 
 		try {
-			productCode = sg.pdl_sup.send_pdl_report (pdl_tstatus, pdl_catalog);
+			productCode = sg.pdl_sup.send_pdl_report (evseq_res, pdl_tstatus, pdl_catalog);
 		}
 
 		// Exception here means PDL report did not succeed
 
 		catch (Exception e) {
 
+			evseq_res.write_log (sg);
 			sg.log_sup.report_pdl_send_exception (tstatus, e);
 
 			// Get current PDL lag from the stage
@@ -376,6 +378,7 @@ public class ExGeneratePDLReport extends ServerExecTask {
 			return RESCODE_TIMELINE_PDL_FAIL;
 		}
 
+		evseq_res.write_log (sg);
 		if (productCode == null) {
 			sg.log_sup.report_pdl_send_conflict (tstatus);
 		} else {

@@ -13,6 +13,7 @@ import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
+import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
@@ -836,6 +837,87 @@ public class ForecastParameters {
 	}
 
 
+	//----- Event-sequence configuration parameters -----
+
+	// Event-sequence configuration parameter fetch method.
+
+	public int evseq_cfg_fetch_meth = FETCH_METH_AUTO;
+
+	// Event-sequence configuration parameter available flag.
+
+	public boolean evseq_cfg_avail = false;
+
+	// Event-sequence configuration parameters (null iff omitted).
+
+	public EventSequenceParameters evseq_cfg_params = null;
+
+	// Set event-sequence configuration parameters to default.
+
+	public void set_default_evseq_cfg_params () {
+		evseq_cfg_params = null;
+		return;
+	}
+
+	// Copy event-sequence configuration parameters from the other object.
+	// Note: EventSequenceParameters is an immutable object.
+
+	public void copy_evseq_cfg_params_from (ForecastParameters other) {
+		evseq_cfg_params = other.evseq_cfg_params;
+		return;
+	}
+
+	// Set event-sequence configuration parameters to analyst values.
+
+	public void set_analyst_evseq_cfg_params (
+			boolean the_evseq_cfg_avail,
+			EventSequenceParameters the_evseq_cfg_params
+	) {
+		evseq_cfg_fetch_meth = FETCH_METH_ANALYST;
+		evseq_cfg_avail = the_evseq_cfg_avail;
+		evseq_cfg_params = the_evseq_cfg_params;
+		return;
+	}
+
+	// Fetch event-sequence configuration parameters.
+
+	public void fetch_evseq_cfg_params (ForecastMainshock fcmain, ForecastParameters prior_params) {
+
+		// Inherit fetch method from prior parameters, or use default
+
+		if (prior_params != null) {
+			evseq_cfg_fetch_meth = prior_params.evseq_cfg_fetch_meth;
+		} else {
+			evseq_cfg_fetch_meth = FETCH_METH_AUTO;
+		}
+
+		// Handle non-auto fetch methods
+
+		switch (evseq_cfg_fetch_meth) {
+
+		// Analyst, copy from prior parameters
+
+		case FETCH_METH_ANALYST:
+			evseq_cfg_avail = prior_params.evseq_cfg_avail;
+			evseq_cfg_params = prior_params.evseq_cfg_params;
+			return;
+
+		// Suppress, make not available
+
+		case FETCH_METH_SUPPRESS:
+			evseq_cfg_avail = false;
+			set_default_evseq_cfg_params();
+			return;
+		}
+
+		// Fetch parameters from configuration file
+
+		evseq_cfg_avail = true;
+		evseq_cfg_params = (new EventSequenceParameters()).fetch();
+
+		return;
+	}
+
+
 	//----- Transient parameters -----
 
 //	// The configured default injectable text, or "" if none, or null if not set.
@@ -894,6 +976,7 @@ public class ForecastParameters {
 		fetch_mag_comp_params (fcmain, prior_params);
 		fetch_seq_spec_params (fcmain, prior_params);
 		fetch_aftershock_search_region (fcmain, prior_params, 0L);
+		fetch_evseq_cfg_params (fcmain, prior_params);
 		return;
 	}
 
@@ -906,6 +989,7 @@ public class ForecastParameters {
 		fetch_mag_comp_params (fcmain, prior_params);
 		fetch_seq_spec_params (fcmain, prior_params);
 		fetch_aftershock_search_region (fcmain, prior_params, the_start_lag);
+		fetch_evseq_cfg_params (fcmain, prior_params);
 		return;
 	}
 
@@ -919,6 +1003,7 @@ public class ForecastParameters {
 		fetch_generic_params (fcmain, prior_params);
 		fetch_mag_comp_params (fcmain, prior_params);
 		fetch_seq_spec_params (fcmain, prior_params);
+		fetch_evseq_cfg_params (fcmain, prior_params);
 
 		return generic_avail && mag_comp_avail && seq_spec_avail;
 	}
@@ -955,6 +1040,10 @@ public class ForecastParameters {
 		aftershock_search_avail = false;
 		set_default_aftershock_search_params();
 
+		evseq_cfg_fetch_meth = FETCH_METH_AUTO;
+		evseq_cfg_avail = false;
+		set_default_evseq_cfg_params();
+
 		set_default_transient_params();
 	
 		return;
@@ -982,6 +1071,10 @@ public class ForecastParameters {
 		aftershock_search_fetch_meth = other.aftershock_search_fetch_meth;
 		aftershock_search_avail = other.aftershock_search_avail;
 		copy_aftershock_search_params_from (other);
+
+		evseq_cfg_fetch_meth = other.evseq_cfg_fetch_meth;
+		evseq_cfg_avail = other.evseq_cfg_avail;
+		copy_evseq_cfg_params_from (other);
 
 		copy_transient_params_from (other);
 	
@@ -1034,6 +1127,12 @@ public class ForecastParameters {
 			result.append ("min_mag = " + min_mag + "\n");
 		}
 
+		result.append ("evseq_cfg_fetch_meth = " + evseq_cfg_fetch_meth + "\n");
+		result.append ("evseq_cfg_avail = " + evseq_cfg_avail + "\n");
+		if (evseq_cfg_avail) {
+			result.append ("evseq_cfg_params = " + evseq_cfg_params.toString() + "\n");
+		}
+
 //		if (def_injectable_text != null) {
 //			result.append ("def_injectable_text = " + def_injectable_text + "\n");
 //		}
@@ -1050,6 +1149,7 @@ public class ForecastParameters {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 22001;
+	private static final int MARSHAL_VER_2 = 22002;
 
 	private static final String M_VERSION_NAME = "ForecastParameters";
 
@@ -1072,46 +1172,103 @@ public class ForecastParameters {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Contents
 
-		writer.marshalLong   ("forecast_lag"   , forecast_lag   );
+		switch (ver) {
 
-		writer.marshalInt    ("generic_calc_meth" , generic_calc_meth );
-		writer.marshalInt    ("seq_spec_calc_meth", seq_spec_calc_meth);
-		writer.marshalInt    ("bayesian_calc_meth", bayesian_calc_meth);
-		writer.marshalString ("injectable_text"   , injectable_text   );
+		case MARSHAL_VER_1:
 
-		writer.marshalInt     ("generic_fetch_meth", generic_fetch_meth);
-		writer.marshalBoolean ("generic_avail"     , generic_avail     );
-		if (generic_avail) {
-			writer.marshalString ("generic_regime", generic_regime);
-			generic_params.marshal (writer, "generic_params");
-		}
+			writer.marshalLong   ("forecast_lag"   , forecast_lag   );
 
-		writer.marshalInt     ("mag_comp_fetch_meth", mag_comp_fetch_meth);
-		writer.marshalBoolean ("mag_comp_avail"     , mag_comp_avail     );
-		if (mag_comp_avail) {
-			writer.marshalString ("mag_comp_regime", mag_comp_regime);
-			mag_comp_params.marshal (writer, "mag_comp_params");
-		}
+			writer.marshalInt    ("generic_calc_meth" , generic_calc_meth );
+			writer.marshalInt    ("seq_spec_calc_meth", seq_spec_calc_meth);
+			writer.marshalInt    ("bayesian_calc_meth", bayesian_calc_meth);
+			writer.marshalString ("injectable_text"   , injectable_text   );
 
-		writer.marshalInt     ("seq_spec_fetch_meth", seq_spec_fetch_meth);
-		writer.marshalBoolean ("seq_spec_avail"     , seq_spec_avail     );
-		if (seq_spec_avail) {
-			seq_spec_params.marshal (writer, "seq_spec_params");
-		}
+			writer.marshalInt     ("generic_fetch_meth", generic_fetch_meth);
+			writer.marshalBoolean ("generic_avail"     , generic_avail     );
+			if (generic_avail) {
+				writer.marshalString ("generic_regime", generic_regime);
+				generic_params.marshal (writer, "generic_params");
+			}
 
-		writer.marshalInt     ("aftershock_search_fetch_meth", aftershock_search_fetch_meth);
-		writer.marshalBoolean ("aftershock_search_avail"     , aftershock_search_avail     );
-		if (aftershock_search_avail) {
-			SphRegion.marshal_poly (writer, "aftershock_search_region", aftershock_search_region);
-			writer.marshalDouble ("min_days" , min_days );
-			writer.marshalDouble ("max_days" , max_days );
-			writer.marshalDouble ("min_depth", min_depth);
-			writer.marshalDouble ("max_depth", max_depth);
-			writer.marshalDouble ("min_mag"  , min_mag  );
+			writer.marshalInt     ("mag_comp_fetch_meth", mag_comp_fetch_meth);
+			writer.marshalBoolean ("mag_comp_avail"     , mag_comp_avail     );
+			if (mag_comp_avail) {
+				writer.marshalString ("mag_comp_regime", mag_comp_regime);
+				mag_comp_params.marshal (writer, "mag_comp_params");
+			}
+
+			writer.marshalInt     ("seq_spec_fetch_meth", seq_spec_fetch_meth);
+			writer.marshalBoolean ("seq_spec_avail"     , seq_spec_avail     );
+			if (seq_spec_avail) {
+				seq_spec_params.marshal (writer, "seq_spec_params");
+			}
+
+			writer.marshalInt     ("aftershock_search_fetch_meth", aftershock_search_fetch_meth);
+			writer.marshalBoolean ("aftershock_search_avail"     , aftershock_search_avail     );
+			if (aftershock_search_avail) {
+				SphRegion.marshal_poly (writer, "aftershock_search_region", aftershock_search_region);
+				writer.marshalDouble ("min_days" , min_days );
+				writer.marshalDouble ("max_days" , max_days );
+				writer.marshalDouble ("min_depth", min_depth);
+				writer.marshalDouble ("max_depth", max_depth);
+				writer.marshalDouble ("min_mag"  , min_mag  );
+			}
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			writer.marshalLong   ("forecast_lag"   , forecast_lag   );
+
+			writer.marshalInt    ("generic_calc_meth" , generic_calc_meth );
+			writer.marshalInt    ("seq_spec_calc_meth", seq_spec_calc_meth);
+			writer.marshalInt    ("bayesian_calc_meth", bayesian_calc_meth);
+			writer.marshalString ("injectable_text"   , injectable_text   );
+
+			writer.marshalInt     ("generic_fetch_meth", generic_fetch_meth);
+			writer.marshalBoolean ("generic_avail"     , generic_avail     );
+			if (generic_avail) {
+				writer.marshalString ("generic_regime", generic_regime);
+				generic_params.marshal (writer, "generic_params");
+			}
+
+			writer.marshalInt     ("mag_comp_fetch_meth", mag_comp_fetch_meth);
+			writer.marshalBoolean ("mag_comp_avail"     , mag_comp_avail     );
+			if (mag_comp_avail) {
+				writer.marshalString ("mag_comp_regime", mag_comp_regime);
+				mag_comp_params.marshal (writer, "mag_comp_params");
+			}
+
+			writer.marshalInt     ("seq_spec_fetch_meth", seq_spec_fetch_meth);
+			writer.marshalBoolean ("seq_spec_avail"     , seq_spec_avail     );
+			if (seq_spec_avail) {
+				seq_spec_params.marshal (writer, "seq_spec_params");
+			}
+
+			writer.marshalInt     ("aftershock_search_fetch_meth", aftershock_search_fetch_meth);
+			writer.marshalBoolean ("aftershock_search_avail"     , aftershock_search_avail     );
+			if (aftershock_search_avail) {
+				SphRegion.marshal_poly (writer, "aftershock_search_region", aftershock_search_region);
+				writer.marshalDouble ("min_days" , min_days );
+				writer.marshalDouble ("max_days" , max_days );
+				writer.marshalDouble ("min_depth", min_depth);
+				writer.marshalDouble ("max_depth", max_depth);
+				writer.marshalDouble ("min_mag"  , min_mag  );
+			}
+
+			writer.marshalInt     ("evseq_cfg_fetch_meth", evseq_cfg_fetch_meth);
+			writer.marshalBoolean ("evseq_cfg_avail"     , evseq_cfg_avail     );
+			if (evseq_cfg_avail) {
+				evseq_cfg_params.marshal (writer, "evseq_cfg_params");
+			}
+
+			break;
 		}
 	
 		return;
@@ -1120,63 +1277,137 @@ public class ForecastParameters {
 	// Unmarshal object, internal.
 
 	protected void do_umarshal (MarshalReader reader) {
-	
+
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
-		forecast_lag    = reader.unmarshalLong   ("forecast_lag"   );
+		switch (ver) {
 
-		generic_calc_meth  = reader.unmarshalInt    ("generic_calc_meth" , CALC_METH_MIN, CALC_METH_MAX);
-		seq_spec_calc_meth = reader.unmarshalInt    ("seq_spec_calc_meth", CALC_METH_MIN, CALC_METH_MAX);
-		bayesian_calc_meth = reader.unmarshalInt    ("bayesian_calc_meth", CALC_METH_MIN, CALC_METH_MAX);
-		injectable_text    = reader.unmarshalString ("injectable_text");
+		case MARSHAL_VER_1:
 
-		generic_fetch_meth = reader.unmarshalInt     ("generic_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
-		generic_avail      = reader.unmarshalBoolean ("generic_avail");
-		if (generic_avail) {
-			generic_regime = reader.unmarshalString ("generic_regime");
-			generic_params = (new GenericRJ_Parameters()).unmarshal (reader, "generic_params");
-		} else {
-			set_default_generic_params();
-		}
+			forecast_lag    = reader.unmarshalLong   ("forecast_lag"   );
 
-		mag_comp_fetch_meth = reader.unmarshalInt     ("mag_comp_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
-		mag_comp_avail      = reader.unmarshalBoolean ("mag_comp_avail");
-		if (mag_comp_avail) {
-			mag_comp_regime = reader.unmarshalString ("mag_comp_regime");
-			mag_comp_params = (new MagCompPage_Parameters()).unmarshal (reader, "mag_comp_params");
-		} else {
-			set_default_mag_comp_params();
-		}
+			generic_calc_meth  = reader.unmarshalInt    ("generic_calc_meth" , CALC_METH_MIN, CALC_METH_MAX);
+			seq_spec_calc_meth = reader.unmarshalInt    ("seq_spec_calc_meth", CALC_METH_MIN, CALC_METH_MAX);
+			bayesian_calc_meth = reader.unmarshalInt    ("bayesian_calc_meth", CALC_METH_MIN, CALC_METH_MAX);
+			injectable_text    = reader.unmarshalString ("injectable_text");
 
-		seq_spec_fetch_meth = reader.unmarshalInt     ("seq_spec_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
-		seq_spec_avail      = reader.unmarshalBoolean ("seq_spec_avail");
-		if (seq_spec_avail) {
-			seq_spec_params = (new SeqSpecRJ_Parameters()).unmarshal (reader, "seq_spec_params");
-		} else {
-			set_default_seq_spec_params();
-		}
-
-		aftershock_search_fetch_meth = reader.unmarshalInt     ("aftershock_search_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
-		aftershock_search_avail      = reader.unmarshalBoolean ("aftershock_search_avail");
-		if (aftershock_search_avail) {
-			aftershock_search_region = SphRegion.unmarshal_poly (reader, "aftershock_search_region");
-			if (aftershock_search_region == null) {
-				throw new MarshalException ("Aftershock search region is null");
+			generic_fetch_meth = reader.unmarshalInt     ("generic_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			generic_avail      = reader.unmarshalBoolean ("generic_avail");
+			if (generic_avail) {
+				generic_regime = reader.unmarshalString ("generic_regime");
+				generic_params = (new GenericRJ_Parameters()).unmarshal (reader, "generic_params");
+			} else {
+				set_default_generic_params();
 			}
-			min_days  = reader.unmarshalDouble ("min_days" );
-			max_days  = reader.unmarshalDouble ("max_days" );
-			min_depth = reader.unmarshalDouble ("min_depth");
-			max_depth = reader.unmarshalDouble ("max_depth");
-			min_mag   = reader.unmarshalDouble ("min_mag"  );
-		} else {
-			set_default_aftershock_search_params();
-		}
 
-		set_default_transient_params();
+			mag_comp_fetch_meth = reader.unmarshalInt     ("mag_comp_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			mag_comp_avail      = reader.unmarshalBoolean ("mag_comp_avail");
+			if (mag_comp_avail) {
+				mag_comp_regime = reader.unmarshalString ("mag_comp_regime");
+				mag_comp_params = (new MagCompPage_Parameters()).unmarshal (reader, "mag_comp_params");
+			} else {
+				set_default_mag_comp_params();
+			}
+
+			seq_spec_fetch_meth = reader.unmarshalInt     ("seq_spec_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			seq_spec_avail      = reader.unmarshalBoolean ("seq_spec_avail");
+			if (seq_spec_avail) {
+				seq_spec_params = (new SeqSpecRJ_Parameters()).unmarshal (reader, "seq_spec_params");
+			} else {
+				set_default_seq_spec_params();
+			}
+
+			aftershock_search_fetch_meth = reader.unmarshalInt     ("aftershock_search_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			aftershock_search_avail      = reader.unmarshalBoolean ("aftershock_search_avail");
+			if (aftershock_search_avail) {
+				aftershock_search_region = SphRegion.unmarshal_poly (reader, "aftershock_search_region");
+				if (aftershock_search_region == null) {
+					throw new MarshalException ("Aftershock search region is null");
+				}
+				min_days  = reader.unmarshalDouble ("min_days" );
+				max_days  = reader.unmarshalDouble ("max_days" );
+				min_depth = reader.unmarshalDouble ("min_depth");
+				max_depth = reader.unmarshalDouble ("max_depth");
+				min_mag   = reader.unmarshalDouble ("min_mag"  );
+			} else {
+				set_default_aftershock_search_params();
+			}
+
+			evseq_cfg_fetch_meth = FETCH_METH_AUTO;
+			evseq_cfg_avail = false;
+			set_default_evseq_cfg_params();
+
+			set_default_transient_params();
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			forecast_lag    = reader.unmarshalLong   ("forecast_lag"   );
+
+			generic_calc_meth  = reader.unmarshalInt    ("generic_calc_meth" , CALC_METH_MIN, CALC_METH_MAX);
+			seq_spec_calc_meth = reader.unmarshalInt    ("seq_spec_calc_meth", CALC_METH_MIN, CALC_METH_MAX);
+			bayesian_calc_meth = reader.unmarshalInt    ("bayesian_calc_meth", CALC_METH_MIN, CALC_METH_MAX);
+			injectable_text    = reader.unmarshalString ("injectable_text");
+
+			generic_fetch_meth = reader.unmarshalInt     ("generic_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			generic_avail      = reader.unmarshalBoolean ("generic_avail");
+			if (generic_avail) {
+				generic_regime = reader.unmarshalString ("generic_regime");
+				generic_params = (new GenericRJ_Parameters()).unmarshal (reader, "generic_params");
+			} else {
+				set_default_generic_params();
+			}
+
+			mag_comp_fetch_meth = reader.unmarshalInt     ("mag_comp_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			mag_comp_avail      = reader.unmarshalBoolean ("mag_comp_avail");
+			if (mag_comp_avail) {
+				mag_comp_regime = reader.unmarshalString ("mag_comp_regime");
+				mag_comp_params = (new MagCompPage_Parameters()).unmarshal (reader, "mag_comp_params");
+			} else {
+				set_default_mag_comp_params();
+			}
+
+			seq_spec_fetch_meth = reader.unmarshalInt     ("seq_spec_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			seq_spec_avail      = reader.unmarshalBoolean ("seq_spec_avail");
+			if (seq_spec_avail) {
+				seq_spec_params = (new SeqSpecRJ_Parameters()).unmarshal (reader, "seq_spec_params");
+			} else {
+				set_default_seq_spec_params();
+			}
+
+			aftershock_search_fetch_meth = reader.unmarshalInt     ("aftershock_search_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			aftershock_search_avail      = reader.unmarshalBoolean ("aftershock_search_avail");
+			if (aftershock_search_avail) {
+				aftershock_search_region = SphRegion.unmarshal_poly (reader, "aftershock_search_region");
+				if (aftershock_search_region == null) {
+					throw new MarshalException ("Aftershock search region is null");
+				}
+				min_days  = reader.unmarshalDouble ("min_days" );
+				max_days  = reader.unmarshalDouble ("max_days" );
+				min_depth = reader.unmarshalDouble ("min_depth");
+				max_depth = reader.unmarshalDouble ("max_depth");
+				min_mag   = reader.unmarshalDouble ("min_mag"  );
+			} else {
+				set_default_aftershock_search_params();
+			}
+
+			evseq_cfg_fetch_meth = reader.unmarshalInt     ("evseq_cfg_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			evseq_cfg_avail      = reader.unmarshalBoolean ("evseq_cfg_avail");
+			if (evseq_cfg_avail) {
+				evseq_cfg_params = (new EventSequenceParameters()).unmarshal (reader, "evseq_cfg_params");
+			} else {
+				set_default_evseq_cfg_params();
+			}
+
+			set_default_transient_params();
+
+			break;
+		}
 
 		return;
 	}

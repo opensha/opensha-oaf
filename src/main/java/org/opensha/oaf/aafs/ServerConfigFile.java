@@ -608,6 +608,26 @@ public class ServerConfigFile {
 
 
 
+	// Return a string describing a PDL option value.
+
+	public static String get_pdlopt_as_string (int pdlopt) {
+
+		switch (pdlopt) {
+		case PDLOPT_NONE: return "PDLOPT_NONE";
+		case PDLOPT_DEV: return "PDLOPT_DEV";
+		case PDLOPT_PROD: return "PDLOPT_PROD";
+		case PDLOPT_SIM_DEV: return "PDLOPT_SIM_DEV";
+		case PDLOPT_SIM_PROD: return "PDLOPT_SIM_PROD";
+		case PDLOPT_DOWN_DEV: return "PDLOPT_DOWN_DEV";
+		case PDLOPT_DOWN_PROD: return "PDLOPT_DOWN_PROD";
+		}
+
+		return "PDLOPT_INVALID(" + pdlopt + ")";
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.

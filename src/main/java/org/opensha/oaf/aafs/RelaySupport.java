@@ -348,16 +348,37 @@ public class RelaySupport extends ServerComponent {
 	//  riprem_reason = Reason code, see RIPREM_REAS_XXXXX in class RiPDLRemoval.
 	//  riprem_forecast_stamp = Forecast stamp, which identifies the forecast.
 	//  riprem_remove_time = Time when it was determined that the OAF product can be deleted.
+	//  riprem_cap_time = Cap time, or CAP_TIME_XXXXX special value, for the event-sequence product.
 	// Returns the new RelayItem if it was added to the database.
 	// Returns null if not added to the database (because a newer one alreay exists).
 	// Remark: The appropriate event id to use is the event id to which the OAF product is
 	// associated, that is, the eventsource + eventsourcecode.
 
+//	public RelayItem submit_prem_relay_item (String event_id, long relay_time, boolean f_force,
+//				int riprem_reason, ForecastStamp riprem_forecast_stamp, long riprem_remove_time) {	// EVSTBD
+//		
+//		RiPDLRemoval riprem_payload = new RiPDLRemoval();
+//		riprem_payload.setup (riprem_reason, riprem_forecast_stamp, riprem_remove_time);
+//
+//		RelayItem result = RelayItem.submit_relay_item (
+//			event_id_to_prem_relay_id (event_id),			// relay_id
+//			relay_time,										// relay_time
+//			riprem_payload.marshal_relay(),					// details
+//			f_force,										// f_force
+//			0L);											// relay_stamp
+//
+//		int log_op = ((result == null) ? LogSupport.RIOP_STALE : LogSupport.RIOP_SAVE);
+//		long log_relay_time = ((result == null) ? relay_time : (result.get_relay_time()));
+//		sg.log_sup.report_prem_relay_set (log_op, event_id, log_relay_time, riprem_payload);
+//	
+//		return result;
+//	}
+
 	public RelayItem submit_prem_relay_item (String event_id, long relay_time, boolean f_force,
-				int riprem_reason, ForecastStamp riprem_forecast_stamp, long riprem_remove_time) {
+				int riprem_reason, ForecastStamp riprem_forecast_stamp, long riprem_remove_time, long riprem_cap_time) {
 		
 		RiPDLRemoval riprem_payload = new RiPDLRemoval();
-		riprem_payload.setup (riprem_reason, riprem_forecast_stamp, riprem_remove_time);
+		riprem_payload.setup (riprem_reason, riprem_forecast_stamp, riprem_remove_time, riprem_cap_time);
 
 		RelayItem result = RelayItem.submit_relay_item (
 			event_id_to_prem_relay_id (event_id),			// relay_id

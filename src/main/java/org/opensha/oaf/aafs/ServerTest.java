@@ -47,6 +47,7 @@ import gov.usgs.earthquake.product.Product;
 import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 import org.opensha.oaf.pdl.PDLSender;
 import org.opensha.oaf.pdl.PDLCodeChooserOaf;
+import org.opensha.oaf.pdl.PDLCodeChooserEventSequence;
 
 
 /**
@@ -4496,9 +4497,9 @@ public class ServerTest {
 
 	public static void test76(String[] args) throws Exception {
 
-		// 5 or 6 additional arguments
+		// 6 or 7 additional arguments
 
-		if (args.length != 6 && args.length != 7) {
+		if (args.length != 7 && args.length != 8) {
 			System.err.println ("ServerTest : Invalid 'test76' or 'psup_delete_oaf' subcommand");
 			return;
 		}
@@ -4507,10 +4508,11 @@ public class ServerTest {
 		String event_id = args[2];
 		int riprem_reason = Integer.parseInt (args[3]);
 		long riprem_forecast_lag = Long.parseLong (args[4]);
-		int pdl_enable = Integer.parseInt (args[5]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
+		long riprem_cap_time = SimpleUtils.string_or_number_or_now_to_time (args[5]);
+		int pdl_enable = Integer.parseInt (args[6]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
 		String pdl_key_filename = null;
-		if (args.length >= 7) {
-			pdl_key_filename = args[6];
+		if (args.length >= 8) {
+			pdl_key_filename = args[7];
 		}
 
 		String my_logfile = null;
@@ -4575,7 +4577,7 @@ public class ServerTest {
 
 			// Call pdl support
 
-			sg.pdl_sup.delete_oaf_products (fcmain, riprem_reason, new ForecastStamp (riprem_forecast_lag));
+			sg.pdl_sup.delete_oaf_products (fcmain, riprem_reason, new ForecastStamp (riprem_forecast_lag), riprem_cap_time);
 		}
 
 		return;
@@ -4588,9 +4590,9 @@ public class ServerTest {
 
 	public static void test77(String[] args) throws Exception {
 
-		// 7 additional arguments
+		// 8 additional arguments
 
-		if (args.length != 8) {
+		if (args.length != 9) {
 			System.err.println ("ServerTest : Invalid 'test77' or 'rsup_prem_submit' subcommand");
 			return;
 		}
@@ -4601,7 +4603,8 @@ public class ServerTest {
 		boolean f_force = Boolean.parseBoolean (args[4]);
 		int riprem_reason = Integer.parseInt (args[5]);
 		long riprem_forecast_lag = Long.parseLong (args[6]);
-		long riprem_remove_time = Long.parseLong (args[7]);
+		long riprem_remove_time = SimpleUtils.string_or_number_or_now_to_time (args[7]);
+		long riprem_cap_time = SimpleUtils.string_or_number_or_now_to_time (args[8]);
 
 		String my_logfile = null;
 		if (!( logfile.equals ("-") )) {
@@ -4635,7 +4638,7 @@ public class ServerTest {
 			// Call relay support
 
 			RelayItem relit = sg.relay_sup.submit_prem_relay_item (event_id, relay_time, f_force,
-				riprem_reason, new ForecastStamp (riprem_forecast_lag), riprem_remove_time);
+				riprem_reason, new ForecastStamp (riprem_forecast_lag), riprem_remove_time, riprem_cap_time);
 
 			// Display result
 
@@ -4652,6 +4655,7 @@ public class ServerTest {
 				System.out.println ("\triprem_reason = " + payload.riprem_reason + " (" + payload.get_riprem_reason_as_string() + ")");
 				System.out.println ("\triprem_forecast_stamp = " + payload.get_riprem_forecast_stamp_as_string());
 				System.out.println ("\triprem_remove_time = " + payload.get_riprem_remove_time_as_string());
+				System.out.println ("\triprem_cap_time = " + payload.get_riprem_cap_time_as_string());
 			}
 		}
 
@@ -4713,6 +4717,7 @@ public class ServerTest {
 					System.out.println ("\triprem_reason = " + payload.riprem_reason + " (" + payload.get_riprem_reason_as_string() + ")");
 					System.out.println ("\triprem_forecast_stamp = " + payload.get_riprem_forecast_stamp_as_string());
 					System.out.println ("\triprem_remove_time = " + payload.get_riprem_remove_time_as_string());
+					System.out.println ("\triprem_cap_time = " + payload.get_riprem_cap_time_as_string());
 				}
 			}
 		}
@@ -5083,12 +5088,15 @@ public class ServerTest {
 
 			// Cleanup event
 
-			long doop = sg.cleanup_sup.cleanup_event (event_id, time_now);
+			EventSequenceResult evseq_res = new EventSequenceResult();
+
+			long doop = sg.cleanup_sup.cleanup_event (event_id, time_now, evseq_res);
 
 			// Display results
 
-			System.out.println ("cleanup_event returned " + doop);
-			System.out.println ("Friendly form = " + PDLCodeChooserOaf.get_doop_as_string (doop));
+			System.out.println ("cleanup_event returned doop =  " + doop + ", doesp = " + evseq_res.doesp);
+			System.out.println ("Friendly form doop = " + PDLCodeChooserOaf.get_doop_as_string (doop));
+			System.out.println ("Friendly form doesp = " + PDLCodeChooserEventSequence.get_doesp_as_string (evseq_res.doesp));
 		}
 
 		return;
@@ -7303,8 +7311,9 @@ public class ServerTest {
 
 		// Subcommand : Test #76
 		// Command format:
-		//  test76  logfile  event_id  riprem_reason  riprem_forecast_lag  pdl_enable  [pdl_key_filename]
+		//  test76  logfile  event_id  riprem_reason  riprem_forecast_lag  riprem_cap_time  pdl_enable  [pdl_key_filename]
 		// Use pdl support to delete OAF products.
+		// Cap time can be ISO8601, "now", or integer; special values: 0 = delete, -1 = no operation, -2 = unbounded.
 		// The logfile can be "-" for none.
 
 		if (args[0].equalsIgnoreCase ("test76") || args[0].equalsIgnoreCase ("psup_delete_oaf")) {
@@ -7320,9 +7329,11 @@ public class ServerTest {
 
 		// Subcommand : Test #77
 		// Command format:
-		//  test77  logfile  event_id  relay_time  f_force  riprem_reason  riprem_forecast_lag  riprem_remove_time
+		//  test77  logfile  event_id  relay_time  f_force  riprem_reason  riprem_forecast_lag  riprem_remove_time  riprem_cap_time
 		// Use relay support to submit a pdl removal relay item.
 		// Then display the item that was written.
+		// Remove time can be ISO8601, "now", or integer.
+		// Cap time can be ISO8601, "now", or integer; special values: 0 = delete, -1 = no operation, -2 = unbounded.
 		// The logfile can be "-" for none.
 
 		if (args[0].equalsIgnoreCase ("test77") || args[0].equalsIgnoreCase ("rsup_prem_submit")) {

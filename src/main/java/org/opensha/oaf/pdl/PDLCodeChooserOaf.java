@@ -170,6 +170,107 @@ public class PDLCodeChooserOaf {
 
 
 
+	// Class that encapsulates the deletion of a list of OAF products.
+
+	public static class DeleteOafOp {
+
+		// Deletion parameters (see deleteOafProducts).
+
+		private List<ComcatProductOaf> oafProducts;
+		private int keep;
+		private String eventNetwork;
+		private String eventCode;
+		private boolean isReviewed;
+
+		// Clear parameters.
+
+		public final void clear () {
+			oafProducts = null;
+			keep = -1;
+			eventNetwork = null;
+			eventCode = null;
+			isReviewed = false;
+			return;
+		}
+
+		// Constructor makes an empty operation.
+
+		public DeleteOafOp () {
+			oafProducts = null;
+			keep = -1;
+			eventNetwork = null;
+			eventCode = null;
+			isReviewed = false;
+		}
+
+		// Set the operation.
+
+		public final void set  (List<ComcatProductOaf> oafProducts, int keep,
+			String eventNetwork, String eventCode, boolean isReviewed) {
+
+			this.oafProducts = oafProducts;
+			this.keep = keep;
+			this.eventNetwork = eventNetwork;
+			this.eventCode = eventCode;
+			this.isReviewed = isReviewed;
+			return;
+		}
+
+		// Return true if we have products to delete.
+
+		public final boolean check_delete () {
+			if (oafProducts != null) {
+				if (keep >= 0 && keep < oafProducts.size()) {
+					if (oafProducts.size() > 1) {
+						return true;
+					}
+				} else {
+					if (oafProducts.size() > 0) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		// Perform the deletion operation.
+
+		public final void do_delete () throws Exception {
+			if (oafProducts != null) {
+				deleteOafProducts (oafProducts, keep, eventNetwork, eventCode, isReviewed);
+			}
+			return;
+		}
+
+		// Make a string representation.
+
+		@Override
+		public String toString () {
+			StringBuilder sb = new StringBuilder();
+			sb.append ("PDLCodeChooserOaf.DeleteOafOp" + "\n");
+			if (oafProducts == null) {
+				sb.append ("oafProducts = <null>" + "\n");
+			} else {
+				sb.append ("oafProducts.size() = " + oafProducts.size() + "\n");
+				sb.append ("keep = " + keep + "\n");
+				sb.append ("eventNetwork = " + eventNetwork + "\n");
+				sb.append ("eventCode = " + eventCode + "\n");
+				sb.append ("isReviewed = " + isReviewed + "\n");
+				if (oafProducts.size() > 0) {
+					sb.append ("oafProducts:" + "\n");
+					for (int k = 0; k < oafProducts.size(); ++k) {
+						sb.append (k + ": " + oafProducts.get(k).summary_string() + "\n");
+					}
+				}
+			}
+			sb.append ("check_delete = " + check_delete() + "\n");
+			return sb.toString();
+		}
+	}
+
+
+
+
 	// Choose the code.
 	// Parameters:
 	//  suggestedCode = Code to use, if none is available from PDL.
@@ -201,26 +302,97 @@ public class PDLCodeChooserOaf {
 			JSONObject geojson, boolean f_gj_prod, String queryID,
 			String eventNetwork, String eventCode, boolean isReviewed) throws Exception {
 
+		DeleteOafOp del_op = new DeleteOafOp();
 		GeoJsonHolder gj_used = null;
 
-		return chooseOafCode (suggestedCode, reviewOverwrite,
+		String result = checkChooseOafCode (suggestedCode, reviewOverwrite,
 			geojson, f_gj_prod, queryID,
-			eventNetwork, eventCode, isReviewed, gj_used);
+			eventNetwork, eventCode, isReviewed, del_op, gj_used);
+
+		del_op.do_delete();
+		return result;
 	}
 
 	public static String chooseOafCode (String suggestedCode, long reviewOverwrite,
 			JSONObject geojson, boolean f_gj_prod, String queryID,
 			String eventNetwork, String eventCode, boolean isReviewed, GeoJsonHolder gj_used) throws Exception {
 
+		DeleteOafOp del_op = new DeleteOafOp();
+
+		String result = checkChooseOafCode (suggestedCode, reviewOverwrite,
+			geojson, f_gj_prod, queryID,
+			eventNetwork, eventCode, isReviewed, del_op, gj_used);
+
+		del_op.do_delete();
+		return result;
+	}
+
+
+
+
+	// Check to choose the code.
+	// Parameters:
+	//  suggestedCode = Code to use, if none is available from PDL.
+	//  reviewOverwrite = Controls what happens if the most recent product from "us"
+	//   is a reviewed product with a valid code:
+	//     -1L = No special treatment.
+	//      0L = Use the code from the most recent product.
+	//      1L = Skip the PDL update (return null).
+	//    > 1L = Skip the PDL update if the most recent product time is >= reviewOverwrite,
+	//           otherwise use the code from the most recent product.
+	//  geojson = GeoJSON for the event, or null if not available.  If not supplied,
+	//   or if f_gj_prod does not correspond to the PDL destination, then this
+	//   function retrieves the geojson from Comcat.
+	//  f_gj_prod = True if geojson was retrieved from Comcat-production, false if it
+	//   was retrieved from Comcat-development.  This is only used if geojson is non-null.
+	//  queryID = Event ID used to query Comcat.  This is used if geojson is not supplied
+	//   or if f_gj_prod does not correspond to the PDL destination.
+	//  eventNetwork = Network identifier for the event (for example, "us").
+	//  eventCode = Network code for the event (for example, "10006jv5").
+	//  isReviewed = True if this product has been reviewed.
+	//  del_op = Returns the deletion operation.  Cannot be null.
+	//  gj_used = If included and non-null, returns the GeoJSON used for reading back from
+	//   PDL.  Note the returned GeoJSON can be null if the event was not found, and may
+	//   be the same as or different from the supplied geojson.
+	// Returns the code to use as eventID when constructing the PDL product.
+	// Returns null if the PDL send should be skipped.  This will never occur if
+	//  reviewOverwrite equals -1L or 0L.
+	// Exactly the same as chooseOafCode, except that instead of deleting
+	//  OAF products it returns an encapsulated deletion operation.
+	// If followed by a call to del_op.do_delete(), the effect is exactly the same
+	//  as calling chooseOafCode.
+	// Note: This function makes no changes to PDL.
+
+	public static String checkChooseOafCode (String suggestedCode, long reviewOverwrite,
+			JSONObject geojson, boolean f_gj_prod, String queryID,
+			String eventNetwork, String eventCode, boolean isReviewed, DeleteOafOp del_op) throws Exception {
+
+		GeoJsonHolder gj_used = null;
+
+		return checkChooseOafCode (suggestedCode, reviewOverwrite,
+			geojson, f_gj_prod, queryID,
+			eventNetwork, eventCode, isReviewed, del_op, gj_used);
+	}
+
+	public static String checkChooseOafCode (String suggestedCode, long reviewOverwrite,
+			JSONObject geojson, boolean f_gj_prod, String queryID,
+			String eventNetwork, String eventCode, boolean isReviewed, DeleteOafOp del_op, GeoJsonHolder gj_used) throws Exception {
+
+		// Default to no deletion operation
+
+		del_op.clear();
+
+		// Default to the supplied geojson
+
+		if (gj_used != null) {
+			gj_used.set (geojson, f_gj_prod);
+		}
+
 		// Get flag indicating if we should read back products from production
 
 		boolean f_use_prod = (new ServerConfig()).get_is_pdl_readback_prod();
 
 		// Get the geojson, reading from Comcat if necessary
-
-		if (gj_used != null) {
-			gj_used.set (geojson, f_gj_prod);
-		}
 
 		JSONObject my_geojson = geojson;
 
@@ -346,7 +518,7 @@ public class PDLCodeChooserOaf {
 					if (reviewOverwrite == 1L || oafProducts.get(ix_recent).updateTime >= reviewOverwrite) {
 
 						System.out.println ("Skipping PDL update due to existing reviewed OAF product: " + oafProducts.get(ix_recent).summary_string());
-						deleteOafProducts (oafProducts, ix_recent, eventNetwork, eventCode, isReviewed);
+						del_op.set (oafProducts, ix_recent, eventNetwork, eventCode, isReviewed);
 						return null;
 					}
 				}
@@ -354,7 +526,7 @@ public class PDLCodeChooserOaf {
 				// Delete other products and return the code from this product
 
 				System.out.println ("Choosing code from existing reviewed OAF product: " + oafProducts.get(ix_recent).summary_string());
-				deleteOafProducts (oafProducts, ix_recent, eventNetwork, eventCode, isReviewed);
+				del_op.set (oafProducts, ix_recent, eventNetwork, eventCode, isReviewed);
 				return oafProducts.get(ix_recent).eventID;
 			}
 		}
@@ -366,7 +538,7 @@ public class PDLCodeChooserOaf {
 			// Delete other products and return the code from this product
 
 			System.out.println ("Choosing suggested code from existing OAF product: " + oafProducts.get(ix_suggested).summary_string());
-			deleteOafProducts (oafProducts, ix_suggested, eventNetwork, eventCode, isReviewed);
+			del_op.set (oafProducts, ix_suggested, eventNetwork, eventCode, isReviewed);
 			return oafProducts.get(ix_suggested).eventID;
 		}
 
@@ -377,7 +549,7 @@ public class PDLCodeChooserOaf {
 			// Delete other products and return the code from this product
 
 			System.out.println ("Choosing code from existing OAF product: " + oafProducts.get(ix_valid).summary_string());
-			deleteOafProducts (oafProducts, ix_valid, eventNetwork, eventCode, isReviewed);
+			del_op.set (oafProducts, ix_valid, eventNetwork, eventCode, isReviewed);
 			return oafProducts.get(ix_valid).eventID;
 		}
 
@@ -388,14 +560,14 @@ public class PDLCodeChooserOaf {
 			// Delete all products and return the suggested code
 
 			System.out.println ("Choosing suggested code '" + suggestedCode + "' because there is no existing code to use");
-			deleteOafProducts (oafProducts, -1, eventNetwork, eventCode, isReviewed);
+			del_op.set (oafProducts, -1, eventNetwork, eventCode, isReviewed);
 			return suggestedCode;
 		}
 
 		// If all else fails, delete all products and return the authoritative ID
 
 		System.out.println ("Choosing authoritative ID '" + idlist.get(0) + "' to use as code");
-		deleteOafProducts (oafProducts, -1, eventNetwork, eventCode, isReviewed);
+		del_op.set (oafProducts, -1, eventNetwork, eventCode, isReviewed);
 		return idlist.get(0);
 	}
 
@@ -476,6 +648,12 @@ public class PDLCodeChooserOaf {
 			JSONObject geojson, boolean f_gj_prod, String queryID,
 			boolean isReviewed, long cutoff_time, GeoJsonHolder gj_used) throws Exception {
 
+		// Default to the supplied geojson
+
+		if (gj_used != null) {
+			gj_used.set (geojson, f_gj_prod);
+		}
+
 		// Server configuration
 
 		ServerConfig server_config = new ServerConfig();
@@ -489,10 +667,6 @@ public class PDLCodeChooserOaf {
 		}
 
 		// Get the geojson, reading from Comcat if necessary
-
-		if (gj_used != null) {
-			gj_used.set (geojson, f_gj_prod);
-		}
 
 		JSONObject my_geojson = geojson;
 
@@ -664,16 +838,82 @@ public class PDLCodeChooserOaf {
 			JSONObject geojson, boolean f_gj_prod, String queryID,
 			boolean isReviewed, long cutoff_time, long reviewed_time) throws Exception {
 
+		DeleteOafOp del_op = new DeleteOafOp();
 		GeoJsonHolder gj_used = null;
 
-		return deleteOldOafProducts_v2 (f_prod,
+		long result = checkDeleteOldOafProducts_v2 (f_prod,
 			geojson, f_gj_prod, queryID,
-			isReviewed, cutoff_time, reviewed_time, gj_used);
+			isReviewed, cutoff_time, reviewed_time, del_op, gj_used);
+
+		del_op.do_delete();
+		return result;
 	}
 
 	public static long deleteOldOafProducts_v2 (Boolean f_prod,
 			JSONObject geojson, boolean f_gj_prod, String queryID,
 			boolean isReviewed, long cutoff_time, long reviewed_time, GeoJsonHolder gj_used) throws Exception {
+
+		DeleteOafOp del_op = new DeleteOafOp();
+
+		long result = checkDeleteOldOafProducts_v2 (f_prod,
+			geojson, f_gj_prod, queryID,
+			isReviewed, cutoff_time, reviewed_time, del_op, gj_used);
+
+		del_op.do_delete();
+		return result;
+	}
+
+
+
+
+	// Check for delete old OAF products associated with an event.
+	// Parameters:
+	//  f_prod = True to read from prod-Comcat, false to read from dev-Comcat,
+	//           null to read from the configured PDL destination.
+	//  geojson = GeoJSON for the event, or null if not available.  If not supplied,
+	//   or if f_gj_prod does not correspond to the PDL destination, then this
+	//   function retrieves the geojson from Comcat.
+	//  f_gj_prod = True if geojson was retrieved from Comcat-production, false if it
+	//   was retrieved from Comcat-development.  This is only used if geojson is non-null.
+	//  queryID = Event ID used to query Comcat.  This is used only if geojson is null,
+	//   or if f_gj_prod does not correspond to the PDL destination.
+	//  isReviewed = True to set reviewed flag on the delete products.
+	//  cutoff_time = Cutoff time in milliseconds since the epoch, or 0L if none.
+	//  reviewed_time = Reviewed product time in milliseconds since the epoch, or 0L if none.
+	//  del_op = Returns the deletion operation.  Cannot be null.
+	//  gj_used = If included and non-null, returns the GeoJSON used for reading back from
+	//   PDL.  Note the returned GeoJSON can be null if the event was not found, and may
+	//   be the same as or different from the supplied geojson.
+	// Exactly the same as deleteOldOafProducts_v2, except that instead of deleting
+	//  OAF products it returns an encapsulated deletion operation.
+	// If followed by a call to del_op.do_delete(), the effect is exactly the same
+	//  as calling deleteOldOafProducts_v2.
+	// Note: This function makes no changes to PDL.
+
+	public static long checkDeleteOldOafProducts_v2 (Boolean f_prod,
+			JSONObject geojson, boolean f_gj_prod, String queryID,
+			boolean isReviewed, long cutoff_time, long reviewed_time, DeleteOafOp del_op) throws Exception {
+
+		GeoJsonHolder gj_used = null;
+
+		return checkDeleteOldOafProducts_v2 (f_prod,
+			geojson, f_gj_prod, queryID,
+			isReviewed, cutoff_time, reviewed_time, del_op, gj_used);
+	}
+
+	public static long checkDeleteOldOafProducts_v2 (Boolean f_prod,
+			JSONObject geojson, boolean f_gj_prod, String queryID,
+			boolean isReviewed, long cutoff_time, long reviewed_time, DeleteOafOp del_op, GeoJsonHolder gj_used) throws Exception {
+
+		// Default to no deletion operation
+
+		del_op.clear();
+
+		// Default to the supplied geojson
+
+		if (gj_used != null) {
+			gj_used.set (geojson, f_gj_prod);
+		}
 
 		// Server configuration
 
@@ -688,10 +928,6 @@ public class PDLCodeChooserOaf {
 		}
 
 		// Get the geojson, reading from Comcat if necessary
-
-		if (gj_used != null) {
-			gj_used.set (geojson, f_gj_prod);
-		}
 
 		JSONObject my_geojson = geojson;
 
@@ -839,8 +1075,7 @@ public class PDLCodeChooserOaf {
 
 		// Delete all OAF products from our source, keeping any reviewed product treated as foreign
 
-		//deleteOafProducts (oafProducts, -1, event_net, event_code, isReviewed);
-		deleteOafProducts (oafProducts, ix_reviewed, event_net, event_code, isReviewed);
+		del_op.set (oafProducts, ix_reviewed, event_net, event_code, isReviewed);
 		return DOOP_DELETED;
 	}
 
@@ -915,6 +1150,12 @@ public class PDLCodeChooserOaf {
 	public static long checkOldOafProducts (Boolean f_prod,
 			JSONObject geojson, boolean f_gj_prod, String queryID, GeoJsonHolder gj_used) {
 
+		// Default to the supplied geojson
+
+		if (gj_used != null) {
+			gj_used.set (geojson, f_gj_prod);
+		}
+
 		// Server configuration
 
 		ServerConfig server_config = new ServerConfig();
@@ -928,10 +1169,6 @@ public class PDLCodeChooserOaf {
 		}
 
 		// Get the geojson, reading from Comcat if necessary
-
-		if (gj_used != null) {
-			gj_used.set (geojson, f_gj_prod);
-		}
 
 		JSONObject my_geojson = geojson;
 
@@ -1382,10 +1619,396 @@ public class PDLCodeChooserOaf {
 				// Display result
 
 				if (result > 0L) {
-					System.out.println ("PDLCodeChooserOaf.deleteOldOafProducts returned: " + SimpleUtils.time_raw_and_string(result));
+					System.out.println ("PDLCodeChooserOaf.deleteOldOafProducts_v2 returned: " + SimpleUtils.time_raw_and_string(result));
 				} else {
-					System.out.println ("PDLCodeChooserOaf.deleteOldOafProducts returned: " + result);
+					System.out.println ("PDLCodeChooserOaf.deleteOldOafProducts_v2 returned: " + result);
 				}
+			}
+
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6  pdl_enable  pdl_key_filename  suggestedCode   reviewOverwrite  queryID  eventNetwork  eventCode  isReviewed
+		// The PDL key filename can be "-" for none.
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Then call checkChooseOafCode and display the result.
+		// Same as test #1 except calling checkChooseOafCode.
+		// This test does not perform any deletion.
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// 8 additional arguments
+
+			if (args.length != 9) {
+				System.err.println ("PDLCodeChooserOaf : Invalid 'test6' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				String pdl_key_filename = args[2];
+				String suggestedCode = args[3];
+				long reviewOverwrite = Long.parseLong (args[4]);
+				String queryID = args[5];
+				String eventNetwork = args[6];
+				String eventCode = args[7];
+				boolean isReviewed = Boolean.parseBoolean (args[8]);
+
+				// Say hello
+
+				System.out.println ("Choosing code for OAF product");
+				System.out.println ("pdl_enable: " + pdl_enable);
+				System.out.println ("pdl_key_filename: " + pdl_key_filename);
+				System.out.println ("suggestedCode: " + suggestedCode);
+				System.out.println ("reviewOverwrite: " + reviewOverwrite);
+				System.out.println ("queryID: " + queryID);
+				System.out.println ("eventNetwork: " + eventNetwork);
+				System.out.println ("eventCode: " + eventCode);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("");
+
+				// Set the PDL enable code
+
+				if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+					System.out.println ("Invalid pdl_enable = " + pdl_enable);
+					return;
+				}
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+				if (!( pdl_key_filename.equals("-") )) {
+
+					if (!( (new File (pdl_key_filename)).canRead() )) {
+						System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+						return;
+					}
+
+					server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+				}
+
+				// Make the call
+
+				JSONObject geojson = null;
+				boolean f_gj_prod = true;
+				PDLCodeChooserOaf.DeleteOafOp del_op = new PDLCodeChooserOaf.DeleteOafOp();
+
+				String chosen_code = PDLCodeChooserOaf.checkChooseOafCode (suggestedCode, reviewOverwrite,
+						geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed, del_op);
+
+				// Display result
+
+				System.out.println ("PDLCodeChooserOaf.checkChooseOafCode result:");
+				System.out.println ((chosen_code == null) ? "<null>" : chosen_code);
+				System.out.println ("");
+				System.out.println (del_op.toString());
+
+			}
+
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  pdl_enable  pdl_key_filename  suggestedCode   reviewOverwrite  queryID  eventNetwork  eventCode  isReviewed
+		// The PDL key filename can be "-" for none.
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Then call checkChooseOafCode and display the result.
+		// Same as test #1 except calling checkChooseOafCode.
+		// Same as test #6 except it performs the deletion.
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// 8 additional arguments
+
+			if (args.length != 9) {
+				System.err.println ("PDLCodeChooserOaf : Invalid 'test7' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				String pdl_key_filename = args[2];
+				String suggestedCode = args[3];
+				long reviewOverwrite = Long.parseLong (args[4]);
+				String queryID = args[5];
+				String eventNetwork = args[6];
+				String eventCode = args[7];
+				boolean isReviewed = Boolean.parseBoolean (args[8]);
+
+				// Say hello
+
+				System.out.println ("Choosing code for OAF product");
+				System.out.println ("pdl_enable: " + pdl_enable);
+				System.out.println ("pdl_key_filename: " + pdl_key_filename);
+				System.out.println ("suggestedCode: " + suggestedCode);
+				System.out.println ("reviewOverwrite: " + reviewOverwrite);
+				System.out.println ("queryID: " + queryID);
+				System.out.println ("eventNetwork: " + eventNetwork);
+				System.out.println ("eventCode: " + eventCode);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("");
+
+				// Set the PDL enable code
+
+				if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+					System.out.println ("Invalid pdl_enable = " + pdl_enable);
+					return;
+				}
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+				if (!( pdl_key_filename.equals("-") )) {
+
+					if (!( (new File (pdl_key_filename)).canRead() )) {
+						System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+						return;
+					}
+
+					server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+				}
+
+				// Make the call
+
+				JSONObject geojson = null;
+				boolean f_gj_prod = true;
+				PDLCodeChooserOaf.DeleteOafOp del_op = new PDLCodeChooserOaf.DeleteOafOp();
+
+				String chosen_code = PDLCodeChooserOaf.checkChooseOafCode (suggestedCode, reviewOverwrite,
+						geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed, del_op);
+
+				// Display result
+
+				System.out.println ("PDLCodeChooserOaf.checkChooseOafCode result:");
+				System.out.println ((chosen_code == null) ? "<null>" : chosen_code);
+				System.out.println ("");
+				System.out.println (del_op.toString());
+
+				// Perform the deletion
+
+				System.out.println ("");
+				System.out.println ("Performing deletion");
+				del_op.do_delete();
+
+			}
+
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #8
+		// Command format:
+		//  test8  pdl_enable  pdl_key_filename  query_id  isReviewed  cutoff_time  reviewed_time
+		// The PDL key filename can be "-" for none.
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Then call checkDeleteOldOafProducts_v2 and display the result.
+		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+		// Times before 1970-01-01 are converted to zero.
+		// Times can also be entered as an integer number of milliseconds, or as "now".
+		// Same as test #4 except calls checkDeleteOldOafProducts_v2.
+		// This test does not perform any deletion.
+
+		if (args[0].equalsIgnoreCase ("test8")) {
+
+			// 6 additional arguments
+
+			if (args.length != 7) {
+				System.err.println ("PDLCodeChooserOaf : Invalid 'test8' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				String pdl_key_filename = args[2];
+				String query_id = args[3];
+				boolean isReviewed = Boolean.parseBoolean (args[4]);
+				long cutoff_time = SimpleUtils.string_or_number_or_now_to_time (args[5]);
+				if (cutoff_time < 0L) {
+					cutoff_time = 0L;
+				}
+				long reviewed_time = SimpleUtils.string_or_number_or_now_to_time (args[6]);
+				if (reviewed_time < 0L) {
+					reviewed_time = 0L;
+				}
+
+				// Say hello
+
+				System.out.println ("Deleting old OAF products");
+				System.out.println ("pdl_enable: " + pdl_enable);
+				System.out.println ("pdl_key_filename: " + pdl_key_filename);
+				System.out.println ("query_id: " + query_id);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("cutoff_time: " + SimpleUtils.time_raw_and_string(cutoff_time));
+				System.out.println ("reviewed_time: " + SimpleUtils.time_raw_and_string(reviewed_time));
+				System.out.println ("");
+
+				// Set the PDL enable code
+
+				if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+					System.out.println ("Invalid pdl_enable = " + pdl_enable);
+					return;
+				}
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+				if (!( pdl_key_filename.equals("-") )) {
+
+					if (!( (new File (pdl_key_filename)).canRead() )) {
+						System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+						return;
+					}
+
+					server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+				}
+
+				// Make the call
+
+				JSONObject geojson = null;
+				boolean f_gj_prod = true;
+				PDLCodeChooserOaf.DeleteOafOp del_op = new PDLCodeChooserOaf.DeleteOafOp();
+
+				long result = PDLCodeChooserOaf.checkDeleteOldOafProducts_v2 (null,
+					geojson, f_gj_prod, query_id, isReviewed, cutoff_time, reviewed_time, del_op);
+
+				// Display result
+
+				if (result > 0L) {
+					System.out.println ("PDLCodeChooserOaf.checkDeleteOldOafProducts_v2 returned: " + SimpleUtils.time_raw_and_string(result));
+				} else {
+					System.out.println ("PDLCodeChooserOaf.checkDeleteOldOafProducts_v2 returned: " + result);
+				}
+				System.out.println ("");
+				System.out.println (del_op.toString());
+			}
+
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #9
+		// Command format:
+		//  test9  pdl_enable  pdl_key_filename  query_id  isReviewed  cutoff_time  reviewed_time
+		// The PDL key filename can be "-" for none.
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Then call checkDeleteOldOafProducts_v2 and display the result.
+		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+		// Times before 1970-01-01 are converted to zero.
+		// Times can also be entered as an integer number of milliseconds, or as "now".
+		// Same as test #4 except calls checkDeleteOldOafProducts_v2.
+		// Same as test #8 except it performs the deletion.
+
+		if (args[0].equalsIgnoreCase ("test9")) {
+
+			// 6 additional arguments
+
+			if (args.length != 7) {
+				System.err.println ("PDLCodeChooserOaf : Invalid 'test9' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				String pdl_key_filename = args[2];
+				String query_id = args[3];
+				boolean isReviewed = Boolean.parseBoolean (args[4]);
+				long cutoff_time = SimpleUtils.string_or_number_or_now_to_time (args[5]);
+				if (cutoff_time < 0L) {
+					cutoff_time = 0L;
+				}
+				long reviewed_time = SimpleUtils.string_or_number_or_now_to_time (args[6]);
+				if (reviewed_time < 0L) {
+					reviewed_time = 0L;
+				}
+
+				// Say hello
+
+				System.out.println ("Deleting old OAF products");
+				System.out.println ("pdl_enable: " + pdl_enable);
+				System.out.println ("pdl_key_filename: " + pdl_key_filename);
+				System.out.println ("query_id: " + query_id);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("cutoff_time: " + SimpleUtils.time_raw_and_string(cutoff_time));
+				System.out.println ("reviewed_time: " + SimpleUtils.time_raw_and_string(reviewed_time));
+				System.out.println ("");
+
+				// Set the PDL enable code
+
+				if (pdl_enable < ServerConfigFile.PDLOPT_MIN || pdl_enable > ServerConfigFile.PDLOPT_MAX) {
+					System.out.println ("Invalid pdl_enable = " + pdl_enable);
+					return;
+				}
+
+				ServerConfig server_config = new ServerConfig();
+				server_config.get_server_config_file().pdl_enable = pdl_enable;
+
+				if (!( pdl_key_filename.equals("-") )) {
+
+					if (!( (new File (pdl_key_filename)).canRead() )) {
+						System.out.println ("Unreadable pdl_key_filename = " + pdl_key_filename);
+						return;
+					}
+
+					server_config.get_server_config_file().pdl_key_filename = pdl_key_filename;
+				}
+
+				// Make the call
+
+				JSONObject geojson = null;
+				boolean f_gj_prod = true;
+				PDLCodeChooserOaf.DeleteOafOp del_op = new PDLCodeChooserOaf.DeleteOafOp();
+
+				long result = PDLCodeChooserOaf.checkDeleteOldOafProducts_v2 (null,
+					geojson, f_gj_prod, query_id, isReviewed, cutoff_time, reviewed_time, del_op);
+
+				// Display result
+
+				if (result > 0L) {
+					System.out.println ("PDLCodeChooserOaf.checkDeleteOldOafProducts_v2 returned: " + SimpleUtils.time_raw_and_string(result));
+				} else {
+					System.out.println ("PDLCodeChooserOaf.checkDeleteOldOafProducts_v2 returned: " + result);
+				}
+				System.out.println ("");
+				System.out.println (del_op.toString());
+
+				// Perform the deletion
+
+				System.out.println ("");
+				System.out.println ("Performing deletion");
+				del_op.do_delete();
 			}
 
 			catch (Exception e) {

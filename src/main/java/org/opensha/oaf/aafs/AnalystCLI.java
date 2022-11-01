@@ -102,6 +102,8 @@ public class AnalystCLI {
 	public static final int CST_FC_SEL			= 30;		// fc_sel
 	public static final int CST_INJ_TEXT		= 31;		// inj_text
 	public static final int CST_FC_CUSTOM		= 32;		// fc_custom
+	public static final int CST_EVSEQ_OPTION	= 33;		// evseq_option
+	public static final int CST_EVSEQ_LOOKBACK	= 34;		// evseq_lookback_days
 
 
 	// Discrete responses.
@@ -109,6 +111,7 @@ public class AnalystCLI {
 	public static final int DVAL_NO				=  0;		// No
 	public static final int DVAL_YES			=  1;		// Yes
 	public static final int DVAL_AUTO			=  2;		// Automatic
+	public static final int DVAL_DELETE			=  3;		// Delete
 
 
 	// Maximum number of grid points.
@@ -142,6 +145,8 @@ public class AnalystCLI {
 	public static final String CS_CANCEL_2		= "c";
 	public static final String CS_MODIFY_1		= "modify";
 	public static final String CS_MODIFY_2		= "m";
+	public static final String CS_DELETE_1		= "delete";
+	public static final String CS_DELETE_2		= "d";
 
 
 
@@ -244,6 +249,14 @@ public class AnalystCLI {
 
 		public String inj_text;
 
+		// Event-sequence option (DVAL_NO, DVAL_YES, DVAL_AUTO, DVAL_DELETE)
+
+		public int evseq_option;
+
+		// Event-sequence lookback
+
+		public double evseq_lookback_days;
+
 
 		//--- Additional variables ---
 
@@ -318,6 +331,14 @@ public class AnalystCLI {
 			// Injectable text
 
 			inj_text = fcparams.get_eff_injectable_text("");
+
+			// Event-sequence option (DVAL_NO, DVAL_YES, DVAL_AUTO, DVAL_DELETE)
+
+			evseq_option = DVAL_AUTO;
+
+			// Event-sequence lookback
+
+			evseq_lookback_days = EventSequenceParameters.convert_lookback_to_days (EventSequenceParameters.get_param_lookback (fcparams));
 		
 			return true;
 		}
@@ -355,6 +376,7 @@ public class AnalystCLI {
 			case DVAL_NO:
 				System.out.println ("custom parameters = " + CS_NO_1);
 				System.out.println ("injectable text = " + inj_text);
+				display_evseq_selections();
 				System.out.println();
 				return;
 			}
@@ -417,8 +439,36 @@ public class AnalystCLI {
 			
 			System.out.println ("injectable text = " + inj_text);
 
+			// Event-sequence
+
+			display_evseq_selections();
+
 			System.out.println();
 
+			return;
+		}
+
+
+
+
+		// Display the event-sequence selections
+
+		public void display_evseq_selections () {
+			switch (evseq_option) {
+			case DVAL_YES:
+				System.out.println ("event-sequence = " + CS_YES_1);
+				System.out.println ("lookback days = " + evseq_lookback_days);
+				break;
+			case DVAL_NO:
+				System.out.println ("event-sequence = " + CS_NO_1);
+				break;
+			case DVAL_DELETE:
+				System.out.println ("event-sequence = " + CS_DELETE_1);
+				break;
+			case DVAL_AUTO:
+				System.out.println ("event-sequence = " + CS_AUTO_1);
+				break;
+			}
 			return;
 		}
 
@@ -492,6 +542,7 @@ public class AnalystCLI {
 			);
 
 			if (fc_custom == DVAL_NO) {
+				insert_evseq_params (new_fcparams);
 				return new_fcparams;
 			}
 
@@ -505,8 +556,44 @@ public class AnalystCLI {
 				true,										// seq_spec_avail
 				make_seq_spec_params()						// seq_spec_params
 			);
+
+			insert_evseq_params (new_fcparams);
 		
 			return new_fcparams;
+		}
+
+
+
+
+		// Insert event-sequence analyst parameters into the new parameters
+
+		public void insert_evseq_params (ForecastParameters new_fcparams) {
+			switch (evseq_option) {
+			case DVAL_YES:
+				new_fcparams.set_analyst_evseq_cfg_params (
+					true,											// evseq_cfg_avail
+					new EventSequenceParameters (ActionConfigFile.ESREP_REPORT,
+						EventSequenceParameters.convert_lookback_to_millis (evseq_lookback_days))	// evseq_cfg_params
+				);
+				break;
+			case DVAL_NO:
+				new_fcparams.set_analyst_evseq_cfg_params (
+					true,											// evseq_cfg_avail
+					new EventSequenceParameters (ActionConfigFile.ESREP_NO_REPORT,
+						ActionConfigFile.DEFAULT_EVSEQ_LOOKBACK)	// evseq_cfg_params
+				);
+				break;
+			case DVAL_DELETE:
+				new_fcparams.set_analyst_evseq_cfg_params (
+					true,											// evseq_cfg_avail
+					new EventSequenceParameters (ActionConfigFile.ESREP_DELETE,
+						ActionConfigFile.DEFAULT_EVSEQ_LOOKBACK)	// evseq_cfg_params
+				);
+				break;
+			case DVAL_AUTO:
+				break;
+			}
+			return;
 		}
 
 
@@ -964,6 +1051,138 @@ public class AnalystCLI {
 			if (f_no) {
 				if (line.equalsIgnoreCase (CS_NO_1) || line.equalsIgnoreCase (CS_NO_2)) {
 					value_int = DVAL_NO;
+					break;
+				}
+			}
+
+			if (f_auto) {
+				if (line.equalsIgnoreCase (CS_AUTO_1) || line.equalsIgnoreCase (CS_AUTO_2)) {
+					value_int = DVAL_AUTO;
+					break;
+				}
+			}
+
+			// Otherwise, try again
+
+			System.out.println ("Please enter a valid response");
+		}
+
+		// Success
+
+		return RES_OK;
+	}
+
+
+
+
+	// Read yes/no/delete/auto from the user.
+
+	private int read_ynda_from_user (String prompt, boolean f_yes, boolean f_no, boolean f_delete, boolean f_auto, Integer default_value) {
+
+		// Create my prompt by appending valid values and default value
+
+		String my_prompt = prompt + " (";
+		String sep = "";
+		if (f_yes) {
+			my_prompt = my_prompt + sep + CS_YES_1;
+			sep = "/";
+		}
+		if (f_no) {
+			my_prompt = my_prompt + sep + CS_NO_1;
+			sep = "/";
+		}
+		if (f_delete) {
+			my_prompt = my_prompt + sep + CS_DELETE_1;
+			sep = "/";
+		}
+		if (f_auto) {
+			my_prompt = my_prompt + sep + CS_AUTO_1;
+			sep = "/";
+		}
+		my_prompt = my_prompt + ")";
+		if (default_value != null) {
+			switch (default_value.intValue()) {
+			case DVAL_YES:
+				my_prompt = my_prompt + " [" + CS_YES_2 + "]";
+				break;
+			case DVAL_NO:
+				my_prompt = my_prompt + " [" + CS_NO_2 + "]";
+				break;
+			case DVAL_DELETE:
+				my_prompt = my_prompt + " [" + CS_DELETE_2 + "]";
+				break;
+			case DVAL_AUTO:
+				my_prompt = my_prompt + " [" + CS_AUTO_2 + "]";
+				break;
+			}
+		}
+
+		// Retry loop
+
+		for (;;) {
+
+			// Display the prompt
+
+			System.out.println (my_prompt);
+
+			// Get response
+
+			String line = scanner.nextLine().trim();
+
+			// If empty ...
+
+			if (line.isEmpty()) {
+
+				// If we have a default value, return it
+
+				if (default_value != null) {
+					value_int = default_value.intValue();
+					break;
+				}
+
+				// Otherwise, prompt the user
+
+				System.out.println ("Please enter a response");
+				continue;
+			}
+
+			// Check for back and restart
+
+			if (line.equalsIgnoreCase (CS_BACK_1) || line.equalsIgnoreCase (CS_BACK_2)) {
+				return RES_BACK;
+			}
+
+			if (line.equalsIgnoreCase (CS_RESTART_1) || line.equalsIgnoreCase (CS_RESTART_2)) {
+				return RES_RESTART;
+			}
+
+			if (line.equalsIgnoreCase (CS_CANCEL_1) || line.equalsIgnoreCase (CS_CANCEL_2)) {
+				return RES_CANCEL;
+			}
+
+			if (line.equalsIgnoreCase (CS_MODIFY_1) || line.equalsIgnoreCase (CS_MODIFY_2)) {
+				return RES_MODIFY;
+			}
+
+			// Check for allowed responses
+
+			if (f_yes) {
+				if (line.equalsIgnoreCase (CS_YES_1) || line.equalsIgnoreCase (CS_YES_2)) {
+					value_int = DVAL_YES;
+					break;
+				}
+			}
+
+			if (f_no) {
+				if (line.equalsIgnoreCase (CS_NO_1) || line.equalsIgnoreCase (CS_NO_2)) {
+					value_int = DVAL_NO;
+					break;
+				}
+			}
+
+			if (f_delete) {
+				if (line.equalsIgnoreCase (CS_DELETE_1) || line.equalsIgnoreCase (CS_DELETE_2)) {
+					value_int = DVAL_DELETE;
 					break;
 				}
 			}
@@ -1675,12 +1894,60 @@ public class AnalystCLI {
 					return false;
 				default:
 					cur_sel.inj_text = value_string;
+					cst = CST_EVSEQ_OPTION;
+					break;
+				}
+				break;
+
+			// Event-sequence option
+
+			case CST_EVSEQ_OPTION:
+				switch (read_ynda_from_user ("Generate event-sequence products for event " + event_id + "?", true, true, true, true, cur_sel.evseq_option)) {
+				case RES_BACK:
+					cst = CST_INJ_TEXT;
+					break;
+				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
+					cst = CST_FC_SEL;
+					break;
+				case RES_CANCEL:
+					return false;
+				default:
+					cur_sel.evseq_option = value_int;
+					if (cur_sel.evseq_option != DVAL_YES) {
+						cst = CST_REVIEW;
+					} else {
+						cst = CST_EVSEQ_LOOKBACK;
+					}
+					break;
+				}
+				break;
+
+			// Event-sequence lookback
+
+			case CST_EVSEQ_LOOKBACK:
+				switch (read_real_from_user ("event-sequence lookback time in days", cur_sel.evseq_lookback_days)) {
+				case RES_BACK:
+					cst = CST_EVSEQ_OPTION;
+					break;
+				case RES_RESTART:
+					cst = CST_EVENT_ID;
+					break;
+				case RES_MODIFY:
+					cst = CST_FC_SEL;
+					break;
+				case RES_CANCEL:
+					return false;
+				default:
+					cur_sel.evseq_lookback_days = value_real;
 					cst = CST_REVIEW;
 					break;
 				}
 				break;
 
-			// Review seelctions
+			// Review selctions
 
 			case CST_REVIEW:
 				System.out.println ();
@@ -1688,7 +1955,11 @@ public class AnalystCLI {
 				cur_sel.display_selections();
 				switch (read_yna_from_user ("Continue with these selections?", true, true, false, null)) {
 				case RES_BACK:
-					cst = CST_INJ_TEXT;
+					if (cur_sel.evseq_option != DVAL_YES) {
+						cst = CST_EVSEQ_OPTION;
+					} else {
+						cst = CST_EVSEQ_LOOKBACK;
+					}
 					break;
 				case RES_RESTART:
 					cst = CST_EVENT_ID;

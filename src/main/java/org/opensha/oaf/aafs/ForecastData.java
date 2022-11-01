@@ -34,7 +34,9 @@ import org.opensha.oaf.pdl.PDLContentsXmlBuilder;
 
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.pdl.PDLProductBuilderEventSequence;
+import org.opensha.oaf.pdl.PDLCodeChooserEventSequence;
 import org.opensha.oaf.comcat.PropertiesEventSequence;
+import org.opensha.oaf.comcat.GeoJsonHolder;
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
@@ -490,6 +492,360 @@ public class ForecastData {
 			content_builder.make_product_file_array());
 	
 		return product;
+	}
+
+
+
+
+	// Make a PDL product.
+	// Parameters:
+	//  evseq_res = Receives event-sequence pending send or deletion result, if any.
+	//  eventID = The event ID for PDL, which for us identifies the timeline.
+	//  isReviewed = Review status, false means automatically generated.
+	// Returns null if the product cannot be constructed due to the presence
+	// of a conflicting product in PDL.
+	// This version is used for sending both OAF and event-sequence products.
+
+	public Product make_pdl_product (EventSequenceResult evseq_res, String eventID, boolean isReviewed) throws Exception {
+
+		// Default to no event-sequence operation
+
+		evseq_res.clear();
+
+		if (eventID == null || eventID.isEmpty()) {
+			throw new IllegalArgumentException ("ForecastData.make_pdl_product: eventID is not specified");
+		}
+
+		// Save the PDL parameters
+
+		pdl_event_id = eventID;
+		pdl_is_reviewed = isReviewed;
+
+		// The JSON file to send
+
+		String jsonText = results.get_pdl_model();
+
+		if (jsonText == null) {
+			throw new IllegalStateException ("ForecastData.make_pdl_product: No JSON file available");
+		}
+
+		// The event network and code
+
+		String eventNetwork = mainshock.mainshock_network;
+		String eventCode = mainshock.mainshock_code;
+
+		// The event ID, which for us identifies the timeline
+
+		//String eventID = ...;
+
+		// Modification time, 0 means now
+
+		long modifiedTime = 0L;
+
+		// Review status, false means automatically generated
+
+		//boolean isReviewed = ...;
+
+		// Choose the code to use
+
+		String suggestedCode = eventID;
+		//long reviewOverwrite = (isReviewed ? 0L : 1L);		// don't overwrite reviewed forecast if we're not reviewed
+		long reviewOverwrite = -1L;
+		String queryID = mainshock.mainshock_event_id;
+		//JSONObject geojson = null;
+		JSONObject geojson = mainshock.mainshock_geojson;	// it's OK if this is null
+		boolean f_gj_prod = true;
+				
+		PDLCodeChooserOaf.DeleteOafOp del_op = new PDLCodeChooserOaf.DeleteOafOp();
+		GeoJsonHolder gj_used = new GeoJsonHolder (geojson, f_gj_prod);
+
+		String chosenCode = PDLCodeChooserOaf.checkChooseOafCode (suggestedCode, reviewOverwrite,
+			geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed, del_op, gj_used);
+
+		// If no chosen code, return null to indicate conflict
+
+		if (chosenCode == null || chosenCode.isEmpty()) {
+			pdl_event_id = "";
+			del_op.do_delete();		// probably won't be anything to delete
+			return null;
+		}
+
+		// Save the chosen code
+
+		pdl_event_id = chosenCode;
+
+		// If event-sequence products are enabled, and we have event-sequence parameters ...
+
+		ActionConfig evseq_action_config = new ActionConfig();
+		if (evseq_action_config.get_is_evseq_enabled() && parameters.evseq_cfg_avail) {
+
+			// If event-sequence reporting parameter is requesting event-sequence delete ...
+
+			int evseq_report = parameters.evseq_cfg_params.get_evseq_cfg_report();
+			if (evseq_report == ActionConfigFile.ESREP_DELETE) {
+
+				// Delete all event-sequence products
+					
+				System.out.println ("Deleting all event-sequence products.");
+
+				long cap_time = PDLCodeChooserEventSequence.CAP_TIME_DELETE;
+				boolean f_keep_reviewed = false;
+
+				int doesp = PDLCodeChooserEventSequence.deleteOldEventSequenceProducts (null,
+					gj_used.geojson, gj_used.f_gj_prod, queryID, isReviewed, cap_time, f_keep_reviewed);
+
+				// If succeeded (no exception), report the deletion
+
+				evseq_res.set_for_delete (queryID, doesp, cap_time);
+			}
+
+			// If event-sequence reporting parameter is requesting event-sequence send ...
+
+			else if (evseq_report == ActionConfigFile.ESREP_REPORT) {
+
+				// Choose the code, which will always equal the code used for OAF
+
+				boolean f_valid_ok = false;		// forces event-sequence code to be the code we supply, if reviewOverwrite == -1L
+				GeoJsonHolder evseq_gj_used = new GeoJsonHolder (gj_used.geojson, gj_used.f_gj_prod);
+
+				String evseq_chosenCode = PDLCodeChooserEventSequence.chooseEventSequenceCode (
+					chosenCode, f_valid_ok, reviewOverwrite, gj_used.geojson, gj_used.f_gj_prod, queryID,
+					eventNetwork, eventCode, isReviewed, evseq_gj_used);
+
+				// If we didn't get a code ...
+
+				if (evseq_chosenCode == null || evseq_chosenCode.isEmpty()) {
+					System.out.println ("Bypassing event-sequence product generation due to inability to obtain a PDL code.");
+				}
+
+				// Otherwise, build the event-sequence product ...
+
+				else {
+
+					PropertiesEventSequence evs_props = new PropertiesEventSequence();
+					String evseq_err = make_evseq_properties (evs_props, evseq_gj_used.geojson);	// checks for null geojson
+
+					// If error during property build ...
+
+					if (evseq_err != null) {
+						System.out.println ("Bypassing event-sequence product generation: " + evseq_err + ".");
+					}
+
+					// Otherwise, we have the event-sequence properties
+
+					else {
+						System.out.println ("Created event-sequence properties.");
+						System.out.println (evs_props.toString());
+
+						evseq_res.set_for_pending_send (queryID, evs_props, evseq_chosenCode, isReviewed);
+					}
+				}
+			}
+		}
+
+		// Now delete any OAF products needed
+
+		del_op.do_delete();
+
+		// The content builder
+
+		PDLContentsXmlBuilder content_builder = new PDLContentsXmlBuilder();
+
+		// If we want forecast.json, attach it
+
+		if (PDLProductBuilderOaf.use_forecast_json()) {
+			PDLProductBuilderOaf.attach_forecast (content_builder, jsonText);
+		}
+
+		// Attach the forecast data file
+
+		attach_forecast_data (content_builder, to_json());
+
+		// Get the inline text
+
+		String inlineText = null;
+		if (PDLProductBuilderOaf.use_inline_text()) {
+			inlineText = jsonText;
+		}
+
+		// Build the product
+
+		Product product = PDLProductBuilderOaf.createProduct (
+			chosenCode, eventNetwork, eventCode, isReviewed, inlineText, modifiedTime,
+			content_builder.make_product_file_array());
+	
+		return product;
+	}
+
+
+
+
+	// Make a PDL product.
+	// Parameters:
+	//  eventID = The event ID for PDL, which for us identifies the timeline.
+	//  isReviewed = Review status, false means automatically generated.
+	//  pdl_code = The code to use for the product.
+	// Returns null if the product cannot be constructed due to missing or empty code.
+	// This function always uses the supplied code, and does not delete OAF products with different codes.
+
+	public Product make_pdl_product_with_code (String eventID, boolean isReviewed, String pdl_code) throws Exception {
+
+		if (eventID == null || eventID.isEmpty()) {
+			throw new IllegalArgumentException ("ForecastData.make_pdl_product: eventID is not specified");
+		}
+
+		// Save the PDL parameters
+
+		pdl_event_id = eventID;
+		pdl_is_reviewed = isReviewed;
+
+		// The JSON file to send
+
+		String jsonText = results.get_pdl_model();
+
+		if (jsonText == null) {
+			throw new IllegalStateException ("ForecastData.make_pdl_product: No JSON file available");
+		}
+
+		// The event network and code
+
+		String eventNetwork = mainshock.mainshock_network;
+		String eventCode = mainshock.mainshock_code;
+
+		// The event ID, which for us identifies the timeline
+
+		//String eventID = ...;
+
+		// Modification time, 0 means now
+
+		long modifiedTime = 0L;
+
+		// Review status, false means automatically generated
+
+		//boolean isReviewed = ...;
+
+		// Choose the code to use
+
+		String chosenCode = pdl_code;
+
+		// If no chosen code, return null to indicate conflict
+
+		if (chosenCode == null || chosenCode.isEmpty()) {
+			pdl_event_id = "";
+			return null;
+		}
+
+		// Save the chosen code
+
+		pdl_event_id = chosenCode;
+
+		// The content builder
+
+		PDLContentsXmlBuilder content_builder = new PDLContentsXmlBuilder();
+
+		// If we want forecast.json, attach it
+
+		if (PDLProductBuilderOaf.use_forecast_json()) {
+			PDLProductBuilderOaf.attach_forecast (content_builder, jsonText);
+		}
+
+		// Attach the forecast data file
+
+		attach_forecast_data (content_builder, to_json());
+
+		// Get the inline text
+
+		String inlineText = null;
+		if (PDLProductBuilderOaf.use_inline_text()) {
+			inlineText = jsonText;
+		}
+
+		// Build the product
+
+		Product product = PDLProductBuilderOaf.createProduct (
+			chosenCode, eventNetwork, eventCode, isReviewed, inlineText, modifiedTime,
+			content_builder.make_product_file_array());
+	
+		return product;
+	}
+
+
+
+
+	// Make event-sequence properties.
+	// Parameters:
+	//  evs_props = Receives the properties.
+	//  geojson = GeoJSON for the event.
+	// Returns null if success.
+	// IF error, returns an error message.
+
+	public String make_evseq_properties (PropertiesEventSequence evs_props, JSONObject geojson) {
+
+		ActionConfig evseq_action_config = new ActionConfig();
+
+		// Start by clearing the property object
+
+		evs_props.clear();
+
+		// If no GeoJSON, we cannot proceed
+
+		if (geojson == null) {
+			return "Failed to create event-sequence properties because no GeoJSON is available";
+		}
+
+		// If no event-sequence parameters, we cannot proceed
+
+		if (!( parameters.evseq_cfg_avail )) {
+			return "Failed to create event-sequence properties because no parameters are available";
+		}
+
+		// If no search region parameters, we cannot proceed
+
+		if (!( parameters.aftershock_search_avail )) {
+			return "Failed to create event-sequence properties because no aftershock search region is available";
+		}
+
+		// Set properties for mainshock
+
+		if (!( evs_props.set_from_event_gj (geojson) )) {
+			return "Failed to set event-sequence properties for mainshock";
+		}
+
+		// Set start time
+
+		long start_delta = parameters.evseq_cfg_params.get_evseq_cfg_lookback();
+
+		if (!( evs_props.set_relative_start_time_millis (-start_delta) )) {		// note negative
+			return "Failed to set start time for event-sequence properties";
+		}
+
+		// Set end time
+
+		long end_delta = parameters.forecast_lag + evseq_action_config.get_evseq_lookahead();
+
+		if (!( evs_props.set_relative_end_time_millis (end_delta) )) {
+			return "Failed to set relative end time for event-sequence properties";
+		}
+
+		// Set the region
+
+		SphRegion sph_region = parameters.aftershock_search_region;
+
+		if (!( evs_props.set_region_from_sph (sph_region) )) {
+			return "Failed to set region for event-sequence properties";
+		}
+
+		// Check invariant
+
+		String evs_inv = evs_props.check_invariant();
+
+		if (evs_inv != null) {
+			return "Invariant check failed for event-sequence properties: " + evs_inv;
+		}
+
+		// success
+
+		return null;
 	}
 
 
@@ -1445,7 +1801,7 @@ public class ForecastData {
 		//
 		// The use of this test is to send prototype event-sequence products for development purposes.
 		// Event-sequence products can be deleted using PropertiesEventSequence test #8.
-		// The event-sequence time range is from 14 days before the mainshock, to 365 days after now.
+		// The event-sequence time range is from 30 days before the mainshock, to 365 days after now.
 
 		if (args[0].equalsIgnoreCase ("test10")) {
 
@@ -1546,9 +1902,9 @@ public class ForecastData {
 				return;
 			}
 
-			// Set start time to 14 days before mainshock
+			// Set start time to 30 days before mainshock
 
-			double start_delta_days = -14.0;
+			double start_delta_days = -30.0;
 
 			if (!( evs_props.set_relative_start_time_days (start_delta_days) )) {
 				System.out.println ("Failed to set relative start time for event-sequence properties");
@@ -1615,6 +1971,248 @@ public class ForecastData {
 
 			if (product == null) {
 				System.out.println ("PDLProductBuilderEventSequence.createProduct returned null, indicating unable to create PDL product");
+				return;
+			}
+
+			// Sign the product
+
+			PDLSender.signProduct(product);
+
+			// Send the product, true means it is text
+
+			PDLSender.sendProduct(product, true);
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #11
+		// Command format:
+		//  test11  pdl_enable  event_id  isReviewed  [pdl_key_filename]
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then put everything in a ForecastData object, and display it.
+		// Then construct the PDL product and send it to the selected PDL destination.
+		// Same as test #4 except also sends the event-sequence product.
+
+		if (args[0].equalsIgnoreCase ("test11")) {
+
+			// 3 or 4 additional arguments
+
+			if (args.length != 4 && args.length != 5) {
+				System.err.println ("ForecastData : Invalid 'test11' subcommand");
+				return;
+			}
+
+			int pdl_enable = Integer.parseInt (args[1]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
+			String the_event_id = args[2];
+			Boolean isReviewed = Boolean.parseBoolean (args[3]);
+			String pdl_key_filename = null;
+			if (args.length >= 5) {
+				pdl_key_filename = args[4];
+			}
+
+			// Set the PDL enable code
+
+			ServerConfig.set_opmode (pdl_enable, pdl_key_filename);
+			System.out.println (ServerConfig.get_opmode_as_string());
+
+			// Fetch just the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Set the forecast time to be 7 days after the mainshock
+
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "NOTE: This is a test, do not use this forecast.", fcmain, params, true);
+
+			// Select report for PDL, if any
+
+			results.pick_pdl_model();
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (results.toString());
+
+			// Construct the forecast data
+
+			AnalystOptions fc_analyst = new AnalystOptions();
+			long ctime = System.currentTimeMillis();
+
+			ForecastData fcdata = new ForecastData();
+			fcdata.set_data (ctime, fcmain, params, results, fc_analyst);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (fcdata.toString());
+			System.out.println ("");
+
+			// Make the PDL product, marked reviewed or not
+
+			Product product;
+			EventSequenceResult evseq_res = new EventSequenceResult();
+
+			try {
+				product = fcdata.make_pdl_product (evseq_res, the_event_id, isReviewed);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				return;
+			}
+
+			// Display event-sequence results
+
+			System.out.println ("");
+			System.out.println (evseq_res.toString());
+			System.out.println ("");
+
+			// Stop if conflict
+
+			if (product == null) {
+				System.out.println ("ForecastData.make_pdl_product returned null, indicating conflict");
+				return;
+			}
+
+			// Send event-sequence product, if any
+
+			evseq_res.perform_send();
+
+			// Sign the product
+
+			PDLSender.signProduct(product);
+
+			// Send the product, true means it is text
+
+			PDLSender.sendProduct(product, true);
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #12
+		// Command format:
+		//  test12  pdl_enable  event_id  isReviewed  pdl_code  [pdl_key_filename]
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then put everything in a ForecastData object, and display it.
+		// Then construct the PDL product and send it to the selected PDL destination.
+		// Same as test #4, except uses the supplied pdl_code and does not delete any products.
+
+		if (args[0].equalsIgnoreCase ("test12")) {
+
+			// 4 or 5 additional arguments
+
+			if (args.length != 5 && args.length != 6) {
+				System.err.println ("ForecastData : Invalid 'test12' subcommand");
+				return;
+			}
+
+			int pdl_enable = Integer.parseInt (args[1]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
+			String the_event_id = args[2];
+			Boolean isReviewed = Boolean.parseBoolean (args[3]);
+			String pdl_code = args[4];
+			String pdl_key_filename = null;
+			if (args.length >= 6) {
+				pdl_key_filename = args[5];
+			}
+
+			// Set the PDL enable code
+
+			ServerConfig.set_opmode (pdl_enable, pdl_key_filename);
+			System.out.println (ServerConfig.get_opmode_as_string());
+
+			// Fetch just the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Set the forecast time to be 7 days after the mainshock
+
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "NOTE: This is a test, do not use this forecast.", fcmain, params, true);
+
+			// Select report for PDL, if any
+
+			results.pick_pdl_model();
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (results.toString());
+
+			// Construct the forecast data
+
+			AnalystOptions fc_analyst = new AnalystOptions();
+			long ctime = System.currentTimeMillis();
+
+			ForecastData fcdata = new ForecastData();
+			fcdata.set_data (ctime, fcmain, params, results, fc_analyst);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (fcdata.toString());
+			System.out.println ("");
+
+			// Make the PDL product, marked reviewed or not
+
+			Product product;
+
+			try {
+				product = fcdata.make_pdl_product_with_code (the_event_id, isReviewed, pdl_code);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				return;
+			}
+
+			// Stop if conflict
+
+			if (product == null) {
+				System.out.println ("ForecastData.make_pdl_product returned null, indicating conflict");
 				return;
 			}
 
