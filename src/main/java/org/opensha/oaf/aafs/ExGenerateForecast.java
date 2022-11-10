@@ -17,6 +17,8 @@ import org.opensha.commons.data.comcat.ComcatException;
 import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.oaf.rj.AftershockStatsShadow;
 
+import org.opensha.oaf.comcat.GeoJsonHolder;
+
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
@@ -433,6 +435,33 @@ public class ExGenerateForecast extends ServerExecTask {
 
 			if (shadow != null) {
 
+				// Get cap time for any event-sequence product
+
+				long cap_time = EventSequenceParameters.get_cap_time_for_shadow (fcmain, tstatus.analyst_options.analyst_params, seq_end_time[0]);
+
+				// GeoJSON holder and flag for product deletion
+
+				GeoJsonHolder gj_holder = new GeoJsonHolder();
+				boolean f_del_evseq = true;
+
+				// If this is a primary server ...
+
+				if (sg.pdl_sup.is_pdl_primary()) {
+
+					// Create a new event-sequence product if needed
+
+					try {
+						boolean f_new_only = false;
+						f_del_evseq = sg.pdl_sup.send_shadowed_evseq (tstatus, fcmain, next_forecast_lag, cap_time, f_new_only, gj_holder);
+					}
+
+					// An exception here triggers a ComCat retry
+
+					catch (Exception e) {
+						return sg.timeline_sup.process_timeline_comcat_retry (task, tstatus, e);
+					}
+				}
+
 				// Insert skip into timeline status
 
 				tstatus.set_state_skipped (sg.task_disp.get_time(), sg.task_disp.get_action_config(),
@@ -459,7 +488,8 @@ public class ExGenerateForecast extends ServerExecTask {
 					+ "shadow mag = " + shadow.getMag() + "\n"
 					+ "shadow time = " + shadow.getOriginTime() + " (" + SimpleUtils.time_to_string(shadow.getOriginTime()) + ")" + "\n"
 					+ "distance = " + String.format("%.3f", separation[0]) + " km" + "\n"
-					+ "interval = " + String.format("%.3f", separation[1]) + " days");
+					+ "interval = " + String.format("%.3f", separation[1]) + " days" + "\n"
+					+ "shadow dur = " + ((seq_end_time[1] <= 0L) ? ("0") : (String.format("%.3f", ((double)(seq_end_time[1]))/SimpleUtils.DAY_MILLIS_D))) + " days");
 
 				sg.log_sup.report_event_shadowed (
 						fcmain.mainshock_event_id,
@@ -467,12 +497,12 @@ public class ExGenerateForecast extends ServerExecTask {
 						fcmain.mainshock_mag,
 						shadow.getMag(),
 						separation[0],
-						separation[1]);
+						separation[1],
+						seq_end_time[1]);
 
 				// Delete OAF products and write relay item
 
-				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_SHADOWED, tstatus.last_forecast_stamp,
-					EventSequenceParameters.get_cap_time_for_shadow (fcmain, tstatus.analyst_options.analyst_params, seq_end_time[0]));
+				sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_SHADOWED, tstatus.last_forecast_stamp, cap_time, gj_holder, f_del_evseq);
 
 				// Write the new timeline entry
 
@@ -571,6 +601,33 @@ public class ExGenerateForecast extends ServerExecTask {
 						}
 					}
 
+					// Get cap time for any event-sequence product
+
+					long cap_time = EventSequenceParameters.get_cap_time_for_shadow (fcmain, tstatus.analyst_options.analyst_params, shadow_time);
+
+					// GeoJSON holder and flag for product deletion
+
+					GeoJsonHolder gj_holder = new GeoJsonHolder();
+					boolean f_del_evseq = true;
+
+					// If this is a primary server ...
+
+					if (sg.pdl_sup.is_pdl_primary()) {
+
+						// Create a new event-sequence product if needed
+
+						try {
+							boolean f_new_only = false;
+							f_del_evseq = sg.pdl_sup.send_shadowed_evseq (tstatus, fcmain, next_forecast_lag, cap_time, f_new_only, gj_holder);
+						}
+
+						// An exception here triggers a ComCat retry
+
+						catch (Exception e) {
+							return sg.timeline_sup.process_timeline_comcat_retry (task, tstatus, e);
+						}
+					}
+
 					// Insert skip into timeline status
 
 					tstatus.set_state_skipped (sg.task_disp.get_time(), sg.task_disp.get_action_config(),
@@ -588,23 +645,26 @@ public class ExGenerateForecast extends ServerExecTask {
 
 					// Display message
 
+					long shadow_dur = shadow_time - fcmain.mainshock_time;
+
 					sg.task_disp.set_display_taskres_log ("TASK-INFO: Foreshock detected:\n"
 						+ "timeline_id = " + tstatus.event_id + "\n"
 						+ "mainshock_event_id = " + fcmain.mainshock_event_id + "\n"
 						+ "mainshock_mag = " + fcmain.mainshock_mag + "\n"
 						+ "catalog_max_event_id = " + forecast_results.catalog_max_event_id + "\n"
-						+ "catalog_max_mag = " + forecast_results.catalog_max_mag);
+						+ "catalog_max_mag = " + forecast_results.catalog_max_mag + "\n"
+						+ "shadow_dur = " + ((shadow_dur <= 0L) ? ("0") : (String.format("%.3f", ((double)(shadow_dur))/SimpleUtils.DAY_MILLIS_D))) + " days");
 
 					sg.log_sup.report_event_foreshock (
 							fcmain.mainshock_event_id,
 							forecast_results.catalog_max_event_id,
 							fcmain.mainshock_mag,
-							forecast_results.catalog_max_mag);
+							forecast_results.catalog_max_mag,
+							shadow_dur);
 
 					// Delete OAF products and write relay item
 
-					sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_FORESHOCK, tstatus.last_forecast_stamp,
-						EventSequenceParameters.get_cap_time_for_shadow (fcmain, tstatus.analyst_options.analyst_params, shadow_time));
+					sg.pdl_sup.delete_oaf_products (fcmain, RiPDLRemoval.RIPREM_REAS_SKIPPED_FORESHOCK, tstatus.last_forecast_stamp, cap_time, gj_holder, f_del_evseq);
 
 					// Write the new timeline entry
 

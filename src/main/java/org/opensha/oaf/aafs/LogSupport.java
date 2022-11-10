@@ -515,6 +515,19 @@ public class LogSupport extends ServerComponent {
 		return;
 	}
 
+	public void report_event_shadowed (String event_id, String shadow_id,
+					double event_mag, double shadow_mag, double distance, double interval, long shadow_dur) {
+		report_action ("EVENT-SHADOWED",
+					"event_id = " + event_id,
+					"shadow_id = " + shadow_id,
+					"event_mag = " + String.format("%.2f", event_mag),
+					"shadow_mag = " + String.format("%.2f", shadow_mag),
+					"distance = " + String.format("%.3f", distance) + " km",
+					"interval = " + String.format("%.3f", interval) + " days",
+					"shadow_dur = " + ((shadow_dur <= 0L) ? ("0") : (String.format("%.3f", ((double)(shadow_dur))/SimpleUtils.DAY_MILLIS_D))) + " days");
+		return;
+	}
+
 
 
 
@@ -527,6 +540,17 @@ public class LogSupport extends ServerComponent {
 					"cat_max_id = " + cat_max_id,
 					"event_mag = " + String.format("%.2f", event_mag),
 					"cat_max_mag = " + String.format("%.2f", cat_max_mag));
+		return;
+	}
+
+	public void report_event_foreshock (String event_id, String cat_max_id,
+					double event_mag, double cat_max_mag, long shadow_dur) {
+		report_action ("EVENT-FORESHOCK",
+					"event_id = " + event_id,
+					"cat_max_id = " + cat_max_id,
+					"event_mag = " + String.format("%.2f", event_mag),
+					"cat_max_mag = " + String.format("%.2f", cat_max_mag),
+					"shadow_dur = " + ((shadow_dur <= 0L) ? ("0") : (String.format("%.3f", ((double)(shadow_dur))/SimpleUtils.DAY_MILLIS_D))) + " days");
 		return;
 	}
 

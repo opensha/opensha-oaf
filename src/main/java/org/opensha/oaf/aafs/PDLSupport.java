@@ -16,7 +16,9 @@ import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.commons.data.comcat.ComcatException;
 import org.opensha.oaf.rj.CompactEqkRupList;
 
+import org.opensha.oaf.comcat.PropertiesEventSequence;
 import org.opensha.oaf.comcat.GeoJsonHolder;
+import org.opensha.oaf.comcat.ComcatPDLSendException;
 
 import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 import org.opensha.oaf.pdl.PDLCodeChooserEventSequence;
@@ -309,16 +311,161 @@ public class PDLSupport extends ServerComponent {
 
 
 
+	// Send an event-sequence product for a shadowed event.
+	// Parameters:
+	//  tstatus = Timeline status.
+	//  fcmain = Mainshock info.
+	//  forecast_lag = Lag for the forecast being processed.
+	//  cap_time = Cap time for the event-sequence product, that is, its end time.
+	//  f_new_only = True to send only if there is no existing event-sequence product with a valid code.
+	//  gj_used = Returns the GeoJSON used to read back from PDL, or null GeoJSON if no readback was done.
+	// Returns false if an event-sequence product was sent, true if not.
+	// Throws an exception if Comcat or PDL error.
+	// Note: If a send occurs, a log entry is written.
+	// Note: If no send occurs, then there is no modification of PDL.
+	// Note: The return value plus gj_used can be passed to delete_oaf_products to correctly
+	//  pass information to a later deletion operation.
+	// Note: This should only be called on a primary server.  The caller must check.
+
+	public boolean send_shadowed_evseq (TimelineStatus tstatus, ForecastMainshock fcmain,
+			long forecast_lag, long cap_time, boolean f_new_only, GeoJsonHolder gj_used) throws Exception {
+
+		// Default to readback not done
+
+		gj_used.clear();
+
+		// If event-sequence is enabled, and the cap time is a time (not a special value) ...
+
+		if (sg.task_disp.get_action_config().get_is_evseq_enabled()
+			&& PDLCodeChooserEventSequence.cap_time_is_time (cap_time)
+			&& (cap_time - fcmain.mainshock_time) >= SimpleUtils.HOUR_MILLIS) {	// sanity check
+
+			// The event ID, which for us identifies the timeline
+
+			String eventID = sg.alias_sup.timeline_id_to_pdl_code (tstatus.event_id);
+
+			// The suggested product code, either derived from the event ID or saved from the prior Send
+
+			String suggested_code = ((tstatus.has_pdl_product_code()) ? (tstatus.pdl_product_code) : eventID);
+
+			// Review status, false means automatically generated
+
+			boolean isReviewed = false;
+
+			// The event network and code
+
+			String eventNetwork = fcmain.mainshock_network;
+			String eventCode = fcmain.mainshock_code;
+
+			// The event query ID
+
+			String queryID = fcmain.mainshock_event_id;
+
+			// The GeoJSON, if available
+
+			JSONObject geojson = fcmain.mainshock_geojson;	// it's OK if this is null
+			boolean f_gj_prod = true;
+
+			// Check if we can issue an event-sequence product, and if so get the code to use
+
+			PDLCodeChooserEventSequence.DeleteEvSeqOp del_op = new PDLCodeChooserEventSequence.DeleteEvSeqOp();
+			String chosen_code = null;
+
+			if (f_new_only) {
+				chosen_code = PDLCodeChooserEventSequence.prepIssueNewEventSequence (null, suggested_code,
+					geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed, del_op, gj_used);
+			} else {
+				boolean f_valid_ok = true;
+				long reviewOverwrite = -1L;
+
+				chosen_code = PDLCodeChooserEventSequence.checkChooseEventSequenceCode (suggested_code, f_valid_ok, reviewOverwrite,
+					geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed, del_op, gj_used);
+			}
+
+			// If we got a code to use and a GeoJSON ...
+
+			if (chosen_code != null && (!(chosen_code.isEmpty())) && gj_used.geojson != null) {
+
+				// The lag we use is the earlier of the supplied forecast lag and the cap time
+
+				long lag = Math.min (forecast_lag, cap_time - fcmain.mainshock_time);
+
+				// Get parameters for the mainshock
+
+				ForecastParameters fcparam = new ForecastParameters();
+				fcparam.fetch_all_params (lag, fcmain, tstatus.analyst_options.analyst_params);
+
+				// If we have event-sequence parameters, and we are reporting ...
+
+				if (fcparam.evseq_cfg_avail && fcparam.evseq_cfg_params.get_evseq_cfg_report() == ActionConfigFile.ESREP_REPORT) {
+
+					// Make the event-sequence properties
+
+					PropertiesEventSequence evs_props = new PropertiesEventSequence();
+					String evseq_err = ForecastData.make_evseq_properties (evs_props, gj_used.geojson, fcparam, cap_time, false);	// checks for null geojson
+
+					// If error during property build ...
+
+					if (evseq_err != null) {
+						System.out.println ("Bypassing shadowed event-sequence product generation: " + evseq_err + ".");
+					}
+
+					// Otherwise, we have the event-sequence properties
+
+					else {
+						System.out.println ("Created shadowed event-sequence properties.");
+						System.out.println (evs_props.toString());
+
+						EventSequenceResult evseq_res = new EventSequenceResult();
+						evseq_res.set_for_pending_send (queryID, evs_props, chosen_code, isReviewed);
+
+						try {
+							// Do pending deletes
+
+							del_op.do_delete();
+
+							// Do the send
+
+							evseq_res.perform_send();
+						}
+						catch (Exception e) {
+							throw new ComcatPDLSendException ("Error sending shadowed event-sequence product to PDL", e);
+						}
+
+						// Write the log entry
+
+						evseq_res.write_log (sg);
+
+						// Return that we did the send
+
+						return false;
+					}
+				}
+			}
+		}
+
+		// No send
+
+		return true;
+	}
+
+
+
 	// Delete the OAF produts for an event.
 	// Parameters:
 	//  fcmain = Forecast mainshock structure, already filled in.
 	//  riprem_reason = Relay item action code, from RiPDLRemoval.RIPREM_REAS_XXXXX.
 	//  riprem_forecast_stamp = Forecast stamp for this action, contained forecast lag can be -1L if unknown.
 	//  riprem_cap_time = Cap time, or CAP_TIME_XXXXX special value, for deleting event-sequence products.
+	//  gj_holder = If non-null, and contains a non-null GeoJSON, it supplies the GeoJSON for reading
+	//   back from PDL.  Otherwise, the GeoJSON from fcmain is used.  If omitted, defaults to null.
+	//  f_del_evseq = True to also delete event-sequence products, false if not.
+	//   If omitted, defaults to true.
 	// If a forecast lag is supplied, then the removal time is equal to the mainshock time
 	//  plus the forecast lag.  Otherwise, the removel time is the current time.
 	// If this is a primary machine, then this function:
 	// - Writes a relay item for the given action code.
+	// - Deletes or caps all event-sequence products associated with the event, if f_del_evseq is true.
 	// - Deletes all OAF products associated with the event.
 	// - Writes a log message.
 	// If an exception occurs during the deletion of OAF products, this function
@@ -394,6 +541,19 @@ public class PDLSupport extends ServerComponent {
 
 
 	public void delete_oaf_products (ForecastMainshock fcmain, int riprem_reason, ForecastStamp riprem_forecast_stamp, long riprem_cap_time) {
+		
+		GeoJsonHolder gj_holder = null;
+		boolean f_del_evseq = true;
+
+		delete_oaf_products (fcmain, riprem_reason, riprem_forecast_stamp, riprem_cap_time,
+			gj_holder, f_del_evseq);
+
+		return;
+	}
+
+
+	public void delete_oaf_products (ForecastMainshock fcmain, int riprem_reason, ForecastStamp riprem_forecast_stamp, long riprem_cap_time,
+			GeoJsonHolder gj_holder, boolean f_del_evseq) {
 
 		// If this is not primary, then do nothing
 
@@ -407,12 +567,13 @@ public class PDLSupport extends ServerComponent {
 		long relay_time = sg.task_disp.get_time();
 		boolean f_force = false;
 
-		long riprem_remove_time;
-		if (riprem_forecast_stamp.get_forecast_lag() < 0L) {
-			riprem_remove_time = sg.task_disp.get_time();
-		} else {
-			riprem_remove_time = fcmain.mainshock_time + riprem_forecast_stamp.get_forecast_lag();
-		}
+		//  long riprem_remove_time;
+		//  if (riprem_forecast_stamp.get_forecast_lag() < 0L) {
+		//  	riprem_remove_time = sg.task_disp.get_time();
+		//  } else {
+		//  	riprem_remove_time = fcmain.mainshock_time + riprem_forecast_stamp.get_forecast_lag();
+		//  }
+		long riprem_remove_time = sg.task_disp.get_time();
 
 		RelayItem relit = sg.relay_sup.submit_prem_relay_item (event_id, relay_time, f_force, riprem_reason, riprem_forecast_stamp, riprem_remove_time, riprem_cap_time);
 	
@@ -423,6 +584,14 @@ public class PDLSupport extends ServerComponent {
 		try {
 			JSONObject geojson = fcmain.mainshock_geojson;	// it's OK if this is null
 			boolean f_gj_prod = true;
+
+			if (gj_holder != null) {
+				if (gj_holder.geojson != null) {
+					geojson = gj_holder.geojson;
+					f_gj_prod = gj_holder.f_gj_prod;
+				}
+			}
+
 			String queryID = fcmain.mainshock_event_id;
 			boolean isReviewed = false;
 			long cutoff_time = 0L;
@@ -436,7 +605,7 @@ public class PDLSupport extends ServerComponent {
 
 			// If event-sequence is enabled, and cap time is not no-operation, delete or cap the event-sequence product
 
-			if (sg.task_disp.get_action_config().get_is_evseq_enabled() && riprem_cap_time != PDLCodeChooserEventSequence.CAP_TIME_NOP) {
+			if (f_del_evseq && sg.task_disp.get_action_config().get_is_evseq_enabled() && riprem_cap_time != PDLCodeChooserEventSequence.CAP_TIME_NOP) {
 
 				GeoJsonHolder gj_used = new GeoJsonHolder (geojson, f_gj_prod);
 

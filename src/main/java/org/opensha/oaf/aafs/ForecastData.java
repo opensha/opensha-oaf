@@ -777,7 +777,7 @@ public class ForecastData {
 	//  evs_props = Receives the properties.
 	//  geojson = GeoJSON for the event.
 	// Returns null if success.
-	// IF error, returns an error message.
+	// If error, returns an error message.
 
 	public String make_evseq_properties (PropertiesEventSequence evs_props, JSONObject geojson) {
 
@@ -796,7 +796,7 @@ public class ForecastData {
 		// If no event-sequence parameters, we cannot proceed
 
 		if (!( parameters.evseq_cfg_avail )) {
-			return "Failed to create event-sequence properties because no parameters are available";
+			return "Failed to create event-sequence properties because no event-sequence parameters are available";
 		}
 
 		// If no search region parameters, we cannot proceed
@@ -830,6 +830,104 @@ public class ForecastData {
 		// Set the region
 
 		SphRegion sph_region = parameters.aftershock_search_region;
+
+		if (!( evs_props.set_region_from_sph (sph_region) )) {
+			return "Failed to set region for event-sequence properties";
+		}
+
+		// Check invariant
+
+		String evs_inv = evs_props.check_invariant();
+
+		if (evs_inv != null) {
+			return "Invariant check failed for event-sequence properties: " + evs_inv;
+		}
+
+		// success
+
+		return null;
+	}
+
+
+
+
+	// Make event-sequence properties.
+	// Parameters:
+	//  evs_props = Receives the properties.
+	//  geojson = GeoJSON for the event.
+	//  fcparam = Forecast parameters for the event.
+	//  seq_end_time = Sequence end time, in milliseconds, either relative or absolute.
+	//  f_rel_end_time = True if end time is relative, false if absolute.
+	// Returns null if success.
+	// If error, returns an error message.
+	// Note: As a special case, if seq_end_time == -1L and f_rel_end_time == true,
+	//  then the end time is the default computed from the forecast lag.
+	// Note: This is a static function.
+
+	public static String make_evseq_properties (PropertiesEventSequence evs_props, JSONObject geojson,
+			ForecastParameters fcparam, long seq_end_time, boolean f_rel_end_time) {
+
+		ActionConfig evseq_action_config = new ActionConfig();
+
+		// Start by clearing the property object
+
+		evs_props.clear();
+
+		// If no GeoJSON, we cannot proceed
+
+		if (geojson == null) {
+			return "Failed to create event-sequence properties because no GeoJSON is available";
+		}
+
+		// If no parameters, we cannot proceed
+
+		if (fcparam == null) {
+			return "Failed to create event-sequence properties because no parameters are available";
+		}
+
+		// If no event-sequence parameters, we cannot proceed
+
+		if (!( fcparam.evseq_cfg_avail )) {
+			return "Failed to create event-sequence properties because no event-sequence parameters are available";
+		}
+
+		// If no search region parameters, we cannot proceed
+
+		if (!( fcparam.aftershock_search_avail )) {
+			return "Failed to create event-sequence properties because no aftershock search region is available";
+		}
+
+		// Set properties for mainshock
+
+		if (!( evs_props.set_from_event_gj (geojson) )) {
+			return "Failed to set event-sequence properties for mainshock";
+		}
+
+		// Set start time
+
+		long start_delta = fcparam.evseq_cfg_params.get_evseq_cfg_lookback();
+
+		if (!( evs_props.set_relative_start_time_millis (-start_delta) )) {		// note negative
+			return "Failed to set start time for event-sequence properties";
+		}
+
+		// Set end time
+
+		if (f_rel_end_time) {
+			long end_delta = ( (seq_end_time != -1L) ? seq_end_time : (fcparam.forecast_lag + evseq_action_config.get_evseq_lookahead()) );
+
+			if (!( evs_props.set_relative_end_time_millis (end_delta) )) {
+				return "Failed to set relative end time for event-sequence properties";
+			}
+		} else {
+			if (!( evs_props.set_end_time (seq_end_time) )) {
+				return "Failed to set absolute end time for event-sequence properties";
+			}
+		}
+
+		// Set the region
+
+		SphRegion sph_region = fcparam.aftershock_search_region;
 
 		if (!( evs_props.set_region_from_sph (sph_region) )) {
 			return "Failed to set region for event-sequence properties";

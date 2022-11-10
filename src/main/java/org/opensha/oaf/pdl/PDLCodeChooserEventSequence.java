@@ -473,6 +473,7 @@ public class PDLCodeChooserEventSequence {
 
 
 
+
 	// If the supplied cap time is a special value, return a smaller (that is, earlier) time that is not special.
 
 	public static long nudge_cap_time (long cap_time) {
@@ -485,7 +486,19 @@ public class PDLCodeChooserEventSequence {
 
 
 
-	// Class that encapsulates the deletion of a list of OAF products.
+	// Return true if the supplied cap time is a time, false if it is a special value.
+
+	public static boolean cap_time_is_time (long cap_time) {
+		if (cap_time >= CAP_TIME_SPECIAL_MIN && cap_time <= CAP_TIME_SPECIAL_MAX) {
+			return false;
+		}
+		return true;
+	}
+
+
+
+
+	// Class that encapsulates the deletion of a list of event-sequence products.
 
 	public static class DeleteEvSeqOp {
 
@@ -591,7 +604,7 @@ public class PDLCodeChooserEventSequence {
 		@Override
 		public String toString () {
 			StringBuilder sb = new StringBuilder();
-			sb.append ("PDLCodeChooserOaf.DeleteEvSeqOp" + "\n");
+			sb.append ("PDLCodeChooserEventSequence.DeleteEvSeqOp" + "\n");
 			if (evseqProducts == null) {
 				sb.append ("evseqProducts = <null>" + "\n");
 			} else {
@@ -1003,7 +1016,7 @@ public class PDLCodeChooserEventSequence {
 	public static final int DOESP_INCOMPLETE = 6;
 		// The geojson contained incomplete information.
 	public static final int DOESP_NO_PRODUCTS = 7;
-		// There are no OAF products (from any source) for the event.
+		// There are no event-sequence products (from any source) for the event.
 	public static final int DOESP_FOREIGN = 8;
 		// There are no event-sequence products from our source, but there exists
 		// an event-sequence product from another source.
@@ -1349,8 +1362,8 @@ public class PDLCodeChooserEventSequence {
 	//  gj_used = If included and non-null, returns the GeoJSON used for reading back from
 	//   PDL.  Note the returned GeoJSON can be null if the event was not found, and may
 	//   be the same as or different from the supplied geojson.
-	// Returns: The update time of the most recent OAF product, in milliseconds since the
-	//  epoch, or 0L if there is no existing OAF product.
+	// Returns: The update time of the most recent event-sequence product, in milliseconds since the
+	//  epoch, or 0L if there is no existing event-sequence product.
 	// Note: Throws ComcatException if Comcat access error.  It is recommended that
 	//  any exception be considered a transient condition.
 
@@ -1444,7 +1457,7 @@ public class PDLCodeChooserEventSequence {
 
 		List<String> idlist = ComcatOAFAccessor.idsToList (event_ids, event_net + event_code);
 
-		// Get the list of OAF products
+		// Get the list of event-sequence products
 
 		List<ComcatProductEventSequence> evseqProducts = ComcatProductEventSequence.make_list_from_gj (my_geojson);
 
@@ -1493,6 +1506,364 @@ public class PDLCodeChooserEventSequence {
 		// Return the time of the most recent product
 
 		return evseqProducts.get(ix_recent).updateTime;
+	}
+
+
+
+
+	// Check if it is possible to issue a new event-sequence product.
+	// Parameters:
+	//  f_prod = True to read from prod-Comcat, false to read from dev-Comcat,
+	//           null to read from the configured PDL destination.
+	//  geojson = GeoJSON for the event, or null if not available.  If not supplied,
+	//   or if f_gj_prod does not correspond to the PDL destination, then this
+	//   function retrieves the geojson from Comcat.
+	//  f_gj_prod = True if geojson was retrieved from Comcat-production, false if it
+	//   was retrieved from Comcat-development.  This is only used if geojson is non-null.
+	//  queryID = Event ID used to query Comcat.  This is used only if geojson is null,
+	//   or if f_gj_prod does not correspond to the PDL destination.
+	//  gj_used = If included and non-null, returns the GeoJSON used for reading back from
+	//   PDL.  Note the returned GeoJSON can be null if the event was not found, and may
+	//   be the same as or different from the supplied geojson.
+	// Returns: True if the event is found, and it contains no event-sequence product
+	//  from our source with a valid code.  Otherwise, returns false.
+	// Note: Throws ComcatException if Comcat access error.  It is recommended that
+	//  any exception be considered a transient condition.
+	// Note: This function does not modify the contents of PDL.
+
+	public static boolean checkIssueNewEventSequence (Boolean f_prod,
+			JSONObject geojson, boolean f_gj_prod, String queryID) {
+
+		GeoJsonHolder gj_used = null;
+
+		return checkIssueNewEventSequence (f_prod,
+			geojson, f_gj_prod, queryID, gj_used);
+	}
+
+	public static boolean checkIssueNewEventSequence (Boolean f_prod,
+			JSONObject geojson, boolean f_gj_prod, String queryID, GeoJsonHolder gj_used) {
+
+		// Default to the supplied geojson
+
+		if (gj_used != null) {
+			gj_used.set (geojson, f_gj_prod);
+		}
+
+		// Server configuration
+
+		ServerConfig server_config = new ServerConfig();
+
+		// Get flag indicating if we should read back products from production
+
+		boolean f_use_prod = server_config.get_is_pdl_readback_prod();
+
+		if (f_prod != null) {
+			f_use_prod = f_prod.booleanValue();
+		}
+
+		// Get the geojson, reading from Comcat if necessary
+
+		JSONObject my_geojson = geojson;
+
+		if (f_gj_prod != f_use_prod) {
+			my_geojson = null;
+		}
+
+		if (my_geojson == null) {
+		
+			// Get the accessor
+
+			ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod);
+
+			// Try to retrieve the event
+
+			ObsEqkRupture rup = accessor.fetchEvent (queryID, false, true);
+
+			// If not found, don't create new product
+
+			if (rup == null) {
+				if (gj_used != null) {
+					gj_used.set (null, f_use_prod);
+				}
+				return false;
+			}
+
+			// Get the geojson from the fetch (must allow for the possibility this is null)
+
+			my_geojson = accessor.get_last_geojson();
+		}
+
+		if (gj_used != null) {
+			gj_used.set (my_geojson, f_use_prod);
+		}
+
+		// If no geojson, don't create new product
+
+		if (my_geojson == null) {
+			return false;
+		}
+
+		// Need to have event net, code, ids, and time
+
+		String event_net = GeoJsonUtils.getNet (my_geojson);
+		String event_code = GeoJsonUtils.getCode (my_geojson);
+		String event_ids = GeoJsonUtils.getIds (my_geojson);
+		Date event_time = GeoJsonUtils.getTime (my_geojson);
+
+		if ( event_net == null || event_net.isEmpty() 
+			|| event_code == null || event_code.isEmpty()
+			|| event_ids == null || event_ids.isEmpty() || event_time == null ) {
+			
+			return false;
+		}
+
+		// Get the list of IDs for this event, with the authorative id first
+
+		List<String> idlist = ComcatOAFAccessor.idsToList (event_ids, event_net + event_code);
+
+		// Get the list of event-sequence products
+
+		List<ComcatProductEventSequence> evseqProducts = ComcatProductEventSequence.make_list_from_gj (my_geojson);
+
+		// Index of the most recent product, with correct source
+
+		int ix_recent = -1;
+
+		// Index of the most recent product, with correct source and valid code
+
+		int ix_valid = -1;
+
+		// Loop over products to find indexes ...
+
+		for (int k = 0; k < evseqProducts.size(); ++k) {
+			ComcatProductEventSequence evseqProduct = evseqProducts.get (k);
+
+			// If the product is for our source ...
+
+			if (evseqProduct.sourceID.equals (server_config.get_pdl_oaf_source())) {
+
+				// Update most recent product
+
+				if (ix_recent == -1 || evseqProduct.updateTime > evseqProducts.get(ix_recent).updateTime) {
+					ix_recent = k;
+				}
+
+				// If the product has a valid code ...
+
+				if (idlist.contains (evseqProduct.eventID)) {
+
+					// Update most recent product with valid code
+
+					if (ix_valid == -1 || evseqProduct.updateTime > evseqProducts.get(ix_valid).updateTime) {
+						ix_valid = k;
+					}
+				}
+			}
+		}
+
+		// If there is a product from our source with a valid code, don't create new product
+
+		if (ix_valid != -1) {
+			return false;
+		}
+
+		// Create new product
+
+		return true;
+	}
+
+
+
+
+	// Prepare to issue a new event-sequence product.
+	// Parameters:
+	//  f_prod = True to read from prod-Comcat, false to read from dev-Comcat,
+	//           null to read from the configured PDL destination.
+	//  suggestedCode = Code to use, if it is valid.
+	//  geojson = GeoJSON for the event, or null if not available.  If not supplied,
+	//   or if f_gj_prod does not correspond to the PDL destination, then this
+	//   function retrieves the geojson from Comcat.
+	//  f_gj_prod = True if geojson was retrieved from Comcat-production, false if it
+	//   was retrieved from Comcat-development.  This is only used if geojson is non-null.
+	//  queryID = Event ID used to query Comcat.  This is used only if geojson is null,
+	//   or if f_gj_prod does not correspond to the PDL destination.
+	//  eventNetwork = Network identifier for the event (for example, "us").
+	//  eventCode = Network code for the event (for example, "10006jv5").
+	//  isReviewed = True if this product has been reviewed.
+	//  del_op = Returns the deletion operation.  Cannot be null.
+	//  gj_used = If included and non-null, returns the GeoJSON used for reading back from
+	//   PDL.  Note the returned GeoJSON can be null if the event was not found, and may
+	//   be the same as or different from the supplied geojson.
+	// Returns: If the event is found, and it contains no event-sequence product from
+	//  our source with a valid code, then returns the PDL code to use for sending a new
+	//  event-sequence product.  Otherwise, returns null, indicating no product should be sent.
+	// The returned PDL code is suggestedCode if it is valid, otherwise the authoritative ID.
+	// If non-null is returned, then the deletion operation will delete all event-Sequence
+	//  products from our source (which will all have invalid codes).  Otherwise, the
+	//  deletion operation is empty.
+	// Note: Throws ComcatException if Comcat access error.  It is recommended that
+	//  any exception be considered a transient condition.
+	// Note: This function does not modify the contents of PDL.
+
+	public static String prepIssueNewEventSequence (Boolean f_prod, String suggestedCode,
+			JSONObject geojson, boolean f_gj_prod, String queryID,
+			String eventNetwork, String eventCode, boolean isReviewed, DeleteEvSeqOp del_op) throws Exception {
+
+		GeoJsonHolder gj_used = null;
+
+		return prepIssueNewEventSequence (f_prod, suggestedCode,
+			geojson, f_gj_prod, queryID,
+			eventNetwork, eventCode, isReviewed, del_op, gj_used);
+	}
+
+	public static String prepIssueNewEventSequence (Boolean f_prod, String suggestedCode,
+			JSONObject geojson, boolean f_gj_prod, String queryID,
+			String eventNetwork, String eventCode, boolean isReviewed, DeleteEvSeqOp del_op, GeoJsonHolder gj_used) throws Exception {
+
+		// Default to no deletion operation
+
+		del_op.clear();
+
+		// Default to the supplied geojson
+
+		if (gj_used != null) {
+			gj_used.set (geojson, f_gj_prod);
+		}
+
+		// Server configuration
+
+		ServerConfig server_config = new ServerConfig();
+
+		// Get flag indicating if we should read back products from production
+
+		boolean f_use_prod = server_config.get_is_pdl_readback_prod();
+
+		if (f_prod != null) {
+			f_use_prod = f_prod.booleanValue();
+		}
+
+		// Get the geojson, reading from Comcat if necessary
+
+		JSONObject my_geojson = geojson;
+
+		if (f_gj_prod != f_use_prod) {
+			my_geojson = null;
+		}
+
+		if (my_geojson == null) {
+		
+			// Get the accessor
+
+			ComcatOAFAccessor accessor = new ComcatOAFAccessor (true, f_use_prod);
+
+			// Try to retrieve the event
+
+			ObsEqkRupture rup = accessor.fetchEvent (queryID, false, true);
+
+			// If not found, don't create new product
+
+			if (rup == null) {
+				if (gj_used != null) {
+					gj_used.set (null, f_use_prod);
+				}
+				return null;
+			}
+
+			// Get the geojson from the fetch (must allow for the possibility this is null)
+
+			my_geojson = accessor.get_last_geojson();
+		}
+
+		if (gj_used != null) {
+			gj_used.set (my_geojson, f_use_prod);
+		}
+
+		// If no geojson, don't create new product
+
+		if (my_geojson == null) {
+			return null;
+		}
+
+		// Need to have event net, code, ids, and time
+
+		String event_net = GeoJsonUtils.getNet (my_geojson);
+		String event_code = GeoJsonUtils.getCode (my_geojson);
+		String event_ids = GeoJsonUtils.getIds (my_geojson);
+		Date event_time = GeoJsonUtils.getTime (my_geojson);
+
+		if ( event_net == null || event_net.isEmpty() 
+			|| event_code == null || event_code.isEmpty()
+			|| event_ids == null || event_ids.isEmpty() || event_time == null ) {
+			
+			return null;
+		}
+
+		// Get the list of IDs for this event, with the authorative id first
+
+		List<String> idlist = ComcatOAFAccessor.idsToList (event_ids, event_net + event_code);
+
+		// Get the list of event-sequence products
+
+		List<ComcatProductEventSequence> evseqProducts = ComcatProductEventSequence.make_list_from_gj (my_geojson);
+
+		// Index of the most recent product, with correct source
+
+		int ix_recent = -1;
+
+		// Index of the most recent product, with correct source and valid code
+
+		int ix_valid = -1;
+
+		// Loop over products to find indexes ...
+
+		for (int k = 0; k < evseqProducts.size(); ++k) {
+			ComcatProductEventSequence evseqProduct = evseqProducts.get (k);
+
+			// If the product is for our source ...
+
+			if (evseqProduct.sourceID.equals (server_config.get_pdl_oaf_source())) {
+
+				// Update most recent product
+
+				if (ix_recent == -1 || evseqProduct.updateTime > evseqProducts.get(ix_recent).updateTime) {
+					ix_recent = k;
+				}
+
+				// If the product has a valid code ...
+
+				if (idlist.contains (evseqProduct.eventID)) {
+
+					// Update most recent product with valid code
+
+					if (ix_valid == -1 || evseqProduct.updateTime > evseqProducts.get(ix_valid).updateTime) {
+						ix_valid = k;
+					}
+				}
+			}
+		}
+
+		// If there is a product from our source with a valid code, don't create new product
+
+		if (ix_valid != -1) {
+			return null;
+		}
+
+		// If the suggested code is valid ...
+
+		if (idlist.contains (suggestedCode)) {
+
+			// Delete all products and return the suggested code
+
+			System.out.println ("Choosing suggested event-sequence code '" + suggestedCode + "'");
+			del_op.set (evseqProducts, -1, eventNetwork, eventCode, isReviewed);
+			return suggestedCode;
+		}
+
+		// If all else fails, delete all products and return the authoritative ID
+
+		System.out.println ("Choosing authoritative ID '" + idlist.get(0) + "' to use as event-sequence code");
+		del_op.set (evseqProducts, -1, eventNetwork, eventCode, isReviewed);
+		return idlist.get(0);
 	}
 
 
@@ -2123,23 +2494,220 @@ public class PDLCodeChooserEventSequence {
 
 
 
+		// Subcommand : Test #10
+		// Command format:
+		//  test10  pdl_enable  pdl_key_filename  query_id
+		// The PDL key filename can be "-" for none.
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile) (0 = none, 1 = dev, 2 = prod, ...).
+		// Then call checkIssueNewEventSequence and display the result.
+
+		if (args[0].equalsIgnoreCase ("test10")) {
+
+			// 3 additional arguments
+
+			if (args.length != 4) {
+				System.err.println ("PDLCodeChooserEventSequence : Invalid 'test10' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				String pdl_key_filename = args[2];
+				String query_id = args[3];
+
+				// Say hello
+
+				System.out.println ("Checking if we can issue a new event-sequence product");
+				System.out.println ("pdl_enable: " + pdl_enable);
+				System.out.println ("pdl_key_filename: " + pdl_key_filename);
+				System.out.println ("query_id: " + query_id);
+				System.out.println ("");
+
+				// Set the PDL enable code
+
+				ServerConfig.set_opmode (pdl_enable, pdl_key_filename);
+				System.out.println (ServerConfig.get_opmode_as_string());
+
+				// Make the call
+
+				JSONObject geojson = null;
+				boolean f_gj_prod = true;
+
+				boolean result = PDLCodeChooserEventSequence.checkIssueNewEventSequence (null,
+					geojson, f_gj_prod, query_id);
+
+				// Display result
+
+				System.out.println ("PDLCodeChooserEventSequence.checkIssueNewEventSequence returned: " + result);
+			}
+
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #11
+		// Command format:
+		//  test11  pdl_enable  pdl_key_filename  suggestedCode  queryID  eventNetwork  eventCode  isReviewed
+		// The PDL key filename can be "-" for none.
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile) (0 = none, 1 = dev, 2 = prod, ...).
+		// Then call prepIssueNewEventSequence and display the result.
+		// This test does not perform any deletion.
+
+		if (args[0].equalsIgnoreCase ("test11")) {
+
+			// 7 additional arguments
+
+			if (args.length != 8) {
+				System.err.println ("PDLCodeChooserEventSequence : Invalid 'test11' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				String pdl_key_filename = args[2];
+				String suggestedCode = args[3];
+				String queryID = args[4];
+				String eventNetwork = args[5];
+				String eventCode = args[6];
+				boolean isReviewed = Boolean.parseBoolean (args[7]);
+
+				// Say hello
+
+				System.out.println ("Preparing for new event-sequence product");
+				System.out.println ("pdl_enable: " + pdl_enable);
+				System.out.println ("pdl_key_filename: " + pdl_key_filename);
+				System.out.println ("suggestedCode: " + suggestedCode);
+				System.out.println ("queryID: " + queryID);
+				System.out.println ("eventNetwork: " + eventNetwork);
+				System.out.println ("eventCode: " + eventCode);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("");
+
+				// Set the PDL enable code
+
+				ServerConfig.set_opmode (pdl_enable, pdl_key_filename);
+				System.out.println (ServerConfig.get_opmode_as_string());
+
+				// Make the call
+
+				JSONObject geojson = null;
+				boolean f_gj_prod = true;
+				PDLCodeChooserEventSequence.DeleteEvSeqOp del_op = new PDLCodeChooserEventSequence.DeleteEvSeqOp();
+
+				String chosen_code = PDLCodeChooserEventSequence.prepIssueNewEventSequence (null, suggestedCode,
+					geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed, del_op);
+
+				// Display result
+
+				System.out.println ("PDLCodeChooserEventSequence.prepIssueNewEventSequence result:");
+				System.out.println ((chosen_code == null) ? "<null>" : chosen_code);
+				System.out.println ("");
+				System.out.println (del_op.toString());
+
+			}
+
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #12
+		// Command format:
+		//  test12  pdl_enable  pdl_key_filename  suggestedCode  queryID  eventNetwork  eventCode  isReviewed
+		// The PDL key filename can be "-" for none.
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile) (0 = none, 1 = dev, 2 = prod, ...).
+		// Then call prepIssueNewEventSequence and display the result.
+		// Same as test #11 except it performs the deletion.
+
+		if (args[0].equalsIgnoreCase ("test12")) {
+
+			// 7 additional arguments
+
+			if (args.length != 8) {
+				System.err.println ("PDLCodeChooserEventSequence : Invalid 'test12' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);
+				String pdl_key_filename = args[2];
+				String suggestedCode = args[3];
+				String queryID = args[4];
+				String eventNetwork = args[5];
+				String eventCode = args[6];
+				boolean isReviewed = Boolean.parseBoolean (args[7]);
+
+				// Say hello
+
+				System.out.println ("Preparing for new event-sequence product");
+				System.out.println ("pdl_enable: " + pdl_enable);
+				System.out.println ("pdl_key_filename: " + pdl_key_filename);
+				System.out.println ("suggestedCode: " + suggestedCode);
+				System.out.println ("queryID: " + queryID);
+				System.out.println ("eventNetwork: " + eventNetwork);
+				System.out.println ("eventCode: " + eventCode);
+				System.out.println ("isReviewed: " + isReviewed);
+				System.out.println ("");
+
+				// Set the PDL enable code
+
+				ServerConfig.set_opmode (pdl_enable, pdl_key_filename);
+				System.out.println (ServerConfig.get_opmode_as_string());
+
+				// Make the call
+
+				JSONObject geojson = null;
+				boolean f_gj_prod = true;
+				PDLCodeChooserEventSequence.DeleteEvSeqOp del_op = new PDLCodeChooserEventSequence.DeleteEvSeqOp();
+
+				String chosen_code = PDLCodeChooserEventSequence.prepIssueNewEventSequence (null, suggestedCode,
+					geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed, del_op);
+
+				// Display result
+
+				System.out.println ("PDLCodeChooserEventSequence.prepIssueNewEventSequence result:");
+				System.out.println ((chosen_code == null) ? "<null>" : chosen_code);
+				System.out.println ("");
+				System.out.println (del_op.toString());
+
+				// Perform the deletion
+
+				System.out.println ("");
+				System.out.println ("Performing deletion");
+				del_op.do_delete();
+
+			}
+
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
 		// Unrecognized subcommand.
 
 		System.err.println ("PDLCodeChooserEventSequence : Unrecognized subcommand : " + args[0]);
 		return;
 
 	}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
