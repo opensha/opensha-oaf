@@ -317,9 +317,12 @@ public class PDLSupport extends ServerComponent {
 	//  fcmain = Mainshock info.
 	//  forecast_lag = Lag for the forecast being processed.
 	//  cap_time = Cap time for the event-sequence product, that is, its end time.
+	//   Can also be CAP_TIME_DELETE to request deletion of event-sequence product.
 	//  f_new_only = True to send only if there is no existing event-sequence product with a valid code.
+	//   True also prevents handing of deletion operations.
 	//  gj_used = Returns the GeoJSON used to read back from PDL, or null GeoJSON if no readback was done.
-	// Returns false if an event-sequence product was sent, true if not.
+	// Returns false if the requested action was taken, that is, an event-sequence product was sent,
+	//  or the deletion operation was done.  Returns true if not.
 	// Throws an exception if Comcat or PDL error.
 	// Note: If a send occurs, a log entry is written.
 	// Note: If no send occurs, then there is no modification of PDL.
@@ -333,6 +336,57 @@ public class PDLSupport extends ServerComponent {
 		// Default to readback not done
 
 		gj_used.clear();
+
+		//  If event-sequence is enabled, and cap time is requesting delete ...
+
+		if (sg.task_disp.get_action_config().get_is_evseq_enabled()
+			&& cap_time == PDLCodeChooserEventSequence.CAP_TIME_DELETE
+			&& (!f_new_only)) {
+
+			// The event ID for deletion (cf delete_oaf_products)
+
+			String queryID = fcmain.mainshock_event_id;
+
+			// The GeoJSON, if available
+
+			JSONObject geojson = fcmain.mainshock_geojson;	// it's OK if this is null
+			boolean f_gj_prod = true;
+
+			// Do the delete operation
+
+			boolean isReviewed = false;
+			boolean f_keep_reviewed = false;
+			PDLCodeChooserEventSequence.DeleteEvSeqOp del_op = new PDLCodeChooserEventSequence.DeleteEvSeqOp();
+
+			int doesp = PDLCodeChooserEventSequence.checkDeleteOldEventSequenceProducts (null,
+					geojson, f_gj_prod, queryID, isReviewed, cap_time, f_keep_reviewed, del_op, gj_used);
+
+			// Do pending deletes
+
+			if (doesp == PDLCodeChooserEventSequence.DOESP_DELETED) {
+				System.out.println ("Deleting shadowed event-sequence product.");
+			}
+
+			try {
+				del_op.do_delete();
+			}
+			catch (Exception e) {
+				throw new ComcatPDLSendException ("Error deleting shadowed event-sequence product from PDL", e);
+			}
+
+			// Log it, if we deleted or capped something
+
+			if (doesp == PDLCodeChooserEventSequence.DOESP_DELETED) {
+				sg.log_sup.report_evseq_delete_ok (fcmain.get_pdl_relay_id());
+			}
+			if (doesp == PDLCodeChooserEventSequence.DOESP_CAPPED) {	// should never happen
+				sg.log_sup.report_evseq_cap_ok (fcmain.get_pdl_relay_id(), cap_time);
+			}
+
+			// Return that we did the delete operation
+
+			return false;
+		}
 
 		// If event-sequence is enabled, and the cap time is a time (not a special value) ...
 
