@@ -573,6 +573,17 @@ public class SimpleUtils {
 
 
 
+	// Function to format floating-point values for display during testing.
+	// This function returns a string, with 12 significant digits, in either
+	// fixed or floating point depending on the value, with no trailing zeros.
+
+	public static String rndd (double x) {
+		return double_to_string_trailz ("%.12G", TRAILZ_REMOVE, x);
+	}
+
+
+
+
 	// Coerce a value to lie within given limits.
 	// Parameters:
 	//  x = Value to check.

@@ -5,6 +5,7 @@ import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import static org.opensha.oaf.util.SimpleUtils.rndd;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -110,12 +111,14 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 		// Interval start time, but not on the first interval which starts at -infinity
 
 		if (n > 0) {
-			result.append("time = ").append(a_time[n-1]).append(": ");
+			//result.append("time = ").append(a_time[n-1]).append(": ");
+			result.append("time = ").append(rndd(a_time[n-1])).append(": ");
 		}
 
 		// Constant function
 
-		result.append("constant: mag = ").append(a_mag[n]);
+		//result.append("constant: mag = ").append(a_mag[n]);
+		result.append("constant: mag = ").append(rndd(a_mag[n]));
 	
 		return result.toString();
 	}
@@ -2013,7 +2016,8 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 				for (int nq = 0; nq < query_count; ++nq) {
 					double t = query_time + nq * query_delta;
 					double mc = mag_comp_fn.get_mag_completeness (t);
-					System.out.println ("  t = " + t + ", mc = " + mc);
+					//System.out.println ("  t = " + t + ", mc = " + mc);
+					System.out.println ("  t = " + rndd(t) + ", mc = " + rndd(mc));
 				}
 
 
@@ -2031,7 +2035,7 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 		// Command format:
 		//  test2  magCat  query_time  query_delta  query_count  mag_eps  time_eps
 		//         durlim_ratio  durlim_min  durlim_max
-		//         split_count  [tsplit  dlbase]  mag  [time  mag]...
+		//         split_count  [tsplit  dlbase]...  mag  [time  mag]...
 		// Build a function with the given parameters, rupture list, and splitting.
 		// Perform queries at the specified set of times.
 		// Display detailed results.
@@ -2125,7 +2129,8 @@ public class OEMagCompFnDisc extends OEMagCompFn {
 				for (int nq = 0; nq < query_count; ++nq) {
 					double t = query_time + nq * query_delta;
 					double mc = mag_comp_fn.get_mag_completeness (t);
-					System.out.println ("  t = " + t + ", mc = " + mc);
+					//System.out.println ("  t = " + t + ", mc = " + mc);
+					System.out.println ("  t = " + rndd(t) + ", mc = " + rndd(mc));
 				}
 
 

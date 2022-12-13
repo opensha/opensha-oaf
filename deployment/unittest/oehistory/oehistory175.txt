@@ -1,0 +1,251 @@
+oehistory175 oetas.fit.OEDisc2History test2 3.0 0.5 0.25 1.0 -30.0 365.0 0.0 3 0.001 1.0e-7 0.005 0.2 0.5 0.05 0.5 0.00001 3.0 5 0.0 0 0.0 365.0 0 0 -28.0 6.8 -14.0 6.2 0.0 7.0 0.02 5.0 0.04 4.6 30.0 6.5 60.0 6.9 90.0 6.1
+Generating magnitude of completeness function
+magCat = 3.0
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = -30.0
+t_range_end = 365.0
+eligible_mag = 0.0
+eligible_count = 3
+mag_eps = 0.001
+time_eps = 1.0E-7
+disc_base = 0.005
+disc_delta = 0.2
+disc_round = 0.5
+disc_gap = 0.05
+durlim_ratio = 0.5
+durlim_min = 1.0E-5
+durlim_max = 3.0
+mag_cat_count = 5
+division_mag = 0.0
+division_count = 0
+t_interval_begin = 0.0
+t_interval_end = 365.0
+before_max_count = 0
+mag_cat_int_join = 0
+time_mag_array:
+  time = -28.0, mag = 6.8
+  time = -14.0, mag = 6.2
+  time = 0.0, mag = 7.0
+  time = 0.02, mag = 5.0
+  time = 0.04, mag = 4.6
+  time = 30.0, mag = 6.5
+  time = 60.0, mag = 6.9
+  time = 90.0, mag = 6.1
+
+rup_list:
+  t = -28.0, mag = 6.8
+  t = -14.0, mag = 6.2
+  t = 0.0, mag = 7.0
+  t = 0.02, mag = 5.0
+  t = 0.04, mag = 4.6
+  t = 30.0, mag = 6.5
+  t = 60.0, mag = 6.9
+  t = 90.0, mag = 6.1
+
+OEDisc2History:
+magCat = 6.1999
+rupture_count = 5
+0, 0: t=-28.00000, mag=6.800, mc=6.200, cat=-1, x=0.000, y=0.000, tv=-28.00000, ii=false
+1, 0: t=-14.00000, mag=6.200, mc=6.200, cat=-1, x=0.000, y=0.000, tv=-14.00000, ii=false
+2, 0: t=0.00000, mag=7.000, mc=6.200, cat=-1, x=0.000, y=0.000, tv=0.00000, ii=false
+3, 44: t=30.00000, mag=6.500, mc=6.200, cat=-1, x=0.000, y=0.000, tv=30.00000, ii=false
+4, 54: t=60.00000, mag=6.900, mc=6.200, cat=-1, x=0.000, y=0.000, tv=60.00000, ii=false
+i_outside_begin = 3
+i_inside_begin = 3
+i_inside_end = 5
+i_outside_end = 5
+interval_count = 190
+0: time = 0.0, mc = 7.0, ismc = false
+1: time = 1.0E-05, mc = 7.0, ismc = false
+2: time = 2.0E-05, mc = 7.0, ismc = false
+3: time = 3.0E-05, mc = 7.0, ismc = false
+4: time = 4.5E-05, mc = 7.0, ismc = false
+5: time = 6.75E-05, mc = 7.0, ismc = false
+6: time = 0.00010125, mc = 7.0, ismc = false
+7: time = 0.000151875, mc = 7.0, ismc = false
+8: time = 0.000221309470961, mc = 6.805, ismc = false
+9: time = 0.000286030672457, mc = 6.805, ismc = false
+10: time = 0.000350751873953, mc = 6.605, ismc = false
+11: time = 0.000453328065611, mc = 6.605, ismc = false
+12: time = 0.00055590425727, mc = 6.405, ismc = false
+13: time = 0.000718476565139, mc = 6.405, ismc = false
+14: time = 0.000881048873008, mc = 6.1999, ismc = true
+15: time = 0.00132157330951, mc = 6.1999, ismc = true
+16: time = 0.00198235996427, mc = 6.1999, ismc = true
+17: time = 0.0029735399464, mc = 6.1999, ismc = true
+18: time = 0.0044603099196, mc = 6.1999, ismc = true
+19: time = 0.0066904648794, mc = 6.1999, ismc = true
+20: time = 0.0100356973191, mc = 6.1999, ismc = true
+21: time = 0.0150535459787, mc = 6.1999, ismc = true
+22: time = 0.022580318968, mc = 6.1999, ismc = true
+23: time = 0.033870478452, mc = 6.1999, ismc = true
+24: time = 0.050805717678, mc = 6.1999, ismc = true
+25: time = 0.076208576517, mc = 6.1999, ismc = true
+26: time = 0.114312864775, mc = 6.1999, ismc = true
+27: time = 0.171469297163, mc = 6.1999, ismc = true
+28: time = 0.257203945745, mc = 6.1999, ismc = true
+29: time = 0.385805918617, mc = 6.1999, ismc = true
+30: time = 0.578708877926, mc = 6.1999, ismc = true
+31: time = 0.868063316889, mc = 6.1999, ismc = true
+32: time = 1.30209497533, mc = 6.1999, ismc = true
+33: time = 1.953142463, mc = 6.1999, ismc = true
+34: time = 2.9297136945, mc = 6.1999, ismc = true
+35: time = 4.39457054175, mc = 6.1999, ismc = true
+36: time = 6.59185581262, mc = 6.1999, ismc = true
+37: time = 9.59185581262, mc = 6.1999, ismc = true
+38: time = 12.5918558126, mc = 6.1999, ismc = true
+39: time = 15.5918558126, mc = 6.1999, ismc = true
+40: time = 18.5918558126, mc = 6.1999, ismc = true
+41: time = 21.5918558126, mc = 6.1999, ismc = true
+42: time = 24.5918558126, mc = 6.1999, ismc = true
+43: time = 27.2959279063, mc = 6.1999, ismc = true
+44: time = 30.0, mc = 6.1999, ismc = true
+45: time = 33.0, mc = 6.1999, ismc = true
+46: time = 36.0, mc = 6.1999, ismc = true
+47: time = 39.0, mc = 6.1999, ismc = true
+48: time = 42.0, mc = 6.1999, ismc = true
+49: time = 45.0, mc = 6.1999, ismc = true
+50: time = 48.0, mc = 6.1999, ismc = true
+51: time = 51.0, mc = 6.1999, ismc = true
+52: time = 54.0, mc = 6.1999, ismc = true
+53: time = 57.0, mc = 6.1999, ismc = true
+54: time = 60.0, mc = 6.9, ismc = false
+55: time = 60.00001, mc = 6.9, ismc = false
+56: time = 60.00002, mc = 6.9, ismc = false
+57: time = 60.00003, mc = 6.9, ismc = false
+58: time = 60.000045, mc = 6.9, ismc = false
+59: time = 60.0000675, mc = 6.9, ismc = false
+60: time = 60.00010125, mc = 6.9, ismc = false
+61: time = 60.0001492461, mc = 6.9, ismc = false
+62: time = 60.0001972423, mc = 6.805, ismc = false
+63: time = 60.0002549251, mc = 6.805, ismc = false
+64: time = 60.0003126079, mc = 6.605, ismc = false
+65: time = 60.0004040291, mc = 6.605, ismc = false
+66: time = 60.0004954502, mc = 6.405, ismc = false
+67: time = 60.0006403429, mc = 6.405, ismc = false
+68: time = 60.0007852356, mc = 6.1999, ismc = true
+69: time = 60.0011778535, mc = 6.1999, ismc = true
+70: time = 60.0017667802, mc = 6.1999, ismc = true
+71: time = 60.0026501703, mc = 6.1999, ismc = true
+72: time = 60.0039752554, mc = 6.1999, ismc = true
+73: time = 60.0059628831, mc = 6.1999, ismc = true
+74: time = 60.0089443247, mc = 6.1999, ismc = true
+75: time = 60.013416487, mc = 6.1999, ismc = true
+76: time = 60.0201247305, mc = 6.1999, ismc = true
+77: time = 60.0301870957, mc = 6.1999, ismc = true
+78: time = 60.0452806435, mc = 6.1999, ismc = true
+79: time = 60.0679209653, mc = 6.1999, ismc = true
+80: time = 60.101881448, mc = 6.1999, ismc = true
+81: time = 60.152822172, mc = 6.1999, ismc = true
+82: time = 60.2292332579, mc = 6.1999, ismc = true
+83: time = 60.3438498869, mc = 6.1999, ismc = true
+84: time = 60.5157748304, mc = 6.1999, ismc = true
+85: time = 60.7736622455, mc = 6.1999, ismc = true
+86: time = 61.1604933683, mc = 6.1999, ismc = true
+87: time = 61.7407400525, mc = 6.1999, ismc = true
+88: time = 62.6111100787, mc = 6.1999, ismc = true
+89: time = 63.916665118, mc = 6.1999, ismc = true
+90: time = 65.8749976771, mc = 6.1999, ismc = true
+91: time = 68.8124965156, mc = 6.1999, ismc = true
+92: time = 71.8124965156, mc = 6.1999, ismc = true
+93: time = 74.8124965156, mc = 6.1999, ismc = true
+94: time = 77.8124965156, mc = 6.1999, ismc = true
+95: time = 80.8124965156, mc = 6.1999, ismc = true
+96: time = 83.8124965156, mc = 6.1999, ismc = true
+97: time = 86.8124965156, mc = 6.1999, ismc = true
+98: time = 89.8124965156, mc = 6.1999, ismc = true
+99: time = 92.8124965156, mc = 6.1999, ismc = true
+100: time = 95.8124965156, mc = 6.1999, ismc = true
+101: time = 98.8124965156, mc = 6.1999, ismc = true
+102: time = 101.812496516, mc = 6.1999, ismc = true
+103: time = 104.812496516, mc = 6.1999, ismc = true
+104: time = 107.812496516, mc = 6.1999, ismc = true
+105: time = 110.812496516, mc = 6.1999, ismc = true
+106: time = 113.812496516, mc = 6.1999, ismc = true
+107: time = 116.812496516, mc = 6.1999, ismc = true
+108: time = 119.812496516, mc = 6.1999, ismc = true
+109: time = 122.812496516, mc = 6.1999, ismc = true
+110: time = 125.812496516, mc = 6.1999, ismc = true
+111: time = 128.812496516, mc = 6.1999, ismc = true
+112: time = 131.812496516, mc = 6.1999, ismc = true
+113: time = 134.812496516, mc = 6.1999, ismc = true
+114: time = 137.812496516, mc = 6.1999, ismc = true
+115: time = 140.812496516, mc = 6.1999, ismc = true
+116: time = 143.812496516, mc = 6.1999, ismc = true
+117: time = 146.812496516, mc = 6.1999, ismc = true
+118: time = 149.812496516, mc = 6.1999, ismc = true
+119: time = 152.812496516, mc = 6.1999, ismc = true
+120: time = 155.812496516, mc = 6.1999, ismc = true
+121: time = 158.812496516, mc = 6.1999, ismc = true
+122: time = 161.812496516, mc = 6.1999, ismc = true
+123: time = 164.812496516, mc = 6.1999, ismc = true
+124: time = 167.812496516, mc = 6.1999, ismc = true
+125: time = 170.812496516, mc = 6.1999, ismc = true
+126: time = 173.812496516, mc = 6.1999, ismc = true
+127: time = 176.812496516, mc = 6.1999, ismc = true
+128: time = 179.812496516, mc = 6.1999, ismc = true
+129: time = 182.812496516, mc = 6.1999, ismc = true
+130: time = 185.812496516, mc = 6.1999, ismc = true
+131: time = 188.812496516, mc = 6.1999, ismc = true
+132: time = 191.812496516, mc = 6.1999, ismc = true
+133: time = 194.812496516, mc = 6.1999, ismc = true
+134: time = 197.812496516, mc = 6.1999, ismc = true
+135: time = 200.812496516, mc = 6.1999, ismc = true
+136: time = 203.812496516, mc = 6.1999, ismc = true
+137: time = 206.812496516, mc = 6.1999, ismc = true
+138: time = 209.812496516, mc = 6.1999, ismc = true
+139: time = 212.812496516, mc = 6.1999, ismc = true
+140: time = 215.812496516, mc = 6.1999, ismc = true
+141: time = 218.812496516, mc = 6.1999, ismc = true
+142: time = 221.812496516, mc = 6.1999, ismc = true
+143: time = 224.812496516, mc = 6.1999, ismc = true
+144: time = 227.812496516, mc = 6.1999, ismc = true
+145: time = 230.812496516, mc = 6.1999, ismc = true
+146: time = 233.812496516, mc = 6.1999, ismc = true
+147: time = 236.812496516, mc = 6.1999, ismc = true
+148: time = 239.812496516, mc = 6.1999, ismc = true
+149: time = 242.812496516, mc = 6.1999, ismc = true
+150: time = 245.812496516, mc = 6.1999, ismc = true
+151: time = 248.812496516, mc = 6.1999, ismc = true
+152: time = 251.812496516, mc = 6.1999, ismc = true
+153: time = 254.812496516, mc = 6.1999, ismc = true
+154: time = 257.812496516, mc = 6.1999, ismc = true
+155: time = 260.812496516, mc = 6.1999, ismc = true
+156: time = 263.812496516, mc = 6.1999, ismc = true
+157: time = 266.812496516, mc = 6.1999, ismc = true
+158: time = 269.812496516, mc = 6.1999, ismc = true
+159: time = 272.812496516, mc = 6.1999, ismc = true
+160: time = 275.812496516, mc = 6.1999, ismc = true
+161: time = 278.812496516, mc = 6.1999, ismc = true
+162: time = 281.812496516, mc = 6.1999, ismc = true
+163: time = 284.812496516, mc = 6.1999, ismc = true
+164: time = 287.812496516, mc = 6.1999, ismc = true
+165: time = 290.812496516, mc = 6.1999, ismc = true
+166: time = 293.812496516, mc = 6.1999, ismc = true
+167: time = 296.812496516, mc = 6.1999, ismc = true
+168: time = 299.812496516, mc = 6.1999, ismc = true
+169: time = 302.812496516, mc = 6.1999, ismc = true
+170: time = 305.812496516, mc = 6.1999, ismc = true
+171: time = 308.812496516, mc = 6.1999, ismc = true
+172: time = 311.812496516, mc = 6.1999, ismc = true
+173: time = 314.812496516, mc = 6.1999, ismc = true
+174: time = 317.812496516, mc = 6.1999, ismc = true
+175: time = 320.812496516, mc = 6.1999, ismc = true
+176: time = 323.812496516, mc = 6.1999, ismc = true
+177: time = 326.812496516, mc = 6.1999, ismc = true
+178: time = 329.812496516, mc = 6.1999, ismc = true
+179: time = 332.812496516, mc = 6.1999, ismc = true
+180: time = 335.812496516, mc = 6.1999, ismc = true
+181: time = 338.812496516, mc = 6.1999, ismc = true
+182: time = 341.812496516, mc = 6.1999, ismc = true
+183: time = 344.812496516, mc = 6.1999, ismc = true
+184: time = 347.812496516, mc = 6.1999, ismc = true
+185: time = 350.812496516, mc = 6.1999, ismc = true
+186: time = 353.812496516, mc = 6.1999, ismc = true
+187: time = 356.812496516, mc = 6.1999, ismc = true
+188: time = 359.812496516, mc = 6.1999, ismc = true
+189: time = 362.406248258, mc = 6.1999, ismc = true
+190: time = 365.0
+

@@ -1,0 +1,104 @@
+oehistory103 oetas.fit.OEMagCompFnMultiFGH test1 3.0 0.5 0.25 1.0 0.0 30.0 0.0 0 10.191 0.005 25 0.0 7.0 0.5 4.5 25.0 8.0 25.1002 7.999 10.2 6.8 10.21 6.7 10.22 6.5 10.23 6.2
+Generating magnitude of completeness function
+magCat = 3.0
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = 0.0
+t_range_end = 30.0
+eligible_mag = 0.0
+eligible_count = 0
+query_time = 10.191
+query_delta = 0.005
+query_count = 25
+time_mag_array:
+  time = 0.0, mag = 7.0
+  time = 0.5, mag = 4.5
+  time = 25.0, mag = 8.0
+  time = 25.1002, mag = 7.999
+  time = 10.2, mag = 6.8
+  time = 10.21, mag = 6.7
+  time = 10.22, mag = 6.5
+  time = 10.23, mag = 6.2
+
+rup_list:
+  t = 0.0, mag = 7.0
+  t = 0.5, mag = 4.5
+  t = 25.0, mag = 8.0
+  t = 25.1002, mag = 7.999
+  t = 10.2, mag = 6.8
+  t = 10.21, mag = 6.7
+  t = 10.22, mag = 6.5
+  t = 10.23, mag = 6.2
+
+OEMagCompFnMultiFGH:
+magCat = 3.0
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = 0.0
+t_range_end = 30.0
+interval_count = 24
+constant: mag = 3.0
+time = 0.0: constant: mag = 7.0
+time = 0.000177827941004: log: mag = 3.25, t0 = 0.0
+time = 0.5: constant: mag = 4.5
+time = 0.50316227766: log: mag = 2.0, t0 = 0.5
+time = 0.529792416984: log: mag = 3.25, t0 = 0.0
+time = 1.77827941004: constant: mag = 3.0
+time = 10.2: constant: mag = 6.8
+time = 10.2002238721: log: mag = 3.15, t0 = 10.2
+time = 10.21: constant: mag = 6.7
+time = 10.2102511886: log: mag = 3.1, t0 = 10.21
+time = 10.22: constant: mag = 6.5
+time = 10.2203162278: log: mag = 3.0, t0 = 10.22
+time = 10.23: constant: mag = 6.2
+time = 10.2304466836: log: mag = 2.85, t0 = 10.23
+time = 10.254240218: log: mag = 3.0, t0 = 10.22
+time = 10.2586211609: log: mag = 3.1, t0 = 10.21
+time = 10.2919548162: log: mag = 3.15, t0 = 10.2
+time = 11.6125375446: constant: mag = 3.0
+time = 25.0: constant: mag = 8.0
+time = 25.0000562341: log: mag = 3.75, t0 = 25.0
+time = 25.1002: constant: mag = 7.999
+time = 25.1002562989: log: mag = 3.7495, t0 = 25.1002
+time = 30.7171427836: constant: mag = 3.0
+
+accept_list:
+  t = 0.0, mag = 7.0, mc = 3.0
+  t = 0.5, mag = 4.5, mc = 3.55102999566
+  t = 10.2, mag = 6.8, mc = 3.0
+  t = 10.21, mag = 6.7, mc = 5.15
+  t = 10.22, mag = 6.5, mc = 5.1
+  t = 10.23, mag = 6.2, mc = 5.0
+  t = 25.0, mag = 8.0, mc = 3.0
+  t = 25.1002, mag = 7.999, mc = 4.74913227847
+
+reject_list:
+
+queries:
+  t = 10.191, mc = 3.0
+  t = 10.196, mc = 3.0
+  t = 10.201, mc = 6.15
+  t = 10.206, mc = 5.37184874962
+  t = 10.211, mc = 6.1
+  t = 10.216, mc = 5.32184874962
+  t = 10.221, mc = 6.0
+  t = 10.226, mc = 5.22184874962
+  t = 10.231, mc = 5.85
+  t = 10.236, mc = 5.07184874962
+  t = 10.241, mc = 4.80860731484
+  t = 10.246, mc = 4.64588001734
+  t = 10.251, mc = 4.52778070527
+  t = 10.256, mc = 4.44369749923
+  t = 10.261, mc = 4.3924298239
+  t = 10.266, mc = 4.35181197299
+  t = 10.271, mc = 4.31467016499
+  t = 10.276, mc = 4.28045606446
+  t = 10.281, mc = 4.24874165128
+  t = 10.286, mc = 4.21918640772
+  t = 10.291, mc = 4.19151498112
+  t = 10.296, mc = 4.16772876696
+  t = 10.301, mc = 4.14567862622
+  t = 10.306, mc = 4.12469413474
+  t = 10.311, mc = 4.10467702121

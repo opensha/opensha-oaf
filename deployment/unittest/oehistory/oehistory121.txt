@@ -1,0 +1,112 @@
+oehistory121 oetas.fit.OEMagCompFnDiscFGH test3 3.0 0.5 0.25 1.0 -30.0 365.0 0.0 3 0.001 1.0e-7 0.005 0.2 0.5 0.05 0.0 0.005 25 0.0 1000.0 1000.0 5 0.0 0 -28.0 6.8 -14.0 6.2 0.0 7.0 0.02 5.0 0.04 4.6 30.0 6.5 60.0 6.9 90.0 6.1
+Generating magnitude of completeness function
+magCat = 3.0
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = -30.0
+t_range_end = 365.0
+eligible_mag = 0.0
+eligible_count = 3
+mag_eps = 0.001
+time_eps = 1.0E-7
+disc_base = 0.005
+disc_delta = 0.2
+disc_round = 0.5
+disc_gap = 0.05
+query_time = 0.0
+query_delta = 0.005
+query_count = 25
+durlim_ratio = 0.0
+durlim_min = 1000.0
+durlim_max = 1000.0
+mag_cat_count = 5
+division_mag = 0.0
+division_count = 0
+time_mag_array:
+  time = -28.0, mag = 6.8
+  time = -14.0, mag = 6.2
+  time = 0.0, mag = 7.0
+  time = 0.02, mag = 5.0
+  time = 0.04, mag = 4.6
+  time = 30.0, mag = 6.5
+  time = 60.0, mag = 6.9
+  time = 90.0, mag = 6.1
+
+rup_list:
+  t = -28.0, mag = 6.8
+  t = -14.0, mag = 6.2
+  t = 0.0, mag = 7.0
+  t = 0.02, mag = 5.0
+  t = 0.04, mag = 4.6
+  t = 30.0, mag = 6.5
+  t = 60.0, mag = 6.9
+  t = 90.0, mag = 6.1
+
+OEMagCompFnDiscFGH:
+magCat = 6.1999
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = -30.0
+t_range_end = 365.0
+t_req_splits = [-30.0, 365.0]
+interval_count = 19
+constant: mag = 6.1999
+time = -30.0: constant: mag = 6.1999
+time = -28.0: constant: mag = 6.8
+time = -27.9997213879: constant: mag = 6.605
+time = -27.9995584296: constant: mag = 6.405
+time = -27.999300158: constant: mag = 6.1999
+time = -14.0: constant: mag = 6.1999
+time = 0.0: constant: mag = 7.0
+time = 0.000221309470961: constant: mag = 6.805
+time = 0.000350751873953: constant: mag = 6.605
+time = 0.00055590425727: constant: mag = 6.405
+time = 0.000881048873008: constant: mag = 6.1999
+time = 30.0: constant: mag = 6.1999
+time = 60.0: constant: mag = 6.9
+time = 60.0001972423: constant: mag = 6.805
+time = 60.0003126079: constant: mag = 6.605
+time = 60.0004954502: constant: mag = 6.405
+time = 60.0007852356: constant: mag = 6.1999
+time = 365.0: constant: mag = 6.1999
+
+accept_list:
+  t = -28.0, mag = 6.8, mc = 6.1999
+  t = -14.0, mag = 6.2, mc = 6.1999
+  t = 0.0, mag = 7.0, mc = 6.1999
+  t = 30.0, mag = 6.5, mc = 6.1999
+  t = 60.0, mag = 6.9, mc = 6.1999
+
+reject_list:
+  t = 0.02, mag = 5.0
+  t = 0.04, mag = 4.6
+  t = 90.0, mag = 6.1
+
+queries:
+  t = 0.0, mc = 6.1999
+  t = 0.005, mc = 6.1999
+  t = 0.01, mc = 6.1999
+  t = 0.015, mc = 6.1999
+  t = 0.02, mc = 6.1999
+  t = 0.025, mc = 6.1999
+  t = 0.03, mc = 6.1999
+  t = 0.035, mc = 6.1999
+  t = 0.04, mc = 6.1999
+  t = 0.045, mc = 6.1999
+  t = 0.05, mc = 6.1999
+  t = 0.055, mc = 6.1999
+  t = 0.06, mc = 6.1999
+  t = 0.065, mc = 6.1999
+  t = 0.07, mc = 6.1999
+  t = 0.075, mc = 6.1999
+  t = 0.08, mc = 6.1999
+  t = 0.085, mc = 6.1999
+  t = 0.09, mc = 6.1999
+  t = 0.095, mc = 6.1999
+  t = 0.1, mc = 6.1999
+  t = 0.105, mc = 6.1999
+  t = 0.11, mc = 6.1999
+  t = 0.115, mc = 6.1999
+  t = 0.12, mc = 6.1999

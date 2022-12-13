@@ -6,6 +6,7 @@ import java.util.Collection;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import static org.opensha.oaf.util.SimpleUtils.rndd;
 
 
 // Class to hold one earthquake rupture in an Operational ETAS catalog.
@@ -222,7 +223,8 @@ public class OERupture {
 	// Produce a one-line string containing unrounded time and magnitude (not newline-terminated).
 
 	public final String u_time_mag_string () {
-		return "t = " + t_day + ", mag = " + rup_mag;
+		//return "t = " + t_day + ", mag = " + rup_mag;
+		return "t = " + rndd(t_day) + ", mag = " + rndd(rup_mag);
 	}
 
 
@@ -231,7 +233,8 @@ public class OERupture {
 	// Produce a one-line string containing unrounded time, magnitude, and productivity (not newline-terminated).
 
 	public final String u_time_mag_prod_string () {
-		return "t = " + t_day + ", mag = " + rup_mag + ", k_prod = " + k_prod;
+		//return "t = " + t_day + ", mag = " + rup_mag + ", k_prod = " + k_prod;
+		return "t = " + rndd(t_day) + ", mag = " + rndd(rup_mag) + ", k_prod = " + rndd(k_prod);
 	}
 
 
@@ -241,7 +244,8 @@ public class OERupture {
 	// Note: The k_prod field is assumed to contain magnitude of completeness.
 
 	public final String u_time_mag_mc_string () {
-		return "t = " + t_day + ", mag = " + rup_mag + ", mc = " + k_prod;
+		//return "t = " + t_day + ", mag = " + rup_mag + ", mc = " + k_prod;
+		return "t = " + rndd(t_day) + ", mag = " + rndd(rup_mag) + ", mc = " + rndd(k_prod);
 	}
 
 

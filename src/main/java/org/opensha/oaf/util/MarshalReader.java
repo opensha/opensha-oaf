@@ -265,6 +265,39 @@ public interface MarshalReader {
 	}
 
 	/**
+	 * Unmarshal a boolean array.
+	 */
+	public default boolean[] unmarshalBooleanArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		boolean[] x = new boolean[n];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalBoolean (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	public default boolean[][] unmarshalBoolean2DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		boolean[][] x = new boolean[n][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalBooleanArray (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	public default boolean[][][] unmarshalBoolean3DArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		boolean[][][] x = new boolean[n][][];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalBoolean2DArray (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	/**
 	 * Unmarshal a float array.
 	 */
 	public default float[] unmarshalFloatArray (String name) {

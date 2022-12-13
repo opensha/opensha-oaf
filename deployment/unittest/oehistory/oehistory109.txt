@@ -1,0 +1,67 @@
+oehistory109 oetas.fit.OEMagCompFnDiscFGH test1 3.0 0.5 0.25 1.0 0.0 30.0 0.0 0 0.001 1.0e-7 0.005 0.2 0.5 0.05 0.0 0.005 25 -10.0 7.0
+Generating magnitude of completeness function
+magCat = 3.0
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = 0.0
+t_range_end = 30.0
+eligible_mag = 0.0
+eligible_count = 0
+mag_eps = 0.001
+time_eps = 1.0E-7
+disc_base = 0.005
+disc_delta = 0.2
+disc_round = 0.5
+disc_gap = 0.05
+query_time = 0.0
+query_delta = 0.005
+query_count = 25
+time_mag_array:
+  time = -10.0, mag = 7.0
+
+rup_list:
+  t = -10.0, mag = 7.0
+
+OEMagCompFnDiscFGH:
+magCat = 3.0
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = 0.0
+t_range_end = 30.0
+t_req_splits = [0.0, 30.0]
+interval_count = 1
+constant: mag = 3.0
+
+accept_list:
+
+reject_list:
+  t = -10.0, mag = 7.0
+
+queries:
+  t = 0.0, mc = 3.0
+  t = 0.005, mc = 3.0
+  t = 0.01, mc = 3.0
+  t = 0.015, mc = 3.0
+  t = 0.02, mc = 3.0
+  t = 0.025, mc = 3.0
+  t = 0.03, mc = 3.0
+  t = 0.035, mc = 3.0
+  t = 0.04, mc = 3.0
+  t = 0.045, mc = 3.0
+  t = 0.05, mc = 3.0
+  t = 0.055, mc = 3.0
+  t = 0.06, mc = 3.0
+  t = 0.065, mc = 3.0
+  t = 0.07, mc = 3.0
+  t = 0.075, mc = 3.0
+  t = 0.08, mc = 3.0
+  t = 0.085, mc = 3.0
+  t = 0.09, mc = 3.0
+  t = 0.095, mc = 3.0
+  t = 0.1, mc = 3.0
+  t = 0.105, mc = 3.0
+  t = 0.11, mc = 3.0
+  t = 0.115, mc = 3.0
+  t = 0.12, mc = 3.0

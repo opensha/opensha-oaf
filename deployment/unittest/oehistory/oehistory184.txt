@@ -1,0 +1,104 @@
+oehistory184 oetas.fit.OEDisc2History test2 3.0 0.5 0.25 1.0 -30.0 365.0 0.0 3 0.001 1.0e-7 0.005 0.2 0.5 0.05 0.0 1000.0 1000.0 0 0.0 0 0.0 365.0 0 1 -28.0 6.8 -14.0 6.2 0.0 7.0 0.02 5.0 0.04 4.6 30.0 6.5 60.0 6.9 90.0 6.1
+Generating magnitude of completeness function
+magCat = 3.0
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = -30.0
+t_range_end = 365.0
+eligible_mag = 0.0
+eligible_count = 3
+mag_eps = 0.001
+time_eps = 1.0E-7
+disc_base = 0.005
+disc_delta = 0.2
+disc_round = 0.5
+disc_gap = 0.05
+durlim_ratio = 0.0
+durlim_min = 1000.0
+durlim_max = 1000.0
+mag_cat_count = 0
+division_mag = 0.0
+division_count = 0
+t_interval_begin = 0.0
+t_interval_end = 365.0
+before_max_count = 0
+mag_cat_int_join = 1
+time_mag_array:
+  time = -28.0, mag = 6.8
+  time = -14.0, mag = 6.2
+  time = 0.0, mag = 7.0
+  time = 0.02, mag = 5.0
+  time = 0.04, mag = 4.6
+  time = 30.0, mag = 6.5
+  time = 60.0, mag = 6.9
+  time = 90.0, mag = 6.1
+
+rup_list:
+  t = -28.0, mag = 6.8
+  t = -14.0, mag = 6.2
+  t = 0.0, mag = 7.0
+  t = 0.02, mag = 5.0
+  t = 0.04, mag = 4.6
+  t = 30.0, mag = 6.5
+  t = 60.0, mag = 6.9
+  t = 90.0, mag = 6.1
+
+OEDisc2History:
+magCat = 3.0
+rupture_count = 6
+0, 0: t=-28.00000, mag=6.800, mc=3.000, cat=-1, x=0.000, y=0.000, tv=-28.00000, ii=false
+1, 0: t=-14.00000, mag=6.200, mc=3.000, cat=-1, x=0.000, y=0.000, tv=-14.00000, ii=false
+2, 0: t=0.00000, mag=7.000, mc=3.000, cat=-1, x=0.000, y=0.000, tv=0.00000, ii=false
+3, 20: t=30.00000, mag=6.500, mc=3.000, cat=-1, x=0.000, y=0.000, tv=30.00000, ii=true
+4, 21: t=60.00000, mag=6.900, mc=3.000, cat=-1, x=0.000, y=0.000, tv=60.00000, ii=false
+5, 41: t=90.00000, mag=6.100, mc=3.000, cat=-1, x=0.000, y=0.000, tv=90.00000, ii=true
+i_outside_begin = 3
+i_inside_begin = 3
+i_inside_end = 6
+i_outside_end = 6
+interval_count = 42
+0: time = 0.0, mc = 7.0, ismc = false
+1: time = 0.000221309470961, mc = 6.805, ismc = false
+2: time = 0.000350751873953, mc = 6.605, ismc = false
+3: time = 0.00055590425727, mc = 6.405, ismc = false
+4: time = 0.000881048873008, mc = 6.205, ismc = false
+5: time = 0.00139636836106, mc = 6.005, ismc = false
+6: time = 0.00221309470961, mc = 5.805, ismc = false
+7: time = 0.00350751873953, mc = 5.605, ismc = false
+8: time = 0.0055590425727, mc = 5.405, ismc = false
+9: time = 0.00881048873008, mc = 5.205, ismc = false
+10: time = 0.0139636836106, mc = 5.005, ismc = false
+11: time = 0.0221309470961, mc = 4.805, ismc = false
+12: time = 0.0350751873953, mc = 4.605, ismc = false
+13: time = 0.055590425727, mc = 4.405, ismc = false
+14: time = 0.0881048873008, mc = 4.205, ismc = false
+15: time = 0.139636836106, mc = 4.005, ismc = false
+16: time = 0.221309470961, mc = 3.805, ismc = false
+17: time = 0.350751873953, mc = 3.605, ismc = false
+18: time = 0.55590425727, mc = 3.405, ismc = false
+19: time = 0.881048873008, mc = 3.205, ismc = false
+20: time = 1.39636836106, mc = 3.0, ismc = true
+21: time = 60.0, mc = 6.9, ismc = false
+22: time = 60.0001972423, mc = 6.805, ismc = false
+23: time = 60.0003126079, mc = 6.605, ismc = false
+24: time = 60.0004954502, mc = 6.405, ismc = false
+25: time = 60.0007852356, mc = 6.205, ismc = false
+26: time = 60.0012445146, mc = 6.005, ismc = false
+27: time = 60.0019724227, mc = 5.805, ismc = false
+28: time = 60.0031260794, mc = 5.605, ismc = false
+29: time = 60.0049545019, mc = 5.405, ismc = false
+30: time = 60.0078523563, mc = 5.205, ismc = false
+31: time = 60.0124451461, mc = 5.005, ismc = false
+32: time = 60.0197242274, mc = 4.805, ismc = false
+33: time = 60.0312607937, mc = 4.605, ismc = false
+34: time = 60.0495450191, mc = 4.405, ismc = false
+35: time = 60.0785235635, mc = 4.205, ismc = false
+36: time = 60.1244514612, mc = 4.005, ismc = false
+37: time = 60.1972422736, mc = 3.805, ismc = false
+38: time = 60.3126079367, mc = 3.605, ismc = false
+39: time = 60.4954501908, mc = 3.405, ismc = false
+40: time = 60.7852356346, mc = 3.205, ismc = false
+41: time = 61.2445146118, mc = 3.0, ismc = true
+42: time = 365.0
+

@@ -1,0 +1,79 @@
+oehistory102 oetas.fit.OEMagCompFnDisc test2 3.0 -0.5 0.5 31 0.05 0.0 1.0 0.01 1.0 1 4.0 true 4 0 7 3 5 7 4.99 9 3 11 8 13 3.01
+Generating discrete magnitude of completeness function
+magCat = 3.0
+query_time = -0.5
+query_delta = 0.5
+query_count = 31
+mag_eps = 0.05
+time_eps = 0.0
+durlim_ratio = 1.0
+durlim_min = 0.01
+durlim_max = 1.0
+split_count = 1
+time-split arrays:
+  tsplit = 4.0, dlbase = true
+mag_time_array:
+  mag = 4.0
+  time = 0.0, mag = 7.0
+  time = 3.0, mag = 5.0
+  time = 7.0, mag = 4.99
+  time = 9.0, mag = 3.0
+  time = 11.0, mag = 8.0
+  time = 13.0, mag = 3.01
+
+OEMagCompFnDisc:
+magCat = 3.0
+interval_count = 20
+constant: mag = 4.0
+time = 0.0: constant: mag = 7.0
+time = 3.0: constant: mag = 5.0
+time = 4.0: constant: mag = 5.0
+time = 4.01: constant: mag = 5.0
+time = 4.02: constant: mag = 5.0
+time = 4.04: constant: mag = 5.0
+time = 4.08: constant: mag = 5.0
+time = 4.16: constant: mag = 5.0
+time = 4.32: constant: mag = 5.0
+time = 4.64: constant: mag = 5.0
+time = 5.28: constant: mag = 5.0
+time = 6.28: constant: mag = 5.0
+time = 7.28: constant: mag = 5.0
+time = 8.14: constant: mag = 5.0
+time = 9.0: constant: mag = 3.0
+time = 10.0: constant: mag = 3.0
+time = 11.0: constant: mag = 8.0
+time = 12.0: constant: mag = 8.0
+time = 13.0: constant: mag = 3.0
+
+queries:
+  t = -0.5, mc = 4.0
+  t = 0.0, mc = 4.0
+  t = 0.5, mc = 7.0
+  t = 1.0, mc = 7.0
+  t = 1.5, mc = 7.0
+  t = 2.0, mc = 7.0
+  t = 2.5, mc = 7.0
+  t = 3.0, mc = 7.0
+  t = 3.5, mc = 5.0
+  t = 4.0, mc = 5.0
+  t = 4.5, mc = 5.0
+  t = 5.0, mc = 5.0
+  t = 5.5, mc = 5.0
+  t = 6.0, mc = 5.0
+  t = 6.5, mc = 5.0
+  t = 7.0, mc = 5.0
+  t = 7.5, mc = 5.0
+  t = 8.0, mc = 5.0
+  t = 8.5, mc = 5.0
+  t = 9.0, mc = 5.0
+  t = 9.5, mc = 3.0
+  t = 10.0, mc = 3.0
+  t = 10.5, mc = 3.0
+  t = 11.0, mc = 3.0
+  t = 11.5, mc = 8.0
+  t = 12.0, mc = 8.0
+  t = 12.5, mc = 8.0
+  t = 13.0, mc = 8.0
+  t = 13.5, mc = 3.0
+  t = 14.0, mc = 3.0
+  t = 14.5, mc = 3.0

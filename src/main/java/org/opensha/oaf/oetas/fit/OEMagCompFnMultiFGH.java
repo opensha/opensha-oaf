@@ -5,6 +5,7 @@ import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import static org.opensha.oaf.util.SimpleUtils.rndd;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,7 @@ import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG;				// negative mag s
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG_CHECK;		// use x <= NO_MAG_NEG_CHECK to check for NO_MAG_NEG
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS;				// positive mag larger than any possible mag
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS_CHECK;		// use x >= NO_MAG_POS_CHECK to check for NO_MAG_POS
+import static org.opensha.oaf.oetas.OEConstants.TINY_MAG_DELTA;			// very small change in mag
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS;			// very large time value
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS_CHECK;	// use x >= HUGE_TIME_DAYS_CHECK to check for HUGE_TIME_DAYS
 import static org.opensha.oaf.oetas.OEConstants.LOG10_HUGE_TIME_DAYS;	// log10 of very large time value
@@ -260,19 +262,22 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 		// Interval start time, but not on the first interval which starts at -infinity
 
 		if (n > 0) {
-			result.append("time = ").append(a_time[n-1]).append(": ");
+			//result.append("time = ").append(a_time[n-1]).append(": ");
+			result.append("time = ").append(rndd(a_time[n-1])).append(": ");
 		}
 
 		// Log function
 
 		if (a_t0[n] < HUGE_TIME_DAYS_CHECK) {
-			result.append("log: mag = ").append(a_mag[n]).append(", t0 = ").append(a_t0[n]);
+			//result.append("log: mag = ").append(a_mag[n]).append(", t0 = ").append(a_t0[n]);
+			result.append("log: mag = ").append(rndd(a_mag[n])).append(", t0 = ").append(rndd(a_t0[n]));
 		}
 
 		// Constant function
 
 		else {
-			result.append("constant: mag = ").append(a_mag[n]);
+			//result.append("constant: mag = ").append(a_mag[n]);
+			result.append("constant: mag = ").append(rndd(a_mag[n]));
 		}
 	
 		return result.toString();
@@ -1393,7 +1398,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 
 			// Set effective eligible magnitude to enforce the count
 
-			eff_eligible_mag = Math.max (eff_eligible_mag, work_list.get(eligible_count).rup_mag);
+			eff_eligible_mag = Math.max (eff_eligible_mag, work_list.get(eligible_count - 1).rup_mag - TINY_MAG_DELTA);
 		}
 		
 		// Sort the list by time, ascending
@@ -1532,7 +1537,7 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 		int interval_count = get_interval_count();
 
 		result.append ("OEMagCompFnMultiFGH:" + "\n");
-		result.append ("magCat = " + magCat + "\n");
+		result.append ("magCat = " + rndd(magCat) + "\n");
 		result.append ("capF = " + capF + "\n");
 		result.append ("capG = " + capG + "\n");
 		result.append ("capH = " + capH + "\n");
@@ -1895,7 +1900,8 @@ public class OEMagCompFnMultiFGH extends OEMagCompFn {
 				for (int nq = 0; nq < query_count; ++nq) {
 					double t = query_time + nq * query_delta;
 					double mc = mag_comp_fn.get_mag_completeness (t);
-					System.out.println ("  t = " + t + ", mc = " + mc);
+					//System.out.println ("  t = " + t + ", mc = " + mc);
+					System.out.println ("  t = " + rndd(t) + ", mc = " + rndd(mc));
 				}
 
 

@@ -73,6 +73,10 @@ public class OEConstants {
 
 	public static final double INFINITE_MAG_NEG_CHECK = -99.0;
 
+	// A very small change in magnitude, smaller than any actual change.
+
+	public static final double TINY_MAG_DELTA = 0.000001;
+
 
 
 	// A time value or difference much larger than any actual value, in days.
@@ -429,12 +433,23 @@ public class OEConstants {
 
 
 
-	// Model parameter keys
+	// Model parameter keys.
 
 	public static final String MKEY_MAG_MAIN = "magMain";
 	public static final String MKEY_SIM_COUNT = "simCount";
 	public static final String MKEY_SIM_DURATION = "simDuration";
 	public static final String MKEY_SIM_MAG_MIN = "simMagMin";
 	public static final String MKEY_SIM_MAG_MAX = "simMagMax";
+
+
+
+
+	// Options to select the magnitude range for rupture likelihood, and for
+	// internval productivity and likelihood, when fitting parameters.
+
+	public static final int LMR_OPT_MCT_INFINITY = 1;		// From time-dependent magnitude of completeness to infinity.
+	public static final int LMR_OPT_MCT_MAG_MAX = 2;		// From time-dependent magnitude of completeness to maximum simulation magnitude.
+	public static final int LMR_OPT_MAGCAT_INFINITY = 3;	// From catalog magnitude of completeness to infinity.
+	public static final int LMR_OPT_MAGCAT_MAG_MAX = 4;		// From catalog magnitude of completeness to maximum simulation magnitude.
 
 }

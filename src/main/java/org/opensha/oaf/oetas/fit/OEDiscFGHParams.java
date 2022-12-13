@@ -1,5 +1,7 @@
 package org.opensha.oaf.oetas.fit;
 
+import java.util.Arrays;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -34,6 +36,8 @@ public class OEDiscFGHParams {
 	public double capH;
 
 	// Beginning and end of the time range of interest, in days.
+	// Rupture times should be within this time range.  There is some allowance (currently 1 day)
+	// to include ruptures close to this range, but ruptures farther away are disregarded.
 
 	public double t_range_begin;
 	public double t_range_end;
@@ -73,6 +77,7 @@ public class OEDiscFGHParams {
 
 	// Minimum magnitude for eligible ruptures, or NO_MAG_NEG if no minimum
 	// (all ruptures eligible), or NO_MAG_POS if no ruptures are eligible.
+	// Note: Eligible ruptures are those that produce time-dependent incompleteness.
 
 	public double eligible_mag;
 
@@ -95,6 +100,25 @@ public class OEDiscFGHParams {
 
 	public OEMagCompFnDisc.SplitFn split_fn;
 
+	//----- Joining Parameters -----
+
+	// List of times at which splits are required (in addition to rupture times and automatically
+	// generated splits), in days.  If null, then t_range_begin and t_range_end are used.
+	// These times should lie within the time range t_range_begin to t_range_end.
+
+	public double[] t_req_splits;
+
+	// Maximum number of ruptures allowed before the first required split (limit is flexible),
+	// or 0 or -1 if no limit.  If non-zero, them mag_cat_count applies only to ruptures
+	// after the first required split.  If zero, then mag_cat_count applies to all ruptures.
+
+	public int before_max_count;
+
+	// Option to join intervals whose magnitude of completeness is magCat: 0 = no join, 1 = join.
+
+	public int mag_cat_int_join;
+
+
 
 
 
@@ -103,9 +127,48 @@ public class OEDiscFGHParams {
 
 
 
+	// Utility function to copy an array, or null.
+
+	private static double[] copy_array_or_null (double[] x) {
+		if (x == null) {
+			return null;
+		}
+		return Arrays.copyOf (x, x.length);
+	}
+
+
+
+
+	// Utility function to equality-test two arrays, or null.
+
+	private static boolean equals_array_or_null (double[] x1, double[] x2) {
+		if (x1 == null) {
+			if (x2 == null) {
+				return true;
+			}
+			return false;
+		}
+		if (x2 == null) {
+			return false;
+		}
+		int len = x1.length;
+		if (x2.length != len) {
+			return false;
+		}
+		for (int i = 0; i < len; ++i) {
+			if (x1[i] != x2[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+
+
+
 	// Clear to default values.
 
-	public void clear () {
+	public final void clear () {
 
 		magCat         = 0.0;
 		capF           = 0.0;
@@ -128,6 +191,10 @@ public class OEDiscFGHParams {
 		division_count = 0;
 		split_fn       = null;
 
+		t_req_splits = null;
+		before_max_count = 0;
+		mag_cat_int_join = 0;
+
 		return;
 	}
 
@@ -145,7 +212,7 @@ public class OEDiscFGHParams {
 
 	// Set all values.
 
-	public OEDiscFGHParams set (
+	public final OEDiscFGHParams set (
 		double magCat,
 		double capF,
 		double capG,
@@ -189,6 +256,70 @@ public class OEDiscFGHParams {
 		this.division_count = division_count;
 		this.split_fn       = split_fn;
 
+		this.t_req_splits = null;
+		this.before_max_count = 0;
+		this.mag_cat_int_join = 0;
+
+		return this;
+	}
+
+
+
+
+	// Set all values, with joining parameters.
+
+	public final OEDiscFGHParams set (
+		double magCat,
+		double capF,
+		double capG,
+		double capH,
+		double t_range_begin,
+		double t_range_end,
+
+		double mag_eps,
+		double time_eps,
+		double disc_base,
+		double disc_delta,
+		double disc_round,
+		double disc_gap,
+
+		int mag_cat_count,
+		double eligible_mag,
+		int eligible_count,
+		double division_mag,
+		int division_count,
+		OEMagCompFnDisc.SplitFn split_fn,
+
+		double[] t_req_splits,
+		int before_max_count,
+		int mag_cat_int_join
+	) {
+
+		this.magCat         = magCat;
+		this.capF           = capF;
+		this.capG           = capG;
+		this.capH           = capH;
+		this.t_range_begin  = t_range_begin;
+		this.t_range_end    = t_range_end;
+
+		this.mag_eps        = mag_eps;
+		this.time_eps       = time_eps;
+		this.disc_base      = disc_base;
+		this.disc_delta     = disc_delta;
+		this.disc_round     = disc_round;
+		this.disc_gap       = disc_gap ;
+
+		this.mag_cat_count  = mag_cat_count;
+		this.eligible_mag   = eligible_mag;
+		this.eligible_count = eligible_count;
+		this.division_mag   = division_mag;
+		this.division_count = division_count;
+		this.split_fn       = split_fn;
+
+		this.t_req_splits = copy_array_or_null (t_req_splits);
+		this.before_max_count = before_max_count;
+		this.mag_cat_int_join = mag_cat_int_join;
+
 		return this;
 	}
 
@@ -197,7 +328,7 @@ public class OEDiscFGHParams {
 
 	// Set values to make all ruptures eligible.
 
-	public OEDiscFGHParams set_eligible_all () {
+	public final OEDiscFGHParams set_eligible_all () {
 		eligible_mag = NO_MAG_NEG;
 		eligible_count = 0;
 		return this;
@@ -208,7 +339,7 @@ public class OEDiscFGHParams {
 
 	// Set values to make no ruptures eligible.
 
-	public OEDiscFGHParams set_eligible_none () {
+	public final OEDiscFGHParams set_eligible_none () {
 		eligible_mag = NO_MAG_POS;
 		eligible_count = 0;
 		return this;
@@ -219,7 +350,7 @@ public class OEDiscFGHParams {
 
 	// Set values to make all ruptures force division.
 
-	public OEDiscFGHParams set_division_all () {
+	public final OEDiscFGHParams set_division_all () {
 		division_mag = NO_MAG_NEG;
 		division_count = 0;
 		return this;
@@ -230,7 +361,7 @@ public class OEDiscFGHParams {
 
 	// Set values to make no ruptures force division.
 
-	public OEDiscFGHParams set_division_none () {
+	public final OEDiscFGHParams set_division_none () {
 		division_mag = NO_MAG_POS;
 		division_count = 0;
 		return this;
@@ -241,7 +372,7 @@ public class OEDiscFGHParams {
 
 	// Force splitting to be enabled, if no splitting function supplied.
 
-	public OEDiscFGHParams require_splitting () {
+	public final OEDiscFGHParams require_splitting () {
 		if (split_fn == null) {
 			split_fn = new OEMagCompFnDisc.SplitFnConstant();
 		}
@@ -251,9 +382,38 @@ public class OEDiscFGHParams {
 
 
 
+//	// Get the time when the first required interval begins.
+//	// Note: Strictly speaking this is undefined if t_req_splits is a zero-length array.
+//
+//	public final double get_interval_begin () {
+//		double t = t_range_begin;
+//		if (t_req_splits != null && t_req_splits.length > 0) {
+//			t = t_req_splits[0];
+//			for (int i = 1; i < t_req_splits.length; ++i) {
+//				t = Math.min (t, t_req_splits[i]);
+//			}
+//		}
+//		return t;
+//	}
+
+
+
+
+	// Return true if we want to join intervals whose magnitude of completeness is magCat.
+
+	public final boolean is_mag_cat_int_join () {
+		if (mag_cat_int_join == 0) {
+			return false;
+		}
+		return true;
+	}
+
+
+
+
 	// Copy all values from the other object.
 
-	public OEDiscFGHParams copy_from (OEDiscFGHParams other) {
+	public final OEDiscFGHParams copy_from (OEDiscFGHParams other) {
 
 		this.magCat         = other.magCat;
 		this.capF           = other.capF;
@@ -275,6 +435,10 @@ public class OEDiscFGHParams {
 		this.division_mag   = other.division_mag;
 		this.division_count = other.division_count;
 		this.split_fn       = other.split_fn;
+
+		this.t_req_splits = copy_array_or_null (other.t_req_splits);
+		this.before_max_count = other.before_max_count;
+		this.mag_cat_int_join = other.mag_cat_int_join;
 
 		return this;
 	}
@@ -310,6 +474,10 @@ public class OEDiscFGHParams {
 		result.append ("division_mag = "   + division_mag   + "\n");
 		result.append ("division_count = " + division_count + "\n");
 		result.append ("split_fn = "       + split_fn.toString() + "\n");
+
+		result.append ("t_req_splits = " + Arrays.toString (t_req_splits) + "\n");
+		result.append ("before_max_count = " + before_max_count + "\n");
+		result.append ("mag_cat_int_join = " + mag_cat_int_join + "\n");
 
 		return result.toString();
 	}
@@ -362,6 +530,14 @@ public class OEDiscFGHParams {
 			writer.marshalInt    ("division_count" , division_count);
 			OEMagCompFnDisc.marshal_splitfn_poly (writer, "split_fn", split_fn);
 
+			boolean has_req_splits = (t_req_splits != null);
+			writer.marshalBoolean ("has_req_splits", has_req_splits);
+			if (has_req_splits) {
+				writer.marshalDoubleArray ("t_req_splits", t_req_splits);
+			}
+			writer.marshalInt    ("before_max_count", before_max_count);
+			writer.marshalInt    ("mag_cat_int_join", mag_cat_int_join);
+
 		}
 		break;
 
@@ -404,6 +580,15 @@ public class OEDiscFGHParams {
 			division_mag   = reader.unmarshalDouble ("division_mag"  );
 			division_count = reader.unmarshalInt    ("division_count");
 			split_fn = OEMagCompFnDisc.unmarshal_splitfn_poly (reader, "split_fn");
+
+			boolean has_req_splits = reader.unmarshalBoolean  ("has_req_splits");
+			if (has_req_splits) {
+				t_req_splits = reader.unmarshalDoubleArray ("t_req_splits");
+			} else {
+				t_req_splits = null;
+			}
+			before_max_count = reader.unmarshalInt  ("before_max_count");
+			mag_cat_int_join = reader.unmarshalInt  ("mag_cat_int_join");
 
 		}
 		break;
@@ -483,6 +668,10 @@ public class OEDiscFGHParams {
 			&& this.division_mag   == other.division_mag
 			&& this.division_count == other.division_count
 			&& OEMagCompFnDisc.equals_splitfn (this.split_fn, other.split_fn)
+
+			&& equals_array_or_null (this.t_req_splits, other.t_req_splits)
+			&& this.before_max_count == other.before_max_count
+			&& this.mag_cat_int_join == other.mag_cat_int_join
 		) {
 			return true;
 		}
@@ -522,6 +711,48 @@ public class OEDiscFGHParams {
 		this.division_count = 200;
 		this.split_fn       = new OEMagCompFnDisc.SplitFnRatio (0.3, 0.04, 3.0);
 
+		this.t_req_splits = null;
+		this.before_max_count = 0;
+		this.mag_cat_int_join = 0;
+
+		return this;
+	}
+
+
+	public OEDiscFGHParams set_to_typical (
+		double main_mag,
+		double t_range_begin,
+		double t_range_end,
+		double t_interval_begin
+	) {
+
+		this.magCat         = Math.min (3.0, main_mag - 1.0);
+		this.capF           = 0.5;
+		this.capG           = 0.25;
+		this.capH           = 1.0;
+		this.t_range_begin  = t_range_begin;
+		this.t_range_end    = t_range_end;
+
+		this.mag_eps        = 0.001;
+		this.time_eps       = 1.0e-7;
+		this.disc_base      = 0.005;
+		this.disc_delta     = 0.2;
+		this.disc_round     = 0.5;
+		this.disc_gap       = 0.05;
+
+		this.mag_cat_count  = 2000;
+		this.eligible_mag   = main_mag - 3.0;
+		this.eligible_count = 20;
+		this.division_mag   = main_mag - 4.0;
+		this.division_count = 200;
+		this.split_fn       = new OEMagCompFnDisc.SplitFnRatio (0.3, 0.04, 3.0);
+
+		this.t_req_splits = new double[2];
+		this.t_req_splits[0] = t_interval_begin;
+		this.t_req_splits[1] = t_range_end;
+		this.before_max_count = 50;
+		this.mag_cat_int_join = 1;
+
 		return this;
 	}
 
@@ -534,11 +765,12 @@ public class OEDiscFGHParams {
 	//  helm_param = Helmstetter parameter option, see OEConstants.HELM_PARAM_XXXXX.
 	//  t_range_begin = Beginning of time range, in days.
 	//  t_range_end = End of time range, in days.
-	//  disc_delta = Discretization delta, should be 0.01 divided by some integer.
+	//  disc_delta = Discretization delta, should be 0.01 multiplied by some integer.
 	//  mag_cat_count = Maximum number of ruptures that can have magnitudes >= magCat, or 0 if no limit.
 	//  eligible_mag = Minimum magnitude for eligible ruptures, NO_MAG_NEG = all, NO_MAG_POS = none.
 	//  eligible_count = Maximum number of eligible ruptures, or 0 if no limit.
 	//  split_fn = Splitting function, must be non-null for any splitting to occur.
+	//  t_interval_begin = If included, the time at which needed intervals begin.
 
 	public OEDiscFGHParams set_sim_history_typical (
 		double magCat,
@@ -572,6 +804,53 @@ public class OEDiscFGHParams {
 		this.division_mag   = NO_MAG_NEG;
 		this.division_count = 0;
 		this.split_fn       = split_fn;
+
+		this.t_req_splits = null;
+		this.before_max_count = 0;
+		this.mag_cat_int_join = 0;
+
+		return this;
+	}
+
+	public OEDiscFGHParams set_sim_history_typical (
+		double magCat,
+		int helm_param,
+		double t_range_begin,
+		double t_range_end,
+		double disc_delta,
+		int mag_cat_count,
+		double eligible_mag,
+		int eligible_count,
+		OEMagCompFnDisc.SplitFn split_fn,
+		double t_interval_begin
+	) {
+
+		this.magCat         = magCat;
+		this.capF           = OEConstants.helm_capF (helm_param);
+		this.capG           = OEConstants.helm_capG (helm_param);
+		this.capH           = OEConstants.helm_capH (helm_param);
+		this.t_range_begin  = t_range_begin;
+		this.t_range_end    = t_range_end;
+
+		this.mag_eps        = OEConstants.FIT_MAG_EPS;
+		this.time_eps       = OEConstants.FIT_TIME_EPS;
+		this.disc_base      = 0.005;	// put base in between mags to 2 decimal places
+		this.disc_delta     = disc_delta;
+		this.disc_round     = 0.5;		// round to nearest
+		this.disc_gap       = disc_delta * 0.25;
+
+		this.mag_cat_count  = mag_cat_count;
+		this.eligible_mag   = eligible_mag;
+		this.eligible_count = eligible_count;
+		this.division_mag   = NO_MAG_NEG;
+		this.division_count = 0;
+		this.split_fn       = split_fn;
+
+		this.t_req_splits = new double[2];
+		this.t_req_splits[0] = t_interval_begin;
+		this.t_req_splits[1] = t_range_end;
+		this.before_max_count = 50;
+		this.mag_cat_int_join = 1;
 
 		return this;
 	}

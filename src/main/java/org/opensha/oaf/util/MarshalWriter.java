@@ -212,6 +212,41 @@ public interface MarshalWriter {
 		return;
 	}
 
+
+	/**
+	 * Marshal a boolean array.
+	 */
+	public default void marshalBooleanArray (String name, boolean[] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalBoolean (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalBoolean2DArray (String name, boolean[][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalBooleanArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	public default void marshalBoolean3DArray (String name, boolean[][][] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalBoolean2DArray (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+
 	/**
 	 * Marshal a float array.
 	 */

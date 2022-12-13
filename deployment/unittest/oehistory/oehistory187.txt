@@ -1,0 +1,53 @@
+oehistory187 oetas.fit.OEDisc2History test2 3.0 0.5 0.25 1.0 -30.0 365.0 0.0 0 0.001 1.0e-7 0.005 0.2 0.5 0.05 0.5 0.00001 3.0 0 0.0 0 0.0 365.0 0 1 -0.2 7.0
+Generating magnitude of completeness function
+magCat = 3.0
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = -30.0
+t_range_end = 365.0
+eligible_mag = 0.0
+eligible_count = 0
+mag_eps = 0.001
+time_eps = 1.0E-7
+disc_base = 0.005
+disc_delta = 0.2
+disc_round = 0.5
+disc_gap = 0.05
+durlim_ratio = 0.5
+durlim_min = 1.0E-5
+durlim_max = 3.0
+mag_cat_count = 0
+division_mag = 0.0
+division_count = 0
+t_interval_begin = 0.0
+t_interval_end = 365.0
+before_max_count = 0
+mag_cat_int_join = 1
+time_mag_array:
+  time = -0.2, mag = 7.0
+
+rup_list:
+  t = -0.2, mag = 7.0
+
+OEDisc2History:
+magCat = 3.0
+rupture_count = 1
+0, 0: t=-0.20000, mag=7.000, mc=3.000, cat=-1, x=0.000, y=0.000, tv=-0.20000, ii=false
+i_outside_begin = 1
+i_inside_begin = 1
+i_inside_end = 1
+i_outside_end = 1
+interval_count = 10
+0: time = 0.0, mc = 4.005, ismc = false
+1: time = 0.0213094709606, mc = 3.805, ismc = false
+2: time = 0.0860306724566, mc = 3.805, ismc = false
+3: time = 0.150751873953, mc = 3.605, ismc = false
+4: time = 0.253328065611, mc = 3.605, ismc = false
+5: time = 0.35590425727, mc = 3.405, ismc = false
+6: time = 0.518476565139, mc = 3.405, ismc = false
+7: time = 0.681048873008, mc = 3.205, ismc = false
+8: time = 0.938708617032, mc = 3.205, ismc = false
+9: time = 1.19636836106, mc = 3.0, ismc = true
+10: time = 365.0
+

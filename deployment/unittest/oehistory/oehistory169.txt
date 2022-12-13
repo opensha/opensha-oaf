@@ -1,0 +1,176 @@
+oehistory169 oetas.fit.OEDisc2History test2 3.0 0.5 0.25 1.0 -30.0 365.0 0.0 0 0.001 1.0e-7 0.005 0.2 0.5 0.05 0.5 0.00001 3.0 0 0.0 0 0.0 365.0 0 0 -0.2 7.0
+Generating magnitude of completeness function
+magCat = 3.0
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = -30.0
+t_range_end = 365.0
+eligible_mag = 0.0
+eligible_count = 0
+mag_eps = 0.001
+time_eps = 1.0E-7
+disc_base = 0.005
+disc_delta = 0.2
+disc_round = 0.5
+disc_gap = 0.05
+durlim_ratio = 0.5
+durlim_min = 1.0E-5
+durlim_max = 3.0
+mag_cat_count = 0
+division_mag = 0.0
+division_count = 0
+t_interval_begin = 0.0
+t_interval_end = 365.0
+before_max_count = 0
+mag_cat_int_join = 0
+time_mag_array:
+  time = -0.2, mag = 7.0
+
+rup_list:
+  t = -0.2, mag = 7.0
+
+OEDisc2History:
+magCat = 3.0
+rupture_count = 1
+0, 0: t=-0.20000, mag=7.000, mc=3.000, cat=-1, x=0.000, y=0.000, tv=-0.20000, ii=false
+i_outside_begin = 1
+i_inside_begin = 1
+i_inside_end = 1
+i_outside_end = 1
+interval_count = 133
+0: time = 0.0, mc = 4.005, ismc = false
+1: time = 0.0213094709606, mc = 3.805, ismc = false
+2: time = 0.0860306724566, mc = 3.805, ismc = false
+3: time = 0.150751873953, mc = 3.605, ismc = false
+4: time = 0.253328065611, mc = 3.605, ismc = false
+5: time = 0.35590425727, mc = 3.405, ismc = false
+6: time = 0.518476565139, mc = 3.405, ismc = false
+7: time = 0.681048873008, mc = 3.205, ismc = false
+8: time = 0.938708617032, mc = 3.205, ismc = false
+9: time = 1.19636836106, mc = 3.0, ismc = true
+10: time = 1.89455254158, mc = 3.0, ismc = true
+11: time = 2.94182881238, mc = 3.0, ismc = true
+12: time = 4.51274321856, mc = 3.0, ismc = true
+13: time = 6.86911482785, mc = 3.0, ismc = true
+14: time = 9.86911482785, mc = 3.0, ismc = true
+15: time = 12.8691148278, mc = 3.0, ismc = true
+16: time = 15.8691148278, mc = 3.0, ismc = true
+17: time = 18.8691148278, mc = 3.0, ismc = true
+18: time = 21.8691148278, mc = 3.0, ismc = true
+19: time = 24.8691148278, mc = 3.0, ismc = true
+20: time = 27.8691148278, mc = 3.0, ismc = true
+21: time = 30.8691148278, mc = 3.0, ismc = true
+22: time = 33.8691148278, mc = 3.0, ismc = true
+23: time = 36.8691148278, mc = 3.0, ismc = true
+24: time = 39.8691148278, mc = 3.0, ismc = true
+25: time = 42.8691148278, mc = 3.0, ismc = true
+26: time = 45.8691148278, mc = 3.0, ismc = true
+27: time = 48.8691148278, mc = 3.0, ismc = true
+28: time = 51.8691148278, mc = 3.0, ismc = true
+29: time = 54.8691148278, mc = 3.0, ismc = true
+30: time = 57.8691148278, mc = 3.0, ismc = true
+31: time = 60.8691148278, mc = 3.0, ismc = true
+32: time = 63.8691148278, mc = 3.0, ismc = true
+33: time = 66.8691148278, mc = 3.0, ismc = true
+34: time = 69.8691148278, mc = 3.0, ismc = true
+35: time = 72.8691148278, mc = 3.0, ismc = true
+36: time = 75.8691148278, mc = 3.0, ismc = true
+37: time = 78.8691148278, mc = 3.0, ismc = true
+38: time = 81.8691148278, mc = 3.0, ismc = true
+39: time = 84.8691148278, mc = 3.0, ismc = true
+40: time = 87.8691148278, mc = 3.0, ismc = true
+41: time = 90.8691148278, mc = 3.0, ismc = true
+42: time = 93.8691148278, mc = 3.0, ismc = true
+43: time = 96.8691148278, mc = 3.0, ismc = true
+44: time = 99.8691148278, mc = 3.0, ismc = true
+45: time = 102.869114828, mc = 3.0, ismc = true
+46: time = 105.869114828, mc = 3.0, ismc = true
+47: time = 108.869114828, mc = 3.0, ismc = true
+48: time = 111.869114828, mc = 3.0, ismc = true
+49: time = 114.869114828, mc = 3.0, ismc = true
+50: time = 117.869114828, mc = 3.0, ismc = true
+51: time = 120.869114828, mc = 3.0, ismc = true
+52: time = 123.869114828, mc = 3.0, ismc = true
+53: time = 126.869114828, mc = 3.0, ismc = true
+54: time = 129.869114828, mc = 3.0, ismc = true
+55: time = 132.869114828, mc = 3.0, ismc = true
+56: time = 135.869114828, mc = 3.0, ismc = true
+57: time = 138.869114828, mc = 3.0, ismc = true
+58: time = 141.869114828, mc = 3.0, ismc = true
+59: time = 144.869114828, mc = 3.0, ismc = true
+60: time = 147.869114828, mc = 3.0, ismc = true
+61: time = 150.869114828, mc = 3.0, ismc = true
+62: time = 153.869114828, mc = 3.0, ismc = true
+63: time = 156.869114828, mc = 3.0, ismc = true
+64: time = 159.869114828, mc = 3.0, ismc = true
+65: time = 162.869114828, mc = 3.0, ismc = true
+66: time = 165.869114828, mc = 3.0, ismc = true
+67: time = 168.869114828, mc = 3.0, ismc = true
+68: time = 171.869114828, mc = 3.0, ismc = true
+69: time = 174.869114828, mc = 3.0, ismc = true
+70: time = 177.869114828, mc = 3.0, ismc = true
+71: time = 180.869114828, mc = 3.0, ismc = true
+72: time = 183.869114828, mc = 3.0, ismc = true
+73: time = 186.869114828, mc = 3.0, ismc = true
+74: time = 189.869114828, mc = 3.0, ismc = true
+75: time = 192.869114828, mc = 3.0, ismc = true
+76: time = 195.869114828, mc = 3.0, ismc = true
+77: time = 198.869114828, mc = 3.0, ismc = true
+78: time = 201.869114828, mc = 3.0, ismc = true
+79: time = 204.869114828, mc = 3.0, ismc = true
+80: time = 207.869114828, mc = 3.0, ismc = true
+81: time = 210.869114828, mc = 3.0, ismc = true
+82: time = 213.869114828, mc = 3.0, ismc = true
+83: time = 216.869114828, mc = 3.0, ismc = true
+84: time = 219.869114828, mc = 3.0, ismc = true
+85: time = 222.869114828, mc = 3.0, ismc = true
+86: time = 225.869114828, mc = 3.0, ismc = true
+87: time = 228.869114828, mc = 3.0, ismc = true
+88: time = 231.869114828, mc = 3.0, ismc = true
+89: time = 234.869114828, mc = 3.0, ismc = true
+90: time = 237.869114828, mc = 3.0, ismc = true
+91: time = 240.869114828, mc = 3.0, ismc = true
+92: time = 243.869114828, mc = 3.0, ismc = true
+93: time = 246.869114828, mc = 3.0, ismc = true
+94: time = 249.869114828, mc = 3.0, ismc = true
+95: time = 252.869114828, mc = 3.0, ismc = true
+96: time = 255.869114828, mc = 3.0, ismc = true
+97: time = 258.869114828, mc = 3.0, ismc = true
+98: time = 261.869114828, mc = 3.0, ismc = true
+99: time = 264.869114828, mc = 3.0, ismc = true
+100: time = 267.869114828, mc = 3.0, ismc = true
+101: time = 270.869114828, mc = 3.0, ismc = true
+102: time = 273.869114828, mc = 3.0, ismc = true
+103: time = 276.869114828, mc = 3.0, ismc = true
+104: time = 279.869114828, mc = 3.0, ismc = true
+105: time = 282.869114828, mc = 3.0, ismc = true
+106: time = 285.869114828, mc = 3.0, ismc = true
+107: time = 288.869114828, mc = 3.0, ismc = true
+108: time = 291.869114828, mc = 3.0, ismc = true
+109: time = 294.869114828, mc = 3.0, ismc = true
+110: time = 297.869114828, mc = 3.0, ismc = true
+111: time = 300.869114828, mc = 3.0, ismc = true
+112: time = 303.869114828, mc = 3.0, ismc = true
+113: time = 306.869114828, mc = 3.0, ismc = true
+114: time = 309.869114828, mc = 3.0, ismc = true
+115: time = 312.869114828, mc = 3.0, ismc = true
+116: time = 315.869114828, mc = 3.0, ismc = true
+117: time = 318.869114828, mc = 3.0, ismc = true
+118: time = 321.869114828, mc = 3.0, ismc = true
+119: time = 324.869114828, mc = 3.0, ismc = true
+120: time = 327.869114828, mc = 3.0, ismc = true
+121: time = 330.869114828, mc = 3.0, ismc = true
+122: time = 333.869114828, mc = 3.0, ismc = true
+123: time = 336.869114828, mc = 3.0, ismc = true
+124: time = 339.869114828, mc = 3.0, ismc = true
+125: time = 342.869114828, mc = 3.0, ismc = true
+126: time = 345.869114828, mc = 3.0, ismc = true
+127: time = 348.869114828, mc = 3.0, ismc = true
+128: time = 351.869114828, mc = 3.0, ismc = true
+129: time = 354.869114828, mc = 3.0, ismc = true
+130: time = 357.869114828, mc = 3.0, ismc = true
+131: time = 360.869114828, mc = 3.0, ismc = true
+132: time = 362.934557414, mc = 3.0, ismc = true
+133: time = 365.0
+

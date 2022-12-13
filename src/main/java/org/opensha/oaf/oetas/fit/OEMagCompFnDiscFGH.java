@@ -5,6 +5,7 @@ import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import static org.opensha.oaf.util.SimpleUtils.rndd;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,7 @@ import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG;				// negative mag s
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG_CHECK;		// use x <= NO_MAG_NEG_CHECK to check for NO_MAG_NEG
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS;				// positive mag larger than any possible mag
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS_CHECK;		// use x >= NO_MAG_POS_CHECK to check for NO_MAG_POS
+import static org.opensha.oaf.oetas.OEConstants.TINY_MAG_DELTA;			// very small change in mag
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS;			// very large time value
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS_CHECK;	// use x >= HUGE_TIME_DAYS_CHECK to check for HUGE_TIME_DAYS
 import static org.opensha.oaf.oetas.OEConstants.LOG10_HUGE_TIME_DAYS;	// log10 of very large time value
@@ -144,6 +146,10 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 	private double t_range_begin;
 	private double t_range_end;
 
+	// Times at which splits are required, non-null and sorted.
+
+	private double[] t_req_splits;
+
 	// Amount by which time range is expanded to allow for rounding errors, in days.
 	// Note: We construct a magnitude of completeness function that is valid for
 	//  t_range_begin - T_RANGE_EXPAND <= t <= t_range_end + T_RANGE_EXPAND.
@@ -228,6 +234,30 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 	// @Override
 	// public double get_mag_cat ();		// inherited
+
+
+
+
+	// Get the beginning of the interval range, as determined by required splits
+
+	public double get_interval_begin () {
+		if (t_req_splits.length < 2) {
+			return t_range_begin;
+		}
+		return t_req_splits[0];
+	}
+
+
+
+
+	// Get the end of the interval range, as determined by required splits
+
+	public double get_interval_end () {
+		if (t_req_splits.length < 2) {
+			return t_range_end;
+		}
+		return t_req_splits[t_req_splits.length - 1];
+	}
 
 
 
@@ -324,10 +354,9 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 		protected OEMagCompFnDisc.SplitFn common_split_fn;
 
-		// Flags indicating if splits are needed at the beginning and end of the time range.
+		// Index of the next required split.
 
-		protected boolean f_need_begin_split;
-		protected boolean f_need_end_split;
+		protected int i_need_req_split;
 
 		// The list of discete values that the log functions can assume.
 		// These are listed in increasing order.
@@ -1379,10 +1408,9 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 			memory_builder.first_split_fn (common_split_fn);
 
-			// Indicate we need splits at beginning and end of time range
+			// Initialize index into array of required splits, indicating we need all of them
 
-			f_need_begin_split = true;
-			f_need_end_split = true;
+			i_need_req_split = 0;
 
 			// Set up the discretization tables
 
@@ -1402,18 +1430,11 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 		public void finish_up_skyline () {
 
-			// If need beginning split, do the split now
+			// Do any remaining required splits now
 
-			if (f_need_begin_split) {
-				memory_builder.add_split (Math.max (t_range_begin, get_current_time()), null);
-				f_need_begin_split = false;
-			}
-
-			// If need ending split, do the split now
-
-			if (f_need_end_split) {
-				memory_builder.add_split (Math.max (t_range_end, get_current_time()), null);
-				f_need_end_split = false;
+			while (i_need_req_split < t_req_splits.length) {
+				memory_builder.add_split (Math.max (t_req_splits[i_need_req_split], get_current_time()), null);
+				++i_need_req_split;
 			}
 
 			// Finish up the superclass.
@@ -1475,22 +1496,11 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 			double time_eps = memory_builder.get_time_eps();
 
-			// If need beginning split, and our time is past the beginning, do the split now
+			// Do any required splits where our time is past the split time
 
-			if (f_need_begin_split) {
-				if (t_day > t_range_begin + time_eps) {
-					memory_builder.add_split (Math.max (t_range_begin, get_current_time()), null);
-					f_need_begin_split = false;
-				}
-			}
-
-			// If need ending split, and our time is past the ending, do the split now
-
-			if (f_need_end_split) {
-				if (t_day > t_range_end + time_eps) {
-					memory_builder.add_split (Math.max (t_range_end, get_current_time()), null);
-					f_need_end_split = false;
-				}
+			while (i_need_req_split < t_req_splits.length && t_day > t_req_splits[i_need_req_split] + time_eps) {
+				memory_builder.add_split (Math.max (t_req_splits[i_need_req_split], get_current_time()), null);
+				++i_need_req_split;
 			}
 
 			// If time-independent ...
@@ -1509,18 +1519,10 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 						memory_builder.add_split (t_day, null);
 					}
 
-					// Clear split flags that this split satisfies
+					// Move past any required splits that this split satisfies
 
-					if (f_need_begin_split) {
-						if (t_day >= t_range_begin - time_eps) {
-							f_need_begin_split = false;
-						}
-					}
-
-					if (f_need_end_split) {
-						if (t_day > t_range_end - time_eps) {
-							f_need_end_split = false;
-						}
+					while (i_need_req_split < t_req_splits.length && t_day >= t_req_splits[i_need_req_split] - time_eps) {
+						++i_need_req_split;
 					}
 				}
 
@@ -1588,19 +1590,11 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				f_did_split = true;
 			}
 
-			// If we did a split, clear split flags that this split satisfies
+			// If we did a split, move past any required splits that this split satisfies
 
 			if (f_did_split) {
-				if (f_need_begin_split) {
-					if (t_day >= t_range_begin - time_eps) {
-						f_need_begin_split = false;
-					}
-				}
-
-				if (f_need_end_split) {
-					if (t_day > t_range_end - time_eps) {
-						f_need_end_split = false;
-					}
+				while (i_need_req_split < t_req_splits.length && t_day >= t_req_splits[i_need_req_split] - time_eps) {
+					++i_need_req_split;
 				}
 			}
 
@@ -1641,13 +1635,16 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 	//                 (all ruptures force division), or NO_MAG_POS if no ruptures force division.
 	//  division_count = Maximum number of ruptures that force division, or 0 if no limit (limit is flexible);
 	//                   the minimum magnitude is increased if necessary to reduce the number of ruptures.
+	//  before_max_count = Maximum number of ruptures allowed before the first required split (limit is flexible),
+	//                     or 0 or -1 if no limit.  If non-zero, them mag_cat_count applies only to ruptures
+	//                     after the first required split.  If zero, then mag_cat_count applies to all ruptures.
 	// Note: All parameters must be already set up.
 	// Note: In each OERupture object, the k_prod field is set equal to the pre-existing magnitude
 	//  of completeness if the rupture is accepted, or NO_MAG_POS if the rupture is rejected.
 
 	public void build_from_rup_list (Collection<OERupture> rup_list, Collection<OERupture> accept_list, Collection<OERupture> reject_list, double eligible_mag, int eligible_count,
 									double mag_eps, double time_eps, double disc_base, double disc_delta, double disc_round, double disc_gap, OEMagCompFnDisc.SplitFn split_fn,
-									int mag_cat_count, double division_mag, int division_count) {
+									int mag_cat_count, double division_mag, int division_count, int before_max_count) {
 	
 		// Copy the given list so we can sort it
 
@@ -1674,12 +1671,18 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 			// Set effective eligible magnitude to enforce the count
 
-			eff_eligible_mag = Math.max (eff_eligible_mag, work_list.get(eligible_count).rup_mag - 0.1*mag_eps);
+			eff_eligible_mag = Math.max (eff_eligible_mag, work_list.get(eligible_count - 1).rup_mag - Math.max(0.1*mag_eps, TINY_MAG_DELTA));
 		}
 
-		// If there is a catalog count, and it limits the number of ruptures to consider ...
+		// Flag, time, and magnitude for filtering ruptures before the first required split
 
-		if (mag_cat_count > 0 && work_list.size() > mag_cat_count) {
+		boolean f_before_filter = false;
+		double before_filter_time = t_range_begin - (2.0 * T_RANGE_EXPAND);
+		double before_filter_mag = magCat;
+
+		// If we are limiting separately before and after the first required split ...
+
+		if (before_max_count != 0 && t_req_splits.length > 0) {
 		
 			// Sort the list by magnitude, descending
 
@@ -1688,9 +1691,62 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				f_mag_sorted = true;
 			}
 
-			// Set effective catalog magnitude to enforce the count
+			// Set the time for the filter, to just before the first required split
 
-			magCat = Math.max (magCat, work_list.get(mag_cat_count).rup_mag - 0.1*mag_eps);
+			before_filter_time = t_req_splits[0] - time_eps;
+
+			// Partition the ruptures into those before and after the filter time
+
+			ArrayList<OERupture> before_list = new ArrayList<OERupture>();
+			ArrayList<OERupture> after_list = new ArrayList<OERupture>();
+
+			for (OERupture rup : work_list) {
+				if (rup.t_day < before_filter_time) {
+					before_list.add (rup);
+				} else {
+					after_list.add (rup);
+				}
+			}
+
+			// If there is a catalog count, and it limits the number of ruptures to consider ...
+
+			if (mag_cat_count > 0 && after_list.size() > mag_cat_count) {
+
+				// Set effective catalog magnitude to enforce the count
+
+				magCat = Math.max (magCat, after_list.get(mag_cat_count - 1).rup_mag - Math.max(0.1*mag_eps, TINY_MAG_DELTA));
+			}
+
+			// If there is a maximum before count, and it limits the number of ruptures to consider ...
+
+			if (before_max_count > 0 && before_list.size() > before_max_count) {
+
+				// Set filter
+
+				before_filter_mag = Math.max (magCat, before_list.get(before_max_count - 1).rup_mag - Math.max(0.1*mag_eps, TINY_MAG_DELTA));
+				f_before_filter = true;
+			}
+		}
+
+		// Otherwise, there is a single limite for all ruptures ...
+
+		else {
+
+			// If there is a catalog count, and it limits the number of ruptures to consider ...
+
+			if (mag_cat_count > 0 && work_list.size() > mag_cat_count) {
+		
+				// Sort the list by magnitude, descending
+
+				if (!( f_mag_sorted )) {
+					work_list.sort (new OERupture.MagDescTimeDescComparator());
+					f_mag_sorted = true;
+				}
+
+				// Set effective catalog magnitude to enforce the count
+
+				magCat = Math.max (magCat, work_list.get(mag_cat_count - 1).rup_mag - Math.max(0.1*mag_eps, TINY_MAG_DELTA));
+			}
 		}
 
 		// Effective division magnitude
@@ -1710,7 +1766,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 			// Set effective division magnitude to enforce the count
 
-			eff_division_mag = Math.max (eff_division_mag, work_list.get(division_count).rup_mag - 0.1*mag_eps);
+			eff_division_mag = Math.max (eff_division_mag, work_list.get(division_count - 1).rup_mag - Math.max(0.1*mag_eps, TINY_MAG_DELTA));
 		}
 		
 		// Sort the list by time, ascending
@@ -1731,27 +1787,41 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 			double t_day = rup.t_day;
 			double rup_mag = rup.rup_mag;
 
-			// Rupture is eligible for skyline if it is at least the minimum magnitude
+			// Filter rupture if desired
 
-			boolean f_eligible = (rup_mag >= eff_eligible_mag);
-
-			// Rupture forces division if it is at least the minimum magnitude
-
-			boolean f_division = (rup_mag >= eff_division_mag);
-
-			// Offer rupture to skyline, check if it is above mag of completeness
-
-			rup.k_prod = sky_builder.offer_rupture (t_day, rup_mag, f_eligible, f_division);
-
-			// Add rupture to accepted or rejected list
-
-			if (rup.k_prod < NO_MAG_POS_CHECK) {
-				if (accept_list != null) {
-					accept_list.add (rup);
-				}
-			} else {
+			if (f_before_filter && t_day < before_filter_time && rup_mag < before_filter_mag) {
+				rup.k_prod = NO_MAG_POS;
 				if (reject_list != null) {
 					reject_list.add (rup);
+				}
+			}
+
+			// Otherwise, no filter ...
+
+			else {
+
+				// Rupture is eligible for skyline if it is at least the minimum magnitude
+
+				boolean f_eligible = (rup_mag >= eff_eligible_mag);
+
+				// Rupture forces division if it is at least the minimum magnitude
+
+				boolean f_division = (rup_mag >= eff_division_mag);
+
+				// Offer rupture to skyline, check if it is above mag of completeness
+
+				rup.k_prod = sky_builder.offer_rupture (t_day, rup_mag, f_eligible, f_division);
+
+				// Add rupture to accepted or rejected list
+
+				if (rup.k_prod < NO_MAG_POS_CHECK) {
+					if (accept_list != null) {
+						accept_list.add (rup);
+					}
+				} else {
+					if (reject_list != null) {
+						reject_list.add (rup);
+					}
 				}
 			}
 		}
@@ -1787,7 +1857,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 								double eligible_mag, int eligible_count,
 								double mag_eps, double time_eps,
 								double disc_base, double disc_delta, double disc_round, double disc_gap, OEMagCompFnDisc.SplitFn split_fn,
-								int mag_cat_count, double division_mag, int division_count) {
+								int mag_cat_count, double division_mag, int division_count, double[] t_req_splits, int before_max_count) {
 
 		// Save parameters
 
@@ -1806,9 +1876,20 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		this.t_range_begin = t_range_begin;
 		this.t_range_end = t_range_end;
 
+		if (t_req_splits == null) {
+			this.t_req_splits = new double[2];
+			this.t_req_splits[0] = t_range_begin;
+			this.t_req_splits[1] = t_range_end;
+		} else {
+			this.t_req_splits = Arrays.copyOf (t_req_splits, t_req_splits.length);
+			Arrays.sort (this.t_req_splits);
+		}
+
 		// Generate the function with the skyline algorithm
 
-		build_from_rup_list (rup_list, accept_list, reject_list, eligible_mag, eligible_count, mag_eps, time_eps, disc_base, disc_delta, disc_round, disc_gap, split_fn, mag_cat_count, division_mag, division_count);
+		build_from_rup_list (rup_list, accept_list, reject_list, eligible_mag, eligible_count,
+				mag_eps, time_eps, disc_base, disc_delta, disc_round, disc_gap, split_fn,
+				mag_cat_count, division_mag, division_count, before_max_count);
 	}
 
 
@@ -1826,7 +1907,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				params.eligible_mag, params.eligible_count,
 				params.mag_eps, params.time_eps,
 				params.disc_base, params.disc_delta, params.disc_round, params.disc_gap, params.split_fn,
-				params.mag_cat_count, params.division_mag, params.division_count);
+				params.mag_cat_count, params.division_mag, params.division_count, params.t_req_splits, params.before_max_count);
 	}
 
 
@@ -1843,6 +1924,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		+ ", capH=" + capH
 		+ ", t_range_begin=" + t_range_begin
 		+ ", t_range_end=" + t_range_end
+		+ ", t_req_splits=" + Arrays.toString (t_req_splits)
 		+ ", interval_count=" + get_interval_count()
 		+ "]";
 	}
@@ -1858,12 +1940,13 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		int interval_count = get_interval_count();
 
 		result.append ("OEMagCompFnDiscFGH:" + "\n");
-		result.append ("magCat = " + magCat + "\n");
+		result.append ("magCat = " + rndd(magCat) + "\n");
 		result.append ("capF = " + capF + "\n");
 		result.append ("capG = " + capG + "\n");
 		result.append ("capH = " + capH + "\n");
 		result.append ("t_range_begin = " + t_range_begin + "\n");
 		result.append ("t_range_end = " + t_range_end + "\n");
+		result.append ("t_req_splits = " + Arrays.toString (t_req_splits) + "\n");
 		result.append ("interval_count = " + interval_count + "\n");
 		for (int n = 0; n < interval_count; ++n) {
 			result.append (get_interval_string (n) + "\n");
@@ -1919,6 +2002,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 			writer.marshalDouble ("capH", capH);
 			writer.marshalDouble ("t_range_begin", t_range_begin);
 			writer.marshalDouble ("t_range_end", t_range_end);
+			writer.marshalDoubleArray ("t_req_splits", t_req_splits);
 
 		}
 		break;
@@ -1959,6 +2043,15 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 			t_range_begin = params.t_range_begin;
 			t_range_end = params.t_range_end;
 
+			if (params.t_req_splits == null) {
+				t_req_splits = new double[2];
+				t_req_splits[0] = params.t_range_begin;
+				t_req_splits[1] = params.t_range_end;
+			} else {
+				t_req_splits = Arrays.copyOf (params.t_req_splits, params.t_req_splits.length);
+				Arrays.sort (t_req_splits);
+			}
+
 			if (!( capH >= MIN_CAP_H )) {
 				throw new MarshalException ("OEMagCompFnDiscFGH.do_umarshal: H parameter is invalid: H = " + capH);
 			}
@@ -1994,7 +2087,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 				build_from_rup_list (rup_list, accept_list, reject_list, params.eligible_mag, params.eligible_count,
 									params.mag_eps, params.time_eps, params.disc_base, params.disc_delta, params.disc_round, params.disc_gap, params.split_fn,
-									params.mag_cat_count, params.division_mag, params.division_count);
+									params.mag_cat_count, params.division_mag, params.division_count, params.before_max_count);
 			}
 			catch (Exception e) {
 				throw new MarshalException ("OEMagCompFnDiscFGH.do_umarshal: Unable to construct skyline function from given ruptures", e);
@@ -2017,6 +2110,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 			capH = reader.unmarshalDouble ("capH");
 			t_range_begin = reader.unmarshalDouble ("t_range_begin");
 			t_range_end = reader.unmarshalDouble ("t_range_end");
+			t_req_splits = reader.unmarshalDoubleArray ("t_req_splits");
 
 			if (!( capH >= MIN_CAP_H )) {
 				throw new MarshalException ("OEMagCompFnDiscFGH.do_umarshal: H parameter is invalid: H = " + capH);
@@ -2222,7 +2316,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 								eligible_mag, eligible_count,
 								mag_eps, time_eps,
 								disc_base, disc_delta, disc_round, disc_gap, null,
-								mag_cat_count, division_mag, division_count);
+								mag_cat_count, division_mag, division_count, null, 0);
 
 				System.out.println ();
 				System.out.println (mag_comp_fn.dump_string());
@@ -2247,7 +2341,8 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				for (int nq = 0; nq < query_count; ++nq) {
 					double t = query_time + nq * query_delta;
 					double mc = mag_comp_fn.get_mag_completeness (t);
-					System.out.println ("  t = " + t + ", mc = " + mc);
+					//System.out.println ("  t = " + t + ", mc = " + mc);
+					System.out.println ("  t = " + rndd(t) + ", mc = " + rndd(mc));
 				}
 
 
@@ -2267,7 +2362,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		//         mag_eps  time_eps  disc_base  disc_delta  disc_round  disc_gap
 		//         query_time  query_delta  query_count 
 		//         durlim_ratio  durlim_min  durlim_max
-		//        [t_day  rup_mag]...
+		//         [t_day  rup_mag]...
 		// Build a function with the given parameters and rupture list.
 		// Perform queries at the specified set of times.
 		// Display detailed results.
@@ -2376,7 +2471,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 								eligible_mag, eligible_count,
 								mag_eps, time_eps,
 								disc_base, disc_delta, disc_round, disc_gap, split_fn,
-								mag_cat_count, division_mag, division_count);
+								mag_cat_count, division_mag, division_count, null, 0);
 
 				System.out.println ();
 				System.out.println (mag_comp_fn.dump_string());
@@ -2401,7 +2496,8 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				for (int nq = 0; nq < query_count; ++nq) {
 					double t = query_time + nq * query_delta;
 					double mc = mag_comp_fn.get_mag_completeness (t);
-					System.out.println ("  t = " + t + ", mc = " + mc);
+					//System.out.println ("  t = " + t + ", mc = " + mc);
+					System.out.println ("  t = " + rndd(t) + ", mc = " + rndd(mc));
 				}
 
 
@@ -2422,7 +2518,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		//         query_time  query_delta  query_count 
 		//         durlim_ratio  durlim_min  durlim_max
 		//         mag_cat_count  division_mag  division_count
-		//        [t_day  rup_mag]...
+		//         [t_day  rup_mag]...
 		// Build a function with the given parameters and rupture list.
 		// Perform queries at the specified set of times.
 		// Display detailed results.
@@ -2535,7 +2631,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				// 				eligible_mag, eligible_count,
 				// 				mag_eps, time_eps,
 				// 				disc_base, disc_delta, disc_round, disc_gap, split_fn,
-				// 				mag_cat_count, division_mag, division_count);
+				// 				mag_cat_count, division_mag, division_count, null, 0);
 
 				OEDiscFGHParams params = new OEDiscFGHParams();
 
@@ -2588,7 +2684,216 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				for (int nq = 0; nq < query_count; ++nq) {
 					double t = query_time + nq * query_delta;
 					double mc = mag_comp_fn.get_mag_completeness (t);
-					System.out.println ("  t = " + t + ", mc = " + mc);
+					//System.out.println ("  t = " + t + ", mc = " + mc);
+					System.out.println ("  t = " + rndd(t) + ", mc = " + rndd(mc));
+				}
+
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  magCat  capF  capG  capH  t_range_begin  t_range_end  eligible_mag  eligible_count
+		//         mag_eps  time_eps  disc_base  disc_delta  disc_round  disc_gap
+		//         query_time  query_delta  query_count 
+		//         durlim_ratio  durlim_min  durlim_max
+		//         mag_cat_count  division_mag  division_count
+		//         t_interval_begin  t_interval_end  before_max_count  mag_cat_int_join
+		//         [t_day  rup_mag]...
+		// Build a function with the given parameters and rupture list.
+		// Perform queries at the specified set of times.
+		// Display detailed results.
+		// This version does splitting.
+		// Same as test #3 except with specified required splitting times and joining parameters.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// 27 or more additional arguments
+
+			if (!( args.length >= 28 && args.length % 2 == 0 )) {
+				System.err.println ("OEMagCompFnDiscFGH : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				double magCat = Double.parseDouble (args[1]);
+				double capF = Double.parseDouble (args[2]);
+				double capG = Double.parseDouble (args[3]);
+				double capH = Double.parseDouble (args[4]);
+				double t_range_begin = Double.parseDouble (args[5]);
+				double t_range_end = Double.parseDouble (args[6]);
+				double eligible_mag = Double.parseDouble (args[7]);
+				int eligible_count = Integer.parseInt (args[8]);
+
+				double mag_eps = Double.parseDouble (args[9]);
+				double time_eps = Double.parseDouble (args[10]);
+				double disc_base = Double.parseDouble (args[11]);
+				double disc_delta = Double.parseDouble (args[12]);
+				double disc_round = Double.parseDouble (args[13]);
+				double disc_gap = Double.parseDouble (args[14]);
+
+				double query_time = Double.parseDouble (args[15]);
+				double query_delta = Double.parseDouble (args[16]);
+				int query_count = Integer.parseInt (args[17]);
+
+				double durlim_ratio = Double.parseDouble (args[18]);
+				double durlim_min = Double.parseDouble (args[19]);
+				double durlim_max = Double.parseDouble (args[20]);
+
+				int mag_cat_count = Integer.parseInt (args[21]);
+				double division_mag = Double.parseDouble (args[22]);
+				int division_count = Integer.parseInt (args[23]);
+
+				double t_interval_begin = Double.parseDouble (args[24]);
+				double t_interval_end = Double.parseDouble (args[25]);
+				int before_max_count = Integer.parseInt (args[26]);
+				int mag_cat_int_join = Integer.parseInt (args[27]);
+
+				double[] time_mag_array = new double[args.length - 28];
+				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + 28]);
+				}
+
+				// Say hello
+
+				System.out.println ("Generating magnitude of completeness function");
+				System.out.println ("magCat = " + magCat);
+				System.out.println ("capF = " + capF);
+				System.out.println ("capG = " + capG);
+				System.out.println ("capH = " + capH);
+				System.out.println ("t_range_begin = " + t_range_begin);
+				System.out.println ("t_range_end = " + t_range_end);
+				System.out.println ("eligible_mag = " + eligible_mag);
+				System.out.println ("eligible_count = " + eligible_count);
+
+				System.out.println ("mag_eps = " + mag_eps);
+				System.out.println ("time_eps = " + time_eps);
+				System.out.println ("disc_base = " + disc_base);
+				System.out.println ("disc_delta = " + disc_delta);
+				System.out.println ("disc_round = " + disc_round);
+				System.out.println ("disc_gap = " + disc_gap);
+
+				System.out.println ("query_time = " + query_time);
+				System.out.println ("query_delta = " + query_delta);
+				System.out.println ("query_count = " + query_count);
+
+				System.out.println ("durlim_ratio = " + durlim_ratio);
+				System.out.println ("durlim_min = " + durlim_min);
+				System.out.println ("durlim_max = " + durlim_max);
+
+				System.out.println ("mag_cat_count = " + mag_cat_count);
+				System.out.println ("division_mag = " + division_mag);
+				System.out.println ("division_count = " + division_count);
+
+				System.out.println ("t_interval_begin = " + t_interval_begin);
+				System.out.println ("t_interval_end = " + t_interval_end);
+				System.out.println ("before_max_count = " + before_max_count);
+				System.out.println ("mag_cat_int_join = " + mag_cat_int_join);
+
+				System.out.println ("time_mag_array:");
+				for (int ntm = 0; ntm < time_mag_array.length; ntm += 2) {
+					System.out.println ("  time = " + time_mag_array[ntm] + ", mag = " + time_mag_array[ntm + 1]);
+				}
+
+				// Make the rupture list
+
+				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+				OERupture.make_time_mag_list (rup_list, time_mag_array);
+
+				System.out.println ();
+				System.out.println ("rup_list:");
+				for (OERupture rup : rup_list) {
+					System.out.println ("  " + rup.u_time_mag_string());
+				}
+
+				// Make time-splitting function
+
+				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
+
+				// Make the magnitude of completeness function
+
+				ArrayList<OERupture> accept_list = new ArrayList<OERupture>();
+				ArrayList<OERupture> reject_list = new ArrayList<OERupture>();
+
+				double[] t_req_splits = new double[2];
+				t_req_splits[0] = t_interval_begin;
+				t_req_splits[1] = t_interval_end;
+
+				// OEMagCompFnDiscFGH mag_comp_fn = new OEMagCompFnDiscFGH (magCat, capF, capG, capH,
+				// 				t_range_begin, t_range_end,
+				// 				rup_list,
+				// 				accept_list, reject_list,
+				// 				eligible_mag, eligible_count,
+				// 				mag_eps, time_eps,
+				// 				disc_base, disc_delta, disc_round, disc_gap, split_fn,
+				// 				mag_cat_count, division_mag, division_count, t_req_splits, 0);
+
+				OEDiscFGHParams params = new OEDiscFGHParams();
+
+				params.set (
+					magCat,
+					capF,
+					capG,
+					capH,
+					t_range_begin,
+					t_range_end,
+
+					mag_eps,
+					time_eps,
+					disc_base,
+					disc_delta,
+					disc_round,
+					disc_gap,
+
+					mag_cat_count,
+					eligible_mag,
+					eligible_count,
+					division_mag,
+					division_count,
+					split_fn,
+
+					t_req_splits,
+					before_max_count,
+					mag_cat_int_join
+				);
+
+				OEMagCompFnDiscFGH mag_comp_fn = new OEMagCompFnDiscFGH (params, rup_list,
+								accept_list, reject_list);
+
+				System.out.println ();
+				System.out.println (mag_comp_fn.dump_string());
+
+				//System.out.println ();
+				System.out.println ("accept_list:");
+				for (OERupture rup : accept_list) {
+					System.out.println ("  " + rup.u_time_mag_mc_string());
+				}
+
+				System.out.println ();
+				System.out.println ("reject_list:");
+				for (OERupture rup : reject_list) {
+					System.out.println ("  " + rup.u_time_mag_string());
+				}
+
+				// Do queries
+
+				System.out.println ();
+				System.out.println ("queries:");
+
+				for (int nq = 0; nq < query_count; ++nq) {
+					double t = query_time + nq * query_delta;
+					double mc = mag_comp_fn.get_mag_completeness (t);
+					//System.out.println ("  t = " + t + ", mc = " + mc);
+					System.out.println ("  t = " + rndd(t) + ", mc = " + rndd(mc));
 				}
 
 

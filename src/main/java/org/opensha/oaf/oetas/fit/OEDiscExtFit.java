@@ -22,6 +22,11 @@ import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS;			// very large 
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS_CHECK;	// use x >= HUGE_TIME_DAYS_CHECK to check for HUGE_TIME_DAYS
 import static org.opensha.oaf.oetas.OEConstants.LOG10_HUGE_TIME_DAYS;	// log10 of very large time value
 
+import static org.opensha.oaf.oetas.OEConstants.LMR_OPT_MCT_INFINITY;		// 1 = From time-dependent magnitude of completeness to infinity.
+import static org.opensha.oaf.oetas.OEConstants.LMR_OPT_MCT_MAG_MAX;		// 2 = From time-dependent magnitude of completeness to maximum simulation magnitude.
+import static org.opensha.oaf.oetas.OEConstants.LMR_OPT_MAGCAT_INFINITY;	// 3 = From catalog magnitude of completeness to infinity.
+import static org.opensha.oaf.oetas.OEConstants.LMR_OPT_MAGCAT_MAG_MAX;		// 4 = From catalog magnitude of completeness to maximum simulation magnitude.
+
 
 // Discretized rupture history, parameter fitting with extended sources.
 // Author: Michael Barall 09/14/2020.
@@ -216,10 +221,10 @@ public class OEDiscExtFit {
 
 	private int lmr_opt;
 
-	public static final int LMR_OPT_MCT_INFINITY = 1;		// From time-dependent magnitude of completeness to infinity.
-	public static final int LMR_OPT_MCT_MAG_MAX = 2;		// From time-dependent magnitude of completeness to maximum simulation magnitude.
-	public static final int LMR_OPT_MAGCAT_INFINITY = 3;	// From catalog magnitude of completeness to infinity.
-	public static final int LMR_OPT_MAGCAT_MAG_MAX = 4;		// From catalog magnitude of completeness to maximum simulation magnitude.
+	//  public static final int LMR_OPT_MCT_INFINITY = 1;		// From time-dependent magnitude of completeness to infinity.
+	//  public static final int LMR_OPT_MCT_MAG_MAX = 2;		// From time-dependent magnitude of completeness to maximum simulation magnitude.
+	//  public static final int LMR_OPT_MAGCAT_INFINITY = 3;	// From catalog magnitude of completeness to infinity.
+	//  public static final int LMR_OPT_MAGCAT_MAG_MAX = 4;		// From catalog magnitude of completeness to maximum simulation magnitude.
 
 	// Likelihood rupture range, the beginning and ending+1 of ruptures to include in likelihood calculation.
 

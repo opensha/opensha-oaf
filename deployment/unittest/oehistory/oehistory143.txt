@@ -1,0 +1,333 @@
+oehistory143 oetas.fit.OEMagCompFnDiscFGH test4 3.0 0.5 0.25 1.0 -30.0 365.0 0.0 3 0.001 1.0e-7 0.005 0.2 0.5 0.05 0.0 0.005 25 0.5 0.00001 3.0 5 0.0 0 0.0 365.0 0 0 -28.0 6.8 -14.0 6.2 0.0 7.0 0.02 5.0 0.04 4.6 30.0 6.5 60.0 6.9 90.0 6.1
+Generating magnitude of completeness function
+magCat = 3.0
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = -30.0
+t_range_end = 365.0
+eligible_mag = 0.0
+eligible_count = 3
+mag_eps = 0.001
+time_eps = 1.0E-7
+disc_base = 0.005
+disc_delta = 0.2
+disc_round = 0.5
+disc_gap = 0.05
+query_time = 0.0
+query_delta = 0.005
+query_count = 25
+durlim_ratio = 0.5
+durlim_min = 1.0E-5
+durlim_max = 3.0
+mag_cat_count = 5
+division_mag = 0.0
+division_count = 0
+t_interval_begin = 0.0
+t_interval_end = 365.0
+before_max_count = 0
+mag_cat_int_join = 0
+time_mag_array:
+  time = -28.0, mag = 6.8
+  time = -14.0, mag = 6.2
+  time = 0.0, mag = 7.0
+  time = 0.02, mag = 5.0
+  time = 0.04, mag = 4.6
+  time = 30.0, mag = 6.5
+  time = 60.0, mag = 6.9
+  time = 90.0, mag = 6.1
+
+rup_list:
+  t = -28.0, mag = 6.8
+  t = -14.0, mag = 6.2
+  t = 0.0, mag = 7.0
+  t = 0.02, mag = 5.0
+  t = 0.04, mag = 4.6
+  t = 30.0, mag = 6.5
+  t = 60.0, mag = 6.9
+  t = 90.0, mag = 6.1
+
+OEMagCompFnDiscFGH:
+magCat = 6.1999
+capF = 0.5
+capG = 0.25
+capH = 1.0
+t_range_begin = -30.0
+t_range_end = 365.0
+t_req_splits = [0.0, 365.0]
+interval_count = 236
+constant: mag = 6.1999
+time = -28.0: constant: mag = 6.8
+time = -27.99999: constant: mag = 6.8
+time = -27.99998: constant: mag = 6.8
+time = -27.99997: constant: mag = 6.8
+time = -27.999955: constant: mag = 6.8
+time = -27.9999325: constant: mag = 6.8
+time = -27.99989875: constant: mag = 6.8
+time = -27.999848125: constant: mag = 6.8
+time = -27.9997847564: constant: mag = 6.8
+time = -27.9997213879: constant: mag = 6.605
+time = -27.9996399087: constant: mag = 6.605
+time = -27.9995584296: constant: mag = 6.405
+time = -27.9994292938: constant: mag = 6.405
+time = -27.999300158: constant: mag = 6.1999
+time = -27.998950237: constant: mag = 6.1999
+time = -27.9984253555: constant: mag = 6.1999
+time = -27.9976380333: constant: mag = 6.1999
+time = -27.9964570499: constant: mag = 6.1999
+time = -27.9946855748: constant: mag = 6.1999
+time = -27.9920283623: constant: mag = 6.1999
+time = -27.9880425434: constant: mag = 6.1999
+time = -27.9820638151: constant: mag = 6.1999
+time = -27.9730957226: constant: mag = 6.1999
+time = -27.959643584: constant: mag = 6.1999
+time = -27.9394653759: constant: mag = 6.1999
+time = -27.9091980639: constant: mag = 6.1999
+time = -27.8637970959: constant: mag = 6.1999
+time = -27.7956956438: constant: mag = 6.1999
+time = -27.6935434657: constant: mag = 6.1999
+time = -27.5403151986: constant: mag = 6.1999
+time = -27.3104727979: constant: mag = 6.1999
+time = -26.9657091968: constant: mag = 6.1999
+time = -26.4485637952: constant: mag = 6.1999
+time = -25.6728456928: constant: mag = 6.1999
+time = -24.5092685392: constant: mag = 6.1999
+time = -22.7639028088: constant: mag = 6.1999
+time = -20.1458542132: constant: mag = 6.1999
+time = -17.1458542132: constant: mag = 6.1999
+time = -15.5729271066: constant: mag = 6.1999
+time = -14.0: constant: mag = 6.1999
+time = -11.0: constant: mag = 6.1999
+time = -8.0: constant: mag = 6.1999
+time = -5.0: constant: mag = 6.1999
+time = -2.5: constant: mag = 6.1999
+time = 0.0: constant: mag = 7.0
+time = 1.0E-05: constant: mag = 7.0
+time = 2.0E-05: constant: mag = 7.0
+time = 3.0E-05: constant: mag = 7.0
+time = 4.5E-05: constant: mag = 7.0
+time = 6.75E-05: constant: mag = 7.0
+time = 0.00010125: constant: mag = 7.0
+time = 0.000151875: constant: mag = 7.0
+time = 0.000221309470961: constant: mag = 6.805
+time = 0.000286030672457: constant: mag = 6.805
+time = 0.000350751873953: constant: mag = 6.605
+time = 0.000453328065611: constant: mag = 6.605
+time = 0.00055590425727: constant: mag = 6.405
+time = 0.000718476565139: constant: mag = 6.405
+time = 0.000881048873008: constant: mag = 6.1999
+time = 0.00132157330951: constant: mag = 6.1999
+time = 0.00198235996427: constant: mag = 6.1999
+time = 0.0029735399464: constant: mag = 6.1999
+time = 0.0044603099196: constant: mag = 6.1999
+time = 0.0066904648794: constant: mag = 6.1999
+time = 0.0100356973191: constant: mag = 6.1999
+time = 0.0150535459787: constant: mag = 6.1999
+time = 0.022580318968: constant: mag = 6.1999
+time = 0.033870478452: constant: mag = 6.1999
+time = 0.050805717678: constant: mag = 6.1999
+time = 0.076208576517: constant: mag = 6.1999
+time = 0.114312864775: constant: mag = 6.1999
+time = 0.171469297163: constant: mag = 6.1999
+time = 0.257203945745: constant: mag = 6.1999
+time = 0.385805918617: constant: mag = 6.1999
+time = 0.578708877926: constant: mag = 6.1999
+time = 0.868063316889: constant: mag = 6.1999
+time = 1.30209497533: constant: mag = 6.1999
+time = 1.953142463: constant: mag = 6.1999
+time = 2.9297136945: constant: mag = 6.1999
+time = 4.39457054175: constant: mag = 6.1999
+time = 6.59185581262: constant: mag = 6.1999
+time = 9.59185581262: constant: mag = 6.1999
+time = 12.5918558126: constant: mag = 6.1999
+time = 15.5918558126: constant: mag = 6.1999
+time = 18.5918558126: constant: mag = 6.1999
+time = 21.5918558126: constant: mag = 6.1999
+time = 24.5918558126: constant: mag = 6.1999
+time = 27.2959279063: constant: mag = 6.1999
+time = 30.0: constant: mag = 6.1999
+time = 33.0: constant: mag = 6.1999
+time = 36.0: constant: mag = 6.1999
+time = 39.0: constant: mag = 6.1999
+time = 42.0: constant: mag = 6.1999
+time = 45.0: constant: mag = 6.1999
+time = 48.0: constant: mag = 6.1999
+time = 51.0: constant: mag = 6.1999
+time = 54.0: constant: mag = 6.1999
+time = 57.0: constant: mag = 6.1999
+time = 60.0: constant: mag = 6.9
+time = 60.00001: constant: mag = 6.9
+time = 60.00002: constant: mag = 6.9
+time = 60.00003: constant: mag = 6.9
+time = 60.000045: constant: mag = 6.9
+time = 60.0000675: constant: mag = 6.9
+time = 60.00010125: constant: mag = 6.9
+time = 60.0001492461: constant: mag = 6.9
+time = 60.0001972423: constant: mag = 6.805
+time = 60.0002549251: constant: mag = 6.805
+time = 60.0003126079: constant: mag = 6.605
+time = 60.0004040291: constant: mag = 6.605
+time = 60.0004954502: constant: mag = 6.405
+time = 60.0006403429: constant: mag = 6.405
+time = 60.0007852356: constant: mag = 6.1999
+time = 60.0011778535: constant: mag = 6.1999
+time = 60.0017667802: constant: mag = 6.1999
+time = 60.0026501703: constant: mag = 6.1999
+time = 60.0039752554: constant: mag = 6.1999
+time = 60.0059628831: constant: mag = 6.1999
+time = 60.0089443247: constant: mag = 6.1999
+time = 60.013416487: constant: mag = 6.1999
+time = 60.0201247305: constant: mag = 6.1999
+time = 60.0301870957: constant: mag = 6.1999
+time = 60.0452806435: constant: mag = 6.1999
+time = 60.0679209653: constant: mag = 6.1999
+time = 60.101881448: constant: mag = 6.1999
+time = 60.152822172: constant: mag = 6.1999
+time = 60.2292332579: constant: mag = 6.1999
+time = 60.3438498869: constant: mag = 6.1999
+time = 60.5157748304: constant: mag = 6.1999
+time = 60.7736622455: constant: mag = 6.1999
+time = 61.1604933683: constant: mag = 6.1999
+time = 61.7407400525: constant: mag = 6.1999
+time = 62.6111100787: constant: mag = 6.1999
+time = 63.916665118: constant: mag = 6.1999
+time = 65.8749976771: constant: mag = 6.1999
+time = 68.8124965156: constant: mag = 6.1999
+time = 71.8124965156: constant: mag = 6.1999
+time = 74.8124965156: constant: mag = 6.1999
+time = 77.8124965156: constant: mag = 6.1999
+time = 80.8124965156: constant: mag = 6.1999
+time = 83.8124965156: constant: mag = 6.1999
+time = 86.8124965156: constant: mag = 6.1999
+time = 89.8124965156: constant: mag = 6.1999
+time = 92.8124965156: constant: mag = 6.1999
+time = 95.8124965156: constant: mag = 6.1999
+time = 98.8124965156: constant: mag = 6.1999
+time = 101.812496516: constant: mag = 6.1999
+time = 104.812496516: constant: mag = 6.1999
+time = 107.812496516: constant: mag = 6.1999
+time = 110.812496516: constant: mag = 6.1999
+time = 113.812496516: constant: mag = 6.1999
+time = 116.812496516: constant: mag = 6.1999
+time = 119.812496516: constant: mag = 6.1999
+time = 122.812496516: constant: mag = 6.1999
+time = 125.812496516: constant: mag = 6.1999
+time = 128.812496516: constant: mag = 6.1999
+time = 131.812496516: constant: mag = 6.1999
+time = 134.812496516: constant: mag = 6.1999
+time = 137.812496516: constant: mag = 6.1999
+time = 140.812496516: constant: mag = 6.1999
+time = 143.812496516: constant: mag = 6.1999
+time = 146.812496516: constant: mag = 6.1999
+time = 149.812496516: constant: mag = 6.1999
+time = 152.812496516: constant: mag = 6.1999
+time = 155.812496516: constant: mag = 6.1999
+time = 158.812496516: constant: mag = 6.1999
+time = 161.812496516: constant: mag = 6.1999
+time = 164.812496516: constant: mag = 6.1999
+time = 167.812496516: constant: mag = 6.1999
+time = 170.812496516: constant: mag = 6.1999
+time = 173.812496516: constant: mag = 6.1999
+time = 176.812496516: constant: mag = 6.1999
+time = 179.812496516: constant: mag = 6.1999
+time = 182.812496516: constant: mag = 6.1999
+time = 185.812496516: constant: mag = 6.1999
+time = 188.812496516: constant: mag = 6.1999
+time = 191.812496516: constant: mag = 6.1999
+time = 194.812496516: constant: mag = 6.1999
+time = 197.812496516: constant: mag = 6.1999
+time = 200.812496516: constant: mag = 6.1999
+time = 203.812496516: constant: mag = 6.1999
+time = 206.812496516: constant: mag = 6.1999
+time = 209.812496516: constant: mag = 6.1999
+time = 212.812496516: constant: mag = 6.1999
+time = 215.812496516: constant: mag = 6.1999
+time = 218.812496516: constant: mag = 6.1999
+time = 221.812496516: constant: mag = 6.1999
+time = 224.812496516: constant: mag = 6.1999
+time = 227.812496516: constant: mag = 6.1999
+time = 230.812496516: constant: mag = 6.1999
+time = 233.812496516: constant: mag = 6.1999
+time = 236.812496516: constant: mag = 6.1999
+time = 239.812496516: constant: mag = 6.1999
+time = 242.812496516: constant: mag = 6.1999
+time = 245.812496516: constant: mag = 6.1999
+time = 248.812496516: constant: mag = 6.1999
+time = 251.812496516: constant: mag = 6.1999
+time = 254.812496516: constant: mag = 6.1999
+time = 257.812496516: constant: mag = 6.1999
+time = 260.812496516: constant: mag = 6.1999
+time = 263.812496516: constant: mag = 6.1999
+time = 266.812496516: constant: mag = 6.1999
+time = 269.812496516: constant: mag = 6.1999
+time = 272.812496516: constant: mag = 6.1999
+time = 275.812496516: constant: mag = 6.1999
+time = 278.812496516: constant: mag = 6.1999
+time = 281.812496516: constant: mag = 6.1999
+time = 284.812496516: constant: mag = 6.1999
+time = 287.812496516: constant: mag = 6.1999
+time = 290.812496516: constant: mag = 6.1999
+time = 293.812496516: constant: mag = 6.1999
+time = 296.812496516: constant: mag = 6.1999
+time = 299.812496516: constant: mag = 6.1999
+time = 302.812496516: constant: mag = 6.1999
+time = 305.812496516: constant: mag = 6.1999
+time = 308.812496516: constant: mag = 6.1999
+time = 311.812496516: constant: mag = 6.1999
+time = 314.812496516: constant: mag = 6.1999
+time = 317.812496516: constant: mag = 6.1999
+time = 320.812496516: constant: mag = 6.1999
+time = 323.812496516: constant: mag = 6.1999
+time = 326.812496516: constant: mag = 6.1999
+time = 329.812496516: constant: mag = 6.1999
+time = 332.812496516: constant: mag = 6.1999
+time = 335.812496516: constant: mag = 6.1999
+time = 338.812496516: constant: mag = 6.1999
+time = 341.812496516: constant: mag = 6.1999
+time = 344.812496516: constant: mag = 6.1999
+time = 347.812496516: constant: mag = 6.1999
+time = 350.812496516: constant: mag = 6.1999
+time = 353.812496516: constant: mag = 6.1999
+time = 356.812496516: constant: mag = 6.1999
+time = 359.812496516: constant: mag = 6.1999
+time = 362.406248258: constant: mag = 6.1999
+time = 365.0: constant: mag = 6.1999
+
+accept_list:
+  t = -28.0, mag = 6.8, mc = 6.1999
+  t = -14.0, mag = 6.2, mc = 6.1999
+  t = 0.0, mag = 7.0, mc = 6.1999
+  t = 30.0, mag = 6.5, mc = 6.1999
+  t = 60.0, mag = 6.9, mc = 6.1999
+
+reject_list:
+  t = 0.02, mag = 5.0
+  t = 0.04, mag = 4.6
+  t = 90.0, mag = 6.1
+
+queries:
+  t = 0.0, mc = 6.1999
+  t = 0.005, mc = 6.1999
+  t = 0.01, mc = 6.1999
+  t = 0.015, mc = 6.1999
+  t = 0.02, mc = 6.1999
+  t = 0.025, mc = 6.1999
+  t = 0.03, mc = 6.1999
+  t = 0.035, mc = 6.1999
+  t = 0.04, mc = 6.1999
+  t = 0.045, mc = 6.1999
+  t = 0.05, mc = 6.1999
+  t = 0.055, mc = 6.1999
+  t = 0.06, mc = 6.1999
+  t = 0.065, mc = 6.1999
+  t = 0.07, mc = 6.1999
+  t = 0.075, mc = 6.1999
+  t = 0.08, mc = 6.1999
+  t = 0.085, mc = 6.1999
+  t = 0.09, mc = 6.1999
+  t = 0.095, mc = 6.1999
+  t = 0.1, mc = 6.1999
+  t = 0.105, mc = 6.1999
+  t = 0.11, mc = 6.1999
+  t = 0.115, mc = 6.1999
+  t = 0.12, mc = 6.1999

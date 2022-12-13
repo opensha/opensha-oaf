@@ -8,6 +8,7 @@ import java.util.Arrays;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import static org.opensha.oaf.util.SimpleUtils.rndd;
 
 import org.opensha.oaf.oetas.OERupture;
 
@@ -549,7 +550,7 @@ public class OEDiscHistory {
 
 		result.append ("OEDiscHistory:" + "\n");
 
-		result.append ("magCat = " + magCat + "\n");
+		result.append ("magCat = " + rndd(magCat) + "\n");
 
 		result.append ("rupture_count = " + rupture_count + "\n");
 		int r_count = Math.min (20, rupture_count);
@@ -586,7 +587,7 @@ public class OEDiscHistory {
 
 		result.append ("OEDiscHistory:" + "\n");
 
-		result.append ("magCat = " + magCat + "\n");
+		result.append ("magCat = " + rndd(magCat) + "\n");
 
 		result.append ("rupture_count = " + rupture_count + "\n");
 
@@ -609,7 +610,7 @@ public class OEDiscHistory {
 
 		result.append ("OEDiscHistory:" + "\n");
 
-		result.append ("magCat = " + magCat + "\n");
+		result.append ("magCat = " + rndd(magCat) + "\n");
 
 		result.append ("rupture_count = " + rupture_count + "\n");
 		for (int i_rup = 0; i_rup < rupture_count; ++i_rup) {
@@ -621,9 +622,9 @@ public class OEDiscHistory {
 
 		result.append ("interval_count = " + interval_count + "\n");
 		for (int i_int = 0; i_int < interval_count; ++i_int) {
-			result.append (i_int + ": time = " + a_interval_time[i_int] + ", mc = " + a_interval_mc[i_int] + "\n");
+			result.append (i_int + ": time = " + rndd(a_interval_time[i_int]) + ", mc = " + rndd(a_interval_mc[i_int]) + "\n");
 		}
-		result.append (interval_count + ": time = " + a_interval_time[interval_count] + "\n");
+		result.append (interval_count + ": time = " + rndd(a_interval_time[interval_count]) + "\n");
 
 		return result.toString();
 	}
@@ -770,7 +771,7 @@ public class OEDiscHistory {
 		//         mag_eps  time_eps  disc_base  disc_delta  disc_round  disc_gap
 		//         durlim_ratio  durlim_min  durlim_max
 		//         mag_cat_count  division_mag  division_count
-		//        [t_day  rup_mag]...
+		//         [t_day  rup_mag]...
 		// Build a history with the given parameters and rupture list.
 		// Display detailed results.
 
@@ -894,6 +895,148 @@ public class OEDiscHistory {
 
 				System.out.println ();
 				System.out.println (history.toString());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  magCat  capF  capG  capH  t_range_begin  t_range_end  eligible_mag  eligible_count
+		//         mag_eps  time_eps  disc_base  disc_delta  disc_round  disc_gap
+		//         durlim_ratio  durlim_min  durlim_max
+		//         mag_cat_count  division_mag  division_count
+		//         [t_day  rup_mag]...
+		// Build a history with the given parameters and rupture list.
+		// Display detailed results.
+		// Same as test #1 except it dumps the entire history (caution: can be large).
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 20 or more additional arguments
+
+			if (!( args.length >= 21 && args.length % 2 == 1 )) {
+				System.err.println ("OEDiscHistory : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				double magCat = Double.parseDouble (args[1]);
+				double capF = Double.parseDouble (args[2]);
+				double capG = Double.parseDouble (args[3]);
+				double capH = Double.parseDouble (args[4]);
+				double t_range_begin = Double.parseDouble (args[5]);
+				double t_range_end = Double.parseDouble (args[6]);
+				double eligible_mag = Double.parseDouble (args[7]);
+				int eligible_count = Integer.parseInt (args[8]);
+
+				double mag_eps = Double.parseDouble (args[9]);
+				double time_eps = Double.parseDouble (args[10]);
+				double disc_base = Double.parseDouble (args[11]);
+				double disc_delta = Double.parseDouble (args[12]);
+				double disc_round = Double.parseDouble (args[13]);
+				double disc_gap = Double.parseDouble (args[14]);
+
+				double durlim_ratio = Double.parseDouble (args[15]);
+				double durlim_min = Double.parseDouble (args[16]);
+				double durlim_max = Double.parseDouble (args[17]);
+
+				int mag_cat_count = Integer.parseInt (args[18]);
+				double division_mag = Double.parseDouble (args[19]);
+				int division_count = Integer.parseInt (args[20]);
+
+				double[] time_mag_array = new double[args.length - 21];
+				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + 21]);
+				}
+
+				// Say hello
+
+				System.out.println ("Generating magnitude of completeness function");
+				System.out.println ("magCat = " + magCat);
+				System.out.println ("capF = " + capF);
+				System.out.println ("capG = " + capG);
+				System.out.println ("capH = " + capH);
+				System.out.println ("t_range_begin = " + t_range_begin);
+				System.out.println ("t_range_end = " + t_range_end);
+				System.out.println ("eligible_mag = " + eligible_mag);
+				System.out.println ("eligible_count = " + eligible_count);
+
+				System.out.println ("mag_eps = " + mag_eps);
+				System.out.println ("time_eps = " + time_eps);
+				System.out.println ("disc_base = " + disc_base);
+				System.out.println ("disc_delta = " + disc_delta);
+				System.out.println ("disc_round = " + disc_round);
+				System.out.println ("disc_gap = " + disc_gap);
+
+				System.out.println ("durlim_ratio = " + durlim_ratio);
+				System.out.println ("durlim_min = " + durlim_min);
+				System.out.println ("durlim_max = " + durlim_max);
+
+				System.out.println ("mag_cat_count = " + mag_cat_count);
+				System.out.println ("division_mag = " + division_mag);
+				System.out.println ("division_count = " + division_count);
+
+				System.out.println ("time_mag_array:");
+				for (int ntm = 0; ntm < time_mag_array.length; ntm += 2) {
+					System.out.println ("  time = " + time_mag_array[ntm] + ", mag = " + time_mag_array[ntm + 1]);
+				}
+
+				// Make the rupture list
+
+				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+				OERupture.make_time_mag_list (rup_list, time_mag_array);
+
+				System.out.println ();
+				System.out.println ("rup_list:");
+				for (OERupture rup : rup_list) {
+					System.out.println ("  " + rup.u_time_mag_string());
+				}
+
+				// Make time-splitting function
+
+				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
+
+				// Make the history
+
+				OEDiscFGHParams params = new OEDiscFGHParams();
+
+				params.set (
+					magCat,
+					capF,
+					capG,
+					capH,
+					t_range_begin,
+					t_range_end,
+
+					mag_eps,
+					time_eps,
+					disc_base,
+					disc_delta,
+					disc_round,
+					disc_gap,
+
+					mag_cat_count,
+					eligible_mag,
+					eligible_count,
+					division_mag,
+					division_count,
+					split_fn
+				);
+
+				OEDiscHistory history = new OEDiscHistory();
+
+				history.build_from_fgh (params, rup_list);
+
+				System.out.println ();
+				System.out.println (history.dump_string());
 
 			} catch (Exception e) {
 				e.printStackTrace();
