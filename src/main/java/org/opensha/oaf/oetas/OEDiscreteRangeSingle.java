@@ -60,6 +60,7 @@ public class OEDiscreteRangeSingle extends OEDiscreteRange {
 	// It is guaranteed that the length of the array equals get_range_size(),
 	// the first element of the array equals get_range_min(), and the last
 	// element of the array equals get_range_max().
+	// The returned array is newly-allocated, so the caller is free to modify it.
 
 	@Override
 	public double[] get_range_array () {

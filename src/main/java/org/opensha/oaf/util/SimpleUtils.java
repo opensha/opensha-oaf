@@ -962,6 +962,30 @@ public class SimpleUtils {
 
 
 
+	// Show the current memory status on standard output.
+
+	public static void show_memory_status () {
+		long max_memory = Runtime.getRuntime().maxMemory();
+		long total_memory = Runtime.getRuntime().totalMemory();
+		long free_memory = Runtime.getRuntime().freeMemory();
+
+		long used_memory = total_memory - free_memory;
+
+		if (max_memory == Long.MAX_VALUE) {
+			System.out.println ("max_memory = unlimited");
+		} else {
+			System.out.println ("max_memory = " + (max_memory / 1048576L) + " M");
+		}
+			
+		System.out.println ("total_memory = " + (total_memory / 1048576L) + " M");
+		System.out.println ("free_memory = " + (free_memory / 1048576L) + " M");
+		System.out.println ("used_memory = " + (used_memory / 1048576L) + " M");
+		return;
+	}
+
+
+
+
 	// Create a one-line string containing memory usage status.
 	// The resulting string has a single line, not termnated by linefeed.
 
@@ -984,6 +1008,16 @@ public class SimpleUtils {
 		sb.append (", used = " + (used_memory / 1048576L) + " M");
 
 		return sb.toString();
+	}
+
+
+
+
+	// Show one-line memory status on standard output.
+
+	public static void show_one_line_memory_status () {
+		System.out.println (one_line_memory_status_string());
+		return;
 	}
 
 
