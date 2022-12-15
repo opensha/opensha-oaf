@@ -1,4 +1,4 @@
-package org.opensha.oaf.oetas;
+package org.opensha.oaf.oetas.util;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -6,12 +6,12 @@ import org.opensha.oaf.util.MarshalException;
 
 
 /**
- * A discrete range of parameter values, for operational ETAS -- logarithmic scale.
+ * A discrete range of parameter values, for operational ETAS -- linear scale.
  * Author: Michael Barall 03/15/2020.
  *
- * This class produces a discrete range of values that are equally-spaced on a logarithmic scale.
+ * This class produces a discrete range of values that are equally-spaced on a linear scale.
  */
-public class OEDiscreteRangeLog extends OEDiscreteRange {
+public class OEDiscreteRangeLinear extends OEDiscreteRange {
 
 	//----- Parameters -----
 
@@ -67,6 +67,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 	// It is guaranteed that the length of the array equals get_range_size(),
 	// the first element of the array equals get_range_min(), and the last
 	// element of the array equals get_range_max().
+	// Elements of this array appear in non-decreasing (and typically increasing) order.
 	// The returned array is newly-allocated, so the caller is free to modify it.
 
 	@Override
@@ -76,13 +77,42 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 		if (range_size > 1) {
 			result[range_size - 1] = range_max;
 			if (range_size > 2) {
-				double log_range_min = Math.log (range_min);
-				double log_range_max = Math.log (range_max);
-				double r_delta = (log_range_max - log_range_min) / ((double)(range_size - 1));
+				final double r_delta = (range_max - range_min) / ((double)(range_size - 1));
 				for (int k = 1; k < range_size - 1; ++k) {
-					result[k] = Math.exp (log_range_min + (r_delta * ((double)k)));
+					result[k] = range_min + (r_delta * ((double)k));
 				}
 			}
+		}
+		return result;
+	}
+
+
+
+
+	// Get the array to partition the discrete parameter values into bins.
+	// It is guaranteed that the length of the array equals get_range_size() + 1, with
+	//   bin_array[n] <= range_array[n] <= bin_array[n+1]
+	// Typically all the inequalities are strict, except possibly for the inequalities
+	// involving the first and last elements of bin_array, and often those are strict too.
+	// The first element of the array is <= get_range_min(), and the last element of The
+	// array is >= get_range_max(), and often but not always those inequalities are strict.
+	// If the range consists of a single value, it is possible that the returned
+	// two-element array contains that single value in both elements.
+	// The returned array is newly-allocated, so the caller is free to modify it.
+
+	@Override
+	public double[] get_bin_array () {
+		double[] result = new double[range_size + 1];
+		if (range_size > 1) {
+			final double r_delta = (range_max - range_min) / ((double)(range_size - 1));
+			result[0] = range_min - (0.5 * r_delta);
+			result[range_size] = range_max + (0.5 * r_delta);
+			for (int k = 1; k < range_size; ++k) {
+				result[k] = range_min + (r_delta * (((double)k) - 0.5));
+			}
+		} else {
+			result[0] = range_min;
+			result[1] = range_min;
 		}
 		return result;
 	}
@@ -95,20 +125,15 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 	// Default constructor does nothing.
 
-	public OEDiscreteRangeLog () {}
+	public OEDiscreteRangeLinear () {}
 
 
 	// Construct from given parameters.
 
-	public OEDiscreteRangeLog (int range_size, double range_min, double range_max) {
+	public OEDiscreteRangeLinear (int range_size, double range_min, double range_max) {
 		if (!( range_size >= 1 )) {
-			throw new IllegalArgumentException ("OEDiscreteRangeLog.OEDiscreteRangeLog: Range size is non-positive: range_size = " + range_size);
+			throw new IllegalArgumentException ("OEDiscreteRangeLinear.OEDiscreteRangeLinear: Range size is non-positive: range_size = " + range_size);
 		}
-
-		if (!( range_min > 0.0 && range_max > 0.0 )) {
-			throw new IllegalArgumentException ("OEDiscreteRangeLog.OEDiscreteRangeLog: Range limits are non-positive: range_min = " + range_min + ", range_max = " + range_max);
-		}
-
 		this.range_size = range_size;
 
 		if (range_min <= range_max) {
@@ -131,11 +156,11 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 	}
 
 
-	// Display our contents
+	// Display our contents.
 
 	@Override
 	public String toString() {
-		return "RangeLog[range_size=" + range_size
+		return "RangeLinear[range_size=" + range_size
 		+ ", range_min=" + range_min
 		+ ", range_max=" + range_max
 		+ "]";
@@ -149,15 +174,15 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 	// Marshal version number.
 
 	private static final int MARSHAL_HWV_1 = 1;		// human-writeable version
-	private static final int MARSHAL_VER_1 = 88001;
+	private static final int MARSHAL_VER_1 = 87001;
 
-	private static final String M_VERSION_NAME = "OEDiscreteRangeLog";
+	private static final String M_VERSION_NAME = "OEDiscreteRangeLinear";
 
 	// Get the type code.
 
 	@Override
 	protected int get_marshal_type () {
-		return MARSHAL_LOG;
+		return MARSHAL_LINEAR;
 	}
 
 	// Marshal object, internal.
@@ -207,7 +232,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 		switch (ver) {
 
 		default:
-			throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Unknown version code: version = " + ver);
+			throw new MarshalException ("OEDiscreteRangeLinear.do_umarshal: Unknown version code: version = " + ver);
 		
 		// Human-writeable version
 
@@ -220,11 +245,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 			double the_range_max = reader.unmarshalDouble ("range_max");
 
 			if (!( range_size >= 1 )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Range size is non-positive: range_size = " + range_size);
-			}
-
-			if (!( the_range_min > 0.0 && the_range_max > 0.0 )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Range limits are non-positive: range_min = " + the_range_min + ", range_max = " + the_range_max);
+				throw new MarshalException ("OEDiscreteRangeLinear.do_umarshal: Range size is non-positive: range_size = " + range_size);
 			}
 
 			if (the_range_min <= the_range_max) {
@@ -262,15 +283,11 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 			range_max = reader.unmarshalDouble ("range_max");
 
 			if (!( range_size >= 1 )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Range size is non-positive: range_size = " + range_size);
-			}
-
-			if (!( range_min > 0.0 && range_max > 0.0 )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Range limits are non-positive: range_min = " + range_min + ", range_max = " + range_max);
+				throw new MarshalException ("OEDiscreteRangeLinear.do_umarshal: Range size is non-positive: range_size = " + range_size);
 			}
 
 			if (!( range_min <= range_max )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Range limits out-of-order: range_min = " + range_min + ", range_max = " + range_max);
+				throw new MarshalException ("OEDiscreteRangeLinear.do_umarshal: Range limits out-of-order: range_min = " + range_min + ", range_max = " + range_max);
 			}
 
 			//  if (range_size == 1) {
@@ -297,7 +314,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 	// Unmarshal object.
 
 	@Override
-	public OEDiscreteRangeLog unmarshal (MarshalReader reader, String name) {
+	public OEDiscreteRangeLinear unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
 		reader.unmarshalMapEnd ();
@@ -306,7 +323,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 	// Marshal object, polymorphic.
 
-	public static void marshal_poly (MarshalWriter writer, String name, OEDiscreteRangeLog obj) {
+	public static void marshal_poly (MarshalWriter writer, String name, OEDiscreteRangeLinear obj) {
 
 		writer.marshalMapBegin (name);
 
@@ -324,8 +341,8 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 	// Unmarshal object, polymorphic.
 
-	public static OEDiscreteRangeLog unmarshal_poly (MarshalReader reader, String name) {
-		OEDiscreteRangeLog result;
+	public static OEDiscreteRangeLinear unmarshal_poly (MarshalReader reader, String name) {
+		OEDiscreteRangeLinear result;
 
 		reader.unmarshalMapBegin (name);
 	
@@ -336,14 +353,14 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 		switch (type) {
 
 		default:
-			throw new MarshalException ("OEDiscreteRangeLog.unmarshal_poly: Unknown class type code: type = " + type);
+			throw new MarshalException ("OEDiscreteRangeLinear.unmarshal_poly: Unknown class type code: type = " + type);
 
 		case MARSHAL_NULL:
 			result = null;
 			break;
 
-		case MARSHAL_LOG:
-			result = new OEDiscreteRangeLog();
+		case MARSHAL_LINEAR:
+			result = new OEDiscreteRangeLinear();
 			result.do_umarshal (reader);
 			break;
 		}

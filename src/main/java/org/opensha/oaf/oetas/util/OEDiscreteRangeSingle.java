@@ -1,4 +1,4 @@
-package org.opensha.oaf.oetas;
+package org.opensha.oaf.oetas.util;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -60,12 +60,35 @@ public class OEDiscreteRangeSingle extends OEDiscreteRange {
 	// It is guaranteed that the length of the array equals get_range_size(),
 	// the first element of the array equals get_range_min(), and the last
 	// element of the array equals get_range_max().
+	// Elements of this array appear in non-decreasing (and typically increasing) order.
 	// The returned array is newly-allocated, so the caller is free to modify it.
 
 	@Override
 	public double[] get_range_array () {
 		double[] result = new double[1];
 		result[0] = range_value;
+		return result;
+	}
+
+
+
+
+	// Get the array to partition the discrete parameter values into bins.
+	// It is guaranteed that the length of the array equals get_range_size() + 1, with
+	//   bin_array[n] <= range_array[n] <= bin_array[n+1]
+	// Typically all the inequalities are strict, except possibly for the inequalities
+	// involving the first and last elements of bin_array, and often those are strict too.
+	// The first element of the array is <= get_range_min(), and the last element of The
+	// array is >= get_range_max(), and often but not always those inequalities are strict.
+	// If the range consists of a single value, it is possible that the returned
+	// two-element array contains that single value in both elements.
+	// The returned array is newly-allocated, so the caller is free to modify it.
+
+	@Override
+	public double[] get_bin_array () {
+		double[] result = new double[2];
+		result[0] = range_value;
+		result[1] = range_value;
 		return result;
 	}
 
@@ -87,7 +110,7 @@ public class OEDiscreteRangeSingle extends OEDiscreteRange {
 	}
 
 
-	// Display our contents
+	// Display our contents.
 
 	@Override
 	public String toString() {

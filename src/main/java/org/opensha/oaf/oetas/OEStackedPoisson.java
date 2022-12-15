@@ -13,6 +13,8 @@ import cern.jet.random.tdouble.DoubleUniform;
 
 import org.opensha.oaf.util.TestMode;
 
+import org.opensha.oaf.oetas.util.OEDiscreteRange;
+
 import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;	// natural logarithm of 10
 
 

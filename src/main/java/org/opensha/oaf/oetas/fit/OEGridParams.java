@@ -8,7 +8,7 @@ import org.opensha.oaf.util.MarshalException;
 
 import org.opensha.oaf.oetas.OEArraysCalc;
 import org.opensha.oaf.oetas.OEConstants;
-import org.opensha.oaf.oetas.OEDiscreteRange;
+import org.opensha.oaf.oetas.util.OEDiscreteRange;
 import org.opensha.oaf.oetas.OEStatsCalc;
 import org.opensha.oaf.oetas.OEOmoriCalc;
 

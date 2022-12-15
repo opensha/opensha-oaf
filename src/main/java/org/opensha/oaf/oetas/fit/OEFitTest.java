@@ -20,7 +20,7 @@ import org.opensha.oaf.oetas.OECatalogSeeder;
 import org.opensha.oaf.oetas.OECatalogStorage;
 import org.opensha.oaf.oetas.OECatalogView;
 import org.opensha.oaf.oetas.OEConstants;
-import org.opensha.oaf.oetas.OEDiscreteRange;
+import org.opensha.oaf.oetas.util.OEDiscreteRange;
 import org.opensha.oaf.oetas.OEEnsembleInitializer;
 import org.opensha.oaf.oetas.OEGenerationInfo;
 import org.opensha.oaf.oetas.OEInitFixedState;
