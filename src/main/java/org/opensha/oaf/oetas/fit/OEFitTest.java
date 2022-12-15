@@ -10,7 +10,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.opensha.oaf.oetas.OEArraysCalc;
+import org.opensha.oaf.oetas.util.OEArraysCalc;
 import org.opensha.oaf.oetas.OECatalogBuilder;
 import org.opensha.oaf.oetas.OECatalogExaminer;
 import org.opensha.oaf.oetas.OECatalogGenerator;

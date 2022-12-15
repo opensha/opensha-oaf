@@ -8,6 +8,8 @@ import java.util.LinkedHashMap;
 import org.opensha.oaf.util.AutoExecutorService;
 import org.opensha.oaf.util.SimpleUtils;
 
+import org.opensha.oaf.oetas.util.OEArraysCalc;
+
 
 // Class for producing and accumulating simulations of operational ETAS catalogs.
 // Author: Michael Barall 03/14/2022.

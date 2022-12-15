@@ -10,6 +10,8 @@ import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.AutoExecutorService;
 
+import org.opensha.oaf.oetas.util.OEArraysCalc;
+
 import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
 
 

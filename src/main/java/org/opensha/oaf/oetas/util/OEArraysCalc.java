@@ -1,6 +1,8 @@
-package org.opensha.oaf.oetas;
+package org.opensha.oaf.oetas.util;
 
 import java.util.Arrays;
+
+import org.opensha.oaf.oetas.OERandomGenerator;
 
 import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;	// natural logarithm of 10
 import static org.opensha.oaf.oetas.OEConstants.SMALL_EXPECTED_COUNT;	// negligably small expected number of earthquakes

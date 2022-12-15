@@ -17,6 +17,8 @@ import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.InvariantViolationException;
 
+import org.opensha.oaf.oetas.util.OEArraysCalc;
+
 import org.opensha.oaf.aafs.ActionConfig;
 
 import org.opensha.oaf.rj.USGS_AftershockForecast;

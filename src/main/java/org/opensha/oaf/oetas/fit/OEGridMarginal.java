@@ -6,7 +6,7 @@ import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
 
-import org.opensha.oaf.oetas.OEArraysCalc;
+import org.opensha.oaf.oetas.util.OEArraysCalc;
 import org.opensha.oaf.oetas.OEStatsCalc;
 
 
