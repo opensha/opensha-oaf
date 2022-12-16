@@ -1049,7 +1049,7 @@ public class OECatalogGenerator {
 		// There needs to be at least one argument, which is the subcommand
 
 		if (args.length < 1) {
-			System.err.println ("OECatalogStorage : Missing subcommand");
+			System.err.println ("OECatalogGenerator : Missing subcommand");
 			return;
 		}
 
@@ -1068,7 +1068,7 @@ public class OECatalogGenerator {
 			// 8 additional arguments
 
 			if (args.length != 9) {
-				System.err.println ("OECatalogStorage : Invalid 'test1' subcommand");
+				System.err.println ("OECatalogGenerator : Invalid 'test1' subcommand");
 				return;
 			}
 
@@ -1210,7 +1210,7 @@ public class OECatalogGenerator {
 			// 8 additional arguments
 
 			if (args.length != 9) {
-				System.err.println ("OECatalogStorage : Invalid 'test2' subcommand");
+				System.err.println ("OECatalogGenerator : Invalid 'test2' subcommand");
 				return;
 			}
 
@@ -1357,7 +1357,7 @@ public class OECatalogGenerator {
 			// 8 additional arguments
 
 			if (args.length != 9) {
-				System.err.println ("OECatalogStorage : Invalid 'test3' subcommand");
+				System.err.println ("OECatalogGenerator : Invalid 'test3' subcommand");
 				return;
 			}
 
@@ -1499,7 +1499,7 @@ public class OECatalogGenerator {
 			// 8 additional arguments
 
 			if (args.length != 9) {
-				System.err.println ("OECatalogStorage : Invalid 'test4' subcommand");
+				System.err.println ("OECatalogGenerator : Invalid 'test4' subcommand");
 				return;
 			}
 
@@ -1647,7 +1647,7 @@ public class OECatalogGenerator {
 			// 13 additional arguments
 
 			if (args.length != 14) {
-				System.err.println ("OECatalogStorage : Invalid 'test5' subcommand");
+				System.err.println ("OECatalogGenerator : Invalid 'test5' subcommand");
 				return;
 			}
 
@@ -1812,7 +1812,7 @@ public class OECatalogGenerator {
 			// 13 additional arguments
 
 			if (args.length != 14) {
-				System.err.println ("OECatalogStorage : Invalid 'test6' subcommand");
+				System.err.println ("OECatalogGenerator : Invalid 'test6' subcommand");
 				return;
 			}
 
@@ -1977,7 +1977,7 @@ public class OECatalogGenerator {
 			// 13 additional arguments
 
 			if (args.length != 14) {
-				System.err.println ("OECatalogStorage : Invalid 'test7' subcommand");
+				System.err.println ("OECatalogGenerator : Invalid 'test7' subcommand");
 				return;
 			}
 
@@ -2143,7 +2143,7 @@ public class OECatalogGenerator {
 			// 14 additional arguments
 
 			if (args.length != 15) {
-				System.err.println ("OECatalogStorage : Invalid 'test8' subcommand");
+				System.err.println ("OECatalogGenerator : Invalid 'test8' subcommand");
 				return;
 			}
 
@@ -2299,7 +2299,7 @@ public class OECatalogGenerator {
 
 		// Unrecognized subcommand.
 
-		System.err.println ("OECatalogStorage : Unrecognized subcommand : " + args[0]);
+		System.err.println ("OECatalogGenerator : Unrecognized subcommand : " + args[0]);
 		return;
 
 	}

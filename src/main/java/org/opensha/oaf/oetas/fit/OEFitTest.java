@@ -22,11 +22,14 @@ import org.opensha.oaf.oetas.OECatalogView;
 import org.opensha.oaf.oetas.OEConstants;
 import org.opensha.oaf.oetas.util.OEDiscreteRange;
 import org.opensha.oaf.oetas.OEEnsembleInitializer;
+import org.opensha.oaf.oetas.OEExaminerPrintSummary;
+import org.opensha.oaf.oetas.OEExaminerSaveList;
 import org.opensha.oaf.oetas.OEGenerationInfo;
 import org.opensha.oaf.oetas.OEInitFixedState;
 import org.opensha.oaf.oetas.OEOrigin;
 import org.opensha.oaf.oetas.OERandomGenerator;
 import org.opensha.oaf.oetas.OERupture;
+import org.opensha.oaf.oetas.OESimulator;
 import org.opensha.oaf.oetas.OEStatsCalc;
 
 import org.opensha.oaf.util.AutoExecutorService;
@@ -63,252 +66,6 @@ public class OEFitTest {
 
 
 
-	// Make a fixed initializer for given parameters, branch ratio, and seed ruptures.
-	// The productivity is specified as a branch ratio.
-	// Parameters:
-	//  cat_params = Catalog parameters.
-	//  time_mag_array = Array with N pairs of elements.  In each pair, the first
-	//                   element is time in days, the second element is magnitude.
-	//                   It is an error if this array has an odd number of elements.
-	//  f_verbose = True to print out the catalog parameters and seed ruptures.
-
-	public static OEEnsembleInitializer make_fixed_initializer (
-		OECatalogParams cat_params, double[] time_mag_array, boolean f_verbose) {
-
-		// Print the catalog parameters
-
-		if (f_verbose) {
-			System.out.println ();
-			System.out.println (cat_params.toString());
-		}
-
-		// Make info for the seed generation
-
-		OEGenerationInfo seed_gen_info = (new OEGenerationInfo()).set (
-			cat_params.mref,	// gen_mag_min
-			cat_params.msup		// gen_mag_max
-		);
-
-		// Make the rupture list
-
-		ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-		OERupture.make_time_mag_list (rup_list, time_mag_array);
-
-		// Calculate the productivity for each seed rupture
-
-		for (OERupture rup : rup_list) {
-			rup.k_prod = OEStatsCalc.calc_k_corr (
-				rup.rup_mag,		// m0
-				cat_params,			// cat_params
-				seed_gen_info		// gen_info
-			);
-		}
-
-		// Print the seed rupture list
-
-		if (f_verbose) {
-			System.out.println ();
-			System.out.println ("rup_list:");
-			for (OERupture rup : rup_list) {
-				System.out.println ("  " + rup.u_time_mag_prod_string());
-			}
-		}
-
-		// Put all of it into an initializer (subclass of OEEnsembleInitializer)
-
-		OEInitFixedState initializer = new OEInitFixedState();
-		initializer.setup (cat_params, seed_gen_info, rup_list);
-
-		return initializer;
-	}
-
-
-
-
-	// A catalog examiner that prints out a summary of the catalog.
-
-	public static class ExaminerPrintSummary implements OECatalogExaminer {
-
-		// Examine the catalog.
-		// Parameters:
-		//  view = Catalog view.
-		//  rangen = Random number generator to use.
-
-		@Override
-		public void examine_cat (OECatalogView view, OERandomGenerator rangen) {
-
-			// Print a catalog summary
-
-			System.out.println ();
-			System.out.println (view.summary_and_gen_list_string());
-			return;
-		}
-	}
-
-
-
-
-	// A catalog examiner that saves the catalog into a list.
-	// Note: The ordering of the ruptures is unspecified.
-
-	public static class ExaminerSaveList implements OECatalogExaminer {
-
-		// The list to receive the catalog contents.
-
-		public Collection<OERupture> rup_list;
-
-		// Flag to also print out a summary of the list.
-
-		public boolean f_verbose;
-
-		// Constructor specifies the list.
-
-		public ExaminerSaveList (Collection<OERupture> rup_list, boolean f_verbose) {
-			this.rup_list = rup_list;
-			this.f_verbose = f_verbose;
-		}
-
-		// Examine the catalog.
-		// Parameters:
-		//  view = Catalog view.
-		//  rangen = Random number generator to use.
-
-		@Override
-		public void examine_cat (OECatalogView view, OERandomGenerator rangen) {
-
-			// Print a catalog summary, if desired
-
-			if (f_verbose) {
-				System.out.println ();
-				System.out.println (view.summary_and_gen_list_string());
-			}
-
-			// Add all the ruptures to the list
-
-			view.dump_to_collection (rup_list);
-			return;
-		}
-	}
-
-
-
-
-	// Generate a single catalog, using the given initializer and examiner.
-
-	public static void gen_single_catalog (OEEnsembleInitializer initializer, OECatalogExaminer examiner) {
-
-		// Tell the initializer to begin initializing catalogs
-
-		initializer.begin_initialization();
-
-		// Here begins code which could be per-thread
-
-		// Get the random number generator
-
-		OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
-
-		// Create a seeder for our initializer, which we re-use for each catalog
-
-		OECatalogSeeder seeder = initializer.make_seeder();
-
-		// Allocate a seeder communication area, which we re-use for each catalog
-
-		OECatalogSeedComm seed_comm = new OECatalogSeedComm();
-
-		// Allocate the storage (subclass of OECatalogBuilder and OECatalogView), which we re-use for each catalog
-
-		OECatalogStorage cat_storage = new OECatalogStorage();
-
-		// Allocate a generator, which we re-use for each catalog
-
-		OECatalogGenerator cat_generator = new OECatalogGenerator();
-
-		// Here begins code which could be per-catalog
-
-		// Set up the seeder communication area
-
-		seed_comm.setup_seed_comm (cat_storage, rangen);
-
-		// Open the seeder
-
-		seeder.open();
-
-		// Seed the catalog
-
-		seeder.seed_catalog (seed_comm);
-
-		// Close the seeder
-
-		seeder.close();
-
-		// Set up the catalog generator
-				
-		cat_generator.setup (rangen, cat_storage, false);
-
-		// Calculate all generations and end the catalog
-
-		cat_generator.calc_all_gen();
-
-		// Tell the generator to forget the catalog
-
-		cat_generator.forget();
-
-		// Examine the catalog
-
-		examiner.examine_cat (cat_storage, rangen);
-
-		// Here ends code which could be per-catalog
-
-		// Here ends code which could be per-thread
-
-		// Tell the initializer to end initializing catalogs
-
-		initializer.end_initialization();
-
-		return;
-	}
-
-
-
-
-	// Show the current memory status.
-
-	public static void show_memory_status () {
-		long max_memory = Runtime.getRuntime().maxMemory();
-		long total_memory = Runtime.getRuntime().totalMemory();
-		long free_memory = Runtime.getRuntime().freeMemory();
-
-		long used_memory = total_memory - free_memory;
-
-		if (max_memory == Long.MAX_VALUE) {
-			System.out.println ("max_memory = unlimited");
-		} else {
-			System.out.println ("max_memory = " + (max_memory / 1048576L) + " M");
-		}
-			
-		System.out.println ("total_memory = " + (total_memory / 1048576L) + " M");
-		System.out.println ("free_memory = " + (free_memory / 1048576L) + " M");
-		System.out.println ("used_memory = " + (used_memory / 1048576L) + " M");
-		return;
-	}
-
-
-
-
-	// Get a short string with the current memory status.
-
-	public static String get_memory_status_string () {
-		long total_memory = Runtime.getRuntime().totalMemory();
-		long free_memory = Runtime.getRuntime().freeMemory();
-
-		long used_memory = total_memory - free_memory;
-
-		return "memory = " + (used_memory / 1048576L) + " of " + (total_memory / 1048576L) + " M";
-	}
-
-
-
-
 	// Run a smoke test on the fitting code.
 
 	public static void fit_smoke_test (OEDiscHistory history, OECatalogParams cat_params, boolean f_intervals, int lmr_opt) {
@@ -317,7 +74,7 @@ public class OEFitTest {
 
 		System.out.println();
 		System.out.println ("Memory status, initial:");
-		show_memory_status();
+		SimpleUtils.show_memory_status();
 
 		// Create the fitter
 
@@ -340,7 +97,7 @@ public class OEFitTest {
 
 			System.out.println();
 			System.out.println ("Memory status, after allocation:");
-			show_memory_status();
+			SimpleUtils.show_memory_status();
 
 			// Build the magnitude-exponent data structures
 
@@ -370,7 +127,7 @@ public class OEFitTest {
 
 			System.out.println();
 			System.out.println ("Memory status, after building:");
-			show_memory_status();
+			SimpleUtils.show_memory_status();
 
 			// Calculate a likelihood
 
@@ -391,7 +148,7 @@ public class OEFitTest {
 
 		System.out.println();
 		System.out.println ("Memory status, final:");
-		show_memory_status();
+		SimpleUtils.show_memory_status();
 
 		return;
 	}
@@ -459,7 +216,7 @@ public class OEFitTest {
 
 		System.out.println();
 		System.out.println ("Memory status, initial:");
-		show_memory_status();
+		SimpleUtils.show_memory_status();
 
 		// Create the fitter
 
@@ -482,7 +239,7 @@ public class OEFitTest {
 
 			System.out.println();
 			System.out.println ("Memory status, after allocation:");
-			show_memory_status();
+			SimpleUtils.show_memory_status();
 
 			// Build the magnitude-exponent data structures
 
@@ -684,7 +441,7 @@ public class OEFitTest {
 
 		System.out.println();
 		System.out.println ("Memory status, initial:");
-		show_memory_status();
+		SimpleUtils.show_memory_status();
 
 		// Create the fitter
 
@@ -707,7 +464,7 @@ public class OEFitTest {
 
 			System.out.println();
 			System.out.println ("Memory status, after allocation:");
-			show_memory_status();
+			SimpleUtils.show_memory_status();
 
 			// Build the magnitude-exponent data structures
 
@@ -1286,7 +1043,7 @@ public class OEFitTest {
 
 		System.out.println();
 		System.out.println ("Memory status, initial:");
-		show_memory_status();
+		SimpleUtils.show_memory_status();
 
 		// Create the multi-threaded fitter
 
@@ -1314,7 +1071,7 @@ public class OEFitTest {
 
 		System.out.println();
 		System.out.println ("Memory status, final:");
-		show_memory_status();
+		SimpleUtils.show_memory_status();
 
 		// Display the result
 
@@ -1638,15 +1395,15 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
-				ExaminerPrintSummary examiner = new ExaminerPrintSummary();
+				OEExaminerPrintSummary examiner = new OEExaminerPrintSummary();
 
 				// Generate a catalog
 
-				gen_single_catalog (initializer, examiner);
+				OESimulator.gen_single_catalog (initializer, examiner);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -1751,16 +1508,16 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
 				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-				ExaminerSaveList examiner = new ExaminerSaveList (rup_list, true);
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
 
 				// Generate a catalog
 
-				gen_single_catalog (initializer, examiner);
+				OESimulator.gen_single_catalog (initializer, examiner);
 
 				// Make time-splitting function
 
@@ -1826,7 +1583,7 @@ public class OEFitTest {
 
 				System.out.println ("Displaying memory status");
 
-				show_memory_status();
+				SimpleUtils.show_memory_status();
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -1939,16 +1696,16 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
 				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-				ExaminerSaveList examiner = new ExaminerSaveList (rup_list, true);
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
 
 				// Generate a catalog
 
-				gen_single_catalog (initializer, examiner);
+				OESimulator.gen_single_catalog (initializer, examiner);
 
 				// Make time-splitting function
 
@@ -2101,16 +1858,16 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
 				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-				ExaminerSaveList examiner = new ExaminerSaveList (rup_list, true);
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
 
 				// Generate a catalog
 
-				gen_single_catalog (initializer, examiner);
+				OESimulator.gen_single_catalog (initializer, examiner);
 
 				// Make time-splitting function
 
@@ -2268,16 +2025,16 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
 				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-				ExaminerSaveList examiner = new ExaminerSaveList (rup_list, true);
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
 
 				// Generate a catalog
 
-				gen_single_catalog (initializer, examiner);
+				OESimulator.gen_single_catalog (initializer, examiner);
 
 				// Make time-splitting function
 
@@ -2465,7 +2222,7 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	false);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, false);
 
 				// Make time-splitting function
 
@@ -2504,11 +2261,11 @@ public class OEFitTest {
 					// Make the catalog examiner
 
 					ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-					ExaminerSaveList examiner = new ExaminerSaveList (rup_list, false);
+					OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, false);
 
 					// Generate a catalog
 
-					gen_single_catalog (initializer, examiner);
+					OESimulator.gen_single_catalog (initializer, examiner);
 
 					// Make a history
 
@@ -2651,16 +2408,16 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
 				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-				ExaminerSaveList examiner = new ExaminerSaveList (rup_list, true);
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
 
 				// Generate a catalog
 
-				gen_single_catalog (initializer, examiner);
+				OESimulator.gen_single_catalog (initializer, examiner);
 
 				// Make time-splitting function
 
@@ -2823,16 +2580,16 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
 				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-				ExaminerSaveList examiner = new ExaminerSaveList (rup_list, true);
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
 
 				// Generate a catalog
 
-				gen_single_catalog (initializer, examiner);
+				OESimulator.gen_single_catalog (initializer, examiner);
 
 				// Make time-splitting function
 
@@ -2995,16 +2752,16 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
 				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-				ExaminerSaveList examiner = new ExaminerSaveList (rup_list, true);
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
 
 				// Generate a catalog
 
-				gen_single_catalog (initializer, examiner);
+				OESimulator.gen_single_catalog (initializer, examiner);
 
 				// Make time-splitting function
 
@@ -3204,7 +2961,7 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	false);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, false);
 
 				// Make time-splitting function
 
@@ -3245,11 +3002,11 @@ public class OEFitTest {
 					// Make the catalog examiner
 
 					ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-					ExaminerSaveList examiner = new ExaminerSaveList (rup_list, false);
+					OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, false);
 
 					// Generate a catalog
 
-					gen_single_catalog (initializer, examiner);
+					OESimulator.gen_single_catalog (initializer, examiner);
 
 					// Make a history
 
@@ -3446,7 +3203,7 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	false);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, false);
 
 				// Make time-splitting function
 
@@ -3495,11 +3252,11 @@ public class OEFitTest {
 					// Make the catalog examiner
 
 					ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-					ExaminerSaveList examiner = new ExaminerSaveList (rup_list, false);
+					OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, false);
 
 					// Generate a catalog
 
-					gen_single_catalog (initializer, examiner);
+					OESimulator.gen_single_catalog (initializer, examiner);
 
 					// Make a history
 
@@ -3806,7 +3563,7 @@ public class OEFitTest {
 
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = make_fixed_initializer (cat_params, time_mag_array,	false);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, false);
 
 				// Make time-splitting function
 
@@ -3855,11 +3612,11 @@ public class OEFitTest {
 					// Make the catalog examiner
 
 					ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-					ExaminerSaveList examiner = new ExaminerSaveList (rup_list, false);
+					OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, false);
 
 					// Generate a catalog
 
-					gen_single_catalog (initializer, examiner);
+					OESimulator.gen_single_catalog (initializer, examiner);
 
 					// Make a history
 

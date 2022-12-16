@@ -606,7 +606,7 @@ public class OECatalogScanner implements OECatalogExaminer {
 
 		// Unrecognized subcommand.
 
-		System.err.println ("OECatalogStorage : Unrecognized subcommand : " + args[0]);
+		System.err.println ("OECatalogScanner : Unrecognized subcommand : " + args[0]);
 		return;
 
 	}

@@ -630,6 +630,89 @@ public class OESimulator {
 
 
 
+	//----- Utility functions -----
+
+
+
+
+	// Generate a single catalog, using the given initializer and examiner.
+
+	public static void gen_single_catalog (OEEnsembleInitializer initializer, OECatalogExaminer examiner) {
+
+		// Tell the initializer to begin initializing catalogs
+
+		initializer.begin_initialization();
+
+		// Here begins code which could be per-thread
+
+		// Get the random number generator
+
+		OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+
+		// Create a seeder for our initializer, which we re-use for each catalog
+
+		OECatalogSeeder seeder = initializer.make_seeder();
+
+		// Allocate a seeder communication area, which we re-use for each catalog
+
+		OECatalogSeedComm seed_comm = new OECatalogSeedComm();
+
+		// Allocate the storage (subclass of OECatalogBuilder and OECatalogView), which we re-use for each catalog
+
+		OECatalogStorage cat_storage = new OECatalogStorage();
+
+		// Allocate a generator, which we re-use for each catalog
+
+		OECatalogGenerator cat_generator = new OECatalogGenerator();
+
+		// Here begins code which could be per-catalog
+
+		// Set up the seeder communication area
+
+		seed_comm.setup_seed_comm (cat_storage, rangen);
+
+		// Open the seeder
+
+		seeder.open();
+
+		// Seed the catalog
+
+		seeder.seed_catalog (seed_comm);
+
+		// Close the seeder
+
+		seeder.close();
+
+		// Set up the catalog generator
+				
+		cat_generator.setup (rangen, cat_storage, false);
+
+		// Calculate all generations and end the catalog
+
+		cat_generator.calc_all_gen();
+
+		// Tell the generator to forget the catalog
+
+		cat_generator.forget();
+
+		// Examine the catalog
+
+		examiner.examine_cat (cat_storage, rangen);
+
+		// Here ends code which could be per-catalog
+
+		// Here ends code which could be per-thread
+
+		// Tell the initializer to end initializing catalogs
+
+		initializer.end_initialization();
+
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 

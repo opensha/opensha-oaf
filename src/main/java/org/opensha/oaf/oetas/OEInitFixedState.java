@@ -82,7 +82,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 	//  the_ruptures = List of ruptures for the first generation.
 	// Note: The function retains the passed-in structures.
 
-	public void setup (OECatalogParams the_cat_params, OEGenerationInfo the_seed_gen_info, List<OERupture> the_ruptures) {
+	public OEInitFixedState setup (OECatalogParams the_cat_params, OEGenerationInfo the_seed_gen_info, List<OERupture> the_ruptures) {
 
 		// Parameter validation
 
@@ -111,7 +111,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 			}
 		}
 
-		return;
+		return this;
 	}
 
 
@@ -126,7 +126,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 	// Note: The magnitude range for the first (seed) generation is the_cat_params.mref to
 	// the_cat_params.msup, and that range is used to calculate mainshock productivity k.
 
-	public void setup_single (OECatalogParams the_cat_params, double mag_main, double t_main) {
+	public OEInitFixedState setup_single (OECatalogParams the_cat_params, double mag_main, double t_main) {
 
 		// Create the first generation info
 
@@ -162,7 +162,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 		// Complete the setup
 
 		setup (the_cat_params, the_seed_gen_info, the_ruptures);
-		return;
+		return this;
 	}
 
 
@@ -179,7 +179,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 	// the_cat_params.msup, and that range is used to calculate mainshock productivity k.
 	// Note: Mainshock branch ratio is proportional to 10^ams where ams is mainshock productivity 'a'.
 
-	public void setup_single (OECatalogParams the_cat_params, double mag_main, double t_main, double n_main) {
+	public OEInitFixedState setup_single (OECatalogParams the_cat_params, double mag_main, double t_main, double n_main) {
 
 		// Create the first generation info
 
@@ -219,7 +219,142 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 		// Complete the setup
 
 		setup (the_cat_params, the_seed_gen_info, the_ruptures);
-		return;
+		return this;
+	}
+
+
+
+
+	// Set up to begin seeding, for given parameters, branch ratio, and seed ruptures.
+	// The productivity is specified as a branch ratio.
+	// Parameters:
+	//  the_cat_params = Catalog parameters.
+	//  time_mag_array = Array with N pairs of elements.  In each pair, the first
+	//                   element is time in days, the second element is magnitude.
+	//                   It is an error if this array has an odd number of elements.
+	//  f_verbose = True to print out the catalog parameters and seed ruptures.
+	// Note: The function retains the passed-in parameter structure.
+	// Note: The magnitude range for the first (seed) generation is the_cat_params.mref to
+	// the_cat_params.msup, and that range is used to calculate mainshock productivity k.
+	// Note: The productivity for all supplied ruptures is determied by the_cat_params.a.
+	// You can use OECatalogParams.set_br to specify a branch ratio.
+	// Note: The productivity passed to the catalog generator is also the_cat_params.a.
+
+	public OEInitFixedState setup_time_mag_list (OECatalogParams the_cat_params, double[] time_mag_array, boolean f_verbose) {
+
+		// Print the catalog parameters
+
+		if (f_verbose) {
+			System.out.println ();
+			System.out.println (the_cat_params.toString());
+		}
+
+		// Make info for the seed generation
+
+		OEGenerationInfo the_seed_gen_info = (new OEGenerationInfo()).set (
+			the_cat_params.mref,	// gen_mag_min
+			the_cat_params.msup		// gen_mag_max
+		);
+
+		// Make the rupture list
+
+		ArrayList<OERupture> the_ruptures = new ArrayList<OERupture>();
+		OERupture.make_time_mag_list (the_ruptures, time_mag_array);
+
+		// Calculate the productivity for each seed rupture
+
+		for (OERupture rup : the_ruptures) {
+			rup.k_prod = OEStatsCalc.calc_k_corr (
+				rup.rup_mag,		// m0
+				the_cat_params,		// cat_params
+				the_seed_gen_info	// gen_info
+			);
+		}
+
+		// Print the seed rupture list
+
+		if (f_verbose) {
+			System.out.println ();
+			System.out.println ("the_ruptures:");
+			for (OERupture rup : the_ruptures) {
+				System.out.println ("  " + rup.u_time_mag_prod_string());
+			}
+		}
+
+		// Complete the setup
+
+		setup (the_cat_params, the_seed_gen_info, the_ruptures);
+		return this;
+	}
+
+
+
+
+	// Set up to begin seeding, for given parameters, branch ratio, and seed ruptures.
+	// The productivity is specified as a branch ratio.
+	// Parameters:
+	//  the_cat_params = Catalog parameters.
+	//  time_mag_array = Array with N pairs of elements.  In each pair, the first
+	//                   element is time in days, the second element is magnitude.
+	//                   It is an error if this array has an odd number of elements.
+	//  n_main = Mainshock branch ratio.
+	//  f_verbose = True to print out the catalog parameters and seed ruptures.
+	// Note: The function retains the passed-in parameter structure.
+	// Note: The magnitude range for the first (seed) generation is the_cat_params.mref to
+	// the_cat_params.msup, and that range is used to calculate mainshock productivity k.
+	// Note: Mainshock branch ratio is proportional to 10^ams where ams is mainshock productivity 'a'.
+	// Note: The productivity for all supplied ruptures is determied by n_main.
+	// Note: The productivity passed to the catalog generator is the_cat_params.a.
+
+	public OEInitFixedState setup_time_mag_list (OECatalogParams the_cat_params, double[] time_mag_array, double n_main, boolean f_verbose) {
+
+		// Print the catalog parameters
+
+		if (f_verbose) {
+			System.out.println ();
+			System.out.println (the_cat_params.toString());
+		}
+
+		// Make info for the seed generation
+
+		OEGenerationInfo the_seed_gen_info = (new OEGenerationInfo()).set (
+			the_cat_params.mref,	// gen_mag_min
+			the_cat_params.msup		// gen_mag_max
+		);
+
+		// Create a parameter structure with mainshock branch ratio
+
+		OECatalogParams main_cat_params = (new OECatalogParams()).copy_from(the_cat_params).set_br(n_main);
+
+		// Make the rupture list
+
+		ArrayList<OERupture> the_ruptures = new ArrayList<OERupture>();
+		OERupture.make_time_mag_list (the_ruptures, time_mag_array);
+
+		// Calculate the productivity for each seed rupture
+
+		for (OERupture rup : the_ruptures) {
+			rup.k_prod = OEStatsCalc.calc_k_corr (
+				rup.rup_mag,		// m0
+				main_cat_params,	// cat_params
+				the_seed_gen_info	// gen_info
+			);
+		}
+
+		// Print the seed rupture list
+
+		if (f_verbose) {
+			System.out.println ();
+			System.out.println ("the_ruptures:");
+			for (OERupture rup : the_ruptures) {
+				System.out.println ("  " + rup.u_time_mag_prod_string());
+			}
+		}
+
+		// Complete the setup
+
+		setup (the_cat_params, the_seed_gen_info, the_ruptures);
+		return this;
 	}
 
 

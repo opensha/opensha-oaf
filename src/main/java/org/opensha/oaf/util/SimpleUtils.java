@@ -936,7 +936,7 @@ public class SimpleUtils {
 
 
 	// Create a string containing memory usage status.
-	// The resulting string has multiple lines, each termnated by linefeed.
+	// The resulting string has multiple lines, each terminated by linefeed.
 
 	public static String memory_status_string () {
 		StringBuilder sb = new StringBuilder();
@@ -987,7 +987,7 @@ public class SimpleUtils {
 
 
 	// Create a one-line string containing memory usage status.
-	// The resulting string has a single line, not termnated by linefeed.
+	// The resulting string has a single line, not terminated by linefeed.
 
 	public static String one_line_memory_status_string () {
 		StringBuilder sb = new StringBuilder();
@@ -1024,7 +1024,7 @@ public class SimpleUtils {
 
 
 	// Create a containing the amount of used memory.
-	// The resulting string contains just a numerical value and unit, and is not termnated by linefeed.
+	// The resulting string contains just a numerical value and unit, and is not terminated by linefeed.
 
 	public static String used_memory_string () {
 		long total_memory = Runtime.getRuntime().totalMemory();
