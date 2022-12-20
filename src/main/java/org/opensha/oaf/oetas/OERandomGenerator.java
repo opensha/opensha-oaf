@@ -333,7 +333,7 @@ public class OERandomGenerator {
 	//  p = Omori p parameter.
 	//  c = Omori c parameter.
 	//  t1 = Lower time value in days, must satisfy t1 + c > 0.
-	//  t2 = Upper time value in days, must satisfy t2 > t1.
+	//  t2 = Upper time value in days, must satisfy t2 >= t1.
 	// Returns Integral(t1, t2, ((t+c)^(-p))*dt).
 
 	// Implementation note: For p != 1, the value is
@@ -366,6 +366,61 @@ public class OERandomGenerator {
 		// t1 and t2 are almost equal.
 
 		return Math.pow(t1 + c, q) * Math.expm1(lnr*q) / q;
+	}
+
+
+
+
+	// Return an Omori average expected rate.
+	// Parameters:
+	//  p = Omori p parameter, must satisfy p >= 0.
+	//  c = Omori c parameter.
+	//  t1 = Lower time value in days, must satisfy t1 + c > 0.
+	//  t2 = Upper time value in days, must satisfy t2 >= t1.
+	// Returns Integral(t1, t2, ((t+c)^(-p))*dt) / (t2 - t1).
+
+	// Implementation note: For p != 1, the value is
+	//
+	// (t1+c)^q * (r^q - 1) / (q * (t2 - t1))
+	//
+	// where
+	//
+	// q = 1 - p
+	//
+	// r = (t2+c)/(t1+c) = 1 + (t2-t1)/(t1+c)
+	//
+	// In the limit of p == 1 or q == 0, the value reduces to log(r) / (t2 - t1).
+	//
+	// For small q, we use the first 2 terms in the Taylor series around q = 0.
+	//
+	// For small t2-t1, we use the one-point midpoint integration rule.
+
+	public static double omori_average_rate (double p, double c, double t1, double t2) {
+		final double q = 1.0 - p;
+		final double dt = t2 - t1;
+		final double sdt = dt / (t1 + c);
+
+		// For sufficiently small dt, the integral can be computed by the one-point
+		// midpoint rule, to an accuracy of about 15 digits.
+		// (8.83e-15 = 24 * 1.0e-15 / e)
+		// (This works out to sdt <= 6.64e-8 for p = 2)
+
+		if (Math.abs(sdt * sdt * p * (p + 1.0)) <= 8.83e-15) {
+			return Math.pow((t1 + t2) * 0.5 + c, -p);
+		}
+
+		// For abs(q) <= 1.0e-9, this formula is correct to 12 digits in the
+		// worst case, and full double precision in the typical case.
+
+		if (Math.abs(q) <= 1.0e-9) {
+			final double lns = Math.log((t2 + c)*(t1 + c));
+			return (0.5*lns*q + 1.0) * Math.log1p(sdt) / dt;
+		}
+
+		// Calculate directly, using expm1 to avoid cancellation when
+		// t1 and t2 are close (but not close enough for midpoint rule).
+
+		return Math.pow(t1 + c, q) * Math.expm1(Math.log1p(sdt) * q) / (q * dt);
 	}
 
 

@@ -733,4 +733,76 @@ public class OECatalogParams {
 		return this;
 	}
 
+
+
+
+	// Calculate an a-value for a given branch ratio.
+	// This function does not change the contents of the object.
+	// Parameters:
+	//  n = Branch ratio, as computed for these parameters.
+	// Returns the a-value.
+
+	public final double calc_a_for_br (
+		double n
+	) {
+		return OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tend - tbegin);
+	}
+
+
+
+
+	// Set the a-value, leaving everything else unchanged.
+	// Parameters:
+	//  a = New value of a.
+	// Returns this object.
+
+	public final OECatalogParams set_a (
+		double a
+	) {
+		this.a               = a;
+		return this;
+	}
+
+
+
+
+	// Calculate an ams-value for a given zero-mref ams-value.
+	// This function does not change the contents of the object.
+	// Parameters:
+	//  zams = Mainshock productivity parameter, assuming zero reference magnitude.
+	// Returns the ams-value, for the reference magnitude mref in this object.
+
+	public final double calc_ams_from_zams (
+		double zams
+	) {
+		return OEStatsCalc.calc_a_new_from_mref_new (
+			zams,			// a_old
+			b,				// b
+			alpha,			// alpha
+			0.0,			// mref_old
+			mref			// mref_new
+		);
+	}
+
+
+
+
+	// Calculate zero-mref ams-value for a ginve ams-value
+	// This function does not change the contents of the object.
+	// Parameters:
+	//  ams = Mainshock productivity parameter, assuming reference magnitude equal to mref.
+	// Returns the ams-value, for zero reference magnitude.
+
+	public final double calc_zams_from_ams (
+		double ams
+	) {
+		return OEStatsCalc.calc_a_new_from_mref_new (
+			ams,			// a_old
+			b,				// b
+			alpha,			// alpha
+			mref,			// mref_old
+			0.0				// mref_new
+		);
+	}
+
 }

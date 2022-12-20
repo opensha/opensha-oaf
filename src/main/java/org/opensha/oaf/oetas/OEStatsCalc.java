@@ -1,5 +1,7 @@
 package org.opensha.oaf.oetas;
 
+import static org.opensha.oaf.util.SimpleUtils.rndd;
+
 import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;	// natural logarithm of 10
 import static org.opensha.oaf.oetas.OEConstants.SMALL_EXPECTED_COUNT;	// negligably small expected number of earthquakes
 
@@ -110,6 +112,24 @@ public class OEStatsCalc {
 	// used with a mainshock magnitude chosen from the *same* G-R distribution
 	// truncated to the interval [mag_min, mag_max], then the expected intensity
 	// function is the same.
+	//
+	// Note that the above formula for Q assumes that the same mathematical formula is
+	// used for the intensity function in both cases.  In particular, mref is used as
+	// the reference magnitude in both cases (so magnitudes appear in exponents in the
+	// combination m - mref).  The factor exp(v*(mref - mag_min)) is due to using the
+	// same reference magnitude.  If instead the lower end of the G-R distribution were
+	// used as the reference magnitude (so in the corrected case magnitudes appear in
+	// exponents in the combination m - mag_min), then that term of Q would go away.
+	// The remaining terms of Q are due to the change in magnitude range.  Notice they
+	// depend only on the magnitude intervals, msup - mref and mag_max - mag_min, not
+	// the absolute magnitudes, and they equal 1 if msup - mref == mag_max - mag_min.
+	//
+	// Note also that the formula for branch ratio assumes that the distribution of
+	// earthquake magnitudes is well-approximated by a continuous exponential
+	// distribution.  This likely requires over 100 earthquakes in the topmost
+	// magnitude, which is much larger than the number found in a typical application.
+	// For this reason, using corrected k to shift the magnitude range is only an
+	// approximation to the behavior of the original magnitude range.
 
 	public static double calc_k_corr (
 		double m0,
@@ -857,6 +877,193 @@ public class OEStatsCalc {
 		// Return generalized correction factor Q_gen
 
 		return q;
+	}
+
+
+
+
+	//----- Testing -----
+
+
+
+
+	public static void main(String[] args) {
+
+		// There needs to be at least one argument, which is the subcommand
+
+		if (args.length < 1) {
+			System.err.println ("OEStatsCalc : Missing subcommand");
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #1
+		// Command format:
+		//  test1  a  p  c  b  alpha  mref  msup  tint
+		// Calculate the branch ratio from the given parameters.
+		// Then check by re-computing the value of a.
+
+		if (args[0].equalsIgnoreCase ("test1")) {
+
+			// 8 additional arguments
+
+			if (!( args.length == 9 )) {
+				System.err.println ("OEStatsCalc : Invalid 'test1' subcommand");
+				return;
+			}
+
+			try {
+
+				double a = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				double mref = Double.parseDouble (args[6]);
+				double msup = Double.parseDouble (args[7]);
+				double tint = Double.parseDouble (args[8]);
+
+				// Say hello
+
+				System.out.println ("Computing branch ratio, given productivity a-value");
+				System.out.println ("a = " + a);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("mref = " + mref);
+				System.out.println ("msup = " + msup);
+				System.out.println ("tint = " + tint);
+
+				// Convert
+
+				double n = calc_branch_ratio (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					mref,
+					msup,
+					tint
+				);
+
+				double a_check = calc_inv_branch_ratio (
+					n,
+					p,
+					c,
+					b,
+					alpha,
+					mref,
+					msup,
+					tint
+				);
+
+				// Display result
+
+				System.out.println();
+				System.out.println ("n = " + rndd(n));
+
+				System.out.println();
+				System.out.println ("a_check = " + rndd(a_check));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  n  p  c  b  alpha  mref  msup  tint
+		// Calculate the value of a from the given parameters.
+		// Then check by re-computing the branch ratio.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 8 additional arguments
+
+			if (!( args.length == 9 )) {
+				System.err.println ("OEStatsCalc : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				double mref = Double.parseDouble (args[6]);
+				double msup = Double.parseDouble (args[7]);
+				double tint = Double.parseDouble (args[8]);
+
+				// Say hello
+
+				System.out.println ("Computing productivity a-value, given branch ratio");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("mref = " + mref);
+				System.out.println ("msup = " + msup);
+				System.out.println ("tint = " + tint);
+
+				// Convert
+
+				double a = calc_inv_branch_ratio (
+					n,
+					p,
+					c,
+					b,
+					alpha,
+					mref,
+					msup,
+					tint
+				);
+
+				double n_check = calc_branch_ratio (
+					a,
+					p,
+					c,
+					b,
+					alpha,
+					mref,
+					msup,
+					tint
+				);
+
+				// Display result
+
+				System.out.println();
+				System.out.println ("a = " + rndd(a));
+
+				System.out.println();
+				System.out.println ("n_check = " + rndd(n_check));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Unrecognized subcommand.
+
+		System.err.println ("OEStatsCalc : Unrecognized subcommand : " + args[0]);
+		return;
+
 	}
 
 
