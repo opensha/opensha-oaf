@@ -364,19 +364,19 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 	// The productivity is specified as a branch ratio.
 	// Parameters:
 	//  the_cat_params = Catalog parameters.
+	//  ams = Mainshock productivity parameter.
 	//  time_mag_array = Array with N pairs of elements.  In each pair, the first
 	//                   element is time in days, the second element is magnitude.
 	//                   It is an error if this array has an odd number of elements.
-	//  ams = Mainshock productivity parameter.
 	//  f_verbose = True to print out the catalog parameters and seed ruptures.
 	// Note: The function retains the passed-in parameter structure.
 	// Note: The magnitude range for the first (seed) generation is the_cat_params.mref to
 	// the_cat_params.msup.
 	// Note: For each supplied rupture, the productivity k is calculated as an *uncorrected*
-	// productivity obtained from ams, the_cat_params.mrel, and the_cat_params.alpha.
+	// productivity obtained from ams, the_cat_params.mref, and the_cat_params.alpha.
 	// Note: The productivity parameter passed to the catalog generator is the_cat_params.a.
 
-	public OEInitFixedState setup_time_mag_list_with_ams (OECatalogParams the_cat_params, double[] time_mag_array, double ams, boolean f_verbose) {
+	public OEInitFixedState setup_time_mag_list_with_ams (OECatalogParams the_cat_params, double ams, double[] time_mag_array, boolean f_verbose) {
 
 		// Print the catalog parameters
 
@@ -404,6 +404,74 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 			rup.k_prod = OEStatsCalc.calc_k_uncorr (
 				rup.rup_mag,			// m0
 				ams,					// a
+				the_cat_params.alpha,	// alpha
+				the_cat_params.mref		// mref
+			);
+		}
+
+		// Print the seed rupture list
+
+		if (f_verbose) {
+			System.out.println ();
+			System.out.println ("the_ruptures:");
+			for (OERupture rup : the_ruptures) {
+				System.out.println ("  " + rup.u_time_mag_prod_string());
+			}
+		}
+
+		// Complete the setup
+
+		setup (the_cat_params, the_seed_gen_info, the_ruptures);
+		return this;
+	}
+
+
+
+
+	// Set up to begin seeding, for given parameters and seed ruptures.
+	// The productivity is specified as a branch ratio.
+	// Parameters:
+	//  the_cat_params = Catalog parameters.
+	//  the_seed_params = Seed generation parameters.
+	//  time_mag_array = Array with N pairs of elements.  In each pair, the first
+	//                   element is time in days, the second element is magnitude.
+	//                   It is an error if this array has an odd number of elements.
+	//  f_verbose = True to print out the catalog parameters and seed ruptures.
+	// Note: The function retains the passed-in catalog parameter structure.
+	// Note: The magnitude range for the first (seed) generation is the_seed_params.seed_mag_min to
+	// the_seed_params.seed_mag_max.
+	// Note: For each supplied rupture, the productivity k is calculated as an *uncorrected*
+	// productivity obtained from the_seed_params.ams, the_cat_params.mref, and the_cat_params.alpha.
+	// Note: The productivity parameter passed to the catalog generator is the_cat_params.a.
+
+	public OEInitFixedState setup_time_mag_list (OECatalogParams the_cat_params, OESeedParams the_seed_params, double[] time_mag_array, boolean f_verbose) {
+
+		// Print the catalog parameters
+
+		if (f_verbose) {
+			System.out.println ();
+			System.out.println (the_cat_params.toString());
+			System.out.println (the_seed_params.toString());
+		}
+
+		// Make info for the seed generation
+
+		OEGenerationInfo the_seed_gen_info = (new OEGenerationInfo()).set (
+			the_seed_params.seed_mag_min,	// gen_mag_min
+			the_seed_params.seed_mag_max	// gen_mag_max
+		);
+
+		// Make the rupture list
+
+		ArrayList<OERupture> the_ruptures = new ArrayList<OERupture>();
+		OERupture.make_time_mag_list (the_ruptures, time_mag_array);
+
+		// Calculate the productivity for each seed rupture
+
+		for (OERupture rup : the_ruptures) {
+			rup.k_prod = OEStatsCalc.calc_k_uncorr (
+				rup.rup_mag,			// m0
+				the_seed_params.ams,	// a
 				the_cat_params.alpha,	// alpha
 				the_cat_params.mref		// mref
 			);
