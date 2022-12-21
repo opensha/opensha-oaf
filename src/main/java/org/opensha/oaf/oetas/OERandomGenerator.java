@@ -12,6 +12,7 @@ import cern.jet.random.tdouble.Poisson;
 import cern.jet.random.tdouble.DoubleUniform;
 
 import org.opensha.oaf.util.TestMode;
+import static org.opensha.oaf.util.SimpleUtils.rndd;
 
 import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;	// natural logarithm of 10
 
@@ -352,7 +353,8 @@ public class OERandomGenerator {
 
 	public static double omori_rate (double p, double c, double t1, double t2) {
 		double q = 1.0 - p;
-		double lnr = Math.log((t2 + c)/(t1 + c));
+		//double lnr = Math.log((t2 + c)/(t1 + c));
+		double lnr = Math.log1p((t2 - t1)/(t1 + c));
 
 		// For abs(q) <= 1.0e-9, this formula is correct to 12 digits in the
 		// worst case, and full double precision in the typical case.
@@ -1119,7 +1121,7 @@ public class OERandomGenerator {
 		// Subcommand : Test #3
 		// Command format:
 		//  test3  p  c  t1  t2
-		// Display the Omori rate.
+		// Display the Omori rate and average Omori rate.
 
 		if (args[0].equalsIgnoreCase ("test3")) {
 
@@ -1139,7 +1141,7 @@ public class OERandomGenerator {
 
 				// Say hello
 
-				System.out.println ("Calculating Omori rate");
+				System.out.println ("Calculating Omori rate and average Omori rate");
 				System.out.println ("p = " + p);
 				System.out.println ("c = " + c);
 				System.out.println ("t1 = " + t1);
@@ -1150,7 +1152,14 @@ public class OERandomGenerator {
 				double rate = OERandomGenerator.omori_rate (p, c, t1, t2);
 
 				System.out.println ();
-				System.out.println ("rate = " + rate);
+				System.out.println ("rate = " + rndd(rate));
+
+				// Calculate the average rate
+
+				double average_rate = OERandomGenerator.omori_average_rate (p, c, t1, t2);
+
+				System.out.println ();
+				System.out.println ("average_rate = " + rndd(average_rate));
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -1201,7 +1210,7 @@ public class OERandomGenerator {
 				for (int k = 0; k <= n; ++k) {
 					double u = ((double)k)/((double)n);
 					double t = OERandomGenerator.omori_rescale (p, c, t1, t2, u);
-					System.out.println (k + "   " + t);
+					System.out.println (k + "   " + rndd(t));
 				}
 
 			} catch (Exception e) {
@@ -1327,7 +1336,7 @@ public class OERandomGenerator {
 				for (int k = 0; k <= n; ++k) {
 					double u = ((double)k)/((double)n);
 					double m = OERandomGenerator.gr_rescale (b, m1, m2, u);
-					System.out.println (k + "   " + m);
+					System.out.println (k + "   " + rndd(m));
 				}
 
 			} catch (Exception e) {
@@ -1448,7 +1457,7 @@ public class OERandomGenerator {
 				double rate = OERandomGenerator.gr_rate (b, mref, m1, m2);
 
 				System.out.println ();
-				System.out.println ("rate = " + rate);
+				System.out.println ("rate = " + rndd(rate));
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -1463,7 +1472,7 @@ public class OERandomGenerator {
 		// Subcommand : Test #9
 		// Command format:
 		//  test9  b  mref  m2  rate
-		// Display the Gutenberg-Richter rate.
+		// Display the inverse Gutenberg-Richter rate.
 
 		if (args[0].equalsIgnoreCase ("test9")) {
 
@@ -1494,7 +1503,7 @@ public class OERandomGenerator {
 				double m1 = OERandomGenerator.gr_inv_rate (b, mref, m2, rate);
 
 				System.out.println ();
-				System.out.println ("m1 = " + m1);
+				System.out.println ("m1 = " + rndd(m1));
 
 			} catch (Exception e) {
 				e.printStackTrace();

@@ -638,9 +638,9 @@ public class OEFit2Test {
 
 
 
-	// Class to use fitting to for a, ams, p, and c; version 1.
+	// Class to use fitting to for a, ams, p, and c; version 2.
 	
-	public static class MLE_fit_a_ams_p_c_v1 implements SimpleThreadTarget {
+	public static class MLE_fit_a_ams_p_c_v2 implements SimpleThreadTarget {
 
 		// --- Input parameters ---
 
@@ -731,6 +731,15 @@ public class OEFit2Test {
 
 		private double calc_omori_scale (double p, double c) {
 			return OERandomGenerator.omori_rate (p, c, 0.0, cat_params.tend - cat_params.tbegin);
+		}
+
+		// Calculate the average Omori scale factor used for a_base.
+		// This is I(p, c)/(tend - tbegin) as described above.
+		// The calculation is done in a way that works even if tend == tbegin.
+		// Note that ratios of this value are the same as for calc_omori_scale.
+
+		private double calc_average_omori_scale (double p, double c) {
+			return OERandomGenerator.omori_average_rate (p, c, 0.0, cat_params.tend - cat_params.tbegin);
 		}
 
 		//--- Internal variables ---
@@ -1042,7 +1051,7 @@ public class OEFit2Test {
 
 		// Create the multi-threaded fitter
 
-		MLE_fit_a_ams_p_c_v1 multi_fitter = new MLE_fit_a_ams_p_c_v1();
+		MLE_fit_a_ams_p_c_v2 multi_fitter = new MLE_fit_a_ams_p_c_v2();
 
 		multi_fitter.setup (
 			history,
@@ -1100,7 +1109,7 @@ public class OEFit2Test {
 	
 		// Create the multi-threaded fitter
 
-		MLE_fit_a_ams_p_c_v1 multi_fitter = new MLE_fit_a_ams_p_c_v1();
+		MLE_fit_a_ams_p_c_v2 multi_fitter = new MLE_fit_a_ams_p_c_v2();
 
 		multi_fitter.setup (
 			history,
@@ -1155,7 +1164,7 @@ public class OEFit2Test {
 	
 		// Create the multi-threaded fitter
 
-		MLE_fit_a_ams_p_c_v1 multi_fitter = new MLE_fit_a_ams_p_c_v1();
+		MLE_fit_a_ams_p_c_v2 multi_fitter = new MLE_fit_a_ams_p_c_v2();
 
 		multi_fitter.setup (
 			history,
