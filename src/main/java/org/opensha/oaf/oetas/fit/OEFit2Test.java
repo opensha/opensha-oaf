@@ -29,6 +29,7 @@ import org.opensha.oaf.oetas.OEInitFixedState;
 import org.opensha.oaf.oetas.OEOrigin;
 import org.opensha.oaf.oetas.OERandomGenerator;
 import org.opensha.oaf.oetas.OERupture;
+import org.opensha.oaf.oetas.OESeedParams;
 import org.opensha.oaf.oetas.OESimulator;
 import org.opensha.oaf.oetas.OEStatsCalc;
 
@@ -1333,7 +1334,7 @@ public class OEFit2Test {
 
 		// Subcommand : Test #1
 		// Command format:
-		//  test1  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//  test1  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
 		//         t_day  rup_mag  [t_day  rup_mag]...
 		// Generate a catalog with the given parameters.
 		// The catalog is seeded with ruptures at the given times and magnitudes.
@@ -1341,33 +1342,36 @@ public class OEFit2Test {
 
 		if (args[0].equalsIgnoreCase ("test1")) {
 
-			// 11 or more additional arguments
+			// 12 or more additional arguments
 
-			if (!( args.length >= 12 && args.length % 2 == 0 )) {
+			if (!( args.length >= 13 && args.length % 2 == 1 )) {
 				System.err.println ("OEFit2Test : Invalid 'test1' subcommand");
 				return;
 			}
 
 			try {
 
-				double n = Double.parseDouble (args[1]);
-				double p = Double.parseDouble (args[2]);
-				double c = Double.parseDouble (args[3]);
-				double b = Double.parseDouble (args[4]);
-				double alpha = Double.parseDouble (args[5]);
-				double mref = Double.parseDouble (args[6]);
-				double msup = Double.parseDouble (args[7]);
-				double tbegin = Double.parseDouble (args[8]);
-				double tend = Double.parseDouble (args[9]);
+				int ii = 1;
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
 
-				double[] time_mag_array = new double[args.length - 10];
+				double[] time_mag_array = new double[args.length - ii];
 				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
-					time_mag_array[ntm] = Double.parseDouble (args[ntm + 10]);
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + ii]);
 				}
 
 				// Say hello
 
 				System.out.println ("Generating catalog with given parameters and seeds");
+				System.out.println ("zams = " + zams);
 				System.out.println ("n = " + n);
 				System.out.println ("p = " + p);
 				System.out.println ("c = " + c);
@@ -1397,9 +1401,13 @@ public class OEFit2Test {
 					tend	// tend
 				);
 
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams (zams, cat_params);
+
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
@@ -1421,55 +1429,67 @@ public class OEFit2Test {
 
 		// Subcommand : Test #2
 		// Command format:
-		//  test2  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//  test2  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
 		//         magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
-		//         durlim_ratio  durlim_min  durlim_max
+		//         durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
 		//         t_day  rup_mag  [t_day  rup_mag]...
 		// Generate a catalog with the given parameters.
 		// The catalog is seeded with ruptures at the given times and magnitudes.
 		// Then construct a history containing the catalog.
 		// Display catalog summary and history contents.
+		// Notes:
+		// [tbegin, tend] is the range of times for which simulation is performed.
+		// [t_interval_begin, tend] is the range of times for which intervals are constructed
+		//  in the history and should satisfy t_interval_begin >= tbegin.
+		// [t_range_begin, tend] is the range of times for which history is constructed,
+		//  where t_range_begin is the minimum of tbegin and any seed rupture time.
 
 		if (args[0].equalsIgnoreCase ("test2")) {
 
-			// 20 or more additional arguments
+			// 24 or more additional arguments
 
-			if (!( args.length >= 21 && args.length % 2 == 1 )) {
+			if (!( args.length >= 25 && args.length % 2 == 1 )) {
 				System.err.println ("OEFit2Test : Invalid 'test2' subcommand");
 				return;
 			}
 
 			try {
 
-				double n = Double.parseDouble (args[1]);
-				double p = Double.parseDouble (args[2]);
-				double c = Double.parseDouble (args[3]);
-				double b = Double.parseDouble (args[4]);
-				double alpha = Double.parseDouble (args[5]);
-				double mref = Double.parseDouble (args[6]);
-				double msup = Double.parseDouble (args[7]);
-				double tbegin = Double.parseDouble (args[8]);
-				double tend = Double.parseDouble (args[9]);
+				int ii = 1;
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
 
-				double magCat = Double.parseDouble (args[10]);
-				int helm_param = Integer.parseInt (args[11]);
-				double disc_delta = Double.parseDouble (args[12]);
-				int mag_cat_count = Integer.parseInt (args[13]);
-				double eligible_mag = Double.parseDouble (args[14]);
-				int eligible_count = Integer.parseInt (args[15]);
+				double magCat = Double.parseDouble (args[ii++]);
+				int helm_param = Integer.parseInt (args[ii++]);
+				double disc_delta = Double.parseDouble (args[ii++]);
+				int mag_cat_count = Integer.parseInt (args[ii++]);
+				double eligible_mag = Double.parseDouble (args[ii++]);
+				int eligible_count = Integer.parseInt (args[ii++]);
 
-				double durlim_ratio = Double.parseDouble (args[16]);
-				double durlim_min = Double.parseDouble (args[17]);
-				double durlim_max = Double.parseDouble (args[18]);
+				double durlim_ratio = Double.parseDouble (args[ii++]);
+				double durlim_min = Double.parseDouble (args[ii++]);
+				double durlim_max = Double.parseDouble (args[ii++]);
+				double t_interval_begin = Double.parseDouble (args[ii++]);
+				int before_max_count = Integer.parseInt (args[ii++]);
+				int mag_cat_int_join = Integer.parseInt (args[ii++]);
 
-				double[] time_mag_array = new double[args.length - 19];
+				double[] time_mag_array = new double[args.length - ii];
 				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
-					time_mag_array[ntm] = Double.parseDouble (args[ntm + 19]);
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + ii]);
 				}
 
 				// Say hello
 
 				System.out.println ("Generating catalog and history with given parameters and seeds");
+				System.out.println ("zams = " + zams);
 				System.out.println ("n = " + n);
 				System.out.println ("p = " + p);
 				System.out.println ("c = " + c);
@@ -1490,6 +1510,9 @@ public class OEFit2Test {
 				System.out.println ("durlim_ratio = " + durlim_ratio);
 				System.out.println ("durlim_min = " + durlim_min);
 				System.out.println ("durlim_max = " + durlim_max);
+				System.out.println ("t_interval_begin = " + t_interval_begin);
+				System.out.println ("before_max_count = " + before_max_count);
+				System.out.println ("mag_cat_int_join = " + mag_cat_int_join);
 
 				System.out.println ("time_mag_array:");
 				for (int ntm = 0; ntm < time_mag_array.length; ntm += 2) {
@@ -1510,9 +1533,13 @@ public class OEFit2Test {
 					tend	// tend
 				);
 
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams (zams, cat_params);
+
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
@@ -1529,18 +1556,27 @@ public class OEFit2Test {
 
 				// Make the history parameters
 
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
 				OEDiscFGHParams hist_params = new OEDiscFGHParams();
 
 				hist_params.set_sim_history_typical (
-					magCat,			// magCat
-					helm_param,		// helm_param
-					tbegin,			// t_range_begin
-					tend,			// t_range_end
-					disc_delta,		// disc_delta
-					mag_cat_count,	// mag_cat_count
-					eligible_mag,	// eligible_mag
-					eligible_count,	// eligible_count
-					split_fn		// split_fn
+					magCat,				// magCat
+					helm_param,			// helm_param
+					t_range_begin,		// t_range_begin
+					t_range_end,		// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
 				);
 
 				// Display the history parameters

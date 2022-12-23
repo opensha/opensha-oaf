@@ -771,6 +771,8 @@ public class OEDiscFGHParams {
 	//  eligible_count = Maximum number of eligible ruptures, or 0 if no limit.
 	//  split_fn = Splitting function, must be non-null for any splitting to occur.
 	//  t_interval_begin = If included, the time at which needed intervals begin.
+	//  before_max_count = If included, the max number of ruptures before the first required split, or 0 or -1 if no limit.
+	//  mag_cat_int_join = If included, option to join intervals with mc equal to magCat,  0 = no join, 1 = join.
 
 	public OEDiscFGHParams set_sim_history_typical (
 		double magCat,
@@ -851,6 +853,51 @@ public class OEDiscFGHParams {
 		this.t_req_splits[1] = t_range_end;
 		this.before_max_count = 50;
 		this.mag_cat_int_join = 1;
+
+		return this;
+	}
+
+	public OEDiscFGHParams set_sim_history_typical (
+		double magCat,
+		int helm_param,
+		double t_range_begin,
+		double t_range_end,
+		double disc_delta,
+		int mag_cat_count,
+		double eligible_mag,
+		int eligible_count,
+		OEMagCompFnDisc.SplitFn split_fn,
+		double t_interval_begin,
+		int before_max_count,
+		int mag_cat_int_join
+	) {
+
+		this.magCat         = magCat;
+		this.capF           = OEConstants.helm_capF (helm_param);
+		this.capG           = OEConstants.helm_capG (helm_param);
+		this.capH           = OEConstants.helm_capH (helm_param);
+		this.t_range_begin  = t_range_begin;
+		this.t_range_end    = t_range_end;
+
+		this.mag_eps        = OEConstants.FIT_MAG_EPS;
+		this.time_eps       = OEConstants.FIT_TIME_EPS;
+		this.disc_base      = 0.005;	// put base in between mags to 2 decimal places
+		this.disc_delta     = disc_delta;
+		this.disc_round     = 0.5;		// round to nearest
+		this.disc_gap       = disc_delta * 0.25;
+
+		this.mag_cat_count  = mag_cat_count;
+		this.eligible_mag   = eligible_mag;
+		this.eligible_count = eligible_count;
+		this.division_mag   = NO_MAG_NEG;
+		this.division_count = 0;
+		this.split_fn       = split_fn;
+
+		this.t_req_splits = new double[2];
+		this.t_req_splits[0] = t_interval_begin;
+		this.t_req_splits[1] = t_range_end;
+		this.before_max_count = before_max_count;
+		this.mag_cat_int_join = mag_cat_int_join;
 
 		return this;
 	}
