@@ -69,7 +69,7 @@ public class OEFit2Test {
 
 	// Run a smoke test on the fitting code.
 
-	public static void fit_smoke_test (OEDisc2History history, OECatalogParams cat_params, boolean f_intervals, int lmr_opt) {
+	public static void fit_smoke_test (OEDisc2History history, OECatalogParams cat_params, OESeedParams seed_params, boolean f_intervals, int lmr_opt) {
 	
 		// Display memory status
 
@@ -132,7 +132,8 @@ public class OEFit2Test {
 			// Calculate a likelihood
 
 			double ten_a_q = Math.pow(10.0, cat_params.a) * mexp.get_q_correction();
-			double ten_ams_q = Math.pow(10.0, cat_params.a) * mexp.get_q_correction();
+
+			double ten_ams_q = Math.pow(10.0, seed_params.ams);
 
 			double loglike = avpr.avpr_calc_log_like (ten_a_q, ten_ams_q);
 
@@ -1637,9 +1638,9 @@ public class OEFit2Test {
 
 		// Subcommand : Test #4
 		// Command format:
-		//  test4  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//  test4  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
 		//         magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
-		//         durlim_ratio  durlim_min  durlim_max
+		//         durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
 		//         f_intervals  lmr_opt
 		//         t_day  rup_mag  [t_day  rup_mag]...
 		// Generate a catalog with the given parameters.
@@ -1647,50 +1648,62 @@ public class OEFit2Test {
 		// Then construct a history containing the catalog.
 		// Then use the history to run a smoke test on the fitting code.
 		// Display catalog summary, history contents, and smoke test results.
+		// Notes:
+		// [tbegin, tend] is the range of times for which simulation is performed.
+		// [t_interval_begin, tend] is the range of times for which intervals are constructed
+		//  in the history and should satisfy t_interval_begin >= tbegin.
+		// [t_range_begin, tend] is the range of times for which history is constructed,
+		//  where t_range_begin is the minimum of tbegin and any seed rupture time.
 
 		if (args[0].equalsIgnoreCase ("test4")) {
 
-			// 22 or more additional arguments
+			// 26 or more additional arguments
 
-			if (!( args.length >= 23 && args.length % 2 == 1 )) {
+			if (!( args.length >= 27 && args.length % 2 == 1 )) {
 				System.err.println ("OEFit2Test : Invalid 'test4' subcommand");
 				return;
 			}
 
 			try {
 
-				double n = Double.parseDouble (args[1]);
-				double p = Double.parseDouble (args[2]);
-				double c = Double.parseDouble (args[3]);
-				double b = Double.parseDouble (args[4]);
-				double alpha = Double.parseDouble (args[5]);
-				double mref = Double.parseDouble (args[6]);
-				double msup = Double.parseDouble (args[7]);
-				double tbegin = Double.parseDouble (args[8]);
-				double tend = Double.parseDouble (args[9]);
+				int ii = 1;
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
 
-				double magCat = Double.parseDouble (args[10]);
-				int helm_param = Integer.parseInt (args[11]);
-				double disc_delta = Double.parseDouble (args[12]);
-				int mag_cat_count = Integer.parseInt (args[13]);
-				double eligible_mag = Double.parseDouble (args[14]);
-				int eligible_count = Integer.parseInt (args[15]);
+				double magCat = Double.parseDouble (args[ii++]);
+				int helm_param = Integer.parseInt (args[ii++]);
+				double disc_delta = Double.parseDouble (args[ii++]);
+				int mag_cat_count = Integer.parseInt (args[ii++]);
+				double eligible_mag = Double.parseDouble (args[ii++]);
+				int eligible_count = Integer.parseInt (args[ii++]);
 
-				double durlim_ratio = Double.parseDouble (args[16]);
-				double durlim_min = Double.parseDouble (args[17]);
-				double durlim_max = Double.parseDouble (args[18]);
+				double durlim_ratio = Double.parseDouble (args[ii++]);
+				double durlim_min = Double.parseDouble (args[ii++]);
+				double durlim_max = Double.parseDouble (args[ii++]);
+				double t_interval_begin = Double.parseDouble (args[ii++]);
+				int before_max_count = Integer.parseInt (args[ii++]);
+				int mag_cat_int_join = Integer.parseInt (args[ii++]);
 
-				boolean f_intervals = Boolean.parseBoolean (args[19]);
-				int lmr_opt = Integer.parseInt (args[20]);
+				boolean f_intervals = Boolean.parseBoolean (args[ii++]);
+				int lmr_opt = Integer.parseInt (args[ii++]);
 
-				double[] time_mag_array = new double[args.length - 21];
+				double[] time_mag_array = new double[args.length - ii];
 				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
-					time_mag_array[ntm] = Double.parseDouble (args[ntm + 21]);
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + ii]);
 				}
 
 				// Say hello
 
 				System.out.println ("Generating catalog and history, and running fit smoke test");
+				System.out.println ("zams = " + zams);
 				System.out.println ("n = " + n);
 				System.out.println ("p = " + p);
 				System.out.println ("c = " + c);
@@ -1711,6 +1724,9 @@ public class OEFit2Test {
 				System.out.println ("durlim_ratio = " + durlim_ratio);
 				System.out.println ("durlim_min = " + durlim_min);
 				System.out.println ("durlim_max = " + durlim_max);
+				System.out.println ("t_interval_begin = " + t_interval_begin);
+				System.out.println ("before_max_count = " + before_max_count);
+				System.out.println ("mag_cat_int_join = " + mag_cat_int_join);
 
 				System.out.println ("f_intervals = " + f_intervals);
 				System.out.println ("lmr_opt = " + lmr_opt);
@@ -1734,9 +1750,13 @@ public class OEFit2Test {
 					tend	// tend
 				);
 
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams (zams, cat_params);
+
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
@@ -1753,18 +1773,27 @@ public class OEFit2Test {
 
 				// Make the history parameters
 
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
 				OEDiscFGHParams hist_params = new OEDiscFGHParams();
 
 				hist_params.set_sim_history_typical (
-					magCat,			// magCat
-					helm_param,		// helm_param
-					tbegin,			// t_range_begin
-					tend,			// t_range_end
-					disc_delta,		// disc_delta
-					mag_cat_count,	// mag_cat_count
-					eligible_mag,	// eligible_mag
-					eligible_count,	// eligible_count
-					split_fn		// split_fn
+					magCat,				// magCat
+					helm_param,			// helm_param
+					tbegin,				// t_range_begin
+					tend,				// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
 				);
 
 				// Display the history parameters
@@ -1785,7 +1814,7 @@ public class OEFit2Test {
 
 				// Run the smoke test
 
-				fit_smoke_test (history, cat_params, f_intervals, lmr_opt);
+				fit_smoke_test (history, cat_params, seed_params, f_intervals, lmr_opt);
 
 			} catch (Exception e) {
 				e.printStackTrace();
