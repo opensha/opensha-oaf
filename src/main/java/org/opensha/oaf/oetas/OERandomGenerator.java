@@ -351,23 +351,38 @@ public class OERandomGenerator {
 	//
 	// For small q, we use the first 2 terms in the Taylor series around q = 0.
 
+//	public static double omori_rate (double p, double c, double t1, double t2) {
+//		double q = 1.0 - p;
+//		//double lnr = Math.log((t2 + c)/(t1 + c));
+//		double lnr = Math.log1p((t2 - t1)/(t1 + c));
+//
+//		// For abs(q) <= 1.0e-9, this formula is correct to 12 digits in the
+//		// worst case, and full double precision in the typical case.
+//
+//		if (Math.abs(q) <= 1.0e-9) {
+//			double lns = Math.log((t2 + c)*(t1 + c));
+//			return (0.5*lns*q + 1.0) * lnr;
+//		}
+//
+//		// Calculate directly, using expm1 to avoid cancellation when
+//		// t1 and t2 are almost equal.
+//
+//		return Math.pow(t1 + c, q) * Math.expm1(lnr*q) / q;
+//	}
+
+	// New version based on OEOmoriCalc.omext_single_integral.
+
 	public static double omori_rate (double p, double c, double t1, double t2) {
-		double q = 1.0 - p;
-		//double lnr = Math.log((t2 + c)/(t1 + c));
-		double lnr = Math.log1p((t2 - t1)/(t1 + c));
+		final double q = 1.0 - p;
+		final double w = t1 + c;
+		final double tr = t2 - t1;
 
-		// For abs(q) <= 1.0e-9, this formula is correct to 12 digits in the
-		// worst case, and full double precision in the typical case.
-
-		if (Math.abs(q) <= 1.0e-9) {
-			double lns = Math.log((t2 + c)*(t1 + c));
-			return (0.5*lns*q + 1.0) * lnr;
+		final double a = Math.log1p(tr/w);
+		final double aq = a*q;
+		if (Math.abs(aq) < 1.0e-15) {
+			return Math.pow(w, q) * a;
 		}
-
-		// Calculate directly, using expm1 to avoid cancellation when
-		// t1 and t2 are almost equal.
-
-		return Math.pow(t1 + c, q) * Math.expm1(lnr*q) / q;
+		return Math.pow(w, q) * Math.expm1(aq) / q;
 	}
 
 
@@ -397,32 +412,58 @@ public class OERandomGenerator {
 	//
 	// For small t2-t1, we use the one-point midpoint integration rule.
 
+//	public static double omori_average_rate (double p, double c, double t1, double t2) {
+//		final double q = 1.0 - p;
+//		final double dt = t2 - t1;
+//		final double sdt = dt / (t1 + c);
+//
+//		// For sufficiently small dt, the integral can be computed by the one-point
+//		// midpoint rule, to an accuracy of about 15 digits.
+//		// (8.83e-15 = 24 * 1.0e-15 / e)
+//		// (This works out to sdt <= 6.64e-8 for p = 2)
+//
+//		if (Math.abs(sdt * sdt * p * (p + 1.0)) <= 8.83e-15) {
+//			return Math.pow((t1 + t2) * 0.5 + c, -p);
+//		}
+//
+//		// For abs(q) <= 1.0e-9, this formula is correct to 12 digits in the
+//		// worst case, and full double precision in the typical case.
+//
+//		if (Math.abs(q) <= 1.0e-9) {
+//			final double lns = Math.log((t2 + c)*(t1 + c));
+//			return (0.5*lns*q + 1.0) * Math.log1p(sdt) / dt;
+//		}
+//
+//		// Calculate directly, using expm1 to avoid cancellation when
+//		// t1 and t2 are close (but not close enough for midpoint rule).
+//
+//		return Math.pow(t1 + c, q) * Math.expm1(Math.log1p(sdt) * q) / (q * dt);
+//	}
+
+	// New version based on OEOmoriCalc.omext_single_density_integral.
+
 	public static double omori_average_rate (double p, double c, double t1, double t2) {
 		final double q = 1.0 - p;
-		final double dt = t2 - t1;
-		final double sdt = dt / (t1 + c);
+		final double w = t1 + c;
+		final double tr = t2 - t1;
 
-		// For sufficiently small dt, the integral can be computed by the one-point
-		// midpoint rule, to an accuracy of about 15 digits.
-		// (8.83e-15 = 24 * 1.0e-15 / e)
-		// (This works out to sdt <= 6.64e-8 for p = 2)
+		// If the relative t range is small enough so the midpoint rule is accurate to about 15 digits ...
 
-		if (Math.abs(sdt * sdt * p * (p + 1.0)) <= 8.83e-15) {
+		if (tr * tr * p * (1.0 + p) <= 24.0e-15 * w * w) {
+
+			// Use the midpoint rule
+
 			return Math.pow((t1 + t2) * 0.5 + c, -p);
 		}
 
-		// For abs(q) <= 1.0e-9, this formula is correct to 12 digits in the
-		// worst case, and full double precision in the typical case.
+		// Otherwise, evaluate the integral
 
-		if (Math.abs(q) <= 1.0e-9) {
-			final double lns = Math.log((t2 + c)*(t1 + c));
-			return (0.5*lns*q + 1.0) * Math.log1p(sdt) / dt;
+		final double a = Math.log1p(tr/w);
+		final double aq = a*q;
+		if (Math.abs(aq) < 1.0e-15) {
+			return Math.pow(w, q) * a / tr;
 		}
-
-		// Calculate directly, using expm1 to avoid cancellation when
-		// t1 and t2 are close (but not close enough for midpoint rule).
-
-		return Math.pow(t1 + c, q) * Math.expm1(Math.log1p(sdt) * q) / (q * dt);
+		return Math.pow(w, q) * Math.expm1(aq) / (q * tr);
 	}
 
 
@@ -960,6 +1001,37 @@ public class OERandomGenerator {
 
 
 	//----- Testing -----
+
+
+
+
+	// Direct calculation of Omori expected rate.
+
+	private static double test_omori_rate (double p, double c, double t1, double t2) {
+		double result;
+		final double q1 = 1.0 - p;
+		if (q1 == 0.0) {
+			result = Math.log(t2 + c) - Math.log(t1 + c);
+		} else {
+			result = (Math.pow(t2 + c, q1) - Math.pow(t1 + c, q1))/q1;
+		}
+		return result;
+	}
+
+
+
+
+	// Direct calculation of Omori average expected rate.
+
+	private static double test_omori_average_rate (double p, double c, double t1, double t2) {
+		double result;
+		if (t2 == t1) {
+			result = Math.pow(t1 + c, -p);
+		} else {
+			result = test_omori_rate (p, c, t1, t2) / (t2 - t1);
+		}
+		return result;
+	}
 
 
 
@@ -1504,6 +1576,192 @@ public class OERandomGenerator {
 
 				System.out.println ();
 				System.out.println ("m1 = " + rndd(m1));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #10
+		// Command format:
+		//  test10  c  t1  t2
+		// Omori rate for various values of p.
+
+		if (args[0].equalsIgnoreCase ("test10")) {
+
+			// 3 additional arguments
+
+			if (args.length != 4) {
+				System.err.println ("OERandomGenerator : Invalid 'test10' subcommand");
+				return;
+			}
+
+			try {
+
+				double c = Double.parseDouble (args[1]);
+				double t1 = Double.parseDouble (args[2]);
+				double t2 = Double.parseDouble (args[3]);
+
+				// Say hello
+
+				System.out.println ("Calculating Omori rate");
+				System.out.println ("c = " + c);
+				System.out.println ("t1 = " + t1);
+				System.out.println ("t2 = " + t2);
+
+				// Values of p
+
+				double[] pval = {
+					0.5,
+					0.6,
+					0.7,
+					0.8,
+					0.9,
+					0.99,
+					0.999,
+					0.9999,
+					0.99999,
+					0.999999,
+					0.9999999,
+					0.99999999,
+					0.999999999,
+					0.9999999999,
+					0.99999999999,
+					0.999999999999,
+					1.0,
+					1.000000000001,
+					1.00000000001,
+					1.0000000001,
+					1.000000001,
+					1.00000001,
+					1.0000001,
+					1.000001,
+					1.00001,
+					1.0001,
+					1.001,
+					1.01,
+					1.1,
+					1.2,
+					1.3,
+					1.4,
+					1.5,
+					1.6,
+					1.7,
+					1.8,
+					1.9,
+					2.0,
+					2.1,
+					2.2,
+					2.3,
+					2.4,
+					2.5
+				};
+
+				// Output the values
+
+				for (double p : pval) {
+					double rate = OERandomGenerator.omori_rate (p, c, t1, t2);
+					double comp = test_omori_rate (p, c, t1, t2);
+					System.out.println (p + "   " + rate + "   " + comp);
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #11
+		// Command format:
+		//  test11  c  t1  t2
+		// Omori average rate for various values of p.
+
+		if (args[0].equalsIgnoreCase ("test11")) {
+
+			// 3 additional arguments
+
+			if (args.length != 4) {
+				System.err.println ("OERandomGenerator : Invalid 'test11' subcommand");
+				return;
+			}
+
+			try {
+
+				double c = Double.parseDouble (args[1]);
+				double t1 = Double.parseDouble (args[2]);
+				double t2 = Double.parseDouble (args[3]);
+
+				// Say hello
+
+				System.out.println ("Calculating Omori average rate");
+				System.out.println ("c = " + c);
+				System.out.println ("t1 = " + t1);
+				System.out.println ("t2 = " + t2);
+
+				// Values of p
+
+				double[] pval = {
+					0.5,
+					0.6,
+					0.7,
+					0.8,
+					0.9,
+					0.99,
+					0.999,
+					0.9999,
+					0.99999,
+					0.999999,
+					0.9999999,
+					0.99999999,
+					0.999999999,
+					0.9999999999,
+					0.99999999999,
+					0.999999999999,
+					1.0,
+					1.000000000001,
+					1.00000000001,
+					1.0000000001,
+					1.000000001,
+					1.00000001,
+					1.0000001,
+					1.000001,
+					1.00001,
+					1.0001,
+					1.001,
+					1.01,
+					1.1,
+					1.2,
+					1.3,
+					1.4,
+					1.5,
+					1.6,
+					1.7,
+					1.8,
+					1.9,
+					2.0,
+					2.1,
+					2.2,
+					2.3,
+					2.4,
+					2.5
+				};
+
+				// Output the values
+
+				for (double p : pval) {
+					double rate = OERandomGenerator.omori_average_rate (p, c, t1, t2);
+					double comp = test_omori_average_rate (p, c, t1, t2);
+					System.out.println (p + "   " + rate + "   " + comp);
+				}
 
 			} catch (Exception e) {
 				e.printStackTrace();
