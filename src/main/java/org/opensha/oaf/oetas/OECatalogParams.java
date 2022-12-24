@@ -368,6 +368,32 @@ public class OECatalogParams {
 
 
 
+	// Set the minimum magnitude to a fixed value.
+	// Note: Produces a minimum magnitude that is non-adjustable.
+
+	public final void set_fixed_mag_min (double mag_min) {
+		this.mag_min_sim     = mag_min;
+		this.mag_min_lo      = mag_min;
+		this.mag_min_hi      = mag_min;
+		return;
+	}
+
+
+
+
+	// Set the maximum magnitude to a fixed value.
+	// Note: Produces a maximum magnitude that is non-adjustable.
+
+	public final void set_fixed_mag_max (double mag_max) {
+		this.mag_max_sim     = mag_max;
+		this.mag_max_lo      = mag_max;
+		this.mag_max_hi      = mag_max;
+		return;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.
