@@ -153,7 +153,7 @@ public class OECatalogParams {
 
 	// The maximum number of ruptures in a catalog, or 0 if no limit.
 	// Note: This is likely a soft limit, with catalog size allowed to exceed this
-	// but eventually be stopped if size continues to increased.
+	// but eventually be stopped if size continues to increase.
 
 	public int max_cat_size;
 
@@ -687,6 +687,58 @@ public class OECatalogParams {
 		this.mag_eps         = OEConstants.GEN_MAG_EPS;
 		this.gen_size_target = 100;
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
+		this.max_cat_size    = 0;
+		this.mag_excess      = 0.0;
+		return this;
+	}
+
+
+
+
+	// Set to values for simulation within a fixed magnitude range.
+	// This version also sets a non-zero max_cat_size and mag_excess.
+	// Parameters:
+	//  a = Productivity parameter.
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter, in days.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Minimum magnitude, also the reference magnitude and min mag for parameter definition.
+	//  msup = Maximum magnitude, also the max mag for parameter definition.
+	//  tbegin = Beginning time for which earthquakes are generated, in days.
+	//  tend = Ending time for which earthquakes are generated, in days.
+	// Returns this object.
+
+	public final OECatalogParams set_to_fixed_mag_limited (
+		double a,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		double mref,
+		double msup,
+		double tbegin,
+		double tend
+	) {
+		this.a               = a;
+		this.p               = p;
+		this.c               = c;
+		this.b               = b;
+		this.alpha           = alpha;
+		this.mref            = mref;
+		this.msup            = msup;
+		this.tbegin          = tbegin;
+		this.tend            = tend;
+		this.teps            = OEConstants.GEN_TIME_EPS;
+		this.mag_min_sim     = mref;
+		this.mag_max_sim     = msup;
+		this.mag_min_lo      = mref;
+		this.mag_min_hi      = mref;
+		this.mag_max_lo      = msup;
+		this.mag_max_hi      = msup;
+		this.mag_eps         = OEConstants.GEN_MAG_EPS;
+		this.gen_size_target = 100;
+		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = OEConstants.DEF_MAX_CAT_SIZE;
 		this.mag_excess      = OEConstants.DEF_MAG_EXCESS;
 		return this;
@@ -710,6 +762,59 @@ public class OECatalogParams {
 	// Returns this object.
 
 	public final OECatalogParams set_to_fixed_mag_br (
+		double n,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		double mref,
+		double msup,
+		double tbegin,
+		double tend
+	) {
+		this.a               = OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tend - tbegin);
+		this.p               = p;
+		this.c               = c;
+		this.b               = b;
+		this.alpha           = alpha;
+		this.mref            = mref;
+		this.msup            = msup;
+		this.tbegin          = tbegin;
+		this.tend            = tend;
+		this.teps            = OEConstants.GEN_TIME_EPS;
+		this.mag_min_sim     = mref;
+		this.mag_max_sim     = msup;
+		this.mag_min_lo      = mref;
+		this.mag_min_hi      = mref;
+		this.mag_max_lo      = msup;
+		this.mag_max_hi      = msup;
+		this.mag_eps         = OEConstants.GEN_MAG_EPS;
+		this.gen_size_target = 100;
+		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
+		this.max_cat_size    = 0;
+		this.mag_excess      = 0.0;
+		return this;
+	}
+
+
+
+
+	// Set to values for simulation within a fixed magnitude range.
+	// This version also sets a non-zero max_cat_size and mag_excess.
+	// The productivity is specified as a branch ratio.
+	// Parameters:
+	//  n = Branch ratio, as computed for these parameters.
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter, in days.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Minimum magnitude, also the reference magnitude and min mag for parameter definition.
+	//  msup = Maximum magnitude, also the max mag for parameter definition.
+	//  tbegin = Beginning time for which earthquakes are generated, in days.
+	//  tend = Ending time for which earthquakes are generated, in days.
+	// Returns this object.
+
+	public final OECatalogParams set_to_fixed_mag_limited_br (
 		double n,
 		double p,
 		double c,

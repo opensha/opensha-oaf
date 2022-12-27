@@ -781,7 +781,7 @@ public class OESimulator {
 				double msup = 9.5;
 				double tend = OEForecastGrid.get_config_tend (tbegin);
 
-				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_br (
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_limited_br (
 					n,
 					p,
 					c,
@@ -912,7 +912,7 @@ public class OESimulator {
 				double msup = 9.5;
 				double tend = OEForecastGrid.get_config_tend (tbegin);
 
-				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_br (
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_limited_br (
 					n,
 					p,
 					c,
@@ -1055,7 +1055,7 @@ public class OESimulator {
 				double msup = 9.5;
 				double tend = OEForecastGrid.get_config_tend (tbegin);
 
-				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_br (
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_limited_br (
 					n,
 					p,
 					c,
@@ -1208,7 +1208,7 @@ public class OESimulator {
 				double msup = 9.5;
 				double tend = OEForecastGrid.get_config_tend (tbegin);
 
-				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_br (
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_limited_br (
 					n,
 					p,
 					c,
