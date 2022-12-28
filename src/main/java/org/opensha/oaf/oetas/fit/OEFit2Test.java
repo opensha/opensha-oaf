@@ -15,6 +15,8 @@ import org.opensha.oaf.oetas.OECatalogBuilder;
 import org.opensha.oaf.oetas.OECatalogExaminer;
 import org.opensha.oaf.oetas.OECatalogGenerator;
 import org.opensha.oaf.oetas.OECatalogParams;
+import org.opensha.oaf.oetas.OECatalogParamsMags;
+import org.opensha.oaf.oetas.OECatalogParamsStats;
 import org.opensha.oaf.oetas.OECatalogSeedComm;
 import org.opensha.oaf.oetas.OECatalogSeeder;
 import org.opensha.oaf.oetas.OECatalogStorage;
@@ -30,6 +32,7 @@ import org.opensha.oaf.oetas.OEOrigin;
 import org.opensha.oaf.oetas.OERandomGenerator;
 import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OESeedParams;
+import org.opensha.oaf.oetas.OESeedParamsStats;
 import org.opensha.oaf.oetas.OESimulator;
 import org.opensha.oaf.oetas.OEStatsCalc;
 
@@ -69,7 +72,7 @@ public class OEFit2Test {
 
 	// Run a smoke test on the fitting code.
 
-	public static void fit_smoke_test (OEDisc2History history, OECatalogParams cat_params, OESeedParams seed_params, boolean f_intervals, int lmr_opt) {
+	public static void fit_smoke_test (OEDisc2History history, OECatalogParamsStats cat_params, OESeedParamsStats seed_params, boolean f_intervals, int lmr_opt) {
 	
 		// Display memory status
 
@@ -82,7 +85,7 @@ public class OEFit2Test {
 		OEDisc2ExtFit fitter = new OEDisc2ExtFit();
 
 		boolean f_likelihood = true;
-		fitter.dfit_build (history, cat_params, f_intervals, f_likelihood, lmr_opt);
+		fitter.dfit_build (history, cat_params.get_params_mags(), f_intervals, f_likelihood, lmr_opt);
 
 		// Allocate the data structures and obtain their handles
 
@@ -207,9 +210,16 @@ public class OEFit2Test {
 	// Use the fitting code to generate and display an a-ams likelihood grid.
 	// a-values have the form cat_params.a + log10(a_range[i]).  So the powers of ten are (10^cat_params.a) * a_range[i].
 	// ams-values have the form seed_params.ams + log10(ams_range[i]).  So the powers of ten are (10^seed_params.ams) * ams_range[i].
+	// In cat_params:
+	//  -- a, p, c, b, and alpha provide the central or only value of the corresponding parameter.
+	//  -- mref, msup, mag_min_sim, and mag_max_sim provide the magnitude ranges used by the fitter
+	//     (which are also the magnitude ranges used for Q-correction of a).
+	//  -- tbegin and tend are not used.
+	// In seed_params:
+	//  -- ams provides the central value of the corresponding parameter.
 
 	public static void fit_a_ams_like_grid (
-		OEDisc2History history, OECatalogParams cat_params, OESeedParams seed_params, boolean f_intervals, int lmr_opt,
+		OEDisc2History history, OECatalogParamsStats cat_params, OESeedParamsStats seed_params, boolean f_intervals, int lmr_opt,
 		double[] a_range, double[] ams_range
 	) {
 	
@@ -224,7 +234,7 @@ public class OEFit2Test {
 		OEDisc2ExtFit fitter = new OEDisc2ExtFit();
 
 		boolean f_likelihood = true;
-		fitter.dfit_build (history, cat_params, f_intervals, f_likelihood, lmr_opt);
+		fitter.dfit_build (history, cat_params.get_params_mags(), f_intervals, f_likelihood, lmr_opt);
 
 		// Allocate the data structures and obtain their handles
 
@@ -449,7 +459,7 @@ public class OEFit2Test {
 		OEDisc2ExtFit fitter = new OEDisc2ExtFit();
 
 		boolean f_likelihood = true;
-		fitter.dfit_build (history, cat_params, f_intervals, f_likelihood, lmr_opt);
+		fitter.dfit_build (history, cat_params.get_params_mags(), f_intervals, f_likelihood, lmr_opt);
 
 		// Allocate the data structures and obtain their handles
 
@@ -558,7 +568,7 @@ public class OEFit2Test {
 		OEDisc2ExtFit fitter = new OEDisc2ExtFit();
 
 		boolean f_likelihood = true;
-		fitter.dfit_build (history, cat_params, f_intervals, f_likelihood, lmr_opt);
+		fitter.dfit_build (history, cat_params.get_params_mags(), f_intervals, f_likelihood, lmr_opt);
 
 		// Allocate the data structures and obtain their handles
 
@@ -949,7 +959,7 @@ public class OEFit2Test {
 			fitter = new OEDisc2ExtFit();
 
 			boolean f_likelihood = true;
-			fitter.dfit_build (history, cat_params, f_intervals, f_likelihood, lmr_opt);
+			fitter.dfit_build (history, cat_params.get_params_mags(), f_intervals, f_likelihood, lmr_opt);
 
 			// Allocate the executor and global data structures
 
@@ -1815,7 +1825,7 @@ public class OEFit2Test {
 
 				// Run the smoke test
 
-				fit_smoke_test (history, cat_params, seed_params, f_intervals, lmr_opt);
+				fit_smoke_test (history, cat_params.get_params_stats(), seed_params.get_params_stats(), f_intervals, lmr_opt);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -2016,7 +2026,7 @@ public class OEFit2Test {
 
 				// Make and display the grid
 
-				fit_a_ams_like_grid (history, cat_params, seed_params, f_intervals, lmr_opt, a_range, ams_range);
+				fit_a_ams_like_grid (history, cat_params.get_params_stats(), seed_params.get_params_stats(), f_intervals, lmr_opt, a_range, ams_range);
 
 			} catch (Exception e) {
 				e.printStackTrace();

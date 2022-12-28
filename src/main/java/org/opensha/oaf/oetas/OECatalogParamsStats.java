@@ -209,6 +209,22 @@ public class OECatalogParamsStats {
 
 
 
+	// Return the magnitude range parameters.
+	// The returned object is newly allocated.
+	// Note: This produces the same result as OECatalogParams.get_params_mags.
+
+	public final OECatalogParamsMags get_params_mags () {
+		return new OECatalogParamsMags (
+			mref,
+			msup,
+			mag_min_sim,
+			mag_max_sim
+		);
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.

@@ -12,6 +12,7 @@ import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OEOmoriCalc;
 import org.opensha.oaf.oetas.OEStatsCalc;
 import org.opensha.oaf.oetas.OECatalogParams;
+import org.opensha.oaf.oetas.OECatalogParamsMags;
 
 import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;				// natural logarithm of 10
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG;				// negative mag smaller than any possible mag
@@ -2955,7 +2956,7 @@ public class OEDisc2ExtFit {
 	//  f_likelihood = True to calculate data needed for log-likelihood.
 	//  lmr_opt = Option to select magnitude range for log-likelihood calculation (LMR_OPT_XXXX).
 
-	public void dfit_build (OEDisc2History history, OECatalogParams cat_params, boolean f_intervals, boolean f_likelihood, int lmr_opt) {
+	public void dfit_build (OEDisc2History history, OECatalogParamsMags cat_params, boolean f_intervals, boolean f_likelihood, int lmr_opt) {
 
 		// Start by clearing
 
