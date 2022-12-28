@@ -1,7 +1,5 @@
 package org.opensha.oaf.oetas;
 
-import java.util.Arrays;
-
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -142,6 +140,18 @@ public class OESeedParams {
 		result.append ("seed_mag_max = "    + seed_mag_max    + "\n");
 
 		return result.toString();
+	}
+
+
+
+
+	// Return the statistics parameters.
+	// The returned object is newly allocated.
+
+	public final OESeedParamsStats get_params_stats () {
+		return new OESeedParamsStats (
+			ams
+		);
 	}
 
 

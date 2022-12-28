@@ -1,7 +1,5 @@
 package org.opensha.oaf.oetas;
 
-import java.util.Arrays;
-
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -389,6 +387,43 @@ public class OECatalogParams {
 		this.mag_max_lo      = mag_max;
 		this.mag_max_hi      = mag_max;
 		return;
+	}
+
+
+
+
+	// Return the statistics parameters.
+	// The returned object is newly allocated.
+
+	public final OECatalogParamsStats get_params_stats () {
+		return new OECatalogParamsStats (
+			a,
+			p,
+			c,
+			b,
+			alpha,
+			mref,
+			msup,
+			tbegin,
+			tend,
+			mag_min_sim,
+			mag_max_sim
+		);
+	}
+
+
+
+
+	// Return the magnitude range parameters.
+	// The returned object is newly allocated.
+
+	public final OECatalogParamsMags get_params_mags () {
+		return new OECatalogParamsMags (
+			mref,
+			msup,
+			mag_min_sim,
+			mag_max_sim
+		);
 	}
 
 

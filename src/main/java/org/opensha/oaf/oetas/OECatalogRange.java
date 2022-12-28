@@ -9,6 +9,9 @@ import org.opensha.oaf.util.MarshalException;
 
 // Class to specify the time and magnitude ranges of an Operational ETAS catalog.
 // Author: Michael Barall 03/07/2022.
+//
+// Holds the subset of the parameters in OECatalogParams that determine the
+// time and magnitude range of a simulation.
 
 public class OECatalogRange {
 
