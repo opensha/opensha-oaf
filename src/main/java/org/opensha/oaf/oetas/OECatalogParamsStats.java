@@ -209,6 +209,30 @@ public class OECatalogParamsStats {
 
 
 
+	// Set the minimum magnitude to a fixed value.
+	// Note: Produces a minimum magnitude that is non-adjustable.
+	// Note: This produces the same result as OECatalogParams.set_fixed_mag_min followed by get_params_stats.
+
+	public final void set_fixed_mag_min (double mag_min) {
+		this.mag_min_sim     = mag_min;
+		return;
+	}
+
+
+
+
+	// Set the maximum magnitude to a fixed value.
+	// Note: Produces a maximum magnitude that is non-adjustable.
+	// Note: This produces the same result as OECatalogParams.set_fixed_mag_max followed by get_params_stats.
+
+	public final void set_fixed_mag_max (double mag_max) {
+		this.mag_max_sim     = mag_max;
+		return;
+	}
+
+
+
+
 	// Return the magnitude range parameters.
 	// The returned object is newly allocated.
 	// Note: This produces the same result as OECatalogParams.get_params_mags.

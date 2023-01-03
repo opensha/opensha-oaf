@@ -2017,7 +2017,12 @@ public class OEFit2Test {
 
 				// Adjust the minimum simulation magnitude to be the history's magCat
 
-				cat_params.set_fixed_mag_min (history.magCat);
+				OECatalogParamsStats cat_params_stats = cat_params.get_params_stats();
+				cat_params_stats.set_fixed_mag_min (history.magCat);
+
+				// Statistics from seed parameters
+
+				OESeedParamsStats seed_params_stats = seed_params.get_params_stats();
 
 				// Parameter ranges
 
@@ -2026,7 +2031,7 @@ public class OEFit2Test {
 
 				// Make and display the grid
 
-				fit_a_ams_like_grid (history, cat_params.get_params_stats(), seed_params.get_params_stats(), f_intervals, lmr_opt, a_range, ams_range);
+				fit_a_ams_like_grid (history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt, a_range, ams_range);
 
 			} catch (Exception e) {
 				e.printStackTrace();
