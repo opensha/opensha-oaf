@@ -319,79 +319,12 @@ public class OEFit2Test {
 
 
 
-	// Lay out an a-value likelihood vector and and a/ams likelihood grid.
-	// vec[i] contains the likelihood value for a_range[i].
-	// grid[i][j] contains the likelihood value for a_range[i] and ams_range[j].
-
-	public static String layout_a_ams_like_vec_grid (double[] vec, double[][] grid, double[] a_range, double[] ams_range) {
-		StringBuilder result = new StringBuilder();
-
-		// Find the maximum value in the vector
-
-		int[] ix_v = new int[1];
-		double max_like_v = OEArraysCalc.find_array_max (vec, ix_v);
-
-		result.append (String.format("vector: max_like = %.7e at a_range[%d] = %.3e",
-				max_like_v, ix_v[0], a_range[ix_v[0]]));
-		result.append ("\n");
-
-		// Find the maximum value in the grid
-
-		int[] ix = new int[2];
-		double max_like = OEArraysCalc.find_array_max (grid, ix);
-
-		result.append (String.format("grid: max_like = %.7e at a_range[%d] = %.3e and ams_range[%d] = %.3e",
-				max_like, ix[0], a_range[ix[0]], ix[1], ams_range[ix[1]]));
-		result.append ("\n");
-
-		// Header line, space followed by the ams-values
-
-		result.append ("           |            |");
-		for (int j = 0; j < ams_range.length; ++j) {
-			result.append (String.format(" % .3e", ams_range[j]));
-		}
-		result.append ("\n");
-
-		// Separator line
-
-		result.append ("-----------+------------+");
-		for (int j = 0; j < ams_range.length; ++j) {
-			result.append ("-----------");
-		}
-		result.append ("\n");
-
-		// Data lines, a-value followed by scaled vector likelihood followed by scaled grid likelihoods
-
-		for (int i = 0; i < a_range.length; ++i) {
-			result.append (String.format("% .3e | % .3e |", a_range[i], vec[i] - max_like_v));
-			for (int j = 0; j < ams_range.length; ++j) {
-				result.append (String.format(" % .3e", grid[i][j] - max_like));
-			}
-			result.append ("\n");
-		}
-	
-		return result.toString();
-	}
-
-
-
-
-	// Lay out an c/p/a likelihood vector and and c/p/a/ams likelihood grid.
-	// vec[k][l][i] contains the likelihood value for c_range[k], p_range[l], a_range[i].
+	// Lay out a c/p/a/ams likelihood grid.
 	// grid[k][l][i][j] contains the likelihood value for c_range[k], p_range[l], a_range[i], ams_range[j].
 
-	public static String layout_c_p_a_ams_like_vec_grid (double[][][] vec, double[][][][] grid,
+	public static String layout_c_p_a_ams_like_grid (double[][][][] grid,
 				double[] a_range, double[] ams_range, double[] p_range, double[] c_range) {
 		StringBuilder result = new StringBuilder();
-
-		// Find the maximum value in the vector
-
-		int[] ix_v = new int[3];
-		double max_like_v = OEArraysCalc.find_array_max (vec, ix_v);
-
-		result.append (String.format("vector: max_like = %.7e at c_range[%d] = %.3e, p_range[%d] = %.3e, a_range[%d] = %.3e",
-				max_like_v, ix_v[0], c_range[ix_v[0]], ix_v[1], p_range[ix_v[1]], ix_v[2], a_range[ix_v[2]]));
-		result.append ("\n");
 
 		// Find the maximum value in the grid
 
@@ -409,7 +342,7 @@ public class OEFit2Test {
 
 		// Header line, space followed by the ams-values
 
-		result.append ("           |            |");
+		result.append ("           |");
 		for (int j = amsix_lo; j < amsix_hi; ++j) {
 			result.append (String.format(" % .3e", ams_range[j]));
 		}
@@ -417,16 +350,16 @@ public class OEFit2Test {
 
 		// Separator line
 
-		result.append ("-----------+------------+");
+		result.append ("-----------+");
 		for (int j = amsix_lo; j < amsix_hi; ++j) {
 			result.append ("-----------");
 		}
 		result.append ("\n");
 
-		// Data lines, a-value followed by scaled vector likelihood followed by scaled grid likelihoods
+		// Data lines, a-value followed by followed by scaled grid likelihoods
 
 		for (int i = 0; i < a_range.length; ++i) {
-			result.append (String.format("% .3e | % .3e |", a_range[i], vec[ix_v[0]][ix_v[1]][i] - max_like_v));
+			result.append (String.format("% .3e |", a_range[i]));
 			for (int j = amsix_lo; j < amsix_hi; ++j) {
 				result.append (String.format(" % .3e", grid[ix[0]][ix[1]][i][j] - max_like));
 			}
@@ -435,218 +368,6 @@ public class OEFit2Test {
 	
 		return result.toString();
 	}
-
-
-
-
-//	// Use the fitting code to generate and display an a-value likelihood vector and an a-ams likelihood grid.
-//	// a-values have the form cat_params.a + log10(a_range[i]).  So the powers of ten are (10^cat_params.a) * a_range[i].
-//	// ams-values have the form cat_params.a + log10(ams_range[i]).  So the powers of ten are (10^cat_params.a) * ams_range[i].
-//
-//	public static void fit_a_ams_like_vec_grid (
-//		OEDisc2History history, OECatalogParams cat_params, boolean f_intervals, int lmr_opt,
-//		double[] a_range, double[] ams_range
-//	) {
-//	
-//		// Display memory status
-//
-//		System.out.println();
-//		System.out.println ("Memory status, initial:");
-//		SimpleUtils.show_memory_status();
-//
-//		// Create the fitter
-//
-//		OEDisc2ExtFit fitter = new OEDisc2ExtFit();
-//
-//		boolean f_likelihood = true;
-//		fitter.dfit_build (history, cat_params.get_params_mags(), f_intervals, f_likelihood, lmr_opt);
-//
-//		// Allocate the data structures and obtain their handles
-//
-//		try (
-//			OEDisc2ExtFit.MagExponentHandle mexp = fitter.make_MagExponentHandle();
-//			OEDisc2ExtFit.OmoriMatrixHandle omat = fitter.make_OmoriMatrixHandle();
-//			OEDisc2ExtFit.PairMagOmoriHandle pmom = fitter.make_PairMagOmoriHandle();
-//			OEDisc2ExtFit.AValueProdHandle avpr = fitter.make_AValueProdHandle();
-//		) {
-//
-//			// Display memory status
-//
-//			System.out.println();
-//			System.out.println ("Memory status, after allocation:");
-//			SimpleUtils.show_memory_status();
-//
-//			// Build the magnitude-exponent data structures
-//
-//			mexp.mexp_build (cat_params.b, cat_params.alpha);
-//
-//			// Build the Omori matrix data structures
-//
-//			omat.omat_build (cat_params.p, cat_params.c);
-//
-//			// Build the magnitude-Omori pair data structures
-//
-//			pmom.pmom_build (mexp, omat);
-//
-//			// Display the fitter contents summary
-//
-//			System.out.println();
-//			System.out.println(fitter.toString());
-//			System.out.println(pmom.toString());
-//
-//			// Likelihood base values
-//
-//			double base_ten_a_q = Math.pow(10.0, cat_params.a) * mexp.get_q_correction();
-//			double base_ten_ams_q = Math.pow(10.0, cat_params.a) * mexp.get_q_correction();
-//
-//			// Likelihood vector
-//
-//			double[] vec = new double[a_range.length];
-//
-//			// Likelihood matrix
-//
-//			double[][] grid = new double[a_range.length][ams_range.length];
-//
-//			// Loop over a-values
-//
-//			for (int aix = 0; aix < a_range.length; ++aix) {
-//
-//				double ten_a_q = base_ten_a_q * a_range[aix];
-//
-//				// Build the a-value-productivity data structures
-//
-//				double ten_aint_q = ten_a_q;
-//
-//				avpr.avpr_build (pmom, ten_aint_q);
-//
-//				// Compute the log-likelihood for vector
-//
-//				vec[aix] = avpr.avpr_calc_log_like (ten_a_q, ten_a_q);
-//
-//				// Loop over ams-values
-//
-//				for (int amsix = 0; amsix < ams_range.length; ++amsix) {
-//				
-//					double ten_ams_q = base_ten_ams_q * ams_range[amsix];
-//
-//					// Compute the log-likelihood for grid
-//
-//					grid[aix][amsix] = avpr.avpr_calc_log_like (ten_a_q, ten_ams_q);
-//				}
-//			}
-//
-//			// Display the result
-//
-//			System.out.println();
-//			System.out.println(layout_a_ams_like_vec_grid (vec, grid, a_range, ams_range));
-//		}
-//
-//		// Discard the fitter
-//
-//		fitter = null;
-//
-//		return;
-//	}
-
-
-
-
-//	// Use the fitting code to find maximum-likelihood values for an a-value likelihood vector and an a-ams likelihood grid.
-//	// a-values have the form cat_params.a + log10(a_range[i]).  So the powers of ten are (10^cat_params.a) * a_range[i].
-//	// ams-values have the form cat_params.a + log10(ams_range[i]).  So the powers of ten are (10^cat_params.a) * ams_range[i].
-//	// ix_vec is a one-element array that returns the MLE index into a_range, for the case of a == ams.
-//	// ix_grid is a two-element array that returns the MLE indexes into a_range and ams_range.
-//
-//	public static void mle_a_ams_like_vec_grid (
-//		OEDisc2History history, OECatalogParams cat_params, boolean f_intervals, int lmr_opt,
-//		double[] a_range, double[] ams_range,
-//		int[] ix_vec, int[] ix_grid
-//	) {
-//
-//		// Create the fitter
-//
-//		OEDisc2ExtFit fitter = new OEDisc2ExtFit();
-//
-//		boolean f_likelihood = true;
-//		fitter.dfit_build (history, cat_params.get_params_mags(), f_intervals, f_likelihood, lmr_opt);
-//
-//		// Allocate the data structures and obtain their handles
-//
-//		try (
-//			OEDisc2ExtFit.MagExponentHandle mexp = fitter.make_MagExponentHandle();
-//			OEDisc2ExtFit.OmoriMatrixHandle omat = fitter.make_OmoriMatrixHandle();
-//			OEDisc2ExtFit.PairMagOmoriHandle pmom = fitter.make_PairMagOmoriHandle();
-//			OEDisc2ExtFit.AValueProdHandle avpr = fitter.make_AValueProdHandle();
-//		) {
-//
-//			// Build the magnitude-exponent data structures
-//
-//			mexp.mexp_build (cat_params.b, cat_params.alpha);
-//
-//			// Build the Omori matrix data structures
-//
-//			omat.omat_build (cat_params.p, cat_params.c);
-//
-//			// Build the magnitude-Omori pair data structures
-//
-//			pmom.pmom_build (mexp, omat);
-//
-//			// Likelihood base values
-//
-//			double base_ten_a_q = Math.pow(10.0, cat_params.a) * mexp.get_q_correction();
-//			double base_ten_ams_q = Math.pow(10.0, cat_params.a) * mexp.get_q_correction();
-//
-//			// Likelihood vector
-//
-//			double[] vec = new double[a_range.length];
-//
-//			// Likelihood matrix
-//
-//			double[][] grid = new double[a_range.length][ams_range.length];
-//
-//			// Loop over a-values
-//
-//			for (int aix = 0; aix < a_range.length; ++aix) {
-//
-//				double ten_a_q = base_ten_a_q * a_range[aix];
-//
-//				// Build the a-value-productivity data structures
-//
-//				double ten_aint_q = ten_a_q;
-//
-//				avpr.avpr_build (pmom, ten_aint_q);
-//
-//				// Compute the log-likelihood for vector
-//
-//				vec[aix] = avpr.avpr_calc_log_like (ten_a_q, ten_a_q);
-//
-//				// Loop over ams-values
-//
-//				for (int amsix = 0; amsix < ams_range.length; ++amsix) {
-//				
-//					double ten_ams_q = base_ten_ams_q * ams_range[amsix];
-//
-//					// Compute the log-likelihood for grid
-//
-//					grid[aix][amsix] = avpr.avpr_calc_log_like (ten_a_q, ten_ams_q);
-//				}
-//			}
-//
-//			// Find the maximum value in the vector
-//
-//			double max_like_vec = OEArraysCalc.find_array_max (vec, ix_vec);
-//
-//			// Find the maximum value in the grid
-//
-//			double max_like_grid = OEArraysCalc.find_array_max (grid, ix_grid);
-//		}
-//
-//		// Discard the fitter
-//
-//		fitter = null;
-//
-//		return;
-//	}
 
 
 
@@ -746,9 +467,9 @@ public class OEFit2Test {
 
 
 
-	// Class to use fitting to for a, ams, p, and c; version 2.
+	// Class to use fitting to for a, ams, p, and c; version 3.
 	
-	public static class MLE_fit_a_ams_p_c_v2 implements SimpleThreadTarget {
+	public static class MLE_fit_a_ams_p_c_v3 implements SimpleThreadTarget {
 
 		// --- Input parameters ---
 
@@ -757,8 +478,20 @@ public class OEFit2Test {
 		public OEDisc2History history;
 
 		// Catalog parameters.
+		// In cat_params:
+		//  -- a, p, c, b, and alpha provide the central or only value of the corresponding parameter.
+		//  -- mref, msup, mag_min_sim, and mag_max_sim provide the magnitude ranges used by the fitter
+		//     (which are also the magnitude ranges used for Q-correction of a).
+		//  -- tbegin and tend are are the time range used for scaling a to preserve the branch ratio
+		//     (only the difference tend - tbegin is relevant).
 
-		public OECatalogParams cat_params;
+		public OECatalogParamsStats cat_params;
+
+		// Seed parameters
+		// In seed_params:
+		//  -- ams provides the central value of the corresponding parameter.
+
+		public  OESeedParamsStats seed_params;
 
 		// Interval option.
 
@@ -774,7 +507,7 @@ public class OEFit2Test {
 		public double[] a_range;
 
 		// Range of ams-values.
-		// ams-values are a_base + log10(ams_range[amsix]).
+		// ams-values are seed_params.ams + log10(ams_range[amsix]).
 
 		public double[] ams_range;
 
@@ -792,7 +525,8 @@ public class OEFit2Test {
 
 		public void setup (
 			OEDisc2History history,
-			OECatalogParams cat_params,
+			OECatalogParamsStats cat_params,
+			OESeedParamsStats seed_params,
 			boolean f_intervals,
 			int lmr_opt,
 			double[] a_range,
@@ -802,6 +536,7 @@ public class OEFit2Test {
 		) {
 			this.history     = history;
 			this.cat_params  = cat_params;
+			this.seed_params = seed_params;
 			this.f_intervals = f_intervals;
 			this.lmr_opt     = lmr_opt;
 			this.a_range     = a_range;
@@ -823,11 +558,6 @@ public class OEFit2Test {
 		//   10^a_base * I(p, c) == 10^cat_params.a * I(cat_params.p, cat_params.c)
 
 		public double[][] a_base;
-
-		// Log-likelihood values under the constraint a == ams.
-		// The indexing is like_vec[cix][pix][aix].
-
-		public double [][][] like_vec;
 
 		// Log-likelihood values.
 		// The indexing is like_vec[cix][pix][aix][amsix].
@@ -955,7 +685,7 @@ public class OEFit2Test {
 
 					// Get scaled a-value
 
-					double a_scaled = cat_params.a + Math.log10(calc_omori_scale(cat_params.p, cat_params.c) / calc_omori_scale(p, c));
+					double a_scaled = cat_params.a + Math.log10(calc_average_omori_scale(cat_params.p, cat_params.c) / calc_average_omori_scale(p, c));
 					a_base[cix][pix] = a_scaled;
 
 					// Build the Omori matrix data structures
@@ -969,11 +699,8 @@ public class OEFit2Test {
 					// Likelihood base values
 
 					double base_ten_a_q = Math.pow(10.0, a_scaled) * mexp.get_q_correction();
-					double base_ten_ams_q = Math.pow(10.0, a_scaled) * mexp.get_q_correction();
 
-					// Likelihood vector
-
-					double[] vec = like_vec[cix][pix];
+					double base_ten_ams_q = Math.pow(10.0, seed_params.ams);
 
 					// Likelihood matrix
 
@@ -990,10 +717,6 @@ public class OEFit2Test {
 						double ten_aint_q = ten_a_q;
 
 						avpr.avpr_build (pmom, ten_aint_q);
-
-						// Compute the log-likelihood for vector
-
-						vec[aix] = avpr.avpr_calc_log_like (ten_a_q, ten_a_q);
 
 						// Loop over ams-values
 
@@ -1035,7 +758,6 @@ public class OEFit2Test {
 			// Allocate arrays for the output parameters
 
 			a_base = new double[c_range.length][p_range.length];
-			like_vec = new double[c_range.length][p_range.length][a_range.length];
 			like_grid = new double[c_range.length][p_range.length][a_range.length][ams_range.length];
 
 			// Create the work units
@@ -1139,15 +861,18 @@ public class OEFit2Test {
 
 
 
-	// Use the fitting code to generate and display an c/p/a likelihood vector and a c/p/a/ams likelihood grid.
-	// a-values have the form cat_params.a + log10(a_range[i]).  So the powers of ten are (10^cat_params.a) * a_range[i].
-	// ams-values have the form cat_params.a + log10(ams_range[i]).  So the powers of ten are (10^cat_params.a) * ams_range[i].
+	// Use the fitting code to generate and display a c/p/a/ams likelihood grid.
+	// a-values have the form a_base(p,c) + log10(a_range[i]).  So the powers of ten are (10^a_base(p,c)) * a_range[i].
+	// ams-values have the form seed_params.ams + log10(ams_range[i]).  So the powers of ten are (10^seed_params.ams) * ams_range[i].
 	// p-values have the form cat_params.p + p_range[i].
 	// c-values have the form cat_params.c * c_range[i].
+	// Note: a_base(p,c) == cat_params.a for p == cat_params.p and c == cat_params.c.  For other values of p and c, 
+	//  a_base(p,c) is chosen to have the same branch ratio on the time interval cat_params.tend - cat_params.tbegin
+	//  and magnitude range cat_params.msup - cat_params.mref.  So the branch ratio is cat_params.get_br() * a_range[i].
 	// This uses the multi-threaded code.
 
-	public static void fit_c_p_a_ams_like_vec_grid (
-		OEDisc2History history, OECatalogParams cat_params, boolean f_intervals, int lmr_opt,
+	public static void fit_c_p_a_ams_like_grid (
+		OEDisc2History history, OECatalogParamsStats cat_params, OESeedParamsStats seed_params, boolean f_intervals, int lmr_opt,
 		double[] a_range, double[] ams_range, double[] p_range, double[] c_range
 	) {
 	
@@ -1159,11 +884,12 @@ public class OEFit2Test {
 
 		// Create the multi-threaded fitter
 
-		MLE_fit_a_ams_p_c_v2 multi_fitter = new MLE_fit_a_ams_p_c_v2();
+		MLE_fit_a_ams_p_c_v3 multi_fitter = new MLE_fit_a_ams_p_c_v3();
 
 		multi_fitter.setup (
 			history,
 			cat_params,
+			seed_params,
 			f_intervals,
 			lmr_opt,
 			a_range,
@@ -1188,7 +914,7 @@ public class OEFit2Test {
 		// Display the result
 
 		System.out.println();
-		System.out.println(layout_c_p_a_ams_like_vec_grid (multi_fitter.like_vec, multi_fitter.like_grid, a_range, ams_range, p_range, c_range));
+		System.out.println(layout_c_p_a_ams_like_grid (multi_fitter.like_grid, a_range, ams_range, p_range, c_range));
 
 		// Discard the fitter
 
@@ -1200,28 +926,31 @@ public class OEFit2Test {
 
 
 
-	// Use the fitting code to find the maximum-likelihood values of a c/p/a likelihood vector and a c/p/a/ams likelihood grid.
-	// a-values have the form cat_params.a + log10(a_range[i]).  So the powers of ten are (10^cat_params.a) * a_range[i].
-	// ams-values have the form cat_params.a + log10(ams_range[i]).  So the powers of ten are (10^cat_params.a) * ams_range[i].
+	// Use the fitting code to find the maximum-likelihood values of a c/p/a/ams likelihood grid.
+	// a-values have the form a_base(p,c) + log10(a_range[i]).  So the powers of ten are (10^a_base(p,c)) * a_range[i].
+	// ams-values have the form seed_params.ams + log10(ams_range[i]).  So the powers of ten are (10^seed_params.ams) * ams_range[i].
 	// p-values have the form cat_params.p + p_range[i].
 	// c-values have the form cat_params.c * c_range[i].
+	// Note: a_base(p,c) == cat_params.a for p == cat_params.p and c == cat_params.c.  For other values of p and c, 
+	//  a_base(p,c) is chosen to have the same branch ratio on the time interval cat_params.tend - cat_params.tbegin
+	//  and magnitude range cat_params.msup - cat_params.mref.  So the branch ratio is cat_params.get_br() * a_range[i].
 	// This uses the multi-threaded code.
-	// ix_vec is a 3-element array that returns the MLE indexes into c_range, p_range, and a_range, for the case of a == ams.
 	// ix_grid is a 4-element array that returns the MLE indexes into c_range, p_range, a_range, and ams_range.
 
-	public static void mle_c_p_a_ams_like_vec_grid (
-		OEDisc2History history, OECatalogParams cat_params, boolean f_intervals, int lmr_opt,
+	public static void mle_c_p_a_ams_like_grid (
+		OEDisc2History history, OECatalogParamsStats cat_params, OESeedParamsStats seed_params, boolean f_intervals, int lmr_opt,
 		double[] a_range, double[] ams_range, double[] p_range, double[] c_range,
-		int[] ix_vec, int[] ix_grid
+		int[] ix_grid
 	) {
 	
 		// Create the multi-threaded fitter
 
-		MLE_fit_a_ams_p_c_v2 multi_fitter = new MLE_fit_a_ams_p_c_v2();
+		MLE_fit_a_ams_p_c_v3 multi_fitter = new MLE_fit_a_ams_p_c_v3();
 
 		multi_fitter.setup (
 			history,
 			cat_params,
+			seed_params,
 			f_intervals,
 			lmr_opt,
 			a_range,
@@ -1236,10 +965,6 @@ public class OEFit2Test {
 		long max_runtime = -1L;
 		long progress_time = -1L;
 		multi_fitter.calc_likelihood (num_threads, max_runtime, progress_time);
-
-		// Find the maximum value in the vector
-
-		double max_like_v = OEArraysCalc.find_array_max (multi_fitter.like_vec, ix_vec);
 
 		// Find the maximum value in the grid
 
@@ -1255,28 +980,31 @@ public class OEFit2Test {
 
 
 
-	// Use the fitting code to find marginals for a c/p/a likelihood vector and a c/p/a/ams likelihood grid.
-	// a-values have the form cat_params.a + log10(a_range[i]).  So the powers of ten are (10^cat_params.a) * a_range[i].
-	// ams-values have the form cat_params.a + log10(ams_range[i]).  So the powers of ten are (10^cat_params.a) * ams_range[i].
+	// Use the fitting code to find marginals for a c/p/a/ams likelihood grid.
+	// a-values have the form a_base(p,c) + log10(a_range[i]).  So the powers of ten are (10^a_base(p,c)) * a_range[i].
+	// ams-values have the form seed_params.ams + log10(ams_range[i]).  So the powers of ten are (10^seed_params.ams) * ams_range[i].
 	// p-values have the form cat_params.p + p_range[i].
 	// c-values have the form cat_params.c * c_range[i].
+	// Note: a_base(p,c) == cat_params.a for p == cat_params.p and c == cat_params.c.  For other values of p and c, 
+	//  a_base(p,c) is chosen to have the same branch ratio on the time interval cat_params.tend - cat_params.tbegin
+	//  and magnitude range cat_params.msup - cat_params.mref.  So the branch ratio is cat_params.get_br() * a_range[i].
 	// This uses the multi-threaded code.
-	// marg_vec receives a 3-dimensional marginal for indexes into c_range, p_range, and a_range, for the case of a == ams.
 	// marg_grid receives a 4-dimensional marginal for indexes into c_range, p_range, a_range, and ams_range.
 
-	public static void marg_c_p_a_ams_like_vec_grid (
-		OEDisc2History history, OECatalogParams cat_params, boolean f_intervals, int lmr_opt,
+	public static void marg_c_p_a_ams_like_grid (
+		OEDisc2History history, OECatalogParamsStats cat_params, OESeedParamsStats seed_params, boolean f_intervals, int lmr_opt,
 		double[] a_range, double[] ams_range, double[] p_range, double[] c_range,
-		OEGridMarginal marg_vec, OEGridMarginal marg_grid
+		OEGridMarginal marg_grid
 	) {
 	
 		// Create the multi-threaded fitter
 
-		MLE_fit_a_ams_p_c_v2 multi_fitter = new MLE_fit_a_ams_p_c_v2();
+		MLE_fit_a_ams_p_c_v3 multi_fitter = new MLE_fit_a_ams_p_c_v3();
 
 		multi_fitter.setup (
 			history,
 			cat_params,
+			seed_params,
 			f_intervals,
 			lmr_opt,
 			a_range,
@@ -1292,14 +1020,10 @@ public class OEFit2Test {
 		long progress_time = -1L;
 		multi_fitter.calc_likelihood (num_threads, max_runtime, progress_time);
 
-		// Find the marginals for the vector
+		// Find the marginals for the grid
 
 		boolean f_has_prob = false;
 		boolean f_convert = false;
-
-		marg_vec.marginals_from_grid (multi_fitter.like_vec, f_has_prob, f_convert);
-
-		// Find the marginals for the grid
 
 		marg_grid.marginals_from_grid (multi_fitter.like_grid, f_has_prob, f_convert);
 
@@ -2370,173 +2094,6 @@ public class OEFit2Test {
 
 
 
-//		// Subcommand : Test #6
-//		// Command format:
-//		//  test6  n  p  c  b  alpha  mref  msup  tbegin  tend
-//		//         magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
-//		//         durlim_ratio  durlim_min  durlim_max
-//		//         f_intervals  lmr_opt
-//		//         t_day  rup_mag  [t_day  rup_mag]...
-//		// Generate a catalog with the given parameters.
-//		// The catalog is seeded with ruptures at the given times and magnitudes.
-//		// Then construct a history containing the catalog.
-//		// Then use the history to generate an a-value vector and an a-ams grid with the fitting code.
-//		// Display catalog summary, history contents, and grid contents.
-//
-//		if (args[0].equalsIgnoreCase ("test6")) {
-//
-//			// 22 or more additional arguments
-//
-//			if (!( args.length >= 23 && args.length % 2 == 1 )) {
-//				System.err.println ("OEFit2Test : Invalid 'test6' subcommand");
-//				return;
-//			}
-//
-//			try {
-//
-//				double n = Double.parseDouble (args[1]);
-//				double p = Double.parseDouble (args[2]);
-//				double c = Double.parseDouble (args[3]);
-//				double b = Double.parseDouble (args[4]);
-//				double alpha = Double.parseDouble (args[5]);
-//				double mref = Double.parseDouble (args[6]);
-//				double msup = Double.parseDouble (args[7]);
-//				double tbegin = Double.parseDouble (args[8]);
-//				double tend = Double.parseDouble (args[9]);
-//
-//				double magCat = Double.parseDouble (args[10]);
-//				int helm_param = Integer.parseInt (args[11]);
-//				double disc_delta = Double.parseDouble (args[12]);
-//				int mag_cat_count = Integer.parseInt (args[13]);
-//				double eligible_mag = Double.parseDouble (args[14]);
-//				int eligible_count = Integer.parseInt (args[15]);
-//
-//				double durlim_ratio = Double.parseDouble (args[16]);
-//				double durlim_min = Double.parseDouble (args[17]);
-//				double durlim_max = Double.parseDouble (args[18]);
-//
-//				boolean f_intervals = Boolean.parseBoolean (args[19]);
-//				int lmr_opt = Integer.parseInt (args[20]);
-//
-//				double[] time_mag_array = new double[args.length - 21];
-//				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
-//					time_mag_array[ntm] = Double.parseDouble (args[ntm + 21]);
-//				}
-//
-//				// Say hello
-//
-//				System.out.println ("Generating catalog and history, and generating a/ams grid");
-//				System.out.println ("n = " + n);
-//				System.out.println ("p = " + p);
-//				System.out.println ("c = " + c);
-//				System.out.println ("b = " + b);
-//				System.out.println ("alpha = " + alpha);
-//				System.out.println ("mref = " + mref);
-//				System.out.println ("msup = " + msup);
-//				System.out.println ("tbegin = " + tbegin);
-//				System.out.println ("tend = " + tend);
-//
-//				System.out.println ("magCat = " + magCat);
-//				System.out.println ("helm_param = " + helm_param);
-//				System.out.println ("disc_delta = " + disc_delta);
-//				System.out.println ("mag_cat_count = " + mag_cat_count);
-//				System.out.println ("eligible_mag = " + eligible_mag);
-//				System.out.println ("eligible_count = " + eligible_count);
-//
-//				System.out.println ("durlim_ratio = " + durlim_ratio);
-//				System.out.println ("durlim_min = " + durlim_min);
-//				System.out.println ("durlim_max = " + durlim_max);
-//
-//				System.out.println ("f_intervals = " + f_intervals);
-//				System.out.println ("lmr_opt = " + lmr_opt);
-//
-//				System.out.println ("time_mag_array:");
-//				for (int ntm = 0; ntm < time_mag_array.length; ntm += 2) {
-//					System.out.println ("  time = " + time_mag_array[ntm] + ", mag = " + time_mag_array[ntm + 1]);
-//				}
-//
-//				// Make the catalog parameters
-//
-//				OECatalogParams cat_params = (new OECatalogParams()).set_to_fixed_mag_br (
-//					n,		// n
-//					p,		// p
-//					c,		// c
-//					b,		// b
-//					alpha,	// alpha
-//					mref,	// mref
-//					msup,	// msup
-//					tbegin,	// tbegin
-//					tend	// tend
-//				);
-//
-//				// Make the catalog initializer
-//
-//				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
-//
-//				// Make the catalog examiner
-//
-//				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
-//				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
-//
-//				// Generate a catalog
-//
-//				OESimulator.gen_single_catalog (initializer, examiner);
-//
-//				// Make time-splitting function
-//
-//				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
-//
-//				// Make the history parameters
-//
-//				OEDiscFGHParams hist_params = new OEDiscFGHParams();
-//
-//				hist_params.set_sim_history_typical (
-//					magCat,			// magCat
-//					helm_param,		// helm_param
-//					tbegin,			// t_range_begin
-//					tend,			// t_range_end
-//					disc_delta,		// disc_delta
-//					mag_cat_count,	// mag_cat_count
-//					eligible_mag,	// eligible_mag
-//					eligible_count,	// eligible_count
-//					split_fn		// split_fn
-//				);
-//
-//				// Display the history parameters
-//
-//				System.out.println ();
-//				System.out.println (hist_params.toString());
-//
-//				// Make a history
-//
-//				OEDisc2History history = new OEDisc2History();
-//
-//				history.build_from_fgh (hist_params, rup_list);
-//
-//				// Display the history
-//
-//				System.out.println ();
-//				System.out.println (history.toString());
-//
-//				// Parameter ranges
-//
-//				double[] a_range = (OEDiscreteRange.makeLog (51, 0.1, 10.0)).get_range_array();
-//				double[] ams_range = (OEDiscreteRange.makeLog (11, Math.sqrt(0.1), Math.sqrt(10.0))).get_range_array();
-//
-//				// Make and display the vector and grid
-//
-//				fit_a_ams_like_vec_grid (history, cat_params, f_intervals, lmr_opt, a_range, ams_range);
-//
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//
-//			return;
-//		}
-
-
-
-
 		// Subcommand : Test #7
 		// Command format:
 		//  test7  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
@@ -2552,7 +2109,7 @@ public class OEFit2Test {
 		// Then for each catalog, write a line containing 11 values:
 		//  catalog number
 		//  a - atrue
-		//  ams - atrue
+		//  ams - amstrue
 		//  a index (grid)
 		//  ams index (grid)
 		//  catalog rupture count
@@ -2790,7 +2347,7 @@ public class OEFit2Test {
 		// Then for each catalog, write a line containing 11 values:
 		//  catalog number
 		//  a - atrue
-		//  ams - atrue
+		//  ams - amstrue
 		//  a index (grid)
 		//  ams index (grid)
 		//  catalog rupture count
@@ -3054,9 +2611,9 @@ public class OEFit2Test {
 
 		// Subcommand : Test #8
 		// Command format:
-		//  test8  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//  test8  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
 		//         magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
-		//         durlim_ratio  durlim_min  durlim_max
+		//         durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
 		//         f_intervals  lmr_opt
 		//         t_day  rup_mag  [t_day  rup_mag]...
 		// Generate a catalog with the given parameters.
@@ -3064,52 +2621,58 @@ public class OEFit2Test {
 		// Then construct a history containing the catalog.
 		// Then use the history to generate an a-value vector and an a-ams grid with the fitting code.
 		// Display catalog summary, history contents, and grid contents.
-		// Note: This is essentially the same as test #6, except using the multi-threading code
-		// (even though only one thread will be used).
+		// Note: This is essentially the same as test #5, except using the multi-threading code
+		// (with default number of threads).
 
 		if (args[0].equalsIgnoreCase ("test8")) {
 
-			// 22 or more additional arguments
+			// 26 or more additional arguments
 
-			if (!( args.length >= 23 && args.length % 2 == 1 )) {
+			if (!( args.length >= 27 && args.length % 2 == 1 )) {
 				System.err.println ("OEFit2Test : Invalid 'test8' subcommand");
 				return;
 			}
 
 			try {
 
-				double n = Double.parseDouble (args[1]);
-				double p = Double.parseDouble (args[2]);
-				double c = Double.parseDouble (args[3]);
-				double b = Double.parseDouble (args[4]);
-				double alpha = Double.parseDouble (args[5]);
-				double mref = Double.parseDouble (args[6]);
-				double msup = Double.parseDouble (args[7]);
-				double tbegin = Double.parseDouble (args[8]);
-				double tend = Double.parseDouble (args[9]);
+				int ii = 1;
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
 
-				double magCat = Double.parseDouble (args[10]);
-				int helm_param = Integer.parseInt (args[11]);
-				double disc_delta = Double.parseDouble (args[12]);
-				int mag_cat_count = Integer.parseInt (args[13]);
-				double eligible_mag = Double.parseDouble (args[14]);
-				int eligible_count = Integer.parseInt (args[15]);
+				double magCat = Double.parseDouble (args[ii++]);
+				int helm_param = Integer.parseInt (args[ii++]);
+				double disc_delta = Double.parseDouble (args[ii++]);
+				int mag_cat_count = Integer.parseInt (args[ii++]);
+				double eligible_mag = Double.parseDouble (args[ii++]);
+				int eligible_count = Integer.parseInt (args[ii++]);
 
-				double durlim_ratio = Double.parseDouble (args[16]);
-				double durlim_min = Double.parseDouble (args[17]);
-				double durlim_max = Double.parseDouble (args[18]);
+				double durlim_ratio = Double.parseDouble (args[ii++]);
+				double durlim_min = Double.parseDouble (args[ii++]);
+				double durlim_max = Double.parseDouble (args[ii++]);
+				double t_interval_begin = Double.parseDouble (args[ii++]);
+				int before_max_count = Integer.parseInt (args[ii++]);
+				int mag_cat_int_join = Integer.parseInt (args[ii++]);
 
-				boolean f_intervals = Boolean.parseBoolean (args[19]);
-				int lmr_opt = Integer.parseInt (args[20]);
+				boolean f_intervals = Boolean.parseBoolean (args[ii++]);
+				int lmr_opt = Integer.parseInt (args[ii++]);
 
-				double[] time_mag_array = new double[args.length - 21];
+				double[] time_mag_array = new double[args.length - ii];
 				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
-					time_mag_array[ntm] = Double.parseDouble (args[ntm + 21]);
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + ii]);
 				}
 
 				// Say hello
 
 				System.out.println ("Generating catalog and history, and generating a/ams grid, multi-threaded");
+				System.out.println ("zams = " + zams);
 				System.out.println ("n = " + n);
 				System.out.println ("p = " + p);
 				System.out.println ("c = " + c);
@@ -3130,6 +2693,9 @@ public class OEFit2Test {
 				System.out.println ("durlim_ratio = " + durlim_ratio);
 				System.out.println ("durlim_min = " + durlim_min);
 				System.out.println ("durlim_max = " + durlim_max);
+				System.out.println ("t_interval_begin = " + t_interval_begin);
+				System.out.println ("before_max_count = " + before_max_count);
+				System.out.println ("mag_cat_int_join = " + mag_cat_int_join);
 
 				System.out.println ("f_intervals = " + f_intervals);
 				System.out.println ("lmr_opt = " + lmr_opt);
@@ -3153,9 +2719,13 @@ public class OEFit2Test {
 					tend	// tend
 				);
 
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams (zams, cat_params);
+
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
@@ -3172,18 +2742,27 @@ public class OEFit2Test {
 
 				// Make the history parameters
 
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
 				OEDiscFGHParams hist_params = new OEDiscFGHParams();
 
 				hist_params.set_sim_history_typical (
-					magCat,			// magCat
-					helm_param,		// helm_param
-					tbegin,			// t_range_begin
-					tend,			// t_range_end
-					disc_delta,		// disc_delta
-					mag_cat_count,	// mag_cat_count
-					eligible_mag,	// eligible_mag
-					eligible_count,	// eligible_count
-					split_fn		// split_fn
+					magCat,				// magCat
+					helm_param,			// helm_param
+					tbegin,				// t_range_begin
+					tend,				// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
 				);
 
 				// Display the history parameters
@@ -3202,6 +2781,15 @@ public class OEFit2Test {
 				System.out.println ();
 				System.out.println (history.toString());
 
+				// Adjust the minimum simulation magnitude to be the history's magCat
+
+				OECatalogParamsStats cat_params_stats = cat_params.get_params_stats();
+				cat_params_stats.set_fixed_mag_min (history.magCat);
+
+				// Statistics from seed parameters
+
+				OESeedParamsStats seed_params_stats = seed_params.get_params_stats();
+
 				// Parameter ranges
 
 				double[] a_range = (OEDiscreteRange.makeLog (51, 0.1, 10.0)).get_range_array();
@@ -3211,7 +2799,7 @@ public class OEFit2Test {
 
 				// Make and display the vector and grid
 
-				fit_c_p_a_ams_like_vec_grid (history, cat_params, f_intervals, lmr_opt, a_range, ams_range, p_range, c_range);
+				fit_c_p_a_ams_like_grid (history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt, a_range, ams_range, p_range, c_range);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -3225,9 +2813,9 @@ public class OEFit2Test {
 
 		// Subcommand : Test #9
 		// Command format:
-		//  test9  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//  test9  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
 		//         magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
-		//         durlim_ratio  durlim_min  durlim_max
+		//         durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
 		//         f_intervals  lmr_opt
 		//         t_day  rup_mag  [t_day  rup_mag]...
 		// Generate a catalog with the given parameters.
@@ -3235,53 +2823,59 @@ public class OEFit2Test {
 		// Then construct a history containing the catalog.
 		// Then use the history to generate an a-value vector and an a-ams grid with the fitting code.
 		// Display catalog summary, history contents, and grid contents.
-		// Note: This is essentially the same as test #6, except using the multi-threading code
-		// (even though only one thread will be used).
+		// Note: This is essentially the same as test #5, except using the multi-threading code
+		// (with default number of threads).
 		// Note: Same as text #8, except p is allowed to vary.
 
 		if (args[0].equalsIgnoreCase ("test9")) {
 
-			// 22 or more additional arguments
+			// 26 or more additional arguments
 
-			if (!( args.length >= 23 && args.length % 2 == 1 )) {
+			if (!( args.length >= 27 && args.length % 2 == 1 )) {
 				System.err.println ("OEFit2Test : Invalid 'test9' subcommand");
 				return;
 			}
 
 			try {
 
-				double n = Double.parseDouble (args[1]);
-				double p = Double.parseDouble (args[2]);
-				double c = Double.parseDouble (args[3]);
-				double b = Double.parseDouble (args[4]);
-				double alpha = Double.parseDouble (args[5]);
-				double mref = Double.parseDouble (args[6]);
-				double msup = Double.parseDouble (args[7]);
-				double tbegin = Double.parseDouble (args[8]);
-				double tend = Double.parseDouble (args[9]);
+				int ii = 1;
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
 
-				double magCat = Double.parseDouble (args[10]);
-				int helm_param = Integer.parseInt (args[11]);
-				double disc_delta = Double.parseDouble (args[12]);
-				int mag_cat_count = Integer.parseInt (args[13]);
-				double eligible_mag = Double.parseDouble (args[14]);
-				int eligible_count = Integer.parseInt (args[15]);
+				double magCat = Double.parseDouble (args[ii++]);
+				int helm_param = Integer.parseInt (args[ii++]);
+				double disc_delta = Double.parseDouble (args[ii++]);
+				int mag_cat_count = Integer.parseInt (args[ii++]);
+				double eligible_mag = Double.parseDouble (args[ii++]);
+				int eligible_count = Integer.parseInt (args[ii++]);
 
-				double durlim_ratio = Double.parseDouble (args[16]);
-				double durlim_min = Double.parseDouble (args[17]);
-				double durlim_max = Double.parseDouble (args[18]);
+				double durlim_ratio = Double.parseDouble (args[ii++]);
+				double durlim_min = Double.parseDouble (args[ii++]);
+				double durlim_max = Double.parseDouble (args[ii++]);
+				double t_interval_begin = Double.parseDouble (args[ii++]);
+				int before_max_count = Integer.parseInt (args[ii++]);
+				int mag_cat_int_join = Integer.parseInt (args[ii++]);
 
-				boolean f_intervals = Boolean.parseBoolean (args[19]);
-				int lmr_opt = Integer.parseInt (args[20]);
+				boolean f_intervals = Boolean.parseBoolean (args[ii++]);
+				int lmr_opt = Integer.parseInt (args[ii++]);
 
-				double[] time_mag_array = new double[args.length - 21];
+				double[] time_mag_array = new double[args.length - ii];
 				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
-					time_mag_array[ntm] = Double.parseDouble (args[ntm + 21]);
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + ii]);
 				}
 
 				// Say hello
 
 				System.out.println ("Generating catalog and history, and generating p/a/ams grid, multi-threaded");
+				System.out.println ("zams = " + zams);
 				System.out.println ("n = " + n);
 				System.out.println ("p = " + p);
 				System.out.println ("c = " + c);
@@ -3302,6 +2896,9 @@ public class OEFit2Test {
 				System.out.println ("durlim_ratio = " + durlim_ratio);
 				System.out.println ("durlim_min = " + durlim_min);
 				System.out.println ("durlim_max = " + durlim_max);
+				System.out.println ("t_interval_begin = " + t_interval_begin);
+				System.out.println ("before_max_count = " + before_max_count);
+				System.out.println ("mag_cat_int_join = " + mag_cat_int_join);
 
 				System.out.println ("f_intervals = " + f_intervals);
 				System.out.println ("lmr_opt = " + lmr_opt);
@@ -3325,9 +2922,13 @@ public class OEFit2Test {
 					tend	// tend
 				);
 
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams (zams, cat_params);
+
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
@@ -3344,18 +2945,27 @@ public class OEFit2Test {
 
 				// Make the history parameters
 
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
 				OEDiscFGHParams hist_params = new OEDiscFGHParams();
 
 				hist_params.set_sim_history_typical (
-					magCat,			// magCat
-					helm_param,		// helm_param
-					tbegin,			// t_range_begin
-					tend,			// t_range_end
-					disc_delta,		// disc_delta
-					mag_cat_count,	// mag_cat_count
-					eligible_mag,	// eligible_mag
-					eligible_count,	// eligible_count
-					split_fn		// split_fn
+					magCat,				// magCat
+					helm_param,			// helm_param
+					tbegin,				// t_range_begin
+					tend,				// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
 				);
 
 				// Display the history parameters
@@ -3374,6 +2984,15 @@ public class OEFit2Test {
 				System.out.println ();
 				System.out.println (history.toString());
 
+				// Adjust the minimum simulation magnitude to be the history's magCat
+
+				OECatalogParamsStats cat_params_stats = cat_params.get_params_stats();
+				cat_params_stats.set_fixed_mag_min (history.magCat);
+
+				// Statistics from seed parameters
+
+				OESeedParamsStats seed_params_stats = seed_params.get_params_stats();
+
 				// Parameter ranges
 
 				double[] a_range = (OEDiscreteRange.makeLog (51, 0.1, 10.0)).get_range_array();
@@ -3383,7 +3002,7 @@ public class OEFit2Test {
 
 				// Make and display the vector and grid
 
-				fit_c_p_a_ams_like_vec_grid (history, cat_params, f_intervals, lmr_opt, a_range, ams_range, p_range, c_range);
+				fit_c_p_a_ams_like_grid (history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt, a_range, ams_range, p_range, c_range);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -3397,9 +3016,9 @@ public class OEFit2Test {
 
 		// Subcommand : Test #10
 		// Command format:
-		//  test10  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//  test10  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
 		//          magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
-		//          durlim_ratio  durlim_min  durlim_max
+		//          durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
 		//          f_intervals  lmr_opt
 		//          t_day  rup_mag  [t_day  rup_mag]...
 		// Generate a catalog with the given parameters.
@@ -3407,53 +3026,59 @@ public class OEFit2Test {
 		// Then construct a history containing the catalog.
 		// Then use the history to generate an a-value vector and an a-ams grid with the fitting code.
 		// Display catalog summary, history contents, and grid contents.
-		// Note: This is essentially the same as test #6, except using the multi-threading code
-		// (even though only one thread will be used).
+		// Note: This is essentially the same as test #5, except using the multi-threading code
+		// (with default number of threads).
 		// Note: Same as text #8, except p and c are allowed to vary.
 
 		if (args[0].equalsIgnoreCase ("test10")) {
 
-			// 22 or more additional arguments
+			// 26 or more additional arguments
 
-			if (!( args.length >= 23 && args.length % 2 == 1 )) {
+			if (!( args.length >= 27 && args.length % 2 == 1 )) {
 				System.err.println ("OEFit2Test : Invalid 'test10' subcommand");
 				return;
 			}
 
 			try {
 
-				double n = Double.parseDouble (args[1]);
-				double p = Double.parseDouble (args[2]);
-				double c = Double.parseDouble (args[3]);
-				double b = Double.parseDouble (args[4]);
-				double alpha = Double.parseDouble (args[5]);
-				double mref = Double.parseDouble (args[6]);
-				double msup = Double.parseDouble (args[7]);
-				double tbegin = Double.parseDouble (args[8]);
-				double tend = Double.parseDouble (args[9]);
+				int ii = 1;
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
 
-				double magCat = Double.parseDouble (args[10]);
-				int helm_param = Integer.parseInt (args[11]);
-				double disc_delta = Double.parseDouble (args[12]);
-				int mag_cat_count = Integer.parseInt (args[13]);
-				double eligible_mag = Double.parseDouble (args[14]);
-				int eligible_count = Integer.parseInt (args[15]);
+				double magCat = Double.parseDouble (args[ii++]);
+				int helm_param = Integer.parseInt (args[ii++]);
+				double disc_delta = Double.parseDouble (args[ii++]);
+				int mag_cat_count = Integer.parseInt (args[ii++]);
+				double eligible_mag = Double.parseDouble (args[ii++]);
+				int eligible_count = Integer.parseInt (args[ii++]);
 
-				double durlim_ratio = Double.parseDouble (args[16]);
-				double durlim_min = Double.parseDouble (args[17]);
-				double durlim_max = Double.parseDouble (args[18]);
+				double durlim_ratio = Double.parseDouble (args[ii++]);
+				double durlim_min = Double.parseDouble (args[ii++]);
+				double durlim_max = Double.parseDouble (args[ii++]);
+				double t_interval_begin = Double.parseDouble (args[ii++]);
+				int before_max_count = Integer.parseInt (args[ii++]);
+				int mag_cat_int_join = Integer.parseInt (args[ii++]);
 
-				boolean f_intervals = Boolean.parseBoolean (args[19]);
-				int lmr_opt = Integer.parseInt (args[20]);
+				boolean f_intervals = Boolean.parseBoolean (args[ii++]);
+				int lmr_opt = Integer.parseInt (args[ii++]);
 
-				double[] time_mag_array = new double[args.length - 21];
+				double[] time_mag_array = new double[args.length - ii];
 				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
-					time_mag_array[ntm] = Double.parseDouble (args[ntm + 21]);
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + ii]);
 				}
 
 				// Say hello
 
 				System.out.println ("Generating catalog and history, and generating c/p/a/ams grid, multi-threaded");
+				System.out.println ("zams = " + zams);
 				System.out.println ("n = " + n);
 				System.out.println ("p = " + p);
 				System.out.println ("c = " + c);
@@ -3474,6 +3099,9 @@ public class OEFit2Test {
 				System.out.println ("durlim_ratio = " + durlim_ratio);
 				System.out.println ("durlim_min = " + durlim_min);
 				System.out.println ("durlim_max = " + durlim_max);
+				System.out.println ("t_interval_begin = " + t_interval_begin);
+				System.out.println ("before_max_count = " + before_max_count);
+				System.out.println ("mag_cat_int_join = " + mag_cat_int_join);
 
 				System.out.println ("f_intervals = " + f_intervals);
 				System.out.println ("lmr_opt = " + lmr_opt);
@@ -3497,9 +3125,13 @@ public class OEFit2Test {
 					tend	// tend
 				);
 
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams (zams, cat_params);
+
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, true);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
 
 				// Make the catalog examiner
 
@@ -3516,18 +3148,27 @@ public class OEFit2Test {
 
 				// Make the history parameters
 
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
 				OEDiscFGHParams hist_params = new OEDiscFGHParams();
 
 				hist_params.set_sim_history_typical (
-					magCat,			// magCat
-					helm_param,		// helm_param
-					tbegin,			// t_range_begin
-					tend,			// t_range_end
-					disc_delta,		// disc_delta
-					mag_cat_count,	// mag_cat_count
-					eligible_mag,	// eligible_mag
-					eligible_count,	// eligible_count
-					split_fn		// split_fn
+					magCat,				// magCat
+					helm_param,			// helm_param
+					tbegin,				// t_range_begin
+					tend,				// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
 				);
 
 				// Display the history parameters
@@ -3546,6 +3187,15 @@ public class OEFit2Test {
 				System.out.println ();
 				System.out.println (history.toString());
 
+				// Adjust the minimum simulation magnitude to be the history's magCat
+
+				OECatalogParamsStats cat_params_stats = cat_params.get_params_stats();
+				cat_params_stats.set_fixed_mag_min (history.magCat);
+
+				// Statistics from seed parameters
+
+				OESeedParamsStats seed_params_stats = seed_params.get_params_stats();
+
 				// Parameter ranges
 
 				double[] a_range = (OEDiscreteRange.makeLog (51, 0.1, 10.0)).get_range_array();
@@ -3555,7 +3205,7 @@ public class OEFit2Test {
 
 				// Make and display the vector and grid
 
-				fit_c_p_a_ams_like_vec_grid (history, cat_params, f_intervals, lmr_opt, a_range, ams_range, p_range, c_range);
+				fit_c_p_a_ams_like_grid (history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt, a_range, ams_range, p_range, c_range);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -3569,9 +3219,9 @@ public class OEFit2Test {
 
 		// Subcommand : Test #11
 		// Command format:
-		//  test11  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//  test11  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
 		//          magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
-		//          durlim_ratio  durlim_min  durlim_max
+		//          durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
 		//          f_intervals  lmr_opt
 		//          num_cat
 		//          t_day  rup_mag  [t_day  rup_mag]...
@@ -3580,20 +3230,13 @@ public class OEFit2Test {
 		// Generate the requested number of catalogs with the given parameters.
 		// Each catalog is seeded with ruptures at the given times and magnitudes.
 		// Then construct a history containing the catalog.
-		// Then use the history to generate maximum likelihood estimates for a c/p/a vector and a c/p/a/ams grid with the fitting code.
-		// Then for each catalog, write a line containing 19 values:
+		// Then use the history to generate maximum likelihood estimates for a c/p/a/ams grid with the fitting code.
+		// Then for each catalog, write a line containing 15 values:
 		//  catalog number
-		//  log(ccon) - log(ctrue)
-		//  pcon - ptrue
-		//  acon - atrue
 		//  log(c) - log(ctrue)
 		//  p - ptrue
 		//  a - atrue
-		//  ams - atrue
-		//  ams - a
-		//  ccon index (vector)
-		//  pcon index (vector)
-		//  acon index (vector)
+		//  ams - amstrue
 		//  c index (grid)
 		//  p index (grid)
 		//  a index (grid)
@@ -3604,44 +3247,49 @@ public class OEFit2Test {
 
 		if (args[0].equalsIgnoreCase ("test11")) {
 
-			// 23 or more additional arguments
+			// 27 or more additional arguments
 
-			if (!( args.length >= 24 && args.length % 2 == 0 )) {
+			if (!( args.length >= 28 && args.length % 2 == 0 )) {
 				System.err.println ("OEFit2Test : Invalid 'test11' subcommand");
 				return;
 			}
 
 			try {
 
-				double n = Double.parseDouble (args[1]);
-				double p = Double.parseDouble (args[2]);
-				double c = Double.parseDouble (args[3]);
-				double b = Double.parseDouble (args[4]);
-				double alpha = Double.parseDouble (args[5]);
-				double mref = Double.parseDouble (args[6]);
-				double msup = Double.parseDouble (args[7]);
-				double tbegin = Double.parseDouble (args[8]);
-				double tend = Double.parseDouble (args[9]);
+				int ii = 1;
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
 
-				double magCat = Double.parseDouble (args[10]);
-				int helm_param = Integer.parseInt (args[11]);
-				double disc_delta = Double.parseDouble (args[12]);
-				int mag_cat_count = Integer.parseInt (args[13]);
-				double eligible_mag = Double.parseDouble (args[14]);
-				int eligible_count = Integer.parseInt (args[15]);
+				double magCat = Double.parseDouble (args[ii++]);
+				int helm_param = Integer.parseInt (args[ii++]);
+				double disc_delta = Double.parseDouble (args[ii++]);
+				int mag_cat_count = Integer.parseInt (args[ii++]);
+				double eligible_mag = Double.parseDouble (args[ii++]);
+				int eligible_count = Integer.parseInt (args[ii++]);
 
-				double durlim_ratio = Double.parseDouble (args[16]);
-				double durlim_min = Double.parseDouble (args[17]);
-				double durlim_max = Double.parseDouble (args[18]);
+				double durlim_ratio = Double.parseDouble (args[ii++]);
+				double durlim_min = Double.parseDouble (args[ii++]);
+				double durlim_max = Double.parseDouble (args[ii++]);
+				double t_interval_begin = Double.parseDouble (args[ii++]);
+				int before_max_count = Integer.parseInt (args[ii++]);
+				int mag_cat_int_join = Integer.parseInt (args[ii++]);
 
-				boolean f_intervals = Boolean.parseBoolean (args[19]);
-				int lmr_opt = Integer.parseInt (args[20]);
+				boolean f_intervals = Boolean.parseBoolean (args[ii++]);
+				int lmr_opt = Integer.parseInt (args[ii++]);
 
-				int num_cat = Integer.parseInt (args[21]);
+				int num_cat = Integer.parseInt (args[ii++]);
 
-				double[] time_mag_array = new double[args.length - 22];
+				double[] time_mag_array = new double[args.length - ii];
 				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
-					time_mag_array[ntm] = Double.parseDouble (args[ntm + 22]);
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + ii]);
 				}
 
 				// Echo the command line
@@ -3659,6 +3307,7 @@ public class OEFit2Test {
 				// Say hello
 
 				System.out.println ("# Generating catalogs, and generating list of maximum likelihood estimates for c/p/a/ams");
+				System.out.println ("# zams = " + zams);
 				System.out.println ("# n = " + n);
 				System.out.println ("# p = " + p);
 				System.out.println ("# c = " + c);
@@ -3679,6 +3328,9 @@ public class OEFit2Test {
 				System.out.println ("# durlim_ratio = " + durlim_ratio);
 				System.out.println ("# durlim_min = " + durlim_min);
 				System.out.println ("# durlim_max = " + durlim_max);
+				System.out.println ("# t_interval_begin = " + t_interval_begin);
+				System.out.println ("# before_max_count = " + before_max_count);
+				System.out.println ("# mag_cat_int_join = " + mag_cat_int_join);
 
 				System.out.println ("# f_intervals = " + f_intervals);
 				System.out.println ("# lmr_opt = " + lmr_opt);
@@ -3706,9 +3358,13 @@ public class OEFit2Test {
 					tend	// tend
 				);
 
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams (zams, cat_params);
+
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, false);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, false);
 
 				// Make time-splitting function
 
@@ -3716,18 +3372,27 @@ public class OEFit2Test {
 
 				// Make the history parameters
 
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
 				OEDiscFGHParams hist_params = new OEDiscFGHParams();
 
 				hist_params.set_sim_history_typical (
-					magCat,			// magCat
-					helm_param,		// helm_param
-					tbegin,			// t_range_begin
-					tend,			// t_range_end
-					disc_delta,		// disc_delta
-					mag_cat_count,	// mag_cat_count
-					eligible_mag,	// eligible_mag
-					eligible_count,	// eligible_count
-					split_fn		// split_fn
+					magCat,				// magCat
+					helm_param,			// helm_param
+					tbegin,				// t_range_begin
+					tend,				// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
 				);
 
 				// Parameter ranges
@@ -3739,7 +3404,6 @@ public class OEFit2Test {
 
 				// Arrays to receive maximum likelihood estimates
 
-				int[] ix_vec = new int[3];
 				int[] ix_grid = new int[4];
 
 				// Loop over catalogs ...
@@ -3761,27 +3425,29 @@ public class OEFit2Test {
 
 					history.build_from_fgh (hist_params, rup_list);
 
+					// Adjust the minimum simulation magnitude to be the history's magCat
+
+					OECatalogParamsStats cat_params_stats = cat_params.get_params_stats();
+					cat_params_stats.set_fixed_mag_min (history.magCat);
+
+					// Statistics from seed parameters
+
+					OESeedParamsStats seed_params_stats = seed_params.get_params_stats();
+
 					// Get the maximum likelihood estimate
 
-					mle_c_p_a_ams_like_vec_grid (history, cat_params, f_intervals, lmr_opt,
-						a_range, ams_range, p_range, c_range, ix_vec, ix_grid);
+					mle_c_p_a_ams_like_grid (history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt,
+						a_range, ams_range, p_range, c_range, ix_grid);
 
 					// Display line
 
 					System.out.println (String.format (
-						"%6d  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f %6d %6d %6d %6d %6d %6d %6d %6d %6d %6d",
+						"%6d  % .4f  % .4f  % .4f  % .4f  %6d %6d %6d %6d %6d %6d %6d",
 						i_cat,
-						Math.log10 (c_range[ix_vec[0]]),
-						            p_range[ix_vec[1]],
-						Math.log10 (a_range[ix_vec[2]]),
 						Math.log10 (c_range[ix_grid[0]]),
 						            p_range[ix_grid[1]],
 						Math.log10 (a_range[ix_grid[2]]),
 						Math.log10 (ams_range[ix_grid[3]]),
-						Math.log10 (ams_range[ix_grid[3]]) - Math.log10 (a_range[ix_grid[2]]),
-						ix_vec[0],
-						ix_vec[1],
-						ix_vec[2],
 						ix_grid[0],
 						ix_grid[1],
 						ix_grid[2],
@@ -3804,9 +3470,9 @@ public class OEFit2Test {
 
 		// Subcommand : Test #12
 		// Command format:
-		//  test12  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//  test12  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
 		//          magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
-		//          durlim_ratio  durlim_min  durlim_max
+		//          durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
 		//          f_intervals  lmr_opt
 		//          num_cat
 		//          t_day  rup_mag  [t_day  rup_mag]...
@@ -3815,21 +3481,14 @@ public class OEFit2Test {
 		// Generate the requested number of catalogs with the given parameters.
 		// Each catalog is seeded with ruptures at the given times and magnitudes.
 		// Then construct a history containing the catalog.
-		// Then use the history to generate maximum likelihood estimates for a c/p/a vector and a c/p/a/ams grid with the fitting code.
+		// Then use the history to generate maximum likelihood estimates for a c/p/a/ams grid with the fitting code.
 		// Then for each catalog, write a series of lines.
-		// Line 1 contains 19 values, based on the global maximum likelihood estimate:
+		// Line 1 contains 12 values, based on the global maximum likelihood estimate:
 		//  catalog number
-		//  log(ccon) - log(ctrue)
-		//  pcon - ptrue
-		//  acon - atrue
 		//  log(c) - log(ctrue)
 		//  p - ptrue
 		//  a - atrue
-		//  ams - atrue
-		//  ams - a
-		//  ccon index (vector)
-		//  pcon index (vector)
-		//  acon index (vector)
+		//  ams - amstrue
 		//  c index (grid)
 		//  p index (grid)
 		//  a index (grid)
@@ -3838,52 +3497,55 @@ public class OEFit2Test {
 		//  history rupture count
 		//  history interval count
 		// Line 2 is the same, except based on the mode of each marginal distribution.
-		// Lines 3 - 5 contain a segment of the marginal probability distributions for c/p/a respectively, under the constraint a == ams.
-		// Lines 6 - 9 contain a segment of the marginal probability distributions for c/p/a/ams respectively.
-		// Line 10 contains mean log(ccon), pcon, acon; then std dev; then cov log(ccon)/pcon, log(ccon)/acon, pcon/acon.
-		// Line 11 contains mean log(c), p, a, ams; then std dev; then cov log(c)/p, log(c)/a, log(c)/ams, p/a, p/ams, a/ams.
-		// (In lines 10 and 11, the values are the deviations from true values.)
+		// Lines 3 - 6 contain a segment of the marginal probability distributions for c/p/a/ams respectively.
+		// Line 7 contains mean log(c), p, a, ams; then std dev; then cov log(c)/p, log(c)/a, log(c)/ams, p/a, p/ams, a/ams.
+		// (In line 7, the values are the deviations from true values.)
 
 		if (args[0].equalsIgnoreCase ("test12")) {
 
-			// 23 or more additional arguments
+			// 27 or more additional arguments
 
-			if (!( args.length >= 24 && args.length % 2 == 0 )) {
+			if (!( args.length >= 28 && args.length % 2 == 0 )) {
 				System.err.println ("OEFit2Test : Invalid 'test12' subcommand");
 				return;
 			}
 
 			try {
 
-				double n = Double.parseDouble (args[1]);
-				double p = Double.parseDouble (args[2]);
-				double c = Double.parseDouble (args[3]);
-				double b = Double.parseDouble (args[4]);
-				double alpha = Double.parseDouble (args[5]);
-				double mref = Double.parseDouble (args[6]);
-				double msup = Double.parseDouble (args[7]);
-				double tbegin = Double.parseDouble (args[8]);
-				double tend = Double.parseDouble (args[9]);
+				int ii = 1;
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
 
-				double magCat = Double.parseDouble (args[10]);
-				int helm_param = Integer.parseInt (args[11]);
-				double disc_delta = Double.parseDouble (args[12]);
-				int mag_cat_count = Integer.parseInt (args[13]);
-				double eligible_mag = Double.parseDouble (args[14]);
-				int eligible_count = Integer.parseInt (args[15]);
+				double magCat = Double.parseDouble (args[ii++]);
+				int helm_param = Integer.parseInt (args[ii++]);
+				double disc_delta = Double.parseDouble (args[ii++]);
+				int mag_cat_count = Integer.parseInt (args[ii++]);
+				double eligible_mag = Double.parseDouble (args[ii++]);
+				int eligible_count = Integer.parseInt (args[ii++]);
 
-				double durlim_ratio = Double.parseDouble (args[16]);
-				double durlim_min = Double.parseDouble (args[17]);
-				double durlim_max = Double.parseDouble (args[18]);
+				double durlim_ratio = Double.parseDouble (args[ii++]);
+				double durlim_min = Double.parseDouble (args[ii++]);
+				double durlim_max = Double.parseDouble (args[ii++]);
+				double t_interval_begin = Double.parseDouble (args[ii++]);
+				int before_max_count = Integer.parseInt (args[ii++]);
+				int mag_cat_int_join = Integer.parseInt (args[ii++]);
 
-				boolean f_intervals = Boolean.parseBoolean (args[19]);
-				int lmr_opt = Integer.parseInt (args[20]);
+				boolean f_intervals = Boolean.parseBoolean (args[ii++]);
+				int lmr_opt = Integer.parseInt (args[ii++]);
 
-				int num_cat = Integer.parseInt (args[21]);
+				int num_cat = Integer.parseInt (args[ii++]);
 
-				double[] time_mag_array = new double[args.length - 22];
+				double[] time_mag_array = new double[args.length - ii];
 				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
-					time_mag_array[ntm] = Double.parseDouble (args[ntm + 22]);
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + ii]);
 				}
 
 				// Echo the command line
@@ -3901,6 +3563,7 @@ public class OEFit2Test {
 				// Say hello
 
 				System.out.println ("# Generating catalogs, and generating list of maximum likelihood estimates and marginals for c/p/a/ams");
+				System.out.println ("# zams = " + zams);
 				System.out.println ("# n = " + n);
 				System.out.println ("# p = " + p);
 				System.out.println ("# c = " + c);
@@ -3921,6 +3584,9 @@ public class OEFit2Test {
 				System.out.println ("# durlim_ratio = " + durlim_ratio);
 				System.out.println ("# durlim_min = " + durlim_min);
 				System.out.println ("# durlim_max = " + durlim_max);
+				System.out.println ("# t_interval_begin = " + t_interval_begin);
+				System.out.println ("# before_max_count = " + before_max_count);
+				System.out.println ("# mag_cat_int_join = " + mag_cat_int_join);
 
 				System.out.println ("# f_intervals = " + f_intervals);
 				System.out.println ("# lmr_opt = " + lmr_opt);
@@ -3948,9 +3614,13 @@ public class OEFit2Test {
 					tend	// tend
 				);
 
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams (zams, cat_params);
+
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, false);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, false);
 
 				// Make time-splitting function
 
@@ -3958,18 +3628,27 @@ public class OEFit2Test {
 
 				// Make the history parameters
 
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
 				OEDiscFGHParams hist_params = new OEDiscFGHParams();
 
 				hist_params.set_sim_history_typical (
-					magCat,			// magCat
-					helm_param,		// helm_param
-					tbegin,			// t_range_begin
-					tend,			// t_range_end
-					disc_delta,		// disc_delta
-					mag_cat_count,	// mag_cat_count
-					eligible_mag,	// eligible_mag
-					eligible_count,	// eligible_count
-					split_fn		// split_fn
+					magCat,				// magCat
+					helm_param,			// helm_param
+					tbegin,				// t_range_begin
+					tend,				// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
 				);
 
 				// Parameter ranges
@@ -3989,7 +3668,6 @@ public class OEFit2Test {
 
 				// Marginals
 
-				OEGridMarginal marg_vec = new OEGridMarginal();
 				OEGridMarginal marg_grid = new OEGridMarginal();
 
 				// Loop over catalogs ...
@@ -4011,30 +3689,31 @@ public class OEFit2Test {
 
 					history.build_from_fgh (hist_params, rup_list);
 
+					// Adjust the minimum simulation magnitude to be the history's magCat
+
+					OECatalogParamsStats cat_params_stats = cat_params.get_params_stats();
+					cat_params_stats.set_fixed_mag_min (history.magCat);
+
+					// Statistics from seed parameters
+
+					OESeedParamsStats seed_params_stats = seed_params.get_params_stats();
+
 					// Get the marginals
 
-					marg_c_p_a_ams_like_vec_grid (history, cat_params, f_intervals, lmr_opt,
-						a_range, ams_range, p_range, c_range, marg_vec, marg_grid);
+					marg_c_p_a_ams_like_grid (history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt,
+						a_range, ams_range, p_range, c_range, marg_grid);
 
 					// Display line, derived from global MLE
 
-					int[] ix_vec = marg_vec.peak_indexes;
 					int[] ix_grid = marg_grid.peak_indexes;
 
 					System.out.println (String.format (
-						"%6d  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f %6d %6d %6d %6d %6d %6d %6d %6d %6d %6d",
+						"%6d  % .4f  % .4f  % .4f  % .4f  %6d %6d %6d %6d %6d %6d %6d",
 						i_cat,
-						Math.log10 (c_range[ix_vec[0]]),
-						            p_range[ix_vec[1]],
-						Math.log10 (a_range[ix_vec[2]]),
 						Math.log10 (c_range[ix_grid[0]]),
 						            p_range[ix_grid[1]],
 						Math.log10 (a_range[ix_grid[2]]),
 						Math.log10 (ams_range[ix_grid[3]]),
-						Math.log10 (ams_range[ix_grid[3]]) - Math.log10 (a_range[ix_grid[2]]),
-						ix_vec[0],
-						ix_vec[1],
-						ix_vec[2],
 						ix_grid[0],
 						ix_grid[1],
 						ix_grid[2],
@@ -4046,23 +3725,15 @@ public class OEFit2Test {
 
 					// Display line, derived from marginal mode
 
-					ix_vec = marg_vec.marginal_mode_index;
 					ix_grid = marg_grid.marginal_mode_index;
 
 					System.out.println (String.format (
-						"%6d  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f %6d %6d %6d %6d %6d %6d %6d %6d %6d %6d",
+						"%6d  % .4f  % .4f  % .4f  % .4f  %6d %6d %6d %6d %6d %6d %6d",
 						i_cat,
-						Math.log10 (c_range[ix_vec[0]]),
-						            p_range[ix_vec[1]],
-						Math.log10 (a_range[ix_vec[2]]),
 						Math.log10 (c_range[ix_grid[0]]),
 						            p_range[ix_grid[1]],
 						Math.log10 (a_range[ix_grid[2]]),
 						Math.log10 (ams_range[ix_grid[3]]),
-						Math.log10 (ams_range[ix_grid[3]]) - Math.log10 (a_range[ix_grid[2]]),
-						ix_vec[0],
-						ix_vec[1],
-						ix_vec[2],
 						ix_grid[0],
 						ix_grid[1],
 						ix_grid[2],
@@ -4075,24 +3746,6 @@ public class OEFit2Test {
 					// Display vector marginal probabilities
 
 					int max_els = 19;
-
-					System.out.println (String.format (
-						"%6d  %s",
-						i_cat,
-						marg_vec.marginal_probability_as_string (0, max_els)
-					));
-
-					System.out.println (String.format (
-						"%6d  %s",
-						i_cat,
-						marg_vec.marginal_probability_as_string (1, max_els)
-					));
-
-					System.out.println (String.format (
-						"%6d  %s",
-						i_cat,
-						marg_vec.marginal_probability_as_string (2, max_els)
-					));
 
 					// Display grid marginal probabilities
 
@@ -4122,20 +3775,10 @@ public class OEFit2Test {
 
 					// Means and covariances
 
-					double[] mean_vec = new double[3];
-					double[][] cov_vec = new double[3][3];
-
 					double[] mean_grid = new double[4];
 					double[][] cov_grid = new double[4][4];
 
-					marg_vec.calc_mean_covariance (range_cpa, mean_vec, cov_vec);
 					marg_grid.calc_mean_covariance (range_cpa, mean_grid, cov_grid);
-
-					System.out.println (String.format (
-						"%6d  %s",
-						i_cat,
-						marg_vec.mean_coveriance_as_string (mean_vec, cov_vec)
-					));
 
 					System.out.println (String.format (
 						"%6d  %s",
@@ -4156,9 +3799,9 @@ public class OEFit2Test {
 
 		// Subcommand : Test #13
 		// Command format:
-		//  test13  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//  test13  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
 		//          magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
-		//          durlim_ratio  durlim_min  durlim_max
+		//          durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
 		//          f_intervals  lmr_opt
 		//          num_cat
 		//          t_day  rup_mag  [t_day  rup_mag]...
@@ -4171,19 +3814,12 @@ public class OEFit2Test {
 		// Then construct a history containing the catalog.
 		// Then use the history to generate maximum likelihood estimates for a c/p/a vector and a c/p/a/ams grid with the fitting code.
 		// Then for each catalog, write a series of lines.
-		// Line 1 contains 19 values, based on the global maximum likelihood estimate:
+		// Line 1 contains 12 values, based on the global maximum likelihood estimate:
 		//  catalog number
-		//  log(ccon) - log(ctrue)
-		//  pcon - ptrue
-		//  acon - atrue
 		//  log(c) - log(ctrue)
 		//  p - ptrue
 		//  a - atrue
-		//  ams - atrue
-		//  ams - a
-		//  ccon index (vector)
-		//  pcon index (vector)
-		//  acon index (vector)
+		//  ams - amstrue
 		//  c index (grid)
 		//  p index (grid)
 		//  a index (grid)
@@ -4192,58 +3828,58 @@ public class OEFit2Test {
 		//  history rupture count
 		//  history interval count
 		// Line 2 is the same, except based on the mode of each marginal distribution.
-		// Lines 3 - 17 contain a segment of the marginal probability distributions for c/p/a respectively, under the constraint a == ams.
-		//  For each variable, this consists of one line of marginal probabilities,
-		//  then one line with the corresponding marginal peak probabilities, then
-		//  three lines with the corresponding marginal peak indexes in order c/p/a.
-		// Lines 18 - 41 contain a segment of the marginal probability distributions for c/p/a/ams respectively.
+		// Lines 3 - 26 contain a segment of the marginal probability distributions for c/p/a/ams respectively.
 		//  For each variable, this consists of one line of marginal probabilities,
 		//  then one line with the corresponding marginal peak probabilities, then
 		//  four lines with the corresponding marginal peak indexes in order c/p/a/ams.
-		// Line 42 contains mean log(ccon), pcon, acon; then std dev; then cov log(ccon)/pcon, log(ccon)/acon, pcon/acon.
-		// Line 43 contains mean log(c), p, a, ams; then std dev; then cov log(c)/p, log(c)/a, log(c)/ams, p/a, p/ams, a/ams.
-		// (In lines 42 and 43, the values are the deviations from true values.)
+		// Line 27 contains mean log(c), p, a, ams; then std dev; then cov log(c)/p, log(c)/a, log(c)/ams, p/a, p/ams, a/ams.
+		// (In line 27, the values are the deviations from true values.)
 
 		if (args[0].equalsIgnoreCase ("test13")) {
 
-			// 23 or more additional arguments
+			// 27 or more additional arguments
 
-			if (!( args.length >= 24 && args.length % 2 == 0 )) {
+			if (!( args.length >= 28 && args.length % 2 == 0 )) {
 				System.err.println ("OEFit2Test : Invalid 'test13' subcommand");
 				return;
 			}
 
 			try {
 
-				double n = Double.parseDouble (args[1]);
-				double p = Double.parseDouble (args[2]);
-				double c = Double.parseDouble (args[3]);
-				double b = Double.parseDouble (args[4]);
-				double alpha = Double.parseDouble (args[5]);
-				double mref = Double.parseDouble (args[6]);
-				double msup = Double.parseDouble (args[7]);
-				double tbegin = Double.parseDouble (args[8]);
-				double tend = Double.parseDouble (args[9]);
+				int ii = 1;
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
 
-				double magCat = Double.parseDouble (args[10]);
-				int helm_param = Integer.parseInt (args[11]);
-				double disc_delta = Double.parseDouble (args[12]);
-				int mag_cat_count = Integer.parseInt (args[13]);
-				double eligible_mag = Double.parseDouble (args[14]);
-				int eligible_count = Integer.parseInt (args[15]);
+				double magCat = Double.parseDouble (args[ii++]);
+				int helm_param = Integer.parseInt (args[ii++]);
+				double disc_delta = Double.parseDouble (args[ii++]);
+				int mag_cat_count = Integer.parseInt (args[ii++]);
+				double eligible_mag = Double.parseDouble (args[ii++]);
+				int eligible_count = Integer.parseInt (args[ii++]);
 
-				double durlim_ratio = Double.parseDouble (args[16]);
-				double durlim_min = Double.parseDouble (args[17]);
-				double durlim_max = Double.parseDouble (args[18]);
+				double durlim_ratio = Double.parseDouble (args[ii++]);
+				double durlim_min = Double.parseDouble (args[ii++]);
+				double durlim_max = Double.parseDouble (args[ii++]);
+				double t_interval_begin = Double.parseDouble (args[ii++]);
+				int before_max_count = Integer.parseInt (args[ii++]);
+				int mag_cat_int_join = Integer.parseInt (args[ii++]);
 
-				boolean f_intervals = Boolean.parseBoolean (args[19]);
-				int lmr_opt = Integer.parseInt (args[20]);
+				boolean f_intervals = Boolean.parseBoolean (args[ii++]);
+				int lmr_opt = Integer.parseInt (args[ii++]);
 
-				int num_cat = Integer.parseInt (args[21]);
+				int num_cat = Integer.parseInt (args[ii++]);
 
-				double[] time_mag_array = new double[args.length - 22];
+				double[] time_mag_array = new double[args.length - ii];
 				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
-					time_mag_array[ntm] = Double.parseDouble (args[ntm + 22]);
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + ii]);
 				}
 
 				// Echo the command line
@@ -4261,6 +3897,7 @@ public class OEFit2Test {
 				// Say hello
 
 				System.out.println ("# Generating catalogs, and generating list of maximum likelihood estimates and marginals for c/p/a/ams");
+				System.out.println ("# zams = " + zams);
 				System.out.println ("# n = " + n);
 				System.out.println ("# p = " + p);
 				System.out.println ("# c = " + c);
@@ -4281,6 +3918,9 @@ public class OEFit2Test {
 				System.out.println ("# durlim_ratio = " + durlim_ratio);
 				System.out.println ("# durlim_min = " + durlim_min);
 				System.out.println ("# durlim_max = " + durlim_max);
+				System.out.println ("# t_interval_begin = " + t_interval_begin);
+				System.out.println ("# before_max_count = " + before_max_count);
+				System.out.println ("# mag_cat_int_join = " + mag_cat_int_join);
 
 				System.out.println ("# f_intervals = " + f_intervals);
 				System.out.println ("# lmr_opt = " + lmr_opt);
@@ -4308,9 +3948,13 @@ public class OEFit2Test {
 					tend	// tend
 				);
 
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams (zams, cat_params);
+
 				// Make the catalog initializer
 
-				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, time_mag_array, false);
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, false);
 
 				// Make time-splitting function
 
@@ -4318,18 +3962,27 @@ public class OEFit2Test {
 
 				// Make the history parameters
 
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
 				OEDiscFGHParams hist_params = new OEDiscFGHParams();
 
 				hist_params.set_sim_history_typical (
-					magCat,			// magCat
-					helm_param,		// helm_param
-					tbegin,			// t_range_begin
-					tend,			// t_range_end
-					disc_delta,		// disc_delta
-					mag_cat_count,	// mag_cat_count
-					eligible_mag,	// eligible_mag
-					eligible_count,	// eligible_count
-					split_fn		// split_fn
+					magCat,				// magCat
+					helm_param,			// helm_param
+					tbegin,				// t_range_begin
+					tend,				// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
 				);
 
 				// Parameter ranges
@@ -4349,7 +4002,6 @@ public class OEFit2Test {
 
 				// Marginals
 
-				OEGridMarginal marg_vec = new OEGridMarginal();
 				OEGridMarginal marg_grid = new OEGridMarginal();
 
 				// Loop over catalogs ...
@@ -4371,30 +4023,31 @@ public class OEFit2Test {
 
 					history.build_from_fgh (hist_params, rup_list);
 
+					// Adjust the minimum simulation magnitude to be the history's magCat
+
+					OECatalogParamsStats cat_params_stats = cat_params.get_params_stats();
+					cat_params_stats.set_fixed_mag_min (history.magCat);
+
+					// Statistics from seed parameters
+
+					OESeedParamsStats seed_params_stats = seed_params.get_params_stats();
+
 					// Get the marginals
 
-					marg_c_p_a_ams_like_vec_grid (history, cat_params, f_intervals, lmr_opt,
-						a_range, ams_range, p_range, c_range, marg_vec, marg_grid);
+					marg_c_p_a_ams_like_grid (history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt,
+						a_range, ams_range, p_range, c_range, marg_grid);
 
 					// Display line, derived from global MLE
 
-					int[] ix_vec = marg_vec.peak_indexes;
 					int[] ix_grid = marg_grid.peak_indexes;
 
 					System.out.println (String.format (
-						"%6d  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f %6d %6d %6d %6d %6d %6d %6d %6d %6d %6d",
+						"%6d  % .4f  % .4f  % .4f  % .4f  %6d %6d %6d %6d %6d %6d %6d",
 						i_cat,
-						Math.log10 (c_range[ix_vec[0]]),
-						            p_range[ix_vec[1]],
-						Math.log10 (a_range[ix_vec[2]]),
 						Math.log10 (c_range[ix_grid[0]]),
 						            p_range[ix_grid[1]],
 						Math.log10 (a_range[ix_grid[2]]),
 						Math.log10 (ams_range[ix_grid[3]]),
-						Math.log10 (ams_range[ix_grid[3]]) - Math.log10 (a_range[ix_grid[2]]),
-						ix_vec[0],
-						ix_vec[1],
-						ix_vec[2],
 						ix_grid[0],
 						ix_grid[1],
 						ix_grid[2],
@@ -4406,23 +4059,15 @@ public class OEFit2Test {
 
 					// Display line, derived from marginal mode
 
-					ix_vec = marg_vec.marginal_mode_index;
 					ix_grid = marg_grid.marginal_mode_index;
 
 					System.out.println (String.format (
-						"%6d  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f %6d %6d %6d %6d %6d %6d %6d %6d %6d %6d",
+						"%6d  % .4f  % .4f  % .4f  % .4f  %6d %6d %6d %6d %6d %6d %6d",
 						i_cat,
-						Math.log10 (c_range[ix_vec[0]]),
-						            p_range[ix_vec[1]],
-						Math.log10 (a_range[ix_vec[2]]),
 						Math.log10 (c_range[ix_grid[0]]),
 						            p_range[ix_grid[1]],
 						Math.log10 (a_range[ix_grid[2]]),
 						Math.log10 (ams_range[ix_grid[3]]),
-						Math.log10 (ams_range[ix_grid[3]]) - Math.log10 (a_range[ix_grid[2]]),
-						ix_vec[0],
-						ix_vec[1],
-						ix_vec[2],
 						ix_grid[0],
 						ix_grid[1],
 						ix_grid[2],
@@ -4432,21 +4077,13 @@ public class OEFit2Test {
 						history.interval_count
 					));
 
-					// Display vector marginal probabilities
+					// Display grid marginal probabilities
 
 					String prefix = String.format ("%6d  ", i_cat);
 					String infix = "\n" + prefix;
 					String suffix = "";
 
 					int max_els = 19;
-
-					System.out.println (marg_vec.marginal_probability_and_peak_as_string (0, max_els, prefix, infix, suffix));
-
-					System.out.println (marg_vec.marginal_probability_and_peak_as_string (1, max_els, prefix, infix, suffix));
-
-					System.out.println (marg_vec.marginal_probability_and_peak_as_string (2, max_els, prefix, infix, suffix));
-
-					// Display grid marginal probabilities
 
 					System.out.println (marg_grid.marginal_probability_and_peak_as_string (0, max_els, prefix, infix, suffix));
 
@@ -4458,20 +4095,10 @@ public class OEFit2Test {
 
 					// Means and covariances
 
-					double[] mean_vec = new double[3];
-					double[][] cov_vec = new double[3][3];
-
 					double[] mean_grid = new double[4];
 					double[][] cov_grid = new double[4][4];
 
-					marg_vec.calc_mean_covariance (range_cpa, mean_vec, cov_vec);
 					marg_grid.calc_mean_covariance (range_cpa, mean_grid, cov_grid);
-
-					System.out.println (String.format (
-						"%6d  %s",
-						i_cat,
-						marg_vec.mean_coveriance_as_string (mean_vec, cov_vec)
-					));
 
 					System.out.println (String.format (
 						"%6d  %s",
@@ -4638,9 +4265,9 @@ public class OEFit2Test {
 
 		// Subcommand : Test #16
 		// Command format:
-		//  test16  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//  test16  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
 		//          magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
-		//          durlim_ratio  durlim_min  durlim_max
+		//          durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
 		//          f_intervals  lmr_opt
 		//          event_id
 		// Note that this is the same as test #13 except with a catalog retrieved from Comcat.
@@ -4651,19 +4278,12 @@ public class OEFit2Test {
 		// Then construct a history containing the catalog.
 		// Then use the history to generate maximum likelihood estimates for a c/p/a vector and a c/p/a/ams grid with the fitting code.
 		// Then write a series of lines.
-		// Line 1 contains 19 values, based on the global maximum likelihood estimate:
+		// Line 1 contains 12 values, based on the global maximum likelihood estimate:
 		//  catalog number
-		//  log(ccon) - log(ctrue)
-		//  pcon - ptrue
-		//  acon - atrue
 		//  log(c) - log(ctrue)
 		//  p - ptrue
 		//  a - atrue
-		//  ams - atrue
-		//  ams - a
-		//  ccon index (vector)
-		//  pcon index (vector)
-		//  acon index (vector)
+		//  ams - amstrue
 		//  c index (grid)
 		//  p index (grid)
 		//  a index (grid)
@@ -4672,54 +4292,54 @@ public class OEFit2Test {
 		//  history rupture count
 		//  history interval count
 		// Line 2 is the same, except based on the mode of each marginal distribution.
-		// Lines 3 - 17 contain a segment of the marginal probability distributions for c/p/a respectively, under the constraint a == ams.
-		//  For each variable, this consists of one line of marginal probabilities,
-		//  then one line with the corresponding marginal peak probabilities, then
-		//  three lines with the corresponding marginal peak indexes in order c/p/a.
-		// Lines 18 - 41 contain a segment of the marginal probability distributions for c/p/a/ams respectively.
+		// Lines 3 - 26 contain a segment of the marginal probability distributions for c/p/a/ams respectively.
 		//  For each variable, this consists of one line of marginal probabilities,
 		//  then one line with the corresponding marginal peak probabilities, then
 		//  four lines with the corresponding marginal peak indexes in order c/p/a/ams.
-		// Line 42 contains mean log(ccon), pcon, acon; then std dev; then cov log(ccon)/pcon, log(ccon)/acon, pcon/acon.
-		// Line 43 contains mean log(c), p, a, ams; then std dev; then cov log(c)/p, log(c)/a, log(c)/ams, p/a, p/ams, a/ams.
-		// (In lines 42 and 43, the values are the deviations from true values.)
+		// Line 27 contains mean log(c), p, a, ams; then std dev; then cov log(c)/p, log(c)/a, log(c)/ams, p/a, p/ams, a/ams.
+		// (In line 27, the values are the deviations from true values.)
 
 		if (args[0].equalsIgnoreCase ("test16")) {
 
-			// 21 additional arguments
+			// 25 additional arguments
 
-			if (!( args.length == 22 )) {
+			if (!( args.length == 26 )) {
 				System.err.println ("OEFit2Test : Invalid 'test16' subcommand");
 				return;
 			}
 
 			try {
 
-				double n = Double.parseDouble (args[1]);
-				double p = Double.parseDouble (args[2]);
-				double c = Double.parseDouble (args[3]);
-				double b = Double.parseDouble (args[4]);
-				double alpha = Double.parseDouble (args[5]);
-				double mref = Double.parseDouble (args[6]);
-				double msup = Double.parseDouble (args[7]);
-				double tbegin = Double.parseDouble (args[8]);
-				double tend = Double.parseDouble (args[9]);
+				int ii = 1;
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
 
-				double magCat = Double.parseDouble (args[10]);
-				int helm_param = Integer.parseInt (args[11]);
-				double disc_delta = Double.parseDouble (args[12]);
-				int mag_cat_count = Integer.parseInt (args[13]);
-				double eligible_mag = Double.parseDouble (args[14]);
-				int eligible_count = Integer.parseInt (args[15]);
+				double magCat = Double.parseDouble (args[ii++]);
+				int helm_param = Integer.parseInt (args[ii++]);
+				double disc_delta = Double.parseDouble (args[ii++]);
+				int mag_cat_count = Integer.parseInt (args[ii++]);
+				double eligible_mag = Double.parseDouble (args[ii++]);
+				int eligible_count = Integer.parseInt (args[ii++]);
 
-				double durlim_ratio = Double.parseDouble (args[16]);
-				double durlim_min = Double.parseDouble (args[17]);
-				double durlim_max = Double.parseDouble (args[18]);
+				double durlim_ratio = Double.parseDouble (args[ii++]);
+				double durlim_min = Double.parseDouble (args[ii++]);
+				double durlim_max = Double.parseDouble (args[ii++]);
+				double t_interval_begin = Double.parseDouble (args[ii++]);
+				int before_max_count = Integer.parseInt (args[ii++]);
+				int mag_cat_int_join = Integer.parseInt (args[ii++]);
 
-				boolean f_intervals = Boolean.parseBoolean (args[19]);
-				int lmr_opt = Integer.parseInt (args[20]);
+				boolean f_intervals = Boolean.parseBoolean (args[ii++]);
+				int lmr_opt = Integer.parseInt (args[ii++]);
 
-				String event_id = args[21];
+				String event_id = args[ii++];
 
 				// Echo the command line
 
@@ -4736,6 +4356,7 @@ public class OEFit2Test {
 				// Say hello
 
 				System.out.println ("# Retrieving aftershock catalog, and generating list of maximum likelihood estimates and marginals for c/p/a/ams");
+				System.out.println ("# zams = " + zams);
 				System.out.println ("# n = " + n);
 				System.out.println ("# p = " + p);
 				System.out.println ("# c = " + c);
@@ -4756,6 +4377,9 @@ public class OEFit2Test {
 				System.out.println ("# durlim_ratio = " + durlim_ratio);
 				System.out.println ("# durlim_min = " + durlim_min);
 				System.out.println ("# durlim_max = " + durlim_max);
+				System.out.println ("# t_interval_begin = " + t_interval_begin);
+				System.out.println ("# before_max_count = " + before_max_count);
+				System.out.println ("# mag_cat_int_join = " + mag_cat_int_join);
 
 				System.out.println ("# f_intervals = " + f_intervals);
 				System.out.println ("# lmr_opt = " + lmr_opt);
@@ -4786,24 +4410,38 @@ public class OEFit2Test {
 					System.out.println (cat_params.toString());
 				}
 
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams (zams, cat_params);
+
+				if (f_verbose) {
+					System.out.println (seed_params.toString());
+				}
+
 				// Make time-splitting function
 
 				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
 
 				// Make the history parameters
 
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+
 				OEDiscFGHParams hist_params = new OEDiscFGHParams();
 
 				hist_params.set_sim_history_typical (
-					magCat,			// magCat
-					helm_param,		// helm_param
-					tbegin,			// t_range_begin
-					tend,			// t_range_end
-					disc_delta,		// disc_delta
-					mag_cat_count,	// mag_cat_count
-					eligible_mag,	// eligible_mag
-					eligible_count,	// eligible_count
-					split_fn		// split_fn
+					magCat,				// magCat
+					helm_param,			// helm_param
+					tbegin,				// t_range_begin
+					tend,				// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
 				);
 
 				if (f_verbose) {
@@ -4830,7 +4468,6 @@ public class OEFit2Test {
 
 				// Marginals
 
-				OEGridMarginal marg_vec = new OEGridMarginal();
 				OEGridMarginal marg_grid = new OEGridMarginal();
 
 				// Loop over catalogs ...
@@ -4875,30 +4512,31 @@ public class OEFit2Test {
 						System.out.println ();
 					}
 
+					// Adjust the minimum simulation magnitude to be the history's magCat
+
+					OECatalogParamsStats cat_params_stats = cat_params.get_params_stats();
+					cat_params_stats.set_fixed_mag_min (history.magCat);
+
+					// Statistics from seed parameters
+
+					OESeedParamsStats seed_params_stats = seed_params.get_params_stats();
+
 					// Get the marginals
 
-					marg_c_p_a_ams_like_vec_grid (history, cat_params, f_intervals, lmr_opt,
-						a_range, ams_range, p_range, c_range, marg_vec, marg_grid);
+					marg_c_p_a_ams_like_grid (history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt,
+						a_range, ams_range, p_range, c_range, marg_grid);
 
 					// Display line, derived from global MLE
 
-					int[] ix_vec = marg_vec.peak_indexes;
 					int[] ix_grid = marg_grid.peak_indexes;
 
 					System.out.println (String.format (
-						"%6d  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f %6d %6d %6d %6d %6d %6d %6d %6d %6d %6d",
+						"%6d  % .4f  % .4f  % .4f  % .4f  %6d %6d %6d %6d %6d %6d %6d",
 						i_cat,
-						Math.log10 (c_range[ix_vec[0]]),
-						            p_range[ix_vec[1]],
-						Math.log10 (a_range[ix_vec[2]]),
 						Math.log10 (c_range[ix_grid[0]]),
 						            p_range[ix_grid[1]],
 						Math.log10 (a_range[ix_grid[2]]),
 						Math.log10 (ams_range[ix_grid[3]]),
-						Math.log10 (ams_range[ix_grid[3]]) - Math.log10 (a_range[ix_grid[2]]),
-						ix_vec[0],
-						ix_vec[1],
-						ix_vec[2],
 						ix_grid[0],
 						ix_grid[1],
 						ix_grid[2],
@@ -4910,23 +4548,15 @@ public class OEFit2Test {
 
 					// Display line, derived from marginal mode
 
-					ix_vec = marg_vec.marginal_mode_index;
 					ix_grid = marg_grid.marginal_mode_index;
 
 					System.out.println (String.format (
-						"%6d  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f  % .4f %6d %6d %6d %6d %6d %6d %6d %6d %6d %6d",
+						"%6d  % .4f  % .4f  % .4f  % .4f  %6d %6d %6d %6d %6d %6d %6d",
 						i_cat,
-						Math.log10 (c_range[ix_vec[0]]),
-						            p_range[ix_vec[1]],
-						Math.log10 (a_range[ix_vec[2]]),
 						Math.log10 (c_range[ix_grid[0]]),
 						            p_range[ix_grid[1]],
 						Math.log10 (a_range[ix_grid[2]]),
 						Math.log10 (ams_range[ix_grid[3]]),
-						Math.log10 (ams_range[ix_grid[3]]) - Math.log10 (a_range[ix_grid[2]]),
-						ix_vec[0],
-						ix_vec[1],
-						ix_vec[2],
 						ix_grid[0],
 						ix_grid[1],
 						ix_grid[2],
@@ -4936,21 +4566,13 @@ public class OEFit2Test {
 						history.interval_count
 					));
 
-					// Display vector marginal probabilities
+					// Display grid marginal probabilities
 
 					String prefix = String.format ("%6d  ", i_cat);
 					String infix = "\n" + prefix;
 					String suffix = "";
 
 					int max_els = 19;
-
-					System.out.println (marg_vec.marginal_probability_and_peak_as_string (0, max_els, prefix, infix, suffix));
-
-					System.out.println (marg_vec.marginal_probability_and_peak_as_string (1, max_els, prefix, infix, suffix));
-
-					System.out.println (marg_vec.marginal_probability_and_peak_as_string (2, max_els, prefix, infix, suffix));
-
-					// Display grid marginal probabilities
 
 					System.out.println (marg_grid.marginal_probability_and_peak_as_string (0, max_els, prefix, infix, suffix));
 
@@ -4962,20 +4584,10 @@ public class OEFit2Test {
 
 					// Means and covariances
 
-					double[] mean_vec = new double[3];
-					double[][] cov_vec = new double[3][3];
-
 					double[] mean_grid = new double[4];
 					double[][] cov_grid = new double[4][4];
 
-					marg_vec.calc_mean_covariance (range_cpa, mean_vec, cov_vec);
 					marg_grid.calc_mean_covariance (range_cpa, mean_grid, cov_grid);
-
-					System.out.println (String.format (
-						"%6d  %s",
-						i_cat,
-						marg_vec.mean_coveriance_as_string (mean_vec, cov_vec)
-					));
 
 					System.out.println (String.format (
 						"%6d  %s",

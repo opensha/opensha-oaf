@@ -543,6 +543,15 @@ public class OECatalogParamsStats {
 
 
 
+	// Calculate the branch ratio.
+
+	public final double get_br () {
+		return OEStatsCalc.calc_branch_ratio (a, p, c, b, alpha, mref, msup, tend - tbegin);
+	}
+
+
+
+
 	// Set the a-value, leaving everything else unchanged.
 	// Parameters:
 	//  a = New value of a.
