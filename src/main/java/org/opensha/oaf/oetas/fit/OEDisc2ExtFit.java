@@ -120,6 +120,25 @@ import static org.opensha.oaf.oetas.OEConstants.LMR_OPT_MAGCAT_MAG_MAX;		// 4 = 
 // The total intensity function at time t is obtained by summing the above formulas over all
 // ruptures at times s < t, and all intervals with beginning times s1 < t.
 //
+// MAINSHOCKS
+//
+// Some ruptures are designated as mainshocks.  For a mainshock source, the parameter "a" is
+// replaced by "ams".  Typically mainshocks have Q == 1 (regardless of magnitude ranges) and
+// can only be sources, not targets.  In any formula below involving a rupture source, it is
+// understood that if the rupture is a mainshock then the substitution a -> ams should be made.
+//
+// BACKGROUND RATE
+//
+// A background rate "mu" is the rate of background earthquakes with magnitude >= mref per
+// unit time.  The intensity function due to the background rate, which is time-independent, is
+//
+//   lambda(m) =  mu * beta * (10^(-b*(m - mref)))
+//
+// The background rate can be well-approximated by a mainshock source at time s which is far
+// in the past.  Comparing lambda(m) and lambda(t, m), a formula for a mainshock source can be
+// converted into a formula for background rate by substituting k -> mu * (-s)^p and
+// (t - s + c) -> (-s).  Formulas can also be computed directly from lambda(m).
+//
 // PRODUCTIVITY DENSITY
 //
 // Consider a target interval from time t1 to t2.  We wish to compute the productivity density
@@ -142,7 +161,14 @@ import static org.opensha.oaf.oetas.OEConstants.LMR_OPT_MAGCAT_MAG_MAX;		// 4 = 
 //
 //          * Integral(t = t1, t = t2; (t - s + c)^(-p) * dt) / (t2 - t1)
 //
-// Notice that this contains two factors of 10^a.
+// Notice that this contains two factors of 10^a.  For a mainshock source, the factor of 10^a
+// inside k is replaced by 10^ams, and typically the factor of Q inside k is taken to be 1.
+// The explicit factor of 10^a can be replaced by 10^aint where "aint" is a productivity
+// parameter for interval sources.  Typically aint == a but the code allows them to be different.
+//
+// If the source is a background rate them
+//
+//   kt = mu * beta * 10^(a + (alpha - b)*(mag_min - mref)) * Q * W(v, mct - mag_min)
 //
 // If the source is an interval from s1 to s2 <= t1, and source productivity density ks, then:
 //
@@ -176,6 +202,12 @@ import static org.opensha.oaf.oetas.OEConstants.LMR_OPT_MAGCAT_MAG_MAX;		// 4 = 
 //
 //   k = 10^(a + alpha*(ms - mref)) * Q
 //
+// If the source rupture is a mainshock, then substitute a -> ams and typically Q -> 1.
+//
+// For a background rate source:
+//
+//   mu * (10^(-b*(mct - mref)))
+//
 // For each source interval at time s1 to s2, with s1 < t:
 //
 //   ks * (10^(-b*(mct - mref))) * Integral(s = s1, s = min(t,s2); (t - s + c)^(-p) * ds)
@@ -190,6 +222,11 @@ import static org.opensha.oaf.oetas.OEConstants.LMR_OPT_MAGCAT_MAG_MAX;		// 4 = 
 // For each source rupture at time s < t2, the contribution to the integral is:
 //
 //   k * (10^(-b*(mct - mref))) * Integral(t = max(t1,s), t = t2; (t - s + c)^(-p) * dt)
+//
+// For a background rate source, the contribution to the integral is the expected number of
+// background earthquakes with magnitude >= mct:
+//
+//   mu * (10^(-b*(mct - mref)) * (t2 - t1)
 //
 // For each source interval at time s1 to s2, with s2 <= t1:
 //
@@ -227,6 +264,10 @@ public class OEDisc2ExtFit {
 	// Likelihood magnitude range option.
 
 	private int lmr_opt;
+
+	// True ot calculate data needed to fit background rate.
+
+	private boolean f_background;
 
 	//  public static final int LMR_OPT_MCT_INFINITY = 1;		// From time-dependent magnitude of completeness to infinity.
 	//  public static final int LMR_OPT_MCT_MAG_MAX = 2;		// From time-dependent magnitude of completeness to maximum simulation magnitude.
@@ -495,6 +536,11 @@ public class OEDisc2ExtFit {
 
 		public double[] int_part_like_unlim;
 
+		// The sum of the above values, as a one-element array.
+		// The sum includes only intervals that are included in the likelihood calculation.
+
+		public double[] sum_int_part_like_unlim;
+
 
 		// Allocate the partial likelihood for each target interval, with unlimited or limited upper magnitude.
 
@@ -502,6 +548,7 @@ public class OEDisc2ExtFit {
 			final int interval_count = history.interval_count;
 
 			int_part_like_unlim = new double[interval_count];
+			sum_int_part_like_unlim = new double[1];
 
 			return;
 		}
@@ -518,6 +565,8 @@ public class OEDisc2ExtFit {
 			final int nlo = like_int_begin;
 			final int nhi = like_int_end;
 
+			double sum = 0.0;
+
 			switch (lmr_opt) {
 
 			default:
@@ -528,6 +577,7 @@ public class OEDisc2ExtFit {
 				for (int n = 0; n < interval_count; ++n) {
 					if (nlo <= n && n < nhi) {
 						int_part_like_unlim[n] = Math.pow(10.0, b*(mref - a_interval_mc[n])) * (a_interval_time[n + 1] - a_interval_time[n]);
+						sum += int_part_like_unlim[n];
 					} else {
 						int_part_like_unlim[n] = 0.0;
 					}
@@ -540,6 +590,7 @@ public class OEDisc2ExtFit {
 				for (int n = 0; n < interval_count; ++n) {
 					if (nlo <= n && n < nhi) {
 						int_part_like_unlim[n] = Math.pow(10.0, b*(mref - a_interval_mc[n])) * (a_interval_time[n + 1] - a_interval_time[n]) * (- Math.expm1(beta*(Math.min(-0.5, a_interval_mc[n] - mag_max))));
+						sum += int_part_like_unlim[n];
 					} else {
 						int_part_like_unlim[n] = 0.0;
 					}
@@ -551,6 +602,7 @@ public class OEDisc2ExtFit {
 				for (int n = 0; n < interval_count; ++n) {
 					if (nlo <= n && n < nhi) {
 						int_part_like_unlim[n] = Math.pow(10.0, b*(mref - magCat)) * (a_interval_time[n + 1] - a_interval_time[n]);
+						sum += int_part_like_unlim[n];
 					} else {
 						int_part_like_unlim[n] = 0.0;
 					}
@@ -563,12 +615,15 @@ public class OEDisc2ExtFit {
 				for (int n = 0; n < interval_count; ++n) {
 					if (nlo <= n && n < nhi) {
 						int_part_like_unlim[n] = Math.pow(10.0, b*(mref - magCat)) * (a_interval_time[n + 1] - a_interval_time[n]) * (- Math.expm1(beta*(Math.min(-0.5, magCat - mag_max))));
+						sum += int_part_like_unlim[n];
 					} else {
 						int_part_like_unlim[n] = 0.0;
 					}
 				}
 				break;
 			}
+
+			sum_int_part_like_unlim[0] = sum;
 
 			return;
 		}
@@ -661,6 +716,7 @@ public class OEDisc2ExtFit {
 			rup_main_azero_prod = null;
 			rup_part_like_unlim = null;
 			int_part_like_unlim = null;
+			sum_int_part_like_unlim = null;
 			int_part_targ_prod = null;
 
 			return;
@@ -741,11 +797,12 @@ public class OEDisc2ExtFit {
 			result.append ("v_term = "       + v_term       + "\n");
 			result.append ("q_correction = " + q_correction + "\n");
 
-			result.append ("rup_azero_prod: "      + vec_summary_string(rup_azero_prod)      + "\n");
-			result.append ("rup_main_azero_prod: " + vec_summary_string(rup_main_azero_prod) + "\n");
-			result.append ("rup_part_like_unlim: " + vec_summary_string(rup_part_like_unlim) + "\n");
-			result.append ("int_part_like_unlim: " + vec_summary_string(int_part_like_unlim) + "\n");
-			result.append ("int_part_targ_prod: "  + vec_summary_string(int_part_targ_prod)  + "\n");
+			result.append ("rup_azero_prod: "          + vec_summary_string(rup_azero_prod)          + "\n");
+			result.append ("rup_main_azero_prod: "     + vec_summary_string(rup_main_azero_prod)     + "\n");
+			result.append ("rup_part_like_unlim: "     + vec_summary_string(rup_part_like_unlim)     + "\n");
+			result.append ("int_part_like_unlim: "     + vec_summary_string(int_part_like_unlim)     + "\n");
+			result.append ("sum_int_part_like_unlim: " + vec_summary_string(sum_int_part_like_unlim) + "\n");
+			result.append ("int_part_targ_prod: "      + vec_summary_string(int_part_targ_prod)      + "\n");
 
 			return result.toString();
 		}
@@ -1350,6 +1407,75 @@ public class OEDisc2ExtFit {
 		}
 
 
+		// Function to apply the matrix.
+		// Parameters:
+		//  y1 = Target vector #1, length = rupture_count.
+		//  y2 = Target vector #2, length = rupture_count.
+		//  y3 = Target vector #3, length = rupture_count.
+		//  x1 = Source vector #1, length = interval_count.
+		//  x2 = Source vector #2, length = interval_count.
+		//  x3 = Source vector #3, length = interval_count.
+		//  o1 = Target offset vector #1, length = rupture_count.
+		//  o2 = Target offset vector #2, length = rupture_count.
+		//  o3 = Target offset vector #3, length = rupture_count.
+		//  d = Target scaling vector, length = rupture_count.
+		// Performs the operation (with m denoting omat_rup_targ_int_src):
+		//   y1[i] = SUM(m[i][j] * x1[j]) * d[i] + o1[i]
+		//   y2[i] = SUM(m[i][j] * x2[j]) * d[i] + o2[i]
+		//   y3[i] = SUM(m[i][j] * x3[j]) * d[i] + o3[i]
+		// where the sum is over j satisfying 0 <= j < m[i].length.
+		// The operation is performed for i satisfying 0 <= i <= m.length.
+		// This is the matrix operation
+		//   y1 = diag(d) * (m * x1) + o1
+		//   y2 = diag(d) * (m * x2) + o2
+		//   y3 = diag(d) * (m * x3) + o3
+
+		public final void apply_omat_rup_targ_int_src (
+				final double[] y1,
+				final double[] y2,
+				final double[] y3,
+				final double[] x1,
+				final double[] x2,
+				final double[] x3,
+				final double[] o1,
+				final double[] o2,
+				final double[] o3,
+				final double[] d ) {
+
+			// Zero-matrix case
+
+			if (omat_rup_targ_int_src == null) {
+				final int ii_top = history.rupture_count;
+				for (int ii = 0; ii < ii_top; ++ii) {
+					y1[ii] = o1[ii];
+					y2[ii] = o2[ii];
+					y3[ii] = o3[ii];
+				}
+				return;
+			}
+
+			// Non-zero matrix
+
+			final int i_top = omat_rup_targ_int_src.length;
+			for (int i = 0; i < i_top; ++i) {
+				double sum1 = 0.0;
+				double sum2 = 0.0;
+				double sum3 = 0.0;
+				final double[] row = omat_rup_targ_int_src[i];
+				final int j_top = row.length;
+				for (int j = 0; j < j_top; ++j) {
+					sum1 += (row[j] * x1[j]);
+					sum2 += (row[j] * x2[j]);
+					sum3 += (row[j] * x3[j]);
+				}
+				y1[i] = sum1 * d[i] + o1[i];
+				y2[i] = sum2 * d[i] + o2[i];
+				y3[i] = sum3 * d[i] + o3[i];
+			}
+			return;
+		}
+
+
 
 
 		// Matrix of Omori values for an interval target and rupture source.
@@ -1719,6 +1845,122 @@ public class OEDisc2ExtFit {
 		}
 
 
+		// Function to apply the matrix.
+		// Parameters:
+		//  y1 = Target vector #1, length = interval_count.
+		//  y2 = Target vector #2, length = interval_count.
+		//  y3 = Target vector #3, length = interval_count.
+		//  z1 = Target scalar #1, length = 1.
+		//  z2 = Target scalar #2, length = 1.
+		//  z3 = Target scalar #3, length = 1.
+		//  x1 = Source vector #1, length = interval_count.
+		//  x2 = Source vector #2, length = interval_count.
+		//  x3 = Source vector #3, length = interval_count.
+		//  o1 = Source scalar offset #1, length = 1.
+		//  o2 = Source scalar offset #2, length = 1.
+		//  o3 = Source scalar offset #3, length = 1.
+		//  dy = Target scaling vector for y, length = interval_count.
+		//  dz = Target scaling vector for z, length = interval_count.
+		//  s = Scale factor.
+		// Performs the operations (with m denoting omat_int_targ_int_src and v denoting omat_self_int_src):
+		//   y1[i] = (SUM(m[i][j] * y1[j]) * dy[i] + x1[i]) * s * (1 + v[i] * dy[i] * s);
+		//   y2[i] = (SUM(m[i][j] * y2[j]) * dy[i] + x2[i]) * s * (1 + v[i] * dy[i] * s);
+		//   y3[i] = (SUM(m[i][j] * y3[j]) * dy[i] + x3[i]) * s * (1 + v[i] * dy[i] * s);
+		// where the sum is over j satisfying 0 <= j < m[i].length, for i satisfying 0 <= i <= m.length.
+		// Because the formulas are a recurrence, they must be evaluated sequentially in increasing i.
+		//   z1[0] = SUM((SUM(m[i][j] * y1[j]) + y1[i] * v[i]) * dz[i]) + o1[0]
+		//   z2[0] = SUM((SUM(m[i][j] * y2[j]) + y2[i] * v[i]) * dz[i]) + o2[0]
+		//   z3[0] = SUM((SUM(m[i][j] * y3[j]) + y3[i] * v[i]) * dz[i]) + o3[0]
+		// where the inner sum is over j satisfying 0 <= j < m[i].length, and the outer sum is
+		// over i satisfying 0 <= i <= m.length.  Because the formulas refer to y1[i] and y2[i] and y3[i],
+		// the y values must be computed first.
+
+		public final void apply_omat_int_targ_int_src (
+				final double[] y1,
+				final double[] y2,
+				final double[] y3,
+				final double[] z1,
+				final double[] z2,
+				final double[] z3,
+				final double[] x1,
+				final double[] x2,
+				final double[] x3,
+				final double[] o1,
+				final double[] o2,
+				final double[] o3,
+				final double[] dy,
+				final double[] dz,
+				final double s) {
+
+			// Zero-matrix case
+
+			if (omat_int_targ_int_src == null) {
+				final int ii_top = history.interval_count;
+				for (int ii = 0; ii < ii_top; ++ii) {
+					y1[ii] = x1[ii] * s;
+					y2[ii] = x2[ii] * s;
+					y3[ii] = x3[ii] * s;
+				}
+				z1[0] = o1[0];
+				z2[0] = o2[0];
+				z3[0] = o3[0];
+				return;
+			}
+
+			// Non-zero matrix
+
+			final int i_top = omat_int_targ_int_src.length;
+
+			// Accumulators across all targets for scalar output
+
+			double total1 = 0.0;
+			double total2 = 0.0;
+			double total3 = 0.0;
+
+			// For each target...
+
+			for (int i = 0; i < i_top; ++i) {
+
+				// Propagate from prior outputs
+
+				double sum1 = 0.0;
+				double sum2 = 0.0;
+				double sum3 = 0.0;
+
+				final double[] row = omat_int_targ_int_src[i];
+				final int j_top = row.length;
+
+				for (int j = 0; j < j_top; ++j) {
+					sum1 += (row[j] * y1[j]);
+					sum2 += (row[j] * y2[j]);
+					sum3 += (row[j] * y3[j]);
+				}
+
+				// Vector output
+
+				final double self = omat_self_int_src[i];
+				final double r = s * (self * dy[i] * s + 1.0);
+
+				y1[i] = (sum1 * dy[i] + x1[i]) * r;
+				y2[i] = (sum2 * dy[i] + x2[i]) * r;
+				y3[i] = (sum3 * dy[i] + x3[i]) * r;
+
+				// Scalar output
+
+				total1 += ((y1[i] * self + sum1) * dz[i]);
+				total2 += ((y2[i] * self + sum2) * dz[i]);
+				total3 += ((y3[i] * self + sum3) * dz[i]);
+			}
+
+			// Total scalar output
+
+			z1[0] = total1 + o1[0];
+			z2[0] = total2 + o2[0];
+			z3[0] = total3 + o3[0];
+			return;
+		}
+
+
 
 
 		//----- Building -----
@@ -1963,6 +2205,9 @@ public class OEDisc2ExtFit {
 		//
 		//   like_rup_targ_rup_src.length = rupture_count
 		//
+		// Note: The formula is modified to take into account the effect of lmr_opt.  This is done
+		// by using mexp.rup_part_like_unlim[i_t_rup] as a factor.
+		//
 		// Note: Multiply by (10^a)*Q to obtain the log-likelihood contribution at each target rupture,
 		// due to prior source ruptures.
 
@@ -1974,6 +2219,26 @@ public class OEDisc2ExtFit {
 		// due to prior source ruptures (or something more complicated if non-zero offsets are used).
 
 		public double[] like_main_rup_targ_rup_src;
+
+		// Unscaled likelihood values for each target rupture, due to a background rate.
+		// This is for a background rate, assuming mu == 1.
+		// like_bkgd_rup_targ_rup_src[i_t_rup] is the unscaled likelihood for the target rupture
+		// selected by i_t_rup, due to a background rate, which is
+		//
+		//   10^(-b*(mct - mref))
+		//
+		//   mct = a_rupture_obj[i_t_rup].k_prod      = target rupture magnitude of completeness
+		//
+		// Note: This can be obtained from the above formula with the substitution
+		// (10^ams) * Q * 10^(alpha*(ms - mref)) * ((t - s + c)^(-p)) --> mu
+		//
+		// Note: These values are independent of p and c, and are the same as mexp.rup_part_like_unlim,
+		// which also brings in the effect of lmr_opt.
+		//
+		// Note: Multiply by mu to obtain the log-likelihood contribution at each target rupture,
+		// due to a background rate.
+
+		public double[] like_bkgd_rup_targ_rup_src;
 
 
 
@@ -1997,6 +2262,11 @@ public class OEDisc2ExtFit {
 		//
 		//   like_int_targ_rup_src.length = 1
 		//
+		// Note: The sum runs over only target intervals i_t_int that are to be included in the
+		// likelihood calculation.  This limitation is achieved by including a factor
+		// mexp.int_part_like_unlim[i_t_int] in the calculation.  This factor also brings in the
+		// effect of lmr_opt.
+		//
 		// Note: Multiply by (10^a)*Q to obtain the log-likelihood contribution for all target intervals,
 		// due to prior source ruptures.
 
@@ -2008,6 +2278,35 @@ public class OEDisc2ExtFit {
 		// due to prior source ruptures (or something more complicated if non-zero offsets are used).
 
 		public double[] like_main_int_targ_rup_src;
+
+		// Unscaled likelihood values for all target intervals, due to a background rate.
+		// This is for a background rate, assuming mu == 1.
+		// like_bkgd_int_targ_rup_src[0] is the unscaled likelihood summed over all target intervals,
+		// due to a background rate, which is
+		//
+		//   SUM( (10^(-b*(mct - mref))) * (t2 - t1) )
+		//
+		// The sum runs over all i_t_int, and
+		//
+		//   t1 = a_interval_time[i_t_int]            = target interval begin time
+		//   t2 = a_interval_time[i_t_int + 1]        = target interval end time
+		//   mct = a_interval_mc[i_t_int]             = target interval magnitude of completeness
+		//
+		//   like_bkgd_int_targ_rup_src.length = 1
+		//
+		// Note: The sum runs over only target intervals i_t_int that are to be included in the
+		// likelihood calculation.
+		//
+		// Note: This can be obtained from the above formula with the substitution
+		// (10^ams) * Q * 10^(alpha*(ms - mref)) * ((t - s + c)^(-p)) --> mu
+		//
+		// Note: These values are independent of p and c, and are the same as mexp.sum_int_part_like_unlim,
+		// which also brings in the effect of lmr_opt.
+		//
+		// Note: Multiply by mu to obtain the log-likelihood contribution for all target intervals,
+		// due to a background rate.
+
+		public double[] like_bkgd_int_targ_rup_src;
 
 
 
@@ -2046,6 +2345,28 @@ public class OEDisc2ExtFit {
 
 		public double[] prod_main_int_targ_rup_src;
 
+		// Unscaled productivity density values for each target interval, due to a background rate.
+		// This is for a background rate, assuming mu == 1.
+		// prod_bkgd_int_targ_rup_src[i_t_int] is the unscaled productivity density for the target interval
+		// selected by i_t_int, due to a background rate, which is
+		//
+		//   beta * 10^((alpha - b)*(mag_min - mref)) * W(v, mct - mag_min)
+		//
+		//   mct = a_interval_mc[i_t_int]             = target interval magnitude of completeness
+		//
+		//   prod_bkgd_int_targ_rup_src.length = interval_count
+		//
+		// Note: This can be obtained from the above formula with the substitution
+		// (10^ams) * Q * 10^(alpha*(ms - mref)) * ((t - s + c)^(-p)) --> mu
+		//
+		// Note: These values are independent of p and c, and are the same as mexp.int_part_targ_prod.
+		//
+		// Note: Multiply by mu*((10^a)*Q) to obtain the productivity density contribution 
+		// for each target interval, due to a background rate.  The first factor is the background
+		// rate, and the second factor is for the productivity of the target intervals.
+
+		public double[] prod_bkgd_int_targ_rup_src;
+
 
 
 
@@ -2062,10 +2383,13 @@ public class OEDisc2ExtFit {
 
 			like_rup_targ_rup_src = null;
 			like_main_rup_targ_rup_src = null;
+			like_bkgd_rup_targ_rup_src = null;
 			like_int_targ_rup_src = null;
 			like_main_int_targ_rup_src = null;
+			like_bkgd_int_targ_rup_src = null;
 			prod_int_targ_rup_src = null;
 			prod_main_int_targ_rup_src = null;
+			prod_bkgd_int_targ_rup_src = null;
 
 			return;
 		}
@@ -2084,12 +2408,15 @@ public class OEDisc2ExtFit {
 
 			like_rup_targ_rup_src = new double[rupture_count];
 			like_main_rup_targ_rup_src = new double[rupture_count];
+			like_bkgd_rup_targ_rup_src = null;
 
 			like_int_targ_rup_src = new double[1];
 			like_main_int_targ_rup_src = new double[1];
+			like_bkgd_int_targ_rup_src = null;
 
 			prod_int_targ_rup_src = new double[interval_count];
 			prod_main_int_targ_rup_src = new double[interval_count];
+			prod_bkgd_int_targ_rup_src = null;
 
 		
 			return;
@@ -2131,6 +2458,12 @@ public class OEDisc2ExtFit {
 				mexp.int_part_targ_prod,		// final double[] dy
 				mexp.int_part_like_unlim		// final double[] dz
 			);
+
+			// Background arrays can be copied from mexp because they are independent of p and c.
+
+			like_bkgd_rup_targ_rup_src = mexp.rup_part_like_unlim;
+			like_bkgd_int_targ_rup_src = mexp.sum_int_part_like_unlim;
+			prod_bkgd_int_targ_rup_src = mexp.int_part_targ_prod;
 		
 			return;
 		}
@@ -2161,8 +2494,10 @@ public class OEDisc2ExtFit {
 
 			result.append ("like_rup_targ_rup_src: "      + vec_summary_string(like_rup_targ_rup_src)      + "\n");
 			result.append ("like_main_rup_targ_rup_src: " + vec_summary_string(like_main_rup_targ_rup_src) + "\n");
+			result.append ("like_bkgd_rup_targ_rup_src: " + vec_summary_string(like_bkgd_rup_targ_rup_src) + "\n");
 			result.append ("like_int_targ_rup_src: "      + vec_summary_string(like_int_targ_rup_src)      + "\n");
 			result.append ("like_main_int_targ_rup_src: " + vec_summary_string(like_main_int_targ_rup_src) + "\n");
+			result.append ("like_bkgd_int_targ_rup_src: " + vec_summary_string(like_bkgd_int_targ_rup_src) + "\n");
 			result.append ("prod_int_targ_rup_src: "      + vec_summary_string(prod_int_targ_rup_src)      + "\n");
 			result.append ("prod_main_int_targ_rup_src: " + vec_summary_string(prod_main_int_targ_rup_src) + "\n");
 
@@ -2189,7 +2524,7 @@ public class OEDisc2ExtFit {
 
 			double nrup = Math.max (0.1, (double)(like_rup_end - like_rup_begin));
 
-			// The MLE makes the expected number of ruptures equal to nrup, assuming no secondary triggering
+			// The MLE makes the expected number of ruptures equal to nrup, assuming no secondary triggering and no background.
 			// Implementation note: See avpr_calc_log_like(), noting that if there is no
 			// secondary triggering then ten_a_q == 0 and ten_aint_q == 0, and therefore
 			// avpr.like_main_int_targ_all_src[0] == pmom.like_main_int_targ_rup_src[0].
@@ -2385,7 +2720,7 @@ public class OEDisc2ExtFit {
 
 
 
-		// Unscaled likelihood values for each target rupture, due to all source intervals.
+		// Unscaled likelihood values for each target rupture, due to all sources.
 		// This is for productivity descended from non-mainshock source ruptures, assuming a == 0 and Q == 1.
 		// It may also contain productivity descended from mainshock source ruptures with non-zero offset values.
 		//
@@ -2433,6 +2768,25 @@ public class OEDisc2ExtFit {
 		// due to prior source intervals (or something more complicated if non-zero offsets are used).
 
 		public double[] like_main_rup_targ_all_src;
+
+		// Same as above, except for productivity descended from a background rate, assuming mu == 1.
+		// It is the sum of two parts.  The first part is the direct effect of the background rate:
+		//
+		//   10^(-b*(mct - mref))
+		//
+		// This first part is equal to:
+		//
+		//   pmom.like_bkgd_rup_targ_rup_src[i_t_rup]
+		//
+		// The second part is the same as above, using interval productivity descended from a background rate.
+		//
+		// Note: This can be obtained from the above formula with the substitution
+		// (10^ams) * Q * 10^(alpha*(ms - mref)) * ((t - s + c)^(-p)) --> mu
+		//
+		// Note: Multiply by mu to obtain the log-likelihood contribution at each target rupture,
+		// due to a background rate.
+
+		public double[] like_bkgd_rup_targ_all_src;
 
 
 
@@ -2497,6 +2851,25 @@ public class OEDisc2ExtFit {
 		// due to prior source intervals (or something more complicated if non-zero offsets are used).
 
 		public double[] like_main_int_targ_all_src;
+
+		// Same as above, except for productivity descended from a background rate, assuming mu == 1.
+		// It is the sum of three parts.  The first part is the direct effect of the background rate:
+		//
+		//   SUM( (10^(-b*(mct - mref))) * (t2 - t1) )
+		//
+		// The sum runs over all i_t_int.  This first part is equal to:
+		//
+		//   pmom.like_bkgd_int_targ_rup_src[0]
+		//
+		// The second and third parts are the same as above, using interval productivity descended from a background rate.
+		//
+		// Note: This can be obtained from the above formula with the substitution
+		// (10^ams) * Q * 10^(alpha*(ms - mref)) * ((t - s + c)^(-p)) --> mu
+		//
+		// Note: Multiply by mu to obtain the log-likelihood contribution for all target intervals,
+		// due to a background rate.
+
+		public double[] like_bkgd_int_targ_all_src;
 
 
 
@@ -2575,6 +2948,26 @@ public class OEDisc2ExtFit {
 
 		public double[] prod_main_int_targ_all_src;
 
+		// Same as above, except for productivity descended from a background rate, assuming mu == 1.
+		// It is the sum of three parts.  The first part is the direct effect of the background rate:
+		//
+		//   (10^aint)*Q * beta * 10^((alpha - b)*(mag_min - mref)) * W(v, mct - mag_min)
+		//
+		// This first part is equal to:
+		//
+		//   pmom.prod_bkgd_int_targ_rup_src[i_t_int] * (10^aint)*Q
+		//
+		// The second and third parts are the same as above, using interval productivity descended from a background rate.
+		//
+		// Note: This can be obtained from the above formula with the substitution
+		// (10^ams) * Q * 10^(alpha*(ms - mref)) * ((t - s + c)^(-p)) --> mu
+		//
+		// Note: This contains the factor of (10^aint)*Q needed to scale the productivity of the interval.
+		// You still need to multiply by mu to scale the productivity by the background rate;
+		// the lack of this factor is why the value is called unscaled.
+
+		public double[] prod_bkgd_int_targ_all_src;
+
 
 
 
@@ -2590,10 +2983,13 @@ public class OEDisc2ExtFit {
 
 			like_rup_targ_all_src = null;
 			like_main_rup_targ_all_src = null;
+			like_bkgd_rup_targ_all_src = null;
 			like_int_targ_all_src = null;
 			like_main_int_targ_all_src = null;
+			like_bkgd_int_targ_all_src = null;
 			prod_int_targ_all_src = null;
 			prod_main_int_targ_all_src = null;
+			prod_bkgd_int_targ_all_src = null;
 
 			return;
 		}
@@ -2612,13 +3008,23 @@ public class OEDisc2ExtFit {
 
 			like_rup_targ_all_src = new double[rupture_count];
 			like_main_rup_targ_all_src = new double[rupture_count];
+			like_bkgd_rup_targ_all_src = new double[rupture_count];
 
 			like_int_targ_all_src = new double[1];
 			like_main_int_targ_all_src = new double[1];
+			like_bkgd_int_targ_all_src = new double[1];
 
 			prod_int_targ_all_src = new double[interval_count];
 			prod_main_int_targ_all_src = new double[interval_count];
+			prod_bkgd_int_targ_all_src = new double[interval_count];
 
+			// If not supporting background, just zero-fill the bachground arrays
+
+			if (!( f_background )) {
+				Arrays.fill (like_bkgd_rup_targ_all_src, 0.0);
+				Arrays.fill (like_bkgd_int_targ_all_src, 0.0);
+				Arrays.fill (prod_bkgd_int_targ_all_src, 0.0);
+			}
 		
 			return;
 		}
@@ -2639,31 +3045,74 @@ public class OEDisc2ExtFit {
 
 			// Build arrays with interval target and interval source (this one must be first!)
 
-			pmom.omat.apply_omat_int_targ_int_src (
-				prod_int_targ_all_src,				// final double[] y1
-				prod_main_int_targ_all_src,			// final double[] y2
-				like_int_targ_all_src,				// final double[] z1
-				like_main_int_targ_all_src,			// final double[] z2
-				pmom.prod_int_targ_rup_src,			// final double[] x1
-				pmom.prod_main_int_targ_rup_src,	// final double[] x2
-				pmom.like_int_targ_rup_src,			// final double[] o1
-				pmom.like_main_int_targ_rup_src,	// final double[] o2
-				pmom.mexp.int_part_targ_prod,		// final double[] dy
-				pmom.mexp.int_part_like_unlim,		// final double[] dz
-				ten_aint_q							// final double s
-			);
+			if (f_background) {
+
+				pmom.omat.apply_omat_int_targ_int_src (
+					prod_int_targ_all_src,				// final double[] y1
+					prod_main_int_targ_all_src,			// final double[] y2
+					prod_bkgd_int_targ_all_src,			// final double[] y3
+					like_int_targ_all_src,				// final double[] z1
+					like_main_int_targ_all_src,			// final double[] z2
+					like_bkgd_int_targ_all_src,			// final double[] z3
+					pmom.prod_int_targ_rup_src,			// final double[] x1
+					pmom.prod_main_int_targ_rup_src,	// final double[] x2
+					pmom.prod_bkgd_int_targ_rup_src,	// final double[] x3
+					pmom.like_int_targ_rup_src,			// final double[] o1
+					pmom.like_main_int_targ_rup_src,	// final double[] o2
+					pmom.like_bkgd_int_targ_rup_src,	// final double[] o3
+					pmom.mexp.int_part_targ_prod,		// final double[] dy
+					pmom.mexp.int_part_like_unlim,		// final double[] dz
+					ten_aint_q							// final double s
+				);
+
+			} else {
+
+				pmom.omat.apply_omat_int_targ_int_src (
+					prod_int_targ_all_src,				// final double[] y1
+					prod_main_int_targ_all_src,			// final double[] y2
+					like_int_targ_all_src,				// final double[] z1
+					like_main_int_targ_all_src,			// final double[] z2
+					pmom.prod_int_targ_rup_src,			// final double[] x1
+					pmom.prod_main_int_targ_rup_src,	// final double[] x2
+					pmom.like_int_targ_rup_src,			// final double[] o1
+					pmom.like_main_int_targ_rup_src,	// final double[] o2
+					pmom.mexp.int_part_targ_prod,		// final double[] dy
+					pmom.mexp.int_part_like_unlim,		// final double[] dz
+					ten_aint_q							// final double s
+				);
+
+			}
 
 			// Build arrays with rupture target and interval source
 
-			pmom.omat.apply_omat_rup_targ_int_src (
-				like_rup_targ_all_src,				// final double[] y1
-				like_main_rup_targ_all_src,			// final double[] y2
-				prod_int_targ_all_src,				// final double[] x1
-				prod_main_int_targ_all_src,			// final double[] x2
-				pmom.like_rup_targ_rup_src,			// final double[] o1
-				pmom.like_main_rup_targ_rup_src,	// final double[] o2
-				pmom.mexp.rup_part_like_unlim		// final double[] d
-			);
+			if (f_background) {
+
+				pmom.omat.apply_omat_rup_targ_int_src (
+					like_rup_targ_all_src,				// final double[] y1
+					like_main_rup_targ_all_src,			// final double[] y2
+					like_bkgd_rup_targ_all_src,			// final double[] y3
+					prod_int_targ_all_src,				// final double[] x1
+					prod_main_int_targ_all_src,			// final double[] x2
+					prod_bkgd_int_targ_all_src,			// final double[] x3
+					pmom.like_rup_targ_rup_src,			// final double[] o1
+					pmom.like_main_rup_targ_rup_src,	// final double[] o2
+					pmom.like_bkgd_rup_targ_rup_src,	// final double[] o3
+					pmom.mexp.rup_part_like_unlim		// final double[] d
+				);
+
+			} else {
+
+				pmom.omat.apply_omat_rup_targ_int_src (
+					like_rup_targ_all_src,				// final double[] y1
+					like_main_rup_targ_all_src,			// final double[] y2
+					prod_int_targ_all_src,				// final double[] x1
+					prod_main_int_targ_all_src,			// final double[] x2
+					pmom.like_rup_targ_rup_src,			// final double[] o1
+					pmom.like_main_rup_targ_rup_src,	// final double[] o2
+					pmom.mexp.rup_part_like_unlim		// final double[] d
+				);
+
+			}
 		
 			return;
 		}
@@ -2694,10 +3143,13 @@ public class OEDisc2ExtFit {
 
 			result.append ("like_rup_targ_all_src: "      + vec_summary_string(like_rup_targ_all_src)      + "\n");
 			result.append ("like_main_rup_targ_all_src: " + vec_summary_string(like_main_rup_targ_all_src) + "\n");
+			result.append ("like_bkgd_rup_targ_all_src: " + vec_summary_string(like_bkgd_rup_targ_all_src) + "\n");
 			result.append ("like_int_targ_all_src: "      + vec_summary_string(like_int_targ_all_src)      + "\n");
 			result.append ("like_main_int_targ_all_src: " + vec_summary_string(like_main_int_targ_all_src) + "\n");
+			result.append ("like_bkgd_int_targ_all_src: " + vec_summary_string(like_bkgd_int_targ_all_src) + "\n");
 			result.append ("prod_int_targ_all_src: "      + vec_summary_string(prod_int_targ_all_src)      + "\n");
 			result.append ("prod_main_int_targ_all_src: " + vec_summary_string(prod_main_int_targ_all_src) + "\n");
+			result.append ("prod_bkgd_int_targ_all_src: " + vec_summary_string(prod_bkgd_int_targ_all_src) + "\n");
 
 			return result.toString();
 		}
@@ -2715,6 +3167,7 @@ public class OEDisc2ExtFit {
 		//  ten_a_q = The value of (10^a)*Q applied to non-mainshock ruptures.  Normally equal to ten_aint_q.
 		//  ten_ams_q = The value of (10^ams)*Q applied to mainshock ruptures.
 		// Returns the log-likelihood value.
+		// This function assumes zero background rate.
 		// Note: The value of ten_ams_q may be more complicated if non-zero offsets for mainshocks are used.
 
 		public double avpr_calc_log_like (final double ten_a_q, final double ten_ams_q) {
@@ -2730,11 +3183,202 @@ public class OEDisc2ExtFit {
 				result += (Math.log((ten_a_q * like_rup_targ_all_src[n]) + (ten_ams_q * like_main_rup_targ_all_src[n])));
 			}
 
-			// Subtracted accumulated contributions from each interval
+			// Subtract accumulated contributions from each interval
 
 			result -= ((ten_a_q * like_int_targ_all_src[0]) + (ten_ams_q * like_main_int_targ_all_src[0]));
 
 			return result;
+		}
+
+
+
+
+		// Calculate log-likelihood.
+		// Parameters:
+		//  ten_a_q = The value of (10^a)*Q applied to non-mainshock ruptures.  Normally equal to ten_aint_q.
+		//  ten_ams_q = The value of (10^ams)*Q applied to mainshock ruptures.
+		//  mu = The background rate.
+		// Returns the log-likelihood value.
+		// Note: The value of ten_ams_q may be more complicated if non-zero offsets for mainshocks are used.
+
+		public double avpr_calc_log_like (final double ten_a_q, final double ten_ams_q, final double mu) {
+
+			// Accumulate contributions from each rupture
+
+			double result = 0.0;
+
+			final int nlo = like_rup_begin;
+			final int nhi = like_rup_end;
+
+			for (int n = nlo; n < nhi; ++n) {
+				result += (Math.log((ten_a_q * like_rup_targ_all_src[n]) + (ten_ams_q * like_main_rup_targ_all_src[n]) + (mu * like_bkgd_rup_targ_all_src[n])));
+			}
+
+			// Subtract accumulated contributions from each interval
+
+			result -= ((ten_a_q * like_int_targ_all_src[0]) + (ten_ams_q * like_main_int_targ_all_src[0]) + (mu * like_bkgd_int_targ_all_src[0]));
+
+			return result;
+		}
+
+
+
+
+		// Calculate log-likelihood for a range of ams values.
+		// Parameters:
+		//  ten_a_q = The value of (10^a)*Q applied to non-mainshock ruptures.  Normally equal to ten_aint_q.
+		//  ten_ams_q = Range of values of (10^ams)*Q applied to mainshock ruptures.
+		//  log_like = Array to receive values of log-likelihood, initialized to log-prior.
+		// Adds the log-likelihood value to each element of log_like.
+		// This function assumes zero background rate.
+		// Note: The value of ten_ams_q may be more complicated if non-zero offsets for mainshocks are used.
+
+		//  public void avpr_add_log_like (final double ten_a_q, final double[] ten_ams_q, final double[] log_like) {
+		//  
+		//  	// Index ranges
+		//  
+		//  	final int jlo = 0;
+		//  	final int jhi = ten_ams_q.length;
+		//  
+		//  	final int nlo = like_rup_begin;
+		//  	final int nhi = like_rup_end;
+		//  
+		//  	// Accumulate contributions from each rupture
+		//  
+		//  	for (int n = nlo; n < nhi; ++n) {
+		//  		final double x_rup = ten_a_q * like_rup_targ_all_src[n];
+		//  		final double y_rup = like_main_rup_targ_all_src[n];
+		//  		for (int j = jlo; j < jhi; ++j) {
+		//  			log_like[j] += (Math.log(x_rup + (ten_ams_q[j] * y_rup)));
+		//  		}
+		//  	}
+		//  
+		//  	// Subtract accumulated contributions from each interval
+		//  
+		//  	final double x_int = ten_a_q * like_int_targ_all_src[0];
+		//  	final double y_int = like_main_int_targ_all_src[0];
+		//  	for (int j = jlo; j < jhi; ++j) {
+		//  		log_like[j] -= (x_int + (ten_ams_q[j] * y_int));
+		//  	}
+		//  
+		//  	return;
+		//  }
+
+		public void avpr_add_log_like (final double ten_a_q, final double[] ten_ams_q, final double[] log_like) {
+
+			// Index ranges
+
+			final int jlo = 0;
+			final int jhi = ten_ams_q.length;
+
+			final int nlo = like_rup_begin;
+			final int nhi = like_rup_end;
+
+			// Loop over ams values
+
+			final double x = ten_a_q * like_int_targ_all_src[0];
+			final double y = like_main_int_targ_all_src[0];
+
+			for (int j = jlo; j < jhi; ++j) {
+
+				final double ten_ams_q_j = ten_ams_q[j];
+
+				// Accumulate contributions from each rupture
+
+				double result = log_like[j];
+
+				for (int n = nlo; n < nhi; ++n) {
+					result += (Math.log((ten_a_q * like_rup_targ_all_src[n]) + (ten_ams_q_j * like_main_rup_targ_all_src[n])));
+				}
+
+				// Subtract accumulated contributions from each interval
+
+				result -= (x + (ten_ams_q_j * y));
+
+				log_like[j] = result;
+			}
+
+			return;
+		}
+
+
+
+
+		// Calculate log-likelihood for a range of ams values.
+		// Parameters:
+		//  ten_a_q = The value of (10^a)*Q applied to non-mainshock ruptures.  Normally equal to ten_aint_q.
+		//  ten_ams_q = Range of values of (10^ams)*Q applied to mainshock ruptures.
+		//  mu = The background rate.
+		//  log_like = Array to receive values of log-likelihood, initialized to log-prior.
+		// Adds the log-likelihood value to each element of log_like.
+		// Note: The value of ten_ams_q may be more complicated if non-zero offsets for mainshocks are used.
+
+		//  public void avpr_add_log_like (final double ten_a_q, final double[] ten_ams_q, final double mu, final double[] log_like) {
+		//  
+		//  	// Index ranges
+		//  
+		//  	final int jlo = 0;
+		//  	final int jhi = ten_ams_q.length;
+		//  
+		//  	final int nlo = like_rup_begin;
+		//  	final int nhi = like_rup_end;
+		//  
+		//  	// Accumulate contributions from each rupture
+		//  
+		//  	for (int n = nlo; n < nhi; ++n) {
+		//  		final double x_rup = (ten_a_q * like_rup_targ_all_src[n]) + (mu * like_bkgd_rup_targ_all_src[n]);
+		//  		final double y_rup = like_main_rup_targ_all_src[n];
+		//  		for (int j = jlo; j < jhi; ++j) {
+		//  			log_like[j] += (Math.log(x_rup + (ten_ams_q[j] * y_rup)));
+		//  		}
+		//  	}
+		//  
+		//  	// Subtract accumulated contributions from each interval
+		//  
+		//  	final double x_int = (ten_a_q * like_int_targ_all_src[0]) + (mu * like_bkgd_int_targ_all_src[0]);
+		//  	final double y_int = like_main_int_targ_all_src[0];
+		//  	for (int j = jlo; j < jhi; ++j) {
+		//  		log_like[j] -= (x_int + (ten_ams_q[j] * y_int));
+		//  	}
+		//  
+		//  	return;
+		//  }
+
+		public void avpr_add_log_like (final double ten_a_q, final double[] ten_ams_q, final double mu, final double[] log_like) {
+
+			// Index ranges
+
+			final int jlo = 0;
+			final int jhi = ten_ams_q.length;
+
+			final int nlo = like_rup_begin;
+			final int nhi = like_rup_end;
+
+			// Loop over ams values
+
+			final double x = (ten_a_q * like_int_targ_all_src[0]) + (mu * like_bkgd_int_targ_all_src[0]);
+			final double y = like_main_int_targ_all_src[0];
+
+			for (int j = jlo; j < jhi; ++j) {
+
+				final double ten_ams_q_j = ten_ams_q[j];
+
+				// Accumulate contributions from each rupture
+
+				double result = log_like[j];
+
+				for (int n = nlo; n < nhi; ++n) {
+					result += (Math.log((ten_a_q * like_rup_targ_all_src[n]) + (ten_ams_q_j * like_main_rup_targ_all_src[n]) + (mu * like_bkgd_rup_targ_all_src[n])));
+				}
+
+				// Subtract accumulated contributions from each interval
+
+				result -= (x + (ten_ams_q_j * y));
+
+				log_like[j] = result;
+			}
+
+			return;
 		}
 
 
@@ -2773,6 +3417,26 @@ public class OEDisc2ExtFit {
 			double[] result = new double[interval_count];
 			for (int j = 0; j < interval_count; ++j) {
 				result[j] = prod_main_int_targ_all_src[j];
+			}
+			return result;
+		}
+
+
+
+
+		// Get the unscaled productivity density for each interval, due to a background rate.
+		// Returns a newly-allocated array with length == interval_count.
+		// Each element contains the unscaled productivity density for the corresponding interval.
+		// Multiply by the interval duration to get total productivity (not density).
+		// Multiply by mu to scale the the background rate.
+		// The two multiplications yield the productivity to use for seeding simulations.
+
+		public double[] avpr_get_unscaled_prod_density_bkgd_int () {
+			final int interval_count = history.interval_count;
+
+			double[] result = new double[interval_count];
+			for (int j = 0; j < interval_count; ++j) {
+				result[j] = prod_bkgd_int_targ_all_src[j];
 			}
 			return result;
 		}
@@ -2856,6 +3520,20 @@ public class OEDisc2ExtFit {
 		}
 
 
+		// Calculate log-likelihood for a range of ams values.
+		// Parameters:
+		//  ten_a_q = The value of (10^a)*Q applied to non-mainshock ruptures.  Normally equal to ten_aint_q.
+		//  ten_ams_q = Range of values of (10^ams)*Q applied to mainshock ruptures.
+		//  log_like = Array to receive values of log-likelihood, initialized to log-prior.
+		// Adds the log-likelihood value to each element of log_like.
+		// Note: The value of ten_ams_q may be more complicated if non-zero offsets for mainshocks are used.
+
+		public final void avpr_add_log_like (final double ten_a_q, final double[] ten_ams_q, final double[] log_like) {
+			avpr.avpr_add_log_like (ten_a_q, ten_ams_q, log_like);
+			return;
+		}
+
+
 		// Get the unscaled productivity density for each interval, due to non-mainshocks.
 		// Returns a newly-allocated array with length == interval_count.
 		// Each element contains the unscaled productivity density for the corresponding interval.
@@ -2877,6 +3555,18 @@ public class OEDisc2ExtFit {
 
 		public final double[] avpr_get_unscaled_prod_density_main_int () {
 			return avpr.avpr_get_unscaled_prod_density_main_int();
+		}
+
+
+		// Get the unscaled productivity density for each interval, due to a background rate.
+		// Returns a newly-allocated array with length == interval_count.
+		// Each element contains the unscaled productivity density for the corresponding interval.
+		// Multiply by the interval duration to get total productivity (not density).
+		// Multiply by mu to scale the the background rate.
+		// The two multiplications yield the productivity to use for seeding simulations.
+
+		public final double[] avpr_get_unscaled_prod_density_bkgd_int () {
+			return avpr.avpr_get_unscaled_prod_density_bkgd_int();
 		}
 	
 	}
@@ -2905,6 +3595,7 @@ public class OEDisc2ExtFit {
 		f_intervals = true;
 		f_likelihood = true;
 		lmr_opt = LMR_OPT_MCT_INFINITY;
+		f_background = true;
 		like_rup_begin = 0;
 		like_rup_end = 0;
 		like_int_begin = 0;
@@ -2971,6 +3662,7 @@ public class OEDisc2ExtFit {
 		this.f_intervals = f_intervals;
 		this.f_likelihood = f_likelihood;
 		this.lmr_opt = lmr_opt;
+		this.f_background = true;
 
 		// Set the likelihood rupture and interval ranges
 
@@ -3027,6 +3719,7 @@ public class OEDisc2ExtFit {
 		result.append ("f_intervals = "            + f_intervals            + "\n");
 		result.append ("f_likelihood = "           + f_likelihood           + "\n");
 		result.append ("lmr_opt = "                + lmr_opt                + "\n");
+		result.append ("f_background = "           + f_background           + "\n");
 		result.append ("like_rup_begin = "         + like_rup_begin         + "\n");
 		result.append ("like_rup_end = "           + like_rup_end           + "\n");
 		result.append ("like_int_begin = "         + like_int_begin         + "\n");

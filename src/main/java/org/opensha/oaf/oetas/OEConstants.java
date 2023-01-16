@@ -452,4 +452,15 @@ public class OEConstants {
 	public static final int LMR_OPT_MAGCAT_INFINITY = 3;	// From catalog magnitude of completeness to infinity.
 	public static final int LMR_OPT_MAGCAT_MAG_MAX = 4;		// From catalog magnitude of completeness to maximum simulation magnitude.
 
+
+
+
+	// Default value of mref, reference and minimum magnitude, for parameter definition.
+
+	public static final double DEF_MREF = 3.0;
+
+	// Default value of msup, maximum magnitude, for parameter definition.
+
+	public static final double DEF_MSUP = 9.5;
+
 }

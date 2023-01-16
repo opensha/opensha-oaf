@@ -63,6 +63,20 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 
 
+	// Get the middle parameter value.
+	// The value is guaranteed to lie between get_range_min() and get_range_max(),
+	// but the definition of "middle" varies by subclass.
+
+	public double get_range_middle () {
+		if (range_size == 1) {
+			return range_min;
+		}
+		return Math.sqrt (range_min) * Math.sqrt (range_max);
+	}
+
+
+
+
 	// Get the discrete parameter values as an array.
 	// It is guaranteed that the length of the array equals get_range_size(),
 	// the first element of the array equals get_range_min(), and the last

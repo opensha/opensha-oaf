@@ -43,6 +43,15 @@ public abstract class OEDiscreteRange {
 
 
 
+	// Get the middle parameter value.
+	// The value is guaranteed to lie between get_range_min() and get_range_max(),
+	// but the definition of "middle" varies by subclass.
+
+	public abstract double get_range_middle ();
+
+
+
+
 	// Get the discrete parameter values as an array.
 	// It is guaranteed that the length of the array equals get_range_size(),
 	// the first element of the array equals get_range_min(), and the last

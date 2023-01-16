@@ -20,28 +20,30 @@ public class OEGridParams {
 
 	//----- Parameter ranges -----
 
+	// Gutenberg-Richter parameter (a single fixed value).
+
+	public double b;
+
+	// ETAS intensity parameter (a single fixed value).
+
+	public double alpha;
+
 	// The range of c-values.
 
-	private OEDiscreteRange c_range;
+	public OEDiscreteRange c_range;
 
 	// The range of p-values.
 
-	private OEDiscreteRange p_range;
+	public OEDiscreteRange p_range;
 
 	// The range of branch ratios.
 	// This controls the productivity of secondary triggering.
 
-	private OEDiscreteRange br_range;
+	public OEDiscreteRange br_range;
 
-	// The range of mainshock productivity values.
-	// If f_ms_relative is false, this is the actual value of (10^ams)*Q.
-	// If f_ms_relative is true, this is relative to some estimated value of (10^ams)*Q.
+	// The range of mainshock productivity values, assuming zero reference magnitude.
 
-	private OEDiscreteRange ms_range;
-
-	// Flag, true if ms_range is relative to some estimated productivity.
-
-	private boolean f_ms_relative;
+	public OEDiscreteRange zams_range;
 
 
 
@@ -55,11 +57,13 @@ public class OEGridParams {
 
 	public final void clear () {
 
-		c_range = null;
-		p_range = null;
-		br_range = null;
-		ms_range = null;
-		f_ms_relative = false;
+		b               = 0.0;
+		alpha           = 0.0;
+
+		c_range         = null;
+		p_range         = null;
+		br_range        = null;
+		zams_range      = null;
 
 		return;
 	}
@@ -76,21 +80,24 @@ public class OEGridParams {
 
 
 
-	// Display our contents.
+	// Constructor that sets up the ranges with the supplied values.
+	// Returns this object.
+	// Implementation note: Since OEDiscreteRange objects are immutable, we can simply save them.
 
-	@Override
-	public String toString() {
-		StringBuilder result = new StringBuilder();
-
-		result.append ("OEGridParams:" + "\n");
-
-		result.append ("c_range = "       + c_range.toString()  + "\n");
-		result.append ("p_range = "       + p_range.toString()  + "\n");
-		result.append ("br_range = "      + br_range.toString() + "\n");
-		result.append ("ms_range = "      + ms_range.toString() + "\n");
-		result.append ("f_ms_relative = " + f_ms_relative       + "\n");
-
-		return result.toString();
+	public OEGridParams (
+		double b,
+		double alpha,
+		OEDiscreteRange c_range,
+		OEDiscreteRange p_range,
+		OEDiscreteRange br_range,
+		OEDiscreteRange zams_range
+	) {
+		this.b          = b;
+		this.alpha      = alpha;
+		this.c_range    = c_range;
+		this.p_range    = p_range;
+		this.br_range   = br_range;
+		this.zams_range = zams_range;
 	}
 
 
@@ -101,18 +108,42 @@ public class OEGridParams {
 	// Implementation note: Since OEDiscreteRange objects are immutable, we can simply save them.
 
 	public final OEGridParams set (
+		double b,
+		double alpha,
 		OEDiscreteRange c_range,
 		OEDiscreteRange p_range,
 		OEDiscreteRange br_range,
-		OEDiscreteRange ms_range,
-		boolean f_ms_relative
+		OEDiscreteRange zams_range
 	) {
-		this.c_range = c_range;
-		this.p_range = p_range;
-		this.br_range = br_range;
-		this.ms_range = ms_range;
-		this.f_ms_relative = f_ms_relative;
+		this.b          = b;
+		this.alpha      = alpha;
+		this.c_range    = c_range;
+		this.p_range    = p_range;
+		this.br_range   = br_range;
+		this.zams_range = zams_range;
 		return this;
+	}
+
+
+
+
+	// Display our contents.
+
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OEGridParams:" + "\n");
+
+		result.append ("b = "             + b                     + "\n");
+		result.append ("alpha = "         + alpha                 + "\n");
+
+		result.append ("c_range = "       + c_range.toString()    + "\n");
+		result.append ("p_range = "       + p_range.toString()    + "\n");
+		result.append ("br_range = "      + br_range.toString()   + "\n");
+		result.append ("zams_range = "    + zams_range.toString() + "\n");
+
+		return result.toString();
 	}
 
 
@@ -122,157 +153,13 @@ public class OEGridParams {
 	// Returns this object.
 
 	public final OEGridParams set_typical () {
+		this.b = 1.0;
+		this.alpha = 1.0;
 		this.c_range = OEDiscreteRange.makeLog (21, 0.00001, 1.00000);
 		this.p_range = OEDiscreteRange.makeLinear (31, 0.70, 1.30);
 		this.br_range = OEDiscreteRange.makeLog (21, 0.01, 1.00);
-		this.ms_range = OEDiscreteRange.makeLog (41, 0.01, 100.00);
-		this.f_ms_relative = true;
+		this.zams_range = OEDiscreteRange.makeLog (41, 0.01, 100.00);
 		return this;
-	}
-
-
-
-
-	//----- Readout -----
-
-
-
-
-	// Get the number of c-values.
-
-	public final int get_c_range_size () {
-		return c_range.get_range_size();
-	}
-
-
-	// Get the minimum c-value.
-
-	public final double get_c_range_min () {
-		return c_range.get_range_min();
-	}
-
-
-	// Get the maximum c-value.
-
-	public final double get_c_range_max () {
-		return c_range.get_range_max();
-	}
-
-
-
-
-	// Get the number of p-values.
-
-	public final int get_p_range_size () {
-		return p_range.get_range_size();
-	}
-
-
-	// Get the minimum p-value.
-
-	public final double get_p_range_min () {
-		return p_range.get_range_min();
-	}
-
-
-	// Get the maximum p-value.
-
-	public final double get_p_range_max () {
-		return p_range.get_range_max();
-	}
-
-
-
-
-	// Get the number of branch ratio values.
-
-	public final int get_br_range_size () {
-		return br_range.get_range_size();
-	}
-
-
-	// Get the minimum branch ratio value.
-
-	public final double get_br_range_min () {
-		return br_range.get_range_min();
-	}
-
-
-	// Get the maximum branch ratio value.
-
-	public final double get_br_range_max () {
-		return br_range.get_range_max();
-	}
-
-
-
-
-	// Get the number of mainshock productivity values.
-
-	public final int get_ms_range_size () {
-		return ms_range.get_range_size();
-	}
-
-
-	// Get the minimum dmainshock productivity value.
-
-	public final double get_ms_range_min () {
-		return ms_range.get_range_min();
-	}
-
-
-	// Get the maximum mainshock productivity value.
-
-	public final double get_ms_range_max () {
-		return ms_range.get_range_max();
-	}
-
-
-	// Get the mainshock productivity relative flag.
-
-	public final boolean get_f_ms_relative () {
-		return f_ms_relative;
-	}
-
-
-
-
-	//----- Range arrays -----
-
-
-
-
-	// Get the array of c-values.
-
-	public final double[] get_c_range_array () {
-		return c_range.get_range_array();
-	}
-
-
-
-
-	// Get the array of p-values.
-
-	public final double[] get_p_range_array () {
-		return p_range.get_range_array();
-	}
-
-
-
-
-	// Get the array of branch ratio values.
-
-	public final double[] get_br_range_array () {
-		return br_range.get_range_array();
-	}
-
-
-
-
-	// Get the array of mainshock productivity values.
-
-	public final double[] get_ms_range_array () {
-		return ms_range.get_range_array();
 	}
 
 
@@ -287,7 +174,7 @@ public class OEGridParams {
 	// Parameters:
 	//  base_ten_a_q = Value of (10^a)*Q that corresponds to branch ratio == 1.0.
 	// Note: Because branch ratio is proportional to (10^a)*Q, this function
-	// returns get_br_range_array() multiplied by base_ten_a_q.
+	// returns br_range.get_range_array() multiplied by base_ten_a_q.
 
 	public final double[] get_ten_a_q_array (double base_ten_a_q) {
 		double[] result = br_range.get_range_array();
@@ -299,18 +186,65 @@ public class OEGridParams {
 
 
 
+	// Get the array of values of (10^a)*Q, which is the productivity for secondary triggering.
+	// Parameters:
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter.
+	//  mref = Reference magnitude = minimum considered magnitude.
+	//  mag_min = Minimum magnitude.
+	//  mag_max = Maximum magnitude.
+	//  tint = Time interval.
+	// This function first calculates the value of (10^a)*Q such that the branch ratio equals 1.0
+	// Because branch ratio is proportional to (10^a)*Q, this function then
+	// returns br_range.get_range_array() multiplied by that value of (10^a)*Q .
+
+	public final double[] get_ten_a_q_array (
+		double p,
+		double c,
+		double mref,
+		double mag_min,
+		double mag_max,
+		double tint
+	) {
+
+		// Get the value of (10^a)*Q that corresponds to branch ratio == 1.0
+
+		final double base_ten_a_q = OEStatsCalc.calc_ten_a_q_from_branch_ratio (
+			1.0,		// n
+			p,			// p
+			c,			// c
+			b,			// b
+			alpha,		// alpha
+			mref,		// mref
+			mag_min,	// mag_min
+			mag_max,	// mag_max
+			tint		// tint
+		);
+
+		// Now get the array
+
+		return get_ten_a_q_array (base_ten_a_q);
+	}
+
+
+
+
 	// Get the array of values of (10^ams)*Q, which is the productivity for mainshock triggering.
 	// Parameters:
-	//  base_ten_ams_q = Estimated maximum likelihood value of (10^ams)*Q.
-	// Note: If f_ms_relative is true, returns get_ms_range_array() multiplied by base_ten_ams_q.
-	// Otherwise, returns get_ms_range_array().
+	//  mref = Reference magnitude.
+	// Note: For ams, we force Q == 1.
 
-	public final double[] get_ten_ams_q_array (double base_ten_ams_q) {
-		double[] result = ms_range.get_range_array();
-		if (f_ms_relative) {
-			for (int i = 0; i < result.length; ++i) {
-				result[i] *= base_ten_ams_q;
-			}
+	public final double[] get_ten_ams_q_array (double mref) {
+		double[] result = zams_range.get_range_array();
+		final double base_ams = OEStatsCalc.calc_a_new_from_mref_new (
+			0.0,			// a_old
+			b,				// b
+			alpha,			// alpha
+			0.0,			// mref_old
+			mref			// mref_new
+		);
+		for (int i = 0; i < result.length; ++i) {
+			result[i] = Math.pow(10.0, base_ams + result[i]);
 		}
 		return result;
 	}
@@ -345,11 +279,12 @@ public class OEGridParams {
 
 		case MARSHAL_VER_1: {
 
-			OEDiscreteRange.marshal_poly (writer, "c_range",  c_range );
-			OEDiscreteRange.marshal_poly (writer, "p_range",  p_range );
-			OEDiscreteRange.marshal_poly (writer, "br_range", br_range);
-			OEDiscreteRange.marshal_poly (writer, "ms_range", ms_range);
-			writer.marshalBoolean ("f_ms_relative", f_ms_relative);
+			writer.marshalDouble ("b"    , b    );
+			writer.marshalDouble ("alpha", alpha);
+			OEDiscreteRange.marshal_poly (writer, "c_range"   , c_range   );
+			OEDiscreteRange.marshal_poly (writer, "p_range"   , p_range   );
+			OEDiscreteRange.marshal_poly (writer, "br_range"  , br_range  );
+			OEDiscreteRange.marshal_poly (writer, "zams_range", zams_range);
 
 		}
 		break;
@@ -373,11 +308,12 @@ public class OEGridParams {
 
 		case MARSHAL_VER_1: {
 
-			c_range  = OEDiscreteRange.unmarshal_poly (reader, "c_range" );
-			p_range  = OEDiscreteRange.unmarshal_poly (reader, "p_range" );
-			br_range = OEDiscreteRange.unmarshal_poly (reader, "br_range");
-			ms_range = OEDiscreteRange.unmarshal_poly (reader, "ms_range");
-			f_ms_relative = reader.unmarshalBoolean ("f_ms_relative");
+			b          = reader.unmarshalDouble ("b"    );
+			alpha      = reader.unmarshalDouble ("alpha");
+			c_range    = OEDiscreteRange.unmarshal_poly (reader, "c_range"   );
+			p_range    = OEDiscreteRange.unmarshal_poly (reader, "p_range"   );
+			br_range   = OEDiscreteRange.unmarshal_poly (reader, "br_range"  );
+			zams_range = OEDiscreteRange.unmarshal_poly (reader, "zams_range");
 
 		}
 		break;
