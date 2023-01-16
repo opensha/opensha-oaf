@@ -15,6 +15,8 @@ import org.opensha.oaf.util.TestMode;
 import static org.opensha.oaf.util.SimpleUtils.rndd;
 
 import static org.opensha.oaf.oetas.OEConstants.C_LOG_10;	// natural logarithm of 10
+import static org.opensha.oaf.oetas.OEConstants.BKGD_TIME_DAYS;			// time value for a background source
+import static org.opensha.oaf.oetas.OEConstants.BKGD_TIME_DAYS_CHECK;	// use x <= BKGD_TIME_DAYS_CHECK to check for BKGD_TIME_DAYS
 
 
 
@@ -388,6 +390,50 @@ public class OERandomGenerator {
 
 
 
+	// Return an Omori expected rate, raw version.
+	// Parameters:
+	//  p = Omori p parameter.
+	//  w = Omori base offset, must satisfy w > 0.
+	//  tr = Time range in days, must satisfy w + tr > 0, prefereably tr >= 0.
+	// Returns Integral(0, tr, ((t+w)^(-p))*dt).
+
+	// This relates to the previous function as
+	// omori_rate (p, c, t1, t2) == omori_rate_raw (p, w, tr)
+	// w == t1 + c
+	// tr == t2 - t1
+	// This function is more accurate if tr is small compared to w.
+
+	// Implementation note: For p != 1, the value is
+	//
+	// w^q * (r^q - 1) / q
+	//
+	// where
+	//
+	// q = 1 - p
+	//
+	// r = (tr/w) + 1
+	//
+	// In the limit of p == 1 or q == 0, the value reduces to log(r).
+	//
+	// For small q, we use the first 2 terms in the Taylor series around q = 0.
+	//
+	// Note: Can be derived from the formulas for the previous function with the
+	// substitutions t1+c -> w, t2+c -> tr+t1+c -> tr+w
+
+	public static double omori_rate_raw (double p, double w, double tr) {
+		final double q = 1.0 - p;
+
+		final double a = Math.log1p(tr/w);
+		final double aq = a*q;
+		if (Math.abs(aq) < 1.0e-15) {
+			return Math.pow(w, q) * a;
+		}
+		return Math.pow(w, q) * Math.expm1(aq) / q;
+	}
+
+
+
+
 	// Return an Omori average expected rate.
 	// Parameters:
 	//  p = Omori p parameter, must satisfy p >= 0.
@@ -454,6 +500,35 @@ public class OERandomGenerator {
 			// Use the midpoint rule
 
 			return Math.pow((t1 + t2) * 0.5 + c, -p);
+		}
+
+		// Otherwise, evaluate the integral
+
+		final double a = Math.log1p(tr/w);
+		final double aq = a*q;
+		if (Math.abs(aq) < 1.0e-15) {
+			return Math.pow(w, q) * a / tr;
+		}
+		return Math.pow(w, q) * Math.expm1(aq) / (q * tr);
+	}
+
+
+
+
+	// Same as above, except with w and tr as parameters.
+	// w == t1 + c
+	// tr == t2 - t1
+
+	public static double omori_average_rate_raw (double p, double w, double tr) {
+		final double q = 1.0 - p;
+
+		// If the relative t range is small enough so the midpoint rule is accurate to about 15 digits ...
+
+		if (tr * tr * p * (1.0 + p) <= 24.0e-15 * w * w) {
+
+			// Use the midpoint rule
+
+			return Math.pow(tr * 0.5 + w, -p);
 		}
 
 		// Otherwise, evaluate the integral
@@ -541,6 +616,80 @@ public class OERandomGenerator {
 
 
 
+	// Rescale a time value in an Omori distribution, raw version.
+	// Parameters:
+	//  p = Omori p parameter.
+	//  w = Omori base offset, must satisfy w > 0.
+	//  tr = Time range in days, must satisfy w + tr > 0, prefereably tr >= 0.
+	//  u = Random number uniformly distributed between 0 and 1.
+	// Returns a time t between 0 and tr, chosen according to a probability density
+	// proportional to lambda(t) = (t+w)^(-p), so that the cumulative distribution
+	// from 0 to t equals u times the cumulative distribution from 0 to tr
+	// (in other words, the u fractile of the distribution).
+	// Note: This is a truncated power-law distribution.
+	// Note: Due to rounding errors, the returned value may be sligntly less than 0
+	// or sligntly greater than tr.  If this is a issue, then the caller should
+	// coerce the return value into range.
+
+	// This relates to the previous function as
+	// omori_rescale (p, c, t1, t2, u) == t1 + omori_rescale_raw (p, w, tr, u)
+	// w == t1 + c
+	// tr == t2 - t1
+	// This function is more accurate if tr is small compared to w.
+
+	// Implementation note: Uses the inversion method.
+	// The following is a uniform random variable:
+	// u = Integral(0, t, lambda(t')*dt') / Integral(0, tr, lambda(t')*dt')
+	// Solving for t gives, assuming p != 1,
+	//
+	// log((t/w) + 1) = log(u*(r^q - 1) + 1) / q
+	//
+	// where
+	//
+	// q = 1 - p
+	//
+	// r = (tr/w) + 1
+	//
+	// If we define  y = log(u*(r^q - 1) + 1) / q  then  t = (exp(y) - 1)*w .
+	//
+	// In the limit of p == 1 or q == 0, this reduces to log((t/w) + 1) = u*log(r).
+	//
+	// For small q, we use the first 4 terms in the Taylor series around q = 0.
+	//
+	// Note: Can be derived from the formulas for the previous function with the
+	// substitutions t1+c -> w, t2+c -> tr+t1+c -> tr+w, t+c -> t+t1+c -> t+w
+
+	public static double omori_rescale_raw (double p, double w, double tr, double u) {
+		final double q = 1.0 - p;
+		final double lnr = Math.log1p(tr/w);
+		final double qlnr = q*lnr;
+		double y;
+
+		// If abs(qlnr) <= 0.01 then the following formula is correct to
+		// about 10 digits, which matches the typical resolution of the
+		// random number generator (32 bits).
+
+		if (Math.abs(qlnr) <= 0.01) {
+			final double c1 = (1.0 - u)/2.0;
+			final double c2 = ((2.0*u - 3.0)*u + 1.0)/6.0;
+			final double c3 = (((-6.0*u + 12.0)*u - 7.0)*u + 1.0)/24.0;
+			y = (((c3*qlnr + c2)* qlnr + c1)*qlnr + 1.0)*u*lnr;
+		}
+
+		// Calculate directly, using expm1 and log1p to avoid cancellation
+
+		else {
+			y = Math.log1p(Math.expm1(qlnr)*u)/q;
+		}
+
+		// Finish computation of time
+
+		return Math.expm1(y)*w;
+	}
+
+
+
+
 	// Sample from an Omori distribution.
 	// Parameters:
 	//  p = Omori p parameter.
@@ -570,8 +719,74 @@ public class OERandomGenerator {
 	// If t0 <= t1 <= t2 - teps, then returns Integral(t1, t2, ((t-t0+c)^(-p))*dt).
 	// If t1 < t0 <= t2 - teps, then returns Integral(t0, t2, ((t-t0+c)^(-p))*dt).
 	// Otherwise, returns 0.
+	//
+	// As a special case, if t0 == BKGD_TIME_DAYS, then return a background expected rate.
+	// If t1 <= t2 - teps, then returns t2-t1.
+	// Otherwise, returns 0.
 
 	public static double omori_rate_shifted (double p, double c, double t0, double teps, double t1, double t2) {
+		double rate;
+
+		// Case where earthquake is a background source
+
+		if (t0 <= BKGD_TIME_DAYS_CHECK) {
+		
+			// Small or degenerate interval
+
+			if (t2 <= t1 + teps) {
+				rate = 0.0;
+			}
+
+			// Otherwise, compute the background rate between t1 and t2
+
+			else {
+				rate = t2 - t1;
+			}
+		}
+
+		// Case where earthquake is before start of time interval
+
+		else if (t0 <= t1) {
+		
+			// Small or degenerate interval
+
+			if (t2 <= t1 + teps) {
+				rate = 0.0;
+			}
+
+			// Otherwise, compute the rate between t1 and t2
+
+			else {
+				//rate = omori_rate (p, c, t1 - t0, t2 - t0);
+				rate = omori_rate_raw (p, t1 - t0 + c, t2 - t1);
+			}
+		}
+
+		// Otherwise, earthquake is within the time interval
+
+		else {
+		
+			// Small or degenerate interval, or earthquake is after end of interval
+
+			if (t2 <= t0 + teps) {
+				rate = 0.0;
+			}
+
+			// Otherwise, compute the rate between t0 and t2
+
+			else {
+				//rate = omori_rate (p, c, 0.0, t2 - t0);
+				rate = omori_rate_raw (p, c, t2 - t0);
+			}
+		}
+
+		return rate;
+	}
+
+
+	// Original version, used omori_rate and did not support background.
+
+	public static double omori_rate_shifted_original (double p, double c, double t0, double teps, double t1, double t2) {
 		double rate;
 
 		// Case where earthquake is before start of time interval
@@ -630,8 +845,105 @@ public class OERandomGenerator {
 	// but the return value of t2 accommodates some possible rounding error cases).
 	// The returned value is the u fractile of the distribution within the given bounds.
 	// Note: This is a truncated power-law distribution.
+	//
+	// As a special case, if t0 == BKGD_TIME_DAYS, then rescale a background time value.
+	// If t1 < t2, then the result is between t1 and t2.
+	// Otherwise, the result is t2.
+	// Note: This is a uniform distribution.
 
 	public static double omori_rescale_shifted (double p, double c, double t0, double t1, double t2, double u) {
+		double t;
+
+		// Case where earthquake is a background source
+
+		if (t0 <= BKGD_TIME_DAYS_CHECK) {
+		
+			// Degenerate interval
+
+			if (t2 <= t1) {
+				t = t2;
+			}
+
+			// Otherwise, rescale between t1 and t2
+
+			else {
+
+				t = ((t2 - t1)*u) + t1;
+
+				// Force result to lie between t1 and t2
+
+				if (t > t2) {
+					t = t2;
+				}
+				if (t < t1) {
+					t = t1;
+				}
+			}
+		}
+
+		// Case where earthquake is before start of time interval
+
+		else if (t0 <= t1) {
+		
+			// Degenerate interval
+
+			if (t2 <= t1) {
+				t = t2;
+			}
+
+			// Otherwise, rescale between t1 and t2
+
+			else {
+
+				//t = omori_rescale (p, c, t1 - t0, t2 - t0, u) + t0;
+				t = omori_rescale_raw (p, t1 - t0 + c, t2 - t1, u) + t1;
+
+				// Force result to lie between t1 and t2
+
+				if (t > t2) {
+					t = t2;
+				}
+				if (t < t1) {
+					t = t1;
+				}
+			}
+		}
+
+		// Otherwise, earthquake is within the time interval
+
+		else {
+		
+			// Degenerate interval, or earthquake is after end of interval
+
+			if (t2 <= t0) {
+				t = t2;
+			}
+
+			// Otherwise, rescale between t0 and t2
+
+			else {
+
+				//t = omori_rescale (p, c, 0.0, t2 - t0, u) + t0;
+				t = omori_rescale_raw (p, c, t2 - t0, u) + t0;
+
+				// Force result to lie between t0 and t2
+
+				if (t > t2) {
+					t = t2;
+				}
+				if (t < t0) {
+					t = t0;
+				}
+			}
+		}
+
+		return t;
+	}
+
+
+	// Original version, used omori_rescale and did not support background.
+
+	public static double omori_rescale_shifted_original (double p, double c, double t0, double t1, double t2, double u) {
 		double t;
 
 		// Case where earthquake is before start of time interval
@@ -708,10 +1020,43 @@ public class OERandomGenerator {
 	// Otherwise, the result is t2 (strictly speaking this is an error condition,
 	// but the return value of t2 accommodates some possible rounding error cases).
 	// Note: This is a truncated power-law distribution.
+	//
+	// As a special case, if t0 == BKGD_TIME_DAYS, then sample from a background distribution.
+	// If t1 < t2, then the result is between t1 and t2.
+	// Otherwise, the result is t2.
+	// Note: This is a uniform distribution.
 
 	public double omori_sample_shifted (double p, double c, double t0, double t1, double t2) {
 		double u = uniform_sample (0.0, 1.0);
 		return omori_rescale_shifted (p, c, t0, t1, t2, u);
+	}
+
+
+
+
+	// Sample from a background distribution.
+	// Parameters:
+	//  t1 = Lower time value in days.
+	//  t2 = Upper time value in days, must satisfy t2 > t1.
+	// Returns a random time t chosen according to a uniform probability density.
+	// If t1 < t2, then the result is between t1 and t2.
+	// Otherwise, the result is t2 (strictly speaking this is an error condition,
+	// but the return value of t2 accommodates some possible rounding error cases).
+
+	public double background_sample (double t1, double t2) {
+		final double u = uniform_sample (0.0, 1.0);
+		double t = ((t2 - t1)*u) + t1;
+
+		// Force result to lie between t1 and t2
+
+		if (t < t1) {
+			t = t1;
+		}
+		if (t > t2) {
+			t = t2;
+		}
+
+		return t;
 	}
 
 

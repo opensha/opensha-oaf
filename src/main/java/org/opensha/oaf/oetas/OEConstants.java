@@ -94,6 +94,16 @@ public class OEConstants {
 
 
 
+	// A time value used to indicate that a rupture is a background source, in days.
+
+	public static final double BKGD_TIME_DAYS = -1.0e+9;
+
+	// Use x <= BKGD_TIME_DAYS_CHECK to check if x contains BKGD_TIME_DAYS.
+
+	public static final double BKGD_TIME_DAYS_CHECK = -0.99e+9;
+
+
+
 	// A duration so extremely small it is considered to be zero.
 	// Note: This is used to avoid divide-by-zero in formulas that have a
 	// duration in the denominator; it does not mean that durations larger

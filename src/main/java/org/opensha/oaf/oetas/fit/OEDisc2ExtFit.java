@@ -2500,6 +2500,7 @@ public class OEDisc2ExtFit {
 			result.append ("like_bkgd_int_targ_rup_src: " + vec_summary_string(like_bkgd_int_targ_rup_src) + "\n");
 			result.append ("prod_int_targ_rup_src: "      + vec_summary_string(prod_int_targ_rup_src)      + "\n");
 			result.append ("prod_main_int_targ_rup_src: " + vec_summary_string(prod_main_int_targ_rup_src) + "\n");
+			result.append ("prod_bkgd_int_targ_rup_src: " + vec_summary_string(prod_bkgd_int_targ_rup_src) + "\n");
 
 			return result.toString();
 		}
@@ -3530,6 +3531,21 @@ public class OEDisc2ExtFit {
 
 		public final void avpr_add_log_like (final double ten_a_q, final double[] ten_ams_q, final double[] log_like) {
 			avpr.avpr_add_log_like (ten_a_q, ten_ams_q, log_like);
+			return;
+		}
+
+
+		// Calculate log-likelihood for a range of ams values.
+		// Parameters:
+		//  ten_a_q = The value of (10^a)*Q applied to non-mainshock ruptures.  Normally equal to ten_aint_q.
+		//  ten_ams_q = Range of values of (10^ams)*Q applied to mainshock ruptures.
+		//  mu = The background rate.
+		//  log_like = Array to receive values of log-likelihood, initialized to log-prior.
+		// Adds the log-likelihood value to each element of log_like.
+		// Note: The value of ten_ams_q may be more complicated if non-zero offsets for mainshocks are used.
+
+		public final void avpr_add_log_like (final double ten_a_q, final double[] ten_ams_q, final double mu, final double[] log_like) {
+			avpr.avpr_add_log_like (ten_a_q, ten_ams_q, mu, log_like);
 			return;
 		}
 

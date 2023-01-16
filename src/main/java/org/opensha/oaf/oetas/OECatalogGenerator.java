@@ -991,12 +991,17 @@ public class OECatalogGenerator {
 	// Function omori_sample_shifted is overridden to always return the earliest
 	// possible time for an aftershock.  This eliminates the reduction in
 	// branching that occurs as aftershocks appear later in the forecast window.
+	// Function background_sample is also overridden to return the earliest time.
 
 	public static class TestBranchRatioRanGen extends OERandomGenerator {
 		@Override
 		public double omori_sample_shifted (double p, double c, double t0, double t1, double t2) {
 			double u = 0.0;
 			return OERandomGenerator.omori_rescale_shifted (p, c, t0, t1, t2, u);
+		}
+		@Override
+		public double background_sample (double t1, double t2) {
+			return Math.min (t1, t2);
 		}
 	}
 
@@ -1007,6 +1012,7 @@ public class OECatalogGenerator {
 	// Function poisson_sample_checked is overridden to always return the mean.
 	// Function omori_sample_shifted is overridden to always return the earliest
 	// possible time for an aftershock.
+	// Function background_sample is also overridden to return the earliest time.
 	// This eliminates most aleatory variability.
 
 	public static class TestNoPoissonRanGen extends TestBranchRatioRanGen {
