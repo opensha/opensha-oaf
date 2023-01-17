@@ -13,15 +13,44 @@ public class OEExaminerSaveList implements OECatalogExaminer {
 
 	public Collection<OERupture> rup_list;
 
+	// Flag to include seed ruptures (generation 0).
+
+	public boolean f_seed;
+
+	// Flag to include ruptures representing a background rate.
+
+	public boolean f_background;
+
 	// Flag to also print out a summary of the list.
 
 	public boolean f_verbose;
 
 
 	// Constructor specifies the list.
+	// Parameters:
+	//  rup_list = Collection to receive ruptures.
+	//  f_verbose = True to print out a catalog summary.
+	// This constructor includes seed ruptures but not ruptures representing a background rate.
 
 	public OEExaminerSaveList (Collection<OERupture> rup_list, boolean f_verbose) {
 		this.rup_list = rup_list;
+		this.f_seed = true;
+		this.f_background = false;
+		this.f_verbose = f_verbose;
+	}
+
+
+	// Constructor specifies the list.
+	// Parameters:
+	//  rup_list = Collection to receive ruptures.
+	//  f_seed = True to include seed ruptures (generation 0).
+	//  f_background = True to include ruptures representing a background rate.
+	//  f_verbose = True to print out a catalog summary.
+
+	public OEExaminerSaveList (Collection<OERupture> rup_list, boolean f_seed, boolean f_background, boolean f_verbose) {
+		this.rup_list = rup_list;
+		this.f_seed = f_seed;
+		this.f_background = f_background;
 		this.f_verbose = f_verbose;
 	}
 
@@ -43,7 +72,7 @@ public class OEExaminerSaveList implements OECatalogExaminer {
 
 		// Add all the ruptures to the list
 
-		view.dump_to_collection (rup_list);
+		view.dump_to_collection (rup_list, f_seed, f_background);
 		return;
 	}
 

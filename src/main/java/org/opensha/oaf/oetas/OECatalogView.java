@@ -289,10 +289,14 @@ public interface OECatalogView {
 
 
 	// Dump the entire catalog contents into a collection of OERupture objects.
+	// Parameters:
+	//  coll = Collection to receive ruptures.
+	//  f_seed = True to include seed ruptures (generation 0).
+	//  f_background = True to include ruptures representing a background rate.
 	// Note: The OERupture objects are newly allocated.
 	// Note: The ordering of the ruptures is unspecified.
 
-	public default void dump_to_collection (Collection<OERupture> coll) {
+	public default void dump_to_collection (Collection<OERupture> coll, boolean f_seed, boolean f_background) {
 
 		// Generation count
 
@@ -300,12 +304,14 @@ public interface OECatalogView {
 
 		// Ruptures
 
-		for (int i_gen = 0; i_gen < gen_count; ++i_gen) {
+		for (int i_gen = (f_seed ? 0 : 1); i_gen < gen_count; ++i_gen) {
 			final int gen_size = get_gen_size (i_gen);
 			for (int j_rup = 0; j_rup < gen_size; ++j_rup) {
 				OERupture rup = new OERupture();
 				get_rup_full (i_gen, j_rup, rup);
-				coll.add (rup);
+				if (f_background || rup.t_day > OEConstants.BKGD_TIME_DAYS_CHECK) {
+					coll.add (rup);
+				}
 			}
 		}
 

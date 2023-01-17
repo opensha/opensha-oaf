@@ -265,7 +265,7 @@ public class OEDisc2ExtFit {
 
 	private int lmr_opt;
 
-	// True ot calculate data needed to fit background rate.
+	// True to calculate data needed to fit background rate.
 
 	private boolean f_background;
 
@@ -3521,6 +3521,19 @@ public class OEDisc2ExtFit {
 		}
 
 
+		// Calculate log-likelihood.
+		// Parameters:
+		//  ten_a_q = The value of (10^a)*Q applied to non-mainshock ruptures.  Normally equal to ten_aint_q.
+		//  ten_ams_q = The value of (10^ams)*Q applied to mainshock ruptures.
+		//  mu = The background rate.
+		// Returns the log-likelihood value.
+		// Note: The value of ten_ams_q may be more complicated if non-zero offsets for mainshocks are used.
+
+		public final double avpr_calc_log_like (final double ten_a_q, final double ten_ams_q, final double mu) {
+			return avpr.avpr_calc_log_like (ten_a_q, ten_ams_q, mu);
+		}
+
+
 		// Calculate log-likelihood for a range of ams values.
 		// Parameters:
 		//  ten_a_q = The value of (10^a)*Q applied to non-mainshock ruptures.  Normally equal to ten_aint_q.
@@ -3661,9 +3674,10 @@ public class OEDisc2ExtFit {
 	//    cat_params.mag_max_sim = The maximum magnitude to use for the simulation.
 	//  f_intervals = True to use intervals to fill in below magnitude of completeness.
 	//  f_likelihood = True to calculate data needed for log-likelihood.
+	//  f_background = 	True to calculate data needed to fit background rate.
 	//  lmr_opt = Option to select magnitude range for log-likelihood calculation (LMR_OPT_XXXX).
 
-	public void dfit_build (OEDisc2History history, OECatalogParamsMags cat_params, boolean f_intervals, boolean f_likelihood, int lmr_opt) {
+	public void dfit_build (OEDisc2History history, OECatalogParamsMags cat_params, boolean f_intervals, boolean f_likelihood, int lmr_opt, boolean f_background) {
 
 		// Start by clearing
 
@@ -3678,7 +3692,7 @@ public class OEDisc2ExtFit {
 		this.f_intervals = f_intervals;
 		this.f_likelihood = f_likelihood;
 		this.lmr_opt = lmr_opt;
-		this.f_background = true;
+		this.f_background = f_background;
 
 		// Set the likelihood rupture and interval ranges
 
