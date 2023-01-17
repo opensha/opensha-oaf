@@ -751,6 +751,36 @@ public class OEStatsCalc {
 
 
 
+	// Calculate a new value of background rate "mu" for a changed value of the reference magnitude.
+	// Parameters:
+	//  mu_old = Background rate parameter, original value.
+	//  b = Gutenberg-Richter parameter.
+	//  mref_old = Reference magnitude, original value.
+	//  mref_new = Reference magnitude, new value.
+	// Returns a new value of "mu", denoted mu_new, such that the computed value
+	// of the intensity function "lambda" is unchanged when mref_new is used
+	// as the reference magnitude in place of mref_old.
+	//
+	// The new value of "mu" is:
+	//
+	//   mu_new = mu_old * 10^(b * (mref_old - mref_new))
+	//
+	// The formula is derived from the condition:
+	//
+	//   mu_old * 10^(- b*(m - mref_old)) == mu_new * 10^(- b*(m - mref_new))
+
+	public static double calc_mu_new_from_mref_new (
+		double mu_old,
+		double b,
+		double mref_old,
+		double mref_new
+	) {
+		return mu_old * Math.pow(10.0, b * (mref_old - mref_new));
+	}
+
+
+
+
 	// Calculate the generalized factor "Q" for a magnitude range change.
 	// Parameters:
 	//  b = Gutenberg-Richter parameter.

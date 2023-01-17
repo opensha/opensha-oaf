@@ -477,6 +477,12 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 			);
 		}
 
+		// If we have a background rate, add a background rupture
+
+		if (the_seed_params.has_background_rate()) {
+			the_ruptures.add ((new OERupture()).set_background (the_seed_params.mu));
+		}
+
 		// Print the seed rupture list
 
 		if (f_verbose) {

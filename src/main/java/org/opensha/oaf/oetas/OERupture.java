@@ -151,6 +151,35 @@ public class OERupture {
 
 
 
+	// Set the values, for an object that represents a background rate.
+	// Return this object.
+	// Note: A background rate object has t_day == OEConstants.BKGD_TIME_DAYS
+	// and k_prod == mu where mu is the background rate.  Then the time-independent
+	// rate of background earthquakes, per unit time, per unit magnitude, is
+	//   lambda(m) = mu * b * log(10) * (10^(-b*(m - mref)))
+
+	public final OERupture set_background (double mu) {
+		this.t_day      = OEConstants.BKGD_TIME_DAYS;
+		this.rup_mag    = 0.0;
+		this.k_prod     = mu;
+		this.rup_parent = RUPPAR_SEED;
+		this.x_km       = 0.0;
+		this.y_km       = 0.0;
+		return this;
+	}
+
+
+
+
+	// Return true if this object represents a background rate.
+
+	public final boolean is_background () {
+		return t_day <= OEConstants.BKGD_TIME_DAYS_CHECK;
+	}
+
+
+
+
 	// Copy the values from the other object.
 	// Return this object.
 

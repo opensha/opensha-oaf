@@ -21,6 +21,10 @@ public class OESeedParamsStats {
 
 	public double ams;
 
+	// Background rate parameter.
+
+	public double mu;
+
 
 
 
@@ -33,6 +37,7 @@ public class OESeedParamsStats {
 
 	public final void clear () {
 		ams             = 0.0;
+		mu				= 0.0;
 		return;
 	}
 
@@ -51,9 +56,11 @@ public class OESeedParamsStats {
 	// Constructor that sets all values.
 
 	public OESeedParamsStats (
-		double ams
+		double ams,
+		double mu
 	) {
 		this.ams             = ams;
+		this.mu              = mu;
 	}
 
 
@@ -66,6 +73,7 @@ public class OESeedParamsStats {
 		double ams
 	) {
 		this.ams             = ams;
+		this.mu              = mu;
 		return this;
 	}
 
@@ -77,6 +85,7 @@ public class OESeedParamsStats {
 
 	public final OESeedParamsStats copy_from (OESeedParamsStats other) {
 		this.ams             = other.ams;
+		this.mu              = other.mu;
 		return this;
 	}
 
@@ -85,17 +94,40 @@ public class OESeedParamsStats {
 
 	// Set all values, given zero-mref ams-value plus catalog parameters.
 	// Parameters:
-	//  zams = Mainshock productivity parameter, assuming zero reference magnitude.
+	//  zams = Mainshock productivity parameter, assuming reference magnitude equal to ZAMS_MREF == 0.0.
 	//  cat_params = Catalog parameters:
 	//   cat_params.b = G-R b-value.
 	//   cat_params.alpha = ETAS alpha-value.
 	//   cat_params.mref = Reference magnitude = Minimum magnitude.
 	//   cat_params.msup = Maximum magnitude.
 	// Returns this object.
+	// Note: This function sets the background rate to zero.
 	// Note: This is a subset of the values produced by OESeedParams.set_from_zams.
 
 	public final OESeedParamsStats set_from_zams (double zams, OECatalogParams cat_params) {
 		this.ams             = cat_params.calc_ams_from_zams (zams);
+		this.mu              = 0.0;
+		return this;
+	}
+
+
+
+
+	// Set all values, given zero-mref ams-value, ZMU_MREF mu-value, plus catalog parameters.
+	// Parameters:
+	//  zams = Mainshock productivity parameter, assuming reference magnitude equal to ZAMS_MREF == 0.0.
+	//  zmu = Background rate parameter, assuming reference magnitude equal to ZMU_MREF.
+	//  cat_params = Catalog parameters:
+	//   cat_params.b = G-R b-value.
+	//   cat_params.alpha = ETAS alpha-value.
+	//   cat_params.mref = Reference magnitude = Minimum magnitude.
+	//   cat_params.msup = Maximum magnitude.
+	// Returns this object.
+	// Note: This is a subset of the values produced by OESeedParams.set_from_zams_zmu.
+
+	public final OESeedParamsStats set_from_zams_zmu (double zams, double zmu, OECatalogParams cat_params) {
+		this.ams             = cat_params.calc_ams_from_zams (zams);
+		this.mu              = cat_params.calc_mu_from_zmu (zmu);
 		return this;
 	}
 
@@ -111,8 +143,18 @@ public class OESeedParamsStats {
 		result.append ("OESeedParamsStats:" + "\n");
 
 		result.append ("ams = "             + ams             + "\n");
+		result.append ("mu = "              + mu              + "\n");
 
 		return result.toString();
+	}
+
+
+
+
+	// Return true if we have a positive background rate.
+
+	public boolean has_background_rate () {
+		return mu > OEConstants.TINY_BACKGROUND_RATE;
 	}
 
 
@@ -143,6 +185,7 @@ public class OESeedParamsStats {
 		case MARSHAL_VER_1: {
 
 			writer.marshalDouble ("ams"            , ams            );
+			writer.marshalDouble ("mu"             , mu             );
 
 		}
 		break;
@@ -167,6 +210,7 @@ public class OESeedParamsStats {
 		case MARSHAL_VER_1: {
 
 			ams             = reader.unmarshalDouble ("ams"            );
+			mu              = reader.unmarshalDouble ("mu"             );
 
 		}
 		break;
@@ -227,6 +271,7 @@ public class OESeedParamsStats {
 	public final boolean check_param_equal (OESeedParamsStats other) {
 		if (
 			   this.ams             == other.ams              
+			&& this.mu              == other.mu              
 		) {
 			return true;
 		}
@@ -239,12 +284,32 @@ public class OESeedParamsStats {
 	// Set to typical values, with user-adjustable ams.
 	// Returns this object.
 	// Note: This is primarily for testing.
+	// Note: This function sets the background rate to zero.
 	// Note: This is a subset of the values produced by OESeedParams.set_to_typical.
 
 	public final OESeedParamsStats set_to_typical (
 		double ams
 	) {
 		this.ams             = ams;
+		this.mu              = 0.0;
+		return this;
+	}
+
+
+
+
+	// Set to typical values, with user-adjustable ams and mu.
+	// Returns this object.
+	// Note: This function sets the background rate to zero.
+	// Note: This is primarily for testing.
+	// Note: This is a subset of the values produced by OESeedParams.set_to_typical.
+
+	public final OESeedParamsStats set_to_typical (
+		double ams,
+		double mu
+	) {
+		this.ams             = ams;
+		this.mu              = mu;
 		return this;
 	}
 

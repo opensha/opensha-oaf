@@ -95,12 +95,15 @@ public class OEConstants {
 
 
 	// A time value used to indicate that a rupture is a background source, in days.
+	// Note: This is within the range representable by a 64-bit signed integer number
+	// of milliseconds, which is about 1.0675e+11 days.  Also, displaying to 5 decimal
+	// places is within the range of double precision.
 
-	public static final double BKGD_TIME_DAYS = -1.0e+9;
+	public static final double BKGD_TIME_DAYS = -1.0e+8;
 
 	// Use x <= BKGD_TIME_DAYS_CHECK to check if x contains BKGD_TIME_DAYS.
 
-	public static final double BKGD_TIME_DAYS_CHECK = -0.99e+9;
+	public static final double BKGD_TIME_DAYS_CHECK = -0.99e+8;
 
 
 
@@ -117,6 +120,12 @@ public class OEConstants {
 	// than this are considered significant.
 	
 	public static final double TINY_OMORI_RATE = 1.0e-150;
+
+	// A background rate so extremely small it is considered to be zero.
+	// Note: This is used to test if background rate code needs to be executed;
+	// it does not mean that rates larger than this are considered significant.
+	
+	public static final double TINY_BACKGROUND_RATE = 1.0e-150;
 
 	// An expected count of earthquakes small enough to treat as zero.
 
@@ -472,5 +481,13 @@ public class OEConstants {
 	// Default value of msup, maximum magnitude, for parameter definition.
 
 	public static final double DEF_MSUP = 9.5;
+
+	// Reference magnitude "mref" used to define the mainshock productivity parameter "zams".
+
+	public static final double ZAMS_MREF = 0.0;
+
+	// Reference magnitude "mref" used to define the background rate parameter "zmu".
+
+	public static final double ZMU_MREF = 3.0;
 
 }

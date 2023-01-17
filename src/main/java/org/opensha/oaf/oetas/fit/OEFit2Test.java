@@ -4606,6 +4606,104 @@ public class OEFit2Test {
 
 
 
+		// Subcommand : Test #17
+		// Command format:
+		//  test17  zmu  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//          [t_day  rup_mag]...
+		// Generate a catalog with the given parameters.
+		// The catalog is seeded with ruptures at the given times and magnitudes.
+		// Display catalog summary.
+		// Same as test #1, except with a background rate, and seed ruptures are optional.
+
+		if (args[0].equalsIgnoreCase ("test17")) {
+
+			// 11 or more additional arguments
+
+			if (!( args.length >= 12 && args.length % 2 == 0 )) {
+				System.err.println ("OEFit2Test : Invalid 'test17' subcommand");
+				return;
+			}
+
+			try {
+
+				int ii = 1;
+				double zmu = Double.parseDouble (args[ii++]);
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
+
+				double[] time_mag_array = new double[args.length - ii];
+				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + ii]);
+				}
+
+				// Say hello
+
+				System.out.println ("Generating catalog with given parameters and seeds");
+				System.out.println ("zmu = " + zmu);
+				System.out.println ("zams = " + zams);
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("mref = " + mref);
+				System.out.println ("msup = " + msup);
+				System.out.println ("tbegin = " + tbegin);
+				System.out.println ("tend = " + tend);
+
+				System.out.println ("time_mag_array:");
+				for (int ntm = 0; ntm < time_mag_array.length; ntm += 2) {
+					System.out.println ("  time = " + time_mag_array[ntm] + ", mag = " + time_mag_array[ntm + 1]);
+				}
+
+				// Make the catalog parameters
+
+				OECatalogParams cat_params = (new OECatalogParams()).set_to_fixed_mag_br (
+					n,		// n
+					p,		// p
+					c,		// c
+					b,		// b
+					alpha,	// alpha
+					mref,	// mref
+					msup,	// msup
+					tbegin,	// tbegin
+					tend	// tend
+				);
+
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams_zmu (zams, zmu, cat_params);
+
+				// Make the catalog initializer
+
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
+
+				// Make the catalog examiner
+
+				OEExaminerPrintSummary examiner = new OEExaminerPrintSummary();
+
+				// Generate a catalog
+
+				OESimulator.gen_single_catalog (initializer, examiner);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
 		// Unrecognized subcommand.
 
 		System.err.println ("OEFit2Test : Unrecognized subcommand : " + args[0]);

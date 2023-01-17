@@ -944,18 +944,18 @@ public class OECatalogParams {
 	// Calculate an ams-value for a given zero-mref ams-value.
 	// This function does not change the contents of the object.
 	// Parameters:
-	//  zams = Mainshock productivity parameter, assuming zero reference magnitude.
+	//  zams = Mainshock productivity parameter, assuming reference magnitude equal to ZAMS_MREF == 0.0.
 	// Returns the ams-value, for the reference magnitude mref in this object.
 
 	public final double calc_ams_from_zams (
 		double zams
 	) {
 		return OEStatsCalc.calc_a_new_from_mref_new (
-			zams,			// a_old
-			b,				// b
-			alpha,			// alpha
-			0.0,			// mref_old
-			mref			// mref_new
+			zams,					// a_old
+			b,						// b
+			alpha,					// alpha
+			OEConstants.ZAMS_MREF,	// mref_old
+			mref					// mref_new
 		);
 	}
 
@@ -966,17 +966,57 @@ public class OECatalogParams {
 	// This function does not change the contents of the object.
 	// Parameters:
 	//  ams = Mainshock productivity parameter, assuming reference magnitude equal to mref.
-	// Returns the ams-value, for zero reference magnitude.
+	// Returns the ams-value, for reference magnitude equal to ZAMS_MREF == 0.0.
 
 	public final double calc_zams_from_ams (
 		double ams
 	) {
 		return OEStatsCalc.calc_a_new_from_mref_new (
-			ams,			// a_old
-			b,				// b
-			alpha,			// alpha
-			mref,			// mref_old
-			0.0				// mref_new
+			ams,					// a_old
+			b,						// b
+			alpha,					// alpha
+			mref,					// mref_old
+			OEConstants.ZAMS_MREF	// mref_new
+		);
+	}
+
+
+
+
+	// Calculate a mu-value for a given reference magnitude ZMU_MREF mu-value.
+	// This function does not change the contents of the object.
+	// Parameters:
+	//  zmu = Background rate parameter, assuming reference magnitude equal to ZMU_MREF.
+	// Returns the mu-value, for the reference magnitude mref in this object.
+
+	public final double calc_mu_from_zmu (
+		double zmu
+	) {
+		return OEStatsCalc.calc_mu_new_from_mref_new (
+			zmu,					// mu_old
+			b,						// b
+			OEConstants.ZMU_MREF,	// mref_old
+			mref					// mref_new
+		);
+	}
+
+
+
+
+	// Calculate the reference value ZMU_MREF mu-value for a ginve mu-value
+	// This function does not change the contents of the object.
+	// Parameters:
+	//  mu = Background rate parameter, assuming reference magnitude equal to mref.
+	// Returns the mu-value, for reference magnitude equal to ZMU_MREF.
+
+	public final double calc_zmu_from_mu (
+		double mu
+	) {
+		return OEStatsCalc.calc_mu_new_from_mref_new (
+			mu,						// mu_old
+			b,						// b
+			mref,					// mref_old
+			OEConstants.ZMU_MREF	// mref_new
 		);
 	}
 
