@@ -222,7 +222,7 @@ public class OEFit2Test {
 	//     (which are also the magnitude ranges used for Q-correction of a).
 	//  -- tbegin and tend are not used.
 	// In seed_params:
-	//  -- ams provides the central value of the corresponding parameter.
+	//  -- ams and mu provide the central or only value of the corresponding parameter.
 
 	public static void fit_a_ams_like_grid (
 		OEDisc2History history, OECatalogParamsStats cat_params, OESeedParamsStats seed_params, boolean f_intervals, int lmr_opt,
@@ -318,6 +318,170 @@ public class OEFit2Test {
 
 			System.out.println();
 			System.out.println(layout_a_ams_like_grid (grid, a_range, ams_range));
+		}
+
+		// Discard the fitter
+
+		fitter = null;
+
+		return;
+	}
+
+
+
+
+	// Lay out an a/mu likelihood grid.
+	// grid[i][j] contains the likelihood value for a_range[i] and mu_range[j].
+
+	public static String layout_a_mu_like_grid (double[][] grid, double[] a_range, double[] mu_range) {
+		StringBuilder result = new StringBuilder();
+
+		// Find the maximum value in the grid
+
+		int[] ix = new int[2];
+		double max_like = OEArraysCalc.find_array_max (grid, ix);
+
+		result.append (String.format("max_like = %.7e at a_range[%d] = %.3e and mu_range[%d] = %.3e",
+				max_like, ix[0], a_range[ix[0]], ix[1], mu_range[ix[1]]));
+		result.append ("\n");
+
+		// Header line, space followed by the mu-values
+
+		result.append ("           |");
+		for (int j = 0; j < mu_range.length; ++j) {
+			result.append (String.format(" % .3e", mu_range[j]));
+		}
+		result.append ("\n");
+
+		// Separator line
+
+		result.append ("-----------+");
+		for (int j = 0; j < mu_range.length; ++j) {
+			result.append ("-----------");
+		}
+		result.append ("\n");
+
+		// Data lines, a-value followed by scaled likelihoods
+
+		for (int i = 0; i < a_range.length; ++i) {
+			result.append (String.format("% .3e |", a_range[i]));
+			for (int j = 0; j < mu_range.length; ++j) {
+				result.append (String.format(" % .3e", grid[i][j] - max_like));
+			}
+			result.append ("\n");
+		}
+	
+		return result.toString();
+	}
+
+
+
+
+	// Use the fitting code to generate and display an a-mu likelihood grid.
+	// a-values have the form cat_params.a + log10(a_range[i]).  So the powers of ten are (10^cat_params.a) * a_range[i].
+	// mu-values have the form seed_params.mu * mu_range[i].
+	// In cat_params:
+	//  -- a, p, c, b, and alpha provide the central or only value of the corresponding parameter.
+	//  -- mref, msup, mag_min_sim, and mag_max_sim provide the magnitude ranges used by the fitter
+	//     (which are also the magnitude ranges used for Q-correction of a).
+	//  -- tbegin and tend are not used.
+	// In seed_params:
+	//  -- ams and mu provide the central or only value of the corresponding parameter.
+
+	public static void fit_a_mu_like_grid (
+		OEDisc2History history, OECatalogParamsStats cat_params, OESeedParamsStats seed_params, boolean f_intervals, int lmr_opt,
+		double[] a_range, double[] mu_range
+	) {
+	
+		// Display memory status
+
+		System.out.println();
+		System.out.println ("Memory status, initial:");
+		SimpleUtils.show_memory_status();
+
+		// Create the fitter
+
+		OEDisc2ExtFit fitter = new OEDisc2ExtFit();
+
+		boolean f_likelihood = true;
+		boolean f_background = seed_params.has_background_rate();
+		fitter.dfit_build (history, cat_params.get_params_mags(), f_intervals, f_likelihood, lmr_opt, f_background);
+
+		// Allocate the data structures and obtain their handles
+
+		try (
+			OEDisc2ExtFit.MagExponentHandle mexp = fitter.make_MagExponentHandle();
+			OEDisc2ExtFit.OmoriMatrixHandle omat = fitter.make_OmoriMatrixHandle();
+			OEDisc2ExtFit.PairMagOmoriHandle pmom = fitter.make_PairMagOmoriHandle();
+			OEDisc2ExtFit.AValueProdHandle avpr = fitter.make_AValueProdHandle();
+		) {
+
+			// Display memory status
+
+			System.out.println();
+			System.out.println ("Memory status, after allocation:");
+			SimpleUtils.show_memory_status();
+
+			// Build the magnitude-exponent data structures
+
+			mexp.mexp_build (cat_params.b, cat_params.alpha);
+
+			// Build the Omori matrix data structures
+
+			omat.omat_build (cat_params.p, cat_params.c);
+
+			// Build the magnitude-Omori pair data structures
+
+			pmom.pmom_build (mexp, omat);
+
+			// Display the fitter contents summary
+
+			System.out.println();
+			System.out.println(fitter.toString());
+			System.out.println(pmom.toString());
+
+			// Likelihood base values
+
+			double base_ten_a_q = Math.pow(10.0, cat_params.a) * mexp.get_q_correction();
+
+			double base_ten_ams_q = Math.pow(10.0, seed_params.ams);
+
+			// Likelihood matrix
+
+			double[][] grid = new double[a_range.length][mu_range.length];
+
+			// Loop over a-values
+
+			for (int aix = 0; aix < a_range.length; ++aix) {
+
+				double ten_a_q = base_ten_a_q * a_range[aix];
+
+				// Build the a-value-productivity data structures
+
+				double ten_aint_q = ten_a_q;
+
+				avpr.avpr_build (pmom, ten_aint_q);
+
+				// Loop over mu-values
+
+				for (int muix = 0; muix < mu_range.length; ++muix) {
+				
+					double mu_value = seed_params.mu * mu_range[muix];
+
+					// Compute the log-likelihood
+
+					if (f_background) {
+						grid[aix][muix] = avpr.avpr_calc_log_like (ten_a_q, base_ten_ams_q, mu_value);
+					} else {
+						grid[aix][muix] = avpr.avpr_calc_log_like (ten_a_q, base_ten_ams_q);
+					}
+				}
+			}
+
+			// Display the result
+
+			System.out.println();
+			System.out.println(layout_a_mu_like_grid (grid, a_range, mu_range));
 		}
 
 		// Discard the fitter
@@ -4959,6 +5123,215 @@ public class OEFit2Test {
 				// Make and display the grid
 
 				fit_a_ams_like_grid (history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt, a_range, ams_range);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #19
+		// Command format:
+		//  test19  zmu  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//          magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
+		//          durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
+		//          f_intervals  lmr_opt
+		//          [t_day  rup_mag]...
+		// Generate a catalog with the given parameters.
+		// The catalog is seeded with ruptures at the given times and magnitudes.
+		// Then construct a history containing the catalog.
+		// Then use the history to generate an a-mu grid with the fitting code.
+		// Display catalog summary, history contents, and grid contents.
+		// Notes:
+		// [tbegin, tend] is the range of times for which simulation is performed.
+		// [t_interval_begin, tend] is the range of times for which intervals are constructed
+		//  in the history and should satisfy t_interval_begin >= tbegin.
+		// [t_range_begin, tend] is the range of times for which history is constructed,
+		//  where t_range_begin is the minimum of tbegin and any seed rupture time.
+		// In the fitter, the minimum simulation magnitude is set equal to magCat reported
+		//  by the history, which forces magCat intervals to have zero productivity.
+		// Same as test #10, except it fits a-mu.
+
+		if (args[0].equalsIgnoreCase ("test19")) {
+
+			// 25 or more additional arguments
+
+			if (!( args.length >= 26 && args.length % 2 == 0 )) {
+				System.err.println ("OEFit2Test : Invalid 'test19' subcommand");
+				return;
+			}
+
+			try {
+
+				int ii = 1;
+				double zmu = Double.parseDouble (args[ii++]);
+				double zams = Double.parseDouble (args[ii++]);
+				double n = Double.parseDouble (args[ii++]);
+				double p = Double.parseDouble (args[ii++]);
+				double c = Double.parseDouble (args[ii++]);
+				double b = Double.parseDouble (args[ii++]);
+				double alpha = Double.parseDouble (args[ii++]);
+				double mref = Double.parseDouble (args[ii++]);
+				double msup = Double.parseDouble (args[ii++]);
+				double tbegin = Double.parseDouble (args[ii++]);
+				double tend = Double.parseDouble (args[ii++]);
+
+				double magCat = Double.parseDouble (args[ii++]);
+				int helm_param = Integer.parseInt (args[ii++]);
+				double disc_delta = Double.parseDouble (args[ii++]);
+				int mag_cat_count = Integer.parseInt (args[ii++]);
+				double eligible_mag = Double.parseDouble (args[ii++]);
+				int eligible_count = Integer.parseInt (args[ii++]);
+
+				double durlim_ratio = Double.parseDouble (args[ii++]);
+				double durlim_min = Double.parseDouble (args[ii++]);
+				double durlim_max = Double.parseDouble (args[ii++]);
+				double t_interval_begin = Double.parseDouble (args[ii++]);
+				int before_max_count = Integer.parseInt (args[ii++]);
+				int mag_cat_int_join = Integer.parseInt (args[ii++]);
+
+				boolean f_intervals = Boolean.parseBoolean (args[ii++]);
+				int lmr_opt = Integer.parseInt (args[ii++]);
+
+				double[] time_mag_array = new double[args.length - ii];
+				for (int ntm = 0; ntm < time_mag_array.length; ++ntm) {
+					time_mag_array[ntm] = Double.parseDouble (args[ntm + ii]);
+				}
+
+				// Say hello
+
+				System.out.println ("Generating catalog and history, and generating a/ams grid");
+				System.out.println ("zmu = " + zmu);
+				System.out.println ("zams = " + zams);
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("mref = " + mref);
+				System.out.println ("msup = " + msup);
+				System.out.println ("tbegin = " + tbegin);
+				System.out.println ("tend = " + tend);
+
+				System.out.println ("magCat = " + magCat);
+				System.out.println ("helm_param = " + helm_param);
+				System.out.println ("disc_delta = " + disc_delta);
+				System.out.println ("mag_cat_count = " + mag_cat_count);
+				System.out.println ("eligible_mag = " + eligible_mag);
+				System.out.println ("eligible_count = " + eligible_count);
+
+				System.out.println ("durlim_ratio = " + durlim_ratio);
+				System.out.println ("durlim_min = " + durlim_min);
+				System.out.println ("durlim_max = " + durlim_max);
+				System.out.println ("t_interval_begin = " + t_interval_begin);
+				System.out.println ("before_max_count = " + before_max_count);
+				System.out.println ("mag_cat_int_join = " + mag_cat_int_join);
+
+				System.out.println ("f_intervals = " + f_intervals);
+				System.out.println ("lmr_opt = " + lmr_opt);
+
+				System.out.println ("time_mag_array:");
+				for (int ntm = 0; ntm < time_mag_array.length; ntm += 2) {
+					System.out.println ("  time = " + time_mag_array[ntm] + ", mag = " + time_mag_array[ntm + 1]);
+				}
+
+				// Make the catalog parameters
+
+				OECatalogParams cat_params = (new OECatalogParams()).set_to_fixed_mag_br (
+					n,		// n
+					p,		// p
+					c,		// c
+					b,		// b
+					alpha,	// alpha
+					mref,	// mref
+					msup,	// msup
+					tbegin,	// tbegin
+					tend	// tend
+				);
+
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams_zmu (zams, zmu, cat_params);
+
+				// Make the catalog initializer
+
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
+
+				// Make the catalog examiner
+
+				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
+
+				// Generate a catalog
+
+				OESimulator.gen_single_catalog (initializer, examiner);
+
+				// Make time-splitting function
+
+				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
+
+				// Make the history parameters
+
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
+				OEDiscFGHParams hist_params = new OEDiscFGHParams();
+
+				hist_params.set_sim_history_typical (
+					magCat,				// magCat
+					helm_param,			// helm_param
+					tbegin,				// t_range_begin
+					tend,				// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
+				);
+
+				// Display the history parameters
+
+				System.out.println ();
+				System.out.println (hist_params.toString());
+
+				// Make a history
+
+				OEDisc2History history = new OEDisc2History();
+
+				history.build_from_fgh (hist_params, rup_list);
+
+				// Display the history
+
+				System.out.println ();
+				System.out.println (history.toString());
+
+				// Adjust the minimum simulation magnitude to be the history's magCat
+
+				OECatalogParamsStats cat_params_stats = cat_params.get_params_stats();
+				cat_params_stats.set_fixed_mag_min (history.magCat);
+
+				// Statistics from seed parameters
+
+				OESeedParamsStats seed_params_stats = seed_params.get_params_stats();
+
+				// Parameter ranges
+
+				double[] a_range = (OEDiscreteRange.makeLog (51, 0.1, 10.0)).get_range_array();
+				double[] mu_range = (OEDiscreteRange.makeLog (11, Math.sqrt(0.1), Math.sqrt(10.0))).get_range_array();
+
+				// Make and display the grid
+
+				fit_a_mu_like_grid (history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt, a_range, mu_range);
 
 			} catch (Exception e) {
 				e.printStackTrace();
