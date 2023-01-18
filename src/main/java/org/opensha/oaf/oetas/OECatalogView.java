@@ -135,9 +135,11 @@ public interface OECatalogView {
 		// Size and generation count
 
 		int the_size = size();
+		int the_etas_size = etas_size();
 		int the_valid_size = valid_size();
 		int gen_count = get_gen_count();
 		result.append ("size = "       + the_size       + "\n");
+		result.append ("etas_size = "  + the_etas_size  + "\n");
 		result.append ("valid_size = " + the_valid_size + "\n");
 		result.append ("gen_count = "  + gen_count      + "\n");
 
@@ -181,9 +183,11 @@ public interface OECatalogView {
 		// Size and generation count
 
 		int the_size = size();
+		int the_etas_size = etas_size();
 		int the_valid_size = valid_size();
 		int gen_count = get_gen_count();
 		result.append ("size = "       + the_size       + "\n");
+		result.append ("etas_size = "  + the_etas_size  + "\n");
 		result.append ("valid_size = " + the_valid_size + "\n");
 		result.append ("gen_count = "  + gen_count      + "\n");
 
@@ -253,9 +257,11 @@ public interface OECatalogView {
 		// Size and generation count
 
 		int the_size = size();
+		int the_etas_size = etas_size();
 		int the_valid_size = valid_size();
 		int gen_count = get_gen_count();
 		result.append ("size = "       + the_size       + "\n");
+		result.append ("etas_size = "  + the_etas_size  + "\n");
 		result.append ("valid_size = " + the_valid_size + "\n");
 		result.append ("gen_count = "  + gen_count      + "\n");
 

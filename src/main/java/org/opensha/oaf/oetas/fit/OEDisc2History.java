@@ -785,9 +785,9 @@ public class OEDisc2History {
 		result.append ("interval_count = " + interval_count + "\n");
 		int i_count = Math.min (20, interval_count);
 		for (int i_int = 0; i_int < i_count; ++i_int) {
-			result.append (i_int + ": time = " + a_interval_time[i_int] + ", mc = " + a_interval_mc[i_int] + ", ismc = " + a_interval_is_magcat[i_int] + "\n");
+			result.append (i_int + ": time = " + rndd(a_interval_time[i_int]) + ", mc = " + rndd(a_interval_mc[i_int]) + ", ismc = " + a_interval_is_magcat[i_int] + "\n");
 		}
-		result.append (i_count + ": time = " + a_interval_time[i_count] + "\n");
+		result.append (i_count + ": time = " + rndd(a_interval_time[i_count]) + "\n");
 		if (i_count < interval_count) {
 			result.append ("... and " + (interval_count - i_count) + " more intervals" + "\n");
 		}
