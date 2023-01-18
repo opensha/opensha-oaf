@@ -431,7 +431,7 @@ public class OECatalogGenerator {
 
 		// If the catalog is too large ...
 
-		if (cat_params.max_cat_size > 0 && cat_builder.size() > cat_params.max_cat_size) {
+		if (cat_params.max_cat_size > 0 && cat_builder.etas_size() > cat_params.max_cat_size) {
 			cat_builder.set_cat_stop_time (find_time_completed());
 			cat_builder.set_cat_result_code (OEConstants.CAT_RESULT_CAT_TOO_LARGE);
 			return 0;

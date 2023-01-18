@@ -103,6 +103,11 @@ public interface OECatalogConsumer extends AutoCloseable {
 	// Next rupture in the first (seed) generation of a catalog.
 	// Parameters:
 	//  comm = Communication area, with per-catalog, per-generation, and per-rupture values set up.
+	//
+	// Usage note:  A rupture passed to next_seed_rup() can be a background rate, so the function must
+	// be prepared to handle them.  A background rate has a time in the far past, so its time will
+	// compare earlier than the time range of the simulation.  OERandomGenerator.omori_rate_shifted
+	// and OERandomGenerator.omori_sample_shifted check for background rates and handle them.
 
 	public void next_seed_rup (OECatalogScanComm comm);
 

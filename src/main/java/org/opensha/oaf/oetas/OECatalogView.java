@@ -33,6 +33,10 @@ public interface OECatalogView {
 
 	public int size ();
 
+	// Get the total number of ruptures in the catalog, excluding seed ruptures.
+
+	public int etas_size ();
+
 	// Get the total number of ruptures in the catalog before the stop time.
 	// This cannot be called until after the catalog is fully built.
 

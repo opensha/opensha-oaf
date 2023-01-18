@@ -31,6 +31,10 @@ public interface OECatalogBuilder extends OECatalogView {
 
 	// public int size ();		// inherited
 
+	// Get the total number of ruptures in the catalog, excluding seed ruptures.
+
+	// public int etas_size ();		// inherited
+
 	// Get the total number of ruptures in the catalog before the stop time.
 	// This cannot be called until after the catalog is fully built.
 

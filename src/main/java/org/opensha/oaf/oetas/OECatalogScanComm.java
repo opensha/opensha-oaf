@@ -52,6 +52,10 @@ public class OECatalogScanComm {
 
 	public int cat_size;
 
+	// Number of ruptures in the catalog, excluding seed ruptures.
+
+	public int cat_etas_size;
+
 	// Number of ruptures in the catalog before the stop time.
 
 	public int cat_valid_size;
@@ -181,6 +185,7 @@ public class OECatalogScanComm {
 		result.append ("cat_result_code = " + cat_result_code + "\n");
 		result.append ("f_result_success = " + f_result_success + "\n");
 		result.append ("cat_size = " + cat_size + "\n");
+		result.append ("cat_etas_size = " + cat_etas_size + "\n");
 		result.append ("cat_valid_size = " + cat_valid_size + "\n");
 
 		result.append ("Per-generation data:" + "\n");
@@ -233,6 +238,7 @@ public class OECatalogScanComm {
 		f_result_success = OEConstants.is_cat_result_success (cat_result_code);
 
 		cat_size = view.size();
+		cat_etas_size = view.etas_size();
 		cat_valid_size = view.valid_size();
 
 		return;

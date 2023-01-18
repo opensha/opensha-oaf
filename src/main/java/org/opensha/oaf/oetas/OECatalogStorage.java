@@ -356,6 +356,19 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 
 
+	// Get the total number of ruptures in the catalog, excluding seed ruptures.
+
+	@Override
+	public int etas_size () {
+		if (gen_count < 1) {
+			return rup_count;
+		}
+		return rup_count - gen_size[0];
+	}
+
+
+
+
 	// Get the total number of ruptures in the catalog before the stop time.
 	// This cannot be called until after the catalog is fully built.
 
