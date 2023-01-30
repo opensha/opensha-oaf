@@ -40,6 +40,7 @@ import org.opensha.oaf.util.AutoExecutorService;
 import org.opensha.oaf.util.SimpleThreadManager;
 import org.opensha.oaf.util.SimpleThreadTarget;
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.TestArgs;
 
 import org.opensha.oaf.aafs.ActionConfig;
 import org.opensha.oaf.aafs.ForecastMainshock;
@@ -53,6 +54,9 @@ import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.commons.geo.Location;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
+
+import static org.opensha.oaf.oetas.OEConstants.DEF_GR_LO_RATIO;		// group rupture default low ratio
+import static org.opensha.oaf.oetas.OEConstants.DEF_GR_HI_RATIO;		// group rupture default high ratio
 
 
 // Tests of parameter fitting methods.
@@ -1380,6 +1384,8 @@ public class OEFit2Test {
 			System.err.println ("OEFit2Test : Missing subcommand");
 			return;
 		}
+
+		TestArgs testargs = new TestArgs (args, "OEFit2Test");
 
 
 
@@ -5949,6 +5955,331 @@ public class OEFit2Test {
 				// Make and display the vector and grid
 
 				fit_c_p_a_ams_like_grid (history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt, a_range, ams_range, p_range, c_range);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #23
+		// Command format:
+		//  test23  zmu  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//          magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
+		//          durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
+		//          f_intervals  lmr_opt
+		//          gs_rel_base_time  gs_ratio  gs_min_width  gr_hi_mag_delta  gr_taper_mag_delta  gr_init_mag
+		//          [t_day  rup_mag]...
+		// Generate a catalog with the given parameters.
+		// The catalog is seeded with ruptures at the given times and magnitudes.
+		// Then construct a history containing the catalog.
+		// Then construct a grouping from the history.
+		// Display catalog summary, history contents, and grouping contents.
+
+		if (testargs.is_test ("test23")) {
+			try {
+
+				System.out.println ("Generating catalog and history, and generating grouping");
+				double zmu = testargs.get_double ("zmu");
+				double zams = testargs.get_double ("zams");
+				double n = testargs.get_double ("n");
+				double p = testargs.get_double ("p");
+				double c = testargs.get_double ("c");
+				double b = testargs.get_double ("b");
+				double alpha = testargs.get_double ("alpha");
+				double mref = testargs.get_double ("mref");
+				double msup = testargs.get_double ("msup");
+				double tbegin = testargs.get_double ("tbegin");
+				double tend = testargs.get_double ("tend");
+
+				double magCat = testargs.get_double ("magCat");
+				int helm_param = testargs.get_int ("helm_param");
+				double disc_delta = testargs.get_double ("disc_delta");
+				int mag_cat_count = testargs.get_int ("mag_cat_count");
+				double eligible_mag = testargs.get_double ("eligible_mag");
+				int eligible_count = testargs.get_int ("eligible_count");
+
+				double durlim_ratio = testargs.get_double ("durlim_ratio");
+				double durlim_min = testargs.get_double ("durlim_min");
+				double durlim_max = testargs.get_double ("durlim_max");
+				double t_interval_begin = testargs.get_double ("t_interval_begin");
+				int before_max_count = testargs.get_int ("before_max_count");
+				int mag_cat_int_join = testargs.get_int ("mag_cat_int_join");
+
+				boolean f_intervals = testargs.get_boolean ("f_intervals");
+				int lmr_opt = testargs.get_int ("lmr_opt");
+
+				double gs_rel_base_time = testargs.get_double ("gs_rel_base_time");
+				double gs_ratio = testargs.get_double ("gs_ratio");
+				double gs_min_width = testargs.get_double ("gs_min_width");
+				double gr_hi_mag_delta = testargs.get_double ("gr_hi_mag_delta");
+				double gr_taper_mag_delta = testargs.get_double ("gr_taper_mag_delta");
+				double gr_init_mag = testargs.get_double ("gr_init_mag");
+
+				double[] time_mag_array = testargs.get_double_tuple_array ("time_mag_array", -1, 0, 2, "time", "mag");
+				testargs.end_test();
+
+				// Make the catalog parameters
+
+				OECatalogParams cat_params = (new OECatalogParams()).set_to_fixed_mag_br (
+					n,		// n
+					p,		// p
+					c,		// c
+					b,		// b
+					alpha,	// alpha
+					mref,	// mref
+					msup,	// msup
+					tbegin,	// tbegin
+					tend	// tend
+				);
+
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams_zmu (zams, zmu, cat_params);
+
+				// Make the catalog initializer
+
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
+
+				// Make the catalog examiner
+
+				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
+
+				// Generate a catalog
+
+				OESimulator.gen_single_catalog (initializer, examiner);
+
+				// Make time-splitting function
+
+				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
+
+				// Make the history parameters
+
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
+				OEDiscFGHParams hist_params = new OEDiscFGHParams();
+
+				hist_params.set_sim_history_typical (
+					magCat,				// magCat
+					helm_param,			// helm_param
+					tbegin,				// t_range_begin
+					tend,				// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
+				);
+
+				// Display the history parameters
+
+				System.out.println ();
+				System.out.println (hist_params.toString());
+
+				// Make a history
+
+				OEDisc2History history = new OEDisc2History();
+
+				history.build_from_fgh (hist_params, rup_list);
+
+				// Display the history
+
+				System.out.println ();
+				System.out.println (history.toString());
+
+				// Make the grouping
+
+				double int_mc_thresh = OEDisc2Grouping.calc_int_mc_thresh (history.magCat, history.magCat, f_intervals, lmr_opt);
+				OEDisc2Grouping.SpanWidthFcn span_width_fcn = new OEDisc2Grouping.SpanWidthFcnRatio (gs_rel_base_time, gs_ratio, gs_min_width);
+				OEDisc2Grouping.RupWidthFcn rup_width_fcn = new OEDisc2Grouping.RupWidthFcnTaper (DEF_GR_LO_RATIO, DEF_GR_HI_RATIO, gr_hi_mag_delta, gr_taper_mag_delta, gr_init_mag);
+
+				OEDisc2Grouping grouping = new OEDisc2Grouping();
+				grouping.build_grouping_from_history (
+					history,
+					int_mc_thresh,
+					span_width_fcn,
+					rup_width_fcn
+				);
+
+				// Display the grouping
+
+				System.out.println ();
+				System.out.println (grouping.toString());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #24
+		// Command format:
+		//  test24  zmu  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//          magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
+		//          durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
+		//          f_intervals  lmr_opt
+		//          gs_rel_base_time  gs_ratio  gs_min_width  gr_hi_mag_delta  gr_taper_mag_delta  gr_init_mag
+		//          [t_day  rup_mag]...
+		// Generate a catalog with the given parameters.
+		// The catalog is seeded with ruptures at the given times and magnitudes.
+		// Then construct a history containing the catalog.
+		// Then construct a grouping from the history.
+		// Display catalog summary, history contents, and grouping contents.
+		// Same as test #23 except dumps the entire contents of the grouping (could be large).
+
+		if (testargs.is_test ("test24")) {
+			try {
+
+				System.out.println ("Generating catalog and history, and generating grouping, with full dump");
+				double zmu = testargs.get_double ("zmu");
+				double zams = testargs.get_double ("zams");
+				double n = testargs.get_double ("n");
+				double p = testargs.get_double ("p");
+				double c = testargs.get_double ("c");
+				double b = testargs.get_double ("b");
+				double alpha = testargs.get_double ("alpha");
+				double mref = testargs.get_double ("mref");
+				double msup = testargs.get_double ("msup");
+				double tbegin = testargs.get_double ("tbegin");
+				double tend = testargs.get_double ("tend");
+
+				double magCat = testargs.get_double ("magCat");
+				int helm_param = testargs.get_int ("helm_param");
+				double disc_delta = testargs.get_double ("disc_delta");
+				int mag_cat_count = testargs.get_int ("mag_cat_count");
+				double eligible_mag = testargs.get_double ("eligible_mag");
+				int eligible_count = testargs.get_int ("eligible_count");
+
+				double durlim_ratio = testargs.get_double ("durlim_ratio");
+				double durlim_min = testargs.get_double ("durlim_min");
+				double durlim_max = testargs.get_double ("durlim_max");
+				double t_interval_begin = testargs.get_double ("t_interval_begin");
+				int before_max_count = testargs.get_int ("before_max_count");
+				int mag_cat_int_join = testargs.get_int ("mag_cat_int_join");
+
+				boolean f_intervals = testargs.get_boolean ("f_intervals");
+				int lmr_opt = testargs.get_int ("lmr_opt");
+
+				double gs_rel_base_time = testargs.get_double ("gs_rel_base_time");
+				double gs_ratio = testargs.get_double ("gs_ratio");
+				double gs_min_width = testargs.get_double ("gs_min_width");
+				double gr_hi_mag_delta = testargs.get_double ("gr_hi_mag_delta");
+				double gr_taper_mag_delta = testargs.get_double ("gr_taper_mag_delta");
+				double gr_init_mag = testargs.get_double ("gr_init_mag");
+
+				double[] time_mag_array = testargs.get_double_tuple_array ("time_mag_array", -1, 0, 2, "time", "mag");
+				testargs.end_test();
+
+				// Make the catalog parameters
+
+				OECatalogParams cat_params = (new OECatalogParams()).set_to_fixed_mag_br (
+					n,		// n
+					p,		// p
+					c,		// c
+					b,		// b
+					alpha,	// alpha
+					mref,	// mref
+					msup,	// msup
+					tbegin,	// tbegin
+					tend	// tend
+				);
+
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams_zmu (zams, zmu, cat_params);
+
+				// Make the catalog initializer
+
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
+
+				// Make the catalog examiner
+
+				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
+
+				// Generate a catalog
+
+				OESimulator.gen_single_catalog (initializer, examiner);
+
+				// Make time-splitting function
+
+				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
+
+				// Make the history parameters
+
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
+				OEDiscFGHParams hist_params = new OEDiscFGHParams();
+
+				hist_params.set_sim_history_typical (
+					magCat,				// magCat
+					helm_param,			// helm_param
+					tbegin,				// t_range_begin
+					tend,				// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
+				);
+
+				// Display the history parameters
+
+				System.out.println ();
+				System.out.println (hist_params.toString());
+
+				// Make a history
+
+				OEDisc2History history = new OEDisc2History();
+
+				history.build_from_fgh (hist_params, rup_list);
+
+				// Display the history
+
+				System.out.println ();
+				System.out.println (history.toString());
+
+				// Make the grouping
+
+				double int_mc_thresh = OEDisc2Grouping.calc_int_mc_thresh (history.magCat, history.magCat, f_intervals, lmr_opt);
+				OEDisc2Grouping.SpanWidthFcn span_width_fcn = new OEDisc2Grouping.SpanWidthFcnRatio (gs_rel_base_time, gs_ratio, gs_min_width);
+				OEDisc2Grouping.RupWidthFcn rup_width_fcn = new OEDisc2Grouping.RupWidthFcnTaper (DEF_GR_LO_RATIO, DEF_GR_HI_RATIO, gr_hi_mag_delta, gr_taper_mag_delta, gr_init_mag);
+
+				OEDisc2Grouping grouping = new OEDisc2Grouping();
+				grouping.build_grouping_from_history (
+					history,
+					int_mc_thresh,
+					span_width_fcn,
+					rup_width_fcn
+				);
+
+				// Display the grouping
+
+				System.out.println ();
+				System.out.println (grouping.dump_string());
 
 			} catch (Exception e) {
 				e.printStackTrace();

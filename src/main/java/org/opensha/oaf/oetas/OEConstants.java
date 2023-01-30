@@ -348,6 +348,42 @@ public class OEConstants {
 
 	public static final double DEF_MAG_EXCESS = 2.0;
 
+	// Negligably small time interval, in days, when grouping sources.
+
+	public static final double GROUP_TIME_EPS = 0.001;
+
+	// Default group span width relative base time, in days.
+
+	public static final double DEF_GS_REL_BASE_TIME = 0.01;
+
+	// Default group span width ratio.
+
+	public static final double DEF_GS_RATIO = 0.02;
+
+	// Default group span minimum width, in days.
+
+	public static final double DEF_GS_MIN_WIDTH = 0.01;
+
+	// Default group rupture width high magnitude delta.
+
+	public static final double DEF_GR_HI_MAG_DELTA = 0.5;
+
+	// Default group rupture width high magnitude delta.
+
+	public static final double DEF_GR_TAPER_MAG_DELTA = 0.2;
+
+	// Default group rupture width initial magnitude.
+
+	public static final double DEF_GR_INIT_MAG = 4.5;
+
+	// Default group rupture width low ratio.
+
+	public static final double DEF_GR_LO_RATIO = 0.0;
+
+	// Default group rupture width high ratio.
+
+	public static final double DEF_GR_HI_RATIO = 0.98;
+
 
 
 	// Catalog result codes.
