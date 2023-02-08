@@ -796,11 +796,11 @@ public class OEDisc2Grouping {
 
 	// Total number of ruptures in all groups.
 
-	private int total_n_rup;
+	public int total_n_rup;
 
 	// Total number of intervals in all groups.
 
-	private int total_n_int;
+	public int total_n_int;
 
 
 
@@ -1940,14 +1940,14 @@ public class OEDisc2Grouping {
 
 		result.append ("a_rupture_group:");
 		for (int i_rup = 0; i_rup < a_rupture_group.length; ++i_rup) {
-			result.append ((i_rup % 20 == 0) ? "\n" : " ");
+			result.append ((i_rup % 30 == 0) ? "\n" : " ");
 			result.append (a_rupture_group[i_rup]);
 		}
 		result.append ("\n");
 
 		result.append ("a_interval_group:");
 		for (int i_int = 0; i_int < a_interval_group.length; ++i_int) {
-			result.append ((i_int % 20 == 0) ? "\n" : " ");
+			result.append ((i_int % 30 == 0) ? "\n" : " ");
 			result.append (a_interval_group[i_int]);
 		}
 		result.append ("\n");
@@ -2137,17 +2137,17 @@ public class OEDisc2Grouping {
 		RupWidthFcn rup_width_fcn
 	) {
 
-		// Ranges of ruptures and intervals in the history (compare to OEDisc2ExtFit.dfit_build())
+		// Ranges of ruptures and intervals in the history (compare to OEDisc2ExtFit.dfit_build() and OEDisc2ExtFit.setup_grouping())
 
-		int main_rup_begin = 0;
-		int targ_rup_end = history.i_inside_end;
+		int accept_rup_begin = 0;
+		int accept_rup_end = history.i_inside_end;
 
-		int like_int_begin = 0;
-		int like_int_end = history.interval_count;
+		int accept_int_begin = 0;
+		int accept_int_end = history.interval_count;
 
 		// Rupture acceptance function
 
-		AcceptSrcFcn rup_accept_fcn = new AcceptSrcFcnRange (main_rup_begin, targ_rup_end);
+		AcceptSrcFcn rup_accept_fcn = new AcceptSrcFcnRange (accept_rup_begin, accept_rup_end);
 
 		// Interval acceptance function
 
@@ -2156,10 +2156,10 @@ public class OEDisc2Grouping {
 			int_accept_fcn = new AcceptSrcFcnNone();
 		}
 		else if (int_mc_thresh <= NO_MAG_NEG_CHECK) {
-			int_accept_fcn = new AcceptSrcFcnAll();
+			int_accept_fcn = new AcceptSrcFcnRange (accept_int_begin, accept_int_end);
 		}
 		else {
-			int_accept_fcn = new AcceptSrcFcnRangeLevel (like_int_begin, like_int_end, history.a_interval_mc, int_mc_thresh + TINY_MAG_DELTA);
+			int_accept_fcn = new AcceptSrcFcnRangeLevel (accept_int_begin, accept_int_end, history.a_interval_mc, int_mc_thresh + TINY_MAG_DELTA);
 		}
 
 		// Make the span width function, apply default, and shift to end of history
@@ -2169,7 +2169,7 @@ public class OEDisc2Grouping {
 			my_span_width_fcn = get_default_span_width_fcn();
 		}
 
-		SpanWidthFcn shifted_span_width_fcn = new SpanWidthFcnShift (my_span_width_fcn, history.a_interval_time[like_int_end]);
+		SpanWidthFcn shifted_span_width_fcn = new SpanWidthFcnShift (my_span_width_fcn, history.a_interval_time[accept_int_end]);
 
 		// Make the rupture width function, apply default
 

@@ -19,6 +19,7 @@ import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG;				// negative mag s
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_NEG_CHECK;		// use x <= NO_MAG_NEG_CHECK to check for NO_MAG_NEG
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS;				// positive mag larger than any possible mag
 import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS_CHECK;		// use x >= NO_MAG_POS_CHECK to check for NO_MAG_POS
+import static org.opensha.oaf.oetas.OEConstants.TINY_MAG_DELTA;			// a very small change in magnitude
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS;			// very large time value
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS_CHECK;	// use x >= HUGE_TIME_DAYS_CHECK to check for HUGE_TIME_DAYS
 import static org.opensha.oaf.oetas.OEConstants.LOG10_HUGE_TIME_DAYS;	// log10 of very large time value
@@ -249,6 +250,10 @@ public class OEDisc2ExtFit {
 
 	private OEDisc2History history;
 
+	// The duration of each interval, in days; length = history.interval_count.
+
+	private double[] history_a_interval_duration;
+
 
 
 	//----- Configuration -----
@@ -293,6 +298,23 @@ public class OEDisc2ExtFit {
 
 	private int main_rup_begin;
 	private int main_rup_end;
+
+
+	//----- Source grouping -----
+
+	// Grouping of rupture and interval sources, or null if none specified.
+
+	private OEDisc2Grouping grouping;
+
+	// The beginning and ending+1 of ruptures to included in the grouping.
+
+	private int accept_rup_begin;
+	private int accept_rup_end;
+
+	// The beginning and ending+1 of intervals to included in the grouping.
+
+	private int accept_int_begin;
+	private int accept_int_end;
 
 
 	//----- Simulation parameters -----
@@ -416,6 +438,24 @@ public class OEDisc2ExtFit {
 		public double[] rup_main_azero_prod;
 
 
+		// Productivity for each group of source ruptures, assuming a == 0 and Q == 1.
+		// The value for each group is
+		//   SUM (10^(alpha*(ms - mref)))
+		// where the sum is over all ruptures in the group and ms is the magnitude of the rupture.
+		// The length is grouping.group_count.
+		// This is for source ruptures classified as non-mainshock, which are scaled by a.
+		// Multiply by (10^a)*Q to get the productivity to use for seeding simulations.
+		// This is null if no grouping has been specified.
+
+		public double[] grouped_rup_azero_prod;
+
+		// This is for source ruptures classified as mainshock, which are scaled by ams.
+		// Multiply by (10^ams)*Q to get the productivity to use for seeding simulations.
+		// This is null if no grouping has been specified.
+
+		public double[] grouped_rup_main_azero_prod;
+
+
 		// Allocate the source productivity for each rupture, assuming a == 0 and Q == 1.
 
 		private void alloc_rup_azero_prod () {
@@ -423,6 +463,16 @@ public class OEDisc2ExtFit {
 
 			rup_azero_prod = new double[rupture_count];
 			rup_main_azero_prod = new double[rupture_count];
+
+			if (grouping != null) {
+				final int group_count = grouping.group_count;
+				grouped_rup_azero_prod = new double[group_count];
+				grouped_rup_main_azero_prod = new double[group_count];
+			}
+			else {
+				grouped_rup_azero_prod = null;
+				grouped_rup_main_azero_prod = null;
+			}
 
 			return;
 		}
@@ -444,6 +494,28 @@ public class OEDisc2ExtFit {
 				} else {
 					rup_azero_prod[n] = Math.pow(10.0, alpha*(a_rupture_obj[n].rup_mag - mref));
 					rup_main_azero_prod[n] = 0.0;
+				}
+			}
+
+			if (grouping != null) {
+
+				final int group_count = grouping.group_count;
+
+				for (int i_grp = 0; i_grp < group_count; ++i_grp) {
+					grouped_rup_azero_prod[i_grp] = 0.0;
+					grouped_rup_main_azero_prod[i_grp] = 0.0;
+				}
+
+				final int[] a_rupture_group = grouping.a_rupture_group;
+				final int group_rup_begin = grouping.group_rup_begin;
+				final int group_rup_end = grouping.group_rup_end;
+
+				for (int i_rup = group_rup_begin; i_rup < group_rup_end; ++i_rup) {
+					final int i_grp = a_rupture_group[i_rup];
+					if (i_grp >= 0) {
+						grouped_rup_azero_prod[i_grp] += rup_azero_prod[i_rup];
+						grouped_rup_main_azero_prod[i_grp] += rup_main_azero_prod[i_rup];
+					}
 				}
 			}
 
@@ -3442,6 +3514,73 @@ public class OEDisc2ExtFit {
 			return result;
 		}
 
+
+
+
+		// Get the unscaled productivity for each group, due to all sources.
+		// Parameters:
+		//  prod_scnd = Receives unscaled productivity density due to non-mainshocks; length = group_count.
+		//  prod_main = Receives unscaled productivity density due to mainshocks; length = group_count.
+		//  prod_bkgd = Receives unscaled productivity density due to a background rate; length = group_count; can be null.
+		// For group n, the productivity to use for seeding simulations is:
+		//  prod_scnd[n]*(10^a)*Q + prod_main[n]*(10^ams)*Q + prod_bkgd[n]*mu
+		// (Note that the two Q's in the above formula are generally different; the second Q is typically 1.)
+		// Note: Grouping must have been specified.
+
+		public void avpr_get_grouped_unscaled_prod_all (double[] prod_scnd, double[] prod_main, double[] prod_bkgd) {
+			final int group_count = grouping.group_count;
+			final int[] a_interval_group = grouping.a_interval_group;
+			final int group_int_begin = grouping.group_int_begin;
+			final int group_int_end = grouping.group_int_end;
+
+			final double[] a_interval_duration = history_a_interval_duration;
+
+			final double[] grouped_rup_azero_prod = pmom.mexp.grouped_rup_azero_prod;
+			final double[] grouped_rup_main_azero_prod = pmom.mexp.grouped_rup_main_azero_prod;
+
+			// Contribution from ruptures
+
+			if (prod_bkgd != null) {
+				for (int n = 0; n < group_count; ++n) {
+					prod_scnd[n] = grouped_rup_azero_prod[n];
+					prod_main[n] = grouped_rup_main_azero_prod[n];
+					prod_bkgd[n] = 0.0;
+				}
+			}
+			else {
+				for (int n = 0; n < group_count; ++n) {
+					prod_scnd[n] = grouped_rup_azero_prod[n];
+					prod_main[n] = grouped_rup_main_azero_prod[n];
+				}
+			}
+
+			// Contribution from intervals
+
+			if (f_background && prod_bkgd != null) {
+				for (int i_int = group_int_begin; i_int < group_int_end; ++i_int) {
+					final int i_grp = a_interval_group[i_int];
+					if (i_grp >= 0) {
+						final double int_dur = a_interval_duration[i_int];
+						prod_scnd[i_grp] += (prod_int_targ_all_src[i_int]      * int_dur);
+						prod_main[i_grp] += (prod_main_int_targ_all_src[i_int] * int_dur);
+						prod_bkgd[i_grp] += (prod_bkgd_int_targ_all_src[i_int] * int_dur);
+					}
+				}
+			}
+			else {
+				for (int i_int = group_int_begin; i_int < group_int_end; ++i_int) {
+					final int i_grp = a_interval_group[i_int];
+					if (i_grp >= 0) {
+						final double int_dur = a_interval_duration[i_int];
+						prod_scnd[i_grp] += (prod_int_targ_all_src[i_int]      * int_dur);
+						prod_main[i_grp] += (prod_main_int_targ_all_src[i_int] * int_dur);
+					}
+				}
+			}
+
+			return;
+		}
+
 	}
 
 
@@ -3597,6 +3736,22 @@ public class OEDisc2ExtFit {
 		public final double[] avpr_get_unscaled_prod_density_bkgd_int () {
 			return avpr.avpr_get_unscaled_prod_density_bkgd_int();
 		}
+
+
+		// Get the unscaled productivity for each group, due to all sources.
+		// Parameters:
+		//  prod_scnd = Receives unscaled productivity density due to non-mainshocks; length = group_count.
+		//  prod_main = Receives unscaled productivity density due to mainshocks; length = group_count.
+		//  prod_bkgd = Receives unscaled productivity density due to a background rate; length = group_count; can be null.
+		// For group n, the productivity to use for seeding simulations is:
+		//  prod_scnd[n]*(10^a)*Q + prod_main[n]*(10^ams)*Q + prod_bkgd[n]*mu
+		// (Note that the two Q's in the above formula are generally different; the second Q is typically 1.)
+		// Note: Grouping must have been specified.
+
+		public final void avpr_get_grouped_unscaled_prod_all (double[] prod_scnd, double[] prod_main, double[] prod_bkgd) {
+			avpr.avpr_get_grouped_unscaled_prod_all (prod_scnd, prod_main, prod_bkgd);
+			return;
+		}
 	
 	}
 
@@ -3620,6 +3775,7 @@ public class OEDisc2ExtFit {
 	public final void clear () {
 
 		history = null;
+		history_a_interval_duration = null;
 
 		f_intervals = true;
 		f_likelihood = true;
@@ -3633,6 +3789,12 @@ public class OEDisc2ExtFit {
 		targ_rup_end = 0;
 		main_rup_begin = 0;
 		main_rup_end = 0;
+
+		grouping = null;
+		accept_rup_begin = 0;
+		accept_rup_end = 0;
+		accept_int_begin = 0;
+		accept_int_end = 0;
 
 		mref = 0.0;
 		msup = 0.0;
@@ -3686,6 +3848,7 @@ public class OEDisc2ExtFit {
 		// Save the history
 
 		this.history = history;
+		this.history_a_interval_duration = history.make_a_interval_duration();
 
 		// Save the configuration
 
@@ -3728,6 +3891,130 @@ public class OEDisc2ExtFit {
 
 
 
+	// Set up the grouping.
+	// Parameters:
+	//  span_width_fcn = Span width function, which gives the maximum width of a span.
+	//                   Time in span_width_fcn is relative to the end of the history.
+	//                   Can be null to use default.
+	//  rup_width_fcn = Rupture width function, which gives the width to assign to a rupture.
+	//                  Can be null to use default.
+
+	public void setup_grouping (OEDisc2Grouping.SpanWidthFcn span_width_fcn, OEDisc2Grouping.RupWidthFcn rup_width_fcn) {
+
+		// Range for history
+
+		this.accept_rup_begin = 0;
+		this.accept_rup_end = history.i_inside_end;
+
+		this.accept_int_begin = 0;
+		this.accept_int_end = history.interval_count;
+
+		// Rupture acceptance function
+
+		OEDisc2Grouping.AcceptSrcFcn rup_accept_fcn = new OEDisc2Grouping.AcceptSrcFcnRange (accept_rup_begin, accept_rup_end);
+
+		// Interval acceptance function
+
+		OEDisc2Grouping.AcceptSrcFcn int_accept_fcn = null;
+
+		if (f_intervals) {
+			switch (lmr_opt) {
+
+			default:
+				throw new IllegalArgumentException ("OEDisc2ExtFit.setup_grouping - Invalid likelihood magnitude range option: lmr_opt = " + lmr_opt);
+			
+			case LMR_OPT_MCT_INFINITY:
+			case LMR_OPT_MCT_MAG_MAX:
+				// Lower limit is time-dependent magnitude of completeness
+				int_accept_fcn = new OEDisc2Grouping.AcceptSrcFcnRangeLevel (accept_int_begin, accept_int_end, history.a_interval_mc, mag_min + TINY_MAG_DELTA);
+				break;
+			
+			case LMR_OPT_MAGCAT_INFINITY:
+			case LMR_OPT_MAGCAT_MAG_MAX:
+				// Lower limit is catalog magnitude of completeness
+				if (mag_min + TINY_MAG_DELTA < history.magCat) {
+					int_accept_fcn = new OEDisc2Grouping.AcceptSrcFcnRange (accept_int_begin, accept_int_end);
+				} else {
+					int_accept_fcn = new OEDisc2Grouping.AcceptSrcFcnNone();
+				}
+				break;
+			}
+		} else {
+			int_accept_fcn = new OEDisc2Grouping.AcceptSrcFcnNone();
+		}
+
+		// Make the span width function, apply default, and shift to end of history
+
+		OEDisc2Grouping.SpanWidthFcn my_span_width_fcn = span_width_fcn;
+		if (my_span_width_fcn == null) {
+			my_span_width_fcn = OEDisc2Grouping.get_default_span_width_fcn();
+		}
+
+		OEDisc2Grouping.SpanWidthFcn shifted_span_width_fcn = new OEDisc2Grouping.SpanWidthFcnShift (my_span_width_fcn, history.a_interval_time[accept_int_end]);
+
+		// Make the rupture width function, apply default
+
+		OEDisc2Grouping.RupWidthFcn my_rup_width_fcn = rup_width_fcn;
+		if (my_rup_width_fcn == null) {
+			my_rup_width_fcn = OEDisc2Grouping.get_default_rup_width_fcn();
+		}
+
+		// Build the grouping
+
+		grouping = new OEDisc2Grouping();
+
+		grouping.build_grouping (
+			history.a_rupture_obj,
+			history.a_interval_time,
+			shifted_span_width_fcn,
+			my_rup_width_fcn,
+			rup_accept_fcn,
+			int_accept_fcn
+		);
+
+		return;
+	}
+
+
+
+
+	// Get the grouping.
+	// Return null if grouping was not set up.
+
+	public final OEDisc2Grouping get_grouping () {
+		return grouping;
+	}
+
+
+
+
+	// Get the number of groups.
+	// Grouping must have been set up.
+
+	public final int get_group_count () {
+		return grouping.group_count;
+	}
+
+
+
+
+	// Get an array giving the time of each group, in days.
+	// The returned array is newly-allocated, and has length equal to the number of groups.
+	// Grouping must have been set up.
+
+	public final double[] get_a_group_time () {
+		final int group_count = grouping.group_count;
+		final double[] a_group_time = grouping.a_group_time;
+		final double[] x = new double[group_count];
+		for (int i = 0; i < group_count; ++i) {
+			x[i] = a_group_time[i];
+		}
+		return x;
+	}
+
+
+
+
 	// Display our contents.
 
 	@Override
@@ -3762,6 +4049,22 @@ public class OEDisc2ExtFit {
 		result.append ("msup = "                   + msup                   + "\n");
 		result.append ("mag_min = "                + mag_min                + "\n");
 		result.append ("mag_max = "                + mag_max                + "\n");
+
+		if (grouping != null) {
+			result.append ("grouping.group_count = "     + grouping.group_count             + "\n");
+			result.append ("grouping.rupture_count = "   + grouping.a_rupture_group.length  + "\n");
+			result.append ("grouping.group_rup_begin = " + grouping.group_rup_begin         + "\n");
+			result.append ("grouping.group_rup_end = "   + grouping.group_rup_end           + "\n");
+			result.append ("grouping.interval_count = "  + grouping.a_interval_group.length + "\n");
+			result.append ("grouping.group_int_begin = " + grouping.group_int_begin         + "\n");
+			result.append ("grouping.group_int_end = "   + grouping.group_int_end           + "\n");
+			result.append ("grouping.total_n_rup = "     + grouping.total_n_rup             + "\n");
+			result.append ("grouping.total_n_int = "     + grouping.total_n_int             + "\n");
+			result.append ("accept_rup_begin = "         + accept_rup_begin                 + "\n");
+			result.append ("accept_rup_end = "           + accept_rup_end                   + "\n");
+			result.append ("accept_int_begin = "         + accept_int_begin                 + "\n");
+			result.append ("accept_int_end = "           + accept_int_end                   + "\n");
+		}
 
 		return result.toString();
 	}

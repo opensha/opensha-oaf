@@ -348,6 +348,26 @@ public class OEDisc2History {
 		return (a_interval_time[n + 1] + a_interval_time[n]) * 0.5;
 	}
 
+	// Make an array containing the duration of each interval, in days.
+
+	public final double[] make_a_interval_duration () {
+		double[] x = new double[interval_count];
+		for (int n = 0; n < interval_count; ++n) {
+			x[n] = a_interval_time[n + 1] - a_interval_time[n];
+		}
+		return x;
+	}
+
+	// Make an array containing the midpoint of each interval, in days.
+
+	public final double[] make_a_interval_midpoint () {
+		double[] x = new double[interval_count];
+		for (int n = 0; n < interval_count; ++n) {
+			x[n] = (a_interval_time[n + 1] + a_interval_time[n]) * 0.5;
+		}
+		return x;
+	}
+
 
 
 
