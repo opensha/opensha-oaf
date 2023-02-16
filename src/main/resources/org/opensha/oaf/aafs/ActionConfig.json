@@ -268,8 +268,8 @@
   "pdl_intake_regions": [
     {
       "name": "CAL-NCSS",
-      "min_mag": 4.0,
-      "intake_mag": 3.75,
+      "min_mag": 5.0,
+      "intake_mag": 4.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
@@ -289,8 +289,8 @@
     },
     {
       "name": "CAL-SCSN",
-      "min_mag": 4.0,
-      "intake_mag": 3.75,
+      "min_mag": 5.0,
+      "intake_mag": 4.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
@@ -307,8 +307,8 @@
     },
     {
       "name": "ALASKA",
-      "min_mag": 4.0,
-      "intake_mag": 3.75,
+      "min_mag": 5.0,
+      "intake_mag": 4.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
@@ -329,8 +329,8 @@
     },
     {
       "name": "HAWAII",
-      "min_mag": 4.0,
-      "intake_mag": 3.75,
+      "min_mag": 5.0,
+      "intake_mag": 4.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
@@ -344,8 +344,8 @@
     },
     {
       "name": "PUERTO-RICO",
-      "min_mag": 4.0,
-      "intake_mag": 3.75,
+      "min_mag": 5.0,
+      "intake_mag": 4.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
@@ -361,8 +361,8 @@
     },
     {
       "name": "GUAM-MARIANAS",
-      "min_mag": 4.0,
-      "intake_mag": 3.75,
+      "min_mag": 5.0,
+      "intake_mag": 4.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
@@ -376,8 +376,8 @@
     },
     {
       "name": "AMERICAN-SAMOA",
-      "min_mag": 4.0,
-      "intake_mag": 3.75,
+      "min_mag": 5.0,
+      "intake_mag": 4.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
@@ -391,8 +391,8 @@
     },
     {
       "name": "USA",
-      "min_mag": 4.0,
-      "intake_mag": 3.75,
+      "min_mag": 5.0,
+      "intake_mag": 4.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
@@ -426,8 +426,8 @@
     },
     {
       "name": "WORLD",
-      "min_mag": 5.0,
-      "intake_mag": 4.0,
+      "min_mag": 6.0,
+      "intake_mag": 5.75,
       "region": {
         "ClassType": 33001,
         "SphRegionWorld": 1
