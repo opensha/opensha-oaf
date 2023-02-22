@@ -1131,7 +1131,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		setVisible(true);
 		
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setTitle("Aftershock Forecaster (v2021.01.28)");
+		setTitle("Aftershock Forecaster (v2023.02.21)");
 		setLocationRelativeTo(null);
 		
 		workingDir = new File(System.getProperty("user.home"));
@@ -1226,7 +1226,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				EnumSet.allOf(MapType.class), MapType.PROBABILITIES, null);
 		fitSourceTypeParam = new EnumParameter<FitSourceType>("Fit finite source",
 				EnumSet.allOf(FitSourceType.class), FitSourceType.SHAKEMAP, null);
-		vs30Param = new BooleanParameter("Apply site corrections", true);
+		vs30Param = new BooleanParameter("Apply site corrections", false);
 		mapLevelParam = new DoubleParameter("Level", 1d, 100d, new Double(10) );
 		mapPOEParam = new DoubleParameter("POE (%)", 0, 99.9, new Double(10));
 		mapGridSpacingParam = new DoubleParameter("\u0394 (km)", 1, 1000, new Double(10d));
@@ -5257,24 +5257,27 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							new_gmpeProbModel.scale(100d);
 
 						// update the max contour level for setting the colorscale
-						if (new_gmpeProbModel.getMaxZ() > maxContourLevel) 
+//						if (new_gmpeProbModel.getMaxZ() > maxContourLevel) //uncomment to scale evrything to year maxcontour 
 							maxContourLevel = new_gmpeProbModel.getMaxZ();
 
 						// set up the contours, with colors
 						CPT cpt2;
 						double[] contourLevels;
+						int numShakingContours = 200;
 						if (mapTypeParam.getValue()==MapType.PROBABILITIES) {
 							double cptMax;
 							
-							if (maxContourLevel > 20)
-								cptMax = Math.min(100, (Math.ceil(maxContourLevel/20))*20);
-							else if (maxContourLevel > 2)
-								cptMax = Math.min(100, (Math.ceil(maxContourLevel/2))*2);
-							else
-								cptMax = 2;
+//							if (maxContourLevel > 20)
+//								cptMax = Math.min(100, (Math.ceil(maxContourLevel/20))*20);
+//							else if (maxContourLevel > 2)
+//								cptMax = Math.min(100, (Math.ceil(maxContourLevel/2))*2);
+//							else
+//								cptMax = 2;
+							cptMax = maxContourLevel;
 															
 							cpt2 = getProbCPT().rescale(minColorLevel, cptMax);
-							contourLevels = ETAS_StatsCalc.linspace(minContourLevel,Math.max(new_gmpeProbModel.getMaxZ(),cptMax),21);	//specify contourLevels directly
+
+							contourLevels = ETAS_StatsCalc.linspace(minContourLevel,Math.max(new_gmpeProbModel.getMaxZ(),cptMax),numShakingContours);	//specify contourLevels directly
 						} else {
 							if (intensityTypeParam.getValue() == IntensityType.MMI) {
 								//MMI color palate

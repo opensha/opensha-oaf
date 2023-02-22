@@ -82,12 +82,9 @@ public class GraphicalForecast{
 	private double[][] probability;
 	private String[][] probString;
 	private String forecastHorizon;
-		
 	
 	private String[] MMIcolors = {"#abe0ff", "#81fff3", "#aaff63", "#ffd100", "#EC2516", "#800000"};
 	private HashMap<String, String> tags = new HashMap<String, String>();
-
-	
 	
 	public GraphicalForecast(){
 		// run with dummy data. This is all made up for debugging.
@@ -158,9 +155,9 @@ public class GraphicalForecast{
 		nfelt_display[2] = Math.max(fractiles[2],1); //dummy values
 		
 		//set scenario probabilities
-		pScenario1 = 0.97;
-		pScenario2 = 0.03;
-		pScenario3 = 0.004;
+		pScenario1 = 0.96;
+		pScenario2 = 0.04;
+		pScenario3 = 0.005;
 	}
 	
 	public GraphicalForecast(File outFile, ETAS_AftershockModel aftershockModel, GregorianCalendar eventDate,
@@ -295,9 +292,7 @@ public class GraphicalForecast{
 	
 	// Set all the variable bits of text 
 	private void assignForecastStrings(){
-		
-		tags.put("DISCLAIMER", "For Internal US Government Use Only");
-		
+		tags.put("DISCLAIMER", "For Official Use Only - Not For Public Distribution");
 		
 		if (predictionIntervals.length > 0) {
 			tags.put("N1_DA", numberString[0][0]);
@@ -426,8 +421,7 @@ public class GraphicalForecast{
 				break;
 		}
 		
-		
-		//	lat lon of mainshock
+		//lat lon of mainshock
 		String degSym = "&deg;";
 		String tag;
 		if (lat0 >= 0)
@@ -525,8 +519,6 @@ public class GraphicalForecast{
 		char[] dateEnd = DATE_END_SEARCH.toCharArray();		
 		dateEnd[10]='T';
 
-		
-		
 		String mapLink = "\"https://earthquake.usgs.gov/earthquakes/map/?"
 		+ "extent=" + String.format("%4.4f", minLat) + "," + String.format("%4.4f", minLon) + "&amp;"
 		+ "extent=" + String.format("%4.4f", maxLat) + "," + String.format("%4.4f", maxLon) + "&amp;"
@@ -546,14 +538,6 @@ public class GraphicalForecast{
 	
 		tags.put("MAP_LINK", mapLink);
 		if (D) System.out.println(mapLink);
-		
-		
-		
-		
-		
-		
-		
-		
 	}
 	
 	public void setFeltMag(double mag){
@@ -680,7 +664,6 @@ public class GraphicalForecast{
 		SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy, HH:mm");  
 		formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 		GregorianCalendar forecastEndDate = new GregorianCalendar();
-		
 		
 		// find the largest magnitude to plot
 		// assign variables
@@ -1011,6 +994,7 @@ public class GraphicalForecast{
 		tMaxDays = tMinDays + predictionIntervals[preferredForecastInterval];
 		
 		double mag1, mag2;
+		
 		if (mag0 > 6.9999) {
 			mag1 = 6;
 			mag2 = mag0;
@@ -1029,6 +1013,13 @@ public class GraphicalForecast{
 			pScenario2 = aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays) - pScenario3;
 			pScenario1 = 1 - aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays);
 		}
+		while(pScenario2 > pScenario1) {
+			mag1++;
+			pScenario3 = aftershockModel.getProbabilityWithAleatory(mag2, tMinDays, tMaxDays);
+			pScenario2 = aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays) - pScenario3;
+			pScenario1 = 1 - aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays);
+		}
+	
 		// set scenario box colors/saturations
 		int RGBvals;
 		float[] HSBvals = new float[3];
@@ -1078,58 +1069,91 @@ public class GraphicalForecast{
 		String scenario2 = new String();
 		String scenario3 = new String();
 		
-		if (mag0 > 6.9999) {
-			// <6 / 6 - Mmain / Mmain+;
-			scenario1 = "The most likely scenario is that aftershocks will continue to decrease in "
-					+ "frequency with no aftershocks larger than M6 within the next " 
+//		if (pScenario1 >= pScenario2) {
+			tags.put("SCENARIO1_QUAL", "Most likely");
+			tags.put("SCENARIO1_QUAL_TEXT", "The most likely");
+			tags.put("SCENARIO2_QUAL", "Less likely");
+			tags.put("SCENARIO2_QUAL_TEXT", "A less likely");
+//		} else {
+//			tags.put("SCENARIO1_QUAL", "Best Case");
+//			tags.put("SCENARIO1_QUAL_TEXT", "The best case");
+//			tags.put("SCENARIO2_QUAL", "Most Likely");
+//			tags.put("SCENARIO2_QUAL_TEXT", "The most likely");
+//		}	
+		tags.put("SCENARIO3_QUAL", "Least likely");
+
+		//exchange "most likely" with "best case" if the probability of Scenario 2 is higher than Scenario 1
+		
+		if (mag0 > 7.69999) {
+			// <67 / 7 - Mmain / Mmain+;
+			scenario1 = tags.get("SCENARIO1_QUAL_TEXT") + " scenario is that aftershocks will continue to decrease in "
+					+ "frequency with no aftershocks larger than M7 within the next " 
 					+ tags.get("FORECAST_INTERVAL") 
-					+ ". Moderately sized aftershocks (M5 and larger) "
-					+ "could cause localized damage, particularly in weak structures. Smaller magnitude "
+					+ ". Moderately sized aftershocks (M5 and M6) are likely "
+					+ "and could still cause localized damage, particularly in weakened structures. Smaller magnitude "
 					+ "earthquakes (M3 and M4) may be felt by people close to the epicenters.";
 			
-			scenario2 = "A less likely scenario would include one or more aftershocks larger than M6, but with"
+			scenario2 = tags.get("SCENARIO2_QUAL_TEXT") + " scenario would include one or more aftershocks larger than M7, but with"
 					+ " none larger than the " + tags.get("MS_MAG") + " mainshock."
 					+ " Aftershocks of this size could cause additional damage and temporarily re-energize"
 					+ " the aftershock sequence. These aftershocks would most likely affect the area already"
 					+ " impacted by the mainshock.";
 			
 			scenario3 = "The least likely scenario is that the sequence could generate an aftershock of the same"
-					+ " size or even larger than the " + tags.get("MS_MAG") + " mainshock. While this is a very "
-					+ "small probability, such an earthquake would affect communities both in and adjacent to the"
-					+ " areas already impacted by the mainshock. Such an earthquake would likely trigger an "
-					+ "aftershock sequence of its own.";
+					+ " size or even larger than the " + tags.get("MS_MAG") + " mainshock. While this is a small probability,"
+					+ " such an earthquake would"
+					+ " likely affect communities both in and adjacent to the areas already impacted by the mainshock,"
+					+ " and would trigger additional aftershocks.";
+		} else if (mag0 > 6.9999) {
+			// <6 / 6 - Mmain / Mmain+;
+			scenario1 = tags.get("SCENARIO1_QUAL_TEXT") + " scenario is that aftershocks will continue to decrease in "
+					+ "frequency with no aftershocks larger than M6 within the next " 
+					+ tags.get("FORECAST_INTERVAL") 
+					+ ". Moderately sized aftershocks (M5 and larger) "
+					+ "may still cause localized damage, particularly in weak structures. Smaller magnitude "
+					+ "earthquakes (M3 and M4) may be felt by people close to the epicenters.";
 			
+			scenario2 = tags.get("SCENARIO2_QUAL_TEXT") + " scenario would include one or more aftershocks larger than M6, but with"
+					+ " none larger than the " + tags.get("MS_MAG") + " mainshock."
+					+ " Aftershocks of this size could cause additional damage and temporarily re-energize"
+					+ " the aftershock sequence. These aftershocks would most likely affect the area already"
+					+ " impacted by the mainshock.";
+			
+			scenario3 = "The least likely scenario is that the sequence could generate an aftershock of the same"
+					+ " size or even larger than the " + tags.get("MS_MAG") + " mainshock. Such an earthquake would"
+					+ " likely affect communities both in and adjacent to the areas already impacted by the mainshock,"
+					+ " and would trigger additional aftershocks.";
 		} else if (mag0  > 5.9999) {
 			// <6 / 6 - 7 / 7+;
-			scenario1 = "The most likely scenario is that aftershocks will continue to decrease in "
+			scenario1 =  tags.get("SCENARIO1_QUAL_TEXT") + " scenario is that aftershocks will continue to decrease in "
 					+ "frequency with no aftershocks larger than M6 within the next "
 					+ tags.get("FORECAST_INTERVAL") 
 					+ ". Moderately sized aftershocks (M5 and larger) "
-					+ "could cause localized damage, particularly in weak structures. Smaller magnitude "
+					+ "may still cause localized damage, particularly in weak structures. Smaller magnitude "
 					+ "earthquakes (M3 and M4) may be felt by people close to the epicenters.";
 			
-			scenario2 = "A less likely scenario would include one or more aftershocks between M6 and M7."
+			scenario2 = tags.get("SCENARIO2_QUAL_TEXT") + " scenario would include one or more aftershocks between M6 and M7."
 					+ " Aftershocks of this size could cause additional damage and temporarily re-energize"
 					+ " the aftershock sequence. These aftershocks would most likely affect the area in and adjacent to the areas already"
 					+ " impacted by the mainshock.";
 			
-			scenario3 = "The least likely scenario is that the sequence could generate an aftershock larger than M7. While this is a very "
+			scenario3 = "The least likely scenario is that the sequence could generate an aftershock larger than M7. While this is a "
 					+ "small probability, such an earthquake would have considerable impact on communities in and adjacent to"
 					+ " areas already impacted by the mainshock. Such an earthquake would likely trigger an "
 					+ "aftershock sequence of its own.";
 		} else {
-			scenario1 = "The most likely scenario is that aftershocks will continue to decrease in "
+			scenario1 = tags.get("SCENARIO1_QUAL_TEXT") + " scenario is that aftershocks will continue to decrease in "
 					+ "frequency with no aftershocks larger than M5 within the next " 
 					+ tags.get("FORECAST_INTERVAL")
 					+ ". Smaller magnitude earthquakes (M3 and M4) may be felt by people close to the epicenters.";
 			
-			scenario2 = "A less likely scenario would include one or more aftershocks between M5 and M6."
-					+ " Aftershocks of this size could cause additional damage and temporarily re-energize"
+			scenario2 = tags.get("SCENARIO2_QUAL_TEXT") + " scenario would include one or more aftershocks between M5 and M6."
+					+ " Aftershocks of this size could cause additional localized damage and temporarily re-energize"
 					+ " the aftershock sequence. These aftershocks would most likely affect the area in and adjacent to areas already"
 					+ " impacted by the mainshock.";
 			
-			scenario3 = "The least likely scenario is that the sequence could generate an earthquake larger than M6. While this is a very "
-					+ "small probability, such an earthquake would affect communities both in and adjacent to the"
+			scenario3 = "The least likely scenario is that the sequence could generate an earthquake larger than M6. While this is a "
+					+ " small probability, such an earthquake would affect communities both in and adjacent to the"
 					+ " areas already impacted by the mainshock, and would likely trigger an aftershock sequence of its own.";
 		}
 		
@@ -1145,7 +1169,7 @@ public class GraphicalForecast{
 				+ "    <table>\n"
 				+ "      <tr class=\"h_scenario\">\n"
 				+ "        <td colspan=\"2\">\n"
-				+ "          Scenario One (Most likely)\n"
+				+ "          Scenario One (" + tags.get("SCENARIO1_QUAL") + ")\n"
 				+ "        </td>\n"
 				+ "      </tr>\n"
 				+ "      <tr >\n"
@@ -1154,7 +1178,7 @@ public class GraphicalForecast{
 				+ "      </tr>\n"
 				+ "      <tr class=\"h_scenario\">\n"
 				+ "        <td colspan=\"2\">\n"
-				+ "			Scenario Two (Less likely)\n"
+				+ "			Scenario Two (" + tags.get("SCENARIO2_QUAL") + ")\n"
 				+ "        </td>\n"
 				+ "      </tr>\n"
 				+ "      <tr>\n"
@@ -1163,7 +1187,7 @@ public class GraphicalForecast{
 				+ "      </tr>\n"
 				+ "      <tr class=\"h_scenario\">\n"
 				+ "        <td colspan=\"2\">\n"
-				+ "          Scenario Three (Least likely)\n"
+				+ "          Scenario Three (" + tags.get("SCENARIO3_QUAL") + ")\n"
 				+ "        </td>\n"
 				+ "      </tr>\n"
 				+ "      <tr>\n"
@@ -1176,8 +1200,6 @@ public class GraphicalForecast{
 		
 		return outputString.toString();
 	}
-	
-	
 	
 	// Build an html document for displaying the advisory, new style for BHA
 	public void writeHTML(File outputFile){
@@ -1245,6 +1267,8 @@ public class GraphicalForecast{
 				+ "      <tr>\n"
 				+ "        <td style=\"text-align:left\">Mainshock Magnitude: "
 				+ tags.get("MS_MAG") + "</td>\n"
+				+ "        <td style=\"text-align:center\">ID: <a href=\"" + eventURL + "\">"
+				+ tags.get("MS_NAME") + "</a></td>\n"
 				+ "        <td style=\"text-align:right\">Location: "
 				+ tags.get("MS_LOC") + "</td>\n"
 				+ "      </tr>\n"
@@ -1328,9 +1352,10 @@ public class GraphicalForecast{
 				+ "    <h1>Aftershock Shaking Forecast</h1>\n"
 				+ "    <p style=\"margin-top:5px\">For forecast starting: " + tags.get("F_START_ABS") + " (UTC)</p><img width=\"800\" src=\""+ imageStr + "\" alt=\"Shaking Forecast\">\n"
 				+ "    <div class=\"shaking_forecast_legend\">\n"
-				+ "      Small gray circles indicate locations of past aftershocks in this sequence.\n"
-				+ "      Contour lines (if shown) give the chance of experiencing potentially damaging ground motions \n"
-				+ "      (exceeding level VI on the Modified Mercalli Intensity scale).\n"
+//				+ "      Small gray circles indicate locations of past aftershocks in this sequence.\n"
+//				+ "      Contour lines (if shown) give the chance of experiencing potentially damaging ground motions \n"
+//				+ "      (exceeding level VI on the Modified Mercalli Intensity scale).\n"
+				+ "      Modified Mercalli Intensity level VI (strong ground shaking) is likely to cause damage, even in well-engineered structures. With more poorly engineered or weakened structures, damage can occur at lower intensity levels.\n"
 				+ "    </div>\n"
 				+ "  </div>");
 		
@@ -1434,7 +1459,7 @@ public class GraphicalForecast{
 				+ ".hgov {color:#dd1111; font-family:helvetica; font-size:14pt; margin:0}\n"
 				+ ".scenario_probability {text-align:center; width:100px; height:60px; color:black; background:#eeeeee;\n"
 				+ "		font-family:helvetica; font-size:28pt; vertical-align:center; margin-right:5px; margin-left:0px}\n"
-				+ ".scenario_text {text-align:justify; vertical-align:top; font-size:11pt}\n"
+				+ ".scenario_text {text-align:justify; vertical-align:top; font-size:12pt}\n"
 				+ ".h_scenario {color:black; background:#ffffff; height:30px; text-align:left; font-weight:bold; \n"
 				+ "	font-family:helvetica; font-size:12pt; margin:0; vertical-align:bottom}\n"
 				+ "\n"
@@ -1473,12 +1498,12 @@ public class GraphicalForecast{
 		
 		//parameters for the svg table
 		double barHeight = 40;
-		if(predictionIntervals.length==3)
-			barHeight = 50;
-		else if(predictionIntervals.length==2)
-			barHeight = 60;
-		else if(predictionIntervals.length==1)
-			barHeight = 120;
+//		if(predictionIntervals.length==3)
+//			barHeight = 40;
+//		else if(predictionIntervals.length==2)
+//			barHeight = 40;
+//		else if(predictionIntervals.length==1)
+//			barHeight = 40;
 
 		double barWidth = 50;
 
