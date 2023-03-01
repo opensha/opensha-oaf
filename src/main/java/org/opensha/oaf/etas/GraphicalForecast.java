@@ -1013,12 +1013,12 @@ public class GraphicalForecast{
 			pScenario2 = aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays) - pScenario3;
 			pScenario1 = 1 - aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays);
 		}
-		while(pScenario2 > pScenario1) {
-			mag1++;
-			pScenario3 = aftershockModel.getProbabilityWithAleatory(mag2, tMinDays, tMaxDays);
-			pScenario2 = aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays) - pScenario3;
-			pScenario1 = 1 - aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays);
-		}
+//		while(pScenario2 > pScenario1) {
+//			mag1++;
+//			pScenario3 = aftershockModel.getProbabilityWithAleatory(mag2, tMinDays, tMaxDays);
+//			pScenario2 = aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays) - pScenario3;
+//			pScenario1 = 1 - aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays);
+//		}
 	
 		// set scenario box colors/saturations
 		int RGBvals;
@@ -1084,27 +1084,28 @@ public class GraphicalForecast{
 
 		//exchange "most likely" with "best case" if the probability of Scenario 2 is higher than Scenario 1
 		
-		if (mag0 > 7.69999) {
-			// <67 / 7 - Mmain / Mmain+;
-			scenario1 = tags.get("SCENARIO1_QUAL_TEXT") + " scenario is that aftershocks will continue to decrease in "
-					+ "frequency with no aftershocks larger than M7 within the next " 
-					+ tags.get("FORECAST_INTERVAL") 
-					+ ". Moderately sized aftershocks (M5 and M6) are likely "
-					+ "and could still cause localized damage, particularly in weakened structures. Smaller magnitude "
-					+ "earthquakes (M3 and M4) may be felt by people close to the epicenters.";
-			
-			scenario2 = tags.get("SCENARIO2_QUAL_TEXT") + " scenario would include one or more aftershocks larger than M7, but with"
-					+ " none larger than the " + tags.get("MS_MAG") + " mainshock."
-					+ " Aftershocks of this size could cause additional damage and temporarily re-energize"
-					+ " the aftershock sequence. These aftershocks would most likely affect the area already"
-					+ " impacted by the mainshock.";
-			
-			scenario3 = "The least likely scenario is that the sequence could generate an aftershock of the same"
-					+ " size or even larger than the " + tags.get("MS_MAG") + " mainshock. While this is a small probability,"
-					+ " such an earthquake would"
-					+ " likely affect communities both in and adjacent to the areas already impacted by the mainshock,"
-					+ " and would trigger additional aftershocks.";
-		} else if (mag0 > 6.9999) {
+//		if (mag0 > 7.69999) {
+//			// <67 / 7 - Mmain / Mmain+;
+//			scenario1 = tags.get("SCENARIO1_QUAL_TEXT") + " scenario is that aftershocks will continue to decrease in "
+//					+ "frequency with no aftershocks larger than M7 within the next " 
+//					+ tags.get("FORECAST_INTERVAL") 
+//					+ ". Moderately sized aftershocks (M5 and M6) are likely "
+//					+ "and could still cause localized damage, particularly in weakened structures. Smaller magnitude "
+//					+ "earthquakes (M3 and M4) may be felt by people close to the epicenters.";
+//			
+//			scenario2 = tags.get("SCENARIO2_QUAL_TEXT") + " scenario would include one or more aftershocks larger than M7, but with"
+//					+ " none larger than the " + tags.get("MS_MAG") + " mainshock."
+//					+ " Aftershocks of this size could cause additional damage and temporarily re-energize"
+//					+ " the aftershock sequence. These aftershocks would most likely affect the area already"
+//					+ " impacted by the mainshock.";
+//			
+//			scenario3 = "The least likely scenario is that the sequence could generate an aftershock of the same"
+//					+ " size or even larger than the " + tags.get("MS_MAG") + " mainshock. While this is a small probability,"
+//					+ " such an earthquake would"
+//					+ " likely affect communities both in and adjacent to the areas already impacted by the mainshock,"
+//					+ " and would trigger additional aftershocks.";
+//		} else 
+		if (mag0 > 6.9999) {
 			// <6 / 6 - Mmain / Mmain+;
 			scenario1 = tags.get("SCENARIO1_QUAL_TEXT") + " scenario is that aftershocks will continue to decrease in "
 					+ "frequency with no aftershocks larger than M6 within the next " 

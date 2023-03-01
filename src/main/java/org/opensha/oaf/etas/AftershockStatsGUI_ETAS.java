@@ -5277,7 +5277,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 															
 							cpt2 = getProbCPT().rescale(minColorLevel, cptMax);
 
-							contourLevels = ETAS_StatsCalc.linspace(minContourLevel,Math.max(new_gmpeProbModel.getMaxZ(),cptMax),numShakingContours);	//specify contourLevels directly
+//							contourLevels = ETAS_StatsCalc.linspace(minContourLevel,Math.max(new_gmpeProbModel.getMaxZ(),cptMax),numShakingContours);	//specify contourLevels directly
+							contourLevels = new double[]{0.01,0.1,1,3,5,10,20,30,40,50,60,70,80,90,99};
 						} else {
 							if (intensityTypeParam.getValue() == IntensityType.MMI) {
 								//MMI color palate
@@ -5285,7 +5286,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							} else
 								cpt2 = getProbCPT().rescale(minColorLevel, Math.max(new_gmpeProbModel.getMaxZ(),maxContourLevel));
 							
-							contourLevels = ETAS_StatsCalc.linspace(minContourLevel,Math.max(new_gmpeProbModel.getMaxZ(),maxContourLevel),21);	//specify contourLevels directly
+//							contourLevels = ETAS_StatsCalc.linspace(minContourLevel,Math.max(new_gmpeProbModel.getMaxZ(),maxContourLevel),21);	//specify contourLevels directly
+							contourLevels = new double[]{0.01,0.1,1,3,5,10,20,30,40,50,60,70,80,90,99}; //direct in percent
 						}
 						List<PolyLine> contours = ETAS_RateModel2D.getContours(new_gmpeProbModel, contourLevels);
 						
