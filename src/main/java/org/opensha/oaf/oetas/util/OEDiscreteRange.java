@@ -23,6 +23,7 @@ public abstract class OEDiscreteRange {
 
 
 	// Get the number of parameter values in the discrete range.
+	// It is guaranteed that the returned value is > 0.
 
 	public abstract int get_range_size ();
 
@@ -76,6 +77,128 @@ public abstract class OEDiscreteRange {
 	// The returned array is newly-allocated, so the caller is free to modify it.
 
 	public abstract double[] get_bin_array ();
+
+
+
+
+	// Get an array of value elements, each spanning one bin.
+	// The value of each element equals the corresponding element of get_range_array().
+	// The lower and upper limits of each element equal the corresponding elements of get_bin_array().
+	//
+	// Implementation note: The default implementation assumes that a single-value range
+	// has both bin limits equal to that single value, and that a range with multiple values
+	// has strict inequalities as described for get_bin_array().  A subclass for which this
+	// is not true should override this method.
+
+	public OEValueElement[] get_velt_array () {
+		final double[] range_array = get_range_array();
+		final int range_size = range_array.length;
+		final OEValueElement[] velt_array = new OEValueElement[range_size];
+		if (range_size > 1) {
+			final double[] bin_array = get_bin_array();
+			for (int i = 0; i < range_size; ++i) {
+				velt_array[i] = new OEValueElement (bin_array[i], range_array[i], bin_array[i + 1]);
+			}
+		}
+		else if (range_size == 1) {
+			velt_array[0] = new OEValueElement (range_array[0]);
+		}
+		return velt_array;
+	}
+
+
+
+
+	// Get a scaled array of value elements, each spanning one bin.
+	// Parameters:
+	//  scale = Scale factor applied to each value.
+	//  offset = Offset applied to each value.
+	// The value of each element equals v*scale+offset, where v is the corresponding element of get_range_array().
+	// The lower and upper limits of each element equal x*scale+offset, where x is the corresponding elements of get_bin_array().
+	// Note: If scale < 0 then the ordering is reversed, so the scaled values are in increasing order.
+	//
+	// Implementation note: The default implementation assumes that a single-value range
+	// has both bin limits equal to that single value, and that a range with multiple values
+	// has strict inequalities as described for get_bin_array().  A subclass for which this
+	// is not true should override this method.
+
+	public OEValueElement[] get_scaled_velt_array (double scale, double offset) {
+		final double[] range_array = get_range_array();
+		final int range_size = range_array.length;
+		final OEValueElement[] velt_array = new OEValueElement[range_size];
+		if (range_size > 1) {
+			final double[] bin_array = get_bin_array();
+			if (scale < 0) {
+				for (int i = 0; i < range_size; ++i) {
+					int j = (range_size - 1) - i;
+					velt_array[i] = new OEValueElement (
+						bin_array[j + 1] * scale + offset,
+						range_array[j] * scale + offset,
+						bin_array[j] * scale + offset
+					);
+				}
+			} else {
+				for (int i = 0; i < range_size; ++i) {
+					velt_array[i] = new OEValueElement (
+						bin_array[i] * scale + offset,
+						range_array[i] * scale + offset,
+						bin_array[i + 1] * scale + offset
+					);
+				}
+			}
+		}
+		else if (range_size == 1) {
+			velt_array[0] = new OEValueElement (range_array[0] * scale + offset);
+		}
+		return velt_array;
+	}
+
+
+
+
+	// Get a scaled array of log10 of value elements, each spanning one bin.
+	// Parameters:
+	//  scale = Scale factor applied to each value.
+	//  offset = Offset applied to each value.
+	// The value of each element equals log10(v)*scale+offset, where v is the corresponding element of get_range_array().
+	// The lower and upper limits of each element equal log10(x)*scale+offset, where x is the corresponding elements of get_bin_array().
+	// Note: If scale < 0 then the ordering is reversed, so the scaled values are in increasing order.
+	//
+	// Implementation note: The default implementation assumes that a single-value range
+	// has both bin limits equal to that single value, and that a range with multiple values
+	// has strict inequalities as described for get_bin_array().  A subclass for which this
+	// is not true should override this method.
+
+	public OEValueElement[] get_scaled_log10_velt_array (double scale, double offset) {
+		final double[] range_array = get_range_array();
+		final int range_size = range_array.length;
+		final OEValueElement[] velt_array = new OEValueElement[range_size];
+		if (range_size > 1) {
+			final double[] bin_array = get_bin_array();
+			if (scale < 0) {
+				for (int i = 0; i < range_size; ++i) {
+					int j = (range_size - 1) - i;
+					velt_array[i] = new OEValueElement (
+						Math.log10(bin_array[j + 1]) * scale + offset,
+						Math.log10(range_array[j]) * scale + offset,
+						Math.log10(bin_array[j]) * scale + offset
+					);
+				}
+			} else {
+				for (int i = 0; i < range_size; ++i) {
+					velt_array[i] = new OEValueElement (
+						Math.log10(bin_array[i]) * scale + offset,
+						Math.log10(range_array[i]) * scale + offset,
+						Math.log10(bin_array[i + 1]) * scale + offset
+					);
+				}
+			}
+		}
+		else if (range_size == 1) {
+			velt_array[0] = new OEValueElement (Math.log10(range_array[0]) * scale + offset);
+		}
+		return velt_array;
+	}
 
 
 
@@ -324,14 +447,16 @@ public abstract class OEDiscreteRange {
 
 				double[] range_array = range.get_range_array();
 				double[] bin_array = range.get_bin_array();
+				OEValueElement[] velt_array = range.get_velt_array();
 
 				System.out.println();
 				System.out.println ("range_array.length = " + range_array.length);
 				System.out.println ("bin_array.length = " + bin_array.length);
+				System.out.println ("velt_array.length = " + velt_array.length);
 
 				System.out.println();
 				for (int k = 0; k < range_length; ++k) {
-					System.out.println (k + ": bin = " + rndd(bin_array[k]) + ", value = " + rndd(range_array[k]));
+					System.out.println (k + ": bin = " + rndd(bin_array[k]) + ", value = " + rndd(range_array[k]) + ", velt = " + velt_array[k].rounded_string());
 				}
 				System.out.println (range_length + ": bin = " + rndd(bin_array[range_length]));
 
@@ -422,6 +547,8 @@ public abstract class OEDiscreteRange {
 
 				double[] range_array = range.get_range_array();
 				double[] bin_array = range.get_bin_array();
+				OEValueElement[] velt_array = range.get_velt_array();
+				System.out.println ("velt_array.length = " + velt_array.length);
 
 				System.out.println();
 				System.out.println ("range_array.length = " + range_array.length);
@@ -429,7 +556,7 @@ public abstract class OEDiscreteRange {
 
 				System.out.println();
 				for (int k = 0; k < range_length; ++k) {
-					System.out.println (k + ": bin = " + rndd(bin_array[k]) + ", value = " + rndd(range_array[k]));
+					System.out.println (k + ": bin = " + rndd(bin_array[k]) + ", value = " + rndd(range_array[k]) + ", velt = " + velt_array[k].rounded_string());
 				}
 				System.out.println (range_length + ": bin = " + rndd(bin_array[range_length]));
 
@@ -520,14 +647,16 @@ public abstract class OEDiscreteRange {
 
 				double[] range_array = range.get_range_array();
 				double[] bin_array = range.get_bin_array();
+				OEValueElement[] velt_array = range.get_velt_array();
 
 				System.out.println();
 				System.out.println ("range_array.length = " + range_array.length);
 				System.out.println ("bin_array.length = " + bin_array.length);
+				System.out.println ("velt_array.length = " + velt_array.length);
 
 				System.out.println();
 				for (int k = 0; k < range_length; ++k) {
-					System.out.println (k + ": bin = " + rndd(bin_array[k]) + ", value = " + rndd(range_array[k]));
+					System.out.println (k + ": bin = " + rndd(bin_array[k]) + ", value = " + rndd(range_array[k]) + ", velt = " + velt_array[k].rounded_string());
 				}
 				System.out.println (range_length + ": bin = " + rndd(bin_array[range_length]));
 

@@ -293,6 +293,44 @@ public class OECatalogParams {
 
 
 
+	// Set the statistics parameters, and copy all other values from the other object.
+	// Returns this object.
+
+	public final OECatalogParams set_stat_and_copy_from (
+		double a,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		OECatalogParams other
+	) {
+		this.a               = a;
+		this.p               = p;
+		this.c               = c;
+		this.b               = b;
+		this.alpha           = alpha;
+		this.mref            = other.mref;
+		this.msup            = other.msup;
+		this.tbegin          = other.tbegin;
+		this.tend            = other.tend;
+		this.teps            = other.teps;
+		this.mag_min_sim     = other.mag_min_sim;
+		this.mag_max_sim     = other.mag_max_sim;
+		this.mag_min_lo      = other.mag_min_lo;
+		this.mag_min_hi      = other.mag_min_hi;
+		this.mag_max_lo      = other.mag_max_lo;
+		this.mag_max_hi      = other.mag_max_hi;
+		this.mag_eps         = other.mag_eps;
+		this.gen_size_target = other.gen_size_target;
+		this.gen_count_max   = other.gen_count_max;
+		this.max_cat_size    = other.max_cat_size;
+		this.mag_excess      = other.mag_excess;
+		return this;
+	}
+
+
+
+
 	// Display our contents.
 
 	@Override
@@ -823,6 +861,41 @@ public class OECatalogParams {
 		this.mag_min_hi      = mref;
 		this.mag_max_lo      = msup;
 		this.mag_max_hi      = msup;
+		this.mag_eps         = OEConstants.GEN_MAG_EPS;
+		this.gen_size_target = 100;
+		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
+		this.max_cat_size    = 0;
+		this.mag_excess      = 0.0;
+		return this;
+	}
+
+
+
+
+	// Set to values for simulation within a fixed magnitude range.
+	// Parameters:
+	//  stats = Statistics parameters.
+	// Returns this object.
+
+	public final OECatalogParams set_to_fixed_mag_stats (
+		OECatalogParamsStats stats
+	) {
+		this.a               = stats.a;
+		this.p               = stats.p;
+		this.c               = stats.c;
+		this.b               = stats.b;
+		this.alpha           = stats.alpha;
+		this.mref            = stats.mref;
+		this.msup            = stats.msup;
+		this.tbegin          = stats.tbegin;
+		this.tend            = stats.tend;
+		this.teps            = OEConstants.GEN_TIME_EPS;
+		this.mag_min_sim     = stats.mag_min_sim;
+		this.mag_max_sim     = stats.mag_max_sim;
+		this.mag_min_lo      = stats.mag_min_sim;
+		this.mag_min_hi      = stats.mag_min_sim;
+		this.mag_max_lo      = stats.mag_max_sim;
+		this.mag_max_hi      = stats.mag_max_sim;
 		this.mag_eps         = OEConstants.GEN_MAG_EPS;
 		this.gen_size_target = 100;
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;

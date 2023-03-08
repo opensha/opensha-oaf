@@ -192,6 +192,8 @@ public class SphLatLon {
 
 	// Earth radius used by Comcat for comverting between km and degrees.
 	// Note: Comcat uses exactly 111.12 km per degree.
+	// Remark: The radius used by ComCat is a value that historically has been used for navigation of ships and aircraft.
+	// Historically, one degree equals 60 nautical miles, and a nautical mile is currently defined to be 1852 meters.
 
 	public static final double EARTH_RADIUS_COMCAT = 111.12 * Math.toDegrees(1.0);
 

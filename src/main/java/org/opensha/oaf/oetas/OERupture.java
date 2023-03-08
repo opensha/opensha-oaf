@@ -196,6 +196,38 @@ public class OERupture {
 
 
 
+	// Set the values for a seed rupture, time, magnitude, and productivity only.
+	// Return this object.
+
+	public final OERupture set_seed (double t_day, double rup_mag, double k_prod) {
+		this.t_day      = t_day;
+		this.rup_mag    = rup_mag;
+		this.k_prod     = k_prod;
+		this.rup_parent = RUPPAR_SEED;
+		this.x_km       = 0.0;
+		this.y_km       = 0.0;
+		return this;
+	}
+
+
+
+
+	// Set the values for a seed rupture, time and productivity only.
+	// Return this object.
+
+	public final OERupture set_seed (double t_day, double k_prod) {
+		this.t_day      = t_day;
+		this.rup_mag    = 0.0;
+		this.k_prod     = k_prod;
+		this.rup_parent = RUPPAR_SEED;
+		this.x_km       = 0.0;
+		this.y_km       = 0.0;
+		return this;
+	}
+
+
+
+
 	// Display our contents.
 
 	@Override

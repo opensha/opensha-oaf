@@ -336,6 +336,20 @@ public class OEDisc2ExtFit {
 	private double mag_max;
 
 
+	//----- Export parameters -----
+
+	// Mainshock magnitude, the largest magnitude among ruptures considered mainshocks, or NO_MAG_NEG if none.
+	// This is not used in this code, but is available to downstream code.
+
+	private double mag_main;
+
+	// Time interval for interpreting branch ratios, in days.
+	// Initialized to the time interval for the Likelihood calculation, but can be set by the user.
+	// Not used in this code other than for branch ratio conversion, mainly for use by downstream code.
+
+	private double tint_br;
+
+
 
 
 	//-----  Per-Exponent Processing -----
@@ -2610,7 +2624,7 @@ public class OEDisc2ExtFit {
 
 
 
-		// Calulcate the value of (10^a)*Q, given the branch ratio.
+		// Calculate the value of (10^a)*Q, given the branch ratio.
 		// Parameters:
 		//  n = Branch ratio.
 		//  tint = Time interval to use for the calculation.
@@ -2638,6 +2652,68 @@ public class OEDisc2ExtFit {
 			);
 		}
 
+
+
+
+		// Calculate the value of (10^a)*Q, given the branch ratio.
+		// Parameters:
+		//  n = Branch ratio.
+		// This function calculates the productivity "a" such that the branch ratio equals n,
+		// and returns the value of (10^a)*Q.
+		// Note: This version uses the stored tint_br as the time interval.
+		// Note: The result is proportinal to n.  So, if it is desired to compute (10^a)*Q
+		// for multiple values of the branch ratio, this can be done by calling this function
+		// with n == 1, and then multiplying the returned value by each value of the branch ratio.
+
+		public final double pmom_calc_ten_a_q_from_branch_ratio (
+			double n
+		) {
+			return OEStatsCalc.calc_ten_a_q_from_branch_ratio (
+				n,
+				omat.p,
+				omat.c,
+				mexp.b,
+				mexp.alpha,
+				mref,
+				mag_min,
+				mag_max,
+				tint_br
+			);
+		}
+
+
+
+
+		// Check if the given parameter values agree with ours.
+		// Parameters:
+		//  check_p = Value of p to check.
+		//  check_c = Value of c to check.
+		//  check_b = Value ofb to check.
+		//  check_alpha = Value of alpha to check.
+		// Returns null if success.
+		// If mismatch, returns a string describing the mismatch.
+
+		public final String pmom_check_param_values (
+			double check_p,
+			double check_c,
+			double check_b,
+			double check_alpha
+		) {
+			if (!( Math.abs(check_p - omat.p) <= 1.0e-10 * (Math.abs(check_p) + Math.abs(omat.p) + 1.0e-20) )) {
+				return "Mismatched value of p: expected " + omat.p + ", got " + check_p;
+			}
+			if (!( Math.abs(check_c - omat.c) <= 1.0e-10 * (Math.abs(check_c) + Math.abs(omat.c) + 1.0e-20) )) {
+				return "Mismatched value of c: expected " + omat.c + ", got " + check_c;
+			}
+			if (!( Math.abs(check_b - mexp.b) <= 1.0e-10 * (Math.abs(check_b) + Math.abs(mexp.b) + 1.0e-20) )) {
+				return "Mismatched value of b: expected " + mexp.b + ", got " + check_b;
+			}
+			if (!( Math.abs(check_alpha - mexp.alpha) <= 1.0e-10 * (Math.abs(check_alpha) + Math.abs(mexp.alpha) + 1.0e-20) )) {
+				return "Mismatched value of alpha: expected " + mexp.alpha + ", got " + check_alpha;
+			}
+			return null;
+		}
+
 	}
 
 
@@ -2648,7 +2724,7 @@ public class OEDisc2ExtFit {
 
 	private ConcurrentLinkedDeque<PairMagOmori> pmom_list;
 
-	// Handle object to obtain or allocate n PairMagOmori.
+	// Handle object to obtain or allocate a PairMagOmori.
 	// The handle should be created in a try-with-resources.
 
 	public class PairMagOmoriHandle implements AutoCloseable {
@@ -2715,7 +2791,7 @@ public class OEDisc2ExtFit {
 		}
 
 
-		// Calulcate the value of (10^a)*Q, given the branch ratio.
+		// Calculate the value of (10^a)*Q, given the branch ratio.
 		// Parameters:
 		//  n = Branch ratio.
 		//  tint = Time interval to use for the calculation.
@@ -2733,6 +2809,71 @@ public class OEDisc2ExtFit {
 			return pmom.pmom_calc_ten_a_q_from_branch_ratio (
 				n,
 				tint
+			);
+		}
+
+
+		// Calculate the value of (10^a)*Q, given the branch ratio.
+		// Parameters:
+		//  n = Branch ratio.
+		// This function calculates the productivity "a" such that the branch ratio equals n,
+		// and returns the value of (10^a)*Q.
+		// Note: This version uses the stored tint_br as the time interval.
+		// Note: The result is proportinal to n.  So, if it is desired to compute (10^a)*Q
+		// for multiple values of the branch ratio, this can be done by calling this function
+		// with n == 1, and then multiplying the returned value by each value of the branch ratio.
+
+		public final double pmom_calc_ten_a_q_from_branch_ratio (
+			double n
+		) {
+			return pmom.pmom_calc_ten_a_q_from_branch_ratio (
+				n
+			);
+		}
+
+
+//		// Get the number of groups.
+//		// Grouping must have been set up.
+//
+//		public final int pmom_get_group_count () {
+//			return grouping.group_count;
+//		}
+
+
+//		// Get the flag indicating if background rate is supported.
+//
+//		public final boolean pmom_get_f_background () {
+//			return f_background;
+//		}
+
+
+//		// Get the reference magnitude.
+//
+//		public final double get_mref () {
+//			return mref;
+//		}
+
+
+		// Check if the given parameter values agree with ours.
+		// Parameters:
+		//  check_p = Value of p to check.
+		//  check_c = Value of c to check.
+		//  check_b = Value ofb to check.
+		//  check_alpha = Value of alpha to check.
+		// Returns null if success.
+		// If mismatch, returns a string describing the mismatch.
+
+		public final String pmom_check_param_values (
+			double check_p,
+			double check_c,
+			double check_b,
+			double check_alpha
+		) {
+			return pmom.pmom_check_param_values (
+				check_p,
+				check_c,
+				check_b,
+				check_alpha
 			);
 		}
 	
@@ -3591,7 +3732,7 @@ public class OEDisc2ExtFit {
 
 	private ConcurrentLinkedDeque<AValueProd> avpr_list;
 
-	// Handle object to obtain or allocate n AValueProd.
+	// Handle object to obtain or allocate an AValueProd.
 	// The handle should be created in a try-with-resources.
 
 	public class AValueProdHandle implements AutoCloseable {
@@ -3752,6 +3893,14 @@ public class OEDisc2ExtFit {
 			avpr.avpr_get_grouped_unscaled_prod_all (prod_scnd, prod_main, prod_bkgd);
 			return;
 		}
+
+
+		// Get the number of groups.
+		// Grouping must have been set up.
+
+		public final int avpr_get_group_count () {
+			return grouping.group_count;
+		}
 	
 	}
 
@@ -3800,6 +3949,9 @@ public class OEDisc2ExtFit {
 		msup = 0.0;
 		mag_min = 0.0;
 		mag_max = 0.0;
+
+		mag_main = 0.0;
+		tint_br = 0.0;
 
 		f_omat_rup_targ_rup_src = true;
 		f_omat_rup_targ_int_src = true;
@@ -3877,6 +4029,11 @@ public class OEDisc2ExtFit {
 		this.msup = cat_params.msup;
 		this.mag_min = cat_params.mag_min_sim;
 		this.mag_max = cat_params.mag_max_sim;
+
+		// Set the export parameters
+
+		this.mag_main = calc_mag_main();
+		this.tint_br = get_like_time_interval();
 
 		// Set the matrix allocation flags
 
@@ -4049,6 +4206,8 @@ public class OEDisc2ExtFit {
 		result.append ("msup = "                   + msup                   + "\n");
 		result.append ("mag_min = "                + mag_min                + "\n");
 		result.append ("mag_max = "                + mag_max                + "\n");
+		result.append ("mag_main = "               + mag_main               + "\n");
+		result.append ("tint_br = "                + tint_br                + "\n");
 
 		if (grouping != null) {
 			result.append ("grouping.group_count = "     + grouping.group_count             + "\n");
@@ -4072,11 +4231,93 @@ public class OEDisc2ExtFit {
 
 
 
-	// Get the time interval used for calculating likelihood.
+	// Get the time interval used for calculating likelihood, in days.
 
 	public final double get_like_time_interval () {
 		final double[] a_interval_time = history.a_interval_time;
 		return a_interval_time[like_int_end] - a_interval_time[like_int_begin];
+	}
+
+
+
+
+	// Get the time interval used for interpreting branch ratio, in days.
+
+	public final double get_tint_br () {
+		return tint_br;
+	}
+
+
+
+
+	// Set the time interval used for interpreting branch ratio, in days.
+
+	public final void set_tint_br (double tint_br) {
+		this.tint_br = tint_br;
+		return;
+	}
+
+
+
+
+	// Calculate the mainshock magnitude.
+	// It is the largest magnitude among ruptures considered mainshocks, or NO_MAG_NEG if none.
+
+	private double calc_mag_main () {
+		final OERupture[] a_rupture_obj = history.a_rupture_obj;
+
+		final int nlo = main_rup_begin;
+		final int nhi = main_rup_end;
+
+		double mag = NO_MAG_NEG;
+
+		for (int i = nlo; i < nhi; ++i) {
+			final double x = a_rupture_obj[i].rup_mag;
+			if (mag < x) {
+				mag = x;
+			}
+		}
+
+		return mag;
+	}
+
+
+
+
+	// Get the mainshock magnitude.
+
+	public final double get_mag_main () {
+		return mag_main;
+	}
+
+
+
+
+	// Get fitting information.
+
+	public final OEDisc2InitFitInfo get_fit_info () {
+		OEDisc2InitFitInfo fit_info = new OEDisc2InitFitInfo();
+
+		int group_count = 0;
+		double[] a_group_time = null;
+		if (grouping != null) {
+			group_count = grouping.group_count;
+			a_group_time = get_a_group_time();
+		}
+
+		fit_info.set (
+			f_background,
+			group_count,
+			a_group_time,
+			mref,
+			msup,
+			mag_min,
+			mag_max,
+			mag_main,
+			tint_br
+		);
+
+		return fit_info;
 	}
 
 

@@ -431,9 +431,17 @@ public class OEStatsCalc {
 	//
 	// Combining the above formulas
 	//
-	//  (10^a)*Q = n * exp(v*(mref - mag_min)) / ( W(v*(mag_max - mag_min)) * (mag_max - mag_min) * b * log(10) * Integral(0, tint, ((t+c)^(-p))*dt)  )
+	//   (10^a)*Q = n * exp(v*(mref - mag_min)) / ( W(v*(mag_max - mag_min)) * (mag_max - mag_min) * b * log(10) * Integral(0, tint, ((t+c)^(-p))*dt)  )
 	//
 	// Notice that msup cancels out of the calculation.
+	//
+	// Notice that if alpha == b then this reduces to
+	//
+	//   Q = (msup - mref) / (mag_max - mag_min)
+	//
+	//   n = b * log(10) * 10^a * (msup - mref) * Integral(0, tint, ((t+c)^(-p))*dt)
+	//
+	//   (10^a)*Q = n / ( (mag_max - mag_min) * b * log(10) * Integral(0, tint, ((t+c)^(-p))*dt)  )
 
 	public static double calc_ten_a_q_from_branch_ratio (
 		double n,
@@ -781,6 +789,104 @@ public class OEStatsCalc {
 
 
 
+	// Calculate an ams-value for a given zero-mref ams-value.
+	// Parameters:
+	//  zams = Mainshock productivity parameter, assuming reference magnitude equal to ZAMS_MREF == 0.0.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Reference magnitude, for the definition of ams.
+	// Returns the ams-value, for the reference magnitude mref.
+
+	public static double calc_ams_from_zams (
+		double zams,
+		double b,
+		double alpha,
+		double mref
+	) {
+		return calc_a_new_from_mref_new (
+			zams,					// a_old
+			b,						// b
+			alpha,					// alpha
+			OEConstants.ZAMS_MREF,	// mref_old
+			mref					// mref_new
+		);
+	}
+
+
+
+
+	// Calculate zero-mref ams-value for a ginve ams-value
+	// Parameters:
+	//  ams = Mainshock productivity parameter, assuming reference magnitude equal to mref.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Reference magnitude, for the definition of ams.
+	// Returns the ams-value, for reference magnitude equal to ZAMS_MREF == 0.0.
+
+	public static double calc_zams_from_ams (
+		double ams,
+		double b,
+		double alpha,
+		double mref
+	) {
+		return calc_a_new_from_mref_new (
+			ams,					// a_old
+			b,						// b
+			alpha,					// alpha
+			mref,					// mref_old
+			OEConstants.ZAMS_MREF	// mref_new
+		);
+	}
+
+
+
+
+	// Calculate a mu-value for a given reference magnitude ZMU_MREF mu-value.
+	// Parameters:
+	//  zmu = Background rate parameter, assuming reference magnitude equal to ZMU_MREF.
+	//  b = Gutenberg-Richter parameter.
+	//  mref = Reference magnitude, for the definition of mu.
+	// Returns the mu-value, for the reference magnitude mref.
+
+	public static double calc_mu_from_zmu (
+		double zmu,
+		double b,
+		double mref
+	) {
+		return calc_mu_new_from_mref_new (
+			zmu,					// mu_old
+			b,						// b
+			OEConstants.ZMU_MREF,	// mref_old
+			mref					// mref_new
+		);
+	}
+
+
+
+
+	// Calculate the reference value ZMU_MREF mu-value for a ginve mu-value
+	// Parameters:
+	//  mu = Background rate parameter, assuming reference magnitude equal to mref.
+	//  b = Gutenberg-Richter parameter.
+	//  mref = Reference magnitude, for the definition of mu.
+	// Returns the mu-value, for reference magnitude equal to ZMU_MREF.
+
+	public final double calc_zmu_from_mu (
+		double mu,
+		double b,
+		double mref
+	) {
+		return calc_mu_new_from_mref_new (
+			mu,						// mu_old
+			b,						// b
+			mref,					// mref_old
+			OEConstants.ZMU_MREF	// mref_new
+		);
+	}
+
+
+
+
 	// Calculate the generalized factor "Q" for a magnitude range change.
 	// Parameters:
 	//  b = Gutenberg-Richter parameter.
@@ -794,7 +900,7 @@ public class OEStatsCalc {
 	//
 	// Returns the generalized conversion factor Q_gen, defined as:
 	//
-	//   Q_gen = ((10^a_old)*Q_old) / ((10^a_new)*Q_new)
+	//   Q_gen = ((10^a_new)*Q_new) / ((10^a_old)*Q_old)
 	//
 	//   a_old = Productivity "a" defined on magnitude range [mref_old, msup_old].
 	//   Q_old = Conversion factor, to change from  [mref_old, msup_old] to  [mag_min_old, mag_max_old].
@@ -811,7 +917,7 @@ public class OEStatsCalc {
 	//
 	//   v = log(10) * (alpha - b)
 	//
-	// Notice that if alpna == b then this reduces to
+	// Notice that if alpha == b then this reduces to
 	//
 	//   Q_gen = (mag_max_old - mag_min_old) / (mag_max_new - mag_min_new)
 	//
@@ -869,7 +975,7 @@ public class OEStatsCalc {
 	//
 	// Returns the generalized conversion factor Q_gen, defined as:
 	//
-	//   Q_gen = ((10^a_old)*Q_old) / ((10^a_new)*Q_new)
+	//   Q_gen = ((10^a_new)*Q_new) / ((10^a_old)*Q_old)
 	//
 	//   a_old = Productivity "a" defined on magnitude range [mref_old, msup_old].
 	//   Q_old = 1.
@@ -882,7 +988,7 @@ public class OEStatsCalc {
 	//
 	//   v = log(10) * (alpha - b)
 	//
-	// Notice that if alpna == b then this reduces to
+	// Notice that if alpha == b then this reduces to
 	//
 	//   Q_gen = 1
 	//
