@@ -198,8 +198,8 @@ public class GraphicalForecast{
 		if (iter != null) {
 			while (iter.hasNext()){
 				Parameter<?> param = (Parameter<?>) iter.next();
-				if (param.getName().equals(paramName));
-				return param.getValue().toString();
+				if (param.getName().equals(paramName))
+					return param.getValue().toString();
 			}
 		} 
 		return "";
@@ -400,7 +400,7 @@ public class GraphicalForecast{
 		else if (pHeadline_display < 0.995)
 			tags.put("PHEADLINE_DISP", String.format( "%1.0f", pHeadline_display*100));
 		else if (pHeadline_display <= 1.0) 
-			tags.put("PHEADLINE_DISP", ">99");
+			tags.put("PHEADLINE_DISP", "99");
 		else 
 			tags.put("PHEADLINE_DISP", "NaN");
 		
@@ -415,6 +415,9 @@ public class GraphicalForecast{
 				break;
 			case 2:
 				tags.put("FORECAST_INTERVAL", "month");
+				break;
+			case 3:
+				tags.put("FORECAST_INTERVAL", "year");
 				break;
 			default:
 				tags.put("FORECAST_INTERVAL", "year");
@@ -765,13 +768,13 @@ public class GraphicalForecast{
 		
 		GregorianCalendar forecastEndDate = new GregorianCalendar();
 		
-		
+		String[] durString = new String[]{"\"1 Day\"","\"1 Week\"","\"1 Month\"","\"1 Year\""};
 		//header
 		jsonString.append(""
 				+ "{\n"
 				+ "\"creationTime\":" + startTimeMillis + ",\n"
 				+ "\"expireTime\":" + expireTimeMillis + ",\n"
-				+ "\"advisoryTimeFrame\":" + "\"1 Month\"" + ",\n"
+				+ "\"advisoryTimeFrame\":" + durString[preferredForecastInterval] + ",\n"
 				+ "\"template\":\"Mainshock\",\n"
 				+ "\"injectableText\":\"\",\n"
 				);
@@ -803,7 +806,7 @@ public class GraphicalForecast{
 				+ "\"forecast\":["
 				);
 		
-		String[] durString = new String[]{"\"1 Day\"","\"1 Week\"","\"1 Month\"","\"1 Year\""};
+
 		for (int j = 0; j<predictionIntervals.length; j++){
 			forecastEndDate.setTimeInMillis(forecastStartDate.getTimeInMillis() + (long) (predictionIntervals[j]*ETAS_StatsCalc.MILLISEC_PER_DAY));
 			foreshockProbability = aftershockModel.getProbabilityWithAleatory(aftershockModel.getMainShockMag(),
@@ -867,120 +870,120 @@ public class GraphicalForecast{
 		}
 	}
 	
-	public void writeSummaryJsonNexp(File outputFile, ETAS_AftershockModel aftershockModel, GregorianCalendar eventDate,
-			GregorianCalendar startDate, double[][] observedNumber, double[][] observedFractile) {
-	StringBuilder jsonString = new StringBuilder();
-	
-	long startTimeMillis = System.currentTimeMillis();
-	long expireTimeMillis = startTimeMillis + (long)3.1573603746e10;
-	
-	int num3s = aftershockModel.aftershockList.getRupsAboveMag(2.99d).size();
-	int num5s = aftershockModel.aftershockList.getRupsAboveMag(4.99d).size();
-	int num6s = aftershockModel.aftershockList.getRupsAboveMag(5.99d).size();
-	int num7s = aftershockModel.aftershockList.getRupsAboveMag(6.99d).size();
-	
-	double foreshockProbability;
-	
-	GregorianCalendar forecastEndDate = new GregorianCalendar();
-	
-	
-	//header
-	jsonString.append(""
-			+ "{\"creationTime\":" + startTimeMillis + ","
-			+ "\"expireTime\":" + expireTimeMillis + ","
-			+ "\"advisoryTimeFrame\":" + "\"1 Month\"" + ","
-			+ "\"template\":\"Mainshock\","
-			+ "\"injectableText\":\"\","
-			);
-
-	//observations
-	jsonString.append(""
-			+ "\"observations\":[{\"magnitude\":3.0,\"count\":" + num3s 
-			+ "},{\"magnitude\":5.0,\"count\":" + num5s 
-			+ "},{\"magnitude\":6.0,\"count\":" + num6s
-			+ "},{\"magnitude\":7.0,\"count\":" + num7s 
-			+ "}],"
-			);
-	 
-	//model
-	jsonString.append(""
-			+ "\"model\":{\"name\":\"Epidemic-Type aftershock model (Bayesian Combination)\",\"reference\":\"#url\",\"parameters\":{" 
-			+ "\"ams\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_ams())
-			+ ",\"a\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_a()) 
-			+ ",\"b\":" + String.format("%3.2f", aftershockModel.get_b()) 
-			+ ",\"magMain\":" + String.format("%2.1f", aftershockModel.getMainShockMag()) 
-			+ ",\"p\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_p()) 
-			+ ",\"c\":" + String.format("%5.4f", aftershockModel.getMaxLikelihood_c())
-			+ ",\"Mc\":" + String.format("%2.1f", aftershockModel.magComplete)
-			+ "}},\"forecast\":["
-			);
-	
-	String[] durString = new String[]{"\"1 Day\"","\"1 Week\"","\"1 Month\"","\"1 Year\""};
-	for (int j = 0; j<predictionIntervals.length; j++){
-		forecastEndDate.setTimeInMillis(forecastStartDate.getTimeInMillis() + (long) (predictionIntervals[j]*ETAS_StatsCalc.MILLISEC_PER_DAY));
-		foreshockProbability = aftershockModel.getProbabilityWithAleatory(aftershockModel.getMainShockMag(),
-				aftershockModel.getForecastMinDays(), aftershockModel.getForecastMinDays() + predictionIntervals[j]);
-		
-		
-		jsonString.append(""
-				+ "{\"timeStart\":" + forecastStartDate.getTimeInMillis() 
-				+ ",\"timeEnd\":" + forecastEndDate.getTimeInMillis()
-				+ ",\"label\":" + durString[j] 
-						+ ",\"bins\":["
-				);
-		
-		for (int i = 0; i < predictionMagnitudes.length; i++) {
-			double mag = predictionMagnitudes[i];
-
-			if (2.99 < mag && mag < 7.01) { //added M4s NvdE 7/3/2020
-				jsonString.append(""
-						+ "{\"magnitude\":" + String.format("%2.1f", mag)
-						+ ",\"p50median\":" + String.format("%d", (int) number[i][j][0])
-						+ ",\"p95minimum\":" + String.format("%d", (int) number[i][j][1])
-						+ ",\"p95maximum\":" + String.format("%d", (int) number[i][j][2])
-						+ ",\"probability\":" + String.format("%5.4f",probability[i][j])
-						+ ",\"observedNumber\":" + String.format("%d", (int) observedNumber[i][j])
-						+ ",\"observedFractile\":" + String.format("%5.4f", observedFractile[i][j])
-						+ "}");
-				if (mag < 7) jsonString.append(",");
-			}
-		}
-		
-		jsonString.append(""
-				+ "],\"aboveMainshockMag\":{"
-				+ "\"magnitude\":" + String.format("%2.1f", aftershockModel.getMainShockMag())
-				+ ",\"probability\":" + String.format("%5.4f", foreshockProbability)
-				+ "}}"
-				);
-		if (j < predictionIntervals.length - 1) jsonString.append(",");
-	}
-	jsonString.append("]}");
-	if(D) System.out.println(jsonString);
-		
-	//write to a file
-	FileWriter fw;
-	try {
-		fw = new FileWriter(outputFile, false);
-	} catch (IOException e1) {
-		//				e1.printStackTrace();
-		System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
-		return;
-	}
-
-	try {
-		fw.append(jsonString);
-	} catch (IOException e) {
-		//					e.printStackTrace();
-		System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
-	}
-
-	try {
-		fw.close();
-	} catch (IOException e) {
-		//				e.printStackTrace();
-		System.err.println("Problem closing file.");
-	}
-}
+//	public void writeSummaryJsonNexp(File outputFile, ETAS_AftershockModel aftershockModel, GregorianCalendar eventDate,
+//			GregorianCalendar startDate, double[][] observedNumber, double[][] observedFractile) {
+//	StringBuilder jsonString = new StringBuilder();
+//	
+//	long startTimeMillis = System.currentTimeMillis();
+//	long expireTimeMillis = startTimeMillis + (long)3.1573603746e10;
+//	
+//	int num3s = aftershockModel.aftershockList.getRupsAboveMag(2.99d).size();
+//	int num5s = aftershockModel.aftershockList.getRupsAboveMag(4.99d).size();
+//	int num6s = aftershockModel.aftershockList.getRupsAboveMag(5.99d).size();
+//	int num7s = aftershockModel.aftershockList.getRupsAboveMag(6.99d).size();
+//	
+//	double foreshockProbability;
+//	
+//	GregorianCalendar forecastEndDate = new GregorianCalendar();
+//	
+//	String[] durString = new String[]{"\"1 Day\"","\"1 Week\"","\"1 Month\"","\"1 Year\""};
+//	
+//	//header
+//	jsonString.append(""
+//			+ "{\"creationTime\":" + startTimeMillis + ","
+//			+ "\"expireTime\":" + expireTimeMillis + ","
+//			+ "\"advisoryTimeFrame\":" + durString[preferredForecastInterval] + ","
+//			+ "\"template\":\"Mainshock\","
+//			+ "\"injectableText\":\"\","
+//			);
+//
+//	//observations
+//	jsonString.append(""
+//			+ "\"observations\":[{\"magnitude\":3.0,\"count\":" + num3s 
+//			+ "},{\"magnitude\":5.0,\"count\":" + num5s 
+//			+ "},{\"magnitude\":6.0,\"count\":" + num6s
+//			+ "},{\"magnitude\":7.0,\"count\":" + num7s 
+//			+ "}],"
+//			);
+//	 
+//	//model
+//	jsonString.append(""
+//			+ "\"model\":{\"name\":\"Epidemic-Type aftershock model (Bayesian Combination)\",\"reference\":\"#url\",\"parameters\":{" 
+//			+ "\"ams\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_ams())
+//			+ ",\"a\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_a()) 
+//			+ ",\"b\":" + String.format("%3.2f", aftershockModel.get_b()) 
+//			+ ",\"magMain\":" + String.format("%2.1f", aftershockModel.getMainShockMag()) 
+//			+ ",\"p\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_p()) 
+//			+ ",\"c\":" + String.format("%5.4f", aftershockModel.getMaxLikelihood_c())
+//			+ ",\"Mc\":" + String.format("%2.1f", aftershockModel.magComplete)
+//			+ "}},\"forecast\":["
+//			);
+//	
+//	for (int j = 0; j<predictionIntervals.length; j++){
+//		forecastEndDate.setTimeInMillis(forecastStartDate.getTimeInMillis() + (long) (predictionIntervals[j]*ETAS_StatsCalc.MILLISEC_PER_DAY));
+//		foreshockProbability = aftershockModel.getProbabilityWithAleatory(aftershockModel.getMainShockMag(),
+//				aftershockModel.getForecastMinDays(), aftershockModel.getForecastMinDays() + predictionIntervals[j]);
+//		
+//		
+//		jsonString.append(""
+//				+ "{\"timeStart\":" + forecastStartDate.getTimeInMillis() 
+//				+ ",\"timeEnd\":" + forecastEndDate.getTimeInMillis()
+//				+ ",\"label\":" + durString[j] 
+//						+ ",\"bins\":["
+//				);
+//		
+//		for (int i = 0; i < predictionMagnitudes.length; i++) {
+//			double mag = predictionMagnitudes[i];
+//
+//			if (2.99 < mag && mag < 7.01) { //added M4s NvdE 7/3/2020
+//				jsonString.append(""
+//						+ "{\"magnitude\":" + String.format("%2.1f", mag)
+//						+ ",\"p50median\":" + String.format("%d", (int) number[i][j][0])
+//						+ ",\"p95minimum\":" + String.format("%d", (int) number[i][j][1])
+//						+ ",\"p95maximum\":" + String.format("%d", (int) number[i][j][2])
+//						+ ",\"probability\":" + String.format("%5.4f",probability[i][j])
+//						+ ",\"observedNumber\":" + String.format("%d", (int) observedNumber[i][j])
+//						+ ",\"observedFractile\":" + String.format("%5.4f", observedFractile[i][j])
+//						+ "}");
+//				if (mag < 7) jsonString.append(",");
+//			}
+//		}
+//		
+//		jsonString.append(""
+//				+ "],\"aboveMainshockMag\":{"
+//				+ "\"magnitude\":" + String.format("%2.1f", aftershockModel.getMainShockMag())
+//				+ ",\"probability\":" + String.format("%5.4f", foreshockProbability)
+//				+ "}}"
+//				);
+//		if (j < predictionIntervals.length - 1) jsonString.append(",");
+//	}
+//	jsonString.append("]}");
+//	if(D) System.out.println(jsonString);
+//		
+//	//write to a file
+//	FileWriter fw;
+//	try {
+//		fw = new FileWriter(outputFile, false);
+//	} catch (IOException e1) {
+//		//				e1.printStackTrace();
+//		System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+//		return;
+//	}
+//
+//	try {
+//		fw.append(jsonString);
+//	} catch (IOException e) {
+//		//					e.printStackTrace();
+//		System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+//	}
+//
+//	try {
+//		fw.close();
+//	} catch (IOException e) {
+//		//				e.printStackTrace();
+//		System.err.println("Problem closing file.");
+//	}
+//}
 
 	public String getScenarioText() {
 		// write some scenario text, responsive to the mainshock magnitude
@@ -1013,12 +1016,6 @@ public class GraphicalForecast{
 			pScenario2 = aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays) - pScenario3;
 			pScenario1 = 1 - aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays);
 		}
-//		while(pScenario2 > pScenario1) {
-//			mag1++;
-//			pScenario3 = aftershockModel.getProbabilityWithAleatory(mag2, tMinDays, tMaxDays);
-//			pScenario2 = aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays) - pScenario3;
-//			pScenario1 = 1 - aftershockModel.getProbabilityWithAleatory(mag1, tMinDays, tMaxDays);
-//		}
 	
 		// set scenario box colors/saturations
 		int RGBvals;
@@ -1069,20 +1066,14 @@ public class GraphicalForecast{
 		String scenario2 = new String();
 		String scenario3 = new String();
 		
-//		if (pScenario1 >= pScenario2) {
-			tags.put("SCENARIO1_QUAL", "Most likely");
-			tags.put("SCENARIO1_QUAL_TEXT", "The most likely");
-			tags.put("SCENARIO2_QUAL", "Less likely");
-			tags.put("SCENARIO2_QUAL_TEXT", "A less likely");
-//		} else {
-//			tags.put("SCENARIO1_QUAL", "Best Case");
-//			tags.put("SCENARIO1_QUAL_TEXT", "The best case");
-//			tags.put("SCENARIO2_QUAL", "Most Likely");
-//			tags.put("SCENARIO2_QUAL_TEXT", "The most likely");
-//		}	
+		tags.put("SCENARIO1_QUAL", "Most likely");
+		tags.put("SCENARIO1_QUAL_TEXT", "The most likely");
+		tags.put("SCENARIO2_QUAL", "Less likely");
+		tags.put("SCENARIO2_QUAL_TEXT", "A less likely");
+
 		tags.put("SCENARIO3_QUAL", "Least likely");
 
-		//exchange "most likely" with "best case" if the probability of Scenario 2 is higher than Scenario 1
+		//TODO: increase the magnitude threshold until scenario 1 is higher probability than scenario 2 
 		
 //		if (mag0 > 7.69999) {
 //			// <67 / 7 - Mmain / Mmain+;
@@ -1218,11 +1209,11 @@ public class GraphicalForecast{
 				+"		<meta name=\"software-version\" content=\"2021-10-01\">\n"
 				+"		<meta name=\"software-version-date\" content=\"2021-10-01\">\n"
 				+"		<meta name=\"advisory-generated-date\" content=\"" + tags.get("V_DATE") + "\">\n"
-				+"		<meta name=\"disclaimer\" content=\"This advisory was generated using softare developed on the OpenSHA platform by the\n"
-				+"			US Geological Survey and the US-AID Bureau of Humanitarian Assistance. The forecast probabilities provided herein\n"
-				+"		    describe the distribution of outcomes of past aftershock sequences, but any sequence can present surprises.\n "
-				+"			This forecast for internal US Government use only. Requests for information regarding this forecast may be directed\n"
-				+ "			to the Bureau of Humanitarian Assistance.\">\n"
+				+"		<meta name=\"disclaimer\" content=\"This advisory was generated using the USGS AftershockForecaster softare developed\n"
+				+"			on the OpenSHA platform by the US Geological Survey and the US-AID Bureau of Humanitarian Assistance. The forecast\n"
+				+" 			provided herein is based primarily on the range of outcomes of past aftershock sequences in similar environments.\n"
+				+"			While this forecast describes the most likely outcomes for sequences like this one, it should not be treated as a\n"
+				+"			a specific prediction. This document is for official use only.\">\n"
 				+"		<meta name=\"OpenSHA\" content=\"www.opensha.org/apps\">\n"
 				+"		<link rel=\"stylesheet\" href=\"BHAforecast.css\">\n"
 				+"		<title>Aftershock Advisory and Forecast</title>\n"
@@ -1238,7 +1229,7 @@ public class GraphicalForecast{
 				+ "        <td class=\"leftLogo\"><img src=\"USAID_logo.png\" alt=\"\" class=\"logo\"></td>\n"
 				+ "        <td><span class=\"disclaimer\">" + tags.get("DISCLAIMER") + "</span>\n"
 				+ "				<br><h1>Aftershock Advisory and Forecast</h1></td>\n"
-				+ "        <td class=\"rightLogo\"><img src=\"USGS_logo.png\" alt=\"\" class=\"logo\"></td>\n"
+				+ "        <td class=\"rightLogo\"><img src=\"Logo.png\" alt=\"\" class=\"logo\"></td>\n"
 				+ "      </tr>\n"
 				+ "    </table>\n"
 				+ "  </div>\n"
@@ -1686,533 +1677,533 @@ public class GraphicalForecast{
 		
 		
 	// Build an html document for displaying the advisory
-	public void writeHTMLclassic(File outputFile){
-	
-		StringBuilder outputString = new StringBuilder();
-	
-		StringBuilder headString = new StringBuilder();
-		StringBuilder infoString = new StringBuilder();
-		StringBuilder probTableString = new StringBuilder();
-		StringBuilder keyString = new StringBuilder();
-		StringBuilder imgString = new StringBuilder(); 
-		
-		//parameters for the svg table
-		double barHeight = 40;
-		if(predictionIntervals.length==2)
-			barHeight = 60;
-		else if(predictionIntervals.length==1)
-			barHeight = 120;
-		
-		
-		double barWidth = 50;
-		double barPadding = 2;
-//		String[][] tableTags = new String[][]{{"P1_DA","P2_DA","P3_DA","P4_DA","P5_DA","P6_DA","P7_DA"},
-//				{"P1_WK","P2_WK","P3_WK","P4_WK","P5_WK","P6_WK","P7_WK"},
-//				{"P1_MO","P2_MO","P3_MO","P4_MO","P5_MO","P6_MO","P7_MO"},
-//				{"P1_YR","P2_YR","P3_YR","P4_YR","P5_YR","P6_YR","P7_YR"}};
-		String[][] tableTags = new String[][]{{"P1_DA","P2_DA","P3_DA","P4_DA","P5_DA","P6_DA"},
-				{"P1_WK","P2_WK","P3_WK","P4_WK","P5_WK","P6_WK"},
-				{"P1_MO","P2_MO","P3_MO","P4_MO","P5_MO","P6_MO"},
-				{"P1_YR","P2_YR","P3_YR","P4_YR","P5_YR","P6_YR"}};
-		
-					
-		
-		headString.append(""
-				+"    <!DOCTYPE html>\n"
-				+"	  <html>\n"
-				+"    <head>\n"
-				+" 		<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\">\n"
-				+" 		<meta name=\"source\" content=\"USGS AftershockForecaster\">\n"
-				+"		<meta name=\"software-version\" content=\"Beta\">\n"
-				+"		<meta name=\"software-version-date\" content=\"2018-05-01\">\n"
-				+"		<meta name=\"advisory-generated-date\" content=\"" + tags.get("V_DATE") + "\">\n"
-				+"		<meta name=\"disclaimer\" content=\"This advisory was generated using softare developed on the OpenSHA platform by the\n"
-				+"			US Geological Survey and the US-AID Bureau of Humanitarian Assistance. The information provided in this document\n"
-				+"			is not an official statement of the US Geological Survey or any other US Government Entity.\">\n"
-				+"		<meta name=\"OpenSHA\" content=\"www.opensha.org/apps\">\n"
-				+"        <style>\n"
-				+"            body {font-family:helvetica; background-color: white; page-break-inside:avoid}\n"
-				+"            h1 {color: black; font-family:helvetica; font-size:20pt; margin:0}\n"
-				+"            h2 {color: black; font-family:helvetica; font-size:14pt; margin:0; text-align:center}\n"
-				+"            h3 {color: black; font-family:helvetica; font-size:12pt; margin:0;}\n"
-				+"            th {font-weight:normal}\n"
-				+"			  tr {padding:0px}\n"
-				+"            td {padding:0px}\n"
-				+"            \n"
-				+" 			  .imageButton {color:#000000;background-color:#eeeeee; border:1px solid black; width:150px; padding:2px; font-size:10pt;}\n"
-	            +"			  .durButton {color:#000000; background-color:#eeeeee; border:1px solid black; width:100px; padding:2px; font-size:10pt;}\n"
-	            +"			  .durButtonDisabled {color:#cccccc; background-color:#eeeeee; border:1px solid black; width:100px; padding:2px; font-size:10pt;}\n"
-	            +" 			  .activeImageButton {color:#dd0000; background-color:#ffeeee; border:1px solid black; width:150px; padding:2px; font-size:10pt;}\n"
-	            +"			  .activeDurButton {color:#dd0000; background-color:#ffeeee; border:1px solid black; width:100px; padding:2px; font-size:10pt;}\n"
-	            +"			  .activeDurButtonDisabled {color:#cccccc; background-color:#eeeeee; border:1px solid black; width:100px; padding:2px; font-size:10pt;}\n"
-				+"            .forecast { font-size:14px; border:0px solid gray; border-collapse:collapse; margin:0; text-align:center}\n"
-				+"            .forecastHeader { font-size:16px; border:0px solid gray; border-collapse:collapse; text-align:center; vertical-align:center; font-weight:normal; height:20px;}\n"
-				+"            .forecastValue { font-size:12px; border:0px solid gray; border-collapse:collapse; text-align:center; margin:0; vertical-align:bottom; color:#666666;}\n"
-				+"            .forecastKey { font-size:12px; border:0px solid gray; border-collapse:collapse; text-align:center; margin:0; vertical-align:bottom; padding:0px}\n"
-				+"            .forecastBar { height:"+(int)barHeight+"px; width:" + (int)barWidth + "px; padding-top:1px;}\n"
-				+"            .forecastRow {border:1px solid #dddddd; border-collapse:collapse; padding-top:1px;}\n"
-				+"\n"				
-				+"            .forecastBox {stroke-width:0px; x:"+(int)barPadding+"px; width:"+(int)(barWidth-2*barPadding)+"px}\n"
-				+" 			  .forecastBoxText {text-anchor:middle; fill:#666666;}\n"
-				+" 			  .key {width:30px;height:12px}\n"
-				+"            div {min-width:800px; max-width:800px; border-collapse:collapse}\n"
-				+"            \n"
-				+"        </style>\n"
-				+"\n"
-				+"		<script>\n"
-				+" 			// Script to crop Shakemap constant amount from bottom, accounting for different Shakemap heights\n"
-				+" 			function cropShakemap(){\n"
-				+ "				var imageData = new Image();\n"
-				+" 				imageData.src = document.getElementById('shakemap').src;\n"
-		        +" 				var shakemapHeight = imageData.height;\n"
-		        +" 				var shakemapWidth = imageData.width;\n"
-		        +" 				var shakemapCropHeight = shakemapHeight * (250/shakemapWidth) - 63;\n"
-		        +" 				document.getElementById('shakemapCrop').style.height = shakemapCropHeight + \"px\";\n"
-		        +" 			}\n"
-		        +"\n"
-		        +"		</script>\n"
-				+"\n"
-				+"	    <title>Aftershock Advisory</title>\n"
-				+"    </head>\n\n");
-
-		infoString.append("    <body onload=\"showTable()\">\n"
-				+"        <div>\n"
-				+"            <table style=\"text-align:center\">\n"
-				+"                <tr>\n"
-				+"                    <td style=\"width:150px\">\n"  
-				+"						<img id=\"logo\" src=\"Logo.png\" alt=\"\" style=\"max-height:60px;max-width:150px\">\n"
-				+"  				  </td>\n"
-				+"                    <td style=\"width:500px;height:60px\"><h1 >Aftershock Advisory and Forecast</h1></td>\n"
-				+"					  </td>\n"
-				+"                    <td style=\"width:150px\">\n"  
-				+"						<img id=\"logo\" src=\"Logo.png\" alt=\"\" style=\"max-height:60px;max-width:150px\">\n"
-				+"  				  </td>\n"
-				+"                </tr>\n"
-				+"            </table>\n"
-				+"            <br>\n"
-				+"            <table>\n"
-				+"                <tr>\n"
-				+"					  <!-- Mainshock and forecast information -->\n"	
-				+"                    <td style=\"width:400px\"><h2 style=\"text-align:left\">" + tags.get("MS_MAG") + " eventID:" + tags.get("MS_NAME") + "</h2></td>\n"
-				+"                    <td style=\"width:400px\"><h3 style=\"text-align:right\">Forecast Generated: " + tags.get("V_DATE") + " UTC</h3></td>\n"
-				+"                </tr>\n"
-				+"            </table>\n"
-				+"            <table>\n"
-				+"                <tr>\n"
-				+"					  <!-- Mainshock origin information -->\n"
-				+"                    <td style=\"margin-left:0px;width:300px\"><h3>Origin: " + tags.get("MS_DATETIME") + " UTC</h3></td>\n"
-				+"                    <td style=\"text-align:center;margin:auto;width:300px\"><h3>Location: " + tags.get("MS_LAT") + " " + tags.get("MS_LON") + "</h3></td>\n"
-				+"                    <td style=\"text-align:right;margin-right:0px;width:200px\"><h3>Depth: " + tags.get("MS_DEPTH") + "</h3></td>\n"
-				+"                </tr>\n"
-				+"            </table>\n"
-				+"        </div>\n"
-				+"        <div>\n"
-				+"			  <!-- Descriptive forecast text -->\n"
-				+"            <p style=\"text-align:justify\">" + tags.get("DESCRIPTIVE_TEXT") + "</p>\n"
-				+"        </div>\n\n");
-
-		probTableString.append("        <div style=\"width:800px;text-align:center;\">\n"
-				+"            <p><h2>Anticipated aftershock activity</h2>\n"
-				+"            <p style=\"margin-top:0px\">Forecast start date: " + tags.get("F_START_ABS") + " UTC</p>\n"
-				+"        </div>\n"
-				+"\n"
-				+"		  <!-- Forecast table with probabilities of different magnitudes -->\n"
-//				+"        <table style=\"width:650px;margin-left:60px;margin-right:100px\"><!-- Table of Probabilities -->\n"
-				+"        <table style=\"width:700px;margin-left:25px;margin-right:50px\"><!-- Table of Probabilities -->\n"
-				+"            <tr>\n"
-			    +"				  <td>\n"
-                +"					<p style=\"text-align:center;font-size:14px\">\n"
-                +"					<br>\n"
-                +" 					Over the next:\n"
-                +" 					</p>\n"
-                +"	      		  </td>\n"
-				+"                <td>\n"
-				+"                    <table>\n"
-				+"                        <tr>\n"
-				+"                            <th></th>\n"
-				+"                            <th class=\"forecast\">Chance of at least one aftershock larger than:</th>\n"
-				+"                        </tr>\n"
-				+"                        <tr>\n"
-				+"                            <td>\n"
-				+"                                <table>\n"
-				+"                                    <tr><th class=\"forecastHeader\" style=\"width:60px\"></th> </tr>\n"
-		);
-//		if (predictionIntervals.length < 4) //code is set up to issue one day bar graph only if the forecast max interval is set to one month. Commenting out for Puerto Rico Earthquake  
-			probTableString.append("                                     <tr><th class=\"forecastBar\">Day</th></tr>\n");
-		if (predictionIntervals.length > 1)	
-			probTableString.append("                                     <tr><th class=\"forecastBar\">Week</th></tr>\n");
-		if (predictionIntervals.length > 2)
-			probTableString.append("                                    <tr><th class=\"forecastBar\">Month</th></tr>\n");
-		if (predictionIntervals.length > 3)
-			probTableString.append("                                    <tr><th class=\"forecastBar\">Year</th></tr>\n");
-		probTableString.append("                                </table>\n"
-				+"                            </td>\n"
-				+"                            <td>\n"
-				+"                                <table class=\"forecast\">\n"
-				+"                                    <tr>\n"
-				+"                                        <th class=\"forecastHeader\">M3</th>\n"
-				+"                                        <th class=\"forecastHeader\">M4</th>\n"
-				+"                                        <th class=\"forecastHeader\">M5</th>\n"
-				+"                                        <th class=\"forecastHeader\">M6</th>\n"
-				+"                                        <th class=\"forecastHeader\">M7</th>\n"
-				+"                                        <th class=\"forecastHeader\">M8</th>\n"
-//				+"                                        <th class=\"forecastHeader\">M9</th>\n"
-				+"                                    </tr>\n"
-				+"                                    \n");
-
-		
-		
-		//generate forecast table
-		int maxRow = predictionIntervals.length;
-		int minRow = 0;
-//		if (predictionIntervals.length == 4) //commented out for PR earthquake
-//				minRow = 1;
-		
-		for (int j = minRow; j<maxRow; j++){
-			probTableString.append(""
-					+"                                    <tr class = \"forecastRow\">\n");
-
-			for (int i = 0; i<MMIcolors.length; i++){
-				double probVal = probability[i][j];
-				double height = barHeight*probVal;
-				String probStr = tags.get(tableTags[j][i]); 
-				double yVal;
-				if (probVal > 0.50) yVal = 11 + barHeight*(1 - probVal);
-				else yVal = barHeight*(1 - probVal) - 3;
-
-				probTableString.append(""
-						+"                                        <td class=\"forecastValue\">\n"
-						+"												<svg class=\"forecastBar\">\n"
-						+"													<rect class = \"forecastBox\" y=\"" + (int) (barHeight - (int) height) + "px\" height=\"" + ((int) height) + "px\" width=\"" + barWidth + "px\" fill=\""+MMIcolors[i]+"\" />\n"
-						+"													<text class = \"forecastBoxText\" x=\"25px\" y=" + String.format("\"%.0fpx\"", yVal) + ">"+probStr+"</text>\n"
-						+"												</svg>\n"
-						+"                                        </td>\n"
-						);
-			}
-			probTableString.append(""
-					+"                                    </tr>\n");
-		}
-		
-		probTableString.append(""
-				+"                                </table>\n"
-				+"                            </td>\n"
-				+"                        </tr>\n"
-				+"                    </table>\n"
-				+"                </td>\n\n");
-		
-		keyString.append("               <td style=\"vertical-align:top\">\n"
-				+"                    <!-- MMI key-->\n"
-				+"                    <table>\n"
-				+"                        <tr><td style=\"height:23px\"></td></tr>\n"
-				+"                        <tr><td class=\"forecast\">Key to colors*</td></tr>\n"
-				+"                        <tr><td>\n"
-				+"                            <table class=\"forecastKey\" style=\"border:1px solid #dddddd;\">\n"
-				+"                                <tr style=\"font-weight:bold\">\n"
-				+"                                    <th style=\"width:50px; font-weight:bold\"></th>\n"
-//				+"                                    <th style=\"width:70px; font-weight:bold\">peak MMI</th>\n"
-				+"                                    <th style=\"width:145px; font-weight:bold\">Potential Shaking</th>\n"
-				+"                                    <th style=\"width:145px; font-weight:bold\">Potential Damage</th>\n"
-				+"                                </tr>\n"
-				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[0] + "\"/></svg></td>\n"
-//				+"                                    <td>II-IV</td>\n"
-				+"                                    <td>weak - light</td>\n"
-				+"                                    <td>none</td>\n"
-				+"                                </tr>\n"
-				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[1] + "\"/></svg></td>\n"
-//				+"                                    <td>III-V</td>\n"
-				+"                                    <td>weak - moderate</td>\n"
-				+"                                    <td>very light</td>\n"
-				+"                                </tr>\n"
-				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[2] + "\"/></svg></td>\n"
-//				+"                                    <td>V-VII</td>\n"
-				+"                                    <td>moderate - strong</td>\n"
-				+"                                    <td>light - moderate</td>\n"
-				+"                                </tr>\n"
-				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[3] + "\"/></svg></td>\n"
-//				+"                                    <td>VI-VIII</td>\n"
-				+"                                    <td>strong - severe</td>\n"
-				+"                                    <td>moderate - heavy</td>\n"
-				+"                                </tr>\n"
-				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[4] + "\"/></svg></td>\n"
-//				+"                                    <td>VIII-X</td>\n"
-				+"                                    <td>severe - violent</td>\n"
-				+"                                    <td>heavy</td>\n"
-				+"                                </tr>\n"
-				+"                                <tr>\n"
-				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[5] + "\"/></svg></td>\n"
-//				+"                                    <td>X+</td>\n"
-				+"                                    <td>violent - extreme</td>\n"
-				+"                                    <td>very heavy</td>\n"
-				+"                                </tr>\n"
-				+"                            </table>\n"
-				+"                        </td></tr>\n"
-				+"                    </table>\n"
-				+"						<p class=\"forecastKey\" style=\"font-size:10px\">*This table gives typical peak shaking and intensity levels associated with the forecast magnitudes. Actual shaking is affected by many factors, and damage may be higher in vulnerable structures.</p>\n"
-				+"                </td>\n"
-				+"            </tr>\n"
-				+"        </table>\n\n");
-
-		// set up javascript to select between different image products. Durations and styles. 
-		imgString.append(""
-				+" 		<br>\n"
-				+"		<div style=\"width:800px;height:500px;margin-left:0px;\">\n"
-		);
-		
-		
-		imgString.append(" "
-				+"  	<!-- Mainshock shakemap -->\n"
-				+"		<table style=\"width:800px;vertical-align:top;text-align:center;\">\n"
-				+"	    	<tr>\n"
-				+"	        	<td style=\"width:250px;display:inline\">\n"
-				+"			    	<br>\n"
-				+" 					<p class=\"forecast\" style=\"white-space:pre\">Mainshock ShakeMap\n(previous shaking)</p>\n"
-				+" 					<div style=\"height:230px;overflow:hidden;margin: 0 -275px 0px -275px;\" id=\"shakemapCrop\">\n"
-				+" 						<!-- Change the link URL to point to your local event summary if preferred. Default is to go to USGS summary -->\n"
-				+" 						<a href=\"" + eventURL + "\">\n");
-		if (shakeMapURL != null)
-			imgString.append(" "
-					+"	        			<img style=\"width:250px\" src=\"" + shakeMapURL + "\" alt=\"Mainshock shakemap\" id=\"shakemap\" onload=\"cropShakemap()\">\n"
-					+" 						</a>\n");
-		else 	
-			imgString.append(" "
-					+"	        			<p>EventPage"
-					+" 						</a>\n");
-		imgString.append(" "
-				+" 					</div>\n"
-				+"		 	   </td>\n"
-				+"			    <td style=\"width:550px\" id=\"imageBox\">\n"
-				+"	 				<!-- To manually specifiy the image you want to see displayed, replace src=\"...\" with the desired filename. -->\n"
-				+"	          	<img style=\"margin:auto;width:550px;max-height:480px\" src=\"ratemap.png\" alt=\"Graphical Forecast\" id=\"theimage\">\n"
-				+"	      	</td>\n"
-				+"		    </tr>\n"
-				+"		</table>\n"
-				);
-
-
-		imgString.append(""
-			
-		);
-		
-		imgString.append(""
-				+"		</div>\n"
-				+" 		<div class=\"forecast\">\n"
-				+"			<!-- This would be a good place for a link to an online source of the forecast, if applicable -->\n"
-				+"			This forecast will be updated as new information becomes available.\n"
-				+"		</div>\n"
-				+" 		<br>\n"
-				+"\n"
-				+"  <div style=\"margin-left:0px;width:800px;text-align:center\">\n"
-				+"		<!-- Set up buttons for changing which image type is displayed -->\n"
-				+" 		<input type=\"button\" class=\"imageButton\" value=\"Table\" id=\"imageButton0\" onClick=\"showTable();\">\n"
-				+"		<input type=\"button\" class=\"activeImageButton\" value=\"Shaking map\" id=\"imageButton1\" onClick=\"changeImage('1');\">\n"
-				+"		<input type=\"button\" class=\"imageButton\" value=\"Magnitude Distribution\" id=\"imageButton2\" onClick=\"changeImage('2');\">\n"
-				+"		<input type=\"button\" class=\"imageButton\" value=\"Number with time\" id=\"imageButton3\" onClick=\"changeImage('3');\">\n"
-				+"		<input type=\"button\" class=\"imageButton\" value=\"Rate map\" id=\"imageButton4\" onClick=\"changeImage('4');\">\n"
-				+"  </div>\n"
-				+"\n"
-				+"  <div style=\"margin-left:0px;width:800px;text-align:center\">\n"
-				+"  	<!-- Set up buttons for changing the image duration -->\n"
-				+"		<input type=\"button\" class=\"durButtonDisabled\" value=\"Day\" id=\"durationButton1\" onClick=\"changeDuration('1');\">\n"
-				+"		<input type=\"button\" class=\"activeDurButtonDisabled\" value=\"Week\" id=\"durationButton2\" onClick=\"changeDuration('2');\">\n"
-				+"		<input type=\"button\" class=\"durButtonDisabled\" value=\"Month\" id=\"durationButton3\" onClick=\"changeDuration('3');\">\n"
-				+"		<input type=\"button\" class=\"durButtonDisabled\" value=\"Year\" id=\"durationButton4\" onClick=\"changeDuration('4');\">\n"
-				+"  </div>\n"
-				+"\n"
-				+"	<script>\n"
-				+"		function showTable(){\n"
-				+"			document.getElementById('imageBox').innerHTML = '<iframe style=\"width:550px;height:480px;border:none\" src=\"Table.html\"></iframe>';\n"
-				+"			for (i = 1; i <= 4; i++){\n"
-				+"				document.getElementById('imageButton' + i).className = 'imageButton';\n"
-				+"			}\n"
-				+"			document.getElementById('imageButton0').className = 'activeImageButton';\n"
-				+"\n"
-				+"			for (i = 1; i <= " + (predictionIntervals.length) + "; i++){\n"
-                +"			    if (document.getElementById('durationButton' + i).className == 'durButton')\n"
-                +"			        document.getElementById('durationButton' + i).className = 'durButtonDisabled';\n"
-                +"			    if (document.getElementById('durationButton' + i).className == 'activeDurButton')\n"
-                +"			        document.getElementById('durationButton' + i).className = 'activeDurButtonDisabled';\n"
-                +"				}\n"
-				+"		}\n"
-				+"\n"
-				+" 		// Script for changing the image in response to button click\n"
-				+"		function changeImage(buttonNumber){\n"
-				+" 		// first make sure we've got an image\n"
-		        +"    	document.getElementById('imageBox').innerHTML = '<img style=\"margin:auto;width:550px;max-height:480px\" src=\"ratemap.png\" alt=\"Graphical Forecast\" id=\"theimage\">';\n"		            
-		        +"\n"
-		        +" 		// now decide which image\n"
-				+"			durationIndex = 1;\n"
-				+"			for (i = 1; i <= " + predictionIntervals.length + " ; i++){\n"
-				+"				if (document.getElementById('durationButton' + i).className.includes('active')){\n"
-				+"	 				var durationIndex = i;\n"
-				+"		   		}\n"
-				+"			}\n"
-				+"			console.log(durationIndex);\n"
-				+"\n"
-				+"			var dur;\n"
-				+"			switch (durationIndex){\n"
-				+"				case 1:\n"
-				+"			    	dur = 'day';\n"
-				+"					break;\n"
-				+"				case 2:\n"
-				+"					dur = 'week';\n"
-				+"					break;\n"
-				+"				case 3:\n"
-				+"					dur = 'month';\n"
-				+"					break;\n"
-				+"				case 4:\n"
-				+"					dur = 'year';\n"
-				+"					break;\n"
-				+"				default:\n"
-				+"					dur = '';\n"
-				+"					break;\n"
-				+"			}\n"
-				+"\n"
-				+"			var imgName = document.getElementById('theimage').src;\n"
-				+"\n"
-				+"			switch (buttonNumber){\n"
-				+"				case '1':\n"
-				+"					var imgName = 'shaking';\n"
-				+"				    var durNeeded = true;\n"
-				+"					break;\n"
-				+"				case '2':\n"
-				+"					var imgName = 'number';\n"
-				+"		            var durNeeded = true;\n"
-				+"	 				break;\n"
-				+"				case '3':\n"
-				+"					var imgName = 'forecastCmlNum';\n"
-				+"	        	    var durNeeded = false;\n"
-				+"					break;\n"
-				+"				case '4':\n"
-				+"					var imgName = 'ratemap';\n"
-				+"	        	    var durNeeded = false;\n"
-				+"					break;\n"
-				+"			}\n"
-				+"\n"
-				+"			if (durNeeded) imgName = imgName + dur;\n"
-				+"\n"
-				+"			var image = document.getElementById('theimage');\n"
-				+"			image.src = imgName + '.png';\n"
-				+"\n"
-				+"			for (i = 0; i < 5; i++){\n"
-				+"				document.getElementById('imageButton' + i).className = 'imageButton';\n"
-				+"			}\n"
-				+"			document.getElementById('imageButton' + buttonNumber).className = 'activeImageButton';\n"
-				+"\n"
-				+"			if (durNeeded){\n"
-				+"				for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
-                +"			    	if (document.getElementById('durationButton' + i).className == 'durButtonDisabled')\n"
-                +"			    	    document.getElementById('durationButton' + i).className = 'durButton';\n"
-                +"			    	if (document.getElementById('durationButton' + i).className == 'activeDurButtonDisabled')\n"
-                +"			    	    document.getElementById('durationButton' + i).className = 'activeDurButton';\n"
-                +"				}\n"
-                +"			} else {\n"
-                +"				for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
-                +"				    if (document.getElementById('durationButton' + i).className == 'durButton')\n"
-                +"				        document.getElementById('durationButton' + i).className = 'durButtonDisabled';\n"
-                +"				    if (document.getElementById('durationButton' + i).className == 'activeDurButton')\n"
-                +"				        document.getElementById('durationButton' + i).className = 'activeDurButtonDisabled';\n"
-                +"				}\n"
-                +"		 	}\n"
-				+"		}\n"
-				+"\n"
-				+"		function changeDuration(buttonNumber){\n"
-				+"			if(document.getElementById('imageButton0').className == 'imageButton' && buttonNumber <= " + predictionIntervals.length + "){\n"
-				+"				var imgName = document.getElementById('theimage').src;\n"
-				+"\n"
-				+"	        	if (imgName.includes('number')) {\n"
-				+"	    			var imgtype = 'number';\n"
-				+"	          		durNeeded = true;\n"
-				+"				} else if (imgName.includes('forecastCmlNum')){\n"
-				+"					var imgtype = 'forecastCmlNum';\n"
-				+"					durNeeded = false;\n"
-				+"				} else if (imgName.includes('rate')){\n"
-				+"					var imgtype = 'ratemap';\n"
-				+"					durNeeded = false;\n"
-				+"				} else if (imgName.includes('shaking')){\n"
-				+"					var imgtype = 'shaking';\n"
-				+"					durNeeded = true;\n"
-				+"				} else {\n"
-				+"					var imgtype = 'ImageNotRecognized';\n"
-				+"					durNeeded = false;\n"
-				+"				}\n"
-				+"\n"
-				+"				if (durNeeded) {\n"
-				+"					switch (buttonNumber){\n"
-				+"				    	case '1':\n"
-				+"	    					imgName = imgtype+'day';\n"
-				+"	 						break;\n"
-				+"						case '2':\n"
-				+"							imgName = imgtype+'week';\n"
-				+"							break;\n"
-				+"						case '3':\n"
-				+"							imgName = imgtype+'month';\n"
-				+"							break;\n"
-				+"						case '4':\n"
-				+"							imgName = imgtype+'year';\n"
-				+"							break;\n"
-				+"			    	}\n"
-				+"				} else {\n"
-				+"					imgName = imgtype;\n"
-				+"				}\n"
-				+"\n"
-				+"				var image = document.getElementById('theimage');\n"
-				+"				image.src = imgName + '.png';\n"
-				+"\n"
-				+"				if (durNeeded){\n"
-				+"        			for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
-		        +"            			document.getElementById('durationButton' + i).className = 'durButton';\n"
-		        +"        			}\n"
-		        +"        			document.getElementById('durationButton' + buttonNumber).className = 'activeDurButton';\n"
-		        +"    			} else {\n"
-		        +"       			for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
-		        +"            			document.getElementById('durationButton' + i).className = 'durButtonDisabled';\n"
-		        +"        			}\n"
-		        +"        			document.getElementById('durationButton' + buttonNumber).className = 'activeDurButtonDisabled';\n"
-		        +"    			}\n"
-		        +"			}\n"
-				+"		}\n"
-				+"	</script>\n"
-				);
-
-		imgString.append(""
-				+" 	</body>\n"
-				+"</html>\n");
-
-		outputString.append(headString);
-		outputString.append(infoString);
-		outputString.append(probTableString);
-		outputString.append(keyString);
-		outputString.append(imgString);
-		
-		// write file
-		FileWriter fw;
-		try {
-			fw = new FileWriter(outputFile, false);
-		} catch (IOException e1) {
-			//				e1.printStackTrace();
-			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
-			return;
-		}
-
-		try {
-			fw.append(outputString);
-		} catch (IOException e) {
-			//					e.printStackTrace();
-			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
-		}
-		
-		try {
-			fw.close();
-		} catch (IOException e) {
-			//				e.printStackTrace();
-			System.err.println("Problem closing file.");
-		}
-	}
+//	public void writeHTMLclassic(File outputFile){
+//	
+//		StringBuilder outputString = new StringBuilder();
+//	
+//		StringBuilder headString = new StringBuilder();
+//		StringBuilder infoString = new StringBuilder();
+//		StringBuilder probTableString = new StringBuilder();
+//		StringBuilder keyString = new StringBuilder();
+//		StringBuilder imgString = new StringBuilder(); 
+//		
+//		//parameters for the svg table
+//		double barHeight = 40;
+//		if(predictionIntervals.length==2)
+//			barHeight = 60;
+//		else if(predictionIntervals.length==1)
+//			barHeight = 120;
+//		
+//		
+//		double barWidth = 50;
+//		double barPadding = 2;
+////		String[][] tableTags = new String[][]{{"P1_DA","P2_DA","P3_DA","P4_DA","P5_DA","P6_DA","P7_DA"},
+////				{"P1_WK","P2_WK","P3_WK","P4_WK","P5_WK","P6_WK","P7_WK"},
+////				{"P1_MO","P2_MO","P3_MO","P4_MO","P5_MO","P6_MO","P7_MO"},
+////				{"P1_YR","P2_YR","P3_YR","P4_YR","P5_YR","P6_YR","P7_YR"}};
+//		String[][] tableTags = new String[][]{{"P1_DA","P2_DA","P3_DA","P4_DA","P5_DA","P6_DA"},
+//				{"P1_WK","P2_WK","P3_WK","P4_WK","P5_WK","P6_WK"},
+//				{"P1_MO","P2_MO","P3_MO","P4_MO","P5_MO","P6_MO"},
+//				{"P1_YR","P2_YR","P3_YR","P4_YR","P5_YR","P6_YR"}};
+//		
+//					
+//		
+//		headString.append(""
+//				+"    <!DOCTYPE html>\n"
+//				+"	  <html>\n"
+//				+"    <head>\n"
+//				+" 		<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\">\n"
+//				+" 		<meta name=\"source\" content=\"USGS AftershockForecaster\">\n"
+//				+"		<meta name=\"software-version\" content=\"Beta\">\n"
+//				+"		<meta name=\"software-version-date\" content=\"2018-05-01\">\n"
+//				+"		<meta name=\"advisory-generated-date\" content=\"" + tags.get("V_DATE") + "\">\n"
+//				+"		<meta name=\"disclaimer\" content=\"This advisory was generated using softare developed on the OpenSHA platform by the\n"
+//				+"			US Geological Survey and the US-AID Bureau of Humanitarian Assistance. The information provided in this document\n"
+//				+"			is not an official statement of the US Geological Survey or any other US Government Entity.\">\n"
+//				+"		<meta name=\"OpenSHA\" content=\"www.opensha.org/apps\">\n"
+//				+"        <style>\n"
+//				+"            body {font-family:helvetica; background-color: white; page-break-inside:avoid}\n"
+//				+"            h1 {color: black; font-family:helvetica; font-size:20pt; margin:0}\n"
+//				+"            h2 {color: black; font-family:helvetica; font-size:14pt; margin:0; text-align:center}\n"
+//				+"            h3 {color: black; font-family:helvetica; font-size:12pt; margin:0;}\n"
+//				+"            th {font-weight:normal}\n"
+//				+"			  tr {padding:0px}\n"
+//				+"            td {padding:0px}\n"
+//				+"            \n"
+//				+" 			  .imageButton {color:#000000;background-color:#eeeeee; border:1px solid black; width:150px; padding:2px; font-size:10pt;}\n"
+//	            +"			  .durButton {color:#000000; background-color:#eeeeee; border:1px solid black; width:100px; padding:2px; font-size:10pt;}\n"
+//	            +"			  .durButtonDisabled {color:#cccccc; background-color:#eeeeee; border:1px solid black; width:100px; padding:2px; font-size:10pt;}\n"
+//	            +" 			  .activeImageButton {color:#dd0000; background-color:#ffeeee; border:1px solid black; width:150px; padding:2px; font-size:10pt;}\n"
+//	            +"			  .activeDurButton {color:#dd0000; background-color:#ffeeee; border:1px solid black; width:100px; padding:2px; font-size:10pt;}\n"
+//	            +"			  .activeDurButtonDisabled {color:#cccccc; background-color:#eeeeee; border:1px solid black; width:100px; padding:2px; font-size:10pt;}\n"
+//				+"            .forecast { font-size:14px; border:0px solid gray; border-collapse:collapse; margin:0; text-align:center}\n"
+//				+"            .forecastHeader { font-size:16px; border:0px solid gray; border-collapse:collapse; text-align:center; vertical-align:center; font-weight:normal; height:20px;}\n"
+//				+"            .forecastValue { font-size:12px; border:0px solid gray; border-collapse:collapse; text-align:center; margin:0; vertical-align:bottom; color:#666666;}\n"
+//				+"            .forecastKey { font-size:12px; border:0px solid gray; border-collapse:collapse; text-align:center; margin:0; vertical-align:bottom; padding:0px}\n"
+//				+"            .forecastBar { height:"+(int)barHeight+"px; width:" + (int)barWidth + "px; padding-top:1px;}\n"
+//				+"            .forecastRow {border:1px solid #dddddd; border-collapse:collapse; padding-top:1px;}\n"
+//				+"\n"				
+//				+"            .forecastBox {stroke-width:0px; x:"+(int)barPadding+"px; width:"+(int)(barWidth-2*barPadding)+"px}\n"
+//				+" 			  .forecastBoxText {text-anchor:middle; fill:#666666;}\n"
+//				+" 			  .key {width:30px;height:12px}\n"
+//				+"            div {min-width:800px; max-width:800px; border-collapse:collapse}\n"
+//				+"            \n"
+//				+"        </style>\n"
+//				+"\n"
+//				+"		<script>\n"
+//				+" 			// Script to crop Shakemap constant amount from bottom, accounting for different Shakemap heights\n"
+//				+" 			function cropShakemap(){\n"
+//				+ "				var imageData = new Image();\n"
+//				+" 				imageData.src = document.getElementById('shakemap').src;\n"
+//		        +" 				var shakemapHeight = imageData.height;\n"
+//		        +" 				var shakemapWidth = imageData.width;\n"
+//		        +" 				var shakemapCropHeight = shakemapHeight * (250/shakemapWidth) - 63;\n"
+//		        +" 				document.getElementById('shakemapCrop').style.height = shakemapCropHeight + \"px\";\n"
+//		        +" 			}\n"
+//		        +"\n"
+//		        +"		</script>\n"
+//				+"\n"
+//				+"	    <title>Aftershock Advisory</title>\n"
+//				+"    </head>\n\n");
+//
+//		infoString.append("    <body onload=\"showTable()\">\n"
+//				+"        <div>\n"
+//				+"            <table style=\"text-align:center\">\n"
+//				+"                <tr>\n"
+//				+"                    <td style=\"width:150px\">\n"  
+//				+"						<img id=\"logo\" src=\"Logo.png\" alt=\"\" style=\"max-height:60px;max-width:150px\">\n"
+//				+"  				  </td>\n"
+//				+"                    <td style=\"width:500px;height:60px\"><h1 >Aftershock Advisory and Forecast</h1></td>\n"
+//				+"					  </td>\n"
+//				+"                    <td style=\"width:150px\">\n"  
+//				+"						<img id=\"logo\" src=\"Logo.png\" alt=\"\" style=\"max-height:60px;max-width:150px\">\n"
+//				+"  				  </td>\n"
+//				+"                </tr>\n"
+//				+"            </table>\n"
+//				+"            <br>\n"
+//				+"            <table>\n"
+//				+"                <tr>\n"
+//				+"					  <!-- Mainshock and forecast information -->\n"	
+//				+"                    <td style=\"width:400px\"><h2 style=\"text-align:left\">" + tags.get("MS_MAG") + " eventID:" + tags.get("MS_NAME") + "</h2></td>\n"
+//				+"                    <td style=\"width:400px\"><h3 style=\"text-align:right\">Forecast Generated: " + tags.get("V_DATE") + " UTC</h3></td>\n"
+//				+"                </tr>\n"
+//				+"            </table>\n"
+//				+"            <table>\n"
+//				+"                <tr>\n"
+//				+"					  <!-- Mainshock origin information -->\n"
+//				+"                    <td style=\"margin-left:0px;width:300px\"><h3>Origin: " + tags.get("MS_DATETIME") + " UTC</h3></td>\n"
+//				+"                    <td style=\"text-align:center;margin:auto;width:300px\"><h3>Location: " + tags.get("MS_LAT") + " " + tags.get("MS_LON") + "</h3></td>\n"
+//				+"                    <td style=\"text-align:right;margin-right:0px;width:200px\"><h3>Depth: " + tags.get("MS_DEPTH") + "</h3></td>\n"
+//				+"                </tr>\n"
+//				+"            </table>\n"
+//				+"        </div>\n"
+//				+"        <div>\n"
+//				+"			  <!-- Descriptive forecast text -->\n"
+//				+"            <p style=\"text-align:justify\">" + tags.get("DESCRIPTIVE_TEXT") + "</p>\n"
+//				+"        </div>\n\n");
+//
+//		probTableString.append("        <div style=\"width:800px;text-align:center;\">\n"
+//				+"            <p><h2>Anticipated aftershock activity</h2>\n"
+//				+"            <p style=\"margin-top:0px\">Forecast start date: " + tags.get("F_START_ABS") + " UTC</p>\n"
+//				+"        </div>\n"
+//				+"\n"
+//				+"		  <!-- Forecast table with probabilities of different magnitudes -->\n"
+////				+"        <table style=\"width:650px;margin-left:60px;margin-right:100px\"><!-- Table of Probabilities -->\n"
+//				+"        <table style=\"width:700px;margin-left:25px;margin-right:50px\"><!-- Table of Probabilities -->\n"
+//				+"            <tr>\n"
+//			    +"				  <td>\n"
+//                +"					<p style=\"text-align:center;font-size:14px\">\n"
+//                +"					<br>\n"
+//                +" 					Over the next:\n"
+//                +" 					</p>\n"
+//                +"	      		  </td>\n"
+//				+"                <td>\n"
+//				+"                    <table>\n"
+//				+"                        <tr>\n"
+//				+"                            <th></th>\n"
+//				+"                            <th class=\"forecast\">Chance of at least one aftershock larger than:</th>\n"
+//				+"                        </tr>\n"
+//				+"                        <tr>\n"
+//				+"                            <td>\n"
+//				+"                                <table>\n"
+//				+"                                    <tr><th class=\"forecastHeader\" style=\"width:60px\"></th> </tr>\n"
+//		);
+////		if (predictionIntervals.length < 4) //code is set up to issue one day bar graph only if the forecast max interval is set to one month. Commenting out for Puerto Rico Earthquake  
+//			probTableString.append("                                     <tr><th class=\"forecastBar\">Day</th></tr>\n");
+//		if (predictionIntervals.length > 1)	
+//			probTableString.append("                                     <tr><th class=\"forecastBar\">Week</th></tr>\n");
+//		if (predictionIntervals.length > 2)
+//			probTableString.append("                                    <tr><th class=\"forecastBar\">Month</th></tr>\n");
+//		if (predictionIntervals.length > 3)
+//			probTableString.append("                                    <tr><th class=\"forecastBar\">Year</th></tr>\n");
+//		probTableString.append("                                </table>\n"
+//				+"                            </td>\n"
+//				+"                            <td>\n"
+//				+"                                <table class=\"forecast\">\n"
+//				+"                                    <tr>\n"
+//				+"                                        <th class=\"forecastHeader\">M3</th>\n"
+//				+"                                        <th class=\"forecastHeader\">M4</th>\n"
+//				+"                                        <th class=\"forecastHeader\">M5</th>\n"
+//				+"                                        <th class=\"forecastHeader\">M6</th>\n"
+//				+"                                        <th class=\"forecastHeader\">M7</th>\n"
+//				+"                                        <th class=\"forecastHeader\">M8</th>\n"
+////				+"                                        <th class=\"forecastHeader\">M9</th>\n"
+//				+"                                    </tr>\n"
+//				+"                                    \n");
+//
+//		
+//		
+//		//generate forecast table
+//		int maxRow = predictionIntervals.length;
+//		int minRow = 0;
+////		if (predictionIntervals.length == 4) //commented out for PR earthquake
+////				minRow = 1;
+//		
+//		for (int j = minRow; j<maxRow; j++){
+//			probTableString.append(""
+//					+"                                    <tr class = \"forecastRow\">\n");
+//
+//			for (int i = 0; i<MMIcolors.length; i++){
+//				double probVal = probability[i][j];
+//				double height = barHeight*probVal;
+//				String probStr = tags.get(tableTags[j][i]); 
+//				double yVal;
+//				if (probVal > 0.50) yVal = 11 + barHeight*(1 - probVal);
+//				else yVal = barHeight*(1 - probVal) - 3;
+//
+//				probTableString.append(""
+//						+"                                        <td class=\"forecastValue\">\n"
+//						+"												<svg class=\"forecastBar\">\n"
+//						+"													<rect class = \"forecastBox\" y=\"" + (int) (barHeight - (int) height) + "px\" height=\"" + ((int) height) + "px\" width=\"" + barWidth + "px\" fill=\""+MMIcolors[i]+"\" />\n"
+//						+"													<text class = \"forecastBoxText\" x=\"25px\" y=" + String.format("\"%.0fpx\"", yVal) + ">"+probStr+"</text>\n"
+//						+"												</svg>\n"
+//						+"                                        </td>\n"
+//						);
+//			}
+//			probTableString.append(""
+//					+"                                    </tr>\n");
+//		}
+//		
+//		probTableString.append(""
+//				+"                                </table>\n"
+//				+"                            </td>\n"
+//				+"                        </tr>\n"
+//				+"                    </table>\n"
+//				+"                </td>\n\n");
+//		
+//		keyString.append("               <td style=\"vertical-align:top\">\n"
+//				+"                    <!-- MMI key-->\n"
+//				+"                    <table>\n"
+//				+"                        <tr><td style=\"height:23px\"></td></tr>\n"
+//				+"                        <tr><td class=\"forecast\">Key to colors*</td></tr>\n"
+//				+"                        <tr><td>\n"
+//				+"                            <table class=\"forecastKey\" style=\"border:1px solid #dddddd;\">\n"
+//				+"                                <tr style=\"font-weight:bold\">\n"
+//				+"                                    <th style=\"width:50px; font-weight:bold\"></th>\n"
+////				+"                                    <th style=\"width:70px; font-weight:bold\">peak MMI</th>\n"
+//				+"                                    <th style=\"width:145px; font-weight:bold\">Potential Shaking</th>\n"
+//				+"                                    <th style=\"width:145px; font-weight:bold\">Potential Damage</th>\n"
+//				+"                                </tr>\n"
+//				+"                                <tr>\n"
+//				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[0] + "\"/></svg></td>\n"
+////				+"                                    <td>II-IV</td>\n"
+//				+"                                    <td>weak - light</td>\n"
+//				+"                                    <td>none</td>\n"
+//				+"                                </tr>\n"
+//				+"                                <tr>\n"
+//				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[1] + "\"/></svg></td>\n"
+////				+"                                    <td>III-V</td>\n"
+//				+"                                    <td>weak - moderate</td>\n"
+//				+"                                    <td>very light</td>\n"
+//				+"                                </tr>\n"
+//				+"                                <tr>\n"
+//				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[2] + "\"/></svg></td>\n"
+////				+"                                    <td>V-VII</td>\n"
+//				+"                                    <td>moderate - strong</td>\n"
+//				+"                                    <td>light - moderate</td>\n"
+//				+"                                </tr>\n"
+//				+"                                <tr>\n"
+//				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[3] + "\"/></svg></td>\n"
+////				+"                                    <td>VI-VIII</td>\n"
+//				+"                                    <td>strong - severe</td>\n"
+//				+"                                    <td>moderate - heavy</td>\n"
+//				+"                                </tr>\n"
+//				+"                                <tr>\n"
+//				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[4] + "\"/></svg></td>\n"
+////				+"                                    <td>VIII-X</td>\n"
+//				+"                                    <td>severe - violent</td>\n"
+//				+"                                    <td>heavy</td>\n"
+//				+"                                </tr>\n"
+//				+"                                <tr>\n"
+//				+"                                    <td><svg class=\"key\"><rect class=\"key\" width=\"30px\" height=\"12px\" fill=\"" + MMIcolors[5] + "\"/></svg></td>\n"
+////				+"                                    <td>X+</td>\n"
+//				+"                                    <td>violent - extreme</td>\n"
+//				+"                                    <td>very heavy</td>\n"
+//				+"                                </tr>\n"
+//				+"                            </table>\n"
+//				+"                        </td></tr>\n"
+//				+"                    </table>\n"
+//				+"						<p class=\"forecastKey\" style=\"font-size:10px\">*This table gives typical peak shaking and intensity levels associated with the forecast magnitudes. Actual shaking is affected by many factors, and damage may be higher in vulnerable structures.</p>\n"
+//				+"                </td>\n"
+//				+"            </tr>\n"
+//				+"        </table>\n\n");
+//
+//		// set up javascript to select between different image products. Durations and styles. 
+//		imgString.append(""
+//				+" 		<br>\n"
+//				+"		<div style=\"width:800px;height:500px;margin-left:0px;\">\n"
+//		);
+//		
+//		
+//		imgString.append(" "
+//				+"  	<!-- Mainshock shakemap -->\n"
+//				+"		<table style=\"width:800px;vertical-align:top;text-align:center;\">\n"
+//				+"	    	<tr>\n"
+//				+"	        	<td style=\"width:250px;display:inline\">\n"
+//				+"			    	<br>\n"
+//				+" 					<p class=\"forecast\" style=\"white-space:pre\">Mainshock ShakeMap\n(previous shaking)</p>\n"
+//				+" 					<div style=\"height:230px;overflow:hidden;margin: 0 -275px 0px -275px;\" id=\"shakemapCrop\">\n"
+//				+" 						<!-- Change the link URL to point to your local event summary if preferred. Default is to go to USGS summary -->\n"
+//				+" 						<a href=\"" + eventURL + "\">\n");
+//		if (shakeMapURL != null)
+//			imgString.append(" "
+//					+"	        			<img style=\"width:250px\" src=\"" + shakeMapURL + "\" alt=\"Mainshock shakemap\" id=\"shakemap\" onload=\"cropShakemap()\">\n"
+//					+" 						</a>\n");
+//		else 	
+//			imgString.append(" "
+//					+"	        			<p>EventPage"
+//					+" 						</a>\n");
+//		imgString.append(" "
+//				+" 					</div>\n"
+//				+"		 	   </td>\n"
+//				+"			    <td style=\"width:550px\" id=\"imageBox\">\n"
+//				+"	 				<!-- To manually specifiy the image you want to see displayed, replace src=\"...\" with the desired filename. -->\n"
+//				+"	          	<img style=\"margin:auto;width:550px;max-height:480px\" src=\"ratemap.png\" alt=\"Graphical Forecast\" id=\"theimage\">\n"
+//				+"	      	</td>\n"
+//				+"		    </tr>\n"
+//				+"		</table>\n"
+//				);
+//
+//
+//		imgString.append(""
+//			
+//		);
+//		
+//		imgString.append(""
+//				+"		</div>\n"
+//				+" 		<div class=\"forecast\">\n"
+//				+"			<!-- This would be a good place for a link to an online source of the forecast, if applicable -->\n"
+//				+"			This forecast will be updated as new information becomes available.\n"
+//				+"		</div>\n"
+//				+" 		<br>\n"
+//				+"\n"
+//				+"  <div style=\"margin-left:0px;width:800px;text-align:center\">\n"
+//				+"		<!-- Set up buttons for changing which image type is displayed -->\n"
+//				+" 		<input type=\"button\" class=\"imageButton\" value=\"Table\" id=\"imageButton0\" onClick=\"showTable();\">\n"
+//				+"		<input type=\"button\" class=\"activeImageButton\" value=\"Shaking map\" id=\"imageButton1\" onClick=\"changeImage('1');\">\n"
+//				+"		<input type=\"button\" class=\"imageButton\" value=\"Magnitude Distribution\" id=\"imageButton2\" onClick=\"changeImage('2');\">\n"
+//				+"		<input type=\"button\" class=\"imageButton\" value=\"Number with time\" id=\"imageButton3\" onClick=\"changeImage('3');\">\n"
+//				+"		<input type=\"button\" class=\"imageButton\" value=\"Rate map\" id=\"imageButton4\" onClick=\"changeImage('4');\">\n"
+//				+"  </div>\n"
+//				+"\n"
+//				+"  <div style=\"margin-left:0px;width:800px;text-align:center\">\n"
+//				+"  	<!-- Set up buttons for changing the image duration -->\n"
+//				+"		<input type=\"button\" class=\"durButtonDisabled\" value=\"Day\" id=\"durationButton1\" onClick=\"changeDuration('1');\">\n"
+//				+"		<input type=\"button\" class=\"activeDurButtonDisabled\" value=\"Week\" id=\"durationButton2\" onClick=\"changeDuration('2');\">\n"
+//				+"		<input type=\"button\" class=\"durButtonDisabled\" value=\"Month\" id=\"durationButton3\" onClick=\"changeDuration('3');\">\n"
+//				+"		<input type=\"button\" class=\"durButtonDisabled\" value=\"Year\" id=\"durationButton4\" onClick=\"changeDuration('4');\">\n"
+//				+"  </div>\n"
+//				+"\n"
+//				+"	<script>\n"
+//				+"		function showTable(){\n"
+//				+"			document.getElementById('imageBox').innerHTML = '<iframe style=\"width:550px;height:480px;border:none\" src=\"Table.html\"></iframe>';\n"
+//				+"			for (i = 1; i <= 4; i++){\n"
+//				+"				document.getElementById('imageButton' + i).className = 'imageButton';\n"
+//				+"			}\n"
+//				+"			document.getElementById('imageButton0').className = 'activeImageButton';\n"
+//				+"\n"
+//				+"			for (i = 1; i <= " + (predictionIntervals.length) + "; i++){\n"
+//                +"			    if (document.getElementById('durationButton' + i).className == 'durButton')\n"
+//                +"			        document.getElementById('durationButton' + i).className = 'durButtonDisabled';\n"
+//                +"			    if (document.getElementById('durationButton' + i).className == 'activeDurButton')\n"
+//                +"			        document.getElementById('durationButton' + i).className = 'activeDurButtonDisabled';\n"
+//                +"				}\n"
+//				+"		}\n"
+//				+"\n"
+//				+" 		// Script for changing the image in response to button click\n"
+//				+"		function changeImage(buttonNumber){\n"
+//				+" 		// first make sure we've got an image\n"
+//		        +"    	document.getElementById('imageBox').innerHTML = '<img style=\"margin:auto;width:550px;max-height:480px\" src=\"ratemap.png\" alt=\"Graphical Forecast\" id=\"theimage\">';\n"		            
+//		        +"\n"
+//		        +" 		// now decide which image\n"
+//				+"			durationIndex = 1;\n"
+//				+"			for (i = 1; i <= " + predictionIntervals.length + " ; i++){\n"
+//				+"				if (document.getElementById('durationButton' + i).className.includes('active')){\n"
+//				+"	 				var durationIndex = i;\n"
+//				+"		   		}\n"
+//				+"			}\n"
+//				+"			console.log(durationIndex);\n"
+//				+"\n"
+//				+"			var dur;\n"
+//				+"			switch (durationIndex){\n"
+//				+"				case 1:\n"
+//				+"			    	dur = 'day';\n"
+//				+"					break;\n"
+//				+"				case 2:\n"
+//				+"					dur = 'week';\n"
+//				+"					break;\n"
+//				+"				case 3:\n"
+//				+"					dur = 'month';\n"
+//				+"					break;\n"
+//				+"				case 4:\n"
+//				+"					dur = 'year';\n"
+//				+"					break;\n"
+//				+"				default:\n"
+//				+"					dur = '';\n"
+//				+"					break;\n"
+//				+"			}\n"
+//				+"\n"
+//				+"			var imgName = document.getElementById('theimage').src;\n"
+//				+"\n"
+//				+"			switch (buttonNumber){\n"
+//				+"				case '1':\n"
+//				+"					var imgName = 'shaking';\n"
+//				+"				    var durNeeded = true;\n"
+//				+"					break;\n"
+//				+"				case '2':\n"
+//				+"					var imgName = 'number';\n"
+//				+"		            var durNeeded = true;\n"
+//				+"	 				break;\n"
+//				+"				case '3':\n"
+//				+"					var imgName = 'forecastCmlNum';\n"
+//				+"	        	    var durNeeded = false;\n"
+//				+"					break;\n"
+//				+"				case '4':\n"
+//				+"					var imgName = 'ratemap';\n"
+//				+"	        	    var durNeeded = false;\n"
+//				+"					break;\n"
+//				+"			}\n"
+//				+"\n"
+//				+"			if (durNeeded) imgName = imgName + dur;\n"
+//				+"\n"
+//				+"			var image = document.getElementById('theimage');\n"
+//				+"			image.src = imgName + '.png';\n"
+//				+"\n"
+//				+"			for (i = 0; i < 5; i++){\n"
+//				+"				document.getElementById('imageButton' + i).className = 'imageButton';\n"
+//				+"			}\n"
+//				+"			document.getElementById('imageButton' + buttonNumber).className = 'activeImageButton';\n"
+//				+"\n"
+//				+"			if (durNeeded){\n"
+//				+"				for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
+//                +"			    	if (document.getElementById('durationButton' + i).className == 'durButtonDisabled')\n"
+//                +"			    	    document.getElementById('durationButton' + i).className = 'durButton';\n"
+//                +"			    	if (document.getElementById('durationButton' + i).className == 'activeDurButtonDisabled')\n"
+//                +"			    	    document.getElementById('durationButton' + i).className = 'activeDurButton';\n"
+//                +"				}\n"
+//                +"			} else {\n"
+//                +"				for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
+//                +"				    if (document.getElementById('durationButton' + i).className == 'durButton')\n"
+//                +"				        document.getElementById('durationButton' + i).className = 'durButtonDisabled';\n"
+//                +"				    if (document.getElementById('durationButton' + i).className == 'activeDurButton')\n"
+//                +"				        document.getElementById('durationButton' + i).className = 'activeDurButtonDisabled';\n"
+//                +"				}\n"
+//                +"		 	}\n"
+//				+"		}\n"
+//				+"\n"
+//				+"		function changeDuration(buttonNumber){\n"
+//				+"			if(document.getElementById('imageButton0').className == 'imageButton' && buttonNumber <= " + predictionIntervals.length + "){\n"
+//				+"				var imgName = document.getElementById('theimage').src;\n"
+//				+"\n"
+//				+"	        	if (imgName.includes('number')) {\n"
+//				+"	    			var imgtype = 'number';\n"
+//				+"	          		durNeeded = true;\n"
+//				+"				} else if (imgName.includes('forecastCmlNum')){\n"
+//				+"					var imgtype = 'forecastCmlNum';\n"
+//				+"					durNeeded = false;\n"
+//				+"				} else if (imgName.includes('rate')){\n"
+//				+"					var imgtype = 'ratemap';\n"
+//				+"					durNeeded = false;\n"
+//				+"				} else if (imgName.includes('shaking')){\n"
+//				+"					var imgtype = 'shaking';\n"
+//				+"					durNeeded = true;\n"
+//				+"				} else {\n"
+//				+"					var imgtype = 'ImageNotRecognized';\n"
+//				+"					durNeeded = false;\n"
+//				+"				}\n"
+//				+"\n"
+//				+"				if (durNeeded) {\n"
+//				+"					switch (buttonNumber){\n"
+//				+"				    	case '1':\n"
+//				+"	    					imgName = imgtype+'day';\n"
+//				+"	 						break;\n"
+//				+"						case '2':\n"
+//				+"							imgName = imgtype+'week';\n"
+//				+"							break;\n"
+//				+"						case '3':\n"
+//				+"							imgName = imgtype+'month';\n"
+//				+"							break;\n"
+//				+"						case '4':\n"
+//				+"							imgName = imgtype+'year';\n"
+//				+"							break;\n"
+//				+"			    	}\n"
+//				+"				} else {\n"
+//				+"					imgName = imgtype;\n"
+//				+"				}\n"
+//				+"\n"
+//				+"				var image = document.getElementById('theimage');\n"
+//				+"				image.src = imgName + '.png';\n"
+//				+"\n"
+//				+"				if (durNeeded){\n"
+//				+"        			for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
+//		        +"            			document.getElementById('durationButton' + i).className = 'durButton';\n"
+//		        +"        			}\n"
+//		        +"        			document.getElementById('durationButton' + buttonNumber).className = 'activeDurButton';\n"
+//		        +"    			} else {\n"
+//		        +"       			for (i = 1; i <= " + predictionIntervals.length + "; i++){\n"
+//		        +"            			document.getElementById('durationButton' + i).className = 'durButtonDisabled';\n"
+//		        +"        			}\n"
+//		        +"        			document.getElementById('durationButton' + buttonNumber).className = 'activeDurButtonDisabled';\n"
+//		        +"    			}\n"
+//		        +"			}\n"
+//				+"		}\n"
+//				+"	</script>\n"
+//				);
+//
+//		imgString.append(""
+//				+" 	</body>\n"
+//				+"</html>\n");
+//
+//		outputString.append(headString);
+//		outputString.append(infoString);
+//		outputString.append(probTableString);
+//		outputString.append(keyString);
+//		outputString.append(imgString);
+//		
+//		// write file
+//		FileWriter fw;
+//		try {
+//			fw = new FileWriter(outputFile, false);
+//		} catch (IOException e1) {
+//			//				e1.printStackTrace();
+//			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+//			return;
+//		}
+//
+//		try {
+//			fw.append(outputString);
+//		} catch (IOException e) {
+//			//					e.printStackTrace();
+//			System.err.println("Couldn't save to file " + outputFile.getAbsolutePath());
+//		}
+//		
+//		try {
+//			fw.close();
+//		} catch (IOException e) {
+//			//				e.printStackTrace();
+//			System.err.println("Problem closing file.");
+//		}
+//	}
 
 	public void setShakeMapURL(String shakeMapURL) {
 		this.shakeMapURL = shakeMapURL;
@@ -2223,6 +2214,7 @@ public class GraphicalForecast{
 			lon -= 360;
 		return lon;
 	}
+	
 	
 	public static void main(String[] args){
 		GraphicalForecast gf = new GraphicalForecast();

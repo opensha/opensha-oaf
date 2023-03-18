@@ -98,8 +98,12 @@ public class OgataMagFreqDist{
 		double logLikeIncrement;
 		double logBayesLike;
 		double B3 = Math.log(1d/Math.sqrt(2*Math.PI)/bPrior_sigma);
-
-		double[] mc_span = ETAS_StatsCalc.linspace(Math.min(getMin(magnitudes),1.0), getMax(magnitudes), npts);
+			
+		double minMag = Math.round(Math.min(getMin(magnitudes),1.0)/0.1)*0.1 - 0.05;
+		double maxMag = Math.round(getMax(magnitudes)/0.1) * 0.1 - 0.05;
+		int nptsMc = (int) Math.round((maxMag - minMag)/0.1) + 1;
+		double[] mc_span = ETAS_StatsCalc.linspace(minMag, maxMag, nptsMc);
+//		double[] mc_span = ETAS_StatsCalc.linspace(Math.min(getMin(magnitudes),1.0), getMax(magnitudes), npts);
 	
 		int mc_index = 0;
 		if (magnitudes.length > 1) {
