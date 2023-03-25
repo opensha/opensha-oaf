@@ -526,4 +526,55 @@ public class OEConstants {
 
 	public static final double ZMU_MREF = 3.0;
 
+
+
+
+	// Bayesian prior weight for the Bayesian model.
+
+	public static final double BAY_WT_BAYESIAN = 1.0;
+
+	// Bayesian prior weight for the sequence specific model.
+
+	public static final double BAY_WT_SEQ_SPEC = 0.0;
+
+
+
+
+	// b-value used to indicate that the b-value is unknown.
+
+	public static final double UNKNOWN_B_VALUE = -1.0;
+
+	// Use b < UNKNOWN_B_VALUE_CHECK to test if b contains UNKNOWN_B_VALUE.
+
+	public static final double UNKNOWN_B_VALUE_CHECK = 0.0;
+
+
+
+
+	// Maximum number of excitation parameter combinations in a grid.
+
+	public static final int MAX_EXCITATION_GRID = 500000;
+
+	// Maximum number of statistical parameter combinations in a grid.
+
+	public static final int MAX_STATISTICS_GRID = 500000;
+
+	// Default size of the bins used to clip the normalized log density function, in matural log units
+
+	public static final double DEF_DENSITY_BIN_SIZE_LNU = 0.01;	// Each bin is ~ 1%
+
+	// Default number of bins used to clip the normalized log density function.
+	// The normalized log-density function is clipped by default at
+	// -DEF_DENSITY_BIN_SIZE_LNU * (DEF_DENSITY_BIN_COUNT - 1) natural log units.
+
+	public static final int DEF_DENSITY_BIN_COUNT = 622;	// clip at density ~ 0.002 of maximum
+
+	// Default fraction of parameter set probability space to clip.
+
+	public static final double DEF_PROB_TAIL_TRIM = 0.003;	// keep grid filling 99.7% of probability space
+
+	// Number of pre-selected parameter sets for seeding catalogs, must be a power of 2.
+
+	public static final int DEF_SEED_SUBVOX_COUNT = 262144;	// 2^18
+
 }

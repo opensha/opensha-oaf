@@ -17,6 +17,17 @@ package org.opensha.oaf.oetas.fit;
 // There is a tradeoff between log_density and vox_volume.
 // The value of log_likelihood + log_density is used to identify the tail of
 // the distribution, that is, the voxels that can be trimmed.
+//
+// A further refinement is to compute the probability as:
+//
+//   exp(log_likelihood * bay_weight + log_density - max_density) * vox_volume
+//
+// The constant bay_weight determines the weight given to the prior;
+// bay_weight == 1 is the usual Bayesian probability, while bay_weight == 0
+// yields a sequence-specific probability.  The constant max_density is
+// chosen so that the arguement to the exp() function is non-positive;
+// this prevents overflows, as the values of log_likelihood and log_density
+// can be large and positive.
 
 public class OEBayPriorValue {
 

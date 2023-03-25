@@ -1,6 +1,7 @@
 package org.opensha.oaf.oetas.fit;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
 
 import org.opensha.oaf.util.MarshalReader;
@@ -30,7 +31,7 @@ import org.opensha.oaf.oetas.util.OEValueElement;
 //
 // For each source group, contains coefficients for seeding the catalog. 
 
-public class OEDisc2InitStatVox {
+public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 	//---- Voxel defintion ---
 
@@ -205,6 +206,12 @@ public class OEDisc2InitStatVox {
 		if (!( a_zams_velt.length > 0 )) {
 			throw new IllegalArgumentException ("OEDisc2InitStatVox.set_subvox_def: No sub-voxels");
 		}
+		if (!( a_zams_velt.length <= OEConstants.MAX_EXCITATION_GRID )) {
+			throw new IllegalArgumentException ("OEDisc2InitStatVox.set_subvox_def: Too many sub-voxels, a_zams_velt.length = " + a_zams_velt.length);
+		}
+		if (!( a_zmu_velt == null || a_zams_velt.length == a_zmu_velt.length )) {
+			throw new IllegalArgumentException ("OEDisc2InitStatVox.set_subvox_def: Inconsistent sub-voxel count, a_zams_velt.length = " + a_zams_velt.length + ", a_zmu_velt.length = " + a_zmu_velt.length);
+		}
 
 		this.a_zams_velt = a_zams_velt;
 		this.a_zmu_velt = a_zmu_velt;
@@ -321,6 +328,7 @@ public class OEDisc2InitStatVox {
 
 
 	// Get the number of sub-voxels.
+	// Threading: Can be called simultaneously by multiple threads.
 
 	public final int get_subvox_count () {
 		return a_zams_velt.length;
@@ -330,9 +338,20 @@ public class OEDisc2InitStatVox {
 
 
 	// Return true if background rates are supported.
+	// Threading: Can be called simultaneously by multiple threads.
 
 	public final boolean is_background_supported () {
 		return prod_bkgd != null;
+	}
+
+
+
+
+	// Get the b-value for this voxel.
+	// Threading: Can be called simultaneously by multiple threads.
+
+	public final double get_b_value () {
+		return b_velt.get_ve_value();
 	}
 
 
@@ -503,9 +522,11 @@ public class OEDisc2InitStatVox {
 
 
 	// Calculate the maximum log-density over the sub-voxels.
+	// Parameters:
+	//  bay_weight = Bayesian prior weight, see OEConstants.BAY_WT_XXXX.
 	// Both Bayesian prior and log-likelihoods must have been computed.
 
-	public final double get_max_subvox_log_density () {
+	public final double get_max_subvox_log_density (double bay_weight) {
 
 		// Get the array lengths
 
@@ -513,9 +534,9 @@ public class OEDisc2InitStatVox {
 
 		// Loop to find maximum
 
-		double x = bay_log_density[0] + log_likelihood[0];
+		double x = (bay_log_density[0] * bay_weight) + log_likelihood[0];
 		for (int j = 1; j < subvox_count; ++j) {
-			x = Math.max (x, bay_log_density[j] + log_likelihood[j]);
+			x = Math.max (x, (bay_log_density[j] * bay_weight) + log_likelihood[j]);
 		}
 
 		return x;
@@ -525,11 +546,165 @@ public class OEDisc2InitStatVox {
 
 
 	// Get the log-density for the given sub-voxel.
+	// Parameters:
+	//  subvox_index = Sub-voxel index (0-based).
+	//  bay_weight = Bayesian prior weight, see OEConstants.BAY_WT_XXXX.
 	// Both Bayesian prior and log-likelihoods must have been computed.
 
-	public final double get_subvox_log_density (int subvox_index) {
-		return bay_log_density[subvox_index] + log_likelihood[subvox_index];
+	public final double get_subvox_log_density (int subvox_index, double bay_weight) {
+		return (bay_log_density[subvox_index] * bay_weight) + log_likelihood[subvox_index];
 	}
+
+
+
+
+	// Get all sub-voxel probabilities and place them in bins.
+	// Parameters:
+	//  bay_weight = Bayesian prior weight, see OEConstants.BAY_WT_XXXX.
+	//  max_log_density = Maximum log-density over all voxels and sub-voxels.
+	//  a_subvox_prob = Receives the probability of each sub-voxel, beginning at a_subvox_prob[dest_index].
+	//  a_density_bin = Receives the bin for the log-density of each sub-voxel, beginning at a_density_bin[dest_index].
+	//  dest_index = Initial index in a_subvox_prob and a_density_bin; the total number of sub-voxels in all prior voxels.
+	//  bin_size_lnu = The size of each log-density bin, in natural log units.
+	//  a_prob_accum = Accumulators for the probabiliy in each bin; length = bin_count.
+	//  a_tally_accum = Accumulators for the number of sub-voxels in each bin; length = bin_count.
+	// Both Bayesian prior and log-likelihoods must have been computed.
+	// This function computes the log-density and probability for each voxel.  It identifies the bin that
+	// contains the log-density, with larger bin numbers corresponding to lower log-densities.  If the
+	// log-density would place it past the last bin, it is included in the last bin.  The probability and
+	// bin index are returned in a_subvox_prob and a_density_bin respectively, and the probability is
+	// added to the element of a_prob_accum correspoinding to the bin.
+	// Note: The i-th density bin contains sub-voxels whose negative normalized log-density lies between
+	// i*bin_size_lnu and (i+1)*bin_size_lnu.  The last bin contains all sub-voxels whose negative
+	// normalized log-density is greater than (bin_count-1)*bin_size_lnu.
+
+	public final void get_probabilities_and_bin (
+		double bay_weight,
+		double max_log_density,
+		double[] a_subvox_prob,
+		int[] a_density_bin,
+		int dest_index,
+		double bin_size_lnu,
+		double[] a_prob_accum,
+		int[] a_tally_accum
+	) {
+
+		// Get the number of density bins, both integer and floating-point
+
+		final int bin_count = a_prob_accum.length;
+		final double d_bin_count = (double)bin_count;
+
+		// Loop over subvoxels ...
+
+		final int subvox_count = get_subvox_count();
+		for (int j = 0; j < subvox_count; ++j) {
+
+			// The log density, normalized to be non-positive
+
+			final double norm_log_density = (bay_log_density[j] * bay_weight) + log_likelihood[j] - max_log_density;
+
+			// Get the bin index, 0 for the highest log density
+
+			final double d_bin_index = (- norm_log_density) / bin_size_lnu;
+			int bin_index;
+			if (d_bin_index >= d_bin_count) {
+				bin_index = bin_count - 1;
+			} else {
+				bin_index = (int)Math.round (d_bin_index - 0.5);
+				if (bin_index < 0) {
+					bin_index = 0;
+				}
+				else if (bin_index >= bin_count) {
+					bin_index = bin_count - 1;
+				}
+			}
+
+			// Compute and accumulate the probability
+
+			final double probability = Math.exp(norm_log_density) * bay_vox_volume[j];
+
+			a_subvox_prob[j + dest_index] = probability;
+			a_density_bin[j + dest_index] = bin_index;
+			a_prob_accum[bin_index] += probability;
+			a_tally_accum[bin_index]++;
+		}
+
+		return;
+	}
+
+
+
+
+	// Get all sub-voxel probabilities and place them in bins.
+	// Parameters:
+	//  bay_weight = Bayesian prior weight, see OEConstants.BAY_WT_XXXX.
+	//  max_log_density = Maximum log-density over all voxels and sub-voxels.
+	//  a_subvox_prob = Receives the probability of each sub-voxel, beginning at a_subvox_prob[dest_index].
+	//  a_density_bin = Receives the bin for the log-density of each sub-voxel, beginning at a_density_bin[dest_index].
+	//  dest_index = Initial index in a_subvox_prob and a_density_bin; the total number of sub-voxels in all prior voxels.
+	//  bin_size_lnu = The size of each log-density bin, in natural log units.
+	//  a_prob_accum = Accumulators for the probabiliy in each bin; length = bin_count.
+	// Both Bayesian prior and log-likelihoods must have been computed.
+	// This function computes the log-density and probability for each voxel.  It identifies the bin that
+	// contains the log-density, with larger bin numbers corresponding to lower log-densities.  If the
+	// log-density would place it past the last bin, it is included in the last bin.  The probability and
+	// bin index are returned in a_subvox_prob and a_density_bin respectively, and the probability is
+	// added to the element of a_prob_accum correspoinding to the bin.
+	// Note: The i-th density bin contains sub-voxels whose negative normalized log-density lies between
+	// i*bin_size_lnu and (i+1)*bin_size_lnu.  The last bin contains all sub-voxels whose negative
+	// normalized log-density is greater than (bin_count-1)*bin_size_lnu.
+
+//	public final void get_probabilities_and_bin (
+//		double bay_weight,
+//		double max_log_density,
+//		double[] a_subvox_prob,
+//		int[] a_density_bin,
+//		int dest_index,
+//		double bin_size_lnu,
+//		double[] a_prob_accum
+//	) {
+//
+//		// Get the number of density bins, both integer and floating-point
+//
+//		final int bin_count = a_prob_accum.length;
+//		final double d_bin_count = (double)bin_count;
+//
+//		// Loop over subvoxels ...
+//
+//		final int subvox_count = get_subvox_count();
+//		for (int j = 0; j < subvox_count; ++j) {
+//
+//			// The log density, normalized to be non-positive
+//
+//			final double norm_log_density = (bay_log_density[j] * bay_weight) + log_likelihood[j] - max_log_density;
+//
+//			// Get the bin index, 0 for the highest log density
+//
+//			final double d_bin_index = (- norm_log_density) / bin_size_lnu;
+//			int bin_index;
+//			if (d_bin_index >= d_bin_count) {
+//				bin_index = bin_count - 1;
+//			} else {
+//				bin_index = (int)Math.round (d_bin_index - 0.5);
+//				if (bin_index < 0) {
+//					bin_index = 0;
+//				}
+//				else if (bin_index >= bin_count) {
+//					bin_index = bin_count - 1;
+//				}
+//			}
+//
+//			// Compute and accumulate the probability
+//
+//			final double probability = Math.exp(norm_log_density) * bay_vox_volume[j];
+//
+//			a_subvox_prob[j + dest_index] = probability;
+//			a_density_bin[j + dest_index] = bin_index;
+//			a_prob_accum[bin_index] += probability;
+//		}
+//
+//		return;
+//	}
 
 
 
@@ -755,6 +930,52 @@ public class OEDisc2InitStatVox {
 		comm.cat_builder.end_generation();
 		
 		return;
+	}
+
+
+
+
+	// Comparison implements a canonical ordering based on the voxel definition.
+	// Returns <0, ==0, or >0 depending on whether this object is less than, equal to, or greater than the other object.
+	// Implementation note: We take advantage of the fact that OEValueElement objects
+	// with the same value are probably the same object.
+
+	@Override
+	public final int compareTo (OEDisc2InitStatVox other) {
+		if (this.b_velt != other.b_velt) {
+			final int x = Double.compare (this.b_velt.get_ve_value(), other.b_velt.get_ve_value());
+			if (x != 0) {
+				return x;
+			}
+		}
+		if (this.alpha_velt != other.alpha_velt) {
+			final int x = Double.compare (
+				(this.alpha_velt == null) ? this.b_velt.get_ve_value() : this.alpha_velt.get_ve_value(),
+				(other.alpha_velt == null) ? other.b_velt.get_ve_value() : other.alpha_velt.get_ve_value()
+			);
+			if (x != 0) {
+				return x;
+			}
+		}
+		if (this.p_velt != other.p_velt) {
+			final int x = Double.compare (this.p_velt.get_ve_value(), other.p_velt.get_ve_value());
+			if (x != 0) {
+				return x;
+			}
+		}
+		if (this.c_velt != other.c_velt) {
+			final int x = Double.compare (this.c_velt.get_ve_value(), other.c_velt.get_ve_value());
+			if (x != 0) {
+				return x;
+			}
+		}
+		if (this.n_velt != other.n_velt) {
+			final int x = Double.compare (this.n_velt.get_ve_value(), other.n_velt.get_ve_value());
+			if (x != 0) {
+				return x;
+			}
+		}
+		return 0;
 	}
 
 
@@ -1116,6 +1337,45 @@ public class OEDisc2InitStatVox {
 		stat_vox.do_umarshal (reader, dedup);
 		reader.unmarshalMapEnd ();
 		return stat_vox;
+	}
+
+	// Marshal an array of objects.
+
+	public static void marshal_array (MarshalWriter writer, String name, OEDisc2InitStatVox[] x, IdentityHashMap<Object, Integer> dedup) {
+		int n = x.length;
+		writer.marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			static_marshal (writer, null, x[i], dedup);
+		}
+		writer.marshalArrayEnd ();
+		return;
+	}
+
+	// Unmarshal an array of objects.
+
+	public static OEDisc2InitStatVox[] unmarshal_array (MarshalReader reader, String name, List<Object> dedup) {
+		int n = reader.unmarshalArrayBegin (name);
+		OEDisc2InitStatVox[] x = new OEDisc2InitStatVox[n];
+		for (int i = 0; i < n; ++i) {
+			x[i] = static_unmarshal (reader, null, dedup);
+		}
+		reader.unmarshalArrayEnd ();
+		return x;
+	}
+
+	// Marshal an array of objects.
+
+	public static void marshal_array (MarshalWriter writer, String name, OEDisc2InitStatVox[] x) {
+		IdentityHashMap<Object, Integer> dedup = new IdentityHashMap<Object, Integer>();
+		marshal_array (writer, name, x, dedup);
+		return;
+	}
+
+	// Unmarshal an array of objects.
+
+	public static OEDisc2InitStatVox[] unmarshal_array (MarshalReader reader, String name) {
+		List<Object> dedup = new ArrayList<Object>();
+		return unmarshal_array (reader, name, dedup);
 	}
 
 

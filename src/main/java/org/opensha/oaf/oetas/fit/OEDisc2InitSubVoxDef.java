@@ -16,21 +16,63 @@ public class OEDisc2InitSubVoxDef {
 
 	// Values and elements for zams, for each sub-voxel, length = subvox_count, must be non-empty.
 
-	public OEValueElement[] a_zams_velt;
+	private OEValueElement[] a_zams_velt;
 
 	// Values and elements for zmu, for each sub-voxel, length = subvox_count, can be null to force zmu == 0.
 
-	public OEValueElement[] a_zmu_velt;
+	private OEValueElement[] a_zmu_velt;
 
 
 	// Get the number of sub-voxels.
+	// Threading: Can be called simultaneously by multiple threads.
 
 	public final int get_subvox_count () {
 		return a_zams_velt.length;
 	}
 
 
+	// Get the zams value element for a given index.
+	// Threading: Can be called simultaneously by multiple threads.
+
+	public final OEValueElement get_zams_velt (int combo_index) {
+		return a_zams_velt[combo_index];
+	}
+
+
+	// Get the zams-value for a given index.
+	// Threading: Can be called simultaneously by multiple threads.
+
+	public final double get_zams_value (int combo_index) {
+		return a_zams_velt[combo_index].get_ve_value();
+	}
+
+
+	// Get the zmu value element for a given index.
+	// Returns null if zmu == 0 is forced.
+	// Threading: Can be called simultaneously by multiple threads.
+
+	public final OEValueElement get_zmu_velt (int combo_index) {
+		if (a_zmu_velt == null) {
+			return null;
+		}
+		return a_zmu_velt[combo_index];
+	}
+
+
+	// Get the zmu-value for a given index.
+	// If zmu == 0 is forced, return 0.
+	// Threading: Can be called simultaneously by multiple threads.
+
+	public final double get_zmu_value (int combo_index) {
+		if (a_zmu_velt == null) {
+			return 0.0;
+		}
+		return a_zmu_velt[combo_index].get_ve_value();
+	}
+
+
 	// Set the sub-voxel definition into the given voxel.
+	// Threading: Can be called simultaneously by multiple threads.
 
 	public final void set_subvox_def (OEDisc2InitStatVox stat_vox) {
 		stat_vox.set_subvox_def (
@@ -49,7 +91,7 @@ public class OEDisc2InitSubVoxDef {
 
 	private OEValueElement[] sep_zams_velt;
 
-	// Values and elements for zmu, for each sub-voxel, length = sep_zmu_count, can be null to force zmu == 0, if non-null then must be non-empty.
+	// Values and elements for zmu, length = sep_zmu_count, can be null to force zmu == 0, if non-null then must be non-empty.
 
 	private OEValueElement[] sep_zmu_velt;
 
@@ -183,13 +225,14 @@ public class OEDisc2InitSubVoxDef {
 	// Get the log-density of the given voxel into a grid.
 	// Parameters:
 	//  stat_vox = Voxel, must have been set up using this object, must have Bayesian prior and log-likelihoods computed.
+	//  bay_weight = Bayesian prior weight, see OEConstants.BAY_WT_XXXX.
 	//  grid = Grid to receive log-density values, indexed as grid[amsix][muix].
 	// Note: This function is primarily for testing.
 
-	public final void get_log_density_grid (OEDisc2InitStatVox stat_vox, double[][] grid) {
+	public final void get_log_density_grid (OEDisc2InitStatVox stat_vox, double bay_weight, double[][] grid) {
 		final int subvox_count = get_subvox_count();
 		for (int subvox_index = 0; subvox_index < subvox_count; ++subvox_index) {
-			grid[get_sep_amsix (subvox_index)][get_sep_muix (subvox_index)] = stat_vox.get_subvox_log_density (subvox_index);
+			grid[get_sep_amsix (subvox_index)][get_sep_muix (subvox_index)] = stat_vox.get_subvox_log_density (subvox_index, bay_weight);
 		}
 		return;
 	}
@@ -237,7 +280,7 @@ public class OEDisc2InitSubVoxDef {
 	// Set the sub-voxel definition, from separate arrays of values.
 	// Parameters:
 	//  sep_zams_velt = Values and elements for zams, must be non-empty.
-	//  sep_zmu_velt = Values and elements for zmu, can be null to force zmu == 0, if non-null mest be non-empty.
+	//  sep_zmu_velt = Values and elements for zmu, can be null to force zmu == 0, if non-null must be non-empty.
 	// Returns this object.
 	// Note: This object copies the arrays.
 
@@ -289,7 +332,7 @@ public class OEDisc2InitSubVoxDef {
 		OEDiscreteRange sep_zmu_range
 	) {
 		if (!( sep_zams_range != null )) {
-			throw new IllegalArgumentException ("OEDisc2InitSubVoxDef.set_subvox_def_from_sep: No zams values");
+			throw new IllegalArgumentException ("OEDisc2InitSubVoxDef.set_from_sep_ranges: No zams values");
 		}
 
 		// Convert ranges into arrays of values

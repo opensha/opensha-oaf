@@ -523,6 +523,42 @@ public class TestArgs {
 
 
 
+	// Get a long argument.
+
+	public final long get_long (String arg_name) {
+		require_more (arg_name);
+		long x = 0;
+		try {
+			x = Long.parseLong (my_args[arg_index]);
+		}
+		catch (Exception e) {
+			signal_error ("Invalid long argument", arg_name, e);
+		}
+		++arg_index;
+		if (f_echo && arg_name != null && !(arg_name.isEmpty())) {
+			System.out.println (arg_name + " = " + x);
+		}
+		return x;
+	}
+
+
+
+
+	// Get an optional long argument, return the optional value if not in argument list.
+
+	public final long get_long_opt (String arg_name, long optval) {
+		if (has_more()) {
+			return get_long (arg_name);
+		}
+		if (f_echo && arg_name != null && !(arg_name.isEmpty())) {
+			System.out.println (arg_name + " = " + optval);
+		}
+		return optval;
+	}
+
+
+
+
 	// Get a boolean argument.
 
 	public final boolean get_boolean (String arg_name) {
@@ -701,8 +737,8 @@ public class TestArgs {
 
 		// Subcommand : Test #1
 		// Command format:
-		//  test1  str  d  i  b
-		// Test the obtaining of string, double, integer, and boolean arguments.
+		//  test1  str  d  i  b  l
+		// Test the obtaining of string, double, integer, boolean, and long arguments.
 
 		if (testargs.is_test ("test1")) {
 
@@ -713,6 +749,7 @@ public class TestArgs {
 			double d = testargs.get_double ("d");
 			int i = testargs.get_int ("i");
 			boolean b = testargs.get_boolean ("b");
+			long l = testargs.get_long ("l");
 			testargs.end_test();
 
 			// Display the command line
@@ -729,6 +766,7 @@ public class TestArgs {
 			System.out.println ("d = " + d);
 			System.out.println ("i = " + i);
 			System.out.println ("b = " + b);
+			System.out.println ("l = " + l);
 
 			return;
 		}
@@ -738,8 +776,8 @@ public class TestArgs {
 
 		// Subcommand : Test #2
 		// Command format:
-		//  test2  [str  [d  [i  [b]]]]
-		// Test the obtaining of optional string, double, integer, and boolean arguments.
+		//  test2  [str  [d  [i  [b  [l]]]]]
+		// Test the obtaining of optional string, double, integer, boolean, and long arguments.
 
 		if (testargs.is_test ("test2")) {
 
@@ -750,6 +788,7 @@ public class TestArgs {
 			double d = testargs.get_double_opt ("d", -3.14159);
 			int i = testargs.get_int_opt ("i", -271828);
 			boolean b = testargs.get_boolean_opt ("b", false);
+			long l = testargs.get_long_opt ("l", -987654321987654L);
 			testargs.end_test();
 
 			// Display the command line
@@ -766,6 +805,7 @@ public class TestArgs {
 			System.out.println ("d = " + d);
 			System.out.println ("i = " + i);
 			System.out.println ("b = " + b);
+			System.out.println ("l = " + l);
 
 			return;
 		}

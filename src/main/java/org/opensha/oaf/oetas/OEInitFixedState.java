@@ -818,7 +818,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 		case MARSHAL_VER_1: {
 
-			OECatalogParams.static_marshal  (writer, "cat_params   "      , cat_params         );
+			OECatalogParams.static_marshal  (writer, "cat_params"         , cat_params         );
 			OEGenerationInfo.static_marshal (writer, "seed_gen_info"      , seed_gen_info      );
 			OERupture.marshal_array         (writer, "ruptures"           , ruptures           );
 			OECatalogParams.static_marshal  (writer, "original_cat_params", original_cat_params);

@@ -379,6 +379,15 @@ public class OEDisc2InitFitInfo {
 
 
 
+	// Return true if we have a mainshock magnitude.
+
+	public final boolean has_mag_main () {
+		return mag_main > OEConstants.NO_MAG_NEG_CHECK;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 

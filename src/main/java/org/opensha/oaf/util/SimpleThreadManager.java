@@ -408,6 +408,100 @@ public class SimpleThreadManager {
 
 
 
+	// Place in state as if threads were launched followed by immediate successful completion.
+	// This function does not launch background threads.
+
+	public void launch_as_complete () {
+
+		// Single thread
+
+		num_threads = 1;
+
+		// Record the start time
+
+		start_time = System.currentTimeMillis();
+
+		// Initialize communication variables
+
+		count_down_latch = new CountDownLatch (num_threads);
+		req_termination.set (false);
+		abort_messages = new ConcurrentLinkedQueue<String>();
+
+		// Terminate the thread
+
+		count_down_latch.countDown();
+		return;
+	}
+
+
+
+
+	// Place in state as if threads were launched followed by immediate timeout.
+	// This function does not launch background threads.
+
+	public void launch_in_timeout () {
+
+		// Single thread
+
+		num_threads = 1;
+
+		// Record the start time
+
+		start_time = System.currentTimeMillis();
+
+		// Initialize communication variables
+
+		count_down_latch = new CountDownLatch (num_threads);
+		req_termination.set (false);
+		abort_messages = new ConcurrentLinkedQueue<String>();
+
+		// Request timeout
+
+		request_termination();
+
+		// Terminate the thread
+
+		count_down_latch.countDown();
+		return;
+	}
+
+
+
+
+	// Place in state as if threads were launched followed by immediate abort.
+	// Parameters:
+	//  message = The abort message.
+	// This function does not launch background threads.
+
+	public void launch_in_abort (String message) {
+
+		// Single thread
+
+		num_threads = 1;
+
+		// Record the start time
+
+		start_time = System.currentTimeMillis();
+
+		// Initialize communication variables
+
+		count_down_latch = new CountDownLatch (num_threads);
+		req_termination.set (false);
+		abort_messages = new ConcurrentLinkedQueue<String>();
+
+		// Request abort
+
+		add_abort_message (message);
+
+		// Terminate the thread
+
+		count_down_latch.countDown();
+		return;
+	}
+
+
+
+
 	// Check if all the threads have terminated.
 	// Returns true if terminated, false if not.
 	// Memory consistency: If the return value is true, then actions in thread_target

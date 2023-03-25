@@ -2608,4 +2608,26 @@ public class OEArraysCalc {
 
 
 
+	// Make an array, where each element equals its index bit-reversed.
+	// Parameters:
+	//  n = Array length, must be a power of 2.
+	// Returns an array x, where x[i] equals i bit-reversed.
+
+	public static int[] make_bit_rev_array (int n) {
+		if (!( n > 0 && (n & (n - 1)) == 0 )) {
+			throw new IllegalArgumentException ("OEArraysCalc.make_bit_rev_array: Array length is not a power of 2: n = " + n);
+		}
+		int[] x = new int[n];
+		x[0] = 0;
+		for (int fbit = 1, rbit = n >> 1; rbit != 0; fbit <<= 1, rbit >>= 1) {
+			for (int j = 0; j < fbit; ++j) {
+				x[j | fbit] = x[j] | rbit;
+			}
+		}
+		return x;
+	}
+
+
+
+
 }
