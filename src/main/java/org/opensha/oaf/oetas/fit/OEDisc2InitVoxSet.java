@@ -1080,6 +1080,45 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 
 
+	// Fill a grid with a c/p/a/ams likelihood grid.
+	// Parameters:
+	//  bay_weight = Bayesian prior weight, see OEConstants.BAY_WT_XXXX.
+	//  grid = Grid to receive log-density values, indexed as grid[cix][pix][aix][amsix].
+	// This function is for testing.
+	// Note: This function assumes that b, alpha, and zmu are fixed, and that the
+	// voxels represent a grid constructed from separate ranges of c, p, n, and zams.
+	// The function depends on the fact that voxels are sorted into canoncial order,
+	// which sorts first on b, then alpha, then c, then p, then n.  It also depends
+	// on zams values appearing in order in the list of sub=voxels.
+
+	public final void test_get_c_p_a_ams_log_density_grid (double bay_weight, double[][][][] grid) {
+		final int c_length = grid.length;
+		final int p_length = grid[0].length;
+		final int a_length = grid[0][0].length;
+		final int ams_length = grid[0][0][0].length;
+		if (!( c_length * p_length * a_length == voxel_count )) {
+			throw new InvariantViolationException ("OEDisc2InitVoxSet.test_get_log_density_grid: Grid size mismatch: c_length = " + c_length + ", p_length = " + p_length + ", a_length = " + a_length + ", voxel_count = " + voxel_count);
+		}
+		for (int cix = 0; cix < c_length; ++cix) {
+			for (int pix = 0; pix < p_length; ++pix) {
+				for (int aix = 0; aix < a_length; ++aix) {
+					final OEDisc2InitStatVox stat_vox = a_voxel_list[(((cix * p_length) + pix) * a_length) + aix];
+					final int subvox_count = stat_vox.get_subvox_count();
+					if (!( ams_length == subvox_count )) {
+						throw new InvariantViolationException ("OEDisc2InitVoxSet.test_get_log_density_grid: Grid size mismatch: ams_length = " + ams_length + ", subvox_count = " + subvox_count);
+					}
+					for (int amsix = 0; amsix < ams_length; ++amsix) {
+						grid[cix][pix][aix][amsix] = stat_vox.get_subvox_log_density (amsix, bay_weight);
+					}
+				}
+			}
+		}
+		return;
+	}
+
+
+
+
 	public static void main(String[] args) {
 
 		// There needs to be at least one argument, which is the subcommand

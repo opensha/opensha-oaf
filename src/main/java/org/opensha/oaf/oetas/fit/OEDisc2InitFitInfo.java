@@ -174,6 +174,7 @@ public class OEDisc2InitFitInfo {
 		result.append ("mag_min = " + mag_min + "\n");
 		result.append ("mag_max = " + mag_max + "\n");
 		result.append ("mag_main = " + mag_main + "\n");
+		result.append ("tint_br = " + tint_br + "\n");
 		if (bay_prior_params != null) {
 			result.append (bay_prior_params.toString());
 		}

@@ -957,14 +957,14 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 				return x;
 			}
 		}
-		if (this.p_velt != other.p_velt) {
-			final int x = Double.compare (this.p_velt.get_ve_value(), other.p_velt.get_ve_value());
+		if (this.c_velt != other.c_velt) {
+			final int x = Double.compare (this.c_velt.get_ve_value(), other.c_velt.get_ve_value());
 			if (x != 0) {
 				return x;
 			}
 		}
-		if (this.c_velt != other.c_velt) {
-			final int x = Double.compare (this.c_velt.get_ve_value(), other.c_velt.get_ve_value());
+		if (this.p_velt != other.p_velt) {
+			final int x = Double.compare (this.p_velt.get_ve_value(), other.p_velt.get_ve_value());
 			if (x != 0) {
 				return x;
 			}
