@@ -175,6 +175,10 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 	private int seed_subvox_count;
 
+	// The time at which the forecast begins, in days.  (Should be >= original_cat_params.tbegin.)
+
+	private double t_forecast;
+
 
 	//--- Derived data
 
@@ -270,6 +274,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 	// Set up for initialization, post fitting.
 	// Parameters:
 	//  the_cat_params = Catalog parameters to use.
+	//  the_t_forecast = The time at which the forecast begins, in days.  (Should be >= the_cat_params.tbegin.)
 	//  the_bay_weight = Bayesian prior weight (1 = Bayesian, 0 = Sequence-specific, see OEConstants.BAY_WT_XXX).
 	//  density_bin_size_lnu = Size of each bin for binning sub-voxels according to log-density, in natural log units.
 	//  density_bin_count = Number of bins for binning sub-voxels according to log-density; must be >= 2.
@@ -282,6 +287,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 	public final void setup_post_fitting (
 		OECatalogParams the_cat_params,
+		double the_t_forecast,
 		double the_bay_weight,
 		double density_bin_size_lnu,
 		int density_bin_count,
@@ -295,6 +301,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		original_cat_params = (new OECatalogParams()).copy_from (the_cat_params);
 		bay_weight = the_bay_weight;
 		seed_subvox_count = the_seed_subvox_count;
+		t_forecast = the_t_forecast;
 
 		// First scan, find total sub-voxel count and maximum log-density
 
@@ -533,6 +540,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		original_cat_params = null;
 		bay_weight = 0.0;
 		seed_subvox_count = 0;
+		t_forecast = 0.0;
 
 		proto_cat_params = null;
 		total_subvox_count = 0;
@@ -596,6 +604,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		}
 		result.append ("bay_weight = " + bay_weight + "\n");
 		result.append ("seed_subvox_count = " + seed_subvox_count + "\n");
+		result.append ("t_forecast = " + t_forecast + "\n");
 		if (proto_cat_params != null) {
 			result.append ("proto_cat_params = {" + proto_cat_params.toString() + "}\n");
 		}
@@ -896,6 +905,17 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 
 
+	// Get the time at which the forecast begins, in days.
+	// The value should be >= the simulation begin time in the catalog parameters.
+
+	@Override
+	public double get_t_forecast () {
+		return t_forecast;
+	}
+
+
+
+
 	// Get parameters that can be displayed to the user.
 	// Parameters:
 	//  paramMap = Map of parameters, which this function adds to.
@@ -909,8 +929,8 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		//paramMap.put ("c", SimpleUtils.round_double_via_string ("%.2e", cat_params.c));
 		//paramMap.put ("b", SimpleUtils.round_double_via_string ("%.2f", cat_params.b));
 		//paramMap.put ("alpha", SimpleUtils.round_double_via_string ("%.2f", cat_params.alpha));
-		paramMap.put ("Mref", SimpleUtils.round_double_via_string ("%.2f", proto_cat_params.mref));
-		paramMap.put ("Msup", SimpleUtils.round_double_via_string ("%.2f", proto_cat_params.msup));
+		paramMap.put ("etas_Mref", SimpleUtils.round_double_via_string ("%.2f", proto_cat_params.mref));
+		paramMap.put ("etas_Msup", SimpleUtils.round_double_via_string ("%.2f", proto_cat_params.msup));
 		return;
 	}
 
@@ -948,6 +968,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 			OECatalogParams.static_marshal    (writer, "original_cat_params"   , original_cat_params   );
 			writer.marshalDouble              (        "bay_weight"            , bay_weight            );
 			writer.marshalInt                 (        "seed_subvox_count"     , seed_subvox_count     );
+			writer.marshalDouble              (        "t_forecast"            , t_forecast            );
 			OECatalogParams.static_marshal    (writer, "proto_cat_params"      , proto_cat_params      );
 			writer.marshalInt                 (        "total_subvox_count"    , total_subvox_count    );
 			writer.marshalIntArray            (        "cum_subvox_count"      , cum_subvox_count      );
@@ -992,6 +1013,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 			original_cat_params    = OECatalogParams.static_unmarshal    (reader, "original_cat_params"   );
 			bay_weight             = reader.unmarshalDouble              (        "bay_weight"            );
 			seed_subvox_count      = reader.unmarshalInt                 (        "seed_subvox_count"     );
+			t_forecast             = reader.unmarshalDouble              (        "t_forecast"            );
 			proto_cat_params       = OECatalogParams.static_unmarshal    (reader, "proto_cat_params"      );
 			total_subvox_count     = reader.unmarshalInt                 (        "total_subvox_count"    );
 			cum_subvox_count       = reader.unmarshalIntArray            (        "cum_subvox_count"      );

@@ -105,6 +105,11 @@ public interface OEEnsembleInitializer {
 
 	public double get_b_value ();
 
+	// Get the time at which the forecast begins, in days.
+	// The value should be >= the simulation begin time in the catalog parameters.
+
+	public double get_t_forecast ();
+
 	// Get parameters that can be displayed to the user.
 	// Parameters:
 	//  paramMap = Map of parameters, which this function adds to.

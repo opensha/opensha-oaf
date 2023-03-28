@@ -735,6 +735,17 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 
 
+	// Get the time at which the forecast begins, in days.
+	// The value should be >= the simulation begin time in the catalog parameters.
+
+	@Override
+	public double get_t_forecast () {
+		return cat_params.tbegin;
+	}
+
+
+
+
 	// Get parameters that can be displayed to the user.
 	// Parameters:
 	//  paramMap = Map of parameters, which this function adds to.

@@ -68,6 +68,22 @@ public class OEDisc2InitFitInfo {
 	public double tint_br;
 
 
+	//----- Time range end -----
+
+	// The end of the interval time range, in days, as originally requested in the history parameters.
+
+	public double req_t_interval_end;
+
+	// The end of th interval time range, in days, covered by intervals in the history.
+
+	public double hist_t_interval_end;
+
+	// The end of the time range, in days, that is included in the source grouping.
+	// (If grouping was not enabled, the end of the time range included in the fitting.)
+
+	public double group_t_interval_end;
+
+
 	//----- Derived objects -----
 
 	// Parameters for the Bayesian prior.
@@ -105,6 +121,10 @@ public class OEDisc2InitFitInfo {
 		mag_main = 0.0;
 		tint_br = 0.0;
 
+		req_t_interval_end = 0.0;
+		hist_t_interval_end = 0.0;
+		group_t_interval_end = 0.0;
+
 		bay_prior_params = null;
 		seed_gen_info = null;
 
@@ -135,7 +155,10 @@ public class OEDisc2InitFitInfo {
 		double mag_min,
 		double mag_max,
 		double mag_main,
-		double tint_br
+		double tint_br,
+		double req_t_interval_end,
+		double hist_t_interval_end,
+		double group_t_interval_end
 	) {
 		this.f_background = f_background;
 		this.group_count = group_count;
@@ -146,6 +169,9 @@ public class OEDisc2InitFitInfo {
 		this.mag_max = mag_max;
 		this.mag_main = mag_main;
 		this.tint_br = tint_br;
+		this.req_t_interval_end = req_t_interval_end;
+		this.hist_t_interval_end = hist_t_interval_end;
+		this.group_t_interval_end = group_t_interval_end;
 
 		this.bay_prior_params = make_bay_prior_params();
 		this.seed_gen_info = make_seed_gen_info();
@@ -175,6 +201,9 @@ public class OEDisc2InitFitInfo {
 		result.append ("mag_max = " + mag_max + "\n");
 		result.append ("mag_main = " + mag_main + "\n");
 		result.append ("tint_br = " + tint_br + "\n");
+		result.append ("req_t_interval_end = " + req_t_interval_end + "\n");
+		result.append ("hist_t_interval_end = " + hist_t_interval_end + "\n");
+		result.append ("group_t_interval_end = " + group_t_interval_end + "\n");
 		if (bay_prior_params != null) {
 			result.append (bay_prior_params.toString());
 		}
@@ -389,6 +418,20 @@ public class OEDisc2InitFitInfo {
 
 
 
+	// For times after the end of the requested time range, adjust to align with history intervals.
+	// Otherwise, return the given time unchnaged.
+
+	public final double adjust_late_time (double t) {
+		if (t >= req_t_interval_end - (0.25 * OEConstants.FIT_TIME_EPS)) {
+			final double t_delta = hist_t_interval_end - req_t_interval_end;
+			return Math.max (hist_t_interval_end, t + t_delta);
+		}
+		return t;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 
@@ -427,6 +470,9 @@ public class OEDisc2InitFitInfo {
 			writer.marshalDouble  ("mag_max"     , mag_max     );
 			writer.marshalDouble  ("mag_main"    , mag_main    );
 			writer.marshalDouble  ("tint_br"     , tint_br     );
+			writer.marshalDouble  ("req_t_interval_end"  , req_t_interval_end  );
+			writer.marshalDouble  ("hist_t_interval_end" , hist_t_interval_end );
+			writer.marshalDouble  ("group_t_interval_end", group_t_interval_end);
 
 		}
 		break;
@@ -463,6 +509,9 @@ public class OEDisc2InitFitInfo {
 			mag_max      = reader.unmarshalDouble  ("mag_max"     );
 			mag_main     = reader.unmarshalDouble  ("mag_main"    );
 			tint_br      = reader.unmarshalDouble  ("tint_br"     );
+			req_t_interval_end   = reader.unmarshalDouble  ("req_t_interval_end"  );
+			hist_t_interval_end  = reader.unmarshalDouble  ("hist_t_interval_end" );
+			group_t_interval_end = reader.unmarshalDouble  ("group_t_interval_end");
 
 			bay_prior_params = make_bay_prior_params();
 			seed_gen_info = make_seed_gen_info();

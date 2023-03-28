@@ -243,7 +243,7 @@ public class OEDisc2History {
 	public int i_inside_end;
 
 	// Index+1 of the last rupture that lies (non-strictly) within the interval range.
-	// This is also the iIndex of the first rupture after the end of the time range (t >= t_interval_end - eps).
+	// This is also the index of the first rupture after the end of the time range (t >= t_interval_end - eps).
 	// Use of epsilon here ensures that a rupture whose time is exactly the interval end time
 	// is treated as occurring after and outside of the interval range.
 
@@ -323,6 +323,14 @@ public class OEDisc2History {
 	// a_interval_time[interval_count] is the ending of the time range.
 
 	public double[] a_interval_time;
+
+	// The beginning of the interval time range, in days, as originally requested in the history parameters.
+
+	public double req_t_interval_begin;
+
+	// The end of the interval time range, in days, as originally requested in the history parameters.
+
+	public double req_t_interval_end;
 
 	// Get the beginning of the time range.
 
@@ -545,6 +553,8 @@ public class OEDisc2History {
 		a_interval_mc = null;
 		a_interval_is_magcat = null;
 		a_interval_time = null;
+		req_t_interval_begin = 0.0;
+		req_t_interval_end = 0.0;
 
 		return;
 	}
@@ -594,6 +604,9 @@ public class OEDisc2History {
 		
 		double t_interval_begin = mag_comp_fn.get_interval_begin();
 		double t_interval_end = mag_comp_fn.get_interval_end();
+
+		req_t_interval_begin = t_interval_begin;	// save it
+		req_t_interval_end = t_interval_end;		// save it
 
 		// Save the number of ruptures
 
@@ -811,6 +824,8 @@ public class OEDisc2History {
 		if (i_count < interval_count) {
 			result.append ("... and " + (interval_count - i_count) + " more intervals" + "\n");
 		}
+		result.append ("req_t_interval_begin = " + rndd(req_t_interval_begin) + "\n");
+		result.append ("req_t_interval_end = " + rndd(req_t_interval_end) + "\n");
 
 		return result.toString();
 	}
@@ -838,6 +853,8 @@ public class OEDisc2History {
 		//result.append ("i_mainshock = " + a_rupture_obj[i_mainshock].one_line_mc_cat_string (i_mainshock, a_rupture_int_time_index[i_mainshock]) + "\n");
 
 		result.append ("interval_count = " + interval_count + "\n");
+		result.append ("req_t_interval_begin = " + rndd(req_t_interval_begin) + "\n");
+		result.append ("req_t_interval_end = " + rndd(req_t_interval_end) + "\n");
 
 		return result.toString();
 	}
@@ -874,6 +891,8 @@ public class OEDisc2History {
 			result.append (i_int + ": time = " + rndd(a_interval_time[i_int]) + ", mc = " + rndd(a_interval_mc[i_int]) + ", ismc = " + a_interval_is_magcat[i_int] + "\n");
 		}
 		result.append (interval_count + ": time = " + rndd(a_interval_time[interval_count]) + "\n");
+		result.append ("req_t_interval_begin = " + rndd(req_t_interval_begin) + "\n");
+		result.append ("req_t_interval_end = " + rndd(req_t_interval_end) + "\n");
 
 		return result.toString();
 	}
@@ -922,6 +941,8 @@ public class OEDisc2History {
 			writer.marshalDoubleArray ("a_interval_mc"           , a_interval_mc           );
 			writer.marshalBooleanArray ("a_interval_is_magcat"     , a_interval_is_magcat     );
 			writer.marshalDoubleArray ("a_interval_time"         , a_interval_time         );
+			writer.marshalDouble      ("req_t_interval_begin"    , req_t_interval_begin    );
+			writer.marshalDouble      ("req_t_interval_end"      , req_t_interval_end      );
 
 		}
 		break;
@@ -962,6 +983,8 @@ public class OEDisc2History {
 			a_interval_mc = reader.unmarshalDoubleArray         ("a_interval_mc"           );
 			a_interval_is_magcat = reader.unmarshalBooleanArray ("a_interval_is_magcat"    );
 			a_interval_time = reader.unmarshalDoubleArray       ("a_interval_time"         );
+			req_t_interval_begin = reader.unmarshalDouble       ("req_t_interval_begin"    );
+			req_t_interval_end = reader.unmarshalDouble         ("req_t_interval_end"      );
 
 		}
 		break;

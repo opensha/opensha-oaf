@@ -500,7 +500,7 @@ public class OEConstants {
 
 
 	// Options to select the magnitude range for rupture likelihood, and for
-	// internval productivity and likelihood, when fitting parameters.
+	// interval productivity and likelihood, when fitting parameters.
 
 	public static final int LMR_OPT_MCT_INFINITY = 1;		// From time-dependent magnitude of completeness to infinity.
 	public static final int LMR_OPT_MCT_MAG_MAX = 2;		// From time-dependent magnitude of completeness to maximum simulation magnitude.
@@ -567,7 +567,8 @@ public class OEConstants {
 	// The normalized log-density function is clipped by default at
 	// -DEF_DENSITY_BIN_SIZE_LNU * (DEF_DENSITY_BIN_COUNT - 1) natural log units.
 
-	public static final int DEF_DENSITY_BIN_COUNT = 622;	// clip at density ~ 0.002 of maximum
+//	public static final int DEF_DENSITY_BIN_COUNT = 622;	// clip at density ~ 0.002 of maximum
+	public static final int DEF_DENSITY_BIN_COUNT = 692;	// clip at density ~ 0.001 of maximum
 
 	// Default fraction of parameter set probability space to clip.
 

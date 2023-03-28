@@ -4188,6 +4188,10 @@ public class OEDisc2ExtFit {
 			result.append ("history.i_inside_end = "    + history.i_inside_end    + "\n");
 			result.append ("history.i_outside_end = "   + history.i_outside_end   + "\n");
 			result.append ("history.interval_count = "  + history.interval_count  + "\n");
+			result.append ("history.req_t_interval_begin = " + history.req_t_interval_begin + "\n");
+			result.append ("history.req_t_interval_end = "   + history.req_t_interval_end   + "\n");
+			result.append ("history.get_t_range_begin() = "  + history.get_t_range_begin()  + "\n");
+			result.append ("history.get_t_range_end() = "    + history.get_t_range_end()    + "\n");
 		}
 
 		result.append ("f_intervals = "            + f_intervals            + "\n");
@@ -4300,9 +4304,11 @@ public class OEDisc2ExtFit {
 
 		int group_count = 0;
 		double[] a_group_time = null;
+		double group_t_interval_end = history.a_interval_time[like_int_end];
 		if (grouping != null) {
 			group_count = grouping.group_count;
 			a_group_time = get_a_group_time();
+			group_t_interval_end = history.a_interval_time[accept_int_end];
 		}
 
 		fit_info.set (
@@ -4314,7 +4320,10 @@ public class OEDisc2ExtFit {
 			mag_min,
 			mag_max,
 			mag_main,
-			tint_br
+			tint_br,
+			history.req_t_interval_end,
+			history.get_t_range_end(),
+			group_t_interval_end
 		);
 
 		return fit_info;

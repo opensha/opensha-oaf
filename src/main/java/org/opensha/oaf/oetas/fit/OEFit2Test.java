@@ -1245,6 +1245,10 @@ public class OEFit2Test {
 
 		// Create prototype catalog parameters, with statistics zeroed out
 
+		double sim_tbegin = fit_info.group_t_interval_end;
+		double t_forecast = fit_info.group_t_interval_end;
+		double sim_tend = t_forecast + 365.0;
+
 		OECatalogParams proto_cat_params = new OECatalogParams();
 		proto_cat_params.set_to_fixed_mag (
 			0.0,				// a
@@ -1254,8 +1258,8 @@ public class OEFit2Test {
 			0.0,				// alpha
 			fit_info.mref,		// mref
 			fit_info.msup,		// msup
-			0.0,				// tbegin
-			fit_info.tint_br	// tend
+			sim_tbegin,			// tbegin
+			sim_tend			// tend
 		);
 		proto_cat_params.set_fixed_mag_min (fit_info.mag_min);
 		proto_cat_params.set_fixed_mag_max (fit_info.mag_max);
@@ -1263,12 +1267,13 @@ public class OEFit2Test {
 		// Complete setting up the voxel set
 
 		voxel_set.setup_post_fitting (
-			proto_cat_params,						// OECatalogParams the_cat_params
-			OEConstants.BAY_WT_BAYESIAN,			// double the_bay_weight
-			OEConstants.DEF_DENSITY_BIN_SIZE_LNU,	// double density_bin_size_lnu
-			OEConstants.DEF_DENSITY_BIN_COUNT,		// int density_bin_count
-			OEConstants.DEF_PROB_TAIL_TRIM,			// double prob_tail_trim
-			OEConstants.DEF_SEED_SUBVOX_COUNT		// int the_seed_subvox_count
+			proto_cat_params,						// the_cat_params
+			t_forecast,								// the_t_forecast
+			OEConstants.BAY_WT_BAYESIAN,			// the_bay_weight
+			OEConstants.DEF_DENSITY_BIN_SIZE_LNU,	// density_bin_size_lnu
+			OEConstants.DEF_DENSITY_BIN_COUNT,		// density_bin_count
+			OEConstants.DEF_PROB_TAIL_TRIM,			// prob_tail_trim
+			OEConstants.DEF_SEED_SUBVOX_COUNT		// the_seed_subvox_count
 		);
 
 
@@ -1553,6 +1558,10 @@ public class OEFit2Test {
 
 		// Create prototype catalog parameters, with statistics zeroed out
 
+		double sim_tbegin = fit_info.group_t_interval_end;
+		double t_forecast = fit_info.group_t_interval_end;
+		double sim_tend = t_forecast + 365.0;
+
 		OECatalogParams proto_cat_params = new OECatalogParams();
 		proto_cat_params.set_to_fixed_mag (
 			0.0,				// a
@@ -1562,8 +1571,8 @@ public class OEFit2Test {
 			0.0,				// alpha
 			fit_info.mref,		// mref
 			fit_info.msup,		// msup
-			0.0,				// tbegin
-			fit_info.tint_br	// tend
+			sim_tbegin,			// tbegin
+			sim_tend			// tend
 		);
 		proto_cat_params.set_fixed_mag_min (fit_info.mag_min);
 		proto_cat_params.set_fixed_mag_max (fit_info.mag_max);
@@ -1571,12 +1580,13 @@ public class OEFit2Test {
 		// Complete setting up the voxel set
 
 		voxel_set.setup_post_fitting (
-			proto_cat_params,						// OECatalogParams the_cat_params
-			OEConstants.BAY_WT_BAYESIAN,			// double the_bay_weight
-			OEConstants.DEF_DENSITY_BIN_SIZE_LNU,	// double density_bin_size_lnu
-			OEConstants.DEF_DENSITY_BIN_COUNT,		// int density_bin_count
-			OEConstants.DEF_PROB_TAIL_TRIM,			// double prob_tail_trim
-			OEConstants.DEF_SEED_SUBVOX_COUNT		// int the_seed_subvox_count
+			proto_cat_params,						// the_cat_params
+			t_forecast,								// the_t_forecast
+			OEConstants.BAY_WT_BAYESIAN,			// the_bay_weight
+			OEConstants.DEF_DENSITY_BIN_SIZE_LNU,	// density_bin_size_lnu
+			OEConstants.DEF_DENSITY_BIN_COUNT,		// density_bin_count
+			OEConstants.DEF_PROB_TAIL_TRIM,			// prob_tail_trim
+			OEConstants.DEF_SEED_SUBVOX_COUNT		// the_seed_subvox_count
 		);
 
 
