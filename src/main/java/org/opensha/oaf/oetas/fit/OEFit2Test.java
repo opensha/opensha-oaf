@@ -1214,9 +1214,9 @@ public class OEFit2Test {
 
 		// Create multi-thread context
 
-		int num_threads = -1;
-		long max_runtime = -1L;
-		long progress_time = 30000L;
+		int num_threads = AutoExecutorService.AESNUM_DEFAULT;	// -1
+		long max_runtime = SimpleExecTimer.NO_MAX_RUNTIME;		// -1L
+		long progress_time = SimpleExecTimer.DEF_PROGRESS_TIME;
 
 		try (
 			AutoExecutorService auto_executor = new AutoExecutorService (num_threads);
@@ -1527,9 +1527,9 @@ public class OEFit2Test {
 
 		// Create multi-thread context
 
-		int num_threads = -1;
-		long max_runtime = -1L;
-		long progress_time = 30000L;
+		int num_threads = AutoExecutorService.AESNUM_DEFAULT;	// -1
+		long max_runtime = SimpleExecTimer.NO_MAX_RUNTIME;		// -1L
+		long progress_time = SimpleExecTimer.DEF_PROGRESS_TIME;
 
 		try (
 			AutoExecutorService auto_executor = new AutoExecutorService (num_threads);

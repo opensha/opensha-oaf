@@ -206,28 +206,20 @@ public class SimpleThreadLoopHelper {
 	}
 
 
+	// Return true if loop iterations have not been completed.
+	// We return true if prompt termination has been requested but no abort has occurred.
+	// Note: In some applications, is_timeout() may return true even if all work has
+	// been completed, for example, if the timeout request occurred while all threads
+	// were executing their final iteration. If completion of all iterations indicates
+	// work is complete, this may be a more appropriate function to use to check for
+	// timeout.
+	// Threading: Although this function is thread-safe, it is intended to be
+	// accessed after all threads have terminated.
 
-
-	//----- Construction -----
-
-
-	// Clear the contents.
-
-	public final void clear () {
-		thread_manager.clear();
-		my_begin_index = 0;
-		my_end_index = 0;
-		current_loop_index.set (0);
-		current_completions.set (0);
-		return;
-	}
-
-
-	// Default constructor.
-
-	public SimpleThreadLoopHelper () {
-		my_begin_index = 0;
-		my_end_index = 0;
+	public final boolean is_incomplete () {
+		int loop_count = get_loop_count();
+		int completions = get_completions();
+		return completions < loop_count;
 	}
 
 
@@ -235,25 +227,177 @@ public class SimpleThreadLoopHelper {
 
 	//----- Services -----
 
+	// Default progress message format.
+	// Threads must treat this as read-only.
+
+	private String def_pm_fmt;
+
+	// Default value of default progress message format.
+
+	public static final String DEF_DEF_PM_FMT = "Completed %C of %L steps in %E seconds";
+
+	// A default format clients can use when threads are complete, with completions == loop count.
+
+	public static final String DEF_COMPLETE_PM_FMT = "Completed all %L steps in %E seconds";
+
+
+	// Set the default progress message format.
+	// Parameters:
+	//  pm_fmt = New progress message format, if null then restore the default.
+	// Returns this object.
+	// Threading: Cannot be called while threads are running (recommended procedure is to set format in constructor).
+
+	public final SimpleThreadLoopHelper set_def_pm_fmt (String pm_fmt) {
+		if (pm_fmt == null) {
+			def_pm_fmt = DEF_DEF_PM_FMT;
+		} else {
+			def_pm_fmt = pm_fmt;
+		}
+		return this;
+	}
+
+
+	// Get the default progress message format.
+
+	public final String get_def_pm_fmt () {
+		return def_pm_fmt;
+	}
+
 
 	// Make a progress message.
 	// Parameters:
-	//  f_last = True if this is expected to be the last progress message.
+	//  pm_fmt = Format for the progress message, if null then use the default format.
 	// Returns a one-line message, not terminated by linefeed.
 	// Threading: This function is thread-safe.
+	//
+	// The format string can contain the following escapes:
+	//  %% = A single percent sign.
+	//  %L = Loop count (number of iterations).
+	//  %C = Number of completions.
+	//  %P = Percent complete (whole number of percent).
+	//  %E = Elapsed time in seconds (seconds and tenthe).
+	//  %U = Memory usage.
 
-	public String make_progress_message (boolean f_last) {
-		long elapsed_time = System.currentTimeMillis() - thread_manager.get_start_time();
-		String s_elapsed_time = String.format ("%.1f", ((double)elapsed_time)/1000.0);
-		int loop_count = get_loop_count();
-		int completions = get_completions();
-		String message;
-		if (f_last && completions > 0 && completions == loop_count) {
-			message = "Completed all " + loop_count + " steps in " + s_elapsed_time + " seconds";
-		} else {
-			message = "Completed " + completions + " of " + loop_count + " steps in " + s_elapsed_time + " seconds";
+	public String make_progress_message (String pm_fmt) {
+		StringBuilder sb = new StringBuilder();
+
+		final int loop_count = get_loop_count();
+		final int completions = get_completions();
+		long time_now = 0L;
+		long elapsed_time = 0L;
+
+		String fmt = pm_fmt;
+		if (fmt == null) {
+			fmt = def_pm_fmt;
 		}
-		return message;
+
+		// Loop over characters in format string
+
+		boolean f_escape = false;
+
+		int len = fmt.length();
+		for (int i = 0; i < len; ++i) {
+
+			// Get character
+
+			char ch = fmt.charAt(i);
+
+			// Parse escape codes
+
+			if (f_escape) {
+				f_escape = false;
+
+				// Switch on character
+
+				switch(ch) {
+
+				// Single percent
+
+				case '%':
+					sb.append ('%');
+					break;
+
+				// Loop count
+
+				case 'L':
+					sb.append (loop_count);
+					break;
+
+				// Number of completions
+
+				case 'C':
+					sb.append (completions);
+					break;
+
+				// Percent complete
+
+				case 'P':
+					if (loop_count <= 0) {
+						sb.append (100);
+					} else {
+						long l_loop_count = (long)loop_count;
+						long l_completions = (long)completions;
+						sb.append ((l_completions * 100L) / l_loop_count);
+					}
+					break;
+
+				// Elapsed time in seconds and tenths
+
+				case 'E':
+					if (time_now == 0L) {
+						time_now = System.currentTimeMillis();
+						elapsed_time = time_now - thread_manager.get_start_time();
+					}
+					sb.append (String.format ("%d.%01d", elapsed_time / 1000L, (elapsed_time % 1000L) / 100L));
+					break;
+
+				// Memory usage
+
+				case 'U':
+					sb.append (SimpleUtils.used_memory_string());
+					break;
+
+				// Anything else, just output the escape code
+
+				default:
+					sb.append ('%');
+					sb.append (ch);
+					break;
+				}
+			}
+
+			// Character outside escape
+
+			else {
+
+				// Check for start of escape
+
+				if (ch == '%') {
+					f_escape = true;
+				}
+
+				// Otherwise, just output the Character
+
+				else {
+					sb.append (ch);
+				}
+			}
+		}
+
+		// If within escape, output the partial escape code
+
+		if (f_escape) {
+			sb.append ('%');
+		}
+
+		return sb.toString();
+	}
+
+
+	// Make a progress message, using default format.
+
+	public String make_progress_message () {
+		return make_progress_message (null);
 	}
 
 
@@ -310,7 +454,7 @@ public class SimpleThreadLoopHelper {
 
 			// Display progress message
 
-			System.out.println (make_progress_message (false));
+			System.out.println (make_progress_message ());
 		}
 
 		return;
@@ -365,6 +509,45 @@ public class SimpleThreadLoopHelper {
 		run_loop (thread_target, executor, begin_index, end_index, max_runtime, progress_time);
 
 		return;
+	}
+
+
+
+
+	//----- Construction -----
+
+
+	// Clear the contents.
+
+	public final void clear () {
+		thread_manager.clear();
+		my_begin_index = 0;
+		my_end_index = 0;
+		current_loop_index.set (0);
+		current_completions.set (0);
+		return;
+	}
+
+
+	// Default constructor.
+
+	public SimpleThreadLoopHelper () {
+		my_begin_index = 0;
+		my_end_index = 0;
+		def_pm_fmt = DEF_DEF_PM_FMT;
+	}
+
+
+	// Constructor also sets the progress message format.
+
+	public SimpleThreadLoopHelper (String pm_fmt) {
+		my_begin_index = 0;
+		my_end_index = 0;
+		if (pm_fmt == null) {
+			def_pm_fmt = DEF_DEF_PM_FMT;
+		} else {
+			def_pm_fmt = pm_fmt;
+		}
 	}
 
 
@@ -509,7 +692,7 @@ public class SimpleThreadLoopHelper {
 
 				// Show final state
 					
-				System.out.println (loop_helper.make_progress_message (true));
+				System.out.println (loop_helper.make_progress_message ());
 			}
 
 			// Return the count of primes
@@ -648,7 +831,7 @@ public class SimpleThreadLoopHelper {
 
 			// Show final state
 					
-			System.out.println (loop_helper.make_progress_message (true));
+			System.out.println (loop_helper.make_progress_message ());
 
 			// Return the count of primes
 

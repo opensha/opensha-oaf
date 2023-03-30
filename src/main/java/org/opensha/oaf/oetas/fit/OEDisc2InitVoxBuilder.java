@@ -502,13 +502,32 @@ public class OEDisc2InitVoxBuilder {
 
 
 
+	// Progress message format while running.
+
+	private static final String PMFMT_RUNNING = "Completed %C of %L steps (%P%%) in %E seconds using %U";
+
+	// Progress message format after completion.
+
+	private static final String PMFMT_DONE = "Completed all %L steps in %E seconds";
+
+	// Progress message format for timeout.
+
+	private static final String PMFMT_TIMEOUT = "Stopped after completing %C of %L steps in %E seconds";
+
+	// Progress message format for abort.
+
+	private static final String PMFMT_ABORT = "Aborted after completing %C of %L steps in %E seconds";
+
+
+
+
 	// Class to build a list of mexp objects, one for each (b, alpha) pair.
 
 	private class TM_mexp_list_builder implements SimpleThreadTarget {
 
 		// The loop helper.
 
-		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper();
+		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper (PMFMT_RUNNING);
 
 		// List of partial voxels for (b, alpha) pairs (read-only).
 
@@ -567,7 +586,7 @@ public class OEDisc2InitVoxBuilder {
 
 			if (loop_helper.is_abort()) {
 				System.out.println (loop_helper.get_abort_message_string());
-				String loop_stat = loop_helper.make_progress_message (false);
+				String loop_stat = loop_helper.make_progress_message (PMFMT_ABORT);
 				String msg = "Abort caching data for (b, alpha) pairs because of thread abort";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -576,8 +595,8 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, check for timeout
 
-			if (loop_helper.is_timeout()) {
-				String loop_stat = loop_helper.make_progress_message (false);
+			if (loop_helper.is_incomplete()) {
+				String loop_stat = loop_helper.make_progress_message (PMFMT_TIMEOUT);
 				String msg = "Abort caching data for (b, alpha) pairs because of timeout";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -586,7 +605,7 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, normal termination
 
-			System.out.println (loop_helper.make_progress_message (true));
+			System.out.println (loop_helper.make_progress_message (PMFMT_DONE));
 			System.out.println ("Finish caching data for (b, alpha) pairs");
 
 			return;
@@ -603,7 +622,7 @@ public class OEDisc2InitVoxBuilder {
 
 		// The loop helper.
 
-		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper();
+		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper (PMFMT_RUNNING);
 
 		// List of partial voxels for (c, p) pairs (read-only).
 
@@ -663,7 +682,7 @@ public class OEDisc2InitVoxBuilder {
 
 			if (loop_helper.is_abort()) {
 				System.out.println (loop_helper.get_abort_message_string());
-				String loop_stat = loop_helper.make_progress_message (false);
+				String loop_stat = loop_helper.make_progress_message (PMFMT_ABORT);
 				String msg = "Abort caching data for (c, p) pairs because of thread abort";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -672,8 +691,8 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, check for timeout
 
-			if (loop_helper.is_timeout()) {
-				String loop_stat = loop_helper.make_progress_message (false);
+			if (loop_helper.is_incomplete()) {
+				String loop_stat = loop_helper.make_progress_message (PMFMT_TIMEOUT);
 				String msg = "Abort caching data for (c, p) pairs because of timeout";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -682,7 +701,7 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, normal termination
 
-			System.out.println (loop_helper.make_progress_message (true));
+			System.out.println (loop_helper.make_progress_message (PMFMT_DONE));
 			System.out.println ("Finish caching data for (c, p) pairs");
 
 			return;
@@ -699,7 +718,7 @@ public class OEDisc2InitVoxBuilder {
 
 		// The loop helper.
 
-		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper();
+		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper (PMFMT_RUNNING);
 
 		// List of partial voxels for (b, alpha) pairs (read-only).
 
@@ -775,7 +794,7 @@ public class OEDisc2InitVoxBuilder {
 
 			if (loop_helper.is_abort()) {
 				System.out.println (loop_helper.get_abort_message_string());
-				String loop_stat = loop_helper.make_progress_message (false);
+				String loop_stat = loop_helper.make_progress_message (PMFMT_ABORT);
 				String msg = "Abort caching data for (b, alpha, c, p) quadruples because of thread abort";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -784,8 +803,8 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, check for timeout
 
-			if (loop_helper.is_timeout()) {
-				String loop_stat = loop_helper.make_progress_message (false);
+			if (loop_helper.is_incomplete()) {
+				String loop_stat = loop_helper.make_progress_message (PMFMT_TIMEOUT);
 				String msg = "Abort caching data for (b, alpha, c, p) quadruples because of timeout";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -794,7 +813,7 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, normal termination
 
-			System.out.println (loop_helper.make_progress_message (true));
+			System.out.println (loop_helper.make_progress_message (PMFMT_DONE));
 			System.out.println ("Finish caching data for (b, alpha, c, p) quadruples");
 
 			return;
@@ -863,7 +882,7 @@ public class OEDisc2InitVoxBuilder {
 
 		// The loop helper.
 
-		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper();
+		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper (PMFMT_RUNNING);
 
 		// List of partial voxels for (b, alpha) pairs (read-only).
 
@@ -976,7 +995,7 @@ public class OEDisc2InitVoxBuilder {
 
 			if (loop_helper.is_abort()) {
 				System.out.println (loop_helper.get_abort_message_string());
-				String loop_stat = loop_helper.make_progress_message (false);
+				String loop_stat = loop_helper.make_progress_message (PMFMT_ABORT);
 				String msg = "Abort calculating likelihoods for (c, p) pairs because of thread abort";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -985,8 +1004,8 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, check for timeout
 
-			if (loop_helper.is_timeout()) {
-				String loop_stat = loop_helper.make_progress_message (false);
+			if (loop_helper.is_incomplete()) {
+				String loop_stat = loop_helper.make_progress_message (PMFMT_TIMEOUT);
 				String msg = "Abort calculating likelihoods for (c, p) pairs because of timeout";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -995,7 +1014,7 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, normal termination
 
-			System.out.println (loop_helper.make_progress_message (true));
+			System.out.println (loop_helper.make_progress_message (PMFMT_DONE));
 			System.out.println ("Finish calculating likelihoods for (c, p) pairs");
 
 			// Check the number of voxels
@@ -1024,7 +1043,7 @@ public class OEDisc2InitVoxBuilder {
 
 		// The loop helper.
 
-		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper();
+		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper (PMFMT_RUNNING);
 
 		// List of partial voxels for (b, alpha) pairs (read-only).
 
@@ -1147,7 +1166,7 @@ public class OEDisc2InitVoxBuilder {
 
 			if (loop_helper.is_abort()) {
 				System.out.println (loop_helper.get_abort_message_string());
-				String loop_stat = loop_helper.make_progress_message (false);
+				String loop_stat = loop_helper.make_progress_message (PMFMT_ABORT);
 				String msg = "Abort calculating likelihoods for (b, alpha, c, p) quadruples because of thread abort";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -1156,8 +1175,8 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, check for timeout
 
-			if (loop_helper.is_timeout()) {
-				String loop_stat = loop_helper.make_progress_message (false);
+			if (loop_helper.is_incomplete()) {
+				String loop_stat = loop_helper.make_progress_message (PMFMT_TIMEOUT);
 				String msg = "Abort calculating likelihoods for (b, alpha, c, p) quadruples because of timeout";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -1166,7 +1185,7 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, normal termination
 
-			System.out.println (loop_helper.make_progress_message (true));
+			System.out.println (loop_helper.make_progress_message (PMFMT_DONE));
 			System.out.println ("Finish calculating likelihoods for (b, alpha, c, p) quadruples");
 
 			// Check the number of voxels
@@ -1195,7 +1214,7 @@ public class OEDisc2InitVoxBuilder {
 
 		// The loop helper.
 
-		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper();
+		private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper (PMFMT_RUNNING);
 
 		// List of partial voxels for (b, alpha, c, p) quadruples (read-only).
 
@@ -1310,7 +1329,7 @@ public class OEDisc2InitVoxBuilder {
 
 			if (loop_helper.is_abort()) {
 				System.out.println (loop_helper.get_abort_message_string());
-				String loop_stat = loop_helper.make_progress_message (false);
+				String loop_stat = loop_helper.make_progress_message (PMFMT_ABORT);
 				String msg = "Abort calculating likelihoods for (b, alpha, c, p, n) quintuples because of thread abort";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -1319,8 +1338,8 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, check for timeout
 
-			if (loop_helper.is_timeout()) {
-				String loop_stat = loop_helper.make_progress_message (false);
+			if (loop_helper.is_incomplete()) {
+				String loop_stat = loop_helper.make_progress_message (PMFMT_TIMEOUT);
 				String msg = "Abort calculating likelihoods for (b, alpha, c, p, n) quintuples because of timeout";
 				System.out.println (loop_stat);
 				System.out.println (msg);
@@ -1329,7 +1348,7 @@ public class OEDisc2InitVoxBuilder {
 
 			// Otherwise, normal termination
 
-			System.out.println (loop_helper.make_progress_message (true));
+			System.out.println (loop_helper.make_progress_message (PMFMT_DONE));
 			System.out.println ("Finish calculating likelihoods for (b, alpha, c, p, n) quintuples");
 
 			// Check the number of voxels

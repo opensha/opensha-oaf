@@ -14,7 +14,7 @@ public class SimpleExecTimer {
 
 	// Default time interval for progress messages, in milliseconds, can be -1L for no progress messages.
 
-	public static final long DEF_PROGRESS_TIME = 30000L;		// 30 seconds
+	public static final long DEF_PROGRESS_TIME = 20000L;		// 20 seconds
 
 	// Default minimum positive time remaining to return, in milliseconds.
 
@@ -497,6 +497,39 @@ public class SimpleExecTimer {
 		}
 
 		return remaining_time;
+	}
+
+
+
+
+	// Get the minimum of two values of remaining time.
+
+	public static long min_remaining_time (long remaining_time_1, long remaining_time_2) {
+		long result = NO_MAX_RUNTIME;
+
+		if (remaining_time_1 >= 0L) {
+			if (remaining_time_2 >= 0L) {
+				result = Math.min (remaining_time_1, remaining_time_2);
+			} else {
+				result = remaining_time_1;
+			}
+		} else {
+			if (remaining_time_2 >= 0L) {
+				result = remaining_time_2;
+			}
+		}
+
+		return result;
+	}
+
+
+
+	// Get the remaining time, in milliseconds, but limited to no more than the argument.
+	// Parameters:
+	//  limit_time = Upper limit for remaining time, in milliseconds, or -1L (== NO_MAX_RUNTIME) if no limit.
+
+	public final long get_lim_remaining_time (long limit_time) {
+		return min_remaining_time (limit_time, get_remaining_time());
 	}
 
 
