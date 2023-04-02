@@ -1384,6 +1384,21 @@ public class OEDisc2InitVoxBuilder {
 
 		final int num_threads = exec_timer.get_executor().get_num_threads();
 
+		// Say hello
+
+		System.out.println ();
+		System.out.println ("Fitting ETAS parameters");
+		System.out.println ();
+		final long max_runtime = exec_timer.get_remaining_time();
+		System.out.println (
+			"Fitting "
+			+ (b_alpha_def.get_combo_count() * c_p_def.get_combo_count() * n_def.get_combo_count() * sub_vox_def.get_subvox_count())
+			+ " parameter combinations, using "
+			+ num_threads
+			+ " threads, with "
+			+ ((max_runtime < 0L) ? ("unlimited runtime") : (((max_runtime + 500L) / 1000L) + " seconds maximum runtime"))
+		);
+
 		// The number of (c, p) pairs
 
 		final int c_p_count = c_p_def.get_combo_count();

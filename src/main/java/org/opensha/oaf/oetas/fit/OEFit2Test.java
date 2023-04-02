@@ -1249,8 +1249,23 @@ public class OEFit2Test {
 		double t_forecast = fit_info.group_t_interval_end;
 		double sim_tend = t_forecast + 365.0;
 
+//		OECatalogParams proto_cat_params = new OECatalogParams();
+//		proto_cat_params.set_to_fixed_mag (
+//			0.0,				// a
+//			0.0,				// p
+//			0.0,				// c
+//			0.0,				// b
+//			0.0,				// alpha
+//			fit_info.mref,		// mref
+//			fit_info.msup,		// msup
+//			sim_tbegin,			// tbegin
+//			sim_tend			// tend
+//		);
+//		proto_cat_params.set_fixed_mag_min (fit_info.mag_min);
+//		proto_cat_params.set_fixed_mag_max (fit_info.mag_max);
+
 		OECatalogParams proto_cat_params = new OECatalogParams();
-		proto_cat_params.set_to_fixed_mag (
+		proto_cat_params.set_to_fixed_mag_limited (
 			0.0,				// a
 			0.0,				// p
 			0.0,				// c
@@ -1259,10 +1274,10 @@ public class OEFit2Test {
 			fit_info.mref,		// mref
 			fit_info.msup,		// msup
 			sim_tbegin,			// tbegin
-			sim_tend			// tend
+			sim_tend,			// tend
+			fit_info.mag_min,	// mag_min_sim
+			fit_info.mag_max	// mag_max_sim
 		);
-		proto_cat_params.set_fixed_mag_min (fit_info.mag_min);
-		proto_cat_params.set_fixed_mag_max (fit_info.mag_max);
 
 		// Complete setting up the voxel set
 
@@ -1562,8 +1577,23 @@ public class OEFit2Test {
 		double t_forecast = fit_info.group_t_interval_end;
 		double sim_tend = t_forecast + 365.0;
 
+//		OECatalogParams proto_cat_params = new OECatalogParams();
+//		proto_cat_params.set_to_fixed_mag (
+//			0.0,				// a
+//			0.0,				// p
+//			0.0,				// c
+//			0.0,				// b
+//			0.0,				// alpha
+//			fit_info.mref,		// mref
+//			fit_info.msup,		// msup
+//			sim_tbegin,			// tbegin
+//			sim_tend			// tend
+//		);
+//		proto_cat_params.set_fixed_mag_min (fit_info.mag_min);
+//		proto_cat_params.set_fixed_mag_max (fit_info.mag_max);
+
 		OECatalogParams proto_cat_params = new OECatalogParams();
-		proto_cat_params.set_to_fixed_mag (
+		proto_cat_params.set_to_fixed_mag_limited (
 			0.0,				// a
 			0.0,				// p
 			0.0,				// c
@@ -1572,10 +1602,10 @@ public class OEFit2Test {
 			fit_info.mref,		// mref
 			fit_info.msup,		// msup
 			sim_tbegin,			// tbegin
-			sim_tend			// tend
+			sim_tend,			// tend
+			fit_info.mag_min,	// mag_min_sim
+			fit_info.mag_max	// mag_max_sim
 		);
-		proto_cat_params.set_fixed_mag_min (fit_info.mag_min);
-		proto_cat_params.set_fixed_mag_max (fit_info.mag_max);
 
 		// Complete setting up the voxel set
 

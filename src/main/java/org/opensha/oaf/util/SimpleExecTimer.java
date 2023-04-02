@@ -524,12 +524,56 @@ public class SimpleExecTimer {
 
 
 
+
+	// Compare two values of remaining time.
+	// Returns <0, ==0, or >0 according to whether remaining_time_1 is less time,
+	// the same amount of time, or more time than remaining_time_2.
+	// Note: A negative value compares equal to any other negative value,
+	// and greater than any positive value.
+
+	public static int compare_remaining_time (long remaining_time_1, long remaining_time_2) {
+		int result = 0;
+
+		if (remaining_time_1 >= 0L) {
+			if (remaining_time_2 >= 0L) {
+				if (remaining_time_1 < remaining_time_2) {
+					result = -1;
+				}
+				else if (remaining_time_1 > remaining_time_2) {
+					result = 1;
+				}
+			} else {
+				result = -1;
+			}
+		} else {
+			if (remaining_time_2 >= 0L) {
+				result = 1;
+			}
+		}
+
+		return result;
+	}
+
+
+
+
 	// Get the remaining time, in milliseconds, but limited to no more than the argument.
 	// Parameters:
 	//  limit_time = Upper limit for remaining time, in milliseconds, or -1L (== NO_MAX_RUNTIME) if no limit.
 
 	public final long get_lim_remaining_time (long limit_time) {
 		return min_remaining_time (limit_time, get_remaining_time());
+	}
+
+
+
+
+	// Return true if the remaining time is at least the desired amount of time, in milliseconds.
+	// Parameters:
+	//  desired_time = Desired amount of time, in milliseconds, or -1L (== NO_MAX_RUNTIME) if no limit.
+
+	public final boolean has_remaining_time (long desired_time) {
+		return compare_remaining_time (desired_time, get_remaining_time()) <= 0;
 	}
 
 

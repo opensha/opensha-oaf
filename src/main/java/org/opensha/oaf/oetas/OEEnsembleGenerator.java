@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.opensha.oaf.util.AutoExecutorService;
+import org.opensha.oaf.util.SimpleThreadLoopHelper;
 import org.opensha.oaf.util.SimpleThreadManager;
 import org.opensha.oaf.util.SimpleThreadTarget;
 import org.opensha.oaf.util.SimpleUtils;
@@ -22,6 +23,10 @@ import org.opensha.oaf.util.SimpleUtils;
 // This is a multi-threaded catalog ensemble generator.  Each catalog is
 // seeded, generated, scanned, accumulated, and then discarded.  Multiple
 // threads permit multiple catalogs to be generated simultaneously.
+//
+// The recommended procedure is to create a new OEEnsembleGenerator
+// object for each ensemble of catalogs generated (although the code
+// would permit the object to be reused).
 
 public class OEEnsembleGenerator implements SimpleThreadTarget {
 
@@ -43,34 +48,41 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 
 
+	//----- Status messages -----
+
+	// Progress message format while running.
+
+	private static final String PMFMT_RUNNING = "Generated %C ETAS catalogs so far in %E seconds using %U";
+
+	// Progress message format after completion.
+
+	private static final String PMFMT_DONE = "Finished generating %C ETAS catalogs in %E seconds";
+
+	// Progress message format for timeout.
+
+	private static final String PMFMT_TIMEOUT = "Reached time limit after generating %C ETAS catalogs in %E seconds";
+
+	// Progress message format for abort.
+
+	private static final String PMFMT_ABORT = "Aborted because of error after generating %C ETAS catalogs in %E seconds";
+
+	// Message when no message is available yet.
+
+	private static final String PMFMT_NONE = "No status available";
+
+
+	// The status message for the last catalog generation.
+
+	private String status_msg;
+
+
+
+
 	//----- Thread communication -----
 
-	// The number of catalogs generated so far.
+	// The loop helper.
 
-	private AtomicInteger catalog_count = new AtomicInteger();
-
-
-	// Get the next work unit.
-	// If there is more work to do, return the current catalog number and increment the catalog count.
-	// If there is no more work to do, return -1.
-	// Threading: This function is thread-safe.
-
-	private int get_work_unit () {
-		int n;
-		do {
-			n = catalog_count.get();
-			if (n >= ensemble_params.num_catalogs) {
-				return -1;
-			}
-		} while (!( catalog_count.compareAndSet (n, n+1) ));
-		return n;
-	}
-
-
-	// True if thread abort has occurred.
-	// Threading: This may only be accessed from the main thread.
-
-	private boolean f_thread_abort;
+	private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper (PMFMT_RUNNING);
 
 
 
@@ -80,15 +92,15 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 
 
-	// Erase the contents.
-
-	public final void clear () {
-		ensemble_params = null;
-
-		catalog_count.set(0);
-		f_thread_abort = false;
-		return;
-	}
+	//// Erase the contents.
+	//
+	//public final void clear () {
+	//	ensemble_params = null;
+	//
+	//	catalog_count.set(0);
+	//	f_thread_abort = false;
+	//	return;
+	//}
 
 
 
@@ -96,7 +108,8 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 	// Default constructor.
 
 	public OEEnsembleGenerator () {
-		clear();
+		ensemble_params = null;
+		status_msg = PMFMT_NONE;
 	}
 
 
@@ -144,16 +157,9 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 		OECatalogGenerator cat_generator = new OECatalogGenerator();
 
-		// Loop until prompt termination is requested
+		// Loop until loop completed or prompt termination is requested
 
-		while (!( thread_manager.get_req_termination() )) {
-
-			// Get next work unit, end loop if none
-
-			final int ncat = get_work_unit();
-			if (ncat < 0) {
-				break;
-			}
+		for (int index = loop_helper.get_loop_index(); index >= 0; index = loop_helper.get_next_index()) {
 
 			// Set up the seeder communication area
 
@@ -212,7 +218,7 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 	//  the_ensemble_params = The ensemble parameters.
 	// This must be called before launching threads.
 
-	public void pre_launch (OEEnsembleParams the_ensemble_params) {
+	private void pre_launch (OEEnsembleParams the_ensemble_params) {
 
 		// Validate parameters
 
@@ -240,13 +246,11 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 
 
-	// Get the number of catalogs processed or being processed.
-	// This may be called while running to monitor progress,
-	// or after termination to obtain the number of catalogs generated.
-	// Threading: This function is thread-safe.
+	// Get the number of catalogs generated.
+	// Threading: This function may only be called from the main thread after termination.
 
 	public final int get_catalog_count () {
-		return catalog_count.get();
+		return loop_helper.get_completions();
 	}
 
 
@@ -256,7 +260,17 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 	// Threading: This function may only be called from the main thread after termination.
 
 	public final boolean has_thread_abort () {
-		return f_thread_abort;
+		return loop_helper.is_abort();
+	}
+
+
+
+
+	// Get the final status message for the last operation.
+	// Threading: This function may only be called from the main thread after termination.
+
+	public final String get_status_msg () {
+		return status_msg;
 	}
 
 
@@ -265,7 +279,7 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 	// Perform post-termination operations.
 	// This must be called after all threads are terminated to finish accumulation.
 
-	public void post_termination () {
+	private void post_termination () {
 
 		// End initialization
 
@@ -283,113 +297,62 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 
 
-	// Get the elapsed time, in seconds, as a string.
-
-	private String get_elapsed_time (long start_time) {
-		long elapsed_time = System.currentTimeMillis() - start_time;
-		String s_elapsed_time = String.format ("%.3f", ((double)elapsed_time)/1000.0);
-		return s_elapsed_time;
-	}
-
-
-
-
 	// Generate all the catalogs.
 	// Parameters:
 	//  the_ensemble_params = The ensemble parameters.
 	//  executor = The executor to use for launching the threads.
-	//  the_num_threads = The number of threads to use, must be > 0.
 	//  max_runtime = Maximum runtime requested, in milliseconds, can be -1L for no limit.
 	//  progress_time = Time interval for progress messages, in milliseconds, can be -1L for no progress messages.
+	// Returns the number of catalogs generated, or -1 if thread abort.
 	// This combines the function of pre_launch, launch_threads, await_termination, and post_termination.
+	// This version creates the executor.
 
-	public void generate_all_catalogs (OEEnsembleParams the_ensemble_params, Executor executor, int the_num_threads, long max_runtime, long progress_time) {
+	public int generate_all_catalogs (OEEnsembleParams the_ensemble_params, AutoExecutorService executor, long max_runtime, long progress_time) {
 
-		// Validate parameters
+		int ncat_gen = 0;
 
-		if (!( the_num_threads > 0 )) {
-			throw new IllegalArgumentException ("OEEnsembleGenerator.generate_all_catalogs: Invalid number of threads: " + the_num_threads);
-		}
+		// No status
 
-		// No thread abort
-
-		f_thread_abort = false;
+		status_msg = PMFMT_NONE;
 	
 		// Pre-launch operations
 
 		pre_launch (the_ensemble_params);
 
-		// Launch the threads
+		// Run the loop
 
-		SimpleThreadManager thread_manager = new SimpleThreadManager();
-		thread_manager.launch_threads (this, executor, the_num_threads);
-
-		// Get the start time
-
-		long start_time = thread_manager.get_start_time();
-
-		// Loop until terminated
-
-		while (!( thread_manager.await_termination (max_runtime, progress_time) )) {
-
-			// Display progress message
-
-			if (progress_time >= 0L) {
-				System.out.println ("Generating " + get_catalog_count() + " ETAS catalogs so far in " + get_elapsed_time (start_time) + " seconds using " + SimpleUtils.used_memory_string());
-			}
-		}
+		loop_helper.run_loop (this, executor, 0, ensemble_params.num_catalogs, max_runtime, progress_time);
 
 		// Check for thread abort
 
-		if (thread_manager.is_abort()) {
-			f_thread_abort = true;
-			if (progress_time >= 0L) {
-				System.out.println ("Stopped because of thread abort in " + get_elapsed_time (start_time) + " seconds");
-				System.out.println (thread_manager.get_abort_message_string());
-			}
+		if (loop_helper.is_abort()) {
+			System.out.println (loop_helper.get_abort_message_string());
+			status_msg = loop_helper.make_progress_message (PMFMT_ABORT);
+			System.out.println (status_msg);
+			ncat_gen = -1;
 		}
 
 		// Otherwise, check for timeout
 
-		else if (thread_manager.is_timeout()) {
-			if (progress_time >= 0L) {
-				System.out.println ("Reached runtime limit after generating " + get_catalog_count() + " ETAS catalogs in " + get_elapsed_time (start_time) + " seconds");
-			}
+		else if (loop_helper.is_incomplete()) {
+			status_msg = loop_helper.make_progress_message (PMFMT_TIMEOUT);
+			System.out.println (status_msg);
+			ncat_gen = loop_helper.get_completions();
 		}
 
 		// Otherwise, normal termination
 
 		else {
-			if (progress_time >= 0L) {
-				System.out.println ("Finished generating " + get_catalog_count() + " ETAS catalogs in " + get_elapsed_time (start_time) + " seconds");
-			}
+			status_msg = loop_helper.make_progress_message (PMFMT_DONE);
+			System.out.println (status_msg);
+			ncat_gen = loop_helper.get_completions();
 		}
 
 		// Post-termination operations
 
 		post_termination();
 
-		return;
-	}
-
-
-
-
-	// Generate all the catalogs.
-	// Parameters:
-	//  the_ensemble_params = The ensemble parameters.
-	//  executor = The executor to use for launching the threads.
-	//  max_runtime = Maximum runtime requested, in milliseconds, can be -1L for no limit.
-	//  progress_time = Time interval for progress messages, in milliseconds, can be -1L for no progress messages.
-	// This combines the function of pre_launch, launch_threads, await_termination, and post_termination.
-	// This version creates the executor.
-
-	public void generate_all_catalogs (OEEnsembleParams the_ensemble_params, AutoExecutorService executor, long max_runtime, long progress_time) {
-
-		// Generate catalogs
-		
-		generate_all_catalogs (the_ensemble_params, executor.get_executor(), executor.get_num_threads(), max_runtime, progress_time);
-		return;
+		return ncat_gen;
 	}
 
 
@@ -401,10 +364,21 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 	//  the_num_threads = The number of threads to use, must be > 0, or -1 for default number of threads.
 	//  max_runtime = Maximum runtime requested, in milliseconds, can be -1L for no limit.
 	//  progress_time = Time interval for progress messages, in milliseconds, can be -1L for no progress messages.
+	// Returns the number of catalogs generated, or -1 if thread abort.
 	// This combines the function of pre_launch, launch_threads, await_termination, and post_termination.
 	// This version creates the executor.
 
-	public void generate_all_catalogs (OEEnsembleParams the_ensemble_params, int the_num_threads, long max_runtime, long progress_time) {
+	public int generate_all_catalogs (OEEnsembleParams the_ensemble_params, int the_num_threads, long max_runtime, long progress_time) {
+
+		// Validate parameters
+
+		if (!( the_num_threads > 0 || the_num_threads == -1 )) {
+			throw new IllegalArgumentException ("OEEnsembleGenerator.generate_all_catalogs: Invalid number of threads: the_num_threads = " + the_num_threads);
+		}
+
+		// Create accessor and generate catalogs
+
+		int ncat_gen = 0;
 
 		try (
 
@@ -415,10 +389,10 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 			// Generate catalogs
 		
-			generate_all_catalogs (the_ensemble_params, auto_executor, max_runtime, progress_time);
+			ncat_gen = generate_all_catalogs (the_ensemble_params, auto_executor, max_runtime, progress_time);
 		}
 
-		return;
+		return ncat_gen;
 	}
 
 

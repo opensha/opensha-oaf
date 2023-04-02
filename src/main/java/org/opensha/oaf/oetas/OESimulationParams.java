@@ -30,10 +30,12 @@ public class OESimulationParams {
 	public int sim_min_num_catalogs;
 
 	// The time limit for generating catalogs, for simulations, in milliseconds; or -1L for no limit.
+	// Ignored if a total execution time limit for ranging + simulation is given.
 
 	public long sim_max_runtime;
 
 	// The time interval for progress messages, for simulations, in milliseconds; of -1L for none.
+	// Ignored if a total execution time limit for ranging + simulation is given.
 
 	public long sim_progress_time;
 
@@ -61,10 +63,12 @@ public class OESimulationParams {
 	public int range_min_num_catalogs;
 
 	// The time limit for generating catalogs, for ranging, in milliseconds; or -1L for no limit.
+	// Ignored if a total execution time limit for ranging + simulation is given.
 
 	public long range_max_runtime;
 
 	// The time interval for progress messages, for ranging, in milliseconds; of -1L for none.
+	// Ignored if a total execution time limit for ranging + simulation is given.
 
 	public long range_progress_time;
 
@@ -113,6 +117,11 @@ public class OESimulationParams {
 
 	public double range_mag_lim_time;
 
+	// Fraction of total execution time to use for each ranging attempt.  Must be between 0 and 1.
+	// This is only used if a total execution time limit for ranging + simulation is given.
+
+	public double range_exec_time_frac;
+
 
 
 
@@ -146,6 +155,7 @@ public class OESimulationParams {
 		range_max_attempts     = 0;
 		range_mag_lim_fraction = 0.0;
 		range_mag_lim_time     = 0.0;
+		range_exec_time_frac   = 0.0;
 		return;
 	}
 
@@ -185,7 +195,8 @@ public class OESimulationParams {
 		double range_min_duration    ,
 		int    range_max_attempts    ,  
 		double range_mag_lim_fraction,
-		double range_mag_lim_time
+		double range_mag_lim_time    ,
+		double range_exec_time_frac
 	) {
 		this.sim_num_catalogs       = sim_num_catalogs      ;
 		this.sim_min_num_catalogs   = sim_min_num_catalogs  ;
@@ -209,6 +220,7 @@ public class OESimulationParams {
 		this.range_max_attempts     = range_max_attempts    ;
 		this.range_mag_lim_fraction = range_mag_lim_fraction;
 		this.range_mag_lim_time     = range_mag_lim_time    ;
+		this.range_exec_time_frac   = range_exec_time_frac  ;
 		return this;
 	}
 
@@ -240,6 +252,7 @@ public class OESimulationParams {
 		this.range_max_attempts     = other.range_max_attempts    ;
 		this.range_mag_lim_fraction = other.range_mag_lim_fraction;
 		this.range_mag_lim_time     = other.range_mag_lim_time    ;
+		this.range_exec_time_frac   = other.range_exec_time_frac  ;
 		return this;
 	}
 
@@ -276,6 +289,7 @@ public class OESimulationParams {
 		result.append ("range_max_attempts = "     + range_max_attempts     + "\n");
 		result.append ("range_mag_lim_fraction = " + range_mag_lim_fraction + "\n");
 		result.append ("range_mag_lim_time = "     + range_mag_lim_time     + "\n");
+		result.append ("range_exec_time_frac = "   + range_exec_time_frac   + "\n");
 
 		return result.toString();
 	}
@@ -314,6 +328,7 @@ public class OESimulationParams {
 			range_max_attempts     = 8;
 			range_mag_lim_fraction = 0.02;
 			range_mag_lim_time     = 10.0;
+			range_exec_time_frac   = 0.110;
 		} else {
 			sim_num_catalogs       = 20000;
 			sim_min_num_catalogs   = 10000;
@@ -340,6 +355,7 @@ public class OESimulationParams {
 			range_max_attempts     = 8;
 			range_mag_lim_fraction = 0.02;
 			range_mag_lim_time     = 10.0;
+			range_exec_time_frac   = 0.110;
 		}
 		return this;
 	}
@@ -393,6 +409,7 @@ public class OESimulationParams {
 			writer.marshalInt    ("range_max_attempts"     , range_max_attempts    );
 			writer.marshalDouble ("range_mag_lim_fraction" , range_mag_lim_fraction);
 			writer.marshalDouble ("range_mag_lim_time"     , range_mag_lim_time    );
+			writer.marshalDouble ("range_exec_time_frac"   , range_exec_time_frac  );
 
 		}
 		break;
@@ -438,6 +455,7 @@ public class OESimulationParams {
 			range_max_attempts     = reader.unmarshalInt    ("range_max_attempts"    );
 			range_mag_lim_fraction = reader.unmarshalDouble ("range_mag_lim_fraction");
 			range_mag_lim_time     = reader.unmarshalDouble ("range_mag_lim_time"    );
+			range_exec_time_frac   = reader.unmarshalDouble ("range_exec_time_frac"  );
 
 		}
 		break;
@@ -519,6 +537,7 @@ public class OESimulationParams {
 			&& this.range_max_attempts     == other.range_max_attempts
 			&& this.range_mag_lim_fraction == other.range_mag_lim_fraction
 			&& this.range_mag_lim_time     == other.range_mag_lim_time
+			&& this.range_exec_time_frac   == other.range_exec_time_frac
 		) {
 			return true;
 		}
