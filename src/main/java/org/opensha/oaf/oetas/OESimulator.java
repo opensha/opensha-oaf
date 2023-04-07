@@ -884,6 +884,127 @@ public class OESimulator {
 
 
 
+	// Run simulation for testing purposes.
+	// Parameters:
+	//  the_sim_initializer = The catalog initializer to use for simulations.
+	//  f_prod = True to select production parameter.
+	//  num_cats = Number of catalogs to generate, or 0 for default.
+	//  target_size = Target size for simulations, or 0 for default.
+	//  max_runtime = Maximum running time in milliseconds, or -1L for no limit.
+	//  progress_time = Progress message time, or -1L for no progress messages
+	// Throws exception if error.
+
+	public static void test_run_simulation_ex (OEEnsembleInitializer the_sim_initializer, boolean f_prod, int num_cats, int target_size, long max_runtime, long progress_time) throws OEException {
+
+		// Create the simulation parameters
+
+		OESimulationParams test_sim_parameters = (new OESimulationParams()).set_to_typical (f_prod);
+
+		if (num_cats > 0) {
+			test_sim_parameters.sim_num_catalogs = Math.max (100, num_cats);
+			test_sim_parameters.range_num_catalogs = Math.max (100, num_cats/10);
+		}
+
+		if (target_size > 0) {
+			test_sim_parameters.range_target_size = Math.max (100, target_size);
+		}
+
+		// Display the simulation parameters
+
+		System.out.println ();
+		System.out.println (test_sim_parameters.toString());
+
+		// Create the executor
+
+		try (
+
+			// Create the executor
+
+			AutoExecutorService auto_executor = new AutoExecutorService();
+		){
+			SimpleExecTimer exec_timer = new SimpleExecTimer (max_runtime, progress_time, auto_executor);
+			exec_timer.start_timer();
+
+			// Run the simulation
+
+			OESimulator simulator = new OESimulator();
+
+			simulator.run_simulation_ex (
+				the_sim_initializer,
+				test_sim_parameters,
+				exec_timer
+			);
+
+			// Display result
+
+			exec_timer.stop_timer();
+
+			long elapsed_time = exec_timer.get_total_runtime();
+			String s_elapsed_time = String.format ("%.1f", ((double)elapsed_time)/1000.0);
+
+			System.out.println ();
+			System.out.println ("Elapsed time = " + s_elapsed_time + " seconds");
+		}
+
+		return;
+	}
+
+
+
+
+	// Run simulation for testing purposes.
+	// Parameters:
+	//  the_sim_initializer = The catalog initializer to use for simulations.
+	//  test_sim_parameters = Simulation parameters.
+	//  max_runtime = Maximum running time in milliseconds, or -1L for no limit.
+	//  progress_time = Progress message time, or -1L for no progress messages
+	// Throws exception if error.
+
+	public static void test_run_simulation_ex (OEEnsembleInitializer the_sim_initializer, OESimulationParams test_sim_parameters, long max_runtime, long progress_time) throws OEException {
+
+		// Display the simulation parameters
+
+		System.out.println ();
+		System.out.println (test_sim_parameters.toString());
+
+		// Create the executor
+
+		try (
+
+			// Create the executor
+
+			AutoExecutorService auto_executor = new AutoExecutorService();
+		){
+			SimpleExecTimer exec_timer = new SimpleExecTimer (max_runtime, progress_time, auto_executor);
+			exec_timer.start_timer();
+
+			// Run the simulation
+
+			OESimulator simulator = new OESimulator();
+
+			simulator.run_simulation_ex (
+				the_sim_initializer,
+				test_sim_parameters,
+				exec_timer
+			);
+
+			// Display result
+
+			exec_timer.stop_timer();
+
+			long elapsed_time = exec_timer.get_total_runtime();
+			String s_elapsed_time = String.format ("%.1f", ((double)elapsed_time)/1000.0);
+
+			System.out.println ();
+			System.out.println ("Elapsed time = " + s_elapsed_time + " seconds");
+		}
+
+		return;
+	}
+
+
+
+
 	public static void main(String[] args) {
 
 		// There needs to be at least one argument, which is the subcommand
@@ -1594,6 +1715,107 @@ public class OESimulator {
 					System.out.println ();
 					System.out.println ("Elapsed time = " + s_elapsed_time + " seconds");
 				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6  n  p  c  b  alpha  mag_main  tbegin  f_prod  num_cats  target_size  max_runtime  progress_time
+		// Build a catalog with the given parameter, using multiple threads.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then run the simulation.
+		// f_prod chooses whether to use production or development simulation parameters.
+		// num_cats and target_size can be zero to use default values.
+		// max_runtime can be -1L for no limit on runtime.
+		// progress_time can be -1L for no progress messages.
+		// Same as test #5 except uses test_run_simulation_ex.
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// 12 additional arguments
+
+			if (args.length != 13) {
+				System.err.println ("OESimulator : Invalid 'test6' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				double mag_main = Double.parseDouble (args[6]);
+				double tbegin = Double.parseDouble (args[7]);
+				boolean f_prod = Boolean.parseBoolean (args[8]);
+				int num_cats = Integer.parseInt (args[9]);
+				int target_size = Integer.parseInt (args[10]);
+				long max_runtime = Long.parseLong (args[11]);
+				long progress_time = Long.parseLong (args[12]);
+
+				// Say hello
+
+				System.out.println ("Running simulation with given parameters, using execution timer, using test function");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("mag_main = " + mag_main);
+				System.out.println ("tbegin = " + tbegin);
+				System.out.println ("f_prod = " + f_prod);
+				System.out.println ("num_cats = " + num_cats);
+				System.out.println ("target_size = " + target_size);
+				System.out.println ("max_runtime = " + max_runtime);
+				System.out.println ("progress_time = " + progress_time);
+
+				// Set up catalog parameters
+
+				double mref = 3.0;
+				double msup = 9.5;
+				double tend = OEForecastGrid.get_config_tend (tbegin);
+
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_limited_br (
+					n,
+					p,
+					c,
+					b,
+					alpha,
+					mref,
+					msup,
+					tbegin,
+					tend
+				);
+
+				// Branch ratio checks
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				System.out.println ("a = " + test_cat_params.a);
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Create the initializer
+
+				double t_main = 0.0;
+
+				OEInitFixedState test_sim_initializer = new OEInitFixedState();
+				test_sim_initializer.setup_single (test_cat_params, mag_main, t_main);
+
+				// Run the simulations
+
+				OESimulator.test_run_simulation_ex (test_sim_initializer, f_prod, num_cats, target_size, max_runtime, progress_time);
 
 			} catch (Exception e) {
 				e.printStackTrace();

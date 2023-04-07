@@ -430,6 +430,31 @@ public class OECatalogParams {
 
 
 
+	// Return the catalog size limits.
+	// The returned object is newly allocated.
+
+	public final OECatalogLimits get_limits () {
+		return new OECatalogLimits (
+			gen_count_max,
+			max_cat_size
+		);
+	}
+
+
+
+
+	// Set the catalog size limits.
+	// The supplied object is not retained.
+
+	public final void set_limits (OECatalogLimits limits) {
+		this.gen_count_max   = limits.gen_count_max;
+		this.max_cat_size    = limits.max_cat_size;
+		return;
+	}
+
+
+
+
 	// Return the statistics parameters.
 	// The returned object is newly allocated.
 
@@ -1149,20 +1174,20 @@ public class OECatalogParams {
 	//  n = Branch ratio, as computed for these parameters.
 	// Returns the a-value.
 
-	public final double calc_a_for_br (
-		double n
-	) {
-		return OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tend - tbegin);
-	}
+//	public final double calc_a_for_br (
+//		double n
+//	) {
+//		return OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tend - tbegin);
+//	}
 
 
 
 
 	// Calculate the branch ratio.
 
-	public final double get_br () {
-		return OEStatsCalc.calc_branch_ratio (a, p, c, b, alpha, mref, msup, tend - tbegin);
-	}
+//	public final double get_br () {
+//		return OEStatsCalc.calc_branch_ratio (a, p, c, b, alpha, mref, msup, tend - tbegin);
+//	}
 
 
 

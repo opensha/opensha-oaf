@@ -534,20 +534,20 @@ public class OECatalogParamsStats {
 	// Returns the a-value.
 	// Note: Same as OECatalogParams.calc_a_for_br.
 
-	public final double calc_a_for_br (
-		double n
-	) {
-		return OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tend - tbegin);
-	}
+//	public final double calc_a_for_br (
+//		double n
+//	) {
+//		return OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tend - tbegin);
+//	}
 
 
 
 
 	// Calculate the branch ratio.
 
-	public final double get_br () {
-		return OEStatsCalc.calc_branch_ratio (a, p, c, b, alpha, mref, msup, tend - tbegin);
-	}
+//	public final double get_br () {
+//		return OEStatsCalc.calc_branch_ratio (a, p, c, b, alpha, mref, msup, tend - tbegin);
+//	}
 
 
 

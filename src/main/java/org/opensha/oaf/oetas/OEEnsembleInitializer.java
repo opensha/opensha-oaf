@@ -98,6 +98,23 @@ public interface OEEnsembleInitializer {
 
 	public void set_range (OECatalogRange range);
 
+	// Get the size limits of the catalog simulations.
+	// The returned object is newly-allocated and not retained in this object.
+
+	public OECatalogLimits get_limits ();
+
+	// Get the initial size limits of the catalog simulations.
+	// The returned object is newly-allocated and not retained in this object.
+
+	public OECatalogLimits get_initial_limits ();
+
+	// Set the size limits to use for catalog simulations.
+	// The supplied OECatalogLimits object is not retained.
+	// Note: This function allows adjusting size limits
+	// without the need to construct an entirely new initializer.
+
+	public void set_limits (OECatalogLimits limits);
+
 	// Get the b-value used by the initializer.
 	// The purpose of this function is to obtain a b-value that can be used
 	// for adjusting the magnitude range in order to get a desired median

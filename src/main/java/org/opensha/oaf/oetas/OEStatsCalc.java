@@ -323,6 +323,31 @@ public class OEStatsCalc {
 
 
 
+	// Calculate the branch ratio.
+	// Parameters:
+	//  cat_params = Catalog parameters.
+	//  tint = Time interval.
+	// See function above for details.
+
+	public static double calc_branch_ratio (
+		OECatalogParams cat_params,
+		double tint
+	) {
+		return calc_branch_ratio (
+			cat_params.a,
+			cat_params.p,
+			cat_params.c,
+			cat_params.b,
+			cat_params.alpha,
+			cat_params.mref,
+			cat_params.msup,
+			tint
+		);
+	}
+
+
+
+
 	// Calculate the inverse branch ratio.
 	// Parameters:
 	//  n = Branch ratio.
@@ -394,6 +419,34 @@ public class OEStatsCalc {
 			cat_params.mref,
 			cat_params.msup,
 			cat_params.tend - cat_params.tbegin
+		);
+	}
+
+
+
+
+	// Calculate the inverse branch ratio.
+	// Parameters:
+	//  n = Branch ratio.
+	//  cat_params = Catalog parameters.
+	//  tint = Time interval.
+	// This function calculates the productivity "a" such that the branch ratio equals n.
+	// See function above for details.
+
+	public static double calc_inv_branch_ratio (
+		double n,
+		OECatalogParams cat_params,
+		double tint
+	) {
+		return calc_inv_branch_ratio (
+			n,
+			cat_params.p,
+			cat_params.c,
+			cat_params.b,
+			cat_params.alpha,
+			cat_params.mref,
+			cat_params.msup,
+			tint
 		);
 	}
 

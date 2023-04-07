@@ -168,7 +168,7 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 
 
-	// Set up to begin seeding, for a single mainshock, with specified mainshock branch ratio.
+	// Set up to begin seeding, for a single mainshock, with specified mainshock branch ratio.  [DEPRECATED]
 	// Parameters:
 	//  the_cat_params = The catalog parameters.
 	//  mag_main = Mainshock magnitude.
@@ -716,6 +716,42 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 	@Override
 	public void set_range (OECatalogRange range) {
 		cat_params.set_range (range);
+		return;
+	}
+
+
+
+
+	// Get the size limits of the catalog simulations.
+	// The returned object is newly-allocated and not retained in this object.
+
+	@Override
+	public OECatalogLimits get_limits () {
+		return cat_params.get_limits();
+	}
+
+
+
+
+	// Get the initial size limits of the catalog simulations.
+	// The returned object is newly-allocated and not retained in this object.
+
+	@Override
+	public OECatalogLimits get_initial_limits () {
+		return original_cat_params.get_limits();
+	}
+
+
+
+
+	// Set the size limits to use for catalog simulations.
+	// The supplied OECatalogLimits object is not retained.
+	// Note: This function allows adjusting size limits
+	// without the need to construct an entirely new initializer.
+
+	@Override
+	public void set_limits (OECatalogLimits limits) {
+		cat_params.set_limits (limits);
 		return;
 	}
 

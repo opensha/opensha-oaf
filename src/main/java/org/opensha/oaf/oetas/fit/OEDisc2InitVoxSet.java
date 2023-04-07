@@ -27,6 +27,7 @@ import org.opensha.oaf.oetas.util.OEValueElement;
 import org.opensha.oaf.oetas.OEEnsembleInitializer;
 import org.opensha.oaf.oetas.OECatalogSeeder;
 import org.opensha.oaf.oetas.OECatalogRange;
+import org.opensha.oaf.oetas.OECatalogLimits;
 import org.opensha.oaf.oetas.OEGenerationInfo;
 import org.opensha.oaf.oetas.util.OEArraysCalc;
 
@@ -735,7 +736,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 			// Get the voxel and sub-voxel indexes
 
-			final int local_seed_index = seeding_index.getAndIncrement();		// a different index for each catalog
+			final int local_seed_index = seeding_index.incrementAndGet();		// a different index for each catalog, first index we use is 1
 			final int global_subvox_index = a_seed_subvox[local_seed_index % seed_subvox_count];	// wrap if number of catalogs exceeds number of seeds
 			final int voxel_index = get_voxel_for_subvox (global_subvox_index);
 			final int local_subvox_index = get_local_for_global_subvox (global_subvox_index, voxel_index);
@@ -886,6 +887,42 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 	@Override
 	public void set_range (OECatalogRange range) {
 		proto_cat_params.set_range (range);
+		return;
+	}
+
+
+
+
+	// Get the size limits of the catalog simulations.
+	// The returned object is newly-allocated and not retained in this object.
+
+	@Override
+	public OECatalogLimits get_limits () {
+		return proto_cat_params.get_limits();
+	}
+
+
+
+
+	// Get the initial size limits of the catalog simulations.
+	// The returned object is newly-allocated and not retained in this object.
+
+	@Override
+	public OECatalogLimits get_initial_limits () {
+		return original_cat_params.get_limits();
+	}
+
+
+
+
+	// Set the size limits to use for catalog simulations.
+	// The supplied OECatalogLimits object is not retained.
+	// Note: This function allows adjusting size limits
+	// without the need to construct an entirely new initializer.
+
+	@Override
+	public void set_limits (OECatalogLimits limits) {
+		proto_cat_params.set_limits (limits);
 		return;
 	}
 
