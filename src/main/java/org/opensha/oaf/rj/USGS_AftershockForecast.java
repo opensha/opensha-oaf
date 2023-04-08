@@ -48,6 +48,8 @@ public class USGS_AftershockForecast {
 	private static final double fractile_median = 0.500;
 	private static final double mag_bin_half_width_default = 0.05;
 
+	private static final boolean include_fractile_list = true;
+
 	//  private static final long[] sdround_thresholds = {86400000L, 259200000L, 604800000L};
 	//  		// 24 hours, 3 days, 7 days
 	//  private static final long[] sdround_snaps = {300000L, 600000L, 1800000L, 3600000L};
@@ -100,6 +102,49 @@ public class USGS_AftershockForecast {
 			return title;
 		}
 	}
+
+	public static class FractileArray {
+		public double[] values;
+
+		public FractileArray (double[] the_values) {
+			if (the_values == null) {
+				values = null;
+			} else {
+				values = Arrays.copyOf (the_values, the_values.length);
+			}
+		}
+
+		public final boolean has_values () {
+			return values != null;
+		}
+
+		public final void sort_values () {
+			if (values != null) {
+				Arrays.sort (values);
+			}
+			return;
+		}
+
+		public final JSONArray as_probabilities () {
+			JSONArray result = new JSONArray();
+			if (values != null) {
+				for (int j = 0; j < values.length; ++j) {
+					result.add (Double.parseDouble (String.format (Locale.US, "%.12f", values[j])));
+				};
+			}
+			return result;
+		}
+
+		public final JSONArray as_values () {
+			JSONArray result = new JSONArray();
+			if (values != null) {
+				for (int j = 0; j < values.length; ++j) {
+					result.add (Math.round (values[j]));
+				};
+			}
+			return result;
+		}
+	}
 	
 	private USGS_ForecastModel model;
 	
@@ -117,6 +162,9 @@ public class USGS_AftershockForecast {
 	private Table<Duration, Double, Double> numEventsUpper;
 	private Table<Duration, Double, Double> numEventsMedian;
 	private Table<Duration, Double, Double> probs;
+
+	private FractileArray fractile_probabilities;
+	private Table<Duration, Double, FractileArray> fractile_values;
 	
 	private boolean includeProbAboveMainshock;
 	
@@ -209,6 +257,16 @@ public class USGS_AftershockForecast {
 			calcMags = Arrays.copyOf(minMags, minMags.length+1);
 			calcMags[calcMags.length-1] = model.getMainShockMag();
 		}
+
+		fractile_probabilities = null;
+		fractile_values = null;
+		if (include_fractile_list) {
+			double[] the_probabilities = model.getFractileProbabilities();
+			if (the_probabilities != null) {
+				fractile_probabilities = new FractileArray (the_probabilities);
+				fractile_values = HashBasedTable.create();
+			}
+		}
 		
 		df.setTimeZone(utc);
 		if (f_verbose) {
@@ -250,6 +308,11 @@ public class USGS_AftershockForecast {
 				}
 
 				probs.put(duration, minMag, poissonProb);
+
+				if (fractile_probabilities != null) {
+					double[] the_values = model.getCumNumFractileWithAleatory (fractile_probabilities.values, minMag, tMinDays, tMaxDays);
+					fractile_values.put (duration, minMag, new FractileArray (the_values));
+				}
 			}
 		}
 	}
@@ -500,6 +563,9 @@ public class USGS_AftershockForecast {
 		json.put("model", modelJSON);
 		
 		// FORECAST
+		if (fractile_probabilities != null) {
+			json.put("fractileProbabilities", fractile_probabilities.as_probabilities());
+		}
 		JSONArray forecastsJSON = new JSONArray();
 		for (int i=0; i<durations.length; i++) {
 			JSONOrderedObject forecastJSON = new JSONOrderedObject();
@@ -522,6 +588,9 @@ public class USGS_AftershockForecast {
 					magBin.put("p95maximum", Math.round(numEventsUpper.get(durations[i], minMags[m])));
 					magBin.put("probability", probs.get(durations[i], minMags[m]));
 					magBin.put("median", Math.round(numEventsMedian.get(durations[i], minMags[m])));
+					if (fractile_probabilities != null) {
+						magBin.put("fractileValues", fractile_values.get(durations[i], minMags[m]).as_values());
+					}
 				}
 				magBins.add(magBin);
 			}
@@ -536,6 +605,9 @@ public class USGS_AftershockForecast {
 					magBin.put("probability", -1.0);
 				} else {
 					magBin.put("probability", probs.get(durations[i], mainMag));
+					if (fractile_probabilities != null) {
+						magBin.put("fractileValues", fractile_values.get(durations[i], mainMag).as_values());
+					}
 				}
 				forecastJSON.put("aboveMainshockMag", magBin);
 			}

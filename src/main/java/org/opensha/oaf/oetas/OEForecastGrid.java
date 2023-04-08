@@ -764,6 +764,18 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 
 
+	// Return the list of probabilities for the additional list of fractiles in the forecast.
+	// Probabilities must be between 0 and 1, and listed in increasing order.
+	// The return can be null to indicate that no additional list of fractiles is supported.
+
+	@Override
+	public double[] getFractileProbabilities () {
+		return adv_fractile_values;
+	}
+
+
+
+
 	//----- Display -----
 
 
