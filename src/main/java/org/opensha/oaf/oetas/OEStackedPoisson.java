@@ -946,6 +946,10 @@ public class OEStackedPoisson {
 
 		private double total_weight;
 
+		// The total weight*mean of all the distributions.
+
+		private double total_mean;
+
 		// The size of the initial segment of prob_dist which can contain non-zero values.
 		// Must satisfy: 0 <= support_size <= active_size
 
@@ -974,6 +978,10 @@ public class OEStackedPoisson {
 			// Record the total weight
 
 			total_weight += weight;
+
+			// Record the total weight*mean
+
+			total_mean += (((double)value) * weight);
 
 			// If non-zero, add to the probability of occurrence
 
@@ -1006,6 +1014,10 @@ public class OEStackedPoisson {
 			// Record the total weight
 
 			total_weight += 1.0;
+
+			// Record the total weight*mean
+
+			total_mean += ((double)value);
 
 			// If non-zero, add to the probability of occurrence
 
@@ -1045,6 +1057,10 @@ public class OEStackedPoisson {
 			// Record the total weight
 
 			total_weight += weight;
+
+			// Record the total weight*mean
+
+			total_mean += (lambda * weight);
 
 			// Adjust the probability of occurrence
 
@@ -1102,6 +1118,10 @@ public class OEStackedPoisson {
 			// Record the total weight
 
 			total_weight += 1.0;
+
+			// Record the total weight*mean
+
+			total_mean += lambda;
 
 			// Adjust the probability of occurrence
 
@@ -1193,12 +1213,17 @@ public class OEStackedPoisson {
 
 			if (mean_ix < 0) {
 				add_point_mass (shift, weight);
+				total_mean += (lambda * weight);	// portion of mean not included
 				return;
 			}
 
 			// Record the total weight
 
 			total_weight += weight;
+
+			// Record the total weight*mean
+
+			total_mean += ((((double)shift) + lambda) * weight);
 
 			// Probability of occurrence is 1.0 because shift > 0
 
@@ -1288,12 +1313,17 @@ public class OEStackedPoisson {
 
 			if (mean_ix < 0) {
 				add_point_mass (shift);
+				total_mean += lambda;	// portion of mean not included
 				return;
 			}
 
 			// Record the total weight
 
 			total_weight += 1.0;
+
+			// Record the total weight*mean
+
+			total_mean += (((double)shift) + lambda);
 
 			// Probability of occurrence is 1.0 because shift > 0
 
@@ -1380,6 +1410,10 @@ public class OEStackedPoisson {
 
 			total_weight += weight;
 
+			// Record the total weight*mean
+
+			total_mean += (lambda * weight);
+
 			// Adjust the probability of occurrence
 
 			prob_occur -= (Math.expm1(-lam_occur) * weight);
@@ -1436,6 +1470,10 @@ public class OEStackedPoisson {
 			// Record the total weight
 
 			total_weight += 1.0;
+
+			// Record the total weight*mean
+
+			total_mean += lambda;
 
 			// Adjust the probability of occurrence
 
@@ -1528,12 +1566,17 @@ public class OEStackedPoisson {
 
 			if (mean_ix < 0) {
 				add_point_mass (shift, weight);
+				total_mean += (lambda * weight);	// portion of mean not included
 				return;
 			}
 
 			// Record the total weight
 
 			total_weight += weight;
+
+			// Record the total weight*mean
+
+			total_mean += ((((double)shift) + lambda) * weight);
 
 			// Probability of occurrence is 1.0 because shift > 0
 
@@ -1623,12 +1666,17 @@ public class OEStackedPoisson {
 
 			if (mean_ix < 0) {
 				add_point_mass (shift);
+				total_mean += lambda;	// portion of mean not included
 				return;
 			}
 
 			// Record the total weight
 
 			total_weight += 1.0;
+
+			// Record the total weight*mean
+
+			total_mean += (((double)shift) + lambda);
 
 			// Probability of occurrence is 1.0 because shift > 0
 
@@ -1716,6 +1764,7 @@ public class OEStackedPoisson {
 
 			prob_occur = 0.0;
 			total_weight = 0.0;
+			total_mean = 0.0;
 
 			support_size = 1;
 			active_size = prob_dist.length;
@@ -1732,6 +1781,7 @@ public class OEStackedPoisson {
 
 			prob_occur = 0.0;
 			total_weight = 0.0;
+			total_mean = 0.0;
 
 			support_size = 1;
 			active_size = prob_dist.length;
@@ -1752,6 +1802,7 @@ public class OEStackedPoisson {
 
 			prob_occur = 0.0;
 			total_weight = 0.0;
+			total_mean = 0.0;
 
 			support_size = 1;
 
@@ -1809,6 +1860,7 @@ public class OEStackedPoisson {
 			result.append ("prob_dist.length = " + prob_dist.length + "\n");
 			result.append ("prob_occur = " + prob_occur + "\n");
 			result.append ("total_weight = " + total_weight + "\n");
+			result.append ("total_mean = " + total_mean + "\n");
 			result.append ("support_size = " + support_size + "\n");
 			result.append ("active_size = " + active_size + "\n");
 
@@ -1830,6 +1882,7 @@ public class OEStackedPoisson {
 			result.append ("prob_dist.length = " + prob_dist.length + "\n");
 			result.append ("prob_occur = " + prob_occur + "\n");
 			result.append ("total_weight = " + total_weight + "\n");
+			result.append ("total_mean = " + total_mean + "\n");
 			result.append ("support_size = " + support_size + "\n");
 			result.append ("active_size = " + active_size + "\n");
 
@@ -1859,6 +1912,7 @@ public class OEStackedPoisson {
 		public final void combine_with (Accumulator other) {
 			prob_occur += other.prob_occur;
 			total_weight += other.total_weight;
+			total_mean += other.total_mean;
 			support_size = Math.max (support_size, other.support_size);
 			active_size = Math.max (active_size, other.active_size);
 
@@ -1885,6 +1939,19 @@ public class OEStackedPoisson {
 				return 0.0;
 			}
 			return prob_occur / total_weight;
+		}
+
+
+
+
+		// Get the mean.
+		// Returns the weighted mean of all the distributions.
+
+		public final double get_mean () {
+			if (total_weight == 0.0) {
+				return 0.0;
+			}
+			return total_mean / total_weight;
 		}
 
 
@@ -1973,6 +2040,15 @@ public class OEStackedPoisson {
 
 		public final double get_total_weight () {
 			return total_weight;
+		}
+
+
+
+
+		// Get the total mean.
+
+		public final double get_total_mean () {
+			return total_mean;
 		}
 
 	}
@@ -2240,6 +2316,31 @@ public class OEStackedPoisson {
 		double[][] result = new double[src.length][];
 		for (int m = 0; m < src.length; ++m) {
 			result[m] = prob_occur_acc_array (src[m]);
+		}
+		return result;
+	}
+
+
+
+
+	// Get the meane for each accumulator in an array of accumulators.
+	// Parameters:
+	//  src = 1D or 2D array of accumulators.
+	// Returns an array, of the same dimension as src, where each element contains the mean.
+
+	public static double[] mean_acc_array (Accumulator[] src) {
+		double[] result = new double[src.length];
+		for (int m = 0; m < src.length; ++m) {
+			result[m] = src[m].get_mean();
+		}
+		return result;
+	}
+
+
+	public static double[][] mean_acc_array (Accumulator[][] src) {
+		double[][] result = new double[src.length][];
+		for (int m = 0; m < src.length; ++m) {
+			result[m] = mean_acc_array (src[m]);
 		}
 		return result;
 	}
@@ -2633,10 +2734,11 @@ public class OEStackedPoisson {
 				System.out.println ();
 				System.out.println (accum.detail_acc_string(f_full));
 
-				// Display probability of occurrence
+				// Display probability of occurrence and mean
 
 				System.out.println ();
 				System.out.println ("Probability of occurrence = " + accum.get_prob_occur());
+				System.out.println ("Mean = " + accum.get_mean());
 
 				// Get some fractiles
 
@@ -2800,10 +2902,11 @@ public class OEStackedPoisson {
 				System.out.println ();
 				System.out.println (accum.detail_acc_string(f_full));
 
-				// Display probability of occurrence
+				// Display probability of occurrence and mean
 
 				System.out.println ();
 				System.out.println ("Probability of occurrence = " + accum.get_prob_occur());
+				System.out.println ("Mean = " + accum.get_mean());
 
 				// Get some fractiles
 
@@ -2981,10 +3084,13 @@ public class OEStackedPoisson {
 				System.out.println ();
 				System.out.println (accum[0][0].detail_acc_string(f_full));
 
-				// Display probability of occurrence
+				// Display probability of occurrence and mean
 
 				System.out.println ();
 				System.out.println ("Probability of occurrence:\n" + test_display_array (OEStackedPoisson.prob_occur_acc_array (accum)));
+
+				System.out.println ();
+				System.out.println ("Mean:\n" + test_display_array (OEStackedPoisson.mean_acc_array (accum)));
 
 				// Get some fractiles
 
