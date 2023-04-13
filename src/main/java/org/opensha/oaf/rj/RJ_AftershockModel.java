@@ -18,6 +18,8 @@ import org.opensha.sha.magdist.ArbIncrementalMagFreqDist;
 import org.opensha.sha.magdist.GutenbergRichterMagFreqDist;
 import org.opensha.sha.magdist.IncrementalMagFreqDist;
 
+import org.opensha.oaf.util.SimpleUtils;
+
 
 /**
  * This represents a Reasenberg-Jones (1989, 1994) aftershock model.
@@ -1191,6 +1193,26 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 		}
 
 		return fractValArray;
+	}
+
+
+
+
+	// Return the list of probabilities for the additional list of fractiles in the forecast.
+	// Probabilities must be between 0 and 1, and listed in increasing order.
+	// The return can be null to indicate that no additional list of fractiles is supported.
+
+	@Override
+	public double[] getFractileProbabilities () {
+
+		// Get the advisory fractile values
+		// Note: There are currently no advisory fractiles in ActionConfig, so we use multiples of 1.25%.
+
+		double[] adv_fractile_values = new double[79];
+		for (int frac_ix = 0; frac_ix < adv_fractile_values.length; ++frac_ix) {
+			adv_fractile_values[frac_ix] = SimpleUtils.round_double_via_string ("%.4f", ((double)(frac_ix + 1)) / 80.0);
+		}
+		return adv_fractile_values;
 	}
 
 

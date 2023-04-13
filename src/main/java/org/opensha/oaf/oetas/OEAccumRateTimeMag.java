@@ -494,6 +494,15 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		}
 
 
+		// Get the mean for each bin.
+		// Returns a 2D array, of dimension r[time_bins][mag_bins].
+		// Each element contains the mean.
+
+		public double[][] get_mean () {
+			return OEStackedPoisson.mean_acc_array (acc_distribution);
+		}
+
+
 
 		// Get a fractile for each bin.
 		// Parameters:
@@ -993,11 +1002,11 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 		// True to report counts.
 
-		protected boolean f_report_counts;
+//		protected boolean f_report_counts;
 
 		// True to report expected rates.
 
-		protected boolean f_report_expected;
+//		protected boolean f_report_expected;
 
 
 
@@ -1808,7 +1817,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 		// Finish performing outfill at the end of a catalog.
 		// This also sets the reporting variables.
 
-		public void cat_finish_outfill (OECatalogScanComm comm) {
+		protected void cat_finish_outfill (OECatalogScanComm comm) {
 
 			// Switch on magnitude fill method
 
@@ -2200,6 +2209,7 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 			if (f_infill_rates) {
 
 				// Full bins
+				// (Note that omori_rate_shifted() properly handles the case comm.rup.t_day == BKGD_TIME_DAYS)
 
 				for (int tix = Math.max (time_ix, 0) ; tix < infill_last_time_bin; ++tix) {
 					cur_gen_rates[tix] += (comm.rup.k_prod * OERandomGenerator.omori_rate_shifted (

@@ -106,11 +106,30 @@ public class USGS_AftershockForecast {
 	public static class FractileArray {
 		public double[] values;
 
+		// Copy entire array
 		public FractileArray (double[] the_values) {
 			if (the_values == null) {
 				values = null;
 			} else {
 				values = Arrays.copyOf (the_values, the_values.length);
+			}
+		}
+
+		// Copy portion of array starting at index lo
+		public FractileArray (double[] the_values, int lo) {
+			if (the_values == null) {
+				values = null;
+			} else {
+				values = Arrays.copyOfRange (the_values, lo, the_values.length);
+			}
+		}
+
+		// Copy portion of array from index lo, inclusive, to index hi, exclusive
+		public FractileArray (double[] the_values, int lo, int hi) {
+			if (the_values == null) {
+				values = null;
+			} else {
+				values = Arrays.copyOfRange (the_values, lo, hi);
 			}
 		}
 
@@ -258,6 +277,8 @@ public class USGS_AftershockForecast {
 			calcMags[calcMags.length-1] = model.getMainShockMag();
 		}
 
+		// If we will use extended fractile lists, add them to the list of fractiles we need to calculate
+		double[] combinedCalcFractiles = calcFractiles;
 		fractile_probabilities = null;
 		fractile_values = null;
 		if (include_fractile_list) {
@@ -265,6 +286,15 @@ public class USGS_AftershockForecast {
 			if (the_probabilities != null) {
 				fractile_probabilities = new FractileArray (the_probabilities);
 				fractile_values = HashBasedTable.create();
+				// We need fractiles for both our list, and the extended lists
+				combinedCalcFractiles = new double[calcFractiles.length + fractile_probabilities.values.length];
+				int j = 0;
+				for (int i = 0; i < calcFractiles.length; ++i) {
+					combinedCalcFractiles[j++] = calcFractiles[i];
+				}
+				for (int i = 0; i < fractile_probabilities.values.length; ++i) {
+					combinedCalcFractiles[j++] = fractile_probabilities.values[i];
+				}
 			}
 		}
 		
@@ -290,7 +320,7 @@ public class USGS_AftershockForecast {
 			for (int m=0; m<calcMags.length; m++) {
 				double minMag = calcMags[m];
 				
-				double[] fractiles = model.getCumNumFractileWithAleatory(calcFractiles, minMag, tMinDays, tMaxDays);
+				double[] fractiles = model.getCumNumFractileWithAleatory(combinedCalcFractiles, minMag, tMinDays, tMaxDays);
 				
 				numEventsLower.put(duration, minMag, fractiles[0]);
 				numEventsUpper.put(duration, minMag, fractiles[1]);
@@ -310,8 +340,7 @@ public class USGS_AftershockForecast {
 				probs.put(duration, minMag, poissonProb);
 
 				if (fractile_probabilities != null) {
-					double[] the_values = model.getCumNumFractileWithAleatory (fractile_probabilities.values, minMag, tMinDays, tMaxDays);
-					fractile_values.put (duration, minMag, new FractileArray (the_values));
+					fractile_values.put (duration, minMag, new FractileArray (fractiles, calcFractiles.length));
 				}
 			}
 		}

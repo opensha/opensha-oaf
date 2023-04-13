@@ -887,9 +887,11 @@ public class OECatalogGenerator {
 
 		// Make generations until end of catalog
 
-		int gen_size = cat_builder.get_gen_size (0);
-		while (gen_size > 0) {
-			gen_size = calc_next_gen();
+		if (cat_params.gen_count_max > 1) {		// don't do this if caller is requesting seeds only
+			int gen_size = cat_builder.get_gen_size (0);
+			while (gen_size > 0) {
+				gen_size = calc_next_gen();
+			}
 		}
 
 		// End the catalog
