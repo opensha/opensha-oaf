@@ -80,6 +80,16 @@ public class OECatalogLimits {
 
 
 
+	// Set the generation count to be seeds only.
+
+	public final OECatalogLimits set_seed_only () {
+		this.gen_count_max   = 1;
+		return this;
+	}
+
+
+
+
 	// Copy all values from the other object.
 
 	public final OECatalogLimits copy_from (OECatalogLimits other) {

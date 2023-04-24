@@ -12,6 +12,10 @@ import org.opensha.oaf.util.MarshalException;
 //
 // Holds the subset of the parameters in OECatalogParams that determine the
 // time and magnitude range of a simulation.
+//
+// Usage note: This class is used both to extract the time and magnitude range from
+// a set of catalog parameters, and to insert a modified time and magnitude range
+// into a set of catalog parameters.
 
 public class OECatalogRange {
 
@@ -288,9 +292,9 @@ public class OECatalogRange {
 
 	// Marshal object.
 
-	public static void static_marshal (MarshalWriter writer, String name, OECatalogRange catalog) {
+	public static void static_marshal (MarshalWriter writer, String name, OECatalogRange catalog_range) {
 		writer.marshalMapBegin (name);
-		catalog.do_marshal (writer);
+		catalog_range.do_marshal (writer);
 		writer.marshalMapEnd ();
 		return;
 	}
@@ -298,11 +302,11 @@ public class OECatalogRange {
 	// Unmarshal object.
 
 	public static OECatalogRange static_unmarshal (MarshalReader reader, String name) {
-		OECatalogRange catalog = new OECatalogRange();
+		OECatalogRange catalog_range = new OECatalogRange();
 		reader.unmarshalMapBegin (name);
-		catalog.do_umarshal (reader);
+		catalog_range.do_umarshal (reader);
 		reader.unmarshalMapEnd ();
-		return catalog;
+		return catalog_range;
 	}
 
 

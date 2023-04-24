@@ -511,6 +511,51 @@ public class OECatalogParamsStats {
 
 
 
+	// Set to values for simulation within a fixed magnitude range.
+	// The productivity is specified as a branch ratio, on a specified time interval.
+	// Parameters:
+	//  n = Branch ratio, as computed for these parameters.
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter, in days.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Minimum magnitude, also the reference magnitude and min mag for parameter definition.
+	//  msup = Maximum magnitude, also the max mag for parameter definition.
+	//  tbegin = Beginning time for which earthquakes are generated, in days.
+	//  tend = Ending time for which earthquakes are generated, in days.
+	//  tint_br = Time interval to use for branch ratio (instead of the time interval in these parameters).
+	// Returns this object.
+	// Note: This is a subset of the values produced by OECatalogParams.set_to_fixed_mag_tint_br.
+
+	public final OECatalogParamsStats set_to_fixed_mag_tint_br (
+		double n,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		double mref,
+		double msup,
+		double tbegin,
+		double tend,
+		double tint_br
+	) {
+		this.a               = OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tint_br);
+		this.p               = p;
+		this.c               = c;
+		this.b               = b;
+		this.alpha           = alpha;
+		this.mref            = mref;
+		this.msup            = msup;
+		this.tbegin          = tbegin;
+		this.tend            = tend;
+		this.mag_min_sim     = mref;
+		this.mag_max_sim     = msup;
+		return this;
+	}
+
+
+
+
 	// Set the branch ratio, leaving everything else unchanged.
 	// Parameters:
 	//  n = Branch ratio, as computed for these parameters.
@@ -521,6 +566,24 @@ public class OECatalogParamsStats {
 		double n
 	) {
 		this.a               = OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tend - tbegin);
+		return this;
+	}
+
+
+
+
+	// Set the branch ratio, leaving everything else unchanged.
+	// Parameters:
+	//  n = Branch ratio, as computed for these parameters.
+	//  tint_br = Time interval to use for branch ratio (instead of the time interval in these parameters).
+	// Returns this object.
+	// Note: Same as OECatalogParams.set_br.
+
+	public final OECatalogParamsStats set_br (
+		double n,
+		double tint_br
+	) {
+		this.a               = OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tint_br);
 		return this;
 	}
 
@@ -543,10 +606,43 @@ public class OECatalogParamsStats {
 
 
 
+	// Calculate an a-value for a given branch ratio.
+	// This function does not change the contents of the object.
+	// Parameters:
+	//  n = Branch ratio, as computed for these parameters.
+	//  tint_br = Time interval to use for branch ratio (instead of the time interval in these parameters).
+	// Returns the a-value.
+	// Note: Same as OECatalogParams.calc_a_for_br.
+
+//	public final double calc_a_for_br (
+//		double n,
+//		double tint_br
+//	) {
+//		return OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tint_br);
+//	}
+
+
+
+
 	// Calculate the branch ratio.
+	// Note: Same as OECatalogParams.get_br.
 
 //	public final double get_br () {
 //		return OEStatsCalc.calc_branch_ratio (a, p, c, b, alpha, mref, msup, tend - tbegin);
+//	}
+
+
+
+	// Calculate the branch ratio.
+	// Parameters:
+	//  tint_br = Time interval to use for branch ratio (instead of the time interval in these parameters).
+	// Returns the branch ratio.
+	// Note: Same as OECatalogParams.get_br.
+
+//	public final double get_br (
+//		double tint_br
+//	) {
+//		return OEStatsCalc.calc_branch_ratio (a, p, c, b, alpha, mref, msup, tint_br);
 //	}
 
 

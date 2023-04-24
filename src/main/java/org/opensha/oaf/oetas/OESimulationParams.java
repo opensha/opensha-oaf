@@ -54,13 +54,28 @@ public class OESimulationParams {
 
 	//--- Ranging
 
-	// The number of catalogs to generate, for ranging.
+	// The number of catalogs to generate, for ranging.  If 0, use 10% of sim_num_catalogs.
 
 	public int range_num_catalogs;
 
-	// The minimum acceptable number of catalogs, for ranging.
+	public final int eff_range_num_catalogs () {
+		if (range_num_catalogs == 0) {
+			return Math.max (sim_num_catalogs / 10, Math.min (50, sim_num_catalogs));
+		}
+		return range_num_catalogs;
+	}
+
+	// The minimum acceptable number of catalogs, for ranging.  If 0, use 50% of range_num_catalogs.
 
 	public int range_min_num_catalogs;
+
+	public final int eff_range_min_num_catalogs () {
+		if (range_min_num_catalogs == 0) {
+			int ncat = eff_range_num_catalogs();
+			return Math.max (ncat / 2, Math.min (50, ncat));
+		}
+		return range_min_num_catalogs;
+	}
 
 	// The time limit for generating catalogs, for ranging, in milliseconds; or -1L for no limit.
 	// Ignored if a total execution time limit for ranging + simulation is given.
@@ -122,6 +137,87 @@ public class OESimulationParams {
 
 	public double range_exec_time_frac;
 
+	//--- Ranging selection
+
+	// The ranging method to use.  (See OEConstants.RANGING_METH_XXXX.)
+
+	public int range_method;
+
+	//--- Ranging, version 2
+
+	// The number of catalogs to generate, for ranging.  If 0, use 20% of sim_num_catalogs.
+	// Note: Because ranging version 2 is fast, it does not have its own timing parameters.
+
+	public int ranv2_num_catalogs;
+
+	public final int eff_ranv2_num_catalogs () {
+		if (ranv2_num_catalogs == 0) {
+			return Math.max (sim_num_catalogs / 5, Math.min (50, sim_num_catalogs));
+		}
+		return ranv2_num_catalogs;
+	}
+
+	// The accumulator to use, for ranging.  (See OEConstants.SEL_ACCUM_XXXX.)
+
+	public int ranv2_accum_selection;
+
+	// Accumulator options, for ranging.
+
+	public int ranv2_accum_option;
+
+	// Minimum relative magnitude for ranging, relative to mainshock or scaling magnitude. [Currently not used]
+
+	public double ranv2_min_rel_mag;
+
+	// Maximum relative magnitude for ranging, relative to mainshock or scaling magnitude. [Currently not used]
+
+	public double ranv2_max_rel_mag;
+
+	// Minimum magnitude for ranging.
+
+	public double ranv2_min_mag;
+
+	// Maximum magnitude for ranging.
+
+	public double ranv2_max_mag;
+
+	// Step size for magnitude ranging.
+
+	public double ranv2_step_mag;
+
+	// Generation count for branch ratio handling, for ranging.  Must be >= 2.
+	// Note: 2 indicates to use the direct aftershocks of the seeds.
+
+	public int ranv2_gen_br;
+
+	// De-rating factor for branch ration handling, for ranging.  Should be between 0 and 1 (and close to 1).
+
+	public double ranv2_derate_br;
+
+	// Minimum probability for a simulated catalog to be nonempty.  Must be strictly between 0 and 1 (and close to 1).
+	// Used in selecting the minimum magnitude.
+
+	public double ranv2_prob_nonempty;
+
+	// Minimum number of direct aftershocks of the seeds, for ranging, or 0 if no requirement.
+	// Used in selecting the minimum magnitude.
+
+	public int ranv2_direct_size;
+
+	// Fractile to use when checking number of direct aftershocks of the seeds, for ranging.  Must be between 0 and 1.
+	// Used in selecting the minimum magnitude.
+
+	public double ranv2_direct_fractile;
+
+	// Allowable fraction of catalogs to exceed max mag, for ranging.  Must be > 0.0 (and close to 0).
+	// Used in selecting the maximum magnitude.
+
+	public double ranv2_exceed_fraction;
+
+	// Magnitude excess to use in simulations, for ranging.
+
+	public double ranv2_mag_excess;
+
 
 
 
@@ -156,6 +252,23 @@ public class OESimulationParams {
 		range_mag_lim_fraction = 0.0;
 		range_mag_lim_time     = 0.0;
 		range_exec_time_frac   = 0.0;
+
+		range_method           = OEConstants.RANGING_METH_SIM;
+		ranv2_num_catalogs     = 0;
+		ranv2_accum_selection  = 0;
+		ranv2_accum_option     = 0;
+		ranv2_min_rel_mag      = 0.0;
+		ranv2_max_rel_mag      = 0.0;
+		ranv2_min_mag          = 0.0;
+		ranv2_max_mag          = 0.0;
+		ranv2_step_mag         = 0.0;
+		ranv2_gen_br           = 0;
+		ranv2_derate_br        = 0.0;
+		ranv2_prob_nonempty    = 0.0;
+		ranv2_direct_size      = 0;
+		ranv2_direct_fractile  = 0.0;
+		ranv2_exceed_fraction  = 0.0;
+		ranv2_mag_excess       = 0.0;
 		return;
 	}
 
@@ -196,7 +309,23 @@ public class OESimulationParams {
 		int    range_max_attempts    ,  
 		double range_mag_lim_fraction,
 		double range_mag_lim_time    ,
-		double range_exec_time_frac
+		double range_exec_time_frac  ,
+		int range_method             ,
+		int ranv2_num_catalogs       ,
+		int ranv2_accum_selection    ,
+		int ranv2_accum_option       ,
+		double ranv2_min_rel_mag     ,
+		double ranv2_max_rel_mag     ,
+		double ranv2_min_mag         ,
+		double ranv2_max_mag         ,
+		double ranv2_step_mag        ,
+		int ranv2_gen_br             ,
+		double ranv2_derate_br       ,
+		double ranv2_prob_nonempty   ,
+		int ranv2_direct_size        ,
+		double ranv2_direct_fractile ,
+		double ranv2_exceed_fraction ,
+		double ranv2_mag_excess
 	) {
 		this.sim_num_catalogs       = sim_num_catalogs      ;
 		this.sim_min_num_catalogs   = sim_min_num_catalogs  ;
@@ -221,6 +350,23 @@ public class OESimulationParams {
 		this.range_mag_lim_fraction = range_mag_lim_fraction;
 		this.range_mag_lim_time     = range_mag_lim_time    ;
 		this.range_exec_time_frac   = range_exec_time_frac  ;
+
+		this.range_method           = range_method          ;
+		this.ranv2_num_catalogs     = ranv2_num_catalogs    ;
+		this.ranv2_accum_selection  = ranv2_accum_selection ;
+		this.ranv2_accum_option     = ranv2_accum_option    ;
+		this.ranv2_min_rel_mag      = ranv2_min_rel_mag     ;
+		this.ranv2_max_rel_mag      = ranv2_max_rel_mag     ;
+		this.ranv2_min_mag          = ranv2_min_mag         ;
+		this.ranv2_max_mag          = ranv2_max_mag         ;
+		this.ranv2_step_mag         = ranv2_step_mag        ;
+		this.ranv2_gen_br           = ranv2_gen_br          ;
+		this.ranv2_derate_br        = ranv2_derate_br       ;
+		this.ranv2_prob_nonempty    = ranv2_prob_nonempty   ;
+		this.ranv2_direct_size      = ranv2_direct_size     ;
+		this.ranv2_direct_fractile  = ranv2_direct_fractile ;
+		this.ranv2_exceed_fraction  = ranv2_exceed_fraction ;
+		this.ranv2_mag_excess       = ranv2_mag_excess      ;
 		return this;
 	}
 
@@ -253,6 +399,23 @@ public class OESimulationParams {
 		this.range_mag_lim_fraction = other.range_mag_lim_fraction;
 		this.range_mag_lim_time     = other.range_mag_lim_time    ;
 		this.range_exec_time_frac   = other.range_exec_time_frac  ;
+
+		this.range_method           = other.range_method          ;
+		this.ranv2_num_catalogs     = other.ranv2_num_catalogs    ;
+		this.ranv2_accum_selection  = other.ranv2_accum_selection ;
+		this.ranv2_accum_option     = other.ranv2_accum_option    ;
+		this.ranv2_min_rel_mag      = other.ranv2_min_rel_mag     ;
+		this.ranv2_max_rel_mag      = other.ranv2_max_rel_mag     ;
+		this.ranv2_min_mag          = other.ranv2_min_mag         ;
+		this.ranv2_max_mag          = other.ranv2_max_mag         ;
+		this.ranv2_step_mag         = other.ranv2_step_mag        ;
+		this.ranv2_gen_br           = other.ranv2_gen_br          ;
+		this.ranv2_derate_br        = other.ranv2_derate_br       ;
+		this.ranv2_prob_nonempty    = other.ranv2_prob_nonempty   ;
+		this.ranv2_direct_size      = other.ranv2_direct_size     ;
+		this.ranv2_direct_fractile  = other.ranv2_direct_fractile ;
+		this.ranv2_exceed_fraction  = other.ranv2_exceed_fraction ;
+		this.ranv2_mag_excess       = other.ranv2_mag_excess      ;
 		return this;
 	}
 
@@ -290,6 +453,23 @@ public class OESimulationParams {
 		result.append ("range_mag_lim_fraction = " + range_mag_lim_fraction + "\n");
 		result.append ("range_mag_lim_time = "     + range_mag_lim_time     + "\n");
 		result.append ("range_exec_time_frac = "   + range_exec_time_frac   + "\n");
+
+		result.append ("range_method = "           + range_method           + "\n");
+		result.append ("ranv2_num_catalogs = "     + ranv2_num_catalogs     + "\n");
+		result.append ("ranv2_accum_selection = "  + ranv2_accum_selection  + "\n");
+		result.append ("ranv2_accum_option = "     + ranv2_accum_option     + "\n");
+		result.append ("ranv2_min_rel_mag = "      + ranv2_min_rel_mag      + "\n");
+		result.append ("ranv2_max_rel_mag = "      + ranv2_max_rel_mag      + "\n");
+		result.append ("ranv2_min_mag = "          + ranv2_min_mag          + "\n");
+		result.append ("ranv2_max_mag = "          + ranv2_max_mag          + "\n");
+		result.append ("ranv2_step_mag = "         + ranv2_step_mag         + "\n");
+		result.append ("ranv2_gen_br = "           + ranv2_gen_br           + "\n");
+		result.append ("ranv2_derate_br = "        + ranv2_derate_br        + "\n");
+		result.append ("ranv2_prob_nonempty = "    + ranv2_prob_nonempty    + "\n");
+		result.append ("ranv2_direct_size = "      + ranv2_direct_size      + "\n");
+		result.append ("ranv2_direct_fractile = "  + ranv2_direct_fractile  + "\n");
+		result.append ("ranv2_exceed_fraction = "  + ranv2_exceed_fraction  + "\n");
+		result.append ("ranv2_mag_excess = "       + ranv2_mag_excess       + "\n");
 
 		return result.toString();
 	}
@@ -329,6 +509,23 @@ public class OESimulationParams {
 			range_mag_lim_fraction = 0.02;
 			range_mag_lim_time     = 10.0;
 			range_exec_time_frac   = 0.110;
+
+			range_method           = OEConstants.RANGING_METH_SIM;
+			ranv2_num_catalogs     = 0;
+			ranv2_accum_selection  = OEConstants.SEL_ACCUM_SEED_EST_RANGING;
+			ranv2_accum_option     = 0;
+			ranv2_min_rel_mag      = -4.0;
+			ranv2_max_rel_mag      = 0.0;
+			ranv2_min_mag          = -3.0;
+			ranv2_max_mag          = 9.9;
+			ranv2_step_mag         = 0.1;
+			ranv2_gen_br           = 10;
+			ranv2_derate_br        = 0.99;
+			ranv2_prob_nonempty    = 0.999;
+			ranv2_direct_size      = 200;
+			ranv2_direct_fractile  = 0.5;
+			ranv2_exceed_fraction  = 0.02;
+			ranv2_mag_excess       = OEConstants.ZERO_MAG_EXCESS;
 		} else {
 			sim_num_catalogs       = 20000;
 			sim_min_num_catalogs   = 10000;
@@ -356,6 +553,23 @@ public class OESimulationParams {
 			range_mag_lim_fraction = 0.02;
 			range_mag_lim_time     = 10.0;
 			range_exec_time_frac   = 0.110;
+
+			range_method           = OEConstants.RANGING_METH_SIM;
+			ranv2_num_catalogs     = 0;
+			ranv2_accum_selection  = OEConstants.SEL_ACCUM_SEED_EST_RANGING;
+			ranv2_accum_option     = 0;
+			ranv2_min_rel_mag      = -4.0;
+			ranv2_max_rel_mag      = 0.0;
+			ranv2_min_mag          = -3.0;
+			ranv2_max_mag          = 9.9;
+			ranv2_step_mag         = 0.1;
+			ranv2_gen_br           = 10;
+			ranv2_derate_br        = 0.99;
+			ranv2_prob_nonempty    = 0.999;
+			ranv2_direct_size      = 200;
+			ranv2_direct_fractile  = 0.5;
+			ranv2_exceed_fraction  = 0.02;
+			ranv2_mag_excess       = OEConstants.ZERO_MAG_EXCESS;
 		}
 		return this;
 	}
@@ -411,6 +625,23 @@ public class OESimulationParams {
 			writer.marshalDouble ("range_mag_lim_time"     , range_mag_lim_time    );
 			writer.marshalDouble ("range_exec_time_frac"   , range_exec_time_frac  );
 
+			writer.marshalInt    ("range_method"           , range_method          );
+			writer.marshalInt    ("ranv2_num_catalogs"     , ranv2_num_catalogs    );
+			writer.marshalInt    ("ranv2_accum_selection"  , ranv2_accum_selection );
+			writer.marshalInt    ("ranv2_accum_option"     , ranv2_accum_option    );
+			writer.marshalDouble ("ranv2_min_rel_mag"      , ranv2_min_rel_mag     );
+			writer.marshalDouble ("ranv2_max_rel_mag"      , ranv2_max_rel_mag     );
+			writer.marshalDouble ("ranv2_min_mag"          , ranv2_min_mag         );
+			writer.marshalDouble ("ranv2_max_mag"          , ranv2_max_mag         );
+			writer.marshalDouble ("ranv2_step_mag"         , ranv2_step_mag        );
+			writer.marshalInt    ("ranv2_gen_br"           , ranv2_gen_br          );
+			writer.marshalDouble ("ranv2_derate_br"        , ranv2_derate_br       );
+			writer.marshalDouble ("ranv2_prob_nonempty"    , ranv2_prob_nonempty   );
+			writer.marshalInt    ("ranv2_direct_size"      , ranv2_direct_size     );
+			writer.marshalDouble ("ranv2_direct_fractile"  , ranv2_direct_fractile );
+			writer.marshalDouble ("ranv2_exceed_fraction"  , ranv2_exceed_fraction );
+			writer.marshalDouble ("ranv2_mag_excess"       , ranv2_mag_excess      );
+
 		}
 		break;
 
@@ -456,6 +687,23 @@ public class OESimulationParams {
 			range_mag_lim_fraction = reader.unmarshalDouble ("range_mag_lim_fraction");
 			range_mag_lim_time     = reader.unmarshalDouble ("range_mag_lim_time"    );
 			range_exec_time_frac   = reader.unmarshalDouble ("range_exec_time_frac"  );
+
+			range_method           = reader.unmarshalInt    ("range_method"          );
+			ranv2_num_catalogs     = reader.unmarshalInt    ("ranv2_num_catalogs"    );
+			ranv2_accum_selection  = reader.unmarshalInt    ("ranv2_accum_selection" );
+			ranv2_accum_option     = reader.unmarshalInt    ("ranv2_accum_option"    );
+			ranv2_min_rel_mag      = reader.unmarshalDouble ("ranv2_min_rel_mag"     );
+			ranv2_max_rel_mag      = reader.unmarshalDouble ("ranv2_max_rel_mag"     );
+			ranv2_min_mag          = reader.unmarshalDouble ("ranv2_min_mag"         );
+			ranv2_max_mag          = reader.unmarshalDouble ("ranv2_max_mag"         );
+			ranv2_step_mag         = reader.unmarshalDouble ("ranv2_step_mag"        );
+			ranv2_gen_br           = reader.unmarshalInt    ("ranv2_gen_br"          );
+			ranv2_derate_br        = reader.unmarshalDouble ("ranv2_derate_br"       );
+			ranv2_prob_nonempty    = reader.unmarshalDouble ("ranv2_prob_nonempty"   );
+			ranv2_direct_size      = reader.unmarshalInt    ("ranv2_direct_size"     );
+			ranv2_direct_fractile  = reader.unmarshalDouble ("ranv2_direct_fractile" );
+			ranv2_exceed_fraction  = reader.unmarshalDouble ("ranv2_exceed_fraction" );
+			ranv2_mag_excess       = reader.unmarshalDouble ("ranv2_mag_excess"      );
 
 		}
 		break;
@@ -538,6 +786,23 @@ public class OESimulationParams {
 			&& this.range_mag_lim_fraction == other.range_mag_lim_fraction
 			&& this.range_mag_lim_time     == other.range_mag_lim_time
 			&& this.range_exec_time_frac   == other.range_exec_time_frac
+
+			&& this.range_method           == other.range_method
+			&& this.ranv2_num_catalogs     == other.ranv2_num_catalogs
+			&& this.ranv2_accum_selection  == other.ranv2_accum_selection
+			&& this.ranv2_accum_option     == other.ranv2_accum_option
+			&& this.ranv2_min_rel_mag      == other.ranv2_min_rel_mag
+			&& this.ranv2_max_rel_mag      == other.ranv2_max_rel_mag
+			&& this.ranv2_min_mag          == other.ranv2_min_mag
+			&& this.ranv2_max_mag          == other.ranv2_max_mag
+			&& this.ranv2_step_mag         == other.ranv2_step_mag
+			&& this.ranv2_gen_br           == other.ranv2_gen_br
+			&& this.ranv2_derate_br        == other.ranv2_derate_br
+			&& this.ranv2_prob_nonempty    == other.ranv2_prob_nonempty
+			&& this.ranv2_direct_size      == other.ranv2_direct_size
+			&& this.ranv2_direct_fractile  == other.ranv2_direct_fractile
+			&& this.ranv2_exceed_fraction  == other.ranv2_exceed_fraction
+			&& this.ranv2_mag_excess       == other.ranv2_mag_excess
 		) {
 			return true;
 		}

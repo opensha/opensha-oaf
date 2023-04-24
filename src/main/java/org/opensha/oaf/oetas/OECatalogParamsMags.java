@@ -9,7 +9,13 @@ import org.opensha.oaf.util.MarshalException;
 // Author: Michael Barall 12/27/2022.
 //
 // Holds the subset of the parameters in OECatalogParams that determine the
-// magnitude ranges of a catalog.
+// magnitude ranges of a catalog.  This includes only the nominal magnitude range,
+// not information about how the magnitude range may be adjusted during a simulation.
+//
+// Usage note: This class is used to extract the magnitude range from a set of
+// catalog parameters, for use in code that needs the magnitude range but not
+// other parameters.  It is not used to specify a magnitude range for insertion
+// into a set of catalog parameters.
 //
 // See OECatalogParams for definition of parameters.
 

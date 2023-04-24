@@ -5,17 +5,11 @@ import java.util.List;
 import java.util.Collection;
 import java.util.Arrays;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-
 import org.opensha.oaf.oetas.util.OEArraysCalc;
 import org.opensha.oaf.oetas.OECatalogBuilder;
 import org.opensha.oaf.oetas.OECatalogExaminer;
 import org.opensha.oaf.oetas.OECatalogGenerator;
 import org.opensha.oaf.oetas.OECatalogParams;
-import org.opensha.oaf.oetas.OECatalogParamsMags;
 import org.opensha.oaf.oetas.OECatalogParamsStats;
 import org.opensha.oaf.oetas.OECatalogSeedComm;
 import org.opensha.oaf.oetas.OECatalogSeeder;
@@ -1371,8 +1365,8 @@ public class OEFit2Test {
 	// p-values have the form cat_params.p + p_range[i].
 	// c-values have the form cat_params.c * c_range[i].
 	// Note: a_base(p,c) == cat_params.a for p == cat_params.p and c == cat_params.c.  For other values of p and c, 
-	//  a_base(p,c) is chosen to have the same branch ratio on the time interval cat_params.tend - cat_params.tbegin
-	//  and magnitude range cat_params.msup - cat_params.mref.  So the branch ratio is cat_params.get_br() * a_range[i].
+	//  a_base(p,c) is chosen to have the same branch ratio on the time interval tint_br (or cat_params.tend - cat_params.tbegin if tint_br == 0)
+	//  and magnitude range cat_params.msup - cat_params.mref.  So the branch ratio is cat_params.get_br(tint_br) * a_range[i].
 	// In cat_params:
 	//  -- a, p, c, b, and alpha provide the central or only value of the corresponding parameter.
 	//  -- mref, msup, mag_min_sim, and mag_max_sim provide the magnitude ranges used by the fitter
@@ -8645,7 +8639,6 @@ public class OEFit2Test {
 		//  where t_range_begin is the minimum of tbegin and any seed rupture time.
 		// In the fitter, the minimum simulation magnitude is set equal to magCat reported
 		//  by the history, which forces magCat intervals to have zero productivity.
-		// Same parameters as text #24, #25, #26, and #27.
 		// Same as test #30 and #31 except with simulation options.
 
 		if (testargs.is_test ("test32")) {
@@ -8849,6 +8842,546 @@ public class OEFit2Test {
 				test_sim_parameters.range_target_fractile = target_fractile;
 				test_sim_parameters.range_mag_lim_fraction = mag_lim_fraction;
 				test_sim_parameters.range_mag_lim_time = mag_lim_time;
+
+				long max_runtime = -1L;
+				long progress_time = 10000L;
+
+				OESimulator.test_run_simulation_ex (vox_set, test_sim_parameters, max_runtime, progress_time);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #33
+		// Command format:
+		//  test33  zmu  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//          magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
+		//          durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
+		//          f_intervals  lmr_opt
+		//          gs_rel_base_time  gs_ratio  gs_min_width  gr_hi_mag_delta  gr_taper_mag_delta  gr_init_mag
+		//          f_fix_p  f_fix_c  max_br  tint_br
+		//          num_cats  min_rel_mag  max_rel_mag  exceed_fraction  target_size  target_fractile  mag_lim_fraction  mag_lim_time
+		//          [t_day  rup_mag]...
+		// Generate a catalog with the given parameters.
+		// The catalog is seeded with ruptures at the given times and magnitudes.
+		// Then construct a history containing the catalog.
+		// Then use the history to generate a voxel set and a c-p-a-ams grid with the fitting code.
+		// Then use the voxel set to seed a catalog.
+		// Display catalog summary, history contents, grid contents, and catalog seeds.
+		// Notes:
+		// [tbegin, tend] is the range of times for which simulation is performed.
+		// [t_interval_begin, tend] is the range of times for which intervals are constructed
+		//  in the history and should satisfy t_interval_begin >= tbegin.
+		// [t_range_begin, tend] is the range of times for which history is constructed,
+		//  where t_range_begin is the minimum of tbegin and any seed rupture time.
+		// In the fitter, the minimum simulation magnitude is set equal to magCat reported
+		//  by the history, which forces magCat intervals to have zero productivity.
+		// Same as test #32 except with consistent handling of branch ratio time interval, and larger parameter ranges.
+
+		if (testargs.is_test ("test33")) {
+			try {
+
+				System.out.println ("Generating catalog and history and forecast, generating grouping, and doing c/p/a/ams fitting, with productivity output, using the statistics voxel set, plus simulation and forecast");
+				double zmu = testargs.get_double ("zmu");
+				double zams = testargs.get_double ("zams");
+				double n = testargs.get_double ("n");
+				double p = testargs.get_double ("p");
+				double c = testargs.get_double ("c");
+				double b = testargs.get_double ("b");
+				double alpha = testargs.get_double ("alpha");
+				double mref = testargs.get_double ("mref");
+				double msup = testargs.get_double ("msup");
+				double tbegin = testargs.get_double ("tbegin");
+				double tend = testargs.get_double ("tend");
+
+				double magCat = testargs.get_double ("magCat");
+				int helm_param = testargs.get_int ("helm_param");
+				double disc_delta = testargs.get_double ("disc_delta");
+				int mag_cat_count = testargs.get_int ("mag_cat_count");
+				double eligible_mag = testargs.get_double ("eligible_mag");
+				int eligible_count = testargs.get_int ("eligible_count");
+
+				double durlim_ratio = testargs.get_double ("durlim_ratio");
+				double durlim_min = testargs.get_double ("durlim_min");
+				double durlim_max = testargs.get_double ("durlim_max");
+				double t_interval_begin = testargs.get_double ("t_interval_begin");
+				int before_max_count = testargs.get_int ("before_max_count");
+				int mag_cat_int_join = testargs.get_int ("mag_cat_int_join");
+
+				boolean f_intervals = testargs.get_boolean ("f_intervals");
+				int lmr_opt = testargs.get_int ("lmr_opt");
+
+				double gs_rel_base_time = testargs.get_double ("gs_rel_base_time");
+				double gs_ratio = testargs.get_double ("gs_ratio");
+				double gs_min_width = testargs.get_double ("gs_min_width");
+				double gr_hi_mag_delta = testargs.get_double ("gr_hi_mag_delta");
+				double gr_taper_mag_delta = testargs.get_double ("gr_taper_mag_delta");
+				double gr_init_mag = testargs.get_double ("gr_init_mag");
+
+				boolean f_fix_p = testargs.get_boolean ("f_fix_p");
+				boolean f_fix_c = testargs.get_boolean ("f_fix_c");
+				double max_br = testargs.get_double ("max_br");
+				double tint_br = testargs.get_double ("tint_br");
+
+				int num_cats = testargs.get_int ("num_cats");
+				double min_rel_mag = testargs.get_double ("min_rel_mag");
+				double max_rel_mag = testargs.get_double ("max_rel_mag");
+				double exceed_fraction = testargs.get_double ("exceed_fraction");
+				int target_size = testargs.get_int ("target_size");
+				double target_fractile = testargs.get_double ("target_fractile");
+				double mag_lim_fraction = testargs.get_double ("mag_lim_fraction");
+				double mag_lim_time = testargs.get_double ("mag_lim_time");
+
+				double[] time_mag_array = testargs.get_double_tuple_array ("time_mag_array", -1, 0, 2, "time", "mag");
+				testargs.end_test();
+
+				// Make the catalog parameters
+
+				OECatalogParams cat_params = (new OECatalogParams()).set_to_fixed_mag_tint_br (
+					n,		// n
+					p,		// p
+					c,		// c
+					b,		// b
+					alpha,	// alpha
+					mref,	// mref
+					msup,	// msup
+					tbegin,	// tbegin
+					tend,	// tend
+					tint_br	// tint_br
+				);
+
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams_zmu (zams, zmu, cat_params);
+
+				// Make the catalog initializer
+
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
+
+				// Make the catalog examiner
+
+				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
+
+				// Generate a catalog
+
+				OESimulator.gen_single_catalog (initializer, examiner);
+
+				// Make time-splitting function
+
+				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
+
+				// Make the history parameters
+
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
+				OEDiscFGHParams hist_params = new OEDiscFGHParams();
+
+				hist_params.set_sim_history_typical (
+					magCat,				// magCat
+					helm_param,			// helm_param
+					t_range_begin,		// t_range_begin
+					t_range_end,		// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
+				);
+
+				// Display the history parameters
+
+				System.out.println ();
+				System.out.println (hist_params.toString());
+
+				// Make a history
+
+				OEDisc2History history = new OEDisc2History();
+
+				history.build_from_fgh (hist_params, rup_list);
+
+				// Display the history
+
+				System.out.println ();
+				System.out.println (history.toString());
+
+				// Adjust the minimum simulation magnitude to be the history's magCat
+
+				OECatalogParamsStats cat_params_stats = cat_params.get_params_stats();
+				cat_params_stats.set_fixed_mag_min (history.magCat);
+
+				// Statistics from seed parameters
+
+				OESeedParamsStats seed_params_stats = seed_params.get_params_stats();
+
+				// Grouping parameters
+
+				OEDisc2Grouping.SpanWidthFcn span_width_fcn = new OEDisc2Grouping.SpanWidthFcnRatio (gs_rel_base_time, gs_ratio, gs_min_width);
+				OEDisc2Grouping.RupWidthFcn rup_width_fcn = new OEDisc2Grouping.RupWidthFcnTaper (DEF_GR_LO_RATIO, DEF_GR_HI_RATIO, gr_hi_mag_delta, gr_taper_mag_delta, gr_init_mag);
+
+				// Parameter ranges
+
+				int num_br = 41;
+				double min_br = 0.01;
+				//double max_br = 1.00;
+
+				int num_zams = 81;
+				double min_zams = -4.50;
+				double max_zams = -0.50;
+
+				int num_p = 37;
+				double min_p = 0.50;
+				double max_p = 2.00;
+
+				int num_c = 21;
+				double min_c = 0.00001;
+				double max_c = 1.00000;
+
+				double[] a_range = (OEDiscreteRange.makeLog (num_br, min_br / n, max_br / n)).get_range_array();
+				double[] ams_range = (OEDiscreteRange.makeLog (num_zams, Math.pow (10.0, min_zams - zams), Math.pow (10.0, max_zams - zams))).get_range_array();
+				double[] p_range = (f_fix_p ? OEDiscreteRange.makeSingle (0.0) : OEDiscreteRange.makeLinear (num_p, min_p - cat_params.p, max_p - cat_params.p)).get_range_array();
+				double[] c_range = (f_fix_c ? OEDiscreteRange.makeSingle (1.0) : OEDiscreteRange.makeLog (num_c, min_c / cat_params.c, max_c / cat_params.c)).get_range_array();
+
+				OEDiscreteRange v_n_range = OEDiscreteRange.makeLog (num_br, min_br, max_br);
+				OEDiscreteRange v_zams_range = OEDiscreteRange.makeLinear (num_zams, min_zams, max_zams);
+				OEDiscreteRange v_p_range = (f_fix_p ? OEDiscreteRange.makeSingle (cat_params.p) : OEDiscreteRange.makeLinear (num_p, min_p, max_p));
+				OEDiscreteRange v_c_range = (f_fix_c ? OEDiscreteRange.makeSingle (cat_params.c) : OEDiscreteRange.makeLog (num_c, min_c, max_c));
+
+				//////double br_max_mult = 1.0 / (Math.min (n, 1.0));
+				////double br_max_mult = max_br / (Math.min (n, 1.0));
+				////
+				//////double[] a_range = (OEDiscreteRange.makeLog (51, 0.1, 10.0)).get_range_array();
+				////double[] a_range = (OEDiscreteRange.makeLog (51, 0.1, br_max_mult)).get_range_array();
+				////double[] ams_range = (OEDiscreteRange.makeLog (51, 0.1, 10.0)).get_range_array();
+				////double[] p_range = (f_fix_p ? OEDiscreteRange.makeSingle (0.0) : OEDiscreteRange.makeLinear (31, -0.3, 0.3)).get_range_array();
+				////double[] c_range = (f_fix_c ? OEDiscreteRange.makeSingle (1.0) : OEDiscreteRange.makeLog (17, 0.01, 100.0)).get_range_array();
+				//////double[] c_range = (OEDiscreteRange.makeLog (17, 0.01, 100.0)).get_range_array();
+				////
+				//////OEDiscreteRange v_n_range = OEDiscreteRange.makeLog (51, n * 0.1, n * 10.0);
+				////OEDiscreteRange v_n_range = OEDiscreteRange.makeLog (51, n * 0.1, n * br_max_mult);
+				////OEDiscreteRange v_zams_range = OEDiscreteRange.makeLinear (51, zams + Math.log10(0.1), zams + Math.log10(10.0));
+				////OEDiscreteRange v_p_range = (f_fix_p ? OEDiscreteRange.makeSingle (cat_params.p) : OEDiscreteRange.makeLinear (31, cat_params.p - 0.3, cat_params.p + 0.3));
+				////OEDiscreteRange v_c_range = (f_fix_c ? OEDiscreteRange.makeSingle (cat_params.c) : OEDiscreteRange.makeLog (17, cat_params.c * 0.01, cat_params.c * 100.0));
+				//////OEDiscreteRange v_c_range = OEDiscreteRange.makeLog (17, cat_params.c * 0.01, cat_params.c * 100.0);
+
+				// Make and display the grid
+
+				OEDisc2InitVoxSet vox_set = fit_vox_set_c_p_a_ams_like_grid (
+					history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt,
+					a_range, ams_range,p_range, c_range, span_width_fcn, rup_width_fcn,
+					v_c_range, v_p_range, v_n_range, v_zams_range, zmu, tint_br
+				);
+
+				// Perform ranging and simulation
+
+				final String sepline = "----------------------------------------------------------------------";
+				System.out.println();
+				System.out.println (sepline);
+				System.out.println (sepline);
+
+				// Create the simulation parameters
+
+				boolean f_prod = true;
+				OESimulationParams test_sim_parameters = (new OESimulationParams()).set_to_typical (f_prod);
+
+				if (num_cats > 0) {
+					test_sim_parameters.sim_num_catalogs = Math.max (100, num_cats);
+					test_sim_parameters.range_num_catalogs = Math.max (100, num_cats/10);
+				}
+
+				if (target_size > 0) {
+					test_sim_parameters.range_target_size = Math.max (100, target_size);
+				}
+
+				test_sim_parameters.range_min_rel_mag = min_rel_mag;
+				test_sim_parameters.range_max_rel_mag = max_rel_mag;
+				test_sim_parameters.range_exceed_fraction = exceed_fraction;
+				test_sim_parameters.range_target_fractile = target_fractile;
+				test_sim_parameters.range_mag_lim_fraction = mag_lim_fraction;
+				test_sim_parameters.range_mag_lim_time = mag_lim_time;
+
+				long max_runtime = -1L;
+				long progress_time = 10000L;
+
+				OESimulator.test_run_simulation_ex (vox_set, test_sim_parameters, max_runtime, progress_time);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #34
+		// Command format:
+		//  test34  zmu  zams  n  p  c  b  alpha  mref  msup  tbegin  tend
+		//          magCat  helm_param  disc_delta  mag_cat_count  eligible_mag  eligible_count
+		//          durlim_ratio  durlim_min  durlim_max  t_interval_begin  before_max_count  mag_cat_int_join
+		//          f_intervals  lmr_opt
+		//          gs_rel_base_time  gs_ratio  gs_min_width  gr_hi_mag_delta  gr_taper_mag_delta  gr_init_mag
+		//          f_fix_p  f_fix_c  max_br  tint_br
+		//          num_cats  prob_nonempty  direct_size  exceed_fraction  accum_option  accum_param_1  mag_excess
+		//          [t_day  rup_mag]...
+		// Generate a catalog with the given parameters.
+		// The catalog is seeded with ruptures at the given times and magnitudes.
+		// Then construct a history containing the catalog.
+		// Then use the history to generate a voxel set and a c-p-a-ams grid with the fitting code.
+		// Then use the voxel set to seed a catalog.
+		// Display catalog summary, history contents, grid contents, and catalog seeds.
+		// Notes:
+		// [tbegin, tend] is the range of times for which simulation is performed.
+		// [t_interval_begin, tend] is the range of times for which intervals are constructed
+		//  in the history and should satisfy t_interval_begin >= tbegin.
+		// [t_range_begin, tend] is the range of times for which history is constructed,
+		//  where t_range_begin is the minimum of tbegin and any seed rupture time.
+		// In the fitter, the minimum simulation magnitude is set equal to magCat reported
+		//  by the history, which forces magCat intervals to have zero productivity.
+		// Same as test #33 except uses ranging version #2.
+
+		if (testargs.is_test ("test34")) {
+			try {
+
+				System.out.println ("Generating catalog and history and forecast, generating grouping, and doing c/p/a/ams fitting, with productivity output, using the statistics voxel set, plus simulation and forecast");
+				double zmu = testargs.get_double ("zmu");
+				double zams = testargs.get_double ("zams");
+				double n = testargs.get_double ("n");
+				double p = testargs.get_double ("p");
+				double c = testargs.get_double ("c");
+				double b = testargs.get_double ("b");
+				double alpha = testargs.get_double ("alpha");
+				double mref = testargs.get_double ("mref");
+				double msup = testargs.get_double ("msup");
+				double tbegin = testargs.get_double ("tbegin");
+				double tend = testargs.get_double ("tend");
+
+				double magCat = testargs.get_double ("magCat");
+				int helm_param = testargs.get_int ("helm_param");
+				double disc_delta = testargs.get_double ("disc_delta");
+				int mag_cat_count = testargs.get_int ("mag_cat_count");
+				double eligible_mag = testargs.get_double ("eligible_mag");
+				int eligible_count = testargs.get_int ("eligible_count");
+
+				double durlim_ratio = testargs.get_double ("durlim_ratio");
+				double durlim_min = testargs.get_double ("durlim_min");
+				double durlim_max = testargs.get_double ("durlim_max");
+				double t_interval_begin = testargs.get_double ("t_interval_begin");
+				int before_max_count = testargs.get_int ("before_max_count");
+				int mag_cat_int_join = testargs.get_int ("mag_cat_int_join");
+
+				boolean f_intervals = testargs.get_boolean ("f_intervals");
+				int lmr_opt = testargs.get_int ("lmr_opt");
+
+				double gs_rel_base_time = testargs.get_double ("gs_rel_base_time");
+				double gs_ratio = testargs.get_double ("gs_ratio");
+				double gs_min_width = testargs.get_double ("gs_min_width");
+				double gr_hi_mag_delta = testargs.get_double ("gr_hi_mag_delta");
+				double gr_taper_mag_delta = testargs.get_double ("gr_taper_mag_delta");
+				double gr_init_mag = testargs.get_double ("gr_init_mag");
+
+				boolean f_fix_p = testargs.get_boolean ("f_fix_p");
+				boolean f_fix_c = testargs.get_boolean ("f_fix_c");
+				double max_br = testargs.get_double ("max_br");
+				double tint_br = testargs.get_double ("tint_br");
+
+				int num_cats = testargs.get_int ("num_cats");
+				double prob_nonempty = testargs.get_double ("prob_nonempty");
+				int direct_size = testargs.get_int ("direct_size");
+				double exceed_fraction = testargs.get_double ("exceed_fraction");
+				int accum_option = testargs.get_int ("accum_option");
+				double accum_param_1 = testargs.get_double ("accum_param_1");
+				double mag_excess = testargs.get_double ("mag_excess");
+
+				double[] time_mag_array = testargs.get_double_tuple_array ("time_mag_array", -1, 0, 2, "time", "mag");
+				testargs.end_test();
+
+				// Make the catalog parameters
+
+				OECatalogParams cat_params = (new OECatalogParams()).set_to_fixed_mag_tint_br (
+					n,		// n
+					p,		// p
+					c,		// c
+					b,		// b
+					alpha,	// alpha
+					mref,	// mref
+					msup,	// msup
+					tbegin,	// tbegin
+					tend,	// tend
+					tint_br	// tint_br
+				);
+
+				// Make the seed parameters
+
+				OESeedParams seed_params = (new OESeedParams()).set_from_zams_zmu (zams, zmu, cat_params);
+
+				// Make the catalog initializer
+
+				OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
+
+				// Make the catalog examiner
+
+				ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+				OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
+
+				// Generate a catalog
+
+				OESimulator.gen_single_catalog (initializer, examiner);
+
+				// Make time-splitting function
+
+				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);
+
+				// Make the history parameters
+
+				double t_range_begin = Math.min (tbegin, t_interval_begin);
+				double t_range_end = tend;
+				for (int itm = 0; itm < time_mag_array.length; itm += 2) {
+					t_range_begin = Math.min (t_range_begin, time_mag_array[itm]);
+				}
+
+				OEDiscFGHParams hist_params = new OEDiscFGHParams();
+
+				hist_params.set_sim_history_typical (
+					magCat,				// magCat
+					helm_param,			// helm_param
+					t_range_begin,		// t_range_begin
+					t_range_end,		// t_range_end
+					disc_delta,			// disc_delta
+					mag_cat_count,		// mag_cat_count
+					eligible_mag,		// eligible_mag
+					eligible_count,		// eligible_count
+					split_fn,			// split_fn
+					t_interval_begin,	// t_interval_begin
+					before_max_count,	// before_max_count
+					mag_cat_int_join	// mag_cat_int_join
+				);
+
+				// Display the history parameters
+
+				System.out.println ();
+				System.out.println (hist_params.toString());
+
+				// Make a history
+
+				OEDisc2History history = new OEDisc2History();
+
+				history.build_from_fgh (hist_params, rup_list);
+
+				// Display the history
+
+				System.out.println ();
+				System.out.println (history.toString());
+
+				// Adjust the minimum simulation magnitude to be the history's magCat
+
+				OECatalogParamsStats cat_params_stats = cat_params.get_params_stats();
+				cat_params_stats.set_fixed_mag_min (history.magCat);
+
+				// Statistics from seed parameters
+
+				OESeedParamsStats seed_params_stats = seed_params.get_params_stats();
+
+				// Grouping parameters
+
+				OEDisc2Grouping.SpanWidthFcn span_width_fcn = new OEDisc2Grouping.SpanWidthFcnRatio (gs_rel_base_time, gs_ratio, gs_min_width);
+				OEDisc2Grouping.RupWidthFcn rup_width_fcn = new OEDisc2Grouping.RupWidthFcnTaper (DEF_GR_LO_RATIO, DEF_GR_HI_RATIO, gr_hi_mag_delta, gr_taper_mag_delta, gr_init_mag);
+
+				// Parameter ranges
+
+				int num_br = 41;
+				double min_br = 0.01;
+				//double max_br = 1.00;
+
+				int num_zams = 81;
+				double min_zams = -4.50;
+				double max_zams = -0.50;
+
+				int num_p = 37;
+				double min_p = 0.50;
+				double max_p = 2.00;
+
+				int num_c = 21;
+				double min_c = 0.00001;
+				double max_c = 1.00000;
+
+				double[] a_range = (OEDiscreteRange.makeLog (num_br, min_br / n, max_br / n)).get_range_array();
+				double[] ams_range = (OEDiscreteRange.makeLog (num_zams, Math.pow (10.0, min_zams - zams), Math.pow (10.0, max_zams - zams))).get_range_array();
+				double[] p_range = (f_fix_p ? OEDiscreteRange.makeSingle (0.0) : OEDiscreteRange.makeLinear (num_p, min_p - cat_params.p, max_p - cat_params.p)).get_range_array();
+				double[] c_range = (f_fix_c ? OEDiscreteRange.makeSingle (1.0) : OEDiscreteRange.makeLog (num_c, min_c / cat_params.c, max_c / cat_params.c)).get_range_array();
+
+				OEDiscreteRange v_n_range = OEDiscreteRange.makeLog (num_br, min_br, max_br);
+				OEDiscreteRange v_zams_range = OEDiscreteRange.makeLinear (num_zams, min_zams, max_zams);
+				OEDiscreteRange v_p_range = (f_fix_p ? OEDiscreteRange.makeSingle (cat_params.p) : OEDiscreteRange.makeLinear (num_p, min_p, max_p));
+				OEDiscreteRange v_c_range = (f_fix_c ? OEDiscreteRange.makeSingle (cat_params.c) : OEDiscreteRange.makeLog (num_c, min_c, max_c));
+
+				//////double br_max_mult = 1.0 / (Math.min (n, 1.0));
+				////double br_max_mult = max_br / (Math.min (n, 1.0));
+				////
+				//////double[] a_range = (OEDiscreteRange.makeLog (51, 0.1, 10.0)).get_range_array();
+				////double[] a_range = (OEDiscreteRange.makeLog (51, 0.1, br_max_mult)).get_range_array();
+				////double[] ams_range = (OEDiscreteRange.makeLog (51, 0.1, 10.0)).get_range_array();
+				////double[] p_range = (f_fix_p ? OEDiscreteRange.makeSingle (0.0) : OEDiscreteRange.makeLinear (31, -0.3, 0.3)).get_range_array();
+				////double[] c_range = (f_fix_c ? OEDiscreteRange.makeSingle (1.0) : OEDiscreteRange.makeLog (17, 0.01, 100.0)).get_range_array();
+				//////double[] c_range = (OEDiscreteRange.makeLog (17, 0.01, 100.0)).get_range_array();
+				////
+				//////OEDiscreteRange v_n_range = OEDiscreteRange.makeLog (51, n * 0.1, n * 10.0);
+				////OEDiscreteRange v_n_range = OEDiscreteRange.makeLog (51, n * 0.1, n * br_max_mult);
+				////OEDiscreteRange v_zams_range = OEDiscreteRange.makeLinear (51, zams + Math.log10(0.1), zams + Math.log10(10.0));
+				////OEDiscreteRange v_p_range = (f_fix_p ? OEDiscreteRange.makeSingle (cat_params.p) : OEDiscreteRange.makeLinear (31, cat_params.p - 0.3, cat_params.p + 0.3));
+				////OEDiscreteRange v_c_range = (f_fix_c ? OEDiscreteRange.makeSingle (cat_params.c) : OEDiscreteRange.makeLog (17, cat_params.c * 0.01, cat_params.c * 100.0));
+				//////OEDiscreteRange v_c_range = OEDiscreteRange.makeLog (17, cat_params.c * 0.01, cat_params.c * 100.0);
+
+				// Make and display the grid
+
+				OEDisc2InitVoxSet vox_set = fit_vox_set_c_p_a_ams_like_grid (
+					history, cat_params_stats, seed_params_stats, f_intervals, lmr_opt,
+					a_range, ams_range,p_range, c_range, span_width_fcn, rup_width_fcn,
+					v_c_range, v_p_range, v_n_range, v_zams_range, zmu, tint_br
+				);
+
+				// Perform ranging and simulation
+
+				final String sepline = "----------------------------------------------------------------------";
+				System.out.println();
+				System.out.println (sepline);
+				System.out.println (sepline);
+
+				// Create the simulation parameters
+
+				boolean f_prod = true;
+				OESimulationParams test_sim_parameters = (new OESimulationParams()).set_to_typical (f_prod);
+
+				if (num_cats > 0) {
+					test_sim_parameters.sim_num_catalogs = Math.max (100, num_cats);
+					test_sim_parameters.range_num_catalogs = Math.max (100, num_cats/10);
+				}
+
+				test_sim_parameters.ranv2_prob_nonempty = prob_nonempty;
+				test_sim_parameters.ranv2_direct_size = direct_size;
+				test_sim_parameters.ranv2_exceed_fraction = exceed_fraction;
+
+				test_sim_parameters.range_method = OEConstants.RANGING_METH_SEED_EST;
+
+				if (accum_option >= 0) {
+					test_sim_parameters.sim_accum_option = accum_option;
+				}
+				test_sim_parameters.sim_accum_param_1 = accum_param_1;
+				test_sim_parameters.ranv2_mag_excess = mag_excess;
 
 				long max_runtime = -1L;
 				long progress_time = 10000L;

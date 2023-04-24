@@ -12,6 +12,7 @@ import org.opensha.oaf.util.SimpleExecTimer;
 import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.oaf.oetas.util.OEArraysCalc;
+import org.opensha.oaf.oetas.util.OEDiscreteRange;
 
 import org.opensha.oaf.oetas.except.OEException;
 import org.opensha.oaf.oetas.except.OERangeConvergenceException;
@@ -357,6 +358,34 @@ public class OESimulator {
 
 	private void do_run_ranging () throws OEException {
 
+		// Switch on ranging method
+
+		switch (sim_parameters.range_method) {
+
+		default:
+			throw new IllegalArgumentException ("OESimulator.do_run_ranging: Invalid ranging method: range_method = " + sim_parameters.range_method);
+
+		case OEConstants.RANGING_METH_SIM:
+			do_run_ranging_v1();
+			break;
+
+		case OEConstants.RANGING_METH_SEED_EST:
+			do_run_ranging_v2();
+			break;
+
+		}
+
+		return;
+	}
+
+
+
+
+	// Run the ranging, version 1.
+	// Throws exception in case of failure.
+
+	private void do_run_ranging_v1 () throws OEException {
+
 		// Get the forecast time from the initializer
 
 		final double t_forecast = sim_initializer.get_t_forecast();
@@ -370,7 +399,7 @@ public class OESimulator {
 			String msg = "Insufficient time remaining to begin ranging";
 			System.out.println ();
 			System.out.println (msg);
-			throw new OERangeTimeoutException ("OESimulator.do_run_ranging: " + msg);
+			throw new OERangeTimeoutException ("OESimulator.do_run_ranging_v1: " + msg);
 		}
 
 		// Get the time and magnitude bins, starting at the time of the forecast
@@ -427,7 +456,7 @@ public class OESimulator {
 				System.out.println ();
 				System.out.println ("Final range:");
 				System.out.println (sim_catalog_range.progress_string());
-				throw new OERangeConvergenceException ("OESimulator.do_run_ranging: " + msg);
+				throw new OERangeConvergenceException ("OESimulator.do_run_ranging_v1: " + msg);
 			}
 
 			// Check if there is time to continue
@@ -437,18 +466,18 @@ public class OESimulator {
 					String msg = "Insufficient time remaining to continue ranging";
 					System.out.println ();
 					System.out.println (msg);
-					throw new OERangeTimeoutException ("OESimulator.do_run_ranging: " + msg);
+					throw new OERangeTimeoutException ("OESimulator.do_run_ranging_v1: " + msg);
 				}
 			}
 
 			// Say hello
 
 			System.out.println ();
-			System.out.println ("Running ETAS ranging, attempt = " + attempt);
+			System.out.println ("Running ETAS ranging, using trial simulation method, attempt = " + attempt);
 			System.out.println ();
 			System.out.println (
 				"Generating "
-				+ sim_parameters.range_num_catalogs
+				+ sim_parameters.eff_range_num_catalogs()
 				+ " catalogs, using "
 				+ sim_executor.get_num_threads()
 				+ " threads, with "
@@ -463,7 +492,7 @@ public class OESimulator {
 			switch (sim_parameters.range_accum_selection) {
 
 			default:
-				throw new IllegalArgumentException ("OESimulator.do_run_ranging: Invalid accumulator selection: range_accum_selection = " + sim_parameters.range_accum_selection);
+				throw new IllegalArgumentException ("OESimulator.do_run_ranging_v1: Invalid accumulator selection: range_accum_selection = " + sim_parameters.range_accum_selection);
 
 			case OEConstants.SEL_ACCUM_SIM_RANGING: {
 				System.out.println ("Using accumulator: OEAccumSimRanging");
@@ -488,7 +517,7 @@ public class OESimulator {
 			ensemble_params.set (
 				sim_initializer,					// initializer
 				accumulators,						// accumulators
-				sim_parameters.range_num_catalogs	// num_catalogs
+				sim_parameters.eff_range_num_catalogs()	// num_catalogs
 			);
 
 			// Create the ensemble generator
@@ -504,26 +533,26 @@ public class OESimulator {
 			if (catalog_count < 0) {
 				String msg = "Ranging failed due to thread abort";
 				System.out.println (msg);
-				throw new OERangeThreadAbortException ("OESimulator.do_run_ranging: " + msg + ": " + ensemble_generator.get_status_msg());
+				throw new OERangeThreadAbortException ("OESimulator.do_run_ranging_v1: " + msg + ": " + ensemble_generator.get_status_msg());
 			}
 
-			if (catalog_count < sim_parameters.range_min_num_catalogs && catalog_count < sim_executor.get_num_threads()) {
-				String msg = "Ranging failed due to insufficient number of catalogs generated within time limit: obtained = " + catalog_count + ", required = " + sim_parameters.range_min_num_catalogs;
+			if (catalog_count < sim_parameters.eff_range_min_num_catalogs() && catalog_count < sim_executor.get_num_threads()) {
+				String msg = "Ranging failed due to insufficient number of catalogs generated within time limit: obtained = " + catalog_count + ", required = " + sim_parameters.eff_range_min_num_catalogs();
 				System.out.println (msg);
-				throw new OERangeTimeoutException ("OESimulator.do_run_ranging: " + msg + ": " + ensemble_generator.get_status_msg());
+				throw new OERangeTimeoutException ("OESimulator.do_run_ranging_v1: " + msg + ": " + ensemble_generator.get_status_msg());
 			}
 
 			// If too few catalogs, but we produced at least one per thread ...
 
-			if (catalog_count < sim_parameters.range_min_num_catalogs) {
+			if (catalog_count < sim_parameters.eff_range_min_num_catalogs()) {
 
 				System.out.println ();
-				System.out.println ("Number of catalogs is below minimum required: catalog_count = " + catalog_count + ", minimum required = " + sim_parameters.range_min_num_catalogs);
+				System.out.println ("Number of catalogs is below minimum required: catalog_count = " + catalog_count + ", minimum required = " + sim_parameters.eff_range_min_num_catalogs());
 
 				// Ratio to reduce catalog size so the count increases to twice the target
 				// number of catalogs, but not more than a factor of 10
 
-				double r = Math.max (0.10, 0.5 * ((double)catalog_count)) / ((double)sim_parameters.range_num_catalogs);
+				double r = Math.max (0.10, 0.5 * ((double)catalog_count)) / ((double)sim_parameters.eff_range_num_catalogs());
 				System.out.println ("Catalog size adjustment ratio = " + r);
 
 				// Rescale the range
@@ -552,13 +581,13 @@ public class OESimulator {
 				if (survival_duration + OEConstants.GEN_TIME_EPS < sim_parameters.range_min_duration) {
 					String msg = "Catalog survival duration is too small: survival_duration = " + survival_duration + ", required minimum = " + sim_parameters.range_min_duration;
 					System.out.println (msg);
-					throw new OERangeConvergenceException ("OESimulator.do_run_ranging: " + msg);
+					throw new OERangeConvergenceException ("OESimulator.do_run_ranging_v1: " + msg);
 				}
 
 				if (survival_bins == 0) {		// would indicate catalogs don't survive to the start of the forecast (very unlikely)
 					String msg = "Catalog survival duration is before start of forecast";
 					System.out.println (msg);
-					throw new OERangeConvergenceException ("OESimulator.do_run_ranging: " + msg);
+					throw new OERangeConvergenceException ("OESimulator.do_run_ranging_v1: " + msg);
 				}
 
 				// The survival catalog size, for the fractile we are interested in
@@ -624,7 +653,7 @@ public class OESimulator {
 						if (check_bin >= survival_bins) {
 							String msg = "Maximum magnitude check time is after catalog survival time: survival_duration = " + survival_duration + ", check_duration = " + check_duration;
 							System.out.println (msg);
-							throw new OERangeConvergenceException ("OESimulator.do_run_ranging: " + msg);
+							throw new OERangeConvergenceException ("OESimulator.do_run_ranging_v1: " + msg);
 						}
 
 						// Among catalogs that complete the survival bins, get the desired fractile of highest magnitude
@@ -639,7 +668,7 @@ public class OESimulator {
 						} else if (new_mag_max < sim_catalog_range.mag_min_sim + 1.0) {
 							String msg = "New maximum magnitude is too close to minimum magnitude, proposed new max mag = " + new_mag_max + ", existing min mag = " + sim_catalog_range.mag_min_sim;
 							System.out.println (msg);
-							throw new OERangeConvergenceException ("OESimulator.do_run_ranging: " + msg);
+							throw new OERangeConvergenceException ("OESimulator.do_run_ranging_v1: " + msg);
 						} else {
 							System.out.println ("Adjusting magnitude range maximum, new max mag = " + new_mag_max + ", existing max mag = " + sim_catalog_range.mag_max_sim);
 							sim_catalog_range.mag_max_sim = new_mag_max;
@@ -662,6 +691,251 @@ public class OESimulator {
 
 		System.out.println ();
 		System.out.println ("Completed ETAS ranging, in " + attempt + " attempts");
+
+		return;
+	}
+
+
+
+
+	// Find the last element of an array which is at least a given threshold.
+	// Parameters:
+	//  x = Threshold.
+	//  values = Array of data values.
+	// Returns the largest index j such that values[j] >= x.
+	// Returns -1 if no element of values is >= x.
+	// Implementation note:  Uses linear search.  Although intended for arrays that are
+	// sorted in decreasing order, we don't use binary search so it can be applied to arrays
+	// that might be slightly out of order due to rounding.
+
+	private int find_last_exceeder (double x, double[] values) {
+		int j = values.length - 1;
+		while (j >= 0 && values[j] < x) {
+			--j;
+		}
+		return j;
+	}
+
+	private int find_last_exceeder (int x, int[] values) {
+		int j = values.length - 1;
+		while (j >= 0 && values[j] < x) {
+			--j;
+		}
+		return j;
+	}
+
+
+
+
+	// Run the ranging, version 2.
+	// Throws exception in case of failure.
+
+	private void do_run_ranging_v2 () throws OEException {
+
+		// Get the forecast time from the initializer
+
+		final double t_forecast = sim_initializer.get_t_forecast();
+
+		// Maximum runtime and progress message time (just use half the simulation time; we should be much faster than that)
+
+		final long max_runtime = ((sim_exec_timer == null) ? sim_parameters.sim_max_runtime : sim_exec_timer.get_frac_remaining_time (0.5));
+		final long progress_time = ((sim_exec_timer == null) ? sim_parameters.sim_progress_time : sim_exec_timer.get_progress_time());
+
+		if (SimpleExecTimer.compare_remaining_time (max_runtime, 1000L) < 0) {
+			String msg = "Insufficient time remaining to begin ranging";
+			System.out.println ();
+			System.out.println (msg);
+			throw new OERangeTimeoutException ("OESimulator.do_run_ranging_v2: " + msg);
+		}
+
+		// Get the time and magnitude bins, starting at the time of the forecast (we really only need the ending time)
+
+		final double[] ranging_time_values = sim_forecast_grid.get_ranging_time_values (t_forecast);
+
+		// Get the b-value and scaling magnitude from the initializer
+
+		final double b_value = sim_initializer.get_b_value();
+		final double scaling_mag = sim_initializer.get_mainshock_mag();
+
+		// Get the simulation start time from the existing range
+
+		final double tbegin = sim_catalog_range.tbegin;
+
+		// Set up a default range (the magnitude range here is not used, so we just use the version #1 values as a default)
+
+		sim_catalog_range.set (
+			tbegin,															// tbegin
+			ranging_time_values[ranging_time_values.length - 1],			// tend
+			scaling_mag + sim_parameters.range_min_rel_mag,					// mag_min_sim
+			scaling_mag + sim_parameters.range_max_rel_mag,					// mag_max_sim
+			sim_parameters.ranv2_mag_excess									// mag_excess
+		);
+
+		// Write the default range into the initializer
+
+		sim_initializer.set_range (sim_catalog_range);
+
+		// If no ranging is desired, just use the default range
+
+		if (sim_parameters.range_accum_selection == OEConstants.SEL_ACCUM_NONE) {
+			System.out.println ();
+			System.out.println ("Using default range");
+			return;
+		}
+
+		// Set the initializer so only seeds are generated
+
+		final OECatalogLimits old_limits = sim_initializer.get_limits();
+		final OECatalogLimits new_limits = sim_initializer.get_limits().set_seed_only();
+		sim_initializer.set_limits (new_limits);
+
+		// Say hello
+
+		System.out.println ();
+		System.out.println ("Running ETAS ranging, using seed estimation technique");
+		System.out.println ();
+		System.out.println ("Current range:");
+		System.out.println (sim_catalog_range.progress_string());
+
+		// Ranges of generation and magnitude
+
+		double[] the_mag_values;
+		int[] the_gen_values;
+
+		// Allocate and set up the desired accumulator
+
+		switch (sim_parameters.ranv2_accum_selection) {
+
+		default:
+			throw new IllegalArgumentException ("OESimulator.do_run_ranging_v2: Invalid accumulator selection: ranv2_accum_selection = " + sim_parameters.range_accum_selection);
+
+		case OEConstants.SEL_ACCUM_SEED_EST_RANGING: {
+			System.out.println ("Using accumulator: OEAccumSeedEstRanging");
+			System.out.println ("Accumulator option: " + sim_parameters.ranv2_accum_option);
+			OEAccumSeedEstRanging accum = new OEAccumSeedEstRanging();
+
+			// For branch ratio time interval, use the time range
+
+			final double the_tint_br = sim_catalog_range.tend - sim_catalog_range.tbegin;
+
+			// Branch ratio de-rating from parameters
+
+			final double the_derate_br = sim_parameters.ranv2_derate_br;
+
+			// Generation list is just direct aftershocks of the seeds plus the paremter value
+
+			the_gen_values = new int[2];
+			the_gen_values[0] = 2;
+			the_gen_values[1] = sim_parameters.ranv2_gen_br;
+
+			// Magnitude range, currently a list of absolute magnitudes
+
+			final double mag_range_min = sim_parameters.ranv2_min_mag;
+			final double mag_range_max = sim_parameters.ranv2_max_mag;
+			final int mag_range_size = (int)(Math.round ((mag_range_max - mag_range_min) / sim_parameters.ranv2_step_mag)) + 1;
+
+			the_mag_values = (OEDiscreteRange.makeLinear (mag_range_size, mag_range_min, mag_range_max)).get_range_array();
+
+			accum.setup (null, sim_parameters.ranv2_accum_option, the_tint_br, the_derate_br, the_gen_values, the_mag_values);
+			range_accumulator = accum;
+		}
+		break;
+
+		}
+
+		// Create the list of accumulators
+
+		ArrayList<OEEnsembleAccumulator> accumulators = new ArrayList<OEEnsembleAccumulator>();
+		accumulators.add (range_accumulator);
+
+		// Set up the ensemble parameters
+
+		OEEnsembleParams ensemble_params = new OEEnsembleParams();
+
+		int req_catalog_count = sim_parameters.eff_ranv2_num_catalogs();
+
+		ensemble_params.set (
+			sim_initializer,					// initializer
+			accumulators,						// accumulators
+			req_catalog_count					// num_catalogs
+		);
+
+		// Create the ensemble generator
+
+		OEEnsembleGenerator ensemble_generator = new OEEnsembleGenerator();
+
+		// Generate the catalogs
+
+		int catalog_count = ensemble_generator.generate_all_catalogs (ensemble_params, sim_executor, max_runtime, progress_time);
+
+		// Error checks
+
+		if (catalog_count < 0) {
+			String msg = "Ranging failed due to thread abort";
+			System.out.println (msg);
+			throw new OERangeThreadAbortException ("OESimulator.do_run_ranging_v2: " + msg + ": " + ensemble_generator.get_status_msg());
+		}
+
+		if (catalog_count < req_catalog_count) {
+			String msg = "Ranging failed due to insufficient number of catalogs generated within time limit: obtained = " + catalog_count + ", required = " + req_catalog_count;
+			System.out.println (msg);
+			throw new OERangeTimeoutException ("OESimulator.do_run_ranging_v2: " + msg + ": " + ensemble_generator.get_status_msg());
+		}
+
+		// Get the probability of occurrence array
+
+		final int xcount = 0;
+		double[][] prob_occur_array = ((OEAccumReadoutSeedEst)range_accumulator).get_prob_occur_array (xcount);
+
+		// Get the fractile array
+
+		double fractile = sim_parameters.ranv2_direct_fractile;
+		int[][] fractile_array = ((OEAccumReadoutSeedEst)range_accumulator).get_fractile_array (fractile);
+
+		// Find the magnitude with requested probability of producing non-empty catalogs.
+
+		int ix_mag_min = Math.max (0, find_last_exceeder (sim_parameters.ranv2_prob_nonempty, prob_occur_array[0]));
+		System.out.println ("Minimum magnitude selected by probability of non-empty catalog exceeding " + sim_parameters.ranv2_prob_nonempty + " is " + the_mag_values[ix_mag_min]);
+
+		// If also requesting minimum number of direct aftershocks, apply it
+
+		if (sim_parameters.ranv2_direct_size > 0) {
+			int ix_2 = Math.max (0, find_last_exceeder (sim_parameters.ranv2_direct_size, fractile_array[0]));
+			System.out.println ("Minimum magnitude selected by number of direct aftershocks exceeding " + sim_parameters.ranv2_direct_size + " is " + the_mag_values[ix_2]);
+			ix_mag_min = Math.min (ix_mag_min, ix_2);
+		}
+
+		// Find the magnitude with requested probability of exceeding
+
+		int ix_mag_max = Math.max (0, find_last_exceeder (sim_parameters.ranv2_exceed_fraction, prob_occur_array[1]));
+		System.out.println ("Maximum magnitude selected by exceedence probability of " + sim_parameters.ranv2_exceed_fraction + " in " + sim_parameters.ranv2_gen_br + " generations is " + the_mag_values[ix_mag_max]);
+
+		// Now set the range
+
+		sim_catalog_range.set (
+			tbegin,															// tbegin
+			ranging_time_values[ranging_time_values.length - 1],			// tend
+			the_mag_values[ix_mag_min],										// mag_min_sim
+			the_mag_values[ix_mag_max],										// mag_max_sim
+			sim_parameters.ranv2_mag_excess									// mag_excess
+		);
+
+		// Restore the catalog limits
+
+		sim_initializer.set_limits (old_limits);
+
+		// Write the selected range into the initializer
+
+		sim_initializer.set_range (sim_catalog_range);
+
+		System.out.println ();
+		System.out.println ("Selected range:");
+		System.out.println (sim_catalog_range.progress_string());
+
+		// Say goodbye
+
+		System.out.println ();
+		System.out.println ("Completed ETAS ranging");
 
 		return;
 	}
@@ -2025,6 +2299,264 @@ public class OESimulator {
 
 				System.out.println ();
 				System.out.println (forecast_json);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #8
+		// Command format:
+		//  test8  n  p  c  b  alpha  mag_main  tbegin  f_prod  num_cats  prob_nonempty  direct_size  exceed_fraction  max_runtime  progress_time
+		// Build a catalog with the given parameter, using multiple threads.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then run the simulation.
+		// f_prod chooses whether to use production or development simulation parameters.
+		// num_cats and target_size can be zero to use default values.
+		// max_runtime can be -1L for no limit on runtime.
+		// progress_time can be -1L for no progress messages.
+		// Same as test #6 except uses ranging version 2.
+
+		if (args[0].equalsIgnoreCase ("test8")) {
+
+			// 14 additional arguments
+
+			if (args.length != 15) {
+				System.err.println ("OESimulator : Invalid 'test8' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				double mag_main = Double.parseDouble (args[6]);
+				double tbegin = Double.parseDouble (args[7]);
+				boolean f_prod = Boolean.parseBoolean (args[8]);
+				int num_cats = Integer.parseInt (args[9]);
+				double prob_nonempty = Double.parseDouble (args[10]);
+				int direct_size = Integer.parseInt (args[11]);
+				double exceed_fraction = Double.parseDouble (args[12]);
+				long max_runtime = Long.parseLong (args[13]);
+				long progress_time = Long.parseLong (args[14]);
+
+				// Say hello
+
+				System.out.println ("Running simulation with given parameters, using execution timer, using ranging version 2");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("mag_main = " + mag_main);
+				System.out.println ("tbegin = " + tbegin);
+				System.out.println ("f_prod = " + f_prod);
+				System.out.println ("num_cats = " + num_cats);
+				System.out.println ("prob_nonempty = " + prob_nonempty);
+				System.out.println ("direct_size = " + direct_size);
+				System.out.println ("exceed_fraction = " + exceed_fraction);
+				System.out.println ("max_runtime = " + max_runtime);
+				System.out.println ("progress_time = " + progress_time);
+
+				// Set up catalog parameters
+
+				double mref = 3.0;
+				double msup = 9.5;
+				double tend = OEForecastGrid.get_config_tend (tbegin);
+
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_limited_br (
+					n,
+					p,
+					c,
+					b,
+					alpha,
+					mref,
+					msup,
+					tbegin,
+					tend
+				);
+
+				// Branch ratio checks
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				System.out.println ("a = " + test_cat_params.a);
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Create the initializer
+
+				double t_main = 0.0;
+
+				OEInitFixedState test_sim_initializer = new OEInitFixedState();
+				test_sim_initializer.setup_single (test_cat_params, mag_main, t_main);
+
+				// Set up simulation parameters
+
+				OESimulationParams test_sim_parameters = (new OESimulationParams()).set_to_typical (f_prod);
+
+				if (num_cats > 0) {
+					test_sim_parameters.sim_num_catalogs = Math.max (100, num_cats);
+					test_sim_parameters.range_num_catalogs = Math.max (100, num_cats/10);
+				}
+
+				test_sim_parameters.ranv2_prob_nonempty = prob_nonempty;
+				test_sim_parameters.ranv2_direct_size = direct_size;
+				test_sim_parameters.ranv2_exceed_fraction = exceed_fraction;
+
+				test_sim_parameters.range_method = OEConstants.RANGING_METH_SEED_EST;
+
+				// Run the simulations
+
+				OESimulator.test_run_simulation_ex (test_sim_initializer, test_sim_parameters, max_runtime, progress_time);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #9
+		// Command format:
+		//  test9  n  p  c  b  alpha  mag_main  tbegin  f_prod  num_cats
+		//         prob_nonempty  direct_size  exceed_fraction  accum_option  accum_param_1  mag_excess  max_runtime  progress_time
+		// Build a catalog with the given parameter, using multiple threads.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then run the simulation.
+		// f_prod chooses whether to use production or development simulation parameters.
+		// num_cats and target_size can be zero to use default values.
+		// max_runtime can be -1L for no limit on runtime.
+		// progress_time can be -1L for no progress messages.
+		// accum_option can be -1 to use default.
+		// accum_param_1 is the upfill secondary reduction multiplier.
+		// Uses ranging version 2.
+		// Same as test #8 with extra parameters.
+
+		if (args[0].equalsIgnoreCase ("test9")) {
+
+			// 17 additional arguments
+
+			if (args.length != 18) {
+				System.err.println ("OESimulator : Invalid 'test9' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				double mag_main = Double.parseDouble (args[6]);
+				double tbegin = Double.parseDouble (args[7]);
+				boolean f_prod = Boolean.parseBoolean (args[8]);
+				int num_cats = Integer.parseInt (args[9]);
+				double prob_nonempty = Double.parseDouble (args[10]);
+				int direct_size = Integer.parseInt (args[11]);
+				double exceed_fraction = Double.parseDouble (args[12]);
+
+				int accum_option = Integer.parseInt (args[13]);
+				double accum_param_1 = Double.parseDouble (args[14]);
+				double mag_excess = Double.parseDouble (args[15]);
+
+				long max_runtime = Long.parseLong (args[16]);
+				long progress_time = Long.parseLong (args[17]);
+
+				// Say hello
+
+				System.out.println ("Running simulation with given parameters, using execution timer, using ranging version 2");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("mag_main = " + mag_main);
+				System.out.println ("tbegin = " + tbegin);
+				System.out.println ("f_prod = " + f_prod);
+				System.out.println ("num_cats = " + num_cats);
+				System.out.println ("prob_nonempty = " + prob_nonempty);
+				System.out.println ("direct_size = " + direct_size);
+				System.out.println ("exceed_fraction = " + exceed_fraction);
+				System.out.println ("accum_option = " + accum_option);
+				System.out.println ("accum_param_1 = " + accum_param_1);
+				System.out.println ("exceed_fraction = " + exceed_fraction);
+				System.out.println ("mag_excess = " + mag_excess);
+				System.out.println ("progress_time = " + progress_time);
+
+				// Set up catalog parameters
+
+				double mref = 3.0;
+				double msup = 9.5;
+				double tend = OEForecastGrid.get_config_tend (tbegin);
+
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_limited_br (
+					n,
+					p,
+					c,
+					b,
+					alpha,
+					mref,
+					msup,
+					tbegin,
+					tend
+				);
+
+				// Branch ratio checks
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				System.out.println ("a = " + test_cat_params.a);
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Create the initializer
+
+				double t_main = 0.0;
+
+				OEInitFixedState test_sim_initializer = new OEInitFixedState();
+				test_sim_initializer.setup_single (test_cat_params, mag_main, t_main);
+
+				// Set up simulation parameters
+
+				OESimulationParams test_sim_parameters = (new OESimulationParams()).set_to_typical (f_prod);
+
+				if (num_cats > 0) {
+					test_sim_parameters.sim_num_catalogs = Math.max (100, num_cats);
+					test_sim_parameters.range_num_catalogs = Math.max (100, num_cats/10);
+				}
+
+				test_sim_parameters.ranv2_prob_nonempty = prob_nonempty;
+				test_sim_parameters.ranv2_direct_size = direct_size;
+				test_sim_parameters.ranv2_exceed_fraction = exceed_fraction;
+
+				test_sim_parameters.range_method = OEConstants.RANGING_METH_SEED_EST;
+
+				if (accum_option >= 0) {
+					test_sim_parameters.sim_accum_option = accum_option;
+				}
+				test_sim_parameters.sim_accum_param_1 = accum_param_1;
+				test_sim_parameters.ranv2_mag_excess = mag_excess;
+
+				// Run the simulations
+
+				OESimulator.test_run_simulation_ex (test_sim_initializer, test_sim_parameters, max_runtime, progress_time);
 
 			} catch (Exception e) {
 				e.printStackTrace();

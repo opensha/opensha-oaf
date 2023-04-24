@@ -1316,18 +1316,30 @@ public class OEAccumSeedEstRanging implements OEEnsembleAccumulator, OEAccumRead
 	
 		// Make generation array for seed-only up to 4 additional generations
 
-		int[] the_gen_values = new int[5];
+		int[] the_gen_values = new int[10];
 		the_gen_values[0] = 2;
 		the_gen_values[1] = 3;
 		the_gen_values[2] = 4;
 		the_gen_values[3] = 5;
 		the_gen_values[4] = 6;
+		the_gen_values[5] = 7;
+		the_gen_values[6] = 8;
+		the_gen_values[7] = 9;
+		the_gen_values[8] = 10;
+		the_gen_values[9] = 11;
 
-		// Make magnitude array for intervals of 0.1, from -6.0 to +2.0 relative to mainshock magnitude
+//		// Make magnitude array for intervals of 0.1, from -6.0 to +2.0 relative to mainshock magnitude
+//
+//		double[] the_mag_values = new double[81];
+//		for (int j = 0; j <= 80; ++j) {
+//			the_mag_values[j] = ((double)(j - 60))/10.0 + mag_main;
+//		}
 
-		double[] the_mag_values = new double[81];
-		for (int j = 0; j <= 80; ++j) {
-			the_mag_values[j] = ((double)(j - 60))/10.0 + mag_main;
+		// Make magnitude array for intervals of 0.1, from -12.0 to +4.0 relative to mainshock magnitude
+
+		double[] the_mag_values = new double[161];
+		for (int j = 0; j <= 160; ++j) {
+			the_mag_values[j] = ((double)(j - 120))/10.0 + mag_main;
 		}
 
 		// Do the setup

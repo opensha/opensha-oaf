@@ -316,7 +316,17 @@ public class OEConstants {
 	public static final int SEL_ACCUM_VAR_TIME_MAG		= 3;	// OEAccumVarTimeMag
 	public static final int SEL_ACCUM_RATE_TIME_MAG		= 4;	// OEAccumRateTimeMag
 	public static final int SEL_ACCUM_SIM_RANGING		= 5;	// OEAccumSimRanging
-	public static final int SEL_ACCUM_MAX				= 5;
+	public static final int SEL_ACCUM_SEED_EST_RANGING	= 6;	// OEAccumSeedEstRanging
+	public static final int SEL_ACCUM_MAX				= 6;
+
+
+
+	// Codes for selecting a ranging method
+
+	public static final int RANGING_METH_MIN			= 1;
+	public static final int RANGING_METH_SIM			= 1;	// Via simulation, using OEAccumSimRanging
+	public static final int RANGING_METH_SEED_EST		= 2;	// Via seed estimation, usingOEAccumSeedEstRanging
+	public static final int RANGING_METH_MAX			= 2;
 
 
 
@@ -348,6 +358,10 @@ public class OEConstants {
 
 	public static final double DEF_MAG_EXCESS = 2.0;
 
+	// Value to disable use of magnitude excess for selecting stop time.
+
+	public static final double ZERO_MAG_EXCESS = 0.0;
+
 	// Negligably small time interval, in days, when grouping sources.
 
 	public static final double GROUP_TIME_EPS = 0.001;
@@ -368,7 +382,7 @@ public class OEConstants {
 
 	public static final double DEF_GR_HI_MAG_DELTA = 0.5;
 
-	// Default group rupture width high magnitude delta.
+	// Default group rupture magnitude delta during which ratio tapers between lo and hi ratios.
 
 	public static final double DEF_GR_TAPER_MAG_DELTA = 0.2;
 
