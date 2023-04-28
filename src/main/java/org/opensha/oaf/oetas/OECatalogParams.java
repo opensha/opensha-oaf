@@ -55,7 +55,7 @@ import org.opensha.oaf.util.MarshalException;
 // on the details of the simulator (these are available in OECatalogRange):
 //   tbegin, tend, mag_min_sim, mag_max_sim, mag_excess
 // The remaining parameters control details of the simulator and are specific to
-// our simulator implementation.
+// our simulator implementation (some of these are also available in OECatalogRange).
 
 public class OECatalogParams {
 
@@ -113,16 +113,19 @@ public class OECatalogParams {
 	public double mag_max_sim;
 
 	// The range of minimum magnitudes to use for the simulation.
-	// The minimum magnitude of each generation may be varied within this range
-	// to control the number of earthquakes per generation.
-	// Should satisfy mag_min_lo <= mag_min_sim <= mag_min_hi.
+	// The minimum magnitude of each generation may be varied within this range,
+	// in accordance with the selected magnitude adjustment method.
+	// Should satisfy mag_min_lo <= mag_min_sim <= mag_min_hi,
+	// with equality if the minimum magnitude is not being adjusted.
 
 	public double mag_min_lo;
 	public double mag_min_hi;
 
 	// The range of maximum magnitudes to use for the simulation.
-	// At present the maximum magnitude is not varied, and so this
-	// should satisfy mag_max_lo == mag_max_sim == mag_max_hi.
+	// The maximum magnitude of each generation may be varied within this range,
+	// in accordance with the selected magnitude adjustment method.
+	// Should satisfy mag_max_lo <= mag_max_sim <= mag_max_hi,
+	// with equality if the maximum magnitude is not being adjusted.
 
 	public double mag_max_lo;
 	public double mag_max_hi;
@@ -137,11 +140,11 @@ public class OECatalogParams {
 	public double mag_eps;
 
 	// The target generation size.
-	// Note: In each generation, the minimum magnitude is adjusted so that the
-	// expected number of aftershocks is equal to gen_size_target, but within the
-	// range mag_min_lo to mag_min_hi.  If mag_min_lo == mag_min_sim == mag_min_hi,
-	// then the minimum magnitude is held fixed at mag_min_sim, but gen_size_target
-	// must still be set to a reasonable value.
+	// Depending on the selected magnitude adjustment method, the minimum magnitude
+	// of a generation may be adjusted so that the expected number of aftershocks is
+	// equal to gen_size_target, but within the range mag_min_lo to mag_min_hi.
+	// If mag_min_lo == mag_min_sim == mag_min_hi, then the minimum magnitude is held
+	// fixed at mag_min_sim, but gen_size_target must still be set to a reasonable value.
 
 	public int gen_size_target;
 
@@ -161,6 +164,162 @@ public class OECatalogParams {
 	// time of the first such rupture.
 
 	public double mag_excess;
+
+	// The magnitude adjustment method, see MAG_ADJ_XXXXX.
+	// Selects the method that a generator uses to adjust the magnitude range
+	// during a simulation.
+
+	public int mag_adj_meth;
+
+	// The generation count to use when estimating the ultimate catalog size,
+	// when adjusting the magnitude range.  The value 2 selects the first generation
+	// after the seeds, i.e., the direct aftershocks of the seeds.
+
+	public int madj_gen_br;
+
+	// The branch ratio de-rating factor to use when estimated the ultimate
+	// catalog size, when adjusting the magnitude range.
+	// This allows for the fact that the effective branch ratio decreases with
+	// succeeding generations, as aftershocks become later in time.
+
+	public double madj_derate_br;
+
+	// The probability of exceeding the maximum magnitude, based on the estimated
+	// ultimate catalog size, when adjusting the magnitude range.
+	// A generator may assume that this value is small.
+
+	public double madj_exceed_fr;
+
+
+
+
+	//----- Magnitude range adjustment methods -----
+
+
+
+
+	// Magnitude adjustment method: Original.
+	// The maximum magnitude is held fixed at mag_max_sim.  The values of mag_max_lo
+	// and mag_max_hi are not used, but should be set equal to mag_max_sim.
+	// The minimum magnitude is adjusted at the start of each generation so that the
+	// expected number of aftershocks during the generation is equal to gen_size_target,
+	// except that the minimum magnitude is coerced to lie between mag_min_lo and
+	// mag_min_hi.  If mag_min_lo == mag_min_hi then the minimum magnitude remains
+	// fixed at their common value; but gen_size_target still needs to have a reasonable
+	// value (such as 100).  The value of mag_min_sim is not used, but it should have a
+	// typical value and lie between mag_min_lo and mag_min_hi.
+
+	public static final int MAG_ADJ_ORIGINAL = 0;
+
+
+	// Set the magnitude adjustment method to original.
+	// Assumes that the following fields are already set up:
+	//  mag_min_sim, mag_max_sim, mag_min_lo, mag_min_hi, gen_size_target.
+
+	public final OECatalogParams set_mag_adj_original () {
+		mag_max_lo = mag_max_sim;
+		mag_max_hi = mag_max_sim;
+		mag_adj_meth = MAG_ADJ_ORIGINAL;
+		madj_gen_br = 0;
+		madj_derate_br = 0.0;
+		madj_exceed_fr = 0.0;
+		return this;
+	}
+
+
+	// Set the magnitude adjustment method to original, for a fixed magnitude range.
+	// Assumes that the following fields are already set up:
+	//  mag_min_sim, mag_max_sim.
+
+	public final OECatalogParams set_mag_adj_original_fixed () {
+		mag_min_lo = mag_min_sim;
+		mag_min_hi = mag_min_sim;
+		mag_max_lo = mag_max_sim;
+		mag_max_hi = mag_max_sim;
+		gen_size_target = 100;
+		mag_adj_meth = MAG_ADJ_ORIGINAL;
+		madj_gen_br = 0;
+		madj_derate_br = 0.0;
+		madj_exceed_fr = 0.0;
+		return this;
+	}
+
+
+	// Finish setting the magnitude adjustment method to original, for original code.
+	// Assumes that the following fields are already set up:
+	//  mag_min_sim, mag_max_sim, mag_min_lo, mag_min_hi, mag_max_lo, mag_max_hi, gen_size_target.
+
+	private void finish_mag_adj_original () {
+		mag_adj_meth = MAG_ADJ_ORIGINAL;
+		madj_gen_br = 0;
+		madj_derate_br = 0.0;
+		madj_exceed_fr = 0.0;
+		return;
+	}
+
+
+
+
+	// Magnitude adjustment method: Fixed.
+	// The maximum magnitude is held fixed at mag_max_sim.  The values of mag_max_lo
+	// and mag_max_hi are not used, but should be set equal to mag_max_sim.
+	// The minimum magnitude is held fixed at mag_min_sim.  The values of mag_min_lo
+	// and mag_min_hi are not used, but should be set equal to mag_min_sim.
+
+	public static final int MAG_ADJ_FIXED = 1;
+
+
+	// Set the magnitude adjustment method to fixed.
+	// Assumes that the following fields are already set up:
+	//  mag_min_sim, mag_max_sim.
+
+	public final OECatalogParams set_mag_adj_fixed () {
+		mag_min_lo = mag_min_sim;
+		mag_min_hi = mag_min_sim;
+		mag_max_lo = mag_max_sim;
+		mag_max_hi = mag_max_sim;
+		gen_size_target = 100;
+		mag_adj_meth = MAG_ADJ_FIXED;
+		madj_gen_br = 0;
+		madj_derate_br = 0.0;
+		madj_exceed_fr = 0.0;
+		return this;
+	}
+
+
+
+
+	// Magnitude adjustment method: Seed productivity estimate.
+	// Minimum and maximum magnitude are adjusted at the start of generation #1
+	// (the direct aftershocks of the seeds).  All succeeding generations use
+	// the same magnitude range.
+	// The maximum magnitude is chosen so that the estimated probability of an
+	// aftershock exceeding the maximum magnitude, within the first madj_gen_br
+	// generations, is madj_exceed_fr.  The estimated ultimate catalog size is
+	// calculated using the total seed productivity, and the branch ratio multiplied
+	// by madj_derate_br.  However, the maximum magnitude is coerced to lie
+	// between mag_max_lo and mag_max_hi.
+	// (Given the assumption that madj_exceed_fr is small, the maximum magnitude
+	// can be chosen so that the expected number of aftershocks exceeding the
+	// maximum magnitude is madj_exceed_fr.)
+	// The minimum magnitude is chosen so that the expected number of aftershocks
+	// in generation #1 is gen_size_target, except that the minimum magnitude is
+	// coerced to lie between mag_min_lo  mag_min_hi.
+	// The values of mag_max_sim and mag_max_sim are not used, but should hold
+	// typical values within their respective ranges.
+
+	public static final int MAG_ADJ_SEED_EST = 2;
+
+
+	// Set the magnitude adjustment method to seed estimate.
+	// Assumes that the following fields are already set up:
+	//  mag_min_sim, mag_max_sim, mag_min_lo, mag_min_hi, mag_max_lo, mag_max_hi,
+	//  gen_size_target, madj_gen_br, madj_derate_br, madj_exceed_fr.
+
+	public final OECatalogParams set_mag_adj_seed_est () {
+		mag_adj_meth = MAG_ADJ_SEED_EST;
+		return this;
+	}
 
 
 
@@ -194,6 +353,10 @@ public class OECatalogParams {
 		gen_count_max   = 0;
 		max_cat_size    = 0;
 		mag_excess      = 0.0;
+		mag_adj_meth    = MAG_ADJ_ORIGINAL;
+		madj_gen_br     = 0;
+		madj_derate_br  = 0.0;
+		madj_exceed_fr  = 0.0;
 		return;
 	}
 
@@ -233,7 +396,11 @@ public class OECatalogParams {
 		int gen_size_target,
 		int gen_count_max,
 		int max_cat_size,
-		double mag_excess
+		double mag_excess,
+		int mag_adj_meth,
+		int madj_gen_br,
+		double madj_derate_br,
+		double madj_exceed_fr
 	) {
 		this.a               = a;
 		this.p               = p;
@@ -256,6 +423,10 @@ public class OECatalogParams {
 		this.gen_count_max   = gen_count_max;
 		this.max_cat_size    = max_cat_size;
 		this.mag_excess      = mag_excess;
+		this.mag_adj_meth    = mag_adj_meth;
+		this.madj_gen_br     = madj_gen_br;
+		this.madj_derate_br  = madj_derate_br;
+		this.madj_exceed_fr  = madj_exceed_fr;
 		return this;
 	}
 
@@ -287,6 +458,10 @@ public class OECatalogParams {
 		this.gen_count_max   = other.gen_count_max;
 		this.max_cat_size    = other.max_cat_size;
 		this.mag_excess      = other.mag_excess;
+		this.mag_adj_meth    = other.mag_adj_meth;
+		this.madj_gen_br     = other.madj_gen_br;
+		this.madj_derate_br  = other.madj_derate_br;
+		this.madj_exceed_fr  = other.madj_exceed_fr;
 		return this;
 	}
 
@@ -325,6 +500,10 @@ public class OECatalogParams {
 		this.gen_count_max   = other.gen_count_max;
 		this.max_cat_size    = other.max_cat_size;
 		this.mag_excess      = other.mag_excess;
+		this.mag_adj_meth    = other.mag_adj_meth;
+		this.madj_gen_br     = other.madj_gen_br;
+		this.madj_derate_br  = other.madj_derate_br;
+		this.madj_exceed_fr  = other.madj_exceed_fr;
 		return this;
 	}
 
@@ -360,6 +539,10 @@ public class OECatalogParams {
 		result.append ("gen_count_max = "   + gen_count_max   + "\n");
 		result.append ("max_cat_size = "    + max_cat_size    + "\n");
 		result.append ("mag_excess = "      + mag_excess      + "\n");
+		result.append ("mag_adj_meth = "    + mag_adj_meth    + "\n");
+		result.append ("madj_gen_br = "     + madj_gen_br     + "\n");
+		result.append ("madj_derate_br = "  + madj_derate_br  + "\n");
+		result.append ("madj_exceed_fr = "  + madj_exceed_fr  + "\n");
 
 		return result.toString();
 	}
@@ -369,7 +552,6 @@ public class OECatalogParams {
 
 	// Return the time and magnitude range.
 	// The returned object is newly allocated.
-	// Note: Implicitly assumes the magnitude range is non-adjustable.
 
 	public final OECatalogRange get_range () {
 		return new OECatalogRange (
@@ -377,7 +559,16 @@ public class OECatalogParams {
 			tend,
 			mag_min_sim,
 			mag_max_sim,
-			mag_excess
+			mag_min_lo,
+			mag_min_hi,
+			mag_max_lo,
+			mag_max_hi,
+			gen_size_target,
+			mag_excess,
+			mag_adj_meth,
+			madj_gen_br,
+			madj_derate_br,
+			madj_exceed_fr
 		);
 	}
 
@@ -386,18 +577,22 @@ public class OECatalogParams {
 
 	// Set the time and magnitude range.
 	// The supplied object is not retained.
-	// Note: Produces a magnitude range that is non-adjustable.
 
 	public final void set_range (OECatalogRange range) {
 		this.tbegin          = range.tbegin;
 		this.tend            = range.tend;
 		this.mag_min_sim     = range.mag_min_sim;
 		this.mag_max_sim     = range.mag_max_sim;
-		this.mag_min_lo      = range.mag_min_sim;
-		this.mag_min_hi      = range.mag_min_sim;
-		this.mag_max_lo      = range.mag_max_sim;
-		this.mag_max_hi      = range.mag_max_sim;
+		this.mag_min_lo      = range.mag_min_lo;
+		this.mag_min_hi      = range.mag_min_hi;
+		this.mag_max_lo      = range.mag_max_lo;
+		this.mag_max_hi      = range.mag_max_hi;
+		this.gen_size_target = range.gen_size_target;
 		this.mag_excess      = range.mag_excess;
+		this.mag_adj_meth    = range.mag_adj_meth;
+		this.madj_gen_br     = range.madj_gen_br;
+		this.madj_derate_br  = range.madj_derate_br;
+		this.madj_exceed_fr  = range.madj_exceed_fr;
 		return;
 	}
 
@@ -537,6 +732,10 @@ public class OECatalogParams {
 			writer.marshalInt    ("gen_count_max"  , gen_count_max  );
 			writer.marshalInt    ("max_cat_size"   , max_cat_size   );
 			writer.marshalDouble ("mag_excess"     , mag_excess     );
+			writer.marshalInt    ("mag_adj_meth"   , mag_adj_meth   );
+			writer.marshalInt    ("madj_gen_br"    , madj_gen_br    );
+			writer.marshalDouble ("madj_derate_br" , madj_derate_br );
+			writer.marshalDouble ("madj_exceed_fr" , madj_exceed_fr );
 
 		}
 		break;
@@ -581,6 +780,10 @@ public class OECatalogParams {
 			gen_count_max   = reader.unmarshalInt    ("gen_count_max"  );
 			max_cat_size    = reader.unmarshalInt    ("max_cat_size"   );
 			mag_excess      = reader.unmarshalDouble ("mag_excess"     );
+			mag_adj_meth    = reader.unmarshalInt    ("mag_adj_meth"   );
+			madj_gen_br     = reader.unmarshalInt    ("madj_gen_br"    );
+			madj_derate_br  = reader.unmarshalDouble ("madj_derate_br" );
+			madj_exceed_fr  = reader.unmarshalDouble ("madj_exceed_fr" );
 
 		}
 		break;
@@ -661,6 +864,10 @@ public class OECatalogParams {
 			&& this.gen_count_max   == other.gen_count_max  
 			&& this.max_cat_size    == other.max_cat_size  
 			&& this.mag_excess      == other.mag_excess  
+			&& this.mag_adj_meth    == other.mag_adj_meth  
+			&& this.madj_gen_br     == other.madj_gen_br  
+			&& this.madj_derate_br  == other.madj_derate_br  
+			&& this.madj_exceed_fr  == other.madj_exceed_fr  
 		) {
 			return true;
 		}
@@ -696,6 +903,7 @@ public class OECatalogParams {
 		this.gen_count_max   = rangen.uniform_int_sample (50, 150);
 		this.max_cat_size    = 0;
 		this.mag_excess      = 0.0;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -736,6 +944,7 @@ public class OECatalogParams {
 		this.gen_count_max   = gen_count_max;
 		this.max_cat_size    = 0;
 		this.mag_excess      = 0.0;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -787,6 +996,7 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = 0;
 		this.mag_excess      = 0.0;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -842,6 +1052,7 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = 0;
 		this.mag_excess      = 0.0;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -894,6 +1105,7 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = OEConstants.DEF_MAX_CAT_SIZE;
 		this.mag_excess      = OEConstants.DEF_MAG_EXCESS;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -950,6 +1162,7 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = OEConstants.DEF_MAX_CAT_SIZE;
 		this.mag_excess      = OEConstants.DEF_MAG_EXCESS;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -1002,6 +1215,7 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = 0;
 		this.mag_excess      = 0.0;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -1056,6 +1270,7 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = 0;
 		this.mag_excess      = 0.0;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -1091,6 +1306,7 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = 0;
 		this.mag_excess      = 0.0;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -1144,6 +1360,7 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = OEConstants.DEF_MAX_CAT_SIZE;
 		this.mag_excess      = OEConstants.DEF_MAG_EXCESS;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -1199,6 +1416,7 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = OEConstants.DEF_MAX_CAT_SIZE;
 		this.mag_excess      = OEConstants.DEF_MAG_EXCESS;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -1256,6 +1474,7 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = OEConstants.DEF_MAX_CAT_SIZE;
 		this.mag_excess      = OEConstants.DEF_MAG_EXCESS;
+		finish_mag_adj_original();
 		return this;
 	}
 
@@ -1315,6 +1534,7 @@ public class OECatalogParams {
 		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
 		this.max_cat_size    = OEConstants.DEF_MAX_CAT_SIZE;
 		this.mag_excess      = OEConstants.DEF_MAG_EXCESS;
+		finish_mag_adj_original();
 		return this;
 	}
 

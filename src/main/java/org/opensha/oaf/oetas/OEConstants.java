@@ -325,8 +325,9 @@ public class OEConstants {
 
 	public static final int RANGING_METH_MIN			= 1;
 	public static final int RANGING_METH_SIM			= 1;	// Via simulation, using OEAccumSimRanging
-	public static final int RANGING_METH_SEED_EST		= 2;	// Via seed estimation, usingOEAccumSeedEstRanging
-	public static final int RANGING_METH_MAX			= 2;
+	public static final int RANGING_METH_SEED_EST		= 2;	// Via seed estimation, using OEAccumSeedEstRanging
+	public static final int RANGING_METH_VAR_SEED_EST	= 3;	// Via seed estimation, variable range on a per-catalog basis
+	public static final int RANGING_METH_MAX			= 3;
 
 
 

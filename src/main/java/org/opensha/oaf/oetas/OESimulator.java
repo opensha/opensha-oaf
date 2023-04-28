@@ -373,6 +373,10 @@ public class OESimulator {
 			do_run_ranging_v2();
 			break;
 
+		case OEConstants.RANGING_METH_VAR_SEED_EST:
+			do_run_ranging_v3();
+			break;
+
 		}
 
 		return;
@@ -417,7 +421,7 @@ public class OESimulator {
 
 		// Set up a default range
 
-		sim_catalog_range.set (
+		sim_catalog_range.set_range_fixed (
 			tbegin,															// tbegin
 			ranging_time_values[ranging_time_values.length - 1],			// tend
 			scaling_mag + sim_parameters.range_min_rel_mag,					// mag_min_sim
@@ -763,7 +767,7 @@ public class OESimulator {
 
 		// Set up a default range (the magnitude range here is not used, so we just use the version #1 values as a default)
 
-		sim_catalog_range.set (
+		sim_catalog_range.set_range_fixed (
 			tbegin,															// tbegin
 			ranging_time_values[ranging_time_values.length - 1],			// tend
 			scaling_mag + sim_parameters.range_min_rel_mag,					// mag_min_sim
@@ -912,7 +916,7 @@ public class OESimulator {
 
 		// Now set the range
 
-		sim_catalog_range.set (
+		sim_catalog_range.set_range_fixed (
 			tbegin,															// tbegin
 			ranging_time_values[ranging_time_values.length - 1],			// tend
 			the_mag_values[ix_mag_min],										// mag_min_sim
@@ -923,6 +927,65 @@ public class OESimulator {
 		// Restore the catalog limits
 
 		sim_initializer.set_limits (old_limits);
+
+		// Write the selected range into the initializer
+
+		sim_initializer.set_range (sim_catalog_range);
+
+		System.out.println ();
+		System.out.println ("Selected range:");
+		System.out.println (sim_catalog_range.progress_string());
+
+		// Say goodbye
+
+		System.out.println ();
+		System.out.println ("Completed ETAS ranging");
+
+		return;
+	}
+
+
+
+
+	// Run the ranging, version 3.
+	// Throws exception in case of failure.
+
+	private void do_run_ranging_v3 () throws OEException {
+
+		// Get the forecast time from the initializer
+
+		final double t_forecast = sim_initializer.get_t_forecast();
+
+		// Get the time and magnitude bins, starting at the time of the forecast (we really only need the ending time)
+
+		final double[] ranging_time_values = sim_forecast_grid.get_ranging_time_values (t_forecast);
+
+		// Get the b-value and scaling magnitude from the initializer
+
+		final double b_value = sim_initializer.get_b_value();
+		final double scaling_mag = sim_initializer.get_mainshock_mag();
+
+		// Get the simulation start time from the existing range
+
+		final double tbegin = sim_catalog_range.tbegin;
+
+		// Set up a per-catalog seed estimation range
+
+		sim_catalog_range.set_range_seed_est (
+			tbegin,													// tbegin
+			ranging_time_values[ranging_time_values.length - 1],	// tend
+			scaling_mag + sim_parameters.range_min_rel_mag,			// mag_min_sim
+			scaling_mag + sim_parameters.range_max_rel_mag,			// mag_max_sim
+			sim_parameters.ranv2_min_mag,							// mag_min_lo
+			sim_parameters.ranv2_max_mag,							// mag_min_hi
+			sim_parameters.ranv2_min_mag,							// mag_max_lo
+			sim_parameters.ranv2_max_mag,							// mag_max_hi
+			sim_parameters.ranv2_direct_size,						// gen_size_target
+			sim_parameters.ranv2_mag_excess,						// mag_excess
+			sim_parameters.ranv2_gen_br,							// madj_gen_br
+			sim_parameters.ranv2_derate_br,							// madj_derate_br
+			sim_parameters.ranv2_exceed_fraction					// madj_exceed_fr
+		);
 
 		// Write the selected range into the initializer
 
@@ -2553,6 +2616,148 @@ public class OESimulator {
 				}
 				test_sim_parameters.sim_accum_param_1 = accum_param_1;
 				test_sim_parameters.ranv2_mag_excess = mag_excess;
+
+				// Run the simulations
+
+				OESimulator.test_run_simulation_ex (test_sim_initializer, test_sim_parameters, max_runtime, progress_time);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #10
+		// Command format:
+		//  test10  n  p  c  b  alpha  mag_main  tbegin  f_prod  num_cats
+		//          direct_size  mag_excess  gen_br  derate_br  exceed_fraction  accum_option  accum_param_1  max_runtime  progress_time
+		// Build a catalog with the given parameter, using multiple threads.
+		// The "n" is the branch ratio; "a" is computed from it.
+		// Then run the simulation.
+		// f_prod chooses whether to use production or development simulation parameters.
+		// num_cats and target_size can be zero to use default values.
+		// max_runtime can be -1L for no limit on runtime.
+		// progress_time can be -1L for no progress messages.
+		// accum_option can be -1 to use default.
+		// accum_param_1 is the upfill secondary reduction multiplier.
+		// Uses ranging version 2.
+		// Same as test #8 with extra parameters.
+
+		if (args[0].equalsIgnoreCase ("test10")) {
+
+			// 18 additional arguments
+
+			if (args.length != 19) {
+				System.err.println ("OESimulator : Invalid 'test10' subcommand");
+				return;
+			}
+
+			try {
+
+				double n = Double.parseDouble (args[1]);
+				double p = Double.parseDouble (args[2]);
+				double c = Double.parseDouble (args[3]);
+				double b = Double.parseDouble (args[4]);
+				double alpha = Double.parseDouble (args[5]);
+				double mag_main = Double.parseDouble (args[6]);
+				double tbegin = Double.parseDouble (args[7]);
+				boolean f_prod = Boolean.parseBoolean (args[8]);
+				int num_cats = Integer.parseInt (args[9]);
+
+				int direct_size = Integer.parseInt (args[10]);
+				double mag_excess = Double.parseDouble (args[11]);
+				int gen_br = Integer.parseInt (args[12]);
+				double derate_br = Double.parseDouble (args[13]);
+				double exceed_fraction = Double.parseDouble (args[14]);
+
+				int accum_option = Integer.parseInt (args[15]);
+				double accum_param_1 = Double.parseDouble (args[16]);
+
+				long max_runtime = Long.parseLong (args[17]);
+				long progress_time = Long.parseLong (args[18]);
+
+				// Say hello
+
+				System.out.println ("Running simulation with given parameters, using execution timer, using ranging version 3");
+				System.out.println ("n = " + n);
+				System.out.println ("p = " + p);
+				System.out.println ("c = " + c);
+				System.out.println ("b = " + b);
+				System.out.println ("alpha = " + alpha);
+				System.out.println ("mag_main = " + mag_main);
+				System.out.println ("tbegin = " + tbegin);
+				System.out.println ("f_prod = " + f_prod);
+				System.out.println ("num_cats = " + num_cats);
+				System.out.println ("direct_size = " + direct_size);
+				System.out.println ("mag_excess = " + mag_excess);
+				System.out.println ("gen_br = " + gen_br);
+				System.out.println ("derate_br = " + derate_br);
+				System.out.println ("exceed_fraction = " + exceed_fraction);
+				System.out.println ("accum_option = " + accum_option);
+				System.out.println ("accum_param_1 = " + accum_param_1);
+				System.out.println ("exceed_fraction = " + exceed_fraction);
+				System.out.println ("progress_time = " + progress_time);
+
+				// Set up catalog parameters
+
+				double mref = 3.0;
+				double msup = 9.5;
+				double tend = OEForecastGrid.get_config_tend (tbegin);
+
+				OECatalogParams test_cat_params = (new OECatalogParams()).set_to_fixed_mag_limited_br (
+					n,
+					p,
+					c,
+					b,
+					alpha,
+					mref,
+					msup,
+					tbegin,
+					tend
+				);
+
+				// Branch ratio checks
+
+				System.out.println ();
+				System.out.println ("Branch ratio calculation");
+
+				System.out.println ("a = " + test_cat_params.a);
+
+				double n_2 = OEStatsCalc.calc_branch_ratio (test_cat_params);
+				System.out.println ("n_2 = " + n_2);
+
+				// Create the initializer
+
+				double t_main = 0.0;
+
+				OEInitFixedState test_sim_initializer = new OEInitFixedState();
+				test_sim_initializer.setup_single (test_cat_params, mag_main, t_main);
+
+				// Set up simulation parameters
+
+				OESimulationParams test_sim_parameters = (new OESimulationParams()).set_to_typical (f_prod);
+
+				if (num_cats > 0) {
+					test_sim_parameters.sim_num_catalogs = Math.max (100, num_cats);
+					test_sim_parameters.range_num_catalogs = Math.max (100, num_cats/10);
+				}
+
+				test_sim_parameters.ranv2_direct_size = direct_size;
+				test_sim_parameters.ranv2_mag_excess = mag_excess;
+				test_sim_parameters.ranv2_gen_br = gen_br;
+				test_sim_parameters.ranv2_derate_br = derate_br;
+				test_sim_parameters.ranv2_exceed_fraction = exceed_fraction;
+
+				test_sim_parameters.range_method = OEConstants.RANGING_METH_VAR_SEED_EST;
+
+				if (accum_option >= 0) {
+					test_sim_parameters.sim_accum_option = accum_option;
+				}
+				test_sim_parameters.sim_accum_param_1 = accum_param_1;
 
 				// Run the simulations
 

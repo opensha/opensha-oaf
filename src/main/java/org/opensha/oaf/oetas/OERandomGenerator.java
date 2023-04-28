@@ -1241,6 +1241,36 @@ public class OERandomGenerator {
 
 
 
+	// Invert a Gutenberg-Richter expected rate, with unbounded range.
+	// Parameters:
+	//  b = Gutenberg-Richter b parameter.
+	//  mref = Reference magnitude.
+	//  rate = Desired expected rate.
+	// Returns the value of m1 that satisfies
+	// r == Integral(m1, m2, (b*log(10)*10^(-b*(m - mref)))*dm).
+	// Take note of the factor b*log(10) in the return value definition,
+	// which indicates the integrand is a rate per unit magnitude.
+	// Note: This is the same as gr_inv_rate with m2 = infinity.
+
+	// Implementation note: The value is
+	//
+	// mref - log(rate) / beta
+	//
+	// where
+	//
+	// beta = b*log(10)
+
+	public static double gr_inv_rate_unbounded (double b, double mref, double rate) {
+		double beta = C_LOG_10 * b;	// log(10) * b
+
+		// Calculate directly
+
+		return mref - Math.log(rate) / beta;
+	}
+
+
+
+
 	// Invert a ratio between two Gutenberg-Richter expected rates.
 	// Parameters:
 	//  b = Gutenberg-Richter b parameter.

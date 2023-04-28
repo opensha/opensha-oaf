@@ -38,6 +38,10 @@ import static org.opensha.oaf.oetas.OEConstants.CATLEN_METH_MAX;
 
 import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
 
+import static org.opensha.oaf.oetas.OECatalogParams.MAG_ADJ_ORIGINAL;
+import static org.opensha.oaf.oetas.OECatalogParams.MAG_ADJ_FIXED;
+import static org.opensha.oaf.oetas.OECatalogParams.MAG_ADJ_SEED_EST;
+
 
 // Operational ETAS catalog accumulator for a cumulative time/magnitude grid.
 // Author: Michael Barall 02/01/2022.
@@ -1242,11 +1246,31 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 
 		// Get the minimum magnitude for the next generation.
-		// If final generation, return the lower minimum magnitude from the parameters.
+		// If final generation, estimate the lower minimum magnitude from the parameters.
 
 		protected final double get_next_gen_mag_min (OECatalogScanComm comm) {
 			if (comm.f_final_gen) {
-				return comm.cat_params.mag_min_lo;
+				switch (comm.cat_params.mag_adj_meth) {
+				
+				// Original magnitude adjustment method
+
+				case MAG_ADJ_ORIGINAL:
+					return comm.cat_params.mag_min_lo;
+
+				// Fixed magnitude range
+
+				case MAG_ADJ_FIXED:
+					return comm.cat_params.mag_min_sim;
+
+				// Determine magnitude range by estimating size from catalog seeds
+
+				case MAG_ADJ_SEED_EST:
+					if (comm.i_gen > 0) {
+						return comm.gen_info.gen_mag_min;	// range is fixed after generation #1
+					}
+					return comm.cat_params.mag_min_lo;
+				}
+				throw new IllegalArgumentException ("OEAccumRateTimeMag.get_next_gen_mag_min: Invalid magnitude adjustment method: mag_adj_meth = " + comm.cat_params.mag_adj_meth);
 			}
 			return comm.next_gen_info.gen_mag_min; 
 		}
@@ -1255,11 +1279,31 @@ public class OEAccumRateTimeMag implements OEEnsembleAccumulator, OEAccumReadout
 
 
 		// Get the maximum magnitude for the next generation.
-		// If final generation, return the maximum magnitude from the parameters.
+		// If final generation, estimate the upper maximum magnitude from the parameters.
 
 		protected final double get_next_gen_mag_max (OECatalogScanComm comm) {
 			if (comm.f_final_gen) {
-				return comm.cat_params.mag_max_sim;
+				switch (comm.cat_params.mag_adj_meth) {
+				
+				// Original magnitude adjustment method
+
+				case MAG_ADJ_ORIGINAL:
+					return comm.cat_params.mag_max_sim;
+
+				// Fixed magnitude range
+
+				case MAG_ADJ_FIXED:
+					return comm.cat_params.mag_max_sim;
+
+				// Determine magnitude range by estimating size from catalog seeds
+
+				case MAG_ADJ_SEED_EST:
+					if (comm.i_gen > 0) {
+						return comm.gen_info.gen_mag_max;	// range is fixed after generation #1
+					}
+					return comm.cat_params.mag_max_hi;
+				}
+				throw new IllegalArgumentException ("OEAccumRateTimeMag.get_next_gen_mag_max: Invalid magnitude adjustment method: mag_adj_meth = " + comm.cat_params.mag_adj_meth);
 			}
 			return comm.next_gen_info.gen_mag_max; 
 		}
