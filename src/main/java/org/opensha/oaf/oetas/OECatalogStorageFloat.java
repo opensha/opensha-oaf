@@ -17,17 +17,19 @@ import org.opensha.oaf.util.MarshalException;
 // Per-rupture information is stored in two-dimensional arrays of primitive type.
 // Each second-level array is called a block.  Blocks are of fixed size.
 // More blocks are added as needed;  the first-level array is expanded if
-// the required number of blocks exceeds the array size.
+// the required number of blocks exceeds the array size.  Some values are stored
+// as float rather than double to conserve memory.
 //
 // Design notes: It is not feasible to use object-per-rupture storage (such as
 // a list of OERupture objects) due to the large number of ruptures that must be
 // held in memory, which may range into many millions of ruptures.  This storage
 // scheme reduces the number of Java objects to about one per 1000 ruptures.
 //
-// Note: Originally some values were stored as float rather than double to
-// conserve memory.  The original version is available as OECatalogStorageFloat.
+// Note: This is the original version of OECatalogStorage.  The new version uses
+// double for all variables.  The only change made to this file is to replace
+// OECatalogStorage with OECatalogStorageFloat.
 
-public class OECatalogStorage implements OECatalogBuilder {
+public class OECatalogStorageFloat implements OECatalogBuilder {
 
 	//----- Per-Catalog storage -----
 
@@ -181,16 +183,18 @@ public class OECatalogStorage implements OECatalogBuilder {
 	private static final int INIT_RUP_BLOCK_COUNT = 16;
 
 	// Rupture time, in days.
+	// Note: This is double (rather than float) to allow sufficient precision so
+	// that times can be relative to the epoch (Jan 1, 1970).
 
 	private double[][] t_day;
 
 	// Rupture magnitude.
 
-	private double[][] rup_mag;
+	private float[][] rup_mag;
 
 	// Productivity "k" value.
 
-	private double[][] k_prod;
+	private float[][] k_prod;
 
 	// The parent rupture number, relative to the start of the prior generation.
 
@@ -198,11 +202,11 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	// The x coordinate, in km.
 
-	private double[][] x_km;
+	private float[][] x_km;
 
 	// The y coordinate, in km.
 
-	private double[][] y_km;
+	private float[][] y_km;
 
 
 	// Initialize the per-rupture storage.
@@ -213,11 +217,11 @@ public class OECatalogStorage implements OECatalogBuilder {
 		rup_block_count = 0;
 		rup_block_capacity = INIT_RUP_BLOCK_COUNT;
 		t_day = new double[INIT_RUP_BLOCK_COUNT][];
-		rup_mag = new double[INIT_RUP_BLOCK_COUNT][];
-		k_prod = new double[INIT_RUP_BLOCK_COUNT][];
+		rup_mag = new float[INIT_RUP_BLOCK_COUNT][];
+		k_prod = new float[INIT_RUP_BLOCK_COUNT][];
 		rup_parent = new int[INIT_RUP_BLOCK_COUNT][];
-		x_km = new double[INIT_RUP_BLOCK_COUNT][];
-		y_km = new double[INIT_RUP_BLOCK_COUNT][];
+		x_km = new float[INIT_RUP_BLOCK_COUNT][];
+		y_km = new float[INIT_RUP_BLOCK_COUNT][];
 		return;
 	}
 
@@ -270,11 +274,11 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 			do {
 				t_day[rup_block_count] = new double[RUP_BLOCK_SIZE];
-				rup_mag[rup_block_count] = new double[RUP_BLOCK_SIZE];
-				k_prod[rup_block_count] = new double[RUP_BLOCK_SIZE];
+				rup_mag[rup_block_count] = new float[RUP_BLOCK_SIZE];
+				k_prod[rup_block_count] = new float[RUP_BLOCK_SIZE];
 				rup_parent[rup_block_count] = new int[RUP_BLOCK_SIZE];
-				x_km[rup_block_count] = new double[RUP_BLOCK_SIZE];
-				y_km[rup_block_count] = new double[RUP_BLOCK_SIZE];
+				x_km[rup_block_count] = new float[RUP_BLOCK_SIZE];
+				y_km[rup_block_count] = new float[RUP_BLOCK_SIZE];
 
 				++rup_block_count;
 			} while (blocks_needed > rup_block_count);
@@ -307,7 +311,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	// Default constructor.
 
-	public OECatalogStorage () {
+	public OECatalogStorageFloat () {
 		cat_params = new OECatalogParams();
 		clear();
 	}
@@ -447,11 +451,11 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 		rup.set (
 			t_day[block][offset],
-			rup_mag[block][offset],
-			k_prod[block][offset],
+			(double)(rup_mag[block][offset]),
+			(double)(k_prod[block][offset]),
 			rup_parent[block][offset],
-			x_km[block][offset],
-			y_km[block][offset]
+			(double)(x_km[block][offset]),
+			(double)(y_km[block][offset])
 		);
 
 		return;
@@ -496,7 +500,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 		int offset = index & RUP_BLOCK_MASK;
 
 		rup.t_day = t_day[block][offset];
-		rup.k_prod = k_prod[block][offset];
+		rup.k_prod = (double)(k_prod[block][offset]);
 
 		return;
 	}
@@ -520,8 +524,8 @@ public class OECatalogStorage implements OECatalogBuilder {
 		int offset = index & RUP_BLOCK_MASK;
 
 		rup.t_day = t_day[block][offset];
-		rup.x_km = x_km[block][offset];
-		rup.y_km = y_km[block][offset];
+		rup.x_km = (double)(x_km[block][offset]);
+		rup.y_km = (double)(y_km[block][offset]);
 
 		return;
 	}
@@ -740,11 +744,11 @@ public class OECatalogStorage implements OECatalogBuilder {
 		// Save rupture information
 
 		t_day[block][offset] = rup.t_day;
-		rup_mag[block][offset] = rup.rup_mag;
-		k_prod[block][offset] = rup.k_prod;
+		rup_mag[block][offset] = (float)(rup.rup_mag);
+		k_prod[block][offset] = (float)(rup.k_prod);
 		rup_parent[block][offset] = rup.rup_parent;
-		x_km[block][offset] = rup.x_km;
-		y_km[block][offset] = rup.y_km;
+		x_km[block][offset] = (float)(rup.x_km);
+		y_km[block][offset] = (float)(rup.y_km);
 
 		return;
 	}
@@ -783,7 +787,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	private static final int MARSHAL_VER_1 = 75001;
 
-	private static final String M_VERSION_NAME = "OECatalogStorage";
+	private static final String M_VERSION_NAME = "OECatalogStorageFloat";
 
 	// Marshal a per-generation array.
 
@@ -851,6 +855,15 @@ public class OECatalogStorage implements OECatalogBuilder {
 		return;
 	}
 
+	private void marshal_rup_array (MarshalWriter writer, String name, float[][] x) {
+		writer.marshalArrayBegin (name, rup_count);
+		for (int i = 0; i < rup_count; ++i) {
+			writer.marshalFloat (null, x[i >> RUP_BLOCK_SHIFT][i & RUP_BLOCK_MASK]);
+		}
+		writer.marshalArrayEnd ();
+		return;
+	}
+
 	// Unmarshal a per-rupture array (assumes storage is pre-allocated)
 
 	private void unmarshal_rup_array (MarshalReader reader, String name, int[][] x) {
@@ -872,6 +885,18 @@ public class OECatalogStorage implements OECatalogBuilder {
 		}
 		for (int i = 0; i < rup_count; ++i) {
 			x[i >> RUP_BLOCK_SHIFT][i & RUP_BLOCK_MASK] = reader.unmarshalDouble (null);
+		}
+		reader.unmarshalArrayEnd ();
+		return;
+	}
+
+	private void unmarshal_rup_array (MarshalReader reader, String name, float[][] x) {
+		int n = reader.unmarshalArrayBegin (name);
+		if (n != rup_count) {
+			throw new MarshalException ("Array length mismatch: name = " + name + ", got = " + n + ", expected = " + rup_count);
+		}
+		for (int i = 0; i < rup_count; ++i) {
+			x[i >> RUP_BLOCK_SHIFT][i & RUP_BLOCK_MASK] = reader.unmarshalFloat (null);
 		}
 		reader.unmarshalArrayEnd ();
 		return;
@@ -984,7 +1009,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	// Unmarshal object.
 
-	public OECatalogStorage unmarshal (MarshalReader reader, String name) {
+	public OECatalogStorageFloat unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
 		reader.unmarshalMapEnd ();
@@ -993,7 +1018,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	// Marshal object.
 
-	public static void static_marshal (MarshalWriter writer, String name, OECatalogStorage catalog) {
+	public static void static_marshal (MarshalWriter writer, String name, OECatalogStorageFloat catalog) {
 		writer.marshalMapBegin (name);
 		catalog.do_marshal (writer);
 		writer.marshalMapEnd ();
@@ -1002,8 +1027,8 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 	// Unmarshal object.
 
-	public static OECatalogStorage static_unmarshal (MarshalReader reader, String name) {
-		OECatalogStorage catalog = new OECatalogStorage();
+	public static OECatalogStorageFloat static_unmarshal (MarshalReader reader, String name) {
+		OECatalogStorageFloat catalog = new OECatalogStorageFloat();
 		reader.unmarshalMapBegin (name);
 		catalog.do_umarshal (reader);
 		reader.unmarshalMapEnd ();
@@ -1022,13 +1047,17 @@ public class OECatalogStorage implements OECatalogBuilder {
 	// This is a test function.
 
 	public void test_trunc_rup_as_if_stored (OERupture src, OERupture dest) {
+		float rup_mag_f = (float)(src.rup_mag);
+		float k_prod_f = (float)(src.k_prod);
+		float x_km_f = (float)(src.x_km);
+		float y_km_f = (float)(src.y_km);
 
 		dest.t_day = src.t_day;
-		dest.rup_mag = src.rup_mag;
-		dest.k_prod = src.k_prod;
+		dest.rup_mag = (double)(rup_mag_f);
+		dest.k_prod = (double)(k_prod_f);
 		dest.rup_parent = src.rup_parent;
-		dest.x_km = src.x_km;
-		dest.y_km = src.y_km;
+		dest.x_km = (double)(x_km_f);
+		dest.y_km = (double)(y_km_f);
 
 		return;
 	}
@@ -1041,7 +1070,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 		// There needs to be at least one argument, which is the subcommand
 
 		if (args.length < 1) {
-			System.err.println ("OECatalogStorage : Missing subcommand");
+			System.err.println ("OECatalogStorageFloat : Missing subcommand");
 			return;
 		}
 
@@ -1061,7 +1090,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 			// 2 additional arguments
 
 			if (args.length != 3) {
-				System.err.println ("OECatalogStorage : Invalid 'test1' subcommand");
+				System.err.println ("OECatalogStorageFloat : Invalid 'test1' subcommand");
 				return;
 			}
 
@@ -1082,7 +1111,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 				// Allocate the storage
 
-				OECatalogStorage cat_storage = new OECatalogStorage();
+				OECatalogStorageFloat cat_storage = new OECatalogStorageFloat();
 
 				// Input catalog parameters
 
@@ -1281,7 +1310,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 			// 2 additional arguments
 
 			if (args.length != 3) {
-				System.err.println ("OECatalogStorage : Invalid 'test2' subcommand");
+				System.err.println ("OECatalogStorageFloat : Invalid 'test2' subcommand");
 				return;
 			}
 
@@ -1302,7 +1331,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 				// Allocate the storage
 
-				OECatalogStorage cat_storage = new OECatalogStorage();
+				OECatalogStorageFloat cat_storage = new OECatalogStorageFloat();
 
 				// Input catalog parameters
 
@@ -1496,7 +1525,7 @@ public class OECatalogStorage implements OECatalogBuilder {
 
 		// Unrecognized subcommand.
 
-		System.err.println ("OECatalogStorage : Unrecognized subcommand : " + args[0]);
+		System.err.println ("OECatalogStorageFloat : Unrecognized subcommand : " + args[0]);
 		return;
 
 	}
