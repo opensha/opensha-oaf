@@ -242,6 +242,38 @@ import static org.opensha.oaf.oetas.OEConstants.LMR_OPT_MAGCAT_MAG_MAX;		// 4 = 
 // done by changing (10^(-b*(mct - mref))) to (10^(-b*(mct - mref)))*(1 - exp(-beta*(mup - mct)))
 // in the above formulas.
 
+// NOTES ON MAGNITUDE RANGES
+//
+// The value of mref is used throughout as the reference magnitude for exponents that contain
+// magnitudes.
+//
+// The value of msup is used only for calculating the q_correction term.  Note that q_correction
+// is not used within this code, because we always work with corrected productivities which are
+// assumed to be of the form (10^a)*Q.  Note that mref, mag_min, and mag_max also enter into
+// the calculation of q_correction.  The q_correction is the correction to convert productivity
+// from the [mref, msup] range to the [mag_min, mag_max] range; in the case alpha == b it
+// reduces to (msup - mref)/(mag_max - mag_min).
+//
+// The values of mref, mag_min, and mag_max are used to convert from branch ratio to (10^a)*Q
+// (functions calc_ten_a_q_from_branch_ratio).  The conversion is not used within this code,
+// but is available for use by callers.  In the case alpha == b, the value of mref drops out,
+// and (10^a)*Q is inversely proportional to (mag_max - mag_min).  Note that the value of
+// tint_br also enters into the conversion.
+//
+// If lmr_opt is LMR_OPT_MCT_MAG_MAX(2) or LMR_OPT_MAGCAT_MAG_MAX(4), then mag_max is used as
+// the upper end of the magnitude range for calculating the likelihood of each target
+// rupture and target interval.  Otherwise, the upper end is infinity.
+//
+// The value of mag_min is used to calculate the productivity of each target interval.
+// If mag_min is less than the effective magnitude of completeness of the interval (mct), then
+// the productivity is positive.  In the case alpha == b, it is proportional to (mct - mag_min).
+// If mag_min is greater than mct, then the productivity of the interval is zero.
+// Note that mct is magCat if lmr_opt is LMR_OPT_MAGCAT_INFINITY(3) or LMR_OPT_MAGCAT_MAG_MAX(4); and
+// mct is the time-dependent magnitude of completeness if lmr_opt is LMR_OPT_MCT_INFINITY(1) or
+// LMR_OPT_MCT_MAG_MAX(2).  Note that setting mag_min >= magCat will cause many or all
+// intervals to have zero productivity.  Note that if f_intervals is false, then all intervals
+// are treated as having zero productivity regardless of mag_min.
+
 public class OEDisc2ExtFit {
 
 	//----- History -----

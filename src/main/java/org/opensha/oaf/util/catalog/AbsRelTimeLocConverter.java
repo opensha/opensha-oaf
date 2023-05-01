@@ -21,4 +21,19 @@ public interface AbsRelTimeLocConverter {
 
 	public void convert_rel_to_abs (RelativeTimeLocation rel_tloc, AbsoluteTimeLocation abs_tloc);
 
+
+	// Convert time from absolute to relative.
+	// Parameters:
+	//  abs_time = Absolute time, in milliseconds since the epoch.
+	// Returns relative time, in days since the origin.
+
+	public double convert_time_abs_to_rel (long abs_time);
+
+
+	// Convert time from relative to absolute.
+	// Parameters:
+	//  rel_t_day = Relative time, in days since the origin.
+	// Returns absolute time, in milliseconds since the epoch.
+
+	public long convert_time_rel_to_abs (double rel_t_day);
 }

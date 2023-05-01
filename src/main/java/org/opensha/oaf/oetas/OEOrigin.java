@@ -652,6 +652,39 @@ public class OEOrigin implements AbsRelTimeLocConverter {
 
 
 
+	// Convert time from absolute to relative.
+	// Parameters:
+	//  abs_time = Absolute time, in milliseconds since the epoch.
+	// Returns relative time, in days since the origin.
+
+	@Override
+	public double convert_time_abs_to_rel (long abs_time) {
+
+		double rel_t_day = ((double)(abs_time - origin_time)) / C_MILLIS_PER_DAY;
+
+		return rel_t_day;
+	}
+
+
+
+
+	// Convert time from relative to absolute.
+	// Parameters:
+	//  rel_t_day = Relative time, in days since the origin.
+	// Returns absolute time, in milliseconds since the epoch.
+
+	@Override
+	public long convert_time_rel_to_abs (double rel_t_day) {
+
+		double rel_millis = rel_t_day * C_MILLIS_PER_DAY;
+		long abs_time = Math.round(rel_millis) + origin_time;
+
+		return abs_time;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.
