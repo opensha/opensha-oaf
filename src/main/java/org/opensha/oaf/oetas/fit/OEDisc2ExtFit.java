@@ -272,7 +272,8 @@ import static org.opensha.oaf.oetas.OEConstants.LMR_OPT_MAGCAT_MAG_MAX;		// 4 = 
 // mct is the time-dependent magnitude of completeness if lmr_opt is LMR_OPT_MCT_INFINITY(1) or
 // LMR_OPT_MCT_MAG_MAX(2).  Note that setting mag_min >= magCat will cause many or all
 // intervals to have zero productivity.  Note that if f_intervals is false, then all intervals
-// are treated as having zero productivity regardless of mag_min.
+// are treated as having zero productivity regardless of mag_min.  Note that if intervals with
+// mct == magCat are joined when forming the history, then mag_min >= magCat is required.
 
 public class OEDisc2ExtFit {
 

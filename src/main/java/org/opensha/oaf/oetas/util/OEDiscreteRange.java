@@ -378,6 +378,76 @@ public abstract class OEDiscreteRange {
 
 
 
+	// Friendly marshal key.
+
+	protected static final String MF_KEY_SINGLE = "single";
+	protected static final String MF_KEY_LINEAR = "linear";
+	protected static final String MF_KEY_LOG = "log";
+
+	// Friendly marshal object, internal.
+	// The friendly form is an array whose first element is one of the keys.  An empty array is a null object.
+
+	protected abstract void do_marshal_friendly (MarshalWriter writer, String name);
+
+	// Friendly unmarshal object, internal.
+	// The caller has already started unmarshalling the array, and supplied the array size n.
+
+	protected abstract void do_umarshal_friendly (MarshalReader reader, int n);
+
+	// Friendly marshal object, polymorphic.
+
+	public static void marshal_friendly (MarshalWriter writer, String name, OEDiscreteRange obj) {
+
+		if (obj == null) {
+			int n = 0;
+			writer.marshalArrayBegin (name, n);
+			writer.marshalArrayEnd ();
+		} else {
+			obj.do_marshal_friendly (writer, name);
+		}
+
+		return;
+	}
+
+	// Friendly unmarshal object, polymorphic.
+
+	public static OEDiscreteRange unmarshal_friendly (MarshalReader reader, String name) {
+		OEDiscreteRange result = null;
+
+		int n = reader.unmarshalArrayBegin (name);
+
+		if (n > 0) {
+			String key = reader.unmarshalString (null);
+
+			switch (key) {
+
+			default:
+				throw new MarshalException ("OEDiscreteRange.unmarshal_friendly: Unknown key: key = " + key);
+
+			case MF_KEY_SINGLE:
+				result = new OEDiscreteRangeSingle();
+				result.do_umarshal_friendly (reader, n);
+				break;
+
+			case MF_KEY_LINEAR:
+				result = new OEDiscreteRangeLinear();
+				result.do_umarshal_friendly (reader, n);
+				break;
+
+			case MF_KEY_LOG:
+				result = new OEDiscreteRangeLog();
+				result.do_umarshal_friendly (reader, n);
+				break;
+			}
+		}
+
+		reader.unmarshalArrayEnd ();
+		return result;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -476,6 +546,27 @@ public abstract class OEDiscreteRange {
 
 				MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
 				range2 = OEDiscreteRange.unmarshal_poly (retrieve, null);
+				retrieve.check_read_complete ();
+
+				System.out.println ("");
+				System.out.println (range2.toString());
+
+				// Friendly marshal to JSON
+
+				store = new MarshalImpJsonWriter();
+				OEDiscreteRange.marshal_friendly (store, null, range);
+				store.check_write_complete ();
+				json_string = store.get_json_string();
+
+				System.out.println ("");
+				System.out.println (json_string);
+
+				// Friendly unmarshal from JSON
+			
+				range2 = null;
+
+				retrieve = new MarshalImpJsonReader (json_string);
+				range2 = OEDiscreteRange.unmarshal_friendly (retrieve, null);
 				retrieve.check_read_complete ();
 
 				System.out.println ("");
@@ -581,6 +672,27 @@ public abstract class OEDiscreteRange {
 				System.out.println ("");
 				System.out.println (range2.toString());
 
+				// Friendly marshal to JSON
+
+				store = new MarshalImpJsonWriter();
+				OEDiscreteRange.marshal_friendly (store, null, range);
+				store.check_write_complete ();
+				json_string = store.get_json_string();
+
+				System.out.println ("");
+				System.out.println (json_string);
+
+				// Friendly unmarshal from JSON
+			
+				range2 = null;
+
+				retrieve = new MarshalImpJsonReader (json_string);
+				range2 = OEDiscreteRange.unmarshal_friendly (retrieve, null);
+				retrieve.check_read_complete ();
+
+				System.out.println ("");
+				System.out.println (range2.toString());
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -676,6 +788,27 @@ public abstract class OEDiscreteRange {
 
 				MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
 				range2 = OEDiscreteRange.unmarshal_poly (retrieve, null);
+				retrieve.check_read_complete ();
+
+				System.out.println ("");
+				System.out.println (range2.toString());
+
+				// Friendly marshal to JSON
+
+				store = new MarshalImpJsonWriter();
+				OEDiscreteRange.marshal_friendly (store, null, range);
+				store.check_write_complete ();
+				json_string = store.get_json_string();
+
+				System.out.println ("");
+				System.out.println (json_string);
+
+				// Friendly unmarshal from JSON
+			
+				range2 = null;
+
+				retrieve = new MarshalImpJsonReader (json_string);
+				range2 = OEDiscreteRange.unmarshal_friendly (retrieve, null);
 				retrieve.check_read_complete ();
 
 				System.out.println ("");

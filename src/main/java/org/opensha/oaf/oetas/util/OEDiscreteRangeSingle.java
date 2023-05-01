@@ -292,4 +292,30 @@ public class OEDiscreteRangeSingle extends OEDiscreteRange {
 		return result;
 	}
 
+
+
+
+	// Friendly marshal object, internal.
+	// The friendly form is an array whose first element is one of the keys.  An empty array is a null object.
+
+	protected void do_marshal_friendly (MarshalWriter writer, String name) {
+		int n = 2;
+		writer.marshalArrayBegin (name, n);
+		writer.marshalString (null, MF_KEY_SINGLE);
+		writer.marshalDouble (null, range_value);
+		writer.marshalArrayEnd ();
+		return;
+	}
+
+	// Friendly unmarshal object, internal.
+	// The caller has already started unmarshalling the array, and supplied the array size n.
+
+	protected void do_umarshal_friendly (MarshalReader reader, int n) {
+		if (n != 2) {
+			throw new MarshalException ("OEDiscreteRangeSingle.do_umarshal_friendly: Invalid array length: n = " + n);
+		}
+		range_value = reader.unmarshalDouble (null);
+		return;
+	}
+
 }

@@ -384,4 +384,58 @@ public class OEDiscreteRangeLinear extends OEDiscreteRange {
 		return result;
 	}
 
+
+
+
+	// Friendly marshal object, internal.
+	// The friendly form is an array whose first element is one of the keys.  An empty array is a null object.
+
+	protected void do_marshal_friendly (MarshalWriter writer, String name) {
+		int n = 4;
+		writer.marshalArrayBegin (name, n);
+		writer.marshalString (null, MF_KEY_LINEAR);
+		writer.marshalInt    (null, range_size);
+		writer.marshalDouble (null, range_min);
+		writer.marshalDouble (null, range_max);
+		writer.marshalArrayEnd ();
+		return;
+	}
+
+	// Friendly unmarshal object, internal.
+	// The caller has already started unmarshalling the array, and supplied the array size n.
+
+	protected void do_umarshal_friendly (MarshalReader reader, int n) {
+		if (n != 4) {
+			throw new MarshalException ("OEDiscreteRangeLinear.do_umarshal_friendly: Invalid array length: n = " + n);
+		}
+
+		range_size = reader.unmarshalInt (null);
+		double the_range_min = reader.unmarshalDouble (null);
+		double the_range_max = reader.unmarshalDouble (null);
+
+		if (!( range_size >= 1 )) {
+			throw new MarshalException ("OEDiscreteRangeLinear.do_umarshal_friendly: Range size is non-positive: range_size = " + range_size);
+		}
+
+		if (the_range_min <= the_range_max) {
+			if (range_size == 1) {
+				range_min = the_range_min;
+				range_max = the_range_min;
+			} else {
+				range_min = the_range_min;
+				range_max = the_range_max;
+			}
+		} else {
+			if (range_size == 1) {
+				range_min = the_range_max;
+				range_max = the_range_max;
+			} else {
+				range_min = the_range_max;
+				range_max = the_range_min;
+			}
+		}
+
+		return;
+	}
+
 }
