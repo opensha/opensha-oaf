@@ -506,6 +506,28 @@ public class USGS_AftershockForecast {
 		return Instant.ofEpochMilli (snap_units * snap);
 	}
 
+	// Round the start date to a "nice" time, with time given in milliseconds since the epoch.
+	public static long sdround_millis (long event_millis, long start_millis) {
+
+		// Delta in milliseconds since the epoch
+
+		long delta_millis = start_millis - event_millis;
+
+		// Find the rounding threshold
+		int n;
+		for (n = 0; n < sdround_thresholds.length; ++n) {
+			if (delta_millis <= sdround_thresholds[n]) {
+				break;
+			}
+		}
+		long snap = sdround_snaps[n];
+
+		// Round up to the next multiple of the snap
+
+		long snap_units = (start_millis + snap - 1L) / snap;
+		return (snap_units * snap);
+	}
+
 	// Round a displayed parameter value to look "nice".
 	public static double dparm_round (double value) {
 		double result = value;

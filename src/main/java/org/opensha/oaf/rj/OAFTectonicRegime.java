@@ -14,8 +14,9 @@ import java.util.HashMap;
 // are added automatically, each with three names:  the Garcia name (with an
 // underscore in place of a dash), the Garcia name (with the dash), and
 // the STREC name.  The first name is the one that appears when converting
-// the regime to a string (in order to match TectonicRegime).  Dynamically-
-// added regimes have only one name.
+// the regime to a string (in order to match TectonicRegime).  The first
+// name is the name that is listed first in the defintion of TectonicRegime;
+// it is the STREC name.  Dynamically-added regimes have only one name.
 //
 // OAFTectonicRegime uses the flyweight design pattern.  That means there is
 // only one object in the system with a given value.  So, objects x and y refer
@@ -111,6 +112,23 @@ public final class OAFTectonicRegime {
 			mappings.put (name, regime);
 		}
 
+		return regime;
+	}
+
+	// forExistingName - Get the tectonic regime with the given name.
+	// If there is no regime for the given name, return null.
+	
+	public static synchronized OAFTectonicRegime forExistingName (String name) {
+
+		// Set up the table if needed
+
+		if (mappings == null) {
+			setup_mappings();
+		}
+
+		// Get the regime from the table, or null if not found
+
+		OAFTectonicRegime regime = mappings.get(name);
 		return regime;
 	}
 

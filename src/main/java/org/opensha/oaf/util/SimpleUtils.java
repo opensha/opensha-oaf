@@ -1057,6 +1057,32 @@ public class SimpleUtils {
 
 
 
+	// Get the amount of used memory, in bytes.
+
+	public static long get_used_memory_bytes () {
+		long total_memory = Runtime.getRuntime().totalMemory();
+		long free_memory = Runtime.getRuntime().freeMemory();
+
+		long used_memory = total_memory - free_memory;
+
+		return used_memory;
+	}
+
+
+
+
+	// Convert an amount of used memory, in bytes, to a string.
+	// The resulting string contains just a numerical value and unit, and is not terminated by linefeed.
+	// Note: Calling get_used_memory_bytes() followed by used_memory_to_string()
+	// performs the same operation as used_memory_string().
+
+	public static String used_memory_to_string (long used_memory) {
+		return (used_memory / 1048576L) + " M";
+	}
+
+
+
+
 	//----- Testing -----
 
 
