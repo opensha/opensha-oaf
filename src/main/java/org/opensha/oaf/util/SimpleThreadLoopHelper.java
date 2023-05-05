@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongUnaryOperator;
+import java.util.function.LongBinaryOperator;
 
 
 // Helpwer class for implementing a simple multi-threaded loop.
@@ -115,7 +116,8 @@ public class SimpleThreadLoopHelper {
 	private AtomicInteger current_completions = new AtomicInteger();
 
 	// The maximum amount of memory used, in bytes, or -1L if unknown.
-	// Note: This is only updated when a progress message displays current memory usage.
+	// Note: This is only updated when a progress message displays current memory usage,
+	// or when the user calls update_max_used_memory.
 
 	private AtomicLong max_used_memory = new AtomicLong();
 
@@ -243,17 +245,29 @@ public class SimpleThreadLoopHelper {
 	// Returns the current amount of memory used.
 	// Threading: This function is thread-safe.
 
-	private long update_max_used_memory () {
-		final long used_memory = SimpleUtils.get_used_memory_bytes();
-		long new_max_used_memory = max_used_memory.updateAndGet (
-			new LongUnaryOperator() {
-				@Override public long applyAsLong (long operand) {
-					return Math.max (operand, used_memory);
-				}
-			}
-		);
+	private final LongBinaryOperator bimax = new LongBinaryOperator() {
+		@Override public long applyAsLong (long left, long right) {
+			return Math.max (left, right);
+		}
+	};
+
+	public final long update_max_used_memory () {
+		long used_memory = SimpleUtils.get_used_memory_bytes();
+		long new_max_used_memory = max_used_memory.accumulateAndGet (used_memory, bimax);
 		return used_memory;
 	}
+
+//	public final long update_max_used_memory () {
+//		final long used_memory = SimpleUtils.get_used_memory_bytes();
+//		long new_max_used_memory = max_used_memory.updateAndGet (
+//			new LongUnaryOperator() {
+//				@Override public long applyAsLong (long operand) {
+//					return Math.max (operand, used_memory);
+//				}
+//			}
+//		);
+//		return used_memory;
+//	}
 
 
 
@@ -866,8 +880,6 @@ public class SimpleThreadLoopHelper {
 			}
 
 			// Show final state
-					
-			System.out.println (loop_helper.make_progress_message ());
 
 			long the_max_used_memory = loop_helper.get_max_used_memory();
 			if (the_max_used_memory < 0L) {
@@ -875,6 +887,8 @@ public class SimpleThreadLoopHelper {
 			} else {
 				System.out.println ("Maximum used memory = " + SimpleUtils.used_memory_to_string (the_max_used_memory));
 			}
+					
+			System.out.println (loop_helper.make_progress_message ());
 
 			// Return the count of primes
 
