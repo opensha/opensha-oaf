@@ -7,6 +7,10 @@ import java.util.Map;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import java.io.IOException;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -201,6 +205,16 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 	private double max_log_density;
 
+	// The voxel and sub-voxel indexes where the maximum log-density occurs.
+	// Note: This is the location of the MLE parameter values.
+
+	private int mle_voxel_index;
+	private int mle_subvox_index;
+
+	// The MLE grid point.
+
+	private OEGridPoint mle_grid_point;
+
 	// The sub-voxels for seeding; length = seed_subvox_count.
 
 	private int[] a_seed_subvox;
@@ -276,7 +290,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 	// Parameters:
 	//  the_cat_params = Catalog parameters to use.
 	//  the_t_forecast = The time at which the forecast begins, in days.  (Should be >= the_cat_params.tbegin.)
-	//  the_bay_weight = Bayesian prior weight (1 = Bayesian, 0 = Sequence-specific, see OEConstants.BAY_WT_XXX).
+	//  the_bay_weight = Bayesian prior weight (1 = Bayesian, 0 = Sequence-specific, 2 = Generic, see OEConstants.BAY_WT_XXX).
 	//  density_bin_size_lnu = Size of each bin for binning sub-voxels according to log-density, in natural log units.
 	//  density_bin_count = Number of bins for binning sub-voxels according to log-density; must be >= 2.
 	//  prob_tail_trim = Fraction of the probability distribution to trim.
@@ -310,19 +324,27 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 		cum_subvox_count[0] = 0;
 		total_subvox_count = a_voxel_list[0].get_subvox_count();
-		max_log_density = a_voxel_list[0].get_max_subvox_log_density (bay_weight);
+
+		mle_voxel_index = 0;
+		mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (bay_weight);
+		max_log_density = a_voxel_list[0].get_subvox_log_density (mle_subvox_index, bay_weight);
 
 		for (int j = 1; j < voxel_count; ++j) {
 			final OEDisc2InitStatVox voxel = a_voxel_list[j];
 			cum_subvox_count[j] = total_subvox_count;
 			total_subvox_count += voxel.get_subvox_count();
-			final double x = voxel.get_max_subvox_log_density (bay_weight);
+			final int k = voxel.get_max_subvox_index_log_density (bay_weight);
+			final double x = voxel.get_subvox_log_density (k, bay_weight);
 			if (max_log_density < x) {
+				mle_voxel_index = j;
+				mle_subvox_index = k;
 				max_log_density = x;
 			}
 		}
 
 		cum_subvox_count[voxel_count] = total_subvox_count;
+
+		mle_grid_point = a_voxel_list[mle_voxel_index].get_subvox_grid_point (mle_subvox_index, new OEGridPoint());
 
 		// Array to hold the probability of each sub-voxel
 
@@ -516,6 +538,17 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 
 
+	// Get the MLE grid point.
+	// The returned OEGridPoint is newly-allocated and not retained in this object.
+	// Can only be called after setup_post_fitting has been called.
+
+	public final OEGridPoint get_mle_grid_point () {
+		return (new OEGridPoint()).copy_from (mle_grid_point);
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -547,6 +580,9 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		total_subvox_count = 0;
 		cum_subvox_count = null;
 		max_log_density = 0.0;
+		mle_voxel_index = 0;
+		mle_subvox_index = 0;
+		mle_grid_point = null;
 		a_seed_subvox = null;
 
 		dither_mismatch = 0;
@@ -619,6 +655,11 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 			}
 		}
 		result.append ("max_log_density = " + max_log_density + "\n");
+		result.append ("mle_voxel_index = " + mle_voxel_index + "\n");
+		result.append ("mle_subvox_index = " + mle_subvox_index + "\n");
+		if (mle_grid_point != null) {
+			result.append ("mle_grid_point = {" + mle_grid_point.toString() + "}\n");
+		}
 		if (a_seed_subvox != null) {
 			result.append ("a_seed_subvox.length = " + a_seed_subvox.length + "\n");
 			if (a_seed_subvox.length >= 4) {
@@ -639,6 +680,27 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		result.append ("ranging_b_value = " + ranging_b_value + "\n");
 
 		return result.toString();
+	}
+
+
+
+
+	// Dump the entire log-density grid to a file.
+	// Parameters:
+	//  filename = File name.
+	// Throws exception if I/O error.
+	// Each line contains the following:
+	//   b  alpha  c  p  n  zams  zmu  bay_log_density  bay_vox_volume  log_likelihood
+
+	public void dump_log_density_to_file (String filename) throws IOException {
+		try (
+			BufferedWriter buf = new BufferedWriter (new FileWriter (filename));
+		) {
+			for (int j = 0; j < voxel_count; ++j) {
+				buf.write (a_voxel_list[j].dump_log_density_to_string (new StringBuilder()).toString());
+			}
+		}
+		return;
 	}
 
 
@@ -1010,6 +1072,9 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 			writer.marshalInt                 (        "total_subvox_count"    , total_subvox_count    );
 			writer.marshalIntArray            (        "cum_subvox_count"      , cum_subvox_count      );
 			writer.marshalDouble              (        "max_log_density"       , max_log_density       );
+			writer.marshalInt                 (        "mle_voxel_index"       , mle_voxel_index       );
+			writer.marshalInt                 (        "mle_subvox_index"      , mle_subvox_index      );
+			OEGridPoint.static_marshal        (writer, "mle_grid_point"        , mle_grid_point        );
 			writer.marshalIntArray            (        "a_seed_subvox"         , a_seed_subvox         );
 			writer.marshalInt                 (        "dither_mismatch"       , dither_mismatch       );
 			writer.marshalDouble              (        "clip_log_density_prob" , clip_log_density_prob );
@@ -1055,6 +1120,9 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 			total_subvox_count     = reader.unmarshalInt                 (        "total_subvox_count"    );
 			cum_subvox_count       = reader.unmarshalIntArray            (        "cum_subvox_count"      );
 			max_log_density        = reader.unmarshalDouble              (        "max_log_density"       );
+			mle_voxel_index        = reader.unmarshalInt                 (        "mle_voxel_index"       );
+			mle_subvox_index       = reader.unmarshalInt                 (        "mle_subvox_index"      );
+			mle_grid_point         = OEGridPoint.static_unmarshal        (reader, "mle_grid_point"        );
 			a_seed_subvox          = reader.unmarshalIntArray            (        "a_seed_subvox"         );
 			dither_mismatch        = reader.unmarshalInt                 (        "dither_mismatch"       );
 			clip_log_density_prob  = reader.unmarshalDouble              (        "clip_log_density_prob" );

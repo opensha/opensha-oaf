@@ -17,6 +17,10 @@ import java.net.URLEncoder;
 
 import java.io.UnsupportedEncodingException;
 
+import java.io.IOException;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 
 
@@ -1083,6 +1087,22 @@ public class SimpleUtils {
 
 
 
+	// Write one or more strings as a file.
+
+	public static void write_string_as_file (String filename, String... s) throws IOException {
+		try (
+			BufferedWriter buf = new BufferedWriter (new FileWriter (filename));
+		) {
+			for (int j = 0; j < s.length; ++j) {
+				buf.write (s[j]);
+			}
+		}
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -1317,6 +1337,61 @@ public class SimpleUtils {
 				System.out.println();
 				System.out.println ("Used memory:");
 				System.out.println (used_memory_string());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6  filename
+		// Test the operation of write_string_as_file.
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// 1 additional arguments
+
+			if (!( args.length == 2 )) {
+				System.err.println ("SimpleUtils : Invalid 'test6' subcommand");
+				return;
+			}
+
+			try {
+
+				String filename = args[1];
+
+				// Say hello
+
+				System.out.println ("Testing write_string_as_file");
+				System.out.println ("filename = " + filename);
+
+				// Make some test strings
+
+				String s1 =
+					  "a0 a1 a2 a3 a4 a5 a6 a7 a8 a9\n"
+					+ "bcd0 bcd1 bcd2 bcd3 bcd4 bcd5 bcd6 bcd7 bcd8 bcd9\n"
+					+ "ef0 ef1 ef2 ef3 ef4 ef5 ef6 ef7 ef8 ef9\n"
+					+ "g0 g1 g2 g3 g4 g5 g6 g7 g8 g9\n"
+					+ "hij0 hij1 hij2 hij3 hij4 hij5 hij6 hij7 hij8 hij9\n"
+					+ "k0 k1 k2 k3 k4 k5 k6 k7 k8 k9\n"
+				;
+
+				String s2 =
+					  "lmn0 lmn1 lmn2 lmn3 lmn4 lmn5 lmn6 lmn7 lmn8 lmn9\n"
+					+ "op0 op1 op2 op3 op4 op5 op6 op7 op8 op9\n"
+					+ "qr0 qr1 qr2 qr3 qr4 qr5 qr6 qr7 qr8 qr9\n"
+					+ "s0 s1 s2 s3 s4 s5 s6 s7 s8 s9\n"
+				;
+
+				// Write it
+
+				write_string_as_file (filename, s1, s2);
 
 			} catch (Exception e) {
 				e.printStackTrace();

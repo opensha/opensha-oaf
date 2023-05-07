@@ -4,7 +4,7 @@ package org.opensha.oaf.oetas.fit;
 // Class to hold the value of a Bayesian prior.
 // Author: Michael Barall 02/21/2023.
 //
-// A Beyesian prior value is evalueted for e given voxel in parameter space.
+// A Beyesian prior value is evaluated for a given voxel in parameter space.
 // The probability of parameters lying in the voxel is:
 //
 //   exp(log_density) * vox_volume
@@ -20,11 +20,12 @@ package org.opensha.oaf.oetas.fit;
 //
 // A further refinement is to compute the probability as:
 //
-//   exp(log_likelihood * bay_weight + log_density - max_density) * vox_volume
+//   exp(log_likelihood * min(1, 2 - bay_weight) + log_density * min(1, bay_weight) - max_density) * vox_volume
 //
 // The constant bay_weight determines the weight given to the prior;
 // bay_weight == 1 is the usual Bayesian probability, while bay_weight == 0
-// yields a sequence-specific probability.  The constant max_density is
+// yields a sequence-specific probability, and bay_weight == 2 yields
+// a generic probability.  The constant max_density is
 // chosen so that the arguement to the exp() function is non-positive;
 // this prevents overflows, as the values of log_likelihood and log_density
 // can be large and positive.

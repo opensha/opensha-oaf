@@ -9,6 +9,7 @@ import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
 import static org.opensha.oaf.util.SimpleUtils.rndd;
+import static org.opensha.oaf.util.SimpleUtils.rndf;
 
 import org.opensha.oaf.oetas.OERupture;
 
@@ -379,7 +380,99 @@ public class OEDisc2History {
 
 
 
-//	//----- Searching -----
+	//----- Raw magnitude of completeness function -----
+
+
+	// Array of length N-1, containing the start time of each interval (after the first).
+
+	public double[] raw_a_time;
+
+	// Array of length N, containing the value of a constant function.
+	// For the n-th interval, 0 <= n < N, the magnitude of completeness is raw_a_mag[n],
+	// for times raw_a_time[n-1] < t <= raw_a_time[n].  For this purpose, pretend
+	// that raw_a_time[-1] = -infinity, and raw_a_time[N-1] = +infinity.
+
+	public double[] raw_a_mag;
+
+
+	// Retrieve the raw magnitude of completeness function.
+	// Parameters:
+	//  mag_comp_fn = Discrete magnitude of completeness function.
+	//  mag_eps = Epsilon for magnitudes.
+	
+	private void retrieve_raw_mc (OEMagCompFnDisc mag_comp_fn, double mag_eps) {
+
+		// Get the raw interval count
+
+		final int raw_interval_count = mag_comp_fn.get_interval_count();
+		if (raw_interval_count < 1) {
+			throw new IllegalArgumentException ("OEDisc2History.retrieve_raw_mc: Invalid raw interval count: raw_interval_count = " + raw_interval_count);
+		}
+
+		// Allocate arrays at maximum length
+
+		raw_a_time = new double[raw_interval_count - 1];
+		raw_a_mag = new double[raw_interval_count];
+
+		// Get the first interval
+
+		double mag = mag_comp_fn.get_mag (0);
+		raw_a_mag[0] = mag;
+		int count = 1;
+
+		// Get succeeding intervals, saving those that change by more than epsilon
+
+		for (int j = 1; j < raw_interval_count; ++j) {
+
+			// Next magnitude
+
+			double next_mag = mag_comp_fn.get_mag (j);
+
+			// If it has changed by more than epsilon, save it
+
+			if (Math.abs (next_mag - mag) > mag_eps) {
+				mag = next_mag;
+				raw_a_mag[count] = next_mag;
+				raw_a_time[count - 1] = mag_comp_fn.get_time (j - 1);
+				++count;
+			}
+		}
+
+		// If we have fewer intervals that the magnitude of completeness function, reallocate the arrays
+
+		if (count < raw_interval_count) {
+			raw_a_time = Arrays.copyOf (raw_a_time, count - 1);
+			raw_a_mag = Arrays.copyOf (raw_a_mag, count);
+		}
+
+		return;
+	}
+
+
+	// Dump the raw magnitude of completeness function to a string.
+	// The first line contains the initial magnitude, and each subsequent line
+	// contains the start time followed by the magnitude of each interval.
+
+	public final String dump_raw_mc_to_string () {
+		StringBuilder result = new StringBuilder();
+
+		result.append (rndf (raw_a_mag[0]));
+		result.append ("\n");
+
+		for (int j = 1; j < raw_a_mag.length; ++j) {
+			result.append (rndd (raw_a_time[j - 1]));
+			result.append (" ");
+			result.append (rndf (raw_a_mag[j]));
+			result.append ("\n");
+		}
+
+		return result.toString();
+	}
+
+
+
+
+	//	//----- Searching -----
 //
 //
 //
@@ -556,6 +649,9 @@ public class OEDisc2History {
 		req_t_interval_begin = 0.0;
 		req_t_interval_end = 0.0;
 
+		raw_a_time = null;
+		raw_a_mag = null;
+
 		return;
 	}
 
@@ -599,6 +695,10 @@ public class OEDisc2History {
 		// Save the magnitude of completeness
 
 		magCat = mag_comp_fn.get_mag_cat();
+
+		// Save the raw magnitude of completeness function
+
+		retrieve_raw_mc (mag_comp_fn, params.mag_eps * 0.25);
 
 		// Get the times at which our intervals begin and end, as requested in parameters
 		
@@ -944,6 +1044,9 @@ public class OEDisc2History {
 			writer.marshalDouble      ("req_t_interval_begin"    , req_t_interval_begin    );
 			writer.marshalDouble      ("req_t_interval_end"      , req_t_interval_end      );
 
+			writer.marshalDoubleArray ("raw_a_time"              , raw_a_time              );
+			writer.marshalDoubleArray ("raw_a_mag"               , raw_a_mag               );
+
 		}
 		break;
 
@@ -985,6 +1088,9 @@ public class OEDisc2History {
 			a_interval_time = reader.unmarshalDoubleArray       ("a_interval_time"         );
 			req_t_interval_begin = reader.unmarshalDouble       ("req_t_interval_begin"    );
 			req_t_interval_end = reader.unmarshalDouble         ("req_t_interval_end"      );
+
+			raw_a_time = reader.unmarshalDoubleArray            ("raw_a_time"              );
+			raw_a_mag = reader.unmarshalDoubleArray             ("raw_a_mag"               );
 
 		}
 		break;

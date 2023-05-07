@@ -552,6 +552,10 @@ public class OEConstants {
 
 	public static final double BAY_WT_SEQ_SPEC = 0.0;
 
+	// Bayesian prior weight for the generic model.
+
+	public static final double BAY_WT_GENERIC = 2.0;
+
 
 
 

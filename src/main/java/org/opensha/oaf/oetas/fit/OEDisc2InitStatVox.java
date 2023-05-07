@@ -7,7 +7,9 @@ import java.util.IdentityHashMap;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.SimpleUtils;
 import static org.opensha.oaf.util.SimpleUtils.rndd;
+import static org.opensha.oaf.util.SimpleUtils.rndf;
 
 import org.opensha.oaf.oetas.OEStatsCalc;
 import org.opensha.oaf.oetas.OEConstants;
@@ -322,6 +324,102 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 
 
+	// Dump the log density data to a string, with one line for each sub-voxel.
+	// Parameters:
+	//  sb = Buffer to receive data, which is appended to the buffer.
+	// Returns sb.
+	// Each line contains the following:
+	//   b  alpha  c  p  n  zams  zmu  bay_log_density  bay_vox_volume  log_likelihood
+	// Both Bayesian prior and log-likelihoods must have been computed.
+
+	public StringBuilder dump_log_density_to_string (StringBuilder sb) {
+
+		// Get the parameter values
+
+		final double b = b_velt.get_ve_value();
+		final double alpha = ((alpha_velt == null) ? b : alpha_velt.get_ve_value());
+		final double c = c_velt.get_ve_value();
+		final double p = p_velt.get_ve_value();
+		final double n = n_velt.get_ve_value();
+
+		// Make the prefix string that is used for each line
+
+		final String prefix = rndf(b) + " " + rndf(alpha) + " " + rndf(c) + " " + rndf(p) + " " + rndf(n) + " ";
+
+		// Get the array lengths
+
+		final int subvox_count = get_subvox_count();
+
+		// Loop to append lines
+
+		for (int j = 0; j < subvox_count; ++j) {
+
+			// Get parameters for this sub-voxel
+
+			final double zams = a_zams_velt[j].get_ve_value();
+			final double zmu = ((a_zmu_velt == null) ? 0.0 : a_zmu_velt[j].get_ve_value());
+
+			sb.append (prefix);
+			sb.append (rndf(zams));
+			sb.append (" ");
+			sb.append (rndf(zmu));
+			sb.append (" ");
+			sb.append (SimpleUtils.double_to_string ("%.11E", bay_log_density[j]));
+			//sb.append (rndf(bay_log_density[j]));
+			sb.append (" ");
+			sb.append (SimpleUtils.double_to_string ("%.11E", bay_vox_volume[j]));
+			//sb.append (rndf(bay_vox_volume[j]));
+			sb.append (" ");
+			sb.append (SimpleUtils.double_to_string ("%.11E", log_likelihood[j]));
+			//sb.append (rndf(log_likelihood[j]));
+			sb.append ("\n");
+		}
+
+		return sb;
+	}
+
+
+
+
+	// Get the grid point corresponding to a given sub-voxel.
+	// Parameters:
+	//  subvox_index = Sub-voxel index (0-based).
+	//  grid_point = Receives the grid point.
+	// Returns grid_point.
+
+	public OEGridPoint get_subvox_grid_point (int subvox_index, OEGridPoint grid_point) {
+
+		// Get the parameter values
+
+		final double b = b_velt.get_ve_value();
+		final double alpha = ((alpha_velt == null) ? b : alpha_velt.get_ve_value());
+		final double c = c_velt.get_ve_value();
+		final double p = p_velt.get_ve_value();
+		final double n = n_velt.get_ve_value();
+
+		// Get parameters for this sub-voxel
+
+		final double zams = a_zams_velt[subvox_index].get_ve_value();
+		final double zmu = ((a_zmu_velt == null) ? 0.0 : a_zmu_velt[subvox_index].get_ve_value());
+
+		// Set the grid point
+
+		grid_point.set (
+			b,
+			alpha,
+			c,
+			p,
+			n,
+			zams,
+			zmu
+		);
+
+		return grid_point;
+	}
+
+
+
+
 	//----- Operations -----
 
 
@@ -521,6 +619,23 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 
 
+	// Get the log-density for the given sub-voxel.
+	// Parameters:
+	//  subvox_index = Sub-voxel index (0-based).
+	//  bay_weight = Bayesian prior weight, see OEConstants.BAY_WT_XXXX.
+	// Both Bayesian prior and log-likelihoods must have been computed.
+
+	public final double get_subvox_log_density (int subvox_index, double bay_weight) {
+		return (
+			(bay_weight <= 1.0)
+			? ((bay_log_density[subvox_index] * bay_weight) + log_likelihood[subvox_index])
+			: (bay_log_density[subvox_index] + (log_likelihood[subvox_index] * (2.0 - bay_weight)))
+		);
+	}
+
+
+
+
 	// Calculate the maximum log-density over the sub-voxels.
 	// Parameters:
 	//  bay_weight = Bayesian prior weight, see OEConstants.BAY_WT_XXXX.
@@ -534,9 +649,9 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 		// Loop to find maximum
 
-		double x = (bay_log_density[0] * bay_weight) + log_likelihood[0];
+		double x = get_subvox_log_density (0, bay_weight);
 		for (int j = 1; j < subvox_count; ++j) {
-			x = Math.max (x, (bay_log_density[j] * bay_weight) + log_likelihood[j]);
+			x = Math.max (x, get_subvox_log_density (j, bay_weight));
 		}
 
 		return x;
@@ -545,14 +660,32 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 
 
-	// Get the log-density for the given sub-voxel.
+	// Find the sub-voxel index which has the maximum log-density over the sub-voxels.
 	// Parameters:
-	//  subvox_index = Sub-voxel index (0-based).
 	//  bay_weight = Bayesian prior weight, see OEConstants.BAY_WT_XXXX.
 	// Both Bayesian prior and log-likelihoods must have been computed.
+	// Note: After calling this function, use get_subvox_log_density() to get the maximum log-density.
 
-	public final double get_subvox_log_density (int subvox_index, double bay_weight) {
-		return (bay_log_density[subvox_index] * bay_weight) + log_likelihood[subvox_index];
+	public final int get_max_subvox_index_log_density (double bay_weight) {
+
+		// Get the array lengths
+
+		final int subvox_count = get_subvox_count();
+
+		// Loop to find maximum
+
+		int subvox_index = 0;
+		double x = get_subvox_log_density (0, bay_weight);
+
+		for (int j = 1; j < subvox_count; ++j) {
+			double y = get_subvox_log_density (j, bay_weight);
+			if (x < y) {
+				subvox_index = j;
+				x = y;
+			}
+		}
+
+		return subvox_index;
 	}
 
 
@@ -601,7 +734,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 			// The log density, normalized to be non-positive
 
-			final double norm_log_density = (bay_log_density[j] * bay_weight) + log_likelihood[j] - max_log_density;
+			final double norm_log_density = get_subvox_log_density (j, bay_weight) - max_log_density;
 
 			// Get the bin index, 0 for the highest log density
 
@@ -676,7 +809,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 //
 //			// The log density, normalized to be non-positive
 //
-//			final double norm_log_density = (bay_log_density[j] * bay_weight) + log_likelihood[j] - max_log_density;
+//			final double norm_log_density = get_subvox_log_density (j, bay_weight) - max_log_density;
 //
 //			// Get the bin index, 0 for the highest log density
 //
