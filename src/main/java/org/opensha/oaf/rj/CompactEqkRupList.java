@@ -10,7 +10,7 @@ import org.opensha.commons.geo.Location;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 
-import org.apache.commons.math3.distribution.UniformRealDistribution;
+import org.opensha.oaf.oetas.OERandomGenerator;
 
 import org.opensha.oaf.util.SimpleUtils;
 
@@ -44,16 +44,20 @@ import org.opensha.oaf.util.SimpleUtils;
  * +/- 951 years.  Negative times are allowed so that times relative to an arbitrary
  * origin are representable.
  *
+ * Acceptance - A single-bit flag, that can be set to indicate the rupture was
+ * accepted for use in the forecast. 
+ *
  * Latitude, longitude, and depth are packed into a 64-bit integer as follows:
  * Bits 0-20 = latitude
  * Bits 21-43 = longitude
  * Bits 44-60 = depth
  * Bits 61-63 = zero
  *
- * Magnitude and time are packed into a 64-bit integer as follows:
+ * Magnitude, time, and acceptance are packed into a 64-bit integer as follows:
  * Bits 0-14 = magnitude
  * Bits 15-60 = time
- * Bits 61-63 = zero
+ * Bit 61 = acceptance
+ * Bits 62-63 = zero
  *
  * The encoding scheme is such that neither 64-bit integer can be zero.
  * So, the value zero can be used to indicate no data.
@@ -119,6 +123,11 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 	public static final long TIME_OFFSET =  0x200000000000L;
 	public static final long TIME_MIN_ENC = 0x200000000000L - 30000000000000L;
 	public static final long TIME_MAX_ENC = 0x200000000000L + 30000000000000L;
+
+	// Acceptance encoding.
+
+	public static final long ACCEPTANCE_MASK = 0x2000000000000000L;
+	public static final long ACCEPTANCE_ZERO = 0x0L;
 
 
 
@@ -353,6 +362,31 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 		return combine_mag_time (rup.getMag(), rup.getOriginTime());
 	}
 
+	// combine_mag_time_acceptance - Combine magnitude, time, and acceptance.
+
+	public static long combine_mag_time_acceptance (double mag, long time, boolean acceptance) {
+
+		long mag_enc = Math.round (mag * MAG_SCALE) + MAG_OFFSET;
+		if (mag_enc < MAG_MIN_ENC || mag_enc > MAG_MAX_ENC) {
+			throw new IllegalArgumentException("CompactEqkRupList.combine_mag_time_acceptance: Magnitude out-of-range: " + mag);
+		}
+
+		long time_enc = time + TIME_OFFSET;
+		if (time_enc < TIME_MIN_ENC || time_enc > TIME_MAX_ENC) {
+			throw new IllegalArgumentException("CompactEqkRupList.combine_mag_time_acceptance: Time out-of-range: " + time);
+		}
+
+		long acceptance_enc = (acceptance ? ACCEPTANCE_MASK : ACCEPTANCE_ZERO);
+
+		return acceptance_enc | (time_enc << TIME_SHIFT) | mag_enc;
+	}
+
+	// combine_mag_time_acceptance - Combine magnitude, time, and acceptance.
+
+	public static long combine_mag_time_acceptance (ObsEqkRupture rup, boolean acceptance) {
+		return combine_mag_time_acceptance (rup.getMag(), rup.getOriginTime(), acceptance);
+	}
+
 	// extract_mag - Extract magnitude.
 
 	public static double extract_mag (long mag_time) {
@@ -373,6 +407,17 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 		}
 
 		return ((mag_time >> TIME_SHIFT) & TIME_MASK) - TIME_OFFSET;
+	}
+
+	// extract_acceptance - Extract acceptance.
+
+	public static boolean extract_acceptance (long mag_time) {
+
+		if (mag_time == 0L) {
+			return false;
+		}
+
+		return (mag_time & ACCEPTANCE_MASK) != ACCEPTANCE_ZERO;
 	}
 
 	// extract_rupture - Extract all values into a rupture.
@@ -445,6 +490,12 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 
 	public final long get_time (int n) {
 		return extract_time (mag_time_list[n]);
+	}
+
+	// get_acceptance - Get the acceptance flag of the n-th element in the list.
+
+	public final boolean get_acceptance (int n) {
+		return extract_acceptance (mag_time_list[n]);
 	}
 
 
@@ -599,6 +650,20 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 		}
 
 		return true;
+	}
+
+	// set_acceptance - Set or clear the acceptance flag at the specified position in this list.
+
+	public void set_acceptance (int index, boolean acceptance) {
+		if (!( index >= 0 && index < eqk_count )) {
+			throw new IndexOutOfBoundsException("CompactEqkRupList.set_acceptance: Invalid index: index = " + index + ", size = " + eqk_count);
+		}
+		if (acceptance) {
+			mag_time_list[index] |= ACCEPTANCE_MASK;
+		} else {
+			mag_time_list[index] &= (~ACCEPTANCE_MASK);
+		}
+		return;
 	}
 
 
@@ -768,7 +833,7 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 
 	// test_make_random_rupture - Make a random earthquake rupture.
 
-	private static ObsEqkRupture test_make_random_rupture (UniformRealDistribution rangen) {
+	private static ObsEqkRupture test_make_random_rupture (OERandomGenerator rangen) {
 
 		// Bounds
 
@@ -789,15 +854,15 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 
 		// Random values
 
-		double lat = rangen.sample() * (lat_max - lat_min) + lat_min;
-		double lon = rangen.sample() * (lon_max - lon_min) + lon_min;
-		double depth = rangen.sample() * (depth_max - depth_min) + depth_min;
-		double mag = rangen.sample() * (mag_max - mag_min) + mag_min;
-		long time = Math.round(rangen.sample() * ((double)time_max - (double)time_min)) + time_min;
+		double lat = rangen.uniform_sample (lat_min, lat_max);
+		double lon = rangen.uniform_sample (lon_min, lon_max);
+		double depth = rangen.uniform_sample (depth_min, depth_max);
+		double mag = rangen.uniform_sample (mag_min, mag_max);
+		long time = Math.round (rangen.uniform_sample ((double)time_min, (double)time_max));
 
 		// One time in 100, use a null Location
 
-		if (rangen.sample() < 0.01) {
+		if (rangen.uniform_sample (0.0, 1.0) < 0.01) {
 			return new ObsEqkRupture (null, time, null, mag);
 		}
 
@@ -911,14 +976,8 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 
 	// test_random_index - Return a random integer from 0 to n-1.
 
-	private static int test_random_index (UniformRealDistribution rangen, int n) {
-		int index = (int)Math.floor (rangen.sample() * (double)n);
-		if (index < 0) {
-			index = 0;
-		}
-		if (index >= n) {
-			index = n-1;
-		}
+	private static int test_random_index (OERandomGenerator rangen, int n) {
+		int index = rangen.uniform_int_sample (0, n-1);
 		return index;
 	}
 
@@ -1000,7 +1059,7 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 
 			// Random number generator
 
-			UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+			OERandomGenerator rangen = new OERandomGenerator();
 
 			// Generate random values
 
@@ -1010,27 +1069,27 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 
 			double[] lat = new double[num_events];
 			for (n = 0; n < num_events; ++n) {
-				lat[n] = rangen.sample() * (lat_max - lat_min) + lat_min;
+				lat[n] = rangen.uniform_sample (lat_min, lat_max);
 			}
 
 			double[] lon = new double[num_events];
 			for (n = 0; n < num_events; ++n) {
-				lon[n] = rangen.sample() * (lon_max - lon_min) + lon_min;
+				lon[n] = rangen.uniform_sample (lon_min, lon_max);
 			}
 
 			double[] depth = new double[num_events];
 			for (n = 0; n < num_events; ++n) {
-				depth[n] = rangen.sample() * (depth_max - depth_min) + depth_min;
+				depth[n] = rangen.uniform_sample (depth_min, depth_max);
 			}
 
 			double[] mag = new double[num_events];
 			for (n = 0; n < num_events; ++n) {
-				mag[n] = rangen.sample() * (mag_max - mag_min) + mag_min;
+				mag[n] = rangen.uniform_sample (mag_min, mag_max);
 			}
 
 			long[] time = new long[num_events];
 			for (n = 0; n < num_events; ++n) {
-				time[n] = Math.round(rangen.sample() * ((double)time_max - (double)time_min)) + time_min;
+				time[n] = Math.round (rangen.uniform_sample ((double)time_min, (double)time_max));
 			}
 
 			// Create the rupture list
@@ -1089,6 +1148,43 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 				++n;
 			}
 
+			// Compare results using indexed access
+
+			System.out.println ("Comparing results using indexed access ...");
+
+			boolean acceptance = false;
+
+			for (n = 0; n < num_events; ++n) {
+				double r_lat = compact_list.get_lat (n);
+				double r_lon = compact_list.get_lon (n);
+				double r_depth = compact_list.get_depth (n);
+				double r_mag = compact_list.get_mag (n);
+				long r_time = compact_list.get_time (n);
+				boolean r_acceptance = compact_list.get_acceptance (n);
+
+				if (!( Math.abs (r_lat - lat[n]) < lat_tol
+					&& Math.abs (r_lon - lon[n]) < lon_tol
+					&& Math.abs (r_depth - depth[n]) < depth_tol
+					&& Math.abs (r_mag - mag[n]) < mag_tol
+					&& Math.abs (r_time - time[n]) < time_tol
+					&& r_acceptance == acceptance )) {
+
+					++errors;
+					if (errors <= 10) {
+						System.out.println ("Mismatch during indexed access:\n" +
+							"lat: " + r_lat + " - " + lat[n] + " = " + (r_lat - lat[n]) + "\n" +
+							"lon: " + r_lon + " - " + lon[n] + " = " + (r_lon - lon[n]) + "\n" +
+							"depth: " + r_depth + " - " + depth[n] + " = " + (r_depth - depth[n]) + "\n" +
+							"mag: " + r_mag + " - " + mag[n] + " = " + (r_mag - mag[n]) + "\n" +
+							"time: " + r_time + " - " + time[n] + " = " + (r_time - time[n]) + "\n" +
+							"acceptance: " + r_acceptance + " != " + acceptance
+						);
+					}
+				}
+			}
+
+			// Display final error count
+
 			System.out.println ("Error count: " + errors);
 
 			return;
@@ -1119,7 +1215,7 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 
 			// Random number generator
 
-			UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+			OERandomGenerator rangen = new OERandomGenerator();
 
 			// Quick test of the comparitor.
 
@@ -1300,6 +1396,225 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 			// Done
 
 			System.out.println ("All test completed successfully");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  num_events
+		// First, construct a ObsEqkRupList of size num_events, with random contents.
+		// Then, convert it to CompactEqkRupList.
+		// Finally, iterate through the CompactEqkRupList and test that the original
+		// random contents is recovered, within tolerances.
+		// Same as test #1 except also sets and clears acceptance flags.
+		// Note: It's OK to use num_events values up to 1 million, but larger values
+		// may crash the JVM due to large memory usage.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("CompactEqkRupList : Invalid 'test3' subcommand");
+				return;
+			}
+			int num_events = Integer.parseInt(args[1]);
+
+			// Bounds and tolerances
+
+			double lat_min = -90.0;
+			double lat_max = 90.0;
+			double lat_tol = 1.0/CompactEqkRupList.LAT_SCALE;
+
+			double lon_min = -180.0;
+			double lon_max = 360.0;
+			double lon_tol = 1.0/CompactEqkRupList.LON_SCALE;
+
+			double depth_min = -5.0;
+			double depth_max = 700.0;
+			double depth_tol = 1.0/CompactEqkRupList.DEPTH_SCALE;
+
+			double mag_min = CompactEqkRupList.MAG_MIN_VALUE;
+			double mag_max = CompactEqkRupList.MAG_MAX_VALUE;
+			double mag_tol = 1.0/CompactEqkRupList.MAG_SCALE;
+
+			long time_min = CompactEqkRupList.TIME_MIN_VALUE;
+			long time_max = CompactEqkRupList.TIME_MAX_VALUE;
+			long time_tol = CompactEqkRupList.TIME_RESOLUTION;
+
+			System.out.println (
+				"lat_min = " + lat_min + "\n" +
+				"lat_max = " + lat_max + "\n" +
+				"lat_tol = " + lat_tol + "\n" +
+				"lon_min = " + lon_min + "\n" +
+				"lon_max = " + lon_max + "\n" +
+				"lon_tol = " + lon_tol + "\n" +
+				"depth_min = " + depth_min + "\n" +
+				"depth_max = " + depth_max + "\n" +
+				"depth_tol = " + depth_tol + "\n" +
+				"mag_min = " + mag_min + "\n" +
+				"mag_max = " + mag_max + "\n" +
+				"mag_tol = " + mag_tol + "\n" +
+				"time_min = " + time_min + "\n" +
+				"time_max = " + time_max + "\n" +
+				"time_tol = " + time_tol + "\n" +
+				"num_events = " + num_events
+			);
+
+			// Random number generator
+
+			OERandomGenerator rangen = new OERandomGenerator();
+
+			// Generate random values
+
+			System.out.println ("Generating random data ...");
+
+			int n;
+
+			double[] lat = new double[num_events];
+			for (n = 0; n < num_events; ++n) {
+				lat[n] = rangen.uniform_sample (lat_min, lat_max);
+			}
+
+			double[] lon = new double[num_events];
+			for (n = 0; n < num_events; ++n) {
+				lon[n] = rangen.uniform_sample (lon_min, lon_max);
+			}
+
+			double[] depth = new double[num_events];
+			for (n = 0; n < num_events; ++n) {
+				depth[n] = rangen.uniform_sample (depth_min, depth_max);
+			}
+
+			double[] mag = new double[num_events];
+			for (n = 0; n < num_events; ++n) {
+				mag[n] = rangen.uniform_sample (mag_min, mag_max);
+			}
+
+			long[] time = new long[num_events];
+			for (n = 0; n < num_events; ++n) {
+				time[n] = Math.round (rangen.uniform_sample ((double)time_min, (double)time_max));
+			}
+
+			boolean[] acceptance = new boolean[num_events];
+			for (n = 0; n < num_events; ++n) {
+				acceptance[n] = (rangen.uniform_sample (0.0, 1.0) > 0.5);
+			}
+
+			// Create the rupture list
+
+			System.out.println ("Creating rupture list ...");
+
+			ObsEqkRupList rup_list = new ObsEqkRupList();
+
+			for (n = 0; n < num_events; ++n) {
+				rup_list.add (new ObsEqkRupture (
+					null,
+					time[n],
+					new Location (lat[n], lon[n], depth[n]),
+					mag[n]
+				));
+			}
+
+			// Compress the rupture list
+
+			System.out.println ("Compressing rupture list ...");
+
+			CompactEqkRupList compact_list = new CompactEqkRupList (rup_list);
+
+			// Set and clear acceptance flags
+
+			System.out.println ("Setting acceptance flags ...");
+
+			int n_accepted = 0;
+			int n_not_accepted = 0;
+
+			for (n = 0; n < num_events; ++n) {
+				compact_list.set_acceptance (n, acceptance[n]);
+				if (acceptance[n]) {
+					++n_accepted;
+				} else {
+					++n_not_accepted;
+				}
+			}
+
+			System.out.println ("Number accepted = " + n_accepted + ", number not accepted = " + n_not_accepted);
+
+			// Compare results
+
+			System.out.println ("Comparing results ...");
+
+			n = 0;
+			int errors = 0;
+
+			for (ObsEqkRupture rup : compact_list) {
+				double r_lat = rup.getHypocenterLocation().getLatitude();
+				double r_lon = rup.getHypocenterLocation().getLongitude();
+				double r_depth = rup.getHypocenterLocation().getDepth();
+				double r_mag = rup.getMag();
+				long r_time = rup.getOriginTime();
+
+				if (!( Math.abs (r_lat - lat[n]) < lat_tol
+					&& Math.abs (r_lon - lon[n]) < lon_tol
+					&& Math.abs (r_depth - depth[n]) < depth_tol
+					&& Math.abs (r_mag - mag[n]) < mag_tol
+					&& Math.abs (r_time - time[n]) < time_tol )) {
+
+					++errors;
+					if (errors <= 10) {
+						System.out.println ("Mismatch:\n" +
+							"lat: " + r_lat + " - " + lat[n] + " = " + (r_lat - lat[n]) + "\n" +
+							"lon: " + r_lon + " - " + lon[n] + " = " + (r_lon - lon[n]) + "\n" +
+							"depth: " + r_depth + " - " + depth[n] + " = " + (r_depth - depth[n]) + "\n" +
+							"mag: " + r_mag + " - " + mag[n] + " = " + (r_mag - mag[n]) + "\n" +
+							"time: " + r_time + " - " + time[n] + " = " + (r_time - time[n])
+						);
+					}
+				}
+
+				++n;
+			}
+
+			// Compare results using indexed access
+
+			System.out.println ("Comparing results using indexed access ...");
+
+			for (n = 0; n < num_events; ++n) {
+				double r_lat = compact_list.get_lat (n);
+				double r_lon = compact_list.get_lon (n);
+				double r_depth = compact_list.get_depth (n);
+				double r_mag = compact_list.get_mag (n);
+				long r_time = compact_list.get_time (n);
+				boolean r_acceptance = compact_list.get_acceptance (n);
+
+				if (!( Math.abs (r_lat - lat[n]) < lat_tol
+					&& Math.abs (r_lon - lon[n]) < lon_tol
+					&& Math.abs (r_depth - depth[n]) < depth_tol
+					&& Math.abs (r_mag - mag[n]) < mag_tol
+					&& Math.abs (r_time - time[n]) < time_tol
+					&& r_acceptance == acceptance[n] )) {
+
+					++errors;
+					if (errors <= 10) {
+						System.out.println ("Mismatch during indexed access:\n" +
+							"lat: " + r_lat + " - " + lat[n] + " = " + (r_lat - lat[n]) + "\n" +
+							"lon: " + r_lon + " - " + lon[n] + " = " + (r_lon - lon[n]) + "\n" +
+							"depth: " + r_depth + " - " + depth[n] + " = " + (r_depth - depth[n]) + "\n" +
+							"mag: " + r_mag + " - " + mag[n] + " = " + (r_mag - mag[n]) + "\n" +
+							"time: " + r_time + " - " + time[n] + " = " + (r_time - time[n]) + "\n" +
+							"acceptance: " + r_acceptance + " != " + acceptance[n]
+						);
+					}
+				}
+			}
+
+			// Display final error count
+
+			System.out.println ("Error count: " + errors);
 
 			return;
 		}
