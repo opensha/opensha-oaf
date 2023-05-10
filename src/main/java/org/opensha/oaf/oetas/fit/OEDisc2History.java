@@ -470,6 +470,30 @@ public class OEDisc2History {
 	}
 
 
+	// Return information about which ruptures were accepted for use in the history.
+	// Parameters:
+	//  rup_list = List of ruptures, must be the same list passed to build_from_fgh.
+	// Returns an array of flags, where the n-th element of the array is true
+	// if the n-th rupture in the list (in the order of the rup_list iterator)
+	// was accepted for use in the history.
+	// Note: The intended effect is that the n-th flag is true if the n-th rupture
+	// is contained in a_rupture_obj.
+	// Implementation note: This implementation uses the fact that OEMagCompFnDiscFGH
+	// sets the k_prod field of each rupture to the magnitude of completeness if The
+	// rupture is accepted, or to NO_MAG_POS if the rupture is rejected.
+
+	public final boolean[] make_acceptance_list (Collection<OERupture> rup_list) {
+		boolean[] acceptance = new boolean[rup_list.size()];
+		int n = 0;
+		for (OERupture rup : rup_list) {
+			acceptance[n] = (rup.k_prod < NO_MAG_POS_CHECK);
+			++n;
+		}
+		return acceptance;
+	}
+
+
+
 
 
 	//	//----- Searching -----
