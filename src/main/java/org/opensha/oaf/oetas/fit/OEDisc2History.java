@@ -8,6 +8,7 @@ import java.util.Arrays;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.InvariantViolationException;
 import static org.opensha.oaf.util.SimpleUtils.rndd;
 import static org.opensha.oaf.util.SimpleUtils.rndf;
 
@@ -384,6 +385,7 @@ public class OEDisc2History {
 
 
 	// Array of length N-1, containing the start time of each interval (after the first).
+	// Note: This is primarily an output to support testing.
 
 	public double[] raw_a_time;
 
@@ -391,6 +393,7 @@ public class OEDisc2History {
 	// For the n-th interval, 0 <= n < N, the magnitude of completeness is raw_a_mag[n],
 	// for times raw_a_time[n-1] < t <= raw_a_time[n].  For this purpose, pretend
 	// that raw_a_time[-1] = -infinity, and raw_a_time[N-1] = +infinity.
+	// Note: This is primarily an output to support testing.
 
 	public double[] raw_a_mag;
 
@@ -438,7 +441,7 @@ public class OEDisc2History {
 			}
 		}
 
-		// If we have fewer intervals that the magnitude of completeness function, reallocate the arrays
+		// If we have fewer intervals than the magnitude of completeness function, reallocate the arrays
 
 		if (count < raw_interval_count) {
 			raw_a_time = Arrays.copyOf (raw_a_time, count - 1);
@@ -470,10 +473,34 @@ public class OEDisc2History {
 	}
 
 
-	// Return information about which ruptures were accepted for use in the history.
+
+
+	//----- Rupture acceptance information -----
+
+
+	// Array indicating which ruptures were accepted for use in the history.
+	// The n-th element of the array is true if the n-th rupture in the list
+	// (in the order of the rup_list iterator passed to build_from_fgh())
+	// was accepted for use in the history.
+	// Note: This is primarily an output to support testing.
+
+	public boolean[] a_acceptance;
+
+	// Number of ruptures that were accepted.
+	// Note: This is primarily an output to support testing.
+
+	public int accept_count;
+
+	// Number of ruptures that were rejected.
+	// Note: This is primarily an output to support testing.
+
+	public int reject_count;
+
+
+	// Save information about which ruptures were accepted for use in the history.
 	// Parameters:
 	//  rup_list = List of ruptures, must be the same list passed to build_from_fgh.
-	// Returns an array of flags, where the n-th element of the array is true
+	// Creates the a_acceptance array, where the n-th element of the array is true
 	// if the n-th rupture in the list (in the order of the rup_list iterator)
 	// was accepted for use in the history.
 	// Note: The intended effect is that the n-th flag is true if the n-th rupture
@@ -482,14 +509,21 @@ public class OEDisc2History {
 	// sets the k_prod field of each rupture to the magnitude of completeness if The
 	// rupture is accepted, or to NO_MAG_POS if the rupture is rejected.
 
-	public final boolean[] make_acceptance_list (Collection<OERupture> rup_list) {
-		boolean[] acceptance = new boolean[rup_list.size()];
+	private void make_acceptance_list (Collection<OERupture> rup_list) {
+		a_acceptance = new boolean[rup_list.size()];
+		accept_count = 0;
+		reject_count = 0;
 		int n = 0;
 		for (OERupture rup : rup_list) {
-			acceptance[n] = (rup.k_prod < NO_MAG_POS_CHECK);
+			a_acceptance[n] = (rup.k_prod < NO_MAG_POS_CHECK);
+			if (a_acceptance[n]) {
+				++accept_count;
+			} else {
+				++reject_count;
+			}
 			++n;
 		}
-		return acceptance;
+		return;
 	}
 
 
@@ -676,6 +710,10 @@ public class OEDisc2History {
 		raw_a_time = null;
 		raw_a_mag = null;
 
+		a_acceptance = null;
+		accept_count = 0;
+		reject_count = 0;
+
 		return;
 	}
 
@@ -723,6 +761,17 @@ public class OEDisc2History {
 		// Save the raw magnitude of completeness function
 
 		retrieve_raw_mc (mag_comp_fn, params.mag_eps * 0.25);
+
+		// Save the rupture acceptance information
+
+		make_acceptance_list (rup_list);
+
+		if (!( accept_count == accept_list.size() )) {
+			throw new InvariantViolationException ("OEDisc2History.build_from_fgh: Acceptance count mismatch: accept_count = " + accept_count + ", accept_list.size() = " + accept_list.size());
+		}
+		if (!( reject_count == reject_list.size() )) {
+			throw new InvariantViolationException ("OEDisc2History.build_from_fgh: Rejection count mismatch: reject_count = " + reject_count + ", reject_list.size() = " + reject_list.size());
+		}
 
 		// Get the times at which our intervals begin and end, as requested in parameters
 		
@@ -951,6 +1000,9 @@ public class OEDisc2History {
 		result.append ("req_t_interval_begin = " + rndd(req_t_interval_begin) + "\n");
 		result.append ("req_t_interval_end = " + rndd(req_t_interval_end) + "\n");
 
+		result.append ("accept_count = " + accept_count + "\n");
+		result.append ("reject_count = " + reject_count + "\n");
+
 		return result.toString();
 	}
 
@@ -1071,6 +1123,10 @@ public class OEDisc2History {
 			writer.marshalDoubleArray ("raw_a_time"              , raw_a_time              );
 			writer.marshalDoubleArray ("raw_a_mag"               , raw_a_mag               );
 
+			writer.marshalBooleanArray ("a_acceptance"             , a_acceptance             );
+			writer.marshalInt         ("accept_count"            , accept_count            );
+			writer.marshalInt         ("reject_count"            , reject_count            );
+
 		}
 		break;
 
@@ -1115,6 +1171,10 @@ public class OEDisc2History {
 
 			raw_a_time = reader.unmarshalDoubleArray            ("raw_a_time"              );
 			raw_a_mag = reader.unmarshalDoubleArray             ("raw_a_mag"               );
+
+			a_acceptance = reader.unmarshalBooleanArray         ("a_acceptance"            );
+			accept_count  = reader.unmarshalInt                 ("accept_count"            );
+			reject_count  = reader.unmarshalInt                 ("reject_count"            );
 
 		}
 		break;

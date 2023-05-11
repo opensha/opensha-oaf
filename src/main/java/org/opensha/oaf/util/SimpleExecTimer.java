@@ -14,7 +14,8 @@ public class SimpleExecTimer {
 
 	// Default time interval for progress messages, in milliseconds, can be -1L for no progress messages.
 
-	public static final long DEF_PROGRESS_TIME = 20000L;		// 20 seconds
+	//public static final long DEF_PROGRESS_TIME = 20000L;		// 20 seconds
+	public static final long DEF_PROGRESS_TIME = 10000L;		// 10 seconds
 
 	// Default minimum positive time remaining to return, in milliseconds.
 

@@ -215,6 +215,12 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 	private OEGridPoint mle_grid_point;
 
+	// The MLE grid points for generic, sequence-specific, and Bayesian models.
+
+	private OEGridPoint gen_mle_grid_point;
+	private OEGridPoint seq_mle_grid_point;
+	private OEGridPoint bay_mle_grid_point;
+
 	// The sub-voxels for seeding; length = seed_subvox_count.
 
 	private int[] a_seed_subvox;
@@ -329,22 +335,63 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (bay_weight);
 		max_log_density = a_voxel_list[0].get_subvox_log_density (mle_subvox_index, bay_weight);
 
+		int gen_mle_voxel_index = 0;
+		int gen_mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (OEConstants.BAY_WT_GENERIC);
+		double gen_max_log_density = a_voxel_list[0].get_subvox_log_density (gen_mle_subvox_index, OEConstants.BAY_WT_GENERIC);
+
+		int seq_mle_voxel_index = 0;
+		int seq_mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (OEConstants.BAY_WT_SEQ_SPEC);
+		double seq_max_log_density = a_voxel_list[0].get_subvox_log_density (seq_mle_subvox_index, OEConstants.BAY_WT_SEQ_SPEC);
+
+		int bay_mle_voxel_index = 0;
+		int bay_mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (OEConstants.BAY_WT_BAYESIAN);
+		double bay_max_log_density = a_voxel_list[0].get_subvox_log_density (bay_mle_subvox_index, OEConstants.BAY_WT_BAYESIAN);
+
 		for (int j = 1; j < voxel_count; ++j) {
 			final OEDisc2InitStatVox voxel = a_voxel_list[j];
 			cum_subvox_count[j] = total_subvox_count;
 			total_subvox_count += voxel.get_subvox_count();
-			final int k = voxel.get_max_subvox_index_log_density (bay_weight);
-			final double x = voxel.get_subvox_log_density (k, bay_weight);
+
+			int k = voxel.get_max_subvox_index_log_density (bay_weight);
+			double x = voxel.get_subvox_log_density (k, bay_weight);
 			if (max_log_density < x) {
 				mle_voxel_index = j;
 				mle_subvox_index = k;
 				max_log_density = x;
+			}
+
+			k = voxel.get_max_subvox_index_log_density (OEConstants.BAY_WT_GENERIC);
+			x = voxel.get_subvox_log_density (k, OEConstants.BAY_WT_GENERIC);
+			if (gen_max_log_density < x) {
+				gen_mle_voxel_index = j;
+				gen_mle_subvox_index = k;
+				gen_max_log_density = x;
+			}
+
+			k = voxel.get_max_subvox_index_log_density (OEConstants.BAY_WT_SEQ_SPEC);
+			x = voxel.get_subvox_log_density (k, OEConstants.BAY_WT_SEQ_SPEC);
+			if (seq_max_log_density < x) {
+				seq_mle_voxel_index = j;
+				seq_mle_subvox_index = k;
+				seq_max_log_density = x;
+			}
+
+			k = voxel.get_max_subvox_index_log_density (OEConstants.BAY_WT_BAYESIAN);
+			x = voxel.get_subvox_log_density (k, OEConstants.BAY_WT_BAYESIAN);
+			if (bay_max_log_density < x) {
+				bay_mle_voxel_index = j;
+				bay_mle_subvox_index = k;
+				bay_max_log_density = x;
 			}
 		}
 
 		cum_subvox_count[voxel_count] = total_subvox_count;
 
 		mle_grid_point = a_voxel_list[mle_voxel_index].get_subvox_grid_point (mle_subvox_index, new OEGridPoint());
+
+		gen_mle_grid_point = a_voxel_list[gen_mle_voxel_index].get_subvox_grid_point (gen_mle_subvox_index, new OEGridPoint());
+		seq_mle_grid_point = a_voxel_list[seq_mle_voxel_index].get_subvox_grid_point (seq_mle_subvox_index, new OEGridPoint());
+		bay_mle_grid_point = a_voxel_list[bay_mle_voxel_index].get_subvox_grid_point (bay_mle_subvox_index, new OEGridPoint());
 
 		// Array to hold the probability of each sub-voxel
 
@@ -549,6 +596,39 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 
 
+	// Get the generic MLE grid point.
+	// The returned OEGridPoint is newly-allocated and not retained in this object.
+	// Can only be called after setup_post_fitting has been called.
+
+	public final OEGridPoint get_gen_mle_grid_point () {
+		return (new OEGridPoint()).copy_from (gen_mle_grid_point);
+	}
+
+
+
+
+	// Get the sequence-specific MLE grid point.
+	// The returned OEGridPoint is newly-allocated and not retained in this object.
+	// Can only be called after setup_post_fitting has been called.
+
+	public final OEGridPoint get_seq_mle_grid_point () {
+		return (new OEGridPoint()).copy_from (seq_mle_grid_point);
+	}
+
+
+
+
+	// Get the Bayesian MLE grid point.
+	// The returned OEGridPoint is newly-allocated and not retained in this object.
+	// Can only be called after setup_post_fitting has been called.
+
+	public final OEGridPoint get_bay_mle_grid_point () {
+		return (new OEGridPoint()).copy_from (bay_mle_grid_point);
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -583,6 +663,9 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		mle_voxel_index = 0;
 		mle_subvox_index = 0;
 		mle_grid_point = null;
+		gen_mle_grid_point = null;
+		seq_mle_grid_point = null;
+		bay_mle_grid_point = null;
 		a_seed_subvox = null;
 
 		dither_mismatch = 0;
@@ -659,6 +742,15 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		result.append ("mle_subvox_index = " + mle_subvox_index + "\n");
 		if (mle_grid_point != null) {
 			result.append ("mle_grid_point = {" + mle_grid_point.toString() + "}\n");
+		}
+		if (gen_mle_grid_point != null) {
+			result.append ("gen_mle_grid_point = {" + gen_mle_grid_point.toString() + "}\n");
+		}
+		if (seq_mle_grid_point != null) {
+			result.append ("seq_mle_grid_point = {" + seq_mle_grid_point.toString() + "}\n");
+		}
+		if (bay_mle_grid_point != null) {
+			result.append ("bay_mle_grid_point = {" + bay_mle_grid_point.toString() + "}\n");
 		}
 		if (a_seed_subvox != null) {
 			result.append ("a_seed_subvox.length = " + a_seed_subvox.length + "\n");
@@ -1075,6 +1167,9 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 			writer.marshalInt                 (        "mle_voxel_index"       , mle_voxel_index       );
 			writer.marshalInt                 (        "mle_subvox_index"      , mle_subvox_index      );
 			OEGridPoint.static_marshal        (writer, "mle_grid_point"        , mle_grid_point        );
+			OEGridPoint.static_marshal        (writer, "gen_mle_grid_point"    , gen_mle_grid_point    );
+			OEGridPoint.static_marshal        (writer, "seq_mle_grid_point"    , seq_mle_grid_point    );
+			OEGridPoint.static_marshal        (writer, "bay_mle_grid_point"    , bay_mle_grid_point    );
 			writer.marshalIntArray            (        "a_seed_subvox"         , a_seed_subvox         );
 			writer.marshalInt                 (        "dither_mismatch"       , dither_mismatch       );
 			writer.marshalDouble              (        "clip_log_density_prob" , clip_log_density_prob );
@@ -1123,6 +1218,9 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 			mle_voxel_index        = reader.unmarshalInt                 (        "mle_voxel_index"       );
 			mle_subvox_index       = reader.unmarshalInt                 (        "mle_subvox_index"      );
 			mle_grid_point         = OEGridPoint.static_unmarshal        (reader, "mle_grid_point"        );
+			gen_mle_grid_point     = OEGridPoint.static_unmarshal        (reader, "gen_mle_grid_point"    );
+			seq_mle_grid_point     = OEGridPoint.static_unmarshal        (reader, "seq_mle_grid_point"    );
+			bay_mle_grid_point     = OEGridPoint.static_unmarshal        (reader, "bay_mle_grid_point"    );
 			a_seed_subvox          = reader.unmarshalIntArray            (        "a_seed_subvox"         );
 			dither_mismatch        = reader.unmarshalInt                 (        "dither_mismatch"       );
 			clip_log_density_prob  = reader.unmarshalDouble              (        "clip_log_density_prob" );
