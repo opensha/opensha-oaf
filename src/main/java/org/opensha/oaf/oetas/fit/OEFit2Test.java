@@ -2802,6 +2802,9 @@ public class OEFit2Test {
 
 				OESimulator.gen_single_catalog (initializer, examiner);
 
+				System.out.println ();
+				System.out.println ("Catalog size = " + rup_list.size());
+
 				// Make time-splitting function
 
 				OEMagCompFnDisc.SplitFn split_fn = new OEMagCompFnDisc.SplitFnRatio (durlim_ratio, durlim_min, durlim_max);

@@ -174,6 +174,17 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 
 
+	//----- Internal values -----
+
+
+	// The starting time for ruptures subject to the mag_cat_count limit, or -HUGE_TIME_DAYS if unlimited.
+	// This field is not marshaled.  It is effectively a return value from build_from_rup_list.
+
+	private double t_mag_cat_count;
+
+
+
+
 	//----- Data structures -----
 	//
 	// The time range is partitioned into N intervals.  Within each interval,
@@ -1680,6 +1691,8 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		double before_filter_time = t_range_begin - (2.0 * T_RANGE_EXPAND);
 		double before_filter_mag = magCat;
 
+		t_mag_cat_count = -HUGE_TIME_DAYS;
+
 		// If we are limiting separately before and after the first required split ...
 
 		if (before_max_count != 0 && t_req_splits.length > 0) {
@@ -1694,6 +1707,8 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 			// Set the time for the filter, to just before the first required split
 
 			before_filter_time = t_req_splits[0] - time_eps;
+
+			t_mag_cat_count = before_filter_time;
 
 			// Partition the ruptures into those before and after the filter time
 
@@ -1728,7 +1743,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 			}
 		}
 
-		// Otherwise, there is a single limite for all ruptures ...
+		// Otherwise, there is a single limit for all ruptures ...
 
 		else {
 
@@ -1908,6 +1923,123 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				params.mag_eps, params.time_eps,
 				params.disc_base, params.disc_delta, params.disc_round, params.disc_gap, params.split_fn,
 				params.mag_cat_count, params.division_mag, params.division_count, params.t_req_splits, params.before_max_count);
+	}
+
+
+
+
+	// Construct from given parameters.
+	// This version changes the definition of params.mag_cat_count so it limits the number
+	// of earthquakes after the time-dependent magnitude of completeness is applied
+	// (rather than before).
+	// Implementation note: If necessary, this function performs a trial construction with
+	// a larger value of params.mag_cat_count, and uses the result to compute a modified
+	// value of params.mag_cat_count.
+
+	public static OEMagCompFnDiscFGH make_from_rup_list (OEDiscFGHParams params, Collection<OERupture> rup_list,
+								Collection<OERupture> accept_list, Collection<OERupture> reject_list)
+	{
+
+		// Get the original mag_cat_count
+
+		int original_mag_cat_count = params.mag_cat_count;
+
+		// If there is no limit, or the limit is large, or there is no time-dependent
+		// magnitude of completeness, then just use the normal constructor
+
+		if (original_mag_cat_count <= 0 || original_mag_cat_count >= rup_list.size() || params.capG > 99.999) {
+			return new OEMagCompFnDiscFGH (params, rup_list, accept_list, reject_list);
+		}
+
+		// Get a trial mag_cat_count, no more than 5 times the original
+
+		int trial_mag_cat_count = 0;	// no limit
+		if (original_mag_cat_count < rup_list.size() / 5) {
+			trial_mag_cat_count = original_mag_cat_count * 5;
+		}
+
+		// Do a trial construction
+
+		ArrayList<OERupture> my_accept_list = new ArrayList<OERupture>();
+		ArrayList<OERupture> my_reject_list = new ArrayList<OERupture>();
+
+		OEMagCompFnDiscFGH mag_comp_fn = new OEMagCompFnDiscFGH (params.magCat, params.capF, params.capG, params.capH,
+				params.t_range_begin, params.t_range_end,
+				rup_list,
+				my_accept_list, my_reject_list,
+				params.eligible_mag, params.eligible_count,
+				params.mag_eps, params.time_eps,
+				params.disc_base, params.disc_delta, params.disc_round, params.disc_gap, params.split_fn,
+				trial_mag_cat_count, params.division_mag, params.division_count, params.t_req_splits, params.before_max_count);
+
+		// Get the start time for ruptures that contribute to mag_cat_count
+
+		double my_t_mag_cat_count = mag_comp_fn.t_mag_cat_count;
+
+		// Extract the list of accepted ruptures that contribute to mag_cat_count
+
+		ArrayList<OERupture> contrib_list = new ArrayList<OERupture>();
+
+		for (OERupture rup : my_accept_list) {
+			if (rup.t_day >= my_t_mag_cat_count) {
+				contrib_list.add (rup);
+			}
+		}
+
+		// If the list does not exceed the original mag_cat_count, return what we have
+
+		if (contrib_list.size() <= original_mag_cat_count) {
+			if (accept_list != null) {
+				accept_list.addAll (my_accept_list);
+			}
+			if (reject_list != null) {
+				reject_list.addAll (my_reject_list);
+			}
+			return mag_comp_fn;
+		}
+		
+		// Sort the list by magnitude, descending
+
+		contrib_list.sort (new OERupture.MagDescTimeDescComparator());
+
+		// Effective magnitude to enforce the count
+
+		double eff_mag = Math.max (params.magCat, contrib_list.get(original_mag_cat_count - 1).rup_mag - Math.max(0.1*params.mag_eps, TINY_MAG_DELTA));
+
+		// Count the number of ruptures above this magnitude
+
+		int new_mag_cat_count = 0;
+
+		for (OERupture rup : rup_list) {
+			if (rup.t_day >= my_t_mag_cat_count && rup.rup_mag >= eff_mag) {
+				++new_mag_cat_count;
+			}
+		}
+
+		// If count does not exceed the original mag_cat_count (probably should not happen), return what we have
+
+		if (new_mag_cat_count <= original_mag_cat_count) {
+			if (accept_list != null) {
+				accept_list.addAll (my_accept_list);
+			}
+			if (reject_list != null) {
+				reject_list.addAll (my_reject_list);
+			}
+			return mag_comp_fn;
+		}
+
+		// Construct using the new mag_cat_count
+
+		mag_comp_fn = null;		// discard existing object
+
+		return new OEMagCompFnDiscFGH (params.magCat, params.capF, params.capG, params.capH,
+				params.t_range_begin, params.t_range_end,
+				rup_list,
+				accept_list, reject_list,
+				params.eligible_mag, params.eligible_count,
+				params.mag_eps, params.time_eps,
+				params.disc_base, params.disc_delta, params.disc_round, params.disc_gap, params.split_fn,
+				new_mag_cat_count, params.division_mag, params.division_count, params.t_req_splits, params.before_max_count);
 	}
 
 

@@ -751,7 +751,10 @@ public class OEDisc2History {
 		ArrayList<OERupture> accept_list = new ArrayList<OERupture>();
 		ArrayList<OERupture> reject_list = new ArrayList<OERupture>();
 
-		OEMagCompFnDiscFGH mag_comp_fn = new OEMagCompFnDiscFGH (params, rup_list,
+		//OEMagCompFnDiscFGH mag_comp_fn = new OEMagCompFnDiscFGH (params, rup_list,
+		//				accept_list, reject_list);
+
+		OEMagCompFnDiscFGH mag_comp_fn = OEMagCompFnDiscFGH.make_from_rup_list (params, rup_list,
 						accept_list, reject_list);
 
 		// Save the magnitude of completeness
