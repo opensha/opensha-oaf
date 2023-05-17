@@ -2750,6 +2750,7 @@ case "$1" in
         echo ""
         echo "Internal variables:"
         echo "my_OS_TYPE = $my_OS_TYPE"
+        echo "my_OS_GEN = $my_OS_GEN"
         echo "my_IS_SELINUX = $my_IS_SELINUX"
         echo "my_OS_SPECIFIC_PATH = $my_OS_SPECIFIC_PATH"
         echo "my_MONGO_LOCAL_ACCOUNT = $my_MONGO_LOCAL_ACCOUNT"
