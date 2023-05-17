@@ -184,11 +184,17 @@
 #     After running this command, you can update the operating system and perform
 #     any other updates, and you can reboot if needed.
 #
+#     This command can be used in dual-server or single-server configurations.
+#     In a dual-server configuration, it switches the local server to secondary
+#     and waits for confirmation that the remote server has switched to primary.
+#
 #     After completing all updates, use "start_aafs_after_update" to re-start AAFS.
 #
 # start_aafs_after_update
 #
 #     Re-start AAFS and MongoDB after performing updates.
+#
+#     This command should be used if "stop_aafs_for_update" was used for shutdown.
 #
 #     In a dual-server configuration, after running this command you should update
 #     the other server if you have not already done so.  After both servers are
@@ -199,6 +205,35 @@
 #
 #     In a dual-server configuration, use this command to resotre the normal
 #     "pair 1" mode of operation after both servers have been updated.
+#
+# stop_local_for_update  <java_option>  <oaf_option>  <backup_filename>
+#
+#     Stop local AAFS and MongoDB, so that updates can be performed.
+#
+#     The java_option specifies whether or not to update Java.  It must be
+#     "java" to update Java, or "nojava" to skip the Java update.
+#
+#     The oaf_option specifies whether or not to update the OAF software.  It must be
+#     "oaf" to update the OAF software, or "nooaf" to skip the OAF software update.
+#
+#     The OAF database is backed up into the file specified by backup_filename.
+#     To skip the database backup, use "nobackup" as the filename.
+#
+#     After running this command, you can update the operating system and perform
+#     any other updates, and you can reboot if needed.
+#
+#     This command can be used in dual-server or single-server configurations.
+#     This command does not switch the mode, and so can be used when shutting
+#     down both servers in a dual-server configuration.  (Use "stop_aafs_for_update"
+#     on the secondary server, and then "stop_local_for_update" on the primary.)
+#
+#     After completing all updates, use "start_local_after_update" to re-start AAFS.
+#
+# start_local_after_update
+#
+#     Re-start local AAFS and MongoDB after performing updates.
+#
+#     This command should be used if "stop_local_for_update" was used for shutdown.
 
 
 
@@ -2636,6 +2671,68 @@ q_stop_aafs_for_update () {
 
 
 
+# Stop local AAFS in preparation for an update, and optionally back up the database.
+# $1 = backup filename, or "nobackup" to skip the backup.
+
+q_stop_local_for_update () {
+    echo "Stopping local AAFS for update..."
+
+    # Check that AAFS is running
+
+    if q_is_aafs_running ; then
+        :
+    else
+        echo "AAFS is not running"
+        exit 1
+    fi
+
+    # If a backup file is specified, check it does not already exist and is writeable
+
+    if [ -z "$1" ]; then
+        echo "Backup filename is not specified."
+        echo "You must supply a filename for the database backup, or use \"nobackup\" to skip the backup."
+        exit 1
+    fi
+    if [ "$1" != "nobackup" ]; then
+        if [ -a "$1" ]; then
+            echo "Backup file already exists: $1"
+            echo "This function cannot replace an existing backup file."
+            exit 1
+        fi
+        if touch "$1" ; then
+            rm "$1"
+        else
+            echo "Cannot create backup file: $1"
+            exit 1
+        fi
+    fi
+
+    # Stop AAFS
+
+    cd /opt/aafs
+    ./moaf.sh stop_aafs
+    cd - >/dev/null
+
+    # Back up the database
+
+    if [ "$1" != "nobackup" ]; then
+        /opt/aafs/moaf.sh backup_database_gzip "$1"
+    fi
+
+    # Stop MongoDB
+
+    cd /opt/aafs
+    ./moaf.sh stop_mongo
+    cd - >/dev/null
+
+    echo "Pausing 10 seconds..."
+    sleep 10
+
+}
+
+
+
+
 # Start AAFS after performing an update.
 
 q_start_aafs_after_update () {
@@ -2658,6 +2755,28 @@ q_start_aafs_after_update () {
         ./moaf.sh start_aafs
         cd - >/dev/null
     fi
+
+}
+
+
+
+
+# Start local AAFS after performing an update.
+
+q_start_local_after_update () {
+    echo "Starting local AAFS after update..."
+
+    # Start MongoDB
+
+    cd /opt/aafs
+    ./moaf.sh start_mongo
+    cd - >/dev/null
+
+    # Start AAFS
+
+    cd /opt/aafs
+    ./moaf.sh start_aafs
+    cd - >/dev/null
 
 }
 
@@ -2928,10 +3047,23 @@ case "$1" in
         echo "Test - Stopped AAFS for update"
         ;;
 
+    # $2 = Backup filename, or "nobackup" to skip backup.
+    test_stop_local_for_update)
+        q_load_oaf_config
+        q_stop_local_for_update "$2"
+        echo "Test - Stopped local AAFS for update"
+        ;;
+
     test_start_aafs_after_update)
         q_load_oaf_config
         q_start_aafs_after_update
         echo "Test - Started AAFS after update"
+        ;;
+
+    test_start_local_after_update)
+        q_load_oaf_config
+        q_start_local_after_update
+        echo "Test - Started local AAFS after update"
         ;;
 
     test_resume_normal_mode)
@@ -3440,6 +3572,79 @@ case "$1" in
 
 
 
+    # $2 = "java" to update Java, or "nojava" to skip the Java update.
+    # $3 = "oaf" to update OAF software, or "nooaf" to skip the OAF software update.
+    # $4 = Backup filename, or "nobackup" to skip the backup.
+    stop_local_for_update)
+        if [ "$2" == "java" ]; then
+            :
+        elif [ "$2" == "nojava" ]; then
+            :
+        else
+            echo "The Java option must be \"java\" to update Java, or \"nojava\" to skip the Java update."
+            exit 1
+        fi
+        if [ "$3" == "oaf" ]; then
+            :
+        elif [ "$3" == "nooaf" ]; then
+            :
+        else
+            echo "The OAF option must be \"oaf\" to update the OAF software, or \"nooaf\" to skip the OAF software update."
+            exit 1
+        fi
+        if [ -z "$4" ]; then
+            echo "Backup filename is not specified."
+            echo "You must supply a filename for the database backup, or use \"nobackup\" to skip the backup."
+            exit 1
+        fi
+        q_load_oaf_config
+        q_stop_local_for_update "$4"
+        if [ "$2" == "java" ]; then
+            q_install_java
+            q_configure_java_dns
+        fi
+        if [ "$3" == "oaf" ]; then
+            q_update_opensha
+            q_configure_oaf
+            q_compile_oaf
+        fi
+        echo ""
+        echo "********************"
+        echo ""
+        echo "Local AAFS and MongoDB have been stopped."
+        if [ "$4" != "nobackup" ]; then
+            echo "The OAF database has been backed up to: $4"
+        fi
+        if [ "$2" == "java" ]; then
+            echo "Java has been updated."
+        fi
+        if [ "$3" == "oaf" ]; then
+            echo "The OAF software has been updated, and the updated version is installed and configured."
+        fi
+        echo ""
+        echo "You can now update the operating system, and do any other needed updates."
+        echo "Then, you can reboot the system if needed."
+        echo ""
+        echo "After completing all updates, use \"start_local_after_update\" to re-start local AAFS and MongoDB."
+        ;;
+
+
+
+
+    start_local_after_update)
+        q_load_oaf_config
+        q_start_local_after_update
+        echo ""
+        echo "********************"
+        echo ""
+        echo "Local AAFS and MongoDB have been re-started."
+        echo ""
+        echo "Completed update."
+        ;;
+
+
+
+
     help)
         echo "Install required packages and Java:"
         echo "  aoaf.sh prepare_system"
@@ -3485,6 +3690,10 @@ case "$1" in
         echo "  aoaf.sh start_aafs_after_update"
         echo "Resume normal operation of a dual-server configuration after updating:"
         echo "  aoaf.sh resume_normal_mode"
+        echo "Stop local AAFS and MongoDB, so that updates can be performed:"
+        echo "  aoaf.sh stop_local_for_update  <java_option>  <oaf_option>  <backup_filename>"
+        echo "Re-start local AAFS and MongoDB after performing updates:"
+        echo "  aoaf.sh start_local_after_update"
         ;;
 
 
