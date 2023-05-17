@@ -152,6 +152,19 @@
 #     After upgrading an existing installation of MongoDB 4.4 to 5.0, and
 #     checking that the new version is operating successfully, use this
 #     command to set the MongoDB feature compatibility version to 5.0.
+#
+# upgrade_mongo_50_to_60
+#
+#     Upgrade an existing installation of MongoDB 5.0 to 6.0.
+#     This command registers the upgraded MongoDB with the OS package manager.
+#     After running this command, you need to do an OS update to complete the
+#     MongoDB upgrade.
+#
+# set_mongo_compatibility_to_60
+#
+#     After upgrading an existing installation of MongoDB 5.0 to 6.0, and
+#     checking that the new version is operating successfully, use this
+#     command to set the MongoDB feature compatibility version to 6.0.
 
 # COMMANDS FOR UPDATING THE SYSTEM
 #
@@ -253,6 +266,7 @@ q_load_oaf_config () {
     # Allowed values of the OS version.
     val_OS_AMAZON_LINUX_2="amazonlinux2"
     val_OS_UBUNTU_2004="ubuntu2004"
+    val_OS_UBUNTU_2204="ubuntu2204"
     val_OS_CENTOS_7="centos7"
 
     # Allowed values of the server option.
@@ -278,6 +292,11 @@ q_load_oaf_config () {
     val_OSTYPE_UBUNTU="ubuntu"
     val_OSTYPE_CENTOS="centos"
 
+    # Values of the internal variable my_OS_GEN.
+    val_OSGEN_ANY="any"
+    val_OSGEN_UBUNTU_2004="focal"
+    val_OSGEN_UBUNTU_2204="jammy"
+
     # The local IP address, as returned by hostname.
     # val_LOCAL_IP="$(hostname -I | cut -d' ' -f1)"
 
@@ -295,6 +314,9 @@ q_load_oaf_config () {
 
     # Internal variable holding the operating system type
     my_OS_TYPE=
+
+    # Internal variable holding the operating system generation or version
+    my_OS_GEN=
 
     # Internal flag indicating if Centos SELinux is enabled, "$val_YES" or "$val_NO"
     my_IS_SELINUX="$val_NO"
@@ -355,14 +377,20 @@ q_load_oaf_config () {
 
     #--- Check and analyze the configuration file ---
 
-    # Check the OS version and set the type
+    # Check the OS version and set the type and generation
 
     if [ "$THE_OS_VERSION" == "$val_OS_AMAZON_LINUX_2" ]; then
         my_OS_TYPE="$val_OSTYPE_AMAZON"
+        my_OS_GEN="$val_OSGEN_ANY"
     elif [ "$THE_OS_VERSION" == "$val_OS_UBUNTU_2004" ]; then
         my_OS_TYPE="$val_OSTYPE_UBUNTU"
+        my_OS_GEN="$val_OSGEN_UBUNTU_2004"
+    elif [ "$THE_OS_VERSION" == "$val_OS_UBUNTU_2204" ]; then
+        my_OS_TYPE="$val_OSTYPE_UBUNTU"
+        my_OS_GEN="$val_OSGEN_UBUNTU_2204"
     elif [ "$THE_OS_VERSION" == "$val_OS_CENTOS_7" ]; then
         my_OS_TYPE="$val_OSTYPE_CENTOS"
+        my_OS_GEN="$val_OSGEN_ANY"
     else
         echo "Invalid operating system version: THE_OS_VERSION = $THE_OS_VERSION" 
         exit 1
@@ -763,6 +791,9 @@ q_install_packages () {
         sudo apt-get -y install vim
         sudo apt-get -y install build-essential
         sudo apt-get -y install git
+        sudo apt-get -y install curl
+        sudo apt-get -y install gnupg
+        sudo apt-get -y install zip
 
     elif [ "$my_OS_TYPE" == "$val_OSTYPE_CENTOS" ]; then
 
@@ -1396,11 +1427,18 @@ q_install_mongo () {
 
         # Import the public key
 
-        wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+        curl -fsSL https://pgp.mongodb.com/server-6.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
 
         # Create a list file
 
-        echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+        if [ "$my_OS_GEN" == "$val_OSGEN_UBUNTU_2004" ]; then
+            echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+        elif [ "$my_OS_GEN" == "$val_OSGEN_UBUNTU_2204" ]; then
+            echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+        else
+            echo "Invalid operating system generation: my_OS_GEN = $my_OS_GEN" 
+            exit 1
+        fi
 
         # Reload the local package database
 
@@ -1740,11 +1778,18 @@ q_upgrade_mongo_50_to_60 () {
 
         # Import the public key
 
-        wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+        curl -fsSL https://pgp.mongodb.com/server-6.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
 
         # Create a list file
 
-        echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+        if [ "$my_OS_GEN" == "$val_OSGEN_UBUNTU_2004" ]; then
+            echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+        elif [ "$my_OS_GEN" == "$val_OSGEN_UBUNTU_2204" ]; then
+            echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+        else
+            echo "Invalid operating system generation: my_OS_GEN = $my_OS_GEN" 
+            exit 1
+        fi
 
         # Reload the local package database
 
@@ -2657,7 +2702,6 @@ case "$1" in
         echo "Configuration parameters:"
         echo "THE_OS_VERSION = $THE_OS_VERSION"
         echo "CPU_CORE_COUNT = $CPU_CORE_COUNT"
-        echo "CPU_CORE_COUNT = $CPU_CORE_COUNT"
         echo "JAVA_SOURCE = $JAVA_SOURCE"
         echo "JAVA_CERT_FILE = $JAVA_CERT_FILE"
         echo "MONGO_BIND_IP = $MONGO_BIND_IP"
@@ -2681,6 +2725,7 @@ case "$1" in
         echo "Named constants:"
         echo "val_OS_AMAZON_LINUX_2 = $val_OS_AMAZON_LINUX_2"
         echo "val_OS_UBUNTU_2004 = $val_OS_UBUNTU_2004"
+        echo "val_OS_UBUNTU_2204 = $val_OS_UBUNTU_2204"
         echo "val_OS_CENTOS_7 = $val_OS_CENTOS_7"
         echo "val_SERVER_PRIMARY = $val_SERVER_PRIMARY"
         echo "val_SERVER_SECONDARY = $val_SERVER_SECONDARY"
@@ -2695,6 +2740,9 @@ case "$1" in
         echo "val_OSTYPE_AMAZON = $val_OSTYPE_AMAZON"
         echo "val_OSTYPE_UBUNTU = $val_OSTYPE_UBUNTU"
         echo "val_OSTYPE_CENTOS = $val_OSTYPE_CENTOS"
+        echo "val_OSGEN_ANY = $val_OSGEN_ANY"
+        echo "val_OSGEN_UBUNTU_2004 = $val_OSGEN_UBUNTU_2004"
+        echo "val_OSGEN_UBUNTU_2204 = $val_OSGEN_UBUNTU_2204"
         echo "val_LOCAL_ACCOUNT = $val_LOCAL_ACCOUNT"
         echo "val_PWD = $val_PWD"
         echo "val_TEMP_WORK_DIR = $val_TEMP_WORK_DIR"

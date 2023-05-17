@@ -33,6 +33,7 @@
 # Operating system option. Must be one of:
 #  "amazonlinux2" -- Amazon Linux 2.
 #  "ubuntu2004" -- Ubuntu 20.04 LTS.
+#  "ubuntu2204" -- Ubuntu 22.04 LTS.
 #  "centos7" -- Centos 7 (might also work for Centos 8 and Centos Stream).
 THE_OS_VERSION=
 
