@@ -298,6 +298,7 @@ public class OEDiscreteRangeSingle extends OEDiscreteRange {
 	// Friendly marshal object, internal.
 	// The friendly form is an array whose first element is one of the keys.  An empty array is a null object.
 
+	@Override
 	protected void do_marshal_friendly (MarshalWriter writer, String name) {
 		int n = 2;
 		writer.marshalArrayBegin (name, n);
@@ -310,11 +311,66 @@ public class OEDiscreteRangeSingle extends OEDiscreteRange {
 	// Friendly unmarshal object, internal.
 	// The caller has already started unmarshalling the array, and supplied the array size n.
 
+	@Override
 	protected void do_umarshal_friendly (MarshalReader reader, int n) {
 		if (n != 2) {
 			throw new MarshalException ("OEDiscreteRangeSingle.do_umarshal_friendly: Invalid array length: n = " + n);
 		}
 		range_value = reader.unmarshalDouble (null);
+		return;
+	}
+
+
+
+
+	// Marshal object with external version, internal.
+	// This is called with the map already open.  It must write the MF_TAG_KIND value.
+
+	@Override
+	protected void do_marshal_xver (MarshalWriter writer, int xver) {
+
+		switch (xver) {
+
+		default:
+			throw new MarshalException ("OEDiscreteRangeSingle.do_marshal_xver: Unknown version code: version = " + xver);
+
+		// Version 1
+
+		case XVER_1: {
+
+			// Write kind and parameters
+
+			writer.marshalString (MF_TAG_KIND, MF_KEY_SINGLE);
+			writer.marshalDouble (MF_TAG_VALUE, range_value);
+		}
+		break;
+
+		}
+		return;
+	}
+
+	// Unmarshal object with external version, internal.
+	// This is called with the map already open.  The MF_TAG_KIND value has already been read.
+
+	@Override
+	protected void do_umarshal_xver (MarshalReader reader, int xver) {
+
+		switch (xver) {
+
+		default:
+			throw new MarshalException ("OEDiscreteRangeSingle.do_umarshal_xver: Unknown version code: version = " + xver);
+		
+		// Version 1
+
+		case XVER_1: {
+
+			// Read parameters
+
+			range_value = reader.unmarshalDouble (MF_TAG_VALUE);
+		}
+		break;
+
+		}
 		return;
 	}
 

@@ -378,11 +378,24 @@ public abstract class OEDiscreteRange {
 
 
 
-	// Friendly marshal key.
+	// Friendly marshal keys.
 
+	protected static final String MF_KEY_NULL = "null";
 	protected static final String MF_KEY_SINGLE = "single";
 	protected static final String MF_KEY_LINEAR = "linear";
 	protected static final String MF_KEY_LOG = "log";
+
+	// Friendly marshal tags.
+
+	protected static final String MF_TAG_KIND = "kind";
+	protected static final String MF_TAG_VALUE = "value";
+	protected static final String MF_TAG_NUM = "num";
+	protected static final String MF_TAG_MIN = "min";
+	protected static final String MF_TAG_MAX = "max";
+
+	// Friendly marshal external version numbers.
+
+	public static final int XVER_1 = 85001;
 
 	// Friendly marshal object, internal.
 	// The friendly form is an array whose first element is one of the keys.  An empty array is a null object.
@@ -424,6 +437,13 @@ public abstract class OEDiscreteRange {
 			default:
 				throw new MarshalException ("OEDiscreteRange.unmarshal_friendly: Unknown key: key = " + key);
 
+			case MF_KEY_NULL:
+				result = null;
+				if (n != 1) {
+					throw new MarshalException ("OEDiscreteRange.unmarshal_friendly: Invalid array length: n = " + n);
+				}
+				break;
+
 			case MF_KEY_SINGLE:
 				result = new OEDiscreteRangeSingle();
 				result.do_umarshal_friendly (reader, n);
@@ -442,6 +462,71 @@ public abstract class OEDiscreteRange {
 		}
 
 		reader.unmarshalArrayEnd ();
+		return result;
+	}
+
+
+
+
+	// Marshal object with external version, internal.
+	// This is called with the map already open.  It must write the MF_TAG_KIND value.
+
+	protected abstract void do_marshal_xver (MarshalWriter writer, int xver);
+
+	// Unmarshal object with external version, internal.
+	// This is called with the map already open.  The MF_TAG_KIND value has already been read.
+
+	protected abstract void do_umarshal_xver (MarshalReader reader, int xver);
+
+	// Marshal object with external version, polymorphic.
+
+	public static void marshal_xver (MarshalWriter writer, String name, int xver, OEDiscreteRange obj) {
+		writer.marshalMapBegin (name);
+
+		if (obj == null) {
+			writer.marshalString (MF_TAG_KIND, MF_KEY_NULL);
+		} else {
+			obj.do_marshal_xver (writer, xver);
+		}
+
+		writer.marshalMapEnd ();
+		return;
+	}
+
+	// Unmarshal object with external version, polymorphic.
+
+	public static OEDiscreteRange unmarshal_xver (MarshalReader reader, String name, int xver) {
+		OEDiscreteRange result = null;
+
+		reader.unmarshalMapBegin (name);
+		String key = reader.unmarshalString (MF_TAG_KIND);
+
+		switch (key) {
+
+		default:
+			throw new MarshalException ("OEDiscreteRange.unmarshal_xver: Unknown key: key = " + key);
+
+		case MF_KEY_NULL:
+			result = null;
+			break;
+
+		case MF_KEY_SINGLE:
+			result = new OEDiscreteRangeSingle();
+			result.do_umarshal_xver (reader, xver);
+			break;
+
+		case MF_KEY_LINEAR:
+			result = new OEDiscreteRangeLinear();
+			result.do_umarshal_xver (reader, xver);
+			break;
+
+		case MF_KEY_LOG:
+			result = new OEDiscreteRangeLog();
+			result.do_umarshal_xver (reader, xver);
+			break;
+		}
+
+		reader.unmarshalMapEnd ();
 		return result;
 	}
 
@@ -572,6 +657,27 @@ public abstract class OEDiscreteRange {
 				System.out.println ("");
 				System.out.println (range2.toString());
 
+				// External version marshal to JSON
+
+				store = new MarshalImpJsonWriter();
+				OEDiscreteRange.marshal_xver (store, null, OEDiscreteRange.XVER_1, range);
+				store.check_write_complete ();
+				json_string = store.get_json_string();
+
+				System.out.println ("");
+				System.out.println (json_string);
+
+				// External version unmarshal from JSON
+			
+				range2 = null;
+
+				retrieve = new MarshalImpJsonReader (json_string);
+				range2 = OEDiscreteRange.unmarshal_xver (retrieve, null, OEDiscreteRange.XVER_1);
+				retrieve.check_read_complete ();
+
+				System.out.println ("");
+				System.out.println (range2.toString());
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -693,6 +799,27 @@ public abstract class OEDiscreteRange {
 				System.out.println ("");
 				System.out.println (range2.toString());
 
+				// External version marshal to JSON
+
+				store = new MarshalImpJsonWriter();
+				OEDiscreteRange.marshal_xver (store, null, OEDiscreteRange.XVER_1, range);
+				store.check_write_complete ();
+				json_string = store.get_json_string();
+
+				System.out.println ("");
+				System.out.println (json_string);
+
+				// External version unmarshal from JSON
+			
+				range2 = null;
+
+				retrieve = new MarshalImpJsonReader (json_string);
+				range2 = OEDiscreteRange.unmarshal_xver (retrieve, null, OEDiscreteRange.XVER_1);
+				retrieve.check_read_complete ();
+
+				System.out.println ("");
+				System.out.println (range2.toString());
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -809,6 +936,27 @@ public abstract class OEDiscreteRange {
 
 				retrieve = new MarshalImpJsonReader (json_string);
 				range2 = OEDiscreteRange.unmarshal_friendly (retrieve, null);
+				retrieve.check_read_complete ();
+
+				System.out.println ("");
+				System.out.println (range2.toString());
+
+				// External version marshal to JSON
+
+				store = new MarshalImpJsonWriter();
+				OEDiscreteRange.marshal_xver (store, null, OEDiscreteRange.XVER_1, range);
+				store.check_write_complete ();
+				json_string = store.get_json_string();
+
+				System.out.println ("");
+				System.out.println (json_string);
+
+				// External version unmarshal from JSON
+			
+				range2 = null;
+
+				retrieve = new MarshalImpJsonReader (json_string);
+				range2 = OEDiscreteRange.unmarshal_xver (retrieve, null, OEDiscreteRange.XVER_1);
 				retrieve.check_read_complete ();
 
 				System.out.println ("");

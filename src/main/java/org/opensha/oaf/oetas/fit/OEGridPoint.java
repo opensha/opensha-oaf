@@ -5,6 +5,8 @@ import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
 
 import org.opensha.oaf.oetas.OEConstants;
+import org.opensha.oaf.util.TestArgs;
+
 import static org.opensha.oaf.util.SimpleUtils.rndd;
 import static org.opensha.oaf.util.SimpleUtils.rndf;
 
@@ -194,6 +196,7 @@ public class OEGridPoint {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 119001;
+	public static final int XVER_1 = 119001;
 
 	private static final String M_VERSION_NAME = "OEGridPoint";
 
@@ -299,8 +302,109 @@ public class OEGridPoint {
 
 
 
+	// Marshal object with external version, internal.
+	// This is called with the map already open.
+
+	private void do_marshal_xver (MarshalWriter writer, int xver) {
+
+		switch (xver) {
+
+		default:
+			throw new MarshalException ("OEGridPoint.do_marshal_xver: Unknown version code: version = " + xver);
+
+		// Version 1
+
+		case XVER_1: {
+
+			writer.marshalDouble ("b"    , b    );
+			writer.marshalDouble ("alpha", alpha);
+			writer.marshalDouble ("c"    , c    );
+			writer.marshalDouble ("p"    , p    );
+			writer.marshalDouble ("n"    , n    );
+			writer.marshalDouble ("zams" , zams );
+			writer.marshalDouble ("zmu"  , zmu  );
+
+		}
+		break;
+
+		}
+		return;
+	}
+
+	// Unmarshal object with external version, internal.
+	// This is called with the map already open.
+
+	private void do_umarshal_xver (MarshalReader reader, int xver) {
+
+		switch (xver) {
+
+		default:
+			throw new MarshalException ("OEGridPoint.do_umarshal_xver: Unknown version code: version = " + xver);
+		
+		// Version 1
+
+		case XVER_1: {
+
+			b     = reader.unmarshalDouble ("b"    );
+			alpha = reader.unmarshalDouble ("alpha");
+			c     = reader.unmarshalDouble ("c"    );
+			p     = reader.unmarshalDouble ("p"    );
+			n     = reader.unmarshalDouble ("n"    );
+			zams  = reader.unmarshalDouble ("zams" );
+			zmu   = reader.unmarshalDouble ("zmu"  );
+
+		}
+		break;
+
+		}
+		return;
+	}
+
+	// Marshal object with external version, polymorphic.
+
+	public void marshal_xver (MarshalWriter writer, String name, int xver) {
+		writer.marshalMapBegin (name);
+		do_marshal_xver (writer, xver);
+		writer.marshalMapEnd ();
+		return;
+	}
+
+	// Unmarshal object with external version, polymorphic.
+
+	public OEGridPoint unmarshal_xver (MarshalReader reader, String name, int xver) {
+		reader.unmarshalMapBegin (name);
+		do_umarshal_xver (reader, xver);
+		reader.unmarshalMapEnd ();
+		return this;
+	}
+
+
+
+
 	//----- Testing -----
 
+
+
+
+	public static void main(String[] args) {
+		try {
+		TestArgs testargs = new TestArgs (args, "OEGridPoint");
+
+
+
+
+
+
+
+		
+		// Unrecognized subcommand, or exception
+
+		testargs.unrecognized_test();
+		} catch (Exception e) {
+		e.printStackTrace();
+		}
+		return;
+	}
 
 
 

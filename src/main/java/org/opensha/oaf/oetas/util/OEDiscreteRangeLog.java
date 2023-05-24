@@ -405,6 +405,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 	// Friendly marshal object, internal.
 	// The friendly form is an array whose first element is one of the keys.  An empty array is a null object.
 
+	@Override
 	protected void do_marshal_friendly (MarshalWriter writer, String name) {
 		int n = 4;
 		writer.marshalArrayBegin (name, n);
@@ -419,6 +420,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 	// Friendly unmarshal object, internal.
 	// The caller has already started unmarshalling the array, and supplied the array size n.
 
+	@Override
 	protected void do_umarshal_friendly (MarshalReader reader, int n) {
 		if (n != 4) {
 			throw new MarshalException ("OEDiscreteRangeLinear.do_umarshal_friendly: Invalid array length: n = " + n);
@@ -454,6 +456,90 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 			}
 		}
 
+		return;
+	}
+
+
+
+
+	// Marshal object with external version, internal.
+	// This is called with the map already open.  It must write the MF_TAG_KIND value.
+
+	@Override
+	protected void do_marshal_xver (MarshalWriter writer, int xver) {
+
+		switch (xver) {
+
+		default:
+			throw new MarshalException ("OEDiscreteRangeLog.do_marshal_xver: Unknown version code: version = " + xver);
+
+		// Version 1
+
+		case XVER_1: {
+
+			// Write kind and parameters
+
+			writer.marshalString (MF_TAG_KIND, MF_KEY_LOG);
+			writer.marshalInt    (MF_TAG_NUM, range_size);
+			writer.marshalDouble (MF_TAG_MIN, range_min);
+			writer.marshalDouble (MF_TAG_MAX, range_max);
+		}
+		break;
+
+		}
+		return;
+	}
+
+	// Unmarshal object with external version, internal.
+	// This is called with the map already open.  The MF_TAG_KIND value has already been read.
+
+	@Override
+	protected void do_umarshal_xver (MarshalReader reader, int xver) {
+
+		switch (xver) {
+
+		default:
+			throw new MarshalException ("OEDiscreteRangeLog.do_umarshal_xver: Unknown version code: version = " + xver);
+		
+		// Version 1
+
+		case XVER_1: {
+
+			// Read parameters
+
+			range_size = reader.unmarshalInt (MF_TAG_NUM);
+			double the_range_min = reader.unmarshalDouble (MF_TAG_MIN);
+			double the_range_max = reader.unmarshalDouble (MF_TAG_MAX);
+
+			if (!( range_size >= 1 )) {
+				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal_xver: Range size is non-positive: range_size = " + range_size);
+			}
+
+			if (!( the_range_min > 0.0 && the_range_max > 0.0 )) {
+				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal_xver: Range limits are non-positive: range_min = " + the_range_min + ", range_max = " + the_range_max);
+			}
+
+			if (the_range_min <= the_range_max) {
+				if (range_size == 1) {
+					range_min = the_range_min;
+					range_max = the_range_min;
+				} else {
+					range_min = the_range_min;
+					range_max = the_range_max;
+				}
+			} else {
+				if (range_size == 1) {
+					range_min = the_range_max;
+					range_max = the_range_max;
+				} else {
+					range_min = the_range_max;
+					range_max = the_range_min;
+				}
+			}
+		}
+		break;
+
+		}
 		return;
 	}
 
