@@ -6,6 +6,10 @@ package org.opensha.oaf.oetas;
 
 public class OEConstants {
 
+
+	//----- Fixed constants -----
+
+
 	// The number of milliseconds in a day.
 
 	public static final double C_MILLIS_PER_DAY = 86400000.0;
@@ -32,6 +36,12 @@ public class OEConstants {
 	// The natural logarithm of 10.
 
 	public static final double C_LOG_10 = 2.3025850929940457;
+
+
+
+
+	//----- Magnitudes -----
+
 
 
 
@@ -79,6 +89,12 @@ public class OEConstants {
 
 
 
+
+	//----- Times -----
+
+
+
+
 	// A time value or difference much larger than any actual value, in days.
 	// (But still much smaller than the range of double.)
 
@@ -107,6 +123,12 @@ public class OEConstants {
 
 
 
+
+	//----- Negligability thresholds -----
+
+
+
+
 	// A duration so extremely small it is considered to be zero.
 	// Note: This is used to avoid divide-by-zero in formulas that have a
 	// duration in the denominator; it does not mean that durations larger
@@ -130,6 +152,12 @@ public class OEConstants {
 	// An expected count of earthquakes small enough to treat as zero.
 
 	public static final double SMALL_EXPECTED_COUNT = 0.001;
+
+
+
+
+	//----- Accumulation and extrapolation -----
+
 
 
 
@@ -331,6 +359,12 @@ public class OEConstants {
 
 
 
+
+	//----- Catalog generation -----
+
+
+
+
 	// Negligably small time interval, in days, when generating catalogs.
 
 	public static final double GEN_TIME_EPS = 0.00001;
@@ -338,14 +372,6 @@ public class OEConstants {
 	// Negligably small magnitude interval, when generating catalogs.
 
 	public static final double GEN_MAG_EPS = 0.0002;
-
-	// Negligably small time interval, in days, when fitting parameters.
-
-	public static final double FIT_TIME_EPS = 1.0e-7;
-
-	// Negligably small magnitude interval, when fitting parameters.
-
-	public static final double FIT_MAG_EPS = 0.001;
 
 	// Default maximum number of generations, when generating catalogs.
 
@@ -362,6 +388,51 @@ public class OEConstants {
 	// Value to disable use of magnitude excess for selecting stop time.
 
 	public static final double ZERO_MAG_EXCESS = 0.0;
+
+
+
+
+	// Catalog result codes.
+
+	public static final int CAT_RESULT_MIN = 0;				// Must be 0 so these can be used as array indexes
+	public static final int CAT_RESULT_OK = 0;				// Success
+	public static final int CAT_RESULT_EARLY_STOP = 1;		// Success, but catalog stopped before end time
+	public static final int CAT_RESULT_CAT_TOO_LARGE = 2;	// Catalog is too large
+	public static final int CAT_RESULT_TOO_MANY_GEN = 3;	// Catalog has too many generations
+	public static final int CAT_RESULT_GEN_TOO_LARGE = 4;	// Generation is too large
+	public static final int CAT_RESULT_MAX = 4;
+
+	// Return true if the result code indicates success
+
+	public static boolean is_cat_result_success (int cat_result) {
+		switch (cat_result) {
+		case CAT_RESULT_OK:
+		case CAT_RESULT_EARLY_STOP:
+			return true;
+		}
+		return false;
+	}
+
+	// Return a string identifying the result code
+
+	public static String cat_result_to_string (int cat_result) {
+		switch (cat_result) {
+		case CAT_RESULT_OK: return "CAT_RESULT_OK";
+		case CAT_RESULT_EARLY_STOP: return "CAT_RESULT_EARLY_STOP";
+		case CAT_RESULT_CAT_TOO_LARGE: return "CAT_RESULT_CAT_TOO_LARGE";
+		case CAT_RESULT_TOO_MANY_GEN: return "CAT_RESULT_TOO_MANY_GEN";
+		case CAT_RESULT_GEN_TOO_LARGE: return "CAT_RESULT_GEN_TOO_LARGE";
+		}
+		return "CAT_RESULT_INVALID(" + cat_result + ")";
+	}
+
+
+
+
+	//----- Source grouping -----
+
+
+
 
 	// Negligably small time interval, in days, when grouping sources.
 
@@ -401,39 +472,61 @@ public class OEConstants {
 
 
 
-	// Catalog result codes.
 
-	public static final int CAT_RESULT_MIN = 0;				// Must be 0 so these can be used as array indexes
-	public static final int CAT_RESULT_OK = 0;				// Success
-	public static final int CAT_RESULT_EARLY_STOP = 1;		// Success, but catalog stopped before end time
-	public static final int CAT_RESULT_CAT_TOO_LARGE = 2;	// Catalog is too large
-	public static final int CAT_RESULT_TOO_MANY_GEN = 3;	// Catalog has too many generations
-	public static final int CAT_RESULT_GEN_TOO_LARGE = 4;	// Generation is too large
-	public static final int CAT_RESULT_MAX = 4;
+	//----- Incompleteness function construction -----
 
-	// Return true if the result code indicates success
 
-	public static boolean is_cat_result_success (int cat_result) {
-		switch (cat_result) {
-		case CAT_RESULT_OK:
-		case CAT_RESULT_EARLY_STOP:
-			return true;
-		}
-		return false;
-	}
 
-	// Return a string identifying the result code
 
-	public static String cat_result_to_string (int cat_result) {
-		switch (cat_result) {
-		case CAT_RESULT_OK: return "CAT_RESULT_OK";
-		case CAT_RESULT_EARLY_STOP: return "CAT_RESULT_EARLY_STOP";
-		case CAT_RESULT_CAT_TOO_LARGE: return "CAT_RESULT_CAT_TOO_LARGE";
-		case CAT_RESULT_TOO_MANY_GEN: return "CAT_RESULT_TOO_MANY_GEN";
-		case CAT_RESULT_GEN_TOO_LARGE: return "CAT_RESULT_GEN_TOO_LARGE";
-		}
-		return "CAT_RESULT_INVALID(" + cat_result + ")";
-	}
+	// Default incompleteness discretization delta between discrete values.  See OEMagCompFnDiscFGH.make_disc_even().
+
+	public static final double DEF_DISC_DELTA = 0.2;
+
+	// Default maximum number of ruptures that can have magnitudes >= magCat, or 0 if no limit.
+
+	public static final int DEF_MAG_CAT_COUNT = 3000;
+
+	// Default maximum number of eligible (to generate incompleteness) ruptures, or 0 if no limit.
+
+	public static final int DEF_ELIGIBLE_COUNT = 5;
+
+	// Default interval duration limit ratio, must be >= 0.
+
+	public static final double DEF_DURLIM_RATIO = 0.5;
+
+	// Default interval duration limit minimum, in days, must be > 0.
+
+	public static final double DEF_DURLIM_MIN = 0.00001;
+
+	// Default interval duration limit maximum, in days, must be >= durlim_min.
+
+	public static final double DEF_DURLIM_MAX= 3.0;
+
+	// Default maximum number of ruptures allowed before the first required split, or 0 or -1 if no limit.
+	// If non-zero, them DEF_MAG_CAT_COUNT applies only to ruptures after the first required split.
+	// If zero, then DEF_MAG_CAT_COUNT applies to all ruptures.
+
+	public static final int DEF_BEFORE_MAX_COUNT = 50;
+
+	// Default option to join intervals whose magnitude of completeness is magCat: 0 = no join, 1 = join.
+
+	public static final int DEF_MAG_CAT_INT_JOIN = 1;
+
+
+
+
+	//----- Helmstetter incompleteness -----
+
+
+
+
+	// Value of Helmstetter G that disables incompleteness.
+
+	public static final double HELM_CAPG_DISABLE = 100.0;
+
+	// Use capG > HELM_CAPG_DISABLE_CHECK to check for incompleteness disabled.
+
+	public static final double HELM_CAPG_DISABLE_CHECK = 99.999;
 
 
 
@@ -503,6 +596,12 @@ public class OEConstants {
 
 
 
+
+	//----- Model parameters to appear in the product -----
+
+
+
+
 	// Model parameter keys.
 
 	public static final String MKEY_MAG_MAIN = "magMain";
@@ -514,6 +613,21 @@ public class OEConstants {
 
 
 
+	//----- Parameter fitting -----
+
+
+
+
+	// Negligably small time interval, in days, when fitting parameters.
+
+	public static final double FIT_TIME_EPS = 1.0e-7;
+
+	// Negligably small magnitude interval, when fitting parameters.
+
+	public static final double FIT_MAG_EPS = 0.001;
+
+
+
 	// Options to select the magnitude range for rupture likelihood, and for
 	// interval productivity and likelihood, when fitting parameters.
 
@@ -522,6 +636,15 @@ public class OEConstants {
 	public static final int LMR_OPT_MAGCAT_INFINITY = 3;	// From catalog magnitude of completeness to infinity.
 	public static final int LMR_OPT_MAGCAT_MAG_MAX = 4;		// From catalog magnitude of completeness to maximum simulation magnitude.
 
+
+
+	// Default value of the option to select magnitude range for log-likelihood calculation (LMR_OPT_XXXX).
+
+	public static final int DEF_LMR_OPT = 1;		// LMR_OPT_MCT_INFINITY
+
+	// Default value of the option to use intervals to fill in below magnitude of completness.
+
+	public static final boolean DEF_F_INTERVALS = true;
 
 
 
@@ -543,6 +666,21 @@ public class OEConstants {
 
 
 
+	// Default minimum time interval to allow for parameter fitting, for branch ratio calculation.
+
+	public static final double DEF_TINT_BR_FITTING = 365.0;
+
+	// Default additional time interval to allow for forecast simulation, for branch ratio calculation.
+
+	public static final double DEF_TINT_BR_FORECAST = 0.0;
+
+
+
+
+	//----- Bayesian weighting -----
+
+
+
 
 	// Bayesian prior weight for the Bayesian model.
 
@@ -556,6 +694,20 @@ public class OEConstants {
 
 	public static final double BAY_WT_GENERIC = 2.0;
 
+	// Bayesian prior weight minimum and maximum values to allow for invariant check.
+
+	public static final double BAY_WT_MIN = -0.000001;
+	public static final double BAY_WT_MAX =  2.000001;
+
+	// Default time in which to apply early Bayesian prior weight, in days.
+
+	public static final double DEF_EARLY_BAY_TIME = 0.125;
+
+
+
+
+	//----- b-values -----
+
 
 
 
@@ -566,6 +718,11 @@ public class OEConstants {
 	// Use b < UNKNOWN_B_VALUE_CHECK to test if b contains UNKNOWN_B_VALUE.
 
 	public static final double UNKNOWN_B_VALUE_CHECK = 0.0;
+
+
+
+
+	//----- Parameter grid, likelihood truncation, and dithering -----
 
 
 

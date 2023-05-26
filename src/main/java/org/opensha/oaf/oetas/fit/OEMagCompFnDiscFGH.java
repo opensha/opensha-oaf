@@ -23,6 +23,8 @@ import static org.opensha.oaf.oetas.OEConstants.TINY_MAG_DELTA;			// very small 
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS;			// very large time value
 import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS_CHECK;	// use x >= HUGE_TIME_DAYS_CHECK to check for HUGE_TIME_DAYS
 import static org.opensha.oaf.oetas.OEConstants.LOG10_HUGE_TIME_DAYS;	// log10 of very large time value
+import static org.opensha.oaf.oetas.OEConstants.HELM_CAPG_DISABLE;		// value of Helmstetter G to disable incompleteness
+import static org.opensha.oaf.oetas.OEConstants.HELM_CAPG_DISABLE_CHECK;	// use capG > HELM_CAPG_DISABLE_CHECK to check for HELM_CAPG_DISABLE
 
 
 /**
@@ -135,7 +137,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 	// protected double magCat;		// inherited
 
 	// Helmstetter Parameters.
-	// Use capG = 100.0 to disable time-dependent magnitude of completeness.
+	// Use capG = 100.0 (== HELM_CAPG_DISABLE) to disable time-dependent magnitude of completeness.
 
 	private double capF;
 	private double capG;
@@ -1516,7 +1518,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 			// If time-independent ...
 
-			if (capG > 99.999) {
+			if (capG > HELM_CAPG_DISABLE_CHECK) {
 			
 				// If want to split at this time ...
 
@@ -1947,7 +1949,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		// If there is no limit, or the limit is large, or there is no time-dependent
 		// magnitude of completeness, then just use the normal constructor
 
-		if (original_mag_cat_count <= 0 || original_mag_cat_count >= rup_list.size() || params.capG > 99.999) {
+		if (original_mag_cat_count <= 0 || original_mag_cat_count >= rup_list.size() || params.capG > HELM_CAPG_DISABLE_CHECK) {
 			return new OEMagCompFnDiscFGH (params, rup_list, accept_list, reject_list);
 		}
 

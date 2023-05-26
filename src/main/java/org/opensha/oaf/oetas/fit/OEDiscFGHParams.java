@@ -326,6 +326,57 @@ public class OEDiscFGHParams {
 
 
 
+	// Set all values, for common parameters.
+
+	public OEDiscFGHParams set_to_common (
+		double magCat,
+		double capF,
+		double capG,
+		double capH,
+		double t_range_begin,
+		double t_range_end,
+		double disc_delta,
+		int mag_cat_count,
+		int eligible_count,
+		OEMagCompFnDisc.SplitFn split_fn,
+		double t_interval_begin,
+		int before_max_count,
+		int mag_cat_int_join
+	) {
+
+		this.magCat         = magCat;
+		this.capF           = capF;
+		this.capG           = capG;
+		this.capH           = capH;
+		this.t_range_begin  = t_range_begin;
+		this.t_range_end    = t_range_end;
+
+		this.mag_eps        = OEConstants.FIT_MAG_EPS;
+		this.time_eps       = OEConstants.FIT_TIME_EPS;
+		this.disc_base      = 0.005;	// put base in between mags to 2 decimal places
+		this.disc_delta     = disc_delta;
+		this.disc_round     = 0.5;		// round to nearest
+		this.disc_gap       = disc_delta * 0.25;
+
+		this.mag_cat_count  = mag_cat_count;
+		this.eligible_mag   = NO_MAG_NEG;
+		this.eligible_count = eligible_count;
+		this.division_mag   = NO_MAG_NEG;
+		this.division_count = 0;
+		this.split_fn       = split_fn;
+
+		this.t_req_splits = new double[2];
+		this.t_req_splits[0] = t_interval_begin;
+		this.t_req_splits[1] = t_range_end;
+		this.before_max_count = before_max_count;
+		this.mag_cat_int_join = mag_cat_int_join;
+
+		return this;
+	}
+
+
+
+
 	// Set values to make all ruptures eligible.
 
 	public final OEDiscFGHParams set_eligible_all () {

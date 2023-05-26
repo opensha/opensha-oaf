@@ -8,6 +8,9 @@ import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
 
+import static org.opensha.oaf.oetas.OEConstants.HELM_CAPG_DISABLE;		// value of Helmstetter G to disable incompleteness
+import static org.opensha.oaf.oetas.OEConstants.HELM_CAPG_DISABLE_CHECK;	// use capG > HELM_CAPG_DISABLE_CHECK to check for HELM_CAPG_DISABLE
+
 
 /**
  * Time-dependent magnitude of completeness function, for operational ETAS.
@@ -84,11 +87,11 @@ public abstract class OEMagCompFn {
 
 
 	// Construct a function which is defined by F,G,H parameters, or a constant.
-	// If capG = 100.0, then return a constant function whose value is always magCat.
+	// If capG = 100.0 (== HELM_CAPG_DISABLE), then return a constant function whose value is always magCat.
 	// Otherwise, return the F,G,H function.
 
 	public static OEMagCompFn makeFGHOrConstant (double magCat, double capF, double capG, double capH) {
-		if (capG > 99.999) {
+		if (capG > HELM_CAPG_DISABLE_CHECK) {
 			return new OEMagCompFnConstant (magCat);
 		}
 		return new OEMagCompFnFGH (magCat, capF, capG, capH);
