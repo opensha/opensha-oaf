@@ -96,10 +96,12 @@ public class OESimulationParams {
 	public int range_accum_option;
 
 	// Minimum relative magnitude for ranging, relative to mainshock or scaling magnitude.
+	// For ranging v2 and v3, used to compute a placeholder mag_min_sim which is disregarded.
 
 	public double range_min_rel_mag;
 
 	// Maximum relative magnitude for ranging, relative to mainshock or scaling magnitude.
+	// For ranging v2 and v3, used to compute a placeholder mag_max_sim which is disregarded.
 
 	public double range_max_rel_mag;
 
@@ -174,10 +176,12 @@ public class OESimulationParams {
 	public double ranv2_max_rel_mag;
 
 	// Minimum magnitude for ranging.
+	// For ranging v3, it is mag_min_lo and mag_max_lo, which are the lowest allowed mags.
 
 	public double ranv2_min_mag;
 
 	// Maximum magnitude for ranging.
+	// For ranging v3, it is mag_min_hi and mag_max_hi, which are the highest allowed mags.
 
 	public double ranv2_max_mag;
 
@@ -187,10 +191,12 @@ public class OESimulationParams {
 
 	// Generation count for branch ratio handling, for ranging.  Must be >= 2.
 	// Note: 2 indicates to use the direct aftershocks of the seeds.
+	// For ranging v3, it is madj_gen_br, the generation count used when estimating max mag.
 
 	public int ranv2_gen_br;
 
-	// De-rating factor for branch ration handling, for ranging.  Should be between 0 and 1 (and close to 1).
+	// De-rating factor for branch ratio handling, for ranging.  Should be between 0 and 1 (and close to 1).
+	// For ranging v3, it is madj_derate_br, the de-rating factor used when estimating max mag.
 
 	public double ranv2_derate_br;
 
@@ -201,6 +207,7 @@ public class OESimulationParams {
 
 	// Minimum number of direct aftershocks of the seeds, for ranging, or 0 if no requirement.
 	// Used in selecting the minimum magnitude.
+	// For ranging v3, it is gen_size_target, which is the target number of direct aftershocks of the seeds.
 
 	public int ranv2_direct_size;
 
@@ -211,10 +218,12 @@ public class OESimulationParams {
 
 	// Allowable fraction of catalogs to exceed max mag, for ranging.  Must be > 0.0 (and close to 0).
 	// Used in selecting the maximum magnitude.
+	// For ranging v3, it is madj_exceed_fr, the faction of exceedence used when estimating max mag.
 
 	public double ranv2_exceed_fraction;
 
 	// Magnitude excess to use in simulations, for ranging.
+	// For ranging v3, it is mag_excess, which if positive discards catalogs where an earthquake exceeds max mag.
 
 	public double ranv2_mag_excess;
 

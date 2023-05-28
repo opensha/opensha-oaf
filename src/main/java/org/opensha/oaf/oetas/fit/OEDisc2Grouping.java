@@ -145,6 +145,16 @@ public class OEDisc2Grouping {
 		public double get_max_width (double t) {
 			return Math.max (min_width, (width_base_time - t) * width_ratio);
 		}
+
+		// Display our contents.
+
+		@Override
+		public String toString() {
+			return "SpanWidthFcnRatio[width_base_time = " + width_base_time
+				+ ", width_ratio = " + width_ratio
+				+ ", min_width = " + min_width
+				+ "]";
+		}
 	}
 
 
@@ -177,6 +187,15 @@ public class OEDisc2Grouping {
 		@Override
 		public double get_max_width (double t) {
 			return wfcn.get_max_width (t - start_time);
+		}
+
+		// Display our contents.
+
+		@Override
+		public String toString() {
+			return "SpanWidthFcnShift[start_time = " + start_time
+				+ ", wfcn = " + wfcn.toString()
+				+ "]";
 		}
 	}
 
@@ -240,6 +259,14 @@ public class OEDisc2Grouping {
 				width = max_width;
 			}
 			return width;
+		}
+
+		// Display our contents.
+
+		@Override
+		public String toString() {
+			return "RupWidthFcnRatio[ratio = " + ratio
+				+ "]";
 		}
 	}
 
@@ -309,6 +336,18 @@ public class OEDisc2Grouping {
 			}
 			return width;
 		}
+
+		// Display our contents.
+
+		@Override
+		public String toString() {
+			return "RupWidthFcnTaper[lo_ratio = " + lo_ratio
+				+ ", hi_ratio = " + hi_ratio
+				+ ", hi_mag_delta = " + hi_mag_delta
+				+ ", taper_mag_delta = " + taper_mag_delta
+				+ ", init_mag = " + init_mag
+				+ "]";
+		}
 	}
 
 
@@ -342,6 +381,13 @@ public class OEDisc2Grouping {
 		public boolean accept_source (int i_src) {
 			return true;
 		}
+
+		// Display our contents.
+
+		@Override
+		public String toString() {
+			return "AcceptSrcFcnNone[]";
+		}
 	}
 
 
@@ -361,6 +407,13 @@ public class OEDisc2Grouping {
 		@Override
 		public boolean accept_source (int i_src) {
 			return false;
+		}
+
+		// Display our contents.
+
+		@Override
+		public String toString() {
+			return "AcceptSrcFcnAll[]";
 		}
 	}
 
@@ -391,6 +444,15 @@ public class OEDisc2Grouping {
 				return true;
 			}
 			return false;
+		}
+
+		// Display our contents.
+
+		@Override
+		public String toString() {
+			return "AcceptSrcFcnRange[accept_begin = " + accept_begin
+				+ ", accept_end = " + accept_end
+				+ "]";
 		}
 	}
 
@@ -427,6 +489,16 @@ public class OEDisc2Grouping {
 				return true;
 			}
 			return false;
+		}
+
+		// Display our contents.
+
+		@Override
+		public String toString() {
+			return "AcceptSrcFcnRangeExc[accept_begin = " + accept_begin
+				+ ", accept_end = " + accept_end
+				+ ", a_exclude.length = " + a_exclude.length
+				+ "]";
 		}
 	}
 
@@ -468,6 +540,17 @@ public class OEDisc2Grouping {
 				return true;
 			}
 			return false;
+		}
+
+		// Display our contents.
+
+		@Override
+		public String toString() {
+			return "AcceptSrcFcnRangeLevel[accept_begin = " + accept_begin
+				+ ", accept_end = " + accept_end
+				+ ", a_level.length = " + a_level.length
+				+ ", threshold = " + threshold
+				+ "]";
 		}
 	}
 

@@ -18,24 +18,24 @@ public class OEGridParams {
 
 	//----- Parameter ranges -----
 
-	// Gutenberg-Richter parameter, b-value.
+	// The range of Gutenberg-Richter parameter, b-value.
 
 	public OEDiscreteRange b_range;
 
-	// ETAS intensity parameter, alpha-value.
+	// The range of ETAS intensity parameter, alpha-value.
 	// Can be null to force alpha == b.
 
 	public OEDiscreteRange alpha_range;
 
-	// The range of Omori c-values.
+	// The range of Omori c-value.
 
 	public OEDiscreteRange c_range;
 
-	// The range of Omori p-values.
+	// The range of Omori p-value.
 
 	public OEDiscreteRange p_range;
 
-	// The range of branch ratios, n-value.
+	// The range of branch ratio, n-value.
 	// This controls the productivity of secondary triggering.
 
 	public OEDiscreteRange n_range;
@@ -44,7 +44,7 @@ public class OEGridParams {
 
 	public OEDiscreteRange zams_range;
 
-	// The range of mainshock productivity, mu-value, for reference magnitude equal to ZMU_MREF.
+	// The range of background rate, mu-value, for reference magnitude equal to ZMU_MREF.
 	// Can be null to force zmu = 0.0.
 
 	public OEDiscreteRange zmu_range;

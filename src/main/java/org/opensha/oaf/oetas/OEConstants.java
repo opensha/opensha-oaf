@@ -1,5 +1,7 @@
 package org.opensha.oaf.oetas;
 
+import org.opensha.oaf.oetas.util.OEDiscreteRange;
+
 
 // Holds constants used by Operational ETAS.
 // Author: Michael Barall 11/27/2019.
@@ -631,10 +633,12 @@ public class OEConstants {
 	// Options to select the magnitude range for rupture likelihood, and for
 	// interval productivity and likelihood, when fitting parameters.
 
+	public static final int LMR_OPT_MIN = 1;				// Minimum value.
 	public static final int LMR_OPT_MCT_INFINITY = 1;		// From time-dependent magnitude of completeness to infinity.
 	public static final int LMR_OPT_MCT_MAG_MAX = 2;		// From time-dependent magnitude of completeness to maximum simulation magnitude.
 	public static final int LMR_OPT_MAGCAT_INFINITY = 3;	// From catalog magnitude of completeness to infinity.
 	public static final int LMR_OPT_MAGCAT_MAG_MAX = 4;		// From catalog magnitude of completeness to maximum simulation magnitude.
+	public static final int LMR_OPT_MAX = 4;				// Maximum value.
 
 
 
@@ -753,5 +757,128 @@ public class OEConstants {
 	// Number of pre-selected parameter sets for seeding catalogs, must be a power of 2.
 
 	public static final int DEF_SEED_SUBVOX_COUNT = 262144;	// 2^18
+
+
+
+
+	// The default range of Gutenberg-Richter parameter, b-value.
+
+	public static OEDiscreteRange def_b_range () {
+		return OEDiscreteRange.makeSingle (1.0);
+	}
+
+	// The default range of ETAS intensity parameter, alpha-value.
+	// Can be null to force alpha == b.
+
+	public static OEDiscreteRange def_alpha_range () {
+		return null;
+	}
+
+	// The default range of Omori c-value.
+
+	public static OEDiscreteRange def_c_range () {
+		return OEDiscreteRange.makeLog (21, 0.00001, 1.00000);
+	}
+
+	// The default range of Omori p-value.
+
+	public static OEDiscreteRange def_p_range () {
+		return OEDiscreteRange.makeLinear (37, 0.50, 2.00);
+	}
+
+	// The default range of branch ratio, n-value.
+	// This controls the productivity of secondary triggering.
+
+	public static OEDiscreteRange def_n_range () {
+		return OEDiscreteRange.makeLog (41, 0.01, 0.90);
+	}
+
+	// The default range of mainshock productivity, ams-value, for reference magnitude equal to ZAMS_MREF == 0.0.
+
+	public static OEDiscreteRange def_zams_range () {
+		return OEDiscreteRange.makeLinear (81, -4.50, -0.50);
+	}
+
+	// The default range of background rate, mu-value, for reference magnitude equal to ZMU_MREF.
+	// Can be null to force zmu = 0.0.
+
+	public static OEDiscreteRange def_zmu_range () {
+		//return null;
+		return OEDiscreteRange.makeSingle (0.0);
+	}
+
+
+
+
+	//----- Ensemble simulation -----
+
+
+
+
+	// Default number of catalogs.
+
+	public static final int DEF_NUM_CATALOGS = 300000;
+
+	// Default minimum acceptable number of catalogs.
+
+	public static final int DEF_MIN_NUM_CATALOGS = 150000;
+
+	// Required minimum number of catalogs.
+
+	public static final int REQ_NUM_CATALOGS = 100;
+
+
+
+	// Default target number of direct aftershocks of the seeds, for per-catalog min mag ranging, lower limit.
+
+	public static final int DEF_RAN_DIRECT_SIZE_LO = 200;
+
+	// Default target number of direct aftershocks of the seeds, for per-catalog min mag ranging, upper limit.
+	// Note: At present, ran_direct_size_hi == ran_direct_size_lo is required.
+
+	public static final int DEF_RAN_DIRECT_SIZE_HI = 200;
+
+	// Default magnitude excess to use during simulations, or 0.0 to disable.
+	// A positive value causes catalogs to be discarded if they produce an earthquake larger than max mag.
+
+	public static final double DEF_RAN_MAG_EXCESS = 0.0;
+
+	// Default generation count for branch ratio handling, for per-catalog max mag ranging.  Must be >= 2.
+	// Note: 2 indicates to use the direct aftershocks of the seeds.
+
+	public static final int DEF_RAN_GEN_BR = 20;
+
+	// Default de-rating factor for branch ratio handling, for per-catalog max mag ranging.  Should be between 0 and 1 (and close to 1).
+
+	public static final double DEF_RAN_DERATE_BR = 0.90;
+
+	// Default allowable fraction of catalogs to exceed max mag, for per-catalog max mag ranging.  Must be > 0.0 (and close to 0).
+
+	public static final double DEF_RAN_EXCEED_FRACTION = 0.02;
+
+
+
+	// The default accumulator to use, for simulations.  (See OEConstants.SEL_ACCUM_XXXX.)
+
+	public static int def_sim_accum_selection () {
+		return OEConstants.SEL_ACCUM_RATE_TIME_MAG;
+	}
+
+	// Default accumulator options, for simulations.
+	// for sim_accum_selection == SEL_ACCUM_RATE_TIME_MAG, it is the extrapolation options.
+
+	public static int def_sim_accum_option () {
+		return OEConstants.make_rate_acc_meth (
+					OEConstants.CATLEN_METH_ENTIRE,
+					OEConstants.OUTFILL_METH_PDF_DIRECT,
+					OEConstants.MAGFILL_METH_PDF_HYBRID);	// 433
+	}
+
+	// Defalt accumulator additional parameter 1, for simulations.
+	// For sim_accum_selection == SEL_ACCUM_RATE_TIME_MAG, it is the proportional reduction (0.0 to 1.0) to apply to secondary productivity when computing upfill.
+
+	public static double def_sim_accum_param_1 () {
+		return 0.25;
+	}
 
 }
