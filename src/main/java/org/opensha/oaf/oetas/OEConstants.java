@@ -831,12 +831,11 @@ public class OEConstants {
 
 	// Default target number of direct aftershocks of the seeds, for per-catalog min mag ranging, lower limit.
 
-	public static final int DEF_RAN_DIRECT_SIZE_LO = 200;
+	public static final int DEF_RAN_DIRECT_SIZE_LO = 100;
 
-	// Default target number of direct aftershocks of the seeds, for per-catalog min mag ranging, upper limit.
-	// Note: At present, ran_direct_size_hi == ran_direct_size_lo is required.
+	// Default target number of direct aftershocks of the seeds, for per-catalog min mag ranging, upper limit; or 0 if not used.
 
-	public static final int DEF_RAN_DIRECT_SIZE_HI = 200;
+	public static final int DEF_RAN_DIRECT_SIZE_HI = 800;
 
 	// Default magnitude excess to use during simulations, or 0.0 to disable.
 	// A positive value causes catalogs to be discarded if they produce an earthquake larger than max mag.

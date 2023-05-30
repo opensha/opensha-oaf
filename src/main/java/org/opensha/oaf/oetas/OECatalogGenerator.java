@@ -472,6 +472,27 @@ public class OECatalogGenerator {
 					expected_count / total_omori_rate	// rate
 				);
 
+				// If there is a range of target sizes ...
+
+				if (cat_params.madj_target_hi > cat_params.gen_size_target) {
+
+					// Find the minimum magnitude for the top of the range
+
+					double expected_count_2 = (double)(cat_params.madj_target_hi);
+
+					double next_mag_min_2 = OERandomGenerator.gr_inv_rate (
+						cat_params.b,						// b
+						cat_params.mref,					// mref
+						next_mag_max,						// m2
+						expected_count_2 / total_omori_rate	// rate
+					);
+
+					// Choose min magnitude randomly in the range
+
+					double u = rangen.uniform_sample (0.0, 1.0);
+					next_mag_min += ((next_mag_min_2 - next_mag_min) * u);
+				}
+
 				// If min magnitude is outside allowable range, bring it into range
 
 				if (next_mag_min < cat_params.mag_min_lo) {
@@ -2595,7 +2616,7 @@ public class OECatalogGenerator {
 		// Command format:
 		//  test10  n  p  c  b  alpha  gen_size_target  gen_count_max  mag_main  tbegin
 		//          mag_min_sim  mag_max_sim  mag_min_lo  mag_min_hi  mag_max_lo  mag_max_hi  mear_opt
-		//          madj_gen_br  madj_derate_br  madj_exceed_fr
+		//          madj_gen_br  madj_derate_br  madj_exceed_fr  madj_target_hi
 		// Build a catalog with the given parameters.
 		// The "n" is the branch ratio; "a" is computed from it.
 		// Then display the catalog summary and generation list.
@@ -2604,9 +2625,9 @@ public class OECatalogGenerator {
 
 		if (args[0].equalsIgnoreCase ("test10")) {
 
-			// 19 additional arguments
+			// 20 additional arguments
 
-			if (args.length != 20) {
+			if (args.length != 21) {
 				System.err.println ("OECatalogGenerator : Invalid 'test10' subcommand");
 				return;
 			}
@@ -2632,6 +2653,7 @@ public class OECatalogGenerator {
 				int the_madj_gen_br = Integer.parseInt (args[17]);
 				double the_madj_derate_br = Double.parseDouble (args[18]);
 				double the_madj_exceed_fr = Double.parseDouble (args[19]);
+				int the_madj_target_hi = Integer.parseInt (args[20]);
 
 				// Say hello
 
@@ -2655,6 +2677,7 @@ public class OECatalogGenerator {
 				System.out.println ("the_madj_gen_br = " + the_madj_gen_br);
 				System.out.println ("the_madj_derate_br = " + the_madj_derate_br);
 				System.out.println ("the_madj_exceed_fr = " + the_madj_exceed_fr);
+				System.out.println ("madj_target_hi = " + the_madj_target_hi);
 
 				// Get the random number generator
 
@@ -2711,6 +2734,7 @@ public class OECatalogGenerator {
 				test_cat_params.madj_gen_br = the_madj_gen_br;
 				test_cat_params.madj_derate_br = the_madj_derate_br;
 				test_cat_params.madj_exceed_fr = the_madj_exceed_fr;
+				test_cat_params.madj_target_hi = the_madj_target_hi;
 
 				test_cat_params.set_mag_adj_seed_est();
 

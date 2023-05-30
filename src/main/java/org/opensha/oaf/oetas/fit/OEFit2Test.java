@@ -9409,7 +9409,7 @@ public class OEFit2Test {
 		//          f_intervals  lmr_opt
 		//          gs_rel_base_time  gs_ratio  gs_min_width  gr_hi_mag_delta  gr_taper_mag_delta  gr_init_mag
 		//          f_fix_p  f_fix_c  max_br  tint_br
-		//          num_cats  direct_size  mag_excess  gen_br  derate_br  exceed_fraction  accum_option  accum_param_1
+		//          num_cats  direct_size  mag_excess  gen_br  derate_br  exceed_fraction  direct_size_hi  accum_option  accum_param_1
 		//          [t_day  rup_mag]...
 		// Generate a catalog with the given parameters.
 		// The catalog is seeded with ruptures at the given times and magnitudes.
@@ -9478,6 +9478,7 @@ public class OEFit2Test {
 				int gen_br = testargs.get_int ("gen_br");
 				double derate_br = testargs.get_double ("derate_br");
 				double exceed_fraction = testargs.get_double ("exceed_fraction");
+				int direct_size_hi = testargs.get_int ("direct_size_hi");
 
 				int accum_option = testargs.get_int ("accum_option");
 				double accum_param_1 = testargs.get_double ("accum_param_1");
@@ -9634,6 +9635,7 @@ public class OEFit2Test {
 				test_sim_parameters.ranv2_gen_br = gen_br;
 				test_sim_parameters.ranv2_derate_br = derate_br;
 				test_sim_parameters.ranv2_exceed_fraction = exceed_fraction;
+				test_sim_parameters.ranv3_direct_size_hi = direct_size_hi;
 
 				test_sim_parameters.range_method = OEConstants.RANGING_METH_VAR_SEED_EST;
 

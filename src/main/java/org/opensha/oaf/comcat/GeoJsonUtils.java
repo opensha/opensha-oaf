@@ -77,22 +77,25 @@ public class GeoJsonUtils {
 
 
 	// Convert a JSONObject to a string.
-	// This is a debugging function.
+	// The result is a valid nicely-formatted JSON file.
+	// This is primarily a debugging function.
 
 	public static String jsonObjectToString (Object o) {
 		StringBuilder sb = new StringBuilder();
-		jsonObjectToString (sb, o, null, "");
+		jsonObjectToString (sb, o, null, "", false);
 		return sb.toString();
 	}
 
 
-	public static void jsonObjectToString (StringBuilder sb, Object o, String name, String prefix) {
+	public static void jsonObjectToString (StringBuilder sb, Object o, String name, String prefix, boolean f_comma) {
 
 		// Write prefix and name
 
 		sb.append (prefix);
 		if (name != null) {
-			sb.append (name);
+			sb.append ("\"");
+			escapeString (sb, name);
+			sb.append ("\"");
 			sb.append (": ");
 		}
 
@@ -100,7 +103,7 @@ public class GeoJsonUtils {
 
 		if (o == null) {
 			sb.append ("null");
-			sb.append ("\n");
+			sb.append (f_comma ? ",\n" : "\n");
 		}
 
 		// Handle string
@@ -110,7 +113,7 @@ public class GeoJsonUtils {
 			sb.append ("\"");
 			escapeString (sb, s);
 			sb.append ("\"");
-			sb.append ("\n");
+			sb.append (f_comma ? ",\n" : "\n");
 		}
 
 		// Handle object (Map)
@@ -120,13 +123,16 @@ public class GeoJsonUtils {
 			sb.append ("{");
 			sb.append ("\n");
 			String new_prefix = prefix + "  ";
+			int n = m.size();
+			int k = 0;
 			for (Object key : m.keySet()) {
 				Object val = m.get (key);
-				jsonObjectToString (sb, val, key.toString(), new_prefix);
+				jsonObjectToString (sb, val, key.toString(), new_prefix, k + 1 < n);
+				++k;
 			}
 			sb.append (prefix);
 			sb.append ("}");
-			sb.append ("\n");
+			sb.append (f_comma ? ",\n" : "\n");
 		}
 
 		// Handle ordered object (Map)
@@ -136,13 +142,16 @@ public class GeoJsonUtils {
 			sb.append ("{");
 			sb.append ("\n");
 			String new_prefix = prefix + "  ";
+			int n = m.size();
+			int k = 0;
 			for (Object key : m.keySet()) {
 				Object val = m.get (key);
-				jsonObjectToString (sb, val, key.toString(), new_prefix);
+				jsonObjectToString (sb, val, key.toString(), new_prefix, k + 1 < n);
+				++k;
 			}
 			sb.append (prefix);
 			sb.append ("}");
-			sb.append ("\n");
+			sb.append (f_comma ? ",\n" : "\n");
 		}
 
 		// Handle array (List)
@@ -155,19 +164,18 @@ public class GeoJsonUtils {
 			int n = a.size();
 			for (int k = 0; k < n; ++k) {
 				Object val = a.get (k);
-				jsonObjectToString (sb, val, Integer.toString (k), new_prefix);
-
+				jsonObjectToString (sb, val, Integer.toString (k), new_prefix, k + 1 < n);
 			}
 			sb.append (prefix);
 			sb.append ("]");
-			sb.append ("\n");
+			sb.append (f_comma ? ",\n" : "\n");
 		}
 
 		// Anything else
 
 		else {
 			sb.append (o.toString());
-			sb.append ("\n");
+			sb.append (f_comma ? ",\n" : "\n");
 		}
 
 		return;

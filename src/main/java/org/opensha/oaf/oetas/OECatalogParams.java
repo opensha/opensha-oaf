@@ -190,6 +190,13 @@ public class OECatalogParams {
 
 	public double madj_exceed_fr;
 
+	// Upper limit for target generation size.
+	// If madj_target_hi > gen_size_target, then gen_size_target and madj_target_hi
+	// specify a range of possible target generation sizes (inclusive), depending
+	// on the selected magnitude adjustment method.
+
+	public int madj_target_hi;
+
 
 
 
@@ -223,6 +230,7 @@ public class OECatalogParams {
 		madj_gen_br = 0;
 		madj_derate_br = 0.0;
 		madj_exceed_fr = 0.0;
+		madj_target_hi = 0;
 		return this;
 	}
 
@@ -241,6 +249,7 @@ public class OECatalogParams {
 		madj_gen_br = 0;
 		madj_derate_br = 0.0;
 		madj_exceed_fr = 0.0;
+		madj_target_hi = 0;
 		return this;
 	}
 
@@ -254,6 +263,7 @@ public class OECatalogParams {
 		madj_gen_br = 0;
 		madj_derate_br = 0.0;
 		madj_exceed_fr = 0.0;
+		madj_target_hi = 0;
 		return;
 	}
 
@@ -283,6 +293,7 @@ public class OECatalogParams {
 		madj_gen_br = 0;
 		madj_derate_br = 0.0;
 		madj_exceed_fr = 0.0;
+		madj_target_hi = 0;
 		return this;
 	}
 
@@ -304,7 +315,10 @@ public class OECatalogParams {
 	// maximum magnitude is madj_exceed_fr.)
 	// The minimum magnitude is chosen so that the expected number of aftershocks
 	// in generation #1 is gen_size_target, except that the minimum magnitude is
-	// coerced to lie between mag_min_lo  mag_min_hi.
+	// coerced to lie between mag_min_lo and mag_min_hi.
+	// If madj_target_hi > gen_size_target, then a second minimum magnitude is
+	// chosen so that the expected number is madj_target_hi, and then the final
+	// minimum magnitude is selected randomly between the two.
 	// The values of mag_max_sim and mag_max_sim are not used, but should hold
 	// typical values within their respective ranges.
 
@@ -314,7 +328,7 @@ public class OECatalogParams {
 	// Set the magnitude adjustment method to seed estimate.
 	// Assumes that the following fields are already set up:
 	//  mag_min_sim, mag_max_sim, mag_min_lo, mag_min_hi, mag_max_lo, mag_max_hi,
-	//  gen_size_target, madj_gen_br, madj_derate_br, madj_exceed_fr.
+	//  gen_size_target, madj_gen_br, madj_derate_br, madj_exceed_fr, madj_target_hi.
 
 	public final OECatalogParams set_mag_adj_seed_est () {
 		mag_adj_meth = MAG_ADJ_SEED_EST;
@@ -357,6 +371,7 @@ public class OECatalogParams {
 		madj_gen_br     = 0;
 		madj_derate_br  = 0.0;
 		madj_exceed_fr  = 0.0;
+		madj_target_hi  = 0;
 		return;
 	}
 
@@ -400,7 +415,8 @@ public class OECatalogParams {
 		int mag_adj_meth,
 		int madj_gen_br,
 		double madj_derate_br,
-		double madj_exceed_fr
+		double madj_exceed_fr,
+		int madj_target_hi
 	) {
 		this.a               = a;
 		this.p               = p;
@@ -427,6 +443,7 @@ public class OECatalogParams {
 		this.madj_gen_br     = madj_gen_br;
 		this.madj_derate_br  = madj_derate_br;
 		this.madj_exceed_fr  = madj_exceed_fr;
+		this.madj_target_hi  = madj_target_hi;
 		return this;
 	}
 
@@ -462,6 +479,7 @@ public class OECatalogParams {
 		this.madj_gen_br     = other.madj_gen_br;
 		this.madj_derate_br  = other.madj_derate_br;
 		this.madj_exceed_fr  = other.madj_exceed_fr;
+		this.madj_target_hi  = other.madj_target_hi;
 		return this;
 	}
 
@@ -504,6 +522,7 @@ public class OECatalogParams {
 		this.madj_gen_br     = other.madj_gen_br;
 		this.madj_derate_br  = other.madj_derate_br;
 		this.madj_exceed_fr  = other.madj_exceed_fr;
+		this.madj_target_hi  = other.madj_target_hi;
 		return this;
 	}
 
@@ -543,6 +562,7 @@ public class OECatalogParams {
 		result.append ("madj_gen_br = "     + madj_gen_br     + "\n");
 		result.append ("madj_derate_br = "  + madj_derate_br  + "\n");
 		result.append ("madj_exceed_fr = "  + madj_exceed_fr  + "\n");
+		result.append ("madj_target_hi = "  + madj_target_hi  + "\n");
 
 		return result.toString();
 	}
@@ -568,7 +588,8 @@ public class OECatalogParams {
 			mag_adj_meth,
 			madj_gen_br,
 			madj_derate_br,
-			madj_exceed_fr
+			madj_exceed_fr,
+			madj_target_hi
 		);
 	}
 
@@ -593,6 +614,7 @@ public class OECatalogParams {
 		this.madj_gen_br     = range.madj_gen_br;
 		this.madj_derate_br  = range.madj_derate_br;
 		this.madj_exceed_fr  = range.madj_exceed_fr;
+		this.madj_target_hi  = range.madj_target_hi;
 		return;
 	}
 
@@ -736,6 +758,7 @@ public class OECatalogParams {
 			writer.marshalInt    ("madj_gen_br"    , madj_gen_br    );
 			writer.marshalDouble ("madj_derate_br" , madj_derate_br );
 			writer.marshalDouble ("madj_exceed_fr" , madj_exceed_fr );
+			writer.marshalInt    ("madj_target_hi" , madj_target_hi );
 
 		}
 		break;
@@ -784,6 +807,7 @@ public class OECatalogParams {
 			madj_gen_br     = reader.unmarshalInt    ("madj_gen_br"    );
 			madj_derate_br  = reader.unmarshalDouble ("madj_derate_br" );
 			madj_exceed_fr  = reader.unmarshalDouble ("madj_exceed_fr" );
+			madj_target_hi  = reader.unmarshalInt    ("madj_target_hi" );
 
 		}
 		break;
@@ -868,6 +892,7 @@ public class OECatalogParams {
 			&& this.madj_gen_br     == other.madj_gen_br  
 			&& this.madj_derate_br  == other.madj_derate_br  
 			&& this.madj_exceed_fr  == other.madj_exceed_fr  
+			&& this.madj_target_hi  == other.madj_target_hi  
 		) {
 			return true;
 		}

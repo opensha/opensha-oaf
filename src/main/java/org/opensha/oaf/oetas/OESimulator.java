@@ -984,7 +984,8 @@ public class OESimulator {
 			sim_parameters.ranv2_mag_excess,						// mag_excess
 			sim_parameters.ranv2_gen_br,							// madj_gen_br
 			sim_parameters.ranv2_derate_br,							// madj_derate_br
-			sim_parameters.ranv2_exceed_fraction					// madj_exceed_fr
+			sim_parameters.ranv2_exceed_fraction,					// madj_exceed_fr
+			sim_parameters.ranv3_direct_size_hi						// madj_target_hi
 		);
 
 		// Write the selected range into the initializer
@@ -2634,7 +2635,7 @@ public class OESimulator {
 		// Subcommand : Test #10
 		// Command format:
 		//  test10  n  p  c  b  alpha  mag_main  tbegin  f_prod  num_cats
-		//          direct_size  mag_excess  gen_br  derate_br  exceed_fraction  accum_option  accum_param_1  max_runtime  progress_time
+		//          direct_size  mag_excess  gen_br  derate_br  exceed_fraction  direct_size_hi  accum_option  accum_param_1  max_runtime  progress_time
 		// Build a catalog with the given parameter, using multiple threads.
 		// The "n" is the branch ratio; "a" is computed from it.
 		// Then run the simulation.
@@ -2649,9 +2650,9 @@ public class OESimulator {
 
 		if (args[0].equalsIgnoreCase ("test10")) {
 
-			// 18 additional arguments
+			// 19 additional arguments
 
-			if (args.length != 19) {
+			if (args.length != 20) {
 				System.err.println ("OESimulator : Invalid 'test10' subcommand");
 				return;
 			}
@@ -2673,12 +2674,13 @@ public class OESimulator {
 				int gen_br = Integer.parseInt (args[12]);
 				double derate_br = Double.parseDouble (args[13]);
 				double exceed_fraction = Double.parseDouble (args[14]);
+				int direct_size_hi = Integer.parseInt (args[15]);
 
-				int accum_option = Integer.parseInt (args[15]);
-				double accum_param_1 = Double.parseDouble (args[16]);
+				int accum_option = Integer.parseInt (args[16]);
+				double accum_param_1 = Double.parseDouble (args[17]);
 
-				long max_runtime = Long.parseLong (args[17]);
-				long progress_time = Long.parseLong (args[18]);
+				long max_runtime = Long.parseLong (args[18]);
+				long progress_time = Long.parseLong (args[19]);
 
 				// Say hello
 
@@ -2697,9 +2699,10 @@ public class OESimulator {
 				System.out.println ("gen_br = " + gen_br);
 				System.out.println ("derate_br = " + derate_br);
 				System.out.println ("exceed_fraction = " + exceed_fraction);
+				System.out.println ("direct_size_hi = " + direct_size_hi);
 				System.out.println ("accum_option = " + accum_option);
 				System.out.println ("accum_param_1 = " + accum_param_1);
-				System.out.println ("exceed_fraction = " + exceed_fraction);
+				System.out.println ("max_runtime = " + max_runtime);
 				System.out.println ("progress_time = " + progress_time);
 
 				// Set up catalog parameters
@@ -2751,6 +2754,7 @@ public class OESimulator {
 				test_sim_parameters.ranv2_gen_br = gen_br;
 				test_sim_parameters.ranv2_derate_br = derate_br;
 				test_sim_parameters.ranv2_exceed_fraction = exceed_fraction;
+				test_sim_parameters.ranv3_direct_size_hi = direct_size_hi;
 
 				test_sim_parameters.range_method = OEConstants.RANGING_METH_VAR_SEED_EST;
 

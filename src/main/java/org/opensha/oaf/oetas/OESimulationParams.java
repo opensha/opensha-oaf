@@ -227,6 +227,15 @@ public class OESimulationParams {
 
 	public double ranv2_mag_excess;
 
+	//--- Ranging, version 3
+
+	// Upper limit for target number of direct aftershocks of the seeds, for ranging, or 0 if not used.
+	// Used in selecting the minimum magnitude.
+	// For ranging v3, it is madj_target_hi.  If madj_target_hi > gen_size_target then gen_size_target and
+	// madj_target_hi specify the range of allowable target numbers;  otherwise the target number is gen_size_target.
+
+	public int ranv3_direct_size_hi;
+
 
 
 
@@ -278,6 +287,8 @@ public class OESimulationParams {
 		ranv2_direct_fractile  = 0.0;
 		ranv2_exceed_fraction  = 0.0;
 		ranv2_mag_excess       = 0.0;
+
+		ranv3_direct_size_hi   = 0;
 		return;
 	}
 
@@ -334,7 +345,8 @@ public class OESimulationParams {
 		int ranv2_direct_size        ,
 		double ranv2_direct_fractile ,
 		double ranv2_exceed_fraction ,
-		double ranv2_mag_excess
+		double ranv2_mag_excess      ,
+		int ranv3_direct_size_hi
 	) {
 		this.sim_num_catalogs       = sim_num_catalogs      ;
 		this.sim_min_num_catalogs   = sim_min_num_catalogs  ;
@@ -376,6 +388,8 @@ public class OESimulationParams {
 		this.ranv2_direct_fractile  = ranv2_direct_fractile ;
 		this.ranv2_exceed_fraction  = ranv2_exceed_fraction ;
 		this.ranv2_mag_excess       = ranv2_mag_excess      ;
+
+		this.ranv3_direct_size_hi   = ranv3_direct_size_hi  ;
 		return this;
 	}
 
@@ -425,6 +439,8 @@ public class OESimulationParams {
 		this.ranv2_direct_fractile  = other.ranv2_direct_fractile ;
 		this.ranv2_exceed_fraction  = other.ranv2_exceed_fraction ;
 		this.ranv2_mag_excess       = other.ranv2_mag_excess      ;
+
+		this.ranv3_direct_size_hi   = other.ranv3_direct_size_hi  ;
 		return this;
 	}
 
@@ -479,6 +495,8 @@ public class OESimulationParams {
 		result.append ("ranv2_direct_fractile = "  + ranv2_direct_fractile  + "\n");
 		result.append ("ranv2_exceed_fraction = "  + ranv2_exceed_fraction  + "\n");
 		result.append ("ranv2_mag_excess = "       + ranv2_mag_excess       + "\n");
+
+		result.append ("ranv3_direct_size_hi = "   + ranv3_direct_size_hi   + "\n");
 
 		return result.toString();
 	}
@@ -535,6 +553,8 @@ public class OESimulationParams {
 			ranv2_direct_fractile  = 0.5;
 			ranv2_exceed_fraction  = 0.02;
 			ranv2_mag_excess       = OEConstants.ZERO_MAG_EXCESS;
+
+			ranv3_direct_size_hi   = 0;
 		} else {
 			sim_num_catalogs       = 20000;
 			sim_min_num_catalogs   = 10000;
@@ -579,6 +599,8 @@ public class OESimulationParams {
 			ranv2_direct_fractile  = 0.5;
 			ranv2_exceed_fraction  = 0.02;
 			ranv2_mag_excess       = OEConstants.ZERO_MAG_EXCESS;
+
+			ranv3_direct_size_hi   = 0;
 		}
 		return this;
 	}
@@ -651,6 +673,8 @@ public class OESimulationParams {
 			writer.marshalDouble ("ranv2_exceed_fraction"  , ranv2_exceed_fraction );
 			writer.marshalDouble ("ranv2_mag_excess"       , ranv2_mag_excess      );
 
+			writer.marshalInt    ("ranv3_direct_size_hi"   , ranv3_direct_size_hi  );
+
 		}
 		break;
 
@@ -713,6 +737,8 @@ public class OESimulationParams {
 			ranv2_direct_fractile  = reader.unmarshalDouble ("ranv2_direct_fractile" );
 			ranv2_exceed_fraction  = reader.unmarshalDouble ("ranv2_exceed_fraction" );
 			ranv2_mag_excess       = reader.unmarshalDouble ("ranv2_mag_excess"      );
+
+			ranv3_direct_size_hi   = reader.unmarshalInt    ("ranv3_direct_size_hi"  );
 
 		}
 		break;
@@ -812,6 +838,8 @@ public class OESimulationParams {
 			&& this.ranv2_direct_fractile  == other.ranv2_direct_fractile
 			&& this.ranv2_exceed_fraction  == other.ranv2_exceed_fraction
 			&& this.ranv2_mag_excess       == other.ranv2_mag_excess
+
+			&& this.ranv3_direct_size_hi   == other.ranv3_direct_size_hi
 		) {
 			return true;
 		}
