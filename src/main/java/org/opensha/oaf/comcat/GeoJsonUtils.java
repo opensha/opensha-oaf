@@ -77,33 +77,54 @@ public class GeoJsonUtils {
 
 
 	// Convert a JSONObject to a string.
-	// The result is a valid nicely-formatted JSON file.
+	// The result is a nicely-formatted JSON file.
+	// If f_friendly is false, the result is valid JSON.
+	// If f_friendly is true, the result is made easier to read by not quoting names,
+	// numbering array elements, and omitting commas.
+	// Note that f_friendly defaults to true.
 	// This is primarily a debugging function.
 
 	public static String jsonObjectToString (Object o) {
 		StringBuilder sb = new StringBuilder();
-		jsonObjectToString (sb, o, null, "", false);
+		jsonObjectToString (sb, o, null, "", true, false, false);
+		return sb.toString();
+	}
+
+	public static String jsonObjectToString (Object o, boolean f_friendly) {
+		StringBuilder sb = new StringBuilder();
+		jsonObjectToString (sb, o, null, "", f_friendly, false, false);
 		return sb.toString();
 	}
 
 
-	public static void jsonObjectToString (StringBuilder sb, Object o, String name, String prefix, boolean f_comma) {
+	public static void jsonObjectToString (StringBuilder sb, Object o, String name, String prefix, boolean f_friendly, boolean f_array, boolean f_comma) {
 
 		// Write prefix and name
 
 		sb.append (prefix);
 		if (name != null) {
-			sb.append ("\"");
-			escapeString (sb, name);
-			sb.append ("\"");
-			sb.append (": ");
+			if (f_array) {
+				if (f_friendly) {
+					sb.append (name);
+					sb.append (": ");
+				}
+			} else {
+				if (f_friendly) {
+					sb.append (name);
+				} else {
+					sb.append ("\"");
+					escapeString (sb, name);
+					sb.append ("\"");
+				}
+				sb.append (": ");
+			}
 		}
 
 		// Handle null
 
 		if (o == null) {
 			sb.append ("null");
-			sb.append (f_comma ? ",\n" : "\n");
+			sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 		}
 
 		// Handle string
@@ -113,7 +134,7 @@ public class GeoJsonUtils {
 			sb.append ("\"");
 			escapeString (sb, s);
 			sb.append ("\"");
-			sb.append (f_comma ? ",\n" : "\n");
+			sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 		}
 
 		// Handle object (Map)
@@ -127,12 +148,12 @@ public class GeoJsonUtils {
 			int k = 0;
 			for (Object key : m.keySet()) {
 				Object val = m.get (key);
-				jsonObjectToString (sb, val, key.toString(), new_prefix, k + 1 < n);
+				jsonObjectToString (sb, val, key.toString(), new_prefix, f_friendly, false, k + 1 < n);
 				++k;
 			}
 			sb.append (prefix);
 			sb.append ("}");
-			sb.append (f_comma ? ",\n" : "\n");
+			sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 		}
 
 		// Handle ordered object (Map)
@@ -146,12 +167,12 @@ public class GeoJsonUtils {
 			int k = 0;
 			for (Object key : m.keySet()) {
 				Object val = m.get (key);
-				jsonObjectToString (sb, val, key.toString(), new_prefix, k + 1 < n);
+				jsonObjectToString (sb, val, key.toString(), new_prefix, f_friendly, false, k + 1 < n);
 				++k;
 			}
 			sb.append (prefix);
 			sb.append ("}");
-			sb.append (f_comma ? ",\n" : "\n");
+			sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 		}
 
 		// Handle array (List)
@@ -164,18 +185,18 @@ public class GeoJsonUtils {
 			int n = a.size();
 			for (int k = 0; k < n; ++k) {
 				Object val = a.get (k);
-				jsonObjectToString (sb, val, Integer.toString (k), new_prefix, k + 1 < n);
+				jsonObjectToString (sb, val, Integer.toString (k), new_prefix, f_friendly, true, k + 1 < n);
 			}
 			sb.append (prefix);
 			sb.append ("]");
-			sb.append (f_comma ? ",\n" : "\n");
+			sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 		}
 
 		// Anything else
 
 		else {
 			sb.append (o.toString());
-			sb.append (f_comma ? ",\n" : "\n");
+			sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 		}
 
 		return;
