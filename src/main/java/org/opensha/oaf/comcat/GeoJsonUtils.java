@@ -16,6 +16,10 @@ import java.util.HashMap;
 import java.util.Arrays;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.FileReader;
+import java.io.BufferedReader;
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
@@ -24,6 +28,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import org.opensha.oaf.util.JSONOrderedObject;
+import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
@@ -273,6 +278,113 @@ public class GeoJsonUtils {
 		}
 
 		return;
+	}
+
+
+
+
+	// Given a string containing JSON, convert it to nicely-formatted JSON.
+	// Parameters:
+	//  s = String containing JSON.
+	//  f_friendly = True to produce a friendly display format, false to produce nicely-formatted valid JSON.
+	// Return a string containing nicely-formatted JSON, which is valid JSON if f_friendly is false.
+	// Throws an exception if error parsing s.
+
+	public static String jsonStringToString (String s, boolean f_friendly) {
+		String result = null;
+
+		try {
+
+			// Parse the JSON
+
+			Object o = JSONOrderedObject.parseWithException (s);
+
+			// Convert to nice format
+
+			result = jsonObjectToString (o, f_friendly);
+		}
+		catch (ParseException e) {
+			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: JSON parse error", e);
+		}
+		catch (Exception e) {
+			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: Unexpected error", e);
+		}
+
+		return result;
+	}
+
+
+
+
+	// Given a reader containing JSON, convert it to nicely-formatted JSON.
+	// Parameters:
+	//  in = Data source containing JSON.
+	//  f_friendly = True to produce a friendly display format, false to produce nicely-formatted valid JSON.
+	// Return a string containing nicely-formatted JSON, which is valid JSON if f_friendly is false.
+	// Throws an exception if error parsing input.
+
+	public static String jsonReaderToString (Reader in, boolean f_friendly) {
+		String result = null;
+
+		try {
+
+			// Parse the JSON
+
+			Object o = JSONOrderedObject.parseWithException (in);
+
+			// Convert to nice format
+
+			result = jsonObjectToString (o, f_friendly);
+		}
+		catch (ParseException e) {
+			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: JSON parse error", e);
+		}
+		catch (IOException e) {
+			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: I/O error", e);
+		}
+		catch (Exception e) {
+			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: Unexpected error", e);
+		}
+
+		return result;
+	}
+
+
+
+
+	// Given a file containing JSON, convert it to nicely-formatted JSON.
+	// Parameters:
+	//  filename = Name of file containing JSON.
+	//  f_friendly = True to produce a friendly display format, false to produce nicely-formatted valid JSON.
+	// Return a string containing nicely-formatted JSON, which is valid JSON if f_friendly is false.
+	// Throws an exception if error parsing input.
+
+	public static String jsonFileToString (String filename, boolean f_friendly) {
+		String result = null;
+
+		try (
+			BufferedReader file_reader = new BufferedReader (new FileReader (filename));
+		){
+
+			// Parse the JSON
+
+			Object o = JSONOrderedObject.parseWithException (file_reader);
+
+			// Convert to nice format
+
+			result = jsonObjectToString (o, f_friendly);
+		}
+		catch (ParseException e) {
+			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: JSON parse error reading file: " + filename, e);
+		}
+		catch (IOException e) {
+			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: I/O error reading file: " + filename, e);
+		}
+		catch (Exception e) {
+			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: Unexpected error", e);
+		}
+
+		return result;
 	}
 
 
@@ -805,6 +917,220 @@ public class GeoJsonUtils {
 				test_show_value ("tsunami", getTsunami (event));
 				test_show_value ("sig", getSig (event));
 				test_show_value ("nst", getNst (event));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  event_id
+		// Fetch information for an event, and display it.
+		// Then display the GeoJSON various ways.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("GeoJsonUtils : Invalid 'test2' subcommand");
+				return;
+			}
+
+			String event_id = args[1];
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+				JSONObject event = accessor.get_last_geojson();
+
+				// Display raw json
+
+				System.out.println ();
+				System.out.println ("********** Raw JSON **********");
+				System.out.println ();
+
+				String json_string = event.toJSONString();
+
+				System.out.println (json_string);
+
+				// Convert object to friendly string
+
+				System.out.println ();
+				System.out.println ("********** Object to Friendly String **********");
+				System.out.println ();
+
+				System.out.println (jsonObjectToString (event, true));
+
+				// Convert object to valid string
+
+				System.out.println ();
+				System.out.println ("********** Object to Valid String **********");
+				System.out.println ();
+
+				System.out.println (jsonObjectToString (event, false));
+
+				// Convert string to friendly string
+
+				System.out.println ();
+				System.out.println ("********** String to Friendly String **********");
+				System.out.println ();
+
+				System.out.println (jsonStringToString (json_string, true));
+
+				// Convert string to valid string
+
+				System.out.println ();
+				System.out.println ("********** String to Valid String **********");
+				System.out.println ();
+
+				System.out.println (jsonStringToString (json_string, false));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  event_id  filename
+		// Fetch information for an event, and display it.
+		// Write the raw GeoJSON to a file, then display the file various ways.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("GeoJsonUtils : Invalid 'test3' subcommand");
+				return;
+			}
+
+			String event_id = args[1];
+			String filename = args[2];
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+				JSONObject event = accessor.get_last_geojson();
+
+				// Write raw json
+
+				System.out.println ();
+				System.out.println ("Writing file: " + filename);
+
+				String json_string = event.toJSONString();
+
+				SimpleUtils.write_string_as_file (filename, json_string);
+
+				// Convert file to friendly string
+
+				System.out.println ();
+				System.out.println ("********** File to Friendly String **********");
+				System.out.println ();
+
+				System.out.println (jsonFileToString (filename, true));
+
+				// Convert file to valid string
+
+				System.out.println ();
+				System.out.println ("********** File to Valid String **********");
+				System.out.println ();
+
+				System.out.println (jsonFileToString (filename, false));
 
 			} catch (Exception e) {
 				e.printStackTrace();
