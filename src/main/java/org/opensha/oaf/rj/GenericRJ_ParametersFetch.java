@@ -232,6 +232,13 @@ public class GenericRJ_ParametersFetch {
 		return parameter_set.getRegimeSet();
 	}
 	
+	/**
+	 * Return a set containing the names of tectonic regimes, as they appear in the file.
+	 */
+	public Set<String> getRegimeNameSet() {
+		return parameter_set.getRegimeNameSet();
+	}
+	
 
 
 
@@ -384,6 +391,32 @@ public class GenericRJ_ParametersFetch {
 			retrieve.check_read_complete ();
 
 			System.out.println (json_string);
+
+			return;
+		}
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5
+		// List the names of all regimes, as they appear in the file.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// No additional arguments
+
+			if (args.length != 1) {
+				System.err.println ("GenericRJ_ParametersFetch : Invalid 'test5' subcommand");
+				return;
+			}
+
+			// Display name of each regime
+		
+			GenericRJ_ParametersFetch fetch = new GenericRJ_ParametersFetch();
+			Set<String> regime_names = fetch.getRegimeNameSet();
+
+			for (String s : regime_names) {
+				System.out.println (s);
+			}
 
 			return;
 		}

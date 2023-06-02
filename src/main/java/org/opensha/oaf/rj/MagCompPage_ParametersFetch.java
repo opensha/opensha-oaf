@@ -210,6 +210,13 @@ public class MagCompPage_ParametersFetch {
 	public Set<OAFTectonicRegime> getRegimeSet() {
 		return parameter_set.getRegimeSet();
 	}
+	
+	/**
+	 * Return a set containing the names of tectonic regimes, as they appear in the file.
+	 */
+	public Set<String> getRegimeNameSet() {
+		return parameter_set.getRegimeNameSet();
+	}
 
 
 
@@ -400,6 +407,33 @@ public class MagCompPage_ParametersFetch {
 						", radiusCentroid = " + String.format ("%.1f", mc_param.get_radiusCentroid (mag)));
 				}
 				System.out.println();
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6
+		// List all regimes, and the properties assigned to each.
+		// Also print a table of magnitude-dependent parameters for various magnitudes.
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// No additional arguments
+
+			if (args.length != 1) {
+				System.err.println ("MagCompPage_ParametersFetch : Invalid 'test6' subcommand");
+				return;
+			}
+
+			// Display name of each regime
+		
+			MagCompPage_ParametersFetch fetch = new MagCompPage_ParametersFetch();
+			Set<String> regime_names = fetch.getRegimeNameSet();
+
+			for (String s : regime_names) {
+				System.out.println (s);
 			}
 
 			return;

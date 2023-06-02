@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Properties;
@@ -71,6 +72,10 @@ public abstract class OAFParameterSet<T> {
 	// region_list - List of regions that override the Garcia regions.
 
 	private List<OAFRegion> region_list = null;
+
+	// regime_names - Names of regimes, as they appear in the file.
+
+	private Set<String> regime_names = null;
 
 	// f_world - True if the world region is included.
 
@@ -242,6 +247,23 @@ public abstract class OAFParameterSet<T> {
 		return OAFTectonicRegime.forName (regime_name);
 	}
 
+	// load_table_regime_name - Load the name of a tectonic regime for the tables.
+
+	public static String load_table_regime_name (Scanner sc) {
+	
+		// Get a string with the name of the regime
+
+		String regime_name;
+
+		try {
+			regime_name = sc.next();
+		} catch (NoSuchElementException e) {
+			throw new RuntimeException("OAFParameterSet: Unexpected end-of-file", e);
+		}
+
+		return regime_name;
+	}
+
 	// load_table_location - Load a location for the tables.
 
 	public static Location load_table_location (Scanner sc) {
@@ -297,11 +319,13 @@ public abstract class OAFParameterSet<T> {
 
 		dataMap = null;
 		region_list = null;
+		regime_names = null;
 
 		// Make working data (use LinkedHashMap to support unit tests, otherwise HashMap would be OK)
 
 		Map<OAFTectonicRegime, T> wk_dataMap = new LinkedHashMap<OAFTectonicRegime, T>();
 		List<OAFRegion> wk_region_list = new ArrayList<OAFRegion>();
+		Set<String> wk_regime_names = new LinkedHashSet<String>();
 
 		// Number of tectonic regimes, must be at least 1
 
@@ -313,7 +337,12 @@ public abstract class OAFParameterSet<T> {
 
 			// Get the tectonic regime
 
-			OAFTectonicRegime regime = load_table_regime (sc);
+			String regime_name = load_table_regime_name (sc);
+			OAFTectonicRegime regime = OAFTectonicRegime.forName (regime_name);
+
+			// Save the name
+
+			wk_regime_names.add (regime_name);
 
 			// Get the parameter values and add to our table
 				
@@ -402,6 +431,7 @@ public abstract class OAFParameterSet<T> {
 
 		dataMap = wk_dataMap;
 		region_list = wk_region_list;
+		regime_names = wk_regime_names;
 
 		return;
 	}
@@ -447,11 +477,13 @@ public abstract class OAFParameterSet<T> {
 
 		dataMap = null;
 		region_list = null;
+		regime_names = null;
 
 		// Make working data (use LinkedHashMap to support unit tests, otherwise HashMap would be OK)
 
 		Map<OAFTectonicRegime, T> wk_dataMap = new LinkedHashMap<OAFTectonicRegime, T>();
 		List<OAFRegion> wk_region_list = new ArrayList<OAFRegion>();
+		Set<String> wk_regime_names = new LinkedHashSet<String>();
 
 		// Begin the JSON object
 
@@ -481,6 +513,10 @@ public abstract class OAFParameterSet<T> {
 
 			String regime_name = reader.unmarshalString ("regime");
 			OAFTectonicRegime regime = OAFTectonicRegime.forName (regime_name);
+
+			// Save the name
+
+			wk_regime_names.add (regime_name);
 
 			// Get the parameter values and add to our table
 				
@@ -586,6 +622,7 @@ public abstract class OAFParameterSet<T> {
 
 		dataMap = wk_dataMap;
 		region_list = wk_region_list;
+		regime_names = wk_regime_names;
 
 		return;
 	}
@@ -1015,6 +1052,13 @@ public abstract class OAFParameterSet<T> {
 	 */
 	public Set<OAFTectonicRegime> getRegimeSet() {
 		return dataMap.keySet();
+	}
+	
+	/**
+	 * Return a set containing the names of tectonic regimes, as they appear in the file.
+	 */
+	public Set<String> getRegimeNameSet() {
+		return regime_names;
 	}
 
 
