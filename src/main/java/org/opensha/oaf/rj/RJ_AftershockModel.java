@@ -498,7 +498,7 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 	 * Identify the tail of the distribution.
 	 * Normalize the likelihood values so they sum to 1.0.
 	 */
-	protected void apcFinish(boolean f_log) {
+	protected final void apcFinish(boolean f_log) {
 
 		// Error if matrix is so large it cannot be stored in a one-dimensional matrix.
 		// (Maybe should use a lower limit than Integer.MAX_VALUE)

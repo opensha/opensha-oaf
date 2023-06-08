@@ -201,29 +201,41 @@ public class USGS_AftershockForecast {
 	
 	public USGS_AftershockForecast(USGS_ForecastModel model, List<ObsEqkRupture> aftershocks,
 			Instant eventDate, Instant startDate) {
-		this(model, aftershocks, min_mags_default, eventDate, startDate, true, mag_bin_half_width_default);
+		this(model, aftershocks, min_mags_default, eventDate, startDate, true, true, mag_bin_half_width_default);
+	}
+	
+	public USGS_AftershockForecast(USGS_ForecastModel model, List<ObsEqkRupture> aftershocks,
+			Instant eventDate, Instant startDate, boolean roundStart) {
+		this(model, aftershocks, min_mags_default, eventDate, startDate, roundStart, true, mag_bin_half_width_default);
 	}
 	
 	public USGS_AftershockForecast(USGS_ForecastModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
 			Instant eventDate, Instant startDate) {
-		this(model, aftershocks, minMags, eventDate, startDate, true, mag_bin_half_width_default);
+		this(model, aftershocks, minMags, eventDate, startDate, true, true, mag_bin_half_width_default);
 	}
 	
 	public USGS_AftershockForecast(USGS_ForecastModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
-			Instant eventDate, Instant startDate, boolean includeProbAboveMainshock, double mag_bin_half_width) {
-		compute(model, aftershocks, minMags, eventDate, startDate, includeProbAboveMainshock, mag_bin_half_width);
+			Instant eventDate, Instant startDate, boolean roundStart) {
+		this(model, aftershocks, minMags, eventDate, startDate, roundStart, true, mag_bin_half_width_default);
+	}
+	
+	public USGS_AftershockForecast(USGS_ForecastModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
+			Instant eventDate, Instant startDate, boolean roundStart, boolean includeProbAboveMainshock, double mag_bin_half_width) {
+		compute(model, aftershocks, minMags, eventDate, startDate, roundStart, includeProbAboveMainshock, mag_bin_half_width);
 	}
 	
 	private static final DateFormat df = new SimpleDateFormat();
 	private static final TimeZone utc = TimeZone.getTimeZone("UTC");
 	
 	private void compute(USGS_ForecastModel model, List<ObsEqkRupture> aftershocks, double[] minMags,
-			Instant eventDate, Instant startDate, boolean includeProbAboveMainshock, double mag_bin_half_width) {
+			Instant eventDate, Instant startDate, boolean roundStart, boolean includeProbAboveMainshock, double mag_bin_half_width) {
 		Preconditions.checkArgument(minMags.length > 0);
 
 		// Round the start time
 
-		startDate = sdround (eventDate, startDate);
+		if (roundStart) {
+			startDate = sdround (eventDate, startDate);
+		}
 		
 		this.model = model;
 		this.minMags = minMags;
@@ -247,10 +259,10 @@ public class USGS_AftershockForecast {
 		for (int m=0; m<minMags.length; m++) {
 			aftershockCounts[m] = 0;
 		}
-		long event_time = eventDate.toEpochMilli();
+		final long event_time = eventDate.toEpochMilli();
 		for (ObsEqkRupture eq : aftershocks) {
 			// ignore events that occurred before the mainshock
-			if (eq.getOriginTime() >= event_time) {
+			if (eq.getOriginTime() >= event_time + 3L) {
 				for (int m=0; m<minMags.length; m++) {
 					if (eq.getMag() >= minMags[m] - mag_bin_half_width) {
 						aftershockCounts[m]++;

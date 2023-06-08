@@ -284,7 +284,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 	 * @param dataStartTimeDays - start time for data, in days since the mainshock
 	 * @param dataEndTimeDays - end time for data, in days since the mainshock
 	 */
-	public void apc_build(ObsEqkRupture mainShock, List<ObsEqkRupture> aftershockList, double dataStartTimeDays, double dataEndTimeDays) {
+	public final void apc_build(ObsEqkRupture mainShock, List<ObsEqkRupture> aftershockList, double dataStartTimeDays, double dataEndTimeDays) {
 
 		// Save the parameters
 
@@ -355,7 +355,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 					// Compute the integral of the aftershock rate over the time interval
 
 					double integral = AftershockStatsCalc.getPageExpectedNumEvents(
-						a, b, magMain, magCat, magCompFn, p, c, dataStartTimeDays, dataEndTimeDays);
+						a, b, magMain, magCat, magCompFn, p, c, Math.max (0.0, dataStartTimeDays), dataEndTimeDays);
 
 					// Form the log likelihood
 
