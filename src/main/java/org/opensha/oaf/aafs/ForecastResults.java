@@ -34,6 +34,7 @@ import org.opensha.oaf.rj.RJ_Summary_Generic;
 import org.opensha.oaf.rj.RJ_Summary_SequenceSpecific;
 import org.opensha.oaf.rj.SeqSpecRJ_Parameters;
 import org.opensha.oaf.rj.USGS_AftershockForecast;
+import org.opensha.oaf.rj.USGS_ForecastInfo;
 
 import static org.opensha.oaf.aafs.ForecastParameters.CALC_METH_AUTO_PDL;
 import static org.opensha.oaf.aafs.ForecastParameters.CALC_METH_AUTO_NO_PDL;
@@ -435,49 +436,28 @@ public class ForecastResults {
 
 			// Build the forecast
 
-			Instant eventDate = Instant.ofEpochMilli(mainshock.getOriginTime());
-			Instant startDate = Instant.ofEpochMilli(Math.max (result_time, mainshock.getOriginTime() + 1000L));
-			USGS_AftershockForecast forecast = new USGS_AftershockForecast (generic_model, catalog_aftershocks, eventDate, startDate);
-
-			if (advisory_lag >= ADVISORY_LAG_YEAR) {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_YEAR);
-			} else if (advisory_lag >= ADVISORY_LAG_MONTH) {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_MONTH);
-			} else if (advisory_lag >= ADVISORY_LAG_WEEK) {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_WEEK);
-			} else {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_DAY);
-			}
-
-			String the_injectable_text = injectable_text;
-			if (the_injectable_text.length() == 0) {
-				the_injectable_text = null;		// convention for USGS_AftershockForecast
-			}
-			forecast.setInjectableText (the_injectable_text);
-
-			if (params.next_scheduled_lag > 0L) {
-				forecast.setNextForecastMillis (mainshock.getOriginTime() + params.next_scheduled_lag);
-			} else if (params.next_scheduled_lag < 0L) {
-				forecast.setNextForecastMillis (-1L);
-			} else {
-				forecast.setNextForecastMillis (0L);
-			}
+			USGS_ForecastInfo fc_info = (new USGS_ForecastInfo()).set_typical (
+				mainshock.getOriginTime(),		// event_time
+				result_time,					// result_time
+				advisory_lag,					// advisory_lag
+				injectable_text,				// injectable_text
+				params.next_scheduled_lag,		// next_scheduled_lag
+				null							// user_param_map
+			);
 
 			// Add parameters for magnitude of completeness and search region
 
-			LinkedHashMap<String, Object> userParamMap = new LinkedHashMap<String, Object>();
 			if (params.mag_comp_avail && params.mag_comp_params != null) {
 				params.mag_comp_params.get_magCompFn().get_display_params (
-					userParamMap, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
+					fc_info.user_param_map, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
 			}
 			if (params.aftershock_search_avail && params.aftershock_search_region != null) {
-				params.aftershock_search_region.get_display_params (userParamMap);
+				params.aftershock_search_region.get_display_params (fc_info.user_param_map);
 			}
-			forecast.setUserParamMap (userParamMap);
 
 			// Get the JSON String
 
-			generic_json = forecast.buildJSONString(result_time);
+			generic_json = fc_info.make_forecast_json (generic_model, catalog_aftershocks, null);
 			if (generic_json == null) {
 				throw new RuntimeException("ForecastResults.calc_generic_results: Unable to generate JSON");
 			}
@@ -590,49 +570,28 @@ public class ForecastResults {
 
 			// Build the forecast
 
-			Instant eventDate = Instant.ofEpochMilli(mainshock.getOriginTime());
-			Instant startDate = Instant.ofEpochMilli(Math.max (result_time, mainshock.getOriginTime() + 1000L));
-			USGS_AftershockForecast forecast = new USGS_AftershockForecast (seq_spec_model, catalog_aftershocks, eventDate, startDate);
-
-			if (advisory_lag >= ADVISORY_LAG_YEAR) {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_YEAR);
-			} else if (advisory_lag >= ADVISORY_LAG_MONTH) {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_MONTH);
-			} else if (advisory_lag >= ADVISORY_LAG_WEEK) {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_WEEK);
-			} else {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_DAY);
-			}
-
-			String the_injectable_text = injectable_text;
-			if (the_injectable_text.length() == 0) {
-				the_injectable_text = null;		// convention for USGS_AftershockForecast
-			}
-			forecast.setInjectableText (the_injectable_text);
-
-			if (params.next_scheduled_lag > 0L) {
-				forecast.setNextForecastMillis (mainshock.getOriginTime() + params.next_scheduled_lag);
-			} else if (params.next_scheduled_lag < 0L) {
-				forecast.setNextForecastMillis (-1L);
-			} else {
-				forecast.setNextForecastMillis (0L);
-			}
+			USGS_ForecastInfo fc_info = (new USGS_ForecastInfo()).set_typical (
+				mainshock.getOriginTime(),		// event_time
+				result_time,					// result_time
+				advisory_lag,					// advisory_lag
+				injectable_text,				// injectable_text
+				params.next_scheduled_lag,		// next_scheduled_lag
+				null							// user_param_map
+			);
 
 			// Add parameters for magnitude of completeness and search region
 
-			LinkedHashMap<String, Object> userParamMap = new LinkedHashMap<String, Object>();
 			if (params.mag_comp_avail && params.mag_comp_params != null) {
 				params.mag_comp_params.get_magCompFn().get_display_params (
-					userParamMap, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
+					fc_info.user_param_map, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
 			}
 			if (params.aftershock_search_avail && params.aftershock_search_region != null) {
-				params.aftershock_search_region.get_display_params (userParamMap);
+				params.aftershock_search_region.get_display_params (fc_info.user_param_map);
 			}
-			forecast.setUserParamMap (userParamMap);
 
 			// Get the JSON String
 
-			seq_spec_json = forecast.buildJSONString(result_time);
+			seq_spec_json = fc_info.make_forecast_json (seq_spec_model, catalog_aftershocks, null);
 			if (seq_spec_json == null) {
 				throw new RuntimeException("ForecastResults.calc_seq_spec_results: Unable to generate JSON");
 			}
@@ -746,49 +705,28 @@ public class ForecastResults {
 
 			// Build the forecast
 
-			Instant eventDate = Instant.ofEpochMilli(mainshock.getOriginTime());
-			Instant startDate = Instant.ofEpochMilli(Math.max (result_time, mainshock.getOriginTime() + 1000L));
-			USGS_AftershockForecast forecast = new USGS_AftershockForecast (bayesian_model, catalog_aftershocks, eventDate, startDate);
-
-			if (advisory_lag >= ADVISORY_LAG_YEAR) {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_YEAR);
-			} else if (advisory_lag >= ADVISORY_LAG_MONTH) {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_MONTH);
-			} else if (advisory_lag >= ADVISORY_LAG_WEEK) {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_WEEK);
-			} else {
-				forecast.setAdvisoryDuration (USGS_AftershockForecast.Duration.ONE_DAY);
-			}
-
-			String the_injectable_text = injectable_text;
-			if (the_injectable_text.length() == 0) {
-				the_injectable_text = null;		// convention for USGS_AftershockForecast
-			}
-			forecast.setInjectableText (the_injectable_text);
-
-			if (params.next_scheduled_lag > 0L) {
-				forecast.setNextForecastMillis (mainshock.getOriginTime() + params.next_scheduled_lag);
-			} else if (params.next_scheduled_lag < 0L) {
-				forecast.setNextForecastMillis (-1L);
-			} else {
-				forecast.setNextForecastMillis (0L);
-			}
+			USGS_ForecastInfo fc_info = (new USGS_ForecastInfo()).set_typical (
+				mainshock.getOriginTime(),		// event_time
+				result_time,					// result_time
+				advisory_lag,					// advisory_lag
+				injectable_text,				// injectable_text
+				params.next_scheduled_lag,		// next_scheduled_lag
+				null							// user_param_map
+			);
 
 			// Add parameters for magnitude of completeness and search region
 
-			LinkedHashMap<String, Object> userParamMap = new LinkedHashMap<String, Object>();
 			if (params.mag_comp_avail && params.mag_comp_params != null) {
 				params.mag_comp_params.get_magCompFn().get_display_params (
-					userParamMap, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
+					fc_info.user_param_map, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
 			}
 			if (params.aftershock_search_avail && params.aftershock_search_region != null) {
-				params.aftershock_search_region.get_display_params (userParamMap);
+				params.aftershock_search_region.get_display_params (fc_info.user_param_map);
 			}
-			forecast.setUserParamMap (userParamMap);
 
 			// Get the JSON String
 
-			bayesian_json = forecast.buildJSONString(result_time);
+			bayesian_json = fc_info.make_forecast_json (bayesian_model, catalog_aftershocks, null);
 			if (bayesian_json == null) {
 				throw new RuntimeException("ForecastResults.calc_bayesian_results: Unable to generate JSON");
 			}
@@ -796,7 +734,7 @@ public class ForecastResults {
 		} catch (Exception e) {
 			//throw new RuntimeException("ForecastResults.calc_bayesian_results: Exception building bayesian forecast", e);
 
-			// In case of any error, just don't to the Bayesian
+			// In case of any error, just don't do the Bayesian
 
 			set_default_bayesian_results();
 			bayesian_result_avail = false;
