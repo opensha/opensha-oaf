@@ -6,26 +6,14 @@ import java.util.LinkedHashMap;
 
 import java.time.Instant;
 
-import java.io.File;
-import java.io.Reader;
-import java.io.FileReader;
-import java.io.BufferedReader;
-import java.io.Writer;
-import java.io.FileWriter;
-import java.io.BufferedWriter;
-import java.io.Closeable;
-import java.io.IOException;
-
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
-import org.opensha.oaf.util.MarshalImpJsonReader;
-import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.MarshalUtils;
+
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TestArgs;
-
-import org.opensha.oaf.comcat.GeoJsonUtils;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
@@ -34,7 +22,7 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 // other than the information in the forecast model.
 // Author: Michael Barall 06/06/2023.
 
-public class USGS_ForecastInfo {
+public class USGS_ForecastInfo implements Marshalable {
 
 	//----- Constants -----
 
@@ -466,6 +454,7 @@ public class USGS_ForecastInfo {
 
 	// Marshal object.
 
+	@Override
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
 		do_marshal (writer);
@@ -475,6 +464,7 @@ public class USGS_ForecastInfo {
 
 	// Unmarshal object.
 
+	@Override
 	public USGS_ForecastInfo unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
@@ -484,95 +474,15 @@ public class USGS_ForecastInfo {
 
 	// Marshal object.
 
-	public static void static_marshal (MarshalWriter writer, String name, USGS_ForecastInfo perf_data) {
-		writer.marshalMapBegin (name);
-		perf_data.do_marshal (writer);
-		writer.marshalMapEnd ();
+	public static void static_marshal (MarshalWriter writer, String name, USGS_ForecastInfo fc_info) {
+		fc_info.marshal (writer, name);
 		return;
 	}
 
 	// Unmarshal object.
 
 	public static USGS_ForecastInfo static_unmarshal (MarshalReader reader, String name) {
-		USGS_ForecastInfo perf_data = new USGS_ForecastInfo();
-		reader.unmarshalMapBegin (name);
-		perf_data.do_umarshal (reader);
-		reader.unmarshalMapEnd ();
-		return perf_data;
-	}
-
-
-
-
-	//----- File access -----
-
-
-
-
-	// Convert to JSON file.
-
-	public void to_json_file (String filename) {
-
-		try (
-			BufferedWriter file_writer = new BufferedWriter (new FileWriter (filename));
-		){
-			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
-			marshal (writer, null);
-			writer.check_write_complete ();
-			writer.write_json_file (file_writer);
-		}
-		catch (IOException e) {
-			throw new MarshalException ("USGS_ForecastInfo: I/O error while writing JSON file: " + filename, e);
-		}
-
-		return;
-	}
-
-
-
-
-	// Convert to nicely-formatted JSON file.
-
-	public void to_formatted_json_file (String filename) {
-
-		try (
-			BufferedWriter file_writer = new BufferedWriter (new FileWriter (filename));
-		){
-			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
-			marshal (writer, null);
-			writer.check_write_complete ();
-
-			Object json_container = writer.get_json_container();
-			String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false);
-
-			file_writer.write (formatted_string);
-		}
-		catch (IOException e) {
-			throw new MarshalException ("USGS_ForecastInfo: I/O error while writing JSON file: " + filename, e);
-		}
-
-		return;
-	}
-
-
-
-
-	// Set contents from JSON file.
-
-	public USGS_ForecastInfo from_json_file (String filename) {
-
-		try (
-			BufferedReader file_reader = new BufferedReader (new FileReader (filename));
-		){
-			MarshalImpJsonReader reader = new MarshalImpJsonReader (file_reader);
-			unmarshal (reader, null);
-			reader.check_read_complete ();
-		}
-		catch (IOException e) {
-			throw new MarshalException ("USGS_ForecastInfo: I/O error while reading JSON file: " + filename, e);
-		}
-
-		return this;
+		return (new USGS_ForecastInfo()).unmarshal (reader, name);
 	}
 
 
@@ -677,15 +587,8 @@ public class USGS_ForecastInfo {
 			System.out.println ("********** Marshal to JSON **********");
 			System.out.println ();
 
-			MarshalImpJsonWriter store = new MarshalImpJsonWriter();
-			USGS_ForecastInfo.static_marshal (store, null, fc_info);
-			store.check_write_complete ();
-
-			String json_string = store.get_json_string();
-			//System.out.println (json_string);
-
-			Object json_container = store.get_json_container();
-			System.out.println (GeoJsonUtils.jsonObjectToString (json_container));
+			String json_string = MarshalUtils.to_json_string (fc_info);
+			System.out.println (MarshalUtils.display_json_string (json_string));
 
 			// Unmarshal from JSON
 
@@ -693,11 +596,8 @@ public class USGS_ForecastInfo {
 			System.out.println ("********** Unmarshal from JSON **********");
 			System.out.println ();
 			
-			USGS_ForecastInfo fc_info2 = null;
-
-			MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
-			fc_info2 = USGS_ForecastInfo.static_unmarshal (retrieve, null);
-			retrieve.check_read_complete ();
+			USGS_ForecastInfo fc_info2 = new USGS_ForecastInfo();
+			MarshalUtils.from_json_string (fc_info2, json_string);
 
 			// Display the contents
 
@@ -748,15 +648,7 @@ public class USGS_ForecastInfo {
 
 			// Marshal to JSON
 
-			MarshalImpJsonWriter store = new MarshalImpJsonWriter();
-			USGS_ForecastInfo.static_marshal (store, null, fc_info);
-			store.check_write_complete ();
-
-			String json_string = store.get_json_string();
-			//System.out.println (json_string);
-
-			Object json_container = store.get_json_container();
-			String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false);
+			String formatted_string = MarshalUtils.to_formatted_json_string (fc_info);
 
 			// Write the file
 
@@ -794,12 +686,12 @@ public class USGS_ForecastInfo {
 
 			// Write to file
 
-			fc_info.to_json_file (filename);
+			MarshalUtils.to_json_file (fc_info, filename);
 
 			// Read back the file and display it
 
 			USGS_ForecastInfo fc_info2 = new USGS_ForecastInfo();
-			fc_info2.from_json_file (filename);
+			MarshalUtils.from_json_file (fc_info2, filename);
 
 			System.out.println ();
 			System.out.println (fc_info2.toString());
@@ -836,12 +728,12 @@ public class USGS_ForecastInfo {
 
 			// Write to file
 
-			fc_info.to_formatted_json_file (filename);
+			MarshalUtils.to_formatted_json_file (fc_info, filename);
 
 			// Read back the file and display it
 
 			USGS_ForecastInfo fc_info2 = new USGS_ForecastInfo();
-			fc_info2.from_json_file (filename);
+			MarshalUtils.from_json_file (fc_info2, filename);
 
 			System.out.println ();
 			System.out.println (fc_info2.toString());
@@ -889,15 +781,8 @@ public class USGS_ForecastInfo {
 			System.out.println ("********** Marshal to JSON **********");
 			System.out.println ();
 
-			MarshalImpJsonWriter store = new MarshalImpJsonWriter();
-			USGS_ForecastInfo.static_marshal (store, null, fc_info);
-			store.check_write_complete ();
-
-			String json_string = store.get_json_string();
-			//System.out.println (json_string);
-
-			Object json_container = store.get_json_container();
-			System.out.println (GeoJsonUtils.jsonObjectToString (json_container));
+			String json_string = MarshalUtils.to_json_string (fc_info);
+			System.out.println (MarshalUtils.display_json_string (json_string));
 
 			// Unmarshal from JSON
 
@@ -905,11 +790,8 @@ public class USGS_ForecastInfo {
 			System.out.println ("********** Unmarshal from JSON **********");
 			System.out.println ();
 			
-			USGS_ForecastInfo fc_info2 = null;
-
-			MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
-			fc_info2 = USGS_ForecastInfo.static_unmarshal (retrieve, null);
-			retrieve.check_read_complete ();
+			USGS_ForecastInfo fc_info2 = new USGS_ForecastInfo();
+			MarshalUtils.from_json_string (fc_info2, json_string);
 
 			// Display the contents
 

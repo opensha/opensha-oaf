@@ -9,6 +9,7 @@ import org.opensha.oaf.util.AutoExecutorService;
 import org.opensha.oaf.util.InvariantViolationException;
 import org.opensha.oaf.util.SimpleExecTimer;
 import org.opensha.oaf.util.SimpleThreadLoopHelper;
+import org.opensha.oaf.util.SimpleThreadLoopResult;
 import org.opensha.oaf.util.SimpleThreadManager;
 import org.opensha.oaf.util.SimpleThreadTarget;
 import org.opensha.oaf.util.SimpleUtils;
@@ -497,6 +498,28 @@ public class OEDisc2InitVoxBuilder {
 
 
 
+	//----- Result info -----
+
+
+	
+
+	// The loop result.
+
+	private SimpleThreadLoopResult loop_result = new SimpleThreadLoopResult();
+
+
+
+
+	// Get the loop result for the last operation.
+	// The returned object is newly-allocated.
+
+	public final SimpleThreadLoopResult get_loop_result () {
+		return (new SimpleThreadLoopResult()).copy_from (loop_result);
+	}
+
+
+
+
 	//----- Thread managers for building lists of partial voxels -----
 
 
@@ -581,6 +604,10 @@ public class OEDisc2InitVoxBuilder {
 			// Run the loop
 
 			loop_helper.run_loop (this, exec_timer, 0, b_alpha_count);
+
+			// Capture the result
+
+			loop_result.accum_loop (loop_helper);
 
 			// Check for thread abort
 
@@ -677,6 +704,10 @@ public class OEDisc2InitVoxBuilder {
 			// Run the loop
 
 			loop_helper.run_loop (this, exec_timer, 0, c_p_count);
+
+			// Capture the result
+
+			loop_result.accum_loop (loop_helper);
 
 			// Check for thread abort
 
@@ -789,6 +820,10 @@ public class OEDisc2InitVoxBuilder {
 			// Run the loop
 
 			loop_helper.run_loop (this, exec_timer, 0, quad_count);
+
+			// Capture the result
+
+			loop_result.accum_loop (loop_helper);
 
 			// Check for thread abort
 
@@ -960,6 +995,10 @@ public class OEDisc2InitVoxBuilder {
 
 		public void omat_calc_like (SimpleExecTimer exec_timer) throws OEException {
 
+			// Initialize result
+
+			loop_result.clear();
+
 			// Open the consumer
 
 			voxel_consumer.begin_voxel_consume (fit_info, b_alpha_def.get_b_scaling());
@@ -988,6 +1027,10 @@ public class OEDisc2InitVoxBuilder {
 				// Run the loop
 
 				loop_helper.run_loop (this, exec_timer, 0, c_p_count);
+
+				// Capture the result
+
+				loop_result.accum_loop (loop_helper);
 
 			}
 
@@ -1122,6 +1165,10 @@ public class OEDisc2InitVoxBuilder {
 
 		public void pmom_calc_like (SimpleExecTimer exec_timer) throws OEException {
 
+			// Initialize result
+
+			loop_result.clear();
+
 			// Open the consumer
 
 			voxel_consumer.begin_voxel_consume (fit_info, b_alpha_def.get_b_scaling());
@@ -1160,6 +1207,10 @@ public class OEDisc2InitVoxBuilder {
 
 				loop_helper.run_loop (this, exec_timer, 0, quad_count);
 
+				// Capture the result
+
+				loop_result.accum_loop (loop_helper);
+
 			}
 
 			// Check for thread abort
@@ -1193,7 +1244,7 @@ public class OEDisc2InitVoxBuilder {
 			final int expected_voxel_count = b_alpha_def.get_combo_count() * c_p_def.get_combo_count() * n_def.get_combo_count();
 			final int got_voxel_count = thread_voxel_count.get();
 			if (got_voxel_count != expected_voxel_count) {
-				throw new InvariantViolationException ("OEDisc2InitVoxBuilder.TM_omat_like_calc.omat_calc_like: Voxel count mismatch: got " + got_voxel_count + ", expected " + expected_voxel_count);
+				throw new InvariantViolationException ("OEDisc2InitVoxBuilder.TM_pmom_like_calc.pmom_calc_like: Voxel count mismatch: got " + got_voxel_count + ", expected " + expected_voxel_count);
 			}
 
 			// Close the consumer
@@ -1276,6 +1327,10 @@ public class OEDisc2InitVoxBuilder {
 
 		public void avpr_calc_like (SimpleExecTimer exec_timer) throws OEException {
 
+			// Initialize result
+
+			loop_result.clear();
+
 			// Open the consumer
 
 			voxel_consumer.begin_voxel_consume (fit_info, b_alpha_def.get_b_scaling());
@@ -1323,6 +1378,10 @@ public class OEDisc2InitVoxBuilder {
 
 				loop_helper.run_loop (this, exec_timer, 0, quint_count);
 
+				// Capture the result
+
+				loop_result.accum_loop (loop_helper);
+
 			}
 
 			// Check for thread abort
@@ -1356,7 +1415,7 @@ public class OEDisc2InitVoxBuilder {
 			final int expected_voxel_count = b_alpha_def.get_combo_count() * c_p_def.get_combo_count() * n_def.get_combo_count();
 			final int got_voxel_count = thread_voxel_count.get();
 			if (got_voxel_count != expected_voxel_count) {
-				throw new InvariantViolationException ("OEDisc2InitVoxBuilder.TM_omat_like_calc.omat_calc_like: Voxel count mismatch: got " + got_voxel_count + ", expected " + expected_voxel_count);
+				throw new InvariantViolationException ("OEDisc2InitVoxBuilder.TM_avpr_like_calc.avpr_calc_like: Voxel count mismatch: got " + got_voxel_count + ", expected " + expected_voxel_count);
 			}
 
 			// Close the consumer

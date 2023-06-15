@@ -10,6 +10,7 @@ import java.time.Instant;
 import org.opensha.oaf.util.AutoExecutorService;
 import org.opensha.oaf.util.SimpleExecTimer;
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.SimpleThreadLoopResult;
 
 import org.opensha.oaf.oetas.util.OEArraysCalc;
 import org.opensha.oaf.oetas.util.OEDiscreteRange;
@@ -75,6 +76,10 @@ public class OESimulator {
 	// The accumulator used for ranging the simulations.
 
 	public OEEnsembleAccumulator range_accumulator;
+
+	// The loop result.
+
+	private SimpleThreadLoopResult loop_result = new SimpleThreadLoopResult();
 
 
 
@@ -306,6 +311,10 @@ public class OESimulator {
 
 		int catalog_count = ensemble_generator.generate_all_catalogs (ensemble_params, sim_executor, max_runtime, progress_time);
 
+		// Accumulate loop results
+
+		loop_result.accum_from (ensemble_generator.get_loop_result());
+
 		// Error checks
 
 		if (catalog_count < 0) {
@@ -531,6 +540,10 @@ public class OESimulator {
 			// Generate the catalogs
 
 			int catalog_count = ensemble_generator.generate_all_catalogs (ensemble_params, sim_executor, max_runtime, progress_time);
+
+			// Accumulate loop results
+
+			loop_result.accum_from (ensemble_generator.get_loop_result());
 
 			// Error checks
 
@@ -872,6 +885,10 @@ public class OESimulator {
 
 		int catalog_count = ensemble_generator.generate_all_catalogs (ensemble_params, sim_executor, max_runtime, progress_time);
 
+		// Accumulate loop results
+
+		loop_result.accum_from (ensemble_generator.get_loop_result());
+
 		// Error checks
 
 		if (catalog_count < 0) {
@@ -1027,6 +1044,10 @@ public class OESimulator {
 		AutoExecutorService the_sim_executor
 	) {
 
+		// Initialize loop result
+
+		loop_result.clear();
+
 		// Display startup information
 
 		long start_time = System.currentTimeMillis();
@@ -1113,6 +1134,10 @@ public class OESimulator {
 		SimpleExecTimer the_sim_exec_timer
 	) throws OEException {
 
+		// Initialize loop result
+
+		loop_result.clear();
+
 		// Display startup information
 
 		System.out.println ();
@@ -1137,6 +1162,16 @@ public class OESimulator {
 		System.out.println ("Ending ETAS ranging and simulation");
 
 		return;
+	}
+
+
+
+
+	// Get the loop result for the last operation.
+	// The returned object is newly-allocated.
+
+	public final SimpleThreadLoopResult get_loop_result () {
+		return (new SimpleThreadLoopResult()).copy_from (loop_result);
 	}
 
 

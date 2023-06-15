@@ -12,7 +12,7 @@ import java.util.function.LongUnaryOperator;
 import java.util.function.LongBinaryOperator;
 
 
-// Helpwer class for implementing a simple multi-threaded loop.
+// Helper class for implementing a simple multi-threaded loop.
 // Author: Michael Barall 03/16/2023.
 //
 // This class is used together with SimpleThreadManager and SimpleThreadTarget
@@ -766,7 +766,11 @@ public class SimpleThreadLoopHelper {
 
 		// The number of primes found so far.
 
-		private AtomicInteger prime_count = new AtomicInteger();;
+		private AtomicInteger prime_count = new AtomicInteger();
+
+		// The loop result.
+
+		private SimpleThreadLoopResult loop_result = new SimpleThreadLoopResult();
 
 		// Count a prime.
 		// Threading: This function is thread-safe.
@@ -860,6 +864,10 @@ public class SimpleThreadLoopHelper {
 
 			loop_helper.run_loop (this, exec_timer, 2, max_n + 1);
 
+			// Capture the result
+
+			loop_result.set_loop (loop_helper);
+
 			// Check for thread abort
 
 			if (loop_helper.is_abort()) {
@@ -889,6 +897,11 @@ public class SimpleThreadLoopHelper {
 			}
 					
 			System.out.println (loop_helper.make_progress_message ());
+
+			// Show loop result
+
+			System.out.println ();
+			System.out.println (loop_result.toString());
 
 			// Return the count of primes
 

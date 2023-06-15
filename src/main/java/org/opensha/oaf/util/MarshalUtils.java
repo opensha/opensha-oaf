@@ -4,6 +4,18 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
+import java.io.File;
+import java.io.Reader;
+import java.io.FileReader;
+import java.io.BufferedReader;
+import java.io.Writer;
+import java.io.FileWriter;
+import java.io.BufferedWriter;
+import java.io.Closeable;
+import java.io.IOException;
+
+import org.opensha.oaf.comcat.GeoJsonUtils;
+
 
 // Class to hold some simple utility functions for marshaling.
 // Author: Michael Barall 03/10/2022.
@@ -254,6 +266,144 @@ public class MarshalUtils {
 			x.put (key, value);
 		}
 		reader.unmarshalArrayEnd ();
+		return;
+	}
+
+
+
+
+	//----- JSON string access -----
+
+
+
+
+	// Write marshalable object to JSON string.
+
+	public static String to_json_string (Marshalable x) {
+
+		MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+		x.marshal (writer, null);
+		writer.check_write_complete ();
+
+		String json_string = writer.get_json_string();
+
+		return json_string;
+	}
+
+
+
+
+	// Write marshalable object to nicely-formatted JSON string.
+	// Note: The returned string is valid JSON.
+
+	public static String to_formatted_json_string (Marshalable x) {
+
+		MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+		x.marshal (writer, null);
+		writer.check_write_complete ();
+
+		Object json_container = writer.get_json_container();
+		String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false);
+
+		return formatted_string;
+	}
+
+
+
+
+	// Read marshalable object from JSON string.
+
+	public static void from_json_string (Marshalable x, String json_string) {
+
+		MarshalImpJsonReader reader = new MarshalImpJsonReader (json_string);
+		x.unmarshal (reader, null);
+		reader.check_read_complete ();
+
+		return;
+	}
+
+
+
+
+	// Convenience function to convert a JSON string to display format.
+	// Note: The returned string is not valid JSON, but is intended to be human-readable.
+	// Note: This function just calls GeoJsonUtils.jsonStringToString().
+
+	public static String display_json_string (String json_string) {
+		return GeoJsonUtils.jsonStringToString (json_string, true);
+	}
+
+
+
+
+	//----- JSON file access -----
+
+
+
+
+	// Write marshalable object to JSON file.
+
+	public static void to_json_file (Marshalable x, String filename) {
+
+		try (
+			BufferedWriter file_writer = new BufferedWriter (new FileWriter (filename));
+		){
+			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+			x.marshal (writer, null);
+			writer.check_write_complete ();
+			writer.write_json_file (file_writer);
+		}
+		catch (IOException e) {
+			throw new MarshalException ("MarshalUtils: I/O error while writing JSON file: " + filename, e);
+		}
+
+		return;
+	}
+
+
+
+
+	// Write marshalable object to nicely-formatted JSON file.
+
+	public static void to_formatted_json_file (Marshalable x, String filename) {
+
+		try (
+			BufferedWriter file_writer = new BufferedWriter (new FileWriter (filename));
+		){
+			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+			x.marshal (writer, null);
+			writer.check_write_complete ();
+
+			Object json_container = writer.get_json_container();
+			String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false);
+
+			file_writer.write (formatted_string);
+		}
+		catch (IOException e) {
+			throw new MarshalException ("MarshalUtils: I/O error while writing JSON file: " + filename, e);
+		}
+
+		return;
+	}
+
+
+
+
+	// Read marshalable object from JSON file.
+
+	public static void from_json_file (Marshalable x, String filename) {
+
+		try (
+			BufferedReader file_reader = new BufferedReader (new FileReader (filename));
+		){
+			MarshalImpJsonReader reader = new MarshalImpJsonReader (file_reader);
+			x.unmarshal (reader, null);
+			reader.check_read_complete ();
+		}
+		catch (IOException e) {
+			throw new MarshalException ("MarshalUtils: I/O error while reading JSON file: " + filename, e);
+		}
+
 		return;
 	}
 

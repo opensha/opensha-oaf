@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.opensha.oaf.util.AutoExecutorService;
 import org.opensha.oaf.util.SimpleThreadLoopHelper;
+import org.opensha.oaf.util.SimpleThreadLoopResult;
 import org.opensha.oaf.util.SimpleThreadManager;
 import org.opensha.oaf.util.SimpleThreadTarget;
 import org.opensha.oaf.util.SimpleUtils;
@@ -83,6 +84,10 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 	// The loop helper.
 
 	private SimpleThreadLoopHelper loop_helper = new SimpleThreadLoopHelper (PMFMT_RUNNING);
+
+	// The loop result.
+
+	private SimpleThreadLoopResult loop_result = new SimpleThreadLoopResult();
 
 
 
@@ -276,6 +281,17 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 
 
+	// Get the loop result for the last operation.
+	// The returned object is newly-allocated.
+	// Threading: This function may only be called from the main thread after termination.
+
+	public final SimpleThreadLoopResult get_loop_result () {
+		return (new SimpleThreadLoopResult()).copy_from (loop_result);
+	}
+
+
+
+
 	// Perform post-termination operations.
 	// This must be called after all threads are terminated to finish accumulation.
 
@@ -305,7 +321,7 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 	//  progress_time = Time interval for progress messages, in milliseconds, can be -1L for no progress messages.
 	// Returns the number of catalogs generated, or -1 if thread abort.
 	// This combines the function of pre_launch, launch_threads, await_termination, and post_termination.
-	// This version creates the executor.
+	// This version uses the passed-in executor.
 
 	public int generate_all_catalogs (OEEnsembleParams the_ensemble_params, AutoExecutorService executor, long max_runtime, long progress_time) {
 
@@ -314,6 +330,10 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 		// No status
 
 		status_msg = PMFMT_NONE;
+
+		// No result
+
+		loop_result.clear();
 	
 		// Pre-launch operations
 
@@ -322,6 +342,10 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 		// Run the loop
 
 		loop_helper.run_loop (this, executor, 0, ensemble_params.num_catalogs, max_runtime, progress_time);
+
+		// Capture the result
+
+		loop_result.accum_loop (loop_helper);
 
 		// Check for thread abort
 
