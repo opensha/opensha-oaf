@@ -14,6 +14,7 @@ import java.io.FileWriter;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.InvariantViolationException;
 import org.opensha.oaf.util.SimpleUtils;
 import static org.opensha.oaf.util.SimpleUtils.rndd;
@@ -39,7 +40,7 @@ import org.opensha.oaf.oetas.util.OEArraysCalc;
 // Operational ETAS catalog initializer for fitted parameters.
 // Author: Michael Barall 03/09/2023.
 
-public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxConsumer {
+public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxConsumer, Marshalable {
 
 
 	//----- Implementation of OEDisc2InitVoxConsumer -----
@@ -629,6 +630,15 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 
 
+	// Get the Bayesian prior weight.
+
+	public final double get_bay_weight () {
+		return bay_weight;
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -1115,13 +1125,16 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 	@Override
 	public void get_display_params (Map<String, Object> paramMap) {
-		//paramMap.put ("a", SimpleUtils.round_double_via_string ("%.2f", cat_params.a));
-		//paramMap.put ("p", SimpleUtils.round_double_via_string ("%.2f", cat_params.p));
-		//paramMap.put ("c", SimpleUtils.round_double_via_string ("%.2e", cat_params.c));
-		//paramMap.put ("b", SimpleUtils.round_double_via_string ("%.2f", cat_params.b));
-		//paramMap.put ("alpha", SimpleUtils.round_double_via_string ("%.2f", cat_params.alpha));
-		paramMap.put ("etas_Mref", SimpleUtils.round_double_via_string ("%.2f", proto_cat_params.mref));
-		paramMap.put ("etas_Msup", SimpleUtils.round_double_via_string ("%.2f", proto_cat_params.msup));
+		paramMap.put ("b", SimpleUtils.round_double_via_string ("%.2f", mle_grid_point.b));
+		paramMap.put ("alpha", SimpleUtils.round_double_via_string ("%.2f", mle_grid_point.alpha));
+		paramMap.put ("c", SimpleUtils.round_double_via_string ("%.2e", mle_grid_point.c));
+		paramMap.put ("p", SimpleUtils.round_double_via_string ("%.2f", mle_grid_point.p));
+		paramMap.put ("n", SimpleUtils.round_double_via_string ("%.2e", mle_grid_point.n));
+		paramMap.put ("zams", SimpleUtils.round_double_via_string ("%.2e", mle_grid_point.zams));
+		paramMap.put ("zmu", SimpleUtils.round_double_via_string ("%.2e", mle_grid_point.zmu));
+
+		//paramMap.put ("etas_Mref", SimpleUtils.round_double_via_string ("%.2f", proto_cat_params.mref));
+		//paramMap.put ("etas_Msup", SimpleUtils.round_double_via_string ("%.2f", proto_cat_params.msup));
 		return;
 	}
 
@@ -1242,6 +1255,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 	// Marshal object.
 
+	@Override
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
 		do_marshal (writer);
@@ -1251,6 +1265,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 	// Unmarshal object.
 
+	@Override
 	public OEDisc2InitVoxSet unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
@@ -1261,20 +1276,14 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 	// Marshal object.
 
 	public static void static_marshal (MarshalWriter writer, String name, OEDisc2InitVoxSet accumulator) {
-		writer.marshalMapBegin (name);
-		accumulator.do_marshal (writer);
-		writer.marshalMapEnd ();
+		accumulator.marshal (writer, name);
 		return;
 	}
 
 	// Unmarshal object.
 
 	public static OEDisc2InitVoxSet static_unmarshal (MarshalReader reader, String name) {
-		OEDisc2InitVoxSet accumulator = new OEDisc2InitVoxSet();
-		reader.unmarshalMapBegin (name);
-		accumulator.do_umarshal (reader);
-		reader.unmarshalMapEnd ();
-		return accumulator;
+		return (new OEDisc2InitVoxSet()).unmarshal (reader, name);
 	}
 
 

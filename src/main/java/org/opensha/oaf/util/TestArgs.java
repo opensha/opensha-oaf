@@ -371,14 +371,16 @@ public class TestArgs {
 
 	// Check if the supplied test is being invoked, return true if so.
 
-	public final boolean is_test (String test_name) {
+	public final boolean is_test (String... test_names) {
 		if (!( has_more() )) {
 			signal_error ("Missing subcommand");
 		}
-		if (my_args[arg_index].equalsIgnoreCase (test_name)) {
-			this.test_name = test_name;
-			++arg_index;
-			return true;
+		for (String s : test_names) {
+			if (my_args[arg_index].equalsIgnoreCase (s)) {
+				this.test_name = s;
+				++arg_index;
+				return true;
+			}
 		}
 		return false;
 	}

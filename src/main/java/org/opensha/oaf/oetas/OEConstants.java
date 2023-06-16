@@ -817,11 +817,11 @@ public class OEConstants {
 
 	// Default number of catalogs.
 
-	public static final int DEF_NUM_CATALOGS = 300000;
+	public static final int DEF_NUM_CATALOGS = 500000;
 
 	// Default minimum acceptable number of catalogs.
 
-	public static final int DEF_MIN_NUM_CATALOGS = 150000;
+	public static final int DEF_MIN_NUM_CATALOGS = 250000;
 
 	// Required minimum number of catalogs.
 

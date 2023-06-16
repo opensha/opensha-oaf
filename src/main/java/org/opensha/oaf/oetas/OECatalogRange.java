@@ -5,10 +5,13 @@ import java.util.Arrays;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
 
 import static org.opensha.oaf.oetas.OECatalogParams.MAG_ADJ_ORIGINAL;
 import static org.opensha.oaf.oetas.OECatalogParams.MAG_ADJ_FIXED;
 import static org.opensha.oaf.oetas.OECatalogParams.MAG_ADJ_SEED_EST;
+
+import static org.opensha.oaf.oetas.OEConstants.GEN_MAG_EPS;
 
 
 // Class to specify the time and magnitude ranges of an Operational ETAS catalog.
@@ -21,7 +24,7 @@ import static org.opensha.oaf.oetas.OECatalogParams.MAG_ADJ_SEED_EST;
 // a set of catalog parameters, and to insert a modified time and magnitude range
 // into a set of catalog parameters.
 
-public class OECatalogRange {
+public class OECatalogRange implements Marshalable {
 
 	// The range of times for which earthquakes are generated, in days.
 	// The time origin is not specified by this class.
@@ -196,6 +199,50 @@ public class OECatalogRange {
 	public final OECatalogRange set_mag_adj_seed_est () {
 		mag_adj_meth = MAG_ADJ_SEED_EST;
 		return this;
+	}
+
+
+
+
+	// Return true if there is a fixed minimum magnitude, equal to mag_min_sim.
+
+	public final boolean is_fixed_mag_min () {
+		switch (mag_adj_meth) {
+
+		case MAG_ADJ_ORIGINAL:
+			if (   Math.abs (mag_min_sim - mag_min_lo) <= GEN_MAG_EPS
+				&& Math.abs (mag_min_hi - mag_min_sim) <= GEN_MAG_EPS) {
+				return true;
+			}
+			return false;
+
+		case MAG_ADJ_FIXED:
+			return true;
+		}
+
+		return false;
+	}
+
+
+
+
+	// Return true if there is a fixed maximum magnitude, equal to mag_max_sim.
+
+	public final boolean is_fixed_mag_max () {
+		switch (mag_adj_meth) {
+
+		case MAG_ADJ_ORIGINAL:
+			if (   Math.abs (mag_max_sim - mag_max_lo) <= GEN_MAG_EPS
+				&& Math.abs (mag_max_hi - mag_max_sim) <= GEN_MAG_EPS) {
+				return true;
+			}
+			return false;
+
+		case MAG_ADJ_FIXED:
+			return true;
+		}
+
+		return false;
 	}
 
 
@@ -580,6 +627,7 @@ public class OECatalogRange {
 
 	// Marshal object.
 
+	@Override
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
 		do_marshal (writer);
@@ -589,6 +637,7 @@ public class OECatalogRange {
 
 	// Unmarshal object.
 
+	@Override
 	public OECatalogRange unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
@@ -599,20 +648,14 @@ public class OECatalogRange {
 	// Marshal object.
 
 	public static void static_marshal (MarshalWriter writer, String name, OECatalogRange catalog_range) {
-		writer.marshalMapBegin (name);
-		catalog_range.do_marshal (writer);
-		writer.marshalMapEnd ();
+		catalog_range.marshal (writer, name);
 		return;
 	}
 
 	// Unmarshal object.
 
 	public static OECatalogRange static_unmarshal (MarshalReader reader, String name) {
-		OECatalogRange catalog_range = new OECatalogRange();
-		reader.unmarshalMapBegin (name);
-		catalog_range.do_umarshal (reader);
-		reader.unmarshalMapEnd ();
-		return catalog_range;
+		return (new OECatalogRange()).unmarshal (reader, name);
 	}
 
 

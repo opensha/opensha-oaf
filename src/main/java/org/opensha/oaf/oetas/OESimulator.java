@@ -71,6 +71,10 @@ public class OESimulator {
 
 	public OECatalogRange sim_catalog_range;
 
+	// The number of simulations performed.
+
+	public int sim_count;
+
 	//----- Intermediate -----
 
 	// The accumulator used for ranging the simulations.
@@ -100,6 +104,7 @@ public class OESimulator {
 		sim_accumulator = null;
 		sim_forecast_grid = null;
 		sim_catalog_range = null;
+		sim_count = 0;
 
 		range_accumulator = null;
 		return;
@@ -310,6 +315,7 @@ public class OESimulator {
 		// Generate the catalogs
 
 		int catalog_count = ensemble_generator.generate_all_catalogs (ensemble_params, sim_executor, max_runtime, progress_time);
+		sim_count = catalog_count;
 
 		// Accumulate loop results
 
@@ -341,10 +347,14 @@ public class OESimulator {
 		display_params.put (OEConstants.MKEY_SIM_COUNT, catalog_count);
 		display_params.put (OEConstants.MKEY_SIM_DURATION,
 			SimpleUtils.round_double_via_string ("%.1f", sim_catalog_range.tend - sim_catalog_range.tbegin));
-		display_params.put (OEConstants.MKEY_SIM_MAG_MIN,
-			SimpleUtils.round_double_via_string ("%.2f", sim_catalog_range.mag_min_sim));
-		display_params.put (OEConstants.MKEY_SIM_MAG_MAX,
-			SimpleUtils.round_double_via_string ("%.2f", sim_catalog_range.mag_max_sim));
+		if (sim_catalog_range.is_fixed_mag_min()) {
+			display_params.put (OEConstants.MKEY_SIM_MAG_MIN,
+				SimpleUtils.round_double_via_string ("%.2f", sim_catalog_range.mag_min_sim));
+		}
+		if (sim_catalog_range.is_fixed_mag_max()) {
+			display_params.put (OEConstants.MKEY_SIM_MAG_MAX,
+				SimpleUtils.round_double_via_string ("%.2f", sim_catalog_range.mag_max_sim));
+		}
 
 		sim_forecast_grid.add_model_param (display_params);
 
