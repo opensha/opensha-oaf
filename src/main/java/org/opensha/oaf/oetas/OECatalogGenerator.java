@@ -455,8 +455,8 @@ public class OECatalogGenerator {
 
 				// If max magnitude is outside allowable range, bring it into range
 
-				if (next_mag_max < Math.max (cat_params.mag_max_lo, cat_params.mag_min_lo + 1.0)) {
-					next_mag_max = Math.max (cat_params.mag_max_lo, cat_params.mag_min_lo + 1.0);
+				if (next_mag_max < Math.max (cat_params.mag_max_lo, cat_params.mag_min_lo + OEConstants.GEN_MIN_MAG_RANGE)) {
+					next_mag_max = Math.max (cat_params.mag_max_lo, cat_params.mag_min_lo + OEConstants.GEN_MIN_MAG_RANGE);
 				}
 				else if (next_mag_max > cat_params.mag_max_hi) {
 					next_mag_max = cat_params.mag_max_hi;

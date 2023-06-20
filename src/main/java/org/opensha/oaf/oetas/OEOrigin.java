@@ -23,6 +23,8 @@ import org.opensha.commons.geo.LocationUtils;
 import org.opensha.oaf.oetas.fit.OEMagCompFn;
 
 import static org.opensha.oaf.oetas.OEConstants.C_MILLIS_PER_DAY;
+import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS;
+import static org.opensha.oaf.oetas.OEConstants.HUGE_TIME_DAYS_CHECK;
 
 import static org.opensha.oaf.oetas.OERupture.RUPPAR_SEED;
 
@@ -342,8 +344,8 @@ public class OEOrigin implements AbsRelTimeLocConverter {
 	//  etas_cat = Catalog of ETAS ruptures.
 	//  f_include_seed = True to include the seed generation, false if not.
 	//  i_mainshock = Index of the mainshock within the seed generation, or -1 if none.
-	//  t_day_min = Minimum time to include, or -1.0e10 if none.
-	//  t_day_max = Maximum time to include, or 1.0e10 if none.
+	//  t_day_min = Minimum time to include, or -HUGE_TIME_DAYS if none.
+	//  t_day_max = Maximum time to include, or HUGE_TIME_DAYS if none.
 	//  mag_comp = Function giving minimum magnitude to include, or null if none.
 	// Returns the list of observed ruptures.
 	// Note: The returned list is sorted by time.
@@ -384,8 +386,8 @@ public class OEOrigin implements AbsRelTimeLocConverter {
 				if (
 					   (i_gen > 0 || f_include_seed)			// allowed generation
 					&& (i_gen > 0 || j_rup != i_mainshock)		// not the mainshock
-					&& (t_day_min < -0.9e10 || etas_rup.t_day >= t_day_min)	// at least min time
-					&& (t_day_max > 0.9e10 || etas_rup.t_day <= t_day_max)	// at most max time
+					&& (t_day_min <= -HUGE_TIME_DAYS_CHECK || etas_rup.t_day >= t_day_min)	// at least min time
+					&& (t_day_max >= HUGE_TIME_DAYS_CHECK || etas_rup.t_day <= t_day_max)	// at most max time
 					&& (mag_comp == null || etas_rup.rup_mag >= mag_comp.get_mag_completeness (etas_rup.t_day))	// at least min mag
 				) {
 					// Convert and save the rupture
@@ -410,8 +412,8 @@ public class OEOrigin implements AbsRelTimeLocConverter {
 	//  etas_cat = Catalog of ETAS ruptures.
 	//  f_include_seed = True to include the seed generation, false if not.
 	//  i_mainshock = Index of the mainshock within the seed generation, or -1 if none.
-	//  t_day_min = Minimum time to include, or -1.0e10 if none.
-	//  t_day_max = Maximum time to include, or 1.0e10 if none.
+	//  t_day_min = Minimum time to include, or -HUGE_TIME_DAYS if none.
+	//  t_day_max = Maximum time to include, or HUGE_TIME_DAYS if none.
 	//  mag_comp = Function giving minimum magnitude to include, or null if none.
 	//  catalog_event_id = Event ID to place in header line, or null if no
 	//    header line should be written.

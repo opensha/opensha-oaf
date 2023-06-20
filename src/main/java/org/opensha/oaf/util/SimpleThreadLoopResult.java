@@ -53,6 +53,11 @@ public class SimpleThreadLoopResult {
 
 	public String abort_message;
 
+	// Upstream accumulator.
+	// If non-null, additions and accumulations are passed to the upstream accumulator, recursively.
+
+	private SimpleThreadLoopResult upstream;
+
 
 
 
@@ -134,6 +139,7 @@ public class SimpleThreadLoopResult {
 
 
 	// Clear the results.
+	// Note: Clear operations are not passed upstream, and do not null the upstream pointer.
 
 	public final SimpleThreadLoopResult clear () {
 		result_count = 0;
@@ -150,9 +156,11 @@ public class SimpleThreadLoopResult {
 
 
 
+
 	// Default constructor.
 
 	public SimpleThreadLoopResult () {
+		upstream = null;
 		clear();
 	}
 
@@ -189,16 +197,74 @@ public class SimpleThreadLoopResult {
 
 
 
+	// Create a short one-line string, not ending in newline.
+
+	public String one_line_string () {
+		StringBuilder result = new StringBuilder();
+
+		// Include the result count if it is not 1
+
+		if (result_count != 1) {
+			result.append ("r = " + result_count);
+		}
+
+		// Do the rest if the result count is not 0 ...
+
+		if (result_count > 0) {
+			if (result_count != 1) {
+				result.append (", ");
+			}
+
+			// Completions, and optionally the loop count
+
+			result.append ("c = " + completion_count);
+			if (completion_count != loop_count) {
+				result.append (" / " + loop_count);
+			}
+
+			// Elapsed time in seconds, if known
+
+			if (has_elapsed_time()) {
+				long seconds = (elapsed_time + 500L) / 1000L;
+				result.append (", t = " + seconds + " s");
+			}
+
+			// Memory in megabytes, if known
+
+			if (has_used_memory()) {
+				long megabytes = used_memory / 1048576L;
+				result.append (", m = " + megabytes + " M");
+			}
+
+			// Possible errors
+
+			if (incomplete_count > 0) {
+				result.append (", incomplete = " + incomplete_count);
+			}
+			if (timeout_count > 0) {
+				result.append (", timeout = " + timeout_count);
+			}
+			if (abort_count > 0) {
+				result.append (", abort = " + abort_count);
+			}
+		}
+
+		return result.toString();
+	}
+
+
+
+
 	//----- Accumulation -----
 
 
 
 
-	// Add time to the amount of elapsed time.
+	// Local operation to add time to the amount of elapsed time.
 	// Parameter:
 	//  the_elapsed_time = Amount of time to add, in milliseconds.  A negative value indicates unknown.
 
-	public final void add_elapsed_time (long the_elapsed_time) {
+	private void local_add_elapsed_time (long the_elapsed_time) {
 		if (the_elapsed_time >= 0L) {
 			if (elapsed_time >= 0L) {
 				elapsed_time += the_elapsed_time;
@@ -212,13 +278,57 @@ public class SimpleThreadLoopResult {
 
 
 
+	// Add time to the amount of elapsed time.
+	// Parameter:
+	//  the_elapsed_time = Amount of time to add, in milliseconds.  A negative value indicates unknown.
+
+	public final void add_elapsed_time (long the_elapsed_time) {
+		for (SimpleThreadLoopResult p = this; p != null; p = p.upstream) {
+			p.local_add_elapsed_time (the_elapsed_time);
+		}
+		return;
+	}
+
+
+
+
+	// Local operation to add memory usage, in bytes.
+	// Parameters:
+	//  the_used_memory = Amount of memory to add, in bytes.  A negative value indicates unknown.
+	// Memory usage is accumulated by taking the maximum.
+
+	private void local_add_used_memory (long the_used_memory) {
+		used_memory = Math.max (used_memory, the_used_memory);
+		return;
+	}
+
+
+
+
 	// Add memory usage, in bytes.
 	// Parameters:
 	//  the_used_memory = Amount of memory to add, in bytes.  A negative value indicates unknown.
 	// Memory usage is accumulated by taking the maximum.
 
 	public final void add_used_memory (long the_used_memory) {
-		used_memory = Math.max (used_memory, the_used_memory);
+		for (SimpleThreadLoopResult p = this; p != null; p = p.upstream) {
+			p.local_add_used_memory (the_used_memory);
+		}
+		return;
+	}
+
+
+
+
+	// Local operation to add an abort message.
+	// Parameters:
+	//  the_abort_message = Abort message.  Can be null if none.
+	// Abort messages are accumulated by saving the last one.
+
+	private void local_add_abort_message (String the_abort_message) {
+		if (the_abort_message != null && the_abort_message.length() > 0) {
+			abort_message = the_abort_message;
+		}
 		return;
 	}
 
@@ -231,8 +341,8 @@ public class SimpleThreadLoopResult {
 	// Abort messages are accumulated by saving the last one.
 
 	public final void add_abort_message (String the_abort_message) {
-		if (the_abort_message != null && the_abort_message.length() > 0) {
-			abort_message = the_abort_message;
+		for (SimpleThreadLoopResult p = this; p != null; p = p.upstream) {
+			p.local_add_abort_message (the_abort_message);
 		}
 		return;
 	}
@@ -241,6 +351,7 @@ public class SimpleThreadLoopResult {
 
 
 	// Copy results from another object.
+	// Note: This does not affect the upstream.
 
 	public final SimpleThreadLoopResult copy_from (SimpleThreadLoopResult other) {
 		this.result_count		= other.result_count;
@@ -259,17 +370,20 @@ public class SimpleThreadLoopResult {
 
 
 	// Accumulate results from another object.
+	// The results are added to all upstream accumulators.
 
 	public final SimpleThreadLoopResult accum_from (SimpleThreadLoopResult other) {
-		this.result_count		+= other.result_count;
-		add_elapsed_time		  (other.elapsed_time);
-		add_used_memory			  (other.used_memory);
-		this.loop_count			+= other.loop_count;
-		this.completion_count	+= other.completion_count;
-		this.incomplete_count	+= other.incomplete_count;
-		this.timeout_count		+= other.timeout_count;
-		this.abort_count		+= other.abort_count;
-		add_abort_message		  (other.abort_message);
+		for (SimpleThreadLoopResult p = this; p != null; p = p.upstream) {
+			p.result_count           += other.result_count;
+			p.local_add_elapsed_time   (other.elapsed_time);
+			p.local_add_used_memory    (other.used_memory);
+			p.loop_count             += other.loop_count;
+			p.completion_count       += other.completion_count;
+			p.incomplete_count       += other.incomplete_count;
+			p.timeout_count          += other.timeout_count;
+			p.abort_count            += other.abort_count;
+			p.local_add_abort_message  (other.abort_message);
+		}
 		return this;
 	}
 
@@ -277,26 +391,49 @@ public class SimpleThreadLoopResult {
 
 
 	// Accumulate results from a loop, which are added to any prior results.
+	// The results are added to all upstream accumulators.
 	// Usage note: The recorded elapsed time is the time since the loop launched.
 	// Threading: This function calls thread-safe functions to obtain information about
 	// the loop, however it is intended to be used after the loop completes.
 
 	public final SimpleThreadLoopResult accum_loop (SimpleThreadLoopHelper loop_helper) {
-		++result_count;
-		add_elapsed_time (System.currentTimeMillis() - loop_helper.get_start_time());
-		add_used_memory (loop_helper.get_max_used_memory());
-		loop_count += ((long)(loop_helper.get_loop_count()));
-		completion_count += ((long)(loop_helper.get_completions()));
+
+		// Get the results from the loop
+
+		int my_result_count = 1;
+		long my_elapsed_time = System.currentTimeMillis() - loop_helper.get_start_time();
+		long my_used_memory = loop_helper.get_max_used_memory();
+		long my_loop_count = (long)(loop_helper.get_loop_count());
+		long my_completion_count = (long)(loop_helper.get_completions());
+		int my_incomplete_count = 0;
 		if (loop_helper.is_incomplete()) {
-			++incomplete_count;
+			++my_incomplete_count;
 		}
+		int my_timeout_count = 0;
 		if (loop_helper.is_timeout()) {
-			++timeout_count;
+			++my_timeout_count;
 		}
+		int my_abort_count = 0;
+		String my_abort_message = null;
 		if (loop_helper.is_abort()) {
-			++abort_count;
-			add_abort_message (loop_helper.get_abort_message_string());
+			++my_abort_count;
+			my_abort_message = loop_helper.get_abort_message_string();
 		}
+
+		// Propagate upstream
+
+		for (SimpleThreadLoopResult p = this; p != null; p = p.upstream) {
+			p.result_count           += my_result_count;
+			p.local_add_elapsed_time   (my_elapsed_time);
+			p.local_add_used_memory    (my_used_memory);
+			p.loop_count             += my_loop_count;
+			p.completion_count       += my_completion_count;
+			p.incomplete_count       += my_incomplete_count;
+			p.timeout_count          += my_timeout_count;
+			p.abort_count            += my_abort_count;
+			p.local_add_abort_message  (my_abort_message);
+		}
+
 		return this;
 	}
 
@@ -304,6 +441,7 @@ public class SimpleThreadLoopResult {
 
 
 	// Set results from a loop, overwriting any prior results.
+	// The results are added to all upstream accumulators.
 	// Usage note: The recorded elapsed time is the time since the loop launched.
 	// Threading: This function calls thread-safe functions to obtain information about
 	// the loop, however it is intended to be used after the loop completes.
@@ -311,6 +449,32 @@ public class SimpleThreadLoopResult {
 	public final SimpleThreadLoopResult set_loop (SimpleThreadLoopHelper loop_helper) {
 		clear();
 		accum_loop (loop_helper);
+		return this;
+	}
+
+
+
+
+	//----- Upstream -----
+
+
+
+
+	// Get the upstream pointer.
+	// Returns null if there is no upstream.
+
+	public final SimpleThreadLoopResult get_upstream () {
+		return upstream;
+	}
+
+
+
+
+	// Set the upstream pointer.
+	// The argument can be null, in which case any existing upstream is removed.
+
+	public final SimpleThreadLoopResult set_upstream (SimpleThreadLoopResult the_upstream) {
+		this.upstream = the_upstream;
 		return this;
 	}
 
@@ -534,6 +698,8 @@ public class SimpleThreadLoopResult {
 			System.out.println ();
 
 			System.out.println (loop_result.toString());
+			System.out.println (loop_result.one_line_string());
+			System.out.println ();
 
 			// Marshal to JSON
 
@@ -566,6 +732,8 @@ public class SimpleThreadLoopResult {
 			// Display the contents
 
 			System.out.println (loop_result2.toString());
+			System.out.println (loop_result2.one_line_string());
+			System.out.println ();
 
 			// Copy values
 
@@ -579,6 +747,8 @@ public class SimpleThreadLoopResult {
 			// Display the contents
 
 			System.out.println (loop_result3.toString());
+			System.out.println (loop_result3.one_line_string());
+			System.out.println ();
 
 			// Accumulate values
 
@@ -588,6 +758,8 @@ public class SimpleThreadLoopResult {
 			
 			loop_result3.accum_from (loop_result2);
 			System.out.println (loop_result3.toString());
+			System.out.println (loop_result3.one_line_string());
+			System.out.println ();
 
 			// Accumulate values
 
@@ -597,6 +769,47 @@ public class SimpleThreadLoopResult {
 			
 			loop_result3.accum_from (loop_result);
 			System.out.println (loop_result3.toString());
+			System.out.println (loop_result3.one_line_string());
+			System.out.println ();
+
+			// Accumulate values with upstream
+
+			System.out.println ();
+			System.out.println ("********** Accumulate with upstream **********");
+			System.out.println ();
+
+			SimpleThreadLoopResult loop_result4 = new SimpleThreadLoopResult();
+			loop_result3.set_upstream (loop_result4);
+
+			System.out.println (loop_result4.toString());
+			System.out.println (loop_result4.one_line_string());
+			System.out.println ();
+			
+			loop_result3.accum_from (loop_result);
+
+			System.out.println (loop_result3.toString());
+			System.out.println (loop_result3.one_line_string());
+			System.out.println ();
+
+			System.out.println (loop_result4.toString());
+			System.out.println (loop_result4.one_line_string());
+			System.out.println ();
+
+			// Accumulate values with upstream
+
+			System.out.println ();
+			System.out.println ("********** Accumulate with upstream **********");
+			System.out.println ();
+			
+			loop_result3.accum_from (loop_result);
+
+			System.out.println (loop_result3.toString());
+			System.out.println (loop_result3.one_line_string());
+			System.out.println ();
+
+			System.out.println (loop_result4.toString());
+			System.out.println (loop_result4.one_line_string());
+			System.out.println ();
 
 			// Done
 

@@ -391,6 +391,10 @@ public class OEConstants {
 
 	public static final double ZERO_MAG_EXCESS = 0.0;
 
+	// Minimum range of magnitudes to permit, when generating catalogs.
+
+	public static final double GEN_MIN_MAG_RANGE = 2.0;
+
 
 
 

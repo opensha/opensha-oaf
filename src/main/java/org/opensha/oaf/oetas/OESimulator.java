@@ -311,6 +311,10 @@ public class OESimulator {
 		// Create the ensemble generator
 
 		OEEnsembleGenerator ensemble_generator = new OEEnsembleGenerator();
+		
+		// Set our loop results to be an upstream
+
+		ensemble_generator.set_upstream_loop_result (loop_result);
 
 		// Generate the catalogs
 
@@ -319,7 +323,7 @@ public class OESimulator {
 
 		// Accumulate loop results
 
-		loop_result.accum_from (ensemble_generator.get_loop_result());
+		//loop_result.accum_from (ensemble_generator.get_loop_result());
 
 		// Error checks
 
@@ -546,6 +550,10 @@ public class OESimulator {
 			// Create the ensemble generator
 
 			OEEnsembleGenerator ensemble_generator = new OEEnsembleGenerator();
+		
+			// Set our loop results to be an upstream
+
+			ensemble_generator.set_upstream_loop_result (loop_result);
 
 			// Generate the catalogs
 
@@ -553,7 +561,7 @@ public class OESimulator {
 
 			// Accumulate loop results
 
-			loop_result.accum_from (ensemble_generator.get_loop_result());
+			//loop_result.accum_from (ensemble_generator.get_loop_result());
 
 			// Error checks
 
@@ -890,6 +898,10 @@ public class OESimulator {
 		// Create the ensemble generator
 
 		OEEnsembleGenerator ensemble_generator = new OEEnsembleGenerator();
+		
+		// Set our loop results to be an upstream
+
+		ensemble_generator.set_upstream_loop_result (loop_result);
 
 		// Generate the catalogs
 
@@ -897,7 +909,7 @@ public class OESimulator {
 
 		// Accumulate loop results
 
-		loop_result.accum_from (ensemble_generator.get_loop_result());
+		//loop_result.accum_from (ensemble_generator.get_loop_result());
 
 		// Error checks
 
@@ -1182,6 +1194,16 @@ public class OESimulator {
 
 	public final SimpleThreadLoopResult get_loop_result () {
 		return (new SimpleThreadLoopResult()).copy_from (loop_result);
+	}
+
+
+
+
+	// Set an upstream accumulator for the loop result.
+
+	public final void set_upstream_loop_result (SimpleThreadLoopResult upstream_loop_result) {
+		loop_result.set_upstream (upstream_loop_result);
+		return;
 	}
 
 

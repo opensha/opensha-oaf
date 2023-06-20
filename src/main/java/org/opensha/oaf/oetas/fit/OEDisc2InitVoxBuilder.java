@@ -520,6 +520,16 @@ public class OEDisc2InitVoxBuilder {
 
 
 
+	// Set an upstream accumulator for the loop result.
+
+	public final void set_upstream_loop_result (SimpleThreadLoopResult upstream_loop_result) {
+		loop_result.set_upstream (upstream_loop_result);
+		return;
+	}
+
+
+
+
 	//----- Thread managers for building lists of partial voxels -----
 
 

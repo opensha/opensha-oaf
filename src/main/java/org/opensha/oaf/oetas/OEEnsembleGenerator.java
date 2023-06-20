@@ -292,6 +292,17 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 
 
+	// Set an upstream accumulator for the loop result.
+	// Threading: Should be called from the main thread before starting.
+
+	public final void set_upstream_loop_result (SimpleThreadLoopResult upstream_loop_result) {
+		loop_result.set_upstream (upstream_loop_result);
+		return;
+	}
+
+
+
+
 	// Perform post-termination operations.
 	// This must be called after all threads are terminated to finish accumulation.
 
