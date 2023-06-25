@@ -502,6 +502,15 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 
 
+	// Return the index of the mainshock within the initial rupture list, or -1 if none.
+
+	public final int get_mainshock_index () {
+		return mainshock_index;
+	}
+
+
+
+
 	//----- Seeders -----
 
 

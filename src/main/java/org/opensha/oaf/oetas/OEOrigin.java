@@ -420,7 +420,6 @@ public class OEOrigin implements AbsRelTimeLocConverter {
 	//  catalog_max_days = Catalog duration, measured in days since the mainshock,
 	//    which should be written to the hedaer line; ignored if no header line is written.
 	//  filename = Name of file to write.
-	// Returns the list of observed ruptures.
 	// Note: The aftershocks are sorted by time.
 	// Note: Throws an exception if file write error.
 
@@ -466,6 +465,92 @@ public class OEOrigin implements AbsRelTimeLocConverter {
 			mainshock,
 			catalog_event_id,
 			catalog_max_days
+		);
+
+		// Write the file
+
+		ext_cat.write_to_file (filename);
+
+		return;
+	}
+
+
+
+
+	// Convert an ETAS rupture list to a list of observed ruptures.
+	// Parameters:
+	//  rup_list = List of ETAS ruptures.
+	//  i_mainshock = Index of the mainshock within the rupture list, or -1 if none.
+	// Returns the list of observed ruptures.
+	// Note: The returned list is sorted by time.
+
+	public ObsEqkRupList convert_etas_list_to_obs (
+		List<OERupture> rup_list,
+		int i_mainshock
+	) {
+
+		// Make the list
+
+		ObsEqkRupList obs_rups = new ObsEqkRupList();
+
+		// Loop over supplied ruptures ...
+
+		int n_rup = rup_list.size();
+		for (int i_rup = 0; i_rup < n_rup; ++i_rup) {
+
+			// If not the mainshock, convert and add to list
+
+			if (i_rup != i_mainshock) {
+				obs_rups.add (convert_etas_to_obs (rup_list.get(i_rup), null));
+			}
+		}
+
+		// Sort list by time
+
+		GUIExternalCatalog.sort_aftershocks (obs_rups);
+
+		return obs_rups;
+	}
+
+
+
+
+	// Write an ETAS rupture list to a file, in GUI external format.
+	// Parameters:
+	//  rup_list = List of ETAS ruptures.
+	//  i_mainshock = Index of the mainshock within the rupture list, or -1 if none.
+	//  filename = Name of file to write.
+	// Note: The aftershocks are sorted by time.
+	// Note: Throws an exception if file write error.
+
+	public void write_etas_list_to_gui_ext (
+		List<OERupture> rup_list,
+		int i_mainshock,
+		String filename
+	) {
+
+		// Get the list of aftershocks
+
+		ObsEqkRupList aftershocks = convert_etas_list_to_obs (
+			rup_list,
+			i_mainshock
+		);
+
+		// Get the mainshock, or null if none
+
+		ObsEqkRupture mainshock = null;
+
+		if (i_mainshock >= 0) {
+			mainshock = convert_etas_to_obs (rup_list.get(i_mainshock), null);
+		};
+
+		// Set up for an external catalog
+
+		GUIExternalCatalog ext_cat = new GUIExternalCatalog();
+
+		ext_cat.setup_catalog (
+			aftershocks,
+			mainshock
 		);
 
 		// Write the file

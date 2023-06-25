@@ -1,0 +1,742 @@
+package org.opensha.oaf.oetas.env;
+
+import org.opensha.oaf.util.MarshalReader;
+import org.opensha.oaf.util.MarshalWriter;
+import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
+import org.opensha.oaf.util.MarshalUtils;
+
+import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.TestArgs;
+
+import org.opensha.oaf.oetas.fit.OEDisc2History;
+import org.opensha.oaf.oetas.fit.OEDisc2InitFitInfo;
+import org.opensha.oaf.oetas.fit.OEDisc2InitVoxSet;
+import org.opensha.oaf.oetas.fit.OEGridPoint;
+
+import org.opensha.oaf.oetas.OECatalogRange;
+import org.opensha.oaf.oetas.OESimulator;
+
+
+// Class to hold results for operational ETAS.
+// Author: Michael Barall 05/04/2022.
+//
+// This class contains results that are saved in the database and the download file.
+
+public class OEtasResults implements Marshalable {
+
+
+	//----- Inputs -----
+
+	public OEtasCatalogInfo cat_info;
+
+
+	//----- History -----
+
+	// Catalog magnitude of completeness.
+
+	public double magCat;
+
+	// Number of ruptures.
+
+	public int rupture_count;
+
+	// Number of intervals.
+
+	public int interval_count;
+
+	// Number of ruptures that were accepted.
+	// Note: This is primarily an output to support testing.
+
+	public int accept_count;
+
+	// Number of ruptures that were rejected.
+	// Note: This is primarily an output to support testing.
+
+	public int reject_count;
+
+
+	//----- Fitting -----
+
+	// Number of groups.  (Zero if grouping was not enabled.)
+
+	public int group_count;
+
+	// Mainshock magnitude, the largest magnitude among ruptures considered mainshocks, or NO_MAG_NEG if none.
+
+	public double mag_main;
+
+	// Time interval for interpreting branch ratios, in days.
+
+	public double tint_br;
+
+
+	//----- Grid -----
+
+	// The MLE grid point.
+
+	public OEGridPoint mle_grid_point;
+
+	// The MLE grid points for generic, sequence-specific, and Bayesian models.
+
+	public OEGridPoint gen_mle_grid_point;
+	public OEGridPoint seq_mle_grid_point;
+	public OEGridPoint bay_mle_grid_point;
+
+	// Bayesian prior weight (1 = Bayesian, 0 = Sequence-specific, see OEConstants.BAY_WT_XXX).
+
+	public double bay_weight;
+
+
+	//----- Simulation -----
+
+	// The range of time and magnitude used for simulation.
+
+	public OECatalogRange sim_range;
+
+	// Number of simulations.
+
+	public int sim_count;
+
+
+	//----- Forecast -----
+
+	// ETAS results JSON.
+
+	public String etas_json = "";
+
+
+
+
+	//----- Construction -----
+
+
+
+
+	// Clear contents.
+
+	public final void clear () {
+		cat_info = null;
+
+		magCat = 0.0;
+		rupture_count = 0;
+		interval_count = 0;
+		accept_count = 0;
+		reject_count = 0;
+
+		group_count = 0;
+		mag_main = 0.0;
+		tint_br = 0.0;
+
+		mle_grid_point = null;
+		gen_mle_grid_point = null;
+		seq_mle_grid_point = null;
+		bay_mle_grid_point = null;
+		bay_weight = 0.0;
+
+		sim_range = null;
+		sim_count = 0;
+
+		etas_json = "";
+		return;
+	}
+
+
+
+
+	// Default constructor.
+
+	public OEtasResults () {
+		clear();
+	}
+
+
+
+
+	// Copy the values.
+
+	public final OEtasResults copy_from (OEtasResults other) {
+		this.cat_info = (new OEtasCatalogInfo()).copy_from (other.cat_info);
+
+		this.magCat = other.magCat;
+		this.rupture_count = other.rupture_count;
+		this.interval_count = other.interval_count;
+		this.accept_count = other.accept_count;
+		this.reject_count = other.reject_count;
+
+		this.group_count = other.group_count;
+		this.mag_main = other.mag_main;
+		this.tint_br = other.tint_br;
+
+		this.mle_grid_point = (new OEGridPoint()).copy_from (other.mle_grid_point);
+		this.gen_mle_grid_point = (new OEGridPoint()).copy_from (other.gen_mle_grid_point);
+		this.seq_mle_grid_point = (new OEGridPoint()).copy_from (other.seq_mle_grid_point);
+		this.bay_mle_grid_point = (new OEGridPoint()).copy_from (other.bay_mle_grid_point);
+		this.bay_weight = other.bay_weight;
+
+		this.sim_range = (new OECatalogRange()).copy_from (other.sim_range);
+		this.sim_count = other.sim_count;
+
+		this.etas_json = other.etas_json;
+		return this;
+	}
+
+
+
+
+	// Display our contents.
+
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OEtasResults:" + "\n");
+
+		result.append ("cat_info = {" + cat_info.toString() + "}\n");
+
+		result.append ("magCat = " + magCat + "\n");
+		result.append ("rupture_count = " + rupture_count + "\n");
+		result.append ("interval_count = " + interval_count + "\n");
+		result.append ("accept_count = " + accept_count + "\n");
+		result.append ("reject_count = " + reject_count + "\n");
+
+		result.append ("group_count = " + group_count + "\n");
+		result.append ("mag_main = " + mag_main + "\n");
+		result.append ("tint_br = " + tint_br + "\n");
+
+		result.append ("mle_grid_point = {" + mle_grid_point.toString() + "}\n");
+		result.append ("gen_mle_grid_point = {" + gen_mle_grid_point.toString() + "}\n");
+		result.append ("seq_mle_grid_point = {" + seq_mle_grid_point.toString() + "}\n");
+		result.append ("bay_mle_grid_point = {" + bay_mle_grid_point.toString() + "}\n");
+		result.append ("bay_weight = " + bay_weight + "\n");
+
+		result.append ("sim_range = {" + sim_range.toString() + "}\n");
+		result.append ("sim_count = " + sim_count + "\n");
+
+		result.append ("etas_json = " + etas_json + "\n");
+
+		return result.toString();
+	}
+
+
+
+
+	// Display our contents, with the JSON string in display format.
+
+	public String to_display_string () {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OEtasResults:" + "\n");
+
+		result.append ("cat_info = {" + cat_info.toString() + "}\n");
+
+		result.append ("magCat = " + magCat + "\n");
+		result.append ("rupture_count = " + rupture_count + "\n");
+		result.append ("interval_count = " + interval_count + "\n");
+		result.append ("accept_count = " + accept_count + "\n");
+		result.append ("reject_count = " + reject_count + "\n");
+
+		result.append ("group_count = " + group_count + "\n");
+		result.append ("mag_main = " + mag_main + "\n");
+		result.append ("tint_br = " + tint_br + "\n");
+
+		result.append ("mle_grid_point = {" + mle_grid_point.toString() + "}\n");
+		result.append ("gen_mle_grid_point = {" + gen_mle_grid_point.toString() + "}\n");
+		result.append ("seq_mle_grid_point = {" + seq_mle_grid_point.toString() + "}\n");
+		result.append ("bay_mle_grid_point = {" + bay_mle_grid_point.toString() + "}\n");
+		result.append ("bay_weight = " + bay_weight + "\n");
+
+		result.append ("sim_range = {" + sim_range.toString() + "}\n");
+		result.append ("sim_count = " + sim_count + "\n");
+
+		result.append ("etas_json = " + "\n");
+		if (etas_json.length() > 0) {
+			result.append (MarshalUtils.display_json_string (etas_json));
+		}
+
+		return result.toString();
+	}
+
+
+
+
+	// Set input data.
+	// Parameters:
+	//  the_cat_info = Catalog information.  This object is not retained.
+
+	public void set_inputs (OEtasCatalogInfo the_cat_info) {
+		cat_info = (new OEtasCatalogInfo()).copy_from (the_cat_info);
+		return;
+	}
+
+
+
+
+	// Set history data.
+	// Parameters:
+	//  history = The history.
+
+	public void set_history (OEDisc2History history) {
+		magCat = history.magCat;
+		rupture_count = history.rupture_count;
+		interval_count = history.interval_count;
+		accept_count = history.accept_count;
+		reject_count = history.reject_count;
+		return;
+	}
+
+
+
+
+	// Set fitting data.
+	// Parameters:
+	//  fit_info = Fitting information.
+
+	public void set_fitting (OEDisc2InitFitInfo fit_info) {
+		group_count = fit_info.group_count;
+		mag_main = fit_info.mag_main;
+		tint_br = fit_info.tint_br;
+		return;
+	}
+
+
+
+
+	// Set grid data.
+	// Parameters:
+	//  voxel_set = Voxel set containing the grid.
+
+	public void set_grid (OEDisc2InitVoxSet voxel_set) {
+		mle_grid_point = voxel_set.get_mle_grid_point();
+		gen_mle_grid_point = voxel_set.get_gen_mle_grid_point();
+		seq_mle_grid_point = voxel_set.get_seq_mle_grid_point();
+		bay_mle_grid_point = voxel_set.get_bay_mle_grid_point();
+		bay_weight = voxel_set.get_bay_weight();
+		return;
+	}
+
+
+
+
+	// Set simulation data.
+	// Parameters:
+	//  simulator = The simulator.
+
+	public void set_simulation (OESimulator simulator) {
+		sim_range = (new OECatalogRange()).copy_from (simulator.sim_catalog_range);
+		sim_count = simulator.sim_count;
+		return;
+	}
+
+
+
+
+	// Set forecast data.
+	// Parameters:
+	//  json_string = String containing forecast JSON.
+
+	public void set_forecast (String json_string) {
+		etas_json = json_string;
+		return;
+	}
+
+
+
+
+	//----- Marshaling -----
+
+
+
+
+	// Marshal version number.
+
+	private static final int MARSHAL_VER_1 = 126001;
+
+	private static final String M_VERSION_NAME = "OEtasResults";
+
+	// Marshal object, internal.
+
+	private void do_marshal (MarshalWriter writer) {
+
+		// Version
+
+		int ver = MARSHAL_VER_1;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
+
+		// Contents
+
+		switch (ver) {
+
+		case MARSHAL_VER_1: {
+
+			OEtasCatalogInfo.static_marshal (writer, "cat_info", cat_info);
+
+			writer.marshalDouble ("magCat", magCat);
+			writer.marshalInt ("rupture_count", rupture_count);
+			writer.marshalInt ("interval_count", interval_count);
+			writer.marshalInt ("accept_count", accept_count);
+			writer.marshalInt ("reject_count", reject_count);
+
+			writer.marshalInt ("group_count", group_count);
+			writer.marshalDouble ("mag_main", mag_main);
+			writer.marshalDouble ("tint_br", tint_br);
+
+			OEGridPoint.static_marshal (writer, "mle_grid_point", mle_grid_point);
+			OEGridPoint.static_marshal (writer, "gen_mle_grid_point", gen_mle_grid_point);
+			OEGridPoint.static_marshal (writer, "seq_mle_grid_point", seq_mle_grid_point);
+			OEGridPoint.static_marshal (writer, "bay_mle_grid_point", bay_mle_grid_point);
+			writer.marshalDouble ("bay_weight", bay_weight);
+
+			OECatalogRange.static_marshal (writer, "sim_range", sim_range);
+			writer.marshalInt ("sim_count", sim_count);
+
+			writer.marshalJsonString ("etas_json", etas_json);
+
+		}
+		break;
+
+		}
+
+		return;
+	}
+
+	// Unmarshal object, internal.
+
+	private void do_umarshal (MarshalReader reader) {
+	
+		// Version
+
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+
+		// Contents
+
+		switch (ver) {
+
+		case MARSHAL_VER_1: {
+
+			cat_info = OEtasCatalogInfo.static_unmarshal (reader, "cat_info");
+
+			magCat = reader.unmarshalDouble ("magCat");
+			rupture_count = reader.unmarshalInt ("rupture_count");
+			interval_count = reader.unmarshalInt ("interval_count");
+			accept_count = reader.unmarshalInt ("accept_count");
+			reject_count = reader.unmarshalInt ("reject_count");
+
+			group_count = reader.unmarshalInt ("group_count");
+			mag_main = reader.unmarshalDouble ("mag_main");
+			tint_br = reader.unmarshalDouble ("tint_br");
+
+			mle_grid_point = OEGridPoint.static_unmarshal (reader, "mle_grid_point");
+			gen_mle_grid_point = OEGridPoint.static_unmarshal (reader, "gen_mle_grid_point");
+			seq_mle_grid_point = OEGridPoint.static_unmarshal (reader, "seq_mle_grid_point");
+			bay_mle_grid_point = OEGridPoint.static_unmarshal (reader, "bay_mle_grid_point");
+			bay_weight = reader.unmarshalDouble ("bay_weight");
+
+			sim_range = OECatalogRange.static_unmarshal (reader, "sim_range");
+			sim_count = reader.unmarshalInt ("sim_count");
+
+			etas_json = reader.unmarshalJsonString ("etas_json");
+
+		}
+		break;
+
+		}
+
+		return;
+	}
+
+	// Marshal object.
+
+	@Override
+	public void marshal (MarshalWriter writer, String name) {
+		writer.marshalMapBegin (name);
+		do_marshal (writer);
+		writer.marshalMapEnd ();
+		return;
+	}
+
+	// Unmarshal object.
+
+	@Override
+	public OEtasResults unmarshal (MarshalReader reader, String name) {
+		reader.unmarshalMapBegin (name);
+		do_umarshal (reader);
+		reader.unmarshalMapEnd ();
+		return this;
+	}
+
+	// Marshal object.
+
+	public static void static_marshal (MarshalWriter writer, String name, OEtasResults etas_results) {
+		etas_results.marshal (writer, name);
+		return;
+	}
+
+	// Unmarshal object.
+
+	public static OEtasResults static_unmarshal (MarshalReader reader, String name) {
+		return (new OEtasResults()).unmarshal (reader, name);
+	}
+
+
+
+
+	//----- Testing -----
+
+
+
+
+	// Make a value to use for testing purposes.
+
+	private static OEtasResults make_test_value () {
+		OEtasResults etas_results = new OEtasResults();
+
+		etas_results.cat_info = OEtasCatalogInfo.make_test_value();
+
+		etas_results.magCat = 3.01;
+		etas_results.rupture_count = 3000;
+		etas_results.interval_count = 250;
+		etas_results.accept_count = 3500;
+		etas_results.reject_count = 2500;
+
+		etas_results.group_count = 150;
+		etas_results.mag_main = 7.8;
+		etas_results.tint_br = 365.0;
+
+		etas_results.mle_grid_point = (new OEGridPoint()).set (1.00, 1.10, 0.200, 1.20, 0.800, 2.60, 3.40);
+		etas_results.gen_mle_grid_point = (new OEGridPoint()).set (1.01, 1.11, 0.201, 1.21, 0.801, 2.61, 3.41);
+		etas_results.seq_mle_grid_point = (new OEGridPoint()).set (1.02, 1.12, 0.202, 1.22, 0.802, 2.62, 3.42);
+		etas_results.bay_mle_grid_point = (new OEGridPoint()).set (1.03, 1.13, 0.203, 1.23, 0.803, 2.63, 3.43);
+		etas_results.bay_weight = 1.0;
+
+		etas_results.sim_range = (new OECatalogRange()).set_range_seed_est (0.0, 365.0, 3.0, 8.0, -4.0, 8.5, -3.0, 9.5, 100, 0.0, 20, 0.90, 0.02, 800);
+		etas_results.sim_count = 500000;
+
+		etas_results.etas_json = "{\"msg\" : \"This is a test\", \"code\" : 1234}";
+
+		return etas_results;
+	}
+
+
+
+
+	public static void main(String[] args) {
+		try {
+		TestArgs testargs = new TestArgs (args, "OEtasResults");
+
+
+
+
+		// Subcommand : Test #1
+		// Command format:
+		//  test1
+		// Construct test values, and display it.
+		// Marshal to JSON and display JSON text, then unmarshal and display the results.
+
+		if (testargs.is_test ("test1")) {
+
+			// Read arguments
+
+			System.out.println ("Constructing, displaying, marshaling, and copying results");
+			testargs.end_test();
+
+			// Create the values
+
+			OEtasResults etas_results = make_test_value();
+
+			// Display the contents
+
+			System.out.println ();
+			System.out.println ("********** Result Display **********");
+			System.out.println ();
+
+			System.out.println (etas_results.toString());
+
+			// Display the contents, in display format
+
+			System.out.println ();
+			System.out.println ("********** Result Display, in Display Format **********");
+			System.out.println ();
+
+			System.out.println (etas_results.to_display_string());
+
+			// Marshal to JSON
+
+			System.out.println ();
+			System.out.println ("********** Marshal to JSON **********");
+			System.out.println ();
+
+			String json_string = MarshalUtils.to_json_string (etas_results);
+			System.out.println (MarshalUtils.display_json_string (json_string));
+
+			// Unmarshal from JSON
+
+			System.out.println ();
+			System.out.println ("********** Unmarshal from JSON **********");
+			System.out.println ();
+			
+			OEtasResults etas_results2 = new OEtasResults();
+			MarshalUtils.from_json_string (etas_results2, json_string);
+
+			// Display the contents
+
+			System.out.println (etas_results2.toString());
+
+			// Copy values
+
+			System.out.println ();
+			System.out.println ("********** Copy info **********");
+			System.out.println ();
+			
+			OEtasResults etas_results3 = new OEtasResults();
+			etas_results3.copy_from (etas_results2);
+
+			// Display the contents
+
+			System.out.println (etas_results3.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  filename
+		// Construct test values, and write them to a file.
+
+		if (testargs.is_test ("test2")) {
+
+			// Read arguments
+
+			System.out.println ("Writing test values to a file");
+			String filename = testargs.get_string ("filename");
+			testargs.end_test();
+
+			// Create the values
+
+			OEtasResults etas_results = make_test_value();
+
+			// Marshal to JSON
+
+			String formatted_string = MarshalUtils.to_formatted_json_string (etas_results);
+
+			// Write the file
+
+			SimpleUtils.write_string_as_file (filename, formatted_string);
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  filename
+		// Construct test values, and write them to a file.
+		// This test writes the raw JSON.
+		// Then it reads back the file and displays it.
+
+		if (testargs.is_test ("test3")) {
+
+			// Read arguments
+
+			System.out.println ("Writing test values to a file, raw JSON");
+			String filename = testargs.get_string ("filename");
+			testargs.end_test();
+
+			// Create the values
+
+			OEtasResults etas_results = make_test_value();
+
+			// Write to file
+
+			MarshalUtils.to_json_file (etas_results, filename);
+
+			// Read back the file and display it
+
+			OEtasResults etas_results2 = new OEtasResults();
+			MarshalUtils.from_json_file (etas_results2, filename);
+
+			System.out.println ();
+			System.out.println (etas_results2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  filename
+		// Construct typical parameters, and write them to a file.
+		// This test writes the formatted JSON.
+		// Then it reads back the file and displays it.
+
+		if (testargs.is_test ("test4")) {
+
+			// Read arguments
+
+			System.out.println ("Writing test values to a file, formatted JSON");
+			String filename = testargs.get_string ("filename");
+			testargs.end_test();
+
+			// Create the values
+
+			OEtasResults etas_results = make_test_value();
+
+			// Write to file
+
+			MarshalUtils.to_formatted_json_file (etas_results, filename);
+
+			// Read back the file and display it
+
+			OEtasResults etas_results2 = new OEtasResults();
+			MarshalUtils.from_json_file (etas_results2, filename);
+
+			System.out.println ();
+			System.out.println (etas_results2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+		
+		// Unrecognized subcommand, or exception
+
+		testargs.unrecognized_test();
+		} catch (Exception e) {
+		e.printStackTrace();
+		}
+		return;
+	}
+
+
+
+
+}

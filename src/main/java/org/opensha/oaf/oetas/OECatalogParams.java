@@ -1303,6 +1303,65 @@ public class OECatalogParams {
 
 
 	// Set to values for simulation within a fixed magnitude range.
+	// The productivity is specified as a branch ratio, on a specified time interval.
+	// Parameters:
+	//  n = Branch ratio, as computed for these parameters.
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter, in days.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mref = Minimum magnitude, also the reference magnitude and min mag for parameter definition.
+	//  msup = Maximum magnitude, also the max mag for parameter definition.
+	//  tbegin = Beginning time for which earthquakes are generated, in days.
+	//  tend = Ending time for which earthquakes are generated, in days.
+	//  tint_br = Time interval to use for branch ratio (instead of the time interval in these parameters).
+	//  mag_min_sim = Minimum magnitude for simulation.
+	//  mag_max_sim = Maximum magnitude for simulation.
+	// Returns this object.
+
+	public final OECatalogParams set_to_fixed_mag_tint_br (
+		double n,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		double mref,
+		double msup,
+		double tbegin,
+		double tend,
+		double tint_br,
+		double mag_min_sim,
+		double mag_max_sim
+	) {
+		this.a               = OEStatsCalc.calc_inv_branch_ratio (n, p, c, b, alpha, mref, msup, tint_br);
+		this.p               = p;
+		this.c               = c;
+		this.b               = b;
+		this.alpha           = alpha;
+		this.mref            = mref;
+		this.msup            = msup;
+		this.tbegin          = tbegin;
+		this.tend            = tend;
+		this.teps            = OEConstants.GEN_TIME_EPS;
+		this.mag_min_sim     = mag_min_sim;
+		this.mag_max_sim     = mag_max_sim;
+		this.mag_min_lo      = mag_min_sim;
+		this.mag_min_hi      = mag_min_sim;
+		this.mag_max_lo      = mag_max_sim;
+		this.mag_max_hi      = mag_max_sim;
+		this.mag_eps         = OEConstants.GEN_MAG_EPS;
+		this.gen_size_target = 100;
+		this.gen_count_max   = OEConstants.DEF_MAX_GEN_COUNT;
+		this.max_cat_size    = 0;
+		this.mag_excess      = 0.0;
+		finish_mag_adj_original();
+		return this;
+	}
+
+
+
+
+	// Set to values for simulation within a fixed magnitude range.
 	// Parameters:
 	//  stats = Statistics parameters.
 	// Returns this object.

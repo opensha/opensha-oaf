@@ -23,6 +23,7 @@ import org.opensha.commons.geo.LocationUtils;
 
 import org.opensha.oaf.util.catalog.ObsEqkRupMinTimeComparator;
 import org.opensha.oaf.util.catalog.EventIDGenerator;
+import org.opensha.oaf.util.SimpleUtils;
 
 
 /**
@@ -170,7 +171,7 @@ public class GUIExternalCatalog {
 	// Design note: The use of (float) to limit output precision is not desireable,
 	// but we retain it because the GUI code works this way.
 	
-	public static String getCatalogLine (ObsEqkRupture rup) {
+	public static String getCatalogLine_old (ObsEqkRupture rup) {
 		StringBuilder sb = new StringBuilder();
 		Location hypoLoc = rup.getHypocenterLocation();
 		sb.append(catDateFormat.format(rup.getOriginTimeCal().getTime())).append("\t");
@@ -178,6 +179,46 @@ public class GUIExternalCatalog {
 		sb.append((float)unwrap(hypoLoc.getLongitude())).append("\t");
 		sb.append((float)hypoLoc.getDepth()).append("\t");
 		sb.append((float)rup.getMag());
+		return sb.toString();
+	}
+
+
+
+
+	// Round to 3 decimal places, convert to string, remove trailing zeros.
+
+	private static String rounddp3 (double x) {
+		return SimpleUtils.double_to_string_trailz ("%.3f", SimpleUtils.TRAILZ_REMOVE, x);
+	}
+
+
+	// Round to 4 decimal places, convert to string, remove trailing zeros.
+
+	private static String rounddp4 (double x) {
+		return SimpleUtils.double_to_string_trailz ("%.4f", SimpleUtils.TRAILZ_REMOVE, x);
+	}
+
+
+	// Round to 5 decimal places, convert to string, remove trailing zeros.
+
+	private static String rounddp5 (double x) {
+		return SimpleUtils.double_to_string_trailz ("%.5f", SimpleUtils.TRAILZ_REMOVE, x);
+	}
+
+
+
+
+	// Given an earthquake rupture, construct the catalog line.
+	// Fields are tab-separated, and the line does not end in a newline.
+	
+	public static String getCatalogLine (ObsEqkRupture rup) {
+		StringBuilder sb = new StringBuilder();
+		Location hypoLoc = rup.getHypocenterLocation();
+		sb.append( catDateFormat.format(rup.getOriginTimeCal().getTime()) ).append("\t");
+		sb.append( rounddp5 (hypoLoc.getLatitude()) ).append("\t");
+		sb.append( rounddp5 (unwrap(hypoLoc.getLongitude())) ).append("\t");
+		sb.append( rounddp3 (hypoLoc.getDepth()) ).append("\t");
+		sb.append( rounddp4 (rup.getMag()) );
 		return sb.toString();
 	}
 

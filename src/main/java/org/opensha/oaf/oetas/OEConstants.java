@@ -1,6 +1,7 @@
 package org.opensha.oaf.oetas;
 
 import org.opensha.oaf.oetas.util.OEDiscreteRange;
+import org.opensha.oaf.util.SimpleUtils;
 
 
 // Holds constants used by Operational ETAS.
@@ -839,7 +840,7 @@ public class OEConstants {
 
 	// Default target number of direct aftershocks of the seeds, for per-catalog min mag ranging, upper limit; or 0 if not used.
 
-	public static final int DEF_RAN_DIRECT_SIZE_HI = 800;
+	public static final int DEF_RAN_DIRECT_SIZE_HI = 1000;
 
 	// Default magnitude excess to use during simulations, or 0.0 to disable.
 	// A positive value causes catalogs to be discarded if they produce an earthquake larger than max mag.
@@ -882,6 +883,24 @@ public class OEConstants {
 
 	public static double def_sim_accum_param_1 () {
 		return 0.25;
+	}
+
+
+
+
+	//----- Testing support -----
+
+
+
+
+	// Default origin time/date for simulated sequences.
+
+	public static final String DEF_SIM_ORIGIN_TIME = "2000-01-01T00:00:00Z";
+
+	// Get the default origin time for simulated sequences, in milliseconds since the epoch.
+
+	public static long get_def_sim_origin_time_millis () {
+		return SimpleUtils.string_to_time (DEF_SIM_ORIGIN_TIME);
 	}
 
 }
