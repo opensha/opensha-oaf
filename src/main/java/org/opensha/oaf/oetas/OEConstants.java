@@ -685,6 +685,16 @@ public class OEConstants {
 
 
 
+	// Default minimum magnitude range above magnitude of completeness, for parameter fitting.
+
+	public static final double DEF_FMAG_ABOVE_MAG_CAT = 4.0;
+
+	// Default minimum magnitude range above maximum magnitude in catalog, for parameter fitting.
+
+	public static final double DEF_FMAG_ABOVE_MAG_MAX = 0.5;
+
+
+
 
 	//----- Bayesian weighting -----
 

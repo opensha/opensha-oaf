@@ -11,6 +11,7 @@ import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TestArgs;
 
 import org.opensha.oaf.oetas.OEConstants;
+import org.opensha.oaf.oetas.OECatalogParamsMags;
 import org.opensha.oaf.oetas.OESimulationParams;
 
 import org.opensha.oaf.oetas.util.OEDiscreteRange;
@@ -737,6 +738,184 @@ public class OEtasParameters implements Marshalable {
 			throw new InvariantViolationException ("OEtasParameters.get_fit_lmr_opt: Fitting parameters not available");
 		}
 		return fit_lmr_opt;
+	}
+
+
+
+
+	//----- Magnitude range for fitting -----
+
+	// Fitting magnitude range available flag.
+
+	public boolean fmag_range_avail = false;
+
+	// Minimum magnitude range above magnitude of completeness, for parameter fitting.
+
+	public double fmag_above_mag_cat = OEConstants.DEF_FMAG_ABOVE_MAG_CAT;
+
+	// Minimum magnitude range above maximum magnitude in catalog, for parameter fitting.
+
+	public double fmag_above_mag_max = OEConstants.DEF_FMAG_ABOVE_MAG_MAX;
+
+	// Clear fitting magnitude range.
+
+	public final void clear_fmag_range () {
+		fmag_range_avail = false;
+
+		fmag_above_mag_cat = OEConstants.DEF_FMAG_ABOVE_MAG_CAT;
+		fmag_above_mag_max = OEConstants.DEF_FMAG_ABOVE_MAG_MAX;
+		return;
+	}
+
+	// Set fitting magnitude range to typical values.
+
+	public final void set_fmag_range_to_typical () {
+		fmag_range_avail = true;
+
+		fmag_above_mag_cat = OEConstants.DEF_FMAG_ABOVE_MAG_CAT;
+		fmag_above_mag_max = OEConstants.DEF_FMAG_ABOVE_MAG_MAX;
+		return;
+	}
+
+	// Copy fitting magnitude range from another object.
+
+	public final void copy_fmag_range_from (OEtasParameters other) {
+		fmag_range_avail = other.fmag_range_avail;
+
+		fmag_above_mag_cat = other.fmag_above_mag_cat;
+		fmag_above_mag_max = other.fmag_above_mag_max;
+		return;
+	}
+
+	// Set the fitting magnitude range to analyst values.
+
+	public final void set_fmag_range_to_analyst (
+		boolean fmag_range_avail,
+		double fmag_above_mag_cat,
+		double fmag_above_mag_max
+	) {
+		this.fmag_range_avail = fmag_range_avail;
+		this.fmag_above_mag_cat = fmag_above_mag_cat;
+		this.fmag_above_mag_max = fmag_above_mag_max;
+		return;
+	}
+
+	// Merge fitting magnitude range from another object, if available.
+
+	public final void merge_fmag_range_from (OEtasParameters other) {
+		if (other != null) {
+			if (other.fmag_range_avail) {
+				copy_fmag_range_from (other);
+			}
+		}
+		return;
+	}
+
+	// Check fitting magnitude range invariant.
+	// Returns null if success, error message if invariant violated.
+
+	public final String check_fmag_range_invariant () {
+		if (fmag_range_avail) {
+			if (!( fmag_above_mag_cat >= 1.0 )) {
+				return "Invalid fitting magnitude range: fmag_above_mag_cat = " + fmag_above_mag_cat;
+			}
+			if (!( fmag_above_mag_max >= 0.0 )) {
+				return "Invalid fitting magnitude range: fmag_above_mag_max = " + fmag_above_mag_max;
+			}
+		}
+		return null;
+	}
+
+	// Append a string representation of the fitting magnitude range.
+
+	public final StringBuilder fmag_range_append_string (StringBuilder sb) {
+		sb.append ("fmag_range_avail = " + fmag_range_avail + "\n");
+		if (fmag_range_avail) {
+			sb.append ("fmag_above_mag_cat = " + fmag_above_mag_cat + "\n");
+			sb.append ("fmag_above_mag_max = " + fmag_above_mag_max + "\n");
+		}
+		return sb;
+	}
+
+	// Marshal fitting magnitude range.
+
+	private void marshal_fmag_range_v1 (MarshalWriter writer) {
+		writer.marshalBoolean ("fmag_range_avail", fmag_range_avail);
+		if (fmag_range_avail) {
+			writer.marshalDouble ("fmag_above_mag_cat", fmag_above_mag_cat);
+			writer.marshalDouble ("fmag_above_mag_max", fmag_above_mag_max);
+		}
+		return;
+	}
+
+	// Unmarshal fitting magnitude range.
+
+	private void unmarshal_fmag_range_v1 (MarshalReader reader) {
+		fmag_range_avail = reader.unmarshalBoolean ("fmag_range_avail");
+		if (fmag_range_avail) {
+			fmag_above_mag_cat = reader.unmarshalDouble ("fmag_above_mag_cat");
+			fmag_above_mag_max = reader.unmarshalDouble ("fmag_above_mag_max");
+		} else {
+			clear_fmag_range();
+		}
+
+		// Check the invariant
+
+		String inv = check_fmag_range_invariant();
+		if (inv != null) {
+			throw new MarshalException ("OEtasParameters.unmarshal_fmag_range_v1: " + inv);
+		}
+		return;
+	}
+
+	// Get the magnitude range to use for fitting.
+	// Parameters:
+	//  cat_magCat = Magnitude of completeness, from the catalog information.
+	//  cat_magTop = Top magnitude, user-supplied, from the catalog information (none if cat_magTop <= cat_magCat).
+	//  rup_mag_top = Maximum magnitude among all known ruptures.
+	//  fit_rup_mag_top = Maximum magnitude among ruptures in the time interval where fitting occurs.
+	//  hist_magCat = Magnitude of completness, from the history used for fitting.
+	// Returns the catalog range to use for fitting.
+	// Use defaults for the reference magnitude and maximum considered magnitude.
+	// Use the history's magCat for the minimum simulation magnitude, which allows combining intervals with mc == magCat.
+
+	public final OECatalogParamsMags get_fmag_range (
+		double cat_magCat,
+		double cat_magTop,
+		double rup_mag_top,
+		double fit_rup_mag_top,
+		double hist_magCat
+	) {
+
+		// Start with the minimum above the history magCat
+
+		double mag_top = hist_magCat + fmag_above_mag_cat;
+
+		// If top magnitude wasn't supplied in catalog info, apply the maximum over the entire catalog
+
+		if (cat_magTop <= cat_magCat + OEConstants.FIT_MAG_EPS) {
+			mag_top = Math.max (mag_top, rup_mag_top + fmag_above_mag_max);
+		}
+
+		// If it was supplied, apply it, and also apply the maximum in the portion of the catalog used for fitting
+
+		else {
+			mag_top = Math.max (mag_top, fit_rup_mag_top + fmag_above_mag_max);
+			mag_top = Math.max (mag_top, cat_magTop);
+		}
+
+		// Make the magnitude range
+		// Use defaults for the reference magnitude and maximum considered magnitude.
+		// Use the history's magCat for the minimum simulation magnitude, which allows combining intervals with mc == magCat.
+
+		OECatalogParamsMags fit_params_mags = new OECatalogParamsMags (
+			OEConstants.DEF_MREF,		// mref
+			OEConstants.DEF_MSUP,		// msup
+			hist_magCat,				// mag_min_sim
+			mag_top						// mag_max_sim
+		);
+
+		return fit_params_mags;
 	}
 
 
@@ -2056,6 +2235,7 @@ public class OEtasParameters implements Marshalable {
 		clear_hist_params();
 		clear_group_params();
 		clear_fit_params();
+		clear_fmag_range();
 		clear_tint_br();
 		clear_range();
 		clear_bay_prior();
@@ -2084,6 +2264,7 @@ public class OEtasParameters implements Marshalable {
 		set_hist_params_to_typical();
 		set_group_params_to_typical();
 		set_fit_params_to_typical();
+		set_fmag_range_to_typical();
 		set_tint_br_to_typical();
 		set_range_to_typical();
 		set_bay_prior_to_typical();
@@ -2103,6 +2284,7 @@ public class OEtasParameters implements Marshalable {
 		copy_hist_params_from (other);
 		copy_group_params_from (other);
 		copy_fit_params_from (other);
+		copy_fmag_range_from (other);
 		copy_tint_br_from (other);
 		copy_range_from (other);
 		copy_bay_prior_from (other);
@@ -2123,6 +2305,7 @@ public class OEtasParameters implements Marshalable {
 		merge_hist_params_from (other);
 		merge_group_params_from (other);
 		merge_fit_params_from (other);
+		merge_fmag_range_from (other);
 		merge_tint_br_from (other);
 		merge_range_from (other);
 		merge_bay_prior_from (other);
@@ -2144,6 +2327,7 @@ public class OEtasParameters implements Marshalable {
 		if (result == null) {result = check_hist_params_invariant();}
 		if (result == null) {result = check_group_params_invariant();}
 		if (result == null) {result = check_fit_params_invariant();}
+		if (result == null) {result = check_fmag_range_invariant();}
 		if (result == null) {result = check_tint_br_invariant();}
 		if (result == null) {result = check_range_invariant();}
 		if (result == null) {result = check_bay_prior_invariant();}
@@ -2168,6 +2352,7 @@ public class OEtasParameters implements Marshalable {
 		hist_params_append_string (result);
 		group_params_append_string (result);
 		fit_params_append_string (result);
+		fmag_range_append_string (result);
 		tint_br_append_string (result);
 		range_append_string (result);
 		bay_prior_append_string (result);
@@ -2212,6 +2397,7 @@ public class OEtasParameters implements Marshalable {
 			marshal_hist_params_v1 (writer);
 			marshal_group_params_v1 (writer);
 			marshal_fit_params_v1 (writer);
+			marshal_fmag_range_v1 (writer);
 			marshal_tint_br_v1 (writer);
 			marshal_range_v1 (writer);
 			marshal_bay_prior_v1 (writer);
@@ -2247,6 +2433,7 @@ public class OEtasParameters implements Marshalable {
 			unmarshal_hist_params_v1 (reader);
 			unmarshal_group_params_v1 (reader);
 			unmarshal_fit_params_v1 (reader);
+			unmarshal_fmag_range_v1 (reader);
 			unmarshal_tint_br_v1 (reader);
 			unmarshal_range_v1 (reader);
 			unmarshal_bay_prior_v1 (reader);
@@ -2472,6 +2659,15 @@ public class OEtasParameters implements Marshalable {
 
 			System.out.println ();
 			System.out.println ("get_fit_lmr_opt =\n" + etas_params.get_fit_lmr_opt());
+
+			System.out.println ();
+			System.out.println ("get_fmag_range(2.0, 2.0, 7.0, 6.0, 3.0) =\n" + etas_params.get_fmag_range(2.0, 2.0, 7.0, 6.0, 3.0).toString());
+
+			System.out.println ();
+			System.out.println ("get_fmag_range(2.0, 5.0, 7.0, 6.0, 3.0) =\n" + etas_params.get_fmag_range(2.0, 5.0, 7.0, 6.0, 3.0).toString());
+
+			System.out.println ();
+			System.out.println ("get_fmag_range(2.0, 8.0, 7.0, 6.0, 3.0) =\n" + etas_params.get_fmag_range(2.0, 8.0, 7.0, 6.0, 3.0).toString());
 
 			System.out.println ();
 			System.out.println ("get_tint_br(0.001) =\n" + etas_params.get_tint_br(0.001));

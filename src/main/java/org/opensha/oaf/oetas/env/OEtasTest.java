@@ -4,12 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Collection;
 
+import org.opensha.oaf.comcat.ComcatOAFAccessor;
+
 import org.opensha.oaf.util.MarshalUtils;
 
 import org.opensha.oaf.util.AutoExecutorService;
 import org.opensha.oaf.util.SimpleExecTimer;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TestArgs;
+
+import org.opensha.oaf.util.SphLatLon;
+import org.opensha.oaf.util.SphRegion;
 
 import org.opensha.oaf.util.gui.GUIExternalCatalog;
 
@@ -23,9 +28,22 @@ import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OESeedParams;
 import org.opensha.oaf.oetas.OESimulator;
 
+import org.opensha.oaf.rj.AftershockStatsCalc;
+import org.opensha.oaf.rj.GenericRJ_ParametersFetch;
+import org.opensha.oaf.rj.MagCompPage_ParametersFetch;
+import org.opensha.oaf.rj.OAFTectonicRegime;
+import org.opensha.oaf.rj.SearchMagFn;
+import org.opensha.oaf.rj.SearchRadiusFn;
 import org.opensha.oaf.rj.USGS_ForecastInfo;
 
+import org.opensha.commons.geo.Location;
+import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
+
+import org.opensha.commons.data.comcat.ComcatRegion;
+import org.opensha.commons.data.comcat.ComcatException;
+//import org.opensha.commons.data.comcat.ComcatAccessor;
+import org.opensha.commons.data.comcat.ComcatVisitor;
 
 
 // Test functions for operational ETAS.
@@ -62,6 +80,182 @@ public class OEtasTest {
 			return defval;
 		}
 		return s;
+	}
+
+
+
+
+	// Fetch mainshock, and display its information.
+	// Throws exception if not found, or error accessing Comcat.
+
+	public static ObsEqkRupture fetch_mainshock (String event_id) {
+
+		// Say hello
+
+		System.out.println ("Fetching event: " + event_id);
+
+		// Create the accessor
+
+		ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+		// Get the rupture
+
+		ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+		// Display its information
+
+		if (rup == null) {
+			throw new ComcatException ("Comcat is unable to find event: " + event_id);
+		}
+
+		System.out.println ();
+		System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+		// Display tectonic regime
+
+		Location hypo = rup.getHypocenterLocation();
+		
+		GenericRJ_ParametersFetch generic_fetch = new GenericRJ_ParametersFetch();
+		OAFTectonicRegime generic_regime = generic_fetch.getRegion (hypo);
+
+		System.out.println ();
+		System.out.println ("Tectonic regime: " + generic_regime.toString());
+
+		// Display magnitude of completeness regine
+		
+		MagCompPage_ParametersFetch mag_comp_fetch = new MagCompPage_ParametersFetch();
+		OAFTectonicRegime mag_comp_regime = mag_comp_fetch.getRegion (hypo);
+
+		System.out.println ("Magnitude of completeness regime: " + mag_comp_regime.toString());
+
+		return rup;
+	}
+
+
+
+
+	// Fetch aftershocks, using the centroid algorithm.
+	// Parameters:
+	//  obs_main = Mainshock.
+	//  min_days = Start of time range used for sampling aftershocks, in days since the mainshock.  Can be < 0.0 to include foreshocks.
+	//  max_days = End of time range used for sampling aftershocks, in days since the mainshock.
+	//  radius_km = Search radius in km, can be 0.0 to use Wells and Coppersmith radius.
+	//  min_mag = Minimum magnitude to use for search, or -10.0 for no minimum.
+	// Throws exception if error.
+
+	public static ObsEqkRupList fetch_aftershocks (ObsEqkRupture obs_main, double min_days, double max_days, double radius_km, double min_mag) {
+
+		// Mainshock information
+
+		String rup_event_id = obs_main.getEventId();
+		long rup_time = obs_main.getOriginTime();
+		double rup_mag = obs_main.getMag();
+		Location hypo = obs_main.getHypocenterLocation();
+
+		// Say hello
+
+		System.out.println ("Fetching aftershocks for event: " + rup_event_id);
+
+		// Get minimum magnitude and radius parameters
+
+		double sample_min_mag = min_mag;
+		double sample_radius = radius_km;
+
+		double centroid_min_mag = min_mag;
+		double centroid_radius = radius_km;
+
+		// Zero radius means to use Wells and Coppersmith, in range 10 to 2000 km
+
+		if (radius_km < 0.001) {
+			SearchRadiusFn search_radius_fn = SearchRadiusFn.makeWCClip (1.0, 10.0, 2000.0);
+			sample_radius = search_radius_fn.getRadius (rup_mag);
+			centroid_radius = search_radius_fn.getRadius (rup_mag);
+		}
+
+		System.out.println ("Search radius in km = " + sample_radius);
+
+		// Depth range used for sampling aftershocks, in kilometers
+
+		double min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+		double max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+
+		// Retrieve list of aftershocks in the initial region
+
+		ObsEqkRupList aftershocks;
+
+		if (centroid_min_mag > SearchMagFn.SKIP_CENTROID_TEST) {	// 9.9
+			aftershocks = new ObsEqkRupList();
+		} else {
+
+			// The initial region is a circle centered at the epicenter
+
+			SphRegion initial_region = SphRegion.makeCircle (new SphLatLon(hypo), centroid_radius);
+
+			// Time range used for centroid
+
+			double centroid_min_days = Math.max (min_days, 0.0);
+			double centroid_max_days = max_days;
+
+			// Call Comcat for centroid calculation
+
+			try {
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+				aftershocks = accessor.fetchAftershocks (obs_main, centroid_min_days, centroid_max_days, min_depth, max_depth, initial_region, initial_region.getPlotWrap(), centroid_min_mag);
+			} catch (Exception e) {
+				throw new RuntimeException ("Comcat exception while performing centroid calculation for event: " + rup_event_id, e);
+			}
+		}
+
+		System.out.println ("Fetched " + aftershocks.size() + " aftershocks in initial search region for event: " + rup_event_id);
+
+		// Center of search region
+
+		Location centroid;
+
+		// If no aftershocks, use the hypocenter location
+
+		if (aftershocks.isEmpty()) {
+			centroid = hypo;
+		}
+
+		// Otherwise, use the centroid of the aftershocks
+
+		else {
+			centroid = AftershockStatsCalc.getSphCentroid (obs_main, aftershocks);
+		}
+
+		// Search region is a circle centered at the centroid (or hypocenter if no aftershocks)
+			
+		SphRegion aftershock_search_region = SphRegion.makeCircle (new SphLatLon(centroid), sample_radius);
+
+		// Time range used for sample
+
+		double sample_min_days = min_days;
+		double sample_max_days = max_days;
+
+		// Retrieve list of aftershocks in the search region
+
+		ObsEqkRupList catalog_comcat_aftershocks;
+
+		try {
+			ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+			catalog_comcat_aftershocks = accessor.fetchAftershocks (obs_main, sample_min_days, sample_max_days,
+				min_depth, max_depth, aftershock_search_region, false, sample_min_mag);
+		} catch (Exception e) {
+			throw new RuntimeException ("Comcat exception while fetching aftershocks for event: " + rup_event_id, e);
+		}
+
+		// Sort the aftershocks in order of increasing time
+
+		if (catalog_comcat_aftershocks.size() > 1) {
+			GUIExternalCatalog.sort_aftershocks (catalog_comcat_aftershocks);
+		}
+
+		// Say goodbye
+
+		System.out.println ("Fetched " + catalog_comcat_aftershocks.size() + " aftershocks for event: " + rup_event_id);
+
+		return catalog_comcat_aftershocks;
 	}
 
 
@@ -466,6 +660,9 @@ public class OEtasTest {
 		double t_main_day = 0.0;
 		USGS_ForecastInfo fc_info = cat_into.make_fc_info_for_test (origin, t_main_day);
 
+		System.out.println ();
+		System.out.println (fc_info.toString());
+
 		// Create multi-thread context
 
 		int num_threads = AutoExecutorService.AESNUM_DEFAULT;	// -1
@@ -550,7 +747,7 @@ public class OEtasTest {
 
 
 
-	// test8
+	// test8/gen_etas
 	// Command line arguments:
 	//  fn_catalog  fn_cat_info  fn_params  fn_accepted  fn_mag_comp  fn_log_density  fn_results  fn_fc_json
 	// Make an ETAS forecast for the given catalog, catalog information, and parameters.
@@ -561,7 +758,7 @@ public class OEtasTest {
 
 		// Read arguments
 
-		System.out.println ("Smoke test for ETAS forecast");
+		System.out.println ("Generate ETAS forecast");
 		String fn_catalog = get_filename_arg (testargs, "fn_catalog");
 		String fn_cat_info = get_filename_arg (testargs, "fn_cat_info");
 		String fn_params = get_filename_arg (testargs, "fn_params");
@@ -696,6 +893,98 @@ public class OEtasTest {
 
 
 
+	// test9/mainshock_info
+	// Command line arguments:
+	//  event_id
+	// Fetch mainshock information from Comcat, and display it.
+
+	public static void test9 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Fetch mainshock information from Comcat");
+		String event_id = testargs.get_string ("event_id");
+		testargs.end_test();
+
+		// Fetch mainshock
+
+		System.out.println ();
+
+		ObsEqkRupture obs_main = fetch_mainshock (event_id);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
+	// test10/write_obs_cat
+	// Command line arguments:
+	//  filename  event_id  min_days  max_days  radius_km  min_mag
+	// Fetch a catalog from Comcat, and write it to a file.
+	// If radius_km is 0.0, then the Wells and Coppersmith radius is used.
+	// The centroid algorithm is used.
+
+	public static void test10 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Fetch aftershock (and foreshock) catalog from Comcat, and write to file");
+		String filename_catalog = get_filename_arg (testargs, "filename_catalog");
+		String event_id = testargs.get_string ("event_id");
+		double min_days = testargs.get_double ("min_days");
+		double max_days = testargs.get_double ("max_days");
+		double radius_km = testargs.get_double ("radius_km");
+		double min_mag = testargs.get_double ("min_mag");
+
+		testargs.end_test();
+
+		// Fetch mainshock
+
+		System.out.println ();
+
+		ObsEqkRupture obs_main = fetch_mainshock (event_id);
+
+		// Make origin at the mainshock
+
+		//OEOrigin origin = (new OEOrigin()).set_from_rupture_horz (obs_main);
+
+		// Fetch aftershocks
+
+		ObsEqkRupList aftershocks = fetch_aftershocks (obs_main, min_days, max_days, radius_km, min_mag);
+
+		// Set up for an external catalog
+
+		GUIExternalCatalog ext_cat = new GUIExternalCatalog();
+
+		ext_cat.setup_catalog (
+			aftershocks,
+			obs_main
+		);
+
+		// Write the file
+
+		ext_cat.write_to_file (filename_catalog);
+
+		System.out.println ();
+		System.out.println ("Wrote " + (aftershocks.size() + 1) + " observed earthquakes to file: " + filename_catalog);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -750,8 +1039,20 @@ public class OEtasTest {
 		}
 
 
-		if (testargs.is_test ("test8")) {
+		if (testargs.is_test ("test8", "gen_etas")) {
 			test8 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test9", "mainshock_info")) {
+			test9 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test10", "write_obs_cat")) {
+			test10 (testargs);
 			return;
 		}
 

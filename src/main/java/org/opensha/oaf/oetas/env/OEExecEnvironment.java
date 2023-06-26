@@ -292,11 +292,11 @@ public class OEExecEnvironment {
 
 		// Display fitting performance
 
-		result.append (", fit = [" + fit_perf_data.one_line_string() + "]");
+		result.append (", fit = {" + fit_perf_data.one_line_string() + "}");
 
 		// Display simulation performance
 
-		result.append (", sim = [" + sim_perf_data.one_line_string() + "]");
+		result.append (", sim = {" + sim_perf_data.one_line_string() + "}");
 
 		return result.toString();
 	}
@@ -1028,35 +1028,45 @@ public class OEExecEnvironment {
 
 	private OEDisc2InitVoxSet do_fitting () throws OEException, IOException {
 
-		// Get the top magnitude for fitting
-
-		double fit_mag_top = catalog_info.magTop;
-
-		// If it wasn't supplied, use the maximum over the entire catalog
-
-		if (fit_mag_top <= catalog_info.magCat + OEConstants.FIT_MAG_EPS) {
-			fit_mag_top = rup_mag_top;
-		}
-
-		// If it was supplied, make it at least the maximum in the portion of the catalog used for fitting
-
-		else {
-			fit_mag_top = Math.max (fit_mag_top, fit_rup_mag_top);
-		}
-
-		// Always make it at least a minimum amount above the history's magCat
-
-		fit_mag_top = Math.max (fit_mag_top, history.magCat + OEConstants.GEN_MIN_MAG_RANGE);
+		//  // Get the top magnitude for fitting
+		//  
+		//  double fit_mag_top = catalog_info.magTop;
+		//  
+		//  // If it wasn't supplied, use the maximum over the entire catalog
+		//  
+		//  if (fit_mag_top <= catalog_info.magCat + OEConstants.FIT_MAG_EPS) {
+		//  	fit_mag_top = rup_mag_top;
+		//  }
+		//  
+		//  // If it was supplied, make it at least the maximum in the portion of the catalog used for fitting
+		//  
+		//  else {
+		//  	fit_mag_top = Math.max (fit_mag_top, fit_rup_mag_top);
+		//  }
+		//  
+		//  // Always make it at least a minimum amount above the history's magCat
+		//  
+		//  fit_mag_top = Math.max (fit_mag_top, history.magCat + OEConstants.GEN_MIN_MAG_RANGE);
+		//  
+		//  // Make the magnitude range
+		//  // Use defaults for the reference magnitude and maximum considered magnitude.
+		//  // Use the history's magCat for the minimum simulation magnitude, which allows combining intervals with mc == magCat.
+		//  
+		//  fit_params_mags = new OECatalogParamsMags (
+		//  	OEConstants.DEF_MREF,		// mref
+		//  	OEConstants.DEF_MSUP,		// msup
+		//  	history.magCat,				// mag_min_sim
+		//  	fit_mag_top					// mag_max_sim
+		//  );
 
 		// Make the magnitude range
-		// Use defaults for the reference magnitude and maximum considered magnitude.
-		// Use the history's magCat for the minimum simulation magnitude, which allows combining intervals with mc == magCat.
 
-		fit_params_mags = new OECatalogParamsMags (
-			OEConstants.DEF_MREF,		// mref
-			OEConstants.DEF_MSUP,		// msup
-			history.magCat,				// mag_min_sim
-			fit_mag_top					// mag_max_sim
+		fit_params_mags = etas_params. get_fmag_range (
+			catalog_info.magCat,	// cat_magCat
+			catalog_info.magTop,	// cat_magTop
+			rup_mag_top,			// rup_mag_top
+			fit_rup_mag_top,		// fit_rup_mag_top
+			history.magCat			// hist_magCat
 		);
 
 		// Create the fitter
