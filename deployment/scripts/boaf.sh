@@ -25,6 +25,13 @@
 #           After the 'packgui' keyword comes the GUI date in form YYYY_MM_DD (or tag), followed by the
 #           name of the private server configuration file.  This creates the production GUI.
 #
+# compile_etas_gui - Same as compilegui except it creates the generic aftershock ETAS GUI.
+#
+# pack_etas_gui - Same as packgui except it creates the production aftershock ETAS GUI.
+#
+# compile_etas_test - Same as compilegui except it creates the generic ETAS command-line test app.
+#                     After the 'compile_etas_test' keyword comes the app date in form YYYY_MM_DD (or tag).
+#
 # deploy - Copy the AAFS jar file and required libraries into /opt/aafs/oefjava.
 #
 # deploycfg - Copy the AAFS configuration files and scripts into /opt/aafs and its subdirectories.
@@ -162,6 +169,8 @@
 #     For a dual-server configuration, it is assumed that both servers use the same database name, username, and password.
 #     This works by modifying the generic GUI, so the generic must already be built and up-to-date.
 #     The server configuration is bound into the production GUI.
+#
+# config_pack_etas_gui - Same as config_packgui except it creates the production ETAS GUI.
 #
 # config_file_packgui - Write a server configuration file for the production GUI.
 #     After the 'config_file_packgui' keyword comes the following parameters:
@@ -607,6 +616,48 @@ case "$1" in
         fi
         ;;
 
+    compile_etas_gui)
+        cd opensha-oaf
+        ./gradlew appETAS_GUIJar
+        cd ..
+        if [ -f opensha-oaf/build/libs/AftershockETAS_GUI.jar ]; then
+            rmexistingfile opensha-oaf/build/libs/AftershockETAS_GUI-$2.jar
+            mv opensha-oaf/build/libs/AftershockETAS_GUI.jar opensha-oaf/build/libs/AftershockETAS_GUI-$2.jar
+        fi
+        ;;
+
+    pack_etas_gui)
+        if [ -f opensha-oaf/build/libs/AftershockETAS_GUI-$2.jar ]; then
+            cd opensha-oaf/build/libs
+            rmexistingdir gtmp
+            rmexistingfile AftershockETAS_Prod_GUI-$2.jar
+            rmexistingfile AftershockETAS_GUI-$2-fixed.jar
+            zip -q -F AftershockETAS_GUI-$2.jar --out AftershockETAS_GUI-$2-fixed.jar
+            mkdir gtmp
+            cd gtmp
+            unzip -uoq ../AftershockETAS_GUI-$2-fixed.jar
+            cd ..
+            cd ../../..
+            rmexistingfile opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
+            cp -pi "$3" opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
+            cd opensha-oaf/build/libs
+            jar -cfe AftershockETAS_Prod_GUI-$2.jar org.opensha.oaf.oetas.gui.OEGUITop -C gtmp .
+            cd ../../..
+        else
+            echo "ETAS GUI has not been compiled yet"
+        fi
+        ;;
+
+    compile_etas_test)
+        cd opensha-oaf
+        ./gradlew appETAS_TestJar
+        cd ..
+        if [ -f opensha-oaf/build/libs/AftershockETAS_Test.jar ]; then
+            rmexistingfile opensha-oaf/build/libs/AftershockETAS_Test-$2.jar
+            mv opensha-oaf/build/libs/AftershockETAS_Test.jar opensha-oaf/build/libs/AftershockETAS_Test-$2.jar
+        fi
+        ;;
+
     deploy)
         if [ -f opensha-oaf/build/libs/oefjava.jar ]; then
             makenewdir /opt/aafs/oefjava
@@ -886,6 +937,39 @@ case "$1" in
         fi
         ;;
 
+    config_pack_etas_gui)
+        if [ -f opensha-oaf/build/libs/AftershockETAS_GUI-$2.jar ]; then
+            cd opensha-oaf/build/libs
+            rmexistingdir gtmp
+            rmexistingfile AftershockETAS_Prod_GUI-$2.jar
+            rmexistingfile AftershockETAS_GUI-$2-fixed.jar
+            zip -q -F AftershockETAS_GUI-$2.jar --out AftershockETAS_GUI-$2-fixed.jar
+            mkdir gtmp
+            cd gtmp
+            unzip -uoq ../AftershockETAS_GUI-$2-fixed.jar
+            cd ..
+            cd ../../..
+            rmexistingfile opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
+            SRVIP1="${3}"
+            REPSET1="${4}"
+            SRVIP2="${5}"
+            REPSET2="${6}"
+            DBNAME="${7}"
+            DBUSER="${8}"
+            DBPASS="${9}"
+            copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json    \
+            "rs0" "usgs" "usgs" "usgs" "usgs"    \
+            "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
+            "$SRVIP1" "$SRVIP2" "test" "1" "none"
+            cd opensha-oaf/build/libs
+            jar -cfe AftershockETAS_Prod_GUI-$2.jar org.opensha.oaf.oetas.gui.OEGUITop -C gtmp .
+            cd ../../..
+        else
+            echo "ETAS GUI has not been compiled yet"
+        fi
+        ;;
+
     config_file_packgui)
         isfilewriteok "$2"
         if [ "$WRITEISOK" == "Y" ]; then
@@ -960,6 +1044,12 @@ case "$1" in
         echo "  boaf.sh compilegui GUIDATE"
         echo "Package the GUI jar file, and bundle with private server configuration file:"
         echo "  boaf.sh packgui GUIDATE FILENAME"
+        echo "Compile the OpenSHA code to create the generic aftershock ETAS GUI:"
+        echo "  boaf.sh compile_etas_gui GUIDATE"
+        echo "Package the ETAS GUI jar file, and bundle with private server configuration file:"
+        echo "  boaf.sh pack_etas_gui GUIDATE FILENAME"
+        echo "Compile the OpenSHA code to create the generic ETAS command-line test app:"
+        echo "  boaf.sh compile_etas_test APPDATE"
         echo "Copy the AAFS jar file and required libraries into /opt/aafs/oefjava:"
         echo "  boaf.sh deploy"
         echo "Copy the AAFS configuration files and scripts into /opt/aafs and its subdirectories:"
@@ -1000,6 +1090,8 @@ case "$1" in
         echo "  boaf.sh config_file_action_dev FILENAME"
         echo "Configure and package the production GUI:"
         echo "  boaf.sh config_packgui GUIDATE SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS"
+        echo "Configure and package the production ETAS GUI:"
+        echo "  boaf.sh config_pack_etas_gui GUIDATE SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS"
         echo "Create and save a server configuration file for the production GUI:"
         echo "  boaf.sh config_file_packgui FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS"
         echo "Run a class in the org.opensha.oaf package, using the compiled-in configuration:"

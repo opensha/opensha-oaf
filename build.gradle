@@ -97,7 +97,8 @@ ext {
 
 createOafAppTask("appOAFJar", "AftershockGUI-current", "org.opensha.oaf.rj.gui.RJGUITop")
 createOafAppTask("appOAF_ETAS_Jar", 'AftershockGUI_ETAS-current-'+getDate(), "org.opensha.oaf.etas.AftershockStatsGUI_ETAS")
-createOafAppTask("appOETASJar", "AftershockOETAS-current", "org.opensha.oaf.oetas.gui.OEGUITop")
+createOafAppTask("appETAS_GUIJar", "AftershockETAS_GUI", "org.opensha.oaf.oetas.gui.OEGUITop")
+createOafAppTask("appETAS_TestJar", "AftershockETAS_Test", "org.opensha.oaf.oetas.env.OEtasTest")
 
 // OAF server task
 
