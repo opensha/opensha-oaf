@@ -36,6 +36,8 @@ import org.opensha.oaf.rj.SearchMagFn;
 import org.opensha.oaf.rj.SearchRadiusFn;
 import org.opensha.oaf.rj.USGS_ForecastInfo;
 
+import org.opensha.oaf.aafs.VersionInfo;
+
 import org.opensha.commons.geo.Location;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -613,7 +615,7 @@ public class OEtasTest {
 
 
 
-	// test7
+	// test7/show_etas
 	// Command line arguments:
 	//  fn_catalog  fn_cat_info  fn_params
 	// Make an ETAS forecast for the given catalog, catalog information, and parameters.
@@ -623,7 +625,7 @@ public class OEtasTest {
 
 		// Read arguments
 
-		System.out.println ("Smoke test for ETAS forecast");
+		System.out.println ("Display ETAS forecast");
 		String fn_catalog = get_filename_arg (testargs, "fn_catalog");
 		String fn_cat_info = get_filename_arg (testargs, "fn_cat_info");
 		String fn_params = get_filename_arg (testargs, "fn_params");
@@ -747,9 +749,9 @@ public class OEtasTest {
 
 
 
-	// test8/gen_etas
+	// test8/run_etas
 	// Command line arguments:
-	//  fn_catalog  fn_cat_info  fn_params  fn_accepted  fn_mag_comp  fn_log_density  fn_results  fn_fc_json
+	//  fn_catalog  fn_cat_info  fn_params  fn_accepted  fn_mag_comp  fn_log_density  fn_intensity  fn_results  fn_fc_json
 	// Make an ETAS forecast for the given catalog, catalog information, and parameters.
 	// Forecast info is constructed assuming the mainshock is at time 0.0 days.
 	// Write any requested files.
@@ -766,6 +768,7 @@ public class OEtasTest {
 		String fn_accepted = get_filename_arg (testargs, "fn_accepted");
 		String fn_mag_comp = get_filename_arg (testargs, "fn_mag_comp");
 		String fn_log_density = get_filename_arg (testargs, "fn_log_density");
+		String fn_intensity = get_filename_arg (testargs, "fn_intensity");
 		String fn_results = get_filename_arg (testargs, "fn_results");
 		String fn_fc_json = get_filename_arg (testargs, "fn_fc_json");
 
@@ -830,6 +833,7 @@ public class OEtasTest {
 				exec_env.filename_accepted = fn_accepted;
 				exec_env.filename_mag_comp = fn_mag_comp;
 				exec_env.filename_log_density = fn_log_density;
+				exec_env.filename_intensity_calc = fn_intensity;
 				exec_env.filename_results = fn_results;
 				exec_env.filename_fc_json = fn_fc_json;
 
@@ -985,6 +989,40 @@ public class OEtasTest {
 
 
 
+	// test11/system_info
+	// Command line arguments:
+	//  <empty>
+	// Display number of threads and memory information.
+
+	public static void test11 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Displaying system information");
+		testargs.end_test();
+
+		// Display program version information
+
+		System.out.println ();
+		System.out.println (VersionInfo.get_one_line_version());
+
+		// Display threads
+
+		System.out.println ();
+		System.out.println ("Threads: " + AutoExecutorService.get_default_num_threads());
+
+		// Display memory
+
+		System.out.println ();
+		System.out.println (SimpleUtils.one_line_memory_status_string());
+		System.out.println ();
+
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -1033,13 +1071,13 @@ public class OEtasTest {
 		}
 
 
-		if (testargs.is_test ("test7")) {
+		if (testargs.is_test ("test7", "show_etas")) {
 			test7 (testargs);
 			return;
 		}
 
 
-		if (testargs.is_test ("test8", "gen_etas")) {
+		if (testargs.is_test ("test8", "run_etas")) {
 			test8 (testargs);
 			return;
 		}
@@ -1053,6 +1091,12 @@ public class OEtasTest {
 
 		if (testargs.is_test ("test10", "write_obs_cat")) {
 			test10 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test11", "system_info")) {
+			test11 (testargs);
 			return;
 		}
 

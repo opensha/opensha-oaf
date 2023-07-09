@@ -382,6 +382,11 @@ public class OEDisc2ExtFit {
 
 	private double tint_br;
 
+	// True to save information needed to calculate the intensity function.
+	// This is not used in this code, but is available to downstream code.
+
+	private boolean f_intensity;
+
 
 
 
@@ -3985,6 +3990,7 @@ public class OEDisc2ExtFit {
 
 		mag_main = 0.0;
 		tint_br = 0.0;
+		f_intensity = false;
 
 		f_omat_rup_targ_rup_src = true;
 		f_omat_rup_targ_int_src = true;
@@ -4067,6 +4073,7 @@ public class OEDisc2ExtFit {
 
 		this.mag_main = calc_mag_main();
 		this.tint_br = get_like_time_interval();
+		this.f_intensity = false;
 
 		// Set the matrix allocation flags
 
@@ -4245,6 +4252,7 @@ public class OEDisc2ExtFit {
 		result.append ("mag_max = "                + mag_max                + "\n");
 		result.append ("mag_main = "               + mag_main               + "\n");
 		result.append ("tint_br = "                + tint_br                + "\n");
+		result.append ("f_intensity = "            + f_intensity            + "\n");
 
 		if (grouping != null) {
 			result.append ("grouping.group_count = "     + grouping.group_count             + "\n");
@@ -4291,6 +4299,25 @@ public class OEDisc2ExtFit {
 
 	public final void set_tint_br (double tint_br) {
 		this.tint_br = tint_br;
+		return;
+	}
+
+
+
+
+	// Get the flag to save information needed to calculate the intensity function.
+
+	public final boolean get_f_intensity () {
+		return f_intensity;
+	}
+
+
+
+
+	// Set the flag to save information needed to calculate the intensity function.
+
+	public final void set_f_intensity (boolean f_intensity) {
+		this.f_intensity = f_intensity;
 		return;
 	}
 
@@ -4356,7 +4383,14 @@ public class OEDisc2ExtFit {
 			tint_br,
 			history.req_t_interval_end,
 			history.get_t_range_end(),
-			group_t_interval_end
+			group_t_interval_end,
+			f_intervals,
+			lmr_opt,
+			f_intensity,
+			like_int_begin,
+			like_int_end,
+			main_rup_begin,
+			main_rup_end
 		);
 
 		return fit_info;

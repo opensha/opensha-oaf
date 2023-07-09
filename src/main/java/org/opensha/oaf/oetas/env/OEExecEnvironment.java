@@ -194,6 +194,10 @@ public class OEExecEnvironment {
 
 	public String filename_log_density = null;
 
+	// Filename for writing the integrated intensity function, or null if not required.
+
+	public String filename_intensity_calc = null;
+
 	// Filename for writing the ETAS results (including forecast JSON), or null if not requested.
 
 	public String filename_results = null;
@@ -1093,6 +1097,12 @@ public class OEExecEnvironment {
 
 		fitter.set_tint_br (tint_br);
 
+		// If we want the integrated intensity function, set flag to save required data
+
+		if (filename_intensity_calc != null) {
+			fitter.set_f_intensity (true);
+		}
+
 		// Display fitter info
 
 		System.out.println();
@@ -1205,6 +1215,9 @@ public class OEExecEnvironment {
 
 		if (filename_log_density != null) {
 
+			System.out.println();
+			System.out.println ("Writing log-density grid to file");
+
 			// Write the file
 
 			try {
@@ -1218,6 +1231,32 @@ public class OEExecEnvironment {
 
 			System.out.println();
 			System.out.println ("Wrote log-density grid to file: " + filename_log_density);
+		}
+
+		// If we want to write the integrated intensity function ...
+
+		if (filename_intensity_calc != null) {
+
+			System.out.println();
+
+			// Write the file
+
+			try {
+				voxel_set.write_integrated_intensity_to_file (
+					filename_intensity_calc,
+					OEConstants.DEF_INTEGRATED_LAMBDA_RES,
+					history,
+					exec_timer
+				);
+			}
+			catch (Exception e) {
+				throw new IOException ("Error writing integrated intensity function file: " + filename_intensity_calc, e);
+			}
+
+			// Report
+
+			System.out.println();
+			System.out.println ("Wrote interated intensity function to file: " + filename_intensity_calc);
 		}
 
 		// Discard the fitter

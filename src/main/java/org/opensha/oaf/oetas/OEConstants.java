@@ -913,4 +913,8 @@ public class OEConstants {
 		return SimpleUtils.string_to_time (DEF_SIM_ORIGIN_TIME);
 	}
 
+	// Default resolution for integrated intensity as a fraction of total time range, or 0 for no requirement.
+
+	public static final double DEF_INTEGRATED_LAMBDA_RES = 0.005;
+
 }

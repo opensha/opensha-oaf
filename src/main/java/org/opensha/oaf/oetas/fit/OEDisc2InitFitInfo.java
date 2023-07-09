@@ -3,6 +3,7 @@ package org.opensha.oaf.oetas.fit;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
 
 import org.opensha.oaf.oetas.OEStatsCalc;
 import org.opensha.oaf.oetas.OEConstants;
@@ -15,7 +16,7 @@ import org.opensha.oaf.oetas.OEGenerationInfo;
 // Threading: This object will be accessed from multiple threads, therefore
 // it must not be modified after initial setup.
 
-public class OEDisc2InitFitInfo {
+public class OEDisc2InitFitInfo implements Marshalable {
 
 	//----- Configuration -----
 
@@ -84,6 +85,31 @@ public class OEDisc2InitFitInfo {
 	public double group_t_interval_end;
 
 
+	//----- Intensity function calculation -----
+
+	// True to use intervals to fill in below magnitude of completeness.
+
+	public boolean f_intervals;
+
+	// Likelihood magnitude range option.
+
+	public int lmr_opt;
+
+	// True to save information needed to calculate the intensity function.
+
+	public boolean f_intensity;
+
+	// Likelihood interval range, the beginning and ending+1 of intervals to include in likelihood calculation.
+
+	public int like_int_begin;
+	public int like_int_end;
+
+	// Mainshock rupture range, the beginning and ending+1 of ruptures to use 'ams' as productivity.
+
+	public int main_rup_begin;
+	public int main_rup_end;
+
+
 	//----- Derived objects -----
 
 	// Parameters for the Bayesian prior.
@@ -125,6 +151,14 @@ public class OEDisc2InitFitInfo {
 		hist_t_interval_end = 0.0;
 		group_t_interval_end = 0.0;
 
+		f_intervals = true;
+		lmr_opt = OEConstants.LMR_OPT_MCT_INFINITY;
+		f_intensity = false;
+		like_int_begin = 0;
+		like_int_end = 0;
+		main_rup_begin = 0;
+		main_rup_end = 0;
+
 		bay_prior_params = null;
 		seed_gen_info = null;
 
@@ -158,7 +192,14 @@ public class OEDisc2InitFitInfo {
 		double tint_br,
 		double req_t_interval_end,
 		double hist_t_interval_end,
-		double group_t_interval_end
+		double group_t_interval_end,
+		boolean f_intervals,
+		int lmr_opt,
+		boolean f_intensity,
+		int like_int_begin,
+		int like_int_end,
+		int main_rup_begin,
+		int main_rup_end
 	) {
 		this.f_background = f_background;
 		this.group_count = group_count;
@@ -172,6 +213,13 @@ public class OEDisc2InitFitInfo {
 		this.req_t_interval_end = req_t_interval_end;
 		this.hist_t_interval_end = hist_t_interval_end;
 		this.group_t_interval_end = group_t_interval_end;
+		this.f_intervals = f_intervals;
+		this.lmr_opt = lmr_opt;
+		this.f_intensity = f_intensity;
+		this.like_int_begin = like_int_begin;
+		this.like_int_end = like_int_end;
+		this.main_rup_begin = main_rup_begin;
+		this.main_rup_end = main_rup_end;
 
 		this.bay_prior_params = make_bay_prior_params();
 		this.seed_gen_info = make_seed_gen_info();
@@ -204,6 +252,13 @@ public class OEDisc2InitFitInfo {
 		result.append ("req_t_interval_end = " + req_t_interval_end + "\n");
 		result.append ("hist_t_interval_end = " + hist_t_interval_end + "\n");
 		result.append ("group_t_interval_end = " + group_t_interval_end + "\n");
+		result.append ("f_intervals = " + f_intervals + "\n");
+		result.append ("lmr_opt = " + lmr_opt + "\n");
+		result.append ("f_intensity = " + f_intensity + "\n");
+		result.append ("like_int_begin = " + like_int_begin + "\n");
+		result.append ("like_int_end = " + like_int_end + "\n");
+		result.append ("main_rup_begin = " + main_rup_begin + "\n");
+		result.append ("main_rup_end = " + main_rup_end + "\n");
 		if (bay_prior_params != null) {
 			result.append (bay_prior_params.toString());
 		}
@@ -432,6 +487,15 @@ public class OEDisc2InitFitInfo {
 
 
 
+	// Return true if intensity function is being calculated and interval sources are needed.
+
+	public final boolean needs_interval_intensity () {
+		return f_intensity && f_intervals;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 
@@ -473,6 +537,13 @@ public class OEDisc2InitFitInfo {
 			writer.marshalDouble  ("req_t_interval_end"  , req_t_interval_end  );
 			writer.marshalDouble  ("hist_t_interval_end" , hist_t_interval_end );
 			writer.marshalDouble  ("group_t_interval_end", group_t_interval_end);
+			writer.marshalBoolean ("f_intervals"         , f_intervals         );
+			writer.marshalInt     ("lmr_opt"             , lmr_opt             );
+			writer.marshalBoolean ("f_intensity"         , f_intensity         );
+			writer.marshalInt     ("like_int_begin"      , like_int_begin      );
+			writer.marshalInt     ("like_int_end"        , like_int_end        );
+			writer.marshalInt     ("main_rup_begin"      , main_rup_begin      );
+			writer.marshalInt     ("main_rup_end"        , main_rup_end        );
 
 		}
 		break;
@@ -512,6 +583,13 @@ public class OEDisc2InitFitInfo {
 			req_t_interval_end   = reader.unmarshalDouble  ("req_t_interval_end"  );
 			hist_t_interval_end  = reader.unmarshalDouble  ("hist_t_interval_end" );
 			group_t_interval_end = reader.unmarshalDouble  ("group_t_interval_end");
+			f_intervals          = reader.unmarshalBoolean ("f_intervals"         );
+			lmr_opt              = reader.unmarshalInt     ("lmr_opt"             );
+			f_intensity          = reader.unmarshalBoolean ("f_intensity"         );
+			like_int_begin       = reader.unmarshalInt     ("like_int_begin"      );
+			like_int_end         = reader.unmarshalInt     ("like_int_end"        );
+			main_rup_begin       = reader.unmarshalInt     ("main_rup_begin"      );
+			main_rup_end         = reader.unmarshalInt     ("main_rup_end"        );
 
 			bay_prior_params = make_bay_prior_params();
 			seed_gen_info = make_seed_gen_info();
@@ -526,6 +604,7 @@ public class OEDisc2InitFitInfo {
 
 	// Marshal object.
 
+	@Override
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
 		do_marshal (writer);
@@ -535,6 +614,7 @@ public class OEDisc2InitFitInfo {
 
 	// Unmarshal object.
 
+	@Override
 	public OEDisc2InitFitInfo unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);

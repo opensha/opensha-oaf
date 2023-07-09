@@ -7,7 +7,9 @@ import java.util.IdentityHashMap;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.InvariantViolationException;
 import static org.opensha.oaf.util.SimpleUtils.rndd;
 import static org.opensha.oaf.util.SimpleUtils.rndf;
 
@@ -124,6 +126,40 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 
 
+	//----- Intensity computation -----
+	//
+	// Information needed to calculate the extended source contribution to the intensity function.
+
+	// The unscaled productivity density for each interval, due to non-mainshocks.
+	// With length == interval_count, each element contains the unscaled productivity density for the corresponding interval.
+	// Multiply by the interval duration to get total productivity (not density).
+	// Multiply by (10^a)*Q to scale the productivity of the non-mainshock source ruptures.
+	// The two multiplications yield the productivity to use for seeding simulations.
+	// Null if the intensity function is not being computed.
+
+	private double[] unscaled_prod_density_int;
+
+	// The unscaled productivity density for each interval, due to mainshocks.
+	// With length == interval_count, each element contains the unscaled productivity density for the corresponding interval.
+	// Multiply by the interval duration to get total productivity (not density).
+	// Multiply by (10^ams)*Q to scale the productivity of the mainshock source ruptures.
+	// The two multiplications yield the productivity to use for seeding simulations.
+	// Null if the intensity function is not being computed.
+
+	private double[] unscaled_prod_density_main_int;
+
+	// The unscaled productivity density for each interval, due to a background rate.
+	// With length == interval_count, each element contains the unscaled productivity density for the corresponding interval.
+	// Multiply by the interval duration to get total productivity (not density).
+	// Multiply by mu to scale the the background rate.
+	// The two multiplications yield the productivity to use for seeding simulations.
+	// Null if the intensity function is not being computed, or if there is no background rate.
+
+	private double[] unscaled_prod_density_bkgd_int;
+
+
+
+
 	//----- Construction -----
 
 
@@ -151,6 +187,10 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 		prod_scnd = null;
 		prod_main = null;
 		prod_bkgd = null;
+
+		unscaled_prod_density_int = null;
+		unscaled_prod_density_main_int = null;
+		unscaled_prod_density_bkgd_int = null;
 
 		return;
 	}
@@ -288,6 +328,10 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 				result.append ("   ... and " + (group_count - group_disp) + " additional groups ..." + "\n");
 			}
 		}
+
+		result.append (((unscaled_prod_density_int == null) ? "unscaled_prod_density_int = <null>" : ("unscaled_prod_density_int.length = " + unscaled_prod_density_int.length)) + "\n");
+		result.append (((unscaled_prod_density_main_int == null) ? "unscaled_prod_density_main_int = <null>" : ("unscaled_prod_density_main_int.length = " + unscaled_prod_density_main_int.length)) + "\n");
+		result.append (((unscaled_prod_density_bkgd_int == null) ? "unscaled_prod_density_bkgd_int = <null>" : ("unscaled_prod_density_bkgd_int.length = " + unscaled_prod_density_bkgd_int.length)) + "\n");
 
 		return result.toString();
 	}
@@ -612,6 +656,37 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 		// Get the unscaled productivity for each group
 
 		avpr.avpr_get_grouped_unscaled_prod_all (prod_scnd, prod_main, prod_bkgd);
+
+		// If we need interval productivites ...
+
+		if (fit_info.needs_interval_intensity()) {
+
+			// Interval productivity descended from non-mainshock
+
+			unscaled_prod_density_int = avpr.avpr_get_unscaled_prod_density_int();
+
+			if (unscaled_prod_density_int != null && unscaled_prod_density_int.length == 0) {
+				unscaled_prod_density_int = null;
+			}
+
+			// Interval productivity descended from mainshock
+
+			unscaled_prod_density_main_int = avpr.avpr_get_unscaled_prod_density_main_int();
+
+			if (unscaled_prod_density_main_int != null && unscaled_prod_density_main_int.length == 0) {
+				unscaled_prod_density_main_int = null;
+			}
+
+			// If we have a background rate, interval productivity descended from the background rate.
+
+			if (is_background_supported()) {
+				unscaled_prod_density_bkgd_int = avpr.avpr_get_unscaled_prod_density_bkgd_int();
+
+				if (unscaled_prod_density_bkgd_int != null && unscaled_prod_density_bkgd_int.length == 0) {
+					unscaled_prod_density_bkgd_int = null;
+				}
+			}
+		}
 
 		return this;
 	}
@@ -1114,6 +1189,150 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 
 
+	// Get parameters to calculate integrated intensity function.
+	// Parameters:
+	//  fit_info = Information about parameter fitting.
+	//  subvox_index = Index (0-based) of the sub-voxel to use for ams and mu.
+	//  intensity_calc = Receives the parameters and extended source information.
+	// Threading: Parameter fit_info can be shared among multiple threads and so must not be modified.
+	//  Parameter intensity_calc is written by this function and so must be local to the current thread.
+
+	public final void get_intensity_calc_params (
+		OEDisc2InitFitInfo fit_info,
+		int subvox_index,
+		OEDisc2IntensityCalc intensity_calc
+	) {
+
+		// Get the parameter values
+
+		final double p = p_velt.get_ve_value();
+		final double c = c_velt.get_ve_value();
+		final double b = b_velt.get_ve_value();
+		final double alpha = ((alpha_velt == null) ? b : alpha_velt.get_ve_value());
+
+		// Use ten_aint_q for ten_a_q
+
+		final double ten_a_q = ten_aint_q;
+
+		// Convert from zams to (10^ams)*Q, with Q == 1
+
+		final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
+			a_zams_velt[subvox_index].get_ve_value(),
+			b,
+			alpha
+		);
+
+		// Convert from zmu to mu, noting a_zmu_velt is non-null if background is supported
+
+		final double mu = (is_background_supported() ? fit_info.calc_mu_from_zmu (
+			a_zmu_velt[subvox_index].get_ve_value(),
+			b
+		) : 0.0);
+
+		// Pass parameters to intensity calculation
+
+		intensity_calc.set_params (
+			b,
+			alpha,
+			c,
+			p,
+			ten_a_q,
+			ten_ams_q,
+			mu
+		);
+
+		// If background supported ...
+
+		if (is_background_supported()) {
+
+			// If we have extended source productivity info ...
+
+			if (unscaled_prod_density_int != null
+				&& unscaled_prod_density_main_int != null
+				&& unscaled_prod_density_bkgd_int != null
+			) {
+
+				// Create extended source productivity info
+
+				final int interval_count = unscaled_prod_density_int.length;
+				final double[] extended_prod_density = new double[interval_count];
+
+				for (int j = 0; j < interval_count; ++j) {
+					extended_prod_density[j] = (
+						(unscaled_prod_density_int[j] * ten_a_q)
+						+ (unscaled_prod_density_main_int[j] * ten_ams_q)
+						+ (unscaled_prod_density_bkgd_int[j] * mu)
+					);
+				}
+
+				// Pass extended source productivity into to intensity calculation
+
+				intensity_calc.set_extended (
+					extended_prod_density
+				);
+			}
+
+			// Otherwise, no extended source productivity
+
+			else {
+				if (fit_info.needs_interval_intensity()) {
+					throw new InvariantViolationException ("OEDisc2InitStatVox.get_intensity_calc_params: Information about extended source productivity is not available.");
+				}
+
+				intensity_calc.set_extended (
+					null
+				);
+			}
+		}
+
+		// Otherwise, no background ...
+
+		else {
+
+			// If we have extended source productivity info ...
+
+			if (unscaled_prod_density_int != null
+				&& unscaled_prod_density_main_int != null
+			) {
+
+				// Create extended source productivity info
+
+				final int interval_count = unscaled_prod_density_int.length;
+				final double[] extended_prod_density = new double[interval_count];
+
+				for (int j = 0; j < interval_count; ++j) {
+					extended_prod_density[j] = (
+						(unscaled_prod_density_int[j] * ten_a_q)
+						+ (unscaled_prod_density_main_int[j] * ten_ams_q)
+					);
+				}
+
+				// Pass extended source productivity into to intensity calculation
+
+				intensity_calc.set_extended (
+					extended_prod_density
+				);
+			}
+
+			// Otherwise, no extended source productivity
+
+			else {
+				if (fit_info.needs_interval_intensity()) {
+					throw new InvariantViolationException ("OEDisc2InitStatVox.get_intensity_calc_params: Information about extended source productivity is not available.");
+				}
+
+				intensity_calc.set_extended (
+					null
+				);
+			}
+		}
+
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -1386,6 +1605,10 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			writer.marshalDoubleArray ("prod_main", array_null_to_empty (prod_main));
 			writer.marshalDoubleArray ("prod_bkgd", array_null_to_empty (prod_bkgd));
 
+			writer.marshalDoubleArray ("unscaled_prod_density_int", array_null_to_empty (unscaled_prod_density_int));
+			writer.marshalDoubleArray ("unscaled_prod_density_main_int", array_null_to_empty (unscaled_prod_density_main_int));
+			writer.marshalDoubleArray ("unscaled_prod_density_bkgd_int", array_null_to_empty (unscaled_prod_density_bkgd_int));
+
 		}
 		break;
 
@@ -1426,6 +1649,10 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			prod_scnd = array_empty_to_null (reader.unmarshalDoubleArray ("prod_scnd"));
 			prod_main = array_empty_to_null (reader.unmarshalDoubleArray ("prod_main"));
 			prod_bkgd = array_empty_to_null (reader.unmarshalDoubleArray ("prod_bkgd"));
+
+			unscaled_prod_density_int = array_empty_to_null (reader.unmarshalDoubleArray ("unscaled_prod_density_int"));
+			unscaled_prod_density_main_int = array_empty_to_null (reader.unmarshalDoubleArray ("unscaled_prod_density_main_int"));
+			unscaled_prod_density_bkgd_int = array_empty_to_null (reader.unmarshalDoubleArray ("unscaled_prod_density_bkgd_int"));
 
 		}
 		break;

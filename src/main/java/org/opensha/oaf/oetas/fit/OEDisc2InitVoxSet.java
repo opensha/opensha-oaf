@@ -17,6 +17,7 @@ import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.InvariantViolationException;
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.SimpleExecTimer;
 import static org.opensha.oaf.util.SimpleUtils.rndd;
 
 import org.opensha.oaf.oetas.OEStatsCalc;
@@ -34,7 +35,10 @@ import org.opensha.oaf.oetas.OECatalogSeeder;
 import org.opensha.oaf.oetas.OECatalogRange;
 import org.opensha.oaf.oetas.OECatalogLimits;
 import org.opensha.oaf.oetas.OEGenerationInfo;
+
 import org.opensha.oaf.oetas.util.OEArraysCalc;
+
+import org.opensha.oaf.oetas.except.OEException;
 
 
 // Operational ETAS catalog initializer for fitted parameters.
@@ -216,10 +220,25 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 	private OEGridPoint mle_grid_point;
 
-	// The MLE grid points for generic, sequence-specific, and Bayesian models.
+	// Maximum log-density, voxel and sub-voxel indexes where the maximum occurs, and MLE grid point for the generic model.
 
+	private double gen_max_log_density;
+	private int gen_mle_voxel_index;
+	private int gen_mle_subvox_index;
 	private OEGridPoint gen_mle_grid_point;
+
+	// Maximum log-density, voxel and sub-voxel indexes where the maximum occurs, and MLE grid point for the sequence-specific model.
+
+	private double seq_max_log_density;
+	private int seq_mle_voxel_index;
+	private int seq_mle_subvox_index;
 	private OEGridPoint seq_mle_grid_point;
+
+	// Maximum log-density, voxel and sub-voxel indexes where the maximum occurs, and MLE grid point for the Bayesian model.
+
+	private double bay_max_log_density;
+	private int bay_mle_voxel_index;
+	private int bay_mle_subvox_index;
 	private OEGridPoint bay_mle_grid_point;
 
 	// The sub-voxels for seeding; length = seed_subvox_count.
@@ -336,17 +355,17 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (bay_weight);
 		max_log_density = a_voxel_list[0].get_subvox_log_density (mle_subvox_index, bay_weight);
 
-		int gen_mle_voxel_index = 0;
-		int gen_mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (OEConstants.BAY_WT_GENERIC);
-		double gen_max_log_density = a_voxel_list[0].get_subvox_log_density (gen_mle_subvox_index, OEConstants.BAY_WT_GENERIC);
+		gen_mle_voxel_index = 0;
+		gen_mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (OEConstants.BAY_WT_GENERIC);
+		gen_max_log_density = a_voxel_list[0].get_subvox_log_density (gen_mle_subvox_index, OEConstants.BAY_WT_GENERIC);
 
-		int seq_mle_voxel_index = 0;
-		int seq_mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (OEConstants.BAY_WT_SEQ_SPEC);
-		double seq_max_log_density = a_voxel_list[0].get_subvox_log_density (seq_mle_subvox_index, OEConstants.BAY_WT_SEQ_SPEC);
+		seq_mle_voxel_index = 0;
+		seq_mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (OEConstants.BAY_WT_SEQ_SPEC);
+		seq_max_log_density = a_voxel_list[0].get_subvox_log_density (seq_mle_subvox_index, OEConstants.BAY_WT_SEQ_SPEC);
 
-		int bay_mle_voxel_index = 0;
-		int bay_mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (OEConstants.BAY_WT_BAYESIAN);
-		double bay_max_log_density = a_voxel_list[0].get_subvox_log_density (bay_mle_subvox_index, OEConstants.BAY_WT_BAYESIAN);
+		bay_mle_voxel_index = 0;
+		bay_mle_subvox_index = a_voxel_list[0].get_max_subvox_index_log_density (OEConstants.BAY_WT_BAYESIAN);
+		bay_max_log_density = a_voxel_list[0].get_subvox_log_density (bay_mle_subvox_index, OEConstants.BAY_WT_BAYESIAN);
 
 		for (int j = 1; j < voxel_count; ++j) {
 			final OEDisc2InitStatVox voxel = a_voxel_list[j];
@@ -639,6 +658,46 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 
 
 
+	// Get the parameters to calculate the integrated intensity function, for the MLE.
+
+	public final void get_intensity_calc_params (OEDisc2IntensityCalc intensity_calc) {
+		a_voxel_list[mle_voxel_index].get_intensity_calc_params (fit_info, mle_subvox_index, intensity_calc);
+		return;
+	}
+
+
+
+
+	// Get the parameters to calculate the integrated intensity function, for the genericMLE.
+
+	public final void get_gen_intensity_calc_params (OEDisc2IntensityCalc intensity_calc) {
+		a_voxel_list[gen_mle_voxel_index].get_intensity_calc_params (fit_info, gen_mle_subvox_index, intensity_calc);
+		return;
+	}
+
+
+
+
+	// Get the parameters to calculate the integrated intensity function, for the sequence-specific MLE.
+
+	public final void get_seq_intensity_calc_params (OEDisc2IntensityCalc intensity_calc) {
+		a_voxel_list[seq_mle_voxel_index].get_intensity_calc_params (fit_info, seq_mle_subvox_index, intensity_calc);
+		return;
+	}
+
+
+
+
+	// Get the parameters to calculate the integrated intensity function, for the Bayesian MLE.
+
+	public final void get_bay_intensity_calc_params (OEDisc2IntensityCalc intensity_calc) {
+		a_voxel_list[bay_mle_voxel_index].get_intensity_calc_params (fit_info, bay_mle_subvox_index, intensity_calc);
+		return;
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -673,8 +732,17 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		mle_voxel_index = 0;
 		mle_subvox_index = 0;
 		mle_grid_point = null;
+		gen_max_log_density = 0.0;
+		gen_mle_voxel_index = 0;
+		gen_mle_subvox_index = 0;
 		gen_mle_grid_point = null;
+		seq_max_log_density = 0.0;
+		seq_mle_voxel_index = 0;
+		seq_mle_subvox_index = 0;
 		seq_mle_grid_point = null;
+		bay_max_log_density = 0.0;
+		bay_mle_voxel_index = 0;
+		bay_mle_subvox_index = 0;
 		bay_mle_grid_point = null;
 		a_seed_subvox = null;
 
@@ -753,12 +821,21 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		if (mle_grid_point != null) {
 			result.append ("mle_grid_point = {" + mle_grid_point.toString() + "}\n");
 		}
+		result.append ("gen_max_log_density = " + gen_max_log_density + "\n");
+		result.append ("gen_mle_voxel_index = " + gen_mle_voxel_index + "\n");
+		result.append ("gen_mle_subvox_index = " + gen_mle_subvox_index + "\n");
 		if (gen_mle_grid_point != null) {
 			result.append ("gen_mle_grid_point = {" + gen_mle_grid_point.toString() + "}\n");
 		}
+		result.append ("seq_max_log_density = " + seq_max_log_density + "\n");
+		result.append ("seq_mle_voxel_index = " + seq_mle_voxel_index + "\n");
+		result.append ("seq_mle_subvox_index = " + seq_mle_subvox_index + "\n");
 		if (seq_mle_grid_point != null) {
 			result.append ("seq_mle_grid_point = {" + seq_mle_grid_point.toString() + "}\n");
 		}
+		result.append ("bay_max_log_density = " + bay_max_log_density + "\n");
+		result.append ("bay_mle_voxel_index = " + bay_mle_voxel_index + "\n");
+		result.append ("bay_mle_subvox_index = " + bay_mle_subvox_index + "\n");
 		if (bay_mle_grid_point != null) {
 			result.append ("bay_mle_grid_point = {" + bay_mle_grid_point.toString() + "}\n");
 		}
@@ -794,7 +871,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 	// Each line contains the following:
 	//   b  alpha  c  p  n  zams  zmu  bay_log_density  bay_vox_volume  log_likelihood
 
-	public void dump_log_density_to_file (String filename) throws IOException {
+	public final void dump_log_density_to_file (String filename) throws IOException {
 		try (
 			BufferedWriter buf = new BufferedWriter (new FileWriter (filename));
 		) {
@@ -802,6 +879,99 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 				buf.write (a_voxel_list[j].dump_log_density_to_string (new StringBuilder()).toString());
 			}
 		}
+		return;
+	}
+
+
+
+
+	// Write the integrated intensity data to a string.
+	// Parmaeters:
+	//  max_frac_duration = Maximum interval duration, as a fraction of the total duration, or zero if no maximum.
+	//  history = The rupture history.
+	//  exec_timer = Execution timer for multi-threading, can be null to use single-threading.
+	// Throws exception if multi-threading error.
+	// Note: The fitting information must have f_intensity set, indicating that fitting saved the necessary information.
+
+	public final String write_integrated_intensity_to_string (
+		double max_frac_duration,
+		OEDisc2History history,
+		SimpleExecTimer exec_timer
+	) throws OEException {
+
+		// Create and set configuration for MLE
+
+		OEDisc2IntensityCalc intensity_calc = (new OEDisc2IntensityCalc()).set_config (
+			max_frac_duration,
+			history,
+			fit_info
+		);
+
+		// Create and set configuration for generic, Sequence-specific, and Bayesian MLE
+
+		OEDisc2IntensityCalc gen_intensity_calc = (new OEDisc2IntensityCalc()).copy_config_from (intensity_calc);
+		OEDisc2IntensityCalc seq_intensity_calc = (new OEDisc2IntensityCalc()).copy_config_from (intensity_calc);
+		OEDisc2IntensityCalc bay_intensity_calc = (new OEDisc2IntensityCalc()).copy_config_from (intensity_calc);
+
+		// Set parameters
+
+		get_intensity_calc_params (intensity_calc);
+		get_gen_intensity_calc_params (gen_intensity_calc);
+		get_seq_intensity_calc_params (seq_intensity_calc);
+		get_bay_intensity_calc_params (bay_intensity_calc);
+
+		// Multi-threaded calculation
+
+		if (exec_timer != null) {
+			intensity_calc.calc_integrated_lambda_mt (exec_timer);
+			gen_intensity_calc.calc_integrated_lambda_mt (exec_timer);
+			seq_intensity_calc.calc_integrated_lambda_mt (exec_timer);
+			bay_intensity_calc.calc_integrated_lambda_mt (exec_timer);
+		}
+
+		// Single-threaded calculation
+
+		else {
+			intensity_calc.calc_integrated_lambda_st();
+			gen_intensity_calc.calc_integrated_lambda_st();
+			seq_intensity_calc.calc_integrated_lambda_st();
+			bay_intensity_calc.calc_integrated_lambda_st();
+		}
+
+		// Produce the file as a string
+
+		String result = intensity_calc.output_file_as_string (gen_intensity_calc, seq_intensity_calc, bay_intensity_calc);
+
+		return result;
+	}
+
+
+
+
+	// Write the integrated intensity data to a file.
+	// Parmaeters:
+	//  filename = File name.
+	//  max_frac_duration = Maximum interval duration, as a fraction of the total duration, or zero if no maximum.
+	//  history = The rupture history.
+	//  exec_timer = Execution timer for multi-threading, can be null to use single-threading.
+	// Throws exception if multi-threading error or I/O error.
+	// Note: The fitting information must have f_intensity set, indicating that fitting saved the necessary information.
+
+	public final void write_integrated_intensity_to_file (
+		String filename,
+		double max_frac_duration,
+		OEDisc2History history,
+		SimpleExecTimer exec_timer
+	) throws OEException, IOException {
+
+		String result = write_integrated_intensity_to_string (
+			max_frac_duration,
+			history,
+			exec_timer
+		);
+
+		SimpleUtils.write_string_as_file (filename, result);
+
 		return;
 	}
 
@@ -1180,8 +1350,17 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 			writer.marshalInt                 (        "mle_voxel_index"       , mle_voxel_index       );
 			writer.marshalInt                 (        "mle_subvox_index"      , mle_subvox_index      );
 			OEGridPoint.static_marshal        (writer, "mle_grid_point"        , mle_grid_point        );
+			writer.marshalDouble              (        "gen_max_log_density"   , gen_max_log_density   );
+			writer.marshalInt                 (        "gen_mle_voxel_index"   , gen_mle_voxel_index   );
+			writer.marshalInt                 (        "gen_mle_subvox_index"  , gen_mle_subvox_index  );
 			OEGridPoint.static_marshal        (writer, "gen_mle_grid_point"    , gen_mle_grid_point    );
+			writer.marshalDouble              (        "seq_max_log_density"   , seq_max_log_density   );
+			writer.marshalInt                 (        "seq_mle_voxel_index"   , seq_mle_voxel_index   );
+			writer.marshalInt                 (        "seq_mle_subvox_index"  , seq_mle_subvox_index  );
 			OEGridPoint.static_marshal        (writer, "seq_mle_grid_point"    , seq_mle_grid_point    );
+			writer.marshalDouble              (        "bay_max_log_density"   , bay_max_log_density   );
+			writer.marshalInt                 (        "bay_mle_voxel_index"   , bay_mle_voxel_index   );
+			writer.marshalInt                 (        "bay_mle_subvox_index"  , bay_mle_subvox_index  );
 			OEGridPoint.static_marshal        (writer, "bay_mle_grid_point"    , bay_mle_grid_point    );
 			writer.marshalIntArray            (        "a_seed_subvox"         , a_seed_subvox         );
 			writer.marshalInt                 (        "dither_mismatch"       , dither_mismatch       );
@@ -1231,8 +1410,17 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 			mle_voxel_index        = reader.unmarshalInt                 (        "mle_voxel_index"       );
 			mle_subvox_index       = reader.unmarshalInt                 (        "mle_subvox_index"      );
 			mle_grid_point         = OEGridPoint.static_unmarshal        (reader, "mle_grid_point"        );
+			gen_max_log_density    = reader.unmarshalDouble              (        "gen_max_log_density"   );
+			gen_mle_voxel_index    = reader.unmarshalInt                 (        "gen_mle_voxel_index"   );
+			gen_mle_subvox_index   = reader.unmarshalInt                 (        "gen_mle_subvox_index"  );
 			gen_mle_grid_point     = OEGridPoint.static_unmarshal        (reader, "gen_mle_grid_point"    );
+			seq_max_log_density    = reader.unmarshalDouble              (        "seq_max_log_density"   );
+			seq_mle_voxel_index    = reader.unmarshalInt                 (        "seq_mle_voxel_index"   );
+			seq_mle_subvox_index   = reader.unmarshalInt                 (        "seq_mle_subvox_index"  );
 			seq_mle_grid_point     = OEGridPoint.static_unmarshal        (reader, "seq_mle_grid_point"    );
+			bay_max_log_density    = reader.unmarshalDouble              (        "bay_max_log_density"   );
+			bay_mle_voxel_index    = reader.unmarshalInt                 (        "bay_mle_voxel_index"   );
+			bay_mle_subvox_index   = reader.unmarshalInt                 (        "bay_mle_subvox_index"  );
 			bay_mle_grid_point     = OEGridPoint.static_unmarshal        (reader, "bay_mle_grid_point"    );
 			a_seed_subvox          = reader.unmarshalIntArray            (        "a_seed_subvox"         );
 			dither_mismatch        = reader.unmarshalInt                 (        "dither_mismatch"       );

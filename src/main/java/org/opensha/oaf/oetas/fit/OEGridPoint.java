@@ -17,7 +17,7 @@ import static org.opensha.oaf.util.SimpleUtils.rndf;
 
 public class OEGridPoint implements Marshalable {
 
-	//----- Parameter ranges -----
+	//----- Parameters -----
 
 	// Gutenberg-Richter parameter, b-value.
 
@@ -44,7 +44,7 @@ public class OEGridPoint implements Marshalable {
 
 	public double zams;
 
-	// Mainshock productivity, mu-value, for reference magnitude equal to ZMU_MREF.
+	// Background productivity, mu-value, for reference magnitude equal to ZMU_MREF.
 
 	public double zmu;
 
