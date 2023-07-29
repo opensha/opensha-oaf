@@ -21,6 +21,16 @@ import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.util.health.HealthMonitor;
 
 
+// Used for dumping products
+import gov.usgs.earthquake.product.io.BinaryProductHandler;
+import gov.usgs.earthquake.product.io.ObjectProductSource;
+import gov.usgs.earthquake.product.io.XmlProductHandler;
+import java.io.OutputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+
 
 /**
  * Code to send products to PDL.
@@ -399,6 +409,72 @@ public class PDLSender {
 			health_monitor.report_success (time_now);
 		}
 
+		return;
+	}
+
+
+
+
+	// Dump a product to an output stream.
+	// Parameters:
+	//  out = Destination output stream.
+	//  product = Product to dump.
+	//  is_text = True to treat the proeuct as text.
+	//  f_deflate = True to apply deflating.
+	// The product is dumped in the form it would appear on the wire (without protocol headers).
+	// See SocketProductSender.sendProduct().
+	// This function is for debugging.
+
+	public static void dump_product_to_stream (OutputStream dest, Product product, boolean is_text, boolean f_deflate) throws Exception {
+		
+		// Compression level when deflating products
+		final int deflateLevel = 1;
+		
+		OutputStream out = dest;
+		ObjectProductSource productSource = new ObjectProductSource(product);
+
+		if (f_deflate) {
+			out = new DeflaterOutputStream(out, new Deflater(deflateLevel));
+		}
+
+		// make sure product handler doesn't close stream before done
+		OutputStream productOut = new StreamUtils.UnclosableOutputStream(out);
+		if (!( is_text )) {
+			productSource.streamTo(new BinaryProductHandler(productOut));
+		} else {
+			productSource.streamTo(new XmlProductHandler(productOut));
+		}
+
+		// deflate requires "finish"
+		if (f_deflate) {
+			((DeflaterOutputStream) out).finish();
+		}
+
+		// flush buffered output stream to socket
+		out.flush();
+
+		return;
+	}
+
+
+
+
+	// Dump a product to a file.
+	// Parameters:
+	//  filename = Filename to write.
+	//  product = Product to dump.
+	//  is_text = True to treat the proeuct as text.
+	//  f_deflate = True to apply deflating.
+	// The product is dumped in the form it would appear on the wire (without protocol headers).
+	// See SocketProductSender.sendProduct().
+	// This function is for debugging.
+
+	public static void dump_product_to_file (String filename, Product product, boolean is_text, boolean f_deflate) throws Exception {
+		try (
+			BufferedOutputStream buf = new BufferedOutputStream (new FileOutputStream (filename));
+		) {
+			dump_product_to_stream (buf, product, is_text, f_deflate);
+		}
 		return;
 	}
 

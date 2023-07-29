@@ -19,6 +19,7 @@ import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.oaf.rj.CompactEqkRupList;
@@ -48,7 +49,7 @@ import org.json.simple.parser.ParseException;
  * All the data pertaining to a forecast.
  * Author: Michael Barall 08/24/2018.
  */
-public class ForecastData {
+public class ForecastData implements Marshalable {
 
 	//----- Forecast data -----
 
@@ -772,6 +773,110 @@ public class ForecastData {
 
 
 
+	// Make a PDL product, and return the files created.
+	// Parameters:
+	//  eventID = The event ID for PDL, which for us identifies the timeline.
+	//  isReviewed = Review status, false means automatically generated.
+	//  pdl_code = The code to use for the product.
+	//  text_files = 3-element array that returns the text files created.
+	//               text_files[0] returns contents.xml.
+	//               text_files[1] returns forecast.json.
+	//               text_files[2] returns forecast_data.json.
+	// Returns null if the product cannot be constructed due to missing or empty code.
+	// This function always uses the supplied code, and does not delete OAF products with different codes.
+
+	public Product make_pdl_product_with_code (String eventID, boolean isReviewed, String pdl_code, String[] text_files) throws Exception {
+
+		if (eventID == null || eventID.isEmpty()) {
+			throw new IllegalArgumentException ("ForecastData.make_pdl_product: eventID is not specified");
+		}
+
+		// Save the PDL parameters
+
+		pdl_event_id = eventID;
+		pdl_is_reviewed = isReviewed;
+
+		// The JSON file to send
+
+		String jsonText = results.get_pdl_model();
+
+		if (jsonText == null) {
+			throw new IllegalStateException ("ForecastData.make_pdl_product: No JSON file available");
+		}
+
+		// The event network and code
+
+		String eventNetwork = mainshock.mainshock_network;
+		String eventCode = mainshock.mainshock_code;
+
+		// The event ID, which for us identifies the timeline
+
+		//String eventID = ...;
+
+		// Modification time, 0 means now
+
+		long modifiedTime = 0L;
+
+		// Review status, false means automatically generated
+
+		//boolean isReviewed = ...;
+
+		// Choose the code to use
+
+		String chosenCode = pdl_code;
+
+		// If no chosen code, return null to indicate conflict
+
+		if (chosenCode == null || chosenCode.isEmpty()) {
+			pdl_event_id = "";
+			return null;
+		}
+
+		// Save the chosen code
+
+		pdl_event_id = chosenCode;
+
+		// The content builder
+
+		PDLContentsXmlBuilder content_builder = new PDLContentsXmlBuilder();
+
+		// If we want forecast.json, attach it
+
+		if (PDLProductBuilderOaf.use_forecast_json()) {
+			PDLProductBuilderOaf.attach_forecast (content_builder, jsonText);
+		}
+
+		// Attach the forecast data file
+
+		String json_data = to_json();
+
+		attach_forecast_data (content_builder, json_data);
+
+		// Get the inline text
+
+		String inlineText = null;
+		if (PDLProductBuilderOaf.use_inline_text()) {
+			inlineText = jsonText;
+		}
+
+		// Build the product
+
+		Product product = PDLProductBuilderOaf.createProduct (
+			chosenCode, eventNetwork, eventCode, isReviewed, inlineText, modifiedTime,
+			content_builder.make_product_file_array());
+
+		// Return the files
+
+		text_files[0] = content_builder.toString();
+		text_files[1] = jsonText;
+		text_files[2] = json_data;
+	
+		return product;
+	}
+
+
+
+
 	// Make event-sequence properties.
 	// Parameters:
 	//  evs_props = Receives the properties.
@@ -1085,6 +1190,7 @@ public class ForecastData {
 
 	// Marshal object.
 
+	@Override
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
 		do_marshal (writer);
@@ -1094,6 +1200,7 @@ public class ForecastData {
 
 	// Unmarshal object.
 
+	@Override
 	public ForecastData unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
@@ -2321,6 +2428,155 @@ public class ForecastData {
 			// Send the product, true means it is text
 
 			PDLSender.sendProduct(product, true);
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #13
+		// Command format:
+		//  test13  pdl_enable  event_id  isReviewed  pdl_code  lag_days  filename_prefix  [pdl_key_filename]
+		// Set the PDL enable according to pdl_enable (see ServerConfigFile).
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then put everything in a ForecastData object, and display it.
+		// Then construct the PDL product and send it to the selected PDL destination.
+		// Same as test #12, except with adjustable lag, and writes out the files.
+		// Note: This uses the 1-month advisory duration, and no injectable text.
+
+		if (args[0].equalsIgnoreCase ("test13")) {
+
+			// 6 or 7 additional arguments
+
+			if (args.length != 7 && args.length != 8) {
+				System.err.println ("ForecastData : Invalid 'test13' subcommand");
+				return;
+			}
+
+			int pdl_enable = Integer.parseInt (args[1]);	// 0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
+			String the_event_id = args[2];
+			Boolean isReviewed = Boolean.parseBoolean (args[3]);
+			String pdl_code = args[4];
+			double lag_days = Double.parseDouble (args[5]);
+			String filename_prefix = args[6];
+			String pdl_key_filename = null;
+			if (args.length >= 8) {
+				pdl_key_filename = args[7];
+			}
+
+			// Set the PDL enable code
+
+			ServerConfig.set_opmode (pdl_enable, pdl_key_filename);
+			System.out.println (ServerConfig.get_opmode_as_string());
+
+			// Fetch just the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Set the forecast time to be lag_days after the mainshock
+
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * lag_days);
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			// Get results
+
+			ForecastResults results = new ForecastResults();
+
+			//results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_WEEK, "NOTE: This is a test, do not use this forecast.", fcmain, params, true);
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, ForecastResults.ADVISORY_LAG_MONTH, null, fcmain, params, true);
+
+			// Select report for PDL, if any
+
+			results.pick_pdl_model();
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (results.toString());
+
+			// Construct the forecast data
+
+			AnalystOptions fc_analyst = new AnalystOptions();
+			long ctime = System.currentTimeMillis();
+
+			ForecastData fcdata = new ForecastData();
+			fcdata.set_data (ctime, fcmain, params, results, fc_analyst);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (fcdata.toString());
+			System.out.println ("");
+
+			// Make the PDL product, marked reviewed or not
+
+			Product product;
+			String[] text_files = new String[3];
+
+			try {
+				product = fcdata.make_pdl_product_with_code (the_event_id, isReviewed, pdl_code, text_files);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				return;
+			}
+
+			// Stop if conflict
+
+			if (product == null) {
+				System.out.println ("ForecastData.make_pdl_product returned null, indicating conflict");
+				return;
+			}
+
+			// Sign the product
+
+			PDLSender.signProduct(product);
+
+			// Send the product, true means it is text
+
+			PDLSender.sendProduct(product, true);
+
+			// Write the files
+
+			System.out.println ("");
+
+			try {
+				byte[] b0 = text_files[0].getBytes();
+				SimpleUtils.write_string_as_file (filename_prefix + "_contents.xml", text_files[0]);
+				SimpleUtils.write_bytes_as_file (filename_prefix + "_contents_bin.xml", b0);
+				System.out.println ("contents.xml string length = " + text_files[0].length() + ", binary length = " + b0.length);
+
+				byte[] b1 = text_files[1].getBytes();
+				SimpleUtils.write_string_as_file (filename_prefix + "_forecast.json", text_files[1]);
+				SimpleUtils.write_bytes_as_file (filename_prefix + "_forecast_bin.json", b1);
+				System.out.println ("forecast.json string length = " + text_files[1].length() + ", binary length = " + b1.length);
+
+				byte[] b2 = text_files[2].getBytes();
+				SimpleUtils.write_string_as_file (filename_prefix + "_forecast_data.json", text_files[2]);
+				SimpleUtils.write_bytes_as_file (filename_prefix + "_forecast_data_bin.json", b2);
+				System.out.println ("forecast_data.json string length = " + text_files[2].length() + ", binary length = " + b2.length);
+
+				PDLSender.dump_product_to_file (filename_prefix + "_product.xml", product, true, false);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				return;
+			}
 
 			return;
 		}

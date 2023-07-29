@@ -20,6 +20,8 @@ import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
 
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 
@@ -1096,6 +1098,20 @@ public class SimpleUtils {
 			for (int j = 0; j < s.length; ++j) {
 				buf.write (s[j]);
 			}
+		}
+		return;
+	}
+
+
+
+
+	// Write an array of bytes as a binary file.
+
+	public static void write_bytes_as_file (String filename, byte[] b) throws IOException {
+		try (
+			BufferedOutputStream buf = new BufferedOutputStream (new FileOutputStream (filename));
+		) {
+			buf.write (b);
 		}
 		return;
 	}
