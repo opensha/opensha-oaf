@@ -155,12 +155,14 @@ public class PDLSender {
 		// Check for simulated error
 
 		if (server_config.get_is_pdl_down()) {
+			report_failed_send (product, is_text);
 			throw new PDLSimulatedException ("PDLSender: Simulated PDL down");
 		}
 
 		double sim_error_rate = server_config.get_pdl_err_rate();
 		if (sim_error_rate > 1.0e-6) {
 			if (sim_error_rate > Math.random()) {
+				report_failed_send (product, is_text);
 				throw new PDLSimulatedException ("PDLSender: Simulated PDL error");
 			}
 		}
@@ -259,6 +261,7 @@ public class PDLSender {
 					if (health_monitor != null) {
 						health_monitor.report_failure (time_now);
 					}
+					report_failed_send (product, is_text);
 					throw new PDLSendException ("PDLSender: Unable to send PDL product to any destination", e);
 				}
 			}
@@ -396,6 +399,7 @@ public class PDLSender {
 					if (health_monitor != null) {
 						health_monitor.report_failure (time_now);
 					}
+					report_failed_send (product, is_text);
 					throw new PDLSendException ("PDLSender: Unable to send PDL product to any destination", e);
 				}
 			}
@@ -419,7 +423,7 @@ public class PDLSender {
 	// Parameters:
 	//  out = Destination output stream.
 	//  product = Product to dump.
-	//  is_text = True to treat the proeuct as text.
+	//  is_text = True to treat the product as text.
 	//  f_deflate = True to apply deflating.
 	// The product is dumped in the form it would appear on the wire (without protocol headers).
 	// See SocketProductSender.sendProduct().
@@ -463,7 +467,7 @@ public class PDLSender {
 	// Parameters:
 	//  filename = Filename to write.
 	//  product = Product to dump.
-	//  is_text = True to treat the proeuct as text.
+	//  is_text = True to treat the product as text.
 	//  f_deflate = True to apply deflating.
 	// The product is dumped in the form it would appear on the wire (without protocol headers).
 	// See SocketProductSender.sendProduct().
@@ -474,6 +478,41 @@ public class PDLSender {
 			BufferedOutputStream buf = new BufferedOutputStream (new FileOutputStream (filename));
 		) {
 			dump_product_to_stream (buf, product, is_text, f_deflate);
+		}
+		return;
+	}
+
+
+
+
+	// Report that a send operation failed.
+	// Parameters:
+	//  product = Product that was attempted to send.
+	//  is_text = True to treat the product as text.
+	// Currently this function writes out the product as a diagnostic file, if possible.
+	// Note: This function must never throw an exception.
+
+	private static void report_failed_send (Product product, boolean is_text) {
+		try {
+
+			// Get a filename prefix to use
+
+			String filename_prefix = ServerConfig.get_diag_filename_prefix();
+
+			// If we got a prefix, write the product as a file
+
+			if (filename_prefix != null) {
+				String filename;
+				if (is_text) {
+					filename = filename_prefix + "pdl_product.xml";
+				} else {
+					filename = filename_prefix + "pdl_product.dat";
+				}
+				dump_product_to_file (filename, product, is_text, false);
+			}
+
+		}
+		catch (Exception e) {
 		}
 		return;
 	}

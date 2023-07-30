@@ -5,6 +5,15 @@ import java.util.Set;
 
 import java.io.File;
 
+import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.nio.file.Files;
+
+import java.text.SimpleDateFormat;
+
+import java.util.Date;
+import java.util.TimeZone;
+
 import org.opensha.oaf.rj.OAFParameterSet;
 
 import org.opensha.oaf.pdl.PDLSenderConfig;
@@ -428,6 +437,102 @@ public final class ServerConfig {
 
 
 
+	//----- Diagnostic file output -----
+
+
+
+
+	// The current diagnostic file sequence number.
+	// In order to ensure that rapid-fire errors cannot fill the disk with diagnostic files,
+	// only a limited number are allowed during any execution of the program.
+	// The sequence number is incorporated into the filename prefix, ensuring that all
+	// filenames are unique within each run.
+	// If the filename pattern contains the time, then filenames will also be unique across runs.
+
+	private static int current_diag_seq_num = 0;
+
+
+	// Build the diagnostic filename prefix.
+	// Parameters:
+	//  prefix_pattern = Pattern for making the prefix, in the format of SimpleDateFormat.
+	//  diag_seq_lo = Lower limit of sequence number, inclusive.
+	//  diag_seq_hi = Upper limit of sequence number, exclusive.
+	// Returns the filename prefix, or null if none.
+
+	private static synchronized String build_diag_filename_prefix (String prefix_pattern, int diag_seq_lo, int diag_seq_hi) {
+
+		// Get and increment the sequence number
+
+		int diag_seq = current_diag_seq_num;
+		if (diag_seq < diag_seq_lo) {
+			diag_seq = diag_seq_lo;
+		}
+		if (diag_seq >= diag_seq_hi) {
+			return null;
+		}
+
+		current_diag_seq_num = diag_seq + 1;
+
+		// Any exception causes a null return
+
+		String filename_prefix = null;
+
+		try {
+
+			// Make the prefix
+
+			long the_time = System.currentTimeMillis();
+
+			SimpleDateFormat fmt = new SimpleDateFormat (prefix_pattern);
+			fmt.setTimeZone (TimeZone.getTimeZone ("UTC"));
+			String trial_prefix = fmt.format (new Date (the_time)) + diag_seq + "-";
+
+			// Make the containing directory, if needed
+
+			Path file_path = Paths.get (trial_prefix + "abcd.txt");	// trial filename
+			Path dir_path = file_path.getParent();
+
+			if (dir_path != null) {
+				Files.createDirectories (dir_path);
+			}
+
+			// Return this prefix
+
+			filename_prefix = trial_prefix;
+		}
+		catch (Exception e) {
+			filename_prefix = null;
+		}
+
+		// Return prefix
+
+		return filename_prefix;
+	}
+
+
+
+
+	// Get the filename prefix to use for writing diagnostic files.
+	// Returns null if no file should be written.
+
+	public static String get_diag_filename_prefix () {
+
+		// Eventually these parameters will come from the configuration file
+
+		String prefix_pattern = "'/data/aafs/diag/'yyyy-MM'/'yyyy-MM-dd-HH-mm-ss'-'";
+		int diag_seq_lo = 100;
+		int diag_seq_hi = 200;
+
+		// Build the prefix, or null if none
+
+		String filename_prefix = build_diag_filename_prefix (prefix_pattern, diag_seq_lo, diag_seq_hi);
+
+		return filename_prefix;
+	}
+
+
+
+
 	//----- Testing -----
 
 	public static void main(String[] args) {
@@ -628,6 +733,42 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  count
+		// Make a diagnostic filename prefix, the requested number of times.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// 1 additional argument
+
+			if (args.length != 2) {
+				System.err.println ("ServerConfig : Invalid 'test3' subcommand");
+				return;
+			}
+
+			try {
+				int count = Integer.parseInt(args[1]);
+
+				for (int n = 0; n < count; ++n) {
+					String filename_prefix = ServerConfig.get_diag_filename_prefix();
+					if (filename_prefix == null) {
+						System.out.println (n + ": " + "<null>");
+					} else {
+						System.out.println (n + ": " + filename_prefix);
+					}
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 
 			return;
 		}
