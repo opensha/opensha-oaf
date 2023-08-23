@@ -209,10 +209,10 @@ public class SphRegionMercRectangle extends SphRegion {
 	@Override
 	public void get_display_params (Map<String, Object> userParamMap) {
 		userParamMap.put ("regionType", "rectangle");
-		userParamMap.put ("regionSouthLat", SimpleUtils.round_double_via_string ("%.4f", min_lat));
-		userParamMap.put ("regionNorthLat", SimpleUtils.round_double_via_string ("%.4f", max_lat));
-		userParamMap.put ("regionWestLon", SimpleUtils.round_double_via_string ("%.4f", (min_lon > 180.0) ? (min_lon - 360.0) : min_lon));
-		userParamMap.put ("regionEastLon", SimpleUtils.round_double_via_string ("%.4f", (max_lon > 180.0) ? (max_lon - 360.0) : max_lon));
+		userParamMap.put ("regionMinLat", SimpleUtils.round_double_via_string ("%.4f", min_lat));
+		userParamMap.put ("regionMaxLat", SimpleUtils.round_double_via_string ("%.4f", max_lat));
+		userParamMap.put ("regionMinLon", SimpleUtils.round_double_via_string ("%.4f", min_lon));
+		userParamMap.put ("regionMaxLon", SimpleUtils.round_double_via_string ("%.4f", max_lon));
 		return;
 	}
 
