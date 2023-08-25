@@ -421,6 +421,38 @@ public class PDLProductFile {
 
 
 
+	// Determine if a file length may not be properly handled by PDL.
+	// Parameters:
+	//  len = Length to check.
+	// Returns true if this is a "bad" length.
+	// Note: As of this writing (08/2023), PDL has a bug which causes it to sometimes
+	// reject a product if it contains a file with certain "bad" lengths.  The reported
+	// error is "bad signature" however the actual error is that the received file length
+	// is different than the expected file length, and the root cause is a bug in the
+	// BASE64 decoder currently used by PDL.  So if possible we should avoid sending a
+	// file with a bad length.
+	// Currently the only bad length we have actually encountered is: 28673.
+	// Note: When testing character data stored in a string s, the test should be applied
+	// to the length of s.getBytes() because this is the file length in bytes.
+
+	public static boolean is_bad_pdl_file_length (int len) {
+		switch (len) {
+			case 28673:
+				return true;
+		}
+		return false;
+	}
+
+
+
+
+	// Common padding strings
+
+	public static final String PAD_SPACE = " ";
+
+
+
+
 	// Set up byte contents.
 	// Parameters:
 	//  bytes = The data.
@@ -463,6 +495,45 @@ public class PDLProductFile {
 		}
 
 		set_bytes (text.getBytes(), filename, mime_type);
+		return this;
+	}
+
+
+
+
+	// Set up byte contents, and pad if necessary to avoid a bad file length
+	// Parameters:
+	//  text = The data, as a string.
+	//  filename = The filename to use in PDL.
+	//  mime_type = The MIME type for this data.
+	//  pad = Padding that can be added to the end of the data.
+	// The padding may be appended more that once if necessary.
+	// If pad is null or empty, no padding is added, even if the length is bad.
+	// Currently, only this version of the function has a padding option,
+	// because this is currently the only version we use.
+
+	public PDLProductFile set_bytes_pad (String text, String filename, String mime_type, String pad) {
+
+		if (text == null) {
+			throw new IllegalArgumentException ("PDLProductFile: Text data is not specified");
+		}
+
+		String s = text;
+		byte[] b = s.getBytes();
+		final int blen = b.length;
+
+		if (pad != null && pad.length() > 0) {
+			while (is_bad_pdl_file_length (b.length)) {
+				s = s + pad;
+				b = s.getBytes();
+			}
+		}
+
+		if (b.length != blen) {
+			System.out.println ("Padded PDL file length from " + blen + " to " + b.length + " for file \"" + filename + "\"");
+		}
+
+		set_bytes (b, filename, mime_type);
 		return this;
 	}
 
@@ -661,6 +732,99 @@ public class PDLProductFile {
 
 				for (PDLProductFile pdl_file : pdl_file_list) {
 					System.out.println (pdl_file.toString());
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  len
+		// Make text of the given length, then make a product file, and display info.
+		// This is intended to test set_bytes_pad().
+		// Note 28673 is the current "bad" length.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// 1 additional argument
+
+			if (args.length != 2) {
+				System.err.println ("PDLProductFile : Invalid 'test2' subcommand");
+				return;
+			}
+
+			try {
+
+				int len = Integer.parseInt (args[1]);
+
+				// Say hello
+
+				System.out.println ("Building PDL file with requested length");
+				System.out.println ("len = " + len);
+
+				// Make the text
+
+				String indata = "0123456789abcdef0123456789ABCDEF";
+
+				StringBuilder text_builder = new StringBuilder();
+
+				for (int j = 0; j < len; ++j) {
+					int k = j % 32;
+					text_builder.append (indata.substring (k, k+1));
+				}
+
+				String text = text_builder.toString();
+
+				System.out.println ();
+				System.out.println ("Input string length = " + text.length());
+
+				// Make the file
+
+				PDLProductFile pdl_file = new PDLProductFile();
+				String filename = "testfile.txt";
+				String mime_type = TEXT_PLAIN;
+				String pad = PAD_SPACE;
+				pdl_file.set_bytes_pad (text, filename, mime_type, pad);
+
+				// Display info
+
+				System.out.println ();
+				System.out.println (pdl_file.toString());
+
+				// Display something about the bytes
+
+				int byte_len = pdl_file.bytes.length;
+
+				System.out.println ();
+				System.out.println ("Byte length = " + byte_len);
+
+				// Display the first 50 bytes
+
+				int disp_len = Math.min (byte_len, 50);
+
+				System.out.println ();
+				System.out.println ("First " + disp_len + " bytes");
+
+				System.out.println ();
+				for (int j = 0; j < disp_len; ++j) {
+					System.out.println (pdl_file.bytes[j]);
+				}
+
+				// Display the last 40 bytes
+
+				System.out.println ();
+				System.out.println ("Last " + disp_len + " bytes");
+
+				System.out.println ();
+				for (int j = 0; j < disp_len; ++j) {
+					System.out.println (pdl_file.bytes[byte_len - disp_len + j]);
 				}
 
 			} catch (Exception e) {

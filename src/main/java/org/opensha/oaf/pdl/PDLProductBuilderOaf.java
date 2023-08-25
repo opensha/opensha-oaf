@@ -510,7 +510,8 @@ public class PDLProductBuilderOaf {
 
 	public static void attach_forecast (PDLContentsXmlBuilder content_builder, String text) {
 		content_builder.begin_section ("Machine-Readable Forecast", "forecast", "The forecast in a machine-readable format");
-		content_builder.add_file (FORECAST_FILENAME, PDLProductFile.APPLICATION_JSON, text);
+		//content_builder.add_file (FORECAST_FILENAME, PDLProductFile.APPLICATION_JSON, text);
+		content_builder.add_file_pad (FORECAST_FILENAME, PDLProductFile.APPLICATION_JSON, text, PDLProductFile.PAD_SPACE);
 		return;
 	}
 

@@ -353,7 +353,8 @@ public class ForecastData implements Marshalable {
 
 	public static void attach_forecast_data (PDLContentsXmlBuilder content_builder, String text) {
 		content_builder.begin_section ("Forecast Data", "forecastData", "Technical data and parameters used to compute the forecast");
-		content_builder.add_file (FORECAST_DATA_FILENAME, PDLProductFile.APPLICATION_JSON, text);
+		//content_builder.add_file (FORECAST_DATA_FILENAME, PDLProductFile.APPLICATION_JSON, text);
+		content_builder.add_file_pad (FORECAST_DATA_FILENAME, PDLProductFile.APPLICATION_JSON, text, PDLProductFile.PAD_SPACE);
 		return;
 	}
 

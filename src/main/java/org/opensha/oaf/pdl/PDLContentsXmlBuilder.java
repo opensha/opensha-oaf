@@ -306,6 +306,23 @@ public class PDLContentsXmlBuilder {
 
 
 
+	// Add a file to the current section.
+	// Parameters:
+	//  filename = The filename, cannot be null or blank.
+	//  mime_type = The mime type, cannot be null or blank.
+	//  text = The file contents, cannot be null.
+	//  pad = Padding that can be added to the end of the data to avoid "bad" lengths, can be null or empty if none.
+	// Note: Various mime types are defined in PDLProductFile.
+
+	public void add_file_pad (String filename, String mime_type, String text, String pad) {
+		PDLProductFile file_contents = (new PDLProductFile()).set_bytes_pad (text, filename, mime_type, pad);
+		add_file (filename, mime_type, file_contents);
+		return;
+	}
+
+
+
+
 	// Make a string containing the contents.xml file.
 
 	@Override
@@ -328,8 +345,10 @@ public class PDLContentsXmlBuilder {
 	// Make the PDL product file for contents.xml.
 
 	public PDLProductFile make_product_file_contents_xml () {
-		return (new PDLProductFile()).set_bytes (
-			toString(), PDLProductFile.CONTENTS_XML, PDLProductFile.APPLICATION_XML);
+		//return (new PDLProductFile()).set_bytes (
+		//	toString(), PDLProductFile.CONTENTS_XML, PDLProductFile.APPLICATION_XML);
+		return (new PDLProductFile()).set_bytes_pad (
+			toString(), PDLProductFile.CONTENTS_XML, PDLProductFile.APPLICATION_XML, PDLProductFile.PAD_SPACE);
 	}
 
 
