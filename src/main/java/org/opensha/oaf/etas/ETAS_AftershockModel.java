@@ -306,6 +306,11 @@ public abstract class ETAS_AftershockModel {
 	}
 
 	public void generateStochasticCatalog(double dataMinDays, double dataMaxDays, double forecastMinDays, double forecastMaxDays, int nSims){
+		generateStochasticCatalog( dataMinDays,  dataMaxDays,  forecastMinDays,  forecastMaxDays,  nSims, true);
+	
+	}
+	
+	public void generateStochasticCatalog(double dataMinDays, double dataMaxDays, double forecastMinDays, double forecastMaxDays, int nSims, boolean dynamicMinMag){
 		if(D){
 			System.out.println("Computing Forecast with " + nSims + " simulations (Data window: " + dataMinDays +" "+ dataMaxDays + ", Forecast window: "+ forecastMinDays +" "+ forecastMaxDays + ")");
 			System.out.println("Model Params: "+ getMaxLikelihood_ams() +" "+ getMaxLikelihood_a() +" "+ getMaxLikelihood_p() +" "+ getMaxLikelihood_c() +" "+ alpha +" "+ b +" "+ magComplete + " " + refMag);
@@ -319,25 +324,31 @@ public abstract class ETAS_AftershockModel {
 			if (magAftershocks[i] > maxASmag)
 				maxASmag = magAftershocks[i];
 		}
-		double minMag = maxASmag - 2.0;
 		
-		
-		// calibrate minimum magnitude choice by running 100 sims. If any come back with zero events, reduce minMag
-		if (nSims > 100) {
-			int nCalibrationSims = 100;
-			boolean iszero = true;
-			while (iszero & minMag > 3.0){
-				simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
-						mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nCalibrationSims, validate); //maxMag = 9.5, maxGeneratons = 100;
-				iszero = false;
-				for (int i = 0; i < simulatedCatalog.numEventsFinal.length; i++) {
-					if(simulatedCatalog.numEventsFinal[i] == 0)
-						iszero = true;
-				}
-				minMag--;
-			}
+		double minMag;
+		if (dynamicMinMag) {
+			minMag = maxASmag - 2.0;
 
-			if (minMag < 3) minMag = 3;
+
+			// calibrate minimum magnitude choice by running 100 sims. If any come back with zero events, reduce minMag
+			if (nSims > 0) {
+				int nCalibrationSims = 100;
+				boolean iszero = true;
+				while (iszero & minMag > 3.0){
+					simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
+							mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nCalibrationSims, validate); //maxMag = 9.5, maxGeneratons = 100;
+					iszero = false;
+					for (int i = 0; i < simulatedCatalog.numEventsFinal.length; i++) {
+						if(simulatedCatalog.numEventsFinal[i] == 0)
+							iszero = true;
+					}
+					minMag--;
+				}
+
+				if (minMag < 3) minMag = 3;
+			}
+		} else {
+			minMag = 3;
 		}
 
 		// now make the real catalogs with the new minMag, etc.

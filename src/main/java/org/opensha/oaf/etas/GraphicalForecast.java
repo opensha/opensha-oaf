@@ -1347,7 +1347,9 @@ public class GraphicalForecast{
 //				+ "      Small gray circles indicate locations of past aftershocks in this sequence.\n"
 //				+ "      Contour lines (if shown) give the chance of experiencing potentially damaging ground motions \n"
 //				+ "      (exceeding level VI on the Modified Mercalli Intensity scale).\n"
-				+ "      Modified Mercalli Intensity level VI (strong ground shaking) is likely to cause damage, even in well-engineered structures. With more poorly engineered or weakened structures, damage can occur at lower intensity levels.\n"
+//				+ "      Modified Mercalli Intensity level VI (strong ground shaking) is likely to cause damage, even in well-engineered structures. With more poorly engineered or weakened structures, damage can occur at lower intensity levels.\n"
+				+ "      This map shows the chance of experiencing strong shaking (Intensity level VI) from an aftershock within the next " + tags.get("FORECAST_INTERVAL") + "."
+				+ "		 Intensity level VI shaking can cause light damage in well-built structures, and can cause moderate to severe damage in less well-built or weakened structures. Shaking is even more likely at lower intensity levels, which could still cause damage in poorly built or weakened structures.\n"
 				+ "    </div>\n"
 				+ "  </div>");
 		

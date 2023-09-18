@@ -377,6 +377,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private BooleanParameter plotSpecificOnlyParam;
 	private ButtonParameter generateMapButton;
 	
+//	private ButtonParameter writeStochasticEventSetsButton;
+	
 	private BooleanParameter vs30Param;
 	
 	private enum IntensityType {
@@ -440,6 +442,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 	}
 	private EnumParameter<FitSourceType> fitSourceTypeParam;	
+	
+	private BooleanParameter writeStochasticEventSets;
 	
 	private EnumParameter<ForecastDuration> advisoryDurationParam;
 	
@@ -901,7 +905,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		plotSpecificOnlyParam.addParameterChangeListener(this);
 		plotSpecificOnlyParam.getEditor().setEnabled(false);
 		plotSpecificOnlyParam.getEditor().refreshParamEditor();
-		fitParams.addParameter(plotSpecificOnlyParam);
+//		fitParams.addParameter(plotSpecificOnlyParam);
+		
+		writeStochasticEventSets = new BooleanParameter("Save Event Sets", false);
+//		writeStochasticEventSets.setInfo("Save the stochastic event sets to disk?");
+//		writeStochasticEventSets.addParameterChangeListener(this);
+//		writeStochasticEventSets.getEditor().setEnabled(true);
+//		writeStochasticEventSets.getEditor().refreshParamEditor();
+//		fitParams.addParameter(writeStochasticEventSets);
 		
 		/*
 		 * map params
@@ -1092,7 +1103,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		setVisible(true);
 		
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setTitle("Aftershock Forecaster (v2023.02.21)");
+		setTitle("Aftershock Forecaster (v2023.03.19)");
 		setLocationRelativeTo(null);
 		
 		workingDir = new File(System.getProperty("user.home"));
@@ -2733,6 +2744,40 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			}
 		}
 	}
+	
+	private void saveStochasticCatalog(File file, int n) throws IOException{
+
+		FileWriter fw = null;
+		try {
+			fw = new FileWriter(file);
+			//write the header
+			String headerString = "# Header: eventID " + mainshock.getEventId() + " dataEndTime " + dataEndTimeParam.getValue() + " Forecast duration " + forecastDurationParam.getValue() + "\n";  
+//			headerString += "# Stochastic event set format: timeFromMainshock \t magnitude \t generation \n";  
+
+			fw.write(headerString);
+
+			String eqCat = bayesianModel.simulatedCatalog.printCatalog(n); 
+			
+			//write all the earthquakes
+			fw.write(eqCat);
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw e;
+//			JOptionPane.showMessageDialog(this, e.getMessage(),
+//					"Error Saving Catalog", JOptionPane.ERROR_MESSAGE);
+		} finally {
+			if (fw != null) {
+				try {
+					fw.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+					throw e;
+				}
+			}
+		}
+	}
+	
 
 	private String fromHeaderLine(String line, String target) throws ParseException {
 		line = line.trim();
@@ -3441,7 +3486,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						if(verbose) System.out.println("Computing Generic forecast");
 						genericModel.setMagComplete(mcParam.getValue());
 						genericModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-								forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue());
+								forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue(), !writeStochasticEventSets.getValue());
 					}
 		}, true);
 		
@@ -3470,7 +3515,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							bayesianModel.setMagComplete(mcParam.getValue());
 							if(verbose)System.out.println("Computing Bayesian forecast");
 							bayesianModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-									forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue());
+									forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue(), !writeStochasticEventSets.getValue());
 						}
 					}		
 		}, true);
@@ -4392,6 +4437,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				new Thread(run).start();
 			} else if (param == plotSpecificOnlyParam) {
 				printTip(7);
+				
+//			} else if (param == writeStochasticEventSets) {
+				
 				
 			} else if (param == publishAdvisoryButton) {
 				System.out.println("Generating advisory document...");
@@ -5844,6 +5892,24 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		return str;
 	}
 	
+	private void publishEventSets() {
+		if (bayesianModel.simulatedCatalog != null) {
+			for (int i = 0; i < numberSimsParam.getValue(); i++) {
+				// publish the catalog
+				String filename = new String(workingDir + "/forecastSets/forecastSet" + String.format("%05d", i) + ".txt");
+				File saveFile = new File(filename);
+				try {
+					saveStochasticCatalog(saveFile, i);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		} else {
+			System.out.println("No stochastic event sets have been generated.");
+		}
+	}
+	
 	private void publishGraphicalForecast(){
 		// use a popup or dropdown menu to set graphical forecast fields
 		
@@ -6094,7 +6160,29 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				System.err.println("Couldn't locate file: " + pngFileIn);
 			}
 
-			
+			if (writeStochasticEventSets.getValue()) {
+				
+				new File(outFile.getParent() + "/forecastSets/").mkdirs();
+				System.out.println("Saving event sets to " + outFile.getParent() + "/forecastSets/");
+				
+				if (bayesianModel.simulatedCatalog != null) {
+					for (int i = 0; i < numberSimsParam.getValue(); i++) {
+						// publish the catalog
+						
+						
+						File saveFile = new File(outFile.getParent() + "/" + "forecastSets/" + String.format("%05d", i) + ".txt");
+						try {
+							saveStochasticCatalog(saveFile, i);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+							System.err.println("Couldn't save: " + saveFile);
+						}
+					}
+				} else {
+					System.out.println("No forecast has been generated.");
+				}
+			}
 		}
 	}
 

@@ -608,12 +608,13 @@ public class ETAScatalog {
 //		return paragraph.toString();
 //	}
 	
-	public String printIntCatalog(int index){
+	public String printCatalog(int index){
 		List<float[]> eqList = getETAScatalog(index);
 		
 		StringBuffer paragraph = new StringBuffer("Time Mag Gen\n");
 		for(float[] eq: eqList){
-			paragraph.append(String.format("%5.2f%n", eq[0]));
+//			paragraph.append(String.format("%5.2f%n", eq[0]));
+			paragraph.append(String.format("%4.3f\t %3.2f\t %1.0f\n", eq[0], eq[1], eq[2]));
 		}
 		return paragraph.toString();
 	}
@@ -622,32 +623,20 @@ public class ETAScatalog {
 	public int[] getEventCounts(double tMinDays, double tMaxDays, double forecastMag) {
 		// TODO Auto-generated method stub
 		
-//		int[] eventCounts = new int[nSims];
-
 		int[] numM = new int[nSims];
 
 		List<float[]> eqCat = new ArrayList<float[]>();
-
-//		Point2D pt = new Point2D.Double();
 
 		//cycle through the simulated catalogs
 		for(int i = 0; i < nSims; i++){
 			eqCat = getETAScatalog(i); 	//double[] eqCat = {relativeTime, magnitude, generationNumber}
 			numM[i] = 0;
+
 			//count all events in time window and magnitude range in this catalog
 			for(float[] eq : eqCat){
 				if(eq[0] > tMinDays && eq[0] <= tMaxDays && eq[1] >= forecastMag)
 					numM[i] ++;
-			}
-			
-//			for(float[] eq : eqCat){
-//				if(eq[0] > tMinDays && eq[0] <= tMaxDays)
-//					numM[i] ++;
-//			}
-//			numM[i] = (int)(numM[i] * Math.pow(10, -b*(forecastMag - magComplete)) + 0.5); //scale to forecast mag (instead of using mags from stochastic catalogs)	
-			
-//			pt.setLocation(numM[i], 1d/nSims);
-//			num_DistributionFunc.set(pt);	//increment the distribution
+			}							
 		}
 		return numM;
 	}
