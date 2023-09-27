@@ -1,6 +1,7 @@
 package org.opensha.oaf.etas;
 
 import java.awt.Color;
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -26,7 +27,7 @@ public class ETAS_RateModel2D {
 
 	private ETAS_AftershockModel forecastModel;
 	private GriddedGeoDataSet rateModel;
-	private Boolean D = false;
+	private Boolean D = true;
 	
 	public ETAS_RateModel2D(ETAS_AftershockModel forecastModel){
 		this.forecastModel = forecastModel;
@@ -516,6 +517,53 @@ public class ETAS_RateModel2D {
 	public static List<PolyLine> getContours(GriddedGeoDataSet gridData, int nc){
 		double[] contourLevels = ETAS_StatsCalc.linspace(0,gridData.getMaxZ(),nc);
 		return getContours(gridData, contourLevels);
+	}
+	
+	
+	
+	public void writeGriddedDataAsCSV(GriddedGeoDataSet gridData, File file) throws IOException  {
+		StringBuilder outputString = new StringBuilder();
+
+		double lon;
+		double lat;
+		double z;
+
+		for (int i = 0; i < gridData.size(); i++){
+			lat = gridData.getLocation(i).getLatitude();
+			lon = gridData.getLocation(i).getLongitude();
+			z = gridData.get(i);
+		
+			// build output string
+			outputString.append(lat + ", " + lon + ", " + z + "\n");
+			if (D) System.out.println(lat + ", " + lon + ", " + z + "\n");
+		}
+		String longString = outputString.toString();
+		
+		FileWriter fw = null;
+		try {
+			fw = new FileWriter(file);
+			//write the header
+			String headerString = "# Header" + "\n";  
+			fw.write(headerString);
+
+			//write all the points
+			fw.write(longString);
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw e;
+//			JOptionPane.showMessageDialog(this, e.getMessage(),
+//					"Error Saving Catalog", JOptionPane.ERROR_MESSAGE);
+		} finally {
+			if (fw != null) {
+				try {
+					fw.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+					throw e;
+				}
+			}
+		}		
 	}
 	
 	public static List<PolyLine> getContours(GriddedGeoDataSet gridData, double[] contourLevels){

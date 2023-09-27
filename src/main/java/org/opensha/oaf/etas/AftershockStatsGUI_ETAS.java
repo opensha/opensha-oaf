@@ -508,6 +508,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private ObsEqkRupture largestShock;
 	private ETAS_RateModel2D rateModel2D;
 	private List<ContourModel> contourList;
+	private List<GriddedGeoDataSet> gmpeProbModelList;
 //	private String shakeMapURL;
 	private DiscretizedFunc[] pgvCurves = null; //defining this globally so it doesn't need to be recomputed
 	private DiscretizedFunc[] pgaCurves = null; //defining this globally so it doesn't need to be recomputed
@@ -905,7 +906,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		plotSpecificOnlyParam.addParameterChangeListener(this);
 		plotSpecificOnlyParam.getEditor().setEnabled(false);
 		plotSpecificOnlyParam.getEditor().refreshParamEditor();
-//		fitParams.addParameter(plotSpecificOnlyParam);
+		fitParams.addParameter(plotSpecificOnlyParam);
 		
 		writeStochasticEventSets = new BooleanParameter("Save Event Sets", false);
 //		writeStochasticEventSets.setInfo("Save the stochastic event sets to disk?");
@@ -5055,7 +5056,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			// clear out (or initialize) the contourModel
 			contourList = new ArrayList<ContourModel>();
 			
-
+			// initialize the GMPE map list
+			gmpeProbModelList = Lists.newArrayList();
+			
 			// for each duration (day/week/month/year or just what's specified) 
 			for (int i = 0; i < ForecastDuration.values().length; i++){
 				// clone the gridded rate model
@@ -5101,6 +5104,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					newForecastRateModel.scale(targetRate/referenceRate);
 					if(D) System.out.println("newForecastRateModel sum: " + newForecastRateModel.getSumZ());
 					
+					// TODO: save individual versions of each of these for output as csv 
 					GriddedGeoDataSet new_gmpeProbModel;
 
 					/*
@@ -5117,6 +5121,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //						new_gmpeProbModel = getIntensityModel(newForecastRateModel, value, true);
 						new_gmpeProbModel = scaleProbabilityModel(gmpeProbModel, referenceRate, targetRate);
 					}
+					
+					// save the shaking model
+					gmpeProbModelList.add(new_gmpeProbModel); 
+					
 					
 					// plot the rate only the first time around (should be the longest duration, and all the others are identical except for scaling)
 					if (!rateModelPlotted) {
@@ -6113,7 +6121,31 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				}
 				
 			}
+
 			
+			// Write griddedRateMap to file
+//			for(ForecastDuration foreDur : ForecastDuration.values()){
+				// find the matching griddedDataSet
+				if(gmpeProbModelList != null) {
+					int nmap = 0;
+					for (GriddedGeoDataSet gmpeMap : gmpeProbModelList){
+						ForecastDuration foreDur = ForecastDuration.values()[nmap];
+						
+						String name = "shakingGrid-" + foreDur.toString();
+						File file = new File(outFile.getParent() + "/" + name + ".csv");
+						System.out.println("Saving shaking grid to: " + file);
+						try {
+							rateModel2D.writeGriddedDataAsCSV(gmpeMap, file);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						nmap++;
+					}
+				}
+//			}
+
+
 			
 			//write logos to the output directory
 			// load the data
