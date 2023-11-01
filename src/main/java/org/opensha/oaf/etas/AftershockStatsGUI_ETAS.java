@@ -1104,7 +1104,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		setVisible(true);
 		
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setTitle("Aftershock Forecaster (v2023.03.19)");
+		setTitle("Aftershock Forecaster (v2023.09.27)");
 		setLocationRelativeTo(null);
 		
 		workingDir = new File(System.getProperty("user.home"));
@@ -5971,7 +5971,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					numberOfIntervals = 4;
 					break;
 			}
-				GraphicalForecast graphForecast = new GraphicalForecast(outFile, model, eventDate, startDate, numberOfIntervals);
+				GraphicalForecast graphForecast = new GraphicalForecast(outFile, model, eventDate, startDate, numberOfIntervals, region);
 			
 			int advisoryDurationIndex;
 			switch (advisoryDurationParam.getValue()) {
@@ -6129,18 +6129,23 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				if(gmpeProbModelList != null) {
 					int nmap = 0;
 					for (GriddedGeoDataSet gmpeMap : gmpeProbModelList){
-						ForecastDuration foreDur = ForecastDuration.values()[nmap];
+						ForecastDuration foreDur = ForecastDuration.values()[nmap++];
 						
 						String name = "shakingGrid-" + foreDur.toString();
 						File file = new File(outFile.getParent() + "/" + name + ".csv");
 						System.out.println("Saving shaking grid to: " + file);
-						try {
-							rateModel2D.writeGriddedDataAsCSV(gmpeMap, file);
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+						
+						if (gmpeMap != null) {
+							try {
+								rateModel2D.writeGriddedDataAsCSV(gmpeMap, file);
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								System.out.println("Unable to save shaking grid to: " + file +". Shaking data may not exist.");
+								e.printStackTrace();
+							}
+						} else {
+							System.out.println("No shaking model found for duration: "  + foreDur);
 						}
-						nmap++;
 					}
 				}
 //			}
@@ -7043,7 +7048,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		GregorianCalendar forecastStart = mainshock.getOriginTimeCal();
 		forecastStart.setTimeInMillis((long)(mainshock.getOriginTime() + forecastStartTimeParam.getValue()*ETAS_StatsCalc.MILLISEC_PER_DAY ));
 	
-		GraphicalForecast newGraph = new GraphicalForecast(null, bayesianModel,  mainshockTime, forecastStart, 4);
+		GraphicalForecast newGraph = new GraphicalForecast(null, bayesianModel,  mainshockTime, forecastStart, 4, region);
 		newGraph.constructForecast();
 		
 		if (rjMode) {
@@ -7056,7 +7061,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			newGraph.writeSummaryJson( outFileJson,  bayesianModel,  mainshockTime, forecastStart);
 			
 
-			newGraph = new GraphicalForecast(null, genericModel,  mainshockTime, forecastStart, 4);
+			newGraph = new GraphicalForecast(null, genericModel,  mainshockTime, forecastStart, 4, region);
 			newGraph.constructForecast();
 			outFileJson = new File(workingDir + "/PRForecasts/" + eventID + "_t" + String.format("%2.1f", dataEndTimeParam.getValue()) + optionString + "_generic.json");
 //			newGraph.writeSummaryJsonNexp( outFileJson,  genericModel,  mainshockTime, forecastStart, observedNumber, observedFractileGeneric);
