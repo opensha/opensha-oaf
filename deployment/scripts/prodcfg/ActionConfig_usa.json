@@ -268,7 +268,7 @@
   "pdl_intake_regions": [
     {
       "name": "CAL-NCSS",
-      "min_mag": 5.0,
+      "min_mag": 4.95,
       "intake_mag": 4.5,
       "region": {
         "ClassType": 14001,
@@ -289,7 +289,7 @@
     },
     {
       "name": "CAL-SCSN",
-      "min_mag": 5.0,
+      "min_mag": 4.95,
       "intake_mag": 4.5,
       "region": {
         "ClassType": 14001,
@@ -307,7 +307,7 @@
     },
     {
       "name": "ALASKA",
-      "min_mag": 5.0,
+      "min_mag": 4.95,
       "intake_mag": 4.5,
       "region": {
         "ClassType": 14001,
@@ -329,7 +329,7 @@
     },
     {
       "name": "PUERTO-RICO",
-      "min_mag": 5.0,
+      "min_mag": 4.95,
       "intake_mag": 4.5,
       "region": {
         "ClassType": 14001,
@@ -346,7 +346,7 @@
     },
     {
       "name": "GUAM-MARIANAS",
-      "min_mag": 5.0,
+      "min_mag": 4.95,
       "intake_mag": 4.5,
       "region": {
         "ClassType": 14001,
@@ -361,7 +361,7 @@
     },
     {
       "name": "AMERICAN-SAMOA",
-      "min_mag": 5.0,
+      "min_mag": 4.95,
       "intake_mag": 4.5,
       "region": {
         "ClassType": 14001,
@@ -376,7 +376,7 @@
     },
     {
       "name": "USA",
-      "min_mag": 5.0,
+      "min_mag": 4.95,
       "intake_mag": 4.5,
       "region": {
         "ClassType": 14001,
