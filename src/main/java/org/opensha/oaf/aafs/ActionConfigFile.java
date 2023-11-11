@@ -379,19 +379,24 @@ public class ActionConfigFile {
 	public ArrayList<String> adv_window_names;
 
 	// Fractile probabilities to include in the foreast.  Must be in increasing order. [v3]
-	// Each value must be a multiple of 0.0001.
+	// Each value must be a multiple of 0.0001 (requirement set by round_fractile_value()).
 	// Must contain the values 0.025, 0.5 and 0.975 for compatibility with forecast tables.
+	// Note: ADV_FRACTILE_EPS must be less than 1/3 the minimum spacing between rounded fractile values.
 
 	public ArrayList<Double> adv_fractile_values;
+
+	public static double round_fractile_value (double fractile_value) {
+		return SimpleUtils.round_double_via_string ("%.4f", fractile_value);
+	}
 
 	private static void def_adv_fractile_values (Collection<Double> x) {	// default for v2 and earlier files 
 
 		//  for (int frac_ix = 0; frac_ix < 79; ++frac_ix) {
-		//  	x.add (new Double ( SimpleUtils.round_double_via_string ("%.4f", ((double)(frac_ix + 1)) / 80.0) ));
+		//  	x.add (new Double ( round_fractile_value (((double)(frac_ix + 1)) / 80.0) ));
 		//  }
 
 		for (int frac_ix = 0; frac_ix < 197; ++frac_ix) {
-			x.add (new Double ( SimpleUtils.round_double_via_string ("%.4f", ((double)(frac_ix + 2)) / 200.0) ));
+			x.add (new Double ( round_fractile_value (((double)(frac_ix + 2)) / 200.0) ));
 		}
 
 		return;
@@ -765,12 +770,12 @@ public class ActionConfigFile {
 			if (!( 0.0 < adv_fractile_value && adv_fractile_value < 1.0 )) {
 				throw new RuntimeException("ActionConfigFile: Out-of-range adv_fractile_value: " + adv_fractile_value + ", index = " + i);
 			}
-			double x = SimpleUtils.round_double_via_string ("%.4f", adv_fractile_value);
+			double x = round_fractile_value (adv_fractile_value);
 			if (Math.abs(x - adv_fractile_value) > ADV_FRACTILE_EPS * 0.1) {
 				throw new RuntimeException("ActionConfigFile: Fractile is not a multiple of 0.0001: Invalid adv_fractile_value: " + adv_fractile_value + ", index = " + i);
 			}
-			if (!( last_frac < x )) {
-				throw new RuntimeException("ActionConfigFile: Out-of-order adv_fractile_value: " + adv_fractile_value + ", index = " + i);
+			if (!( last_frac + (ADV_FRACTILE_EPS * 2.0) < x )) {
+				throw new RuntimeException("ActionConfigFile: Out-of-order or too-closely-spaced adv_fractile_value: " + adv_fractile_value + ", index = " + i);
 			}
 			if (Math.abs(x - 0.025) <= ADV_FRACTILE_EPS * 0.1) {
 				f_found_025 = true;

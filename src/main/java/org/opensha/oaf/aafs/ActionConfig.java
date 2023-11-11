@@ -467,31 +467,31 @@ public final class ActionConfig {
 		return param_set.adv_window_names.get(i);
 	}
 
-	// Get the number of advisory fractile probabilities.
+	// Get the number of advisory fractile probabilities. [v3]
 
 	public int get_adv_fractile_value_count () {
 		return param_set.adv_fractile_values.size();
 	}
 
-	// Get the i-th advisory fractile probability.
+	// Get the i-th advisory fractile probability. [v3]
 
 	public double get_adv_fractile_value (int i) {
 		return param_set.adv_fractile_values.get(i).doubleValue();
 	}
 
-	// Get the i-th advisory fractile probability, rounded.
+	// Get the i-th advisory fractile probability, rounded. [v3]
 
 	public double get_adv_fractile_value_rounded (int i) {
-		return SimpleUtils.round_double_via_string ("%.4f", get_adv_fractile_value(i));
+		return ActionConfigFile.round_fractile_value (get_adv_fractile_value(i));
 	}
 
-	// Get the number of advisory bar counts.
+	// Get the number of advisory bar counts. [v3]
 
 	public int get_adv_bar_count_count () {
 		return param_set.adv_bar_counts.size();
 	}
 
-	// Get the i-th advisory bar count.
+	// Get the i-th advisory bar count. [v3]
 
 	public int get_adv_bar_count (int i) {
 		return param_set.adv_bar_counts.get(i).intValue();
@@ -616,7 +616,7 @@ public final class ActionConfig {
 		return result;
 	}
 
-	// Return all advisory fractile probabilities in a newly-allocated array.
+	// Return all advisory fractile probabilities in a newly-allocated array. [v3]
 	// The return values are in increasing order.
 
 	public double[] get_adv_fractile_values_array () {
@@ -628,7 +628,7 @@ public final class ActionConfig {
 		return result;
 	}
 
-	// Return all advisory fractile probabilities, rounded, in a newly-allocated array.
+	// Return all advisory fractile probabilities, rounded, in a newly-allocated array. [v3]
 	// The return values are in increasing order.
 
 	public double[] get_adv_fractile_values_rounded_array () {
@@ -640,7 +640,7 @@ public final class ActionConfig {
 		return result;
 	}
 
-	// Return all advisory bar counts in a newly-allocated array.
+	// Return all advisory bar counts in a newly-allocated array. [v3]
 	// The return values are in increasing order.
 
 	public int[] get_adv_bar_counts_array () {
