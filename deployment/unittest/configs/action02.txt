@@ -41,6 +41,7 @@ evseq_lookback = PT720H
 evseq_lookahead = PT8760H
 evseq_cap_min_dur = PT72H
 evseq_cap_gap = PT1H
+etas_enable = 0
 adv_min_mag_bins = [
   0:  3.0
   1:  4.0
@@ -65,6 +66,217 @@ adv_window_names = [
   1:  1 Week
   2:  1 Month
   3:  1 Year
+]
+adv_fractile_values = [
+  0:  0.01
+  1:  0.015
+  2:  0.02
+  3:  0.025
+  4:  0.03
+  5:  0.035
+  6:  0.04
+  7:  0.045
+  8:  0.05
+  9:  0.055
+  10:  0.06
+  11:  0.065
+  12:  0.07
+  13:  0.075
+  14:  0.08
+  15:  0.085
+  16:  0.09
+  17:  0.095
+  18:  0.1
+  19:  0.105
+  20:  0.11
+  21:  0.115
+  22:  0.12
+  23:  0.125
+  24:  0.13
+  25:  0.135
+  26:  0.14
+  27:  0.145
+  28:  0.15
+  29:  0.155
+  30:  0.16
+  31:  0.165
+  32:  0.17
+  33:  0.175
+  34:  0.18
+  35:  0.185
+  36:  0.19
+  37:  0.195
+  38:  0.2
+  39:  0.205
+  40:  0.21
+  41:  0.215
+  42:  0.22
+  43:  0.225
+  44:  0.23
+  45:  0.235
+  46:  0.24
+  47:  0.245
+  48:  0.25
+  49:  0.255
+  50:  0.26
+  51:  0.265
+  52:  0.27
+  53:  0.275
+  54:  0.28
+  55:  0.285
+  56:  0.29
+  57:  0.295
+  58:  0.3
+  59:  0.305
+  60:  0.31
+  61:  0.315
+  62:  0.32
+  63:  0.325
+  64:  0.33
+  65:  0.335
+  66:  0.34
+  67:  0.345
+  68:  0.35
+  69:  0.355
+  70:  0.36
+  71:  0.365
+  72:  0.37
+  73:  0.375
+  74:  0.38
+  75:  0.385
+  76:  0.39
+  77:  0.395
+  78:  0.4
+  79:  0.405
+  80:  0.41
+  81:  0.415
+  82:  0.42
+  83:  0.425
+  84:  0.43
+  85:  0.435
+  86:  0.44
+  87:  0.445
+  88:  0.45
+  89:  0.455
+  90:  0.46
+  91:  0.465
+  92:  0.47
+  93:  0.475
+  94:  0.48
+  95:  0.485
+  96:  0.49
+  97:  0.495
+  98:  0.5
+  99:  0.505
+  100:  0.51
+  101:  0.515
+  102:  0.52
+  103:  0.525
+  104:  0.53
+  105:  0.535
+  106:  0.54
+  107:  0.545
+  108:  0.55
+  109:  0.555
+  110:  0.56
+  111:  0.565
+  112:  0.57
+  113:  0.575
+  114:  0.58
+  115:  0.585
+  116:  0.59
+  117:  0.595
+  118:  0.6
+  119:  0.605
+  120:  0.61
+  121:  0.615
+  122:  0.62
+  123:  0.625
+  124:  0.63
+  125:  0.635
+  126:  0.64
+  127:  0.645
+  128:  0.65
+  129:  0.655
+  130:  0.66
+  131:  0.665
+  132:  0.67
+  133:  0.675
+  134:  0.68
+  135:  0.685
+  136:  0.69
+  137:  0.695
+  138:  0.7
+  139:  0.705
+  140:  0.71
+  141:  0.715
+  142:  0.72
+  143:  0.725
+  144:  0.73
+  145:  0.735
+  146:  0.74
+  147:  0.745
+  148:  0.75
+  149:  0.755
+  150:  0.76
+  151:  0.765
+  152:  0.77
+  153:  0.775
+  154:  0.78
+  155:  0.785
+  156:  0.79
+  157:  0.795
+  158:  0.8
+  159:  0.805
+  160:  0.81
+  161:  0.815
+  162:  0.82
+  163:  0.825
+  164:  0.83
+  165:  0.835
+  166:  0.84
+  167:  0.845
+  168:  0.85
+  169:  0.855
+  170:  0.86
+  171:  0.865
+  172:  0.87
+  173:  0.875
+  174:  0.88
+  175:  0.885
+  176:  0.89
+  177:  0.895
+  178:  0.9
+  179:  0.905
+  180:  0.91
+  181:  0.915
+  182:  0.92
+  183:  0.925
+  184:  0.93
+  185:  0.935
+  186:  0.94
+  187:  0.945
+  188:  0.95
+  189:  0.955
+  190:  0.96
+  191:  0.965
+  192:  0.97
+  193:  0.975
+  194:  0.98
+  195:  0.985
+  196:  0.99
+]
+adv_bar_counts = [
+  0:  0
+  1:  1
+  2:  2
+  3:  5
+  4:  10
+  5:  20
+  6:  50
+  7:  100
+  8:  200
+  9:  500
 ]
 forecast_lags = [
   0:  PT10M
@@ -293,76 +505,76 @@ IntakeSphRegion
 	MinLon: -125.3
 	MaxLat: 42.1
 	MaxLon: -118.0167
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: CAL-SCSN
 	MinLat: 32.0
 	MinLon: -121.25
 	MaxLat: 37.2167
 	MaxLon: -114.3333
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: ALASKA
 	MinLat: 49.55
 	MinLon: 166.99
 	MaxLat: 71.77
 	MaxLon: 230.84
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: HAWAII
 	MinLat: 15.45
 	MinLon: -179.9999
 	MaxLat: 31.88
 	MaxLon: -151.52
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: PUERTO-RICO
 	MinLat: 16.97
 	MinLon: -68.12
 	MaxLat: 19.68
 	MaxLon: -64.29
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: GUAM-MARIANAS
 	MinLat: 10.142
 	MinLon: 140.977
 	MaxLat: 22.431
 	MaxLon: 149.414
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: AMERICAN-SAMOA
 	MinLat: -17.099
 	MinLon: -171.255
 	MaxLat: -10.941
 	MaxLon: -167.651
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: USA
 	MinLat: 24.0959
 	MinLon: -130.4154
 	MaxLat: 49.217
 	MaxLon: -66.2
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: WORLD
 	MinLat: -90.0
 	MinLon: -180.0
 	MaxLat: 90.0
 	MaxLon: 180.0
-	MinMag: 5.0
-	IntakeMag: 4.0
+	MinMag: 5.95
+	IntakeMag: 5.75
 ]
 
 
-{"ClassType":24001,"ActionConfigFile":24002,"forecast_min_gap":"PT5M","forecast_max_delay":"PT168H","comcat_clock_skew":"PT8M","comcat_origin_skew":"PT2M","comcat_retry_min_gap":"PT30S","comcat_retry_missing":"PT1H","seq_spec_min_lag":"PT3H","advisory_dur_week":"PT1S","advisory_dur_month":"PT624H","advisory_dur_year":"PT8232H","def_max_forecast_lag":"PT8760H","withdraw_forecast_lag":"PT72H","stale_forecast_option":3,"shadow_search_radius":2000.0,"shadow_lookback_time":"PT8760H","shadow_centroid_mag":2.95,"shadow_large_mag":7.6,"poll_short_period":"PT20M","poll_short_lookback":"PT72H","poll_short_intake_gap":"PT30S","poll_long_period":"PT24H","poll_long_lookback":"PT7920H","poll_long_intake_gap":"PT2M","pdl_intake_max_age":"PT7200H","pdl_intake_max_future":"PT24H","removal_forecast_age":"PT8400H","removal_update_skew":"PT2H","removal_lookback_tmax":"PT105120H","removal_lookback_tmin":"PT30M","removal_lookback_mag":3.9,"removal_check_period":"PT24H","removal_retry_period":"PT30M","removal_event_gap":"PT2M","removal_foreign_block":"PT720H","def_injectable_text":"","evseq_enable":1,"evseq_report":1,"evseq_lookback":"PT720H","evseq_lookahead":"PT8760H","evseq_cap_min_dur":"PT72H","evseq_cap_gap":"PT1H","adv_min_mag_bins":[3.0,4.0,5.0,6.0,7.0],"adv_window_start_offs":["PT0S","PT0S","PT0S","PT0S"],"adv_window_end_offs":["PT24H","PT168H","PT720H","PT8760H"],"adv_window_names":["1 Day","1 Week","1 Month","1 Year"],"forecast_lags":["PT10M","PT30M","PT50M","PT2H","PT4H","PT6H","PT12H","PT18H","PT24H","PT48H","PT72H","PT96H","PT120H","PT144H","PT168H","PT192H","PT216H","PT240H","PT264H","PT288H","PT312H","PT336H","PT384H","PT456H","PT528H","PT600H","PT672H","PT840H","PT1008H","PT1176H","PT1344H","PT1512H","PT1680H","PT1848H","PT2016H","PT2184H","PT2352H","PT2520H","PT2688H","PT2856H","PT3024H","PT3192H","PT3360H","PT3528H","PT3696H","PT3864H","PT4032H","PT4200H","PT4368H","PT4536H","PT4704H","PT4872H","PT5040H","PT5208H","PT5376H","PT5544H","PT5712H","PT5880H","PT6048H","PT6216H","PT6384H","PT6552H","PT6720H","PT6888H","PT7056H","PT7224H","PT7392H","PT7560H","PT7728H","PT7896H","PT8064H","PT8232H","PT8400H","PT8568H","PT8760H","PT9432H","PT10104H","PT10776H","PT11448H","PT12120H","PT12792H","PT13464H","PT14136H","PT14808H","PT15480H","PT16152H","PT16824H","PT17520H","PT18984H","PT20448H","PT21912H","PT23352H","PT24816H","PT26280H","PT27744H","PT29208H","PT30672H","PT32112H","PT33576H","PT35040H","PT36504H","PT37968H","PT39432H","PT40872H","PT42336H","PT43800H","PT45264H","PT46728H","PT48192H","PT49632H","PT51096H","PT52560H","PT54024H","PT55488H","PT56952H","PT58392H","PT59856H","PT61320H","PT62784H","PT64248H","PT65712H","PT67152H","PT68616H","PT70080H","PT71544H","PT73008H","PT74472H","PT75912H","PT77376H","PT78840H","PT80304H","PT81768H","PT83232H","PT84672H","PT86136H","PT87600H"],"comcat_retry_lags":["PT30S","PT2M","PT5M","PT10M","PT20M","PT30M","PT40M","PT50M","PT1H","PT2H","PT4H","PT8H","PT12H","PT16H","PT20H","PT24H","PT48H","PT72H","PT96H","PT120H","PT144H","PT168H","PT192H","PT216H","PT240H","PT264H","PT288H","PT312H","PT336H","PT360H"],"comcat_intake_lags":["PT2M","PT5M","PT10M","PT15M","PT20M","PT25M","PT30M","PT40M","PT50M","PT1H","PT2H","PT4H","PT8H","PT12H","PT16H","PT20H","PT24H"],"pdl_report_retry_lags":["PT2M","PT5M","PT10M","PT20M","PT30M","PT40M","PT50M","PT1H","PT2H","PT4H","PT8H","PT12H","PT16H","PT20H","PT24H","PT48H","PT72H","PT96H","PT120H","PT144H","PT168H","PT192H","PT216H","PT240H","PT264H","PT288H","PT312H","PT336H","PT360H"],"pdl_intake_regions":[{"name":"CAL-NCSS","min_mag":4.0,"intake_mag":3.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":34.5,"max_lat":42.1,"min_lon":-125.3,"max_lon":-118.0167,"vertex_list":[{"lat":34.5,"lon":-121.25},{"lat":37.2167,"lon":-118.0167},{"lat":37.75,"lon":-118.25},{"lat":37.75,"lon":-119.5},{"lat":39.5,"lon":-120.75},{"lat":42.0,"lon":-121.4167},{"lat":42.0,"lon":-122.7},{"lat":42.1,"lon":-123.0},{"lat":39.75,"lon":-123.0},{"lat":39.75,"lon":-125.3}]}},{"name":"CAL-SCSN","min_mag":4.0,"intake_mag":3.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":32.0,"max_lat":37.2167,"min_lon":-121.25,"max_lon":-114.3333,"vertex_list":[{"lat":35.8,"lon":-116.4},{"lat":34.0815,"lon":-114.4717},{"lat":32.0,"lon":-114.3333},{"lat":32.0,"lon":-120.5},{"lat":34.5,"lon":-121.25},{"lat":37.2167,"lon":-118.0167},{"lat":36.6847,"lon":-117.793}]}},{"name":"ALASKA","min_mag":4.0,"intake_mag":3.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":true,"min_lat":49.55,"max_lat":71.77,"min_lon":166.99,"max_lon":230.84,"vertex_list":[{"lat":54.685,"lon":-129.16},{"lat":59.7916,"lon":-135.4762},{"lat":59.11,"lon":-136.98},{"lat":60.5741,"lon":-141.0023},{"lat":71.77,"lon":-141.0023},{"lat":71.77,"lon":-162.51},{"lat":59.98,"lon":-175.08},{"lat":49.55,"lon":166.99},{"lat":49.55,"lon":-166.64},{"lat":57.66,"lon":-142.29},{"lat":54.685,"lon":-134.87}]}},{"name":"HAWAII","min_mag":4.0,"intake_mag":3.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":15.45,"max_lat":31.88,"min_lon":-179.9999,"max_lon":-151.52,"vertex_list":[{"lat":15.45,"lon":-153.9},{"lat":22.02,"lon":-151.52},{"lat":31.88,"lon":-179.9999},{"lat":24.93,"lon":-179.9999}]}},{"name":"PUERTO-RICO","min_mag":4.0,"intake_mag":3.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":16.97,"max_lat":19.68,"min_lon":-68.12,"max_lon":-64.29,"vertex_list":[{"lat":19.68,"lon":-68.12},{"lat":16.97,"lon":-68.12},{"lat":16.97,"lon":-64.29},{"lat":18.13,"lon":-64.29},{"lat":18.62,"lon":-65.07},{"lat":19.68,"lon":-65.07}]}},{"name":"GUAM-MARIANAS","min_mag":4.0,"intake_mag":3.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":10.142,"max_lat":22.431,"min_lon":140.977,"max_lon":149.414,"vertex_list":[{"lat":22.431,"lon":140.977},{"lat":22.431,"lon":149.414},{"lat":10.142,"lon":149.414},{"lat":10.142,"lon":140.977}]}},{"name":"AMERICAN-SAMOA","min_mag":4.0,"intake_mag":3.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":-17.099,"max_lat":-10.941,"min_lon":-171.255,"max_lon":-167.651,"vertex_list":[{"lat":-10.941,"lon":-171.255},{"lat":-10.941,"lon":-167.651},{"lat":-17.099,"lon":-167.651},{"lat":-17.099,"lon":-171.255}]}},{"name":"USA","min_mag":4.0,"intake_mag":3.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":24.0959,"max_lat":49.217,"min_lon":-130.4154,"max_lon":-66.2,"vertex_list":[{"lat":24.0959,"lon":-80.1764},{"lat":26.08,"lon":-98.83},{"lat":29.72,"lon":-101.37},{"lat":28.84,"lon":-103.71},{"lat":31.7834,"lon":-106.5366},{"lat":31.7834,"lon":-108.2077},{"lat":31.3323,"lon":-108.2077},{"lat":31.3323,"lon":-111.0748},{"lat":32.4938,"lon":-114.8135},{"lat":32.7175,"lon":-114.7423},{"lat":31.5216,"lon":-130.1218},{"lat":49.217,"lon":-130.4154},{"lat":48.2152,"lon":-123.3628},{"lat":49.0025,"lon":-122.8964},{"lat":49.0,"lon":-95.1952},{"lat":48.17,"lon":-87.21},{"lat":44.84,"lon":-81.39},{"lat":41.67,"lon":-83.06},{"lat":44.11,"lon":-76.42},{"lat":45.0,"lon":-74.98},{"lat":45.0134,"lon":-71.5528},{"lat":47.4598,"lon":-69.2244},{"lat":47.4,"lon":-67.94},{"lat":42.88,"lon":-66.2}]}},{"name":"WORLD","min_mag":5.0,"intake_mag":4.0,"region":{"ClassType":33001,"SphRegionWorld":33001,"SphRegion":12001,"plot_wrap":false,"min_lat":-90.0,"max_lat":90.0,"min_lon":-180.0,"max_lon":180.0}}]}
+{"ClassType":24001,"ActionConfigFile":24003,"forecast_min_gap":"PT5M","forecast_max_delay":"PT168H","comcat_clock_skew":"PT8M","comcat_origin_skew":"PT2M","comcat_retry_min_gap":"PT30S","comcat_retry_missing":"PT1H","seq_spec_min_lag":"PT3H","advisory_dur_week":"PT1S","advisory_dur_month":"PT624H","advisory_dur_year":"PT8232H","def_max_forecast_lag":"PT8760H","withdraw_forecast_lag":"PT72H","stale_forecast_option":3,"shadow_search_radius":2000.0,"shadow_lookback_time":"PT8760H","shadow_centroid_mag":2.95,"shadow_large_mag":7.6,"poll_short_period":"PT20M","poll_short_lookback":"PT72H","poll_short_intake_gap":"PT30S","poll_long_period":"PT24H","poll_long_lookback":"PT7920H","poll_long_intake_gap":"PT2M","pdl_intake_max_age":"PT7200H","pdl_intake_max_future":"PT24H","removal_forecast_age":"PT8400H","removal_update_skew":"PT2H","removal_lookback_tmax":"PT105120H","removal_lookback_tmin":"PT30M","removal_lookback_mag":3.9,"removal_check_period":"PT24H","removal_retry_period":"PT30M","removal_event_gap":"PT2M","removal_foreign_block":"PT720H","def_injectable_text":"","evseq_enable":1,"evseq_report":1,"evseq_lookback":"PT720H","evseq_lookahead":"PT8760H","evseq_cap_min_dur":"PT72H","evseq_cap_gap":"PT1H","etas_enable":0,"adv_min_mag_bins":[3.0,4.0,5.0,6.0,7.0],"adv_window_start_offs":["PT0S","PT0S","PT0S","PT0S"],"adv_window_end_offs":["PT24H","PT168H","PT720H","PT8760H"],"adv_window_names":["1 Day","1 Week","1 Month","1 Year"],"adv_fractile_values":[0.01,0.015,0.02,0.025,0.03,0.035,0.04,0.045,0.05,0.055,0.06,0.065,0.07,0.075,0.08,0.085,0.09,0.095,0.1,0.105,0.11,0.115,0.12,0.125,0.13,0.135,0.14,0.145,0.15,0.155,0.16,0.165,0.17,0.175,0.18,0.185,0.19,0.195,0.2,0.205,0.21,0.215,0.22,0.225,0.23,0.235,0.24,0.245,0.25,0.255,0.26,0.265,0.27,0.275,0.28,0.285,0.29,0.295,0.3,0.305,0.31,0.315,0.32,0.325,0.33,0.335,0.34,0.345,0.35,0.355,0.36,0.365,0.37,0.375,0.38,0.385,0.39,0.395,0.4,0.405,0.41,0.415,0.42,0.425,0.43,0.435,0.44,0.445,0.45,0.455,0.46,0.465,0.47,0.475,0.48,0.485,0.49,0.495,0.5,0.505,0.51,0.515,0.52,0.525,0.53,0.535,0.54,0.545,0.55,0.555,0.56,0.565,0.57,0.575,0.58,0.585,0.59,0.595,0.6,0.605,0.61,0.615,0.62,0.625,0.63,0.635,0.64,0.645,0.65,0.655,0.66,0.665,0.67,0.675,0.68,0.685,0.69,0.695,0.7,0.705,0.71,0.715,0.72,0.725,0.73,0.735,0.74,0.745,0.75,0.755,0.76,0.765,0.77,0.775,0.78,0.785,0.79,0.795,0.8,0.805,0.81,0.815,0.82,0.825,0.83,0.835,0.84,0.845,0.85,0.855,0.86,0.865,0.87,0.875,0.88,0.885,0.89,0.895,0.9,0.905,0.91,0.915,0.92,0.925,0.93,0.935,0.94,0.945,0.95,0.955,0.96,0.965,0.97,0.975,0.98,0.985,0.99],"adv_bar_counts":[0,1,2,5,10,20,50,100,200,500],"forecast_lags":["PT10M","PT30M","PT50M","PT2H","PT4H","PT6H","PT12H","PT18H","PT24H","PT48H","PT72H","PT96H","PT120H","PT144H","PT168H","PT192H","PT216H","PT240H","PT264H","PT288H","PT312H","PT336H","PT384H","PT456H","PT528H","PT600H","PT672H","PT840H","PT1008H","PT1176H","PT1344H","PT1512H","PT1680H","PT1848H","PT2016H","PT2184H","PT2352H","PT2520H","PT2688H","PT2856H","PT3024H","PT3192H","PT3360H","PT3528H","PT3696H","PT3864H","PT4032H","PT4200H","PT4368H","PT4536H","PT4704H","PT4872H","PT5040H","PT5208H","PT5376H","PT5544H","PT5712H","PT5880H","PT6048H","PT6216H","PT6384H","PT6552H","PT6720H","PT6888H","PT7056H","PT7224H","PT7392H","PT7560H","PT7728H","PT7896H","PT8064H","PT8232H","PT8400H","PT8568H","PT8760H","PT9432H","PT10104H","PT10776H","PT11448H","PT12120H","PT12792H","PT13464H","PT14136H","PT14808H","PT15480H","PT16152H","PT16824H","PT17520H","PT18984H","PT20448H","PT21912H","PT23352H","PT24816H","PT26280H","PT27744H","PT29208H","PT30672H","PT32112H","PT33576H","PT35040H","PT36504H","PT37968H","PT39432H","PT40872H","PT42336H","PT43800H","PT45264H","PT46728H","PT48192H","PT49632H","PT51096H","PT52560H","PT54024H","PT55488H","PT56952H","PT58392H","PT59856H","PT61320H","PT62784H","PT64248H","PT65712H","PT67152H","PT68616H","PT70080H","PT71544H","PT73008H","PT74472H","PT75912H","PT77376H","PT78840H","PT80304H","PT81768H","PT83232H","PT84672H","PT86136H","PT87600H"],"comcat_retry_lags":["PT30S","PT2M","PT5M","PT10M","PT20M","PT30M","PT40M","PT50M","PT1H","PT2H","PT4H","PT8H","PT12H","PT16H","PT20H","PT24H","PT48H","PT72H","PT96H","PT120H","PT144H","PT168H","PT192H","PT216H","PT240H","PT264H","PT288H","PT312H","PT336H","PT360H"],"comcat_intake_lags":["PT2M","PT5M","PT10M","PT15M","PT20M","PT25M","PT30M","PT40M","PT50M","PT1H","PT2H","PT4H","PT8H","PT12H","PT16H","PT20H","PT24H"],"pdl_report_retry_lags":["PT2M","PT5M","PT10M","PT20M","PT30M","PT40M","PT50M","PT1H","PT2H","PT4H","PT8H","PT12H","PT16H","PT20H","PT24H","PT48H","PT72H","PT96H","PT120H","PT144H","PT168H","PT192H","PT216H","PT240H","PT264H","PT288H","PT312H","PT336H","PT360H"],"pdl_intake_regions":[{"name":"CAL-NCSS","min_mag":4.95,"intake_mag":4.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":34.5,"max_lat":42.1,"min_lon":-125.3,"max_lon":-118.0167,"vertex_list":[{"lat":34.5,"lon":-121.25},{"lat":37.2167,"lon":-118.0167},{"lat":37.75,"lon":-118.25},{"lat":37.75,"lon":-119.5},{"lat":39.5,"lon":-120.75},{"lat":42.0,"lon":-121.4167},{"lat":42.0,"lon":-122.7},{"lat":42.1,"lon":-123.0},{"lat":39.75,"lon":-123.0},{"lat":39.75,"lon":-125.3}]}},{"name":"CAL-SCSN","min_mag":4.95,"intake_mag":4.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":32.0,"max_lat":37.2167,"min_lon":-121.25,"max_lon":-114.3333,"vertex_list":[{"lat":35.8,"lon":-116.4},{"lat":34.0815,"lon":-114.4717},{"lat":32.0,"lon":-114.3333},{"lat":32.0,"lon":-120.5},{"lat":34.5,"lon":-121.25},{"lat":37.2167,"lon":-118.0167},{"lat":36.6847,"lon":-117.793}]}},{"name":"ALASKA","min_mag":4.95,"intake_mag":4.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":true,"min_lat":49.55,"max_lat":71.77,"min_lon":166.99,"max_lon":230.84,"vertex_list":[{"lat":54.685,"lon":-129.16},{"lat":59.7916,"lon":-135.4762},{"lat":59.11,"lon":-136.98},{"lat":60.5741,"lon":-141.0023},{"lat":71.77,"lon":-141.0023},{"lat":71.77,"lon":-162.51},{"lat":59.98,"lon":-175.08},{"lat":49.55,"lon":166.99},{"lat":49.55,"lon":-166.64},{"lat":57.66,"lon":-142.29},{"lat":54.685,"lon":-134.87}]}},{"name":"HAWAII","min_mag":4.95,"intake_mag":4.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":15.45,"max_lat":31.88,"min_lon":-179.9999,"max_lon":-151.52,"vertex_list":[{"lat":15.45,"lon":-153.9},{"lat":22.02,"lon":-151.52},{"lat":31.88,"lon":-179.9999},{"lat":24.93,"lon":-179.9999}]}},{"name":"PUERTO-RICO","min_mag":4.95,"intake_mag":4.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":16.97,"max_lat":19.68,"min_lon":-68.12,"max_lon":-64.29,"vertex_list":[{"lat":19.68,"lon":-68.12},{"lat":16.97,"lon":-68.12},{"lat":16.97,"lon":-64.29},{"lat":18.13,"lon":-64.29},{"lat":18.62,"lon":-65.07},{"lat":19.68,"lon":-65.07}]}},{"name":"GUAM-MARIANAS","min_mag":4.95,"intake_mag":4.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":10.142,"max_lat":22.431,"min_lon":140.977,"max_lon":149.414,"vertex_list":[{"lat":22.431,"lon":140.977},{"lat":22.431,"lon":149.414},{"lat":10.142,"lon":149.414},{"lat":10.142,"lon":140.977}]}},{"name":"AMERICAN-SAMOA","min_mag":4.95,"intake_mag":4.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":-17.099,"max_lat":-10.941,"min_lon":-171.255,"max_lon":-167.651,"vertex_list":[{"lat":-10.941,"lon":-171.255},{"lat":-10.941,"lon":-167.651},{"lat":-17.099,"lon":-167.651},{"lat":-17.099,"lon":-171.255}]}},{"name":"USA","min_mag":4.95,"intake_mag":4.75,"region":{"ClassType":14001,"SphRegionMercPolygon":14001,"SphRegion":12001,"plot_wrap":false,"min_lat":24.0959,"max_lat":49.217,"min_lon":-130.4154,"max_lon":-66.2,"vertex_list":[{"lat":24.0959,"lon":-80.1764},{"lat":26.08,"lon":-98.83},{"lat":29.72,"lon":-101.37},{"lat":28.84,"lon":-103.71},{"lat":31.7834,"lon":-106.5366},{"lat":31.7834,"lon":-108.2077},{"lat":31.3323,"lon":-108.2077},{"lat":31.3323,"lon":-111.0748},{"lat":32.4938,"lon":-114.8135},{"lat":32.7175,"lon":-114.7423},{"lat":31.5216,"lon":-130.1218},{"lat":49.217,"lon":-130.4154},{"lat":48.2152,"lon":-123.3628},{"lat":49.0025,"lon":-122.8964},{"lat":49.0,"lon":-95.1952},{"lat":48.17,"lon":-87.21},{"lat":44.84,"lon":-81.39},{"lat":41.67,"lon":-83.06},{"lat":44.11,"lon":-76.42},{"lat":45.0,"lon":-74.98},{"lat":45.0134,"lon":-71.5528},{"lat":47.4598,"lon":-69.2244},{"lat":47.4,"lon":-67.94},{"lat":42.88,"lon":-66.2}]}},{"name":"WORLD","min_mag":5.95,"intake_mag":5.75,"region":{"ClassType":33001,"SphRegionWorld":33001,"SphRegion":12001,"plot_wrap":false,"min_lat":-90.0,"max_lat":90.0,"min_lon":-180.0,"max_lon":180.0}}]}
 
 ActionConfigFile:
 forecast_min_gap = PT5M
@@ -406,6 +618,7 @@ evseq_lookback = PT720H
 evseq_lookahead = PT8760H
 evseq_cap_min_dur = PT72H
 evseq_cap_gap = PT1H
+etas_enable = 0
 adv_min_mag_bins = [
   0:  3.0
   1:  4.0
@@ -430,6 +643,217 @@ adv_window_names = [
   1:  1 Week
   2:  1 Month
   3:  1 Year
+]
+adv_fractile_values = [
+  0:  0.01
+  1:  0.015
+  2:  0.02
+  3:  0.025
+  4:  0.03
+  5:  0.035
+  6:  0.04
+  7:  0.045
+  8:  0.05
+  9:  0.055
+  10:  0.06
+  11:  0.065
+  12:  0.07
+  13:  0.075
+  14:  0.08
+  15:  0.085
+  16:  0.09
+  17:  0.095
+  18:  0.1
+  19:  0.105
+  20:  0.11
+  21:  0.115
+  22:  0.12
+  23:  0.125
+  24:  0.13
+  25:  0.135
+  26:  0.14
+  27:  0.145
+  28:  0.15
+  29:  0.155
+  30:  0.16
+  31:  0.165
+  32:  0.17
+  33:  0.175
+  34:  0.18
+  35:  0.185
+  36:  0.19
+  37:  0.195
+  38:  0.2
+  39:  0.205
+  40:  0.21
+  41:  0.215
+  42:  0.22
+  43:  0.225
+  44:  0.23
+  45:  0.235
+  46:  0.24
+  47:  0.245
+  48:  0.25
+  49:  0.255
+  50:  0.26
+  51:  0.265
+  52:  0.27
+  53:  0.275
+  54:  0.28
+  55:  0.285
+  56:  0.29
+  57:  0.295
+  58:  0.3
+  59:  0.305
+  60:  0.31
+  61:  0.315
+  62:  0.32
+  63:  0.325
+  64:  0.33
+  65:  0.335
+  66:  0.34
+  67:  0.345
+  68:  0.35
+  69:  0.355
+  70:  0.36
+  71:  0.365
+  72:  0.37
+  73:  0.375
+  74:  0.38
+  75:  0.385
+  76:  0.39
+  77:  0.395
+  78:  0.4
+  79:  0.405
+  80:  0.41
+  81:  0.415
+  82:  0.42
+  83:  0.425
+  84:  0.43
+  85:  0.435
+  86:  0.44
+  87:  0.445
+  88:  0.45
+  89:  0.455
+  90:  0.46
+  91:  0.465
+  92:  0.47
+  93:  0.475
+  94:  0.48
+  95:  0.485
+  96:  0.49
+  97:  0.495
+  98:  0.5
+  99:  0.505
+  100:  0.51
+  101:  0.515
+  102:  0.52
+  103:  0.525
+  104:  0.53
+  105:  0.535
+  106:  0.54
+  107:  0.545
+  108:  0.55
+  109:  0.555
+  110:  0.56
+  111:  0.565
+  112:  0.57
+  113:  0.575
+  114:  0.58
+  115:  0.585
+  116:  0.59
+  117:  0.595
+  118:  0.6
+  119:  0.605
+  120:  0.61
+  121:  0.615
+  122:  0.62
+  123:  0.625
+  124:  0.63
+  125:  0.635
+  126:  0.64
+  127:  0.645
+  128:  0.65
+  129:  0.655
+  130:  0.66
+  131:  0.665
+  132:  0.67
+  133:  0.675
+  134:  0.68
+  135:  0.685
+  136:  0.69
+  137:  0.695
+  138:  0.7
+  139:  0.705
+  140:  0.71
+  141:  0.715
+  142:  0.72
+  143:  0.725
+  144:  0.73
+  145:  0.735
+  146:  0.74
+  147:  0.745
+  148:  0.75
+  149:  0.755
+  150:  0.76
+  151:  0.765
+  152:  0.77
+  153:  0.775
+  154:  0.78
+  155:  0.785
+  156:  0.79
+  157:  0.795
+  158:  0.8
+  159:  0.805
+  160:  0.81
+  161:  0.815
+  162:  0.82
+  163:  0.825
+  164:  0.83
+  165:  0.835
+  166:  0.84
+  167:  0.845
+  168:  0.85
+  169:  0.855
+  170:  0.86
+  171:  0.865
+  172:  0.87
+  173:  0.875
+  174:  0.88
+  175:  0.885
+  176:  0.89
+  177:  0.895
+  178:  0.9
+  179:  0.905
+  180:  0.91
+  181:  0.915
+  182:  0.92
+  183:  0.925
+  184:  0.93
+  185:  0.935
+  186:  0.94
+  187:  0.945
+  188:  0.95
+  189:  0.955
+  190:  0.96
+  191:  0.965
+  192:  0.97
+  193:  0.975
+  194:  0.98
+  195:  0.985
+  196:  0.99
+]
+adv_bar_counts = [
+  0:  0
+  1:  1
+  2:  2
+  3:  5
+  4:  10
+  5:  20
+  6:  50
+  7:  100
+  8:  200
+  9:  500
 ]
 forecast_lags = [
   0:  PT10M
@@ -658,71 +1082,71 @@ IntakeSphRegion
 	MinLon: -125.3
 	MaxLat: 42.1
 	MaxLon: -118.0167
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: CAL-SCSN
 	MinLat: 32.0
 	MinLon: -121.25
 	MaxLat: 37.2167
 	MaxLon: -114.3333
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: ALASKA
 	MinLat: 49.55
 	MinLon: 166.99
 	MaxLat: 71.77
 	MaxLon: 230.84
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: HAWAII
 	MinLat: 15.45
 	MinLon: -179.9999
 	MaxLat: 31.88
 	MaxLon: -151.52
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: PUERTO-RICO
 	MinLat: 16.97
 	MinLon: -68.12
 	MaxLat: 19.68
 	MaxLon: -64.29
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: GUAM-MARIANAS
 	MinLat: 10.142
 	MinLon: 140.977
 	MaxLat: 22.431
 	MaxLon: 149.414
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: AMERICAN-SAMOA
 	MinLat: -17.099
 	MinLon: -171.255
 	MaxLat: -10.941
 	MaxLon: -167.651
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: USA
 	MinLat: 24.0959
 	MinLon: -130.4154
 	MaxLat: 49.217
 	MaxLon: -66.2
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: WORLD
 	MinLat: -90.0
 	MinLon: -180.0
 	MaxLat: 90.0
 	MaxLon: 180.0
-	MinMag: 5.0
-	IntakeMag: 4.0
+	MinMag: 5.95
+	IntakeMag: 5.75
 ]
 

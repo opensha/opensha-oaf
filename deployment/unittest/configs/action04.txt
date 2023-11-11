@@ -42,6 +42,7 @@ evseq_lookback = PT720H
 evseq_lookahead = PT8760H
 evseq_cap_min_dur = PT72H
 evseq_cap_gap = PT1H
+etas_enable = 0
 adv_min_mag_bins = [
   0:  3.0
   1:  4.0
@@ -66,6 +67,217 @@ adv_window_names = [
   1:  1 Week
   2:  1 Month
   3:  1 Year
+]
+adv_fractile_values = [
+  0:  0.01
+  1:  0.015
+  2:  0.02
+  3:  0.025
+  4:  0.03
+  5:  0.035
+  6:  0.04
+  7:  0.045
+  8:  0.05
+  9:  0.055
+  10:  0.06
+  11:  0.065
+  12:  0.07
+  13:  0.075
+  14:  0.08
+  15:  0.085
+  16:  0.09
+  17:  0.095
+  18:  0.1
+  19:  0.105
+  20:  0.11
+  21:  0.115
+  22:  0.12
+  23:  0.125
+  24:  0.13
+  25:  0.135
+  26:  0.14
+  27:  0.145
+  28:  0.15
+  29:  0.155
+  30:  0.16
+  31:  0.165
+  32:  0.17
+  33:  0.175
+  34:  0.18
+  35:  0.185
+  36:  0.19
+  37:  0.195
+  38:  0.2
+  39:  0.205
+  40:  0.21
+  41:  0.215
+  42:  0.22
+  43:  0.225
+  44:  0.23
+  45:  0.235
+  46:  0.24
+  47:  0.245
+  48:  0.25
+  49:  0.255
+  50:  0.26
+  51:  0.265
+  52:  0.27
+  53:  0.275
+  54:  0.28
+  55:  0.285
+  56:  0.29
+  57:  0.295
+  58:  0.3
+  59:  0.305
+  60:  0.31
+  61:  0.315
+  62:  0.32
+  63:  0.325
+  64:  0.33
+  65:  0.335
+  66:  0.34
+  67:  0.345
+  68:  0.35
+  69:  0.355
+  70:  0.36
+  71:  0.365
+  72:  0.37
+  73:  0.375
+  74:  0.38
+  75:  0.385
+  76:  0.39
+  77:  0.395
+  78:  0.4
+  79:  0.405
+  80:  0.41
+  81:  0.415
+  82:  0.42
+  83:  0.425
+  84:  0.43
+  85:  0.435
+  86:  0.44
+  87:  0.445
+  88:  0.45
+  89:  0.455
+  90:  0.46
+  91:  0.465
+  92:  0.47
+  93:  0.475
+  94:  0.48
+  95:  0.485
+  96:  0.49
+  97:  0.495
+  98:  0.5
+  99:  0.505
+  100:  0.51
+  101:  0.515
+  102:  0.52
+  103:  0.525
+  104:  0.53
+  105:  0.535
+  106:  0.54
+  107:  0.545
+  108:  0.55
+  109:  0.555
+  110:  0.56
+  111:  0.565
+  112:  0.57
+  113:  0.575
+  114:  0.58
+  115:  0.585
+  116:  0.59
+  117:  0.595
+  118:  0.6
+  119:  0.605
+  120:  0.61
+  121:  0.615
+  122:  0.62
+  123:  0.625
+  124:  0.63
+  125:  0.635
+  126:  0.64
+  127:  0.645
+  128:  0.65
+  129:  0.655
+  130:  0.66
+  131:  0.665
+  132:  0.67
+  133:  0.675
+  134:  0.68
+  135:  0.685
+  136:  0.69
+  137:  0.695
+  138:  0.7
+  139:  0.705
+  140:  0.71
+  141:  0.715
+  142:  0.72
+  143:  0.725
+  144:  0.73
+  145:  0.735
+  146:  0.74
+  147:  0.745
+  148:  0.75
+  149:  0.755
+  150:  0.76
+  151:  0.765
+  152:  0.77
+  153:  0.775
+  154:  0.78
+  155:  0.785
+  156:  0.79
+  157:  0.795
+  158:  0.8
+  159:  0.805
+  160:  0.81
+  161:  0.815
+  162:  0.82
+  163:  0.825
+  164:  0.83
+  165:  0.835
+  166:  0.84
+  167:  0.845
+  168:  0.85
+  169:  0.855
+  170:  0.86
+  171:  0.865
+  172:  0.87
+  173:  0.875
+  174:  0.88
+  175:  0.885
+  176:  0.89
+  177:  0.895
+  178:  0.9
+  179:  0.905
+  180:  0.91
+  181:  0.915
+  182:  0.92
+  183:  0.925
+  184:  0.93
+  185:  0.935
+  186:  0.94
+  187:  0.945
+  188:  0.95
+  189:  0.955
+  190:  0.96
+  191:  0.965
+  192:  0.97
+  193:  0.975
+  194:  0.98
+  195:  0.985
+  196:  0.99
+]
+adv_bar_counts = [
+  0:  0
+  1:  1
+  2:  2
+  3:  5
+  4:  10
+  5:  20
+  6:  50
+  7:  100
+  8:  200
+  9:  500
 ]
 forecast_lags = [
   0:  PT10M
@@ -294,72 +506,72 @@ IntakeSphRegion
 	MinLon: -125.3
 	MaxLat: 42.1
 	MaxLon: -118.0167
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: CAL-SCSN
 	MinLat: 32.0
 	MinLon: -121.25
 	MaxLat: 37.2167
 	MaxLon: -114.3333
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: ALASKA
 	MinLat: 49.55
 	MinLon: 166.99
 	MaxLat: 71.77
 	MaxLon: 230.84
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: HAWAII
 	MinLat: 15.45
 	MinLon: -179.9999
 	MaxLat: 31.88
 	MaxLon: -151.52
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: PUERTO-RICO
 	MinLat: 16.97
 	MinLon: -68.12
 	MaxLat: 19.68
 	MaxLon: -64.29
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: GUAM-MARIANAS
 	MinLat: 10.142
 	MinLon: 140.977
 	MaxLat: 22.431
 	MaxLon: 149.414
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: AMERICAN-SAMOA
 	MinLat: -17.099
 	MinLon: -171.255
 	MaxLat: -10.941
 	MaxLon: -167.651
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: USA
 	MinLat: 24.0959
 	MinLon: -130.4154
 	MaxLat: 49.217
 	MaxLon: -66.2
-	MinMag: 4.0
-	IntakeMag: 3.75
+	MinMag: 4.95
+	IntakeMag: 4.75
 IntakeSphRegion
 	Name: WORLD
 	MinLat: -90.0
 	MinLon: -180.0
 	MaxLat: 90.0
 	MaxLon: 180.0
-	MinMag: 5.0
-	IntakeMag: 4.0
+	MinMag: 5.95
+	IntakeMag: 5.75
 ]
 
 
@@ -367,8 +579,9 @@ skip_stale_forecasts = false
 omit_stale_forecasts = true
 is_evseq_enabled = true
 is_evseq_reported = true
-pdl_intake_region_min_min_mag = 4.0
-pdl_intake_region_min_intake_mag = 3.75
+is_etas_enabled = false
+pdl_intake_region_min_min_mag = 4.95
+pdl_intake_region_min_intake_mag = 4.75
 max_adv_window_end_off = 31536000000
 
 advisory bin 0: mag = 3.0
@@ -381,6 +594,215 @@ advisory window 0: start = PT0S, end = PT24H, name = 1 Day
 advisory window 1: start = PT0S, end = PT168H, name = 1 Week
 advisory window 2: start = PT0S, end = PT720H, name = 1 Month
 advisory window 3: start = PT0S, end = PT8760H, name = 1 Year
+
+fractile 0: probability = 0.01, rounded = 0.01
+fractile 1: probability = 0.015, rounded = 0.015
+fractile 2: probability = 0.02, rounded = 0.02
+fractile 3: probability = 0.025, rounded = 0.025
+fractile 4: probability = 0.03, rounded = 0.03
+fractile 5: probability = 0.035, rounded = 0.035
+fractile 6: probability = 0.04, rounded = 0.04
+fractile 7: probability = 0.045, rounded = 0.045
+fractile 8: probability = 0.05, rounded = 0.05
+fractile 9: probability = 0.055, rounded = 0.055
+fractile 10: probability = 0.06, rounded = 0.06
+fractile 11: probability = 0.065, rounded = 0.065
+fractile 12: probability = 0.07, rounded = 0.07
+fractile 13: probability = 0.075, rounded = 0.075
+fractile 14: probability = 0.08, rounded = 0.08
+fractile 15: probability = 0.085, rounded = 0.085
+fractile 16: probability = 0.09, rounded = 0.09
+fractile 17: probability = 0.095, rounded = 0.095
+fractile 18: probability = 0.1, rounded = 0.1
+fractile 19: probability = 0.105, rounded = 0.105
+fractile 20: probability = 0.11, rounded = 0.11
+fractile 21: probability = 0.115, rounded = 0.115
+fractile 22: probability = 0.12, rounded = 0.12
+fractile 23: probability = 0.125, rounded = 0.125
+fractile 24: probability = 0.13, rounded = 0.13
+fractile 25: probability = 0.135, rounded = 0.135
+fractile 26: probability = 0.14, rounded = 0.14
+fractile 27: probability = 0.145, rounded = 0.145
+fractile 28: probability = 0.15, rounded = 0.15
+fractile 29: probability = 0.155, rounded = 0.155
+fractile 30: probability = 0.16, rounded = 0.16
+fractile 31: probability = 0.165, rounded = 0.165
+fractile 32: probability = 0.17, rounded = 0.17
+fractile 33: probability = 0.175, rounded = 0.175
+fractile 34: probability = 0.18, rounded = 0.18
+fractile 35: probability = 0.185, rounded = 0.185
+fractile 36: probability = 0.19, rounded = 0.19
+fractile 37: probability = 0.195, rounded = 0.195
+fractile 38: probability = 0.2, rounded = 0.2
+fractile 39: probability = 0.205, rounded = 0.205
+fractile 40: probability = 0.21, rounded = 0.21
+fractile 41: probability = 0.215, rounded = 0.215
+fractile 42: probability = 0.22, rounded = 0.22
+fractile 43: probability = 0.225, rounded = 0.225
+fractile 44: probability = 0.23, rounded = 0.23
+fractile 45: probability = 0.235, rounded = 0.235
+fractile 46: probability = 0.24, rounded = 0.24
+fractile 47: probability = 0.245, rounded = 0.245
+fractile 48: probability = 0.25, rounded = 0.25
+fractile 49: probability = 0.255, rounded = 0.255
+fractile 50: probability = 0.26, rounded = 0.26
+fractile 51: probability = 0.265, rounded = 0.265
+fractile 52: probability = 0.27, rounded = 0.27
+fractile 53: probability = 0.275, rounded = 0.275
+fractile 54: probability = 0.28, rounded = 0.28
+fractile 55: probability = 0.285, rounded = 0.285
+fractile 56: probability = 0.29, rounded = 0.29
+fractile 57: probability = 0.295, rounded = 0.295
+fractile 58: probability = 0.3, rounded = 0.3
+fractile 59: probability = 0.305, rounded = 0.305
+fractile 60: probability = 0.31, rounded = 0.31
+fractile 61: probability = 0.315, rounded = 0.315
+fractile 62: probability = 0.32, rounded = 0.32
+fractile 63: probability = 0.325, rounded = 0.325
+fractile 64: probability = 0.33, rounded = 0.33
+fractile 65: probability = 0.335, rounded = 0.335
+fractile 66: probability = 0.34, rounded = 0.34
+fractile 67: probability = 0.345, rounded = 0.345
+fractile 68: probability = 0.35, rounded = 0.35
+fractile 69: probability = 0.355, rounded = 0.355
+fractile 70: probability = 0.36, rounded = 0.36
+fractile 71: probability = 0.365, rounded = 0.365
+fractile 72: probability = 0.37, rounded = 0.37
+fractile 73: probability = 0.375, rounded = 0.375
+fractile 74: probability = 0.38, rounded = 0.38
+fractile 75: probability = 0.385, rounded = 0.385
+fractile 76: probability = 0.39, rounded = 0.39
+fractile 77: probability = 0.395, rounded = 0.395
+fractile 78: probability = 0.4, rounded = 0.4
+fractile 79: probability = 0.405, rounded = 0.405
+fractile 80: probability = 0.41, rounded = 0.41
+fractile 81: probability = 0.415, rounded = 0.415
+fractile 82: probability = 0.42, rounded = 0.42
+fractile 83: probability = 0.425, rounded = 0.425
+fractile 84: probability = 0.43, rounded = 0.43
+fractile 85: probability = 0.435, rounded = 0.435
+fractile 86: probability = 0.44, rounded = 0.44
+fractile 87: probability = 0.445, rounded = 0.445
+fractile 88: probability = 0.45, rounded = 0.45
+fractile 89: probability = 0.455, rounded = 0.455
+fractile 90: probability = 0.46, rounded = 0.46
+fractile 91: probability = 0.465, rounded = 0.465
+fractile 92: probability = 0.47, rounded = 0.47
+fractile 93: probability = 0.475, rounded = 0.475
+fractile 94: probability = 0.48, rounded = 0.48
+fractile 95: probability = 0.485, rounded = 0.485
+fractile 96: probability = 0.49, rounded = 0.49
+fractile 97: probability = 0.495, rounded = 0.495
+fractile 98: probability = 0.5, rounded = 0.5
+fractile 99: probability = 0.505, rounded = 0.505
+fractile 100: probability = 0.51, rounded = 0.51
+fractile 101: probability = 0.515, rounded = 0.515
+fractile 102: probability = 0.52, rounded = 0.52
+fractile 103: probability = 0.525, rounded = 0.525
+fractile 104: probability = 0.53, rounded = 0.53
+fractile 105: probability = 0.535, rounded = 0.535
+fractile 106: probability = 0.54, rounded = 0.54
+fractile 107: probability = 0.545, rounded = 0.545
+fractile 108: probability = 0.55, rounded = 0.55
+fractile 109: probability = 0.555, rounded = 0.555
+fractile 110: probability = 0.56, rounded = 0.56
+fractile 111: probability = 0.565, rounded = 0.565
+fractile 112: probability = 0.57, rounded = 0.57
+fractile 113: probability = 0.575, rounded = 0.575
+fractile 114: probability = 0.58, rounded = 0.58
+fractile 115: probability = 0.585, rounded = 0.585
+fractile 116: probability = 0.59, rounded = 0.59
+fractile 117: probability = 0.595, rounded = 0.595
+fractile 118: probability = 0.6, rounded = 0.6
+fractile 119: probability = 0.605, rounded = 0.605
+fractile 120: probability = 0.61, rounded = 0.61
+fractile 121: probability = 0.615, rounded = 0.615
+fractile 122: probability = 0.62, rounded = 0.62
+fractile 123: probability = 0.625, rounded = 0.625
+fractile 124: probability = 0.63, rounded = 0.63
+fractile 125: probability = 0.635, rounded = 0.635
+fractile 126: probability = 0.64, rounded = 0.64
+fractile 127: probability = 0.645, rounded = 0.645
+fractile 128: probability = 0.65, rounded = 0.65
+fractile 129: probability = 0.655, rounded = 0.655
+fractile 130: probability = 0.66, rounded = 0.66
+fractile 131: probability = 0.665, rounded = 0.665
+fractile 132: probability = 0.67, rounded = 0.67
+fractile 133: probability = 0.675, rounded = 0.675
+fractile 134: probability = 0.68, rounded = 0.68
+fractile 135: probability = 0.685, rounded = 0.685
+fractile 136: probability = 0.69, rounded = 0.69
+fractile 137: probability = 0.695, rounded = 0.695
+fractile 138: probability = 0.7, rounded = 0.7
+fractile 139: probability = 0.705, rounded = 0.705
+fractile 140: probability = 0.71, rounded = 0.71
+fractile 141: probability = 0.715, rounded = 0.715
+fractile 142: probability = 0.72, rounded = 0.72
+fractile 143: probability = 0.725, rounded = 0.725
+fractile 144: probability = 0.73, rounded = 0.73
+fractile 145: probability = 0.735, rounded = 0.735
+fractile 146: probability = 0.74, rounded = 0.74
+fractile 147: probability = 0.745, rounded = 0.745
+fractile 148: probability = 0.75, rounded = 0.75
+fractile 149: probability = 0.755, rounded = 0.755
+fractile 150: probability = 0.76, rounded = 0.76
+fractile 151: probability = 0.765, rounded = 0.765
+fractile 152: probability = 0.77, rounded = 0.77
+fractile 153: probability = 0.775, rounded = 0.775
+fractile 154: probability = 0.78, rounded = 0.78
+fractile 155: probability = 0.785, rounded = 0.785
+fractile 156: probability = 0.79, rounded = 0.79
+fractile 157: probability = 0.795, rounded = 0.795
+fractile 158: probability = 0.8, rounded = 0.8
+fractile 159: probability = 0.805, rounded = 0.805
+fractile 160: probability = 0.81, rounded = 0.81
+fractile 161: probability = 0.815, rounded = 0.815
+fractile 162: probability = 0.82, rounded = 0.82
+fractile 163: probability = 0.825, rounded = 0.825
+fractile 164: probability = 0.83, rounded = 0.83
+fractile 165: probability = 0.835, rounded = 0.835
+fractile 166: probability = 0.84, rounded = 0.84
+fractile 167: probability = 0.845, rounded = 0.845
+fractile 168: probability = 0.85, rounded = 0.85
+fractile 169: probability = 0.855, rounded = 0.855
+fractile 170: probability = 0.86, rounded = 0.86
+fractile 171: probability = 0.865, rounded = 0.865
+fractile 172: probability = 0.87, rounded = 0.87
+fractile 173: probability = 0.875, rounded = 0.875
+fractile 174: probability = 0.88, rounded = 0.88
+fractile 175: probability = 0.885, rounded = 0.885
+fractile 176: probability = 0.89, rounded = 0.89
+fractile 177: probability = 0.895, rounded = 0.895
+fractile 178: probability = 0.9, rounded = 0.9
+fractile 179: probability = 0.905, rounded = 0.905
+fractile 180: probability = 0.91, rounded = 0.91
+fractile 181: probability = 0.915, rounded = 0.915
+fractile 182: probability = 0.92, rounded = 0.92
+fractile 183: probability = 0.925, rounded = 0.925
+fractile 184: probability = 0.93, rounded = 0.93
+fractile 185: probability = 0.935, rounded = 0.935
+fractile 186: probability = 0.94, rounded = 0.94
+fractile 187: probability = 0.945, rounded = 0.945
+fractile 188: probability = 0.95, rounded = 0.95
+fractile 189: probability = 0.955, rounded = 0.955
+fractile 190: probability = 0.96, rounded = 0.96
+fractile 191: probability = 0.965, rounded = 0.965
+fractile 192: probability = 0.97, rounded = 0.97
+fractile 193: probability = 0.975, rounded = 0.975
+fractile 194: probability = 0.98, rounded = 0.98
+fractile 195: probability = 0.985, rounded = 0.985
+fractile 196: probability = 0.99, rounded = 0.99
+
+bar 0: count = 0
+bar 1: count = 1
+bar 2: count = 2
+bar 3: count = 5
+bar 4: count = 10
+bar 5: count = 20
+bar 6: count = 50
+bar 7: count = 100
+bar 8: count = 200
+bar 9: count = 500
 
 PT10M  600000
 PT30M  1800000

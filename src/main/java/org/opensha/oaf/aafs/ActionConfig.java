@@ -11,6 +11,7 @@ import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
+import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.oaf.rj.OAFParameterSet;
 
@@ -414,6 +415,22 @@ public final class ActionConfig {
 		return param_set.evseq_cap_gap;
 	}
 
+	// Get option to enable ETAS forecasts. [v3]
+
+	public int get_etas_enable () {
+		return param_set.etas_enable;
+	}
+
+	public String get_etas_enable_as_string () {
+		return ActionConfigFile.get_etas_ena_as_string (get_etas_enable());
+	}
+
+	// Get flag, indicating if ETAS forecasts are enabled. [v3]
+
+	public boolean get_is_etas_enabled () {
+		return param_set.etas_enable == ActionConfigFile.ETAS_ENA_ENABLE;
+	}
+
 	// Get the number of advisory magnitude bins.
 
 	public int get_adv_min_mag_bin_count () {
@@ -448,6 +465,36 @@ public final class ActionConfig {
 
 	public String get_adv_window_name (int i) {
 		return param_set.adv_window_names.get(i);
+	}
+
+	// Get the number of advisory fractile probabilities.
+
+	public int get_adv_fractile_value_count () {
+		return param_set.adv_fractile_values.size();
+	}
+
+	// Get the i-th advisory fractile probability.
+
+	public double get_adv_fractile_value (int i) {
+		return param_set.adv_fractile_values.get(i).doubleValue();
+	}
+
+	// Get the i-th advisory fractile probability, rounded.
+
+	public double get_adv_fractile_value_rounded (int i) {
+		return SimpleUtils.round_double_via_string ("%.4f", get_adv_fractile_value(i));
+	}
+
+	// Get the number of advisory bar counts.
+
+	public int get_adv_bar_count_count () {
+		return param_set.adv_bar_counts.size();
+	}
+
+	// Get the i-th advisory bar count.
+
+	public int get_adv_bar_count (int i) {
+		return param_set.adv_bar_counts.get(i).intValue();
 	}
 
 	// Get the first element of forecast_lags that is >= the supplied min_lag.
@@ -565,6 +612,42 @@ public final class ActionConfig {
 		String[] result = new String[n];
 		for (int i = 0; i < n; ++i) {
 			result[i] = get_adv_window_name(i);
+		}
+		return result;
+	}
+
+	// Return all advisory fractile probabilities in a newly-allocated array.
+	// The return values are in increasing order.
+
+	public double[] get_adv_fractile_values_array () {
+		int n = get_adv_fractile_value_count();
+		double[] result = new double[n];
+		for (int i = 0; i < n; ++i) {
+			result[i] = get_adv_fractile_value(i);
+		}
+		return result;
+	}
+
+	// Return all advisory fractile probabilities, rounded, in a newly-allocated array.
+	// The return values are in increasing order.
+
+	public double[] get_adv_fractile_values_rounded_array () {
+		int n = get_adv_fractile_value_count();
+		double[] result = new double[n];
+		for (int i = 0; i < n; ++i) {
+			result[i] = get_adv_fractile_value_rounded(i);
+		}
+		return result;
+	}
+
+	// Return all advisory bar counts in a newly-allocated array.
+	// The return values are in increasing order.
+
+	public int[] get_adv_bar_counts_array () {
+		int n = get_adv_bar_count_count();
+		int[] result = new int[n];
+		for (int i = 0; i < n; ++i) {
+			result[i] = get_adv_bar_count(i);
 		}
 		return result;
 	}
@@ -776,6 +859,7 @@ public final class ActionConfig {
 			System.out.println ("omit_stale_forecasts = " + action_config.get_omit_stale_forecasts());
 			System.out.println ("is_evseq_enabled = " + action_config.get_is_evseq_enabled());
 			System.out.println ("is_evseq_reported = " + action_config.get_is_evseq_reported());
+			System.out.println ("is_etas_enabled = " + action_config.get_is_etas_enabled());
 			System.out.println ("pdl_intake_region_min_min_mag = " + action_config.get_pdl_intake_region_min_min_mag());
 			System.out.println ("pdl_intake_region_min_intake_mag = " + action_config.get_pdl_intake_region_min_intake_mag());
 			System.out.println ("max_adv_window_end_off = " + action_config.get_max_adv_window_end_off());
@@ -800,6 +884,27 @@ public final class ActionConfig {
 					+ ", end = " + Duration.ofMillis(action_config.get_adv_window_end_off(i)).toString()
 					+ ", name = " + action_config.get_adv_window_name(i)
 					);
+			}
+
+			// Display the list of fractile probabilities
+
+			System.out.println ("");
+
+			int n_fractile = action_config.get_adv_fractile_value_count();
+			for (int i = 0; i < n_fractile; ++i) {
+				System.out.println ("fractile " + i
+					+ ": probability = " + action_config.get_adv_fractile_value(i)
+					+ ", rounded = " + action_config.get_adv_fractile_value_rounded(i)
+					);
+			}
+
+			// Display the list of bar counts
+
+			System.out.println ("");
+
+			int n_bar = action_config.get_adv_bar_count_count();
+			for (int i = 0; i < n_bar; ++i) {
+				System.out.println ("bar " + i + ": count = " + action_config.get_adv_bar_count(i));
 			}
 
 			// Display list of forecast time lags
