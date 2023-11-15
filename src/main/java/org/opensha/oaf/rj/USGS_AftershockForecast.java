@@ -36,6 +36,7 @@ import com.google.common.collect.Table;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 
 import org.opensha.oaf.aafs.ServerConfig;
+import org.opensha.oaf.aafs.ActionConfig;
 
 import org.opensha.oaf.util.SimpleUtils;
 
@@ -49,6 +50,12 @@ public class USGS_AftershockForecast {
 	private static final double mag_bin_half_width_default = 0.05;
 
 	private static final boolean include_fractile_list = true;
+
+	private static final boolean include_bar_list = true;	// if true, then include_fractile_list must also be true
+
+	private static final boolean use_bar_prob_one = true;	// if true, use the probability of one or more when constructing bars
+
+	private static final boolean force_bar_sum_100 = false;	// if true, force bar percentages to sum to 100
 
 	//  private static final long[] sdround_thresholds = {86400000L, 259200000L, 604800000L};
 	//  		// 24 hours, 3 days, 7 days
@@ -105,6 +112,7 @@ public class USGS_AftershockForecast {
 
 	public static class FractileArray {
 		public double[] values;
+		public int[] barvals;
 
 		// Copy entire array
 		public FractileArray (double[] the_values) {
@@ -113,6 +121,7 @@ public class USGS_AftershockForecast {
 			} else {
 				values = Arrays.copyOf (the_values, the_values.length);
 			}
+			barvals = null;
 		}
 
 		// Copy portion of array starting at index lo
@@ -122,6 +131,7 @@ public class USGS_AftershockForecast {
 			} else {
 				values = Arrays.copyOfRange (the_values, lo, the_values.length);
 			}
+			barvals = null;
 		}
 
 		// Copy portion of array from index lo, inclusive, to index hi, exclusive
@@ -131,6 +141,7 @@ public class USGS_AftershockForecast {
 			} else {
 				values = Arrays.copyOfRange (the_values, lo, hi);
 			}
+			barvals = null;
 		}
 
 		public final boolean has_values () {
@@ -162,6 +173,289 @@ public class USGS_AftershockForecast {
 				};
 			}
 			return result;
+		}
+
+		// Set the bar values from an array
+		public final void set_barvals (int[] the_barvals) {
+			if (the_barvals == null) {
+				barvals = null;
+			} else {
+				barvals = Arrays.copyOf (the_barvals, the_barvals.length);
+			}
+			return;
+		}
+
+		// Check if we have bar values
+		public final boolean has_barvals () {
+			return barvals != null;
+		}
+
+		// Make a JSON array containing the bar values
+		public final JSONArray as_barvals () {
+			JSONArray result = new JSONArray();
+			if (barvals != null) {
+				for (int j = 0; j < barvals.length; ++j) {
+					result.add (barvals[j]);
+				};
+			}
+			return result;
+		}
+
+		// Calculate the bar values, given the fractile values.
+		// Parameters:
+		//  fractile_probs = Fractile probabilities.
+		//  bar_counts = Bar counts, this determines the number of bars.
+		//  prob_one = Probability of one or more aftershocks.
+
+		public final void calc_barvals (double[] fractile_probs, int[] bar_counts, double prob_one) {
+
+			// If we don't have everything we need, then no bar values
+
+			if (!( values != null && fractile_probs != null && bar_counts != null && fractile_probs.length > 0 && bar_counts.length > 0 )) {
+				barvals = null;
+				return;
+			}
+
+			if (!( values.length == fractile_probs.length )) {
+				throw new IllegalArgumentException ("USGS_AftershockForecast.FractileArray: Fractile list length mismatch: values.length = " + values.length + ", fractile_probs.length = " + fractile_probs.length);
+			}
+
+			// Allocate and zero-fill the bar values
+
+			int nbars = bar_counts.length;
+			barvals = new int[nbars];
+			double[] r_barvals = new double[nbars];
+
+			for (int j = 0; j < nbars; ++j) {
+				barvals[j] = 0;
+				r_barvals[j] = 0.0;
+			}
+
+			// Degenerate case of one bar
+
+			if (nbars == 1) {
+				barvals[0] = 100;
+				return;
+			}
+
+			// If the probability of one or more is less than 1%, and we're using the probability of 1+, return 100% probability of zero
+
+			if (use_bar_prob_one && prob_one < 0.01) {
+				barvals[0] = 100;
+				return;
+			}
+
+			// Indexes into bars and fractiles
+
+			int bar_ix = 0;
+			int frac_ix = 0;
+			int nfracs = fractile_probs.length;
+
+			// Cumulative probability so far
+			// Note: We maintain the condition that frac_ix is smallest index so that fractile_probs[frac_ix] > cprob
+
+			double cprob = 0.0;
+
+			// If first bar is for zero only, and we're using the probability of 1+ ...
+
+			if (use_bar_prob_one && bar_counts[1] == 1) {
+
+				// If the probability of one or more is greater than 99%, force the first bar to zero
+
+				if (prob_one > 0.99) {
+					barvals[0] = 0;
+				}
+
+				// Otherwise (prob of 1+ is between 1% and 99%), force the first bar to be the complement of the probabability of one or more display
+
+				else {
+					barvals[0] = 100 - (int)(Math.round (prob_one * 100.0));
+				}
+
+				// Set cumulative probability to be the complement of the probability of one or more
+
+				cprob = 1.0 - prob_one;
+
+				// Advance index into fractiles to the first probability greater than the cumulative probability
+
+				while (frac_ix < nfracs && fractile_probs[frac_ix] <= cprob) {
+					++frac_ix;
+				}
+
+				// Set the real bar value to exactly equal the percentage
+
+				r_barvals[0] = (double)(barvals[0]);
+
+				// We did the first bar
+
+				++bar_ix;
+			}
+
+			// Loop over bars
+
+			for ( ; bar_ix < nbars; ++bar_ix) {
+
+				// Save the initial cumulative probability
+
+				double saved_cprob = cprob;
+
+				// If this is the last bar, set the cumulative probability to 1 and advance to end of fractile list
+
+				if (bar_ix == nbars - 1) {
+					cprob = 1.0;
+					frac_ix = nfracs;
+				}
+
+				// Otherwise, not the last bar ...
+
+				else {
+
+					// End count of the current bar
+
+					int bar_end_count = bar_counts[bar_ix + 1];
+
+					// Interval of values in which we interpolate
+					// Note: We maintain the condition bar_end_count > interval_lo
+
+					int interval_lo = bar_counts[bar_ix];
+					int interval_hi = interval_lo;
+
+					// Scan forward until we find a fractile value greater than or equal to the end of the current bar
+
+					int saved_frac_ix = frac_ix;
+					while (frac_ix < nfracs) {
+						interval_hi = Math.max (interval_hi, (int)(Math.round (values[frac_ix])));
+						if (bar_end_count <= interval_hi) {
+							break;
+						}
+						interval_lo = interval_hi;
+						++frac_ix;
+					}
+
+					// If we reached the end of the fractiles, set the cumulative probability to 1
+
+					if (frac_ix >= nfracs) {
+						cprob = 1.0;
+					}
+
+					// Otherwise, if we advanced within the fractile list, interpolate between two fractiles
+
+					else if (frac_ix > saved_frac_ix) {
+
+						// Note: interval_lo < bar_end_count <= interval_hi
+
+						double p_lo = fractile_probs[frac_ix - 1];
+						double p_hi = fractile_probs[frac_ix];
+
+						double v_lo = (double)(interval_lo);
+						double v_hi = (double)(interval_hi);
+						double v_mid = ((double)(bar_end_count)) - 0.5;
+
+						cprob = p_lo + ( (p_hi - p_lo) * (v_mid - v_lo) / (v_hi - v_lo) );
+					}
+
+					// Otherwise, interpolate between the start of the bar and the end of the fractile
+
+					else {
+
+						// Note: bar_counts[bar_ix] == interval_lo < bar_end_count <= interval_hi
+
+						double p_lo = cprob;
+						double p_hi = fractile_probs[frac_ix];
+
+						double v_lo = Math.max (0.0, ((double)(interval_lo)) - 0.5);
+						double v_hi = (double)(interval_hi);
+						double v_mid = ((double)(bar_end_count)) - 0.5;
+
+						cprob = p_lo + ( (p_hi - p_lo) * (v_mid - v_lo) / (v_hi - v_lo) );
+					}
+				}
+
+				// Probability for this bar
+
+				r_barvals[bar_ix] = Math.max (0.0, (cprob - saved_cprob) * 100.0);
+				barvals[bar_ix] = (int)(Math.round (r_barvals[bar_ix]));
+			}
+
+			// If we want to force percentages to sum to exactly 100 ...
+
+			if (force_bar_sum_100) {
+
+				// First bar eligible for adjustment
+
+				int lo_bar_ix = ((use_bar_prob_one && bar_counts[1] == 1) ? 1 : 0);
+
+				// Sum the percentages
+
+				int sum = 0;
+				for (int j = 0; j < nbars; ++j) {
+					sum += barvals[j];
+				}
+
+				// If sum too low, increase percentages
+
+				while (sum < 100) {
+
+					// Find bar whose percentage is lowest compared to its real value
+
+					int best_j = -1;
+					double best_err = 0.0;
+
+					for (int j = lo_bar_ix; j < nbars; ++j) {
+						if (barvals[j] <= 99) {
+							double err = ((double)(barvals[j])) - r_barvals[j];
+							if (best_j == -1 || err <= best_err) {
+								best_j = j;
+								best_err = err;
+							}
+						}
+					}
+
+					// Stop if we didn't find any eligible bar
+
+					if (best_j == -1) {
+						break;
+					}
+
+					// Increase the percentage that produces the least error
+
+					barvals[best_j]++;
+					++sum;
+				}
+
+				// If sum too high, decrease percentages
+
+				while (sum > 100) {
+
+					// Find bar whose percentage is highest compared to its real value
+
+					int best_j = -1;
+					double best_err = 0.0;
+
+					for (int j = lo_bar_ix; j < nbars; ++j) {
+						if (barvals[j] >= 1) {
+							double err = ((double)(barvals[j])) - r_barvals[j];
+							if (best_j == -1 || err >= best_err) {
+								best_j = j;
+								best_err = err;
+							}
+						}
+					}
+
+					// Stop if we didn't find any eligible bar
+
+					if (best_j == -1) {
+						break;
+					}
+
+					// Decrease the percentage that produces the least error
+
+					barvals[best_j]--;
+					--sum;
+				}
+			}
+
+			return;
 		}
 	}
 	
@@ -297,6 +591,9 @@ public class USGS_AftershockForecast {
 			double[] the_probabilities = model.getFractileProbabilities();
 			if (the_probabilities != null) {
 				fractile_probabilities = new FractileArray (the_probabilities);
+				if (include_bar_list) {
+					fractile_probabilities.set_barvals ((new ActionConfig()).get_adv_bar_counts_array());
+				}
 				fractile_values = HashBasedTable.create();
 				// We need fractiles for both our list, and the extended lists
 				combinedCalcFractiles = new double[calcFractiles.length + fractile_probabilities.values.length];
@@ -352,7 +649,11 @@ public class USGS_AftershockForecast {
 				probs.put(duration, minMag, poissonProb);
 
 				if (fractile_probabilities != null) {
-					fractile_values.put (duration, minMag, new FractileArray (fractiles, calcFractiles.length));
+					FractileArray fractile_array = new FractileArray (fractiles, calcFractiles.length);
+					if (fractile_probabilities.has_barvals()) {
+						fractile_array.calc_barvals (fractile_probabilities.values, fractile_probabilities.barvals, poissonProb);
+					}
+					fractile_values.put (duration, minMag, fractile_array);
 				}
 			}
 		}
@@ -628,6 +929,9 @@ public class USGS_AftershockForecast {
 		// FORECAST
 		if (fractile_probabilities != null) {
 			json.put("fractileProbabilities", fractile_probabilities.as_probabilities());
+			if (fractile_probabilities.has_barvals()) {
+				json.put("barLabels", fractile_probabilities.as_barvals());
+			}
 		}
 		JSONArray forecastsJSON = new JSONArray();
 		for (int i=0; i<durations.length; i++) {
@@ -652,7 +956,11 @@ public class USGS_AftershockForecast {
 					magBin.put("probability", probs.get(durations[i], minMags[m]));
 					magBin.put("median", Math.round(numEventsMedian.get(durations[i], minMags[m])));
 					if (fractile_probabilities != null) {
-						magBin.put("fractileValues", fractile_values.get(durations[i], minMags[m]).as_values());
+						FractileArray fractile_array = fractile_values.get(durations[i], minMags[m]);
+						magBin.put("fractileValues", fractile_array.as_values());
+						if (fractile_probabilities.has_barvals()) {
+							magBin.put("barPercentages", fractile_array.as_barvals());
+						}
 					}
 				}
 				magBins.add(magBin);
@@ -669,7 +977,11 @@ public class USGS_AftershockForecast {
 				} else {
 					magBin.put("probability", probs.get(durations[i], mainMag));
 					if (fractile_probabilities != null) {
-						magBin.put("fractileValues", fractile_values.get(durations[i], mainMag).as_values());
+						FractileArray fractile_array = fractile_values.get(durations[i], mainMag);
+						magBin.put("fractileValues", fractile_array.as_values());
+						if (fractile_probabilities.has_barvals()) {
+							magBin.put("barPercentages", fractile_array.as_barvals());
+						}
 					}
 				}
 				forecastJSON.put("aboveMainshockMag", magBin);

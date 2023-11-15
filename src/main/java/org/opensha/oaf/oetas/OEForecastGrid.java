@@ -244,17 +244,17 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 
 
-	// Round an advisory fractile.
-	// We require advisory fractiles to be multiples of 0.0001.
-	// Throw an exception if fractile is not acceptable.
-
-	private static double round_adv_fractile (double frac) {
-		double x = SimpleUtils.round_double_via_string ("%.4f", frac);
-		if (Math.abs(x - frac) > MATCH_FRACTILE_EPS * 0.1) {
-			throw new IllegalArgumentException ("OEForecastGrid.round_adv_fractile: Fractile is not a multiple of 0.0001: frac = " + frac);
-		}
-		return x;
-	}
+//	// Round an advisory fractile.
+//	// We require advisory fractiles to be multiples of 0.0001.
+//	// Throw an exception if fractile is not acceptable.
+//
+//	private static double round_adv_fractile (double frac) {
+//		double x = SimpleUtils.round_double_via_string ("%.4f", frac);
+//		if (Math.abs(x - frac) > MATCH_FRACTILE_EPS * 0.1) {
+//			throw new IllegalArgumentException ("OEForecastGrid.round_adv_fractile: Fractile is not a multiple of 0.0001: frac = " + frac);
+//		}
+//		return x;
+//	}
 
 
 
@@ -289,13 +289,17 @@ public class OEForecastGrid implements USGS_ForecastModel {
 		}
 		Arrays.sort (adv_mag_values);		// should already be sorted, but just in case
 
-		// Get the advisory fractile values
-		// Note: There are currenly no advisory fractiles in ActionConfig, so we use multiples of 1.25%.
+//		// Get the advisory fractile values
+//		// Note: There are currenly no advisory fractiles in ActionConfig, so we use multiples of 1.25%.
+//
+//		adv_fractile_values = new double[79];
+//		for (int frac_ix = 0; frac_ix < adv_fractile_values.length; ++frac_ix) {
+//			adv_fractile_values[frac_ix] = round_adv_fractile (((double)(frac_ix + 1)) / 80.0);
+//		}
 
-		adv_fractile_values = new double[79];
-		for (int frac_ix = 0; frac_ix < adv_fractile_values.length; ++frac_ix) {
-			adv_fractile_values[frac_ix] = round_adv_fractile (((double)(frac_ix + 1)) / 80.0);
-		}
+		// Get the advisory fractile values, from ActionConfig
+
+		adv_fractile_values = action_config.get_adv_fractile_values_rounded_array();
 
 		// Get the advisory exceedence count values
 		// Note: At present, only 0 is supported,
