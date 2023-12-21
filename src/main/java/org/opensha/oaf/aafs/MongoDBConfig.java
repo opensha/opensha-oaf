@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
@@ -97,6 +98,7 @@ import org.bson.types.ObjectId;
  *			"transact_read_preference" = String giving read preference for transactions ("" | "primary" | "primary-pref" | "secondary" | "secondary-pref" | "nearest").
  *			"transact_retries" = Integer giving transaction retry limit, or -1 for no limit.
  *			"commit_retries" = Integer giving commit retry limit, or -1 for no limit.
+ *          [v2] "ssl_options" = String containing SSL options (see class MongoDBSSLParams).
  *			"addresses" = [ Array giving a list host addresses.
  *				element = { Structure giving host address.
  *					"host_name" = String giving host address name or IP address.
@@ -128,6 +130,7 @@ public class MongoDBConfig {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 54001;
+	private static final int MARSHAL_VER_2 = 54002;
 
 	private static final String M_VERSION_NAME = "MongoDBConfig";
 
@@ -1440,6 +1443,14 @@ public class MongoDBConfig {
 			return commit_retries;
 		}
 
+		// SSL option string, see MongoDBSSLParams.
+
+		private String ssl_options;
+
+		public String get_ssl_options () {
+			return ssl_options;
+		}
+
 		// Host address list.
 
 		private List<HostAddress> addresses;
@@ -1462,7 +1473,7 @@ public class MongoDBConfig {
 							String connection_mode, String cluster_type, String replica_set_name, String connection_string, 
 							String username, String auth_db, String password,
 							int session_level, String causal_consistency,  String transact_write_concern, String transact_read_concern,
-							String transact_read_preference, int transact_retries, int commit_retries,
+							String transact_read_preference, int transact_retries, int commit_retries, String ssl_options,
 							List<HostAddress> addresses, List<DatabaseConfig> databases) {
 			this.host_handle              = host_handle;
 			this.write_concern            = write_concern;
@@ -1483,6 +1494,7 @@ public class MongoDBConfig {
 			this.transact_read_preference = transact_read_preference;
 			this.transact_retries         = transact_retries;
 			this.commit_retries           = commit_retries;
+			this.ssl_options              = ssl_options;
 			this.addresses                = new ArrayList<HostAddress> (addresses);
 			this.databases                = new ArrayList<DatabaseConfig> (databases);
 		}
@@ -1533,6 +1545,10 @@ public class MongoDBConfig {
 				throw new InvariantViolationException ("MongoDBConfig.HostConfig: Invalid commit retry limit: " + commit_retries);
 			}
 
+			if (!( MongoDBSSLParams.is_valid_ssl_option_string (ssl_options) )) {
+				throw new InvariantViolationException ("MongoDBConfig.HostConfig: Invalid SSL option string: " + ssl_options);
+			}
+
 			check_host_address_list (addresses);
 
 			if (!( check_database_config_list (databases) )) {
@@ -1567,6 +1583,8 @@ public class MongoDBConfig {
 			builder = apply_read_concern (builder, read_concern);
 			builder = apply_read_preference (builder, read_preference);
 			builder = apply_retry_writes (builder, retry_writes);
+
+			builder = MongoDBSSLParams.resolve_and_apply_ssl_options (builder, ssl_options);
 
 			return builder.build();
 		}
@@ -1812,6 +1830,7 @@ public class MongoDBConfig {
 			result.append (prefix + "transact_read_preference = " + ((transact_read_preference == null) ? "<null>" : transact_read_preference) + "\n");
 			result.append (prefix + "transact_retries = " + transact_retries + "\n");
 			result.append (prefix + "commit_retries = " + commit_retries + "\n");
+			result.append (prefix + "ssl_options = " + ssl_options + "\n");
 
 			if (addresses.size() == 0) {
 				result.append (prefix + "addresses = <empty>\n");
@@ -1838,27 +1857,66 @@ public class MongoDBConfig {
 
 		public void marshal (MarshalWriter writer, String name, int ver) {
 			writer.marshalMapBegin (name);
-			writer.marshalString ("host_handle"             , host_handle             );
-			writer.marshalString ("write_concern"           , write_concern           );
-			writer.marshalString ("read_concern"            , read_concern            );
-			writer.marshalString ("read_preference"         , read_preference         );
-			writer.marshalString ("retry_writes"            , retry_writes            );
-			writer.marshalString ("connection_mode"         , connection_mode         );
-			writer.marshalString ("cluster_type"            , cluster_type            );
-			writer.marshalString ("replica_set_name"        , replica_set_name        );
-			writer.marshalString ("connection_string"       , connection_string       );
-			writer.marshalString ("username"                , username                );
-			writer.marshalString ("auth_db"                 , auth_db                 );
-			writer.marshalString ("password"                , password                );
-			writer.marshalInt    ("session_level"           , session_level           );
-			writer.marshalString ("causal_consistency"      , causal_consistency      );
-			writer.marshalString ("transact_write_concern"  , transact_write_concern  );
-			writer.marshalString ("transact_read_concern"   , transact_read_concern   );
-			writer.marshalString ("transact_read_preference", transact_read_preference);
-			writer.marshalInt    ("transact_retries"        , transact_retries        );
-			writer.marshalInt    ("commit_retries"          , commit_retries          );
-			marshal_host_address_list    (writer, "addresses", ver, addresses);
-			marshal_database_config_list (writer, "databases", ver, databases);
+
+			switch (ver) {
+
+			case MARSHAL_VER_1:
+
+				writer.marshalString ("host_handle"             , host_handle             );
+				writer.marshalString ("write_concern"           , write_concern           );
+				writer.marshalString ("read_concern"            , read_concern            );
+				writer.marshalString ("read_preference"         , read_preference         );
+				writer.marshalString ("retry_writes"            , retry_writes            );
+				writer.marshalString ("connection_mode"         , connection_mode         );
+				writer.marshalString ("cluster_type"            , cluster_type            );
+				writer.marshalString ("replica_set_name"        , replica_set_name        );
+				writer.marshalString ("connection_string"       , connection_string       );
+				writer.marshalString ("username"                , username                );
+				writer.marshalString ("auth_db"                 , auth_db                 );
+				writer.marshalString ("password"                , password                );
+				writer.marshalInt    ("session_level"           , session_level           );
+				writer.marshalString ("causal_consistency"      , causal_consistency      );
+				writer.marshalString ("transact_write_concern"  , transact_write_concern  );
+				writer.marshalString ("transact_read_concern"   , transact_read_concern   );
+				writer.marshalString ("transact_read_preference", transact_read_preference);
+				writer.marshalInt    ("transact_retries"        , transact_retries        );
+				writer.marshalInt    ("commit_retries"          , commit_retries          );
+
+				marshal_host_address_list    (writer, "addresses", ver, addresses);
+				marshal_database_config_list (writer, "databases", ver, databases);
+	
+				break;
+
+			case MARSHAL_VER_2:
+
+				writer.marshalString ("host_handle"             , host_handle             );
+				writer.marshalString ("write_concern"           , write_concern           );
+				writer.marshalString ("read_concern"            , read_concern            );
+				writer.marshalString ("read_preference"         , read_preference         );
+				writer.marshalString ("retry_writes"            , retry_writes            );
+				writer.marshalString ("connection_mode"         , connection_mode         );
+				writer.marshalString ("cluster_type"            , cluster_type            );
+				writer.marshalString ("replica_set_name"        , replica_set_name        );
+				writer.marshalString ("connection_string"       , connection_string       );
+				writer.marshalString ("username"                , username                );
+				writer.marshalString ("auth_db"                 , auth_db                 );
+				writer.marshalString ("password"                , password                );
+				writer.marshalInt    ("session_level"           , session_level           );
+				writer.marshalString ("causal_consistency"      , causal_consistency      );
+				writer.marshalString ("transact_write_concern"  , transact_write_concern  );
+				writer.marshalString ("transact_read_concern"   , transact_read_concern   );
+				writer.marshalString ("transact_read_preference", transact_read_preference);
+				writer.marshalInt    ("transact_retries"        , transact_retries        );
+				writer.marshalInt    ("commit_retries"          , commit_retries          );
+
+				MongoDBSSLParams.marshal_ssl_option_string (writer, "ssl_options", ssl_options);
+
+				marshal_host_address_list    (writer, "addresses", ver, addresses);
+				marshal_database_config_list (writer, "databases", ver, databases);
+
+				break;
+			}
+
 			writer.marshalMapEnd ();
 			return;
 		}
@@ -1867,27 +1925,68 @@ public class MongoDBConfig {
 
 		public HostConfig (MarshalReader reader, String name, int ver) {
 			reader.unmarshalMapBegin (name);
-			host_handle              = reader.unmarshalString ("host_handle"             );
-			write_concern            = reader.unmarshalString ("write_concern"           );
-			read_concern             = reader.unmarshalString ("read_concern"            );
-			read_preference          = reader.unmarshalString ("read_preference"         );
-			retry_writes             = reader.unmarshalString ("retry_writes"            );
-			connection_mode          = reader.unmarshalString ("connection_mode"         );
-			cluster_type             = reader.unmarshalString ("cluster_type"            );
-			replica_set_name         = reader.unmarshalString ("replica_set_name"        );
-			connection_string        = reader.unmarshalString ("connection_string"       );
-			username                 = reader.unmarshalString ("username"                );
-			auth_db                  = reader.unmarshalString ("auth_db"                 );
-			password                 = reader.unmarshalString ("password"                );
-			session_level            = reader.unmarshalInt    ("session_level"           );
-			causal_consistency       = reader.unmarshalString ("causal_consistency"      );
-			transact_write_concern   = reader.unmarshalString ("transact_write_concern"  );
-			transact_read_concern    = reader.unmarshalString ("transact_read_concern"   );
-			transact_read_preference = reader.unmarshalString ("transact_read_preference");
-			transact_retries         = reader.unmarshalInt    ("transact_retries"        );
-			commit_retries           = reader.unmarshalInt    ("commit_retries"          );
-			addresses                = unmarshal_host_address_list    (reader, "addresses", ver);
-			databases                = unmarshal_database_config_list (reader, "databases", ver);
+
+			switch (ver) {
+
+			case MARSHAL_VER_1:
+
+				host_handle              = reader.unmarshalString ("host_handle"             );
+				write_concern            = reader.unmarshalString ("write_concern"           );
+				read_concern             = reader.unmarshalString ("read_concern"            );
+				read_preference          = reader.unmarshalString ("read_preference"         );
+				retry_writes             = reader.unmarshalString ("retry_writes"            );
+				connection_mode          = reader.unmarshalString ("connection_mode"         );
+				cluster_type             = reader.unmarshalString ("cluster_type"            );
+				replica_set_name         = reader.unmarshalString ("replica_set_name"        );
+				connection_string        = reader.unmarshalString ("connection_string"       );
+				username                 = reader.unmarshalString ("username"                );
+				auth_db                  = reader.unmarshalString ("auth_db"                 );
+				password                 = reader.unmarshalString ("password"                );
+				session_level            = reader.unmarshalInt    ("session_level"           );
+				causal_consistency       = reader.unmarshalString ("causal_consistency"      );
+				transact_write_concern   = reader.unmarshalString ("transact_write_concern"  );
+				transact_read_concern    = reader.unmarshalString ("transact_read_concern"   );
+				transact_read_preference = reader.unmarshalString ("transact_read_preference");
+				transact_retries         = reader.unmarshalInt    ("transact_retries"        );
+				commit_retries           = reader.unmarshalInt    ("commit_retries"          );
+
+				ssl_options              = MongoDBSSLParams.unmarshal_def_ssl_option_string ();
+
+				addresses                = unmarshal_host_address_list    (reader, "addresses", ver);
+				databases                = unmarshal_database_config_list (reader, "databases", ver);
+	
+				break;
+
+			case MARSHAL_VER_2:
+
+				host_handle              = reader.unmarshalString ("host_handle"             );
+				write_concern            = reader.unmarshalString ("write_concern"           );
+				read_concern             = reader.unmarshalString ("read_concern"            );
+				read_preference          = reader.unmarshalString ("read_preference"         );
+				retry_writes             = reader.unmarshalString ("retry_writes"            );
+				connection_mode          = reader.unmarshalString ("connection_mode"         );
+				cluster_type             = reader.unmarshalString ("cluster_type"            );
+				replica_set_name         = reader.unmarshalString ("replica_set_name"        );
+				connection_string        = reader.unmarshalString ("connection_string"       );
+				username                 = reader.unmarshalString ("username"                );
+				auth_db                  = reader.unmarshalString ("auth_db"                 );
+				password                 = reader.unmarshalString ("password"                );
+				session_level            = reader.unmarshalInt    ("session_level"           );
+				causal_consistency       = reader.unmarshalString ("causal_consistency"      );
+				transact_write_concern   = reader.unmarshalString ("transact_write_concern"  );
+				transact_read_concern    = reader.unmarshalString ("transact_read_concern"   );
+				transact_read_preference = reader.unmarshalString ("transact_read_preference");
+				transact_retries         = reader.unmarshalInt    ("transact_retries"        );
+				commit_retries           = reader.unmarshalInt    ("commit_retries"          );
+
+				ssl_options              = MongoDBSSLParams.unmarshal_ssl_option_string (reader, "ssl_options");
+
+				addresses                = unmarshal_host_address_list    (reader, "addresses", ver);
+				databases                = unmarshal_database_config_list (reader, "databases", ver);
+
+				break;
+			}
+
 			reader.unmarshalMapEnd ();
 		}
 	}
@@ -2046,7 +2145,7 @@ public class MongoDBConfig {
 
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
-		int ver = MARSHAL_VER_1;
+		int ver = MARSHAL_VER_2;
 		writer.marshalInt (M_VERSION_NAME, ver);
 		writer.marshalString ("default_db_handle", default_db_handle);
 		marshal_host_config_list (writer, "hosts", ver, hosts);
@@ -2058,7 +2157,7 @@ public class MongoDBConfig {
 
 	public MongoDBConfig (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 		default_db_handle = reader.unmarshalString ("default_db_handle");
 		hosts = unmarshal_host_config_list (reader, "hosts", ver);
 		reader.unmarshalMapEnd ();

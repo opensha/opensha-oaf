@@ -48,7 +48,7 @@ CPU_CORE_COUNT=
 # Source from which to obtain Java.
 # If it begins with "/" or "~", it is a fully-qualified filename.
 # Otherwise, it is a URL from which Java is downloaded.
-# If left blank, it defaults to Amazon Coretto 11.
+# If left blank, it defaults to Amazon Corretto 11.
 # This should be a path with the last component ending in .tar.gz.
 JAVA_SOURCE=
 
@@ -57,6 +57,12 @@ JAVA_SOURCE=
 # Leave blank if no digital certificate is needed.
 # If non-blank, it should be a fully-qualified file name, typically ending in .cer.
 JAVA_CERT_FILE=
+
+
+# Maximum memory to use for the Java VM heap, in GB, only for the AAFS server.
+# If blank or 0, then the default value is used, which is typically one-fourth
+# of the system memory.
+JAVA_MAX_MEMORY_GB=
 
 
 # The IP address that MongoDB should bind to.
@@ -74,6 +80,12 @@ JAVA_CERT_FILE=
 #       it is added automatically.
 #   "$(hostname -I)" -- Bind to the computer's IP address as returned by hostname.
 MONGO_BIND_IP=
+
+
+# Amount of memory to use for the MongoDB cache, in GB.
+# If blank or 0, then the default value is used, which is typically one-half
+# of the system memory.
+MONGO_CACHE_GB=
 
 
 # ----- Values that control the AAFS configuration -----

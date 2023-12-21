@@ -94,6 +94,7 @@ public class ServerCmd {
 				System.out.println (VersionInfo.get_title());
 				System.out.println ("");
 				System.out.println ("AAFS server is starting at " + SimpleUtils.time_to_string (start_time));
+				SimpleUtils.show_one_line_memory_status();
 
 				// Get a task dispatcher
 
@@ -474,6 +475,7 @@ public class ServerCmd {
 				System.out.println (VersionInfo.get_title());
 				System.out.println ("");
 				System.out.println ("AAFS server is starting at " + SimpleUtils.time_to_string (start_time));
+				SimpleUtils.show_one_line_memory_status();
 
 				// Get a task dispatcher
 

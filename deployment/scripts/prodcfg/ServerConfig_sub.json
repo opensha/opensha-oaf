@@ -1,7 +1,7 @@
 {
   "ServerConfigFile": 34001,
   "mongo_config": {
-    "MongoDBConfig": 54001,
+    "MongoDBConfig": 54002,
     "default_db_handle": "local-usgs",
     "hosts": [
       {
@@ -24,6 +24,7 @@
         "transact_read_preference": "primary",
         "transact_retries": 0,
         "commit_retries": 0,
+        "ssl_options": "---MONGO_SSL_OPT_0---",
         "addresses": [
           {
             "host_name": "127.0.0.1",
@@ -86,6 +87,7 @@
         "transact_read_preference": "primary",
         "transact_retries": 0,
         "commit_retries": 0,
+        "ssl_options": "---MONGO_SSL_OPT_1---",
         "addresses": [
           {
             "host_name": "---SERVER_IP_1---",
@@ -132,6 +134,7 @@
         "transact_read_preference": "primary",
         "transact_retries": 0,
         "commit_retries": 0,
+        "ssl_options": "---MONGO_SSL_OPT_2---",
         "addresses": [
           {
             "host_name": "---SERVER_IP_2---",

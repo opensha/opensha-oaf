@@ -438,6 +438,21 @@
 
 
 
+# Read the launch options file, if it exists, and set our options.
+# jmem = Amount of memory to use for Java when starting AAFS, in GB.
+
+if [ -f "/opt/aafs/oafcfg/LaunchOptions.sh" ]; then
+    source /opt/aafs/oafcfg/LaunchOptions.sh
+fi
+
+if [ -z "$MOAF_JAVA_MAX_MEMORY_GB" ]; then
+    jmem="0"
+else
+    jmem="$MOAF_JAVA_MAX_MEMORY_GB"
+fi
+
+
+
 
 # Function to test if MongoDB is running.
 # There are no arguments.
@@ -507,7 +522,11 @@ do_start_aafs () {
     if [ ! -d /data/aafs/pids ]; then
         mkdir /data/aafs/pids
     fi
-    nohup /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd start >> /data/aafs/logs/aafs.log 2>&1 & echo $! > /data/aafs/pids/aafs.pid
+    if [ "$jmem" -gt 0 ]; then
+        nohup /usr/local/java/bin/java -Xmx${jmem}G -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd start >> /data/aafs/logs/aafs.log 2>&1 & echo $! > /data/aafs/pids/aafs.pid
+    else
+        nohup /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd start >> /data/aafs/logs/aafs.log 2>&1 & echo $! > /data/aafs/pids/aafs.pid
+    fi
     echo "Pausing 30 seconds..."
     sleep 30
     echo "Removing old PDL listener data..."
@@ -570,7 +589,11 @@ do_start_aafs_no_intake () {
     if [ ! -d /data/aafs/pids ]; then
         mkdir /data/aafs/pids
     fi
-    nohup /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd start >> /data/aafs/logs/aafs.log 2>&1 & echo $! > /data/aafs/pids/aafs.pid
+    if [ "$jmem" -gt 0 ]; then
+        nohup /usr/local/java/bin/java -Xmx${jmem}G -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd start >> /data/aafs/logs/aafs.log 2>&1 & echo $! > /data/aafs/pids/aafs.pid
+    else
+        nohup /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd start >> /data/aafs/logs/aafs.log 2>&1 & echo $! > /data/aafs/pids/aafs.pid
+    fi
     echo "Pausing 15 seconds..."
     sleep 15
 }

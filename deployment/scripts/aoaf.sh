@@ -16,7 +16,8 @@
 #
 #     Install required software packages, and then install Java.
 #     Also, set the AAFS environment variables.
-#     This is the first command to run when setting up a new system.
+#     This is the first command to run when setting up a new system
+#     (exception: if you are installing certificates, install them first).
 #     Before running this command, update the operating system.
 #     After running this command, you will need to log out and log in, or reboot.
 #     Then, use "install_oaf" to continue the installation.
@@ -38,6 +39,10 @@
 #     Install and configure the OAF software and a specific version of MongoDB.
 #     Performs the same function as install_oaf except using MongoDB 4.4, 5.0,
 #     6.0, or 7.0, respectively.
+#
+# install_oaf_no_mongo
+#
+#     Install and configure the OAF software without installing MongoDB.
 #
 # initialize_oaf  <relay_mode>  <configured_primary>
 #
@@ -236,6 +241,66 @@
 #
 #     This command should be used if "stop_local_for_update" was used for shutdown.
 
+# COMMANDS TO MANAGE CERTIFICATES
+#
+# install_certs  <source_dir>
+#
+#     Install certificates.  This is used to enable TLS and client authentication.
+#
+#     <source_dir> is a directory that contains the certificates to install.
+#     It may contain three sets of files:
+#
+#       Root CA certificate:
+#         oafcert_root_ca.pem
+#
+#       Server certificate:
+#         oafcert_server.pem
+#         oafcert_server_pass.txt
+# 
+#       Client or application certificate:
+#         oafcert_app.pem
+#         oafcert_app.p12
+#         oafcert_app_pass.txt
+#         oafcert_app_p12_pass.txt
+#
+#     The following combinations are allowed:
+#
+#       Root+Server:        A server that requires TLS.
+#       Root+Server+Client: A server that requires TLS and client authentication.
+#       Root:               A workstation that uses TLS.
+#       Root+Client:        A workstation that uses TLS and client authentication.
+#
+#     This command can be used either before or after the software is installed.
+#     If used after the software is installed, then any existing certificates are
+#     replaced, and the command also updates Java, the AAFS environment variables,
+#     the MongoDB configuration, and the AAFS configuration.
+#
+# remove_certs
+#
+#     Remove certificates.  This is used to disable TLS.
+#
+#     This command removes any certificates that were previously installed
+#     with the install_certs command.
+#
+#     This command can be used either before or after the software is installed.
+#     If used after the software is installed, then any existing certificates are
+#     removed, and the command also updates Java, the AAFS environment variables,
+#     the MongoDB configuration, and the AAFS configuration.
+
+# COMMANDS FOR SPECIAL FUNCTIONS
+#
+# run_mongosh
+#
+#     Start the MongoDB shell (mongosh).
+#
+#     It is started with the appropriate command-line options for TLS.
+#
+# run_mongosh_to  <host_address>
+#
+#     Start the MongoDB shell (mongosh), for the given host address.
+#
+#     It is started with the appropriate command-line options for TLS.
+
 
 
 
@@ -348,6 +413,22 @@ q_load_oaf_config () {
     # Temporary work directory (within the current directory).
     val_TEMP_WORK_DIR="$val_PWD/selcfg"
 
+    # Regular expression used to test for non-negative integer (do not enclose in quotes when used in an if statement).
+    val_NNINT_REGEX='^(0|([1-9][0-9]*))$'
+
+    # Filename for the launch options script.
+    val_LAUNCH_OPTIONS_FILE="/opt/aafs/oafcfg/LaunchOptions.sh"
+
+    # Filenames used for certificate management.
+    cval_file_root_ca="oafcert_root_ca"
+    cval_file_server="oafcert_server"
+    cval_file_client="oafcert_app"
+    cval_suffix_pass="_pass.txt"
+    cval_suffix_p12_pass="_p12_pass.txt"
+
+    # Directory where certificates are installed on the server.
+    cval_CERT_DIR="/etc/oafssl"
+
 
     #--- Internal variables, derived from system configuration ---
 
@@ -400,6 +481,18 @@ q_load_oaf_config () {
     my_JAVA_FILE_BASENAME=
 
 
+    #--- Internal variables, derived from installed certificates ---
+
+    # Internal flag indicating if a root certificate is installed, "$val_YES" or "$val_NO"
+    my_HAS_ROOT_CERT="$val_NO"
+
+    # Internal flag indicating if a server certificate is installed, "$val_YES" or "$val_NO"
+    my_HAS_SERVER_CERT="$val_NO"
+
+    # Internal flag indicating if a client certificate is installed, "$val_YES" or "$val_NO"
+    my_HAS_CLIENT_CERT="$val_NO"
+
+
     #--- Load configuration file ---
 
     # Source the configuration file, from current or home directory
@@ -411,6 +504,21 @@ q_load_oaf_config () {
     else
         echo "Cannot find configuration file oaf_config.sh"
         exit 1
+    fi
+
+
+    #--- Certificate checks -----
+
+    if [ -d "$cval_CERT_DIR" ]; then
+        if [ -f "${cval_CERT_DIR}/${cval_file_root_ca}.pem" ]; then
+            my_HAS_ROOT_CERT="$val_YES"
+        fi
+        if [ -f "${cval_CERT_DIR}/${cval_file_server}.pem" ]; then
+            my_HAS_SERVER_CERT="$val_YES"
+        fi
+        if [ -f "${cval_CERT_DIR}/${cval_file_client}.pem" ]; then
+            my_HAS_CLIENT_CERT="$val_YES"
+        fi
     fi
 
 
@@ -508,6 +616,11 @@ q_load_oaf_config () {
         CPU_CORE_COUNT="0"
     fi
 
+    if [[ ! "$CPU_CORE_COUNT" =~ $val_NNINT_REGEX ]]; then
+        echo "Core count must be an integer"
+        exit 1
+    fi
+
     if [ "$CPU_CORE_COUNT" -lt 0 ]; then
         echo "Core count cannot be negative"
         exit 1
@@ -549,6 +662,38 @@ q_load_oaf_config () {
             echo "Cannot find Java certificate file: JAVA_CERT_FILE = $JAVA_CERT_FILE"
             exit 1
         fi
+    fi
+
+    # If Java maximum memory size is blank, default it to zero; check it is non-negative
+
+    if [ -z "$JAVA_MAX_MEMORY_GB" ]; then
+        JAVA_MAX_MEMORY_GB="0"
+    fi
+
+    if [[ ! "$JAVA_MAX_MEMORY_GB" =~ $val_NNINT_REGEX ]]; then
+        echo "Java maximum memory size must be an integer"
+        exit 1
+    fi
+
+    if [ "$JAVA_MAX_MEMORY_GB" -lt 0 ]; then
+        echo "Java maximum memory size cannot be negative"
+        exit 1
+    fi
+
+    # If MongoDB cache size is blank, default it to zero; check it is non-negative
+
+    if [ -z "$MONGO_CACHE_GB" ]; then
+        MONGO_CACHE_GB="0"
+    fi
+
+    if [[ ! "$MONGO_CACHE_GB" =~ $val_NNINT_REGEX ]]; then
+        echo "MongoDB cache size must be an integer"
+        exit 1
+    fi
+
+    if [ "$MONGO_CACHE_GB" -lt 0 ]; then
+        echo "MongoDB cache size cannot be negative"
+        exit 1
     fi
 
     # Check the server option
@@ -986,6 +1131,10 @@ q_install_java () {
         sudo /usr/local/java/bin/keytool -importcert -noprompt -keystore /usr/local/java/lib/security/cacerts -storepass changeit -alias "oafjavacert" -file "$JAVA_CERT_FILE"
     fi
 
+    if [ "$my_HAS_ROOT_CERT" == "$val_YES" ]; then
+        sudo /usr/local/java/bin/keytool -importcert -noprompt -keystore /usr/local/java/lib/security/cacerts -storepass changeit -alias "oafrootcert" -file "${cval_CERT_DIR}/${cval_file_root_ca}.pem"
+    fi
+
     # Insert a link to Java in /usr/bin, if it was not already done
 
     if [ ! -f /usr/bin/java ]; then
@@ -1094,6 +1243,29 @@ q_set_aafs_vars () {
 
         echo "AAFS_NUM_THREADS=$CPU_CORE_COUNT" > "$val_TEMP_WORK_DIR/aafsvars.sh"
         echo 'export AAFS_NUM_THREADS' >> "$val_TEMP_WORK_DIR/aafsvars.sh"
+
+        if [ "$my_HAS_ROOT_CERT" == "$val_YES" ]; then
+            echo "AAFS_SSL_DIR=\"$cval_CERT_DIR\"" >> "$val_TEMP_WORK_DIR/aafsvars.sh"
+            echo 'export AAFS_SSL_DIR' >> "$val_TEMP_WORK_DIR/aafsvars.sh"
+        fi
+
+        if [ -f /etc/profile.d/aafsvars.sh ]; then
+            sudo rm -f /etc/profile.d/aafsvars.sh
+        fi
+
+        sudo cp "$val_TEMP_WORK_DIR/aafsvars.sh" /etc/profile.d/aafsvars.sh
+        source /etc/profile.d/aafsvars.sh
+
+    elif [ "$my_HAS_ROOT_CERT" == "$val_YES" ]; then
+
+        q_ensure_temp_work_dir
+
+        if [ -f "$val_TEMP_WORK_DIR/aafsvars.sh" ]; then
+            rm "$val_TEMP_WORK_DIR/aafsvars.sh"
+        fi
+
+        echo "AAFS_SSL_DIR=\"$cval_CERT_DIR\"" > "$val_TEMP_WORK_DIR/aafsvars.sh"
+        echo 'export AAFS_SSL_DIR' >> "$val_TEMP_WORK_DIR/aafsvars.sh"
 
         if [ -f /etc/profile.d/aafsvars.sh ]; then
             sudo rm -f /etc/profile.d/aafsvars.sh
@@ -2270,6 +2442,26 @@ q_configure_mongo () {
     | sed "s|security:|security:"'\'$'\n'"  authorization: enabled"'\'$'\n'"  keyFile: $my_MONGO_KEY_FILE|"    \
     > "$val_TEMP_WORK_DIR/mongod_temp.conf"
 
+    if [ "$my_HAS_SERVER_CERT" == "$val_YES" ]; then
+        echo "" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+        echo "net:" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+        echo "  tls:" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+        echo "    mode: requireTLS" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+        echo "    certificateKeyFile: ${cval_CERT_DIR}/${cval_file_server}.pem" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+        echo "    certificateKeyFilePassword: $(cat "${cval_CERT_DIR}/${cval_file_server}${cval_suffix_pass}")" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+        if [ "$my_HAS_CLIENT_CERT" == "$val_YES" ]; then
+        echo "    CAFile: ${cval_CERT_DIR}/${cval_file_root_ca}.pem" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+        fi
+    fi
+
+    if [ "$MONGO_CACHE_GB" -gt 0 ]; then
+        echo "" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+        echo "storage:" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+        echo "  wiredTiger:" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+        echo "    engineConfig:" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+        echo "      cacheSizeGB: $MONGO_CACHE_GB" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
+    fi
+
     echo "" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
     echo "setParameter:" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
     echo "  transactionLifetimeLimitSeconds: 1200" >> "$val_TEMP_WORK_DIR/mongod_temp.conf"
@@ -2346,6 +2538,47 @@ q_setup_mongo_4x () {
 
 
 
+# Run the mongo shell, passing in required certificates.
+# This function produces no output of its own.
+
+q_run_mongosh () {
+
+    if [ "$my_HAS_ROOT_CERT" == "$val_YES" ]; then
+        if [ "$my_HAS_CLIENT_CERT" == "$val_YES" ]; then
+            mongosh --tls --tlsCAFile "${cval_CERT_DIR}/${cval_file_root_ca}.pem" --tlsCertificateKeyFile "${cval_CERT_DIR}/${cval_file_client}.pem" --tlsCertificateKeyFilePassword "$(cat "${cval_CERT_DIR}/${cval_file_client}${cval_suffix_pass}")"
+        else
+            mongosh --tls --tlsCAFile "${cval_CERT_DIR}/${cval_file_root_ca}.pem"
+        fi
+    else
+        mongosh
+    fi
+
+}
+
+
+
+
+# Run the mongo shell to the given host, passing in required certificates.
+# $1 = Host address.
+# This function produces no output of its own.
+
+q_run_mongosh_to () {
+
+    if [ "$my_HAS_ROOT_CERT" == "$val_YES" ]; then
+        if [ "$my_HAS_CLIENT_CERT" == "$val_YES" ]; then
+            mongosh --host "$1" --tls --tlsCAFile "${cval_CERT_DIR}/${cval_file_root_ca}.pem" --tlsCertificateKeyFile "${cval_CERT_DIR}/${cval_file_client}.pem" --tlsCertificateKeyFilePassword $(cat "${cval_CERT_DIR}/${cval_file_client}${cval_suffix_pass}")
+        else
+            mongosh --host "$1" --tls --tlsCAFile "${cval_CERT_DIR}/${cval_file_root_ca}.pem"
+        fi
+    else
+        mongosh --host "$1"
+    fi
+
+}
+
+
+
+
 # Set up MongoDB by creating the replica set and user accounts, for version 5.0, 6.0, and 7.0.
 # (Difference is using mongosh instead of mongo.)
 
@@ -2373,7 +2606,7 @@ q_setup_mongo () {
     echo "rs.initiate()" > "$val_TEMP_WORK_DIR/mongo_setup_1"
     echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_setup_1"
 
-    mongosh < "$val_TEMP_WORK_DIR/mongo_setup_1"
+    q_run_mongosh < "$val_TEMP_WORK_DIR/mongo_setup_1"
 
     echo "Pausing 30 seconds..."
     sleep 30
@@ -2386,7 +2619,7 @@ q_setup_mongo () {
     echo "db.createUser({user:"'"'"$MONGO_ADMIN_USER"'"'", pwd:"'"'"$MONGO_ADMIN_PASS"'"'", roles:[{role:"'"'"userAdminAnyDatabase"'"'", db:"'"'"admin"'"'"},{role:"'"'"clusterAdmin"'"'", db:"'"'"admin"'"'"}]})" >> "$val_TEMP_WORK_DIR/mongo_setup_2"
     echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_setup_2"
 
-    mongosh < "$val_TEMP_WORK_DIR/mongo_setup_2"
+    q_run_mongosh < "$val_TEMP_WORK_DIR/mongo_setup_2"
 
     # Create the database user
 
@@ -2398,7 +2631,7 @@ q_setup_mongo () {
     echo "db.createUser({user:"'"'"$MONGO_USER"'"'", pwd:"'"'"$MONGO_PASS"'"'", roles:[{role:"'"'"dbOwner"'"'", db:"'"'"$MONGO_NAME"'"'"}]})" >> "$val_TEMP_WORK_DIR/mongo_setup_3"
     echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_setup_3"
 
-    mongosh < "$val_TEMP_WORK_DIR/mongo_setup_3"
+    q_run_mongosh < "$val_TEMP_WORK_DIR/mongo_setup_3"
 
     # Stop MongoDB
 
@@ -2481,7 +2714,7 @@ q_set_mongo_compatibility_to_50 () {
     echo "db.adminCommand( { setFeatureCompatibilityVersion: "'"'"5.0"'"'" } )" >> "$val_TEMP_WORK_DIR/mongo_fcv_50"
     echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_fcv_50"
 
-    mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_50"
+    q_run_mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_50"
 
     echo "Pausing 30 seconds..."
     sleep 30
@@ -2524,7 +2757,7 @@ q_set_mongo_compatibility_to_60 () {
     echo "db.adminCommand( { setFeatureCompatibilityVersion: "'"'"6.0"'"'" } )" >> "$val_TEMP_WORK_DIR/mongo_fcv_60"
     echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_fcv_60"
 
-    mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_60"
+    q_run_mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_60"
 
     echo "Pausing 30 seconds..."
     sleep 30
@@ -2567,7 +2800,7 @@ q_set_mongo_compatibility_to_70 () {
     echo "db.adminCommand( { setFeatureCompatibilityVersion: "'"'"7.0"'"'" } )" >> "$val_TEMP_WORK_DIR/mongo_fcv_70"
     echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_fcv_70"
 
-    mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_70"
+    q_run_mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_70"
 
     echo "Pausing 30 seconds..."
     sleep 30
@@ -2610,7 +2843,7 @@ q_get_mongo_compatibility () {
     echo "db.adminCommand( { getParameter: 1, featureCompatibilityVersion: 1 } )" >> "$val_TEMP_WORK_DIR/mongo_fcv_get"
     echo "quit()" >> "$val_TEMP_WORK_DIR/mongo_fcv_get"
 
-    mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_get"
+    q_run_mongosh < "$val_TEMP_WORK_DIR/mongo_fcv_get"
 
     echo "Pausing 5 seconds..."
     sleep 5
@@ -2633,6 +2866,24 @@ q_get_mongo_compatibility () {
 q_configure_oaf () {
     echo "Configuring OAF..."
 
+    # Determine SSL options based on installed certificates
+
+    if [ "$my_HAS_SERVER_CERT" == "$val_YES" ]; then
+        if [ "$my_HAS_CLIENT_CERT" == "$val_YES" ]; then
+            my_SSL_OPTIONS="sslEnable=true\&sslClientAuth=true"
+        else
+            my_SSL_OPTIONS="sslEnable=true"
+        fi
+    else
+        if [ "$my_HAS_CLIENT_CERT" == "$val_YES" ]; then
+            my_SSL_OPTIONS="sslEnable=true\&sslClientAuth=true"
+        elif [ "$my_HAS_ROOT_CERT" == "$val_YES" ]; then
+            my_SSL_OPTIONS="sslEnable=true"
+        else
+            my_SSL_OPTIONS="sslEnable=false"
+        fi
+    fi
+
     # Create directories if needed, and copy configuration files and scripts into position
 
     ./boaf.sh updatecfg
@@ -2647,19 +2898,19 @@ q_configure_oaf () {
 
         # Primary server in a dual-server configuration
 
-        ./boaf.sh config_server_1 "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$SERVER_NAME_1" "$PDL_OPTION"
+        ./boaf.sh config_server_1 "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$SERVER_NAME_1" "$PDL_OPTION" "$my_SSL_OPTIONS"
 
     elif [ "$SERVER_OPTION" == "$val_SERVER_SECONDARY" ]; then
 
         # Secondary server in a dual-server configuration
 
-        ./boaf.sh config_server_2 "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$SERVER_NAME_2" "$PDL_OPTION"
+        ./boaf.sh config_server_2 "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$SERVER_NAME_2" "$PDL_OPTION" "$my_SSL_OPTIONS"
 
     elif [ "$SERVER_OPTION" == "$val_SERVER_SOLO" ]; then
 
         # Single-server configuration
 
-        ./boaf.sh config_server_solo "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$SERVER_NAME_1" "$PDL_OPTION"
+        ./boaf.sh config_server_solo "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$SERVER_NAME_1" "$PDL_OPTION" "$my_SSL_OPTIONS"
 
     elif [ "$SERVER_OPTION" == "$val_SERVER_DEV" ]; then
 
@@ -2695,6 +2946,14 @@ q_configure_oaf () {
         exit 1
     fi
 
+    # Write the launch options script
+
+    if [ -f "$val_LAUNCH_OPTIONS_FILE" ]; then
+        rm "$val_LAUNCH_OPTIONS_FILE"
+    fi
+
+    echo "MOAF_JAVA_MAX_MEMORY_GB=\"$JAVA_MAX_MEMORY_GB\"" > "$val_LAUNCH_OPTIONS_FILE"
+
 }
 
 
@@ -2726,6 +2985,24 @@ q_compile_oaf () {
 
     ./boaf.sh deploy
 
+    # Determine SSL options based on installed certificates
+
+    if [ "$my_HAS_SERVER_CERT" == "$val_YES" ]; then
+        if [ "$my_HAS_CLIENT_CERT" == "$val_YES" ]; then
+            my_SSL_OPTIONS="sslEnable=true\&sslClientAuth=true"
+        else
+            my_SSL_OPTIONS="sslEnable=true"
+        fi
+    else
+        if [ "$my_HAS_CLIENT_CERT" == "$val_YES" ]; then
+            my_SSL_OPTIONS="sslEnable=true\&sslClientAuth=true"
+        elif [ "$my_HAS_ROOT_CERT" == "$val_YES" ]; then
+            my_SSL_OPTIONS="sslEnable=true"
+        else
+            my_SSL_OPTIONS="sslEnable=false"
+        fi
+    fi
+
     # Build the generic GUI
 
     echo "Building generic GUI..."
@@ -2737,9 +3014,25 @@ q_compile_oaf () {
     echo "Building production GUI..."
 
     if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
-        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS"
+        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
     else
-        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS"
+        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+    fi
+
+    # Build the generic ETAS GUI
+
+    echo "Building generic ETAS GUI..."
+
+    ./boaf.sh compile_etas_gui "$GUI_DATE"
+
+    # Build the production ETAS GUI
+
+    echo "Building production ETAS GUI..."
+
+    if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
+        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+    else
+        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
     fi
 
 }
@@ -2753,21 +3046,56 @@ q_rebuild_gui () {
     echo "Rebuilding GUI..."
 
     rm opensha-oaf/build/libs/AftershockGUI*
+    rm opensha-oaf/build/libs/AftershockETAS_GUI*
+
+    # Determine SSL options based on installed certificates
+
+    if [ "$my_HAS_SERVER_CERT" == "$val_YES" ]; then
+        if [ "$my_HAS_CLIENT_CERT" == "$val_YES" ]; then
+            my_SSL_OPTIONS="sslEnable=true\&sslClientAuth=true"
+        else
+            my_SSL_OPTIONS="sslEnable=true"
+        fi
+    else
+        if [ "$my_HAS_CLIENT_CERT" == "$val_YES" ]; then
+            my_SSL_OPTIONS="sslEnable=true\&sslClientAuth=true"
+        elif [ "$my_HAS_ROOT_CERT" == "$val_YES" ]; then
+            my_SSL_OPTIONS="sslEnable=true"
+        else
+            my_SSL_OPTIONS="sslEnable=false"
+        fi
+    fi
 
     # Build the generic GUI
 
-    echo "Building generic GUI..."
+    echo "Building generic RJ GUI..."
 
     ./boaf.sh compilegui "$GUI_DATE"
 
     # Build the production GUI
 
-    echo "Building production GUI..."
+    echo "Building production RJ GUI..."
 
     if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
-        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS"
+        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
     else
-        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS"
+        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+    fi
+
+    # Build the generic ETAS GUI
+
+    echo "Building generic ETAS GUI..."
+
+    ./boaf.sh compile_etas_gui "$GUI_DATE"
+
+    # Build the production ETAS GUI
+
+    echo "Building production ETAS GUI..."
+
+    if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
+        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+    else
+        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
     fi
 
 }
@@ -3205,6 +3533,121 @@ q_resume_normal_mode () {
 
 
 
+# Remove installed certificates, if any.
+
+q_remove_certs () {
+    echo "Removing certificates..."
+
+    if q_is_mongo_running ; then
+        echo "Please shut down AAFS and MongoDB before attempting to remove certificates."
+        exit 1
+    fi
+
+    # Remove the certificate directory, if it exists
+
+    if [ -d "$cval_CERT_DIR" ]; then
+        sudo rm -r "$cval_CERT_DIR"
+    fi
+
+    # Set flags
+
+    my_HAS_ROOT_CERT="$val_NO"
+    my_HAS_SERVER_CERT="$val_NO"
+    my_HAS_CLIENT_CERT="$val_NO"
+
+}
+
+
+
+
+# Install certificates.
+# $1 = Source directory.
+
+q_install_certs () {
+    echo "Installing certificates..."
+
+    if q_is_mongo_running ; then
+        echo "Please shut down AAFS and MongoDB before attempting to install certificates."
+        exit 1
+    fi
+
+    # Existence checks
+
+    if [ ! -d "$1" ]; then
+        echo "Cannot find directory : $1"
+        exit 1
+    fi
+
+    if [ ! -f "$1/${cval_file_root_ca}.pem" ]; then
+        echo "Cannot find file : $1/${cval_file_root_ca}.pem"
+        exit 1
+    fi
+
+    if [ -f "$1/${cval_file_server}.pem" ]; then
+        if [ ! -f "$1/${cval_file_server}${cval_suffix_pass}" ]; then
+            echo "Cannot find file : $1/${cval_file_server}${cval_suffix_pass}"
+            exit 1
+        fi
+    fi
+
+    if [ -f "$1/${cval_file_client}.pem" ]; then
+        if [ ! -f "$1/${cval_file_client}${cval_suffix_pass}" ]; then
+            echo "Cannot find file : $1/${cval_file_client}${cval_suffix_pass}"
+            exit 1
+        fi
+        if [ ! -f "$1/${cval_file_client}.p12" ]; then
+            echo "Cannot find file : $1/${cval_file_client}.p12"
+            exit 1
+        fi
+        if [ ! -f "$1/${cval_file_client}${cval_suffix_p12_pass}" ]; then
+            echo "Cannot find file : $1/${cval_file_client}${cval_suffix_p12_pass}"
+            exit 1
+        fi
+    fi
+
+    # Remove the certificate directory, if it exists
+
+    if [ -d "$cval_CERT_DIR" ]; then
+        sudo rm -r "$cval_CERT_DIR"
+    fi
+
+    # Set flags
+
+    my_HAS_ROOT_CERT="$val_NO"
+    my_HAS_SERVER_CERT="$val_NO"
+    my_HAS_CLIENT_CERT="$val_NO"
+
+    # Make the certificate directory
+
+    sudo mkdir "$cval_CERT_DIR"
+
+    # Copy certs
+
+    sudo cp --preserve=timestamps "$1/${cval_file_root_ca}.pem" "${cval_CERT_DIR}/${cval_file_root_ca}.pem"
+    echo "Installed root CA certificate"
+    my_HAS_ROOT_CERT="$val_YES"
+
+    if [ -f "$1/${cval_file_server}.pem" ]; then
+        sudo cp --preserve=timestamps "$1/${cval_file_server}.pem" "${cval_CERT_DIR}/${cval_file_server}.pem"
+        sudo cp --preserve=timestamps "$1/${cval_file_server}${cval_suffix_pass}" "${cval_CERT_DIR}/${cval_file_server}${cval_suffix_pass}"
+        echo "Installed server certificate"
+        my_HAS_SERVER_CERT="$val_YES"
+    fi
+
+    if [ -f "$1/${cval_file_client}.pem" ]; then
+        sudo cp --preserve=timestamps "$1/${cval_file_client}.pem" "${cval_CERT_DIR}/${cval_file_client}.pem"
+        sudo cp --preserve=timestamps "$1/${cval_file_client}${cval_suffix_pass}" "${cval_CERT_DIR}/${cval_file_client}${cval_suffix_pass}"
+        sudo cp --preserve=timestamps "$1/${cval_file_client}.p12" "${cval_CERT_DIR}/${cval_file_client}.p12"
+        sudo cp --preserve=timestamps "$1/${cval_file_client}${cval_suffix_p12_pass}" "${cval_CERT_DIR}/${cval_file_client}${cval_suffix_p12_pass}"
+        echo "Installed client certificate"
+        my_HAS_CLIENT_CERT="$val_YES"
+    fi
+
+}
+
+
+
+
 case "$1" in
 
     test_load_oaf_config)
@@ -3216,7 +3659,9 @@ case "$1" in
         echo "CPU_CORE_COUNT = $CPU_CORE_COUNT"
         echo "JAVA_SOURCE = $JAVA_SOURCE"
         echo "JAVA_CERT_FILE = $JAVA_CERT_FILE"
+        echo "JAVA_MAX_MEMORY_GB = $JAVA_MAX_MEMORY_GB"
         echo "MONGO_BIND_IP = $MONGO_BIND_IP"
+        echo "MONGO_CACHE_GB = $MONGO_CACHE_GB"
         echo "SERVER_OPTION = $SERVER_OPTION"
         echo "ACTION_OPTION = $ACTION_OPTION"
         echo "MONGO_ADMIN_USER = $MONGO_ADMIN_USER"
@@ -3259,6 +3704,14 @@ case "$1" in
         echo "val_LOCAL_ACCOUNT = $val_LOCAL_ACCOUNT"
         echo "val_PWD = $val_PWD"
         echo "val_TEMP_WORK_DIR = $val_TEMP_WORK_DIR"
+        echo "val_NNINT_REGEX = $val_NNINT_REGEX"
+        echo "val_LAUNCH_OPTIONS_FILE = $val_LAUNCH_OPTIONS_FILE"
+        echo "cval_file_root_ca = $cval_file_root_ca"
+        echo "cval_file_server = $cval_file_server"
+        echo "cval_file_client = $cval_file_client"
+        echo "cval_suffix_pass = $cval_suffix_pass"
+        echo "cval_suffix_p12_pass = $cval_suffix_p12_pass"
+        echo "cval_CERT_DIR = $cval_CERT_DIR"
 
         echo ""
         echo "Internal variables:"
@@ -3281,6 +3734,9 @@ case "$1" in
         echo "my_ARM_ARCH = $my_ARM_ARCH"
         echo "my_IS_JAVA_FILE_SOURCE = $my_IS_JAVA_FILE_SOURCE"
         echo "my_JAVA_FILE_BASENAME = $my_JAVA_FILE_BASENAME"
+        echo "my_HAS_ROOT_CERT = $my_HAS_ROOT_CERT"
+        echo "my_HAS_SERVER_CERT = $my_HAS_SERVER_CERT"
+        echo "my_HAS_CLIENT_CERT = $my_HAS_CLIENT_CERT"
         ;;
 
     test_check_installed)
@@ -3513,6 +3969,32 @@ case "$1" in
         echo ""
         echo "Test - Installed OAF without installing MongoDB."
         echo "It is recommended that you reboot the system now."
+        ;;
+
+    test_remove_certs)
+        q_load_oaf_config
+        q_remove_certs
+        echo "Test - Removed certificates"
+        ;;
+
+    # $2 = Source directory.
+    test_install_certs)
+        q_load_oaf_config
+        q_install_certs "$2"
+        echo "Test - Installed certificates"
+        ;;
+
+    test_run_mongosh)
+        q_load_oaf_config
+        q_run_mongosh
+        echo "Test - Ran MongoDB shell"
+        ;;
+
+    # $2 = Host address.
+    test_run_mongosh_to)
+        q_load_oaf_config
+        q_run_mongosh_to "$2"
+        echo "Test - Ran MongoDB shell to the given host"
         ;;
 
 
@@ -4189,19 +4671,136 @@ case "$1" in
 
 
 
+    install_oaf_no_mongo)
+        q_load_oaf_config
+        q_check_installed
+        q_check_java
+        q_create_dirs
+        q_download_opensha
+        q_configure_oaf
+        q_compile_oaf
+        echo ""
+        echo "********************"
+        echo ""
+        echo "The selected ACTION_OPTION is "'"'"$ACTION_OPTION"'"'
+        echo ""
+        q_check_pdl_key_file
+        echo ""
+        echo "Completed OAF installation."
+        echo "It is recommended that you reboot the system now."
+        ;;
+
+
+
+
+    remove_certs)
+        if q_is_mongo_running ; then
+            echo "Please shut down AAFS and MongoDB before attempting to remove certificates."
+            exit 1
+        fi
+        q_load_oaf_config
+        q_remove_certs
+
+        # If there is an existing Java installation, update it, and the AAFS environment variables
+        my_NEED_REBOOT="$val_NO"
+        if [ -d /usr/local/java ]; then
+            my_NEED_REBOOT="$val_YES"
+            q_install_java
+            q_configure_java_dns
+            q_set_aafs_vars
+        fi
+
+        # If there is an existing MongoDB installation, update the configuration
+        if [ -f "$my_MONGO_CONF_FILE" ]; then
+            q_configure_mongo
+        fi
+
+        # If there is an existing OAF installation, update the configuration
+        if [ -d /opt/aafs ]; then
+            q_configure_oaf
+        fi
+
+        echo ""
+        echo "********************"
+        echo ""
+        echo "Removed certificates."
+        if [ "$my_NEED_REBOOT" == "$val_YES" ]; then
+            echo "It is recommended that you reboot the system now."
+        fi
+        ;;
+
+
+
+
+    # $2 = Source directory.
+    install_certs)
+        if q_is_mongo_running ; then
+            echo "Please shut down AAFS and MongoDB before attempting to install certificates."
+            exit 1
+        fi
+        q_load_oaf_config
+        q_install_certs "$2"
+
+        # If there is an existing Java installation, update it, and the AAFS environment variables
+        my_NEED_REBOOT="$val_NO"
+        if [ -d /usr/local/java ]; then
+            my_NEED_REBOOT="$val_YES"
+            q_install_java
+            q_configure_java_dns
+            q_set_aafs_vars
+        fi
+
+        # If there is an existing MongoDB installation, update the configuration
+        if [ -f "$my_MONGO_CONF_FILE" ]; then
+            q_configure_mongo
+        fi
+
+        # If there is an existing OAF installation, update the configuration
+        if [ -d /opt/aafs ]; then
+            q_configure_oaf
+        fi
+
+        echo ""
+        echo "********************"
+        echo ""
+        echo "Installed certificates."
+        if [ "$my_NEED_REBOOT" == "$val_YES" ]; then
+            echo "It is recommended that you reboot the system now."
+        fi
+        ;;
+
+
+
+
+    run_mongosh)
+        q_load_oaf_config
+        q_run_mongosh
+        ;;
+
+
+
+
+    # $2 = Host address.
+    run_mongosh_to)
+        q_load_oaf_config
+        q_run_mongosh_to "$2"
+        ;;
+
+
+
+
     help)
         echo "Install required packages and Java:"
         echo "  aoaf.sh prepare_system"
         echo "Install and configure the OAF software and MongoDB:"
         echo "  aoaf.sh install_oaf"
-        echo "Install and configure the OAF software and MongoDB 4.4:"
+        echo "Install and configure the OAF software and a specific version of MongoDB:"
         echo "  aoaf.sh install_oaf_44"
-        echo "Install and configure the OAF software and MongoDB 5.0:"
         echo "  aoaf.sh install_oaf_50"
-        echo "Install and configure the OAF software and MongoDB 6.0:"
         echo "  aoaf.sh install_oaf_60"
-        echo "Install and configure the OAF software and MongoDB 7.0:"
         echo "  aoaf.sh install_oaf_70"
+        echo "Install and configure the OAF software without installing MongoDB:"
+        echo "  aoaf.sh install_oaf_no_mongo"
         echo "Initialize the OAF database:"
         echo "  aoaf.sh initialize_oaf  <relay_mode>  <configured_primary>"
         echo "Restore the OAF database:"
@@ -4220,21 +4819,15 @@ case "$1" in
         echo "  aoaf.sh update_aafs_vars"
         echo "Update the MongoDB configuration file:"
         echo "  aoaf.sh reconfigure_mongo"
-        echo "Upgrade an existing installation of MongoDB 4.2 to 4.4:"
+        echo "Upgrade an existing installation of MongoDB to the next version:"
         echo "  aoaf.sh upgrade_mongo_42_to_44"
-        echo "Set MongoDB compatibility version to 4.4:"
-        echo "  aoaf.sh set_mongo_compatibility_to_44"
-        echo "Upgrade an existing installation of MongoDB 4.4 to 5.0:"
         echo "  aoaf.sh upgrade_mongo_44_to_50"
-        echo "Set MongoDB compatibility version to 5.0:"
-        echo "  aoaf.sh set_mongo_compatibility_to_50"
-        echo "Upgrade an existing installation of MongoDB 5.0 to 6.0:"
         echo "  aoaf.sh upgrade_mongo_50_to_60"
-        echo "Set MongoDB compatibility version to 6.0:"
-        echo "  aoaf.sh set_mongo_compatibility_to_60"
-        echo "Upgrade an existing installation of MongoDB 6.0 to 7.0:"
         echo "  aoaf.sh upgrade_mongo_60_to_70_not_recommended"
-        echo "Set MongoDB compatibility version to 7.0:"
+        echo "Set MongoDB compatibility version:"
+        echo "  aoaf.sh set_mongo_compatibility_to_44"
+        echo "  aoaf.sh set_mongo_compatibility_to_50"
+        echo "  aoaf.sh set_mongo_compatibility_to_60"
         echo "  aoaf.sh set_mongo_compatibility_to_70"
         echo "Get MongoDB compatibility version:"
         echo "  aoaf.sh get_mongo_compatibility"
@@ -4248,6 +4841,14 @@ case "$1" in
         echo "  aoaf.sh stop_local_for_update  <java_option>  <oaf_option>  <backup_filename>"
         echo "Re-start local AAFS and MongoDB after performing updates:"
         echo "  aoaf.sh start_local_after_update"
+        echo "Install certificates from the given directory:"
+        echo "  aoaf.sh install_certs  <source_dir>"
+        echo "Remove certificates:"
+        echo "  aoaf.sh remove_certs"
+        echo "Start the MongoDB shell (mongosh):"
+        echo "  aoaf.sh run_mongosh"
+        echo "Start the MongoDB shell (mongosh), for the given host address:"
+        echo "  aoaf.sh run_mongosh_to  <host_address>"
         ;;
 
 

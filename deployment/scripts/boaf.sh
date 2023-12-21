@@ -51,7 +51,7 @@
 #
 # config_server_solo - Create a server configuration file for a single-server configuration.
 #     After the 'config_server_solo' keyword comes the following parameters:
-#       SRVIP1  REPSET1  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT
+#       SRVIP1  REPSET1  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT  SSLOPT
 #     Where:
 #       SRVIP1 = Server IP address.
 #       REPSET1 = MongoDB replica set name.
@@ -60,6 +60,8 @@
 #       DBPASS = MongoDB password.
 #       SRVNAME = Server name.
 #       PDLOPT = PDL option.
+#       SSLOPT = SSL option string.
+#     If any of these options contains an ampersand, then the ampersand must be escaped with a backslash.
 #     The PDL option must be one of the following:
 #       "none" = Forecasts are not sent to PDL.
 #       "dev" = Forecasts are sent to PDL-Development.
@@ -69,12 +71,12 @@
 #
 # config_file_server_solo - Create a server configuration file for a single-server configuration.
 #     After the 'config_file_server_solo' keyword comes the following parameters:
-#       FILENAME  SRVIP1  REPSET1  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT
+#       FILENAME  SRVIP1  REPSET1  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT  SSLOPT
 #     Same as 'config_server_solo' except the configuration file is written to FILENAME.
 #
 # config_server_1 - Create a server configuration file for server #1 in a dual-server configuration.
 #     After the 'config_server_1' keyword comes the following parameters:
-#       SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT
+#       SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT  SSLOPT
 #     Where:
 #       SRVIP1 = Server IP address for server #1.
 #       REPSET1 = MongoDB replica set name for server #1.
@@ -85,6 +87,8 @@
 #       DBPASS = MongoDB password.
 #       SRVNAME = Server name.
 #       PDLOPT = PDL option.
+#       SSLOPT = SSL option string.
+#     If any of these options contains an ampersand, then the ampersand must be escaped with a backslash.
 #     The PDL option must be one of the following:
 #       "none" = Forecasts are not sent to PDL.
 #       "dev" = Forecasts are sent to PDL-Development.
@@ -96,12 +100,12 @@
 #
 # config_file_server_1 - Create a server configuration file for server #1 in a dual-server configuration.
 #     After the 'config_file_server_1' keyword comes the following parameters:
-#       FILENAME  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT
+#       FILENAME  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT  SSLOPT
 #     Same as 'config_server_1' except the configuration file is written to FILENAME.
 #
 # config_server_2 - Create a server configuration file for server #2 in a dual-server configuration.
 #     After the 'config_server_2' keyword comes the following parameters:
-#       SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT
+#       SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT  SSLOPT
 #     Where:
 #       SRVIP1 = Server IP address for server #1.
 #       REPSET1 = MongoDB replica set name for server #1.
@@ -112,6 +116,8 @@
 #       DBPASS = MongoDB password.
 #       SRVNAME = Server name.
 #       PDLOPT = PDL option.
+#       SSLOPT = SSL option string.
+#     If any of these options contains an ampersand, then the ampersand must be escaped with a backslash.
 #     The PDL option must be one of the following:
 #       "none" = Forecasts are not sent to PDL.
 #       "dev" = Forecasts are sent to PDL-Development.
@@ -123,7 +129,7 @@
 #
 # config_file_server_2 - Create a server configuration file for server #2 in a dual-server configuration.
 #     After the 'config_file_server_2' keyword comes the following parameters:
-#       FILENAME  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT
+#       FILENAME  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SRVNAME  PDLOPT  SSLOPT
 #     Same as 'config_server_2' except the configuration file is written to FILENAME.
 #
 # config_server_dev - Install a server configuration file for a development server in single-server configuration.
@@ -154,7 +160,7 @@
 #
 # config_packgui - Configure and package the production GUI.
 #     After the 'config_packgui' keyword comes the following parameters:
-#       GUIDATE  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS
+#       GUIDATE  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SSLOPT
 #     Where:
 #       GUIDATE = GUI date in form YYYY_MM_DD (or tag).
 #       SRVIP1 = Server IP address for server #1.
@@ -164,6 +170,8 @@
 #       DBNAME = MongoDB database name.
 #       DBUSER = MongoDB username.
 #       DBPASS = MongoDB password.
+#       SSLOPT = SSL option string.
+#     If any of these options (except GUIDATE) contains an ampersand, then the ampersand must be escaped with a backslash.
 #     It is assumed that DBNAME is both the data storage database and authentication database.
 #     For a single-server configuration, enter the same IP address and replica set name for both server #1 and server #2.
 #     For a dual-server configuration, it is assumed that both servers use the same database name, username, and password.
@@ -174,7 +182,7 @@
 #
 # config_file_packgui - Write a server configuration file for the production GUI.
 #     After the 'config_file_packgui' keyword comes the following parameters:
-#       FILENAME  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS
+#       FILENAME  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SSLOPT
 #     Same as 'config_packgui' except the configuration file is written to FILENAME.
 #
 # run - Run a class in the org.opensha.oaf package, using the compiled-in configuration.
@@ -407,7 +415,7 @@ isfilewriteok () {
 # Function to copy a server configuration file with substitutions, overwriting any existing file.
 # ${1} = Source file.
 # ${2} = Destination file.
-# ${3} thru ${22} = Server parameters, see definitions below.
+# ${3} thru ${25} = Server parameters, see definitions below.
 # Note that ${22} is one of:
 #  "none" if forecasts are not sent to PDL.
 #  "dev" if forecasts are sent to PDL-Development.
@@ -456,6 +464,21 @@ copysubsrv () {
             ;;
     esac
 
+    MONGO_SSL_OPT_0="${23}"
+    if [ -z "$MONGO_SSL_OPT_0" ]; then
+        MONGO_SSL_OPT_0="auto"
+    fi
+
+    MONGO_SSL_OPT_1="${24}"
+    if [ -z "$MONGO_SSL_OPT_1" ]; then
+        MONGO_SSL_OPT_1="auto"
+    fi
+
+    MONGO_SSL_OPT_2="${25}"
+    if [ -z "$MONGO_SSL_OPT_2" ]; then
+        MONGO_SSL_OPT_2="auto"
+    fi
+
     cat "${1}"    \
     | sed "s/---MONGO_REP_SET_0---/$MONGO_REP_SET_0/g"    \
     | sed "s/---MONGO_USER_0---/$MONGO_USER_0/g"    \
@@ -478,6 +501,9 @@ copysubsrv () {
     | sed "s/---SERVER_NUMBER_0---/$SERVER_NUMBER_0/g"    \
     | sed "s/---PDL_ENABLE_0---/$PDL_ENABLE_0/g"    \
     | sed "s|---PDL_KEYFILE_0---|$PDL_KEYFILE_0|g"    \
+    | sed "s/---MONGO_SSL_OPT_0---/$MONGO_SSL_OPT_0/g"    \
+    | sed "s/---MONGO_SSL_OPT_1---/$MONGO_SSL_OPT_1/g"    \
+    | sed "s/---MONGO_SSL_OPT_2---/$MONGO_SSL_OPT_2/g"    \
     > "${2}"
 }
 
@@ -630,7 +656,7 @@ case "$1" in
         if [ -f opensha-oaf/build/libs/AftershockETAS_GUI-$2.jar ]; then
             cd opensha-oaf/build/libs
             rmexistingdir gtmp
-            rmexistingfile AftershockETAS_Prod_GUI-$2.jar
+            rmexistingfile AftershockETAS_GUI-prod-$2.jar
             rmexistingfile AftershockETAS_GUI-$2-fixed.jar
             zip -q -F AftershockETAS_GUI-$2.jar --out AftershockETAS_GUI-$2-fixed.jar
             mkdir gtmp
@@ -641,7 +667,7 @@ case "$1" in
             rmexistingfile opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
             cp -pi "$3" opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json
             cd opensha-oaf/build/libs
-            jar -cfe AftershockETAS_Prod_GUI-$2.jar org.opensha.oaf.oetas.gui.OEGUITop -C gtmp .
+            jar -cfe AftershockETAS_GUI-prod-$2.jar org.opensha.oaf.oetas.gui.OEGUITop -C gtmp .
             cd ../../..
         else
             echo "ETAS GUI has not been compiled yet"
@@ -731,11 +757,12 @@ case "$1" in
             DBPASS="${6}"
             SRVNAME="${7}"
             PDLOPT="${8}"
+            SSLOPT="${9}"
             copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json /opt/aafs/oafcfg/ServerConfig.json    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
-            "$SRVIP1" "$SRVIP1" "$SRVNAME" "1" "$PDLOPT"
+            "$SRVIP1" "$SRVIP1" "$SRVNAME" "1" "$PDLOPT" "$SSLOPT" "$SSLOPT" "$SSLOPT"
         else
             echo "Configuration directory /opt/aafs/oafcfg has not been created yet"
         fi
@@ -752,11 +779,12 @@ case "$1" in
             DBPASS="${7}"
             SRVNAME="${8}"
             PDLOPT="${9}"
+            SSLOPT="${10}"
             copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json "$2"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
-            "$SRVIP1" "$SRVIP1" "$SRVNAME" "1" "$PDLOPT"
+            "$SRVIP1" "$SRVIP1" "$SRVNAME" "1" "$PDLOPT" "$SSLOPT" "$SSLOPT" "$SSLOPT"
         else
             echo "Operation aborted"
         fi
@@ -773,11 +801,12 @@ case "$1" in
             DBPASS="${8}"
             SRVNAME="${9}"
             PDLOPT="${10}"
+            SSLOPT="${11}"
             copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json /opt/aafs/oafcfg/ServerConfig.json    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
-            "$SRVIP1" "$SRVIP2" "$SRVNAME" "1" "$PDLOPT"
+            "$SRVIP1" "$SRVIP2" "$SRVNAME" "1" "$PDLOPT" "$SSLOPT" "$SSLOPT" "$SSLOPT"
         else
             echo "Configuration directory /opt/aafs/oafcfg has not been created yet"
         fi
@@ -796,11 +825,12 @@ case "$1" in
             DBPASS="${9}"
             SRVNAME="${10}"
             PDLOPT="${11}"
+            SSLOPT="${12}"
             copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json "$2"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
-            "$SRVIP1" "$SRVIP2" "$SRVNAME" "1" "$PDLOPT"
+            "$SRVIP1" "$SRVIP2" "$SRVNAME" "1" "$PDLOPT" "$SSLOPT" "$SSLOPT" "$SSLOPT"
         else
             echo "Operation aborted"
         fi
@@ -817,11 +847,12 @@ case "$1" in
             DBPASS="${8}"
             SRVNAME="${9}"
             PDLOPT="${10}"
+            SSLOPT="${11}"
             copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json /opt/aafs/oafcfg/ServerConfig.json    \
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
-            "$SRVIP1" "$SRVIP2" "$SRVNAME" "2" "$PDLOPT"
+            "$SRVIP1" "$SRVIP2" "$SRVNAME" "2" "$PDLOPT" "$SSLOPT" "$SSLOPT" "$SSLOPT"
         else
             echo "Configuration directory /opt/aafs/oafcfg has not been created yet"
         fi
@@ -840,11 +871,12 @@ case "$1" in
             DBPASS="${9}"
             SRVNAME="${10}"
             PDLOPT="${11}"
+            SSLOPT="${12}"
             copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json "$2"    \
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
-            "$SRVIP1" "$SRVIP2" "$SRVNAME" "2" "$PDLOPT"
+            "$SRVIP1" "$SRVIP2" "$SRVNAME" "2" "$PDLOPT" "$SSLOPT" "$SSLOPT" "$SSLOPT"
         else
             echo "Operation aborted"
         fi
@@ -924,11 +956,12 @@ case "$1" in
             DBNAME="${7}"
             DBUSER="${8}"
             DBPASS="${9}"
+            SSLOPT="${10}"
             copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json    \
             "rs0" "usgs" "usgs" "usgs" "usgs"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
-            "$SRVIP1" "$SRVIP2" "test" "1" "none"
+            "$SRVIP1" "$SRVIP2" "test" "1" "none" "auto" "$SSLOPT" "$SSLOPT"
             cd opensha-oaf/build/libs
             jar -cfe AftershockGUI-prod-$2.jar org.opensha.oaf.rj.gui.RJGUITop -C gtmp .
             cd ../../..
@@ -941,7 +974,7 @@ case "$1" in
         if [ -f opensha-oaf/build/libs/AftershockETAS_GUI-$2.jar ]; then
             cd opensha-oaf/build/libs
             rmexistingdir gtmp
-            rmexistingfile AftershockETAS_Prod_GUI-$2.jar
+            rmexistingfile AftershockETAS_GUI-prod-$2.jar
             rmexistingfile AftershockETAS_GUI-$2-fixed.jar
             zip -q -F AftershockETAS_GUI-$2.jar --out AftershockETAS_GUI-$2-fixed.jar
             mkdir gtmp
@@ -957,13 +990,14 @@ case "$1" in
             DBNAME="${7}"
             DBUSER="${8}"
             DBPASS="${9}"
+            SSLOPT="${10}"
             copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json    \
             "rs0" "usgs" "usgs" "usgs" "usgs"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
-            "$SRVIP1" "$SRVIP2" "test" "1" "none"
+            "$SRVIP1" "$SRVIP2" "test" "1" "none" "auto" "$SSLOPT" "$SSLOPT"
             cd opensha-oaf/build/libs
-            jar -cfe AftershockETAS_Prod_GUI-$2.jar org.opensha.oaf.oetas.gui.OEGUITop -C gtmp .
+            jar -cfe AftershockETAS_GUI-prod-$2.jar org.opensha.oaf.oetas.gui.OEGUITop -C gtmp .
             cd ../../..
         else
             echo "ETAS GUI has not been compiled yet"
@@ -981,11 +1015,12 @@ case "$1" in
             DBNAME="${7}"
             DBUSER="${8}"
             DBPASS="${9}"
+            SSLOPT="${10}"
             copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json "$2"     \
             "rs0" "usgs" "usgs" "usgs" "usgs"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
-            "$SRVIP1" "$SRVIP2" "test" "1" "none"
+            "$SRVIP1" "$SRVIP2" "test" "1" "none" "auto" "$SSLOPT" "$SSLOPT"
         else
             echo "Operation aborted"
         fi
@@ -1065,17 +1100,17 @@ case "$1" in
         echo "Erase any existing action configuration file from /opt/aafs/oafcfg:"
         echo "  boaf.sh erase_config_action"
         echo "Create a server configuration file for a single-server configuration:"
-        echo "  boaf.sh config_server_solo SRVIP1 REPSET1 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
+        echo "  boaf.sh config_server_solo SRVIP1 REPSET1 DBNAME DBUSER DBPASS SRVNAME PDLOPT SSLOPT"
         echo "Create and save a server configuration file for a single-server configuration:"
-        echo "  boaf.sh config_file_server_solo FILENAME SRVIP1 REPSET1 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
+        echo "  boaf.sh config_file_server_solo FILENAME SRVIP1 REPSET1 DBNAME DBUSER DBPASS SRVNAME PDLOPT SSLOPT"
         echo "Create a server configuration file for server #1 in a dual-server configuration:"
-        echo "  boaf.sh config_server_1 SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
+        echo "  boaf.sh config_server_1 SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT SSLOPT"
         echo "Create and save a server configuration file for server #1 in a dual-server configuration:"
-        echo "  boaf.sh config_file_server_1 FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
+        echo "  boaf.sh config_file_server_1 FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT SSLOPT"
         echo "Create a server configuration file for server #2 in a dual-server configuration:"
-        echo "  boaf.sh config_server_2 SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
+        echo "  boaf.sh config_server_2 SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT SSLOPT"
         echo "Create and save a server configuration file for server #2 in a dual-server configuration:"
-        echo "  boaf.sh config_file_server_2 FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT"
+        echo "  boaf.sh config_file_server_2 FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SRVNAME PDLOPT SSLOPT"
         echo "Install a server configuration file for a development server in single-server configuration:"
         echo "  boaf.sh config_server_dev"
         echo "Write a server configuration file for a development server in single-server configuration:"
@@ -1089,11 +1124,11 @@ case "$1" in
         echo "Write an action configuration file that accepts earthquakes world-wide:"
         echo "  boaf.sh config_file_action_dev FILENAME"
         echo "Configure and package the production GUI:"
-        echo "  boaf.sh config_packgui GUIDATE SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS"
+        echo "  boaf.sh config_packgui GUIDATE SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SSLOPT"
         echo "Configure and package the production ETAS GUI:"
-        echo "  boaf.sh config_pack_etas_gui GUIDATE SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS"
+        echo "  boaf.sh config_pack_etas_gui GUIDATE SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SSLOPT"
         echo "Create and save a server configuration file for the production GUI:"
-        echo "  boaf.sh config_file_packgui FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS"
+        echo "  boaf.sh config_file_packgui FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SSLOPT"
         echo "Run a class in the org.opensha.oaf package, using the compiled-in configuration:"
         echo "  boaf.sh run CLASSNAME [PARAMETER...]"
         echo "Run a class in the org.opensha.oaf package, reading configuration from ./oafcfg:"
