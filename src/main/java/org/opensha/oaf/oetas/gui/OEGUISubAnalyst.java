@@ -38,6 +38,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JPasswordField;
 import javax.swing.SwingUtilities;
 
 import org.jfree.chart.title.PaintScaleLegend;
@@ -141,6 +142,7 @@ import org.opensha.oaf.util.gui.GUISeparatorParameter;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
+import org.opensha.oaf.aafs.MongoDBSSLParams;
 import org.opensha.oaf.aafs.GUICmd;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
@@ -542,6 +544,75 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 
 
+	//----- Security code -----
+
+
+
+
+	// Request server PIN from the user, if required.
+	// Returns true if success, false if user canceled.
+
+	private boolean request_server_pin () throws GUIEDTException {
+
+		// Make sure SSL parameters are loaded
+
+		MongoDBSSLParams.load_new_sys_info();
+
+		// Password so far
+
+		String user_pass = null;
+
+		// Loop while we need a password
+
+		while (MongoDBSSLParams.needs_password()) {
+
+			// Display the dialog
+
+			JPasswordField pf;
+			if (user_pass == null) {
+				pf = new JPasswordField ();
+			} else {
+				pf = new JPasswordField (user_pass);
+			}
+			int user_opt = JOptionPane.showConfirmDialog (gui_top.get_top_window(), pf, "Enter PIN", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+			if (user_opt != JOptionPane.OK_OPTION) {
+				return false;
+			}
+			char[] raw_pass = pf.getPassword();
+			if (raw_pass == null) {
+				return false;
+			}
+			user_pass = new String (raw_pass);
+
+			// Check and set this password
+
+			String ckpw = MongoDBSSLParams.check_and_set_user_password (user_pass);
+
+			// If error, display message
+
+			if (ckpw != null) {
+				System.out.println ();
+
+				//System.out.println (ckpw);
+
+				String[] ckpw_lines = ckpw.split ("\n");
+				if (ckpw_lines.length > 0) {
+					System.out.println (ckpw_lines[0]);
+					System.out.println ();
+				}
+
+				JOptionPane.showMessageDialog(gui_top.get_top_window(), "The PIN is incorrect, please try again", "Incorrect PIN", JOptionPane.INFORMATION_MESSAGE);
+			}
+		}
+
+		// Success
+
+		return true;
+	}
+
+
+
+
 	//----- Parameter change actions ------
 
 
@@ -567,6 +638,12 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 		case PARMGRP_SERVER_STATUS: {
 			if (!( f_sub_enable && f_server_status_enable )) {
+				return;
+			}
+
+			// Request PIN if needed
+
+			if (!( request_server_pin() )) {
 				return;
 			}
 
@@ -749,6 +826,13 @@ public class OEGUISubAnalyst extends OEGUIListener {
 			// User canceled, or did not enter correct text
 				
 			if (userInput == null || !(userInput.equals("AAFS"))) {
+				JOptionPane.showMessageDialog(gui_top.get_top_window(), "Canceled: Analyst options have NOT been sent to server", "Send canceled", JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+
+			// Request PIN if needed
+
+			if (!( request_server_pin() )) {
 				JOptionPane.showMessageDialog(gui_top.get_top_window(), "Canceled: Analyst options have NOT been sent to server", "Send canceled", JOptionPane.INFORMATION_MESSAGE);
 				return;
 			}

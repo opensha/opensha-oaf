@@ -7,6 +7,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.InvalidPathException;
 
+import java.security.KeyStore;
+import java.io.FileInputStream;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -434,6 +437,43 @@ public class MongoDBSSLParams {
 
 
 
+	// Check if a keystore password is correct.
+	// Parameters:
+	//  ks_type = Type of keystore.
+	//  ks_filename = Filename containing keystore.
+	//  ks_password = Password to check.
+	// Returns null if the password is correct.
+	// Returns error message (typically a stack trace) if not.
+
+	public static String check_keystore_password (String ks_type, String ks_filename, String ks_password) {
+
+		try {
+
+			// Convert password to character array
+
+			char[] password = ks_password.toCharArray();
+
+			// Create an implementation of the keystore type (throws KeyStoreException if no such implementation)
+
+			KeyStore ks = KeyStore.getInstance (ks_type);
+
+			// Attempt to load the keystore (throws exception if bad password or some other error)
+
+			try (FileInputStream fis = new FileInputStream (ks_filename)) {
+				ks.load (fis, password);
+			}
+
+		}
+		catch (Exception e) {
+			return SimpleUtils.getStackTraceAsString (e);
+		}
+
+		return null;
+	}
+
+
+
+
 	//----- Global (System-Wide) Resources -----
 
 
@@ -563,6 +603,26 @@ public class MongoDBSSLParams {
 
 
 
+	// Return true if a user password is required for the key store.
+	// We require a user password if system info is loaded, we have an SSL environment,
+	// and we have a key store, but there is no key store password obtained during load.
+	// Note: The return value is not affected by whether a user password has been set.
+	// Note: Caller must synchronize.
+
+	private static boolean do_requires_user_password () {
+		if (
+			do_has_ssl_env()
+			&& (oaf_key_store != null)
+			&& (oaf_key_store_pass == null)
+		) {
+			return true;
+		}
+		return false;
+	}
+
+
+
+
 	// Set or clear a property.
 	// If the value is null, then the property is cleared.
 	// Returns the prior value of the property, or null if there was no prior value.
@@ -656,6 +716,11 @@ public class MongoDBSSLParams {
 				saved_prop_key_store_pass = null;
 			}
 		}
+
+		// For debugging only, display current properties
+
+		//System.out.println ();
+		//show_all_store_props();
 
 		return;
 	}
@@ -877,7 +942,7 @@ public class MongoDBSSLParams {
 	// Set the user key store password.
 	// The argument can be null to remove the user password.
 	// Note: The user password is persistent across info loads, and can be set at any time.
-	// Note: Unfortunately there does not appear to be a simple way to check that the password is correct.
+	// Note: Use do_check_and_set_user_password() if you want to check that the password is correct.
 	// Note: Caller must synchronize.
 
 	private static void do_set_user_password (String user_pass) {
@@ -897,6 +962,76 @@ public class MongoDBSSLParams {
 
 
 
+	// Check and set the user key store password.
+	// The argument can be null to remove the user password.
+	// The return is null if password was correct and successfully set.
+	// The return is an error message (typically an exception strack trace) if
+	// the password is incorrect or there is some other error.
+	// Note: The user password is persistent across info loads, and can be set at any time.
+	// Note: It is recommended to call this only if do_needs_password() returns true.
+	// Note: Caller must synchronize.
+
+	private static String do_check_and_set_user_password (String user_pass) {
+
+		// If null, just remove the user password
+
+		if (user_pass == null) {
+			user_key_store_pass = null;
+		}
+
+		// Otherwise, we are setting the password ...
+
+		else {
+			String ks_password = user_pass.trim();
+
+			// If we have an environment and a keystore filename ...
+
+			if (do_has_ssl_env() && (oaf_key_store != null)) {
+
+				String ks_filename = oaf_key_store;
+
+				// If the filename ends in .p12 then force PKCS12, otherwise use the default
+
+				String ks_type;
+				if (ks_filename.trim().endsWith (".p12")) {
+					ks_type = "pkcs12";
+				} else {
+					ks_type = KeyStore.getDefaultType();
+				}
+
+				// Check the password, return error if it's bad
+
+				String ckpw = check_keystore_password (ks_type, ks_filename, ks_password);
+				if (ckpw != null) {
+					return ckpw;
+				}
+			}
+
+			// Set the new password
+
+			user_key_store_pass = ks_password;
+		}
+
+		// Update properties
+
+		do_set_props();
+		return null;
+	}
+
+
+
+
+	// Get the user key store password.
+	// The returned value can be null if the user password is not set.
+	// Note: Caller must synchronize.
+
+	private static String do_get_user_password () {
+		return user_key_store_pass;
+	}
+
+
+
+
 	//----- Service Functions -----
 
 
@@ -911,6 +1046,16 @@ public class MongoDBSSLParams {
 
 
 
+	// Return true if a user password is required for the key store.
+	// Note: The return value is not affected by whether a user password has been set.
+
+	public static synchronized boolean requires_user_password () {
+		return do_requires_user_password();
+	}
+
+
+
+
 	// Set the user key store password.
 	// The argument can be null to remove the user password.
 	// Note: The user password is persistent across info loads, and can be set at any time.
@@ -918,6 +1063,30 @@ public class MongoDBSSLParams {
 	public static synchronized void set_user_password (String user_pass) {
 		do_set_user_password (user_pass);
 		return;
+	}
+
+
+
+
+	// Check and set the user key store password.
+	// The argument can be null to remove the user password.
+	// The return is an error message (typically an exception strack trace) if
+	// the password is incorrect or there is some other error.
+	// Note: The user password is persistent across info loads, and can be set at any time.
+	// Note: It is recommended to call this only if needs_password() returns true.
+
+	public static synchronized String check_and_set_user_password (String user_pass) {
+		return do_check_and_set_user_password (user_pass);
+	}
+
+
+
+
+	// Get the user key store password.
+	// The returned value can be null if the user password is not set.
+
+	public static synchronized String get_user_password () {
+		return do_get_user_password();
 	}
 
 
@@ -1091,7 +1260,11 @@ public class MongoDBSSLParams {
 
 	private static void show_all_global_state () {
 		System.out.println (global_info_to_string());
-		System.out.println ("needs_pasword = " + needs_password() + "\n");
+		System.out.println ("needs_pasword = " + needs_password());
+		System.out.println ("requires_user_password = " + requires_user_password());
+		String upass = get_user_password();
+		System.out.println ("get_user_password = " + ((upass == null) ? "<null>" : upass));
+		System.out.println ();
 		show_all_store_props();
 		return;
 	}
@@ -1270,6 +1443,112 @@ public class MongoDBSSLParams {
 					System.out.println (resolve_and_print_ssl_options (options));
 				}
 			}
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  ks_type  ks_filename  ks_password
+		// Test if the given password is correct for the given keystore and type.
+		// As a special case, ks_type="-" selects the default keystore type.
+
+		if (testargs.is_test ("test4")) {
+
+			// Read arguments
+
+			System.out.println ("Check keystore for correct password");
+			String ks_type = testargs.get_string ("ks_type");
+			String ks_filename = testargs.get_string ("ks_filename");
+			String ks_password = testargs.get_string ("ks_password");
+			testargs.end_test();
+
+			// Apply default type if requested
+
+			if (ks_type.equals ("-")) {
+				ks_type = KeyStore.getDefaultType();
+
+				System.out.println ();
+				System.out.println ("Using default keystore type: ks_type = " + ks_type);
+			}
+
+			// Check password
+
+			String ckpw = check_keystore_password (ks_type, ks_filename, ks_password);
+
+			if (ckpw == null) {
+				System.out.println ();
+				System.out.println ("Password is correct!");
+			}
+			else {
+				System.out.println ();
+				System.out.println ("Password is incorrect, or some other error.");
+				System.out.println ();
+				System.out.println ("Error reason:");
+				System.out.println (ckpw);
+			}
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  user_pass
+		// Test of check and set user password.
+
+		if (testargs.is_test ("test5")) {
+
+			// Read arguments
+
+			String user_pass = testargs.get_string ("user_pass");
+			testargs.end_test();
+
+			// Load system information
+
+			System.out.println ();
+			System.out.println ("*** Load system information");
+			System.out.println ();
+
+			load_new_sys_info();
+
+			show_all_global_state();
+
+			// Check and set user password
+
+			System.out.println ();
+			System.out.println ("*** Check and set user password");
+			System.out.println ();
+
+			String ckpw = check_and_set_user_password (user_pass);
+
+			if (ckpw == null) {
+				System.out.println ();
+				System.out.println ("Password is correct!");
+			}
+			else {
+				System.out.println ();
+				System.out.println ("Password is incorrect, or some other error.");
+				System.out.println ();
+				System.out.println ("Error reason:");
+				System.out.println (ckpw);
+			}
+
+			System.out.println ();
+			show_all_global_state();
 
 			// Done
 
