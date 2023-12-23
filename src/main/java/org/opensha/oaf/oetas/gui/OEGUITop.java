@@ -47,6 +47,14 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 
+import javax.swing.JPasswordField;
+import javax.swing.JComponent;
+import javax.swing.event.AncestorListener;
+import javax.swing.event.AncestorEvent;
+import javax.swing.Timer;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import org.jfree.chart.title.PaintScaleLegend;
 import org.jfree.data.Range;
 import org.jfree.chart.ui.RectangleEdge;
@@ -147,6 +155,7 @@ import org.opensha.oaf.util.gui.GUIExternalCatalog;
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.GUICmd;
+import org.opensha.oaf.aafs.MongoDBSSLParams;
 import org.opensha.oaf.aafs.VersionInfo;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
@@ -484,6 +493,172 @@ public class OEGUITop extends OEGUIComponent {
 
 
 
+	//----- Security code -----
+
+
+
+
+	// Flag indicates if server access is available.
+
+	private boolean has_server_access = true;
+
+	public final boolean get_has_server_access () {
+		return has_server_access;
+	}
+
+
+
+
+	// This listener is used to give focus to the JPasswordField in the dialog.
+	// Note it has to be done twice, with a short time delay, because the OK
+	// button steals the focus away when the dialog is first displayed.
+
+	public static class MyAncestorListener implements AncestorListener
+	{
+		boolean f_active;
+
+		public MyAncestorListener () {
+			f_active = true;
+		}
+
+		@Override
+		public void ancestorAdded (AncestorEvent event)
+		{
+			//System.out.println ("ancestorAdded event fired");
+			if (f_active) {
+				f_active = false;
+
+				final AncestorListener my_listener = this;
+				final JComponent my_component = event.getComponent();
+
+				final Timer timer = new Timer (200, new ActionListener () {
+					@Override
+					public void actionPerformed (ActionEvent e) {
+						//System.out.println ("ancestorAdded timer fired");
+						my_component.requestFocusInWindow();
+					}
+				});
+				timer.setRepeats (false);
+
+				SwingUtilities.invokeLater (new Runnable () {
+					@Override
+					public void	run ()
+					{
+						//System.out.println ("ancestorAdded handler invoked");
+						my_component.requestFocusInWindow();
+						my_component.removeAncestorListener (my_listener);
+
+						timer.start();
+					}
+				});
+			}
+		}
+
+		@Override
+		public void ancestorMoved (AncestorEvent event) {}
+
+		@Override
+		public void ancestorRemoved (AncestorEvent event) {}
+	}
+
+
+
+
+
+	// Request server PIN from the user, if required.
+	// Returns true if success, false if user canceled.
+
+	public boolean request_server_pin () throws GUIEDTException {
+
+		// Make sure SSL parameters are loaded
+
+		MongoDBSSLParams.load_new_sys_info();
+
+		// Password so far
+
+		String user_pass = null;
+
+		// Loop while we need a password
+
+		while (MongoDBSSLParams.needs_password()) {
+
+			// Create the password text field
+
+			JPasswordField pf;
+			if (user_pass == null) {
+				pf = new JPasswordField ();
+			} else {
+				pf = new JPasswordField (user_pass);
+			}
+			pf.addAncestorListener (new MyAncestorListener());
+
+			// Display the dialog
+
+			int user_opt = JOptionPane.showConfirmDialog (gui_top.get_top_window(), pf, "Enter PIN for server access", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+			if (user_opt != JOptionPane.OK_OPTION) {
+				return false;
+			}
+			char[] raw_pass = pf.getPassword();
+			if (raw_pass == null) {
+				raw_pass = new char[0];
+			}
+			user_pass = (new String (raw_pass)).trim();
+
+			// Handle case of empty password
+
+			if (user_pass.isEmpty()) {
+				JOptionPane.showMessageDialog(gui_top.get_top_window(), "Please enter a PIN", "No PIN", JOptionPane.INFORMATION_MESSAGE);
+			}
+
+			// Otherwise, user entered a password ...
+
+			else {
+
+				// Check and set this password
+
+				String ckpw = MongoDBSSLParams.check_and_set_user_password (user_pass);
+
+				// If error, display message
+
+				if (ckpw != null) {
+					System.out.println ();
+
+					//System.out.println (ckpw);
+
+					String[] ckpw_lines = ckpw.split ("\n");
+					if (ckpw_lines.length > 0) {
+						System.out.println (ckpw_lines[0]);
+						System.out.println ();
+					}
+
+					JOptionPane.showMessageDialog(gui_top.get_top_window(), "The PIN is incorrect, please try again", "Incorrect PIN", JOptionPane.INFORMATION_MESSAGE);
+				}
+			}
+		}
+
+		// Success
+
+		return true;
+	}
+
+
+
+
+	// Return true if server access is available (without prompting for password).
+
+	public boolean server_access_available () throws GUIEDTException {
+
+		//  if (MongoDBSSLParams.needs_password()) {
+		//  	return false;
+		//  }
+		//  return true;
+
+		return gui_top.get_has_server_access();
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -599,7 +774,7 @@ public class OEGUITop extends OEGUIComponent {
 
 		GUIEDTRunnable.check_on_edt();
 
-		//  try {
+		try {	// comment out try and catch if nothing here throws GUIEDTException
 
 			// Show the window
 
@@ -610,9 +785,13 @@ public class OEGUITop extends OEGUIComponent {
 			System.out.println(VersionInfo.get_title());
 			System.out.println();
 
-		//  } catch (GUIEDTException e) {
-		//  	throw new IllegalStateException ("OEGUITop.start - Caught GUIEDTException, which should never be thrown", e);
-		//  }
+			// Request server PIN if necessary
+
+			has_server_access = gui_top.request_server_pin();
+
+		} catch (GUIEDTException e) {
+			throw new IllegalStateException ("OEGUITop.start - Caught GUIEDTException, which should never be thrown", e);
+		}
 
 		return;
 	}
