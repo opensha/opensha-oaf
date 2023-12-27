@@ -804,6 +804,10 @@ public class OEGUITop extends OEGUIComponent {
 	
 	public static void main(String[] args) {
 
+		// Allow SSL certificates to be retieved from the directory where the jar file is located
+
+		MongoDBSSLParams.set_search_jar_dir (true);
+
 		// The GUI accepts certain command-line options and commands.
 		// They are documented in GUICmd.
 

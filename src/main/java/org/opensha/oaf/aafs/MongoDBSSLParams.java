@@ -10,6 +10,9 @@ import java.nio.file.InvalidPathException;
 import java.security.KeyStore;
 import java.io.FileInputStream;
 
+import java.net.URL;
+import java.net.URI;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -474,9 +477,122 @@ public class MongoDBSSLParams {
 
 
 
+	//----- Jar Directory -----
+
+
+
+
+	// Find directory containing the jar file, subroutine 1.
+	// Returns null if cannot be found.
+
+	private static String find_jar_dir_sub_1 (boolean f_verbose) {
+		String jar_dir = null;
+
+		try {
+			URL url = MongoDBSSLParams.class.getProtectionDomain().getCodeSource().getLocation();
+			if (url != null) {
+
+				if (f_verbose) {
+					System.out.println ();
+					System.out.println ("find_jar_dir_sub_1: URL = " + url.toString());
+					System.out.println ("find_jar_dir_sub_1: URI = " + url.toURI().toString());
+				}
+
+				Path parent = Paths.get(url.toURI()).getParent();
+				if (parent != null) {
+					jar_dir = parent.toString();
+
+					if (f_verbose) {
+						System.out.println ("find_jar_dir_sub_1: DIR = " + jar_dir);
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			jar_dir = null;
+		}
+
+		return jar_dir;
+	}
+
+
+
+
+	// Find directory containing the jar file, subroutine 2.
+	// Returns null if cannot be found.
+
+	private static String find_jar_dir_sub_2 (boolean f_verbose) {
+		String jar_dir = null;
+
+		try {
+			URL url = MongoDBSSLParams.class.getResource (MongoDBSSLParams.class.getSimpleName() + ".class");
+
+			if (f_verbose) {
+				System.out.println ();
+				System.out.println ("find_jar_dir_sub_2: URL = " + url.toString());
+				System.out.println ("find_jar_dir_sub_2: URI = " + url.toURI().toString());
+			}
+
+			String s_url = url.toString();
+
+			if (s_url.startsWith ("jar:file:")) {
+				String s_path = s_url.replaceAll ("^jar:(file:.*[.]jar)!/.*", "$1");
+				Path parent = Paths.get((new URL (s_path)).toURI()).getParent();
+				if (parent != null) {
+					jar_dir = parent.toString();
+
+					if (f_verbose) {
+						System.out.println ("find_jar_dir_sub_2: DIR = " + jar_dir);
+					}
+				}
+			}
+
+			else if (s_url.startsWith ("file:")) {
+				String s_path = s_url.replaceAll ("^(file:.*[.]jar)!/.*", "$1");
+				Path parent = Paths.get((new URL (s_path)).toURI()).getParent();
+				if (parent != null) {
+					jar_dir = parent.toString();
+
+					if (f_verbose) {
+						System.out.println ("find_jar_dir_sub_1: DIR = " + jar_dir);
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			jar_dir = null;
+		}
+
+		return jar_dir;
+	}
+
+
+
+
+	// Find directory containing the jar file.
+	// Returns null if cannot be found.
+
+	public static String find_jar_dir () {
+		String jar_dir = find_jar_dir_sub_1 (false);
+		if (jar_dir == null) {
+			jar_dir = find_jar_dir_sub_2 (false);
+		}
+		return jar_dir;
+	}
+
+
+
+
 	//----- Global (System-Wide) Resources -----
 
 
+
+
+	//--- Configuration
+
+	// True to check jar directory if AAFS_SSL_DIR is not defined.
+
+	private static boolean f_search_jar_dir = false;
 
 
 	//--- System environment
@@ -751,6 +867,17 @@ public class MongoDBSSLParams {
 
 
 
+	// Set the flag indicating if the jar directory should be checked if AAFS_SSL_DIR is not defined.
+	// Note: Caller must synchronize.
+
+	private static void do_set_search_jar_dir (boolean the_f_search_jar_dir) {
+		f_search_jar_dir = the_f_search_jar_dir;
+		return;
+	}
+
+
+
+
 	// Load the system information, overwriting any existing system information.
 	// Also sets the properties, if possible.
 	// If error, throws an exception and leaves system information in the unloaded state.
@@ -772,37 +899,97 @@ public class MongoDBSSLParams {
 		// Check the environment variable AAFS_SSL_DIR to get our path, if none defined then we loaded info but found no environment
 
 		String var = System.getenv ("AAFS_SSL_DIR");
-		if (var == null) {
-			f_loaded_sys_info = true;
-			return;
-		}
-		var = var.trim();
-		if (var.isEmpty()) {
-			f_loaded_sys_info = true;
-			return;
+
+		if (var != null) {
+			var = var.trim();
+			if (var.isEmpty()) {
+				var = null;
+			}
 		}
 
-		// Verify that the value is a directory
+		// If we found the environment variable ...
 
-		try {
-			my_oaf_ssl_dir = Paths.get (var);
-		}
-		catch (InvalidPathException e) {
-			throw new MongoDBSSLParamsException ("MongoDBSSLParams: Environment variable AAFS_SSL_DIR contains an invalid path: " + e.getMessage(), e);
-		}
-		catch (Exception e) {
-			throw new MongoDBSSLParamsException ("MongoDBSSLParams: Environment variable AAFS_SSL_DIR contains an invalid path: " + var, e);
+		if (var != null) {
+
+			// Verify that the value is a directory
+
+			try {
+				my_oaf_ssl_dir = Paths.get (var);
+			}
+			catch (InvalidPathException e) {
+				throw new MongoDBSSLParamsException ("MongoDBSSLParams: Environment variable AAFS_SSL_DIR contains an invalid path: " + e.getMessage(), e);
+			}
+			catch (Exception e) {
+				throw new MongoDBSSLParamsException ("MongoDBSSLParams: Environment variable AAFS_SSL_DIR contains an invalid path: " + var, e);
+			}
+
+			boolean is_dir = false;
+			try {
+				is_dir = Files.isDirectory (my_oaf_ssl_dir);
+			}
+			catch (Exception e) {
+				throw new MongoDBSSLParamsException ("MongoDBSSLParams: Error checking for existence of directory in environment variable AAFS_SSL_DIR: " + var, e);
+			}
+			if (!( is_dir )) {
+				throw new MongoDBSSLParamsException ("MongoDBSSLParams: Cannot find directory in environment variable AAFS_SSL_DIR: " + var);
+			}
+
 		}
 
-		boolean is_dir = false;
-		try {
-			is_dir = Files.isDirectory (my_oaf_ssl_dir);
-		}
-		catch (Exception e) {
-			throw new MongoDBSSLParamsException ("MongoDBSSLParams: Error checking for existence of directory in environment variable AAFS_SSL_DIR: " + var, e);
-		}
-		if (!( is_dir )) {
-			throw new MongoDBSSLParamsException ("MongoDBSSLParams: Cannot find directory in environment variable AAFS_SSL_DIR: " + var);
+		// Otherwise, no environment variable ...
+
+		else {
+
+			try {
+
+				// If we want to check the jar directory ...
+
+				if (f_search_jar_dir) {
+
+					// Get the jar directory
+
+					String jar_dir = find_jar_dir();
+
+					// If we got the jar directory ...
+
+					if (jar_dir != null) {
+
+						// Convert to path
+
+						Path jar_dir_path = Paths.get (jar_dir);
+
+						// If it is a directory (it should be) ...
+
+						if (Files.isDirectory (jar_dir_path)) {
+
+							// If the trust store file exists and is readable, use the jar directory
+
+							if (Files.isReadable (jar_dir_path.resolve (FN_OAF_TRUST_STORE))) {
+								my_oaf_ssl_dir = jar_dir_path;
+							}
+
+							// Otherwise, if the key store file exists and is readable, use the jar directory
+
+							else if (Files.isReadable (jar_dir_path.resolve (FN_OAF_KEY_STORE))) {
+								my_oaf_ssl_dir = jar_dir_path;
+							}
+						}
+					}
+				}
+			}
+
+			// Any exception here means no jar directory
+
+			catch (Exception e) {
+				my_oaf_ssl_dir = null;
+			}
+
+			// If we didn't find the files in the jar directory, then no environment
+
+			if (my_oaf_ssl_dir == null) {
+				f_loaded_sys_info = true;
+				return;
+			}
 		}
 
 		// Check if the trust store file exists and is readable
@@ -1159,6 +1346,16 @@ public class MongoDBSSLParams {
 
 
 
+	// Set the flag indicating if the jar directory should be checked if AAFS_SSL_DIR is not defined.
+
+	public static synchronized void set_search_jar_dir (boolean the_f_search_jar_dir) {
+		do_set_search_jar_dir (the_f_search_jar_dir);
+		return;
+	}
+
+
+
+
 	// Load the system information, overwriting any existing system information.
 	// Also sets the properties, if possible.
 	// If error, throws an exception and leaves system information in the unloaded state.
@@ -1200,6 +1397,8 @@ public class MongoDBSSLParams {
 	public static synchronized String global_info_to_string () {
 		StringBuilder result = new StringBuilder();
 		result.append ("MongoDBSSLParams (static):" + "\n");
+		
+		result.append ("f_search_jar_dir = " + f_search_jar_dir + "\n");
 		
 		result.append ("f_loaded_sys_info = " + f_loaded_sys_info + "\n");
 		result.append ("oaf_ssl_dir = " + ((oaf_ssl_dir == null) ? "<null>" : (oaf_ssl_dir.toString())) + "\n");
@@ -1548,6 +1747,114 @@ public class MongoDBSSLParams {
 			}
 
 			System.out.println ();
+			show_all_global_state();
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6
+		// Test location of jar directory.
+
+		if (testargs.is_test ("test6")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Test subroutine 1
+
+			String jar_dir_1 = find_jar_dir_sub_1 (true);
+
+			System.out.println ();
+			System.out.println ("Jar directory sub 1 : " + ((jar_dir_1 == null) ? "<null>" : jar_dir_1));
+
+			// Test subroutine 2
+
+			String jar_dir_2 = find_jar_dir_sub_2 (true);
+
+			System.out.println ();
+			System.out.println ("Jar directory sub 2 : " + ((jar_dir_2 == null) ? "<null>" : jar_dir_2));
+
+			// Test main routine
+
+			String jar_dir = find_jar_dir();
+
+			System.out.println ();
+			System.out.println ("Jar directory : " + ((jar_dir == null) ? "<null>" : jar_dir));
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7
+		// Test of load environment, set user password, clear environment.
+		// Same as test #2 except sets the flag to search the jar directory.
+
+		if (testargs.is_test ("test7")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Set the flag to search the jar directory
+
+			set_search_jar_dir (true);
+
+			// Show global state while unloaded
+
+			System.out.println ();
+			System.out.println ("*** Initial unloaded state");
+			System.out.println ();
+
+			show_all_global_state();
+
+			// Load system information
+
+			System.out.println ();
+			System.out.println ("*** Load system information");
+			System.out.println ();
+
+			load_new_sys_info();
+
+			show_all_global_state();
+
+			// Set user password
+
+			System.out.println ();
+			System.out.println ("*** Set user password");
+			System.out.println ();
+
+			set_user_password ("test_user_pass");
+
+			show_all_global_state();
+
+			// Clear system information
+
+			System.out.println ();
+			System.out.println ("*** Clear system information");
+			System.out.println ();
+
+			clear_sys_info();
+
 			show_all_global_state();
 
 			// Done
