@@ -8,6 +8,13 @@ import java.nio.file.Paths;
 import java.nio.file.InvalidPathException;
 
 import java.security.KeyStore;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+
 import java.io.FileInputStream;
 
 import java.net.URL;
@@ -356,7 +363,7 @@ public class MongoDBSSLParams {
 		// Returns the resulting modified builder.
 		// If SSL is disabled, the function just returns its argument.
 
-		public final MongoClientSettings.Builder apply_ssl_options (MongoClientSettings.Builder builder) {
+		public final MongoClientSettings.Builder apply_ssl_options (MongoClientSettings.Builder builder, SSLContext ssl_context) {
 			MongoClientSettings.Builder my_builder = builder;
 
 			if (is_ssl_enable()) {
@@ -365,6 +372,9 @@ public class MongoDBSSLParams {
 					builder2.enabled (true);
 					if (is_invalid_host_addr()) {
 						builder2.invalidHostNameAllowed (true);
+					}
+					if (ssl_context != null) {
+						builder2.context (ssl_context);
 					}
 				});
 
@@ -472,6 +482,27 @@ public class MongoDBSSLParams {
 		}
 
 		return null;
+	}
+
+
+
+
+	// Return true if two strings match, allowing null arguments.
+	// Note: Null matches null, but nothing else.
+
+	public static boolean string_matches (String s1, String s2) {
+		if (s1 == null) {
+			if (s2 == null) {
+				return true;
+			}
+			return false;
+		}
+		else {
+			if (s2 == null) {
+				return false;
+			}
+		}
+		return s1.equals (s2);
 	}
 
 
@@ -594,6 +625,10 @@ public class MongoDBSSLParams {
 
 	private static boolean f_search_jar_dir = false;
 
+	// True to use an SSLContext instead of setting system properties.
+
+	private static boolean f_use_ssl_context = false;
+
 
 	//--- System environment
 
@@ -632,7 +667,7 @@ public class MongoDBSSLParams {
 
 	private static boolean f_set_prop_trust_store = false;
 
-	// Saved values of the trust store and passwork properties.
+	// Saved values of the trust store and password properties.
 
 	private static String saved_prop_trust_store = null;
 	private static String saved_prop_trust_store_pass = null;
@@ -641,10 +676,27 @@ public class MongoDBSSLParams {
 
 	private static boolean f_set_prop_key_store = false;
 
-	// Saved values of the key store and passwork properties.
+	// Saved values of the key store and password properties.
 
 	private static String saved_prop_key_store = null;
 	private static String saved_prop_key_store_pass = null;
+
+
+	//--- SSL context
+
+	// The SSL context to use for MongoDB.
+
+	private static SSLContext mongo_ssl_context = null;
+
+	// The trust store used to make the SSL context.
+
+	private static String context_trust_store = null;
+
+	// The key store used to make the SSL context.
+
+	private static String context_key_store = null;
+	private static String context_key_store_pass = null;
+
 
 
 
@@ -758,10 +810,15 @@ public class MongoDBSSLParams {
 
 	private static void do_set_props () {
 
+		// Make or discard the SSL context, according to our current state
+
+		do_set_ssl_context();
+
 		// If we want to set the trust store ...
 
 		if (
 			do_has_ssl_env()
+			&& (!f_use_ssl_context)
 			&& oaf_trust_store != null
 			&& (f_allow_trust_only || oaf_key_store == null || oaf_key_store_pass != null || user_key_store_pass != null)
 		) {
@@ -799,6 +856,7 @@ public class MongoDBSSLParams {
 
 		if (
 			do_has_ssl_env()
+			&& (!f_use_ssl_context)
 			&& oaf_key_store != null
 			&& (oaf_key_store_pass != null || user_key_store_pass != null)
 		) {
@@ -844,6 +902,166 @@ public class MongoDBSSLParams {
 
 
 
+	// Make or discard the SSL context, according to our current state.
+	// Note: Caller must synchronize.
+
+	private static void do_set_ssl_context () {
+
+		// If we want to make the SSL context ...
+
+		if (
+			do_has_ssl_env()
+			&& f_use_ssl_context
+			&& (oaf_trust_store != null || oaf_key_store != null)
+			&& (oaf_key_store == null || oaf_key_store_pass != null || user_key_store_pass != null)
+		) {
+
+			// If we don't already have the requested SSL contest ...
+
+			if (!(
+				mongo_ssl_context != null
+				&& string_matches (context_trust_store, oaf_trust_store)
+				&& string_matches (context_key_store, oaf_key_store)
+				&& string_matches (context_key_store_pass, oaf_key_store_pass)
+			)) {
+
+				// Any exception here means we couldn't make the context
+
+				try {
+
+					// List of key store and trust store managers
+
+					KeyManager[] key_man_list = null;
+					TrustManager[] trust_man_list = null;
+
+					// If we have our own key store ...
+
+					if (oaf_key_store != null) {
+
+						// Convert password to character string
+
+						char[] ks_password;
+						if (user_key_store_pass != null) {
+							ks_password = user_key_store_pass.toCharArray();
+						} else {
+							ks_password = oaf_key_store_pass.toCharArray();
+						}
+
+						// If the filename ends in .p12 then force PKCS12, otherwise use the default
+
+						String ks_type;
+						if (oaf_key_store.trim().endsWith (".p12")) {
+							ks_type = "pkcs12";
+						} else {
+							ks_type = KeyStore.getDefaultType();
+						}
+
+						// Create an implementation of the keystore type (throws KeyStoreException if no such implementation)
+
+						KeyStore ks = KeyStore.getInstance (ks_type);
+
+						// Attempt to load the keystore (throws exception if bad password or some other error)
+
+						try (FileInputStream fis = new FileInputStream (oaf_key_store)) {
+							ks.load (fis, ks_password);
+						}
+
+						// Make the key manager factory
+
+						KeyManagerFactory key_man_factory = KeyManagerFactory.getInstance (KeyManagerFactory.getDefaultAlgorithm());
+
+						key_man_factory.init (ks, ks_password);
+
+						// Get the list of key managers
+
+						key_man_list = key_man_factory.getKeyManagers();
+					}
+
+					// If we have our own trust store ...
+
+					if (oaf_trust_store != null) {
+
+						// Convert password to character string
+
+						char[] ts_password = DEF_TRUST_STORE_PASS.toCharArray();;
+
+						// If the filename ends in .p12 then force PKCS12, otherwise use the default
+
+						String ts_type;
+						if (oaf_trust_store.trim().endsWith (".p12")) {
+							ts_type = "pkcs12";
+						} else {
+							ts_type = KeyStore.getDefaultType();
+						}
+
+						// Create an implementation of the trust store type (throws KeyStoreException if no such implementation)
+
+						KeyStore ts = KeyStore.getInstance (ts_type);
+
+						// Attempt to load the trust store (throws exception if bad password or some other error)
+
+						try (FileInputStream fis = new FileInputStream (oaf_trust_store)) {
+							ts.load (fis, ts_password);
+						}
+
+						// Make the trust manager factory
+
+						TrustManagerFactory trust_man_factory = TrustManagerFactory.getInstance (TrustManagerFactory.getDefaultAlgorithm());
+
+						trust_man_factory.init (ts);
+
+						// Get the list of trust managers
+
+						trust_man_list = trust_man_factory.getTrustManagers();
+					}
+
+					// Make the SSL context
+
+					SSLContext my_ssl_context = SSLContext.getInstance ("TLS");
+
+					my_ssl_context.init (key_man_list, trust_man_list, null);
+
+					// Context made successfully, save it
+
+					mongo_ssl_context = my_ssl_context;
+					context_trust_store = oaf_trust_store;
+					context_key_store = oaf_key_store;
+					context_key_store_pass = oaf_key_store_pass;
+				}
+
+				// Failed to make the context
+
+				catch (Exception e) {
+
+					// Discard any SSL context
+
+					mongo_ssl_context = null;
+					context_trust_store = null;
+					context_key_store = null;
+					context_key_store_pass = null;
+
+					// Display the reason for the failure
+
+					System.out.println (SimpleUtils.getStackTraceAsString (e));
+				}
+			}
+		}
+
+		// Otherwise, discard any SSL context
+
+		else {
+			mongo_ssl_context = null;
+			context_trust_store = null;
+			context_key_store = null;
+			context_key_store_pass = null;
+		}
+
+		return;
+	}
+
+
+
+
 	// Clear the system information.
 	// Also restores the system default properties, if we changed them.
 	// Note: Caller must synchronize.
@@ -872,6 +1090,19 @@ public class MongoDBSSLParams {
 
 	private static void do_set_search_jar_dir (boolean the_f_search_jar_dir) {
 		f_search_jar_dir = the_f_search_jar_dir;
+		return;
+	}
+
+
+
+
+	// Set the flag indicating if an SSLContext should be used instead of setting system properties.
+	// Note: Because this sets the mode of operation, it should be used before any
+	// attempt to load parameters, preferably early in the main function.
+	// Note: Caller must synchronize.
+
+	private static void do_set_use_ssl_context (boolean the_f_use_ssl_context) {
+		f_use_ssl_context = the_f_use_ssl_context;
 		return;
 	}
 
@@ -1329,7 +1560,7 @@ public class MongoDBSSLParams {
 		//if (!( do_needs_password() )) {
 		//	throw new MongoDBSSLParamsException ("MongoDBSSLParams: SSL key store password has not been set");
 		//}
-		return ssl_options.apply_ssl_options (builder);
+		return ssl_options.apply_ssl_options (builder, mongo_ssl_context);
 	}
 
 
@@ -1350,6 +1581,18 @@ public class MongoDBSSLParams {
 
 	public static synchronized void set_search_jar_dir (boolean the_f_search_jar_dir) {
 		do_set_search_jar_dir (the_f_search_jar_dir);
+		return;
+	}
+
+
+
+
+	// Set the flag indicating if an SSLContext should be used instead of setting system properties.
+	// Note: Because this sets the mode of operation, it should be used before any
+	// attempt to load parameters, preferably early in the main function.
+
+	public static synchronized void set_use_ssl_context (boolean the_f_use_ssl_context) {
+		do_set_use_ssl_context (the_f_use_ssl_context);
 		return;
 	}
 
@@ -1399,6 +1642,7 @@ public class MongoDBSSLParams {
 		result.append ("MongoDBSSLParams (static):" + "\n");
 		
 		result.append ("f_search_jar_dir = " + f_search_jar_dir + "\n");
+		result.append ("f_use_ssl_context = " + f_use_ssl_context + "\n");
 		
 		result.append ("f_loaded_sys_info = " + f_loaded_sys_info + "\n");
 		result.append ("oaf_ssl_dir = " + ((oaf_ssl_dir == null) ? "<null>" : (oaf_ssl_dir.toString())) + "\n");
@@ -1415,6 +1659,11 @@ public class MongoDBSSLParams {
 		result.append ("f_set_prop_key_store = " + f_set_prop_key_store + "\n");
 		result.append ("saved_prop_key_store = " + ((saved_prop_key_store == null) ? "<null>" : saved_prop_key_store) + "\n");
 		result.append ("saved_prop_key_store_pass = " + ((saved_prop_key_store_pass == null) ? "<null>" : saved_prop_key_store_pass) + "\n");
+
+		result.append ("mongo_ssl_context = " + ((mongo_ssl_context == null) ? "<null>" : "<available>") + "\n");
+		result.append ("context_trust_store = " + ((context_trust_store == null) ? "<null>" : context_trust_store) + "\n");
+		result.append ("context_key_store = " + ((context_key_store == null) ? "<null>" : context_key_store) + "\n");
+		result.append ("context_key_store_pass = " + ((context_key_store_pass == null) ? "<null>" : context_key_store_pass) + "\n");
 
 		return result.toString();
 	}
@@ -1844,6 +2093,65 @@ public class MongoDBSSLParams {
 			System.out.println ();
 
 			set_user_password ("test_user_pass");
+
+			show_all_global_state();
+
+			// Clear system information
+
+			System.out.println ();
+			System.out.println ("*** Clear system information");
+			System.out.println ();
+
+			clear_sys_info();
+
+			show_all_global_state();
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #8
+		// Command format:
+		//  test8
+		// Test of load environment, clear environment, using SSLContext.
+		// Similar to test #7 except sets the flag to search the jar directory.
+
+		if (testargs.is_test ("test8")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Set the flag to use SSLContext
+
+			set_use_ssl_context (true);
+
+			// Set the flag to search the jar directory
+
+			set_search_jar_dir (true);
+
+			// Show global state while unloaded
+
+			System.out.println ();
+			System.out.println ("*** Initial unloaded state");
+			System.out.println ();
+
+			show_all_global_state();
+
+			// Load system information
+
+			System.out.println ();
+			System.out.println ("*** Load system information");
+			System.out.println ();
+
+			load_new_sys_info();
 
 			show_all_global_state();
 

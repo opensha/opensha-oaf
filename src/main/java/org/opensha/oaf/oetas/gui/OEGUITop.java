@@ -498,6 +498,15 @@ public class OEGUITop extends OEGUIComponent {
 
 
 
+	// Return true if PIN request is deferred until the user attempts to contact the server.
+
+	public final boolean get_defer_pin_request () {
+		return true;
+	}
+
+
+
+
 	// Flag indicates if server access is available.
 
 	private boolean has_server_access = true;
@@ -787,7 +796,11 @@ public class OEGUITop extends OEGUIComponent {
 
 			// Request server PIN if necessary
 
-			has_server_access = gui_top.request_server_pin();
+			if (gui_top.get_defer_pin_request()) {
+				has_server_access = true;
+			} else {
+				has_server_access = gui_top.request_server_pin();
+			}
 
 		} catch (GUIEDTException e) {
 			throw new IllegalStateException ("OEGUITop.start - Caught GUIEDTException, which should never be thrown", e);
@@ -803,6 +816,10 @@ public class OEGUITop extends OEGUIComponent {
 
 	
 	public static void main(String[] args) {
+
+		// Use SSL context for MongoDB
+
+		MongoDBSSLParams.set_use_ssl_context (true);
 
 		// Allow SSL certificates to be retieved from the directory where the jar file is located
 

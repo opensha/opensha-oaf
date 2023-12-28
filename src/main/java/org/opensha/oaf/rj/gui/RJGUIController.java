@@ -2461,16 +2461,20 @@ public class RJGUIController extends RJGUIListener {
 
 			// Check for server access available
 
-			if (!( gui_top.server_access_available() )) {
-				JOptionPane.showMessageDialog(gui_top.get_top_window(), "Server access is not available because no PIN was entered", "No server access", JOptionPane.INFORMATION_MESSAGE);
-				return;
+			if (!( gui_top.get_defer_pin_request() )) {
+				if (!( gui_top.server_access_available() )) {
+					JOptionPane.showMessageDialog(gui_top.get_top_window(), "Server access is not available because no PIN was entered", "No server access", JOptionPane.INFORMATION_MESSAGE);
+					return;
+				}
 			}
 
 			// Request PIN if needed
 
-			//  if (!( gui_top.request_server_pin() )) {
-			//  	return;
-			//  }
+			if (gui_top.get_defer_pin_request()) {
+				if (!( gui_top.request_server_pin() )) {
+					return;
+				}
+			}
 
 			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
 			final int[] status_success = new int[1];
@@ -2651,9 +2655,11 @@ public class RJGUIController extends RJGUIListener {
 
 			// Check for server access available
 
-			if (!( gui_top.server_access_available() )) {
-				JOptionPane.showMessageDialog(gui_top.get_top_window(), "Server access is not available because no PIN was entered", "No server access", JOptionPane.INFORMATION_MESSAGE);
-				return;
+			if (!( gui_top.get_defer_pin_request() )) {
+				if (!( gui_top.server_access_available() )) {
+					JOptionPane.showMessageDialog(gui_top.get_top_window(), "Server access is not available because no PIN was entered", "No server access", JOptionPane.INFORMATION_MESSAGE);
+					return;
+				}
 			}
 
 			// Ask user for confirmation
@@ -2669,10 +2675,12 @@ public class RJGUIController extends RJGUIListener {
 
 			// Request PIN if needed
 
-			//  if (!( gui_top.request_server_pin() )) {
-			//  	JOptionPane.showMessageDialog(gui_top.get_top_window(), "Canceled: Analyst options have NOT been sent to server", "Send canceled", JOptionPane.INFORMATION_MESSAGE);
-			//  	return;
-			//  }
+			if (gui_top.get_defer_pin_request()) {
+				if (!( gui_top.request_server_pin() )) {
+					JOptionPane.showMessageDialog(gui_top.get_top_window(), "Canceled: Analyst options have NOT been sent to server", "Send canceled", JOptionPane.INFORMATION_MESSAGE);
+					return;
+				}
+			}
 
 			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
 			final XferAnalystImpl xfer_analyst_impl = new XferAnalystImpl();
