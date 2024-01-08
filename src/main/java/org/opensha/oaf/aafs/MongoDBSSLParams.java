@@ -42,6 +42,10 @@ import com.mongodb.MongoClientSettings;
 
 public class MongoDBSSLParams {
 
+	// True to enable tracing output, for debugging.
+
+	private static boolean f_trace = false;
+
 
 
 
@@ -460,11 +464,29 @@ public class MongoDBSSLParams {
 
 	public static String check_keystore_password (String ks_type, String ks_filename, String ks_password) {
 
+		if (f_trace) {
+			System.out.println ();
+			System.out.println ("*** Beginning check_keystore_password");
+			System.out.println ();
+			System.out.println ("ks_type = " + ks_type);
+			System.out.println ("ks_filename = " + ks_filename);
+			System.out.println ("ks_password = " + ks_password);
+		}
+
 		try {
 
 			// Convert password to character array
 
 			char[] password = ks_password.toCharArray();
+
+			if (f_trace) {
+				System.out.print ("password =");
+				for (char c : password) {
+					System.out.print (" " + Integer.toString ((int)c, 16));
+				}
+				System.out.println ();
+				System.out.println ();
+			}
 
 			// Create an implementation of the keystore type (throws KeyStoreException if no such implementation)
 
@@ -478,6 +500,13 @@ public class MongoDBSSLParams {
 
 		}
 		catch (Exception e) {
+			if (f_trace) {
+				System.out.println ();
+				System.out.println ("Exception occurred during check_keystore_password");
+				System.out.println (SimpleUtils.getStackTraceAsString (e));
+				System.out.println ();
+			}
+
 			return SimpleUtils.getStackTraceAsString (e);
 		}
 
@@ -896,6 +925,14 @@ public class MongoDBSSLParams {
 		//System.out.println ();
 		//show_all_store_props();
 
+		if (f_trace) {
+			System.out.println ();
+			System.out.println ("*** State at conclusion of do_set_props");
+			System.out.println ();
+			show_all_global_state();
+			System.out.println ();
+		}
+
 		return;
 	}
 
@@ -1068,6 +1105,12 @@ public class MongoDBSSLParams {
 
 	private static void do_clear_sys_info () {
 
+		if (f_trace) {
+			System.out.println ();
+			System.out.println ("*** Beginning do_clear_sys_info");
+			System.out.println ();
+		}
+
 		// Restore not-loaded system information values
 
 		f_loaded_sys_info = false;
@@ -1115,6 +1158,12 @@ public class MongoDBSSLParams {
 	// Note: Caller must synchronize.
 
 	private static void do_load_sys_info () {
+
+		if (f_trace) {
+			System.out.println ();
+			System.out.println ("*** Beginning do_load_sys_info");
+			System.out.println ();
+		}
 
 		// Clear any existing system information, restore properties to system default
 
@@ -1364,6 +1413,15 @@ public class MongoDBSSLParams {
 	// Note: Caller must synchronize.
 
 	private static void do_set_user_password (String user_pass) {
+
+		if (f_trace) {
+			System.out.println ();
+			System.out.println ("*** Beginning do_set_user_password");
+			System.out.println ();
+			System.out.println ("user_pass = " + ((user_pass == null) ? "<null>" : user_pass));
+			System.out.println ();
+		}
+
 		if (user_pass == null) {
 			user_key_store_pass = null;
 		}
@@ -1390,6 +1448,16 @@ public class MongoDBSSLParams {
 	// Note: Caller must synchronize.
 
 	private static String do_check_and_set_user_password (String user_pass) {
+
+		if (f_trace) {
+			System.out.println ();
+			System.out.println ("*** Beginning do_check_and_set_user_password");
+			System.out.println ();
+			System.out.println ("user_pass = " + ((user_pass == null) ? "<null>" : user_pass));
+			System.out.println ();
+			show_all_global_state();
+			System.out.println ();
+		}
 
 		// If null, just remove the user password
 
@@ -1421,6 +1489,15 @@ public class MongoDBSSLParams {
 
 				String ckpw = check_keystore_password (ks_type, ks_filename, ks_password);
 				if (ckpw != null) {
+
+					if (f_trace) {
+						System.out.println ();
+						System.out.println ("*** Error return from do_check_and_set_user_password");
+						System.out.println ();
+						//System.out.println (ckpw);
+						//System.out.println ();
+					}
+
 					return ckpw;
 				}
 			}
@@ -1560,6 +1637,16 @@ public class MongoDBSSLParams {
 		//if (!( do_needs_password() )) {
 		//	throw new MongoDBSSLParamsException ("MongoDBSSLParams: SSL key store password has not been set");
 		//}
+
+		if (f_trace) {
+			System.out.println ();
+			System.out.println ("*** Setting MongoDB SSL options");
+			System.out.println ();
+			System.out.println ("options = " + options);
+			System.out.println (ssl_options.toString());
+			System.out.println ();
+		}
+
 		return ssl_options.apply_ssl_options (builder, mongo_ssl_context);
 	}
 

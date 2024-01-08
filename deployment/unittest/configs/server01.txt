@@ -22,6 +22,7 @@ mongo_config = {
     transact_read_preference = primary
     transact_retries = 0
     commit_retries = 0
+    ssl_options = auto
     addresses[0]:
       host_name = 127.0.0.1
       host_port = 27017
@@ -69,6 +70,7 @@ mongo_config = {
     transact_read_preference = primary
     transact_retries = 0
     commit_retries = 0
+    ssl_options = auto
     addresses[0]:
       host_name = 127.0.0.1
       host_port = 27017
@@ -104,6 +106,7 @@ mongo_config = {
     transact_read_preference = primary
     transact_retries = 0
     commit_retries = 0
+    ssl_options = auto
     addresses[0]:
       host_name = 127.0.0.1
       host_port = 27017
