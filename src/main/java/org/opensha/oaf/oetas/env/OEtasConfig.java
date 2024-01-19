@@ -1,6 +1,7 @@
 package org.opensha.oaf.oetas.env;
 
 import java.util.Set;
+import java.util.List;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -10,6 +11,11 @@ import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TestArgs;
 
 import org.opensha.oaf.rj.OAFTectonicRegime;
+import org.opensha.oaf.rj.OAFRegimeParams;
+import org.opensha.oaf.rj.OAFRegion;
+import org.opensha.oaf.rj.OAFParameterSet;
+
+import org.opensha.commons.geo.Location;
 
 
 // Configuration file for operational ETAS.
@@ -51,7 +57,7 @@ public class OEtasConfig {
 
 			// Read the configuation file
 
-			wk_param_set = OEtasConfigFile.unmarshal_config ("EtasConfig.json", OEtasConfig.class);
+			wk_param_set = (new OEtasConfigFile()).unmarshal_config (OEtasConfigFile.OE_CONFIG_FILENAME, OEtasConfig.class);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -101,59 +107,34 @@ public class OEtasConfig {
 	}
 
 
+
+
 	//----- Parameter access -----
+	
 
 
-	// Get a copy of the global parameters.
 
-	public final OEtasParameters get_global_parameters () {
-		return param_set.get_global_parameters();
+	// Find the resolved parameters for the given location.
+	// The returned OAFRegimeParams is newly-allocated.
+	// It is guaranteed that the returned OAFRegimeParams contains regime and parameters,
+	// and the contained OEtasParameters are newly-allocated.
+
+	public OAFRegimeParams<OEtasParameters> get_resolved_params (Location loc, OEtasParameters analyst_params) {
+		return param_set.get_resolved_params (loc, analyst_params);
 	}
 
 
-	// Get a copy of the regional parameters for the given regime.
-	// Return null if regime is null or if there are no regional parameters for the regime.
-
-	public final OEtasParameters get_regional_parameters (OAFTectonicRegime regime) {
-		return param_set.get_regional_parameters (regime);
-	}
 
 
-	// Get a copy of the regional parameters for the given regime name.
-	// Return null if regime_name is null or if there are no regional parameters for the regime.
+	// Find the resolved parameters for the given location, and return the result as a string.
+	// This function is primarily for testing.
 
-	public final OEtasParameters get_regional_parameters (String regime_name) {
-		return param_set.get_regional_parameters (regime_name);
-	}
-
-
-	// Get resolved parameters for the given regime.
-	// Parameters:
-	//  regime = Tectonic regime, can be null to omit regional parameters.
-	//  analyst_params = Analyst-supplied parameters, can be null if none.
-	// Return a newly-allocated parameter structure.
-	// This function starts with default (typical) parameters, then merges global parameters,
-	// then merges regional parameters (if any), then merges analyst parameters (if any).
-	// Parameters present in later sets of parameters replace those in earlier sets.
-
-	public final OEtasParameters get_resolved_parameters (OAFTectonicRegime regime, OEtasParameters analyst_params) {
-		return param_set.get_resolved_parameters (regime, analyst_params);
-	}
-
-
-	// Get resolved parameters for the given regime.
-	// Parameters:
-	//  regime_name = Name of tectonic regime, can be null to omit regional parameters.
-	//  analyst_params = Analyst-supplied parameters, can be null if none.
-	// Return a newly-allocated parameter structure.
-	// This function starts with default (typical) parameters, then merges global parameters,
-	// then merges regional parameters (if any), then merges analyst parameters (if any).
-	// Parameters present in later sets of parameters replace those in earlier sets.
-
-	public final OEtasParameters get_resolved_parameters (String regime_name, OEtasParameters analyst_params) {
-		return param_set.get_resolved_parameters (regime_name, analyst_params);
+	public String get_resolved_params_as_string (Location loc, OEtasParameters analyst_params) {
+		return param_set.regime_params_to_string (get_resolved_params (loc, analyst_params));
 	}
 	
+
+
 
 	// Return a set containing the tectonic regimes.
 
@@ -166,6 +147,13 @@ public class OEtasConfig {
 
 	public Set<String> getRegimeNameSet () {
 		return param_set.getRegimeNameSet ();
+	}
+
+
+	// Return a read-only view of the list of regions in the file.
+
+	public List<OAFRegion> get_region_list () {
+		return param_set.get_region_list();
 	}
 
 
@@ -247,47 +235,20 @@ public class OEtasConfig {
 				System.out.println (name);
 			}
 
-			// Display global parameters
+			// Query by location
 
 			System.out.println ();
-			System.out.println ("********** Global parameters **********");
-			System.out.println ();
+			System.out.println ("********** Resolved Query by Location **********");
 
-			System.out.println (etas_config.get_global_parameters().toString());
+			List<Location> my_loc_list = OAFParameterSet.getTestLocations();
 
-			// Display regional parameters by regime
-
-			System.out.println ();
-			System.out.println ("********** Regional/Resolved parameters by regime **********");
-
-			for (OAFTectonicRegime regime : my_regime_set) {
+			for (Location loc : my_loc_list) {
 				System.out.println ();
-				System.out.println ();
-				System.out.println ("*** Regional, for regime: " + regime.toString());
-				System.out.println ();
-				System.out.println (etas_config.get_regional_parameters(regime).toString());
-				System.out.println ();
-				System.out.println ("*** Resolved, for regime: " + regime.toString());
-				System.out.println ();
-				System.out.println (etas_config.get_resolved_parameters(regime, null).toString());
+				System.out.println ("Query location : lat = " + loc.getLatitude() + ", lon = " + loc.getLongitude() + ", depth = " + loc.getDepth());
+				System.out.println (etas_config.get_resolved_params_as_string (loc, null));
 			}
 
-			// Display regional parameters by name
-
 			System.out.println ();
-			System.out.println ("********** Regional/Resolved parameters by name **********");
-
-			for (String name : my_regime_name_set) {
-				System.out.println ();
-				System.out.println ();
-				System.out.println ("*** Regional, for name: " + name);
-				System.out.println ();
-				System.out.println (etas_config.get_regional_parameters(name).toString());
-				System.out.println ();
-				System.out.println ("*** Resolved, for name: " + name);
-				System.out.println ();
-				System.out.println (etas_config.get_resolved_parameters(name, null).toString());
-			}
 
 			// Done
 
@@ -350,47 +311,20 @@ public class OEtasConfig {
 				System.out.println (name);
 			}
 
-			// Display global parameters
+			// Query by location
 
 			System.out.println ();
-			System.out.println ("********** Global parameters **********");
-			System.out.println ();
+			System.out.println ("********** Resolved Query by Location **********");
 
-			System.out.println (etas_config.get_global_parameters().toString());
+			List<Location> my_loc_list = OAFParameterSet.getTestLocations();
 
-			// Display regional parameters by regime
-
-			System.out.println ();
-			System.out.println ("********** Regional/Resolved parameters by regime **********");
-
-			for (OAFTectonicRegime regime : my_regime_set) {
+			for (Location loc : my_loc_list) {
 				System.out.println ();
-				System.out.println ();
-				System.out.println ("*** Regional, for regime: " + regime.toString());
-				System.out.println ();
-				System.out.println (etas_config.get_regional_parameters(regime).toString());
-				System.out.println ();
-				System.out.println ("*** Resolved, for regime: " + regime.toString());
-				System.out.println ();
-				System.out.println (etas_config.get_resolved_parameters(regime, null).toString());
+				System.out.println ("Query location : lat = " + loc.getLatitude() + ", lon = " + loc.getLongitude() + ", depth = " + loc.getDepth());
+				System.out.println (etas_config.get_resolved_params_as_string (loc, null));
 			}
 
-			// Display regional parameters by name
-
 			System.out.println ();
-			System.out.println ("********** Regional/Resolved parameters by name **********");
-
-			for (String name : my_regime_name_set) {
-				System.out.println ();
-				System.out.println ();
-				System.out.println ("*** Regional, for name: " + name);
-				System.out.println ();
-				System.out.println (etas_config.get_regional_parameters(name).toString());
-				System.out.println ();
-				System.out.println ("*** Resolved, for name: " + name);
-				System.out.println ();
-				System.out.println (etas_config.get_resolved_parameters(name, null).toString());
-			}
 
 			// Done
 

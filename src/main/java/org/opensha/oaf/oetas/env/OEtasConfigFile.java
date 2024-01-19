@@ -20,311 +20,246 @@ import org.opensha.oaf.util.InvariantViolationException;
 
 import org.opensha.oaf.rj.OAFTectonicRegime;
 import org.opensha.oaf.rj.OAFParameterSet;
+import org.opensha.oaf.rj.OAF2ParameterSet;
+import org.opensha.oaf.rj.OAFRegimeParams;
+import org.opensha.oaf.rj.OAFRegion;
 import org.opensha.oaf.rj.GenericRJ_ParametersFetch;
+
+import org.opensha.commons.geo.Location;
 
 
 // Configuration file for operational ETAS.
 // Author: Michael Barall 05/21/2022.
 //
-// All fields are public, since this is just a buffer for reading and writing files.
-//
 // JSON file format:
 //
+//	{
 //	"OEtasConfigFile" = Integer giving file version number, currently 122001.
-//  "global_params" = {
-//      elements = OEtasParameters
-//  }
-//  "regional_params" = [
-//      element = {
-//          "regimes" = [
-//              element = String giving name of tectonic regime
-//          ]
-//          "parameters" = {
-//              elements = OEtasParameters
-//          }
-//      }
-//  ]
+//  ... embedded OAF2ParameterSet
+//	}
 
-public class OEtasConfigFile implements Marshalable {
+public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implements Marshalable */ {
+
+
+	//----- Constants -----
+
+
+	// The default configuration filename.
+
+	public static final String OE_CONFIG_FILENAME = "EtasConfig.json";
 
 
 
 
-	//----- Nested class for regional parameters -----
+	//----- Overridden methods -----
 
 
 
 
-	// Class to hold parameters and a list of regimes in which they apply.
+	// Marshal parameters.
 
-	public static class RegimeParams {
-
-		// The regimes that apply to this set of parameters.
-
-		public String[] regimes;
-
-		// The parameters.
-
-		public OEtasParameters parameters;
-
-		// Set the parameters and regimes.
-
-		public final RegimeParams set (OEtasParameters parameters, String... regimes) {
-			this.parameters = parameters;
-			this.regimes = new String[regimes.length];
-			for (int j = 0; j < regimes.length; ++j) {
-				this.regimes[j] = regimes[j];
-			}
-			return this;
-		}
-
-		// Display the contents
-
-		@Override
-		public String toString() {
-			StringBuilder result = new StringBuilder();
-			result.append ("RegimeParams:" + "\n");
-
-			result.append ("regimes = [" + "\n");
-			for (int i = 0; i < regimes.length; ++i) {
-				result.append (i + ": " + regimes[i] + "\n");
-			}
-			result.append ("]" + "\n");
-
-			result.append ("parameters = {" + parameters.toString() + "}" + "\n");
-
-			return result.toString();
-		}
-
-		// Check that values are valid, throw an exception if not.
-		// If f_check_params is true, also check the invariant of the parameters (not necessary if params have just been unmarshaled).
-
-		public final void check_invariant (boolean f_check_params) {
-
-			if (!( regimes != null && regimes.length > 0 )) {
-				throw new InvariantViolationException ("OEtasConfigFile.RegimeParams: Missing regime name list");
-			}
-			for (String s : regimes) {
-				if (!( s != null && s.length() > 0 )) {
-					throw new InvariantViolationException ("OEtasConfigFile.RegimeParams: Null or empty regime name");
-				}
-			}
-
-			if (!( parameters != null )) {
-				throw new InvariantViolationException ("OEtasConfigFile.RegimeParams: Missing regional parameters");
-			}
-			if (f_check_params) {
-				String inv = parameters.check_invariant();
-				if (inv != null) {
-					throw new InvariantViolationException ("OEtasConfigFile.RegimeParams: Invalid regional parameters: " + inv);
-				}
-			}
-
-			return;
-		}
-
-		// Marshal parameters and regimes.
-
-		public void marshal (MarshalWriter writer, String name) {
-
-			// Begin the JSON object
-
-			writer.marshalMapBegin (name);
-
-			// Write the regimes
-
-			writer.marshalStringArray ("regimes", regimes);
-
-			// Write the parameters
-
-			OEtasParameters.static_marshal (writer, "parameters", parameters);
-
-			// End the JSON object
-
-			writer.marshalMapEnd ();
-			return;
-		}
-
-		// Unmarshal parameters and regimes.
-
-		public RegimeParams unmarshal (MarshalReader reader, String name) {
-
-			// Begin the JSON object
-
-			reader.unmarshalMapBegin (name);
-
-			// Get the regimes
-
-			regimes = reader.unmarshalStringArray ("regimes");
-
-			// Get the parameters
-
-			parameters = OEtasParameters.static_unmarshal (reader, "parameters");
-
-			// End the JSON object
-
-			reader.unmarshalMapEnd ();
-			return this;
-		}
-	}
-
-	// Marshal a list of regimes and parameters.
-
-	public static void marshal_regime_params_list (MarshalWriter writer, String name, List<RegimeParams> regime_params_list) {
-		int n = regime_params_list.size();
-		writer.marshalArrayBegin (name, n);
-		for (RegimeParams regime_params : regime_params_list) {
-			regime_params.marshal (writer, null);
-		}
-		writer.marshalArrayEnd ();
+	@Override
+	protected void marshal_parameters (MarshalWriter writer, String name, OEtasParameters params) {
+		OEtasParameters.static_marshal (writer, name, params);
 		return;
 	}
 
-	// Unmarshal a list of regimes and parameters.
 
-	public static ArrayList<RegimeParams> unmarshal_regime_params_list (MarshalReader reader, String name) {
-		ArrayList<RegimeParams> regime_params_list = new ArrayList<RegimeParams>();
-		int n = reader.unmarshalArrayBegin (name);
-		for (int i = 0; i < n; ++i) {
-			regime_params_list.add ((new RegimeParams()).unmarshal (reader, null));
+	// Unmarshal parameters.
+
+	@Override
+	protected OEtasParameters unmarshal_parameters (MarshalReader reader, String name) {
+		return OEtasParameters.static_unmarshal (reader, name);
+	}
+
+
+	// Convert parameters to string for display.
+	// Default is to use the toString function.
+	// Note: Must accept null parameters.
+
+	@Override
+	protected String parameters_to_string (OEtasParameters params) {
+		if (params == null) {
+			return "<null>";
 		}
-		reader.unmarshalArrayEnd ();
-		return regime_params_list;
+		return params.toString();
+	}
+
+
+	// Return true if the file must contain either a world region or all Garcia regions.
+	// Default is to return false.
+	// Note: If true, then any location query returns non-null regime.
+
+	@Override
+	protected boolean require_full_coverage () {
+		return false;
+	}
+
+
+	// Return true if all parameter objects in the file must be non-null.
+	// Default is to return false.
+	// Note: If true, then any query that returns non-null regime also returns non-null
+	// parameters; and the parameters argument to marshal_parameters ia always non-null.
+	// Note: If true, and if require_full_coverage is also true, then any location query
+	// returns non-null parameters.
+
+	@Override
+	protected boolean require_non_null_parameters () {
+		return true;
+	}
+
+
+	// Return true if all there must be a default parameter object in the file.
+	// Default is to return false.
+
+	@Override
+	protected boolean require_default_parameters () {
+		return false;
 	}
 
 
 
 
-	//----- Parameter values -----
+	//----- Marshaling -----
+
+	// Marshal version number.
+
+	private static final int MARSHAL_VER_1 = 122001;
+
+	private static final String M_VERSION_NAME = "OEtasConfigFile";
 
 
 
 
-	// Operational ETAS global parameters.
+	// Marshal object, internal.
 
-	private OEtasParameters global_params = null;
+	@Override
+	protected void do_marshal (MarshalWriter writer) {
 
-	// List of operational ETAS regional parameters.
+		// Version
 
-	private ArrayList<RegimeParams> regional_params = null;
+		int ver = MARSHAL_VER_1;
 
-	// Map of regimes to parameters.
+		writer.marshalInt (M_VERSION_NAME, ver);
 
-	private LinkedHashMap<OAFTectonicRegime, RegimeParams> regime_to_params = null;
+		// Pass thru
 
-	// The regime names as they appear in the file.
-
-	private LinkedHashSet<String> regime_names = null;
-
-
-
-
-	//----- Access -----
-
-
-
-
-	// Get a copy of the global parameters.
-
-	public final OEtasParameters get_global_parameters () {
-		OEtasParameters etas_params = (new OEtasParameters()).copy_from (global_params);
-		return etas_params;
+		super.do_marshal (writer);
+	
+		return;
 	}
 
 
 
 
-	// Get a copy of the regional parameters for the given regime.
-	// Return null if regime is null or if there are no regional parameters for the regime.
+	// Unmarshal object, internal.
 
-	public final OEtasParameters get_regional_parameters (OAFTectonicRegime regime) {
-		OEtasParameters etas_params = null;
-		if (regime != null) {
-			RegimeParams regime_params = regime_to_params.get (regime);
-			if (regime_params != null) {
-				etas_params = (new OEtasParameters()).copy_from (regime_params.parameters);
-			}
-		}
-		return etas_params;
+	@Override
+	protected void do_umarshal (MarshalReader reader) {
+	
+		// Version
+
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+
+		// Pass thru
+
+		super.do_umarshal (reader);
+
+		return;
 	}
 
 
 
 
-	// Get a copy of the regional parameters for the given regime name.
-	// Return null if regime_name is null or if there are no regional parameters for the regime.
+	// Marshal object.
 
-	public final OEtasParameters get_regional_parameters (String regime_name) {
-		OAFTectonicRegime regime = null;
-		if (regime_name != null) {
-			regime = OAFTectonicRegime.forExistingName (regime_name);	// can return null
-		}
-		return get_regional_parameters (regime);
+	@Override
+	public void marshal (MarshalWriter writer, String name) {
+		writer.marshalMapBegin (name);
+		do_marshal (writer);
+		writer.marshalMapEnd ();
+		return;
 	}
 
 
 
 
-	// Get resolved parameters for the given regime.
+	// Unmarshal object.
+
+	@Override
+	public OEtasConfigFile unmarshal (MarshalReader reader, String name) {
+		reader.unmarshalMapBegin (name);
+		do_umarshal (reader);
+		reader.unmarshalMapEnd ();
+		return this;
+	}
+
+
+
+
+	// Unmarshal object from a configuration file.
 	// Parameters:
-	//  regime = Tectonic regime, can be null to omit regional parameters.
-	//  analyst_params = Analyst-supplied parameters, can be null if none.
-	// Return a newly-allocated parameter structure.
-	// This function starts with default (typical) parameters, then merges global parameters,
-	// then merges regional parameters (if any), then merges analyst parameters (if any).
-	// Parameters present in later sets of parameters replace those in earlier sets.
+	//  filename = Name of file (not including a path).
+	//  requester = Class that is requesting the file.
 
-	public final OEtasParameters get_resolved_parameters (OAFTectonicRegime regime, OEtasParameters analyst_params) {
-		OEtasParameters etas_params = (new OEtasParameters()).set_to_typical();
-		etas_params.merge_from (global_params);
-		if (regime != null) {
-			RegimeParams regime_params = regime_to_params.get (regime);
-			if (regime_params != null) {
-				etas_params.merge_from (regime_params.parameters);
-			}
+	@Override
+	public OEtasConfigFile unmarshal_config (String filename, Class<?> requester) {
+		OAFParameterSet.unmarshal_file_as_json (this, filename, requester);
+		return this;
+	}
+
+
+
+
+	//----- Searching -----
+	
+
+
+
+	// Find the resolved parameters for the given location.
+	// The returned OAFRegimeParams is newly-allocated.
+	// It is guaranteed that the returned OAFRegimeParams contains regime and parameters,
+	// and the contained OEtasParameters are newly-allocated.
+
+	public OAFRegimeParams<OEtasParameters> get_resolved_params (Location loc, OEtasParameters analyst_params) {
+
+		// Start with the built-in defaults, using default regime
+
+		OAFRegimeParams<OEtasParameters> result = new OAFRegimeParams<OEtasParameters> (get_default_regime(), (new OEtasParameters()).set_to_typical());
+
+		// Merge in the default parameters from the file, if we have any
+
+		OAFRegimeParams<OEtasParameters> x = get_default_params ();
+		if (x.has_params()) {
+			result.params.merge_from (x.params);
+			result.regime = x.regime;
 		}
+
+		// Merge in parameters for the location, if we have any
+
+		x = get_params (loc);
+		if (x.has_params()) {
+			result.params.merge_from (x.params);
+			result.regime = x.regime;
+		}
+
+		// Merge in analyst parameters, if we have any
+
 		if (analyst_params != null) {
-			etas_params.merge_from (analyst_params);
+			result.params.merge_from (analyst_params);
 		}
-		return etas_params;
+
+		return result;
 	}
 
 
 
 
-	// Get resolved parameters for the given regime.
-	// Parameters:
-	//  regime_name = Name of tectonic regime, can be null to omit regional parameters.
-	//  analyst_params = Analyst-supplied parameters, can be null if none.
-	// Return a newly-allocated parameter structure.
-	// This function starts with default (typical) parameters, then merges global parameters,
-	// then merges regional parameters (if any), then merges analyst parameters (if any).
-	// Parameters present in later sets of parameters replace those in earlier sets.
+	// Find the resolved parameters for the given location, and return the result as a string.
+	// This function is primarily for testing.
 
-	public final OEtasParameters get_resolved_parameters (String regime_name, OEtasParameters analyst_params) {
-		OAFTectonicRegime regime = null;
-		if (regime_name != null) {
-			regime = OAFTectonicRegime.forExistingName (regime_name);	// can return null
-		}
-		return get_resolved_parameters (regime, analyst_params);
-	}
-	
-
-
-
-	// Return a set containing the tectonic regimes.
-
-	public Set<OAFTectonicRegime> getRegimeSet() {
-		return regime_to_params.keySet();
-	}
-	
-
-
-
-	// Return a set containing the names of tectonic regimes, as they appear in the file.
-
-	public Set<String> getRegimeNameSet() {
-		return regime_names;
+	public String get_resolved_params_as_string (Location loc, OEtasParameters analyst_params) {
+		return regime_params_to_string (get_resolved_params (loc, analyst_params));
 	}
 
 
@@ -335,58 +270,9 @@ public class OEtasConfigFile implements Marshalable {
 
 
 
-	// Clear contents.
-
-	public final void clear () {
-		global_params = null;
-		regional_params = null;
-		regime_to_params = null;
-		regime_names = null;
-		return;
-	}
-
-
-
-
 	// Default constructor.
 
 	public OEtasConfigFile () {
-		clear();
-	}
-
-
-
-
-	// Make the map of regimes to parameters.
-	// The global_params and regional_params must already be set up.
-
-	public final void make_regime_to_params () {
-		regime_to_params = new LinkedHashMap<OAFTectonicRegime, RegimeParams>();
-		regime_names = new LinkedHashSet<String>();
-
-		// Scan the list of regional parameters
-
-		for (RegimeParams regime_params : regional_params) {
-
-			// Scan the list of regime names
-
-			for (String regime_name : regime_params.regimes) {
-
-				// Get the regime with this name
-
-				OAFTectonicRegime regime = OAFTectonicRegime.forName (regime_name);
-
-				// Add to the mapping
-
-				if (regime_to_params.put (regime, regime_params) != null) {
-					throw new InvariantViolationException ("OEtasConfigFile.make_regime_to_params: Duplicate tectonic regime: \"" + regime_name + "\" => \"" + regime.toString() + "\"");
-				}
-
-				regime_names.add (regime_name);
-			}
-		}
-
-		return;
 	}
 
 
@@ -399,13 +285,7 @@ public class OEtasConfigFile implements Marshalable {
 		StringBuilder result = new StringBuilder();
 		result.append ("OEtasConfigFile:" + "\n");
 
-		result.append ("global_params = {" + global_params.toString() + "}" + "\n");
-
-		result.append ("regional_params = [" + "\n");
-		for (int i = 0; i < regional_params.size(); ++i) {
-			result.append (i + ": {" + regional_params.get(i).toString() + "}" + "\n");
-		}
-		result.append ("]" + "\n");
+		result.append (super.toString());
 
 		return result.toString();
 	}
@@ -413,201 +293,84 @@ public class OEtasConfigFile implements Marshalable {
 
 
 
-	// Check that values are valid, throw an exception if not.
-	// If f_check_params is true, also check the invariant of the parameters (not necessary if params have just been unmarshaled).
-
-	public void check_invariant (boolean f_check_params) {
-
-		if (!( global_params != null )) {
-			throw new InvariantViolationException ("OEtasConfigFile: Missing global parameters");
-		}
-		if (f_check_params) {
-			String inv = global_params.check_invariant();
-			if (inv != null) {
-				throw new InvariantViolationException ("OEtasConfigFile: Invalid global parameters: " + inv);
-			}
-		}
-
-		if (!( regional_params != null && regional_params.size() > 0 )) {
-			throw new InvariantViolationException ("OEtasConfigFile: Missing regional parameter list");
-		}
-		for (RegimeParams regime_params : regional_params) {
-			regime_params.check_invariant (f_check_params);
-		}
-
-		if (!( regime_to_params != null )) {
-			throw new InvariantViolationException ("OEtasConfigFile: Missing regime to parameter mapping");
-		}
-
-		if (!( regime_names != null )) {
-			throw new InvariantViolationException ("OEtasConfigFile: Missing regime name list");
-		}
-
-		return;
-	}
-
-
-
-
 	// Set to sample values.
-	// The global parameters are set to typical (default) values.
-	// The regional parameters have empty values, and there is one for each R&J regime.
+	// The default parameters are set to typical (default) values.
+	// The regional parameters have empty values, and are defined for each R&J regime.
 
 	public OEtasConfigFile set_to_sample () {
 
-		// Get the list of regime names to use
+		// Load the data
 
 		GenericRJ_ParametersFetch fetch = new GenericRJ_ParametersFetch();
-		Set<String> my_regime_names = fetch.getRegimeNameSet();
 
-		// Set global parameters to typical values
+		// Add a default selection which contains typical parameters
 
-		global_params = (new OEtasParameters()).set_to_typical();
+		add_selection ((new OEtasParameters()).set_to_typical(), OAF2ParameterSet.default_region);
 
-		// Add empty regional parameters
+		// Add a selection which contains empty parameters and applies to all regions 
+		// Note that the OEtasParameters constructor produces empty parameters
 
-		regional_params = new ArrayList<RegimeParams>();
+		Set<String> fetch_regime_names = fetch.getRegimeNameSet();
+		add_selection (new OEtasParameters(), fetch_regime_names.toArray (new String[0]));
 
-		for (String s : my_regime_names) {
-			regional_params.add ((new RegimeParams()).set (new OEtasParameters(), s));	// OEtasParameters constructor produces empty parameters
+		// Add a region for each region in the file
+
+		List<OAFRegion> fetch_region_list = fetch.get_region_list ();
+		for (OAFRegion r : fetch_region_list) {
+			add_region (r);
 		}
 
-		// Make the mapping of regimes to parameters
+		// Finish the setup
 
-		make_regime_to_params();
-
-		// Check invariant
-
-		check_invariant (true);
+		finish_setup();
 
 		return this;
-	}
-
-
-
-
-	//----- Marshaling -----
-
-
-
-
-	// Marshal version number.
-
-	private static final int MARSHAL_VER_1 = 122001;
-
-	private static final String M_VERSION_NAME = "OEtasConfigFile";
-
-	// Marshal object, internal.
-
-	private void do_marshal (MarshalWriter writer) {
-
-		// Error check
-
-		check_invariant (true);
-
-		// Version
-
-		int ver = MARSHAL_VER_1;
-
-		writer.marshalInt (M_VERSION_NAME, ver);
-
-		// Contents
-
-		switch (ver) {
-
-		case MARSHAL_VER_1: {
-
-			OEtasParameters.static_marshal (writer, "global_params", global_params);
-			marshal_regime_params_list (writer, "regional_params", regional_params);
-
-		}
-		break;
-
-		}
-
-		return;
-	}
-
-	// Unmarshal object, internal.
-
-	private void do_umarshal (MarshalReader reader) {
-	
-		// Version
-
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
-
-		// Contents
-
-		switch (ver) {
-
-		case MARSHAL_VER_1: {
-
-			clear();
-
-			global_params = OEtasParameters.static_unmarshal (reader, "global_params");
-			regional_params = unmarshal_regime_params_list (reader, "regional_params");
-
-			make_regime_to_params();	// make the mapping of regimes to parameters
-
-		}
-		break;
-
-		}
-
-		// Error check
-
-		check_invariant (false);
-
-		return;
-	}
-
-	// Marshal object.
-
-	@Override
-	public void marshal (MarshalWriter writer, String name) {
-		writer.marshalMapBegin (name);
-		do_marshal (writer);
-		writer.marshalMapEnd ();
-		return;
-	}
-
-	// Unmarshal object.
-
-	@Override
-	public OEtasConfigFile unmarshal (MarshalReader reader, String name) {
-		reader.unmarshalMapBegin (name);
-		do_umarshal (reader);
-		reader.unmarshalMapEnd ();
-		return this;
-	}
-
-	// Marshal object.
-
-	public static void static_marshal (MarshalWriter writer, String name, OEtasConfigFile etas_config) {
-		etas_config.marshal (writer, name);
-		return;
-	}
-
-	// Unmarshal object.
-
-	public static OEtasConfigFile static_unmarshal (MarshalReader reader, String name) {
-		return (new OEtasConfigFile()).unmarshal (reader, name);
-	}
-
-	// Unmarshal object from a configuration file.
-	// Parameters:
-	//  filename = Name of file (not including a path).
-	//  requester = Class that is requesting the file.
-
-	public static OEtasConfigFile unmarshal_config (String filename, Class<?> requester) {
-		MarshalReader reader = OAFParameterSet.load_file_as_json (filename, requester);
-		return (new OEtasConfigFile()).unmarshal (reader, null);
 	}
 
 
 
 
 	//----- Testing -----
+
+
+
+
+	// Run a test of resolved searching.
+	// Parameters:
+	//  pset = Parameter set.
+	//  loc_list = List of locations to query, or null to use a default list.
+	//  analyst_params = Analyst parameters to apply, or null if none.
+
+	public static void test_resolved_searching (OEtasConfigFile pset, List<Location> loc_list, OEtasParameters analyst_params) {
+
+		// Display parameter set
+
+		System.out.println ();
+		System.out.println ("********** Parameter Set **********");
+		System.out.println ();
+
+		System.out.println (pset.toString());
+
+		// Query by location
+
+		System.out.println ();
+		System.out.println ("********** Resolved Query by Location **********");
+
+		List<Location> my_loc_list = loc_list;
+		if (my_loc_list == null) {
+			my_loc_list = OAFParameterSet.getTestLocations();
+		}
+
+		for (Location loc : my_loc_list) {
+			System.out.println ();
+			System.out.println ("Query location : lat = " + loc.getLatitude() + ", lon = " + loc.getLongitude() + ", depth = " + loc.getDepth());
+			System.out.println (pset.get_resolved_params_as_string (loc, analyst_params));
+		}
+
+		System.out.println ();
+
+		return;
+	}
 
 
 
@@ -632,11 +395,20 @@ public class OEtasConfigFile implements Marshalable {
 
 			// Read the configuration file
 
-			OEtasConfigFile etas_config = unmarshal_config ("EtasConfig.json", OEtasConfig.class);
+			OEtasConfigFile etas_config = (new OEtasConfigFile()).unmarshal_config (OE_CONFIG_FILENAME, OEtasConfig.class);
 
 			// Display it
 
+			System.out.println ();
+			System.out.println ("********** Parameter Set **********");
+			System.out.println ();
+
 			System.out.println (etas_config.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
 
 			return;
 		}
@@ -659,24 +431,71 @@ public class OEtasConfigFile implements Marshalable {
 
 			// Read the configuration file
 
-			OEtasConfigFile etas_config = unmarshal_config ("EtasConfig.json", OEtasConfig.class);
+			OEtasConfigFile etas_config = (new OEtasConfigFile()).unmarshal_config (OE_CONFIG_FILENAME, OEtasConfig.class);
 
 			// Display it
+
+			System.out.println ();
+			System.out.println ("********** Parameter Set **********");
+			System.out.println ();
 
 			System.out.println (etas_config.toString());
 
 			// Marshal to JSON
 
+			System.out.println ();
+			System.out.println ("********** Marshal **********");
+			System.out.println ();
+
 			String json_string = MarshalUtils.to_json_string (etas_config);
 			System.out.println (MarshalUtils.display_json_string (json_string));
 
 			// Unmarshal from JSON
+
+			System.out.println ();
+			System.out.println ("********** Unmarshal **********");
+			System.out.println ();
 			
 			etas_config = new OEtasConfigFile();
 			MarshalUtils.from_json_string (etas_config, json_string);
 
-			System.out.println ("");
 			System.out.println (etas_config.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3
+		// Unmarshal from the configuration file, and display it.
+		// Then perform a test of superclass searching.
+
+		if (testargs.is_test ("test3")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Read the configuration file
+
+			OEtasConfigFile etas_config = (new OEtasConfigFile()).unmarshal_config (OE_CONFIG_FILENAME, OEtasConfig.class);
+
+			// Test it
+
+			OAF2ParameterSet.test_searching (etas_config, null);
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
 
 			return;
 		}
@@ -687,9 +506,40 @@ public class OEtasConfigFile implements Marshalable {
 		// Subcommand : Test #4
 		// Command format:
 		//  test4
-		// Make a sample configuration file, and display it.
+		// Unmarshal from the configuration file, and display it.
+		// Then perform a test of resolved searching.
 
 		if (testargs.is_test ("test4")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Read the configuration file
+
+			OEtasConfigFile etas_config = (new OEtasConfigFile()).unmarshal_config (OE_CONFIG_FILENAME, OEtasConfig.class);
+
+			// Test it
+
+			test_resolved_searching (etas_config, null, null);
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5
+		// Make a sample configuration file, and display it.
+
+		if (testargs.is_test ("test5")) {
 
 			// Zero additional argument
 
@@ -701,6 +551,10 @@ public class OEtasConfigFile implements Marshalable {
 
 			// Display it
 
+			System.out.println ();
+			System.out.println ("********** Sample Parameter Set **********");
+			System.out.println ();
+
 			System.out.println (etas_config.toString());
 
 			return;
@@ -709,14 +563,14 @@ public class OEtasConfigFile implements Marshalable {
 
 
 
-		// Subcommand : Test #5
+		// Subcommand : Test #6
 		// Command format:
-		//  test5  filename
+		//  test6  filename
 		// Make a sample configuration file, and write it to a file.
 		// This test writes the raw JSON.
 		// Then it reads back the file and displays it.
 
-		if (testargs.is_test ("test5")) {
+		if (testargs.is_test ("test6")) {
 
 			// Read arguments
 
@@ -738,6 +592,9 @@ public class OEtasConfigFile implements Marshalable {
 			MarshalUtils.from_json_file (etas_config2, filename);
 
 			System.out.println ();
+			System.out.println ("********** Unmarshaled Sample Parameter Set **********");
+			System.out.println ();
+
 			System.out.println (etas_config2.toString());
 
 			// Done
@@ -751,14 +608,14 @@ public class OEtasConfigFile implements Marshalable {
 
 
 
-		// Subcommand : Test #6
+		// Subcommand : Test #7
 		// Command format:
-		//  test6  filename
+		//  test7  filename
 		// Make a sample configuration file, and write it to a file.
 		// This test writes the formatted JSON.
 		// Then it reads back the file and displays it.
 
-		if (testargs.is_test ("test6")) {
+		if (testargs.is_test ("test7")) {
 
 			// Read arguments
 
@@ -778,6 +635,10 @@ public class OEtasConfigFile implements Marshalable {
 
 			OEtasConfigFile etas_config2 = new OEtasConfigFile();
 			MarshalUtils.from_json_file (etas_config2, filename);
+
+			System.out.println ();
+			System.out.println ("********** Unmarshaled Sample Parameter Set **********");
+			System.out.println ();
 
 			System.out.println ();
 			System.out.println (etas_config2.toString());

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Collections;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -33,6 +34,7 @@ import org.opensha.oaf.rj.OAFRegion;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalImpJsonReader;
+import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SphRegionMercPolygon;
@@ -118,15 +120,15 @@ public abstract class OAFParameterSet<T> {
 		try {
 			value = sc.nextInt();
 		} catch (InputMismatchException e) {
-			throw new RuntimeException("OAFParameterSet: Badly formatted integer value", e);
+			throw new OAFParameterException("OAFParameterSet: Badly formatted integer value", e);
 		} catch (NoSuchElementException e) {
-			throw new RuntimeException("OAFParameterSet: Unexpected end-of-file", e);
+			throw new OAFParameterException("OAFParameterSet: Unexpected end-of-file", e);
 		}
 
 		// Range checking
 
 		if (value < minval || value > maxval) {
-			throw new RuntimeException("OAFParameterSet: Integer value out-of-range");
+			throw new OAFParameterException("OAFParameterSet: Integer value out-of-range");
 		}
 
 		return value;
@@ -153,15 +155,15 @@ public abstract class OAFParameterSet<T> {
 		try {
 			value = sc.nextLong();
 		} catch (InputMismatchException e) {
-			throw new RuntimeException("OAFParameterSet: Badly formatted long integer value", e);
+			throw new OAFParameterException("OAFParameterSet: Badly formatted long integer value", e);
 		} catch (NoSuchElementException e) {
-			throw new RuntimeException("OAFParameterSet: Unexpected end-of-file", e);
+			throw new OAFParameterException("OAFParameterSet: Unexpected end-of-file", e);
 		}
 
 		// Range checking
 
 		if (value < minval || value > maxval) {
-			throw new RuntimeException("OAFParameterSet: Long integer value out-of-range");
+			throw new OAFParameterException("OAFParameterSet: Long integer value out-of-range");
 		}
 
 		return value;
@@ -188,15 +190,15 @@ public abstract class OAFParameterSet<T> {
 		try {
 			value = sc.nextDouble();
 		} catch (InputMismatchException e) {
-			throw new RuntimeException("OAFParameterSet: Badly formatted double value", e);
+			throw new OAFParameterException("OAFParameterSet: Badly formatted double value", e);
 		} catch (NoSuchElementException e) {
-			throw new RuntimeException("OAFParameterSet: Unexpected end-of-file", e);
+			throw new OAFParameterException("OAFParameterSet: Unexpected end-of-file", e);
 		}
 
 		// Range checking
 
 		if (value < minval || value > maxval) {
-			throw new RuntimeException("OAFParameterSet: Double value out-of-range");
+			throw new OAFParameterException("OAFParameterSet: Double value out-of-range");
 		}
 
 		return value;
@@ -222,9 +224,9 @@ public abstract class OAFParameterSet<T> {
 		try {
 			value = sc.nextBoolean();
 		} catch (InputMismatchException e) {
-			throw new RuntimeException("OAFParameterSet: Badly formatted boolean value", e);
+			throw new OAFParameterException("OAFParameterSet: Badly formatted boolean value", e);
 		} catch (NoSuchElementException e) {
-			throw new RuntimeException("OAFParameterSet: Unexpected end-of-file", e);
+			throw new OAFParameterException("OAFParameterSet: Unexpected end-of-file", e);
 		}
 
 		return value;
@@ -241,7 +243,7 @@ public abstract class OAFParameterSet<T> {
 		try {
 			regime_name = sc.next();
 		} catch (NoSuchElementException e) {
-			throw new RuntimeException("OAFParameterSet: Unexpected end-of-file", e);
+			throw new OAFParameterException("OAFParameterSet: Unexpected end-of-file", e);
 		}
 
 		return OAFTectonicRegime.forName (regime_name);
@@ -258,7 +260,7 @@ public abstract class OAFParameterSet<T> {
 		try {
 			regime_name = sc.next();
 		} catch (NoSuchElementException e) {
-			throw new RuntimeException("OAFParameterSet: Unexpected end-of-file", e);
+			throw new OAFParameterException("OAFParameterSet: Unexpected end-of-file", e);
 		}
 
 		return regime_name;
@@ -311,7 +313,7 @@ public abstract class OAFParameterSet<T> {
 	// If special regions overlap, the region listed first "wins".
 	//
 	// The caller must supply the Scanner from which parameters can be read.
-	// In case of error, this function throws RuntimeException (or another unchecked exception).
+	// In case of error, this function throws OAFParameterException (or another unchecked exception).
 
 	public void load_data (Scanner sc) {
 
@@ -360,7 +362,7 @@ public abstract class OAFParameterSet<T> {
 			for (String garcia_region : garcia_regions) {
 				if ( wk_dataMap.containsKey (OAFTectonicRegime.forName (garcia_region)) )
 				{
-					throw new RuntimeException("OAFParameterSet: Parameters defined for both World and Garcia region : " + garcia_region);
+					throw new OAFParameterException("OAFParameterSet: Parameters defined for both World and Garcia region : " + garcia_region);
 				}
 			}
 
@@ -371,7 +373,7 @@ public abstract class OAFParameterSet<T> {
 			for (String garcia_region : garcia_regions) {
 				if (!( wk_dataMap.containsKey (OAFTectonicRegime.forName (garcia_region)) ))
 				{
-					throw new RuntimeException("OAFParameterSet: No parameters defined for Garcia region : " + garcia_region);
+					throw new OAFParameterException("OAFParameterSet: No parameters defined for Garcia region : " + garcia_region);
 				}
 			}
 		}
@@ -390,7 +392,7 @@ public abstract class OAFParameterSet<T> {
 
 			if (!( wk_dataMap.containsKey (regime) ))
 			{
-				throw new RuntimeException("OAFParameterSet: No parameters defined for special region : " + regime);
+				throw new OAFParameterException("OAFParameterSet: No parameters defined for special region : " + regime);
 			}
 
 			// Get the depth range
@@ -399,7 +401,7 @@ public abstract class OAFParameterSet<T> {
 			double max_depth = load_table_double (sc);
 
 			if (min_depth >= max_depth) {
-				throw new RuntimeException("OAFParameterSet: Minimum and maximum depths are reversed");
+				throw new OAFParameterException("OAFParameterSet: Minimum and maximum depths are reversed");
 			}
 
 			// Get the polygon border type
@@ -469,7 +471,7 @@ public abstract class OAFParameterSet<T> {
 	// If special regions overlap, the region listed first "wins".
 	//
 	// The caller must supply the MarshalReader from which parameters can be read.
-	// In case of error, this function throws RuntimeException (or another unchecked exception).
+	// In case of error, this function throws OAFParameterException (or another unchecked exception).
 
 	public void load_data (MarshalReader reader) {
 
@@ -498,7 +500,7 @@ public abstract class OAFParameterSet<T> {
 		int regime_count = reader.unmarshalArrayBegin ("regimes");
 
 		if (regime_count < 1) {
-			throw new RuntimeException("OAFParameterSet: No parameter sets found in file");
+			throw new OAFParameterException("OAFParameterSet: No parameter sets found in file");
 		}
 
 		// For each tectonic regime ...
@@ -542,7 +544,7 @@ public abstract class OAFParameterSet<T> {
 			for (String garcia_region : garcia_regions) {
 				if ( wk_dataMap.containsKey (OAFTectonicRegime.forName (garcia_region)) )
 				{
-					throw new RuntimeException("OAFParameterSet: Parameters defined for both World and Garcia region : " + garcia_region);
+					throw new OAFParameterException("OAFParameterSet: Parameters defined for both World and Garcia region : " + garcia_region);
 				}
 			}
 
@@ -553,7 +555,7 @@ public abstract class OAFParameterSet<T> {
 			for (String garcia_region : garcia_regions) {
 				if (!( wk_dataMap.containsKey (OAFTectonicRegime.forName (garcia_region)) ))
 				{
-					throw new RuntimeException("OAFParameterSet: No parameters defined for Garcia region : " + garcia_region);
+					throw new OAFParameterException("OAFParameterSet: No parameters defined for Garcia region : " + garcia_region);
 				}
 			}
 		}
@@ -577,7 +579,7 @@ public abstract class OAFParameterSet<T> {
 
 			if (!( wk_dataMap.containsKey (regime) ))
 			{
-				throw new RuntimeException("OAFParameterSet: No parameters defined for special region : " + regime);
+				throw new OAFParameterException("OAFParameterSet: No parameters defined for special region : " + regime);
 			}
 
 			// Get the depth range
@@ -586,7 +588,7 @@ public abstract class OAFParameterSet<T> {
 			double max_depth = reader.unmarshalDouble ("max_depth");
 
 			if (min_depth >= max_depth) {
-				throw new RuntimeException("OAFParameterSet: Minimum and maximum depths are reversed");
+				throw new OAFParameterException("OAFParameterSet: Minimum and maximum depths are reversed");
 			}
 
 			// Get the spherical region
@@ -594,7 +596,7 @@ public abstract class OAFParameterSet<T> {
 			SphRegion sph_region = SphRegion.unmarshal_poly (reader, "region") ;
 
 			if (sph_region == null) {
-				throw new RuntimeException("OAFParameterSet: No spherical region specified");
+				throw new OAFParameterException("OAFParameterSet: No spherical region specified");
 			}
 
 			// Form the region
@@ -630,14 +632,14 @@ public abstract class OAFParameterSet<T> {
 	// load_parameter_values - Load parameter values for the tables.
 	// This function should create a new object of type T, read the
 	// parameter values from the Scanner, and return the object.
-	// In case of error, this function should throw RuntimeException.
+	// In case of error, this function should throw OAFParameterException (or another unchecked exception).
 
 	protected abstract T load_parameter_values (Scanner sc);
 
 	// load_parameter_values - Load parameter values for the tables.
 	// This function should create a new object of type T, read the
 	// parameter values from the MarshalReader, and return the object.
-	// In case of error, this function should throw RuntimeException (or a subclass).
+	// In case of error, this function should throw OAFParameterException (or another unchecked exception).
 
 	protected abstract T load_parameter_values (MarshalReader reader, String name);
 
@@ -655,7 +657,7 @@ public abstract class OAFParameterSet<T> {
 	//  does NOT then fall back to reading from the directory of the class file.
 	//  This is to avoid inadvertently using compiled-in parameters when a
 	//  parameter file is missing.
-	// If the file cannot be opened, then RuntimeException is thrown.
+	// If the file cannot be opened, then OAFParameterException is thrown.
 
 	public static InputStream open_param_file (String filename, Class<?> requester) {
 
@@ -671,7 +673,7 @@ public abstract class OAFParameterSet<T> {
 
 			stream = requester.getResourceAsStream(filename);
 			if (stream == null) {
-				throw new RuntimeException("OAFParameterSet: Cannot find data file: " + filename);
+				throw new OAFParameterException("OAFParameterSet: Cannot find data file: " + filename);
 			}
 
 		} else {
@@ -683,9 +685,9 @@ public abstract class OAFParameterSet<T> {
 			try {
 				stream = new FileInputStream(pathname);
 			} catch (FileNotFoundException e) {
-				throw new RuntimeException("OAFParameterSet: File not found: " + pathname.toString(), e);
+				throw new OAFParameterException("OAFParameterSet: File not found: " + pathname.toString(), e);
 			} catch (Exception e) {
-				throw new RuntimeException("OAFParameterSet: Failed to open file: " + pathname.toString(), e);
+				throw new OAFParameterException("OAFParameterSet: Failed to open file: " + pathname.toString(), e);
 			}
 
 		}
@@ -699,7 +701,7 @@ public abstract class OAFParameterSet<T> {
 	//  requester = Class that is requesting the file.
 	// This function first calls open_param_file to open the file,
 	// then calls load_data above to read the data.
-	// In case of error, this function throws RuntimeException (or another unchecked exception).
+	// In case of error, this function throws OAFParameterException (or another unchecked exception).
 
 	public void load_data (String filename, Class<?> requester) {
 
@@ -717,7 +719,7 @@ public abstract class OAFParameterSet<T> {
 			load_data (sc);
 
 		} catch (Exception e) {
-			throw new RuntimeException("OAFParameterSet: Unable to load data file: " + filename, e);
+			throw new OAFParameterException("OAFParameterSet: Unable to load data file: " + filename, e);
 		}
 
 		return;
@@ -735,7 +737,7 @@ public abstract class OAFParameterSet<T> {
 	// This function first calls open_param_file to open the file,
 	// then uses java.util.Properties to parse the file.
 	// The file format is as described in the documentation for java.util.Properties.
-	// In case of error, this function throws RuntimeException (or another unchecked exception).
+	// In case of error, this function throws OAFParameterException (or another unchecked exception).
 
 	public static Properties load_properties (String filename, Class<?> requester, Properties defaults, String[] required) {
 
@@ -763,11 +765,11 @@ public abstract class OAFParameterSet<T> {
 			prop.load(stream);
 
 		} catch (IOException e) {
-			throw new RuntimeException("OAFParameterSet: Error reading from data file: " + filename, e);
+			throw new OAFParameterException("OAFParameterSet: Error reading from data file: " + filename, e);
 		} catch (IllegalArgumentException e) {
-			throw new RuntimeException("OAFParameterSet: Malformed text in data file: " + filename, e);
+			throw new OAFParameterException("OAFParameterSet: Malformed text in data file: " + filename, e);
 		} catch (Exception e) {
-			throw new RuntimeException("OAFParameterSet: Unable to load data file: " + filename, e);
+			throw new OAFParameterException("OAFParameterSet: Unable to load data file: " + filename, e);
 		}
 
 		// Check that required properties are supplied
@@ -775,7 +777,7 @@ public abstract class OAFParameterSet<T> {
 		if (required != null) {
 			for (String key : required) {
 				if (prop.getProperty(key) == null) {
-					throw new RuntimeException("OAFParameterSet: Missing property '" + key + "' in data file: " + filename);
+					throw new OAFParameterException("OAFParameterSet: Missing property '" + key + "' in data file: " + filename);
 				}
 			}
 		}
@@ -789,7 +791,7 @@ public abstract class OAFParameterSet<T> {
 	//  requester = Class that is requesting the file.
 	// This function first calls open_param_file to open the file,
 	// then reads the entire contents of the file into a string.
-	// In case of error, this function throws RuntimeException (or another unchecked exception).
+	// In case of error, this function throws OAFParameterException (or another unchecked exception).
 
 	public static String load_file_as_string (String filename, Class<?> requester) {
 
@@ -800,15 +802,11 @@ public abstract class OAFParameterSet<T> {
 		try (
 
 			// Open the data file, it will be auto-closed on exit from the try block
-
-			InputStream stream = open_param_file (filename, requester);
-		){
-
 			// Convert the InputStream to a Reader
 			// (Could specify a charset in the InputStreamReader constructor)
-			// (Don't need to close these because they are just wrappers around the InputStream)
 
-			Reader reader = new BufferedReader (new InputStreamReader (stream));
+			Reader reader = new BufferedReader (new InputStreamReader (open_param_file (filename, requester)));
+		){
 
 			// Buffer to build string
 
@@ -833,9 +831,9 @@ public abstract class OAFParameterSet<T> {
 			result = builder.toString();
 
 		} catch (IOException e) {
-			throw new RuntimeException("OAFParameterSet: Error reading from data file: " + filename, e);
+			throw new OAFParameterException("OAFParameterSet: Error reading from data file: " + filename, e);
 		} catch (Exception e) {
-			throw new RuntimeException("OAFParameterSet: Unable to load data file: " + filename, e);
+			throw new OAFParameterException("OAFParameterSet: Unable to load data file: " + filename, e);
 		}
 
 		// Done
@@ -849,9 +847,9 @@ public abstract class OAFParameterSet<T> {
 	//  requester = Class that is requesting the file.
 	// This function first calls open_param_file to open the file,
 	// then reads the entire contents of the file into a MarshalReader.
-	// In case of error, this function throws RuntimeException (or another unchecked exception).
+	// In case of error, this function throws OAFParameterException (or another unchecked exception).
 
-	public static MarshalReader load_file_as_json (String filename, Class<?> requester) {
+	public static MarshalImpJsonReader load_file_as_json (String filename, Class<?> requester) {
 
 		MarshalImpJsonReader result;
 
@@ -860,29 +858,48 @@ public abstract class OAFParameterSet<T> {
 		try (
 
 			// Open the data file, it will be auto-closed on exit from the try block
-
-			InputStream stream = open_param_file (filename, requester);
-		){
-
 			// Convert the InputStream to a Reader
 			// (Could specify a charset in the InputStreamReader constructor)
-			// (Don't need to close these because they are just wrappers around the InputStream)
 
-			Reader reader = new BufferedReader (new InputStreamReader (stream));
+			Reader reader = new BufferedReader (new InputStreamReader (open_param_file (filename, requester)));
+		){
 
 			// Read the file as JSON
 
 			result = new MarshalImpJsonReader (reader);
 
 		} catch (IOException e) {
-			throw new RuntimeException("OAFParameterSet: Error reading from data file: " + filename, e);
+			throw new OAFParameterException("OAFParameterSet: Error reading from data file: " + filename, e);
 		} catch (Exception e) {
-			throw new RuntimeException("OAFParameterSet: Unable to load data file: " + filename, e);
+			throw new OAFParameterException("OAFParameterSet: Unable to load data file: " + filename, e);
 		}
 
 		// Done
 
 		return result;
+	}
+
+	// unmarshal_file_as_json - Unmarshal a data file as JSON.
+	// Parameters:
+	//  x = Object into which the file is unmarshaled
+	//  filename = Name of file (not including a path).
+	//  requester = Class that is requesting the file.
+	// This function first calls load_file_as_json to read the file,
+	// then unmarshals into the provided object.
+	// In case of error, this function throws MarshalException, OAFParameterException, or another unchecked exception.
+
+	public static void unmarshal_file_as_json (Marshalable x, String filename, Class<?> requester) {
+
+		// Open the reader
+
+		MarshalImpJsonReader reader = load_file_as_json (filename, requester);
+
+		// Unmarshal
+
+		x.unmarshal (reader, null);
+		reader.check_read_complete ();
+
+		return;
 	}
 
 	// load_json_data - Load parameters from the JSON file.
@@ -891,13 +908,13 @@ public abstract class OAFParameterSet<T> {
 	//  requester = Class that is requesting the file.
 	// This function first calls load_file_as_json to read the file,
 	// then calls load_data above to read the data.
-	// In case of error, this function throws RuntimeException (or another unchecked exception).
+	// In case of error, this function throws OAFParameterException (or another unchecked exception).
 
 	public void load_json_data (String filename, Class<?> requester) {
 
 		// Open the reader
 
-		MarshalReader reader = load_file_as_json (filename, requester);
+		MarshalImpJsonReader reader = load_file_as_json (filename, requester);
 
 		// Any exception means load has failed
 
@@ -906,9 +923,10 @@ public abstract class OAFParameterSet<T> {
 			// Load the data
 
 			load_data (reader);
+			reader.check_read_complete ();
 
 		} catch (Exception e) {
-			throw new RuntimeException("OAFParameterSet: Unable to load data file: " + filename, e);
+			throw new OAFParameterException("OAFParameterSet: Unable to load data file: " + filename, e);
 		}
 
 		return;
@@ -960,7 +978,7 @@ public abstract class OAFParameterSet<T> {
 	public T get(OAFTectonicRegime region) {
 		T params = dataMap.get(region);
 		if (params == null) {
-			throw new RuntimeException("OAFParameterSet: Unknown tectonic regime : " + region);
+			throw new OAFParameterException("OAFParameterSet: Unknown tectonic regime : " + region);
 		}
 		return params;
 	}
@@ -1059,6 +1077,13 @@ public abstract class OAFParameterSet<T> {
 	 */
 	public Set<String> getRegimeNameSet() {
 		return regime_names;
+	}
+
+
+	// Return a read-only view of the list of regions in the file.
+
+	public List<OAFRegion> get_region_list () {
+		return Collections.unmodifiableList (region_list);
 	}
 
 

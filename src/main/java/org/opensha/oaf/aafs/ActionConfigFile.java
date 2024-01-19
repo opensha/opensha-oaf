@@ -13,6 +13,7 @@ import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
+import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SimpleUtils;
@@ -104,7 +105,7 @@ import org.opensha.oaf.rj.OAFParameterSet;
  *		element = IntakeSphRegion JSON representation, giving region and magnitude thresholds.
  *	]
  */
-public class ActionConfigFile {
+public class ActionConfigFile implements Marshalable {
 
 	//----- Parameter values -----
 
@@ -1844,6 +1845,7 @@ public class ActionConfigFile {
 
 	// Marshal object.
 
+	@Override
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
 		do_marshal (writer);
@@ -1853,6 +1855,7 @@ public class ActionConfigFile {
 
 	// Unmarshal object.
 
+	@Override
 	public ActionConfigFile unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
@@ -1915,9 +1918,15 @@ public class ActionConfigFile {
 	//  requester = Class that is requesting the file.
 
 	public static ActionConfigFile unmarshal_config (String filename, Class<?> requester) {
-		MarshalReader reader = OAFParameterSet.load_file_as_json (filename,requester);
-		return (new ActionConfigFile()).unmarshal (reader, null);
+		ActionConfigFile x = new ActionConfigFile();
+		OAFParameterSet.unmarshal_file_as_json (x, filename, requester);
+		return x;
 	}
+
+	//public static ActionConfigFile unmarshal_config (String filename, Class<?> requester) {
+	//	MarshalReader reader = OAFParameterSet.load_file_as_json (filename,requester);
+	//	return (new ActionConfigFile()).unmarshal (reader, null);
+	//}
 
 
 

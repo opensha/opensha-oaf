@@ -348,9 +348,70 @@
 #            "PRIST_INITIALIZING" - The server is currently initializing and has not
 #                                   yet selected if it is primary or secondary.
 #            "PRIST_SHUTDOWN" - The server is currently shut down.
+#          * The inferred status of the other (remote) server, which can be:
+#            "ISR_NONE" - No information is available about the other server, because
+#                         this server is shut down or running in solo mode.
+#            "ISR_OK" - The other server appears to have a normal connection with this
+#                       server. This is the usual inferred status in a dual-server configuration.
+#            "ISR_NOT_SUPPLIED" - Inferred status is not available in the database (this
+#                                 should not occur if running up-to-date AAFS software).
+#            "ISR_LISTENING" - The other server is presumed to be listening for a call
+#                              from this server. This is the inferred status during the first
+#                              few attempts to establish or re-establish a connection to the
+#                              other server.
+#            "ISR_DEAD_UNREACHABLE" - The other server is inferred to be dead, because it
+#                                     is unable to accept a connection.  This may indicate
+#                                     that there is a network problem; or that the other
+#                                     server is down; or that MongoDB on the other server
+#                                     is not running or in a bad state; or that the other
+#                                     server's database is uninitialized or corrupted; or
+#                                     that the MongoDB username and password are incorrect.
+#            "ISR_DEAD_BAD_STATE" - The other server is inferred to be dead, because it
+#                                   is in a state that disallows incoming connections.
+#                                   For example, this may indicate that AAFS on the other
+#                                   server is shut down or running in solo mode.
+#            "ISR_DEAD_BAD_SYNC_DATA" - The other server is inferred to be dead, because
+#                                       it cannot supply the data needed for this server
+#                                       to synchronize with it.
+#            "ISR_DEAD_NOT_CALLABLE" - The other server is inferred to be dead, because
+#                                      attempts to establish a connection with it have
+#                                      failed for an unspecified reason (this should not occur).
+#            "ISR_DEAD_STALE_HEARTBEAT" - The other server is inferred to be dead, because
+#                                         its heartbeat is stale (more than 30 minutes old).
+#            "ISR_DEAD_BAD_HEALTH" - The other server is inferred to be dead, because it is
+#                                    reporting a problem with its internal subsystems.
+#            "ISR_UNSYNCED_MODE" - The other server is inferred to not be synchronized
+#                                  with this server, because it is running in a different
+#                                  mode than this server.  It is normal for this to appear 
+#                                  briefly when servers are commanded to change mode, but it
+#                                  should quickly return to ISR_OK as the servers re-synchronize.
+#            "ISR_NOT_CONNECTED" - The other server is inferred to not be connected and
+#                                  synchronized with this server, because its link status
+#                                  is disconnected, calling, or initial sync.
+#            "ISR_UNAVAILABLE" - Information about the other server is unexpectedly not
+#                                available (this should not occur).
+#          * The status of the server's internal subsystems, which can be:
+#            "HS_NONE" - No information is available about the internal subsystems.
+#            "HS_OK" - The internal subsystems appear to be healthy.  This is the usual
+#                      status in a running system.
+#            "HS_ALERT" - There is a problem with one or more internal subsystems that
+#                         is preventing the server from producing forecasts.  In this case,
+#                         the command displays a status code number and an extra line 
+#                         identifying the problem subsystem(s).
+#            "HS_WARNING" - There is a problem with one or more internal subsystems that
+#                           requires attention from the operator, because it might be
+#                           affecting the server's ability to produce forecasts.  In this
+#                           case, the command displays a status code number and an extra
+#                           line identifying the problem subsystem(s).
+#            "HS_INFO" - There is an issue with one or more internal subsystems that the
+#                        operator should be aware of, but does not affect the server's
+#                        ability to produce forecasts.  In this case, the command displays
+#                        a status code number and an extra line identifying the problem
+#                        subsystem(s).
 #          * The time of the last server heartbeat.  Heartbeats normally occur every
 #            five minutes, but can be longer if the server is busy.  The heartbeat
-#            is considered stale if it is 45 minutes old.
+#            is considered stale if it is 30 minutes old.  If the heartbeat is stale,
+#            then the command displays a warning message.
 #
 #     You must start MongoDB before running this command.
 #     In a single-server configuration, the server is considered to be server #1.
@@ -436,6 +497,19 @@
 #     You must start AAFS before running this command.
 #     In a single-server configuration, the server is considered to be server #1.
 
+# COMMANDS TO ADJUST SERVER STATUS
+#
+# reset_health_monitor
+#
+#     Reset the server's internal health monitor.  This clears any health
+#     monitoring condition, returning the status to HS_OK.  Although some health
+#     conditions clear themselves automatically when the cause abates, in some
+#     cases the condition must be cleared manually with this command.  The health
+#     condition will reappear if the cause returns or persists.
+#
+#     You must start AAFS before running this command.
+
+
 
 
 # Read the launch options file, if it exists, and set our options.
@@ -500,7 +574,7 @@ do_stop_mongo () {
 
 
 
-# Function to show AAFS software version number
+# Function to show AAFS software version number.
 # There are no arguments.
 
 do_show_version () {
@@ -1013,6 +1087,17 @@ case "$1" in
         fi
         ;;
 
+    # Commands to adjust server status
+
+    reset_health_monitor)
+        if is_aafs_running ; then
+            echo "Resetting health monitor ..."
+            /usr/local/java/bin/java -Doafcfg=/opt/aafs/oafcfg -cp /opt/aafs/oefjava/oefjava.jar:/opt/aafs/oefjava/ProductClient.jar org.opensha.oaf.aafs.ServerCmd reset_health_monitor 2>&1
+        else
+            echo "You need to start AAFS before running this command"
+        fi
+        ;;
+
     # Help commands
 
     help)
@@ -1064,8 +1149,10 @@ case "$1" in
         echo "  moaf.sh stop_secondary_aafs"
         echo "Initialize analyst parameters, using the analyst CLI:"
         echo "  moaf.sh init_analyst_cli"
-        echo "Change analyst parameters in a running system, using the analyst CLI::"
+        echo "Change analyst parameters in a running system, using the analyst CLI:"
         echo "  moaf.sh analyst_cli <srvnum>"
+        echo "Reset the health monitor status:"
+        echo "  moaf.sh reset_health_monitor"
         ;;
 
     *)

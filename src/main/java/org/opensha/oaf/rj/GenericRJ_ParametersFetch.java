@@ -4,6 +4,7 @@ import java.util.InputMismatchException;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.List;
 
 import org.opensha.commons.geo.BorderType;
 import org.opensha.commons.geo.Location;
@@ -237,6 +238,13 @@ public class GenericRJ_ParametersFetch {
 	 */
 	public Set<String> getRegimeNameSet() {
 		return parameter_set.getRegimeNameSet();
+	}
+
+
+	// Return a read-only view of the list of regions in the file.
+
+	public List<OAFRegion> get_region_list () {
+		return parameter_set.get_region_list();
 	}
 	
 

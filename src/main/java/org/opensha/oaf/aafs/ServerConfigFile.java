@@ -13,6 +13,7 @@ import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
+import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.TimeSplitOutputStream;
@@ -72,7 +73,7 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  *		}
  *	]
  */
-public class ServerConfigFile {
+public class ServerConfigFile implements Marshalable {
 
 	//----- Parameter values -----
 
@@ -822,6 +823,7 @@ public class ServerConfigFile {
 
 	// Marshal object.
 
+	@Override
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
 		do_marshal (writer);
@@ -831,6 +833,7 @@ public class ServerConfigFile {
 
 	// Unmarshal object.
 
+	@Override
 	public ServerConfigFile unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
@@ -893,9 +896,15 @@ public class ServerConfigFile {
 	//  requester = Class that is requesting the file.
 
 	public static ServerConfigFile unmarshal_config (String filename, Class<?> requester) {
-		MarshalReader reader = OAFParameterSet.load_file_as_json (filename,requester);
-		return (new ServerConfigFile()).unmarshal (reader, null);
+		ServerConfigFile x = new ServerConfigFile();
+		OAFParameterSet.unmarshal_file_as_json (x, filename, requester);
+		return x;
 	}
+
+	//public static ServerConfigFile unmarshal_config (String filename, Class<?> requester) {
+	//	MarshalReader reader = OAFParameterSet.load_file_as_json (filename,requester);
+	//	return (new ServerConfigFile()).unmarshal (reader, null);
+	//}
 
 
 
