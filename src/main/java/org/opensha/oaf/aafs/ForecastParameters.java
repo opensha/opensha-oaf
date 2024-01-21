@@ -8,6 +8,7 @@ import org.opensha.oaf.util.EventNotFoundException;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
@@ -24,6 +25,9 @@ import org.opensha.oaf.rj.MagCompPage_ParametersFetch;
 import org.opensha.oaf.rj.OAFTectonicRegime;
 import org.opensha.oaf.rj.SearchMagFn;
 import org.opensha.oaf.rj.SeqSpecRJ_Parameters;
+import org.opensha.oaf.rj.OAFRegimeParams;
+import org.opensha.oaf.oetas.env.OEtasConfig;
+import org.opensha.oaf.oetas.env.OEtasParameters;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
@@ -35,7 +39,7 @@ import org.opensha.commons.geo.Location;
  *
  * All fields are public, since there is little benefit to having lots of getters and setters.
  */
-public class ForecastParameters {
+public class ForecastParameters implements Marshalable {
 
 	//----- Constants -----
 
@@ -918,6 +922,147 @@ public class ForecastParameters {
 	}
 
 
+	//----- ETAS parameters -----
+
+	// ETAS parameter fetch method.
+
+	public int etas_fetch_meth = FETCH_METH_AUTO;
+
+	// ETAS parameter available flag.
+
+	public boolean etas_avail = false;
+
+	// Tectonic regime (null iff omitted).
+	// (For analyst-supplied values, cannot be null, but can be an empty string,
+	// and need not be the name of a known tectonic regime.)
+
+	public String etas_regime = null;
+
+	// ETAS parameters (null iff omitted).
+
+	public OEtasParameters etas_params = null;
+
+	// Set ETAS parameters to default.
+
+	public void set_default_etas_params () {
+		etas_regime = null;
+		etas_params = null;
+		return;
+	}
+
+	// Copy etas parameters from the other object.
+	// Note: OEtasParameters is not immutable, but if it is within ForecastParameters it must not be modified.
+
+	public void copy_etas_params_from (ForecastParameters other) {
+		etas_regime = other.etas_regime;
+		if (other.etas_params == null) {
+			etas_params = null;
+		} else {
+			etas_params = (new OEtasParameters()).copy_from (other.etas_params);
+		}
+		return;
+	}
+
+	// Set ETAS parameters to analyst values.
+
+	public void set_analyst_etas_params (
+			boolean the_etas_avail,
+			String the_etas_regime,
+			OEtasParameters the_etas_params
+	) {
+		etas_fetch_meth = FETCH_METH_ANALYST;
+		etas_avail = the_etas_avail;
+		etas_regime = the_etas_regime;
+		if (the_etas_params == null) {
+			etas_params = null;
+		} else {
+			etas_params = (new OEtasParameters()).copy_from (the_etas_params);
+		}
+		return;
+	}
+
+	// Fetch ETAS parameters.
+	// Note: Mainshock parameters must be fetched first.
+
+	public void fetch_etas_params (ForecastMainshock fcmain, ForecastParameters prior_params) {
+
+		// Inherit fetch method from prior parameters, or use default
+
+		if (prior_params != null) {
+			etas_fetch_meth = prior_params.etas_fetch_meth;
+		} else {
+			etas_fetch_meth = FETCH_METH_AUTO;
+		}
+
+		// Assume no analyst parameters or regime
+
+		OEtasParameters analyst_params = null;;
+		String analyst_regime = null;
+
+		// Handle non-auto fetch methods
+
+		switch (etas_fetch_meth) {
+
+		// Analyst, copy from prior parameters
+
+		case FETCH_METH_ANALYST:
+			etas_avail = prior_params.etas_avail;
+			if (!( etas_avail )) {
+				set_default_etas_params();
+				return;
+			}
+			analyst_regime = prior_params.etas_regime;
+			analyst_params = prior_params.etas_params;
+
+			if (analyst_regime != null) {
+				if (analyst_params == null || analyst_regime.trim().isEmpty()) {
+					analyst_regime = null;
+				}
+			}
+			break;
+
+		// Suppress, make not available
+
+		case FETCH_METH_SUPPRESS:
+			etas_avail = false;
+			set_default_etas_params();
+			return;
+		}
+
+		// If ETAS is disabled, then we can't fetch ETAS parameters
+
+		if (!( (new ActionConfig()).get_is_etas_enabled() )) {
+			etas_avail = false;
+			set_default_etas_params();
+			return;
+		}
+
+		// If we don't have mainshock parameters, then we can't fetch ETAS parameters
+
+		if (!( fcmain.mainshock_avail )) {
+			etas_avail = false;
+			set_default_etas_params();
+			return;
+		}
+
+		// Fetch parameters based on mainshock location
+
+		OAFRegimeParams<OEtasParameters> x = (new OEtasConfig()).get_resolved_params (fcmain.get_eqk_location(), analyst_params);
+
+		if (!( x.has_params() )) {
+			etas_avail = false;
+			set_default_etas_params();
+			return;
+		}
+
+		etas_avail = true;
+		etas_regime = ( (analyst_regime != null) ? analyst_regime : x.regime.toString() );
+		etas_params = x.params;
+
+		return;
+	}
+
+
 	//----- Transient parameters -----
 
 //	// The configured default injectable text, or "" if none, or null if not set.
@@ -977,6 +1122,7 @@ public class ForecastParameters {
 		fetch_seq_spec_params (fcmain, prior_params);
 		fetch_aftershock_search_region (fcmain, prior_params, 0L);
 		fetch_evseq_cfg_params (fcmain, prior_params);
+		fetch_etas_params (fcmain, prior_params);
 		return;
 	}
 
@@ -990,6 +1136,7 @@ public class ForecastParameters {
 		fetch_seq_spec_params (fcmain, prior_params);
 		fetch_aftershock_search_region (fcmain, prior_params, the_start_lag);
 		fetch_evseq_cfg_params (fcmain, prior_params);
+		fetch_etas_params (fcmain, prior_params);
 		return;
 	}
 
@@ -1004,6 +1151,7 @@ public class ForecastParameters {
 		fetch_mag_comp_params (fcmain, prior_params);
 		fetch_seq_spec_params (fcmain, prior_params);
 		fetch_evseq_cfg_params (fcmain, prior_params);
+		fetch_etas_params (fcmain, prior_params);
 
 		return generic_avail && mag_comp_avail && seq_spec_avail;
 	}
@@ -1044,6 +1192,10 @@ public class ForecastParameters {
 		evseq_cfg_avail = false;
 		set_default_evseq_cfg_params();
 
+		etas_fetch_meth = FETCH_METH_AUTO;
+		etas_avail = false;
+		set_default_etas_params();
+
 		set_default_transient_params();
 	
 		return;
@@ -1075,6 +1227,10 @@ public class ForecastParameters {
 		evseq_cfg_fetch_meth = other.evseq_cfg_fetch_meth;
 		evseq_cfg_avail = other.evseq_cfg_avail;
 		copy_evseq_cfg_params_from (other);
+
+		etas_fetch_meth = other.etas_fetch_meth;
+		etas_avail = other.etas_avail;
+		copy_etas_params_from (other);
 
 		copy_transient_params_from (other);
 	
@@ -1133,6 +1289,13 @@ public class ForecastParameters {
 			result.append ("evseq_cfg_params = " + evseq_cfg_params.toString() + "\n");
 		}
 
+		result.append ("etas_fetch_meth = " + etas_fetch_meth + "\n");
+		result.append ("etas_avail = " + etas_avail + "\n");
+		if (etas_avail) {
+			result.append ("etas_regime = " + etas_regime + "\n");
+			result.append ("etas_params = " + etas_params.toString() + "\n");
+		}
+
 //		if (def_injectable_text != null) {
 //			result.append ("def_injectable_text = " + def_injectable_text + "\n");
 //		}
@@ -1150,6 +1313,7 @@ public class ForecastParameters {
 
 	private static final int MARSHAL_VER_1 = 22001;
 	private static final int MARSHAL_VER_2 = 22002;
+	private static final int MARSHAL_VER_3 = 22003;
 
 	private static final String M_VERSION_NAME = "ForecastParameters";
 
@@ -1172,7 +1336,7 @@ public class ForecastParameters {
 
 		// Version
 
-		int ver = MARSHAL_VER_2;
+		int ver = MARSHAL_VER_3;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -1269,6 +1433,61 @@ public class ForecastParameters {
 			}
 
 			break;
+
+		case MARSHAL_VER_3:
+
+			writer.marshalLong   ("forecast_lag"   , forecast_lag   );
+
+			writer.marshalInt    ("generic_calc_meth" , generic_calc_meth );
+			writer.marshalInt    ("seq_spec_calc_meth", seq_spec_calc_meth);
+			writer.marshalInt    ("bayesian_calc_meth", bayesian_calc_meth);
+			writer.marshalString ("injectable_text"   , injectable_text   );
+
+			writer.marshalInt     ("generic_fetch_meth", generic_fetch_meth);
+			writer.marshalBoolean ("generic_avail"     , generic_avail     );
+			if (generic_avail) {
+				writer.marshalString ("generic_regime", generic_regime);
+				generic_params.marshal (writer, "generic_params");
+			}
+
+			writer.marshalInt     ("mag_comp_fetch_meth", mag_comp_fetch_meth);
+			writer.marshalBoolean ("mag_comp_avail"     , mag_comp_avail     );
+			if (mag_comp_avail) {
+				writer.marshalString ("mag_comp_regime", mag_comp_regime);
+				mag_comp_params.marshal (writer, "mag_comp_params");
+			}
+
+			writer.marshalInt     ("seq_spec_fetch_meth", seq_spec_fetch_meth);
+			writer.marshalBoolean ("seq_spec_avail"     , seq_spec_avail     );
+			if (seq_spec_avail) {
+				seq_spec_params.marshal (writer, "seq_spec_params");
+			}
+
+			writer.marshalInt     ("aftershock_search_fetch_meth", aftershock_search_fetch_meth);
+			writer.marshalBoolean ("aftershock_search_avail"     , aftershock_search_avail     );
+			if (aftershock_search_avail) {
+				SphRegion.marshal_poly (writer, "aftershock_search_region", aftershock_search_region);
+				writer.marshalDouble ("min_days" , min_days );
+				writer.marshalDouble ("max_days" , max_days );
+				writer.marshalDouble ("min_depth", min_depth);
+				writer.marshalDouble ("max_depth", max_depth);
+				writer.marshalDouble ("min_mag"  , min_mag  );
+			}
+
+			writer.marshalInt     ("evseq_cfg_fetch_meth", evseq_cfg_fetch_meth);
+			writer.marshalBoolean ("evseq_cfg_avail"     , evseq_cfg_avail     );
+			if (evseq_cfg_avail) {
+				evseq_cfg_params.marshal (writer, "evseq_cfg_params");
+			}
+
+			writer.marshalInt     ("etas_fetch_meth", etas_fetch_meth);
+			writer.marshalBoolean ("etas_avail"     , etas_avail     );
+			if (etas_avail) {
+				writer.marshalString ("etas_regime", etas_regime);
+				etas_params.marshal (writer, "etas_params");
+			}
+
+			break;
 		}
 	
 		return;
@@ -1280,7 +1499,7 @@ public class ForecastParameters {
 
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Contents
 
@@ -1340,6 +1559,10 @@ public class ForecastParameters {
 			evseq_cfg_fetch_meth = FETCH_METH_AUTO;
 			evseq_cfg_avail = false;
 			set_default_evseq_cfg_params();
+
+			etas_fetch_meth = FETCH_METH_AUTO;
+			etas_avail = false;
+			set_default_etas_params();
 
 			set_default_transient_params();
 
@@ -1404,6 +1627,82 @@ public class ForecastParameters {
 				set_default_evseq_cfg_params();
 			}
 
+			etas_fetch_meth = FETCH_METH_AUTO;
+			etas_avail = false;
+			set_default_etas_params();
+
+			set_default_transient_params();
+
+			break;
+
+		case MARSHAL_VER_3:
+
+			forecast_lag    = reader.unmarshalLong   ("forecast_lag"   );
+
+			generic_calc_meth  = reader.unmarshalInt    ("generic_calc_meth" , CALC_METH_MIN, CALC_METH_MAX);
+			seq_spec_calc_meth = reader.unmarshalInt    ("seq_spec_calc_meth", CALC_METH_MIN, CALC_METH_MAX);
+			bayesian_calc_meth = reader.unmarshalInt    ("bayesian_calc_meth", CALC_METH_MIN, CALC_METH_MAX);
+			injectable_text    = reader.unmarshalString ("injectable_text");
+
+			generic_fetch_meth = reader.unmarshalInt     ("generic_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			generic_avail      = reader.unmarshalBoolean ("generic_avail");
+			if (generic_avail) {
+				generic_regime = reader.unmarshalString ("generic_regime");
+				generic_params = (new GenericRJ_Parameters()).unmarshal (reader, "generic_params");
+			} else {
+				set_default_generic_params();
+			}
+
+			mag_comp_fetch_meth = reader.unmarshalInt     ("mag_comp_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			mag_comp_avail      = reader.unmarshalBoolean ("mag_comp_avail");
+			if (mag_comp_avail) {
+				mag_comp_regime = reader.unmarshalString ("mag_comp_regime");
+				mag_comp_params = (new MagCompPage_Parameters()).unmarshal (reader, "mag_comp_params");
+			} else {
+				set_default_mag_comp_params();
+			}
+
+			seq_spec_fetch_meth = reader.unmarshalInt     ("seq_spec_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			seq_spec_avail      = reader.unmarshalBoolean ("seq_spec_avail");
+			if (seq_spec_avail) {
+				seq_spec_params = (new SeqSpecRJ_Parameters()).unmarshal (reader, "seq_spec_params");
+			} else {
+				set_default_seq_spec_params();
+			}
+
+			aftershock_search_fetch_meth = reader.unmarshalInt     ("aftershock_search_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			aftershock_search_avail      = reader.unmarshalBoolean ("aftershock_search_avail");
+			if (aftershock_search_avail) {
+				aftershock_search_region = SphRegion.unmarshal_poly (reader, "aftershock_search_region");
+				if (aftershock_search_region == null) {
+					throw new MarshalException ("Aftershock search region is null");
+				}
+				min_days  = reader.unmarshalDouble ("min_days" );
+				max_days  = reader.unmarshalDouble ("max_days" );
+				min_depth = reader.unmarshalDouble ("min_depth");
+				max_depth = reader.unmarshalDouble ("max_depth");
+				min_mag   = reader.unmarshalDouble ("min_mag"  );
+			} else {
+				set_default_aftershock_search_params();
+			}
+
+			evseq_cfg_fetch_meth = reader.unmarshalInt     ("evseq_cfg_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			evseq_cfg_avail      = reader.unmarshalBoolean ("evseq_cfg_avail");
+			if (evseq_cfg_avail) {
+				evseq_cfg_params = (new EventSequenceParameters()).unmarshal (reader, "evseq_cfg_params");
+			} else {
+				set_default_evseq_cfg_params();
+			}
+
+			etas_fetch_meth = reader.unmarshalInt     ("etas_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			etas_avail      = reader.unmarshalBoolean ("etas_avail");
+			if (etas_avail) {
+				etas_regime = reader.unmarshalString ("etas_regime");
+				etas_params = (new OEtasParameters()).unmarshal (reader, "etas_params");
+			} else {
+				set_default_etas_params();
+			}
+
 			set_default_transient_params();
 
 			break;
@@ -1414,6 +1713,7 @@ public class ForecastParameters {
 
 	// Marshal object.
 
+	@Override
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
 		do_marshal (writer);
@@ -1423,6 +1723,7 @@ public class ForecastParameters {
 
 	// Unmarshal object.
 
+	@Override
 	public ForecastParameters unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
@@ -1557,6 +1858,129 @@ public class ForecastParameters {
 			}
 
 			String the_query_event_id = args[1];
+
+			// Fetch just the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_query_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Set the forecast time to be 7 days after the mainshock
+
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			// Marshal to JSON
+
+			MarshalImpJsonWriter store = new MarshalImpJsonWriter();
+			ForecastParameters.marshal_poly (store, null, params);
+			store.check_write_complete ();
+			String json_string = store.get_json_string();
+
+			System.out.println ("");
+			System.out.println (json_string);
+
+			// Unmarshal from JSON
+			
+			params = null;
+
+			MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
+			params = ForecastParameters.unmarshal_poly (retrieve, null);
+			retrieve.check_read_complete ();
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  pdl_enable  query_event_id
+		// Get parameters for the event, and display them.
+		// The pdl_enable can be used to control ETAS: 0 = default, 100 = disable, 200 = enable.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("ForecastParameters : Invalid 'test3' subcommand");
+				return;
+			}
+
+			int pdl_enable = Integer.parseInt (args[1]);	// 0 = ETAS default, 100 = disable ETAS, 200 = enable ETAS
+			String the_query_event_id = args[2];
+
+			// Set the PDL enable code (ETAS enable or disable)
+
+			ServerConfig.set_opmode (pdl_enable);
+
+			// Fetch just the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (the_query_event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Set the forecast time to be 7 days after the mainshock
+
+			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Display them
+
+			System.out.println ("");
+			System.out.println (params.toString());
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  pdl_enable  query_event_id
+		// Get parameters for the event, and display them.
+		// Then marshal to JSON, and display the JSON.
+		// Then unmarshal, and display the unmarshaled parameters.
+		// The pdl_enable can be used to control ETAS: 0 = default, 100 = disable, 200 = enable.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// 2 additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("ForecastParameters : Invalid 'test4' subcommand");
+				return;
+			}
+
+			int pdl_enable = Integer.parseInt (args[1]);	// 0 = ETAS default, 100 = disable ETAS, 200 = enable ETAS
+			String the_query_event_id = args[2];
+
+			// Set the PDL enable code (ETAS enable or disable)
+
+			ServerConfig.set_opmode (pdl_enable);
 
 			// Fetch just the mainshock info
 

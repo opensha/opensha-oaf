@@ -11,6 +11,7 @@ import java.time.Instant;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
@@ -50,7 +51,7 @@ import org.opensha.commons.geo.Location;
  *
  * All fields are public, since there is little benefit to having lots of getters and setters.
  */
-public class ForecastResults {
+public class ForecastResults implements Marshalable {
 
 	//----- Constants -----
 
@@ -1068,6 +1069,7 @@ public class ForecastResults {
 
 	// Marshal object.
 
+	@Override
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
 		do_marshal (writer);
@@ -1077,6 +1079,7 @@ public class ForecastResults {
 
 	// Unmarshal object.
 
+	@Override
 	public ForecastResults unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
