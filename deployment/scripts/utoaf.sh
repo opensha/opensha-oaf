@@ -19,6 +19,8 @@
 # ref - Show all reference test results (using less).
 #
 # diff - Show differences between current and reference test results (using git diff).
+#
+# sdiff - Show differences between current and reference test results, with limited context (using git diff).
 
 
 
@@ -444,6 +446,13 @@ case "$2" in
 
     diff)
         git diff -U9999 "$REFDIR" "$CURDIR"
+        ;;
+
+
+    # Show differences between current test results and reference test results, with limited context
+
+    sdiff)
+        git diff -U5 "$REFDIR" "$CURDIR"
         ;;
 
 

@@ -334,6 +334,8 @@ public final class ServerConfig {
 	//      0 = none, 1 = dev, 2 = prod, 3 = sim dev, 4 = sim prod, 5 = down dev, 6 = down prod
 	//    The tens digit selects the event-sequence configuration:
 	//      00 = default, 10 = report, 20 = delete, 30 = no report, 40 = disable
+	//    The hundreds digit selects ETAS enable:
+	//      000 = default, 100 = disable ETAS (force R&J), 200 = enable ETAS
 	//  key_filename = PDL signing key filename.
 	//    If null, blank, "-", or omitted, the default is not changed.
 	// Throws an exception if invalid arguments.
@@ -361,7 +363,7 @@ public final class ServerConfig {
 
 		// Event-sequence option
 
-		int evsopt = opmode - pdlopt;
+		int evsopt = (opmode % 100) - (opmode % 10);
 		boolean set_evsopt = false;
 		int esena = -1;
 		int esrep = -1;
@@ -397,6 +399,30 @@ public final class ServerConfig {
 			action_config.get_action_config_file().evseq_report = esrep;
 		}
 
+		// Event-sequence option
+
+		int etasopt = (opmode % 1000) - (opmode % 100);
+		boolean set_etasopt = false;
+		int etasena = -1;
+		switch (etasopt) {
+		case 0:
+			break;
+		case 100:
+			set_etasopt = true;
+			etasena = ActionConfigFile.ETAS_ENA_DISABLE;
+			break;
+		case 200:
+			set_etasopt = true;
+			etasena = ActionConfigFile.ETAS_ENA_ENABLE;
+			break;
+		default:
+			throw new IllegalArgumentException ("ServerConfig.set_opmode: Invalid mode (ETAS enable): opmode = " + opmode);
+		}
+
+		if (set_etasopt) {
+			action_config.get_action_config_file().etas_enable = etasena;
+		}
+
 		// PDL key file
 
 		if (!( key_filename == null || key_filename.isEmpty() || key_filename.equals("-") )) {
@@ -425,6 +451,7 @@ public final class ServerConfig {
 		result.append ("pdl_enable = " + server_config.get_pdl_enable_as_string());
 		result.append (", evseq_enable = " + action_config.get_evseq_enable_as_string());
 		result.append (", evseq_report = " + action_config.get_evseq_report_as_string());
+		result.append (", etas_enable = " + action_config.get_etas_enable_as_string());
 
 		String key_filename = server_config.get_pdl_key_filename();
 		if (!( key_filename == null || key_filename.isEmpty() || key_filename.equals("-") )) {

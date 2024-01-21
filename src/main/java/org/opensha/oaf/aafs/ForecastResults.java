@@ -1192,22 +1192,28 @@ public class ForecastResults {
 
 		// Subcommand : Test #1
 		// Command format:
-		//  test1  event_id
+		//  test1  pdl_enable  event_id
 		// Get parameters for the event, and display them.
 		// Then get results for the event, and display them.
+		// The pdl_enable can be used to control ETAS: 0 = default, 100 = disable, 200 = enable.
 
 		if (args[0].equalsIgnoreCase ("test1")) {
 
-			// One additional argument
+			// 2 additional arguments
 
-			if (args.length != 2) {
+			if (args.length != 3) {
 				System.err.println ("ForecastResults : Invalid 'test1' subcommand");
 				return;
 			}
 
 			try {
 
-				String the_event_id = args[1];
+				int pdl_enable = Integer.parseInt (args[1]);	// 0 = ETAS default, 100 = disable ETAS, 200 = enable ETAS
+				String the_event_id = args[2];
+
+				// Set the PDL enable code (ETAS enable or disable)
+
+				ServerConfig.set_opmode (pdl_enable);
 
 				// Fetch just the mainshock info
 
@@ -1253,25 +1259,31 @@ public class ForecastResults {
 
 		// Subcommand : Test #2
 		// Command format:
-		//  test2  event_id
+		//  test2  pdl_enable  event_id
 		// Get parameters for the event, and display them.
 		// Then get results for the event, and display them.
 		// Then marshal to JSON, and display the JSON.
 		// Then unmarshal, and display the unmarshaled results.
 		// Then rebuild transient data, and display the results.
+		// The pdl_enable can be used to control ETAS: 0 = default, 100 = disable, 200 = enable.
 
 		if (args[0].equalsIgnoreCase ("test2")) {
 
-			// One additional argument
+			// 2 additional arguments
 
-			if (args.length != 2) {
+			if (args.length != 3) {
 				System.err.println ("ForecastResults : Invalid 'test2' subcommand");
 				return;
 			}
 
 			try {
 
-				String the_event_id = args[1];
+				int pdl_enable = Integer.parseInt (args[1]);	// 0 = ETAS default, 100 = disable ETAS, 200 = enable ETAS
+				String the_event_id = args[2];
+
+				// Set the PDL enable code (ETAS enable or disable)
+
+				ServerConfig.set_opmode (pdl_enable);
 
 				// Fetch just the mainshock info
 
@@ -1349,23 +1361,29 @@ public class ForecastResults {
 
 		// Subcommand : Test #3
 		// Command format:
-		//  test3  event_id  lag_days
+		//  test3  pdl_enable  event_id  lag_days
 		// Get parameters for the event, and display them.
 		// Then get results for the event, and display them.
+		// The pdl_enable can be used to control ETAS: 0 = default, 100 = disable, 200 = enable.
 
 		if (args[0].equalsIgnoreCase ("test3")) {
 
-			// 2 additional arguments
+			// 3 additional arguments
 
-			if (args.length != 3) {
+			if (args.length != 4) {
 				System.err.println ("ForecastResults : Invalid 'test3' subcommand");
 				return;
 			}
 
 			try {
 
-				String the_event_id = args[1];
-				double lag_days = Double.parseDouble (args[2]);
+				int pdl_enable = Integer.parseInt (args[1]);	// 0 = ETAS default, 100 = disable ETAS, 200 = enable ETAS
+				String the_event_id = args[2];
+				double lag_days = Double.parseDouble (args[3]);
+
+				// Set the PDL enable code (ETAS enable or disable)
+
+				ServerConfig.set_opmode (pdl_enable);
 
 				// Fetch just the mainshock info
 
@@ -1427,27 +1445,33 @@ public class ForecastResults {
 
 		// Subcommand : Test #4
 		// Command format:
-		//  test4  event_id  lag_days
+		//  test4  pdl_enable  event_id  lag_days
 		// Get parameters for the event, and display them.
 		// Then get results for the event, and display them.
 		// Then marshal to JSON, and display the JSON.
 		// Then unmarshal, and display the unmarshaled results.
 		// Then rebuild transient data, and display the results.
 		// Then display the stored catalog.
+		// The pdl_enable can be used to control ETAS: 0 = default, 100 = disable, 200 = enable.
 
 		if (args[0].equalsIgnoreCase ("test4")) {
 
-			// 2 additional arguments
+			// 3 additional arguments
 
-			if (args.length != 3) {
+			if (args.length != 4) {
 				System.err.println ("ForecastResults : Invalid 'test4' subcommand");
 				return;
 			}
 
 			try {
 
-				String the_event_id = args[1];
-				double lag_days = Double.parseDouble (args[2]);
+				int pdl_enable = Integer.parseInt (args[1]);	// 0 = ETAS default, 100 = disable ETAS, 200 = enable ETAS
+				String the_event_id = args[2];
+				double lag_days = Double.parseDouble (args[3]);
+
+				// Set the PDL enable code (ETAS enable or disable)
+
+				ServerConfig.set_opmode (pdl_enable);
 
 				// Fetch just the mainshock info
 
@@ -1552,34 +1576,41 @@ public class ForecastResults {
 
 		// Subcommand : Test #5
 		// Command format:
-		//  test5  event_id  mag  start_time
+		//  test5  pdl_enable  event_id  mag  start_time
 		// Get parameters for the event, and display them.
 		// Then get results for the event, and display them.
 		// Then, for each forecast, get the probability distribution for the given
 		// magnitude, starting at the given time in days, for day, week, month, and year,
 		// and display them.
+		// The pdl_enable can be used to control ETAS: 0 = default, 100 = disable, 200 = enable.
 
 		if (args[0].equalsIgnoreCase ("test5")) {
 
-			// Three additional argument
+			// 4 additional arguments
 
-			if (args.length != 4) {
+			if (args.length != 5) {
 				System.err.println ("ForecastResults : Invalid 'test5' subcommand");
 				return;
 			}
 
 			try {
 
-				String the_event_id = args[1];
-				double mag = Double.parseDouble (args[2]);
-				double start_time = Double.parseDouble (args[3]);
+				int pdl_enable = Integer.parseInt (args[1]);	// 0 = ETAS default, 100 = disable ETAS, 200 = enable ETAS
+				String the_event_id = args[2];
+				double mag = Double.parseDouble (args[3]);
+				double start_time = Double.parseDouble (args[4]);
 
 				// Say hello
 
 				System.out.println ("Getting results and probability distributions");
+				System.out.println ("pdl_enable = " + pdl_enable);
 				System.out.println ("the_event_id = " + the_event_id);
 				System.out.println ("mag = " + mag);
 				System.out.println ("start_time = " + start_time);
+
+				// Set the PDL enable code (ETAS enable or disable)
+
+				ServerConfig.set_opmode (pdl_enable);
 
 				// Fetch just the mainshock info
 
