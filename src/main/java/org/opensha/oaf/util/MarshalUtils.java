@@ -303,7 +303,25 @@ public class MarshalUtils {
 		writer.check_write_complete ();
 
 		Object json_container = writer.get_json_container();
-		String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false);
+		String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false, false);
+
+		return formatted_string;
+	}
+
+
+
+
+	// Write marshalable object to nicely-formatted compact JSON string.
+	// Note: The returned string is valid JSON.
+
+	public static String to_formatted_compact_json_string (Marshalable x) {
+
+		MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+		x.marshal (writer, null);
+		writer.check_write_complete ();
+
+		Object json_container = writer.get_json_container();
+		String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false, true);
 
 		return formatted_string;
 	}
@@ -330,7 +348,7 @@ public class MarshalUtils {
 	// Note: This function just calls GeoJsonUtils.jsonStringToString().
 
 	public static String display_json_string (String json_string) {
-		return GeoJsonUtils.jsonStringToString (json_string, true);
+		return GeoJsonUtils.jsonStringToString (json_string, true, true);
 	}
 
 
@@ -375,7 +393,33 @@ public class MarshalUtils {
 			writer.check_write_complete ();
 
 			Object json_container = writer.get_json_container();
-			String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false);
+			String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false, false);
+
+			file_writer.write (formatted_string);
+		}
+		catch (IOException e) {
+			throw new MarshalException ("MarshalUtils: I/O error while writing JSON file: " + filename, e);
+		}
+
+		return;
+	}
+
+
+
+
+	// Write marshalable object to nicely-formatted compact JSON file.
+
+	public static void to_formatted_compact_json_file (Marshalable x, String filename) {
+
+		try (
+			BufferedWriter file_writer = new BufferedWriter (new FileWriter (filename));
+		){
+			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+			x.marshal (writer, null);
+			writer.check_write_complete ();
+
+			Object json_container = writer.get_json_container();
+			String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false, true);
 
 			file_writer.write (formatted_string);
 		}

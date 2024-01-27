@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collection;
 import java.util.Arrays;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
@@ -81,28 +82,45 @@ public class GeoJsonUtils {
 
 
 
-	// Convert a JSONObject to a string.
+	// Convert a JSON object to a string.
 	// The result is a nicely-formatted JSON file.
 	// If f_friendly is false, the result is valid JSON.
 	// If f_friendly is true, the result is made easier to read by not quoting names,
 	// numbering array elements, and omitting commas.
 	// Note that f_friendly defaults to true.
+	// If f_compact is ture, the result is made compact by allowing some array elements
+	// and map items to appear on the same line.
+	// Note that f_compact defaults to false.
 	// This is primarily a debugging function.
 
 	public static String jsonObjectToString (Object o) {
 		StringBuilder sb = new StringBuilder();
-		jsonObjectToString (sb, o, null, "", true, false, false);
+		jsonSubObjectToString (sb, o, null, "", true, false, false, false);
 		return sb.toString();
 	}
 
-	public static String jsonObjectToString (Object o, boolean f_friendly) {
+	public static String jsonObjectToString (Object o, boolean f_friendly, boolean f_compact) {
 		StringBuilder sb = new StringBuilder();
-		jsonObjectToString (sb, o, null, "", f_friendly, false, false);
+		jsonSubObjectToString (sb, o, null, "", f_friendly, f_compact, false, false);
 		return sb.toString();
 	}
 
 
-	public static void jsonObjectToString (StringBuilder sb, Object o, String name, String prefix, boolean f_friendly, boolean f_array, boolean f_comma) {
+
+
+	// Convert a JSON subobject to a string.
+	// Parameters:
+	//  sb = String destination.
+	//  o = JSON object to convert.
+	//  name = Name for a map entry, array index (as a string) for array element, or null if top-level.
+	//  prefix = Prefix to use on each line; used for indenting nested objects.
+	//  f_friendly = If true, use a friendly format which is easier to read but not valid JSON.
+	//  f_compact = If true, use a compact format which allows multiple map entries or array elements per line.
+	//  f_array = If true, this object is an array element.
+	//  f_comma = If true, there ia another element after this one in the map or array containing this object.
+	// This is a recursive function, that calls itself for nested subobjects.
+
+	private static void jsonSubObjectToString (StringBuilder sb, Object o, String name, String prefix, boolean f_friendly, boolean f_compact, boolean f_array, boolean f_comma) {
 
 		// Write prefix and name
 
@@ -146,55 +164,61 @@ public class GeoJsonUtils {
 
 		else if (o instanceof JSONObject) {
 			JSONObject m = (JSONObject) o;
-			sb.append ("{");
-			sb.append ("\n");
-			String new_prefix = prefix + "  ";
-			int n = m.size();
-			int k = 0;
-			for (Object key : m.keySet()) {
-				Object val = m.get (key);
-				jsonObjectToString (sb, val, key.toString(), new_prefix, f_friendly, false, k + 1 < n);
-				++k;
+			if (!( f_compact && compactMapToString (sb, m, prefix, f_friendly, f_comma) )) {
+				sb.append ("{");
+				sb.append ("\n");
+				String new_prefix = prefix + "  ";
+				int n = m.size();
+				int k = 0;
+				for (Object key : m.keySet()) {
+					Object val = m.get (key);
+					jsonSubObjectToString (sb, val, key.toString(), new_prefix, f_friendly, f_compact, false, k + 1 < n);
+					++k;
+				}
+				sb.append (prefix);
+				sb.append ("}");
+				sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 			}
-			sb.append (prefix);
-			sb.append ("}");
-			sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 		}
 
 		// Handle ordered object (Map)
 
 		else if (o instanceof JSONOrderedObject) {
 			JSONOrderedObject m = (JSONOrderedObject) o;
-			sb.append ("{");
-			sb.append ("\n");
-			String new_prefix = prefix + "  ";
-			int n = m.size();
-			int k = 0;
-			for (Object key : m.keySet()) {
-				Object val = m.get (key);
-				jsonObjectToString (sb, val, key.toString(), new_prefix, f_friendly, false, k + 1 < n);
-				++k;
+			if (!( f_compact && compactMapToString (sb, m, prefix, f_friendly, f_comma) )) {
+				sb.append ("{");
+				sb.append ("\n");
+				String new_prefix = prefix + "  ";
+				int n = m.size();
+				int k = 0;
+				for (Object key : m.keySet()) {
+					Object val = m.get (key);
+					jsonSubObjectToString (sb, val, key.toString(), new_prefix, f_friendly, f_compact, false, k + 1 < n);
+					++k;
+				}
+				sb.append (prefix);
+				sb.append ("}");
+				sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 			}
-			sb.append (prefix);
-			sb.append ("}");
-			sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 		}
 
 		// Handle array (List)
 
 		else if (o instanceof JSONArray) {
 			JSONArray a = (JSONArray) o;
-			sb.append ("[");
-			sb.append ("\n");
-			String new_prefix = prefix + "  ";
-			int n = a.size();
-			for (int k = 0; k < n; ++k) {
-				Object val = a.get (k);
-				jsonObjectToString (sb, val, Integer.toString (k), new_prefix, f_friendly, true, k + 1 < n);
+			if (!( f_compact && compactArrayToString (sb, a, prefix, f_friendly, f_comma) )) {
+				sb.append ("[");
+				sb.append ("\n");
+				String new_prefix = prefix + "  ";
+				int n = a.size();
+				for (int k = 0; k < n; ++k) {
+					Object val = a.get (k);
+					jsonSubObjectToString (sb, val, Integer.toString (k), new_prefix, f_friendly, f_compact, true, k + 1 < n);
+				}
+				sb.append (prefix);
+				sb.append ("]");
+				sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 			}
-			sb.append (prefix);
-			sb.append ("]");
-			sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 		}
 
 		// Anything else
@@ -205,6 +229,224 @@ public class GeoJsonUtils {
 		}
 
 		return;
+	}
+
+
+
+
+	// Convert a compact item to a string.
+
+	private static void compactItemToString (StringBuilder sb, Object o, boolean f_friendly, boolean f_comma) {
+
+		// Handle null
+
+		if (o == null) {
+			sb.append ("null");
+		}
+
+		// Handle string
+
+		else if (o instanceof String) {
+			String s = (String) o;
+			sb.append ("\"");
+			escapeString (sb, s);
+			sb.append ("\"");
+		}
+
+		// Anything else
+
+		else {
+			sb.append (o.toString());
+		}
+
+		// Append comma if requested
+
+		if (f_comma && !f_friendly) {
+			sb.append (",");
+		}
+
+		return;
+	}
+
+
+
+
+	// Convert a compact array to a string.
+	// Returns true if processed, false if not.
+
+	private static boolean compactArrayToString (StringBuilder sb, JSONArray a, String prefix, boolean f_friendly, boolean f_comma) {
+
+		// Test if this is eligible to be a compact array
+
+		for (Object o : a) {
+			if (o != null) {
+				if ((o instanceof JSONObject) || (o instanceof JSONOrderedObject) || (o instanceof JSONArray)) {
+					return false;
+				}
+				if (o.toString().length() > 28) {
+					return false;
+				}
+			}
+		}
+
+		// Small array, on a single line
+
+		int n = a.size();
+		if (n <= 10) {
+			sb.append ("[");
+			for (int k = 0; k < n; ++k) {
+				Object val = a.get (k);
+				if (k > 0) {
+					sb.append (" ");
+				}
+				compactItemToString (sb, val, f_friendly, k + 1 < n);
+			}
+			sb.append ("]");
+			sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
+		}
+
+		// Large array, 10 items per line
+
+		else {
+			sb.append ("[");
+			String new_prefix = prefix + "  ";
+			for (int k = 0; k < n; ++k) {
+				Object val = a.get (k);
+				if (k % 10 == 0) {
+					sb.append ("\n");
+					sb.append (new_prefix);
+					if (f_friendly) {
+						sb.append (Integer.toString (k));
+						sb.append (": ");
+					}
+				} else {
+					sb.append (" ");
+				}
+				compactItemToString (sb, val, f_friendly, k + 1 < n);
+			}
+			sb.append ("\n");
+			sb.append (prefix);
+			sb.append ("]");
+			sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
+		}
+
+		return true;
+	}
+
+
+
+
+	// Convert a compact map to a string.
+	// Returns true if processed, false if not.
+
+	private static boolean compactMapToString (StringBuilder sb, JSONObject m, String prefix, boolean f_friendly, boolean f_comma) {
+
+		// Test if this is eligible to be a compact map
+
+		int n = m.size();
+		if (n > 4) {
+			return false;
+		}
+
+		for (Object o : m.values()) {
+			if (o != null) {
+				if ((o instanceof JSONObject) || (o instanceof JSONOrderedObject) || (o instanceof JSONArray)) {
+					return false;
+				}
+				if (o.toString().length() > 28) {
+					return false;
+				}
+			}
+		}
+
+		for (Object o : m.keySet()) {
+			if (o == null || o.toString().length() > 28) {
+				return false;
+			}
+		}
+
+		// Small map, on a single line
+
+		sb.append ("{");
+		int k = 0;
+		for (Object key : m.keySet()) {
+			Object val = m.get (key);
+			if (k > 0) {
+				sb.append (" ");
+			}
+			if (f_friendly) {
+				sb.append (key.toString());
+			} else {
+				sb.append ("\"");
+				escapeString (sb, key.toString());
+				sb.append ("\"");
+			}
+			sb.append (": ");
+			compactItemToString (sb, val, f_friendly, k + 1 < n);
+			++k;
+		}
+		sb.append ("}");
+		sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
+
+		return true;
+	}
+
+
+
+
+	// Convert a compact map to a string.
+	// Returns true if processed, false if not.
+
+	private static boolean compactMapToString (StringBuilder sb, JSONOrderedObject m, String prefix, boolean f_friendly, boolean f_comma) {
+
+		// Test if this is eligible to be a compact map
+
+		int n = m.size();
+		if (n > 4) {
+			return false;
+		}
+
+		for (Object o : m.values()) {
+			if (o != null) {
+				if ((o instanceof JSONObject) || (o instanceof JSONOrderedObject) || (o instanceof JSONArray)) {
+					return false;
+				}
+				if (o.toString().length() > 28) {
+					return false;
+				}
+			}
+		}
+
+		for (Object o : m.keySet()) {
+			if (o == null || o.toString().length() > 28) {
+				return false;
+			}
+		}
+
+		// Small map, on a single line
+
+		sb.append ("{");
+		int k = 0;
+		for (Object key : m.keySet()) {
+			Object val = m.get (key);
+			if (k > 0) {
+				sb.append (" ");
+			}
+			if (f_friendly) {
+				sb.append (key.toString());
+			} else {
+				sb.append ("\"");
+				escapeString (sb, key.toString());
+				sb.append ("\"");
+			}
+			sb.append (": ");
+			compactItemToString (sb, val, f_friendly, k + 1 < n);
+			++k;
+		}
+		sb.append ("}");
+		sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
+
+		return true;
 	}
 
 
@@ -287,10 +529,11 @@ public class GeoJsonUtils {
 	// Parameters:
 	//  s = String containing JSON.
 	//  f_friendly = True to produce a friendly display format, false to produce nicely-formatted valid JSON.
+	//  f_compact = True to produce a compact format with some map items or array elements on the same line.
 	// Return a string containing nicely-formatted JSON, which is valid JSON if f_friendly is false.
 	// Throws an exception if error parsing s.
 
-	public static String jsonStringToString (String s, boolean f_friendly) {
+	public static String jsonStringToString (String s, boolean f_friendly, boolean f_compact) {
 		String result = null;
 
 		try {
@@ -301,7 +544,7 @@ public class GeoJsonUtils {
 
 			// Convert to nice format
 
-			result = jsonObjectToString (o, f_friendly);
+			result = jsonObjectToString (o, f_friendly, f_compact);
 		}
 		catch (ParseException e) {
 			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: JSON parse error", e);
@@ -320,10 +563,11 @@ public class GeoJsonUtils {
 	// Parameters:
 	//  in = Data source containing JSON.
 	//  f_friendly = True to produce a friendly display format, false to produce nicely-formatted valid JSON.
+	//  f_compact = True to produce a compact format with some map items or array elements on the same line.
 	// Return a string containing nicely-formatted JSON, which is valid JSON if f_friendly is false.
 	// Throws an exception if error parsing input.
 
-	public static String jsonReaderToString (Reader in, boolean f_friendly) {
+	public static String jsonReaderToString (Reader in, boolean f_friendly, boolean f_compact) {
 		String result = null;
 
 		try {
@@ -334,16 +578,16 @@ public class GeoJsonUtils {
 
 			// Convert to nice format
 
-			result = jsonObjectToString (o, f_friendly);
+			result = jsonObjectToString (o, f_friendly, f_compact);
 		}
 		catch (ParseException e) {
-			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: JSON parse error", e);
+			throw new RuntimeException ("GeoJsonUtils.jsonReaderToString: JSON parse error", e);
 		}
 		catch (IOException e) {
-			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: I/O error", e);
+			throw new RuntimeException ("GeoJsonUtils.jsonReaderToString: I/O error", e);
 		}
 		catch (Exception e) {
-			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: Unexpected error", e);
+			throw new RuntimeException ("GeoJsonUtils.jsonReaderToString: Unexpected error", e);
 		}
 
 		return result;
@@ -356,10 +600,11 @@ public class GeoJsonUtils {
 	// Parameters:
 	//  filename = Name of file containing JSON.
 	//  f_friendly = True to produce a friendly display format, false to produce nicely-formatted valid JSON.
+	//  f_compact = True to produce a compact format with some map items or array elements on the same line.
 	// Return a string containing nicely-formatted JSON, which is valid JSON if f_friendly is false.
 	// Throws an exception if error parsing input.
 
-	public static String jsonFileToString (String filename, boolean f_friendly) {
+	public static String jsonFileToString (String filename, boolean f_friendly, boolean f_compact) {
 		String result = null;
 
 		try (
@@ -372,16 +617,16 @@ public class GeoJsonUtils {
 
 			// Convert to nice format
 
-			result = jsonObjectToString (o, f_friendly);
+			result = jsonObjectToString (o, f_friendly, f_compact);
 		}
 		catch (ParseException e) {
-			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: JSON parse error reading file: " + filename, e);
+			throw new RuntimeException ("GeoJsonUtils.jsonFileToString: JSON parse error reading file: " + filename, e);
 		}
 		catch (IOException e) {
-			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: I/O error reading file: " + filename, e);
+			throw new RuntimeException ("GeoJsonUtils.jsonFileToString: I/O error reading file: " + filename, e);
 		}
 		catch (Exception e) {
-			throw new RuntimeException ("GeoJsonUtils.jsonStringToString: Unexpected error", e);
+			throw new RuntimeException ("GeoJsonUtils.jsonFileToString: Unexpected error", e);
 		}
 
 		return result;
@@ -1007,7 +1252,7 @@ public class GeoJsonUtils {
 				System.out.println ("********** Object to Friendly String **********");
 				System.out.println ();
 
-				System.out.println (jsonObjectToString (event, true));
+				System.out.println (jsonObjectToString (event, true, false));
 
 				// Convert object to valid string
 
@@ -1015,7 +1260,23 @@ public class GeoJsonUtils {
 				System.out.println ("********** Object to Valid String **********");
 				System.out.println ();
 
-				System.out.println (jsonObjectToString (event, false));
+				System.out.println (jsonObjectToString (event, false, false));
+
+				// Convert object to friendly compact string
+
+				System.out.println ();
+				System.out.println ("********** Object to Friendly Compact String **********");
+				System.out.println ();
+
+				System.out.println (jsonObjectToString (event, true, true));
+
+				// Convert object to valid compact string
+
+				System.out.println ();
+				System.out.println ("********** Object to Valid Compact String **********");
+				System.out.println ();
+
+				System.out.println (jsonObjectToString (event, false, true));
 
 				// Convert string to friendly string
 
@@ -1023,7 +1284,7 @@ public class GeoJsonUtils {
 				System.out.println ("********** String to Friendly String **********");
 				System.out.println ();
 
-				System.out.println (jsonStringToString (json_string, true));
+				System.out.println (jsonStringToString (json_string, true, false));
 
 				// Convert string to valid string
 
@@ -1031,7 +1292,23 @@ public class GeoJsonUtils {
 				System.out.println ("********** String to Valid String **********");
 				System.out.println ();
 
-				System.out.println (jsonStringToString (json_string, false));
+				System.out.println (jsonStringToString (json_string, false, false));
+
+				// Convert string to friendly compact string
+
+				System.out.println ();
+				System.out.println ("********** String to Friendly Compact String **********");
+				System.out.println ();
+
+				System.out.println (jsonStringToString (json_string, true, true));
+
+				// Convert string to valid compact string
+
+				System.out.println ();
+				System.out.println ("********** String to Valid Compact String **********");
+				System.out.println ();
+
+				System.out.println (jsonStringToString (json_string, false, true));
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -1122,7 +1399,7 @@ public class GeoJsonUtils {
 				System.out.println ("********** File to Friendly String **********");
 				System.out.println ();
 
-				System.out.println (jsonFileToString (filename, true));
+				System.out.println (jsonFileToString (filename, true, false));
 
 				// Convert file to valid string
 
@@ -1130,7 +1407,100 @@ public class GeoJsonUtils {
 				System.out.println ("********** File to Valid String **********");
 				System.out.println ();
 
-				System.out.println (jsonFileToString (filename, false));
+				System.out.println (jsonFileToString (filename, false, false));
+
+				// Convert file to friendly compact string
+
+				System.out.println ();
+				System.out.println ("********** File to Friendly Compact String **********");
+				System.out.println ();
+
+				System.out.println (jsonFileToString (filename, true, true));
+
+				// Convert file to valid compact string
+
+				System.out.println ();
+				System.out.println ("********** File to Valid Compact String **********");
+				System.out.println ();
+
+				System.out.println (jsonFileToString (filename, false, true));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  url_spec
+		// Fetch a JSON file from a URL, and display it.
+		// Then display the JSON various ways.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("GeoJsonUtils : Invalid 'test4' subcommand");
+				return;
+			}
+
+			String url_spec = args[1];
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching URL: " + url_spec);
+
+				// Get the File
+
+				String json_string = ComcatProduct.read_string_from_url (url_spec, -1L, -1L);
+
+				// Display raw json
+
+				System.out.println ();
+				System.out.println ("********** Raw JSON **********");
+				System.out.println ();
+
+				System.out.println (json_string);
+
+				// Convert string to friendly string
+
+				System.out.println ();
+				System.out.println ("********** String to Friendly String **********");
+				System.out.println ();
+
+				System.out.println (jsonStringToString (json_string, true, false));
+
+				// Convert string to valid string
+
+				System.out.println ();
+				System.out.println ("********** String to Valid String **********");
+				System.out.println ();
+
+				System.out.println (jsonStringToString (json_string, false, false));
+
+				// Convert string to friendly compact string
+
+				System.out.println ();
+				System.out.println ("********** String to Friendly Compact String **********");
+				System.out.println ();
+
+				System.out.println (jsonStringToString (json_string, true, true));
+
+				// Convert string to valid compact string
+
+				System.out.println ();
+				System.out.println ("********** String to Valid Compact String **********");
+				System.out.println ();
+
+				System.out.println (jsonStringToString (json_string, false, true));
 
 			} catch (Exception e) {
 				e.printStackTrace();
