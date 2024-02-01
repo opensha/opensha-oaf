@@ -161,7 +161,164 @@ pdl_prod_senders = [
 ]
 
 
-{"ClassType":34001,"ServerConfigFile":34001,"mongo_config":{"MongoDBConfig":54002,"default_db_handle":"local-usgs","hosts":[{"host_handle":"local","write_concern":"majority+journaled","read_concern":"majority","read_preference":"primary","retry_writes":"","connection_mode":"","cluster_type":"","replica_set_name":"rs0","connection_string":"","username":"usgs","auth_db":"usgs","password":"usgs","session_level":2,"causal_consistency":"","transact_write_concern":"majority+journaled","transact_read_concern":"snapshot","transact_read_preference":"primary","transact_retries":0,"commit_retries":0,"ssl_options":"auto","addresses":[{"host_name":"127.0.0.1","host_port":27017}],"databases":[{"db_handle":"local-usgs","db_name":"usgs","write_concern":"majority+journaled","read_concern":"majority","read_preference":"primary","collections":[{"coll_name":"alias","access_level":2},{"coll_name":"catalog","access_level":2},{"coll_name":"log","access_level":2},{"coll_name":"relay","access_level":2},{"coll_name":"tasks","access_level":2},{"coll_name":"timeline","access_level":2}]}]},{"host_handle":"oaf1","write_concern":"majority+journaled","read_concern":"majority","read_preference":"primary","retry_writes":"","connection_mode":"","cluster_type":"","replica_set_name":"rs0","connection_string":"","username":"usgs","auth_db":"usgs","password":"usgs","session_level":2,"causal_consistency":"","transact_write_concern":"majority+journaled","transact_read_concern":"snapshot","transact_read_preference":"primary","transact_retries":0,"commit_retries":0,"ssl_options":"auto","addresses":[{"host_name":"127.0.0.1","host_port":27017}],"databases":[{"db_handle":"oaf1-usgs","db_name":"usgs","write_concern":"majority+journaled","read_concern":"majority","read_preference":"primary","collections":[{"coll_name":"relay","access_level":0},{"coll_name":"tasks","access_level":2}]}]},{"host_handle":"oaf2","write_concern":"majority+journaled","read_concern":"majority","read_preference":"primary","retry_writes":"","connection_mode":"","cluster_type":"","replica_set_name":"rs0","connection_string":"","username":"usgs2","auth_db":"usgs2","password":"usgs2","session_level":2,"causal_consistency":"","transact_write_concern":"majority+journaled","transact_read_concern":"snapshot","transact_read_preference":"primary","transact_retries":0,"commit_retries":0,"ssl_options":"auto","addresses":[{"host_name":"127.0.0.1","host_port":27017}],"databases":[{"db_handle":"oaf2-usgs","db_name":"usgs2","write_concern":"majority+journaled","read_concern":"majority","read_preference":"primary","collections":[{"coll_name":"relay","access_level":0},{"coll_name":"tasks","access_level":2}]}]}]},"server_name":"test","server_number":1,"server_db_handles":["local-usgs","oaf1-usgs","oaf2-usgs"],"log_con_aafs":"'\/data\/aafs\/logs\/'yyyy-MM'\/'yyyy-MM-dd'-aafs.log'","log_con_intake":"'\/data\/aafs\/logs\/'yyyy-MM'\/'yyyy-MM-dd'-intake.log'","log_con_control":"'\/data\/aafs\/logs\/'yyyy-MM'\/'yyyy-MM-dd'-control.log'","log_summary":"'\/data\/aafs\/logs\/'yyyy-MM'\/'yyyy-MM-dd'-summary.log'","comcat_url":"https:\/\/earthquake.usgs.gov\/fdsnws\/event\/1\/","feed_url":"https:\/\/earthquake.usgs.gov\/earthquakes\/feed\/v1.0\/detail\/","comcat_dev_url":"https:\/\/earthquake.usgs.gov\/fdsnws\/event\/1\/","feed_dev_url":"https:\/\/earthquake.usgs.gov\/earthquakes\/feed\/v1.0\/detail\/","comcat_err_rate":0.0,"comcat_exclude":[],"locat_bins":0,"locat_filenames":[],"block_pdl_intake":0,"block_poll_intake":0,"block_fc_content":0,"db_err_rate":0.0,"pdl_enable":0,"pdl_key_filename":"","pdl_err_rate":0.0,"pdl_oaf_source":"us","pdl_oaf_type":"oaf","pdl_dev_senders":[],"pdl_prod_senders":[{"host":"prod01-pdl01.cr.usgs.gov","port":11235,"connectTimeout":15000},{"host":"prod02-pdl01.cr.usgs.gov","port":11235,"connectTimeout":15000}]}
+{
+  "ClassType": 34001,
+  "ServerConfigFile": 34001,
+  "mongo_config": {
+    "MongoDBConfig": 54002,
+    "default_db_handle": "local-usgs",
+    "hosts": [
+      {
+        "host_handle": "local",
+        "write_concern": "majority+journaled",
+        "read_concern": "majority",
+        "read_preference": "primary",
+        "retry_writes": "",
+        "connection_mode": "",
+        "cluster_type": "",
+        "replica_set_name": "rs0",
+        "connection_string": "",
+        "username": "usgs",
+        "auth_db": "usgs",
+        "password": "usgs",
+        "session_level": 2,
+        "causal_consistency": "",
+        "transact_write_concern": "majority+journaled",
+        "transact_read_concern": "snapshot",
+        "transact_read_preference": "primary",
+        "transact_retries": 0,
+        "commit_retries": 0,
+        "ssl_options": "auto",
+        "addresses": [
+          {"host_name": "127.0.0.1", "host_port": 27017}
+        ],
+        "databases": [
+          {
+            "db_handle": "local-usgs",
+            "db_name": "usgs",
+            "write_concern": "majority+journaled",
+            "read_concern": "majority",
+            "read_preference": "primary",
+            "collections": [
+              {"coll_name": "alias", "access_level": 2},
+              {"coll_name": "catalog", "access_level": 2},
+              {"coll_name": "log", "access_level": 2},
+              {"coll_name": "relay", "access_level": 2},
+              {"coll_name": "tasks", "access_level": 2},
+              {"coll_name": "timeline", "access_level": 2}
+            ]
+          }
+        ]
+      },
+      {
+        "host_handle": "oaf1",
+        "write_concern": "majority+journaled",
+        "read_concern": "majority",
+        "read_preference": "primary",
+        "retry_writes": "",
+        "connection_mode": "",
+        "cluster_type": "",
+        "replica_set_name": "rs0",
+        "connection_string": "",
+        "username": "usgs",
+        "auth_db": "usgs",
+        "password": "usgs",
+        "session_level": 2,
+        "causal_consistency": "",
+        "transact_write_concern": "majority+journaled",
+        "transact_read_concern": "snapshot",
+        "transact_read_preference": "primary",
+        "transact_retries": 0,
+        "commit_retries": 0,
+        "ssl_options": "auto",
+        "addresses": [
+          {"host_name": "127.0.0.1", "host_port": 27017}
+        ],
+        "databases": [
+          {
+            "db_handle": "oaf1-usgs",
+            "db_name": "usgs",
+            "write_concern": "majority+journaled",
+            "read_concern": "majority",
+            "read_preference": "primary",
+            "collections": [
+              {"coll_name": "relay", "access_level": 0},
+              {"coll_name": "tasks", "access_level": 2}
+            ]
+          }
+        ]
+      },
+      {
+        "host_handle": "oaf2",
+        "write_concern": "majority+journaled",
+        "read_concern": "majority",
+        "read_preference": "primary",
+        "retry_writes": "",
+        "connection_mode": "",
+        "cluster_type": "",
+        "replica_set_name": "rs0",
+        "connection_string": "",
+        "username": "usgs2",
+        "auth_db": "usgs2",
+        "password": "usgs2",
+        "session_level": 2,
+        "causal_consistency": "",
+        "transact_write_concern": "majority+journaled",
+        "transact_read_concern": "snapshot",
+        "transact_read_preference": "primary",
+        "transact_retries": 0,
+        "commit_retries": 0,
+        "ssl_options": "auto",
+        "addresses": [
+          {"host_name": "127.0.0.1", "host_port": 27017}
+        ],
+        "databases": [
+          {
+            "db_handle": "oaf2-usgs",
+            "db_name": "usgs2",
+            "write_concern": "majority+journaled",
+            "read_concern": "majority",
+            "read_preference": "primary",
+            "collections": [
+              {"coll_name": "relay", "access_level": 0},
+              {"coll_name": "tasks", "access_level": 2}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "server_name": "test",
+  "server_number": 1,
+  "server_db_handles": ["local-usgs", "oaf1-usgs", "oaf2-usgs"],
+  "log_con_aafs": "'/data/aafs/logs/'yyyy-MM'/'yyyy-MM-dd'-aafs.log'",
+  "log_con_intake": "'/data/aafs/logs/'yyyy-MM'/'yyyy-MM-dd'-intake.log'",
+  "log_con_control": "'/data/aafs/logs/'yyyy-MM'/'yyyy-MM-dd'-control.log'",
+  "log_summary": "'/data/aafs/logs/'yyyy-MM'/'yyyy-MM-dd'-summary.log'",
+  "comcat_url": "https://earthquake.usgs.gov/fdsnws/event/1/",
+  "feed_url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/",
+  "comcat_dev_url": "https://earthquake.usgs.gov/fdsnws/event/1/",
+  "feed_dev_url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/",
+  "comcat_err_rate": 0.0,
+  "comcat_exclude": [],
+  "locat_bins": 0,
+  "locat_filenames": [],
+  "block_pdl_intake": 0,
+  "block_poll_intake": 0,
+  "block_fc_content": 0,
+  "db_err_rate": 0.0,
+  "pdl_enable": 0,
+  "pdl_key_filename": "",
+  "pdl_err_rate": 0.0,
+  "pdl_oaf_source": "us",
+  "pdl_oaf_type": "oaf",
+  "pdl_dev_senders": [],
+  "pdl_prod_senders": [
+    {"host": "prod01-pdl01.cr.usgs.gov", "port": 11235, "connectTimeout": 15000},
+    {"host": "prod02-pdl01.cr.usgs.gov", "port": 11235, "connectTimeout": 15000}
+  ]
+}
+
 
 ServerConfigFile:
 mongo_config = {

@@ -67,6 +67,8 @@ evseq_cfg_avail = true
 evseq_cfg_params = EventSequenceParameters:
   evseq_cfg_report = 1
   evseq_cfg_lookback = 2592000000 (PT720H)
+etas_fetch_meth = 0
+etas_avail = false
 next_scheduled_lag = 0
 
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-10-25T00:04:15.190Z&format=geojson&latitude=37.06823&limit=20000&longitude=-121.85576&maxdepth=700.000&maxradius=0.31276&mindepth=-5.000&minmagnitude=2.450&orderby=time&starttime=1989-10-18T00:04:15.190Z

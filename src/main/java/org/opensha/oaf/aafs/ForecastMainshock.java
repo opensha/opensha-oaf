@@ -11,6 +11,8 @@ import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
+import org.opensha.oaf.util.Marshalable;
+import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SimpleUtils;
@@ -34,7 +36,7 @@ import org.json.simple.JSONObject;
  *
  * This code was originally part of ForecastParameters and was split out to a separate class.
  */
-public class ForecastMainshock {
+public class ForecastMainshock implements Marshalable {
 
 	//----- Root parameters -----
 
@@ -497,6 +499,7 @@ public class ForecastMainshock {
 
 	// Marshal object.
 
+	@Override
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
 		do_marshal (writer);
@@ -506,6 +509,7 @@ public class ForecastMainshock {
 
 	// Unmarshal object.
 
+	@Override
 	public ForecastMainshock unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
@@ -647,7 +651,7 @@ public class ForecastMainshock {
 			String json_string = store.get_json_string();
 
 			System.out.println ("");
-			System.out.println (json_string);
+			System.out.println (MarshalUtils.display_valid_json_string (json_string));
 
 			// Unmarshal from JSON
 			
@@ -736,7 +740,7 @@ public class ForecastMainshock {
 			String json_string = store.get_json_string();
 
 			System.out.println ("");
-			System.out.println (json_string);
+			System.out.println (MarshalUtils.display_valid_json_string (json_string));
 
 			// Unmarshal from JSON
 			

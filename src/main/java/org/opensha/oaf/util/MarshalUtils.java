@@ -354,6 +354,17 @@ public class MarshalUtils {
 
 
 
+	// Convenience function to convert a JSON string to display format.
+	// Note: The returned string is valid JSON, and is intended to be human-readable.
+	// Note: This function just calls GeoJsonUtils.jsonStringToString().
+
+	public static String display_valid_json_string (String json_string) {
+		return GeoJsonUtils.jsonStringToString (json_string, false, true);
+	}
+
+
+
+
 	//----- JSON file access -----
 
 

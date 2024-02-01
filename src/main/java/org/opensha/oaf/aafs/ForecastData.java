@@ -20,6 +20,7 @@ import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.Marshalable;
+import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.oaf.rj.CompactEqkRupList;
@@ -1414,7 +1415,7 @@ public class ForecastData implements Marshalable {
 			String json_string = fcdata.to_json();
 
 			System.out.println ("");
-			System.out.println (json_string);
+			System.out.println (MarshalUtils.display_valid_json_string (json_string));
 
 			// Read from JSON
 
@@ -1740,7 +1741,7 @@ public class ForecastData implements Marshalable {
 			String json_string = fcdata.to_json();
 
 			System.out.println ("");
-			System.out.println (json_string);
+			System.out.println (MarshalUtils.display_valid_json_string (json_string));
 
 			// Read from JSON
 

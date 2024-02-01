@@ -12,6 +12,7 @@ import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.Marshalable;
+import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
@@ -1332,7 +1333,7 @@ public class ForecastResults implements Marshalable {
 				String json_string = store.get_json_string();
 
 				System.out.println ("");
-				System.out.println (json_string);
+				System.out.println (MarshalUtils.display_valid_json_string (json_string));
 
 				// Unmarshal from JSON
 			
@@ -1525,7 +1526,7 @@ public class ForecastResults implements Marshalable {
 				String json_string = store.get_json_string();
 
 				System.out.println ("");
-				System.out.println (json_string);
+				System.out.println (MarshalUtils.display_valid_json_string (json_string));
 
 				// Unmarshal from JSON
 			

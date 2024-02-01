@@ -14,6 +14,7 @@ import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.Marshalable;
+import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.TimeSplitOutputStream;
@@ -977,7 +978,7 @@ public class ServerConfigFile implements Marshalable {
 			String json_string = store.get_json_string();
 
 			System.out.println ("");
-			System.out.println (json_string);
+			System.out.println (MarshalUtils.display_valid_json_string (json_string));
 
 			// Unmarshal from JSON
 			
@@ -1026,7 +1027,7 @@ public class ServerConfigFile implements Marshalable {
 			String json_string = store.get_json_string();
 
 			System.out.println ("");
-			System.out.println (json_string);
+			System.out.println (MarshalUtils.display_valid_json_string (json_string));
 
 			// Unmarshal from JSON
 			

@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.Arrays;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.FileReader;
@@ -132,13 +133,7 @@ public class GeoJsonUtils {
 					sb.append (": ");
 				}
 			} else {
-				if (f_friendly) {
-					sb.append (name);
-				} else {
-					sb.append ("\"");
-					escapeString (sb, name);
-					sb.append ("\"");
-				}
+				jsonNameToString (sb, name, f_friendly);
 				sb.append (": ");
 			}
 		}
@@ -374,13 +369,7 @@ public class GeoJsonUtils {
 			if (k > 0) {
 				sb.append (" ");
 			}
-			if (f_friendly) {
-				sb.append (key.toString());
-			} else {
-				sb.append ("\"");
-				escapeString (sb, key.toString());
-				sb.append ("\"");
-			}
+			jsonNameToString (sb, key.toString(), f_friendly);
 			sb.append (": ");
 			compactItemToString (sb, val, f_friendly, k + 1 < n);
 			++k;
@@ -432,13 +421,7 @@ public class GeoJsonUtils {
 			if (k > 0) {
 				sb.append (" ");
 			}
-			if (f_friendly) {
-				sb.append (key.toString());
-			} else {
-				sb.append ("\"");
-				escapeString (sb, key.toString());
-				sb.append ("\"");
-			}
+			jsonNameToString (sb, key.toString(), f_friendly);
 			sb.append (": ");
 			compactItemToString (sb, val, f_friendly, k + 1 < n);
 			++k;
@@ -447,6 +430,26 @@ public class GeoJsonUtils {
 		sb.append ((f_comma && !f_friendly) ? ",\n" : "\n");
 
 		return true;
+	}
+
+
+
+
+	// Write a JSON name.
+	// Friendly format writes the name with no quotes or escapes, if possible.
+
+	//private static final Pattern friendly_name_pattern = Pattern.compile ("[a-zA-Z0-9_.~$@/\\\\+-]+");
+	private static final Pattern friendly_name_pattern = Pattern.compile ("[.~/\\\\+-]*[a-zA-Z0-9_$@][a-zA-Z0-9_$@.~/\\\\+-]*");
+
+	private static void jsonNameToString (StringBuilder sb, String name, boolean f_friendly) {
+		if (f_friendly && friendly_name_pattern.matcher(name).matches()) {
+			sb.append (name);
+		} else {
+			sb.append ("\"");
+			escapeString (sb, name);
+			sb.append ("\"");
+		}
+		return;
 	}
 
 
