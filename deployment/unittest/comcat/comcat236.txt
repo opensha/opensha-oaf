@@ -10,18 +10,19 @@ rup_lat = 51.8486
 rup_lon = 178.7352
 rup_depth = 109.0
 description = Rat Islands, Aleutian Islands, Alaska
-ids = ,ak014803qfpr,ak11300221,at00n7n3cm,pt14174004,usc000rki5,
+ids = ,ak014803qfpr,ak11300221,at00n7n3cm,pt14174004,usc000rki5,iscgem604760173,
 net = us
 code = c000rki5
 
 http_status = 200
 EI Map: code = c000rki5
 EI Map: description = Rat Islands, Aleutian Islands, Alaska
-EI Map: ids = ,ak014803qfpr,ak11300221,at00n7n3cm,pt14174004,usc000rki5,
+EI Map: ids = ,ak014803qfpr,ak11300221,at00n7n3cm,pt14174004,usc000rki5,iscgem604760173,
 EI Map: net = us
 ID List: usc000rki5
 ID List: ak014803qfpr
 ID List: ak11300221
 ID List: at00n7n3cm
 ID List: pt14174004
+ID List: iscgem604760173
 URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usc000rki5.geojson

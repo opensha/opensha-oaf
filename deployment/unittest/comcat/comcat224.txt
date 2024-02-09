@@ -10,14 +10,15 @@ rup_lat = -0.2559
 rup_lon = 119.8462
 rup_depth = 20.0
 description = 72 km N of Palu, Indonesia
-ids = ,us1000h3p4,
+ids = ,us1000h3p4,iscgem616642238,
 net = us
 code = 1000h3p4
 
 http_status = 200
 EI Map: code = 1000h3p4
 EI Map: description = 72 km N of Palu, Indonesia
-EI Map: ids = ,us1000h3p4,
+EI Map: ids = ,us1000h3p4,iscgem616642238,
 EI Map: net = us
 ID List: us1000h3p4
+ID List: iscgem616642238
 URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us1000h3p4.geojson

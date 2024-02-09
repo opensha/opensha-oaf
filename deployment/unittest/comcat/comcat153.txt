@@ -12,7 +12,7 @@ rup_lat = 28.2305
 rup_lon = 84.7314
 rup_depth = 8.22
 description = 67 km NNE of Bharatpur, Nepal
-ids = ,us20002926,gcmt20150425061126,atlas20150425061125,
+ids = ,us20002926,gcmt20150425061126,iscgem607208674,atlas20150425061125,
 net = us
 code = 20002926
 
@@ -24,10 +24,10 @@ radius_km = 200.0
 min_mag = 3.5
 limit_per_call = 0
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-04-24T06:11:25.950Z&format=geojson&latitude=28.23050&limit=20000&longitude=84.73140&maxdepth=700.000&maxradius=1.79986&mindepth=-5.000&minmagnitude=3.500&orderby=time&starttime=2015-04-25T06:12:52.350Z
-Count of events received = 306
-Count of events after filtering = 306
-Total number of events returned = 306
-Events returned by fetchEventList = 306
+Count of events received = 307
+Count of events after filtering = 307
+Total number of events returned = 307
+Events returned by fetchEventList = 307
 http_status[0] = 200
 List of events returned by fetchEventList:
 0: us20005heg (time = 2016-04-12 14:41:52 UTC, mag = 4.300, lat = 27.60620, lon = 86.06210, depth = 10.000)
@@ -332,7 +332,8 @@ List of events returned by fetchEventList:
 299: us20002bfi (time = 2015-04-25 06:29:46 UTC, mag = 4.700, lat = 27.84780, lon = 85.07170, depth = 10.000)
 300: us20002bf2 (time = 2015-04-25 06:28:05 UTC, mag = 4.800, lat = 27.70060, lon = 85.50430, depth = 10.000)
 301: us20002bfk (time = 2015-04-25 06:25:55 UTC, mag = 5.000, lat = 27.68700, lon = 85.58540, depth = 10.000)
-302: us20002bhs (time = 2015-04-25 06:22:02 UTC, mag = 5.100, lat = 27.80060, lon = 85.11410, depth = 10.000)
-303: us20002bi6 (time = 2015-04-25 06:20:40 UTC, mag = 5.400, lat = 28.20460, lon = 84.49200, depth = 10.000)
-304: us20002bi0 (time = 2015-04-25 06:18:10 UTC, mag = 5.600, lat = 27.68570, lon = 86.02130, depth = 10.000)
-305: us20002bi4 (time = 2015-04-25 06:15:22 UTC, mag = 6.100, lat = 27.62850, lon = 85.53980, depth = 10.000)
+302: iscgem607260025 (time = 2015-04-25 06:22:23 UTC, mag = 5.260, lat = 27.81300, lon = 85.44800, depth = 18.000)
+303: us20002bhs (time = 2015-04-25 06:22:02 UTC, mag = 5.100, lat = 27.80060, lon = 85.11410, depth = 10.000)
+304: us20002bi6 (time = 2015-04-25 06:20:40 UTC, mag = 5.400, lat = 28.20460, lon = 84.49200, depth = 10.000)
+305: us20002bi0 (time = 2015-04-25 06:18:10 UTC, mag = 5.600, lat = 27.68570, lon = 86.02130, depth = 10.000)
+306: us20002bi4 (time = 2015-04-25 06:15:22 UTC, mag = 6.100, lat = 27.62850, lon = 85.53980, depth = 10.000)

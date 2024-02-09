@@ -10,17 +10,18 @@ rup_lat = 38.2151667
 rup_lon = -122.3123333
 rup_depth = 11.12
 description = South Napa
-ids = ,at00nat3ek,nc72282711,usb000s5tp,atlas20140824102044,
+ids = ,at00nat3ek,nc72282711,usb000s5tp,iscgem610572079,atlas20140824102044,
 net = nc
 code = 72282711
 
 http_status = 200
 EI Map: code = 72282711
 EI Map: description = South Napa
-EI Map: ids = ,at00nat3ek,nc72282711,usb000s5tp,atlas20140824102044,
+EI Map: ids = ,at00nat3ek,nc72282711,usb000s5tp,iscgem610572079,atlas20140824102044,
 EI Map: net = nc
 ID List: nc72282711
 ID List: at00nat3ek
 ID List: usb000s5tp
+ID List: iscgem610572079
 ID List: atlas20140824102044
 URL = https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc72282711.geojson

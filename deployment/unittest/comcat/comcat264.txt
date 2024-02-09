@@ -10,7 +10,7 @@ rup_lat = -19.6097
 rup_lon = -70.7691
 rup_depth = 25.0
 description = 93 km NW of Iquique, Chile
-ids = ,pt14091000,at00n3dm1y,usc000nzvd,atlas20140401234647,
+ids = ,pt14091000,at00n3dm1y,usc000nzvd,iscgem610102185,atlas20140401234647,
 net = us
 code = c000nzvd
 

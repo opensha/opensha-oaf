@@ -12,7 +12,7 @@ rup_lat = 28.2305
 rup_lon = 84.7314
 rup_depth = 8.22
 description = 67 km NNE of Bharatpur, Nepal
-ids = ,us20002926,gcmt20150425061126,atlas20150425061125,
+ids = ,us20002926,gcmt20150425061126,iscgem607208674,atlas20150425061125,
 net = us
 code = 20002926
 

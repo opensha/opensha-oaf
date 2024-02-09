@@ -10,18 +10,19 @@ rup_lat = -31.5729
 rup_lon = -71.6744
 rup_depth = 22.44
 description = 48 km W of Illapel, Chile
-ids = ,us20003k7a,at00nuskyv,pt15259054,gcmt20150916225433,atlas20150916225432,
+ids = ,us20003k7a,at00nuskyv,pt15259054,gcmt20150916225433,iscgem611531714,atlas20150916225432,
 net = us
 code = 20003k7a
 
 http_status = 200
 EI Map: code = 20003k7a
 EI Map: description = 48 km W of Illapel, Chile
-EI Map: ids = ,us20003k7a,at00nuskyv,pt15259054,gcmt20150916225433,atlas20150916225432,
+EI Map: ids = ,us20003k7a,at00nuskyv,pt15259054,gcmt20150916225433,iscgem611531714,atlas20150916225432,
 EI Map: net = us
 ID List: us20003k7a
 ID List: at00nuskyv
 ID List: pt15259054
 ID List: gcmt20150916225433
+ID List: iscgem611531714
 ID List: atlas20150916225432
 URL = https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=us20003k7a&format=geojson
