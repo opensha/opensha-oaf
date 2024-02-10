@@ -193,7 +193,7 @@ public class OEGUISubRJValue extends OEGUIListener {
 	private IntegerParameter aValNumParam;
 
 	private IntegerParameter init_aValNumParam () throws GUIEDTException {
-		aValNumParam = new IntegerParameter("RJ a-value Number", 1, 10000, new Integer(101));
+		aValNumParam = new IntegerParameter("RJ a-value Number", 1, 10000, Integer.valueOf(101));
 		aValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (aValNumParam, "aValNumParam", PARMGRP_RANGE_RJ_A);
 		return aValNumParam;
@@ -219,7 +219,7 @@ public class OEGUISubRJValue extends OEGUIListener {
 	private IntegerParameter pValNumParam;
 
 	private IntegerParameter init_pValNumParam () throws GUIEDTException {
-		pValNumParam = new IntegerParameter("RJ p-value Number", 1, 10000, new Integer(45));
+		pValNumParam = new IntegerParameter("RJ p-value Number", 1, 10000, Integer.valueOf(45));
 		pValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (pValNumParam, "pValNumParam", PARMGRP_RANGE_RJ_P);
 		return pValNumParam;
@@ -245,7 +245,7 @@ public class OEGUISubRJValue extends OEGUIListener {
 	private IntegerParameter cValNumParam;
 
 	private IntegerParameter init_cValNumParam () throws GUIEDTException {
-		cValNumParam = new IntegerParameter("RJ c-value Number", 1, 10000, new Integer(1));
+		cValNumParam = new IntegerParameter("RJ c-value Number", 1, 10000, Integer.valueOf(1));
 		cValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (cValNumParam, "cValNumParam", PARMGRP_RANGE_RJ_C);
 		return cValNumParam;

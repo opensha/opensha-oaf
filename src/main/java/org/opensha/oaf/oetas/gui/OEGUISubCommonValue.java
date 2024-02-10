@@ -195,7 +195,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private DoubleParameter fParam;
 
 	private DoubleParameter init_fParam () throws GUIEDTException {
-		fParam = new DoubleParameter("F", 0.0, 2.0, new Double(0.5));
+		fParam = new DoubleParameter("F", 0.0, 2.0, Double.valueOf(0.5));
 		fParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (fParam, "fParam", PARMGRP_COM_VALUE);
 		return fParam;
@@ -208,7 +208,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private DoubleParameter gParam;
 
 	private DoubleParameter init_gParam () throws GUIEDTException {
-		gParam = new DoubleParameter("G", -10.0, 100.0, new Double(0.25));
+		gParam = new DoubleParameter("G", -10.0, 100.0, Double.valueOf(0.25));
 		gParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (gParam, "gParam", PARMGRP_COM_VALUE);
 		return gParam;
@@ -221,7 +221,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private DoubleParameter hParam;
 
 	private DoubleParameter init_hParam () throws GUIEDTException {
-		hParam = new DoubleParameter("H", 0.0, 10.0, new Double(1.0));
+		hParam = new DoubleParameter("H", 0.0, 10.0, Double.valueOf(1.0));
 		hParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (hParam, "hParam", PARMGRP_COM_VALUE);
 		return hParam;
@@ -234,7 +234,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private DoubleParameter mCatParam;
 
 	private DoubleParameter init_mCatParam () throws GUIEDTException {
-		mCatParam = new DoubleParameter("Mcat", 1.0, 7.0, new Double(4.5));
+		mCatParam = new DoubleParameter("Mcat", 1.0, 7.0, Double.valueOf(4.5));
 		mCatParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (mCatParam, "mCatParam", PARMGRP_COM_VALUE);
 		return mCatParam;
@@ -263,7 +263,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private DoubleParameter magPrecisionParam;
 
 	private DoubleParameter init_magPrecisionParam () throws GUIEDTException {
-		magPrecisionParam = new DoubleParameter("Mag Precision", 0d, 1d, new Double(0.1));
+		magPrecisionParam = new DoubleParameter("Mag Precision", 0d, 1d, Double.valueOf(0.1));
 		magPrecisionParam.setInfo("Magnitude rounding applied by network");;
 		register_param (magPrecisionParam, "magPrecisionParam", PARMGRP_MAG_PREC);
 		return magPrecisionParam;

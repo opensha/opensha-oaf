@@ -425,9 +425,9 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 		// Construct the document
 
 		Document doc = new Document ("_id", id)
-						.append ("relay_time" , new Long(relay_time))
+						.append ("relay_time" , Long.valueOf(relay_time))
 						.append ("relay_id"   , relay_id)
-						.append ("relay_stamp", new Long(relay_stamp))
+						.append ("relay_stamp", Long.valueOf(relay_stamp))
 						.append ("details"    , details);
 
 		return doc;
@@ -578,13 +578,13 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 		// Select entries with relay_time >= relay_time_lo
 
 		if (relay_time_lo > 0L) {
-			filters.add (Filters.gte ("relay_time", new Long(relay_time_lo)));
+			filters.add (Filters.gte ("relay_time", Long.valueOf(relay_time_lo)));
 		}
 
 		// Select entries with relay_time <= relay_time_hi
 
 		if (relay_time_hi > 0L) {
-			filters.add (Filters.lte ("relay_time", new Long(relay_time_hi)));
+			filters.add (Filters.lte ("relay_time", Long.valueOf(relay_time_hi)));
 		}
 
 		// Return combination of filters
@@ -839,8 +839,8 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 
 		ArrayList<Bson> updates = new ArrayList<Bson>();
 
-		updates.add (Updates.set ("relay_time", new Long(relit.relay_time)));
-		updates.add (Updates.set ("relay_stamp", new Long(relit.relay_stamp)));
+		updates.add (Updates.set ("relay_time", Long.valueOf(relit.relay_time)));
+		updates.add (Updates.set ("relay_stamp", Long.valueOf(relit.relay_stamp)));
 		updates.add (Updates.set ("details", relit.details));
 
 		// Update item id if desired (this would send the item id thru the changestream)
@@ -1085,11 +1085,11 @@ public class RelayItem extends DBEntity implements java.io.Serializable {
 		// Filter to watch relay_stamp >= 0L, in the fullDocument subdocument of the change stream document
 
 		long stamp_cutoff = 0L;
-		//Bson filter = Filters.gte ("fullDocument.relay_stamp", new Long(stamp_cutoff));
+		//Bson filter = Filters.gte ("fullDocument.relay_stamp", Long.valueOf(stamp_cutoff));
 
 		// The "not" form of the filter also passes changes that don't contain a full document, such as delete and invalidate
 
-		Bson filter = Filters.not (Filters.lt ("fullDocument.relay_stamp", new Long(stamp_cutoff)));
+		Bson filter = Filters.not (Filters.lt ("fullDocument.relay_stamp", Long.valueOf(stamp_cutoff)));
 
 		// Get the cursor and iterator
 

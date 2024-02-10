@@ -388,7 +388,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 	 */
 	@Override
 	public void marshalLong (String name, long x) {
-		current_context_write.check_name (name, new Long(x));
+		current_context_write.check_name (name, Long.valueOf(x));
 		return;
 	}
 
@@ -397,7 +397,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 	 */
 	@Override
 	public void marshalDouble (String name, double x) {
-		current_context_write.check_name (name, new Double(x));
+		current_context_write.check_name (name, Double.valueOf(x));
 		return;
 	}
 
@@ -415,7 +415,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 	 */
 	@Override
 	public void marshalBoolean (String name, boolean x) {
-		current_context_write.check_name (name, new Boolean(x));
+		current_context_write.check_name (name, Boolean.valueOf(x));
 		return;
 	}
 
@@ -424,7 +424,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 	 */
 	@Override
 	public void marshalFloat (String name, float x) {
-		current_context_write.check_name (name, new Float(x));
+		current_context_write.check_name (name, Float.valueOf(x));
 		return;
 	}
 

@@ -998,7 +998,7 @@ public class MongoDBUtil implements AutoCloseable {
 	public static List<Long> long_array_to_list (long[] arr) {
 		ArrayList<Long> w = new ArrayList<Long>();
 		for (long x: arr) {
-			w.add (new Long(x));
+			w.add (Long.valueOf(x));
 		}
 		return w;
 	}
@@ -1009,7 +1009,7 @@ public class MongoDBUtil implements AutoCloseable {
 	public static List<Integer> int_array_to_list (int[] arr) {
 		ArrayList<Integer> w = new ArrayList<Integer>();
 		for (int x: arr) {
-			w.add (new Integer(x));
+			w.add (Integer.valueOf(x));
 		}
 		return w;
 	}
@@ -1020,7 +1020,7 @@ public class MongoDBUtil implements AutoCloseable {
 	public static List<Double> double_array_to_list (double[] arr) {
 		ArrayList<Double> w = new ArrayList<Double>();
 		for (double x: arr) {
-			w.add (new Double(x));
+			w.add (Double.valueOf(x));
 		}
 		return w;
 	}

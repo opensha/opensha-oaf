@@ -196,7 +196,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private IntegerParameter lognmsETASValNumParam;
 
 	private IntegerParameter init_lognmsETASValNumParam () throws GUIEDTException {
-		lognmsETASValNumParam = new IntegerParameter("ETAS log_nms Number", 1, 10000, new Integer(51));
+		lognmsETASValNumParam = new IntegerParameter("ETAS log_nms Number", 1, 10000, Integer.valueOf(51));
 		lognmsETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (lognmsETASValNumParam, "lognmsETASValNumParam", PARMGRP_RANGE_ETAS_LOG_NMS);
 		return lognmsETASValNumParam;
@@ -222,7 +222,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private IntegerParameter lognETASValNumParam;
 
 	private IntegerParameter init_lognETASValNumParam () throws GUIEDTException {
-		lognETASValNumParam = new IntegerParameter("ETAS log_n Number", 1, 10000, new Integer(31));
+		lognETASValNumParam = new IntegerParameter("ETAS log_n Number", 1, 10000, Integer.valueOf(31));
 		lognETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (lognETASValNumParam, "lognETASValNumParam", PARMGRP_RANGE_ETAS_LOG_N);
 		return lognETASValNumParam;
@@ -248,7 +248,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private IntegerParameter pETASValNumParam;
 
 	private IntegerParameter init_pETASValNumParam () throws GUIEDTException {
-		pETASValNumParam = new IntegerParameter("ETAS p Number", 1, 10000, new Integer(31));
+		pETASValNumParam = new IntegerParameter("ETAS p Number", 1, 10000, Integer.valueOf(31));
 		pETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (pETASValNumParam, "pETASValNumParam", PARMGRP_RANGE_ETAS_P);
 		return pETASValNumParam;
@@ -274,7 +274,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private IntegerParameter logcETASValNumParam;
 
 	private IntegerParameter init_logcETASValNumParam () throws GUIEDTException {
-		logcETASValNumParam = new IntegerParameter("ETAS log_c Number", 1, 10000, new Integer(21));
+		logcETASValNumParam = new IntegerParameter("ETAS log_c Number", 1, 10000, Integer.valueOf(21));
 		logcETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (logcETASValNumParam, "logcETASValNumParam", PARMGRP_RANGE_ETAS_LOG_C);
 		return logcETASValNumParam;

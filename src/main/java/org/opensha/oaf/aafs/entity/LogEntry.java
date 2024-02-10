@@ -562,15 +562,15 @@ public class LogEntry extends DBEntity implements java.io.Serializable {
 		// Construct the document
 
 		Document doc = new Document ("_id", id)
-						.append ("log_time"   , new Long(log_time))
+						.append ("log_time"   , Long.valueOf(log_time))
 						.append ("event_id"   , event_id)
-						.append ("sched_time" , new Long(sched_time))
-						.append ("submit_time", new Long(submit_time))
+						.append ("sched_time" , Long.valueOf(sched_time))
+						.append ("submit_time", Long.valueOf(submit_time))
 						.append ("submit_id"  , submit_id)
-						.append ("opcode"     , new Integer(opcode))
-						.append ("stage"      , new Integer(stage))
+						.append ("opcode"     , Integer.valueOf(opcode))
+						.append ("stage"      , Integer.valueOf(stage))
 						.append ("details"    , details)
-						.append ("rescode"    , new Integer(rescode))
+						.append ("rescode"    , Integer.valueOf(rescode))
 						.append ("results"    , results);
 
 		return doc;
@@ -694,13 +694,13 @@ public class LogEntry extends DBEntity implements java.io.Serializable {
 		// Select entries with log_time >= log_time_lo
 
 		if (log_time_lo > 0L) {
-			filters.add (Filters.gte ("log_time", new Long(log_time_lo)));
+			filters.add (Filters.gte ("log_time", Long.valueOf(log_time_lo)));
 		}
 
 		// Select entries with log_time <= log_time_hi
 
 		if (log_time_hi > 0L) {
-			filters.add (Filters.lte ("log_time", new Long(log_time_hi)));
+			filters.add (Filters.lte ("log_time", Long.valueOf(log_time_hi)));
 		}
 
 		// Return combination of filters

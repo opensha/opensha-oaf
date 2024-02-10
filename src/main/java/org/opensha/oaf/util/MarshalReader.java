@@ -336,7 +336,7 @@ public interface MarshalReader {
 	public default void unmarshalLongCollection (String name, Collection<Long> x) {
 		int n = unmarshalArrayBegin (name);
 		for (int i = 0; i < n; ++i) {
-			x.add (new Long (unmarshalLong (null)));
+			x.add (Long.valueOf (unmarshalLong (null)));
 		}
 		unmarshalArrayEnd ();
 		return;
@@ -348,7 +348,7 @@ public interface MarshalReader {
 	public default void unmarshalDoubleCollection (String name, Collection<Double> x) {
 		int n = unmarshalArrayBegin (name);
 		for (int i = 0; i < n; ++i) {
-			x.add (new Double (unmarshalDouble (null)));
+			x.add (Double.valueOf (unmarshalDouble (null)));
 		}
 		unmarshalArrayEnd ();
 		return;
@@ -372,7 +372,7 @@ public interface MarshalReader {
 	public default void unmarshalIntCollection (String name, Collection<Integer> x) {
 		int n = unmarshalArrayBegin (name);
 		for (int i = 0; i < n; ++i) {
-			x.add (new Integer (unmarshalInt (null)));
+			x.add (Integer.valueOf (unmarshalInt (null)));
 		}
 		unmarshalArrayEnd ();
 		return;
@@ -384,7 +384,7 @@ public interface MarshalReader {
 	public default void unmarshalFloatCollection (String name, Collection<Float> x) {
 		int n = unmarshalArrayBegin (name);
 		for (int i = 0; i < n; ++i) {
-			x.add (new Float (unmarshalFloat (null)));
+			x.add (Float.valueOf (unmarshalFloat (null)));
 		}
 		unmarshalArrayEnd ();
 		return;

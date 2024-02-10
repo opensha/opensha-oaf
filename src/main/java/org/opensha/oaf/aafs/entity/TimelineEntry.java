@@ -509,10 +509,10 @@ public class TimelineEntry extends DBEntity implements java.io.Serializable {
 		// Construct the document
 
 		Document doc = new Document ("_id", id)
-						.append ("action_time", new Long(action_time))
+						.append ("action_time", Long.valueOf(action_time))
 						.append ("event_id"   , event_id)
 						.append ("comcat_ids" , Arrays.asList(comcat_ids.clone()))
-						.append ("actcode"    , new Integer(actcode))
+						.append ("actcode"    , Integer.valueOf(actcode))
 						.append ("details"    , details);
 
 		return doc;
@@ -643,20 +643,20 @@ public class TimelineEntry extends DBEntity implements java.io.Serializable {
 		// Select entries with action_time >= action_time_lo
 
 		if (action_time_lo > 0L) {
-			filters.add (Filters.gte ("action_time", new Long(action_time_lo)));
+			filters.add (Filters.gte ("action_time", Long.valueOf(action_time_lo)));
 		}
 
 		// Select entries with action_time <= action_time_hi
 
 		if (action_time_hi > 0L) {
-			filters.add (Filters.lte ("action_time", new Long(action_time_hi)));
+			filters.add (Filters.lte ("action_time", Long.valueOf(action_time_hi)));
 		}
 
 		// Select entries with action_time % action_time_div_rem[0] == action_time_div_rem[1]
 
 		if (action_time_div_rem != null) {
 			if (action_time_div_rem[0] > 0L) {
-				filters.add (Filters.mod ("action_time", new Long(action_time_div_rem[0]), new Long(action_time_div_rem[1])));
+				filters.add (Filters.mod ("action_time", Long.valueOf(action_time_div_rem[0]), Long.valueOf(action_time_div_rem[1])));
 			}
 		}
 

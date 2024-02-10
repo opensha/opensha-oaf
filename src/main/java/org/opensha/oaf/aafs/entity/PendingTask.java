@@ -575,13 +575,13 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 		// Construct the document
 
 		Document doc = new Document ("_id", id)
-						.append ("exec_time"  , new Long(exec_time))
+						.append ("exec_time"  , Long.valueOf(exec_time))
 						.append ("event_id"   , event_id)
-						.append ("sched_time" , new Long(sched_time))
-						.append ("submit_time", new Long(submit_time))
+						.append ("sched_time" , Long.valueOf(sched_time))
+						.append ("submit_time", Long.valueOf(submit_time))
 						.append ("submit_id"  , submit_id)
-						.append ("opcode"     , new Integer(opcode))
-						.append ("stage"      , new Integer(stage))
+						.append ("opcode"     , Integer.valueOf(opcode))
+						.append ("stage"      , Integer.valueOf(stage))
 						.append ("details"    , details);
 
 		return doc;
@@ -703,13 +703,13 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 		// Select entries with exec_time >= exec_time_lo
 
 		if (exec_time_lo > 0L) {
-			filters.add (Filters.gte ("exec_time", new Long(exec_time_lo)));
+			filters.add (Filters.gte ("exec_time", Long.valueOf(exec_time_lo)));
 		}
 
 		// Select entries with exec_time <= exec_time_hi
 
 		if (exec_time_hi > 0L) {
-			filters.add (Filters.lte ("exec_time", new Long(exec_time_hi)));
+			filters.add (Filters.lte ("exec_time", Long.valueOf(exec_time_hi)));
 		}
 
 		// Return combination of filters
@@ -731,7 +731,7 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 	// The filter selects tasks with exec_time <= cutoff_time.
 
 	private static Bson cutoff_filter (long cutoff_time) {
-		return Filters.lte ("exec_time", new Long(cutoff_time));
+		return Filters.lte ("exec_time", Long.valueOf(cutoff_time));
 	}
 
 
@@ -1196,7 +1196,7 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 
 		// Update: Set exec_time to 0L
 
-		Bson update = Updates.set ("exec_time", new Long(0L));
+		Bson update = Updates.set ("exec_time", Long.valueOf(0L));
 
 		// Options: sort by exec_time, return original document value
 
@@ -1248,8 +1248,8 @@ public class PendingTask extends DBEntity implements java.io.Serializable {
 
 		ArrayList<Bson> updates = new ArrayList<Bson>();
 
-		updates.add (Updates.set ("exec_time", new Long(exec_time)));
-		updates.add (Updates.set ("stage", new Integer(stage)));
+		updates.add (Updates.set ("exec_time", Long.valueOf(exec_time)));
+		updates.add (Updates.set ("stage", Integer.valueOf(stage)));
 
 		// Update event ID if desired
 

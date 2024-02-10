@@ -241,27 +241,27 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 	private void init_dataStartTimeParam () throws GUIEDTException {
 
-		dataStartTimeParam_comcat = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam_comcat = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_comcat.setUnits("Days");
 		dataStartTimeParam_comcat.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_comcat, "dataStartTimeParam_comcat", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataStartTimeParam_catalog = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam_catalog = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_catalog.setUnits("Days");
 		dataStartTimeParam_catalog.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_catalog, "dataStartTimeParam_catalog", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataStartTimeParam_forecast = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam_forecast = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_forecast.setUnits("Days");
 		dataStartTimeParam_forecast.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_forecast, "dataStartTimeParam_forecast", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataStartTimeParam_rj_sim = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam_rj_sim = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_rj_sim.setUnits("Days");
 		dataStartTimeParam_rj_sim.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_rj_sim, "dataStartTimeParam_rj_sim", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataStartTimeParam_etas_sim = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam_etas_sim = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_etas_sim.setUnits("Days");
 		dataStartTimeParam_etas_sim.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_etas_sim, "dataStartTimeParam_etas_sim", PARMGRP_DATA_SOURCE_PARAM);
@@ -294,27 +294,27 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 	private void init_dataEndTimeParam () throws GUIEDTException {
 
-		dataEndTimeParam_comcat = new DoubleParameter("Data End Time", 0d, 36500d, new Double(7d));
+		dataEndTimeParam_comcat = new DoubleParameter("Data End Time", 0d, 36500d, Double.valueOf(7d));
 		dataEndTimeParam_comcat.setUnits("Days");
 		dataEndTimeParam_comcat.setInfo("Data end relative to mainshock origin time");
 		register_param (dataEndTimeParam_comcat, "dataEndTimeParam_comcat", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataEndTimeParam_catalog = new DoubleParameter("Data End Time", 0d, 36500d, new Double(0d));
+		dataEndTimeParam_catalog = new DoubleParameter("Data End Time", 0d, 36500d, Double.valueOf(0d));
 		dataEndTimeParam_catalog.setUnits("Days");
 		dataEndTimeParam_catalog.setInfo("Data end relative to mainshock origin time");
 		register_param (dataEndTimeParam_catalog, "dataEndTimeParam_catalog", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataEndTimeParam_forecast = new DoubleParameter("Data End Time", 0d, 36500d, new Double(0d));
+		dataEndTimeParam_forecast = new DoubleParameter("Data End Time", 0d, 36500d, Double.valueOf(0d));
 		dataEndTimeParam_forecast.setUnits("Days");
 		dataEndTimeParam_forecast.setInfo("Data end relative to mainshock origin time");
 		register_param (dataEndTimeParam_forecast, "dataEndTimeParam_forecast", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataEndTimeParam_rj_sim = new DoubleParameter("Data End Time", 0d, 36500d, new Double(7d));
+		dataEndTimeParam_rj_sim = new DoubleParameter("Data End Time", 0d, 36500d, Double.valueOf(7d));
 		dataEndTimeParam_rj_sim.setUnits("Days");
 		dataEndTimeParam_rj_sim.setInfo("Data end relative to mainshock origin time");
 		register_param (dataEndTimeParam_rj_sim, "dataEndTimeParam_rj_sim", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataEndTimeParam_etas_sim = new DoubleParameter("Data End Time", 0d, 36500d, new Double(7d));
+		dataEndTimeParam_etas_sim = new DoubleParameter("Data End Time", 0d, 36500d, Double.valueOf(7d));
 		dataEndTimeParam_etas_sim.setUnits("Days");
 		dataEndTimeParam_etas_sim.setInfo("Data end relative to mainshock origin time");
 		register_param (dataEndTimeParam_etas_sim, "dataEndTimeParam_etas_sim", PARMGRP_DATA_SOURCE_PARAM);
@@ -341,7 +341,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 	private DoubleParameter minMagFetchParam;
 
 	private DoubleParameter init_minMagFetchParam () throws GUIEDTException {
-		minMagFetchParam = new DoubleParameter("Minimum magnitude", -8d, 9d, new Double(1d));
+		minMagFetchParam = new DoubleParameter("Minimum magnitude", -8d, 9d, Double.valueOf(1d));
 		minMagFetchParam.setInfo("Minimum magnitude when fetching data from Comcat");
 		register_param (minMagFetchParam, "minMagFetchParam", PARMGRP_DATA_SOURCE_PARAM);
 		return minMagFetchParam;

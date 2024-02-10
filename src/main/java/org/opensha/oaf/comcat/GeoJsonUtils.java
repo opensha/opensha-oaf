@@ -789,7 +789,7 @@ public class GeoJsonUtils {
 		if (o != null) {
 			if (o instanceof Number) {
 				if (!( o instanceof Double || o instanceof Float )) {
-					return new Long (((Number) o).longValue());
+					return Long.valueOf (((Number) o).longValue());
 				}
 			}
 		}
@@ -810,7 +810,7 @@ public class GeoJsonUtils {
 				if (!( o instanceof Double || o instanceof Float )) {
 					long y = ((Number) o).longValue();
 					if (y >= (long)Integer.MIN_VALUE && y <= (long)Integer.MAX_VALUE) {
-						return new Integer ((int) y);
+						return Integer.valueOf ((int) y);
 					}
 				}
 			}
@@ -851,10 +851,10 @@ public class GeoJsonUtils {
 		if (o != null) {
 			if (o instanceof Number) {
 				if (!( o instanceof Double || o instanceof Float )) {
-					return new Long (((Number) o).longValue());
+					return Long.valueOf (((Number) o).longValue());
 				}
 			} else if (o instanceof Date) {
-				return new Long (((Date) o).getTime());
+				return Long.valueOf (((Date) o).getTime());
 			}
 		}
 		return null;
@@ -871,7 +871,7 @@ public class GeoJsonUtils {
 		Object o = getSubObject (x, keys);
 		if (o != null) {
 			if (o instanceof Number) {
-				return new Double (((Number) o).doubleValue());
+				return Double.valueOf (((Number) o).doubleValue());
 			}
 		}
 		return null;

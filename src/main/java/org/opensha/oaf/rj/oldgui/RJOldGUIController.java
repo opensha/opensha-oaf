@@ -180,7 +180,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter dataStartTimeParam;
 
 	private DoubleParameter init_dataStartTimeParam () throws GUIEDTException {
-		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam.setUnits("Days");
 		dataStartTimeParam.setInfo("Relative to main shock origin time");
 		dataStartTimeParam.addParameterChangeListener(this);
@@ -193,7 +193,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter dataEndTimeParam;
 
 	private DoubleParameter init_dataEndTimeParam () throws GUIEDTException {
-		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, 36500d, new Double(7d));
+		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, 36500d, Double.valueOf(7d));
 		dataEndTimeParam.setUnits("Days");
 		dataEndTimeParam.setInfo("Relative to main shock origin time");
 		dataEndTimeParam.addParameterChangeListener(this);
@@ -265,15 +265,15 @@ public class RJOldGUIController extends RJOldGUIListener {
 	
 
 	private ParameterListParameter init_regionEditParam () throws GUIEDTException {
-		radiusParam = new DoubleParameter("Radius", 0d, 20000d, new Double(20d));
+		radiusParam = new DoubleParameter("Radius", 0d, 20000d, Double.valueOf(20d));
 		radiusParam.setUnits("km");
-		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, new Double(32d));
-		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, new Double(36d));
-		minLonParam = new DoubleParameter("Min Lon", -180d, 180d, new Double(32d));
-		maxLonParam = new DoubleParameter("Max Lon", -180d, 180d, new Double(36d));
-		minDepthParam = new DoubleParameter("Min Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MIN_DEPTH));
+		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, Double.valueOf(32d));
+		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, Double.valueOf(36d));
+		minLonParam = new DoubleParameter("Min Lon", -180d, 180d, Double.valueOf(32d));
+		maxLonParam = new DoubleParameter("Max Lon", -180d, 180d, Double.valueOf(36d));
+		minDepthParam = new DoubleParameter("Min Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, Double.valueOf(ComcatOAFAccessor.DEFAULT_MIN_DEPTH));
 		minDepthParam.setUnits("km");
-		maxDepthParam = new DoubleParameter("Max Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MAX_DEPTH));
+		maxDepthParam = new DoubleParameter("Max Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, Double.valueOf(ComcatOAFAccessor.DEFAULT_MAX_DEPTH));
 		maxDepthParam.setUnits("km");
 		regionCenterTypeParam = new EnumParameter<RegionCenterType>(
 				"Region Center", EnumSet.allOf(RegionCenterType.class), RegionCenterType.CENTROID, null);
@@ -351,7 +351,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter magPrecisionParam;
 
 	private DoubleParameter init_magPrecisionParam () throws GUIEDTException {
-		magPrecisionParam = new DoubleParameter("Mag Precision", 0d, 1d, new Double(0.1));
+		magPrecisionParam = new DoubleParameter("Mag Precision", 0d, 1d, Double.valueOf(0.1));
 		magPrecisionParam.setInfo("Magnitude rounding applied by network");;
 		magPrecisionParam.addParameterChangeListener(this);
 		return magPrecisionParam;
@@ -410,7 +410,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private IntegerParameter aValNumParam;
 
 	private IntegerParameter init_aValNumParam () throws GUIEDTException {
-		aValNumParam = new IntegerParameter("a-value Number", 1, 10000, new Integer(101));
+		aValNumParam = new IntegerParameter("a-value Number", 1, 10000, Integer.valueOf(101));
 		aValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		aValNumParam.addParameterChangeListener(this);
 		return aValNumParam;
@@ -436,7 +436,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private IntegerParameter pValNumParam;
 
 	private IntegerParameter init_pValNumParam () throws GUIEDTException {
-		pValNumParam = new IntegerParameter("p-value Number", 1, 10000, new Integer(45));
+		pValNumParam = new IntegerParameter("p-value Number", 1, 10000, Integer.valueOf(45));
 		pValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		pValNumParam.addParameterChangeListener(this);
 		return pValNumParam;
@@ -462,7 +462,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private IntegerParameter cValNumParam;
 
 	private IntegerParameter init_cValNumParam () throws GUIEDTException {
-		cValNumParam = new IntegerParameter("c-value num", 1, 10000, new Integer(1));
+		cValNumParam = new IntegerParameter("c-value num", 1, 10000, Integer.valueOf(1));
 		cValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		cValNumParam.addParameterChangeListener(this);
 		return cValNumParam;
@@ -487,7 +487,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter fParam;
 
 	private DoubleParameter init_fParam () throws GUIEDTException {
-		fParam = new DoubleParameter("F", 0.0, 2.0, new Double(0.5));
+		fParam = new DoubleParameter("F", 0.0, 2.0, Double.valueOf(0.5));
 		fParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		fParam.addParameterChangeListener(this);
 		return fParam;
@@ -500,7 +500,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter gParam;
 
 	private DoubleParameter init_gParam () throws GUIEDTException {
-		gParam = new DoubleParameter("G", -10.0, 100.0, new Double(0.25));
+		gParam = new DoubleParameter("G", -10.0, 100.0, Double.valueOf(0.25));
 		gParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		gParam.addParameterChangeListener(this);
 		return gParam;
@@ -513,7 +513,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter hParam;
 
 	private DoubleParameter init_hParam () throws GUIEDTException {
-		hParam = new DoubleParameter("H", 0.0, 10.0, new Double(1.0));
+		hParam = new DoubleParameter("H", 0.0, 10.0, Double.valueOf(1.0));
 		hParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		hParam.addParameterChangeListener(this);
 		return hParam;
@@ -526,7 +526,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter mCatParam;
 
 	private DoubleParameter init_mCatParam () throws GUIEDTException {
-		mCatParam = new DoubleParameter("Mcat", 1.0, 7.0, new Double(4.5));
+		mCatParam = new DoubleParameter("Mcat", 1.0, 7.0, Double.valueOf(4.5));
 		mCatParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		mCatParam.addParameterChangeListener(this);
 		return mCatParam;
@@ -550,7 +550,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter aValParam;
 
 	private DoubleParameter init_aValParam () throws GUIEDTException {
-		aValParam = new DoubleParameter("a-value", new Double(0d));	// can't use DoubleParameter("a-value", null) because the call would be ambiguous
+		aValParam = new DoubleParameter("a-value", Double.valueOf(0d));	// can't use DoubleParameter("a-value", null) because the call would be ambiguous
 		aValParam.setValue(null);
 		aValParam.addParameterChangeListener(this);
 		return aValParam;
@@ -563,7 +563,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter pValParam;
 
 	private DoubleParameter init_pValParam () throws GUIEDTException {
-		pValParam = new DoubleParameter("p-value", new Double(0d));	// can't use DoubleParameter("p-value", null) because the call would be ambiguous
+		pValParam = new DoubleParameter("p-value", Double.valueOf(0d));	// can't use DoubleParameter("p-value", null) because the call would be ambiguous
 		pValParam.setValue(null);
 		pValParam.addParameterChangeListener(this);
 		return pValParam;
@@ -576,7 +576,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter cValParam;
 
 	private DoubleParameter init_cValParam () throws GUIEDTException {
-		cValParam = new DoubleParameter("c-value", new Double(0d));	// can't use DoubleParameter("c-value", null) because the call would be ambiguous
+		cValParam = new DoubleParameter("c-value", Double.valueOf(0d));	// can't use DoubleParameter("c-value", null) because the call would be ambiguous
 		cValParam.setValue(null);
 		cValParam.addParameterChangeListener(this);
 		return cValParam;
@@ -602,7 +602,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter forecastStartTimeParam;
 
 	private DoubleParameter init_forecastStartTimeParam () throws GUIEDTException {
-		forecastStartTimeParam = new DoubleParameter("Forecast Start Time", 0d, 36500d, new Double(0d));
+		forecastStartTimeParam = new DoubleParameter("Forecast Start Time", 0d, 36500d, Double.valueOf(0d));
 		forecastStartTimeParam.setUnits("Days");
 		forecastStartTimeParam.addParameterChangeListener(this);
 		return forecastStartTimeParam;
@@ -615,7 +615,7 @@ public class RJOldGUIController extends RJOldGUIListener {
 	private DoubleParameter forecastEndTimeParam;
 
 	private DoubleParameter init_forecastEndTimeParam () throws GUIEDTException {
-		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, 36500d, new Double(7d));
+		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, 36500d, Double.valueOf(7d));
 		forecastEndTimeParam.setUnits("Days");
 		forecastEndTimeParam.addParameterChangeListener(this);
 		return forecastEndTimeParam;

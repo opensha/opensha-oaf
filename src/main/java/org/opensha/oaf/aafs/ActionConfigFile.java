@@ -394,11 +394,11 @@ public class ActionConfigFile implements Marshalable {
 	private static void def_adv_fractile_values (Collection<Double> x) {	// default for v2 and earlier files 
 
 		//  for (int frac_ix = 0; frac_ix < 79; ++frac_ix) {
-		//  	x.add (new Double ( round_fractile_value (((double)(frac_ix + 1)) / 80.0) ));
+		//  	x.add (Double.valueOf ( round_fractile_value (((double)(frac_ix + 1)) / 80.0) ));
 		//  }
 
 		for (int frac_ix = 0; frac_ix < 197; ++frac_ix) {
-			x.add (new Double ( round_fractile_value (((double)(frac_ix + 2)) / 200.0) ));
+			x.add (Double.valueOf ( round_fractile_value (((double)(frac_ix + 2)) / 200.0) ));
 		}
 
 		return;
@@ -413,16 +413,16 @@ public class ActionConfigFile implements Marshalable {
 
 	private static void def_adv_bar_counts (Collection<Integer> x) {	// default for v2 and earlier files 
 
-		x.add (new Integer (0));
-		x.add (new Integer (1));
-		x.add (new Integer (2));
-		x.add (new Integer (5));
-		x.add (new Integer (10));
-		x.add (new Integer (20));
-		x.add (new Integer (50));
-		x.add (new Integer (100));
-		x.add (new Integer (200));
-		x.add (new Integer (500));
+		x.add (Integer.valueOf (0));
+		x.add (Integer.valueOf (1));
+		x.add (Integer.valueOf (2));
+		x.add (Integer.valueOf (5));
+		x.add (Integer.valueOf (10));
+		x.add (Integer.valueOf (20));
+		x.add (Integer.valueOf (50));
+		x.add (Integer.valueOf (100));
+		x.add (Integer.valueOf (200));
+		x.add (Integer.valueOf (500));
 
 		return;
 	}
@@ -1002,7 +1002,7 @@ public class ActionConfigFile implements Marshalable {
 
 		// Binary search
 
-		int index = Collections.binarySearch (forecast_lags, new Long(min_lag));
+		int index = Collections.binarySearch (forecast_lags, Long.valueOf(min_lag));
 
 		// If not found, convert to index of next larger element
 
@@ -1030,7 +1030,7 @@ public class ActionConfigFile implements Marshalable {
 
 		// Binary search
 
-		int index = Collections.binarySearch (forecast_lags, new Long(min_lag));
+		int index = Collections.binarySearch (forecast_lags, Long.valueOf(min_lag));
 
 		// If not found, convert to index of next larger element
 
@@ -1072,7 +1072,7 @@ public class ActionConfigFile implements Marshalable {
 
 		// Binary search
 
-		int index = Collections.binarySearch (comcat_retry_lags, new Long(min_lag));
+		int index = Collections.binarySearch (comcat_retry_lags, Long.valueOf(min_lag));
 
 		// If not found, convert to index of next larger element
 
@@ -1099,7 +1099,7 @@ public class ActionConfigFile implements Marshalable {
 
 		// Binary search
 
-		int index = Collections.binarySearch (comcat_intake_lags, new Long(min_lag));
+		int index = Collections.binarySearch (comcat_intake_lags, Long.valueOf(min_lag));
 
 		// If not found, convert to index of next larger element
 
@@ -1126,7 +1126,7 @@ public class ActionConfigFile implements Marshalable {
 
 		// Binary search
 
-		int index = Collections.binarySearch (pdl_report_retry_lags, new Long(min_lag));
+		int index = Collections.binarySearch (pdl_report_retry_lags, Long.valueOf(min_lag));
 
 		// If not found, convert to index of next larger element
 
@@ -1332,7 +1332,7 @@ public class ActionConfigFile implements Marshalable {
 		ArrayList<Long> duration_list = new ArrayList<Long>();
 		int n = reader.unmarshalArrayBegin (name);
 		for (int i = 0; i < n; ++i) {
-			duration_list.add (new Long (unmarshal_duration (reader, null)));
+			duration_list.add (Long.valueOf (unmarshal_duration (reader, null)));
 		}
 		reader.unmarshalArrayEnd ();
 		return duration_list;

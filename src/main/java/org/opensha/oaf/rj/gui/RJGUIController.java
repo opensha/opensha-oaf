@@ -180,7 +180,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter dataStartTimeParam;
 
 	private DoubleParameter init_dataStartTimeParam () throws GUIEDTException {
-		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam.setUnits("Days");
 		dataStartTimeParam.setInfo("Data start relative to main shock origin time");
 		dataStartTimeParam.addParameterChangeListener(this);
@@ -193,7 +193,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter dataEndTimeParam;
 
 	private DoubleParameter init_dataEndTimeParam () throws GUIEDTException {
-		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, 36500d, new Double(7d));
+		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, 36500d, Double.valueOf(7d));
 		dataEndTimeParam.setUnits("Days");
 		dataEndTimeParam.setInfo("Data end relative to main shock origin time");
 		dataEndTimeParam.addParameterChangeListener(this);
@@ -296,45 +296,45 @@ public class RJGUIController extends RJGUIListener {
 	
 
 	private ParameterListParameter init_regionEditParam () throws GUIEDTException {
-		radiusParam = new DoubleParameter("Radius", 0d, 20000d, new Double(20d));
+		radiusParam = new DoubleParameter("Radius", 0d, 20000d, Double.valueOf(20d));
 		radiusParam.setUnits("km");
 		radiusParam.setInfo("Radius of circular region");
 
-		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, new Double(32d));
+		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, Double.valueOf(32d));
 		minLatParam.setInfo("Minimum latitude of rectangular region");
 
-		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, new Double(36d));
+		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, Double.valueOf(36d));
 		maxLatParam.setInfo("Maximum latitude of rectangular region");
 
-		minLonParam = new DoubleParameter("Min Lon", -180d, 180d, new Double(32d));
+		minLonParam = new DoubleParameter("Min Lon", -180d, 180d, Double.valueOf(32d));
 		minLonParam.setInfo("Minimum longitude of rectangular region");
 
-		maxLonParam = new DoubleParameter("Max Lon", -180d, 180d, new Double(36d));
+		maxLonParam = new DoubleParameter("Max Lon", -180d, 180d, Double.valueOf(36d));
 		maxLonParam.setInfo("Maximum longitude of rectangular region");
 
-		minDepthParam = new DoubleParameter("Min Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MIN_DEPTH));
+		minDepthParam = new DoubleParameter("Min Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, Double.valueOf(ComcatOAFAccessor.DEFAULT_MIN_DEPTH));
 		minDepthParam.setUnits("km");
 		minDepthParam.setInfo("Minimum depth of region");
 		
-		maxDepthParam = new DoubleParameter("Max Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MAX_DEPTH));
+		maxDepthParam = new DoubleParameter("Max Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, Double.valueOf(ComcatOAFAccessor.DEFAULT_MAX_DEPTH));
 		maxDepthParam.setUnits("km");
 		maxDepthParam.setInfo("Maximum depth of region");
 		
-		wcMultiplierParam = new DoubleParameter("WC Multiplier", 0d, 100d, new Double(1d));
+		wcMultiplierParam = new DoubleParameter("WC Multiplier", 0d, 100d, Double.valueOf(1d));
 		wcMultiplierParam.setInfo("Multiplier for WC radius");
 
-		minRadiusParam = new DoubleParameter("Min Radius", 0d, 20000d, new Double(10d));
+		minRadiusParam = new DoubleParameter("Min Radius", 0d, 20000d, Double.valueOf(10d));
 		minRadiusParam.setUnits("km");
 		minRadiusParam.setInfo("Minimum radius of circular region");
 		
-		maxRadiusParam = new DoubleParameter("Max Radius", 0d, 20000d, new Double(2000d));
+		maxRadiusParam = new DoubleParameter("Max Radius", 0d, 20000d, Double.valueOf(2000d));
 		maxRadiusParam.setUnits("km");
 		maxRadiusParam.setInfo("Maximum radius of circular region");
 		
-		centerLatParam = new DoubleParameter("Center Lat", -90d, 90d, new Double(34d));
+		centerLatParam = new DoubleParameter("Center Lat", -90d, 90d, Double.valueOf(34d));
 		centerLatParam.setInfo("Latitude of center of circular region");
 
-		centerLonParam = new DoubleParameter("Center Lon", -180d, 180d, new Double(34d));
+		centerLonParam = new DoubleParameter("Center Lon", -180d, 180d, Double.valueOf(34d));
 		centerLonParam.setInfo("Longitude of center of circular region");
 		
 		regionList = new ParameterList();
@@ -410,7 +410,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter magPrecisionParam;
 
 	private DoubleParameter init_magPrecisionParam () throws GUIEDTException {
-		magPrecisionParam = new DoubleParameter("Mag Precision", 0d, 1d, new Double(0.1));
+		magPrecisionParam = new DoubleParameter("Mag Precision", 0d, 1d, Double.valueOf(0.1));
 		magPrecisionParam.setInfo("Magnitude rounding applied by network");;
 		magPrecisionParam.addParameterChangeListener(this);
 		return magPrecisionParam;
@@ -469,7 +469,7 @@ public class RJGUIController extends RJGUIListener {
 	private IntegerParameter aValNumParam;
 
 	private IntegerParameter init_aValNumParam () throws GUIEDTException {
-		aValNumParam = new IntegerParameter("a-value Number", 1, 10000, new Integer(101));
+		aValNumParam = new IntegerParameter("a-value Number", 1, 10000, Integer.valueOf(101));
 		aValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		aValNumParam.addParameterChangeListener(this);
 		return aValNumParam;
@@ -495,7 +495,7 @@ public class RJGUIController extends RJGUIListener {
 	private IntegerParameter pValNumParam;
 
 	private IntegerParameter init_pValNumParam () throws GUIEDTException {
-		pValNumParam = new IntegerParameter("p-value Number", 1, 10000, new Integer(45));
+		pValNumParam = new IntegerParameter("p-value Number", 1, 10000, Integer.valueOf(45));
 		pValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		pValNumParam.addParameterChangeListener(this);
 		return pValNumParam;
@@ -521,7 +521,7 @@ public class RJGUIController extends RJGUIListener {
 	private IntegerParameter cValNumParam;
 
 	private IntegerParameter init_cValNumParam () throws GUIEDTException {
-		cValNumParam = new IntegerParameter("c-value num", 1, 10000, new Integer(1));
+		cValNumParam = new IntegerParameter("c-value num", 1, 10000, Integer.valueOf(1));
 		cValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		cValNumParam.addParameterChangeListener(this);
 		return cValNumParam;
@@ -546,7 +546,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter fParam;
 
 	private DoubleParameter init_fParam () throws GUIEDTException {
-		fParam = new DoubleParameter("F", 0.0, 2.0, new Double(0.5));
+		fParam = new DoubleParameter("F", 0.0, 2.0, Double.valueOf(0.5));
 		fParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		fParam.addParameterChangeListener(this);
 		return fParam;
@@ -559,7 +559,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter gParam;
 
 	private DoubleParameter init_gParam () throws GUIEDTException {
-		gParam = new DoubleParameter("G", -10.0, 100.0, new Double(0.25));
+		gParam = new DoubleParameter("G", -10.0, 100.0, Double.valueOf(0.25));
 		gParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		gParam.addParameterChangeListener(this);
 		return gParam;
@@ -572,7 +572,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter hParam;
 
 	private DoubleParameter init_hParam () throws GUIEDTException {
-		hParam = new DoubleParameter("H", 0.0, 10.0, new Double(1.0));
+		hParam = new DoubleParameter("H", 0.0, 10.0, Double.valueOf(1.0));
 		hParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		hParam.addParameterChangeListener(this);
 		return hParam;
@@ -585,7 +585,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter mCatParam;
 
 	private DoubleParameter init_mCatParam () throws GUIEDTException {
-		mCatParam = new DoubleParameter("Mcat", 1.0, 7.0, new Double(4.5));
+		mCatParam = new DoubleParameter("Mcat", 1.0, 7.0, Double.valueOf(4.5));
 		mCatParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		mCatParam.addParameterChangeListener(this);
 		return mCatParam;
@@ -609,7 +609,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter aValParam;
 
 	private DoubleParameter init_aValParam () throws GUIEDTException {
-		aValParam = new DoubleParameter("a-value", new Double(0d));	// can't use DoubleParameter("a-value", null) because the call would be ambiguous
+		aValParam = new DoubleParameter("a-value", Double.valueOf(0d));	// can't use DoubleParameter("a-value", null) because the call would be ambiguous
 		aValParam.setValue(null);
 		aValParam.addParameterChangeListener(this);
 		return aValParam;
@@ -622,7 +622,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter pValParam;
 
 	private DoubleParameter init_pValParam () throws GUIEDTException {
-		pValParam = new DoubleParameter("p-value", new Double(0d));	// can't use DoubleParameter("p-value", null) because the call would be ambiguous
+		pValParam = new DoubleParameter("p-value", Double.valueOf(0d));	// can't use DoubleParameter("p-value", null) because the call would be ambiguous
 		pValParam.setValue(null);
 		pValParam.addParameterChangeListener(this);
 		return pValParam;
@@ -635,7 +635,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter cValParam;
 
 	private DoubleParameter init_cValParam () throws GUIEDTException {
-		cValParam = new DoubleParameter("c-value", new Double(0d));	// can't use DoubleParameter("c-value", null) because the call would be ambiguous
+		cValParam = new DoubleParameter("c-value", Double.valueOf(0d));	// can't use DoubleParameter("c-value", null) because the call would be ambiguous
 		cValParam.setValue(null);
 		cValParam.addParameterChangeListener(this);
 		return cValParam;
@@ -661,7 +661,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter forecastStartTimeParam;
 
 	private DoubleParameter init_forecastStartTimeParam () throws GUIEDTException {
-		forecastStartTimeParam = new DoubleParameter("Forecast Start Time", 0d, 36500d, new Double(0d));
+		forecastStartTimeParam = new DoubleParameter("Forecast Start Time", 0d, 36500d, Double.valueOf(0d));
 		forecastStartTimeParam.setUnits("Days");
 		forecastStartTimeParam.setInfo("Forecast start relative to main shock origin time");
 		forecastStartTimeParam.addParameterChangeListener(this);
@@ -675,7 +675,7 @@ public class RJGUIController extends RJGUIListener {
 	private DoubleParameter forecastEndTimeParam;
 
 	private DoubleParameter init_forecastEndTimeParam () throws GUIEDTException {
-		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, 36500d, new Double(7d));
+		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, 36500d, Double.valueOf(7d));
 		forecastEndTimeParam.setUnits("Days");
 		forecastEndTimeParam.setInfo("Forecast end relative to main shock origin time");
 		forecastEndTimeParam.addParameterChangeListener(this);
@@ -740,7 +740,7 @@ public class RJGUIController extends RJGUIListener {
 		double duration_max = gui_model.get_max_fc_duration_days();
 		double duration_def = gui_model.get_def_fc_duration_days();
 
-		forecastDurationParam = new DoubleParameter("Forecast Duration", duration_min, duration_max, new Double(duration_def));
+		forecastDurationParam = new DoubleParameter("Forecast Duration", duration_min, duration_max, Double.valueOf(duration_def));
 		forecastDurationParam.setUnits("Days");
 		forecastDurationParam.setInfo("Forecast duration relative to main shock origin time");
 		forecastDurationParam.addParameterChangeListener(this);

@@ -308,7 +308,7 @@ public class AliasFamily extends DBEntity implements java.io.Serializable {
 
 			// Insert into reverse map and check for duplicate
 
-			if (tlmap.put (timeline_ids[tlix], new Integer(tlix)) != null) {
+			if (tlmap.put (timeline_ids[tlix], Integer.valueOf(tlix)) != null) {
 				throw new IllegalArgumentException("AliasFamily.set_assigments: Found duplicate timeline ID : " + timeline_ids[tlix]);
 			}
 
@@ -343,7 +343,7 @@ public class AliasFamily extends DBEntity implements java.io.Serializable {
 		// Construct the reverse map of Comcat IDs and check for duplicates
 
 		for (ccix = 0; ccix < comcat_ids_length; ++ccix) {
-			if (ccmap.put (comcat_ids[ccix], new Integer(ccix)) != null) {
+			if (ccmap.put (comcat_ids[ccix], Integer.valueOf(ccix)) != null) {
 				throw new IllegalArgumentException("AliasFamily.set_assigments: Found duplicate Comcat ID : " + comcat_ids[ccix]);
 			}
 		}
@@ -553,7 +553,7 @@ public class AliasFamily extends DBEntity implements java.io.Serializable {
 		// Construct the document
 
 		Document doc = new Document ("_id", id)
-						.append ("family_time" , new Long(family_time))
+						.append ("family_time" , Long.valueOf(family_time))
 						.append ("timeline_ids", Arrays.asList(timeline_ids.clone()))
 						.append ("comcat_ids"  , Arrays.asList(comcat_ids.clone()))
 						.append ("enc_bindings", MongoDBUtil.int_array_to_list (enc_bindings));
@@ -685,20 +685,20 @@ public class AliasFamily extends DBEntity implements java.io.Serializable {
 		// Select entries with family_time >= family_time_lo
 
 		if (family_time_lo > 0L) {
-			filters.add (Filters.gte ("family_time", new Long(family_time_lo)));
+			filters.add (Filters.gte ("family_time", Long.valueOf(family_time_lo)));
 		}
 
 		// Select entries with family_time <= family_time_hi
 
 		if (family_time_hi > 0L) {
-			filters.add (Filters.lte ("family_time", new Long(family_time_hi)));
+			filters.add (Filters.lte ("family_time", Long.valueOf(family_time_hi)));
 		}
 
 		// Select entries with family_time % family_time_div_rem[0] == family_time_div_rem[1]
 
 		if (family_time_div_rem != null) {
 			if (family_time_div_rem[0] > 0L) {
-				filters.add (Filters.mod ("family_time", new Long(family_time_div_rem[0]), new Long(family_time_div_rem[1])));
+				filters.add (Filters.mod ("family_time", Long.valueOf(family_time_div_rem[0]), Long.valueOf(family_time_div_rem[1])));
 			}
 		}
 

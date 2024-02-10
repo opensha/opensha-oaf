@@ -223,7 +223,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 		double duration_max = gui_model.get_max_fc_duration_days();
 		double duration_def = gui_model.get_def_fc_duration_days();
 
-		forecastDurationParam = new DoubleParameter("Forecast Duration", duration_min, duration_max, new Double(duration_def));
+		forecastDurationParam = new DoubleParameter("Forecast Duration", duration_min, duration_max, Double.valueOf(duration_def));
 		forecastDurationParam.setUnits("Days");
 		forecastDurationParam.setInfo("Forecast duration relative to main shock origin time");
 		register_param (forecastDurationParam, "forecastDurationParam", PARMGRP_ANALYST_OPTION);

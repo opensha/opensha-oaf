@@ -191,7 +191,7 @@ public class OEGUISubForecast extends OEGUIListener {
 	private DoubleParameter forecastStartTimeParam;
 
 	private DoubleParameter init_forecastStartTimeParam () throws GUIEDTException {
-		forecastStartTimeParam = new DoubleParameter("Forecast Start Time", 0d, 36500d, new Double(0d));
+		forecastStartTimeParam = new DoubleParameter("Forecast Start Time", 0d, 36500d, Double.valueOf(0d));
 		forecastStartTimeParam.setUnits("Days");
 		forecastStartTimeParam.setInfo("Forecast start relative to main shock origin time");
 		register_param (forecastStartTimeParam, "forecastStartTimeParam", PARMGRP_FCAST_VALUE);
@@ -205,7 +205,7 @@ public class OEGUISubForecast extends OEGUIListener {
 	private DoubleParameter forecastEndTimeParam;
 
 	private DoubleParameter init_forecastEndTimeParam () throws GUIEDTException {
-		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, 36500d, new Double(7d));
+		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, 36500d, Double.valueOf(7d));
 		forecastEndTimeParam.setUnits("Days");
 		forecastEndTimeParam.setInfo("Forecast end relative to main shock origin time");
 		register_param (forecastEndTimeParam, "forecastEndTimeParam", PARMGRP_FCAST_VALUE);

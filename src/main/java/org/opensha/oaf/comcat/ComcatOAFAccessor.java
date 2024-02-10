@@ -147,7 +147,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 		if (sim_error_rate > 1.0e-6) {
 			if (sim_error_rate > Math.random()) {
 				local_http_status = -2;
-				http_statuses.add (new Integer(get_http_status_code()));
+				http_statuses.add (Integer.valueOf(get_http_status_code()));
 				throw new ComcatSimulatedException ("ComcatOAFAccessor: Simulated Comcat error");
 			}
 		}
@@ -413,7 +413,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 			// Set up HTTP status for event not found
 
 			local_http_status = 404;	// not found
-			http_statuses.add (new Integer(get_http_status_code()));
+			http_statuses.add (Integer.valueOf(get_http_status_code()));
 			return null;
 		}
 
@@ -432,7 +432,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 			} else {
 				local_http_status = 200;	// success
 			}
-			http_statuses.add (new Integer(get_http_status_code()));
+			http_statuses.add (Integer.valueOf(get_http_status_code()));
 			return locrup;
 		}
 
@@ -523,7 +523,7 @@ public class ComcatOAFAccessor extends ComcatAccessor {
 			// Set up resulting HTTP status
 
 			local_http_status = 200;	// success
-			http_statuses.add (new Integer(get_http_status_code()));
+			http_statuses.add (Integer.valueOf(get_http_status_code()));
 			return result;
 		}
 

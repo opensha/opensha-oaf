@@ -386,9 +386,9 @@ public class CatalogSnapshot extends DBEntity implements java.io.Serializable {
 
 		Document doc = new Document ("_id", id)
 						.append ("event_id"          , event_id)
-						.append ("start_time"        , new Long(start_time))
-						.append ("end_time"          , new Long(end_time))
-						.append ("eqk_count"         , new Integer(eqk_count))
+						.append ("start_time"        , Long.valueOf(start_time))
+						.append ("end_time"          , Long.valueOf(end_time))
+						.append ("eqk_count"         , Integer.valueOf(eqk_count))
 						.append ("lat_lon_depth_list", MongoDBUtil.long_array_to_list (lat_lon_depth_list))
 						.append ("mag_time_list"     , MongoDBUtil.long_array_to_list (mag_time_list));
 
@@ -509,13 +509,13 @@ public class CatalogSnapshot extends DBEntity implements java.io.Serializable {
 		// Select entries with end_time >= end_time_lo
 
 		if (end_time_lo > 0L) {
-			filters.add (Filters.gte ("end_time", new Long(end_time_lo)));
+			filters.add (Filters.gte ("end_time", Long.valueOf(end_time_lo)));
 		}
 
 		// Select entries with end_time <= end_time_hi
 
 		if (end_time_hi > 0L) {
-			filters.add (Filters.lte ("end_time", new Long(end_time_hi)));
+			filters.add (Filters.lte ("end_time", Long.valueOf(end_time_hi)));
 		}
 
 		// Return combination of filters

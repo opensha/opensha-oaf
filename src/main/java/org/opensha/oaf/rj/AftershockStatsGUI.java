@@ -312,13 +312,13 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		eventIDParam.addParameterChangeListener(this);
 		dataParams.addParameter(eventIDParam);
 		
-		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 36500d, new Double(0d));
+		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam.setUnits("Days");
 		dataStartTimeParam.setInfo("Relative to main shock origin time");
 		dataStartTimeParam.addParameterChangeListener(this);
 		dataParams.addParameter(dataStartTimeParam);
 		
-		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, 36500d, new Double(7d));
+		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, 36500d, Double.valueOf(7d));
 		dataEndTimeParam.setUnits("Days");
 		dataEndTimeParam.setInfo("Relative to main shock origin time");
 		dataEndTimeParam.addParameterChangeListener(this);
@@ -331,15 +331,15 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		dataParams.addParameter(regionTypeParam);
 		
 		// these are inside region editor
-		radiusParam = new DoubleParameter("Radius", 0d, 20000d, new Double(20d));
+		radiusParam = new DoubleParameter("Radius", 0d, 20000d, Double.valueOf(20d));
 		radiusParam.setUnits("km");
-		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, new Double(32d));
-		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, new Double(36d));
-		minLonParam = new DoubleParameter("Min Lon", -180d, 180d, new Double(32d));
-		maxLonParam = new DoubleParameter("Max Lon", -180d, 180d, new Double(36d));
-		minDepthParam = new DoubleParameter("Min Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MIN_DEPTH));
+		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, Double.valueOf(32d));
+		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, Double.valueOf(36d));
+		minLonParam = new DoubleParameter("Min Lon", -180d, 180d, Double.valueOf(32d));
+		maxLonParam = new DoubleParameter("Max Lon", -180d, 180d, Double.valueOf(36d));
+		minDepthParam = new DoubleParameter("Min Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, Double.valueOf(ComcatOAFAccessor.DEFAULT_MIN_DEPTH));
 		minDepthParam.setUnits("km");
-		maxDepthParam = new DoubleParameter("Max Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MAX_DEPTH));
+		maxDepthParam = new DoubleParameter("Max Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, Double.valueOf(ComcatOAFAccessor.DEFAULT_MAX_DEPTH));
 		maxDepthParam.setUnits("km");
 		regionCenterTypeParam = new EnumParameter<AftershockStatsGUI.RegionCenterType>(
 				"Region Center", EnumSet.allOf(RegionCenterType.class), RegionCenterType.CENTROID, null);
@@ -374,7 +374,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		mcParam.addParameterChangeListener(this);
 		dataParams.addParameter(mcParam);
 		
-		magPrecisionParam = new DoubleParameter("Mag Precision", 0d, 1d, new Double(0.1));
+		magPrecisionParam = new DoubleParameter("Mag Precision", 0d, 1d, Double.valueOf(0.1));
 		magPrecisionParam.setInfo("Magnitude rounding applied by network");;
 		magPrecisionParam.addParameterChangeListener(this);
 		dataParams.addParameter(magPrecisionParam);
@@ -399,7 +399,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		aValRangeParam.addParameterChangeListener(this);
 		fitParams.addParameter(aValRangeParam);
 		
-		aValNumParam = new IntegerParameter("a-value num", 1, 10000, new Integer(101));
+		aValNumParam = new IntegerParameter("a-value num", 1, 10000, Integer.valueOf(101));
 		aValNumParam.addParameterChangeListener(this);
 		fitParams.addParameter(aValNumParam);
 		
@@ -407,7 +407,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		pValRangeParam.addParameterChangeListener(this);
 		fitParams.addParameter(pValRangeParam);
 		
-		pValNumParam = new IntegerParameter("p-value num", 1, 10000, new Integer(45));
+		pValNumParam = new IntegerParameter("p-value num", 1, 10000, Integer.valueOf(45));
 		pValNumParam.addParameterChangeListener(this);
 		fitParams.addParameter(pValNumParam);
 		
@@ -415,7 +415,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		cValRangeParam.addParameterChangeListener(this);
 		fitParams.addParameter(cValRangeParam);
 		
-		cValNumParam = new IntegerParameter("c-value num", 1, 10000, new Integer(1));
+		cValNumParam = new IntegerParameter("c-value num", 1, 10000, Integer.valueOf(1));
 		cValNumParam.addParameterChangeListener(this);
 		fitParams.addParameter(cValNumParam);
 		
@@ -423,19 +423,19 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		timeDepMcParam.addParameterChangeListener(this);
 		fitParams.addParameter(timeDepMcParam);
 		
-		fParam = new DoubleParameter("F", 0.0, 2.0, new Double(0.5));
+		fParam = new DoubleParameter("F", 0.0, 2.0, Double.valueOf(0.5));
 		fParam.addParameterChangeListener(this);
 		fitParams.addParameter(fParam);
 		
-		gParam = new DoubleParameter("G", -10.0, 100.0, new Double(0.25));
+		gParam = new DoubleParameter("G", -10.0, 100.0, Double.valueOf(0.25));
 		gParam.addParameterChangeListener(this);
 		fitParams.addParameter(gParam);
 		
-		hParam = new DoubleParameter("H", 0.0, 10.0, new Double(1.0));
+		hParam = new DoubleParameter("H", 0.0, 10.0, Double.valueOf(1.0));
 		hParam.addParameterChangeListener(this);
 		fitParams.addParameter(hParam);
 		
-		mCatParam = new DoubleParameter("Mcat", 1.0, 7.0, new Double(4.5));
+		mCatParam = new DoubleParameter("Mcat", 1.0, 7.0, Double.valueOf(4.5));
 		mCatParam.addParameterChangeListener(this);
 		fitParams.addParameter(mCatParam);
 		
@@ -443,17 +443,17 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		computeAftershockParamsButton.addParameterChangeListener(this);
 		fitParams.addParameter(computeAftershockParamsButton);
 		
-		aValParam = new DoubleParameter("a-value", new Double(0d));
+		aValParam = new DoubleParameter("a-value", Double.valueOf(0d));
 		aValParam.setValue(null);
 		aValParam.addParameterChangeListener(this);
 		fitParams.addParameter(aValParam);
 		
-		pValParam = new DoubleParameter("p-value", new Double(0d));
+		pValParam = new DoubleParameter("p-value", Double.valueOf(0d));
 		pValParam.setValue(null);
 		pValParam.addParameterChangeListener(this);
 		fitParams.addParameter(pValParam);
 		
-		cValParam = new DoubleParameter("c-value", new Double(0d));
+		cValParam = new DoubleParameter("c-value", Double.valueOf(0d));
 		cValParam.setValue(null);
 		cValParam.addParameterChangeListener(this);
 		fitParams.addParameter(cValParam);
@@ -462,12 +462,12 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		forecastStartTimeNowParam.addParameterChangeListener(this);
 		fitParams.addParameter(forecastStartTimeNowParam);
 		
-		forecastStartTimeParam = new DoubleParameter("Forecast Start Time", 0d, 36500d, new Double(0d));
+		forecastStartTimeParam = new DoubleParameter("Forecast Start Time", 0d, 36500d, Double.valueOf(0d));
 		forecastStartTimeParam.setUnits("Days");
 		forecastStartTimeParam.addParameterChangeListener(this);
 		fitParams.addParameter(forecastStartTimeParam);
 		
-		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, 36500d, new Double(7d));
+		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, 36500d, Double.valueOf(7d));
 		forecastEndTimeParam.setUnits("Days");
 		forecastEndTimeParam.addParameterChangeListener(this);
 		fitParams.addParameter(forecastEndTimeParam);

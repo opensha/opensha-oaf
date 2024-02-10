@@ -204,56 +204,56 @@ public class OEGUISubRegion extends OEGUIListener {
 
 
 	private void init_regionDialogParam () throws GUIEDTException {
-		radiusParam = new DoubleParameter("Radius", 0d, 20000d, new Double(20d));
+		radiusParam = new DoubleParameter("Radius", 0d, 20000d, Double.valueOf(20d));
 		radiusParam.setUnits("km");
 		radiusParam.setInfo("Radius of circular region");
 		register_param (radiusParam, "radiusParam", PARMGRP_REGION_PARAM);
 
-		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, new Double(32d));
+		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, Double.valueOf(32d));
 		minLatParam.setInfo("Minimum latitude of rectangular region");
 		register_param (minLatParam, "minLatParam", PARMGRP_REGION_PARAM);
 
-		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, new Double(36d));
+		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, Double.valueOf(36d));
 		maxLatParam.setInfo("Maximum latitude of rectangular region");
 		register_param (maxLatParam, "maxLatParam", PARMGRP_REGION_PARAM);
 
-		minLonParam = new DoubleParameter("Min Lon", -180d, 180d, new Double(32d));
+		minLonParam = new DoubleParameter("Min Lon", -180d, 180d, Double.valueOf(32d));
 		minLonParam.setInfo("Minimum longitude of rectangular region");
 		register_param (minLonParam, "minLonParam", PARMGRP_REGION_PARAM);
 
-		maxLonParam = new DoubleParameter("Max Lon", -180d, 180d, new Double(36d));
+		maxLonParam = new DoubleParameter("Max Lon", -180d, 180d, Double.valueOf(36d));
 		maxLonParam.setInfo("Maximum longitude of rectangular region");
 		register_param (maxLonParam, "maxLonParam", PARMGRP_REGION_PARAM);
 
-		minDepthParam = new DoubleParameter("Min Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MIN_DEPTH));
+		minDepthParam = new DoubleParameter("Min Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, Double.valueOf(ComcatOAFAccessor.DEFAULT_MIN_DEPTH));
 		minDepthParam.setUnits("km");
 		minDepthParam.setInfo("Minimum depth of region");
 		register_param (minDepthParam, "minDepthParam", PARMGRP_REGION_PARAM);
 		
-		maxDepthParam = new DoubleParameter("Max Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, new Double(ComcatOAFAccessor.DEFAULT_MAX_DEPTH));
+		maxDepthParam = new DoubleParameter("Max Depth", ComcatOAFAccessor.DEFAULT_MIN_DEPTH, ComcatOAFAccessor.DEFAULT_MAX_DEPTH, Double.valueOf(ComcatOAFAccessor.DEFAULT_MAX_DEPTH));
 		maxDepthParam.setUnits("km");
 		maxDepthParam.setInfo("Maximum depth of region");
 		register_param (maxDepthParam, "maxDepthParam", PARMGRP_REGION_PARAM);
 		
-		wcMultiplierParam = new DoubleParameter("WC Multiplier", 0d, 100d, new Double(1d));
+		wcMultiplierParam = new DoubleParameter("WC Multiplier", 0d, 100d, Double.valueOf(1d));
 		wcMultiplierParam.setInfo("Multiplier for WC radius");
 		register_param (wcMultiplierParam, "wcMultiplierParam", PARMGRP_REGION_PARAM);
 
-		minRadiusParam = new DoubleParameter("Min Radius", 0d, 20000d, new Double(10d));
+		minRadiusParam = new DoubleParameter("Min Radius", 0d, 20000d, Double.valueOf(10d));
 		minRadiusParam.setUnits("km");
 		minRadiusParam.setInfo("Minimum radius of circular region");
 		register_param (minRadiusParam, "minRadiusParam", PARMGRP_REGION_PARAM);
 		
-		maxRadiusParam = new DoubleParameter("Max Radius", 0d, 20000d, new Double(2000d));
+		maxRadiusParam = new DoubleParameter("Max Radius", 0d, 20000d, Double.valueOf(2000d));
 		maxRadiusParam.setUnits("km");
 		maxRadiusParam.setInfo("Maximum radius of circular region");
 		register_param (maxRadiusParam, "maxRadiusParam", PARMGRP_REGION_PARAM);
 		
-		centerLatParam = new DoubleParameter("Center Lat", -90d, 90d, new Double(34d));
+		centerLatParam = new DoubleParameter("Center Lat", -90d, 90d, Double.valueOf(34d));
 		centerLatParam.setInfo("Latitude of center of circular region");
 		register_param (centerLatParam, "centerLatParam", PARMGRP_REGION_PARAM);
 
-		centerLonParam = new DoubleParameter("Center Lon", -180d, 180d, new Double(34d));
+		centerLonParam = new DoubleParameter("Center Lon", -180d, 180d, Double.valueOf(34d));
 		centerLonParam.setInfo("Longitude of center of circular region");
 		register_param (centerLonParam, "centerLonParam", PARMGRP_REGION_PARAM);
 
