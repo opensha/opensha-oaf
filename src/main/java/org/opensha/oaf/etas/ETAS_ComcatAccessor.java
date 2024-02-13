@@ -573,7 +573,7 @@ public class ETAS_ComcatAccessor {
 								
 							Location loc;
 							try{
-								loc = new Location(new Double(split[0]), new Double(split[1]));
+								loc = new Location(Double.valueOf(split[0]), Double.valueOf(split[1]));
 							} catch (Exception e) {
 								System.err.println("Problem parsing finite source at line:") ;
 								StringBuilder outString = new StringBuilder();

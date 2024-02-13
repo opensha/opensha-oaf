@@ -580,7 +580,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		dateStartString.getEditor().setEnabled(false);
 		forecastParams.addParameter(dateStartString);
 		
-//		forecastDurationParam = new DoubleParameter("Forecast Duration", 0d, 366, new Double(366d));
+//		forecastDurationParam = new DoubleParameter("Forecast Duration", 0d, 366, Double.valueOf(366d));
 //		forecastDurationParam.setUnits("Days");
 //		forecastDurationParam.setInfo("Forecast duration relative to forecast start time");
 //		forecastDurationParam.addParameterChangeListener(this);
@@ -604,7 +604,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		forecastParams.addParameter(quickForecastButton);
 		
 		timeWindow = new ParameterList(); 
-		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, new Double(0d));
+		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, Double.valueOf(0d));
 		
 //		if(prForecastMode || prReportMode) {
 		if(dataStartFixed) {
@@ -648,22 +648,22 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		regionCenterLonParam.getConstraint().setNullAllowed(true);
 		regionCenterLonParam.setInfo("Center point of aftershock zone");
 		
-		radiusParam = new DoubleParameter("Radius", 0d, 10000d, new Double(20));
+		radiusParam = new DoubleParameter("Radius", 0d, 10000d, Double.valueOf(20));
 		radiusParam.setUnits("km");
 		radiusParam.setInfo("Radius for collecting aftershocks in km");
-		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, new Double(0));
+		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, Double.valueOf(0));
 		minLatParam.setInfo("Minimum latitude for rectangle");
-		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, new Double(0));
+		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, Double.valueOf(0));
 		maxLatParam.setInfo("Maximum latitude for rectangle");
-		minLonParam = new DoubleParameter("Min Lon", -180d, 360d, new Double(0));
+		minLonParam = new DoubleParameter("Min Lon", -180d, 360d, Double.valueOf(0));
 		minLonParam.setInfo("Minimum longitude for rectangle");
-		maxLonParam = new DoubleParameter("Max Lon", -180d, 360d, new Double(0));
+		maxLonParam = new DoubleParameter("Max Lon", -180d, 360d, Double.valueOf(0));
 		maxLonParam.setInfo("Maximum longitude for rectangle");
 		
-		minDepthParam = new DoubleParameter("Min Depth", 0d, 1000d, new Double(0));
+		minDepthParam = new DoubleParameter("Min Depth", 0d, 1000d, Double.valueOf(0));
 		minDepthParam.setUnits("km");
 		minDepthParam.setInfo("Minimum depth for collecting aftershocks");
-		maxDepthParam = new DoubleParameter("Max Depth", 0d, 1000d, new Double(1000d));
+		maxDepthParam = new DoubleParameter("Max Depth", 0d, 1000d, Double.valueOf(1000d));
 		maxDepthParam.setUnits("km");
 		maxDepthParam.setInfo("Maximum depth for collecting aftershocks");
 		
@@ -745,7 +745,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		mcParam.getEditor().getComponent().setAlignmentX(RIGHT_ALIGNMENT);
 		
 		
-		magPrecisionParam = new DoubleParameter("\u0394M", 0d, 1d, new Double(0.1));
+		magPrecisionParam = new DoubleParameter("\u0394M", 0d, 1d, Double.valueOf(0.1));
 		magPrecisionParam.setInfo("Magnitude rounding applied by network");;
 		magPrecisionParam.addParameterChangeListener(this);
 		magPrecisionParam.getEditor().getComponent().setMinimumSize(null);
@@ -776,7 +776,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		amsValRangeParam.setInfo("Specify mainshock productivity parameter range.");
 		amsValRangeParam.addParameterChangeListener(this);
 		
-		amsValNumParam = new IntegerParameter("ams-value num", 1, 101, new Integer(31));
+		amsValNumParam = new IntegerParameter("ams-value num", 1, 101, Integer.valueOf(31));
 		amsValNumParam.setInfo("Set number of points in grid search");
 		amsValNumParam.addParameterChangeListener(this);
 		
@@ -784,7 +784,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		aValRangeParam.setInfo("Specify secondary productivity parameter range.");
 		aValRangeParam.addParameterChangeListener(this);
 		
-		aValNumParam = new IntegerParameter("a-value num", 1, 101, new Integer(31));
+		aValNumParam = new IntegerParameter("a-value num", 1, 101, Integer.valueOf(31));
 		aValNumParam.setInfo("Set number of points in grid search");
 		aValNumParam.addParameterChangeListener(this);
 		
@@ -792,7 +792,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		pValRangeParam.setInfo("Specify Omori p-parameter range.");
 		pValRangeParam.addParameterChangeListener(this);
 		
-		pValNumParam = new IntegerParameter("p-value num", 1, 101, new Integer(31));
+		pValNumParam = new IntegerParameter("p-value num", 1, 101, Integer.valueOf(31));
 		pValNumParam.setInfo("Set number of points in grid search");
 		pValNumParam.addParameterChangeListener(this);
 		
@@ -800,15 +800,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		cValRangeParam.setInfo("Specify Omori c-parameter range.");
 		cValRangeParam.addParameterChangeListener(this);
 		
-		cValNumParam = new IntegerParameter("c-value num", 1, 101, new Integer(31));
+		cValNumParam = new IntegerParameter("c-value num", 1, 101, Integer.valueOf(31));
 		cValNumParam.setInfo("Set number of points in grid search");
 		cValNumParam.addParameterChangeListener(this);
 		
-		rmaxParam = new DoubleParameter("rmax", 1d, Double.POSITIVE_INFINITY, new Double(200));
+		rmaxParam = new DoubleParameter("rmax", 1d, Double.POSITIVE_INFINITY, Double.valueOf(200));
 		rmaxParam.setInfo("Specify max completeness rate");
 		rmaxParam.addParameterChangeListener(this);
 		
-		magRefParam = new DoubleParameter("Reference Magnitude", new Double(0d));
+		magRefParam = new DoubleParameter("Reference Magnitude", Double.valueOf(0d));
 		
 		timeDepMcParam = new BooleanParameter("Apply time dep. Mc", true);
 		timeDepMcParam.setInfo("Apply time dependent magnitude of completeness");
@@ -849,7 +849,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		/*
 		 * Fit params
 		 */
-		amsValParam = new DoubleParameter("ams", new Double(0d));
+		amsValParam = new DoubleParameter("ams", Double.valueOf(0d));
 		amsValParam.setInfo("Mainshock direct productivity parameter");
 		amsValParam.setValue(null);
 	
@@ -859,7 +859,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		setEnabledStyle(amsValParam, false);
 		outputParams.addParameter(amsValParam);
 		
-		aValParam = new DoubleParameter("a", new Double(0d));
+		aValParam = new DoubleParameter("a", Double.valueOf(0d));
 		aValParam.setInfo("Secondary productivity parameter");
 		aValParam.setValue(null);
 		aValParam.addParameterChangeListener(this);
@@ -868,7 +868,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		setEnabledStyle(aValParam, false);
 		outputParams.addParameter(aValParam);
 		
-		pValParam = new DoubleParameter("p", new Double(0d));
+		pValParam = new DoubleParameter("p", Double.valueOf(0d));
 		pValParam.setValue(null);
 		pValParam.setInfo("Omori p-parameter");
 		pValParam.addParameterChangeListener(this);
@@ -877,7 +877,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		setEnabledStyle(pValParam, false);
 		outputParams.addParameter(pValParam);
 		
-		cValParam = new DoubleParameter("log-c", new Double(0d));
+		cValParam = new DoubleParameter("log-c", Double.valueOf(0d));
 		cValParam.setValue(null);
 		cValParam.setInfo("log10 of Omori c-parameter");
 		cValParam.addParameterChangeListener(this);
@@ -948,26 +948,26 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		generateMapButton.getEditor().setEditorBorder(BorderFactory.createLineBorder(Color.black, 1));
 		mapParams.addParameter(generateMapButton);
 	
-		mapLevelParam = new DoubleParameter("Level", 1d, 100d, new Double(10) );
+		mapLevelParam = new DoubleParameter("Level", 1d, 100d, Double.valueOf(10) );
 		mapLevelParam.setInfo("Shaking intensity level");
 		mapLevelParam.addParameterChangeListener(this);
 		mapLevelParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
 		mapPlotParams.addParameter(mapLevelParam);
 		
-		mapPOEParam = new DoubleParameter("POE (%)", 0, 99.9, new Double(10));
+		mapPOEParam = new DoubleParameter("POE (%)", 0, 99.9, Double.valueOf(10));
 		mapPOEParam.setInfo("Probability of exceedence");
 
 		mapPOEParam.addParameterChangeListener(this);
 		mapPOEParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
 		mapPlotParams.addParameter(mapPOEParam);
 		
-		mapGridSpacingParam = new DoubleParameter("\u0394 (km)", 1, 1000, new Double(10d));
+		mapGridSpacingParam = new DoubleParameter("\u0394 (km)", 1, 1000, Double.valueOf(10d));
 		mapGridSpacingParam.setInfo("Cell size for map (km)");
 		mapGridSpacingParam.addParameterChangeListener(this);
 		mapGridSpacingParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
 		mapPlotParams.addParameter(mapGridSpacingParam);
 		
-		mapScaleParam  = new DoubleParameter("Scale", 1d, 10d, new Double(5));
+		mapScaleParam  = new DoubleParameter("Scale", 1d, 10d, Double.valueOf(5));
 		mapScaleParam.setInfo("Map scale in fault lengths");
 		mapScaleParam.addParameterChangeListener(this);
 		mapScaleParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
@@ -1135,9 +1135,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		plotAllDurationsParam = new BooleanParameter("Plot Week/Month/Year", true);	
 		
 		if (dataStartFixed)
-			dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, new Double(dataStartFixedValue));
+			dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, Double.valueOf(dataStartFixedValue));
 		else
-			dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, new Double(0d));
+			dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, Double.valueOf(0d));
 		
 		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, Double.POSITIVE_INFINITY);
 		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, Double.POSITIVE_INFINITY);
@@ -1156,14 +1156,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				new DoubleConstraint(GeoTools.LON_MIN,360),
 				DECIMAL_DEGREES, null);
 		
-		radiusParam = new DoubleParameter("Radius", 0d, 10000d, new Double(20));
-		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, new Double(0));
-		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, new Double(0));
-		minLonParam = new DoubleParameter("Min Lon", -180d, 360d, new Double(0));
-		maxLonParam = new DoubleParameter("Max Lon", -180d, 360d, new Double(0));
+		radiusParam = new DoubleParameter("Radius", 0d, 10000d, Double.valueOf(20));
+		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, Double.valueOf(0));
+		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, Double.valueOf(0));
+		minLonParam = new DoubleParameter("Min Lon", -180d, 360d, Double.valueOf(0));
+		maxLonParam = new DoubleParameter("Max Lon", -180d, 360d, Double.valueOf(0));
 		
-		minDepthParam = new DoubleParameter("Min Depth", 0d, 1000d, new Double(0));
-		maxDepthParam = new DoubleParameter("Max Depth", 0d, 1000d, new Double(1000d));
+		minDepthParam = new DoubleParameter("Min Depth", 0d, 1000d, Double.valueOf(0));
+		maxDepthParam = new DoubleParameter("Max Depth", 0d, 1000d, Double.valueOf(1000d));
 		
 		regionCenterTypeParam = new EnumParameter<AftershockStatsGUI_ETAS.RegionCenterType>(
 				"Aftershock Zone Center", EnumSet.allOf(RegionCenterType.class), RegionCenterType.CENTROID, null);
@@ -1171,26 +1171,26 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		autoMcParam = new BooleanParameter("Automatically find Mc", true);
 		bParam = new DoubleParameter("b", 1d);
 		mcParam = new DoubleParameter("Mc", 4.5);
-		magPrecisionParam = new DoubleParameter("\u0394M", 0d, 1d, new Double(0.1));
+		magPrecisionParam = new DoubleParameter("\u0394M", 0d, 1d, Double.valueOf(0.1));
 		alphaParam = new DoubleParameter("alpha-value", 1d);
 		tectonicRegimeParam = new EnumParameter<TectonicRegime>(
 				"Tectonic Regime", EnumSet.allOf(TectonicRegime.class), TectonicRegime.GLOBAL_AVERAGE, null);
 		fitMSProductivityParam = new BooleanParameter("Fit MS Productivity", true);
 		amsValRangeParam = new RangeParameter("ams-value range", new Range(-4.0, -1));
-		amsValNumParam = new IntegerParameter("ams-value num", 1, 101, new Integer(51));
+		amsValNumParam = new IntegerParameter("ams-value num", 1, 101, Integer.valueOf(51));
 		aValRangeParam = new RangeParameter("a-value range", new Range(-4.0, -1));
-		aValNumParam = new IntegerParameter("a-value num", 1, 101, new Integer(31));
+		aValNumParam = new IntegerParameter("a-value num", 1, 101, Integer.valueOf(31));
 		pValRangeParam = new RangeParameter("p-value range", new Range(0.5, 2.0));
-		pValNumParam = new IntegerParameter("p-value num", 1, 101, new Integer(31));
+		pValNumParam = new IntegerParameter("p-value num", 1, 101, Integer.valueOf(31));
 		cValRangeParam = new RangeParameter("c-value range", new Range(1e-5, 1));
-		cValNumParam = new IntegerParameter("c-value num", 1, 101, new Integer(21));
-		rmaxParam = new DoubleParameter("rmax", 1d, Double.POSITIVE_INFINITY, new Double(200));
-		magRefParam = new DoubleParameter("Reference Magnitude", new Double(0d));
+		cValNumParam = new IntegerParameter("c-value num", 1, 101, Integer.valueOf(21));
+		rmaxParam = new DoubleParameter("rmax", 1d, Double.POSITIVE_INFINITY, Double.valueOf(200));
+		magRefParam = new DoubleParameter("Reference Magnitude", Double.valueOf(0d));
 		timeDepMcParam = new BooleanParameter("Apply time dep. Mc", true);
-		amsValParam = new DoubleParameter("ams", new Double(0d));
-		aValParam = new DoubleParameter("a", new Double(0d));
-		pValParam = new DoubleParameter("p", new Double(0d));
-		cValParam = new DoubleParameter("log-c", new Double(0d));
+		amsValParam = new DoubleParameter("ams", Double.valueOf(0d));
+		aValParam = new DoubleParameter("a", Double.valueOf(0d));
+		pValParam = new DoubleParameter("p", Double.valueOf(0d));
+		cValParam = new DoubleParameter("log-c", Double.valueOf(0d));
 		plotSpecificOnlyParam = new BooleanParameter("Specific Forecast Only", false);
 		intensityTypeParam = new EnumParameter<IntensityType>("Intensity Measure",
 				EnumSet.allOf(IntensityType.class), IntensityType.MMI, null);
@@ -1199,10 +1199,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		fitSourceTypeParam = new EnumParameter<FitSourceType>("Fit finite source",
 				EnumSet.allOf(FitSourceType.class), FitSourceType.SHAKEMAP, null);
 		vs30Param = new BooleanParameter("Apply site corrections", false);
-		mapLevelParam = new DoubleParameter("Level", 1d, 100d, new Double(10) );
-		mapPOEParam = new DoubleParameter("POE (%)", 0, 99.9, new Double(10));
-		mapGridSpacingParam = new DoubleParameter("\u0394 (km)", 1, 1000, new Double(10d));
-		mapScaleParam  = new DoubleParameter("Scale", 1d, 10d, new Double(5));
+		mapLevelParam = new DoubleParameter("Level", 1d, 100d, Double.valueOf(10) );
+		mapPOEParam = new DoubleParameter("POE (%)", 0, 99.9, Double.valueOf(10));
+		mapGridSpacingParam = new DoubleParameter("\u0394 (km)", 1, 1000, Double.valueOf(10d));
+		mapScaleParam  = new DoubleParameter("Scale", 1d, 10d, Double.valueOf(5));
 		workingDir = new File(System.getProperty("user.home"));
 		accessor = new ETAS_ComcatAccessor();
 		quickForecastButton = new ButtonParameter("Forecast using default settings", "Quick Forecast");
