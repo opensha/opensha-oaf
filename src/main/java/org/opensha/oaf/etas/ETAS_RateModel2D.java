@@ -35,7 +35,6 @@ public class ETAS_RateModel2D {
 	
 	public ETAS_RateModel2D(ETAS_AftershockModel forecastModel, double plotDuration, double scale, double spacing, double stressDrop, double mainshockFitDuration, String fitType, FaultTrace faultTrace){
 		this.forecastModel = forecastModel;
-//		this.rateModel = calculateRateModel( plotDuration, scale, spacing, stressDrop,  mainshockFitDuration,  fitType,  faultTrace);
 		this.rateModel = calculateRateModel( plotDuration, scale, spacing, stressDrop,  mainshockFitDuration,  fitType,  faultTrace);
 	}
 	
@@ -121,8 +120,10 @@ public class ETAS_RateModel2D {
 			// fit finite mainshock source to shakemap source (fits line to rupture geometry...)
 //			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(forecastModel.mainShock, faultTrace, stressDrop);
 			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(largestShock, faultTrace, stressDrop);
+		
 		} else if (fitType.equals("custom") && faultTrace != null && faultTrace.size() > 1) {
 			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(largestShock, faultTrace, stressDrop);
+		
 		}
 		//else {equivalentMainshock was already constructed with a faultTrace made up of the mainshock hypocenter}
 
