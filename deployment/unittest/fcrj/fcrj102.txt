@@ -57,11 +57,13 @@ max_lon = 86.75738960062111
 center_lat = 27.844967753731904
 center_lon = 85.27943680694666
 radius = 145.21116175877404
-min_days = 0.0
+min_days = -60.0
 max_days = 0.014
 min_depth = -5.0
 max_depth = 700.0
 min_mag = 2.95
+fit_start_inset = 0.0
+fit_end_inset = 0.0
 evseq_cfg_fetch_meth = 0
 evseq_cfg_avail = true
 evseq_cfg_params = EventSequenceParameters:
@@ -71,11 +73,11 @@ etas_fetch_meth = 0
 etas_avail = false
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-25T06:31:35.550Z&format=geojson&latitude=27.84497&limit=20000&longitude=85.27944&maxdepth=700.000&maxradius=1.30680&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2015-04-25T06:11:25.950Z
-Count of events received = 9
-Count of events after filtering = 8
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-25T06:31:35.550Z&format=geojson&latitude=27.84497&limit=20000&longitude=85.27944&maxdepth=700.000&maxradius=1.30680&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2015-02-24T06:11:25.950Z
+Count of events received = 10
+Count of events after filtering = 9
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 8
+Total number of events returned = 9
 b=1.000  magMain=7.800  apcTot=401  apcSup=347
 a: like=-2.130  mean=-2.131  sdev=0.4897  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=54  hi=401
 p: like=0.9800  mean=0.9800  sdev=0.000  min=0.9800  max=0.9800  delta=0.000  num=1  lo=0  hi=1
@@ -108,13 +110,15 @@ result_time = 1429943495550
 advisory_lag = 604800000
 injectable_text = test3 injectable.
 catalog_result_avail = true
-catalog_start_time = 1429942285950
+catalog_start_time = 1424758285950
 catalog_end_time = 1429943495550
-catalog_eqk_count = 8
+catalog_eqk_count = 9
 catalog_max_mag = 6.1
 catalog_max_event_id = us20002bi4
 catalog_aftershocks = available
 catalog_comcat_aftershocks = available
+catalog_fit_start_days = 0.0
+catalog_fit_end_days = 0.014
 generic_result_avail = true
 generic_summary:
 b                    = 1.0
@@ -157,4 +161,5 @@ generic_pdl = false
 generic_model = available
 seq_spec_result_avail = false
 bayesian_result_avail = false
+etas_result_avail = false
 

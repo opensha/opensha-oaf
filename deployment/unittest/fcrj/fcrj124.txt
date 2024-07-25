@@ -57,11 +57,13 @@ max_lon = 120.68979457820207
 center_lat = -0.38273296419147285
 center_lon = 119.87842735883582
 radius = 90.1571137605956
-min_days = 0.0
+min_days = -60.0
 max_days = 0.014
 min_depth = -5.0
 max_depth = 700.0
 min_mag = 2.95
+fit_start_inset = 0.0
+fit_end_inset = 0.0
 evseq_cfg_fetch_meth = 0
 evseq_cfg_avail = true
 evseq_cfg_params = EventSequenceParameters:
@@ -71,11 +73,11 @@ etas_fetch_meth = 0
 etas_avail = false
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2018-09-28T10:22:54.850Z&format=geojson&latitude=-0.38273&limit=20000&longitude=119.87843&maxdepth=700.000&maxradius=0.81135&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2018-09-28T10:02:45.250Z
-Count of events received = 3
-Count of events after filtering = 2
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2018-09-28T10:22:54.850Z&format=geojson&latitude=-0.38273&limit=20000&longitude=119.87843&maxdepth=700.000&maxradius=0.81135&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2018-07-30T10:02:45.250Z
+Count of events received = 17
+Count of events after filtering = 16
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 2
+Total number of events returned = 16
 b=1.000  magMain=7.500  apcTot=401  apcSup=379
 a: like=-2.470  mean=-2.470  sdev=0.5001  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=14  hi=393
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
@@ -108,13 +110,15 @@ result_time = 1538130174850
 advisory_lag = 604800000
 injectable_text = test3 injectable.
 catalog_result_avail = true
-catalog_start_time = 1538128965250
+catalog_start_time = 1532944965250
 catalog_end_time = 1538130174850
-catalog_eqk_count = 2
-catalog_max_mag = 5.8
-catalog_max_event_id = us1000h3p8
+catalog_eqk_count = 16
+catalog_max_mag = 6.1
+catalog_max_event_id = -us1000h3mf
 catalog_aftershocks = available
 catalog_comcat_aftershocks = available
+catalog_fit_start_days = 0.0
+catalog_fit_end_days = 0.014
 generic_result_avail = true
 generic_summary:
 b                    = 1.0
@@ -157,4 +161,5 @@ generic_pdl = false
 generic_model = available
 seq_spec_result_avail = false
 bayesian_result_avail = false
+etas_result_avail = false
 

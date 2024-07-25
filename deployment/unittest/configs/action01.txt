@@ -42,6 +42,14 @@ evseq_lookahead = PT8760H
 evseq_cap_min_dur = PT72H
 evseq_cap_gap = PT1H
 etas_enable = 0
+etas_time_limit = PT4M
+etas_progress_time = PT10S
+data_fetch_lookback = PT1440H
+data_fit_dur_min = PT10M
+comcat_cache_1_mag = 2.0
+comcat_cache_1_time = PT2184H
+comcat_cache_2_mag = 4.95
+comcat_cache_2_time = PT9504H
 adv_min_mag_bins = [
   0:  3.0
   1:  4.0

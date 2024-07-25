@@ -57,11 +57,13 @@ max_lon = 120.68979457820207
 center_lat = -0.38273296419147285
 center_lon = 119.87842735883582
 radius = 90.1571137605956
-min_days = 0.0
+min_days = -60.0
 max_days = 0.014
 min_depth = -5.0
 max_depth = 700.0
 min_mag = 2.95
+fit_start_inset = 0.0
+fit_end_inset = 0.0
 evseq_cfg_fetch_meth = 0
 evseq_cfg_avail = true
 evseq_cfg_params = EventSequenceParameters:
@@ -71,11 +73,11 @@ etas_fetch_meth = 0
 etas_avail = false
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2018-09-28T10:22:54.850Z&format=geojson&latitude=-0.38273&limit=20000&longitude=119.87843&maxdepth=700.000&maxradius=0.81135&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2018-09-28T10:02:45.250Z
-Count of events received = 3
-Count of events after filtering = 2
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2018-09-28T10:22:54.850Z&format=geojson&latitude=-0.38273&limit=20000&longitude=119.87843&maxdepth=700.000&maxradius=0.81135&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2018-07-30T10:02:45.250Z
+Count of events received = 17
+Count of events after filtering = 16
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 2
+Total number of events returned = 16
 b=1.000  magMain=7.500  apcTot=401  apcSup=379
 a: like=-2.470  mean=-2.470  sdev=0.5001  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=14  hi=393
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
@@ -108,13 +110,15 @@ result_time = 1538130174850
 advisory_lag = 604800000
 injectable_text = 
 catalog_result_avail = true
-catalog_start_time = 1538128965250
+catalog_start_time = 1532944965250
 catalog_end_time = 1538130174850
-catalog_eqk_count = 2
-catalog_max_mag = 5.8
-catalog_max_event_id = us1000h3p8
+catalog_eqk_count = 16
+catalog_max_mag = 6.1
+catalog_max_event_id = -us1000h3mf
 catalog_aftershocks = available
 catalog_comcat_aftershocks = available
+catalog_fit_start_days = 0.0
+catalog_fit_end_days = 0.014
 generic_result_avail = true
 generic_summary:
 b                    = 1.0
@@ -157,20 +161,23 @@ generic_pdl = false
 generic_model = available
 seq_spec_result_avail = false
 bayesian_result_avail = false
+etas_result_avail = false
 
 
 {
   "ClassType": 23001,
-  "ForecastResults": 23001,
+  "ForecastResults": 23002,
   "result_time": 1538130174850,
   "advisory_lag": 604800000,
   "injectable_text": "",
   "catalog_result_avail": true,
-  "catalog_start_time": 1538128965250,
+  "catalog_start_time": 1532944965250,
   "catalog_end_time": 1538130174850,
-  "catalog_eqk_count": 2,
-  "catalog_max_mag": 5.8,
-  "catalog_max_event_id": "us1000h3p8",
+  "catalog_eqk_count": 16,
+  "catalog_max_mag": 6.1,
+  "catalog_max_event_id": "-us1000h3mf",
+  "catalog_fit_start_days": 0.0,
+  "catalog_fit_end_days": 0.014,
   "generic_result_avail": true,
   "generic_summary": {
     "RJ_Summary_Generic": 5001,
@@ -1010,7 +1017,8 @@ bayesian_result_avail = false
   },
   "generic_pdl": false,
   "seq_spec_result_avail": false,
-  "bayesian_result_avail": false
+  "bayesian_result_avail": false,
+  "etas_result_avail": false
 }
 
 
@@ -1019,13 +1027,15 @@ result_time = 1538130174850
 advisory_lag = 604800000
 injectable_text = 
 catalog_result_avail = true
-catalog_start_time = 1538128965250
+catalog_start_time = 1532944965250
 catalog_end_time = 1538130174850
-catalog_eqk_count = 2
-catalog_max_mag = 5.8
-catalog_max_event_id = us1000h3p8
+catalog_eqk_count = 16
+catalog_max_mag = 6.1
+catalog_max_event_id = -us1000h3mf
 catalog_aftershocks = null
 catalog_comcat_aftershocks = null
+catalog_fit_start_days = 0.0
+catalog_fit_end_days = 0.014
 generic_result_avail = true
 generic_summary:
 b                    = 1.0
@@ -1068,6 +1078,7 @@ generic_pdl = false
 generic_model = null
 seq_spec_result_avail = false
 bayesian_result_avail = false
+etas_result_avail = false
 
 b=1.000  magMain=7.500  apcTot=401  apcSup=379
 a: like=-2.470  mean=-2.470  sdev=0.5001  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=14  hi=393
@@ -1080,13 +1091,15 @@ result_time = 1538130174850
 advisory_lag = 604800000
 injectable_text = 
 catalog_result_avail = true
-catalog_start_time = 1538128965250
+catalog_start_time = 1532944965250
 catalog_end_time = 1538130174850
-catalog_eqk_count = 2
-catalog_max_mag = 5.8
-catalog_max_event_id = us1000h3p8
+catalog_eqk_count = 16
+catalog_max_mag = 6.1
+catalog_max_event_id = -us1000h3mf
 catalog_aftershocks = available
 catalog_comcat_aftershocks = null
+catalog_fit_start_days = 0.0
+catalog_fit_end_days = 0.014
 generic_result_avail = true
 generic_summary:
 b                    = 1.0
@@ -1129,8 +1142,23 @@ generic_pdl = false
 generic_model = available
 seq_spec_result_avail = false
 bayesian_result_avail = false
+etas_result_avail = false
 
 
-Saved catalog size = 2
-0: time = 2018-09-28 10:14:20 UTC, mag = 5.800, lat = -0.01750, lon = 119.75490, depth = 10.000
-1: time = 2018-09-28 10:16:48 UTC, mag = 5.700, lat = -0.87480, lon = 120.03420, depth = 10.000
+Saved catalog size = 16
+0: time = 2018-09-21 23:20:34 UTC, mag = 4.800, lat = -0.90690, lon = 119.73380, depth = 27.940
+1: time = 2018-09-22 12:08:16 UTC, mag = 4.600, lat = -0.94170, lon = 119.75220, depth = 10.000
+2: time = 2018-09-28 06:59:30 UTC, mag = 4.200, lat = -0.33550, lon = 119.88790, depth = 10.000
+3: time = 2018-09-28 06:59:59 UTC, mag = 6.100, lat = -0.40090, lon = 119.77050, depth = 4.990
+4: time = 2018-09-28 07:03:18 UTC, mag = 5.400, lat = -0.21020, lon = 120.01750, depth = 10.000
+5: time = 2018-09-28 07:17:12 UTC, mag = 4.700, lat = -0.21900, lon = 119.95290, depth = 10.000
+6: time = 2018-09-28 07:28:37 UTC, mag = 4.900, lat = -0.37490, lon = 119.92500, depth = 10.000
+7: time = 2018-09-28 07:50:43 UTC, mag = 4.500, lat = -0.26060, lon = 119.96170, depth = 10.000
+8: time = 2018-09-28 08:00:28 UTC, mag = 4.700, lat = -0.39280, lon = 119.82820, depth = 10.000
+9: time = 2018-09-28 08:24:58 UTC, mag = 5.100, lat = -0.34640, lon = 119.86820, depth = 10.000
+10: time = 2018-09-28 09:11:13 UTC, mag = 4.300, lat = -0.40400, lon = 119.87050, depth = 10.000
+11: time = 2018-09-28 09:20:33 UTC, mag = 4.500, lat = -0.24410, lon = 119.88150, depth = 10.000
+12: time = 2018-09-28 09:22:48 UTC, mag = 4.400, lat = -0.30600, lon = 119.82090, depth = 10.000
+13: time = 2018-09-28 09:57:37 UTC, mag = 4.700, lat = -0.31650, lon = 119.94730, depth = 10.000
+14: time = 2018-09-28 10:14:20 UTC, mag = 5.800, lat = -0.01750, lon = 119.75490, depth = 10.000
+15: time = 2018-09-28 10:16:48 UTC, mag = 5.700, lat = -0.87480, lon = 120.03420, depth = 10.000
