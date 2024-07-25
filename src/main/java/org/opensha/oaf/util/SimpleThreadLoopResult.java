@@ -205,7 +205,7 @@ public class SimpleThreadLoopResult {
 		// Include the result count if it is not 1
 
 		if (result_count != 1) {
-			result.append ("r = " + result_count);
+			result.append ("res = " + result_count);
 		}
 
 		// Do the rest if the result count is not 0 ...
@@ -217,7 +217,7 @@ public class SimpleThreadLoopResult {
 
 			// Completions, and optionally the loop count
 
-			result.append ("c = " + completion_count);
+			result.append ("cmpl = " + completion_count);
 			if (completion_count != loop_count) {
 				result.append (" / " + loop_count);
 			}
@@ -226,14 +226,14 @@ public class SimpleThreadLoopResult {
 
 			if (has_elapsed_time()) {
 				long seconds = (elapsed_time + 500L) / 1000L;
-				result.append (", t = " + seconds + " s");
+				result.append (", time = " + seconds + " s");
 			}
 
 			// Memory in megabytes, if known
 
 			if (has_used_memory()) {
 				long megabytes = used_memory / 1048576L;
-				result.append (", m = " + megabytes + " M");
+				result.append (", mem = " + megabytes + " M");
 			}
 
 			// Possible errors

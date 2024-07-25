@@ -428,7 +428,61 @@ public final class ActionConfig {
 	// Get flag, indicating if ETAS forecasts are enabled. [v3]
 
 	public boolean get_is_etas_enabled () {
-		return param_set.etas_enable == ActionConfigFile.ETAS_ENA_ENABLE;
+		return param_set.etas_enable != ActionConfigFile.ETAS_ENA_DISABLE;
+	}
+
+	// Get time limit for an ETAS calculation. [v4]
+	// Must be a whole number of seconds, between 60 and 10^9 seconds, or 0 for no time limit.
+
+	public long get_etas_time_limit () {
+		return param_set.etas_time_limit;
+	}
+
+	// Time interval between ETAS progress messages. [v4]
+	// Must be a whole number of seconds, between 2 and 10^9 seconds, or 0 for no progress messages.
+	
+	public long get_etas_progress_time () {
+		return param_set.etas_progress_time;
+	}
+
+	// Get time before mainshock to fetch data from ComCat. [v4]
+	// Must be a whole number of seconds, between 0 and 10 years
+
+	public long get_data_fetch_lookback () {
+		return param_set.data_fetch_lookback;
+	}
+
+	// Get minimum fitting interval duration. [v4]
+	// Must be a whole number of seconds, between 2 minutes and 1 year.
+
+	public long get_data_fit_dur_min () {
+		return param_set.data_fit_dur_min;
+	}
+
+	// Get minimum magnitude for ComCat cache #1. [v4]
+
+	public double get_comcat_cache_1_mag () {
+		return param_set.comcat_cache_1_mag;
+	}
+
+	// Get lookback time for ComCat cache #1. [v4]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_comcat_cache_1_time () {
+		return param_set.comcat_cache_1_time;
+	}
+
+	// Get minimum magnitude for ComCat cache #2. [v4]
+
+	public double get_comcat_cache_2_mag () {
+		return param_set.comcat_cache_2_mag;
+	}
+
+	// Get lookback time for ComCat cache #2. [v4]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_comcat_cache_2_time () {
+		return param_set.comcat_cache_2_time;
 	}
 
 	// Get the number of advisory magnitude bins.

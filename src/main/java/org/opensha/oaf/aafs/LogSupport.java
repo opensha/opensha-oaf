@@ -27,6 +27,8 @@ import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 import org.opensha.oaf.pdl.PDLCodeChooserEventSequence;
 import org.opensha.oaf.comcat.PropertiesEventSequence;
 
+import org.opensha.oaf.oetas.env.OEtasLogInfo;
+
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
@@ -1134,6 +1136,37 @@ public class LogSupport extends ServerComponent {
 	public void report_timeline_to_secondary (int tasks_canceled) {
 		report_action ("TIMELINE-TO-SECONDARY",
 					"tasks_canceled = " + tasks_canceled);
+		return;
+	}
+
+
+
+
+	// Report results of an ETAS operation.
+
+	public void report_etas_results (OEtasLogInfo etas_log_info) {
+
+		if (etas_log_info != null && etas_log_info.has_log_entry()) {
+
+			String name = "ETAS-UNKNOWN";
+
+			switch (etas_log_info.etas_logtype) {
+			case OEtasLogInfo.ETAS_LOGTYPE_OMIT: name = "ETAS-OMIT"; break;
+			case OEtasLogInfo.ETAS_LOGTYPE_OK: name = "ETAS-OK"; break;
+			case OEtasLogInfo.ETAS_LOGTYPE_FAIL: name = "ETAS-FAIL"; break;
+			case OEtasLogInfo.ETAS_LOGTYPE_SKIP: name = "ETAS-SKIP"; break;
+			case OEtasLogInfo.ETAS_LOGTYPE_UNKNOWN: name = "ETAS-UNKNOWN"; break;
+			}
+
+			report_action (name,
+						etas_log_info.etas_log_string
+						);
+
+			if (etas_log_info.has_etas_abort_message()) {
+				report_info (etas_log_info.etas_abort_message);
+			}
+		}
+
 		return;
 	}
 

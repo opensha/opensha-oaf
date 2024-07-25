@@ -72,6 +72,44 @@ public class SimpleUtils {
 
 
 
+	// Convert milliseconds (long) to days (double).
+
+	public static double millis_to_days (long millis) {
+		return ((double)millis) / DAY_MILLIS_D;
+	}
+
+	// Convert days (double) to milliseconds (long).
+
+	public static long days_to_millis (double days) {
+		return Math.round (DAY_MILLIS_D * days);
+	}
+
+
+
+
+	// Clip x to lie between v1 and v2.
+
+	public static double clip_val (double v1, double v2, double x) {
+		return ( (v1 < v2) ? (Math.max(v1, Math.min(v2, x))) : (Math.max(v2, Math.min(v1, x))) );
+	}
+
+
+	// Clip x to lie between v1 and v2 assuming v1 <= v2; if v1 > v2 then the return value is v1.
+
+	public static double clip_max_min (double v1, double v2, double x) {
+		return Math.max(v1, Math.min(v2, x));
+	}
+
+
+	// Clip x to lie between v1 and v2 assuming v1 <= v2; if v1 > v2 then the return value is v2.
+
+	public static double clip_min_max (double v1, double v2, double x) {
+		return Math.min(v2, Math.max(v1, x));
+	}
+
+
+
+
 	// Get a stack trace as a string.
 
 	public static String getStackTraceAsString (Throwable e) {

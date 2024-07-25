@@ -1145,6 +1145,11 @@ public class OEGUIModel extends OEGUIComponent {
 
 		double min_mag = ForecastParameters.SEARCH_PARAM_OMIT;
 
+		// Fitting interval, assume default
+		
+		double fit_start_inset = ForecastParameters.SEARCH_PARAM_OMIT;
+		double fit_end_inset = ForecastParameters.SEARCH_PARAM_OMIT;
+
 		// Minimum magnitude to use for search, user-supplied or none
 
 		double search_min_mag = SearchMagFn.NO_MIN_MAG;
@@ -1284,7 +1289,9 @@ public class OEGUIModel extends OEGUIComponent {
 			maxDays,				// double the_max_days,
 			minDepth,				// double the_min_depth,
 			maxDepth,				// double the_max_depth,
-			min_mag					// double the_min_mag
+			min_mag,				// double the_min_mag,
+			fit_start_inset,		// double the_fit_start_inset,
+			fit_end_inset			// double the_fit_end_inset
 		);
 
 		if (!( fetch_fcparams.aftershock_search_avail )) {
@@ -2138,7 +2145,9 @@ public class OEGUIModel extends OEGUIComponent {
 			ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_days
 			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_depth
 			ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_depth
-			ForecastParameters.SEARCH_PARAM_OMIT		// the_min_mag
+			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_mag
+			ForecastParameters.SEARCH_PARAM_OMIT,		// the_fit_start_inset
+			ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
 		);
 		
 		return new_fcparams;

@@ -399,7 +399,7 @@ public final class ServerConfig {
 			action_config.get_action_config_file().evseq_report = esrep;
 		}
 
-		// Event-sequence option
+		// ETAS enable option
 
 		int etasopt = (opmode % 1000) - (opmode % 100);
 		boolean set_etasopt = false;

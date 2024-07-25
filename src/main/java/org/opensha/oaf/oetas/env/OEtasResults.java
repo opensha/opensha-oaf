@@ -23,7 +23,7 @@ import org.opensha.oaf.oetas.OESimulator;
 //
 // This class contains results that are saved in the database and the download file.
 
-public class OEtasResults implements Marshalable {
+public class OEtasResults extends OEtasOutcome implements Marshalable {
 
 
 	//----- Inputs -----
@@ -102,8 +102,26 @@ public class OEtasResults implements Marshalable {
 	//----- Forecast -----
 
 	// ETAS results JSON.
+	// Must be non-null, but can be empty to indicate not available.
 
 	public String etas_json = "";
+
+	// Return true if there is a (non-null and non-empty) ETAS results JSON.
+
+	@Override
+	public boolean has_etas_json () {
+		if (etas_json == null || etas_json.isEmpty()) {
+			return false;
+		}
+		return true;
+	}
+
+	// Get the ETAS results JSON, or null or empty if none.
+
+	@Override
+	public String get_etas_json () {
+		return etas_json;
+	}
 
 
 
@@ -223,6 +241,7 @@ public class OEtasResults implements Marshalable {
 
 	// Display our contents, with the JSON string in display format.
 
+	@Override
 	public String to_display_string () {
 		StringBuilder result = new StringBuilder();
 
@@ -249,7 +268,7 @@ public class OEtasResults implements Marshalable {
 		result.append ("sim_range = {" + sim_range.toString() + "}\n");
 		result.append ("sim_count = " + sim_count + "\n");
 
-		result.append ("etas_json = " + "\n");
+		result.append ("etas_json:" + "\n");
 		if (etas_json.length() > 0) {
 			result.append (MarshalUtils.display_json_string (etas_json));
 		}
@@ -354,9 +373,17 @@ public class OEtasResults implements Marshalable {
 
 	private static final String M_VERSION_NAME = "OEtasResults";
 
+	// Get the type code.
+
+	@Override
+	protected int get_marshal_type () {
+		return MARSHAL_ETAS_RESULTS;
+	}
+
 	// Marshal object, internal.
 
-	private void do_marshal (MarshalWriter writer) {
+	@Override
+	protected void do_marshal (MarshalWriter writer) {
 
 		// Version
 
@@ -369,6 +396,12 @@ public class OEtasResults implements Marshalable {
 		switch (ver) {
 
 		case MARSHAL_VER_1: {
+
+			// Superclass
+
+			super.do_marshal (writer);
+
+			// Contents
 
 			OEtasCatalogInfo.static_marshal (writer, "cat_info", cat_info);
 
@@ -403,7 +436,8 @@ public class OEtasResults implements Marshalable {
 
 	// Unmarshal object, internal.
 
-	private void do_umarshal (MarshalReader reader) {
+	@Override
+	protected void do_umarshal (MarshalReader reader) {
 	
 		// Version
 
@@ -414,6 +448,12 @@ public class OEtasResults implements Marshalable {
 		switch (ver) {
 
 		case MARSHAL_VER_1: {
+
+			// Superclass
+
+			super.do_umarshal (reader);
+
+			// Contents
 
 			cat_info = OEtasCatalogInfo.static_unmarshal (reader, "cat_info");
 
@@ -446,37 +486,90 @@ public class OEtasResults implements Marshalable {
 		return;
 	}
 
-	// Marshal object.
+//	// Marshal object.
+//
+//	@Override
+//	public void marshal (MarshalWriter writer, String name) {
+//		writer.marshalMapBegin (name);
+//		int mytype = get_marshal_type();
+//		writer.marshalInt (M_TYPE_NAME, mytype);
+//		do_marshal (writer);
+//		writer.marshalMapEnd ();
+//		return;
+//	}
 
-	@Override
-	public void marshal (MarshalWriter writer, String name) {
+//	// Unmarshal object.
+//
+//	@Override
+//	public OEtasOutcome unmarshal (MarshalReader reader, String name) {
+//		reader.unmarshalMapBegin (name);
+//		int mytype = get_marshal_type();
+//		int type = reader.unmarshalInt (M_TYPE_NAME, mytype, mytype);
+//		do_umarshal (reader);
+//		reader.unmarshalMapEnd ();
+//		return this;
+//	}
+
+//	// Marshal object.
+//
+//	public static void static_marshal (MarshalWriter writer, String name, OEtasResults etas_results) {
+//		etas_results.marshal (writer, name);
+//		return;
+//	}
+
+//	// Unmarshal object.
+//
+//	public static OEtasResults static_unmarshal (MarshalReader reader, String name) {
+//		return (new OEtasResults()).unmarshal (reader, name);
+//	}
+
+	// Marshal object, polymorphic.
+
+	public static void marshal_poly (MarshalWriter writer, String name, OEtasResults obj) {
+
 		writer.marshalMapBegin (name);
-		do_marshal (writer);
+
+		if (obj == null) {
+			writer.marshalInt (M_TYPE_NAME, MARSHAL_NULL);
+		} else {
+			writer.marshalInt (M_TYPE_NAME, obj.get_marshal_type());
+			obj.do_marshal (writer);
+		}
+
 		writer.marshalMapEnd ();
+
 		return;
 	}
 
-	// Unmarshal object.
+	// Unmarshal object, polymorphic.
 
-	@Override
-	public OEtasResults unmarshal (MarshalReader reader, String name) {
+	public static OEtasResults unmarshal_poly (MarshalReader reader, String name) {
+		OEtasResults result;
+
 		reader.unmarshalMapBegin (name);
-		do_umarshal (reader);
+	
+		// Switch according to type
+
+		int type = reader.unmarshalInt (M_TYPE_NAME);
+
+		switch (type) {
+
+		default:
+			throw new MarshalException ("OEtasResults.unmarshal_poly: Unknown class type code: type = " + type);
+
+		case MARSHAL_NULL:
+			result = null;
+			break;
+
+		case MARSHAL_ETAS_RESULTS:
+			result = new OEtasResults();
+			result.do_umarshal (reader);
+			break;
+		}
+
 		reader.unmarshalMapEnd ();
-		return this;
-	}
 
-	// Marshal object.
-
-	public static void static_marshal (MarshalWriter writer, String name, OEtasResults etas_results) {
-		etas_results.marshal (writer, name);
-		return;
-	}
-
-	// Unmarshal object.
-
-	public static OEtasResults static_unmarshal (MarshalReader reader, String name) {
-		return (new OEtasResults()).unmarshal (reader, name);
+		return result;
 	}
 
 

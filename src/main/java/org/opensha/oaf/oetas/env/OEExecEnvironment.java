@@ -74,7 +74,16 @@ public class OEExecEnvironment {
 
 
 	// ETAS result codes.
+	// Zero indicates ETAS successful.
+	// Negative indicates ETAS not attempted or not completed.
+	// Positive indicates ETAS failed.
 
+	public static final int ETAS_RESCODE_MIN = -7;
+	public static final int ETAS_RESCODE_MAG_COMP_FORM = -7;		// Unsupported form of magnitude completeness function
+	public static final int ETAS_RESCODE_NO_DATA = -6;				// Required data not available
+	public static final int ETAS_RESCODE_UNSUPPORTED = -5;			// ETAS not supported by the implementation
+	public static final int ETAS_RESCODE_NO_PARAMS = -4;			// No ETAS parameters available
+	public static final int ETAS_RESCODE_DISABLED = -3;				// ETAS is disabled in the config file
 	public static final int ETAS_RESCODE_IN_PROGRESS = -2;			// ETAS code is running
 	public static final int ETAS_RESCODE_NOT_ATTEMPTED = -1;		// ETAS forecast not attempted
 	public static final int ETAS_RESCODE_OK = 0;					// Success
@@ -94,11 +103,18 @@ public class OEExecEnvironment {
 	public static final int ETAS_RESCODE_UNEXPECTED_ERROR = 14;		// Unexpected exception in ETAS code
 	public static final int ETAS_RESCODE_IO_ERROR = 15;				// I/O error
 	public static final int ETAS_RESCODE_DATA_INVALID = 16;			// Received invalid data
+	public static final int ETAS_RESCODE_UNKNOWN_FAILURE = 17;		// Failed for an unknown reason
+	public static final int ETAS_RESCODE_MAX = 17;
 
 	// Return a string identifying the result code
 
 	public static String etas_result_to_string (int result) {
 		switch (result) {
+		case ETAS_RESCODE_MAG_COMP_FORM: return "ETAS_RESCODE_MAG_COMP_FORM";
+		case ETAS_RESCODE_NO_DATA: return "ETAS_RESCODE_NO_DATA";
+		case ETAS_RESCODE_UNSUPPORTED: return "ETAS_RESCODE_UNSUPPORTED";
+		case ETAS_RESCODE_NO_PARAMS: return "ETAS_RESCODE_NO_PARAMS";
+		case ETAS_RESCODE_DISABLED: return "ETAS_RESCODE_DISABLED";
 		case ETAS_RESCODE_IN_PROGRESS: return "ETAS_RESCODE_IN_PROGRESS";
 		case ETAS_RESCODE_NOT_ATTEMPTED: return "ETAS_RESCODE_NOT_ATTEMPTED";
 		case ETAS_RESCODE_OK: return "ETAS_RESCODE_OK";
@@ -118,8 +134,48 @@ public class OEExecEnvironment {
 		case ETAS_RESCODE_UNEXPECTED_ERROR: return "ETAS_RESCODE_UNEXPECTED_ERROR";
 		case ETAS_RESCODE_IO_ERROR: return "ETAS_RESCODE_IO_ERRPR";
 		case ETAS_RESCODE_DATA_INVALID: return "ETAS_RESCODE_DATA_INVALID";
+		case ETAS_RESCODE_UNKNOWN_FAILURE: return "ETAS_RESCODE_UNKNOWN_FAILURE";
 		}
 		return "ETAS_RESCODE_INVALID(" + result + ")";
+	}
+
+
+
+
+	// Return the log entry type corresponding to a result code
+
+	public static int etas_result_to_logtype (int result) {
+		switch (result) {
+		case ETAS_RESCODE_MAG_COMP_FORM:		return OEtasLogInfo.ETAS_LOGTYPE_SKIP;
+		case ETAS_RESCODE_NO_DATA:				return OEtasLogInfo.ETAS_LOGTYPE_SKIP;
+		case ETAS_RESCODE_UNSUPPORTED:			return OEtasLogInfo.ETAS_LOGTYPE_OMIT;
+		case ETAS_RESCODE_NO_PARAMS:			return OEtasLogInfo.ETAS_LOGTYPE_SKIP;
+		case ETAS_RESCODE_DISABLED:				return OEtasLogInfo.ETAS_LOGTYPE_OMIT;
+		case ETAS_RESCODE_IN_PROGRESS:			return OEtasLogInfo.ETAS_LOGTYPE_UNKNOWN;
+		case ETAS_RESCODE_NOT_ATTEMPTED:		return OEtasLogInfo.ETAS_LOGTYPE_SKIP;
+		case ETAS_RESCODE_OK:					return OEtasLogInfo.ETAS_LOGTYPE_OK;
+		case ETAS_RESCODE_GENERAL_ABORT:		return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_FIT_ABORT:			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_FIT_CONVERGENCE:		return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_FIT_THREAD_ABORT:		return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_FIT_TIMEOUT:			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_RANGE_ABORT:			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_RANGE_CONVERGENCE:	return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_RANGE_THREAD_ABORT:	return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_RANGE_TIMEOUT:		return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_SIM_ABORT:			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_SIM_FORECAST:			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_SIM_THREAD_ABORT:		return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_SIM_TIMEOUT:			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_UNEXPECTED_ERROR:		return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_IO_ERROR:				return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_DATA_INVALID:			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_UNKNOWN_FAILURE:		return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		}
+		if (result > 0) {
+			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		}
+		return OEtasLogInfo.ETAS_LOGTYPE_UNKNOWN;
 	}
 
 
@@ -240,10 +296,37 @@ public class OEExecEnvironment {
 
 
 
+	// Return true if the given result code indicates ETAS has completed successfully.
+
+	public static boolean is_etas_successful (int rescode) {
+		return rescode == ETAS_RESCODE_OK;
+	}
+
+
+
+
 	// Return true if ETAS has completed successfully.
 
 	public final boolean is_etas_successful () {
 		return etas_rescode == ETAS_RESCODE_OK;
+	}
+
+
+
+
+	// Return true if the given result code indicates ETAS has been attempted.
+
+	public static boolean is_etas_attempted (int rescode) {
+		return rescode >= 0;
+	}
+
+
+
+
+	// Return true if ETAS has been attempted.
+
+	public final boolean is_etas_attempted () {
+		return etas_rescode >= 0;
 	}
 
 
@@ -283,26 +366,89 @@ public class OEExecEnvironment {
 	public final String make_etas_log_string () {
 		StringBuilder result = new StringBuilder();
 
-		// If not successful, start with the result code
+		// If ETAS was attempted ...
 
-		if (!( is_etas_successful() )) {
-			result.append (get_rescode_as_string() + ", ");
+		if (is_etas_attempted()) {
+
+			// If not successful, start with the result code
+
+			if (!( is_etas_successful() )) {
+				result.append (get_rescode_as_string() + ", ");
+			}
+
+			// Display the total time
+
+			long seconds = (exec_timer.get_split_runtime() + 500L) / 1000L;
+			result.append ("time = " + seconds + " s");
+
+			// Display fitting performance
+
+			result.append (", fit = {" + fit_perf_data.one_line_string() + "}");
+
+			// Display simulation performance
+
+			result.append (", sim = {" + sim_perf_data.one_line_string() + "}");
 		}
 
-		// Display the total time
+		// Otherwise, ETAS was not attempted ...
 
-		long seconds = (exec_timer.get_split_runtime() + 500L) / 1000L;
-		result.append ("t = " + seconds + " s");
+		else {
 
-		// Display fitting performance
+			// Just display the result code
 
-		result.append (", fit = {" + fit_perf_data.one_line_string() + "}");
-
-		// Display simulation performance
-
-		result.append (", sim = {" + sim_perf_data.one_line_string() + "}");
+			result.append (get_rescode_as_string());
+		}
 
 		return result.toString();
+	}
+
+
+
+	// Make the log information.
+
+	public final OEtasLogInfo make_etas_log_info () {
+		OEtasLogInfo log_info = new OEtasLogInfo (etas_result_to_logtype (etas_rescode), make_etas_log_string(), abort_message);
+
+		// If ETAS was attempted ...
+
+		if (is_etas_attempted()) {
+
+			// If successful, save global log info for ETAS success
+
+			if (is_etas_successful()) {
+				log_info.set_global_accum_success (
+					etas_rescode,						// int rescode,
+					exec_timer.get_split_runtime(),		// long total_time,
+					fit_perf_data.elapsed_time,			// long fit_time,
+					sim_perf_data.elapsed_time,			// long sim_time,
+					fit_perf_data.used_memory,			// long fit_memory,
+					sim_perf_data.used_memory			// long sim_memory
+				);
+			}
+
+			// If not successful, save global log info for ETAS failure
+
+			else {
+				log_info.set_global_accum_failure (etas_rescode);
+			}
+		}
+
+		return log_info;
+	}
+
+
+
+
+	// Make the log information for a given result code and log string.
+	// Parameters:
+	//  rescode = Result code, ETAS_RESCODE_XXXX.
+	//  log_string = Log string, can be null or empty if none.
+	// Note: This sets up log info for an ETAS failure prior to launching ETAS.
+
+	public static OEtasLogInfo make_etas_log_info (int rescode, String log_string) {
+		OEtasLogInfo log_info = new OEtasLogInfo (etas_result_to_logtype (rescode), log_string, null);
+		log_info.set_global_accum_failure (rescode);
+		return log_info;
 	}
 
 

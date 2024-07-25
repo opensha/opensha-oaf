@@ -918,6 +918,28 @@ public class OEtasParameters implements Marshalable {
 		return fit_params_mags;
 	}
 
+	// Suggest a value for mag_top, given a magnitude of completness and maximum magnitude.
+	// Parameters:
+	//  the_mag_cat = Magnitude of completeness.
+	//  the_mag_max = Maximum magnitude.
+	// Returns a possible value for mag_top.
+
+	public final double suggest_mag_top (
+		double the_mag_cat,
+		double the_mag_max
+	) {
+
+		// Start with a minimum above the magnitude of completeness
+
+		double mag_top = the_mag_cat + (fmag_range_avail ? fmag_above_mag_cat : OEConstants.DEF_FMAG_ABOVE_MAG_CAT);
+
+		// Then apply the maximum magnitude
+
+		mag_top = Math.max (mag_top, the_mag_max + (fmag_range_avail ? fmag_above_mag_max : OEConstants.DEF_FMAG_ABOVE_MAG_MAX));
+
+		return mag_top;
+	}
+
 
 
 
