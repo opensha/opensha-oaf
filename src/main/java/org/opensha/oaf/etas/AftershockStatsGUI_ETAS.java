@@ -427,8 +427,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private enum FitSourceType {
 		AFTERSHOCKS("Early aftershocks"),
 		POINT_SOURCE("Point source"),
-		SHAKEMAP("Shakemap finite source");
-//		CUSTOM("Load from file");
+		SHAKEMAP("Shakemap finite source"),
+		CUSTOM("Load from file");
 		
 		private String name;
 		
@@ -1197,7 +1197,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		mapTypeParam =  new EnumParameter<MapType>("Map Type",
 				EnumSet.allOf(MapType.class), MapType.PROBABILITIES, null);
 		fitSourceTypeParam = new EnumParameter<FitSourceType>("Fit finite source",
-				EnumSet.allOf(FitSourceType.class), FitSourceType.SHAKEMAP, null);
+				EnumSet.allOf(FitSourceType.class), FitSourceType.AFTERSHOCKS, null);
 		vs30Param = new BooleanParameter("Apply site corrections", false);
 		mapLevelParam = new DoubleParameter("Level", 1d, 100d, Double.valueOf(10) );
 		mapPOEParam = new DoubleParameter("POE (%)", 0, 99.9, Double.valueOf(10));
@@ -1214,6 +1214,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			dataStartTimeParam.getEditor().refreshParamEditor();
 		}
 
+		//TODO: output a parameter file
+		
+		
 		// run the forecast!
 		parameterChange(new ParameterChangeEvent(quickForecastButton, quickForecastButton.getName(), quickForecastButton.getValue(),  quickForecastButton.getValue()));
 		
@@ -4375,9 +4378,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //				}
 //
 			} else if (param == fitSourceTypeParam) { 
-//				if (fitSourceTypeParam.getValue() == FitSourceType.CUSTOM) {
-//					loadSourceFromFile();
-//				}
+				if (fitSourceTypeParam.getValue() == FitSourceType.CUSTOM) {
+					loadSourceFromFile();
+				}
 				
 				pgvCurves = null;
 				pgaCurves = null;
@@ -4917,8 +4920,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				fitType = "aftershocks";
 			else if (fitSourceTypeParam.getValue() == FitSourceType.SHAKEMAP)
 				fitType = "shakemap";
-//			else if (fitSourceTypeParam.getValue() == FitSourceType.CUSTOM)
-//				fitType = "custom";
+			else if (fitSourceTypeParam.getValue() == FitSourceType.CUSTOM)
+				fitType = "custom";
 			else
 				fitType = "none";
 			
@@ -6747,57 +6750,65 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		return Math.round(val*Math.pow(10, sigDigits))/Math.pow(10, sigDigits);
 	}
 
-	private void loadSourceFromFile() {
-//		File finiteSourceFile = new File();
+	private void loadSourceFromFile() throws IOException {
+		File finiteSourceFile;
+		System.out.println("Loading finite source from file...");
+		
+		
+		if (loadCatalogChooser == null)
+			loadCatalogChooser = new JFileChooser();
 
-		String source = " 34.6985 -118.5089\n"
-				+"34.5478 -118.1039\n"
-				+"34.4029 -117.7536\n"
-				+"34.3163 -117.5490\n"
-				+"34.3163 -117.5490\n"
-				+"34.2709 -117.4510\n"
-				+"34.2328 -117.3887\n"
-				+"34.1731 -117.2742\n"
-				+"34.1500 -117.2220\n"
-				+"34.1500 -117.2220\n"
-				+"34.0928 -117.0677\n"
-				+"34.0738 -117.0139\n"
-				+"34.0338 -116.9023\n"
-				+"34.0113 -116.8735\n"
-				+"33.9591 -116.8198\n"
-				+"33.9532 -116.8014\n"
-				+"33.9374 -116.7786\n"
-				+"33.9442 -116.6858\n"
-				+"33.9176 -116.6239\n"
-				+"33.9070 -116.5849\n"
-				+"33.8847 -116.5169\n"
-				+"33.8481 -116.4265\n"
-				+"33.8485 -116.3830\n"
-				+"33.7882 -116.2463\n"
-				+"33.7882 -116.2463\n"
-				+"33.3501 -115.7119";
+		loadCatalogChooser.setCurrentDirectory(workingDir);
+
+		int ret = loadCatalogChooser.showOpenDialog(this);
+		if (ret == JFileChooser.APPROVE_OPTION) {
+			finiteSourceFile = loadCatalogChooser.getSelectedFile();
+//
+//					try {
+//						loadCatalog(finiteSourceFile);
+//						setEnableParamsPostFetch(false);
+//
+//					} catch (IOException e) {
+//						ExceptionUtils.throwAsRuntimeException(e);
+//					}
+		} else {
+			System.err.println("Problem loading finite source...\n");
+			throw new IOException();
+		}
+					
+		StringBuffer source = new StringBuffer();
+		
+		List<String> lines = Files.readLines(finiteSourceFile, Charset.defaultCharset());
+		for (int i=0; i<lines.size(); i++) {
+			String line = lines.get(i).trim();
+			if (!line.isEmpty()) {
+				source.append(line + '\n');
+			}
+		}
+		
+		System.out.println("Loaded "+lines.size()+" lines from file.");
+				System.out.println(source);
+
 		
 //		List<String> lines = source.split("\\n");
-		String[] lines = source.split("\\n");
+		String[] sourcePoints = source.toString().split("\\n");
 		
 		if (faultTrace == null)
 			faultTrace = new FaultTrace("custom");
 	
-		for (int i=0; i<lines.length; i++) {
-			String line = lines[i];
-			if (line.startsWith("#")) {
-				//header
-			} else {
-				if (!line.isEmpty()) {
-					String[] pts = line.trim().split(" ");
-					if(D) System.out.println(i + ": " + line +  " " + pts[0] + " " + pts[1]);
+		for (int i=0; i<sourcePoints.length; i++) {
+			String sourcePoint = sourcePoints[i];
+			
+				if (!sourcePoint.isEmpty()) {
+					String[] pts = sourcePoint.trim().split(", ");
+					if(D) System.out.println(i + ": " + sourcePoint +  " " + pts[0] + " " + pts[1]);
 					double lat = Double.parseDouble(pts[0]);
 					double lon = Double.parseDouble(pts[1]);
 
 					
 					faultTrace.add(new Location(lat, lon));
 				}
-			}
+			
 		}
 		System.out.println("Loaded "+faultTrace.size()+" points from finite source file.");
 	}

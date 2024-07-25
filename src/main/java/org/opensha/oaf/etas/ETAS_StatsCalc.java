@@ -26,7 +26,7 @@ public class ETAS_StatsCalc {
 	public final static double MILLISEC_PER_YEAR = 1000*60*60*24*365.25;
 	public final static long MILLISEC_PER_DAY = 1000*60*60*24;
 	
-	private static final boolean D = false;
+	private static final boolean D = true;
 
 	
 	/**
@@ -119,16 +119,36 @@ public class ETAS_StatsCalc {
      * 
      */
     public static ETASEqkRupture fitMainshockLineSource(ObsEqkRupture mainshock, FaultTrace faultTrace, double stressDrop){
-    	double q = 0.99; //quantile of the AS zone to try to capture
+    	ETASEqkRupture equivalentMainshock = new ETASEqkRupture(mainshock, stressDrop);
+    	equivalentMainshock.setFaultTrace(faultTrace);
     	
-    	//make a dummy Eqk Rupture List
-    	ObsEqkRupList aftershockFitList = new ObsEqkRupList();
-    	for (Location loc : faultTrace){
-    		if(D) System.out.println(loc);
-    		aftershockFitList.add(new ObsEqkRupture("dummy", mainshock.getOriginTime(), loc, 0.0));
-    	}
+    	//reconstruct ellipse
+    	double d = magnitude2radius(mainshock.getMag(), stressDrop);
+    	double a = LocationUtils.horzDistance(faultTrace.first(), faultTrace.last())/2.0;
+    	double c = Math.pow(a/d,2.0);
+    	double b = a/c;
     	
-    	return fitMainshockLineSource( mainshock,  aftershockFitList,  stressDrop,  q, false);
+//    		 we need to represent this as a set of sources:
+
+            double radiusMS, rMSequivalent;
+
+            if (a < b){
+            	rMSequivalent = a; //this is going to be SpatialKernelDistance
+            	radiusMS = b;		//this is going to be rupture length
+            } else {
+            	rMSequivalent = b;
+            	radiusMS = a;
+            }
+            equivalentMainshock.setSpatialKernelDistance(rMSequivalent);	
+
+          if(D) System.out.println("Dimensions of ellipse: " + a + " " + " " + b + " aspect: " + String.format("%3.2f", c) + "; EQ mag: "
+    		+ mainshock.getMag() + "; DS:" + stressDrop + "; EQ radius: " + magnitude2radius(mainshock.getMag(), stressDrop) );
+
+        	return equivalentMainshock; 
+    	
+    	
+    	
+//    	return fitMainshockLineSource( mainshock,  aftershockFitList,  stressDrop,  q, false);
     }
 
     /** fitMainshockLineSource fits a mainshock line source to the aftershocks in aftershockFitList, consisting of npts points
@@ -143,10 +163,9 @@ public class ETAS_StatsCalc {
      * 
      */
     public static ETASEqkRupture fitMainshockLineSource(ObsEqkRupture mainshock, ObsEqkRupList aftershockFitList, double stressDrop, double q, boolean weightByDistance){
+    	// This works but probably has unknown failure modes.
     	
     	ETASEqkRupture equivalentMainshock = new ETASEqkRupture(mainshock, stressDrop);
-    	
-    	
         
     	//mainshock coords (lat0 and lon0 not actaully used...)
     	double mag0, lat0, lon0;
@@ -189,8 +208,13 @@ public class ETAS_StatsCalc {
         	th[i] = Math.atan2(dy[i], dx[i]);
         	r[i] = Math.sqrt(dx[i]*dx[i] + dy[i]*dy[i]);
         	
+        	// Assign weights to each aftershock to decide how much it contributes to the source fit
         	if (weightByDistance){
-        		// weight by distance
+        		// weight by distance. Aftershocks get a weight of one if they are within 2 * the vdE and Shaw radius,
+        		// which assigns a 1km radius to a reference M4.6 earthquake with a 3Mpa stress drop. 
+        		// Source scaling follows the assumption that M0 = stressdrop*L^3. Aftershocks outside this diameter are 
+        		// downweighted following a cosine taper to double the diameter. Weights are zero beyond.
+        		//  
         		if (r[i] < 2*r0)
         			w[i] = 1d;
         		else if (r[i] < 4*r0)
@@ -202,10 +226,11 @@ public class ETAS_StatsCalc {
         	}
 
         	//weight by time
+        	// time weighting follows omori's law, with a c-parameter of 1 day. The weight falls of as a power law beyond 1 day.
+        	// This should be made an accessible option.
         	w[i] *= 1d/(dt[i] + 1d);
 
-        	
-//    		w[i] = Math.pow(10, 0.5*mag[i]);	//weight by lengthscale
+//    		w[i] = Math.pow(10, 0.5*mag[i]);	//weight by magntiude of the aftershock?
     		lonwsum += lon[i]*w[i];
     		latwsum += lat[i]*w[i];
     		wsum += w[i];
@@ -215,7 +240,7 @@ public class ETAS_StatsCalc {
         double latc = latwsum / wsum;
         if(D) System.out.println("Centroid location: " + latc + " " + lonc + " " + r0);
 
-      
+        // recompute distances relative to centroid, and reweight (this should be made object-oriented). See comments above.
         for(int i = 0; i < mag.length; i++){
     		// compute x, y locs relative to centroid
     		dy[i] = (lat[i] - latc) * 111.111;
@@ -241,7 +266,7 @@ public class ETAS_StatsCalc {
     		wsum += w[i];
     	}
         
-        // compute an initial guess for orientation based on L1 norm solution
+        // initial guess is taking the average angle (is this averaging right?)
         double omega0, sinsum = 0, cossum = 0;
         for(int i = 0; i< mag.length; i++){
         	 sinsum += Math.sin(dy[i]/dx[i]);
@@ -288,7 +313,10 @@ public class ETAS_StatsCalc {
          
         if(D) System.out.println("Best fit mainshock strike: " + omega0*180/Math.PI + " north of east");
         
-        // compute coordinates relative to best-fit line
+        // now we're going to get the coordinates of the aftershocks in mainshock space and come up with an 
+        // ellipse that will lasso some fraction of the early aftershocks 
+        
+        // compute coordinates relative to best-fit line (mainshock source)
         for(int i = 0; i < th.length; i++){
     		phi[i] = th[i] - omega0;
     	  	p[i] = r[i] * Math.sin(phi[i]);
@@ -302,7 +330,7 @@ public class ETAS_StatsCalc {
         coeff[1][0] = Math.sin(omega0);
         coeff[1][1] = Math.cos(omega0);
 
-        //find quantiles of x and y.
+        //find quantiles of x and y relative to mainshock (width and length)
         java.util.Arrays.sort(d);
         double xmin = d[(int) Math.floor( (0.5 - q/2)*d.length )];
         double xmax = d[(int) Math.floor( (0.5 + q/2)*d.length )];
@@ -319,9 +347,14 @@ public class ETAS_StatsCalc {
         double a = Math.sqrt(c) * magnitude2radius(mag0, stressDrop);
         double b = a/c;
         
-        if(D) System.out.println("Dimensions of ellipse: " + a + " " + " " + b + "; EQ mag: " + mag0 + "; DS:" + stressDrop + "; EQ radius: " + magnitude2radius(mag0, stressDrop) );
+        // We start by treating the source as an ellipse.
+        // The ellipse has the same area as the circle for the isotropic source, but has the aspect ratio of the early aftershocks. 
+        // the long axis of the ellipse is the rupture length. The short axis is the internal length scale.
+        if(D) System.out.println("Dimensions of ellipse: " + a + " " + " " + b + "; EQ mag: "
+        		+ mag0 + "; DS:" + stressDrop + "; EQ radius: " + magnitude2radius(mag0, stressDrop) );
         
-        //build set of equivalent sources to represent line source
+        // we need to represent this as a set of sources:
+        // build set of equivalent sources to represent line source
         double radiusMS, rMSequivalent;
         int nEquivalent;
         
@@ -333,12 +366,13 @@ public class ETAS_StatsCalc {
         	radiusMS = a;
         }
         
+        // make a bunch of sources (10 per degree) to represent the mainshock, using the length scale from the kernel.
         equivalentMainshock.setSpatialKernelDistance(rMSequivalent);
     	nEquivalent = (int) (radiusMS/rMSequivalent*10);
     	
     	if(D) System.out.println("Building rupture trace with " + nEquivalent + " points...");
     	
-        // now find the equivalent magnitude for an integer number of sources
+        // now find the equivalent magnitude for an integer number of sources? or is this done somewhere else? In the 2D rate model for example?
     	if(nEquivalent < 1)
     		nEquivalent = 1;
     
