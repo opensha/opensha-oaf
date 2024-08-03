@@ -50,6 +50,8 @@ comcat_cache_1_mag = 2.0
 comcat_cache_1_time = PT2184H
 comcat_cache_2_mag = 4.95
 comcat_cache_2_time = PT9504H
+forecast_rate_limit = PT20S
+forecast_max_limit = PT1M
 adv_min_mag_bins = [
   0:  3.0
   1:  4.0
@@ -634,6 +636,8 @@ IntakeSphRegion
   "comcat_cache_1_time": "PT2184H",
   "comcat_cache_2_mag": 4.95,
   "comcat_cache_2_time": "PT9504H",
+  "forecast_rate_limit": "PT20S",
+  "forecast_max_limit": "PT1M",
   "adv_min_mag_bins": [3.0, 4.0, 5.0, 6.0, 7.0],
   "adv_window_start_offs": ["PT0S", "PT0S", "PT0S", "PT0S"],
   "adv_window_end_offs": ["PT24H", "PT168H", "PT720H", "PT8760H"],
@@ -968,6 +972,8 @@ comcat_cache_1_mag = 2.0
 comcat_cache_1_time = PT2184H
 comcat_cache_2_mag = 4.95
 comcat_cache_2_time = PT9504H
+forecast_rate_limit = PT20S
+forecast_max_limit = PT1M
 adv_min_mag_bins = [
   0:  3.0
   1:  4.0

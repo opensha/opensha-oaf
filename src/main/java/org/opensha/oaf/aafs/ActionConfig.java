@@ -485,6 +485,20 @@ public final class ActionConfig {
 		return param_set.comcat_cache_2_time;
 	}
 
+	// Get minimum time between forecasts. [v4]
+	// Must be a whole number of seconds, between 0 and 5 minutes.
+
+	public long get_forecast_rate_limit () {
+		return param_set.forecast_rate_limit;
+	}
+
+	// Get maximum delay for forecast rate limit. [v4]
+	// Must be a whole number of seconds, between 0 and 5 minutes.
+
+	public long get_forecast_max_limit () {
+		return param_set.forecast_max_limit;
+	}
+
 	// Get the number of advisory magnitude bins.
 
 	public int get_adv_min_mag_bin_count () {

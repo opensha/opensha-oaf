@@ -50,6 +50,8 @@
   "comcat_cache_1_time": "P91D",
   "comcat_cache_2_mag": 4.95,
   "comcat_cache_2_time": "P396D",
+  "forecast_rate_limit": "PT20S",
+  "forecast_max_limit": "PT1M",
   "adv_min_mag_bins": [ 3.00, 4.00, 5.00, 6.00, 7.00 ],
   "adv_window_start_offs": [ "P0D", "P0D", "P0D", "P0D" ],
   "adv_window_end_offs": [ "P1D", "P7D", "P30D", "P365D" ],

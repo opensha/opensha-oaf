@@ -80,6 +80,8 @@ import org.opensha.oaf.rj.OAFParameterSet;
  *  [v4] "comcat_cache_1_time" = String giving lookback time for ComCat cache #1, in java.time.Duration format.
  *  [v4] "comcat_cache_2_mag" = Real value giving the minimum magnitude for ComCat cache #2.
  *  [v4] "comcat_cache_2_time" = String giving lookback time for ComCat cache #2, in java.time.Duration format.
+ *  [v4] "forecast_rate_limit" = String giving minimum time between forecasts, in java.time.Duration format.
+ *  [v4] "forecast_max_limit" = String giving maximum delay for forecast rate limit, in java.time.Duration format.
  *	"adv_min_mag_bins" = [ Array giving a list of minimum magnitudes for which forecasts are generated, in increasing order.
  *		element = Real value giving minimum magnitude for the bin.
  *	]
@@ -389,7 +391,7 @@ public class ActionConfigFile implements Marshalable {
 	public long etas_progress_time;
 
 	// Time before mainshock to fetch data from ComCat. [v4]
-	// Must be a whole number of seconds, between 0 and 10 years
+	// Must be a whole number of seconds, between 0 and 10 years.
 
 	public static final long DEFAULT_DATA_FETCH_LOOKBACK = 5184000000L;		// Default value for forecast parameters = 60 days
 	public static final long REC_MIN_DATA_FETCH_LOOKBACK = 0L;				// Recommended minimum value for forecast parameters = 0
@@ -443,6 +445,28 @@ public class ActionConfigFile implements Marshalable {
 	private static final long V3_COMCAT_CACHE_2_TIME = 34214400000L;	// Default value for v3 and earlier files = 396 days
 
 	public long comcat_cache_2_time;
+
+	// Minimum time between forecasts. [v4]
+	// Must be a whole number of seconds, between 0 and 5 minutes.
+
+	public static final long DEFAULT_FORECAST_RATE_LIMIT = 20000L;		// Default value for forecast parameters = 20 seconds
+	public static final long REC_MIN_FORECAST_RATE_LIMIT = 0L;			// Recommended minimum value for forecast parameters = 0
+	public static final long REC_MAX_FORECAST_RATE_LIMIT = 300000L;		// Recommended maximum value for forecast parameters = 5 minutes
+
+	private static final long V3_FORECAST_RATE_LIMIT = 20000L;	// Default value for v3 and earlier files = 20 seconds
+
+	public long forecast_rate_limit;
+
+	// Maximum delay for forecast rate limit. [v4]
+	// Must be a whole number of seconds, between 0 and 5 minutes.
+
+	public static final long DEFAULT_FORECAST_MAX_LIMIT = 60000L;		// Default value for forecast parameters = 60 seconds
+	public static final long REC_MIN_FORECAST_MAX_LIMIT = 0L;			// Recommended minimum value for forecast parameters = 0
+	public static final long REC_MAX_FORECAST_MAX_LIMIT = 300000L;		// Recommended maximum value for forecast parameters = 5 minutes
+
+	private static final long V3_FORECAST_MAX_LIMIT = 60000L;	// Default value for v3 and earlier files = 60 seconds
+
+	public long forecast_max_limit;
 
 	// Minimum magnitude for advisory magnitude bins.  Must be in increasing order.
 
@@ -607,6 +631,8 @@ public class ActionConfigFile implements Marshalable {
 		comcat_cache_1_time = 0L;
 		comcat_cache_2_mag = 0.0;
 		comcat_cache_2_time = 0L;
+		forecast_rate_limit = 0L;
+		forecast_max_limit = 0L;
 		adv_min_mag_bins = new ArrayList<Double>();
 		adv_window_start_offs = new ArrayList<Long>();
 		adv_window_end_offs = new ArrayList<Long>();
@@ -821,6 +847,14 @@ public class ActionConfigFile implements Marshalable {
 
 		if (!( is_valid_lag(comcat_cache_2_time) )) {
 			throw new RuntimeException("ActionConfigFile: Invalid comcat_cache_2_time: " + comcat_cache_2_time);
+		}
+
+		if (!( is_valid_lag(forecast_rate_limit, REC_MIN_FORECAST_RATE_LIMIT, REC_MAX_FORECAST_RATE_LIMIT) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid forecast_rate_limit: " + forecast_rate_limit);
+		}
+
+		if (!( is_valid_lag(forecast_max_limit, REC_MIN_FORECAST_MAX_LIMIT, REC_MAX_FORECAST_MAX_LIMIT) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid forecast_max_limit: " + forecast_max_limit);
 		}
 
 		int n;
@@ -1042,6 +1076,8 @@ public class ActionConfigFile implements Marshalable {
 		result.append ("comcat_cache_1_time = " + Duration.ofMillis(comcat_cache_1_time).toString() + "\n");
 		result.append ("comcat_cache_2_mag = " + comcat_cache_2_mag + "\n");
 		result.append ("comcat_cache_2_time = " + Duration.ofMillis(comcat_cache_2_time).toString() + "\n");
+		result.append ("forecast_rate_limit = " + Duration.ofMillis(forecast_rate_limit).toString() + "\n");
+		result.append ("forecast_max_limit = " + Duration.ofMillis(forecast_max_limit).toString() + "\n");
 
 		result.append ("adv_min_mag_bins = [" + "\n");
 		for (int i = 0; i < adv_min_mag_bins.size(); ++i) {
@@ -1804,6 +1840,8 @@ public class ActionConfigFile implements Marshalable {
 			marshal_duration           (writer, "comcat_cache_1_time"  , comcat_cache_1_time  );
 			writer.marshalDouble       (        "comcat_cache_2_mag"   , comcat_cache_2_mag   );
 			marshal_duration           (writer, "comcat_cache_2_time"  , comcat_cache_2_time  );
+			marshal_duration           (writer, "forecast_rate_limit"  , forecast_rate_limit  );
+			marshal_duration           (writer, "forecast_max_limit"   , forecast_max_limit   );
 
 			writer.marshalDoubleCollection     ("adv_min_mag_bins"     , adv_min_mag_bins     );
 			marshal_duration_list      (writer, "adv_window_start_offs", adv_window_start_offs);
@@ -1893,6 +1931,8 @@ public class ActionConfigFile implements Marshalable {
 			comcat_cache_1_time   = V3_COMCAT_CACHE_1_TIME;
 			comcat_cache_2_mag    = V3_COMCAT_CACHE_2_MAG;
 			comcat_cache_2_time   = V3_COMCAT_CACHE_2_TIME;
+			forecast_rate_limit   = V3_FORECAST_RATE_LIMIT;
+			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
@@ -1970,6 +2010,8 @@ public class ActionConfigFile implements Marshalable {
 			comcat_cache_1_time   = V3_COMCAT_CACHE_1_TIME;
 			comcat_cache_2_mag    = V3_COMCAT_CACHE_2_MAG;
 			comcat_cache_2_time   = V3_COMCAT_CACHE_2_TIME;
+			forecast_rate_limit   = V3_FORECAST_RATE_LIMIT;
+			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
@@ -2047,6 +2089,8 @@ public class ActionConfigFile implements Marshalable {
 			comcat_cache_1_time   = V3_COMCAT_CACHE_1_TIME;
 			comcat_cache_2_mag    = V3_COMCAT_CACHE_2_MAG;
 			comcat_cache_2_time   = V3_COMCAT_CACHE_2_TIME;
+			forecast_rate_limit   = V3_FORECAST_RATE_LIMIT;
+			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
@@ -2124,6 +2168,8 @@ public class ActionConfigFile implements Marshalable {
 			comcat_cache_1_time   = unmarshal_duration           (reader, "comcat_cache_1_time"  );
 			comcat_cache_2_mag    = reader.unmarshalDouble       (        "comcat_cache_2_mag"   );
 			comcat_cache_2_time   = unmarshal_duration           (reader, "comcat_cache_2_time"  );
+			forecast_rate_limit   = unmarshal_duration           (reader, "forecast_rate_limit"  );
+			forecast_max_limit    = unmarshal_duration           (reader, "forecast_max_limit"   );
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );

@@ -1173,6 +1173,20 @@ public class LogSupport extends ServerComponent {
 
 
 
+	// Report forecast rate limit triggered, if delay is positive.
+
+	public void report_forecast_rate_limit (long delay) {
+		if (delay > 0L) {
+			double delay_secs = ((double)delay)/1000.0;
+			report_action ("FORECAST-RATE-LIMIT",
+						"delay = " + String.format ("%.3f", delay_secs) + " seconds");
+		}
+		return;
+	}
+
+
+
+
 	//----- Construction -----
 
 

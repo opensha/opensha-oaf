@@ -45,6 +45,41 @@ public class ExGenerateForecast extends ServerExecTask {
 
 
 
+	// Calculate delay to enforce forecast rate limit, if needed.
+	// The parameters is the rate limit time and the maximum allowed delay, in milliseconds.
+	// The return value is the delay that is required, in milliseconds, or 0L if none..
+	// Note: This would work for multiple threads, although the dispatcher is single-threaded.
+
+	private static long forecast_wakeup_time = 0L;
+
+	private static synchronized long enforce_rate_limit (long rate_limit, long max_delay) {
+		long delay = 0L;
+
+		// If rate limit is at least 1 second ...
+
+		if (rate_limit >= 1000L && max_delay >= 1000L) {
+			long time_now = System.currentTimeMillis();
+
+			// If after the wakeup time, just set the next wakeup time
+
+			if (time_now >= forecast_wakeup_time) {
+				forecast_wakeup_time = time_now + rate_limit;
+			}
+
+			// Otherwise, delay until wakeup time, but not more than the maximum
+
+			else {
+				delay = Math.min (max_delay, forecast_wakeup_time - time_now);
+				forecast_wakeup_time += rate_limit;
+			}
+		}
+
+		return delay;
+	}
+
+
+
+
 	// Generate forecast.
 
 	private int exec_gen_forecast (PendingTask task) {
@@ -84,6 +119,26 @@ public class ExGenerateForecast extends ServerExecTask {
 
 			sg.timeline_sup.next_auto_timeline (tstatus);
 			return RESCODE_FORECAST_CANCELED;
+		}
+
+		//--- Rate limit
+
+		// Enforce rate limit if needed
+
+		long rate_limit_delay = enforce_rate_limit (
+			sg.task_disp.get_action_config().get_forecast_rate_limit(),
+			sg.task_disp.get_action_config().get_forecast_max_limit()
+		);
+
+		// If requesting at least 1/4 second of delay, do the delay
+
+		if (rate_limit_delay >= 250L) {
+			try {
+				Thread.sleep (rate_limit_delay);
+			} catch (InterruptedException e) {
+			}
+
+			sg.log_sup.report_forecast_rate_limit (rate_limit_delay);
 		}
 
 		//--- Mainshock
