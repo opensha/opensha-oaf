@@ -93,6 +93,18 @@ public class SimpleUtils {
 		return ( (v1 < v2) ? (Math.max(v1, Math.min(v2, x))) : (Math.max(v2, Math.min(v1, x))) );
 	}
 
+	public static float clip_val_f (float v1, float v2, float x) {
+		return ( (v1 < v2) ? (Math.max(v1, Math.min(v2, x))) : (Math.max(v2, Math.min(v1, x))) );
+	}
+
+	public static int clip_val_i (int v1, int v2, int x) {
+		return ( (v1 < v2) ? (Math.max(v1, Math.min(v2, x))) : (Math.max(v2, Math.min(v1, x))) );
+	}
+
+	public static long clip_val_l (long v1, long v2, long x) {
+		return ( (v1 < v2) ? (Math.max(v1, Math.min(v2, x))) : (Math.max(v2, Math.min(v1, x))) );
+	}
+
 
 	// Clip x to lie between v1 and v2 assuming v1 <= v2; if v1 > v2 then the return value is v1.
 
@@ -100,10 +112,34 @@ public class SimpleUtils {
 		return Math.max(v1, Math.min(v2, x));
 	}
 
+	public static float clip_max_min_f (float v1, float v2, float x) {
+		return Math.max(v1, Math.min(v2, x));
+	}
+
+	public static int clip_max_min_i (int v1, int v2, int x) {
+		return Math.max(v1, Math.min(v2, x));
+	}
+
+	public static long clip_max_min_l (long v1, long v2, long x) {
+		return Math.max(v1, Math.min(v2, x));
+	}
+
 
 	// Clip x to lie between v1 and v2 assuming v1 <= v2; if v1 > v2 then the return value is v2.
 
 	public static double clip_min_max (double v1, double v2, double x) {
+		return Math.min(v2, Math.max(v1, x));
+	}
+
+	public static float clip_min_max_f (float v1, float v2, float x) {
+		return Math.min(v2, Math.max(v1, x));
+	}
+
+	public static int clip_min_max_i (int v1, int v2, int x) {
+		return Math.min(v2, Math.max(v1, x));
+	}
+
+	public static long clip_min_max_l (long v1, long v2, long x) {
 		return Math.min(v2, Math.max(v1, x));
 	}
 

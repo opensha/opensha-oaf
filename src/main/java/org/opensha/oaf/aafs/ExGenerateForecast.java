@@ -47,7 +47,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 	// Calculate delay to enforce forecast rate limit, if needed.
 	// The parameters is the rate limit time and the maximum allowed delay, in milliseconds.
-	// The return value is the delay that is required, in milliseconds, or 0L if none..
+	// The return value is the delay that is required, in milliseconds, or 0L if none.
 	// Note: This would work for multiple threads, although the dispatcher is single-threaded.
 
 	private static long forecast_wakeup_time = 0L;
@@ -60,18 +60,14 @@ public class ExGenerateForecast extends ServerExecTask {
 		if (rate_limit >= 1000L && max_delay >= 1000L) {
 			long time_now = System.currentTimeMillis();
 
-			// If after the wakeup time, just set the next wakeup time
+			// Delay until wakup time, coerced between 0 and the allowed maximum
 
-			if (time_now >= forecast_wakeup_time) {
-				forecast_wakeup_time = time_now + rate_limit;
-			}
+			delay = SimpleUtils.clip_max_min_l (0L, max_delay, forecast_wakeup_time - time_now);
 
-			// Otherwise, delay until wakeup time, but not more than the maximum
+			// Next wakeup time
+			// Note: The term (2L * rate_limit) allows, after a period of inactivity, a burst of 4 forecasts with no delays
 
-			else {
-				delay = Math.min (max_delay, forecast_wakeup_time - time_now);
-				forecast_wakeup_time += rate_limit;
-			}
+			forecast_wakeup_time = Math.max (forecast_wakeup_time + rate_limit, time_now - (2L * rate_limit));
 		}
 
 		return delay;
