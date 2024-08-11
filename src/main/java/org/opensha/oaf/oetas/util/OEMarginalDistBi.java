@@ -148,8 +148,8 @@ public class OEMarginalDistBi implements Marshalable {
 
 	// Finish accumulation.
 	// Parameters:
-	//  norm = Desired total weight, use a negative value for no normalization..
-	//  format = Format code for rounding, or null if none. (see SimpleUtils.round_double_via_string)
+	//  norm = Desired total weight, use a negative value for no normalization.
+	//  format = Format code for rounding, or null if none. (see SimpleUtils.round_double_via_string).
 
 	public final void end_accum (double norm, String format) {
 

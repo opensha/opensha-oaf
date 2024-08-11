@@ -219,8 +219,8 @@ public abstract class OEDiscreteRange {
 	public OEMarginalBinFinder make_bin_finder (boolean f_out_lo, boolean f_out_hi) {
 		int rsize = get_range_size();
 		if (rsize == 1) {
-			int bcount = 1 + (f_out_lo ? 0 : 1) + (f_out_hi ? 0 : 1);
-			int bnum = (f_out_lo ? 0 : 1);
+			int bcount = 1 + (f_out_lo ? 1 : 0) + (f_out_hi ? 1 : 0);
+			int bnum = (f_out_lo ? 1 : 0);
 			return new OEMarginalBinSingle (bcount, bnum);
 		}
 		int lo = (f_out_lo ? 0 : 1);
