@@ -120,6 +120,33 @@ public class OEMarginalDistRange implements Marshalable {
 
 
 
+
+	// Set up an empty range.
+	// Parameters:
+	//  the_var_name = Name of the variable, cannot be null.
+	//  the_var_index = Index number of the variable, 0-based.
+
+	public final OEMarginalDistRange setup_empty_range (
+		String the_var_name,
+		int the_var_index
+	) {
+		// Save identification
+
+		var_name = the_var_name;
+		var_index = the_var_index;
+		bin_count = 0;
+		out_lo = false;
+		out_hi = false;
+
+		// Set up the values.
+
+		values = new double[0];
+
+		return this;
+	}
+
+
+
 	// Display our contents.
 
 	@Override

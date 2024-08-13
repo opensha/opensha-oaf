@@ -321,6 +321,7 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 	//  density_bin_count = Number of bins for binning sub-voxels according to log-density; must be >= 2.
 	//  prob_tail_trim = Fraction of the probability distribution to trim.
 	//  the_seed_subvox_count = Number of sub-voxels to use for seeding, must be a power of 2.
+	//  stat_accum = Statistics accumulator.
 	// Note: The i-th density bin contains sub-voxels whose negative normalized log-density lies between
 	// i*density_bin_size_lnu and (i+1)*density_bin_size_lnu.  The last bin contains all sub-voxels whose negative
 	// normalized log-density is greater than (density_bin_count-1)*density_bin_size_lnu.  The density bins are
@@ -333,7 +334,8 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		double density_bin_size_lnu,
 		int density_bin_count,
 		double prob_tail_trim,
-		int the_seed_subvox_count
+		int the_seed_subvox_count,
+		OEDisc2VoxStatAccum stat_accum
 	) {
 
 		// Save the parameters
@@ -431,6 +433,16 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		int[] a_tally_accum = new int[density_bin_count];
 		OEArraysCalc.zero_array (a_tally_accum);
 
+		// Prepare the statistics accumulator
+
+		stat_accum.vsaccum_begin (
+			bay_weight,
+			max_log_density,
+			gen_max_log_density,
+			seq_max_log_density,
+			bay_max_log_density
+		);
+
 		// Second scan, get the probabilities and density bins
 
 		for (int j = 0; j < voxel_count; ++j) {
@@ -446,6 +458,10 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 				a_tally_accum
 			);
 		}
+
+		// Finish the statistics accumulator
+
+		stat_accum.vsaccum_end();
 
 		// Cumulate the probabilities and tallies in the bins
 

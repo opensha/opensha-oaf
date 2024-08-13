@@ -61,6 +61,16 @@ public class OEMarginalDistSetBuilder {
 
 	private List<OEDiscreteRange> var_range_list;
 
+	// The list of variable values defined so far.
+	// An element of this list cannot be null, but can be an empty range if the corresponding variable is not used.
+
+	private List<OEMarginalDistRange> var_value_list;
+
+	// The list of formats used for rounding variable values.
+	// Elements of this list can be null if no rounding is needed.
+
+	private List<String> var_format_list;
+
 	// The list of flags, indicating which variables are used in the marginals.
 
 	private List<Boolean> var_usage_list;
@@ -84,6 +94,8 @@ public class OEMarginalDistSetBuilder {
 		var_name_list = new ArrayList<String>();
 		data_name_list = new ArrayList<String>();
 		var_range_list = new ArrayList<OEDiscreteRange>();
+		var_value_list = new ArrayList<OEMarginalDistRange>();
+		var_format_list = new ArrayList<String>();
 		var_usage_list = new ArrayList<Boolean>();
 		return;
 	}
@@ -104,12 +116,14 @@ public class OEMarginalDistSetBuilder {
 	// Parameters:
 	//  name = Name of the variable.  If null, it is changed to an empty string.
 	//  range = Range of the varialbe.  Can be null if the variable is not used in marginals.
+	//  format = Format code for rounding variable values, or null if none. (see SimpleUtils.round_double_via_string)
 	//  f_used = True to use variable in the marginals, false if not.
 	// Returns the index number of this variable.
 
-	public final int add_var (String name, OEDiscreteRange range, boolean f_used) {
+	public final int add_var (String name, OEDiscreteRange range, String format, boolean f_used) {
 		var_name_list.add ((name == null) ? "" : name);
 		var_range_list.add (range);
+		var_format_list.add (format);
 		var_usage_list.add (f_used);
 		return var_name_list.size() - 1;
 	}
@@ -121,15 +135,16 @@ public class OEMarginalDistSetBuilder {
 	// Parameters:
 	//  name = Name of the variable.  If null, it is changed to an empty string.
 	//  range = Range of the varialbe.  Can be null if the variable is not used in marginals.
+	//  format = Format code for rounding variable values, or null if none. (see SimpleUtils.round_double_via_string)
 	// Returns the index number of this variable.
 	// Note: The variable is used in marginals if the range is non-null has contains more than one value.
 
-	public final int add_var (String name, OEDiscreteRange range) {
+	public final int add_var (String name, OEDiscreteRange range, String format) {
 		boolean f_used = false;
 		if (range != null && range.get_range_size() > 1) {
 			f_used = true;
 		}
-		return add_var (name, range, f_used);
+		return add_var (name, range, format, f_used);
 	}
 
 
@@ -163,16 +178,32 @@ public class OEMarginalDistSetBuilder {
 		dist_n = new int[var_count];
 		dist_w = new double[data_count];
 
-		// Make the bin finders
+		// Make the bin finders and variable values
 
 		bin_finders = new OEMarginalBinFinder[var_count];
+		var_value_list = new ArrayList<OEMarginalDistRange>();
 
 		for (int i = 0; i < var_count; ++i) {
 			OEDiscreteRange range = var_range_list.get(i);
 			if (range == null) {
-				bin_finders[i] = new OEMarginalBinSingle();	// for null range, use a single bin
+				// for null range, use a single bin and empty values
+				bin_finders[i] = new OEMarginalBinSingle();
+
+				var_value_list.add ((new OEMarginalDistRange()).setup_empty_range (
+					var_name_list.get(i),
+					i
+				));
 			} else {
 				bin_finders[i] = range.make_bin_finder (true, true);
+
+				var_value_list.add ((new OEMarginalDistRange()).setup_range (
+					var_name_list.get(i),
+					i,
+					range,
+					true,
+					true,
+					var_format_list.get(i)
+				));
 			}
 		}
 
@@ -226,7 +257,7 @@ public class OEMarginalDistSetBuilder {
 		// Create the marginal dustrubution set
 
 		dist_set = (new OEMarginalDistSet())
-			.set_grid_info (var_name_list, data_name_list, var_range_list)
+			.set_grid_info (var_name_list, data_name_list, var_range_list, var_value_list)
 			.begin_accum (univar_list, bivar_list);
 
 		return;
@@ -337,13 +368,13 @@ public class OEMarginalDistSetBuilder {
 	// Note: To agree with the above index number, this must be the only (or at least the first) variables.
 
 	public final void add_etas_vars (OEGridParams grid_params) {
-		add_var ("b", grid_params.b_range);
-		add_var ("alpha", grid_params.alpha_range);
-		add_var ("c", grid_params.c_range);
-		add_var ("p", grid_params.p_range);
-		add_var ("n", grid_params.n_range);
-		add_var ("zams", grid_params.zams_range);
-		add_var ("zmu", grid_params.zmu_range);
+		add_var ("b", grid_params.b_range, "%.6e");
+		add_var ("alpha", grid_params.alpha_range, "%.6e");
+		add_var ("c", grid_params.c_range, "%.6e");
+		add_var ("p", grid_params.p_range, "%.6e");
+		add_var ("n", grid_params.n_range, "%.6e");
+		add_var ("zams", grid_params.zams_range, "%.6e");
+		add_var ("zmu", grid_params.zmu_range, "%.6e");
 		return;
 	}
 
@@ -452,7 +483,8 @@ public class OEMarginalDistSetBuilder {
 	// Returns the marginal distribution set.
 
 	public final OEMarginalDistSet end_etas_accum () {
-		return end_accum (1000.0, 10000.0, "%.5e");
+		//return end_accum (1000.0, 10000.0, "%.5e");
+		return end_accum (1000.0, 1000.0, "%.5e");
 	}
 
 

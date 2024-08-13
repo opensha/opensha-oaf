@@ -43,9 +43,16 @@ public class OEMarginalDistSet implements Marshalable {
 	// If a range has size n, then the associated variable is partitioned into n+2 bins;
 	// the first and last bins contain values that are out-of-range low or high, respectively.
 	// If a range has size 1, then typically there are no distributions for that variable.
-	// An element of this array can be null if the correpsonding variable is not used.
+	// An element of this array can be null if the corresponding variable is not used.
 
 	public OEDiscreteRange[] var_ranges;
+
+	// Values of the variables.
+	// May be an empty array, but cannot be null.
+	// The variable index numbers in the distributions may be used to index into this array.
+	// An element of this array cannot be null, but can be an empty range if the corresponding variable is not used.
+
+	public OEMarginalDistRange[] var_values;
 
 
 	//----- Data -----
@@ -73,11 +80,13 @@ public class OEMarginalDistSet implements Marshalable {
 	//  var_name_list = List of variable names, can be null if none.  Elements must be non-null.
 	//  data_name_list = List of data names, can be null if none.  Elements must be non-null.
 	//  var_range_list = List of variable ranges, can be null if none.  Elements can be null.
+	//  var_value_list = List of variable values, can be null if none.  Elements must be non-null.
 
 	public final OEMarginalDistSet set_grid_info (
 		Collection<String> var_name_list,
 		Collection<String> data_name_list,
-		Collection<OEDiscreteRange> var_range_list
+		Collection<OEDiscreteRange> var_range_list,
+		Collection<OEMarginalDistRange> var_value_list
 	) {
 		if (var_name_list == null) {
 			var_names = new String[0];
@@ -95,6 +104,12 @@ public class OEMarginalDistSet implements Marshalable {
 			var_ranges = new OEDiscreteRange[0];
 		} else {
 			var_ranges = var_range_list.toArray (new OEDiscreteRange[0]);
+		}
+
+		if (var_value_list == null) {
+			var_values = new OEMarginalDistRange[0];
+		} else {
+			var_values = var_value_list.toArray (new OEMarginalDistRange[0]);
 		}
 
 		return this;
@@ -195,6 +210,7 @@ public class OEMarginalDistSet implements Marshalable {
 		var_names	= new String[0];
 		data_names	= new String[0];
 		var_ranges	= new OEDiscreteRange[0];
+		var_values	= new OEMarginalDistRange[0];
 
 		univar		= new OEMarginalDistUni[0];
 		bivar		= new OEMarginalDistBi[0];
@@ -224,6 +240,7 @@ public class OEMarginalDistSet implements Marshalable {
 		result.append ("var_names.length = "  + var_names.length  + "\n");
 		result.append ("data_names.length = " + data_names.length + "\n");
 		result.append ("var_ranges.length = " + var_ranges.length + "\n");
+		result.append ("var_values.length = " + var_values.length + "\n");
 
 		result.append ("univar.length = "     + univar.length     + "\n");
 		result.append ("bivar.length = "      + bivar.length      + "\n");
@@ -276,6 +293,7 @@ public class OEMarginalDistSet implements Marshalable {
 			writer.marshalStringArray ("var_names", var_names);
 			writer.marshalStringArray ("data_names", data_names);
 			OEDiscreteRange.marshal_array (writer, "var_ranges", var_ranges);
+			OEMarginalDistRange.marshal_array (writer, "var_values", var_values);
 
 			OEMarginalDistUni.marshal_array (writer, "univar", univar);
 			OEMarginalDistBi.marshal_array (writer, "bivar", bivar);
@@ -305,6 +323,7 @@ public class OEMarginalDistSet implements Marshalable {
 			var_names = reader.unmarshalStringArray ("var_names");
 			data_names = reader.unmarshalStringArray ("data_names");
 			var_ranges = OEDiscreteRange.unmarshal_array (reader, "var_ranges");
+			var_values = OEMarginalDistRange.unmarshal_array (reader, "var_values");
 
 			univar = OEMarginalDistUni.unmarshal_array (reader, "univar");
 			bivar = OEMarginalDistBi.unmarshal_array (reader, "bivar");
@@ -434,6 +453,7 @@ public class OEMarginalDistSet implements Marshalable {
 		List<String> var_name_list = new ArrayList<String>();
 		List<String> data_name_list = new ArrayList<String>();
 		List<OEDiscreteRange> var_range_list = new ArrayList<OEDiscreteRange>();
+		List<OEMarginalDistRange> var_value_list = new ArrayList<OEMarginalDistRange>();
 
 		var_name_list.add ("test_var1");
 		var_name_list.add ("test_var2");
@@ -444,6 +464,15 @@ public class OEMarginalDistSet implements Marshalable {
 		OEMarginalBinFinder[] bin_finders = new OEMarginalBinFinder[var_range_list.size()];
 		for (int i = 0; i < bin_finders.length; ++i) {
 			bin_finders[i] = var_range_list.get(i).make_bin_finder (true, true);
+
+			var_value_list.add ((new OEMarginalDistRange()).setup_range (
+				var_name_list.get(i),
+				i,
+				var_range_list.get(i),
+				true,
+				true,
+				"%.6e"
+			));
 		}
 
 		List<OEMarginalDistUni> univar_list = new ArrayList<OEMarginalDistUni>();
@@ -477,7 +506,7 @@ public class OEMarginalDistSet implements Marshalable {
 		));
 
 		OEMarginalDistSet dist_set = (new OEMarginalDistSet())
-			.set_grid_info (var_name_list, data_name_list, var_range_list)
+			.set_grid_info (var_name_list, data_name_list, var_range_list, var_value_list)
 			.begin_accum (univar_list, bivar_list);
 
 		int[] n = new int[var_name_list.size()];

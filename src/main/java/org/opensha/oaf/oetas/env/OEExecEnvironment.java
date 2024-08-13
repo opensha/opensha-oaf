@@ -39,6 +39,8 @@ import org.opensha.oaf.oetas.fit.OEDisc2InitVoxBuilder;
 import org.opensha.oaf.oetas.fit.OEDisc2InitVoxSet;
 import org.opensha.oaf.oetas.fit.OEDiscFGHParams;
 import org.opensha.oaf.oetas.fit.OEGridParams;
+import org.opensha.oaf.oetas.fit.OEDisc2VoxStatAccum;
+import org.opensha.oaf.oetas.fit.OEDisc2VoxStatAccumMarginal;
 
 import org.opensha.oaf.oetas.except.OEException;
 import org.opensha.oaf.oetas.except.OEDataInvalidException;
@@ -1332,6 +1334,11 @@ public class OEExecEnvironment {
 			fit_info.mag_max	// mag_max_sim
 		);
 
+		// Statistics accumulator
+
+		boolean f_full_marginal = false;		// eventually the caller needs to control this
+		OEDisc2VoxStatAccumMarginal stat_accum = new OEDisc2VoxStatAccumMarginal (grid_params, f_full_marginal);
+
 		// Complete setting up the voxel set
 
 		double bay_weight = etas_params.get_bay_weight (catalog_info.t_data_end - catalog_info.t_data_begin);
@@ -1343,7 +1350,8 @@ public class OEExecEnvironment {
 			etas_params.get_density_bin_size_lnu(),	// density_bin_size_lnu
 			etas_params.get_density_bin_count(),	// density_bin_count
 			etas_params.get_prob_tail_trim(),		// prob_tail_trim
-			etas_params.get_seed_subvox_count()		// the_seed_subvox_count
+			etas_params.get_seed_subvox_count(),	// the_seed_subvox_count
+			stat_accum								// stat_accum
 		);
 
 		// Display voxel set results

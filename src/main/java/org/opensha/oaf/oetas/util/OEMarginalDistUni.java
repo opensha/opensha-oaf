@@ -165,7 +165,9 @@ public class OEMarginalDistUni implements Marshalable {
 		int frac_ix = 0;
 		double frac_sub = total * frac_probs[frac_ix];
 
-		final double mult = ((norm < 0.0 || total <= 0.0) ? 1.0 : (norm / total));
+		//final double mult = ((norm < 0.0 || total <= 0.0) ? 1.0 : (norm / total));
+		final double mult = ((norm < 0.0 || max_weight <= 0.0) ? 1.0 : (norm / max_weight));
+
 		if (format == null) {
 			scale = total * mult;
 		} else {
