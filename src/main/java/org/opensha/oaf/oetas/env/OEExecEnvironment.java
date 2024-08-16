@@ -41,6 +41,9 @@ import org.opensha.oaf.oetas.fit.OEDiscFGHParams;
 import org.opensha.oaf.oetas.fit.OEGridParams;
 import org.opensha.oaf.oetas.fit.OEDisc2VoxStatAccum;
 import org.opensha.oaf.oetas.fit.OEDisc2VoxStatAccumMarginal;
+import org.opensha.oaf.oetas.fit.OEDisc2VoxStatAccumMulti;
+
+import org.opensha.oaf.oetas.util.OEMarginalDistSet;
 
 import org.opensha.oaf.oetas.except.OEException;
 import org.opensha.oaf.oetas.except.OEDataInvalidException;
@@ -1336,8 +1339,16 @@ public class OEExecEnvironment {
 
 		// Statistics accumulator
 
-		boolean f_full_marginal = false;		// eventually the caller needs to control this
-		OEDisc2VoxStatAccumMarginal stat_accum = new OEDisc2VoxStatAccumMarginal (grid_params, f_full_marginal);
+		boolean f_full_marginal = true;		// eventually the caller needs to control this, but it only adds about 0.5 seconds to make the full marginal
+
+		OEDisc2VoxStatAccumMarginal stat_accum_slim = new OEDisc2VoxStatAccumMarginal (grid_params, false, false);
+
+		OEDisc2VoxStatAccumMarginal stat_accum_full = null;
+		if (f_full_marginal) {
+			stat_accum_full = new OEDisc2VoxStatAccumMarginal (grid_params, true, false);
+		}
+
+		OEDisc2VoxStatAccum stat_accum = (new OEDisc2VoxStatAccumMulti (stat_accum_slim, stat_accum_full)).get_stat_accum();
 
 		// Complete setting up the voxel set
 
@@ -1364,6 +1375,20 @@ public class OEExecEnvironment {
 		etas_results.set_fitting (fit_info);
 
 		etas_results.set_grid (voxel_set);
+
+		boolean save_marginals = true;
+		OEMarginalDistSet marginals = stat_accum_slim.get_dist_set();
+		boolean save_full_marginals = false;
+		OEMarginalDistSet full_marginals = null;
+		if (stat_accum_full != null) {
+			full_marginals = stat_accum_full.get_dist_set();
+		}
+		etas_results.set_marginals (
+			save_marginals,
+			marginals,
+			save_full_marginals,
+			full_marginals
+		);
 
 		// If we want to write the log-density grid ...
 

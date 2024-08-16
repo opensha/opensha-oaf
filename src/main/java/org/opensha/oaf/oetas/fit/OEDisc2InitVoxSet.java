@@ -455,7 +455,8 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 				cum_subvox_count[j],	// dest_index
 				density_bin_size_lnu,	// bin_size_lnu
 				a_prob_accum,
-				a_tally_accum
+				a_tally_accum,
+				stat_accum
 			);
 		}
 

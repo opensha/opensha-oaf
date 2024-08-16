@@ -172,6 +172,37 @@ public class OEMarginalDistRange implements Marshalable {
 
 
 
+	// Deep copy of another object.
+	// Returns this object.
+
+	public OEMarginalDistRange copy_from (OEMarginalDistRange other) {
+		var_name		= other.var_name;
+		var_index		= other.var_index;
+		bin_count		= other.bin_count;
+		out_lo			= other.out_lo;
+		out_hi			= other.out_hi;
+		values			= OEArraysCalc.array_copy (other.values);
+		return this;
+	}
+
+
+
+
+	// Deep copy an array of objects.
+	// Returns the newly-allocated array.
+
+	public static OEMarginalDistRange[] array_copy (final OEMarginalDistRange[] x) {
+		final int c0 = x.length;
+		final OEMarginalDistRange[] r0 = new OEMarginalDistRange[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = (new OEMarginalDistRange()).copy_from (x[m0]);
+		}
+		return r0;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 
@@ -348,7 +379,7 @@ public class OEMarginalDistRange implements Marshalable {
 
 			// Read arguments
 
-			System.out.println ("Constructing, displaying, and marshaling, marginal univariate distribution");
+			System.out.println ("Constructing, displaying, and marshaling, marginal variable range");
 			int count = testargs.get_int ("count");
 			boolean f_out_lo = testargs.get_boolean ("f_out_lo");
 			boolean f_out_hi = testargs.get_boolean ("f_out_hi");
@@ -386,6 +417,57 @@ public class OEMarginalDistRange implements Marshalable {
 			
 			OEMarginalDistRange dist_range2 = new OEMarginalDistRange();
 			MarshalUtils.from_json_string (dist_range2, json_string);
+
+			// Display the contents
+
+			System.out.println (dist_range2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  count  f_out_lo  f_out_hi
+		// Construct test values, using the specified number of values and out-of-range flags, and display it.
+		// Copy and display the copy.
+
+		if (testargs.is_test ("test2")) {
+
+			// Read arguments
+
+			System.out.println ("Constructing, displaying, and copying, marginal variable range");
+			int count = testargs.get_int ("count");
+			boolean f_out_lo = testargs.get_boolean ("f_out_lo");
+			boolean f_out_hi = testargs.get_boolean ("f_out_hi");
+			testargs.end_test();
+
+			// Create the values
+
+			OEMarginalDistRange dist_range = make_test_value (count, f_out_lo, f_out_hi);
+
+			// Display the contents
+
+			System.out.println ();
+			System.out.println ("********** Range Display **********");
+			System.out.println ();
+
+			System.out.println (dist_range.toString());
+
+			// Copy
+
+			System.out.println ();
+			System.out.println ("********** Copy **********");
+			System.out.println ();
+			
+			OEMarginalDistRange dist_range2 = (new OEMarginalDistRange()).copy_from (dist_range);
 
 			// Display the contents
 

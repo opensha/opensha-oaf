@@ -63,6 +63,11 @@ public class OEMarginalDistUni implements Marshalable {
 
 	public double scale;
 
+	// Number of data values supplied.
+	// This field is not marshaled.
+
+	//private long data_count;
+
 
 
 
@@ -103,6 +108,8 @@ public class OEMarginalDistUni implements Marshalable {
 		OEArraysCalc.fill_array (fractiles, -1);
 		scale = 0.0;
 
+		//data_count = 0L;
+
 		return this;
 	}
 
@@ -117,6 +124,7 @@ public class OEMarginalDistUni implements Marshalable {
 
 	public final void add_weight (int n, double w) {
 		dist[n] += w;
+		//++data_count;
 		return;
 	}
 
@@ -132,6 +140,7 @@ public class OEMarginalDistUni implements Marshalable {
 
 	public final void add_weight (int[] n, double[] w) {
 		dist[n[var_index]] += w[data_index];
+		//++data_count;
 		return;
 	}
 
@@ -178,7 +187,7 @@ public class OEMarginalDistUni implements Marshalable {
 		for (int n = 0; n < bin_count; ++n) {
 			final double w = dist[n];
 			sub_total += w;
-			while (frac_sub <= sub_total) {
+			while (frac_sub <= sub_total && frac_ix < frac_count) {
 				fractiles[frac_ix] = n;
 				++frac_ix;
 				frac_sub = total * ((frac_ix < frac_count) ? frac_probs[frac_ix] : 100.0);
@@ -217,6 +226,7 @@ public class OEMarginalDistUni implements Marshalable {
 		mode			= -1;
 		fractiles		= new int[0];
 		scale			= 0.0;
+		//data_count		= 0L;
 		return;
 	}
 
@@ -257,6 +267,40 @@ public class OEMarginalDistUni implements Marshalable {
 		}
 
 		return result.toString();
+	}
+
+
+
+
+	// Deep copy of another object.
+	// Returns this object.
+
+	public OEMarginalDistUni copy_from (OEMarginalDistUni other) {
+		var_name		= other.var_name;
+		var_index		= other.var_index;
+		data_name		= other.data_name;
+		data_index		= other.data_index;
+		dist			= OEArraysCalc.array_copy (other.dist);
+		mode			= other.mode;
+		fractiles		= OEArraysCalc.array_copy (other.fractiles);
+		scale			= other.scale;
+		//data_count		= other.data_count;
+		return this;
+	}
+
+
+
+
+	// Deep copy an array of objects.
+	// Returns the newly-allocated array.
+
+	public static OEMarginalDistUni[] array_copy (final OEMarginalDistUni[] x) {
+		final int c0 = x.length;
+		final OEMarginalDistUni[] r0 = new OEMarginalDistUni[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = (new OEMarginalDistUni()).copy_from (x[m0]);
+		}
+		return r0;
 	}
 
 
@@ -586,6 +630,55 @@ public class OEMarginalDistUni implements Marshalable {
 			
 			OEMarginalDistUni dist_uni2 = new OEMarginalDistUni();
 			MarshalUtils.from_json_string (dist_uni2, json_string);
+
+			// Display the contents
+
+			System.out.println (dist_uni2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  reps
+		// Construct test values, using the specified number of repetitions, and display it.
+		// Copy and display the copy.
+
+		if (testargs.is_test ("test3")) {
+
+			// Read arguments
+
+			System.out.println ("Constructing, displaying, and copying, marginal univariate distribution");
+			int reps = testargs.get_int ("reps");
+			testargs.end_test();
+
+			// Create the values
+
+			OEMarginalDistUni dist_uni = make_test_value (reps);
+
+			// Display the contents
+
+			System.out.println ();
+			System.out.println ("********** Distribution Display **********");
+			System.out.println ();
+
+			System.out.println (dist_uni.toString());
+
+			// Copy
+
+			System.out.println ();
+			System.out.println ("********** Copy **********");
+			System.out.println ();
+			
+			OEMarginalDistUni dist_uni2 = (new OEMarginalDistUni()).copy_from (dist_uni);
 
 			// Display the contents
 

@@ -42,6 +42,8 @@ public class OEMarginalDistSet implements Marshalable {
 	// The variable index numbers in the distributions may be used to index into this array.
 	// If a range has size n, then the associated variable is partitioned into n+2 bins;
 	// the first and last bins contain values that are out-of-range low or high, respectively.
+	// Exception: If there is an entry in var_values for the variable, then that entry
+	// specifies which out-of-range bins exist.
 	// If a range has size 1, then typically there are no distributions for that variable.
 	// An element of this array can be null if the corresponding variable is not used.
 
@@ -49,8 +51,10 @@ public class OEMarginalDistSet implements Marshalable {
 
 	// Values of the variables.
 	// May be an empty array, but cannot be null.
-	// The variable index numbers in the distributions may be used to index into this array.
-	// An element of this array cannot be null, but can be an empty range if the corresponding variable is not used.
+	// If not null, it must contain an entry for every variable that appears in any marginal,
+	// and optionally can contain entries for other variables.
+	// An element of this array cannot be null, but can be an empty range if the corresponding
+	// variable is not used.
 
 	public OEMarginalDistRange[] var_values;
 
@@ -220,7 +224,7 @@ public class OEMarginalDistSet implements Marshalable {
 
 
 
-	// Default constructor.
+	// Default constructor makes an empty set.
 
 	public OEMarginalDistSet () {
 		clear();
@@ -258,6 +262,40 @@ public class OEMarginalDistSet implements Marshalable {
 		}
 
 		return result.toString();
+	}
+
+
+
+
+	// Deep copy of another object.
+	// Returns this object.
+
+	public OEMarginalDistSet copy_from (OEMarginalDistSet other) {
+		var_names		= OEArraysCalc.array_copy (other.var_names);
+		data_names		= OEArraysCalc.array_copy (other.data_names);
+		var_ranges		= new OEDiscreteRange[other.var_ranges.length];
+		for (int i = 0; i < var_ranges.length; ++i) {
+			var_ranges[i]	= other.var_ranges[i];	// OEDiscreteRange objects are immutable
+		}
+		var_values		= OEMarginalDistRange.array_copy (other.var_values);
+		univar			= OEMarginalDistUni.array_copy (other.univar);
+		bivar			= OEMarginalDistBi.array_copy (other.bivar);
+		return this;
+	}
+
+
+
+
+	// Deep copy an array of objects.
+	// Returns the newly-allocated array.
+
+	public static OEMarginalDistSet[] array_copy (final OEMarginalDistSet[] x) {
+		final int c0 = x.length;
+		final OEMarginalDistSet[] r0 = new OEMarginalDistSet[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = (new OEMarginalDistSet()).copy_from (x[m0]);
+		}
+		return r0;
 	}
 
 
@@ -646,6 +684,74 @@ public class OEMarginalDistSet implements Marshalable {
 			
 			OEMarginalDistSet dist_set2 = new OEMarginalDistSet();
 			MarshalUtils.from_json_string (dist_set2, json_string);
+
+			// Display the contents
+
+			System.out.println (dist_set2.toString());
+
+			// Marshal to JSON
+
+			System.out.println ();
+			System.out.println ("********** Marshal to JSON, again **********");
+			System.out.println ();
+
+			String json_string2 = MarshalUtils.to_formatted_compact_json_string (dist_set2);
+			System.out.println (json_string2);
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  reps
+		// Construct test values, using the specified number of repetitions, and display it.
+		// Copy and display the copy.
+		// This version includes grid information.
+
+		if (testargs.is_test ("test3")) {
+
+			// Read arguments
+
+			System.out.println ("Constructing, displaying, and copying, set of marginal distributions");
+			int reps = testargs.get_int ("reps");
+			testargs.end_test();
+
+			// Create the values
+
+			OEMarginalDistSet dist_set = make_test_value_2 (reps);
+
+			// Display the contents
+
+			System.out.println ();
+			System.out.println ("********** Distribution Display **********");
+			System.out.println ();
+
+			System.out.println (dist_set.toString());
+
+			// Marshal to JSON
+
+			System.out.println ();
+			System.out.println ("********** Marshal to JSON **********");
+			System.out.println ();
+
+			String json_string = MarshalUtils.to_formatted_compact_json_string (dist_set);
+			System.out.println (json_string);
+
+			// Copy
+
+			System.out.println ();
+			System.out.println ("********** Copy **********");
+			System.out.println ();
+			
+			OEMarginalDistSet dist_set2 = (new OEMarginalDistSet()).copy_from (dist_set);
 
 			// Display the contents
 

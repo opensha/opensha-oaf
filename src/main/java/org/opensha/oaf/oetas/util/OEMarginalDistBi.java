@@ -63,6 +63,11 @@ public class OEMarginalDistBi implements Marshalable {
 
 	public double scale;
 
+	// Number of data values supplied.
+	// This field is not marshaled.
+
+	//private long data_count;
+
 
 
 
@@ -110,6 +115,8 @@ public class OEMarginalDistBi implements Marshalable {
 		mode2 = -1;
 		scale = 0.0;
 
+		//data_count = 0L;
+
 		return this;
 	}
 
@@ -125,6 +132,7 @@ public class OEMarginalDistBi implements Marshalable {
 
 	public final void add_weight (int n1, int n2, double w) {
 		dist[n1][n2] += w;
+		//++data_count;
 		return;
 	}
 
@@ -140,6 +148,7 @@ public class OEMarginalDistBi implements Marshalable {
 
 	public final void add_weight (int[] n, double[] w) {
 		dist[n[var_index1]][n[var_index2]] += w[data_index];
+		//++data_count;
 		return;
 	}
 
@@ -217,6 +226,7 @@ public class OEMarginalDistBi implements Marshalable {
 		mode1			= -1;
 		mode2			= -1;
 		scale			= 0.0;
+		//data_count		= 0L;
 		return;
 	}
 
@@ -267,6 +277,42 @@ public class OEMarginalDistBi implements Marshalable {
 		}
 
 		return result.toString();
+	}
+
+
+
+
+	// Deep copy of another object.
+	// Returns this object.
+
+	public OEMarginalDistBi copy_from (OEMarginalDistBi other) {
+		var_name1		= other.var_name1;
+		var_index1		= other.var_index1;
+		var_name2		= other.var_name2;
+		var_index2		= other.var_index2;
+		data_name		= other.data_name;
+		data_index		= other.data_index;
+		dist			= OEArraysCalc.array_copy (other.dist);
+		mode1			= other.mode1;
+		mode2			= other.mode2;
+		scale			= other.scale;
+		//data_count		= other.data_count;
+		return this;
+	}
+
+
+
+
+	// Deep copy an array of objects.
+	// Returns the newly-allocated array.
+
+	public static OEMarginalDistBi[] array_copy (final OEMarginalDistBi[] x) {
+		final int c0 = x.length;
+		final OEMarginalDistBi[] r0 = new OEMarginalDistBi[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = (new OEMarginalDistBi()).copy_from (x[m0]);
+		}
+		return r0;
 	}
 
 
@@ -614,6 +660,55 @@ public class OEMarginalDistBi implements Marshalable {
 			
 			OEMarginalDistBi dist_bi2 = new OEMarginalDistBi();
 			MarshalUtils.from_json_string (dist_bi2, json_string);
+
+			// Display the contents
+
+			System.out.println (dist_bi2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  reps
+		// Construct test values, using the specified number of repetitions, and display it.
+		// Copy and display the copy.
+
+		if (testargs.is_test ("test3")) {
+
+			// Read arguments
+
+			System.out.println ("Constructing, displaying, and copying, marginal bivariate distribution");
+			int reps = testargs.get_int ("reps");
+			testargs.end_test();
+
+			// Create the values
+
+			OEMarginalDistBi dist_bi = make_test_value (reps);
+
+			// Display the contents
+
+			System.out.println ();
+			System.out.println ("********** Distribution Display **********");
+			System.out.println ();
+
+			System.out.println (dist_bi.toString());
+
+			// Copy
+
+			System.out.println ();
+			System.out.println ("********** Copy **********");
+			System.out.println ();
+			
+			OEMarginalDistBi dist_bi2 = (new OEMarginalDistBi()).copy_from (dist_bi);
 
 			// Display the contents
 

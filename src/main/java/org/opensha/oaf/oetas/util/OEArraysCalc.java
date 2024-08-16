@@ -2443,6 +2443,15 @@ public class OEArraysCalc {
 		return r0;
 	}
 
+	public static String[] array_copy (final String[] x) {
+		final int c0 = x.length;
+		final String[] r0 = new String[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = x[m0];
+		}
+		return r0;
+	}
+
 	public static double[][] array_copy (final double[][] x) {
 		final int c0 = x.length;
 		final double[][] r0 = new double[c0][];
@@ -2465,6 +2474,21 @@ public class OEArraysCalc {
 			final int[] x1 = x[m0];
 			final int c1 = x1.length;
 			final int[] r1 = new int[c1];
+			r0[m0] = r1;
+			for (int m1 = 0; m1 < c1; ++m1) {
+				r1[m1] = x1[m1];
+			}
+		}
+		return r0;
+	}
+
+	public static String[][] array_copy (final String[][] x) {
+		final int c0 = x.length;
+		final String[][] r0 = new String[c0][];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final String[] x1 = x[m0];
+			final int c1 = x1.length;
+			final String[] r1 = new String[c1];
 			r0[m0] = r1;
 			for (int m1 = 0; m1 < c1; ++m1) {
 				r1[m1] = x1[m1];

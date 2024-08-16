@@ -26,6 +26,7 @@ import org.opensha.oaf.oetas.OEConstants;
 import org.opensha.oaf.oetas.fit.OEGridParams;
 import org.opensha.oaf.oetas.fit.OEDisc2VoxStatAccum;
 import org.opensha.oaf.oetas.fit.OEDisc2VoxStatAccumMarginal;
+import org.opensha.oaf.oetas.fit.OEDisc2VoxStatAccumMulti;
 
 import org.opensha.oaf.oetas.util.OEMarginalDistSetBuilder;
 import org.opensha.oaf.oetas.util.OEMarginalDistSet;
@@ -324,6 +325,7 @@ public class OEtasLogDensityFile {
 	// Parameters:
 	//  grid_params = Defines the variable ranges.
 	//  f_bivar_marg = True to generate bivariate marginals.
+	// Note: This produces marginals that include out-of-range bins.
 
 	public OEMarginalDistSet make_marginal_dist (OEGridParams grid_params, boolean f_bivar_marg) {
 		if (ldf_file == null || ldf_file.isEmpty()) {
@@ -345,7 +347,7 @@ public class OEtasLogDensityFile {
 		// Make the marginal distributions
 
 		OEMarginalDistSetBuilder dist_set_builder = new OEMarginalDistSetBuilder();
-		dist_set_builder.add_etas_vars (grid_params);
+		dist_set_builder.add_etas_vars (grid_params, true);
 		dist_set_builder.add_etas_data_gen_seq_bay();
 		dist_set_builder.begin_accum (f_bivar_marg);
 
@@ -371,6 +373,7 @@ public class OEtasLogDensityFile {
 	//  f_full = True to generate full marginals (including bivariate), false for slim marginals.
 	//  bay_weight = Bayesian prior weight: 0.0 = sequence-specific 1.0 = Bayesian, 2.0 = generic.
 	// Note: This version uses the statistics accumulator instead of the distribution set builder.
+	// Note: This produces marginals that include out-of-range bins.
 
 	public OEMarginalDistSet make_marginal_dist (OEGridParams grid_params, boolean f_full, double bay_weight) {
 		if (ldf_file == null || ldf_file.isEmpty()) {
@@ -393,7 +396,7 @@ public class OEtasLogDensityFile {
 
 		// Make the marginal distributions
 
-		OEDisc2VoxStatAccumMarginal stat_accum = new OEDisc2VoxStatAccumMarginal (grid_params, f_full);
+		OEDisc2VoxStatAccumMarginal stat_accum = new OEDisc2VoxStatAccumMarginal (grid_params, f_full, true);
 
 		stat_accum.vsaccum_begin (
 			bay_weight,
@@ -413,6 +416,76 @@ public class OEtasLogDensityFile {
 
 		OEMarginalDistSet dist_set = stat_accum.get_dist_set();
 		return dist_set;
+	}
+
+
+
+
+	// Make the marginal distribution.
+	// Parameters:
+	//  grid_params = Defines the variable ranges.
+	//  f_full = True to generate both slim and full marginals (including bivariate), false for slim marginals only.
+	//  bay_weight = Bayesian prior weight: 0.0 = sequence-specific 1.0 = Bayesian, 2.0 = generic.
+	// Returns a 2-element array.  The first is the slim marginal set, and the seconds is
+	// the full marginal set (including bivariate) or null.
+	// Note: This version uses the statistics multi-accumulator.
+	// Note: This produces marginals that do not include out-of-range bins.
+
+	public OEMarginalDistSet[] make_marginal_dist_2 (OEGridParams grid_params, boolean f_full, double bay_weight) {
+		if (ldf_file == null || ldf_file.isEmpty()) {
+			throw new RuntimeException ("OEtasLogDensityFile.make_marginal_dist: No data loaded");
+		}
+
+		// Loop thru to find the maximum log likelihoods
+
+		double act_max_log_density = ldf_file.get(0).get_log_density (bay_weight);
+		double gen_max_log_density = ldf_file.get(0).get_log_density (OEConstants.BAY_WT_GENERIC);
+		double seq_max_log_density = ldf_file.get(0).get_log_density (OEConstants.BAY_WT_SEQ_SPEC);
+		double bay_max_log_density = ldf_file.get(0).get_log_density (OEConstants.BAY_WT_BAYESIAN);
+
+		for (LDFLine ldf_line : ldf_file) {
+			act_max_log_density = Math.max (act_max_log_density, ldf_line.get_log_density (bay_weight));
+			gen_max_log_density = Math.max (gen_max_log_density, ldf_line.get_log_density (OEConstants.BAY_WT_GENERIC));
+			seq_max_log_density = Math.max (seq_max_log_density, ldf_line.get_log_density (OEConstants.BAY_WT_SEQ_SPEC));
+			bay_max_log_density = Math.max (bay_max_log_density, ldf_line.get_log_density (OEConstants.BAY_WT_BAYESIAN));
+		}
+
+		// Make the marginal distributions
+
+		OEDisc2VoxStatAccumMarginal stat_accum_slim = new OEDisc2VoxStatAccumMarginal (grid_params, false, false);
+
+		OEDisc2VoxStatAccumMarginal stat_accum_full = null;
+		if (f_full) {
+			stat_accum_full = new OEDisc2VoxStatAccumMarginal (grid_params, true, false);
+		}
+
+		OEDisc2VoxStatAccum stat_accum = (new OEDisc2VoxStatAccumMulti (stat_accum_slim, stat_accum_full)).get_stat_accum();
+
+		stat_accum.vsaccum_begin (
+			bay_weight,
+			act_max_log_density,
+			gen_max_log_density,
+			seq_max_log_density,
+			bay_max_log_density
+		);
+
+		for (LDFLine ldf_line : ldf_file) {
+			ldf_line. accum_marginal (
+				stat_accum
+			);
+		}
+
+		stat_accum.vsaccum_end();
+
+		OEMarginalDistSet[] dist_sets = new OEMarginalDistSet[2];
+		dist_sets[0] = stat_accum_slim.get_dist_set();
+		if (f_full) {
+			dist_sets[1] = stat_accum_full.get_dist_set();
+		} else {
+			dist_sets[1] = null;
+		}
+
+		return dist_sets;
 	}
 
 
@@ -549,7 +622,16 @@ public class OEtasLogDensityFile {
 			System.out.println ("***** Making marginal distribution *****");
 			System.out.println ();
 
+			long start_time = System.currentTimeMillis();
+
 			OEMarginalDistSet dist_set = density_file.make_marginal_dist (grid_params, f_bivar_marg);
+
+			long end_time = System.currentTimeMillis();
+			long elapsed_time = end_time - start_time;
+			String s_elapsed_time = String.format ("%.3f", ((double)elapsed_time)/1000.0);
+			System.out.println ("Elapsed time = " + s_elapsed_time);
+			System.out.println ();
+
 			System.out.println (dist_set.toString());
 
 			// Save the marginal distribution
@@ -616,7 +698,16 @@ public class OEtasLogDensityFile {
 			System.out.println ("***** Making marginal distribution *****");
 			System.out.println ();
 
+			long start_time = System.currentTimeMillis();
+
 			OEMarginalDistSet dist_set = density_file.make_marginal_dist (grid_params, f_full, bay_weight);
+	
+			long end_time = System.currentTimeMillis();
+			long elapsed_time = end_time - start_time;
+			String s_elapsed_time = String.format ("%.3f", ((double)elapsed_time)/1000.0);
+			System.out.println ("Elapsed time = " + s_elapsed_time);
+			System.out.println ();
+			
 			System.out.println (dist_set.toString());
 
 			// Save the marginal distribution
@@ -626,6 +717,101 @@ public class OEtasLogDensityFile {
 			System.out.println ();
 
 			MarshalUtils.to_formatted_compact_json_file (dist_set, dist_filename);
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  load_filename  param_filename  bay_weight  slim_filename  full_filename
+		// Load log-density from a file, compute marginal distributions, and save them to files.
+		// The full_filename can be "-" if full (bivariate) output is not requested.
+		// This test uses the voxel statistics multi-accumulator, and does not produce out-of-range bins.
+
+		if (testargs.is_test ("test5")) {
+
+			// Read arguments
+
+			System.out.println ("Load file, then compute marginal distributions");
+			String load_filename = testargs.get_string ("load_filename");
+			String param_filename = testargs.get_string ("param_filename");
+			double bay_weight = testargs.get_double ("bay_weight");
+			String slim_filename = testargs.get_string ("slim_filename");
+			String full_filename = testargs.get_string ("full_filename");
+			testargs.end_test();
+
+			boolean f_full = true;
+			if (full_filename.equals ("-")) {
+				f_full = false;
+			}
+
+			// Load the parameter file
+
+			System.out.println ();
+			System.out.println ("***** Loading parameter file *****");
+			System.out.println ();
+
+			OEtasParameters param_file = new OEtasParameters();
+			MarshalUtils.from_json_file (param_file, param_filename);
+
+			OEGridParams grid_params = param_file.make_grid_params();
+
+			// Load the log-density file.
+
+			System.out.println ();
+			System.out.println ("***** Loading log-density file *****");
+			System.out.println ();
+
+			OEtasLogDensityFile density_file = new OEtasLogDensityFile();
+			int line_count = density_file.load_file (load_filename);
+			System.out.println ("Loaded " + line_count + " lines");
+
+			// Make the marginal distributions
+
+			System.out.println ();
+			System.out.println ("***** Making marginal distributions *****");
+			System.out.println ();
+
+			long start_time = System.currentTimeMillis();
+
+			OEMarginalDistSet[] dist_sets = density_file.make_marginal_dist_2 (grid_params, f_full, bay_weight);
+
+			long end_time = System.currentTimeMillis();
+			long elapsed_time = end_time - start_time;
+			String s_elapsed_time = String.format ("%.3f", ((double)elapsed_time)/1000.0);
+			System.out.println ("Elapsed time = " + s_elapsed_time);
+			System.out.println ();
+
+			System.out.println ("Slim distribution set");
+			System.out.println ();
+			System.out.println (dist_sets[0].toString());
+
+			if (f_full) {
+				System.out.println ();
+				System.out.println ("Full distribution set");
+				System.out.println ();
+				System.out.println (dist_sets[1].toString());
+			}
+
+			// Save the marginal distribution
+
+			System.out.println ();
+			System.out.println ("***** Saving marginal distribution *****");
+			System.out.println ();
+
+			MarshalUtils.to_formatted_compact_json_file (dist_sets[0], slim_filename);
+
+			if (f_full) {
+				MarshalUtils.to_formatted_compact_json_file (dist_sets[1], full_filename);
+			}
 
 			// Done
 

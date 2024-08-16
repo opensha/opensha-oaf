@@ -66,6 +66,14 @@ public class OEMarginalDistSetBuilder {
 
 	private List<OEMarginalDistRange> var_value_list;
 
+	// The list of flags to include a bin for out-of-range low.
+
+	private List<Boolean> f_out_lo_list;
+
+	// The list of flags to include a bin for out-of-range high.
+
+	private List<Boolean> f_out_hi_list;
+
 	// The list of formats used for rounding variable values.
 	// Elements of this list can be null if no rounding is needed.
 
@@ -95,6 +103,8 @@ public class OEMarginalDistSetBuilder {
 		data_name_list = new ArrayList<String>();
 		var_range_list = new ArrayList<OEDiscreteRange>();
 		var_value_list = new ArrayList<OEMarginalDistRange>();
+		f_out_lo_list = new ArrayList<Boolean>();
+		f_out_hi_list = new ArrayList<Boolean>();
 		var_format_list = new ArrayList<String>();
 		var_usage_list = new ArrayList<Boolean>();
 		return;
@@ -116,13 +126,17 @@ public class OEMarginalDistSetBuilder {
 	// Parameters:
 	//  name = Name of the variable.  If null, it is changed to an empty string.
 	//  range = Range of the varialbe.  Can be null if the variable is not used in marginals.
+	//  f_out_lo = True to include an extra bin for values out-of-range below the first bin.
+	//  f_out_hi = True to include an extra bin for values out-of-range above the last bin.
 	//  format = Format code for rounding variable values, or null if none. (see SimpleUtils.round_double_via_string)
 	//  f_used = True to use variable in the marginals, false if not.
 	// Returns the index number of this variable.
 
-	public final int add_var (String name, OEDiscreteRange range, String format, boolean f_used) {
+	public final int add_var (String name, OEDiscreteRange range, boolean f_out_lo, boolean f_out_hi, String format, boolean f_used) {
 		var_name_list.add ((name == null) ? "" : name);
 		var_range_list.add (range);
+		f_out_lo_list.add (f_out_lo);
+		f_out_hi_list.add (f_out_hi);
 		var_format_list.add (format);
 		var_usage_list.add (f_used);
 		return var_name_list.size() - 1;
@@ -135,16 +149,18 @@ public class OEMarginalDistSetBuilder {
 	// Parameters:
 	//  name = Name of the variable.  If null, it is changed to an empty string.
 	//  range = Range of the varialbe.  Can be null if the variable is not used in marginals.
+	//  f_out_lo = True to include an extra bin for values out-of-range below the first bin.
+	//  f_out_hi = True to include an extra bin for values out-of-range above the last bin.
 	//  format = Format code for rounding variable values, or null if none. (see SimpleUtils.round_double_via_string)
 	// Returns the index number of this variable.
 	// Note: The variable is used in marginals if the range is non-null has contains more than one value.
 
-	public final int add_var (String name, OEDiscreteRange range, String format) {
+	public final int add_var (String name, OEDiscreteRange range, boolean f_out_lo, boolean f_out_hi, String format) {
 		boolean f_used = false;
 		if (range != null && range.get_range_size() > 1) {
 			f_used = true;
 		}
-		return add_var (name, range, format, f_used);
+		return add_var (name, range, f_out_lo, f_out_hi, format, f_used);
 	}
 
 
@@ -194,14 +210,14 @@ public class OEMarginalDistSetBuilder {
 					i
 				));
 			} else {
-				bin_finders[i] = range.make_bin_finder (true, true);
+				bin_finders[i] = range.make_bin_finder (f_out_lo_list.get(i), f_out_hi_list.get(i));
 
 				var_value_list.add ((new OEMarginalDistRange()).setup_range (
 					var_name_list.get(i),
 					i,
 					range,
-					true,
-					true,
+					f_out_lo_list.get(i),
+					f_out_hi_list.get(i),
 					var_format_list.get(i)
 				));
 			}
@@ -365,16 +381,17 @@ public class OEMarginalDistSetBuilder {
 	// Add the variables for an ETAS grid.
 	// Parameters:
 	//  grid_params = Definition of the parameters.
+	//  f_out = True to include bins for out-of-range variable values.
 	// Note: To agree with the above index number, this must be the only (or at least the first) variables.
 
-	public final void add_etas_vars (OEGridParams grid_params) {
-		add_var ("b", grid_params.b_range, "%.6e");
-		add_var ("alpha", grid_params.alpha_range, "%.6e");
-		add_var ("c", grid_params.c_range, "%.6e");
-		add_var ("p", grid_params.p_range, "%.6e");
-		add_var ("n", grid_params.n_range, "%.6e");
-		add_var ("zams", grid_params.zams_range, "%.6e");
-		add_var ("zmu", grid_params.zmu_range, "%.6e");
+	public final void add_etas_vars (OEGridParams grid_params, boolean f_out) {
+		add_var ("b", grid_params.b_range, f_out, f_out, "%.6e");
+		add_var ("alpha", grid_params.alpha_range, f_out, f_out, "%.6e");
+		add_var ("c", grid_params.c_range, f_out, f_out, "%.6e");
+		add_var ("p", grid_params.p_range, f_out, f_out, "%.6e");
+		add_var ("n", grid_params.n_range, f_out, f_out, "%.6e");
+		add_var ("zams", grid_params.zams_range, f_out, f_out, "%.6e");
+		add_var ("zmu", grid_params.zmu_range, f_out, f_out, "%.6e");
 		return;
 	}
 

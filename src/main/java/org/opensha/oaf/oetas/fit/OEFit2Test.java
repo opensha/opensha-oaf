@@ -1274,9 +1274,9 @@ public class OEFit2Test {
 			fit_info.mag_max	// mag_max_sim
 		);
 
-		// Statistics accumulator, full marginal distribution
+		// Statistics accumulator, slim marginal distribution
 
-		OEDisc2VoxStatAccumMarginal stat_accum = new OEDisc2VoxStatAccumMarginal (grid_params, true);
+		OEDisc2VoxStatAccumMarginal stat_accum = new OEDisc2VoxStatAccumMarginal (grid_params, false, true);
 
 		// Complete setting up the voxel set
 
@@ -1611,9 +1611,9 @@ public class OEFit2Test {
 			fit_info.mag_max	// mag_max_sim
 		);
 
-		// Statistics accumulator, full marginal distribution
+		// Statistics accumulator, slim marginal distribution
 
-		OEDisc2VoxStatAccumMarginal stat_accum = new OEDisc2VoxStatAccumMarginal (grid_params, true);
+		OEDisc2VoxStatAccumMarginal stat_accum = new OEDisc2VoxStatAccumMarginal (grid_params, false, true);
 
 		// Complete setting up the voxel set
 

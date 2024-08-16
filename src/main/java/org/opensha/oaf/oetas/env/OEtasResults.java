@@ -16,6 +16,9 @@ import org.opensha.oaf.oetas.fit.OEGridPoint;
 
 import org.opensha.oaf.oetas.OECatalogRange;
 import org.opensha.oaf.oetas.OESimulator;
+import org.opensha.oaf.oetas.OEConstants;
+
+import org.opensha.oaf.oetas.util.OEMarginalDistSet;
 
 
 // Class to hold results for operational ETAS.
@@ -69,6 +72,28 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 	// Time interval for interpreting branch ratios, in days.
 
 	public double tint_br;
+
+	// Fitting reference magnitude, also the minimum considered magnitude, for parameter definition. [v2]
+	// Currently this is always OEConstants.DEF_MREF = 3.0 (see OEtasParameters.get_fmag_range()).
+
+	public double fitting_mref;
+
+	// Fitting maximum considered magnitude, for parameter definition. [v2]
+	// Currently this is always OEConstants.DEF_MSUP = 9.5 (see OEtasParameters.get_fmag_range()).
+
+	public double fitting_msup;
+
+	// Fitting assumed minimum magnitude to use for the simulation. [v2]
+	// Currently this is the magnitude of completeness after history construction (see OEtasParameters.get_fmag_range()).
+	// (Set to OEConstants.DEF_MREF when loaded from a v1 file).
+
+	public double fitting_mag_min;
+
+	// Fitting assumed maximum magnitude to use for the simulation. [v2]
+	// Currently this is the mag_top as modified by the catalog maximum magnitudes (see OEtasParameters.get_fmag_range()).
+	// (Set to OEConstants.DEF_MSUP when loaded from a v1 file).
+
+	public double fitting_mag_max;
 
 
 	//----- Grid -----
@@ -124,6 +149,27 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 	}
 
 
+	//----- Marginals -----
+
+	// True if the marginals should be saved during marshaling. [v2]
+
+	public boolean save_marginals;
+
+	// Marginals (single variate for active Bayesian weight), or null if none. [v2]
+	// If this is null, then same_marginals must be false.
+
+	public OEMarginalDistSet marginals;
+
+	// True if the full marginals should be saved during marshaling. [v2]
+
+	public boolean save_full_marginals;
+
+	// Full marginals (bivariate for multiple Bayesian weights), or null if none. [v2]
+	// If this is null, then save_full_marginals must be false.
+
+	public OEMarginalDistSet full_marginals;
+
+
 
 
 	//----- Construction -----
@@ -145,6 +191,10 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		group_count = 0;
 		mag_main = 0.0;
 		tint_br = 0.0;
+		fitting_mref = 0.0;
+		fitting_msup = 0.0;
+		fitting_mag_min = 0.0;
+		fitting_mag_max = 0.0;
 
 		mle_grid_point = null;
 		gen_mle_grid_point = null;
@@ -156,6 +206,11 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		sim_count = 0;
 
 		etas_json = "";
+
+		save_marginals = false;
+		marginals = null;
+		save_full_marginals = false;
+		full_marginals = null;
 		return;
 	}
 
@@ -185,6 +240,10 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		this.group_count = other.group_count;
 		this.mag_main = other.mag_main;
 		this.tint_br = other.tint_br;
+		this.fitting_mref = other.fitting_mref;
+		this.fitting_msup = other.fitting_msup;
+		this.fitting_mag_min = other.fitting_mag_min;
+		this.fitting_mag_max = other.fitting_mag_max;
 
 		this.mle_grid_point = (new OEGridPoint()).copy_from (other.mle_grid_point);
 		this.gen_mle_grid_point = (new OEGridPoint()).copy_from (other.gen_mle_grid_point);
@@ -196,6 +255,20 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		this.sim_count = other.sim_count;
 
 		this.etas_json = other.etas_json;
+
+		this.save_marginals = other.save_marginals;
+		if (other.marginals == null) {
+			this.marginals = null;
+		} else {
+			this.marginals = (new OEMarginalDistSet()).copy_from (other.marginals);
+		}
+		this.save_full_marginals = other.save_full_marginals;
+		if (other.full_marginals == null) {
+			this.full_marginals = null;
+		} else {
+			this.full_marginals = (new OEMarginalDistSet()).copy_from (other.full_marginals);
+		}
+
 		return this;
 	}
 
@@ -221,6 +294,10 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		result.append ("group_count = " + group_count + "\n");
 		result.append ("mag_main = " + mag_main + "\n");
 		result.append ("tint_br = " + tint_br + "\n");
+		result.append ("fitting_mref = " + fitting_mref + "\n");
+		result.append ("fitting_msup = " + fitting_msup + "\n");
+		result.append ("fitting_mag_min = " + fitting_mag_min + "\n");
+		result.append ("fitting_mag_max = " + fitting_mag_max + "\n");
 
 		result.append ("mle_grid_point = {" + mle_grid_point.toString() + "}\n");
 		result.append ("gen_mle_grid_point = {" + gen_mle_grid_point.toString() + "}\n");
@@ -232,6 +309,11 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		result.append ("sim_count = " + sim_count + "\n");
 
 		result.append ("etas_json = " + etas_json + "\n");
+
+		result.append ("save_marginals = " + save_marginals + "\n");
+		result.append ("marginals = " + ((marginals == null) ? "null" : (marginals.toString())) + "\n");
+		result.append ("save_full_marginals = " + save_full_marginals + "\n");
+		result.append ("full_marginals = " + ((full_marginals == null) ? "null" : (full_marginals.toString())) + "\n");
 
 		return result.toString();
 	}
@@ -258,6 +340,10 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		result.append ("group_count = " + group_count + "\n");
 		result.append ("mag_main = " + mag_main + "\n");
 		result.append ("tint_br = " + tint_br + "\n");
+		result.append ("fitting_mref = " + fitting_mref + "\n");
+		result.append ("fitting_msup = " + fitting_msup + "\n");
+		result.append ("fitting_mag_min = " + fitting_mag_min + "\n");
+		result.append ("fitting_mag_max = " + fitting_mag_max + "\n");
 
 		result.append ("mle_grid_point = {" + mle_grid_point.toString() + "}\n");
 		result.append ("gen_mle_grid_point = {" + gen_mle_grid_point.toString() + "}\n");
@@ -272,6 +358,11 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		if (etas_json.length() > 0) {
 			result.append (MarshalUtils.display_json_string (etas_json));
 		}
+
+		result.append ("save_marginals = " + save_marginals + "\n");
+		result.append ("marginals = " + ((marginals == null) ? "null" : (marginals.toString())) + "\n");
+		result.append ("save_full_marginals = " + save_full_marginals + "\n");
+		result.append ("full_marginals = " + ((full_marginals == null) ? "null" : (full_marginals.toString())) + "\n");
 
 		return result.toString();
 	}
@@ -315,6 +406,10 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		group_count = fit_info.group_count;
 		mag_main = fit_info.mag_main;
 		tint_br = fit_info.tint_br;
+		fitting_mref = fit_info.mref;
+		fitting_msup = fit_info.msup;
+		fitting_mag_min = fit_info.mag_min;
+		fitting_mag_max = fit_info.mag_max;
 		return;
 	}
 
@@ -362,6 +457,29 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 
 
 
+	// Set marginals.
+	// Parameters:
+	//  save_marginals = True if the marginals should be saved during marshaling.
+	//  marginals = Marginals (single variate for active Bayesian weight), or null if none.  (If null, then save_marginals must be false.)
+	//  save_full_marginals = True if the full marginals should be saved during marshaling.
+	//  full_marginals = Full marginals (bivariate for multiple Bayesian weights), or null if none.  (If null, then save_full_marginals must be false.)
+
+	public void set_marginals (
+		boolean save_marginals,
+		OEMarginalDistSet marginals,
+		boolean save_full_marginals,
+		OEMarginalDistSet full_marginals
+	) {
+		this.save_marginals = save_marginals;
+		this.marginals = marginals;
+		this.save_full_marginals = save_full_marginals;
+		this.full_marginals = full_marginals;
+		return;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 
@@ -370,6 +488,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 126001;
+	private static final int MARSHAL_VER_2 = 126002;
 
 	private static final String M_VERSION_NAME = "OEtasResults";
 
@@ -387,7 +506,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_1;
+		int ver = MARSHAL_VER_2;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -429,6 +548,53 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		}
 		break;
 
+		case MARSHAL_VER_2: {
+
+			// Superclass
+
+			super.do_marshal (writer);
+
+			// Contents
+
+			OEtasCatalogInfo.static_marshal (writer, "cat_info", cat_info);
+
+			writer.marshalDouble ("magCat", magCat);
+			writer.marshalInt ("rupture_count", rupture_count);
+			writer.marshalInt ("interval_count", interval_count);
+			writer.marshalInt ("accept_count", accept_count);
+			writer.marshalInt ("reject_count", reject_count);
+
+			writer.marshalInt ("group_count", group_count);
+			writer.marshalDouble ("mag_main", mag_main);
+			writer.marshalDouble ("tint_br", tint_br);
+			writer.marshalDouble ("fitting_mref", fitting_mref);
+			writer.marshalDouble ("fitting_msup", fitting_msup);
+			writer.marshalDouble ("fitting_mag_min", fitting_mag_min);
+			writer.marshalDouble ("fitting_mag_max", fitting_mag_max);
+
+			OEGridPoint.static_marshal (writer, "mle_grid_point", mle_grid_point);
+			OEGridPoint.static_marshal (writer, "gen_mle_grid_point", gen_mle_grid_point);
+			OEGridPoint.static_marshal (writer, "seq_mle_grid_point", seq_mle_grid_point);
+			OEGridPoint.static_marshal (writer, "bay_mle_grid_point", bay_mle_grid_point);
+			writer.marshalDouble ("bay_weight", bay_weight);
+
+			OECatalogRange.static_marshal (writer, "sim_range", sim_range);
+			writer.marshalInt ("sim_count", sim_count);
+
+			writer.marshalJsonString ("etas_json", etas_json);
+
+			writer.marshalBoolean ("save_marginals", save_marginals);
+			if (save_marginals) {
+				OEMarginalDistSet.static_marshal (writer, "marginals", marginals);
+			}
+			writer.marshalBoolean ("save_full_marginals", save_full_marginals);
+			if (save_full_marginals) {
+				OEMarginalDistSet.static_marshal (writer, "full_marginals", full_marginals);
+			}
+
+		}
+		break;
+
 		}
 
 		return;
@@ -441,7 +607,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
@@ -466,6 +632,10 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			group_count = reader.unmarshalInt ("group_count");
 			mag_main = reader.unmarshalDouble ("mag_main");
 			tint_br = reader.unmarshalDouble ("tint_br");
+			fitting_mref = OEConstants.DEF_MREF;
+			fitting_msup = OEConstants.DEF_MSUP;
+			fitting_mag_min = OEConstants.DEF_MREF;
+			fitting_mag_max = OEConstants.DEF_MSUP;
 
 			mle_grid_point = OEGridPoint.static_unmarshal (reader, "mle_grid_point");
 			gen_mle_grid_point = OEGridPoint.static_unmarshal (reader, "gen_mle_grid_point");
@@ -477,6 +647,62 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			sim_count = reader.unmarshalInt ("sim_count");
 
 			etas_json = reader.unmarshalJsonString ("etas_json");
+
+			save_marginals = false;
+			marginals = null;
+			save_full_marginals = false;
+			full_marginals = null;
+
+		}
+		break;
+
+		case MARSHAL_VER_2: {
+
+			// Superclass
+
+			super.do_umarshal (reader);
+
+			// Contents
+
+			cat_info = OEtasCatalogInfo.static_unmarshal (reader, "cat_info");
+
+			magCat = reader.unmarshalDouble ("magCat");
+			rupture_count = reader.unmarshalInt ("rupture_count");
+			interval_count = reader.unmarshalInt ("interval_count");
+			accept_count = reader.unmarshalInt ("accept_count");
+			reject_count = reader.unmarshalInt ("reject_count");
+
+			group_count = reader.unmarshalInt ("group_count");
+			mag_main = reader.unmarshalDouble ("mag_main");
+			tint_br = reader.unmarshalDouble ("tint_br");
+			fitting_mref = reader.unmarshalDouble ("fitting_mref");
+			fitting_msup = reader.unmarshalDouble ("fitting_msup");
+			fitting_mag_min = reader.unmarshalDouble ("fitting_mag_min");
+			fitting_mag_max = reader.unmarshalDouble ("fitting_mag_max");
+
+			mle_grid_point = OEGridPoint.static_unmarshal (reader, "mle_grid_point");
+			gen_mle_grid_point = OEGridPoint.static_unmarshal (reader, "gen_mle_grid_point");
+			seq_mle_grid_point = OEGridPoint.static_unmarshal (reader, "seq_mle_grid_point");
+			bay_mle_grid_point = OEGridPoint.static_unmarshal (reader, "bay_mle_grid_point");
+			bay_weight = reader.unmarshalDouble ("bay_weight");
+
+			sim_range = OECatalogRange.static_unmarshal (reader, "sim_range");
+			sim_count = reader.unmarshalInt ("sim_count");
+
+			etas_json = reader.unmarshalJsonString ("etas_json");
+
+			save_marginals = reader.unmarshalBoolean ("save_marginals");
+			if (save_marginals) {
+				marginals = OEMarginalDistSet.static_unmarshal (reader, "marginals");
+			} else {
+				marginals = null;
+			}
+			save_full_marginals = reader.unmarshalBoolean ("save_full_marginals");
+			if (save_full_marginals) {
+				full_marginals = OEMarginalDistSet.static_unmarshal (reader, "full_marginals");
+			} else {
+				full_marginals = null;
+			}
 
 		}
 		break;
@@ -596,6 +822,10 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		etas_results.group_count = 150;
 		etas_results.mag_main = 7.8;
 		etas_results.tint_br = 365.0;
+		etas_results.fitting_mref = OEConstants.DEF_MREF;
+		etas_results.fitting_msup = OEConstants.DEF_MSUP;
+		etas_results.fitting_mag_min = OEConstants.DEF_MREF;
+		etas_results.fitting_mag_max = OEConstants.DEF_MSUP;
 
 		etas_results.mle_grid_point = (new OEGridPoint()).set (1.00, 1.10, 0.200, 1.20, 0.800, 2.60, 3.40);
 		etas_results.gen_mle_grid_point = (new OEGridPoint()).set (1.01, 1.11, 0.201, 1.21, 0.801, 2.61, 3.41);
@@ -607,6 +837,11 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		etas_results.sim_count = 500000;
 
 		etas_results.etas_json = "{\"msg\" : \"This is a test\", \"code\" : 1234}";
+
+		etas_results.save_marginals = true;
+		etas_results.marginals = OEMarginalDistSet.make_test_value_2 (1000000);
+		etas_results.save_full_marginals = false;
+		etas_results.full_marginals = OEMarginalDistSet.make_test_value (1000000);
 
 		return etas_results;
 	}
@@ -660,8 +895,11 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			System.out.println ("********** Marshal to JSON **********");
 			System.out.println ();
 
-			String json_string = MarshalUtils.to_json_string (etas_results);
-			System.out.println (MarshalUtils.display_json_string (json_string));
+			//String json_string = MarshalUtils.to_json_string (etas_results);
+			//System.out.println (MarshalUtils.display_json_string (json_string));
+
+			String json_string = MarshalUtils.to_formatted_compact_json_string (etas_results);
+			System.out.println (json_string);
 
 			// Unmarshal from JSON
 
@@ -688,6 +926,18 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			// Display the contents
 
 			System.out.println (etas_results3.toString());
+
+			// Marshal to JSON
+
+			System.out.println ();
+			System.out.println ("********** Marshal the copy to JSON **********");
+			System.out.println ();
+
+			//String json_string3 = MarshalUtils.to_json_string (etas_results3);
+			//System.out.println (MarshalUtils.display_json_string (json_string3));
+
+			String json_string3 = MarshalUtils.to_formatted_compact_json_string (etas_results3);
+			System.out.println (json_string3);
 
 			// Done
 

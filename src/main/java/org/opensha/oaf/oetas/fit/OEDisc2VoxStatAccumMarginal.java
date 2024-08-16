@@ -22,6 +22,10 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 
 	private boolean f_full;
 
+	// True to include bins for out-of-range variable values.
+
+	private boolean f_out;
+
 
 	//----- Data -----
 
@@ -100,14 +104,16 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 	// Parameters:
 	//  grid_params = Definition of the parameters.
 	//  f_full = True to create a full distribution (with bivariate marginal), false for a slim distribution (for PDL).
+	//  f_out = True to include bins for out-of-range variable values.
 	// Note: This function does not retain the grid_params object.
 
-	public OEDisc2VoxStatAccumMarginal (OEGridParams grid_params, boolean f_full) {
+	public OEDisc2VoxStatAccumMarginal (OEGridParams grid_params, boolean f_full, boolean f_out) {
 
 		// Save the parameters
 
 		this.grid_params = (new OEGridParams()).copy_from (grid_params);
 		this.f_full = f_full;
+		this.f_out = f_out;
 
 		// Clear data
 
@@ -166,7 +172,7 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 		// Make the set builder and prepare it to receive data
 
 		dist_set_builder = new OEMarginalDistSetBuilder();
-		dist_set_builder.add_etas_vars (grid_params);
+		dist_set_builder.add_etas_vars (grid_params, f_out);
 		if (f_full) {
 			dist_set_builder.add_etas_data_gen_seq_bay();
 			dist_set_builder.begin_accum (true);
