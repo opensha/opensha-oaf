@@ -439,11 +439,12 @@ public class OEMarginalDistSetBuilder {
 
 
 
-	// Index numbers for ETAS data, generic, sequence specific, and bayesian.
+	// Index numbers for ETAS data, generic, sequence specific, bayesian, and active.
 
 	public static final int DMIX_GENERIC = 0;
 	public static final int DMIX_DEQ_SPEC = 1;
 	public static final int DMIX_BAYESIAN = 2;
+	public static final int DMIX_ACTIVE = 3;
 
 
 
@@ -451,7 +452,7 @@ public class OEMarginalDistSetBuilder {
 	// Add the data for ETAS, a single probability.
 
 	public final void add_etas_data_prob () {
-		add_data ("probability");
+		add_data ("likelihood");
 		return;
 	}
 
@@ -464,6 +465,19 @@ public class OEMarginalDistSetBuilder {
 		add_data ("generic");
 		add_data ("seqspec");
 		add_data ("bayesian");
+		return;
+	}
+
+
+
+
+	// Add the data for ETAS, generic, sequence specific, bayesian, and active.
+
+	public final void add_etas_data_gen_seq_bay_act () {
+		add_data ("generic");
+		add_data ("seqspec");
+		add_data ("bayesian");
+		add_data ("active");
 		return;
 	}
 
@@ -490,6 +504,24 @@ public class OEMarginalDistSetBuilder {
 		dist_w[DMIX_GENERIC] = gen;
 		dist_w[DMIX_DEQ_SPEC] = seq;
 		dist_w[DMIX_BAYESIAN] = bay;
+		return;
+	}
+
+
+
+
+	// Set the data for ETAS, generic, sequence specific, bayesian, and active.
+
+	public final void set_etas_data_gen_seq_bay_act (
+		double gen,
+		double seq,
+		double bay,
+		double act
+	) {
+		dist_w[DMIX_GENERIC] = gen;
+		dist_w[DMIX_DEQ_SPEC] = seq;
+		dist_w[DMIX_BAYESIAN] = bay;
+		dist_w[DMIX_ACTIVE] = act;
 		return;
 	}
 

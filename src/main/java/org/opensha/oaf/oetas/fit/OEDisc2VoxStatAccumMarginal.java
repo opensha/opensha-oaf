@@ -174,7 +174,7 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 		dist_set_builder = new OEMarginalDistSetBuilder();
 		dist_set_builder.add_etas_vars (grid_params, f_out);
 		if (f_full) {
-			dist_set_builder.add_etas_data_gen_seq_bay();
+			dist_set_builder.add_etas_data_gen_seq_bay_act();
 			dist_set_builder.begin_accum (true);
 		} else {
 			dist_set_builder.add_etas_data_prob();
@@ -267,12 +267,21 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 				bay_max_log_density
 			);
 
+			double act = get_probability (
+				act_bay_weight,
+				bay_log_density,
+				bay_vox_volume,
+				log_likelihood,
+				act_max_log_density
+			);
+
 			// Pass data into the builder
 
-			dist_set_builder.set_etas_data_gen_seq_bay (
+			dist_set_builder.set_etas_data_gen_seq_bay_act (
 				gen,
 				seq,
-				bay
+				bay,
+				act
 			);
 		}
 

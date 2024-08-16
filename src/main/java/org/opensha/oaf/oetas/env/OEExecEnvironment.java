@@ -1339,7 +1339,7 @@ public class OEExecEnvironment {
 
 		// Statistics accumulator
 
-		boolean f_full_marginal = true;		// eventually the caller needs to control this, but it only adds about 0.5 seconds to make the full marginal
+		boolean f_full_marginal = true;		// eventually the caller needs to control this, but it likely adds less than one second to make the full marginal
 
 		OEDisc2VoxStatAccumMarginal stat_accum_slim = new OEDisc2VoxStatAccumMarginal (grid_params, false, false);
 
@@ -1378,7 +1378,7 @@ public class OEExecEnvironment {
 
 		boolean save_marginals = true;
 		OEMarginalDistSet marginals = stat_accum_slim.get_dist_set();
-		boolean save_full_marginals = false;
+		boolean save_full_marginals = false;		// maybe the caller should control this
 		OEMarginalDistSet full_marginals = null;
 		if (stat_accum_full != null) {
 			full_marginals = stat_accum_full.get_dist_set();

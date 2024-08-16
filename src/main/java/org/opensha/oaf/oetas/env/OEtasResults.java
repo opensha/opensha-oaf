@@ -108,7 +108,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 	public OEGridPoint seq_mle_grid_point;
 	public OEGridPoint bay_mle_grid_point;
 
-	// Bayesian prior weight (1 = Bayesian, 0 = Sequence-specific, see OEConstants.BAY_WT_XXX).
+	// Bayesian prior weight (0 = Sequence-specific, 1 = Bayesian, 2 = Generic, see OEConstants.BAY_WT_XXX).
 
 	public double bay_weight;
 
