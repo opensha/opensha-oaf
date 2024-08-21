@@ -1,0 +1,518 @@
+{
+  "OEGaussAPCConfigFile": 134001,
+  "OAF2ParameterSet": 127001,
+  "selections": [
+    {
+      "regimes": ["ANSR-ABSLDEC"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "ANSR-ABSLDEC",
+        "aValue_mean": -2.2,
+        "aValue_sigma": 0.307,
+        "log_cValue": -2.231,
+        "pValue": 1.04,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.0
+      }
+    },
+    {
+      "regimes": ["ANSR-ABSLOCB"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "ANSR-ABSLOCB",
+        "aValue_mean": -2.52,
+        "aValue_sigma": 0.341,
+        "log_cValue": -1.006,
+        "pValue": 1.072,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.0
+      }
+    },
+    {
+      "regimes": ["ANSR-ABSLSHC"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "ANSR-ABSLSHC",
+        "aValue_mean": -2.652,
+        "aValue_sigma": 0.467,
+        "log_cValue": -3.3,
+        "pValue": 0.953,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.0
+      }
+    },
+    {
+      "regimes": ["ANSR-DEEPCON"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "ANSR-DEEPCON",
+        "aValue_mean": -2.23,
+        "aValue_sigma": 0.319,
+        "log_cValue": -2.059,
+        "pValue": 1.078,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.0
+      }
+    },
+    {
+      "regimes": ["ANSR-HOTSPOT"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "ANSR-HOTSPOT",
+        "aValue_mean": -3.143,
+        "aValue_sigma": 0.572,
+        "log_cValue": -4.036,
+        "pValue": 1.108,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.0
+      }
+    },
+    {
+      "regimes": ["ANSR-OCEANBD"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "ANSR-OCEANBD",
+        "aValue_mean": -2.959,
+        "aValue_sigma": 0.417,
+        "log_cValue": -2.569,
+        "pValue": 1.006,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.0
+      }
+    },
+    {
+      "regimes": ["ANSR-SHALCON"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "ANSR-SHALCON",
+        "aValue_mean": -2.463,
+        "aValue_sigma": 0.302,
+        "log_cValue": -2.762,
+        "pValue": 0.96,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.0
+      }
+    },
+    {
+      "regimes": ["SCR-GENERIC"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "SCR-GENERIC",
+        "aValue_mean": -2.364,
+        "aValue_sigma": 0.71,
+        "log_cValue": -1.27,
+        "pValue": 1.042,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.0
+      }
+    },
+    {
+      "regimes": ["SOR-GENERIC"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "SOR-GENERIC",
+        "aValue_mean": -3.302,
+        "aValue_sigma": 0.337,
+        "log_cValue": -3.868,
+        "pValue": 1.136,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.0
+      }
+    },
+    {
+      "regimes": ["SZ-GENERIC"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "SZ-GENERIC",
+        "aValue_mean": -2.268,
+        "aValue_sigma": 0.292,
+        "log_cValue": -2.47,
+        "pValue": 0.981,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.5
+      }
+    },
+    {
+      "regimes": ["SZ-INLBACK"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "SZ-INLBACK",
+        "aValue_mean": -2.47,
+        "aValue_sigma": 0.387,
+        "log_cValue": -3.434,
+        "pValue": 0.975,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.5
+      }
+    },
+    {
+      "regimes": ["SZ-ONSHORE"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "SZ-ONSHORE",
+        "aValue_mean": -2.282,
+        "aValue_sigma": 0.371,
+        "log_cValue": -2.73,
+        "pValue": 0.931,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.5
+      }
+    },
+    {
+      "regimes": ["SZ-OUTERTR"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "SZ-OUTERTR",
+        "aValue_mean": -2.298,
+        "aValue_sigma": 0.386,
+        "log_cValue": -2.624,
+        "pValue": 1.017,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.5
+      }
+    },
+    {
+      "regimes": ["GLOBAL-AVERAGE", "DEFAULT"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "GLOBAL-AVERAGE",
+        "aValue_mean": -2.43,
+        "aValue_sigma": 0.395,
+        "log_cValue": -2.565,
+        "pValue": 0.966,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.5
+      }
+    },
+    {
+      "regimes": ["CALIFORNIA", "CAL-HYDROTHERMAL", "CAL-MENDOCINO", "CAL-NCSS", "CAL-SCSN"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "CALIFORNIA",
+        "aValue_mean": -2.35,
+        "aValue_sigma": 0.302,
+        "log_cValue": -1.7696,
+        "pValue": 1.01,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 2.5,
+        "maxMag": 9.0
+      }
+    },
+    {
+      "regimes": ["SOR-ABVSLAB"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "SOR-ABVSLAB",
+        "aValue_mean": -3.302,
+        "aValue_sigma": 0.337,
+        "log_cValue": -3.868,
+        "pValue": 1.136,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.0
+      }
+    },
+    {
+      "regimes": ["SCR-ABVSLAB"],
+      "params": {
+        "OEGaussAPCParams": 133001,
+        "regimeName": "SCR-ABVSLAB",
+        "aValue_mean": -2.364,
+        "aValue_sigma": 0.71,
+        "log_cValue": -1.27,
+        "pValue": 1.042,
+        "covaa": 7.13E-6,
+        "covpp": 7.67E-6,
+        "covcc": 8.99E-4,
+        "covap": 2.63E-6,
+        "covac": 3.75E-5,
+        "covcp": 4.5E-5,
+        "numSequences": 2099,
+        "alpha": 1.0,
+        "bValue": 1.0,
+        "refMag": 4.5,
+        "maxMag": 9.0
+      }
+    }
+  ],
+  "regions": [
+    {
+      "regime": "CAL-HYDROTHERMAL",
+      "min_depth": -1.0E10,
+      "max_depth": 1.0E10,
+      "region": {
+        "ClassType": 14001,
+        "SphRegionMercPolygon": 14001,
+        "SphRegion": 12001,
+        "plot_wrap": false,
+        "min_lat": 37.25,
+        "max_lat": 37.825,
+        "min_lon": -119.25,
+        "max_lon": -118.25,
+        "vertex_list": [
+          {"lat": 37.25, "lon": -119.25},
+          {"lat": 37.25, "lon": -118.25},
+          {"lat": 37.825, "lon": -118.25},
+          {"lat": 37.825, "lon": -119.25}
+        ]
+      }
+    },
+    {
+      "regime": "CAL-HYDROTHERMAL",
+      "min_depth": -1.0E10,
+      "max_depth": 1.0E10,
+      "region": {
+        "ClassType": 14001,
+        "SphRegionMercPolygon": 14001,
+        "SphRegion": 12001,
+        "plot_wrap": false,
+        "min_lat": 32.9,
+        "max_lat": 33.3,
+        "min_lon": -116.0,
+        "max_lon": -115.3,
+        "vertex_list": [
+          {"lat": 32.9, "lon": -115.3},
+          {"lat": 33.3, "lon": -115.3},
+          {"lat": 33.3, "lon": -116.0},
+          {"lat": 32.9, "lon": -116.0}
+        ]
+      }
+    },
+    {
+      "regime": "CAL-HYDROTHERMAL",
+      "min_depth": -1.0E10,
+      "max_depth": 1.0E10,
+      "region": {
+        "ClassType": 14001,
+        "SphRegionMercPolygon": 14001,
+        "SphRegion": 12001,
+        "plot_wrap": false,
+        "min_lat": 35.55,
+        "max_lat": 36.3,
+        "min_lon": -118.2,
+        "max_lon": -117.5,
+        "vertex_list": [
+          {"lat": 35.55, "lon": -117.5},
+          {"lat": 36.3, "lon": -117.5},
+          {"lat": 36.3, "lon": -118.2},
+          {"lat": 35.55, "lon": -118.2}
+        ]
+      }
+    },
+    {
+      "regime": "CAL-MENDOCINO",
+      "min_depth": -1.0E10,
+      "max_depth": 1.0E10,
+      "region": {
+        "ClassType": 14001,
+        "SphRegionMercPolygon": 14001,
+        "SphRegion": 12001,
+        "plot_wrap": false,
+        "min_lat": 39.75,
+        "max_lat": 43.0,
+        "min_lon": -125.5,
+        "max_lon": -123.0,
+        "vertex_list": [
+          {"lat": 39.75, "lon": -125.3},
+          {"lat": 39.75, "lon": -123.0},
+          {"lat": 42.1, "lon": -123.0},
+          {"lat": 43.0, "lon": -125.0},
+          {"lat": 40.0, "lon": -125.5}
+        ]
+      }
+    },
+    {
+      "regime": "CAL-NCSS",
+      "min_depth": -1.0E10,
+      "max_depth": 1.0E10,
+      "region": {
+        "ClassType": 14001,
+        "SphRegionMercPolygon": 14001,
+        "SphRegion": 12001,
+        "plot_wrap": false,
+        "min_lat": 34.5,
+        "max_lat": 42.1,
+        "min_lon": -125.3,
+        "max_lon": -118.0167,
+        "vertex_list": [
+          {"lat": 34.5, "lon": -121.25},
+          {"lat": 37.2167, "lon": -118.0167},
+          {"lat": 37.75, "lon": -118.25},
+          {"lat": 37.75, "lon": -119.5},
+          {"lat": 39.5, "lon": -120.75},
+          {"lat": 42.0, "lon": -121.4167},
+          {"lat": 42.0, "lon": -122.7},
+          {"lat": 42.1, "lon": -123.0},
+          {"lat": 39.75, "lon": -123.0},
+          {"lat": 39.75, "lon": -125.3}
+        ]
+      }
+    },
+    {
+      "regime": "CAL-SCSN",
+      "min_depth": -1.0E10,
+      "max_depth": 1.0E10,
+      "region": {
+        "ClassType": 14001,
+        "SphRegionMercPolygon": 14001,
+        "SphRegion": 12001,
+        "plot_wrap": false,
+        "min_lat": 32.0,
+        "max_lat": 37.2167,
+        "min_lon": -121.25,
+        "max_lon": -114.3333,
+        "vertex_list": [
+          {"lat": 35.8, "lon": -116.4},
+          {"lat": 34.0815, "lon": -114.4717},
+          {"lat": 32.0, "lon": -114.3333},
+          {"lat": 32.0, "lon": -120.5},
+          {"lat": 34.5, "lon": -121.25},
+          {"lat": 37.2167, "lon": -118.0167},
+          {"lat": 36.6847, "lon": -117.793}
+        ]
+      }
+    }
+  ]
+}
