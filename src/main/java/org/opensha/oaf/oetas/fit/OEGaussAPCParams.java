@@ -96,6 +96,11 @@ public class OEGaussAPCParams implements Marshalable {
 				
 	private double bValue_sigma;
 
+	// Mean and standard deviation of ams.
+
+	private double mean_ams;
+	private double sigma_ams;
+
 
 
 
@@ -118,6 +123,11 @@ public class OEGaussAPCParams implements Marshalable {
 				
 		bValue_sigma = 0.1;	// From NvdE: this needs to be replaced with a real estimate
 
+		// Mean and standard deviation of ams is assumed to be the same as a
+
+		mean_ams = aValue_mean;
+		sigma_ams = aValue_sigma;
+
 		return;
 	}
 
@@ -125,11 +135,6 @@ public class OEGaussAPCParams implements Marshalable {
 
 
 	//----- Derived parameters -----
-
-	// Mean and standard deviation of ams.
-
-	private double mean_ams;
-	private double sigma_ams;
 
 	// Mean value of log c.
 
@@ -162,11 +167,6 @@ public class OEGaussAPCParams implements Marshalable {
 	// Assumes that the configurable and assumed parameters are already set up.
 
 	private void setup_derived_params () {
-
-		// Mean and standard deviation of ams is assumed to be the same as a
-
-		mean_ams = aValue_mean;
-		sigma_ams = aValue_sigma;
 
 		// Mean of log c (Note we do not use log_cValue from the comfigurable parameters)
 
@@ -256,6 +256,95 @@ public class OEGaussAPCParams implements Marshalable {
 
 
 
+	// Accessor functions.
+
+	public final double get_aValue_mean () {
+		return aValue_mean;
+	}
+
+	public final double get_aValue_sigma () {
+		return aValue_sigma;
+	}
+
+	public final double get_log_cValue () {
+		return log_cValue;
+	}
+
+	public final double get_pValue () {
+		return pValue;
+	}
+
+	public final double get_covaa () {
+		return covaa;
+	}
+
+	public final double get_covpp () {
+		return covpp;
+	}
+
+	public final double get_covcc () {
+		return covcc;
+	}
+
+	public final double get_covap () {
+		return covap;
+	}
+
+	public final double get_covac () {
+		return covac;
+	}
+
+	public final double get_covcp () {
+		return covcp;
+	}
+
+	public final int get_numSequences () {
+		return numSequences;
+	}
+
+	public final double get_alpha () {
+		return alpha;
+	}
+
+	public final double get_bValue () {
+		return bValue;
+	}
+
+	public final double get_refMag () {
+		return refMag;
+	}
+
+	public final double get_maxMag () {
+		return maxMag;
+	}
+
+	public final double get_cValue () {
+		return cValue;
+	}
+
+	public final double get_pValue_sigma () {
+		return pValue_sigma;
+	}
+
+	public final double get_logcValue_sigma () {
+		return logcValue_sigma;
+	}
+
+	public final double get_bValue_sigma () {
+		return bValue_sigma;
+	}
+
+	public final double get_mean_ams () {
+		return mean_ams;
+	}
+
+	public final double get_sigma_ams () {
+		return sigma_ams;
+	}
+
+
+
+
 	// Calculate the log-prior likelhood for given a, p, and c.
 	// Note: The value of a must be for the magnitude range [refMag, maxMag];
 
@@ -338,11 +427,11 @@ public class OEGaussAPCParams implements Marshalable {
 		pValue_sigma = 0.0;
 		logcValue_sigma = 0.0;
 		bValue_sigma = 0.0;
+		mean_ams = 0.0;
+		sigma_ams = 0.0;
 
 		// Derived parameters
 
-		mean_ams = 0.0;
-		sigma_ams = 0.0;
 		mean_logc = 0.0;
 		covariance = null;
 		covInverse = null;
@@ -369,7 +458,7 @@ public class OEGaussAPCParams implements Marshalable {
 
 
 	// Set the values.
-	// This sets configurable parameters, and computes the rest
+	// This sets configurable parameters, and computes the rest.
 
 	public final OEGaussAPCParams set (
 		String regimeName,
@@ -407,6 +496,64 @@ public class OEGaussAPCParams implements Marshalable {
 		this.maxMag			= maxMag;
 
 		setup_assumed_params_v1();
+		setup_derived_params();
+		return this;
+	}
+
+
+
+
+	// Set the values.
+	// This sets configurable and assumed parameters, and computes the rest.
+
+	public final OEGaussAPCParams set (
+		String regimeName,
+		double aValue_mean,
+		double aValue_sigma,
+		double log_cValue,
+		double pValue,
+		double covaa,
+		double covpp,
+		double covcc,
+		double covap,
+		double covac,
+		double covcp,
+		int numSequences,
+		double alpha,
+		double bValue,
+		double refMag,
+		double maxMag,
+		double cValue,
+		double pValue_sigma,
+		double logcValue_sigma,
+		double bValue_sigma,
+		double mean_ams,
+		double sigma_ams
+	) {
+		this.regimeName		= regimeName;
+		this.aValue_mean	= aValue_mean;
+		this.aValue_sigma	= aValue_sigma;
+		this.log_cValue		= log_cValue;
+		this.pValue			= pValue;
+		this.covaa			= covaa;
+		this.covpp			= covpp;
+		this.covcc			= covcc;
+		this.covap			= covap;
+		this.covac			= covac;
+		this.covcp			= covcp;
+		this.numSequences	= numSequences;
+		this.alpha			= alpha;
+		this.bValue			= bValue;
+		this.refMag			= refMag;
+		this.maxMag			= maxMag;
+
+		this.cValue				= cValue;
+		this.pValue_sigma		= pValue_sigma;
+		this.logcValue_sigma	= logcValue_sigma;
+		this.bValue_sigma		= bValue_sigma;
+		this.mean_ams			= mean_ams;
+		this.sigma_ams			= sigma_ams;
+
 		setup_derived_params();
 		return this;
 	}
@@ -487,9 +634,9 @@ public class OEGaussAPCParams implements Marshalable {
 		this.pValue_sigma		= other.pValue_sigma;
 		this.logcValue_sigma	= other.logcValue_sigma;
 		this.bValue_sigma		= other.bValue_sigma;
+		this.mean_ams			= other.mean_ams;
+		this.sigma_ams			= other.sigma_ams;
 
-		this.mean_ams				= other.mean_ams;
-		this.sigma_ams				= other.sigma_ams;
 		this.mean_logc				= other.mean_logc;
 		this.covariance				= copy_2d_array_or_null (other.covariance);
 		this.covInverse				= copy_2d_array_or_null (other.covInverse);
@@ -555,9 +702,9 @@ public class OEGaussAPCParams implements Marshalable {
 		result.append ("pValue_sigma = "		+ pValue_sigma + "\n");
 		result.append ("logcValue_sigma = "		+ logcValue_sigma + "\n");
 		result.append ("bValue_sigma = "		+ bValue_sigma + "\n");
+		result.append ("mean_ams = "			+ mean_ams + "\n");
+		result.append ("sigma_ams = "			+ sigma_ams + "\n");
 
-		result.append ("mean_ams = "				+ mean_ams + "\n");
-		result.append ("sigma_ams = "				+ sigma_ams + "\n");
 		result.append ("mean_logc = "				+ mean_logc + "\n");
 		result.append ("covDeterminant = "			+ covDeterminant + "\n");
 		result.append ("priorCovDeterminant = "		+ priorCovDeterminant + "\n");
@@ -689,7 +836,8 @@ public class OEGaussAPCParams implements Marshalable {
 
 	// Marshal version number.
 
-	private static final int MARSHAL_VER_1 = 133001;
+	private static final int MARSHAL_VER_1 = 133001;	// marshals only configurable parameters
+	private static final int MARSHAL_VER_2 = 133002;	// marshals configurable and assumed parameters
 
 	private static final String M_VERSION_NAME = "OEGaussAPCParams";
 
@@ -699,7 +847,7 @@ public class OEGaussAPCParams implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_1;
+		int ver = MARSHAL_VER_2;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -729,6 +877,35 @@ public class OEGaussAPCParams implements Marshalable {
 		}
 		break;
 
+		case MARSHAL_VER_2: {
+
+			writer.marshalString ("regimeName", regimeName);
+			writer.marshalDouble ("aValue_mean", aValue_mean);
+			writer.marshalDouble ("aValue_sigma", aValue_sigma);
+			writer.marshalDouble ("log_cValue", log_cValue);
+			writer.marshalDouble ("pValue", pValue);
+			writer.marshalDouble ("covaa", covaa);
+			writer.marshalDouble ("covpp", covpp);
+			writer.marshalDouble ("covcc", covcc);
+			writer.marshalDouble ("covap", covap);
+			writer.marshalDouble ("covac", covac);
+			writer.marshalDouble ("covcp", covcp);
+			writer.marshalInt ("numSequences", numSequences);
+			writer.marshalDouble ("alpha", alpha);
+			writer.marshalDouble ("bValue", bValue);
+			writer.marshalDouble ("refMag", refMag);
+			writer.marshalDouble ("maxMag", maxMag);
+
+			writer.marshalDouble ("cValue", cValue);
+			writer.marshalDouble ("pValue_sigma", pValue_sigma);
+			writer.marshalDouble ("logcValue_sigma", logcValue_sigma);
+			writer.marshalDouble ("bValue_sigma", bValue_sigma);
+			writer.marshalDouble ("mean_ams", mean_ams);
+			writer.marshalDouble ("sigma_ams", sigma_ams);
+
+		}
+		break;
+
 		}
 
 		return;
@@ -740,7 +917,7 @@ public class OEGaussAPCParams implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
@@ -767,6 +944,42 @@ public class OEGaussAPCParams implements Marshalable {
 
 			try {
 				setup_assumed_params_v1();
+				setup_derived_params();
+			}
+			catch (Exception e) {
+				throw new MarshalException ("OEGaussAPCParams.do_umarshal: Error completing setup", e);
+			}
+
+		}
+		break;
+
+		case MARSHAL_VER_2: {
+
+			regimeName = reader.unmarshalString ("regimeName");
+			aValue_mean = reader.unmarshalDouble ("aValue_mean");
+			aValue_sigma = reader.unmarshalDouble ("aValue_sigma");
+			log_cValue = reader.unmarshalDouble ("log_cValue");
+			pValue = reader.unmarshalDouble ("pValue");
+			covaa = reader.unmarshalDouble ("covaa");
+			covpp = reader.unmarshalDouble ("covpp");
+			covcc = reader.unmarshalDouble ("covcc");
+			covap = reader.unmarshalDouble ("covap");
+			covac = reader.unmarshalDouble ("covac");
+			covcp = reader.unmarshalDouble ("covcp");
+			numSequences = reader.unmarshalInt ("numSequences");
+			alpha = reader.unmarshalDouble ("alpha");
+			bValue = reader.unmarshalDouble ("bValue");
+			refMag = reader.unmarshalDouble ("refMag");
+			maxMag = reader.unmarshalDouble ("maxMag");
+
+			cValue = reader.unmarshalDouble ("cValue");
+			pValue_sigma = reader.unmarshalDouble ("pValue_sigma");
+			logcValue_sigma = reader.unmarshalDouble ("logcValue_sigma");
+			bValue_sigma = reader.unmarshalDouble ("bValue_sigma");
+			mean_ams = reader.unmarshalDouble ("mean_ams");
+			sigma_ams = reader.unmarshalDouble ("sigma_ams");
+
+			try {
 				setup_derived_params();
 			}
 			catch (Exception e) {

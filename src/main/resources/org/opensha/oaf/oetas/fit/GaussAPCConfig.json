@@ -5,7 +5,7 @@
     {
       "regimes": ["ANSR-ABSLDEC"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "ANSR-ABSLDEC",
         "aValue_mean": -2.2,
         "aValue_sigma": 0.307,
@@ -21,13 +21,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.2,
+        "sigma_ams": 0.307
       }
     },
     {
       "regimes": ["ANSR-ABSLOCB"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "ANSR-ABSLOCB",
         "aValue_mean": -2.52,
         "aValue_sigma": 0.341,
@@ -43,13 +49,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.52,
+        "sigma_ams": 0.341
       }
     },
     {
       "regimes": ["ANSR-ABSLSHC"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "ANSR-ABSLSHC",
         "aValue_mean": -2.652,
         "aValue_sigma": 0.467,
@@ -65,13 +77,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.652,
+        "sigma_ams": 0.467
       }
     },
     {
       "regimes": ["ANSR-DEEPCON"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "ANSR-DEEPCON",
         "aValue_mean": -2.23,
         "aValue_sigma": 0.319,
@@ -87,13 +105,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.23,
+        "sigma_ams": 0.319
       }
     },
     {
       "regimes": ["ANSR-HOTSPOT"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "ANSR-HOTSPOT",
         "aValue_mean": -3.143,
         "aValue_sigma": 0.572,
@@ -109,13 +133,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -3.143,
+        "sigma_ams": 0.572
       }
     },
     {
       "regimes": ["ANSR-OCEANBD"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "ANSR-OCEANBD",
         "aValue_mean": -2.959,
         "aValue_sigma": 0.417,
@@ -131,13 +161,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.959,
+        "sigma_ams": 0.417
       }
     },
     {
       "regimes": ["ANSR-SHALCON"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "ANSR-SHALCON",
         "aValue_mean": -2.463,
         "aValue_sigma": 0.302,
@@ -153,13 +189,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.463,
+        "sigma_ams": 0.302
       }
     },
     {
       "regimes": ["SCR-GENERIC"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "SCR-GENERIC",
         "aValue_mean": -2.364,
         "aValue_sigma": 0.71,
@@ -175,13 +217,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.364,
+        "sigma_ams": 0.71
       }
     },
     {
       "regimes": ["SOR-GENERIC"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "SOR-GENERIC",
         "aValue_mean": -3.302,
         "aValue_sigma": 0.337,
@@ -197,13 +245,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -3.302,
+        "sigma_ams": 0.337
       }
     },
     {
       "regimes": ["SZ-GENERIC"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "SZ-GENERIC",
         "aValue_mean": -2.268,
         "aValue_sigma": 0.292,
@@ -219,13 +273,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.5
+        "maxMag": 9.5,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.268,
+        "sigma_ams": 0.292
       }
     },
     {
       "regimes": ["SZ-INLBACK"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "SZ-INLBACK",
         "aValue_mean": -2.47,
         "aValue_sigma": 0.387,
@@ -241,13 +301,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.5
+        "maxMag": 9.5,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.47,
+        "sigma_ams": 0.387
       }
     },
     {
       "regimes": ["SZ-ONSHORE"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "SZ-ONSHORE",
         "aValue_mean": -2.282,
         "aValue_sigma": 0.371,
@@ -263,13 +329,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.5
+        "maxMag": 9.5,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.282,
+        "sigma_ams": 0.371
       }
     },
     {
       "regimes": ["SZ-OUTERTR"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "SZ-OUTERTR",
         "aValue_mean": -2.298,
         "aValue_sigma": 0.386,
@@ -285,13 +357,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.5
+        "maxMag": 9.5,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.298,
+        "sigma_ams": 0.386
       }
     },
     {
       "regimes": ["GLOBAL-AVERAGE", "DEFAULT"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "GLOBAL-AVERAGE",
         "aValue_mean": -2.43,
         "aValue_sigma": 0.395,
@@ -307,13 +385,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.5
+        "maxMag": 9.5,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.43,
+        "sigma_ams": 0.395
       }
     },
     {
       "regimes": ["CALIFORNIA", "CAL-HYDROTHERMAL", "CAL-MENDOCINO", "CAL-NCSS", "CAL-SCSN"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "CALIFORNIA",
         "aValue_mean": -2.35,
         "aValue_sigma": 0.302,
@@ -329,13 +413,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 2.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.35,
+        "sigma_ams": 0.302
       }
     },
     {
       "regimes": ["SOR-ABVSLAB"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "SOR-ABVSLAB",
         "aValue_mean": -3.302,
         "aValue_sigma": 0.337,
@@ -351,13 +441,19 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -3.302,
+        "sigma_ams": 0.337
       }
     },
     {
       "regimes": ["SCR-ABVSLAB"],
       "params": {
-        "OEGaussAPCParams": 133001,
+        "OEGaussAPCParams": 133002,
         "regimeName": "SCR-ABVSLAB",
         "aValue_mean": -2.364,
         "aValue_sigma": 0.71,
@@ -373,7 +469,13 @@
         "alpha": 1.0,
         "bValue": 1.0,
         "refMag": 4.5,
-        "maxMag": 9.0
+        "maxMag": 9.0,
+        "cValue": 0.0031622776601683794,
+        "pValue_sigma": 0.12688313520716613,
+        "logcValue_sigma": 0.8333,
+        "bValue_sigma": 0.1,
+        "mean_ams": -2.364,
+        "sigma_ams": 0.71
       }
     }
   ],
