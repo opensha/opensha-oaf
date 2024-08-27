@@ -115,7 +115,7 @@ public class OEGaussAPCConfigFile extends OAF2ParameterSet<OEGaussAPCParams> /* 
 
 	@Override
 	protected boolean require_default_parameters () {
-		return false;
+		return true;
 	}
 
 

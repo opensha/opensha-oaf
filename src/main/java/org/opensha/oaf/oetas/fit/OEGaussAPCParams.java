@@ -569,6 +569,10 @@ public class OEGaussAPCParams implements Marshalable {
 
 	public static final String CALIFORNIA_REGIME = "CALIFORNIA";
 
+	// Regime name for analyst-supplied parameters.
+
+	public static final String ANALYST_REGIME = "ANALYST";
+
 
 	// Set to global values.
 
@@ -722,6 +726,43 @@ public class OEGaussAPCParams implements Marshalable {
 
 
 
+	// Display our contents, showing only adjustable parameters
+
+	public String to_string_2 () {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OEGaussAPCParams:" + "\n");
+
+		result.append ("regimeName = "		+ regimeName + "\n");
+		result.append ("aValue_mean = "		+ aValue_mean + "\n");
+		result.append ("aValue_sigma = "	+ aValue_sigma + "\n");
+		result.append ("log_cValue = "		+ log_cValue + "\n");
+		result.append ("pValue = "			+ pValue + "\n");
+		result.append ("covaa = "			+ covaa + "\n");
+		result.append ("covpp = "			+ covpp + "\n");
+		result.append ("covcc = "			+ covcc + "\n");
+		result.append ("covap = "			+ covap + "\n");
+		result.append ("covac = "			+ covac + "\n");
+		result.append ("covcp = "			+ covcp + "\n");
+		result.append ("numSequences = "	+ numSequences + "\n");
+		result.append ("alpha = "			+ alpha + "\n");
+		result.append ("bValue = "			+ bValue + "\n");
+		result.append ("refMag = "			+ refMag + "\n");
+		result.append ("maxMag = "			+ maxMag + "\n");
+
+		result.append ("cValue = "				+ cValue + "\n");
+		result.append ("pValue_sigma = "		+ pValue_sigma + "\n");
+		result.append ("logcValue_sigma = "		+ logcValue_sigma + "\n");
+		result.append ("bValue_sigma = "		+ bValue_sigma + "\n");
+		result.append ("mean_ams = "			+ mean_ams + "\n");
+		result.append ("sigma_ams = "			+ sigma_ams + "\n");
+
+		return result.toString();
+	}
+
+
+
+
 	// Produce a one-line summary string.
 
 	public final String summary_string () {
@@ -742,6 +783,38 @@ public class OEGaussAPCParams implements Marshalable {
 			+ bValue + ", "
 			+ refMag + ", "
 			+ maxMag + "]";
+		return result;
+	}
+
+
+
+
+	// Produce a one-line summary string, including assumed parameters.
+
+	public final String summary_string_2 () {
+		String result = "OEGaussAPCParams["
+			+ regimeName + ", "
+			+ aValue_mean + ", "
+			+ aValue_sigma + ", "
+			+ log_cValue + ", "
+			+ pValue + ", "
+			+ covaa + ", "
+			+ covpp + ", "
+			+ covcc + ", "
+			+ covap + ", "
+			+ covac + ", "
+			+ covcp + ", "
+			+ numSequences + ", "
+			+ alpha + ", "
+			+ bValue + ", "
+			+ refMag + ", "
+			+ maxMag + ", "
+			+ cValue + ", "
+			+ pValue_sigma + ", "
+			+ logcValue_sigma + ", "
+			+ bValue_sigma + ", "
+			+ mean_ams + ", "
+			+ sigma_ams + "]";
 		return result;
 	}
 

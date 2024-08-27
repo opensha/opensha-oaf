@@ -5,6 +5,10 @@ import org.opensha.oaf.oetas.util.OEValueElement;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
+import org.opensha.oaf.util.MarshalUtils;
+
+import org.opensha.commons.geo.Location;
 
 
 // Bayesian prior function, for operational ETAS.
@@ -16,7 +20,7 @@ import org.opensha.oaf.util.MarshalException;
 // They are pure functions, which means that their outputs depend only on the
 // supplied value elements.
 
-public abstract class OEBayPrior {
+public abstract class OEBayPrior implements Marshalable {
 
 	//----- Evaluation -----
 
@@ -167,7 +171,7 @@ public abstract class OEBayPrior {
 		final double c_factor = c_velt.get_log_ratio (1.0);
 		final double p_factor = p_velt.get_width (1.0);
 		final double n_factor = n_velt.get_log_ratio (1.0);
-		final double zams_factor = zams_velt.get_width (1.0);
+		final double zams_factor = ((zams_velt == null) ? 1.0 : (zams_velt.get_width (1.0)));
 		final double zmu_factor = ((zmu_velt == null) ? 1.0 : (zmu_velt.get_log_ratio (1.0)));
 
 		// Combine
@@ -228,7 +232,7 @@ public abstract class OEBayPrior {
 
 		// Calculate factors for each element
 
-		final double zams_factor = zams_velt.get_width (1.0);
+		final double zams_factor = ((zams_velt == null) ? 1.0 : (zams_velt.get_width (1.0)));
 		final double zmu_factor = ((zmu_velt == null) ? 1.0 : (zmu_velt.get_log_ratio (1.0)));
 
 		// Combine
@@ -257,6 +261,13 @@ public abstract class OEBayPrior {
 	}
 
 
+	// Construct a function for Gauss distribution in a, p, and c.
+
+	public static OEBayPrior makeGaussAPC (OEGaussAPCParams the_params) {
+		return new OEBayPriorGaussAPC (the_params);
+	}
+
+
 
 
 	//----- Marshaling -----
@@ -272,6 +283,7 @@ public abstract class OEBayPrior {
 	protected static final int MARSHAL_NULL = 111000;
 	protected static final int MARSHAL_UNIFORM = 112001;
 	protected static final int MARSHAL_NORMAL = 113001;
+	protected static final int MARSHAL_GAUSSIAN_APC = 135001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
@@ -311,6 +323,7 @@ public abstract class OEBayPrior {
 
 	// Marshal object.
 
+	@Override
 	public void marshal (MarshalWriter writer, String name) {
 		writer.marshalMapBegin (name);
 		do_marshal (writer);
@@ -320,6 +333,7 @@ public abstract class OEBayPrior {
 
 	// Unmarshal object.
 
+	@Override
 	public OEBayPrior unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
@@ -372,6 +386,11 @@ public abstract class OEBayPrior {
 
 		case MARSHAL_NORMAL:
 			result = new OEBayPriorNormal();
+			result.do_umarshal (reader);
+			break;
+
+		case MARSHAL_GAUSSIAN_APC:
+			result = new OEBayPriorGaussAPC();
 			result.do_umarshal (reader);
 			break;
 		}

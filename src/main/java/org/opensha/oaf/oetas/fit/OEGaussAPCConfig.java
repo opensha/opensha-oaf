@@ -144,6 +144,57 @@ public class OEGaussAPCConfig {
 
 
 
+	// Find the parameters for the tectonic regime with the given name,
+	// or default parameters if there are none.
+	// The returned OAFRegimeParams is newly-allocated.
+	// The parameter object in OAFRegimeParams is the internal object and
+	// should not be modified by the caller.
+	// Note: The config file is guaranteed to have a default entry, so this
+	// always returns non-null parameters and regime.
+
+	public OAFRegimeParams<OEGaussAPCParams> get_params_or_default (String name) {
+		if (!( name == null || name.trim().isEmpty() )) {
+			 OAFRegimeParams<OEGaussAPCParams> rp = param_set.get_params (name);
+			 if (rp.has_params()) {
+				 return rp;
+			 }
+		}
+		return param_set.get_default_params ();
+	}
+
+
+
+
+	// Find the parameters for the tectonic regime with the given name,
+	// or given locatoin, or default parameters.
+	// If name is non-null and non-empty and refers to an entry in the config file,
+	// then return those parameters;  otherwise, if loc is non-null then return the
+	// parameters for that location;  otherwise, return the default parameters.
+	// The returned OAFRegimeParams is newly-allocated.
+	// The parameter object in OAFRegimeParams is the internal object and
+	// should not be modified by the caller.
+	// Note: The config file is guaranteed to have a default entry, so this
+	// always returns non-null parameters and regime.
+
+	public OAFRegimeParams<OEGaussAPCParams> get_params_or_default (String name, Location loc) {
+		if (!( name == null || name.trim().isEmpty() )) {
+			 OAFRegimeParams<OEGaussAPCParams> rp = param_set.get_params (name);
+			 if (rp.has_params()) {
+				 return rp;
+			 }
+		}
+		if (loc != null) {
+			 OAFRegimeParams<OEGaussAPCParams> rp = param_set.get_params (loc);
+			 if (rp.has_params()) {		// should always be true
+				 return rp;
+			 }
+		}
+		return param_set.get_default_params ();
+	}
+
+
+
+
 	// Find the parameters for the tectonic regime with the given name, and return the result as a string.
 	// This function is primarily for testing.
 

@@ -16,16 +16,16 @@ public class OEBayPriorParams {
 
 	private double mag_main;
 
-	public double get_mag_main () {
+	public final double get_mag_main () {
 		return mag_main;
 	}
 
 
-	// Time interval used for converting branch ratio into productivity..
+	// Time interval used for converting branch ratio into productivity.
 
 	private double tint_br;
 
-	public double get_tint_br () {
+	public final double get_tint_br () {
 		return tint_br;
 	}
 
@@ -70,7 +70,7 @@ public class OEBayPriorParams {
 
 
 
-	// Set  the supplied values.
+	// Set the supplied values.
 	// Returns this object.
 
 	public final OEBayPriorParams set (
