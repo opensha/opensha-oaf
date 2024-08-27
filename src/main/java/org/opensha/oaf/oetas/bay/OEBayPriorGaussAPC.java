@@ -1,28 +1,36 @@
-package org.opensha.oaf.oetas.fit;
+package org.opensha.oaf.oetas.bay;
 
 import org.opensha.oaf.oetas.util.OEValueElement;
+import org.opensha.oaf.oetas.OEStatsCalc;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
 
+import org.opensha.oaf.rj.OAFRegimeParams;
 
-// Bayesian prior function, for operational ETAS - Uniform.
-// Author: Michael Barall 02/21/2023.
+import org.opensha.commons.geo.Location;
+
+
+// Bayesian prior function, for operational ETAS - Gauss distribution in a, p, and c..
+// Author: Michael Barall 08/21/2024.
 //
-// This function supplies a uniform Bayesian prior density.
+// This function supplies a Bayesian prior density, which is a multivariate Gaussian
+// distribution on a, p, and c, combined with a Gaussian distribution on ams.
+// Parameters and formulas are given in OEGaussAPCParams, and locatoin-dependent
+// parameters are available from a configuration file through OEGaussAPCConfig.
 //
 // Objects of this class, and its subclasses, are immutable and stateless.
 // They are pure functions, which means that their outputs depend only on the
 // supplied value elements.
-//
-// This class is a placeholder.
 
-public class OEBayPriorNormal extends OEBayPrior {
+public class OEBayPriorGaussAPC extends OEBayPrior {
 
 	//----- Parameters -----
 
-	// <None>
+	// Gaussian parameters.
+
+	private OEGaussAPCParams gauss_params;
 
 
 
@@ -68,9 +76,44 @@ public class OEBayPriorNormal extends OEBayPrior {
 			zmu_velt
 		);
 
+		// Get the parameter values
+
+		final double b = b_velt.get_ve_value();
+		final double alpha = ((alpha_velt == null) ? b : alpha_velt.get_ve_value());
+		final double c = c_velt.get_ve_value();
+		final double p = p_velt.get_ve_value();
+		final double n = n_velt.get_ve_value();
+
+		// Get a-value for given branch ratio and Gauss parameter magnitude range
+
+		final double a = OEStatsCalc.calc_inv_branch_ratio (
+			n,							// n
+			p,							// p
+			c,							// c
+			b,							// b
+			alpha,						// alpha
+			gauss_params.get_refMag(),	// mref
+			gauss_params.get_maxMag(),	// msup
+			bay_params.get_tint_br()	// tint
+		);
+
+		// Get the parameter values
+
+		final double zams = zams_velt.get_ve_value();
+		final double zmu = ((zmu_velt == null) ? 0.0 : zmu_velt.get_ve_value());
+
+		// Convert zams to Gauss parameter magnitude range
+
+		final double ams = OEStatsCalc.calc_ams_from_zams (
+			zams,						// zams
+			b,							// b
+			alpha,						// alpha
+			gauss_params.get_refMag()	// mref
+		);
+
 		// Set the log density
 
-		bay_value.log_density = 0.0;
+		bay_value.log_density = gauss_params.log_prior_likelihood_ams_a_p_c (ams, a, p, c);
 
 		return;
 	}
@@ -110,10 +153,10 @@ public class OEBayPriorNormal extends OEBayPrior {
 	) {
 		int k = a_zams_velt.length;
 		if (!( a_log_density.length == k && a_vox_volume.length == k && (a_zmu_velt == null || a_zmu_velt.length == k) )) {
-			throw new IllegalArgumentException ("OEBayPriorNormal.get_bay_value: Array length mismatch");
+			throw new IllegalArgumentException ("OEBayPriorGaussAPC.get_bay_value: Array length mismatch");
 		}
 
-		double stat_vox_volume = common_stat_vox_volume (
+		final double stat_vox_volume = common_stat_vox_volume (
 			b_velt,
 			alpha_velt,
 			c_velt,
@@ -121,10 +164,35 @@ public class OEBayPriorNormal extends OEBayPrior {
 			n_velt
 		);
 
-		OEValueElement zams_velt = null;
-		OEValueElement zmu_velt = null;
+		// Get the parameter values
+
+		final double b = b_velt.get_ve_value();
+		final double alpha = ((alpha_velt == null) ? b : alpha_velt.get_ve_value());
+		final double c = c_velt.get_ve_value();
+		final double p = p_velt.get_ve_value();
+		final double n = n_velt.get_ve_value();
+
+		// Get a-value for given branch ratio and Gauss parameter magnitude range
+
+		final double a = OEStatsCalc.calc_inv_branch_ratio (
+			n,							// n
+			p,							// p
+			c,							// c
+			b,							// b
+			alpha,						// alpha
+			gauss_params.get_refMag(),	// mref
+			gauss_params.get_maxMag(),	// msup
+			bay_params.get_tint_br()	// tint
+		);
+
+		// Partial log density
+
+		final double stat_vox_log_like = gauss_params.log_prior_likelihood_a_p_c (a, p, c);
 
 		// Loop over each (zams, zmu) pair
+
+		OEValueElement zams_velt = null;
+		OEValueElement zmu_velt = null;
 
 		for (int i = 0; i < k; ++i) {
 			zams_velt = a_zams_velt[i];
@@ -138,7 +206,23 @@ public class OEBayPriorNormal extends OEBayPrior {
 				zmu_velt
 			);
 
-			a_log_density[i] = 0.0;
+			// Get the parameter values
+
+			final double zams = zams_velt.get_ve_value();
+			final double zmu = ((zmu_velt == null) ? 0.0 : zmu_velt.get_ve_value());
+
+			// Convert zams to Gauss parameter magnitude range
+
+			final double ams = OEStatsCalc.calc_ams_from_zams (
+				zams,						// zams
+				b,							// b
+				alpha,						// alpha
+				gauss_params.get_refMag()	// mref
+			);
+
+			// Set the log density
+
+			a_log_density[i] = stat_vox_log_like + gauss_params.log_prior_likelihood_ams (ams);
 		}
 
 		return;
@@ -150,22 +234,45 @@ public class OEBayPriorNormal extends OEBayPrior {
 	//----- Construction -----
 
 
+
+
 	// Default constructor does nothing.
 
-	public OEBayPriorNormal () {}
+	public OEBayPriorGaussAPC () {}
 
 
-	//// Construct from given parameters.
-	//
-	//public OEBayPriorNormal () {
-	//}
+
+
+	// Construct from given parameters.
+	// Parameters:
+	//  the_params = Gauss a/p/c parameters, or null if none
+	// If the_params is null, then default (global-average) parameters are used.
+	
+	public OEBayPriorGaussAPC (OEGaussAPCParams the_params) {
+
+		// If no parameters, use default
+
+		if (the_params == null) {
+			gauss_params = (new OEGaussAPCParams()).copy_from ( (new OEGaussAPCConfig()).get_default_params().params );
+		}
+
+		// If we have parameters, copy them
+
+		else {
+			gauss_params =  (new OEGaussAPCParams()).copy_from (the_params);
+		}
+	}
+
+
 
 
 	// Display our contents
 
 	@Override
 	public String toString() {
-		return "OEBayPriorNormal";
+		return "OEBayPriorGaussAPC["
+			+ "gauss_params=" + gauss_params.summary_string_2()
+			+ "]";
 	}
 
 
@@ -175,16 +282,15 @@ public class OEBayPriorNormal extends OEBayPrior {
 
 	// Marshal version number.
 
-	private static final int MARSHAL_HWV_1 = 1;		// human-writeable version
-	private static final int MARSHAL_VER_1 = 113001;
+	private static final int MARSHAL_VER_1 = 135001;
 
-	private static final String M_VERSION_NAME = "OEBayPriorNormal";
+	private static final String M_VERSION_NAME = "OEBayPriorGaussAPC";
 
 	// Get the type code.
 
 	@Override
 	protected int get_marshal_type () {
-		return MARSHAL_NORMAL;
+		return MARSHAL_GAUSSIAN_APC;
 	}
 
 	// Marshal object, internal.
@@ -210,7 +316,7 @@ public class OEBayPriorNormal extends OEBayPrior {
 
 			// Contents
 
-			// <None>
+			OEGaussAPCParams.static_marshal (writer, "gauss_params", gauss_params);
 
 		}
 		break;
@@ -232,20 +338,7 @@ public class OEBayPriorNormal extends OEBayPrior {
 		switch (ver) {
 
 		default:
-			throw new MarshalException ("OEBayPriorNormal.do_umarshal: Unknown version code: version = " + ver);
-		
-		// Human-writeable version
-
-		case MARSHAL_HWV_1: {
-
-			// Get parameters
-
-			// <None>
-
-		}
-		break;
-
-		// Machine-written version
+			throw new MarshalException ("OEBayPriorGaussAPC.do_umarshal: Unknown version code: version = " + ver);
 
 		case MARSHAL_VER_1: {
 
@@ -255,7 +348,7 @@ public class OEBayPriorNormal extends OEBayPrior {
 
 			// Contents
 
-			// <None>
+			gauss_params = OEGaussAPCParams.static_unmarshal (reader, "gauss_params");
 
 		}
 		break;
@@ -278,7 +371,7 @@ public class OEBayPriorNormal extends OEBayPrior {
 	// Unmarshal object.
 
 	@Override
-	public OEBayPriorNormal unmarshal (MarshalReader reader, String name) {
+	public OEBayPriorGaussAPC unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
 		reader.unmarshalMapEnd ();
@@ -287,7 +380,7 @@ public class OEBayPriorNormal extends OEBayPrior {
 
 	// Marshal object, polymorphic.
 
-	public static void marshal_poly (MarshalWriter writer, String name, OEBayPriorNormal obj) {
+	public static void marshal_poly (MarshalWriter writer, String name, OEBayPriorGaussAPC obj) {
 
 		writer.marshalMapBegin (name);
 
@@ -305,8 +398,8 @@ public class OEBayPriorNormal extends OEBayPrior {
 
 	// Unmarshal object, polymorphic.
 
-	public static OEBayPriorNormal unmarshal_poly (MarshalReader reader, String name) {
-		OEBayPriorNormal result;
+	public static OEBayPriorGaussAPC unmarshal_poly (MarshalReader reader, String name) {
+		OEBayPriorGaussAPC result;
 
 		reader.unmarshalMapBegin (name);
 	
@@ -317,14 +410,14 @@ public class OEBayPriorNormal extends OEBayPrior {
 		switch (type) {
 
 		default:
-			throw new MarshalException ("OEBayPriorNormal.unmarshal_poly: Unknown class type code: type = " + type);
+			throw new MarshalException ("OEBayPriorGaussAPC.unmarshal_poly: Unknown class type code: type = " + type);
 
 		case MARSHAL_NULL:
 			result = null;
 			break;
 
-		case MARSHAL_NORMAL:
-			result = new OEBayPriorNormal();
+		case MARSHAL_GAUSSIAN_APC:
+			result = new OEBayPriorGaussAPC();
 			result.do_umarshal (reader);
 			break;
 		}

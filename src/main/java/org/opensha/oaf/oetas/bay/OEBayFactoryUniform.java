@@ -1,4 +1,4 @@
-package org.opensha.oaf.oetas.fit;
+package org.opensha.oaf.oetas.bay;
 
 import org.opensha.oaf.oetas.util.OEValueElement;
 
@@ -7,24 +7,16 @@ import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
 
 
-// Bayesian prior factory function, for operational ETAS - Fixed.
+// Bayesian prior factory function, for operational ETAS - Uniform.
 // Author: Michael Barall 08/26/2024.
 //
-// This factory function supplies a fixed Bayesian prior function, specified in the constructor.
+// This factory function supplies a uniform Bayesian prior density.
 //
 // Objects of this class, and its subclasses, are immutable and stateless.
 // They are pure functions, which means that their outputs depend only on the
 // supplied parameters.
 
-public class OEBayFactoryFixed extends OEBayFactory {
-
-	//----- Parameters -----
-
-	// Our Bayesian prior function.
-
-	private OEBayPrior bay_prior;
-
-
+public class OEBayFactoryUniform extends OEBayFactory {
 
 
 	//----- Creation -----
@@ -42,7 +34,7 @@ public class OEBayFactoryFixed extends OEBayFactory {
 	public OEBayPrior make_bay_prior (
 		OEBayFactoryParams factory_params
 	) {
-		return bay_prior;
+		return new OEBayPriorUniform ();
 	}
 
 
@@ -53,23 +45,20 @@ public class OEBayFactoryFixed extends OEBayFactory {
 
 	// Default constructor does nothing.
 
-	public OEBayFactoryFixed () {
-		this.bay_prior = null;
-	}
+	public OEBayFactoryUniform () {}
 
 
-	// Construct from given parameters.
-	
-	public OEBayFactoryFixed (OEBayPrior bay_prior) {
-		this.bay_prior = bay_prior;
-	}
+	//// Construct from given parameters.
+	//
+	//public OEBayFactoryUniform () {
+	//}
 
 
 	// Display our contents
 
 	@Override
 	public String toString() {
-		return "OEBayFactoryFixed";
+		return "OEBayFactoryUniform";
 	}
 
 
@@ -80,15 +69,15 @@ public class OEBayFactoryFixed extends OEBayFactory {
 	// Marshal version number.
 
 	private static final int MARSHAL_HWV_1 = 1;		// human-writeable version
-	private static final int MARSHAL_VER_1 = 138001;
+	private static final int MARSHAL_VER_1 = 137001;
 
-	private static final String M_VERSION_NAME = "OEBayFactoryFixed";
+	private static final String M_VERSION_NAME = "OEBayFactoryUniform";
 
 	// Get the type code.
 
 	@Override
 	protected int get_marshal_type () {
-		return MARSHAL_FIXED;
+		return MARSHAL_UNIFORM;
 	}
 
 	// Marshal object, internal.
@@ -114,7 +103,7 @@ public class OEBayFactoryFixed extends OEBayFactory {
 
 			// Contents
 
-			OEBayPrior.marshal_poly (writer, "bay_prior", bay_prior);
+			// <None>
 
 		}
 		break;
@@ -136,7 +125,7 @@ public class OEBayFactoryFixed extends OEBayFactory {
 		switch (ver) {
 
 		default:
-			throw new MarshalException ("OEBayFactoryFixed.do_umarshal: Unknown version code: version = " + ver);
+			throw new MarshalException ("OEBayFactoryUniform.do_umarshal: Unknown version code: version = " + ver);
 		
 		// Human-writeable version
 
@@ -144,7 +133,7 @@ public class OEBayFactoryFixed extends OEBayFactory {
 
 			// Get parameters
 
-			bay_prior = OEBayPrior.unmarshal_poly (reader, "bay_prior");
+			// <None>
 
 		}
 		break;
@@ -159,7 +148,7 @@ public class OEBayFactoryFixed extends OEBayFactory {
 
 			// Contents
 
-			bay_prior = OEBayPrior.unmarshal_poly (reader, "bay_prior");
+			// <None>
 
 		}
 		break;
@@ -182,7 +171,7 @@ public class OEBayFactoryFixed extends OEBayFactory {
 	// Unmarshal object.
 
 	@Override
-	public OEBayFactoryFixed unmarshal (MarshalReader reader, String name) {
+	public OEBayFactoryUniform unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
 		reader.unmarshalMapEnd ();
@@ -191,7 +180,7 @@ public class OEBayFactoryFixed extends OEBayFactory {
 
 	// Marshal object, polymorphic.
 
-	public static void marshal_poly (MarshalWriter writer, String name, OEBayFactoryFixed obj) {
+	public static void marshal_poly (MarshalWriter writer, String name, OEBayFactoryUniform obj) {
 
 		writer.marshalMapBegin (name);
 
@@ -209,8 +198,8 @@ public class OEBayFactoryFixed extends OEBayFactory {
 
 	// Unmarshal object, polymorphic.
 
-	public static OEBayFactoryFixed unmarshal_poly (MarshalReader reader, String name) {
-		OEBayFactoryFixed result;
+	public static OEBayFactoryUniform unmarshal_poly (MarshalReader reader, String name) {
+		OEBayFactoryUniform result;
 
 		reader.unmarshalMapBegin (name);
 	
@@ -221,14 +210,14 @@ public class OEBayFactoryFixed extends OEBayFactory {
 		switch (type) {
 
 		default:
-			throw new MarshalException ("OEBayFactoryFixed.unmarshal_poly: Unknown class type code: type = " + type);
+			throw new MarshalException ("OEBayFactoryUniform.unmarshal_poly: Unknown class type code: type = " + type);
 
 		case MARSHAL_NULL:
 			result = null;
 			break;
 
-		case MARSHAL_FIXED:
-			result = new OEBayFactoryFixed();
+		case MARSHAL_UNIFORM:
+			result = new OEBayFactoryUniform();
 			result.do_umarshal (reader);
 			break;
 		}

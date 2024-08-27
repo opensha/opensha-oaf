@@ -9,6 +9,11 @@ import org.opensha.oaf.oetas.OEStatsCalc;
 import org.opensha.oaf.oetas.OEConstants;
 import org.opensha.oaf.oetas.OEGenerationInfo;
 
+import org.opensha.oaf.oetas.bay.OEBayFactory;
+import org.opensha.oaf.oetas.bay.OEBayFactoryParams;
+import org.opensha.oaf.oetas.bay.OEBayPrior;
+import org.opensha.oaf.oetas.bay.OEBayPriorParams;
+
 
 // Information about parameter fitting, needed for catalog initialization.
 // Author: Michael Barall 03/02/2023.

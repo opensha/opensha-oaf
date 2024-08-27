@@ -1,4 +1,4 @@
-package org.opensha.oaf.oetas.fit;
+package org.opensha.oaf.oetas.bay;
 
 import java.util.List;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package org.opensha.oaf.oetas.fit;
+package org.opensha.oaf.oetas.bay;
 
 
 // Class to hold the value of a Bayesian prior.

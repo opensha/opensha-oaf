@@ -16,7 +16,11 @@ import org.opensha.oaf.oetas.OESimulationParams;
 
 import org.opensha.oaf.oetas.util.OEDiscreteRange;
 
-import org.opensha.oaf.oetas.fit.OEBayPrior;
+import org.opensha.oaf.oetas.bay.OEBayFactory;
+import org.opensha.oaf.oetas.bay.OEBayFactoryParams;
+import org.opensha.oaf.oetas.bay.OEBayPrior;
+import org.opensha.oaf.oetas.bay.OEBayPriorParams;
+
 import org.opensha.oaf.oetas.fit.OEGridParams;
 import org.opensha.oaf.oetas.fit.OEDiscFGHParams;
 import org.opensha.oaf.oetas.fit.OEMagCompFnDisc;

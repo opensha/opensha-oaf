@@ -1,4 +1,4 @@
-package org.opensha.oaf.oetas.fit;
+package org.opensha.oaf.oetas.bay;
 
 import org.opensha.oaf.oetas.util.OEValueElement;
 
@@ -15,8 +15,10 @@ import org.opensha.oaf.util.MarshalException;
 // Objects of this class, and its subclasses, are immutable and stateless.
 // They are pure functions, which means that their outputs depend only on the
 // supplied value elements.
+//
+// This class is a placeholder.
 
-public class OEBayPriorUniform extends OEBayPrior {
+public class OEBayPriorNormal extends OEBayPrior {
 
 	//----- Parameters -----
 
@@ -108,7 +110,7 @@ public class OEBayPriorUniform extends OEBayPrior {
 	) {
 		int k = a_zams_velt.length;
 		if (!( a_log_density.length == k && a_vox_volume.length == k && (a_zmu_velt == null || a_zmu_velt.length == k) )) {
-			throw new IllegalArgumentException ("OEBayPriorUniform.get_bay_value: Array length mismatch");
+			throw new IllegalArgumentException ("OEBayPriorNormal.get_bay_value: Array length mismatch");
 		}
 
 		double stat_vox_volume = common_stat_vox_volume (
@@ -150,12 +152,12 @@ public class OEBayPriorUniform extends OEBayPrior {
 
 	// Default constructor does nothing.
 
-	public OEBayPriorUniform () {}
+	public OEBayPriorNormal () {}
 
 
 	//// Construct from given parameters.
 	//
-	//public OEBayPriorUniform () {
+	//public OEBayPriorNormal () {
 	//}
 
 
@@ -163,7 +165,7 @@ public class OEBayPriorUniform extends OEBayPrior {
 
 	@Override
 	public String toString() {
-		return "OEBayPriorUniform";
+		return "OEBayPriorNormal";
 	}
 
 
@@ -174,15 +176,15 @@ public class OEBayPriorUniform extends OEBayPrior {
 	// Marshal version number.
 
 	private static final int MARSHAL_HWV_1 = 1;		// human-writeable version
-	private static final int MARSHAL_VER_1 = 112001;
+	private static final int MARSHAL_VER_1 = 113001;
 
-	private static final String M_VERSION_NAME = "OEBayPriorUniform";
+	private static final String M_VERSION_NAME = "OEBayPriorNormal";
 
 	// Get the type code.
 
 	@Override
 	protected int get_marshal_type () {
-		return MARSHAL_UNIFORM;
+		return MARSHAL_NORMAL;
 	}
 
 	// Marshal object, internal.
@@ -230,7 +232,7 @@ public class OEBayPriorUniform extends OEBayPrior {
 		switch (ver) {
 
 		default:
-			throw new MarshalException ("OEBayPriorUniform.do_umarshal: Unknown version code: version = " + ver);
+			throw new MarshalException ("OEBayPriorNormal.do_umarshal: Unknown version code: version = " + ver);
 		
 		// Human-writeable version
 
@@ -276,7 +278,7 @@ public class OEBayPriorUniform extends OEBayPrior {
 	// Unmarshal object.
 
 	@Override
-	public OEBayPriorUniform unmarshal (MarshalReader reader, String name) {
+	public OEBayPriorNormal unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
 		reader.unmarshalMapEnd ();
@@ -285,7 +287,7 @@ public class OEBayPriorUniform extends OEBayPrior {
 
 	// Marshal object, polymorphic.
 
-	public static void marshal_poly (MarshalWriter writer, String name, OEBayPriorUniform obj) {
+	public static void marshal_poly (MarshalWriter writer, String name, OEBayPriorNormal obj) {
 
 		writer.marshalMapBegin (name);
 
@@ -303,8 +305,8 @@ public class OEBayPriorUniform extends OEBayPrior {
 
 	// Unmarshal object, polymorphic.
 
-	public static OEBayPriorUniform unmarshal_poly (MarshalReader reader, String name) {
-		OEBayPriorUniform result;
+	public static OEBayPriorNormal unmarshal_poly (MarshalReader reader, String name) {
+		OEBayPriorNormal result;
 
 		reader.unmarshalMapBegin (name);
 	
@@ -315,14 +317,14 @@ public class OEBayPriorUniform extends OEBayPrior {
 		switch (type) {
 
 		default:
-			throw new MarshalException ("OEBayPriorUniform.unmarshal_poly: Unknown class type code: type = " + type);
+			throw new MarshalException ("OEBayPriorNormal.unmarshal_poly: Unknown class type code: type = " + type);
 
 		case MARSHAL_NULL:
 			result = null;
 			break;
 
-		case MARSHAL_UNIFORM:
-			result = new OEBayPriorUniform();
+		case MARSHAL_NORMAL:
+			result = new OEBayPriorNormal();
 			result.do_umarshal (reader);
 			break;
 		}

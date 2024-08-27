@@ -30,7 +30,11 @@ import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OESimulationParams;
 import org.opensha.oaf.oetas.OESimulator;
 
-import org.opensha.oaf.oetas.fit.OEBayPrior;
+import org.opensha.oaf.oetas.bay.OEBayFactory;
+import org.opensha.oaf.oetas.bay.OEBayFactoryParams;
+import org.opensha.oaf.oetas.bay.OEBayPrior;
+import org.opensha.oaf.oetas.bay.OEBayPriorParams;
+
 import org.opensha.oaf.oetas.fit.OEDisc2ExtFit;
 import org.opensha.oaf.oetas.fit.OEDisc2Grouping;
 import org.opensha.oaf.oetas.fit.OEDisc2History;
