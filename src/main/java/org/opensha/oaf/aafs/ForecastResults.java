@@ -1017,15 +1017,19 @@ public class ForecastResults implements Marshalable {
 			double t_forecast = Math.max(t_data_end, SimpleUtils.millis_to_days (fc_info.start_time - fcmain.mainshock_time));
 
 			OEtasCatalogInfo catalog_info = (new OEtasCatalogInfo()).set (
-				the_mag_cat,												// double magCat,
-				the_mag_top,												// double magTop,
-				params.mag_comp_params.get_magCompFn().getDefaultGUICapF(),	// double capF,
-				params.mag_comp_params.get_magCompFn().getDefaultGUICapG(),	// double capG,
-				params.mag_comp_params.get_magCompFn().getDefaultGUICapH(),	// double capH,
-				t_data_begin,												// double t_data_begin,
-				t_data_end,													// double t_data_end,
-				t_fitting,													// double t_fitting,
-				t_forecast													// double t_forecast
+				the_mag_cat,												// double magCat
+				the_mag_top,												// double magTop
+				params.mag_comp_params.get_magCompFn().getDefaultGUICapF(),	// double capF
+				params.mag_comp_params.get_magCompFn().getDefaultGUICapG(),	// double capG
+				params.mag_comp_params.get_magCompFn().getDefaultGUICapH(),	// double capH
+				t_data_begin,												// double t_data_begin
+				t_data_end,													// double t_data_end
+				t_fitting,													// double t_fitting
+				t_forecast,													// double t_forecast
+				fcmain.mainshock_mag,										// double mag_main
+				fcmain.mainshock_lat,										// double lat_main
+				fcmain.mainshock_lon,										// double lon_main
+				fcmain.mainshock_depth										// double depth_main
 			);
 
 			// Create multi-thread context

@@ -19,6 +19,7 @@ public class OEBayFactoryParams {
 
 	// Mainshock magnitude (or another magnitude representing the sequence).
 	// Can be OEConstants.NO_MAG_NEG if not specified or unknown.
+	// Note: Unknown value must agree with the special value in OEtasCatalogInfo.
 
 	private double mag_main;
 
@@ -57,11 +58,26 @@ public class OEBayFactoryParams {
 
 
 
+	// Get the value for an unknown magnitude.
+
+	public static double unknown_mag () {
+		return OEConstants.NO_MAG_NEG;
+	}
+
+
+	// Get the value for an unknown location.
+
+	public static Location unknown_loc () {
+		return null;
+	}
+
+
+
 
 	// Clear to empty values.
 
 	public final void clear () {
-		mag_main = 0.0;
+		mag_main = OEConstants.NO_MAG_NEG;
 		loc_main  = null;
 		return;
 	}
@@ -69,7 +85,7 @@ public class OEBayFactoryParams {
 
 
 
-	// Default constructor.
+	// Default constructor sets unknown magnitude and location.
 
 	public OEBayFactoryParams () {
 		clear();
@@ -85,7 +101,7 @@ public class OEBayFactoryParams {
 		Location loc_main
 	) {
 		this.mag_main = mag_main;
-		this.loc_main  = loc_main;
+		this.loc_main = loc_main;
 	}
 
 
@@ -99,7 +115,7 @@ public class OEBayFactoryParams {
 		Location loc_main
 	) {
 		this.mag_main = mag_main;
-		this.loc_main  = loc_main;
+		this.loc_main = loc_main;
 		return this;
 	}
 

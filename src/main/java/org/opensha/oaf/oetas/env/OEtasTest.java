@@ -508,7 +508,7 @@ public class OEtasTest {
 	// test5/write_cat_info
 	// Command line arguments:
 	//  filename  magCat  magTop  capF  capG  capH  t_data_begin  t_data_end  t_fitting  t_forecast
-	// Write ETAS catalog information to a file.
+	// Write ETAS catalog information to a file (with unknown mainshock magnitude and location).
 	// For no incompleteness:  F = 0.50, G = 100.0, H = 1.00
 	// For World incompleteness:  F = 0.50, G = 0.25, H = 1.00
 	// For California incompleteness:  F = 1.00, G = 4.50, H = 0.75
@@ -544,6 +544,156 @@ public class OEtasTest {
 			t_data_end,		// t_data_end
 			t_fitting,		// t_fitting
 			t_forecast		// t_forecast
+		);
+
+		// Write to file
+
+		MarshalUtils.to_formatted_json_file (cat_into, filename_cat_info);
+
+		System.out.println ();
+		System.out.println ("Wrote catalog information to file: " + filename_cat_info);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
+	// test12/write_cat_info_2
+	// Command line arguments:
+	//  filename  magCat  magTop  capF  capG  capH  t_data_begin  t_data_end  t_fitting  t_forecast  mag_main  lat_main  lon_main  depth_main
+	// Write ETAS catalog information to a file.
+	// For no incompleteness:  F = 0.50, G = 100.0, H = 1.00
+	// For World incompleteness:  F = 0.50, G = 0.25, H = 1.00
+	// For California incompleteness:  F = 1.00, G = 4.50, H = 0.75
+
+	public static void test12 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Writing ETAS catalog information to a file");
+		String filename_cat_info = get_filename_arg (testargs, "filename_cat_info");
+
+		double magCat = testargs.get_double ("magCat");
+		double magTop = testargs.get_double ("magTop");
+		double capF = testargs.get_double ("capF");
+		double capG = testargs.get_double ("capG");
+		double capH = testargs.get_double ("capH");
+		double t_data_begin = testargs.get_double ("t_data_begin");
+		double t_data_end = testargs.get_double ("t_data_end");
+		double t_fitting = testargs.get_double ("t_fitting");
+		double t_forecast = testargs.get_double ("t_forecast");
+
+		double mag_main = testargs.get_double ("mag_main");
+		double lat_main = testargs.get_double ("lat_main");
+		double lon_main = testargs.get_double ("lon_main");
+		double depth_main = testargs.get_double ("depth_main");
+
+		testargs.end_test();
+
+		// Make the catalog information
+
+		OEtasCatalogInfo cat_into = (new OEtasCatalogInfo()).set (
+			magCat,			// magCat
+			magTop,			// magTop
+			capF,			// capF
+			capG,			// capG
+			capH,			// capH
+			t_data_begin,	// t_data_begin
+			t_data_end,		// t_data_end
+			t_fitting,		// t_fitting
+			t_forecast,		// t_forecast
+			mag_main,		// mag_main
+			lat_main,		// lat_main
+			lon_main,		// lon_main
+			depth_main		// depth_main
+		);
+
+		// Write to file
+
+		MarshalUtils.to_formatted_json_file (cat_into, filename_cat_info);
+
+		System.out.println ();
+		System.out.println ("Wrote catalog information to file: " + filename_cat_info);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
+	// test13/write_cat_info_3
+	// Command line arguments:
+	//  filename  magCat  magTop  capF  capG  capH  t_data_begin  t_data_end  t_fitting  t_forecast  event_id
+	// Write ETAS catalog information to a file.
+	// For no incompleteness:  F = 0.50, G = 100.0, H = 1.00
+	// For World incompleteness:  F = 0.50, G = 0.25, H = 1.00
+	// For California incompleteness:  F = 1.00, G = 4.50, H = 0.75
+
+	public static void test13 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Writing ETAS catalog information to a file");
+		String filename_cat_info = get_filename_arg (testargs, "filename_cat_info");
+
+		double magCat = testargs.get_double ("magCat");
+		double magTop = testargs.get_double ("magTop");
+		double capF = testargs.get_double ("capF");
+		double capG = testargs.get_double ("capG");
+		double capH = testargs.get_double ("capH");
+		double t_data_begin = testargs.get_double ("t_data_begin");
+		double t_data_end = testargs.get_double ("t_data_end");
+		double t_fitting = testargs.get_double ("t_fitting");
+		double t_forecast = testargs.get_double ("t_forecast");
+
+		String event_id = testargs.get_string ("event_id");
+
+		testargs.end_test();
+
+		// Get mainshock information
+
+		System.out.println ();
+
+		ObsEqkRupture obs_main = fetch_mainshock (event_id);
+
+		double mag_main = obs_main.getMag();
+		Location hypo = obs_main.getHypocenterLocation();
+		double lat_main = hypo.getLatitude();
+		double lon_main = hypo.getLongitude();
+		double depth_main = hypo.getDepth();
+
+		System.out.println ("mag_main = " + mag_main);
+		System.out.println ("lat_main = " + lat_main);
+		System.out.println ("lon_main = " + lon_main);
+		System.out.println ("depth_main = " + depth_main);
+
+		// Make the catalog information
+
+		OEtasCatalogInfo cat_into = (new OEtasCatalogInfo()).set (
+			magCat,			// magCat
+			magTop,			// magTop
+			capF,			// capF
+			capG,			// capG
+			capH,			// capH
+			t_data_begin,	// t_data_begin
+			t_data_end,		// t_data_end
+			t_fitting,		// t_fitting
+			t_forecast,		// t_forecast
+			mag_main,		// mag_main
+			lat_main,		// lat_main
+			lon_main,		// lon_main
+			depth_main		// depth_main
 		);
 
 		// Write to file
@@ -1097,6 +1247,18 @@ public class OEtasTest {
 
 		if (testargs.is_test ("test11", "system_info")) {
 			test11 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test12", "write_cat_info_2")) {
+			test12 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test13", "write_cat_info_3")) {
+			test13 (testargs);
 			return;
 		}
 
