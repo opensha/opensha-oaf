@@ -14,6 +14,11 @@ import org.opensha.oaf.oetas.fit.OEDisc2InitFitInfo;
 import org.opensha.oaf.oetas.fit.OEDisc2InitVoxSet;
 import org.opensha.oaf.oetas.fit.OEGridPoint;
 
+import org.opensha.oaf.oetas.bay.OEBayFactory;
+import org.opensha.oaf.oetas.bay.OEBayFactoryParams;
+import org.opensha.oaf.oetas.bay.OEBayPrior;
+import org.opensha.oaf.oetas.bay.OEBayPriorParams;
+
 import org.opensha.oaf.oetas.OECatalogRange;
 import org.opensha.oaf.oetas.OESimulator;
 import org.opensha.oaf.oetas.OEConstants;
@@ -94,6 +99,11 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 	// (Set to OEConstants.DEF_MSUP when loaded from a v1 file).
 
 	public double fitting_mag_max;
+
+	// The Bayesian prior. [v2]
+	// (Set to a uniform prior if loaded from a v1 file).
+
+	public OEBayPrior bay_prior;
 
 
 	//----- Grid -----
@@ -195,6 +205,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		fitting_msup = 0.0;
 		fitting_mag_min = 0.0;
 		fitting_mag_max = 0.0;
+		bay_prior = null;
 
 		mle_grid_point = null;
 		gen_mle_grid_point = null;
@@ -244,6 +255,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		this.fitting_msup = other.fitting_msup;
 		this.fitting_mag_min = other.fitting_mag_min;
 		this.fitting_mag_max = other.fitting_mag_max;
+		this.bay_prior = other.bay_prior;		// OEBayPrior is immutable
 
 		this.mle_grid_point = (new OEGridPoint()).copy_from (other.mle_grid_point);
 		this.gen_mle_grid_point = (new OEGridPoint()).copy_from (other.gen_mle_grid_point);
@@ -298,6 +310,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		result.append ("fitting_msup = " + fitting_msup + "\n");
 		result.append ("fitting_mag_min = " + fitting_mag_min + "\n");
 		result.append ("fitting_mag_max = " + fitting_mag_max + "\n");
+		result.append ("bay_prior = {" + bay_prior.toString() + "}\n");
 
 		result.append ("mle_grid_point = {" + mle_grid_point.toString() + "}\n");
 		result.append ("gen_mle_grid_point = {" + gen_mle_grid_point.toString() + "}\n");
@@ -344,6 +357,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		result.append ("fitting_msup = " + fitting_msup + "\n");
 		result.append ("fitting_mag_min = " + fitting_mag_min + "\n");
 		result.append ("fitting_mag_max = " + fitting_mag_max + "\n");
+		result.append ("bay_prior = {" + bay_prior.toString() + "}\n");
 
 		result.append ("mle_grid_point = {" + mle_grid_point.toString() + "}\n");
 		result.append ("gen_mle_grid_point = {" + gen_mle_grid_point.toString() + "}\n");
@@ -401,8 +415,9 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 	// Set fitting data.
 	// Parameters:
 	//  fit_info = Fitting information.
+	//  the_bay_prior = Bayesian prior.
 
-	public void set_fitting (OEDisc2InitFitInfo fit_info) {
+	public void set_fitting (OEDisc2InitFitInfo fit_info, OEBayPrior the_bay_prior) {
 		group_count = fit_info.group_count;
 		mag_main = fit_info.mag_main;
 		tint_br = fit_info.tint_br;
@@ -410,6 +425,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		fitting_msup = fit_info.msup;
 		fitting_mag_min = fit_info.mag_min;
 		fitting_mag_max = fit_info.mag_max;
+		bay_prior = the_bay_prior;		// OEBayPrior is immutable
 		return;
 	}
 
@@ -571,6 +587,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			writer.marshalDouble ("fitting_msup", fitting_msup);
 			writer.marshalDouble ("fitting_mag_min", fitting_mag_min);
 			writer.marshalDouble ("fitting_mag_max", fitting_mag_max);
+			OEBayPrior.marshal_poly (writer, "bay_prior", bay_prior);
 
 			OEGridPoint.static_marshal (writer, "mle_grid_point", mle_grid_point);
 			OEGridPoint.static_marshal (writer, "gen_mle_grid_point", gen_mle_grid_point);
@@ -636,6 +653,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			fitting_msup = OEConstants.DEF_MSUP;
 			fitting_mag_min = OEConstants.DEF_MREF;
 			fitting_mag_max = OEConstants.DEF_MSUP;
+			bay_prior = OEBayPrior.makeUniform();
 
 			mle_grid_point = OEGridPoint.static_unmarshal (reader, "mle_grid_point");
 			gen_mle_grid_point = OEGridPoint.static_unmarshal (reader, "gen_mle_grid_point");
@@ -679,6 +697,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			fitting_msup = reader.unmarshalDouble ("fitting_msup");
 			fitting_mag_min = reader.unmarshalDouble ("fitting_mag_min");
 			fitting_mag_max = reader.unmarshalDouble ("fitting_mag_max");
+			bay_prior = OEBayPrior.unmarshal_poly (reader, "bay_prior");
 
 			mle_grid_point = OEGridPoint.static_unmarshal (reader, "mle_grid_point");
 			gen_mle_grid_point = OEGridPoint.static_unmarshal (reader, "gen_mle_grid_point");
@@ -826,6 +845,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		etas_results.fitting_msup = OEConstants.DEF_MSUP;
 		etas_results.fitting_mag_min = OEConstants.DEF_MREF;
 		etas_results.fitting_mag_max = OEConstants.DEF_MSUP;
+		etas_results.bay_prior = OEBayPrior.makeUniform();
 
 		etas_results.mle_grid_point = (new OEGridPoint()).set (1.00, 1.10, 0.200, 1.20, 0.800, 2.60, 3.40);
 		etas_results.gen_mle_grid_point = (new OEGridPoint()).set (1.01, 1.11, 0.201, 1.21, 0.801, 2.61, 3.41);

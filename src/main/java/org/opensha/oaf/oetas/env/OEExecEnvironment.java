@@ -43,6 +43,7 @@ import org.opensha.oaf.oetas.fit.OEDisc2InitVoxBuilder;
 import org.opensha.oaf.oetas.fit.OEDisc2InitVoxSet;
 import org.opensha.oaf.oetas.fit.OEDiscFGHParams;
 import org.opensha.oaf.oetas.fit.OEGridParams;
+import org.opensha.oaf.oetas.fit.OEGridOptions;
 import org.opensha.oaf.oetas.fit.OEDisc2VoxStatAccum;
 import org.opensha.oaf.oetas.fit.OEDisc2VoxStatAccumMarginal;
 import org.opensha.oaf.oetas.fit.OEDisc2VoxStatAccumMulti;
@@ -1258,6 +1259,12 @@ public class OEExecEnvironment {
 			fitter.set_f_intensity (true);
 		}
 
+		// Pass grid options into the fitter
+
+		OEGridOptions grid_options = etas_params.make_grid_options();
+
+		fitter.set_grid_options (grid_options);
+
 		// Display fitter info
 
 		System.out.println();
@@ -1274,7 +1281,9 @@ public class OEExecEnvironment {
 
 		// Get the Bayesian prior
 
-		OEBayPrior bay_prior = etas_params.get_bay_prior ();;
+		OEBayFactoryParams bay_factory_params = catalog_info.get_bay_factory_params();
+
+		OEBayPrior bay_prior = etas_params.get_bay_prior (bay_factory_params);
 
 		// Make the voxel set
 
@@ -1376,7 +1385,7 @@ public class OEExecEnvironment {
 
 		// Save fitting results
 
-		etas_results.set_fitting (fit_info);
+		etas_results.set_fitting (fit_info, bay_prior);
 
 		etas_results.set_grid (voxel_set);
 

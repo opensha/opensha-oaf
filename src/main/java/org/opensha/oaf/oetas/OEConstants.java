@@ -822,6 +822,12 @@ public class OEConstants {
 		return OEDiscreteRange.makeSingle (0.0);
 	}
 
+	// True if the value of zams is interpreted relative to the a-value.
+
+	public static boolean def_relative_zams () {
+		return false;
+	}
+
 
 
 

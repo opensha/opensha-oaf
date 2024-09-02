@@ -28,6 +28,8 @@ import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OESeedParams;
 import org.opensha.oaf.oetas.OESimulator;
 
+import org.opensha.oaf.oetas.bay.OEBayFactory;
+
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.rj.GenericRJ_ParametersFetch;
 import org.opensha.oaf.rj.MagCompPage_ParametersFetch;
@@ -295,12 +297,13 @@ public class OEtasTest {
 	// Command line arguments:
 	//  filename
 	// Write sample ETAS parameters to a file.
+	// This command sets a uniform Bayesian prior.
 
 	public static void test2 (TestArgs testargs) throws Exception {
 
 		// Read arguments
 
-		System.out.println ("Writing sample ETAS parameters to a file");
+		System.out.println ("Writing sample ETAS parameters to a file, uniform prior");
 		String filename = testargs.get_string ("filename");
 		testargs.end_test();
 
@@ -308,6 +311,45 @@ public class OEtasTest {
 
 		OEtasParameters etas_params = new OEtasParameters();
 		etas_params.set_to_typical ();
+		etas_params.set_bay_prior_to_analyst (true, OEBayFactory.makeUniform());
+
+		// Write to file
+
+		MarshalUtils.to_formatted_json_file (etas_params, filename);
+
+		System.out.println ();
+		System.out.println ("Wrote sample parameters to file: " + filename);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
+	// test14/write_sample_params_2
+	// Command line arguments:
+	//  filename
+	// Write sample ETAS parameters to a file.
+	// This command sets a Gaussian a/p/c Bayesian prior.
+
+	public static void test14 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Writing sample ETAS parameters to a file, Gaussian prior");
+		String filename = testargs.get_string ("filename");
+		testargs.end_test();
+
+		// Create the parameters
+
+		OEtasParameters etas_params = new OEtasParameters();
+		etas_params.set_to_typical ();
+		etas_params.set_bay_prior_to_analyst (true, OEBayFactory.makeGaussAPC());
 
 		// Write to file
 
@@ -1259,6 +1301,12 @@ public class OEtasTest {
 
 		if (testargs.is_test ("test13", "write_cat_info_3")) {
 			test13 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test14", "write_sample_params_2")) {
+			test14 (testargs);
 			return;
 		}
 

@@ -1552,6 +1552,7 @@ public class OEDisc2IntensityCalc {
 				cat_params_stats.mag_max_sim,	// mag_max
 				mag_main,						// mag_main
 				tint_br,						// tint_br
+				new OEGridOptions(),			// grid_options
 				history.req_t_interval_end,		// req_t_interval_end
 				history.get_t_range_end(),		// hist_t_interval_end
 				group_t_interval_end,			// group_t_interval_end
@@ -1862,6 +1863,7 @@ public class OEDisc2IntensityCalc {
 				cat_params_stats.mag_max_sim,	// mag_max
 				mag_main,						// mag_main
 				tint_br,						// tint_br
+				new OEGridOptions(),			// grid_options
 				history.req_t_interval_end,		// req_t_interval_end
 				history.get_t_range_end(),		// hist_t_interval_end
 				group_t_interval_end,			// group_t_interval_end

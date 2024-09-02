@@ -22,6 +22,7 @@ import org.opensha.oaf.oetas.bay.OEBayPrior;
 import org.opensha.oaf.oetas.bay.OEBayPriorParams;
 
 import org.opensha.oaf.oetas.fit.OEGridParams;
+import org.opensha.oaf.oetas.fit.OEGridOptions;
 import org.opensha.oaf.oetas.fit.OEDiscFGHParams;
 import org.opensha.oaf.oetas.fit.OEMagCompFnDisc;
 import org.opensha.oaf.oetas.fit.OEDisc2Grouping;
@@ -1125,6 +1126,10 @@ public class OEtasParameters implements Marshalable {
 
 	public OEDiscreteRange zmu_range = null;
 
+	// True if the value of zams is interpreted relative to the a-value. [v2]
+
+	public boolean relative_zams = false;
+
 	// Clear ETAS parameter ranges.
 
 	public final void clear_range () {
@@ -1137,6 +1142,8 @@ public class OEtasParameters implements Marshalable {
 		n_range     = null;
 		zams_range  = null;
 		zmu_range   = null;
+
+		relative_zams = false;
 		return;
 	}
 
@@ -1152,6 +1159,8 @@ public class OEtasParameters implements Marshalable {
 		n_range     = OEConstants.def_n_range();
 		zams_range  = OEConstants.def_zams_range();
 		zmu_range   = OEConstants.def_zmu_range();
+
+		relative_zams = OEConstants.def_relative_zams();
 		return;
 	}
 
@@ -1168,6 +1177,8 @@ public class OEtasParameters implements Marshalable {
 		n_range     = other.n_range;
 		zams_range  = other.zams_range;
 		zmu_range   = other.zmu_range;
+
+		relative_zams = other.relative_zams;
 		return;
 	}
 
@@ -1182,7 +1193,8 @@ public class OEtasParameters implements Marshalable {
 		OEDiscreteRange p_range,
 		OEDiscreteRange n_range,
 		OEDiscreteRange zams_range,
-		OEDiscreteRange zmu_range
+		OEDiscreteRange zmu_range,
+		boolean relative_zams
 	) {
 		this.range_avail = range_avail;
 		this.b_range     = b_range;
@@ -1192,6 +1204,7 @@ public class OEtasParameters implements Marshalable {
 		this.n_range     = n_range;
 		this.zams_range  = zams_range;
 		this.zmu_range   = zmu_range;
+		this.relative_zams = relative_zams;
 		return;
 	}
 
@@ -1255,6 +1268,8 @@ public class OEtasParameters implements Marshalable {
 			sb.append ("n_range = "     + range_to_string(n_range)     + "\n");
 			sb.append ("zams_range = "  + range_to_string(zams_range)  + "\n");
 			sb.append ("zmu_range = "   + range_to_string(zmu_range)   + "\n");
+
+			sb.append ("relative_zams = " + relative_zams + "\n");
 		}
 		return sb;
 	}
@@ -1276,6 +1291,23 @@ public class OEtasParameters implements Marshalable {
 		return;
 	}
 
+	private void marshal_range_v2 (MarshalWriter writer) {
+		writer.marshalBoolean ("range_avail", range_avail);
+		if (range_avail) {
+			final int xver = OEDiscreteRange.XVER_1;
+			OEDiscreteRange.marshal_xver (writer, "b_range"    , xver, b_range    );
+			OEDiscreteRange.marshal_xver (writer, "alpha_range", xver, alpha_range);
+			OEDiscreteRange.marshal_xver (writer, "c_range"    , xver, c_range    );
+			OEDiscreteRange.marshal_xver (writer, "p_range"    , xver, p_range    );
+			OEDiscreteRange.marshal_xver (writer, "n_range"    , xver, n_range    );
+			OEDiscreteRange.marshal_xver (writer, "zams_range" , xver, zams_range );
+			OEDiscreteRange.marshal_xver (writer, "zmu_range"  , xver, zmu_range  );
+
+			writer.marshalBoolean ("relative_zams", relative_zams);
+		}
+		return;
+	}
+
 	// Unmarshal ETAS parameter ranges.
 
 	private void unmarshal_range_v1 (MarshalReader reader) {
@@ -1289,6 +1321,34 @@ public class OEtasParameters implements Marshalable {
 			n_range     = OEDiscreteRange.unmarshal_xver (reader, "n_range"    , xver);
 			zams_range  = OEDiscreteRange.unmarshal_xver (reader, "zams_range" , xver);
 			zmu_range   = OEDiscreteRange.unmarshal_xver (reader, "zmu_range"  , xver);
+
+			relative_zams = OEConstants.def_relative_zams();
+		} else {
+			clear_range();
+		}
+
+		// Check the invariant
+
+		String inv = check_range_invariant();
+		if (inv != null) {
+			throw new MarshalException ("OEtasParameters.unmarshal_range_v1: " + inv);
+		}
+		return;
+	}
+
+	private void unmarshal_range_v2 (MarshalReader reader) {
+		range_avail = reader.unmarshalBoolean ("range_avail");
+		if (range_avail) {
+			final int xver = OEDiscreteRange.XVER_1;
+			b_range     = OEDiscreteRange.unmarshal_xver (reader, "b_range"    , xver);
+			alpha_range = OEDiscreteRange.unmarshal_xver (reader, "alpha_range", xver);
+			c_range     = OEDiscreteRange.unmarshal_xver (reader, "c_range"    , xver);
+			p_range     = OEDiscreteRange.unmarshal_xver (reader, "p_range"    , xver);
+			n_range     = OEDiscreteRange.unmarshal_xver (reader, "n_range"    , xver);
+			zams_range  = OEDiscreteRange.unmarshal_xver (reader, "zams_range" , xver);
+			zmu_range   = OEDiscreteRange.unmarshal_xver (reader, "zmu_range"  , xver);
+
+			relative_zams = reader.unmarshalBoolean ("relative_zams");
 		} else {
 			clear_range();
 		}
@@ -1337,6 +1397,20 @@ public class OEtasParameters implements Marshalable {
 		return true;
 	}
 
+	// Make a newly-allocated OEGridOptions object containing the grid options.
+	// Note: Caller must check the ranges are available.
+
+	public final OEGridOptions make_grid_options () {
+		if (!( range_avail )) {
+			throw new InvariantViolationException ("OEtasParameters.make_grid_options: ETAS parameter ranges not available");
+		}
+		OEGridOptions grid_options = new OEGridOptions (
+			relative_zams
+		);
+		return grid_options;
+	}
+
+
 
 
 	//----- Bayesian prior -----
@@ -1345,16 +1419,21 @@ public class OEtasParameters implements Marshalable {
 
 	public boolean bay_prior_avail = false;
 
-	// Bayesian prior.
+	// Bayesian prior. [v1, removed in v2]
 
-	public OEBayPrior bay_prior = null;
+	//public OEBayPrior bay_prior = null;
+
+	// Bayesian prior factory. [v2]
+
+	public OEBayFactory bay_factory = null;
 
 	// Clear Bayesian prior.
 
 	public final void clear_bay_prior () {
 		bay_prior_avail = false;
 
-		bay_prior = null;
+		//bay_prior = null;
+		bay_factory = null;
 		return;
 	}
 
@@ -1363,7 +1442,10 @@ public class OEtasParameters implements Marshalable {
 	public final void set_bay_prior_to_typical () {
 		bay_prior_avail = true;
 
-		bay_prior = OEBayPrior.makeUniform();
+		//bay_prior = OEBayPrior.makeUniform();
+
+		bay_factory = OEBayFactory.makeUniform();
+		//bay_factory = OEBayFactory makeGaussAPC();
 		return;
 	}
 
@@ -1373,19 +1455,32 @@ public class OEtasParameters implements Marshalable {
 	public final void copy_bay_prior_from (OEtasParameters other) {
 		bay_prior_avail = other.bay_prior_avail;
 
-		bay_prior = other.bay_prior;
+		//bay_prior = other.bay_prior;
+		bay_factory = other.bay_factory;
 		return;
 	}
 
 	// Set the Bayesian prior to analyst values.
 	// Note: OEBayPrior is an immutable object.
 
+	//public final void set_bay_prior_to_analyst (
+	//	boolean bay_prior_avail,
+	//	OEBayPrior bay_prior
+	//) {
+	//	this.bay_prior_avail = bay_prior_avail;
+	//	this.bay_prior = bay_prior;
+	//	return;
+	//}
+
+	// Set the Bayesian prior to analyst values.
+	// Note: OEBayFactory is an immutable object.
+
 	public final void set_bay_prior_to_analyst (
 		boolean bay_prior_avail,
-		OEBayPrior bay_prior
+		OEBayFactory bay_factory
 	) {
 		this.bay_prior_avail = bay_prior_avail;
-		this.bay_prior = bay_prior;
+		this.bay_factory = bay_factory;
 		return;
 	}
 
@@ -1405,8 +1500,11 @@ public class OEtasParameters implements Marshalable {
 
 	public final String check_bay_prior_invariant () {
 		if (bay_prior_avail) {
-			if (!( bay_prior != null )) {
-				return "Missing bay_prior";
+			//if (!( bay_prior != null )) {
+			//	return "Missing bay_prior";
+			//}
+			if (!( bay_factory != null )) {
+				return "Missing bay_factory";
 			}
 		}
 		return null;
@@ -1417,7 +1515,8 @@ public class OEtasParameters implements Marshalable {
 	public final StringBuilder bay_prior_append_string (StringBuilder sb) {
 		sb.append ("bay_prior_avail = " + bay_prior_avail + "\n");
 		if (bay_prior_avail) {
-			sb.append ("bay_prior = {" + bay_prior.toString() + "}\n");
+			//sb.append ("bay_prior = {" + bay_prior.toString() + "}\n");
+			sb.append ("bay_factory = {" + bay_factory.toString() + "}\n");
 		}
 		return sb;
 	}
@@ -1427,7 +1526,16 @@ public class OEtasParameters implements Marshalable {
 	private void marshal_bay_prior_v1 (MarshalWriter writer) {
 		writer.marshalBoolean ("bay_prior_avail", bay_prior_avail);
 		if (bay_prior_avail) {
+			OEBayPrior bay_prior = bay_factory.make_bay_prior (new OEBayFactoryParams());
 			OEBayPrior.marshal_poly (writer, "bay_prior", bay_prior);
+		}
+		return;
+	}
+
+	private void marshal_bay_prior_v2 (MarshalWriter writer) {
+		writer.marshalBoolean ("bay_prior_avail", bay_prior_avail);
+		if (bay_prior_avail) {
+			OEBayFactory.marshal_poly (writer, "bay_factory", bay_factory);
 		}
 		return;
 	}
@@ -1437,7 +1545,8 @@ public class OEtasParameters implements Marshalable {
 	private void unmarshal_bay_prior_v1 (MarshalReader reader) {
 		bay_prior_avail = reader.unmarshalBoolean ("bay_prior_avail");
 		if (bay_prior_avail) {
-			bay_prior = OEBayPrior.unmarshal_poly (reader, "bay_prior");
+			OEBayPrior bay_prior = OEBayPrior.unmarshal_poly (reader, "bay_prior");
+			bay_factory = OEBayFactory.makeFixed (bay_prior);
 		} else {
 			clear_bay_prior();
 		}
@@ -1451,13 +1560,39 @@ public class OEtasParameters implements Marshalable {
 		return;
 	}
 
+	private void unmarshal_bay_prior_v2 (MarshalReader reader) {
+		bay_prior_avail = reader.unmarshalBoolean ("bay_prior_avail");
+		if (bay_prior_avail) {
+			bay_factory = OEBayFactory.unmarshal_poly (reader, "bay_factory");
+		} else {
+			clear_bay_prior();
+		}
+
+		// Check the invariant
+
+		String inv = check_bay_prior_invariant();
+		if (inv != null) {
+			throw new MarshalException ("OEtasParameters.unmarshal_bay_prior_v2: " + inv);
+		}
+		return;
+	}
+
 	// Get the Bayesian prior.
 	// Note: Caller must check the Bayesian prior is available.
 
-	public final OEBayPrior get_bay_prior () {
+	//public final OEBayPrior get_bay_prior () {
+	//	if (!( bay_prior_avail )) {
+	//		throw new InvariantViolationException ("OEtasParameters.get_bay_prior: Bayesian prior not available");
+	//	}
+	//	OEBayPrior bay_prior = bay_factory.make_bay_prior (new OEBayFactoryParams());
+	//	return bay_prior;
+	//}
+
+	public final OEBayPrior get_bay_prior (OEBayFactoryParams factory_params) {
 		if (!( bay_prior_avail )) {
 			throw new InvariantViolationException ("OEtasParameters.get_bay_prior: Bayesian prior not available");
 		}
+		OEBayPrior bay_prior = bay_factory.make_bay_prior (factory_params);
 		return bay_prior;
 	}
 
@@ -2401,6 +2536,7 @@ public class OEtasParameters implements Marshalable {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 121001;
+	private static final int MARSHAL_VER_2 = 121002;
 
 	private static final String M_VERSION_NAME = "OEtasParameters";
 
@@ -2410,7 +2546,7 @@ public class OEtasParameters implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_1;
+		int ver = MARSHAL_VER_2;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -2435,6 +2571,23 @@ public class OEtasParameters implements Marshalable {
 		}
 		break;
 
+		case MARSHAL_VER_2: {
+
+			marshal_hist_params_v1 (writer);
+			marshal_group_params_v1 (writer);
+			marshal_fit_params_v1 (writer);
+			marshal_fmag_range_v1 (writer);
+			marshal_tint_br_v1 (writer);
+			marshal_range_v2 (writer);
+			marshal_bay_prior_v2 (writer);
+			marshal_bay_weight_v1 (writer);
+			marshal_grid_post_v1 (writer);
+			marshal_num_catalogs_v1 (writer);
+			marshal_sim_params_v1 (writer);
+
+		}
+		break;
+
 		}
 
 		return;
@@ -2446,7 +2599,7 @@ public class OEtasParameters implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
@@ -2463,6 +2616,25 @@ public class OEtasParameters implements Marshalable {
 			unmarshal_tint_br_v1 (reader);
 			unmarshal_range_v1 (reader);
 			unmarshal_bay_prior_v1 (reader);
+			unmarshal_bay_weight_v1 (reader);
+			unmarshal_grid_post_v1 (reader);
+			unmarshal_num_catalogs_v1 (reader);
+			unmarshal_sim_params_v1 (reader);
+
+		}
+		break;
+
+		case MARSHAL_VER_2: {
+
+			clear();	// for fields that are not marshaled
+
+			unmarshal_hist_params_v1 (reader);
+			unmarshal_group_params_v1 (reader);
+			unmarshal_fit_params_v1 (reader);
+			unmarshal_fmag_range_v1 (reader);
+			unmarshal_tint_br_v1 (reader);
+			unmarshal_range_v2 (reader);
+			unmarshal_bay_prior_v2 (reader);
 			unmarshal_bay_weight_v1 (reader);
 			unmarshal_grid_post_v1 (reader);
 			unmarshal_num_catalogs_v1 (reader);
@@ -2565,8 +2737,11 @@ public class OEtasParameters implements Marshalable {
 			System.out.println ("********** Marshal to JSON **********");
 			System.out.println ();
 
-			String json_string = MarshalUtils.to_json_string (etas_params);
-			System.out.println (MarshalUtils.display_json_string (json_string));
+			//String json_string = MarshalUtils.to_json_string (etas_params);
+			//System.out.println (MarshalUtils.display_json_string (json_string));
+
+			String json_string = MarshalUtils.to_formatted_compact_json_string (etas_params);
+			System.out.println (json_string);
 
 			// Unmarshal from JSON
 
@@ -2605,8 +2780,11 @@ public class OEtasParameters implements Marshalable {
 			System.out.println ("********** Empty Marshal to JSON **********");
 			System.out.println ();
 
-			String json_string_empty = MarshalUtils.to_json_string (etas_params_empty);
-			System.out.println (MarshalUtils.display_json_string (json_string_empty));
+			//String json_string_empty = MarshalUtils.to_json_string (etas_params_empty);
+			//System.out.println (MarshalUtils.display_json_string (json_string_empty));
+
+			String json_string_empty = MarshalUtils.to_formatted_compact_json_string (etas_params_empty);
+			System.out.println (json_string_empty);
 
 			// Unmarshal from JSON
 
@@ -2711,7 +2889,13 @@ public class OEtasParameters implements Marshalable {
 			System.out.println ("make_grid_params =\n" + etas_params.make_grid_params().toString());
 
 			System.out.println ();
-			System.out.println ("get_bay_prior =\n" + etas_params.get_bay_prior().toString());
+			System.out.println ("get_fit_f_background =\n" + etas_params.get_fit_f_background());
+
+			System.out.println ();
+			System.out.println ("make_grid_options =\n" + etas_params.make_grid_options().toString());
+
+			System.out.println ();
+			System.out.println ("get_bay_prior =\n" + etas_params.get_bay_prior(new OEBayFactoryParams()).toString());
 
 			System.out.println ();
 			System.out.println ("get_bay_weight(0.001) =\n" + etas_params.get_bay_weight(0.001));
