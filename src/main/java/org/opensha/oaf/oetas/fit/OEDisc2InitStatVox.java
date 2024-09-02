@@ -102,6 +102,10 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 	private double ten_aint_q;
 
+	// Offset for converting relative zams to absolute zams, or zero if zams is absolute.
+
+	private double rel_to_abs_zams_offset;
+
 	// The fitted log-likelihood for each sub-voxel, length = subvox_count.
 
 	private double[] log_likelihood;
@@ -188,6 +192,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 		bay_vox_volume = null;
 
 		ten_aint_q = 0.0;
+		rel_to_abs_zams_offset = 0.0;
 		log_likelihood = null;
 
 		prod_scnd = null;
@@ -287,6 +292,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 		if (log_likelihood != null) {
 			result.append ("ten_aint_q = " + rndd(ten_aint_q) + "\n");
+			result.append ("rel_to_abs_zams_offset = " + rndd(rel_to_abs_zams_offset) + "\n");
 		}
 
 		final int subvox_count = ((a_zams_velt == null) ? 0 : a_zams_velt.length);
@@ -406,7 +412,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 			// Get parameters for this sub-voxel
 
-			final double zams = a_zams_velt[j].get_ve_value();
+			final double zams = a_zams_velt[j].get_ve_value();		// use raw value
 			final double zmu = ((a_zmu_velt == null) ? 0.0 : a_zmu_velt[j].get_ve_value());
 
 			sb.append (prefix);
@@ -449,7 +455,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 		// Get parameters for this sub-voxel
 
-		final double zams = a_zams_velt[subvox_index].get_ve_value();
+		final double zams = a_zams_velt[subvox_index].get_ve_value();		// use raw value
 		final double zmu = ((a_zmu_velt == null) ? 0.0 : a_zmu_velt[subvox_index].get_ve_value());
 
 		// Set the grid point
@@ -604,6 +610,16 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			alpha
 		) ;
 
+		// Get offset to convert relative zams to absolute zams, or zero if zams is absolute
+
+		rel_to_abs_zams_offset = fit_info.calc_rel_to_abs_zams_offset (
+			n,
+			p,
+			c,
+			b,
+			alpha
+		) ;
+
 		// Build the avpr object
 
 		avpr.avpr_build (pmom, ten_aint_q);
@@ -619,7 +635,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 				// Convert from zams to (10^ams)*Q, with Q == 1
 
 				final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-					a_zams_velt[j].get_ve_value(),
+					a_zams_velt[j].get_ve_value() + rel_to_abs_zams_offset,
 					b,
 					alpha
 				);
@@ -648,7 +664,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 				// Convert from zams to (10^ams)*Q, with Q == 1
 
 				final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-					a_zams_velt[j].get_ve_value(),
+					a_zams_velt[j].get_ve_value() + rel_to_abs_zams_offset,
 					b,
 					alpha
 				);
@@ -835,7 +851,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 			// Get parameters for this sub-voxel
 
-			final double zams = a_zams_velt[j].get_ve_value();
+			final double zams = a_zams_velt[j].get_ve_value();		// use raw value
 			final double zmu = ((a_zmu_velt == null) ? 0.0 : a_zmu_velt[j].get_ve_value());
 
 			// Pass them to the statistics accumulator
@@ -1088,7 +1104,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 		// Convert from zams to ams
 
 		final double ams = fit_info.calc_ams_from_zams (
-			a_zams_velt[subvox_index].get_ve_value(),
+			a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 			b,
 			alpha
 		);
@@ -1163,7 +1179,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			// Convert from zams to (10^ams)*Q, with Q == 1
 
 			final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-				a_zams_velt[subvox_index].get_ve_value(),
+				a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 				b,
 				alpha
 			);
@@ -1207,7 +1223,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			// Convert from zams to (10^ams)*Q, with Q == 1
 
 			final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-				a_zams_velt[subvox_index].get_ve_value(),
+				a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 				b,
 				alpha
 			);
@@ -1314,7 +1330,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 		// Convert from zams to (10^ams)*Q, with Q == 1
 
 		final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-			a_zams_velt[subvox_index].get_ve_value(),
+			a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 			b,
 			alpha
 		);
@@ -1459,7 +1475,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			// Convert from zams to (10^ams)*Q, with Q == 1
 
 			final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-				a_zams_velt[subvox_index].get_ve_value(),
+				a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 				b,
 				alpha
 			);
@@ -1504,7 +1520,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			// Convert from zams to (10^ams)*Q, with Q == 1
 
 			final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-				a_zams_velt[subvox_index].get_ve_value(),
+				a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 				b,
 				alpha
 			);
@@ -1696,6 +1712,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			writer.marshalDoubleArray ("bay_vox_volume", array_null_to_empty (bay_vox_volume));
 
 			writer.marshalDouble ("ten_aint_q", ten_aint_q);
+			writer.marshalDouble ("rel_to_abs_zams_offset", rel_to_abs_zams_offset);
 			writer.marshalDoubleArray ("log_likelihood", array_null_to_empty (log_likelihood));
 
 			writer.marshalDoubleArray ("prod_scnd", array_null_to_empty (prod_scnd));
@@ -1741,6 +1758,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			bay_vox_volume = array_empty_to_null (reader.unmarshalDoubleArray ("bay_vox_volume"));
 
 			ten_aint_q = reader.unmarshalDouble ("ten_aint_q");
+			rel_to_abs_zams_offset = reader.unmarshalDouble ("rel_to_abs_zams_offset");
 			log_likelihood = array_empty_to_null (reader.unmarshalDoubleArray ("log_likelihood"));
 
 			prod_scnd = array_empty_to_null (reader.unmarshalDoubleArray ("prod_scnd"));

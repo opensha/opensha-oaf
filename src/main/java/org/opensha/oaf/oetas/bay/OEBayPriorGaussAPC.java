@@ -102,14 +102,24 @@ public class OEBayPriorGaussAPC extends OEBayPrior {
 		final double zams = zams_velt.get_ve_value();
 		final double zmu = ((zmu_velt == null) ? 0.0 : zmu_velt.get_ve_value());
 
-		// Convert zams to Gauss parameter magnitude range
+		// If zams is relative, shift it so zero zams is the peak of the distribution
 
-		final double ams = OEStatsCalc.calc_ams_from_zams (
-			zams,						// zams
-			b,							// b
-			alpha,						// alpha
-			gauss_params.get_refMag()	// mref
-		);
+		double ams;
+
+		if (bay_params.get_relative_zams()) {
+			ams = zams + gauss_params.get_mean_ams();
+		}
+
+		// If ams is absolute, convert zams to Gauss parameter magnitude range
+
+		else {
+			ams = OEStatsCalc.calc_ams_from_zams (
+				zams,						// zams
+				b,							// b
+				alpha,						// alpha
+				gauss_params.get_refMag()	// mref
+			);
+		}
 
 		// Set the log density
 
@@ -211,14 +221,24 @@ public class OEBayPriorGaussAPC extends OEBayPrior {
 			final double zams = zams_velt.get_ve_value();
 			final double zmu = ((zmu_velt == null) ? 0.0 : zmu_velt.get_ve_value());
 
-			// Convert zams to Gauss parameter magnitude range
+			// If zams is relative, shift it so zero zams is the peak of the distribution
 
-			final double ams = OEStatsCalc.calc_ams_from_zams (
-				zams,						// zams
-				b,							// b
-				alpha,						// alpha
-				gauss_params.get_refMag()	// mref
-			);
+			double ams;
+
+			if (bay_params.get_relative_zams()) {
+				ams = zams + gauss_params.get_mean_ams();
+			}
+
+			// If ams is absolute, convert zams to Gauss parameter magnitude range
+
+			else {
+				ams = OEStatsCalc.calc_ams_from_zams (
+					zams,						// zams
+					b,							// b
+					alpha,						// alpha
+					gauss_params.get_refMag()	// mref
+				);
+			}
 
 			// Set the log density
 
