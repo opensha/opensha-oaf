@@ -52,6 +52,7 @@ import static org.opensha.oaf.aafs.ForecastParameters.CALC_METH_SUPPRESS;
 import static org.opensha.oaf.aafs.ForecastParameters.SEARCH_PARAM_OMIT;
 import static org.opensha.oaf.aafs.ForecastParameters.SEARCH_PARAM_TEST;
 
+import static org.opensha.oaf.oetas.env.OEExecEnvironment.ETAS_RESCODE_NOT_ELIGIBLE;
 import static org.opensha.oaf.oetas.env.OEExecEnvironment.ETAS_RESCODE_MAG_COMP_FORM;
 import static org.opensha.oaf.oetas.env.OEExecEnvironment.ETAS_RESCODE_NO_DATA;
 import static org.opensha.oaf.oetas.env.OEExecEnvironment.ETAS_RESCODE_UNSUPPORTED;
@@ -980,6 +981,14 @@ public class ForecastResults implements Marshalable {
 		if (!( catalog_result_avail
 				&& fcmain.mainshock_avail )) {
 			set_etas_skip_reason (ETAS_RESCODE_NO_DATA);
+			return;
+		}
+
+		// We need to be eligible based on magnitude
+
+		if (!( params.etas_params.check_eligible (fcmain.mainshock_mag, catalog_max_mag) )) {
+			set_etas_skip_reason (ETAS_RESCODE_NOT_ELIGIBLE);
+			System.out.println ("Not eligible for ETAS: mainshock_mag = " + fcmain.mainshock_mag + ", catalog_max_mag = " + catalog_max_mag);
 			return;
 		}
 

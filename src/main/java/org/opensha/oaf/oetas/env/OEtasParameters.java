@@ -1445,7 +1445,23 @@ public class OEtasParameters implements Marshalable {
 		//bay_prior = OEBayPrior.makeUniform();
 
 		bay_factory = OEBayFactory.makeUniform();
-		//bay_factory = OEBayFactory makeGaussAPC();
+		//bay_factory = OEBayFactory.makeGaussAPC();
+		return;
+	}
+
+	// Set Bayesian prior to typical values for a uniform prior
+
+	public final void set_bay_prior_to_typical_uniform () {
+		bay_prior_avail = true;
+		bay_factory = OEBayFactory.makeUniform();
+		return;
+	}
+
+	// Set Bayesian prior to typical values for a Gaussian a/p/c prior.
+
+	public final void set_bay_prior_to_typical_gauss_apc () {
+		bay_prior_avail = true;
+		bay_factory = OEBayFactory.makeGaussAPC();
 		return;
 	}
 
@@ -2385,6 +2401,228 @@ public class OEtasParameters implements Marshalable {
 
 
 
+	//----- Parameters for ETAS eligibility -----
+
+	// Eligibility parameters available flag. [v2]
+
+	public boolean eligible_params_avail = false;
+
+	// Eligibility option (see OEConstants.ELIGIBLE_OPT_XXXXX). [v2]
+
+	public int eligible_option = OEConstants.ELIGIBLE_OPT_AUTO;
+
+	// Mainshock magnitude for ETAS eligibility. [v2]
+
+	public double eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
+
+	// Catalog maximum magnitude for ETAS eligibility. [v2]
+
+	public double eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
+
+	// Clear elegibility parameters.
+
+	public final void clear_eligible_params () {
+		eligible_params_avail = false;
+
+		eligible_option = OEConstants.ELIGIBLE_OPT_AUTO;
+		eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
+		eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
+		return;
+	}
+
+	// Set elegibility parameters to typical values.
+
+	public final void set_eligible_params_to_typical () {
+		eligible_params_avail = true;
+
+		eligible_option = OEConstants.ELIGIBLE_OPT_AUTO;
+		eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
+		eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
+		return;
+	}
+
+	// Copy elegibility parameters from another object.
+
+	public final void copy_eligible_params_from (OEtasParameters other) {
+		eligible_params_avail = other.eligible_params_avail;
+
+		eligible_option = other.eligible_option;
+		eligible_main_mag = other.eligible_main_mag;
+		eligible_cat_max_mag = other.eligible_cat_max_mag;
+		return;
+	}
+
+	// Set the elegibility parameters to analyst values.
+
+	public final void set_eligible_params_to_analyst (
+		boolean eligible_params_avail,
+		int eligible_option,
+		double eligible_main_mag,
+		double eligible_cat_max_mag
+	) {
+		this.eligible_params_avail = eligible_params_avail;
+		this.eligible_option = eligible_option;
+		this.eligible_main_mag = eligible_main_mag;
+		this.eligible_cat_max_mag = eligible_cat_max_mag;
+		return;
+	}
+
+	// Set the elegibility parameters to analyst values, using default magnitudes.
+
+	public final void set_eligible_params_to_analyst (
+		boolean eligible_params_avail,
+		int eligible_option
+	) {
+		this.eligible_params_avail = eligible_params_avail;
+		this.eligible_option = eligible_option;
+		this.eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
+		this.eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
+		return;
+	}
+
+	// Merge elegibility parameters from another object, if available.
+
+	public final void merge_eligible_params_from (OEtasParameters other) {
+		if (other != null) {
+			if (other.eligible_params_avail) {
+				copy_eligible_params_from (other);
+			}
+		}
+		return;
+	}
+
+	// Check elegibility parameters invariant.
+	// Returns null if success, error message if invariant violated.
+
+	public final String check_eligible_params_invariant () {
+		if (eligible_params_avail) {
+			if (!( eligible_option >= OEConstants.ELIGIBLE_OPT_MIN && eligible_option <= OEConstants.ELIGIBLE_OPT_MAX )) {
+				return "Invalid ETAS eligibility option: eligible_option = " + eligible_option;
+			}
+		}
+		return null;
+	}
+
+	// Append a string representation of the elegibility parameters.
+
+	public final StringBuilder eligible_params_append_string (StringBuilder sb) {
+		sb.append ("eligible_params_avail = " + eligible_params_avail + "\n");
+		if (eligible_params_avail) {
+			sb.append ("eligible_option = " + eligible_option + "\n");
+			sb.append ("eligible_main_mag = " + eligible_main_mag + "\n");
+			sb.append ("eligible_cat_max_mag = " + eligible_cat_max_mag + "\n");
+		}
+		return sb;
+	}
+
+	// Marshal elegibility parameters.
+
+	private void marshal_eligible_params_v1 (MarshalWriter writer) {
+
+		// Not present in v1
+
+		return;
+	}
+
+	private void marshal_eligible_params_v2 (MarshalWriter writer) {
+		writer.marshalBoolean ("eligible_params_avail", eligible_params_avail);
+		if (eligible_params_avail) {
+			writer.marshalInt ("eligible_option", eligible_option);
+			writer.marshalDouble ("eligible_main_mag", eligible_main_mag);
+			writer.marshalDouble ("eligible_cat_max_mag", eligible_cat_max_mag);
+		}
+		return;
+	}
+
+	// Unmarshal elegibility parameters.
+
+	private void unmarshal_eligible_params_v1 (MarshalReader reader) {
+
+		//// Not present in v1, set to unconditionally eligible
+		//
+		//eligible_params_avail = true;
+		//eligible_option = OEConstants.ELIGIBLE_OPT_ENABLE;
+		//eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
+		//eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
+
+		// Not present in v1, clear it to not-available
+			
+		clear_eligible_params();
+
+		// Check the invariant
+
+		String inv = check_eligible_params_invariant();
+		if (inv != null) {
+			throw new MarshalException ("OEtasParameters.unmarshal_eligible_params_v1: " + inv);
+		}
+		return;
+	}
+
+	private void unmarshal_eligible_params_v2 (MarshalReader reader) {
+		eligible_params_avail = reader.unmarshalBoolean ("eligible_params_avail");
+		if (eligible_params_avail) {
+			eligible_option = reader.unmarshalInt ("eligible_option");
+			eligible_main_mag = reader.unmarshalDouble ("eligible_main_mag");
+			eligible_cat_max_mag = reader.unmarshalDouble ("eligible_cat_max_mag");
+		} else {
+			clear_eligible_params();
+		}
+
+		// Check the invariant
+
+		String inv = check_eligible_params_invariant();
+		if (inv != null) {
+			throw new MarshalException ("OEtasParameters.unmarshal_eligible_params_v2: " + inv);
+		}
+		return;
+	}
+
+	// Check if eligible for an ETAS forecast.
+	// Parameters:
+	//  mainshock_mag = Mainshock magnitude, or another magnitude representative of the sequence.
+	//  catalog_max_mag = Maximum magnitude in the catalog, exclusive of the mainshock.
+
+	public final boolean check_eligible (
+		double mainshock_mag,
+		double catalog_max_mag
+	) {
+		// If not available, assume eligible
+
+		if (!( eligible_params_avail )) {
+			return true;
+		}
+
+		// Switch on option
+
+		switch (eligible_option) {
+
+		// Unconditional disable
+
+		case OEConstants.ELIGIBLE_OPT_DISABLE:
+			return false;
+
+		// Unconditional enable
+
+		case OEConstants.ELIGIBLE_OPT_ENABLE:
+			return true;
+
+		// Automatic selection based on magnitude
+
+		case OEConstants.ELIGIBLE_OPT_AUTO:
+			if (mainshock_mag >= eligible_main_mag || catalog_max_mag >= eligible_cat_max_mag) {
+				return true;
+			}
+			return false;
+		}
+
+		// Unrecognized option (should never happen), assume eligible
+
+		return true;
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -2404,6 +2642,7 @@ public class OEtasParameters implements Marshalable {
 		clear_grid_post();
 		clear_num_catalogs();
 		clear_sim_params();
+		clear_eligible_params();
 		return;
 	}
 
@@ -2433,6 +2672,7 @@ public class OEtasParameters implements Marshalable {
 		set_grid_post_to_typical();
 		set_num_catalogs_to_typical();
 		set_sim_params_to_typical();
+		set_eligible_params_to_typical();
 		return this;
 	}
 
@@ -2453,6 +2693,7 @@ public class OEtasParameters implements Marshalable {
 		copy_grid_post_from (other);
 		copy_num_catalogs_from (other);
 		copy_sim_params_from (other);
+		copy_eligible_params_from (other);
 		return this;
 	}
 
@@ -2474,6 +2715,7 @@ public class OEtasParameters implements Marshalable {
 		merge_grid_post_from (other);
 		merge_num_catalogs_from (other);
 		merge_sim_params_from (other);
+		merge_eligible_params_from (other);
 		return this;
 	}
 
@@ -2496,6 +2738,7 @@ public class OEtasParameters implements Marshalable {
 		if (result == null) {result = check_grid_post_invariant();}
 		if (result == null) {result = check_num_catalogs_invariant();}
 		if (result == null) {result = check_sim_params_invariant();}
+		if (result == null) {result = check_eligible_params_invariant();}
 		return result;
 	}
 
@@ -2521,6 +2764,7 @@ public class OEtasParameters implements Marshalable {
 		grid_post_append_string (result);
 		num_catalogs_append_string (result);
 		sim_params_append_string (result);
+		eligible_params_append_string (result);
 
 		return result.toString();
 	}
@@ -2567,6 +2811,7 @@ public class OEtasParameters implements Marshalable {
 			marshal_grid_post_v1 (writer);
 			marshal_num_catalogs_v1 (writer);
 			marshal_sim_params_v1 (writer);
+			marshal_eligible_params_v1 (writer);
 
 		}
 		break;
@@ -2584,6 +2829,7 @@ public class OEtasParameters implements Marshalable {
 			marshal_grid_post_v1 (writer);
 			marshal_num_catalogs_v1 (writer);
 			marshal_sim_params_v1 (writer);
+			marshal_eligible_params_v2 (writer);
 
 		}
 		break;
@@ -2620,6 +2866,7 @@ public class OEtasParameters implements Marshalable {
 			unmarshal_grid_post_v1 (reader);
 			unmarshal_num_catalogs_v1 (reader);
 			unmarshal_sim_params_v1 (reader);
+			unmarshal_eligible_params_v1 (reader);
 
 		}
 		break;
@@ -2639,6 +2886,7 @@ public class OEtasParameters implements Marshalable {
 			unmarshal_grid_post_v1 (reader);
 			unmarshal_num_catalogs_v1 (reader);
 			unmarshal_sim_params_v1 (reader);
+			unmarshal_eligible_params_v2 (reader);
 
 		}
 		break;
@@ -2923,6 +3171,15 @@ public class OEtasParameters implements Marshalable {
 
 			System.out.println ();
 			System.out.println ("get_sim_params =\n" + etas_params.get_sim_params().toString());
+
+			System.out.println ();
+			System.out.println ("check_eligible(5.0, 3.0) =\n" + etas_params.check_eligible(5.0, 3.0));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.5, 3.0) =\n" + etas_params.check_eligible(4.5, 3.0));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.5, 4.0) =\n" + etas_params.check_eligible(4.5, 4.0));
 
 			// Done
 

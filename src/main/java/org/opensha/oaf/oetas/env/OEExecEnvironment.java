@@ -88,7 +88,8 @@ public class OEExecEnvironment {
 	// Negative indicates ETAS not attempted or not completed.
 	// Positive indicates ETAS failed.
 
-	public static final int ETAS_RESCODE_MIN = -7;
+	public static final int ETAS_RESCODE_MIN = -8;
+	public static final int ETAS_RESCODE_NOT_ELIGIBLE = -8;			// Not eligible for an ETAS forecast
 	public static final int ETAS_RESCODE_MAG_COMP_FORM = -7;		// Unsupported form of magnitude completeness function
 	public static final int ETAS_RESCODE_NO_DATA = -6;				// Required data not available
 	public static final int ETAS_RESCODE_UNSUPPORTED = -5;			// ETAS not supported by the implementation
@@ -120,6 +121,7 @@ public class OEExecEnvironment {
 
 	public static String etas_result_to_string (int result) {
 		switch (result) {
+		case ETAS_RESCODE_NOT_ELIGIBLE: return "ETAS_RESCODE_NOT_ELIGIBLE";
 		case ETAS_RESCODE_MAG_COMP_FORM: return "ETAS_RESCODE_MAG_COMP_FORM";
 		case ETAS_RESCODE_NO_DATA: return "ETAS_RESCODE_NO_DATA";
 		case ETAS_RESCODE_UNSUPPORTED: return "ETAS_RESCODE_UNSUPPORTED";
@@ -156,6 +158,7 @@ public class OEExecEnvironment {
 
 	public static int etas_result_to_logtype (int result) {
 		switch (result) {
+		case ETAS_RESCODE_NOT_ELIGIBLE:			return OEtasLogInfo.ETAS_LOGTYPE_SKIP;
 		case ETAS_RESCODE_MAG_COMP_FORM:		return OEtasLogInfo.ETAS_LOGTYPE_SKIP;
 		case ETAS_RESCODE_NO_DATA:				return OEtasLogInfo.ETAS_LOGTYPE_SKIP;
 		case ETAS_RESCODE_UNSUPPORTED:			return OEtasLogInfo.ETAS_LOGTYPE_OMIT;

@@ -904,6 +904,35 @@ public class OEConstants {
 
 
 
+	//----- Eligibility options -----
+
+
+
+
+	// Default mainshock magnitude for ETAS eligibility.
+
+	public static final double DEF_ELIGIBLE_MAIN_MAG = 4.75;
+
+	// Default catalog maximum magnitude for ETAS eligibility.
+
+	public static final double DEF_ELIGIBLE_CAT_MAX_MAG = 3.95;
+
+	// Default catalog maximum magnitude delta for ETAS eligibility.
+
+	//public static final double DEF_ELIGIBLE_CAT_MAX_DELTA = 0.50;
+
+
+	// Eligibility option codes.
+
+	public static final int ELIGIBLE_OPT_MIN = 0;
+	public static final int ELIGIBLE_OPT_DISABLE = 0;	// disable ETAS unconditinally for the earthquake
+	public static final int ELIGIBLE_OPT_ENABLE = 1;	// enable ETAS unconditinall for the earthquake
+	public static final int ELIGIBLE_OPT_AUTO = 2;		// use automatic eligibility criterion
+	public static final int ELIGIBLE_OPT_MAX = 2;
+
+
+
+
 	//----- Testing support -----
 
 
