@@ -147,6 +147,7 @@ public class OEMarginalDistRange implements Marshalable {
 
 
 
+
 	// Display our contents.
 
 	@Override
@@ -165,6 +166,26 @@ public class OEMarginalDistRange implements Marshalable {
 		for (int n = 0; n < values.length; ++n) {
 			result.append ("values[" + n + "] = " + values[n] + "\n");
 		}
+
+		return result.toString();
+	}
+
+
+
+
+	// Display a summary of our contents.
+
+	public String summary_string () {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OEMarginalDistRange:" + "\n");
+
+		result.append ("var_name = "         + var_name         + "\n");
+		result.append ("var_index = "        + var_index        + "\n");
+		result.append ("bin_count = "        + bin_count        + "\n");
+		result.append ("out_lo = "           + out_lo           + "\n");
+		result.append ("out_hi = "           + out_hi           + "\n");
+		result.append ("values.length = "    + values.length    + "\n");
 
 		return result.toString();
 	}
@@ -198,6 +219,15 @@ public class OEMarginalDistRange implements Marshalable {
 			r0[m0] = (new OEMarginalDistRange()).copy_from (x[m0]);
 		}
 		return r0;
+	}
+
+
+
+
+	// Get the amount of table storage used (in units of double).
+
+	public final long get_table_storage () {
+		return ((long)(values.length));
 	}
 
 

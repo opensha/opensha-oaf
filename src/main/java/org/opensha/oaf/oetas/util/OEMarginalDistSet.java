@@ -203,6 +203,182 @@ public class OEMarginalDistSet implements Marshalable {
 
 
 
+	//----- Searching -----
+
+
+
+
+	// Return true if we have names of the variables.
+
+	public final boolean has_var_names () {
+		if (var_names.length == 0) {
+			return false;
+		}
+		return true;
+	}
+
+
+
+
+	// Return true if we have names of the data.
+
+	public final boolean has_data_names () {
+		if (data_names.length == 0) {
+			return false;
+		}
+		return true;
+	}
+
+
+
+
+	// Return true if we have variable ranges.
+
+	public final boolean has_var_ranges () {
+		if (var_ranges.length == 0) {
+			return false;
+		}
+		return true;
+	}
+
+
+
+
+	// Return true if we have variable values.
+
+	public final boolean has_var_values () {
+		if (var_values.length == 0) {
+			return false;
+		}
+		return true;
+	}
+
+
+
+
+	// Return true if we have all grid definition information.
+
+	public final boolean has_grid_def_info () {
+		if (var_names.length == 0) {
+			return false;
+		}
+		if (data_names.length == 0) {
+			return false;
+		}
+		if (var_ranges.length == 0) {
+			return false;
+		}
+		if (var_values.length == 0) {
+			return false;
+		}
+		return true;
+	}
+
+
+
+
+	// Return true if we have univariate distributions.
+
+	public final boolean has_univar () {
+		if (univar.length == 0) {
+			return false;
+		}
+		return true;
+	}
+
+
+
+
+	// Return true if we have bivariate distributions.
+
+	public final boolean has_bivar () {
+		if (bivar.length == 0) {
+			return false;
+		}
+		return true;
+	}
+
+
+
+
+	// Find the index number for a given variable name.
+	// Returns -1 if name not found.
+	// Throws exception if we don't have variable names.
+	
+	public final int find_var_index (String name) {
+		if (var_names.length == 0) {
+			throw new IllegalStateException ("OEMarginalDistSet.find_var_index: Variable names not available");
+		}
+		for (int n = 0; n < var_names.length; ++n) {
+			if (var_names[n].equals (name)) {
+				return n;
+			}
+		}
+		return -1;
+	}
+
+
+
+
+	// Find the index number for a given data name.
+	// Returns -1 if name not found.
+	// Throws exception if we don't have data names.
+	
+	public final int find_data_index (String name) {
+		if (data_names.length == 0) {
+			throw new IllegalStateException ("OEMarginalDistSet.find_data_index: Data names not available");
+		}
+		for (int n = 0; n < data_names.length; ++n) {
+			if (data_names[n].equals (name)) {
+				return n;
+			}
+		}
+		return -1;
+	}
+
+
+
+
+	// Find the univariate marginal distribution, given the variable and data indexes.
+	// Returns null if not found.
+
+	public final OEMarginalDistUni find_univar (int var_index, int data_index) {
+		for (OEMarginalDistUni x : univar) {
+			if (x.data_index == data_index) {
+				if (x.var_index == var_index) {
+					return x;
+				}
+			}
+		}
+		return null;
+	}
+
+
+
+
+	// Find the bivariate marginal distribution, given the variable and data indexes.
+	// Returns null if not found.
+	// If found, reversed[0] is set true if the index numbers are reversed in the marginal, false if not.
+
+	public final OEMarginalDistBi find_bivar (int var_index1, int var_index2, int data_index, boolean[] reversed) {
+		for (OEMarginalDistBi x : bivar) {
+			if (x.data_index == data_index) {
+				if (x.var_index1 == var_index1 && x.var_index2 == var_index2) {
+					reversed[0] = false;
+					return x;
+				}
+				if (x.var_index1 == var_index2 && x.var_index2 == var_index1) {
+					reversed[0] = true;
+					return x;
+				}
+			}
+		}
+		return null;
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -267,6 +443,98 @@ public class OEMarginalDistSet implements Marshalable {
 
 
 
+	// Display an extended version of our contents.
+
+	public String extended_string () {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OEMarginalDistSet:" + "\n");
+
+		result.append ("var_names.length = "  + var_names.length  + "\n");
+		result.append ("data_names.length = " + data_names.length + "\n");
+		result.append ("var_ranges.length = " + var_ranges.length + "\n");
+		result.append ("var_values.length = " + var_values.length + "\n");
+
+		result.append ("univar.length = "     + univar.length     + "\n");
+		result.append ("bivar.length = "      + bivar.length      + "\n");
+
+		for (int n = 0; n < var_names.length; ++n) {
+			result.append ("var_names[" + n + "] = " + var_names[n] + "\n");
+		}
+
+		for (int n = 0; n < data_names.length; ++n) {
+			result.append ("data_names[" + n + "] = " + data_names[n] + "\n");
+		}
+
+		for (int n = 0; n < var_ranges.length; ++n) {
+			result.append ("var_ranges[" + n + "] = " + ((var_ranges[n] == null) ? "null" : (var_ranges[n].toString())) + "\n");
+		}
+
+		for (int n = 0; n < var_values.length; ++n) {
+			result.append ("var_values[" + n + "] = {" + var_values[n].summary_string() + "}\n");
+		}
+
+		for (int n = 0; n < univar.length; ++n) {
+			result.append ("univar[" + n + "] = {" + univar[n].summary_string() + "}\n");
+		}
+
+		for (int n = 0; n < bivar.length; ++n) {
+			result.append ("bivar[" + n + "] = {" + bivar[n].summary_string() + "}\n");
+		}
+
+		return result.toString();
+	}
+
+
+
+
+	// Display an extended version of our contents.
+	// This version includes contents of variable ranges and univariate distributions,
+	// and partial contents of bivariate distributions.
+
+	public String extended_string_2 () {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OEMarginalDistSet:" + "\n");
+
+		result.append ("var_names.length = "  + var_names.length  + "\n");
+		result.append ("data_names.length = " + data_names.length + "\n");
+		result.append ("var_ranges.length = " + var_ranges.length + "\n");
+		result.append ("var_values.length = " + var_values.length + "\n");
+
+		result.append ("univar.length = "     + univar.length     + "\n");
+		result.append ("bivar.length = "      + bivar.length      + "\n");
+
+		for (int n = 0; n < var_names.length; ++n) {
+			result.append ("var_names[" + n + "] = " + var_names[n] + "\n");
+		}
+
+		for (int n = 0; n < data_names.length; ++n) {
+			result.append ("data_names[" + n + "] = " + data_names[n] + "\n");
+		}
+
+		for (int n = 0; n < var_ranges.length; ++n) {
+			result.append ("var_ranges[" + n + "] = " + ((var_ranges[n] == null) ? "null" : (var_ranges[n].toString())) + "\n");
+		}
+
+		for (int n = 0; n < var_values.length; ++n) {
+			result.append ("var_values[" + n + "] = {" + var_values[n].toString() + "}\n");
+		}
+
+		for (int n = 0; n < univar.length; ++n) {
+			result.append ("univar[" + n + "] = {" + univar[n].toString() + "}\n");
+		}
+
+		for (int n = 0; n < bivar.length; ++n) {
+			result.append ("bivar[" + n + "] = {" + bivar[n].toString() + "}\n");
+		}
+
+		return result.toString();
+	}
+
+
+
+
 	// Deep copy of another object.
 	// Returns this object.
 
@@ -296,6 +564,25 @@ public class OEMarginalDistSet implements Marshalable {
 			r0[m0] = (new OEMarginalDistSet()).copy_from (x[m0]);
 		}
 		return r0;
+	}
+
+
+
+
+	// Get the amount of table storage used (in units of double).
+
+	public final long get_table_storage () {
+		long storage = 0L;
+		for (OEMarginalDistRange x : var_values) {
+			storage += x.get_table_storage();
+		}
+		for (OEMarginalDistUni x : univar) {
+			storage += x.get_table_storage();
+		}
+		for (OEMarginalDistBi x : bivar) {
+			storage += x.get_table_storage();
+		}
+		return storage;
 	}
 
 
@@ -565,6 +852,72 @@ public class OEMarginalDistSet implements Marshalable {
 
 
 
+	// Test the find_var_index function.
+
+	public static void test_find_var_index (OEMarginalDistSet dist_set, String name) {
+		int index = dist_set.find_var_index (name);
+
+		System.out.println ();
+		System.out.println ("find_var_index(\"" + name + "\") = " + index);
+
+		return;
+	}
+
+
+
+
+	// Test the find_data_index function.
+
+	public static void test_find_data_index (OEMarginalDistSet dist_set, String name) {
+		int index = dist_set.find_data_index (name);
+
+		System.out.println ();
+		System.out.println ("find_data_index(\"" + name + "\") = " + index);
+
+		return;
+	}
+
+
+
+
+	// Test the find_univar function.
+
+	public static void test_find_univar (OEMarginalDistSet dist_set, int var_index, int data_index) {
+		OEMarginalDistUni x = dist_set.find_univar (var_index, data_index);
+
+		System.out.println ();
+		if (x == null) {
+			System.out.println ("find_univar(" + var_index + ", " + data_index + ") = " + "<null>");
+		} else {
+			System.out.println ("find_univar(" + var_index + ", " + data_index + ") = {" + x.summary_string() + "}");
+		}
+
+		return;
+	}
+
+
+
+
+	// Test the find_bivar function.
+
+	public static void test_find_bivar (OEMarginalDistSet dist_set, int var_index1, int var_index2, int data_index) {
+		boolean[] reversed = new boolean[1];
+		OEMarginalDistBi x = dist_set.find_bivar (var_index1, var_index2, data_index, reversed);
+
+		System.out.println ();
+		if (x == null) {
+			System.out.println ("find_bivar(" + var_index1 + ", " + var_index2 + ", " + data_index + ", reversed) = " + "<null>");
+		} else {
+			System.out.println ("find_bivar(" + var_index1 + ", " + var_index2 + ", " + data_index + ", reversed) = {" + x.summary_string() + "}");
+			System.out.println ("reversed[0] = " + reversed[0]);
+		}
+
+		return;
+	}
+
+
+
+
 	public static void main(String[] args) {
 		try {
 		TestArgs testargs = new TestArgs (args, "OEMarginalDistSet");
@@ -765,6 +1118,128 @@ public class OEMarginalDistSet implements Marshalable {
 
 			String json_string2 = MarshalUtils.to_formatted_compact_json_string (dist_set2);
 			System.out.println (json_string2);
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  reps
+		// Construct test values, using the specified number of repetitions, and display it.
+		// Display the results of various query functions.
+		// This version includes grid information.
+
+		if (testargs.is_test ("test4")) {
+
+			// Read arguments
+
+			System.out.println ("Constructing, displaying, and querying, set of marginal distributions");
+			int reps = testargs.get_int ("reps");
+			testargs.end_test();
+
+			// Create the values
+
+			OEMarginalDistSet dist_set = make_test_value_2 (reps);
+
+			// Display the contents
+
+			System.out.println ();
+			System.out.println ("********** Display with toString **********");
+			System.out.println ();
+
+			System.out.println (dist_set.toString());
+
+			System.out.println ();
+			System.out.println ("********** Display with extended_string **********");
+			System.out.println ();
+
+			System.out.println (dist_set.extended_string());
+
+			System.out.println ();
+			System.out.println ("********** Display with extended_string_2 **********");
+			System.out.println ();
+
+			System.out.println (dist_set.extended_string_2());
+
+			System.out.println ();
+			System.out.println ("********** Availability query functions **********");
+
+			System.out.println ();
+			System.out.println ("has_var_names() = " + dist_set.has_var_names());
+
+			System.out.println ();
+			System.out.println ("has_data_names() = " + dist_set.has_data_names());
+
+			System.out.println ();
+			System.out.println ("has_var_ranges() = " + dist_set.has_var_ranges());
+
+			System.out.println ();
+			System.out.println ("has_var_values() = " + dist_set.has_var_values());
+
+			System.out.println ();
+			System.out.println ("has_grid_def_info() = " + dist_set.has_grid_def_info());
+
+			System.out.println ();
+			System.out.println ("has_univar() = " + dist_set.has_univar());
+
+			System.out.println ();
+			System.out.println ("has_bivar() = " + dist_set.has_bivar());
+
+			System.out.println ();
+			System.out.println ("********** Size query functions **********");
+
+			System.out.println ();
+			System.out.println ("get_table_storage() = " + dist_set.get_table_storage());
+
+			System.out.println ();
+			System.out.println ("********** Name query functions **********");
+
+			System.out.println ();
+			System.out.println ("find_var_index (\"test_var1\") = " + dist_set.find_var_index ("test_var1"));
+
+			System.out.println ();
+			System.out.println ("find_var_index (\"test_var2\") = " + dist_set.find_var_index ("test_var2"));
+
+			System.out.println ();
+			System.out.println ("find_var_index (\"test_var3\") = " + dist_set.find_var_index ("test_var3"));
+
+			System.out.println ();
+			System.out.println ("find_data_index (\"test_data\") = " + dist_set.find_data_index ("test_data"));
+
+			System.out.println ();
+			System.out.println ("find_data_index (\"test_data2\") = " + dist_set.find_data_index ("test_data2"));
+
+			System.out.println ();
+			System.out.println ("********** Univariate search functions **********");
+
+			test_find_univar (dist_set, 0, 0);
+
+			test_find_univar (dist_set, 1, 0);
+
+			test_find_univar (dist_set, 2, 0);
+
+			test_find_univar (dist_set, 0, 1);
+
+			System.out.println ();
+			System.out.println ("********** Bivariate search functions **********");
+
+			test_find_bivar (dist_set, 0, 1, 0);
+
+			test_find_bivar (dist_set, 1, 0, 0);
+
+			test_find_bivar (dist_set, 2, 1, 0);
+
+			test_find_bivar (dist_set, 0, 2, 0);
+
+			test_find_bivar (dist_set, 0, 1, 1);
 
 			// Done
 

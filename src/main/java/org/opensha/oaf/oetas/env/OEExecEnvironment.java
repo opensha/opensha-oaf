@@ -1394,6 +1394,9 @@ public class OEExecEnvironment {
 
 		boolean save_marginals = true;
 		OEMarginalDistSet marginals = stat_accum_slim.get_dist_set();
+		if (marginals.get_table_storage() > 5000L) {	// tables too big to insert in forecast data file
+			save_marginals = false;
+		}
 		boolean save_full_marginals = false;		// maybe the caller should control this
 		OEMarginalDistSet full_marginals = null;
 		if (stat_accum_full != null) {

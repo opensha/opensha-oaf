@@ -2326,6 +2326,131 @@ public class ForecastResults implements Marshalable {
 
 
 
+		// Subcommand : Test #6
+		// Command format:
+		//  test6  pdl_enable  event_id  f_apc
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then, for each RJ model, compute and display the marginals (may produce lengthy output).
+		// If f_apc is true, then sequence specific parameters allow all of a/p/c to vary.
+		// The pdl_enable can be used to control ETAS: 0 = default, 100 = disable, 200 = enable.
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// 4 additional arguments
+
+			if (args.length != 4) {
+				System.err.println ("ForecastResults : Invalid 'test6' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);	// 0 = ETAS default, 100 = disable ETAS, 200 = enable ETAS
+				String the_event_id = args[2];
+				boolean f_apc = Boolean.parseBoolean (args[3]);
+
+				// Say hello
+
+				System.out.println ("Getting results and marginal distributions");
+				System.out.println ("pdl_enable = " + pdl_enable);
+				System.out.println ("the_event_id = " + the_event_id);
+				System.out.println ("f_apc = " + f_apc);
+
+				// Set the PDL enable code (ETAS enable or disable)
+
+				ServerConfig.set_opmode (pdl_enable);
+
+				// Fetch just the mainshock info
+
+				ForecastMainshock fcmain = new ForecastMainshock();
+				fcmain.setup_mainshock_only (the_event_id);
+
+				System.out.println ("");
+				System.out.println (fcmain.toString());
+
+				// Set the forecast time to be 7 days after the mainshock
+
+				long the_forecast_lag = SimpleUtils.days_to_millis (7.0);
+
+				// Get parameters
+
+				ForecastParameters params = new ForecastParameters();
+				params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+				if (f_apc) {
+					params.seq_spec_params = new SeqSpecRJ_Parameters (
+						1.0,	// double b
+						-4.5,	// double min_a
+						-0.5,	// double max_a
+						45,		// int    num_a
+						0.5,	// double min_p
+						2.0,	// double max_p
+						37,		// int    num_p
+						0.01,	// double min_c
+						1.00,	// double max_c
+						17		// int    num_c
+					);
+				}
+
+				// Display them
+
+				System.out.println ("");
+				System.out.println (params.toString());
+
+				// Get results
+
+				ForecastResults results = new ForecastResults();
+				results.calc_all (fcmain.mainshock_time + the_forecast_lag, ADVISORY_LAG_WEEK, "test1 injectable.", fcmain, params, true);
+				results.write_calc_log (null);
+
+				// Display them
+
+				System.out.println ("");
+				System.out.println (results.toString());
+
+				// Generic forecast marginals
+
+				if (results.generic_result_avail) {
+					System.out.println ("");
+					System.out.println ("***** Generic forecast marginals *****");
+					System.out.println ("");
+					System.out.println (results.generic_model.make_rj_marginals(true).extended_string_2());
+				}
+
+				// Sequence specific forecast marginals
+
+				if (results.seq_spec_result_avail) {
+					System.out.println ("");
+					System.out.println ("***** Sequence specific forecast marginals *****");
+					System.out.println ("");
+					System.out.println (results.seq_spec_model.make_rj_marginals(true).extended_string_2());
+				}
+
+				// Bayesian forecast marginals
+
+				if (results.bayesian_result_avail) {
+					System.out.println ("");
+					System.out.println ("***** Bayesian forecast marginals *****");
+					System.out.println ("");
+					System.out.println (results.bayesian_model.make_rj_marginals(true).extended_string_2());
+				}
+
+				// Done
+
+				System.out.println ();
+				System.out.println ("Done");
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
 		// Unrecognized subcommand.
 
 		System.err.println ("ForecastResults : Unrecognized subcommand : " + args[0]);

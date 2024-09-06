@@ -15,6 +15,8 @@ import org.opensha.oaf.util.TestArgs;
 
 import org.opensha.oaf.oetas.fit.OEGridParams;
 
+import org.opensha.oaf.rj.RJ_AftershockModel;
+
 
 // Class to build a set of univariate and bivariate marginal distribution for operational ETAS.
 // Author: Michael Barall 08/09/2024.
@@ -365,7 +367,7 @@ public class OEMarginalDistSetBuilder {
 
 
 
-	// Index numbers for variables in ETAS grid parameters (see OEGridParams).
+	// Index numbers and names for variables in ETAS grid parameters (see OEGridParams).
 
 	public static final int VMIX_B = 0;
 	public static final int VMIX_ALPHA = 1;
@@ -374,6 +376,14 @@ public class OEMarginalDistSetBuilder {
 	public static final int VMIX_N = 4;
 	public static final int VMIX_ZAMS = 5;
 	public static final int VMIX_ZMU = 6;
+
+	public static final String VNAME_B = "b";
+	public static final String VNAME_ALPHA = "alpha";
+	public static final String VNAME_C = "c";
+	public static final String VNAME_P = "p";
+	public static final String VNAME_N = "n";
+	public static final String VNAME_ZAMS = "zams";
+	public static final String VNAME_ZMU = "zmu";
 
 
 
@@ -432,19 +442,26 @@ public class OEMarginalDistSetBuilder {
 
 
 
-	// Index numbers for ETAS data, a single probability..
+	// Index numbers and names for ETAS data, a single probability.
 
 	public static final int DMIX_PROB = 0;
 
+	public static final String DNAME_PROB = "likelihood";
 
 
 
-	// Index numbers for ETAS data, generic, sequence specific, bayesian, and active.
+
+	// Index numbers and names for ETAS data, generic, sequence specific, bayesian, and active.
 
 	public static final int DMIX_GENERIC = 0;
 	public static final int DMIX_DEQ_SPEC = 1;
 	public static final int DMIX_BAYESIAN = 2;
 	public static final int DMIX_ACTIVE = 3;
+
+	public static final String DNAME_GENERIC = "generic";
+	public static final String DNAME_DEQ_SPEC = "seqspec";
+	public static final String DNAME_BAYESIAN = "bayesian";
+	public static final String DNAME_ACTIVE = "active";
 
 
 
@@ -533,6 +550,120 @@ public class OEMarginalDistSetBuilder {
 
 	public final OEMarginalDistSet end_etas_accum () {
 		//return end_accum (1000.0, 10000.0, "%.5e");
+		return end_accum (1000.0, 1000.0, "%.5e");
+	}
+
+
+
+
+	//----- Special purpose: RJ model -----
+
+
+
+
+	// Index numbers and names for variables in RJ grid parameters.
+
+	public static final int VMIX_RJ_B = 0;
+	public static final int VMIX_RJ_A = 1;
+	public static final int VMIX_RJ_P = 2;
+	public static final int VMIX_RJ_C = 3;
+
+	public static final String VNAME_RJ_B = "b";
+	public static final String VNAME_RJ_A = "a";
+	public static final String VNAME_RJ_P = "p";
+	public static final String VNAME_RJ_C = "c";
+
+
+
+
+	// Index numbers and names for RJ data, a single probability.
+
+	public static final int DMIX_RJ_PROB = 0;
+
+	public static final String DNAME_RJ_PROB = "likelihood";
+
+
+
+
+	// Make marginal distribution for an RJ model.
+	// Parameters:
+	//  rjmod = RJ model.
+	//  f_bivar_marg = True if bivariate marginal distributions are desired.
+	// Returns the marginal distribution set.
+
+	public final OEMarginalDistSet make_rj_marginals (RJ_AftershockModel rjmod, boolean f_bivar_marg) {
+
+		// Variable b
+
+		final double value_b = rjmod.get_b();
+
+		final OEDiscreteRange range_b = OEDiscreteRange.makeSingle (value_b);
+
+		add_var ("b", range_b, false, false, "%.6e");
+
+		// Variable a
+
+		final double min_a = rjmod.getMin_a();
+		final double max_a = rjmod.getMax_a();
+		final int num_a = rjmod.getNum_a();
+
+		final OEDiscreteRange range_a = ((num_a == 1) ? (OEDiscreteRange.makeSingle (min_a)) : (OEDiscreteRange.makeLinear (num_a, min_a, max_a)));
+		final double[] values_a = range_a.get_range_array();
+
+		add_var ("a", range_a, false, false, "%.6e");
+
+		// Variable p
+
+		final double min_p = rjmod.getMin_p();
+		final double max_p = rjmod.getMax_p();
+		final int num_p = rjmod.getNum_p();
+
+		final OEDiscreteRange range_p = ((num_p == 1) ? (OEDiscreteRange.makeSingle (min_p)) : (OEDiscreteRange.makeLinear (num_p, min_p, max_p)));
+		final double[] values_p = range_p.get_range_array();
+
+		add_var ("p", range_p, false, false, "%.6e");
+
+		// Variable c
+
+		final double min_c = rjmod.getMin_c();
+		final double max_c = rjmod.getMax_c();
+		final int num_c = rjmod.getNum_c();
+
+		final OEDiscreteRange range_c = ((num_c == 1) ? (OEDiscreteRange.makeSingle (min_c)) : (OEDiscreteRange.makeLinear (num_c, min_c, max_c)));
+		final double[] values_c = range_c.get_range_array();
+
+		add_var ("c", range_c, false, false, "%.6e");
+
+		// Data likelihood
+
+		add_data ("likelihood");
+
+		// Begin accumulation
+
+		begin_accum (f_bivar_marg);
+
+		// Set b-value
+
+		set_var (VMIX_RJ_B, value_b);
+
+		// Loop over combinations of a/p/c, setting the data values
+
+		for (int aIndex = 0; aIndex < num_a; aIndex++) {
+			set_var (VMIX_RJ_A, values_a[aIndex]);
+
+			for (int pIndex = 0; pIndex < num_p; pIndex++) {
+				set_var (VMIX_RJ_P, values_p[pIndex]);
+
+				for (int cIndex = 0; cIndex < num_c; cIndex++) {
+					set_var (VMIX_RJ_C, values_c[cIndex]);
+
+					set_data_and_accum (DMIX_RJ_PROB, rjmod.get_apc_prob (aIndex, pIndex, cIndex));
+				}
+			}
+		}
+
+		// End accumulation and return the marginal distribution set
+
 		return end_accum (1000.0, 1000.0, "%.5e");
 	}
 

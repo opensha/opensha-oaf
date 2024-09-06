@@ -272,6 +272,27 @@ public class OEMarginalDistUni implements Marshalable {
 
 
 
+	// Display a summary of our contents.
+
+	public String summary_string () {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("OEMarginalDistUni:" + "\n");
+
+		result.append ("var_name = "         + var_name         + "\n");
+		result.append ("var_index = "        + var_index        + "\n");
+		result.append ("data_name = "        + data_name        + "\n");
+		result.append ("data_index = "       + data_index       + "\n");
+		result.append ("dist.length = "      + dist.length      + "\n");
+		result.append ("mode = "             + mode             + "\n");
+		result.append ("scale = "            + scale            + "\n");
+
+		return result.toString();
+	}
+
+
+
+
 	// Deep copy of another object.
 	// Returns this object.
 
@@ -301,6 +322,15 @@ public class OEMarginalDistUni implements Marshalable {
 			r0[m0] = (new OEMarginalDistUni()).copy_from (x[m0]);
 		}
 		return r0;
+	}
+
+
+
+
+	// Get the amount of table storage used (in units of double).
+
+	public final long get_table_storage () {
+		return ((long)(dist.length)) + ((long)(fractiles.length));
 	}
 
 
