@@ -868,7 +868,7 @@ public class OEStatsCalc {
 
 
 
-	// Calculate zero-mref ams-value for a ginve ams-value
+	// Calculate zero-mref ams-value for a given ams-value.
 	// Parameters:
 	//  ams = Mainshock productivity parameter, assuming reference magnitude equal to mref.
 	//  b = Gutenberg-Richter parameter.
@@ -889,6 +889,73 @@ public class OEStatsCalc {
 			mref,					// mref_old
 			OEConstants.ZAMS_MREF	// mref_new
 		);
+	}
+
+
+
+
+	// Calculate zero-mref ams-value for a given branch ratio.
+	// Parameters:
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	//  mag_min = Minimum magnitude.
+	//  mag_max = Maximum magnitude.
+	//  tint = Time interval.
+	// Returns the ams-value, for reference magnitude equal to ZAMS_MREF == 0.0.
+	//
+	// This function calculates a zams-value so that, during simulation, a mainshock
+	// has the same productivity as an aftershock of the same magnitude.  This requires
+	//
+	//   calc_k_uncorr (m0, ams, ...) == calc_k_corr (m0, a, ...)
+	//
+	// because the lhs is the productivity of a mainshock of magnitude m0, and the rhs
+	// is the productivity of an aftershock of magnitude m0.  Comparing the formulas
+	// for calc_k_uncorr and calc_k_corr, this requires
+	//
+	//   10^ams == (10^a)*Q
+	//
+	// Referring to the formulas for calc_ten_a_q_from_branch_ratio,
+	//
+	//   (10^a)*Q = n * exp(v*(mref - mag_min)) / ( W(v*(mag_max - mag_min)) * (mag_max - mag_min) * b * log(10) * Integral(0, tint, ((t+c)^(-p))*dt)  )
+	//
+	//   W(x) = (exp(x) - 1)/x
+	//
+	//   v = log(10) * (alpha - b)
+	//
+	// Referring to calc_zams_from_ams and calc_a_new_from_mref_new,
+	//
+	//   10^zams = 10^ams * 10^((alpha - b) * (ZAMS_MREF - mref))
+	//
+	//           = (10^a)*Q * exp(v*(ZAMS_MREF - mref))
+	//
+	//           = n * exp(v*(ZAMS_MREF - mag_min)) / ( W(v*(mag_max - mag_min)) * (mag_max - mag_min) * b * log(10) * Integral(0, tint, ((t+c)^(-p))*dt)  )
+	//
+	// Note that mref has dropped out of the formula.  Also, this is the result that
+	// calc_ten_a_q_from_branch_ratio returns if it is called with mref = ZAMS_MREF.
+
+	public static double calc_zams_from_br (
+		double n,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		double mag_min,
+		double mag_max,
+		double tint
+	) {
+		return Math.log10 (calc_ten_a_q_from_branch_ratio (
+			n,
+			p,
+			c,
+			b,
+			alpha,
+			OEConstants.ZAMS_MREF,
+			mag_min,
+			mag_max,
+			tint
+		));
 	}
 
 
@@ -917,7 +984,7 @@ public class OEStatsCalc {
 
 
 
-	// Calculate the reference value ZMU_MREF mu-value for a ginve mu-value
+	// Calculate the reference value ZMU_MREF mu-value for a given mu-value.
 	// Parameters:
 	//  mu = Background rate parameter, assuming reference magnitude equal to mref.
 	//  b = Gutenberg-Richter parameter.

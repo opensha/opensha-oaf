@@ -27,6 +27,7 @@ import org.opensha.oaf.oetas.OEOrigin;
 import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OESeedParams;
 import org.opensha.oaf.oetas.OESimulator;
+import org.opensha.oaf.oetas.OEStatsCalc;
 
 import org.opensha.oaf.oetas.bay.OEBayFactory;
 
@@ -443,6 +444,97 @@ public class OEtasTest {
 
 
 
+	// test15
+	// Command line arguments:
+	//  zmu  rel_ams  n  p  c  b  alpha  mref  msup  tbegin  tend  tint_br  mag_min_sim  mag_max_sim
+	//  [t_day  rup_mag]...
+	// Generate a simulated ETAS catalog, and display information about it.
+	// The value of ams is specified relative to the a-value.
+
+	public static void test15 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Generate simulated ETAS catalog and display info");
+		double zmu = testargs.get_double ("zmu");
+		double rel_ams = testargs.get_double ("rel_ams");
+		double n = testargs.get_double ("n");
+		double p = testargs.get_double ("p");
+		double c = testargs.get_double ("c");
+		double b = testargs.get_double ("b");
+		double alpha = testargs.get_double ("alpha");
+		double mref = testargs.get_double ("mref");
+		double msup = testargs.get_double ("msup");
+		double tbegin = testargs.get_double ("tbegin");
+		double tend = testargs.get_double ("tend");
+		double tint_br = testargs.get_double ("tint_br");
+		double mag_min_sim = testargs.get_double ("mag_min_sim");
+		double mag_max_sim = testargs.get_double ("mag_max_sim");
+
+		double[] time_mag_array = testargs.get_double_tuple_array ("time_mag_array", -1, 0, 2, "time", "mag");
+		testargs.end_test();
+
+		// Compute zams for the given branch ratio
+
+		double zams = rel_ams + OEStatsCalc.calc_zams_from_br (
+			n,
+			p,
+			c,
+			b,
+			alpha,
+			mag_min_sim,
+			mag_max_sim,
+			tint_br
+		);
+
+		System.out.println ();
+		System.out.println ("Equivalent zams = " + zams);
+
+		// Make the catalog parameters
+
+		OECatalogParams cat_params = (new OECatalogParams()).set_to_fixed_mag_tint_br (
+			n,				// n
+			p,				// p
+			c,				// c
+			b,				// b
+			alpha,			// alpha
+			mref,			// mref
+			msup,			// msup
+			tbegin,			// tbegin
+			tend,			// tend
+			tint_br,		// tint_br
+			mag_min_sim,	// mag_min_sim
+			mag_max_sim		// mag_max_sim
+		);
+
+		// Make the seed parameters
+
+		OESeedParams seed_params = (new OESeedParams()).set_from_zams_zmu (zams, zmu, cat_params);
+
+		// Make the catalog initializer
+
+		OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
+
+		// Make the catalog examiner
+
+		ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+		OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
+
+		// Generate a catalog
+
+		OESimulator.gen_single_catalog (initializer, examiner);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
 	// test4/write_sim_cat
 	// Command line arguments:
 	//  filename  basetime  zmu  zams  n  p  c  b  alpha  mag_min  mag_max  tbegin  tend  tint_br
@@ -476,6 +568,127 @@ public class OEtasTest {
 		// Base time in milliseconds
 
 		long basetime_millis = SimpleUtils.string_to_time (basetime);
+
+		// Make the catalog parameters
+
+		double mref = OEConstants.DEF_MREF;
+		double msup = OEConstants.DEF_MSUP;
+
+		OECatalogParams cat_params = (new OECatalogParams()).set_to_fixed_mag_tint_br (
+			n,				// n
+			p,				// p
+			c,				// c
+			b,				// b
+			alpha,			// alpha
+			mref,			// mref
+			msup,			// msup
+			tbegin,			// tbegin
+			tend,			// tend
+			tint_br,		// tint_br
+			mag_min,		// mag_min_sim
+			mag_max			// mag_max_sim
+		);
+
+		// Make the seed parameters
+
+		OESeedParams seed_params = (new OESeedParams()).set_from_zams_zmu (zams, zmu, cat_params);
+
+		// Make the catalog initializer
+
+		OEEnsembleInitializer initializer = (new OEInitFixedState()).setup_time_mag_list (cat_params, seed_params, time_mag_array, true);
+
+		// Make the catalog examiner
+
+		ArrayList<OERupture> rup_list = new ArrayList<OERupture>();
+		OEExaminerSaveList examiner = new OEExaminerSaveList (rup_list, true);
+
+		// Generate a catalog
+
+		OESimulator.gen_single_catalog (initializer, examiner);
+
+		// Make origin at the basetime
+
+		OEOrigin origin = new OEOrigin (basetime_millis, 0.0, 0.0, 0.0);
+
+		// We take the mainshock to be the first element of the list, or no mainshock if the list is empty.
+
+		int i_mainshock = -1;
+		if (time_mag_array.length > 0) {
+			i_mainshock = 0;
+		}
+
+		// Write the file
+
+		origin.write_etas_list_to_gui_ext (
+			rup_list,
+			i_mainshock,
+			filename_catalog
+		);
+
+		System.out.println ();
+		System.out.println ("Wrote " + rup_list.size() + " simulated earthquakes to file: " + filename_catalog);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
+	// test16/write_sim_cat_2
+	// Command line arguments:
+	//  filename  basetime  zmu  rel_ams  n  p  c  b  alpha  mag_min  mag_max  tbegin  tend  tint_br
+	//  [t_day  rup_mag]...
+	// Generate a simulated ETAS catalog, display information about it, and write it to a file.
+	// The basetime parameter is in ISO8601 format, or "-" to use the default of Jan 1 2000.
+	// The value of ams is specified relative to the a-value.
+
+	public static void test16 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Generate simulated ETAS catalog, display info, and write to file");
+		String filename_catalog = get_filename_arg (testargs, "filename_catalog");
+		String basetime = get_omit_string_arg (testargs, "basetime", OEConstants.DEF_SIM_ORIGIN_TIME);
+		double zmu = testargs.get_double ("zmu");
+		double rel_ams = testargs.get_double ("rel_ams");
+		double n = testargs.get_double ("n");
+		double p = testargs.get_double ("p");
+		double c = testargs.get_double ("c");
+		double b = testargs.get_double ("b");
+		double alpha = testargs.get_double ("alpha");
+		double mag_min = testargs.get_double ("mref");
+		double mag_max = testargs.get_double ("msup");
+		double tbegin = testargs.get_double ("tbegin");
+		double tend = testargs.get_double ("tend");
+		double tint_br = testargs.get_double ("tint_br");
+
+		double[] time_mag_array = testargs.get_double_tuple_array ("time_mag_array", -1, 0, 2, "time", "mag");
+		testargs.end_test();
+
+		// Base time in milliseconds
+
+		long basetime_millis = SimpleUtils.string_to_time (basetime);
+
+		// Compute zams for the given branch ratio
+
+		double zams = rel_ams + OEStatsCalc.calc_zams_from_br (
+			n,
+			p,
+			c,
+			b,
+			alpha,
+			mag_min,
+			mag_max,
+			tint_br
+		);
+
+		System.out.println ();
+		System.out.println ("Equivalent zams = " + zams);
 
 		// Make the catalog parameters
 
@@ -1307,6 +1520,18 @@ public class OEtasTest {
 
 		if (testargs.is_test ("test14", "write_sample_params_2")) {
 			test14 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test15")) {
+			test15 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test16", "write_sim_cat_2")) {
+			test16 (testargs);
 			return;
 		}
 
