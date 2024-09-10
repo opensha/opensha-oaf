@@ -2361,7 +2361,7 @@ public class OEtasParameters implements Marshalable {
 	// Get the simulation parameters.
 	// Note: Caller must check the simulation parameters and number of catalogs are available.
 
-	public final OESimulationParams get_sim_params () {
+	public final OESimulationParams get_sim_params (boolean f_small_eqk) {
 		if (!( sim_params_avail )) {
 			throw new InvariantViolationException ("OEtasParameters.get_sim_params: Simulation parameters not available");
 		}
@@ -2371,8 +2371,8 @@ public class OEtasParameters implements Marshalable {
 
 		// Insert number of catalogs
 
-		sim_parameters.sim_num_catalogs = get_num_catalogs();
-		sim_parameters.sim_min_num_catalogs = get_min_num_catalogs();
+		sim_parameters.sim_num_catalogs = div_x_by_2_if_small_eqk (f_small_eqk, get_num_catalogs(), OEConstants.REQ_NUM_CATALOGS);
+		sim_parameters.sim_min_num_catalogs = div_x_by_2_if_small_eqk (f_small_eqk, get_min_num_catalogs(), OEConstants.REQ_NUM_CATALOGS);
 
 		sim_parameters.range_num_catalogs = Math.max (OEConstants.REQ_NUM_CATALOGS, sim_parameters.sim_num_catalogs/10);
 		sim_parameters.range_min_num_catalogs = Math.max (OEConstants.REQ_NUM_CATALOGS, sim_parameters.sim_min_num_catalogs/10);
@@ -2419,7 +2419,12 @@ public class OEtasParameters implements Marshalable {
 
 	public double eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
 
-	// Clear elegibility parameters.
+	// Mainshock magnitude below which earthquake is considered small. [v2]
+	// Can use OEConstants.NO_MAG_NEG (in practice zero would work) if none.
+
+	public double eligible_small_mag = OEConstants.DEF_ELIGIBLE_SMALL_MAG;
+
+	// Clear eligibility parameters.
 
 	public final void clear_eligible_params () {
 		eligible_params_avail = false;
@@ -2427,10 +2432,11 @@ public class OEtasParameters implements Marshalable {
 		eligible_option = OEConstants.ELIGIBLE_OPT_AUTO;
 		eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
 		eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
+		eligible_small_mag = OEConstants.DEF_ELIGIBLE_SMALL_MAG;
 		return;
 	}
 
-	// Set elegibility parameters to typical values.
+	// Set eligibility parameters to typical values.
 
 	public final void set_eligible_params_to_typical () {
 		eligible_params_avail = true;
@@ -2438,10 +2444,11 @@ public class OEtasParameters implements Marshalable {
 		eligible_option = OEConstants.ELIGIBLE_OPT_AUTO;
 		eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
 		eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
+		eligible_small_mag = OEConstants.DEF_ELIGIBLE_SMALL_MAG;
 		return;
 	}
 
-	// Copy elegibility parameters from another object.
+	// Copy eligibility parameters from another object.
 
 	public final void copy_eligible_params_from (OEtasParameters other) {
 		eligible_params_avail = other.eligible_params_avail;
@@ -2449,25 +2456,28 @@ public class OEtasParameters implements Marshalable {
 		eligible_option = other.eligible_option;
 		eligible_main_mag = other.eligible_main_mag;
 		eligible_cat_max_mag = other.eligible_cat_max_mag;
+		eligible_small_mag = other.eligible_small_mag;
 		return;
 	}
 
-	// Set the elegibility parameters to analyst values.
+	// Set the eligibility parameters to analyst values.
 
 	public final void set_eligible_params_to_analyst (
 		boolean eligible_params_avail,
 		int eligible_option,
 		double eligible_main_mag,
-		double eligible_cat_max_mag
+		double eligible_cat_max_mag,
+		double eligible_small_mag
 	) {
 		this.eligible_params_avail = eligible_params_avail;
 		this.eligible_option = eligible_option;
 		this.eligible_main_mag = eligible_main_mag;
 		this.eligible_cat_max_mag = eligible_cat_max_mag;
+		this.eligible_small_mag = eligible_small_mag;
 		return;
 	}
 
-	// Set the elegibility parameters to analyst values, using default magnitudes.
+	// Set the eligibility parameters to analyst values, using default magnitudes.
 
 	public final void set_eligible_params_to_analyst (
 		boolean eligible_params_avail,
@@ -2477,10 +2487,11 @@ public class OEtasParameters implements Marshalable {
 		this.eligible_option = eligible_option;
 		this.eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
 		this.eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
+		this.eligible_small_mag = OEConstants.DEF_ELIGIBLE_SMALL_MAG;
 		return;
 	}
 
-	// Merge elegibility parameters from another object, if available.
+	// Merge eligibility parameters from another object, if available.
 
 	public final void merge_eligible_params_from (OEtasParameters other) {
 		if (other != null) {
@@ -2491,7 +2502,7 @@ public class OEtasParameters implements Marshalable {
 		return;
 	}
 
-	// Check elegibility parameters invariant.
+	// Check eligibility parameters invariant.
 	// Returns null if success, error message if invariant violated.
 
 	public final String check_eligible_params_invariant () {
@@ -2503,7 +2514,7 @@ public class OEtasParameters implements Marshalable {
 		return null;
 	}
 
-	// Append a string representation of the elegibility parameters.
+	// Append a string representation of the eligibility parameters.
 
 	public final StringBuilder eligible_params_append_string (StringBuilder sb) {
 		sb.append ("eligible_params_avail = " + eligible_params_avail + "\n");
@@ -2511,11 +2522,12 @@ public class OEtasParameters implements Marshalable {
 			sb.append ("eligible_option = " + eligible_option + "\n");
 			sb.append ("eligible_main_mag = " + eligible_main_mag + "\n");
 			sb.append ("eligible_cat_max_mag = " + eligible_cat_max_mag + "\n");
+			sb.append ("eligible_small_mag = " + eligible_small_mag + "\n");
 		}
 		return sb;
 	}
 
-	// Marshal elegibility parameters.
+	// Marshal eligibility parameters.
 
 	private void marshal_eligible_params_v1 (MarshalWriter writer) {
 
@@ -2530,11 +2542,12 @@ public class OEtasParameters implements Marshalable {
 			writer.marshalInt ("eligible_option", eligible_option);
 			writer.marshalDouble ("eligible_main_mag", eligible_main_mag);
 			writer.marshalDouble ("eligible_cat_max_mag", eligible_cat_max_mag);
+			writer.marshalDouble ("eligible_small_mag", eligible_small_mag);
 		}
 		return;
 	}
 
-	// Unmarshal elegibility parameters.
+	// Unmarshal eligibility parameters.
 
 	private void unmarshal_eligible_params_v1 (MarshalReader reader) {
 
@@ -2544,6 +2557,7 @@ public class OEtasParameters implements Marshalable {
 		//eligible_option = OEConstants.ELIGIBLE_OPT_ENABLE;
 		//eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
 		//eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
+		//eligible_small_mag = OEConstants.NO_MAG_NEG;
 
 		// Not present in v1, clear it to not-available
 			
@@ -2564,6 +2578,7 @@ public class OEtasParameters implements Marshalable {
 			eligible_option = reader.unmarshalInt ("eligible_option");
 			eligible_main_mag = reader.unmarshalDouble ("eligible_main_mag");
 			eligible_cat_max_mag = reader.unmarshalDouble ("eligible_cat_max_mag");
+			eligible_small_mag = reader.unmarshalDouble ("eligible_small_mag");
 		} else {
 			clear_eligible_params();
 		}
@@ -2618,6 +2633,47 @@ public class OEtasParameters implements Marshalable {
 		// Unrecognized option (should never happen), assume eligible
 
 		return true;
+	}
+
+	// Check if this is considered a small earthquake.
+	// Parameters:
+	//  catalog_info = Catalog information.
+	// Return true if this is a small earthquake.
+
+	public boolean is_small_mag (OEtasCatalogInfo catalog_info) {
+
+		// If not available, assume not small
+
+		if (!( eligible_params_avail )) {
+			return false;
+		}
+
+		// If catalog info contains a magnitude ...
+
+		if (catalog_info.mag_main_avail) {
+
+			// It's small if less than the threshold
+
+			if (catalog_info.mag_main < eligible_small_mag) {
+				return true;
+			}
+		}
+
+		// Not known to be small
+
+		return false;
+	}
+
+	// If small earthquake, divide x by 2, but do not reduce below minx.
+	// If not small, or if x <= minx, return x.
+
+	private static int div_x_by_2_if_small_eqk (boolean f_small_eqk, int x, int minx) {
+		if (f_small_eqk) {
+			if (x > minx) {
+				return Math.max (minx, x/2);
+			}
+		}
+		return x;
 	}
 
 
@@ -3170,7 +3226,10 @@ public class OEtasParameters implements Marshalable {
 			System.out.println ("get_min_num_catalogs =\n" + etas_params.get_min_num_catalogs());
 
 			System.out.println ();
-			System.out.println ("get_sim_params =\n" + etas_params.get_sim_params().toString());
+			System.out.println ("get_sim_params(false) =\n" + etas_params.get_sim_params(false).toString());
+
+			System.out.println ();
+			System.out.println ("get_sim_params(true) =\n" + etas_params.get_sim_params(true).toString());
 
 			System.out.println ();
 			System.out.println ("check_eligible(5.0, 3.0) =\n" + etas_params.check_eligible(5.0, 3.0));

@@ -911,7 +911,7 @@ public class OEConstants {
 
 	// Default mainshock magnitude for ETAS eligibility.
 
-	public static final double DEF_ELIGIBLE_MAIN_MAG = 4.75;
+	public static final double DEF_ELIGIBLE_MAIN_MAG = 4.45;
 
 	// Default catalog maximum magnitude for ETAS eligibility.
 
@@ -920,6 +920,11 @@ public class OEConstants {
 	// Default catalog maximum magnitude delta for ETAS eligibility.
 
 	//public static final double DEF_ELIGIBLE_CAT_MAX_DELTA = 0.50;
+
+	// Default mainshock magnitude below which earthquake is considered small.
+	// Can use OEConstants.NO_MAG_NEG (or zero) if none.
+
+	public static final double DEF_ELIGIBLE_SMALL_MAG = 4.95;
 
 
 	// Eligibility option codes.

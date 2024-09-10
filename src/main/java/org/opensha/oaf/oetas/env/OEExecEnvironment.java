@@ -1488,7 +1488,7 @@ public class OEExecEnvironment {
 
 		// Create the simulation parameters
 
-		sim_parameters = etas_params.get_sim_params();
+		sim_parameters = etas_params.get_sim_params (etas_params.is_small_mag (catalog_info));
 
 		// Display them
 

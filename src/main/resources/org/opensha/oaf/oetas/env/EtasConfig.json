@@ -102,8 +102,9 @@
         "sim_accum_param_1": 0.25,
         "eligible_params_avail": true,
         "eligible_option": 2,
-        "eligible_main_mag": 4.75,
-        "eligible_cat_max_mag": 3.95
+        "eligible_main_mag": 4.45,
+        "eligible_cat_max_mag": 3.95,
+        "eligible_small_mag": 4.95
       }
     },
     {

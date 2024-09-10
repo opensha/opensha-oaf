@@ -794,6 +794,42 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 
 
 
+
+		// Subcommand : Test #10
+		// Command format:
+		//  test8  filename
+		// Read the file and displays it.
+
+		if (testargs.is_test ("test10")) {
+
+			// Read arguments
+
+			System.out.println ("Read ETAS configuration file");
+			String filename = testargs.get_string ("filename");
+			testargs.end_test();
+
+			// Read the file and display it
+
+			OEtasConfigFile etas_config2 = new OEtasConfigFile();
+			MarshalUtils.from_json_file (etas_config2, filename);
+
+			System.out.println ();
+			System.out.println ("********** Unmarshaled Parameter Set **********");
+			System.out.println ();
+
+			System.out.println ();
+			System.out.println (etas_config2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
 		
 		// Unrecognized subcommand, or exception
 

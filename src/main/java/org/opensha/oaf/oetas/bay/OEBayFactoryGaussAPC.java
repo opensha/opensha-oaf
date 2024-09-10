@@ -215,7 +215,7 @@ public class OEBayFactoryGaussAPC extends OEBayFactory {
 	public String toString() {
 		StringBuilder result = new StringBuilder();
 
-		result.append ("OEBayFactoryParams:" + "\n");
+		result.append ("OEBayFactoryGaussAPC:" + "\n");
 		result.append ("cmode = " + cmode + "\n");
 
 		// Switch according to creation mode
