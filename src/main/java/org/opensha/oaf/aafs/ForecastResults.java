@@ -1081,6 +1081,7 @@ public class ForecastResults implements Marshalable {
 					exec_env.filename_intensity_calc = null;
 					exec_env.filename_results = null;
 					exec_env.filename_fc_json = null;
+					exec_env.filename_marginals = null;
 
 					// Set up the input area
 

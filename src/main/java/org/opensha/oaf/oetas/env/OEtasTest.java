@@ -1241,6 +1241,157 @@ public class OEtasTest {
 				exec_env.filename_intensity_calc = fn_intensity;
 				exec_env.filename_results = fn_results;
 				exec_env.filename_fc_json = fn_fc_json;
+				exec_env.filename_marginals = null;
+
+				// Set up the input area
+
+				exec_env.setup_input_area_from_obs (
+					etas_params,			// OEtasParameters the_etas_params,
+					fc_info,				// USGS_ForecastInfo the_forecast_info,
+					cat_into,				// OEtasCatalogInfo the_catalog_info,
+					ext_cat.mainshock,		// ObsEqkRupture the_obs_mainshock,
+					ext_cat.aftershocks		// List<ObsEqkRupture> the_obs_rup_list
+				);
+
+				// Run ETAS!
+
+				exec_env.run_etas();
+			}
+
+			// Pass exceptions into the ETAS execution environment
+
+			catch (Exception e) {
+				exec_env.report_exception (e);
+			}
+
+			// Display result
+
+			System.out.println ();
+
+			if (exec_env.is_etas_successful()) {
+				System.out.println ();
+				System.out.println (exec_env.get_forecast_summary_string());
+				System.out.println ("ETAS succeeded");
+			}
+			else {
+				System.out.println ("ETAS failed, result code = " + exec_env.get_rescode_as_string());
+			}
+
+			if (exec_env.has_abort_message()) {
+				System.out.println (exec_env.get_abort_message());
+			}
+
+			System.out.println ("Log: " + exec_env.make_etas_log_string());
+
+			exec_timer.stop_timer();
+
+			long elapsed_time = exec_timer.get_total_runtime();
+			long elapsed_seconds = (elapsed_time + 500L) / 1000L;
+
+			System.out.println ();
+			System.out.println ("Elapsed time = " + elapsed_seconds + " seconds");
+		}
+
+		// Done
+
+		//System.out.println ();
+		//System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
+	// test17/run_etas_2
+	// Command line arguments:
+	//  fn_catalog  fn_cat_info  fn_params  fn_accepted  fn_mag_comp  fn_log_density  fn_intensity  fn_results  fn_fc_json  fn_marginals
+	// Make an ETAS forecast for the given catalog, catalog information, and parameters.
+	// Forecast info is constructed assuming the mainshock is at time 0.0 days.
+	// Write any requested files.
+
+	public static void test17 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Generate ETAS forecast");
+		String fn_catalog = get_filename_arg (testargs, "fn_catalog");
+		String fn_cat_info = get_filename_arg (testargs, "fn_cat_info");
+		String fn_params = get_filename_arg (testargs, "fn_params");
+
+		String fn_accepted = get_filename_arg (testargs, "fn_accepted");
+		String fn_mag_comp = get_filename_arg (testargs, "fn_mag_comp");
+		String fn_log_density = get_filename_arg (testargs, "fn_log_density");
+		String fn_intensity = get_filename_arg (testargs, "fn_intensity");
+		String fn_results = get_filename_arg (testargs, "fn_results");
+		String fn_fc_json = get_filename_arg (testargs, "fn_fc_json");
+		String fn_marginals = get_filename_arg (testargs, "fn_marginals");
+
+		testargs.end_test();
+
+		// Read the catalog
+
+		GUIExternalCatalog ext_cat = new GUIExternalCatalog();
+
+		ext_cat.read_from_file (fn_catalog, null);
+
+		if (ext_cat.mainshock == null) {
+			throw new RuntimeException ("No mainshock found in catalog file: " + fn_catalog);
+		}
+
+		// Read the catalog information
+
+		OEtasCatalogInfo cat_into = new OEtasCatalogInfo();
+		MarshalUtils.from_json_file (cat_into, fn_cat_info);
+
+		// Read the parameters
+
+		OEtasParameters etas_params = new OEtasParameters();
+		MarshalUtils.from_json_file (etas_params, fn_params);
+
+		// Make origin at the basetime, which is assumed to be the mainshock time
+
+		long basetime_millis = ext_cat.mainshock.getOriginTime();
+		OEOrigin origin = new OEOrigin (basetime_millis, 0.0, 0.0, 0.0);
+
+		// Make the forecast info
+
+		double t_main_day = 0.0;
+		USGS_ForecastInfo fc_info = cat_into.make_fc_info_for_test (origin, t_main_day);
+
+		// Create multi-thread context
+
+		int num_threads = AutoExecutorService.AESNUM_DEFAULT;	// -1
+		long max_runtime = SimpleExecTimer.NO_MAX_RUNTIME;		// -1L
+		long progress_time = SimpleExecTimer.DEF_PROGRESS_TIME;
+
+		try (
+			AutoExecutorService auto_executor = new AutoExecutorService (num_threads);
+		){
+			SimpleExecTimer exec_timer = new SimpleExecTimer (max_runtime, progress_time, auto_executor);
+			exec_timer.start_timer();
+
+			// Make the ETAS execution environment
+
+			OEExecEnvironment exec_env = new OEExecEnvironment();
+
+			// Create ETAS context
+
+			try {
+
+				// Set up the communication area
+
+				exec_env.setup_comm_area (exec_timer);
+
+				// Select files we want
+
+				exec_env.filename_accepted = fn_accepted;
+				exec_env.filename_mag_comp = fn_mag_comp;
+				exec_env.filename_log_density = fn_log_density;
+				exec_env.filename_intensity_calc = fn_intensity;
+				exec_env.filename_results = fn_results;
+				exec_env.filename_fc_json = fn_fc_json;
+				exec_env.filename_marginals = fn_marginals;
 
 				// Set up the input area
 
@@ -1532,6 +1683,12 @@ public class OEtasTest {
 
 		if (testargs.is_test ("test16", "write_sim_cat_2")) {
 			test16 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test17", "run_etas_2")) {
+			test17 (testargs);
 			return;
 		}
 

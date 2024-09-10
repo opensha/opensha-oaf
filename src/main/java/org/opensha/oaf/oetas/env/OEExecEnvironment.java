@@ -275,6 +275,10 @@ public class OEExecEnvironment {
 
 	public String filename_fc_json = null;
 
+	// Filename for writing the marginals, or null if not requested.
+
+	public String filename_marginals = null;
+
 
 
 
@@ -898,6 +902,25 @@ public class OEExecEnvironment {
 
 			System.out.println();
 			System.out.println ("Wrote forecast JSON to file: " + filename_fc_json);
+		}
+
+		// If we want to write out the marginals ...
+
+		if (filename_marginals != null && etas_results.full_marginals != null) {
+
+			// Write to file
+
+			try {
+				MarshalUtils.to_formatted_json_file (etas_results.full_marginals, filename_marginals);
+			}
+			catch (Exception e) {
+				throw new IOException ("Error writing marginals file: " + filename_marginals, e);
+			}
+
+			// Report
+
+			System.out.println();
+			System.out.println ("Wrote marginals to file: " + filename_marginals);
 		}
 
 		// Report
