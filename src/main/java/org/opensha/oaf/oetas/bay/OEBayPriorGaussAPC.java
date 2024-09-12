@@ -102,12 +102,12 @@ public class OEBayPriorGaussAPC extends OEBayPrior {
 		final double zams = zams_velt.get_ve_value();
 		final double zmu = ((zmu_velt == null) ? 0.0 : zmu_velt.get_ve_value());
 
-		// If zams is relative, shift it so zero zams is the peak of the distribution
+		// If zams is relative, shift it so zams = mean_ams-aValueMean is the peak of the distribution
 
 		double ams;
 
 		if (bay_params.get_relative_zams()) {
-			ams = zams + gauss_params.get_mean_ams();
+			ams = zams + gauss_params.get_aValue_mean();
 		}
 
 		// If ams is absolute, convert zams to Gauss parameter magnitude range
@@ -221,12 +221,12 @@ public class OEBayPriorGaussAPC extends OEBayPrior {
 			final double zams = zams_velt.get_ve_value();
 			final double zmu = ((zmu_velt == null) ? 0.0 : zmu_velt.get_ve_value());
 
-			// If zams is relative, shift it so zero zams is the peak of the distribution
+			// If zams is relative, shift it so zams = mean_ams-aValueMean is the peak of the distribution
 
 			double ams;
 
 			if (bay_params.get_relative_zams()) {
-				ams = zams + gauss_params.get_mean_ams();
+				ams = zams + gauss_params.get_aValue_mean();
 			}
 
 			// If ams is absolute, convert zams to Gauss parameter magnitude range

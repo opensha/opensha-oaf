@@ -704,6 +704,7 @@ case "$1" in
         copycfg opensha-oaf/src/main/resources/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
         copycfg opensha-oaf/src/main/resources/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
         copycfg opensha-oaf/src/main/resources/org/opensha/oaf/oetas/env/EtasConfig.json /opt/aafs/oafcfg/EtasConfig.json
+        copycfg opensha-oaf/src/main/resources/org/opensha/oaf/oetas/bay/GaussAPCConfig.json /opt/aafs/oafcfg/GaussAPCConfig.json
         copyscr opensha-oaf/deployment/scripts/aafs/moaf.sh /opt/aafs/moaf.sh
         copyscr opensha-oaf/deployment/scripts/aafs/intake/init.sh /opt/aafs/intake/init.sh
         copyscr opensha-oaf/deployment/scripts/aafs/intake/listener.sh /opt/aafs/intake/listener.sh
@@ -720,6 +721,7 @@ case "$1" in
         copyover opensha-oaf/src/main/resources/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
         copyover opensha-oaf/src/main/resources/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
         copyover opensha-oaf/src/main/resources/org/opensha/oaf/oetas/env/EtasConfig.json /opt/aafs/oafcfg/EtasConfig.json
+        copyover opensha-oaf/src/main/resources/org/opensha/oaf/oetas/bay/GaussAPCConfig.json /opt/aafs/oafcfg/GaussAPCConfig.json
         replacescr opensha-oaf/deployment/scripts/aafs/moaf.sh /opt/aafs/moaf.sh
         replacescr opensha-oaf/deployment/scripts/aafs/intake/init.sh /opt/aafs/intake/init.sh
         replacescr opensha-oaf/deployment/scripts/aafs/intake/listener.sh /opt/aafs/intake/listener.sh
@@ -732,6 +734,7 @@ case "$1" in
         git diff opensha-oaf/src/main/resources/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
         git diff opensha-oaf/src/main/resources/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
         git diff opensha-oaf/src/main/resources/org/opensha/oaf/oetas/env/EtasConfig.json /opt/aafs/oafcfg/EtasConfig.json
+        git diff opensha-oaf/src/main/resources/org/opensha/oaf/oetas/bay/GaussAPCConfig.json /opt/aafs/oafcfg/GaussAPCConfig.json
         git diff opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
         ;;
 
@@ -741,6 +744,7 @@ case "$1" in
         git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json /opt/aafs/oafcfg/GenericRJ_ParametersFetch.json
         git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json /opt/aafs/oafcfg/MagCompPage_ParametersFetch.json
         git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/oetas/env/EtasConfig.json /opt/aafs/oafcfg/EtasConfig.json
+        git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/oetas/bay/GaussAPCConfig.json /opt/aafs/oafcfg/GaussAPCConfig.json
         git diff --color opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
         ;;
 
