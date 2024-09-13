@@ -10,6 +10,8 @@
 #
 # update - Update the OpenSHA repositories.
 #
+# update_aoaf - Update the aoaf.sh deployment script.
+#
 # clean - Delete all compiled files.
 #
 # compile - Compile the OpenSHA code to create AAFS.
@@ -558,6 +560,14 @@ case "$1" in
         cd ..
         ;;
 
+    update_aoaf)
+        if [ -f aoaf.sh ]; then
+            rm aoaf.sh
+        fi
+        wget https://github.com/opensha/opensha-oaf/raw/master/deployment/scripts/aoaf.sh
+        chmod 755 aoaf.sh
+        ;;
+
     clean)
         if [ -d opensha ]; then
             if [ ! -d opensha/src ]; then
@@ -1077,6 +1087,8 @@ case "$1" in
         echo "  boaf.sh clone"
         echo "Update the OpenSHA repositories:"
         echo "  boaf.sh update"
+        echo "Update the aoaf.sh deployment script:"
+        echo "  boaf.sh update_aoaf"
         echo "Delete all compiled files:"
         echo "  boaf.sh clean"
         echo "Compile the OpenSHA code to create AAFS:"
