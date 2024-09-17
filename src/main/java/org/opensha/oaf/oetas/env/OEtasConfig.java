@@ -115,6 +115,7 @@ public class OEtasConfig {
 
 
 	// Find the resolved parameters for the given location.
+	// If the location is null, return default parameters.
 	// The returned OAFRegimeParams is newly-allocated.
 	// It is guaranteed that the returned OAFRegimeParams contains regime and parameters,
 	// and the contained OEtasParameters are newly-allocated.

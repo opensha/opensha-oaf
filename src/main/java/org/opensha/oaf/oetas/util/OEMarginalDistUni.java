@@ -120,7 +120,7 @@ public class OEMarginalDistUni implements Marshalable {
 	// Parameters:
 	//  n = Bin number.
 	//  w = Weight, must be >= 0.0.
-	// Note: This must be called as least once with w > 0.0.
+	// Note: This must be called at least once with w > 0.0.
 
 	public final void add_weight (int n, double w) {
 		dist[n] += w;
@@ -136,7 +136,7 @@ public class OEMarginalDistUni implements Marshalable {
 	//  n = Array of bin numbers.
 	//  w = Array of weights, each must be >= 0.0.
 	// The indexes are used to select one element of each array.
-	// Note: This must be called as least once with w > 0.0.
+	// Note: This must be called at least once with w > 0.0.
 
 	public final void add_weight (int[] n, double[] w) {
 		dist[n[var_index]] += w[data_index];

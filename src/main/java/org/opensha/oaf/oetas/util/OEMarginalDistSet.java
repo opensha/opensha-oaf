@@ -379,6 +379,27 @@ public class OEMarginalDistSet implements Marshalable {
 
 
 
+	// Find the bivariate marginal distribution, given the variable and data indexes.
+	// Returns null if not found.
+	// If found, and the index numbers are reversed in the marginal, then make and return the transpose of the marginal.
+
+	public final OEMarginalDistBi find_bivar_or_transpose (int var_index1, int var_index2, int data_index) {
+		for (OEMarginalDistBi x : bivar) {
+			if (x.data_index == data_index) {
+				if (x.var_index1 == var_index1 && x.var_index2 == var_index2) {
+					return x;
+				}
+				if (x.var_index1 == var_index2 && x.var_index2 == var_index1) {
+					return (new OEMarginalDistBi()).transpose_of (x);
+				}
+			}
+		}
+		return null;
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -918,6 +939,24 @@ public class OEMarginalDistSet implements Marshalable {
 
 
 
+	// Test the find_bivar_or_transpose function.
+
+	public static void test_find_bivar_or_transpose (OEMarginalDistSet dist_set, int var_index1, int var_index2, int data_index) {
+		OEMarginalDistBi x = dist_set.find_bivar_or_transpose (var_index1, var_index2, data_index);
+
+		System.out.println ();
+		if (x == null) {
+			System.out.println ("find_bivar_or_transpose(" + var_index1 + ", " + var_index2 + ", " + data_index + ") = " + "<null>");
+		} else {
+			System.out.println ("find_bivar_or_transpose(" + var_index1 + ", " + var_index2 + ", " + data_index + ") = {" + x.summary_string() + "}");
+		}
+
+		return;
+	}
+
+
+
+
 	public static void main(String[] args) {
 		try {
 		TestArgs testargs = new TestArgs (args, "OEMarginalDistSet");
@@ -1240,6 +1279,19 @@ public class OEMarginalDistSet implements Marshalable {
 			test_find_bivar (dist_set, 0, 2, 0);
 
 			test_find_bivar (dist_set, 0, 1, 1);
+
+			System.out.println ();
+			System.out.println ("********** Bivariate search functions with transpose **********");
+
+			test_find_bivar_or_transpose (dist_set, 0, 1, 0);
+
+			test_find_bivar_or_transpose (dist_set, 1, 0, 0);
+
+			test_find_bivar_or_transpose (dist_set, 2, 1, 0);
+
+			test_find_bivar_or_transpose (dist_set, 0, 2, 0);
+
+			test_find_bivar_or_transpose (dist_set, 0, 1, 1);
 
 			// Done
 

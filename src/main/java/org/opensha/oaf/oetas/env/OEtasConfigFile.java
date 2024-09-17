@@ -217,6 +217,7 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 
 
 	// Find the resolved parameters for the given location.
+	// If the location is null, return default parameters.
 	// The returned OAFRegimeParams is newly-allocated.
 	// It is guaranteed that the returned OAFRegimeParams contains regime and parameters,
 	// and the contained OEtasParameters are newly-allocated.
@@ -237,10 +238,12 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 
 		// Merge in parameters for the location, if we have any
 
-		x = get_params (loc);
-		if (x.has_params()) {
-			result.params.merge_from (x.params);
-			result.regime = x.regime;
+		if (loc != null) {
+			x = get_params (loc);
+			if (x.has_params()) {
+				result.params.merge_from (x.params);
+				result.regime = x.regime;
+			}
 		}
 
 		// Merge in analyst parameters, if we have any

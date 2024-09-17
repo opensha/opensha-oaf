@@ -128,7 +128,7 @@ public class OEMarginalDistBi implements Marshalable {
 	//  n1 = Bin number for variable #1.
 	//  n2 = Bin number for variable #2.
 	//  w = Weight, must be >= 0.0.
-	// Note: This must be called as least once with w > 0.0.
+	// Note: This must be called at least once with w > 0.0.
 
 	public final void add_weight (int n1, int n2, double w) {
 		dist[n1][n2] += w;
@@ -144,7 +144,7 @@ public class OEMarginalDistBi implements Marshalable {
 	//  n = Array of bin numbers.
 	//  w = Array of weights, each must be >= 0.0.
 	// The indexes are used to select two bin numbers and one weight from the arrays.
-	// Note: This must be called as least once with w > 0.0.
+	// Note: This must be called at least once with w > 0.0.
 
 	public final void add_weight (int[] n, double[] w) {
 		dist[n[var_index1]][n[var_index2]] += w[data_index];
@@ -340,6 +340,38 @@ public class OEMarginalDistBi implements Marshalable {
 			r0[m0] = (new OEMarginalDistBi()).copy_from (x[m0]);
 		}
 		return r0;
+	}
+
+
+
+
+	// Set this objec to be the transpose of another object.
+	// Returns this object.
+
+	public OEMarginalDistBi transpose_of (OEMarginalDistBi other) {
+		var_name1		= other.var_name2;
+		var_index1		= other.var_index2;
+		var_name2		= other.var_name1;
+		var_index2		= other.var_index1;
+		data_name		= other.data_name;
+		data_index		= other.data_index;
+		int n2 = other.dist.length;
+		if (n2 == 0) {
+			dist = new double[0][];
+		} else {
+			int n1 = other.dist[0].length;
+			dist = new double[n1][n2];
+			for (int i1 = 0; i1 < n1; ++i1) {
+				for (int i2 = 0; i2 < n2; ++i2) {
+					dist[i1][i2] = other.dist[i2][i1];
+				}
+			}
+		}
+		mode1			= other.mode2;
+		mode2			= other.mode1;
+		scale			= other.scale;
+		//data_count		= other.data_count;
+		return this;
 	}
 
 
@@ -748,6 +780,55 @@ public class OEMarginalDistBi implements Marshalable {
 			System.out.println ();
 			
 			OEMarginalDistBi dist_bi2 = (new OEMarginalDistBi()).copy_from (dist_bi);
+
+			// Display the contents
+
+			System.out.println (dist_bi2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  reps
+		// Construct test values, using the specified number of repetitions, and display it.
+		// Transpose and display the transpose.
+
+		if (testargs.is_test ("test4")) {
+
+			// Read arguments
+
+			System.out.println ("Constructing, displaying, and transposing, marginal bivariate distribution");
+			int reps = testargs.get_int ("reps");
+			testargs.end_test();
+
+			// Create the values
+
+			OEMarginalDistBi dist_bi = make_test_value (reps);
+
+			// Display the contents
+
+			System.out.println ();
+			System.out.println ("********** Distribution Display **********");
+			System.out.println ();
+
+			System.out.println (dist_bi.toString());
+
+			// Copy
+
+			System.out.println ();
+			System.out.println ("********** Transpose **********");
+			System.out.println ();
+			
+			OEMarginalDistBi dist_bi2 = (new OEMarginalDistBi()).transpose_of (dist_bi);
 
 			// Display the contents
 

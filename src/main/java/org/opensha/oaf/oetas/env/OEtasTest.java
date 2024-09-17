@@ -30,15 +30,21 @@ import org.opensha.oaf.oetas.OESimulator;
 import org.opensha.oaf.oetas.OEStatsCalc;
 
 import org.opensha.oaf.oetas.bay.OEBayFactory;
+import org.opensha.oaf.oetas.bay.OEGaussAPCParams;
+import org.opensha.oaf.oetas.bay.OEGaussAPCConfig;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.rj.GenericRJ_ParametersFetch;
+import org.opensha.oaf.rj.MagCompPage_Parameters;
 import org.opensha.oaf.rj.MagCompPage_ParametersFetch;
+import org.opensha.oaf.rj.OAFRegimeParams;
 import org.opensha.oaf.rj.OAFTectonicRegime;
 import org.opensha.oaf.rj.SearchMagFn;
 import org.opensha.oaf.rj.SearchRadiusFn;
 import org.opensha.oaf.rj.USGS_ForecastInfo;
 
+import org.opensha.oaf.aafs.ActionConfig;
+import org.opensha.oaf.aafs.ForecastResults;
 import org.opensha.oaf.aafs.VersionInfo;
 
 import org.opensha.commons.geo.Location;
@@ -89,11 +95,23 @@ public class OEtasTest {
 
 
 
+	// Convert regime to string, including null.
+
+	public static String regime_to_string (OAFTectonicRegime regime) {
+		if (regime == null) {
+			return "<null>";
+		}
+		return regime.toString();
+	}
+
+
+
 
 	// Fetch mainshock, and display its information.
+	// If f_extended_info is true, then display additional info.
 	// Throws exception if not found, or error accessing Comcat.
 
-	public static ObsEqkRupture fetch_mainshock (String event_id) {
+	public static ObsEqkRupture fetch_mainshock (String event_id, boolean f_extended_info) {
 
 		// Say hello
 
@@ -116,22 +134,80 @@ public class OEtasTest {
 		System.out.println ();
 		System.out.println (ComcatOAFAccessor.rupToString (rup));
 
-		// Display tectonic regime
+		if (f_extended_info) {
 
-		Location hypo = rup.getHypocenterLocation();
+			ActionConfig action_config = new ActionConfig();
+
+			// Display tectonic regime
+
+			Location hypo = rup.getHypocenterLocation();
 		
-		GenericRJ_ParametersFetch generic_fetch = new GenericRJ_ParametersFetch();
-		OAFTectonicRegime generic_regime = generic_fetch.getRegion (hypo);
+			GenericRJ_ParametersFetch generic_fetch = new GenericRJ_ParametersFetch();
+			OAFTectonicRegime generic_regime = generic_fetch.getRegion (hypo);
 
-		System.out.println ();
-		System.out.println ("Tectonic regime: " + generic_regime.toString());
+			//System.out.println ();
+			System.out.println ("Regimes:");
+			System.out.println ("Tectonic regime: " + generic_regime.toString());
 
-		// Display magnitude of completeness regine
+			// Display magnitude of completeness regime
 		
-		MagCompPage_ParametersFetch mag_comp_fetch = new MagCompPage_ParametersFetch();
-		OAFTectonicRegime mag_comp_regime = mag_comp_fetch.getRegion (hypo);
+			MagCompPage_ParametersFetch mag_comp_fetch = new MagCompPage_ParametersFetch();
+			OAFTectonicRegime mag_comp_regime = mag_comp_fetch.getRegion (hypo);
 
-		System.out.println ("Magnitude of completeness regime: " + mag_comp_regime.toString());
+			System.out.println ("Magnitude of completeness regime: " + mag_comp_regime.toString());
+
+			// Display ETAS parameter regime
+
+			OAFRegimeParams<OEtasParameters> etas_x = (new OEtasConfig()).get_resolved_params (hypo, null);
+			System.out.println ("ETAS parameter regime: " + regime_to_string (etas_x.regime));
+
+			// Display Gaussian prior regime
+
+			OAFRegimeParams<OEGaussAPCParams> gapc_x = (new OEGaussAPCConfig()).get_params (hypo);
+			System.out.println ("Gaussian prior regime: " + gapc_x.params.get_regimeName());
+
+			// Display magnitude of completeness info
+
+			System.out.println ();
+			System.out.println ("Magnitude info:");
+
+			MagCompPage_Parameters mag_comp_params = get_mag_comp_params (rup);
+
+			System.out.println ("MagCat = " + mag_comp_params.get_magCat ());
+			System.out.println ("MagCat (adjusted) = " + mag_comp_params.get_magCat (rup.getMag()));
+
+			if (mag_comp_params.get_magCompFn().is_page_or_constant()) {
+				System.out.println ("F = " + mag_comp_params.get_magCompFn().getDefaultGUICapF());
+				System.out.println ("G = " + mag_comp_params.get_magCompFn().getDefaultGUICapG());
+				System.out.println ("H = " + mag_comp_params.get_magCompFn().getDefaultGUICapH());
+			}
+
+			double the_mag_cat = mag_comp_params.get_magCat (rup.getMag());
+			double the_mag_top = etas_x.params.suggest_mag_top (the_mag_cat, rup.getMag());
+			System.out.println ("MagTop = " + the_mag_top);
+
+			// Display catalog search info
+
+			System.out.println ();
+			System.out.println ("Search info:");
+
+			long the_start_lag = -(action_config.get_data_fetch_lookback());
+			double min_days = SimpleUtils.round_double_via_string ("%.5f", SimpleUtils.millis_to_days (the_start_lag));
+			System.out.println ("min_days = " + min_days);
+
+			long the_end_lag = System.currentTimeMillis() - (rup.getOriginTime() + action_config.get_comcat_clock_skew() + action_config.get_comcat_origin_skew());
+			the_end_lag = SimpleUtils.clip_min_max_l (SimpleUtils.MINUTE_MILLIS, SimpleUtils.YEAR_MILLIS * 11L, the_end_lag);	// clip to 11 years
+			double max_days = SimpleUtils.round_double_via_string ("%.5f", SimpleUtils.millis_to_days (the_end_lag));
+			System.out.println ("max_days = " + max_days);
+
+			double sample_radius = mag_comp_params.get_radiusSample (rup.getMag());
+			double radius_km = SimpleUtils.round_double_via_string ("%.3f", sample_radius);
+			System.out.println ("radius_km = " + radius_km);
+
+			double sample_min_mag = mag_comp_params.get_magSample (rup.getMag());
+			double min_mag = SimpleUtils.round_double_via_string ("%.3f", sample_min_mag);
+			System.out.println ("min_mag = " + min_mag);
+		}
 
 		return rup;
 	}
@@ -261,6 +337,155 @@ public class OEtasTest {
 		System.out.println ("Fetched " + catalog_comcat_aftershocks.size() + " aftershocks for event: " + rup_event_id);
 
 		return catalog_comcat_aftershocks;
+	}
+
+
+
+
+	// Get the magnitude of completeness parameters for a location.
+
+	public static MagCompPage_Parameters get_mag_comp_params (Location loc) {
+		MagCompPage_ParametersFetch fetch = new MagCompPage_ParametersFetch();
+		OAFTectonicRegime regime = fetch.getRegion (loc);
+		return fetch.get (regime);
+	}
+
+
+
+
+	// Get the magnitude of completeness parameters for a rupture.
+
+	public static MagCompPage_Parameters get_mag_comp_params (ObsEqkRupture rup) {
+		return get_mag_comp_params (rup.getHypocenterLocation());
+	}
+
+
+
+
+	// Get the ETAS parameters for a location.
+	// A null location returns default parameters.
+
+	public static OEtasParameters get_etas_params (Location loc) {
+		OAFRegimeParams<OEtasParameters> x = (new OEtasConfig()).get_resolved_params (loc, null);
+		return x.params;
+	}
+
+
+
+
+	// Get the ETAS parameters for a rupture.
+
+	public static OEtasParameters get_etas_params (ObsEqkRupture rup) {
+		return get_etas_params (rup.getHypocenterLocation());
+	}
+
+
+
+
+	// Make catalog information, given a catalog.
+	// Parameters:
+	//  mainshock = The mainshock.
+	//  aftershock = List of aftershocks (and foreshocks), should not include the mainshock.
+	//  forecast_lag = Time after mainshock at which data ends, in milliseconds.
+	//  f_gap = True to insert a gap after end of data so forecast begins at a "round" time.
+
+	public static OEtasCatalogInfo make_cat_info_for_cat (
+		ObsEqkRupture mainshock,
+		List<ObsEqkRupture> aftershocks,
+		long forecast_lag,
+		boolean f_gap
+	) {
+		// Configuration file
+
+		ActionConfig action_config = new ActionConfig();
+
+		// Mainshock parameters
+
+		long mainshock_time = mainshock.getOriginTime();
+		double mainshock_mag = mainshock.getMag();
+		Location hypo = mainshock.getHypocenterLocation();
+		double mainshock_lat = hypo.getLatitude();
+		double mainshock_lon = hypo.getLongitude();
+		double mainshock_depth = hypo.getDepth();
+
+		// Forecast information
+
+		long result_time = mainshock_time + forecast_lag;
+		long advisory_lag = ForecastResults.forecast_lag_to_advisory_lag (forecast_lag, action_config);
+		String injectable_text = "";
+		long next_scheduled_lag = 0L;
+		
+		USGS_ForecastInfo fc_info = (new USGS_ForecastInfo()).set_typical (
+			mainshock_time,					// event_time
+			result_time,					// result_time
+			advisory_lag,					// advisory_lag
+			injectable_text,				// injectable_text
+			next_scheduled_lag,				// next_scheduled_lag
+			null							// user_param_map
+		);
+
+		// Magnitude of completeness parameters
+
+		MagCompPage_Parameters mag_comp_params = get_mag_comp_params (hypo);
+
+		// We need to have magnitude of completeness parameters with Helmstetter function
+
+		if (!( mag_comp_params.get_magCompFn().is_page_or_constant() )) {
+			throw new IllegalArgumentException ("OEtasTest.make_cat_info_for_cat: Magnitude of completeness parameters are not Helmstetter parameters");
+		}
+
+		// ETAS parameters
+
+		OEtasParameters etas_params = get_etas_params (hypo);
+
+		// Get catalog maximum magnitude and minimum time
+
+		double catalog_max_mag = mainshock_mag;
+		long catalog_min_time = mainshock_time;
+
+		for (ObsEqkRupture rup : aftershocks) {
+			catalog_max_mag = Math.max (catalog_max_mag, rup.getMag());
+			catalog_min_time = Math.min (catalog_min_time, rup.getOriginTime());
+		}
+
+		// Infer data fetch min and max times
+
+		double min_days = (catalog_min_time - mainshock_time) - SimpleUtils.DAY_MILLIS;	// back up one day
+		double max_days = SimpleUtils.millis_to_days (forecast_lag);
+
+		// Catalog information
+		// Note: By comparison to the code in ForecastResults, this is special-cased by
+		// assuing fit_start_inset == 0.0 and fit_end_inset == 0.0; this results in using
+		// the default values for get_catalog_fit_end_days and get_catalog_fit_start_days.
+
+		double the_mag_cat = mag_comp_params.get_magCat (mainshock_mag);
+		double the_mag_top = etas_params.suggest_mag_top (the_mag_cat, catalog_max_mag);
+
+		double t_data_begin = min_days;
+		double t_data_end = max_days;
+		double t_fitting = Math.max(0.0, min_days);
+		double t_forecast = t_data_end;
+		if (f_gap) {
+			t_forecast = Math.max(t_data_end, SimpleUtils.millis_to_days (fc_info.start_time - mainshock_time));
+		}
+
+		OEtasCatalogInfo catalog_info = (new OEtasCatalogInfo()).set (
+			the_mag_cat,												// double magCat
+			the_mag_top,												// double magTop
+			mag_comp_params.get_magCompFn().getDefaultGUICapF(),		// double capF
+			mag_comp_params.get_magCompFn().getDefaultGUICapG(),		// double capG
+			mag_comp_params.get_magCompFn().getDefaultGUICapH(),		// double capH
+			t_data_begin,												// double t_data_begin
+			t_data_end,													// double t_data_end
+			t_fitting,													// double t_fitting
+			t_forecast,													// double t_forecast
+			mainshock_mag,												// double mag_main
+			mainshock_lat,												// double lat_main
+			mainshock_lon,												// double lon_main
+			mainshock_depth												// double depth_main
+		);
+
+		return catalog_info;
 	}
 
 
@@ -920,7 +1145,7 @@ public class OEtasTest {
 
 		System.out.println ();
 
-		ObsEqkRupture obs_main = fetch_mainshock (event_id);
+		ObsEqkRupture obs_main = fetch_mainshock (event_id, false);
 
 		double mag_main = obs_main.getMag();
 		Location hypo = obs_main.getHypocenterLocation();
@@ -1470,7 +1695,7 @@ public class OEtasTest {
 
 		System.out.println ();
 
-		ObsEqkRupture obs_main = fetch_mainshock (event_id);
+		ObsEqkRupture obs_main = fetch_mainshock (event_id, true);
 
 		// Done
 
@@ -1508,7 +1733,7 @@ public class OEtasTest {
 
 		System.out.println ();
 
-		ObsEqkRupture obs_main = fetch_mainshock (event_id);
+		ObsEqkRupture obs_main = fetch_mainshock (event_id, false);
 
 		// Make origin at the mainshock
 
