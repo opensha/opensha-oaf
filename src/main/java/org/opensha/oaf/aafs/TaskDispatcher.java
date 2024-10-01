@@ -308,6 +308,18 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 	private boolean dispatcher_verbose = true;
 
+	// The delay after which to force idle time processing, when idle time processing is active, in milliseconds.
+
+	private long idle_force_delay_short = 120000L;		// 2 minutes
+
+	// The delay after which to force idle time processing, when idle time processing is complete, in milliseconds.
+
+	private long idle_force_delay_long = 480000L;		// 8 minutes
+
+	// The number of tasks after shick idle time can be forced (must be > 0).
+
+	private int idle_force_task_count = 2;
+
 
 
 
@@ -723,6 +735,17 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 					sg.relay_link.poll_relay_link();
 				}
 
+				// The time at which we force idle-time processing
+
+				long idle_force_time = dispatcher_true_time + idle_force_delay_long;
+
+				// The state used for controlling idle-time forcing
+				// -1 = Idle-time processing with a task pending.
+				//  0 = Idle-time processing with no task pending.
+				// >0 = Number of consecutive tasks processed (max value = idle_force_task_count).
+
+				int idle_state = 0;
+
 				// Polling loop, continue until shutdown or exception
 
 				while (dispatcher_state != STATE_SHUTDOWN) {
@@ -754,22 +777,45 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 					// Get the next task on the pending queue, that's ready to execute, and activate it
 
 					long cutoff_time = dispatcher_time;
-					boolean f_idle = true;
 					task = null;
 
-					// If doing transactions, do a prelimiary check without starting a transaction
+					// Do a prelimiary check without starting a transaction
 
-					boolean f_prelim = true;
-					if (dispatcher_transact) {
-						PendingTask prelim_task = PendingTask.get_first_ready_task (cutoff_time);
-						if (prelim_task == null) {
-							f_prelim = false;
+					PendingTask prelim_task = PendingTask.get_first_ready_task (cutoff_time);
+
+					// No task, do idle-time with no task pending
+
+					if (prelim_task == null) {
+						idle_state = 0;
+					}
+
+					// Otherwise, there is a task pending ...
+
+					else {
+
+						// If not enough tasks to force idle-time, just count it
+
+						if (idle_state < idle_force_task_count) {
+							if (idle_state < 0) {
+								idle_state = 0;
+							}
+							++idle_state;
 						}
+
+						// Otherwise, check if we need to force idle-time, only if the task is not executing at early time
+
+						else {
+							if (dispatcher_true_time > idle_force_time && prelim_task.get_exec_time() > EXEC_TIME_MAX_EARLY) {
+								idle_state = -1;
+							}
+						}
+
+						prelim_task = null;
 					}
 
 					// If passed prelimiary check, start a transaction if enabled
 
-					if (f_prelim) {
+					if (idle_state > 0) {
 						try (
 							MongoDBUtil mongo_inner = new MongoDBUtil (conopt_inner, ddbopt, null);
 						){
@@ -782,10 +828,6 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 							if (task != null) {
 
-								// Not idle
-
-								f_idle = false;
-
 								// State = processing
 
 								dispatcher_state = STATE_PROCESSING;
@@ -793,6 +835,12 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 								// Dispatch on opcode
 
 								dispatch_task (task);
+							}
+
+							// Otherwise, do idle-time with no task pending
+
+							else {
+								idle_state = 0;
 							}
 
 							// If doing transactions, commit
@@ -809,7 +857,7 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 					// If idle ...
 
-					if (f_idle) {
+					if (idle_state <= 0) {
 
 						// State = idle time
 
@@ -817,25 +865,35 @@ public class TaskDispatcher extends ServerComponent implements Runnable {
 
 						// Execute idle time operations
 
-						exec_idle_time();
+						boolean did_work = exec_idle_time();
+
+						// Calculate time at which idle-time can be forced
+
+						long time_now = ServerClock.get_true_time();
+						idle_force_time = time_now + (did_work ? idle_force_delay_short : idle_force_delay_long);
 
 						// State = waiting
 
 						dispatcher_state = STATE_WAITING;
 
-						// Get polling delay, allowing for time consumed by idle time operations
+						// If no task pending, insert a time delay
 
-						long eff_polling_delay = dispatcher_true_time + polling_delay - ServerClock.get_true_time();
-						if (eff_polling_delay > polling_delay) {
-							eff_polling_delay = polling_delay;
-						}
+						if (idle_state == 0) {
 
-						// Wait for the polling delay
+							// Get polling delay, allowing for time consumed by idle time operations
 
-						if (eff_polling_delay >= polling_delay_min) {
-							try {
-								Thread.sleep(eff_polling_delay);
-							} catch (InterruptedException e) {
+							long eff_polling_delay = dispatcher_true_time + polling_delay - time_now;
+							if (eff_polling_delay > polling_delay) {
+								eff_polling_delay = polling_delay;
+							}
+
+							// Wait for the polling delay
+
+							if (eff_polling_delay >= polling_delay_min) {
+								try {
+									Thread.sleep(eff_polling_delay);
+								} catch (InterruptedException e) {
+								}
 							}
 						}
 					}

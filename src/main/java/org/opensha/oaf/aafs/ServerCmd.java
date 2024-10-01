@@ -1515,8 +1515,9 @@ public class ServerCmd {
 				int stage = 0;
 
 				long the_time = time_now;
+				long the_sched_time = Math.max (the_time - ServerComponent.DURATION_BOOST_RELAY_MODE, ServerComponent.EXEC_TIME_MIN_NORMAL);
 
-				boolean result = TaskDispatcher.post_remote_task (db_handle, event_id, the_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
+				boolean result = TaskDispatcher.post_remote_task (db_handle, event_id, the_sched_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
 
 				if (result) {
 					System.out.println ("Successfully sent new relay mode to server " + n);
@@ -1747,8 +1748,9 @@ public class ServerCmd {
 				int stage = 0;
 
 				long the_time = time_now;
+				long the_sched_time = Math.max (the_time - ServerComponent.DURATION_BOOST_ANALYST_CMD, ServerComponent.EXEC_TIME_MIN_NORMAL);
 
-				boolean result = TaskDispatcher.post_remote_task (db_handle, event_id, the_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
+				boolean result = TaskDispatcher.post_remote_task (db_handle, event_id, the_sched_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
 
 				if (result) {
 					f_success = true;
@@ -1838,8 +1840,9 @@ public class ServerCmd {
 				int stage = 0;
 
 				long the_time = time_now;
+				long the_sched_time = Math.max (the_time - ServerComponent.DURATION_BOOST_ANALYST_CMD, ServerComponent.EXEC_TIME_MIN_NORMAL);
 
-				boolean result = TaskDispatcher.post_remote_task (db_handle, event_id, the_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
+				boolean result = TaskDispatcher.post_remote_task (db_handle, event_id, the_sched_time, the_time, "ServerCmd", opcode, stage, payload.marshal_task());
 
 				if (result) {
 					f_success = true;
