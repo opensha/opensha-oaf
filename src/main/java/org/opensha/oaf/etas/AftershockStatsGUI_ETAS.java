@@ -6824,8 +6824,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		List<String> lines = new ArrayList<String>();
 		try{
 			lines = IOUtils.readLines(citiesIS, StandardCharsets.UTF_8);
-		} catch (IOException e) {
-			System.out.println("Couldn't load city information");
+		} catch (Exception e) {
+			System.out.println("Couldn't load country border information: "+e.getMessage());
 		}
 
 		//populate the feature list
@@ -6862,8 +6862,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		List<String> lines = new ArrayList<String>();
 		try{
 			lines = IOUtils.readLines(bordersIS, StandardCharsets.UTF_8);
-		} catch (IOException e) {
-			System.out.println("Couldn't load country border information");
+		} catch (Exception e) {
+			System.out.println("Couldn't load country border information: "+e.getMessage());
 		}
 
 		ArrayList<XY_DataSet> countryBorders = new ArrayList<XY_DataSet>();
