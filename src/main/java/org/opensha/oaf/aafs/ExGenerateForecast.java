@@ -11,6 +11,7 @@ import org.opensha.oaf.aafs.entity.RelayItem;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
+import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.commons.data.comcat.ComcatException;
@@ -71,6 +72,50 @@ public class ExGenerateForecast extends ServerExecTask {
 		}
 
 		return delay;
+	}
+
+
+
+
+	// Save a forecast json file.
+	// Parameters:
+	//  json_string = String containing the forecast JSON, if null or empty then nothing is written.
+	//  event_id = Mainshock event ID (inserted into the filename).
+	//  lag = Forecast time relative to mainshock (inserted into the filename).
+	// Note: This function absorbs and discards all exceptions.
+
+	private static void save_forecast_json (String json_string, String event_id, long lag) {
+		try {
+
+			// IF we have a JSON string ...
+
+			if (json_string != null && json_string.length() > 0) {
+
+				// Get filename prefix containing the time, and create the directory if needed
+
+				String filename_prefix = ServerConfig.get_fcsave_filename_prefix();
+
+				// If we got the filename prefix ...
+
+				if (filename_prefix != null) {
+
+					// Create filename from prefix, event id, and lag
+
+					String filename = filename_prefix + event_id + "-" + SimpleUtils.duration_to_string_3 (lag - (lag % 1000L)) + ".json";
+
+					// Format the JSON String
+
+					String fmt_json_string = MarshalUtils.display_valid_json_string (json_string);
+
+					// Write the file
+
+					SimpleUtils.write_string_as_file (filename, fmt_json_string);
+				}
+			}
+		}
+		catch (Exception e) {
+		}
+		return;
 	}
 
 
@@ -746,6 +791,12 @@ public class ExGenerateForecast extends ServerExecTask {
 //
 //				return RESCODE_TIMELINE_FORESHOCK;
 			}
+		}
+
+		// Save forecast into a file, if desired
+
+		if (sg.task_disp.get_action_config().get_is_forecast_file_enabled()) {
+			save_forecast_json (forecast_results.get_pdl_model(), fcmain.mainshock_event_id, next_forecast_lag);
 		}
 
 		// Insert forecast into timeline status

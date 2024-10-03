@@ -82,6 +82,7 @@ import org.opensha.oaf.rj.OAFParameterSet;
  *  [v4] "comcat_cache_2_time" = String giving lookback time for ComCat cache #2, in java.time.Duration format.
  *  [v4] "forecast_rate_limit" = String giving minimum time between forecasts, in java.time.Duration format.
  *  [v4] "forecast_max_limit" = String giving maximum delay for forecast rate limit, in java.time.Duration format.
+ *  [v4] "forecast_file_option" = Option to save forecasts into files: 0 = disable, 1 = enable. 
  *	"adv_min_mag_bins" = [ Array giving a list of minimum magnitudes for which forecasts are generated, in increasing order.
  *		element = Real value giving minimum magnitude for the bin.
  *	]
@@ -360,7 +361,7 @@ public class ActionConfigFile implements Marshalable {
 	// Option to enable ETAS forecasts. [v3]
 
 	public static final int ETAS_ENA_MIN = 0;
-	public static final int ETAS_ENA_DISABLE = 0;	// Completely disable ETAS fprecasts
+	public static final int ETAS_ENA_DISABLE = 0;	// Completely disable ETAS forecasts
 	public static final int ETAS_ENA_ENABLE = 1;	// Enable ETAS forecasts, original ETAS method
 	public static final int ETAS_ENA_MAX = 1;
 
@@ -467,6 +468,17 @@ public class ActionConfigFile implements Marshalable {
 	private static final long V3_FORECAST_MAX_LIMIT = 60000L;	// Default value for v3 and earlier files = 60 seconds
 
 	public long forecast_max_limit;
+
+	// Option to save forecasts into files. [v4]
+
+	public static final int FORECAST_FILE_OPTION_MIN = 0;
+	public static final int FORECAST_FILE_OPTION_DISABLE = 0;	// Disable saving forecasts into files
+	public static final int FORECAST_FILE_OPTION_ENABLE = 1;	// Enable saving forecasts into files
+	public static final int FORECAST_FILE_OPTION_MAX = 1;
+
+	private static final int V3_FORECAST_FILE_OPTION = 0;	// Default value for v3 and earlier files
+
+	public int forecast_file_option;
 
 	// Minimum magnitude for advisory magnitude bins.  Must be in increasing order.
 
@@ -633,6 +645,7 @@ public class ActionConfigFile implements Marshalable {
 		comcat_cache_2_time = 0L;
 		forecast_rate_limit = 0L;
 		forecast_max_limit = 0L;
+		forecast_file_option = FORECAST_FILE_OPTION_DISABLE;
 		adv_min_mag_bins = new ArrayList<Double>();
 		adv_window_start_offs = new ArrayList<Long>();
 		adv_window_end_offs = new ArrayList<Long>();
@@ -857,6 +870,10 @@ public class ActionConfigFile implements Marshalable {
 			throw new RuntimeException("ActionConfigFile: Invalid forecast_max_limit: " + forecast_max_limit);
 		}
 
+		if (!( forecast_file_option >= FORECAST_FILE_OPTION_MIN && forecast_file_option <= FORECAST_FILE_OPTION_MAX )) {
+			throw new RuntimeException("ActionConfigFile: Invalid forecast_file_option: " + forecast_file_option);
+		}
+
 		int n;
 		long min_lag;
 
@@ -1078,6 +1095,7 @@ public class ActionConfigFile implements Marshalable {
 		result.append ("comcat_cache_2_time = " + Duration.ofMillis(comcat_cache_2_time).toString() + "\n");
 		result.append ("forecast_rate_limit = " + Duration.ofMillis(forecast_rate_limit).toString() + "\n");
 		result.append ("forecast_max_limit = " + Duration.ofMillis(forecast_max_limit).toString() + "\n");
+		result.append ("forecast_file_option = " + forecast_file_option + "\n");
 
 		result.append ("adv_min_mag_bins = [" + "\n");
 		for (int i = 0; i < adv_min_mag_bins.size(); ++i) {
@@ -1440,6 +1458,21 @@ public class ActionConfigFile implements Marshalable {
 		}
 
 		return "ETAS_ENA_INVALID(" + etas_ena + ")";
+	}
+
+
+
+
+	// Return a string describing a forecast file option value.
+
+	public static String get_forecast_file_opt_as_string (int forecast_file_opt) {
+
+		switch (forecast_file_opt) {
+		case FORECAST_FILE_OPTION_DISABLE: return "FORECAST_FILE_OPTION_DISABLE";
+		case FORECAST_FILE_OPTION_ENABLE: return "FORECAST_FILE_OPTION_ENABLE";
+		}
+
+		return "FORECAST_FILE_OPTION_INVALID(" + forecast_file_opt + ")";
 	}
 
 
@@ -1842,6 +1875,7 @@ public class ActionConfigFile implements Marshalable {
 			marshal_duration           (writer, "comcat_cache_2_time"  , comcat_cache_2_time  );
 			marshal_duration           (writer, "forecast_rate_limit"  , forecast_rate_limit  );
 			marshal_duration           (writer, "forecast_max_limit"   , forecast_max_limit   );
+			writer.marshalInt          (        "forecast_file_option" , forecast_file_option );
 
 			writer.marshalDoubleCollection     ("adv_min_mag_bins"     , adv_min_mag_bins     );
 			marshal_duration_list      (writer, "adv_window_start_offs", adv_window_start_offs);
@@ -1933,6 +1967,7 @@ public class ActionConfigFile implements Marshalable {
 			comcat_cache_2_time   = V3_COMCAT_CACHE_2_TIME;
 			forecast_rate_limit   = V3_FORECAST_RATE_LIMIT;
 			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
+			forecast_file_option  = V3_FORECAST_FILE_OPTION;
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
@@ -2012,6 +2047,7 @@ public class ActionConfigFile implements Marshalable {
 			comcat_cache_2_time   = V3_COMCAT_CACHE_2_TIME;
 			forecast_rate_limit   = V3_FORECAST_RATE_LIMIT;
 			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
+			forecast_file_option  = V3_FORECAST_FILE_OPTION;
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
@@ -2091,6 +2127,7 @@ public class ActionConfigFile implements Marshalable {
 			comcat_cache_2_time   = V3_COMCAT_CACHE_2_TIME;
 			forecast_rate_limit   = V3_FORECAST_RATE_LIMIT;
 			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
+			forecast_file_option  = V3_FORECAST_FILE_OPTION;
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
@@ -2170,6 +2207,7 @@ public class ActionConfigFile implements Marshalable {
 			comcat_cache_2_time   = unmarshal_duration           (reader, "comcat_cache_2_time"  );
 			forecast_rate_limit   = unmarshal_duration           (reader, "forecast_rate_limit"  );
 			forecast_max_limit    = unmarshal_duration           (reader, "forecast_max_limit"   );
+			forecast_file_option  = reader.unmarshalInt          (        "forecast_file_option" );
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );

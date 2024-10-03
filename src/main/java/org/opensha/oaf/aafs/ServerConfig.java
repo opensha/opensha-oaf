@@ -560,6 +560,85 @@ public final class ServerConfig {
 
 
 
+	//----- Forecast save file output -----
+
+
+
+
+	// The most recent directory used to store forecast files, or null if none.
+	// This is used to avoid calling Files.createDirectories for every file.
+
+	private static Path last_fcsave_dir_path = null;
+
+
+	// Build the forecast filename prefix.
+	// Parameters:
+	//  prefix_pattern = Pattern for making the prefix, in the format of SimpleDateFormat.
+	// Returns the filename prefix, or null if none.
+
+	private static synchronized String build_fcsave_filename_prefix (String prefix_pattern) {
+
+		// Any exception causes a null return
+
+		String filename_prefix = null;
+
+		try {
+
+			// Make the prefix
+
+			long the_time = System.currentTimeMillis();
+
+			SimpleDateFormat fmt = new SimpleDateFormat (prefix_pattern);
+			fmt.setTimeZone (TimeZone.getTimeZone ("UTC"));
+			String trial_prefix = fmt.format (new Date (the_time));
+
+			// Make the containing directory, if needed
+
+			Path file_path = Paths.get (trial_prefix + "abcd.txt");	// trial filename
+			Path dir_path = file_path.getParent();
+
+			if (dir_path != null) {
+				if (!( last_fcsave_dir_path != null && dir_path.equals (last_fcsave_dir_path) )) {
+					Files.createDirectories (dir_path);
+					last_fcsave_dir_path = dir_path;
+				}
+			}
+
+			// Return this prefix
+
+			filename_prefix = trial_prefix;
+		}
+		catch (Exception e) {
+			filename_prefix = null;
+		}
+
+		// Return prefix
+
+		return filename_prefix;
+	}
+
+
+
+
+	// Get the filename prefix to use for writing forecast save files.
+	// Returns null if no file should be written.
+
+	public static String get_fcsave_filename_prefix () {
+
+		// Eventually these parameters will come from the configuration file
+
+		String prefix_pattern = "'/data/aafs/forecasts/'yyyy-MM'/'yyyy-MM-dd-HH-mm-ss'-'";
+
+		// Build the prefix, or null if none
+
+		String filename_prefix = build_fcsave_filename_prefix (prefix_pattern);
+
+		return filename_prefix;
+	}
+
+
+
+
 	//----- Testing -----
 
 	public static void main(String[] args) {
@@ -786,6 +865,49 @@ public final class ServerConfig {
 
 				for (int n = 0; n < count; ++n) {
 					String filename_prefix = ServerConfig.get_diag_filename_prefix();
+					if (filename_prefix == null) {
+						System.out.println (n + ": " + "<null>");
+					} else {
+						System.out.println (n + ": " + filename_prefix);
+					}
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  count
+		// Make a forecast filename prefix, the requested number of times.
+		// Delay 5 seconds in between prefixes.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// 1 additional argument
+
+			if (args.length != 2) {
+				System.err.println ("ServerConfig : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+				int count = Integer.parseInt(args[1]);
+
+				for (int n = 0; n < count; ++n) {
+					if (n != 0) {
+						try {
+							Thread.sleep (5000L);	// wait 5 seconds
+						} catch (InterruptedException e) {
+						}
+					}
+					String filename_prefix = ServerConfig.get_fcsave_filename_prefix();
 					if (filename_prefix == null) {
 						System.out.println (n + ": " + "<null>");
 					} else {

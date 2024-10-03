@@ -25,7 +25,7 @@ runut rj02 rj.GenericRJ_ParametersFetch test2
 runut rj03 rj.GenericRJ_ParametersFetch test3
 runut rj04 rj.GenericRJ_ParametersFetch test4
 
-# Tests for action configuration
+# Tests for server configuration
 
 runut server01 aafs.ServerConfigFile test1
 runut server02 aafs.ServerConfigFile test2
@@ -33,5 +33,27 @@ runut server03 aafs.ServerConfigFile test3
 
 runut server04 aafs.ServerConfig test1
 runut server05 aafs.ServerConfig test2
+
+# Tests for operational ETAS configuration
+
+runut oeconf01 oetas.env.OEtasConfigFile test1
+runut oeconf02 oetas.env.OEtasConfigFile test2
+runut oeconf03 oetas.env.OEtasConfigFile test3
+runut oeconf04 oetas.env.OEtasConfigFile test4
+runut oeconf05 oetas.env.OEtasConfigFile test5
+
+runut oeconf06 oetas.env.OEtasConfig test1
+runut oeconf07 oetas.env.OEtasConfig test2
+
+# Tests for operational ETAS Gaussian a/p/c prior configuration
+
+runut oegapc01 oetas.bay.OEGaussAPCConfigFile test1
+runut oegapc02 oetas.bay.OEGaussAPCConfigFile test2
+runut oegapc03 oetas.bay.OEGaussAPCConfigFile test3
+runut oegapc04 oetas.bay.OEGaussAPCConfigFile test4
+runut oegapc05 oetas.bay.OEGaussAPCConfigFile test5
+
+runut oegapc06 oetas.bay.OEGaussAPCConfig test1
+runut oegapc07 oetas.bay.OEGaussAPCConfig test2
 
 

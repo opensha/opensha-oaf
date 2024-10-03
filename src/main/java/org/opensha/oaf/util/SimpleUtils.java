@@ -350,6 +350,101 @@ public class SimpleUtils {
 
 
 
+	// Convert a duration (in milliseconds) to a human-readable string.
+	// This version includes a "days" field for durations of 1 day or more.
+	// This produces an easier-to-read form, not in java.time.Duration format.
+
+	public static String duration_to_string_3 (long the_duration) {
+		String result;
+
+		// If negative, reverse the sign and prepend a minus sign
+
+		long x = the_duration;
+		String sign = "";
+
+		if (x < 0L) {
+			x = -x;
+			sign = "-";
+		}
+
+		// Split
+
+		long days = x / DAY_MILLIS;
+		long hours = (x / HOUR_MILLIS) % 24L;
+		long minutes = (x / MINUTE_MILLIS) % 60L;
+		long seconds = (x / SECOND_MILLIS) % 60L;
+		long millis = x % 1000L;
+
+		// Leading field is days
+
+		if (days != 0) {
+			if (millis != 0) {
+				result = String.format ("%s%dd%dh%dm%d.%03ds", sign, days, hours, minutes, seconds, millis);
+			} else if (seconds != 0) {
+				result = String.format ("%s%dd%dh%dm%ds", sign, days, hours, minutes, seconds);
+			} else if (minutes != 0) {
+				result = String.format ("%s%dd%dh%dm", sign, days, hours, minutes);
+			} else if (hours != 0) {
+				result = String.format ("%s%dd%dh", sign, days, hours);
+			} else {
+				result = String.format ("%s%dd", sign, days);
+			}
+		}
+
+		// Leading field is hours
+
+		else if (hours != 0) {
+			if (millis != 0) {
+				result = String.format ("%s%dh%dm%d.%03ds", sign, hours, minutes, seconds, millis);
+			} else if (seconds != 0) {
+				result = String.format ("%s%dh%dm%ds", sign, hours, minutes, seconds);
+			} else if (minutes != 0) {
+				result = String.format ("%s%dh%dm", sign, hours, minutes);
+			} else {
+				result = String.format ("%s%dh", sign, hours);
+			}
+		}
+
+		// Leading field is minutes
+
+		else if (minutes != 0) {
+			if (millis != 0) {
+				result = String.format ("%s%dm%d.%03ds", sign, minutes, seconds, millis);
+			} else if (seconds != 0) {
+				result = String.format ("%s%dm%ds", sign, minutes, seconds);
+			} else {
+				result = String.format ("%s%dm", sign, minutes);
+			}
+		}
+
+		// Leading field is seconds
+
+		else {
+			if (millis != 0) {
+				result = String.format ("%s%d.%03ds", sign, seconds, millis);
+			} else {
+				result = String.format ("%s%ds", sign, seconds);
+			}
+		}
+
+		return result;
+	}
+
+
+
+
+	// Given a duration (in milliseconds), produce a string which
+	// is its numerical value followed by the human-readable form in parentheses.
+	// This version includes a "days" field for durations of 1 day or more.
+	// This produces an easier-to-read form, not in java.time.Duration format.
+
+	public static String duration_raw_and_string_3 (long the_duration) {
+		return the_duration + " (" + duration_to_string_3(the_duration) + ")";
+	}
+
+
+
+
 	// Given information about an event, produce a one-line summary.
 
 	public static String event_info_one_line (long event_time,
