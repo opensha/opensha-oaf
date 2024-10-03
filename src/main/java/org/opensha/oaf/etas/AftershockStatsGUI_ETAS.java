@@ -6825,7 +6825,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		try{
 			lines = IOUtils.readLines(citiesIS, StandardCharsets.UTF_8);
 		} catch (Exception e) {
-			System.out.println("Couldn't load country border information: "+e.getMessage());
+			System.out.println("Couldn't load city information: "+e.getMessage());
 		}
 
 		//populate the feature list
