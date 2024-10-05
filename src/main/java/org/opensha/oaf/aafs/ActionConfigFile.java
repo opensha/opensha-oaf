@@ -474,7 +474,8 @@ public class ActionConfigFile implements Marshalable {
 	public static final int FORECAST_FILE_OPTION_MIN = 0;
 	public static final int FORECAST_FILE_OPTION_DISABLE = 0;	// Disable saving forecasts into files
 	public static final int FORECAST_FILE_OPTION_ENABLE = 1;	// Enable saving forecasts into files
-	public static final int FORECAST_FILE_OPTION_MAX = 1;
+	public static final int FORECAST_FILE_OPTION_VERBOSE = 2;	// Enable verbose saving forecasts into files
+	public static final int FORECAST_FILE_OPTION_MAX = 2;
 
 	private static final int V3_FORECAST_FILE_OPTION = 0;	// Default value for v3 and earlier files
 
@@ -1470,6 +1471,7 @@ public class ActionConfigFile implements Marshalable {
 		switch (forecast_file_opt) {
 		case FORECAST_FILE_OPTION_DISABLE: return "FORECAST_FILE_OPTION_DISABLE";
 		case FORECAST_FILE_OPTION_ENABLE: return "FORECAST_FILE_OPTION_ENABLE";
+		case FORECAST_FILE_OPTION_VERBOSE: return "FORECAST_FILE_OPTION_VERBOSE";
 		}
 
 		return "FORECAST_FILE_OPTION_INVALID(" + forecast_file_opt + ")";

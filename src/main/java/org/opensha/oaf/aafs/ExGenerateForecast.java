@@ -82,14 +82,15 @@ public class ExGenerateForecast extends ServerExecTask {
 	//  json_string = String containing the forecast JSON, if null or empty then nothing is written.
 	//  event_id = Mainshock event ID (inserted into the filename).
 	//  lag = Forecast time relative to mainshock (inserted into the filename).
+	//  fcdata = Forecast data file to write, or null if none.
 	// Note: This function absorbs and discards all exceptions.
 
-	private static void save_forecast_json (String json_string, String event_id, long lag) {
+	private static void save_forecast_json (String json_string, String event_id, long lag, ForecastData fcdata) {
 		try {
 
-			// IF we have a JSON string ...
+			// If we have a JSON string ...
 
-			if (json_string != null && json_string.length() > 0) {
+			if (json_string != null && json_string.trim().length() > 0) {
 
 				// Get filename prefix containing the time, and create the directory if needed
 
@@ -110,6 +111,19 @@ public class ExGenerateForecast extends ServerExecTask {
 					// Write the file
 
 					SimpleUtils.write_string_as_file (filename, fmt_json_string);
+
+					// If we also want to write a forecast_data file ..
+
+					if (fcdata != null) {
+
+						// Create filename
+
+						String data_filename = filename_prefix + event_id + "-" + SimpleUtils.duration_to_string_3 (lag - (lag % 1000L)) + "_data.json";
+
+						// Write a formatted file
+
+						MarshalUtils.to_formatted_compact_json_file (fcdata, data_filename);
+					}
 				}
 			}
 		}
@@ -793,12 +807,6 @@ public class ExGenerateForecast extends ServerExecTask {
 			}
 		}
 
-		// Save forecast into a file, if desired
-
-		if (sg.task_disp.get_action_config().get_is_forecast_file_enabled()) {
-			save_forecast_json (forecast_results.get_pdl_model(), fcmain.mainshock_event_id, next_forecast_lag);
-		}
-
 		// Insert forecast into timeline status
 
 		tstatus.set_state_forecast (sg.task_disp.get_time(), sg.task_disp.get_action_config(), fcmain, forecast_params, forecast_results);
@@ -811,6 +819,24 @@ public class ExGenerateForecast extends ServerExecTask {
 
 		if (new_next_forecast_lag < 0L) {
 			tstatus.set_fc_status (TimelineStatus.FCSTAT_STOP_EXPIRED);
+		}
+
+		// Save forecast into a file, if desired
+
+		if (sg.task_disp.get_action_config().get_is_forecast_file_enabled()) {
+			ForecastData save_fcdata = null;
+
+			// If verbose, set up to write forecast_data file
+
+			if (sg.task_disp.get_action_config().get_is_forecast_file_verbose()) {
+				save_fcdata = new ForecastData();
+				save_fcdata.set_data (tstatus.entry_time, tstatus.forecast_mainshock, tstatus.forecast_params,
+									tstatus.forecast_results, tstatus.analyst_options);
+			}
+
+			// Write the file(s)
+
+			save_forecast_json (forecast_results.get_pdl_model(), fcmain.mainshock_event_id, next_forecast_lag, save_fcdata);
 		}
 
 		//--- PDL report

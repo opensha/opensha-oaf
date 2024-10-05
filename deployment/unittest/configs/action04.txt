@@ -592,6 +592,7 @@ is_evseq_enabled = true
 is_evseq_reported = true
 is_etas_enabled = false
 is_forecast_file_enabled = false
+is_forecast_file_verbose = false
 pdl_intake_region_min_min_mag = 4.95
 pdl_intake_region_min_intake_mag = 4.75
 max_adv_window_end_off = 31536000000

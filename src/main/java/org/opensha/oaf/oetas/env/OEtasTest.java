@@ -30,8 +30,20 @@ import org.opensha.oaf.oetas.OESimulator;
 import org.opensha.oaf.oetas.OEStatsCalc;
 
 import org.opensha.oaf.oetas.bay.OEBayFactory;
+import org.opensha.oaf.oetas.bay.OEBayFactoryParams;
+import org.opensha.oaf.oetas.bay.OEBayPrior;
+import org.opensha.oaf.oetas.bay.OEBayPriorParams;
+import org.opensha.oaf.oetas.bay.OEBayPriorValue;
 import org.opensha.oaf.oetas.bay.OEGaussAPCParams;
 import org.opensha.oaf.oetas.bay.OEGaussAPCConfig;
+
+import org.opensha.oaf.oetas.fit.OEGridParams;
+import org.opensha.oaf.oetas.fit.OEGridOptions;
+
+import org.opensha.oaf.oetas.util.OEDiscreteRange;
+import org.opensha.oaf.oetas.util.OEMarginalDistSet;
+import org.opensha.oaf.oetas.util.OEMarginalDistSetBuilder;
+import org.opensha.oaf.oetas.util.OEValueElement;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.rj.GenericRJ_ParametersFetch;
@@ -486,6 +498,187 @@ public class OEtasTest {
 		);
 
 		return catalog_info;
+	}
+
+
+
+
+	// Make the marginal distribution for a Bayesian prior.
+	// Parameters:
+	//  bay_prior = Bayesian prior.
+	//  bay_params = Parameters for Bayesian prior.
+	//  grid_params = Specifies parameter ranges.
+	//  f_bivar_marg = True to include bivariate marginals.
+	// Returns the marginals of the Bayesian prior.
+	// Note: Creates marginals for two data values, "by_bin" does not
+	// make use of voxel volumes, and "by_volume" uses voxel volumes.
+
+	public static OEMarginalDistSet make_marginal_for_prior (
+		OEBayPrior bay_prior,
+		OEBayPriorParams bay_params,
+		OEGridParams grid_params,
+		boolean f_bivar_marg
+	) {
+		// Set up the marginal distribution builder
+
+		OEMarginalDistSetBuilder dist_set_builder = new OEMarginalDistSetBuilder();
+		dist_set_builder.add_etas_vars (grid_params, false);
+		int ix_density = dist_set_builder.add_data ("density");
+		int ix_prob = dist_set_builder.add_data ("probability");
+		dist_set_builder.begin_accum (f_bivar_marg);
+
+		// Get volume element arrays for each variable, noting that alpha_velt_array and zmu_velt_array can be null.
+
+		OEValueElement[] b_velt_array = grid_params.b_range.get_velt_array();
+		int b_velt_count = b_velt_array.length;
+
+		OEValueElement[] alpha_velt_array = new OEValueElement[1];
+		alpha_velt_array[0] = null;
+		if (grid_params.alpha_range != null) {
+			alpha_velt_array = grid_params.alpha_range.get_velt_array();
+		}
+		int alpha_velt_count = alpha_velt_array.length;
+
+		OEValueElement[] c_velt_array = grid_params.c_range.get_velt_array();
+		int c_velt_count = c_velt_array.length;
+
+		OEValueElement[] p_velt_array = grid_params.p_range.get_velt_array();
+		int p_velt_count = p_velt_array.length;
+
+		OEValueElement[] n_velt_array = grid_params.n_range.get_velt_array();
+		int n_velt_count = n_velt_array.length;
+
+		OEValueElement[] zams_velt_array = grid_params.zams_range.get_velt_array();
+		int zams_velt_count = zams_velt_array.length;
+
+		OEValueElement[] zmu_velt_array = new OEValueElement[1];
+		zmu_velt_array[0] = null;
+		if (grid_params.zmu_range != null) {
+			zmu_velt_array = grid_params.zmu_range.get_velt_array();
+		}
+		int zmu_velt_count = zmu_velt_array.length;
+
+		// Loop over all voxels to get the maximum log density
+
+		double max_log_density = -Double.MAX_VALUE;
+
+		OEBayPriorValue bay_value = new OEBayPriorValue();
+
+		for (int b_ix = 0; b_ix < b_velt_count; ++b_ix) {
+			final OEValueElement b_velt = b_velt_array[b_ix];
+
+			for (int alpha_ix = 0; alpha_ix < alpha_velt_count; ++alpha_ix) {
+				final OEValueElement alpha_velt = alpha_velt_array[alpha_ix];
+
+				for (int c_ix = 0; c_ix < c_velt_count; ++c_ix) {
+					final OEValueElement c_velt = c_velt_array[c_ix];
+
+					for (int p_ix = 0; p_ix < p_velt_count; ++p_ix) {
+						final OEValueElement p_velt = p_velt_array[p_ix];
+
+						for (int n_ix = 0; n_ix < n_velt_count; ++n_ix) {
+							final OEValueElement n_velt = n_velt_array[n_ix];
+
+							for (int zams_ix = 0; zams_ix < zams_velt_count; ++zams_ix) {
+								final OEValueElement zams_velt = zams_velt_array[zams_ix];
+
+								for (int zmu_ix = 0; zmu_ix < zmu_velt_count; ++zmu_ix) {
+									final OEValueElement zmu_velt = zmu_velt_array[zmu_ix];
+
+									bay_prior.get_bay_value (
+										bay_params,
+										bay_value,
+										b_velt,
+										alpha_velt,
+										c_velt,
+										p_velt,
+										n_velt,
+										zams_velt,
+										zmu_velt
+									);
+
+									max_log_density = Math.max (max_log_density, bay_value.log_density);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Loop ovar all voxels to accumulate the marginals
+
+		for (int b_ix = 0; b_ix < b_velt_count; ++b_ix) {
+			final OEValueElement b_velt = b_velt_array[b_ix];
+			final double b = b_velt.get_ve_value();
+
+			for (int alpha_ix = 0; alpha_ix < alpha_velt_count; ++alpha_ix) {
+				final OEValueElement alpha_velt = alpha_velt_array[alpha_ix];
+				final double alpha = ((alpha_velt == null) ? b : alpha_velt.get_ve_value());
+
+				for (int c_ix = 0; c_ix < c_velt_count; ++c_ix) {
+					final OEValueElement c_velt = c_velt_array[c_ix];
+					final double c = c_velt.get_ve_value();
+
+					for (int p_ix = 0; p_ix < p_velt_count; ++p_ix) {
+						final OEValueElement p_velt = p_velt_array[p_ix];
+						final double p = p_velt.get_ve_value();
+
+						for (int n_ix = 0; n_ix < n_velt_count; ++n_ix) {
+							final OEValueElement n_velt = n_velt_array[n_ix];
+							final double n = n_velt.get_ve_value();
+
+							dist_set_builder.set_etas_var_b_alpha_c_p_n (
+								b,
+								alpha,
+								c,
+								p,
+								n
+							);
+
+							for (int zams_ix = 0; zams_ix < zams_velt_count; ++zams_ix) {
+								final OEValueElement zams_velt = zams_velt_array[zams_ix];
+								final double zams = zams_velt.get_ve_value();
+
+								for (int zmu_ix = 0; zmu_ix < zmu_velt_count; ++zmu_ix) {
+									final OEValueElement zmu_velt = zmu_velt_array[zmu_ix];
+									final double zmu = ((zmu_velt == null) ? 0.0 : zmu_velt.get_ve_value());
+
+									dist_set_builder.set_etas_var_zams_zmu (
+										zams,
+										zmu
+									);
+
+									bay_prior.get_bay_value (
+										bay_params,
+										bay_value,
+										b_velt,
+										alpha_velt,
+										c_velt,
+										p_velt,
+										n_velt,
+										zams_velt,
+										zmu_velt
+									);
+
+									final double density = Math.exp (bay_value.log_density - max_log_density);
+
+									dist_set_builder.set_data (ix_density, density);
+									dist_set_builder.set_data (ix_prob, density * bay_value.vox_volume);
+
+									dist_set_builder.accum();
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Return the marginal distribution
+
+		OEMarginalDistSet dist_set = dist_set_builder.end_etas_accum();
+		return dist_set;
 	}
 
 
@@ -1804,6 +1997,80 @@ public class OEtasTest {
 
 
 
+	// test18/write_prior_marginals
+	// Command line arguments:
+	//  filename  fn_params  tint_br  f_bivar_marg
+	// Write marginal file for the Bayesian prior.
+	// The parameter grid and Bayesian prior are obtained from an ETAS parameter file.
+	// The Bayesian factory is called with unknown mainshock magnitude and location.
+
+	public static void test18 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Writing marginals for a Bayesian prior");
+		String filename_marginal = get_filename_arg (testargs, "filename_marginal");
+		String fn_params = get_filename_arg (testargs, "fn_params");
+
+		double tint_br = testargs.get_double ("tint_br");
+		boolean f_bivar_marg = testargs.get_boolean ("f_bivar_marg");
+
+		testargs.end_test();
+
+		// Mainshock magnitude and location
+
+		double mag_main = OEBayFactoryParams.unknown_mag();
+		Location loc_main = OEBayFactoryParams.unknown_loc();
+
+		// Read the parameters
+
+		OEtasParameters etas_params = new OEtasParameters();
+		MarshalUtils.from_json_file (etas_params, fn_params);
+
+		// Get grid parameters and options
+
+		OEGridParams grid_params = etas_params.make_grid_params();
+		OEGridOptions grid_options = etas_params.make_grid_options();
+
+		// Bayesian factory parameters
+
+		OEBayFactoryParams bay_factory_params = new OEBayFactoryParams (mag_main, loc_main);
+
+		// Get Bayesian prior parameters
+
+		OEBayPrior bay_prior = etas_params.get_bay_prior (bay_factory_params);
+
+		// Bayesian prior Parameters
+
+		OEBayPriorParams bay_params = new OEBayPriorParams (mag_main, tint_br, grid_options);
+
+		// Compute the marginals
+
+		OEMarginalDistSet dist_set = make_marginal_for_prior (
+			bay_prior,
+			bay_params,
+			grid_params,
+			f_bivar_marg
+		);
+
+		// Write to file
+
+		MarshalUtils.to_formatted_json_file (dist_set, filename_marginal);
+
+		System.out.println ();
+		System.out.println ("Wrote Bayesian prior marginals to file: " + filename_marginal);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -1914,6 +2181,12 @@ public class OEtasTest {
 
 		if (testargs.is_test ("test17", "run_etas_2")) {
 			test17 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test18", "write_prior_marginals")) {
+			test18 (testargs);
 			return;
 		}
 

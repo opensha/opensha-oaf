@@ -515,6 +515,12 @@ public final class ActionConfig {
 		return param_set.forecast_file_option != ActionConfigFile.FORECAST_FILE_OPTION_DISABLE;
 	}
 
+	// Get flag, indicating if verbose save forecasts into files is enabled. [v4]
+
+	public boolean get_is_forecast_file_verbose () {
+		return param_set.forecast_file_option == ActionConfigFile.FORECAST_FILE_OPTION_VERBOSE;
+	}
+
 	// Get the number of advisory magnitude bins.
 
 	public int get_adv_min_mag_bin_count () {
@@ -945,6 +951,7 @@ public final class ActionConfig {
 			System.out.println ("is_evseq_reported = " + action_config.get_is_evseq_reported());
 			System.out.println ("is_etas_enabled = " + action_config.get_is_etas_enabled());
 			System.out.println ("is_forecast_file_enabled = " + action_config.get_is_forecast_file_enabled());
+			System.out.println ("is_forecast_file_verbose = " + action_config.get_is_forecast_file_verbose());
 			System.out.println ("pdl_intake_region_min_min_mag = " + action_config.get_pdl_intake_region_min_min_mag());
 			System.out.println ("pdl_intake_region_min_intake_mag = " + action_config.get_pdl_intake_region_min_intake_mag());
 			System.out.println ("max_adv_window_end_off = " + action_config.get_max_adv_window_end_off());
