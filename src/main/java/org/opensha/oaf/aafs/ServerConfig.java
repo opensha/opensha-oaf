@@ -162,6 +162,30 @@ public final class ServerConfig {
 		return param_set.log_summary;
 	}
 
+	// Pattern for a diagnostic filename prefix, in the format of SimpleDateFormat. [v2]
+
+	public String get_diag_fn_prefix() {
+		return param_set.diag_fn_prefix;
+	}
+
+	// Lower limit of diag file sequence number, inclusive, must be >= 0. [v2]
+
+	public int get_diag_seq_lo() {
+		return param_set.diag_seq_lo;
+	}
+
+	// Upper limit of diag file sequence number, exclusive, must be >= diag_seq_lo. [v2]
+
+	public int get_diag_seq_hi() {
+		return param_set.diag_seq_hi;
+	}
+
+	// Pattern for a forecast filename prefix, in the format of SimpleDateFormat. [v2]
+
+	public String get_forecast_fn_prefix() {
+		return param_set.forecast_fn_prefix;
+	}
+
 	// Comcat URL.
 
 	public String get_comcat_url() {
@@ -544,11 +568,15 @@ public final class ServerConfig {
 
 	public static String get_diag_filename_prefix () {
 
-		// Eventually these parameters will come from the configuration file
+		// Pattern from the configuration file
 
-		String prefix_pattern = "'/data/aafs/diag/'yyyy-MM'/'yyyy-MM-dd-HH-mm-ss'-'";
-		int diag_seq_lo = 100;
-		int diag_seq_hi = 200;
+		//String prefix_pattern = "'/data/aafs/diag/'yyyy-MM'/'yyyy-MM-dd-HH-mm-ss'-'";
+		//int diag_seq_lo = 100;
+		//int diag_seq_hi = 200;
+		ServerConfig server_config = new ServerConfig();
+		String prefix_pattern = server_config.get_diag_fn_prefix();
+		int diag_seq_lo = server_config.get_diag_seq_lo();
+		int diag_seq_hi = server_config.get_diag_seq_hi();
 
 		// Build the prefix, or null if none
 
@@ -625,9 +653,10 @@ public final class ServerConfig {
 
 	public static String get_fcsave_filename_prefix () {
 
-		// Eventually these parameters will come from the configuration file
+		// Pattern from the configuration file
 
-		String prefix_pattern = "'/data/aafs/forecasts/'yyyy-MM'/'yyyy-MM-dd-HH-mm-ss'-'";
+		//String prefix_pattern = "'/data/aafs/forecasts/'yyyy-MM'/'yyyy-MM-dd-HH-mm-ss'-'";
+		String prefix_pattern = (new ServerConfig()).get_forecast_fn_prefix();
 
 		// Build the prefix, or null if none
 
@@ -711,6 +740,10 @@ public final class ServerConfig {
 			System.out.println("log_con_intake = " + server_config.get_log_con_intake());
 			System.out.println("log_con_control = " + server_config.get_log_con_control());
 			System.out.println("log_summary = " + server_config.get_log_summary());
+			System.out.println("diag_fn_prefix = " + server_config.get_diag_fn_prefix());
+			System.out.println("diag_seq_lo = " + server_config.get_diag_seq_lo());
+			System.out.println("diag_seq_hi = " + server_config.get_diag_seq_hi());
+			System.out.println("forecast_fn_prefix = " + server_config.get_forecast_fn_prefix());
 			System.out.println("comcat_url = " + server_config.get_comcat_url());
 			System.out.println("feed_url = " + server_config.get_feed_url());
 			System.out.println("comcat_dev_url = " + server_config.get_comcat_dev_url());

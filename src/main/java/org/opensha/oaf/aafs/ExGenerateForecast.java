@@ -20,6 +20,8 @@ import org.opensha.oaf.rj.AftershockStatsShadow;
 
 import org.opensha.oaf.comcat.GeoJsonHolder;
 
+import org.opensha.oaf.pdl.PDLProductBuilderOaf;
+
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
@@ -102,7 +104,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 					// Create filename from prefix, event id, and lag
 
-					String filename = filename_prefix + event_id + "-" + SimpleUtils.duration_to_string_3 (lag - (lag % 1000L)) + ".json";
+					String filename = filename_prefix + event_id + "-" + SimpleUtils.duration_to_string_3 (lag - (lag % 1000L)) + "-" + PDLProductBuilderOaf.FORECAST_FILENAME;
 
 					// Format the JSON String
 
@@ -118,7 +120,7 @@ public class ExGenerateForecast extends ServerExecTask {
 
 						// Create filename
 
-						String data_filename = filename_prefix + event_id + "-" + SimpleUtils.duration_to_string_3 (lag - (lag % 1000L)) + "_data.json";
+						String data_filename = filename_prefix + event_id + "-" + SimpleUtils.duration_to_string_3 (lag - (lag % 1000L)) + "-" + ForecastData.FORECAST_DATA_FILENAME;
 
 						// Write a formatted file
 
