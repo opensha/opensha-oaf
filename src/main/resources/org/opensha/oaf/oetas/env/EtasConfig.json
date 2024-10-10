@@ -56,10 +56,11 @@
           "max": 2.0
         },
         "n_range": {
-          "kind": "log",
+          "kind": "log_skew",
           "num": 41,
-          "min": 0.01,
-          "max": 0.9
+          "min": 0.02,
+          "max": 0.9,
+          "skew": 3.0
         },
         "zams_range": {
           "kind": "linear",
@@ -74,8 +75,8 @@
         "relative_zams": false,
         "bay_prior_avail": true,
         "bay_factory": {
-          "ClassType": 137001,
-          "OEBayFactoryUniform": 137001,
+          "ClassType": 139001,
+          "OEBayFactoryGaussAPC": 139001,
           "OEBayFactory": 136001
         },
         "bay_weight_avail": true,

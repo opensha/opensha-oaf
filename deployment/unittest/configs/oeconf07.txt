@@ -41,12 +41,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -227,12 +229,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -298,12 +302,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -369,12 +375,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -440,12 +448,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -511,12 +521,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -582,12 +594,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -653,12 +667,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -724,12 +740,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -795,12 +813,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -866,12 +886,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -937,12 +959,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1008,12 +1032,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1079,12 +1105,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1150,12 +1178,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1221,12 +1251,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1292,12 +1324,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1363,12 +1397,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1434,12 +1470,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1505,12 +1543,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1576,12 +1616,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1647,12 +1689,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1718,12 +1762,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1789,12 +1835,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1860,12 +1908,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -1931,12 +1981,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2002,12 +2054,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2073,12 +2127,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2144,12 +2200,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2215,12 +2273,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2286,12 +2346,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2357,12 +2419,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2428,12 +2492,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2499,12 +2565,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2570,12 +2638,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2641,12 +2711,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2712,12 +2784,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2783,12 +2857,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2854,12 +2930,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2925,12 +3003,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -2996,12 +3076,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -3067,12 +3149,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -3138,12 +3222,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -3209,12 +3295,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0
@@ -3280,12 +3368,14 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLog[range_size=41, range_min=0.01, range_max=0.9]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
 zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
 zmu_range = RangeSingle[range_value=0.0]
 relative_zams = false
 bay_prior_avail = true
-bay_factory = {OEBayFactoryUniform}
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
 bay_weight_avail = true
 bay_weight = 1.0
 early_bay_weight = 2.0

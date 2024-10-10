@@ -1,6 +1,7 @@
 package org.opensha.oaf.oetas;
 
 import org.opensha.oaf.oetas.util.OEDiscreteRange;
+import org.opensha.oaf.oetas.bay.OEBayFactory;
 import org.opensha.oaf.util.SimpleUtils;
 
 
@@ -725,6 +726,16 @@ public class OEConstants {
 
 
 
+	// The default Bayesian prior factory.
+
+	public static OEBayFactory def_bay_factory () {
+		//return OEBayFactory.makeUniform();
+		return OEBayFactory.makeGaussAPC();
+	}
+
+
+
+
 	//----- b-values -----
 
 
@@ -805,7 +816,8 @@ public class OEConstants {
 	// This controls the productivity of secondary triggering.
 
 	public static OEDiscreteRange def_n_range () {
-		return OEDiscreteRange.makeLog (41, 0.01, 0.90);
+		//return OEDiscreteRange.makeLog (41, 0.01, 0.90);
+		return OEDiscreteRange.makeLogSkew (41, 0.02, 0.90, 3.0);
 	}
 
 	// The default range of mainshock productivity, ams-value, for reference magnitude equal to ZAMS_MREF == 0.0.

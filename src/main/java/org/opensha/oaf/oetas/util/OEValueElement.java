@@ -364,6 +364,30 @@ public class OEValueElement {
 	}
 
 
+	// Display our contents, with rounded values, including width.
+
+	public String rounded_string_linear () {
+		return "OEValueElement[ve_kind = " + kind_to_string (ve_kind)
+		+ ", ve_value = " + rndd(ve_value)
+		+ ", ve_lower = " + rndd(ve_lower)
+		+ ", ve_upper = " + rndd(ve_upper)
+		+ ", width = " + rndd(get_width(1.0))
+		+ "]";
+	}
+
+
+	// Display our contents, with rounded values, including log ratio.
+
+	public String rounded_string_log () {
+		return "OEValueElement[ve_kind = " + kind_to_string (ve_kind)
+		+ ", ve_value = " + rndd(ve_value)
+		+ ", ve_lower = " + rndd(ve_lower)
+		+ ", ve_upper = " + rndd(ve_upper)
+		+ ", log_ratio = " + rndd(get_log_ratio(1.0))
+		+ "]";
+	}
+
+
 	// Display a shortened version our contents, with rounded values.
 
 	public String shortened_string () {

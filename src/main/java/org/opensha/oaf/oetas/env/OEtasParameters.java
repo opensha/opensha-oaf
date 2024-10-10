@@ -1444,8 +1444,10 @@ public class OEtasParameters implements Marshalable {
 
 		//bay_prior = OEBayPrior.makeUniform();
 
-		bay_factory = OEBayFactory.makeUniform();
+		//bay_factory = OEBayFactory.makeUniform();
 		//bay_factory = OEBayFactory.makeGaussAPC();
+
+		bay_factory = OEConstants.def_bay_factory();
 		return;
 	}
 
@@ -3239,6 +3241,12 @@ public class OEtasParameters implements Marshalable {
 
 			System.out.println ();
 			System.out.println ("check_eligible(4.5, 4.0) =\n" + etas_params.check_eligible(4.5, 4.0));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.0, 3.0) =\n" + etas_params.check_eligible(4.0, 3.0));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.0, 4.0) =\n" + etas_params.check_eligible(4.0, 4.0));
 
 			// Done
 

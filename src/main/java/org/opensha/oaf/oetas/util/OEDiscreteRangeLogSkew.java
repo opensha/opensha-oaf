@@ -6,12 +6,13 @@ import org.opensha.oaf.util.MarshalException;
 
 
 /**
- * A discrete range of parameter values, for operational ETAS -- logarithmic scale.
- * Author: Michael Barall 03/15/2020.
+ * A discrete range of parameter values, for operational ETAS -- logarithmic scale with skew.
+ * Author: Michael Barall 10/07/2024.
  *
- * This class produces a discrete range of values that are equally-spaced on a logarithmic scale.
+ * This class produces a discrete range of values that are unequally-spaced on a logarithmic scale.
+ * A skew parameter specifies how much the values are clustered towards one end of the range.
  */
-public class OEDiscreteRangeLog extends OEDiscreteRange {
+public class OEDiscreteRangeLogSkew extends OEDiscreteRange {
 
 	//----- Parameters -----
 
@@ -26,6 +27,63 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 	private double range_min;
 	private double range_max;
+
+	// Skew factor.
+	// This is (approximately) the ratio of the density of points at the high end
+	// of the range, divided by the density of points at the low end of the range.
+	// So, range_skew > 1.0 puts more points at the high end of the range,
+	// while range_skew == 1.0 makes the points equally spaced.
+
+	private double range_skew;
+
+
+
+
+	//----- Formulas -----
+
+
+	// Linearization function.
+	// Parameters:
+	//  x = Value within range.
+	//  c = Parameter derived from skew.
+	// Retursn w such that points are spaced linearly in w.
+
+	private double lin_fcn (double x, double c) {
+		return Math.log(x/(1.0 - (c*x)));
+	}
+
+
+	// Inverse linearization function.
+	// Parameters:
+	//  w = Variable such that points are spaced linearly in w.
+	//  c = Parameter derived from skew.
+	// Returns value x within the range.
+
+	private double inv_lin_fcn (double w, double c) {
+		final double expw = Math.exp(w);
+		return expw/(1.0 + (c*expw));
+	}
+
+
+	// Derivative of log(x) with respect to w, expressed as a function of x.
+	// Parameters:
+	//  x = Value within range.
+	//  c = Parameter derived from skew.
+	// Returns the derivative (d/dw)(log(x)).
+	// Note: (d/dw)(log(x)) = 1/(1 + c*exp(w)) = 1 - (c*x).
+
+	private double dlogx_dw (double x, double c) {
+		return 1.0 - (c*x);
+	}
+
+
+	// Calculate the coefficient c used above.
+	// Returns c.
+	// Note that c = 0 if skew = 1, and c > 0 if skew > 1.
+
+	private double calc_c () {
+		return (range_skew - 1.0)/((range_skew*range_max) - range_min);
+	}
 
 
 
@@ -72,7 +130,12 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 		if (range_size == 1) {
 			return range_min;
 		}
-		return Math.sqrt (range_min) * Math.sqrt (range_max);
+		final double c = calc_c();
+		final double wlo = lin_fcn (range_min, c);
+		final double whi = lin_fcn (range_max, c);
+		return inv_lin_fcn (0.5*(wlo + whi), c);
+
+		//return Math.sqrt (range_min) * Math.sqrt (range_max);
 	}
 
 
@@ -92,11 +155,12 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 		if (range_size > 1) {
 			result[range_size - 1] = range_max;
 			if (range_size > 2) {
-				final double log_range_min = Math.log (range_min);
-				final double log_range_max = Math.log (range_max);
-				final double r_delta = (log_range_max - log_range_min) / ((double)(range_size - 1));
+				final double c = calc_c();
+				final double wlo = lin_fcn (range_min, c);
+				final double whi = lin_fcn (range_max, c);
+				final double w_delta = (whi - wlo) / ((double)(range_size - 1));
 				for (int k = 1; k < range_size - 1; ++k) {
-					result[k] = Math.exp (log_range_min + (r_delta * ((double)k)));
+					result[k] = inv_lin_fcn (wlo + (w_delta * ((double)k)), c);
 				}
 			}
 		}
@@ -121,11 +185,14 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 	public double[] get_bin_array () {
 		double[] result = new double[range_size + 1];
 		if (range_size > 1) {
-			final double log_range_min = Math.log (range_min);
-			final double log_range_max = Math.log (range_max);
-			final double r_delta = (log_range_max - log_range_min) / ((double)(range_size - 1));
-			for (int k = 0; k <= range_size; ++k) {
-				result[k] = Math.exp (log_range_min + (r_delta * (((double)k) - 0.5)));
+			final double c = calc_c();
+			final double wlo = lin_fcn (range_min, c);
+			final double whi = lin_fcn (range_max, c);
+			final double w_delta = (whi - wlo) / ((double)(range_size - 1));
+			result[0] = Math.exp ( Math.log (range_min) - (0.5 * w_delta * dlogx_dw (range_min, c)) );
+			result[range_size] = Math.exp ( Math.log (range_max) + (0.5 * w_delta * dlogx_dw (range_max, c)) );
+			for (int k = 1; k < range_size; ++k) {
+				result[k] = inv_lin_fcn (wlo + (w_delta * (((double)k) - 0.5)), c);
 			}
 		} else {
 			result[0] = range_min;
@@ -142,18 +209,22 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 	// Default constructor does nothing.
 
-	public OEDiscreteRangeLog () {}
+	public OEDiscreteRangeLogSkew () {}
 
 
 	// Construct from given parameters.
 
-	public OEDiscreteRangeLog (int range_size, double range_min, double range_max) {
+	public OEDiscreteRangeLogSkew (int range_size, double range_min, double range_max, double range_skew) {
 		if (!( range_size >= 1 )) {
-			throw new IllegalArgumentException ("OEDiscreteRangeLog.OEDiscreteRangeLog: Range size is non-positive: range_size = " + range_size);
+			throw new IllegalArgumentException ("OEDiscreteRangeLogSkew.OEDiscreteRangeLogSkew: Range size is non-positive: range_size = " + range_size);
 		}
 
 		if (!( range_min > 0.0 && range_max > 0.0 )) {
-			throw new IllegalArgumentException ("OEDiscreteRangeLog.OEDiscreteRangeLog: Range limits are non-positive: range_min = " + range_min + ", range_max = " + range_max);
+			throw new IllegalArgumentException ("OEDiscreteRangeLogSkew.OEDiscreteRangeLogSkew: Range limits are non-positive: range_min = " + range_min + ", range_max = " + range_max);
+		}
+
+		if (!( range_skew > 0.0 )) {
+			throw new IllegalArgumentException ("OEDiscreteRangeLogSkew.OEDiscreteRangeLogSkew: Range skew is non-positive: range_skew = " + range_skew);
 		}
 
 		this.range_size = range_size;
@@ -175,6 +246,8 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 				this.range_max = range_min;
 			}
 		}
+
+		this.range_skew = range_skew;
 	}
 
 
@@ -182,9 +255,10 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 	@Override
 	public String toString() {
-		return "RangeLog[range_size=" + range_size
+		return "RangeLogSkew[range_size=" + range_size
 		+ ", range_min=" + range_min
 		+ ", range_max=" + range_max
+		+ ", range_skew=" + range_skew
 		+ "]";
 	}
 
@@ -196,15 +270,15 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 	// Marshal version number.
 
 	private static final int MARSHAL_HWV_1 = 1;		// human-writeable version
-	private static final int MARSHAL_VER_1 = 88001;
+	private static final int MARSHAL_VER_1 = 141001;
 
-	private static final String M_VERSION_NAME = "OEDiscreteRangeLog";
+	private static final String M_VERSION_NAME = "OEDiscreteRangeLogSkew";
 
 	// Get the type code.
 
 	@Override
 	protected int get_marshal_type () {
-		return MARSHAL_LOG;
+		return MARSHAL_LOG_SKEW;
 	}
 
 	// Marshal object, internal.
@@ -233,6 +307,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 			writer.marshalInt    ("range_size", range_size);
 			writer.marshalDouble ("range_min", range_min);
 			writer.marshalDouble ("range_max", range_max);
+			writer.marshalDouble ("range_skew", range_skew);
 
 		}
 		break;
@@ -254,7 +329,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 		switch (ver) {
 
 		default:
-			throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Unknown version code: version = " + ver);
+			throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal: Unknown version code: version = " + ver);
 		
 		// Human-writeable version
 
@@ -265,13 +340,18 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 			range_size = reader.unmarshalInt ("range_size");
 			double the_range_min = reader.unmarshalDouble ("range_min");
 			double the_range_max = reader.unmarshalDouble ("range_max");
+			double the_range_skew = reader.unmarshalDouble ("range_skew");
 
 			if (!( range_size >= 1 )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Range size is non-positive: range_size = " + range_size);
+				throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal: Range size is non-positive: range_size = " + range_size);
 			}
 
 			if (!( the_range_min > 0.0 && the_range_max > 0.0 )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Range limits are non-positive: range_min = " + the_range_min + ", range_max = " + the_range_max);
+				throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal: Range limits are non-positive: range_min = " + the_range_min + ", range_max = " + the_range_max);
+			}
+
+			if (!( the_range_skew > 0.0 )) {
+				throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal: Range skew is non-positive: range_skew = " + range_skew);
 			}
 
 			if (the_range_min <= the_range_max) {
@@ -291,6 +371,8 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 					range_max = the_range_min;
 				}
 			}
+
+			range_skew = the_range_skew;
 		}
 		break;
 
@@ -307,17 +389,22 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 			range_size = reader.unmarshalInt ("range_size");
 			range_min = reader.unmarshalDouble ("range_min");
 			range_max = reader.unmarshalDouble ("range_max");
+			range_skew = reader.unmarshalDouble ("range_skew");
 
 			if (!( range_size >= 1 )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Range size is non-positive: range_size = " + range_size);
+				throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal: Range size is non-positive: range_size = " + range_size);
 			}
 
 			if (!( range_min > 0.0 && range_max > 0.0 )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Range limits are non-positive: range_min = " + range_min + ", range_max = " + range_max);
+				throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal: Range limits are non-positive: range_min = " + range_min + ", range_max = " + range_max);
 			}
 
 			if (!( range_min <= range_max )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal: Range limits out-of-order: range_min = " + range_min + ", range_max = " + range_max);
+				throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal: Range limits out-of-order: range_min = " + range_min + ", range_max = " + range_max);
+			}
+
+			if (!( range_skew > 0.0 )) {
+				throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal: Range skew is non-positive: range_skew = " + range_skew);
 			}
 
 			//  if (range_size == 1) {
@@ -344,7 +431,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 	// Unmarshal object.
 
 	@Override
-	public OEDiscreteRangeLog unmarshal (MarshalReader reader, String name) {
+	public OEDiscreteRangeLogSkew unmarshal (MarshalReader reader, String name) {
 		reader.unmarshalMapBegin (name);
 		do_umarshal (reader);
 		reader.unmarshalMapEnd ();
@@ -353,7 +440,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 	// Marshal object, polymorphic.
 
-	public static void marshal_poly (MarshalWriter writer, String name, OEDiscreteRangeLog obj) {
+	public static void marshal_poly (MarshalWriter writer, String name, OEDiscreteRangeLogSkew obj) {
 
 		writer.marshalMapBegin (name);
 
@@ -371,8 +458,8 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 	// Unmarshal object, polymorphic.
 
-	public static OEDiscreteRangeLog unmarshal_poly (MarshalReader reader, String name) {
-		OEDiscreteRangeLog result;
+	public static OEDiscreteRangeLogSkew unmarshal_poly (MarshalReader reader, String name) {
+		OEDiscreteRangeLogSkew result;
 
 		reader.unmarshalMapBegin (name);
 	
@@ -383,14 +470,14 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 		switch (type) {
 
 		default:
-			throw new MarshalException ("OEDiscreteRangeLog.unmarshal_poly: Unknown class type code: type = " + type);
+			throw new MarshalException ("OEDiscreteRangeLogSkew.unmarshal_poly: Unknown class type code: type = " + type);
 
 		case MARSHAL_NULL:
 			result = null;
 			break;
 
-		case MARSHAL_LOG:
-			result = new OEDiscreteRangeLog();
+		case MARSHAL_LOG_SKEW:
+			result = new OEDiscreteRangeLogSkew();
 			result.do_umarshal (reader);
 			break;
 		}
@@ -408,12 +495,13 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 	@Override
 	protected void do_marshal_friendly (MarshalWriter writer, String name) {
-		int n = 4;
+		int n = 5;
 		writer.marshalArrayBegin (name, n);
-		writer.marshalString (null, MF_KEY_LOG);
+		writer.marshalString (null, MF_KEY_LOG_SKEW);
 		writer.marshalInt    (null, range_size);
 		writer.marshalDouble (null, range_min);
 		writer.marshalDouble (null, range_max);
+		writer.marshalDouble (null, range_skew);
 		writer.marshalArrayEnd ();
 		return;
 	}
@@ -423,20 +511,25 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 	@Override
 	protected void do_umarshal_friendly (MarshalReader reader, int n) {
-		if (n != 4) {
+		if (n != 5) {
 			throw new MarshalException ("OEDiscreteRangeLinear.do_umarshal_friendly: Invalid array length: n = " + n);
 		}
 
 		range_size = reader.unmarshalInt (null);
 		double the_range_min = reader.unmarshalDouble (null);
 		double the_range_max = reader.unmarshalDouble (null);
+		double the_range_skew = reader.unmarshalDouble (null);
 
 		if (!( range_size >= 1 )) {
-			throw new MarshalException ("OEDiscreteRangeLog.do_umarshal_friendly: Range size is non-positive: range_size = " + range_size);
+			throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal_friendly: Range size is non-positive: range_size = " + range_size);
 		}
 
 		if (!( the_range_min > 0.0 && the_range_max > 0.0 )) {
-			throw new MarshalException ("OEDiscreteRangeLog.do_umarshal_friendly: Range limits are non-positive: range_min = " + the_range_min + ", range_max = " + the_range_max);
+			throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal_friendly: Range limits are non-positive: range_min = " + the_range_min + ", range_max = " + the_range_max);
+		}
+
+		if (!( the_range_skew > 0.0 )) {
+			throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal_friendly: Range skew is non-positive: range_skew = " + range_skew);
 		}
 
 		if (the_range_min <= the_range_max) {
@@ -457,6 +550,8 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 			}
 		}
 
+		range_skew = the_range_skew;
+
 		return;
 	}
 
@@ -472,7 +567,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 		switch (xver) {
 
 		default:
-			throw new MarshalException ("OEDiscreteRangeLog.do_marshal_xver: Unknown version code: version = " + xver);
+			throw new MarshalException ("OEDiscreteRangeLogSkew.do_marshal_xver: Unknown version code: version = " + xver);
 
 		// Version 1
 
@@ -480,10 +575,11 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 
 			// Write kind and parameters
 
-			writer.marshalString (MF_TAG_KIND, MF_KEY_LOG);
+			writer.marshalString (MF_TAG_KIND, MF_KEY_LOG_SKEW);
 			writer.marshalInt    (MF_TAG_NUM, range_size);
 			writer.marshalDouble (MF_TAG_MIN, range_min);
 			writer.marshalDouble (MF_TAG_MAX, range_max);
+			writer.marshalDouble (MF_TAG_SKEW, range_skew);
 		}
 		break;
 
@@ -500,7 +596,7 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 		switch (xver) {
 
 		default:
-			throw new MarshalException ("OEDiscreteRangeLog.do_umarshal_xver: Unknown version code: version = " + xver);
+			throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal_xver: Unknown version code: version = " + xver);
 		
 		// Version 1
 
@@ -511,13 +607,18 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 			range_size = reader.unmarshalInt (MF_TAG_NUM);
 			double the_range_min = reader.unmarshalDouble (MF_TAG_MIN);
 			double the_range_max = reader.unmarshalDouble (MF_TAG_MAX);
+			double the_range_skew = reader.unmarshalDouble (MF_TAG_SKEW);
 
 			if (!( range_size >= 1 )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal_xver: Range size is non-positive: range_size = " + range_size);
+				throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal_xver: Range size is non-positive: range_size = " + range_size);
 			}
 
 			if (!( the_range_min > 0.0 && the_range_max > 0.0 )) {
-				throw new MarshalException ("OEDiscreteRangeLog.do_umarshal_xver: Range limits are non-positive: range_min = " + the_range_min + ", range_max = " + the_range_max);
+				throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal_xver: Range limits are non-positive: range_min = " + the_range_min + ", range_max = " + the_range_max);
+			}
+
+			if (!( the_range_skew > 0.0 )) {
+				throw new MarshalException ("OEDiscreteRangeLogSkew.do_umarshal_xver: Range skew is non-positive: range_skew = " + range_skew);
 			}
 
 			if (the_range_min <= the_range_max) {
@@ -537,6 +638,8 @@ public class OEDiscreteRangeLog extends OEDiscreteRange {
 					range_max = the_range_min;
 				}
 			}
+
+			range_skew = the_range_skew;
 		}
 		break;
 
