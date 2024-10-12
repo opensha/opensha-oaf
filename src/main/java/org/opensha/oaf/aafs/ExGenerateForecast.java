@@ -670,6 +670,8 @@ public class ExGenerateForecast extends ServerExecTask {
 				fcmain,
 				forecast_params,
 				next_forecast_lag >= sg.task_disp.get_action_config().get_seq_spec_min_lag());
+
+			forecast_results.write_calc_log (sg);
 		}
 
 		// An exception here triggers a ComCat retry

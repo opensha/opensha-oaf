@@ -937,11 +937,12 @@ public class ForecastResults implements Marshalable {
 	}
 
 	// Set the reason why ETAS is being skipped.
+	// The log_string can be null or empty if none.
 
-	private void set_etas_skip_reason (int rescode) {
+	private void set_etas_skip_reason (int rescode, String log_string) {
 		set_default_etas_results();
 		etas_rescode = rescode;
-		etas_log_info = OEExecEnvironment.make_etas_log_info (rescode, null);
+		etas_log_info = OEExecEnvironment.make_etas_log_info (rescode, log_string);
 		etas_result_avail = true;
 		return;
 	}
@@ -964,7 +965,7 @@ public class ForecastResults implements Marshalable {
 
 		if (!( (params.etas_fetch_meth != CALC_METH_SUPPRESS)
 				&& params.etas_avail )) {
-			set_etas_skip_reason (ETAS_RESCODE_NO_PARAMS);
+			set_etas_skip_reason (ETAS_RESCODE_NO_PARAMS, OEExecEnvironment.etas_result_to_string (ETAS_RESCODE_NO_PARAMS));
 			return;
 		}
 
@@ -972,7 +973,7 @@ public class ForecastResults implements Marshalable {
 
 		if (!( params.mag_comp_avail
 				&& params.mag_comp_params.get_magCompFn().is_page_or_constant() )) {
-			set_etas_skip_reason (ETAS_RESCODE_MAG_COMP_FORM);
+			set_etas_skip_reason (ETAS_RESCODE_MAG_COMP_FORM, OEExecEnvironment.etas_result_to_string (ETAS_RESCODE_MAG_COMP_FORM));
 			return;
 		}
 
@@ -980,14 +981,14 @@ public class ForecastResults implements Marshalable {
 
 		if (!( catalog_result_avail
 				&& fcmain.mainshock_avail )) {
-			set_etas_skip_reason (ETAS_RESCODE_NO_DATA);
+			set_etas_skip_reason (ETAS_RESCODE_NO_DATA, OEExecEnvironment.etas_result_to_string (ETAS_RESCODE_NO_DATA));
 			return;
 		}
 
 		// We need to be eligible based on magnitude
 
 		if (!( params.etas_params.check_eligible (fcmain.mainshock_mag, catalog_max_mag) )) {
-			set_etas_skip_reason (ETAS_RESCODE_NOT_ELIGIBLE);
+			set_etas_skip_reason (ETAS_RESCODE_NOT_ELIGIBLE, OEExecEnvironment.etas_result_to_string (ETAS_RESCODE_NOT_ELIGIBLE) + ", mainshock_mag = " + fcmain.mainshock_mag + ", catalog_max_mag = " + catalog_max_mag);
 			System.out.println ("Not eligible for ETAS: mainshock_mag = " + fcmain.mainshock_mag + ", catalog_max_mag = " + catalog_max_mag);
 			return;
 		}
