@@ -901,6 +901,7 @@ public class ForecastResults implements Marshalable {
 
 	// ETAS forecast outcome, can be null if none. [v2]
 	// Note that even if etas_result_avail is true, this can be null, and this can be non-null but not contain a forecast JSON.
+	// Note that if etas_rescode does not indicate success, then any forecast in etas_outcome should not be sent to PDL.
 
 	public OEtasOutcome etas_outcome = null;
 
@@ -916,7 +917,7 @@ public class ForecastResults implements Marshalable {
 	// Return true if we have an ETAS JSON.
 
 	public final boolean has_etas_json () {
-		return (etas_result_avail && (etas_outcome != null) && etas_outcome.has_etas_json());
+		return (etas_result_avail && OEExecEnvironment.is_etas_successful(etas_rescode) && (etas_outcome != null) && etas_outcome.has_etas_json());
 	}
 
 	// Return the ETAS JSON.
@@ -1111,7 +1112,7 @@ public class ForecastResults implements Marshalable {
 				etas_log_info = exec_env.make_etas_log_info();
 
 				etas_outcome = null;
-				if (exec_env.is_etas_successful()) {
+				if (exec_env.is_etas_completed()) {
 					etas_outcome = exec_env.etas_results;
 				}
 
@@ -1123,6 +1124,11 @@ public class ForecastResults implements Marshalable {
 					System.out.println ();
 					System.out.println (exec_env.get_forecast_summary_string());
 					System.out.println ("ETAS succeeded");
+				}
+				else if (exec_env.is_etas_completed()) {
+					System.out.println ();
+					//System.out.println (exec_env.get_forecast_summary_string());
+					System.out.println ("ETAS forecast rejected");
 				}
 				else {
 					System.out.println ("ETAS failed, result code = " + exec_env.get_rescode_as_string());
@@ -1168,6 +1174,115 @@ public class ForecastResults implements Marshalable {
 
 		etas_log_info = null;
 		return;
+	}
+
+	// calc_etas_catalog_info - Calculate ETAS OEtasCatalogInfo structure.
+	// Also calculate the USGS_ForecastInfo structure.
+	// Return null if the structures cannot be calculated.
+	// An exception also indicates the structure cannot be calculated.
+	// Note: This function supports testing.  It lets the caller obtain the
+	// same OEtasCatalogInfo structure that would be used by the sutomatic
+	// system.  It requires only that catalog info be loaded (along with
+	// result time, advisory lag, and injectable text).
+	// Note: The code is the same as the first part of calc_etas_results().
+	// Note: A successful return implies that we have ETAS parameters,
+	// mainshock parameters, and catalog results.
+
+	public static class ForecastAndCatalogInfo {
+		public USGS_ForecastInfo fc_info;
+		public OEtasCatalogInfo catalog_info;
+
+		public ForecastAndCatalogInfo (USGS_ForecastInfo fc_info,OEtasCatalogInfo catalog_info) {
+			this.fc_info = fc_info;
+			this.catalog_info = catalog_info;
+		}
+	}
+
+	public ForecastAndCatalogInfo calc_etas_catalog_info (ForecastMainshock fcmain, ForecastParameters params) {
+
+		ActionConfig my_action_config = new ActionConfig();
+
+		// If ETAS is disabled, then we can't have ETAS results
+
+		if (!( my_action_config.get_is_etas_enabled() )) {
+			return null;
+		}
+
+		// We need to have ETAS parameters
+
+		if (!( (params.etas_fetch_meth != CALC_METH_SUPPRESS)
+				&& params.etas_avail )) {
+			return null;
+		}
+
+		// We need to have magnitude of completeness parameters with Helmstetter function
+
+		if (!( params.mag_comp_avail
+				&& params.mag_comp_params.get_magCompFn().is_page_or_constant() )) {
+			return null;
+		}
+
+		// We need to have catalog results and mainshock parameters
+
+		if (!( catalog_result_avail
+				&& fcmain.mainshock_avail )) {
+			return null;
+		}
+
+		// We need to be eligible based on magnitude (we skip this test)
+
+		//  if (!( params.etas_params.check_eligible (fcmain.mainshock_mag, catalog_max_mag) )) {
+		//  	return null;
+		//  }
+
+		// Build the forecast information
+		
+		USGS_ForecastInfo fc_info = (new USGS_ForecastInfo()).set_typical (
+			fcmain.mainshock_time,			// event_time
+			result_time,					// result_time
+			advisory_lag,					// advisory_lag
+			injectable_text,				// injectable_text
+			params.next_scheduled_lag,		// next_scheduled_lag
+			null							// user_param_map
+		);
+		
+		// Add parameters for magnitude of completeness and search region
+		
+		if (params.mag_comp_avail && params.mag_comp_params != null) {
+			params.mag_comp_params.get_magCompFn().get_display_params (
+				fc_info.user_param_map, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
+		}
+		if (params.aftershock_search_avail && params.aftershock_search_region != null) {
+			params.aftershock_search_region.get_display_params (fc_info.user_param_map);
+		}
+
+		// Build the catalog information
+
+		double the_mag_cat = params.mag_comp_params.get_magCat (fcmain.mainshock_mag);
+		double the_mag_top = params.etas_params.suggest_mag_top (the_mag_cat, Math.max(fcmain.mainshock_mag, catalog_max_mag));
+
+		double t_data_begin = params.min_days;
+		double t_data_end = get_catalog_fit_end_days (params.max_days);
+		double t_fitting = get_catalog_fit_start_days (Math.max(0.0, params.min_days));
+		double t_forecast = Math.max(t_data_end, SimpleUtils.millis_to_days (fc_info.start_time - fcmain.mainshock_time));
+
+		OEtasCatalogInfo catalog_info = (new OEtasCatalogInfo()).set (
+			the_mag_cat,												// double magCat
+			the_mag_top,												// double magTop
+			params.mag_comp_params.get_magCompFn().getDefaultGUICapF(),	// double capF
+			params.mag_comp_params.get_magCompFn().getDefaultGUICapG(),	// double capG
+			params.mag_comp_params.get_magCompFn().getDefaultGUICapH(),	// double capH
+			t_data_begin,												// double t_data_begin
+			t_data_end,													// double t_data_end
+			t_fitting,													// double t_fitting
+			t_forecast,													// double t_forecast
+			fcmain.mainshock_mag,										// double mag_main
+			fcmain.mainshock_lat,										// double lat_main
+			fcmain.mainshock_lon,										// double lon_main
+			fcmain.mainshock_depth										// double depth_main
+		);
+
+		return new ForecastAndCatalogInfo (fc_info, catalog_info);
 	}
 
 
@@ -1218,6 +1333,18 @@ public class ForecastResults implements Marshalable {
 		rebuild_seq_spec_results (fcmain, params);
 		rebuild_bayesian_results (fcmain, params);
 		rebuild_etas_results (fcmain, params);
+		return;
+	}
+
+	// Calculate only the catalog, not doing any forecasts.
+	// Note: For consistency, parameters are the same as calc_all, although
+	// not all affect the result.  This function supports testing.
+
+	public void calc_catalog_only (long the_result_time, long the_advisory_lag, String the_injectable_text, ForecastMainshock fcmain, ForecastParameters params, boolean f_seq_spec) {
+		result_time = the_result_time;
+		advisory_lag = the_advisory_lag;
+		injectable_text = ((the_injectable_text == null) ? "" : the_injectable_text);
+		calc_catalog_results (fcmain, params);
 		return;
 	}
 

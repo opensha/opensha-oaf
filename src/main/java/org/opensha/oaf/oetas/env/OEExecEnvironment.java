@@ -115,7 +115,8 @@ public class OEExecEnvironment {
 	public static final int ETAS_RESCODE_IO_ERROR = 15;				// I/O error
 	public static final int ETAS_RESCODE_DATA_INVALID = 16;			// Received invalid data
 	public static final int ETAS_RESCODE_UNKNOWN_FAILURE = 17;		// Failed for an unknown reason
-	public static final int ETAS_RESCODE_MAX = 17;
+	public static final int ETAS_RESCODE_REJECTED = 18;				// ETAS forecast was rejected
+	public static final int ETAS_RESCODE_MAX = 18;
 
 	// Return a string identifying the result code
 
@@ -147,6 +148,7 @@ public class OEExecEnvironment {
 		case ETAS_RESCODE_IO_ERROR: return "ETAS_RESCODE_IO_ERRPR";
 		case ETAS_RESCODE_DATA_INVALID: return "ETAS_RESCODE_DATA_INVALID";
 		case ETAS_RESCODE_UNKNOWN_FAILURE: return "ETAS_RESCODE_UNKNOWN_FAILURE";
+		case ETAS_RESCODE_REJECTED: return "ETAS_RESCODE_REJECTED";
 		}
 		return "ETAS_RESCODE_INVALID(" + result + ")";
 	}
@@ -184,11 +186,30 @@ public class OEExecEnvironment {
 		case ETAS_RESCODE_IO_ERROR:				return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
 		case ETAS_RESCODE_DATA_INVALID:			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
 		case ETAS_RESCODE_UNKNOWN_FAILURE:		return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
+		case ETAS_RESCODE_REJECTED:				return OEtasLogInfo.ETAS_LOGTYPE_REJECT;
 		}
 		if (result > 0) {
 			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
 		}
 		return OEtasLogInfo.ETAS_LOGTYPE_UNKNOWN;
+	}
+
+
+
+
+	// Return true if the result code indicates reject.
+
+	public static boolean is_etas_result_reject (int result) {
+		return etas_result_to_logtype (result) == OEtasLogInfo.ETAS_LOGTYPE_REJECT;
+	}
+
+
+
+
+	// Return true if the result code indicates skip.
+
+	public static boolean is_etas_result_skip (int result) {
+		return etas_result_to_logtype (result) == OEtasLogInfo.ETAS_LOGTYPE_SKIP;
 	}
 
 
@@ -314,6 +335,8 @@ public class OEExecEnvironment {
 
 
 	// Return true if the given result code indicates ETAS has completed successfully.
+	// Note: A true return means that ETAS results are available, and the forecast
+	// within the results (if any) can be used.
 
 	public static boolean is_etas_successful (int rescode) {
 		return rescode == ETAS_RESCODE_OK;
@@ -326,6 +349,37 @@ public class OEExecEnvironment {
 
 	public final boolean is_etas_successful () {
 		return etas_rescode == ETAS_RESCODE_OK;
+	}
+
+
+
+
+	// Return true if the given result code indicates ETAS has completed.
+	// Note: A true return means that ETAS results are available, however the forecast
+	// within the results (if any) may or may not be usable. If is_etas_successful()
+	// returns false, then the ETAS forecast has been rejected.
+
+	public static boolean is_etas_completed (int rescode) {
+		switch (rescode) {
+		case ETAS_RESCODE_OK:
+		case ETAS_RESCODE_REJECTED:
+			return true;
+		}
+		return false;
+	}
+
+
+
+
+	// Return true if ETAS has completed.
+
+	public final boolean is_etas_completed () {
+		switch (etas_rescode) {
+		case ETAS_RESCODE_OK:
+		case ETAS_RESCODE_REJECTED:
+			return true;
+		}
+		return false;
 	}
 
 
@@ -430,9 +484,9 @@ public class OEExecEnvironment {
 
 		if (is_etas_attempted()) {
 
-			// If successful, save global log info for ETAS success
+			// If completed, save global log info for ETAS success
 
-			if (is_etas_successful()) {
+			if (is_etas_completed()) {
 				log_info.set_global_accum_success (
 					etas_rescode,						// int rescode,
 					exec_timer.get_split_runtime(),		// long total_time,
@@ -443,7 +497,7 @@ public class OEExecEnvironment {
 				);
 			}
 
-			// If not successful, save global log info for ETAS failure
+			// If not completed, save global log info for ETAS failure
 
 			else {
 				log_info.set_global_accum_failure (etas_rescode);

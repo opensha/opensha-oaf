@@ -21,7 +21,8 @@ public class OEtasLogInfo {
 	public static final int ETAS_LOGTYPE_FAIL = 2;			// ETAS operation failed
 	public static final int ETAS_LOGTYPE_SKIP = 3;			// ETAS was skipped
 	public static final int ETAS_LOGTYPE_UNKNOWN = 4;		// Unknown log type
-	public static final int ETAS_LOGTYPE_MAX = 4;			// Maximum value
+	public static final int ETAS_LOGTYPE_REJECT = 5;		// ETAS forecast was rejected
+	public static final int ETAS_LOGTYPE_MAX = 5;			// Maximum value
 
 	// Return a string identifying the log type
 
@@ -32,6 +33,7 @@ public class OEtasLogInfo {
 		case ETAS_LOGTYPE_FAIL: return "ETAS_LOGTYPE_FAIL";
 		case ETAS_LOGTYPE_SKIP: return "ETAS_LOGTYPE_SKIP";
 		case ETAS_LOGTYPE_UNKNOWN: return "ETAS_LOGTYPE_UNKNOWN";
+		case ETAS_LOGTYPE_REJECT: return "ETAS_LOGTYPE_REJECT";
 		}
 		return "ETAS_LOGTYPE_INVALID(" + logtype + ")";
 	}
@@ -92,7 +94,7 @@ public class OEtasLogInfo {
 
 	public boolean g_avail;
 
-	// True of the global log information is a success.
+	// True if the global log information is a success (ETAS forecast completed).
 
 	public boolean g_success;
 

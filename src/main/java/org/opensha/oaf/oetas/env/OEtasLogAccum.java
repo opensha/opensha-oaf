@@ -17,6 +17,8 @@ public class OEtasLogAccum {
 	// Success/fail counts.
 
 	private long success_count;
+	private long skip_count;
+	private long reject_count;
 	private long failure_count;
 
 	// Nummber of operations returning each result code.
@@ -235,7 +237,11 @@ public class OEtasLogAccum {
 
 		// Count failure
 
-		++failure_count;
+		if (OEExecEnvironment.is_etas_result_skip (rescode)) {
+			++skip_count;
+		} else {
+			++failure_count;
+		}
 
 		// Force result code into range, and count it
 
@@ -273,7 +279,11 @@ public class OEtasLogAccum {
 
 		// Count success
 
-		++success_count;
+		if (OEExecEnvironment.is_etas_result_reject (rescode)) {
+			++reject_count;
+		} else {
+			++success_count;
+		}
 
 		// Force result code into range, and count it
 
@@ -353,6 +363,8 @@ public class OEtasLogAccum {
 	public final void clear () {
 
 		success_count = 0L;
+		skip_count = 0L;
+		reject_count = 0L;
 		failure_count = 0L;
 
 		int n = OEExecEnvironment.ETAS_RESCODE_MAX + 1 - OEExecEnvironment.ETAS_RESCODE_MIN;
@@ -424,10 +436,21 @@ public class OEtasLogAccum {
 		result.append ("Accumulated ETAS performance data.\n");
 		result.append ("\n");
 
-		w1 = Math.max (l_chars (success_count), l_chars (failure_count));
+		w1 = l_chars (success_count);
+		w1 = Math.max (w1, l_chars (skip_count));
+		w1 = Math.max (w1, l_chars (reject_count));
+		w1 = Math.max (w1, l_chars (failure_count));
 
 		result.append ("success_count = ");
 		append_lpad (result, w1, success_count);
+		result.append ("\n");
+
+		result.append ("skip_count    = ");
+		append_lpad (result, w1, skip_count);
+		result.append ("\n");
+
+		result.append ("reject_count  = ");
+		append_lpad (result, w1, reject_count);
 		result.append ("\n");
 
 		result.append ("failure_count = ");

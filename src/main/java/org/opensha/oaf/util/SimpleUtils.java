@@ -353,6 +353,7 @@ public class SimpleUtils {
 	// Convert a duration (in milliseconds) to a human-readable string.
 	// This version includes a "days" field for durations of 1 day or more.
 	// This produces an easier-to-read form, not in java.time.Duration format.
+	// Example: 7d13h4m.
 
 	public static String duration_to_string_3 (long the_duration) {
 		String result;
@@ -440,6 +441,163 @@ public class SimpleUtils {
 
 	public static String duration_raw_and_string_3 (long the_duration) {
 		return the_duration + " (" + duration_to_string_3(the_duration) + ")";
+	}
+
+
+
+
+	// Convert a numan-readable string (example: 7d13h4m) to a duration in milliseconds.
+	// Parameters:
+	//  s = String to convert.
+	//  def_unit = A string that gives default units; can be null or blank if none.
+	// The string to convert consists of a uptional sign, followed by optional
+	// substrings of "nnd", "nnh", "nnm", and "nns" (in that order) which given
+	// durations in days, hours, minutes, and seconds.  Each "nn" can be An
+	// unsigned integer or fixed-point number.  The unit characters (d,h,m,s)
+	// can be lowercase or uppercase.
+	// If def_unit is non-null and non-blank, then it must be a unit character
+	// (lowercase or uppercase d,h,m,s).  The the string contains no units at all,
+	// then it is interpreted as if it were terminated by def_unit.
+	// If def_unit is null or blank, then it is an error for the string to not
+	// contain a units character.
+
+	// Pattern for a string with no unit.
+
+	//private static final Pattern stodur_nounit_pattern = Pattern.compile ("([+-])?  ( (?:\\d+(?:\\.\\d*)?) | (?:\\.\\d+) )");
+	private static final Pattern stodur_nounit_pattern = Pattern.compile ("([+-])?((?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))");
+
+	// Pattern for a string with units.
+
+	//private static final Pattern stodur_unit_pattern = Pattern.compile ("([+-])?  (?:( (?:\\d+(?:\\.\\d*)?) | (?:\\.\\d+) )[dD])?  (?:( (?:\\d+(?:\\.\\d*)?) | (?:\\.\\d+) )[hH])?  (?:( (?:\\d+(?:\\.\\d*)?) | (?:\\.\\d+) )[mM])?  (?:( (?:\\d+(?:\\.\\d*)?) | (?:\\.\\d+) )[sS])?");
+	private static final Pattern stodur_unit_pattern = Pattern.compile ("([+-])?(?:((?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))[dD])?(?:((?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))[hH])?(?:((?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))[mM])?(?:((?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))[sS])?");
+
+	public static long string_to_duration_3 (String s, String def_unit) {
+		String s_trim = s.trim();
+
+		// Get the number of milliseconds per default unit, or -1.0 if no default unit
+
+		double def_unit_millis = -1.0;
+
+		if (def_unit != null) {
+			String def_unit_trim = def_unit.trim();
+			if (def_unit_trim.length() > 0) {
+				switch (def_unit.trim()) {
+					case "d": case "D": def_unit_millis = DAY_MILLIS_D; break;
+					case "h": case "H": def_unit_millis = HOUR_MILLIS_D; break;
+					case "m": case "M": def_unit_millis = MINUTE_MILLIS_D; break;
+					case "s": case "S": def_unit_millis = SECOND_MILLIS_D; break;
+					default:
+						throw new IllegalArgumentException ("SimpleUtils.string_to_duration_3: Invalid def_unit = " + def_unit);
+				}
+			}
+		}
+
+		// Any exceptions here indicate invalid string
+
+		try {
+
+			// If we match a string with units ...
+
+			Matcher matcher = stodur_unit_pattern.matcher (s_trim);
+			if (matcher.matches()) {
+
+				// Get the positive duration in floating point
+
+				boolean f_got_value = false;
+				double d_dur = 0.0;
+
+				String g = matcher.group(2);
+				if (g != null) {
+					f_got_value = true;
+					d_dur += (Double.parseDouble(g) * DAY_MILLIS_D);
+				}
+
+				g = matcher.group(3);
+				if (g != null) {
+					f_got_value = true;
+					d_dur += (Double.parseDouble(g) * HOUR_MILLIS_D);
+				}
+
+				g = matcher.group(4);
+				if (g != null) {
+					f_got_value = true;
+					d_dur += (Double.parseDouble(g) * MINUTE_MILLIS_D);
+				}
+
+				g = matcher.group(5);
+				if (g != null) {
+					f_got_value = true;
+					d_dur += (Double.parseDouble(g) * SECOND_MILLIS_D);
+				}
+
+				// If we got a value ...
+
+				if (f_got_value) {
+
+					// Convert to integer milliseconds
+
+					long dur = Math.round (d_dur);
+
+					// Apply sign
+
+					g = matcher.group(1);
+					if (g != null) {
+						if (g.equals ("-")) {
+							dur = -dur;
+						}
+					}
+
+					return dur;
+				}
+			}
+
+			// Otherwise, if we have a default unit ...
+
+			else if (def_unit_millis > 0.0) {
+
+				// If we match a string without units ...
+
+				matcher = stodur_nounit_pattern.matcher (s_trim);
+				if (matcher.matches()) {
+
+					// Get the positive duration in floating point
+
+					boolean f_got_value = false;
+					double d_dur = 0.0;
+
+					String g = matcher.group(2);
+					if (g != null) {
+						f_got_value = true;
+						d_dur += (Double.parseDouble(g) * def_unit_millis);
+					}
+
+					// If we got a value ...
+
+					if (f_got_value) {
+
+						// Convert to integer milliseconds
+
+						long dur = Math.round (d_dur);
+
+						// Apply sign
+
+						g = matcher.group(1);
+						if (g != null) {
+							if (g.equals ("-")) {
+								dur = -dur;
+							}
+						}
+
+						return dur;
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			throw new IllegalArgumentException ("SimpleUtil.string_to_duration_3: Invalid string = " + s, e);
+		}
+
+		throw new IllegalArgumentException ("SimpleUtil.string_to_duration_3: Invalid string = " + s);
 	}
 
 
@@ -1577,6 +1735,64 @@ public class SimpleUtils {
 				// Write it
 
 				write_string_as_file (filename, s1, s2);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  string  def_unit
+		// Test the operation of string_to_duration_3.
+		// The value of def_unit can be "null" or "empty" to produce a null or empty string.
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// 2 additional arguments
+
+			if (!( args.length == 3 )) {
+				System.err.println ("SimpleUtils : Invalid 'test7' subcommand");
+				return;
+			}
+
+			try {
+
+				String s = args[1];
+				String def_unit = args[2];
+
+				// Say hello
+
+				System.out.println ("Removing trailing zeros using remove_trailing_zeros");
+				System.out.println ("s = \"" + s + "\"");
+				System.out.println ("def_unit = " + def_unit);
+
+				if (def_unit.equals ("null")) {
+					def_unit = null;
+				}
+				else if (def_unit.equals ("empty")) {
+					def_unit = "";
+				}
+
+				// Convert to duration in milliseconds
+
+				long duration_millis = string_to_duration_3 (s, def_unit);
+
+				// Display result
+
+				System.out.println();
+				System.out.println ("duration_millis = " + duration_millis);
+
+				System.out.println();
+				System.out.println ("duration_to_string_2 = " + duration_to_string_2 (duration_millis));
+
+				System.out.println();
+				System.out.println ("duration_to_string_3 = " + duration_to_string_3 (duration_millis));
 
 			} catch (Exception e) {
 				e.printStackTrace();

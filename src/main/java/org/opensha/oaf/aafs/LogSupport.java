@@ -1156,6 +1156,7 @@ public class LogSupport extends ServerComponent {
 			case OEtasLogInfo.ETAS_LOGTYPE_FAIL: name = "ETAS-FAIL"; break;
 			case OEtasLogInfo.ETAS_LOGTYPE_SKIP: name = "ETAS-SKIP"; break;
 			case OEtasLogInfo.ETAS_LOGTYPE_UNKNOWN: name = "ETAS-UNKNOWN"; break;
+			case OEtasLogInfo.ETAS_LOGTYPE_REJECT: name = "ETAS-REJECT"; break;
 			}
 
 			report_action (name,

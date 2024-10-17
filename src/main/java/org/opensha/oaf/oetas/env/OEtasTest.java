@@ -46,6 +46,7 @@ import org.opensha.oaf.oetas.util.OEMarginalDistSetBuilder;
 import org.opensha.oaf.oetas.util.OEValueElement;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
+import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.oaf.rj.GenericRJ_ParametersFetch;
 import org.opensha.oaf.rj.MagCompPage_Parameters;
 import org.opensha.oaf.rj.MagCompPage_ParametersFetch;
@@ -56,6 +57,9 @@ import org.opensha.oaf.rj.SearchRadiusFn;
 import org.opensha.oaf.rj.USGS_ForecastInfo;
 
 import org.opensha.oaf.aafs.ActionConfig;
+import org.opensha.oaf.aafs.ActionConfigFile;
+import org.opensha.oaf.aafs.ForecastMainshock;
+import org.opensha.oaf.aafs.ForecastParameters;
 import org.opensha.oaf.aafs.ForecastResults;
 import org.opensha.oaf.aafs.VersionInfo;
 
@@ -679,6 +683,129 @@ public class OEtasTest {
 
 		OEMarginalDistSet dist_set = dist_set_builder.end_etas_accum();
 		return dist_set;
+	}
+
+
+
+
+	// A structure that holds the inputs needed from observed data.
+	// See setup_input_area_from_obs() and setup_input_area_from_compact() for parameters,
+	// noting that CompactEqkRupList is a subclass of List<ObsEqkRupture>.
+
+	public static class ObsInputs {
+		public OEtasParameters etas_params;
+		public USGS_ForecastInfo forecast_info;
+		public OEtasCatalogInfo catalog_info;
+		public ObsEqkRupture obs_mainshock;
+		public CompactEqkRupList the_rup_list;
+
+		public ObsInputs (
+			OEtasParameters etas_params,
+			USGS_ForecastInfo forecast_info,
+			OEtasCatalogInfo catalog_info,
+			ObsEqkRupture obs_mainshock,
+			CompactEqkRupList the_rup_list
+		) {
+			this.etas_params   = etas_params;
+			this.forecast_info = forecast_info;
+			this.catalog_info  = catalog_info;
+			this.obs_mainshock = obs_mainshock;
+			this.the_rup_list  = the_rup_list;
+		}
+	}
+
+
+
+
+	// Get observed inputs for a given mainshock and forecast lag.
+	// Parameters:
+	//  event_id = Mainshock event ID.
+	//  next_forecast_lag = The forecast lag, in milliseconds since the mainshock.
+	//  analyst_params = Analyst parameters, or null if none.
+	// Returns the same inputs that the automatic system would use.
+	// Returns null or throws an exception if inputs cannot be obtained.
+	// Note: Much of the code is copied from ExGenerateForecast.java.
+
+	public static ObsInputs get_obs_inputs (String event_id, long next_forecast_lag, ForecastParameters analyst_params) {
+
+		// Get action parameters and enable ETAS
+
+		ActionConfig action_config = new ActionConfig();
+
+		action_config.get_action_config_file().etas_enable = ActionConfigFile.ETAS_ENA_ENABLE;
+
+		// Get mainshock parameters
+
+		ForecastMainshock fcmain = new ForecastMainshock();
+
+		fcmain.setup_mainshock_only (event_id);		// throws exception if not found or other error
+
+		System.out.println ();
+		System.out.println (fcmain.toString());
+
+		// Fetch parameters (model and search parameters), and calculate catalog
+		// Note: This section of code comes from ExGenerateForecast.java,
+		// calling calc_catalog_only() instead of calc_all().
+
+		ForecastParameters forecast_params = new ForecastParameters();
+		ForecastResults forecast_results = new ForecastResults();
+
+		forecast_params.fetch_all_params (next_forecast_lag, fcmain, analyst_params);
+
+		forecast_params.next_scheduled_lag = action_config.get_next_forecast_lag (
+			next_forecast_lag + action_config.get_forecast_min_gap(),		// min_lag
+			0L																// max_lag
+		);
+
+		if (forecast_params.next_scheduled_lag > 0L) {
+			forecast_params.next_scheduled_lag += (
+				action_config.get_comcat_clock_skew()
+				+ action_config.get_comcat_origin_skew()
+			);
+		}
+
+		long advisory_lag;
+
+		if (next_forecast_lag >= action_config.get_advisory_dur_year()) {
+			advisory_lag = ForecastResults.ADVISORY_LAG_YEAR;
+		} else if (next_forecast_lag >= action_config.get_advisory_dur_month()) {
+			advisory_lag = ForecastResults.ADVISORY_LAG_MONTH;
+		} else if (next_forecast_lag >= action_config.get_advisory_dur_week()) {
+			advisory_lag = ForecastResults.ADVISORY_LAG_WEEK;
+		} else {
+			advisory_lag = ForecastResults.ADVISORY_LAG_DAY;
+		}
+
+		String the_injectable_text = forecast_params.get_eff_injectable_text (
+				action_config.get_def_injectable_text());
+
+		forecast_results.calc_catalog_only (
+			fcmain.mainshock_time + next_forecast_lag,
+			advisory_lag,
+			the_injectable_text,
+			fcmain,
+			forecast_params,
+			next_forecast_lag >= action_config.get_seq_spec_min_lag());
+
+		// Read out the forecast and catalog info
+
+		ForecastResults.ForecastAndCatalogInfo fc_and_catalog_info = forecast_results.calc_etas_catalog_info (fcmain, forecast_params);
+
+		if (fc_and_catalog_info == null) {
+			throw new IllegalStateException ("OEtasTest.get_obs_inputs: Unable to obtain forecast and catalog information");
+		}
+
+		// Collect the inputs
+
+		ObsInputs obs_inputs = new ObsInputs (
+			forecast_params.etas_params,			// OEtasParameters etas_params,
+			fc_and_catalog_info.fc_info,			// USGS_ForecastInfo forecast_info,
+			fc_and_catalog_info.catalog_info,		// OEtasCatalogInfo catalog_info,
+			fcmain.get_eqk_rupture(),				// ObsEqkRupture obs_mainshock,
+			forecast_results.catalog_aftershocks	// CompactEqkRupList the_rup_list
+		);
+
+		return obs_inputs;
 	}
 
 
@@ -2071,6 +2198,84 @@ public class OEtasTest {
 
 
 
+	// test19/write_event_inputs
+	// Command line arguments:
+	//  event_id  forecast_lag  fn_catalog  fn_cat_info  fn_params
+	// Write the catalog, catalog information, and parameters files that the
+	// automatic system would use for the given event and forecast lag.
+	// The forecast lag can be a decimal number of days, or a string of
+	// form similar to 7d8h15m.
+
+	public static void test19 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Write input files for a given event and forecast lag");
+		String event_id = get_filename_arg (testargs, "event_id");
+		String s_forecast_lag = get_filename_arg (testargs, "forecast_lag");
+
+		String fn_catalog = get_filename_arg (testargs, "fn_catalog");
+		String fn_cat_info = get_filename_arg (testargs, "fn_cat_info");
+		String fn_params = get_filename_arg (testargs, "fn_params");
+
+		testargs.end_test();
+
+		// Parse the forecast lag
+
+		long forecast_lag = SimpleUtils.string_to_duration_3 (s_forecast_lag, "d");
+
+		System.out.println ();
+		System.out.println ("Fetching data for event_id = " + event_id + ", forecast_lag = " + SimpleUtils.duration_to_string_3 (forecast_lag));
+
+		// Read the inputs
+
+		ObsInputs obs_inputs = get_obs_inputs (event_id, forecast_lag, null);
+
+		if (obs_inputs == null) {
+			System.out.println ();
+			System.out.println ("Unable to construct inputs");
+			return;
+		}
+
+		// Write the catalog file
+
+		GUIExternalCatalog ext_cat = new GUIExternalCatalog();
+
+		ext_cat.setup_catalog (
+			obs_inputs.the_rup_list,
+			obs_inputs.obs_mainshock
+		);
+
+		ext_cat.write_to_file (fn_catalog);
+
+		System.out.println ();
+		System.out.println ("Wrote " + (obs_inputs.the_rup_list.size() + 1) + " observed earthquakes to file: " + fn_catalog);
+
+		// Write the catalog information file
+
+		MarshalUtils.to_formatted_json_file (obs_inputs.catalog_info, fn_cat_info);
+
+		System.out.println ();
+		System.out.println ("Wrote catalog information to file: " + fn_cat_info);
+
+		// Write the parameters file
+
+		MarshalUtils.to_formatted_json_file (obs_inputs.etas_params, fn_params);
+
+		System.out.println ();
+		System.out.println ("Wrote ETAS parameters to file: " + fn_params);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -2187,6 +2392,12 @@ public class OEtasTest {
 
 		if (testargs.is_test ("test18", "write_prior_marginals")) {
 			test18 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test19", "write_event_inputs")) {
+			test19 (testargs);
 			return;
 		}
 
