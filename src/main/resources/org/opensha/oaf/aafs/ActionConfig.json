@@ -21,7 +21,7 @@
   "poll_short_lookback": "P3DT0H0M0S",
   "poll_short_intake_gap": "P0DT0H0M30S",
   "poll_long_period": "P1DT0H0M0S",
-  "poll_long_lookback": "P330DT0H0M0S",
+  "poll_long_lookback": "P350DT0H0M0S",
   "poll_long_intake_gap": "P0DT0H2M0S",
   "pdl_intake_max_age": "P300D",
   "pdl_intake_max_future": "P1D",
@@ -491,8 +491,8 @@
   "pdl_intake_regions": [
     {
       "name": "CAL-NCSS",
-      "min_mag": 4.95,
-      "intake_mag": 4.75,
+      "min_mag": 3.95,
+      "intake_mag": 3.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
@@ -512,8 +512,8 @@
     },
     {
       "name": "CAL-SCSN",
-      "min_mag": 4.95,
-      "intake_mag": 4.75,
+      "min_mag": 3.95,
+      "intake_mag": 3.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,
@@ -614,8 +614,8 @@
     },
     {
       "name": "USA",
-      "min_mag": 4.95,
-      "intake_mag": 4.75,
+      "min_mag": 3.95,
+      "intake_mag": 3.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 1,

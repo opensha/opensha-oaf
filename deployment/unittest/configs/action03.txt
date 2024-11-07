@@ -21,7 +21,7 @@ poll_short_period = PT20M
 poll_short_lookback = PT72H
 poll_short_intake_gap = PT30S
 poll_long_period = PT24H
-poll_long_lookback = PT7920H
+poll_long_lookback = PT8400H
 poll_long_intake_gap = PT2M
 pdl_intake_max_age = PT7200H
 pdl_intake_max_future = PT24H
@@ -516,16 +516,16 @@ IntakeSphRegion
 	MinLon: -125.3
 	MaxLat: 42.1
 	MaxLon: -118.0167
-	MinMag: 4.95
-	IntakeMag: 4.75
+	MinMag: 3.95
+	IntakeMag: 3.75
 IntakeSphRegion
 	Name: CAL-SCSN
 	MinLat: 32.0
 	MinLon: -121.25
 	MaxLat: 37.2167
 	MaxLon: -114.3333
-	MinMag: 4.95
-	IntakeMag: 4.75
+	MinMag: 3.95
+	IntakeMag: 3.75
 IntakeSphRegion
 	Name: ALASKA
 	MinLat: 49.55
@@ -572,8 +572,8 @@ IntakeSphRegion
 	MinLon: -130.4154
 	MaxLat: 49.217
 	MaxLon: -66.2
-	MinMag: 4.95
-	IntakeMag: 4.75
+	MinMag: 3.95
+	IntakeMag: 3.75
 IntakeSphRegion
 	Name: WORLD
 	MinLat: -90.0
@@ -608,7 +608,7 @@ IntakeSphRegion
   "poll_short_lookback": "PT72H",
   "poll_short_intake_gap": "PT30S",
   "poll_long_period": "PT24H",
-  "poll_long_lookback": "PT7920H",
+  "poll_long_lookback": "PT8400H",
   "poll_long_intake_gap": "PT2M",
   "pdl_intake_max_age": "PT7200H",
   "pdl_intake_max_future": "PT24H",
@@ -700,8 +700,8 @@ IntakeSphRegion
   "pdl_intake_regions": [
     {
       "name": "CAL-NCSS",
-      "min_mag": 4.95,
-      "intake_mag": 4.75,
+      "min_mag": 3.95,
+      "intake_mag": 3.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 14001,
@@ -727,8 +727,8 @@ IntakeSphRegion
     },
     {
       "name": "CAL-SCSN",
-      "min_mag": 4.95,
-      "intake_mag": 4.75,
+      "min_mag": 3.95,
+      "intake_mag": 3.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 14001,
@@ -865,8 +865,8 @@ IntakeSphRegion
     },
     {
       "name": "USA",
-      "min_mag": 4.95,
-      "intake_mag": 4.75,
+      "min_mag": 3.95,
+      "intake_mag": 3.75,
       "region": {
         "ClassType": 14001,
         "SphRegionMercPolygon": 14001,
@@ -945,7 +945,7 @@ poll_short_period = PT20M
 poll_short_lookback = PT72H
 poll_short_intake_gap = PT30S
 poll_long_period = PT24H
-poll_long_lookback = PT7920H
+poll_long_lookback = PT8400H
 poll_long_intake_gap = PT2M
 pdl_intake_max_age = PT7200H
 pdl_intake_max_future = PT24H
@@ -1440,16 +1440,16 @@ IntakeSphRegion
 	MinLon: -125.3
 	MaxLat: 42.1
 	MaxLon: -118.0167
-	MinMag: 4.95
-	IntakeMag: 4.75
+	MinMag: 3.95
+	IntakeMag: 3.75
 IntakeSphRegion
 	Name: CAL-SCSN
 	MinLat: 32.0
 	MinLon: -121.25
 	MaxLat: 37.2167
 	MaxLon: -114.3333
-	MinMag: 4.95
-	IntakeMag: 4.75
+	MinMag: 3.95
+	IntakeMag: 3.75
 IntakeSphRegion
 	Name: ALASKA
 	MinLat: 49.55
@@ -1496,8 +1496,8 @@ IntakeSphRegion
 	MinLon: -130.4154
 	MaxLat: 49.217
 	MaxLon: -66.2
-	MinMag: 4.95
-	IntakeMag: 4.75
+	MinMag: 3.95
+	IntakeMag: 3.75
 IntakeSphRegion
 	Name: WORLD
 	MinLat: -90.0
