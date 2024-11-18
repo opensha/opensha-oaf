@@ -411,6 +411,10 @@ public abstract class OAF2ParameterSet<T> implements Marshalable {
 
 	private selection_holder<T> default_selection = null;
 
+	// parameter_list - List of non-null parameters, as they appear in the file.
+
+	private List<T> parameter_list = null;
+
 	// The world regime (set up during construction and not subsequently changed).
 
 	private OAFTectonicRegime world_regime = null;
@@ -440,6 +444,7 @@ public abstract class OAF2ParameterSet<T> implements Marshalable {
 		garcia_count = 0;
 		world_selection = null;
 		default_selection = null;
+		parameter_list = new ArrayList<T>();
 
 		// Requirement flags
 
@@ -464,6 +469,12 @@ public abstract class OAF2ParameterSet<T> implements Marshalable {
 				if (selection.select_params == null) {
 					throw new MarshalException ("OAF2ParameterSet.finish_setup: Found null parameter object");
 				}
+			}
+
+			// If parameters are non-null, add to the list
+
+			if (selection.select_params != null) {
+				parameter_list.add (selection.select_params);
 			}
 
 			// Loop over regime names ...
@@ -577,6 +588,17 @@ public abstract class OAF2ParameterSet<T> implements Marshalable {
 
 	public final OAFTectonicRegime get_default_regime () {
 		return default_regime;
+	}
+
+
+
+
+	// Get the list of non-null parameters.
+	// Note: The caller must not modify the list or any of the parameters.
+	// The intended use is to iterate over the list of parmaeters.
+
+	public final List<T> get_parameter_list () {
+		return parameter_list;
 	}
 
 

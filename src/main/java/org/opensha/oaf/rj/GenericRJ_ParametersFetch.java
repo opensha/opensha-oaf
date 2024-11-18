@@ -193,7 +193,7 @@ public class GenericRJ_ParametersFetch {
 	 * @param loc = Location.
 	 * @return Object of type T containing parameters.
 	 */
-	public GenericRJ_Parameters get(Location loc) {
+	public final GenericRJ_Parameters get(Location loc) {
 		return parameter_set.get(loc);
 	}
 	
@@ -203,7 +203,7 @@ public class GenericRJ_ParametersFetch {
 	 * @return Object of type T containing parameters.
 	 * The function throws an exception if no parameters are defined for the region.
 	 */
-	public GenericRJ_Parameters get(OAFTectonicRegime region) {
+	public final GenericRJ_Parameters get(OAFTectonicRegime region) {
 		return parameter_set.get(region);
 	}
 	
@@ -213,7 +213,7 @@ public class GenericRJ_ParametersFetch {
 	 * @return Object of type T containing parameters.
 	 * The function returns null if no parameters are defined for the region.
 	 */
-	public GenericRJ_Parameters getOrNull(OAFTectonicRegime region) {
+	public final GenericRJ_Parameters getOrNull(OAFTectonicRegime region) {
 		return parameter_set.getOrNull(region);
 	}
 	
@@ -222,29 +222,38 @@ public class GenericRJ_ParametersFetch {
 	 * @param loc = Location.
 	 * @return Tectonic regime for the location.
 	 */
-	public OAFTectonicRegime getRegion(Location loc) {
+	public final OAFTectonicRegime getRegion(Location loc) {
 		return parameter_set.getRegion(loc);
 	}
 	
 	/**
 	 * Return a set containing the tectonic regimes.
 	 */
-	public Set<OAFTectonicRegime> getRegimeSet() {
+	public final Set<OAFTectonicRegime> getRegimeSet() {
 		return parameter_set.getRegimeSet();
 	}
 	
 	/**
 	 * Return a set containing the names of tectonic regimes, as they appear in the file.
 	 */
-	public Set<String> getRegimeNameSet() {
+	public final Set<String> getRegimeNameSet() {
 		return parameter_set.getRegimeNameSet();
 	}
 
 
 	// Return a read-only view of the list of regions in the file.
 
-	public List<OAFRegion> get_region_list () {
+	public final List<OAFRegion> get_region_list () {
 		return parameter_set.get_region_list();
+	}
+
+
+	// Get the list of non-null parameters.
+	// Note: The caller must not modify the list or any of the parameters.
+	// The intended use is to iterate over the list of parmaeters.
+
+	public final List<GenericRJ_Parameters> get_parameter_list () {
+		return parameter_set.get_parameter_list();
 	}
 	
 
@@ -424,6 +433,34 @@ public class GenericRJ_ParametersFetch {
 
 			for (String s : regime_names) {
 				System.out.println (s);
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6
+		// List all non-null parameter values, as they appear in the file.
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// No additional arguments
+
+			if (args.length != 1) {
+				System.err.println ("GenericRJ_ParametersFetch : Invalid 'test6' subcommand");
+				return;
+			}
+
+			// Display values of non-null parameters
+		
+			GenericRJ_ParametersFetch fetch = new GenericRJ_ParametersFetch();
+			List<GenericRJ_Parameters> parameter_values = fetch.get_parameter_list();
+
+			int n = 0;
+			for (GenericRJ_Parameters value : parameter_values) {
+				System.out.println (n + ": " + value.toString());
+				++n;
 			}
 
 			return;

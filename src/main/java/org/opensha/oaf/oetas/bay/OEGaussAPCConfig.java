@@ -242,6 +242,15 @@ public class OEGaussAPCConfig {
 	}
 
 
+	// Get the list of non-null parameters.
+	// Note: The caller must not modify the list or any of the parameters.
+	// The intended use is to iterate over the list of parmaeters.
+
+	public final List<OEGaussAPCParams> get_parameter_list () {
+		return param_set.get_parameter_list();
+	}
+
+
 
 
 	//----- Parameter modification -----
@@ -410,6 +419,44 @@ public class OEGaussAPCConfig {
 			}
 
 			System.out.println ();
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3
+		// Create an object, and display the list of non-null parameters.
+
+		if (testargs.is_test ("test3")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Create a configuration object
+
+			OEGaussAPCConfig gauss_apc_config = new OEGaussAPCConfig();
+
+			// Display parameter values
+
+			System.out.println ();
+			System.out.println ("********** Parameter values **********");
+			System.out.println ();
+
+			int n = 0;
+			for (OEGaussAPCParams value : gauss_apc_config.get_parameter_list()) {
+				System.out.println (n + ": " + value.toString());
+				++n;
+			}
 
 			// Done
 

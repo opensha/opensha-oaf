@@ -172,7 +172,7 @@ public class MagCompPage_ParametersFetch {
 	 * @param loc = Location.
 	 * @return Object of type T containing parameters.
 	 */
-	public MagCompPage_Parameters get(Location loc) {
+	public final MagCompPage_Parameters get(Location loc) {
 		return parameter_set.get(loc);
 	}
 	
@@ -182,7 +182,7 @@ public class MagCompPage_ParametersFetch {
 	 * @return Object of type T containing parameters.
 	 * The function throws an exception if no parameters are defined for the region.
 	 */
-	public MagCompPage_Parameters get(OAFTectonicRegime region) {
+	public final MagCompPage_Parameters get(OAFTectonicRegime region) {
 		return parameter_set.get(region);
 	}
 	
@@ -192,7 +192,7 @@ public class MagCompPage_ParametersFetch {
 	 * @return Object of type T containing parameters.
 	 * The function returns null if no parameters are defined for the region.
 	 */
-	public MagCompPage_Parameters getOrNull(OAFTectonicRegime region) {
+	public final MagCompPage_Parameters getOrNull(OAFTectonicRegime region) {
 		return parameter_set.getOrNull(region);
 	}
 	
@@ -201,29 +201,38 @@ public class MagCompPage_ParametersFetch {
 	 * @param loc = Location.
 	 * @return Tectonic regime for the location.
 	 */
-	public OAFTectonicRegime getRegion(Location loc) {
+	public final OAFTectonicRegime getRegion(Location loc) {
 		return parameter_set.getRegion(loc);
 	}
 	
 	/**
 	 * Return a set containing the tectonic regimes.
 	 */
-	public Set<OAFTectonicRegime> getRegimeSet() {
+	public final Set<OAFTectonicRegime> getRegimeSet() {
 		return parameter_set.getRegimeSet();
 	}
 	
 	/**
 	 * Return a set containing the names of tectonic regimes, as they appear in the file.
 	 */
-	public Set<String> getRegimeNameSet() {
+	public final Set<String> getRegimeNameSet() {
 		return parameter_set.getRegimeNameSet();
 	}
 
 
 	// Return a read-only view of the list of regions in the file.
 
-	public List<OAFRegion> get_region_list () {
+	public final List<OAFRegion> get_region_list () {
 		return parameter_set.get_region_list();
+	}
+
+
+	// Get the list of non-null parameters.
+	// Note: The caller must not modify the list or any of the parameters.
+	// The intended use is to iterate over the list of parmaeters.
+
+	public final List<MagCompPage_Parameters> get_parameter_list () {
+		return parameter_set.get_parameter_list();
 	}
 
 
@@ -442,6 +451,34 @@ public class MagCompPage_ParametersFetch {
 
 			for (String s : regime_names) {
 				System.out.println (s);
+			}
+
+			return;
+		}
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7
+		// List all non-null parameter values, as they appear in the file.
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// No additional arguments
+
+			if (args.length != 1) {
+				System.err.println ("MagCompPage_ParametersFetch : Invalid 'test7' subcommand");
+				return;
+			}
+
+			// Display values of non-null parameters
+		
+			MagCompPage_ParametersFetch fetch = new MagCompPage_ParametersFetch();
+			List<MagCompPage_Parameters> parameter_values = fetch.get_parameter_list();
+
+			int n = 0;
+			for (MagCompPage_Parameters value : parameter_values) {
+				System.out.println (n + ": " + value.toString());
+				++n;
 			}
 
 			return;

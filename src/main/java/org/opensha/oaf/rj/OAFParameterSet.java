@@ -83,6 +83,10 @@ public abstract class OAFParameterSet<T> {
 
 	private boolean f_world = false;
 
+	// parameter_list - List of non-null parameters, as they appear in the file.
+
+	private List<T> parameter_list = null;
+
 	// List of Garcia regions.
 
 	protected static final String[] garcia_regions = {
@@ -322,12 +326,14 @@ public abstract class OAFParameterSet<T> {
 		dataMap = null;
 		region_list = null;
 		regime_names = null;
+		parameter_list = null;
 
 		// Make working data (use LinkedHashMap to support unit tests, otherwise HashMap would be OK)
 
 		Map<OAFTectonicRegime, T> wk_dataMap = new LinkedHashMap<OAFTectonicRegime, T>();
 		List<OAFRegion> wk_region_list = new ArrayList<OAFRegion>();
 		Set<String> wk_regime_names = new LinkedHashSet<String>();
+		List<T> wk_parameter_list = new ArrayList<T>();
 
 		// Number of tectonic regimes, must be at least 1
 
@@ -347,8 +353,12 @@ public abstract class OAFParameterSet<T> {
 			wk_regime_names.add (regime_name);
 
 			// Get the parameter values and add to our table
-				
-			wk_dataMap.put(regime, load_parameter_values (sc));
+			
+			T parameter_value = load_parameter_values (sc);
+			wk_dataMap.put(regime, parameter_value);
+			if (parameter_value != null) {
+				wk_parameter_list.add (parameter_value);
+			}
 		}
 
 		// Check if we have a world region
@@ -434,6 +444,7 @@ public abstract class OAFParameterSet<T> {
 		dataMap = wk_dataMap;
 		region_list = wk_region_list;
 		regime_names = wk_regime_names;
+		parameter_list = wk_parameter_list;
 
 		return;
 	}
@@ -480,12 +491,14 @@ public abstract class OAFParameterSet<T> {
 		dataMap = null;
 		region_list = null;
 		regime_names = null;
+		parameter_list = null;
 
 		// Make working data (use LinkedHashMap to support unit tests, otherwise HashMap would be OK)
 
 		Map<OAFTectonicRegime, T> wk_dataMap = new LinkedHashMap<OAFTectonicRegime, T>();
 		List<OAFRegion> wk_region_list = new ArrayList<OAFRegion>();
 		Set<String> wk_regime_names = new LinkedHashSet<String>();
+		List<T> wk_parameter_list = new ArrayList<T>();
 
 		// Begin the JSON object
 
@@ -521,8 +534,12 @@ public abstract class OAFParameterSet<T> {
 			wk_regime_names.add (regime_name);
 
 			// Get the parameter values and add to our table
-				
-			wk_dataMap.put(regime, load_parameter_values (reader, "params"));
+			
+			T parameter_value = load_parameter_values (reader, "params");
+			wk_dataMap.put(regime, parameter_value);
+			if (parameter_value != null) {
+				wk_parameter_list.add (parameter_value);
+			}
 
 			// End the JSON object
 
@@ -625,6 +642,7 @@ public abstract class OAFParameterSet<T> {
 		dataMap = wk_dataMap;
 		region_list = wk_region_list;
 		regime_names = wk_regime_names;
+		parameter_list = wk_parameter_list;
 
 		return;
 	}
@@ -964,7 +982,7 @@ public abstract class OAFParameterSet<T> {
 	 * @param loc = Location.
 	 * @return Object of type T containing parameters.
 	 */
-	public T get(Location loc) {
+	public final T get(Location loc) {
 		OAFTectonicRegime region = getRegion(loc);
 		return get(region);
 	}
@@ -975,7 +993,7 @@ public abstract class OAFParameterSet<T> {
 	 * @return Object of type T containing parameters.
 	 * The function throws an exception if no parameters are defined for the region.
 	 */
-	public T get(OAFTectonicRegime region) {
+	public final T get(OAFTectonicRegime region) {
 		T params = dataMap.get(region);
 		if (params == null) {
 			throw new OAFParameterException("OAFParameterSet: Unknown tectonic regime : " + region);
@@ -989,7 +1007,7 @@ public abstract class OAFParameterSet<T> {
 	 * @return Object of type T containing parameters.
 	 * The function returns null if no parameters are defined for the region.
 	 */
-	public T getOrNull(OAFTectonicRegime region) {
+	public final T getOrNull(OAFTectonicRegime region) {
 		T params = dataMap.get(region);
 		return params;
 	}
@@ -999,7 +1017,7 @@ public abstract class OAFParameterSet<T> {
 	 * @param loc = Location.
 	 * @return Tectonic regime for the location.
 	 */
-	public OAFTectonicRegime getRegion(Location loc) {
+	public final OAFTectonicRegime getRegion(Location loc) {
 
 		// Location allows longitude -180 to 360, so bring it in range
 
@@ -1068,22 +1086,31 @@ public abstract class OAFParameterSet<T> {
 	/**
 	 * Return a set containing the tectonic regimes.
 	 */
-	public Set<OAFTectonicRegime> getRegimeSet() {
+	public final Set<OAFTectonicRegime> getRegimeSet() {
 		return dataMap.keySet();
 	}
 	
 	/**
 	 * Return a set containing the names of tectonic regimes, as they appear in the file.
 	 */
-	public Set<String> getRegimeNameSet() {
+	public final Set<String> getRegimeNameSet() {
 		return regime_names;
 	}
 
 
 	// Return a read-only view of the list of regions in the file.
 
-	public List<OAFRegion> get_region_list () {
+	public final List<OAFRegion> get_region_list () {
 		return Collections.unmodifiableList (region_list);
+	}
+
+
+	// Get the list of non-null parameters.
+	// Note: The caller must not modify the list or any of the parameters.
+	// The intended use is to iterate over the list of parmaeters.
+
+	public final List<T> get_parameter_list () {
+		return parameter_list;
 	}
 
 
