@@ -521,6 +521,38 @@ public final class ActionConfig {
 		return param_set.forecast_file_option == ActionConfigFile.FORECAST_FILE_OPTION_VERBOSE;
 	}
 
+	// Get the version of shadowing algorithm to use. [v5]
+	// Eventually this will come from the configuration file.
+
+	public int get_shadow_method () {
+		return 3;
+		//return param_set.shadow_method;
+	}
+
+	// Get minimum magnitude for a candidate shadowing event to be considered large, for shadowing algorithm v3. [v5]
+	// Eventually this will come from the configuration file.
+
+	public double get_shadow3_large_mag () {
+		return 7.0;
+		//return param_set.shadow3_large_mag;
+	}
+
+	// Get centroid radius multiplier, for shadowing algorithm v3. [v5]
+	// Eventually this will come from the configuration file.
+
+	public double get_shadow3_centroid_mult () {
+		return 0.5;
+		//return param_set.shadow3_centroid_mult;
+	}
+
+	// Get sample radius multiplier, for shadowing algorithm v3. [v5]
+	// Eventually this will come from the configuration file.
+
+	public double get_shadow3_sample_mult () {
+		return 1.0;
+		//return param_set.shadow3_sample_mult;
+	}
+
 	// Get the number of advisory magnitude bins.
 
 	public int get_adv_min_mag_bin_count () {

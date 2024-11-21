@@ -1,0 +1,35 @@
+shadowc111 rj.AftershockStatsShadow test3 nc10089897 60
+Fetching event: nc10089897
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc10089897.geojson
+Count of events received = 1
+rup_event_id = nc10089897
+rup_time = 618567207390 (1989-08-08 08:13:27 UTC)
+rup_mag = 5.4
+rup_lat = 37.1481667
+rup_lon = -121.9268333
+rup_depth = 13.409
+
+find_shadow_v3 parameters:
+time_now = 623751207390 (1989-10-07 08:13:27 UTC)
+search_radius = 2000.0
+search_time_lo = 587031207390 (1988-08-08 08:13:27 UTC)
+search_time_hi = 650103207390 (1990-08-08 08:13:27 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-10-07T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=1988-08-08T08:13:27.390Z
+Count of events received = 0
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock nc10089897 for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-10-07T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=5.400&orderby=time&starttime=1988-08-08T08:13:27.390Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock nc10089897 for magnitude 5.40 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock nc10089897 is not shadowed
+
+Event is not shadowed

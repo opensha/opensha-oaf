@@ -21,6 +21,8 @@ import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SphRegionCircle;
 import org.opensha.oaf.util.SimpleUtils;
 
+import org.opensha.oaf.util.catalog.ObsEqkRupMaxMagComparator;
+
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 
 
@@ -273,6 +275,12 @@ public class AftershockStatsShadow {
 	public static final double DEF_CENTROID_MAG_FLOOR = 2.5;	// default centroid magnitude floor
 
 	public static final double DEF_LARGE_MAG = 8.0;				// default large magnitude
+
+	public static final double DEF_V3_LARGE_MAG = 7.0;			// default large magnitude for version 3
+
+	public static final double DEF_V3_CENTROID_MULT = 0.5;		// default centroid radius multiplier for version 3
+
+	public static final double DEF_V3_SAMPLE_MULT = 1.0;		// default sample radius multiplier for version 3
 
 	
 
@@ -809,6 +817,12 @@ public class AftershockStatsShadow {
 			}
 		}
 
+		if (seq_end_time != null) {
+			if (seq_end_time.length < 2) {
+				throw new IllegalArgumentException ("AftershockStatsShadow.find_shadow_v2: Sequence end time array is too short");
+			}
+		}
+
 		// Verbose mode flag
 
 		boolean f_verbose = AftershockVerbose.get_verbose_mode();
@@ -1207,6 +1221,514 @@ public class AftershockStatsShadow {
 
 
 
+	// This class holds shadow candidate info, for the version 3 implementation.
+
+	private static class CandidateInfo {
+	
+		// The rupture, or null if this object is empty..
+
+		public ObsEqkRupture rupture;
+
+		// The event id.
+
+		public String event_id;
+
+		// The time.
+
+		public long time;
+
+		// The magnitude.
+
+		public double mag;
+
+		// The hypocenter.
+
+		public Location hypo;
+
+		// Clear to an empty object.
+
+		public final void clear () {
+			rupture = null;
+			event_id = null;
+			time = Long.MAX_VALUE;
+			mag = -Double.MAX_VALUE;
+			hypo = null;
+			return;
+		}
+
+		// Set values for the given rupture.
+
+		public final void set (ObsEqkRupture rup) {
+			rupture = rup;
+			event_id = rup.getEventId();
+			time = rup.getOriginTime();
+			mag = rup.getMag();
+			hypo = rup.getHypocenterLocation();
+			return;
+		}
+
+		// Constructor sets up an empty object.
+
+		public CandidateInfo () {
+			clear();
+		}
+
+		// Constructor sets values for the given rupture.
+
+		public CandidateInfo (ObsEqkRupture rup) {
+			set (rup);
+		}
+
+		// Copy values from another object.
+
+		public final void copy_from (CandidateInfo other) {
+			this.rupture = other.rupture;
+			this.event_id = other.event_id;
+			this.time = other.time;
+			this.mag = other.mag;
+			this.hypo = other.hypo;
+			return;
+		}
+
+		// Return true if this object has been set.
+
+		public final boolean is_set () {
+			return rupture != null;
+		}
+
+		// Return true if this object is empty.
+
+		public final boolean is_empty () {
+			return rupture == null;
+		}
+
+		// Calculate the exclusion radius (see find_shadow_v3 for parameter definition).
+
+		public final double exclusion_radius (MagCompPage_ParametersFetch mag_comp_fetch, double centroid_multiplier, double sample_multiplier) {
+
+			// Get the magnitude of completeness parameters
+
+			MagCompPage_Parameters mag_comp_params = mag_comp_fetch.get (hypo);
+
+			// Get the centroid radius
+
+			double centroid_radius = mag_comp_params.get_radiusCentroid (mag);
+
+			// Get the sample radius
+
+			double sample_radius = mag_comp_params.get_radiusSample (mag);
+
+			// Get the exclusion radius
+
+			double exclusion_radius = (centroid_radius * centroid_multiplier) + (sample_radius * sample_multiplier);
+			return exclusion_radius;
+		}
+
+		// Return true if this event is larger than the other event.
+		// Magnitude ties are broken by considering the earlier event to be larger.
+		// The event id is used as a final tie-breaker, so this is a total ordering.
+
+		public final boolean is_larger_than (CandidateInfo other) {
+			return
+			( (this.mag > other.mag) || ( (this.mag == other.mag) &&
+				( (this.time < other.time) || ( (this.time == other.time) &&
+					(this.event_id.compareTo (other.event_id) < 0)
+				))
+			));
+		}
+
+		// Return true if this event is earlier than the other event.
+		// Ties are broken by considering the larger event to be earlier.
+		// The event id is used as a final tie-breaker, so this is a total ordering.
+
+		public final boolean is_earlier_than (CandidateInfo other) {
+			return
+			( (this.time < other.time) || ( (this.time == other.time) &&
+				( (this.mag > other.mag) || ( (this.mag == other.mag) &&
+					(this.event_id.compareTo (other.event_id) < 0)
+				))
+			));
+		}
+
+	}
+
+	
+
+
+	// Determine if a given mainshock is shadowed. [Version 3]
+	// Parameters:
+	//  mainshock = The mainshock to check for shadowing.
+	//  time_now = The time at which the check is to be done.  Typically time_now is close
+	//    to the current time.  But it can also be in the past, to determine if the
+	//    mainshock was shadowed at a past time.
+	//  search_radius = The radius of a circle surrounding the mainshock, in km.  The
+	//    program searches within the circle to find events larger than the mainshock that
+	//    might be shadowing the mainshock.  A recommended value is 2000 km, which is likely
+	//    large enough to find the largest possible earthquake (assuming that the centroid
+	//    radius multiplier in the magnitude-of-completeness parameters is equal to 1.0).
+	//    The value must be positive.
+	//  search_time_lo, search_time_hi = Time interval, expressed in milliseconds since
+	//    the epoch.  The program searches for possible shadowing events that lie between
+	//    the two times.  Typically these are chosen to bracket the mainshock origin time,
+	//    and indicate how far apart in time events must be so they don't shadow each other.
+	//    Typical values are 1 year before and after the mainshock origin time.  It is
+	//    permitted for search_time_hi to be larger than time_now;  the effect is as if
+	//    search_time_hi were set equal to time_now.  The value of search_time_lo must be
+	//    strictly less than search_time_hi, time_now, and the current time as reported by
+	//    System.currentTimeMillis().
+	//  centroid_multiplier, sample_multiplier = Multipliers applied to the configured
+	//    centroid radius and sample radius of a candidate shadowing event.  The exclusion
+	//    radius is calculated as centroid_multiplier times the configured centroid radius,
+	//    plus sample_multiplier times the configured sample radius.  The candidate can
+	//    shadow the mainshock if the distance between the candidate and the mainshock is
+	//    within the exclusion radius.  Typical values are 0.5 and 1.0 respectively.
+	//    These values must be non-negative.
+	//  large_mag = Minimum magnitude for a candidate shadowing event to be considered large.
+	//    An initial call to Comcat is made to find candidates with large magnitude in the
+	//    entire search radius.  Then, if needed, a second call is made to find candidates
+	//    with small magnitude, using a much smaller radius.  A typical value is 7.0, which
+	//    gives a W&C radius of 40 km, and so typically results in the second call having
+	//    a radius of 60 km.  This mechanism avoids searching for small earthquakes over
+	//    a very large area.  Set to 10.0 to disable.
+	//  separation = A 2-element array that is used to return the separation between
+	//    the mainshock and the shadowing event.  If the mainshock is shadowed, then
+	//    separation[0] receives the separation in kilometers, and separation[1] receives
+	//    the separation in days (positive means the mainshock occurs after the shadowing
+	//    event).  Can be null if separation is not required.
+	//  seq_end_time = A 2-element array that is used to return the absolute and relative
+	//    times at which the sequence beginning with the mainshock ends.  If the mainshock
+	//    is shadowed, then seq_end_time[0] receives the absolute time at which the sequence
+	//    ends (in milliseconds since the epoch), and seq_end_time[1] receives the relative
+	//    time (in milliseconds since the mainshock).  If the mainshock is shadowed by an
+	//    earlier (or concurrent) event, then the sequence end time is the time of the
+	//    mainshock (and hence the relative time is zero).  Otherwise, the sequence end time
+	//    is the time of the earliest event that shadows the mainshock.
+	// Returns:
+	// If the mainshock is not shadowed, then the return value is null.
+	// If the mainshock is shadowed, then the return value is the shadowing earthquake.
+	//   If there are multiple shadowing earthquakes, then the one with largest magnitude
+	//   is returned.  If magnitudes are tied, then the earliest earthquake is returned.
+	// An exception from this function likely means a Comcat failure.
+	// Note: This function never searches for earthquakes of smaller magnitude than
+	//  the mainshock.
+	// Note: This function makes one or two Comcat calls.
+
+	public static ObsEqkRupture find_shadow_v3 (ObsEqkRupture mainshock, long time_now,
+					double search_radius, long search_time_lo, long search_time_hi,
+					double centroid_multiplier, double sample_multiplier,
+					double large_mag, double[] separation, long[] seq_end_time) {
+
+		// Parameter validation
+
+		if (!( mainshock != null )) {
+			throw new IllegalArgumentException ("AftershockStatsShadow.find_shadow_v3: No mainshock supplied");
+		}
+
+		long system_time_now = System.currentTimeMillis();
+
+		if (!( search_time_lo < system_time_now
+			&& search_time_lo < search_time_hi
+			&& search_time_lo < time_now )) {
+			throw new IllegalArgumentException ("AftershockStatsShadow.find_shadow_v3: Invalid search times"
+				+ ": search_time_lo = " + search_time_lo
+				+ ", search_time_hi = " + search_time_hi
+				+ ", time_now = " + time_now
+				+ ", system_time_now = " + system_time_now
+				);
+		}
+
+		if (!( centroid_multiplier >= 0.0
+			&& sample_multiplier >= 0.0
+			&& (centroid_multiplier > 0.0 || sample_multiplier > 0.0) )) {
+			throw new IllegalArgumentException ("AftershockStatsShadow.find_shadow_v3: Invalid radius multipliers"
+				+ ": centroid_multiplier = " + centroid_multiplier
+				+ ", sample_multiplier = " + sample_multiplier
+			);
+		}
+
+		if (!( search_radius > 0.0 )) {
+			throw new IllegalArgumentException ("AftershockStatsShadow.find_shadow_v3: Invalid search radius"
+				+ ": search_radius = " + search_radius
+			);
+		}
+
+		if (separation != null) {
+			if (separation.length < 2) {
+				throw new IllegalArgumentException ("AftershockStatsShadow.find_shadow_v3: Separation array is too short");
+			}
+		}
+
+		if (seq_end_time != null) {
+			if (seq_end_time.length < 2) {
+				throw new IllegalArgumentException ("AftershockStatsShadow.find_shadow_v3: Sequence end time array is too short");
+			}
+		}
+
+		// Verbose mode flag
+
+		boolean f_verbose = AftershockVerbose.get_verbose_mode();
+
+		// A Comcat accessor to use
+
+		ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+		// Fetch object for magnitude of completeness parameters
+
+		MagCompPage_ParametersFetch mag_comp_fetch = new MagCompPage_ParametersFetch();
+
+		// Get the mainshock parameters, and its exclusion radius
+
+		final CandidateInfo mainshock_info = new CandidateInfo (mainshock);
+		final double mainshock_exclusion_radius = mainshock_info.exclusion_radius (mag_comp_fetch, centroid_multiplier, sample_multiplier);
+
+		// Set of earthquakes already seen, initialize to the mainshock
+
+		final Set<String> events_seen = new HashSet<String>();
+		events_seen.add (mainshock_info.event_id);
+
+		// The best (largest) shadowing rupture (or empty if none), its parameters, and its distance from the mainshock
+
+		final CandidateInfo best_info = new CandidateInfo();
+		double best_distance = Double.MAX_VALUE;
+
+		// The earliest shadowing rupture (or empty if none), and its parameters
+
+		final CandidateInfo earliest_info = new CandidateInfo();
+
+		// Scratch storage for working with a candidate potential shadowing event
+
+		final CandidateInfo potential_info = new CandidateInfo();
+
+		// Create the list of candidate search magnitudes, in descending order
+
+		List<Double> candidate_mag_list = new ArrayList<Double>();
+
+		if (large_mag < 9.99999) {
+			if (mainshock_info.mag < large_mag) {
+				candidate_mag_list.add (large_mag);
+			}
+		}
+		candidate_mag_list.add (mainshock_info.mag);
+
+		// Loop over search magnitudes
+
+		for (int ix_mag = 0; ix_mag < candidate_mag_list.size(); ++ix_mag) {
+			double candidate_search_mag = candidate_mag_list.get (ix_mag);
+
+			// Get the candidate search radius
+
+			double candidate_search_radius = search_radius;
+
+			// If not the first, use the largest possible exclusion radius of the prior search magnitude
+
+			if (ix_mag > 0) {
+				double prior_search_mag = candidate_mag_list.get (ix_mag - 1);
+
+				// Use at least the mainshock exclusion radius
+
+				candidate_search_radius = mainshock_exclusion_radius;
+
+				// Loop over all magnitude of completeness parameters to find the largest possible
+
+				for (MagCompPage_Parameters mag_comp_params : mag_comp_fetch.get_parameter_list()) {
+
+					// Get the centroid radius
+
+					double centroid_radius = mag_comp_params.get_radiusCentroid (prior_search_mag);
+
+					// Get the sample radius
+
+					double sample_radius = mag_comp_params.get_radiusSample (prior_search_mag);
+
+					// Get the exclusion radius
+
+					double exclusion_radius = (centroid_radius * centroid_multiplier) + (sample_radius * sample_multiplier);
+
+					// Accumulate maximum
+
+					candidate_search_radius = Math.max (candidate_search_radius, exclusion_radius);
+				}
+
+				// But limit to the provided search radius
+
+				candidate_search_radius = Math.min (candidate_search_radius, search_radius);
+			}
+
+			// Construct a circle around the mainshock with the candidate search radius
+
+			SphLatLon mainshock_sph_hypo = new SphLatLon (mainshock_info.hypo);
+			SphRegion search_region = SphRegion.makeCircle (mainshock_sph_hypo, candidate_search_radius);
+
+			// The effective end of the search time is the provided search_time_hi, but not past time_now,
+			// and there is no need to search past the earliest shadowing time seen so far (because such
+			// an event would be smaller in magnitude and later in time than a shadowing event already seen)
+
+			long eff_search_time_hi = Math.min (search_time_hi, time_now);
+
+			if (earliest_info.is_set()) {
+				eff_search_time_hi = Math.min (eff_search_time_hi, Math.max (earliest_info.time, search_time_lo + 1L));
+			}
+
+			// Get a list of potential candidates by calling Comcat
+			// Potentials must lie in the search region, within the search times,
+			// have magnitude at least equal to the mainshock, and not be the mainshock
+
+			double min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+			double max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+
+			boolean wrapLon = false;
+			boolean extendedInfo = false;
+			int limit_per_call = 0;
+			int max_calls = 0;
+
+			ObsEqkRupList potentials = accessor.fetchEventList (mainshock_info.event_id,
+						search_time_lo, eff_search_time_hi,
+						min_depth, max_depth,
+						search_region, wrapLon, extendedInfo,
+						candidate_search_mag, limit_per_call, max_calls);
+
+			if (f_verbose) {
+				System.out.println ("AftershockStatsShadow.find_shadow_v3: Found " + potentials.size()
+					+ " potential shadowing events for mainshock " + mainshock_info.event_id
+					+ " for magnitude " + String.format ("%.2f", candidate_search_mag)
+					+ " within " + String.format ("%.3f", candidate_search_radius) + " km");
+			}
+
+			// Examine the potentials and accumulate the candidates
+
+			for (ObsEqkRupture potential : potentials) {
+
+				// Get the potential parameters
+
+				potential_info.set (potential);
+
+				// Check that the event has not been seen before, and that the time is
+				// within the search times, and that the magnitude is larger than the mainshock
+
+				if (
+					events_seen.add (potential_info.event_id)
+					&& potential_info.time <= eff_search_time_hi
+					&& potential_info.time >= search_time_lo
+					&& potential_info.is_larger_than (mainshock_info)
+				) {
+
+					// Flag if this would be a new best
+
+					boolean f_new_best = (best_info.is_empty() || potential_info.is_larger_than (best_info));
+
+					// Flag if this would be a new earliest, and if current earliest is after the mainshock
+
+					boolean f_new_earliest = (earliest_info.is_empty() || (earliest_info.time > mainshock_info.time && potential_info.is_earlier_than (earliest_info) ));
+
+					// If the event would be a new best or earliest ...
+
+					if (f_new_best || f_new_earliest) {
+
+						// Get the exclusion radius
+
+						double exclusion_radius = potential_info.exclusion_radius (mag_comp_fetch, centroid_multiplier, sample_multiplier);
+
+						// Get the distance to the mainshock
+
+						double dist = SphLatLon.horzDistance (mainshock_info.hypo, potential_info.hypo);
+
+						// If the potential shadows the mainshock ...
+
+						if (dist <= Math.max (exclusion_radius, mainshock_exclusion_radius)) {
+
+							// If it's a new best, record it
+
+							if (f_new_best) {
+								best_info.copy_from (potential_info);
+								best_distance = dist;
+							}
+
+							// If it's a new earliest, record it
+
+							if (f_new_earliest) {
+								earliest_info.copy_from (potential_info);
+							}
+						}
+					}
+				}
+			}
+
+			// If we found a shadowing event and the earliest time is before (or concurrent with) the mainshock, we can stop now
+
+			if (best_info.is_set() && earliest_info.time <= mainshock_info.time) {
+
+				double best_time_offset = ((double)(mainshock_info.time - best_info.time))/ComcatOAFAccessor.day_millis;
+
+				if (separation != null) {
+					separation[0] = best_distance;
+					separation[1] = best_time_offset;
+				}
+
+				if (f_verbose) {
+					System.out.println ("AftershockStatsShadow.find_shadow_v3: Mainshock " + mainshock_info.event_id + " is shadowed by event " + best_info.event_id);
+					System.out.println (String.format ("AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = %.2f, shadowing event magnitude = %.2f", mainshock_info.mag, best_info.mag));
+					System.out.println (String.format ("AftershockStatsShadow.find_shadow_v3: Distance = %.3f km, time offset = %.3f days", best_distance, best_time_offset));
+				}
+
+				if (seq_end_time != null) {
+					seq_end_time[0] = mainshock_info.time;
+					seq_end_time[1] = 0L;
+				}
+
+				String early_event_id = ((best_info.time <= mainshock_info.time) ? best_info.event_id : earliest_info.event_id);
+
+				if (f_verbose) {
+					System.out.println ("AftershockStatsShadow.find_shadow_v3: Mainshock is an aftershock of event " + early_event_id);
+				}
+
+				return best_info.rupture;
+			}
+		}
+
+		// If mainshock is shadowed by a later event, return it
+
+		if (best_info.is_set()) {
+
+			double best_time_offset = ((double)(mainshock_info.time - best_info.time))/ComcatOAFAccessor.day_millis;
+
+			if (separation != null) {
+				separation[0] = best_distance;
+				separation[1] = best_time_offset;
+			}
+
+			if (f_verbose) {
+				System.out.println ("AftershockStatsShadow.find_shadow_v3: Mainshock " + mainshock_info.event_id + " is shadowed by event " + best_info.event_id);
+				System.out.println (String.format ("AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = %.2f, shadowing event magnitude = %.2f", mainshock_info.mag, best_info.mag));
+				System.out.println (String.format ("AftershockStatsShadow.find_shadow_v3: Distance = %.3f km, time offset = %.3f days", best_distance, best_time_offset));
+			}
+
+			long rel_time_millis = earliest_info.time - mainshock_info.time;
+			double rel_time_days = ((double)rel_time_millis)/ComcatOAFAccessor.day_millis;
+
+			if (seq_end_time != null) {
+				seq_end_time[0] = earliest_info.time;
+				seq_end_time[1] = rel_time_millis;
+			}
+
+			if (f_verbose) {
+				System.out.println (String.format ("AftershockStatsShadow.find_shadow_v3: Mainshock is a foreshock of event %s, relative time = %.3f days", earliest_info.event_id, rel_time_days));
+			}
+
+			return best_info.rupture;
+		}
+
+		// If no candidates shadow the mainshock, then return null
+
+		if (f_verbose) {
+			System.out.println ("AftershockStatsShadow.find_shadow_v3: Mainshock " + mainshock_info.event_id + " is not shadowed");
+		}
+
+		return null;
+	}
+
+
+
+
 	// Constructor.
 
 	public AftershockStatsShadow () {
@@ -1448,6 +1970,137 @@ public class AftershockStatsShadow {
 					search_radius, search_time_lo, search_time_hi,
 					centroid_rel_time_lo, centroid_rel_time_hi,
 					centroid_mag_floor, large_mag, separation, seq_end_time);
+
+				// Display results
+
+				System.out.println ("");
+
+				if (shadow == null) {
+					System.out.println ("Event is not shadowed");
+				} else {
+					System.out.println ("Event is shadowed by:");
+
+					String shadow_event_id = shadow.getEventId();
+					long shadow_time = shadow.getOriginTime();
+					double shadow_mag = shadow.getMag();
+					Location shadow_hypo = shadow.getHypocenterLocation();
+					double shadow_lat = shadow_hypo.getLatitude();
+					double shadow_lon = shadow_hypo.getLongitude();
+					double shadow_depth = shadow_hypo.getDepth();
+
+					System.out.println ("shadow_event_id = " + shadow_event_id);
+					System.out.println ("shadow_time = " + shadow_time + " (" + SimpleUtils.time_to_string(shadow_time) + ")");
+					System.out.println ("shadow_mag = " + shadow_mag);
+					System.out.println ("shadow_lat = " + shadow_lat);
+					System.out.println ("shadow_lon = " + shadow_lon);
+					System.out.println ("shadow_depth = " + shadow_depth);
+
+					System.out.println ("separation_km = " + String.format ("%.3f", separation[0]));
+					System.out.println ("separation_days = " + String.format ("%.3f", separation[1]));
+
+					System.out.println ("seq_end_time_abs = " + seq_end_time[0] + " (" + SimpleUtils.time_to_string(seq_end_time[0]) + ")");
+					System.out.println ("seq_end_time_rel_days = " + String.format ("%.3f", ((double)(seq_end_time[1]))/ComcatOAFAccessor.day_millis));
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3  event_id  days
+		// Fetch information for an event, and display it.
+		// Then, test if the event is shadowed.  The time_now is set to the specified
+		//  number of days after the event, and other parameters are set to defaults.
+		// Then, display the shadowing event if one is found.
+		// Same as test #1 except uses find_shadow_v3.
+
+		if (args[0].equalsIgnoreCase ("test3")) {
+
+			// Two additional arguments
+
+			if (args.length != 3) {
+				System.err.println ("AftershockStatsShadow : Invalid 'test3' subcommand");
+				return;
+			}
+
+			try {
+
+				String event_id = args[1];
+				double days = Double.parseDouble (args[2]);
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					return;
+				}
+
+				String rup_event_id = rup.getEventId();
+				long rup_time = rup.getOriginTime();
+				double rup_mag = rup.getMag();
+				Location rup_hypo = rup.getHypocenterLocation();
+				double rup_lat = rup_hypo.getLatitude();
+				double rup_lon = rup_hypo.getLongitude();
+				double rup_depth = rup_hypo.getDepth();
+
+				System.out.println ("rup_event_id = " + rup_event_id);
+				System.out.println ("rup_time = " + rup_time + " (" + SimpleUtils.time_to_string(rup_time) + ")");
+				System.out.println ("rup_mag = " + rup_mag);
+				System.out.println ("rup_lat = " + rup_lat);
+				System.out.println ("rup_lon = " + rup_lon);
+				System.out.println ("rup_depth = " + rup_depth);
+
+				// Get find shadow parameters
+
+				long time_now = rup_time + (long)(days*ComcatOAFAccessor.day_millis);
+				double search_radius = DEF_SEARCH_RADIUS;
+				long search_time_lo = rup_time - YEAR_IN_MILLIS;
+				long search_time_hi = rup_time + YEAR_IN_MILLIS;
+				double centroid_multiplier = DEF_V3_CENTROID_MULT;
+				double sample_multiplier = DEF_V3_SAMPLE_MULT;
+				double large_mag = DEF_V3_LARGE_MAG;
+				double[] separation = new double[2];
+				long[] seq_end_time = new long[2];
+
+				System.out.println ("");
+				System.out.println ("find_shadow_v3 parameters:");
+				System.out.println ("time_now = " + time_now + " (" + SimpleUtils.time_to_string(time_now) + ")");
+				System.out.println ("search_radius = " + search_radius);
+				System.out.println ("search_time_lo = " + search_time_lo + " (" + SimpleUtils.time_to_string(search_time_lo) + ")");
+				System.out.println ("search_time_hi = " + search_time_hi + " (" + SimpleUtils.time_to_string(search_time_hi) + ")");
+				System.out.println ("centroid_multiplier = " + centroid_multiplier);
+				System.out.println ("sample_multiplier = " + sample_multiplier);
+				System.out.println ("large_mag = " + large_mag);
+
+				// Run find_shadow_v2
+
+				System.out.println ("");
+				System.out.println ("Finding shadow:");
+
+				ObsEqkRupture shadow = find_shadow_v3 (rup, time_now,
+					search_radius, search_time_lo, search_time_hi,
+					centroid_multiplier, sample_multiplier,
+					large_mag, separation, seq_end_time);
 
 				// Display results
 

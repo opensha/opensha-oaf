@@ -1,0 +1,48 @@
+shadowc109 rj.AftershockStatsShadow test3 nc10089897 365
+Fetching event: nc10089897
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nc10089897.geojson
+Count of events received = 1
+rup_event_id = nc10089897
+rup_time = 618567207390 (1989-08-08 08:13:27 UTC)
+rup_mag = 5.4
+rup_lat = 37.1481667
+rup_lon = -121.9268333
+rup_depth = 13.409
+
+find_shadow_v3 parameters:
+time_now = 650103207390 (1990-08-08 08:13:27 UTC)
+search_radius = 2000.0
+search_time_lo = 587031207390 (1988-08-08 08:13:27 UTC)
+search_time_hi = 650103207390 (1990-08-08 08:13:27 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1990-08-08T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=1988-08-08T08:13:27.390Z
+Count of events received = 0
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock nc10089897 for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1990-08-08T08:13:27.390Z&format=geojson&latitude=37.14817&limit=20000&longitude=-121.92683&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=5.400&orderby=time&starttime=1988-08-08T08:13:27.390Z
+Count of events received = 3
+Count of events after filtering = 2
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow_v3: Found 2 potential shadowing events for mainshock nc10089897 for magnitude 5.40 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock nc10089897 is shadowed by event nc216859
+AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = 5.40, shadowing event magnitude = 6.90
+AftershockStatsShadow.find_shadow_v3: Distance = 13.124 km, time offset = -70.660 days
+AftershockStatsShadow.find_shadow_v3: Mainshock is a foreshock of event nc216859, relative time = 70.660 days
+
+Event is shadowed by:
+shadow_event_id = nc216859
+shadow_time = 624672255190 (1989-10-18 00:04:15 UTC)
+shadow_mag = 6.9
+shadow_lat = 37.0361667
+shadow_lon = -121.8798333
+shadow_depth = 17.214
+separation_km = 13.124
+separation_days = -70.660
+seq_end_time_abs = 624672255190 (1989-10-18 00:04:15 UTC)
+seq_end_time_rel_days = 70.660

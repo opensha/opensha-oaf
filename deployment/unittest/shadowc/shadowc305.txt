@@ -1,0 +1,42 @@
+shadowc305 rj.AftershockStatsShadow test3 usb000kj1z 365
+Fetching event: usb000kj1z
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usb000kj1z.geojson
+Count of events received = 1
+rup_event_id = usb000kj1z
+rup_time = 1382516610360 (2013-10-23 08:23:30 UTC)
+rup_mag = 6.0
+rup_lat = -23.0067
+rup_lon = -177.1425
+rup_depth = 160.0
+
+find_shadow_v3 parameters:
+time_now = 1414052610360 (2014-10-23 08:23:30 UTC)
+search_radius = 2000.0
+search_time_lo = 1350980610360 (2012-10-23 08:23:30 UTC)
+search_time_hi = 1414052610360 (2014-10-23 08:23:30 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-10-23T08:23:30.360Z&format=geojson&latitude=-23.00670&limit=20000&longitude=-177.14250&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2012-10-23T08:23:30.360Z
+Count of events received = 1
+Count of events after filtering = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usb000kj1z for magnitude 7.00 within 2000.000 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usb000kj1z is shadowed by event usb000h3k3
+AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = 6.00, shadowing event magnitude = 7.40
+AftershockStatsShadow.find_shadow_v3: Distance = 9.158 km, time offset = 152.628 days
+AftershockStatsShadow.find_shadow_v3: Mainshock is an aftershock of event usb000h3k3
+
+Event is shadowed by:
+shadow_event_id = usb000h3k3
+shadow_time = 1369329544750 (2013-05-23 17:19:04 UTC)
+shadow_mag = 7.4
+shadow_lat = -23.009
+shadow_lon = -177.232
+shadow_depth = 173.7
+separation_km = 9.158
+separation_days = 152.628
+seq_end_time_abs = 1382516610360 (2013-10-23 08:23:30 UTC)
+seq_end_time_rel_days = 0.000

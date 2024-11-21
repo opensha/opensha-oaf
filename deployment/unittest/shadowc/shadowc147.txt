@@ -1,0 +1,35 @@
+shadowc147 rj.AftershockStatsShadow test3 usp000cmqq 365
+Fetching event: usp000cmqq
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000cmqq.geojson
+Count of events received = 1
+rup_event_id = usp000cmqq
+rup_time = 1077330882700 (2004-02-21 02:34:42 UTC)
+rup_mag = 6.6
+rup_lat = -58.425
+rup_lon = -14.963
+rup_depth = 10.0
+
+find_shadow_v3 parameters:
+time_now = 1108866882700 (2005-02-20 02:34:42 UTC)
+search_radius = 2000.0
+search_time_lo = 1045794882700 (2003-02-21 02:34:42 UTC)
+search_time_hi = 1108866882700 (2005-02-20 02:34:42 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-02-20T02:34:42.700Z&format=geojson&latitude=-58.42500&limit=20000&longitude=-14.96300&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2003-02-21T02:34:42.700Z
+Count of events received = 1
+Count of events after filtering = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usp000cmqq for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-02-20T02:34:42.700Z&format=geojson&latitude=-58.42500&limit=20000&longitude=-14.96300&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.600&orderby=time&starttime=2003-02-21T02:34:42.700Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock usp000cmqq for magnitude 6.60 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000cmqq is not shadowed
+
+Event is not shadowed

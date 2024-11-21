@@ -526,15 +526,31 @@ public class ExGenerateForecast extends ServerExecTask {
 			double[] separation = new double[2];
 			long[] seq_end_time = new long[2];
 
+			int shadow_method = sg.task_disp.get_action_config().get_shadow_method();
+			double large_mag_3 = sg.task_disp.get_action_config().get_shadow3_large_mag();
+			double centroid_multiplier = sg.task_disp.get_action_config().get_shadow3_centroid_mult();
+			double sample_multiplier = sg.task_disp.get_action_config().get_shadow3_sample_mult();
+
 			// Run find_shadow
 
 			ObsEqkRupture shadow;
 
 			try {
-				shadow = AftershockStatsShadow.find_shadow_v2 (rup, time_now,
-					search_radius, search_time_lo, search_time_hi,
-					centroid_rel_time_lo, centroid_rel_time_hi,
-					centroid_mag_floor, large_mag, separation, seq_end_time);
+				if (shadow_method == 2) {
+
+					shadow = AftershockStatsShadow.find_shadow_v2 (rup, time_now,
+						search_radius, search_time_lo, search_time_hi,
+						centroid_rel_time_lo, centroid_rel_time_hi,
+						centroid_mag_floor, large_mag, separation, seq_end_time);
+				
+				} else {
+
+					shadow = AftershockStatsShadow.find_shadow_v3 (rup, time_now,
+						search_radius, search_time_lo, search_time_hi,
+						centroid_multiplier, sample_multiplier,
+						large_mag_3, separation, seq_end_time);
+
+				}
 			}
 
 			// An exception here triggers a ComCat retry

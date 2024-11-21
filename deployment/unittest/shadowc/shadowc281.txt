@@ -1,0 +1,42 @@
+shadowc281 rj.AftershockStatsShadow test3 us20003msd 365
+Fetching event: us20003msd
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20003msd.geojson
+Count of events received = 1
+rup_event_id = us20003msd
+rup_time = 1442905980520 (2015-09-22 07:13:00 UTC)
+rup_mag = 6.0
+rup_lat = -31.4441
+rup_lon = -71.2653
+rup_depth = 58.0
+
+find_shadow_v3 parameters:
+time_now = 1474441980520 (2016-09-21 07:13:00 UTC)
+search_radius = 2000.0
+search_time_lo = 1411369980520 (2014-09-22 07:13:00 UTC)
+search_time_hi = 1474441980520 (2016-09-21 07:13:00 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-21T07:13:00.520Z&format=geojson&latitude=-31.44410&limit=20000&longitude=-71.26530&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2014-09-22T07:13:00.520Z
+Count of events received = 2
+Count of events after filtering = 2
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow_v3: Found 2 potential shadowing events for mainshock us20003msd for magnitude 7.00 within 2000.000 km
+AftershockStatsShadow.find_shadow_v3: Mainshock us20003msd is shadowed by event us20003k7a
+AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = 6.00, shadowing event magnitude = 8.30
+AftershockStatsShadow.find_shadow_v3: Distance = 41.315 km, time offset = 5.346 days
+AftershockStatsShadow.find_shadow_v3: Mainshock is an aftershock of event us20003k7a
+
+Event is shadowed by:
+shadow_event_id = us20003k7a
+shadow_time = 1442444072860 (2015-09-16 22:54:32 UTC)
+shadow_mag = 8.3
+shadow_lat = -31.5729
+shadow_lon = -71.6744
+shadow_depth = 22.44
+separation_km = 41.315
+separation_days = 5.346
+seq_end_time_abs = 1442905980520 (2015-09-22 07:13:00 UTC)
+seq_end_time_rel_days = 0.000

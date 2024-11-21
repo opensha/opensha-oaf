@@ -1,0 +1,35 @@
+shadowc189 rj.AftershockStatsShadow test3 us100049ce 365
+Fetching event: us100049ce
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us100049ce.geojson
+Count of events received = 1
+rup_event_id = us100049ce
+rup_time = 1450986243130 (2015-12-24 19:44:03 UTC)
+rup_mag = 6.2
+rup_lat = -55.755
+rup_lon = -123.1158
+rup_depth = 12.28
+
+find_shadow_v3 parameters:
+time_now = 1482522243130 (2016-12-23 19:44:03 UTC)
+search_radius = 2000.0
+search_time_lo = 1419450243130 (2014-12-24 19:44:03 UTC)
+search_time_hi = 1482522243130 (2016-12-23 19:44:03 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-12-23T19:44:03.130Z&format=geojson&latitude=-55.75500&limit=20000&longitude=-123.11580&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2014-12-24T19:44:03.130Z
+Count of events received = 0
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock us100049ce for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-12-23T19:44:03.130Z&format=geojson&latitude=-55.75500&limit=20000&longitude=-123.11580&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.200&orderby=time&starttime=2014-12-24T19:44:03.130Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock us100049ce for magnitude 6.20 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock us100049ce is not shadowed
+
+Event is not shadowed

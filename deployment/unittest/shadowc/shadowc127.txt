@@ -1,0 +1,35 @@
+shadowc127 rj.AftershockStatsShadow test3 usp000gufy 365
+Fetching event: usp000gufy
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000gufy.geojson
+Count of events received = 1
+rup_event_id = usp000gufy
+rup_time = 1235831586350 (2009-02-28 14:33:06 UTC)
+rup_mag = 6.3
+rup_lat = -60.525
+rup_lon = -24.796
+rup_depth = 15.0
+
+find_shadow_v3 parameters:
+time_now = 1267367586350 (2010-02-28 14:33:06 UTC)
+search_radius = 2000.0
+search_time_lo = 1204295586350 (2008-02-29 14:33:06 UTC)
+search_time_hi = 1267367586350 (2010-02-28 14:33:06 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2010-02-28T14:33:06.350Z&format=geojson&latitude=-60.52500&limit=20000&longitude=-24.79600&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2008-02-29T14:33:06.350Z
+Count of events received = 1
+Count of events after filtering = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usp000gufy for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2010-02-28T14:33:06.350Z&format=geojson&latitude=-60.52500&limit=20000&longitude=-24.79600&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.300&orderby=time&starttime=2008-02-29T14:33:06.350Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock usp000gufy for magnitude 6.30 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000gufy is not shadowed
+
+Event is not shadowed

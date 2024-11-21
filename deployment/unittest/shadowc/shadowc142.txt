@@ -1,0 +1,35 @@
+shadowc142 rj.AftershockStatsShadow test3 usp000h68a 365
+Fetching event: usp000h68a
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000h68a.geojson
+Count of events received = 1
+rup_event_id = usp000h68a
+rup_time = 1263729601080 (2010-01-17 12:00:01 UTC)
+rup_mag = 6.3
+rup_lat = -57.664
+rup_lon = -65.879
+rup_depth = 5.0
+
+find_shadow_v3 parameters:
+time_now = 1295265601080 (2011-01-17 12:00:01 UTC)
+search_radius = 2000.0
+search_time_lo = 1232193601080 (2009-01-17 12:00:01 UTC)
+search_time_hi = 1295265601080 (2011-01-17 12:00:01 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-01-17T12:00:01.080Z&format=geojson&latitude=-57.66400&limit=20000&longitude=-65.87900&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2009-01-17T12:00:01.080Z
+Count of events received = 0
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock usp000h68a for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-01-17T12:00:01.080Z&format=geojson&latitude=-57.66400&limit=20000&longitude=-65.87900&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.300&orderby=time&starttime=2009-01-17T12:00:01.080Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock usp000h68a for magnitude 6.30 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000h68a is not shadowed
+
+Event is not shadowed

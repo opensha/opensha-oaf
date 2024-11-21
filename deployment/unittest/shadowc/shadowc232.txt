@@ -1,0 +1,48 @@
+shadowc232 rj.AftershockStatsShadow test3 usp000fqmj 365
+Fetching event: usp000fqmj
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000fqmj.geojson
+Count of events received = 1
+rup_event_id = usp000fqmj
+rup_time = 1192483703680 (2007-10-15 21:28:23 UTC)
+rup_mag = 6.1
+rup_lat = -44.793
+rup_lon = 167.458
+rup_depth = 19.0
+
+find_shadow_v3 parameters:
+time_now = 1224019703680 (2008-10-14 21:28:23 UTC)
+search_radius = 2000.0
+search_time_lo = 1160947703680 (2006-10-15 21:28:23 UTC)
+search_time_hi = 1224019703680 (2008-10-14 21:28:23 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-10-14T21:28:23.680Z&format=geojson&latitude=-44.79300&limit=20000&longitude=167.45800&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2006-10-15T21:28:23.680Z
+Count of events received = 2
+Count of events after filtering = 2
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow_v3: Found 2 potential shadowing events for mainshock usp000fqmj for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2008-10-14T21:28:23.680Z&format=geojson&latitude=-44.79300&limit=20000&longitude=167.45800&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2006-10-15T21:28:23.680Z
+Count of events received = 2
+Count of events after filtering = 1
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usp000fqmj for magnitude 6.10 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000fqmj is shadowed by event usp000fqks
+AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = 6.10, shadowing event magnitude = 6.80
+AftershockStatsShadow.find_shadow_v3: Distance = 7.499 km, time offset = 0.374 days
+AftershockStatsShadow.find_shadow_v3: Mainshock is an aftershock of event usp000fqks
+
+Event is shadowed by:
+shadow_event_id = usp000fqks
+shadow_time = 1192451374860 (2007-10-15 12:29:34 UTC)
+shadow_mag = 6.8
+shadow_lat = -44.796
+shadow_lon = 167.553
+shadow_depth = 18.0
+separation_km = 7.499
+separation_days = 0.374
+seq_end_time_abs = 1192483703680 (2007-10-15 21:28:23 UTC)
+seq_end_time_rel_days = 0.000
