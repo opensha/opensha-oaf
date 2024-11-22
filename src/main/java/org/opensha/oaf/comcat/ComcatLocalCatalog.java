@@ -967,6 +967,185 @@ public class ComcatLocalCatalog {
 
 
 
+		// Subcommand : Download catalog to a local file.
+		// Command format:
+		//  download_large  filename  start_time  end_time  min_mag  query_dur  wait_dur
+		// Download a world-wide catalog, and write to the given file.
+		// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+		// Durations are in java.time.Duration format, for example P3DT11H45M04S or P100D or PT30S.
+		// Note: Same as the download command, except it performs multiple calls to Comcat,
+		// each no longer than about query_dur in duration, with a waiting time of wait_dur
+		// between calls to Comcat.  Comcat calls have a minimum duration of 1 hour.
+
+		if (args[0].equalsIgnoreCase ("download_large")) {
+
+			// Four additional arguments
+
+			if (args.length != 7) {
+				System.err.println ("ComcatLocalCatalogEntry : Invalid 'download_large' subcommand");
+				return;
+			}
+
+			try {
+
+				String filename = args[1];
+				long startTime = SimpleUtils.string_to_time (args[2]);
+				long endTime = SimpleUtils.string_to_time (args[3]);
+				double min_mag = Double.parseDouble (args[4]);
+				long query_dur = SimpleUtils.string_to_duration (args[5]);
+				long wait_dur = SimpleUtils.string_to_duration (args[6]);
+
+				// Say hello
+
+				System.out.println ("Downloading catalog: " + filename);
+				System.out.println ("Start time: " + SimpleUtils.time_to_string(startTime));
+				System.out.println ("End time: " + SimpleUtils.time_to_string(endTime));
+				System.out.println ("Minimum magnitude: " + min_mag);
+				System.out.println ("Query duration: " + SimpleUtils.duration_to_string_2(query_dur));
+				System.out.println ("Wait duration: " + SimpleUtils.duration_to_string_2(wait_dur));
+				System.out.println ("");
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Construct the Region
+
+				SphRegionWorld region = new SphRegionWorld ();
+
+				// Set of earthquakes already seen
+
+				Set<String> events_seen = new HashSet<String>();
+
+				// Number of entries written to the output file
+
+				int entries_written = 0;
+
+				// Number of duplicate entries found
+
+				int duplicate_entries = 0;
+
+				// Number of entries discarded due to error
+
+				int discarded_entries = 0;
+
+				// Minimum query duration in milliseconds
+
+				long min_query_dur = 3600000L;		// 1 hour
+
+				// Open the output file
+
+				try (
+					Writer writer = new BufferedWriter (new FileWriter (filename));
+				){
+
+					// The start time for the current Comcat query
+
+					long current_startTime = endTime;
+
+					// Loop until done the entire interval
+
+					while (current_startTime > startTime) {
+
+						// If not the first call, insert a delay
+
+						if (current_startTime < endTime && wait_dur > 250L) {
+							System.out.println ("Waiting " + wait_dur + " milliseconds");
+							try {
+								Thread.sleep (wait_dur);
+							} catch (InterruptedException e) {
+							}
+						}
+
+						// Current start time becomes the current end time
+
+						long current_endTime = current_startTime;
+
+						// Adjust the current start time
+
+						current_startTime -= Math.max (query_dur, min_query_dur);
+
+						if (current_startTime <= startTime + min_query_dur) {
+							current_startTime = startTime;
+						}
+
+						// Call Comcat
+							
+						System.out.println ("Calling Comcat from " + SimpleUtils.time_to_string(current_startTime) + " to " + SimpleUtils.time_to_string(current_endTime));
+
+						String rup_event_id = null;
+						double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+						double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+						boolean wrapLon = false;
+						boolean extendedInfo = true;
+
+						ObsEqkRupList rup_list = accessor.fetchEventList (rup_event_id, current_startTime, current_endTime,
+								minDepth, maxDepth, region, wrapLon, extendedInfo,
+								min_mag);
+
+						// Display the information
+
+						System.out.println ("Events returned by fetchEventList = " + rup_list.size());
+
+						// Loop over ruptures
+
+						for (ObsEqkRupture rup : rup_list) {
+
+							// If this event has not been seen before ...
+
+							if (events_seen.add (rup.getEventId())) {
+
+								// Convert to catalog entry
+
+								ComcatLocalCatalogEntry entry = null;
+
+								try {
+									entry = new ComcatLocalCatalogEntry();
+									entry.set_eqk_rupture (rup);
+								} catch (Exception e) {
+									entry = null;
+								}
+
+								// If we got an entry, write to the file
+
+								if (entry != null) {
+									writer.write (entry.format_line() + "\n");
+									++entries_written;
+								}
+
+								// Otherwise, a discarded entry
+
+								else {
+									++discarded_entries;
+								}
+							}
+
+							// Otherwise, a duplicate entry
+
+							else {
+								++duplicate_entries;
+							}
+						}
+					}
+				}
+
+				// Display the result
+
+				System.out.println ();
+				System.out.println ("Events written to local catalog = " + entries_written);
+				System.out.println ("Duplicate Comcat events found = " + duplicate_entries);
+				System.out.println ("Events discarded due to invalid contents = " + discarded_entries);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
 		// Subcommand : Load catalog from a local file and display statistics.
 		// Command format:
 		//  statistics  filename...
@@ -992,6 +1171,71 @@ public class ComcatLocalCatalog {
 
 				ComcatLocalCatalog local_catalog = new ComcatLocalCatalog();
 				local_catalog.load_catalog (0, filename);
+
+				// Display statistics
+
+				System.out.println (local_catalog.toString());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Load catalog from a local file and display statistics.
+		// Command format:
+		//  statistics_2  filename...  lat_bins
+		// Same as statistics except also includes time and memory information,
+		// and allows specifying the number of latitude bins (0 for default).
+
+		if (args[0].equalsIgnoreCase ("statistics_2")) {
+
+			// Two or more additional arguments
+
+			if (args.length < 3) {
+				System.err.println ("ComcatLocalCatalogEntry : Invalid 'statistics' subcommand");
+				return;
+			}
+
+			try {
+
+				int lat_bins = Integer.parseInt (args[args.length - 1]);
+				String[] filename = Arrays.copyOfRange (args, 1, args.length - 1);
+
+				// Say hello
+
+				System.out.println ("Loading catalog: " + "[" + String.join (", ", filename) + "]");
+
+				// Start time
+
+				long start_time = System.currentTimeMillis();
+
+				// Display memory
+
+				System.out.println ();
+				SimpleUtils.show_one_line_memory_status();
+				System.out.println ();
+
+				// Load the catalog
+
+				ComcatLocalCatalog local_catalog = new ComcatLocalCatalog();
+				local_catalog.load_catalog (lat_bins, filename);
+
+				// Load complete time
+
+				long load_complete_time = System.currentTimeMillis();
+				System.out.println ();
+				System.out.println ("Catalog load time = " + SimpleUtils.duration_to_string_3 (load_complete_time - start_time));
+
+				// Display memory
+
+				System.out.println ();
+				SimpleUtils.show_one_line_memory_status();
+				System.out.println ();
 
 				// Display statistics
 
@@ -1552,6 +1796,142 @@ public class ComcatLocalCatalog {
 						++n;
 					}
 				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  filename...  lat_bins  event_id  min_days  max_days  radius_km  min_mag
+		// Fetch information for an event, and display it.
+		// Then fetch the event list for a circle surrounding the hypocenter,
+		// for the specified interval in days after the origin time,
+		// excluding the event itself.
+		// Same as test #2, except displays information about time and memory,
+		// and allows specifying the number of latitude bins (0 for default).
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// Seven or more additional arguments
+
+			if (args.length < 8) {
+				System.err.println ("ComcatLocalCatalogEntry : Invalid 'test4' subcommand");
+				return;
+			}
+
+			try {
+
+				String filename[] = Arrays.copyOfRange (args, 1, args.length - 6);
+				int lat_bins = Integer.parseInt (args[args.length - 6]);
+				String event_id = args[args.length - 5];
+				double min_days = Double.parseDouble (args[args.length - 4]);
+				double max_days = Double.parseDouble (args[args.length - 3]);
+				double radius_km = Double.parseDouble (args[args.length - 2]);
+				double min_mag = Double.parseDouble (args[args.length - 1]);
+
+				// Start time
+
+				long start_time = System.currentTimeMillis();
+
+				// Display memory
+
+				System.out.println ();
+				SimpleUtils.show_one_line_memory_status();
+				System.out.println ();
+
+				// Load the catalog
+
+				System.out.println ("Loading catalog: " + "[" + String.join (", ", filename) + "]");
+				ComcatLocalCatalog local_catalog = new ComcatLocalCatalog();
+				local_catalog.load_catalog (lat_bins, filename);
+
+				// Load complete time
+
+				long load_complete_time = System.currentTimeMillis();
+				System.out.println ();
+				System.out.println ("Catalog load time = " + SimpleUtils.duration_to_string_3 (load_complete_time - start_time));
+
+				// Display memory
+
+				System.out.println ();
+				SimpleUtils.show_one_line_memory_status();
+				System.out.println ();
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Get the rupture
+
+				ObsEqkRupture rup = local_catalog.fetchEvent (event_id, false, true, false);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+				long rup_time = rup.getOriginTime();
+				Location hypo = rup.getHypocenterLocation();
+
+				// Say hello
+
+				System.out.println ("Fetching event list");
+				System.out.println ("min_days = " + min_days);
+				System.out.println ("max_days = " + max_days);
+				System.out.println ("radius_km = " + radius_km);
+				System.out.println ("min_mag = " + min_mag);
+
+				// Construct the Region
+
+				SphRegionCircle region = new SphRegionCircle (new SphLatLon(hypo), radius_km);
+
+				// Calculate the times
+
+				long startTime = rup_time + (long)(min_days*ComcatOAFAccessor.day_millis);
+				long endTime = rup_time + (long)(max_days*ComcatOAFAccessor.day_millis);
+
+				// Start time
+
+				long fetch_start_time = System.currentTimeMillis();
+
+				// Call Comcat
+
+				double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+				double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+				boolean wrapLon = false;
+				boolean extendedInfo = false;
+
+				ObsEqkRupList rup_list = local_catalog.fetchEventList (rup_event_id, startTime, endTime,
+						minDepth, maxDepth, region, wrapLon, extendedInfo,
+						min_mag);
+
+				// Fetch complete time
+
+				long fetch_complete_time = System.currentTimeMillis();
+				System.out.println ();
+				System.out.println ("Fetch time = " + SimpleUtils.duration_to_string_3 (fetch_complete_time - fetch_start_time));
+
+				// Display memory
+
+				System.out.println ();
+				SimpleUtils.show_one_line_memory_status();
+				System.out.println ();
+
+				// Display the information
+
+				System.out.println ("Events returned by fetchEventList = " + rup_list.size());
 
 			} catch (Exception e) {
 				e.printStackTrace();
