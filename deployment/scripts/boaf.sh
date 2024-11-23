@@ -47,6 +47,11 @@
 #
 # diffcfgc - Same as diffcfg except forces the use of colored text when displaying changes.
 #
+# dev_deploycfg - Copy the AAFS configuration files into ./oafcfg, for use with the runcfg command.
+#                 The user is prompted before any existing file in ./oafcfg is changed.
+#
+# dev_diffcfgc - Use git diff to compare the configuration files in ./oafcfg to the originals, with color.
+#
 # erase_config_server - Erase any existing server configuration file from /opt/aafs/oafcfg.
 #
 # erase_config_action - Erase any existing action configuration file from /opt/aafs/oafcfg.
@@ -758,6 +763,25 @@ case "$1" in
         git diff --color opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
         ;;
 
+    dev_deploycfg)
+        makenewdir ./oafcfg
+        copycfg opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ServerConfig.json ./oafcfg/ServerConfig.json
+        copycfg opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ActionConfig.json ./oafcfg/ActionConfig.json
+        copycfg opensha-oaf/src/main/resources/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json ./oafcfg/GenericRJ_ParametersFetch.json
+        copycfg opensha-oaf/src/main/resources/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json ./oafcfg/MagCompPage_ParametersFetch.json
+        copycfg opensha-oaf/src/main/resources/org/opensha/oaf/oetas/env/EtasConfig.json ./oafcfg/EtasConfig.json
+        copycfg opensha-oaf/src/main/resources/org/opensha/oaf/oetas/bay/GaussAPCConfig.json ./oafcfg/GaussAPCConfig.json
+        ;;
+
+    dev_diffcfgc)
+        git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ServerConfig.json ./oafcfg/ServerConfig.json
+        git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ActionConfig.json ./oafcfg/ActionConfig.json
+        git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/rj/GenericRJ_ParametersFetch.json ./oafcfg/GenericRJ_ParametersFetch.json
+        git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/rj/MagCompPage_ParametersFetch.json ./oafcfg/MagCompPage_ParametersFetch.json
+        git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/oetas/env/EtasConfig.json ./oafcfg/EtasConfig.json
+        git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/oetas/bay/GaussAPCConfig.json ./oafcfg/GaussAPCConfig.json
+        ;;
+
     erase_config_server)
         rmexistingfile /opt/aafs/oafcfg/ServerConfig.json
         ;;
@@ -1115,6 +1139,10 @@ case "$1" in
         echo "  boaf.sh diffcfg"
         echo "Same as diffcfg except forces the use of colored text when displaying changes:"
         echo "  boaf.sh diffcfgc"
+        echo "Copy the AAFS configuration files and scripts into into ./oafcfg, for use with runcfg:"
+        echo "  boaf.sh dev_deploycfg"
+        echo "Use git diff to compare the configuration files in ./oafcfg to the originals, with color:"
+        echo "  boaf.sh dev_diffcfgc"
         echo "Erase any existing server configuration file from /opt/aafs/oafcfg:"
         echo "  boaf.sh erase_config_server"
         echo "Erase any existing action configuration file from /opt/aafs/oafcfg:"
