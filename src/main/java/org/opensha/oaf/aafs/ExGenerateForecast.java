@@ -679,15 +679,13 @@ public class ExGenerateForecast extends ServerExecTask {
 			String the_injectable_text = forecast_params.get_eff_injectable_text (
 					sg.task_disp.get_action_config().get_def_injectable_text());
 
-			forecast_results.calc_all (
+			forecast_results.calc_catalog_only (
 				fcmain.mainshock_time + next_forecast_lag,
 				advisory_lag,
 				the_injectable_text,
 				fcmain,
 				forecast_params,
 				next_forecast_lag >= sg.task_disp.get_action_config().get_seq_spec_min_lag());
-
-			forecast_results.write_calc_log (sg);
 		}
 
 		// An exception here triggers a ComCat retry
@@ -695,10 +693,6 @@ public class ExGenerateForecast extends ServerExecTask {
 		catch (Exception e) {
 			return sg.timeline_sup.process_timeline_comcat_retry (task, tstatus, e);
 		}
-
-		// Select report for PDL, if any
-
-		forecast_results.pick_pdl_model();
 
 		// If we have an earthquake catalog ...
 
@@ -826,6 +820,27 @@ public class ExGenerateForecast extends ServerExecTask {
 //				return RESCODE_TIMELINE_FORESHOCK;
 			}
 		}
+
+		// Now compute the forecast
+
+		try {
+
+			forecast_results.calc_after_catalog (
+				fcmain,
+				forecast_params);
+
+			forecast_results.write_calc_log (sg);
+		}
+
+		// An exception here triggers a ComCat retry
+
+		catch (Exception e) {
+			return sg.timeline_sup.process_timeline_comcat_retry (task, tstatus, e);
+		}
+
+		// Select report for PDL, if any
+
+		forecast_results.pick_pdl_model();
 
 		// Insert forecast into timeline status
 

@@ -1336,15 +1336,42 @@ public class ForecastResults implements Marshalable {
 		return;
 	}
 
+	// These variables are used to pass information from calc_catalog_only to calc_after_catalog.
+	// These variables are not marshaled.
+
+	private boolean saved_f_seq_spec = true;		// saved value of f_seq_spec
+	private boolean f_did_catalog_only = false;		// true if calc_catalog_only completed successfully
+
 	// Calculate only the catalog, not doing any forecasts.
 	// Note: For consistency, parameters are the same as calc_all, although
-	// not all affect the result.  This function supports testing.
+	// not all affect the result.  This function supports testing, and can also
+	// be used to examine the catalog before decided whether to compute forecasts.
 
 	public void calc_catalog_only (long the_result_time, long the_advisory_lag, String the_injectable_text, ForecastMainshock fcmain, ForecastParameters params, boolean f_seq_spec) {
 		result_time = the_result_time;
 		advisory_lag = the_advisory_lag;
 		injectable_text = ((the_injectable_text == null) ? "" : the_injectable_text);
 		calc_catalog_results (fcmain, params);
+
+		saved_f_seq_spec = f_seq_spec;
+		f_did_catalog_only = true;
+		return;
+	}
+
+	// Calculate forecasts, after a call to calc_catalog_only.
+	// Calling calc_catalog_only followed by calc_after_catalog is equivalent to calling calc_all.
+	// This allows the caller to examine the catalog before deciding whether to compute forecasts.
+
+	public void calc_after_catalog (ForecastMainshock fcmain, ForecastParameters params) {
+		if (!( f_did_catalog_only )) {
+			throw new IllegalStateException ("ForecastResults.calc_after_catalog: Did not complete call to calc_catalog_only");
+		}
+		boolean f_seq_spec = saved_f_seq_spec;
+
+		calc_generic_results (fcmain, params);
+		calc_seq_spec_results (fcmain, params, f_seq_spec);
+		calc_bayesian_results (fcmain, params);
+		calc_etas_results (fcmain, params);
 		return;
 	}
 
