@@ -9,5 +9,4 @@ tmp
 Scratch*.java
 .DS_Store
 build.date
-build.githash
-build.gitbranch
+build.git*
