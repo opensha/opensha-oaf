@@ -63,6 +63,18 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 
 	public int reject_count;
 
+	// Number of accepted ruptures in the triggering interval. [v3]
+	// Note: This is primarily an output to support testing.
+	// (Set to min(1, accept_count) when loaded from a v1 or v2 file.)
+
+	public int triggering_count;
+
+	// Number of accepted ruptures in the fitting interval. [v3]
+	// Note: This is primarily an output to support testing.
+	// (Set to max(0, accept_count-1) when loaded from a v1 or v2 file.)
+
+	public int fitting_count;
+
 
 	//----- Fitting -----
 
@@ -197,6 +209,8 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		interval_count = 0;
 		accept_count = 0;
 		reject_count = 0;
+		triggering_count = 0;
+		fitting_count = 0;
 
 		group_count = 0;
 		mag_main = 0.0;
@@ -247,6 +261,8 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		this.interval_count = other.interval_count;
 		this.accept_count = other.accept_count;
 		this.reject_count = other.reject_count;
+		this.triggering_count = other.triggering_count;
+		this.fitting_count = other.fitting_count;
 
 		this.group_count = other.group_count;
 		this.mag_main = other.mag_main;
@@ -302,6 +318,8 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		result.append ("interval_count = " + interval_count + "\n");
 		result.append ("accept_count = " + accept_count + "\n");
 		result.append ("reject_count = " + reject_count + "\n");
+		result.append ("triggering_count = " + triggering_count + "\n");
+		result.append ("fitting_count = " + fitting_count + "\n");
 
 		result.append ("group_count = " + group_count + "\n");
 		result.append ("mag_main = " + mag_main + "\n");
@@ -349,6 +367,8 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		result.append ("interval_count = " + interval_count + "\n");
 		result.append ("accept_count = " + accept_count + "\n");
 		result.append ("reject_count = " + reject_count + "\n");
+		result.append ("triggering_count = " + triggering_count + "\n");
+		result.append ("fitting_count = " + fitting_count + "\n");
 
 		result.append ("group_count = " + group_count + "\n");
 		result.append ("mag_main = " + mag_main + "\n");
@@ -406,6 +426,8 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		interval_count = history.interval_count;
 		accept_count = history.accept_count;
 		reject_count = history.reject_count;
+		triggering_count = history.i_inside_begin;
+		fitting_count = history.i_inside_end - history.i_inside_begin;
 		return;
 	}
 
@@ -505,6 +527,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 
 	private static final int MARSHAL_VER_1 = 126001;
 	private static final int MARSHAL_VER_2 = 126002;
+	private static final int MARSHAL_VER_3 = 126003;
 
 	private static final String M_VERSION_NAME = "OEtasResults";
 
@@ -612,6 +635,56 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		}
 		break;
 
+		case MARSHAL_VER_3: {
+
+			// Superclass
+
+			super.do_marshal (writer);
+
+			// Contents
+
+			OEtasCatalogInfo.static_marshal (writer, "cat_info", cat_info);
+
+			writer.marshalDouble ("magCat", magCat);
+			writer.marshalInt ("rupture_count", rupture_count);
+			writer.marshalInt ("interval_count", interval_count);
+			writer.marshalInt ("accept_count", accept_count);
+			writer.marshalInt ("reject_count", reject_count);
+			writer.marshalInt ("triggering_count", triggering_count);
+			writer.marshalInt ("fitting_count", fitting_count);
+
+			writer.marshalInt ("group_count", group_count);
+			writer.marshalDouble ("mag_main", mag_main);
+			writer.marshalDouble ("tint_br", tint_br);
+			writer.marshalDouble ("fitting_mref", fitting_mref);
+			writer.marshalDouble ("fitting_msup", fitting_msup);
+			writer.marshalDouble ("fitting_mag_min", fitting_mag_min);
+			writer.marshalDouble ("fitting_mag_max", fitting_mag_max);
+			OEBayPrior.marshal_poly (writer, "bay_prior", bay_prior);
+
+			OEGridPoint.static_marshal (writer, "mle_grid_point", mle_grid_point);
+			OEGridPoint.static_marshal (writer, "gen_mle_grid_point", gen_mle_grid_point);
+			OEGridPoint.static_marshal (writer, "seq_mle_grid_point", seq_mle_grid_point);
+			OEGridPoint.static_marshal (writer, "bay_mle_grid_point", bay_mle_grid_point);
+			writer.marshalDouble ("bay_weight", bay_weight);
+
+			OECatalogRange.static_marshal (writer, "sim_range", sim_range);
+			writer.marshalInt ("sim_count", sim_count);
+
+			writer.marshalJsonString ("etas_json", etas_json);
+
+			writer.marshalBoolean ("save_marginals", save_marginals);
+			if (save_marginals) {
+				OEMarginalDistSet.static_marshal (writer, "marginals", marginals);
+			}
+			writer.marshalBoolean ("save_full_marginals", save_full_marginals);
+			if (save_full_marginals) {
+				OEMarginalDistSet.static_marshal (writer, "full_marginals", full_marginals);
+			}
+
+		}
+		break;
+
 		}
 
 		return;
@@ -645,6 +718,8 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			interval_count = reader.unmarshalInt ("interval_count");
 			accept_count = reader.unmarshalInt ("accept_count");
 			reject_count = reader.unmarshalInt ("reject_count");
+			triggering_count = Math.min(1, accept_count);
+			fitting_count = Math.max(0, accept_count-1);
 
 			group_count = reader.unmarshalInt ("group_count");
 			mag_main = reader.unmarshalDouble ("mag_main");
@@ -689,6 +764,62 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			interval_count = reader.unmarshalInt ("interval_count");
 			accept_count = reader.unmarshalInt ("accept_count");
 			reject_count = reader.unmarshalInt ("reject_count");
+			triggering_count = Math.min(1, accept_count);
+			fitting_count = Math.max(0, accept_count-1);
+
+			group_count = reader.unmarshalInt ("group_count");
+			mag_main = reader.unmarshalDouble ("mag_main");
+			tint_br = reader.unmarshalDouble ("tint_br");
+			fitting_mref = reader.unmarshalDouble ("fitting_mref");
+			fitting_msup = reader.unmarshalDouble ("fitting_msup");
+			fitting_mag_min = reader.unmarshalDouble ("fitting_mag_min");
+			fitting_mag_max = reader.unmarshalDouble ("fitting_mag_max");
+			bay_prior = OEBayPrior.unmarshal_poly (reader, "bay_prior");
+
+			mle_grid_point = OEGridPoint.static_unmarshal (reader, "mle_grid_point");
+			gen_mle_grid_point = OEGridPoint.static_unmarshal (reader, "gen_mle_grid_point");
+			seq_mle_grid_point = OEGridPoint.static_unmarshal (reader, "seq_mle_grid_point");
+			bay_mle_grid_point = OEGridPoint.static_unmarshal (reader, "bay_mle_grid_point");
+			bay_weight = reader.unmarshalDouble ("bay_weight");
+
+			sim_range = OECatalogRange.static_unmarshal (reader, "sim_range");
+			sim_count = reader.unmarshalInt ("sim_count");
+
+			etas_json = reader.unmarshalJsonString ("etas_json");
+
+			save_marginals = reader.unmarshalBoolean ("save_marginals");
+			if (save_marginals) {
+				marginals = OEMarginalDistSet.static_unmarshal (reader, "marginals");
+			} else {
+				marginals = null;
+			}
+			save_full_marginals = reader.unmarshalBoolean ("save_full_marginals");
+			if (save_full_marginals) {
+				full_marginals = OEMarginalDistSet.static_unmarshal (reader, "full_marginals");
+			} else {
+				full_marginals = null;
+			}
+
+		}
+		break;
+
+		case MARSHAL_VER_3: {
+
+			// Superclass
+
+			super.do_umarshal (reader);
+
+			// Contents
+
+			cat_info = OEtasCatalogInfo.static_unmarshal (reader, "cat_info");
+
+			magCat = reader.unmarshalDouble ("magCat");
+			rupture_count = reader.unmarshalInt ("rupture_count");
+			interval_count = reader.unmarshalInt ("interval_count");
+			accept_count = reader.unmarshalInt ("accept_count");
+			reject_count = reader.unmarshalInt ("reject_count");
+			triggering_count = reader.unmarshalInt ("triggering_count");
+			fitting_count = reader.unmarshalInt ("fitting_count");
 
 			group_count = reader.unmarshalInt ("group_count");
 			mag_main = reader.unmarshalDouble ("mag_main");
@@ -837,6 +968,8 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		etas_results.interval_count = 250;
 		etas_results.accept_count = 3500;
 		etas_results.reject_count = 2500;
+		etas_results.triggering_count = Math.min(1, etas_results.accept_count);
+		etas_results.fitting_count = Math.max(0, etas_results.accept_count-1);
 
 		etas_results.group_count = 150;
 		etas_results.mag_main = 7.8;

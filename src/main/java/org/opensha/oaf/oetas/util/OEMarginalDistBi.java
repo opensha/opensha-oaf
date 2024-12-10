@@ -157,7 +157,7 @@ public class OEMarginalDistBi implements Marshalable {
 
 	// Finish accumulation.
 	// Parameters:
-	//  norm = Desired total weight, use a negative value for no normalization.
+	//  norm = Desired maximum weight, use a negative value for no normalization.
 	//  format = Format code for rounding, or null if none. (see SimpleUtils.round_double_via_string).
 
 	public final void end_accum (double norm, String format) {
@@ -203,6 +203,172 @@ public class OEMarginalDistBi implements Marshalable {
 		}
 
 		return;
+	}
+
+
+
+
+	//----- Stacking functions -----
+
+
+
+
+	// Set up to begin stacking.
+	// Parameters:
+	//  other = Distribution to use as a template.
+	// Sets up this distribution to have the same identification as the other,
+	// with all data equal to zero.
+
+	public final OEMarginalDistBi begin_stacking (OEMarginalDistBi other) {
+
+		// Save Identification
+
+		var_name1  = other.var_name1;
+		var_index1 = other.var_index1;
+		var_name2  = other.var_name2;
+		var_index2 = other.var_index2;
+		data_name  = other.data_name;
+		data_index = other.data_index;
+		
+		// Initialize data
+
+		dist = OEArraysCalc.array_copy_zero (other.dist);
+
+		mode1 = -1;
+		mode2 = -1;
+		scale = 0.0;
+
+		//data_count = 0L;
+
+		return this;
+	}
+
+
+
+
+	// Begin stacking for an array of objects.
+	// Parameters:
+	//  x = Array of distributions to use as a template.
+	// Returns the newly-allocated array.
+
+	public static OEMarginalDistBi[] array_begin_stacking (final OEMarginalDistBi[] x) {
+		final int c0 = x.length;
+		final OEMarginalDistBi[] r0 = new OEMarginalDistBi[c0];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			r0[m0] = (new OEMarginalDistBi()).begin_stacking (x[m0]);
+		}
+		return r0;
+	}
+
+
+
+
+	// Add a distribution to the stack.
+	// Parameters:
+	//  other = Distribution to add.
+	//  w = Weight for the other distribution, must be > 0.0.
+
+	public final void add_to_stack (OEMarginalDistBi other, double w) {
+		final double s = w / other.scale;	// scale factor that produces desired total weight
+		OEArraysCalc.array_add_scale (dist, other.dist, s);
+		scale += w;
+		//data_count += other.data_count;
+		return;
+	}
+
+
+
+
+	// Add each distribution in the y array to the corresponding stack in the x array.
+	// Parameters:
+	//  x = Array of stacks.
+	//  y = Array of distributions to add.
+	//  w = Weight for the other distribution, must be > 0.0.
+	// Note: Throws exception if the arrays have different length.
+
+	public static void array_add_to_stack (final OEMarginalDistBi[] x, final OEMarginalDistBi[] y, double w) {
+		final int c0 = x.length;
+		if (c0 != y.length) {
+			throw new IllegalArgumentException ("OEMarginalDistBi.array_add_to_stack: Array length mismatch: x.length = " + x.length + ", y.length = " + y.length);
+		}
+		for (int m0 = 0; m0 < c0; ++m0) {
+			x[m0].add_to_stack (y[m0], w);
+		}
+		return;
+	}
+
+
+
+
+	// Finish stacking.
+	// Parameters:
+	//  norm = Desired maximum weight, use a negative value for no normalization.
+	//  format = Format code for rounding, or null if none. (see SimpleUtils.round_double_via_string).
+
+	public final void end_stacking (double norm, String format) {
+		end_accum (norm, format);
+		return;
+	}
+
+
+
+
+	// Finish stacking for an array of objects.
+	// Parameters:
+	//  x = Array of stacks.
+	//  norm = Desired maximum weight, use a negative value for no normalization.
+	//  format = Format code for rounding, or null if none. (see SimpleUtils.round_double_via_string).
+
+	public static void array_end_stacking (final OEMarginalDistBi[] x, double norm, String format) {
+		final int c0 = x.length;
+		for (int m0 = 0; m0 < c0; ++m0) {
+			x[m0].end_stacking (norm, format);
+		}
+		return;
+	}
+
+
+
+
+	// Test if the other distribution is stackable on this one.
+	// Parameters:
+	//  other = Distribution to add.
+	// It is considered stackable if it has the same variable and data names, and same extents.
+
+	public final boolean is_stackable (OEMarginalDistBi other) {
+		if (   var_name1.equals (other.var_name1)
+			&& var_name2.equals (other.var_name2)
+			&& data_name.equals (other.data_name)
+			&& dist.length == other.dist.length
+			&& dist[0].length == other.dist[0].length
+		) {
+			return true;
+		}
+		return false;
+	}
+
+
+
+
+	// Test if each distribution in the y array is stackable
+	// on the corresponding stack in the x array.
+	// Parameters:
+	//  x = Array of stacks.
+	//  y = Array of distributions to add.
+	// Returns true if all are stackable.
+	// Note: Returns false if the arrays have different length.
+
+	public static boolean array_is_stackable (final OEMarginalDistBi[] x, final OEMarginalDistBi[] y) {
+		final int c0 = x.length;
+		if (c0 != y.length) {
+			return false;
+		}
+		for (int m0 = 0; m0 < c0; ++m0) {
+			if (!( x[m0].is_stackable (y[m0]) )) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 

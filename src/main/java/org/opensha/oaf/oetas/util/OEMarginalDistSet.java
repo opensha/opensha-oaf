@@ -134,8 +134,8 @@ public class OEMarginalDistSet implements Marshalable {
 	// Note: The caller must have called begin_accum on each distribution.
 
 	public final OEMarginalDistSet begin_accum (
-		Collection<OEMarginalDistUni> univar_list,
-		Collection<OEMarginalDistBi> bivar_list
+		List<OEMarginalDistUni> univar_list,
+		List<OEMarginalDistBi> bivar_list
 	) {
 		if (univar_list == null) {
 			univar = new OEMarginalDistUni[0];
@@ -176,8 +176,8 @@ public class OEMarginalDistSet implements Marshalable {
 
 	// Finish accumulation.
 	// Parameters:
-	//  norm_uni = Desired total weight for univariate marginals, use a negative value for no normalization.
-	//  norm_bi = Desired total weight for bivariate marginals, use a negative value for no normalization.
+	//  norm_uni = Desired maximum weight for univariate marginals, use a negative value for no normalization.
+	//  norm_bi = Desired maximum weight for bivariate marginals, use a negative value for no normalization.
 	//  format = Format code for rounding, or null if none. (see SimpleUtils.round_double_via_string)
 
 	public final void end_accum (double norm_uni, double norm_bi, String format) {
@@ -198,6 +198,81 @@ public class OEMarginalDistSet implements Marshalable {
 	public final void erase_bivar_dist () {
 		bivar = new OEMarginalDistBi[0];
 		return;
+	}
+
+
+
+
+	//----- Stacking functions -----
+
+
+
+
+	// Set up to begin stacking.
+	// Parameters:
+	//  other = Distribution set to use as a template.
+	// Sets up this distribution set to be the same as the other,
+	// with all data equal to zero.
+
+	public OEMarginalDistSet begin_stacking (OEMarginalDistSet other) {
+		var_names		= OEArraysCalc.array_copy (other.var_names);
+		data_names		= OEArraysCalc.array_copy (other.data_names);
+		var_ranges		= new OEDiscreteRange[other.var_ranges.length];
+		for (int i = 0; i < var_ranges.length; ++i) {
+			var_ranges[i]	= other.var_ranges[i];	// OEDiscreteRange objects are immutable
+		}
+		var_values		= OEMarginalDistRange.array_copy (other.var_values);
+		univar			= OEMarginalDistUni.array_begin_stacking (other.univar);
+		bivar			= OEMarginalDistBi.array_begin_stacking (other.bivar);
+		return this;
+	}
+
+
+
+
+	// Add a distribution set to the stack.
+	// Parameters:
+	//  other = Distribution set to add.
+	//  w = Weight for the other distribution set, must be > 0.0.
+
+	public final void add_to_stack (OEMarginalDistSet other, double w) {
+		OEMarginalDistUni.array_add_to_stack (univar, other.univar, w);
+		OEMarginalDistBi.array_add_to_stack (bivar, other.bivar, w);
+		return;
+	}
+
+
+
+
+	// Finish stacking.
+	// Parameters:
+	//  norm_uni = Desired maximum weight for univariate marginals, use a negative value for no normalization.
+	//  norm_bi = Desired maximum weight for bivariate marginals, use a negative value for no normalization.
+	//  format = Format code for rounding, or null if none. (see SimpleUtils.round_double_via_string)
+
+	public final void end_stacking (double norm_uni, double norm_bi, String format) {
+		OEMarginalDistUni.array_end_stacking (univar, norm_uni, format);
+		OEMarginalDistBi.array_end_stacking (bivar, norm_bi, format);
+		return;
+	}
+
+
+
+
+	// Test if the other distribution set is stackable on this one.
+	// Parameters:
+	//  other = Distribution set to add.
+	// It is considered stackable if each distribution has the same variable and data names, and same extents.
+	// Note: In principle this function should also check variable values.
+
+	public final boolean is_stackable (OEMarginalDistSet other) {
+		if (!( OEMarginalDistUni.array_is_stackable (univar, other.univar) )) {
+			return false;
+		}
+		if (!(OEMarginalDistBi.array_is_stackable (bivar, other.bivar) )) {
+			return false;
+		}
+		return true;
 	}
 
 
@@ -1292,6 +1367,75 @@ public class OEMarginalDistSet implements Marshalable {
 			test_find_bivar_or_transpose (dist_set, 0, 2, 0);
 
 			test_find_bivar_or_transpose (dist_set, 0, 1, 1);
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  reps  sets
+		// Construct the specified number of sets of test values, each using the specified number 
+		// of repetitions, stack them, and display the stack.
+
+		if (testargs.is_test ("test5")) {
+
+			// Read arguments
+
+			System.out.println ("Construct multiple sets of marginal distributions, and stack them");
+			int reps = testargs.get_int ("reps");
+			int sets = testargs.get_int ("sets");
+			testargs.end_test();
+
+			// The stack
+
+			OEMarginalDistSet dist_stack = null;
+
+			// For the desired number of sets ...
+
+			for (int iset = 0; iset < sets; ++iset) {
+
+				// Create the values
+
+				OEMarginalDistSet dist_set = make_test_value_2 (reps);
+
+				// If the stack has not been created, make it now
+
+				if (dist_stack == null) {
+					dist_stack = (new OEMarginalDistSet()).begin_stacking (dist_set);
+				}
+
+				// Check for stackable
+
+				if (!( dist_stack.is_stackable (dist_set) )) {
+					System.out.println ();
+					System.out.println ("Stackable test failed, iset = " + iset);
+					return;
+				}
+
+				// Add to stack
+
+				double w = 1.0;
+				dist_stack.add_to_stack (dist_set, w);
+			}
+
+			// Finish the stack
+
+			dist_stack.end_stacking (1000.0, 10000.0, "%.5e");
+
+			// Display it
+
+			System.out.println ();
+
+			String json_string = MarshalUtils.to_formatted_compact_json_string (dist_stack);
+			System.out.println (json_string);
 
 			// Done
 

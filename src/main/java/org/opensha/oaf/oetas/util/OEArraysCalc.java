@@ -2654,4 +2654,216 @@ public class OEArraysCalc {
 
 
 
+	// Make an array with the same extents as the source array, initialized to all zero.
+	// Parameters:
+	//  x = Source array.
+	// Returns an array, with the same extents as x, with all elements set to zero.
+
+	public static double[] array_copy_zero (final double[] x) {
+		final double[] r0 = new double[x.length];
+		Arrays.fill (r0, 0.0);
+		return r0;
+	}
+
+	public static int[] array_copy_zero (final int[] x) {
+		final int[] r0 = new int[x.length];
+		Arrays.fill (r0, 0);
+		return r0;
+	}
+
+	public static double[][] array_copy_zero (final double[][] x) {
+		final int c0 = x.length;
+		final double[][] r0 = new double[c0][];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final double[] r1 = new double[x[m0].length];
+			r0[m0] = r1;
+			Arrays.fill (r1, 0.0);
+		}
+		return r0;
+	}
+
+	public static int[][] array_copy_zero (final int[][] x) {
+		final int c0 = x.length;
+		final int[][] r0 = new int[c0][];
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final int[] r1 = new int[x[m0].length];
+			r0[m0] = r1;
+			Arrays.fill (r1, 0);
+		}
+		return r0;
+	}
+
+
+
+
+	// Add each element of the source array to the corresponding element of the destination array.
+	// Parameters:
+	//  x = Destination array.
+	//  y = Source array.
+	// The effect is: x += y.
+	// If the arrays have different extents, addition is performed on the elements thay have in common.
+
+	public static void array_add (final double[] x, final double[] y) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			x[m0] += y[m0];
+		}
+		return;
+	}
+
+	public static void array_add (final int[] x, final int[] y) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			x[m0] += y[m0];
+		}
+		return;
+	}
+
+	public static void array_add (final double[][] x, final double[][] y) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final double[] x1 = x[m0];
+			final double[] y1 = y[m0];
+			final int c1 = Math.min (x1.length, y1.length);
+			for (int m1 = 0; m1 < c1; ++m1) {
+				x1[m1] += y1[m1];
+			}
+		}
+		return;
+	}
+
+	public static void array_add (final int[][] x, final int[][] y) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final int[] x1 = x[m0];
+			final int[] y1 = y[m0];
+			final int c1 = Math.min (x1.length, y1.length);
+			for (int m1 = 0; m1 < c1; ++m1) {
+				x1[m1] += y1[m1];
+			}
+		}
+		return;
+	}
+
+
+
+
+	// Subtract each element of the source array from the corresponding element of the destination array.
+	// Parameters:
+	//  x = Destination array.
+	//  y = Source array.
+	// The effect is: x -= y.
+	// If the arrays have different extents, subtraction is performed on the elements thay have in common.
+
+	public static void array_sub (final double[] x, final double[] y) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			x[m0] -= y[m0];
+		}
+		return;
+	}
+
+	public static void array_sub (final int[] x, final int[] y) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			x[m0] -= y[m0];
+		}
+		return;
+	}
+
+	public static void array_sub (final double[][] x, final double[][] y) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final double[] x1 = x[m0];
+			final double[] y1 = y[m0];
+			final int c1 = Math.min (x1.length, y1.length);
+			for (int m1 = 0; m1 < c1; ++m1) {
+				x1[m1] -= y1[m1];
+			}
+		}
+		return;
+	}
+
+	public static void array_sub (final int[][] x, final int[][] y) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final int[] x1 = x[m0];
+			final int[] y1 = y[m0];
+			final int c1 = Math.min (x1.length, y1.length);
+			for (int m1 = 0; m1 < c1; ++m1) {
+				x1[m1] -= y1[m1];
+			}
+		}
+		return;
+	}
+
+
+
+
+	// Multiply each element of the source array by the scale factor,
+	// then add the product to the corresponding element of the destination array.
+	// Parameters:
+	//  x = Destination array.
+	//  y = Source array.
+	//  s = Scale factor.
+	// The effect is: x += (s*y).
+	// If the arrays have different extents, addition is performed on the elements thay have in common.
+
+	public static void array_add_scale (final double[] x, final double[] y, final double s) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			x[m0] += (s * y[m0]);
+		}
+		return;
+	}
+
+	public static void array_add_scale (final double[][] x, final double[][] y, final double s) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final double[] x1 = x[m0];
+			final double[] y1 = y[m0];
+			final int c1 = Math.min (x1.length, y1.length);
+			for (int m1 = 0; m1 < c1; ++m1) {
+				x1[m1] += (s * y1[m1]);
+			}
+		}
+		return;
+	}
+
+
+
+
+	// Multiply each element of the source array by the scale factor,
+	// then subtract the product from the corresponding element of the destination array.
+	// Parameters:
+	//  x = Destination array.
+	//  y = Source array.
+	//  s = Scale factor.
+	// The effect is: x -= (s*y).
+	// If the arrays have different extents, subtraction is performed on the elements thay have in common.
+
+	public static void array_sub_scale (final double[] x, final double[] y, final double s) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			x[m0] -= (s * y[m0]);
+		}
+		return;
+	}
+
+	public static void array_sub_scale (final double[][] x, final double[][] y, final double s) {
+		final int c0 = Math.min (x.length, y.length);
+		for (int m0 = 0; m0 < c0; ++m0) {
+			final double[] x1 = x[m0];
+			final double[] y1 = y[m0];
+			final int c1 = Math.min (x1.length, y1.length);
+			for (int m1 = 0; m1 < c1; ++m1) {
+				x1[m1] -= (s * y1[m1]);
+			}
+		}
+		return;
+	}
+
+
+
+
 }
