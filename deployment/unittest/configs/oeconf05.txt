@@ -1,0 +1,146 @@
+oeconf05 oetas.env.OEtasConfigFile test5
+
+********** Sample Parameter Set **********
+
+OEtasConfigFile:
+OAF2ParameterSet:
+selections = [
+
+regimes = [DEFAULT]
+params = {OEtasParameters:
+hist_params_avail = true
+disc_delta = 0.2
+mag_cat_count = 3000
+eligible_count = 5
+durlim_ratio = 0.5
+durlim_min = 1.0E-5
+durlim_max = 3.0
+before_max_count = 50
+mag_cat_int_join = 1
+group_params_avail = true
+gs_rel_base_time = 0.01
+gs_ratio = 0.02
+gs_min_width = 0.01
+gr_hi_mag_delta = 0.5
+gr_taper_mag_delta = 0.2
+gr_init_mag = 4.5
+gr_lo_ratio = 0.0
+gr_hi_ratio = 0.98
+fit_params_avail = true
+fit_f_intervals = true
+fit_lmr_opt = 1
+fmag_range_avail = true
+fmag_above_mag_cat = 4.0
+fmag_above_mag_max = 0.5
+tint_br_avail = true
+tint_br_fitting = 365.0
+tint_br_forecast = 0.0
+range_avail = true
+b_range = RangeSingle[range_value=1.0]
+alpha_range = <null>
+c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
+p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
+n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+zmu_range = RangeSingle[range_value=0.0]
+relative_zams = false
+bay_prior_avail = true
+bay_factory = {OEBayFactoryGaussAPC:
+cmode = 1
+}
+bay_weight_avail = true
+bay_weight = 1.0
+early_bay_weight = 2.0
+early_bay_time = 0.125
+grid_post_avail = true
+density_bin_size_lnu = 0.01
+density_bin_count = 692
+prob_tail_trim = 0.003
+seed_subvox_count = 262144
+num_catalogs_avail = true
+num_catalogs = 500000
+min_num_catalogs = 250000
+sim_params_avail = true
+ran_direct_size_lo = 100
+ran_direct_size_hi = 1000
+ran_mag_excess = 0.0
+ran_gen_br = 20
+ran_derate_br = 0.9
+ran_exceed_fraction = 0.02
+sim_accum_selection = 4
+sim_accum_option = 433
+sim_accum_param_1 = 0.25
+eligible_params_avail = true
+eligible_option = 2
+eligible_main_mag = 4.45
+eligible_cat_max_mag = 3.95
+eligible_small_mag = 4.95
+}
+
+regimes = [ANSR-ABSLDEC, ANSR-ABSLOCB, ANSR-ABSLSHC, ANSR-DEEPCON, ANSR-HOTSPOT, ANSR-OCEANBD, ANSR-SHALCON, SCR-GENERIC, SOR-GENERIC, SZ-GENERIC, SZ-INLBACK, SZ-ONSHORE, SZ-OUTERTR, SCR-ABVSLAB, SOR-ABVSLAB, CAL-SCSN, CAL-NCSS, CAL-MENDOCINO, CAL-HYDROTHERMAL]
+params = {OEtasParameters:
+hist_params_avail = false
+group_params_avail = false
+fit_params_avail = false
+fmag_range_avail = false
+tint_br_avail = false
+range_avail = false
+bay_prior_avail = false
+bay_weight_avail = false
+grid_post_avail = false
+num_catalogs_avail = false
+sim_params_avail = false
+eligible_params_avail = false
+}
+]
+regions = [
+OAFSphRegion
+	Regime: CAL-HYDROTHERMAL
+	MinLat: 37.25
+	MinLon: -119.25
+	MaxLat: 37.825
+	MaxLon: -118.25
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+OAFSphRegion
+	Regime: CAL-HYDROTHERMAL
+	MinLat: 32.9
+	MinLon: -116.0
+	MaxLat: 33.3
+	MaxLon: -115.3
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+OAFSphRegion
+	Regime: CAL-HYDROTHERMAL
+	MinLat: 35.55
+	MinLon: -118.2
+	MaxLat: 36.3
+	MaxLon: -117.5
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+OAFSphRegion
+	Regime: CAL-MENDOCINO
+	MinLat: 39.75
+	MinLon: -125.5
+	MaxLat: 43.0
+	MaxLon: -123.0
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+OAFSphRegion
+	Regime: CAL-NCSS
+	MinLat: 34.5
+	MinLon: -125.3
+	MaxLat: 42.1
+	MaxLon: -118.0167
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+OAFSphRegion
+	Regime: CAL-SCSN
+	MinLat: 32.0
+	MinLon: -121.25
+	MaxLat: 37.2167
+	MaxLon: -114.3333
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+]
+

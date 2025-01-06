@@ -1,0 +1,48 @@
+shadowc200 rj.AftershockStatsShadow test3 usp000hcxy 365
+Fetching event: usp000hcxy
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000hcxy.geojson
+Count of events received = 1
+rup_event_id = usp000hcxy
+rup_time = 1274266263080 (2010-05-19 10:51:03 UTC)
+rup_mag = 6.0
+rup_lat = -54.843
+rup_lon = -135.398
+rup_depth = 10.0
+
+find_shadow_v3 parameters:
+time_now = 1305802263080 (2011-05-19 10:51:03 UTC)
+search_radius = 2000.0
+search_time_lo = 1242730263080 (2009-05-19 10:51:03 UTC)
+search_time_hi = 1305802263080 (2011-05-19 10:51:03 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-05-19T10:51:03.080Z&format=geojson&latitude=-54.84300&limit=20000&longitude=-135.39800&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2009-05-19T10:51:03.080Z
+Count of events received = 0
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock usp000hcxy for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2011-05-19T10:51:03.080Z&format=geojson&latitude=-54.84300&limit=20000&longitude=-135.39800&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.000&orderby=time&starttime=2009-05-19T10:51:03.080Z
+Count of events received = 2
+Count of events after filtering = 1
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usp000hcxy for magnitude 6.00 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000hcxy is shadowed by event usp000hcxv
+AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = 6.00, shadowing event magnitude = 6.00
+AftershockStatsShadow.find_shadow_v3: Distance = 10.497 km, time offset = 0.014 days
+AftershockStatsShadow.find_shadow_v3: Mainshock is an aftershock of event usp000hcxv
+
+Event is shadowed by:
+shadow_event_id = usp000hcxv
+shadow_time = 1274265010400 (2010-05-19 10:30:10 UTC)
+shadow_mag = 6.0
+shadow_lat = -54.8
+shadow_lon = -135.252
+shadow_depth = 10.0
+separation_km = 10.497
+separation_days = 0.014
+seq_end_time_abs = 1274266263080 (2010-05-19 10:51:03 UTC)
+seq_end_time_rel_days = 0.000

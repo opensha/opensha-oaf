@@ -993,6 +993,11 @@ public class RJGUIModel extends RJGUIComponent {
 
 		double min_mag = ForecastParameters.SEARCH_PARAM_OMIT;
 
+		// Fitting interval, assume default
+		
+		double fit_start_inset = ForecastParameters.SEARCH_PARAM_OMIT;
+		double fit_end_inset = ForecastParameters.SEARCH_PARAM_OMIT;
+
 		// Switch on region type
 
 		switch (xfer.x_regionTypeParam) {
@@ -1119,7 +1124,9 @@ public class RJGUIModel extends RJGUIComponent {
 			maxDays,				// double the_max_days,
 			minDepth,				// double the_min_depth,
 			maxDepth,				// double the_max_depth,
-			min_mag					// double the_min_mag
+			min_mag,				// double the_min_mag,
+			fit_start_inset,		// double the_fit_start_inset,
+			fit_end_inset			// double the_fit_end_inset
 		);
 
 		if (!( fetch_fcparams.aftershock_search_avail )) {
@@ -1608,7 +1615,9 @@ public class RJGUIModel extends RJGUIComponent {
 			ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_days
 			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_depth
 			ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_depth
-			ForecastParameters.SEARCH_PARAM_OMIT		// the_min_mag
+			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_mag
+			ForecastParameters.SEARCH_PARAM_OMIT,		// the_fit_start_inset
+			ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
 		);
 		
 		return new_fcparams;

@@ -1,0 +1,48 @@
+shadowc280 rj.AftershockStatsShadow test3 usp000b4us 365
+Fetching event: usp000b4us
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000b4us.geojson
+Count of events received = 1
+rup_event_id = usp000b4us
+rup_time = 1022169135280 (2002-05-23 15:52:15 UTC)
+rup_mag = 6.0
+rup_lat = -30.749
+rup_lon = -71.197
+rup_depth = 52.1
+
+find_shadow_v3 parameters:
+time_now = 1053705135280 (2003-05-23 15:52:15 UTC)
+search_radius = 2000.0
+search_time_lo = 990633135280 (2001-05-23 15:52:15 UTC)
+search_time_hi = 1053705135280 (2003-05-23 15:52:15 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-05-23T15:52:15.280Z&format=geojson&latitude=-30.74900&limit=20000&longitude=-71.19700&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2001-05-23T15:52:15.280Z
+Count of events received = 2
+Count of events after filtering = 2
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow_v3: Found 2 potential shadowing events for mainshock usp000b4us for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-05-23T15:52:15.280Z&format=geojson&latitude=-30.74900&limit=20000&longitude=-71.19700&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.000&orderby=time&starttime=2001-05-23T15:52:15.280Z
+Count of events received = 2
+Count of events after filtering = 1
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usp000b4us for magnitude 6.00 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000b4us is shadowed by event usp000b6du
+AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = 6.00, shadowing event magnitude = 6.60
+AftershockStatsShadow.find_shadow_v3: Distance = 9.343 km, time offset = -25.920 days
+AftershockStatsShadow.find_shadow_v3: Mainshock is a foreshock of event usp000b6du, relative time = 25.920 days
+
+Event is shadowed by:
+shadow_event_id = usp000b6du
+shadow_time = 1024408582830 (2002-06-18 13:56:22 UTC)
+shadow_mag = 6.6
+shadow_lat = -30.805
+shadow_lon = -71.124
+shadow_depth = 54.0
+separation_km = 9.343
+separation_days = -25.920
+seq_end_time_abs = 1024408582830 (2002-06-18 13:56:22 UTC)
+seq_end_time_rel_days = 25.920

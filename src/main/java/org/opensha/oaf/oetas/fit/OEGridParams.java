@@ -135,6 +135,26 @@ public class OEGridParams {
 
 
 
+	// Copy the ranges from the other object.
+	// Returns this object.
+	// Implementation note: Since OEDiscreteRange objects are immutable, we can simply save them.
+
+	public final OEGridParams copy_from (
+		OEGridParams other
+	) {
+		this.b_range     = other.b_range;
+		this.alpha_range = other.alpha_range;
+		this.c_range     = other.c_range;
+		this.p_range     = other.p_range;
+		this.n_range     = other.n_range;
+		this.zams_range  = other.zams_range;
+		this.zmu_range   = other.zmu_range;
+		return this;
+	}
+
+
+
+
 	// Convert a range to a string, or "<null>" if the supplied range is null.
 
 	private String range_to_string (OEDiscreteRange range) {

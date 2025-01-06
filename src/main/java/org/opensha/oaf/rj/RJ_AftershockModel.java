@@ -22,6 +22,9 @@ import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.oaf.aafs.ActionConfig;
 
+import org.opensha.oaf.oetas.util.OEMarginalDistSet;
+import org.opensha.oaf.oetas.util.OEMarginalDistSetBuilder;
+
 
 /**
  * This represents a Reasenberg-Jones (1989, 1994) aftershock model.
@@ -241,19 +244,19 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 	// They are NOT the maximum likelihood values of a, p, and c considered separately.
 	// Note: These are the a, p, and c values for the largest element in apc_likelihood.
 	
-	public double getMaxLikelihood_a() {return get_a(max_a_index);}
+	public final double getMaxLikelihood_a() {return get_a(max_a_index);}
 	
-	public double getMaxLikelihood_p() {return get_p(max_p_index);}
+	public final double getMaxLikelihood_p() {return get_p(max_p_index);}
 	
-	public double getMaxLikelihood_c() {return get_c(max_c_index);}
+	public final double getMaxLikelihood_c() {return get_c(max_c_index);}
 
 	// Return the floating-point value of a, p, or c, given its index number.
 		
-	protected double get_a(int aIndex) {return min_a+aIndex*delta_a;}
+	protected final double get_a(int aIndex) {return min_a+aIndex*delta_a;}
 	
-	protected double get_p(int pIndex) {return min_p+pIndex*delta_p;}
+	protected final double get_p(int pIndex) {return min_p+pIndex*delta_p;}
 	
-	protected double get_c(int cIndex) {return min_c+cIndex*delta_c;}
+	protected final double get_c(int cIndex) {return min_c+cIndex*delta_c;}
 
 	// Return true if the model contains a mainshock magnitude.
 
@@ -267,75 +270,75 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 
 	// Return the Gutenberg-Richter b value.
 	
-	public double get_b() {return b;}
+	public final double get_b() {return b;}
 
 	// Return the mean value of a, p, or c.
 
-	public double getMean_a() {return stat_a_mean;}
-	public double getMean_p() {return stat_p_mean;}
-	public double getMean_c() {return stat_c_mean;}
+	public final double getMean_a() {return stat_a_mean;}
+	public final double getMean_p() {return stat_p_mean;}
+	public final double getMean_c() {return stat_c_mean;}
 
 	// Return the standard deviation of a, p, or c.
 
-	public double getStdDev_a() {return stat_a_sdev;}
-	public double getStdDev_p() {return stat_p_sdev;}
-	public double getStdDev_c() {return stat_c_sdev;}
+	public final double getStdDev_a() {return stat_a_sdev;}
+	public final double getStdDev_p() {return stat_p_sdev;}
+	public final double getStdDev_c() {return stat_c_sdev;}
 
 	// Return the maximum likelihood value of a, p, or c (alternate implementation).
 
-	public double getMaxLike_a() {return stat_a_like;}
-	public double getMaxLike_p() {return stat_p_like;}
-	public double getMaxLike_c() {return stat_c_like;}
+	public final double getMaxLike_a() {return stat_a_like;}
+	public final double getMaxLike_p() {return stat_p_like;}
+	public final double getMaxLike_c() {return stat_c_like;}
 
 	// Return parameter space information.
 
-	public double getMin_a() {return min_a;}
-	public double getMin_p() {return min_p;}
-	public double getMin_c() {return min_c;}
+	public final double getMin_a() {return min_a;}
+	public final double getMin_p() {return min_p;}
+	public final double getMin_c() {return min_c;}
 
-	public double getMax_a() {return max_a;}
-	public double getMax_p() {return max_p;}
-	public double getMax_c() {return max_c;}
+	public final double getMax_a() {return max_a;}
+	public final double getMax_p() {return max_p;}
+	public final double getMax_c() {return max_c;}
 
-	public double getDelta_a() {return delta_a;}
-	public double getDelta_p() {return delta_p;}
-	public double getDelta_c() {return delta_c;}
+	public final double getDelta_a() {return delta_a;}
+	public final double getDelta_p() {return delta_p;}
+	public final double getDelta_c() {return delta_c;}
 
-	public int getNum_a() {return num_a;}
-	public int getNum_p() {return num_p;}
-	public int getNum_c() {return num_c;}
+	public final int getNum_a() {return num_a;}
+	public final int getNum_p() {return num_p;}
+	public final int getNum_c() {return num_c;}
 
 	// Given index numbers for a, p, and c, return a single index.
 	// Note: The single-indexing scheme is that c-index varies most rapidly, a-index most slowly. 
 
-	protected int get_single_index (int aIndex, int pIndex, int cIndex) {
+	protected final int get_single_index (int aIndex, int pIndex, int cIndex) {
 		return (((aIndex * num_p) + pIndex) * num_c) + cIndex;
 	}
 
 	// Return the floating-point value of a, p, or c, given a single index.
 		
-	protected double get_a_from_single_index (int index) {return get_a (index / (num_p * num_c));}
-	protected double get_p_from_single_index (int index) {return get_p ((index / num_c) % num_p);}
-	protected double get_c_from_single_index (int index) {return get_c (index % num_c);}
+	protected final double get_a_from_single_index (int index) {return get_a (index / (num_p * num_c));}
+	protected final double get_p_from_single_index (int index) {return get_p ((index / num_c) % num_p);}
+	protected final double get_c_from_single_index (int index) {return get_c (index % num_c);}
 
 	// Get index value from a/p/c value.
 	// Note: This is primarily for testing.
 
-	public int get_aIndex_from_a (double the_a) {
+	public final int get_aIndex_from_a (double the_a) {
 		if (num_a == 1) {
 			return 0;
 		}
 		return (int)(Math.round((the_a - min_a)/delta_a));
 	}
 
-	public int get_pIndex_from_p (double the_p) {
+	public final int get_pIndex_from_p (double the_p) {
 		if (num_p == 1) {
 			return 0;
 		}
 		return (int)(Math.round((the_p - min_p)/delta_p));
 	}
 
-	public int get_cIndex_from_c (double the_c) {
+	public final int get_cIndex_from_c (double the_c) {
 		if (num_c == 1) {
 			return 0;
 		}
@@ -346,7 +349,7 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 	// clipped and rescaled so small tail elements are forced to zero.
 	// Note: This is primarily for testing.
 
-	public double get_clipped_apc_prob (int aIndex, int pIndex, int cIndex) {
+	public final double get_clipped_apc_prob (int aIndex, int pIndex, int cIndex) {
 		double result = apc_likelihood[aIndex][pIndex][cIndex];
 		if (result > apc_max_tail_element) {
 			result = result / apc_support_total;
@@ -356,12 +359,19 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 		return result;
 	}
 
+	// Get the probability for the given indexes.
+	// Note: This is primarily for costructing marginal distributions.
+
+	public final double get_apc_prob (int aIndex, int pIndex, int cIndex) {
+		return apc_likelihood[aIndex][pIndex][cIndex];
+	}
+
 
 
 	/**
 	 * Turn verbose mode on or off.
 	 */
-	public void set_verbose (boolean f_verbose) {
+	public final void set_verbose (boolean f_verbose) {
 		D = f_verbose;
 		return;
 	}
@@ -385,7 +395,7 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 	 * For example, the default value of 0.0001 means to throw out the smallest elements
 	 * in apc_likelihood (after normalizing it) until their total reaches apc_tail_fraction.
 	 */
-	public void set_tail_fraction(double apc_tail_fraction) {
+	public final void set_tail_fraction(double apc_tail_fraction) {
 		this.apc_tail_fraction = apc_tail_fraction;
 		return;
 	}
@@ -396,7 +406,7 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 	/**
 	 * Set a fixed value of parameter a.
 	 */
-	protected void set_fixed_a(double a) {
+	protected final void set_fixed_a(double a) {
 		num_a = 1;
 		min_a = a;
 		max_a = a;
@@ -410,7 +420,7 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 	/**
 	 * Set a fixed value of parameter p.
 	 */
-	protected void set_fixed_p(double p) {
+	protected final void set_fixed_p(double p) {
 		num_p = 1;
 		min_p = p;
 		max_p = p;
@@ -424,7 +434,7 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 	/**
 	 * Set a fixed value of parameter c.
 	 */
-	protected void set_fixed_c(double c) {
+	protected final void set_fixed_c(double c) {
 		num_c = 1;
 		min_c = c;
 		max_c = c;
@@ -1609,6 +1619,20 @@ public abstract class RJ_AftershockModel implements USGS_ForecastModel {
 		apcFinish (false);
 		
 		return;
+	}
+
+
+
+
+	// Make a set of marginal distributions, in the form of OEMarginalDistSet.
+	// Parameters:
+	//  f_bivar_marg = True if bivariate marginal distributions are desired.
+	// Returns the marginal distribution set.
+
+	public final OEMarginalDistSet make_rj_marginals (boolean f_bivar_marg) {
+		OEMarginalDistSetBuilder builder = new OEMarginalDistSetBuilder();
+		OEMarginalDistSet dist_set = builder.make_rj_marginals (this, f_bivar_marg);
+		return dist_set;
 	}
 
 

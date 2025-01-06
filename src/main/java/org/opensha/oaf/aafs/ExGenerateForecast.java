@@ -11,6 +11,7 @@ import org.opensha.oaf.aafs.entity.RelayItem;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
+import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.commons.data.comcat.ComcatException;
@@ -18,6 +19,8 @@ import org.opensha.oaf.rj.CompactEqkRupList;
 import org.opensha.oaf.rj.AftershockStatsShadow;
 
 import org.opensha.oaf.comcat.GeoJsonHolder;
+
+import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -40,6 +43,95 @@ public class ExGenerateForecast extends ServerExecTask {
 	@Override
 	public int exec_task (PendingTask task) {
 		return exec_gen_forecast (task);
+	}
+
+
+
+
+	// Calculate delay to enforce forecast rate limit, if needed.
+	// The parameters is the rate limit time and the maximum allowed delay, in milliseconds.
+	// The return value is the delay that is required, in milliseconds, or 0L if none.
+	// Note: This would work for multiple threads, although the dispatcher is single-threaded.
+
+	private static long forecast_wakeup_time = 0L;
+
+	private static synchronized long enforce_rate_limit (long rate_limit, long max_delay) {
+		long delay = 0L;
+
+		// If rate limit is at least 1 second ...
+
+		if (rate_limit >= 1000L && max_delay >= 1000L) {
+			long time_now = System.currentTimeMillis();
+
+			// Delay until wakup time, coerced between 0 and the allowed maximum
+
+			delay = SimpleUtils.clip_max_min_l (0L, max_delay, forecast_wakeup_time - time_now);
+
+			// Next wakeup time
+			// Note: The term (2L * rate_limit) allows, after a period of inactivity, a burst of 4 forecasts with no delays
+
+			forecast_wakeup_time = Math.max (forecast_wakeup_time + rate_limit, time_now - (2L * rate_limit));
+		}
+
+		return delay;
+	}
+
+
+
+
+	// Save a forecast json file.
+	// Parameters:
+	//  json_string = String containing the forecast JSON, if null or empty then nothing is written.
+	//  event_id = Mainshock event ID (inserted into the filename).
+	//  lag = Forecast time relative to mainshock (inserted into the filename).
+	//  fcdata = Forecast data file to write, or null if none.
+	// Note: This function absorbs and discards all exceptions.
+
+	private static void save_forecast_json (String json_string, String event_id, long lag, ForecastData fcdata) {
+		try {
+
+			// If we have a JSON string ...
+
+			if (json_string != null && json_string.trim().length() > 0) {
+
+				// Get filename prefix containing the time, and create the directory if needed
+
+				String filename_prefix = ServerConfig.get_fcsave_filename_prefix();
+
+				// If we got the filename prefix ...
+
+				if (filename_prefix != null) {
+
+					// Create filename from prefix, event id, and lag
+
+					String filename = filename_prefix + event_id + "-" + SimpleUtils.duration_to_string_3 (lag - (lag % 1000L)) + "-" + PDLProductBuilderOaf.FORECAST_FILENAME;
+
+					// Format the JSON String
+
+					String fmt_json_string = MarshalUtils.display_valid_json_string (json_string);
+
+					// Write the file
+
+					SimpleUtils.write_string_as_file (filename, fmt_json_string);
+
+					// If we also want to write a forecast_data file ..
+
+					if (fcdata != null) {
+
+						// Create filename
+
+						String data_filename = filename_prefix + event_id + "-" + SimpleUtils.duration_to_string_3 (lag - (lag % 1000L)) + "-" + ForecastData.FORECAST_DATA_FILENAME;
+
+						// Write a formatted file
+
+						MarshalUtils.to_formatted_compact_json_file (fcdata, data_filename);
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+		}
+		return;
 	}
 
 
@@ -84,6 +176,26 @@ public class ExGenerateForecast extends ServerExecTask {
 
 			sg.timeline_sup.next_auto_timeline (tstatus);
 			return RESCODE_FORECAST_CANCELED;
+		}
+
+		//--- Rate limit
+
+		// Enforce rate limit if needed
+
+		long rate_limit_delay = enforce_rate_limit (
+			sg.task_disp.get_action_config().get_forecast_rate_limit(),
+			sg.task_disp.get_action_config().get_forecast_max_limit()
+		);
+
+		// If requesting at least 1/4 second of delay, do the delay
+
+		if (rate_limit_delay >= 250L) {
+			try {
+				Thread.sleep (rate_limit_delay);
+			} catch (InterruptedException e) {
+			}
+
+			sg.log_sup.report_forecast_rate_limit (rate_limit_delay);
 		}
 
 		//--- Mainshock
@@ -414,15 +526,31 @@ public class ExGenerateForecast extends ServerExecTask {
 			double[] separation = new double[2];
 			long[] seq_end_time = new long[2];
 
+			int shadow_method = sg.task_disp.get_action_config().get_shadow_method();
+			double large_mag_3 = sg.task_disp.get_action_config().get_shadow3_large_mag();
+			double centroid_multiplier = sg.task_disp.get_action_config().get_shadow3_centroid_mult();
+			double sample_multiplier = sg.task_disp.get_action_config().get_shadow3_sample_mult();
+
 			// Run find_shadow
 
 			ObsEqkRupture shadow;
 
 			try {
-				shadow = AftershockStatsShadow.find_shadow_v2 (rup, time_now,
-					search_radius, search_time_lo, search_time_hi,
-					centroid_rel_time_lo, centroid_rel_time_hi,
-					centroid_mag_floor, large_mag, separation, seq_end_time);
+				if (shadow_method == 2) {
+
+					shadow = AftershockStatsShadow.find_shadow_v2 (rup, time_now,
+						search_radius, search_time_lo, search_time_hi,
+						centroid_rel_time_lo, centroid_rel_time_hi,
+						centroid_mag_floor, large_mag, separation, seq_end_time);
+				
+				} else {
+
+					shadow = AftershockStatsShadow.find_shadow_v3 (rup, time_now,
+						search_radius, search_time_lo, search_time_hi,
+						centroid_multiplier, sample_multiplier,
+						large_mag_3, separation, seq_end_time);
+
+				}
 			}
 
 			// An exception here triggers a ComCat retry
@@ -551,7 +679,7 @@ public class ExGenerateForecast extends ServerExecTask {
 			String the_injectable_text = forecast_params.get_eff_injectable_text (
 					sg.task_disp.get_action_config().get_def_injectable_text());
 
-			forecast_results.calc_all (
+			forecast_results.calc_catalog_only (
 				fcmain.mainshock_time + next_forecast_lag,
 				advisory_lag,
 				the_injectable_text,
@@ -565,10 +693,6 @@ public class ExGenerateForecast extends ServerExecTask {
 		catch (Exception e) {
 			return sg.timeline_sup.process_timeline_comcat_retry (task, tstatus, e);
 		}
-
-		// Select report for PDL, if any
-
-		forecast_results.pick_pdl_model();
 
 		// If we have an earthquake catalog ...
 
@@ -697,6 +821,27 @@ public class ExGenerateForecast extends ServerExecTask {
 			}
 		}
 
+		// Now compute the forecast
+
+		try {
+
+			forecast_results.calc_after_catalog (
+				fcmain,
+				forecast_params);
+
+			forecast_results.write_calc_log (sg);
+		}
+
+		// An exception here triggers a ComCat retry
+
+		catch (Exception e) {
+			return sg.timeline_sup.process_timeline_comcat_retry (task, tstatus, e);
+		}
+
+		// Select report for PDL, if any
+
+		forecast_results.pick_pdl_model();
+
 		// Insert forecast into timeline status
 
 		tstatus.set_state_forecast (sg.task_disp.get_time(), sg.task_disp.get_action_config(), fcmain, forecast_params, forecast_results);
@@ -709,6 +854,24 @@ public class ExGenerateForecast extends ServerExecTask {
 
 		if (new_next_forecast_lag < 0L) {
 			tstatus.set_fc_status (TimelineStatus.FCSTAT_STOP_EXPIRED);
+		}
+
+		// Save forecast into a file, if desired
+
+		if (sg.task_disp.get_action_config().get_is_forecast_file_enabled()) {
+			ForecastData save_fcdata = null;
+
+			// If verbose, set up to write forecast_data file
+
+			if (sg.task_disp.get_action_config().get_is_forecast_file_verbose()) {
+				save_fcdata = new ForecastData();
+				save_fcdata.set_data (tstatus.entry_time, tstatus.forecast_mainshock, tstatus.forecast_params,
+									tstatus.forecast_results, tstatus.analyst_options);
+			}
+
+			// Write the file(s)
+
+			save_forecast_json (forecast_results.get_pdl_model(), fcmain.mainshock_event_id, next_forecast_lag, save_fcdata);
 		}
 
 		//--- PDL report

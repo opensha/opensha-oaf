@@ -1,0 +1,35 @@
+shadowc329 rj.AftershockStatsShadow test3 us200029x8 365
+Fetching event: us200029x8
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us200029x8.geojson
+Count of events received = 1
+rup_event_id = us200029x8
+rup_time = 1430239179190 (2015-04-28 16:39:39 UTC)
+rup_mag = 6.1
+rup_lat = -20.8865
+rup_lon = -178.6329
+rup_depth = 581.0
+
+find_shadow_v3 parameters:
+time_now = 1461775179190 (2016-04-27 16:39:39 UTC)
+search_radius = 2000.0
+search_time_lo = 1398703179190 (2014-04-28 16:39:39 UTC)
+search_time_hi = 1461775179190 (2016-04-27 16:39:39 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-04-27T16:39:39.190Z&format=geojson&latitude=-20.88650&limit=20000&longitude=-178.63290&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2014-04-28T16:39:39.190Z
+Count of events received = 2
+Count of events after filtering = 2
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow_v3: Found 2 potential shadowing events for mainshock us200029x8 for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-04-27T16:39:39.190Z&format=geojson&latitude=-20.88650&limit=20000&longitude=-178.63290&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2014-04-28T16:39:39.190Z
+Count of events received = 2
+Count of events after filtering = 1
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock us200029x8 for magnitude 6.10 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock us200029x8 is not shadowed
+
+Event is not shadowed

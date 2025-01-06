@@ -84,10 +84,12 @@ public class ServerComponent {
 
 	public static final long EXEC_TIME_ACTIVE = 0L;						// Task is active
 	public static final long EXEC_TIME_MIN_WAITING = 1L;				// Minimum execution time for waiting tasks
-	public static final long EXEC_TIME_MIN_PROMPT = 10000000L;			// Minimum execution time for prompt tasks, 10^7 ~ 2.8 hours
-	public static final long EXEC_TIME_MAX_PROMPT = 19000000L;			// Maximum execution time for prompt tasks
-	public static final long EXEC_TIME_SHUTDOWN = 20000000L;			// Execution time for shutdown task, 2*10^7 ~ 5.6 hours
-	public static final long EXEC_TIME_FAR_FUTURE = 1000000000000000L;	// 10^15 ~ 30,000 years
+	public static final long EXEC_TIME_MIN_PROMPT  = 10000000L;			// Minimum execution time for prompt tasks, 10^7 ~ 2.8 hours
+	public static final long EXEC_TIME_MAX_PROMPT  = 19000000L;			// Maximum execution time for prompt tasks
+	public static final long EXEC_TIME_SHUTDOWN    = 20000000L;			// Execution time for shutdown task, 2*10^7 ~ 5.6 hours
+	public static final long EXEC_TIME_MAX_EARLY   = 20000999L;			// Maximum execution time for early tasks
+	public static final long EXEC_TIME_MIN_NORMAL  = 20001000L;			// Minimum execution time for normal tasks
+	public static final long EXEC_TIME_FAR_FUTURE  = 1000000000000000L;	// 10^15 ~ 30,000 years
 
 
 
@@ -277,6 +279,10 @@ public class ServerComponent {
 	public static final long DURATION_DAY = 86400000L;				// 1 day
 	public static final long DURATION_YEAR = 31536000000L;			// 1 year (365 days)
 	public static final long DURATION_HUGE = 1000000000000000L;		// 10^15 ~ 30,000 years
+
+	public static final long DURATION_BOOST_RELAY_MODE = 2592000000L;		// Priority boost for relay mode change commands = 30 days
+	public static final long DURATION_BOOST_ANALYST_CMD = 3600000L;			// Priority boost for analyst option commands = 1 hour
+	public static final long DURATION_BOOST_ANALYST_RELAY = 31536000000L;	// Priority boost for analyst option relay = 1 year (365 days)
 
 
 

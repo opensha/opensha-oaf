@@ -22,6 +22,12 @@ import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OESeedParams;
 import org.opensha.oaf.oetas.OERandomGenerator;
 import org.opensha.oaf.oetas.OECatalogStorage;
+
+import org.opensha.oaf.oetas.bay.OEBayFactory;
+import org.opensha.oaf.oetas.bay.OEBayFactoryParams;
+import org.opensha.oaf.oetas.bay.OEBayPrior;
+import org.opensha.oaf.oetas.bay.OEBayPriorParams;
+
 import org.opensha.oaf.oetas.util.OEValueElement;
 
 
@@ -95,6 +101,10 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 	// The value of (10^aint)*Q used for fitting parameters to this voxel.
 
 	private double ten_aint_q;
+
+	// Offset for converting relative zams to absolute zams, or zero if zams is absolute.
+
+	private double rel_to_abs_zams_offset;
 
 	// The fitted log-likelihood for each sub-voxel, length = subvox_count.
 
@@ -182,6 +192,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 		bay_vox_volume = null;
 
 		ten_aint_q = 0.0;
+		rel_to_abs_zams_offset = 0.0;
 		log_likelihood = null;
 
 		prod_scnd = null;
@@ -281,6 +292,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 		if (log_likelihood != null) {
 			result.append ("ten_aint_q = " + rndd(ten_aint_q) + "\n");
+			result.append ("rel_to_abs_zams_offset = " + rndd(rel_to_abs_zams_offset) + "\n");
 		}
 
 		final int subvox_count = ((a_zams_velt == null) ? 0 : a_zams_velt.length);
@@ -400,7 +412,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 			// Get parameters for this sub-voxel
 
-			final double zams = a_zams_velt[j].get_ve_value();
+			final double zams = a_zams_velt[j].get_ve_value();		// use raw value
 			final double zmu = ((a_zmu_velt == null) ? 0.0 : a_zmu_velt[j].get_ve_value());
 
 			sb.append (prefix);
@@ -443,7 +455,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 
 		// Get parameters for this sub-voxel
 
-		final double zams = a_zams_velt[subvox_index].get_ve_value();
+		final double zams = a_zams_velt[subvox_index].get_ve_value();		// use raw value
 		final double zmu = ((a_zmu_velt == null) ? 0.0 : a_zmu_velt[subvox_index].get_ve_value());
 
 		// Set the grid point
@@ -598,6 +610,16 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			alpha
 		) ;
 
+		// Get offset to convert relative zams to absolute zams, or zero if zams is absolute
+
+		rel_to_abs_zams_offset = fit_info.calc_rel_to_abs_zams_offset (
+			n,
+			p,
+			c,
+			b,
+			alpha
+		) ;
+
 		// Build the avpr object
 
 		avpr.avpr_build (pmom, ten_aint_q);
@@ -613,7 +635,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 				// Convert from zams to (10^ams)*Q, with Q == 1
 
 				final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-					a_zams_velt[j].get_ve_value(),
+					a_zams_velt[j].get_ve_value() + rel_to_abs_zams_offset,
 					b,
 					alpha
 				);
@@ -642,7 +664,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 				// Convert from zams to (10^ams)*Q, with Q == 1
 
 				final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-					a_zams_velt[j].get_ve_value(),
+					a_zams_velt[j].get_ve_value() + rel_to_abs_zams_offset,
 					b,
 					alpha
 				);
@@ -776,6 +798,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 	//  bin_size_lnu = The size of each log-density bin, in natural log units.
 	//  a_prob_accum = Accumulators for the probabiliy in each bin; length = bin_count.
 	//  a_tally_accum = Accumulators for the number of sub-voxels in each bin; length = bin_count.
+	//  stat_accum = Statistics accumulator.
 	// Both Bayesian prior and log-likelihoods must have been computed.
 	// This function computes the log-density and probability for each voxel.  It identifies the bin that
 	// contains the log-density, with larger bin numbers corresponding to lower log-densities.  If the
@@ -785,6 +808,96 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 	// Note: The i-th density bin contains sub-voxels whose negative normalized log-density lies between
 	// i*bin_size_lnu and (i+1)*bin_size_lnu.  The last bin contains all sub-voxels whose negative
 	// normalized log-density is greater than (bin_count-1)*bin_size_lnu.
+
+	public final void get_probabilities_and_bin (
+		double bay_weight,
+		double max_log_density,
+		double[] a_subvox_prob,
+		int[] a_density_bin,
+		int dest_index,
+		double bin_size_lnu,
+		double[] a_prob_accum,
+		int[] a_tally_accum,
+		OEDisc2VoxStatAccum stat_accum
+	) {
+
+		// Get the parameter values
+
+		final double b = b_velt.get_ve_value();
+		final double alpha = ((alpha_velt == null) ? b : alpha_velt.get_ve_value());
+		final double c = c_velt.get_ve_value();
+		final double p = p_velt.get_ve_value();
+		final double n = n_velt.get_ve_value();
+
+		// Pass them to the statistics accumulator
+
+		stat_accum.vsaccum_set_b_alpha_c_p_n (
+			b,
+			alpha,
+			c,
+			p,
+			n
+		);
+
+		// Get the number of density bins, both integer and floating-point
+
+		final int bin_count = a_prob_accum.length;
+		final double d_bin_count = (double)bin_count;
+
+		// Loop over subvoxels ...
+
+		final int subvox_count = get_subvox_count();
+		for (int j = 0; j < subvox_count; ++j) {
+
+			// Get parameters for this sub-voxel
+
+			final double zams = a_zams_velt[j].get_ve_value();		// use raw value
+			final double zmu = ((a_zmu_velt == null) ? 0.0 : a_zmu_velt[j].get_ve_value());
+
+			// Pass them to the statistics accumulator
+
+			stat_accum.vsaccum_add_data (
+				zams,
+				zmu,
+				bay_log_density[j],
+				bay_vox_volume[j],
+				log_likelihood[j]
+			);
+
+			// The log density, normalized to be non-positive
+
+			final double norm_log_density = get_subvox_log_density (j, bay_weight) - max_log_density;
+
+			// Get the bin index, 0 for the highest log density
+
+			final double d_bin_index = (- norm_log_density) / bin_size_lnu;
+			int bin_index;
+			if (d_bin_index >= d_bin_count) {
+				bin_index = bin_count - 1;
+			} else {
+				bin_index = (int)Math.round (d_bin_index - 0.5);
+				if (bin_index < 0) {
+					bin_index = 0;
+				}
+				else if (bin_index >= bin_count) {
+					bin_index = bin_count - 1;
+				}
+			}
+
+			// Compute and accumulate the probability
+
+			final double probability = Math.exp(norm_log_density) * bay_vox_volume[j];
+
+			a_subvox_prob[j + dest_index] = probability;
+			a_density_bin[j + dest_index] = bin_index;
+			a_prob_accum[bin_index] += probability;
+			a_tally_accum[bin_index]++;
+		}
+
+		return;
+	}
+
+	// Following older verson without stat_accum is deprecated.
 
 	public final void get_probabilities_and_bin (
 		double bay_weight,
@@ -991,7 +1104,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 		// Convert from zams to ams
 
 		final double ams = fit_info.calc_ams_from_zams (
-			a_zams_velt[subvox_index].get_ve_value(),
+			a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 			b,
 			alpha
 		);
@@ -1066,7 +1179,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			// Convert from zams to (10^ams)*Q, with Q == 1
 
 			final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-				a_zams_velt[subvox_index].get_ve_value(),
+				a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 				b,
 				alpha
 			);
@@ -1110,7 +1223,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			// Convert from zams to (10^ams)*Q, with Q == 1
 
 			final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-				a_zams_velt[subvox_index].get_ve_value(),
+				a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 				b,
 				alpha
 			);
@@ -1217,7 +1330,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 		// Convert from zams to (10^ams)*Q, with Q == 1
 
 		final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-			a_zams_velt[subvox_index].get_ve_value(),
+			a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 			b,
 			alpha
 		);
@@ -1362,7 +1475,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			// Convert from zams to (10^ams)*Q, with Q == 1
 
 			final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-				a_zams_velt[subvox_index].get_ve_value(),
+				a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 				b,
 				alpha
 			);
@@ -1407,7 +1520,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			// Convert from zams to (10^ams)*Q, with Q == 1
 
 			final double ten_ams_q = fit_info.calc_ten_ams_q_from_zams (
-				a_zams_velt[subvox_index].get_ve_value(),
+				a_zams_velt[subvox_index].get_ve_value() + rel_to_abs_zams_offset,
 				b,
 				alpha
 			);
@@ -1599,6 +1712,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			writer.marshalDoubleArray ("bay_vox_volume", array_null_to_empty (bay_vox_volume));
 
 			writer.marshalDouble ("ten_aint_q", ten_aint_q);
+			writer.marshalDouble ("rel_to_abs_zams_offset", rel_to_abs_zams_offset);
 			writer.marshalDoubleArray ("log_likelihood", array_null_to_empty (log_likelihood));
 
 			writer.marshalDoubleArray ("prod_scnd", array_null_to_empty (prod_scnd));
@@ -1644,6 +1758,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			bay_vox_volume = array_empty_to_null (reader.unmarshalDoubleArray ("bay_vox_volume"));
 
 			ten_aint_q = reader.unmarshalDouble ("ten_aint_q");
+			rel_to_abs_zams_offset = reader.unmarshalDouble ("rel_to_abs_zams_offset");
 			log_likelihood = array_empty_to_null (reader.unmarshalDoubleArray ("log_likelihood"));
 
 			prod_scnd = array_empty_to_null (reader.unmarshalDoubleArray ("prod_scnd"));

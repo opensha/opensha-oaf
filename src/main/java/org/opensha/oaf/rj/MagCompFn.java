@@ -225,6 +225,13 @@ public abstract class MagCompFn {
 	public abstract boolean is_constant ();
 
 
+	// Return true if the function is a Page et al. function, or a constant always equal to magCat.
+	// If true, then getDefaultGUICapF/G/H can be used to retrieve the Helmstetter parameters
+	// F, G, and H;  a constant will return G == 100.0.
+
+	public abstract boolean is_page_or_constant ();
+
+
 
 
 	//----- Marshaling -----

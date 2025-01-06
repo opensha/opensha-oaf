@@ -428,7 +428,129 @@ public final class ActionConfig {
 	// Get flag, indicating if ETAS forecasts are enabled. [v3]
 
 	public boolean get_is_etas_enabled () {
-		return param_set.etas_enable == ActionConfigFile.ETAS_ENA_ENABLE;
+		return param_set.etas_enable != ActionConfigFile.ETAS_ENA_DISABLE;
+	}
+
+	// Get time limit for an ETAS calculation. [v4]
+	// Must be a whole number of seconds, between 60 and 10^9 seconds, or 0 for no time limit.
+
+	public long get_etas_time_limit () {
+		return param_set.etas_time_limit;
+	}
+
+	// Time interval between ETAS progress messages. [v4]
+	// Must be a whole number of seconds, between 2 and 10^9 seconds, or 0 for no progress messages.
+	
+	public long get_etas_progress_time () {
+		return param_set.etas_progress_time;
+	}
+
+	// Get time before mainshock to fetch data from ComCat. [v4]
+	// Must be a whole number of seconds, between 0 and 10 years
+
+	public long get_data_fetch_lookback () {
+		return param_set.data_fetch_lookback;
+	}
+
+	// Get minimum fitting interval duration. [v4]
+	// Must be a whole number of seconds, between 2 minutes and 1 year.
+
+	public long get_data_fit_dur_min () {
+		return param_set.data_fit_dur_min;
+	}
+
+	// Get minimum magnitude for ComCat cache #1. [v4]
+
+	public double get_comcat_cache_1_mag () {
+		return param_set.comcat_cache_1_mag;
+	}
+
+	// Get lookback time for ComCat cache #1. [v4]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_comcat_cache_1_time () {
+		return param_set.comcat_cache_1_time;
+	}
+
+	// Get minimum magnitude for ComCat cache #2. [v4]
+
+	public double get_comcat_cache_2_mag () {
+		return param_set.comcat_cache_2_mag;
+	}
+
+	// Get lookback time for ComCat cache #2. [v4]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public long get_comcat_cache_2_time () {
+		return param_set.comcat_cache_2_time;
+	}
+
+	// Get minimum time between forecasts. [v4]
+	// Must be a whole number of seconds, between 0 and 5 minutes.
+
+	public long get_forecast_rate_limit () {
+		return param_set.forecast_rate_limit;
+	}
+
+	// Get maximum delay for forecast rate limit. [v4]
+	// Must be a whole number of seconds, between 0 and 5 minutes.
+
+	public long get_forecast_max_limit () {
+		return param_set.forecast_max_limit;
+	}
+
+	// Get option to save forecasts into files. [v4]
+
+	public int get_forecast_file_option () {
+		return param_set.forecast_file_option;
+	}
+
+	public String get_forecast_file_option_as_string () {
+		return ActionConfigFile.get_forecast_file_opt_as_string (get_forecast_file_option());
+	}
+
+	// Get flag, indicating if save forecasts into files is enabled. [v4]
+
+	public boolean get_is_forecast_file_enabled () {
+		return param_set.forecast_file_option != ActionConfigFile.FORECAST_FILE_OPTION_DISABLE;
+	}
+
+	// Get flag, indicating if verbose save forecasts into files is enabled. [v4]
+
+	public boolean get_is_forecast_file_verbose () {
+		return param_set.forecast_file_option == ActionConfigFile.FORECAST_FILE_OPTION_VERBOSE;
+	}
+
+	// Get the version of shadowing algorithm to use. [v5]
+	// Eventually this will come from the configuration file.
+
+	public int get_shadow_method () {
+		return 3;
+		//return param_set.shadow_method;
+	}
+
+	// Get minimum magnitude for a candidate shadowing event to be considered large, for shadowing algorithm v3. [v5]
+	// Eventually this will come from the configuration file.
+
+	public double get_shadow3_large_mag () {
+		return 7.0;
+		//return param_set.shadow3_large_mag;
+	}
+
+	// Get centroid radius multiplier, for shadowing algorithm v3. [v5]
+	// Eventually this will come from the configuration file.
+
+	public double get_shadow3_centroid_mult () {
+		return 0.5;
+		//return param_set.shadow3_centroid_mult;
+	}
+
+	// Get sample radius multiplier, for shadowing algorithm v3. [v5]
+	// Eventually this will come from the configuration file.
+
+	public double get_shadow3_sample_mult () {
+		return 1.0;
+		//return param_set.shadow3_sample_mult;
 	}
 
 	// Get the number of advisory magnitude bins.
@@ -860,6 +982,8 @@ public final class ActionConfig {
 			System.out.println ("is_evseq_enabled = " + action_config.get_is_evseq_enabled());
 			System.out.println ("is_evseq_reported = " + action_config.get_is_evseq_reported());
 			System.out.println ("is_etas_enabled = " + action_config.get_is_etas_enabled());
+			System.out.println ("is_forecast_file_enabled = " + action_config.get_is_forecast_file_enabled());
+			System.out.println ("is_forecast_file_verbose = " + action_config.get_is_forecast_file_verbose());
 			System.out.println ("pdl_intake_region_min_min_mag = " + action_config.get_pdl_intake_region_min_min_mag());
 			System.out.println ("pdl_intake_region_min_intake_mag = " + action_config.get_pdl_intake_region_min_intake_mag());
 			System.out.println ("max_adv_window_end_off = " + action_config.get_max_adv_window_end_off());

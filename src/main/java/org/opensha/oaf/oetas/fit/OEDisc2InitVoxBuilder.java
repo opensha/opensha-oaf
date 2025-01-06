@@ -14,6 +14,11 @@ import org.opensha.oaf.util.SimpleThreadManager;
 import org.opensha.oaf.util.SimpleThreadTarget;
 import org.opensha.oaf.util.SimpleUtils;
 
+import org.opensha.oaf.oetas.bay.OEBayFactory;
+import org.opensha.oaf.oetas.bay.OEBayFactoryParams;
+import org.opensha.oaf.oetas.bay.OEBayPrior;
+import org.opensha.oaf.oetas.bay.OEBayPriorParams;
+
 import org.opensha.oaf.oetas.util.OEValueElement;
 
 import org.opensha.oaf.oetas.except.OEException;

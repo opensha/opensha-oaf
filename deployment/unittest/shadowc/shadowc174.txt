@@ -1,0 +1,35 @@
+shadowc174 rj.AftershockStatsShadow test3 usp000bhrf 365
+Fetching event: usp000bhrf
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000bhrf.geojson
+Count of events received = 1
+rup_event_id = usp000bhrf
+rup_time = 1037390311780 (2002-11-15 19:58:31 UTC)
+rup_mag = 6.6
+rup_lat = -56.051
+rup_lon = -36.404
+rup_depth = 10.0
+
+find_shadow_v3 parameters:
+time_now = 1068926311780 (2003-11-15 19:58:31 UTC)
+search_radius = 2000.0
+search_time_lo = 1005854311780 (2001-11-15 19:58:31 UTC)
+search_time_hi = 1068926311780 (2003-11-15 19:58:31 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-11-15T19:58:31.780Z&format=geojson&latitude=-56.05100&limit=20000&longitude=-36.40400&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2001-11-15T19:58:31.780Z
+Count of events received = 1
+Count of events after filtering = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usp000bhrf for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-11-15T19:58:31.780Z&format=geojson&latitude=-56.05100&limit=20000&longitude=-36.40400&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.600&orderby=time&starttime=2001-11-15T19:58:31.780Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock usp000bhrf for magnitude 6.60 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000bhrf is not shadowed
+
+Event is not shadowed

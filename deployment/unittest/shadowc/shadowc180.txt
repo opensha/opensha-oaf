@@ -1,0 +1,35 @@
+shadowc180 rj.AftershockStatsShadow test3 usp000dstt 365
+Fetching event: usp000dstt
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000dstt.geojson
+Count of events received = 1
+rup_event_id = usp000dstt
+rup_time = 1118604384800 (2005-06-12 19:26:24 UTC)
+rup_mag = 6.0
+rup_lat = -56.293
+rup_lon = -27.075
+rup_depth = 94.1
+
+find_shadow_v3 parameters:
+time_now = 1150140384800 (2006-06-12 19:26:24 UTC)
+search_radius = 2000.0
+search_time_lo = 1087068384800 (2004-06-12 19:26:24 UTC)
+search_time_hi = 1150140384800 (2006-06-12 19:26:24 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2006-06-12T19:26:24.800Z&format=geojson&latitude=-56.29300&limit=20000&longitude=-27.07500&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2004-06-12T19:26:24.800Z
+Count of events received = 1
+Count of events after filtering = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usp000dstt for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2006-06-12T19:26:24.800Z&format=geojson&latitude=-56.29300&limit=20000&longitude=-27.07500&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.000&orderby=time&starttime=2004-06-12T19:26:24.800Z
+Count of events received = 2
+Count of events after filtering = 1
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usp000dstt for magnitude 6.00 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000dstt is not shadowed
+
+Event is not shadowed

@@ -1,0 +1,48 @@
+shadowc322 rj.AftershockStatsShadow test3 usp000aakj 365
+Fetching event: usp000aakj
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000aakj.geojson
+Count of events received = 1
+rup_event_id = usp000aakj
+rup_time = 983365531640 (2001-02-28 13:05:31 UTC)
+rup_mag = 6.3
+rup_lat = -22.002
+rup_lon = 170.108
+rup_depth = 10.0
+
+find_shadow_v3 parameters:
+time_now = 1014901531640 (2002-02-28 13:05:31 UTC)
+search_radius = 2000.0
+search_time_lo = 951829531640 (2000-02-29 13:05:31 UTC)
+search_time_hi = 1014901531640 (2002-02-28 13:05:31 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2002-02-28T13:05:31.640Z&format=geojson&latitude=-22.00200&limit=20000&longitude=170.10800&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2000-02-29T13:05:31.640Z
+Count of events received = 5
+Count of events after filtering = 5
+Total number of events returned = 5
+AftershockStatsShadow.find_shadow_v3: Found 5 potential shadowing events for mainshock usp000aakj for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2002-02-28T13:05:31.640Z&format=geojson&latitude=-22.00200&limit=20000&longitude=170.10800&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.300&orderby=time&starttime=2000-02-29T13:05:31.640Z
+Count of events received = 2
+Count of events after filtering = 1
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usp000aakj for magnitude 6.30 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000aakj is shadowed by event usp000aake
+AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = 6.30, shadowing event magnitude = 6.70
+AftershockStatsShadow.find_shadow_v3: Distance = 10.354 km, time offset = 0.025 days
+AftershockStatsShadow.find_shadow_v3: Mainshock is an aftershock of event usp000aake
+
+Event is shadowed by:
+shadow_event_id = usp000aake
+shadow_time = 983363414050 (2001-02-28 12:30:14 UTC)
+shadow_mag = 6.7
+shadow_lat = -21.986
+shadow_lon = 170.207
+shadow_depth = 10.0
+separation_km = 10.354
+separation_days = 0.025
+seq_end_time_abs = 983365531640 (2001-02-28 13:05:31 UTC)
+seq_end_time_rel_days = 0.000

@@ -1,6 +1,7 @@
 package org.opensha.oaf.oetas;
 
 import org.opensha.oaf.oetas.util.OEDiscreteRange;
+import org.opensha.oaf.oetas.bay.OEBayFactory;
 import org.opensha.oaf.util.SimpleUtils;
 
 
@@ -725,6 +726,16 @@ public class OEConstants {
 
 
 
+	// The default Bayesian prior factory.
+
+	public static OEBayFactory def_bay_factory () {
+		//return OEBayFactory.makeUniform();
+		return OEBayFactory.makeGaussAPC();
+	}
+
+
+
+
 	//----- b-values -----
 
 
@@ -805,7 +816,8 @@ public class OEConstants {
 	// This controls the productivity of secondary triggering.
 
 	public static OEDiscreteRange def_n_range () {
-		return OEDiscreteRange.makeLog (41, 0.01, 0.90);
+		//return OEDiscreteRange.makeLog (41, 0.01, 0.90);
+		return OEDiscreteRange.makeLogSkew (41, 0.02, 0.90, 3.0);
 	}
 
 	// The default range of mainshock productivity, ams-value, for reference magnitude equal to ZAMS_MREF == 0.0.
@@ -820,6 +832,12 @@ public class OEConstants {
 	public static OEDiscreteRange def_zmu_range () {
 		//return null;
 		return OEDiscreteRange.makeSingle (0.0);
+	}
+
+	// True if the value of zams is interpreted relative to the a-value.
+
+	public static boolean def_relative_zams () {
+		return false;
 	}
 
 
@@ -894,6 +912,40 @@ public class OEConstants {
 	public static double def_sim_accum_param_1 () {
 		return 0.25;
 	}
+
+
+
+
+	//----- Eligibility options -----
+
+
+
+
+	// Default mainshock magnitude for ETAS eligibility.
+
+	public static final double DEF_ELIGIBLE_MAIN_MAG = 4.45;
+
+	// Default catalog maximum magnitude for ETAS eligibility.
+
+	public static final double DEF_ELIGIBLE_CAT_MAX_MAG = 3.95;
+
+	// Default catalog maximum magnitude delta for ETAS eligibility.
+
+	//public static final double DEF_ELIGIBLE_CAT_MAX_DELTA = 0.50;
+
+	// Default mainshock magnitude below which earthquake is considered small.
+	// Can use OEConstants.NO_MAG_NEG (or zero) if none.
+
+	public static final double DEF_ELIGIBLE_SMALL_MAG = 4.95;
+
+
+	// Eligibility option codes.
+
+	public static final int ELIGIBLE_OPT_MIN = 0;
+	public static final int ELIGIBLE_OPT_DISABLE = 0;	// disable ETAS unconditinally for the earthquake
+	public static final int ELIGIBLE_OPT_ENABLE = 1;	// enable ETAS unconditinall for the earthquake
+	public static final int ELIGIBLE_OPT_AUTO = 2;		// use automatic eligibility criterion
+	public static final int ELIGIBLE_OPT_MAX = 2;
 
 
 

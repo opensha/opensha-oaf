@@ -60,7 +60,7 @@ public class ForecastCatalog {
 
 	// get_rupture_list - Get the earthquake rupture list.
 
-	public CompactEqkRupList get_rupture_list () {
+	public final CompactEqkRupList get_rupture_list () {
 
 		// For null list, return null
 
@@ -84,7 +84,7 @@ public class ForecastCatalog {
 
 	// set_rupture_list - Set the earthquake rupture list.
 
-	public ForecastCatalog set_rupture_list (CompactEqkRupList rupture_list) {
+	public final ForecastCatalog set_rupture_list (CompactEqkRupList rupture_list) {
 
 		// For null list, use count = -1
 
@@ -177,7 +177,7 @@ public class ForecastCatalog {
 	// Set variables for standard format.
 	// Note: This is the default.
 
-	public void set_standard_format () {
+	public final void set_standard_format () {
 		f_friendly_format = false;
 
 		mainshock_time = 0L;
@@ -194,7 +194,7 @@ public class ForecastCatalog {
 
 	// Set variables for friendly format.
 
-	public void set_friendly_format (ForecastMainshock fcmain) {
+	public final void set_friendly_format (ForecastMainshock fcmain) {
 		f_friendly_format = true;
 
 		if (fcmain != null && fcmain.mainshock_avail) {
@@ -212,6 +212,26 @@ public class ForecastCatalog {
 		}
 
 		return;
+	}
+
+
+
+
+	// Set this object equal to a shallow copy of the other object.
+	// On return, this object contains the same arrays as the other object.
+
+	public final ForecastCatalog shallow_copy_from (ForecastCatalog other) {
+		this.eqk_count          = other.eqk_count;
+		this.lat_lon_depth_list = other.lat_lon_depth_list;
+		this.mag_time_list      = other.mag_time_list;
+		this.f_friendly_format  = other.f_friendly_format;
+		this.mainshock_time     = other.mainshock_time;
+		this.mainshock_mag      = other.mainshock_mag;
+		this.mainshock_lat      = other.mainshock_lat;
+		this.mainshock_lon      = other.mainshock_lon;
+		this.mainshock_depth    = other.mainshock_depth;
+
+		return this;
 	}
 
 
@@ -350,10 +370,107 @@ public class ForecastCatalog {
 
 
 
+	// Marshal aftershock, in friendly format. [v3]
+
+	protected void marshal_friendly_aftershock_v3 (int n, MarshalWriter writer, String name) {
+		writer.marshalMapBegin (name);
+
+		long aftershock_time    = CompactEqkRupList.extract_time (mag_time_list[n]);
+		double aftershock_mag   = CompactEqkRupList.extract_mag (mag_time_list[n]);
+		double aftershock_lat   = CompactEqkRupList.extract_lat (lat_lon_depth_list[n]);
+		double aftershock_lon   = CompactEqkRupList.extract_lon (lat_lon_depth_list[n]);
+		double aftershock_depth = CompactEqkRupList.extract_depth (lat_lon_depth_list[n]);
+
+		boolean aftershock_acceptance = CompactEqkRupList.extract_acceptance (mag_time_list[n]);
+
+		String aftershock_utc = "";
+		if (aftershock_time != 0L) {
+			aftershock_utc = SimpleUtils.time_to_parseable_string (aftershock_time);
+		}
+
+		writer.marshalString      ("utc"  , aftershock_utc  );
+		writer.marshalLong        ("time" , aftershock_time );
+		writer.marshalDouble      ("mag"  , aftershock_mag  );
+		writer.marshalDouble      ("lat"  , aftershock_lat  );
+		writer.marshalDouble      ("lon"  , aftershock_lon  );
+		writer.marshalDouble      ("depth", aftershock_depth);
+
+		writer.marshalBoolean     ("acceptance", aftershock_acceptance);
+
+		writer.marshalMapEnd ();
+		return;
+	}
+
+	// Unmarshal aftershock, in friendly format. [v3]
+
+	protected void unmarshal_friendly_aftershock_v3 (int n, MarshalReader reader, String name) {
+		reader.unmarshalMapBegin (name);
+
+		long aftershock_time;
+		double aftershock_mag;
+		double aftershock_lat;
+		double aftershock_lon;
+		double aftershock_depth;
+
+		boolean aftershock_acceptance;
+
+		String aftershock_utc;
+
+		aftershock_utc      = reader.unmarshalString      ("utc"  );
+		aftershock_time     = reader.unmarshalLong        ("time" );
+		aftershock_mag      = reader.unmarshalDouble      ("mag"  );
+		aftershock_lat      = reader.unmarshalDouble      ("lat"  );
+		aftershock_lon      = reader.unmarshalDouble      ("lon"  );
+		aftershock_depth    = reader.unmarshalDouble      ("depth");
+
+		aftershock_acceptance = reader.unmarshalBoolean   ("acceptance");
+
+		mag_time_list[n] = CompactEqkRupList.combine_mag_time_acceptance (aftershock_mag, aftershock_time, aftershock_acceptance);
+		lat_lon_depth_list[n] = CompactEqkRupList.combine_lat_lon_depth (aftershock_lat, aftershock_lon, aftershock_depth);
+
+		reader.unmarshalMapEnd ();
+		return;
+	}
+
+	// Marshal aftershock list, in friendly format. [v3]
+
+	protected void marshal_friendly_aftershock_list_v3 (MarshalWriter writer, String name) {
+		int list_len = Math.max (eqk_count, 0);
+		writer.marshalArrayBegin (name, list_len);
+		for (int n = 0; n < list_len; ++n) {
+			marshal_friendly_aftershock_v3 (n, writer, null);
+		}
+		writer.marshalArrayEnd ();
+		return;
+	}
+
+	// Unmarshal aftershock list, in friendly format. [v3]
+	// This also allocates the arrays.
+
+	protected void unmarshal_friendly_aftershock_list_v3 (MarshalReader reader, String name) {
+		int list_len = reader.unmarshalArrayBegin (name);
+		if (list_len != Math.max (eqk_count, 0)) {
+			throw new MarshalException ("ForecastCatalog: Aftershock list length mismatch: list_len = " + list_len + ", eqk_count = " + eqk_count);
+		}
+		lat_lon_depth_list = new long[Math.max (eqk_count, 1)];
+		lat_lon_depth_list[0] = 0L;
+		mag_time_list = new long[Math.max (eqk_count, 1)];
+		mag_time_list[0] = 0L;
+		for (int n = 0; n < list_len; ++n) {
+			unmarshal_friendly_aftershock_v3 (n, reader, null);
+		}
+		reader.unmarshalArrayEnd ();
+		return;
+	}
+
+
+
+
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 45001;		// current version for database and PDL
-	private static final int MARSHAL_VER_2 = 45002;		// current version for friendly output
+	private static final int MARSHAL_VER_2 = 45002;		// friendly output for v2 (before acceptance was added)
+	private static final int MARSHAL_VER_3 = 45003;		// current version for friendly output
 
 	private static final String M_VERSION_NAME = "ForecastCatalog";
 
@@ -376,7 +493,7 @@ public class ForecastCatalog {
 
 		// Version
 
-		int ver = (f_friendly_format ? MARSHAL_VER_2 : MARSHAL_VER_1);
+		int ver = (f_friendly_format ? MARSHAL_VER_3 : MARSHAL_VER_1);
 		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Contents
@@ -401,6 +518,14 @@ public class ForecastCatalog {
 			marshal_friendly_aftershock_list (writer, "aftershock_list"            );
 
 			break;
+
+		case MARSHAL_VER_3:
+
+			marshal_friendly_mainshock          (writer, "mainshock"                  );
+			writer.marshalInt                   (        "aftershock_count", eqk_count);
+			marshal_friendly_aftershock_list_v3 (writer, "aftershock_list"            );
+
+			break;
 		}
 	
 		return;
@@ -412,7 +537,7 @@ public class ForecastCatalog {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Contents
 
@@ -438,6 +563,16 @@ public class ForecastCatalog {
 			unmarshal_friendly_mainshock       (reader, "mainshock"       );
 			eqk_count = reader.unmarshalInt    (        "aftershock_count");
 			unmarshal_friendly_aftershock_list (reader, "aftershock_list" );
+
+			break;
+
+		case MARSHAL_VER_3:
+
+			set_friendly_format (null);
+
+			unmarshal_friendly_mainshock          (reader, "mainshock"       );
+			eqk_count = reader.unmarshalInt       (        "aftershock_count");
+			unmarshal_friendly_aftershock_list_v3 (reader, "aftershock_list" );
 
 			break;
 		}

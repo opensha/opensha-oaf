@@ -387,6 +387,11 @@ public class OEDisc2ExtFit {
 
 	private boolean f_intensity;
 
+	// Options for the parameter grid.
+	// This is not used in this code, but is available to downstream code.
+
+	private OEGridOptions grid_options;
+
 
 
 
@@ -3991,6 +3996,7 @@ public class OEDisc2ExtFit {
 		mag_main = 0.0;
 		tint_br = 0.0;
 		f_intensity = false;
+		grid_options = null;
 
 		f_omat_rup_targ_rup_src = true;
 		f_omat_rup_targ_int_src = true;
@@ -4074,6 +4080,7 @@ public class OEDisc2ExtFit {
 		this.mag_main = calc_mag_main();
 		this.tint_br = get_like_time_interval();
 		this.f_intensity = false;
+		this.grid_options = new OEGridOptions();
 
 		// Set the matrix allocation flags
 
@@ -4253,6 +4260,9 @@ public class OEDisc2ExtFit {
 		result.append ("mag_main = "               + mag_main               + "\n");
 		result.append ("tint_br = "                + tint_br                + "\n");
 		result.append ("f_intensity = "            + f_intensity            + "\n");
+		if (grid_options != null) {
+			result.append ("grid_options = {"            + grid_options.toString()          + "}\n");
+		}
 
 		if (grouping != null) {
 			result.append ("grouping.group_count = "     + grouping.group_count             + "\n");
@@ -4324,6 +4334,25 @@ public class OEDisc2ExtFit {
 
 
 
+	// Get the options for the parameter grid.
+
+	public final OEGridOptions get_grid_options () {
+		return grid_options;
+	}
+
+
+
+
+	// Set the options for the parameter grid.
+
+	public final void set_grid_options (OEGridOptions grid_options) {
+		this.grid_options = grid_options;
+		return;
+	}
+
+
+
+
 	// Calculate the mainshock magnitude.
 	// It is the largest magnitude among ruptures considered mainshocks, or NO_MAG_NEG if none.
 
@@ -4381,6 +4410,7 @@ public class OEDisc2ExtFit {
 			mag_max,
 			mag_main,
 			tint_br,
+			grid_options,
 			history.req_t_interval_end,
 			history.get_t_range_end(),
 			group_t_interval_end,

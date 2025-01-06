@@ -1109,7 +1109,7 @@ public class RelayLink extends ServerComponent {
 
 				PendingTask.submit_task (
 					task_payload.event_id,										// event id
-					Math.max (relit.get_relay_time() - DURATION_YEAR, EXEC_TIME_SHUTDOWN + 1000L),		// sched_time
+					Math.max (relit.get_relay_time() - DURATION_BOOST_ANALYST_RELAY, EXEC_TIME_MIN_NORMAL),		// sched_time
 					time_now,													// submit_time
 					"RelayLink",												// submit_id
 					OPCODE_ANALYST_SELECTION,									// opcode

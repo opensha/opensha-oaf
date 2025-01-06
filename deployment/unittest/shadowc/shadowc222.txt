@@ -1,0 +1,48 @@
+shadowc222 rj.AftershockStatsShadow test3 usp000d750 365
+Fetching event: usp000d750
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000d750.geojson
+Count of events received = 1
+rup_event_id = usp000d750
+rup_time = 1098823690580 (2004-10-26 20:48:10 UTC)
+rup_mag = 6.0
+rup_lat = -57.067
+rup_lon = -24.829
+rup_depth = 10.0
+
+find_shadow_v3 parameters:
+time_now = 1130359690580 (2005-10-26 20:48:10 UTC)
+search_radius = 2000.0
+search_time_lo = 1067287690580 (2003-10-27 20:48:10 UTC)
+search_time_hi = 1130359690580 (2005-10-26 20:48:10 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-10-26T20:48:10.580Z&format=geojson&latitude=-57.06700&limit=20000&longitude=-24.82900&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2003-10-27T20:48:10.580Z
+Count of events received = 0
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock usp000d750 for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2005-10-26T20:48:10.580Z&format=geojson&latitude=-57.06700&limit=20000&longitude=-24.82900&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.000&orderby=time&starttime=2003-10-27T20:48:10.580Z
+Count of events received = 2
+Count of events after filtering = 1
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usp000d750 for magnitude 6.00 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000d750 is shadowed by event usp000d754
+AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = 6.00, shadowing event magnitude = 6.40
+AftershockStatsShadow.find_shadow_v3: Distance = 9.072 km, time offset = -0.087 days
+AftershockStatsShadow.find_shadow_v3: Mainshock is a foreshock of event usp000d754, relative time = 0.087 days
+
+Event is shadowed by:
+shadow_event_id = usp000d754
+shadow_time = 1098831187860 (2004-10-26 22:53:07 UTC)
+shadow_mag = 6.4
+shadow_lat = -57.071
+shadow_lon = -24.679
+shadow_depth = 10.0
+separation_km = 9.072
+separation_days = -0.087
+seq_end_time_abs = 1098831187860 (2004-10-26 22:53:07 UTC)
+seq_end_time_rel_days = 0.087

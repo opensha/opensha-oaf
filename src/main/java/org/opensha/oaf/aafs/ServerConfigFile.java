@@ -42,6 +42,10 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  *	"log_con_intake" = String giving pattern for intake console log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"log_con_control" = String giving pattern for control console log filenames, in the format of SimpleDateFormat, or "" if none.
  *	"log_summary" = String giving pattern for summary log filenames, in the format of SimpleDateFormat, or "" if none.
+ *	[v2] "diag_fn_prefix" = String giving pattern for a diagnostic filename prefix, in the format of SimpleDateFormat.
+ *  [v2] "diag_seq_lo" = Integer giving lower limit of diag file sequence number, inclusive, must be >= 0.
+ *  [v2] "diag_seq_hi" = Integer giving upper limit of diag file sequence number, exclusive, must be >= diag_seq_lo.
+ *	[v2] "forecast_fn_prefix" = String giving pattern for a forecast filename prefix, in the format of SimpleDateFormat.
  *	"comcat_url" = String giving Comcat URL.
  *	"feed_url" = String giving real-time feed URL, or empty string to not use the feed.
  *	"comcat_dev_url" = String giving Comcat development URL.
@@ -112,6 +116,30 @@ public class ServerConfigFile implements Marshalable {
 	// Pattern for summary log filenames, in the format of SimpleDateFormat, or "" if none.
 
 	public String log_summary;
+
+	// Pattern for a diagnostic filename prefix, in the format of SimpleDateFormat. [v2]
+
+	public String diag_fn_prefix;
+
+	private static final String V1_DIAG_FN_PREFIX = "'/data/aafs/diag/'yyyy-MM'/'yyyy-MM-dd-HH-mm-ss'-'";
+
+	// Lower limit of diag file sequence number, inclusive, must be >= 0. [v2]
+
+	public int diag_seq_lo;
+
+	private static final int V1_DIAG_SEQ_LO = 100;		// Value for V1 files
+
+	// Upper limit of diag file sequence number, exclusive, must be >= diag_seq_lo. [v2]
+
+	public int diag_seq_hi;
+
+	private static final int V1_DIAG_SEQ_HI = 200;		// Value for V1 files
+
+	// Pattern for a forecast filename prefix, in the format of SimpleDateFormat. [v2]
+
+	public String forecast_fn_prefix;
+
+	private static final String V1_FORECAST_FN_PREFIX = "'/data/aafs/forecasts/'yyyy-MM'/'yyyy-MM-dd-HH-mm-ss'-'";
 
 	// Comcat URL.
 
@@ -221,6 +249,10 @@ public class ServerConfigFile implements Marshalable {
 		log_con_intake = "";
 		log_con_control = "";
 		log_summary = "";
+		diag_fn_prefix = "";
+		diag_seq_lo = 0;
+		diag_seq_hi = 0;
+		forecast_fn_prefix = "";
 		comcat_url = "";
 		feed_url = "";
 		comcat_dev_url = "";
@@ -291,6 +323,18 @@ public class ServerConfigFile implements Marshalable {
 
 		if (!( log_summary != null && (log_summary.isEmpty() || TimeSplitOutputStream.is_valid_pattern(log_summary)) )) {
 			throw new InvariantViolationException ("ServerConfigFile: Invalid log_summary: " + ((log_summary == null) ? "<null>" : log_summary));
+		}
+
+		if (!( TimeSplitOutputStream.is_valid_pattern(diag_fn_prefix) )) {
+			throw new InvariantViolationException ("ServerConfigFile: Invalid diag_fn_prefix: " + ((diag_fn_prefix == null) ? "<null>" : diag_fn_prefix));
+		}
+
+		if (!( diag_seq_lo >= 0 && diag_seq_hi >= diag_seq_lo )) {
+			throw new InvariantViolationException ("ServerConfigFile: Invalid diag_seq_lo and diag_seq_hi: diag_seq_lo = " + diag_seq_lo + ", diag_seq_hi = " + diag_seq_hi);
+		}
+
+		if (!( TimeSplitOutputStream.is_valid_pattern(forecast_fn_prefix) )) {
+			throw new InvariantViolationException ("ServerConfigFile: Invalid forecast_fn_prefix: " + ((forecast_fn_prefix == null) ? "<null>" : forecast_fn_prefix));
 		}
 
 		if (!( comcat_url != null && comcat_url.trim().length() > 0 )) {
@@ -415,6 +459,10 @@ public class ServerConfigFile implements Marshalable {
 		result.append ("log_con_intake = " + ((log_con_intake == null) ? "<null>" : log_con_intake) + "\n");
 		result.append ("log_con_control = " + ((log_con_control == null) ? "<null>" : log_con_control) + "\n");
 		result.append ("log_summary = " + ((log_summary == null) ? "<null>" : log_summary) + "\n");
+		result.append ("diag_fn_prefix = " + ((diag_fn_prefix == null) ? "<null>" : diag_fn_prefix) + "\n");
+		result.append ("diag_seq_lo = " + diag_seq_lo + "\n");
+		result.append ("diag_seq_hi = " + diag_seq_hi + "\n");
+		result.append ("forecast_fn_prefix = " + ((forecast_fn_prefix == null) ? "<null>" : forecast_fn_prefix) + "\n");
 		result.append ("comcat_url = " + ((comcat_url == null) ? "<null>" : comcat_url) + "\n");
 		result.append ("feed_url = " + ((feed_url == null) ? "<null>" : feed_url) + "\n");
 		result.append ("comcat_dev_url = " + ((comcat_dev_url == null) ? "<null>" : comcat_dev_url) + "\n");
@@ -635,6 +683,7 @@ public class ServerConfigFile implements Marshalable {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 34001;
+	private static final int MARSHAL_VER_2 = 34002;
 
 	private static final String M_VERSION_NAME = "ServerConfigFile";
 
@@ -737,38 +786,86 @@ public class ServerConfigFile implements Marshalable {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Contents
 
-		mongo_config.marshal    (writer, "mongo_config"                        );
+		switch (ver) {
 
-		writer.marshalString    (        "server_name"      , server_name      );
-		writer.marshalInt       (        "server_number"    , server_number    );
-		marshal_string_coll     (writer, "server_db_handles", server_db_handles);
-		writer.marshalString    (        "log_con_aafs"     , log_con_aafs     );
-		writer.marshalString    (        "log_con_intake"   , log_con_intake   );
-		writer.marshalString    (        "log_con_control"  , log_con_control  );
-		writer.marshalString    (        "log_summary"      , log_summary      );
-		writer.marshalString    (        "comcat_url"       , comcat_url       );
-		writer.marshalString    (        "feed_url"         , feed_url         );
-		writer.marshalString    (        "comcat_dev_url"   , comcat_dev_url   );
-		writer.marshalString    (        "feed_dev_url"     , feed_dev_url     );
-		writer.marshalDouble    (        "comcat_err_rate"  , comcat_err_rate  );
-		marshal_string_coll     (writer, "comcat_exclude"   , comcat_exclude   );
-		writer.marshalInt       (        "locat_bins"       , locat_bins       );
-		marshal_string_coll     (writer, "locat_filenames"  , locat_filenames  );
-		writer.marshalInt       (        "block_pdl_intake" , block_pdl_intake );
-		writer.marshalInt       (        "block_poll_intake", block_poll_intake);
-		writer.marshalInt       (        "block_fc_content" , block_fc_content );
-		writer.marshalDouble    (        "db_err_rate"      , db_err_rate      );
-		writer.marshalInt       (        "pdl_enable"       , pdl_enable       );
-		writer.marshalString    (        "pdl_key_filename" , pdl_key_filename );
-		writer.marshalDouble    (        "pdl_err_rate"     , pdl_err_rate     );
-		writer.marshalString    (        "pdl_oaf_source"   , pdl_oaf_source   );
-		writer.marshalString    (        "pdl_oaf_type"     , pdl_oaf_type     );
-		marshal_pdl_sender_list (writer, "pdl_dev_senders"  , pdl_dev_senders  );
-		marshal_pdl_sender_list (writer, "pdl_prod_senders" , pdl_prod_senders );
+		case MARSHAL_VER_1:
+
+			mongo_config.marshal    (writer, "mongo_config"                        );
+
+			writer.marshalString    (        "server_name"      , server_name      );
+			writer.marshalInt       (        "server_number"    , server_number    );
+			marshal_string_coll     (writer, "server_db_handles", server_db_handles);
+			writer.marshalString    (        "log_con_aafs"     , log_con_aafs     );
+			writer.marshalString    (        "log_con_intake"   , log_con_intake   );
+			writer.marshalString    (        "log_con_control"  , log_con_control  );
+			writer.marshalString    (        "log_summary"      , log_summary      );
+			writer.marshalString    (        "comcat_url"       , comcat_url       );
+			writer.marshalString    (        "feed_url"         , feed_url         );
+			writer.marshalString    (        "comcat_dev_url"   , comcat_dev_url   );
+			writer.marshalString    (        "feed_dev_url"     , feed_dev_url     );
+			writer.marshalDouble    (        "comcat_err_rate"  , comcat_err_rate  );
+			marshal_string_coll     (writer, "comcat_exclude"   , comcat_exclude   );
+			writer.marshalInt       (        "locat_bins"       , locat_bins       );
+			marshal_string_coll     (writer, "locat_filenames"  , locat_filenames  );
+			writer.marshalInt       (        "block_pdl_intake" , block_pdl_intake );
+			writer.marshalInt       (        "block_poll_intake", block_poll_intake);
+			writer.marshalInt       (        "block_fc_content" , block_fc_content );
+			writer.marshalDouble    (        "db_err_rate"      , db_err_rate      );
+			writer.marshalInt       (        "pdl_enable"       , pdl_enable       );
+			writer.marshalString    (        "pdl_key_filename" , pdl_key_filename );
+			writer.marshalDouble    (        "pdl_err_rate"     , pdl_err_rate     );
+			writer.marshalString    (        "pdl_oaf_source"   , pdl_oaf_source   );
+			writer.marshalString    (        "pdl_oaf_type"     , pdl_oaf_type     );
+			marshal_pdl_sender_list (writer, "pdl_dev_senders"  , pdl_dev_senders  );
+			marshal_pdl_sender_list (writer, "pdl_prod_senders" , pdl_prod_senders );
+	
+			break;
+
+		case MARSHAL_VER_2:
+
+			mongo_config.marshal    (writer, "mongo_config"                        );
+
+			writer.marshalString    (        "server_name"      , server_name      );
+			writer.marshalInt       (        "server_number"    , server_number    );
+			marshal_string_coll     (writer, "server_db_handles", server_db_handles);
+			writer.marshalString    (        "log_con_aafs"     , log_con_aafs     );
+			writer.marshalString    (        "log_con_intake"   , log_con_intake   );
+			writer.marshalString    (        "log_con_control"  , log_con_control  );
+			writer.marshalString    (        "log_summary"      , log_summary      );
+
+			writer.marshalString    (        "diag_fn_prefix"    , diag_fn_prefix    );
+			writer.marshalInt       (        "diag_seq_lo"       , diag_seq_lo       );
+			writer.marshalInt       (        "diag_seq_hi"       , diag_seq_hi       );
+			writer.marshalString    (        "forecast_fn_prefix", forecast_fn_prefix);
+
+			writer.marshalString    (        "comcat_url"       , comcat_url       );
+			writer.marshalString    (        "feed_url"         , feed_url         );
+			writer.marshalString    (        "comcat_dev_url"   , comcat_dev_url   );
+			writer.marshalString    (        "feed_dev_url"     , feed_dev_url     );
+			writer.marshalDouble    (        "comcat_err_rate"  , comcat_err_rate  );
+			marshal_string_coll     (writer, "comcat_exclude"   , comcat_exclude   );
+			writer.marshalInt       (        "locat_bins"       , locat_bins       );
+			marshal_string_coll     (writer, "locat_filenames"  , locat_filenames  );
+			writer.marshalInt       (        "block_pdl_intake" , block_pdl_intake );
+			writer.marshalInt       (        "block_poll_intake", block_poll_intake);
+			writer.marshalInt       (        "block_fc_content" , block_fc_content );
+			writer.marshalDouble    (        "db_err_rate"      , db_err_rate      );
+			writer.marshalInt       (        "pdl_enable"       , pdl_enable       );
+			writer.marshalString    (        "pdl_key_filename" , pdl_key_filename );
+			writer.marshalDouble    (        "pdl_err_rate"     , pdl_err_rate     );
+			writer.marshalString    (        "pdl_oaf_source"   , pdl_oaf_source   );
+			writer.marshalString    (        "pdl_oaf_type"     , pdl_oaf_type     );
+			marshal_pdl_sender_list (writer, "pdl_dev_senders"  , pdl_dev_senders  );
+			marshal_pdl_sender_list (writer, "pdl_prod_senders" , pdl_prod_senders );
+
+			break;
+		}
 	
 		return;
 	}
@@ -779,41 +876,96 @@ public class ServerConfigFile implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
-		mongo_config      = new MongoDBConfig         (reader, "mongo_config"     );
+		switch (ver) {
 
-		server_name       = reader.unmarshalString    (        "server_name"      );
-		server_number     = reader.unmarshalInt       (        "server_number"    );
-		server_db_handles = new ArrayList<String>();
-		unmarshal_string_coll                         (reader, "server_db_handles", server_db_handles);
-		log_con_aafs      = reader.unmarshalString    (        "log_con_aafs"     );
-		log_con_intake    = reader.unmarshalString    (        "log_con_intake"   );
-		log_con_control   = reader.unmarshalString    (        "log_con_control"  );
-		log_summary       = reader.unmarshalString    (        "log_summary"      );
-		comcat_url        = reader.unmarshalString    (        "comcat_url"       );
-		feed_url          = reader.unmarshalString    (        "feed_url"         );
-		comcat_dev_url    = reader.unmarshalString    (        "comcat_dev_url"   );
-		feed_dev_url      = reader.unmarshalString    (        "feed_dev_url"     );
-		comcat_err_rate   = reader.unmarshalDouble    (        "comcat_err_rate"  );
-		comcat_exclude = new LinkedHashSet<String>();
-		unmarshal_string_coll                         (reader, "comcat_exclude"   , comcat_exclude   );
-		locat_bins        = reader.unmarshalInt       (        "locat_bins"       );
-		locat_filenames = new ArrayList<String>();
-		unmarshal_string_coll                         (reader, "locat_filenames"  , locat_filenames  );
-		block_pdl_intake  = reader.unmarshalInt       (        "block_pdl_intake" );
-		block_poll_intake = reader.unmarshalInt       (        "block_poll_intake");
-		block_fc_content  = reader.unmarshalInt       (        "block_fc_content" );
-		db_err_rate       = reader.unmarshalDouble    (        "db_err_rate"      );
-		pdl_enable        = reader.unmarshalInt       (        "pdl_enable"       );
-		pdl_key_filename  = reader.unmarshalString    (        "pdl_key_filename" );
-		pdl_err_rate      = reader.unmarshalDouble    (        "pdl_err_rate"     );
-		pdl_oaf_source    = reader.unmarshalString    (        "pdl_oaf_source"   );
-		pdl_oaf_type      = reader.unmarshalString    (        "pdl_oaf_type"     );
-		pdl_dev_senders   = unmarshal_pdl_sender_list (reader, "pdl_dev_senders"  );
-		pdl_prod_senders  = unmarshal_pdl_sender_list (reader, "pdl_prod_senders" );
+		case MARSHAL_VER_1:
+
+			mongo_config      = new MongoDBConfig         (reader, "mongo_config"     );
+
+			server_name       = reader.unmarshalString    (        "server_name"      );
+			server_number     = reader.unmarshalInt       (        "server_number"    );
+			server_db_handles = new ArrayList<String>();
+			unmarshal_string_coll                         (reader, "server_db_handles", server_db_handles);
+			log_con_aafs      = reader.unmarshalString    (        "log_con_aafs"     );
+			log_con_intake    = reader.unmarshalString    (        "log_con_intake"   );
+			log_con_control   = reader.unmarshalString    (        "log_con_control"  );
+			log_summary       = reader.unmarshalString    (        "log_summary"      );
+
+			diag_fn_prefix = V1_DIAG_FN_PREFIX;
+			diag_seq_lo = V1_DIAG_SEQ_LO;
+			diag_seq_hi = V1_DIAG_SEQ_HI;
+			forecast_fn_prefix = V1_FORECAST_FN_PREFIX;
+
+			comcat_url        = reader.unmarshalString    (        "comcat_url"       );
+			feed_url          = reader.unmarshalString    (        "feed_url"         );
+			comcat_dev_url    = reader.unmarshalString    (        "comcat_dev_url"   );
+			feed_dev_url      = reader.unmarshalString    (        "feed_dev_url"     );
+			comcat_err_rate   = reader.unmarshalDouble    (        "comcat_err_rate"  );
+			comcat_exclude = new LinkedHashSet<String>();
+			unmarshal_string_coll                         (reader, "comcat_exclude"   , comcat_exclude   );
+			locat_bins        = reader.unmarshalInt       (        "locat_bins"       );
+			locat_filenames = new ArrayList<String>();
+			unmarshal_string_coll                         (reader, "locat_filenames"  , locat_filenames  );
+			block_pdl_intake  = reader.unmarshalInt       (        "block_pdl_intake" );
+			block_poll_intake = reader.unmarshalInt       (        "block_poll_intake");
+			block_fc_content  = reader.unmarshalInt       (        "block_fc_content" );
+			db_err_rate       = reader.unmarshalDouble    (        "db_err_rate"      );
+			pdl_enable        = reader.unmarshalInt       (        "pdl_enable"       );
+			pdl_key_filename  = reader.unmarshalString    (        "pdl_key_filename" );
+			pdl_err_rate      = reader.unmarshalDouble    (        "pdl_err_rate"     );
+			pdl_oaf_source    = reader.unmarshalString    (        "pdl_oaf_source"   );
+			pdl_oaf_type      = reader.unmarshalString    (        "pdl_oaf_type"     );
+			pdl_dev_senders   = unmarshal_pdl_sender_list (reader, "pdl_dev_senders"  );
+			pdl_prod_senders  = unmarshal_pdl_sender_list (reader, "pdl_prod_senders" );
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			mongo_config      = new MongoDBConfig         (reader, "mongo_config"     );
+
+			server_name       = reader.unmarshalString    (        "server_name"      );
+			server_number     = reader.unmarshalInt       (        "server_number"    );
+			server_db_handles = new ArrayList<String>();
+			unmarshal_string_coll                         (reader, "server_db_handles", server_db_handles);
+			log_con_aafs      = reader.unmarshalString    (        "log_con_aafs"     );
+			log_con_intake    = reader.unmarshalString    (        "log_con_intake"   );
+			log_con_control   = reader.unmarshalString    (        "log_con_control"  );
+			log_summary       = reader.unmarshalString    (        "log_summary"      );
+
+			diag_fn_prefix     = reader.unmarshalString    (        "diag_fn_prefix"    );
+			diag_seq_lo        = reader.unmarshalInt       (        "diag_seq_lo"       );
+			diag_seq_hi        = reader.unmarshalInt       (        "diag_seq_hi"       );
+			forecast_fn_prefix = reader.unmarshalString    (        "forecast_fn_prefix");
+
+			comcat_url        = reader.unmarshalString    (        "comcat_url"       );
+			feed_url          = reader.unmarshalString    (        "feed_url"         );
+			comcat_dev_url    = reader.unmarshalString    (        "comcat_dev_url"   );
+			feed_dev_url      = reader.unmarshalString    (        "feed_dev_url"     );
+			comcat_err_rate   = reader.unmarshalDouble    (        "comcat_err_rate"  );
+			comcat_exclude = new LinkedHashSet<String>();
+			unmarshal_string_coll                         (reader, "comcat_exclude"   , comcat_exclude   );
+			locat_bins        = reader.unmarshalInt       (        "locat_bins"       );
+			locat_filenames = new ArrayList<String>();
+			unmarshal_string_coll                         (reader, "locat_filenames"  , locat_filenames  );
+			block_pdl_intake  = reader.unmarshalInt       (        "block_pdl_intake" );
+			block_poll_intake = reader.unmarshalInt       (        "block_poll_intake");
+			block_fc_content  = reader.unmarshalInt       (        "block_fc_content" );
+			db_err_rate       = reader.unmarshalDouble    (        "db_err_rate"      );
+			pdl_enable        = reader.unmarshalInt       (        "pdl_enable"       );
+			pdl_key_filename  = reader.unmarshalString    (        "pdl_key_filename" );
+			pdl_err_rate      = reader.unmarshalDouble    (        "pdl_err_rate"     );
+			pdl_oaf_source    = reader.unmarshalString    (        "pdl_oaf_source"   );
+			pdl_oaf_type      = reader.unmarshalString    (        "pdl_oaf_type"     );
+			pdl_dev_senders   = unmarshal_pdl_sender_list (reader, "pdl_dev_senders"  );
+			pdl_prod_senders  = unmarshal_pdl_sender_list (reader, "pdl_prod_senders" );
+
+			break;
+		}
 
 		// Error check
 

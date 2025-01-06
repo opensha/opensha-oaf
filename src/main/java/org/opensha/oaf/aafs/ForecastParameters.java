@@ -506,6 +506,18 @@ public class ForecastParameters implements Marshalable {
 
 	public double min_mag = -10.0;
 
+	// Start of fitting interval, inset relative to mainshock (positive if after mainshock, can be negative), in days. [v3]
+
+	public static final double DEFAULT_FIT_START_INSET = 0.0;
+
+	public double fit_start_inset = 0.0;
+
+	// End of fitting interval, inset relative to data end (positive if before data end, cannot be negative), in days. [v3]
+
+	public static final double DEFAULT_FIT_END_INSET = 0.0;
+
+	public double fit_end_inset = 0.0;
+
 	// Set aftershock search parameters to default.
 
 	public void set_default_aftershock_search_params () {
@@ -515,6 +527,8 @@ public class ForecastParameters implements Marshalable {
 		min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
 		max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 		min_mag = -10.0;
+		fit_start_inset = DEFAULT_FIT_START_INSET;
+		fit_end_inset = DEFAULT_FIT_END_INSET;
 		return;
 	}
 
@@ -528,6 +542,8 @@ public class ForecastParameters implements Marshalable {
 		min_depth = other.min_depth;
 		max_depth = other.max_depth;
 		min_mag = other.min_mag;
+		fit_start_inset = other.fit_start_inset;
+		fit_end_inset = other.fit_end_inset;
 		return;
 	}
 
@@ -540,7 +556,9 @@ public class ForecastParameters implements Marshalable {
 		double the_max_days,
 		double the_min_depth,
 		double the_max_depth,
-		double the_min_mag
+		double the_min_mag,
+		double the_fit_start_inset,
+		double the_fit_end_inset
 	) {
 		aftershock_search_fetch_meth = FETCH_METH_ANALYST;
 		aftershock_search_avail = the_aftershock_search_avail;
@@ -550,6 +568,8 @@ public class ForecastParameters implements Marshalable {
 		min_depth = the_min_depth;
 		max_depth = the_max_depth;
 		min_mag = the_min_mag;
+		fit_start_inset = the_fit_start_inset;
+		fit_end_inset = the_fit_end_inset;
 		return;
 	}
 
@@ -587,7 +607,9 @@ public class ForecastParameters implements Marshalable {
 					prior_params.max_days,
 					prior_params.min_depth,
 					prior_params.max_depth,
-					prior_params.min_mag
+					prior_params.min_mag,
+					prior_params.fit_start_inset,
+					prior_params.fit_end_inset
 				);
 
 				return;
@@ -602,10 +624,12 @@ public class ForecastParameters implements Marshalable {
 			min_depth = prior_params.min_depth;
 			max_depth = prior_params.max_depth;
 			min_mag = prior_params.min_mag;
+			fit_start_inset = prior_params.fit_start_inset;
+			fit_end_inset = prior_params.fit_end_inset;
 
 			// Special handling for max_days, try to make it match forecast_lag if available
 
-			max_days = ((double)forecast_lag)/ComcatOAFAccessor.day_millis;
+			max_days = SimpleUtils.millis_to_days (forecast_lag);
 
 			return;
 
@@ -636,10 +660,10 @@ public class ForecastParameters implements Marshalable {
 		// Time range used for sampling aftershocks, in days since the mainshock
 
 		//min_days = 0.0;
-		min_days = ((double)the_start_lag)/ComcatOAFAccessor.day_millis;
+		min_days = SimpleUtils.millis_to_days (the_start_lag);
 
-		//max_days = ((double)System.currentTimeMillis())/ComcatOAFAccessor.day_millis;
-		max_days = ((double)forecast_lag)/ComcatOAFAccessor.day_millis;
+		//max_days = SimpleUtils.millis_to_days (System.currentTimeMillis());
+		max_days = SimpleUtils.millis_to_days (forecast_lag);
 
 		// Depth range used for sampling aftershocks, in kilometers
 
@@ -649,6 +673,11 @@ public class ForecastParameters implements Marshalable {
 		// Minimum magnitude used for sampling aftershocks
 
 		min_mag = sample_min_mag;
+
+		// Fitting interval range
+
+		fit_start_inset = DEFAULT_FIT_START_INSET;
+		fit_end_inset = DEFAULT_FIT_END_INSET;
 
 		// Retrieve list of aftershocks in the initial region
 
@@ -707,7 +736,7 @@ public class ForecastParameters implements Marshalable {
 	// Note: the_forecast_lag is used only if the_max_days is defaulted.
 
 	public static final double SEARCH_PARAM_OMIT = 1.0e9;		// Value to indicate parameter omitted
-	private static final double SEARCH_PARAM_TEST = 0.9e9;		// Value to test parameter omitted
+	public static final double SEARCH_PARAM_TEST = 0.9e9;		// Value to test parameter omitted
 
 	public void set_aftershock_search_region (
 		ForecastMainshock fcmain,
@@ -718,7 +747,9 @@ public class ForecastParameters implements Marshalable {
 		double the_max_days,
 		double the_min_depth,
 		double the_max_depth,
-		double the_min_mag
+		double the_min_mag,
+		double the_fit_start_inset,
+		double the_fit_end_inset
 	) {
 
 		// Time range used for sampling aftershocks, in days since the mainshock
@@ -727,14 +758,14 @@ public class ForecastParameters implements Marshalable {
 			min_days = the_min_days;
 		} else {
 			//min_days = 0.0;
-			min_days = ((double)the_start_lag)/ComcatOAFAccessor.day_millis;
+			min_days = SimpleUtils.millis_to_days (the_start_lag);
 		}
 
 		if (the_max_days < SEARCH_PARAM_TEST) {
 			max_days = the_max_days;
 		} else {
-			//max_days = ((double)System.currentTimeMillis())/ComcatOAFAccessor.day_millis;
-			max_days = ((double)the_forecast_lag)/ComcatOAFAccessor.day_millis;		// the function parameter, not the field
+			//max_days = SimpleUtils.millis_to_days (System.currentTimeMillis());
+			max_days = SimpleUtils.millis_to_days (the_forecast_lag);		// the function parameter, not the field
 		}
 
 		// Depth range used for sampling aftershocks, in kilometers
@@ -766,6 +797,20 @@ public class ForecastParameters implements Marshalable {
 			}
 
 			min_mag = mag_comp_params.get_magSample (fcmain.mainshock_mag);
+		}
+
+		// Fitting interval, in days
+
+		if (the_fit_start_inset < SEARCH_PARAM_TEST) {
+			fit_start_inset = the_fit_start_inset;
+		} else {
+			fit_start_inset = DEFAULT_FIT_START_INSET;
+		}
+
+		if (the_fit_end_inset < SEARCH_PARAM_TEST) {
+			fit_end_inset = the_fit_end_inset;
+		} else {
+			fit_end_inset = DEFAULT_FIT_END_INSET;
 		}
 
 		// The search region
@@ -844,15 +889,15 @@ public class ForecastParameters implements Marshalable {
 
 	//----- Event-sequence configuration parameters -----
 
-	// Event-sequence configuration parameter fetch method.
+	// Event-sequence configuration parameter fetch method. [v2]
 
 	public int evseq_cfg_fetch_meth = FETCH_METH_AUTO;
 
-	// Event-sequence configuration parameter available flag.
+	// Event-sequence configuration parameter available flag. [v2]
 
 	public boolean evseq_cfg_avail = false;
 
-	// Event-sequence configuration parameters (null iff omitted).
+	// Event-sequence configuration parameters (null iff omitted). [v2]
 
 	public EventSequenceParameters evseq_cfg_params = null;
 
@@ -925,21 +970,21 @@ public class ForecastParameters implements Marshalable {
 
 	//----- ETAS parameters -----
 
-	// ETAS parameter fetch method.
+	// ETAS parameter fetch method. [v3]
 
 	public int etas_fetch_meth = FETCH_METH_AUTO;
 
-	// ETAS parameter available flag.
+	// ETAS parameter available flag. [v3]
 
 	public boolean etas_avail = false;
 
-	// Tectonic regime (null iff omitted).
+	// Tectonic regime (null iff omitted). [v3]
 	// (For analyst-supplied values, cannot be null, but can be an empty string,
 	// and need not be the name of a known tectonic regime.)
 
 	public String etas_regime = null;
 
-	// ETAS parameters (null iff omitted).
+	// ETAS parameters (null iff omitted). [v3]
 
 	public OEtasParameters etas_params = null;
 
@@ -1116,12 +1161,13 @@ public class ForecastParameters implements Marshalable {
 	// Fetch all parameters.
 
 	public void fetch_all_params (long the_forecast_lag, ForecastMainshock fcmain, ForecastParameters prior_params) {
+		long the_start_lag = -((new ActionConfig()).get_data_fetch_lookback());
 		forecast_lag = the_forecast_lag;
 		fetch_control_params (fcmain, prior_params);
 		fetch_generic_params (fcmain, prior_params);
 		fetch_mag_comp_params (fcmain, prior_params);
 		fetch_seq_spec_params (fcmain, prior_params);
-		fetch_aftershock_search_region (fcmain, prior_params, 0L);
+		fetch_aftershock_search_region (fcmain, prior_params, the_start_lag);
 		fetch_evseq_cfg_params (fcmain, prior_params);
 		fetch_etas_params (fcmain, prior_params);
 		return;
@@ -1282,6 +1328,8 @@ public class ForecastParameters implements Marshalable {
 			result.append ("min_depth = " + min_depth + "\n");
 			result.append ("max_depth = " + max_depth + "\n");
 			result.append ("min_mag = " + min_mag + "\n");
+			result.append ("fit_start_inset = " + fit_start_inset + "\n");
+			result.append ("fit_end_inset = " + fit_end_inset + "\n");
 		}
 
 		result.append ("evseq_cfg_fetch_meth = " + evseq_cfg_fetch_meth + "\n");
@@ -1473,6 +1521,9 @@ public class ForecastParameters implements Marshalable {
 				writer.marshalDouble ("min_depth", min_depth);
 				writer.marshalDouble ("max_depth", max_depth);
 				writer.marshalDouble ("min_mag"  , min_mag  );
+
+				writer.marshalDouble ("fit_start_inset", fit_start_inset);
+				writer.marshalDouble ("fit_end_inset"  , fit_end_inset  );
 			}
 
 			writer.marshalInt     ("evseq_cfg_fetch_meth", evseq_cfg_fetch_meth);
@@ -1553,6 +1604,9 @@ public class ForecastParameters implements Marshalable {
 				min_depth = reader.unmarshalDouble ("min_depth");
 				max_depth = reader.unmarshalDouble ("max_depth");
 				min_mag   = reader.unmarshalDouble ("min_mag"  );
+
+				fit_start_inset = DEFAULT_FIT_START_INSET;
+				fit_end_inset   = DEFAULT_FIT_END_INSET;
 			} else {
 				set_default_aftershock_search_params();
 			}
@@ -1616,6 +1670,9 @@ public class ForecastParameters implements Marshalable {
 				min_depth = reader.unmarshalDouble ("min_depth");
 				max_depth = reader.unmarshalDouble ("max_depth");
 				min_mag   = reader.unmarshalDouble ("min_mag"  );
+
+				fit_start_inset = DEFAULT_FIT_START_INSET;
+				fit_end_inset   = DEFAULT_FIT_END_INSET;
 			} else {
 				set_default_aftershock_search_params();
 			}
@@ -1683,6 +1740,9 @@ public class ForecastParameters implements Marshalable {
 				min_depth = reader.unmarshalDouble ("min_depth");
 				max_depth = reader.unmarshalDouble ("max_depth");
 				min_mag   = reader.unmarshalDouble ("min_mag"  );
+
+				fit_start_inset = reader.unmarshalDouble ("fit_start_inset");
+				fit_end_inset   = reader.unmarshalDouble ("fit_end_inset"  );
 			} else {
 				set_default_aftershock_search_params();
 			}
@@ -1824,7 +1884,7 @@ public class ForecastParameters implements Marshalable {
 
 			// Set the forecast time to be 7 days after the mainshock
 
-			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+			long the_forecast_lag = SimpleUtils.days_to_millis (7.0);
 
 			// Get parameters
 
@@ -1870,7 +1930,7 @@ public class ForecastParameters implements Marshalable {
 
 			// Set the forecast time to be 7 days after the mainshock
 
-			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+			long the_forecast_lag = SimpleUtils.days_to_millis (7.0);
 
 			// Get parameters
 
@@ -1941,7 +2001,7 @@ public class ForecastParameters implements Marshalable {
 
 			// Set the forecast time to be 7 days after the mainshock
 
-			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+			long the_forecast_lag = SimpleUtils.days_to_millis (7.0);
 
 			// Get parameters
 
@@ -1993,7 +2053,7 @@ public class ForecastParameters implements Marshalable {
 
 			// Set the forecast time to be 7 days after the mainshock
 
-			long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+			long the_forecast_lag = SimpleUtils.days_to_millis (7.0);
 
 			// Get parameters
 

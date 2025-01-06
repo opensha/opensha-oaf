@@ -72,6 +72,80 @@ public class SimpleUtils {
 
 
 
+	// Convert milliseconds (long) to days (double).
+
+	public static double millis_to_days (long millis) {
+		return ((double)millis) / DAY_MILLIS_D;
+	}
+
+	// Convert days (double) to milliseconds (long).
+
+	public static long days_to_millis (double days) {
+		return Math.round (DAY_MILLIS_D * days);
+	}
+
+
+
+
+	// Clip x to lie between v1 and v2.
+
+	public static double clip_val (double v1, double v2, double x) {
+		return ( (v1 < v2) ? (Math.max(v1, Math.min(v2, x))) : (Math.max(v2, Math.min(v1, x))) );
+	}
+
+	public static float clip_val_f (float v1, float v2, float x) {
+		return ( (v1 < v2) ? (Math.max(v1, Math.min(v2, x))) : (Math.max(v2, Math.min(v1, x))) );
+	}
+
+	public static int clip_val_i (int v1, int v2, int x) {
+		return ( (v1 < v2) ? (Math.max(v1, Math.min(v2, x))) : (Math.max(v2, Math.min(v1, x))) );
+	}
+
+	public static long clip_val_l (long v1, long v2, long x) {
+		return ( (v1 < v2) ? (Math.max(v1, Math.min(v2, x))) : (Math.max(v2, Math.min(v1, x))) );
+	}
+
+
+	// Clip x to lie between v1 and v2 assuming v1 <= v2; if v1 > v2 then the return value is v1.
+
+	public static double clip_max_min (double v1, double v2, double x) {
+		return Math.max(v1, Math.min(v2, x));
+	}
+
+	public static float clip_max_min_f (float v1, float v2, float x) {
+		return Math.max(v1, Math.min(v2, x));
+	}
+
+	public static int clip_max_min_i (int v1, int v2, int x) {
+		return Math.max(v1, Math.min(v2, x));
+	}
+
+	public static long clip_max_min_l (long v1, long v2, long x) {
+		return Math.max(v1, Math.min(v2, x));
+	}
+
+
+	// Clip x to lie between v1 and v2 assuming v1 <= v2; if v1 > v2 then the return value is v2.
+
+	public static double clip_min_max (double v1, double v2, double x) {
+		return Math.min(v2, Math.max(v1, x));
+	}
+
+	public static float clip_min_max_f (float v1, float v2, float x) {
+		return Math.min(v2, Math.max(v1, x));
+	}
+
+	public static int clip_min_max_i (int v1, int v2, int x) {
+		return Math.min(v2, Math.max(v1, x));
+	}
+
+	public static long clip_min_max_l (long v1, long v2, long x) {
+		return Math.min(v2, Math.max(v1, x));
+	}
+
+
+
+
 	// Get a stack trace as a string.
 
 	public static String getStackTraceAsString (Throwable e) {
@@ -271,6 +345,259 @@ public class SimpleUtils {
 
 	public static String duration_raw_and_string_2 (long the_duration) {
 		return the_duration + " (" + duration_to_string_2(the_duration) + ")";
+	}
+
+
+
+
+	// Convert a duration (in milliseconds) to a human-readable string.
+	// This version includes a "days" field for durations of 1 day or more.
+	// This produces an easier-to-read form, not in java.time.Duration format.
+	// Example: 7d13h4m.
+
+	public static String duration_to_string_3 (long the_duration) {
+		String result;
+
+		// If negative, reverse the sign and prepend a minus sign
+
+		long x = the_duration;
+		String sign = "";
+
+		if (x < 0L) {
+			x = -x;
+			sign = "-";
+		}
+
+		// Split
+
+		long days = x / DAY_MILLIS;
+		long hours = (x / HOUR_MILLIS) % 24L;
+		long minutes = (x / MINUTE_MILLIS) % 60L;
+		long seconds = (x / SECOND_MILLIS) % 60L;
+		long millis = x % 1000L;
+
+		// Leading field is days
+
+		if (days != 0) {
+			if (millis != 0) {
+				result = String.format ("%s%dd%dh%dm%d.%03ds", sign, days, hours, minutes, seconds, millis);
+			} else if (seconds != 0) {
+				result = String.format ("%s%dd%dh%dm%ds", sign, days, hours, minutes, seconds);
+			} else if (minutes != 0) {
+				result = String.format ("%s%dd%dh%dm", sign, days, hours, minutes);
+			} else if (hours != 0) {
+				result = String.format ("%s%dd%dh", sign, days, hours);
+			} else {
+				result = String.format ("%s%dd", sign, days);
+			}
+		}
+
+		// Leading field is hours
+
+		else if (hours != 0) {
+			if (millis != 0) {
+				result = String.format ("%s%dh%dm%d.%03ds", sign, hours, minutes, seconds, millis);
+			} else if (seconds != 0) {
+				result = String.format ("%s%dh%dm%ds", sign, hours, minutes, seconds);
+			} else if (minutes != 0) {
+				result = String.format ("%s%dh%dm", sign, hours, minutes);
+			} else {
+				result = String.format ("%s%dh", sign, hours);
+			}
+		}
+
+		// Leading field is minutes
+
+		else if (minutes != 0) {
+			if (millis != 0) {
+				result = String.format ("%s%dm%d.%03ds", sign, minutes, seconds, millis);
+			} else if (seconds != 0) {
+				result = String.format ("%s%dm%ds", sign, minutes, seconds);
+			} else {
+				result = String.format ("%s%dm", sign, minutes);
+			}
+		}
+
+		// Leading field is seconds
+
+		else {
+			if (millis != 0) {
+				result = String.format ("%s%d.%03ds", sign, seconds, millis);
+			} else {
+				result = String.format ("%s%ds", sign, seconds);
+			}
+		}
+
+		return result;
+	}
+
+
+
+
+	// Given a duration (in milliseconds), produce a string which
+	// is its numerical value followed by the human-readable form in parentheses.
+	// This version includes a "days" field for durations of 1 day or more.
+	// This produces an easier-to-read form, not in java.time.Duration format.
+
+	public static String duration_raw_and_string_3 (long the_duration) {
+		return the_duration + " (" + duration_to_string_3(the_duration) + ")";
+	}
+
+
+
+
+	// Convert a numan-readable string (example: 7d13h4m) to a duration in milliseconds.
+	// Parameters:
+	//  s = String to convert.
+	//  def_unit = A string that gives default units; can be null or blank if none.
+	// The string to convert consists of a uptional sign, followed by optional
+	// substrings of "nnd", "nnh", "nnm", and "nns" (in that order) which given
+	// durations in days, hours, minutes, and seconds.  Each "nn" can be An
+	// unsigned integer or fixed-point number.  The unit characters (d,h,m,s)
+	// can be lowercase or uppercase.
+	// If def_unit is non-null and non-blank, then it must be a unit character
+	// (lowercase or uppercase d,h,m,s).  The the string contains no units at all,
+	// then it is interpreted as if it were terminated by def_unit.
+	// If def_unit is null or blank, then it is an error for the string to not
+	// contain a units character.
+
+	// Pattern for a string with no unit.
+
+	//private static final Pattern stodur_nounit_pattern = Pattern.compile ("([+-])?  ( (?:\\d+(?:\\.\\d*)?) | (?:\\.\\d+) )");
+	private static final Pattern stodur_nounit_pattern = Pattern.compile ("([+-])?((?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))");
+
+	// Pattern for a string with units.
+
+	//private static final Pattern stodur_unit_pattern = Pattern.compile ("([+-])?  (?:( (?:\\d+(?:\\.\\d*)?) | (?:\\.\\d+) )[dD])?  (?:( (?:\\d+(?:\\.\\d*)?) | (?:\\.\\d+) )[hH])?  (?:( (?:\\d+(?:\\.\\d*)?) | (?:\\.\\d+) )[mM])?  (?:( (?:\\d+(?:\\.\\d*)?) | (?:\\.\\d+) )[sS])?");
+	private static final Pattern stodur_unit_pattern = Pattern.compile ("([+-])?(?:((?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))[dD])?(?:((?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))[hH])?(?:((?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))[mM])?(?:((?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))[sS])?");
+
+	public static long string_to_duration_3 (String s, String def_unit) {
+		String s_trim = s.trim();
+
+		// Get the number of milliseconds per default unit, or -1.0 if no default unit
+
+		double def_unit_millis = -1.0;
+
+		if (def_unit != null) {
+			String def_unit_trim = def_unit.trim();
+			if (def_unit_trim.length() > 0) {
+				switch (def_unit.trim()) {
+					case "d": case "D": def_unit_millis = DAY_MILLIS_D; break;
+					case "h": case "H": def_unit_millis = HOUR_MILLIS_D; break;
+					case "m": case "M": def_unit_millis = MINUTE_MILLIS_D; break;
+					case "s": case "S": def_unit_millis = SECOND_MILLIS_D; break;
+					default:
+						throw new IllegalArgumentException ("SimpleUtils.string_to_duration_3: Invalid def_unit = " + def_unit);
+				}
+			}
+		}
+
+		// Any exceptions here indicate invalid string
+
+		try {
+
+			// If we match a string with units ...
+
+			Matcher matcher = stodur_unit_pattern.matcher (s_trim);
+			if (matcher.matches()) {
+
+				// Get the positive duration in floating point
+
+				boolean f_got_value = false;
+				double d_dur = 0.0;
+
+				String g = matcher.group(2);
+				if (g != null) {
+					f_got_value = true;
+					d_dur += (Double.parseDouble(g) * DAY_MILLIS_D);
+				}
+
+				g = matcher.group(3);
+				if (g != null) {
+					f_got_value = true;
+					d_dur += (Double.parseDouble(g) * HOUR_MILLIS_D);
+				}
+
+				g = matcher.group(4);
+				if (g != null) {
+					f_got_value = true;
+					d_dur += (Double.parseDouble(g) * MINUTE_MILLIS_D);
+				}
+
+				g = matcher.group(5);
+				if (g != null) {
+					f_got_value = true;
+					d_dur += (Double.parseDouble(g) * SECOND_MILLIS_D);
+				}
+
+				// If we got a value ...
+
+				if (f_got_value) {
+
+					// Convert to integer milliseconds
+
+					long dur = Math.round (d_dur);
+
+					// Apply sign
+
+					g = matcher.group(1);
+					if (g != null) {
+						if (g.equals ("-")) {
+							dur = -dur;
+						}
+					}
+
+					return dur;
+				}
+			}
+
+			// Otherwise, if we have a default unit ...
+
+			else if (def_unit_millis > 0.0) {
+
+				// If we match a string without units ...
+
+				matcher = stodur_nounit_pattern.matcher (s_trim);
+				if (matcher.matches()) {
+
+					// Get the positive duration in floating point
+
+					boolean f_got_value = false;
+					double d_dur = 0.0;
+
+					String g = matcher.group(2);
+					if (g != null) {
+						f_got_value = true;
+						d_dur += (Double.parseDouble(g) * def_unit_millis);
+					}
+
+					// If we got a value ...
+
+					if (f_got_value) {
+
+						// Convert to integer milliseconds
+
+						long dur = Math.round (d_dur);
+
+						// Apply sign
+
+						g = matcher.group(1);
+						if (g != null) {
+							if (g.equals ("-")) {
+								dur = -dur;
+							}
+						}
+
+						return dur;
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			throw new IllegalArgumentException ("SimpleUtil.string_to_duration_3: Invalid string = " + s, e);
+		}
+
+		throw new IllegalArgumentException ("SimpleUtil.string_to_duration_3: Invalid string = " + s);
 	}
 
 
@@ -1408,6 +1735,64 @@ public class SimpleUtils {
 				// Write it
 
 				write_string_as_file (filename, s1, s2);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  string  def_unit
+		// Test the operation of string_to_duration_3.
+		// The value of def_unit can be "null" or "empty" to produce a null or empty string.
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// 2 additional arguments
+
+			if (!( args.length == 3 )) {
+				System.err.println ("SimpleUtils : Invalid 'test7' subcommand");
+				return;
+			}
+
+			try {
+
+				String s = args[1];
+				String def_unit = args[2];
+
+				// Say hello
+
+				System.out.println ("Removing trailing zeros using remove_trailing_zeros");
+				System.out.println ("s = \"" + s + "\"");
+				System.out.println ("def_unit = " + def_unit);
+
+				if (def_unit.equals ("null")) {
+					def_unit = null;
+				}
+				else if (def_unit.equals ("empty")) {
+					def_unit = "";
+				}
+
+				// Convert to duration in milliseconds
+
+				long duration_millis = string_to_duration_3 (s, def_unit);
+
+				// Display result
+
+				System.out.println();
+				System.out.println ("duration_millis = " + duration_millis);
+
+				System.out.println();
+				System.out.println ("duration_to_string_2 = " + duration_to_string_2 (duration_millis));
+
+				System.out.println();
+				System.out.println ("duration_to_string_3 = " + duration_to_string_3 (duration_millis));
 
 			} catch (Exception e) {
 				e.printStackTrace();

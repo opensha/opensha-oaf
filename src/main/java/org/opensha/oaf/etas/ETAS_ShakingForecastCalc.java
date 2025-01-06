@@ -1,34 +1,26 @@
 package org.opensha.oaf.etas;
 
 import java.awt.geom.Point2D;
-import java.io.File;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JFrame;
-
-import org.jfree.data.Range;
 import org.opensha.commons.data.Site;
 import org.opensha.commons.data.TimeSpan;
 import org.opensha.commons.data.WeightedList;
 import org.opensha.commons.data.function.ArbitrarilyDiscretizedFunc;
 import org.opensha.commons.data.function.DiscretizedFunc;
 import org.opensha.commons.data.siteData.SiteData;
-import org.opensha.commons.data.siteData.impl.WaldAllenGlobalVs30;
 import org.opensha.commons.data.xyz.ArbDiscrGeoDataSet;
 import org.opensha.commons.data.xyz.GeoDataSet;
 import org.opensha.commons.data.xyz.GriddedGeoDataSet;
 import org.opensha.commons.geo.GriddedRegion;
 import org.opensha.commons.geo.Location;
-import org.opensha.commons.geo.Region;
-import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotSpec;
-import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
 import org.opensha.commons.param.Parameter;
-import org.opensha.commons.util.cpt.CPT;
+import org.opensha.oaf.etas.griddedInterpGMPE.DistanceInterpolator;
+import org.opensha.oaf.etas.griddedInterpGMPE.DoubleParameterInterpolator;
+import org.opensha.oaf.etas.griddedInterpGMPE.GriddedInterpGMPE_Calc;
 import org.opensha.sha.calc.hazardMap.HazardDataSetLoader;
 import org.opensha.sha.earthquake.AbstractERF;
 import org.opensha.sha.earthquake.ProbEqkSource;
@@ -36,21 +28,12 @@ import org.opensha.sha.earthquake.rupForecastImpl.PointSourceNshm;
 import org.opensha.sha.faultSurface.utils.PointSourceDistanceCorrection;
 import org.opensha.sha.faultSurface.utils.PointSourceDistanceCorrections;
 import org.opensha.sha.gui.infoTools.IMT_Info;
-import org.opensha.sha.imr.AttenRelRef;
 import org.opensha.sha.imr.ScalarIMR;
-import org.opensha.sha.imr.attenRelImpl.calc.Wald_MMI_Calc;
-import org.opensha.sha.imr.param.IntensityMeasureParams.PGA_Param;
-import org.opensha.sha.imr.param.IntensityMeasureParams.PGV_Param;
-import org.opensha.sha.imr.param.IntensityMeasureParams.SA_Param;
 import org.opensha.sha.imr.param.SiteParams.Vs30_Param;
 import org.opensha.sha.magdist.GutenbergRichterMagFreqDist;
 import org.opensha.sha.util.FocalMech;
 
 import com.google.common.base.Preconditions;
-
-import org.opensha.oaf.etas.griddedInterpGMPE.DistanceInterpolator;
-import org.opensha.oaf.etas.griddedInterpGMPE.DoubleParameterInterpolator;
-import org.opensha.oaf.etas.griddedInterpGMPE.GriddedInterpGMPE_Calc;
 
 public class ETAS_ShakingForecastCalc {
 	

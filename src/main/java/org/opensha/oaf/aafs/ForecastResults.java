@@ -20,6 +20,8 @@ import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.catalog.ObsEqkRupMinTimeComparator;
+import org.opensha.oaf.util.AutoExecutorService;
+import org.opensha.oaf.util.SimpleExecTimer;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
@@ -38,9 +40,25 @@ import org.opensha.oaf.rj.SeqSpecRJ_Parameters;
 import org.opensha.oaf.rj.USGS_AftershockForecast;
 import org.opensha.oaf.rj.USGS_ForecastInfo;
 
+import org.opensha.oaf.oetas.env.OEExecEnvironment;
+import org.opensha.oaf.oetas.env.OEtasOutcome;
+import org.opensha.oaf.oetas.env.OEtasLogInfo;
+import org.opensha.oaf.oetas.env.OEtasCatalogInfo;
+
 import static org.opensha.oaf.aafs.ForecastParameters.CALC_METH_AUTO_PDL;
 import static org.opensha.oaf.aafs.ForecastParameters.CALC_METH_AUTO_NO_PDL;
 import static org.opensha.oaf.aafs.ForecastParameters.CALC_METH_SUPPRESS;
+
+import static org.opensha.oaf.aafs.ForecastParameters.SEARCH_PARAM_OMIT;
+import static org.opensha.oaf.aafs.ForecastParameters.SEARCH_PARAM_TEST;
+
+import static org.opensha.oaf.oetas.env.OEExecEnvironment.ETAS_RESCODE_NOT_ELIGIBLE;
+import static org.opensha.oaf.oetas.env.OEExecEnvironment.ETAS_RESCODE_MAG_COMP_FORM;
+import static org.opensha.oaf.oetas.env.OEExecEnvironment.ETAS_RESCODE_NO_DATA;
+import static org.opensha.oaf.oetas.env.OEExecEnvironment.ETAS_RESCODE_UNSUPPORTED;
+import static org.opensha.oaf.oetas.env.OEExecEnvironment.ETAS_RESCODE_NO_PARAMS;
+import static org.opensha.oaf.oetas.env.OEExecEnvironment.ETAS_RESCODE_DISABLED;
+import static org.opensha.oaf.oetas.env.OEExecEnvironment.ETAS_RESCODE_NOT_ATTEMPTED;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
@@ -129,6 +147,7 @@ public class ForecastResults implements Marshalable {
 	public double catalog_max_mag = 0.0;
 
 	// Event id of the aftershock with maximum magnitude ("" if there are no aftershocks).
+	// Note: It is prefixed with "-" if the event is a foreshock.
 
 	public String catalog_max_event_id = "";
 
@@ -143,6 +162,80 @@ public class ForecastResults implements Marshalable {
 
 	public ObsEqkRupList catalog_comcat_aftershocks = null;
 
+	// catalog_fit_start_days - Start time of fitting interval in days since the mainshock. [v2]
+	// Can be SEARCH_PARAM_OMIT if unknown.
+
+	public double catalog_fit_start_days = SEARCH_PARAM_OMIT;
+
+	// catalog_fit_end_days - End time of fitting interval in days since the mainshock. [v2]
+	// Can be SEARCH_PARAM_OMIT if unknown.
+	// (May extend slightly past the end of data if needed to ensure fitting interval has a positive length.)
+
+	public double catalog_fit_end_days = SEARCH_PARAM_OMIT;
+
+	// Get the start time of the fitting interval in days since the mainshock.
+	// Returns the default value if the time is unknown.
+
+	public double get_catalog_fit_start_days (double def_start) {
+		return ((catalog_fit_start_days < SEARCH_PARAM_TEST) ? catalog_fit_start_days : def_start);
+	}
+
+	// Get the end time of the fitting interval in days since the mainshock.
+	// Returns the default value if the time is unknown.
+
+	public double get_catalog_fit_end_days (double def_end) {
+		return ((catalog_fit_end_days < SEARCH_PARAM_TEST) ? catalog_fit_end_days : def_end);
+	}
+
+	// The smallest allowed fitting interval, in days.
+	// In practice this should not come into play.  It exists to ensure preconditions are satisfied.
+
+	public static final double TINY_FIT_INTERVAL_DAYS = 0.001;
+
+	// Calculate the start and end of the fitting interval from the forecast parameters.
+
+	public void calc_catalog_fit_interval (ForecastMainshock fcmain, ForecastParameters params) {
+
+		// Parameters must have mainshock, aftershock search region
+
+		if (!( fcmain.mainshock_avail && params.aftershock_search_avail )) {
+			catalog_fit_start_days = SEARCH_PARAM_OMIT;
+			catalog_fit_end_days = SEARCH_PARAM_OMIT;
+			return;
+		}
+
+		// The requested minimum duration of the fitting interval
+
+		double req_min_dur = SimpleUtils.millis_to_days ((new ActionConfig()).get_data_fit_dur_min());
+
+		// The latest time that allows minumum duration before the end of the data,
+		// coerced to be after the mainshock
+
+		double x = Math.max(0.0, params.max_days - req_min_dur);
+
+		// Reduce the fit start to be no later than x, and then coerce into the data range
+
+		catalog_fit_start_days = SimpleUtils.clip_max_min (params.min_days, params.max_days,
+			Math.min(x, params.fit_start_inset)
+		);
+
+		// The earliest time that allows minimum duration after both the fit start and mainshock
+
+		double y = Math.max(0.0, catalog_fit_start_days) + req_min_dur;
+
+		// Increase the fit end to be no earlier than y, and then coerce to be
+		// after the fit start and before the data end
+		// (The extra TINY_FIT_INTERVAL_DAYS ensures that the fitting interval has non-zero length,
+		// even if it requires extending the fitting interval slightly past the end of the data;
+		// in practice this should not happen.)
+
+		catalog_fit_end_days = SimpleUtils.clip_max_min (catalog_fit_start_days + TINY_FIT_INTERVAL_DAYS, params.max_days,
+			Math.max(y, params.max_days - params.fit_end_inset)
+		);
+
+		return;
+	}
+
 	// set_default_catalog_results - Set catalog results to default values.
 
 	public void set_default_catalog_results () {
@@ -153,6 +246,8 @@ public class ForecastResults implements Marshalable {
 		catalog_max_event_id = "";
 		catalog_aftershocks = null;
 		catalog_comcat_aftershocks = null;
+		catalog_fit_start_days = SEARCH_PARAM_OMIT;
+		catalog_fit_end_days = SEARCH_PARAM_OMIT;
 		return;
 	}
 
@@ -184,8 +279,10 @@ public class ForecastResults implements Marshalable {
 		// Save catalog and info
 
 		long eventTime = mainshock.getOriginTime();
-		catalog_start_time = eventTime + (long)(params.min_days * ComcatOAFAccessor.day_millis);
-		catalog_end_time = eventTime + (long)(params.max_days * ComcatOAFAccessor.day_millis);
+		catalog_start_time = eventTime + SimpleUtils.days_to_millis (params.min_days);
+		catalog_end_time = eventTime + SimpleUtils.days_to_millis (params.max_days);
+
+		calc_catalog_fit_interval (fcmain, params);
 
 		catalog_eqk_count = catalog_comcat_aftershocks.size();
 		catalog_aftershocks = new CompactEqkRupList (catalog_comcat_aftershocks);
@@ -232,8 +329,10 @@ public class ForecastResults implements Marshalable {
 		//ObsEqkRupList catalog_comcat_aftershocks;		// if this isn't an object field
 
 		long eventTime = mainshock.getOriginTime();
-		catalog_start_time = eventTime + (long)(params.min_days * ComcatOAFAccessor.day_millis);
-		catalog_end_time = eventTime + (long)(params.max_days * ComcatOAFAccessor.day_millis);
+		catalog_start_time = eventTime + SimpleUtils.days_to_millis (params.min_days);
+		catalog_end_time = eventTime + SimpleUtils.days_to_millis (params.max_days);
+
+		calc_catalog_fit_interval (fcmain, params);
 
 		// Loop over supplied aftershocks
 
@@ -388,6 +487,7 @@ public class ForecastResults implements Marshalable {
 	public RJ_Summary_Generic generic_summary = null;
 
 	// Generic results JSON.
+	// Must be non-null, but can be empty to indicate not available.
 
 	public String generic_json = "";
 
@@ -519,6 +619,7 @@ public class ForecastResults implements Marshalable {
 	public RJ_Summary_SequenceSpecific seq_spec_summary = null;
 
 	// Sequence specific results JSON.
+	// Must be non-null, but can be empty to indicate not available.
 
 	public String seq_spec_json = "";
 
@@ -564,7 +665,8 @@ public class ForecastResults implements Marshalable {
 
 			ObsEqkRupture mainshock = fcmain.get_eqk_rupture();
 			seq_spec_model = new RJ_AftershockModel_SequenceSpecific (mainshock, catalog_aftershocks,
-				params.min_days, params.max_days, params.mag_comp_params, params.seq_spec_params);
+				get_catalog_fit_start_days (params.min_days), get_catalog_fit_end_days (params.max_days),
+				params.mag_comp_params, params.seq_spec_params);
 
 			// Save the summary
 
@@ -633,7 +735,8 @@ public class ForecastResults implements Marshalable {
 
 				ObsEqkRupture mainshock = fcmain.get_eqk_rupture();
 				seq_spec_model = new RJ_AftershockModel_SequenceSpecific (mainshock, catalog_aftershocks,
-					params.min_days, params.max_days, params.mag_comp_params, params.seq_spec_params);
+					get_catalog_fit_start_days (params.min_days), get_catalog_fit_end_days (params.max_days),
+					params.mag_comp_params, params.seq_spec_params);
 
 			} catch (Exception e) {
 				throw new RuntimeException("ForecastResults.rebuild_seq_spec_results: Exception building sequence specific forecast", e);
@@ -655,6 +758,7 @@ public class ForecastResults implements Marshalable {
 	public RJ_Summary_Bayesian bayesian_summary = null;
 
 	// Bayesian results JSON.
+	// Must be non-null, but can be empty to indicate not available.
 
 	public String bayesian_json = "";
 
@@ -785,6 +889,403 @@ public class ForecastResults implements Marshalable {
 	}
 
 
+	//----- ETAS results -----
+
+	// ETAS result available flag. [v2]
+
+	public boolean etas_result_avail = false;
+
+	// ETAS result code, see ETAS_RESCODE_XXXXX. [v2]
+
+	public int etas_rescode = ETAS_RESCODE_UNSUPPORTED;
+
+	// ETAS forecast outcome, can be null if none. [v2]
+	// Note that even if etas_result_avail is true, this can be null, and this can be non-null but not contain a forecast JSON.
+	// Note that if etas_rescode does not indicate success, then any forecast in etas_outcome should not be sent to PDL.
+
+	public OEtasOutcome etas_outcome = null;
+
+	// ETAS log information, can be null if none. [v2]
+	// This field is not marshaled.
+
+	public OEtasLogInfo etas_log_info = null;
+
+	// True if results sent to PDL. [v2]
+
+	public boolean etas_pdl = false;
+
+	// Return true if we have an ETAS JSON.
+
+	public final boolean has_etas_json () {
+		return (etas_result_avail && OEExecEnvironment.is_etas_successful(etas_rescode) && (etas_outcome != null) && etas_outcome.has_etas_json());
+	}
+
+	// Return the ETAS JSON.
+	// Before calling, check if the ETAS JSON is available by calling has_etas_json().
+
+	public final String get_etas_json () {
+		return etas_outcome.get_etas_json();
+	}
+
+	// set_default_etas_results - Set ETAS results to default values.
+
+	public void set_default_etas_results () {
+		etas_rescode = ETAS_RESCODE_UNSUPPORTED;
+		etas_outcome = null;
+		etas_log_info = null;
+		etas_pdl = false;
+		return;
+	}
+
+	// Set the reason why ETAS is being skipped.
+	// The log_string can be null or empty if none.
+
+	private void set_etas_skip_reason (int rescode, String log_string) {
+		set_default_etas_results();
+		etas_rescode = rescode;
+		etas_log_info = OEExecEnvironment.make_etas_log_info (rescode, log_string);
+		etas_result_avail = true;
+		return;
+	}
+
+	// calc_etas_results - Calculate ETAS results.
+
+	public void calc_etas_results (ForecastMainshock fcmain, ForecastParameters params) {
+
+		ActionConfig my_action_config = new ActionConfig();
+
+		// If ETAS is disabled, then we can't have ETAS results
+
+		if (!( my_action_config.get_is_etas_enabled() )) {
+			set_default_etas_results();
+			etas_result_avail = false;
+			return;
+		}
+
+		// We need to have ETAS parameters
+
+		if (!( (params.etas_fetch_meth != CALC_METH_SUPPRESS)
+				&& params.etas_avail )) {
+			set_etas_skip_reason (ETAS_RESCODE_NO_PARAMS, OEExecEnvironment.etas_result_to_string (ETAS_RESCODE_NO_PARAMS));
+			return;
+		}
+
+		// We need to have magnitude of completeness parameters with Helmstetter function
+
+		if (!( params.mag_comp_avail
+				&& params.mag_comp_params.get_magCompFn().is_page_or_constant() )) {
+			set_etas_skip_reason (ETAS_RESCODE_MAG_COMP_FORM, OEExecEnvironment.etas_result_to_string (ETAS_RESCODE_MAG_COMP_FORM));
+			return;
+		}
+
+		// We need to have catalog results and mainshock parameters
+
+		if (!( catalog_result_avail
+				&& fcmain.mainshock_avail )) {
+			set_etas_skip_reason (ETAS_RESCODE_NO_DATA, OEExecEnvironment.etas_result_to_string (ETAS_RESCODE_NO_DATA));
+			return;
+		}
+
+		// We need to be eligible based on magnitude
+
+		if (!( params.etas_params.check_eligible (fcmain.mainshock_mag, catalog_max_mag) )) {
+			set_etas_skip_reason (ETAS_RESCODE_NOT_ELIGIBLE, OEExecEnvironment.etas_result_to_string (ETAS_RESCODE_NOT_ELIGIBLE) + ", mainshock_mag = " + fcmain.mainshock_mag + ", catalog_max_mag = " + catalog_max_mag);
+			System.out.println ("Not eligible for ETAS: mainshock_mag = " + fcmain.mainshock_mag + ", catalog_max_mag = " + catalog_max_mag);
+			return;
+		}
+
+		try {
+		
+			// Build the forecast information
+		
+			USGS_ForecastInfo fc_info = (new USGS_ForecastInfo()).set_typical (
+				fcmain.mainshock_time,			// event_time
+				result_time,					// result_time
+				advisory_lag,					// advisory_lag
+				injectable_text,				// injectable_text
+				params.next_scheduled_lag,		// next_scheduled_lag
+				null							// user_param_map
+			);
+		
+			// Add parameters for magnitude of completeness and search region
+		
+			if (params.mag_comp_avail && params.mag_comp_params != null) {
+				params.mag_comp_params.get_magCompFn().get_display_params (
+					fc_info.user_param_map, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
+			}
+			if (params.aftershock_search_avail && params.aftershock_search_region != null) {
+				params.aftershock_search_region.get_display_params (fc_info.user_param_map);
+			}
+
+			// Build the catalog information
+
+			double the_mag_cat = params.mag_comp_params.get_magCat (fcmain.mainshock_mag);
+			double the_mag_top = params.etas_params.suggest_mag_top (the_mag_cat, Math.max(fcmain.mainshock_mag, catalog_max_mag));
+
+			double t_data_begin = params.min_days;
+			double t_data_end = get_catalog_fit_end_days (params.max_days);
+			double t_fitting = get_catalog_fit_start_days (Math.max(0.0, params.min_days));
+			double t_forecast = Math.max(t_data_end, SimpleUtils.millis_to_days (fc_info.start_time - fcmain.mainshock_time));
+
+			OEtasCatalogInfo catalog_info = (new OEtasCatalogInfo()).set (
+				the_mag_cat,												// double magCat
+				the_mag_top,												// double magTop
+				params.mag_comp_params.get_magCompFn().getDefaultGUICapF(),	// double capF
+				params.mag_comp_params.get_magCompFn().getDefaultGUICapG(),	// double capG
+				params.mag_comp_params.get_magCompFn().getDefaultGUICapH(),	// double capH
+				t_data_begin,												// double t_data_begin
+				t_data_end,													// double t_data_end
+				t_fitting,													// double t_fitting
+				t_forecast,													// double t_forecast
+				fcmain.mainshock_mag,										// double mag_main
+				fcmain.mainshock_lat,										// double lat_main
+				fcmain.mainshock_lon,										// double lon_main
+				fcmain.mainshock_depth										// double depth_main
+			);
+
+			// Create multi-thread context
+
+			int num_threads = AutoExecutorService.AESNUM_DEFAULT;	// -1
+
+			long max_runtime = my_action_config.get_etas_time_limit();
+			if (max_runtime == ActionConfigFile.NO_ETAS_TIME_LIMIT) {
+				max_runtime = SimpleExecTimer.NO_MAX_RUNTIME;		// -1L
+			}
+
+			long progress_time = my_action_config.get_etas_progress_time();
+			if (progress_time == ActionConfigFile.NO_ETAS_PROGRESS_TIME) {
+				progress_time = SimpleExecTimer.NO_PROGRESS_TIME;	// -1L
+			}
+
+			try (
+				AutoExecutorService auto_executor = new AutoExecutorService (num_threads);
+			){
+				SimpleExecTimer exec_timer = new SimpleExecTimer (max_runtime, progress_time, auto_executor);
+				exec_timer.start_timer();
+
+				// Make the ETAS execution environment
+
+				OEExecEnvironment exec_env = new OEExecEnvironment();
+
+				// Create ETAS context
+
+				try {
+
+					// Set up the communication area
+
+					exec_env.setup_comm_area (exec_timer);
+
+					// Select files we want
+
+					exec_env.filename_accepted = null;
+					exec_env.filename_mag_comp = null;
+					exec_env.filename_log_density = null;
+					exec_env.filename_intensity_calc = null;
+					exec_env.filename_results = null;
+					exec_env.filename_fc_json = null;
+					exec_env.filename_marginals = null;
+
+					// Set up the input area
+
+					exec_env.setup_input_area_from_compact (
+						params.etas_params,			// OEtasParameters the_etas_params,
+						fc_info,					// USGS_ForecastInfo the_forecast_info,
+						catalog_info,				// OEtasCatalogInfo the_catalog_info,
+						fcmain.get_eqk_rupture(),	// ObsEqkRupture the_obs_mainshock,
+						catalog_aftershocks			// CompactEqkRupList the_compact_rup_list
+					);
+
+					// Run ETAS!
+
+					exec_env.run_etas();
+				}
+
+				// Pass exceptions into the ETAS execution environment
+
+				catch (Exception e) {
+					exec_env.report_exception (e);
+				}
+
+				// Save results
+
+				etas_rescode = exec_env.etas_rescode;
+				etas_log_info = exec_env.make_etas_log_info();
+
+				etas_outcome = null;
+				if (exec_env.is_etas_completed()) {
+					etas_outcome = exec_env.etas_results;
+				}
+
+				// Display result
+
+				System.out.println ();
+
+				if (exec_env.is_etas_successful()) {
+					System.out.println ();
+					System.out.println (exec_env.get_forecast_summary_string());
+					System.out.println ("ETAS succeeded");
+				}
+				else if (exec_env.is_etas_completed()) {
+					System.out.println ();
+					//System.out.println (exec_env.get_forecast_summary_string());
+					System.out.println ("ETAS forecast rejected");
+				}
+				else {
+					System.out.println ("ETAS failed, result code = " + exec_env.get_rescode_as_string());
+				}
+
+				if (etas_log_info.has_etas_log_string()) {
+					System.out.println ("ETAS Log: " + etas_log_info.etas_log_string);
+				}
+
+				if (etas_log_info.has_etas_abort_message()) {
+					System.out.println (etas_log_info.etas_abort_message);
+				}
+
+				// Stop timer
+
+				exec_timer.stop_timer();
+
+				long elapsed_time = exec_timer.get_total_runtime();
+				long elapsed_seconds = (elapsed_time + 500L) / 1000L;
+
+				System.out.println ();
+				System.out.println ("Elapsed time = " + elapsed_seconds + " seconds");
+			}
+
+		
+		} catch (Exception e) {
+			throw new RuntimeException("ForecastResults.calc_etas_results: Exception building ETAS forecast", e);
+		}
+		
+		// Done
+		
+		etas_pdl = false;
+		etas_result_avail = true;
+
+		return;
+	}
+
+	// rebuild_etas_results - Rebuild transient ETAS results.
+
+	public void rebuild_etas_results (ForecastMainshock fcmain, ForecastParameters params) {
+
+		// Nothing to do (we can't rebuild the log info) ...
+
+		etas_log_info = null;
+		return;
+	}
+
+	// calc_etas_catalog_info - Calculate ETAS OEtasCatalogInfo structure.
+	// Also calculate the USGS_ForecastInfo structure.
+	// Return null if the structures cannot be calculated.
+	// An exception also indicates the structure cannot be calculated.
+	// Note: This function supports testing.  It lets the caller obtain the
+	// same OEtasCatalogInfo structure that would be used by the sutomatic
+	// system.  It requires only that catalog info be loaded (along with
+	// result time, advisory lag, and injectable text).
+	// Note: The code is the same as the first part of calc_etas_results().
+	// Note: A successful return implies that we have ETAS parameters,
+	// mainshock parameters, and catalog results.
+
+	public static class ForecastAndCatalogInfo {
+		public USGS_ForecastInfo fc_info;
+		public OEtasCatalogInfo catalog_info;
+
+		public ForecastAndCatalogInfo (USGS_ForecastInfo fc_info,OEtasCatalogInfo catalog_info) {
+			this.fc_info = fc_info;
+			this.catalog_info = catalog_info;
+		}
+	}
+
+	public ForecastAndCatalogInfo calc_etas_catalog_info (ForecastMainshock fcmain, ForecastParameters params) {
+
+		ActionConfig my_action_config = new ActionConfig();
+
+		// If ETAS is disabled, then we can't have ETAS results
+
+		if (!( my_action_config.get_is_etas_enabled() )) {
+			return null;
+		}
+
+		// We need to have ETAS parameters
+
+		if (!( (params.etas_fetch_meth != CALC_METH_SUPPRESS)
+				&& params.etas_avail )) {
+			return null;
+		}
+
+		// We need to have magnitude of completeness parameters with Helmstetter function
+
+		if (!( params.mag_comp_avail
+				&& params.mag_comp_params.get_magCompFn().is_page_or_constant() )) {
+			return null;
+		}
+
+		// We need to have catalog results and mainshock parameters
+
+		if (!( catalog_result_avail
+				&& fcmain.mainshock_avail )) {
+			return null;
+		}
+
+		// We need to be eligible based on magnitude (we skip this test)
+
+		//  if (!( params.etas_params.check_eligible (fcmain.mainshock_mag, catalog_max_mag) )) {
+		//  	return null;
+		//  }
+
+		// Build the forecast information
+		
+		USGS_ForecastInfo fc_info = (new USGS_ForecastInfo()).set_typical (
+			fcmain.mainshock_time,			// event_time
+			result_time,					// result_time
+			advisory_lag,					// advisory_lag
+			injectable_text,				// injectable_text
+			params.next_scheduled_lag,		// next_scheduled_lag
+			null							// user_param_map
+		);
+		
+		// Add parameters for magnitude of completeness and search region
+		
+		if (params.mag_comp_avail && params.mag_comp_params != null) {
+			params.mag_comp_params.get_magCompFn().get_display_params (
+				fc_info.user_param_map, params.mag_comp_params.get_magCat (fcmain.mainshock_mag));
+		}
+		if (params.aftershock_search_avail && params.aftershock_search_region != null) {
+			params.aftershock_search_region.get_display_params (fc_info.user_param_map);
+		}
+
+		// Build the catalog information
+
+		double the_mag_cat = params.mag_comp_params.get_magCat (fcmain.mainshock_mag);
+		double the_mag_top = params.etas_params.suggest_mag_top (the_mag_cat, Math.max(fcmain.mainshock_mag, catalog_max_mag));
+
+		double t_data_begin = params.min_days;
+		double t_data_end = get_catalog_fit_end_days (params.max_days);
+		double t_fitting = get_catalog_fit_start_days (Math.max(0.0, params.min_days));
+		double t_forecast = Math.max(t_data_end, SimpleUtils.millis_to_days (fc_info.start_time - fcmain.mainshock_time));
+
+		OEtasCatalogInfo catalog_info = (new OEtasCatalogInfo()).set (
+			the_mag_cat,												// double magCat
+			the_mag_top,												// double magTop
+			params.mag_comp_params.get_magCompFn().getDefaultGUICapF(),	// double capF
+			params.mag_comp_params.get_magCompFn().getDefaultGUICapG(),	// double capG
+			params.mag_comp_params.get_magCompFn().getDefaultGUICapH(),	// double capH
+			t_data_begin,												// double t_data_begin
+			t_data_end,													// double t_data_end
+			t_fitting,													// double t_fitting
+			t_forecast,													// double t_forecast
+			fcmain.mainshock_mag,										// double mag_main
+			fcmain.mainshock_lat,										// double lat_main
+			fcmain.mainshock_lon,										// double lon_main
+			fcmain.mainshock_depth										// double depth_main
+		);
+
+		return new ForecastAndCatalogInfo (fc_info, catalog_info);
+	}
+
+
 	//----- Construction -----
 
 	// Default constructor.
@@ -802,6 +1303,7 @@ public class ForecastResults implements Marshalable {
 		calc_generic_results (fcmain, params);
 		calc_seq_spec_results (fcmain, params, f_seq_spec);
 		calc_bayesian_results (fcmain, params);
+		calc_etas_results (fcmain, params);
 		return;
 	}
 
@@ -819,6 +1321,7 @@ public class ForecastResults implements Marshalable {
 		calc_generic_results (fcmain, params);
 		calc_seq_spec_results (fcmain, params, f_seq_spec);
 		calc_bayesian_results (fcmain, params);
+		calc_etas_results (fcmain, params);
 		return;
 	}
 
@@ -829,14 +1332,59 @@ public class ForecastResults implements Marshalable {
 		rebuild_generic_results (fcmain, params);
 		rebuild_seq_spec_results (fcmain, params);
 		rebuild_bayesian_results (fcmain, params);
+		rebuild_etas_results (fcmain, params);
+		return;
+	}
+
+	// These variables are used to pass information from calc_catalog_only to calc_after_catalog.
+	// These variables are not marshaled.
+
+	private boolean saved_f_seq_spec = true;		// saved value of f_seq_spec
+	private boolean f_did_catalog_only = false;		// true if calc_catalog_only completed successfully
+
+	// Calculate only the catalog, not doing any forecasts.
+	// Note: For consistency, parameters are the same as calc_all, although
+	// not all affect the result.  This function supports testing, and can also
+	// be used to examine the catalog before decided whether to compute forecasts.
+
+	public void calc_catalog_only (long the_result_time, long the_advisory_lag, String the_injectable_text, ForecastMainshock fcmain, ForecastParameters params, boolean f_seq_spec) {
+		result_time = the_result_time;
+		advisory_lag = the_advisory_lag;
+		injectable_text = ((the_injectable_text == null) ? "" : the_injectable_text);
+		calc_catalog_results (fcmain, params);
+
+		saved_f_seq_spec = f_seq_spec;
+		f_did_catalog_only = true;
+		return;
+	}
+
+	// Calculate forecasts, after a call to calc_catalog_only.
+	// Calling calc_catalog_only followed by calc_after_catalog is equivalent to calling calc_all.
+	// This allows the caller to examine the catalog before deciding whether to compute forecasts.
+
+	public void calc_after_catalog (ForecastMainshock fcmain, ForecastParameters params) {
+		if (!( f_did_catalog_only )) {
+			throw new IllegalStateException ("ForecastResults.calc_after_catalog: Did not complete call to calc_catalog_only");
+		}
+		boolean f_seq_spec = saved_f_seq_spec;
+
+		calc_generic_results (fcmain, params);
+		calc_seq_spec_results (fcmain, params, f_seq_spec);
+		calc_bayesian_results (fcmain, params);
+		calc_etas_results (fcmain, params);
 		return;
 	}
 
 	// Pick one of the models to be sent to PDL, and set the corresponding xxxx_pdl flag.
-	// Models are picked in priority order: Bayesian, sequence specific, and generic.
+	// Models are picked in priority order: ETAS, Bayesian, sequence specific, and generic.
 	// Returns the JSON to be sent to PDL, or null if none.
 
 	public String pick_pdl_model () {
+
+		if (has_etas_json()) {
+			etas_pdl = true;
+			return get_etas_json();
+		}
 
 		if (bayesian_result_avail) {
 			if (bayesian_json.length() > 0) {
@@ -872,6 +1420,10 @@ public class ForecastResults implements Marshalable {
 
 	public String get_pdl_model () {
 
+		if (etas_pdl) {
+			return get_etas_json();
+		}
+
 		if (bayesian_pdl) {
 			return bayesian_json;
 		}
@@ -885,6 +1437,33 @@ public class ForecastResults implements Marshalable {
 		}
 	
 		return null;
+	}
+
+	// Log calculation results, and also write some logging info to standard out.
+	// If sg is null, just write info to standard out.
+
+	public void write_calc_log (ServerGroup sg) {
+
+		// If we have ETAS log info ...
+
+		if (etas_result_avail && etas_log_info != null) {
+
+			// Write log entry
+
+			if (sg != null) {
+				sg.log_sup.report_etas_results (etas_log_info);
+			}
+
+			// Accumulate global ETAS log info, and display it
+
+			String global_stats = etas_log_info.apply_to_global_accum();
+			if (global_stats != null && global_stats.length() > 0) {
+				System.out.println ();
+				System.out.println (global_stats);
+			}
+		}
+
+		return;
 	}
 
 	// Display our contents
@@ -908,6 +1487,8 @@ public class ForecastResults implements Marshalable {
 			result.append ("catalog_max_event_id = " + catalog_max_event_id + "\n");
 			result.append ("catalog_aftershocks = " + ((catalog_aftershocks == null) ? "null" : "available") + "\n");
 			result.append ("catalog_comcat_aftershocks = " + ((catalog_comcat_aftershocks == null) ? "null" : "available") + "\n");
+			result.append ("catalog_fit_start_days = " + catalog_fit_start_days + "\n");
+			result.append ("catalog_fit_end_days = " + catalog_fit_end_days + "\n");
 		}
 
 		result.append ("generic_result_avail = " + generic_result_avail + "\n");
@@ -934,6 +1515,82 @@ public class ForecastResults implements Marshalable {
 			result.append ("bayesian_model = " + ((bayesian_model == null) ? "null" : "available") + "\n");
 		}
 
+		result.append ("etas_result_avail = " + etas_result_avail + "\n");
+		if (etas_result_avail) {
+			result.append ("etas_rescode = " + OEExecEnvironment.etas_result_to_string (etas_rescode) + "\n");
+			result.append ("etas_outcome" + ((etas_outcome == null) ? " = null\n" : (":\n" + etas_outcome.toString())));
+			result.append ("etas_log_info" + ((etas_log_info == null) ? " = null\n" : (":\n" + etas_log_info.toString())));
+			result.append ("etas_pdl = " + etas_pdl + "\n");
+		}
+
+		return result.toString();
+	}
+
+	// Display our contents, with the JSON strings in display format.
+
+	public String to_display_string () {
+		StringBuilder result = new StringBuilder();
+
+		result.append ("ForecastResults:" + "\n");
+
+		result.append ("result_time = " + result_time + "\n");
+		result.append ("advisory_lag = " + advisory_lag + "\n");
+		result.append ("injectable_text = " + injectable_text + "\n");
+
+		result.append ("catalog_result_avail = " + catalog_result_avail + "\n");
+		if (catalog_result_avail) {
+			result.append ("catalog_start_time = " + catalog_start_time + "\n");
+			result.append ("catalog_end_time = " + catalog_end_time + "\n");
+			result.append ("catalog_eqk_count = " + catalog_eqk_count + "\n");
+			result.append ("catalog_max_mag = " + catalog_max_mag + "\n");
+			result.append ("catalog_max_event_id = " + catalog_max_event_id + "\n");
+			result.append ("catalog_aftershocks = " + ((catalog_aftershocks == null) ? "null" : "available") + "\n");
+			result.append ("catalog_comcat_aftershocks = " + ((catalog_comcat_aftershocks == null) ? "null" : "available") + "\n");
+			result.append ("catalog_fit_start_days = " + catalog_fit_start_days + "\n");
+			result.append ("catalog_fit_end_days = " + catalog_fit_end_days + "\n");
+		}
+
+		result.append ("generic_result_avail = " + generic_result_avail + "\n");
+		if (generic_result_avail) {
+			result.append ("generic_summary:\n" + generic_summary.toString() + "\n");
+			result.append ("generic_pdl = " + generic_pdl + "\n");
+			result.append ("generic_model = " + ((generic_model == null) ? "null" : "available") + "\n");
+			result.append ("generic_json:" + "\n");
+			if (generic_json.length() > 0) {
+				result.append (MarshalUtils.display_json_string (generic_json));
+			}
+		}
+
+		result.append ("seq_spec_result_avail = " + seq_spec_result_avail + "\n");
+		if (seq_spec_result_avail) {
+			result.append ("seq_spec_summary:\n" + seq_spec_summary.toString() + "\n");
+			result.append ("seq_spec_pdl = " + seq_spec_pdl + "\n");
+			result.append ("seq_spec_model = " + ((seq_spec_model == null) ? "null" : "available") + "\n");
+			result.append ("seq_spec_json:" + "\n");
+			if (seq_spec_json.length() > 0) {
+				result.append (MarshalUtils.display_json_string (seq_spec_json));
+			}
+		}
+
+		result.append ("bayesian_result_avail = " + bayesian_result_avail + "\n");
+		if (bayesian_result_avail) {
+			result.append ("bayesian_summary:\n" + bayesian_summary.toString() + "\n");
+			result.append ("bayesian_pdl = " + bayesian_pdl + "\n");
+			result.append ("bayesian_model = " + ((bayesian_model == null) ? "null" : "available") + "\n");
+			result.append ("bayesian_json:" + "\n");
+			if (bayesian_json.length() > 0) {
+				result.append (MarshalUtils.display_json_string (bayesian_json));
+			}
+		}
+
+		result.append ("etas_result_avail = " + etas_result_avail + "\n");
+		if (etas_result_avail) {
+			result.append ("etas_rescode = " + OEExecEnvironment.etas_result_to_string (etas_rescode) + "\n");
+			result.append ("etas_log_info" + ((etas_log_info == null) ? " = null\n" : (":\n" + etas_log_info.toString())));
+			result.append ("etas_pdl = " + etas_pdl + "\n");
+			result.append ("etas_outcome" + ((etas_outcome == null) ? " = null\n" : (":\n" + etas_outcome.to_display_string())));
+		}
+
 		return result.toString();
 	}
 
@@ -945,6 +1602,7 @@ public class ForecastResults implements Marshalable {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 23001;
+	private static final int MARSHAL_VER_2 = 23002;
 
 	private static final String M_VERSION_NAME = "ForecastResults";
 
@@ -967,42 +1625,99 @@ public class ForecastResults implements Marshalable {
 
 		// Version
 
-		writer.marshalInt (M_VERSION_NAME, MARSHAL_VER_1);
+		int ver = MARSHAL_VER_2;
+
+		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Contents
 
-		writer.marshalLong   ("result_time"    , result_time    );
-		writer.marshalLong   ("advisory_lag"   , advisory_lag   );
-		writer.marshalString ("injectable_text", injectable_text);
+		switch (ver) {
 
-		writer.marshalBoolean ("catalog_result_avail", catalog_result_avail);
-		if (catalog_result_avail) {
-			writer.marshalLong   ("catalog_start_time"  , catalog_start_time  );
-			writer.marshalLong   ("catalog_end_time"    , catalog_end_time    );
-			writer.marshalInt    ("catalog_eqk_count"   , catalog_eqk_count   );
-			writer.marshalDouble ("catalog_max_mag"     , catalog_max_mag     );
-			writer.marshalString ("catalog_max_event_id", catalog_max_event_id);
-		}
+		case MARSHAL_VER_1:
 
-		writer.marshalBoolean ("generic_result_avail", generic_result_avail);
-		if (generic_result_avail) {
-			generic_summary.marshal (writer, "generic_summary");
-			writer.marshalJsonString ("generic_json", generic_json);
-			writer.marshalBoolean    ("generic_pdl" , generic_pdl );
-		}
+			writer.marshalLong   ("result_time"    , result_time    );
+			writer.marshalLong   ("advisory_lag"   , advisory_lag   );
+			writer.marshalString ("injectable_text", injectable_text);
 
-		writer.marshalBoolean ("seq_spec_result_avail", seq_spec_result_avail);
-		if (seq_spec_result_avail) {
-			seq_spec_summary.marshal (writer, "seq_spec_summary");
-			writer.marshalJsonString ("seq_spec_json", seq_spec_json);
-			writer.marshalBoolean    ("seq_spec_pdl" , seq_spec_pdl );
-		}
+			writer.marshalBoolean ("catalog_result_avail", catalog_result_avail);
+			if (catalog_result_avail) {
+				writer.marshalLong   ("catalog_start_time"  , catalog_start_time  );
+				writer.marshalLong   ("catalog_end_time"    , catalog_end_time    );
+				writer.marshalInt    ("catalog_eqk_count"   , catalog_eqk_count   );
+				writer.marshalDouble ("catalog_max_mag"     , catalog_max_mag     );
+				writer.marshalString ("catalog_max_event_id", catalog_max_event_id);
+			}
 
-		writer.marshalBoolean ("bayesian_result_avail", bayesian_result_avail);
-		if (bayesian_result_avail) {
-			bayesian_summary.marshal (writer, "bayesian_summary");
-			writer.marshalJsonString ("bayesian_json", bayesian_json);
-			writer.marshalBoolean    ("bayesian_pdl" , bayesian_pdl );
+			writer.marshalBoolean ("generic_result_avail", generic_result_avail);
+			if (generic_result_avail) {
+				generic_summary.marshal (writer, "generic_summary");
+				writer.marshalJsonString ("generic_json", generic_json);
+				writer.marshalBoolean    ("generic_pdl" , generic_pdl );
+			}
+
+			writer.marshalBoolean ("seq_spec_result_avail", seq_spec_result_avail);
+			if (seq_spec_result_avail) {
+				seq_spec_summary.marshal (writer, "seq_spec_summary");
+				writer.marshalJsonString ("seq_spec_json", seq_spec_json);
+				writer.marshalBoolean    ("seq_spec_pdl" , seq_spec_pdl );
+			}
+
+			writer.marshalBoolean ("bayesian_result_avail", bayesian_result_avail);
+			if (bayesian_result_avail) {
+				bayesian_summary.marshal (writer, "bayesian_summary");
+				writer.marshalJsonString ("bayesian_json", bayesian_json);
+				writer.marshalBoolean    ("bayesian_pdl" , bayesian_pdl );
+			}
+	
+			break;
+
+		case MARSHAL_VER_2:
+
+			writer.marshalLong   ("result_time"    , result_time    );
+			writer.marshalLong   ("advisory_lag"   , advisory_lag   );
+			writer.marshalString ("injectable_text", injectable_text);
+
+			writer.marshalBoolean ("catalog_result_avail", catalog_result_avail);
+			if (catalog_result_avail) {
+				writer.marshalLong   ("catalog_start_time"  , catalog_start_time  );
+				writer.marshalLong   ("catalog_end_time"    , catalog_end_time    );
+				writer.marshalInt    ("catalog_eqk_count"   , catalog_eqk_count   );
+				writer.marshalDouble ("catalog_max_mag"     , catalog_max_mag     );
+				writer.marshalString ("catalog_max_event_id", catalog_max_event_id);
+
+				writer.marshalDouble ("catalog_fit_start_days", catalog_fit_start_days);
+				writer.marshalDouble ("catalog_fit_end_days"  , catalog_fit_end_days  );
+			}
+
+			writer.marshalBoolean ("generic_result_avail", generic_result_avail);
+			if (generic_result_avail) {
+				generic_summary.marshal (writer, "generic_summary");
+				writer.marshalJsonString ("generic_json", generic_json);
+				writer.marshalBoolean    ("generic_pdl" , generic_pdl );
+			}
+
+			writer.marshalBoolean ("seq_spec_result_avail", seq_spec_result_avail);
+			if (seq_spec_result_avail) {
+				seq_spec_summary.marshal (writer, "seq_spec_summary");
+				writer.marshalJsonString ("seq_spec_json", seq_spec_json);
+				writer.marshalBoolean    ("seq_spec_pdl" , seq_spec_pdl );
+			}
+
+			writer.marshalBoolean ("bayesian_result_avail", bayesian_result_avail);
+			if (bayesian_result_avail) {
+				bayesian_summary.marshal (writer, "bayesian_summary");
+				writer.marshalJsonString ("bayesian_json", bayesian_json);
+				writer.marshalBoolean    ("bayesian_pdl" , bayesian_pdl );
+			}
+
+			writer.marshalBoolean ("etas_result_avail", etas_result_avail);
+			if (etas_result_avail) {
+				writer.marshalInt     ("etas_rescode"   , etas_rescode   );
+				OEtasOutcome.marshal_poly (writer, "etas_outcome", etas_outcome);
+				writer.marshalBoolean ("etas_pdl"       , etas_pdl       );
+			}
+
+			break;
 		}
 	
 		return;
@@ -1014,55 +1729,132 @@ public class ForecastResults implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
-		result_time     = reader.unmarshalLong   ("result_time"    );
-		advisory_lag    = reader.unmarshalLong   ("advisory_lag"   );
-		injectable_text = reader.unmarshalString ("injectable_text");
+		switch (ver) {
 
-		catalog_result_avail = reader.unmarshalBoolean ("catalog_result_avail");
-		if (catalog_result_avail) {
-			catalog_start_time   = reader.unmarshalLong   ("catalog_start_time"  );
-			catalog_end_time     = reader.unmarshalLong   ("catalog_end_time"    );
-			catalog_eqk_count    = reader.unmarshalInt    ("catalog_eqk_count"   );
-			catalog_max_mag      = reader.unmarshalDouble ("catalog_max_mag"     );
-			catalog_max_event_id = reader.unmarshalString ("catalog_max_event_id");
-			catalog_aftershocks = null;
-			catalog_comcat_aftershocks = null;
-		} else {
-			set_default_catalog_results();
-		}
+		case MARSHAL_VER_1:
 
-		generic_result_avail = reader.unmarshalBoolean ("generic_result_avail");
-		if (generic_result_avail) {
-			generic_summary = (new RJ_Summary_Generic()).unmarshal (reader, "generic_summary");
-			generic_json    = reader.unmarshalJsonString ("generic_json");
-			generic_pdl     = reader.unmarshalBoolean    ("generic_pdl" );
-			generic_model   = null;
-		} else {
-			set_default_generic_results();
-		}
+			result_time     = reader.unmarshalLong   ("result_time"    );
+			advisory_lag    = reader.unmarshalLong   ("advisory_lag"   );
+			injectable_text = reader.unmarshalString ("injectable_text");
 
-		seq_spec_result_avail = reader.unmarshalBoolean ("seq_spec_result_avail");
-		if (seq_spec_result_avail) {
-			seq_spec_summary = (new RJ_Summary_SequenceSpecific()).unmarshal (reader, "seq_spec_summary");
-			seq_spec_json    = reader.unmarshalJsonString ("seq_spec_json");
-			seq_spec_pdl     = reader.unmarshalBoolean    ("seq_spec_pdl" );
-			seq_spec_model   = null;
-		} else {
-			set_default_seq_spec_results();
-		}
+			catalog_result_avail = reader.unmarshalBoolean ("catalog_result_avail");
+			if (catalog_result_avail) {
+				catalog_start_time   = reader.unmarshalLong   ("catalog_start_time"  );
+				catalog_end_time     = reader.unmarshalLong   ("catalog_end_time"    );
+				catalog_eqk_count    = reader.unmarshalInt    ("catalog_eqk_count"   );
+				catalog_max_mag      = reader.unmarshalDouble ("catalog_max_mag"     );
+				catalog_max_event_id = reader.unmarshalString ("catalog_max_event_id");
+				catalog_aftershocks = null;
+				catalog_comcat_aftershocks = null;
 
-		bayesian_result_avail = reader.unmarshalBoolean ("bayesian_result_avail");
-		if (bayesian_result_avail) {
-			bayesian_summary = (new RJ_Summary_Bayesian()).unmarshal (reader, "bayesian_summary");
-			bayesian_json    = reader.unmarshalJsonString ("bayesian_json");
-			bayesian_pdl     = reader.unmarshalBoolean    ("bayesian_pdl" );
-			bayesian_model   = null;
-		} else {
-			set_default_bayesian_results();
+				catalog_fit_start_days = SEARCH_PARAM_OMIT;
+				catalog_fit_end_days = SEARCH_PARAM_OMIT;
+			} else {
+				set_default_catalog_results();
+			}
+
+			generic_result_avail = reader.unmarshalBoolean ("generic_result_avail");
+			if (generic_result_avail) {
+				generic_summary = (new RJ_Summary_Generic()).unmarshal (reader, "generic_summary");
+				generic_json    = reader.unmarshalJsonString ("generic_json");
+				generic_pdl     = reader.unmarshalBoolean    ("generic_pdl" );
+				generic_model   = null;
+			} else {
+				set_default_generic_results();
+			}
+
+			seq_spec_result_avail = reader.unmarshalBoolean ("seq_spec_result_avail");
+			if (seq_spec_result_avail) {
+				seq_spec_summary = (new RJ_Summary_SequenceSpecific()).unmarshal (reader, "seq_spec_summary");
+				seq_spec_json    = reader.unmarshalJsonString ("seq_spec_json");
+				seq_spec_pdl     = reader.unmarshalBoolean    ("seq_spec_pdl" );
+				seq_spec_model   = null;
+			} else {
+				set_default_seq_spec_results();
+			}
+
+			bayesian_result_avail = reader.unmarshalBoolean ("bayesian_result_avail");
+			if (bayesian_result_avail) {
+				bayesian_summary = (new RJ_Summary_Bayesian()).unmarshal (reader, "bayesian_summary");
+				bayesian_json    = reader.unmarshalJsonString ("bayesian_json");
+				bayesian_pdl     = reader.unmarshalBoolean    ("bayesian_pdl" );
+				bayesian_model   = null;
+			} else {
+				set_default_bayesian_results();
+			}
+
+			etas_result_avail = false;
+			set_default_etas_results();
+
+			break;
+
+		case MARSHAL_VER_2:
+
+			result_time     = reader.unmarshalLong   ("result_time"    );
+			advisory_lag    = reader.unmarshalLong   ("advisory_lag"   );
+			injectable_text = reader.unmarshalString ("injectable_text");
+
+			catalog_result_avail = reader.unmarshalBoolean ("catalog_result_avail");
+			if (catalog_result_avail) {
+				catalog_start_time   = reader.unmarshalLong   ("catalog_start_time"  );
+				catalog_end_time     = reader.unmarshalLong   ("catalog_end_time"    );
+				catalog_eqk_count    = reader.unmarshalInt    ("catalog_eqk_count"   );
+				catalog_max_mag      = reader.unmarshalDouble ("catalog_max_mag"     );
+				catalog_max_event_id = reader.unmarshalString ("catalog_max_event_id");
+				catalog_aftershocks = null;
+				catalog_comcat_aftershocks = null;
+
+				catalog_fit_start_days = reader.unmarshalDouble ("catalog_fit_start_days");
+				catalog_fit_end_days   = reader.unmarshalDouble ("catalog_fit_end_days"  );
+			} else {
+				set_default_catalog_results();
+			}
+
+			generic_result_avail = reader.unmarshalBoolean ("generic_result_avail");
+			if (generic_result_avail) {
+				generic_summary = (new RJ_Summary_Generic()).unmarshal (reader, "generic_summary");
+				generic_json    = reader.unmarshalJsonString ("generic_json");
+				generic_pdl     = reader.unmarshalBoolean    ("generic_pdl" );
+				generic_model   = null;
+			} else {
+				set_default_generic_results();
+			}
+
+			seq_spec_result_avail = reader.unmarshalBoolean ("seq_spec_result_avail");
+			if (seq_spec_result_avail) {
+				seq_spec_summary = (new RJ_Summary_SequenceSpecific()).unmarshal (reader, "seq_spec_summary");
+				seq_spec_json    = reader.unmarshalJsonString ("seq_spec_json");
+				seq_spec_pdl     = reader.unmarshalBoolean    ("seq_spec_pdl" );
+				seq_spec_model   = null;
+			} else {
+				set_default_seq_spec_results();
+			}
+
+			bayesian_result_avail = reader.unmarshalBoolean ("bayesian_result_avail");
+			if (bayesian_result_avail) {
+				bayesian_summary = (new RJ_Summary_Bayesian()).unmarshal (reader, "bayesian_summary");
+				bayesian_json    = reader.unmarshalJsonString ("bayesian_json");
+				bayesian_pdl     = reader.unmarshalBoolean    ("bayesian_pdl" );
+				bayesian_model   = null;
+			} else {
+				set_default_bayesian_results();
+			}
+
+			etas_result_avail = reader.unmarshalBoolean ("etas_result_avail");
+			if (etas_result_avail) {
+				etas_rescode  = reader.unmarshalInt     ("etas_rescode");
+				etas_outcome  = OEtasOutcome.unmarshal_poly (reader, "etas_outcome");
+				etas_log_info = null;
+				etas_pdl      = reader.unmarshalBoolean ("etas_pdl"    );
+			} else {
+				set_default_etas_results();
+			}
+
+			break;
 		}
 
 		return;
@@ -1229,7 +2021,7 @@ public class ForecastResults implements Marshalable {
 
 				// Set the forecast time to be 7 days after the mainshock
 
-				long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+				long the_forecast_lag = SimpleUtils.days_to_millis (7.0);
 
 				// Get parameters
 
@@ -1245,6 +2037,7 @@ public class ForecastResults implements Marshalable {
 
 				ForecastResults results = new ForecastResults();
 				results.calc_all (fcmain.mainshock_time + the_forecast_lag, ADVISORY_LAG_WEEK, "test1 injectable.", fcmain, params, true);
+				results.write_calc_log (null);
 
 				// Display them
 
@@ -1299,7 +2092,7 @@ public class ForecastResults implements Marshalable {
 
 				// Set the forecast time to be 7 days after the mainshock
 
-				long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+				long the_forecast_lag = SimpleUtils.days_to_millis (7.0);
 
 				// Get parameters
 
@@ -1315,6 +2108,7 @@ public class ForecastResults implements Marshalable {
 
 				ForecastResults results = new ForecastResults();
 				results.calc_all (fcmain.mainshock_time + the_forecast_lag, ADVISORY_LAG_WEEK, "", fcmain, params, true);
+				results.write_calc_log (null);
 
 				// Display them
 
@@ -1399,7 +2193,7 @@ public class ForecastResults implements Marshalable {
 
 				// Set the forecast time to be lag_days days after the mainshock
 
-				long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * lag_days);
+				long the_forecast_lag = SimpleUtils.days_to_millis (lag_days);
 
 				// Get the advisory lag
 
@@ -1431,6 +2225,7 @@ public class ForecastResults implements Marshalable {
 
 				ForecastResults results = new ForecastResults();
 				results.calc_all (fcmain.mainshock_time + the_forecast_lag, advisory_lag, "test3 injectable.", fcmain, params, the_forecast_lag >= action_config.get_seq_spec_min_lag());
+				results.write_calc_log (null);
 
 				// Display them
 
@@ -1487,7 +2282,7 @@ public class ForecastResults implements Marshalable {
 
 				// Set the forecast time to be lag_days days after the mainshock
 
-				long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * lag_days);
+				long the_forecast_lag = SimpleUtils.days_to_millis (lag_days);
 
 				// Get the advisory lag
 
@@ -1508,6 +2303,7 @@ public class ForecastResults implements Marshalable {
 
 				ForecastResults results = new ForecastResults();
 				results.calc_all (fcmain.mainshock_time + the_forecast_lag, the_advisory_lag, "", fcmain, params, forecast_lag_to_f_seq_spec (the_forecast_lag, action_config));
+				results.write_calc_log (null);
 
 				// Display them
 
@@ -1626,7 +2422,7 @@ public class ForecastResults implements Marshalable {
 
 				// Set the forecast time to be 7 days after the mainshock
 
-				long the_forecast_lag = Math.round(ComcatOAFAccessor.day_millis * 7.0);
+				long the_forecast_lag = SimpleUtils.days_to_millis (7.0);
 
 				// Get parameters
 
@@ -1642,6 +2438,7 @@ public class ForecastResults implements Marshalable {
 
 				ForecastResults results = new ForecastResults();
 				results.calc_all (fcmain.mainshock_time + the_forecast_lag, ADVISORY_LAG_WEEK, "test1 injectable.", fcmain, params, true);
+				results.write_calc_log (null);
 
 				// Display them
 
@@ -1674,6 +2471,131 @@ public class ForecastResults implements Marshalable {
 					System.out.println ("");
 					System.out.println (show_prob_dist (results.bayesian_model, mag, start_time));
 				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6  pdl_enable  event_id  f_apc
+		// Get parameters for the event, and display them.
+		// Then get results for the event, and display them.
+		// Then, for each RJ model, compute and display the marginals (may produce lengthy output).
+		// If f_apc is true, then sequence specific parameters allow all of a/p/c to vary.
+		// The pdl_enable can be used to control ETAS: 0 = default, 100 = disable, 200 = enable.
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// 4 additional arguments
+
+			if (args.length != 4) {
+				System.err.println ("ForecastResults : Invalid 'test6' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);	// 0 = ETAS default, 100 = disable ETAS, 200 = enable ETAS
+				String the_event_id = args[2];
+				boolean f_apc = Boolean.parseBoolean (args[3]);
+
+				// Say hello
+
+				System.out.println ("Getting results and marginal distributions");
+				System.out.println ("pdl_enable = " + pdl_enable);
+				System.out.println ("the_event_id = " + the_event_id);
+				System.out.println ("f_apc = " + f_apc);
+
+				// Set the PDL enable code (ETAS enable or disable)
+
+				ServerConfig.set_opmode (pdl_enable);
+
+				// Fetch just the mainshock info
+
+				ForecastMainshock fcmain = new ForecastMainshock();
+				fcmain.setup_mainshock_only (the_event_id);
+
+				System.out.println ("");
+				System.out.println (fcmain.toString());
+
+				// Set the forecast time to be 7 days after the mainshock
+
+				long the_forecast_lag = SimpleUtils.days_to_millis (7.0);
+
+				// Get parameters
+
+				ForecastParameters params = new ForecastParameters();
+				params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+				if (f_apc) {
+					params.seq_spec_params = new SeqSpecRJ_Parameters (
+						1.0,	// double b
+						-4.5,	// double min_a
+						-0.5,	// double max_a
+						45,		// int    num_a
+						0.5,	// double min_p
+						2.0,	// double max_p
+						37,		// int    num_p
+						0.01,	// double min_c
+						1.00,	// double max_c
+						17		// int    num_c
+					);
+				}
+
+				// Display them
+
+				System.out.println ("");
+				System.out.println (params.toString());
+
+				// Get results
+
+				ForecastResults results = new ForecastResults();
+				results.calc_all (fcmain.mainshock_time + the_forecast_lag, ADVISORY_LAG_WEEK, "test1 injectable.", fcmain, params, true);
+				results.write_calc_log (null);
+
+				// Display them
+
+				System.out.println ("");
+				System.out.println (results.toString());
+
+				// Generic forecast marginals
+
+				if (results.generic_result_avail) {
+					System.out.println ("");
+					System.out.println ("***** Generic forecast marginals *****");
+					System.out.println ("");
+					System.out.println (results.generic_model.make_rj_marginals(true).extended_string_2());
+				}
+
+				// Sequence specific forecast marginals
+
+				if (results.seq_spec_result_avail) {
+					System.out.println ("");
+					System.out.println ("***** Sequence specific forecast marginals *****");
+					System.out.println ("");
+					System.out.println (results.seq_spec_model.make_rj_marginals(true).extended_string_2());
+				}
+
+				// Bayesian forecast marginals
+
+				if (results.bayesian_result_avail) {
+					System.out.println ("");
+					System.out.println ("***** Bayesian forecast marginals *****");
+					System.out.println ("");
+					System.out.println (results.bayesian_model.make_rj_marginals(true).extended_string_2());
+				}
+
+				// Done
+
+				System.out.println ();
+				System.out.println ("Done");
 
 			} catch (Exception e) {
 				e.printStackTrace();

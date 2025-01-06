@@ -60,6 +60,7 @@ public class OEDiscreteRangeSingle extends OEDiscreteRange {
 	// The value is guaranteed to lie between get_range_min() and get_range_max(),
 	// but the definition of "middle" varies by subclass.
 
+	@Override
 	public double get_range_middle () {
 		return range_value;
 	}

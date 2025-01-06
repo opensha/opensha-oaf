@@ -57,11 +57,13 @@ max_lon = -122.20859077660604
 center_lat = 38.23666713205694
 center_lon = -122.3231640354888
 radius = 10.0
-min_days = 0.0
+min_days = -60.0
 max_days = 0.014
 min_depth = -5.0
 max_depth = 700.0
 min_mag = 2.45
+fit_start_inset = 0.0
+fit_end_inset = 0.0
 evseq_cfg_fetch_meth = 0
 evseq_cfg_avail = true
 evseq_cfg_params = EventSequenceParameters:
@@ -71,11 +73,11 @@ etas_fetch_meth = 0
 etas_avail = false
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-08-24T10:40:53.670Z&format=geojson&latitude=38.23667&limit=20000&longitude=-122.32316&maxdepth=700.000&maxradius=0.08999&mindepth=-5.000&minmagnitude=2.450&orderby=time&starttime=2014-08-24T10:20:44.070Z
-Count of events received = 4
-Count of events after filtering = 3
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2014-08-24T10:40:53.670Z&format=geojson&latitude=38.23667&limit=20000&longitude=-122.32316&maxdepth=700.000&maxradius=0.08999&mindepth=-5.000&minmagnitude=2.450&orderby=time&starttime=2014-06-25T10:20:44.070Z
+Count of events received = 6
+Count of events after filtering = 5
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 3
+Total number of events returned = 5
 b=1.000  magMain=6.020  apcTot=401  apcSup=364
 a: like=-2.640  mean=-2.640  sdev=0.4798  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=4  hi=368
 p: like=0.9600  mean=0.9600  sdev=0.000  min=0.9600  max=0.9600  delta=0.000  num=1  lo=0  hi=1
@@ -108,13 +110,15 @@ result_time = 1408876853670
 advisory_lag = 604800000
 injectable_text = 
 catalog_result_avail = true
-catalog_start_time = 1408875644070
+catalog_start_time = 1403691644070
 catalog_end_time = 1408876853670
-catalog_eqk_count = 3
+catalog_eqk_count = 5
 catalog_max_mag = 3.81
 catalog_max_event_id = nc72282716
 catalog_aftershocks = available
 catalog_comcat_aftershocks = available
+catalog_fit_start_days = 0.0
+catalog_fit_end_days = 0.014
 generic_result_avail = true
 generic_summary:
 b                    = 1.0
@@ -157,20 +161,23 @@ generic_pdl = false
 generic_model = available
 seq_spec_result_avail = false
 bayesian_result_avail = false
+etas_result_avail = false
 
 
 {
   "ClassType": 23001,
-  "ForecastResults": 23001,
+  "ForecastResults": 23002,
   "result_time": 1408876853670,
   "advisory_lag": 604800000,
   "injectable_text": "",
   "catalog_result_avail": true,
-  "catalog_start_time": 1408875644070,
+  "catalog_start_time": 1403691644070,
   "catalog_end_time": 1408876853670,
-  "catalog_eqk_count": 3,
+  "catalog_eqk_count": 5,
   "catalog_max_mag": 3.81,
   "catalog_max_event_id": "nc72282716",
+  "catalog_fit_start_days": 0.0,
+  "catalog_fit_end_days": 0.014,
   "generic_result_avail": true,
   "generic_summary": {
     "RJ_Summary_Generic": 5001,
@@ -1010,7 +1017,8 @@ bayesian_result_avail = false
   },
   "generic_pdl": false,
   "seq_spec_result_avail": false,
-  "bayesian_result_avail": false
+  "bayesian_result_avail": false,
+  "etas_result_avail": false
 }
 
 
@@ -1019,13 +1027,15 @@ result_time = 1408876853670
 advisory_lag = 604800000
 injectable_text = 
 catalog_result_avail = true
-catalog_start_time = 1408875644070
+catalog_start_time = 1403691644070
 catalog_end_time = 1408876853670
-catalog_eqk_count = 3
+catalog_eqk_count = 5
 catalog_max_mag = 3.81
 catalog_max_event_id = nc72282716
 catalog_aftershocks = null
 catalog_comcat_aftershocks = null
+catalog_fit_start_days = 0.0
+catalog_fit_end_days = 0.014
 generic_result_avail = true
 generic_summary:
 b                    = 1.0
@@ -1068,6 +1078,7 @@ generic_pdl = false
 generic_model = null
 seq_spec_result_avail = false
 bayesian_result_avail = false
+etas_result_avail = false
 
 b=1.000  magMain=6.020  apcTot=401  apcSup=364
 a: like=-2.640  mean=-2.640  sdev=0.4798  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=4  hi=368
@@ -1080,13 +1091,15 @@ result_time = 1408876853670
 advisory_lag = 604800000
 injectable_text = 
 catalog_result_avail = true
-catalog_start_time = 1408875644070
+catalog_start_time = 1403691644070
 catalog_end_time = 1408876853670
-catalog_eqk_count = 3
+catalog_eqk_count = 5
 catalog_max_mag = 3.81
 catalog_max_event_id = nc72282716
 catalog_aftershocks = available
 catalog_comcat_aftershocks = null
+catalog_fit_start_days = 0.0
+catalog_fit_end_days = 0.014
 generic_result_avail = true
 generic_summary:
 b                    = 1.0
@@ -1129,9 +1142,12 @@ generic_pdl = false
 generic_model = available
 seq_spec_result_avail = false
 bayesian_result_avail = false
+etas_result_avail = false
 
 
-Saved catalog size = 3
-0: time = 2014-08-24 10:21:45 UTC, mag = 3.810, lat = 38.23500, lon = -122.31980, depth = 9.000
-1: time = 2014-08-24 10:24:44 UTC, mag = 3.510, lat = 38.25980, lon = -122.33730, depth = 10.340
-2: time = 2014-08-24 10:27:16 UTC, mag = 2.470, lat = 38.23850, lon = -122.34180, depth = 8.930
+Saved catalog size = 5
+0: time = 2014-07-20 04:14:03 UTC, mag = 2.720, lat = 38.25270, lon = -122.32500, depth = 6.690
+1: time = 2014-08-05 12:40:01 UTC, mag = 3.030, lat = 38.25570, lon = -122.32320, depth = 8.110
+2: time = 2014-08-24 10:21:45 UTC, mag = 3.810, lat = 38.23500, lon = -122.31980, depth = 9.000
+3: time = 2014-08-24 10:24:44 UTC, mag = 3.510, lat = 38.25980, lon = -122.33730, depth = 10.340
+4: time = 2014-08-24 10:27:16 UTC, mag = 2.470, lat = 38.23850, lon = -122.34180, depth = 8.930

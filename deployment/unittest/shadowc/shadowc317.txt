@@ -1,0 +1,48 @@
+shadowc317 rj.AftershockStatsShadow test3 usp000cg6m 365
+Fetching event: usp000cg6m
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000cg6m.geojson
+Count of events received = 1
+rup_event_id = usp000cg6m
+rup_time = 1072500925460 (2003-12-27 04:55:25 UTC)
+rup_mag = 6.1
+rup_lat = -22.107
+rup_lon = 169.35
+rup_depth = 10.0
+
+find_shadow_v3 parameters:
+time_now = 1104036925460 (2004-12-26 04:55:25 UTC)
+search_radius = 2000.0
+search_time_lo = 1040964925460 (2002-12-27 04:55:25 UTC)
+search_time_hi = 1104036925460 (2004-12-26 04:55:25 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2004-12-26T04:55:25.460Z&format=geojson&latitude=-22.10700&limit=20000&longitude=169.35000&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2002-12-27T04:55:25.460Z
+Count of events received = 4
+Count of events after filtering = 4
+Total number of events returned = 4
+AftershockStatsShadow.find_shadow_v3: Found 4 potential shadowing events for mainshock usp000cg6m for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2003-12-27T16:00:59.450Z&format=geojson&latitude=-22.10700&limit=20000&longitude=169.35000&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.100&orderby=time&starttime=2002-12-27T04:55:25.460Z
+Count of events received = 3
+Count of events after filtering = 2
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 2
+AftershockStatsShadow.find_shadow_v3: Found 2 potential shadowing events for mainshock usp000cg6m for magnitude 6.10 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000cg6m is shadowed by event usp000cg90
+AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = 6.10, shadowing event magnitude = 7.30
+AftershockStatsShadow.find_shadow_v3: Distance = 44.044 km, time offset = -0.462 days
+AftershockStatsShadow.find_shadow_v3: Mainshock is an aftershock of event usp000cg55
+
+Event is shadowed by:
+shadow_event_id = usp000cg90
+shadow_time = 1072540859450 (2003-12-27 16:00:59 UTC)
+shadow_mag = 7.3
+shadow_lat = -22.015
+shadow_lon = 169.766
+shadow_depth = 10.0
+separation_km = 44.044
+separation_days = -0.462
+seq_end_time_abs = 1072500925460 (2003-12-27 04:55:25 UTC)
+seq_end_time_rel_days = 0.000

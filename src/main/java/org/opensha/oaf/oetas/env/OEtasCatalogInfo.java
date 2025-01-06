@@ -11,9 +11,14 @@ import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TestArgs;
 
+import org.opensha.oaf.oetas.OEConstants;
 import org.opensha.oaf.oetas.OEOrigin;
 
+import org.opensha.oaf.oetas.bay.OEBayFactoryParams;
+
 import org.opensha.oaf.rj.USGS_ForecastInfo;
+
+import org.opensha.commons.geo.Location;
 
 
 // Class to hold information describing an observed catalog being passed in to operational ETAS.
@@ -61,9 +66,45 @@ public class OEtasCatalogInfo implements Marshalable {
 	public double t_forecast;
 
 
+	//----- Mainshock information -----
+
+	// True if mainshock magnitude is available. [v2]
+
+	public boolean mag_main_avail;
+
+	// Mainshock magnitude (or another magnitude representing the sequence). [v2]
+
+	public double mag_main;
+
+	// True if mainshock location is available. [v2]
+
+	public boolean loc_main_avail;
+
+	// Mainshock location (latitude, longitude, depth) (or another location representing the sequence). [v2]
+
+	public double lat_main;
+	public double lon_main;
+	public double depth_main;
+
+
 
 
 	//----- Construction -----
+
+
+
+
+	// Clear the mainshock info.
+
+	private void clear_main_info () {
+		mag_main_avail	= false;
+		mag_main		= OEConstants.NO_MAG_NEG;
+		loc_main_avail	= false;
+		lat_main		= 0.0;
+		lon_main		= 0.0;
+		depth_main		= 0.0;
+		return;
+	}
 
 
 
@@ -80,6 +121,8 @@ public class OEtasCatalogInfo implements Marshalable {
 		t_data_end		= 0.0;
 		t_fitting		= 0.0;
 		t_forecast		= 0.0;
+
+		clear_main_info();
 		return;
 	}
 
@@ -96,6 +139,7 @@ public class OEtasCatalogInfo implements Marshalable {
 
 
 	// Set the values.
+	// This sets the mainshock magnitude and location to unavailable.
 
 	public final OEtasCatalogInfo set (
 		double magCat,
@@ -117,6 +161,56 @@ public class OEtasCatalogInfo implements Marshalable {
 		this.t_data_end		= t_data_end;
 		this.t_fitting		= t_fitting;
 		this.t_forecast		= t_forecast;
+
+		clear_main_info();
+		return this;
+	}
+
+
+
+
+	// Set the values.
+	// This sets the mainshock magnitude and location to available.
+
+	public final OEtasCatalogInfo set (
+		double magCat,
+		double magTop,
+		double capF,
+		double capG,
+		double capH,
+		double t_data_begin,
+		double t_data_end,
+		double t_fitting,
+		double t_forecast,
+		double mag_main,
+		double lat_main,
+		double lon_main,
+		double depth_main
+	) {
+		this.magCat			= magCat;
+		this.magTop			= magTop;
+		this.capF			= capF;
+		this.capG			= capG;
+		this.capH			= capH;
+		this.t_data_begin	= t_data_begin;
+		this.t_data_end		= t_data_end;
+		this.t_fitting		= t_fitting;
+		this.t_forecast		= t_forecast;
+
+		this.mag_main_avail	= true;
+		this.mag_main		= mag_main;
+		this.loc_main_avail	= true;
+		this.lat_main		= lat_main;
+		this.lon_main		= lon_main;
+		this.depth_main		= depth_main;
+
+		try {
+			Location loc_main = get_loc_main();
+		}
+		catch (Exception e) {
+			throw new IllegalArgumentException ("OEtasCatalogInfo.set: Invalid location: lat = " + this.lat_main + ", lon = " + this.lon_main + ", depth = " + this.depth_main, e);
+		}
+
 		return this;
 	}
 
@@ -135,6 +229,13 @@ public class OEtasCatalogInfo implements Marshalable {
 		this.t_data_end		= other.t_data_end;
 		this.t_fitting		= other.t_fitting;
 		this.t_forecast		= other.t_forecast;
+
+		this.mag_main_avail	= other.mag_main_avail;
+		this.mag_main		= other.mag_main;
+		this.loc_main_avail	= other.loc_main_avail;
+		this.lat_main		= other.lat_main;
+		this.lon_main		= other.lon_main;
+		this.depth_main		= other.depth_main;
 		return this;
 	}
 
@@ -159,12 +260,67 @@ public class OEtasCatalogInfo implements Marshalable {
 		result.append ("t_fitting = "    + t_fitting    + "\n");
 		result.append ("t_forecast = "   + t_forecast   + "\n");
 
+		result.append ("mag_main_avail = " + mag_main_avail + "\n");
+		if (mag_main_avail) {
+			result.append ("mag_main = " + mag_main + "\n");
+		}
+		result.append ("loc_main_avail = " + loc_main_avail + "\n");
+		if (loc_main_avail) {
+			result.append ("lat_main = " + lat_main + "\n");
+			result.append ("lon_main = " + lon_main + "\n");
+			result.append ("depth_main = " + depth_main + "\n");
+		}
+
 		return result.toString();
 	}
 
 
 
 	//----- Operations -----
+
+
+
+
+	// Get mainshock location as a Location.
+	// Caller must check that mainshock location is available.
+
+	public final Location get_loc_main () {
+		return new Location (lat_main, lon_main, depth_main);
+	}
+
+
+
+
+	// Get mainshock location as a Location, or null if not available..
+
+	public final Location get_loc_main_or_null () {
+		if (loc_main_avail) {
+			return new Location (lat_main, lon_main, depth_main);
+		}
+		return null;
+	}
+
+
+
+
+	// Get mainshock magnitude, or the special value OEConstants.NO_MAG_NEG if not available.
+	// Note: Special value must agree with the unknown value in OEBayFactoryParams.
+
+	public final double get_mag_main_or_special () {
+		if (mag_main_avail) {
+			return mag_main;
+		}
+		return OEConstants.NO_MAG_NEG;
+	}
+
+
+
+
+	// Get the Bayesian prior factory, using the mainshock info.
+
+	public final OEBayFactoryParams get_bay_factory_params () {
+		return new OEBayFactoryParams (get_mag_main_or_special(), get_loc_main_or_null());
+	}
 
 
 
@@ -241,6 +397,7 @@ public class OEtasCatalogInfo implements Marshalable {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 125001;
+	private static final int MARSHAL_VER_2 = 125002;
 
 	private static final String M_VERSION_NAME = "OEtasCatalogInfo";
 
@@ -250,7 +407,7 @@ public class OEtasCatalogInfo implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_1;
+		int ver = MARSHAL_VER_2;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -273,6 +430,33 @@ public class OEtasCatalogInfo implements Marshalable {
 		}
 		break;
 
+		case MARSHAL_VER_2: {
+
+			writer.marshalDouble ("magCat", magCat);
+			writer.marshalDouble ("magTop", magTop);
+			writer.marshalDouble ("capF", capF);
+			writer.marshalDouble ("capG", capG);
+			writer.marshalDouble ("capH", capH);
+			writer.marshalDouble ("t_data_begin", t_data_begin);
+			writer.marshalDouble ("t_data_end", t_data_end);
+			writer.marshalDouble ("t_fitting", t_fitting);
+			writer.marshalDouble ("t_forecast", t_forecast);
+
+			writer.marshalBoolean ("mag_main_avail", mag_main_avail);
+			if (mag_main_avail) {
+				writer.marshalDouble ("mag_main", mag_main);
+			}
+
+			writer.marshalBoolean ("loc_main_avail", loc_main_avail);
+			if (loc_main_avail) {
+				writer.marshalDouble ("lat_main", lat_main);
+				writer.marshalDouble ("lon_main", lon_main);
+				writer.marshalDouble ("depth_main", depth_main);
+			}
+
+		}
+		break;
+
 		}
 
 		return;
@@ -284,7 +468,7 @@ public class OEtasCatalogInfo implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
@@ -301,6 +485,47 @@ public class OEtasCatalogInfo implements Marshalable {
 			t_data_end = reader.unmarshalDouble ("t_data_end");
 			t_fitting = reader.unmarshalDouble ("t_fitting");
 			t_forecast = reader.unmarshalDouble ("t_forecast");
+
+			clear_main_info();
+
+		}
+		break;
+
+		case MARSHAL_VER_2: {
+
+			magCat = reader.unmarshalDouble ("magCat");
+			magTop = reader.unmarshalDouble ("magTop");
+			capF = reader.unmarshalDouble ("capF");
+			capG = reader.unmarshalDouble ("capG");
+			capH = reader.unmarshalDouble ("capH");
+			t_data_begin = reader.unmarshalDouble ("t_data_begin");
+			t_data_end = reader.unmarshalDouble ("t_data_end");
+			t_fitting = reader.unmarshalDouble ("t_fitting");
+			t_forecast = reader.unmarshalDouble ("t_forecast");
+
+			mag_main_avail = reader.unmarshalBoolean ("mag_main_avail");
+			if (mag_main_avail) {
+				mag_main = reader.unmarshalDouble ("mag_main");
+			} else {
+				mag_main = OEConstants.NO_MAG_NEG;
+			}
+
+			loc_main_avail = reader.unmarshalBoolean ("loc_main_avail");
+			if (loc_main_avail) {
+				lat_main = reader.unmarshalDouble ("lat_main");
+				lon_main = reader.unmarshalDouble ("lon_main");
+				depth_main = reader.unmarshalDouble ("depth_main");
+				try {
+					Location loc_main = get_loc_main();
+				}
+				catch (Exception e) {
+					throw new MarshalException ("OEtasCatalogInfo.do_umarshal: Invalid location: lat = " + lat_main + ", lon = " + lon_main + ", depth = " + depth_main, e);
+				}
+			} else {
+				lat_main = 0.0;
+				lon_main = 0.0;
+				depth_main = 0.0;
+			}
 
 		}
 		break;
@@ -366,6 +591,34 @@ public class OEtasCatalogInfo implements Marshalable {
 			7.0,		// t_data_end
 			0.0,		// t_fitting
 			7.02		// t_forecast
+		);
+
+		return etas_cat_info;
+	}
+
+
+
+
+	// Make a value to use for testing purposes, including mainshock info.
+	// (Magnitude and location for Ridgecrest earthquake.)
+
+	public static OEtasCatalogInfo make_test_value_2 () {
+		OEtasCatalogInfo etas_cat_info = new OEtasCatalogInfo();
+
+		etas_cat_info.set (
+			3.0,		// magCat
+			8.0,		// magTop
+			1.00,		// capF
+			4.50,		// capG
+			0.75,		// capH
+			-30.0,		// t_data_begin
+			7.0,		// t_data_end
+			0.0,		// t_fitting
+			7.02,		// t_forecast
+			7.1,		// mag_main
+			35.770,		// lat_main
+			-117.599,	// lon_main
+			8.0			// depth_main
 		);
 
 		return etas_cat_info;
@@ -440,6 +693,14 @@ public class OEtasCatalogInfo implements Marshalable {
 			// Display the contents
 
 			System.out.println (etas_cat_info3.toString());
+
+			// Bayesian prior factory parameters
+
+			System.out.println ();
+			System.out.println ("********** Bayesian prior factory parameters **********");
+			System.out.println ();
+
+			System.out.println (etas_cat_info.get_bay_factory_params().toString());
 
 			// Done
 
@@ -611,6 +872,86 @@ public class OEtasCatalogInfo implements Marshalable {
 			USGS_ForecastInfo fc_info = etas_cat_info.make_fc_info_for_test (origin, t_main_days);
 
 			System.out.println (fc_info.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6
+		// Construct test values, and display it.
+		// Marshal to JSON and display JSON text, then unmarshal and display the results.
+		// Same as test #1 except includes mainshock info.
+
+		if (testargs.is_test ("test6")) {
+
+			// Read arguments
+
+			System.out.println ("Constructing, displaying, marshaling, and copying catalog info");
+			testargs.end_test();
+
+			// Create the values
+
+			OEtasCatalogInfo etas_cat_info = make_test_value_2();
+
+			// Display the contents
+
+			System.out.println ();
+			System.out.println ("********** Catalog Info Display **********");
+			System.out.println ();
+
+			System.out.println (etas_cat_info.toString());
+
+			// Marshal to JSON
+
+			System.out.println ();
+			System.out.println ("********** Marshal to JSON **********");
+			System.out.println ();
+
+			String json_string = MarshalUtils.to_json_string (etas_cat_info);
+			System.out.println (MarshalUtils.display_json_string (json_string));
+
+			// Unmarshal from JSON
+
+			System.out.println ();
+			System.out.println ("********** Unmarshal from JSON **********");
+			System.out.println ();
+			
+			OEtasCatalogInfo etas_cat_info2 = new OEtasCatalogInfo();
+			MarshalUtils.from_json_string (etas_cat_info2, json_string);
+
+			// Display the contents
+
+			System.out.println (etas_cat_info2.toString());
+
+			// Copy values
+
+			System.out.println ();
+			System.out.println ("********** Copy info **********");
+			System.out.println ();
+			
+			OEtasCatalogInfo etas_cat_info3 = new OEtasCatalogInfo();
+			etas_cat_info3.copy_from (etas_cat_info2);
+
+			// Display the contents
+
+			System.out.println (etas_cat_info3.toString());
+
+			// Bayesian prior factory parameters
+
+			System.out.println ();
+			System.out.println ("********** Bayesian prior factory parameters **********");
+			System.out.println ();
+
+			System.out.println (etas_cat_info.get_bay_factory_params().toString());
 
 			// Done
 

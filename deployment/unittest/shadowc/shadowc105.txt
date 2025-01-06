@@ -1,0 +1,30 @@
+shadowc105 rj.AftershockStatsShadow test3 us20003k7a 365
+Fetching event: us20003k7a
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20003k7a.geojson
+Count of events received = 1
+rup_event_id = us20003k7a
+rup_time = 1442444072860 (2015-09-16 22:54:32 UTC)
+rup_mag = 8.3
+rup_lat = -31.5729
+rup_lon = -71.6744
+rup_depth = 22.44
+
+find_shadow_v3 parameters:
+time_now = 1473980072860 (2016-09-15 22:54:32 UTC)
+search_radius = 2000.0
+search_time_lo = 1410908072860 (2014-09-16 22:54:32 UTC)
+search_time_hi = 1473980072860 (2016-09-15 22:54:32 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2016-09-15T22:54:32.860Z&format=geojson&latitude=-31.57290&limit=20000&longitude=-71.67440&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=8.300&orderby=time&starttime=2014-09-16T22:54:32.860Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock us20003k7a for magnitude 8.30 within 2000.000 km
+AftershockStatsShadow.find_shadow_v3: Mainshock us20003k7a is not shadowed
+
+Event is not shadowed

@@ -1,0 +1,48 @@
+shadowc216 rj.AftershockStatsShadow test3 usp000jdhs 365
+Fetching event: usp000jdhs
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000jdhs.geojson
+Count of events received = 1
+rup_event_id = usp000jdhs
+rup_time = 1326637291370 (2012-01-15 14:21:31 UTC)
+rup_mag = 6.0
+rup_lat = -60.882
+rup_lon = -55.965
+rup_depth = 10.0
+
+find_shadow_v3 parameters:
+time_now = 1358173291370 (2013-01-14 14:21:31 UTC)
+search_radius = 2000.0
+search_time_lo = 1295101291370 (2011-01-15 14:21:31 UTC)
+search_time_hi = 1358173291370 (2013-01-14 14:21:31 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2013-01-14T14:21:31.370Z&format=geojson&latitude=-60.88200&limit=20000&longitude=-55.96500&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2011-01-15T14:21:31.370Z
+Count of events received = 0
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock usp000jdhs for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2013-01-14T14:21:31.370Z&format=geojson&latitude=-60.88200&limit=20000&longitude=-55.96500&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.000&orderby=time&starttime=2011-01-15T14:21:31.370Z
+Count of events received = 2
+Count of events after filtering = 1
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 1
+AftershockStatsShadow.find_shadow_v3: Found 1 potential shadowing events for mainshock usp000jdhs for magnitude 6.00 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000jdhs is shadowed by event usp000jdhq
+AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = 6.00, shadowing event magnitude = 6.60
+AftershockStatsShadow.find_shadow_v3: Distance = 10.849 km, time offset = 0.029 days
+AftershockStatsShadow.find_shadow_v3: Mainshock is an aftershock of event usp000jdhq
+
+Event is shadowed by:
+shadow_event_id = usp000jdhq
+shadow_time = 1326634819540 (2012-01-15 13:40:19 UTC)
+shadow_mag = 6.6
+shadow_lat = -60.948
+shadow_lon = -56.113
+shadow_depth = 8.0
+separation_km = 10.849
+separation_days = 0.029
+seq_end_time_abs = 1326637291370 (2012-01-15 14:21:31 UTC)
+seq_end_time_rel_days = 0.000

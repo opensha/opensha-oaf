@@ -9,6 +9,11 @@ import org.opensha.oaf.oetas.OEStatsCalc;
 import org.opensha.oaf.oetas.OEConstants;
 import org.opensha.oaf.oetas.OEGenerationInfo;
 
+import org.opensha.oaf.oetas.bay.OEBayFactory;
+import org.opensha.oaf.oetas.bay.OEBayFactoryParams;
+import org.opensha.oaf.oetas.bay.OEBayPrior;
+import org.opensha.oaf.oetas.bay.OEBayPriorParams;
+
 
 // Information about parameter fitting, needed for catalog initialization.
 // Author: Michael Barall 03/02/2023.
@@ -67,6 +72,10 @@ public class OEDisc2InitFitInfo implements Marshalable {
 	// Time interval for interpreting branch ratios, in days.
 
 	public double tint_br;
+
+	// Options for the parameter grid. [v2]
+
+	public OEGridOptions grid_options;
 
 
 	//----- Time range end -----
@@ -146,6 +155,7 @@ public class OEDisc2InitFitInfo implements Marshalable {
 
 		mag_main = 0.0;
 		tint_br = 0.0;
+		grid_options = null;
 
 		req_t_interval_end = 0.0;
 		hist_t_interval_end = 0.0;
@@ -190,6 +200,7 @@ public class OEDisc2InitFitInfo implements Marshalable {
 		double mag_max,
 		double mag_main,
 		double tint_br,
+		OEGridOptions grid_options,
 		double req_t_interval_end,
 		double hist_t_interval_end,
 		double group_t_interval_end,
@@ -210,6 +221,7 @@ public class OEDisc2InitFitInfo implements Marshalable {
 		this.mag_max = mag_max;
 		this.mag_main = mag_main;
 		this.tint_br = tint_br;
+		this.grid_options = (new OEGridOptions()).copy_from (grid_options);
 		this.req_t_interval_end = req_t_interval_end;
 		this.hist_t_interval_end = hist_t_interval_end;
 		this.group_t_interval_end = group_t_interval_end;
@@ -249,6 +261,7 @@ public class OEDisc2InitFitInfo implements Marshalable {
 		result.append ("mag_max = " + mag_max + "\n");
 		result.append ("mag_main = " + mag_main + "\n");
 		result.append ("tint_br = " + tint_br + "\n");
+		result.append ("grid_options = {" + grid_options.toString() + "}\n");
 		result.append ("req_t_interval_end = " + req_t_interval_end + "\n");
 		result.append ("hist_t_interval_end = " + hist_t_interval_end + "\n");
 		result.append ("group_t_interval_end = " + group_t_interval_end + "\n");
@@ -359,6 +372,82 @@ public class OEDisc2InitFitInfo implements Marshalable {
 
 
 
+	// Calculate the offset for converting relative zams to absolute zams..
+	// Parameters:
+	//  n = Branch ratio.
+	//  p = Omori exponent parameter.
+	//  c = Omori offset parameter.
+	//  b = Gutenberg-Richter parameter.
+	//  alpha = ETAS intensity parameter.
+	// This function calculates the offset to add to zams in order to obtain an absolute zams.
+	// Note: If zams is not relative, this function returns zero.
+	// Note: If zams is relative, this function returns a zams value such that calc_ten_ams_q_from_zams
+	// returns the same value as calc_ten_a_q_from_branch_ratio.  In other words, a zams Value
+	// such that (10^ams)*Q equals (10^a)*Q (noting that Q = 1.0 for the ams conversion).
+	// Note: Another formulation is that a mainshock has the same productivity as an aftershock
+	// of the same magnitude.
+
+	public final double calc_rel_to_abs_zams_offset (
+		double n,
+		double p,
+		double c,
+		double b,
+		double alpha
+	) {
+		// If zams is relative ...
+
+		if (grid_options.get_relative_zams()) {
+
+			//  // Calculate (10^ams)*Q, assuming it is equal to (10^a)*Q
+			//  
+			//  double ten_ams_q = OEStatsCalc.calc_ten_a_q_from_branch_ratio (
+			//  	n,
+			//  	p,
+			//  	c,
+			//  	b,
+			//  	alpha,
+			//  	mref,
+			//  	mag_min,
+			//  	mag_max,
+			//  	tint_br
+			//  );
+			//  
+			//  // Assuming Q = 1.0, calculate ams
+			//  
+			//  double ams = Math.log10 (ten_ams_q);
+			//  
+			//  // Convert from the reference magnitude for this object to the reference magnitude for zams
+			//  
+			//  return OEStatsCalc.calc_a_new_from_mref_new (
+			//  	ams,					// a_old
+			//  	b,						// b
+			//  	alpha,					// alpha
+			//  	mref,					// mref_old
+			//  	OEConstants.ZAMS_MREF	// mref_new
+			//  );
+
+			// Convert from branch ratio to zams, preserving productivity
+
+			return OEStatsCalc.calc_zams_from_br (
+				n,
+				p,
+				c,
+				b,
+				alpha,
+				mag_min,
+				mag_max,
+				tint_br
+			);
+		}
+
+		// If zams is absolute, return zero
+
+		return 0.0;
+	}
+
+
+
+
 	// Calculate a mu-value for a given reference magnitude ZMU_MREF mu-value.
 	// Parameters:
 	//  zmu = Background rate parameter, assuming reference magnitude equal to ZMU_MREF.
@@ -445,7 +534,8 @@ public class OEDisc2InitFitInfo implements Marshalable {
 	public final OEBayPriorParams make_bay_prior_params () {
 		return new OEBayPriorParams (
 			mag_main,
-			tint_br
+			tint_br,
+			grid_options
 		);
 	}
 
@@ -504,6 +594,7 @@ public class OEDisc2InitFitInfo implements Marshalable {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 114001;
+	private static final int MARSHAL_VER_2 = 114002;
 
 	private static final String M_VERSION_NAME = "OEDisc2InitFitInfo";
 
@@ -513,7 +604,7 @@ public class OEDisc2InitFitInfo implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_1;
+		int ver = MARSHAL_VER_2;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -548,6 +639,34 @@ public class OEDisc2InitFitInfo implements Marshalable {
 		}
 		break;
 
+		case MARSHAL_VER_2: {
+
+			writer.marshalBoolean ("f_background", f_background);
+			writer.marshalInt     ("group_count" , group_count );
+			if (group_count > 0) {
+				writer.marshalDoubleArray ("a_group_time", a_group_time);
+			}
+			writer.marshalDouble  ("mref"        , mref        );
+			writer.marshalDouble  ("msup"        , msup        );
+			writer.marshalDouble  ("mag_min"     , mag_min     );
+			writer.marshalDouble  ("mag_max"     , mag_max     );
+			writer.marshalDouble  ("mag_main"    , mag_main    );
+			writer.marshalDouble  ("tint_br"     , tint_br     );
+			OEGridOptions.static_marshal (writer, "grid_options", grid_options);
+			writer.marshalDouble  ("req_t_interval_end"  , req_t_interval_end  );
+			writer.marshalDouble  ("hist_t_interval_end" , hist_t_interval_end );
+			writer.marshalDouble  ("group_t_interval_end", group_t_interval_end);
+			writer.marshalBoolean ("f_intervals"         , f_intervals         );
+			writer.marshalInt     ("lmr_opt"             , lmr_opt             );
+			writer.marshalBoolean ("f_intensity"         , f_intensity         );
+			writer.marshalInt     ("like_int_begin"      , like_int_begin      );
+			writer.marshalInt     ("like_int_end"        , like_int_end        );
+			writer.marshalInt     ("main_rup_begin"      , main_rup_begin      );
+			writer.marshalInt     ("main_rup_end"        , main_rup_end        );
+
+		}
+		break;
+
 		}
 
 		return;
@@ -559,7 +678,7 @@ public class OEDisc2InitFitInfo implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
@@ -580,6 +699,40 @@ public class OEDisc2InitFitInfo implements Marshalable {
 			mag_max      = reader.unmarshalDouble  ("mag_max"     );
 			mag_main     = reader.unmarshalDouble  ("mag_main"    );
 			tint_br      = reader.unmarshalDouble  ("tint_br"     );
+			grid_options = new OEGridOptions();
+			req_t_interval_end   = reader.unmarshalDouble  ("req_t_interval_end"  );
+			hist_t_interval_end  = reader.unmarshalDouble  ("hist_t_interval_end" );
+			group_t_interval_end = reader.unmarshalDouble  ("group_t_interval_end");
+			f_intervals          = reader.unmarshalBoolean ("f_intervals"         );
+			lmr_opt              = reader.unmarshalInt     ("lmr_opt"             );
+			f_intensity          = reader.unmarshalBoolean ("f_intensity"         );
+			like_int_begin       = reader.unmarshalInt     ("like_int_begin"      );
+			like_int_end         = reader.unmarshalInt     ("like_int_end"        );
+			main_rup_begin       = reader.unmarshalInt     ("main_rup_begin"      );
+			main_rup_end         = reader.unmarshalInt     ("main_rup_end"        );
+
+			bay_prior_params = make_bay_prior_params();
+			seed_gen_info = make_seed_gen_info();
+
+		}
+		break;
+
+		case MARSHAL_VER_2: {
+
+			f_background = reader.unmarshalBoolean ("f_background");
+			group_count  = reader.unmarshalInt     ("group_count" );
+			if (group_count > 0) {
+				a_group_time = reader.unmarshalDoubleArray ("a_group_time");
+			} else {
+				a_group_time = null;
+			}
+			mref         = reader.unmarshalDouble  ("mref"        );
+			msup         = reader.unmarshalDouble  ("msup"        );
+			mag_min      = reader.unmarshalDouble  ("mag_min"     );
+			mag_max      = reader.unmarshalDouble  ("mag_max"     );
+			mag_main     = reader.unmarshalDouble  ("mag_main"    );
+			tint_br      = reader.unmarshalDouble  ("tint_br"     );
+			grid_options = OEGridOptions.static_unmarshal (reader, "grid_options");
 			req_t_interval_end   = reader.unmarshalDouble  ("req_t_interval_end"  );
 			hist_t_interval_end  = reader.unmarshalDouble  ("hist_t_interval_end" );
 			group_t_interval_end = reader.unmarshalDouble  ("group_t_interval_end");

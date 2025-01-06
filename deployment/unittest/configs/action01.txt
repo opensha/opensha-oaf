@@ -21,7 +21,7 @@ poll_short_period = PT20M
 poll_short_lookback = PT72H
 poll_short_intake_gap = PT30S
 poll_long_period = PT24H
-poll_long_lookback = PT7920H
+poll_long_lookback = PT8400H
 poll_long_intake_gap = PT2M
 pdl_intake_max_age = PT7200H
 pdl_intake_max_future = PT24H
@@ -42,6 +42,17 @@ evseq_lookahead = PT8760H
 evseq_cap_min_dur = PT72H
 evseq_cap_gap = PT1H
 etas_enable = 0
+etas_time_limit = PT4M
+etas_progress_time = PT10S
+data_fetch_lookback = PT1440H
+data_fit_dur_min = PT10M
+comcat_cache_1_mag = 2.0
+comcat_cache_1_time = PT2184H
+comcat_cache_2_mag = 4.95
+comcat_cache_2_time = PT9504H
+forecast_rate_limit = PT20S
+forecast_max_limit = PT1M
+forecast_file_option = 0
 adv_min_mag_bins = [
   0:  3.0
   1:  4.0
@@ -505,16 +516,16 @@ IntakeSphRegion
 	MinLon: -125.3
 	MaxLat: 42.1
 	MaxLon: -118.0167
-	MinMag: 4.95
-	IntakeMag: 4.75
+	MinMag: 3.95
+	IntakeMag: 3.75
 IntakeSphRegion
 	Name: CAL-SCSN
 	MinLat: 32.0
 	MinLon: -121.25
 	MaxLat: 37.2167
 	MaxLon: -114.3333
-	MinMag: 4.95
-	IntakeMag: 4.75
+	MinMag: 3.95
+	IntakeMag: 3.75
 IntakeSphRegion
 	Name: ALASKA
 	MinLat: 49.55
@@ -561,8 +572,8 @@ IntakeSphRegion
 	MinLon: -130.4154
 	MaxLat: 49.217
 	MaxLon: -66.2
-	MinMag: 4.95
-	IntakeMag: 4.75
+	MinMag: 3.95
+	IntakeMag: 3.75
 IntakeSphRegion
 	Name: WORLD
 	MinLat: -90.0

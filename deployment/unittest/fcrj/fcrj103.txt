@@ -57,11 +57,13 @@ max_lon = 86.75738960062111
 center_lat = 27.844967753731904
 center_lon = 85.27943680694666
 radius = 145.21116175877404
-min_days = 0.0
+min_days = -60.0
 max_days = 0.014
 min_depth = -5.0
 max_depth = 700.0
 min_mag = 2.95
+fit_start_inset = 0.0
+fit_end_inset = 0.0
 evseq_cfg_fetch_meth = 0
 evseq_cfg_avail = true
 evseq_cfg_params = EventSequenceParameters:
@@ -71,11 +73,11 @@ etas_fetch_meth = 0
 etas_avail = false
 next_scheduled_lag = 0
 
-https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-25T06:31:35.550Z&format=geojson&latitude=27.84497&limit=20000&longitude=85.27944&maxdepth=700.000&maxradius=1.30680&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2015-04-25T06:11:25.950Z
-Count of events received = 9
-Count of events after filtering = 8
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-25T06:31:35.550Z&format=geojson&latitude=27.84497&limit=20000&longitude=85.27944&maxdepth=700.000&maxradius=1.30680&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2015-02-24T06:11:25.950Z
+Count of events received = 10
+Count of events after filtering = 9
 Events filtered due to conversion = 0, location = 0, id = 1
-Total number of events returned = 8
+Total number of events returned = 9
 b=1.000  magMain=7.800  apcTot=401  apcSup=347
 a: like=-2.130  mean=-2.131  sdev=0.4897  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=54  hi=401
 p: like=0.9800  mean=0.9800  sdev=0.000  min=0.9800  max=0.9800  delta=0.000  num=1  lo=0  hi=1
@@ -108,13 +110,15 @@ result_time = 1429943495550
 advisory_lag = 604800000
 injectable_text = 
 catalog_result_avail = true
-catalog_start_time = 1429942285950
+catalog_start_time = 1424758285950
 catalog_end_time = 1429943495550
-catalog_eqk_count = 8
+catalog_eqk_count = 9
 catalog_max_mag = 6.1
 catalog_max_event_id = us20002bi4
 catalog_aftershocks = available
 catalog_comcat_aftershocks = available
+catalog_fit_start_days = 0.0
+catalog_fit_end_days = 0.014
 generic_result_avail = true
 generic_summary:
 b                    = 1.0
@@ -157,20 +161,23 @@ generic_pdl = false
 generic_model = available
 seq_spec_result_avail = false
 bayesian_result_avail = false
+etas_result_avail = false
 
 
 {
   "ClassType": 23001,
-  "ForecastResults": 23001,
+  "ForecastResults": 23002,
   "result_time": 1429943495550,
   "advisory_lag": 604800000,
   "injectable_text": "",
   "catalog_result_avail": true,
-  "catalog_start_time": 1429942285950,
+  "catalog_start_time": 1424758285950,
   "catalog_end_time": 1429943495550,
-  "catalog_eqk_count": 8,
+  "catalog_eqk_count": 9,
   "catalog_max_mag": 6.1,
   "catalog_max_event_id": "us20002bi4",
+  "catalog_fit_start_days": 0.0,
+  "catalog_fit_end_days": 0.014,
   "generic_result_avail": true,
   "generic_summary": {
     "RJ_Summary_Generic": 5001,
@@ -1010,7 +1017,8 @@ bayesian_result_avail = false
   },
   "generic_pdl": false,
   "seq_spec_result_avail": false,
-  "bayesian_result_avail": false
+  "bayesian_result_avail": false,
+  "etas_result_avail": false
 }
 
 
@@ -1019,13 +1027,15 @@ result_time = 1429943495550
 advisory_lag = 604800000
 injectable_text = 
 catalog_result_avail = true
-catalog_start_time = 1429942285950
+catalog_start_time = 1424758285950
 catalog_end_time = 1429943495550
-catalog_eqk_count = 8
+catalog_eqk_count = 9
 catalog_max_mag = 6.1
 catalog_max_event_id = us20002bi4
 catalog_aftershocks = null
 catalog_comcat_aftershocks = null
+catalog_fit_start_days = 0.0
+catalog_fit_end_days = 0.014
 generic_result_avail = true
 generic_summary:
 b                    = 1.0
@@ -1068,6 +1078,7 @@ generic_pdl = false
 generic_model = null
 seq_spec_result_avail = false
 bayesian_result_avail = false
+etas_result_avail = false
 
 b=1.000  magMain=7.800  apcTot=401  apcSup=347
 a: like=-2.130  mean=-2.131  sdev=0.4897  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=54  hi=401
@@ -1080,13 +1091,15 @@ result_time = 1429943495550
 advisory_lag = 604800000
 injectable_text = 
 catalog_result_avail = true
-catalog_start_time = 1429942285950
+catalog_start_time = 1424758285950
 catalog_end_time = 1429943495550
-catalog_eqk_count = 8
+catalog_eqk_count = 9
 catalog_max_mag = 6.1
 catalog_max_event_id = us20002bi4
 catalog_aftershocks = available
 catalog_comcat_aftershocks = null
+catalog_fit_start_days = 0.0
+catalog_fit_end_days = 0.014
 generic_result_avail = true
 generic_summary:
 b                    = 1.0
@@ -1129,14 +1142,16 @@ generic_pdl = false
 generic_model = available
 seq_spec_result_avail = false
 bayesian_result_avail = false
+etas_result_avail = false
 
 
-Saved catalog size = 8
-0: time = 2015-04-25 06:15:22 UTC, mag = 6.100, lat = 27.62850, lon = 85.53980, depth = 10.000
-1: time = 2015-04-25 06:18:10 UTC, mag = 5.600, lat = 27.68570, lon = 86.02130, depth = 10.000
-2: time = 2015-04-25 06:20:40 UTC, mag = 5.400, lat = 28.20460, lon = 84.49200, depth = 10.000
-3: time = 2015-04-25 06:22:02 UTC, mag = 5.100, lat = 27.80060, lon = 85.11410, depth = 10.000
-4: time = 2015-04-25 06:22:23 UTC, mag = 5.260, lat = 27.81300, lon = 85.44800, depth = 18.000
-5: time = 2015-04-25 06:25:55 UTC, mag = 5.000, lat = 27.68700, lon = 85.58540, depth = 10.000
-6: time = 2015-04-25 06:28:05 UTC, mag = 4.800, lat = 27.70060, lon = 85.50430, depth = 10.000
-7: time = 2015-04-25 06:29:46 UTC, mag = 4.700, lat = 27.84780, lon = 85.07170, depth = 10.000
+Saved catalog size = 9
+0: time = 2015-04-02 00:56:38 UTC, mag = 4.600, lat = 28.70070, lon = 86.33090, depth = 57.330
+1: time = 2015-04-25 06:15:22 UTC, mag = 6.100, lat = 27.62850, lon = 85.53980, depth = 10.000
+2: time = 2015-04-25 06:18:10 UTC, mag = 5.600, lat = 27.68570, lon = 86.02130, depth = 10.000
+3: time = 2015-04-25 06:20:40 UTC, mag = 5.400, lat = 28.20460, lon = 84.49200, depth = 10.000
+4: time = 2015-04-25 06:22:02 UTC, mag = 5.100, lat = 27.80060, lon = 85.11410, depth = 10.000
+5: time = 2015-04-25 06:22:23 UTC, mag = 5.260, lat = 27.81300, lon = 85.44800, depth = 18.000
+6: time = 2015-04-25 06:25:55 UTC, mag = 5.000, lat = 27.68700, lon = 85.58540, depth = 10.000
+7: time = 2015-04-25 06:28:05 UTC, mag = 4.800, lat = 27.70060, lon = 85.50430, depth = 10.000
+8: time = 2015-04-25 06:29:46 UTC, mag = 4.700, lat = 27.84780, lon = 85.07170, depth = 10.000

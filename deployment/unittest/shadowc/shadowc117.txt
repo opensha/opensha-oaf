@@ -1,0 +1,35 @@
+shadowc117 rj.AftershockStatsShadow test3 usb000pnw2 365
+Fetching event: usb000pnw2
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usb000pnw2.geojson
+Count of events received = 1
+rup_event_id = usb000pnw2
+rup_time = 1397747211490 (2014-04-17 15:06:51 UTC)
+rup_mag = 6.2
+rup_lat = -62.8705
+rup_lon = 155.7431
+rup_depth = 20.56
+
+find_shadow_v3 parameters:
+time_now = 1429283211490 (2015-04-17 15:06:51 UTC)
+search_radius = 2000.0
+search_time_lo = 1366211211490 (2013-04-17 15:06:51 UTC)
+search_time_hi = 1429283211490 (2015-04-17 15:06:51 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-17T15:06:51.490Z&format=geojson&latitude=-62.87050&limit=20000&longitude=155.74310&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2013-04-17T15:06:51.490Z
+Count of events received = 0
+Count of events after filtering = 0
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock usb000pnw2 for magnitude 7.00 within 2000.000 km
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2015-04-17T15:06:51.490Z&format=geojson&latitude=-62.87050&limit=20000&longitude=155.74310&maxdepth=700.000&maxradius=0.54992&mindepth=-5.000&minmagnitude=6.200&orderby=time&starttime=2013-04-17T15:06:51.490Z
+Count of events received = 1
+Count of events after filtering = 0
+Events filtered due to conversion = 0, location = 0, id = 1
+Total number of events returned = 0
+AftershockStatsShadow.find_shadow_v3: Found 0 potential shadowing events for mainshock usb000pnw2 for magnitude 6.20 within 61.107 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usb000pnw2 is not shadowed
+
+Event is not shadowed

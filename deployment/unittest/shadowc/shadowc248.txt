@@ -1,0 +1,42 @@
+shadowc248 rj.AftershockStatsShadow test3 usp000huc2 365
+Fetching event: usp000huc2
+https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/usp000huc2.geojson
+Count of events received = 1
+rup_event_id = usp000huc2
+rup_time = 1297454730910 (2011-02-11 20:05:30 UTC)
+rup_mag = 6.9
+rup_lat = -36.422
+rup_lon = -72.96
+rup_depth = 26.0
+
+find_shadow_v3 parameters:
+time_now = 1328990730910 (2012-02-11 20:05:30 UTC)
+search_radius = 2000.0
+search_time_lo = 1265918730910 (2010-02-11 20:05:30 UTC)
+search_time_hi = 1328990730910 (2012-02-11 20:05:30 UTC)
+centroid_multiplier = 0.5
+sample_multiplier = 1.0
+large_mag = 7.0
+
+Finding shadow:
+https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2012-02-11T20:05:30.910Z&format=geojson&latitude=-36.42200&limit=20000&longitude=-72.96000&maxdepth=700.000&maxradius=17.99856&mindepth=-5.000&minmagnitude=7.000&orderby=time&starttime=2010-02-11T20:05:30.910Z
+Count of events received = 5
+Count of events after filtering = 5
+Total number of events returned = 5
+AftershockStatsShadow.find_shadow_v3: Found 5 potential shadowing events for mainshock usp000huc2 for magnitude 7.00 within 2000.000 km
+AftershockStatsShadow.find_shadow_v3: Mainshock usp000huc2 is shadowed by event official20100227063411530_30
+AftershockStatsShadow.find_shadow_v3: Mainshock magnitude = 6.90, shadowing event magnitude = 8.80
+AftershockStatsShadow.find_shadow_v3: Distance = 33.796 km, time offset = 349.563 days
+AftershockStatsShadow.find_shadow_v3: Mainshock is an aftershock of event official20100227063411530_30
+
+Event is shadowed by:
+shadow_event_id = official20100227063411530_30
+shadow_time = 1267252451530 (2010-02-27 06:34:11 UTC)
+shadow_mag = 8.8
+shadow_lat = -36.122
+shadow_lon = -72.898
+shadow_depth = 22.9
+separation_km = 33.796
+separation_days = 349.563
+seq_end_time_abs = 1297454730910 (2011-02-11 20:05:30 UTC)
+seq_end_time_rel_days = 0.000

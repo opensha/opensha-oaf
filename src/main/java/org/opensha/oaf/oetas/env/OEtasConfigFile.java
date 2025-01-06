@@ -217,6 +217,7 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 
 
 	// Find the resolved parameters for the given location.
+	// If the location is null, return default parameters.
 	// The returned OAFRegimeParams is newly-allocated.
 	// It is guaranteed that the returned OAFRegimeParams contains regime and parameters,
 	// and the contained OEtasParameters are newly-allocated.
@@ -237,10 +238,12 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 
 		// Merge in parameters for the location, if we have any
 
-		x = get_params (loc);
-		if (x.has_params()) {
-			result.params.merge_from (x.params);
-			result.regime = x.regime;
+		if (loc != null) {
+			x = get_params (loc);
+			if (x.has_params()) {
+				result.params.merge_from (x.params);
+				result.regime = x.regime;
+			}
 		}
 
 		// Merge in analyst parameters, if we have any
@@ -306,6 +309,43 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 		// Add a default selection which contains typical parameters
 
 		add_selection ((new OEtasParameters()).set_to_typical(), OAF2ParameterSet.default_region);
+
+		// Add a selection which contains empty parameters and applies to all regions 
+		// Note that the OEtasParameters constructor produces empty parameters
+
+		Set<String> fetch_regime_names = fetch.getRegimeNameSet();
+		add_selection (new OEtasParameters(), fetch_regime_names.toArray (new String[0]));
+
+		// Add a region for each region in the file
+
+		List<OAFRegion> fetch_region_list = fetch.get_region_list ();
+		for (OAFRegion r : fetch_region_list) {
+			add_region (r);
+		}
+
+		// Finish the setup
+
+		finish_setup();
+
+		return this;
+	}
+
+
+
+
+	// Set to sample values.
+	// The parameter is used as the default parameters.
+	// The regional parameters have empty values, and are defined for each R&J regime.
+
+	public OEtasConfigFile set_to_sample (OEtasParameters def_params) {
+
+		// Load the data
+
+		GenericRJ_ParametersFetch fetch = new GenericRJ_ParametersFetch();
+
+		// Add a default selection which contains typical parameters
+
+		add_selection (def_params, OAF2ParameterSet.default_region);
 
 		// Add a selection which contains empty parameters and applies to all regions 
 		// Note that the OEtasParameters constructor produces empty parameters
@@ -638,6 +678,146 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 
 			System.out.println ();
 			System.out.println ("********** Unmarshaled Sample Parameter Set **********");
+			System.out.println ();
+
+			System.out.println ();
+			System.out.println (etas_config2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #8
+		// Command format:
+		//  test8  filename
+		// Make a sample configuration file, and write it to a file.
+		// This test writes the formatted JSON.
+		// Then it reads back the file and displays it.
+		// Same as test #7 except forces the use of a uniform Bayesian prior.
+
+		if (testargs.is_test ("test8")) {
+
+			// Read arguments
+
+			System.out.println ("Writing sample ETAS configuration file, uniform prior, formatted JSON");
+			String filename = testargs.get_string ("filename");
+			testargs.end_test();
+
+			// Default parameters for the configuration file
+
+			OEtasParameters def_params = (new OEtasParameters()).set_to_typical();
+			def_params.set_bay_prior_to_typical_uniform();
+
+			// Sample configuration file
+
+			OEtasConfigFile etas_config = (new OEtasConfigFile()).set_to_sample(def_params);
+
+			// Write to file
+
+			MarshalUtils.to_formatted_json_file (etas_config, filename);
+
+			// Read back the file and display it
+
+			OEtasConfigFile etas_config2 = new OEtasConfigFile();
+			MarshalUtils.from_json_file (etas_config2, filename);
+
+			System.out.println ();
+			System.out.println ("********** Unmarshaled Sample Parameter Set **********");
+			System.out.println ();
+
+			System.out.println ();
+			System.out.println (etas_config2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #9
+		// Command format:
+		//  test9  filename
+		// Make a sample configuration file, and write it to a file.
+		// This test writes the formatted JSON.
+		// Then it reads back the file and displays it.
+		// Same as test #7 except forces the use of a Gauss a/p/c Bayesian prior.
+
+		if (testargs.is_test ("test9")) {
+
+			// Read arguments
+
+			System.out.println ("Writing sample ETAS configuration file, uniform prior, formatted JSON");
+			String filename = testargs.get_string ("filename");
+			testargs.end_test();
+
+			// Default parameters for the configuration file
+
+			OEtasParameters def_params = (new OEtasParameters()).set_to_typical();
+			def_params.set_bay_prior_to_typical_gauss_apc();
+
+			// Sample configuration file
+
+			OEtasConfigFile etas_config = (new OEtasConfigFile()).set_to_sample(def_params);
+
+			// Write to file
+
+			MarshalUtils.to_formatted_json_file (etas_config, filename);
+
+			// Read back the file and display it
+
+			OEtasConfigFile etas_config2 = new OEtasConfigFile();
+			MarshalUtils.from_json_file (etas_config2, filename);
+
+			System.out.println ();
+			System.out.println ("********** Unmarshaled Sample Parameter Set **********");
+			System.out.println ();
+
+			System.out.println ();
+			System.out.println (etas_config2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #10
+		// Command format:
+		//  test8  filename
+		// Read the file and displays it.
+
+		if (testargs.is_test ("test10")) {
+
+			// Read arguments
+
+			System.out.println ("Read ETAS configuration file");
+			String filename = testargs.get_string ("filename");
+			testargs.end_test();
+
+			// Read the file and display it
+
+			OEtasConfigFile etas_config2 = new OEtasConfigFile();
+			MarshalUtils.from_json_file (etas_config2, filename);
+
+			System.out.println ();
+			System.out.println ("********** Unmarshaled Parameter Set **********");
 			System.out.println ();
 
 			System.out.println ();

@@ -59,7 +59,7 @@ import org.opensha.oaf.rj.OAFParameterSet;
  *  "removal_update_skew" = String giving update time clock skew allowance for PDL forecasts, in java.time.Duration format.
  *  "removal_lookback_tmax" = String giving maximum time before present to search for forecasts that need to be removed from PDL, in java.time.Duration format.
  *  "removal_lookback_tmin" = String giving minimum time before present to search for forecasts that need to be removed from PDL, in java.time.Duration format.
- *  "removal_lookback_mag" = Real value giving the minimum magnitude to search for forecasts that need to be removed from PDL, in java.time.Duration format.
+ *  "removal_lookback_mag" = Real value giving the minimum magnitude to search for forecasts that need to be removed from PDL.
  *  "removal_check_period" = String giving period for checking for forecasts that need to be removed from PDL, in java.time.Duration format.
  *  "removal_retry_period" = String giving retry interval for checking for forecasts that need to be removed from PDL, in java.time.Duration format.
  *  "removal_event_gap" = String giving gap between processing events with forecasts that may need to be removed from PDL, in java.time.Duration format.
@@ -71,7 +71,18 @@ import org.opensha.oaf.rj.OAFParameterSet;
  *  [v2] "evseq_lookahead" = String giving event-sequence lookahead time, in java.time.Duration format.
  *  [v2] "evseq_cap_min_dur" = String giving event-sequence minimum duration when capping, in java.time.Duration format.
  *  [v2] "evseq_cap_gap" = String giving event-sequence gap before capping event, in java.time.Duration format.
- *  [v3] "etas_enable" = Option to enable ETAS fprecasts: 0 = disable, 1 = enable
+ *  [v3] "etas_enable" = Option to enable ETAS forecasts: 0 = disable, 1 = enable, >1 = select alternate ETAS method. 
+ *  [v4] "etas_time_limit" = String giving ETAS calculation time limit, in java.time.Duration format.
+ *  [v4] "etas_progress_time" = String giving ETAS progress reporting time, in java.time.Duration format.
+ *  [v4] "data_fetch_lookback" = String giving data fetch lookback time, in java.time.Duration format.
+ *  [v4] "data_fit_dur_min" = String giving minimum duration of a fitting interval, in java.time.Duration format.
+ *  [v4] "comcat_cache_1_mag" = Real value giving the minimum magnitude for ComCat cache #1.
+ *  [v4] "comcat_cache_1_time" = String giving lookback time for ComCat cache #1, in java.time.Duration format.
+ *  [v4] "comcat_cache_2_mag" = Real value giving the minimum magnitude for ComCat cache #2.
+ *  [v4] "comcat_cache_2_time" = String giving lookback time for ComCat cache #2, in java.time.Duration format.
+ *  [v4] "forecast_rate_limit" = String giving minimum time between forecasts, in java.time.Duration format.
+ *  [v4] "forecast_max_limit" = String giving maximum delay for forecast rate limit, in java.time.Duration format.
+ *  [v4] "forecast_file_option" = Option to save forecasts into files: 0 = disable, 1 = enable. 
  *	"adv_min_mag_bins" = [ Array giving a list of minimum magnitudes for which forecasts are generated, in increasing order.
  *		element = Real value giving minimum magnitude for the bin.
  *	]
@@ -350,13 +361,125 @@ public class ActionConfigFile implements Marshalable {
 	// Option to enable ETAS forecasts. [v3]
 
 	public static final int ETAS_ENA_MIN = 0;
-	public static final int ETAS_ENA_DISABLE = 0;	// Completely disable ETAS fprecasts
-	public static final int ETAS_ENA_ENABLE = 1;	// Enable ETAS forecasts
+	public static final int ETAS_ENA_DISABLE = 0;	// Completely disable ETAS forecasts
+	public static final int ETAS_ENA_ENABLE = 1;	// Enable ETAS forecasts, original ETAS method
 	public static final int ETAS_ENA_MAX = 1;
 
 	private static final int V2_ETAS_ENABLE = 0;	// Default value for v2 and earlier files
 
 	public int etas_enable;
+
+	// Time limit for an ETAS calculation. [v4]
+	// Must be a whole number of seconds, between 60 and 10^9 seconds, or 0 for no time limit.
+
+	public static final long DEFAULT_ETAS_TIME_LIMIT = 240000L;	// Default value for forecast parameters = 4 minutes
+	public static final long NO_ETAS_TIME_LIMIT = 0L;			// Value for no time limit
+	public static final long REC_MIN_ETAS_TIME_LIMIT = 60000L;	// Recommended minimum value for forecast parameters =  1 minute
+
+	private static final long V3_ETAS_TIME_LIMIT = 240000L;		// Default value for v3 and earlier files = 4 minutes
+
+	public long etas_time_limit;
+
+	// Time interval between ETAS progress messages. [v4]
+	// Must be a whole number of seconds, between 2 and 10^9 seconds, or 0 for no progress messages.
+	
+	public static final long DEFAULT_ETAS_PROGRESS_TIME = 10000L;	// Default value for forecast parameters = 10 seconds
+	public static final long NO_ETAS_PROGRESS_TIME = 0L;			// Value for no progress messages
+	public static final long REC_MIN_ETAS_PROGRESS_TIME = 2000L;	// Recommended minimum value for forecast parameters =  2 seconds
+	
+	private static final long V3_ETAS_PROGRESS_TIME = 10000L;		// Default value for v3 and earlier files = 10 seconds
+	
+	public long etas_progress_time;
+
+	// Time before mainshock to fetch data from ComCat. [v4]
+	// Must be a whole number of seconds, between 0 and 10 years.
+
+	public static final long DEFAULT_DATA_FETCH_LOOKBACK = 5184000000L;		// Default value for forecast parameters = 60 days
+	public static final long REC_MIN_DATA_FETCH_LOOKBACK = 0L;				// Recommended minimum value for forecast parameters = 0
+	public static final long REC_MAX_DATA_FETCH_LOOKBACK = 315360000000L;	// Recommended maximum value for forecast parameters = 10 years
+
+	private static final long V3_DATA_FETCH_LOOKBACK = 5184000000L;	// Default value for v3 and earlier files = 60 days
+
+	public long data_fetch_lookback;
+
+	// Minimum fitting interval duration. [v4]
+	// Must be a whole number of seconds, between 2 minutes and 1 year.
+
+	public static final long DEFAULT_DATA_FIT_DUR_MIN = 600000L;	// Default value for forecast parameters = 10 minutes
+	public static final long REC_MIN_DATA_FIT_DUR_MIN = 120000L;		// Recommended minimum value for forecast parameters = 2 minutes
+	public static final long REC_MAX_DATA_FIT_DUR_MIN = 31536000000L;	// Recommended maximum value for forecast parameters = 1 year
+
+	private static final long V3_DATA_FIT_DUR_MIN = 600000L;	// Default value for v3 and later files = 10 minutes
+
+	public long data_fit_dur_min;
+
+	// Minimum magnitude for ComCat cache #1. [v4]
+
+	public static final double DEFAULT_COMCAT_CACHE_1_MAG = 2.00;	// Default value for forecast parameters
+
+	private static final double V3_COMCAT_CACHE_1_MAG = 2.00;	// Default value for v3 and earlier files
+
+	public double comcat_cache_1_mag;
+
+	// Lookback time for ComCat cache #1. [v4]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public static final long DEFAULT_COMCAT_CACHE_1_TIME = 7862400000L;	// Default value for forecast parameters = 91 days
+
+	private static final long V3_COMCAT_CACHE_1_TIME = 7862400000L;	// Default value for v3 and earlier files = 91 days
+
+	public long comcat_cache_1_time;
+
+	// Minimum magnitude for ComCat cache #2. [v4]
+
+	public static final double DEFAULT_COMCAT_CACHE_2_MAG = 4.95;	// Default value for forecast parameters
+
+	private static final double V3_COMCAT_CACHE_2_MAG = 4.95;	// Default value for v3 and earlier files
+
+	public double comcat_cache_2_mag;
+
+	// Lookback time for ComCat cache #2. [v4]
+	// Must be a whole number of seconds, between 1 and 10^9 seconds.
+
+	public static final long DEFAULT_COMCAT_CACHE_2_TIME = 34214400000L;	// Default value for forecast parameters = 396 days
+
+	private static final long V3_COMCAT_CACHE_2_TIME = 34214400000L;	// Default value for v3 and earlier files = 396 days
+
+	public long comcat_cache_2_time;
+
+	// Minimum time between forecasts. [v4]
+	// Must be a whole number of seconds, between 0 and 5 minutes.
+
+	public static final long DEFAULT_FORECAST_RATE_LIMIT = 20000L;		// Default value for forecast parameters = 20 seconds
+	public static final long REC_MIN_FORECAST_RATE_LIMIT = 0L;			// Recommended minimum value for forecast parameters = 0
+	public static final long REC_MAX_FORECAST_RATE_LIMIT = 300000L;		// Recommended maximum value for forecast parameters = 5 minutes
+
+	private static final long V3_FORECAST_RATE_LIMIT = 20000L;	// Default value for v3 and earlier files = 20 seconds
+
+	public long forecast_rate_limit;
+
+	// Maximum delay for forecast rate limit. [v4]
+	// Must be a whole number of seconds, between 0 and 5 minutes.
+
+	public static final long DEFAULT_FORECAST_MAX_LIMIT = 60000L;		// Default value for forecast parameters = 60 seconds
+	public static final long REC_MIN_FORECAST_MAX_LIMIT = 0L;			// Recommended minimum value for forecast parameters = 0
+	public static final long REC_MAX_FORECAST_MAX_LIMIT = 300000L;		// Recommended maximum value for forecast parameters = 5 minutes
+
+	private static final long V3_FORECAST_MAX_LIMIT = 60000L;	// Default value for v3 and earlier files = 60 seconds
+
+	public long forecast_max_limit;
+
+	// Option to save forecasts into files. [v4]
+
+	public static final int FORECAST_FILE_OPTION_MIN = 0;
+	public static final int FORECAST_FILE_OPTION_DISABLE = 0;	// Disable saving forecasts into files
+	public static final int FORECAST_FILE_OPTION_ENABLE = 1;	// Enable saving forecasts into files
+	public static final int FORECAST_FILE_OPTION_VERBOSE = 2;	// Enable verbose saving forecasts into files
+	public static final int FORECAST_FILE_OPTION_MAX = 2;
+
+	private static final int V3_FORECAST_FILE_OPTION = 0;	// Default value for v3 and earlier files
+
+	public int forecast_file_option;
 
 	// Minimum magnitude for advisory magnitude bins.  Must be in increasing order.
 
@@ -513,6 +636,17 @@ public class ActionConfigFile implements Marshalable {
 		evseq_cap_min_dur = 0L;
 		evseq_cap_gap = 0L;
 		etas_enable = ETAS_ENA_DISABLE;
+		etas_time_limit = 0L;
+		etas_progress_time = 0L;
+		data_fetch_lookback = 0L;
+		data_fit_dur_min = 0L;
+		comcat_cache_1_mag = 0.0;
+		comcat_cache_1_time = 0L;
+		comcat_cache_2_mag = 0.0;
+		comcat_cache_2_time = 0L;
+		forecast_rate_limit = 0L;
+		forecast_max_limit = 0L;
+		forecast_file_option = FORECAST_FILE_OPTION_DISABLE;
 		adv_min_mag_bins = new ArrayList<Double>();
 		adv_window_start_offs = new ArrayList<Long>();
 		adv_window_end_offs = new ArrayList<Long>();
@@ -539,6 +673,10 @@ public class ActionConfigFile implements Marshalable {
 
 	private boolean is_valid_lag (long lag, long min_lag) {
 		return (lag >= min_lag && lag <= MAX_LAG && lag % UNIT_LAG == 0L);
+	}
+
+	private boolean is_valid_lag (long lag, long min_lag, long max_lag) {
+		return (lag >= min_lag && lag <= max_lag && lag % UNIT_LAG == 0L);
 	}
 
 	// Check that values are valid, throw an exception if not.
@@ -699,6 +837,42 @@ public class ActionConfigFile implements Marshalable {
 
 		if (!( etas_enable >= ETAS_ENA_MIN && etas_enable <= ETAS_ENA_MAX )) {
 			throw new RuntimeException("ActionConfigFile: Invalid etas_enable: " + etas_enable);
+		}
+
+		if (!( etas_time_limit == NO_ETAS_TIME_LIMIT || is_valid_lag(etas_time_limit, REC_MIN_ETAS_TIME_LIMIT) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid etas_time_limit: " + etas_time_limit);
+		}
+
+		if (!( etas_progress_time == NO_ETAS_PROGRESS_TIME || is_valid_lag(etas_progress_time, REC_MIN_ETAS_PROGRESS_TIME) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid etas_progress_time: " + etas_progress_time);
+		}
+
+		if (!( is_valid_lag(data_fetch_lookback, REC_MIN_DATA_FETCH_LOOKBACK, REC_MAX_DATA_FETCH_LOOKBACK) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid data_fetch_lookback: " + data_fetch_lookback);
+		}
+
+		if (!( is_valid_lag(data_fit_dur_min, REC_MIN_DATA_FIT_DUR_MIN, REC_MAX_DATA_FIT_DUR_MIN) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid data_fit_dur_min: " + data_fit_dur_min);
+		}
+
+		if (!( is_valid_lag(comcat_cache_1_time) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid comcat_cache_1_time: " + comcat_cache_1_time);
+		}
+
+		if (!( is_valid_lag(comcat_cache_2_time) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid comcat_cache_2_time: " + comcat_cache_2_time);
+		}
+
+		if (!( is_valid_lag(forecast_rate_limit, REC_MIN_FORECAST_RATE_LIMIT, REC_MAX_FORECAST_RATE_LIMIT) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid forecast_rate_limit: " + forecast_rate_limit);
+		}
+
+		if (!( is_valid_lag(forecast_max_limit, REC_MIN_FORECAST_MAX_LIMIT, REC_MAX_FORECAST_MAX_LIMIT) )) {
+			throw new RuntimeException("ActionConfigFile: Invalid forecast_max_limit: " + forecast_max_limit);
+		}
+
+		if (!( forecast_file_option >= FORECAST_FILE_OPTION_MIN && forecast_file_option <= FORECAST_FILE_OPTION_MAX )) {
+			throw new RuntimeException("ActionConfigFile: Invalid forecast_file_option: " + forecast_file_option);
 		}
 
 		int n;
@@ -911,6 +1085,18 @@ public class ActionConfigFile implements Marshalable {
 		result.append ("evseq_cap_gap = " + Duration.ofMillis(evseq_cap_gap).toString() + "\n");
 
 		result.append ("etas_enable = " + etas_enable + "\n");
+
+		result.append ("etas_time_limit = " + Duration.ofMillis(etas_time_limit).toString() + "\n");
+		result.append ("etas_progress_time = " + Duration.ofMillis(etas_progress_time).toString() + "\n");
+		result.append ("data_fetch_lookback = " + Duration.ofMillis(data_fetch_lookback).toString() + "\n");
+		result.append ("data_fit_dur_min = " + Duration.ofMillis(data_fit_dur_min).toString() + "\n");
+		result.append ("comcat_cache_1_mag = " + comcat_cache_1_mag + "\n");
+		result.append ("comcat_cache_1_time = " + Duration.ofMillis(comcat_cache_1_time).toString() + "\n");
+		result.append ("comcat_cache_2_mag = " + comcat_cache_2_mag + "\n");
+		result.append ("comcat_cache_2_time = " + Duration.ofMillis(comcat_cache_2_time).toString() + "\n");
+		result.append ("forecast_rate_limit = " + Duration.ofMillis(forecast_rate_limit).toString() + "\n");
+		result.append ("forecast_max_limit = " + Duration.ofMillis(forecast_max_limit).toString() + "\n");
+		result.append ("forecast_file_option = " + forecast_file_option + "\n");
 
 		result.append ("adv_min_mag_bins = [" + "\n");
 		for (int i = 0; i < adv_min_mag_bins.size(); ++i) {
@@ -1278,6 +1464,22 @@ public class ActionConfigFile implements Marshalable {
 
 
 
+	// Return a string describing a forecast file option value.
+
+	public static String get_forecast_file_opt_as_string (int forecast_file_opt) {
+
+		switch (forecast_file_opt) {
+		case FORECAST_FILE_OPTION_DISABLE: return "FORECAST_FILE_OPTION_DISABLE";
+		case FORECAST_FILE_OPTION_ENABLE: return "FORECAST_FILE_OPTION_ENABLE";
+		case FORECAST_FILE_OPTION_VERBOSE: return "FORECAST_FILE_OPTION_VERBOSE";
+		}
+
+		return "FORECAST_FILE_OPTION_INVALID(" + forecast_file_opt + ")";
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.
@@ -1285,6 +1487,7 @@ public class ActionConfigFile implements Marshalable {
 	private static final int MARSHAL_VER_1 = 24001;
 	private static final int MARSHAL_VER_2 = 24002;
 	private static final int MARSHAL_VER_3 = 24003;
+	private static final int MARSHAL_VER_4 = 24004;
 
 	private static final String M_VERSION_NAME = "ActionConfigFile";
 
@@ -1433,7 +1636,7 @@ public class ActionConfigFile implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_3;
+		int ver = MARSHAL_VER_4;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -1615,6 +1818,82 @@ public class ActionConfigFile implements Marshalable {
 			marshal_intake_region_list (writer, "pdl_intake_regions"   , pdl_intake_regions   );
 
 			break;
+
+		case MARSHAL_VER_4:
+
+			marshal_duration           (writer, "forecast_min_gap"     , forecast_min_gap     );
+			marshal_duration           (writer, "forecast_max_delay"   , forecast_max_delay   );
+			marshal_duration           (writer, "comcat_clock_skew"    , comcat_clock_skew    );
+			marshal_duration           (writer, "comcat_origin_skew"   , comcat_origin_skew   );
+			marshal_duration           (writer, "comcat_retry_min_gap" , comcat_retry_min_gap );
+			marshal_duration           (writer, "comcat_retry_missing" , comcat_retry_missing );
+			marshal_duration           (writer, "seq_spec_min_lag"     , seq_spec_min_lag     );
+			marshal_duration           (writer, "advisory_dur_week"    , advisory_dur_week    );
+			marshal_duration           (writer, "advisory_dur_month"   , advisory_dur_month   );
+			marshal_duration           (writer, "advisory_dur_year"    , advisory_dur_year    );
+
+			marshal_duration           (writer, "def_max_forecast_lag" , def_max_forecast_lag );
+			marshal_duration           (writer, "withdraw_forecast_lag", withdraw_forecast_lag);
+			writer.marshalInt          (        "stale_forecast_option", stale_forecast_option);
+			writer.marshalDouble       (        "shadow_search_radius" , shadow_search_radius );
+			marshal_duration           (writer, "shadow_lookback_time" , shadow_lookback_time );
+			writer.marshalDouble       (        "shadow_centroid_mag"  , shadow_centroid_mag  );
+			writer.marshalDouble       (        "shadow_large_mag"     , shadow_large_mag     );
+			marshal_duration           (writer, "poll_short_period"    , poll_short_period    );
+			marshal_duration           (writer, "poll_short_lookback"  , poll_short_lookback  );
+			marshal_duration           (writer, "poll_short_intake_gap", poll_short_intake_gap);
+			marshal_duration           (writer, "poll_long_period"     , poll_long_period     );
+			marshal_duration           (writer, "poll_long_lookback"   , poll_long_lookback   );
+			marshal_duration           (writer, "poll_long_intake_gap" , poll_long_intake_gap );
+			marshal_duration           (writer, "pdl_intake_max_age"   , pdl_intake_max_age   );
+			marshal_duration           (writer, "pdl_intake_max_future", pdl_intake_max_future);
+			marshal_duration           (writer, "removal_forecast_age" , removal_forecast_age );
+			marshal_duration           (writer, "removal_update_skew"  , removal_update_skew  );
+			marshal_duration           (writer, "removal_lookback_tmax", removal_lookback_tmax);
+			marshal_duration           (writer, "removal_lookback_tmin", removal_lookback_tmin);
+			writer.marshalDouble       (        "removal_lookback_mag" , removal_lookback_mag );
+			marshal_duration           (writer, "removal_check_period" , removal_check_period );
+			marshal_duration           (writer, "removal_retry_period" , removal_retry_period );
+			marshal_duration           (writer, "removal_event_gap"    , removal_event_gap    );
+			marshal_duration           (writer, "removal_foreign_block", removal_foreign_block);
+			writer.marshalString       (        "def_injectable_text"  , def_injectable_text  );
+
+			writer.marshalInt          (        "evseq_enable"         , evseq_enable         );
+			writer.marshalInt          (        "evseq_report"         , evseq_report         );
+			marshal_duration           (writer, "evseq_lookback"       , evseq_lookback       );
+			marshal_duration           (writer, "evseq_lookahead"      , evseq_lookahead      );
+			marshal_duration           (writer, "evseq_cap_min_dur"    , evseq_cap_min_dur    );
+			marshal_duration           (writer, "evseq_cap_gap"        , evseq_cap_gap        );
+
+			writer.marshalInt          (        "etas_enable"          , etas_enable          );
+
+			marshal_duration           (writer, "etas_time_limit"      , etas_time_limit      );
+			marshal_duration           (writer, "etas_progress_time"   , etas_progress_time   );
+			marshal_duration           (writer, "data_fetch_lookback"  , data_fetch_lookback  );
+			marshal_duration           (writer, "data_fit_dur_min"     , data_fit_dur_min     );
+			writer.marshalDouble       (        "comcat_cache_1_mag"   , comcat_cache_1_mag   );
+			marshal_duration           (writer, "comcat_cache_1_time"  , comcat_cache_1_time  );
+			writer.marshalDouble       (        "comcat_cache_2_mag"   , comcat_cache_2_mag   );
+			marshal_duration           (writer, "comcat_cache_2_time"  , comcat_cache_2_time  );
+			marshal_duration           (writer, "forecast_rate_limit"  , forecast_rate_limit  );
+			marshal_duration           (writer, "forecast_max_limit"   , forecast_max_limit   );
+			writer.marshalInt          (        "forecast_file_option" , forecast_file_option );
+
+			writer.marshalDoubleCollection     ("adv_min_mag_bins"     , adv_min_mag_bins     );
+			marshal_duration_list      (writer, "adv_window_start_offs", adv_window_start_offs);
+			marshal_duration_list      (writer, "adv_window_end_offs"  , adv_window_end_offs  );
+			writer.marshalStringCollection     ("adv_window_names"     , adv_window_names     );
+
+			writer.marshalDoubleCollection     ("adv_fractile_values"  , adv_fractile_values  );
+			writer.marshalIntCollection        ("adv_bar_counts"       , adv_bar_counts       );
+
+			marshal_duration_list      (writer, "forecast_lags"        , forecast_lags        );
+			marshal_duration_list      (writer, "comcat_retry_lags"    , comcat_retry_lags    );
+			marshal_duration_list      (writer, "comcat_intake_lags"   , comcat_intake_lags   );
+			marshal_duration_list      (writer, "pdl_report_retry_lags", pdl_report_retry_lags);
+			marshal_intake_region_list (writer, "pdl_intake_regions"   , pdl_intake_regions   );
+
+			break;
 		}
 
 		return;
@@ -1626,7 +1905,7 @@ public class ActionConfigFile implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_4);
 
 		// Contents
 
@@ -1679,6 +1958,18 @@ public class ActionConfigFile implements Marshalable {
 			evseq_cap_gap         = V1_EVSEQ_CAP_GAP;
 
 			etas_enable           = V2_ETAS_ENABLE;
+
+			etas_time_limit       = V3_ETAS_TIME_LIMIT;
+			etas_progress_time    = V3_ETAS_PROGRESS_TIME;
+			data_fetch_lookback   = V3_DATA_FETCH_LOOKBACK;
+			data_fit_dur_min      = V3_DATA_FIT_DUR_MIN;
+			comcat_cache_1_mag    = V3_COMCAT_CACHE_1_MAG;
+			comcat_cache_1_time   = V3_COMCAT_CACHE_1_TIME;
+			comcat_cache_2_mag    = V3_COMCAT_CACHE_2_MAG;
+			comcat_cache_2_time   = V3_COMCAT_CACHE_2_TIME;
+			forecast_rate_limit   = V3_FORECAST_RATE_LIMIT;
+			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
+			forecast_file_option  = V3_FORECAST_FILE_OPTION;
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
@@ -1748,6 +2039,18 @@ public class ActionConfigFile implements Marshalable {
 
 			etas_enable           = V2_ETAS_ENABLE;
 
+			etas_time_limit       = V3_ETAS_TIME_LIMIT;
+			etas_progress_time    = V3_ETAS_PROGRESS_TIME;
+			data_fetch_lookback   = V3_DATA_FETCH_LOOKBACK;
+			data_fit_dur_min      = V3_DATA_FIT_DUR_MIN;
+			comcat_cache_1_mag    = V3_COMCAT_CACHE_1_MAG;
+			comcat_cache_1_time   = V3_COMCAT_CACHE_1_TIME;
+			comcat_cache_2_mag    = V3_COMCAT_CACHE_2_MAG;
+			comcat_cache_2_time   = V3_COMCAT_CACHE_2_TIME;
+			forecast_rate_limit   = V3_FORECAST_RATE_LIMIT;
+			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
+			forecast_file_option  = V3_FORECAST_FILE_OPTION;
+
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
 			adv_window_start_offs = unmarshal_duration_list      (reader, "adv_window_start_offs");
@@ -1815,6 +2118,98 @@ public class ActionConfigFile implements Marshalable {
 			evseq_cap_gap         = unmarshal_duration           (reader, "evseq_cap_gap"        );
 
 			etas_enable           = reader.unmarshalInt          (        "etas_enable"          );
+
+			etas_time_limit       = V3_ETAS_TIME_LIMIT;
+			etas_progress_time    = V3_ETAS_PROGRESS_TIME;
+			data_fetch_lookback   = V3_DATA_FETCH_LOOKBACK;
+			data_fit_dur_min      = V3_DATA_FIT_DUR_MIN;
+			comcat_cache_1_mag    = V3_COMCAT_CACHE_1_MAG;
+			comcat_cache_1_time   = V3_COMCAT_CACHE_1_TIME;
+			comcat_cache_2_mag    = V3_COMCAT_CACHE_2_MAG;
+			comcat_cache_2_time   = V3_COMCAT_CACHE_2_TIME;
+			forecast_rate_limit   = V3_FORECAST_RATE_LIMIT;
+			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
+			forecast_file_option  = V3_FORECAST_FILE_OPTION;
+
+			adv_min_mag_bins = new ArrayList<Double>();
+			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
+			adv_window_start_offs = unmarshal_duration_list      (reader, "adv_window_start_offs");
+			adv_window_end_offs   = unmarshal_duration_list      (reader, "adv_window_end_offs"  );
+			adv_window_names = new ArrayList<String>();
+			reader.unmarshalStringCollection                     (        "adv_window_names"     , adv_window_names     );
+
+			adv_fractile_values = new ArrayList<Double>();
+			reader.unmarshalDoubleCollection                     (        "adv_fractile_values"  , adv_fractile_values  );
+			adv_bar_counts = new ArrayList<Integer>();
+			reader.unmarshalIntCollection                        (        "adv_bar_counts"       , adv_bar_counts       );
+
+			forecast_lags         = unmarshal_duration_list      (reader, "forecast_lags"        );
+			comcat_retry_lags     = unmarshal_duration_list      (reader, "comcat_retry_lags"    );
+			comcat_intake_lags    = unmarshal_duration_list      (reader, "comcat_intake_lags"   );
+			pdl_report_retry_lags = unmarshal_duration_list      (reader, "pdl_report_retry_lags");
+			pdl_intake_regions    = unmarshal_intake_region_list (reader, "pdl_intake_regions"   );
+
+			break;
+
+		case MARSHAL_VER_4:
+
+			forecast_min_gap      = unmarshal_duration           (reader, "forecast_min_gap"     );
+			forecast_max_delay    = unmarshal_duration           (reader, "forecast_max_delay"   );
+			comcat_clock_skew     = unmarshal_duration           (reader, "comcat_clock_skew"    );
+			comcat_origin_skew    = unmarshal_duration           (reader, "comcat_origin_skew"   );
+			comcat_retry_min_gap  = unmarshal_duration           (reader, "comcat_retry_min_gap" );
+			comcat_retry_missing  = unmarshal_duration           (reader, "comcat_retry_missing" );
+			seq_spec_min_lag      = unmarshal_duration           (reader, "seq_spec_min_lag"     );
+			advisory_dur_week     = unmarshal_duration           (reader, "advisory_dur_week"    );
+			advisory_dur_month    = unmarshal_duration           (reader, "advisory_dur_month"   );
+			advisory_dur_year     = unmarshal_duration           (reader, "advisory_dur_year"    );
+
+			def_max_forecast_lag  = unmarshal_duration           (reader, "def_max_forecast_lag" );
+			withdraw_forecast_lag = unmarshal_duration           (reader, "withdraw_forecast_lag");
+			stale_forecast_option = reader.unmarshalInt          (        "stale_forecast_option");
+			shadow_search_radius  = reader.unmarshalDouble       (        "shadow_search_radius" );
+			shadow_lookback_time  = unmarshal_duration           (reader, "shadow_lookback_time" );
+			shadow_centroid_mag   = reader.unmarshalDouble       (        "shadow_centroid_mag"  );
+			shadow_large_mag      = reader.unmarshalDouble       (        "shadow_large_mag"     );
+			poll_short_period     = unmarshal_duration           (reader, "poll_short_period"    );
+			poll_short_lookback   = unmarshal_duration           (reader, "poll_short_lookback"  );
+			poll_short_intake_gap = unmarshal_duration           (reader, "poll_short_intake_gap");
+			poll_long_period      = unmarshal_duration           (reader, "poll_long_period"     );
+			poll_long_lookback    = unmarshal_duration           (reader, "poll_long_lookback"   );
+			poll_long_intake_gap  = unmarshal_duration           (reader, "poll_long_intake_gap" );
+			pdl_intake_max_age    = unmarshal_duration           (reader, "pdl_intake_max_age"   );
+			pdl_intake_max_future = unmarshal_duration           (reader, "pdl_intake_max_future");
+			removal_forecast_age  = unmarshal_duration           (reader, "removal_forecast_age" );
+			removal_update_skew   = unmarshal_duration           (reader, "removal_update_skew"  );
+			removal_lookback_tmax = unmarshal_duration           (reader, "removal_lookback_tmax");
+			removal_lookback_tmin = unmarshal_duration           (reader, "removal_lookback_tmin");
+			removal_lookback_mag  = reader.unmarshalDouble       (        "removal_lookback_mag" );
+			removal_check_period  = unmarshal_duration           (reader, "removal_check_period" );
+			removal_retry_period  = unmarshal_duration           (reader, "removal_retry_period" );
+			removal_event_gap     = unmarshal_duration           (reader, "removal_event_gap"    );
+			removal_foreign_block = unmarshal_duration           (reader, "removal_foreign_block");
+			def_injectable_text   = reader.unmarshalString       (        "def_injectable_text"  );
+
+			evseq_enable          = reader.unmarshalInt          (        "evseq_enable"         );
+			evseq_report          = reader.unmarshalInt          (        "evseq_report"         );
+			evseq_lookback        = unmarshal_duration           (reader, "evseq_lookback"       );
+			evseq_lookahead       = unmarshal_duration           (reader, "evseq_lookahead"      );
+			evseq_cap_min_dur     = unmarshal_duration           (reader, "evseq_cap_min_dur"    );
+			evseq_cap_gap         = unmarshal_duration           (reader, "evseq_cap_gap"        );
+
+			etas_enable           = reader.unmarshalInt          (        "etas_enable"          );
+
+			etas_time_limit       = unmarshal_duration           (reader, "etas_time_limit"      );
+			etas_progress_time    = unmarshal_duration           (reader, "etas_progress_time"   );
+			data_fetch_lookback   = unmarshal_duration           (reader, "data_fetch_lookback"  );
+			data_fit_dur_min      = unmarshal_duration           (reader, "data_fit_dur_min"     );
+			comcat_cache_1_mag    = reader.unmarshalDouble       (        "comcat_cache_1_mag"   );
+			comcat_cache_1_time   = unmarshal_duration           (reader, "comcat_cache_1_time"  );
+			comcat_cache_2_mag    = reader.unmarshalDouble       (        "comcat_cache_2_mag"   );
+			comcat_cache_2_time   = unmarshal_duration           (reader, "comcat_cache_2_time"  );
+			forecast_rate_limit   = unmarshal_duration           (reader, "forecast_rate_limit"  );
+			forecast_max_limit    = unmarshal_duration           (reader, "forecast_max_limit"   );
+			forecast_file_option  = reader.unmarshalInt          (        "forecast_file_option" );
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
@@ -2057,6 +2452,57 @@ public class ActionConfigFile implements Marshalable {
 
 			MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
 			action_cfg = (new ActionConfigFile()).unmarshal (retrieve, null);
+			retrieve.check_read_complete ();
+
+			System.out.println ("");
+			System.out.println (action_cfg.toString());
+
+			return;
+		}
+
+		// Subcommand : Test #4
+		// Command format:
+		//  test4  filename
+		// Unmarshal from the specified file, and display it.
+		// Then marshal to JSON, and display the JSON.
+		// Then unmarshal, and display the unmarshaled results.
+
+		if (args[0].equalsIgnoreCase ("test4")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("ActionConfigFile : Invalid 'test4' subcommand");
+				return;
+			}
+
+			String filename = args[1];
+
+			// Read the configuration file
+
+			ActionConfigFile action_cfg = new ActionConfigFile();
+			MarshalUtils.from_json_file (action_cfg, filename);
+
+			// Display it
+
+			System.out.println (action_cfg.toString());
+
+			// Marshal to JSON
+
+			MarshalImpJsonWriter store = new MarshalImpJsonWriter();
+			ActionConfigFile.marshal_poly (store, null, action_cfg);
+			store.check_write_complete ();
+			String json_string = store.get_json_string();
+
+			System.out.println ("");
+			System.out.println (MarshalUtils.display_valid_json_string (json_string));
+
+			// Unmarshal from JSON
+			
+			action_cfg = null;
+
+			MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
+			action_cfg = ActionConfigFile.unmarshal_poly (retrieve, null);
 			retrieve.check_read_complete ();
 
 			System.out.println ("");

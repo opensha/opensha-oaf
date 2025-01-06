@@ -32,6 +32,11 @@ import org.opensha.oaf.oetas.OESimulationParams;
 import org.opensha.oaf.oetas.OESimulator;
 import org.opensha.oaf.oetas.OEStatsCalc;
 
+import org.opensha.oaf.oetas.bay.OEBayFactory;
+import org.opensha.oaf.oetas.bay.OEBayFactoryParams;
+import org.opensha.oaf.oetas.bay.OEBayPrior;
+import org.opensha.oaf.oetas.bay.OEBayPriorParams;
+
 import org.opensha.oaf.oetas.except.OEException;
 
 import org.opensha.oaf.util.AutoExecutorService;
@@ -1274,6 +1279,10 @@ public class OEFit2Test {
 			fit_info.mag_max	// mag_max_sim
 		);
 
+		// Statistics accumulator, slim marginal distribution
+
+		OEDisc2VoxStatAccumMarginal stat_accum = new OEDisc2VoxStatAccumMarginal (grid_params, false, true);
+
 		// Complete setting up the voxel set
 
 		voxel_set.setup_post_fitting (
@@ -1283,7 +1292,8 @@ public class OEFit2Test {
 			OEConstants.DEF_DENSITY_BIN_SIZE_LNU,	// density_bin_size_lnu
 			OEConstants.DEF_DENSITY_BIN_COUNT,		// density_bin_count
 			OEConstants.DEF_PROB_TAIL_TRIM,			// prob_tail_trim
-			OEConstants.DEF_SEED_SUBVOX_COUNT		// the_seed_subvox_count
+			OEConstants.DEF_SEED_SUBVOX_COUNT,		// the_seed_subvox_count
+			stat_accum								// stat_accum
 		);
 
 
@@ -1606,6 +1616,10 @@ public class OEFit2Test {
 			fit_info.mag_max	// mag_max_sim
 		);
 
+		// Statistics accumulator, slim marginal distribution
+
+		OEDisc2VoxStatAccumMarginal stat_accum = new OEDisc2VoxStatAccumMarginal (grid_params, false, true);
+
 		// Complete setting up the voxel set
 
 		voxel_set.setup_post_fitting (
@@ -1615,7 +1629,8 @@ public class OEFit2Test {
 			OEConstants.DEF_DENSITY_BIN_SIZE_LNU,	// density_bin_size_lnu
 			OEConstants.DEF_DENSITY_BIN_COUNT,		// density_bin_count
 			OEConstants.DEF_PROB_TAIL_TRIM,			// prob_tail_trim
-			OEConstants.DEF_SEED_SUBVOX_COUNT		// the_seed_subvox_count
+			OEConstants.DEF_SEED_SUBVOX_COUNT,		// the_seed_subvox_count
+			stat_accum								// stat_accum
 		);
 
 

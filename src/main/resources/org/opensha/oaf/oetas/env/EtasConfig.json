@@ -7,7 +7,7 @@
         "DEFAULT"
       ],
       "params": {
-        "OEtasParameters": 121001,
+        "OEtasParameters": 121002,
         "hist_params_avail": true,
         "disc_delta": 0.2,
         "mag_cat_count": 3000,
@@ -56,10 +56,11 @@
           "max": 2.0
         },
         "n_range": {
-          "kind": "log",
+          "kind": "log_skew",
           "num": 41,
-          "min": 0.01,
-          "max": 0.9
+          "min": 0.02,
+          "max": 0.9,
+          "skew": 3.0
         },
         "zams_range": {
           "kind": "linear",
@@ -71,11 +72,12 @@
           "kind": "single",
           "value": 0.0
         },
+        "relative_zams": false,
         "bay_prior_avail": true,
-        "bay_prior": {
-          "ClassType": 112001,
-          "OEBayPriorUniform": 112001,
-          "OEBayPrior": 111001
+        "bay_factory": {
+          "ClassType": 139001,
+          "OEBayFactoryGaussAPC": 139001,
+          "OEBayFactory": 136001
         },
         "bay_weight_avail": true,
         "bay_weight": 1.0,
@@ -98,7 +100,12 @@
         "ran_exceed_fraction": 0.02,
         "sim_accum_selection": 4,
         "sim_accum_option": 433,
-        "sim_accum_param_1": 0.25
+        "sim_accum_param_1": 0.25,
+        "eligible_params_avail": true,
+        "eligible_option": 2,
+        "eligible_main_mag": 4.45,
+        "eligible_cat_max_mag": 3.95,
+        "eligible_small_mag": 4.95
       }
     },
     {
@@ -124,7 +131,7 @@
         "CAL-HYDROTHERMAL"
       ],
       "params": {
-        "OEtasParameters": 121001,
+        "OEtasParameters": 121002,
         "hist_params_avail": false,
         "group_params_avail": false,
         "fit_params_avail": false,
@@ -135,7 +142,8 @@
         "bay_weight_avail": false,
         "grid_post_avail": false,
         "num_catalogs_avail": false,
-        "sim_params_avail": false
+        "sim_params_avail": false,
+        "eligible_params_avail": false
       }
     }
   ],

@@ -128,7 +128,8 @@ public class MagCompFnConstant extends MagCompFn {
 
 	@Override
 	public double getDefaultGUICapF () {
-		return 0.0;
+		//return 0.0;
+		return 0.50;		// changed to agree with OEConstants
 	}
 
 
@@ -144,7 +145,8 @@ public class MagCompFnConstant extends MagCompFn {
 
 	@Override
 	public double getDefaultGUICapH () {
-		return 0.0;
+		//return 0.0;
+		return 1.00;		// changed to agree with OEConstants
 	}
 
 
@@ -152,6 +154,16 @@ public class MagCompFnConstant extends MagCompFn {
 
 	@Override
 	public boolean is_constant () {
+		return true;
+	}
+
+
+	// Return true if the function is a Page et al. function, or a constant always equal to magCat.
+	// If true, then getDefaultGUICapF/G/H can be used to retrieve the Helmstetter parameters
+	// F, G, and H;  a constant will return G == 100.0.
+
+	@Override
+	public boolean is_page_or_constant () {
 		return true;
 	}
 

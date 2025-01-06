@@ -453,6 +453,27 @@ public class TestArgs {
 
 
 
+	// Get a string argument which can be omitted.
+	// Return optval if not in argument list, or if the argument is null, empty, or equal to omitarg.
+
+	public final String get_string_omit (String arg_name, String optval, String omitarg) {
+		String x = optval;
+		if (has_more()) {
+			String s = my_args[arg_index];
+			if (!( s == null || s.equals ("") || s.equals (omitarg) )) {
+				x = s;
+			}
+			++arg_index;
+		}
+		if (f_echo && arg_name != null && !(arg_name.isEmpty())) {
+			System.out.println (arg_name + " = " + ((x == null) ? "<null>" : x));
+		}
+		return x;
+	}
+
+
+
+
 	// Get a double argument.
 
 	public final double get_double (String arg_name) {
@@ -718,6 +739,50 @@ public class TestArgs {
 				}
 				System.out.println (sb.toString());
 			}
+		}
+		return x;
+	}
+
+
+
+
+	// Get a time argument, as a long in milliseconds since the epochs.
+	// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+
+	public final long get_time (String arg_name) {
+		require_more (arg_name);
+		long x = 0;
+		try {
+			x = SimpleUtils.string_to_time (my_args[arg_index]);
+		}
+		catch (Exception e) {
+			signal_error ("Invalid time argument", arg_name, e);
+		}
+		++arg_index;
+		if (f_echo && arg_name != null && !(arg_name.isEmpty())) {
+			System.out.println (arg_name + " = " + SimpleUtils.time_to_string(x));
+		}
+		return x;
+	}
+
+
+
+
+	// Get a duration argument, as a long in milliseconds.
+	// Durations are in java.time.Duration format, for example P3DT11H45M04S or P100D or PT30S.
+
+	public final long get_duration (String arg_name) {
+		require_more (arg_name);
+		long x = 0;
+		try {
+			x = SimpleUtils.string_to_duration (my_args[arg_index]);
+		}
+		catch (Exception e) {
+			signal_error ("Invalid duration argument", arg_name, e);
+		}
+		++arg_index;
+		if (f_echo && arg_name != null && !(arg_name.isEmpty())) {
+			System.out.println (arg_name + " = " + SimpleUtils.duration_to_string_2(x));
 		}
 		return x;
 	}

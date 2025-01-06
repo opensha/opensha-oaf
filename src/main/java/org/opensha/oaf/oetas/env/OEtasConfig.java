@@ -115,6 +115,7 @@ public class OEtasConfig {
 
 
 	// Find the resolved parameters for the given location.
+	// If the location is null, return default parameters.
 	// The returned OAFRegimeParams is newly-allocated.
 	// It is guaranteed that the returned OAFRegimeParams contains regime and parameters,
 	// and the contained OEtasParameters are newly-allocated.
@@ -154,6 +155,15 @@ public class OEtasConfig {
 
 	public List<OAFRegion> get_region_list () {
 		return param_set.get_region_list();
+	}
+
+
+	// Get the list of non-null parameters.
+	// Note: The caller must not modify the list or any of the parameters.
+	// The intended use is to iterate over the list of parmaeters.
+
+	public final List<OEtasParameters> get_parameter_list () {
+		return param_set.get_parameter_list();
 	}
 
 
@@ -325,6 +335,44 @@ public class OEtasConfig {
 			}
 
 			System.out.println ();
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #3
+		// Command format:
+		//  test3
+		// Create an object, and display the list of non-null parameters.
+
+		if (testargs.is_test ("test3")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Create a configuration object
+
+			OEtasConfig etas_config = new OEtasConfig();
+
+			// Display parameter values
+
+			System.out.println ();
+			System.out.println ("********** Parameter values **********");
+			System.out.println ();
+
+			int n = 0;
+			for (OEtasParameters value : etas_config.get_parameter_list()) {
+				System.out.println (n + ": " + value.toString());
+				++n;
+			}
 
 			// Done
 
