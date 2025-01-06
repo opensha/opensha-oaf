@@ -17,6 +17,7 @@ import javax.swing.JOptionPane;
 
 import org.jfree.data.Range;
 import org.opensha.commons.data.Site;
+import org.opensha.commons.data.WeightedList;
 import org.opensha.commons.data.function.ArbitrarilyDiscretizedFunc;
 import org.opensha.commons.data.function.DiscretizedFunc;
 import org.opensha.commons.data.function.LightFixedXFunc;
@@ -41,7 +42,9 @@ import org.opensha.sha.calc.HazardCurveCalculator;
 import org.opensha.sha.earthquake.ERF;
 import org.opensha.sha.earthquake.EqkRupture;
 import org.opensha.sha.earthquake.ProbEqkRupture;
-import org.opensha.sha.earthquake.rupForecastImpl.PointSource13b;
+import org.opensha.sha.earthquake.rupForecastImpl.PointSourceNshm;
+import org.opensha.sha.faultSurface.utils.PointSourceDistanceCorrection;
+import org.opensha.sha.faultSurface.utils.PointSourceDistanceCorrections;
 import org.opensha.sha.gui.infoTools.IMT_Info;
 import org.opensha.sha.imr.AttenRelRef;
 import org.opensha.sha.imr.ScalarIMR;
@@ -75,6 +78,8 @@ public class GriddedInterpGMPE_Calc {
 	private NDimArrayCalc arrayCalc;
 	private double[] allExceedRates; // source non-exceedance rates
 	private NDimensionalLinearInterpolation interpolator;
+	
+	private static final WeightedList<PointSourceDistanceCorrection> distCorrs = PointSourceDistanceCorrections.NSHM_2013.get();
 	
 	public GriddedInterpGMPE_Calc(ScalarIMR gmpe, DiscretizedFunc xVals, double b, double minMag, double maxMag, int numMag,
 			DistanceInterpolator distInterp, AbstractGMPEInterpolation<?>... otherInterps) {
@@ -125,7 +130,8 @@ public class GriddedInterpGMPE_Calc {
 //		double wtEach = 1d/FocalMech.values().length;
 //		for (FocalMech mech : FocalMech.values())
 //			mechWtMap.put(mech, wtEach);
-		PointSource13b source = new PointSource13b(loc, inputMFD, duration, depths, mechWtMap);
+		PointSourceNshm source = new PointSourceNshm(loc, inputMFD, duration, mechWtMap,
+				PointSourceNshm.M_DEPTH_CUT_DEFAULT, depths[0], depths[1], distCorrs);
 		
 		if(D) System.out.println("Precalculating GMPE for "+allInterps.size()+" dimensions, "+arrayCalc.rawArraySize()+" values");
 		
@@ -171,7 +177,7 @@ public class GriddedInterpGMPE_Calc {
 	
 //	private MinMaxAveTracker numRupsTrack;
 	
-	private void precalcRecursive(int[] upstreamIndexes, PointSource13b source) {
+	private void precalcRecursive(int[] upstreamIndexes, PointSourceNshm source) {
 		int curIndex = upstreamIndexes.length;
 		AbstractGMPEInterpolation<?> interp = allInterps.get(curIndex);
 		int[] indexes = Arrays.copyOf(upstreamIndexes, curIndex+1);

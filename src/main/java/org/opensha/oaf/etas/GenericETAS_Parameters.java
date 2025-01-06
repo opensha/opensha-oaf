@@ -64,7 +64,6 @@ public class GenericETAS_Parameters implements java.io.Serializable{
 			double alpha, double bValue, double bValue_sigma, double refMag, double maxMag) {
 
 		double[][] covariance = new double[][]{{covaa, covap, covac},{covap, covpp, covcp},{covac, covcp, covcc}};  
-		//			double[][] priorCovariance = new double[][]{{covaa*n, covap*n, covac*n},{covap*n, covpp*n, covcp*n},{covac*n, covcp*n, covcc*n}};
 		double[][] priorCovariance = new double[][]{{aValue_sigma*aValue_sigma, covap*n, covac*n},{covap*n, covpp*n, covcp*n},{covac*n, covcp*n, covcc*n}};
 
 		this.amsValue_mean = aValue_mean;

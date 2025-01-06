@@ -157,26 +157,36 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 	}
     
-	private boolean D; //debug
+	private boolean D = true; //debug
 	private boolean prReportMode; //this is for creating the duration product for Puerto Rico
 	private boolean prForecastMode; //this is for creating the forecast for Puerto Rico
 	private boolean publishUSGS;
 	private boolean publishMexico;
+	
 	private boolean rjMode;
 	private boolean verbose;
 	private boolean commandLine = false;
 	private boolean validate;
+	
 	private boolean mcFixed;
-	private boolean bFixed;
-	private boolean dataStartFixed;
 	private double mcFixedValue;
+	
+	private boolean bFixed;
 	private double bFixedValue;
+	
+	private String catalogFileName; // catalog file to use 
+	private boolean catalogFileGiven;
+	
+	private boolean dataStartFixed;
 	private double dataStartFixedValue;
+	
 	private volatile boolean changeListenerEnabled = true;
 	private boolean tipsOn = true;
 	private File workingDir;
 	private String eventID;	//for command line use
+	private String forecastDuration = "week";	//for command line use
 	private Double forecastStartTime; //for command line use
+	
 
 	//this is needed to prevent long processing times/overloaded memory. If more than MAX_EARTHQUAKE_NUMBER aftershocks are retrieved from ComCat,
 	//the magnitude of completeness is increased to the size of the nth largest aftershock. Must be > 0  or you'll get a nullPoitnerException down the line.
@@ -1206,18 +1216,31 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		workingDir = new File(System.getProperty("user.home"));
 		accessor = new ETAS_ComcatAccessor();
 		quickForecastButton = new ButtonParameter("Forecast using default settings", "Quick Forecast");
-
+		writeStochasticEventSets = new BooleanParameter("Save Event Sets", false);
+		
+		
 		eventIDParam.setValue(eventID);
 		forecastStartTimeParam.setValue(forecastStartTime);
 		if(forecastStartTime < dataStartTimeParam.getValue()) {
 			dataStartTimeParam.setValue(forecastStartTime);
 			dataStartTimeParam.getEditor().refreshParamEditor();
 		}
+		
+		advisoryDurationParam = new EnumParameter<ForecastDuration>(
+				"Advisory Duration", EnumSet.allOf(ForecastDuration.class), ForecastDuration.WEEK, null);
+		
+		advisoryDurationParam.setValue(ForecastDuration.WEEK);
+		
+		forecastDurationParam.setValue(ForecastDuration.YEAR);
 
+		//TODO: load a parameter file
+		
+		
 		//TODO: output a parameter file
+//		saveGlobalParameterConfig();		
 		
-		
-		// run the forecast!
+		// run the forecast! the comnand line should basically click quick forecast, and quick forecast should load parameters
+		// and run everything automatically the way it was last run.
 		parameterChange(new ParameterChangeEvent(quickForecastButton, quickForecastButton.getName(), quickForecastButton.getValue(),  quickForecastButton.getValue()));
 		
 		return;
@@ -3241,6 +3264,32 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			}
 			
 		}, true);
+		
+		CalcStep loadCatalogStep = new CalcStep("Fetching Events From File", "loading catalog from file", new Runnable() {
+			
+			@Override
+			public void run() {
+				try {
+					System.out.println("Loading Catalog from file: " + catalogFileName);
+
+					final File[] file = new File[1];
+
+					if (catalogFileGiven){
+						String filename = new String(workingDir + "/" + catalogFileName);
+						file[0] = new File(filename);
+					} else {
+						throw new IllegalStateException("catalog file not given.");
+					}
+					loadCatalog(file[0]);
+					if (!commandLine)
+						setEnableParamsPostFetch(false);
+
+				} catch (IOException e) {
+					ExceptionUtils.throwAsRuntimeException(e);
+				}
+			}
+		}, true);
+			
 
 		CalcStep setMainshockStep = new CalcStep("Initializing Model", "Collecting mainshock information...", new Runnable() {
 
@@ -3487,10 +3536,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 					@Override
 					public void run() {
-						if(verbose) System.out.println("Computing Generic forecast");
+						if(verbose) System.out.println("Setting Mc");
 						genericModel.setMagComplete(mcParam.getValue());
+						if(verbose) System.out.println("Computing Generic forecast");
 						genericModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-								forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue(), !writeStochasticEventSets.getValue());
+								forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue());
 					}
 		}, true);
 		
@@ -3519,7 +3569,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							bayesianModel.setMagComplete(mcParam.getValue());
 							if(verbose)System.out.println("Computing Bayesian forecast");
 							bayesianModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-									forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue(), !writeStochasticEventSets.getValue());
+									forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue());
 						}
 					}		
 		}, true);
@@ -3791,35 +3841,38 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					
 					@Override
 					public void run() {
-						writeForecast();
+						File outFile = new File(workingDir + "/Forecasts/" + eventID + "/" + eventID + "_t" 
+							+ String.format("%2.1f", dataEndTimeParam.getValue()) +  ".json");
+						publishJsonOnly(outFile);
+						
 					}
 					
 				}, true);
 
 				CalcRunnable run;
 				if(!commandLine)
-					if (prForecastMode) 
-						run = new CalcRunnable(progress,
-								fetchCatalogStep,
-								setMainshockStep,
-								postFetchCalcStep,
-								postFetchPlotStep,
-								prForecastStep,
-								enforceRJstep,
-								plotMFDStep,
-								quickTabRefreshStep1,
-								computeBayesStep,
-								postParamPlotStep,
-								quickTabRefreshStep2,
-								genericForecastStep,
-								bayesianForecastStep,
-								postForecastPlotStep,
-								plotTableStep,
-								quickTabRefreshStep3,
-								quickMapStep,
-								plotMapStep,
-								tipStep);
-					else
+//					if (prForecastMode) 
+//						run = new CalcRunnable(progress,
+//								fetchCatalogStep,
+//								setMainshockStep,
+//								postFetchCalcStep,
+//								postFetchPlotStep,
+//								prForecastStep,
+//								enforceRJstep,
+//								plotMFDStep,
+//								quickTabRefreshStep1,
+//								computeBayesStep,
+//								postParamPlotStep,
+//								quickTabRefreshStep2,
+//								genericForecastStep,
+//								bayesianForecastStep,
+//								postForecastPlotStep,
+//								plotTableStep,
+//								quickTabRefreshStep3,
+//								quickMapStep,
+//								plotMapStep,
+//								tipStep);
+//					else
 						run = new CalcRunnable(progress,
 								fetchCatalogStep,
 								setMainshockStep,
@@ -3840,13 +3893,24 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 								plotMapStep,
 								tipStep);
 					
-				else
-					if (prForecastMode) 
+				else {
+//					if (prForecastMode) 
+//						run = new CalcRunnable(progress,
+//								fetchCatalogStep,
+//								setMainshockStep,
+//								postFetchCalcStep,
+//								prForecastStep,
+//								enforceRJstep,
+//								computeBayesStep,
+//								genericForecastStep,
+//								bayesianForecastStep,
+//								writeForecastToFileStep);
+//					else
+					if (catalogFileGiven)
 						run = new CalcRunnable(progress,
-								fetchCatalogStep,
+								loadCatalogStep,
 								setMainshockStep,
 								postFetchCalcStep,
-								prForecastStep,
 								enforceRJstep,
 								computeBayesStep,
 								genericForecastStep,
@@ -3862,7 +3926,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 								genericForecastStep,
 								bayesianForecastStep,
 								writeForecastToFileStep);
-						
+				}
+				
 				new Thread(run).start();
 
 			} else if (param == eventIDParam || param == dataStartTimeParam || param == dataEndTimeParam
@@ -4026,21 +4091,28 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			} else if (param == loadCatalogButton) {
 				System.out.println("Loading Catalog from file...");
 
+				final File[] file = new File[1];
+
+
 				if (loadCatalogChooser == null)
 					loadCatalogChooser = new JFileChooser();
-
 				loadCatalogChooser.setCurrentDirectory(workingDir);
 
 				int ret = loadCatalogChooser.showOpenDialog(this);
 				if (ret == JFileChooser.APPROVE_OPTION) {
-					final File file = loadCatalogChooser.getSelectedFile();
+					file[0] = loadCatalogChooser.getSelectedFile();
+				} else {
+					throw new IllegalStateException("File selection was canceled or an error occured");
+				}
 
+			
+				if(true) {
 					CalcStep loadStep = new CalcStep("Loading Catalog", "Loading events from local catalog...", new Runnable() {
 
 						@Override
 						public void run() {
 							try {
-								loadCatalog(file);
+								loadCatalog(file[0]);
 								setEnableParamsPostFetch(false);
 
 							} catch (IOException e) {
@@ -5921,18 +5993,62 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 	}
 	
-	private void publishGraphicalForecast(){
-		// use a popup or dropdown menu to set graphical forecast fields
-		
-		//this is cribbed from the previous method
+	private void publishJsonOnly(File outFile) {
+		//this is reproduced in publishGraphicalForecast method
 		GregorianCalendar eventDate = mainshock.getOriginTimeCal();
 		GregorianCalendar startDate = new GregorianCalendar();
 		Double minDays = forecastStartTimeParam.getValue();
 		validateParameter(minDays, "start time");
 		double startTime = eventDate.getTime().getTime() + minDays*ETAS_StatsCalc.MILLISEC_PER_DAY;
 		startDate.setTimeInMillis((long)startTime);
-				
-		// write HTML document summary 
+	
+		ETAS_AftershockModel model;
+		if (bayesianModel != null)
+			model = bayesianModel;
+		else 
+			model = genericModel;
+
+		GraphicalForecast graphForecast = new GraphicalForecast(outFile, model, eventDate, startDate);
+		int advisoryDurationIndex;
+		switch (forecastDuration.toUpperCase()) {
+			case "YEAR":
+				advisoryDurationIndex = 3;
+				break;
+			case "MONTH":
+				advisoryDurationIndex = 2;
+				break;
+			case "WEEK":
+				advisoryDurationIndex = 1;
+				break;
+			case "DAY":
+				advisoryDurationIndex = 0;
+				break;
+			default:
+				advisoryDurationIndex = 1; //weeek default
+				break;
+		}
+		
+		graphForecast.setPreferredForecastInterval(advisoryDurationIndex);
+		graphForecast.setAftershockRadiusKM(radiusParam.getValue());
+		graphForecast.setMapRadiusDeg(radiusParam.getValue() * mapScaleParam.getValue()/3 / 111.111);
+		
+		graphForecast.constructForecast();
+		
+		//output a json that can be sent to PDL
+		try {
+			System.out.println("Saving forecast summary to: " + outFile);
+			
+			graphForecast.writeSummaryJson(outFile);
+			
+		} catch (Exception e) {
+			System.err.println("Couldn't save forecast summary to: " + outFile);
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private void publishGraphicalForecast(){
+		// pick a file and directory to write HTML document summary 		
 		File outFile;
 		workingDirChooser = new JFileChooser(workingDir.getPath());
 		workingDirChooser.setSelectedFile(new File("Advisory.html"));
@@ -5942,6 +6058,21 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		int ret = workingDirChooser.showSaveDialog(this);
 		
 		if (ret == JFileChooser.APPROVE_OPTION) {
+			outFile = workingDirChooser.getSelectedFile();
+
+			publishGraphicalForecast(outFile);
+		}
+	}
+	
+	private void publishGraphicalForecast(File outFile){
+		//this is cribbed from the previous method
+		GregorianCalendar eventDate = mainshock.getOriginTimeCal();
+		GregorianCalendar startDate = new GregorianCalendar();
+		Double minDays = forecastStartTimeParam.getValue();
+		validateParameter(minDays, "start time");
+		double startTime = eventDate.getTime().getTime() + minDays*ETAS_StatsCalc.MILLISEC_PER_DAY;
+		startDate.setTimeInMillis((long)startTime);
+				
 			outFile = workingDirChooser.getSelectedFile();
 			workingDir = outFile.getParentFile();
 			workingDirChooser.setCurrentDirectory(workingDir);
@@ -5974,7 +6105,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					numberOfIntervals = 4;
 					break;
 			}
-				GraphicalForecast graphForecast = new GraphicalForecast(outFile, model, eventDate, startDate, numberOfIntervals, region);
+			GraphicalForecast graphForecast = new GraphicalForecast(outFile, model, eventDate, startDate, numberOfIntervals, region);
 			
 			int advisoryDurationIndex;
 			switch (advisoryDurationParam.getValue()) {
@@ -6041,22 +6172,27 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			}
 			
 			// print selected figures: Expected number distributions
-			for (int i = 0; i < aftershockExpectedNumGraph.size(); i++){
-				String file = aftershockExpectedNumGraph.get(i).getName().replaceAll("[^a-zA-Z]",  "").toLowerCase();
-				file = outFile.getParent() + "/" + file + ".png"; //file must have this name
-				try {
-					System.out.println("Saving forecastMFD to: " + file);
-					aftershockExpectedNumGraph.get(i).saveAsPNG(file);
-				} catch (Exception e) {
-					System.err.println("Couldn't save forecastMFD to: " + file);
+			if(aftershockExpectedNumGraph != null) {
+				for (int i = 0; i < aftershockExpectedNumGraph.size(); i++){
+					String file = aftershockExpectedNumGraph.get(i).getName().replaceAll("[^a-zA-Z]",  "").toLowerCase();
+					file = outFile.getParent() + "/" + file + ".png"; //file must have this name
+					try {
+						System.out.println("Saving forecastMFD to: " + file);
+						aftershockExpectedNumGraph.get(i).saveAsPNG(file);
+					} catch (Exception e) {
+						System.err.println("Couldn't save forecastMFD to: " + file);
+					}
 				}
 			}
 			
+			
 			// cumulative events with time
-			try {
-				cmlNumGraph.saveAsPNG(outFile.getParent() + "/forecastCmlNum.png");
-			} catch (Exception e) {
-				System.err.println("Couldn't save forecastCumulativeNumber to: " + outFile.getParent() + "/forecastCmlNum.png");
+			if(cmlNumGraph != null) {
+				try {
+					cmlNumGraph.saveAsPNG(outFile.getParent() + "/forecastCmlNum.png");
+				} catch (Exception e) {
+					System.err.println("Couldn't save forecastCumulativeNumber to: " + outFile.getParent() + "/forecastCmlNum.png");
+				}
 			}
 	
 			// ratemap
@@ -6104,25 +6240,24 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			}
 
 			// Write Contours to file
-			for(ForecastDuration foreDur : ForecastDuration.values()){
-				// find the matching contour set
-				int nmatch = 0;
-				if(contourList != null) {
-				for (ContourModel contours : contourList){
-					if (contours.getName().contains(foreDur.toString())){
-						nmatch++;
-						String name = "contour-" + foreDur.toString();
-						File file = new File(outFile.getParent() + "/" + name + ".kml");
-						System.out.println("Saving contours to: " + file);
-						ETAS_RateModel2D.writeContoursAsKML(contours.getContours(), contours.getName(), contours.getUnits(), file, contours.getCPT());
+			if(contourList != null) {
+				for(ForecastDuration foreDur : ForecastDuration.values()){
+					// find the matching contour set
+					int nmatch = 0;
+					for (ContourModel contours : contourList){
+						if (contours.getName().contains(foreDur.toString())){
+							nmatch++;
+							String name = "contour-" + foreDur.toString();
+							File file = new File(outFile.getParent() + "/" + name + ".kml");
+							System.out.println("Saving contours to: " + file);
+							ETAS_RateModel2D.writeContoursAsKML(contours.getContours(), contours.getName(), contours.getUnits(), file, contours.getCPT());
+						}
 					}
+					if (nmatch > 1) System.out.println("More than one set of contours found for duration: " + foreDur);
+					else if (nmatch == 0) System.out.println("No contours found for duration: " + foreDur);
 				}
-				if (nmatch > 1) System.out.println("More than one set of contours found for duration: " + foreDur);
-				else if (nmatch == 0) System.out.println("No contours found for duration: " + foreDur);
-				} else {
-					System.out.println("No forecast contours computed.");
-				}
-				
+			} else {
+				System.out.println("No forecast contours computed.");
 			}
 
 			
@@ -6223,7 +6358,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					System.out.println("No forecast has been generated.");
 				}
 			}
-		}
+//		}
 	}
 
 	private void setChangeListenerEnabled(boolean enabled){
@@ -6824,8 +6959,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		List<String> lines = new ArrayList<String>();
 		try{
 			lines = IOUtils.readLines(citiesIS, StandardCharsets.UTF_8);
-		} catch (IOException e) {
-			System.out.println("Couldn't load city information");
+		} catch (Exception e) {
+			System.out.println("Couldn't load city information: "+e.getMessage());
 		}
 
 		//populate the feature list
@@ -6862,8 +6997,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		List<String> lines = new ArrayList<String>();
 		try{
 			lines = IOUtils.readLines(bordersIS, StandardCharsets.UTF_8);
-		} catch (IOException e) {
-			System.out.println("Couldn't load country border information");
+		} catch (Exception e) {
+			System.out.println("Couldn't load country border information: "+e.getMessage());
 		}
 
 		ArrayList<XY_DataSet> countryBorders = new ArrayList<XY_DataSet>();
@@ -6941,8 +7076,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		if (tipsOn) System.out.println(tipText.get(step));
 	}
 	
+	//no longer used. Publish the forecast through the GraphicalForecast object
 	private void writeForecast() {
 		// save the forecast to file
+		// this was used for the puerto rico retrospective paper, and isnt used for production
 		double[] predictionMagnitudes = new double[]{3,4,5,6,7,8,9};
 		double[] predictionIntervals = new double[]{1,7,31,365}; //day,week,month,year
 
@@ -7095,7 +7232,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		prForecastMode = false;
 		mcFixed = false;
 		dataStartFixed = false;
-		
+		catalogFileGiven = false;
+
 		//check for arguments
 		for(int i = 0; i < args.length; i++) {
 			String argument = args[i];
@@ -7121,6 +7259,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				i++;
 				forecastStartTime = Double.parseDouble(args[i]);
 			}
+			if (argument.contains("-forecastDuration")) {
+				i++;
+				forecastDuration = args[i].toUpperCase();
+			}
 			if (argument.contains("-Mc") || argument.contains("-mc")) {
 				i++;
 				mcFixedValue = Double.parseDouble(args[i]);
@@ -7131,14 +7273,16 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				bFixedValue = Double.parseDouble(args[i]);
 				bFixed = true;
 			}
-			
+			if (argument.contentEquals("-catalog")) {
+				i++;
+				catalogFileName = args[i];
+				catalogFileGiven = true;
+			}
 			if (argument.contentEquals("-dataStart")) {
 				i++;
 				dataStartFixedValue = Double.parseDouble(args[i]);
 				dataStartFixed = true;
 			}
-			
-			
 		}
 	}
 

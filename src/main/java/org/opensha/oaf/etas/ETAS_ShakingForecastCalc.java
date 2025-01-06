@@ -14,6 +14,7 @@ import javax.swing.JFrame;
 import org.jfree.data.Range;
 import org.opensha.commons.data.Site;
 import org.opensha.commons.data.TimeSpan;
+import org.opensha.commons.data.WeightedList;
 import org.opensha.commons.data.function.ArbitrarilyDiscretizedFunc;
 import org.opensha.commons.data.function.DiscretizedFunc;
 import org.opensha.commons.data.siteData.SiteData;
@@ -31,7 +32,9 @@ import org.opensha.commons.util.cpt.CPT;
 import org.opensha.sha.calc.hazardMap.HazardDataSetLoader;
 import org.opensha.sha.earthquake.AbstractERF;
 import org.opensha.sha.earthquake.ProbEqkSource;
-import org.opensha.sha.earthquake.rupForecastImpl.PointSource13b;
+import org.opensha.sha.earthquake.rupForecastImpl.PointSourceNshm;
+import org.opensha.sha.faultSurface.utils.PointSourceDistanceCorrection;
+import org.opensha.sha.faultSurface.utils.PointSourceDistanceCorrections;
 import org.opensha.sha.gui.infoTools.IMT_Info;
 import org.opensha.sha.imr.AttenRelRef;
 import org.opensha.sha.imr.ScalarIMR;
@@ -53,7 +56,8 @@ public class ETAS_ShakingForecastCalc {
 	
 	private static boolean D = false;
 	private static double magDelta = 0.1;
-	private static double[] depths = { 7, 2 }; // depth of <6.5 and >=6.5, respectively
+	private static final double MAG_CUT = 6.5;
+	private static double[] depths = { 7, 2 }; // depth of <MAG_CUT and >=MAG_CUT, respectively
 	
 	/**
 	 * 
@@ -192,6 +196,8 @@ public class ETAS_ShakingForecastCalc {
 		public void updateForecast() {
 			sources = new ArrayList<>();
 			
+			WeightedList<PointSourceDistanceCorrection> distCorrs = PointSourceDistanceCorrections.NSHM_2013.get();
+			
 			for (int i=0; i<rateModel.size(); i++) {
 				Location loc = rateModel.getLocation(i);
 				double rate = rateModel.get(i);
@@ -207,7 +213,7 @@ public class ETAS_ShakingForecastCalc {
 				else
 					mechWtMap = mechWts.get(i);
 				
-				PointSource13b source = new PointSource13b(loc, mfd, durationYears, depths, mechWtMap);
+				PointSourceNshm source = new PointSourceNshm(loc, mfd, durationYears, mechWtMap, MAG_CUT, depths[0], depths[1], distCorrs);
 				sources.add(source);
 			}
 		}

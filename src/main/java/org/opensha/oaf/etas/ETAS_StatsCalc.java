@@ -124,7 +124,7 @@ public class ETAS_StatsCalc {
     	
     	//reconstruct ellipse
     	double d = magnitude2radius(mainshock.getMag(), stressDrop);
-    	double a = LocationUtils.horzDistance(faultTrace.first(), faultTrace.last())/2.0;
+    	double a = LocationUtils.horzDistance(faultTrace.first(), faultTrace.last())/2;
     	double c = Math.pow(a/d,2.0);
     	double b = a/c;
     	
