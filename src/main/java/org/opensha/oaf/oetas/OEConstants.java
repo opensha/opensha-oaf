@@ -784,6 +784,22 @@ public class OEConstants {
 
 	public static final int DEF_SEED_SUBVOX_COUNT = 262144;	// 2^18
 
+	// Maximum branch ratio passed to simulation from dithered voxel set.
+	// Note: This is primarily to allow the fitting code to be tested with branch ratio greater then 1.0,
+	// but also can be used as upper limit for branch ratio parameter in GUI.
+
+	public static final double MAX_DITHERING_BR_FOR_SIM = 0.99;
+
+	// Branch ratio above which voxels should be excluded from dithered voxel set.
+	// Note: This is primarily to allow the fitting code to be tested with branch ratio greater then 1.0.
+
+	public static final double EXCLUDE_DITHERING_BR_FOR_SIM = 0.99001;
+
+	// Maximum branch ratio considered sub-critical when computing marginals.
+	// Note: This is primarily to allow the fitting code to be tested with branch ratio greater then 1.0.
+
+	public static final double MAX_MARGINAL_BR_SUB_CRITICAL = 0.99001;
+
 
 
 

@@ -1085,33 +1085,77 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		@Override
 		public void seed_catalog (OECatalogSeedComm comm) {
 
-			// Get the voxel and sub-voxel indexes
+			boolean f_loop = true;
+			while (f_loop) {
 
-			final int local_seed_index = seeding_index.incrementAndGet();		// a different index for each catalog, first index we use is 1
-			final int global_subvox_index = a_seed_subvox[local_seed_index % seed_subvox_count];	// wrap if number of catalogs exceeds number of seeds
-			final int voxel_index = get_voxel_for_subvox (global_subvox_index);
-			final int local_subvox_index = get_local_for_global_subvox (global_subvox_index, voxel_index);
+				// Get the voxel and sub-voxel indexes
 
-			// Let the voxel make the catalog parameters
+				final int local_seed_index = seeding_index.incrementAndGet();		// a different index for each catalog, first index we use is 1
+				final int global_subvox_index = a_seed_subvox[local_seed_index % seed_subvox_count];	// wrap if number of catalogs exceeds number of seeds
+				final int voxel_index = get_voxel_for_subvox (global_subvox_index);
+				final int local_subvox_index = get_local_for_global_subvox (global_subvox_index, voxel_index);
 
-			a_voxel_list[voxel_index].get_cat_params (
-				fit_info,
-				proto_cat_params,
-				local_cat_params
-			);
+				// Let the voxel make the catalog parameters
 
-			// Let the voxel seed the catalog
+				final double cat_br = a_voxel_list[voxel_index].get_vox_cat_params (
+					fit_info,
+					proto_cat_params,
+					local_cat_params
+				);
 
-			a_voxel_list[voxel_index].seed_catalog (
-				fit_info,
-				local_subvox_index,
-				local_cat_params,
-				comm,
-				local_rup
-			);
+				// If branch ratio does not exceed maximum ...
+
+				if (cat_br <= OEConstants.EXCLUDE_DITHERING_BR_FOR_SIM) {
+
+					// Stop looping
+
+					f_loop = false;
+
+					// Let the voxel seed the catalog
+
+					a_voxel_list[voxel_index].seed_catalog (
+						fit_info,
+						local_subvox_index,
+						local_cat_params,
+						comm,
+						local_rup
+					);
+				}
+			}
 		
 			return;
 		}
+
+//		@Override
+//		public void seed_catalog (OECatalogSeedComm comm) {
+//
+//			// Get the voxel and sub-voxel indexes
+//
+//			final int local_seed_index = seeding_index.incrementAndGet();		// a different index for each catalog, first index we use is 1
+//			final int global_subvox_index = a_seed_subvox[local_seed_index % seed_subvox_count];	// wrap if number of catalogs exceeds number of seeds
+//			final int voxel_index = get_voxel_for_subvox (global_subvox_index);
+//			final int local_subvox_index = get_local_for_global_subvox (global_subvox_index, voxel_index);
+//
+//			// Let the voxel make the catalog parameters
+//
+//			a_voxel_list[voxel_index].get_cat_params (
+//				fit_info,
+//				proto_cat_params,
+//				local_cat_params
+//			);
+//
+//			// Let the voxel seed the catalog
+//
+//			a_voxel_list[voxel_index].seed_catalog (
+//				fit_info,
+//				local_subvox_index,
+//				local_cat_params,
+//				comm,
+//				local_rup
+//			);
+//		
+//			return;
+//		}
 
 	}
 

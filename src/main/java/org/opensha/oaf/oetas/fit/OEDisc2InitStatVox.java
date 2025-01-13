@@ -1035,11 +1035,12 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 	//  fit_info = Information about parameter fitting.
 	//  proto_cat_params = Catalog parameters, containing everything except our statistics (a, p, c, b, alpha).
 	//  local_cat_params = Receives the catalog parameters, with our statistics inserted.
+	// Returns the branch ratio for these parameters.
 	// Threading: Parameters fit_info and proto_cat_params can be shared among multiple threads and so
 	//  must not be modified.  Parameter local_cat_params is written by this function and so must be
 	//  local to the current thread.
 
-	public final void get_cat_params (
+	public final double get_vox_cat_params (
 		OEDisc2InitFitInfo fit_info,
 		OECatalogParams proto_cat_params,
 		OECatalogParams local_cat_params
@@ -1051,7 +1052,8 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 		final double c = c_velt.get_ve_value();
 		final double b = b_velt.get_ve_value();
 		final double alpha = ((alpha_velt == null) ? b : alpha_velt.get_ve_value());
-		final double n = n_velt.get_ve_value();
+		//final double n = n_velt.get_ve_value();
+		final double n = Math.min (OEConstants.MAX_DITHERING_BR_FOR_SIM, n_velt.get_ve_value());
 
 		// Convert branch ratio into productivity for the catalog's magnitude range
 
@@ -1076,7 +1078,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 			proto_cat_params
 		);
 
-		return;
+		return n;
 	}
 
 
@@ -1090,7 +1092,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 	// Threading: Parameter fit_info can be shared among multiple threads and so must not be modified.
 	//  Parameter local_seed_params is written by this function and so must be local to the current thread.
 
-	public final void get_seed_params (
+	public final void get_vox_seed_params (
 		OEDisc2InitFitInfo fit_info,
 		int subvox_index,
 		OESeedParams local_seed_params
@@ -1588,7 +1590,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 		// Fill the local catalog parameters
 
 		OECatalogParams local_cat_params = new OECatalogParams();
-		get_cat_params (
+		get_vox_cat_params (
 			fit_info,
 			proto_cat_params,
 			local_cat_params
@@ -1600,7 +1602,7 @@ public class OEDisc2InitStatVox implements Comparable<OEDisc2InitStatVox> {
 		// Fill the local seed parameters
 
 		OESeedParams local_seed_params = new OESeedParams();
-		get_seed_params (
+		get_vox_seed_params (
 			fit_info,
 			subvox_index,
 			local_seed_params

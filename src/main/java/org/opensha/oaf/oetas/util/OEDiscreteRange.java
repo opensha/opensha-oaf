@@ -48,8 +48,17 @@ public abstract class OEDiscreteRange implements Marshalable {
 	// Get the middle parameter value.
 	// The value is guaranteed to lie between get_range_min() and get_range_max(),
 	// but the definition of "middle" varies by subclass.
+	// Implementation note: Subclasses will typically be able to provide a more efficient implementation.
 
-	public abstract double get_range_middle ();
+	public double get_range_middle () {
+		final int range_size = get_range_size();
+		if (range_size % 2 == 0) {
+			double[] bins = get_bin_array();
+			return bins[range_size / 2];
+		}
+		double[] vals = get_range_array();
+		return vals[range_size / 2];
+	}
 
 
 
@@ -235,6 +244,20 @@ public abstract class OEDiscreteRange implements Marshalable {
 
 
 
+	// Make a sub-range of this range.
+	// Parameters:
+	//  subix_lo = Beginning index of the sub-range within the parent range, inclusive.
+	//  subix_hi = Ending index of the sub-range within the parent range, exclusive.
+	// Returns the sub-range.
+	// Implementation note: A subclass may be able to provide a more efficient implementation.
+
+	public OEDiscreteRange make_sub_range (int subix_lo, int subix_hi) {
+		return new OEDiscreteRangeSubRange (this, subix_lo, subix_hi);
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -298,6 +321,13 @@ public abstract class OEDiscreteRange implements Marshalable {
 	}
 
 
+	// Construct a sub-range of the given parent range, with the given sub-range indexes..
+
+	public static OEDiscreteRange makeSubRange (OEDiscreteRange parent_range, int subix_lo, int subix_hi) {
+		return new OEDiscreteRangeSubRange (parent_range, subix_lo, subix_hi);
+	}
+
+
 
 
 	//----- Marshaling -----
@@ -317,6 +347,7 @@ public abstract class OEDiscreteRange implements Marshalable {
 	protected static final int MARSHAL_LOG_SKEW = 141001;
 	protected static final int MARSHAL_LOG_POWER_SKEW = 142001;
 	protected static final int MARSHAL_LINEAR_POWER_SKEW = 143001;
+	protected static final int MARSHAL_SUB_RANGE = 144001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
@@ -441,6 +472,11 @@ public abstract class OEDiscreteRange implements Marshalable {
 			result = new OEDiscreteRangeLinearPowerSkew();
 			result.do_umarshal (reader);
 			break;
+
+		case MARSHAL_SUB_RANGE:
+			result = new OEDiscreteRangeSubRange();
+			result.do_umarshal (reader);
+			break;
 		}
 
 		reader.unmarshalMapEnd ();
@@ -484,6 +520,7 @@ public abstract class OEDiscreteRange implements Marshalable {
 	protected static final String MF_KEY_LOG_SKEW = "log_skew";
 	protected static final String MF_KEY_LOG_POWER_SKEW = "log_power_skew";
 	protected static final String MF_KEY_LINEAR_POWER_SKEW = "linear_power_skew";
+	protected static final String MF_KEY_SUB_RANGE = "sub_range";
 
 	// Friendly marshal tags.
 
@@ -494,6 +531,9 @@ public abstract class OEDiscreteRange implements Marshalable {
 	protected static final String MF_TAG_MAX = "max";
 	protected static final String MF_TAG_SKEW = "skew";
 	protected static final String MF_TAG_POWER = "power";
+	protected static final String MF_TAG_PARENT = "parent";
+	protected static final String MF_TAG_LO = "lo";
+	protected static final String MF_TAG_HI = "hi";
 
 	// Friendly marshal external version numbers.
 
@@ -575,6 +615,11 @@ public abstract class OEDiscreteRange implements Marshalable {
 				result = new OEDiscreteRangeLinearPowerSkew();
 				result.do_umarshal_friendly (reader, n);
 				break;
+
+			case MF_KEY_SUB_RANGE:
+				result = new OEDiscreteRangeSubRange();
+				result.do_umarshal_friendly (reader, n);
+				break;
 			}
 		}
 
@@ -654,6 +699,11 @@ public abstract class OEDiscreteRange implements Marshalable {
 
 		case MF_KEY_LINEAR_POWER_SKEW:
 			result = new OEDiscreteRangeLinearPowerSkew();
+			result.do_umarshal_xver (reader, xver);
+			break;
+
+		case MF_KEY_SUB_RANGE:
+			result = new OEDiscreteRangeSubRange();
 			result.do_umarshal_xver (reader, xver);
 			break;
 		}
@@ -1458,6 +1508,157 @@ public abstract class OEDiscreteRange implements Marshalable {
 				// Create the range and display it
 
 				OEDiscreteRange range = OEDiscreteRange.makeLinearPowerSkew (range_size, range_min, range_max, range_skew, range_power);
+
+				System.out.println();
+				System.out.println ("range = " + range.toString());
+
+				// Get the range size and display it
+
+				int range_length = range.get_range_size();
+
+				System.out.println();
+				System.out.println ("range_length = " + range_length);
+
+				// Display the range minimum and maximum
+
+				System.out.println();
+				System.out.println ("get_range_min() = " + range.get_range_min());
+				System.out.println ("get_range_max() = " + range.get_range_max());
+
+				// Display the range middle
+
+				System.out.println();
+				System.out.println ("get_range_middle() = " + range.get_range_middle());
+
+				// Get the range and bin arrays and display them
+
+				double[] range_array = range.get_range_array();
+				double[] bin_array = range.get_bin_array();
+				OEValueElement[] velt_array = range.get_velt_array();
+
+				System.out.println();
+				System.out.println ("range_array.length = " + range_array.length);
+				System.out.println ("bin_array.length = " + bin_array.length);
+				System.out.println ("velt_array.length = " + velt_array.length);
+
+				System.out.println();
+				for (int k = 0; k < range_length; ++k) {
+					System.out.println (k + ": bin = " + rndd(bin_array[k]) + ", value = " + rndd(range_array[k]) + ", velt = " + velt_array[k].rounded_string_linear());
+				}
+				System.out.println (range_length + ": bin = " + rndd(bin_array[range_length]));
+
+				// Marshal to JSON
+
+				MarshalImpJsonWriter store = new MarshalImpJsonWriter();
+				OEDiscreteRange.marshal_poly (store, null, range);
+				store.check_write_complete ();
+				String json_string = store.get_json_string();
+
+				System.out.println ("");
+				System.out.println (json_string);
+
+				// Unmarshal from JSON
+			
+				OEDiscreteRange range2 = null;
+
+				MarshalImpJsonReader retrieve = new MarshalImpJsonReader (json_string);
+				range2 = OEDiscreteRange.unmarshal_poly (retrieve, null);
+				retrieve.check_read_complete ();
+
+				System.out.println ("");
+				System.out.println (range2.toString());
+
+				// Friendly marshal to JSON
+
+				store = new MarshalImpJsonWriter();
+				OEDiscreteRange.marshal_friendly (store, null, range);
+				store.check_write_complete ();
+				json_string = store.get_json_string();
+
+				System.out.println ("");
+				System.out.println (json_string);
+
+				// Friendly unmarshal from JSON
+			
+				range2 = null;
+
+				retrieve = new MarshalImpJsonReader (json_string);
+				range2 = OEDiscreteRange.unmarshal_friendly (retrieve, null);
+				retrieve.check_read_complete ();
+
+				System.out.println ("");
+				System.out.println (range2.toString());
+
+				// External version marshal to JSON
+
+				store = new MarshalImpJsonWriter();
+				OEDiscreteRange.marshal_xver (store, null, OEDiscreteRange.XVER_1, range);
+				store.check_write_complete ();
+				json_string = store.get_json_string();
+
+				System.out.println ("");
+				System.out.println (json_string);
+
+				// External version unmarshal from JSON
+			
+				range2 = null;
+
+				retrieve = new MarshalImpJsonReader (json_string);
+				range2 = OEDiscreteRange.unmarshal_xver (retrieve, null, OEDiscreteRange.XVER_1);
+				retrieve.check_read_complete ();
+
+				System.out.println ("");
+				System.out.println (range2.toString());
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  range_size range_min  range_max  subix_lo  subix_hi
+		// Test the operation of OEDiscreteRangeSubRange.
+		// Create a sub-range of a linear range and display it.
+		// Display the size.
+		// Display the range and bin arrays.
+		// Marshal to JSON and display the JSON.
+		// Unmarshal from JSON and display the recovered range.
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// 4 additional arguments
+
+			if (!( args.length == 6 )) {
+				System.err.println ("OEDiscreteRange : Invalid 'test7' subcommand");
+				return;
+			}
+
+			try {
+
+				int range_size = Integer.parseInt (args[1]);
+				double range_min = Double.parseDouble (args[2]);
+				double range_max = Double.parseDouble (args[3]);
+				int subix_lo = Integer.parseInt (args[4]);
+				int subix_hi = Integer.parseInt (args[5]);
+
+				// Say hello
+
+				System.out.println ("Testing OEDiscreteRangeSubRange, sub-range of linear range");
+				System.out.println ("range_size = " + range_size);
+				System.out.println ("range_min = " + range_min);
+				System.out.println ("range_max = " + range_max);
+				System.out.println ("subix_lo = " + subix_lo);
+				System.out.println ("subix_hi = " + subix_hi);
+
+				// Create the range and display it
+
+				OEDiscreteRange range = OEDiscreteRange.makeSubRange (OEDiscreteRange.makeLinear (range_size, range_min, range_max), subix_lo, subix_hi);
 
 				System.out.println();
 				System.out.println ("range = " + range.toString());

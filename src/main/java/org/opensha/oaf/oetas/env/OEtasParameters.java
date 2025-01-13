@@ -2004,6 +2004,16 @@ public class OEtasParameters implements Marshalable {
 		return;
 	}
 
+	// Set number of catalogs to minimum allowed values.
+
+	public final void set_num_catalogs_to_minimum () {
+		num_catalogs_avail = true;
+
+		num_catalogs = OEConstants.REQ_NUM_CATALOGS;
+		min_num_catalogs = OEConstants.REQ_NUM_CATALOGS;
+		return;
+	}
+
 	// Copy number of catalogs from another object.
 
 	public final void copy_num_catalogs_from (OEtasParameters other) {

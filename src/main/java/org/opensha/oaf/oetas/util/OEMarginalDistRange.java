@@ -1,5 +1,7 @@
 package org.opensha.oaf.oetas.util;
 
+import java.io.IOException;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -228,6 +230,79 @@ public class OEMarginalDistRange implements Marshalable {
 
 	public final long get_table_storage () {
 		return ((long)(values.length));
+	}
+
+
+
+
+	//----- Utility functions -----
+
+
+
+
+	// Get a string identifying the variables.
+	// Note: Components of the string are separated by dashes, which accommodates
+	// variable names that contain underscores.
+
+	public final String get_id_string () {
+		return "values-" + var_name;
+	}
+
+
+
+
+	// Make a string containing the values in table form.
+	// The string consists of a sequence of values separated by spaces,
+	// terminated by a newline.
+	// Out-of-range values are represented as "-Inf" and "+Inf".
+
+	public final String get_table_string () {
+		StringBuilder result = new StringBuilder();
+
+		if (out_lo) {
+			result.append ("-Inf ");
+		}
+
+		for (int n = 0; n < values.length; ++n) {
+			if (n > 0) {
+				result.append (" ");
+			}
+			result.append (values[n]);
+		}
+
+		if (out_hi) {
+			result.append (" +Inf");
+		}
+
+		result.append ("\n");
+		return result.toString();
+	}
+
+
+
+
+	// Write a file containing the table string.
+	// Parameters:
+	//  filename = Name of file to write.
+
+	public final void write_table_file (String filename) throws IOException {
+		SimpleUtils.write_string_as_file (filename, get_table_string());
+		return;
+	}
+
+
+
+
+	// Write a file containing the table string.
+	// Parameters:
+	//  fn_prefix = Filename prefix, can be empty but not null.
+	//  fn_suffix = Filename suffix, can be empty but not null.
+	// The filename is created by applying the given prefix and suffix
+	// to the id string.
+
+	public final void write_table_file (String fn_prefix, String fn_suffix) throws IOException {
+		write_table_file (fn_prefix + get_id_string() + fn_suffix);
+		return;
 	}
 
 

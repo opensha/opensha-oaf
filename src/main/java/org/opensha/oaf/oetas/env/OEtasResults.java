@@ -63,11 +63,11 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 
 	public int reject_count;
 
-	// Number of accepted ruptures in the triggering interval. [v3]
+	// Number of accepted ruptures in the excitation interval. [v3]
 	// Note: This is primarily an output to support testing.
 	// (Set to min(1, accept_count) when loaded from a v1 or v2 file.)
 
-	public int triggering_count;
+	public int excitation_count;
 
 	// Number of accepted ruptures in the fitting interval. [v3]
 	// Note: This is primarily an output to support testing.
@@ -209,7 +209,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		interval_count = 0;
 		accept_count = 0;
 		reject_count = 0;
-		triggering_count = 0;
+		excitation_count = 0;
 		fitting_count = 0;
 
 		group_count = 0;
@@ -261,7 +261,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		this.interval_count = other.interval_count;
 		this.accept_count = other.accept_count;
 		this.reject_count = other.reject_count;
-		this.triggering_count = other.triggering_count;
+		this.excitation_count = other.excitation_count;
 		this.fitting_count = other.fitting_count;
 
 		this.group_count = other.group_count;
@@ -318,7 +318,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		result.append ("interval_count = " + interval_count + "\n");
 		result.append ("accept_count = " + accept_count + "\n");
 		result.append ("reject_count = " + reject_count + "\n");
-		result.append ("triggering_count = " + triggering_count + "\n");
+		result.append ("excitation_count = " + excitation_count + "\n");
 		result.append ("fitting_count = " + fitting_count + "\n");
 
 		result.append ("group_count = " + group_count + "\n");
@@ -367,7 +367,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		result.append ("interval_count = " + interval_count + "\n");
 		result.append ("accept_count = " + accept_count + "\n");
 		result.append ("reject_count = " + reject_count + "\n");
-		result.append ("triggering_count = " + triggering_count + "\n");
+		result.append ("excitation_count = " + excitation_count + "\n");
 		result.append ("fitting_count = " + fitting_count + "\n");
 
 		result.append ("group_count = " + group_count + "\n");
@@ -426,7 +426,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		interval_count = history.interval_count;
 		accept_count = history.accept_count;
 		reject_count = history.reject_count;
-		triggering_count = history.i_inside_begin;
+		excitation_count = history.i_inside_begin;
 		fitting_count = history.i_inside_end - history.i_inside_begin;
 		return;
 	}
@@ -650,7 +650,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			writer.marshalInt ("interval_count", interval_count);
 			writer.marshalInt ("accept_count", accept_count);
 			writer.marshalInt ("reject_count", reject_count);
-			writer.marshalInt ("triggering_count", triggering_count);
+			writer.marshalInt ("excitation_count", excitation_count);
 			writer.marshalInt ("fitting_count", fitting_count);
 
 			writer.marshalInt ("group_count", group_count);
@@ -718,7 +718,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			interval_count = reader.unmarshalInt ("interval_count");
 			accept_count = reader.unmarshalInt ("accept_count");
 			reject_count = reader.unmarshalInt ("reject_count");
-			triggering_count = Math.min(1, accept_count);
+			excitation_count = Math.min(1, accept_count);
 			fitting_count = Math.max(0, accept_count-1);
 
 			group_count = reader.unmarshalInt ("group_count");
@@ -764,7 +764,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			interval_count = reader.unmarshalInt ("interval_count");
 			accept_count = reader.unmarshalInt ("accept_count");
 			reject_count = reader.unmarshalInt ("reject_count");
-			triggering_count = Math.min(1, accept_count);
+			excitation_count = Math.min(1, accept_count);
 			fitting_count = Math.max(0, accept_count-1);
 
 			group_count = reader.unmarshalInt ("group_count");
@@ -818,7 +818,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 			interval_count = reader.unmarshalInt ("interval_count");
 			accept_count = reader.unmarshalInt ("accept_count");
 			reject_count = reader.unmarshalInt ("reject_count");
-			triggering_count = reader.unmarshalInt ("triggering_count");
+			excitation_count = reader.unmarshalInt ("excitation_count");
 			fitting_count = reader.unmarshalInt ("fitting_count");
 
 			group_count = reader.unmarshalInt ("group_count");
@@ -968,7 +968,7 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		etas_results.interval_count = 250;
 		etas_results.accept_count = 3500;
 		etas_results.reject_count = 2500;
-		etas_results.triggering_count = Math.min(1, etas_results.accept_count);
+		etas_results.excitation_count = Math.min(1, etas_results.accept_count);
 		etas_results.fitting_count = Math.max(0, etas_results.accept_count-1);
 
 		etas_results.group_count = 150;

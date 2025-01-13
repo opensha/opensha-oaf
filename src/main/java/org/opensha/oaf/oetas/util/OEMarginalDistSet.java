@@ -4,6 +4,10 @@ import java.util.Random;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+
+import java.io.IOException;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -51,7 +55,7 @@ public class OEMarginalDistSet implements Marshalable {
 
 	// Values of the variables.
 	// May be an empty array, but cannot be null.
-	// If not null, it must contain an entry for every variable that appears in any marginal,
+	// If not empty, it must contain an entry for every variable that appears in any marginal,
 	// and optionally can contain entries for other variables.
 	// An element of this array cannot be null, but can be an empty range if the corresponding
 	// variable is not used.
@@ -680,6 +684,150 @@ public class OEMarginalDistSet implements Marshalable {
 		}
 		return storage;
 	}
+
+
+
+
+	//----- Utility functions -----
+
+
+
+
+	// Write files containing the table strings.
+	// Parameters:
+	//  fn_prefix = Filename prefix, can be empty but not null.
+	//  fn_suffix = Filename suffix, can be empty but not null.
+	// This writes one file for each value range, univariate distribution,
+	// and bivariate distribution.  Each filenemae is created by applying
+	// the given prefix and suffix to the id string.
+
+	public final void write_table_files (String fn_prefix, String fn_suffix) throws IOException {
+
+		for (int n = 0; n < var_values.length; ++n) {
+			var_values[n].write_table_file (fn_prefix, fn_suffix);
+		}
+
+		for (int n = 0; n < univar.length; ++n) {
+			univar[n].write_table_file (fn_prefix, fn_suffix);
+		}
+
+		for (int n = 0; n < bivar.length; ++n) {
+			bivar[n].write_table_file (fn_prefix, fn_suffix);
+		}
+
+		return;
+	}
+
+
+
+
+//	// Get the fraction of weight contained in a range of values of a given variable.  [DEPRECATED]
+//	// Parameters:
+//	//  vname = Variable name.
+//	//  vlo = Variable index lower limit, inclusive.
+//	//  vhi = Variable index upper limit, exclusive.
+//	//  prefix = Prefix to prepend to id strings, can be null or blank if none.
+//	//  weight_map = Map to receive the fractions of weight.
+//	// For each univariate and bivariate distribution, calculate the fraction of weight
+//	// contained in the rage of values for the variable identified in vname (the fraction
+//	// is 1.0 for distributions that do not contain data for vname).  Then, add an entry
+//	// to weight_map where the key is the distribution's id string (obtained from
+//	// get_id_string), with the given prefix, and the value is the weight fraction.
+//	// Note: Must satisfy 0 <= v1lo <= v1hi <= # of values for the variable vname.
+//
+//	public final void get_var_weight_fraction_map (String vname, int vlo, int vhi, String prefix, Map<String, Double> weight_map) {
+//		final String my_prefix = ((prefix == null) ? ("") : prefix);
+//		for (OEMarginalDistUni x : univar) {
+//			weight_map.put (my_prefix + x.get_id_string(), x.get_var_weight_fraction (vname, vlo, vhi));
+//		}
+//		for (OEMarginalDistBi x : bivar) {
+//			weight_map.put (my_prefix + x.get_id_string(), x.get_var_weight_fraction (vname, vlo, vhi));
+//		}
+//		return;
+//	}
+
+
+
+
+//	// Add each distribution in the y array to the corresponding stack in the x array.  [DEPRECATED]
+//	// Parameters:
+//	//  x = Array of stacks.
+//	//  y = Array of distributions to add.
+//	//  prefix = Prefix to prepend to id strings, can be null or blank if none.
+//	//  weight_map = Map containing weight for each distribution to add.
+//	// Note: Each entry in weight_map has key equal to an id string, and value equal to weight.
+//	// Note: Throws exception if the arrays have different length, or if any id strings don't match,
+//	// or if the weight_map does not contain an entry for each distribution.
+//
+//	public static void array_add_to_stack (final OEMarginalDistUni[] x, final OEMarginalDistUni[] y, String prefix, Map<String, Double> weight_map) {
+//		final String my_prefix = ((prefix == null) ? ("") : prefix);
+//		final int c0 = x.length;
+//		if (c0 != y.length) {
+//			throw new IllegalArgumentException ("OEMarginalDistSet.array_add_to_stack: Array length mismatch: x.length = " + x.length + ", y.length = " + y.length);
+//		}
+//		for (int m0 = 0; m0 < c0; ++m0) {
+//			final String x_id = my_prefix + x[m0].get_id_string();
+//			final String y_id = my_prefix + y[m0].get_id_string();
+//			if (!( x_id.equals (y_id) )) {
+//				throw new IllegalArgumentException ("OEMarginalDistSet.array_add_to_stack: ID string mismatch at index " + m0 + ": x_id = " + x_id + ", y_id = " + y_id);
+//			}
+//			Double w = weight_map.get (x_id);
+//			if (w == null) {
+//				throw new IllegalArgumentException ("OEMarginalDistSet.array_add_to_stack: No stacking weight supplied at index " + m0 + ": x_id = " + x_id);
+//			}
+//			x[m0].add_to_stack (y[m0], w);
+//		}
+//		return;
+//	}
+
+
+
+
+//	// Add each distribution in the y array to the corresponding stack in the x array.  [DEPRECATED]
+//	// Parameters:
+//	//  x = Array of stacks.
+//	//  y = Array of distributions to add.
+//	//  prefix = Prefix to prepend to id strings, can be null or blank if none.
+//	//  weight_map = Map containing weight for each distribution to add.
+//	// Note: Each entry in weight_map has key equal to an id string, and value equal to weight.
+//	// Note: Throws exception if the arrays have different length, or if any id strings don't match,
+//	// or if the weight_map does not contain an entry for each distribution.
+//
+//	public static void array_add_to_stack (final OEMarginalDistBi[] x, final OEMarginalDistBi[] y, String prefix, Map<String, Double> weight_map) {
+//		final String my_prefix = ((prefix == null) ? ("") : prefix);
+//		final int c0 = x.length;
+//		if (c0 != y.length) {
+//			throw new IllegalArgumentException ("OEMarginalDistSet.array_add_to_stack: Array length mismatch: x.length = " + x.length + ", y.length = " + y.length);
+//		}
+//		for (int m0 = 0; m0 < c0; ++m0) {
+//			final String x_id = my_prefix + x[m0].get_id_string();
+//			final String y_id = my_prefix + y[m0].get_id_string();
+//			if (!( x_id.equals (y_id) )) {
+//				throw new IllegalArgumentException ("OEMarginalDistSet.array_add_to_stack: ID string mismatch at index " + m0 + ": x_id = " + x_id + ", y_id = " + y_id);
+//			}
+//			Double w = weight_map.get (x_id);
+//			if (w == null) {
+//				throw new IllegalArgumentException ("OEMarginalDistSet.array_add_to_stack: No stacking weight supplied at index " + m0 + ": x_id = " + x_id);
+//			}
+//			x[m0].add_to_stack (y[m0], w);
+//		}
+//		return;
+//	}
+
+
+
+
+//	// Add a distribution set to the stack.  [DEPRECATED]
+//	// Parameters:
+//	//  other = Distribution set to add.
+//	//  prefix = Prefix to prepend to id strings, can be null or blank if none.
+//	//  weight_map = Map containing weight for each distribution to add.
+//
+//	public final void add_to_stack (OEMarginalDistSet other, String prefix, Map<String, Double> weight_map) {
+//		array_add_to_stack (univar, other.univar, prefix, weight_map);
+//		array_add_to_stack (bivar, other.bivar, prefix, weight_map);
+//		return;
+//	}
 
 
 

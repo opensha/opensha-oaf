@@ -401,6 +401,37 @@ public class ForecastResults implements Marshalable {
 		return;
 	}
 
+	// copy_catalog_results_from - Copy catalog results from another object.
+	// Note: This is a deep copy, except for catalog_comcat_aftershocks which is shared
+	// between this object and the other object (because it is not intended to be
+	// modified, and there is no simple way to deep-copy it).
+
+	public void copy_catalog_results_from (ForecastResults other) {
+
+		// Handle case where catalog results are not available
+
+		if (!( other.catalog_result_avail )) {
+			set_default_catalog_results();
+			this.catalog_result_avail = false;
+			return;
+		}
+
+		// Catalog results are available, copy them
+			
+		this.catalog_result_avail = true;
+
+		this.catalog_start_time = other.catalog_start_time;
+		this.catalog_end_time = other.catalog_end_time;
+		this.catalog_eqk_count = other.catalog_eqk_count;
+		this.catalog_max_mag = other.catalog_max_mag;
+		this.catalog_max_event_id = other.catalog_max_event_id;
+		this.catalog_aftershocks = other.catalog_aftershocks.make_deep_copy();
+		this.catalog_comcat_aftershocks = other.catalog_comcat_aftershocks;
+		this.catalog_fit_start_days = other.catalog_fit_start_days;
+		this.catalog_fit_end_days = other.catalog_fit_end_days;
+		return;
+	}
+
 	// rebuild_catalog_results - Rebuild transient catalog results.
 
 	public void rebuild_catalog_results (ForecastMainshock fcmain, ForecastParameters params, CompactEqkRupList the_catalog_aftershocks) {
@@ -1372,6 +1403,29 @@ public class ForecastResults implements Marshalable {
 		calc_seq_spec_results (fcmain, params, f_seq_spec);
 		calc_bayesian_results (fcmain, params);
 		calc_etas_results (fcmain, params);
+		return;
+	}
+
+	// Copy only the catalog, not any forecasts, from another object, after a call to calc_catalog_only on the other object.
+	// Note: This can be used to create multiple objects containing the same catalog,
+	// allowing multiple forecasts to be computed on the same catalog (presumably with
+	// different parameters), without having to re-fetch the catalog each time.
+	// Note: This is a deep copy, except for catalog_comcat_aftershocks which is shared
+	// between this object and the other object (because it is not intended to be
+	// modified, and there is no simple way to deep-copy it).
+
+	public void copy_catalog_only_from (ForecastResults other) {
+		if (!( other.f_did_catalog_only )) {
+			throw new IllegalStateException ("ForecastResults.copy_catalog_only_from: Did not complete call to calc_catalog_only on the other object");
+		}
+
+		this.result_time = other.result_time;
+		this.advisory_lag = other.advisory_lag;
+		this.injectable_text = other.injectable_text;
+		copy_catalog_results_from (other);
+
+		this.saved_f_seq_spec = other.saved_f_seq_spec;
+		this.f_did_catalog_only = other.f_did_catalog_only;
 		return;
 	}
 

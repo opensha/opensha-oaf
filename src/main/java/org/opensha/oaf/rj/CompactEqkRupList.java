@@ -823,6 +823,12 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 		this.mag_time_list = mag_time_list;
 	}
 
+	// Make a deep copy of this object.
+
+	public CompactEqkRupList make_deep_copy () {
+		return new CompactEqkRupList (eqk_count, lat_lon_depth_list.clone(), mag_time_list.clone());
+	}
+
 
 
 

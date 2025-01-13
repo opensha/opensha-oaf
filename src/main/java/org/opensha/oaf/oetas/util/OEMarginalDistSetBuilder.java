@@ -466,6 +466,21 @@ public class OEMarginalDistSetBuilder {
 
 
 
+	// Index numbers and names for second set of ETAS data, generic, sequence specific, bayesian, and active.
+
+	public static final int DMIX_GENERIC_2 = 4;
+	public static final int DMIX_DEQ_SPEC_2 = 5;
+	public static final int DMIX_BAYESIAN_2 = 6;
+	public static final int DMIX_ACTIVE_2 = 7;
+
+	public static final String DNAME_GENERIC_2 = "generic2";
+	public static final String DNAME_DEQ_SPEC_2 = "seqspec2";
+	public static final String DNAME_BAYESIAN_2 = "bayesian2";
+	public static final String DNAME_ACTIVE_2 = "active2";
+
+
+
+
 	// Add the data for ETAS, a single probability.
 
 	public final void add_etas_data_prob () {
@@ -495,6 +510,23 @@ public class OEMarginalDistSetBuilder {
 		add_data ("seqspec");
 		add_data ("bayesian");
 		add_data ("active");
+		return;
+	}
+
+
+
+
+	// Add the data for ETAS, generic, sequence specific, bayesian, and active, including second set.
+
+	public final void add_etas_data_gen_seq_bay_act_dual () {
+		add_data ("generic");
+		add_data ("seqspec");
+		add_data ("bayesian");
+		add_data ("active");
+		add_data ("generic2");
+		add_data ("seqspec2");
+		add_data ("bayesian2");
+		add_data ("active2");
 		return;
 	}
 
@@ -539,6 +571,32 @@ public class OEMarginalDistSetBuilder {
 		dist_w[DMIX_DEQ_SPEC] = seq;
 		dist_w[DMIX_BAYESIAN] = bay;
 		dist_w[DMIX_ACTIVE] = act;
+		return;
+	}
+
+
+
+
+	// Set the data for ETAS, generic, sequence specific, bayesian, and active, including second set..
+
+	public final void set_etas_data_gen_seq_bay_act_dual (
+		double gen,
+		double seq,
+		double bay,
+		double act,
+		double gen2,
+		double seq2,
+		double bay2,
+		double act2
+	) {
+		dist_w[DMIX_GENERIC] = gen;
+		dist_w[DMIX_DEQ_SPEC] = seq;
+		dist_w[DMIX_BAYESIAN] = bay;
+		dist_w[DMIX_ACTIVE] = act;
+		dist_w[DMIX_GENERIC_2] = gen2;
+		dist_w[DMIX_DEQ_SPEC_2] = seq2;
+		dist_w[DMIX_BAYESIAN_2] = bay2;
+		dist_w[DMIX_ACTIVE_2] = act2;
 		return;
 	}
 

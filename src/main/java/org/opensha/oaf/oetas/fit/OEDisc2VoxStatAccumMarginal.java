@@ -26,6 +26,10 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 
 	private boolean f_out;
 
+	// True to include a second set of data to accumulate marginals for the sub-critical part of parameter space.
+
+	private boolean f_dual;
+
 
 	//----- Data -----
 
@@ -43,6 +47,10 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 	// The marginal distribution set builder.
 
 	private OEMarginalDistSetBuilder dist_set_builder;
+
+	// True if the current voxel is super-critical.
+
+	private boolean f_vox_super_critical;
 
 
 
@@ -115,6 +123,12 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 		this.f_full = f_full;
 		this.f_out = f_out;
 
+		if (f_full && grid_params.n_range.get_range_max() > OEConstants.MAX_MARGINAL_BR_SUB_CRITICAL) {
+			this.f_dual = true;
+		} else {
+			this.f_dual = false;
+		}
+
 		// Clear data
 
 		act_bay_weight = 0.0;
@@ -124,6 +138,8 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 		bay_max_log_density = 0.0;
 
 		dist_set_builder = null;
+
+		f_vox_super_critical = false;
 	}
 
 
@@ -174,7 +190,11 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 		dist_set_builder = new OEMarginalDistSetBuilder();
 		dist_set_builder.add_etas_vars (grid_params, f_out);
 		if (f_full) {
-			dist_set_builder.add_etas_data_gen_seq_bay_act();
+			if (f_dual) {
+				dist_set_builder.add_etas_data_gen_seq_bay_act_dual();
+			} else {
+				dist_set_builder.add_etas_data_gen_seq_bay_act();
+			}
 			dist_set_builder.begin_accum (true);
 		} else {
 			dist_set_builder.add_etas_data_prob();
@@ -198,7 +218,7 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 		double p,
 		double n
 	) {
-		//	 Pass it into the builder
+		// Pass it into the builder
 
 		dist_set_builder.set_etas_var_b_alpha_c_p_n (
 			b,
@@ -207,6 +227,14 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 			p,
 			n
 		);
+
+		// Remember if this is super-critical in a dual marginal
+
+		if (f_dual && n > OEConstants.MAX_MARGINAL_BR_SUB_CRITICAL) {
+			f_vox_super_critical = true;
+		} else {
+			f_vox_super_critical = false;
+		}
 
 		return;
 	}
@@ -277,12 +305,29 @@ public class OEDisc2VoxStatAccumMarginal implements OEDisc2VoxStatAccum {
 
 			// Pass data into the builder
 
-			dist_set_builder.set_etas_data_gen_seq_bay_act (
-				gen,
-				seq,
-				bay,
-				act
-			);
+			if (f_dual) {
+
+				dist_set_builder.set_etas_data_gen_seq_bay_act_dual (
+					gen,
+					seq,
+					bay,
+					act,
+					f_vox_super_critical ? 0.0 : gen,
+					f_vox_super_critical ? 0.0 : seq,
+					f_vox_super_critical ? 0.0 : bay,
+					f_vox_super_critical ? 0.0 : act
+				);
+
+			} else {
+
+				dist_set_builder.set_etas_data_gen_seq_bay_act (
+					gen,
+					seq,
+					bay,
+					act
+				);
+
+			}
 		}
 
 		// Make data for slim marginals

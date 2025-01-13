@@ -2,6 +2,8 @@ package org.opensha.oaf.oetas.util;
 
 import java.util.Random;
 
+import java.io.IOException;
+
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
@@ -494,6 +496,123 @@ public class OEMarginalDistUni implements Marshalable {
 
 	public final long get_table_storage () {
 		return ((long)(dist.length)) + ((long)(fractiles.length));
+	}
+
+
+
+
+	//----- Utility functions -----
+
+
+
+
+	// Get a string identifying the variables and data.
+	// Note: Components of the string are separated by dashes, which accommodates
+	// variable and data names that contain underscores.
+
+	public final String get_id_string () {
+		return "univar-" + var_name + "-" + data_name;
+	}
+
+
+
+
+	// Make a string containing the values in table form.
+	// The string consists of a sequence of values separated by spaces,
+	// terminated by a newline.
+
+	public final String get_table_string () {
+		StringBuilder result = new StringBuilder();
+
+		final int bin_count = dist.length;
+
+		for (int n = 0; n < bin_count; ++n) {
+			if (n > 0) {
+				result.append (" ");
+			}
+			result.append (dist[n]);
+		}
+
+		result.append ("\n");
+		return result.toString();
+	}
+
+
+
+
+	// Write a file containing the table string.
+	// Parameters:
+	//  filename = Name of file to write.
+
+	public final void write_table_file (String filename) throws IOException {
+		SimpleUtils.write_string_as_file (filename, get_table_string());
+		return;
+	}
+
+
+
+
+	// Write a file containing the table string.
+	// Parameters:
+	//  fn_prefix = Filename prefix, can be empty but not null.
+	//  fn_suffix = Filename suffix, can be empty but not null.
+	// The filename is created by applying the given prefix and suffix
+	// to the id string.
+
+	public final void write_table_file (String fn_prefix, String fn_suffix) throws IOException {
+		write_table_file (fn_prefix + get_id_string() + fn_suffix);
+		return;
+	}
+
+
+
+
+	// Get the fraction of weight contained in a range of variable values.
+	// Parameters:
+	//  vlo = Variable index lower limit, inclusive.
+	//  vhi = Variable index upper limit, exclusive.
+	// Returns a value from 0.0 to 1.0 representing the fraction of weight in the given range.
+	// Note: Must satisfy 0 <= vlo <= vhi <= dist.length.
+
+	public final double get_weight_fraction (int vlo, int vhi) {
+		if (!( 0 <= vlo && vlo <= vhi && vhi <= dist.length )) {
+			throw new IllegalArgumentException ("OEMarginalDistUni.get_weight_fraction: Index out-of-range: vlo = " + vlo + ", vhi = " + vhi + ", dist.length = " + dist.length);
+		}
+
+		final int bin_count = dist.length;
+		double inside_total = 0.0;
+		double outside_total = 0.0;
+
+		for (int n = 0; n < vlo; ++n) {
+			outside_total += dist[n];
+		}
+		for (int n = vlo; n < vhi; ++n) {
+			inside_total += dist[n];
+		}
+		for (int n = vhi; n < bin_count; ++n) {
+			outside_total += dist[n];
+		}
+
+		return inside_total / (outside_total + inside_total);
+	}
+
+
+
+
+	// Get the fraction of weight contained in a range of values of a given variable.
+	// Parameters:
+	//  vname = Variable name.
+	//  vlo = Variable index lower limit, inclusive.
+	//  vhi = Variable index upper limit, exclusive.
+	// Returns a value from 0.0 to 1.0 representing the fraction of weight in the given range of the given variable.
+	// Note: Returns 1.0 if vname is not the name of our variable.
+	// Note: Must satisfy 0 <= vlo <= vhi <= dist.length.
+
+	public final double get_var_weight_fraction (String vname, int vlo, int vhi) {
+		if (vname.equals (var_name)) {
+			return get_weight_fraction (vlo, vhi);
+		}
+		return 1.0;
 	}
 
 
