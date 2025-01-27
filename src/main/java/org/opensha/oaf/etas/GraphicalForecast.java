@@ -18,6 +18,7 @@ import java.util.TimeZone;
 import javax.swing.JTable;
 
 import org.apache.commons.io.FileUtils;
+import org.opensha.commons.data.function.ArbDiscrEmpiricalDistFunc;
 import org.opensha.commons.param.Parameter;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -78,6 +79,8 @@ public class GraphicalForecast{
 	private double[] predictionIntervals = new double[]{DAY,WEEK,MONTH,YEAR}; //day,week,month,year
 	private int preferredForecastInterval = 1; //week
 	double fracIncrement = 0.0025;
+	int[] barGraphUppers = new int[]{};
+	double[] barGraphValues = new double[] {};
 	
 //	private String[] predictionIntervalStrings = new String[]{"day","week","month","year"}; //day,week,month,year
 	private double[][][] number;  //dimensions: [predMag][predInterval][range: exp, lower, upper];
@@ -770,13 +773,22 @@ public class GraphicalForecast{
 		//set up fractiles
 		int nfrac = (int)(1.0/fracIncrement) - 1;
 		double[] fractiles = ETAS_StatsCalc.linspace(fracIncrement, 1-fracIncrement, nfrac);
-		
+		int[] barNumbers = {0,1,2,5,10,20,50,100,200,500}; //this is now hard coded, should be taken from a config file
+				
 		//build a string for the json
 		StringBuilder fractileProbabilityString = new StringBuilder();
 		for(int k = 0; k < fractiles.length - 1; k++) {
 			fractileProbabilityString.append(String.format("%5.4f,", fractiles[k]));
 		}
 		fractileProbabilityString.append(String.format("%5.4f", fractiles[fractiles.length-1]));
+		
+		//build a string for the json
+		StringBuilder barNumberString = new StringBuilder();
+			for(int k = 0; k < barNumbers.length - 1; k++) {
+				barNumberString.append(String.format("%d,", barNumbers[k]));
+			}
+		barNumberString.append(String.format("%d", barNumbers[barNumbers.length-1]));
+				
 		
 		
 		//report number of observed earthquakes
@@ -829,23 +841,23 @@ public class GraphicalForecast{
 				+ ",\n\t\t\"magMain\":" + String.format("%2.1f", aftershockModel.getMainShockMag()) 
 				+ ",\n\t\t\"p\":" + String.format("%3.2f", aftershockModel.getMaxLikelihood_p()) 
 				+ ",\n\t\t\"c\":" + String.format("%5.4f", aftershockModel.getMaxLikelihood_c())
-				+ ",\n\t\t\"Mc\":" + String.format("%2.1f", aftershockModel.magComplete)
+				+ ",\n\t\t\"Mc\":" + String.format("%2.2f", aftershockModel.magComplete)
 				);
 		if(region != null) {
 			jsonString.append(""
 				+ ",\n\t\t\"regionType\":\"circle\""
-				+ ",\n\t\t\"regionCenterLat\":" + String.format("%2.1f", region.getCircleCenterLat())
-				+ ",\n\t\t\"regionCenterLon\":" + String.format("%2.1f", region.getCircleCenterLon())
+				+ ",\n\t\t\"regionCenterLat\":" + String.format("%2.4f", region.getCircleCenterLat())
+				+ ",\n\t\t\"regionCenterLon\":" + String.format("%2.4f", region.getCircleCenterLon())
 				+ ",\n\t\t\"regionRadius\":" + String.format("%2.1f", region.getCircleRadiusKm())
 				);
 		}
 	
-		
-		
+		//TODO: append bar graph probabilities directly
 		
 		jsonString.append(""
 				+ "\n\t\t}\n\t},"
 				+ "\n\"fractileProbabilities\":[" + fractileProbabilityString + "],"
+				+ "\n\"barLabels\":[" + barNumberString + "],"
 				+ "\n\"forecast\":["
 				);
 		
@@ -865,23 +877,34 @@ public class GraphicalForecast{
 			
 			for (int i = 0; i < predictionMagnitudes.length; i++) {
 				double mag = predictionMagnitudes[i];
-				
+
+				// compute number values for the specified probabilty fractiles. 
 				StringBuilder fractileString = new StringBuilder();
-//				double[] fractiles = {0.0125,0.025,0.0375,0.05,0.0625,0.075,0.0875,0.1,0.1125,0.125,0.1375,0.15,0.1625,0.175,0.1875,0.2,0.2125,0.225,0.2375,0.25,0.2625,0.275,0.2875,0.3,0.3125,0.325,0.3375,0.35,0.3625,0.375,0.3875,0.4,0.4125,0.425,0.4375,0.45,0.4625,0.475,0.4875,0.5,0.5125,0.525,0.5375,0.55,0.5625,0.575,0.5875,0.6,0.6125,0.625,0.6375,0.65,0.6625,0.675,0.6875,0.7,0.7125,0.725,0.7375,0.75,0.7625,0.775,0.7875,0.8,0.8125,0.825,0.8375,0.85,0.8625,0.875,0.8875,0.9,0.9125,0.925,0.9375,0.95,0.9625,0.975,0.9875};
-				
-//				int nfrac = (int)(1.0/fracIncrement) - 1;
-//				double[] fractiles = ETAS_StatsCalc.linspace(fracIncrement, 1-fracIncrement, nfrac);
-				
 				double[] fractileValues = aftershockModel.getCumNumFractileWithAleatory(fractiles, mag,
 						aftershockModel.getForecastMinDays(), aftershockModel.getForecastMinDays() + predictionIntervals[j]);
-				
 				for(int k = 0; k < fractileValues.length - 1; k++) {
 					fractileString.append(String.format("%d,", Math.round(fractileValues[k])));
 				}
 				fractileString.append(String.format("%d", Math.round(fractileValues[fractileValues.length-1])));
-//				fractileString = String.format("%5.4f,", fractileValues);
-						
-						
+				
+				
+//				getProbabilityWithAleatory(int num, double mag, double tMinDays, double tMaxDays) {
+//						
+				// compute probabililty values for the specified number ranges
+				StringBuilder barProbabilityString = new StringBuilder();
+				double[] barProbabilityValue = aftershockModel.getCumulativeProbabilityValue(
+						aftershockModel.getForecastMinDays(), aftershockModel.getForecastMinDays() + predictionIntervals[j],
+						mag, barNumbers);
+				double barCumSum = 0;
+				
+				for(int k = 0; k < barProbabilityValue.length; k++) {
+					if (k < barProbabilityValue.length - 1)	
+						barProbabilityString.append(String.format("%d,", Math.round(100*(barProbabilityValue[k] - barCumSum))));
+					else
+						barProbabilityString.append(String.format("%d", Math.round(100*(1.0 - barCumSum))));
+					barCumSum = barProbabilityValue[k];
+				}
+				
 				if (2.99 < mag && mag < 7.01) { //added M4s NvdE 7/3/2020
 					jsonString.append(""
 							+ "\n\t\t{\"magnitude\":" + String.format("%2.1f", mag)
@@ -890,6 +913,7 @@ public class GraphicalForecast{
 							+ ",\n\t\t\"probability\":" + String.format("%5.4f",probability[i][j])
 							+ ",\n\t\t\"median\":" + String.format("%d", Math.round(number[i][j][0]))
 							+ ",\n\t\t\"fractileValues\":[" + fractileString + "]"
+							+ ",\n\t\t\"barPercentages\":[" + barProbabilityString + "]"
 							+ "\n\t\t}");
 					if (mag < 7) jsonString.append(",");
 				}
@@ -903,6 +927,13 @@ public class GraphicalForecast{
 					);
 			if (j < predictionIntervals.length - 1) jsonString.append(",");
 		}
+		
+		
+		
+		//TODO: add next forecast time
+		
+		
+		
 		jsonString.append("\n\t]\n}");
 		if(D) System.out.println(jsonString);
 			

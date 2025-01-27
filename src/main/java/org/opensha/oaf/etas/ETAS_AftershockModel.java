@@ -863,7 +863,31 @@ public abstract class ETAS_AftershockModel {
 //		return magnitudePDF;
 //	}
 
+//	public double[] getProbabilityWithAleatory(int[] number, double mag, double tMinDays, double tMaxDays) {
+//		computeNum_DistributionFunc(tMinDays, tMaxDays, mag);
+//
+//
+//		double[] prob = new double[number.length];
+//
+//		for (int k = 0; k < number.length; k++) {
+//			prob[k] = 1 - num_DistributionFunc.getClosestYtoX(number[k]);
+//
+//			if(D) System.out.println("Prob value = " + 100.0*prob[k]);
+//			// the above probability is the fraction of simulations with events above max(magComplete, mag),
+//			// so if mag<magComplete, we need to scale up the probability. We do this with a Poisson rate assumption.
+//
+//			if(mag < simulatedCatalog.minMagLimit){
+//				prob[k] = 1 - Math.pow(1-prob[k], Math.pow(10, -b*(mag-simulatedCatalog.minMagLimit)));
+//			}
+//
+//		}
+//		
+//		return prob;
+//	}
+
+
 	public double getProbabilityWithAleatory(double mag, double tMinDays, double tMaxDays) {
+		
 		computeNum_DistributionFunc(tMinDays, tMaxDays, mag);
 
 		double probOne = 1 - num_DistributionFunc.getY(0);
@@ -879,6 +903,8 @@ public abstract class ETAS_AftershockModel {
 		
 		
 		return probOne;
+				
+		
 	}
 
 	/**
@@ -1212,6 +1238,34 @@ public abstract class ETAS_AftershockModel {
 		}
 	}
 
+	
+	public double[] getCumulativeProbabilityValue(double tmin, double tmax, double minMag, int[] nObserved) {
+		
+		this.computeNum_DistributionFunc(tmin, tmax, minMag);
+
+		
+		double[] xValues = num_DistributionFunc.getXVals();
+		double[] yValues = num_DistributionFunc.getYVals();
+		double[] zValues = new double[nObserved.length];
+		
+		for (int k = 0; k < nObserved.length; k++) { 
+			double ySum = 0;
+			
+			for (int i = 0; i < xValues.length; i++) {
+				if (nObserved[k] >= xValues[i])
+					ySum += yValues[i];
+				else 
+					break;
+			}
+			
+			zValues[k] = ySum/num_DistributionFunc.getSumOfAllY_Values();
+			
+		}
+		return zValues;
+	}
+
+
+
 	/*
 	 * This one returns the value of the cdf at the specified x-value, with a randomized correction for the discreteness of
 	 * the distribution. The fractile value for count n is defined q = P(N <= n) - rand(1)*P(N == n); 
@@ -1219,6 +1273,7 @@ public abstract class ETAS_AftershockModel {
 	public double getCumulativeQuantileValue(double tmin, double tmax, double minMag, int nObserved) {
 		
 		this.computeNum_DistributionFunc(tmin, tmax, minMag);
+		
 		
 		double[] xValues = num_DistributionFunc.getXVals();
 		double[] yValues = num_DistributionFunc.getYVals();
