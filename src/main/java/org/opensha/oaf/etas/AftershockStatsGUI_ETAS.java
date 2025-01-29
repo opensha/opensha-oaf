@@ -1720,6 +1720,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					}
 
 				} else {
+					if(D) System.out.println("region will be null");
 					region = buildRegion(mainshock, null);
 					aftershocks = accessor.fetchAftershocks(mainshock, dataMinDays, dataMaxDays, minDepth, maxDepth, region, region.getPlotWrap());
 				}
