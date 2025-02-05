@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Arrays;
 
 import java.io.IOException;
 
@@ -417,6 +418,86 @@ public class OEBayTest {
 
 
 
+	// Make a remapping of regime names.
+	// Parameters:
+	//  remap_option = Option selecting a map.
+	// Return a map of original to new regime names.
+
+	public static Map<String, String> make_regime_remap (int remap_option) {
+
+		// Make regime name remapping according to selected option
+
+		Map<String, String> regime_remap = new HashMap<String, String>();
+
+		switch (remap_option) {
+		default:
+			throw new IllegalArgumentException ("OEBayTest.make_regime_remap: Invalid remapping option: remap_option = " + remap_option);
+
+		// Remapping option 0: No remapping
+
+		case 0:
+			break;
+
+		// Remapping option 1: Map each region to its primary type
+
+		case 1:
+			regime_remap.put ("ACR (deep)", "ACR");
+			regime_remap.put ("ACR (hot spot)", "ACR");
+			regime_remap.put ("ACR (oceanic boundary)", "ACR");
+			regime_remap.put ("ACR (shallow)", "ACR");
+			regime_remap.put ("ACR deep (above slab)", "ACR");
+			regime_remap.put ("ACR oceanic boundary (above slab)", "ACR");
+			regime_remap.put ("ACR shallow (above slab)", "ACR");
+			regime_remap.put ("CAL-HYDROTHERMAL", "CAL");
+			regime_remap.put ("CAL-MENDOCINO", "CAL");
+			regime_remap.put ("CAL-NCSS", "CAL");
+			regime_remap.put ("CAL-SCSN", "CAL");
+			regime_remap.put ("SCR (above slab)", "SCR");
+			regime_remap.put ("SCR (generic)", "SCR");
+			regime_remap.put ("SOR (above slab)", "SOR");
+			regime_remap.put ("SOR (generic)", "SOR");
+			regime_remap.put ("SZ (generic)", "SZ");
+			regime_remap.put ("SZ (inland/back-arc)", "SZ");
+			regime_remap.put ("SZ (on-shore)", "SZ");
+			regime_remap.put ("SZ (outer-trench)", "SZ");
+			break;
+
+		// Remapping option 2: Map each region to its level-1 in categorization
+
+		case 2:
+			regime_remap.put ("ACR (deep)", "ANSR");
+			regime_remap.put ("ACR (hot spot)", "ANSR");
+			regime_remap.put ("ACR (oceanic boundary)", "ANSR");
+			regime_remap.put ("ACR (shallow)", "ANSR");
+			regime_remap.put ("ACR deep (above slab)", "ANSR");
+			regime_remap.put ("ACR oceanic boundary (above slab)", "ANSR");
+			regime_remap.put ("ACR shallow (above slab)", "ANSR");
+			regime_remap.put ("CAL-HYDROTHERMAL", "ANSR");
+			regime_remap.put ("CAL-MENDOCINO", "ANSR");
+			regime_remap.put ("CAL-NCSS", "ANSR");
+			regime_remap.put ("CAL-SCSN", "ANSR");
+			regime_remap.put ("SCR (above slab)", "SCR");
+			regime_remap.put ("SCR (generic)", "SCR");
+			regime_remap.put ("SOR (above slab)", "SOR");
+			regime_remap.put ("SOR (generic)", "SOR");
+			regime_remap.put ("SZ (generic)", "SZ");
+			regime_remap.put ("SZ (inland/back-arc)", "SZ");
+			regime_remap.put ("SZ (on-shore)", "SZ");
+			regime_remap.put ("SZ (outer-trench)", "SZ");
+			break;
+		}
+
+		return regime_remap;
+	}
+
+
+
+
+	//----- Accumulators -----
+
+
+
+
 	// Sequence accumulator that just counts the number of sequences.
 
 	private static class SeqAccumCount implements Marshalable {
@@ -707,7 +788,356 @@ public class OEBayTest {
 
 
 
-	// Sequence accumulator that just counts the number of sequences.
+	// Sequence accumulator that counts the number of sequences and a histogram of sequence size.
+
+	private static class SeqAccum2Count implements Marshalable {
+
+		// The count of number of sequences.
+
+		public int seq_count;
+
+		// A histogram of sequence size.
+
+		public int[] seq_size_hist;
+
+		// Constructor.
+
+		public SeqAccum2Count () {
+			this.seq_count = 0;
+			this.seq_size_hist = new int[100];
+			Arrays.fill (seq_size_hist, 0);
+		}
+
+		// Accumulate a sequence.
+
+		public void seq_accum (ForecastMainshock fcmain, ForecastParameters forecast_params, ForecastResults forecast_results) {
+
+			// Paramaters must contain generic and magnitude of completeness parameters
+
+			if (!( forecast_params.generic_avail && forecast_params.mag_comp_avail )) {
+				return;
+			}
+
+			// Check for catalog available
+
+			if (!( forecast_results.catalog_result_avail
+				&& forecast_results.catalog_comcat_aftershocks != null )) {
+
+				return;
+			}
+
+			// Count the sequence
+
+			++seq_count;
+
+			// Update the histogram
+
+			int ascount = count_aftershock_above_mcat (fcmain, forecast_params, forecast_results);
+			if (ascount >= seq_size_hist.length) {
+				int newlength = Math.max (ascount + 1, 2*seq_size_hist.length);
+				seq_size_hist = Arrays.copyOf (seq_size_hist, newlength);
+			}
+			seq_size_hist[ascount] = seq_size_hist[ascount] + 1;
+
+			return;
+		}
+
+		// Make a string containing the histogram.
+
+		public String hist_string (String prefix) {
+			StringBuilder result = new StringBuilder();
+
+			result.append (prefix + "Total: " + seq_count + "\n");
+
+			int cum = 0;
+			int inv = seq_count;
+			for (int i = 0; i < seq_size_hist.length; ++i) {
+				int x = seq_size_hist[i];
+				if (x > 0) {
+					cum += x;
+					result.append (prefix + i + ": " + x + "   cum = " + cum + "   inv = " + inv + "\n");
+					inv -= x;
+				}
+			}
+
+			return result.toString();
+		}
+
+		// Marshal object, internal.
+
+		protected void do_marshal (MarshalWriter writer) {
+			writer.marshalInt  ("seq_count", seq_count);
+			writer.marshalIntArray ("seq_size_hist", seq_size_hist);
+			return;
+		}
+
+		// Unmarshal object, internal.
+
+		protected void do_umarshal (MarshalReader reader) {
+			seq_count = reader.unmarshalInt  ("seq_count");
+			seq_size_hist = reader.unmarshalIntArray ("seq_size_hist");
+			return;
+		}
+
+		// Marshal object.
+
+		@Override
+		public void marshal (MarshalWriter writer, String name) {
+			writer.marshalMapBegin (name);
+			do_marshal (writer);
+			writer.marshalMapEnd ();
+			return;
+		}
+
+		// Unmarshal object.
+
+		@Override
+		public SeqAccum2Count unmarshal (MarshalReader reader, String name) {
+			reader.unmarshalMapBegin (name);
+			do_umarshal (reader);
+			reader.unmarshalMapEnd ();
+			return this;
+		}
+	}
+
+
+
+
+	// Holds SeqAccum2Count objects for each tectonic regime, plus global.
+
+	private static class SeqAccum2CountHolder implements Marshalable {
+
+		// The minimum magnitude delta above the magnitude of completeness, for a sequence to count.
+
+		public double min_mag_cat_delta;
+
+		// True to use ETAS regimes, false to use generic regimes.
+
+		public boolean f_etas_regime;
+
+		// Remapping for regime names
+
+		public Map<String, String> regime_remap;
+
+		// The list of regime names (remapped), sorted.
+
+		public List<String> regime_names;
+
+		// A global accumulator.
+
+		public SeqAccum2Count global_accum;
+
+		// A map, containing an accumulator for each tectonic regime.
+
+		public Map<String, SeqAccum2Count> regime_accums;
+
+		// Constructor allocates the accumulators.
+
+		public SeqAccum2CountHolder (double min_mag_cat_delta, boolean f_etas_regime, Map<String, String> regime_remap) {
+
+			// Save the parameters
+
+			this.min_mag_cat_delta = min_mag_cat_delta;
+			this.f_etas_regime = f_etas_regime;
+			this.regime_remap = regime_remap;
+
+			// If a null map was supplied, replace it with an empty map
+
+			if (this.regime_remap == null) {
+				this.regime_remap = new HashMap<String, String>();
+			}
+
+			// Get action parameters and enable ETAS if we are using ETAS regimes
+
+			ActionConfig action_config = new ActionConfig();
+
+			if (this.f_etas_regime) {
+				action_config.get_action_config_file().etas_enable = ActionConfigFile.ETAS_ENA_ENABLE;
+			}
+
+			// Allocate the global accumulator
+
+			global_accum = new SeqAccum2Count ();
+
+			// Get the list of regime names
+
+			regime_names = new ArrayList<String>();
+			Set<String> names_seen = new HashSet<String>();
+
+			if (this.f_etas_regime) {
+
+				OEtasConfig fetch = new OEtasConfig();
+				for (OAFTectonicRegime regime : fetch.getRegimeSet()) {
+					String regime_name = regime.toString();
+					if (this.regime_remap.containsKey (regime_name)) {
+						regime_name = this.regime_remap.get (regime_name);
+					}
+					if (names_seen.add (regime_name)) {
+						regime_names.add (regime_name);
+					}
+				}
+
+			} else {
+
+				GenericRJ_ParametersFetch fetch = new GenericRJ_ParametersFetch();
+				for (OAFTectonicRegime regime : fetch.getRegimeSet()) {
+					String regime_name = regime.toString();
+					if (this.regime_remap.containsKey (regime_name)) {
+						regime_name = this.regime_remap.get (regime_name);
+					}
+					if (names_seen.add (regime_name)) {
+						regime_names.add (regime_name);
+					}
+				}
+
+			}
+
+			Collections.sort (regime_names);
+
+			// Allocate the per-regime accumulators
+			
+			regime_accums = new HashMap<String, SeqAccum2Count>();
+			for (String regime_name : regime_names) {
+				regime_accums.put (regime_name, new SeqAccum2Count ());
+			}
+		}
+
+		// Construct an empty object.
+
+		public SeqAccum2CountHolder () {
+			min_mag_cat_delta = 0.0;
+			f_etas_regime = false;
+			regime_remap = null;
+			regime_names = null;
+			global_accum = null;
+			regime_accums = null;
+		}
+
+		// Accumulate a sequence.
+
+		public void seq_accum (ForecastMainshock fcmain, ForecastParameters forecast_params, ForecastResults forecast_results) {
+
+			// Paramaters must contain generic parameters and magnitude of completeness
+
+			if (!( forecast_params.generic_avail
+				&& forecast_params.mag_comp_avail )) {
+				return;
+			}
+
+			// If using ETAS regimes, parameters must contain ETAS parameters.
+
+			if (f_etas_regime) {
+				if (!( forecast_params.etas_avail )) {
+					return;
+				}
+			}
+
+			// Check for magnitude of completeness delta
+
+			if (!( fcmain.mainshock_mag >= forecast_params.mag_comp_params.get_magCat (fcmain.mainshock_mag) + min_mag_cat_delta )) {
+				return;
+			}
+
+			// Accumulate global count
+
+			global_accum.seq_accum (fcmain, forecast_params, forecast_results);
+
+			// Accumulate per-regime count
+
+			String regime_name = ((f_etas_regime) ? (forecast_params.etas_regime) : (forecast_params.generic_regime));
+			if (regime_remap.containsKey (regime_name)) {
+				regime_name = regime_remap.get (regime_name);
+			}
+			regime_accums.get(regime_name).seq_accum (fcmain, forecast_params, forecast_results);
+
+			return;
+		}
+
+		// Make a string containing the counts.
+
+		public String count_string () {
+			StringBuilder result = new StringBuilder();
+
+			result.append ("Global count:" + "\n");
+			result.append (global_accum.hist_string ("  "));
+
+			for (String regime_name : regime_names) {
+				result.append (regime_name + ":" + "\n");
+				result.append (regime_accums.get(regime_name).hist_string ("  "));
+			}
+
+			return result.toString();
+		}
+
+		// Marshal object, internal.
+
+		protected void do_marshal (MarshalWriter writer) {
+			writer.marshalDouble ("min_mag_cat_delta", min_mag_cat_delta);
+			writer.marshalBoolean ("f_etas_regime", f_etas_regime);
+
+			MarshalUtils.marshalMapStringString (writer, "regime_remap", regime_remap);
+
+			writer.marshalStringCollection ("regime_names", regime_names);
+			global_accum.marshal (writer, "global_accum");
+			writer.marshalMapBegin ("regime_accums");
+			for (String regime_name : regime_names) {
+				regime_accums.get(regime_name).marshal (writer, regime_name);
+			}
+			writer.marshalMapEnd ();
+			return;
+		}
+
+		// Unmarshal object, internal.
+
+		protected void do_umarshal (MarshalReader reader) {
+			min_mag_cat_delta = reader.unmarshalDouble ("min_mag_cat_delta");
+			f_etas_regime = reader.unmarshalBoolean ("f_etas_regime");
+
+			regime_remap = new HashMap<String, String>();
+			MarshalUtils.unmarshalMapStringString (reader, "regime_remap", regime_remap);
+
+			regime_names = new ArrayList<String>();
+			reader.unmarshalStringCollection ("regime_names", regime_names);
+			global_accum = (new SeqAccum2Count()).unmarshal (reader, "global_accum");
+
+			reader.unmarshalMapBegin ("regime_accums");
+			regime_accums = new HashMap<String, SeqAccum2Count>();
+			for (String regime_name : regime_names) {
+				regime_accums.put (regime_name, (new SeqAccum2Count()).unmarshal (reader, regime_name));
+			}
+			reader.unmarshalMapEnd ();
+			return;
+		}
+
+		// Marshal object.
+
+		@Override
+		public void marshal (MarshalWriter writer, String name) {
+			writer.marshalMapBegin (name);
+			do_marshal (writer);
+			writer.marshalMapEnd ();
+			return;
+		}
+
+		// Unmarshal object.
+
+		@Override
+		public SeqAccum2CountHolder unmarshal (MarshalReader reader, String name) {
+			reader.unmarshalMapBegin (name);
+			do_umarshal (reader);
+			reader.unmarshalMapEnd ();
+			return this;
+		}
+	}
+
+
+
+
+
+
+
+
+	// Sequence accumulator that counts the number of sequences and maaintains stacked marginal distributions.
 
 	private static class SeqAccumStackDist implements Marshalable {
 
@@ -1148,6 +1578,422 @@ public class OEBayTest {
 
 
 
+	// Holds SeqAccumStackDist objects for each tectonic regime, plus global.
+
+	private static class SeqAccum2StackDistHolder implements Marshalable {
+
+		// The minimum magnitude delta above the magnitude of completeness, for a sequence to count, inclusive.
+
+		public double min_mag_cat_delta;
+
+		// The maximum magnitude delta above the magnitude of completeness, for a sequence to count, exclusive, use 100.0 for none.
+
+		public double max_mag_cat_delta;
+
+		// The minimum catalog size (in ForecastResults) for a sequence to count, inclusive.
+
+		public int min_catalog_size;
+
+		// The maximum catalog size (in ForecastResults) for a sequence to count, exclusive, use 0 for none.
+
+		public int max_catalog_size;
+
+		// The minimum fitting count (in OEtasResults) for a sequence to count, inclusive.
+
+		public int min_fitting_count;
+
+		// The minimum fitting count (in OEtasResults) for a sequence to count, exclusive, use 0 for none.
+
+		public int max_fitting_count;
+
+		// Single value of c to use, or 100.0 to use range in the parameters.
+
+		public double single_c;
+
+		// Single value of p to use, or 100.0 to use range in the parameters.
+
+		public double single_p;
+
+		// Single value of n to use, or 100.0 to use range in the parameters.
+
+		public double single_n;
+
+		// Single value of zams to use, or 100.0 to use range in the parameters.
+
+		public double single_zams;
+
+		// True to use ETAS regimes, false to use generic regimes.
+
+		public boolean f_etas_regime;
+
+		// Remapping for regime names
+
+		public Map<String, String> regime_remap;
+
+		// The list of regime names (remapped), sorted.
+
+		public List<String> regime_names;
+
+		// A global accumulator.
+
+		public SeqAccumStackDist global_accum;
+
+		// A map, containing an accumulator for each tectonic regime.
+
+		public Map<String, SeqAccumStackDist> regime_accums;
+
+		// Constructor allocates the accumulators.
+
+		public SeqAccum2StackDistHolder (
+			double min_mag_cat_delta, double max_mag_cat_delta,
+			int min_catalog_size, int max_catalog_size, int min_fitting_count, int max_fitting_count,
+			double single_c, double single_p, double single_n, double single_zams,
+			boolean f_etas_regime, Map<String, String> regime_remap) {
+
+			// Save the parameters
+
+			this.min_mag_cat_delta = min_mag_cat_delta;
+			this.max_mag_cat_delta = max_mag_cat_delta;
+			this.min_catalog_size = min_catalog_size;
+			this.max_catalog_size = max_catalog_size;
+			this.min_fitting_count = min_fitting_count;
+			this.max_fitting_count = max_fitting_count;
+			this.single_c = single_c;
+			this.single_p = single_p;
+			this.single_n = single_n;
+			this.single_zams = single_zams;
+			this.f_etas_regime = f_etas_regime;
+			this.regime_remap = regime_remap;
+
+			// If a null map was supplied, replace it with an empty map
+
+			if (this.regime_remap == null) {
+				this.regime_remap = new HashMap<String, String>();
+			}
+
+			// Get action parameters and enable ETAS
+
+			ActionConfig action_config = new ActionConfig();
+
+			action_config.get_action_config_file().etas_enable = ActionConfigFile.ETAS_ENA_ENABLE;
+
+			// Allocate the global accumulator
+
+			global_accum = new SeqAccumStackDist();
+
+			// Get the list of regime names
+
+			regime_names = new ArrayList<String>();
+			Set<String> names_seen = new HashSet<String>();
+
+			if (this.f_etas_regime) {
+
+				OEtasConfig fetch = new OEtasConfig();
+				for (OAFTectonicRegime regime : fetch.getRegimeSet()) {
+					String regime_name = regime.toString();
+					if (this.regime_remap.containsKey (regime_name)) {
+						regime_name = this.regime_remap.get (regime_name);
+					}
+					if (names_seen.add (regime_name)) {
+						regime_names.add (regime_name);
+					}
+				}
+
+			} else {
+
+				GenericRJ_ParametersFetch fetch = new GenericRJ_ParametersFetch();
+				for (OAFTectonicRegime regime : fetch.getRegimeSet()) {
+					String regime_name = regime.toString();
+					if (this.regime_remap.containsKey (regime_name)) {
+						regime_name = this.regime_remap.get (regime_name);
+					}
+					if (names_seen.add (regime_name)) {
+						regime_names.add (regime_name);
+					}
+				}
+
+			}
+
+			Collections.sort (regime_names);
+
+			// Allocate the per-regime accumulators
+			
+			regime_accums = new HashMap<String, SeqAccumStackDist>();
+			for (String regime_name : regime_names) {
+				regime_accums.put (regime_name, new SeqAccumStackDist());
+			}
+		}
+
+		// Construct an empty object.
+
+		public SeqAccum2StackDistHolder () {
+			min_mag_cat_delta = 0.0;
+			max_mag_cat_delta = 0.0;
+			min_catalog_size = 0;
+			max_catalog_size = 0;
+			min_fitting_count = 0;
+			max_fitting_count = 0;
+			single_c = 0.0;
+			single_p = 0.0;
+			single_n = 0.0;
+			single_zams = 0.0;
+			f_etas_regime = true;
+			regime_remap = null;
+			regime_names = null;
+			global_accum = null;
+			regime_accums = null;
+		}
+
+		// Accumulate a sequence.
+
+		public void seq_accum (ForecastMainshock fcmain, ForecastParameters forecast_params, ForecastResults forecast_results) {
+
+			// Paramaters must contain generic, magnitude of completeness, and ETAS parameters
+
+			if (!( forecast_params.generic_avail
+				&& forecast_params.mag_comp_avail
+				&& forecast_params.etas_avail )) {
+
+				return;
+			}
+
+			// Patch in single-value parameters
+
+			if (single_c < 99.0) {
+				forecast_params.etas_params.set_c_range_single (single_c);
+			}
+
+			if (single_p < 99.0) {
+				forecast_params.etas_params.set_p_range_single (single_p);
+			}
+
+			if (single_n < 99.0) {
+				forecast_params.etas_params.set_n_range_single (single_n);
+			}
+
+			if (single_zams < 99.0) {
+				forecast_params.etas_params.set_zams_range_single (single_zams);
+			}
+
+			// Check for magnitude of completeness delta
+
+			double magCat = forecast_params.mag_comp_params.get_magCat (fcmain.mainshock_mag);
+
+			if (!( fcmain.mainshock_mag >= magCat + min_mag_cat_delta
+				&& fcmain.mainshock_mag < magCat + max_mag_cat_delta )) {
+				return;
+			}
+
+			// Check for catalog available and sufficient size
+
+			//  if (!( forecast_results.catalog_result_avail && forecast_results.catalog_eqk_count >= min_catalog_size )) {
+			//  	return;
+			//  }
+
+			int as_above_mcat = count_aftershock_above_mcat (fcmain, forecast_params, forecast_results);
+
+			if (!( forecast_results.catalog_result_avail
+				&& forecast_results.catalog_comcat_aftershocks != null
+				&& as_above_mcat >= min_catalog_size )) {
+
+				return;
+			}
+
+			// Set number of ETAS simulations to minimum
+
+			forecast_params.etas_params.set_num_catalogs_to_minimum();
+
+			// Run forecast
+
+			forecast_results.calc_after_catalog (fcmain, forecast_params);
+
+			// ETAS forecast must have completed successfully and produced expected results
+
+			if (!( forecast_results.has_etas_json()
+				&& forecast_results.etas_outcome instanceof OEtasResults )) {
+
+				return;
+			}
+
+			OEtasResults etas_results = (OEtasResults)(forecast_results.etas_outcome);
+
+			if (!( etas_results.full_marginals != null )) {
+				return;
+			}
+
+			// Check for sufficient number of ruptures used for fitting
+
+			if (!( etas_results.fitting_count >= min_fitting_count )) {
+				return;
+			}
+
+			// Check max limits on number of ruptures
+
+			if (max_catalog_size > 0) {
+				if (max_fitting_count > 0) {
+					if (as_above_mcat >= max_catalog_size && etas_results.fitting_count >= max_fitting_count) {
+						return;
+					}
+				} else {
+					if (as_above_mcat >= max_catalog_size) {
+						return;
+					}
+				}
+			} else {
+				if (max_fitting_count > 0) {
+					if (etas_results.fitting_count >= max_fitting_count) {
+						return;
+					}
+				}
+			}
+
+			// Accumulate global stack
+
+			global_accum.seq_accum (fcmain, forecast_params, forecast_results);
+
+			// Accumulate per-regime stack
+
+			String regime_name = ((f_etas_regime) ? (forecast_params.etas_regime) : (forecast_params.generic_regime));
+			if (regime_remap.containsKey (regime_name)) {
+				regime_name = regime_remap.get (regime_name);
+			}
+			regime_accums.get(regime_name).seq_accum (fcmain, forecast_params, forecast_results);
+
+			return;
+		}
+
+		// End accumulation of sequences.
+
+		public void end_accum () {
+
+			// End accumulation for global stack
+
+			global_accum.end_accum();
+
+			// End accumulation for per-regime stacks
+
+			for (String regime_name : regime_names) {
+				regime_accums.get(regime_name).end_accum();
+			}
+
+			return;
+		}
+
+		// Make a string containing the counts.
+
+		public String count_string () {
+			StringBuilder result = new StringBuilder();
+
+			result.append ("Global count: " + global_accum.seq_count + "\n");
+
+			result.append ("Regime counts:" + "\n");
+			for (String regime_name : regime_names) {
+				result.append (regime_name + ": " + regime_accums.get(regime_name).seq_count + "\n");
+			}
+
+			return result.toString();
+		}
+
+		// Write files containing the table strings.
+		// Parameters:
+		//  fn_prefix = Filename prefix, can be empty but not null.
+		//  fn_suffix = Filename suffix, can be empty but not null.
+
+		public void write_table_files (String fn_prefix, String fn_suffix) throws IOException {
+
+			global_accum.write_table_files (fn_prefix + "global-", fn_suffix);
+
+			for (String regime_name : regime_names) {
+				String nice_name = regime_name.trim().toLowerCase().replace(' ', '_').replace('-', '_').replace('/', '_');
+				regime_accums.get(regime_name).write_table_files (fn_prefix + nice_name + "-", fn_suffix);
+			}
+
+			return;
+		}
+
+		// Marshal object, internal.
+
+		protected void do_marshal (MarshalWriter writer) {
+			writer.marshalDouble ("min_mag_cat_delta", min_mag_cat_delta);
+			writer.marshalDouble ("max_mag_cat_delta", max_mag_cat_delta);
+			writer.marshalInt  ("min_catalog_size", min_catalog_size);
+			writer.marshalInt  ("max_catalog_size", max_catalog_size);
+			writer.marshalInt  ("min_fitting_count", min_fitting_count);
+			writer.marshalInt  ("max_fitting_count", max_fitting_count);
+			writer.marshalDouble ("single_c", single_c);
+			writer.marshalDouble ("single_p", single_p);
+			writer.marshalDouble ("single_n", single_n);
+			writer.marshalDouble ("single_zams", single_zams);
+			writer.marshalBoolean  ("f_etas_regime", f_etas_regime);
+
+			MarshalUtils.marshalMapStringString (writer, "regime_remap", regime_remap);
+
+			writer.marshalStringCollection ("regime_names", regime_names);
+			global_accum.marshal (writer, "global_accum");
+
+			writer.marshalMapBegin ("regime_accums");
+			for (String regime_name : regime_names) {
+				regime_accums.get(regime_name).marshal (writer, regime_name);
+			}
+			writer.marshalMapEnd ();
+			return;
+		}
+
+		// Unmarshal object, internal.
+
+		protected void do_umarshal (MarshalReader reader) {
+			min_mag_cat_delta = reader.unmarshalDouble ("min_mag_cat_delta");
+			max_mag_cat_delta = reader.unmarshalDouble ("max_mag_cat_delta");
+			min_catalog_size = reader.unmarshalInt  ("min_catalog_size");
+			max_catalog_size = reader.unmarshalInt  ("max_catalog_size");
+			min_fitting_count = reader.unmarshalInt  ("min_fitting_count");
+			max_fitting_count = reader.unmarshalInt  ("max_fitting_count");
+			single_c = reader.unmarshalDouble ("single_c");
+			single_p = reader.unmarshalDouble ("single_p");
+			single_n = reader.unmarshalDouble ("single_n");
+			single_zams = reader.unmarshalDouble ("single_zams");
+			f_etas_regime = reader.unmarshalBoolean  ("f_etas_regime");
+
+			regime_remap = new HashMap<String, String>();
+			MarshalUtils.unmarshalMapStringString (reader, "regime_remap", regime_remap);
+
+			regime_names = new ArrayList<String>();
+			reader.unmarshalStringCollection ("regime_names", regime_names);
+			global_accum = (new SeqAccumStackDist()).unmarshal (reader, "global_accum");
+
+			reader.unmarshalMapBegin ("regime_accums");
+			regime_accums = new HashMap<String, SeqAccumStackDist>();
+			for (String regime_name : regime_names) {
+				regime_accums.put (regime_name, (new SeqAccumStackDist()).unmarshal (reader, regime_name));
+			}
+			reader.unmarshalMapEnd ();
+			return;
+		}
+
+		// Marshal object.
+
+		@Override
+		public void marshal (MarshalWriter writer, String name) {
+			writer.marshalMapBegin (name);
+			do_marshal (writer);
+			writer.marshalMapEnd ();
+			return;
+		}
+
+		// Unmarshal object.
+
+		@Override
+		public SeqAccum2StackDistHolder unmarshal (MarshalReader reader, String name) {
+			reader.unmarshalMapBegin (name);
+			do_umarshal (reader);
+			reader.unmarshalMapEnd ();
+			return this;
+		}
+	}
+
+
+
+
 	//----- Test or generation functions -----
 
 
@@ -1517,17 +2363,7 @@ public class OEBayTest {
 
 		// Make regime name remapping according to selected option
 
-		Map<String, String> regime_remap = new HashMap<String, String>();
-
-		switch (remap_option) {
-		default:
-			throw new IllegalArgumentException ("OEBayTest.test5: Invalid remapping option: remap_option = " + remap_option);
-
-		// Remapping option 0: No remapping
-
-		case 0:
-			break;
-		}
+		Map<String, String> regime_remap = make_regime_remap (remap_option);
 
 		// Get list of ruptures satisfying intake
 
@@ -1651,6 +2487,277 @@ public class OEBayTest {
 
 
 
+	// test8/sequence_count_2
+	// Command line arguments:
+	//  start_time  end_time  forecast_lag  min_mag_cat_delta  f_etas_regime  remap_option  [filename]
+	// Get the list of earthquakes satisfying intake criteria in the time range.
+	// Count the ones that are not shadowed and meet the specified minimum magnitude
+	// above magCat and minimum catalog size.
+	// Display count globally and for each tectonic regime.
+	// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+	// Durations are in java.time.Duration format, for example P3DT11H45M04S or P100D or PT30S.
+	// Result is written to file if filename is included and is not "-".
+	// Same as test4, except forces ETAS to be enabled and uses ETAS regimes.
+
+	public static void test8 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Count earthquakes satisfying intake criteria in the time range, not shadowed, satisfying min magnitude, and make histogram of catalog size");
+		long start_time = testargs.get_time ("start_time");
+		long end_time = testargs.get_time ("end_time");
+		long forecast_lag = testargs.get_duration ("forecast_lag");
+		double min_mag_cat_delta = testargs.get_double ("min_mag_cat_delta");
+		boolean f_etas_regime = testargs.get_boolean ("f_etas_regime");
+		int remap_option = testargs.get_int ("remap_option");
+		String filename = testargs.get_string_omit ("filename", null, "-");
+
+		testargs.end_test();
+
+		// Make regime name remapping according to selected option
+
+		Map<String, String> regime_remap = make_regime_remap (remap_option);
+
+		// Get list of ruptures satisfying intake
+
+		boolean wrapLon = false;
+		boolean extendedInfo = true;
+
+		ObsEqkRupList rups = fetchIntakeEventList (start_time, end_time, wrapLon, extendedInfo);
+
+		// Count holder
+
+		SeqAccum2CountHolder count_holder = new SeqAccum2CountHolder (min_mag_cat_delta, f_etas_regime, regime_remap);
+
+		// Loop over ruptures
+
+		int count_shadowed = 0;
+		int count_not_shadowed = 0;
+
+		for (int i = 0; i < rups.size(); ++i) {
+			System.out.println ();
+
+			// Shadow test
+
+			String event_id = rups.get(i).getEventId();
+			ForecastParameters analyst_params = null;
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			ForecastParameters forecast_params = new ForecastParameters();
+			ForecastResults forecast_results = new ForecastResults();
+
+			boolean f_shadowed = is_event_shadowed (event_id, forecast_lag, analyst_params, fcmain, forecast_params, forecast_results);
+
+			// If not shadowed, accumulate it
+
+			if (f_shadowed) {
+				++count_shadowed;
+				System.out.println ("Event " + event_id + " is shadowed");
+			} else {
+				++count_not_shadowed;
+				System.out.println ("Event " + event_id + " is not shadowed");
+				count_holder.seq_accum (fcmain, forecast_params, forecast_results);
+			}
+		}
+
+		// Display final counts
+
+		System.out.println ();
+		System.out.println ("Number of events that are shadowed = " + count_shadowed);
+		System.out.println ("Number of events that are not shadowed = " + count_not_shadowed);
+
+		System.out.println ();
+		System.out.println (count_holder.count_string());
+
+		// Write to file if desired
+
+		if (filename != null) {
+			System.out.println ();
+			System.out.println ("Writing to file: " + filename);
+			MarshalUtils.to_formatted_compact_json_file (count_holder, filename);
+		}
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
+	// test9/sequence_stack_2
+	// Command line arguments:
+	//  start_time  end_time  forecast_lag  min_mag_cat_delta  max_mag_cat_delta  min_catalog_size  max_catalog_size  min_fitting_count  max_fitting_count  single_c  single_p  single_n  single_zams  f_etas_regime  remap_option  [filename]
+	// Get the list of earthquakes satisfying intake criteria in the time range.
+	// Generate ETAS forecassts for the ones that are not shadowed and meet the specified
+	// magnitude range above magCat, catalog size range, and number of ruptures used for fitting range.
+	// Stack the resulting univariate and bivariate marginal distributions.
+	// Display count globally and for each tectonic regime.
+	// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
+	// Durations are in java.time.Duration format, for example P3DT11H45M04S or P100D or PT30S.
+	// Max magnitude delta, and single values, can be 100.0 for none.
+	// Max catalog sizes can be 0 for none.
+	// Note if both max catalog sizes are given, a sequence is excluded if it exceeds both maxima (not just one).
+	// Result is written to file if filename is included and is not "-".
+
+	public static void test9 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Stack marginal distributions for earthquakes satisfying intake criteria in the time range, not shadowed, satisfying min magnitude and catalog size");
+		long start_time = testargs.get_time ("start_time");
+		long end_time = testargs.get_time ("end_time");
+		long forecast_lag = testargs.get_duration ("forecast_lag");
+		double min_mag_cat_delta = testargs.get_double ("min_mag_cat_delta");
+		double max_mag_cat_delta = testargs.get_double ("max_mag_cat_delta");
+		int min_catalog_size = testargs.get_int ("min_catalog_size");
+		int max_catalog_size = testargs.get_int ("max_catalog_size");
+		int min_fitting_count = testargs.get_int ("min_fitting_count");
+		int max_fitting_count = testargs.get_int ("max_fitting_count");
+		double single_c = testargs.get_double ("single_c");
+		double single_p = testargs.get_double ("single_p");
+		double single_n = testargs.get_double ("single_n");
+		double single_zams = testargs.get_double ("single_zams");
+		boolean f_etas_regime = testargs.get_boolean ("f_etas_regime");
+		int remap_option = testargs.get_int ("remap_option");
+		String filename = testargs.get_string_omit ("filename", null, "-");
+
+		testargs.end_test();
+
+		// Make regime name remapping according to selected option
+
+		Map<String, String> regime_remap = make_regime_remap (remap_option);
+
+		// Get list of ruptures satisfying intake
+
+		boolean wrapLon = false;
+		boolean extendedInfo = true;
+
+		ObsEqkRupList rups = fetchIntakeEventList (start_time, end_time, wrapLon, extendedInfo);
+
+		// Stack holder
+
+		SeqAccum2StackDistHolder stack_holder = new SeqAccum2StackDistHolder (
+			min_mag_cat_delta, max_mag_cat_delta,
+			min_catalog_size, max_catalog_size, min_fitting_count, max_fitting_count,
+			single_c, single_p, single_n, single_zams,
+			f_etas_regime, regime_remap
+		);
+
+		// Loop over ruptures
+
+		int count_shadowed = 0;
+		int count_not_shadowed = 0;
+
+		for (int i = 0; i < rups.size(); ++i) {
+			System.out.println ();
+
+			// Shadow test
+
+			String event_id = rups.get(i).getEventId();
+			ForecastParameters analyst_params = null;
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			ForecastParameters forecast_params = new ForecastParameters();
+			ForecastResults forecast_results = new ForecastResults();
+
+			boolean f_shadowed = is_event_shadowed (event_id, forecast_lag, analyst_params, fcmain, forecast_params, forecast_results);
+
+			// If not shadowed, accumulate it
+
+			if (f_shadowed) {
+				++count_shadowed;
+				System.out.println ("Event " + event_id + " is shadowed");
+			} else {
+				++count_not_shadowed;
+				System.out.println ("Event " + event_id + " is not shadowed");
+				stack_holder.seq_accum (fcmain, forecast_params, forecast_results);
+			}
+		}
+
+		// Finish accumulation
+
+		stack_holder.end_accum();
+
+		// Display final counts
+
+		System.out.println ();
+		System.out.println ("Number of events that are shadowed = " + count_shadowed);
+		System.out.println ("Number of events that are not shadowed = " + count_not_shadowed);
+
+		System.out.println ();
+		System.out.println (stack_holder.count_string());
+
+		// Write to file if desired
+
+		if (filename != null) {
+			System.out.println ();
+			System.out.println ("Writing to file: " + filename);
+			MarshalUtils.to_formatted_compact_json_file (stack_holder, filename);
+		}
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
+	// test10/write_stack_tables_2
+	// Command line arguments:
+	//  filename  fn_prefix  fn_suffix
+	// Read a set of stacks as generated by the sequence_stack_2 command, and write it out
+	// as a set of table files.
+	// Filenames are constructed using the specified prefix and suffix, and incorporate
+	// the names of regimes, variables, and data to create many different filenames.
+
+	public static void test10 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Read stacked marginal distributions and write them out as a set of table files");
+		String filename = testargs.get_string ("filename");
+		String fn_prefix = testargs.get_string ("fn_prefix");
+		String fn_suffix = testargs.get_string ("fn_suffix");
+
+		testargs.end_test();
+
+		// Stack holder
+
+		SeqAccum2StackDistHolder stack_holder = new SeqAccum2StackDistHolder ();
+
+		// Read it
+
+		System.out.println ();
+		System.out.println ("Reading file: " + filename);
+
+		MarshalUtils.from_json_file (stack_holder, filename);
+
+		// Write the table files
+
+		System.out.println ();
+		System.out.println ("Writing table files: " + fn_prefix + "..." + fn_suffix);
+
+		stack_holder.write_table_files (fn_prefix, fn_suffix);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -1701,6 +2808,24 @@ public class OEBayTest {
 
 		if (testargs.is_test ("test7", "write_stack_tables")) {
 			test7 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test8", "sequence_count_2")) {
+			test8 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test9", "sequence_stack_2")) {
+			test9 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test10", "write_stack_tables_2")) {
+			test10 (testargs);
 			return;
 		}
 

@@ -1515,6 +1515,55 @@ public class GeoJsonUtils {
 
 
 
+		// Subcommand : Test #5
+		// Command format:
+		//  test5  in_filename  f_friendly  f_compact  out_filename
+		// Read a JSON file, then convert it according to the flags.
+		// If f_friendly is true, use a friendly format that is not valid JSON; if false, use nicely-formatted valid JSON.
+		// If f_compact is true, use a compact format (multiple values per line).
+		// If out_filename is "-" then write to standard output.
+		// This can be used as a JSON pretty-print.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// Four additional argument
+
+			if (args.length != 5) {
+				System.err.println ("GeoJsonUtils : Invalid 'test5' subcommand");
+				return;
+			}
+
+			String in_filename = args[1];
+			boolean f_friendly = Boolean.parseBoolean (args[2]);
+			boolean f_compact = Boolean.parseBoolean (args[3]);
+			String out_filename = args[4];
+
+			try {
+
+				// Read and convert the file
+
+				String contents = jsonFileToString (in_filename, f_friendly, f_compact);
+
+				// Write the result
+
+				if (out_filename.equals ("-")) {
+					System.out.println (contents);
+				}
+				else {
+					SimpleUtils.write_string_as_file (out_filename, contents);
+					System.out.println ("Converted " + in_filename + " --> " + out_filename);
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
 		// Unrecognized subcommand.
 
 		System.err.println ("GeoJsonUtils : Unrecognized subcommand : " + args[0]);

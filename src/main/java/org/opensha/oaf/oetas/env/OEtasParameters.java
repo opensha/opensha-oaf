@@ -1208,6 +1208,55 @@ public class OEtasParameters implements Marshalable {
 		return;
 	}
 
+	// Set the b range to a single value.
+
+	public final void set_b_range_single (double b) {
+		b_range = OEDiscreteRange.makeSingle (b);
+		return;
+	}
+
+	// Set the alpha range to a single value.
+
+	public final void set_alpha_range_single (double alpha) {
+		alpha_range = OEDiscreteRange.makeSingle (alpha);
+		return;
+	}
+
+	// Set the c range to a single value.
+
+	public final void set_c_range_single (double c) {
+		c_range = OEDiscreteRange.makeSingle (c);
+		return;
+	}
+
+	// Set the p range to a single value.
+
+	public final void set_p_range_single (double p) {
+		p_range = OEDiscreteRange.makeSingle (p);
+		return;
+	}
+
+	// Set the n range to a single value.
+
+	public final void set_n_range_single (double n) {
+		n_range = OEDiscreteRange.makeSingle (n);
+		return;
+	}
+
+	// Set the zams range to a single value.
+
+	public final void set_zams_range_single (double zams) {
+		zams_range = OEDiscreteRange.makeSingle (zams);
+		return;
+	}
+
+	// Set the zmu range to a single value.
+
+	public final void set_zmu_range_single (double zmu) {
+		zmu_range = OEDiscreteRange.makeSingle (zmu);
+		return;
+	}
+
 	// Merge ETAS parameter ranges from another object, if available.
 
 	public final void merge_range_from (OEtasParameters other) {
