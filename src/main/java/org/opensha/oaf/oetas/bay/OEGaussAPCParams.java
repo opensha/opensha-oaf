@@ -14,6 +14,7 @@ import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TestArgs;
 
+import org.opensha.oaf.oetas.OEConstants;
 import org.opensha.oaf.oetas.util.OEArraysCalc;
 
 // Used for 3x3 matrix inversion and determinant
@@ -23,7 +24,6 @@ import org.apache.commons.math3.linear.CholeskyDecomposition;
 
 // Used only for initial import from the CSV file
 import org.opensha.commons.data.CSVFile;
-import org.opensha.oaf.etas.GenericETAS_ParametersFetch;
 
 
 // Class to hold parameters for a Gauss distribution on a/p/c.
@@ -888,7 +888,7 @@ public class OEGaussAPCParams implements Marshalable {
 		List<OEGaussAPCParams> result;
 
 		try {
-			URL paramsURL = GenericETAS_ParametersFetch.class.getResource ("resources/vdEGenericETASParams_080919.csv");
+			URL paramsURL = OEConstants.class.getResource ("resources/vdEGenericETASParams_080919.csv");
 			CSVFile<String> csv = CSVFile.readURL (paramsURL, true);
 			result = import_csv_rows (csv);
 		}
