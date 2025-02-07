@@ -523,9 +523,26 @@ public class ETAScatalog {
 	
 	public List<float[]> getETAScatalog(int index){
 		return catalogList.get(index); 
-//		return catalogTimesList.get(index);
-		// return eqList;
 	}
+
+// //not so useful...
+//	public List<float[]> getAllETAScatalogs(){
+//		List<float[]> allCatalogList = new ArrayList<float[]>(); //list of catalogs
+//		List<float[]> eqCat = new ArrayList<float[]>();
+//
+//		//cycle through the simulated catalogs
+//		for(int i = 0; i < nSims; i++){
+//			eqCat = getETAScatalog(i); 	//double[] eqCat = {relativeTime, magnitude, generationNumber}
+//			for(int j = 0; j < eqCat.size(); j++) {
+//				allCatalogList.add(eqCat.get(j));
+//			}
+//		}
+//		if(D) System.out.println("allCatalogList contains " + allCatalogList.size() + " elements.");
+//		if(D) System.out.println("last eqCat contains " + eqCat.size() + " elements.");
+//		return allCatalogList;
+//	}
+//	
+	
 	
 //	public int[] getETASintCatalog(int index){
 //		return intCatalogList.get(index); 

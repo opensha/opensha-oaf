@@ -6937,7 +6937,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //		List<String> lines = source.split("\\n");
 		String[] sourcePoints = source.toString().split("\\n");
 		
-		if (faultTrace == null)
+//		if (faultTrace == null)
 			faultTrace = new FaultTrace("custom");
 	
 		for (int i=0; i<sourcePoints.length; i++) {
