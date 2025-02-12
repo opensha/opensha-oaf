@@ -29,7 +29,7 @@
   "removal_update_skew": "P0DT2H0M0S",
   "removal_lookback_tmax": "P4380DT0H0M0S",
   "removal_lookback_tmin": "P0DT0H30M0S",
-  "removal_lookback_mag": 3.9,
+  "removal_lookback_mag": 3.45,
   "removal_check_period": "P1DT0H0M0S",
   "removal_retry_period": "P0DT0H30M0S",
   "removal_event_gap": "P0DT0H2M0S",
