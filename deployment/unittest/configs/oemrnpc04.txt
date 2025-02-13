@@ -1,0 +1,2532 @@
+oemrnpc04 oetas.bay.OEMixedRNPCConfigFile test4
+
+********** Parameter Set **********
+
+OEMixedRNPCConfigFile:
+OAF2ParameterSet:
+selections = [
+
+regimes = [GLOBAL, DEFAULT]
+params = {OEMixedRNPCParams:
+regimeName = GLOBAL
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.6
+nomega = 0.7
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+regimes = [ANSR]
+params = {OEMixedRNPCParams:
+regimeName = ANSR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+regimes = [SCR]
+params = {OEMixedRNPCParams:
+regimeName = SCR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.4
+nomega = 0.54
+nalpha = -2.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.18
+alt_nomega = 0.3
+alt_nalpha = 1.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.30275239378085583
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.2850342711212632
+}
+
+regimes = [SOR]
+params = {OEMixedRNPCParams:
+regimeName = SOR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.6
+nomega = 0.7
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+regimes = [SZ]
+params = {OEMixedRNPCParams:
+regimeName = SZ
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.6
+nomega = 0.72
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5904344662326367
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+regimes = [ANSR-ABSLDEC]
+params = {OEMixedRNPCParams:
+regimeName = ANSR-ABSLDEC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.5
+nomega = 0.55
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.3211015324490523
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+regimes = [ANSR-ABSLOCB]
+params = {OEMixedRNPCParams:
+regimeName = ANSR-ABSLOCB
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+regimes = [ANSR-ABSLSHC]
+params = {OEMixedRNPCParams:
+regimeName = ANSR-ABSLSHC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+regimes = [ANSR-DEEPCON]
+params = {OEMixedRNPCParams:
+regimeName = ANSR-DEEPCON
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.55
+nomega = 0.42
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.65
+alt_nomega = 0.42
+alt_nalpha = -2.2
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.05143796549994974
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.05143796549994974
+}
+
+regimes = [ANSR-HOTSPOT]
+params = {OEMixedRNPCParams:
+regimeName = ANSR-HOTSPOT
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+regimes = [ANSR-OCEANBD]
+params = {OEMixedRNPCParams:
+regimeName = ANSR-OCEANBD
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.3
+nomega = 0.6
+nalpha = -2.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.40811290943868206
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+regimes = [ANSR-SHALCON]
+params = {OEMixedRNPCParams:
+regimeName = ANSR-SHALCON
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.8
+nomega = 0.7
+nalpha = -6.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.85
+alt_nomega = 0.5
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.22579135264472733
+}
+
+regimes = [CAL-HYDROTHERMAL]
+params = {OEMixedRNPCParams:
+regimeName = CAL-HYDROTHERMAL
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.85
+nomega = 0.32
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.85
+alt_nomega = 0.32
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = 0.22049574998369206
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.22049574998369206
+}
+
+regimes = [CAL-MENDOCINO]
+params = {OEMixedRNPCParams:
+regimeName = CAL-MENDOCINO
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+regimes = [CAL-NCSS]
+params = {OEMixedRNPCParams:
+regimeName = CAL-NCSS
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.55
+nalpha = -4.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.65
+alt_nomega = 0.4
+alt_nalpha = -5.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.3211015324490523
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.0026478013305176167
+}
+
+regimes = [CAL-SCSN]
+params = {OEMixedRNPCParams:
+regimeName = CAL-SCSN
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.7
+nomega = 0.41
+nalpha = -3.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.73
+alt_nomega = 0.33
+alt_nalpha = -3.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.02734041392088907
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.1897240913169383
+}
+
+regimes = [SCR-ABVSLAB]
+params = {OEMixedRNPCParams:
+regimeName = SCR-ABVSLAB
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.4
+nomega = 0.54
+nalpha = -2.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.18
+alt_nomega = 0.3
+alt_nalpha = 1.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.30275239378085583
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.2850342711212632
+}
+
+regimes = [SCR-GENERIC]
+params = {OEMixedRNPCParams:
+regimeName = SCR-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.42
+nomega = 0.4
+nalpha = -1.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.18
+alt_nomega = 0.3
+alt_nalpha = 1.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.0026478013305176167
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.2850342711212632
+}
+
+regimes = [SOR-ABVSLAB]
+params = {OEMixedRNPCParams:
+regimeName = SOR-ABVSLAB
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.6
+nomega = 0.7
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+regimes = [SOR-GENERIC]
+params = {OEMixedRNPCParams:
+regimeName = SOR-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.6
+nomega = 0.7
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+regimes = [SZ-GENERIC]
+params = {OEMixedRNPCParams:
+regimeName = SZ-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.57
+nomega = 0.7
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.68
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+regimes = [SZ-INLBACK]
+params = {OEMixedRNPCParams:
+regimeName = SZ-INLBACK
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.7
+nomega = 0.5
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.85
+alt_nomega = 0.45
+alt_nalpha = -2.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.22579135264472733
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+regimes = [SZ-ONSHORE]
+params = {OEMixedRNPCParams:
+regimeName = SZ-ONSHORE
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.5
+nomega = 0.6
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.53
+alt_nalpha = -3.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.40811290943868206
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.28406026076870317
+}
+
+regimes = [SZ-OUTERTR]
+params = {OEMixedRNPCParams:
+regimeName = SZ-OUTERTR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 1.0
+nomega = 0.7
+nalpha = -8.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 1.0
+alt_nomega = 0.45
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+]
+regions = [
+OAFSphRegion
+	Regime: CAL-HYDROTHERMAL
+	MinLat: 37.25
+	MinLon: -119.25
+	MaxLat: 37.825
+	MaxLon: -118.25
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+OAFSphRegion
+	Regime: CAL-HYDROTHERMAL
+	MinLat: 32.9
+	MinLon: -116.0
+	MaxLat: 33.3
+	MaxLon: -115.3
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+OAFSphRegion
+	Regime: CAL-HYDROTHERMAL
+	MinLat: 35.55
+	MinLon: -118.2
+	MaxLat: 36.3
+	MaxLon: -117.5
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+OAFSphRegion
+	Regime: CAL-MENDOCINO
+	MinLat: 39.75
+	MinLon: -125.5
+	MaxLat: 43.0
+	MaxLon: -123.0
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+OAFSphRegion
+	Regime: CAL-NCSS
+	MinLat: 34.5
+	MinLon: -125.3
+	MaxLat: 42.1
+	MaxLon: -118.0167
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+OAFSphRegion
+	Regime: CAL-SCSN
+	MinLat: 32.0
+	MinLon: -121.25
+	MaxLat: 37.2167
+	MaxLon: -114.3333
+	MinDepth: -1.0E10
+	MaxDepth: 1.0E10
+]
+
+
+********** Query by Location **********
+
+********** Query location : lat = 56.0464, lon = -149.0728, depth = 25.0
+regime = SZ (outer-trench)
+params = {OEMixedRNPCParams:
+regimeName = SZ-OUTERTR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 1.0
+nomega = 0.7
+nalpha = -8.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 1.0
+alt_nomega = 0.45
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 56.0464, lon = 210.9272, depth = 25.0
+regime = SZ (outer-trench)
+params = {OEMixedRNPCParams:
+regimeName = SZ-OUTERTR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 1.0
+nomega = 0.7
+nalpha = -8.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 1.0
+alt_nomega = 0.45
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 56.0464, lon = 210.9272, depth = 20.0
+regime = SZ (outer-trench)
+params = {OEMixedRNPCParams:
+regimeName = SZ-OUTERTR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 1.0
+nomega = 0.7
+nalpha = -8.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 1.0
+alt_nomega = 0.45
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 56.0464, lon = 210.9272, depth = 15.0
+regime = SZ (outer-trench)
+params = {OEMixedRNPCParams:
+regimeName = SZ-OUTERTR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 1.0
+nomega = 0.7
+nalpha = -8.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 1.0
+alt_nomega = 0.45
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 56.0464, lon = 210.9272, depth = 10.0
+regime = SZ (outer-trench)
+params = {OEMixedRNPCParams:
+regimeName = SZ-OUTERTR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 1.0
+nomega = 0.7
+nalpha = -8.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 1.0
+alt_nomega = 0.45
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 56.0464, lon = 210.9272, depth = 5.0
+regime = SZ (outer-trench)
+params = {OEMixedRNPCParams:
+regimeName = SZ-OUTERTR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 1.0
+nomega = 0.7
+nalpha = -8.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 1.0
+alt_nomega = 0.45
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 56.0464, lon = 210.9272, depth = 0.0
+regime = SZ (outer-trench)
+params = {OEMixedRNPCParams:
+regimeName = SZ-OUTERTR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 1.0
+nomega = 0.7
+nalpha = -8.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 1.0
+alt_nomega = 0.45
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 28.2305, lon = 84.7314, depth = 8.22
+regime = ACR (deep)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-DEEPCON
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.55
+nomega = 0.42
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.65
+alt_nomega = 0.42
+alt_nalpha = -2.2
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.05143796549994974
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.05143796549994974
+}
+
+
+********** Query location : lat = 35.0, lon = -118.0, depth = 7.0
+regime = CAL-SCSN
+params = {OEMixedRNPCParams:
+regimeName = CAL-SCSN
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.7
+nomega = 0.41
+nalpha = -3.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.73
+alt_nomega = 0.33
+alt_nalpha = -3.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.02734041392088907
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.1897240913169383
+}
+
+
+********** Query location : lat = 35.0, lon = -50.0, depth = 7.0
+regime = SOR (generic)
+params = {OEMixedRNPCParams:
+regimeName = SOR-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.6
+nomega = 0.7
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+
+********** Query location : lat = 34.0, lon = -119.0, depth = 15.0
+regime = CAL-SCSN
+params = {OEMixedRNPCParams:
+regimeName = CAL-SCSN
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.7
+nomega = 0.41
+nalpha = -3.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.73
+alt_nomega = 0.33
+alt_nalpha = -3.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.02734041392088907
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.1897240913169383
+}
+
+
+********** Query location : lat = 40.0, lon = -122.0, depth = 15.0
+regime = CAL-NCSS
+params = {OEMixedRNPCParams:
+regimeName = CAL-NCSS
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.55
+nalpha = -4.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.65
+alt_nomega = 0.4
+alt_nalpha = -5.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.3211015324490523
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.0026478013305176167
+}
+
+
+********** Query location : lat = 41.0, lon = -124.0, depth = 15.0
+regime = CAL-MENDOCINO
+params = {OEMixedRNPCParams:
+regimeName = CAL-MENDOCINO
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 37.5, lon = -118.8, depth = 15.0
+regime = CAL-HYDROTHERMAL
+params = {OEMixedRNPCParams:
+regimeName = CAL-HYDROTHERMAL
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.85
+nomega = 0.32
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.85
+alt_nomega = 0.32
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = 0.22049574998369206
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.22049574998369206
+}
+
+
+********** Query location : lat = 33.0, lon = -115.6, depth = 15.0
+regime = CAL-HYDROTHERMAL
+params = {OEMixedRNPCParams:
+regimeName = CAL-HYDROTHERMAL
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.85
+nomega = 0.32
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.85
+alt_nomega = 0.32
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = 0.22049574998369206
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.22049574998369206
+}
+
+
+********** Query location : lat = 36.0, lon = -118.0, depth = 15.0
+regime = CAL-HYDROTHERMAL
+params = {OEMixedRNPCParams:
+regimeName = CAL-HYDROTHERMAL
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.85
+nomega = 0.32
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.85
+alt_nomega = 0.32
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = 0.22049574998369206
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.22049574998369206
+}
+
+
+********** Query location : lat = 64.8434, lon = -147.7452, depth = 15.0
+regime = ACR shallow (above slab)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-ABSLSHC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 58.2022, lon = -134.7586, depth = 15.0
+regime = ACR (shallow)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-SHALCON
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.8
+nomega = 0.7
+nalpha = -6.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.85
+alt_nomega = 0.5
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.22579135264472733
+}
+
+
+********** Query location : lat = 54.1402, lon = -165.8121, depth = 15.0
+regime = SZ (generic)
+params = {OEMixedRNPCParams:
+regimeName = SZ-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.57
+nomega = 0.7
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.68
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+
+********** Query location : lat = 21.307, lon = -157.8597, depth = 15.0
+regime = ACR (hot spot)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-HOTSPOT
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 18.399, lon = -66.098, depth = 15.0
+regime = SZ (generic)
+params = {OEMixedRNPCParams:
+regimeName = SZ-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.57
+nomega = 0.7
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.68
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+
+********** Query location : lat = 13.4172, lon = 144.7492, depth = 15.0
+regime = SZ (on-shore)
+params = {OEMixedRNPCParams:
+regimeName = SZ-ONSHORE
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.5
+nomega = 0.6
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.53
+alt_nalpha = -3.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.40811290943868206
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.28406026076870317
+}
+
+
+********** Query location : lat = 15.0207, lon = 145.6244, depth = 15.0
+regime = SZ (on-shore)
+params = {OEMixedRNPCParams:
+regimeName = SZ-ONSHORE
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.5
+nomega = 0.6
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.53
+alt_nalpha = -3.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.40811290943868206
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.28406026076870317
+}
+
+
+********** Query location : lat = -14.2817, lon = -170.7003, depth = 15.0
+regime = ACR (hot spot)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-HOTSPOT
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 29.7531, lon = -95.3778, depth = 15.0
+regime = SCR (generic)
+params = {OEMixedRNPCParams:
+regimeName = SCR-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.42
+nomega = 0.4
+nalpha = -1.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.18
+alt_nomega = 0.3
+alt_nalpha = 1.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.0026478013305176167
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.2850342711212632
+}
+
+
+********** Query location : lat = 41.8768, lon = -87.6411, depth = 15.0
+regime = SCR (generic)
+params = {OEMixedRNPCParams:
+regimeName = SCR-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.42
+nomega = 0.4
+nalpha = -1.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.18
+alt_nomega = 0.3
+alt_nalpha = 1.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.0026478013305176167
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.2850342711212632
+}
+
+
+********** Query location : lat = 47.6042, lon = -122.3369, depth = 15.0
+regime = SZ (on-shore)
+params = {OEMixedRNPCParams:
+regimeName = SZ-ONSHORE
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.5
+nomega = 0.6
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.53
+alt_nalpha = -3.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.40811290943868206
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.28406026076870317
+}
+
+
+********** Query location : lat = 25.7653, lon = -80.2012, depth = 15.0
+regime = SCR (generic)
+params = {OEMixedRNPCParams:
+regimeName = SCR-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.42
+nomega = 0.4
+nalpha = -1.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.18
+alt_nomega = 0.3
+alt_nalpha = 1.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.0026478013305176167
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.2850342711212632
+}
+
+
+********** Query location : lat = 42.3628, lon = -71.0586, depth = 15.0
+regime = SCR (generic)
+params = {OEMixedRNPCParams:
+regimeName = SCR-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.42
+nomega = 0.4
+nalpha = -1.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.18
+alt_nomega = 0.3
+alt_nalpha = 1.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.0026478013305176167
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.2850342711212632
+}
+
+
+********** Query location : lat = 38.0, lon = 80.0, depth = 15.0
+regime = ACR deep (above slab)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-ABSLDEC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.5
+nomega = 0.55
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.3211015324490523
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = -15.0, lon = 175.0, depth = 15.0
+regime = ACR oceanic boundary (above slab)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-ABSLOCB
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 60.0, lon = -175.0, depth = 15.0
+regime = ACR shallow (above slab)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-ABSLSHC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 32.0, lon = 100.0, depth = 15.0
+regime = ACR (deep)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-DEEPCON
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.55
+nomega = 0.42
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.65
+alt_nomega = 0.42
+alt_nalpha = -2.2
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.05143796549994974
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.05143796549994974
+}
+
+
+********** Query location : lat = -45.0, lon = 70.0, depth = 15.0
+regime = ACR (hot spot)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-HOTSPOT
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.6
+nomega = 0.68
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5332760523926883
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = -65.0, lon = 175.0, depth = 15.0
+regime = ACR (oceanic boundary)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-OCEANBD
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.3
+nomega = 0.6
+nalpha = -2.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.45
+alt_nalpha = -3.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.40811290943868206
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 68.0, lon = -175.0, depth = 15.0
+regime = ACR (shallow)
+params = {OEMixedRNPCParams:
+regimeName = ANSR-SHALCON
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.01
+csigma = 1.1
+pmu = 1.08
+psigma = 0.15
+nzeta = 0.8
+nomega = 0.7
+nalpha = -6.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.85
+alt_nomega = 0.5
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.0142487130089977
+log_norm_fit_p = 0.7523900990364811
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.22579135264472733
+}
+
+
+********** Query location : lat = 0.0, lon = -70.0, depth = 15.0
+regime = SCR (above slab)
+params = {OEMixedRNPCParams:
+regimeName = SCR-ABVSLAB
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.4
+nomega = 0.54
+nalpha = -2.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.18
+alt_nomega = 0.3
+alt_nalpha = 1.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.30275239378085583
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.2850342711212632
+}
+
+
+********** Query location : lat = 40.0, lon = -90.0, depth = 15.0
+regime = SCR (generic)
+params = {OEMixedRNPCParams:
+regimeName = SCR-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.42
+nomega = 0.4
+nalpha = -1.5
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.18
+alt_nomega = 0.3
+alt_nalpha = 1.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.0026478013305176167
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = 0.2850342711212632
+}
+
+
+********** Query location : lat = -2.0, lon = 158.0, depth = 15.0
+regime = SOR (above slab)
+params = {OEMixedRNPCParams:
+regimeName = SOR-ABVSLAB
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.6
+nomega = 0.7
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+
+********** Query location : lat = 35.0, lon = -140.0, depth = 15.0
+regime = SOR (generic)
+params = {OEMixedRNPCParams:
+regimeName = SOR-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.6
+nomega = 0.7
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+
+********** Query location : lat = -6.0, lon = 156.0, depth = 15.0
+regime = SZ (generic)
+params = {OEMixedRNPCParams:
+regimeName = SZ-GENERIC
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.57
+nomega = 0.7
+nalpha = -2.9
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.68
+alt_nomega = 0.47
+alt_nalpha = -2.9
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.16391594892664
+}
+
+
+********** Query location : lat = 18.0, lon = 145.0, depth = 15.0
+regime = SZ (inland/back-arc)
+params = {OEMixedRNPCParams:
+regimeName = SZ-INLBACK
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.7
+nomega = 0.5
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.85
+alt_nomega = 0.45
+alt_nalpha = -2.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.22579135264472733
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+********** Query location : lat = 45.0, lon = -123.0, depth = 15.0
+regime = SZ (on-shore)
+params = {OEMixedRNPCParams:
+regimeName = SZ-ONSHORE
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 0.5
+nomega = 0.6
+nalpha = -2.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 0.75
+alt_nomega = 0.53
+alt_nalpha = -3.5
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.40811290943868206
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.28406026076870317
+}
+
+
+********** Query location : lat = 50.0, lon = -150.0, depth = 15.0
+regime = SZ (outer-trench)
+params = {OEMixedRNPCParams:
+regimeName = SZ-OUTERTR
+rtx0 = 0.0
+rty0 = 1000.0
+rtx1 = -0.68
+rty1 = 275.0
+rtx2 = 0.45
+rty2 = 153.0
+cmu = 0.014
+csigma = 1.4
+pmu = 1.05
+psigma = 0.2
+nzeta = 1.0
+nomega = 0.7
+nalpha = -8.0
+alt_rtx0 = 0.0
+alt_rty0 = 1000.0
+alt_rtx1 = -0.83
+alt_rty1 = 378.0
+alt_rtx2 = 1.43
+alt_rty2 = 145.0
+alt_nzeta = 1.0
+alt_nomega = 0.45
+alt_nalpha = -6.0
+f_use_alt_fit_zams = false
+f_use_alt_fit_n = false
+log_norm_fit_zams = -6.654529935301133
+log_norm_fit_c = -1.2554107698258856
+log_norm_fit_p = 0.46470802658470023
+log_norm_fit_n = -0.5622635892659403
+log_norm_alt_fit_zams = -7.38794112096761
+log_norm_alt_fit_n = -0.12043083698690124
+}
+
+
+
+Done

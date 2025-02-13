@@ -56,4 +56,15 @@ runut oegapc05 oetas.bay.OEGaussAPCConfigFile test5
 runut oegapc06 oetas.bay.OEGaussAPCConfig test1
 runut oegapc07 oetas.bay.OEGaussAPCConfig test2
 
+# Tests for operational ETAS mixed relative-ams/n/p/c prior configuration
+
+runut oemrnpc01 oetas.bay.OEMixedRNPCConfigFile test1
+runut oemrnpc02 oetas.bay.OEMixedRNPCConfigFile test2
+runut oemrnpc03 oetas.bay.OEMixedRNPCConfigFile test3
+runut oemrnpc04 oetas.bay.OEMixedRNPCConfigFile test4
+runut oemrnpc05 oetas.bay.OEMixedRNPCConfigFile test5
+
+runut oemrnpc06 oetas.bay.OEMixedRNPCConfig test1
+runut oemrnpc07 oetas.bay.OEMixedRNPCConfig test2
+
 

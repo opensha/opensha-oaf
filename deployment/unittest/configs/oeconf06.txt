@@ -31,8 +31,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -41,12 +41,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -76,6 +76,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 regimes = [ANSR-ABSLDEC, ANSR-ABSLOCB, ANSR-ABSLSHC, ANSR-DEEPCON, ANSR-HOTSPOT, ANSR-OCEANBD, ANSR-SHALCON, SCR-GENERIC, SOR-GENERIC, SZ-GENERIC, SZ-INLBACK, SZ-ONSHORE, SZ-OUTERTR, SCR-ABVSLAB, SOR-ABVSLAB, CAL-SCSN, CAL-NCSS, CAL-MENDOCINO, CAL-HYDROTHERMAL]
@@ -219,8 +220,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -229,12 +230,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -264,6 +265,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -292,8 +294,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -302,12 +304,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -337,6 +339,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -365,8 +368,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -375,12 +378,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -410,6 +413,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -438,8 +442,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -448,12 +452,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -483,6 +487,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -511,8 +516,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -521,12 +526,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -556,6 +561,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -584,8 +590,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -594,12 +600,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -629,6 +635,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -657,8 +664,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -667,12 +674,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -702,6 +709,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -730,8 +738,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -740,12 +748,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -775,6 +783,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -803,8 +812,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -813,12 +822,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -848,6 +857,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -876,8 +886,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -886,12 +896,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -921,6 +931,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -949,8 +960,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -959,12 +970,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -994,6 +1005,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1022,8 +1034,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1032,12 +1044,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1067,6 +1079,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1095,8 +1108,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1105,12 +1118,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1140,6 +1153,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1168,8 +1182,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1178,12 +1192,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1213,6 +1227,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1241,8 +1256,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1251,12 +1266,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1286,6 +1301,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1314,8 +1330,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1324,12 +1340,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1359,6 +1375,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1387,8 +1404,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1397,12 +1414,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1432,6 +1449,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1460,8 +1478,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1470,12 +1488,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1505,6 +1523,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1533,8 +1552,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1543,12 +1562,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1578,6 +1597,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1606,8 +1626,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1616,12 +1636,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1651,6 +1671,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1679,8 +1700,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1689,12 +1710,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1724,6 +1745,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1752,8 +1774,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1762,12 +1784,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1797,6 +1819,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1825,8 +1848,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1835,12 +1858,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1870,6 +1893,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1898,8 +1922,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1908,12 +1932,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -1943,6 +1967,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -1971,8 +1996,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -1981,12 +2006,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2016,6 +2041,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2044,8 +2070,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2054,12 +2080,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2089,6 +2115,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2117,8 +2144,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2127,12 +2154,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2162,6 +2189,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2190,8 +2218,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2200,12 +2228,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2235,6 +2263,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2263,8 +2292,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2273,12 +2302,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2308,6 +2337,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2336,8 +2366,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2346,12 +2376,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2381,6 +2411,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2409,8 +2440,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2419,12 +2450,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2454,6 +2485,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2482,8 +2514,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2492,12 +2524,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2527,6 +2559,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2555,8 +2588,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2565,12 +2598,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2600,6 +2633,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2628,8 +2662,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2638,12 +2672,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2673,6 +2707,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2701,8 +2736,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2711,12 +2746,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2746,6 +2781,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2774,8 +2810,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2784,12 +2820,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2819,6 +2855,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2847,8 +2884,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2857,12 +2894,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2892,6 +2929,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2920,8 +2958,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -2930,12 +2968,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -2965,6 +3003,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -2993,8 +3032,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -3003,12 +3042,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -3038,6 +3077,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -3066,8 +3106,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -3076,12 +3116,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -3111,6 +3151,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -3139,8 +3180,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -3149,12 +3190,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -3184,6 +3225,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -3212,8 +3254,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -3222,12 +3264,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -3257,6 +3299,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -3285,8 +3328,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -3295,12 +3338,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -3330,6 +3373,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 
@@ -3358,8 +3402,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -3368,12 +3412,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -3403,6 +3447,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 

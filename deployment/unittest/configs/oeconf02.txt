@@ -30,8 +30,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -40,12 +40,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -75,6 +75,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 regimes = [ANSR-ABSLDEC, ANSR-ABSLOCB, ANSR-ABSLSHC, ANSR-DEEPCON, ANSR-HOTSPOT, ANSR-OCEANBD, ANSR-SHALCON, SCR-GENERIC, SOR-GENERIC, SZ-GENERIC, SZ-INLBACK, SZ-ONSHORE, SZ-OUTERTR, SCR-ABVSLAB, SOR-ABVSLAB, CAL-SCSN, CAL-NCSS, CAL-MENDOCINO, CAL-HYDROTHERMAL]
@@ -154,7 +155,7 @@ OAFSphRegion
     0: {
       regimes: ["DEFAULT"]
       params: {
-        OEtasParameters: 121002
+        OEtasParameters: 121003
         hist_params_avail: true
         disc_delta: 0.2
         mag_cat_count: 3000
@@ -177,8 +178,8 @@ OAFSphRegion
         fit_f_intervals: true
         fit_lmr_opt: 1
         fmag_range_avail: true
-        fmag_above_mag_cat: 4.0
-        fmag_above_mag_max: 0.5
+        fmag_above_mag_cat: 2.0
+        fmag_above_mag_max: 0.2
         tint_br_avail: true
         tint_br_fitting: 365.0
         tint_br_forecast: 0.0
@@ -189,16 +190,16 @@ OAFSphRegion
         p_range: {kind: "linear" num: 37 min: 0.5 max: 2.0}
         n_range: {
           kind: "log_skew"
-          num: 41
-          min: 0.02
+          num: 81
+          min: 0.025
           max: 0.9
           skew: 3.0
         }
-        zams_range: {kind: "linear" num: 81 min: -4.5 max: -0.5}
+        zams_range: {kind: "linear" num: 43 min: -2.0 max: 1.0}
         zmu_range: {kind: "single" value: 0.0}
-        relative_zams: false
+        relative_zams: true
         bay_prior_avail: true
-        bay_factory: {ClassType: 139001 OEBayFactoryGaussAPC: 139001 OEBayFactory: 136001}
+        bay_factory: {ClassType: 148001 OEBayFactoryMixedRNPC: 148001 OEBayFactory: 136001}
         bay_weight_avail: true
         bay_weight: 1.0
         early_bay_weight: 2.0
@@ -226,6 +227,7 @@ OAFSphRegion
         eligible_main_mag: 4.45
         eligible_cat_max_mag: 3.95
         eligible_small_mag: 4.95
+        eligible_above_mag_cat: 2.0
       }
     }
     1: {
@@ -234,7 +236,7 @@ OAFSphRegion
         10: "SZ-INLBACK" "SZ-ONSHORE" "SZ-OUTERTR" "SCR-ABVSLAB" "SOR-ABVSLAB" "CAL-SCSN" "CAL-NCSS" "CAL-MENDOCINO" "CAL-HYDROTHERMAL"
       ]
       params: {
-        OEtasParameters: 121002
+        OEtasParameters: 121003
         hist_params_avail: false
         group_params_avail: false
         fit_params_avail: false
@@ -421,8 +423,8 @@ fit_params_avail = true
 fit_f_intervals = true
 fit_lmr_opt = 1
 fmag_range_avail = true
-fmag_above_mag_cat = 4.0
-fmag_above_mag_max = 0.5
+fmag_above_mag_cat = 2.0
+fmag_above_mag_max = 0.2
 tint_br_avail = true
 tint_br_fitting = 365.0
 tint_br_forecast = 0.0
@@ -431,12 +433,12 @@ b_range = RangeSingle[range_value=1.0]
 alpha_range = <null>
 c_range = RangeLog[range_size=21, range_min=1.0E-5, range_max=1.0]
 p_range = RangeLinear[range_size=37, range_min=0.5, range_max=2.0]
-n_range = RangeLogSkew[range_size=41, range_min=0.02, range_max=0.9, range_skew=3.0]
-zams_range = RangeLinear[range_size=81, range_min=-4.5, range_max=-0.5]
+n_range = RangeLogSkew[range_size=81, range_min=0.025, range_max=0.9, range_skew=3.0]
+zams_range = RangeLinear[range_size=43, range_min=-2.0, range_max=1.0]
 zmu_range = RangeSingle[range_value=0.0]
-relative_zams = false
+relative_zams = true
 bay_prior_avail = true
-bay_factory = {OEBayFactoryGaussAPC:
+bay_factory = {OEBayFactoryMixedRNPC:
 cmode = 1
 }
 bay_weight_avail = true
@@ -466,6 +468,7 @@ eligible_option = 2
 eligible_main_mag = 4.45
 eligible_cat_max_mag = 3.95
 eligible_small_mag = 4.95
+eligible_above_mag_cat = 2.0
 }
 
 regimes = [ANSR-ABSLDEC, ANSR-ABSLOCB, ANSR-ABSLSHC, ANSR-DEEPCON, ANSR-HOTSPOT, ANSR-OCEANBD, ANSR-SHALCON, SCR-GENERIC, SOR-GENERIC, SZ-GENERIC, SZ-INLBACK, SZ-ONSHORE, SZ-OUTERTR, SCR-ABVSLAB, SOR-ABVSLAB, CAL-SCSN, CAL-NCSS, CAL-MENDOCINO, CAL-HYDROTHERMAL]

@@ -29,7 +29,7 @@ removal_forecast_age = PT8400H
 removal_update_skew = PT2H
 removal_lookback_tmax = PT105120H
 removal_lookback_tmin = PT30M
-removal_lookback_mag = 3.9
+removal_lookback_mag = 3.45
 removal_check_period = PT24H
 removal_retry_period = PT30M
 removal_event_gap = PT2M
@@ -46,9 +46,9 @@ etas_time_limit = PT4M
 etas_progress_time = PT10S
 data_fetch_lookback = PT1440H
 data_fit_dur_min = PT10M
-comcat_cache_1_mag = 2.0
+comcat_cache_1_mag = 1.95
 comcat_cache_1_time = PT2184H
-comcat_cache_2_mag = 4.95
+comcat_cache_2_mag = 3.95
 comcat_cache_2_time = PT9504H
 forecast_rate_limit = PT20S
 forecast_max_limit = PT1M
@@ -616,7 +616,7 @@ IntakeSphRegion
   "removal_update_skew": "PT2H",
   "removal_lookback_tmax": "PT105120H",
   "removal_lookback_tmin": "PT30M",
-  "removal_lookback_mag": 3.9,
+  "removal_lookback_mag": 3.45,
   "removal_check_period": "PT24H",
   "removal_retry_period": "PT30M",
   "removal_event_gap": "PT2M",
@@ -633,9 +633,9 @@ IntakeSphRegion
   "etas_progress_time": "PT10S",
   "data_fetch_lookback": "PT1440H",
   "data_fit_dur_min": "PT10M",
-  "comcat_cache_1_mag": 2.0,
+  "comcat_cache_1_mag": 1.95,
   "comcat_cache_1_time": "PT2184H",
-  "comcat_cache_2_mag": 4.95,
+  "comcat_cache_2_mag": 3.95,
   "comcat_cache_2_time": "PT9504H",
   "forecast_rate_limit": "PT20S",
   "forecast_max_limit": "PT1M",
@@ -953,7 +953,7 @@ removal_forecast_age = PT8400H
 removal_update_skew = PT2H
 removal_lookback_tmax = PT105120H
 removal_lookback_tmin = PT30M
-removal_lookback_mag = 3.9
+removal_lookback_mag = 3.45
 removal_check_period = PT24H
 removal_retry_period = PT30M
 removal_event_gap = PT2M
@@ -970,9 +970,9 @@ etas_time_limit = PT4M
 etas_progress_time = PT10S
 data_fetch_lookback = PT1440H
 data_fit_dur_min = PT10M
-comcat_cache_1_mag = 2.0
+comcat_cache_1_mag = 1.95
 comcat_cache_1_time = PT2184H
-comcat_cache_2_mag = 4.95
+comcat_cache_2_mag = 3.95
 comcat_cache_2_time = PT9504H
 forecast_rate_limit = PT20S
 forecast_max_limit = PT1M
