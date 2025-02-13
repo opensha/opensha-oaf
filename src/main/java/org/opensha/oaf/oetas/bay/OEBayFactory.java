@@ -114,6 +114,37 @@ public abstract class OEBayFactory implements Marshalable {
 	}
 
 
+	// Construct a factory for a mixed relative-ams/n/p/c prior, using mainshock location to select parameters.
+
+	public static OEBayFactory makeMixedRNPC () {
+		return new OEBayFactoryMixedRNPC ();
+	}
+
+	// Construct a factory for a mixed relative-ams/n/p/c prior, using parameters for the given regime.
+	// Default parameters are used if the regime is null or blank, or if it is not found.
+	// Due to overloading, a null argument must be explicitly a String (or use "" instead).
+
+	public static OEBayFactory makeMixedRNPC (String the_regime) {
+		return new OEBayFactoryMixedRNPC (the_regime);
+	}
+
+	// Construct a factory for a mixed relative-ams/n/p/c prior, using the given location to select parameters.
+	// Default parameters are used if the location is null.
+	// Due to overloading, a null argument must be explicitly a Location.
+
+	public static OEBayFactory makeMixedRNPC (Location the_loc) {
+		return new OEBayFactoryMixedRNPC (the_loc);
+	}
+
+	// Construct a factory for a mixed relative-ams/n/p/c prior, using the given parameters.
+	// Default parameters are used if the parameter object is null.
+	// Due to overloading, a null argument must be explicitly a OEMixedRNPCParams.
+
+	public static OEBayFactory makeMixedRNPC (OEMixedRNPCParams the_params) {
+		return new OEBayFactoryMixedRNPC (the_params);
+	}
+
+
 
 
 	//----- Marshaling -----
@@ -130,6 +161,7 @@ public abstract class OEBayFactory implements Marshalable {
 	protected static final int MARSHAL_UNIFORM = 137001;
 	protected static final int MARSHAL_FIXED = 138001;
 	protected static final int MARSHAL_GAUSSIAN_APC = 139001;
+	protected static final int MARSHAL_MIXED_RNPC = 148001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
@@ -237,6 +269,11 @@ public abstract class OEBayFactory implements Marshalable {
 
 		case MARSHAL_GAUSSIAN_APC:
 			result = new OEBayFactoryGaussAPC();
+			result.do_umarshal (reader);
+			break;
+
+		case MARSHAL_MIXED_RNPC:
+			result = new OEBayFactoryMixedRNPC();
 			result.do_umarshal (reader);
 			break;
 		}
@@ -714,6 +751,174 @@ public abstract class OEBayFactory implements Marshalable {
 				// Factory to test
 
 				OEBayFactory bay_factory = OEBayFactory.makeGaussAPC (loc);
+
+				// Test factory
+
+				test_factory_unknown_loc (bay_factory);
+			}
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #8
+		// Command format:
+		//  test8
+		// Test the mixed relative-ams/n/p/c factory, for the ANSR regime.
+
+		if (testargs.is_test ("test8")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Factory to test
+
+			OEBayFactory bay_factory = OEBayFactory.makeMixedRNPC ("ANSR");
+
+			// Test it
+
+			test_factory_unknown_loc (bay_factory);
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #9
+		// Command format:
+		//  test9
+		// Test the mixed relative-ams/n/p/c factory, for given parameters.
+
+		if (testargs.is_test ("test9")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Factory to test
+
+			OEBayFactory bay_factory = OEBayFactory.makeMixedRNPC ( (new OEMixedRNPCConfig()).get_default_params().params );
+
+			// Test it
+
+			test_factory_unknown_loc (bay_factory);
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #10
+		// Command format:
+		//  test10
+		// Test the mixed relative-ams/n/p/c factory, for mainshock location, but unknown.
+
+		if (testargs.is_test ("test10")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Factory to test
+
+			OEBayFactory bay_factory = OEBayFactory.makeMixedRNPC ();
+
+			// Test it
+
+			test_factory_unknown_loc (bay_factory);
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #11
+		// Command format:
+		//  test11
+		// Test the mixed relative-ams/n/p/c factory, for mainshock location, at a list of locations.
+
+		if (testargs.is_test ("test11")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Factory to test
+
+			OEBayFactory bay_factory = OEBayFactory.makeMixedRNPC ();
+
+			// List of locations
+
+			List<Location> my_loc_list = OAFParameterSet.getTestLocations();
+			for (Location loc : my_loc_list) {
+				System.out.println ();
+				System.out.println ("********** Query location : lat = " + loc.getLatitude() + ", lon = " + loc.getLongitude() + ", depth = " + loc.getDepth());
+				System.out.println ();
+
+				// Test factory
+
+				test_factory_known_loc (bay_factory, loc);
+			}
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #12
+		// Command format:
+		//  test12
+		// Test the mixed relative-ams/n/p/c factory, for specified location, at a list of locations.
+
+		if (testargs.is_test ("test12")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// List of locations
+
+			List<Location> my_loc_list = OAFParameterSet.getTestLocations();
+			for (Location loc : my_loc_list) {
+				System.out.println ();
+				System.out.println ("********** Query location : lat = " + loc.getLatitude() + ", lon = " + loc.getLongitude() + ", depth = " + loc.getDepth());
+				System.out.println ();
+
+				// Factory to test
+
+				OEBayFactory bay_factory = OEBayFactory.makeMixedRNPC (loc);
 
 				// Test factory
 

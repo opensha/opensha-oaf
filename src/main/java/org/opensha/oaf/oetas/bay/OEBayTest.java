@@ -2758,6 +2758,54 @@ public class OEBayTest {
 
 
 
+	// test11/write_marginal_tables
+	// Command line arguments:
+	//  filename  fn_prefix  fn_suffix
+	// Read a set of marginal distributions (OEMarginalDistSet), and write it out
+	// as a set of table files.
+	// Filenames are constructed using the specified prefix and suffix, and incorporate
+	// the names of regimes, variables, and data to create many different filenames.
+
+	public static void test11 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Read a set of marginal distributions and write it out as a set of table files");
+		String filename = testargs.get_string ("filename");
+		String fn_prefix = testargs.get_string ("fn_prefix");
+		String fn_suffix = testargs.get_string ("fn_suffix");
+
+		testargs.end_test();
+
+		// Stack holder
+
+		OEMarginalDistSet dist_set = new OEMarginalDistSet ();
+
+		// Read it
+
+		System.out.println ();
+		System.out.println ("Reading file: " + filename);
+
+		MarshalUtils.from_json_file (dist_set, filename);
+
+		// Write the table files
+
+		System.out.println ();
+		System.out.println ("Writing table files: " + fn_prefix + "..." + fn_suffix);
+
+		dist_set.write_table_files (fn_prefix, fn_suffix);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -2826,6 +2874,12 @@ public class OEBayTest {
 
 		if (testargs.is_test ("test10", "write_stack_tables_2")) {
 			test10 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test11", "write_marginal_tables")) {
+			test11 (testargs);
 			return;
 		}
 

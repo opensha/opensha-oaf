@@ -30,19 +30,12 @@ import cern.jet.stat.tdouble.Probability;
 // Erf.erf(x) is the error function erf(x).
 // Erf.erfc is the complemented error function erfc(x) = 1 - erf(x)
 
-
-// Used for 3x3 matrix inversion and determinant
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.CholeskyDecomposition;
-
 // Used only for initial import from the CSV file
 import org.opensha.commons.data.CSVFile;
 
 
 // Class to hold parameters for a mixed distribution on rel-zams/n/p/c.
 // Author: Michael Barall.
-// Based on code by Nicholas van der Elst.
 
 public class OEMixedRNPCParams implements Marshalable {
 
@@ -468,8 +461,8 @@ public class OEMixedRNPCParams implements Marshalable {
 
 	// Calculate the log of the fit to n.
 
-	public final double calc_log_fit_n (double p) {
-		return calc_log_ulogskewnorm (p, nzeta, nomega, nalpha) + log_norm_fit_n;
+	public final double calc_log_fit_n (double n) {
+		return calc_log_ulogskewnorm (n, nzeta, nomega, nalpha) + log_norm_fit_n;
 	}
 
 
@@ -477,8 +470,8 @@ public class OEMixedRNPCParams implements Marshalable {
 
 	// Calculate the log of the alternate fit to n.
 
-	public final double calc_log_alt_fit_n (double p) {
-		return calc_log_ulogskewnorm (p, alt_nzeta, alt_nomega, alt_nalpha) + log_norm_alt_fit_n;
+	public final double calc_log_alt_fit_n (double n) {
+		return calc_log_ulogskewnorm (n, alt_nzeta, alt_nomega, alt_nalpha) + log_norm_alt_fit_n;
 	}
 
 
@@ -486,70 +479,47 @@ public class OEMixedRNPCParams implements Marshalable {
 
 	// Calculate the log of the selected fit to n.
 
-	public final double calc_log_sel_fit_n (double p) {
+	public final double calc_log_sel_fit_n (double n) {
 		if (f_use_alt_fit_n) {
-			return calc_log_alt_fit_n (p);
+			return calc_log_alt_fit_n (n);
 		}
-		return calc_log_fit_n (p);
+		return calc_log_fit_n (n);
 	}
 
 
 
 
+	// Calculate the log-prior likelhood for given n, p, and c.
+
+	public final double log_prior_likelihood_n_p_c (double n, double p, double c) {
+
+		double log_like = calc_log_sel_fit_n (n) + calc_log_fit_p (p) + calc_log_fit_c (c);
+		return log_like;
+	}
 
 
 
 
+	// Calculate the log-prior likelhood for given relative zams.
+	// Note: The value of zams must be relative.
+
+	public final double log_prior_likelihood_zams (double zams) {
+
+		double log_like = calc_log_sel_fit_zams (zams);
+		return log_like;
+	}
 
 
 
 
+	// Calculate the log-prior likelhood for given relative zams, n, p, and c.
+	// Note: The value of zams must be relative.
 
-//	// Calculate the log-prior likelhood for given a, p, and c.
-//	// Note: The value of a must be for the magnitude range [refMag, maxMag];
-//
-//	public final double log_prior_likelihood_a_p_c (double a, double p, double c) {
-//		
-//		double logc = Math.log10(c);
-//		
-//		double[] delta = {a - aValue_mean, p - pValue, logc - mean_logc};
-//		
-//		double cid = 0.0;
-//		for(int i = 0; i < 3; i++){
-//			for(int j = 0; j < 3; j++){
-//				cid += delta[i] * delta[j] * priorCovInverse[j][i];
-//			}
-//		}
-//
-//		double log_like = -0.5*cid + log_norm_prior_a_p_c;
-//		return log_like;
-//	}
-//
-//
-//
-//
-//	// Calculate the log-prior likelhood for given ams.
-//	// Note: The value of ams must be for the magnitude range [refMag, maxMag];
-//
-//	public final double log_prior_likelihood_ams (double ams) {
-//
-//		double delta = ams - mean_ams;
-//
-//		double log_like = (-0.5*(delta*delta) / (sigma_ams*sigma_ams)) + log_norm_prior_ams;
-//		return log_like;
-//	}
-//
-//
-//
-//
-//	// Calculate the log-prior likelhood for given ams, a, p, and c.
-//	// Note: The values of ams and a must be for the magnitude range [refMag, maxMag];
-//
-//	public final double log_prior_likelihood_ams_a_p_c (double ams, double a, double p, double c) {
-//
-//		double log_like = log_prior_likelihood_a_p_c (a, p, c) + log_prior_likelihood_ams (ams);
-//		return log_like;
-//	}
+	public final double log_prior_likelihood_zams_n_p_c (double zams, double n, double p, double c) {
+
+		double log_like = log_prior_likelihood_n_p_c (n, p, c)  + log_prior_likelihood_zams (zams);
+		return log_like;
+	}
 
 
 

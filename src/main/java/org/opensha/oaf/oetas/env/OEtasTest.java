@@ -856,7 +856,7 @@ public class OEtasTest {
 		// Create the parameters
 
 		OEtasParameters etas_params = new OEtasParameters();
-		etas_params.set_to_typical ();
+		etas_params.set_to_typical_ov1 ();
 		etas_params.set_bay_prior_to_analyst (true, OEBayFactory.makeUniform());
 
 		// Write to file
@@ -894,8 +894,46 @@ public class OEtasTest {
 		// Create the parameters
 
 		OEtasParameters etas_params = new OEtasParameters();
-		etas_params.set_to_typical ();
+		etas_params.set_to_typical_ov1 ();
 		etas_params.set_bay_prior_to_analyst (true, OEBayFactory.makeGaussAPC());
+
+		// Write to file
+
+		MarshalUtils.to_formatted_json_file (etas_params, filename);
+
+		System.out.println ();
+		System.out.println ("Wrote sample parameters to file: " + filename);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
+	// test20/write_sample_params_3
+	// Command line arguments:
+	//  filename
+	// Write sample ETAS parameters to a file.
+	// This command sets a mixed relative-ams/n/p/c Bayesian prior.
+
+	public static void test20 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Writing sample ETAS parameters to a file, mixed relative-ams/n/p/c prior");
+		String filename = testargs.get_string ("filename");
+		testargs.end_test();
+
+		// Create the parameters
+
+		OEtasParameters etas_params = new OEtasParameters();
+		etas_params.set_to_typical_cv ();
+		etas_params.set_bay_prior_to_analyst (true, OEBayFactory.makeMixedRNPC());
 
 		// Write to file
 
@@ -2398,6 +2436,12 @@ public class OEtasTest {
 
 		if (testargs.is_test ("test19", "write_event_inputs")) {
 			test19 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test20", "write_sample_params_3")) {
+			test20 (testargs);
 			return;
 		}
 

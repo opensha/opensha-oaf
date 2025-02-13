@@ -1018,8 +1018,10 @@ public class ForecastResults implements Marshalable {
 		}
 
 		// We need to be eligible based on magnitude
+			
+		double eli_mag_cat = params.mag_comp_params.get_magCat (fcmain.mainshock_mag);
 
-		if (!( params.etas_params.check_eligible (fcmain.mainshock_mag, catalog_max_mag) )) {
+		if (!( params.etas_params.check_eligible (fcmain.mainshock_mag, catalog_max_mag, eli_mag_cat) )) {
 			set_etas_skip_reason (ETAS_RESCODE_NOT_ELIGIBLE, OEExecEnvironment.etas_result_to_string (ETAS_RESCODE_NOT_ELIGIBLE) + ", mainshock_mag = " + fcmain.mainshock_mag + ", catalog_max_mag = " + catalog_max_mag);
 			System.out.println ("Not eligible for ETAS: mainshock_mag = " + fcmain.mainshock_mag + ", catalog_max_mag = " + catalog_max_mag);
 			return;
@@ -1262,7 +1264,9 @@ public class ForecastResults implements Marshalable {
 
 		// We need to be eligible based on magnitude (we skip this test)
 
-		//  if (!( params.etas_params.check_eligible (fcmain.mainshock_mag, catalog_max_mag) )) {
+		//	double eli_mag_cat = params.mag_comp_params.get_magCat (fcmain.mainshock_mag);
+		//
+		//  if (!( params.etas_params.check_eligible (fcmain.mainshock_mag, catalog_max_mag, eli_mag_cat) )) {
 		//  	return null;
 		//  }
 

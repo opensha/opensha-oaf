@@ -686,13 +686,23 @@ public class OEConstants {
 
 
 
+	// Default minimum magnitude range above magnitude of completeness, for parameter fitting. [Old version 1]
+
+	public static final double DEF_FMAG_ABOVE_MAG_CAT_OV1 = 4.0;
+
+	// Default minimum magnitude range above maximum magnitude in catalog, for parameter fitting. [Old version 1]
+
+	public static final double DEF_FMAG_ABOVE_MAG_MAX_OV1 = 0.5;
+
+
+
 	// Default minimum magnitude range above magnitude of completeness, for parameter fitting.
 
-	public static final double DEF_FMAG_ABOVE_MAG_CAT = 4.0;
+	public static final double DEF_FMAG_ABOVE_MAG_CAT = 2.0;
 
 	// Default minimum magnitude range above maximum magnitude in catalog, for parameter fitting.
 
-	public static final double DEF_FMAG_ABOVE_MAG_MAX = 0.5;
+	public static final double DEF_FMAG_ABOVE_MAG_MAX = 0.2;
 
 
 
@@ -726,11 +736,19 @@ public class OEConstants {
 
 
 
+	// The default Bayesian prior factory. [Old version 1]
+
+	public static OEBayFactory def_bay_factory_ov1 () {
+		//return OEBayFactory.makeUniform();
+		return OEBayFactory.makeGaussAPC();
+	}
+
+
+
 	// The default Bayesian prior factory.
 
 	public static OEBayFactory def_bay_factory () {
-		//return OEBayFactory.makeUniform();
-		return OEBayFactory.makeGaussAPC();
+		return OEBayFactory.makeMixedRNPC();
 	}
 
 
@@ -803,6 +821,62 @@ public class OEConstants {
 
 
 
+	// The default range of Gutenberg-Richter parameter, b-value. [Old version 1]
+
+	public static OEDiscreteRange def_b_range_ov1 () {
+		return OEDiscreteRange.makeSingle (1.0);
+	}
+
+	// The default range of ETAS intensity parameter, alpha-value. [Old version 1]
+	// Can be null to force alpha == b.
+
+	public static OEDiscreteRange def_alpha_range_ov1 () {
+		return null;
+	}
+
+	// The default range of Omori c-value. [Old version 1]
+
+	public static OEDiscreteRange def_c_range_ov1 () {
+		return OEDiscreteRange.makeLog (21, 0.00001, 1.00000);
+	}
+
+	// The default range of Omori p-value. [Old version 1]
+
+	public static OEDiscreteRange def_p_range_ov1 () {
+		return OEDiscreteRange.makeLinear (37, 0.50, 2.00);
+	}
+
+	// The default range of branch ratio, n-value. [Old version 1]
+	// This controls the productivity of secondary triggering.
+
+	public static OEDiscreteRange def_n_range_ov1 () {
+		//return OEDiscreteRange.makeLog (41, 0.01, 0.90);
+		return OEDiscreteRange.makeLogSkew (41, 0.02, 0.90, 3.0);
+	}
+
+	// The default range of mainshock productivity, ams-value, for reference magnitude equal to ZAMS_MREF == 0.0. [Old version 1]
+
+	public static OEDiscreteRange def_zams_range_ov1 () {
+		return OEDiscreteRange.makeLinear (81, -4.50, -0.50);
+	}
+
+	// The default range of background rate, mu-value, for reference magnitude equal to ZMU_MREF. [Old version 1]
+	// Can be null to force zmu = 0.0.
+
+	public static OEDiscreteRange def_zmu_range_ov1 () {
+		//return null;
+		return OEDiscreteRange.makeSingle (0.0);
+	}
+
+	// True if the value of zams is interpreted relative to the a-value. [Old version 1]
+
+	public static boolean def_relative_zams_ov1 () {
+		return false;
+	}
+
+
+
+
 	// The default range of Gutenberg-Richter parameter, b-value.
 
 	public static OEDiscreteRange def_b_range () {
@@ -832,14 +906,14 @@ public class OEConstants {
 	// This controls the productivity of secondary triggering.
 
 	public static OEDiscreteRange def_n_range () {
-		//return OEDiscreteRange.makeLog (41, 0.01, 0.90);
-		return OEDiscreteRange.makeLogSkew (41, 0.02, 0.90, 3.0);
+		//return OEDiscreteRange.makeLog (81, 0.025, 0.90);
+		return OEDiscreteRange.makeLogSkew (81, 0.025, 0.90, 3.0);
 	}
 
 	// The default range of mainshock productivity, ams-value, for reference magnitude equal to ZAMS_MREF == 0.0.
 
 	public static OEDiscreteRange def_zams_range () {
-		return OEDiscreteRange.makeLinear (81, -4.50, -0.50);
+		return OEDiscreteRange.makeLinear (43, -2.0, 1.0);
 	}
 
 	// The default range of background rate, mu-value, for reference magnitude equal to ZMU_MREF.
@@ -853,7 +927,7 @@ public class OEConstants {
 	// True if the value of zams is interpreted relative to the a-value.
 
 	public static boolean def_relative_zams () {
-		return false;
+		return true;
 	}
 
 
@@ -953,6 +1027,11 @@ public class OEConstants {
 	// Can use OEConstants.NO_MAG_NEG (or zero) if none.
 
 	public static final double DEF_ELIGIBLE_SMALL_MAG = 4.95;
+
+	// Default amount mainshock magnitude must exceed magnitude of completeness.
+	// Can use OEConstants.NO_MAG_NEG (in practice zero would work) if none.
+
+	public static final double DEF_ELIGIBLE_ABOVE_MAG_CAT = 2.00;
 
 
 	// Eligibility option codes.

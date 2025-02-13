@@ -782,6 +782,16 @@ public class OEtasParameters implements Marshalable {
 		return;
 	}
 
+	// Set fitting magnitude range to typical values. [Old version 1]
+
+	public final void set_fmag_range_to_typical_ov1 () {
+		fmag_range_avail = true;
+
+		fmag_above_mag_cat = OEConstants.DEF_FMAG_ABOVE_MAG_CAT_OV1;
+		fmag_above_mag_max = OEConstants.DEF_FMAG_ABOVE_MAG_MAX_OV1;
+		return;
+	}
+
 	// Copy fitting magnitude range from another object.
 
 	public final void copy_fmag_range_from (OEtasParameters other) {
@@ -1164,6 +1174,23 @@ public class OEtasParameters implements Marshalable {
 		return;
 	}
 
+	// Set ETAS parameter ranges to typical values. [Old version 1]
+
+	public final void set_range_to_typical_ov1 () {
+		range_avail = true;
+
+		b_range     = OEConstants.def_b_range_ov1();
+		alpha_range = OEConstants.def_alpha_range_ov1();
+		c_range     = OEConstants.def_c_range_ov1();
+		p_range     = OEConstants.def_p_range_ov1();
+		n_range     = OEConstants.def_n_range_ov1();
+		zams_range  = OEConstants.def_zams_range_ov1();
+		zmu_range   = OEConstants.def_zmu_range_ov1();
+
+		relative_zams = OEConstants.def_relative_zams_ov1();
+		return;
+	}
+
 	// Copy ETAS parameter ranges from another object.
 	// Note: OEDiscreteRange is an immutable object.
 
@@ -1371,7 +1398,8 @@ public class OEtasParameters implements Marshalable {
 			zams_range  = OEDiscreteRange.unmarshal_xver (reader, "zams_range" , xver);
 			zmu_range   = OEDiscreteRange.unmarshal_xver (reader, "zmu_range"  , xver);
 
-			relative_zams = OEConstants.def_relative_zams();
+			//relative_zams = OEConstants.def_relative_zams();
+			relative_zams = false;
 		} else {
 			clear_range();
 		}
@@ -1490,13 +1518,21 @@ public class OEtasParameters implements Marshalable {
 
 	public final void set_bay_prior_to_typical () {
 		bay_prior_avail = true;
+		bay_factory = OEConstants.def_bay_factory();
+		return;
+	}
+
+	// Set Bayesian prior to typical values. [Old version 1]
+
+	public final void set_bay_prior_to_typical_ov1 () {
+		bay_prior_avail = true;
 
 		//bay_prior = OEBayPrior.makeUniform();
 
 		//bay_factory = OEBayFactory.makeUniform();
 		//bay_factory = OEBayFactory.makeGaussAPC();
 
-		bay_factory = OEConstants.def_bay_factory();
+		bay_factory = OEConstants.def_bay_factory_ov1();
 		return;
 	}
 
@@ -1513,6 +1549,14 @@ public class OEtasParameters implements Marshalable {
 	public final void set_bay_prior_to_typical_gauss_apc () {
 		bay_prior_avail = true;
 		bay_factory = OEBayFactory.makeGaussAPC();
+		return;
+	}
+
+	// Set Bayesian prior to typical values for a mixed relative-ams/n/p/c prior.
+
+	public final void set_bay_prior_to_typical_mixed_rnpc () {
+		bay_prior_avail = true;
+		bay_factory = OEBayFactory.makeMixedRNPC();
 		return;
 	}
 
@@ -2485,6 +2529,11 @@ public class OEtasParameters implements Marshalable {
 
 	public double eligible_small_mag = OEConstants.DEF_ELIGIBLE_SMALL_MAG;
 
+	// Amount mainshock magnitude must exceed magnitude of completeness. [v3]
+	// Can use OEConstants.NO_MAG_NEG (in practice zero would work) if none.
+
+	public double eligible_above_mag_cat = OEConstants.DEF_ELIGIBLE_ABOVE_MAG_CAT;
+
 	// Clear eligibility parameters.
 
 	public final void clear_eligible_params () {
@@ -2494,6 +2543,7 @@ public class OEtasParameters implements Marshalable {
 		eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
 		eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
 		eligible_small_mag = OEConstants.DEF_ELIGIBLE_SMALL_MAG;
+		eligible_above_mag_cat = OEConstants.DEF_ELIGIBLE_ABOVE_MAG_CAT;
 		return;
 	}
 
@@ -2506,6 +2556,7 @@ public class OEtasParameters implements Marshalable {
 		eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
 		eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
 		eligible_small_mag = OEConstants.DEF_ELIGIBLE_SMALL_MAG;
+		eligible_above_mag_cat = OEConstants.DEF_ELIGIBLE_ABOVE_MAG_CAT;
 		return;
 	}
 
@@ -2518,6 +2569,7 @@ public class OEtasParameters implements Marshalable {
 		eligible_main_mag = other.eligible_main_mag;
 		eligible_cat_max_mag = other.eligible_cat_max_mag;
 		eligible_small_mag = other.eligible_small_mag;
+		eligible_above_mag_cat = other.eligible_above_mag_cat;
 		return;
 	}
 
@@ -2528,13 +2580,15 @@ public class OEtasParameters implements Marshalable {
 		int eligible_option,
 		double eligible_main_mag,
 		double eligible_cat_max_mag,
-		double eligible_small_mag
+		double eligible_small_mag,
+		double eligible_above_mag_cat
 	) {
 		this.eligible_params_avail = eligible_params_avail;
 		this.eligible_option = eligible_option;
 		this.eligible_main_mag = eligible_main_mag;
 		this.eligible_cat_max_mag = eligible_cat_max_mag;
 		this.eligible_small_mag = eligible_small_mag;
+		this.eligible_above_mag_cat = eligible_above_mag_cat;
 		return;
 	}
 
@@ -2549,6 +2603,7 @@ public class OEtasParameters implements Marshalable {
 		this.eligible_main_mag = OEConstants.DEF_ELIGIBLE_MAIN_MAG;
 		this.eligible_cat_max_mag = OEConstants.DEF_ELIGIBLE_CAT_MAX_MAG;
 		this.eligible_small_mag = OEConstants.DEF_ELIGIBLE_SMALL_MAG;
+		this.eligible_above_mag_cat = OEConstants.DEF_ELIGIBLE_ABOVE_MAG_CAT;
 		return;
 	}
 
@@ -2584,6 +2639,7 @@ public class OEtasParameters implements Marshalable {
 			sb.append ("eligible_main_mag = " + eligible_main_mag + "\n");
 			sb.append ("eligible_cat_max_mag = " + eligible_cat_max_mag + "\n");
 			sb.append ("eligible_small_mag = " + eligible_small_mag + "\n");
+			sb.append ("eligible_above_mag_cat = " + eligible_above_mag_cat + "\n");
 		}
 		return sb;
 	}
@@ -2604,6 +2660,18 @@ public class OEtasParameters implements Marshalable {
 			writer.marshalDouble ("eligible_main_mag", eligible_main_mag);
 			writer.marshalDouble ("eligible_cat_max_mag", eligible_cat_max_mag);
 			writer.marshalDouble ("eligible_small_mag", eligible_small_mag);
+		}
+		return;
+	}
+
+	private void marshal_eligible_params_v3 (MarshalWriter writer) {
+		writer.marshalBoolean ("eligible_params_avail", eligible_params_avail);
+		if (eligible_params_avail) {
+			writer.marshalInt ("eligible_option", eligible_option);
+			writer.marshalDouble ("eligible_main_mag", eligible_main_mag);
+			writer.marshalDouble ("eligible_cat_max_mag", eligible_cat_max_mag);
+			writer.marshalDouble ("eligible_small_mag", eligible_small_mag);
+			writer.marshalDouble ("eligible_above_mag_cat", eligible_above_mag_cat);
 		}
 		return;
 	}
@@ -2640,6 +2708,29 @@ public class OEtasParameters implements Marshalable {
 			eligible_main_mag = reader.unmarshalDouble ("eligible_main_mag");
 			eligible_cat_max_mag = reader.unmarshalDouble ("eligible_cat_max_mag");
 			eligible_small_mag = reader.unmarshalDouble ("eligible_small_mag");
+
+			eligible_above_mag_cat = OEConstants.NO_MAG_NEG;
+		} else {
+			clear_eligible_params();
+		}
+
+		// Check the invariant
+
+		String inv = check_eligible_params_invariant();
+		if (inv != null) {
+			throw new MarshalException ("OEtasParameters.unmarshal_eligible_params_v2: " + inv);
+		}
+		return;
+	}
+
+	private void unmarshal_eligible_params_v3 (MarshalReader reader) {
+		eligible_params_avail = reader.unmarshalBoolean ("eligible_params_avail");
+		if (eligible_params_avail) {
+			eligible_option = reader.unmarshalInt ("eligible_option");
+			eligible_main_mag = reader.unmarshalDouble ("eligible_main_mag");
+			eligible_cat_max_mag = reader.unmarshalDouble ("eligible_cat_max_mag");
+			eligible_small_mag = reader.unmarshalDouble ("eligible_small_mag");
+			eligible_above_mag_cat = reader.unmarshalDouble ("eligible_above_mag_cat");
 		} else {
 			clear_eligible_params();
 		}
@@ -2657,10 +2748,12 @@ public class OEtasParameters implements Marshalable {
 	// Parameters:
 	//  mainshock_mag = Mainshock magnitude, or another magnitude representative of the sequence.
 	//  catalog_max_mag = Maximum magnitude in the catalog, exclusive of the mainshock.
+	//  mag_cat = Catalog magnitude of completeness.
 
 	public final boolean check_eligible (
 		double mainshock_mag,
-		double catalog_max_mag
+		double catalog_max_mag,
+		double mag_cat
 	) {
 		// If not available, assume eligible
 
@@ -2685,6 +2778,9 @@ public class OEtasParameters implements Marshalable {
 		// Automatic selection based on magnitude
 
 		case OEConstants.ELIGIBLE_OPT_AUTO:
+			if (eligible_above_mag_cat > OEConstants.NO_MAG_NEG_CHECK && mainshock_mag - mag_cat < eligible_above_mag_cat) {
+				return false;
+			}
 			if (mainshock_mag >= eligible_main_mag || catalog_max_mag >= eligible_cat_max_mag) {
 				return true;
 			}
@@ -2775,9 +2871,10 @@ public class OEtasParameters implements Marshalable {
 
 
 
-	// Set to typical values.
+	// Set to typical values. [Current version]
+	// This version uses the mixed relative-ams/n/p/c prior.
 
-	public final OEtasParameters set_to_typical () {
+	public final OEtasParameters set_to_typical_cv () {
 		set_hist_params_to_typical();
 		set_group_params_to_typical();
 		set_fit_params_to_typical();
@@ -2785,6 +2882,29 @@ public class OEtasParameters implements Marshalable {
 		set_tint_br_to_typical();
 		set_range_to_typical();
 		set_bay_prior_to_typical();
+		set_bay_weight_to_typical();
+		set_grid_post_to_typical();
+		set_num_catalogs_to_typical();
+		set_sim_params_to_typical();
+		set_eligible_params_to_typical();
+		return this;
+	}
+
+
+
+
+	// Set to typical values. [Old version 1]
+	// This version uses the Gauss a/p/c prior.
+	// These settings are also recommended for the uniform prior.
+
+	public final OEtasParameters set_to_typical_ov1 () {
+		set_hist_params_to_typical();
+		set_group_params_to_typical();
+		set_fit_params_to_typical();
+		set_fmag_range_to_typical_ov1();
+		set_tint_br_to_typical();
+		set_range_to_typical_ov1();
+		set_bay_prior_to_typical_ov1();
 		set_bay_weight_to_typical();
 		set_grid_post_to_typical();
 		set_num_catalogs_to_typical();
@@ -2898,6 +3018,7 @@ public class OEtasParameters implements Marshalable {
 
 	private static final int MARSHAL_VER_1 = 121001;
 	private static final int MARSHAL_VER_2 = 121002;
+	private static final int MARSHAL_VER_3 = 121003;
 
 	private static final String M_VERSION_NAME = "OEtasParameters";
 
@@ -2907,7 +3028,7 @@ public class OEtasParameters implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_2;
+		int ver = MARSHAL_VER_3;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -2951,6 +3072,24 @@ public class OEtasParameters implements Marshalable {
 		}
 		break;
 
+		case MARSHAL_VER_3: {
+
+			marshal_hist_params_v1 (writer);
+			marshal_group_params_v1 (writer);
+			marshal_fit_params_v1 (writer);
+			marshal_fmag_range_v1 (writer);
+			marshal_tint_br_v1 (writer);
+			marshal_range_v2 (writer);
+			marshal_bay_prior_v2 (writer);
+			marshal_bay_weight_v1 (writer);
+			marshal_grid_post_v1 (writer);
+			marshal_num_catalogs_v1 (writer);
+			marshal_sim_params_v1 (writer);
+			marshal_eligible_params_v3 (writer);
+
+		}
+		break;
+
 		}
 
 		return;
@@ -2962,7 +3101,7 @@ public class OEtasParameters implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Contents
 
@@ -3004,6 +3143,26 @@ public class OEtasParameters implements Marshalable {
 			unmarshal_num_catalogs_v1 (reader);
 			unmarshal_sim_params_v1 (reader);
 			unmarshal_eligible_params_v2 (reader);
+
+		}
+		break;
+
+		case MARSHAL_VER_3: {
+
+			clear();	// for fields that are not marshaled
+
+			unmarshal_hist_params_v1 (reader);
+			unmarshal_group_params_v1 (reader);
+			unmarshal_fit_params_v1 (reader);
+			unmarshal_fmag_range_v1 (reader);
+			unmarshal_tint_br_v1 (reader);
+			unmarshal_range_v2 (reader);
+			unmarshal_bay_prior_v2 (reader);
+			unmarshal_bay_weight_v1 (reader);
+			unmarshal_grid_post_v1 (reader);
+			unmarshal_num_catalogs_v1 (reader);
+			unmarshal_sim_params_v1 (reader);
+			unmarshal_eligible_params_v3 (reader);
 
 		}
 		break;
@@ -3064,7 +3223,7 @@ public class OEtasParameters implements Marshalable {
 		// Subcommand : Test #1
 		// Command format:
 		//  test1
-		// Construct typical parameters, and display it.
+		// Construct typical parameters (current version), and display it.
 		// Check the invariant.
 		// Marshal to JSON and display JSON text, then unmarshal and display the results.
 		// Also test copy, merge, readout.
@@ -3079,7 +3238,7 @@ public class OEtasParameters implements Marshalable {
 			// Create the parameters
 
 			OEtasParameters etas_params = new OEtasParameters();
-			etas_params.set_to_typical ();
+			etas_params.set_to_typical_cv ();
 
 			// Display the contents
 
@@ -3293,19 +3452,25 @@ public class OEtasParameters implements Marshalable {
 			System.out.println ("get_sim_params(true) =\n" + etas_params.get_sim_params(true).toString());
 
 			System.out.println ();
-			System.out.println ("check_eligible(5.0, 3.0) =\n" + etas_params.check_eligible(5.0, 3.0));
+			System.out.println ("check_eligible(5.0, 3.0, 1.0) =\n" + etas_params.check_eligible(5.0, 3.0, 1.0));
 
 			System.out.println ();
-			System.out.println ("check_eligible(4.5, 3.0) =\n" + etas_params.check_eligible(4.5, 3.0));
+			System.out.println ("check_eligible(4.5, 3.0, 1.0) =\n" + etas_params.check_eligible(4.5, 3.0, 1.0));
 
 			System.out.println ();
-			System.out.println ("check_eligible(4.5, 4.0) =\n" + etas_params.check_eligible(4.5, 4.0));
+			System.out.println ("check_eligible(4.5, 3.0, 2.8) =\n" + etas_params.check_eligible(4.5, 3.0, 2.8));
 
 			System.out.println ();
-			System.out.println ("check_eligible(4.0, 3.0) =\n" + etas_params.check_eligible(4.0, 3.0));
+			System.out.println ("check_eligible(4.5, 4.0, 1.0) =\n" + etas_params.check_eligible(4.5, 4.0, 1.0));
 
 			System.out.println ();
-			System.out.println ("check_eligible(4.0, 4.0) =\n" + etas_params.check_eligible(4.0, 4.0));
+			System.out.println ("check_eligible(4.0, 3.0, 1.0) =\n" + etas_params.check_eligible(4.0, 3.0, 1.0));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.0, 4.0, 1.0) =\n" + etas_params.check_eligible(4.0, 4.0, 1.0));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.0, 4.0, 2.8) =\n" + etas_params.check_eligible(4.0, 4.0, 2.8));
 
 			// Done
 
@@ -3334,7 +3499,7 @@ public class OEtasParameters implements Marshalable {
 			// Create the parameters
 
 			OEtasParameters etas_params = new OEtasParameters();
-			etas_params.set_to_typical ();
+			etas_params.set_to_typical_cv ();
 
 			// Marshal to JSON
 
@@ -3373,7 +3538,7 @@ public class OEtasParameters implements Marshalable {
 			// Create the parameters
 
 			OEtasParameters etas_params = new OEtasParameters();
-			etas_params.set_to_typical ();
+			etas_params.set_to_typical_cv ();
 
 			// Write to file
 
@@ -3416,7 +3581,7 @@ public class OEtasParameters implements Marshalable {
 			// Create the parameters
 
 			OEtasParameters etas_params = new OEtasParameters();
-			etas_params.set_to_typical ();
+			etas_params.set_to_typical_cv ();
 
 			// Write to file
 
@@ -3472,6 +3637,270 @@ public class OEtasParameters implements Marshalable {
 
 			System.out.println ();
 			System.out.println (etas_params2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6
+		// Construct typical parameters (old version 1), and display it.
+		// Check the invariant.
+		// Marshal to JSON and display JSON text, then unmarshal and display the results.
+		// Also test copy, merge, readout.
+		// Same as test #1, except using old version 1 parameters.
+
+		if (testargs.is_test ("test6")) {
+
+			// Read arguments
+
+			System.out.println ("Constructing, displaying, and marshaling ETAS parameters");
+			testargs.end_test();
+
+			// Create the parameters
+
+			OEtasParameters etas_params = new OEtasParameters();
+			etas_params.set_to_typical_ov1 ();
+
+			// Display the contents
+
+			System.out.println ();
+			System.out.println ("********** ETAS Parameters Display **********");
+			System.out.println ();
+
+			System.out.println (etas_params.toString());
+
+			// Test invariant
+
+			String inv = etas_params.check_invariant();
+
+			System.out.println ();
+			System.out.println ("Invariant = " + ((inv == null) ? "null" : inv));
+
+			// Marshal to JSON
+
+			System.out.println ();
+			System.out.println ("********** Marshal to JSON **********");
+			System.out.println ();
+
+			//String json_string = MarshalUtils.to_json_string (etas_params);
+			//System.out.println (MarshalUtils.display_json_string (json_string));
+
+			String json_string = MarshalUtils.to_formatted_compact_json_string (etas_params);
+			System.out.println (json_string);
+
+			// Unmarshal from JSON
+
+			System.out.println ();
+			System.out.println ("********** Unmarshal from JSON **********");
+			System.out.println ();
+			
+			OEtasParameters etas_params2 = new OEtasParameters();
+			MarshalUtils.from_json_string (etas_params2, json_string);
+
+			// Display the contents
+
+			System.out.println (etas_params2.toString());
+
+			// Display an empty object
+
+			System.out.println ();
+			System.out.println ("********** Empty ETAS Parameters Display **********");
+			System.out.println ();
+
+			OEtasParameters etas_params_empty = new OEtasParameters();
+			etas_params_empty.clear();
+
+			System.out.println (etas_params_empty.toString());
+
+			// Test invariant
+
+			String inv_empty = etas_params_empty.check_invariant();
+
+			System.out.println ();
+			System.out.println ("Invariant = " + ((inv_empty == null) ? "null" : inv_empty));
+
+			// Marshal to JSON
+
+			System.out.println ();
+			System.out.println ("********** Empty Marshal to JSON **********");
+			System.out.println ();
+
+			//String json_string_empty = MarshalUtils.to_json_string (etas_params_empty);
+			//System.out.println (MarshalUtils.display_json_string (json_string_empty));
+
+			String json_string_empty = MarshalUtils.to_formatted_compact_json_string (etas_params_empty);
+			System.out.println (json_string_empty);
+
+			// Unmarshal from JSON
+
+			System.out.println ();
+			System.out.println ("********** Empty Unmarshal from JSON **********");
+			System.out.println ();
+			
+			OEtasParameters etas_params_empty2 = new OEtasParameters();
+			MarshalUtils.from_json_string (etas_params_empty2, json_string_empty);
+
+			// Display the contents
+
+			System.out.println (etas_params_empty2.toString());
+
+			// Set up an object by copying
+
+			System.out.println ();
+			System.out.println ("********** Copy into empty object **********");
+			System.out.println ();
+
+			OEtasParameters etas_params3 = new OEtasParameters();
+			etas_params3.clear();
+			etas_params3.copy_from (etas_params);
+
+			System.out.println (etas_params3.toString());
+
+			// Merge from empty object, nothing should change
+
+			System.out.println ();
+			System.out.println ("********** Merge from empty object **********");
+			System.out.println ();
+
+			OEtasParameters etas_params4 = new OEtasParameters();
+			etas_params4.clear();
+			etas_params3.merge_from (etas_params4);
+
+			System.out.println (etas_params3.toString());
+
+			// Merge into empty object, should be like a copy
+
+			System.out.println ();
+			System.out.println ("********** Merge into empty object **********");
+			System.out.println ();
+
+			etas_params4.clear();
+			etas_params4.merge_from (etas_params);
+
+			System.out.println (etas_params4.toString());
+
+			// Test readout functions
+
+			System.out.println ();
+			System.out.println ("********** Readout functions **********");
+			System.out.println ();
+
+			OEDiscFGHParams fgh_params = etas_params.make_hist_params (
+				3.0,		// magCat,
+				1.00,		// capF,
+				4.50,		// capG,
+				0.75,		// capH,
+				-30.0,		// t_range_begin,
+				180.0,		// t_range_end,
+				0.0			// t_interval_begin
+			);
+
+			System.out.println ("make_hist_params =\n" + fgh_params.toString());
+
+			System.out.println ();
+			System.out.println ("get_span_width_fcn =\n" + etas_params.get_span_width_fcn().toString());
+
+			System.out.println ();
+			System.out.println ("get_rup_width_fcn =\n" + etas_params.get_rup_width_fcn().toString());
+
+			System.out.println ();
+			System.out.println ("get_fit_f_interval =\n" + etas_params.get_fit_f_interval());
+
+			System.out.println ();
+			System.out.println ("get_fit_lmr_opt =\n" + etas_params.get_fit_lmr_opt());
+
+			System.out.println ();
+			System.out.println ("get_fmag_range(2.0, 2.0, 7.0, 6.0, 3.0) =\n" + etas_params.get_fmag_range(2.0, 2.0, 7.0, 6.0, 3.0).toString());
+
+			System.out.println ();
+			System.out.println ("get_fmag_range(2.0, 5.0, 7.0, 6.0, 3.0) =\n" + etas_params.get_fmag_range(2.0, 5.0, 7.0, 6.0, 3.0).toString());
+
+			System.out.println ();
+			System.out.println ("get_fmag_range(2.0, 8.0, 7.0, 6.0, 3.0) =\n" + etas_params.get_fmag_range(2.0, 8.0, 7.0, 6.0, 3.0).toString());
+
+			System.out.println ();
+			System.out.println ("get_tint_br(0.001) =\n" + etas_params.get_tint_br(0.001));
+
+			System.out.println ();
+			System.out.println ("get_tint_br(3.0) =\n" + etas_params.get_tint_br(3.0));
+
+			System.out.println ();
+			System.out.println ("get_tint_br(365.0) =\n" + etas_params.get_tint_br(365.0));
+
+			System.out.println ();
+			System.out.println ("get_tint_br(3650.0) =\n" + etas_params.get_tint_br(3650.0));
+
+			System.out.println ();
+			System.out.println ("make_grid_params =\n" + etas_params.make_grid_params().toString());
+
+			System.out.println ();
+			System.out.println ("get_fit_f_background =\n" + etas_params.get_fit_f_background());
+
+			System.out.println ();
+			System.out.println ("make_grid_options =\n" + etas_params.make_grid_options().toString());
+
+			System.out.println ();
+			System.out.println ("get_bay_prior =\n" + etas_params.get_bay_prior(new OEBayFactoryParams()).toString());
+
+			System.out.println ();
+			System.out.println ("get_bay_weight(0.001) =\n" + etas_params.get_bay_weight(0.001));
+
+			System.out.println ();
+			System.out.println ("get_bay_weight(3.0) =\n" + etas_params.get_bay_weight(3.0));
+
+			System.out.println ();
+			System.out.println ("get_density_bin_size_lnu =\n" + etas_params.get_density_bin_size_lnu());
+
+			System.out.println ();
+			System.out.println ("get_density_bin_count =\n" + etas_params.get_density_bin_count());
+
+			System.out.println ();
+			System.out.println ("get_prob_tail_trim =\n" + etas_params.get_prob_tail_trim());
+
+			System.out.println ();
+			System.out.println ("get_seed_subvox_count =\n" + etas_params.get_seed_subvox_count());
+
+			System.out.println ();
+			System.out.println ("get_num_catalogs =\n" + etas_params.get_num_catalogs());
+
+			System.out.println ();
+			System.out.println ("get_min_num_catalogs =\n" + etas_params.get_min_num_catalogs());
+
+			System.out.println ();
+			System.out.println ("get_sim_params(false) =\n" + etas_params.get_sim_params(false).toString());
+
+			System.out.println ();
+			System.out.println ("get_sim_params(true) =\n" + etas_params.get_sim_params(true).toString());
+
+			System.out.println ();
+			System.out.println ("check_eligible(5.0, 3.0, 1.0) =\n" + etas_params.check_eligible(5.0, 3.0, 1.0));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.5, 3.0, 1.0) =\n" + etas_params.check_eligible(4.5, 3.0, 1.0));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.5, 3.0, 2.8) =\n" + etas_params.check_eligible(4.5, 3.0, 2.8));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.5, 4.0, 1.0) =\n" + etas_params.check_eligible(4.5, 4.0, 1.0));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.0, 3.0, 1.0) =\n" + etas_params.check_eligible(4.0, 3.0, 1.0));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.0, 4.0, 1.0) =\n" + etas_params.check_eligible(4.0, 4.0, 1.0));
+
+			System.out.println ();
+			System.out.println ("check_eligible(4.0, 4.0, 2.8) =\n" + etas_params.check_eligible(4.0, 4.0, 2.8));
 
 			// Done
 

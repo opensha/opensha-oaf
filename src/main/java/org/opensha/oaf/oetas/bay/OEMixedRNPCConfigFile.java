@@ -661,13 +661,14 @@ public class OEMixedRNPCConfigFile extends OAF2ParameterSet<OEMixedRNPCParams> /
 		// Make a sample configuration file, and write it to a file.
 		// This test writes the formatted JSON.
 		// Then it reads back the file and displays it.
+		// If filename is omitted, write MixedRNPCConfig.json in the current directory.
 
 		if (testargs.is_test ("test7")) {
 
 			// Read arguments
 
 			System.out.println ("Writing sample ETAS configuration file, formatted JSON");
-			String filename = testargs.get_string ("filename");
+			String filename = testargs.get_string_opt ("filename", "MixedRNPCConfig.json");
 			testargs.end_test();
 
 			// Sample configuration file

@@ -226,7 +226,7 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 
 		// Start with the built-in defaults, using default regime
 
-		OAFRegimeParams<OEtasParameters> result = new OAFRegimeParams<OEtasParameters> (get_default_regime(), (new OEtasParameters()).set_to_typical());
+		OAFRegimeParams<OEtasParameters> result = new OAFRegimeParams<OEtasParameters> (get_default_regime(), (new OEtasParameters()).set_to_typical_cv());
 
 		// Merge in the default parameters from the file, if we have any
 
@@ -308,7 +308,7 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 
 		// Add a default selection which contains typical parameters
 
-		add_selection ((new OEtasParameters()).set_to_typical(), OAF2ParameterSet.default_region);
+		add_selection ((new OEtasParameters()).set_to_typical_cv(), OAF2ParameterSet.default_region);
 
 		// Add a selection which contains empty parameters and applies to all regions 
 		// Note that the OEtasParameters constructor produces empty parameters
@@ -654,13 +654,14 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 		// Make a sample configuration file, and write it to a file.
 		// This test writes the formatted JSON.
 		// Then it reads back the file and displays it.
+		// If filename is omitted, write EtasConfig.json in the current directory.
 
 		if (testargs.is_test ("test7")) {
 
 			// Read arguments
 
 			System.out.println ("Writing sample ETAS configuration file, formatted JSON");
-			String filename = testargs.get_string ("filename");
+			String filename = testargs.get_string_opt ("filename", "EtasConfig.json");
 			testargs.end_test();
 
 			// Sample configuration file
@@ -701,18 +702,19 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 		// This test writes the formatted JSON.
 		// Then it reads back the file and displays it.
 		// Same as test #7 except forces the use of a uniform Bayesian prior.
+		// If filename is omitted, write EtasConfig_Uniform.json in the current directory.
 
 		if (testargs.is_test ("test8")) {
 
 			// Read arguments
 
 			System.out.println ("Writing sample ETAS configuration file, uniform prior, formatted JSON");
-			String filename = testargs.get_string ("filename");
+			String filename = testargs.get_string_opt ("filename", "EtasConfig_Uniform.json");
 			testargs.end_test();
 
 			// Default parameters for the configuration file
 
-			OEtasParameters def_params = (new OEtasParameters()).set_to_typical();
+			OEtasParameters def_params = (new OEtasParameters()).set_to_typical_ov1();
 			def_params.set_bay_prior_to_typical_uniform();
 
 			// Sample configuration file
@@ -753,18 +755,19 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 		// This test writes the formatted JSON.
 		// Then it reads back the file and displays it.
 		// Same as test #7 except forces the use of a Gauss a/p/c Bayesian prior.
+		// If filename is omitted, write EtasConfig_GaussAPC.json in the current directory.
 
 		if (testargs.is_test ("test9")) {
 
 			// Read arguments
 
 			System.out.println ("Writing sample ETAS configuration file, uniform prior, formatted JSON");
-			String filename = testargs.get_string ("filename");
+			String filename = testargs.get_string_opt ("filename", "EtasConfig_GaussAPC.json");
 			testargs.end_test();
 
 			// Default parameters for the configuration file
 
-			OEtasParameters def_params = (new OEtasParameters()).set_to_typical();
+			OEtasParameters def_params = (new OEtasParameters()).set_to_typical_ov1();
 			def_params.set_bay_prior_to_typical_gauss_apc();
 
 			// Sample configuration file
@@ -818,6 +821,59 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 
 			System.out.println ();
 			System.out.println ("********** Unmarshaled Parameter Set **********");
+			System.out.println ();
+
+			System.out.println ();
+			System.out.println (etas_config2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #11
+		// Command format:
+		//  test9  filename
+		// Make a sample configuration file, and write it to a file.
+		// This test writes the formatted JSON.
+		// Then it reads back the file and displays it.
+		// Same as test #7 except forces the use of a mixed relative-ams/n/p/c Bayesian prior.
+		// If filename is omitted, write EtasConfig_MixedRNPC.json in the current directory.
+
+		if (testargs.is_test ("test11")) {
+
+			// Read arguments
+
+			System.out.println ("Writing sample ETAS configuration file, mixed relative-ams/n/p/c prior, formatted JSON");
+			String filename = testargs.get_string_opt ("filename", "EtasConfig_MixedRNPC.json");
+			testargs.end_test();
+
+			// Default parameters for the configuration file
+
+			OEtasParameters def_params = (new OEtasParameters()).set_to_typical_cv();
+			def_params.set_bay_prior_to_typical_mixed_rnpc();
+
+			// Sample configuration file
+
+			OEtasConfigFile etas_config = (new OEtasConfigFile()).set_to_sample(def_params);
+
+			// Write to file
+
+			MarshalUtils.to_formatted_json_file (etas_config, filename);
+
+			// Read back the file and display it
+
+			OEtasConfigFile etas_config2 = new OEtasConfigFile();
+			MarshalUtils.from_json_file (etas_config2, filename);
+
+			System.out.println ();
+			System.out.println ("********** Unmarshaled Sample Parameter Set **********");
 			System.out.println ();
 
 			System.out.println ();

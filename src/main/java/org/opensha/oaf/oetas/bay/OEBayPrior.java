@@ -268,6 +268,13 @@ public abstract class OEBayPrior implements Marshalable {
 	}
 
 
+	// Construct a function for mixed distribution in relative-ams, n, p, and c.
+
+	public static OEBayPrior makeMixedRNPC (OEMixedRNPCParams the_params) {
+		return new OEBayPriorMixedRNPC (the_params);
+	}
+
+
 
 
 	//----- Marshaling -----
@@ -284,6 +291,7 @@ public abstract class OEBayPrior implements Marshalable {
 	protected static final int MARSHAL_UNIFORM = 112001;
 	protected static final int MARSHAL_NORMAL = 113001;
 	protected static final int MARSHAL_GAUSSIAN_APC = 135001;
+	protected static final int MARSHAL_MIXED_RNPC = 147001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
@@ -391,6 +399,11 @@ public abstract class OEBayPrior implements Marshalable {
 
 		case MARSHAL_GAUSSIAN_APC:
 			result = new OEBayPriorGaussAPC();
+			result.do_umarshal (reader);
+			break;
+
+		case MARSHAL_MIXED_RNPC:
+			result = new OEBayPriorMixedRNPC();
 			result.do_umarshal (reader);
 			break;
 		}
