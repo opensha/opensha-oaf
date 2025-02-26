@@ -1659,6 +1659,8 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 									double mag_eps, double time_eps, double disc_base, double disc_delta, double disc_round, double disc_gap, OEMagCompFnDisc.SplitFn split_fn,
 									int mag_cat_count, double division_mag, int division_count, int before_max_count) {
 	
+		boolean f_verbose = false;
+
 		// Copy the given list so we can sort it
 
 		ArrayList<OERupture> work_list = new ArrayList<OERupture>(rup_list);
@@ -1695,6 +1697,16 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 		t_mag_cat_count = -HUGE_TIME_DAYS;
 
+		if (f_verbose) {
+			System.out.println ();
+			System.out.println ("OEMagCompFnDiscFGH.build_from_rup_list: Enforcing size limit");
+			System.out.println ("initial magCat = " + magCat);
+			System.out.println ("mag_cat_count = " + mag_cat_count);
+			System.out.println ("before_max_count = " + before_max_count);
+			System.out.println ("t_req_splits.length = " + t_req_splits.length);
+			System.out.println ("work_list.size() = " + work_list.size());
+		}
+
 		// If we are limiting separately before and after the first required split ...
 
 		if (before_max_count != 0 && t_req_splits.length > 0) {
@@ -1725,6 +1737,13 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				}
 			}
 
+			if (f_verbose) {
+				System.out.println ("Limiting separately before and after split");
+				System.out.println ("t_mag_cat_count = " + t_mag_cat_count);
+				System.out.println ("before_list.size() = " + work_list.size());
+				System.out.println ("after_list.size() = " + work_list.size());
+			}
+
 			// If there is a catalog count, and it limits the number of ruptures to consider ...
 
 			if (mag_cat_count > 0 && after_list.size() > mag_cat_count) {
@@ -1732,6 +1751,11 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				// Set effective catalog magnitude to enforce the count
 
 				magCat = Math.max (magCat, after_list.get(mag_cat_count - 1).rup_mag - Math.max(0.1*mag_eps, TINY_MAG_DELTA));
+
+				if (f_verbose) {
+					System.out.println ("after_list.get(mag_cat_count - 1).rup_mag = " + after_list.get(mag_cat_count - 1).rup_mag);
+					System.out.println ("adjusted magCat = " + magCat);
+				}
 			}
 
 			// If there is a maximum before count, and it limits the number of ruptures to consider ...
@@ -1742,6 +1766,11 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 
 				before_filter_mag = Math.max (magCat, before_list.get(before_max_count - 1).rup_mag - Math.max(0.1*mag_eps, TINY_MAG_DELTA));
 				f_before_filter = true;
+
+				if (f_verbose) {
+					System.out.println ("before_list.get(before_max_count - 1).rup_mag = " + before_list.get(before_max_count - 1).rup_mag);
+					System.out.println ("before_filter_mag = " + before_filter_mag);
+				}
 			}
 		}
 
@@ -1763,7 +1792,17 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				// Set effective catalog magnitude to enforce the count
 
 				magCat = Math.max (magCat, work_list.get(mag_cat_count - 1).rup_mag - Math.max(0.1*mag_eps, TINY_MAG_DELTA));
+
+				if (f_verbose) {
+					System.out.println ("Applying single limit to all ruptures");
+					System.out.println ("work_list.get(mag_cat_count - 1).rup_mag = " + work_list.get(mag_cat_count - 1).rup_mag);
+					System.out.println ("adjusted magCat = " + magCat);
+				}
 			}
+		}
+
+		if (f_verbose) {
+			System.out.println ();
 		}
 
 		// Effective division magnitude
@@ -1941,6 +1980,7 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 	public static OEMagCompFnDiscFGH make_from_rup_list (OEDiscFGHParams params, Collection<OERupture> rup_list,
 								Collection<OERupture> accept_list, Collection<OERupture> reject_list)
 	{
+		boolean f_verbose = false;
 
 		// Get the original mag_cat_count
 
@@ -1950,6 +1990,14 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		// magnitude of completeness, then just use the normal constructor
 
 		if (original_mag_cat_count <= 0 || original_mag_cat_count >= rup_list.size() || params.capG > HELM_CAPG_DISABLE_CHECK) {
+			if (f_verbose) {
+				System.out.println ();
+				System.out.println ("OEMagCompFnDiscFGH.make_from_rup_list: Using normal constructor");
+				System.out.println ("original_mag_cat_count = " + original_mag_cat_count);
+				System.out.println ("rup_list.size() = " + rup_list.size());
+				System.out.println ("params.capG = " + params.capG);
+				System.out.println ();
+			}
 			return new OEMagCompFnDiscFGH (params, rup_list, accept_list, reject_list);
 		}
 
@@ -1997,6 +2045,18 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 			if (reject_list != null) {
 				reject_list.addAll (my_reject_list);
 			}
+			if (f_verbose) {
+				System.out.println ();
+				System.out.println ("OEMagCompFnDiscFGH.make_from_rup_list: Trial list does not exceed size limit");
+				System.out.println ("original_mag_cat_count = " + original_mag_cat_count);
+				System.out.println ("rup_list.size() = " + rup_list.size());
+				System.out.println ("my_t_mag_cat_count = " + my_t_mag_cat_count);
+				System.out.println ("contrib_list.size() = " + contrib_list.size());
+				System.out.println ("my_accept_list.size() = " + my_accept_list.size());
+				System.out.println ("my_reject_list.size() = " + my_reject_list.size());
+				System.out.println ("mag_comp_fn.get_mag_cat() = " + rndd(mag_comp_fn.get_mag_cat()));
+				System.out.println ();
+			}
 			return mag_comp_fn;
 		}
 		
@@ -2021,20 +2081,39 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 		// If count does not exceed the original mag_cat_count (probably should not happen), return what we have
 
 		if (new_mag_cat_count <= original_mag_cat_count) {
-			if (accept_list != null) {
-				accept_list.addAll (my_accept_list);
-			}
-			if (reject_list != null) {
-				reject_list.addAll (my_reject_list);
-			}
-			return mag_comp_fn;
+
+			//  if (accept_list != null) {
+			//  	accept_list.addAll (my_accept_list);
+			//  }
+			//  if (reject_list != null) {
+			//  	reject_list.addAll (my_reject_list);
+			//  }
+			//  if (f_verbose) {
+			//  	System.out.println ();
+			//  	System.out.println ("OEMagCompFnDiscFGH.make_from_rup_list: Trial count does not exceed size limit");
+			//  	System.out.println ("original_mag_cat_count = " + original_mag_cat_count);
+			//  	System.out.println ("new_mag_cat_count = " + new_mag_cat_count);
+			//  	System.out.println ("rup_list.size() = " + rup_list.size());
+			//  	System.out.println ("my_t_mag_cat_count = " + my_t_mag_cat_count);
+			//  	System.out.println ("contrib_list.size() = " + contrib_list.size());
+			//  	System.out.println ("my_accept_list.size() = " + my_accept_list.size());
+			//  	System.out.println ("my_reject_list.size() = " + my_reject_list.size());
+			//  	System.out.println ("mag_comp_fn.get_mag_cat() = " + rndd(mag_comp_fn.get_mag_cat()));
+			//  	System.out.println ();
+			//  }
+			//  return mag_comp_fn;
+
+			// This does happen sometimes, and when it does it is not correct to return what we have
+			// because what we have was not created with the original mag_cat_count
+
+			new_mag_cat_count = original_mag_cat_count;
 		}
 
 		// Construct using the new mag_cat_count
 
 		mag_comp_fn = null;		// discard existing object
 
-		return new OEMagCompFnDiscFGH (params.magCat, params.capF, params.capG, params.capH,
+		mag_comp_fn = new OEMagCompFnDiscFGH (params.magCat, params.capF, params.capG, params.capH,
 				params.t_range_begin, params.t_range_end,
 				rup_list,
 				accept_list, reject_list,
@@ -2042,6 +2121,25 @@ public class OEMagCompFnDiscFGH extends OEMagCompFnDisc {
 				params.mag_eps, params.time_eps,
 				params.disc_base, params.disc_delta, params.disc_round, params.disc_gap, params.split_fn,
 				new_mag_cat_count, params.division_mag, params.division_count, params.t_req_splits, params.before_max_count);
+
+		if (f_verbose) {
+			System.out.println ();
+			System.out.println ("OEMagCompFnDiscFGH.make_from_rup_list: Used new size limit");
+			System.out.println ("original_mag_cat_count = " + original_mag_cat_count);
+			System.out.println ("new_mag_cat_count = " + new_mag_cat_count);
+			System.out.println ("rup_list.size() = " + rup_list.size());
+			System.out.println ("my_t_mag_cat_count = " + my_t_mag_cat_count);
+			System.out.println ("contrib_list.size() = " + contrib_list.size());
+			if (accept_list != null) {
+				System.out.println ("accept_list.size() = " + accept_list.size());
+			}
+			if (reject_list != null) {
+				System.out.println ("reject_list.size() = " + reject_list.size());
+			}
+			System.out.println ("mag_comp_fn.get_mag_cat() = " + rndd(mag_comp_fn.get_mag_cat()));
+			System.out.println ();
+		}
+		return mag_comp_fn;
 	}
 
 

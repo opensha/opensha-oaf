@@ -1,4 +1,4 @@
-oehistory185 oetas.fit.OEDisc2History test2 3.0 0.5 0.25 1.0 -30.0 365.0 0.0 3 0.001 1.0e-7 0.005 0.2 0.5 0.05 0.0 1000.0 1000.0 5 0.0 0 0.0 365.0 0 1 -28.0 6.8 -14.0 6.2 0.0 7.0 0.02 5.0 0.04 4.6 30.0 6.5 60.0 6.9 90.0 6.1
+oehistory201 oetas.fit.OEDisc2History test2 3.0 0.5 0.25 1.0 -30.0 365.0 0.0 3 0.001 1.0e-7 0.005 0.2 0.5 0.05 0.0 1000.0 1000.0 5 0.0 0 0.0 365.0 0 0 -28.0 6.8 -14.0 6.2 0.0 7.0 0.02 5.0 0.04 4.6 30.0 6.5 31.0 3.1 32.0 3.2 33.0 3.3 34.0 3.4 35.0 3.5 36.0 3.6 37.0 3.7 38.0 3.8 39.0 3.9 60.0 6.9 90.0 6.1
 Generating magnitude of completeness function
 magCat = 3.0
 capF = 0.5
@@ -23,7 +23,7 @@ division_count = 0
 t_interval_begin = 0.0
 t_interval_end = 365.0
 before_max_count = 0
-mag_cat_int_join = 1
+mag_cat_int_join = 0
 time_mag_array:
   time = -28.0, mag = 6.8
   time = -14.0, mag = 6.2
@@ -31,6 +31,15 @@ time_mag_array:
   time = 0.02, mag = 5.0
   time = 0.04, mag = 4.6
   time = 30.0, mag = 6.5
+  time = 31.0, mag = 3.1
+  time = 32.0, mag = 3.2
+  time = 33.0, mag = 3.3
+  time = 34.0, mag = 3.4
+  time = 35.0, mag = 3.5
+  time = 36.0, mag = 3.6
+  time = 37.0, mag = 3.7
+  time = 38.0, mag = 3.8
+  time = 39.0, mag = 3.9
   time = 60.0, mag = 6.9
   time = 90.0, mag = 6.1
 
@@ -41,6 +50,15 @@ rup_list:
   t = 0.02, mag = 5.0
   t = 0.04, mag = 4.6
   t = 30.0, mag = 6.5
+  t = 31.0, mag = 3.1
+  t = 32.0, mag = 3.2
+  t = 33.0, mag = 3.3
+  t = 34.0, mag = 3.4
+  t = 35.0, mag = 3.5
+  t = 36.0, mag = 3.6
+  t = 37.0, mag = 3.7
+  t = 38.0, mag = 3.8
+  t = 39.0, mag = 3.9
   t = 60.0, mag = 6.9
   t = 90.0, mag = 6.1
 
@@ -50,24 +68,25 @@ rupture_count = 5
 0, 0: t=-28.00000, mag=6.800, mc=6.200, cat=-1, x=0.000, y=0.000, tv=-28.00000, ii=false
 1, 0: t=-14.00000, mag=6.200, mc=6.200, cat=-1, x=0.000, y=0.000, tv=-14.00000, ii=false
 2, 0: t=0.00000, mag=7.000, mc=6.200, cat=-1, x=0.000, y=0.000, tv=0.00000, ii=false
-3, 4: t=30.00000, mag=6.500, mc=6.200, cat=-1, x=0.000, y=0.000, tv=30.00000, ii=true
-4, 5: t=60.00000, mag=6.900, mc=6.200, cat=-1, x=0.000, y=0.000, tv=60.00000, ii=false
+3, 5: t=30.00000, mag=6.500, mc=6.200, cat=-1, x=0.000, y=0.000, tv=30.00000, ii=false
+4, 6: t=60.00000, mag=6.900, mc=6.200, cat=-1, x=0.000, y=0.000, tv=60.00000, ii=false
 i_outside_begin = 3
 i_inside_begin = 3
 i_inside_end = 5
 i_outside_end = 5
-interval_count = 10
+interval_count = 11
 0: time = 0.0, mc = 7.0, ismc = false
 1: time = 0.000221309470961, mc = 6.805, ismc = false
 2: time = 0.000350751873953, mc = 6.605, ismc = false
 3: time = 0.00055590425727, mc = 6.405, ismc = false
 4: time = 0.000881048873008, mc = 6.1999, ismc = true
-5: time = 60.0, mc = 6.9, ismc = false
-6: time = 60.0001972423, mc = 6.805, ismc = false
-7: time = 60.0003126079, mc = 6.605, ismc = false
-8: time = 60.0004954502, mc = 6.405, ismc = false
-9: time = 60.0007852356, mc = 6.1999, ismc = true
-10: time = 365.0
+5: time = 30.0, mc = 6.1999, ismc = true
+6: time = 60.0, mc = 6.9, ismc = false
+7: time = 60.0001972423, mc = 6.805, ismc = false
+8: time = 60.0003126079, mc = 6.605, ismc = false
+9: time = 60.0004954502, mc = 6.405, ismc = false
+10: time = 60.0007852356, mc = 6.1999, ismc = true
+11: time = 365.0
 req_t_interval_begin = 0.0
 req_t_interval_end = 365.0
 

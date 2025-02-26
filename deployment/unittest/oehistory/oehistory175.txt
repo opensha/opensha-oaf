@@ -248,4 +248,6 @@ interval_count = 190
 188: time = 359.812496516, mc = 6.1999, ismc = true
 189: time = 362.406248258, mc = 6.1999, ismc = true
 190: time = 365.0
+req_t_interval_begin = 0.0
+req_t_interval_end = 365.0
 

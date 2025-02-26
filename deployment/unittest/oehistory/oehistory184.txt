@@ -101,4 +101,6 @@ interval_count = 42
 40: time = 60.7852356346, mc = 3.205, ismc = false
 41: time = 61.2445146118, mc = 3.0, ismc = true
 42: time = 365.0
+req_t_interval_begin = 0.0
+req_t_interval_end = 365.0
 

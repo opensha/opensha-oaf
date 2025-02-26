@@ -88,4 +88,6 @@ interval_count = 30
 28: time = 60.0006403429, mc = 6.405, ismc = false
 29: time = 60.0007852356, mc = 6.1999, ismc = true
 30: time = 365.0
+req_t_interval_begin = 0.0
+req_t_interval_end = 365.0
 

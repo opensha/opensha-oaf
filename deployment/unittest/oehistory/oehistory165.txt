@@ -137,4 +137,6 @@ interval_count = 78
 76: time = 90.3126079367, mc = 3.205, ismc = false
 77: time = 90.4954501908, mc = 3.0, ismc = true
 78: time = 365.0
+req_t_interval_begin = 0.0
+req_t_interval_end = 365.0
 

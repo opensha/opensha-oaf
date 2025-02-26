@@ -50,4 +50,6 @@ interval_count = 10
 8: time = 0.938708617032, mc = 3.205, ismc = false
 9: time = 1.19636836106, mc = 3.0, ismc = true
 10: time = 365.0
+req_t_interval_begin = 0.0
+req_t_interval_end = 365.0
 

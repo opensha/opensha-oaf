@@ -45,19 +45,18 @@ rup_list:
   t = 0.007, mag = 6.8
 
 OEDisc2History:
-magCat = 4.9999
-rupture_count = 6
-0, 0: t=-28.00000, mag=6.800, mc=5.000, cat=-1, x=0.000, y=0.000, tv=-28.00000, ii=false
-1, 0: t=0.00000, mag=7.000, mc=5.000, cat=-1, x=0.000, y=0.000, tv=0.00000, ii=false
+magCat = 3.0
+rupture_count = 5
+0, 0: t=-28.00000, mag=6.800, mc=3.000, cat=-1, x=0.000, y=0.000, tv=-28.00000, ii=false
+1, 0: t=0.00000, mag=7.000, mc=3.000, cat=-1, x=0.000, y=0.000, tv=0.00000, ii=false
 2, 23: t=0.00700, mag=6.800, mc=5.405, cat=-1, x=0.000, y=0.000, tv=0.00700, ii=false
-3, 26: t=0.02000, mag=5.000, mc=5.000, cat=-1, x=0.000, y=0.000, tv=0.02000, ii=true
-4, 26: t=30.00000, mag=6.500, mc=5.000, cat=-1, x=0.000, y=0.000, tv=30.00000, ii=true
-5, 26: t=60.00000, mag=6.900, mc=5.000, cat=-1, x=0.000, y=0.000, tv=60.00000, ii=true
+3, 46: t=30.00000, mag=6.500, mc=3.000, cat=-1, x=0.000, y=0.000, tv=30.00000, ii=true
+4, 46: t=60.00000, mag=6.900, mc=3.000, cat=-1, x=0.000, y=0.000, tv=60.00000, ii=true
 i_outside_begin = 2
 i_inside_begin = 2
-i_inside_end = 6
-i_outside_end = 6
-interval_count = 27
+i_inside_end = 5
+i_outside_end = 5
+interval_count = 47
 0: time = 0.0, mc = 7.0, ismc = false
 1: time = 1.0E-05, mc = 7.0, ismc = false
 2: time = 2.0E-05, mc = 7.0, ismc = false
@@ -84,6 +83,28 @@ interval_count = 27
 23: time = 0.007, mc = 5.405, ismc = false
 24: time = 0.00881048873008, mc = 5.205, ismc = false
 25: time = 0.0113870861703, mc = 5.205, ismc = false
-26: time = 0.0139636836106, mc = 4.9999, ismc = true
-27: time = 365.0
+26: time = 0.0139636836106, mc = 5.005, ismc = false
+27: time = 0.0180473153533, mc = 5.005, ismc = false
+28: time = 0.0221309470961, mc = 4.805, ismc = false
+29: time = 0.0286030672457, mc = 4.805, ismc = false
+30: time = 0.0350751873953, mc = 4.605, ismc = false
+31: time = 0.0453328065611, mc = 4.605, ismc = false
+32: time = 0.055590425727, mc = 4.405, ismc = false
+33: time = 0.0718476565139, mc = 4.405, ismc = false
+34: time = 0.0881048873008, mc = 4.205, ismc = false
+35: time = 0.113870861703, mc = 4.205, ismc = false
+36: time = 0.139636836106, mc = 4.005, ismc = false
+37: time = 0.180473153533, mc = 4.005, ismc = false
+38: time = 0.221309470961, mc = 3.805, ismc = false
+39: time = 0.286030672457, mc = 3.805, ismc = false
+40: time = 0.350751873953, mc = 3.605, ismc = false
+41: time = 0.453328065611, mc = 3.605, ismc = false
+42: time = 0.55590425727, mc = 3.405, ismc = false
+43: time = 0.718476565139, mc = 3.405, ismc = false
+44: time = 0.881048873008, mc = 3.205, ismc = false
+45: time = 1.13870861703, mc = 3.205, ismc = false
+46: time = 1.39636836106, mc = 3.0, ismc = true
+47: time = 365.0
+req_t_interval_begin = 0.0
+req_t_interval_end = 365.0
 
