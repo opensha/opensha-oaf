@@ -5,7 +5,7 @@ https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson
 Count of events received = 1
 Alias: Update for timeline ID = .a
 Alias: Merges from Comcat = 0, IDs processed = 3
-Alias: Merges from database = 0, IDs processed = 3
+Alias: Merges from database = 0, IDs processed = 4
 Alias: Matches with method 1 = 1
 Alias: Matches with method 2U = 0
 Alias: Matches with method 3U = 0
@@ -19,7 +19,7 @@ Alias: Matches with method RU = 0
 Alias: Matches with method RN = 0
 Alias: Matches with method S = 0
 Alias: Update summary:
-.a = [us20002926, atlas20150425061125, gcmt20150425061126] live
+.a = [us20002926, atlas20150425061125, iscgem607208674, gcmt20150425061126] live
 removed IDs = []
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson
 Count of events received = 1
@@ -30,7 +30,7 @@ mainshock_avail = true
 mainshock_event_id = us20002926
 mainshock_network = us
 mainshock_code = 20002926
-mainshock_id_list = [us20002926, gcmt20150425061126, atlas20150425061125]
+mainshock_id_list = [us20002926, gcmt20150425061126, iscgem607208674, atlas20150425061125]
 mainshock_time = 1429942285950 (2015-04-25 06:11:25 UTC)
 mainshock_mag = 7.8
 mainshock_lat = 28.2305

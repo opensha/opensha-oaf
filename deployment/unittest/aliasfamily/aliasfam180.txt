@@ -11,7 +11,7 @@ Count of events received = 1
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/bad3.geojson
 Count of events received = 0
 Alias: Merges from Comcat = 1, IDs processed = 5
-Alias: Merges from database = 0, IDs processed = 3
+Alias: Merges from database = 0, IDs processed = 4
 Alias: Matches with method 1 = 0
 Alias: Matches with method 2U = 0
 Alias: Matches with method 3U = 0
@@ -25,7 +25,7 @@ Alias: Matches with method RU = 0
 Alias: Matches with method RN = 0
 Alias: Matches with method S = 1
 Alias: Update summary:
-.a = [us20002926, atlas20150425061125, gcmt20150425061126, -bad1, -bad2] live
+.a = [us20002926, atlas20150425061125, iscgem607208674, gcmt20150425061126, -bad1, -bad2] live
 .b = [-bad3, -bad2, -atlas20150425061125] stopped
 removed IDs = [bad3, bad1, bad2]
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/bad3.geojson

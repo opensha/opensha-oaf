@@ -3,14 +3,14 @@ AliasFamily
 	id: 54a73f100000000000000001
 	family_time: 1420246800000
 	timeline_ids: [.a]
-	comcat_ids: [us20002926, atlas20150425061125, gcmt20150425061126]
-	enc_bindings: [3, 2]
+	comcat_ids: [us20002926, atlas20150425061125, iscgem607208674, gcmt20150425061126]
+	enc_bindings: [4, 2]
 AliasAssignmentList:
 	family_time: 1420246800000
 AliasAssignment[0]:
 	timeline_id: .a
 	primary_id: us20002926
-	comcat_ids: [us20002926, atlas20150425061125, gcmt20150425061126]
+	comcat_ids: [us20002926, atlas20150425061125, iscgem607208674, gcmt20150425061126]
 	removed_ids: []
 	all_absent_ids: []
 AliasFamily

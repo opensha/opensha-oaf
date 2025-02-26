@@ -3,19 +3,19 @@ AliasFamily
 	id: 54a963800000000000000002
 	family_time: 1420387200000
 	timeline_ids: [.a, .b]
-	comcat_ids: [us20002926, atlas20150425061125, gcmt20150425061126, nc72282711, at00nat3ek, usb000s5tp, atlas20140824102044, bad3, bad1, bad2]
-	enc_bindings: [3, 7, 6, 8, 8, 9, 7, 9]
+	comcat_ids: [us20002926, atlas20150425061125, iscgem607208674, gcmt20150425061126, nc72282711, at00nat3ek, usb000s5tp, atlas20140824102044, iscgem610572079, bad3, bad1, bad2]
+	enc_bindings: [4, 9, 6, 8, 10, 11, 9, 11]
 AliasAssignmentList:
 	family_time: 1420387200000
 AliasAssignment[0]:
 	timeline_id: .a
 	primary_id: us20002926
-	comcat_ids: [us20002926, atlas20150425061125, gcmt20150425061126]
+	comcat_ids: [us20002926, atlas20150425061125, iscgem607208674, gcmt20150425061126]
 	removed_ids: [bad1, bad2]
 AliasAssignment[1]:
 	timeline_id: .b
 	primary_id: nc72282711
-	comcat_ids: [nc72282711, at00nat3ek, usb000s5tp, atlas20140824102044]
+	comcat_ids: [nc72282711, at00nat3ek, usb000s5tp, atlas20140824102044, iscgem610572079]
 	removed_ids: [bad3, bad2]
 	all_absent_ids: []
 AliasFamily

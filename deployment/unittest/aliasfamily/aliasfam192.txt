@@ -11,7 +11,7 @@ Count of events received = 1
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/bad1.geojson
 Count of events received = 0
 Alias: Merges from Comcat = 1, IDs processed = 3
-Alias: Merges from database = 0, IDs processed = 7
+Alias: Merges from database = 0, IDs processed = 9
 Alias: Matches with method 1 = 0
 Alias: Matches with method 2U = 1
 Alias: Matches with method 3U = 0
@@ -26,8 +26,8 @@ Alias: Matches with method RN = 0
 Alias: Matches with method S = 0
 Alias: Created new timeline ID = .nc72282711, for Comcat ID = nc72282711
 Alias: Update summary:
-.a = [us20002926, atlas20150425061125, gcmt20150425061126, -at00nat3ek, -bad1] live
-.nc72282711 = [nc72282711, at00nat3ek, usb000s5tp, atlas20140824102044] split
+.a = [us20002926, atlas20150425061125, iscgem607208674, gcmt20150425061126, -at00nat3ek, -bad1] live
+.nc72282711 = [nc72282711, at00nat3ek, usb000s5tp, atlas20140824102044, iscgem610572079] split
 removed IDs = [bad1]
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us20002926.geojson
 Count of events received = 1
@@ -38,7 +38,7 @@ mainshock_avail = true
 mainshock_event_id = us20002926
 mainshock_network = us
 mainshock_code = 20002926
-mainshock_id_list = [us20002926, gcmt20150425061126, atlas20150425061125]
+mainshock_id_list = [us20002926, gcmt20150425061126, iscgem607208674, atlas20150425061125]
 mainshock_time = 1429942285950 (2015-04-25 06:11:25 UTC)
 mainshock_mag = 7.8
 mainshock_lat = 28.2305

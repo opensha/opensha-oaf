@@ -7,7 +7,7 @@ Count of events received = 1
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us1000h3p4.geojson
 Count of events received = 1
 Alias: Merges from Comcat = 0, IDs processed = 2
-Alias: Merges from database = 0, IDs processed = 1
+Alias: Merges from database = 0, IDs processed = 2
 Alias: Matches with method 1 = 1
 Alias: Matches with method 2U = 0
 Alias: Matches with method 3U = 0
@@ -21,7 +21,7 @@ Alias: Matches with method RU = 0
 Alias: Matches with method RN = 0
 Alias: Matches with method S = 0
 Alias: Update summary:
-.a = [us1000h3p4, -us1000h4p4] live
+.a = [us1000h3p4, iscgem616642238, -us1000h4p4] live
 removed IDs = [us1000h4p4]
 https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us1000h3p4.geojson
 Count of events received = 1
@@ -32,7 +32,7 @@ mainshock_avail = true
 mainshock_event_id = us1000h3p4
 mainshock_network = us
 mainshock_code = 1000h3p4
-mainshock_id_list = [us1000h3p4]
+mainshock_id_list = [us1000h3p4, iscgem616642238]
 mainshock_time = 1538128965250 (2018-09-28 10:02:45 UTC)
 mainshock_mag = 7.5
 mainshock_lat = -0.2559
