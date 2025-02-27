@@ -483,7 +483,7 @@ public class GriddedInterpGMPE_Calc {
 //		double[] depths = { 7, 2 };
 //		calc.precalc(durationYears, depths, mechWts);
 //		
-//		GeoDataSet griddedTotCumRates = ArbDiscrGeoDataSet.loadXYZFile("/home/kevin/OpenSHA/oaf/etas_tests/rateMap.txt", true);
+//		GeoDataSet griddedTotCumRates = ArbDiscrGeoDataSet.loadXYZFile("~/OpenSHA/oaf/etas_tests/rateMap.txt", true);
 //		
 //		System.out.println(gmpe.getIntensityMeasure().getName());
 //		
