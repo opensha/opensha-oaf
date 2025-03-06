@@ -3,10 +3,12 @@ package org.opensha.oaf.util;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import java.io.Writer;
 import java.io.Reader;
@@ -462,6 +464,16 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 		return;
 	}
 
+	//----- Extended JSON support -----
+
+	// Marshal a JSON null value.
+
+	@Override
+	public void marshalJsonNull (String name) {
+		current_context_write.check_name (name, null);
+		return;
+	}
+
 	//----- Construction -----
 
 	/**
@@ -525,6 +537,40 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 
 
 	//----- Testing -----
+
+
+
+
+	// Display an object, or the string "<null>".
+
+	private static String show_object (Object o) {
+		return ((o == null) ? "<null>" : (o.toString()));
+	}
+
+
+
+
+	// Read a JSON scalar, display it and its type code.
+	// This can also handle an empty map and empty array.
+
+	private static String read_json_scalar (MarshalReader reader, String name) {
+		int jpt = reader.unmarshalJsonPeekType (name);
+
+		if (jpt == MarshalReader.JPT_MAP) {
+			reader.unmarshalMapBegin (name);
+			reader.unmarshalMapEnd ();
+			return "jpt = " + jpt + ", " + show_object(name) + " = {}";
+		}
+
+		if (jpt == MarshalReader.JPT_ARRAY) {
+			int array_size = reader.unmarshalArrayBegin (name);
+			reader.unmarshalArrayEnd ();
+			return "jpt = " + jpt + ", " + show_object(name) + " = [], array_size = " + array_size;
+		}
+
+		Object o = reader.unmarshalJsonScalar (name);
+		return "jpt = " + jpt + ", " + show_object(name) + " = " + show_object(o);
+	}
 
 
 
@@ -1055,6 +1101,215 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 			System.out.println ("JSON string:");
 			System.out.println (json_string);
 
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #5
+		// Command format:
+		//  test5
+		// Test extended JSON functions.
+
+		if (args[0].equalsIgnoreCase ("test5")) {
+
+			// No additional arguments
+
+			if (args.length != 1) {
+				System.err.println ("MarshalImpJsonWriter : Invalid 'test5' subcommand");
+				return;
+			}
+
+			// Set up data
+
+			int i = -987654321;
+			long l = 12345678987654L;
+			float f = 2.71828f;
+			double d = 3.1415926535;
+			boolean bt = true;
+			boolean bf = false;
+			String s = "This is a test string";
+			String extra = "Extra string";
+
+			// Marshal the data
+
+			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+
+			writer.marshalMapBegin (null);
+
+			writer.marshalJsonScalar ("n", null);
+			writer.marshalJsonScalar ("i", i);
+			writer.marshalJsonScalar ("l", l);
+			writer.marshalJsonScalar ("f", f);
+			writer.marshalJsonScalar ("d", d);
+			writer.marshalJsonScalar ("bt", bt);
+			writer.marshalJsonScalar ("bf", bf);
+			writer.marshalJsonScalar ("s", s);
+			writer.marshalJsonScalar ("extra", extra);
+
+			writer.marshalMapBegin ("m");
+			writer.marshalMapEnd ();
+
+			writer.marshalArrayBegin ("a", 0);
+			writer.marshalArrayEnd ();
+
+			writer.marshalMapEnd ();
+
+			if (!( writer.check_write_complete() )) {
+				System.out.println ("Writer reports writing not complete");
+				return;
+			}
+
+			String json_string = writer.get_json_string();
+
+			writer = null;
+
+			System.out.println ();
+			System.out.println ("JSON string:");
+			System.out.println ();
+			System.out.println (json_string);
+
+			// Unmarshal the data
+
+			Set<String> keys = new LinkedHashSet<String>();
+
+			MarshalImpJsonReader reader = new MarshalImpJsonReader (json_string);
+
+			reader.unmarshalJsonMapBegin (null, keys);
+
+			System.out.println ();
+			System.out.println ("Keys:");
+			System.out.println ();
+			for (String key : keys) {
+				System.out.println (key);
+			}
+			System.out.println ();
+
+			System.out.println (read_json_scalar (reader, "n"));
+			System.out.println (read_json_scalar (reader, "i"));
+			System.out.println (read_json_scalar (reader, "l"));
+			System.out.println (read_json_scalar (reader, "f"));
+			System.out.println (read_json_scalar (reader, "d"));
+			System.out.println (read_json_scalar (reader, "bt"));
+			System.out.println (read_json_scalar (reader, "bf"));
+			System.out.println (read_json_scalar (reader, "s"));
+			//System.out.println (read_json_scalar (reader, "extra"));
+			System.out.println (read_json_scalar (reader, "m"));
+			System.out.println (read_json_scalar (reader, "a"));
+
+			reader.unmarshalJsonMapEnd (false);
+
+			System.out.println ();
+
+			if (!( reader.check_read_complete() )) {
+				System.out.println ("Reader reports reading not complete");
+				return;
+			}
+
+			System.out.println ("Done");
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6
+		// Test extended JSON functions.
+		// Same as test #5 except the outer container is an array.
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// No additional arguments
+
+			if (args.length != 1) {
+				System.err.println ("MarshalImpJsonWriter : Invalid 'test6' subcommand");
+				return;
+			}
+
+			// Set up data
+
+			int i = -987654321;
+			long l = 12345678987654L;
+			float f = 2.71828f;
+			double d = 3.1415926535;
+			boolean bt = true;
+			boolean bf = false;
+			String s = "This is a test string";
+			String extra = "Extra string";
+
+			// Marshal the data
+
+			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+
+			writer.marshalArrayBegin (null, 11);
+
+			writer.marshalJsonScalar (null, null);
+			writer.marshalJsonScalar (null, i);
+			writer.marshalJsonScalar (null, l);
+			writer.marshalJsonScalar (null, f);
+			writer.marshalJsonScalar (null, d);
+			writer.marshalJsonScalar (null, bt);
+			writer.marshalJsonScalar (null, bf);
+			writer.marshalJsonScalar (null, s);
+			writer.marshalJsonScalar (null, extra);
+
+			writer.marshalMapBegin (null);
+			writer.marshalMapEnd ();
+
+			writer.marshalArrayBegin (null, 0);
+			writer.marshalArrayEnd ();
+
+			writer.marshalArrayEnd ();
+
+			if (!( writer.check_write_complete() )) {
+				System.out.println ("Writer reports writing not complete");
+				return;
+			}
+
+			String json_string = writer.get_json_string();
+
+			writer = null;
+
+			System.out.println ();
+			System.out.println ("JSON string:");
+			System.out.println ();
+			System.out.println (json_string);
+
+			// Unmarshal the data
+
+			Set<String> keys = new LinkedHashSet<String>();
+
+			MarshalImpJsonReader reader = new MarshalImpJsonReader (json_string);
+
+			int array_size = reader.unmarshalArrayBegin (null);
+
+			System.out.println ();
+
+			System.out.println (read_json_scalar (reader, null));
+			System.out.println (read_json_scalar (reader, null));
+			System.out.println (read_json_scalar (reader, null));
+			System.out.println (read_json_scalar (reader, null));
+			System.out.println (read_json_scalar (reader, null));
+			System.out.println (read_json_scalar (reader, null));
+			System.out.println (read_json_scalar (reader, null));
+			System.out.println (read_json_scalar (reader, null));
+			System.out.println (read_json_scalar (reader, null));
+			System.out.println (read_json_scalar (reader, null));
+			System.out.println (read_json_scalar (reader, null));
+
+			reader.unmarshalArrayEnd ();
+
+			System.out.println ();
+
+			if (!( reader.check_read_complete() )) {
+				System.out.println ("Reader reports reading not complete");
+				return;
+			}
+
+			System.out.println ("Done");
 			return;
 		}
 

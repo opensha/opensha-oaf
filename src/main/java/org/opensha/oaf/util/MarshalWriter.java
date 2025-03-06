@@ -345,4 +345,51 @@ public interface MarshalWriter {
 		return;
 	}
 
+
+	//----- Extended JSON support -----
+
+	// Marshal a JSON null value.
+
+	public default void marshalJsonNull (String name) {
+		throw new MarshalUnsupportedException ("marshalJsonNull is not supported");
+	}
+
+	// Marshal a JSON scalar.
+	// The object may be one of the following types:
+	//  null
+	//  Integer
+	//  Long
+	//  Float
+	//  Double
+	//  Boolean
+	//  String
+
+	public default void marshalJsonScalar (String name, Object x) {
+		if (x == null) {
+			marshalJsonNull (name);
+		}
+		else if (x instanceof Integer) {
+			marshalInt (name, (Integer)x);
+		}
+		else if (x instanceof Long) {
+			marshalLong (name, (Long)x);
+		}
+		else if (x instanceof Float) {
+			marshalFloat (name, (Float)x);
+		}
+		else if (x instanceof Double) {
+			marshalDouble (name, (Double)x);
+		}
+		else if (x instanceof Boolean) {
+			marshalBoolean (name, (Boolean)x);
+		}
+		else if (x instanceof String) {
+			marshalString (name, (String)x);
+		}
+		else {
+			throw new MarshalException ("marshalJsonScalar called with an invalid type");
+		}
+		return;
+	}
+
 }

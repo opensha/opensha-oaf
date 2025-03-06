@@ -390,4 +390,100 @@ public interface MarshalReader {
 		return;
 	}
 
+
+	//----- Extended JSON support -----
+
+	// Begin a map context.
+	// If keys is non-null, then all the JSON keys are added to the collection.
+
+	public default void  unmarshalJsonMapBegin (String name, Collection<String> keys) {
+		throw new MarshalUnsupportedException ("unmarshalJsonMapBegin is not supported");
+	}
+
+	// End a map context.
+	// If f_check_keys is true, then throw an exception if any keys were not used.
+	// Note that f_check_keys = true gives the same behavior as unmarshalMapEnd.
+
+	public default void unmarshalJsonMapEnd (boolean f_check_keys) {
+		throw new MarshalUnsupportedException ("unmarshalJsonMapEnd is not supported");
+	}
+
+	// Unmarshal a JSON null value.
+
+	public default void unmarshalJsonNull (String name) {
+		throw new MarshalUnsupportedException ("unmarshalJsonNull is not supported");
+	}
+
+	// Get the type of the next object to be read.
+	// This function does not consume the next object.
+
+	public static final int JPT_NULL = 0;
+	public static final int JPT_INTEGER = 1;
+	public static final int JPT_LONG = 2;
+	public static final int JPT_FLOAT = 3;
+	public static final int JPT_DOUBLE = 4;
+	public static final int JPT_BOOLEAN = 5;
+	public static final int JPT_STRING = 6;
+
+	public static final int JPT_MAP = 7;
+	public static final int JPT_ARRAY = 8;
+
+	public default int unmarshalJsonPeekType (String name) {
+		throw new MarshalUnsupportedException ("unmarshalJsonPeekType is not supported");
+	}
+
+	// Unarshal a JSON scalar.
+	// The returned object may be one of the following types:
+	//  null
+	//  Integer
+	//  Long
+	//  Float
+	//  Double
+	//  Boolean
+	//  String
+	// Note: For numeric types, the type of object returned may be different from
+	// the type of object suppled to marshalJsonScalar(), but the value is the same.
+
+	public default Object unmarshalJsonScalar (String name) {
+		int jpt = unmarshalJsonPeekType (name);
+		Object x = null;
+
+		switch (jpt) {
+
+		case JPT_NULL:
+			unmarshalJsonNull (name);
+			break;
+
+		case JPT_INTEGER:
+			x = unmarshalInt (name);
+			break;
+
+		case JPT_LONG:
+			x = unmarshalLong (name);
+			break;
+
+		case JPT_FLOAT:
+			x = unmarshalFloat (name);
+			break;
+
+		case JPT_DOUBLE:
+			x = unmarshalDouble (name);
+			break;
+
+		case JPT_BOOLEAN:
+			x = unmarshalBoolean (name);
+			break;
+
+		case JPT_STRING:
+			x = unmarshalString (name);
+			break;
+
+		default:
+			throw new MarshalException ("unmarshalJsonScalar found an invalid object type code: " + jpt);
+		}
+
+		return x;
+	}
+
+
 }

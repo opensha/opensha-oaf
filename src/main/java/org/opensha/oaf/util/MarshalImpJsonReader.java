@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collection;
 
 import java.io.Writer;
 import java.io.Reader;
@@ -51,6 +52,10 @@ public class MarshalImpJsonReader implements MarshalReader {
 
 		public abstract Object check_name (String name);
 
+		// peek_name - Check a name, and return the named object, without consuming it.
+
+		public abstract Object peek_name (String name);
+
 		// notify_child_begin - Notification that a child is beginning, and return the child object.
 
 		public abstract Object notify_child_begin (String name, Context child);
@@ -61,7 +66,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 
 		// close_map - Close a map context, return the previous context.
 
-		public abstract Context close_map ();
+		public abstract Context close_map (boolean f_check_keys);
 
 		// close_array - Close an array context, return the previous context.
 
@@ -114,6 +119,29 @@ public class MarshalImpJsonReader implements MarshalReader {
 			return result;
 		}
 
+		// peek_name - Check a name, and return the named object, without consuming it.
+
+		@Override
+		public Object peek_name (String name) {
+
+			// Find the named object, and throw exception if none
+
+			if (name == null) {
+				throw new MarshalException ("No name specified for element in map context");
+			}
+			if (names.contains (name)) {
+				throw new MarshalException ("Duplicate element name in map context: name = " + name);
+			}
+			Object result = json_map.get (name);
+			if (result == null) {
+				if (!( json_map.containsKey (name) )) {
+					throw new MarshalException ("Element not found in map context: name = " + name);
+				}
+			}
+
+			return result;
+		}
+
 		// notify_child_begin - Notification that a child is beginning, and return the child object.
 
 		@Override
@@ -136,7 +164,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 		// close_map - Close a map context, return the previous context.
 
 		@Override
-		public Context close_map () {
+		public Context close_map (boolean f_check_keys) {
 			
 			// Check if all names were used
 
@@ -144,9 +172,11 @@ public class MarshalImpJsonReader implements MarshalReader {
 				if (!( o instanceof String )) {
 					throw new MarshalException ("Non-string key found in map context");
 				}
-				String name = (String)o;
-				if (!( names.contains(name) )) {
-					throw new MarshalException ("Unused element name in map context: name = " + name);
+				if (f_check_keys) {
+					String name = (String)o;
+					if (!( names.contains(name) )) {
+						throw new MarshalException ("Unused element name in map context: name = " + name);
+					}
 				}
 			}
 
@@ -163,7 +193,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 
 		// Constructor.
 
-		public ContextMap (String name, Context previous) {
+		public ContextMap (String name, Context previous, Collection<String> keys) {
 			super (previous);
 			this.names = new HashSet<String>();
 			this.child_name = null;
@@ -175,6 +205,14 @@ public class MarshalImpJsonReader implements MarshalReader {
 				throw new MarshalException ("Wrong element type, expecting map context: name = " + ((name == null) ? "null" : name));
 			}
 			this.json_map = (JSONOrderedObject)o;
+			if (keys != null) {
+				for (Object x : this.json_map.keySet()) {
+					if (!( x instanceof String )) {
+						throw new MarshalException ("Non-string key found in map context");
+					}
+					keys.add ((String)x);
+				}
+			}
 		}
 	}
 
@@ -213,6 +251,23 @@ public class MarshalImpJsonReader implements MarshalReader {
 			return json_array.get(array_index++);
 		}
 
+		// peek_name - Check a name, and return the named object, without consuming it.
+
+		@Override
+		public Object peek_name (String name) {
+
+			// Increment the index and check for overrun
+
+			if (name != null) {
+				throw new MarshalException ("Name specified for element in array context: name = " + name);
+			}
+			if (array_index == json_array.size()) {
+				throw new MarshalException ("Exceeded declared array size in array context: declared size = " + json_array.size());
+			}
+
+			return json_array.get(array_index);
+		}
+
 		// notify_child_begin - Notification that a child is beginning, and return the child object.
 
 		@Override
@@ -233,7 +288,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 		// close_map - Close a map context, return the previous context.
 
 		@Override
-		public Context close_map () {
+		public Context close_map (boolean f_check_keys) {
 			throw new MarshalException ("Attempt to end map context when in array context");
 		}
 
@@ -293,9 +348,22 @@ public class MarshalImpJsonReader implements MarshalReader {
 			// Throw exception
 
 			if (name == null) {
-				throw new MarshalException ("Attempt to add element in root context: name = null");
+				throw new MarshalException ("Attempt to read element in root context: name = null");
 			}
-			throw new MarshalException ("Attempt to add element in root context: name = " + name);
+			throw new MarshalException ("Attempt to read element in root context: name = " + name);
+		}
+
+		// peek_name - Check a name, and return the named object, without consuming it.
+
+		@Override
+		public Object peek_name (String name) {
+
+			// Throw exception
+
+			if (name == null) {
+				throw new MarshalException ("Attempt to peek element in root context: name = null");
+			}
+			throw new MarshalException ("Attempt to peek element in root context: name = " + name);
 		}
 
 		// notify_child_begin - Notification that a child is beginning, and return the child object.
@@ -339,7 +407,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 		// close_map - Close a map context, return the previous context.
 
 		@Override
-		public Context close_map () {
+		public Context close_map (boolean f_check_keys) {
 			throw new MarshalException ("Attempt to end map context when in root context");
 		}
 
@@ -376,7 +444,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 	 */
 	@Override
 	public void unmarshalMapBegin (String name) {
-		current_context_read = new ContextMap (name, current_context_read);
+		current_context_read = new ContextMap (name, current_context_read, null);
 		return;
 	}
 
@@ -385,7 +453,7 @@ public class MarshalImpJsonReader implements MarshalReader {
 	 */
 	@Override
 	public void unmarshalMapEnd () {
-		current_context_read = current_context_read.close_map();
+		current_context_read = current_context_read.close_map (true);
 		return;
 	}
 
@@ -513,6 +581,85 @@ public class MarshalImpJsonReader implements MarshalReader {
 			}
 		}
 		return result;
+	}
+
+	//----- Extended JSON support -----
+
+	// Begin a map context.
+	// If keys is non-null, then all the JSON keys are added to the collection.
+
+	@Override
+	public void  unmarshalJsonMapBegin (String name, Collection<String> keys) {
+		current_context_read = new ContextMap (name, current_context_read, keys);
+		return;
+	}
+
+	// End a map context.
+	// If f_check_keys is true, then throw an exception if any keys were not used.
+	// Note that f_check_keys = true gives the same behavior as unmarshalMapEnd.
+
+	@Override
+	public void unmarshalJsonMapEnd (boolean f_check_keys) {
+		current_context_read = current_context_read.close_map (f_check_keys);
+		return;
+	}
+
+	// Unmarshal a JSON null value.
+
+	@Override
+	public void unmarshalJsonNull (String name) {
+		Object o = current_context_read.check_name (name);
+		if (o != null) {
+			throw new MarshalException ("Unmarshal null found non-null data: name = " + ((name == null) ? "null" : name));		
+		}
+		return;
+	}
+
+	// Get the type of the next object to be read.
+	// This function does not consume the next object.
+
+	@Override
+	public int unmarshalJsonPeekType (String name) {
+		Object o = current_context_read.peek_name (name);
+		int jpt = -1;
+
+		if (o == null) {
+			jpt = JPT_NULL;
+		}
+		else if (o instanceof Number) {
+			if (o instanceof Double) {
+				jpt =  JPT_DOUBLE;
+			}
+			else if (o instanceof Float) {
+				jpt = JPT_FLOAT;
+			}
+			else {
+				long x = ((Number)o).longValue();
+				if (x < (long)Integer.MIN_VALUE || x > (long)Integer.MAX_VALUE) {
+					jpt = JPT_LONG;
+				}
+				else {
+					jpt = JPT_INTEGER;
+				}
+			}
+		}
+		else if (o instanceof Boolean) {
+			jpt = JPT_BOOLEAN;
+		}
+		else if (o instanceof String) {
+			jpt = JPT_STRING;
+		}
+		else if (o instanceof JSONOrderedObject) {
+			jpt = JPT_MAP;
+		}
+		else if (o instanceof JSONArray) {
+			jpt = JPT_ARRAY;
+		}
+		else {
+			throw new MarshalException ("unmarshalJsonPeekType found element of unknown type");
+		}
+
+		return jpt;
 	}
 
 	//----- Construction -----
