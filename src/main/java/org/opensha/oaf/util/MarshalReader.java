@@ -485,5 +485,24 @@ public interface MarshalReader {
 		return x;
 	}
 
+	// Unarshal a JSON scalar, required to be non-null.
+	// The returned object may be one of the following types:
+	//  Integer
+	//  Long
+	//  Float
+	//  Double
+	//  Boolean
+	//  String
+	// Note: For numeric types, the type of object returned may be different from
+	// the type of object suppled to marshalJsonScalar(), but the value is the same.
+
+	public default Object unmarshalJsonScalarNonNull (String name) {
+		Object x = unmarshalJsonScalar (name);
+		if (x == null) {
+			throw new MarshalException ("unmarshalJsonScalarNonNull found a null object");
+		}
+		return x;
+	}
+
 
 }
