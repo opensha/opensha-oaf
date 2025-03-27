@@ -271,7 +271,8 @@ public class OafSendExample {
 
 		// This is a legacy vestige that does not get used anymore, but we need
 		// to add it otherwise sending will fail. Anything will do ...
-		product.setTrackerURL(new URL("http://www.google.com/"));
+		//product.setTrackerURL(new URL("http://www.google.com/"));
+		PDLSender.product_setTrackerURL (product);
 
 
 		attachPropertiesToProduct(product); // simply key-value properties

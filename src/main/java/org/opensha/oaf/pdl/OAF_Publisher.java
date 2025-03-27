@@ -57,11 +57,12 @@ public class OAF_Publisher {
 
 		// This is a legacy vestige that does not get used anymore, but we need
 		// to add it otherwise sending will fail. Anything will do ...
-		try {
-			product.setTrackerURL(new URL("http://www.google.com/"));
-		} catch (MalformedURLException e) {
-			ExceptionUtils.throwAsRuntimeException(e);
-		}
+		//try {
+			//product.setTrackerURL(new URL("http://www.google.com/"));
+			PDLSender.product_setTrackerURL (product);
+		//} catch (MalformedURLException e) {
+		//	ExceptionUtils.throwAsRuntimeException(e);
+		//}
 
 
 		attachPropertiesToProduct(product, eventID); // simply key-value properties

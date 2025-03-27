@@ -136,7 +136,8 @@ public class PDLProductBuilderEventSequenceText {
 
 		// Legacy requirement
 
-		product.setTrackerURL(new URL("http://www.google.com/"));
+		//product.setTrackerURL(new URL("http://www.google.com/"));
+		PDLSender.product_setTrackerURL (product);
 
 		// Attach properties
 
@@ -258,7 +259,8 @@ public class PDLProductBuilderEventSequenceText {
 
 		// Legacy requirement
 
-		product.setTrackerURL(new URL("http://www.google.com/"));
+		//product.setTrackerURL(new URL("http://www.google.com/"));
+		PDLSender.product_setTrackerURL (product);
 
 		// Attach properties
 

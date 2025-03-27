@@ -16,6 +16,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.Map;
 import java.util.List;
+import java.net.MalformedURLException;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.util.health.HealthMonitor;
@@ -102,11 +103,42 @@ public class PDLSender {
 
 
 	
+	// Set the tracker URL in the product.
+	// Parameters:
+	//  product = The product to use.
+	// This is a legacy requirement in PDL client 2.X.
+	// The tracker URL is not used any more, but still must be set.  Any URL will do.
+	// The function is removed in PDL client 3.X.
+
+	// Version for PDL client 2.X.
+
+	public static void product_setTrackerURL (Product product) {
+		try {
+			product.setTrackerURL(new URL("http://www.google.com/"));
+		}
+		catch (MalformedURLException e) {
+			throw new RuntimeException ("Unable to create or set tracker URL", e);
+		}
+		return;
+	}
+
+	// Version for PDL client 3.X.
+
+//	public static void product_setTrackerURL (Product product) {
+//		return;
+//	}
+
+
+
+
+	
 	// Sign the product.
 	// Parameters:
 	//  product = The product to sign.
 	// Throws exception if unable to sign product.
 	// Note: If no PDL key file has been specified, the function leaves the product unsigned.
+
+	// Version for PDL client 2.X.
 
 	public static void signProduct (Product product) {
 
@@ -137,6 +169,38 @@ public class PDLSender {
 
 		return;
 	}
+
+	// Version for PDL client 3.X.
+
+//	public static void signProduct (Product product) {
+//
+//		// Get the PDL key filename
+//
+//		ServerConfig server_config = new ServerConfig();
+//		String pdl_key_filename = server_config.get_pdl_key_filename();
+//
+//		// If no key supplied, then leave the product unsigned
+//
+//		if (pdl_key_filename.isEmpty()) {
+//			return;
+//		}
+//
+//		// Attempt to sign the product
+//
+//		try {
+//			File privateKey = new File(pdl_key_filename); // OpenSSH private key file
+//			product.sign(CryptoUtils.readOpenSSHPrivateKey(StreamUtils.readStream(
+//				StreamUtils.getInputStream(privateKey)), null), CryptoUtils.Version.SIGNATURE_V2);
+//		}
+//
+//		// Signing failed
+//
+//		catch (Exception e) {
+//			throw new PDLSigningException ("PDLSender: Unable to sign PDL product", e);
+//		}
+//
+//		return;
+//	}
 
 
 
