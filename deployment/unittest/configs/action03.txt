@@ -50,9 +50,13 @@ comcat_cache_1_mag = 1.95
 comcat_cache_1_time = PT2184H
 comcat_cache_2_mag = 3.95
 comcat_cache_2_time = PT9504H
-forecast_rate_limit = PT20S
+forecast_rate_limit = PT25S
 forecast_max_limit = PT1M
 forecast_file_option = 0
+shadow_method = 2
+shadow3_large_mag = 7.0
+shadow3_centroid_mult = 0.5
+shadow3_sample_mult = 1.0
 adv_min_mag_bins = [
   0:  3.0
   1:  4.0
@@ -586,7 +590,7 @@ IntakeSphRegion
 
 
 {
-  "ActionConfigFile": 24004,
+  "ActionConfigFile": 24005,
   "forecast_min_gap": "PT5M",
   "forecast_max_delay": "PT168H",
   "comcat_clock_skew": "PT8M",
@@ -637,9 +641,13 @@ IntakeSphRegion
   "comcat_cache_1_time": "PT2184H",
   "comcat_cache_2_mag": 3.95,
   "comcat_cache_2_time": "PT9504H",
-  "forecast_rate_limit": "PT20S",
+  "forecast_rate_limit": "PT25S",
   "forecast_max_limit": "PT1M",
   "forecast_file_option": 0,
+  "shadow_method": 2,
+  "shadow3_large_mag": 7.0,
+  "shadow3_centroid_mult": 0.5,
+  "shadow3_sample_mult": 1.0,
   "adv_min_mag_bins": [3.0, 4.0, 5.0, 6.0, 7.0],
   "adv_window_start_offs": ["PT0S", "PT0S", "PT0S", "PT0S"],
   "adv_window_end_offs": ["PT24H", "PT168H", "PT720H", "PT8760H"],
@@ -974,9 +982,13 @@ comcat_cache_1_mag = 1.95
 comcat_cache_1_time = PT2184H
 comcat_cache_2_mag = 3.95
 comcat_cache_2_time = PT9504H
-forecast_rate_limit = PT20S
+forecast_rate_limit = PT25S
 forecast_max_limit = PT1M
 forecast_file_option = 0
+shadow_method = 2
+shadow3_large_mag = 7.0
+shadow3_centroid_mult = 0.5
+shadow3_sample_mult = 1.0
 adv_min_mag_bins = [
   0:  3.0
   1:  4.0

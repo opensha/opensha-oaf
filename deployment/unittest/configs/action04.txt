@@ -51,9 +51,13 @@ comcat_cache_1_mag = 1.95
 comcat_cache_1_time = PT2184H
 comcat_cache_2_mag = 3.95
 comcat_cache_2_time = PT9504H
-forecast_rate_limit = PT20S
+forecast_rate_limit = PT25S
 forecast_max_limit = PT1M
 forecast_file_option = 0
+shadow_method = 2
+shadow3_large_mag = 7.0
+shadow3_centroid_mult = 0.5
+shadow3_sample_mult = 1.0
 adv_min_mag_bins = [
   0:  3.0
   1:  4.0

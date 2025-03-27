@@ -83,6 +83,10 @@ import org.opensha.oaf.rj.OAFParameterSet;
  *  [v4] "forecast_rate_limit" = String giving minimum time between forecasts, in java.time.Duration format.
  *  [v4] "forecast_max_limit" = String giving maximum delay for forecast rate limit, in java.time.Duration format.
  *  [v4] "forecast_file_option" = Option to save forecasts into files: 0 = disable, 1 = enable. 
+ *  [v5] "shadow_method" = Version of shadowing algorithm to use: 2 = shadowing algorithm v2, 3 = shadowing algorithm v3. 
+ *  [v5] "shadow3_large_mag" = Minimum magnitude for a candidate shadowing event to be considered large, for shadowing algorithm v3. 
+ *  [v5] "shadow3_centroid_mult" = Centroid radius multiplier, for shadowing algorithm v3. 
+ *  [v5] "shadow3_sample_mult" = Sample radius multiplier, for shadowing algorithm v3. 
  *	"adv_min_mag_bins" = [ Array giving a list of minimum magnitudes for which forecasts are generated, in increasing order.
  *		element = Real value giving minimum magnitude for the bin.
  *	]
@@ -481,6 +485,43 @@ public class ActionConfigFile implements Marshalable {
 
 	public int forecast_file_option;
 
+	// Version of shadowing algorithm to use. [v5]
+
+	public static final int SHADOW_METHOD_MIN = 2;
+	public static final int SHADOW_METHOD_ALGORITHM_V2 = 2;	// Shadow algorithm v2
+	public static final int SHADOW_METHOD_ALGORITHM_V3 = 3;	// Shadow algorithm v3
+	public static final int SHADOW_METHOD_MAX = 3;
+
+	public static final int DEFAULT_SHADOW_METHOD = 2;	// Default value for forecast parameters
+
+	private static final int V4_SHADOW_METHOD = 2;	// Default value for v4 and earlier files
+
+	public int shadow_method;
+
+	// Minimum magnitude for a candidate shadowing event to be considered large, for shadowing algorithm v3. [v5]
+
+	public static final double DEFAULT_SHADOW3_LARGE_MAG = 7.0;	// Default value for forecast parameters
+
+	private static final double V4_SHADOW3_LARGE_MAG = 7.0;	// Default value for v4 and earlier files
+
+	public double shadow3_large_mag;
+
+	//  Centroid radius multiplier, for shadowing algorithm v3. [v5]
+
+	public static final double DEFAULT_SHADOW3_CENTROID_MULT = 0.5;	// Default value for forecast parameters
+
+	private static final double V4_SHADOW3_CENTROID_MULT = 0.5;	// Default value for v4 and earlier files
+
+	public double shadow3_centroid_mult;
+
+	// Sample radius multiplier, for shadowing algorithm v3. [v5]
+
+	public static final double DEFAULT_SHADOW3_SAMPLE_MULT = 1.0;	// Default value for forecast parameters
+
+	private static final double V4_SHADOW3_SAMPLE_MULT = 1.0;	// Default value for v4 and earlier files
+
+	public double shadow3_sample_mult;
+
 	// Minimum magnitude for advisory magnitude bins.  Must be in increasing order.
 
 	public ArrayList<Double> adv_min_mag_bins;
@@ -647,6 +688,10 @@ public class ActionConfigFile implements Marshalable {
 		forecast_rate_limit = 0L;
 		forecast_max_limit = 0L;
 		forecast_file_option = FORECAST_FILE_OPTION_DISABLE;
+		shadow_method = DEFAULT_SHADOW_METHOD;
+		shadow3_large_mag = 0.0;
+		shadow3_centroid_mult = 0.0;
+		shadow3_sample_mult = 0.0;
 		adv_min_mag_bins = new ArrayList<Double>();
 		adv_window_start_offs = new ArrayList<Long>();
 		adv_window_end_offs = new ArrayList<Long>();
@@ -875,6 +920,10 @@ public class ActionConfigFile implements Marshalable {
 			throw new RuntimeException("ActionConfigFile: Invalid forecast_file_option: " + forecast_file_option);
 		}
 
+		if (!( shadow_method >= SHADOW_METHOD_MIN && shadow_method <= SHADOW_METHOD_MAX )) {
+			throw new RuntimeException("ActionConfigFile: Invalid shadow_method: " + shadow_method);
+		}
+
 		int n;
 		long min_lag;
 
@@ -1097,6 +1146,11 @@ public class ActionConfigFile implements Marshalable {
 		result.append ("forecast_rate_limit = " + Duration.ofMillis(forecast_rate_limit).toString() + "\n");
 		result.append ("forecast_max_limit = " + Duration.ofMillis(forecast_max_limit).toString() + "\n");
 		result.append ("forecast_file_option = " + forecast_file_option + "\n");
+
+		result.append ("shadow_method = " + shadow_method + "\n");
+		result.append ("shadow3_large_mag = " + shadow3_large_mag + "\n");
+		result.append ("shadow3_centroid_mult = " + shadow3_centroid_mult + "\n");
+		result.append ("shadow3_sample_mult = " + shadow3_sample_mult + "\n");
 
 		result.append ("adv_min_mag_bins = [" + "\n");
 		for (int i = 0; i < adv_min_mag_bins.size(); ++i) {
@@ -1480,6 +1534,21 @@ public class ActionConfigFile implements Marshalable {
 
 
 
+	// Return a string describing a shadow method option value.
+
+	public static String get_shadow_method_opt_as_string (int shadow_method_opt) {
+
+		switch (shadow_method_opt) {
+		case SHADOW_METHOD_ALGORITHM_V2: return "SHADOW_METHOD_ALGORITHM_V2";
+		case SHADOW_METHOD_ALGORITHM_V3: return "SHADOW_METHOD_ALGORITHM_V3";
+		}
+
+		return "SHADOW_METHOD_INVALID(" + shadow_method_opt + ")";
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal version number.
@@ -1488,6 +1557,7 @@ public class ActionConfigFile implements Marshalable {
 	private static final int MARSHAL_VER_2 = 24002;
 	private static final int MARSHAL_VER_3 = 24003;
 	private static final int MARSHAL_VER_4 = 24004;
+	private static final int MARSHAL_VER_5 = 24005;
 
 	private static final String M_VERSION_NAME = "ActionConfigFile";
 
@@ -1636,7 +1706,7 @@ public class ActionConfigFile implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_4;
+		int ver = MARSHAL_VER_5;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -1894,6 +1964,87 @@ public class ActionConfigFile implements Marshalable {
 			marshal_intake_region_list (writer, "pdl_intake_regions"   , pdl_intake_regions   );
 
 			break;
+
+		case MARSHAL_VER_5:
+
+			marshal_duration           (writer, "forecast_min_gap"     , forecast_min_gap     );
+			marshal_duration           (writer, "forecast_max_delay"   , forecast_max_delay   );
+			marshal_duration           (writer, "comcat_clock_skew"    , comcat_clock_skew    );
+			marshal_duration           (writer, "comcat_origin_skew"   , comcat_origin_skew   );
+			marshal_duration           (writer, "comcat_retry_min_gap" , comcat_retry_min_gap );
+			marshal_duration           (writer, "comcat_retry_missing" , comcat_retry_missing );
+			marshal_duration           (writer, "seq_spec_min_lag"     , seq_spec_min_lag     );
+			marshal_duration           (writer, "advisory_dur_week"    , advisory_dur_week    );
+			marshal_duration           (writer, "advisory_dur_month"   , advisory_dur_month   );
+			marshal_duration           (writer, "advisory_dur_year"    , advisory_dur_year    );
+
+			marshal_duration           (writer, "def_max_forecast_lag" , def_max_forecast_lag );
+			marshal_duration           (writer, "withdraw_forecast_lag", withdraw_forecast_lag);
+			writer.marshalInt          (        "stale_forecast_option", stale_forecast_option);
+			writer.marshalDouble       (        "shadow_search_radius" , shadow_search_radius );
+			marshal_duration           (writer, "shadow_lookback_time" , shadow_lookback_time );
+			writer.marshalDouble       (        "shadow_centroid_mag"  , shadow_centroid_mag  );
+			writer.marshalDouble       (        "shadow_large_mag"     , shadow_large_mag     );
+			marshal_duration           (writer, "poll_short_period"    , poll_short_period    );
+			marshal_duration           (writer, "poll_short_lookback"  , poll_short_lookback  );
+			marshal_duration           (writer, "poll_short_intake_gap", poll_short_intake_gap);
+			marshal_duration           (writer, "poll_long_period"     , poll_long_period     );
+			marshal_duration           (writer, "poll_long_lookback"   , poll_long_lookback   );
+			marshal_duration           (writer, "poll_long_intake_gap" , poll_long_intake_gap );
+			marshal_duration           (writer, "pdl_intake_max_age"   , pdl_intake_max_age   );
+			marshal_duration           (writer, "pdl_intake_max_future", pdl_intake_max_future);
+			marshal_duration           (writer, "removal_forecast_age" , removal_forecast_age );
+			marshal_duration           (writer, "removal_update_skew"  , removal_update_skew  );
+			marshal_duration           (writer, "removal_lookback_tmax", removal_lookback_tmax);
+			marshal_duration           (writer, "removal_lookback_tmin", removal_lookback_tmin);
+			writer.marshalDouble       (        "removal_lookback_mag" , removal_lookback_mag );
+			marshal_duration           (writer, "removal_check_period" , removal_check_period );
+			marshal_duration           (writer, "removal_retry_period" , removal_retry_period );
+			marshal_duration           (writer, "removal_event_gap"    , removal_event_gap    );
+			marshal_duration           (writer, "removal_foreign_block", removal_foreign_block);
+			writer.marshalString       (        "def_injectable_text"  , def_injectable_text  );
+
+			writer.marshalInt          (        "evseq_enable"         , evseq_enable         );
+			writer.marshalInt          (        "evseq_report"         , evseq_report         );
+			marshal_duration           (writer, "evseq_lookback"       , evseq_lookback       );
+			marshal_duration           (writer, "evseq_lookahead"      , evseq_lookahead      );
+			marshal_duration           (writer, "evseq_cap_min_dur"    , evseq_cap_min_dur    );
+			marshal_duration           (writer, "evseq_cap_gap"        , evseq_cap_gap        );
+
+			writer.marshalInt          (        "etas_enable"          , etas_enable          );
+
+			marshal_duration           (writer, "etas_time_limit"      , etas_time_limit      );
+			marshal_duration           (writer, "etas_progress_time"   , etas_progress_time   );
+			marshal_duration           (writer, "data_fetch_lookback"  , data_fetch_lookback  );
+			marshal_duration           (writer, "data_fit_dur_min"     , data_fit_dur_min     );
+			writer.marshalDouble       (        "comcat_cache_1_mag"   , comcat_cache_1_mag   );
+			marshal_duration           (writer, "comcat_cache_1_time"  , comcat_cache_1_time  );
+			writer.marshalDouble       (        "comcat_cache_2_mag"   , comcat_cache_2_mag   );
+			marshal_duration           (writer, "comcat_cache_2_time"  , comcat_cache_2_time  );
+			marshal_duration           (writer, "forecast_rate_limit"  , forecast_rate_limit  );
+			marshal_duration           (writer, "forecast_max_limit"   , forecast_max_limit   );
+			writer.marshalInt          (        "forecast_file_option" , forecast_file_option );
+
+			writer.marshalInt          (        "shadow_method"        , shadow_method        );
+			writer.marshalDouble       (        "shadow3_large_mag"    , shadow3_large_mag    );
+			writer.marshalDouble       (        "shadow3_centroid_mult", shadow3_centroid_mult);
+			writer.marshalDouble       (        "shadow3_sample_mult"  , shadow3_sample_mult  );
+
+			writer.marshalDoubleCollection     ("adv_min_mag_bins"     , adv_min_mag_bins     );
+			marshal_duration_list      (writer, "adv_window_start_offs", adv_window_start_offs);
+			marshal_duration_list      (writer, "adv_window_end_offs"  , adv_window_end_offs  );
+			writer.marshalStringCollection     ("adv_window_names"     , adv_window_names     );
+
+			writer.marshalDoubleCollection     ("adv_fractile_values"  , adv_fractile_values  );
+			writer.marshalIntCollection        ("adv_bar_counts"       , adv_bar_counts       );
+
+			marshal_duration_list      (writer, "forecast_lags"        , forecast_lags        );
+			marshal_duration_list      (writer, "comcat_retry_lags"    , comcat_retry_lags    );
+			marshal_duration_list      (writer, "comcat_intake_lags"   , comcat_intake_lags   );
+			marshal_duration_list      (writer, "pdl_report_retry_lags", pdl_report_retry_lags);
+			marshal_intake_region_list (writer, "pdl_intake_regions"   , pdl_intake_regions   );
+
+			break;
 		}
 
 		return;
@@ -1905,7 +2056,7 @@ public class ActionConfigFile implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_4);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_5);
 
 		// Contents
 
@@ -1970,6 +2121,11 @@ public class ActionConfigFile implements Marshalable {
 			forecast_rate_limit   = V3_FORECAST_RATE_LIMIT;
 			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
 			forecast_file_option  = V3_FORECAST_FILE_OPTION;
+
+			shadow_method         = V4_SHADOW_METHOD;
+			shadow3_large_mag     = V4_SHADOW3_LARGE_MAG;
+			shadow3_centroid_mult = V4_SHADOW3_CENTROID_MULT;
+			shadow3_sample_mult   = V4_SHADOW3_SAMPLE_MULT;
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
@@ -2051,6 +2207,11 @@ public class ActionConfigFile implements Marshalable {
 			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
 			forecast_file_option  = V3_FORECAST_FILE_OPTION;
 
+			shadow_method         = V4_SHADOW_METHOD;
+			shadow3_large_mag     = V4_SHADOW3_LARGE_MAG;
+			shadow3_centroid_mult = V4_SHADOW3_CENTROID_MULT;
+			shadow3_sample_mult   = V4_SHADOW3_SAMPLE_MULT;
+
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
 			adv_window_start_offs = unmarshal_duration_list      (reader, "adv_window_start_offs");
@@ -2131,6 +2292,11 @@ public class ActionConfigFile implements Marshalable {
 			forecast_max_limit    = V3_FORECAST_MAX_LIMIT;
 			forecast_file_option  = V3_FORECAST_FILE_OPTION;
 
+			shadow_method         = V4_SHADOW_METHOD;
+			shadow3_large_mag     = V4_SHADOW3_LARGE_MAG;
+			shadow3_centroid_mult = V4_SHADOW3_CENTROID_MULT;
+			shadow3_sample_mult   = V4_SHADOW3_SAMPLE_MULT;
+
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
 			adv_window_start_offs = unmarshal_duration_list      (reader, "adv_window_start_offs");
@@ -2210,6 +2376,96 @@ public class ActionConfigFile implements Marshalable {
 			forecast_rate_limit   = unmarshal_duration           (reader, "forecast_rate_limit"  );
 			forecast_max_limit    = unmarshal_duration           (reader, "forecast_max_limit"   );
 			forecast_file_option  = reader.unmarshalInt          (        "forecast_file_option" );
+
+			shadow_method         = V4_SHADOW_METHOD;
+			shadow3_large_mag     = V4_SHADOW3_LARGE_MAG;
+			shadow3_centroid_mult = V4_SHADOW3_CENTROID_MULT;
+			shadow3_sample_mult   = V4_SHADOW3_SAMPLE_MULT;
+
+			adv_min_mag_bins = new ArrayList<Double>();
+			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
+			adv_window_start_offs = unmarshal_duration_list      (reader, "adv_window_start_offs");
+			adv_window_end_offs   = unmarshal_duration_list      (reader, "adv_window_end_offs"  );
+			adv_window_names = new ArrayList<String>();
+			reader.unmarshalStringCollection                     (        "adv_window_names"     , adv_window_names     );
+
+			adv_fractile_values = new ArrayList<Double>();
+			reader.unmarshalDoubleCollection                     (        "adv_fractile_values"  , adv_fractile_values  );
+			adv_bar_counts = new ArrayList<Integer>();
+			reader.unmarshalIntCollection                        (        "adv_bar_counts"       , adv_bar_counts       );
+
+			forecast_lags         = unmarshal_duration_list      (reader, "forecast_lags"        );
+			comcat_retry_lags     = unmarshal_duration_list      (reader, "comcat_retry_lags"    );
+			comcat_intake_lags    = unmarshal_duration_list      (reader, "comcat_intake_lags"   );
+			pdl_report_retry_lags = unmarshal_duration_list      (reader, "pdl_report_retry_lags");
+			pdl_intake_regions    = unmarshal_intake_region_list (reader, "pdl_intake_regions"   );
+
+			break;
+
+		case MARSHAL_VER_5:
+
+			forecast_min_gap      = unmarshal_duration           (reader, "forecast_min_gap"     );
+			forecast_max_delay    = unmarshal_duration           (reader, "forecast_max_delay"   );
+			comcat_clock_skew     = unmarshal_duration           (reader, "comcat_clock_skew"    );
+			comcat_origin_skew    = unmarshal_duration           (reader, "comcat_origin_skew"   );
+			comcat_retry_min_gap  = unmarshal_duration           (reader, "comcat_retry_min_gap" );
+			comcat_retry_missing  = unmarshal_duration           (reader, "comcat_retry_missing" );
+			seq_spec_min_lag      = unmarshal_duration           (reader, "seq_spec_min_lag"     );
+			advisory_dur_week     = unmarshal_duration           (reader, "advisory_dur_week"    );
+			advisory_dur_month    = unmarshal_duration           (reader, "advisory_dur_month"   );
+			advisory_dur_year     = unmarshal_duration           (reader, "advisory_dur_year"    );
+
+			def_max_forecast_lag  = unmarshal_duration           (reader, "def_max_forecast_lag" );
+			withdraw_forecast_lag = unmarshal_duration           (reader, "withdraw_forecast_lag");
+			stale_forecast_option = reader.unmarshalInt          (        "stale_forecast_option");
+			shadow_search_radius  = reader.unmarshalDouble       (        "shadow_search_radius" );
+			shadow_lookback_time  = unmarshal_duration           (reader, "shadow_lookback_time" );
+			shadow_centroid_mag   = reader.unmarshalDouble       (        "shadow_centroid_mag"  );
+			shadow_large_mag      = reader.unmarshalDouble       (        "shadow_large_mag"     );
+			poll_short_period     = unmarshal_duration           (reader, "poll_short_period"    );
+			poll_short_lookback   = unmarshal_duration           (reader, "poll_short_lookback"  );
+			poll_short_intake_gap = unmarshal_duration           (reader, "poll_short_intake_gap");
+			poll_long_period      = unmarshal_duration           (reader, "poll_long_period"     );
+			poll_long_lookback    = unmarshal_duration           (reader, "poll_long_lookback"   );
+			poll_long_intake_gap  = unmarshal_duration           (reader, "poll_long_intake_gap" );
+			pdl_intake_max_age    = unmarshal_duration           (reader, "pdl_intake_max_age"   );
+			pdl_intake_max_future = unmarshal_duration           (reader, "pdl_intake_max_future");
+			removal_forecast_age  = unmarshal_duration           (reader, "removal_forecast_age" );
+			removal_update_skew   = unmarshal_duration           (reader, "removal_update_skew"  );
+			removal_lookback_tmax = unmarshal_duration           (reader, "removal_lookback_tmax");
+			removal_lookback_tmin = unmarshal_duration           (reader, "removal_lookback_tmin");
+			removal_lookback_mag  = reader.unmarshalDouble       (        "removal_lookback_mag" );
+			removal_check_period  = unmarshal_duration           (reader, "removal_check_period" );
+			removal_retry_period  = unmarshal_duration           (reader, "removal_retry_period" );
+			removal_event_gap     = unmarshal_duration           (reader, "removal_event_gap"    );
+			removal_foreign_block = unmarshal_duration           (reader, "removal_foreign_block");
+			def_injectable_text   = reader.unmarshalString       (        "def_injectable_text"  );
+
+			evseq_enable          = reader.unmarshalInt          (        "evseq_enable"         );
+			evseq_report          = reader.unmarshalInt          (        "evseq_report"         );
+			evseq_lookback        = unmarshal_duration           (reader, "evseq_lookback"       );
+			evseq_lookahead       = unmarshal_duration           (reader, "evseq_lookahead"      );
+			evseq_cap_min_dur     = unmarshal_duration           (reader, "evseq_cap_min_dur"    );
+			evseq_cap_gap         = unmarshal_duration           (reader, "evseq_cap_gap"        );
+
+			etas_enable           = reader.unmarshalInt          (        "etas_enable"          );
+
+			etas_time_limit       = unmarshal_duration           (reader, "etas_time_limit"      );
+			etas_progress_time    = unmarshal_duration           (reader, "etas_progress_time"   );
+			data_fetch_lookback   = unmarshal_duration           (reader, "data_fetch_lookback"  );
+			data_fit_dur_min      = unmarshal_duration           (reader, "data_fit_dur_min"     );
+			comcat_cache_1_mag    = reader.unmarshalDouble       (        "comcat_cache_1_mag"   );
+			comcat_cache_1_time   = unmarshal_duration           (reader, "comcat_cache_1_time"  );
+			comcat_cache_2_mag    = reader.unmarshalDouble       (        "comcat_cache_2_mag"   );
+			comcat_cache_2_time   = unmarshal_duration           (reader, "comcat_cache_2_time"  );
+			forecast_rate_limit   = unmarshal_duration           (reader, "forecast_rate_limit"  );
+			forecast_max_limit    = unmarshal_duration           (reader, "forecast_max_limit"   );
+			forecast_file_option  = reader.unmarshalInt          (        "forecast_file_option" );
+
+			shadow_method         = reader.unmarshalInt          (        "shadow_method"        );
+			shadow3_large_mag     = reader.unmarshalDouble       (        "shadow3_large_mag"    );
+			shadow3_centroid_mult = reader.unmarshalDouble       (        "shadow3_centroid_mult");
+			shadow3_sample_mult   = reader.unmarshalDouble       (        "shadow3_sample_mult"  );
 
 			adv_min_mag_bins = new ArrayList<Double>();
 			reader.unmarshalDoubleCollection                     (        "adv_min_mag_bins"     , adv_min_mag_bins     );
