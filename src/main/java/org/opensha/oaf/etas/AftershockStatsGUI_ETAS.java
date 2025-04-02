@@ -975,7 +975,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		mapGridSpacingParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
 		mapPlotParams.addParameter(mapGridSpacingParam);
 		
-		mapScaleParam  = new DoubleParameter("Scale", 1d, 10d, Double.valueOf(5));
+		mapScaleParam  = new DoubleParameter("Scale", 1d, 100d, Double.valueOf(5));
 		mapScaleParam.setInfo("Map scale in fault lengths");
 		mapScaleParam.addParameterChangeListener(this);
 		mapScaleParam.getEditor().getComponent().setPreferredSize(new Dimension(outputWidth, 50));
@@ -1210,7 +1210,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		mapLevelParam = new DoubleParameter("Level", 1d, 100d, Double.valueOf(10) );
 		mapPOEParam = new DoubleParameter("POE (%)", 0, 99.9, Double.valueOf(10));
 		mapGridSpacingParam = new DoubleParameter("\u0394 (km)", 1, 1000, Double.valueOf(10d));
-		mapScaleParam  = new DoubleParameter("Scale", 1d, 10d, Double.valueOf(5));
+		mapScaleParam  = new DoubleParameter("Scale", 1d, 100d, Double.valueOf(5));
 		workingDir = new File(System.getProperty("user.home"));
 		accessor = new ETAS_ComcatAccessor();
 		quickForecastButton = new ButtonParameter("Forecast using default settings", "Quick Forecast");

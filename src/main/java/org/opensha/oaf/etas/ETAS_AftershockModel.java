@@ -294,9 +294,10 @@ public abstract class ETAS_AftershockModel {
 
 	public double getFractileNumEvents(double magMin, double tMinDays, double tMaxDays, double fractile) {
 		num_DistributionFunc = computeNum_DistributionFunc( tMinDays,  tMaxDays,  magMin);
-		if (num_DistributionFunc.size() > 0)
-			return num_DistributionFunc.getDiscreteFractile(fractile);
-		else
+		if (num_DistributionFunc.size() > 0) {
+//			return num_DistributionFunc.getDiscreteFractile(fractile);
+			return scaledNumDistributionFunc(fractile, magMin);
+		} else
 			return 0;
 	}
 
@@ -322,7 +323,7 @@ public abstract class ETAS_AftershockModel {
 		
 		double minMag;
 		if (dynamicMinMag) {
-			minMag = maxASmag - 1.0;
+			minMag = maxASmag - 2.7;
 
 
 			// calibrate minimum magnitude choice by running 100 sims. If any come back with zero events, reduce minMag
@@ -331,7 +332,7 @@ public abstract class ETAS_AftershockModel {
 //				boolean iszero = true;
 				int numNotZero = 0;
 				
-				while (numNotZero < 95 & minMag > -3.0){
+				while (numNotZero < 100 & minMag > -3.0){
 					minMag--;
 					simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
 							mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nCalibrationSims, validate); //maxMag = 9.5, maxGeneratons = 100;
@@ -726,107 +727,74 @@ public abstract class ETAS_AftershockModel {
 		return mfdArray;
 	}
 
-// I thought I could make this one faster... still trying 
-		
-//	public EvenlyDiscretizedFunc[] getCumNumMFD_FractileWithAleatoryVariability(double[] fractileArray, double minMag, double maxMag, int numMag, double tMinDays, double tMaxDays) {
-//		EvenlyDiscretizedFunc[] mfdArray = new EvenlyDiscretizedFunc[fractileArray.length];
-//
-//		for(int i=0;i<fractileArray.length;i++) {
-//			mfdArray[i] = new EvenlyDiscretizedFunc(minMag, maxMag, numMag);
-//			mfdArray[i].setName(fractileArray[i]+" Fractile for Num Events, including aleatory variability");
-//			mfdArray[i].setInfo("Cumulative distribution (greater than or equal to each magnitude)");
-//		}
-//
-//		// get the super catalog for this time range and minimum magnitude
-//		List<List<float[]>> catalogList = new ArrayList<List<float[]>>();
-//		List<float[]> eqCat;
-//		float[] eqTemp;
-//		for(int i=0;i<simulatedCatalog.nSims;i++) {
-//			eqCat = simulatedCatalog.getETAScatalog(i);
-//			for(int j = 0; j < eqCat.size(); j++) {
-//				eqTemp = eqCat.get(j);
-//				if (eqTemp[0] < tMinDays || eqTemp[0] > tMaxDays || eqTemp[1] < minMag)
-//					eqCat.remove(j);
-//			}
-//			catalogList.add(eqCat);
-//		}
-//
-//		// now work on this catalog, removing elements as we go
-//		
-//		double mag, val;
-//		int[] eqCount = new int[simulatedCatalog.nSims];
-//		for(int i=0;i<numMag;i++) {
-//			List<List<float[]>> catalogList2 = new ArrayList<List<float[]>>();
-//			
-//			mag = mfdArray[0].getX(i);	// any MFD will do, as they all have the same x-axis values
-//		
-//			for(int j = 0; j < catalogList.size(); j++) {
-//				eqCat = catalogList.get(j);
-//				
-//				for(int k = 0; k < eqCat.size(); k++) {
-//					eqTemp = eqCat.get(k);
-//				
-//					if (eqTemp[1] < mag) 
-//						eqCat.remove(k);
-//				}
-//				
-//				eqCount[j] = eqCat.size(); 
-//				catalogList2.add(eqCat);
-//			}
-//			
-//			Arrays.sort(eqCount);
-//			
-//			for(int j=0;j<fractileArray.length;j++) {
-//				int index = (int) Math.round(simulatedCatalog.nSims * fractileArray[j]);
-//				val = eqCount[index];
-//				mfdArray[j].set(i,val);
-//			}
-//			
-//			catalogList = catalogList2;
-//			
-//		}
-//
-//		return mfdArray;
-//	}
 
 	public double[] getCumNumFractileWithAleatory(double[] fractileArray, double mag, double tMinDays, double tMaxDays) {
 		// can I compute this just once?
 		computeNum_DistributionFunc(tMinDays, tMaxDays, mag);
 		
-		
 		double[] fractValArray = new double[fractileArray.length];
 
+//		double probOne = 1 - num_DistributionFunc.getY(0); // (1 - probability of zero events)
+//		double lambda = -Math.log(1-probOne);
+//		if(lambda <= 0) lambda = 0;
+//		
+		for(int i = 0; i < fractileArray.length; i++){
+			fractValArray[i] = scaledNumDistributionFunc(fractileArray[i], mag);
+			
+			// MOVED THE FOLLOWING CODE INTO METHOD SCALEDNUMDISTRIBUTIONFUNCTION
+			//
+			//
+			//			double fractValComplete = num_DistributionFunc.getDiscreteFractile(fractileArray[i]);			
+//			// the preceding gives the number of magComplete used in the simulation. We want the number of mag. Scale:
+//			if(mag < simulatedCatalog.minMagLimit) {
+//				
+//				// fractValComplete is an integer (the number of earthquakes for which f% of the simulations have fewer)
+//				// this can be zero, which is no good for scaling the rate to magnitudes lower than mag (or magComplete)
+//				// It is therefore necessary to produce some kind of fractional count. We do this by computing the
+//				// Poisson rate that gives the observed probability of zero events in the simulations. 
+//
+////				if(D) System.out.println("mag=" + mag + " duration=" + (tMaxDays-tMinDays) + " fractValComplete=" + fractValComplete);
+//				
+//				if(fractValComplete <= 1){
+////					if(D) System.out.println("using Poisson approximation for fractile");
+//					fractValComplete = poissQuantile(lambda, fractileArray[i]);
+////					if(D) System.out.println("new fractValComplete=" + fractValComplete + " probOne=" + probOne + " lambda=" + lambda);
+//				}
+//				
+//				fractValArray[i] = Math.pow(10, -b*(mag - simulatedCatalog.minMagLimit)) * fractValComplete;	
+//			} else
+//			fractValArray[i] = fractValComplete;
+		}
+		return fractValArray;
+	}
+	
+	public double scaledNumDistributionFunc(double fractile, double mag){
+		
+		double fractValComplete = num_DistributionFunc.getDiscreteFractile(fractile);
+		double fractValScaled;
+		
 		double probOne = 1 - num_DistributionFunc.getY(0); // (1 - probability of zero events)
 		double lambda = -Math.log(1-probOne);
 		if(lambda <= 0) lambda = 0;
-		
-		for(int i = 0; i < fractileArray.length; i++){
-			double fractValComplete = num_DistributionFunc.getDiscreteFractile(fractileArray[i]);
-			
-		
-			
-			// the preceding gives the number of magComplete used in the simulation. We want the number of mag. Scale:
-			if(mag < simulatedCatalog.minMagLimit) {
-				
-				// fractValComplete is an integer (the number of earthquakes for which f% of the simulations have fewer)
-				// this can be zero, which is no good for scaling the rate to magnitudes lower than mag (or magComplete)
-				// It is therefore necessary to produce some kind of fractional count. We do this by computing the
-				// Poisson rate that gives the observed probability of zero events in the simulations. 
 
-//				if(D) System.out.println("mag=" + mag + " duration=" + (tMaxDays-tMinDays) + " fractValComplete=" + fractValComplete);
-				
-				if(fractValComplete <= 1){
-//					if(D) System.out.println("using Poisson approximation for fractile");
-					fractValComplete = poissQuantile(lambda, fractileArray[i]);
-//					if(D) System.out.println("new fractValComplete=" + fractValComplete + " probOne=" + probOne + " lambda=" + lambda);
-				}
-				
-				fractValArray[i] = Math.pow(10, -b*(mag - simulatedCatalog.minMagLimit)) * fractValComplete;	
-			} else
-				fractValArray[i] = fractValComplete;
-		}
+		// the preceding gives the number of magComplete used in the simulation. We want the number of mag. Scale:
+		if(mag < simulatedCatalog.minMagLimit) {
+			// fractValComplete is an integer (the number of earthquakes for which f% of the simulations have fewer)
+			// this can be zero, which is no good for scaling the rate to magnitudes lower than mag (or magComplete)
+			// It is therefore necessary to produce some kind of fractional count. We do this by computing the
+			// Poisson rate that gives the observed probability of zero events in the simulations. 
 
-		return fractValArray;
+			if(fractValComplete <= 1){
+				//			if(D) System.out.println("using Poisson approximation for fractile");
+				fractValComplete = poissQuantile(lambda, fractile);
+				//			if(D) System.out.println("new fractValComplete=" + fractValComplete + " probOne=" + probOne + " lambda=" + lambda);
+			}
+
+			fractValScaled = Math.pow(10, -b*(mag - simulatedCatalog.minMagLimit)) * fractValComplete;	
+		} else
+			fractValScaled = fractValComplete;
+	
+		return fractValScaled;
 	}
 	
 	public double getMedianPoissInterp(double mag, double tMinDays, double tMaxDays) {
@@ -1321,11 +1289,20 @@ public abstract class ETAS_AftershockModel {
 		double[] yValues = num_DistributionFunc.getYVals();
 		double[] zValues = new double[nObserved.length];
 		
+		
+		double numScaled;
 		for (int k = 0; k < nObserved.length; k++) { 
-			double ySum = 0;
+			// scale the number observed if the minMag is less than the simMinMag
+			if(minMag < simulatedCatalog.minMagLimit) {
+				
+				numScaled = Math.pow(10, b*(minMag - simulatedCatalog.minMagLimit)) * nObserved[k];	
+			} else
+				numScaled = nObserved[k];	
 			
+			// find the fraction of the number distribution below each scaled N
+			double ySum = 0;
 			for (int i = 0; i < xValues.length; i++) {
-				if (nObserved[k] >= xValues[i])
+				if (numScaled >= xValues[i])
 					ySum += yValues[i];
 				else 
 					break;

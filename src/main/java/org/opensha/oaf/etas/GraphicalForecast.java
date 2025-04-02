@@ -788,8 +788,6 @@ public class GraphicalForecast{
 				barNumberString.append(String.format("%d,", barNumbers[k]));
 			}
 		barNumberString.append(String.format("%d", barNumbers[barNumbers.length-1]));
-				
-		
 		
 		//report number of observed earthquakes
 		int num3s = 0;

@@ -213,7 +213,7 @@ public class ETAS_StatsCalc {
         		// weight by distance. Aftershocks get a weight of one if they are within 2 * the vdE and Shaw radius,
         		// which assigns a 1km radius to a reference M4.6 earthquake with a 3Mpa stress drop. 
         		// Source scaling follows the assumption that M0 = stressdrop*L^3. Aftershocks outside this diameter are 
-        		// downweighted following a cosine taper to double the diameter. Weights are zero beyond.
+        		// downweighted following a cosine taper out to four times the radius. Weights are zero beyond.
         		//  
         		if (r[i] < 2*r0)
         			w[i] = 1d;
