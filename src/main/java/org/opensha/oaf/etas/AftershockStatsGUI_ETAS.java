@@ -5190,13 +5190,6 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					
 					// TODO: save individual versions of each of these for output as csv 
 					GriddedGeoDataSet new_gmpeProbModel;
-
-					/*
-					 * mess things up:
-					 */
-//					pgvCurves = null;
-//					pgaCurves = null;
-//					psaCurves = null;
 					
 					if (mapTypeParam.getValue() == MapType.LEVEL) //if we're plotting levels with a given prob, start from scratch
 //						new_gmpeProbModel = getIntensityModel(newForecastRateModel, value, false);

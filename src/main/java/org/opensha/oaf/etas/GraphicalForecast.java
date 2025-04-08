@@ -885,22 +885,37 @@ public class GraphicalForecast{
 				}
 				fractileString.append(String.format("%d", Math.round(fractileValues[fractileValues.length-1])));
 				
-				
-//				getProbabilityWithAleatory(int num, double mag, double tMinDays, double tMaxDays) {
-//						
 				// compute probabililty values for the specified number ranges
 				StringBuilder barProbabilityString = new StringBuilder();
-				double[] barProbabilityValue = aftershockModel.getCumulativeProbabilityValue(
-						aftershockModel.getForecastMinDays(), aftershockModel.getForecastMinDays() + predictionIntervals[j],
-						mag, barNumbers);
-				double barCumSum = 0;
+				double[] barCumProbability = new double[barNumbers.length];
+				double[] barProbability = new double[barNumbers.length];
 				
-				for(int k = 0; k < barProbabilityValue.length; k++) {
-					if (k < barProbabilityValue.length - 1)	
-						barProbabilityString.append(String.format("%d,", Math.round(100*(barProbabilityValue[k] - barCumSum))));
+				int m;
+				for(int k = 0; k < barNumbers.length - 1; k++) {
+					m = 0;
+					while(m < fractiles.length && fractileValues[m] < barNumbers[k+1] - 0.5) 
+						m++;
+					if (m == 0)
+						barCumProbability[k] = 0;
 					else
-						barProbabilityString.append(String.format("%d", Math.round(100*(1.0 - barCumSum))));
-					barCumSum = barProbabilityValue[k];
+						barCumProbability[k] = fractiles[m-1];
+				}
+				// then the final value
+				barCumProbability[barNumbers.length - 1] = fractiles[fractiles.length-1]; 
+				
+				for(int k = 0; k < barNumbers.length; k++) {
+					if (k == 0) {
+						barProbability[k] = barCumProbability[k];
+					} else  if (0< k && k < barNumbers.length - 1)
+						barProbability[k] =  barCumProbability[k] - barCumProbability[k-1];
+					else
+						barProbability[k] = fractiles[fractiles.length-1] - barCumProbability[k-1];
+					
+					if (k < barNumbers.length - 1) 
+						barProbabilityString.append(String.format("%d,", Math.round(100*(barProbability[k]))));
+					else
+						barProbabilityString.append(String.format("%d", Math.round(100*(barProbability[k]))));
+					
 				}
 				
 				if (2.99 < mag && mag < 7.01) { //added M4s NvdE 7/3/2020
