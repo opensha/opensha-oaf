@@ -397,12 +397,13 @@ public class USGS_AftershockForecast {
 				while (sum < 100) {
 
 					// Find bar whose percentage is lowest compared to its real value
+					// (don't go from 0 to 1 unless it's adjacent to a nonzero bar)
 
 					int best_j = -1;
 					double best_err = 0.0;
 
 					for (int j = lo_bar_ix; j < nbars; ++j) {
-						if (barvals[j] <= 99) {
+						if (barvals[j] <= 99 && ( barvals[j] > 0 || (j > 0 && barvals[j-1] > 0) || (j+1 < nbars && barvals[j+1] > 0) )) {
 							double err = ((double)(barvals[j])) - r_barvals[j];
 							if (best_j == -1 || err <= best_err) {
 								best_j = j;
@@ -428,12 +429,13 @@ public class USGS_AftershockForecast {
 				while (sum > 100) {
 
 					// Find bar whose percentage is highest compared to its real value
+					// (don't go from 1 to 0 unless it's the first or last bar or adjacent to a zero bar)
 
 					int best_j = -1;
 					double best_err = 0.0;
 
 					for (int j = lo_bar_ix; j < nbars; ++j) {
-						if (barvals[j] >= 1) {
+						if (barvals[j] >= 1 && ( barvals[j] > 1 || j == 0 || j+1 >= nbars || barvals[j-1] == 0 || barvals[j+1] == 0 )) {
 							double err = ((double)(barvals[j])) - r_barvals[j];
 							if (best_j == -1 || err >= best_err) {
 								best_j = j;

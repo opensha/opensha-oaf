@@ -1062,7 +1062,8 @@ public class OEMixedRNPCParams implements Marshalable {
 
 		try {
 			//URL paramsURL = OEConstants.class.getResource ("resources/mbMixedEtasParams_20250204.csv");
-			URL paramsURL = OEConstants.class.getResource ("resources/mbMixedEtasParams_20250326.csv");
+			//URL paramsURL = OEConstants.class.getResource ("resources/mbMixedEtasParams_20250326.csv");
+			URL paramsURL = OEConstants.class.getResource ("resources/mbMixedEtasParams_20250409.csv");
 			CSVFile<String> csv = CSVFile.readURL (paramsURL, true);
 			result = import_csv_rows (csv);
 		}
