@@ -241,7 +241,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 	private void init_dataStartTimeParam () throws GUIEDTException {
 
-		dataStartTimeParam_comcat = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
+		dataStartTimeParam_comcat = new DoubleParameter("Data Start Time", -365d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_comcat.setUnits("Days");
 		dataStartTimeParam_comcat.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_comcat, "dataStartTimeParam_comcat", PARMGRP_DATA_SOURCE_PARAM);

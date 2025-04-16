@@ -91,6 +91,7 @@ import org.opensha.oaf.util.gui.GUIEDTException;
 import org.opensha.oaf.util.gui.GUIEDTRunnable;
 import org.opensha.oaf.util.gui.GUIEventAlias;
 import org.opensha.oaf.util.gui.GUIExternalCatalog;
+import org.opensha.oaf.util.gui.GUIExternalCatalogV2;
 import org.opensha.oaf.util.AutoExecutorService;
 
 import org.opensha.oaf.aafs.ServerConfig;
@@ -1520,7 +1521,7 @@ public class OEGUIModel extends OEGUIComponent {
 	//  src = Source to read lines from the file.
 	// This is called by the controller to initiate catalog load.
 
-	public void loadCatalog (OEGUIController.XferCatalogMod xfer, Supplier<String> src) {
+	public void loadCatalog_v1 (OEGUIController.XferCatalogMod xfer, Supplier<String> src) {
 
 		// Will not be fetching from Comcat
 
@@ -1651,7 +1652,7 @@ public class OEGUIModel extends OEGUIComponent {
 	// Parameters:
 	//  dest = Destination to write the lines of the catalog.
 
-	public void saveCatalog (Consumer<String> dest) {
+	public void saveCatalog_v1 (Consumer<String> dest) {
 
 		if (!( modstate_has_catalog() )) {
 			throw new IllegalStateException ("OEGUIModel.saveCatalog - Invalid model state: " + cur_modstate_string());
@@ -1713,7 +1714,146 @@ public class OEGUIModel extends OEGUIComponent {
 		rcf.write_all_sections (dest);
 		return;
 	}
-	
+
+
+
+
+	// Load catalog from a file.
+	// Parameters:
+	//  xfer = Transfer object to read/modify control parameters.
+	//  src = Source to read lines from the file.
+	// This is called by the controller to initiate catalog load.
+
+	public static final String DEF_SYM_NAME_START_TIME = "start_time";
+	public static final String DEF_SYM_NAME_END_TIME = "end_time";
+	public static final String DEF_SYM_NAME_WRAP_LON = "wrap_lon";
+
+	public void loadCatalog (OEGUIController.XferCatalogMod xfer, Supplier<String> src) {
+
+		// Will not be fetching from Comcat
+
+		has_fetched_catalog = false;
+
+		// Make the catalog file
+
+		GUIExternalCatalogV2 catfile = new GUIExternalCatalogV2();
+		catfile.read_from_supplier (src);
+
+		// Get parameters
+
+		if (catfile.has_symbol (DEF_SYM_NAME_START_TIME)) {
+			xfer.x_dataSource.modify_dataStartTimeParam (catfile.get_symbol_as_double (DEF_SYM_NAME_START_TIME));
+		}
+
+		if (catfile.has_symbol (DEF_SYM_NAME_END_TIME)) {
+			xfer.x_dataSource.modify_dataEndTimeParam (catfile.get_symbol_as_double (DEF_SYM_NAME_END_TIME));
+		}
+
+		boolean wrapLon = false;
+		if (catfile.has_symbol (DEF_SYM_NAME_WRAP_LON)) {
+			wrapLon = catfile.get_symbol_as_boolean (DEF_SYM_NAME_WRAP_LON);
+		}
+
+		// Get the mainshock
+
+		ObsEqkRupture myMainshock = GUIExternalCatalogV2.copy_wrap_rup (catfile.get_mainshock(), wrapLon);
+
+		// Get the aftershock list
+
+		ObsEqkRupList myAftershocks = GUIExternalCatalogV2.copy_wrap_rup_list (
+			catfile.get_joined_rup_list (true, GUIExternalCatalogV2.EQCAT_FORESHOCK, GUIExternalCatalogV2.EQCAT_AFTERSHOCK), wrapLon );
+
+		// Display search result
+		
+		System.out.println ("Loaded " + myAftershocks.size() + " aftershocks from file");
+
+		// If we didn't get an event ID, set it
+
+		if (myMainshock.getEventId() == null || myMainshock.getEventId().isEmpty()) {
+			myMainshock.setEventId ("__custom");
+		}
+
+		// Store mainshock into our data structures
+
+		cur_mainshock = myMainshock;
+
+		fcmain = new ForecastMainshock();
+		fcmain.setup_local_mainshock (cur_mainshock);
+
+		// Finish setting up the mainshock
+
+		setup_for_mainshock (xfer);
+
+		// Catalog time range
+
+		double minDays = xfer.x_dataSource.x_dataStartTimeParam;
+		double maxDays = xfer.x_dataSource.x_dataEndTimeParam;
+
+		// Here we need to trim the catalog to be only events that lie within the selected time interval
+		
+		ObsEqkRupList trimmedAftershocks = new ObsEqkRupList();
+		long eventTime = myMainshock.getOriginTime();
+		long startTime = eventTime + (long)(minDays*ComcatOAFAccessor.day_millis);
+		long endTime = eventTime + (long)(maxDays*ComcatOAFAccessor.day_millis);
+		for (ObsEqkRupture as : myAftershocks) {
+			long asTime = as.getOriginTime();
+			if (asTime >= startTime && asTime <= endTime) {
+				trimmedAftershocks.add(as);
+			}
+		}
+		
+		System.out.println("Found " + trimmedAftershocks.size() + " aftershocks between selected start and end times");
+
+		// Establish name of mainshock
+
+		xfer.x_dataSource.modify_eventIDParam (myMainshock.getEventId());
+
+		// Take the trimmed list of aftershocks as our aftershocks
+
+		cur_wrapLon = wrapLon;
+
+		cur_aftershocks = trimmedAftershocks;
+
+		// Perform post-fetch actions
+
+		postFetchActions (xfer);
+
+		return;
+	}
+
+
+
+
+	// Save the catalog to a file.
+	// Parameters:
+	//  dest = Destination to write the lines of the catalog.
+
+	public void saveCatalog (Consumer<String> dest) {
+
+		if (!( modstate_has_catalog() )) {
+			throw new IllegalStateException ("OEGUIModel.saveCatalog - Invalid model state: " + cur_modstate_string());
+		}
+
+		// Make the catalog file
+
+		GUIExternalCatalogV2 catfile = new GUIExternalCatalogV2();
+
+		// Set symbol definitions
+
+		catfile.symdef_add_double (DEF_SYM_NAME_START_TIME, get_cat_dataStartTimeParam());
+		catfile.symdef_add_double (DEF_SYM_NAME_END_TIME, get_cat_dataEndTimeParam());
+		catfile.symdef_add_boolean (DEF_SYM_NAME_WRAP_LON, get_cur_wrapLon());
+
+		// Set up mainshock and aftershocks
+
+		catfile.add_all_quakes (get_cur_mainshock(), get_cur_aftershocks(), null);
+
+		// Write the file
+
+		catfile.write_to_consumer (dest);
+		return;
+	}
+
 
 
 
