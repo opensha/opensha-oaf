@@ -471,4 +471,40 @@ public class SphRegionCircle extends SphRegion {
 		return result;
 	}
 
+	// Marshal object to a single unadorned line of text.
+
+	@Override
+	public String marshal_to_line () {
+		StringBuilder result = new StringBuilder();
+		result.append (Double.toString (center.get_lat()));
+		result.append (" ");
+		result.append (Double.toString (center.get_lon()));
+		result.append (" ");
+		result.append (Double.toString (radius));
+		return result.toString();
+	}
+
+	// Unmarshal object from a single unadorned line of text.
+
+	@Override
+	public SphRegionCircle unmarshal_from_line (String line) {
+		String s = line.trim();
+		String[] w = s.split ("[ \\t]+");
+		if (w.length != 3) {
+			throw new MarshalException ("SphRegionCircle.unmarshal_from_line : Invalid line: " + s);
+		}
+
+		try {
+			double the_lat = Double.parseDouble (w[0]);
+			double the_lon = Double.parseDouble (w[1]);
+			SphLatLon the_center = new SphLatLon (the_lat, the_lon);
+			double the_radius = Double.parseDouble (w[2]);
+			setup (the_center, the_radius);
+		}
+		catch (Exception e) {
+			throw new MarshalException ("SphRegionCircle.unmarshal_from_line : Invalid line: " + s, e);
+		}
+		return this;
+	}
+
 }

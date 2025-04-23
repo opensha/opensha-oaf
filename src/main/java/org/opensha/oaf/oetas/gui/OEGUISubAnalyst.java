@@ -596,15 +596,15 @@ public class OEGUISubAnalyst extends OEGUIListener {
 				public void run_in_edt() throws GUIEDTException {
 					gui_view.view_show_console();
 				}
-			}, true);
+			});
 			GUICalcStep computeStep_2 = new GUICalcStep("Fetching AAFS Server Status", "...", new Runnable() {
 						
 				@Override
 				public void run() {
 					status_success[0] = gui_model.fetchServerStatus(progress);
 				}
-			}, gui_top.get_forceWorkerEDT());
-			Runnable postComputeStep = new GUIEDTRunnable() {
+			});
+			GUIEDTRunnable postComputeStep = new GUIEDTRunnable() {
 						
 				@Override
 				public void run_in_edt() throws GUIEDTException {
@@ -647,9 +647,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 					JOptionPane.showMessageDialog(gui_top.get_top_window(), message, title, message_type);
 				}
 			};
-			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2);
-			run.set_reporter(postComputeStep);
-			new Thread(run).start();
+			GUICalcRunnable.run_steps (progress, postComputeStep, computeStep_1, computeStep_2);
 
 
 
@@ -797,15 +795,15 @@ public class OEGUISubAnalyst extends OEGUIListener {
 				public void run() {
 					send_success[0] = gui_model.sendAnalystOptions(progress, xfer_analyst_impl);
 				}
-			}, gui_top.get_forceWorkerEDT());
+			});
 			GUICalcStep computeStep_3 = new GUICalcStep("Sending Analyst Options to AAFS Server", "...", new GUIEDTRunnable() {
 						
 				@Override
 				public void run_in_edt() throws GUIEDTException {
 					xfer_analyst_impl.xfer_store();
 				}
-			}, true);
-			Runnable postComputeStep = new GUIEDTRunnable() {
+			});
+			GUIEDTRunnable postComputeStep = new GUIEDTRunnable() {
 						
 				@Override
 				public void run_in_edt() throws GUIEDTException {
@@ -818,9 +816,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 					}
 				}
 			};
-			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_2, computeStep_3);
-			run.set_reporter(postComputeStep);
-			new Thread(run).start();
+			GUICalcRunnable.run_steps (progress, postComputeStep, computeStep_2, computeStep_3);
 
 		}
 		break;

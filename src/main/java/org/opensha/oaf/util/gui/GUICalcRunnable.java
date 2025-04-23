@@ -30,7 +30,7 @@ public class GUICalcRunnable implements Runnable {
 
 	// This is called in the EDT after the progress bar is removed, typically to report final status to the user.
 
-	private Runnable reporter;
+	private GUIEDTRunnable reporter;
 
 	// An exception that occurred, or null if none.
 		
@@ -42,7 +42,7 @@ public class GUICalcRunnable implements Runnable {
 
 	// To construct, specify the owner of the progress monitor window, and the calculation steps.
 		
-	public GUICalcRunnable(Component owner, GUICalcStep... calcSteps) {
+	public GUICalcRunnable (Component owner, GUICalcStep... calcSteps) {
 		this.owner = owner;
 		this.progress_bar = new GUICalcProgressBar (owner, "", "", false);
 		this.steps = calcSteps;
@@ -51,7 +51,7 @@ public class GUICalcRunnable implements Runnable {
 
 	// Or, you can pass in the progress bar.
 		
-	public GUICalcRunnable(GUICalcProgressBar progress_bar, GUICalcStep... calcSteps) {
+	public GUICalcRunnable (GUICalcProgressBar progress_bar, GUICalcStep... calcSteps) {
 		this.owner = progress_bar.get_owner();
 		this.progress_bar = progress_bar;
 		this.steps = calcSteps;
@@ -62,7 +62,7 @@ public class GUICalcRunnable implements Runnable {
 	// Note: The reporter executes in the EDT and should be a simple task,
 	// typically just a call to showMessageDialog.
 
-	public void set_reporter (Runnable reporter) {
+	public void set_reporter (GUIEDTRunnable reporter) {
 		this.reporter = reporter;
 		return;
 	}
@@ -181,4 +181,31 @@ public class GUICalcRunnable implements Runnable {
 		return;
 	}
 
+	// Run the given calculation steps.
+	// Parameters:
+	//  the_owner = The owner of the progress monitor window.
+	//  the_reporter = The final status reporter, or null if none.
+	//  the_calcSteps = The calculation steps to perform.
+
+	public static void run_steps (Component the_owner, GUIEDTRunnable the_reporter, GUICalcStep... the_calcSteps) {
+		GUICalcRunnable run = new GUICalcRunnable (the_owner, the_calcSteps);
+		if (the_reporter != null) {
+			run.set_reporter (the_reporter);
+		}
+		new Thread(run).start();
+	}
+
+	// Run the given calculation steps.
+	// Parameters:
+	//  the_progress_bar = The progress bar to use.
+	//  the_reporter = The final status reporter, or null if none.
+	//  the_calcSteps = The calculation steps to perform.
+
+	public static void run_steps (GUICalcProgressBar the_progress_bar, GUIEDTRunnable the_reporter, GUICalcStep... the_calcSteps) {
+		GUICalcRunnable run = new GUICalcRunnable (the_progress_bar, the_calcSteps);
+		if (the_reporter != null) {
+			run.set_reporter (the_reporter);
+		}
+		new Thread(run).start();
+	}
 }

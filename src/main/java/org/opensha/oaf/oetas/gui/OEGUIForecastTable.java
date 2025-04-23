@@ -536,25 +536,23 @@ public class OEGUIForecastTable extends OEGUIListener {
 							} catch (Exception e) {
 								pdl_exception = e;
 							}
-
-							// Pop up a message displaying the result, either success or error
-
-							SwingUtilities.invokeLater(new Runnable() {
-								@Override
-								public void run() {
-									if (pdl_exception == null) {
-										JOptionPane.showMessageDialog(my_panel, "Success: Forecast has been successfully sent to PDL", "Publication succeeded", JOptionPane.INFORMATION_MESSAGE);
-									} else {
-										pdl_exception.printStackTrace();
-										String message = ClassUtils.getClassNameWithoutPackage(pdl_exception.getClass())+": "+pdl_exception.getMessage();
-										JOptionPane.showMessageDialog(my_panel, message, "Error sending product", JOptionPane.ERROR_MESSAGE);
-									}
-								}
-							});
 						}
-					}, gui_top.get_forceWorkerEDT());
-					GUICalcRunnable run = new GUICalcRunnable(gui_top.get_top_window(), pdlSendStep);
-					new Thread(run).start();
+					});
+					GUIEDTRunnable postSendStep = new GUIEDTRunnable() {
+						
+						@Override
+						public void run_in_edt() throws GUIEDTException {
+							// Pop up a message displaying the result, either success or error  TODO: Use a reporter for this
+							if (pdl_exception == null) {
+								JOptionPane.showMessageDialog(my_panel, "Success: Forecast has been successfully sent to PDL", "Publication succeeded", JOptionPane.INFORMATION_MESSAGE);
+							} else {
+								pdl_exception.printStackTrace();
+								String message = ClassUtils.getClassNameWithoutPackage(pdl_exception.getClass())+": "+pdl_exception.getMessage();
+								JOptionPane.showMessageDialog(my_panel, message, "Error sending product", JOptionPane.ERROR_MESSAGE);
+							}
+						}
+					};
+					GUICalcRunnable.run_steps (gui_top.get_top_window(), postSendStep, pdlSendStep);
 
 				}
 			}

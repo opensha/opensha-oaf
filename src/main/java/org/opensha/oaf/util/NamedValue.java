@@ -36,7 +36,7 @@ public class NamedValue<T> {
 
 	@Override
 	public String toString() {
-		return "(" + name + ", " + value.toString() +  ")";
+		return "(" + name + ", " + ((value == null) ? "<null>" : (value.toString())) +  ")";
 	}
 
 

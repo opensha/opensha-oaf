@@ -882,7 +882,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 					System.out.println("Num rups \u2265 Mc = " + filteredRupList.size());
 					System.out.println("Computed b-value: " + b);
 				}
-			}, gui_top.get_forceWorkerEDT());
+			});
 
 			// Store back transfer parameters, re-plot and update state
 
@@ -896,12 +896,11 @@ public class OEGUISubCommonValue extends OEGUIListener {
 						gui_model.change_bParam(validParam(bParam));
 					}
 				}
-			}, true);
+			});
 
 			// Run in threads
 
-			GUICalcRunnable run = new GUICalcRunnable(progress, bStep_1, bStep_2);
-			new Thread(run).start();
+			GUICalcRunnable.run_steps (progress, null, bStep_1, bStep_2);
 		}
 		break;
 

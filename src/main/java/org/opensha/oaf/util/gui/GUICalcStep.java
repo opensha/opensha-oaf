@@ -20,14 +20,15 @@ public class GUICalcStep {
 
 	// Specify the progress monitor title, message, and operation to run.
 		
-	public GUICalcStep(String title, String progressMessage, Runnable run) {
-		this(title, progressMessage, run, false);
+	public GUICalcStep (String title, String progressMessage, Runnable run) {
+		this (title, progressMessage, run, run instanceof GUIEDTRunnable);
 	}
 
+	// [DEPRECATED, will eventually be made protected.]
 	// Specify the progress monitor title, message, operation to run,
 	// and flag specifying if operation must run in the event dispatch thread.
 		
-	public GUICalcStep(String title, String progressMessage, Runnable run, boolean runInEDT) {
+	public GUICalcStep (String title, String progressMessage, Runnable run, boolean runInEDT) {
 		this.title = title;
 		this.progressMessage = progressMessage;
 		this.run = run;

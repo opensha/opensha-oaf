@@ -176,12 +176,13 @@ public class RJGUITop extends RJGUIComponent {
 	//----- Program options -----
 
 	// Setting this flag true forces all worker threads to run on the event dispatch thread.
+	// ETA: Functionality moved to GUICalcRunnable.
 
-	private boolean forceWorkerEDT = false;
-
-	public final boolean get_forceWorkerEDT () {
-		return forceWorkerEDT;
-	}
+	//private boolean forceWorkerEDT = false;
+	//
+	//public final boolean get_forceWorkerEDT () {
+	//	return forceWorkerEDT;
+	//}
 
 	// Setting this flag true enables the patch for calculation steps that should be on
 	// a worker thread, but currently must be on the EDT because they write to the screen.

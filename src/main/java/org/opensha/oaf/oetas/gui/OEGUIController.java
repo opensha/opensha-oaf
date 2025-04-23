@@ -1250,7 +1250,7 @@ public class OEGUIController extends OEGUIListener {
 					public void run() {
 						gui_model.fetchEvents(xfer_catalog_impl);
 					}
-				}, gui_top.get_forceWorkerEDT());
+				});
 
 				// Store back transfer parameters, update model state, and create plots
 
@@ -1262,12 +1262,11 @@ public class OEGUIController extends OEGUIListener {
 						advance_state(MODSTATE_CATALOG);
 						post_fetch_param_update();
 					}
-				}, true);
+				});
 
 				// Run in threads
 
-				GUICalcRunnable run = new GUICalcRunnable(progress, fetchStep_1, postFetchPlotStep);
-				new Thread(run).start();
+				GUICalcRunnable.run_steps (progress, null, fetchStep_1, postFetchPlotStep);
 			}
 			break;
 
@@ -1297,7 +1296,7 @@ public class OEGUIController extends OEGUIListener {
 							}
 
 						}
-					}, gui_top.get_forceWorkerEDT());
+					});
 
 				// Store back transfer parameters, update model state, and create plots
 
@@ -1309,12 +1308,11 @@ public class OEGUIController extends OEGUIListener {
 							advance_state(MODSTATE_CATALOG);
 							post_fetch_param_update();
 						}
-					}, true);
+					});
 
 				// Run in threads
 
-				GUICalcRunnable run = new GUICalcRunnable(progress, loadStep_1, postFetchPlotStep);
-				new Thread(run).start();
+				GUICalcRunnable.run_steps (progress, null, loadStep_1, postFetchPlotStep);
 			}
 			break;
 
@@ -1333,7 +1331,7 @@ public class OEGUIController extends OEGUIListener {
 					public void run() {
 						gui_model.loadCatFromForecast (xfer_catalog_impl);
 					}
-				}, gui_top.get_forceWorkerEDT());
+				});
 
 				// Store back transfer parameters, update model state, and create plots
 
@@ -1345,12 +1343,11 @@ public class OEGUIController extends OEGUIListener {
 						advance_state(MODSTATE_CATALOG);
 						post_fetch_param_update();
 					}
-				}, true);
+				});
 
 				// Run in threads
 
-				GUICalcRunnable run = new GUICalcRunnable(progress, fetchStep_1, postFetchPlotStep);
-				new Thread(run).start();
+				GUICalcRunnable.run_steps (progress, null, fetchStep_1, postFetchPlotStep);
 			}
 			break;
 
@@ -1467,7 +1464,7 @@ public class OEGUIController extends OEGUIListener {
 				public void run() {
 					gui_model.fitParams(xfer_fitting_impl);
 				}
-			}, gui_top.get_forceWorkerEDT());
+			});
 
 			// Make plots and finalize
 
@@ -1479,12 +1476,11 @@ public class OEGUIController extends OEGUIListener {
 					advance_state(MODSTATE_PARAMETERS);
 					post_fitting_param_update();
 				}
-			}, true);
+			});
 
 			// Run in threads
 
-			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_2, postComputeStep);
-			new Thread(run).start();
+			GUICalcRunnable.run_steps (progress, null, computeStep_2, postComputeStep);
 		}
 		break;
 
@@ -1521,7 +1517,7 @@ public class OEGUIController extends OEGUIListener {
 				public void run() {
 					gui_model.computeForecasts(progress, xfer_forecast_impl);
 				}
-			}, gui_top.get_forceWorkerEDT());
+			});
 
 			// Make plots and finalize
 
@@ -1533,12 +1529,11 @@ public class OEGUIController extends OEGUIListener {
 					advance_state(MODSTATE_FORECAST);
 					post_forecast_update();
 				}
-			}, true);
+			});
 
 			// Run in threads
 
-			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_2, postComputeStep);
-			new Thread(run).start();
+			GUICalcRunnable.run_steps (progress, null, computeStep_2, postComputeStep);
 		}
 		break;
 

@@ -504,4 +504,46 @@ public class SphRegionMercPolygon extends SphRegion {
 		return result;
 	}
 
+	// Marshal object to a single unadorned line of text.
+
+	@Override
+	public String marshal_to_line () {
+		StringBuilder result = new StringBuilder();
+		for (int i = 0; i < vertex_list.size(); ++i) {
+			SphLatLon p = vertex_list.get (i);
+			if (i != 0) {
+				result.append (" ");
+			}
+			result.append (Double.toString (p.get_lat()));
+			result.append (" ");
+			result.append (Double.toString (p.get_lon()));
+		}
+		return result.toString();
+	}
+
+	// Unmarshal object from a single unadorned line of text.
+
+	@Override
+	public SphRegionMercPolygon unmarshal_from_line (String line) {
+		String s = line.trim();
+		String[] w = s.split ("[ \\t]+");
+		if (!( w.length >= 6 && w.length % 2 == 0 )) {
+			throw new MarshalException ("SphRegionMercPolygon.unmarshal_from_line : Invalid line: " + s);
+		}
+
+		try {
+			List<SphLatLon> the_vertex_list = new ArrayList<SphLatLon>();
+			for (int i = 0; i < w.length; i += 2) {
+				double the_lat = Double.parseDouble (w[i]);
+				double the_lon = Double.parseDouble (w[i+1]);
+				the_vertex_list.add (new SphLatLon (the_lat, the_lon));
+			}
+			setup (the_vertex_list);
+		}
+		catch (Exception e) {
+			throw new MarshalException ("SphRegionMercPolygon.unmarshal_from_line : Invalid line: " + s, e);
+		}
+		return this;
+	}
+
 }

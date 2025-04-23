@@ -31,6 +31,10 @@ import org.opensha.oaf.util.MarshalException;
  * A rectangle is limited to 180 degrees of longitude.
  * Attempting to make a rectangle spanning more than 180 degrees of longitude
  * will make a rectangle that goes around the Earth the "other way".
+ *
+ * New: It is now possible to create a rectangle that spans more than 180
+ * degrees in longitude, by explicitly giving minimum and maximum latitude
+ * and logitude in the constructor.
  */
 public class SphRegionMercRectangle extends SphRegion {
 
@@ -187,6 +191,56 @@ public class SphRegionMercRectangle extends SphRegion {
 
 		return;
 	}
+
+
+	// Construct from given ranges of latitude and longitude.
+
+	public SphRegionMercRectangle (double lat_1, double lat_2, double lon_1, double lon_2) {
+		setup (lat_1, lat_2, lon_1, lon_2);
+	}
+
+
+	// Set up the region.
+
+	private void setup (double lat_1, double lat_2, double lon_1, double lon_2) {
+
+		// Set up a box in the -180 to +180 domain
+
+		plot_wrap = false;
+
+		min_lat = Math.min (lat_1, lat_2);
+		max_lat = Math.max (lat_1, lat_2);
+
+		min_lon = Math.min (lon_1, lon_2);
+		max_lon = Math.max (lon_1, lon_2);
+
+		// Check valid latitude range
+
+		if (!( min_lat >= -90.0 && max_lat <= 90.0 )) {
+			throw new IllegalArgumentException ("SphRegionMercRectangle.setup: Illegal latitude range: lat_1 = " + lat_1 + ", lat_2 = " + lat_2);
+		}
+
+		// Check for valid longitude range in the -180 to +180 domain
+
+		if (min_lon >= -180.0 && max_lon <= 180.0) {
+			plot_wrap = false;
+		}
+
+		// Check for valid longitude range in the 0 to +360 domain
+
+		else if (min_lon >= 0.0 && max_lon <= 360.0) {
+			plot_wrap = true;
+		}
+
+		else {
+			throw new IllegalArgumentException ("SphRegionMercRectangle.setup: Illegal longidude range: lon_1 = " + lon_1 + ", lon_2 = " + lon_2);
+		}
+
+		plot_border = null;
+
+		return;
+	}
+
 
 	// Display our contents
 
@@ -373,6 +427,44 @@ public class SphRegionMercRectangle extends SphRegion {
 		reader.unmarshalMapEnd ();
 
 		return result;
+	}
+
+	// Marshal object to a single unadorned line of text.
+
+	@Override
+	public String marshal_to_line () {
+		StringBuilder result = new StringBuilder();
+		result.append (min_lat);
+		result.append (" ");
+		result.append (max_lat);
+		result.append (" ");
+		result.append (min_lon);
+		result.append (" ");
+		result.append (max_lon);
+		return result.toString();
+	}
+
+	// Unmarshal object from a single unadorned line of text.
+
+	@Override
+	public SphRegionMercRectangle unmarshal_from_line (String line) {
+		String s = line.trim();
+		String[] w = s.split ("[ \\t]+");
+		if (w.length != 4) {
+			throw new MarshalException ("SphRegionMercRectangle.unmarshal_from_line : Invalid line: " + s);
+		}
+
+		try {
+			double lat_1 = Double.parseDouble (w[0]);
+			double lat_2 = Double.parseDouble (w[1]);
+			double lon_1 = Double.parseDouble (w[2]);
+			double lon_2 = Double.parseDouble (w[3]);
+			setup (lat_1, lat_2, lon_1, lon_2);
+		}
+		catch (Exception e) {
+			throw new MarshalException ("SphRegionMercRectangle.unmarshal_from_line : Invalid line: " + s, e);
+		}
+		return this;
 	}
 
 }

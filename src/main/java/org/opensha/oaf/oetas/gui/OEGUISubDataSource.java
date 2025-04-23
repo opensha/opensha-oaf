@@ -1358,7 +1358,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 					received[0] = newForecastList.size();
 				}
-			}, gui_top.get_forceWorkerEDT());
+			});
 
 			// Populate dropdown list
 
@@ -1379,11 +1379,11 @@ public class OEGUISubDataSource extends OEGUIListener {
 						refresh_forecastListDropdown();
 					}
 				}
-			}, true);
+			});
 
 			// Display number received
 
-			Runnable postFetchStep = new GUIEDTRunnable() {
+			GUIEDTRunnable postFetchStep = new GUIEDTRunnable() {
 						
 				@Override
 				public void run_in_edt() throws GUIEDTException {
@@ -1413,9 +1413,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 			// Run in threads
 
-			GUICalcRunnable run = new GUICalcRunnable(progress, fetchStep_1, fetchStep_2);
-			run.set_reporter(postFetchStep);
-			new Thread(run).start();
+			GUICalcRunnable.run_steps (progress, postFetchStep, fetchStep_1, fetchStep_2);
 		}
 		break;
 

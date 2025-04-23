@@ -2086,7 +2086,7 @@ public class RJGUIController extends RJGUIListener {
 				public void run_in_edt() throws GUIEDTException {
 					xfer_catalog_impl.xfer_load(true);
 				}
-			}, true);
+			});
 			GUICalcStep fetchStep_2 = new GUICalcStep("Fetching Events",
 				"Contacting USGS ComCat Webservice. This is occasionally slow. "
 				+ "If it fails, trying again often works.", new Runnable() {
@@ -2095,7 +2095,7 @@ public class RJGUIController extends RJGUIListener {
 				public void run() {
 					gui_model.fetchEvents(xfer_catalog_impl);
 				}
-			}, gui_top.get_forceWorkerEDT());
+			});
 			GUICalcStep postFetchPlotStep = new GUICalcStep("Plotting Events/Data", "...", new GUIEDTRunnable() {
 						
 				@Override
@@ -2104,9 +2104,8 @@ public class RJGUIController extends RJGUIListener {
 					advance_state(MODSTATE_CATALOG);
 					post_fetch_param_update();
 				}
-			}, true);
-			GUICalcRunnable run = new GUICalcRunnable(progress, fetchStep_1, fetchStep_2, postFetchPlotStep);
-			new Thread(run).start();
+			});
+			GUICalcRunnable.run_steps (progress, null, fetchStep_1, fetchStep_2, postFetchPlotStep);
 
 
 		// Load catalog button.
@@ -2137,14 +2136,14 @@ public class RJGUIController extends RJGUIListener {
 						public void run_in_edt() throws GUIEDTException {
 							xfer_catalog_impl.xfer_load(false);
 						}
-					}, true);
+					});
 				GUICalcStep loadStep_2 = new GUICalcStep("Loading Events", "...", new Runnable() {
 						
 						@Override
 						public void run() {
 							gui_model.loadCatalog(xfer_catalog_impl, file);
 						}
-					}, gui_top.get_forceWorkerEDT());
+					});
 				GUICalcStep postFetchPlotStep = new GUICalcStep("Plotting Events/Data", "...", new GUIEDTRunnable() {
 					
 						@Override
@@ -2153,9 +2152,8 @@ public class RJGUIController extends RJGUIListener {
 							advance_state(MODSTATE_CATALOG);
 							post_fetch_param_update();
 						}
-					}, true);
-				GUICalcRunnable run = new GUICalcRunnable(progress, loadStep_1, loadStep_2, postFetchPlotStep);
-				new Thread(run).start();
+					});
+				GUICalcRunnable.run_steps (progress, null, loadStep_1, loadStep_2, postFetchPlotStep);
 			}
 
 
@@ -2260,7 +2258,7 @@ public class RJGUIController extends RJGUIListener {
 					System.out.println("Num rups \u2265 Mc = "+filteredRupList.size());
 					System.out.println("Computed b-value: "+b[0]);
 				}
-			}, gui_top.get_forceWorkerEDT());
+			});
 			GUICalcStep bStep_2 = new GUICalcStep("Computing b", "...", new GUIEDTRunnable() {
 				
 				@Override
@@ -2271,9 +2269,8 @@ public class RJGUIController extends RJGUIListener {
 						gui_model.change_bParam(validParam(bParam));
 					}
 				}
-			}, true);
-			GUICalcRunnable run = new GUICalcRunnable(progress, bStep_1, bStep_2);
-			new Thread(run).start();
+			});
+			GUICalcRunnable.run_steps (progress, null, bStep_1, bStep_2);
 
 
 		// b-value.
@@ -2365,14 +2362,14 @@ public class RJGUIController extends RJGUIListener {
 				public void run_in_edt() throws GUIEDTException {
 					xfer_fitting_impl.xfer_load();
 				}
-			}, true);
+			});
 			GUICalcStep computeStep_2 = new GUICalcStep("Computing Aftershock Params", "...", new Runnable() {
 						
 				@Override
 				public void run() {
 					gui_model.fitParams(xfer_fitting_impl);
 				}
-			}, gui_top.get_forceWorkerEDT());
+			});
 			GUICalcStep postComputeStep = new GUICalcStep("Plotting Model PDFs", "...", new GUIEDTRunnable() {
 						
 				@Override
@@ -2381,9 +2378,8 @@ public class RJGUIController extends RJGUIListener {
 					advance_state(MODSTATE_PARAMETERS);
 					post_fitting_param_update();
 				}
-			}, true);
-			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2, postComputeStep);
-			new Thread(run).start();
+			});
+			GUICalcRunnable.run_steps (progress, null, computeStep_1, computeStep_2, postComputeStep);
 
 
 		// Button to set forecast time to now.
@@ -2430,14 +2426,14 @@ public class RJGUIController extends RJGUIListener {
 				public void run_in_edt() throws GUIEDTException {
 					xfer_forecast_impl.xfer_load();
 				}
-			}, true);
+			});
 			GUICalcStep computeStep_2 = new GUICalcStep("Computing Forecast", "...", new Runnable() {
 						
 				@Override
 				public void run() {
 					gui_model.computeForecasts(progress, xfer_forecast_impl);
 				}
-			}, gui_top.get_forceWorkerEDT());
+			});
 			GUICalcStep postComputeStep = new GUICalcStep("Plotting Forecast", "...", new GUIEDTRunnable() {
 						
 				@Override
@@ -2446,9 +2442,8 @@ public class RJGUIController extends RJGUIListener {
 					advance_state(MODSTATE_FORECAST);
 					post_forecast_update();
 				}
-			}, true);
-			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2, postComputeStep);
-			new Thread(run).start();
+			});
+			GUICalcRunnable.run_steps (progress, null, computeStep_1, computeStep_2, postComputeStep);
 
 
 		// Button to fetch server status.
@@ -2485,15 +2480,15 @@ public class RJGUIController extends RJGUIListener {
 				public void run_in_edt() throws GUIEDTException {
 					gui_view.view_show_console();
 				}
-			}, true);
+			});
 			GUICalcStep computeStep_2 = new GUICalcStep("Fetching AAFS Server Status", "...", new Runnable() {
 						
 				@Override
 				public void run() {
 					status_success[0] = gui_model.fetchServerStatus(progress);
 				}
-			}, gui_top.get_forceWorkerEDT());
-			Runnable postComputeStep = new GUIEDTRunnable() {
+			});
+			GUIEDTRunnable postComputeStep = new GUIEDTRunnable() {
 						
 				@Override
 				public void run_in_edt() throws GUIEDTException {
@@ -2536,9 +2531,7 @@ public class RJGUIController extends RJGUIListener {
 					JOptionPane.showMessageDialog(gui_top.get_top_window(), message, title, message_type);
 				}
 			};
-			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2);
-			run.set_reporter(postComputeStep);
-			new Thread(run).start();
+			GUICalcRunnable.run_steps (progress, postComputeStep, computeStep_1, computeStep_2);
 
 
 		// Drop-down to select automatic forecast enable.
@@ -2692,22 +2685,22 @@ public class RJGUIController extends RJGUIListener {
 				public void run_in_edt() throws GUIEDTException {
 					xfer_analyst_impl.xfer_load();
 				}
-			}, true);
+			});
 			GUICalcStep computeStep_2 = new GUICalcStep("Sending Analyst Options to AAFS Server", "...", new Runnable() {
 						
 				@Override
 				public void run() {
 					send_success[0] = gui_model.sendAnalystOptions(progress, xfer_analyst_impl);
 				}
-			}, gui_top.get_forceWorkerEDT());
+			});
 			GUICalcStep computeStep_3 = new GUICalcStep("Sending Analyst Options to AAFS Server", "...", new GUIEDTRunnable() {
 						
 				@Override
 				public void run_in_edt() throws GUIEDTException {
 					xfer_analyst_impl.xfer_store();
 				}
-			}, true);
-			Runnable postComputeStep = new GUIEDTRunnable() {
+			});
+			GUIEDTRunnable postComputeStep = new GUIEDTRunnable() {
 						
 				@Override
 				public void run_in_edt() throws GUIEDTException {
@@ -2720,9 +2713,7 @@ public class RJGUIController extends RJGUIListener {
 					}
 				}
 			};
-			GUICalcRunnable run = new GUICalcRunnable(progress, computeStep_1, computeStep_2, computeStep_3);
-			run.set_reporter(postComputeStep);
-			new Thread(run).start();
+			GUICalcRunnable.run_steps (progress, postComputeStep, computeStep_1, computeStep_2, computeStep_3);
 
 
 		}
