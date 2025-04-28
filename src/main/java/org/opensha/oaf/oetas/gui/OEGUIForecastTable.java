@@ -40,6 +40,10 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+
 import org.jfree.chart.title.PaintScaleLegend;
 import org.jfree.data.Range;
 import org.jfree.chart.ui.RectangleEdge;
@@ -69,6 +73,7 @@ import org.opensha.oaf.rj.SeqSpecRJ_Parameters;
 import org.opensha.oaf.rj.USGS_AftershockForecast;
 import org.opensha.oaf.rj.USGS_AftershockForecast.Duration;
 import org.opensha.oaf.rj.USGS_AftershockForecast.Template;
+import org.opensha.oaf.rj.USGS_ForecastHolder;
 
 import org.opensha.commons.data.xyz.EvenlyDiscrXYZ_DataSet;
 import org.opensha.commons.exceptions.ConstraintException;
@@ -128,6 +133,7 @@ import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
+import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.gui.GUIConsoleWindow;
 import org.opensha.oaf.util.gui.GUICalcStep;
 import org.opensha.oaf.util.gui.GUICalcRunnable;
@@ -157,7 +163,21 @@ import org.json.simple.JSONObject;
 
 	
 public class OEGUIForecastTable extends OEGUIListener {
-		
+
+
+	//----- Internal constants -----
+
+
+	// Parameter groups.
+
+	private static final int PARMGRP_FCTAB_EXPORT = 901;				// Export button
+	private static final int PARMGRP_FCTAB_PUBLISH = 902;				// Publish to PDL button
+	private static final int PARMGRP_FCTAB_ADVISORY_DUR_PARAM = 903;	// Advisory duration parameter
+	private static final int PARMGRP_FCTAB_TEMPLATE_PARAM = 904;		// Forecast template parameter
+	private static final int PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM = 905;	// Include probability above mainshock parameter
+	private static final int PARMGRP_FCTAB_INJECTABLE_TEXT = 906;		// Injectable text button
+	
+
 	//----- Parameters within the panel -----
 
 
@@ -167,7 +187,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 	private ButtonParameter init_exportButton () throws GUIEDTException {
 		exportButton = new ButtonParameter("JSON", "Export JSON...");
-		exportButton.addParameterChangeListener(this);
+		register_param (exportButton, "exportButton" + my_suffix, PARMGRP_FCTAB_EXPORT);
 		return exportButton;
 	}
 
@@ -200,7 +220,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 		}
 		//publishButton = new ButtonParameter("USGS PDL", "Publish Forecast");
 		publishButton = new ButtonParameter("USGS PDL", publish_forecast);
-		publishButton.addParameterChangeListener(this);
+		register_param (publishButton, "publishButton" + my_suffix, PARMGRP_FCTAB_PUBLISH);
 		return publishButton;
 	}
 
@@ -211,8 +231,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 	private EnumParameter<Duration> init_advisoryDurationParam () throws GUIEDTException {
 		advisoryDurationParam = new EnumParameter<USGS_AftershockForecast.Duration>(
-				"Advisory Duration", EnumSet.allOf(Duration.class), forecast.getAdvisoryDuration(), null);
-		advisoryDurationParam.addParameterChangeListener(this);
+				"Advisory Duration", EnumSet.allOf(Duration.class), my_fc_holder.get_advisory_time_frame_as_enum(), null);
+		register_param (advisoryDurationParam, "advisoryDurationParam" + my_suffix, PARMGRP_FCTAB_ADVISORY_DUR_PARAM);
 		return advisoryDurationParam;
 	}
 
@@ -223,8 +243,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 	private EnumParameter<Template> init_templateParam () throws GUIEDTException {
 		templateParam = new EnumParameter<USGS_AftershockForecast.Template>(
-				"Template", EnumSet.allOf(Template.class), forecast.getTemplate(), null);
-		templateParam.addParameterChangeListener(this);
+				"Template", EnumSet.allOf(Template.class), my_fc_holder.get_template_as_enum(), null);
+		register_param (templateParam, "templateParam" + my_suffix, PARMGRP_FCTAB_TEMPLATE_PARAM);
 		return templateParam;
 	}
 
@@ -234,8 +254,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private BooleanParameter probAboveMainParam;
 
 	private BooleanParameter init_probAboveMainParam () throws GUIEDTException {
-		probAboveMainParam = new BooleanParameter("Include Prob \u2265 Main", forecast.isIncludeProbAboveMainshock());
-		probAboveMainParam.addParameterChangeListener(this);
+		probAboveMainParam = new BooleanParameter("Include Prob \u2265 Main", my_fc_holder.get_include_above_mainshock());
+		register_param (probAboveMainParam, "probAboveMainParam" + my_suffix, PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM);
 		return probAboveMainParam;
 	}
 
@@ -246,7 +266,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 	private ButtonParameter init_injectableTextButton () throws GUIEDTException {
 		injectableTextButton = new ButtonParameter("Injectable Text", "Set text...");
-		injectableTextButton.addParameterChangeListener(this);
+		register_param (injectableTextButton, "injectableTextButton" + my_suffix, PARMGRP_FCTAB_INJECTABLE_TEXT);
 		return injectableTextButton;
 	}
 
@@ -281,6 +301,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 		// Create the container
 
 		paramsEditor = new GriddedParameterListEditor(params, -1, 2);
+		add_symbol (paramsEditor , "paramsEditor" + my_suffix);
 		return paramsEditor;
 	}
 
@@ -290,14 +311,20 @@ public class OEGUIForecastTable extends OEGUIListener {
 	//----- Internal variables -----
 
 
-	// The forecast for this panel.
-		
-	private USGS_AftershockForecast forecast;
+	// The forecast holder for this panel.
+	// Note: This is a private copy, so we can modify it.
+
+	private USGS_ForecastHolder my_fc_holder;
 
 
 	// The name of this panel.
 
-	String my_name;
+	private String my_name;
+
+
+	// The suffix applied to parameter names in this panel.
+
+	private String my_suffix;
 
 
 	// Our panel.
@@ -325,25 +352,25 @@ public class OEGUIForecastTable extends OEGUIListener {
 	//----- Debugging support -----
 
 
-	// Add all parameters to the symbol table.
-
-	private void setup_symbol_table () {
-
-		String suffix = "@" + my_name.replaceAll("\\s", "");	// remove white space from name
-
-		// Set up the symbol table
-
-		add_symbol (exportButton , "exportButton" + suffix);
-		add_symbol (publishButton , "publishButton" + suffix);
-		add_symbol (advisoryDurationParam , "advisoryDurationParam" + suffix);
-		add_symbol (templateParam , "templateParam" + suffix);
-		add_symbol (probAboveMainParam , "probAboveMainParam" + suffix);
-		add_symbol (injectableTextButton , "injectableTextButton" + suffix);
-
-		add_symbol (paramsEditor , "paramsEditor" + suffix);
-
-		return;
-	}
+//	// Add all parameters to the symbol table.
+//
+//	private void setup_symbol_table () {
+//
+//		String suffix = "@" + my_name.replaceAll("\\s", "");	// remove white space from name
+//
+//		// Set up the symbol table
+//
+//		add_symbol (exportButton , "exportButton" + suffix);
+//		add_symbol (publishButton , "publishButton" + suffix);
+//		add_symbol (advisoryDurationParam , "advisoryDurationParam" + suffix);
+//		add_symbol (templateParam , "templateParam" + suffix);
+//		add_symbol (probAboveMainParam , "probAboveMainParam" + suffix);
+//		add_symbol (injectableTextButton , "injectableTextButton" + suffix);
+//
+//		add_symbol (paramsEditor , "paramsEditor" + suffix);
+//
+//		return;
+//	}
 
 
 
@@ -351,9 +378,21 @@ public class OEGUIForecastTable extends OEGUIListener {
 	//----- Construction -----
 
 
+
+
+	// [DEPRECATED]
 	// Constructor, accepts the forecast for this panel.
 		
-	public OEGUIForecastTable (OEGUIComponent gui_comp, USGS_AftershockForecast forecast, String my_name) throws GUIEDTException {
+	public OEGUIForecastTable (OEGUIComponent gui_comp, USGS_AftershockForecast my_forecast, String my_name) throws GUIEDTException {
+		this (gui_comp, my_forecast.buildJSONString(), my_name);
+	}
+
+
+
+
+	// Constructor, accepts the forecast for this panel.
+		
+	public OEGUIForecastTable (OEGUIComponent gui_comp, String my_json_string, String my_name) throws GUIEDTException {
 
 		// Link components
 
@@ -361,8 +400,12 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 		// Save the forecast and name
 
-		this.forecast = forecast;
+		this.my_fc_holder = new USGS_ForecastHolder();
+		MarshalUtils.from_json_string (this.my_fc_holder, my_json_string);
+
 		this.my_name = my_name;
+
+		this.my_suffix = "@" + my_name.replaceAll("\\s", "");	// remove white space from name
 
 		// Allocate the panel
 
@@ -375,14 +418,41 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 		// Set up symbol table
 
-		setup_symbol_table();
+		//setup_symbol_table();
 
 		// Set up the panel
 			
 		my_panel.add(paramsEditor, BorderLayout.NORTH);
-		JTable jTable = new JTable(forecast.getTableModel());
+		JTable jTable = new JTable(make_table_model (this.my_fc_holder));
 		jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(Font.BOLD));
 		my_panel.add(jTable, BorderLayout.CENTER);
+	}
+
+
+
+
+	// Make a table model in swing format.
+
+	public static TableModel make_table_model (USGS_ForecastHolder fch) {
+		final USGS_ForecastHolder.GUITable gui_table = fch.make_gui_table();
+		return new AbstractTableModel() {
+
+			@Override
+			public int getRowCount() {
+				return gui_table.get_row_count();
+			}
+
+			@Override
+			public int getColumnCount() {
+				return gui_table.get_col_count();
+			}
+
+			@Override
+			public Object getValueAt (int rowIndex, int columnIndex) {
+				return gui_table.get_gui_text (rowIndex, columnIndex);
+			}
+			
+		};
 	}
 
 
@@ -396,14 +466,24 @@ public class OEGUIForecastTable extends OEGUIListener {
 	@Override
 	public void parameterChange_EDT (ParameterChangeEvent event) throws GUIEDTException {
 
+		Parameter<?> param = event.getParameter();
+		int parmgrp = get_parmgrp (param);
+
+
+		// Switch on parameter group
+
+		switch (parmgrp) {
+
+
 		// *** Export to JSON file.
 
-		if (event.getParameter() == exportButton) {
+		case PARMGRP_FCTAB_EXPORT: {
 
 			// Ask user to select file
 
-			if (chooser == null)
+			if (chooser == null) {
 				chooser = new JFileChooser();
+			}
 			int ret = chooser.showSaveDialog(my_panel);
 			if (ret == JFileChooser.APPROVE_OPTION) {
 				File file = chooser.getSelectedFile();
@@ -414,13 +494,13 @@ public class OEGUIForecastTable extends OEGUIListener {
 				if (injText != null && injText.length() == 0) {
 					injText = null;
 				}
-				forecast.setInjectableText(injText);
+				my_fc_holder.set_injectable_text(injText);
 
 				// Convert forecast to JSON string, display error message if it fails
 
 				String jsonText = null;
 				try {
-					jsonText = forecast.buildJSONString();
+					jsonText = MarshalUtils.to_json_string (my_fc_holder);
 				} catch (Exception e) {
 					jsonText = null;
 					e.printStackTrace();
@@ -442,10 +522,13 @@ public class OEGUIForecastTable extends OEGUIListener {
 					}
 				}
 			}
+		}
+		break;
+
 
 		//*** Publish forecast to PDL
 
-		} else if (event.getParameter() == publishButton) {
+		case PARMGRP_FCTAB_PUBLISH: {
 
 			// Ask user for confirmation
 
@@ -467,13 +550,13 @@ public class OEGUIForecastTable extends OEGUIListener {
 				if (injText != null && injText.length() == 0) {
 					injText = null;
 				}
-				forecast.setInjectableText(injText);
+				my_fc_holder.set_injectable_text(injText);
 
 				// Build the PDL product, display error message if it failed
 
 				try {
-					//product = OAF_Publisher.createProduct(gui_model.get_cur_mainshock().getEventId(), forecast);
-					String jsonText = forecast.buildJSONString();
+					//product = OAF_Publisher.createProduct(gui_model.get_cur_mainshock().getEventId(), my_forecast);
+					String jsonText = MarshalUtils.to_json_string (my_fc_holder);
 
 					//Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (gui_model.get_cur_mainshock(), ComcatOAFAccessor.EITMOPT_OMIT_NULL_EMPTY);
 					//String eventNetwork = eimap.get (ComcatOAFAccessor.PARAM_NAME_NETWORK);
@@ -556,29 +639,41 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 				}
 			}
+		}
+		break;
+
 
 		//*** Set advisory duration, from dropdown list
 
-		} else if (event.getParameter() == advisoryDurationParam) {
-			forecast.setAdvisoryDuration(validParam(advisoryDurationParam));
+		case PARMGRP_FCTAB_ADVISORY_DUR_PARAM: {
+			my_fc_holder.set_advisory_time_frame_from_enum (validParam(advisoryDurationParam));
+		}
+		break;
+
 
 		//*** Set PDL template, from dropdown list
 
-		} else if (event.getParameter() == templateParam) {
-			forecast.setTemplate(validParam(templateParam));
+		case PARMGRP_FCTAB_TEMPLATE_PARAM: {
+			my_fc_holder.set_template_from_enum (validParam(templateParam));
+		}
+		break;
+
 
 		//*** Select whether to include probability of an aftershock larger than mainshock, from checkbox
 
-		} else if (event.getParameter() == probAboveMainParam) {
-			forecast.setIncludeProbAboveMainshock(validParam(probAboveMainParam));
+		case PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM: {
+			my_fc_holder.set_include_above_mainshock (validParam(probAboveMainParam));
+		}
+		break;
+
 
 		//*** Enter the injectable text
 
-		} else if (event.getParameter() == injectableTextButton) {
+		case PARMGRP_FCTAB_INJECTABLE_TEXT: {
 
 			//  // Show a dialog containing the existing injectable text
 			//  
-			//  String prevText = forecast.getInjectableText();
+			//  String prevText = my_fc_holder.get_injectable_text();
 			//  if (prevText == null)
 			//  	prevText = "";
 			//  JTextArea area = new JTextArea(prevText);
@@ -595,7 +690,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 			//  	String text = area.getText().trim();
 			//  	if (text.length() == 0)
 			//  		text = null;
-			//  	forecast.setInjectableText(text);
+			//  	my_fc_holder.set_injectable_text(text);
 			//  }
 
 			// Show a dialog containing the existing injectable text
@@ -622,6 +717,15 @@ public class OEGUIForecastTable extends OEGUIListener {
 				gui_model.setAnalystInjText(text);
 			}
 		}
+		break;
+
+
+		// Unknown parameter group
+
+		default:
+			throw new IllegalStateException("OEGUIForecastTable: Unknown parameter group: " + get_symbol_and_type(param));
+		}
+
 
 		return;
 	}
