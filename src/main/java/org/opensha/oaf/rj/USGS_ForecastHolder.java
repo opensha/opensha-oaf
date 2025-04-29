@@ -1361,8 +1361,9 @@ public class USGS_ForecastHolder implements Marshalable {
 	// Throws IllegalArgumentException if string does not correspond to any duration label.
 
 	public static USGS_AftershockForecast.Duration string_to_advisory_time_frame (String s) {
+		String s_trim = s.trim();
 		for (USGS_AftershockForecast.Duration duration : USGS_AftershockForecast.Duration.values()) {
-			if (s.equalsIgnoreCase (duration.toString())) {
+			if (s_trim.equalsIgnoreCase (duration.toString())) {
 				return duration;
 			}
 		}
@@ -1374,8 +1375,9 @@ public class USGS_ForecastHolder implements Marshalable {
 	// Throws IllegalArgumentException if string does not correspond to any duration label.
 
 	public static String adjust_case_of_advisory_time_frame (String s) {
+		String s_trim = s.trim();
 		for (USGS_AftershockForecast.Duration duration : USGS_AftershockForecast.Duration.values()) {
-			if (s.equalsIgnoreCase (duration.toString())) {
+			if (s_trim.equalsIgnoreCase (duration.toString())) {
 				return duration.toString();
 			}
 		}
@@ -1423,8 +1425,9 @@ public class USGS_ForecastHolder implements Marshalable {
 	// Throws IllegalArgumentException if string does not correspond to any template title.
 
 	public static USGS_AftershockForecast.Template string_to_template (String s) {
+		String s_trim = s.trim();
 		for (USGS_AftershockForecast.Template template : USGS_AftershockForecast.Template.values()) {
-			if (s.equalsIgnoreCase (template.toString())) {
+			if (s_trim.equalsIgnoreCase (template.toString())) {
 				return template;
 			}
 		}
@@ -1436,8 +1439,9 @@ public class USGS_ForecastHolder implements Marshalable {
 	// Throws IllegalArgumentException if string does not correspond to any template title.
 
 	public static String adjust_case_of_template (String s) {
+		String s_trim = s.trim();
 		for (USGS_AftershockForecast.Template template : USGS_AftershockForecast.Template.values()) {
-			if (s.equalsIgnoreCase (template.toString())) {
+			if (s_trim.equalsIgnoreCase (template.toString())) {
 				return template.toString();
 			}
 		}
