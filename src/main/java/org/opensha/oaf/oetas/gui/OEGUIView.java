@@ -472,6 +472,26 @@ public class OEGUIView extends OEGUIComponent {
 			}
 		}
 	}
+	
+
+
+
+	private void buildFuncsCharsForBinnedFS(XY_DataSet[] binnedFuncs,
+			List<PlotElement> funcs, List<PlotCurveCharacterstics> chars, PlotSymbol sym, Color c) {
+		EvenlyDiscretizedFunc my_magSizeFunc = getMagSizeFunc();
+		double magDelta = my_magSizeFunc.getDelta();
+		for (int i=0; i<binnedFuncs.length; i++) {
+			double mag = my_magSizeFunc.getX(i);
+			XY_DataSet xy = binnedFuncs[i];
+			if (xy.size() == 0)
+				continue;
+			xy.setName((float)(mag-0.5*magDelta)+" < M < "+(float)(mag+0.5*magDelta)
+					+": "+xy.size()+" FS");
+			float size = (float)my_magSizeFunc.getY(i);
+			funcs.add(xy);
+			chars.add(new PlotCurveCharacterstics(sym, size, c));
+		}
+	}
 
 
 
@@ -641,15 +661,41 @@ public class OEGUIView extends OEGUIComponent {
 		}
 		
 		// Create lists of aftershock epicenters, magnitudes, and times after mainshock in days
+		// Make separate lists for aftershocks and foreshocks
 
 		List<Point2D> points = Lists.newArrayList();
 		List<Double> mags = Lists.newArrayList();
 		List<Double> timeDeltas = Lists.newArrayList();
+
+		List<Point2D> points_fs = Lists.newArrayList();
+		List<Double> mags_fs = Lists.newArrayList();
+		List<Double> timeDeltas_fs = Lists.newArrayList();
+
 		for (ObsEqkRupture rup : gui_model.get_plot_aftershocks()) {
 			Location loc = rup.getHypocenterLocation();
-			points.add(new Point2D.Double(SphLatLon.get_lon (loc, f_wrap_lon), loc.getLatitude()));
-			mags.add(rup.getMag());
-			timeDeltas.add(getTimeSinceMainshock(rup));
+			double tdelta = getTimeSinceMainshock(rup);
+			if (tdelta < 0.0) {
+				points_fs.add(new Point2D.Double(SphLatLon.get_lon (loc, f_wrap_lon), loc.getLatitude()));
+				mags_fs.add(rup.getMag());
+				timeDeltas_fs.add(tdelta);
+			} else {
+				points.add(new Point2D.Double(SphLatLon.get_lon (loc, f_wrap_lon), loc.getLatitude()));
+				mags.add(rup.getMag());
+				timeDeltas.add(tdelta);
+			}
+		}
+
+		// Plot foreshocks
+
+		boolean plot_foreshocks = true;
+
+		if (plot_foreshocks) {
+
+			// Bin foreshocks by magnitude
+
+			XY_DataSet[] foreshockDatasets = XY_DatasetBinner.bin(points_fs, mags_fs, my_magSizeFunc);
+			
+			buildFuncsCharsForBinnedFS(foreshockDatasets, funcs, chars, PlotSymbol.CIRCLE, Color.DARK_GRAY);
 		}
 
 		// If coloring aftershock by time ...
@@ -675,7 +721,7 @@ public class OEGUIView extends OEGUIComponent {
 			subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
 					cptInc, RectangleEdge.RIGHT);
 
-		// Otherwise, no colors ...
+		// Otherwise, color by magnitude ...
 
 		} else {
 			// Bin aftershocks by magnitude
@@ -1103,6 +1149,9 @@ public class OEGUIView extends OEGUIComponent {
 			
 			subtitle = GraphPanel.getLegendForCPT(my_distCPT, "Distance (km)", axisLabelFontSize, tickLabelFontSize,
 					0d, RectangleEdge.RIGHT);
+
+		// Otherwise, color by magnitude ...
+
 		} else {
 			XY_DataSet[] magBinnedFuncs = XY_DatasetBinner.bin(points, mags, my_magSizeFunc);
 				// magBinnedFuncs[i] is a list of points, where i identifies a magnitude bin.
