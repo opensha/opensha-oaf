@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+import java.util.function.Predicate;
 
 import java.io.IOException;
 import java.io.BufferedReader;
@@ -116,6 +117,16 @@ public class GUIExternalCatalogV2 {
 	public Map<String, String> symbols;
 
 
+	// Standard symbol names.
+
+	public static final String SSYM_TIME_RANGE = "time_range";
+	public static final String SSYM_DEPTH_RANGE = "depth_range";
+	public static final String SSYM_MIN_MAG = "min_mag";
+	public static final String SSYM_AFTERSHOCK_REGION = "aftershock_region";
+	public static final String SSYM_OUTER_REGION = "outer_region";
+	public static final String SSYM_WRAP_LON = "wrap_lon";
+
+
 	//----- Internal variables used while parsing -----
 
 
@@ -208,7 +219,7 @@ public class GUIExternalCatalogV2 {
 	}
 
 
-	// Get the value of a symbol, as an  int.
+	// Get the value of a symbol, as an int.
 	// Throws exception if symbol is not defined or has invalid value.
 
 	public final int get_symbol_as_int (String name) {
@@ -262,6 +273,88 @@ public class GUIExternalCatalogV2 {
 	}
 
 
+	// Get the value of a symbol, as an array of strings.
+	// Throws exception if symbol is not defined or has invalid value.
+	// If len >= 0, it is the expected array length.
+	// Note: Strings are separated by spaces or tabs, and there is no parsing for quotes or special symbols.
+
+	public final String[] get_symbol_as_string_array (String name, int len) {
+		String value = symbols.get (name);
+		if (value == null) {
+			throw new NoSuchElementException ("GUIExternalCatalogV2.get_symbol_as_string_array: Undefined symbol: " + name);
+		}
+		String[] w = value.trim().split ("[ \\t]+");
+		if (len >= 0 && w.length != len) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.get_symbol_as_string_array: Invalid symbol: name = " + name + ", value = " + value);
+		}
+		return w;
+	}
+
+
+	// Get the value of a symbol, as an array of double.
+	// Throws exception if symbol is not defined or has invalid value.
+	// If len >= 0, it is the expected array length.
+	// Note: Strings are separated by spaces or tabs, and there is no parsing for quotes or special symbols.
+
+	public final double[] get_symbol_as_double_array (String name, int len) {
+		String value = symbols.get (name);
+		if (value == null) {
+			throw new NoSuchElementException ("GUIExternalCatalogV2.get_symbol_as_double_array: Undefined symbol: " + name);
+		}
+		String[] w = value.trim().split ("[ \\t]+");
+		double[] result = new double[w.length];
+		try {
+			for (int i = 0; i < w.length; ++i) {
+				result[i] = Double.parseDouble (w[i]);
+			}
+		} catch (Exception e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.get_symbol_as_double_array: Invalid symbol: name = " + name + ", value = " + value);
+		}
+		return result;
+	}
+
+
+	// Get the value of a symbol, as an array of int.
+	// Throws exception if symbol is not defined or has invalid value.
+	// If len >= 0, it is the expected array length.
+	// Note: Strings are separated by spaces or tabs, and there is no parsing for quotes or special symbols.
+
+	public final int[] get_symbol_as_int_array (String name, int len) {
+		String value = symbols.get (name);
+		if (value == null) {
+			throw new NoSuchElementException ("GUIExternalCatalogV2.get_symbol_as_int_array: Undefined symbol: " + name);
+		}
+		String[] w = value.trim().split ("[ \\t]+");
+		int[] result = new int[w.length];
+		try {
+			for (int i = 0; i < w.length; ++i) {
+				result[i] = Integer.parseInt (w[i]);
+			}
+		} catch (Exception e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.get_symbol_as_int_array: Invalid symbol: name = " + name + ", value = " + value);
+		}
+		return result;
+	}
+
+
+	// Get the value of a symbol, as a region.
+	// Throws exception if symbol is not defined or has invalid value.
+
+	public final SphRegion get_symbol_as_region (String name) {
+		String value = symbols.get (name);
+		if (value == null) {
+			throw new NoSuchElementException ("GUIExternalCatalogV2.get_symbol_as_region: Undefined symbol: " + name);
+		}
+		SphRegion result;
+		try {
+			result = SphRegion.unmarshal_from_line_poly (value);
+		} catch (Exception e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.get_symbol_as_region: Invalid symbol: name = " + name + ", value = " + value);
+		}
+		return result;
+	}
+
+
 
 
 	// Get the list of ruptures for a given category.
@@ -284,6 +377,25 @@ public class GUIExternalCatalogV2 {
 		ObsEqkRupList rups = new ObsEqkRupList();
 		for (String category : categories) {
 			rups.addAll (get_rup_list (category));
+		}
+		if (f_sort) {
+			sort_aftershocks (rups);
+		}
+		return rups;
+	}
+
+
+	// Get a list that contains all the ruptures in all the given categories that satisfy the filter.
+	// If f_sort is true, the combined list is sorted in increasing order of time.
+
+	public final ObsEqkRupList get_filtered_joined_rup_list (boolean f_sort, Predicate<ObsEqkRupture> filter, String... categories) {
+		ObsEqkRupList rups = new ObsEqkRupList();
+		for (String category : categories) {
+			for (ObsEqkRupture rup : get_rup_list (category)) {
+				if (filter.test (rup)) {
+					rups.add (rup);
+				}
+			}
 		}
 		if (f_sort) {
 			sort_aftershocks (rups);
@@ -560,7 +672,8 @@ public class GUIExternalCatalogV2 {
 	// Pattern to recognize a line containing an earthquake.
 	// Note: A Pattern is an immutable object that can be used by multiple threads.
 
-	private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)-(\\d\\d?)-(\\d\\d?)[ \\t]+(\\d\\d?):(\\d\\d?):(\\d\\d?)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]*([a-zA-Z_0-9]*)[ \\t]*[\\n\\r]*");
+	//private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)-(\\d\\d?)-(\\d\\d?)[ \\t]+(\\d\\d?):(\\d\\d?):(\\d\\d?)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]*([a-zA-Z_0-9]*)[ \\t]*[\\n\\r]*");
+	private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)-(\\d\\d?)-(\\d\\d?)[ \\t]+(\\d\\d?):(\\d\\d?):(\\d\\d?)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
 
 	// Capture groups for the earthquake description.
 
@@ -630,7 +743,10 @@ public class GUIExternalCatalogV2 {
 		String lon = matcher.group (quake_lon_capture_group);
 		String depth = matcher.group (quake_depth_capture_group);
 
-		String id = matcher.group (quake_id_capture_group);
+		String id = matcher.group (quake_id_capture_group);	// might be null
+		if (id == null) {
+			id = "";
+		}
 
 		// Convert the date and time, allowing single-digit for all except year
 
@@ -853,7 +969,7 @@ public class GUIExternalCatalogV2 {
 	}
 
 
-	// Add a symbol definition, with the value given as a double
+	// Add a symbol definition, with the value given as a double.
 	// Throws exception if name or value is invalid, or if there is already a symbol with the name.
 
 	public final void symdef_add_double (String name, double value) {
@@ -867,7 +983,7 @@ public class GUIExternalCatalogV2 {
 	}
 
 
-	// Add a symbol definition, with the value given as an int
+	// Add a symbol definition, with the value given as an int.
 	// Throws exception if name or value is invalid, or if there is already a symbol with the name.
 
 	public final void symdef_add_int (String name, int value) {
@@ -881,7 +997,7 @@ public class GUIExternalCatalogV2 {
 	}
 
 
-	// Add a symbol definition, with the value given as a long
+	// Add a symbol definition, with the value given as a long.
 	// Throws exception if name or value is invalid, or if there is already a symbol with the name.
 
 	public final void symdef_add_long (String name, long value) {
@@ -895,7 +1011,7 @@ public class GUIExternalCatalogV2 {
 	}
 
 
-	// Add a symbol definition, with the value given as a boolean
+	// Add a symbol definition, with the value given as a boolean.
 	// Throws exception if name or value is invalid, or if there is already a symbol with the name.
 
 	public final void symdef_add_boolean (String name, boolean value) {
@@ -905,6 +1021,174 @@ public class GUIExternalCatalogV2 {
 			throw new InvariantViolationException ("GUIExternalCatalogV2.symdef_add: Duplicate symbol name: " + name);
 		}
 		symbols.put (name, my_value);
+		return;
+	}
+
+
+	// Add a symbol definition, with the value given as an array of String.
+	// Throws exception if name or value is invalid, or if there is already a symbol with the name.
+	// Note: Leading and trailing spaces are stripped from each string (by trim()).
+	// Note: Correct parsing requires each string to not contain embedded white space; this is not checked.
+
+	public final void symdef_add_string_array (String name, String... value) {
+		check_name (name);
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < value.length; ++i) {
+			if (i > 0) {
+				sb.append (" ");
+			}
+			sb.append (value[i].trim());
+		}
+		String my_value = symdef_check_value (sb.toString());
+		if (symbols.containsKey (name)) {
+			throw new InvariantViolationException ("GUIExternalCatalogV2.symdef_add_string_array: Duplicate symbol name: " + name);
+		}
+		symbols.put (name, my_value);
+		return;
+	}
+
+
+	// Add a symbol definition, with the value given as an array of double.
+	// Throws exception if name or value is invalid, or if there is already a symbol with the name.
+
+	public final void symdef_add_double_array (String name, double... value) {
+		check_name (name);
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < value.length; ++i) {
+			if (i > 0) {
+				sb.append (" ");
+			}
+			sb.append (Double.toString (value[i]));
+		}
+		String my_value = symdef_check_value (sb.toString());
+		if (symbols.containsKey (name)) {
+			throw new InvariantViolationException ("GUIExternalCatalogV2.symdef_add_double_array: Duplicate symbol name: " + name);
+		}
+		symbols.put (name, my_value);
+		return;
+	}
+
+
+	// Add a symbol definition, with the value given as an array of int.
+	// Throws exception if name or value is invalid, or if there is already a symbol with the name.
+
+	public final void symdef_add_int_array (String name, int... value) {
+		check_name (name);
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < value.length; ++i) {
+			if (i > 0) {
+				sb.append (" ");
+			}
+			sb.append (Integer.toString (value[i]));
+		}
+		String my_value = symdef_check_value (sb.toString());
+		if (symbols.containsKey (name)) {
+			throw new InvariantViolationException ("GUIExternalCatalogV2.symdef_add_int_array: Duplicate symbol name: " + name);
+		}
+		symbols.put (name, my_value);
+		return;
+	}
+
+
+	// Add a symbol definition, with the value given as a region.
+	// Throws exception if name or value is invalid, or if there is already a symbol with the name.
+
+	public final void symdef_add_region (String name, SphRegion value) {
+		check_name (name);
+		String my_value = symdef_check_value (SphRegion.marshal_to_line_poly(value).trim());
+		if (symbols.containsKey (name)) {
+			throw new InvariantViolationException ("GUIExternalCatalogV2.symdef_add_region: Duplicate symbol name: " + name);
+		}
+		symbols.put (name, my_value);
+		return;
+	}
+
+
+	// Add multiple symbols for a call to Comcat.
+	// Parameters are the same as for a call to the Comcat accessor, except includes
+	// both aftershock and outer regions, either or both of which can be null.
+	// Note: As a special case, if maxDays == minDays, then the end time is the current time.
+
+	public final void symdef_add_comcat (
+		ObsEqkRupture mainshock,
+		double minDays,
+		double maxDays,
+		double minDepth,
+		double maxDepth,
+		SphRegion aftershock_region,
+		SphRegion outer_region,
+		boolean wrapLon,
+		double minMag
+	) {
+		symdef_add_comcat (
+			mainshock.getOriginTime(),
+			minDays,
+			maxDays,
+			minDepth,
+			maxDepth,
+			aftershock_region,
+			outer_region,
+			wrapLon,
+			minMag
+		);
+
+		return;
+	}
+
+
+	public final void symdef_add_comcat (
+		long mainshock_time,
+		double minDays,
+		double maxDays,
+		double minDepth,
+		double maxDepth,
+		SphRegion aftershock_region,
+		SphRegion outer_region,
+		boolean wrapLon,
+		double minMag
+	) {
+
+		// Time range
+		// Note: ComcatAccessor uses cast to long, which truncates toward zero
+
+		long startTime = mainshock_time + (long)(minDays * SimpleUtils.DAY_MILLIS_D);
+		long endTime = mainshock_time + (long)(maxDays * SimpleUtils.DAY_MILLIS_D);
+
+		double my_maxDays = maxDays;
+		if (startTime == endTime) {
+			endTime = System.currentTimeMillis();
+			my_maxDays = SimpleUtils.millis_to_days (endTime - mainshock_time);
+		}
+
+		symdef_add_double_array (SSYM_TIME_RANGE, minDays, my_maxDays);
+
+		// Minimum magnitude
+		// Note: ComcatAccessor uses -10.0 for no minimum, and tests against -9.0
+
+		if (minMag >= -9.0) {
+			symdef_add_double (SSYM_MIN_MAG, minMag);
+		}
+
+		// Depth range
+
+		symdef_add_double_array (SSYM_DEPTH_RANGE, minDepth, maxDepth);
+
+		// Aftershock region
+
+		if (aftershock_region != null) {
+			symdef_add_region (SSYM_AFTERSHOCK_REGION, aftershock_region);
+		}
+
+		// Outer region
+
+		if (outer_region != null) {
+			symdef_add_region (SSYM_OUTER_REGION, outer_region);
+		}
+
+		// Wrap longitude
+
+		symdef_add_boolean (SSYM_WRAP_LON, wrapLon);
+
 		return;
 	}
 

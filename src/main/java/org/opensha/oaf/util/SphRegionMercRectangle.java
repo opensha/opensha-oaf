@@ -34,7 +34,10 @@ import org.opensha.oaf.util.MarshalException;
  *
  * New: It is now possible to create a rectangle that spans more than 180
  * degrees in longitude, by explicitly giving minimum and maximum latitude
- * and logitude in the constructor.
+ * and longitude in the constructor.  Due to the fact that longitudes are
+ * restricted to be either in the range -180 to +180 or in the range 0 to +360,
+ * it is not possible to represent every rectangle that spans more than 180
+ * degrees in longitude.
  */
 public class SphRegionMercRectangle extends SphRegion {
 

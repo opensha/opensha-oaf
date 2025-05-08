@@ -555,6 +555,34 @@ public class OEGUIView extends OEGUIComponent {
 			throw new IllegalStateException ("OEGUIView.plotAftershockHypocs - Invalid model state: " + gui_model.cur_modstate_string());
 		}
 
+		// The outer region, or null if none, to plot the regional aftershocks
+
+		SphRegion outer_region = gui_model.get_outer_region();
+
+		// The inner region, or null if none, to plot the aftershock region
+
+		SphRegion inner_region = gui_model.get_cur_region();
+
+		// Flag, true if we need to plot in the 0 to +360 domain, false for the -180 to +180 domain
+
+		boolean f_wrap_lon = false;
+
+		if (outer_region != null) {
+			f_wrap_lon = outer_region.getPlotWrap();
+		} else if (inner_region != null) {
+			f_wrap_lon = inner_region.getPlotWrap();
+		} else {
+
+			// TODO: At this point we should scan the aftershock longitudes and determine which
+			// domain is a better fit, but for now we just check if the mainshock is closer to The
+			// date line than to the prime meridian
+
+			double main_lon = gui_model.get_cur_mainshock().getHypocenterLocation().getLongitude();
+			if (main_lon < -90.0 || main_lon > 90.0) {
+				f_wrap_lon = true;
+			}
+		}
+
 		// Functions and characteristics
 
 		List<PlotElement> funcs = Lists.newArrayList();
@@ -572,6 +600,7 @@ public class OEGUIView extends OEGUIComponent {
 		if (colorByTime) {
 			try {
 				timeCPT = GMT_CPT_Files.MAX_SPECTRUM.instance().rescale(0d, gui_model.get_cat_dataEndTimeParam());
+				//timeCPT.setBelowMinColor (Color.BLACK);		// color for foreshocks
 			} catch (IOException e) {
 				throw ExceptionUtils.asRuntimeException(e);
 			}
@@ -586,8 +615,9 @@ public class OEGUIView extends OEGUIComponent {
 			FaultTrace trace = gui_model.get_cur_mainshock().getRuptureSurface().getEvenlyDiscritizedUpperEdge();
 			DefaultXY_DataSet traceFunc = new DefaultXY_DataSet();
 			traceFunc.setName("Main Shock Trace");
-			for(Location loc:trace)
-				traceFunc.set(loc.getLongitude(), loc.getLatitude());
+			for(Location loc:trace) {
+				traceFunc.set(SphLatLon.get_lon (loc, f_wrap_lon), loc.getLatitude());
+			}
 			funcs.add(traceFunc);
 			chars.add(new PlotCurveCharacterstics(PlotLineType.SOLID, 2f, Color.BLACK));
 
@@ -595,16 +625,17 @@ public class OEGUIView extends OEGUIComponent {
 
 		} else {
 			Location hypo = gui_model.get_cur_mainshock().getHypocenterLocation();
-			DefaultXY_DataSet xy = new DefaultXY_DataSet(new double[] {hypo.getLongitude()},
+			DefaultXY_DataSet xy = new DefaultXY_DataSet(new double[] {SphLatLon.get_lon (hypo, f_wrap_lon)},
 					new double[] {hypo.getLatitude()});
 			xy.setName("Main Shock Location");
 			funcs.add(xy);
 			float size = (float)my_magSizeFunc.getY(my_magSizeFunc.getClosestXIndex(gui_model.get_cur_mainshock().getMag()));
 			Color c;
-			if (colorByTime)
+			if (colorByTime) {
 				c = timeCPT.getMinColor();		//TODO: Use color for mainshock time, not necessarily min color
-			else
+			} else {
 				c = Color.BLACK;
+			}
 			//chars.add(new PlotCurveCharacterstics(PlotSymbol.FILLED_CIRCLE, size, c));
 			chars.add(new PlotCurveCharacterstics(PlotSymbol.CIRCLE, size, c));
 		}
@@ -614,9 +645,9 @@ public class OEGUIView extends OEGUIComponent {
 		List<Point2D> points = Lists.newArrayList();
 		List<Double> mags = Lists.newArrayList();
 		List<Double> timeDeltas = Lists.newArrayList();
-		for (ObsEqkRupture rup : gui_model.get_cur_aftershocks()) {
+		for (ObsEqkRupture rup : gui_model.get_plot_aftershocks()) {
 			Location loc = rup.getHypocenterLocation();
-			points.add(new Point2D.Double(loc.getLongitude(), loc.getLatitude()));
+			points.add(new Point2D.Double(SphLatLon.get_lon (loc, f_wrap_lon), loc.getLatitude()));
 			mags.add(rup.getMag());
 			timeDeltas.add(getTimeSinceMainshock(rup));
 		}
@@ -638,8 +669,9 @@ public class OEGUIView extends OEGUIComponent {
 			// The graph legend
 
 			double cptInc = 0d;
-			if ((timeCPT.getMaxValue() - timeCPT.getMinValue()) < 10)
+			if ((timeCPT.getMaxValue() - timeCPT.getMinValue()) < 10) {
 				cptInc = 1d;
+			}
 			subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
 					cptInc, RectangleEdge.RIGHT);
 
@@ -655,12 +687,25 @@ public class OEGUIView extends OEGUIComponent {
 		
 		// Now add outline of region, if we have one
 
-		if (gui_model.get_cur_region() != null) {
+		if (inner_region != null) {
 			DefaultXY_DataSet outline = new DefaultXY_DataSet();
-			for (Location loc : gui_model.get_cur_region().getBorder())
-				outline.set(loc.getLongitude(), loc.getLatitude());
+			for (Location loc : inner_region.getBorder()) {
+				outline.set(SphLatLon.get_lon (loc, f_wrap_lon), loc.getLatitude());
+			}
 			outline.set(outline.get(0));
 			outline.setName("Region Outline");
+			
+			funcs.add(outline);
+			chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 2f, Color.GRAY));
+		}
+
+		if (outer_region != null && outer_region != inner_region) {
+			DefaultXY_DataSet outline = new DefaultXY_DataSet();
+			for (Location loc : outer_region.getBorder()) {
+				outline.set(SphLatLon.get_lon (loc, f_wrap_lon), loc.getLatitude());
+			}
+			outline.set(outline.get(0));
+			outline.setName("Area Outline");
 			
 			funcs.add(outline);
 			chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 2f, Color.GRAY));
@@ -693,9 +738,14 @@ public class OEGUIView extends OEGUIComponent {
 		// If we have a region, adjust axis ranges to hold it
 		
 		double regBuff = 0.05;
-		if (gui_model.get_cur_region() != null) {
-			epicenterGraph.setAxisRange(gui_model.get_cur_region().getMinLon()-regBuff, gui_model.get_cur_region().getMaxLon()+regBuff,
-					gui_model.get_cur_region().getMinLat()-regBuff, gui_model.get_cur_region().getMaxLat()+regBuff);
+
+		if (outer_region != null) {
+			epicenterGraph.setAxisRange(outer_region.getMinLon()-regBuff, outer_region.getMaxLon()+regBuff,
+					outer_region.getMinLat()-regBuff, outer_region.getMaxLat()+regBuff);
+
+		} else if (inner_region != null) {
+			epicenterGraph.setAxisRange(inner_region.getMinLon()-regBuff, inner_region.getMaxLon()+regBuff,
+					inner_region.getMinLat()-regBuff, inner_region.getMaxLat()+regBuff);
 
 		// Otherwise, adjust axis ranges to hold all the aftershocks
 
@@ -703,11 +753,11 @@ public class OEGUIView extends OEGUIComponent {
 			 MinMaxAveTracker latTrack = new MinMaxAveTracker();
 			 MinMaxAveTracker lonTrack = new MinMaxAveTracker();
 			 latTrack.addValue(gui_model.get_cur_mainshock().getHypocenterLocation().getLatitude());
-			 lonTrack.addValue(gui_model.get_cur_mainshock().getHypocenterLocation().getLongitude());
-			 for (ObsEqkRupture rup : gui_model.get_cur_aftershocks()) {
+			 lonTrack.addValue(SphLatLon.get_lon (gui_model.get_cur_mainshock().getHypocenterLocation(), f_wrap_lon));
+			 for (ObsEqkRupture rup : gui_model.get_plot_aftershocks()) {
 				 Location loc = rup.getHypocenterLocation();
 				 latTrack.addValue(loc.getLatitude());
-				 lonTrack.addValue(loc.getLongitude());
+				 lonTrack.addValue(SphLatLon.get_lon (loc, f_wrap_lon));
 			 }
 			 epicenterGraph.setAxisRange(lonTrack.getMin()-regBuff, lonTrack.getMax()+regBuff,
 						latTrack.getMin()-regBuff, latTrack.getMax()+regBuff);
@@ -717,8 +767,9 @@ public class OEGUIView extends OEGUIComponent {
 		
 		setupGP(epicenterGraph);
 		
-		if (subtitle != null)
+		if (subtitle != null) {
 			epicenterGraph.getGraphPanel().addSubtitle(subtitle);
+		}
 
 		// Add to the view
 
@@ -1184,6 +1235,9 @@ public class OEGUIView extends OEGUIComponent {
 		for (int i=0; i<gui_model.get_cur_aftershocks().size(); i++) {
 			ObsEqkRupture aftershock = gui_model.get_cur_aftershocks().get(i);
 			double time = getTimeSinceMainshock(aftershock);	// time in days
+			if (time < 0.0) {
+				continue;		// foreshock fix
+			}
 			if (aftershock.getMag() < magCompFn.getMagCompleteness (magMain, magMin, time)) {
 				continue;
 			}
@@ -1286,7 +1340,7 @@ public class OEGUIView extends OEGUIComponent {
 	// of-completeness function is supplied.  The returned function has 1000 points.
 	
 	private EvenlyDiscretizedFunc getModelCumNumWithTimePlot(RJ_AftershockModel the_model, double magMin, MagCompFn magCompFnPlot) {
-		double tMin = gui_model.get_cat_dataStartTimeParam();
+		double tMin = Math.max (0.0, gui_model.get_cat_dataStartTimeParam());	// foreshock fix
 		double tMax = gui_model.get_cat_dataEndTimeParam();
 		if (gui_model.modstate_has_forecast()) {
 			tMax = Math.max(tMax, gui_model.get_cat_forecastEndTimeParam());	// if we have a forecast, extend at least to end of forecast

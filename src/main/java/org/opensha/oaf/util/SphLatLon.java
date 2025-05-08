@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import org.opensha.commons.geo.Location;
+import org.opensha.commons.geo.LocationList;
 
 import static java.lang.Math.PI;
 import static org.opensha.commons.geo.GeoTools.TWOPI;
@@ -191,6 +192,41 @@ public class SphLatLon implements Marshalable, MarshalableAsLine {
 			}
 		}
 		return lon;
+	}
+
+	// Force longitude in a Location to lie in the selected domain.
+	// If f_wrap_lon is true, the result has longitude between 0 and +360.
+	// If f_wrap_lon is false, the result has longitude between -180 and +180.
+	// Note: If the longitude is already in the desired domain, then loc is returned.
+
+	public static Location wrap_location (Location loc, boolean f_wrap_lon) {
+		double lon = loc.getLongitude();
+		if (f_wrap_lon) {
+			if (lon < 0.0) {
+				return new Location (loc.getLatitude(), lon + 360.0, loc.getDepth());
+			}
+		}
+		else {
+			if (lon > 180.0) {
+				return new Location (loc.getLatitude(), lon - 360.0, loc.getDepth());
+			}
+		}
+		return loc;
+	}
+
+	// Force longitude for each Location in a list to lie in the selected domain.
+	// If f_wrap_lon is true, then each result has longitude between 0 and +360.
+	// If f_wrap_lon is false, then each result has longitude between -180 and +180.
+	// Note: Returns a newly-allocated LocationList.  Elements of the list may include
+	// both Location objects from the original list (if they are already in the
+	// desired domain) and newly-allocated Location objects.
+
+	public static LocationList wrap_location_list (List<Location> locs, boolean f_wrap_lon) {
+		LocationList result = new LocationList();
+		for (Location loc : locs) {
+			result.add (wrap_location (loc, f_wrap_lon));
+		}
+		return result;
 	}
 
 

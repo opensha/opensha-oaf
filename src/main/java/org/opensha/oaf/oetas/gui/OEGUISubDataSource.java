@@ -241,27 +241,27 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 	private void init_dataStartTimeParam () throws GUIEDTException {
 
-		dataStartTimeParam_comcat = new DoubleParameter("Data Start Time", -365d, 36500d, Double.valueOf(0d));
+		dataStartTimeParam_comcat = new DoubleParameter("Data Start Time", -3650d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_comcat.setUnits("Days");
 		dataStartTimeParam_comcat.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_comcat, "dataStartTimeParam_comcat", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataStartTimeParam_catalog = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
+		dataStartTimeParam_catalog = new DoubleParameter("Data Start Time", -3650d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_catalog.setUnits("Days");
 		dataStartTimeParam_catalog.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_catalog, "dataStartTimeParam_catalog", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataStartTimeParam_forecast = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
+		dataStartTimeParam_forecast = new DoubleParameter("Data Start Time", -3650d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_forecast.setUnits("Days");
 		dataStartTimeParam_forecast.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_forecast, "dataStartTimeParam_forecast", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataStartTimeParam_rj_sim = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
+		dataStartTimeParam_rj_sim = new DoubleParameter("Data Start Time", -3650d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_rj_sim.setUnits("Days");
 		dataStartTimeParam_rj_sim.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_rj_sim, "dataStartTimeParam_rj_sim", PARMGRP_DATA_SOURCE_PARAM);
 
-		dataStartTimeParam_etas_sim = new DoubleParameter("Data Start Time", 0d, 36500d, Double.valueOf(0d));
+		dataStartTimeParam_etas_sim = new DoubleParameter("Data Start Time", -3650d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_etas_sim.setUnits("Days");
 		dataStartTimeParam_etas_sim.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_etas_sim, "dataStartTimeParam_etas_sim", PARMGRP_DATA_SOURCE_PARAM);
@@ -357,14 +357,37 @@ public class OEGUISubDataSource extends OEGUIListener {
 		return useMinMagFetchParam;
 	}
 
-	// Option to use start and end time when fetching from Comcat; default true; check box.
+	// Option to use start and end time when fetching from Comcat or catalog; default true; check box.
 
-	private BooleanParameter useStartEndTimeParam;
+	private BooleanParameter useStartEndTimeParam_comcat;
+	private BooleanParameter useStartEndTimeParam_catalog;
 
-	private BooleanParameter init_useStartEndTimeParam () throws GUIEDTException {
-		useStartEndTimeParam = new BooleanParameter("Use start and end times", false);
-		register_param (useStartEndTimeParam, "useStartEndTimeParam", PARMGRP_DATA_ENABLE_PARAM);
-		return useStartEndTimeParam;
+	private void init_useStartEndTimeParam () throws GUIEDTException {
+
+		useStartEndTimeParam_comcat = new BooleanParameter("Use start and end times", false);
+		register_param (useStartEndTimeParam_comcat, "useStartEndTimeParam_comcat", PARMGRP_DATA_ENABLE_PARAM);
+
+		useStartEndTimeParam_catalog = new BooleanParameter("Use start and end times", false);
+		register_param (useStartEndTimeParam_catalog, "useStartEndTimeParam_catalog", PARMGRP_DATA_ENABLE_PARAM);
+
+		return;
+	}
+
+	private BooleanParameter get_useStartEndTimeParam (DataSource type) {
+		BooleanParameter result;
+		switch (type) {
+		case COMCAT:             result = useStartEndTimeParam_comcat;   break;
+		case CATALOG_FILE:       result = useStartEndTimeParam_catalog;  break;
+
+		case PUBLISHED_FORECAST:
+		case RJ_SIMULATION:
+		case ETAS_SIMULATION:
+			throw new IllegalStateException("get_useStartEndTimeParam: Invalid data source type: " + type);
+
+		default:
+			throw new IllegalStateException("Unknown data source type: " + type);
+		}
+		return result;
 	}
 
 	// Option to use analyst options when fetching from Comcat; default true; check box.
@@ -541,7 +564,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 		case COMCAT:
 			dataSourceEditParam.setListTitleText ("Comcat");
 			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(8, f_button_row));
-			dataSourceList.addParameter(useStartEndTimeParam);
+			dataSourceList.addParameter(get_useStartEndTimeParam (type));
 			dataSourceList.addParameter(get_dataStartTimeParam (type));
 			dataSourceList.addParameter(get_dataEndTimeParam (type));
 			dataSourceList.addParameter(useMinMagFetchParam);
@@ -553,9 +576,10 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		case CATALOG_FILE:
 			dataSourceEditParam.setListTitleText ("Catalog File");
-			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(4, f_button_row));
+			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(5, f_button_row));
 			dataSourceList.addParameter(catalogFileParam);
 			dataSourceList.addParameter(browseCatalogFileButton);
+			dataSourceList.addParameter(get_useStartEndTimeParam (type));
 			dataSourceList.addParameter(get_dataStartTimeParam (type));
 			dataSourceList.addParameter(get_dataEndTimeParam (type));
 			break;
@@ -638,14 +662,14 @@ public class OEGUISubDataSource extends OEGUIListener {
 		switch (type) {
 
 		case COMCAT:
-			enableParam(get_dataStartTimeParam (type), validParam(useStartEndTimeParam));
-			enableParam(get_dataEndTimeParam (type), validParam(useStartEndTimeParam));
+			enableParam(get_dataStartTimeParam (type), validParam(get_useStartEndTimeParam (type)));
+			enableParam(get_dataEndTimeParam (type), validParam(get_useStartEndTimeParam (type)));
 			enableParam(minMagFetchParam, validParam(useMinMagFetchParam));
 			break;
 			
 		case CATALOG_FILE:
-			enableParam(get_dataStartTimeParam (type), false);
-			enableParam(get_dataEndTimeParam (type), false);
+			enableParam(get_dataStartTimeParam (type), validParam(get_useStartEndTimeParam (type)));
+			enableParam(get_dataEndTimeParam (type), validParam(get_useStartEndTimeParam (type)));
 			break;
 
 		case PUBLISHED_FORECAST:
@@ -709,7 +733,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		public boolean x_useMinMagFetchParam;		// parameter value, checked for validity
 
-		// Option to use start and end time when fetching from Comcat. [COMCAT]
+		// Option to use start and end time when fetching from Comcat. [COMCAT, CATALOG_FILE]
 
 		public boolean x_useStartEndTimeParam;		// parameter value, checked for validity
 
@@ -830,7 +854,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 				x_dataEndTimeParam = validParam(get_dataEndTimeParam (x_dataSourceTypeParam));
 				x_minMagFetchParam = validParam(minMagFetchParam);
 				x_useMinMagFetchParam = validParam(useMinMagFetchParam);
-				x_useStartEndTimeParam = validParam(useStartEndTimeParam);
+				x_useStartEndTimeParam = validParam(get_useStartEndTimeParam (x_dataSourceTypeParam));
 				x_useAnalystOptionsParam = validParam(useAnalystOptionsParam);
 				x_region.xfer_get_impl().xfer_load();
 				break;
@@ -838,6 +862,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 			case CATALOG_FILE:
 				x_dataStartTimeParam = validParam(get_dataStartTimeParam (x_dataSourceTypeParam));
 				x_dataEndTimeParam = validParam(get_dataEndTimeParam (x_dataSourceTypeParam));
+				x_useStartEndTimeParam = validParam(get_useStartEndTimeParam (x_dataSourceTypeParam));
 				x_useAnalystOptionsParam = false;
 				x_catalogFileParam = validParam(catalogFileParam);
 				break;
