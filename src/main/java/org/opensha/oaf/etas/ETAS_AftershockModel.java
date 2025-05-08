@@ -255,26 +255,30 @@ public abstract class ETAS_AftershockModel {
 		
 		num_DistributionFunc = new ArbDiscrEmpiricalDistFunc();
 
-		int[] numM = new int[simulatedCatalog.nSims];
 
 		List<float[]> eqCat = new ArrayList<float[]>();
 
 		Point2D pt = new Point2D.Double();
 
+//		int[] numM = new int[simulatedCatalog.nSims];
+		int numM;
 		//cycle through the simulated catalogs
 		for(int i = 0; i < simulatedCatalog.nSims; i++){
 			eqCat = simulatedCatalog.getETAScatalog(i); 	//double[] eqCat = {relativeTime, magnitude, generationNumber}
-			numM[i] = 0;
+//			numM[i] = 0;
+			numM = 0;
 			//count all events in time window and magnitude range in this catalog
 			for(float[] eq : eqCat){
 				if(eq[0] > tMinDays && eq[0] <= tMaxDays && eq[1] >= forecastMag)
-					numM[i] ++;
+//					numM[i] ++;
+					numM ++;
 			}
 						
-			pt.setLocation(numM[i], 1d/simulatedCatalog.nSims);
+//			pt.setLocation(numM[i], 1d/simulatedCatalog.nSims);
+			pt.setLocation(numM, 1d/simulatedCatalog.nSims);
 			num_DistributionFunc.set(pt);	//increment the distribution
 		}
-
+		
 		return num_DistributionFunc;
 	}
 
@@ -323,7 +327,8 @@ public abstract class ETAS_AftershockModel {
 		
 		double minMag;
 		if (dynamicMinMag) {
-			minMag = maxASmag - 2.7;
+//			minMag = maxASmag - 2.7;
+			minMag = 3.0;
 
 
 			// calibrate minimum magnitude choice by running 100 sims. If any come back with zero events, reduce minMag
@@ -332,6 +337,7 @@ public abstract class ETAS_AftershockModel {
 //				boolean iszero = true;
 				int numNotZero = 0;
 				
+				minMag++;
 				while (numNotZero < 100 & minMag > -3.0){
 					minMag--;
 					simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
@@ -739,7 +745,8 @@ public abstract class ETAS_AftershockModel {
 //		if(lambda <= 0) lambda = 0;
 //		
 		for(int i = 0; i < fractileArray.length; i++){
-			fractValArray[i] = scaledNumDistributionFunc(fractileArray[i], mag);
+			fractValArray[i] = num_DistributionFunc.getDiscreteFractile(fractileArray[i]);
+//			fractValArray[i] = scaledNumDistributionFunc(fractileArray[i], mag);
 			
 			// MOVED THE FOLLOWING CODE INTO METHOD SCALEDNUMDISTRIBUTIONFUNCTION
 			//
@@ -881,50 +888,6 @@ public abstract class ETAS_AftershockModel {
 
 	}
 
-//	/** This one gives probability as a function of magnitude for the specified time range
-//	 * 
-//	 **/
-//	public EvenlyDiscretizedFunc getMagnitudePDFwithAleatoryVariability(double minMag, double maxMag, int numMag, double tMinDays, double tMaxDays) {
-//		EvenlyDiscretizedFunc magnitudePDF = new EvenlyDiscretizedFunc(minMag, maxMag, numMag);
-//		magnitudePDF.setName("probabiltiy of exceeding magnitude M");
-//		magnitudePDF.setInfo("Cumulative distribution (greater than or equal to each magnitude)");
-//
-////		double value = getProbabilityWithAleatory(minMag, tMinDays, tMaxDays);
-//		
-//		for(int i=0;i<numMag;i++) {
-//			double mag = magnitudePDF.getX(i);	// any MFD will do, as they all have the same x-axis values
-//			double value = getProbabilityWithAleatory(mag, tMinDays, tMaxDays);
-////			double probOne = 1 - Math.pow(1-value, Math.pow(10, -b*(mag-minMag)));
-//			
-//			magnitudePDF.set(i,value);
-//		}
-//		
-//	
-//		
-//		return magnitudePDF;
-//	}
-
-//	public double[] getProbabilityWithAleatory(int[] number, double mag, double tMinDays, double tMaxDays) {
-//		computeNum_DistributionFunc(tMinDays, tMaxDays, mag);
-//
-//
-//		double[] prob = new double[number.length];
-//
-//		for (int k = 0; k < number.length; k++) {
-//			prob[k] = 1 - num_DistributionFunc.getClosestYtoX(number[k]);
-//
-//			if(D) System.out.println("Prob value = " + 100.0*prob[k]);
-//			// the above probability is the fraction of simulations with events above max(magComplete, mag),
-//			// so if mag<magComplete, we need to scale up the probability. We do this with a Poisson rate assumption.
-//
-//			if(mag < simulatedCatalog.minMagLimit){
-//				prob[k] = 1 - Math.pow(1-prob[k], Math.pow(10, -b*(mag-simulatedCatalog.minMagLimit)));
-//			}
-//
-//		}
-//		
-//		return prob;
-//	}
 
 
 	public double getProbabilityWithAleatory(double mag, double tMinDays, double tMaxDays) {
@@ -939,9 +902,10 @@ public abstract class ETAS_AftershockModel {
 //			probOne = 1 - Math.pow(1-probOne, Math.pow(10, -b*(mag-magComplete)));
 //		}
 		if(mag < simulatedCatalog.minMagLimit){
-			probOne = 1 - Math.pow(1-probOne, Math.pow(10, -b*(mag-simulatedCatalog.minMagLimit)));
+			 probOne = 1 - Math.pow(1-probOne, Math.pow(10, -b*(mag-simulatedCatalog.minMagLimit)));
+			// this one seems to give problematic values that don't agree with the fractiles. Maybe I need
+			// to do the fractiles differently?
 		}
-		
 		
 		return probOne;
 				

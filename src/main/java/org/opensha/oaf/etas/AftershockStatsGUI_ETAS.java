@@ -4658,7 +4658,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 			double maxMag = 9.5d;
 			
-			double deltaMag = 0.1;
+			double deltaMag = 0.5;
 			int numMag = (int)((maxMag - minMag)/deltaMag + 1.5);
 
 			List<ETAS_AftershockModel> models = Lists.newArrayList();
