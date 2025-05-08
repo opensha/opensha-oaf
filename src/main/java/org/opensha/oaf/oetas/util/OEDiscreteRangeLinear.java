@@ -135,6 +135,29 @@ public class OEDiscreteRangeLinear extends OEDiscreteRange {
 
 
 
+	// Get the natural scale for this range.
+	// Returns one of the values RSCALE_XXXXX.
+	// Note: A single-value range may return any value.
+
+	@Override
+	public int get_natural_scale () {
+		return RSCALE_LINEAR;
+	}
+
+
+
+
+	// Return true if the range is uniformly spaced in its natural scale.
+	// Note: A single-value range should always return true.
+
+	@Override
+	public boolean is_natural_uniform () {
+		return true;
+	}
+
+
+
+
 	//----- Construction -----
 
 

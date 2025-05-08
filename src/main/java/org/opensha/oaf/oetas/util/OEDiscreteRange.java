@@ -6,6 +6,7 @@ import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.MarshalImpJsonWriter;
+import org.opensha.oaf.util.InvariantViolationException;
 import static org.opensha.oaf.util.SimpleUtils.rndd;
 
 
@@ -253,6 +254,88 @@ public abstract class OEDiscreteRange implements Marshalable {
 
 	public OEDiscreteRange make_sub_range (int subix_lo, int subix_hi) {
 		return new OEDiscreteRangeSubRange (this, subix_lo, subix_hi);
+	}
+
+
+
+
+	// Get the natural scale for this range.
+	// Returns one of the values RSCALE_XXXXX.
+	// Note: A single-value range may return any value.
+
+	public static final int RSCALE_UNKNOWN = 0;		// Unknown scale.
+	public static final int RSCALE_LINEAR = 1;		// Linear scale.
+	public static final int RSCALE_LOG = 2;			// Logarithmic scale.
+
+	public abstract int get_natural_scale ();
+
+
+
+
+	// Return true if the range is uniformaly spaced in its natural scale.
+	// Note: A single-value range should always return true.
+
+	public abstract boolean is_natural_uniform ();
+
+
+
+
+	// Get the relative measure of each value in the natural scale, as an array.
+	// It is guaranteed that the length of the array equals get_range_size().
+	// The measure is the size of the bin corresponding to the value, in the natural scale.
+	// Measures are normalized so that the largest measure is 1.0.
+	// If the range is uniform, then each element of the returned array is 1.0.
+	// The returned array is newly-allocated, so the caller is free to modify it.
+	// Note: A range with unknown natural scale, that can contain more than one
+	// element, should override this method.
+
+	public double[] get_natural_measure_array () {
+		int rsize = get_range_size();
+		double[] measure_array = new double[rsize];
+		if (rsize == 1 || is_natural_uniform()) {
+			for (int i = 0; i < rsize; ++i) {
+				measure_array[i] = 1.0;
+			}
+		} else {
+			double[] bins = get_bin_array();
+			double top = 0.0;
+
+			// Switch on scale, linear or log
+
+			switch (get_natural_scale()) {
+			default:
+				throw new InvariantViolationException ("OEDiscreteRange.get_natural_measure_array: Unknown scale on a range with more than one element.");
+			
+			case RSCALE_LINEAR:
+				for (int i = 0; i < rsize; ++i) {
+					double w = bins[i+1] - bins[i];
+					measure_array[i] = w;
+					if (top < w) {
+						top = w;
+					}
+				}
+				break;
+
+			case RSCALE_LOG:
+				for (int i = 0; i < rsize; ++i) {
+					double w = Math.log (bins[i+1] / bins[i]);
+					measure_array[i] = w;
+					if (top < w) {
+						top = w;
+					}
+				}
+				break;
+
+			}
+
+			// Normalize largest value to 1.0
+
+			for (int i = 0; i < rsize; ++i) {
+				measure_array[i] = measure_array[i] / top;
+			}
+		}
+
+		return measure_array;
 	}
 
 
@@ -802,6 +885,20 @@ public abstract class OEDiscreteRange implements Marshalable {
 				}
 				System.out.println (range_length + ": bin = " + rndd(bin_array[range_length]));
 
+				// Display measure information
+
+				double[] measure_array = range.get_natural_measure_array();
+
+				System.out.println();
+				System.out.println ("get_natural_scale() = " + range.get_natural_scale());
+				System.out.println ("is_natural_uniform() = " + range.is_natural_uniform());
+				System.out.println ("measure_array.length = " + measure_array.length);
+
+				System.out.println();
+				for (int k = 0; k < range_length; ++k) {
+					System.out.println (k + ": measure = " + rndd(measure_array[k]));
+				}
+
 				// Marshal to JSON
 
 				MarshalImpJsonWriter store = new MarshalImpJsonWriter();
@@ -949,6 +1046,20 @@ public abstract class OEDiscreteRange implements Marshalable {
 				}
 				System.out.println (range_length + ": bin = " + rndd(bin_array[range_length]));
 
+				// Display measure information
+
+				double[] measure_array = range.get_natural_measure_array();
+
+				System.out.println();
+				System.out.println ("get_natural_scale() = " + range.get_natural_scale());
+				System.out.println ("is_natural_uniform() = " + range.is_natural_uniform());
+				System.out.println ("measure_array.length = " + measure_array.length);
+
+				System.out.println();
+				for (int k = 0; k < range_length; ++k) {
+					System.out.println (k + ": measure = " + rndd(measure_array[k]));
+				}
+
 				// Marshal to JSON
 
 				MarshalImpJsonWriter store = new MarshalImpJsonWriter();
@@ -1095,6 +1206,20 @@ public abstract class OEDiscreteRange implements Marshalable {
 					System.out.println (k + ": bin = " + rndd(bin_array[k]) + ", value = " + rndd(range_array[k]) + ", velt = " + velt_array[k].rounded_string_log());
 				}
 				System.out.println (range_length + ": bin = " + rndd(bin_array[range_length]));
+
+				// Display measure information
+
+				double[] measure_array = range.get_natural_measure_array();
+
+				System.out.println();
+				System.out.println ("get_natural_scale() = " + range.get_natural_scale());
+				System.out.println ("is_natural_uniform() = " + range.is_natural_uniform());
+				System.out.println ("measure_array.length = " + measure_array.length);
+
+				System.out.println();
+				for (int k = 0; k < range_length; ++k) {
+					System.out.println (k + ": measure = " + rndd(measure_array[k]));
+				}
 
 				// Marshal to JSON
 
@@ -1244,6 +1369,20 @@ public abstract class OEDiscreteRange implements Marshalable {
 					System.out.println (k + ": bin = " + rndd(bin_array[k]) + ", value = " + rndd(range_array[k]) + ", velt = " + velt_array[k].rounded_string_log());
 				}
 				System.out.println (range_length + ": bin = " + rndd(bin_array[range_length]));
+
+				// Display measure information
+
+				double[] measure_array = range.get_natural_measure_array();
+
+				System.out.println();
+				System.out.println ("get_natural_scale() = " + range.get_natural_scale());
+				System.out.println ("is_natural_uniform() = " + range.is_natural_uniform());
+				System.out.println ("measure_array.length = " + measure_array.length);
+
+				System.out.println();
+				for (int k = 0; k < range_length; ++k) {
+					System.out.println (k + ": measure = " + rndd(measure_array[k]));
+				}
 
 				// Marshal to JSON
 
@@ -1396,6 +1535,20 @@ public abstract class OEDiscreteRange implements Marshalable {
 				}
 				System.out.println (range_length + ": bin = " + rndd(bin_array[range_length]));
 
+				// Display measure information
+
+				double[] measure_array = range.get_natural_measure_array();
+
+				System.out.println();
+				System.out.println ("get_natural_scale() = " + range.get_natural_scale());
+				System.out.println ("is_natural_uniform() = " + range.is_natural_uniform());
+				System.out.println ("measure_array.length = " + measure_array.length);
+
+				System.out.println();
+				for (int k = 0; k < range_length; ++k) {
+					System.out.println (k + ": measure = " + rndd(measure_array[k]));
+				}
+
 				// Marshal to JSON
 
 				MarshalImpJsonWriter store = new MarshalImpJsonWriter();
@@ -1547,6 +1700,20 @@ public abstract class OEDiscreteRange implements Marshalable {
 				}
 				System.out.println (range_length + ": bin = " + rndd(bin_array[range_length]));
 
+				// Display measure information
+
+				double[] measure_array = range.get_natural_measure_array();
+
+				System.out.println();
+				System.out.println ("get_natural_scale() = " + range.get_natural_scale());
+				System.out.println ("is_natural_uniform() = " + range.is_natural_uniform());
+				System.out.println ("measure_array.length = " + measure_array.length);
+
+				System.out.println();
+				for (int k = 0; k < range_length; ++k) {
+					System.out.println (k + ": measure = " + rndd(measure_array[k]));
+				}
+
 				// Marshal to JSON
 
 				MarshalImpJsonWriter store = new MarshalImpJsonWriter();
@@ -1697,6 +1864,20 @@ public abstract class OEDiscreteRange implements Marshalable {
 					System.out.println (k + ": bin = " + rndd(bin_array[k]) + ", value = " + rndd(range_array[k]) + ", velt = " + velt_array[k].rounded_string_linear());
 				}
 				System.out.println (range_length + ": bin = " + rndd(bin_array[range_length]));
+
+				// Display measure information
+
+				double[] measure_array = range.get_natural_measure_array();
+
+				System.out.println();
+				System.out.println ("get_natural_scale() = " + range.get_natural_scale());
+				System.out.println ("is_natural_uniform() = " + range.is_natural_uniform());
+				System.out.println ("measure_array.length = " + measure_array.length);
+
+				System.out.println();
+				for (int k = 0; k < range_length; ++k) {
+					System.out.println (k + ": measure = " + rndd(measure_array[k]));
+				}
 
 				// Marshal to JSON
 

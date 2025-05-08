@@ -152,6 +152,67 @@ public class OEDiscreteRangeSubRange extends OEDiscreteRange {
 
 
 
+	// Get the natural scale for this range.
+	// Returns one of the values RSCALE_XXXXX.
+	// Note: A single-value range may return any value.
+
+	@Override
+	public int get_natural_scale () {
+		return parent_range.get_natural_scale();
+	}
+
+
+
+
+	// Return true if the range is uniformly spaced in its natural scale.
+	// Note: A single-value range should always return true.
+
+	@Override
+	public boolean is_natural_uniform () {
+		return (get_range_size() == 1 || parent_range.is_natural_uniform());
+	}
+
+
+
+
+	// Get the relative measure of each value in the natural scale, as an array.
+	// It is guaranteed that the length of the array equals get_range_size().
+	// The measure is the size of the bin corresponding to the value, in the natural scale.
+	// Measures are normalized so that the largest measure is 1.0.
+	// If the range is uniform, then each element of the returned array is 1.0.
+	// The returned array is newly-allocated, so the caller is free to modify it.
+	// Note: A range with unknown natural scale, that can contain more than one
+	// element, should override this method.
+
+	@Override
+	public double[] get_natural_measure_array () {
+		int rsize = get_range_size();
+		double[] measure_array;
+		if (rsize == 1 || parent_range.is_natural_uniform()) {
+			measure_array = new double[rsize];
+			for (int i = 0; i < rsize; ++i) {
+				measure_array[i] = 1.0;
+			}
+		} else {
+			measure_array = Arrays.copyOfRange (parent_range.get_natural_measure_array(), subix_lo, subix_hi);
+
+			// Normalize largest value to 1.0
+
+			double top = 0.0;
+			for (int i = 0; i < rsize; ++i) {
+				top = Math.max (top, measure_array[i]);
+			}
+			for (int i = 0; i < rsize; ++i) {
+				measure_array[i] = measure_array[i] / top;
+			}
+		}
+
+		return measure_array;
+	}
+
+
+
+
 	//----- Construction -----
 
 

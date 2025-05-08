@@ -113,7 +113,7 @@ public class OEValueElement {
 	// Get the logarithm of the ratio of the element limits, except return single_log_ratio if the interval is a single point.
 
 	public final double get_log_ratio (double single_log_ratio) {
-		return ((ve_kind == VE_SINGLE) ? single_log_ratio : (ve_upper / ve_lower));
+		return ((ve_kind == VE_SINGLE) ? single_log_ratio : (Math.log (ve_upper / ve_lower)));
 	}
 
 
