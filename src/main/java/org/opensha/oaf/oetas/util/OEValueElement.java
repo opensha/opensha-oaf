@@ -44,6 +44,10 @@ public class OEValueElement {
 	private double ve_lower;
 	private double ve_upper;
 
+	// Natural measure of the value element.
+
+	private double ve_measure;
+
 
 
 
@@ -72,6 +76,19 @@ public class OEValueElement {
 
 	public final double get_ve_upper () {
 		return ve_upper;
+	}
+
+	// Get the natural measure.
+
+	public final double get_ve_measure () {
+		return ve_measure;
+	}
+
+
+	// Get the natural measure of the value element, or null_measure if the element is null.
+
+	public static double get_ve_measure (OEValueElement velt, double null_measure) {
+		return ((velt == null) ? null_measure : (velt.ve_measure));
 	}
 
 
@@ -122,20 +139,32 @@ public class OEValueElement {
 	//----- Construction -----
 
 
-	// Make a single point element.
+	// Make a single point element, with measure equal to 1.0.
 
 	public OEValueElement (double value) {
 		ve_kind = VE_SINGLE;
 		ve_lower = value;
 		ve_value = value;
 		ve_upper = value;
+		ve_measure = 1.0;
 	}
 
 
-	// Make an element with the given value and limits.
+	// Make a single point element, with the given value and measure.
+
+	public OEValueElement (double value, double measure) {
+		ve_kind = VE_SINGLE;
+		ve_lower = value;
+		ve_value = value;
+		ve_upper = value;
+		ve_measure = measure;
+	}
+
+
+	// Make an element with the given value and limits, and measure.
 	// The kind is set according to whether the value is equal to either or both limits.
 
-	public OEValueElement (double lower, double value, double upper) {
+	public OEValueElement (double lower, double value, double upper, double measure) {
 		if (value == lower) {
 			if (value == upper) {
 				ve_kind = VE_SINGLE;
@@ -173,59 +202,61 @@ public class OEValueElement {
 				ve_upper = upper;
 			}
 		}
+		ve_measure = measure;
 	}
 
 
-	// Make an element with the given value and limits.
+	// Make an element with the given value and limits, and measure.
 	// The kind is set according to whether the value is equal to either or both limits.
 	// Two numbers are considered equal if their difference is <= eps.
 
-	public OEValueElement (double lower, double value, double upper, double eps) {
-		if (Math.abs (value - lower) <= eps) {
-			if (Math.abs (value - upper) <= eps) {
-				ve_kind = VE_SINGLE;
-				ve_lower = value;
-				ve_value = value;
-				ve_upper = value;
-			}
-			else if (value > upper) {
-				throw new IllegalArgumentException ("OEValueElement.OEValueElement: Invalid limits: lower = " + lower + ", value = " + value + ", upper = " + upper + ", eps = " + eps);
-			}
-			else {	// value < upper
-				ve_kind = VE_LEFT;
-				ve_lower = value;
-				ve_value = value;
-				ve_upper = upper;
-			}
-		}
-		else if (value < lower) {
-			throw new IllegalArgumentException ("OEValueElement.OEValueElement: Invalid limits: lower = " + lower + ", value = " + value + ", upper = " + upper + ", eps = " + eps);
-		}
-		else {	// value > lower
-			if (Math.abs (value - upper) <= eps) {
-				ve_kind = VE_RIGHT;
-				ve_lower = lower;
-				ve_value = value;
-				ve_upper = value;
-			}
-			else if (value > upper) {
-				throw new IllegalArgumentException ("OEValueElement.OEValueElement: Invalid limits: lower = " + lower + ", value = " + value + ", upper = " + upper + ", eps = " + eps);
-			}
-			else {	// value < upper
-				ve_kind = VE_INTERIOR;
-				ve_lower = lower;
-				ve_value = value;
-				ve_upper = upper;
-			}
-		}
-	}
+//	public OEValueElement (double lower, double value, double upper, double eps, double measure) {
+//		if (Math.abs (value - lower) <= eps) {
+//			if (Math.abs (value - upper) <= eps) {
+//				ve_kind = VE_SINGLE;
+//				ve_lower = value;
+//				ve_value = value;
+//				ve_upper = value;
+//			}
+//			else if (value > upper) {
+//				throw new IllegalArgumentException ("OEValueElement.OEValueElement: Invalid limits: lower = " + lower + ", value = " + value + ", upper = " + upper + ", eps = " + eps);
+//			}
+//			else {	// value < upper
+//				ve_kind = VE_LEFT;
+//				ve_lower = value;
+//				ve_value = value;
+//				ve_upper = upper;
+//			}
+//		}
+//		else if (value < lower) {
+//			throw new IllegalArgumentException ("OEValueElement.OEValueElement: Invalid limits: lower = " + lower + ", value = " + value + ", upper = " + upper + ", eps = " + eps);
+//		}
+//		else {	// value > lower
+//			if (Math.abs (value - upper) <= eps) {
+//				ve_kind = VE_RIGHT;
+//				ve_lower = lower;
+//				ve_value = value;
+//				ve_upper = value;
+//			}
+//			else if (value > upper) {
+//				throw new IllegalArgumentException ("OEValueElement.OEValueElement: Invalid limits: lower = " + lower + ", value = " + value + ", upper = " + upper + ", eps = " + eps);
+//			}
+//			else {	// value < upper
+//				ve_kind = VE_INTERIOR;
+//				ve_lower = lower;
+//				ve_value = value;
+//				ve_upper = upper;
+//			}
+//		}
+//		ve_measure = measure;
+//	}
 
 
-	// Make an element with the given limits.
+	// Make an element with the given limits, and measure.
 	// The value is at an endpoint, the left endpoint if f_left is true, the right endpoint if f_left is false.
 	// The kind is set according to whether the limits are equal.
 
-	public OEValueElement (boolean f_left, double lower, double upper) {
+	public OEValueElement (boolean f_left, double lower, double upper, double measure) {
 		if (lower == upper) {
 			if (f_left) {
 				ve_kind = VE_SINGLE;
@@ -255,45 +286,47 @@ public class OEValueElement {
 				ve_upper = upper;
 			}
 		}
+		ve_measure = measure;
 	}
 
 
-	// Make an element with the given limits.
+	// Make an element with the given limits, and measure.
 	// The value is at an endpoint, the left endpoint if f_left is true, the right endpoint if f_left is false.
 	// The kind is set according to whether the limits are equal.
 	// Two numbers are considered equal if their difference is <= eps.
 
-	public OEValueElement (boolean f_left, double lower, double upper, double eps) {
-		if (Math.abs (lower - upper) <= eps) {
-			if (f_left) {
-				ve_kind = VE_SINGLE;
-				ve_lower = lower;
-				ve_value = lower;
-				ve_upper = lower;
-			} else {
-				ve_kind = VE_SINGLE;
-				ve_lower = upper;
-				ve_value = upper;
-				ve_upper = upper;
-			}
-		}
-		else if (lower > upper) {
-			throw new IllegalArgumentException ("OEValueElement.OEValueElement: Invalid limits: f_left = " + f_left + ", lower = " + lower + ", upper = " + upper + ", eps = " + eps);
-		}
-		else {	// lower < upper
-			if (f_left) {
-				ve_kind = VE_LEFT;
-				ve_lower = lower;
-				ve_value = lower;
-				ve_upper = upper;
-			} else {
-				ve_kind = VE_RIGHT;
-				ve_lower = lower;
-				ve_value = upper;
-				ve_upper = upper;
-			}
-		}
-	}
+//	public OEValueElement (boolean f_left, double lower, double upper, double eps, double measure) {
+//		if (Math.abs (lower - upper) <= eps) {
+//			if (f_left) {
+//				ve_kind = VE_SINGLE;
+//				ve_lower = lower;
+//				ve_value = lower;
+//				ve_upper = lower;
+//			} else {
+//				ve_kind = VE_SINGLE;
+//				ve_lower = upper;
+//				ve_value = upper;
+//				ve_upper = upper;
+//			}
+//		}
+//		else if (lower > upper) {
+//			throw new IllegalArgumentException ("OEValueElement.OEValueElement: Invalid limits: f_left = " + f_left + ", lower = " + lower + ", upper = " + upper + ", eps = " + eps);
+//		}
+//		else {	// lower < upper
+//			if (f_left) {
+//				ve_kind = VE_LEFT;
+//				ve_lower = lower;
+//				ve_value = lower;
+//				ve_upper = upper;
+//			} else {
+//				ve_kind = VE_RIGHT;
+//				ve_lower = lower;
+//				ve_value = upper;
+//				ve_upper = upper;
+//			}
+//		}
+//		ve_measure = measure;
+//	}
 
 
 
@@ -349,6 +382,7 @@ public class OEValueElement {
 		+ ", ve_value = " + ve_value
 		+ ", ve_lower = " + ve_lower
 		+ ", ve_upper = " + ve_upper
+		+ ", ve_measure = " + ve_measure
 		+ "]";
 	}
 
@@ -360,6 +394,7 @@ public class OEValueElement {
 		+ ", ve_value = " + rndd(ve_value)
 		+ ", ve_lower = " + rndd(ve_lower)
 		+ ", ve_upper = " + rndd(ve_upper)
+		+ ", ve_measure = " + rndd(ve_measure)
 		+ "]";
 	}
 
@@ -371,6 +406,7 @@ public class OEValueElement {
 		+ ", ve_value = " + rndd(ve_value)
 		+ ", ve_lower = " + rndd(ve_lower)
 		+ ", ve_upper = " + rndd(ve_upper)
+		+ ", ve_measure = " + rndd(ve_measure)
 		+ ", width = " + rndd(get_width(1.0))
 		+ "]";
 	}
@@ -383,6 +419,7 @@ public class OEValueElement {
 		+ ", ve_value = " + rndd(ve_value)
 		+ ", ve_lower = " + rndd(ve_lower)
 		+ ", ve_upper = " + rndd(ve_upper)
+		+ ", ve_measure = " + rndd(ve_measure)
 		+ ", log_ratio = " + rndd(get_log_ratio(1.0))
 		+ "]";
 	}
@@ -395,6 +432,7 @@ public class OEValueElement {
 		+ "[" + rndd(ve_value)
 		+ ", " + rndd(ve_lower)
 		+ ", " + rndd(ve_upper)
+		+ ", " + rndd(ve_measure)
 		+ "]";
 	}
 
@@ -406,6 +444,7 @@ public class OEValueElement {
 		+ "[" + rndf(ve_value)
 		+ ", " + rndf(ve_lower)
 		+ ", " + rndf(ve_upper)
+		+ ", " + rndf(ve_measure)
 		+ "]";
 	}
 
@@ -422,19 +461,23 @@ public class OEValueElement {
 		switch (ve_kind) {
 		case VE_SINGLE:
 			writer.marshalDouble ("ve_value", ve_value);
+			writer.marshalDouble ("ve_measure", ve_measure);
 			break;
 		case VE_LEFT:
 			writer.marshalDouble ("ve_value", ve_value);
 			writer.marshalDouble ("ve_upper", ve_upper);
+			writer.marshalDouble ("ve_measure", ve_measure);
 			break;
 		case VE_RIGHT:
 			writer.marshalDouble ("ve_lower", ve_lower);
 			writer.marshalDouble ("ve_value", ve_value);
+			writer.marshalDouble ("ve_measure", ve_measure);
 			break;
 		case VE_INTERIOR:
 			writer.marshalDouble ("ve_lower", ve_lower);
 			writer.marshalDouble ("ve_value", ve_value);
 			writer.marshalDouble ("ve_upper", ve_upper);
+			writer.marshalDouble ("ve_measure", ve_measure);
 			break;
 		default:
 			throw new MarshalException ("OEValueElement.do_marshal: Object contains invalid kind: ve_kind = " + ve_kind);
@@ -452,21 +495,25 @@ public class OEValueElement {
 			ve_value = reader.unmarshalDouble ("ve_value");
 			ve_lower = ve_value;
 			ve_upper = ve_value;
+			ve_measure = reader.unmarshalDouble ("ve_measure");
 			break;
 		case VE_LEFT:
 			ve_value = reader.unmarshalDouble ("ve_value");
 			ve_upper = reader.unmarshalDouble ("ve_upper");
 			ve_lower = ve_value;
+			ve_measure = reader.unmarshalDouble ("ve_measure");
 			break;
 		case VE_RIGHT:
 			ve_lower = reader.unmarshalDouble ("ve_lower");
 			ve_value = reader.unmarshalDouble ("ve_value");
 			ve_upper = ve_value;
+			ve_measure = reader.unmarshalDouble ("ve_measure");
 			break;
 		case VE_INTERIOR:
 			ve_lower = reader.unmarshalDouble ("ve_lower");
 			ve_value = reader.unmarshalDouble ("ve_value");
 			ve_upper = reader.unmarshalDouble ("ve_upper");
+			ve_measure = reader.unmarshalDouble ("ve_measure");
 			break;
 		default:
 			throw new MarshalException ("OEValueElement.OEValueElement: Object contains invalid kind: ve_kind = " + ve_kind);
@@ -490,21 +537,25 @@ public class OEValueElement {
 			ve_value = reader.unmarshalDouble ("ve_value");
 			ve_lower = ve_value;
 			ve_upper = ve_value;
+			ve_measure = reader.unmarshalDouble ("ve_measure");
 			break;
 		case VE_LEFT:
 			ve_value = reader.unmarshalDouble ("ve_value");
 			ve_upper = reader.unmarshalDouble ("ve_upper");
 			ve_lower = ve_value;
+			ve_measure = reader.unmarshalDouble ("ve_measure");
 			break;
 		case VE_RIGHT:
 			ve_lower = reader.unmarshalDouble ("ve_lower");
 			ve_value = reader.unmarshalDouble ("ve_value");
 			ve_upper = ve_value;
+			ve_measure = reader.unmarshalDouble ("ve_measure");
 			break;
 		case VE_INTERIOR:
 			ve_lower = reader.unmarshalDouble ("ve_lower");
 			ve_value = reader.unmarshalDouble ("ve_value");
 			ve_upper = reader.unmarshalDouble ("ve_upper");
+			ve_measure = reader.unmarshalDouble ("ve_measure");
 			break;
 		default:
 			throw new MarshalException ("OEValueElement.do_umarshal: Object contains invalid kind: ve_kind = " + ve_kind);

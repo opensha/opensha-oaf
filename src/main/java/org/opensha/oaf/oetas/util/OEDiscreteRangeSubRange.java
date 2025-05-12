@@ -138,8 +138,9 @@ public class OEDiscreteRangeSubRange extends OEDiscreteRange {
 
 		//  if (get_range_size() == 1) {
 		//  	final double[] range_array = get_range_array();
+		//		final double[] measure_array = get_natural_measure_array();
 		//  	final OEValueElement[] velt_array = new OEValueElement[1];
-		//  	velt_array[0] = new OEValueElement (range_array[0]);
+		//  	velt_array[0] = new OEValueElement (range_array[0], measure_array[0]);
 		//  	return velt_array;
 		//  }
 
@@ -175,38 +176,31 @@ public class OEDiscreteRangeSubRange extends OEDiscreteRange {
 
 
 
-	// Get the relative measure of each value in the natural scale, as an array.
+	// Get the measure of each value in the natural scale, as an array.
 	// It is guaranteed that the length of the array equals get_range_size().
 	// The measure is the size of the bin corresponding to the value, in the natural scale.
-	// Measures are normalized so that the largest measure is 1.0.
-	// If the range is uniform, then each element of the returned array is 1.0.
+	// It is recommended that a single-value range return a measure of 1.0.
+	// If the range is uniform, then elements of the returned array should be equal (up to rounding errors).
 	// The returned array is newly-allocated, so the caller is free to modify it.
 	// Note: A range with unknown natural scale, that can contain more than one
 	// element, should override this method.
 
 	@Override
 	public double[] get_natural_measure_array () {
-		int rsize = get_range_size();
-		double[] measure_array;
-		if (rsize == 1 || parent_range.is_natural_uniform()) {
-			measure_array = new double[rsize];
-			for (int i = 0; i < rsize; ++i) {
-				measure_array[i] = 1.0;
-			}
-		} else {
-			measure_array = Arrays.copyOfRange (parent_range.get_natural_measure_array(), subix_lo, subix_hi);
 
-			// Normalize largest value to 1.0
+		// This code would return measure 1.0 for a single-element subrange,
+		// however then the measure would not match the measure in the parent range.
 
-			double top = 0.0;
-			for (int i = 0; i < rsize; ++i) {
-				top = Math.max (top, measure_array[i]);
-			}
-			for (int i = 0; i < rsize; ++i) {
-				measure_array[i] = measure_array[i] / top;
-			}
-		}
+		//  int rsize = get_range_size();
+		//  double[] measure_array;
+		//  if (rsize == 1) {
+		//  	measure_array = new double[rsize];
+		//  	measure_array[0] = 1.0;
+		//  } else {
+		//  	measure_array = Arrays.copyOfRange (parent_range.get_natural_measure_array(), subix_lo, subix_hi);
+		//  }
 
+		double[] measure_array = Arrays.copyOfRange (parent_range.get_natural_measure_array(), subix_lo, subix_hi);
 		return measure_array;
 	}
 

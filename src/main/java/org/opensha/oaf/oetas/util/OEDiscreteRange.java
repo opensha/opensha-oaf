@@ -104,15 +104,16 @@ public abstract class OEDiscreteRange implements Marshalable {
 	public OEValueElement[] get_velt_array () {
 		final double[] range_array = get_range_array();
 		final int range_size = range_array.length;
+		final double[] measure_array = get_natural_measure_array();
 		final OEValueElement[] velt_array = new OEValueElement[range_size];
 		if (range_size > 1) {
 			final double[] bin_array = get_bin_array();
 			for (int i = 0; i < range_size; ++i) {
-				velt_array[i] = new OEValueElement (bin_array[i], range_array[i], bin_array[i + 1]);
+				velt_array[i] = new OEValueElement (bin_array[i], range_array[i], bin_array[i + 1], measure_array[i]);
 			}
 		}
 		else if (range_size == 1) {
-			velt_array[0] = new OEValueElement (range_array[0]);
+			velt_array[0] = new OEValueElement (range_array[0], measure_array[0]);
 		}
 		return velt_array;
 	}
@@ -136,6 +137,7 @@ public abstract class OEDiscreteRange implements Marshalable {
 //	public OEValueElement[] get_scaled_velt_array (double scale, double offset) {
 //		final double[] range_array = get_range_array();
 //		final int range_size = range_array.length;
+//		final double[] measure_array = get_natural_measure_array();
 //		final OEValueElement[] velt_array = new OEValueElement[range_size];
 //		if (range_size > 1) {
 //			final double[] bin_array = get_bin_array();
@@ -145,7 +147,8 @@ public abstract class OEDiscreteRange implements Marshalable {
 //					velt_array[i] = new OEValueElement (
 //						bin_array[j + 1] * scale + offset,
 //						range_array[j] * scale + offset,
-//						bin_array[j] * scale + offset
+//						bin_array[j] * scale + offset,
+//						measure_array[j] * (-scale)
 //					);
 //				}
 //			} else {
@@ -153,7 +156,8 @@ public abstract class OEDiscreteRange implements Marshalable {
 //					velt_array[i] = new OEValueElement (
 //						bin_array[i] * scale + offset,
 //						range_array[i] * scale + offset,
-//						bin_array[i + 1] * scale + offset
+//						bin_array[i + 1] * scale + offset,
+//						measure_array[i] * scale
 //					);
 //				}
 //			}
@@ -192,7 +196,8 @@ public abstract class OEDiscreteRange implements Marshalable {
 //					velt_array[i] = new OEValueElement (
 //						Math.log10(bin_array[j + 1]) * scale + offset,
 //						Math.log10(range_array[j]) * scale + offset,
-//						Math.log10(bin_array[j]) * scale + offset
+//						Math.log10(bin_array[j]) * scale + offset,
+//						Math.log (bin_array[j] / bin_array[j + 1]);
 //					);
 //				}
 //			} else {
@@ -200,7 +205,8 @@ public abstract class OEDiscreteRange implements Marshalable {
 //					velt_array[i] = new OEValueElement (
 //						Math.log10(bin_array[i]) * scale + offset,
 //						Math.log10(range_array[i]) * scale + offset,
-//						Math.log10(bin_array[i + 1]) * scale + offset
+//						Math.log10(bin_array[i + 1]) * scale + offset,
+//						Math.log (bin_array[i + 1] / bin_array[i]);
 //					);
 //				}
 //			}
@@ -280,11 +286,11 @@ public abstract class OEDiscreteRange implements Marshalable {
 
 
 
-	// Get the relative measure of each value in the natural scale, as an array.
+	// Get the measure of each value in the natural scale, as an array.
 	// It is guaranteed that the length of the array equals get_range_size().
 	// The measure is the size of the bin corresponding to the value, in the natural scale.
-	// Measures are normalized so that the largest measure is 1.0.
-	// If the range is uniform, then each element of the returned array is 1.0.
+	// It is recommended that a single-value range return a measure of 1.0.
+	// If the range is uniform, then elements of the returned array should be equal (up to rounding errors).
 	// The returned array is newly-allocated, so the caller is free to modify it.
 	// Note: A range with unknown natural scale, that can contain more than one
 	// element, should override this method.
@@ -292,13 +298,10 @@ public abstract class OEDiscreteRange implements Marshalable {
 	public double[] get_natural_measure_array () {
 		int rsize = get_range_size();
 		double[] measure_array = new double[rsize];
-		if (rsize == 1 || is_natural_uniform()) {
-			for (int i = 0; i < rsize; ++i) {
-				measure_array[i] = 1.0;
-			}
+		if (rsize == 1) {
+			measure_array[0] = 1.0;
 		} else {
 			double[] bins = get_bin_array();
-			double top = 0.0;
 
 			// Switch on scale, linear or log
 
@@ -308,30 +311,15 @@ public abstract class OEDiscreteRange implements Marshalable {
 			
 			case RSCALE_LINEAR:
 				for (int i = 0; i < rsize; ++i) {
-					double w = bins[i+1] - bins[i];
-					measure_array[i] = w;
-					if (top < w) {
-						top = w;
-					}
+					measure_array[i] = bins[i+1] - bins[i];
 				}
 				break;
 
 			case RSCALE_LOG:
 				for (int i = 0; i < rsize; ++i) {
-					double w = Math.log (bins[i+1] / bins[i]);
-					measure_array[i] = w;
-					if (top < w) {
-						top = w;
-					}
+					measure_array[i] = Math.log (bins[i+1] / bins[i]);
 				}
 				break;
-
-			}
-
-			// Normalize largest value to 1.0
-
-			for (int i = 0; i < rsize; ++i) {
-				measure_array[i] = measure_array[i] / top;
 			}
 		}
 

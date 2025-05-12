@@ -243,6 +243,107 @@ public abstract class OEBayPrior implements Marshalable {
 
 
 
+	// Calculate the voxel volume, using the natural measure of each element.
+	// Parameters:
+	//  b_velt = Gutenberg-Richter value and element.
+	//  alpha_velt = ETAS intensity value and element, can be null to force alpha == b.
+	//  c_velt = Omori c-value and element.
+	//  p_velt = Omori p-value and element.
+	//  n_velt = Branch ratio value and element.
+	//  zams_velt = Mainshock productivity value and element, assuming reference magnitude equal to ZAMS_MREF == 0.0.
+	//  zmu_velt = Background rate value and element, assuming reference magnitude equal to ZMU_MREF, can be null to force zmu == 0.
+	// Returns the voxel volume.
+	// Threading: This function may be called simultaneously by multiple threads.
+
+	protected double common_vox_volume_nm (
+		OEValueElement b_velt,
+		OEValueElement alpha_velt,
+		OEValueElement c_velt,
+		OEValueElement p_velt,
+		OEValueElement n_velt,
+		OEValueElement zams_velt,
+		OEValueElement zmu_velt
+	) {
+
+		// Calculate factors for each element
+
+		final double b_factor = OEValueElement.get_ve_measure (b_velt, 1.0);
+		final double alpha_factor = OEValueElement.get_ve_measure (alpha_velt, 1.0);
+		final double c_factor = OEValueElement.get_ve_measure (c_velt, 1.0);
+		final double p_factor = OEValueElement.get_ve_measure (p_velt, 1.0);
+		final double n_factor = OEValueElement.get_ve_measure (n_velt, 1.0);
+		final double zams_factor = OEValueElement.get_ve_measure (zams_velt, 1.0);
+		final double zmu_factor = OEValueElement.get_ve_measure (zmu_velt, 1.0);
+
+		// Combine
+
+		return b_factor * alpha_factor * c_factor * p_factor * n_factor * zams_factor * zmu_factor;
+	}
+
+
+
+
+	// Calculate the statistics voxel volume (the volume due to b, alpha, c, p, and n), using the natural measure of each element.
+	// Parameters:
+	//  b_velt = Gutenberg-Richter value and element.
+	//  alpha_velt = ETAS intensity value and element, can be null to force alpha == b.
+	//  c_velt = Omori c-value and element.
+	//  p_velt = Omori p-value and element.
+	//  n_velt = Branch ratio value and element.
+	// Returns the statistics voxel volume.
+	// Threading: This function may be called simultaneously by multiple threads.
+
+	protected double common_stat_vox_volume_nm (
+		OEValueElement b_velt,
+		OEValueElement alpha_velt,
+		OEValueElement c_velt,
+		OEValueElement p_velt,
+		OEValueElement n_velt
+	) {
+
+		// Calculate factors for each element
+
+		final double b_factor = OEValueElement.get_ve_measure (b_velt, 1.0);
+		final double alpha_factor = OEValueElement.get_ve_measure (alpha_velt, 1.0);
+		final double c_factor = OEValueElement.get_ve_measure (c_velt, 1.0);
+		final double p_factor = OEValueElement.get_ve_measure (p_velt, 1.0);
+		final double n_factor = OEValueElement.get_ve_measure (n_velt, 1.0);
+
+		// Combine
+
+		return b_factor * alpha_factor * c_factor * p_factor * n_factor;
+	}
+
+
+
+
+	// Calculate the voxel volume, using the natural measure of each element.
+	// Parameters:
+	//  stat_vox_volume = Statistics voxel volume (the volume due to b, alpha, c, p, and n).
+	//  zams_velt = Mainshock productivity value and element, assuming reference magnitude equal to ZAMS_MREF == 0.0.
+	//  zmu_velt = Background rate value and element, assuming reference magnitude equal to ZMU_MREF, can be null to force zmu == 0.
+	// Returns the voxel volume.
+	// Threading: This function may be called simultaneously by multiple threads.
+
+	protected double common_vox_volume_nm (
+		double stat_vox_volume,
+		OEValueElement zams_velt,
+		OEValueElement zmu_velt
+	) {
+
+		// Calculate factors for each element
+
+		final double zams_factor = OEValueElement.get_ve_measure (zams_velt, 1.0);
+		final double zmu_factor = OEValueElement.get_ve_measure (zmu_velt, 1.0);
+
+		// Combine
+
+		return stat_vox_volume * zams_factor * zmu_factor;
+	}
+
+
+
+
 	//----- Factory methods -----
 
 
