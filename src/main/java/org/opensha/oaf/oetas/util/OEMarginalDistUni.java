@@ -618,6 +618,37 @@ public class OEMarginalDistUni implements Marshalable {
 
 
 
+	// Make the density array.
+	// Parameters:
+	//  out_lo = True if the first bin is for out-of-range values.
+	//  out_hi = True if the last bin is for out-of-range values.
+	//  measure_array = Array giving measure of each bin, not including out-of-range values.
+	//  mass = Desired total mass of the density function.
+	// This function assumes that each value in the distribution is proportional to density*measure.
+	// It obtains density by dividing each value by the measure.
+	// It scales so that the total of density*measure (including out-of-range values) is mass.
+	// The resulting array does not contain entries for out-of-range values.
+
+	public final double[] make_density_array (boolean out_lo, boolean out_hi, double[] measure_array, double mass) {
+		final int vlo = (out_lo ? 1 : 0);
+		final int vhi = dist.length - (out_hi ? 1 : 0);
+		final int len = vhi - vlo;
+		if (!( len > 0 && len == measure_array.length )) {
+			throw new IllegalArgumentException ("OEMarginalDistUni.make_density_array: Array length mismatch: vlo = " + vlo + ", vhi = " + vhi + ", dist.length = " + dist.length + ", measure_array.length = " + measure_array.length);
+		}
+
+		final double mult = mass / scale;
+		final double[] density = new double[len];
+		for (int n = 0; n < len; ++n) {
+			density[n] = mult * dist[n + vlo] / measure_array[n];
+		}
+
+		return density;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 

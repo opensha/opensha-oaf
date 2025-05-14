@@ -17,7 +17,9 @@ import java.util.Date;
 import java.util.EnumSet;
 //import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayDeque;
@@ -79,6 +81,7 @@ import org.opensha.commons.geo.LocationUtils;
 //import org.opensha.commons.gui.ConsoleWindow;
 import org.opensha.commons.gui.plot.GraphPanel;
 import org.opensha.commons.gui.plot.GraphWidget;
+import org.opensha.commons.gui.plot.PlotPreferences;
 import org.opensha.commons.gui.plot.PlotCurveCharacterstics;
 import org.opensha.commons.gui.plot.PlotElement;
 import org.opensha.commons.gui.plot.PlotLineType;
@@ -150,8 +153,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.opensha.oaf.util.LineConsumerFile;
 import org.opensha.oaf.util.LineSupplierFile;
+import org.opensha.oaf.util.InvariantViolationException;
 
-import org.json.simple.JSONObject;
+import org.opensha.oaf.oetas.util.OEDiscreteRange;
+import org.opensha.oaf.oetas.util.OEMarginalDistSet;
+import org.opensha.oaf.oetas.util.OEMarginalDistSetBuilder;
 
 
 // Reasenberg & Jones GUI - View implementation.
@@ -1724,6 +1730,641 @@ public class OEGUIView extends OEGUIComponent {
 
 
 
+	// Make a function from arrays of arguments and values, and a name.
+	// Parameters:
+	//  args = Function arguments.
+	//  vals = Function values.
+	//  name = Name to assign, can be null for none.
+
+	private ArbitrarilyDiscretizedFunc func_from_args_vals (double[] args, double[] vals, String name) {
+		if (!( args.length == vals.length )) {
+			throw new IllegalArgumentException ("OEGUIView.func_from_args_vals: Array length mismatch: args.length = " + args.length + ", vals.length = " + vals.length);
+		}
+		ArbitrarilyDiscretizedFunc func = new ArbitrarilyDiscretizedFunc();
+
+		// Add all the points
+
+		for (int j = 0; j < args.length; ++j) {
+			func.set (args[j], vals[j]);
+		}
+
+		// If a name is supplied, set it
+
+		if (name != null) {
+			func.setName (name);
+		}
+
+		return func;
+	}
+
+
+
+
+	// Make a 1D PDF function.
+	// Parameters:
+	//  dist_set = Marginal distribution set. Can be null.
+	//  var_name = Variable name.
+	//  data_name = Data name.
+	//  func_name = Function name, can be null for none.
+	//  rscale = Used to return the natural scale (OEDiscreteRange.RSCALE_XXXX).
+	// Returns the function, or null if it cannot be generated.
+	// The caller should initialize rscale[0] to RSCALE_NULL before the first call to
+	// this function.  On a non-null return, rscale[0] is updated to the natural scale
+	// if its current value is RSCALE_NULL.  If rscale[0] is not RSCALE_NULL, then the
+	// current scale is checked for compatibility (log vs linear) and null is returned
+	// if they are not compatible (which should not happen).
+
+	private ArbitrarilyDiscretizedFunc make_1d_pdf_func (
+		OEMarginalDistSet dist_set, String var_name, String data_name, String func_name, int[] rscale) {
+
+		// Must have a distribution set with all grid info
+
+		if (dist_set == null) {
+			return null;
+		}
+		if (!( dist_set.has_grid_def_info() )) {
+			return null;
+		}
+
+		// Find the variable index
+
+		int var_index = dist_set.find_var_index (var_name);
+		if (var_index < 0) {
+			return null;
+		}
+
+		// Find the data index
+
+		int data_index = dist_set.find_data_index (data_name);
+		if (data_index < 0) {
+			return null;
+		}
+
+		// Make the univariate density array
+
+		double mass = 1.0;
+		double[] density_array = dist_set.make_univar_density (var_index, data_index, mass);
+		if (density_array == null) {
+			return null;
+		}
+
+		// Get the variable value array
+
+		double[] value_array = dist_set.get_value_array (var_index);
+		if (value_array.length <= 1) {
+			return null;		// should not happen
+		}
+		if (value_array.length != density_array.length) {
+			throw new InvariantViolationException ("OEGUIView.make_1d_pdf_func: Array length mismatch: density_array.length = " + density_array.length + ", value_array.length = " + value_array.length);
+		}
+
+		// Get the discrete range
+
+		OEDiscreteRange range = dist_set.get_discrete_range(var_index);
+		if (range.get_range_size() != value_array.length) {
+			throw new InvariantViolationException ("OEGUIView.make_1d_pdf_func: Range length mismatch: range.get_range_size() = " + range.get_range_size() + ", value_array.length = " + value_array.length);
+		}
+
+		// This is used to test log-range plotting when working with RJ, comment out when not testing
+
+		if (var_name.equals("c")) {
+			range = OEDiscreteRange.makeLog (range.get_range_size(), range.get_range_min(), range.get_range_max());
+			value_array = range.get_range_array();
+		}
+
+		// Update the scale, check for log
+
+		int my_rscale = range.get_natural_scale();
+
+		if (rscale[0] == OEDiscreteRange.RSCALE_NULL) {
+			rscale[0] = my_rscale;
+		} else {
+			if (!( OEDiscreteRange.is_rscale_log (rscale[0]) == OEDiscreteRange.is_rscale_log (my_rscale) )) {
+				return null;	// should not happen
+			}
+			if (rscale[0] == OEDiscreteRange.RSCALE_UNKNOWN) {
+				rscale[0] = my_rscale;
+			}
+		}
+
+		// Here we could take the log of each element of value_array, if the range
+		// is a log scale and we wanted to make plots in linear scale
+
+		//  if (OEDiscreteRange.is_rscale_log (my_rscale)) {
+		//  	for (int j = 0; j < value_array.length; ++j) {
+		//  		value_array[j] = Math.log10 (value_array[j]);
+		//  	}
+		//  }
+
+		// Make the function
+
+		ArbitrarilyDiscretizedFunc func = func_from_args_vals (value_array, density_array, func_name);
+
+		return func;
+	}
+
+
+
+
+	// Make a 1D PDF given marginals.
+	// Parameters:
+	//  title = Plot title.
+	//  tab_text = Text to appear on the tab.
+	//  var_name = Variable name.
+	//  gen_dist_set = Marginal distribution set, for generic. Can be null.
+	//  gen_data_name = Data name, for generic.
+	//  seq_dist_set = Marginal distribution set, for sequence specific. Can be null.
+	//  seq_data_name = Data name, for sequence specific.
+	//  bay_dist_set = Marginal distribution set, for bayesian. Can be null.
+	//  bay_data_name = Data name, for bayesian.
+
+	private void make_1d_pdf (
+		String title, String tab_text, String var_name,
+		OEMarginalDistSet gen_dist_set, String gen_data_name,
+		OEMarginalDistSet seq_dist_set, String seq_data_name,
+		OEMarginalDistSet bay_dist_set, String bay_data_name)
+	{
+		// Natural scale
+
+		int[] rscale = new int[1];
+		rscale[0] = OEDiscreteRange.RSCALE_NULL;
+
+		// List of functions and characteristics
+		
+		//List<PlotElement> funcs = new ArrayList<PlotElement>();
+		List<ArbitrarilyDiscretizedFunc> funcs = new ArrayList<ArbitrarilyDiscretizedFunc>();
+		List<PlotCurveCharacterstics> chars = new ArrayList<PlotCurveCharacterstics>();
+
+		// Sequence-specific PDF
+
+		ArbitrarilyDiscretizedFunc seq_func = make_1d_pdf_func (
+			seq_dist_set, var_name, seq_data_name, "SeqSpec", rscale);
+
+		if (seq_func != null) {
+			funcs.add (seq_func);
+			chars.add (new PlotCurveCharacterstics (PlotLineType.HISTOGRAM, 1f, sequence_specific_color));
+		}
+
+		// Generic PDF
+
+		ArbitrarilyDiscretizedFunc gen_func = make_1d_pdf_func (
+			gen_dist_set, var_name, gen_data_name, "Generic", rscale);
+
+		if (gen_func != null) {
+			funcs.add (gen_func);
+			chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 2f, generic_color));
+		}
+
+		// Bayesian PDF
+
+		ArbitrarilyDiscretizedFunc bay_func = make_1d_pdf_func (
+			bay_dist_set, var_name, bay_data_name, "Bayesian", rscale);
+
+		if (bay_func != null) {
+			funcs.add (bay_func);
+			chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 2f, bayesian_color));
+		}
+
+		// If we got at least one function ...
+
+		if (funcs.size() > 0) {
+
+			// Get the x and y ranges (min y is zero)
+
+			double min_x = Double.MAX_VALUE;
+			double max_x = -Double.MAX_VALUE;
+			double max_y = -Double.MAX_VALUE;
+			double min_y = 0.0;
+
+			for (ArbitrarilyDiscretizedFunc func : funcs) {
+				min_x = Math.min (min_x, func.getMinX());
+				max_x = Math.max (max_x, func.getMaxX());
+				max_y = Math.max (max_y, func.getMaxY());
+			}
+
+			// Create a plot with the given functions and characteristics, and font sizes
+		
+			PlotSpec spec = new PlotSpec(funcs, chars, title, var_name, "Density");
+			//spec.setLegendVisible(funcs.size() > 1);
+			spec.setLegendVisible(true);	// always show legend even if just one curve
+
+			GraphWidget widget;
+
+			// If log scale, set log on horizontal axis, and specify ranges so
+			// auto-ranging won't make min x below zero
+
+			if (OEDiscreteRange.is_rscale_log (rscale[0])) {
+
+				PlotPreferences plotPrefs = PlotPreferences.getDefault();
+				boolean xLog = true;
+				boolean yLog = false;
+				Range xRange = new Range (min_x * Math.pow(max_x / min_x, -0.06), max_x * Math.pow(max_x / min_x, 0.06));
+				Range yRange = new Range (0.0, max_y * 1.06);
+
+				widget = new GraphWidget(spec, plotPrefs, xLog, yLog, xRange, yRange);
+			}
+
+			// If linear scale, auto-ranging is OK
+		
+			else {
+				widget = new GraphWidget(spec);
+			}
+
+			// Adjust font sizes
+
+			setupGP(widget);
+
+			// Set log scale on horizontal axis if needed
+
+			if (rscale[0] == OEDiscreteRange.RSCALE_LOG) {
+				widget.setX_Log (true);
+			}
+
+			// Add to the view
+
+			pdfGraphsPane.addTab (tab_text, null, widget);
+		}
+
+		return;
+	}
+
+
+
+
+	// Rasterize a discrete range.
+	// Parameters:
+	//  range = Discrete range to rasterize
+	//  identity_length = Max length of identity mapping, or -1 for no limit.
+	//  raster_length = Length of the returned array, if it is not an identity mapping.
+	// Returns an integer array that maps from uniformly-spaced integer indexes
+	// to indexes within the discrete range.  Uniform spacing is in a linear or log
+	// scale depending on whether the supplied range is linear or log.
+	// If the given range is uniform, and its length does not exceed identity_length
+	// (or identity_length is -1), then an identity mapping is returned.
+	// Setting identity_length to 0 prevents any identity mapping from being returned.
+	// This function can be used to plot non-uniform data ranges onto evenly spaced plots,
+	// and also to limit the number of points in the plot.
+
+	private int[] rasterize_range (OEDiscreteRange range, int identity_length, int raster_length) {
+
+		// Length of the array we will return
+
+		int len = raster_length;
+		if (range.is_natural_uniform()) {
+			if (identity_length < 0 || range.get_range_size() <= identity_length) {
+				len = range.get_range_size();
+			}
+		}
+
+		// Make a uniform range of the desired Length, with the same limits
+
+		OEDiscreteRange uniform;
+		if (range.is_natural_log()) {
+			uniform = OEDiscreteRange.makeLog (len, range.get_range_min(), range.get_range_max());
+		} else {
+			uniform = OEDiscreteRange.makeLinear (len, range.get_range_min(), range.get_range_max());
+		}
+
+		// Use the bin finder for the given range to find the index for each element of the uniform range
+
+		return range.make_bin_finder(false, false).find_bins (uniform.get_range_array());
+	}
+
+
+
+
+	// Make a 2D PDF function.
+	// Parameters:
+	//  dist_set = Marginal distribution set. Can be null.
+	//  var_name1 = Variable name #1.
+	//  var_name2 = Variable name #2.
+	//  data_name = Data name.
+	//  rscale = Used to return the natural scales (OEDiscreteRange.RSCALE_XXXX).
+	// Returns the function, or null if it cannot be generated.
+	// The return is an evenly-discretized function of two variables.
+	// In case of a log range, the x and/or y values are the log10 of the variables,
+	// so the function may be plotted on a linear scale.
+	// On a non-null return, rscale[0] and rscale[1] are set to the RSCALE_XXXX value
+	// for the x and y ranges respectively.
+
+	private EvenlyDiscrXYZ_DataSet make_2d_pdf_func (
+		OEMarginalDistSet dist_set, String var_name1, String var_name2, String data_name, int[] rscale) {
+
+		// Must have a distribution set with all grid info
+
+		if (dist_set == null) {
+			return null;
+		}
+		if (!( dist_set.has_grid_def_info() )) {
+			return null;
+		}
+
+		// Find the variable indexes
+
+		int var_index1 = dist_set.find_var_index (var_name1);
+		if (var_index1 < 0) {
+			return null;
+		}
+
+		int var_index2 = dist_set.find_var_index (var_name2);
+		if (var_index2 < 0) {
+			return null;
+		}
+
+		// Find the data index
+
+		int data_index = dist_set.find_data_index (data_name);
+		if (data_index < 0) {
+			return null;
+		}
+
+		// Make the biivariate density matrix
+
+		double mass = 1.0;
+		double[][] density_matrix = dist_set.make_bivar_density (var_index1, var_index2, data_index, mass);
+		if (density_matrix == null) {
+			return null;
+		}
+
+		// Get the variable value arrays
+
+		double[] value_array1 = dist_set.get_value_array (var_index1);
+		if (value_array1.length <= 1) {
+			return null;		// should not happen
+		}
+		if (value_array1.length != density_matrix.length) {
+			throw new InvariantViolationException ("OEGUIView.make_2d_pdf_func: Array length mismatch: density_matrix.length = " + density_matrix.length + ", value_array1.length = " + value_array1.length);
+		}
+
+		double[] value_array2 = dist_set.get_value_array (var_index2);
+		if (value_array2.length <= 1) {
+			return null;		// should not happen
+		}
+		if (value_array2.length != density_matrix[0].length) {
+			throw new InvariantViolationException ("OEGUIView.make_2d_pdf_func: Array length mismatch: density_matrix[0].length = " + density_matrix[0].length + ", value_array2.length = " + value_array2.length);
+		}
+
+		// Get the discrete ranges
+
+		OEDiscreteRange range1 = dist_set.get_discrete_range(var_index1);
+		if (range1.get_range_size() != value_array1.length) {
+			throw new InvariantViolationException ("OEGUIView.make_2d_pdf_func: Range length mismatch: range1.get_range_size() = " + range1.get_range_size() + ", value_array1.length = " + value_array1.length);
+		}
+
+		OEDiscreteRange range2 = dist_set.get_discrete_range(var_index2);
+		if (range2.get_range_size() != value_array2.length) {
+			throw new InvariantViolationException ("OEGUIView.make_2d_pdf_func: Range length mismatch: range2.get_range_size() = " + range2.get_range_size() + ", value_array2.length = " + value_array2.length);
+		}
+
+		// This is used to test log-range plotting when working with RJ, comment out when not testing
+
+		if (var_name1.equals("c")) {
+			range1 = OEDiscreteRange.makeLog (range1.get_range_size(), range1.get_range_min(), range1.get_range_max());
+			value_array1 = range1.get_range_array();
+		}
+
+		if (var_name2.equals("c")) {
+			range2 = OEDiscreteRange.makeLog (range2.get_range_size(), range2.get_range_min(), range2.get_range_max());
+			value_array2 = range2.get_range_array();
+		}
+
+		// Get the scales
+
+		int my_rscale1 = range1.get_natural_scale();
+		int my_rscale2 = range2.get_natural_scale();
+
+		rscale[0] = my_rscale1;
+		rscale[1] = my_rscale2;
+
+		// Take the log of each element in the value array, if the range is log scale
+
+		if (OEDiscreteRange.is_rscale_log (my_rscale1)) {
+			for (int j = 0; j < value_array1.length; ++j) {
+				value_array1[j] = Math.log10 (value_array1[j]);
+			}
+		}
+
+		if (OEDiscreteRange.is_rscale_log (my_rscale2)) {
+			for (int j = 0; j < value_array2.length; ++j) {
+				value_array2[j] = Math.log10 (value_array2[j]);
+			}
+		}
+
+		// Rasterize the two ranges
+
+		int identity_length = 350;
+		int raster_length = 320;
+
+		int[] raster1 = rasterize_range (range1, identity_length, raster_length);
+		int[] raster2 = rasterize_range (range2, identity_length, raster_length);
+
+		// Make the function
+
+		int num_1 = raster1.length;
+		int num_2 = raster2.length;
+
+		double min_1 = value_array1[raster1[0]];
+		double min_2 = value_array2[raster2[0]];
+
+		double max_1 = value_array1[raster1[num_1 - 1]];
+		double max_2 = value_array2[raster2[num_2 - 1]];
+
+		double delta_1 = (max_1 - min_1) / ((double)(num_1 - 1));
+		double delta_2 = (max_2 - min_2) / ((double)(num_2 - 1));
+
+		EvenlyDiscrXYZ_DataSet func = new EvenlyDiscrXYZ_DataSet (num_1, num_2, min_1, min_2, delta_1, delta_2);
+
+		for (int j1 = 0; j1 < num_1; ++j1) {
+			for (int j2 = 0; j2 < num_2; ++j2) {
+				func.set (j1, j2, density_matrix[raster1[j1]][raster2[j2]]);
+			}
+		}
+
+		return func;
+	}
+
+
+
+
+	// Make a 2D PDF given a marginal.
+	// Parameters:
+	//  title = Plot title.
+	//  tab_text = Text to appear on the tab.
+	//  var_name1 = Variable name #1.
+	//  var_name2 = Variable name #2.
+	//  dist_set = Marginal distribution set.
+	//  data_name = Data name.
+
+	private void make_2d_pdf (
+		String title, String tab_text, String var_name1, String var_name2,
+		OEMarginalDistSet dist_set, String data_name)
+	{
+		// Natural scale
+
+		int[] rscale = new int[2];
+		rscale[0] = OEDiscreteRange.RSCALE_NULL;
+		rscale[1] = OEDiscreteRange.RSCALE_NULL;
+
+		// Get the Function
+
+		EvenlyDiscrXYZ_DataSet func = make_2d_pdf_func (
+			dist_set, var_name1, var_name2, data_name, rscale);
+
+		if (func == null) {
+			return;
+		}
+		
+		// Get a color scale, for the Z-values in the pdf
+
+		CPT cpt;
+		try {
+			cpt = GMT_CPT_Files.MAX_SPECTRUM.instance().rescale (func.getMinZ(), func.getMaxZ());
+		} catch (IOException e) {
+			throw new InvariantViolationException ("OEGUIView.make_2d_pdf: Failed to make color scale", e);
+		}
+
+		// Create a plot and add it to the view
+
+		String name1 = var_name1;
+		if (OEDiscreteRange.is_rscale_log (rscale[0])) {
+			name1 = "log10 " + name1;
+		}
+
+		String name2 = var_name2;
+		if (OEDiscreteRange.is_rscale_log (rscale[1])) {
+			name2 = "log10 " + name2;
+		}
+		
+		XYZPlotSpec spec = new XYZPlotSpec (func, cpt, title, name1, name2, "Density");
+		
+		//XYZGraphPanel xyzGP = new XYZGraphPanel();
+		//pdfGraphsPane.addTab(name1+" vs "+name2, null, xyzGP);
+		GraphWidget widget = new GraphWidget(spec);
+		setupGP(widget);
+		pdfGraphsPane.addTab (tab_text, null, widget);
+
+		// Draw the PDF
+
+		double xDelta = func.getGridSpacingX();
+		double yDelta = func.getGridSpacingY();
+		widget.setAxisRange(
+			new Range(func.getMinX()-0.5*xDelta, func.getMaxX()+0.5*xDelta),
+			new Range(func.getMinY()-0.5*yDelta, func.getMaxY()+0.5*yDelta));
+
+		return;
+	}
+
+
+
+
+	// Plot the probability density functions.
+	// This routine can re-plot an existing tab.
+	// Must be called with model state >= MODSTATE_PARAMETERS.
+	
+	private void plotPDFs_v2() throws GUIEDTException {
+
+		if (gui_top.get_trace_events()) {
+			System.out.println ("@@@@@ Entry: OEGUIView.plotPDFs, tab count = " + tabbedPane.getTabCount());
+		}
+
+		if (!( gui_model.modstate_has_aftershock_params() )) {
+			throw new IllegalStateException ("OEGUIView.plotPDFs - Invalid model state: " + gui_model.cur_modstate_string());
+		}
+
+		// Allocate a new component, or remove all the tabs from an existing component
+
+		boolean new_tab = false;
+
+		if (pdfGraphsPane == null) {
+			pdfGraphsPane = new JTabbedPane();
+			new_tab = true;
+		} else {
+			//  while (pdfGraphsPane.getTabCount() > 0) {
+			//  	pdfGraphsPane.removeTabAt(0);
+			//  }
+			pdfGraphsPane.removeAll();
+		}
+
+		// Get marginal distribution sets  TODO: Get by calling model
+
+		OEMarginalDistSet gen_dist_set = null;
+		OEMarginalDistSet seq_dist_set = null;
+		OEMarginalDistSet bay_dist_set = null;
+
+		if (gui_model.get_genericModel() != null) {
+			gen_dist_set = (new OEMarginalDistSetBuilder()).make_rj_marginals (gui_model.get_genericModel(), true);
+		}
+
+		if (gui_model.get_cur_model() != null) {
+			seq_dist_set = (new OEMarginalDistSetBuilder()).make_rj_marginals (gui_model.get_cur_model(), true);
+		}
+
+		if (gui_model.get_bayesianModel() != null) {
+			bay_dist_set = (new OEMarginalDistSetBuilder()).make_rj_marginals (gui_model.get_bayesianModel(), true);
+		}
+
+		// Add tabs for 1D marginals
+
+		make_1d_pdf (
+			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_A, "RJ " + OEMarginalDistSetBuilder.VNAME_RJ_A, OEMarginalDistSetBuilder.VNAME_RJ_A,
+			gen_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB,
+			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB,
+			bay_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
+		);
+
+		make_1d_pdf (
+			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_P, "RJ " + OEMarginalDistSetBuilder.VNAME_RJ_P, OEMarginalDistSetBuilder.VNAME_RJ_P,
+			gen_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB,
+			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB,
+			bay_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
+		);
+
+		make_1d_pdf (
+			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_C, "RJ " + OEMarginalDistSetBuilder.VNAME_RJ_C, OEMarginalDistSetBuilder.VNAME_RJ_C,
+			gen_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB,
+			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB,
+			bay_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
+		);
+
+		// Add tabs for 2D PDFs
+
+		make_2d_pdf (
+			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_A + " vs " + OEMarginalDistSetBuilder.VNAME_RJ_C,
+			"RJ " + OEMarginalDistSetBuilder.VNAME_RJ_A + "/" + OEMarginalDistSetBuilder.VNAME_RJ_C,
+			OEMarginalDistSetBuilder.VNAME_RJ_A,
+			OEMarginalDistSetBuilder.VNAME_RJ_C,
+			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
+		);
+
+		make_2d_pdf (
+			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_A + " vs " + OEMarginalDistSetBuilder.VNAME_RJ_P,
+			"RJ " + OEMarginalDistSetBuilder.VNAME_RJ_A + "/" + OEMarginalDistSetBuilder.VNAME_RJ_P,
+			OEMarginalDistSetBuilder.VNAME_RJ_A,
+			OEMarginalDistSetBuilder.VNAME_RJ_P,
+			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
+		);
+
+		make_2d_pdf (
+			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_C + " vs " + OEMarginalDistSetBuilder.VNAME_RJ_P,
+			"RJ " + OEMarginalDistSetBuilder.VNAME_RJ_C + "/" + OEMarginalDistSetBuilder.VNAME_RJ_P,
+			OEMarginalDistSetBuilder.VNAME_RJ_C,
+			OEMarginalDistSetBuilder.VNAME_RJ_P,
+			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
+		);
+
+		// Add to the view
+
+		if (new_tab) {
+			tabbedPane.addTab("Model PDFs", null, pdfGraphsPane,
+					"Aftershock Model Prob Dist Funcs");
+		}
+
+		return;
+	}
+
+
+
+
 	//----- Forecast MFD tab -----
 
 
@@ -2089,7 +2730,8 @@ public class OEGUIView extends OEGUIComponent {
 
 		case MODSTATE_PARAMETERS:
 			plotCumulativeNum();	// re-plot because set of plots is changed
-			plotPDFs();
+			//plotPDFs();
+			plotPDFs_v2();
 			tabbedPane.setSelectedComponent(pdfGraphsPane);
 			break;
 

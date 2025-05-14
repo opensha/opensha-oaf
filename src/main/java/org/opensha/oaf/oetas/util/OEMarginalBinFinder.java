@@ -24,4 +24,18 @@ public interface OEMarginalBinFinder {
 
 	public int find_bin (double v);
 
+
+	// Find the bins which contain the given values.
+	// Returns an array of the same length as the argument,
+	// in which each value ranges from 0 to get_bin_count()-1.
+	// Threading: Can be called by multiple threads.
+
+	public default int[] find_bins (double[] v) {
+		int[] x = new int[v.length];
+		for (int j = 0; j < v.length; ++j) {
+			x[j] = find_bin (v[j]);
+		}
+		return x;
+	}
+
 }

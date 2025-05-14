@@ -273,7 +273,30 @@ public abstract class OEDiscreteRange implements Marshalable {
 	public static final int RSCALE_LINEAR = 1;		// Linear scale.
 	public static final int RSCALE_LOG = 2;			// Logarithmic scale.
 
+	public static final int RSCALE_NULL = -1;		// Special value indicating scale has not been set.
+
 	public abstract int get_natural_scale ();
+
+
+
+
+	// Return true if the given scale is logarithmic.
+
+	public static boolean is_rscale_log (int rscale) {
+		if (rscale == RSCALE_LOG) {
+			return true;
+		}
+		return false;
+	}
+
+
+
+
+	// Return true if this range's natural scale is logarithmic.
+
+	public final boolean is_natural_log () {
+		return is_rscale_log (get_natural_scale());
+	}
 
 
 

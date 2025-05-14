@@ -702,6 +702,65 @@ public class OEMarginalDistBi implements Marshalable {
 
 
 
+	// Make the density matrix.
+	// Parameters:
+	//  out_lo1 = True if the first bin is for out-of-range values, for variable #1.
+	//  out_hi1 = True if the last bin is for out-of-range values, for variable #1.
+	//  measure_array1 = Array giving measure of each bin, not including out-of-range values, for variable #1.
+	//  out_lo2 = True if the first bin is for out-of-range values, for variable #2.
+	//  out_hi2 = True if the last bin is for out-of-range values, for variable #2.
+	//  measure_array2 = Array giving measure of each bin, not including out-of-range values, for variable #2.
+	//  mass = Desired total mass of the density function.
+	//  f_transpose = True to return the transpose of the density matrix.
+	// This function assumes that each value in the distribution is proportional to density*measure.
+	// It obtains density by dividing each value by the measure.
+	// It scales so that the total of density*measure (including out-of-range values) is mass.
+	// The measure of a 2D bin is the product of the measures of the two variables.
+	// The resulting array does not contain entries for out-of-range values.
+
+	public final double[][] make_density_matrix (
+			boolean out_lo1, boolean out_hi1, double[] measure_array1,
+			boolean out_lo2, boolean out_hi2, double[] measure_array2,
+			double mass, boolean f_transpose)
+	{
+		final int v1lo = (out_lo1 ? 1 : 0);
+		final int v1hi = dist.length - (out_hi1 ? 1 : 0);
+		final int len1 = v1hi - v1lo;
+		if (!( len1 > 0 && len1 == measure_array1.length )) {
+			throw new IllegalArgumentException ("OEMarginalDistBi.make_density_matrix: Array length mismatch: v1lo = " + v1lo + ", v1hi = " + v1hi + ", dist.length = " + dist.length + ", measure_array1.length = " + measure_array1.length);
+		}
+		final int v2lo = (out_lo2 ? 1 : 0);
+		final int v2hi = dist[0].length - (out_hi2 ? 1 : 0);
+		final int len2 = v2hi - v2lo;
+		if (!( len2 > 0 && len2 == measure_array2.length )) {
+			throw new IllegalArgumentException ("OEMarginalDistBi.make_density_matrix: Array length mismatch: v2lo = " + v2lo + ", v2hi = " + v2hi + ", dist[0].length = " + dist[0].length + ", measure_array2.length = " + measure_array2.length);
+		}
+
+		final double mult = mass / scale;
+		double[][] density;
+
+		if (f_transpose) {
+			density = new double[len2][len1];
+			for (int n1 = 0; n1 < len1; ++n1) {
+				for (int n2 = 0; n2 < len2; ++n2) {
+					density[n2][n1] = mult * dist[n1 + v1lo][n2 + v2lo] / (measure_array1[n1] * measure_array2[n2]);
+				}
+			}
+		} else {
+			density = new double[len1][len2];
+			for (int n1 = 0; n1 < len1; ++n1) {
+				for (int n2 = 0; n2 < len2; ++n2) {
+					density[n1][n2] = mult * dist[n1 + v1lo][n2 + v2lo] / (measure_array1[n1] * measure_array2[n2]);
+				}
+			}
+		}
+
+		return density;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 

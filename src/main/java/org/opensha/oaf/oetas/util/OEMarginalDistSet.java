@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
 
 import java.io.IOException;
 
@@ -828,6 +829,169 @@ public class OEMarginalDistSet implements Marshalable {
 //		array_add_to_stack (bivar, other.bivar, prefix, weight_map);
 //		return;
 //	}
+
+
+
+
+	//----- Density -----
+
+
+
+
+	// Get the array of values for a variable, given its index.
+	// The returned array does not include entries of out-of-range values.
+	// Note: The returned array is a copy.
+
+	public final double[] get_value_array (int var_index) {
+		if (var_values.length == 0) {
+			throw new IllegalStateException ("OEMarginalDistSet.get_value_array: Variable values not available");
+		}
+		OEMarginalDistRange var_value = var_values[var_index];
+		if (var_value == null) {
+			throw new IllegalStateException ("OEMarginalDistSet.get_value_array: Variable value not available: var_index = " + var_index);
+		}
+		return Arrays.copyOfRange (var_value.values, 0, var_value.values.length);
+	}
+
+
+
+
+	// Get the discrete range for a variable, given its index.
+
+	public final OEDiscreteRange get_discrete_range (int var_index) {
+		if (var_ranges.length == 0) {
+			throw new IllegalStateException ("OEMarginalDistSet.get_discrete_range: Variable ranges not available");
+		}
+		OEDiscreteRange var_range = var_ranges[var_index];
+		if (var_range == null) {
+			throw new IllegalStateException ("OEMarginalDistSet.get_discrete_range: Variable range not available: var_index = " + var_index);
+		}
+		return var_range;
+	}
+
+
+
+
+	// Make the density array for a univariate marginal.
+	// Parameters:
+	//  var_index = Index of the variable.
+	//  data_index = Index of the data.
+	//  mass = Desired total mass of the density function.
+	// Returns the density array, or null if there is no such univariate marginal.
+	// Note: If return is non-null, then it is guaranteed that a range and value
+	// for the variable is available.
+
+	public final double[] make_univar_density (int var_index, int data_index, double mass) {
+
+		// Find the univariate distribution, return null if none
+
+		OEMarginalDistUni x = find_univar (var_index, data_index);
+		if (x == null) {
+			return null;
+		}
+
+		// Get the values and discrete range
+
+		if (var_values.length == 0) {
+			throw new IllegalStateException ("OEMarginalDistSet.make_univar_density: Variable values not available");
+		}
+		OEMarginalDistRange var_value = var_values[var_index];
+		if (var_value == null) {
+			throw new IllegalStateException ("OEMarginalDistSet.make_univar_density: Variable value not available: var_index = " + var_index);
+		}
+
+		if (var_ranges.length == 0) {
+			throw new IllegalStateException ("OEMarginalDistSet.make_univar_density: Variable ranges not available");
+		}
+		OEDiscreteRange var_range = var_ranges[var_index];
+		if (var_range == null) {
+			throw new IllegalStateException ("OEMarginalDistSet.make_univar_density: Variable range not available: var_index = " + var_index);
+		}
+
+		// Make the density array
+
+		double[] density = x.make_density_array (
+			var_value.out_lo, var_value.out_hi, var_range.get_natural_measure_array(), mass
+		);
+		
+		return density;
+	}
+
+
+
+
+	// Make the density matrix for a bivariate marginal.
+	// Parameters:
+	//  var_index1 = Index of variable #1.
+	//  var_index2 = Index of variable #2.
+	//  data_index = Index of the data.
+	//  mass = Desired total mass of the density function.
+	// Returns the density matrix, or null if there is no such bivariate marginal.
+	// Note: If return is non-null, then it is guaranteed that ranges and values
+	// for the variables are available.
+	// Note: If the variables are given in reverse order from the bivariate marginal,
+	// the returned matrix is transposed accordingly.
+
+	public final double[][] make_bivar_density (int var_index1, int var_index2, int data_index, double mass) {
+
+		// Find the univariate distribution, return null if none
+
+		boolean[] reversed = new boolean[1];
+		OEMarginalDistBi x = find_bivar (var_index1, var_index2, data_index, reversed);
+		if (x == null) {
+			return null;
+		}
+
+		// Get the values and discrete range
+
+		if (var_values.length == 0) {
+			throw new IllegalStateException ("OEMarginalDistSet.make_bivar_density: Variable values not available");
+		}
+		OEMarginalDistRange var_value1 = var_values[var_index1];
+		if (var_value1 == null) {
+			throw new IllegalStateException ("OEMarginalDistSet.make_bivar_density: Variable value not available: var_index1 = " + var_index1);
+		}
+		OEMarginalDistRange var_value2 = var_values[var_index2];
+		if (var_value2 == null) {
+			throw new IllegalStateException ("OEMarginalDistSet.make_bivar_density: Variable value not available: var_index2 = " + var_index2);
+		}
+
+		if (var_ranges.length == 0) {
+			throw new IllegalStateException ("OEMarginalDistSet.make_bivar_density: Variable ranges not available");
+		}
+		OEDiscreteRange var_range1 = var_ranges[var_index1];
+		if (var_range1 == null) {
+			throw new IllegalStateException ("OEMarginalDistSet.make_bivar_density: Variable range not available: var_index1 = " + var_index1);
+		}
+		OEDiscreteRange var_range2 = var_ranges[var_index2];
+		if (var_range2 == null) {
+			throw new IllegalStateException ("OEMarginalDistSet.make_bivar_density: Variable range not available: var_index2 = " + var_index2);
+		}
+
+		// Make the density matrix
+
+		double[][] density;
+
+		if (reversed[0]) {
+
+			density = x.make_density_matrix (
+				var_value2.out_lo, var_value2.out_hi, var_range2.get_natural_measure_array(),
+				var_value1.out_lo, var_value1.out_hi, var_range1.get_natural_measure_array(),
+				mass, reversed[0]
+			);
+
+		} else {
+
+			density = x.make_density_matrix (
+				var_value1.out_lo, var_value1.out_hi, var_range1.get_natural_measure_array(),
+				var_value2.out_lo, var_value2.out_hi, var_range2.get_natural_measure_array(),
+				mass, reversed[0]
+			);
+
+		}
+		
+		return density;
+	}
 
 
 
