@@ -73,6 +73,7 @@ import org.opensha.oaf.rj.USGS_AftershockForecast.Duration;
 import org.opensha.oaf.rj.USGS_AftershockForecast.Template;
 
 import org.opensha.commons.data.xyz.EvenlyDiscrXYZ_DataSet;
+import org.opensha.commons.data.xyz.ArbDiscrXYZ_DataSet;
 import org.opensha.commons.exceptions.ConstraintException;
 import org.opensha.commons.exceptions.ParameterException;
 import org.opensha.commons.geo.Location;
@@ -1730,6 +1731,15 @@ public class OEGUIView extends OEGUIComponent {
 
 
 
+	// This flag enables a test mode, where a variable named "c" is forced to be on a log scale.
+	// This allows testing of log-scale plots using RJ parameters.
+	// Set to false when not testing.
+
+	private static final boolean force_c_log = true;
+
+
+
+
 	// Make a function from arrays of arguments and values, and a name.
 	// Parameters:
 	//  args = Function arguments.
@@ -1825,9 +1835,9 @@ public class OEGUIView extends OEGUIComponent {
 			throw new InvariantViolationException ("OEGUIView.make_1d_pdf_func: Range length mismatch: range.get_range_size() = " + range.get_range_size() + ", value_array.length = " + value_array.length);
 		}
 
-		// This is used to test log-range plotting when working with RJ, comment out when not testing
+		// This is used to test log-range plotting when working with RJ, deactivate when not testing
 
-		if (var_name.equals("c")) {
+		if (force_c_log && var_name.equals("c")) {
 			range = OEDiscreteRange.makeLog (range.get_range_size(), range.get_range_min(), range.get_range_max());
 			value_array = range.get_range_array();
 		}
@@ -2016,7 +2026,7 @@ public class OEGUIView extends OEGUIComponent {
 			}
 		}
 
-		// Make a uniform range of the desired Length, with the same limits
+		// Make a uniform range of the desired length, with the same limits
 
 		OEDiscreteRange uniform;
 		if (range.is_natural_log()) {
@@ -2039,7 +2049,7 @@ public class OEGUIView extends OEGUIComponent {
 	//  var_name1 = Variable name #1.
 	//  var_name2 = Variable name #2.
 	//  data_name = Data name.
-	//  rscale = Used to return the natural scales (OEDiscreteRange.RSCALE_XXXX).
+	//  rscale = 2-element array used to return the natural scales (OEDiscreteRange.RSCALE_XXXX).
 	// Returns the function, or null if it cannot be generated.
 	// The return is an evenly-discretized function of two variables.
 	// In case of a log range, the x and/or y values are the log10 of the variables,
@@ -2116,14 +2126,14 @@ public class OEGUIView extends OEGUIComponent {
 			throw new InvariantViolationException ("OEGUIView.make_2d_pdf_func: Range length mismatch: range2.get_range_size() = " + range2.get_range_size() + ", value_array2.length = " + value_array2.length);
 		}
 
-		// This is used to test log-range plotting when working with RJ, comment out when not testing
+		// This is used to test log-range plotting when working with RJ, deactivate when not testing
 
-		if (var_name1.equals("c")) {
+		if (force_c_log && var_name1.equals("c")) {
 			range1 = OEDiscreteRange.makeLog (range1.get_range_size(), range1.get_range_min(), range1.get_range_max());
 			value_array1 = range1.get_range_array();
 		}
 
-		if (var_name2.equals("c")) {
+		if (force_c_log && var_name2.equals("c")) {
 			range2 = OEDiscreteRange.makeLog (range2.get_range_size(), range2.get_range_min(), range2.get_range_max());
 			value_array2 = range2.get_range_array();
 		}
@@ -2250,6 +2260,347 @@ public class OEGUIView extends OEGUIComponent {
 		widget.setAxisRange(
 			new Range(func.getMinX()-0.5*xDelta, func.getMaxX()+0.5*xDelta),
 			new Range(func.getMinY()-0.5*yDelta, func.getMaxY()+0.5*yDelta));
+
+		return;
+	}
+
+
+
+
+	// Uniformize a discrete range.
+	// Parameters:
+	//  range = Discrete range to uniformize.
+	//  uniform_length = Desired length of uniform range.
+	//  min_match_length = Minimum range size for matching lemgth.
+	//  max_match_length = Maximum range size for matching length, or -1 for no limit.
+	//  f_expand = True to expand the range slightly if the number of points is increasing.
+	// Returns a discrete range that is uniform (linear or log) and spans (approximately)
+	// the same range of values.
+	// If the supplied range is uniform and its size is between min_match_length and
+	// max_match_length (inclusive), then the returned range has the same size as the
+	// supplied range.  Otherwise, the size of the returned range is uniform_length.
+	// If the size of the returned range is larger than the size of the supplied range, and
+	// f_expand is true, then the range is slightly enlarged to avoid undersampling the endpoints.
+
+	private OEDiscreteRange uniformize_range (OEDiscreteRange range, int uniform_length, int min_match_length, int max_match_length, boolean f_expand) {
+
+		// Length of the range we will return
+
+		int rsize = range.get_range_size();
+
+		int len = uniform_length;
+		if (range.is_natural_uniform()) {
+			if (rsize >= min_match_length && (max_match_length < 0 || rsize <= max_match_length)) {
+				len = rsize;
+			}
+		}
+
+		// Minimum and maximum values of the uniform range
+
+		double umin = range.get_range_min();
+		double umax = range.get_range_max();
+
+		// If the number of points is increasing, adjust endpoints
+
+		if (f_expand && len > rsize) {
+			double[] rbins = range.get_bin_array();
+
+			double ratio = ((double)len) / ((double)rsize);
+			double r = (ratio - 1.0) / ratio;
+
+			if (range.is_natural_log()) {
+				double umin_diff = umin / rbins[0];
+				double umax_diff = rbins[rsize] / umax;
+
+				if (umin_diff > 1.0) {
+					umin = umin / Math.pow (umin_diff, r);
+				}
+				if (umax_diff > 1.0) {
+					umax = umax * Math.pow (umax_diff, r);
+				}
+			} else {
+				double umin_diff = umin - rbins[0];
+				double umax_diff = rbins[rsize] - umax;
+
+				if (umin_diff > 0.0) {
+					umin = umin - (umin_diff * r);
+				}
+				if (umax_diff > 0.0) {
+					umax = umax + (umax_diff * r);
+				}
+			}
+		}
+
+		// Make a uniform range of the desired length
+
+		OEDiscreteRange uniform;
+		if (range.is_natural_log()) {
+			uniform = OEDiscreteRange.makeLog (len, umin, umax);
+		} else {
+			uniform = OEDiscreteRange.makeLinear (len, umin, umax);
+		}
+
+		return uniform;
+	}
+
+
+
+
+	// Make a 2D PDF function.
+	// Parameters:
+	//  dist_set = Marginal distribution set. Can be null.
+	//  var_name1 = Variable name #1.
+	//  var_name2 = Variable name #2.
+	//  data_name = Data name.
+	//  rscale = 2-element array used to return the natural scales (OEDiscreteRange.RSCALE_XXXX).
+	//  x_bounds = 2-element array used to return the min and max values of x.
+	//  y_bounds = 2-element array used to return the min and max values of y.
+	//  z_bounds = 2-element array used to return the min and max values of z.
+	// Returns the function, or null if it cannot be generated.
+	// The return is an arbitrarily-deiscretized function of two variables.
+	// It has a product structure, with each axis being uniformly discretized
+	// in either linear or log space.
+	// On a non-null return, rscale[0] and rscale[1] are set to the RSCALE_XXXX value
+	// for the x and y ranges respectively, and the bounds are filled in.
+
+	private ArbDiscrXYZ_DataSet make_2d_pdf_func_v2 (
+		OEMarginalDistSet dist_set, String var_name1, String var_name2, String data_name, int[] rscale,
+		double[] x_bounds, double[] y_bounds, double[] z_bounds) {
+
+		// Must have a distribution set with all grid info
+
+		if (dist_set == null) {
+			return null;
+		}
+		if (!( dist_set.has_grid_def_info() )) {
+			return null;
+		}
+
+		// Find the variable indexes
+
+		int var_index1 = dist_set.find_var_index (var_name1);
+		if (var_index1 < 0) {
+			return null;
+		}
+
+		int var_index2 = dist_set.find_var_index (var_name2);
+		if (var_index2 < 0) {
+			return null;
+		}
+
+		// Find the data index
+
+		int data_index = dist_set.find_data_index (data_name);
+		if (data_index < 0) {
+			return null;
+		}
+
+		// Make the biivariate density matrix
+
+		double mass = 1.0;
+		double[][] density_matrix = dist_set.make_bivar_density (var_index1, var_index2, data_index, mass);
+		if (density_matrix == null) {
+			return null;
+		}
+
+		// Get the variable value arrays
+
+		double[] value_array1 = dist_set.get_value_array (var_index1);
+		if (value_array1.length <= 1) {
+			return null;		// should not happen
+		}
+		if (value_array1.length != density_matrix.length) {
+			throw new InvariantViolationException ("OEGUIView.make_2d_pdf_func: Array length mismatch: density_matrix.length = " + density_matrix.length + ", value_array1.length = " + value_array1.length);
+		}
+
+		double[] value_array2 = dist_set.get_value_array (var_index2);
+		if (value_array2.length <= 1) {
+			return null;		// should not happen
+		}
+		if (value_array2.length != density_matrix[0].length) {
+			throw new InvariantViolationException ("OEGUIView.make_2d_pdf_func: Array length mismatch: density_matrix[0].length = " + density_matrix[0].length + ", value_array2.length = " + value_array2.length);
+		}
+
+		// Get the discrete ranges
+
+		OEDiscreteRange range1 = dist_set.get_discrete_range(var_index1);
+		if (range1.get_range_size() != value_array1.length) {
+			throw new InvariantViolationException ("OEGUIView.make_2d_pdf_func: Range length mismatch: range1.get_range_size() = " + range1.get_range_size() + ", value_array1.length = " + value_array1.length);
+		}
+
+		OEDiscreteRange range2 = dist_set.get_discrete_range(var_index2);
+		if (range2.get_range_size() != value_array2.length) {
+			throw new InvariantViolationException ("OEGUIView.make_2d_pdf_func: Range length mismatch: range2.get_range_size() = " + range2.get_range_size() + ", value_array2.length = " + value_array2.length);
+		}
+
+		// This is used to test log-range plotting when working with RJ, deactivate when not testing
+
+		if (force_c_log && var_name1.equals("c")) {
+			range1 = OEDiscreteRange.makeLog (range1.get_range_size(), range1.get_range_min(), range1.get_range_max());
+			value_array1 = range1.get_range_array();
+		}
+
+		if (force_c_log && var_name2.equals("c")) {
+			range2 = OEDiscreteRange.makeLog (range2.get_range_size(), range2.get_range_min(), range2.get_range_max());
+			value_array2 = range2.get_range_array();
+		}
+
+		// Get the scales
+
+		int my_rscale1 = range1.get_natural_scale();
+		int my_rscale2 = range2.get_natural_scale();
+
+		rscale[0] = my_rscale1;
+		rscale[1] = my_rscale2;
+
+		// Uniformize the two ranges
+
+		int uniform_length = 320;
+		int min_match_length = 300;
+		int max_match_length = 350;
+
+		OEDiscreteRange uniform1 = uniformize_range (range1, uniform_length, min_match_length, max_match_length, true);
+		OEDiscreteRange uniform2 = uniformize_range (range2, uniform_length, min_match_length, max_match_length, true);
+
+		// Get the values of the uniform ranges
+
+		double[] uniform_values1 = uniform1.get_range_array();
+		double[] uniform_values2 = uniform2.get_range_array();
+
+		// Get raster maps from the uniform ranges to the original ranges
+
+		int[] raster1 = range1.make_bin_finder(false, false).find_bins (uniform_values1);
+		int[] raster2 = range2.make_bin_finder(false, false).find_bins (uniform_values2);
+
+		// Make the function
+
+		int num_1 = uniform_values1.length;
+		int num_2 = uniform_values2.length;
+
+		double min_x = uniform_values1[0];
+		double min_y = uniform_values2[0];
+
+		double max_x = uniform_values1[num_1 - 1];
+		double max_y = uniform_values2[num_2 - 1];
+
+		double min_z = Double.MAX_VALUE;
+		double max_z = -Double.MAX_VALUE;
+
+		ArbDiscrXYZ_DataSet func = new ArbDiscrXYZ_DataSet ();
+
+		for (int j1 = 0; j1 < num_1; ++j1) {
+			for (int j2 = 0; j2 < num_2; ++j2) {
+				double z = density_matrix[raster1[j1]][raster2[j2]];
+				min_z = Math.min (min_z, z);
+				max_z = Math.max (max_z, z);
+				func.set (uniform_values1[j1], uniform_values2[j2], z);
+			}
+		}
+
+		// Return the bounds
+
+		x_bounds[0] = min_x;
+		x_bounds[1] = max_x;
+
+		y_bounds[0] = min_y;
+		y_bounds[1] = max_y;
+
+		z_bounds[0] = min_z;
+		z_bounds[1] = max_z;
+
+		return func;
+	}
+
+
+
+
+	// Make a 2D PDF given a marginal.
+	// Parameters:
+	//  title = Plot title.
+	//  tab_text = Text to appear on the tab.
+	//  var_name1 = Variable name #1.
+	//  var_name2 = Variable name #2.
+	//  dist_set = Marginal distribution set.
+	//  data_name = Data name.
+	//
+	// Note: Testing shows that ArbDiscrXYZ_DataSet does not plot properly when one
+	// of the axes is on a log scale.  So, use of this function is not recommended.
+
+	private void make_2d_pdf_v2 (
+		String title, String tab_text, String var_name1, String var_name2,
+		OEMarginalDistSet dist_set, String data_name)
+	{
+		// Natural scale
+
+		int[] rscale = new int[2];
+		rscale[0] = OEDiscreteRange.RSCALE_NULL;
+		rscale[1] = OEDiscreteRange.RSCALE_NULL;
+
+		// Get the Function
+
+		double[] x_bounds = new double[2];
+		double[] y_bounds = new double[2];
+		double[] z_bounds = new double[2];
+
+		ArbDiscrXYZ_DataSet func = make_2d_pdf_func_v2 (
+			dist_set, var_name1, var_name2, data_name, rscale,
+			x_bounds, y_bounds, z_bounds);
+
+		if (func == null) {
+			return;
+		}
+		
+		// Get a color scale, for the Z-values in the pdf
+
+		CPT cpt;
+		try {
+			cpt = GMT_CPT_Files.MAX_SPECTRUM.instance().rescale (z_bounds[0], z_bounds[1]);
+		} catch (IOException e) {
+			throw new InvariantViolationException ("OEGUIView.make_2d_pdf: Failed to make color scale", e);
+		}
+
+		// Create a plot and add it to the view
+
+		String name1 = var_name1;
+		String name2 = var_name2;
+		
+		XYZPlotSpec spec = new XYZPlotSpec (func, cpt, title, name1, name2, "Density");
+
+		// Make the graph widget with appropriate scales
+
+		double min_x = x_bounds[0];
+		double max_x = x_bounds[1];
+
+		double min_y = y_bounds[0];
+		double max_y = y_bounds[1];
+
+		PlotPreferences plotPrefs = PlotPreferences.getDefault();
+		boolean xLog = OEDiscreteRange.is_rscale_log (rscale[0]);
+		boolean yLog = OEDiscreteRange.is_rscale_log (rscale[1]);
+
+		Range xRange;
+		if (xLog) {
+			xRange = new Range (min_x * Math.pow(max_x / min_x, -0.03), max_x * Math.pow(max_x / min_x, 0.03));
+		} else {
+			xRange = new Range (min_x - ((max_x - min_x) * 0.03), max_x + ((max_x - min_x) * 0.03));
+		}
+
+		Range yRange;
+		if (yLog) {
+			yRange = new Range (min_y * Math.pow(max_y / min_y, -0.03), max_y * Math.pow(max_y / min_y, 0.03));
+		} else {
+			yRange = new Range (min_y - ((max_y - min_y) * 0.03), max_y + ((max_y - min_y) * 0.03));
+		}
+
+		GraphWidget widget = new GraphWidget (spec, plotPrefs, xLog, yLog, xRange, yRange);
+
+		// Set fonts
+
+		setupGP(widget);
+
+		// Add tab
+
+		pdfGraphsPane.addTab (tab_text, null, widget);
 
 		return;
 	}
