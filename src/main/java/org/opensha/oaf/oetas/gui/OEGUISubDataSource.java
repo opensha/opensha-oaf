@@ -400,6 +400,16 @@ public class OEGUISubDataSource extends OEGUIListener {
 		return useAnalystOptionsParam;
 	}
 
+	// Option to use outer region when fetching from Comcat; default true; check box.
+
+	private BooleanParameter useOuterRegionParam;
+
+	private BooleanParameter init_useOuterRegionParam () throws GUIEDTException {
+		useOuterRegionParam = new BooleanParameter("Show outer region", true);
+		register_param (useOuterRegionParam, "useOuterRegionParam", PARMGRP_DATA_SOURCE_PARAM);
+		return useOuterRegionParam;
+	}
+
 	// Catalog file; edit box containing a string.
 
 	private StringParameter catalogFileParam;
@@ -536,6 +546,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 		init_useMinMagFetchParam();
 		init_useStartEndTimeParam();
 		init_useAnalystOptionsParam();
+		init_useOuterRegionParam();
 		init_catalogFileParam();
 		init_browseCatalogFileButton();
 		init_populateForecastListButton();
@@ -563,7 +574,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		case COMCAT:
 			dataSourceEditParam.setListTitleText ("Comcat");
-			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(8, f_button_row));
+			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(9, f_button_row));
 			dataSourceList.addParameter(get_useStartEndTimeParam (type));
 			dataSourceList.addParameter(get_dataStartTimeParam (type));
 			dataSourceList.addParameter(get_dataEndTimeParam (type));
@@ -572,6 +583,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 			dataSourceList.addParameter(useAnalystOptionsParam);
 			dataSourceList.addParameter(sub_ctl_region.get_regionTypeParam());
 			dataSourceList.addParameter(sub_ctl_region.get_regionEditParam());
+			dataSourceList.addParameter(useOuterRegionParam);
 			break;
 
 		case CATALOG_FILE:
@@ -741,6 +753,10 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		public boolean x_useAnalystOptionsParam;	// parameter value, checked for validity
 
+		// Option to use outer region when fetching from Comcat. [COMCAT]
+
+		public boolean x_useOuterRegionParam;	// parameter value, checked for validity
+
 		// Search region. [COMCAT]
 
 		public OEGUISubRegion.XferRegionView x_region;	// Region parameters
@@ -856,6 +872,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 				x_useMinMagFetchParam = validParam(useMinMagFetchParam);
 				x_useStartEndTimeParam = validParam(get_useStartEndTimeParam (x_dataSourceTypeParam));
 				x_useAnalystOptionsParam = validParam(useAnalystOptionsParam);
+				x_useOuterRegionParam = validParam(useOuterRegionParam);
 				x_region.xfer_get_impl().xfer_load();
 				break;
 

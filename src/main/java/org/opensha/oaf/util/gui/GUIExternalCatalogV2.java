@@ -673,7 +673,28 @@ public class GUIExternalCatalogV2 {
 	// Note: A Pattern is an immutable object that can be used by multiple threads.
 
 	//private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)-(\\d\\d?)-(\\d\\d?)[ \\t]+(\\d\\d?):(\\d\\d?):(\\d\\d?)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]*([a-zA-Z_0-9]*)[ \\t]*[\\n\\r]*");
-	private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)-(\\d\\d?)-(\\d\\d?)[ \\t]+(\\d\\d?):(\\d\\d?):(\\d\\d?)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
+
+	// This second form has better handling of the optional ID field, capture string is null if ID not present.
+
+	//private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)-(\\d\\d?)-(\\d\\d?)[ \\t]+(\\d\\d?):(\\d\\d?):(\\d\\d?)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
+
+	// This third form is permissive on how the date and time are formatted:
+	// - Month, day, hour, minute, and second can be one or two digits (year must be 4 digits).
+	// - Seconds can optionally have a decimal part (which is discarded).
+	// - Dashes and colons can be surrounded by spaces/tabs, or replaced by spaces/tabs.
+	// - Date and time can be optionally separated by "T" (case-insensitive), optionally surrounded by spaces/tabs.
+	// - Time can optionally be followed by "Z" or "UTC" (case-insensitive), optionally preceded by spaces/tabs.
+	// As a consequence, date/time can be specified in ISO-8601 format (example: 2011-12-03T10:15:30Z).
+	// We also change the ordering of fields (put mag after lat/lon/depth) to match the original GUI format (requires no change to regex).
+
+	private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:\\.\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
+
+	// (?:[ \\t]+|[ \\t]*-[ \\t]*)				= spaces/tabs, or dash optionally surrounded by spaces/tabs
+	// (?:[ \\t]+|[ \\t]*:[ \\t]*)				= spaces/tabs, or colon optionally surrounded by spaces/tabs
+	// (?:[ \\t]+|[ \\t]*[tT][ \\t]*)			= spaces/tabs, or "T" (case insensitive) optionally surrounded by spaces/tabs
+	// (?:\\.\\d*)?								= optional decimal part, dot optionally followed by digits
+	// (?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?		= optional "Z" or "UTC" (case insensitive), optionally preceded by spaces/tabs
+
 
 	// Capture groups for the earthquake description.
 
@@ -685,11 +706,11 @@ public class GUIExternalCatalogV2 {
 	private static final int quake_minute_capture_group = 5;
 	private static final int quake_second_capture_group = 6;
 
-	private static final int quake_mag_capture_group = 7;
+	private static final int quake_lat_capture_group = 7;
+	private static final int quake_lon_capture_group = 8;
+	private static final int quake_depth_capture_group = 9;
 
-	private static final int quake_lat_capture_group = 8;
-	private static final int quake_lon_capture_group = 9;
-	private static final int quake_depth_capture_group = 10;
+	private static final int quake_mag_capture_group = 10;
 
 	private static final int quake_id_capture_group = 11;
 
@@ -737,11 +758,11 @@ public class GUIExternalCatalogV2 {
 		String minute = matcher.group (quake_minute_capture_group);
 		String second = matcher.group (quake_second_capture_group);
 
-		String mag = matcher.group (quake_mag_capture_group);
-
 		String lat = matcher.group (quake_lat_capture_group);
 		String lon = matcher.group (quake_lon_capture_group);
 		String depth = matcher.group (quake_depth_capture_group);
+
+		String mag = matcher.group (quake_mag_capture_group);
 
 		String id = matcher.group (quake_id_capture_group);	// might be null
 		if (id == null) {
@@ -788,17 +809,6 @@ public class GUIExternalCatalogV2 {
 			throw new IllegalArgumentException ("GUIExternalCatalogV2.quake_parse_line: Error parsing time for line: " + line, e);
 		}
 
-		// Convert magnitude
-
-		double r_mag;
-		try {
-			r_mag = Double.parseDouble (mag);
-		} catch (NumberFormatException e) {
-			throw new IllegalArgumentException ("GUIExternalCatalogV2.quake_parse_line: Numeric conversion error parsing magnitude for line: " + line, e);
-		} catch (Exception e) {
-			throw new IllegalArgumentException ("GUIExternalCatalogV2.quake_parse_line: Error parsing magnitude for line: " + line, e);
-		}
-
 		// Convert location
 
 		Location hypo;
@@ -808,6 +818,17 @@ public class GUIExternalCatalogV2 {
 			throw new IllegalArgumentException ("GUIExternalCatalogV2.quake_parse_line: Numeric conversion error parsing location for line: " + line, e);
 		} catch (Exception e) {
 			throw new IllegalArgumentException ("GUIExternalCatalogV2.quake_parse_line: Error parsing location for line: " + line, e);
+		}
+
+		// Convert magnitude
+
+		double r_mag;
+		try {
+			r_mag = Double.parseDouble (mag);
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.quake_parse_line: Numeric conversion error parsing magnitude for line: " + line, e);
+		} catch (Exception e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.quake_parse_line: Error parsing magnitude for line: " + line, e);
 		}
 
 		// Make the result
@@ -825,15 +846,13 @@ public class GUIExternalCatalogV2 {
 
 	// Format a line containing an earthquake description.
 	// Line format, and number of columns:
-	//   date   time   mag   lat   lon   depth   id
-	//    10  1  8   2  6  2  9  2  10 2   8   2 1+
+	//   date   time   lat   lon   depth   mag   id
+	//    10  1  8   2  9  2  10 2   8   2  6  2 1+
 
 	public static String quake_format_line (ObsEqkRupture rup) {
 		StringBuilder result = new StringBuilder();
 		Location hypo = rup.getHypocenterLocation();
 		result.append (SimpleUtils.time_to_string_no_z (rup.getOriginTime()));
-		result.append ("  ");
-		result.append (SimpleUtils.double_to_string_trailz ("%6.3f", SimpleUtils.TRAILZ_PAD_RIGHT, rup.getMag()));
 		result.append ("  ");
 		result.append (SimpleUtils.double_to_string_trailz ("%9.5f", SimpleUtils.TRAILZ_PAD_RIGHT, hypo.getLatitude()));
 		result.append ("  ");
@@ -844,6 +863,8 @@ public class GUIExternalCatalogV2 {
 		result.append (SimpleUtils.double_to_string_trailz ("%10.5f", SimpleUtils.TRAILZ_PAD_RIGHT, lon));
 		result.append ("  ");
 		result.append (SimpleUtils.double_to_string_trailz ("%8.3f", SimpleUtils.TRAILZ_PAD_RIGHT, hypo.getDepth()));
+		result.append ("  ");
+		result.append (SimpleUtils.double_to_string_trailz ("%6.3f", SimpleUtils.TRAILZ_PAD_RIGHT, rup.getMag()));
 		String id = rup.getEventId();
 		if (id != null) {
 			id = id.trim();
@@ -858,8 +879,8 @@ public class GUIExternalCatalogV2 {
 
 	// Format a comment line containing column headers for earthquake description.
 	// Line format, and number of columns:
-	//   date   time   mag   lat   lon   depth   id
-	//    10  1  8   2  6  2  9  2  10 2   8   2 1+
+	//   date   time   lat   lon   depth   mag   id
+	//    10  1  8   2  9  2  10 2   8   2  6  2 1+
 
 	public static String quake_format_header () {
 		StringBuilder result = new StringBuilder();
@@ -867,13 +888,13 @@ public class GUIExternalCatalogV2 {
 		result.append (" ");
 		result.append ("  Time  ");
 		result.append ("  ");
-		result.append (" Mag  ");
-		result.append ("  ");
 		result.append ("   Lat   ");
 		result.append ("  ");
 		result.append ("    Lon   ");
 		result.append ("  ");
 		result.append ("  Depth ");
+		result.append ("  ");
+		result.append (" Mag  ");
 		result.append ("  ");
 		result.append ("    ID");
 		return result.toString();

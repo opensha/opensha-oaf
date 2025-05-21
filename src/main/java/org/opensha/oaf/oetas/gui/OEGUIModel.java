@@ -1511,7 +1511,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// If we can make an outer region ...
 
-		if (fetch_fcparams.aftershock_search_region.isCircular() && fetch_fcparams.aftershock_search_region.getCircleRadiusKm() <= 3000.0) {
+		if (xfer.x_dataSource.x_useOuterRegionParam && fetch_fcparams.aftershock_search_region.isCircular() && fetch_fcparams.aftershock_search_region.getCircleRadiusKm() <= 3000.0) {
 
 			// Make the outer region as a larger circle
 
