@@ -76,9 +76,9 @@ import org.opensha.commons.data.comcat.ComcatException;
 // is one line containing the name of the catagory, in this form:
 //   #begin: name
 // Then comes a comment which shows the names of the columes:
-//   #  Date      Time     Mag       Lat         Lon       Depth       ID
+//   #  Date      Time       Lat         Lon       Depth    Mag        ID
 // Then comes a series of earthquakes, one per line.  For example:
-//   2019-07-06 03:19:53   7.1     35.7695   -117.59933     8.0    ci38457511
+//   2019-07-06 03:19:53   35.7695   -117.59933     8.0     7.1    ci38457511
 //
 // When reading the file, any line that begins with # and does not have the
 // form of a symbol definition or category selection is ignored.  completely
@@ -127,6 +127,22 @@ public class GUIExternalCatalogV2 {
 	public static final String SSYM_WRAP_LON = "wrap_lon";
 
 
+	//----- Parsing options -----
+
+
+	// Option to allow legacy mainshock. (Default true)
+
+	private boolean f_allow_legacy_main;
+
+	// Option to re-classify aftershocks, if the file contains one mainshock and no foreshocks. (Default true)
+
+	private boolean f_reclassify_aftershocks;
+
+	// Option to sort all lists of earthquakes in order of increasing time. (Default false)
+
+	private boolean f_sort_all_lists;
+
+
 	//----- Internal variables used while parsing -----
 
 
@@ -137,6 +153,14 @@ public class GUIExternalCatalogV2 {
 	// The current line number, used while parsing (init to 0).
 
 	private int current_line_number;
+
+	// True if the previous line was the legacy mainshock introduction.
+
+	private boolean f_seen_legacy_main_intro;
+
+	// True if we got a mainshock from a legacy mainshock line.
+
+	private boolean f_got_legacy_main;
 
 
 	//----- Internal variables used while building -----
@@ -903,6 +927,186 @@ public class GUIExternalCatalogV2 {
 
 
 
+	//--- Legacy Mainshock
+
+
+
+
+	// Pattern to recognize the comment that introduces a legacy mainshock.
+	// The comment should be "# Main Shock:";
+	// We recognize any comment that begins with "Main" (case-insensitive).
+
+	private static final Pattern legacy_main_intro_pattern = Pattern.compile ("[ \\t]*#[ \\t]*[Mm][Aa][Ii][Nn].*");
+
+	// Pattern to recognize a line containing a legacy mainshock.
+	// The legacy mainshock is given as a comment, on the next line after the introductory comment.
+	// Note: In principle, we only need to recognize the legacy format (only spaces/tabs allowed for date/time separators, no time zone, no event ID).
+	// For convenience, we use quake_line_pattern with a prefixed #, which is more permissive.
+
+	private static final Pattern legacy_main_line_pattern = Pattern.compile ("[ \\t]*#[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:\\.\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
+
+
+	// Parse a line which may contain a legacy mainshock.
+	// Returns the earthquake if parse successful.
+	// Returns null if the line does not have the form of an earthquake.
+	// Throws exception if error.
+
+	public static ObsEqkRupture legacy_main_parse_line (String line) {
+		Matcher matcher = legacy_main_line_pattern.matcher (line);
+		if (!( matcher.matches() )) {
+			//throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Invalid earthquake data format for line: " + line);
+			return null;
+		}
+
+		// Get the parts of the line
+
+		String year = matcher.group (quake_year_capture_group);
+		String month = matcher.group (quake_month_capture_group);
+		String day = matcher.group (quake_day_capture_group);
+
+		String hour = matcher.group (quake_hour_capture_group);
+		String minute = matcher.group (quake_minute_capture_group);
+		String second = matcher.group (quake_second_capture_group);
+
+		String lat = matcher.group (quake_lat_capture_group);
+		String lon = matcher.group (quake_lon_capture_group);
+		String depth = matcher.group (quake_depth_capture_group);
+
+		String mag = matcher.group (quake_mag_capture_group);
+
+		String id = matcher.group (quake_id_capture_group);	// might be null
+		if (id == null) {
+			id = "";
+		}
+
+		// Convert the date and time, allowing single-digit for all except year
+
+		StringBuilder daytime = new StringBuilder();
+		daytime.append (year);
+		daytime.append ("-");
+		if (month.length() == 1) {
+			daytime.append ("0");
+		}
+		daytime.append (month);
+		daytime.append ("-");
+		if (day.length() == 1) {
+			daytime.append ("0");
+		}
+		daytime.append (day);
+		daytime.append ("T");
+		if (hour.length() == 1) {
+			daytime.append ("0");
+		}
+		daytime.append (hour);
+		daytime.append (":");
+		if (minute.length() == 1) {
+			daytime.append ("0");
+		}
+		daytime.append (minute);
+		daytime.append (":");
+		if (second.length() == 1) {
+			daytime.append ("0");
+		}
+		daytime.append (second);
+		daytime.append ("Z");
+
+		long time;
+		try {
+			time = SimpleUtils.string_to_time (daytime.toString());
+		} catch (DateTimeParseException e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Date/time parse error parsing time for line: " + line, e);
+		} catch (Exception e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Error parsing time for line: " + line, e);
+		}
+
+		// Convert location
+
+		Location hypo;
+		try {
+			hypo = new Location(Double.parseDouble (lat), Double.parseDouble (lon), Double.parseDouble (depth));
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Numeric conversion error parsing location for line: " + line, e);
+		} catch (Exception e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Error parsing location for line: " + line, e);
+		}
+
+		// Convert magnitude
+
+		double r_mag;
+		try {
+			r_mag = Double.parseDouble (mag);
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Numeric conversion error parsing magnitude for line: " + line, e);
+		} catch (Exception e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Error parsing magnitude for line: " + line, e);
+		}
+
+		// Make the result
+
+		ObsEqkRupture result;
+		try {
+			result = new ObsEqkRupture (id, time, hypo, r_mag);
+		} catch (Exception e) {
+			throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Error forming earthquake rupture object for line: " + line, e);
+		}
+
+		return result;
+	}
+
+
+	// Format a comment line containing a legacy mainshock description.
+	// Line format, and number of columns:
+	//   date   time   lat   lon   depth   mag   id
+	//    10  1  8   2  9  2  10 2   8   2  6  2 1+
+	// Note: In principle, all separators should be a single tab, and the event ID should not be included.
+
+	public static String legacy_main_format_line (ObsEqkRupture rup) {
+		StringBuilder result = new StringBuilder();
+		Location hypo = rup.getHypocenterLocation();
+		result.append ("# ");
+		result.append (SimpleUtils.time_to_string_no_z (rup.getOriginTime()));
+		result.append ("  ");
+		result.append (SimpleUtils.double_to_string_trailz ("%9.5f", SimpleUtils.TRAILZ_PAD_RIGHT, hypo.getLatitude()));
+		result.append ("  ");
+		double lon = hypo.getLongitude();
+		if (lon > 180.0) {
+			lon -= 360.0;
+		}
+		result.append (SimpleUtils.double_to_string_trailz ("%10.5f", SimpleUtils.TRAILZ_PAD_RIGHT, lon));
+		result.append ("  ");
+		result.append (SimpleUtils.double_to_string_trailz ("%8.3f", SimpleUtils.TRAILZ_PAD_RIGHT, hypo.getDepth()));
+		result.append ("  ");
+		result.append (SimpleUtils.double_to_string_trailz ("%6.3f", SimpleUtils.TRAILZ_PAD_RIGHT, rup.getMag()));
+		String id = rup.getEventId();
+		if (id != null) {
+			id = id.trim();
+			if (id.length() > 0 && is_quake_id_valid (id)) {
+				result.append ("  ");
+				result.append (id);
+			}
+		}
+		return result.toString();
+	}
+
+
+	// Return true if the given line is a comment line containing the legacy mainshock introduction.
+
+	public static boolean is_legacy_main_intro_line (String line) {
+		return legacy_main_intro_pattern.matcher(line).matches();
+	}
+
+
+	// Format a comment line containing the legacy mainshock introduction.
+
+	public static String format_legacy_main_intro_line () {
+		StringBuilder result = new StringBuilder();
+		result.append ("# Main Shock:");
+		return result.toString();
+	}
+
+
+
+
 	//--- Count
 
 
@@ -942,8 +1146,14 @@ public class GUIExternalCatalogV2 {
 		earthquakes.put (EQCAT_AFTERSHOCK, new ObsEqkRupList());
 		earthquakes.put (EQCAT_REGIONAL, new ObsEqkRupList());
 
+		f_allow_legacy_main = true;
+		f_reclassify_aftershocks = true;
+		f_sort_all_lists = false;
+
 		current_category = null;
 		current_line_number = 0;
+		f_seen_legacy_main_intro = false;
+		f_got_legacy_main = false;
 		classification_time = Long.MIN_VALUE;
 		classification_region = null;
 
@@ -957,6 +1167,39 @@ public class GUIExternalCatalogV2 {
 
 	public GUIExternalCatalogV2 () {
 		clear();
+	}
+
+
+
+
+	// Set the option to allow legacy mainshock.
+	// Return this object.
+
+	public GUIExternalCatalogV2 set_allow_legacy_main (boolean the_f_allow_legacy_main) {
+		this.f_allow_legacy_main = the_f_allow_legacy_main;
+		return this;
+	}
+
+
+
+
+	// Set the option to re-classify aftershocks.
+	// Return this object.
+
+	public GUIExternalCatalogV2 set_reclassify_aftershocks (boolean the_f_reclassify_aftershocks) {
+		this.f_reclassify_aftershocks = the_f_reclassify_aftershocks;
+		return this;
+	}
+
+
+
+
+	// Set the option to allow legacy mainshock.
+	// Return this object.
+
+	public GUIExternalCatalogV2 set_sort_all_lists (boolean the_f_sort_all_lists) {
+		this.f_sort_all_lists = the_f_sort_all_lists;
+		return this;
 	}
 
 
@@ -1329,6 +1572,39 @@ public class GUIExternalCatalogV2 {
 
 		++current_line_number;
 
+		// Handle legacy mainshock, if it is allowed and no category has been Set
+
+		if (f_allow_legacy_main && current_category == null) {
+
+			try {
+
+				// Check for legacy mainshock introduction
+
+				boolean is_legacy_main_intro = is_legacy_main_intro_line (line);
+				if (is_legacy_main_intro) {
+					f_seen_legacy_main_intro = true;
+					return;
+				}
+
+				// Check for legacy mainshock, if so then add to mainshock category and set aftershock as the current category
+
+				if (f_seen_legacy_main_intro) {
+					f_seen_legacy_main_intro = false;
+
+					ObsEqkRupture rup = legacy_main_parse_line (line);
+					if (rup != null) {
+						add_quake (EQCAT_MAINSHOCK, rup);
+						current_category = EQCAT_AFTERSHOCK;
+						f_got_legacy_main = true;
+						return;
+					}
+				}
+
+			} catch (Exception e) {
+				throw new IllegalArgumentException ("GUIExternalCatalogV2.parse_line: Error on line " + current_line_number + ": failed to parse comment line", e);
+			}
+		}
+
 		// Handle earthquake
 
 		try {
@@ -1382,6 +1658,60 @@ public class GUIExternalCatalogV2 {
 		// Cannot recognize the line
 			
 		throw new IllegalArgumentException ("GUIExternalCatalogV2.parse_line: Error on line " + current_line_number + ": Unknown line format: line = " + line);
+	}
+
+
+
+
+	// Finish parsing after all lines have been parsed.
+
+	public final void finish_parse () {
+
+		// If we want to reclassify aftershocks ...
+
+		if (f_reclassify_aftershocks) {
+
+			// Get the lists
+
+			ObsEqkRupList mainshock_list = earthquakes.get (EQCAT_MAINSHOCK);
+			ObsEqkRupList foreshock_list = earthquakes.get (EQCAT_FORESHOCK);
+			ObsEqkRupList aftershock_list = earthquakes.get (EQCAT_AFTERSHOCK);
+
+			// Reclassify if there is one mainshock, no foreshocks, and at least one aftershock
+
+			if (mainshock_list.size() == 1 && foreshock_list.size() == 0 && aftershock_list.size() > 0) {
+
+				// Get the mainshock time
+
+				long mainshock_time = mainshock_list.get(0).getOriginTime();
+
+				// Copy the aftershock list then clear it
+
+				ArrayList<ObsEqkRupture> rup_list = new ArrayList<ObsEqkRupture> (aftershock_list);
+				aftershock_list.clear();
+
+				// Scan the rupture list and classify (by time only)
+
+				for (ObsEqkRupture rup : rup_list) {
+					if (rup.getOriginTime() < mainshock_time) {
+						foreshock_list.add (rup);
+					} else {
+						aftershock_list.add (rup);
+					}
+				}
+			}
+		}
+
+		// If we want to sort all lists ...
+
+		if (f_sort_all_lists) {
+
+			// Sort the lists
+
+			sort_all_earthquakes();
+		}
+
+		return;
 	}
 
 
@@ -1568,6 +1898,13 @@ public class GUIExternalCatalogV2 {
 
 		// Any final steps would be done here
 	
+		try {
+			finish_parse();
+		}
+		catch (Exception e) {
+			throw new RuntimeException ("GUIExternalCatalogV2.read_from_file: Parsing error reading catalog file: " + the_file.getPath(), e);
+		}
+
 		return;
 	}
 
@@ -1605,7 +1942,14 @@ public class GUIExternalCatalogV2 {
 		}
 
 		// Any final steps would be done here
-	
+
+		try {
+			finish_parse();
+		}
+		catch (Exception e) {
+			throw new RuntimeException ("GUIExternalCatalogV2.read_from_string: Parsing error reading catalog file from string.", e);
+		}
+
 		return;
 	}
 
@@ -1639,6 +1983,13 @@ public class GUIExternalCatalogV2 {
 
 		// Any final steps would be done here
 	
+		try {
+			finish_parse();
+		}
+		catch (Exception e) {
+			throw new RuntimeException ("GUIExternalCatalogV2.read_from_supplier: Error reading catalog file", e);
+		}
+
 		return;
 	}
 
