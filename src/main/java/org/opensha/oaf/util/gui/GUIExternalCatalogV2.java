@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.LinkedHashSet;
+import java.util.Collection;
 import java.util.TimeZone;
 import java.util.Date;
 import java.util.NoSuchElementException;
@@ -134,7 +135,7 @@ public class GUIExternalCatalogV2 {
 
 	private boolean f_allow_legacy_main;
 
-	// Option to re-classify aftershocks, if the file contains one mainshock and no foreshocks. (Default true)
+	// Option to re-classify aftershocks, if the file contains one mainshock and no foreshocks. (Default false)
 
 	private boolean f_reclassify_aftershocks;
 
@@ -415,11 +416,7 @@ public class GUIExternalCatalogV2 {
 	public final ObsEqkRupList get_filtered_joined_rup_list (boolean f_sort, Predicate<ObsEqkRupture> filter, String... categories) {
 		ObsEqkRupList rups = new ObsEqkRupList();
 		for (String category : categories) {
-			for (ObsEqkRupture rup : get_rup_list (category)) {
-				if (filter.test (rup)) {
-					rups.add (rup);
-				}
-			}
+			filter_earthquakes (filter, get_rup_list (category), rups);
 		}
 		if (f_sort) {
 			sort_aftershocks (rups);
@@ -1147,7 +1144,7 @@ public class GUIExternalCatalogV2 {
 		earthquakes.put (EQCAT_REGIONAL, new ObsEqkRupList());
 
 		f_allow_legacy_main = true;
-		f_reclassify_aftershocks = true;
+		f_reclassify_aftershocks = false;
 		f_sort_all_lists = false;
 
 		current_category = null;
@@ -1230,6 +1227,17 @@ public class GUIExternalCatalogV2 {
 	public final void symdef_add (NamedValue<String> named_value) {
 		symdef_add (named_value.get_name(), named_value.get_value());
 		return;
+	}
+
+
+	// Remove a symbol definition.
+	// Returns the current value of the symbol, or null if the symbol does not currently exist.
+	// Note: It is not an error to remove a symbol which does not currently exist.
+	// Note: To change the value of a symbol which currently exists, you must first
+	// remove the existing definition and then add the new definition.
+
+	public final String symdef_remove (String name) {
+		return symbols.remove (name);
 	}
 
 
@@ -1840,6 +1848,108 @@ public class GUIExternalCatalogV2 {
 			result.add (copy_wrap_rup (rup, wrapLon));
 		}
 		return result;
+	}
+
+
+
+
+	// Filter a list of earthquakes.
+	// Each earthquake in the source that passes the filter is added to the destination.
+
+	public static void filter_earthquakes (Predicate<ObsEqkRupture> filter, Collection<ObsEqkRupture> src, Collection<ObsEqkRupture> dest) {
+		for (ObsEqkRupture rup : src) {
+			if (filter.test (rup)) {
+				dest.add (rup);
+			}
+		}
+		return;
+	}
+
+
+
+
+	// Filter a list of earthquakes.
+	// Clear the source and then re-add all earthquakes that pass the filter.
+
+	public static void filter_earthquakes (Predicate<ObsEqkRupture> filter, Collection<ObsEqkRupture> src) {
+		ArrayList<ObsEqkRupture> x = new ArrayList<ObsEqkRupture>(src);
+		src.clear();
+		filter_earthquakes (filter, x, src);
+		return;
+	}
+
+
+
+
+	// Filter each category of earthquakes, except the mainshock.
+
+	public final void filter_all_earthquakes_except_main (final Predicate<ObsEqkRupture> filter) {
+		earthquakes.forEach ((String category, ObsEqkRupList rups) -> {
+			if (!( category.equals (EQCAT_MAINSHOCK) )) {
+				filter_earthquakes (filter, rups);
+			}
+		});
+		return;
+	}
+
+
+
+
+	// Reclassify earthquakes in the EQCAT_FORESHOCK, EQCAT_AFTERSHOCK, and EQCAT_REGIONAL categories.
+	// There must be exactly one mainshock in the file.
+	// If region is null, then there are no regional earthquakes.
+	// If filter is provided and non-null, then the foreshocks, aftershocks, and regional earthquakes are filtered.
+	// The resulting lists of foreshocks, aftershocks, and regional earthquakes are sorted.
+
+	public final void reclassify_earthquakes (SphRegion region) {
+		reclassify_earthquakes (region, null);
+		return;
+	}
+
+	public final void reclassify_earthquakes (SphRegion region, Predicate<ObsEqkRupture> filter) {
+
+		// Get the mainshock, exception if we don't have it
+
+		ObsEqkRupture mainshock = get_mainshock();
+		
+		// Get all earthquakes to reclassify, and clear the existing lists
+
+		ObsEqkRupList foreshock_list = earthquakes.get (EQCAT_FORESHOCK);
+		ObsEqkRupList aftershock_list = earthquakes.get (EQCAT_AFTERSHOCK);
+		ObsEqkRupList regional_list = earthquakes.get (EQCAT_REGIONAL);
+
+		ArrayList<ObsEqkRupture> rups = new ArrayList<ObsEqkRupture>();
+
+		if (filter == null) {
+			rups.addAll (foreshock_list);
+			rups.addAll (aftershock_list);
+			rups.addAll (regional_list);
+		} else {
+			filter_earthquakes (filter, foreshock_list, rups);
+			filter_earthquakes (filter, aftershock_list, rups);
+			filter_earthquakes (filter, regional_list, rups);
+		}
+
+		foreshock_list.clear();
+		aftershock_list.clear();
+		regional_list.clear();
+
+		// Sort the combined list, since the original ordering in the file has been lost
+
+		sort_aftershocks (rups);
+
+		// Set up classification
+
+		classification_time = mainshock.getOriginTime();
+		classification_region = region;
+
+		// Classify and add all the earthquakes in the combined list
+
+		for (ObsEqkRupture rup : rups) {
+			classify_and_add_quake (rup);
+		}
+
+		return;
 	}
 
 

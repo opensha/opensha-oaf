@@ -232,7 +232,28 @@ public class SphRegionMercRectangle extends SphRegion {
 		// Check for valid longitude range in the 0 to +360 domain
 
 		else if (min_lon >= 0.0 && max_lon <= 360.0) {
-			plot_wrap = true;
+
+			// If it's the full 0 to +360 range, change to -180 to +180
+
+			if (min_lon == 0.0 && max_lon == 360.0) {
+				plot_wrap = false;
+				min_lon = -180.0;
+				max_lon = 180.0;
+			}
+
+			// Otherwise, if it can be shifted into the -180 to +180 domain, do so
+
+			else if (min_lon >= 180.0) {
+				plot_wrap = false;
+				min_lon -= 360.0;
+				max_lon -= 360.0;
+			}
+
+			// Otherwise, use the 0 to +360 domain
+
+			else {
+				plot_wrap = true;
+			}
 		}
 
 		else {

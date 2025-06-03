@@ -390,14 +390,37 @@ public class OEGUISubDataSource extends OEGUIListener {
 		return result;
 	}
 
-	// Option to use analyst options when fetching from Comcat; default true; check box.
+	// Option to use analyst options when fetching from Comcat or catalog; default true (Comcat), false (catalog); check box.
 
-	private BooleanParameter useAnalystOptionsParam;
+	private BooleanParameter useAnalystOptionsParam_comcat;
+	private BooleanParameter useAnalystOptionsParam_catalog;
 
-	private BooleanParameter init_useAnalystOptionsParam () throws GUIEDTException {
-		useAnalystOptionsParam = new BooleanParameter("Use analyst options", true);
-		register_param (useAnalystOptionsParam, "useAnalystOptionsParam", PARMGRP_DATA_SOURCE_PARAM);
-		return useAnalystOptionsParam;
+	private void init_useAnalystOptionsParam () throws GUIEDTException {
+
+		useAnalystOptionsParam_comcat = new BooleanParameter("Use analyst options", true);
+		register_param (useAnalystOptionsParam_comcat, "useAnalystOptionsParam_comcat", PARMGRP_DATA_SOURCE_PARAM);
+
+		useAnalystOptionsParam_catalog = new BooleanParameter("Use analyst options", false);
+		register_param (useAnalystOptionsParam_catalog, "useAnalystOptionsParam_catalog", PARMGRP_DATA_SOURCE_PARAM);
+
+		return;
+	}
+
+	private BooleanParameter get_useAnalystOptionsParam (DataSource type) {
+		BooleanParameter result;
+		switch (type) {
+		case COMCAT:             result = useAnalystOptionsParam_comcat;   break;
+		case CATALOG_FILE:       result = useAnalystOptionsParam_catalog;  break;
+
+		case PUBLISHED_FORECAST:
+		case RJ_SIMULATION:
+		case ETAS_SIMULATION:
+			throw new IllegalStateException("get_useAnalystOptionsParam: Invalid data source type: " + type);
+
+		default:
+			throw new IllegalStateException("Unknown data source type: " + type);
+		}
+		return result;
 	}
 
 	// Option to use outer region when fetching from Comcat; default true; check box.
@@ -431,6 +454,52 @@ public class OEGUISubDataSource extends OEGUIListener {
 		browseCatalogFileButton.setInfo("Browse for a catalog file");
 		register_param (browseCatalogFileButton, "browseCatalogFileButton", PARMGRP_CATALOG_FILE_BROWSE);
 		return browseCatalogFileButton;
+	}
+
+	// Option to use Comcat to get mainshock info when loading a catalog; default false; check box.
+
+	private BooleanParameter useComcatForMainshockParam;
+
+	private void init_useComcatForMainshockParam () throws GUIEDTException {
+		useComcatForMainshockParam = new BooleanParameter("Call Comcat for mainshock", false);
+		register_param (useComcatForMainshockParam, "useComcatForMainshockParam", PARMGRP_DATA_ENABLE_PARAM);
+		return;
+	}
+
+	// Option to set aftershock region when loading a catalog; default false; check box.
+
+	private BooleanParameter useRegionForLoadParam;
+
+	private void init_useRegionForLoadParam () throws GUIEDTException {
+		useRegionForLoadParam = new BooleanParameter("Set aftershock region", false);
+		register_param (useRegionForLoadParam, "useRegionForLoadParam", PARMGRP_DATA_ENABLE_PARAM);
+		return;
+	}
+
+	// Aftershock region when loading a catalog; three edit boxes containing radius, latitude, longitude.
+
+	private DoubleParameter aftershockRegionParam_radius;
+	private DoubleParameter aftershockRegionParam_latitude;
+	private DoubleParameter aftershockRegionParam_longitude;
+
+	private void init_aftershockRegionParam () throws GUIEDTException {
+
+		aftershockRegionParam_radius = new DoubleParameter("Region Radius", 1d, 5000d, Double.valueOf(10d));
+		aftershockRegionParam_radius.setUnits("Km");
+		aftershockRegionParam_radius.setInfo("Radius of the aftershock region");
+		register_param (aftershockRegionParam_radius, "aftershockRegionParam_radius", PARMGRP_DATA_SOURCE_PARAM);
+
+		aftershockRegionParam_latitude = new DoubleParameter("Region Latitude", -90d, 90d, Double.valueOf(0d));
+		aftershockRegionParam_latitude.setUnits("Deg");
+		aftershockRegionParam_latitude.setInfo("Latitude of the center of the aftershock region");
+		register_param (aftershockRegionParam_latitude, "aftershockRegionParam_latitude", PARMGRP_DATA_SOURCE_PARAM);
+
+		aftershockRegionParam_longitude = new DoubleParameter("Region Longitude", -180d, 180d, Double.valueOf(0d));
+		aftershockRegionParam_longitude.setUnits("Deg");
+		aftershockRegionParam_longitude.setInfo("Longitude of the center of the aftershock region");
+		register_param (aftershockRegionParam_longitude, "aftershockRegionParam_longitude", PARMGRP_DATA_SOURCE_PARAM);
+
+		return;
 	}
 
 	// Populate forecast list button.
@@ -549,6 +618,9 @@ public class OEGUISubDataSource extends OEGUIListener {
 		init_useOuterRegionParam();
 		init_catalogFileParam();
 		init_browseCatalogFileButton();
+		init_useComcatForMainshockParam();
+		init_useRegionForLoadParam();
+		init_aftershockRegionParam();
 		init_populateForecastListButton();
 		init_includeSupersededParam();
 		init_forecastListDropdown();
@@ -580,7 +652,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 			dataSourceList.addParameter(get_dataEndTimeParam (type));
 			dataSourceList.addParameter(useMinMagFetchParam);
 			dataSourceList.addParameter(minMagFetchParam);
-			dataSourceList.addParameter(useAnalystOptionsParam);
+			dataSourceList.addParameter(get_useAnalystOptionsParam (type));
 			dataSourceList.addParameter(sub_ctl_region.get_regionTypeParam());
 			dataSourceList.addParameter(sub_ctl_region.get_regionEditParam());
 			dataSourceList.addParameter(useOuterRegionParam);
@@ -588,12 +660,18 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		case CATALOG_FILE:
 			dataSourceEditParam.setListTitleText ("Catalog File");
-			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(5, f_button_row));
+			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(11, f_button_row));
 			dataSourceList.addParameter(catalogFileParam);
 			dataSourceList.addParameter(browseCatalogFileButton);
+			dataSourceList.addParameter(useComcatForMainshockParam);
+			dataSourceList.addParameter(get_useAnalystOptionsParam (type));
 			dataSourceList.addParameter(get_useStartEndTimeParam (type));
 			dataSourceList.addParameter(get_dataStartTimeParam (type));
 			dataSourceList.addParameter(get_dataEndTimeParam (type));
+			dataSourceList.addParameter(useRegionForLoadParam);
+			dataSourceList.addParameter(aftershockRegionParam_radius);
+			dataSourceList.addParameter(aftershockRegionParam_latitude);
+			dataSourceList.addParameter(aftershockRegionParam_longitude);
 			break;
 
 		case PUBLISHED_FORECAST:
@@ -682,6 +760,10 @@ public class OEGUISubDataSource extends OEGUIListener {
 		case CATALOG_FILE:
 			enableParam(get_dataStartTimeParam (type), validParam(get_useStartEndTimeParam (type)));
 			enableParam(get_dataEndTimeParam (type), validParam(get_useStartEndTimeParam (type)));
+			enableParam(get_useAnalystOptionsParam (type), validParam(useComcatForMainshockParam));
+			enableParam(aftershockRegionParam_radius, validParam(useRegionForLoadParam));
+			enableParam(aftershockRegionParam_latitude, validParam(useRegionForLoadParam));
+			enableParam(aftershockRegionParam_longitude, validParam(useRegionForLoadParam));
 			break;
 
 		case PUBLISHED_FORECAST:
@@ -722,7 +804,8 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		public DataSource x_dataSourceTypeParam;	// Data source type
 
-		// Event ID. [COMCAT, PUBLISHED_FORECAST]  (can be modified for any type)
+		// Event ID. [COMCAT, CATALOG_FILE, PUBLISHED_FORECAST]  (can be modified for any type)
+		// For CATALOG_FILE only, can be null if the edit field is empty.
 
 		public String x_eventIDParam;				// parameter value, checked for validity
 		public abstract void modify_eventIDParam (String x);
@@ -749,7 +832,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		public boolean x_useStartEndTimeParam;		// parameter value, checked for validity
 
-		// Option to use analyst options when fetching from Comcat. [COMCAT, CATALOG_FILE (forced false)]
+		// Option to use analyst options when fetching from Comcat. [COMCAT, CATALOG_FILE]
 
 		public boolean x_useAnalystOptionsParam;	// parameter value, checked for validity
 
@@ -764,6 +847,18 @@ public class OEGUISubDataSource extends OEGUIListener {
 		// Catalog file. [CATALOG_FILE]
 
 		public String x_catalogFileParam;			// parameter value, checked for validity
+
+		// Option to use Comcat to get mainshock info when loading a catalog file. [CATALOG_FILE]
+
+		public boolean x_useComcatForMainshockParam;	// parameter value, checked for validity
+
+		// Option to set aftershock region when loading a catalog file. [CATALOG_FILE]
+
+		public boolean x_useRegionForLoadParam;	// parameter value, checked for validity
+
+		// Aftershock region when loading a catalog file, or null if none. [CATALOG_FILE]
+
+		public SphRegion x_aftershockRegionParam;	// parameter value, checked for validity
 
 		// OAF product, for retrieving published forecast.  [PUBLISHED_FORECAST]
 		// If null, use the current product for the given event ID.
@@ -871,17 +966,33 @@ public class OEGUISubDataSource extends OEGUIListener {
 				x_minMagFetchParam = validParam(minMagFetchParam);
 				x_useMinMagFetchParam = validParam(useMinMagFetchParam);
 				x_useStartEndTimeParam = validParam(get_useStartEndTimeParam (x_dataSourceTypeParam));
-				x_useAnalystOptionsParam = validParam(useAnalystOptionsParam);
+				x_useAnalystOptionsParam = validParam(get_useAnalystOptionsParam (x_dataSourceTypeParam));
 				x_useOuterRegionParam = validParam(useOuterRegionParam);
 				x_region.xfer_get_impl().xfer_load();
 				break;
 
 			case CATALOG_FILE:
+				if (definedParam(eventIDParam)) {
+					x_eventIDParam = validParam(eventIDParam);
+				} else {
+					x_eventIDParam = null;
+				}
 				x_dataStartTimeParam = validParam(get_dataStartTimeParam (x_dataSourceTypeParam));
 				x_dataEndTimeParam = validParam(get_dataEndTimeParam (x_dataSourceTypeParam));
 				x_useStartEndTimeParam = validParam(get_useStartEndTimeParam (x_dataSourceTypeParam));
-				x_useAnalystOptionsParam = false;
+				x_useAnalystOptionsParam = validParam(get_useAnalystOptionsParam (x_dataSourceTypeParam));
 				x_catalogFileParam = validParam(catalogFileParam);
+				x_useComcatForMainshockParam = validParam(useComcatForMainshockParam);
+				x_useRegionForLoadParam = validParam(useRegionForLoadParam);
+				if (validParam(useRegionForLoadParam)) {
+					double radius = validParam(aftershockRegionParam_radius);
+					double lat = validParam(aftershockRegionParam_latitude);
+					double lon = validParam(aftershockRegionParam_longitude);
+					SphLatLon center = new SphLatLon (lat, lon);
+					x_aftershockRegionParam = SphRegion.makeCircle (center, radius);
+				} else {
+					x_aftershockRegionParam = null;
+				}
 				break;
 
 			case PUBLISHED_FORECAST:
@@ -1347,9 +1458,10 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 			// Call Comcat to get list of forecasts
 
-			GUICalcStep fetchStep_1 = new GUICalcStep("Fetching Forecasts",
-				"Contacting USGS ComCat. This is occasionally slow. "
-				+ "If it fails, trying again often works.", new Runnable() {
+			GUICalcStep fetchStep_1 = new GUICalcStep(
+				"Fetching Forecasts",
+				"Contacting USGS ComCat. This is occasionally slow. If it fails, trying again often works.",
+				new Runnable() {
 						
 				@Override
 				public void run() {

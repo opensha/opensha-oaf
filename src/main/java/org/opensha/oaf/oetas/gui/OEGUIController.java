@@ -1242,9 +1242,10 @@ public class OEGUIController extends OEGUIListener {
 
 				// Call model to fetch from Comcat
 
-				GUICalcStep fetchStep_1 = new GUICalcStep("Fetching Events",
-					"Contacting USGS ComCat Webservice. This is occasionally slow. "
-					+ "If it fails, trying again often works.", new Runnable() {
+				GUICalcStep fetchStep_1 = new GUICalcStep(
+					"Fetching Events",
+					"Contacting USGS ComCat. This is occasionally slow. If it fails, trying again often works.",
+					new Runnable() {
 						
 					@Override
 					public void run() {
@@ -1289,12 +1290,29 @@ public class OEGUIController extends OEGUIListener {
 								LineSupplierFile lsf = new LineSupplierFile (file);
 							){
 								try {
-									gui_model.loadCatalog (xfer_catalog_impl, lsf);
+									gui_model.loadCatalog_1 (xfer_catalog_impl, lsf);
 								} catch (Exception e) {
 									throw new RuntimeException ("Error reading catalog file: " + lsf.error_locus(), e);
 								}
 							}
 
+							gui_model.loadCatalog_2 (xfer_catalog_impl);
+
+						}
+					});
+
+				// Call model to finish the load, possibly including a call to Comcat
+
+				boolean f_comcat = xfer_catalog_impl.x_dataSource.x_useComcatForMainshockParam;
+
+				GUICalcStep loadStep_2 = new GUICalcStep(
+					f_comcat ? "Fetching Mainshock" : "Loading Events",
+					f_comcat ? "Contacting USGS ComCat. This is occasionally slow. If it fails, trying again often works." : "...",
+					new Runnable() {
+						
+						@Override
+						public void run() {
+							gui_model.loadCatalog_3 (xfer_catalog_impl);
 						}
 					});
 
@@ -1312,7 +1330,7 @@ public class OEGUIController extends OEGUIListener {
 
 				// Run in threads
 
-				GUICalcRunnable.run_steps (progress, null, loadStep_1, postFetchPlotStep);
+				GUICalcRunnable.run_steps (progress, null, loadStep_1, loadStep_2, postFetchPlotStep);
 			}
 			break;
 
@@ -1323,9 +1341,10 @@ public class OEGUIController extends OEGUIListener {
 
 				// Call model to fetch from Comcat
 
-				GUICalcStep fetchStep_1 = new GUICalcStep("Fetching Data From Forecast",
-					"Contacting USGS ComCat Webservice. This is occasionally slow. "
-					+ "If it fails, trying again often works.", new Runnable() {
+				GUICalcStep fetchStep_1 = new GUICalcStep(
+					"Fetching Data From Forecast",
+					"Contacting USGS ComCat. This is occasionally slow. If it fails, trying again often works.",
+					new Runnable() {
 						
 					@Override
 					public void run() {

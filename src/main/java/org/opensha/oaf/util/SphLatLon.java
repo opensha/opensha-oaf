@@ -726,6 +726,35 @@ public class SphLatLon implements Marshalable, MarshalableAsLine {
 
 
 
+	// Return true if two points have both coordinates equal to within a tolerance.
+
+	public boolean equals_tol (SphLatLon other, double tol) {
+		return (Math.abs (this.lat - other.lat) <= tol && Math.abs (this.lon - other.lon) <= tol);
+	}
+
+	public static boolean equals_tol (SphLatLon p1, SphLatLon p2, double tol) {
+		return (Math.abs (p1.lat - p2.lat) <= tol && Math.abs (p1.lon - p2.lon) <= tol);
+	}
+
+
+	// Return true if two lists of points have coordinates equal to within a tolerance.
+
+	public static boolean equals_tol (List<SphLatLon> plist1, List<SphLatLon> plist2, double tol) {
+		int n = plist1.size();
+		if (n != plist2.size()) {
+			return false;
+		}
+		for (int j = 0; j < n; ++j) {
+			if (!( equals_tol (plist1.get(j), plist2.get(j), tol) )) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 	// Marshal object.

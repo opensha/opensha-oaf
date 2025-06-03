@@ -281,6 +281,483 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 
 
 
+	//----- Comparison -----
+
+
+	// Possible results of a region comparison.
+	// Note: Regions that touch on the boundary are considered to intersect.
+
+	public static final int RCMP_UNKNOWN			= 0;	// Result unknown
+	public static final int RCMP_EQUAL				= 1;	// Regions are equal
+	public static final int RCMP_DISJOINT			= 2;	// Regions are disjoint
+	public static final int RCMP_SUBSET				= 3;	// This region (#1) is a subset of the other region (#2)
+	public static final int RCMP_CONTAINS			= 4;	// This region (#1) contains the other region (#2)
+	public static final int RCMP_OVERLAP			= 5;	// Regions intersect, but neither contains the other
+	//public static final int RCMP_SUBSET_OR_EQUAL	= 6;	// This region (#1) is a subset of the other region (#2), and they may be equal
+	//public static final int RCMP_CONTAINS_OR_EQUAL	= 7;	// This region (#1) contains the other region (#2), and they may be equal
+	//public static final int RCMP_INTERSECT		= 8;	// Regions intersect, but it is unknown if either contains the other or if they are equal
+
+
+	// Default tolerance for region comparisons.
+
+	public static final double DEF_TOL_RCMP = 0.000005;
+
+
+	// Return true if the result code indicates it is known this region is not a subset of the other region.
+
+	public static boolean is_known_non_subset (int rcmp) {
+		switch (rcmp) {
+		case RCMP_DISJOINT:
+		case RCMP_CONTAINS:
+		case RCMP_OVERLAP:
+			return true;
+		}
+		return false;
+	}
+
+
+	// Compare this region's bounding box to the other region's bounding box.
+	// Returns one of the RCMP_XXXX values.
+	// Note: Bounding box borders are considered to coincide if they agree within a tolerance.
+
+	public int compare_bbox_to (SphRegion other) {
+
+		// Check for the same object
+
+		if (this == other) {
+			return RCMP_EQUAL;
+		}
+
+		// Compare latitude ranges
+
+		int lat_rcmp = compare_coord_ranges_tol (min_lat, max_lat, other.min_lat, other.max_lat);
+
+		if (lat_rcmp == RCMP_DISJOINT) {
+			return RCMP_DISJOINT;
+		}
+
+		// Compare longitude ranges
+
+		int lon_rcmp = compare_lon_ranges (min_lon, max_lon, other.min_lon, other.max_lon);
+
+		if (lon_rcmp == RCMP_DISJOINT) {
+			return RCMP_DISJOINT;
+		}
+
+		// Return the combination
+
+		return combine_rcmp (lat_rcmp, lon_rcmp);
+	}
+
+
+	// Return true if this object's bounding box is disjoint from the other object's bounding box.
+	// Note: Bounding boxes are disjoint if they are separated by at least a tolerance.
+
+	public boolean is_disjoint_bbox (SphRegion other) {
+
+		// Check for the same object
+
+		if (this == other) {
+			return false;
+		}
+
+		// Disjoint if either latitude or longitude range is disjoint
+
+		return (is_disjoint_coord_ranges_tol (min_lat, max_lat, other.min_lat, other.max_lat)
+				|| is_disjoint_lon_ranges (min_lon, max_lon, other.min_lon, other.max_lon));
+	}
+
+
+	// Compare this region to the other region.
+	// Returns one of the RCMP_XXXX values.
+	// Note: Comparisons may use a tolerance to allow for rounding errors.
+	// Note: This function returns a result other than RCMP_UNKNOWN only in cases
+	// where the comparison can be done relatively easily.
+	// Note: The default method uses only the bounding box and the is-rectangle flags.
+
+	public int compare_to (SphRegion other) {
+
+		// Check for the same object
+
+		if (this == other) {
+			return RCMP_EQUAL;
+		}
+
+		// Compare the bounding boxes
+
+		int rcmp = compare_bbox_to (other);
+
+		// Apply the is-rectangle flags
+
+		switch (rcmp) {
+
+		case RCMP_EQUAL:
+			if (this.isRectangular()) {
+				if (!( other.isRectangular() )) {
+					rcmp = RCMP_CONTAINS;
+				}
+			} else {
+				if (other.isRectangular()) {
+					rcmp = RCMP_SUBSET;
+				} else {
+					rcmp = RCMP_UNKNOWN;
+				}
+			}
+			break;
+
+		case RCMP_SUBSET:
+			if (!( other.isRectangular() )) {
+				rcmp = RCMP_UNKNOWN;
+			}
+			break;
+
+		case RCMP_CONTAINS:
+			if (!( this.isRectangular() )) {
+				rcmp = RCMP_UNKNOWN;
+			}
+			break;
+
+		case RCMP_OVERLAP:
+			if (!( this.isRectangular() && other.isRectangular() )) {
+				rcmp = RCMP_UNKNOWN;
+			}
+			break;
+		}
+
+		return rcmp;
+	}
+
+
+	// Compare coordinate ranges.
+	// Parameters:
+	//  min_coord1 = Minimum for coordinate range #1.
+	//  max_coord1 = Maximum for coordinate range #1.
+	//  min_coord2 = Minimum for coordinate range #2.
+	//  max_coord2 = Maximum for coordinate range #2.
+	// Returns an RCMP_XXXX value, for comparison of range #1 to range #2.
+
+	public static int compare_coord_ranges (double min_coord1, double max_coord1, double min_coord2, double max_coord2) {
+
+		// Check for disjoint coordinate ranges
+
+		if (min_coord1 > max_coord2 || max_coord1 < min_coord2) {
+			return RCMP_DISJOINT;
+		}
+
+		// Check for equal ranges
+
+		if (min_coord1 == min_coord2 && max_coord1 == max_coord2) {
+			return RCMP_EQUAL;
+		}
+
+		// Check for one range containing the other
+
+		if (min_coord1 >= min_coord2 && max_coord1 <= max_coord2) {
+			return RCMP_SUBSET;
+		}
+		if (min_coord1 <= min_coord2 && max_coord1 >= max_coord2) {
+			return RCMP_CONTAINS;
+		}
+
+		// Ranges overlap
+		
+		return RCMP_OVERLAP;
+	}
+
+
+	// Compare coordinate ranges, with a small tolerance for equality, when it is known they are not disjoint.
+	// Parameters:
+	//  min_coord1 = Minimum for coordinate range #1.
+	//  max_coord1 = Maximum for coordinate range #1.
+	//  min_coord2 = Minimum for coordinate range #2.
+	//  max_coord2 = Maximum for coordinate range #2.
+	//  tol = Tolerance.
+	// Returns an RCMP_XXXX value, for comparison of range #1 to range #2.
+
+	protected static int compare_coord_ranges_tol_no_disjoint (double min_coord1, double max_coord1, double min_coord2, double max_coord2, final double tol) {
+
+		// Comparison results, with tolerance for equality
+
+		final double diffmin = min_coord1 - min_coord2;
+		int cmpmin = 0;		// 1, 0, or -1 according as min_coord1 is >, ==, or < min_coord2
+		if (diffmin > tol) {
+			cmpmin = 1;
+		} else if (diffmin < -tol) {
+			cmpmin = -1;
+		}
+
+		final double diffmax = max_coord1 - max_coord2;
+		int cmpmax = 0;		// 1, 0, or -1 according as max_coord1 is >, ==, or < max_coord2
+		if (diffmax > tol) {
+			cmpmax = 1;
+		} else if (diffmax < -tol) {
+			cmpmax = -1;
+		}
+
+		// Check for equal ranges
+
+		if (cmpmin == 0 && cmpmax == 0) {
+			return RCMP_EQUAL;
+		}
+
+		// Check for one range containing the other
+
+		if (cmpmin >= 0 && cmpmax <= 0) {
+			return RCMP_SUBSET;
+		}
+		if (cmpmin <= 0 && cmpmax >= 0) {
+			return RCMP_CONTAINS;
+		}
+
+		// Ranges overlap
+		
+		return RCMP_OVERLAP;
+	}
+
+
+	// Compare coordinate ranges, with a small tolerance for equality.
+	// Parameters:
+	//  min_coord1 = Minimum for coordinate range #1.
+	//  max_coord1 = Maximum for coordinate range #1.
+	//  min_coord2 = Minimum for coordinate range #2.
+	//  max_coord2 = Maximum for coordinate range #2.
+	// Returns an RCMP_XXXX value, for comparison of range #1 to range #2.
+
+	public static int compare_coord_ranges_tol (double min_coord1, double max_coord1, double min_coord2, double max_coord2) {
+
+		// Tolerance
+
+		final double tol = DEF_TOL_RCMP;
+
+		// Check for disjoint coordinate ranges, must exceed tolerance to be considered disjoint
+
+		if (min_coord1 - max_coord2 > tol || min_coord2 - max_coord1 > tol) {
+			return RCMP_DISJOINT;
+		}
+
+		// Finish comparison
+
+		return compare_coord_ranges_tol_no_disjoint (min_coord1, max_coord1, min_coord2, max_coord2, tol);
+	}
+
+
+	// Test if coordinate ranges are disjoint, with a small tolerance.
+	// Parameters:
+	//  min_coord1 = Minimum for coordinate range #1.
+	//  max_coord1 = Maximum for coordinate range #1.
+	//  min_coord2 = Minimum for coordinate range #2.
+	//  max_coord2 = Maximum for coordinate range #2.
+	// Returns true if ranges are disjoint.
+
+	public static boolean is_disjoint_coord_ranges_tol (double min_coord1, double max_coord1, double min_coord2, double max_coord2) {
+
+		// Tolerance
+
+		final double tol = DEF_TOL_RCMP;
+
+		// Check for disjoint coordinate ranges, must exceed tolerance to be considered disjoint
+
+		return (min_coord1 - max_coord2 > tol || min_coord2 - max_coord1 > tol);
+	}
+
+
+	// Compare longitude ranges, with a small tolerance.
+	// Parameters:
+	//  min_lon1 = Minimum for longitude range #1.
+	//  max_lon1 = Maximum for longitude range #1.
+	//  min_lon2 = Minimum for longitude range #2.
+	//  max_lon2 = Maximum for longitude range #2.
+	// Returns an RCMP_XXXX value, for comparison of range #1 to range #2.
+	// Each longitude must be between -360 and +360, and must have min < max.
+
+	public static int compare_lon_ranges (double min_lon1, double max_lon1, double min_lon2, double max_lon2) {
+
+		// Tolerance
+
+		final double tol = DEF_TOL_RCMP;
+
+		// Handle cases where one or both ranges spans 360 degrees, allowing tolerance on both ends
+
+		final double full_circ = 360.0 - (2.0 * tol);
+
+		if (max_lon1 - min_lon1 >= full_circ) {
+			if (max_lon2 - min_lon2 >= full_circ) {
+				return RCMP_EQUAL;
+			}
+			return RCMP_CONTAINS;
+		} else {
+			if (max_lon2 - min_lon2 >= full_circ) {
+				return RCMP_SUBSET;
+			}
+		}
+
+		// If range #2 ends after range #1 (or at the same time)
+
+		if (max_lon1 <= max_lon2) {
+
+			// If wrapped (by -360) range #2 is at or after the start of range #1 (allowing tolerance)
+
+			final double max_wrap2 = max_lon2 - 360.0;
+
+			if (min_lon1 - max_wrap2 <= tol) {		// equivalent to: max_lon2 >= min_lon1 + 360.0 - tol
+
+				final double min_wrap2 = min_lon2 - 360.0;
+
+				// Disjoint if range #1 lies in the space between the wrapped and double-wrapped range #2
+
+				if (min_lon1 - (max_lon2 - 720.0) > tol && min_wrap2 - max_lon1 > tol) {
+					return RCMP_DISJOINT;
+				}
+
+				// Compare range #1 to wrapped range #2
+
+				return compare_coord_ranges_tol_no_disjoint (min_lon1, max_lon1, min_wrap2, max_wrap2, tol);
+			}
+		}
+
+		// Otherwise, range #1 ends after range #2
+
+		else {
+
+			// If wrapped (by -360) range #1 is at or after the start of range #2 (allowing tolerance)
+
+			final double max_wrap1 = max_lon1 - 360.0;
+
+			if (min_lon2 - max_wrap1 <= tol) {		// equivalent to: max_lon1 >= min_lon2 + 360.0 - tol
+
+				final double min_wrap1 = min_lon1 - 360.0;
+
+				// Disjoint if range #2 lies in the space between the wrapped and double-wrapped range #1
+
+				if (min_lon2 - (max_lon1 - 720.0) > tol && min_wrap1 - max_lon2 > tol) {
+					return RCMP_DISJOINT;
+				}
+
+				// Compare range #1 to wrapped range #2
+
+				return compare_coord_ranges_tol_no_disjoint (min_wrap1, max_wrap1, min_lon2, max_lon2, tol);
+			}
+		}
+
+		// Disjoint if ranges (without wrapping) don't touch
+
+		if (min_lon1 - max_lon2 > tol || min_lon2 - max_lon1 > tol) {
+			return RCMP_DISJOINT;
+		}
+
+		// Compare range #1 to range #2
+
+		return compare_coord_ranges_tol_no_disjoint (min_lon1, max_lon1, min_lon2, max_lon2, tol);
+	}
+
+
+	// Test if longitude ranges are disjoint, with a small tolerance.
+	// Parameters:
+	//  min_lon1 = Minimum for longitude range #1.
+	//  max_lon1 = Maximum for longitude range #1.
+	//  min_lon2 = Minimum for longitude range #2.
+	//  max_lon2 = Maximum for longitude range #2.
+	// Returns true if ranges are disjoint.
+	// Each longitude must be between -360 and +360, and must have min < max.
+
+	public static boolean is_disjoint_lon_ranges (double min_lon1, double max_lon1, double min_lon2, double max_lon2) {
+
+		// Tolerance
+
+		final double tol = DEF_TOL_RCMP;
+
+		// Handle cases where one or both ranges spans 360 degrees
+
+		final double full_circ = 360.0 - (2.0 * tol);
+
+		if (max_lon1 - min_lon1 >= full_circ || max_lon2 - min_lon2 >= full_circ) {
+			return false;
+		}
+
+		// If range #2 ends after range #1 (or at the same time)
+
+		if (max_lon1 <= max_lon2) {
+
+			// If wrapped (by -360) range #2 is at or after the start of range #1 (allowing tolerance)
+
+			final double max_wrap2 = max_lon2 - 360.0;
+
+			if (min_lon1 - max_wrap2 <= tol) {		// equivalent to: max_lon2 >= min_lon1 + 360.0 - tol
+
+				final double min_wrap2 = min_lon2 - 360.0;
+
+				// Disjoint if range #1 lies in the space between the wrapped and double-wrapped range #2
+
+				return (min_lon1 - (max_lon2 - 720.0) > tol && min_wrap2 - max_lon1 > tol);
+			}
+		}
+
+		// Otherwise, range #1 ends after range #2
+
+		else {
+
+			// If wrapped (by -360) range #1 is at or after the start of range #2 (allowing tolerance)
+
+			final double max_wrap1 = max_lon1 - 360.0;
+
+			if (min_lon2 - max_wrap1 <= tol) {		// equivalent to: max_lon1 >= min_lon2 + 360.0 - tol
+
+				final double min_wrap1 = min_lon1 - 360.0;
+
+				// Disjoint if range #2 lies in the space between the wrapped and double-wrapped range #1
+
+				return (min_lon2 - (max_lon1 - 720.0) > tol && min_wrap1 - max_lon2 > tol);
+			}
+		}
+
+		// Disjoint if ranges (without wrapping) don't touch
+
+		return (min_lon1 - max_lon2 > tol || min_lon2 - max_lon1 > tol);
+	}
+
+
+	// Combine two range comparisons.
+	// Parameters:
+	//  rcmp1 = Comparison result #1.
+	//  rcmp2 = Comparison result #2.
+	// Returns and RCMP_XXXX values, for a 2D comparison.
+
+	public static int combine_rcmp (int rcmp1, int rcmp2) {
+
+		// If either is unknown, the combined result is unknown
+
+		if (rcmp1 == RCMP_UNKNOWN || rcmp2 == RCMP_UNKNOWN) {
+			return RCMP_UNKNOWN;
+		}
+
+		// If either is disjoint, the combined result is disjoint
+
+		if (rcmp1 == RCMP_DISJOINT || rcmp2 == RCMP_DISJOINT) {
+			return RCMP_DISJOINT;
+		}
+
+		// If either is equal, the result is the other
+
+		if (rcmp1 == RCMP_EQUAL) {
+			return rcmp2;
+		}
+		if (rcmp2 == RCMP_EQUAL) {
+			return rcmp1;
+		}
+
+		// We know both results intersect, if they intersect the same way then return the common value
+
+		if (rcmp1 == rcmp2) {
+			return rcmp1;
+		}
+
+		// Otherwise, they overlap
+
+		return RCMP_OVERLAP;
+	}
+
+
+
 	//----- Construction -----
 
 	/**

@@ -361,6 +361,33 @@ public class ForecastMainshock implements Marshalable {
 		return;
 	}
 
+	// Override time, magnitude, and location with information from the given rupture.
+
+	public void override_time_mag_loc (ObsEqkRupture rup) {
+		mainshock_time = rup.getOriginTime();
+		mainshock_mag = rup.getMag();
+		Location hypo = rup.getHypocenterLocation();
+		mainshock_lat = hypo.getLatitude();
+		mainshock_lon = hypo.getLongitude();
+		mainshock_depth = hypo.getDepth();
+
+		if (mainshock_lon > 180.0) {
+			mainshock_lon -= 360.0;
+		}
+		if (mainshock_lon < -180.0) {
+			mainshock_lon = 180.0;
+		}
+
+		if (mainshock_lat > 90.0) {
+			mainshock_lat = 90.0;
+		}
+		else if (mainshock_lat < -90.0) {
+			mainshock_lat = -90.0;
+		}
+
+		return;
+	}
+
 	// Copy from another object.
 
 	public void copy_from (ForecastMainshock other) {

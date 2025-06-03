@@ -174,6 +174,84 @@ public class SphRegionCircle extends SphRegion {
 
 
 
+	//----- Comparison -----
+
+
+	// Compare this region to the other region.
+	// Returns one of the RCMP_XXXX values.
+	// Note: Comparisons may use a tolerance to allow for rounding errors.
+	// Note: This function returns a result other than RCMP_UNKNOWN only in cases
+	// where the comparison can be done relatively easily.
+	// Note: The default method uses only the bounding box and the is-rectangle flags.
+
+	@Override
+	public int compare_to (SphRegion other) {
+
+		// If the other region is a circle, do a circle comparison
+
+		if (other instanceof SphRegionCircle) {
+			return compare_to_circle ((SphRegionCircle)other);
+		}
+
+		// Otherwise, pass thru
+
+		return super.compare_to (other);
+	}
+
+
+	// Compare this circle to the other circle.
+	// Returns one of the RCMP_XXXX values.
+	// Note: Comparisons may use a tolerance to allow for rounding errors.
+
+	public int compare_to_circle (SphRegionCircle other) {
+
+		// Check for the same object
+
+		if (this == other) {
+			return RCMP_EQUAL;
+		}
+
+		// Tolerance
+
+		final double tol = DEF_TOL_RCMP;
+
+		// Tolerance for radius, in km
+
+		final double tol_km = tol * 100.0;
+
+		// Get the distance between the circle centers, in km
+
+		final double dist_km = SphLatLon.horzDistance(center, other.center);
+
+		// Check for disjoint circles
+
+		if (dist_km > radius + other.radius + tol_km) {
+			return RCMP_DISJOINT;
+		}
+
+		// Check for equal circles
+
+		if (dist_km <= tol_km && Math.abs (radius - other.radius) <= tol_km) {
+			return RCMP_EQUAL;
+		}
+
+		// Check for one circle containing the other
+
+		if (dist_km + radius <= other.radius + tol_km) {
+			return RCMP_SUBSET;
+		}
+		if (dist_km + other.radius <= radius + tol_km) {
+			return RCMP_CONTAINS;
+		}
+
+		// Circles overlap
+		
+		return RCMP_OVERLAP;
+	}
+
+
+
+
 	//----- Construction -----
 
 	/**

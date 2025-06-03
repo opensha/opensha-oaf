@@ -219,6 +219,67 @@ public class SphRegionMercPolygon extends SphRegion {
 
 
 
+	//----- Comparison -----
+
+
+	// Compare this region to the other region.
+	// Returns one of the RCMP_XXXX values.
+	// Note: Comparisons may use a tolerance to allow for rounding errors.
+	// Note: This function returns a result other than RCMP_UNKNOWN only in cases
+	// where the comparison can be done relatively easily.
+	// Note: The default method uses only the bounding box and the is-rectangle flags.
+
+	@Override
+	public int compare_to (SphRegion other) {
+
+		// If the other region is a mercator polygon, do a polygon comparison
+
+		if (other instanceof SphRegionMercPolygon) {
+			return compare_to_merc_polygon ((SphRegionMercPolygon)other);
+		}
+
+		// Otherwise, pass thru
+
+		return super.compare_to (other);
+	}
+
+
+	// Compare this polygon to the other polygon.
+	// Returns one of the RCMP_XXXX values.
+	// Note: Comparisons may use a tolerance to allow for rounding errors.
+
+	public int compare_to_merc_polygon (SphRegionMercPolygon other) {
+
+		// Check for the same object
+
+		if (this == other) {
+			return RCMP_EQUAL;
+		}
+
+		// Tolerance
+
+		final double tol = DEF_TOL_RCMP;
+
+		// If the list of points is the same to within tolerance, report as equal
+
+		if (SphLatLon.equals_tol (this.vertex_list, other.vertex_list, tol)) {
+			return RCMP_EQUAL;
+		}
+
+		// If the bounding boxes are disjoint, report as disjoint
+
+		if (is_disjoint_bbox (other)) {
+			return RCMP_DISJOINT;
+		}
+
+		// Otherwise we don't know
+
+		return RCMP_UNKNOWN;
+	}
+
+
+
+
 	//----- Construction -----
 
 	/**

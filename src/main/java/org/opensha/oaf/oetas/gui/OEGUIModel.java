@@ -340,17 +340,52 @@ public class OEGUIModel extends OEGUIComponent {
 	}
 
 
-	// The filter to use when extracting events from the catalog file.
-	// Available when model state >= MODSTATE_CATALOG.
-
-	private Predicate<ObsEqkRupture> din_filter;
-
-	public final Predicate<ObsEqkRupture> get_din_filter () {
-		if (!( modstate >= MODSTATE_CATALOG )) {
-			throw new IllegalStateException ("Access to OEGUIModel.din_filter while in state " + cur_modstate_string());
-		}
-		return din_filter;
-	}
+//	// The time range associated with the catalog,in days since the mainshock.
+//	// Available when model state >= MODSTATE_CATALOG.
+//
+//	private double din_start_time;
+//	private double din_end_time;
+//
+//	public final double get_din_start_time () {
+//		if (!( modstate >= MODSTATE_CATALOG )) {
+//			throw new IllegalStateException ("Access to OEGUIModel.din_start_time while in state " + cur_modstate_string());
+//		}
+//		return din_start_time;
+//	}
+//
+//	public final double get_din_end_time () {
+//		if (!( modstate >= MODSTATE_CATALOG )) {
+//			throw new IllegalStateException ("Access to OEGUIModel.din_end_time while in state " + cur_modstate_string());
+//		}
+//		return din_end_time;
+//	}
+//
+//
+//	// The aftershock region associated with the catalog.
+//	// Available when model state >= MODSTATE_CATALOG.
+//
+//	private SphRegion din_aftershock_region;
+//
+//	public final SphRegion get_din_aftershock_region () {
+//		if (!( modstate >= MODSTATE_CATALOG )) {
+//			throw new IllegalStateException ("Access to OEGUIModel.din_aftershock_region while in state " + cur_modstate_string());
+//		}
+//		return din_aftershock_region;
+//	}
+//
+//
+//	// The minimum magnitude associated with the catalog, can be -10.0 (COMCAT_NO_MIN_MAG) if none or unknown.
+//	// Available when model state >= MODSTATE_CATALOG.
+//	// Note: ComcatOAFAccessor uses -10.0 to indicate no minimum magnitude.
+//
+//	private double din_min_mag;
+//
+//	public final double get_din_min_mag () {
+//		if (!( modstate >= MODSTATE_CATALOG )) {
+//			throw new IllegalStateException ("Access to OEGUIModel.din_min_mag while in state " + cur_modstate_string());
+//		}
+//		return din_min_mag;
+//	}
 
 
 	// The mainshock structure.
@@ -368,6 +403,19 @@ public class OEGUIModel extends OEGUIComponent {
 	// The AAFS parameters for the mainshock.
 	// This contains all default parameters for the mainshock, except the search region.
 	// Available when model state >= MODSTATE_CATALOG.
+	//
+	// When loaded from Comcat, contains the forecast parameters for the mainshock location
+	// (excluding search region or forecast lag, see ForecastParameters.fetch_forecast_params()).
+	// If analyst parameters are available (if the checkbox to use analyst parameters is checked,
+	// and the most recent forecast has a ForecastData file that contains analyst parameters),
+	// then the analyst parameters are used in the call to ForecastParameters.fetch_forecast_params().
+	//
+	// When loaded from a catalog file, contains the forecast parameters for the mainshock location
+	// (excluding search region or forecast lag, see ForecastParameters.fetch_forecast_params()).
+	//
+	// When loaded from a ForecastData file, contains the forecast parameters from the file.
+	// (Analyst parameters are not relevant because any analyst parameters in the file were
+	// already used to create the forecast parameters.)
 
 	private ForecastParameters aafs_fcparams;
 
@@ -814,7 +862,6 @@ public class OEGUIModel extends OEGUIComponent {
 
 		if (modstate < MODSTATE_CATALOG) {
 			din_catalog = null;
-			din_filter = null;
 			fcmain = null;
 			aafs_fcparams = null;
 			fetch_fcparams = null;
@@ -901,7 +948,6 @@ public class OEGUIModel extends OEGUIComponent {
 		// No data structures yet
 
 		din_catalog = null;
-		din_filter = null;
 		fcmain = null;
 		aafs_fcparams = null;
 		fetch_fcparams = null;
@@ -1412,16 +1458,16 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Extract sorted aftershock lists from the catalog
 
-		cur_aftershocks = din_catalog.get_filtered_joined_rup_list (true, din_filter,
+		cur_aftershocks = din_catalog.get_joined_rup_list (true,
 			GUIExternalCatalogV2.EQCAT_FORESHOCK, GUIExternalCatalogV2.EQCAT_AFTERSHOCK);
 
-		strict_aftershocks = din_catalog.get_filtered_joined_rup_list (true, din_filter,
+		strict_aftershocks = din_catalog.get_joined_rup_list (true,
 			GUIExternalCatalogV2.EQCAT_AFTERSHOCK);
 
-		strict_foreshocks = din_catalog.get_filtered_joined_rup_list (true, din_filter,
+		strict_foreshocks = din_catalog.get_joined_rup_list (true,
 			GUIExternalCatalogV2.EQCAT_FORESHOCK);
 
-		plot_aftershocks = din_catalog.get_filtered_joined_rup_list (true, din_filter,
+		plot_aftershocks = din_catalog.get_joined_rup_list (true,
 			GUIExternalCatalogV2.EQCAT_FORESHOCK, GUIExternalCatalogV2.EQCAT_AFTERSHOCK, GUIExternalCatalogV2.EQCAT_REGIONAL);
 		
 		System.out.println ("Obtained " + strict_aftershocks.size() + " aftershocks");
@@ -1497,10 +1543,9 @@ public class OEGUIModel extends OEGUIComponent {
 
 		setup_search_region (xfer);
 
-		// Allocate the catalog, and a filter that accepts all
+		// Allocate the catalog
 
 		din_catalog = new GUIExternalCatalogV2();
-		din_filter = new ObsEqkRupFilter();
 
 		// Get the aftershocks
 
@@ -1590,6 +1635,13 @@ public class OEGUIModel extends OEGUIComponent {
 			din_catalog.add_all_quakes (cur_mainshock, my_aftershocks, null);
 		}
 
+		//  // Set catalog info
+		//  
+		//  din_start_time = fetch_fcparams.min_days;
+		//  din_end_time = fetch_fcparams.max_days;
+		//  din_aftershock_region = fetch_fcparams.aftershock_search_region;
+		//  din_min_mag = fetch_fcparams.min_mag;
+
 		// Perform post-fetch actions
 
 		postFetchActions (xfer);
@@ -1605,124 +1657,359 @@ public class OEGUIModel extends OEGUIComponent {
 	//  xfer = Transfer object to read/modify control parameters.
 	//  src = Source to read lines from the file.
 	// This is called by the controller to initiate catalog load.
+	// Part 1 reads the catalog file.
+	// Part 2 performs parameter validation.
+	// Part 3 contacts Comcat for mainshock info (if selected) and completes the load.
 
-	public void loadCatalog (OEGUIController.XferCatalogMod xfer, Supplier<String> src) {
+	public void loadCatalog_1 (OEGUIController.XferCatalogMod xfer, Supplier<String> src) {
 
 		// Will not be fetching from Comcat
 
 		has_fetched_catalog = false;
 
-		// Allocate the catalog, and a filter that accepts all
+		// Allocate the catalog
 
 		din_catalog = new GUIExternalCatalogV2();
-		din_filter = new ObsEqkRupFilter();
 
 		// Load the catalog
 
 		din_catalog.read_from_supplier (src);
 
-		// Get parameters
+		return;
+	}
 
-		SphRegion my_cur_region = null;
+	public void loadCatalog_2 (OEGUIController.XferCatalogMod xfer) {
+
+		// Check parameters
+
 		if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_AFTERSHOCK_REGION)) {
-			my_cur_region = din_catalog.get_symbol_as_region (GUIExternalCatalogV2.SSYM_AFTERSHOCK_REGION);
+			try {
+				SphRegion x = din_catalog.get_symbol_as_region (GUIExternalCatalogV2.SSYM_AFTERSHOCK_REGION);
+			}
+			catch (Exception e) {
+				throw new RuntimeException ("File contains invalid parameter: " + GUIExternalCatalogV2.SSYM_AFTERSHOCK_REGION, e);
+			}
+		} else {
+			if (!( xfer.x_dataSource.x_useRegionForLoadParam )) {
+				throw new RuntimeException ("File does not contain an aftershock search region, and the user did not supply one");
+			}
 		}
 
-		outer_region = null;
 		if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_OUTER_REGION)) {
-			outer_region = din_catalog.get_symbol_as_region (GUIExternalCatalogV2.SSYM_OUTER_REGION);
+			try {
+				SphRegion x = din_catalog.get_symbol_as_region (GUIExternalCatalogV2.SSYM_OUTER_REGION);
+			}
+			catch (Exception e) {
+				throw new RuntimeException ("File contains invalid parameter: " + GUIExternalCatalogV2.SSYM_OUTER_REGION, e);
+			}
 		}
 
-		cur_wrapLon = false;
 		if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_WRAP_LON)) {
-			cur_wrapLon = din_catalog.get_symbol_as_boolean (GUIExternalCatalogV2.SSYM_WRAP_LON);
+			try {
+				boolean x = din_catalog.get_symbol_as_boolean (GUIExternalCatalogV2.SSYM_WRAP_LON);
+			}
+			catch (Exception e) {
+				throw new RuntimeException ("File contains invalid parameter: " + GUIExternalCatalogV2.SSYM_WRAP_LON, e);
+			}
 		}
 
-		double[] time_range = null;
 		if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_TIME_RANGE)) {
-			time_range = din_catalog.get_symbol_as_double_array (GUIExternalCatalogV2.SSYM_TIME_RANGE, 2);
+			try {
+				double[] x = din_catalog.get_symbol_as_double_array (GUIExternalCatalogV2.SSYM_TIME_RANGE, 2);
+			}
+			catch (Exception e) {
+				throw new RuntimeException ("File contains invalid parameter: " + GUIExternalCatalogV2.SSYM_TIME_RANGE, e);
+			}
+		} else {
+			if (!( xfer.x_dataSource.x_useStartEndTimeParam )) {
+				throw new RuntimeException ("File does not contain a time range, and the user did not supply one");
+			}
+		}
+
+		if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_DEPTH_RANGE)) {
+			try {
+				double[] x = din_catalog.get_symbol_as_double_array (GUIExternalCatalogV2.SSYM_DEPTH_RANGE, 2);
+			}
+			catch (Exception e) {
+				throw new RuntimeException ("File contains invalid parameter: " + GUIExternalCatalogV2.SSYM_DEPTH_RANGE, e);
+			}
+		}
+
+		if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_MIN_MAG)) {
+			try {
+				double x = din_catalog.get_symbol_as_double (GUIExternalCatalogV2.SSYM_MIN_MAG);
+			}
+			catch (Exception e) {
+				throw new RuntimeException ("File contains invalid parameter: " + GUIExternalCatalogV2.SSYM_MIN_MAG, e);
+			}
+		}
+
+		// Check mainshock
+
+		int main_count = din_catalog.get_rup_list_size (GUIExternalCatalogV2.EQCAT_MAINSHOCK);
+
+		if (main_count > 1) {
+			throw new RuntimeException ("File contains more than one mainshock");
+		}
+		else if (main_count < 1) {
+			if (xfer.x_dataSource.x_useComcatForMainshockParam) {
+				if (xfer.x_dataSource.x_eventIDParam == null) {
+					throw new RuntimeException ("File does not contain a mainshock, and the user did not supply an event ID to load a mainshock from Comcat");
+				}
+			} else {
+				throw new RuntimeException ("File does not contain a mainshock, and the option to load a mainshock from ComCat was not selected");
+			}
+		}
+		else {
+			if (xfer.x_dataSource.x_useComcatForMainshockParam) {
+				if (xfer.x_dataSource.x_eventIDParam == null) {
+					String id = din_catalog.get_mainshock().getEventId();
+					if (id == null || id.trim().isEmpty()) {
+						throw new RuntimeException ("File does not contain a mainshock event ID, and the user did not supply an event ID to load a mainshock from Comcat");
+					}
+				}
+			}
 		}
 
 		// Display load result
 		
 		System.out.println ("Loaded " + din_catalog.get_total_size() + " earthquakes from file");
 
-		// Store mainshock into our data structures
+		// Install user-supplied region, if any
 
-		cur_mainshock = din_catalog.get_mainshock();
+		if (xfer.x_dataSource.x_useRegionForLoadParam) {
 
-		fcmain = new ForecastMainshock();
-		fcmain.setup_local_mainshock (cur_mainshock);
+			// Compare it to an outer region if available, or an aftershock region if available
+
+			SphRegion compare_region = null;
+			if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_OUTER_REGION)) {
+				compare_region = din_catalog.get_symbol_as_region (GUIExternalCatalogV2.SSYM_OUTER_REGION);
+			}
+			else if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_AFTERSHOCK_REGION)) {
+				compare_region = din_catalog.get_symbol_as_region (GUIExternalCatalogV2.SSYM_AFTERSHOCK_REGION);
+			}
+
+			// The user region
+
+			SphRegion user_region = xfer.x_dataSource.x_aftershockRegionParam;
+
+			// Warn if it is outside the region in the file
+
+			if (compare_region != null) {
+				if (SphRegion.is_known_non_subset (user_region.compare_to (compare_region))) {
+					System.out.println ("WARNING: User-selected region is not a subset of the region in the file");
+				}
+			}
+
+			// Insert region into file, replacing any existing region
+
+			din_catalog.symdef_remove (GUIExternalCatalogV2.SSYM_AFTERSHOCK_REGION);
+			din_catalog.symdef_add_region (GUIExternalCatalogV2.SSYM_AFTERSHOCK_REGION, user_region);
+		}
+
+		// Install user-supplied time range, if any
+
+		if (xfer.x_dataSource.x_useStartEndTimeParam) {
+
+			// Compare it to a time range in the file, if available
+
+			double[] compare_time_range = null;
+			if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_TIME_RANGE)) {
+				compare_time_range = din_catalog.get_symbol_as_double_array (GUIExternalCatalogV2.SSYM_TIME_RANGE, 2);
+			}
+
+			// The user time range
+
+			double the_min_days = xfer.x_dataSource.x_dataStartTimeParam;
+			double the_max_days = xfer.x_dataSource.x_dataEndTimeParam;
+
+			// Warn if it is outside the range in the file
+
+			if (compare_time_range != null) {
+				if (the_min_days < compare_time_range[0] || the_max_days > compare_time_range[1]) {
+					System.out.println ("WARNING: User-selected time range is not a subset of the time range in the file");
+				}
+			}
+
+			// Insert time range into file, replacing any existing time range
+
+			din_catalog.symdef_remove (GUIExternalCatalogV2.SSYM_TIME_RANGE);
+			din_catalog.symdef_add_double_array (GUIExternalCatalogV2.SSYM_TIME_RANGE, the_min_days, the_max_days);
+		}
+
+		return;
+	}
+
+	public void loadCatalog_3 (OEGUIController.XferCatalogMod xfer) {
+
+		// If we want to load mainshock from Comcat ...
+
+		boolean f_used_event_id = false;
+
+		if (xfer.x_dataSource.x_useComcatForMainshockParam) {
+
+			// Get the user-supplied event id
+
+			String query_id = xfer.x_dataSource.x_eventIDParam;
+
+			// If none, use the event id for the mainshock in the file (we already checked it exists)
+
+			if (query_id == null) {
+				query_id = din_catalog.get_mainshock().getEventId();
+			}
+
+			// Otherwise, see if the event id is an alias, and change it if so
+
+			else {
+				String xlatid = GUIEventAlias.query_alias_dict (query_id);
+				if (xlatid != null) {
+					System.out.println("Translating Event ID: " + query_id + " -> " + xlatid);
+					xfer.x_dataSource.modify_eventIDParam(xlatid);
+					query_id = xlatid;
+				}
+
+				f_used_event_id = true;
+			}
+
+			// Fetch the mainshock from Comcat
+
+			fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_poll (query_id);
+			Preconditions.checkState(fcmain.mainshock_avail, "Event not found: %s", query_id);
+
+			// If the file contains a mainshock, use its time, mag, and location in place of Comcat's
+
+			int main_count = din_catalog.get_rup_list_size (GUIExternalCatalogV2.EQCAT_MAINSHOCK);
+			if (main_count == 1) {
+				fcmain.override_time_mag_loc (din_catalog.get_mainshock());
+			}
+
+			// The mainshock
+
+			cur_mainshock = fcmain.get_eqk_rupture();
+		}
+
+		// Otherwise, use mainshock from the file
+
+		else {
+			cur_mainshock = din_catalog.get_mainshock();
+
+			fcmain = new ForecastMainshock();
+			fcmain.setup_local_mainshock (cur_mainshock);
+		}
+
+		// If we didn't use the event ID field, establish name of mainshock
+
+		if (!( f_used_event_id )) {
+			if (cur_mainshock.getEventId() == null || cur_mainshock.getEventId().trim().isEmpty()) {
+				xfer.x_dataSource.modify_eventIDParam ("_catalog_file");
+			} else {
+				xfer.x_dataSource.modify_eventIDParam (cur_mainshock.getEventId().trim());
+			}
+		}
 
 		// Finish setting up the mainshock
 
 		setup_for_mainshock (xfer);
 
-		fetch_fcparams.aftershock_search_region = my_cur_region;
+		// Get parameters and create a filter
 
-		// If we are using user-supplied time range ...
+		ObsEqkRupFilter my_din_filter = new ObsEqkRupFilter();
 
-		if (xfer.x_dataSource.x_useStartEndTimeParam) {
+		// Parameter: aftershock search region, already in the file
 
-			// User-supplied time range
+		SphRegion the_aftershock_search_region = din_catalog.get_symbol_as_region (GUIExternalCatalogV2.SSYM_AFTERSHOCK_REGION);
 
-			double minDays = xfer.x_dataSource.x_dataStartTimeParam;
-			double maxDays = xfer.x_dataSource.x_dataEndTimeParam;
+		// Parameter: outer region
 
-			// If there is a time range in the file ...
-
-			if (time_range != null) {
-
-				// Adjust user start time if necessary to be within range of the File
-
-				if (minDays < time_range[0]) {
-					System.out.println ("WARNING: Start time is before the start of data in the file. Setting min days to: " + time_range[0]);
-					xfer.x_dataSource.modify_dataStartTimeParam(time_range[0]);
-					minDays = xfer.x_dataSource.x_dataStartTimeParam;
-				}
-
-				// Adjust user end time if necessary to be within range of the File
-
-				if (maxDays > time_range[1]) {
-					System.out.println ("WARNING: End time is after the end of data in the file. Setting max days to: " + time_range[1]);
-					xfer.x_dataSource.modify_dataEndTimeParam(time_range[1]);
-					maxDays = xfer.x_dataSource.x_dataEndTimeParam;
-				}
-			}
-
-			// Set filter to accept ruptures within the user-supplied time range
-
-			((ObsEqkRupFilter)din_filter).set_time_range_filter (cur_mainshock, minDays, maxDays);
+		outer_region = null;
+		if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_OUTER_REGION)) {
+			outer_region = din_catalog.get_symbol_as_region (GUIExternalCatalogV2.SSYM_OUTER_REGION);
 		}
 
-		// Otherwise, use the time range in the file ...
+		// If aftershock region was user-supplied, apply it as a filter with no outer region
 
-		else {
+		//  if (xfer.x_dataSource.x_useRegionForLoadParam) {
+		//  	my_din_filter.set_include_region_filter (the_aftershock_search_region);
+		//  	outer_region = null;
+		//  }
 
-			// If there is a time range in the file ...
+		// Parameter: wrap longitude [DEPRECATED]
 
-			if (time_range != null) {
-
-				// Adjust time parameters
-
-				xfer.x_dataSource.modify_dataStartTimeParam(time_range[0]);
-				xfer.x_dataSource.modify_dataEndTimeParam(time_range[1]);
-			}
-
-			// Otherwise, no time range available
-
-			else {
-				throw new IllegalStateException ("No time range is available in the file, and none was supplied by the user");
-			}
+		cur_wrapLon = false;
+		if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_WRAP_LON)) {
+			cur_wrapLon = din_catalog.get_symbol_as_boolean (GUIExternalCatalogV2.SSYM_WRAP_LON);
 		}
 
-		// Establish name of mainshock
+		// Parameter: time range, already in the file
 
-		if (cur_mainshock.getEventId() == null || cur_mainshock.getEventId().trim().isEmpty()) {
-			xfer.x_dataSource.modify_eventIDParam ("__custom");
+		double[] time_range = din_catalog.get_symbol_as_double_array (GUIExternalCatalogV2.SSYM_TIME_RANGE, 2);
+		double the_min_days = time_range[0];
+		double the_max_days = time_range[1];
+			
+		// Set filter to accept ruptures in the time range
+		
+		my_din_filter.set_time_range_filter (cur_mainshock, the_min_days, the_max_days);
+
+		// If time range does not come from the user, write it back to the user
+
+		if (!( xfer.x_dataSource.x_useStartEndTimeParam )) {
+			xfer.x_dataSource.modify_dataStartTimeParam(the_min_days);
+			xfer.x_dataSource.modify_dataEndTimeParam(the_max_days);
+		}
+
+		// Parameter: depth range
+
+		double the_min_depth;
+		double the_max_depth;
+
+		if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_DEPTH_RANGE)) {
+			double[] depth_range = din_catalog.get_symbol_as_double_array (GUIExternalCatalogV2.SSYM_DEPTH_RANGE, 2);
+			the_min_depth = depth_range[0];
+			the_max_depth = depth_range[1];
 		} else {
-			xfer.x_dataSource.modify_eventIDParam (cur_mainshock.getEventId().trim());
+			the_min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+			the_max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
 		}
+
+		// Parameter: minimum magnitude
+
+		double the_min_mag;
+		if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_MIN_MAG)) {
+			the_min_mag = din_catalog.get_symbol_as_double (GUIExternalCatalogV2.SSYM_MIN_MAG);
+
+			// If the catalog supplies a minimum magnitude, add it to the filter
+
+			my_din_filter.set_min_mag_filter (the_min_mag);
+
+		} else {
+			the_min_mag = ComcatOAFAccessor.COMCAT_NO_MIN_MAG;		// -10.0 = no minimum
+		}
+
+		// Parameter: insets
+
+		double the_fit_start_inset = ForecastParameters.DEFAULT_FIT_START_INSET;
+		double the_fit_end_inset = ForecastParameters.DEFAULT_FIT_END_INSET;
+
+		// Save the parameters
+
+		boolean the_aftershock_search_avail = true;
+
+		fetch_fcparams.set_analyst_aftershock_search_params (
+			the_aftershock_search_avail,
+			the_aftershock_search_region,
+			the_min_days,
+			the_max_days,
+			the_min_depth,
+			the_max_depth,
+			the_min_mag,
+			the_fit_start_inset,
+			the_fit_end_inset
+		);
+
+		// Reclassify earthquakes and apply filter
+
+		din_catalog.reclassify_earthquakes (the_aftershock_search_region, my_din_filter);
 
 		// Perform post-fetch actions
 
@@ -1871,10 +2158,9 @@ public class OEGUIModel extends OEGUIComponent {
 
 		setup_for_mainshock (xfer, dlf);
 
-		// Allocate the catalog, and a filter that accepts all
+		// Allocate the catalog
 
 		din_catalog = new GUIExternalCatalogV2();
-		din_filter = new ObsEqkRupFilter();
 
 		// Set symbols in the catalog
 
@@ -1889,6 +2175,13 @@ public class OEGUIModel extends OEGUIComponent {
 			cur_wrapLon,
 			fetch_fcparams.min_mag
 		);
+
+		//  // Set catalog info
+		//  
+		//  din_start_time = fetch_fcparams.min_days;
+		//  din_end_time = fetch_fcparams.max_days;
+		//  din_aftershock_region = fetch_fcparams.aftershock_search_region;
+		//  din_min_mag = fetch_fcparams.min_mag;
 
 		// Get the list of aftershocks and foreshocks
 
