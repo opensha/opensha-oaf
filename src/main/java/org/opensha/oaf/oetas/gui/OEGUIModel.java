@@ -548,19 +548,6 @@ public class OEGUIModel extends OEGUIComponent {
 		return plot_aftershocks;
 	}
 
-	// [DEPRECATED]  TODO: Delete
-	// Wrap-longitude flag, true if longitudes are 0 to +360, false if they are -180 to +180.
-	// Available when model state >= MODSTATE_CATALOG.
-
-	private boolean cur_wrapLon;
-
-	public final boolean get_cur_wrapLon () {
-		if (!( modstate >= MODSTATE_CATALOG )) {
-			throw new IllegalStateException ("Access to OEGUIModel.cur_wrapLon while in state " + cur_modstate_string());
-		}
-		return cur_wrapLon;
-	}
-
 
 	// The sequence-specific model.
 	// Available when model state >= MODSTATE_CATALOG.
@@ -875,7 +862,6 @@ public class OEGUIModel extends OEGUIComponent {
 			strict_foreshocks = null;
 			outer_region = null;
 			plot_aftershocks = null;
-			cur_wrapLon = false;
 			genericModel = null;
 			aftershockMND = null;
 			mnd_mmaxc = 0.0;
@@ -961,7 +947,6 @@ public class OEGUIModel extends OEGUIComponent {
 		strict_foreshocks = null;
 		outer_region = null;
 		plot_aftershocks = null;
-		cur_wrapLon = false;
 		cur_model = null;
 		genericModel = null;
 		bayesianModel = null;
@@ -1551,8 +1536,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
-		//cur_wrapLon = fetch_fcparams.aftershock_search_region.getPlotWrap();	TODO: Delete
-		cur_wrapLon = false;
+		boolean my_wrapLon = false;
 
 		// If we can make an outer region ...
 
@@ -1573,7 +1557,7 @@ public class OEGUIModel extends OEGUIComponent {
 				fetch_fcparams.max_depth,
 				fetch_fcparams.aftershock_search_region,
 				outer_region,
-				cur_wrapLon,
+				my_wrapLon,
 				fetch_fcparams.min_mag
 			);
 
@@ -1586,7 +1570,7 @@ public class OEGUIModel extends OEGUIComponent {
 				fetch_fcparams.min_depth,
 				fetch_fcparams.max_depth,
 				outer_region,
-				cur_wrapLon,
+				my_wrapLon,
 				fetch_fcparams.min_mag
 			);
 
@@ -1613,7 +1597,7 @@ public class OEGUIModel extends OEGUIComponent {
 				fetch_fcparams.max_depth,
 				fetch_fcparams.aftershock_search_region,
 				outer_region,
-				cur_wrapLon,
+				my_wrapLon,
 				fetch_fcparams.min_mag
 			);
 
@@ -1626,7 +1610,7 @@ public class OEGUIModel extends OEGUIComponent {
 				fetch_fcparams.min_depth,
 				fetch_fcparams.max_depth,
 				fetch_fcparams.aftershock_search_region,
-				cur_wrapLon,
+				my_wrapLon,
 				fetch_fcparams.min_mag
 			);
 
@@ -1934,13 +1918,6 @@ public class OEGUIModel extends OEGUIComponent {
 		//  	outer_region = null;
 		//  }
 
-		// Parameter: wrap longitude [DEPRECATED]
-
-		cur_wrapLon = false;
-		if (din_catalog.has_symbol (GUIExternalCatalogV2.SSYM_WRAP_LON)) {
-			cur_wrapLon = din_catalog.get_symbol_as_boolean (GUIExternalCatalogV2.SSYM_WRAP_LON);
-		}
-
 		// Parameter: time range, already in the file
 
 		double[] time_range = din_catalog.get_symbol_as_double_array (GUIExternalCatalogV2.SSYM_TIME_RANGE, 2);
@@ -2147,9 +2124,9 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Store mainshock into our data structures
 
-		cur_wrapLon = false;
+		boolean my_wrapLon = false;
 
-		cur_mainshock = dlf.mainshock.get_eqk_rupture_wrapped (cur_wrapLon);
+		cur_mainshock = dlf.mainshock.get_eqk_rupture();
 
 		fcmain = new ForecastMainshock();
 		fcmain.copy_from (dlf.mainshock);
@@ -2172,7 +2149,7 @@ public class OEGUIModel extends OEGUIComponent {
 			fetch_fcparams.max_depth,
 			fetch_fcparams.aftershock_search_region,
 			null,
-			cur_wrapLon,
+			my_wrapLon,
 			fetch_fcparams.min_mag
 		);
 
@@ -2188,7 +2165,7 @@ public class OEGUIModel extends OEGUIComponent {
 		ObsEqkRupList my_aftershocks = new ObsEqkRupList();
 		int neqk = cat.get_eqk_count();
 		for (int index = 0; index < neqk; ++index) {
-			my_aftershocks.add (cat.get_wrapped (index, "", cur_wrapLon));
+			my_aftershocks.add (cat.get_wrapped (index, "", my_wrapLon));
 		}
 
 		// Add them to the catalog

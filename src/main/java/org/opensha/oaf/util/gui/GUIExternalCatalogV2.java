@@ -1485,9 +1485,11 @@ public class GUIExternalCatalogV2 {
 			symdef_add_region (SSYM_OUTER_REGION, outer_region);
 		}
 
-		// Wrap longitude
+		// Wrap longitude (only for non-default value)
 
-		symdef_add_boolean (SSYM_WRAP_LON, wrapLon);
+		if (wrapLon) {
+			symdef_add_boolean (SSYM_WRAP_LON, wrapLon);
+		}
 
 		return;
 	}
