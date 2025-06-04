@@ -1764,7 +1764,7 @@ public class OEGUIModel extends OEGUIComponent {
 			if (xfer.x_dataSource.x_useComcatForMainshockParam) {
 				if (xfer.x_dataSource.x_eventIDParam == null) {
 					String id = din_catalog.get_mainshock().getEventId();
-					if (id == null || id.trim().isEmpty()) {
+					if (id == null || id.trim().isEmpty() || EventIDGenerator.is_generated_id(id.trim())) {
 						throw new RuntimeException ("File does not contain a mainshock event ID, and the user did not supply an event ID to load a mainshock from Comcat");
 					}
 				}
@@ -1901,7 +1901,7 @@ public class OEGUIModel extends OEGUIComponent {
 		// If we didn't use the event ID field, establish name of mainshock
 
 		if (!( f_used_event_id )) {
-			if (cur_mainshock.getEventId() == null || cur_mainshock.getEventId().trim().isEmpty()) {
+			if (cur_mainshock.getEventId() == null || cur_mainshock.getEventId().trim().isEmpty() || EventIDGenerator.is_generated_id(cur_mainshock.getEventId())) {
 				xfer.x_dataSource.modify_eventIDParam ("_catalog_file");
 			} else {
 				xfer.x_dataSource.modify_eventIDParam (cur_mainshock.getEventId().trim());

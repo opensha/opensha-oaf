@@ -22,6 +22,7 @@ import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.catalog.ObsEqkRupMinTimeComparator;
 import org.opensha.oaf.util.AutoExecutorService;
 import org.opensha.oaf.util.SimpleExecTimer;
+import org.opensha.oaf.util.catalog.EventIDGenerator;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
@@ -307,10 +308,17 @@ public class ForecastResults implements Marshalable {
 	}
 
 	// calc_catalog_results_from_known_as - Calculate catalog results from a known aftershock sequence.
-	// Note: The purpose of this function is to inject simulated aftershock sequences of known
-	// statistical properties, for testing purposes.  The supplied aftershock sequence is
-	// filtered by time and magnitude.  It is not filtered by location or depth, because
-	// simulated sequences are unlikely to contain that information.
+	// Note: This function does not retain the known_as list or any of the ObsEqkRupture objects
+	//  in the list.  It creates a new list of newly-allocated ObsEqkRupture objects.
+	// Note: If any supplied aftershock does not contain a hypocenter, then the hypocenter of
+	//  the mainshock is used for that aftershock.
+	// Note: If any supplied aftershock does not contain an event ID (non-null and non-empty),
+	//  then an event ID is generated and used for that aftershock.
+	// Note: The supplied aftershock sequence is filtered by time and magnitude, according to
+	//  params.min_days, params.max_days, and params.min_mag.  It is not filtered by location or depth.
+	// Note: This function can be used by the GUI to calculate forecasts when the catalog has
+	//  already been fetched from Comcat or another source.
+	// Note: This function can be used to inject simulated aftershock sequences for testing.
 
 	public void calc_catalog_results_from_known_as (ForecastMainshock fcmain,
 		ForecastParameters params, List<ObsEqkRupture> known_as) {
@@ -338,7 +346,7 @@ public class ForecastResults implements Marshalable {
 
 		catalog_comcat_aftershocks = new ObsEqkRupList();
 
-		int event_num = 0;
+		//int event_num = 0;
 
 		for (ObsEqkRupture rup : known_as) {
 
@@ -351,7 +359,7 @@ public class ForecastResults implements Marshalable {
 
 			// Count it
 
-			++event_num;
+			//++event_num;
 
 			// If it passes the filter ...
 
@@ -367,8 +375,9 @@ public class ForecastResults implements Marshalable {
 
 				// If no event id supplied, replace with a generated id
 
-				if (rup_event_id == null) {
-					rup_event_id = "kas_" + Integer.toString(event_num);
+				if (rup_event_id == null || rup_event_id.trim().isEmpty()) {
+					//rup_event_id = "kas_" + Integer.toString(event_num);
+					rup_event_id = EventIDGenerator.generate_id();
 				}
 
 				// Add to our catalog

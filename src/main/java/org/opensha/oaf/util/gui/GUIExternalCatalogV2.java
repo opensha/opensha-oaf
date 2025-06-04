@@ -41,6 +41,8 @@ import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.LineSupplierFile;
 import org.opensha.oaf.util.LineConsumerFile;
 
+import org.opensha.oaf.util.catalog.EventIDGenerator;
+
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.commons.data.comcat.ComcatException;
 
@@ -142,6 +144,10 @@ public class GUIExternalCatalogV2 {
 	// Option to sort all lists of earthquakes in order of increasing time. (Default false)
 
 	private boolean f_sort_all_lists;
+
+	// Option to generate event IDs if they are not supplied in the file.  (Default true)
+
+	private boolean f_generate_event_ids;
 
 
 	//----- Internal variables used while parsing -----
@@ -757,9 +763,10 @@ public class GUIExternalCatalogV2 {
 	// Parse a line which may contain an earthquake.
 	// Returns the earthquake if parse successful.
 	// Returns null if the line does not have the form of an earthquake.
+	// If f_generate_id is true, generate an event ID if none is supplied in the line.
 	// Throws exception if error.
 
-	public static ObsEqkRupture quake_parse_line (String line) {
+	public static ObsEqkRupture quake_parse_line (String line, boolean f_generate_id) {
 		if (!( is_quake_form (line) )) {
 			return null;
 		}
@@ -787,7 +794,11 @@ public class GUIExternalCatalogV2 {
 
 		String id = matcher.group (quake_id_capture_group);	// might be null
 		if (id == null) {
-			id = "";
+			if (f_generate_id) {
+				id = EventIDGenerator.generate_id();
+			} else {
+				id = "";
+			}
 		}
 
 		// Convert the date and time, allowing single-digit for all except year
@@ -889,7 +900,7 @@ public class GUIExternalCatalogV2 {
 		String id = rup.getEventId();
 		if (id != null) {
 			id = id.trim();
-			if (id.length() > 0 && is_quake_id_valid (id)) {
+			if (id.length() > 0 && is_quake_id_valid (id) && (!( EventIDGenerator.is_generated_id(id) ))) {
 				result.append ("  ");
 				result.append (id);
 			}
@@ -946,9 +957,10 @@ public class GUIExternalCatalogV2 {
 	// Parse a line which may contain a legacy mainshock.
 	// Returns the earthquake if parse successful.
 	// Returns null if the line does not have the form of an earthquake.
+	// If f_generate_id is true, generate an event ID if none is supplied in the line.
 	// Throws exception if error.
 
-	public static ObsEqkRupture legacy_main_parse_line (String line) {
+	public static ObsEqkRupture legacy_main_parse_line (String line, boolean f_generate_id) {
 		Matcher matcher = legacy_main_line_pattern.matcher (line);
 		if (!( matcher.matches() )) {
 			//throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Invalid earthquake data format for line: " + line);
@@ -973,7 +985,11 @@ public class GUIExternalCatalogV2 {
 
 		String id = matcher.group (quake_id_capture_group);	// might be null
 		if (id == null) {
-			id = "";
+			if (f_generate_id) {
+				id = EventIDGenerator.generate_id();
+			} else {
+				id = "";
+			}
 		}
 
 		// Convert the date and time, allowing single-digit for all except year
@@ -1077,7 +1093,7 @@ public class GUIExternalCatalogV2 {
 		String id = rup.getEventId();
 		if (id != null) {
 			id = id.trim();
-			if (id.length() > 0 && is_quake_id_valid (id)) {
+			if (id.length() > 0 && is_quake_id_valid (id) && (!( EventIDGenerator.is_generated_id(id) ))) {
 				result.append ("  ");
 				result.append (id);
 			}
@@ -1146,6 +1162,7 @@ public class GUIExternalCatalogV2 {
 		f_allow_legacy_main = true;
 		f_reclassify_aftershocks = false;
 		f_sort_all_lists = false;
+		f_generate_event_ids = true;
 
 		current_category = null;
 		current_line_number = 0;
@@ -1196,6 +1213,17 @@ public class GUIExternalCatalogV2 {
 
 	public GUIExternalCatalogV2 set_sort_all_lists (boolean the_f_sort_all_lists) {
 		this.f_sort_all_lists = the_f_sort_all_lists;
+		return this;
+	}
+
+
+
+
+	// Set the option to generate event IDs if they are not supplied in the file.
+	// Return this object.
+
+	public GUIExternalCatalogV2 set_generate_event_ids (boolean the_f_generate_event_ids) {
+		this.f_generate_event_ids = the_f_generate_event_ids;
 		return this;
 	}
 
@@ -1599,7 +1627,7 @@ public class GUIExternalCatalogV2 {
 				if (f_seen_legacy_main_intro) {
 					f_seen_legacy_main_intro = false;
 
-					ObsEqkRupture rup = legacy_main_parse_line (line);
+					ObsEqkRupture rup = legacy_main_parse_line (line, f_generate_event_ids);
 					if (rup != null) {
 						add_quake (EQCAT_MAINSHOCK, rup);
 						current_category = EQCAT_AFTERSHOCK;
@@ -1616,7 +1644,7 @@ public class GUIExternalCatalogV2 {
 		// Handle earthquake
 
 		try {
-			ObsEqkRupture rup = quake_parse_line (line);
+			ObsEqkRupture rup = quake_parse_line (line, f_generate_event_ids);
 			if (rup != null) {
 				if (current_category == null) {
 					throw new IllegalArgumentException ("GUIExternalCatalogV2.parse_line: Error on line " + current_line_number + ": found earthquake with no category selected");
