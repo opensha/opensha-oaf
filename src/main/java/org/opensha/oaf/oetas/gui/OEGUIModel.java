@@ -109,11 +109,12 @@ import java.io.BufferedWriter;
 
 import org.opensha.oaf.aafs.ForecastMainshock;
 import org.opensha.oaf.aafs.ForecastParameters;
+import org.opensha.oaf.aafs.ForecastResults;
+import org.opensha.oaf.aafs.ForecastData;
 import org.opensha.oaf.aafs.ServerCmd;
 import org.opensha.oaf.aafs.AnalystOptions;
 import org.opensha.oaf.aafs.ActionConfig;
 import org.opensha.oaf.aafs.ServerClock;
-import org.opensha.oaf.aafs.ForecastData;
 
 import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.SimpleUtils;
@@ -340,54 +341,6 @@ public class OEGUIModel extends OEGUIComponent {
 	}
 
 
-//	// The time range associated with the catalog,in days since the mainshock.
-//	// Available when model state >= MODSTATE_CATALOG.
-//
-//	private double din_start_time;
-//	private double din_end_time;
-//
-//	public final double get_din_start_time () {
-//		if (!( modstate >= MODSTATE_CATALOG )) {
-//			throw new IllegalStateException ("Access to OEGUIModel.din_start_time while in state " + cur_modstate_string());
-//		}
-//		return din_start_time;
-//	}
-//
-//	public final double get_din_end_time () {
-//		if (!( modstate >= MODSTATE_CATALOG )) {
-//			throw new IllegalStateException ("Access to OEGUIModel.din_end_time while in state " + cur_modstate_string());
-//		}
-//		return din_end_time;
-//	}
-//
-//
-//	// The aftershock region associated with the catalog.
-//	// Available when model state >= MODSTATE_CATALOG.
-//
-//	private SphRegion din_aftershock_region;
-//
-//	public final SphRegion get_din_aftershock_region () {
-//		if (!( modstate >= MODSTATE_CATALOG )) {
-//			throw new IllegalStateException ("Access to OEGUIModel.din_aftershock_region while in state " + cur_modstate_string());
-//		}
-//		return din_aftershock_region;
-//	}
-//
-//
-//	// The minimum magnitude associated with the catalog, can be -10.0 (COMCAT_NO_MIN_MAG) if none or unknown.
-//	// Available when model state >= MODSTATE_CATALOG.
-//	// Note: ComcatOAFAccessor uses -10.0 to indicate no minimum magnitude.
-//
-//	private double din_min_mag;
-//
-//	public final double get_din_min_mag () {
-//		if (!( modstate >= MODSTATE_CATALOG )) {
-//			throw new IllegalStateException ("Access to OEGUIModel.din_min_mag while in state " + cur_modstate_string());
-//		}
-//		return din_min_mag;
-//	}
-
-
 	// The mainshock structure.
 	// Available when model state >= MODSTATE_CATALOG.
 
@@ -410,8 +363,10 @@ public class OEGUIModel extends OEGUIComponent {
 	// and the most recent forecast has a ForecastData file that contains analyst parameters),
 	// then the analyst parameters are used in the call to ForecastParameters.fetch_forecast_params().
 	//
-	// When loaded from a catalog file, contains the forecast parameters for the mainshock location
-	// (excluding search region or forecast lag, see ForecastParameters.fetch_forecast_params()).
+	// When loaded from a catalog file, the contents are the same as if loaded from Comcat,
+	// except that analyst parameters are available only if the user selected to load mainshock
+	// info from Comcat, and the checkbox to use analyst parameters is checked, and the most
+	// recent forecast has a ForecastData file that contains analyst parameters.
 	//
 	// When loaded from a ForecastData file, contains the forecast parameters from the file.
 	// (Analyst parameters are not relevant because any analyst parameters in the file were
@@ -426,6 +381,23 @@ public class OEGUIModel extends OEGUIComponent {
 
 	// Custom search region, or null if none.
 	// Available when model state >= MODSTATE_CATALOG.
+	// This is used when creating analyst options to send to the server, with custom parameters.
+	// If custom_search_region is not null, then the aftershock search parameters are set to
+	// use this specific region.
+	//
+	// When loaded from Comcat, with the STANDARD region: If analyst parameters are available
+	// and they contain a custom region, then custom_search_region is set to that region;
+	// otherwise custom_search_region is null.
+	//
+	// When loaded from Comcat with another region option: If the region option is CUSTOM_CIRCLE
+	// or CUSTOM_RECTANGLE then custom_search_region is set to that region, otherwise it is null.
+	//
+	// When loaded from a catalog file: custom_search_region is set to the aftershock search
+	// region associated with the file (which may be contained in the file or supplied by the user).
+	//
+	// Whe loaded from a ForecastData file: If analyst parameters are available
+	// and they contain a custom region, then custom_search_region is set to that region;
+	// otherwise custom_search_region is null.
 
 	private SphRegion custom_search_region;
 
@@ -549,18 +521,209 @@ public class OEGUIModel extends OEGUIComponent {
 	}
 
 
-	// The sequence-specific model.
+	// The analyst options for the existing forecast.
+	// Available when model state >= MODSTATE_CATALOG.
+	// Can be null if analyst options were not retrieved.
+
+	private AnalystOptions existing_analyst_opts;
+
+	public final AnalystOptions get_existing_analyst_opts () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.existing_analyst_opts while in state " + cur_modstate_string());
+		}
+		return existing_analyst_opts;
+	}
+
+
+	// The parameters in the analyst options for the existing forecast.
+	// Available when model state >= MODSTATE_CATALOG.
+	// Can be null if analyst options were not retrieved, or if they do not contain custom parameters.
+
+	public final ForecastParameters get_existing_analyst_fcparams () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.existing_analyst_fcparams while in state " + cur_modstate_string());
+		}
+		if (existing_analyst_opts == null) {
+			return null;
+		}
+		return existing_analyst_opts.analyst_params;
+	}
+
+
+	// The parameters used to create the forecast.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	private ForecastParameters forecast_fcparams;
+
+	public final ForecastParameters get_forecast_fcparams () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.forecast_fcparams while in state " + cur_modstate_string());
+		}
+		return forecast_fcparams;
+	}
+
+
+	// The results of the forecast.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	private ForecastResults forecast_fcresults;
+
+	public final ForecastResults get_forecast_fcresults () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.forecast_fcresults while in state " + cur_modstate_string());
+		}
+		return forecast_fcresults;
+	}
+
+
+	// The analyst options for the forecast.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	private AnalystOptions forecast_analyst_opts;
+
+	public final AnalystOptions get_forecast_analyst_opts () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.forecast_analyst_opts while in state " + cur_modstate_string());
+		}
+		return forecast_analyst_opts;
+	}
+
+
+	// The data for the forecast.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	private ForecastData forecast_fcdata;
+
+	public final ForecastData get_forecast_fcdata () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.forecast_fcdata while in state " + cur_modstate_string());
+		}
+		return forecast_fcdata;
+	}
+
+
+	// The RJ sequence-specific model.
 	// Available when model state >= MODSTATE_CATALOG.
 	// It is non-null when state >= MODSTATE_PARAMETERS.
-	
-	private RJ_AftershockModel_SequenceSpecific cur_model = null;
+	// Note: We always generate the sequence-specific model, so it is always non-null when state >= MODSTATE_PARAMETERS.
 
 	public final RJ_AftershockModel_SequenceSpecific get_cur_model () {
 		if (!( modstate >= MODSTATE_CATALOG )) {
 			throw new IllegalStateException ("Access to OEGUIModel.cur_model while in state " + cur_modstate_string());
 		}
-		return cur_model;
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			return null;
+		}
+		if (!( forecast_fcresults.seq_spec_result_avail )) {
+			return null;
+		}
+		return forecast_fcresults.seq_spec_model;
 	}
+
+
+	// The RJ generic model.
+	// Available when model state >= MODSTATE_CATALOG.
+	// It is non-null when state >= MODSTATE_PARAMETERS.
+
+	public final RJ_AftershockModel_Generic get_genericModel () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.genericModel while in state " + cur_modstate_string());
+		}
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			return null;
+		}
+		if (!( forecast_fcresults.generic_result_avail )) {
+			return null;
+		}
+		return forecast_fcresults.generic_model;
+	}
+
+
+	// The RJ Bayesian model.
+	// Available when model state >= MODSTATE_CATALOG.
+	// It may (or may not) be non-null when state >= MODSTATE_PARAMETERS.
+	
+	public final RJ_AftershockModel_Bayesian get_bayesianModel () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.bayesianModel while in state " + cur_modstate_string());
+		}
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			return null;
+		}
+		if (!( forecast_fcresults.bayesian_result_avail )) {
+			return null;
+		}
+		return forecast_fcresults.bayesian_model;
+	}
+
+
+	// The RJ generic JSON.
+	// Available when model state >= MODSTATE_CATALOG.
+	// It may (or may not) be non-null when state >= MODSTATE_PARAMETERS.
+
+	public final String get_genericJSON () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.genericJSON while in state " + cur_modstate_string());
+		}
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			return null;
+		}
+		if (!( forecast_fcresults.generic_result_avail )) {
+			return null;
+		}
+		String s = forecast_fcresults.generic_json;
+		if (s != null && s.trim().isEmpty()) {
+			s = null;
+		}
+		return s;
+	}
+
+
+	// The RJ sequence-specific JSON.
+	// Available when model state >= MODSTATE_CATALOG.
+	// It may (or may not) be non-null when state >= MODSTATE_PARAMETERS.
+
+	public final String get_seqSpecJSON () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.seqSpecJSON while in state " + cur_modstate_string());
+		}
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			return null;
+		}
+		if (!( forecast_fcresults.seq_spec_result_avail )) {
+			return null;
+		}
+		String s = forecast_fcresults.seq_spec_json;
+		if (s != null && s.trim().isEmpty()) {
+			s = null;
+		}
+		return s;
+	}
+
+
+	// The RJ bayesian JSON.
+	// Available when model state >= MODSTATE_CATALOG.
+	// It may (or may not) be non-null when state >= MODSTATE_PARAMETERS.
+
+	public final String get_bayesianJSON () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.bayesianJSON while in state " + cur_modstate_string());
+		}
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			return null;
+		}
+		if (!( forecast_fcresults.bayesian_result_avail )) {
+			return null;
+		}
+		String s = forecast_fcresults.bayesian_json;
+		if (s != null && s.trim().isEmpty()) {
+			s = null;
+		}
+		return s;
+	}
+
+
+
 
 	// The generic parameters for the mainshock.
 	// Available when model state >= MODSTATE_CATALOG.
@@ -570,18 +733,6 @@ public class OEGUIModel extends OEGUIComponent {
 			throw new IllegalStateException ("Access to OEGUIModel.genericParams while in state " + cur_modstate_string());
 		}
 		return aafs_fcparams.generic_params;
-	}
-
-	// The generic model for the mainshock.
-	// Available when model state >= MODSTATE_CATALOG.
-
-	private RJ_AftershockModel_Generic genericModel = null;
-
-	public final RJ_AftershockModel_Generic get_genericModel () {
-		if (!( modstate >= MODSTATE_CATALOG )) {
-			throw new IllegalStateException ("Access to OEGUIModel.genericModel while in state " + cur_modstate_string());
-		}
-		return genericModel;
 	}
 
 	// The magnitude-of-completeness parameters for the mainshock.
@@ -602,19 +753,6 @@ public class OEGUIModel extends OEGUIComponent {
 			throw new IllegalStateException ("Access to OEGUIModel.seqSpecParams while in state " + cur_modstate_string());
 		}
 		return aafs_fcparams.seq_spec_params;
-	}
-
-	// The Bayesian model.
-	// Available when model state >= MODSTATE_CATALOG.
-	// It may (or may not) be non-null when state >= MODSTATE_PARAMETERS.
-	
-	private RJ_AftershockModel_Bayesian bayesianModel = null;
-
-	public final RJ_AftershockModel_Bayesian get_bayesianModel () {
-		if (!( modstate >= MODSTATE_CATALOG )) {
-			throw new IllegalStateException ("Access to OEGUIModel.bayesianModel while in state " + cur_modstate_string());
-		}
-		return bayesianModel;
 	}
 
 	// Magnitude-number distribution of the catalog.
@@ -639,43 +777,6 @@ public class OEGUIModel extends OEGUIComponent {
 			throw new IllegalStateException ("Access to OEGUIModel.mnd_mmaxc while in state " + cur_modstate_string());
 		}
 		return mnd_mmaxc;
-	}
-
-	// The generic forecast.
-	// Available when model state >= MODSTATE_FORECAST.
-
-	private USGS_AftershockForecast genericForecast = null;
-
-	public final USGS_AftershockForecast get_genericForecast () {
-		if (!( modstate >= MODSTATE_FORECAST )) {
-			throw new IllegalStateException ("Access to OEGUIModel.genericForecast while in state " + cur_modstate_string());
-		}
-		return genericForecast;
-	}
-
-	// The sequence-specific forecast.
-	// Available when model state >= MODSTATE_FORECAST.
-
-	private USGS_AftershockForecast seqSpecForecast = null;
-
-	public final USGS_AftershockForecast get_seqSpecForecast () {
-		if (!( modstate >= MODSTATE_FORECAST )) {
-			throw new IllegalStateException ("Access to OEGUIModel.seqSpecForecast while in state " + cur_modstate_string());
-		}
-		return seqSpecForecast;
-	}
-
-	// The bayesian forecast.
-	// Available when model state >= MODSTATE_FORECAST.
-	// Will be null if there is no bayesian model.
-
-	private USGS_AftershockForecast bayesianForecast = null;
-
-	public final USGS_AftershockForecast get_bayesianForecast () {
-		if (!( modstate >= MODSTATE_FORECAST )) {
-			throw new IllegalStateException ("Access to OEGUIModel.bayesianForecast while in state " + cur_modstate_string());
-		}
-		return bayesianForecast;
 	}
 
 
@@ -833,16 +934,15 @@ public class OEGUIModel extends OEGUIComponent {
 		// Structures not valid if we don't have a forecast
 
 		if (modstate < MODSTATE_FORECAST) {
-			genericForecast = null;
-			seqSpecForecast = null;
-			bayesianForecast = null;
 		}
 
 		// Structures not valid if we don't have parameers
 
 		if (modstate < MODSTATE_PARAMETERS) {
-			cur_model = null;
-			bayesianModel = null;
+			forecast_fcparams = null;
+			forecast_fcresults = null;
+			forecast_analyst_opts = null;
+			forecast_fcdata = null;
 		}
 
 		// Structures not valid if we don't have a catalog
@@ -862,7 +962,11 @@ public class OEGUIModel extends OEGUIComponent {
 			strict_foreshocks = null;
 			outer_region = null;
 			plot_aftershocks = null;
-			genericModel = null;
+			existing_analyst_opts = null;
+			forecast_fcparams = null;
+			forecast_fcresults = null;
+			forecast_analyst_opts = null;
+			forecast_fcdata = null;
 			aftershockMND = null;
 			mnd_mmaxc = 0.0;
 		}
@@ -947,15 +1051,13 @@ public class OEGUIModel extends OEGUIComponent {
 		strict_foreshocks = null;
 		outer_region = null;
 		plot_aftershocks = null;
-		cur_model = null;
-		genericModel = null;
-		bayesianModel = null;
+		existing_analyst_opts = null;
+		forecast_fcparams = null;
+		forecast_fcresults = null;
+		forecast_analyst_opts = null;
+		forecast_fcdata = null;
 		aftershockMND = null;
 		mnd_mmaxc = 0.0;
-
-		genericForecast = null;
-		seqSpecForecast = null;
-		bayesianForecast = null;
 
 		// Get info from the configuration
 
@@ -1009,13 +1111,17 @@ public class OEGUIModel extends OEGUIComponent {
 	//    in particular, fetch_fcparams.aftershock_search_region == null.
 	//  - custom_search_region is the current analyst-supplied region, or null if none.
 	//  - analyst_inj_text is the current analyst-supplied text, or an empty string if none.
-	//  - Generic model is computed.
+	//  //- Generic model is computed.
 
 	private void setup_for_mainshock (OEGUIController.XferCatalogMod xfer) {
 
 		// Display mainshock information
 
 		System.out.println (fcmain.toString());
+
+		// Existing analyst options, or null if none
+
+		existing_analyst_opts = null;
 
 		// Analyst-supplied forecast parameters, or null if none
 
@@ -1061,6 +1167,10 @@ public class OEGUIModel extends OEGUIComponent {
 					catch (Exception e) {
 						throw new RuntimeException ("Error: Unable to read download file from Comcat", e);
 					}
+
+					// Save the analyst options
+						
+					existing_analyst_opts = (new AnalystOptions()).copy_from (dlf.analyst);
 
 					// If there are analyst-supplied parameters, save them
 
@@ -1121,7 +1231,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Make the generic RJ model
 
-		genericModel = new RJ_AftershockModel_Generic(fcmain.mainshock_mag, aafs_fcparams.generic_params);
+		//genericModel = new RJ_AftershockModel_Generic(fcmain.mainshock_mag, aafs_fcparams.generic_params);
 
 		// As a courtesy, spit out the decimal days remaining in the origin day
 
@@ -1140,7 +1250,7 @@ public class OEGUIModel extends OEGUIComponent {
 	//    in particular, fetch_fcparams.aftershock_search_region contains the search region.
 	//  - custom_search_region is the analyst-specified search region, or null if none.
 	//  - analyst_inj_text is the effective injectable text from the download file, or empty string if none
-	//  - Generic model is computed.
+	//  //- Generic model is computed.
 	// Note: This function should not be followed by a call to setup_search_region.
 
 	private void setup_for_mainshock (OEGUIController.XferCatalogMod xfer, ForecastData dlf) {
@@ -1170,6 +1280,10 @@ public class OEGUIModel extends OEGUIComponent {
 		fetch_fcparams = new ForecastParameters();
 		fetch_fcparams.copy_from (aafs_fcparams);
 
+		// Save the analyst options
+						
+		existing_analyst_opts = (new AnalystOptions()).copy_from (dlf.analyst);
+
 		// Analyst-specified custom search region, or null if none
 
 		custom_search_region = null;
@@ -1183,10 +1297,10 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Make the generic RJ model
 		// Note: Compare to ForecastResults.rebuild_generic_results, this is how the generic
-		// model is rebuilt when the download file is loades.  (Probably we could just use
-		// the generic model in the download file, if the download file is rebuilts when loaded).
+		// model is rebuilt when the download file is loaded.  (Probably we could just use
+		// the generic model in the download file, if the download file is rebuilt when loaded).
 
-		genericModel = new RJ_AftershockModel_Generic(fcmain.mainshock_mag, aafs_fcparams.generic_params);
+		//genericModel = new RJ_AftershockModel_Generic(fcmain.mainshock_mag, aafs_fcparams.generic_params);
 
 		return;
 	}
@@ -1619,13 +1733,6 @@ public class OEGUIModel extends OEGUIComponent {
 			din_catalog.add_all_quakes (cur_mainshock, my_aftershocks, null);
 		}
 
-		//  // Set catalog info
-		//  
-		//  din_start_time = fetch_fcparams.min_days;
-		//  din_end_time = fetch_fcparams.max_days;
-		//  din_aftershock_region = fetch_fcparams.aftershock_search_region;
-		//  din_min_mag = fetch_fcparams.min_mag;
-
 		// Perform post-fetch actions
 
 		postFetchActions (xfer);
@@ -1984,6 +2091,10 @@ public class OEGUIModel extends OEGUIComponent {
 			the_fit_end_inset
 		);
 
+		// The region from a file is treated as a custom region
+
+		custom_search_region = the_aftershock_search_region;
+
 		// Reclassify earthquakes and apply filter
 
 		din_catalog.reclassify_earthquakes (the_aftershock_search_region, my_din_filter);
@@ -2153,13 +2264,6 @@ public class OEGUIModel extends OEGUIComponent {
 			fetch_fcparams.min_mag
 		);
 
-		//  // Set catalog info
-		//  
-		//  din_start_time = fetch_fcparams.min_days;
-		//  din_end_time = fetch_fcparams.max_days;
-		//  din_aftershock_region = fetch_fcparams.aftershock_search_region;
-		//  din_min_mag = fetch_fcparams.min_mag;
-
 		// Get the list of aftershocks and foreshocks
 
 		ObsEqkRupList my_aftershocks = new ObsEqkRupList();
@@ -2198,7 +2302,26 @@ public class OEGUIModel extends OEGUIComponent {
 
 	public void fitParams (OEGUIController.XferFittingMod xfer) {
 
-		// Get sequence-specific parameters
+		// Allocate parameter structure, initialized to the catalog fetch parameters
+
+		forecast_fcparams = new ForecastParameters();
+		forecast_fcparams.copy_from (fetch_fcparams);
+
+		// Allocate structure to hold results
+
+		forecast_fcresults = new ForecastResults();
+
+		// Allocate analyst options, and the parameters within, initialized to the starting point for analyst parameters
+
+		forecast_analyst_opts = new AnalystOptions();
+		forecast_analyst_opts.analyst_params = new ForecastParameters();
+		forecast_analyst_opts.analyst_params.setup_all_default();
+
+		// Allocate data structure
+
+		forecast_fcdata = new ForecastData();
+
+		// Get RJ sequence-specific parameters
 
 		Range aRange = xfer.x_rjValue.x_aValRangeParam;
 		int aNum = xfer.x_rjValue.x_aValNumParam;
@@ -2209,6 +2332,8 @@ public class OEGUIModel extends OEGUIComponent {
 		Range cRange = xfer.x_rjValue.x_cValRangeParam;
 		int cNum = xfer.x_rjValue.x_cValNumParam;
 		//validateRange(cRange, cNum, "c-value");
+
+		// Get common forecast parameters
 					
 		double mc = xfer.x_commonValue.x_mcParam;
 		//double mc = cat_mcParam;
@@ -2216,9 +2341,9 @@ public class OEGUIModel extends OEGUIComponent {
 		double b = xfer.x_commonValue.x_bParam;
 		//double b = cat_bParam;
 
-		// Save the sequence-specific parameters for possible use in analyst options
+		// Form the RJ sequence-specific parameters, save into both forecast and analyst parameters
 
-		fetch_fcparams.seq_spec_params = new SeqSpecRJ_Parameters (
+		forecast_fcparams.seq_spec_params = new SeqSpecRJ_Parameters (
 			b,
 			aRange.getLowerBound(),
 			aRange.getUpperBound(),
@@ -2229,6 +2354,11 @@ public class OEGUIModel extends OEGUIComponent {
 			cRange.getLowerBound(),
 			cRange.getUpperBound(),
 			cNum
+		);
+
+		forecast_analyst_opts.analyst_params.set_analyst_seq_spec_params (
+			true,										// seq_spec_avail
+			forecast_fcparams.seq_spec_params			// seq_spec_params
 		);
 
 		// Magnitude of completeness info
@@ -2250,12 +2380,6 @@ public class OEGUIModel extends OEGUIComponent {
 			mCat = xfer.x_commonValue.x_mCatParam;
 
 			magCompFn = MagCompFn.makePageOrConstant (f, g, h);
-						
-			cur_model = new RJ_AftershockModel_SequenceSpecific(get_cur_mainshock(), get_cur_aftershocks(), mCat, magCompFn, b,
-					cat_dataStartTimeParam, cat_dataEndTimeParam,
-					aRange.getLowerBound(), aRange.getUpperBound(), aNum,
-					pRange.getLowerBound(), pRange.getUpperBound(), pNum,
-					cRange.getLowerBound(), cRange.getUpperBound(), cNum);
 
 		// Otherwise, time-independent magnitude of completeness
 
@@ -2264,22 +2388,16 @@ public class OEGUIModel extends OEGUIComponent {
 			mCat = mc;
 
 			magCompFn = MagCompFn.makeConstant();
-
-			cur_model = new RJ_AftershockModel_SequenceSpecific(get_cur_mainshock(), get_cur_aftershocks(), mc, b,
-					cat_dataStartTimeParam, cat_dataEndTimeParam,
-					aRange.getLowerBound(), aRange.getUpperBound(), aNum,
-					pRange.getLowerBound(), pRange.getUpperBound(), pNum,
-					cRange.getLowerBound(), cRange.getUpperBound(), cNum);
 		}
 
-		// Save the magnitude-of-completeness parameters for possible use in analyst options
+		// Form magnitude-of-completeness parameters, save into both forecast and analyst parameters
 
 		SearchMagFn magSample = aafs_fcparams.mag_comp_params.get_fcn_magSample();	// the original value
-		SearchRadiusFn radiusSample = fetch_fcparams.mag_comp_params.get_fcn_radiusSample();
+		SearchRadiusFn radiusSample = forecast_fcparams.mag_comp_params.get_fcn_radiusSample();
 		SearchMagFn magCentroid = aafs_fcparams.mag_comp_params.get_fcn_magCentroid();	// the original value
-		SearchRadiusFn radiusCentroid = fetch_fcparams.mag_comp_params.get_fcn_radiusCentroid();
+		SearchRadiusFn radiusCentroid = forecast_fcparams.mag_comp_params.get_fcn_radiusCentroid();
 
-		fetch_fcparams.mag_comp_params = new MagCompPage_Parameters (
+		forecast_fcparams.mag_comp_params = new MagCompPage_Parameters (
 			mCat,
 			magCompFn,
 			magSample.makeForAnalystMagCat (mCat),
@@ -2288,18 +2406,76 @@ public class OEGUIModel extends OEGUIComponent {
 			radiusCentroid
 		);
 
-		// Make the Bayesian model if possible
-					
-		bayesianModel = null;
-		if (genericModel != null) {
-			if (RJ_AftershockModel_Bayesian.areModelsEquivalent(cur_model, genericModel))
-				bayesianModel = new RJ_AftershockModel_Bayesian(cur_model, genericModel);
-			else
-				System.out.println("Could not create Bayesian model as sequence specifc and "
-						+ "generic models are not equivalent");
+		forecast_analyst_opts.analyst_params.set_analyst_mag_comp_params (
+			true,										// mag_comp_avail
+			aafs_fcparams.mag_comp_regime,				// mag_comp_regime
+			forecast_fcparams.mag_comp_params			// mag_comp_params
+		);
+
+		// Adjust the minimum magnitude to the value for forecasting
+		// (GUI often uses a very low min mag for fetching aftershocks, we need to limit the number of aftershocks used)
+
+		double new_min_mag = forecast_fcparams.mag_comp_params.get_magSample (fcmain.mainshock_mag);
+		if (new_min_mag < forecast_fcparams.min_mag) {
+			System.out.println ("WARNING: Minimum magnitude needed for forecast (" + new_min_mag + ") is less than minimum magnitude in catalog (" + forecast_fcparams.min_mag + ")");
+		}
+		forecast_fcparams.min_mag = new_min_mag;
+
+		// Set next scheduled forecast time to unknown
+
+		forecast_fcparams.next_scheduled_lag = 0L;
+
+		// If we are using a custom search region, record that in the analyst parameters
+
+		if (custom_search_region != null) {
+			forecast_analyst_opts.analyst_params.set_analyst_aftershock_search_params (
+				true,										// the_aftershock_search_avail
+				custom_search_region,						// the_aftershock_search_region
+				ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_days
+				ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_days
+				ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_depth
+				ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_depth
+				ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_mag
+				ForecastParameters.SEARCH_PARAM_OMIT,		// the_fit_start_inset
+				ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
+			);
 		}
 
+		// Run the forecast
+		// Note: The aftershocks are filtered by time and magnitude in ForecastResults
+		// TODO: Get injectable text (or maybe injectable text can be added to JSON later, also next forecast time)
+
+		ActionConfig action_config = new ActionConfig();
+		long the_forecast_lag = SimpleUtils.days_to_millis (forecast_fcparams.max_days);
+		long the_result_time = fcmain.mainshock_time + the_forecast_lag;
+		long the_advisory_lag = ForecastResults.forecast_lag_to_advisory_lag (the_forecast_lag, action_config);
+		String the_injectable_text = null;
+		boolean f_seq_spec = true;
+
+		forecast_fcresults.calc_all_from_known_as (
+			the_result_time,
+			the_advisory_lag,
+			the_injectable_text,
+			fcmain,
+			forecast_fcparams,
+			f_seq_spec,
+			cur_aftershocks
+		);
+
+		// Put into data structure
+
+		long creation_time = System.currentTimeMillis();
+
+		forecast_fcdata.set_data (
+			creation_time,
+			fcmain,
+			forecast_fcparams,
+			forecast_fcresults,
+			forecast_analyst_opts
+		);
+
 		// Save the catalog parameters (we should already have these values)
+		// TODO: Delete?
 
 		//cat_dataStartTimeParam = xfer.x_dataSource.x_dataStartTimeParam;
 		//cat_dataEndTimeParam = xfer.x_dataSource.x_dataEndTimeParam;
@@ -2329,12 +2505,6 @@ public class OEGUIModel extends OEGUIComponent {
 		cat_forecastStartTimeParam = xfer.x_fcValue.x_forecastStartTimeParam;
 		cat_forecastEndTimeParam = xfer.x_fcValue.x_forecastEndTimeParam;
 
-		// Compute the aftershock forecasts
-
-		seqSpecForecast = makeForecast (progress, cat_forecastStartTimeParam, cur_model, "Seq. Specific");
-		genericForecast = makeForecast (progress, cat_forecastStartTimeParam, genericModel, "Generic");
-		bayesianForecast = makeForecast (progress, cat_forecastStartTimeParam, bayesianModel, "Bayesian");
-
 		// Remove the model-specific message
 		
 		if (progress != null) {
@@ -2353,57 +2523,57 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
-	// Make the forecast for a model.
-	// Returns null if the model is null.
-
-	private USGS_AftershockForecast makeForecast (GUICalcProgressBar progress, double minDays, RJ_AftershockModel the_model, String name) {
-
-		// Check for null model
-
-		if (the_model == null) {
-			return null;
-		}
-
-		// Start time of forecast is from forecastStartTimeParam
-		
-		Instant eventDate = Instant.ofEpochMilli(get_cur_mainshock().getOriginTime());
-		double startTime = eventDate.toEpochMilli() + minDays*ComcatOAFAccessor.day_millis;
-		Instant startDate = Instant.ofEpochMilli((long)startTime);
-
-		// Begin timer
-
-		Stopwatch watch = Stopwatch.createStarted();
-
-		// Announce we are processing the model
-			
-		if (progress != null) {
-			progress.setIndeterminate(true, "Calculating " + name + "...");
-		}
-
-		// Calculate the forecast for the model
-
-		USGS_AftershockForecast forecast;
-		if (gui_top.get_include_m4()) {
-			double[] min_mags = new double[5];
-			min_mags[0] = 3.0;
-			min_mags[1] = 4.0;
-			min_mags[2] = 5.0;
-			min_mags[3] = 6.0;
-			min_mags[4] = 7.0;
-			forecast = new USGS_AftershockForecast(the_model, gui_model.get_cur_aftershocks(), min_mags, eventDate, startDate);
-		} else {
-			forecast = new USGS_AftershockForecast(the_model, gui_model.get_cur_aftershocks(), eventDate, startDate);
-		}
-
-		// Display timing
-			
-		System.out.println("Took " + watch.elapsed(TimeUnit.SECONDS) + "s to compute aftershock table for " + name);
-		watch.stop();
-
-		// Return the forecast
-
-		return forecast;
-	}
+//	// Make the forecast for a model.
+//	// Returns null if the model is null.
+//
+//	private USGS_AftershockForecast makeForecast (GUICalcProgressBar progress, double minDays, RJ_AftershockModel the_model, String name) {
+//
+//		// Check for null model
+//
+//		if (the_model == null) {
+//			return null;
+//		}
+//
+//		// Start time of forecast is from forecastStartTimeParam
+//		
+//		Instant eventDate = Instant.ofEpochMilli(get_cur_mainshock().getOriginTime());
+//		double startTime = eventDate.toEpochMilli() + minDays*ComcatOAFAccessor.day_millis;
+//		Instant startDate = Instant.ofEpochMilli((long)startTime);
+//
+//		// Begin timer
+//
+//		Stopwatch watch = Stopwatch.createStarted();
+//
+//		// Announce we are processing the model
+//			
+//		if (progress != null) {
+//			progress.setIndeterminate(true, "Calculating " + name + "...");
+//		}
+//
+//		// Calculate the forecast for the model
+//
+//		USGS_AftershockForecast forecast;
+//		if (gui_top.get_include_m4()) {
+//			double[] min_mags = new double[5];
+//			min_mags[0] = 3.0;
+//			min_mags[1] = 4.0;
+//			min_mags[2] = 5.0;
+//			min_mags[3] = 6.0;
+//			min_mags[4] = 7.0;
+//			forecast = new USGS_AftershockForecast(the_model, gui_model.get_cur_aftershocks(), min_mags, eventDate, startDate);
+//		} else {
+//			forecast = new USGS_AftershockForecast(the_model, gui_model.get_cur_aftershocks(), eventDate, startDate);
+//		}
+//
+//		// Display timing
+//			
+//		System.out.println("Took " + watch.elapsed(TimeUnit.SECONDS) + "s to compute aftershock table for " + name);
+//		watch.stop();
+//
+//		// Return the forecast
+//
+//		return forecast;
+//	}
 
 
 

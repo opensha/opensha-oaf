@@ -1320,7 +1320,7 @@ public class OEGUIView extends OEGUIComponent {
 		if (gui_model.get_cur_model() != null) {
 			EvenlyDiscretizedFunc expected = getModelCumNumWithTimePlot(gui_model.get_cur_model(), magMin, magCompFnPlot);
 			
-			maxY = Math.max(count, expected.getMaxY());
+			maxY = Math.max(maxY, expected.getMaxY());
 			
 			funcs.add(expected);
 			chars.add(new PlotCurveCharacterstics(PlotLineType.SOLID, 3f, sequence_specific_color));
@@ -1333,7 +1333,7 @@ public class OEGUIView extends OEGUIComponent {
 		if (gui_model.get_genericModel() != null) {
 			EvenlyDiscretizedFunc expected = getModelCumNumWithTimePlot(gui_model.get_genericModel(), magMin, magCompFnPlot);
 			
-			maxY = Math.max(count, expected.getMaxY());
+			maxY = Math.max(maxY, expected.getMaxY());
 			
 			funcs.add(expected);
 			chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 3f, generic_color));
@@ -1346,7 +1346,7 @@ public class OEGUIView extends OEGUIComponent {
 		if (gui_model.get_bayesianModel() != null) {
 			EvenlyDiscretizedFunc expected = getModelCumNumWithTimePlot(gui_model.get_bayesianModel(), magMin, magCompFnPlot);
 				
-			maxY = Math.max(count, expected.getMaxY());
+			maxY = Math.max(maxY, expected.getMaxY());
 				
 			funcs.add(expected);
 			chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 3f, bayesian_color));
@@ -2975,32 +2975,28 @@ public class OEGUIView extends OEGUIComponent {
 
 		// Allocate lists of models, names, and colors
 
-		List<RJ_AftershockModel> aft_models = Lists.newArrayList();
 		List<String> aft_names = Lists.newArrayList();
-		List<USGS_AftershockForecast> aft_forecasts = Lists.newArrayList();
+		List<String> aft_forecasts = Lists.newArrayList();
 
 		// Add sequence-specific model
 		
-		aft_models.add(gui_model.get_cur_model());
-		aft_names.add("Seq. Specific");
-		aft_forecasts.add(gui_model.get_seqSpecForecast());
+		if (gui_model.get_seqSpecJSON() != null) {
+			aft_names.add("SeqSpecc");
+			aft_forecasts.add(gui_model.get_seqSpecJSON());
+		}
+
+		// Add generic model
 		
-		if (gui_model.get_genericModel() != null) {
-
-			// Add generic model
-
-			aft_models.add(gui_model.get_genericModel());
+		if (gui_model.get_genericJSON() != null) {
 			aft_names.add("Generic");
-			aft_forecasts.add(gui_model.get_genericForecast());
-			
-			if (gui_model.get_bayesianModel() != null) {
+			aft_forecasts.add(gui_model.get_genericJSON());
+		}
 
-				// Add Bayesian model
-
-				aft_models.add(gui_model.get_bayesianModel());
-				aft_names.add("Bayesian");
-				aft_forecasts.add(gui_model.get_bayesianForecast());
-			}
+		// Add bayesian model
+		
+		if (gui_model.get_bayesianJSON() != null) {
+			aft_names.add("Bayesian");
+			aft_forecasts.add(gui_model.get_bayesianJSON());
 		}
 
 		// Allocate a new component, or remove all the tabs from an existing component
@@ -3019,10 +3015,10 @@ public class OEGUIView extends OEGUIComponent {
 
 		// For each model, add a tab
 		
-		for (int i=0; i<aft_models.size(); i++) {
+		for (int i = 0; i < aft_forecasts.size(); i++) {
 			String name = aft_names.get(i);
-			USGS_AftershockForecast forecast = aft_forecasts.get(i);
-			forecastTablePane.addTab(name, (new OEGUIForecastTable(this, forecast, name)).get_my_panel());
+			String forecastJSON = aft_forecasts.get(i);
+			forecastTablePane.addTab(name, (new OEGUIForecastTable(this, forecastJSON, name)).get_my_panel());
 		}
 
 		// Add to the view

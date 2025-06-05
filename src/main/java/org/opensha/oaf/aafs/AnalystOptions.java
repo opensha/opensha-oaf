@@ -147,6 +147,27 @@ public class AnalystOptions {
 	}
 
 
+	// Deep copy everything from the other object.
+	// Returns this object.
+
+	public AnalystOptions copy_from (AnalystOptions other) {
+		this.analyst_id			= other.analyst_id;
+		this.analyst_remark		= other.analyst_remark;
+		this.analyst_time		= other.analyst_time;
+		if (other.analyst_params == null) {
+			this.analyst_params = null;
+		} else {
+			this.analyst_params = new ForecastParameters();
+			this.analyst_params.copy_from (other.analyst_params);
+		}
+		this.extra_forecast_lag	= other.extra_forecast_lag;
+		this.max_forecast_lag	= other.max_forecast_lag;
+		this.intake_option		= other.intake_option;
+		this.shadow_option		= other.shadow_option;
+		return this;
+	}
+
+
 
 
 	//----- Service functins -----

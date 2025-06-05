@@ -380,12 +380,12 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 
 
-	// [DEPRECATED]
-	// Constructor, accepts the forecast for this panel.
-		
-	public OEGUIForecastTable (OEGUIComponent gui_comp, USGS_AftershockForecast my_forecast, String my_name) throws GUIEDTException {
-		this (gui_comp, my_forecast.buildJSONString(), my_name);
-	}
+//	// [DEPRECATED]
+//	// Constructor, accepts the forecast for this panel.
+//		
+//	public OEGUIForecastTable (OEGUIComponent gui_comp, USGS_AftershockForecast my_forecast, String my_name) throws GUIEDTException {
+//		this (gui_comp, my_forecast.buildJSONString(), my_name);
+//	}
 
 
 
