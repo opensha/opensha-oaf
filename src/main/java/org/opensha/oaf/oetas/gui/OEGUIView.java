@@ -133,6 +133,7 @@ import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
+import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.gui.GUIConsoleWindow;
 import org.opensha.oaf.util.gui.GUICalcStep;
 import org.opensha.oaf.util.gui.GUICalcRunnable;
@@ -145,6 +146,8 @@ import org.opensha.oaf.util.gui.GUIExternalCatalog;
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.GUICmd;
+import org.opensha.oaf.aafs.ForecastResults;
+import org.opensha.oaf.aafs.ActionConfig;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
@@ -210,7 +213,7 @@ public class OEGUIView extends OEGUIComponent {
 
 	private JTabbedPane pdfGraphsPane;				// Tabbed plot of probability distribution function [MODSTATE_PARAMETERS]
 
-	private GraphWidget aftershockExpectedGraph;	// Plot of forecast number vs magnitude [MODSTATE_FORECAST]
+	//private GraphWidget aftershockExpectedGraph;	// Plot of forecast number vs magnitude [MODSTATE_FORECAST]
 
 	private JTabbedPane forecastTablePane;			// Tabbed display of forecast tables and controls [MODSTATE_FORECAST]
 
@@ -245,7 +248,7 @@ public class OEGUIView extends OEGUIComponent {
 
 		pdfGraphsPane = null;
 
-		aftershockExpectedGraph = null;
+		//aftershockExpectedGraph = null;
 
 		forecastTablePane = null;
 
@@ -1254,6 +1257,8 @@ public class OEGUIView extends OEGUIComponent {
 		String magMinCaption;
 
 		// If we have a seq-spec model, use its magnitude-of-completeness function
+		// TODO: Take magnitude-of-completeness function from forecast parameters?
+		// TODO: For ETAS, the m-of-c function is more complicated, maybe a separate plot for ETAS?
 		
 		if (gui_model.get_cur_model() != null) {
 			magMin = gui_model.get_cur_model().get_magCat();
@@ -1399,7 +1404,12 @@ public class OEGUIView extends OEGUIComponent {
 		double tMin = Math.max (0.0, gui_model.get_cat_dataStartTimeParam());	// foreshock fix
 		double tMax = gui_model.get_cat_dataEndTimeParam();
 		if (gui_model.modstate_has_forecast()) {
-			tMax = Math.max(tMax, gui_model.get_cat_forecastEndTimeParam());	// if we have a forecast, extend at least to end of forecast
+			//tMax = Math.max(tMax, gui_model.get_cat_forecastEndTimeParam());	// if we have a forecast, extend at least to end of forecast
+			//TODO: For now, instead of a user parameter, use the data end time plus advisory duration
+			double end_days = gui_model.get_cat_dataEndTimeParam();
+			long end_millis = SimpleUtils.days_to_millis (end_days);
+			long adv_millis = ForecastResults.forecast_lag_to_advisory_lag (end_millis, new ActionConfig());
+			tMax = Math.max (tMax, end_days + SimpleUtils.millis_to_days (adv_millis));
 		}
 		Preconditions.checkState(tMax > tMin);
 		double tDelta = (tMax - tMin)/1000d;
@@ -2721,235 +2731,235 @@ public class OEGUIView extends OEGUIComponent {
 
 
 
-	// Pre-computed graphic elements for expected aftershock MFDs.
-		
-	private List<PlotElement> eafmd_funcs = null;
-	private List<PlotCurveCharacterstics> eafmd_chars = null;
-	private MinMaxAveTracker eafmd_yTrack = null;
+//	// Pre-computed graphic elements for expected aftershock MFDs.
+//		
+//	private List<PlotElement> eafmd_funcs = null;
+//	private List<PlotCurveCharacterstics> eafmd_chars = null;
+//	private MinMaxAveTracker eafmd_yTrack = null;
 
 
 
 
-	// Pre-compute elements for expected aftershock MFDs.
-	// Parameters:
-	//  progress = Destination for progress messages, or null if none.
-	//  minDays = Start time of forecast, in days, from forecastStartTimeParam.
-	//  maxDays = End time of forecast, in days, from forecastEndTimeParam.
-	// This can execute on a worker thread.
-
-	public void precomputeEAMFD (GUICalcProgressBar progress, double minDays, double maxDays) {
-
-		if (gui_top.get_trace_events()) {
-			System.out.println ("@@@@@ Entry: OEGUIView.precomputeEAMFD");
-		}
-		
-		// Get the magnitude range to use
-
-		double minMag;
-		if (gui_model.get_cur_mainshock().getMag() < 6)
-			minMag = 3d;
-		else
-			minMag = 3d;
-		double maxMag = 9d;
-		double deltaMag = 0.1;
-		int numMag = (int)((maxMag - minMag)/deltaMag + 1.5);
-
-		// Allocate lists of functions and characteristics
-		
-		eafmd_funcs = Lists.newArrayList();
-		eafmd_chars = Lists.newArrayList();
-
-		// Lists of models, each with name and color
-		
-		List<RJ_AftershockModel> models = Lists.newArrayList();
-		List<String> names = Lists.newArrayList();
-		List<Color> colors = Lists.newArrayList();
-
-		// Add sequence-specific model
-		
-		models.add(gui_model.get_cur_model());
-		names.add("Seq. Specific");
-		colors.add(sequence_specific_color);
-		
-		if (gui_model.get_genericModel() != null) {
-
-			// Add generic model
-
-			models.add(gui_model.get_genericModel());
-			names.add("Generic");
-			colors.add(generic_color);
-			
-			if (gui_model.get_bayesianModel() != null) {
-
-				// Add Bayesian model
-
-				models.add(gui_model.get_bayesianModel());
-				names.add("Bayesian");
-				colors.add(bayesian_color);
-			}
-		}
-
-		// Fractiles for forecast uncertainty
-		
-		double[] fractiles = { 0.025, 0.975 };
-
-		// For each model ...
-		
-		for (int i=0; i<models.size(); i++) {
-
-			// Announce we are processing the model
-
-			String name = names.get(i);
-			if (progress != null) {
-				progress.updateProgress(i, models.size(), "Calculating "+name+"...");
-			}
-
-			// Calculate model mode and mean MFD
-
-			RJ_AftershockModel the_model = models.get(i);
-			EvenlyDiscretizedFunc mode = the_model.getModalCumNumMFD(minMag, maxMag, numMag, minDays, maxDays);
-			mode.setName(name+" Mode");
-			EvenlyDiscretizedFunc mean = the_model.getMeanCumNumMFD(minMag, maxMag, numMag, minDays, maxDays);
-			mean.setName("Mean");
-			Color c = colors.get(i);
-
-			// Plot the mode as a solid line
-			
-			eafmd_funcs.add(mode);
-			eafmd_chars.add(new PlotCurveCharacterstics(PlotLineType.SOLID, 2f, c));
-
-			// Plot the mean as a dashed line
-			
-			eafmd_funcs.add(mean);
-			eafmd_chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 1f, c));
-
-			// Calculate the fractile MFDs
-			
-			EvenlyDiscretizedFunc[] fractilesFuncs = the_model.getCumNumMFD_FractileWithAleatoryVariability(
-					fractiles, minMag, maxMag, numMag, minDays, maxDays);
-
-			// Plot the fractile MFDs as dotted lines
-			
-			for (int j= 0; j<fractiles.length; j++) {
-				double f = fractiles[j];
-				EvenlyDiscretizedFunc fractile = fractilesFuncs[j];
-				fractile.setName("p"+(float)(f*100d)+"%");
-				
-				eafmd_funcs.add(fractile);
-				eafmd_chars.add(new PlotCurveCharacterstics(PlotLineType.DOTTED, 1f, c));
-			}
-		}
-
-		// Remove the model-specific message
-		
-		if (progress != null) {
-			//progress.setIndeterminate(true);
-			//progress.setProgressMessage("Plotting...");
-			progress.setIndeterminate(true, "Plotting...");
-		}
-		
-		// Mainshock mag and Bath's law, use evenly discr functions so that it shows up well at all zoom levels
-
-		double mainshockMag = gui_model.get_cur_mainshock().getMag();
-		double bathsMag = mainshockMag - 1.2;
-		DefaultXY_DataSet mainshockFunc = new DefaultXY_DataSet();
-		mainshockFunc.setName("Mainshock M="+(float)mainshockMag);
-		DefaultXY_DataSet bathsFunc = new DefaultXY_DataSet();
-		bathsFunc.setName("Bath's Law M="+(float)bathsMag);
-
-		// Determine range of Y-values
-		
-		eafmd_yTrack = new MinMaxAveTracker();
-		for (PlotElement elem : eafmd_funcs) {
-			if (elem instanceof XY_DataSet) {
-				XY_DataSet xy = (XY_DataSet)elem;
-				for (Point2D pt : xy)
-					if (pt.getY() > 0)
-						eafmd_yTrack.addValue(pt.getY());
-			}
-		}
-		System.out.println(eafmd_yTrack);
-
-		// Draw vertical dashed lines at the mainshock magnitude and Bath's law magnitude
-
-		EvenlyDiscretizedFunc yVals = new EvenlyDiscretizedFunc(eafmd_yTrack.getMin(), eafmd_yTrack.getMax(), 20);
-		for (int i=0; i<yVals.size(); i++) {
-			double y = yVals.getX(i);
-			mainshockFunc.set(mainshockMag, y);
-			bathsFunc.set(bathsMag, y);
-		}
-		eafmd_funcs.add(mainshockFunc);
-		eafmd_chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 2f, Color.BLACK));
-		eafmd_funcs.add(bathsFunc);
-		eafmd_chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 2f, Color.GRAY));		
-
-		return;
-	}
-
-
-
-
-	// Plot the forecast MFDs.
-	// This routine can re-plot an existing tab.
-	// Must be called with model state >= MODSTATE_PARAMETERS.
-	
-	private void plotEAMFD() throws GUIEDTException {
-
-		if (gui_top.get_trace_events()) {
-			System.out.println ("@@@@@ Entry: OEGUIView.plotEAMFD, tab count = " + tabbedPane.getTabCount());
-		}
-
-		if (!( gui_model.modstate_has_forecast() )) {
-			throw new IllegalStateException ("OEGUIView.plotEAMFD - Invalid model state: " + gui_model.cur_modstate_string());
-		}
-
-		// Create a plot with the pre-computed functions and characteristics
-
-		final PlotSpec spec = new PlotSpec(eafmd_funcs, eafmd_chars, "Aftershock Forecast", "Magnitude", "Expected Num \u2265 Mag");
-		spec.setLegendVisible(true);
-
-		boolean new_tab = false;
-		
-		if (aftershockExpectedGraph == null) {
-			aftershockExpectedGraph = new GraphWidget(spec);
-			new_tab = true;
-		} else {
-			aftershockExpectedGraph.setPlotSpec(spec);
-		}
-
-		// Set axes and font sizes
-
-		aftershockExpectedGraph.setY_Log(true);
-		aftershockExpectedGraph.setY_AxisRange(new Range(eafmd_yTrack.getMin(), eafmd_yTrack.getMax()));
-		setupGP(aftershockExpectedGraph);
-
-		// Add to the view
-
-		if (new_tab) {
-			tabbedPane.addTab("Forecast", null, aftershockExpectedGraph,
-					"Aftershock Expected Frequency Plot");
-		}
-
-		return;
-	}
+//	// Pre-compute elements for expected aftershock MFDs.
+//	// Parameters:
+//	//  progress = Destination for progress messages, or null if none.
+//	//  minDays = Start time of forecast, in days, from forecastStartTimeParam.
+//	//  maxDays = End time of forecast, in days, from forecastEndTimeParam.
+//	// This can execute on a worker thread.
+//
+//	public void precomputeEAMFD (GUICalcProgressBar progress, double minDays, double maxDays) {
+//
+//		if (gui_top.get_trace_events()) {
+//			System.out.println ("@@@@@ Entry: OEGUIView.precomputeEAMFD");
+//		}
+//		
+//		// Get the magnitude range to use
+//
+//		double minMag;
+//		if (gui_model.get_cur_mainshock().getMag() < 6)
+//			minMag = 3d;
+//		else
+//			minMag = 3d;
+//		double maxMag = 9d;
+//		double deltaMag = 0.1;
+//		int numMag = (int)((maxMag - minMag)/deltaMag + 1.5);
+//
+//		// Allocate lists of functions and characteristics
+//		
+//		eafmd_funcs = Lists.newArrayList();
+//		eafmd_chars = Lists.newArrayList();
+//
+//		// Lists of models, each with name and color
+//		
+//		List<RJ_AftershockModel> models = Lists.newArrayList();
+//		List<String> names = Lists.newArrayList();
+//		List<Color> colors = Lists.newArrayList();
+//
+//		// Add sequence-specific model
+//		
+//		models.add(gui_model.get_cur_model());
+//		names.add("Seq. Specific");
+//		colors.add(sequence_specific_color);
+//		
+//		if (gui_model.get_genericModel() != null) {
+//
+//			// Add generic model
+//
+//			models.add(gui_model.get_genericModel());
+//			names.add("Generic");
+//			colors.add(generic_color);
+//			
+//			if (gui_model.get_bayesianModel() != null) {
+//
+//				// Add Bayesian model
+//
+//				models.add(gui_model.get_bayesianModel());
+//				names.add("Bayesian");
+//				colors.add(bayesian_color);
+//			}
+//		}
+//
+//		// Fractiles for forecast uncertainty
+//		
+//		double[] fractiles = { 0.025, 0.975 };
+//
+//		// For each model ...
+//		
+//		for (int i=0; i<models.size(); i++) {
+//
+//			// Announce we are processing the model
+//
+//			String name = names.get(i);
+//			if (progress != null) {
+//				progress.updateProgress(i, models.size(), "Calculating "+name+"...");
+//			}
+//
+//			// Calculate model mode and mean MFD
+//
+//			RJ_AftershockModel the_model = models.get(i);
+//			EvenlyDiscretizedFunc mode = the_model.getModalCumNumMFD(minMag, maxMag, numMag, minDays, maxDays);
+//			mode.setName(name+" Mode");
+//			EvenlyDiscretizedFunc mean = the_model.getMeanCumNumMFD(minMag, maxMag, numMag, minDays, maxDays);
+//			mean.setName("Mean");
+//			Color c = colors.get(i);
+//
+//			// Plot the mode as a solid line
+//			
+//			eafmd_funcs.add(mode);
+//			eafmd_chars.add(new PlotCurveCharacterstics(PlotLineType.SOLID, 2f, c));
+//
+//			// Plot the mean as a dashed line
+//			
+//			eafmd_funcs.add(mean);
+//			eafmd_chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 1f, c));
+//
+//			// Calculate the fractile MFDs
+//			
+//			EvenlyDiscretizedFunc[] fractilesFuncs = the_model.getCumNumMFD_FractileWithAleatoryVariability(
+//					fractiles, minMag, maxMag, numMag, minDays, maxDays);
+//
+//			// Plot the fractile MFDs as dotted lines
+//			
+//			for (int j= 0; j<fractiles.length; j++) {
+//				double f = fractiles[j];
+//				EvenlyDiscretizedFunc fractile = fractilesFuncs[j];
+//				fractile.setName("p"+(float)(f*100d)+"%");
+//				
+//				eafmd_funcs.add(fractile);
+//				eafmd_chars.add(new PlotCurveCharacterstics(PlotLineType.DOTTED, 1f, c));
+//			}
+//		}
+//
+//		// Remove the model-specific message
+//		
+//		if (progress != null) {
+//			//progress.setIndeterminate(true);
+//			//progress.setProgressMessage("Plotting...");
+//			progress.setIndeterminate(true, "Plotting...");
+//		}
+//		
+//		// Mainshock mag and Bath's law, use evenly discr functions so that it shows up well at all zoom levels
+//
+//		double mainshockMag = gui_model.get_cur_mainshock().getMag();
+//		double bathsMag = mainshockMag - 1.2;
+//		DefaultXY_DataSet mainshockFunc = new DefaultXY_DataSet();
+//		mainshockFunc.setName("Mainshock M="+(float)mainshockMag);
+//		DefaultXY_DataSet bathsFunc = new DefaultXY_DataSet();
+//		bathsFunc.setName("Bath's Law M="+(float)bathsMag);
+//
+//		// Determine range of Y-values
+//		
+//		eafmd_yTrack = new MinMaxAveTracker();
+//		for (PlotElement elem : eafmd_funcs) {
+//			if (elem instanceof XY_DataSet) {
+//				XY_DataSet xy = (XY_DataSet)elem;
+//				for (Point2D pt : xy)
+//					if (pt.getY() > 0)
+//						eafmd_yTrack.addValue(pt.getY());
+//			}
+//		}
+//		System.out.println(eafmd_yTrack);
+//
+//		// Draw vertical dashed lines at the mainshock magnitude and Bath's law magnitude
+//
+//		EvenlyDiscretizedFunc yVals = new EvenlyDiscretizedFunc(eafmd_yTrack.getMin(), eafmd_yTrack.getMax(), 20);
+//		for (int i=0; i<yVals.size(); i++) {
+//			double y = yVals.getX(i);
+//			mainshockFunc.set(mainshockMag, y);
+//			bathsFunc.set(bathsMag, y);
+//		}
+//		eafmd_funcs.add(mainshockFunc);
+//		eafmd_chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 2f, Color.BLACK));
+//		eafmd_funcs.add(bathsFunc);
+//		eafmd_chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 2f, Color.GRAY));		
+//
+//		return;
+//	}
 
 
 
 
-	// Remove the expected aftershock MFDs plot.
-	// Performs no operation if the expected aftershock MFDs plot is not currently in the tabbed pane.
+//	// Plot the forecast MFDs.
+//	// This routine can re-plot an existing tab.
+//	// Must be called with model state >= MODSTATE_PARAMETERS.
+//	
+//	private void plotEAMFD() throws GUIEDTException {
+//
+//		if (gui_top.get_trace_events()) {
+//			System.out.println ("@@@@@ Entry: OEGUIView.plotEAMFD, tab count = " + tabbedPane.getTabCount());
+//		}
+//
+//		if (!( gui_model.modstate_has_forecast() )) {
+//			throw new IllegalStateException ("OEGUIView.plotEAMFD - Invalid model state: " + gui_model.cur_modstate_string());
+//		}
+//
+//		// Create a plot with the pre-computed functions and characteristics
+//
+//		final PlotSpec spec = new PlotSpec(eafmd_funcs, eafmd_chars, "Aftershock Forecast", "Magnitude", "Expected Num \u2265 Mag");
+//		spec.setLegendVisible(true);
+//
+//		boolean new_tab = false;
+//		
+//		if (aftershockExpectedGraph == null) {
+//			aftershockExpectedGraph = new GraphWidget(spec);
+//			new_tab = true;
+//		} else {
+//			aftershockExpectedGraph.setPlotSpec(spec);
+//		}
+//
+//		// Set axes and font sizes
+//
+//		aftershockExpectedGraph.setY_Log(true);
+//		aftershockExpectedGraph.setY_AxisRange(new Range(eafmd_yTrack.getMin(), eafmd_yTrack.getMax()));
+//		setupGP(aftershockExpectedGraph);
+//
+//		// Add to the view
+//
+//		if (new_tab) {
+//			tabbedPane.addTab("Forecast", null, aftershockExpectedGraph,
+//					"Aftershock Expected Frequency Plot");
+//		}
+//
+//		return;
+//	}
 
-	private void removeEAMFD () throws GUIEDTException {
-		tabbedPane.remove(aftershockExpectedGraph);
-		aftershockExpectedGraph = null;
 
-		// Also remove the pre-computed elements
 
-		eafmd_funcs = null;
-		eafmd_chars = null;
-		eafmd_yTrack = null;
-		return;
-	}
+
+//	// Remove the expected aftershock MFDs plot.
+//	// Performs no operation if the expected aftershock MFDs plot is not currently in the tabbed pane.
+//
+//	private void removeEAMFD () throws GUIEDTException {
+//		tabbedPane.remove(aftershockExpectedGraph);
+//		aftershockExpectedGraph = null;
+//
+//		// Also remove the pre-computed elements
+//
+//		eafmd_funcs = null;
+//		eafmd_chars = null;
+//		eafmd_yTrack = null;
+//		return;
+//	}
 
 
 
@@ -2978,24 +2988,47 @@ public class OEGUIView extends OEGUIComponent {
 		List<String> aft_names = Lists.newArrayList();
 		List<String> aft_forecasts = Lists.newArrayList();
 
+		// Tab number for selected forecast
+
+		int selected_tab = -1;
+
+		// Add ETAS model
+		
+		if (gui_model.get_etasJSON() != null) {
+			if (gui_model.get_isEtasSelected()) {
+				selected_tab = aft_forecasts.size();
+			}
+			aft_names.add("ETAS");
+			aft_forecasts.add(gui_model.get_etasJSON());
+		}
+
 		// Add sequence-specific model
 		
 		if (gui_model.get_seqSpecJSON() != null) {
-			aft_names.add("SeqSpecc");
+			if (gui_model.get_isSeqSpecSelected()) {
+				selected_tab = aft_forecasts.size();
+			}
+			aft_names.add("RJ SeqSpecc");
 			aft_forecasts.add(gui_model.get_seqSpecJSON());
 		}
 
 		// Add generic model
 		
 		if (gui_model.get_genericJSON() != null) {
-			aft_names.add("Generic");
+			if (gui_model.get_isGenericSelected()) {
+				selected_tab = aft_forecasts.size();
+			}
+			aft_names.add("RJ Generic");
 			aft_forecasts.add(gui_model.get_genericJSON());
 		}
 
 		// Add bayesian model
 		
 		if (gui_model.get_bayesianJSON() != null) {
-			aft_names.add("Bayesian");
+			if (gui_model.get_isBayesianSelected()) {
+				selected_tab = aft_forecasts.size();
+			}
+			aft_names.add("RJ Bayesian");
 			aft_forecasts.add(gui_model.get_bayesianJSON());
 		}
 
@@ -3014,11 +3047,27 @@ public class OEGUIView extends OEGUIComponent {
 		}
 
 		// For each model, add a tab
+
+		JPanel selected_comp = null;
 		
 		for (int i = 0; i < aft_forecasts.size(); i++) {
 			String name = aft_names.get(i);
 			String forecastJSON = aft_forecasts.get(i);
-			forecastTablePane.addTab(name, (new OEGUIForecastTable(this, forecastJSON, name)).get_my_panel());
+			JPanel modcomp = (new OEGUIForecastTable(this, forecastJSON, name)).get_my_panel();
+			if (i == selected_tab) {
+				selected_comp = modcomp;
+			}
+			forecastTablePane.addTab(name, modcomp);
+		}
+
+		// If we found a selected forecast, select the corresponding tab
+
+		//if (selected_tab >= 0) {
+		//	forecastTablePane.setSelectedIndex (selected_tab);
+		//}
+
+		if (selected_comp != null) {
+			forecastTablePane.setSelectedComponent (selected_comp);
 		}
 
 		// Add to the view
@@ -3086,9 +3135,10 @@ public class OEGUIView extends OEGUIComponent {
 
 		case MODSTATE_FORECAST:
 			plotCumulativeNum();	// re-plot because time range is changed
-			plotEAMFD();
+			//plotEAMFD();
 			plotAFTable();
-			tabbedPane.setSelectedComponent(aftershockExpectedGraph);
+			//tabbedPane.setSelectedComponent(aftershockExpectedGraph);
+			tabbedPane.setSelectedComponent(forecastTablePane);
 			break;
 		}
 
@@ -3115,7 +3165,7 @@ public class OEGUIView extends OEGUIComponent {
 
 		if (new_modstate < MODSTATE_FORECAST) {
 			removeAFTable();
-			removeEAMFD();
+			//removeEAMFD();
 			if (new_modstate >= MODSTATE_PARAMETERS && old_modstate >= MODSTATE_FORECAST) {
 				plotCumulativeNum();	// re-plot because time range is changed
 			}

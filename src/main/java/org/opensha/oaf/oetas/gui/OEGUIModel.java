@@ -723,6 +723,72 @@ public class OEGUIModel extends OEGUIComponent {
 	}
 
 
+	// The ETAS JSON.
+	// Available when model state >= MODSTATE_CATALOG.
+	// It may (or may not) be non-null when state >= MODSTATE_PARAMETERS.
+
+	public final String get_etasJSON () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.etasJSON while in state " + cur_modstate_string());
+		}
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			return null;
+		}
+		if (!( forecast_fcresults.has_etas_json() )) {
+			return null;
+		}
+		String s = forecast_fcresults.get_etas_json();
+		if (s != null && s.trim().isEmpty()) {
+			s = null;
+		}
+		return s;
+	}
+
+
+	// Return true if RJ generic model is selected.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	public final boolean get_isGenericSelected () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.isGenericSelected while in state " + cur_modstate_string());
+		}
+		return forecast_fcresults.generic_pdl;
+	}
+
+
+	// Return true if RJ sequence specific model is selected.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	public final boolean get_isSeqSpecSelected () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.isSeqSpecSelected while in state " + cur_modstate_string());
+		}
+		return forecast_fcresults.seq_spec_pdl;
+	}
+
+
+	// Return true if RJ Bayesian model is selected.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	public final boolean get_isBayesianSelected () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.isBayesianSelected while in state " + cur_modstate_string());
+		}
+		return forecast_fcresults.bayesian_pdl;
+	}
+
+
+	// Return true if ETAS model is selected.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	public final boolean get_isEtasSelected () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.isEtasSelected while in state " + cur_modstate_string());
+		}
+		return forecast_fcresults.etas_pdl;
+	}
+
+
 
 
 	// The generic parameters for the mainshock.
@@ -828,6 +894,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 	// Data start time, in days since the mainshock, for the catalog.
 	// Available when model state >= MODSTATE_CATALOG.
+	// TODO: Obtain value from fetch_fcparams?
 
 	private double cat_dataStartTimeParam;
 
@@ -840,6 +907,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 	// Data end time, in days since the mainshock, for the catalog.
 	// Available when model state >= MODSTATE_CATALOG.
+	// TODO: Obtain value from fetch_fcparams?
 
 	private double cat_dataEndTimeParam;
 
@@ -900,29 +968,29 @@ public class OEGUIModel extends OEGUIComponent {
 		return cat_bParam;
 	}
 
-	// Forecast start time, in days since the mainshock.
-	// Available when model state >= MODSTATE_FORECAST.
-
-	private double cat_forecastStartTimeParam;
-
-	public final double get_cat_forecastStartTimeParam () {
-		if (!( modstate >= MODSTATE_FORECAST )) {
-			throw new IllegalStateException ("Access to OEGUIModel.cat_forecastStartTimeParam while in state " + cur_modstate_string());
-		}
-		return cat_forecastStartTimeParam;
-	}
-
-	// Forecast start time, in days since the mainshock.
-	// Available when model state >= MODSTATE_FORECAST.
-
-	private double cat_forecastEndTimeParam;
-
-	public final double get_cat_forecastEndTimeParam () {
-		if (!( modstate >= MODSTATE_FORECAST )) {
-			throw new IllegalStateException ("Access to OEGUIModel.cat_forecastEndTimeParam while in state " + cur_modstate_string());
-		}
-		return cat_forecastEndTimeParam;
-	}
+//	// Forecast start time, in days since the mainshock.
+//	// Available when model state >= MODSTATE_FORECAST.
+//
+//	private double cat_forecastStartTimeParam;
+//
+//	public final double get_cat_forecastStartTimeParam () {
+//		if (!( modstate >= MODSTATE_FORECAST )) {
+//			throw new IllegalStateException ("Access to OEGUIModel.cat_forecastStartTimeParam while in state " + cur_modstate_string());
+//		}
+//		return cat_forecastStartTimeParam;
+//	}
+//
+//	// Forecast start time, in days since the mainshock.
+//	// Available when model state >= MODSTATE_FORECAST.
+//
+//	private double cat_forecastEndTimeParam;
+//
+//	public final double get_cat_forecastEndTimeParam () {
+//		if (!( modstate >= MODSTATE_FORECAST )) {
+//			throw new IllegalStateException ("Access to OEGUIModel.cat_forecastEndTimeParam while in state " + cur_modstate_string());
+//		}
+//		return cat_forecastEndTimeParam;
+//	}
 
 
 
@@ -2462,6 +2530,8 @@ public class OEGUIModel extends OEGUIComponent {
 			cur_aftershocks
 		);
 
+		forecast_fcresults.pick_pdl_model();
+
 		// Put into data structure
 
 		long creation_time = System.currentTimeMillis();
@@ -2502,8 +2572,8 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Save the catalog parameters
 
-		cat_forecastStartTimeParam = xfer.x_fcValue.x_forecastStartTimeParam;
-		cat_forecastEndTimeParam = xfer.x_fcValue.x_forecastEndTimeParam;
+		//cat_forecastStartTimeParam = xfer.x_fcValue.x_forecastStartTimeParam;
+		//cat_forecastEndTimeParam = xfer.x_fcValue.x_forecastEndTimeParam;
 
 		// Remove the model-specific message
 		
@@ -2515,7 +2585,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Pre-compute elements for expected aftershock MFDs.
 
-		gui_view.precomputeEAMFD (progress, cat_forecastStartTimeParam, cat_forecastEndTimeParam);
+		//gui_view.precomputeEAMFD (progress, cat_forecastStartTimeParam, cat_forecastEndTimeParam);
 
 		return;
 	}
