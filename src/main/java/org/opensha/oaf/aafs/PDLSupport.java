@@ -199,6 +199,71 @@ public class PDLSupport extends ServerComponent {
 
 
 
+	// Static version that also sends event-sequence products.
+	// Returns the event ID used for PDL.
+
+	public static String static_send_pdl_report (
+		boolean isReviewed,
+		EventSequenceResult evseq_res,
+		long creation_time,
+		ForecastMainshock forecast_mainshock,
+		ForecastParameters forecast_params,
+		ForecastResults forecast_results,
+		AnalystOptions analyst_options
+	) throws Exception {
+
+		evseq_res.clear();
+
+		// Check for availability of event id, network, and code
+
+		if (forecast_mainshock.mainshock_event_id == null || forecast_mainshock.mainshock_event_id.trim().isEmpty()) {
+			throw new IllegalArgumentException ("Cannot construct OAF product because the event ID is not available");
+		}
+		if (forecast_mainshock.mainshock_network == null || forecast_mainshock.mainshock_network.trim().isEmpty()
+			|| forecast_mainshock.mainshock_code == null || forecast_mainshock.mainshock_code.trim().isEmpty()) {
+			throw new IllegalArgumentException ("Cannot construct OAF product for event " + forecast_mainshock.mainshock_event_id + " because the mainshock network and code are not available");
+		}
+
+		// Collect the forecast data
+
+		ForecastData forecast_data = new ForecastData();
+		forecast_data.set_data (creation_time, forecast_mainshock, forecast_params,
+							forecast_results, analyst_options);
+
+		// The suggested product code, derived from the event ID
+
+		String suggested_code = forecast_mainshock.mainshock_event_id;
+
+		// Build the product
+
+		Product product = forecast_data.make_pdl_product (evseq_res, suggested_code, isReviewed);
+
+		// Stop if conflict
+
+		if (product == null) {
+			throw new RuntimeException ("Cannot construct OAF product for event " + forecast_mainshock.mainshock_event_id + " due to the presence of a conflicting product in PDL");
+		}
+
+		// Send event-sequence product, if any
+
+		evseq_res.perform_send();
+
+		// Sign the product
+
+		PDLSender.signProduct(product);
+
+		// Send the product, true means it is text
+
+		PDLSender.sendProduct(product, true);
+
+		// Save the event ID used for PDL
+
+		return forecast_data.pdl_event_id;
+	}
+
+
+
+
 	// Send a report to PDL.
 	// Return the code used to send to PDL, null if not stored due to conflict with existing forecast.
 	// Throw an exception if the report failed.
@@ -304,6 +369,72 @@ public class PDLSupport extends ServerComponent {
 		// Save the product code that was used in the send
 
 		tstatus.pdl_product_code = ((forecast_data.pdl_event_id.equals (eventID)) ? "" : (forecast_data.pdl_event_id));
+
+		return forecast_data.pdl_event_id;
+	}
+
+
+
+
+	// Static version that also sends event-sequence products.
+	// Returns the event ID used for PDL.
+
+	public static String static_send_pdl_report (
+		boolean isReviewed,
+		EventSequenceResult evseq_res,
+		long creation_time,
+		ForecastMainshock forecast_mainshock,
+		ForecastParameters forecast_params,
+		ForecastResults forecast_results,
+		AnalystOptions analyst_options,
+		CompactEqkRupList catalog
+	) throws Exception {
+
+		evseq_res.clear();
+
+		// Check for availability of event id, network, and code
+
+		if (forecast_mainshock.mainshock_event_id == null || forecast_mainshock.mainshock_event_id.trim().isEmpty()) {
+			throw new IllegalArgumentException ("Cannot construct OAF product because the event ID is not available");
+		}
+		if (forecast_mainshock.mainshock_network == null || forecast_mainshock.mainshock_network.trim().isEmpty()
+			|| forecast_mainshock.mainshock_code == null || forecast_mainshock.mainshock_code.trim().isEmpty()) {
+			throw new IllegalArgumentException ("Cannot construct OAF product for event " + forecast_mainshock.mainshock_event_id + " because the mainshock network and code are not available");
+		}
+
+		// Collect the forecast data
+
+		ForecastData forecast_data = new ForecastData();
+		forecast_data.set_data (creation_time, forecast_mainshock, forecast_params,
+							forecast_results, analyst_options, catalog);
+
+		// The suggested product code, derived from the event ID
+
+		String suggested_code = forecast_mainshock.mainshock_event_id;
+
+		// Build the product
+
+		Product product = forecast_data.make_pdl_product (evseq_res, suggested_code, isReviewed);
+
+		// Stop if conflict
+
+		if (product == null) {
+			throw new RuntimeException ("Cannot construct OAF product for event " + forecast_mainshock.mainshock_event_id + " due to the presence of a conflicting product in PDL");
+		}
+
+		// Send event-sequence product, if any
+
+		evseq_res.perform_send();
+
+		// Sign the product
+
+		PDLSender.signProduct(product);
+
+		// Send the product, true means it is text
+
+		PDLSender.sendProduct(product, true);
+
+		// Save the event ID used for PDL
 
 		return forecast_data.pdl_event_id;
 	}
@@ -502,6 +633,7 @@ public class PDLSupport extends ServerComponent {
 
 		return true;
 	}
+
 
 
 
@@ -704,6 +836,104 @@ public class PDLSupport extends ServerComponent {
 		// Done
 
 		return;
+	}
+
+
+
+
+	// Delete the OAF produts for an event, static function.
+	// Parameters:
+	//  fcmain = Forecast mainshock structure, already filled in.
+	//  isReviewed = True if the deletion is reviewed.
+	//  cap_time = Cap time, or CAP_TIME_XXXXX special value, for deleting event-sequence products.
+	//	  If equal to PDLCodeChooserEventSequence.CAP_TIME_NOP, then no event-sequence products are deleted.
+	//    If equal to PDLCodeChooserEventSequence.CAP_TIME_DELETE, then all event-sequence products are deleted.
+	//  f_keep_reviewed = True to prevent deletion of reviewed products (oaf and event-sequence).
+	//  gj_holder = If non-null, and contains a non-null GeoJSON, it supplies the GeoJSON for reading
+	//   back from PDL.  Otherwise, the GeoJSON from fcmain is used.  If omitted, defaults to null.
+	// Returns a 3-element array of boolean.
+	//   result[0] = True if an oaf product was deleted.
+	//   result[1] = True if an event-sequence product was deleted.
+	//   result[2] = True if an event-sequence product was capped.
+	// Note: At most one of result[1] and result[2] are true;
+	// Note: If event-sequence is disabled in ActionConfig.json, then event-sequence is not deleted.
+
+	public static boolean[] static_delete_oaf_products (
+		ForecastMainshock fcmain,
+		boolean isReviewed,
+		long cap_time,
+		boolean f_keep_reviewed,
+		GeoJsonHolder gj_holder
+	) throws Exception {
+
+		// Initialize result to no action
+
+		boolean[] result = new boolean[3];
+		result[0] = false;
+		result[1] = false;
+		result[2] = false;
+
+		// Check for availability of event id
+
+		if (fcmain.mainshock_event_id == null || fcmain.mainshock_event_id.trim().isEmpty()) {
+			throw new IllegalArgumentException ("Cannot delete OAF products because the event ID is not available");
+		}
+
+		// Delete the old OAF products
+
+		JSONObject geojson = fcmain.mainshock_geojson;	// it's OK if this is null
+		boolean f_gj_prod = true;
+
+		if (gj_holder != null) {
+			if (gj_holder.geojson != null) {
+				geojson = gj_holder.geojson;
+				f_gj_prod = gj_holder.f_gj_prod;
+			}
+		}
+
+		String queryID = fcmain.mainshock_event_id;
+		long cutoff_time = 0L;
+
+		long reviewed_time = 0L;
+		if (f_keep_reviewed) {
+			reviewed_time = 1L;		// don't delete reviewed products
+		}
+
+		// If event-sequence is enabled, and cap time is not no-operation, delete or cap the event-sequence product
+
+		if ((new ActionConfig()).get_is_evseq_enabled() && cap_time != PDLCodeChooserEventSequence.CAP_TIME_NOP) {
+
+			GeoJsonHolder gj_used = new GeoJsonHolder (geojson, f_gj_prod);
+
+			int doesp = PDLCodeChooserEventSequence.deleteOldEventSequenceProducts (null,
+					geojson, f_gj_prod, queryID, isReviewed, cap_time, f_keep_reviewed, gj_used);
+
+			geojson = gj_used.geojson;
+			f_gj_prod = gj_used.f_gj_prod;
+
+			// Indicate in result if we deleted or capped something
+
+			if (doesp == PDLCodeChooserEventSequence.DOESP_DELETED) {
+				result[1] = true;
+			}
+			if (doesp == PDLCodeChooserEventSequence.DOESP_CAPPED) {
+				result[2] = true;
+			}
+		}
+
+		// Now delete the OAF product
+
+		long delres = PDLCodeChooserOaf.deleteOldOafProducts_v2 (null, geojson, f_gj_prod, queryID, isReviewed, cutoff_time, reviewed_time);
+
+		// Indicate in result if we deleted something
+
+		if (delres == PDLCodeChooserOaf.DOOP_DELETED) {
+			result[0] = true;
+		}
+
+		// Done
+
+		return result;
 	}
 
 
