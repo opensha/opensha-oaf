@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.time.Instant;
 import java.time.Duration;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -160,10 +161,17 @@ public class SimpleUtils {
 
 	// Convert a time (in milliseconds after the epoch) to a human-readable string.
 
+	private static final TimeZone tz_utc = TimeZone.getTimeZone("UTC");
+
+	private static final SimpleDateFormat time_to_string_fmt = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss z");
+	static {
+		time_to_string_fmt.setTimeZone (tz_utc);
+	}
+
 	public static String time_to_string (long the_time) {
-		SimpleDateFormat fmt = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss z");
-		fmt.setTimeZone (TimeZone.getTimeZone ("UTC"));
-		return fmt.format (new Date (the_time));
+		//SimpleDateFormat fmt = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss z");
+		//fmt.setTimeZone (TimeZone.getTimeZone ("UTC"));
+		return time_to_string_fmt.format (new Date (the_time));
 	}
 
 
@@ -172,10 +180,15 @@ public class SimpleUtils {
 	// Convert a time (in milliseconds after the epoch) to a human-readable string.
 	// This version does not have the "UTC" suffix (but the time is still UTC).
 
+	private static final SimpleDateFormat time_to_string_no_z_fmt = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss");
+	static {
+		time_to_string_no_z_fmt.setTimeZone (tz_utc);
+	}
+
 	public static String time_to_string_no_z (long the_time) {
-		SimpleDateFormat fmt = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss");
-		fmt.setTimeZone (TimeZone.getTimeZone ("UTC"));
-		return fmt.format (new Date (the_time));
+		//SimpleDateFormat fmt = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss");
+		//fmt.setTimeZone (TimeZone.getTimeZone ("UTC"));
+		return time_to_string_no_z_fmt.format (new Date (the_time));
 	}
 
 
@@ -205,8 +218,10 @@ public class SimpleUtils {
 
 
 
-	// Convert a time (in milliseconds after the epoch) to a parseable string.
+	// Convert a time (in milliseconds after the epoch) to a parseable string (ISO-8601 format).
 	// The result can be understood by string_to_time().
+	// If (and only if) the milliseconds are non-zero, then the seconds field includes
+	// a decimal part with three decimal places.
 
 	public static String time_to_parseable_string (long the_time) {
 		//SimpleDateFormat fmt = new SimpleDateFormat ("yyyy-MM-dd'T'HH:mm:ssz");
@@ -218,11 +233,159 @@ public class SimpleUtils {
 
 
 
+	// Convert a time (in milliseconds after the epoch) to a parseable string (ISO-8601 format).
+	// The result always has a 3-digit millisecond field.
+	// The result can be understood by string_to_time().
+
+	private static final SimpleDateFormat time_to_parseable_string_with_millis_fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+	static {
+		time_to_parseable_string_with_millis_fmt.setTimeZone (tz_utc);
+	}
+
+	public static String time_to_parseable_string_with_millis (long the_time) {
+		return time_to_parseable_string_with_millis_fmt.format (new Date (the_time));
+	}
+
+
+
+
+	// Convert a time (in milliseconds after the epoch) to a parseable string (ISO-8601 format).
+	// The result never has a millisecond field.
+	// The result can be understood by string_to_time().
+
+	private static final SimpleDateFormat time_to_parseable_string_no_millis_fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+	static {
+		time_to_parseable_string_no_millis_fmt.setTimeZone (tz_utc);
+	}
+
+	public static String time_to_parseable_string_no_millis (long the_time) {
+		return time_to_parseable_string_no_millis_fmt.format (new Date (the_time));
+	}
+
+
+
+
 	// Convert a string in ISO-8601 format to time (in milliseconds after the epoch).
 	// An example is 2011-12-03T10:15:30Z.
+	// The seconds field may include a decimal part to specify milliseconds.
 
 	public static long string_to_time (String s) {
 		return Instant.parse(s).toEpochMilli();
+	}
+
+
+
+
+	// Convert a string ito time (in milliseconds after the epoch).
+	// This conversion is highly permissive in the time format.
+	// Fields are specified in order: year month day hour minute second
+	// - Month, day, hour, minute, and second can be one or two digits (year must be 4 digits).
+	// - Seconds are optional.
+	// - Seconds can optionally have a decimal part, consisting of period/comma followed by any number of digits.
+	// - Parts of date can be separated by spaces/tabs, or by dash/slash/period/comma optionally surrounded by spaces/tabs.
+	// - Parts of time can be separated by spaces/tabs, or by colon/period/comma optionally surrounded by spaces/tabs.
+	// - Date and time can be optionally separated by "T" (case-insensitive), optionally surrounded by spaces/tabs.
+	// - Time can optionally be followed by "Z" or "UTC" (case-insensitive), optionally preceded by spaces/tabs.
+	// Note that ISO-8601 format is accepted.
+
+	private static final Pattern sttp_pattern = Pattern.compile ("[\\x00-\\x20]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[.,](\\d*))?)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[\\x00-\\x20]*");
+	
+	private static final int sttp_year_capture_group = 1;
+	private static final int sttp_month_capture_group = 2;
+	private static final int sttp_day_capture_group = 3;
+
+	private static final int sttp_hour_capture_group = 4;
+	private static final int sttp_minute_capture_group = 5;
+	private static final int sttp_second_capture_group = 6;
+	private static final int sttp_millis_capture_group = 7;
+
+	public static long string_to_time_permissive (String s) {
+
+		Matcher matcher = sttp_pattern.matcher (s);
+		if (!( matcher.matches() )) {
+			throw new IllegalArgumentException ("SimpleUtils.string_to_time_permissive: Invalid date/time format for string: " + s.trim());
+		}
+
+		// Get the parts of the string
+
+		String year = matcher.group (sttp_year_capture_group);
+		String month = matcher.group (sttp_month_capture_group);
+		String day = matcher.group (sttp_day_capture_group);
+
+		String hour = matcher.group (sttp_hour_capture_group);
+		String minute = matcher.group (sttp_minute_capture_group);
+		String second = matcher.group (sttp_second_capture_group);
+		String millis = matcher.group (sttp_millis_capture_group);
+
+		// Convert the date and time, allowing single-digit for all except year
+
+		StringBuilder daytime = new StringBuilder();
+		daytime.append (year);
+		daytime.append ("-");
+		if (month.length() == 1) {
+			daytime.append ("0");
+		}
+		daytime.append (month);
+		daytime.append ("-");
+		if (day.length() == 1) {
+			daytime.append ("0");
+		}
+		daytime.append (day);
+		daytime.append ("T");
+		if (hour.length() == 1) {
+			daytime.append ("0");
+		}
+		daytime.append (hour);
+		daytime.append (":");
+		if (minute.length() == 1) {
+			daytime.append ("0");
+		}
+		daytime.append (minute);
+
+		daytime.append (":");
+		if (second == null) {
+			daytime.append ("00");
+		} else {
+			if (second.length() == 1) {
+				daytime.append ("0");
+			}
+			daytime.append (second);
+			if (millis != null) {
+				daytime.append (".");
+				switch (millis.length()) {
+				case 0:
+					daytime.append ("000");
+					break;
+				case 1:
+					daytime.append (millis);
+					daytime.append ("00");
+					break;
+				case 2:
+					daytime.append (millis);
+					daytime.append ("0");
+					break;
+				case 3:
+					daytime.append (millis);
+					break;
+				default:
+					daytime.append (millis.substring (0, 3));
+					break;
+				}
+			}
+		}
+
+		daytime.append ("Z");
+
+		long time;
+		try {
+			time = string_to_time (daytime.toString());
+		} catch (DateTimeParseException e) {
+			throw new IllegalArgumentException ("SimpleUtils.string_to_time_permissive: Date/time parse error parsing time for string: " + s.trim(), e);
+		} catch (Exception e) {
+			throw new IllegalArgumentException ("SimpleUtils.string_to_time_permissive: Error parsing time for string: " + s.trim(), e);
+		}
+
+		return time;
 	}
 
 
@@ -1793,6 +1956,126 @@ public class SimpleUtils {
 
 				System.out.println();
 				System.out.println ("duration_to_string_3 = " + duration_to_string_3 (duration_millis));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #8
+		// Command format:
+		//  test8  string
+		// Test the operation of string_to_time and varios formatting functions.
+
+		if (args[0].equalsIgnoreCase ("test8")) {
+
+			// 1 additional arguments
+
+			if (!( args.length == 2 )) {
+				System.err.println ("SimpleUtils : Invalid 'test8' subcommand");
+				return;
+			}
+
+			try {
+
+				String s = args[1];
+
+				// Say hello
+
+				System.out.println ("Converting time using string_to_time");
+				System.out.println ("s = " + s);
+
+				// Convert
+
+				long time = string_to_time(s);
+
+				// Display result
+
+				System.out.println();
+				System.out.println ("time = " + time);
+
+				System.out.println();
+				System.out.println ("time_to_string = " + time_to_string(time));
+
+				System.out.println();
+				System.out.println ("time_to_string_no_z = " + time_to_string_no_z(time));
+
+				System.out.println();
+				System.out.println ("time_raw_and_string = " + time_raw_and_string(time));
+
+				System.out.println();
+				System.out.println ("time_to_parseable_string = " + time_to_parseable_string(time));
+
+				System.out.println();
+				System.out.println ("time_to_parseable_string_with_millis = " + time_to_parseable_string_with_millis(time));
+
+				System.out.println();
+				System.out.println ("time_to_parseable_string_no_millis = " + time_to_parseable_string_no_millis(time));
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #9
+		// Command format:
+		//  test9  string
+		// Test the operation of string_to_time_permissive and varios formatting functions.
+
+		if (args[0].equalsIgnoreCase ("test9")) {
+
+			// 1 additional arguments
+
+			if (!( args.length == 2 )) {
+				System.err.println ("SimpleUtils : Invalid 'test9' subcommand");
+				return;
+			}
+
+			try {
+
+				String s = args[1];
+
+				// Say hello
+
+				System.out.println ("Converting time using string_to_time_permissive");
+				System.out.println ("s = " + s);
+
+				// Convert
+
+				long time = string_to_time_permissive(s);
+
+				// Display result
+
+				System.out.println();
+				System.out.println ("time = " + time);
+
+				System.out.println();
+				System.out.println ("time_to_string = " + time_to_string(time));
+
+				System.out.println();
+				System.out.println ("time_to_string_no_z = " + time_to_string_no_z(time));
+
+				System.out.println();
+				System.out.println ("time_raw_and_string = " + time_raw_and_string(time));
+
+				System.out.println();
+				System.out.println ("time_to_parseable_string = " + time_to_parseable_string(time));
+
+				System.out.println();
+				System.out.println ("time_to_parseable_string_with_millis = " + time_to_parseable_string_with_millis(time));
+
+				System.out.println();
+				System.out.println ("time_to_parseable_string_no_millis = " + time_to_parseable_string_no_millis(time));
 
 			} catch (Exception e) {
 				e.printStackTrace();

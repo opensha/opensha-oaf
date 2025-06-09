@@ -714,13 +714,30 @@ public class GUIExternalCatalogV2 {
 	// As a consequence, date/time can be specified in ISO-8601 format (example: 2011-12-03T10:15:30Z).
 	// We also change the ordering of fields (put mag after lat/lon/depth) to match the original GUI format (requires no change to regex).
 
-	private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:\\.\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
+	//private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:\\.\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
 
 	// (?:[ \\t]+|[ \\t]*-[ \\t]*)				= spaces/tabs, or dash optionally surrounded by spaces/tabs
 	// (?:[ \\t]+|[ \\t]*:[ \\t]*)				= spaces/tabs, or colon optionally surrounded by spaces/tabs
 	// (?:[ \\t]+|[ \\t]*[tT][ \\t]*)			= spaces/tabs, or "T" (case insensitive) optionally surrounded by spaces/tabs
 	// (?:\\.\\d*)?								= optional decimal part, dot optionally followed by digits
 	// (?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?		= optional "Z" or "UTC" (case insensitive), optionally preceded by spaces/tabs
+
+	// This fourth form is even more permissive on how the date and time are formatted:
+	// - Month, day, hour, minute, and second can be one or two digits (year must be 4 digits).
+	// - Seconds can optionally have a decimal part, consisting of period/comma followed by any number of digits (which is discarded).
+	// - Parts of date can be separated by spaces/tabs, or by dash/slash/period/comma optionally surrounded by spaces/tabs.
+	// - Parts of time can be separated by spaces/tabs, or by colon/period/comma optionally surrounded by spaces/tabs.
+	// - Date and time can be optionally separated by "T" (case-insensitive), optionally surrounded by spaces/tabs.
+	// - Time can optionally be followed by "Z" or "UTC" (case-insensitive), optionally preceded by spaces/tabs.
+	// As a consequence, date/time can be specified in ISO-8601 format (example: 2011-12-03T10:15:30Z).
+	// We also change the ordering of fields (put mag after lat/lon/depth) to match the original GUI format (requires no change to regex).
+	// Additionally, we allow lat/lon/depth/mag to use period or comma as the decimal point.
+
+	private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[.,]\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
+
+	// (?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)			= spaces/tabs, or dash/slash/period/comma optionally surrounded by spaces/tabs
+	// (?:[ \\t]+|[ \\t]*[:.,][ \\t]*)			= spaces/tabs, or colon/period/comma optionally surrounded by spaces/tabs
+	// (?:[.,]\\d*)?							= optional decimal part, period/comma optionally followed by digits
 
 
 	// Capture groups for the earthquake description.
@@ -845,7 +862,7 @@ public class GUIExternalCatalogV2 {
 
 		Location hypo;
 		try {
-			hypo = new Location(Double.parseDouble (lat), Double.parseDouble (lon), Double.parseDouble (depth));
+			hypo = new Location(Double.parseDouble (lat.replace(',', '.')), Double.parseDouble (lon.replace(',', '.')), Double.parseDouble (depth.replace(',', '.')));
 		} catch (NumberFormatException e) {
 			throw new IllegalArgumentException ("GUIExternalCatalogV2.quake_parse_line: Numeric conversion error parsing location for line: " + line, e);
 		} catch (Exception e) {
@@ -856,7 +873,7 @@ public class GUIExternalCatalogV2 {
 
 		double r_mag;
 		try {
-			r_mag = Double.parseDouble (mag);
+			r_mag = Double.parseDouble (mag.replace(',', '.'));
 		} catch (NumberFormatException e) {
 			throw new IllegalArgumentException ("GUIExternalCatalogV2.quake_parse_line: Numeric conversion error parsing magnitude for line: " + line, e);
 		} catch (Exception e) {
@@ -951,7 +968,9 @@ public class GUIExternalCatalogV2 {
 	// Note: In principle, we only need to recognize the legacy format (only spaces/tabs allowed for date/time separators, no time zone, no event ID).
 	// For convenience, we use quake_line_pattern with a prefixed #, which is more permissive.
 
-	private static final Pattern legacy_main_line_pattern = Pattern.compile ("[ \\t]*#[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:\\.\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
+	//private static final Pattern legacy_main_line_pattern = Pattern.compile ("[ \\t]*#[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:\\.\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
+	
+	private static final Pattern legacy_main_line_pattern = Pattern.compile ("[ \\t]*#[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[.,]\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
 
 
 	// Parse a line which may contain a legacy mainshock.
@@ -1036,7 +1055,7 @@ public class GUIExternalCatalogV2 {
 
 		Location hypo;
 		try {
-			hypo = new Location(Double.parseDouble (lat), Double.parseDouble (lon), Double.parseDouble (depth));
+			hypo = new Location(Double.parseDouble (lat.replace(',', '.')), Double.parseDouble (lon.replace(',', '.')), Double.parseDouble (depth.replace(',', '.')));
 		} catch (NumberFormatException e) {
 			throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Numeric conversion error parsing location for line: " + line, e);
 		} catch (Exception e) {
@@ -1047,7 +1066,7 @@ public class GUIExternalCatalogV2 {
 
 		double r_mag;
 		try {
-			r_mag = Double.parseDouble (mag);
+			r_mag = Double.parseDouble (mag.replace(',', '.'));
 		} catch (NumberFormatException e) {
 			throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Numeric conversion error parsing magnitude for line: " + line, e);
 		} catch (Exception e) {
