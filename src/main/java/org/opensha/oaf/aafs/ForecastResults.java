@@ -100,6 +100,19 @@ public class ForecastResults implements Marshalable {
 		return the_advisory_lag;
 	}
 
+	// Convert an advisory lag into an advisory name, using the advisory windows in ActionConfig.
+	// Returns null if there is no name for the given advisory lag.
+
+	public static String advisory_lag_to_name (long the_advisory_lag, ActionConfig action_config) {
+		int n = action_config.get_adv_window_count();
+		for (int j = 0; j < n; ++j) {
+			if (action_config.get_adv_window_start_off(j) == 0L && action_config.get_adv_window_end_off(j) == the_advisory_lag) {
+				return action_config.get_adv_window_name(j);
+			}
+		}
+		return null;
+	}
+
 	// Convert a forecast lag to a flag indicating if sequence specific results should be calculated.
 
 	public static boolean forecast_lag_to_f_seq_spec (long the_forecast_lag, ActionConfig action_config) {
@@ -1504,6 +1517,213 @@ public class ForecastResults implements Marshalable {
 		}
 	
 		return null;
+	}
+
+	// Code numbers that identify the possible models selected for PDL.
+
+	public static final int PMCODE_INVALID	= -2;			// a code guaranteed to be invalid
+	public static final int PMCODE_NONE		= -1;			// no model selected
+
+	public static final int PMCODE_GENERIC	= 0;			// RJ generic model
+	public static final int PMCODE_SEQ_SPEC	= 1;			// RJ sequence specific model
+	public static final int PMCODE_BAYESIAN	= 2;			// RJ bayesian model
+	public static final int PMCODE_ETAS		= 3;			// ETAS model
+
+	// Return true if the model JSON is available.
+
+	public boolean is_pdl_model_available (int pmcode) {
+		switch (pmcode) {
+
+		case PMCODE_GENERIC:
+			return (generic_result_avail && generic_json.length() > 0);
+
+		case PMCODE_SEQ_SPEC:
+			return (seq_spec_result_avail && seq_spec_json.length() > 0);
+
+		case PMCODE_BAYESIAN:
+			return (bayesian_result_avail && bayesian_json.length() > 0);
+
+		case PMCODE_ETAS:
+			return (has_etas_json());
+		}
+
+		throw new IllegalArgumentException ("ForecastResults.is_pdl_model_available: Invalid PDL model code: " + pmcode);
+	}
+
+	// Return true if the model is selectable for use by PDL.
+
+	public boolean is_pdl_model_selectable (int pmcode) {
+		switch (pmcode) {
+
+		case PMCODE_GENERIC:
+			return (generic_result_avail && generic_json.length() > 0);
+
+		case PMCODE_SEQ_SPEC:
+			return (seq_spec_result_avail && seq_spec_json.length() > 0 && seq_spec_summary.get_numAftershocks() >= 1);
+
+		case PMCODE_BAYESIAN:
+			return (bayesian_result_avail && bayesian_json.length() > 0);
+
+		case PMCODE_ETAS:
+			return (has_etas_json());
+		}
+
+		throw new IllegalArgumentException ("ForecastResults.is_pdl_model_selectable: Invalid PDL model code: " + pmcode);
+	}
+
+	// Return the model JSON, or null if not available.
+	// A non-null return will always be non-empty.
+
+	public String get_pdl_model_json (int pmcode) {
+		switch (pmcode) {
+
+		case PMCODE_GENERIC:
+			if (generic_result_avail && generic_json.length() > 0) {
+				return generic_json;
+			}
+			return null;
+
+		case PMCODE_SEQ_SPEC:
+			if (seq_spec_result_avail && seq_spec_json.length() > 0) {
+				return seq_spec_json;
+			}
+			return null;
+
+		case PMCODE_BAYESIAN:
+			if (bayesian_result_avail && bayesian_json.length() > 0) {
+				return bayesian_json;
+			}
+			return null;
+
+		case PMCODE_ETAS:
+			if (has_etas_json()) {
+				return get_etas_json();
+			}
+			return null;
+		}
+
+		throw new IllegalArgumentException ("ForecastResults.get_pdl_model_json: Invalid PDL model code: " + pmcode);
+	}
+
+	// Set the model JSON.
+	// The supplied json_text must be non-null and non-empty.
+	// A non-null return will always be non-empty.
+
+	public void set_pdl_model_json (int pmcode, String json_text) {
+		switch (pmcode) {
+
+		case PMCODE_GENERIC:
+			if (generic_result_avail && generic_json.length() > 0) {
+				generic_json = json_text;
+				return;
+			}
+			throw new IllegalStateException ("ForecastResults.set_pdl_model_json: Attempt to set RJ generic JSON text when it is not available");
+
+		case PMCODE_SEQ_SPEC:
+			if (seq_spec_result_avail && seq_spec_json.length() > 0) {
+				seq_spec_json = json_text;
+				return;
+			}
+			throw new IllegalStateException ("ForecastResults.set_pdl_model_json: Attempt to set RJ sequence specific JSON text when it is not available");
+
+		case PMCODE_BAYESIAN:
+			if (bayesian_result_avail && bayesian_json.length() > 0) {
+				bayesian_json = json_text;
+				return;
+			}
+			throw new IllegalStateException ("ForecastResults.set_pdl_model_json: Attempt to set RJ bayesian JSON text when it is not available");
+
+		case PMCODE_ETAS:
+			if (has_etas_json()) {
+				etas_outcome.set_etas_json (json_text);
+				return;
+			}
+			throw new IllegalStateException ("ForecastResults.set_pdl_model_json: Attempt to set ETAS JSON text when it is not available");
+		}
+
+		throw new IllegalArgumentException ("ForecastResults.set_pdl_model_json: Invalid PDL model code: " + pmcode);
+	}
+
+	// Return the code of the currently selected PDL model, or PMCODE_NONE if none is currently selected.
+
+	public int get_selected_pdl_model () {
+
+		// Note the order of checking must match get_pdl_model()
+
+		if (etas_pdl) {
+			return PMCODE_ETAS;
+		}
+
+		if (bayesian_pdl) {
+			return PMCODE_BAYESIAN;
+		}
+
+		if (seq_spec_pdl) {
+			return PMCODE_SEQ_SPEC;
+		}
+
+		if (generic_pdl) {
+			return PMCODE_GENERIC;
+		}
+	
+		return PMCODE_NONE;
+	}
+
+	// Set the selected PDL model.
+	// Throws exception if the model is not selectable.
+
+	public void set_selected_pdl_model (int pmcode) {
+		switch (pmcode) {
+
+		case PMCODE_NONE:
+			etas_pdl = false;
+			bayesian_pdl = false;
+			seq_spec_pdl = false;
+			generic_pdl = false;
+			return;
+
+		case PMCODE_GENERIC:
+			if (generic_result_avail && generic_json.length() > 0) {
+				etas_pdl = false;
+				bayesian_pdl = false;
+				seq_spec_pdl = false;
+				generic_pdl = true;
+				return;
+			}
+			throw new IllegalStateException ("ForecastResults.set_selected_pdl_model: Attempt to select RJ generic model when it is not selectable");
+
+		case PMCODE_SEQ_SPEC:
+			if (seq_spec_result_avail && seq_spec_json.length() > 0 && seq_spec_summary.get_numAftershocks() >= 1) {
+				etas_pdl = false;
+				bayesian_pdl = false;
+				seq_spec_pdl = true;
+				generic_pdl = false;
+				return;
+			}
+			throw new IllegalStateException ("ForecastResults.set_selected_pdl_model: Attempt to select RJ sequence specific model when it is not selectable");
+
+		case PMCODE_BAYESIAN:
+			if (bayesian_result_avail && bayesian_json.length() > 0) {
+				etas_pdl = false;
+				bayesian_pdl = true;
+				seq_spec_pdl = false;
+				generic_pdl = false;
+				return;
+			}
+			throw new IllegalStateException ("ForecastResults.set_selected_pdl_model: Attempt to select RJ bayesian model when it is not selectable");
+
+		case PMCODE_ETAS:
+			if (has_etas_json()) {
+				etas_pdl = true;
+				bayesian_pdl = false;
+				seq_spec_pdl = false;
+				generic_pdl = false;
+				return;
+			}
+			throw new IllegalStateException ("ForecastResults.set_selected_pdl_model: Attempt to select ETAS model when it is not selectable");
+		}
+
+		throw new IllegalArgumentException ("ForecastResults.set_selected_pdl_model: Invalid PDL model code: " + pmcode);
 	}
 
 	// Log calculation results, and also write some logging info to standard out.

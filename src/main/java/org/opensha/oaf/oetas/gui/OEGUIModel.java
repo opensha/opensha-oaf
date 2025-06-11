@@ -668,14 +668,7 @@ public class OEGUIModel extends OEGUIComponent {
 		if (!( modstate >= MODSTATE_PARAMETERS )) {
 			return null;
 		}
-		if (!( forecast_fcresults.generic_result_avail )) {
-			return null;
-		}
-		String s = forecast_fcresults.generic_json;
-		if (s != null && s.trim().isEmpty()) {
-			s = null;
-		}
-		return s;
+		return forecast_fcresults.get_pdl_model_json (ForecastResults.PMCODE_GENERIC);
 	}
 
 
@@ -690,14 +683,7 @@ public class OEGUIModel extends OEGUIComponent {
 		if (!( modstate >= MODSTATE_PARAMETERS )) {
 			return null;
 		}
-		if (!( forecast_fcresults.seq_spec_result_avail )) {
-			return null;
-		}
-		String s = forecast_fcresults.seq_spec_json;
-		if (s != null && s.trim().isEmpty()) {
-			s = null;
-		}
-		return s;
+		return forecast_fcresults.get_pdl_model_json (ForecastResults.PMCODE_SEQ_SPEC);
 	}
 
 
@@ -712,14 +698,7 @@ public class OEGUIModel extends OEGUIComponent {
 		if (!( modstate >= MODSTATE_PARAMETERS )) {
 			return null;
 		}
-		if (!( forecast_fcresults.bayesian_result_avail )) {
-			return null;
-		}
-		String s = forecast_fcresults.bayesian_json;
-		if (s != null && s.trim().isEmpty()) {
-			s = null;
-		}
-		return s;
+		return forecast_fcresults.get_pdl_model_json (ForecastResults.PMCODE_BAYESIAN);
 	}
 
 
@@ -734,14 +713,7 @@ public class OEGUIModel extends OEGUIComponent {
 		if (!( modstate >= MODSTATE_PARAMETERS )) {
 			return null;
 		}
-		if (!( forecast_fcresults.has_etas_json() )) {
-			return null;
-		}
-		String s = forecast_fcresults.get_etas_json();
-		if (s != null && s.trim().isEmpty()) {
-			s = null;
-		}
-		return s;
+		return forecast_fcresults.get_pdl_model_json (ForecastResults.PMCODE_ETAS);
 	}
 
 
@@ -752,7 +724,7 @@ public class OEGUIModel extends OEGUIComponent {
 		if (!( modstate >= MODSTATE_PARAMETERS )) {
 			throw new IllegalStateException ("Access to OEGUIModel.isGenericSelected while in state " + cur_modstate_string());
 		}
-		return forecast_fcresults.generic_pdl;
+		return (forecast_fcresults.get_selected_pdl_model() == ForecastResults.PMCODE_GENERIC);
 	}
 
 
@@ -763,7 +735,7 @@ public class OEGUIModel extends OEGUIComponent {
 		if (!( modstate >= MODSTATE_PARAMETERS )) {
 			throw new IllegalStateException ("Access to OEGUIModel.isSeqSpecSelected while in state " + cur_modstate_string());
 		}
-		return forecast_fcresults.seq_spec_pdl;
+		return (forecast_fcresults.get_selected_pdl_model() == ForecastResults.PMCODE_SEQ_SPEC);
 	}
 
 
@@ -774,7 +746,7 @@ public class OEGUIModel extends OEGUIComponent {
 		if (!( modstate >= MODSTATE_PARAMETERS )) {
 			throw new IllegalStateException ("Access to OEGUIModel.isBayesianSelected while in state " + cur_modstate_string());
 		}
-		return forecast_fcresults.bayesian_pdl;
+		return (forecast_fcresults.get_selected_pdl_model() == ForecastResults.PMCODE_BAYESIAN);
 	}
 
 
@@ -785,7 +757,7 @@ public class OEGUIModel extends OEGUIComponent {
 		if (!( modstate >= MODSTATE_PARAMETERS )) {
 			throw new IllegalStateException ("Access to OEGUIModel.isEtasSelected while in state " + cur_modstate_string());
 		}
-		return forecast_fcresults.etas_pdl;
+		return (forecast_fcresults.get_selected_pdl_model() == ForecastResults.PMCODE_ETAS);
 	}
 
 

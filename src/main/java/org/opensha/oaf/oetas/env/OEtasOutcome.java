@@ -25,6 +25,14 @@ public abstract class OEtasOutcome implements Marshalable {
 
 	public abstract String get_etas_json ();
 
+	// Set the ETAS results JSON.
+	// The purpose of this function is to be able to adjust forecast info after the
+	// computation is complete (such as injectable text). It must only be called after
+	// a call to get_etas_json that returns a non-null non-empty result.  The supplied
+	// json_text must be non-null and non-empty.
+
+	public abstract void set_etas_json (String json_text);
+
 
 
 
