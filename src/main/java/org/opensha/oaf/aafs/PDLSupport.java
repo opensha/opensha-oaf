@@ -205,16 +205,14 @@ public class PDLSupport extends ServerComponent {
 	public static String static_send_pdl_report (
 		boolean isReviewed,
 		EventSequenceResult evseq_res,
-		long creation_time,
-		ForecastMainshock forecast_mainshock,
-		ForecastParameters forecast_params,
-		ForecastResults forecast_results,
-		AnalystOptions analyst_options
+		ForecastData forecast_data
 	) throws Exception {
 
 		evseq_res.clear();
 
 		// Check for availability of event id, network, and code
+
+		ForecastMainshock forecast_mainshock = forecast_data.mainshock;
 
 		if (forecast_mainshock.mainshock_event_id == null || forecast_mainshock.mainshock_event_id.trim().isEmpty()) {
 			throw new IllegalArgumentException ("Cannot construct OAF product because the event ID is not available");
@@ -223,12 +221,6 @@ public class PDLSupport extends ServerComponent {
 			|| forecast_mainshock.mainshock_code == null || forecast_mainshock.mainshock_code.trim().isEmpty()) {
 			throw new IllegalArgumentException ("Cannot construct OAF product for event " + forecast_mainshock.mainshock_event_id + " because the mainshock network and code are not available");
 		}
-
-		// Collect the forecast data
-
-		ForecastData forecast_data = new ForecastData();
-		forecast_data.set_data (creation_time, forecast_mainshock, forecast_params,
-							forecast_results, analyst_options);
 
 		// The suggested product code, derived from the event ID
 
@@ -259,6 +251,33 @@ public class PDLSupport extends ServerComponent {
 		// Save the event ID used for PDL
 
 		return forecast_data.pdl_event_id;
+	}
+
+
+
+
+	// Static version that also sends event-sequence products.
+	// Returns the event ID used for PDL.
+
+	public static String static_send_pdl_report (
+		boolean isReviewed,
+		EventSequenceResult evseq_res,
+		long creation_time,
+		ForecastMainshock forecast_mainshock,
+		ForecastParameters forecast_params,
+		ForecastResults forecast_results,
+		AnalystOptions analyst_options
+	) throws Exception {
+
+		// Collect the forecast data
+
+		ForecastData forecast_data = new ForecastData();
+		forecast_data.set_data (creation_time, forecast_mainshock, forecast_params,
+							forecast_results, analyst_options);
+
+		// Finish the send
+
+		return static_send_pdl_report (isReviewed, evseq_res, forecast_data);
 	}
 
 
@@ -390,53 +409,15 @@ public class PDLSupport extends ServerComponent {
 		CompactEqkRupList catalog
 	) throws Exception {
 
-		evseq_res.clear();
-
-		// Check for availability of event id, network, and code
-
-		if (forecast_mainshock.mainshock_event_id == null || forecast_mainshock.mainshock_event_id.trim().isEmpty()) {
-			throw new IllegalArgumentException ("Cannot construct OAF product because the event ID is not available");
-		}
-		if (forecast_mainshock.mainshock_network == null || forecast_mainshock.mainshock_network.trim().isEmpty()
-			|| forecast_mainshock.mainshock_code == null || forecast_mainshock.mainshock_code.trim().isEmpty()) {
-			throw new IllegalArgumentException ("Cannot construct OAF product for event " + forecast_mainshock.mainshock_event_id + " because the mainshock network and code are not available");
-		}
-
 		// Collect the forecast data
 
 		ForecastData forecast_data = new ForecastData();
 		forecast_data.set_data (creation_time, forecast_mainshock, forecast_params,
 							forecast_results, analyst_options, catalog);
 
-		// The suggested product code, derived from the event ID
+		// Finish the send
 
-		String suggested_code = forecast_mainshock.mainshock_event_id;
-
-		// Build the product
-
-		Product product = forecast_data.make_pdl_product (evseq_res, suggested_code, isReviewed);
-
-		// Stop if conflict
-
-		if (product == null) {
-			throw new RuntimeException ("Cannot construct OAF product for event " + forecast_mainshock.mainshock_event_id + " due to the presence of a conflicting product in PDL");
-		}
-
-		// Send event-sequence product, if any
-
-		evseq_res.perform_send();
-
-		// Sign the product
-
-		PDLSender.signProduct(product);
-
-		// Send the product, true means it is text
-
-		PDLSender.sendProduct(product, true);
-
-		// Save the event ID used for PDL
-
-		return forecast_data.pdl_event_id;
+		return static_send_pdl_report (isReviewed, evseq_res, forecast_data);
 	}
 
 
