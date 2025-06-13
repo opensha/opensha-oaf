@@ -340,6 +340,61 @@ public class ForecastData implements Marshalable {
 
 
 
+	//----- Adjustments -----
+
+
+
+
+	// Saved values from adjustments, null if no adjustments have been done.
+
+	private AdjustableParameters.AdjSaveForecastData adj_save_forecast_data = null;
+
+
+
+
+	// Adjust values, after forecast has been computed.
+
+	public void adjust_post_forecast (AdjustableParameters adj_params) {
+		if (adj_save_forecast_data == null) {
+			adj_save_forecast_data = new AdjustableParameters.AdjSaveForecastData();
+		}
+		adj_params.adjust_forecast_data (adj_save_forecast_data, this);
+		return;
+	}
+
+
+
+
+	// Revert any adjustments made after the forecast has been computed.
+
+	public void revert_post_forecast () {
+		if (adj_save_forecast_data != null) {
+			adj_save_forecast_data.revert_to (this);
+			adj_save_forecast_data = null;
+		}
+		return;
+	}
+
+
+
+
+	// Return an auto closeable class that reverts adjustments when closed.
+
+	public class AutoRevert implements AutoCloseable {
+		@Override
+		public void close() {
+			revert_post_forecast();
+			return;
+		}
+	}
+
+	public AutoRevert get_auto_revert () {
+		return new AutoRevert();
+	}
+
+
+
+
 	//----- PDL functions -----
 
 
