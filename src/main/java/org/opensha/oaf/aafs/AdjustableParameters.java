@@ -311,11 +311,7 @@ public class AdjustableParameters {
 			// Injectable text
 
 			if (f_adj_injectable_text) {
-				if (has_text (injectable_text)) {
-					fc_params.injectable_text = injectable_text;
-				} else {
-					fc_params.injectable_text = ForecastParameters.INJ_TXT_USE_DEFAULT;
-				}
+				fc_params.set_eff_injectable_text (injectable_text);
 			} else {
 				adj_save.revert_text_to (fc_params);
 			}
@@ -323,18 +319,7 @@ public class AdjustableParameters {
 			// Event-sequence
 
 			if (f_adj_evseq) {
-				if (evseq_cfg_params == null) {
-					fc_params.evseq_cfg_fetch_meth = ForecastParameters.FETCH_METH_AUTO;
-					if (f_analyst_params) {
-						fc_params.evseq_cfg_avail = false;
-						fc_params.evseq_cfg_params = null;
-					} else {
-						fc_params.evseq_cfg_avail = true;
-						fc_params.evseq_cfg_params = (new EventSequenceParameters()).fetch();
-					}
-				} else {
-					fc_params.set_analyst_evseq_cfg_params (true, evseq_cfg_params);
-				}
+				fc_params.set_or_fetch_evseq_cfg_params (evseq_cfg_params, f_analyst_params);
 			} else {
 				adj_save.revert_evseq_to (fc_params);
 			}

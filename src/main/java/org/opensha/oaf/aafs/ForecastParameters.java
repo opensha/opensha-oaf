@@ -160,6 +160,35 @@ public class ForecastParameters implements Marshalable {
 		return result;
 	}
 
+	// Get the effective injectable text.
+	// The default text is taken from the action configuration.
+	// Note: The return value is always non-null, and is "" if no injectable text is desired.
+
+	public String get_eff_injectable_text () {
+		return get_eff_injectable_text ((new ActionConfig()).get_def_injectable_text());
+	}
+
+	// Set the effective injectable text.
+	// If the text is null, or equals the default injectable text, then it is treated as default.
+
+	public void set_eff_injectable_text (String text, String def_injectable_text) {
+		if (text == null || (def_injectable_text != null && text.equals (def_injectable_text))) {
+			injectable_text = INJ_TXT_USE_DEFAULT;
+		} else {
+			injectable_text = text;
+		}
+		return;
+	}
+
+	// Set the effective injectable text.
+	// If the text is null, or equals the default injectable text from the action configuration,
+	// then it is treated as default.
+
+	public void set_eff_injectable_text (String text) {
+		set_eff_injectable_text (text, (new ActionConfig()).get_def_injectable_text());
+		return;
+	}
+
 	// Set flags to suppress all R&J forecasts.
 
 	public void set_rj_suppress () {
@@ -925,6 +954,33 @@ public class ForecastParameters implements Marshalable {
 		evseq_cfg_fetch_meth = FETCH_METH_ANALYST;
 		evseq_cfg_avail = the_evseq_cfg_avail;
 		evseq_cfg_params = the_evseq_cfg_params;
+		return;
+	}
+
+	// Set or fetch event-sequence configuration values.
+	// If the_evseq_cfg_params is non-null, set it as the event-sequence parameters
+	// as if fetched from analyst parameters.
+	// If the_evseq_cfg_params is null, set the event-sequence parameters as if 
+	// determined by the automatic system.
+	// The f_analyst_params flag indicates if this ForecastParameters object is
+	// being used as analyst parameters.
+
+	public void set_or_fetch_evseq_cfg_params (
+		EventSequenceParameters the_evseq_cfg_params,
+		boolean f_analyst_params
+	) {
+		if (the_evseq_cfg_params == null) {
+			evseq_cfg_fetch_meth = ForecastParameters.FETCH_METH_AUTO;
+			if (f_analyst_params) {
+				evseq_cfg_avail = false;
+				evseq_cfg_params = null;
+			} else {
+				evseq_cfg_avail = true;
+				evseq_cfg_params = (new EventSequenceParameters()).fetch();
+			}
+		} else {
+			set_analyst_evseq_cfg_params (true, the_evseq_cfg_params);
+		}
 		return;
 	}
 
