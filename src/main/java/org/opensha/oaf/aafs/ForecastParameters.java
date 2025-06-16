@@ -168,8 +168,19 @@ public class ForecastParameters implements Marshalable {
 		return get_eff_injectable_text ((new ActionConfig()).get_def_injectable_text());
 	}
 
+	// Get the raw injectable text.
+	// The return value is null if it is default.
+
+	public String get_raw_injectable_text () {
+		if (injectable_text.equals (INJ_TXT_USE_DEFAULT)) {
+			return null;
+		}
+		return injectable_text;
+	}
+
 	// Set the effective injectable text.
 	// If the text is null, or equals the default injectable text, then it is treated as default.
+	// If def_injectable_text is null, then only text == null is treated as default.
 
 	public void set_eff_injectable_text (String text, String def_injectable_text) {
 		if (text == null || (def_injectable_text != null && text.equals (def_injectable_text))) {

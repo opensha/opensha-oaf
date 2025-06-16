@@ -34,16 +34,42 @@ public class AdjustableParameters {
 
 	public boolean f_adj_injectable_text = false;
 
-	// The injectable text to use, or "" if none.
-	// Note: In principle, null selects the system default and "" selects empty text.
-	// But, the system default is empty text, so for now both set the system default.
+	// The injectable text to use, or "" if none, or null to select the system default.
 
-	public String injectable_text = "";
+	public String injectable_text = null;
 
 	// Return true if we are adjusting injectable text to a non-default value.
 
 	public boolean is_adj_nondef_injectable_text () {
-		return (f_adj_injectable_text && has_text (injectable_text));
+		return (f_adj_injectable_text && injectable_text != null);
+	}
+
+	// Get the injectable text, converting null to "".
+
+	public String get_injectable_text_non_null () {
+		return ((injectable_text == null) ? "" : injectable_text);
+	}
+
+	// Set the injectable text, converting "" to null.
+
+	public void set_injectable_text_non_empty (String s) {
+		if (s.isEmpty()) {
+			injectable_text = null;
+		} else {
+			injectable_text = s;
+		}
+		return;
+	}
+
+	// Get the effective injectable text.
+	// If injectable_text is null, the default injectable text is obtained from the action configuration.
+	// Note: The return value is always non-null, and is "" if no injectable text is desired.
+
+	public String get_eff_injectable_text () {
+		if (injectable_text == null) {
+			return (new ActionConfig()).get_def_injectable_text();
+		}
+		return injectable_text;
 	}
 
 
@@ -151,6 +177,44 @@ public class AdjustableParameters {
 
 
 
+	// True if adjusting maximum forecast lag.
+	// Used for: analyst options.
+
+	public boolean f_adj_max_forecast_lag = false;
+
+	// The maximum forecast lag, in milliseconds since the mainshock, or 0L for system default.
+
+	public long max_forecast_lag = 0L;
+
+	// Return true if adjusting maximum forecast lag to a non-default value.
+
+	public boolean is_adj_nondef_max_forecast_lag () {
+		return (f_adj_max_forecast_lag && max_forecast_lag != 0L);
+	}
+
+
+
+	// True if adjusting intake options.
+	// Used for: analyst options.
+
+	public boolean f_adj_intake = false;
+
+	// Option for intake filtering.
+
+	public int intake_option = AnalystOptions.OPT_INTAKE_NORMAL;
+
+	// Option for shadowing.
+
+	public int shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
+
+	// Return true if adjusting intake options to a non-default value.
+
+	public boolean is_adj_nondef_intake () {
+		return (f_adj_intake && (intake_option != AnalystOptions.OPT_INTAKE_NORMAL || shadow_option != AnalystOptions.OPT_SHADOW_NORMAL));
+	}
+
+
+
 
 	// toString - Convert to string.
 
@@ -171,7 +235,7 @@ public class AdjustableParameters {
 
 		result.append ("f_adj_next_forecast_time = " + f_adj_next_forecast_time + "\n");
 		if (f_adj_next_forecast_time) {
-			result.append (SimpleUtils.time_raw_and_string_with_cutoff (nextForecastTime, 0L) + "\n");
+			result.append ("nextForecastTime = " + SimpleUtils.time_raw_and_string_with_cutoff (nextForecastTime, 0L) + "\n");
 		}
 
 		result.append ("f_adj_advisory_time_frame = " + f_adj_advisory_time_frame + "\n");
@@ -191,10 +255,60 @@ public class AdjustableParameters {
 
 		result.append ("f_adj_pdl_model = " + f_adj_pdl_model + "\n");
 		if (f_adj_pdl_model) {
-			result.append (Integer.toString (pdl_model_pmcode) + "\n");
+			result.append ("pdl_model_pmcode = " + Integer.toString (pdl_model_pmcode) + "\n");
+		}
+
+		result.append ("f_adj_max_forecast_lag = " + f_adj_max_forecast_lag + "\n");
+		if (f_adj_max_forecast_lag) {
+			result.append ("max_forecast_lag = " + SimpleUtils.duration_raw_and_string_2 (max_forecast_lag) + "\n");
+		}
+
+		result.append ("f_adj_intake = " + f_adj_intake + "\n");
+		if (f_adj_intake) {
+			result.append ("intake_option = " + intake_option + "\n");
+			result.append ("shadow_option = " + shadow_option + "\n");
 		}
 
 		return result.toString();
+	}
+
+
+
+
+	// Copy from another object.
+	// Returns this object.
+
+	public AdjustableParameters copy_from (AdjustableParameters other) {
+		this.f_adj_injectable_text		= other.f_adj_injectable_text;
+		this.injectable_text			= other.injectable_text;
+
+		this.f_adj_analyst_text			= other.f_adj_analyst_text;
+		this.analyst_id					= other.analyst_id;
+		this.analyst_remark				= other.analyst_remark;
+
+		this.f_adj_next_forecast_time	= other.f_adj_next_forecast_time;
+		this.nextForecastTime			= other.nextForecastTime;
+
+		this.f_adj_advisory_time_frame	= other.f_adj_advisory_time_frame;
+		this.advisoryTimeFrame			= other.advisoryTimeFrame;
+
+		this.f_adj_template				= other.f_adj_template;
+		this.template					= other.template;
+
+		this.f_adj_evseq				= other.f_adj_evseq;
+		this.evseq_cfg_params			= other.evseq_cfg_params;
+
+		this.f_adj_pdl_model			= other.f_adj_pdl_model;
+		this.pdl_model_pmcode			= other.pdl_model_pmcode;
+
+		this.f_adj_max_forecast_lag		= other.f_adj_max_forecast_lag;
+		this.max_forecast_lag			= other.max_forecast_lag;
+
+		this.f_adj_intake				= other.f_adj_intake;
+		this.intake_option				= other.intake_option;
+		this.shadow_option				= other.shadow_option;
+
+		return this;
 	}
 
 
@@ -311,7 +425,7 @@ public class AdjustableParameters {
 			// Injectable text
 
 			if (f_adj_injectable_text) {
-				fc_params.set_eff_injectable_text (injectable_text);
+				fc_params.set_eff_injectable_text (injectable_text, null);
 			} else {
 				adj_save.revert_text_to (fc_params);
 			}
@@ -337,6 +451,47 @@ public class AdjustableParameters {
 
 
 
+	// Class to adjust ForecastParameters and automatically revert on close.
+
+	public class AutoAdjForecastParameters implements AutoCloseable {
+		private ForecastParameters fc_params;
+		private boolean f_analyst_params;
+		private AdjSaveForecastParameters adj_save;
+
+		// Adjust parameters, can be called after construction to re-adjust.
+
+		public final void adjust () {
+			adjust_forecast_parameters (adj_save, fc_params, f_analyst_params);
+			return;
+		}
+
+		// Constructor saves the object being adjusted.
+
+		public AutoAdjForecastParameters (ForecastParameters fc_params, boolean f_analyst_params) {
+			this.fc_params = fc_params;
+			this.f_analyst_params = f_analyst_params;
+			this.adj_save = new AdjSaveForecastParameters();
+			adjust();
+		}
+
+		// Revert on close.
+
+		@Override
+		public void close() {
+			adj_save.revert_to (fc_params);
+			return;
+		}
+	}
+
+	// Make an auto-closeable object that adjusts parameters and reverts on close.
+
+	public AutoAdjForecastParameters get_auto_adj (ForecastParameters fc_params, boolean f_analyst_params) {
+		return new AutoAdjForecastParameters (fc_params, f_analyst_params);
+	}
+
+
+
+
 	//----- Adjustments to AnalystOptions -----
 
 
@@ -345,14 +500,14 @@ public class AdjustableParameters {
 	// Return true if we are adjusting analyst options.
 
 	public boolean is_adj_analyst_options () {
-		return (f_adj_analyst_text || is_adj_forecast_parameters());
+		return (f_adj_analyst_text || is_adj_forecast_parameters() || f_adj_max_forecast_lag || f_adj_intake);
 	}
 
 
 	// Return true if we are adjusting analyst options to non-default values.
 
 	public boolean is_adj_nondef_analyst_options () {
-		return (is_adj_nondef_analyst_text() || is_adj_nondef_forecast_parameters());
+		return (is_adj_nondef_analyst_text() || is_adj_nondef_forecast_parameters() || is_adj_nondef_max_forecast_lag() || is_adj_nondef_intake());
 	}
 
 
@@ -375,9 +530,18 @@ public class AdjustableParameters {
 
 		public boolean saved_has_analyst_params = false;
 
-		// Saved values from analyst_params
+		// Saved values from analyst_params.
 
 		public AdjSaveForecastParameters adj_save_analyst_params = new AdjSaveForecastParameters();
+
+		// Saved maximum forecast lag.
+
+		public long saved_max_forecast_lag = 0L;
+
+		// Saved intake options.
+
+		public int saved_intake_option = AnalystOptions.OPT_INTAKE_NORMAL;
+		public int saved_shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
 
 		// Clear to nothing saved.
 
@@ -389,6 +553,11 @@ public class AdjustableParameters {
 
 			saved_has_analyst_params = false;
 			adj_save_analyst_params.clear();
+
+			saved_max_forecast_lag = 0L;
+
+			saved_intake_option = AnalystOptions.OPT_INTAKE_NORMAL;
+			saved_shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
 
 			return;
 		}
@@ -409,6 +578,11 @@ public class AdjustableParameters {
 					saved_has_analyst_params = true;
 					adj_save_analyst_params.save_from (fc_analyst_opts.analyst_params);
 				}
+
+				saved_max_forecast_lag = fc_analyst_opts.max_forecast_lag;
+
+				saved_intake_option = fc_analyst_opts.intake_option;
+				saved_shadow_option = fc_analyst_opts.shadow_option;
 			}
 			return;
 		}
@@ -434,9 +608,26 @@ public class AdjustableParameters {
 			return;
 		}
 
+		public void revert_max_forecast_lag_to (AnalystOptions fc_analyst_opts) {
+			if (f_saved) {
+				fc_analyst_opts.max_forecast_lag = saved_max_forecast_lag;
+			}
+			return;
+		}
+
+		public void revert_intake_to (AnalystOptions fc_analyst_opts) {
+			if (f_saved) {
+				fc_analyst_opts.intake_option = saved_intake_option;
+				fc_analyst_opts.shadow_option = saved_shadow_option;
+			}
+			return;
+		}
+
 		public void revert_to (AnalystOptions fc_analyst_opts) {
 			revert_analyst_text_to (fc_analyst_opts);
 			revert_analyst_params_to (fc_analyst_opts);
+			revert_max_forecast_lag_to (fc_analyst_opts);
+			revert_intake_to (fc_analyst_opts);
 			return;
 		}
 	}
@@ -493,6 +684,23 @@ public class AdjustableParameters {
 			} else {
 				adj_save.revert_analyst_params_to (fc_analyst_opts);
 			}
+
+			// Maximum forecast lag
+
+			if (f_adj_max_forecast_lag) {
+				fc_analyst_opts.max_forecast_lag = max_forecast_lag;
+			} else {
+				adj_save.revert_max_forecast_lag_to (fc_analyst_opts);
+			}
+
+			// Intake options
+
+			if (f_adj_intake) {
+				fc_analyst_opts.intake_option = intake_option;
+				fc_analyst_opts.shadow_option = shadow_option;
+			} else {
+				adj_save.revert_intake_to (fc_analyst_opts);
+			}
 		}
 
 		// Otherwise, revert
@@ -502,6 +710,45 @@ public class AdjustableParameters {
 		}
 
 		return;
+	}
+
+
+
+
+	// Class to adjust AnalystOptions and automatically revert on close.
+
+	public class AutoAdjAnalystOptions implements AutoCloseable {
+		private AnalystOptions fc_analyst_opts;
+		private AdjSaveAnalystOptions adj_save;
+
+		// Adjust parameters, can be called after construction to re-adjust.
+
+		public final void adjust () {
+			adjust_analyst_options (adj_save, fc_analyst_opts);
+			return;
+		}
+
+		// Constructor saves the object being adjusted.
+
+		public AutoAdjAnalystOptions (AnalystOptions fc_analyst_opts) {
+			this.fc_analyst_opts = fc_analyst_opts;
+			this.adj_save = new AdjSaveAnalystOptions();
+			adjust();
+		}
+
+		// Revert on close.
+
+		@Override
+		public void close() {
+			adj_save.revert_to (fc_analyst_opts);
+			return;
+		}
+	}
+
+	// Make an auto-closeable object that adjusts parameters and reverts on close.
+
+	public AutoAdjAnalystOptions get_auto_adj (AnalystOptions fc_analyst_opts) {
+		return new AutoAdjAnalystOptions (fc_analyst_opts);
 	}
 
 
@@ -635,7 +882,7 @@ public class AdjustableParameters {
 		// Adjust injectable text
 
 		if (f_adj_injectable_text) {
-			fc_holder.set_injectable_text (injectable_text);
+			fc_holder.set_injectable_text (get_eff_injectable_text());
 		}
 
 		// Adjust next forecast time
@@ -711,6 +958,45 @@ public class AdjustableParameters {
 		}
 
 		return;
+	}
+
+
+
+
+	// Class to adjust ForecastResults and automatically revert on close.
+
+	public class AutoAdjForecastResults implements AutoCloseable {
+		private ForecastResults fc_results;
+		private AdjSaveForecastResults adj_save;
+
+		// Adjust parameters, can be called after construction to re-adjust.
+
+		public final void adjust () {
+			adjust_forecast_results (adj_save, fc_results);
+			return;
+		}
+
+		// Constructor saves the object being adjusted.
+
+		public AutoAdjForecastResults (ForecastResults fc_results) {
+			this.fc_results = fc_results;
+			this.adj_save = new AdjSaveForecastResults();
+			adjust();
+		}
+
+		// Revert on close.
+
+		@Override
+		public void close() {
+			adj_save.revert_to (fc_results);
+			return;
+		}
+	}
+
+	// Make an auto-closeable object that adjusts parameters and reverts on close.
+
+	public AutoAdjForecastResults get_auto_adj (ForecastResults fc_results) {
+		return new AutoAdjForecastResults (fc_results);
 	}
 
 
@@ -814,6 +1100,132 @@ public class AdjustableParameters {
 		else {
 			adj_save.revert_to (fc_data);
 		}
+
+		return;
+	}
+
+
+
+
+	// Class to adjust ForecastData and automatically revert on close.
+
+	public class AutoAdjForecastData implements AutoCloseable {
+		private ForecastData fc_data;
+		private AdjSaveForecastData adj_save;
+
+		// Adjust parameters, can be called after construction to re-adjust.
+
+		public final void adjust () {
+			adjust_forecast_data (adj_save, fc_data);
+			return;
+		}
+
+		// Constructor saves the object being adjusted.
+
+		public AutoAdjForecastData (ForecastData fc_data) {
+			this.fc_data = fc_data;
+			this.adj_save = new AdjSaveForecastData();
+			adjust();
+		}
+
+		// Revert on close.
+
+		@Override
+		public void close() {
+			adj_save.revert_to (fc_data);
+			return;
+		}
+	}
+
+	// Make an auto-closeable object that adjusts parameters and reverts on close.
+
+	public AutoAdjForecastData get_auto_adj (ForecastData fc_data) {
+		return new AutoAdjForecastData (fc_data);
+	}
+
+
+
+
+	//----- GUI Support -----
+
+
+
+
+	// Set values from the analyst options of an existing forecast.
+	// Parameters:
+	//  fc_analyst_opts = Anslyst options of an existing forecast, or null if none.
+	// Note: The intent is that this object can be used to hold values that are being
+	// adjusted in the GUI.
+
+	public void setup_from_analyst_opts (AnalystOptions fc_analyst_opts) {
+
+		// If null, set up using a default analyst options
+
+		AnalystOptions my_opts = fc_analyst_opts;
+
+		if (my_opts == null) {
+			my_opts = new AnalystOptions();
+			my_opts.setup_all_default();
+		}
+
+		// Injectable text
+
+		f_adj_injectable_text = true;
+		if (my_opts.analyst_params == null) {
+			injectable_text = null;
+		} else {
+			injectable_text = my_opts.analyst_params.get_raw_injectable_text();
+		}
+
+		// Analyst text
+
+		f_adj_analyst_text = true;
+		analyst_id = my_opts.analyst_id;
+		analyst_remark = my_opts.analyst_remark;
+
+		// Next forecast time, set to default
+
+		f_adj_next_forecast_time = false;
+		nextForecastTime = 0L;
+
+		// Advisory duration, set to default
+
+		f_adj_advisory_time_frame = false;
+		advisoryTimeFrame = null;
+
+		// Product template, set to default
+
+		f_adj_template = false;
+		template = null;
+
+		// Event-sequence parameters
+
+		f_adj_evseq = true;
+		if (my_opts.analyst_params == null) {
+			evseq_cfg_params = null;
+		} else {
+			if (my_opts.analyst_params.evseq_cfg_avail) {
+				evseq_cfg_params = my_opts.analyst_params.evseq_cfg_params;
+			} else {
+				evseq_cfg_params = null;
+			}
+		}
+
+		// PDL model, set to not available
+
+		f_adj_pdl_model = false;
+		pdl_model_pmcode = ForecastResults.PMCODE_INVALID;
+
+		// Maximum forecast lag
+
+		f_adj_max_forecast_lag = true;
+		max_forecast_lag = my_opts.max_forecast_lag;
+
+		// Intake options
+
+		f_adj_intake = true;
+		intake_option = my_opts.intake_option;
+		shadow_option = my_opts.shadow_option;
 
 		return;
 	}
