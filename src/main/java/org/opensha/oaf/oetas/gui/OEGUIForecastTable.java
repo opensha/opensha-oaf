@@ -490,7 +490,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 				// Set injectable text
 
-				String injText = gui_model.get_analyst_inj_text();
+				String injText = gui_model.get_analyst_adj_params().injectable_text;
 				if (injText != null && injText.length() == 0) {
 					injText = null;
 				}
@@ -546,7 +546,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 				// Set injectable text
 
-				String injText = gui_model.get_analyst_inj_text();
+				String injText = gui_model.get_analyst_adj_params().injectable_text;
 				if (injText != null && injText.length() == 0) {
 					injText = null;
 				}
@@ -696,7 +696,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 			// Show a dialog containing the existing injectable text
 			// (Same code as in OEGUIController.)
 
-			String prevText = gui_model.get_analyst_inj_text();
+			String prevText = gui_model.get_analyst_adj_params().get_injectable_text_non_null();
 			if (prevText == null) {	// should never happen
 				prevText = "";
 			}
@@ -714,7 +714,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 			if (ret == JOptionPane.OK_OPTION) {
 				String text = area.getText().trim();
-				gui_model.setAnalystInjText(text);
+				gui_model.get_analyst_adj_params().set_injectable_text_non_empty(text);
 			}
 		}
 		break;

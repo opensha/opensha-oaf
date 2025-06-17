@@ -142,6 +142,7 @@ import org.opensha.oaf.util.gui.GUISeparatorParameter;
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.GUICmd;
+import org.opensha.oaf.aafs.AnalystOptions;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
@@ -515,11 +516,11 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 		// When analyst options are disabled, force to normal settings
 
-		if (!( f_analyst_option_enable )) {
-			updateParam(autoEnableParam, AutoEnable.NORMAL);
-			updateParam(useCustomParamsParam, true);
-			updateParam(forecastDurationParam, gui_model.get_def_fc_duration_days());
-		}
+		//  if (!( f_analyst_option_enable )) {
+		//  	updateParam(autoEnableParam, AutoEnable.NORMAL);
+		//  	updateParam(useCustomParamsParam, true);
+		//  	updateParam(forecastDurationParam, gui_model.get_def_fc_duration_days());
+		//  }
 
 		return;
 	}
@@ -536,6 +537,58 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 	private void report_analyst_change () throws GUIEDTException {
 		//gui_controller.notify_analyst_option_change();
+		return;
+	}
+
+
+	// Update analyst values from model.
+
+	public void update_analyst_from_model () throws GUIEDTException {
+
+		// Forecast enable selection
+
+		if (gui_model.get_analyst_adj_params().f_adj_intake) {
+			switch (gui_model.get_analyst_adj_params().intake_option) {
+			case AnalystOptions.OPT_INTAKE_BLOCK:
+				updateParam(autoEnableParam, AutoEnable.DISABLE);
+				break;
+			case AnalystOptions.OPT_INTAKE_IGNORE:
+				updateParam(autoEnableParam, AutoEnable.ENABLE);
+				break;
+			case AnalystOptions.OPT_INTAKE_NORMAL:
+				updateParam(autoEnableParam, AutoEnable.NORMAL);
+				break;
+			default:
+				updateParam(autoEnableParam, AutoEnable.NORMAL);
+				break;
+			}
+		} else {
+			updateParam(autoEnableParam, AutoEnable.NORMAL);
+		}
+
+		// Maximum forecast lag
+
+		if (gui_model.get_analyst_adj_params().f_adj_max_forecast_lag) {
+			if (gui_model.get_analyst_adj_params().max_forecast_lag == 0L) {
+				updateParam(forecastDurationParam, gui_model.get_def_fc_duration_days());
+			} else {
+				updateParam(forecastDurationParam, OEGUIModel.fc_duration_to_days (gui_model.get_analyst_adj_params().max_forecast_lag));
+			}
+		} else {
+			updateParam(forecastDurationParam, gui_model.get_def_fc_duration_days());
+		}
+
+		// Flag to use custom parameters
+
+		if (gui_model.get_existing_analyst_opts() == null) {
+			updateParam(useCustomParamsParam, true);
+		} else {
+			// At this point one might look at gui_model.get_existing_analyst_opts().analyst_params
+			// to check if it is non-null and contains any non-default parameters, and update 
+			// useCustomParamsParam to false if not.  However, that is probably not what the user desires.
+			updateParam(useCustomParamsParam, true);
+		}
+
 		return;
 	}
 
@@ -677,7 +730,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 			// Show a dialog containing the existing injectable text
 
-			String prevText = gui_model.get_analyst_inj_text();
+			String prevText = gui_model.get_analyst_adj_params().get_injectable_text_non_null();
 			if (prevText == null) {	// should never happen
 				prevText = "";
 			}
@@ -695,7 +748,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 			if (ret == JOptionPane.OK_OPTION) {
 				String text = area.getText().trim();
-				gui_model.setAnalystInjText(text);
+				gui_model.get_analyst_adj_params().set_injectable_text_non_empty(text);
 				report_analyst_change();
 			}
 		}

@@ -804,6 +804,8 @@ public class OEGUIController extends OEGUIListener {
 
 		sub_ctl_forecast_param.update_fc_value_from_model();
 
+		sub_ctl_analyst_option.update_analyst_from_model();
+
 		return;
 	}
 

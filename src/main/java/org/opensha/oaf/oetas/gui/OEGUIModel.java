@@ -115,6 +115,7 @@ import org.opensha.oaf.aafs.ServerCmd;
 import org.opensha.oaf.aafs.AnalystOptions;
 import org.opensha.oaf.aafs.ActionConfig;
 import org.opensha.oaf.aafs.ServerClock;
+import org.opensha.oaf.aafs.AdjustableParameters;
 
 import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.SimpleUtils;
@@ -401,17 +402,19 @@ public class OEGUIModel extends OEGUIComponent {
 
 	private SphRegion custom_search_region;
 
-	// Analyst injectable text, or null if none.
+	// Analyst adjustable parameters.
 	// Available when model state >= MODSTATE_CATALOG.
-	// An empty string means no injectable text.
+	// If a download file is available at the time the catalog is loaded, this is initialized
+	// from the analyst options in the download file.  Otherwise, it is initialized from
+	// a default set of analyst options.
 
-	private String analyst_inj_text;
+	private AdjustableParameters analyst_adj_params;
 
-	public final String get_analyst_inj_text () {
+	public final AdjustableParameters get_analyst_adj_params () {
 		if (!( modstate >= MODSTATE_CATALOG )) {
-			throw new IllegalStateException ("Access to OEGUIModel.analyst_inj_text while in state " + cur_modstate_string());
+			throw new IllegalStateException ("Access to OEGUIModel.analyst_adj_params while in state " + cur_modstate_string());
 		}
-		return analyst_inj_text;
+		return analyst_adj_params;
 	}
 
 	// True if the stored catalog is fetched from Comcat.
@@ -846,6 +849,15 @@ public class OEGUIModel extends OEGUIComponent {
 		return ((double)max_fc_duration) / SimpleUtils.DAY_MILLIS_D;
 	}
 
+	// Convert a forecast duration to days.
+
+	public static double fc_duration_to_days (long fc_duration) {
+		if (fc_duration % SimpleUtils.DAY_MILLIS == 0L) {
+			return (double)(fc_duration / SimpleUtils.DAY_MILLIS);
+		}
+		return ((double)fc_duration) / SimpleUtils.DAY_MILLIS_D;
+	}
+
 
 
 
@@ -993,7 +1005,7 @@ public class OEGUIModel extends OEGUIComponent {
 			aafs_fcparams = null;
 			fetch_fcparams = null;
 			custom_search_region = null;
-			analyst_inj_text = null;
+			analyst_adj_params = null;
 			has_fetched_catalog = false;
 
 			cur_mainshock = null;
@@ -1082,7 +1094,7 @@ public class OEGUIModel extends OEGUIComponent {
 		aafs_fcparams = null;
 		fetch_fcparams = null;
 		custom_search_region = null;
-		analyst_inj_text = null;
+		analyst_adj_params = null;
 		has_fetched_catalog = false;
 
 		cur_mainshock = null;
@@ -1150,7 +1162,7 @@ public class OEGUIModel extends OEGUIComponent {
 	//  - fetch_fcparams contains a copy of aafs_fcparams;
 	//    in particular, fetch_fcparams.aftershock_search_region == null.
 	//  - custom_search_region is the current analyst-supplied region, or null if none.
-	//  - analyst_inj_text is the current analyst-supplied text, or an empty string if none.
+	//  - analyst_adj_params is the current analyst-supplied adjustable parameters.
 	//  //- Generic model is computed.
 
 	private void setup_for_mainshock (OEGUIController.XferCatalogMod xfer) {
@@ -1261,13 +1273,10 @@ public class OEGUIModel extends OEGUIComponent {
 			custom_search_region = analyst_fcparms.aftershock_search_region;
 		}
 
-		// No injectable text, or effective analyst-supplied text
+		// Save adjustable parameters from analyst options
 
-		analyst_inj_text = "";
-
-		if (analyst_fcparms != null) {
-			analyst_inj_text = analyst_fcparms.get_eff_injectable_text ("");
-		}
+		analyst_adj_params = new AdjustableParameters();
+		analyst_adj_params.setup_from_analyst_opts (existing_analyst_opts);
 
 		// Make the generic RJ model
 
@@ -1289,7 +1298,7 @@ public class OEGUIModel extends OEGUIComponent {
 	//  - fetch_fcparams contains a copy of aafs_fcparams;
 	//    in particular, fetch_fcparams.aftershock_search_region contains the search region.
 	//  - custom_search_region is the analyst-specified search region, or null if none.
-	//  - analyst_inj_text is the effective injectable text from the download file, or empty string if none
+	//  - analyst_adj_params is the analyst-supplied adjustable parameters from the download file.
 	//  //- Generic model is computed.
 	// Note: This function should not be followed by a call to setup_search_region.
 
@@ -1331,9 +1340,10 @@ public class OEGUIModel extends OEGUIComponent {
 			custom_search_region = dlf.analyst.analyst_params.aftershock_search_region;
 		}
 
-		// Effective injectable text
+		// Save adjustable parameters from analyst options
 
-		analyst_inj_text = aafs_fcparams.get_eff_injectable_text ("");
+		analyst_adj_params = new AdjustableParameters();
+		analyst_adj_params.setup_from_analyst_opts (existing_analyst_opts);
 
 		// Make the generic RJ model
 		// Note: Compare to ForecastResults.rebuild_generic_results, this is how the generic
@@ -2641,7 +2651,7 @@ public class OEGUIModel extends OEGUIComponent {
 			ForecastParameters.CALC_METH_AUTO_PDL,		// generic_calc_meth
 			ForecastParameters.CALC_METH_AUTO_PDL,		// seq_spec_calc_meth
 			ForecastParameters.CALC_METH_AUTO_PDL,		// bayesian_calc_meth
-			analyst_inj_text.isEmpty() ? ForecastParameters.INJ_TXT_USE_DEFAULT : analyst_inj_text
+			analyst_adj_params.injectable_text			// injectable_text
 		);
 
 		if (!( xfer.x_useCustomParamsParam )) {
@@ -2790,17 +2800,6 @@ public class OEGUIModel extends OEGUIComponent {
 		int result = ServerCmd.gui_show_relay_status (progress);
 
 		return result;
-	}
-
-
-
-
-	// Set the analyst injectable text.
-	// Can be called when model state >= MODSTATE_PARAMETERS.
-
-	public void setAnalystInjText (String inj_text) {
-		analyst_inj_text = inj_text;
-		return;
 	}
 
 

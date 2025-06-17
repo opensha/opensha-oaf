@@ -112,6 +112,7 @@ public class ForecastParameters implements Marshalable {
 	}
 
 	// Set control parameters to analyst values.
+	// If the_injectable_text is null, then use the system default.
 
 	public void set_analyst_control_params (
 			int the_generic_calc_meth,
@@ -122,7 +123,7 @@ public class ForecastParameters implements Marshalable {
 		generic_calc_meth  = the_generic_calc_meth;
 		seq_spec_calc_meth = the_seq_spec_calc_meth;
 		bayesian_calc_meth = the_bayesian_calc_meth;
-		injectable_text    = the_injectable_text;
+		injectable_text    = ((the_injectable_text == null) ? INJ_TXT_USE_DEFAULT : the_injectable_text);
 		return;
 	}
 
