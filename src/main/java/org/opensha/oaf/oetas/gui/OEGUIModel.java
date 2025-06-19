@@ -114,8 +114,10 @@ import org.opensha.oaf.aafs.ForecastData;
 import org.opensha.oaf.aafs.ServerCmd;
 import org.opensha.oaf.aafs.AnalystOptions;
 import org.opensha.oaf.aafs.ActionConfig;
+import org.opensha.oaf.aafs.ActionConfigFile;
 import org.opensha.oaf.aafs.ServerClock;
 import org.opensha.oaf.aafs.AdjustableParameters;
+import org.opensha.oaf.aafs.EventSequenceParameters;
 
 import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.SimpleUtils;
@@ -861,6 +863,32 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+	// Configured, minimum, default, and maximum event-sequence lookback.
+
+	private long config_evseq_lookback;
+	private long min_evseq_lookback;
+	private long def_evseq_lookback;
+	private long max_evseq_lookback;
+
+	public double get_config_evseq_lookback_days () {
+		return fc_duration_to_days (config_evseq_lookback);
+	}
+
+	public double get_max_evseq_lookback_days () {
+		return fc_duration_to_days (max_evseq_lookback);
+	}
+
+	public long get_min_evseq_lookback () {
+		return min_evseq_lookback;
+	}
+
+	public long get_max_evseq_lookback () {
+		return max_evseq_lookback;
+	}
+
+
+
+
 	//----- Controller parameters for the model -----
 
 
@@ -1118,6 +1146,11 @@ public class OEGUIModel extends OEGUIComponent {
 		def_fc_duration = action_config.get_def_max_forecast_lag();
 		max_fc_duration = action_config.get_extended_max_forecast_lag();
 		min_fc_duration = Math.min (SimpleUtils.DAY_MILLIS, def_fc_duration);
+
+		config_evseq_lookback = action_config.get_evseq_lookback();
+		min_evseq_lookback = ActionConfigFile.REC_MIN_EVSEQ_LOOKBACK;
+		def_evseq_lookback = ActionConfigFile.DEFAULT_EVSEQ_LOOKBACK;
+		max_evseq_lookback = ActionConfigFile.REC_MAX_EVSEQ_LOOKBACK;
 
 		return;
 	}
@@ -2502,6 +2535,8 @@ public class OEGUIModel extends OEGUIComponent {
 		String the_injectable_text = null;
 		boolean f_seq_spec = true;
 
+		forecast_fcparams.forecast_lag = the_forecast_lag;
+
 		forecast_fcresults.calc_all_from_known_as (
 			the_result_time,
 			the_advisory_lag,
@@ -2635,64 +2670,85 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
-	// Make the new forecast parameters for analyst options.
-	// See AnalystCLI.make_new_fcparams.
+	// Make a set of adjustable parameters for analyst options.
 
-	public ForecastParameters make_analyst_fcparams (OEGUISubAnalyst.XferAnalystView xfer) {
+	public AdjustableParameters make_analyst_adj_params (OEGUISubAnalyst.XferAnalystView xfer) {
 
-		ForecastParameters new_fcparams = new ForecastParameters();
-		new_fcparams.setup_all_default();
+		// Event-sequence parameters
 
-		if (xfer.x_autoEnableParam == AutoEnable.DISABLE) {
-			return new_fcparams;
+		EventSequenceParameters evseq_cfg_params = null;
+		switch (xfer.x_evSeqOptionParam) {
+		case IGNORE:
+			evseq_cfg_params = EventSequenceParameters.make_coerce (
+				ActionConfigFile.ESREP_NO_REPORT, SimpleUtils.days_to_millis (xfer.x_evSeqLookbackParam));
+			break;
+		case UPDATE:
+			evseq_cfg_params = EventSequenceParameters.make_coerce (
+				ActionConfigFile.ESREP_REPORT, SimpleUtils.days_to_millis (xfer.x_evSeqLookbackParam));
+			break;
+		case DELETE:
+			evseq_cfg_params = EventSequenceParameters.make_coerce (
+				ActionConfigFile.ESREP_DELETE, SimpleUtils.days_to_millis (xfer.x_evSeqLookbackParam));
+			break;
 		}
 
-		new_fcparams.set_analyst_control_params (
-			ForecastParameters.CALC_METH_AUTO_PDL,		// generic_calc_meth
-			ForecastParameters.CALC_METH_AUTO_PDL,		// seq_spec_calc_meth
-			ForecastParameters.CALC_METH_AUTO_PDL,		// bayesian_calc_meth
-			analyst_adj_params.injectable_text			// injectable_text
-		);
+		// Maximum forecasst lag
 
-		if (!( xfer.x_useCustomParamsParam )) {
-			return new_fcparams;
+		long max_forecast_lag = Math.round (xfer.x_forecastDuration * SimpleUtils.DAY_MILLIS_D);
+		if (max_forecast_lag >= def_fc_duration - 1000L && max_forecast_lag <= def_fc_duration + 1000L) {
+			max_forecast_lag = 0L;
+		}
+		else if (max_forecast_lag >= max_fc_duration - 1000L) {
+			max_forecast_lag = max_fc_duration;
+		}
+		else if (max_forecast_lag <= min_fc_duration + 1000L) {
+			max_forecast_lag = min_fc_duration;
 		}
 
-		new_fcparams.set_analyst_mag_comp_params (
-			true,										// mag_comp_avail
-			aafs_fcparams.mag_comp_regime,				// mag_comp_regime
-			fetch_fcparams.mag_comp_params				// mag_comp_params
-		);
+		// Intake option
 
-		new_fcparams.set_analyst_seq_spec_params (
-			true,										// seq_spec_avail
-			fetch_fcparams.seq_spec_params				// seq_spec_params
-		);
+		int intake_option;
+		int shadow_option;
 
-		if (custom_search_region == null) {
-			return new_fcparams;
+		switch (xfer.x_autoEnableParam) {
+
+		case DISABLE:
+			intake_option = AnalystOptions.OPT_INTAKE_BLOCK;
+			shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
+			break;
+
+		case ENABLE:
+			intake_option = AnalystOptions.OPT_INTAKE_IGNORE;
+			shadow_option = AnalystOptions.OPT_SHADOW_IGNORE;
+			break;
+
+		default:
+			intake_option = AnalystOptions.OPT_INTAKE_NORMAL;
+			shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
+			break;
 		}
 
-		new_fcparams.set_analyst_aftershock_search_params (
-			true,										// the_aftershock_search_avail
-			custom_search_region,						// the_aftershock_search_region
-			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_days
-			ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_days
-			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_depth
-			ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_depth
-			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_mag
-			ForecastParameters.SEARCH_PARAM_OMIT,		// the_fit_start_inset
-			ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
+		// Set up the adjustable parameters
+
+		AdjustableParameters adj_params = new AdjustableParameters();
+
+		adj_params.set_all_analyst_opts (
+			analyst_adj_params.injectable_text,
+			analyst_adj_params.analyst_id,
+			analyst_adj_params.analyst_remark,
+			evseq_cfg_params,
+			max_forecast_lag,
+			intake_option,
+			shadow_option
 		);
-		
-		return new_fcparams;
+
+		return adj_params;
 	}
 
 
 
 
-	// Make the analyst options.
-	// See AnalystCLI.make_new_analyst_options.
+	// Make the analyst options, for sending to the server
 
 	public AnalystOptions make_analyst_options (OEGUISubAnalyst.XferAnalystView xfer) {
 
@@ -2720,50 +2776,78 @@ public class OEGUIModel extends OEGUIComponent {
 							+ action_config.get_comcat_origin_skew()),
 				first_forecast_lag + 1000L);
 
-		// Parameters that vary based on forecast selection
+		// Get the adjustable parameters
+
+		AdjustableParameters adj_params = make_analyst_adj_params (xfer);
+
+		// Time at which to issue an extra forecast
 		
-		long extra_forecast_lag;
-		int intake_option;
-		int shadow_option;
+		long extra_forecast_lag = current_lag;
 
-		switch (xfer.x_autoEnableParam) {
+		// This would not issue an extra forecast if we are disabling,
+		// but we need the extra forecast to remove any existing forecast promptly.
 
-		case DISABLE:
-			//extra_forecast_lag = -1L;
-			extra_forecast_lag = current_lag;	// needed so any existing forecast is removed promptly
-			intake_option = AnalystOptions.OPT_INTAKE_BLOCK;
-			shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
-			break;
+		//  if (adj_params.intake_option == AnalystOptions.OPT_INTAKE_BLOCK) {
+		//  	extra_forecast_lag = -1L;
+		//  }
 
-		case ENABLE:
-			extra_forecast_lag = current_lag;
-			intake_option = AnalystOptions.OPT_INTAKE_IGNORE;
-			shadow_option = AnalystOptions.OPT_SHADOW_IGNORE;
-			break;
+		// Time the analyst parameters are set
 
-		default:
-			extra_forecast_lag = current_lag;
-			intake_option = AnalystOptions.OPT_INTAKE_NORMAL;
-			shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
-			break;
-		}
-
-		// Other parameters
-
-		String analyst_id = "";
-		String analyst_remark = "";
 		long analyst_time = time_now;
-		ForecastParameters analyst_params = make_analyst_fcparams (xfer);
 
-		long max_forecast_lag = Math.round (xfer.x_forecastDuration * SimpleUtils.DAY_MILLIS_D);
-		if (max_forecast_lag >= def_fc_duration - 1000L && max_forecast_lag <= def_fc_duration + 1000L) {
-			max_forecast_lag = 0L;
-		}
-		else if (max_forecast_lag >= max_fc_duration - 1000L) {
-			max_forecast_lag = max_fc_duration;
-		}
-		else if (max_forecast_lag <= min_fc_duration + 1000L) {
-			max_forecast_lag = min_fc_duration;
+		// Analyst Parameters
+
+		ForecastParameters analyst_params = new ForecastParameters();
+		analyst_params.setup_all_default();
+
+		// Always supply event-sequence parameters, even if we are blocking
+		// (Necessary to control whether event-sequence products should be deleted)
+
+		analyst_params.set_or_fetch_evseq_cfg_params (adj_params.evseq_cfg_params, true);
+
+		// If not disabling ...
+
+		if (adj_params.intake_option != AnalystOptions.OPT_INTAKE_BLOCK) {
+
+			// Supply injectable text
+
+			analyst_params.set_eff_injectable_text (adj_params.injectable_text, null);
+
+			// If we want custom forecasting parameters ...
+
+			if (xfer.x_useCustomParamsParam) {
+
+				// Magnitude of completeness parameters
+
+				analyst_params.set_analyst_mag_comp_params (
+					true,										// mag_comp_avail
+					aafs_fcparams.mag_comp_regime,				// mag_comp_regime
+					fetch_fcparams.mag_comp_params				// mag_comp_params
+				);
+
+				// RJ sequence specific parameters
+
+				analyst_params.set_analyst_seq_spec_params (
+					true,										// seq_spec_avail
+					fetch_fcparams.seq_spec_params				// seq_spec_params
+				);
+
+				// If we used a custom search region, set it
+
+				if (custom_search_region != null) {
+					analyst_params.set_analyst_aftershock_search_params (
+						true,										// the_aftershock_search_avail
+						custom_search_region,						// the_aftershock_search_region
+						ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_days
+						ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_days
+						ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_depth
+						ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_depth
+						ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_mag
+						ForecastParameters.SEARCH_PARAM_OMIT,		// the_fit_start_inset
+						ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
+					);
+				}
+			}
 		}
 
 		// Create the analyst options
@@ -2771,18 +2855,170 @@ public class OEGUIModel extends OEGUIComponent {
 		AnalystOptions anopt = new AnalystOptions();
 
 		anopt.setup (
-			analyst_id,
-			analyst_remark,
+			adj_params.analyst_id,
+			adj_params.analyst_remark,
 			analyst_time,
 			analyst_params,
 			extra_forecast_lag,
-			max_forecast_lag,
-			intake_option,
-			shadow_option
+			adj_params.max_forecast_lag,
+			adj_params.intake_option,
+			adj_params.shadow_option
 		);
 
 		return anopt;
 	}
+
+
+
+
+//	// Make the new forecast parameters for analyst options.
+//	// See AnalystCLI.make_new_fcparams.
+//
+//	public ForecastParameters make_analyst_fcparams (OEGUISubAnalyst.XferAnalystView xfer) {
+//
+//		ForecastParameters new_fcparams = new ForecastParameters();
+//		new_fcparams.setup_all_default();
+//
+//		if (xfer.x_autoEnableParam == AutoEnable.DISABLE) {
+//			return new_fcparams;
+//		}
+//
+//		new_fcparams.set_analyst_control_params (
+//			ForecastParameters.CALC_METH_AUTO_PDL,		// generic_calc_meth
+//			ForecastParameters.CALC_METH_AUTO_PDL,		// seq_spec_calc_meth
+//			ForecastParameters.CALC_METH_AUTO_PDL,		// bayesian_calc_meth
+//			analyst_adj_params.injectable_text			// injectable_text
+//		);
+//
+//		if (!( xfer.x_useCustomParamsParam )) {
+//			return new_fcparams;
+//		}
+//
+//		new_fcparams.set_analyst_mag_comp_params (
+//			true,										// mag_comp_avail
+//			aafs_fcparams.mag_comp_regime,				// mag_comp_regime
+//			fetch_fcparams.mag_comp_params				// mag_comp_params
+//		);
+//
+//		new_fcparams.set_analyst_seq_spec_params (
+//			true,										// seq_spec_avail
+//			fetch_fcparams.seq_spec_params				// seq_spec_params
+//		);
+//
+//		if (custom_search_region == null) {
+//			return new_fcparams;
+//		}
+//
+//		new_fcparams.set_analyst_aftershock_search_params (
+//			true,										// the_aftershock_search_avail
+//			custom_search_region,						// the_aftershock_search_region
+//			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_days
+//			ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_days
+//			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_depth
+//			ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_depth
+//			ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_mag
+//			ForecastParameters.SEARCH_PARAM_OMIT,		// the_fit_start_inset
+//			ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
+//		);
+//		
+//		return new_fcparams;
+//	}
+
+
+
+
+//	// Make the analyst options.
+//	// See AnalystCLI.make_new_analyst_options.
+//
+//	public AnalystOptions make_analyst_options (OEGUISubAnalyst.XferAnalystView xfer) {
+//
+//		// Action configuration
+//
+//		ActionConfig action_config = new ActionConfig();
+//
+//		// The first forecast lag, note is is a multiple of 1 second
+//
+//		long first_forecast_lag = action_config.get_next_forecast_lag (0L);
+//		if (first_forecast_lag < 0L) {
+//			first_forecast_lag = 0L;
+//		}
+//
+//		// Time now
+//
+//		long time_now = ServerClock.get_time();
+//
+//		// The forecast lag that would cause a forecast to be issued now,
+//		// as a multiple of 1 seconds, but after the first forecast
+//
+//		long current_lag = action_config.floor_unit_lag (
+//				time_now - (fcmain.mainshock_time
+//							+ action_config.get_comcat_clock_skew()
+//							+ action_config.get_comcat_origin_skew()),
+//				first_forecast_lag + 1000L);
+//
+//		// Parameters that vary based on forecast selection
+//		
+//		long extra_forecast_lag;
+//		int intake_option;
+//		int shadow_option;
+//
+//		switch (xfer.x_autoEnableParam) {
+//
+//		case DISABLE:
+//			//extra_forecast_lag = -1L;
+//			extra_forecast_lag = current_lag;	// needed so any existing forecast is removed promptly
+//			intake_option = AnalystOptions.OPT_INTAKE_BLOCK;
+//			shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
+//			break;
+//
+//		case ENABLE:
+//			extra_forecast_lag = current_lag;
+//			intake_option = AnalystOptions.OPT_INTAKE_IGNORE;
+//			shadow_option = AnalystOptions.OPT_SHADOW_IGNORE;
+//			break;
+//
+//		default:
+//			extra_forecast_lag = current_lag;
+//			intake_option = AnalystOptions.OPT_INTAKE_NORMAL;
+//			shadow_option = AnalystOptions.OPT_SHADOW_NORMAL;
+//			break;
+//		}
+//
+//		// Other parameters
+//
+//		String analyst_id = "";
+//		String analyst_remark = "";
+//		long analyst_time = time_now;
+//		ForecastParameters analyst_params = make_analyst_fcparams (xfer);
+//
+//		long max_forecast_lag = Math.round (xfer.x_forecastDuration * SimpleUtils.DAY_MILLIS_D);
+//		if (max_forecast_lag >= def_fc_duration - 1000L && max_forecast_lag <= def_fc_duration + 1000L) {
+//			max_forecast_lag = 0L;
+//		}
+//		else if (max_forecast_lag >= max_fc_duration - 1000L) {
+//			max_forecast_lag = max_fc_duration;
+//		}
+//		else if (max_forecast_lag <= min_fc_duration + 1000L) {
+//			max_forecast_lag = min_fc_duration;
+//		}
+//
+//		// Create the analyst options
+//
+//		AnalystOptions anopt = new AnalystOptions();
+//
+//		anopt.setup (
+//			analyst_id,
+//			analyst_remark,
+//			analyst_time,
+//			analyst_params,
+//			extra_forecast_lag,
+//			max_forecast_lag,
+//			intake_option,
+//			shadow_option
+//		);
+//
+//		return anopt;
+//	}
 
 
 

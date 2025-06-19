@@ -1154,8 +1154,8 @@ public class AdjustableParameters {
 	// Set values from the analyst options of an existing forecast.
 	// Parameters:
 	//  fc_analyst_opts = Anslyst options of an existing forecast, or null if none.
-	// Note: The intent is that this object can be used to hold values that are being
-	// adjusted in the GUI.
+	// Note: The intent is that the GUI can use this object to capture analyst
+	// options from an existing forecast, as a starting point for user selections.
 
 	public void setup_from_analyst_opts (AnalystOptions fc_analyst_opts) {
 
@@ -1226,6 +1226,73 @@ public class AdjustableParameters {
 		f_adj_intake = true;
 		intake_option = my_opts.intake_option;
 		shadow_option = my_opts.shadow_option;
+
+		return;
+	}
+
+
+
+
+	// Set values from user-supplied analyst options.
+	// Note: The intent is that the GUI can use this object to consolidate analyst
+	// options selected by the user..
+
+	public void set_all_analyst_opts (
+		String injectable_text,
+		String analyst_id,
+		String analyst_remark,
+		EventSequenceParameters evseq_cfg_params,
+		long max_forecast_lag,
+		int intake_option,
+		int shadow_option
+	) {
+
+		// Injectable text
+
+		this.f_adj_injectable_text = true;
+		this.injectable_text = injectable_text;
+
+		// Analyst text
+
+		this.f_adj_analyst_text = true;
+		this.analyst_id = analyst_id;
+		this.analyst_remark = analyst_remark;
+
+		// Next forecast time, set to default
+
+		this.f_adj_next_forecast_time = false;
+		this.nextForecastTime = 0L;
+
+		// Advisory duration, set to default
+
+		this.f_adj_advisory_time_frame = false;
+		this.advisoryTimeFrame = null;
+
+		// Product template, set to default
+
+		this.f_adj_template = false;
+		this.template = null;
+
+		// Event-sequence parameters
+
+		this.f_adj_evseq = true;
+		this.evseq_cfg_params = evseq_cfg_params;
+
+		// PDL model, set to not available
+
+		this.f_adj_pdl_model = false;
+		this.pdl_model_pmcode = ForecastResults.PMCODE_INVALID;
+
+		// Maximum forecast lag
+
+		this.f_adj_max_forecast_lag = true;
+		this.max_forecast_lag = max_forecast_lag;
+
+		// Intake options
+
+		this.f_adj_intake = true;
+		this.intake_option = intake_option;
+		this.shadow_option = shadow_option;
 
 		return;
 	}

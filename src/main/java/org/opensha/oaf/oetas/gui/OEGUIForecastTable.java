@@ -237,7 +237,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 	}
 
 
-	// Set forecast template; drip-down list.
+	// Set forecast template; drop-down list.
 
 	private EnumParameter<Template> templateParam;
 
@@ -322,6 +322,11 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private String my_name;
 
 
+	// The PDL model code for this panel, see ForecastResults.PMCODE_XXXXX.
+
+	private int my_pmcode;
+
+
 	// The suffix applied to parameter names in this panel.
 
 	private String my_suffix;
@@ -392,7 +397,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 	// Constructor, accepts the forecast for this panel.
 		
-	public OEGUIForecastTable (OEGUIComponent gui_comp, String my_json_string, String my_name) throws GUIEDTException {
+	public OEGUIForecastTable (OEGUIComponent gui_comp, String my_json_string, String my_name, int my_pmcode) throws GUIEDTException {
 
 		// Link components
 
@@ -404,6 +409,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 		MarshalUtils.from_json_string (this.my_fc_holder, my_json_string);
 
 		this.my_name = my_name;
+
+		this.my_pmcode = my_pmcode;
 
 		this.my_suffix = "@" + my_name.replaceAll("\\s", "");	// remove white space from name
 

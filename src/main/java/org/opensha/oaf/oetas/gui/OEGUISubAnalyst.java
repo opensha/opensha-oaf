@@ -141,8 +141,11 @@ import org.opensha.oaf.util.gui.GUISeparatorParameter;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
+import org.opensha.oaf.aafs.ActionConfig;
+import org.opensha.oaf.aafs.ActionConfigFile;
 import org.opensha.oaf.aafs.GUICmd;
 import org.opensha.oaf.aafs.AnalystOptions;
+import org.opensha.oaf.aafs.EventSequenceParameters;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
@@ -163,12 +166,12 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 	// Parameter groups.
 
-	private static final int PARMGRP_SERVER_STATUS = 401;		// Button to fetch server status
 	private static final int PARMGRP_ANALYST_OPTION = 402;		// Controls to select analyst options
 	private static final int PARMGRP_ANALYST_INJ_TEXT = 403;	// Button to set injectable text
 	private static final int PARMGRP_ANALYST_EXPORT = 404;		// Button to export analyst options to file
 	private static final int PARMGRP_ANALYST_SEND = 405;		// Button to send analyst options to server
 	private static final int PARMGRP_ANALYST_EDIT = 406;		// Button to open the analyst function dialog
+	private static final int PARMGRP_ANALYST_REMARK = 407;		// Button to set analyst remark
 
 
 
@@ -176,17 +179,6 @@ public class OEGUISubAnalyst extends OEGUIListener {
 	//----- Controls for the Server dialog -----
 
 
-
-
-	// Fetch Server Status button.
-
-	private ButtonParameter fetchServerStatusButton;
-
-	private ButtonParameter init_fetchServerStatusButton () throws GUIEDTException {
-		fetchServerStatusButton = new ButtonParameter("AAFS Server", "Fetch Status");
-		register_param (fetchServerStatusButton, "fetchServerStatusButton", PARMGRP_SERVER_STATUS);
-		return fetchServerStatusButton;
-	}
 
 
 	// Automatic forecast enable; dropdown containing an enumeration to select automatic enable option.
@@ -203,19 +195,18 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 
 	// Option to supply custom parameters to automatic system; check box.
-	// Default is obtained from generic parameters when the data is loaded (typically true).
 
 	private BooleanParameter useCustomParamsParam;
 
 	private BooleanParameter init_useCustomParamsParam () throws GUIEDTException {
-		useCustomParamsParam = new BooleanParameter("Use custom parameters", true);
+		useCustomParamsParam = new BooleanParameter("Use custom parameters", false);
 		register_param (useCustomParamsParam, "useCustomParamsParam", PARMGRP_ANALYST_OPTION);
 		return useCustomParamsParam;
 	}
 
 
 	// Forecast duration, in days since the mainshock; edit box containing a number.
-	// Default is obtained from the action configuratin, typically 365.0.
+	// Default is obtained from the action configuration, typically 365.0.
 
 	private DoubleParameter forecastDurationParam;
 
@@ -226,7 +217,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 		forecastDurationParam = new DoubleParameter("Forecast Duration", duration_min, duration_max, Double.valueOf(duration_def));
 		forecastDurationParam.setUnits("Days");
-		forecastDurationParam.setInfo("Forecast duration relative to main shock origin time");
+		forecastDurationParam.setInfo("Forecast duration relative to mainshock origin time");
 		register_param (forecastDurationParam, "forecastDurationParam", PARMGRP_ANALYST_OPTION);
 		return forecastDurationParam;
 	}
@@ -240,6 +231,48 @@ public class OEGUISubAnalyst extends OEGUIListener {
 		setInjTextButton = new ButtonParameter("Injectable Text", "Set Text...");
 		register_param (setInjTextButton, "setInjTextButton", PARMGRP_ANALYST_INJ_TEXT);
 		return setInjTextButton;
+	}
+
+
+	// Set Analyst Remark button.
+
+	private ButtonParameter setAnRemarkButton;
+
+	private ButtonParameter init_setAnRemarkButton () throws GUIEDTException {
+		setAnRemarkButton = new ButtonParameter("Analyst Remark", "Edit Remark...");
+		register_param (setAnRemarkButton, "setAnRemarkButton", PARMGRP_ANALYST_REMARK);
+		return setAnRemarkButton;
+	}
+
+
+	// Event-sequence option; dropdown containing an enumeration to select event-sequence enable option.
+
+	private EnumParameter<EvSeqReportOption> evSeqOptionParam;
+
+	private EnumParameter<EvSeqReportOption> init_evSeqOptionParam () throws GUIEDTException {
+		evSeqOptionParam = new EnumParameter<EvSeqReportOption>(
+				"Event-Sequence Option", EnumSet.allOf(EvSeqReportOption.class), EvSeqReportOption.AUTO, null);
+		evSeqOptionParam.setInfo("Controls whether the automatic system generates event-sequence products");
+		register_param (evSeqOptionParam, "evSeqOptionParam", PARMGRP_ANALYST_OPTION);
+		return evSeqOptionParam;
+	}
+
+
+	// Event-sequece lookback, in days before the mainshock; edit box containing a number.
+	// Default is obtained from the action configuration, typically 30.0.
+
+	private DoubleParameter evSeqLookbackParam;
+
+	private DoubleParameter init_evSeqLookbackParam () throws GUIEDTException {
+		double lookback_min = 0.0;
+		double lookback_max = gui_model.get_max_evseq_lookback_days();
+		double lookback_config = gui_model.get_config_evseq_lookback_days();
+
+		evSeqLookbackParam = new DoubleParameter("Event-Sequence Lookback", lookback_min, lookback_max, Double.valueOf(lookback_config));
+		evSeqLookbackParam.setUnits("Days");
+		evSeqLookbackParam.setInfo("Event-sequence extent before the mainshock origin time");
+		register_param (evSeqLookbackParam, "evSeqLookbackParam", PARMGRP_ANALYST_OPTION);
+		return evSeqLookbackParam;
 	}
 
 
@@ -271,8 +304,6 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 	private void init_analystDialogParam () throws GUIEDTException {
 		
-		init_fetchServerStatusButton();
-		
 		init_autoEnableParam();
 		
 		init_useCustomParamsParam();
@@ -280,6 +311,12 @@ public class OEGUISubAnalyst extends OEGUIListener {
 		init_forecastDurationParam();
 		
 		init_setInjTextButton();
+		
+		init_setAnRemarkButton();
+
+		init_evSeqOptionParam();
+
+		init_evSeqLookbackParam();
 		
 		init_exportAnalystOptionsButton();
 		
@@ -302,19 +339,21 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 		boolean f_button_row = false;
 
-		analystList.addParameter(fetchServerStatusButton);
+		analystList.addParameter(autoEnableParam);
+		analystList.addParameter(forecastDurationParam);
+		analystList.addParameter(setInjTextButton);
+		analystList.addParameter(setAnRemarkButton);
+		analystList.addParameter(evSeqOptionParam);
+		analystList.addParameter(evSeqLookbackParam);
 
 		analystList.addParameter(new GUISeparatorParameter("Separator1", gui_top.get_separator_color()));
 
-		analystList.addParameter(autoEnableParam);
 		analystList.addParameter(useCustomParamsParam);
-		analystList.addParameter(forecastDurationParam);
-		analystList.addParameter(setInjTextButton);
 		analystList.addParameter(exportAnalystOptionsButton);
 		analystList.addParameter(sendAnalystOptionsButton);
 
-		analystEditParam.setListTitleText ("Automatic System");
-		analystEditParam.setDialogDimensions (gui_top.get_dialog_dims(7, f_button_row, 1));
+		analystEditParam.setListTitleText ("Analyst Parameters");
+		analystEditParam.setDialogDimensions (gui_top.get_dialog_dims(9, f_button_row, 1));
 		
 		analystEditParam.getEditor().refreshParamEditor();
 	}
@@ -322,9 +361,9 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 	private GUIParameterListParameter init_analystEditParam () throws GUIEDTException {
 		analystList = new ParameterList();
-		analystEditParam = new GUIParameterListParameter("Server Operations", analystList, "Server Ops...",
-							"Server Operations", "Automatic System", null, null, false, gui_top.get_trace_events());
-		analystEditParam.setInfo("Operations on the AAFS Server");
+		analystEditParam = new GUIParameterListParameter("Analyst Parameters", analystList, "Edit Analyst Params...",
+							"Edit Analyst Parameters", "Analyst Parameters", null, null, false, gui_top.get_trace_events());
+		analystEditParam.setInfo("Set analyst parameter values, and send to AAFS server");
 		register_param (analystEditParam, "analystEditParam", PARMGRP_ANALYST_EDIT);
 
 		updateAnalystParamList();
@@ -344,9 +383,10 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 	private boolean f_sub_enable;
 
-	// True to enable the server status button.
+	// True to enable custom parameters
 
-	private boolean f_server_status_enable;
+	private boolean f_custom_params_enable;
+	private boolean last_f_custom_params_enable;
 
 	// True to enable analyst option controls.
 
@@ -356,12 +396,20 @@ public class OEGUISubAnalyst extends OEGUIListener {
 	// Adjust the enable/disable state of our controls.
 
 	private void adjust_enable () throws GUIEDTException {
-		enableParam(fetchServerStatusButton, f_server_status_enable);
 
 		enableParam(autoEnableParam, f_analyst_option_enable);
-		enableParam(useCustomParamsParam, f_analyst_option_enable);
 		enableParam(forecastDurationParam, f_analyst_option_enable);
 		enableParam(setInjTextButton, f_analyst_option_enable);
+		enableParam(setAnRemarkButton, f_analyst_option_enable);
+		enableParam(evSeqOptionParam, f_analyst_option_enable);
+		enableParam(evSeqLookbackParam, f_analyst_option_enable);
+
+		enableParam(useCustomParamsParam, f_custom_params_enable);
+		if (f_custom_params_enable != last_f_custom_params_enable) {
+			updateParam(useCustomParamsParam, f_custom_params_enable);
+			last_f_custom_params_enable = f_custom_params_enable;
+		}
+
 		enableParam(exportAnalystOptionsButton, f_analyst_option_enable);
 		enableParam(sendAnalystOptionsButton, f_analyst_option_enable);
 
@@ -393,6 +441,14 @@ public class OEGUISubAnalyst extends OEGUIListener {
 		// Forecast duration, in days since the mainshock.
 
 		public double x_forecastDuration;		// parameter value, checked for validity
+
+		// Event-sequence option.
+
+		public EvSeqReportOption x_evSeqOptionParam;	// parameter value, checked for validity
+
+		// Event-sequence lookback.
+
+		public double x_evSeqLookbackParam;	// parameter value, checked for validity
 
 		// Get the implementation class.
 
@@ -454,6 +510,14 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 			x_forecastDuration = validParam(forecastDurationParam);
 
+			// Event-sequence option.
+
+			x_evSeqOptionParam = validParam(evSeqOptionParam);
+
+			// Event-sequence lookback.
+
+			x_evSeqLookbackParam = validParam(evSeqLookbackParam);
+
 			return this;
 		}
 
@@ -483,7 +547,8 @@ public class OEGUISubAnalyst extends OEGUIListener {
 		// Default enable state
 
 		f_sub_enable = true;
-		f_server_status_enable = true;
+		f_custom_params_enable = false;
+		last_f_custom_params_enable = false;
 		f_analyst_option_enable = false;
 
 		// Create and initialize controls
@@ -507,10 +572,10 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 	// Enable or disable the sub-controller.
 
-	public void sub_analyst_enable (boolean f_sub_enable, boolean f_server_status_enable,
+	public void sub_analyst_enable (boolean f_sub_enable, boolean f_custom_params_enable,
 			boolean f_analyst_option_enable) throws GUIEDTException {
 		this.f_sub_enable = f_sub_enable;
-		this.f_server_status_enable = f_server_status_enable;
+		this.f_custom_params_enable = f_custom_params_enable;
 		this.f_analyst_option_enable = f_analyst_option_enable;
 		adjust_enable();
 
@@ -578,16 +643,50 @@ public class OEGUISubAnalyst extends OEGUIListener {
 			updateParam(forecastDurationParam, gui_model.get_def_fc_duration_days());
 		}
 
+		// Event-sequence option and lookback
+
+		if (gui_model.get_analyst_adj_params().f_adj_evseq && gui_model.get_analyst_adj_params().evseq_cfg_params != null) {
+			switch (gui_model.get_analyst_adj_params().evseq_cfg_params.get_evseq_cfg_report()) {
+			case ActionConfigFile.ESREP_NO_REPORT:
+				updateParam(evSeqOptionParam, EvSeqReportOption.IGNORE);
+				break;
+			case ActionConfigFile.ESREP_REPORT:
+				updateParam(evSeqOptionParam, EvSeqReportOption.UPDATE);
+				break;
+			case ActionConfigFile.ESREP_DELETE:
+				updateParam(evSeqOptionParam, EvSeqReportOption.DELETE);
+				break;
+			default:
+				updateParam(evSeqOptionParam, EvSeqReportOption.AUTO);
+				break;
+			}
+
+			double lookback_days = 0.0;
+			long lookback = gui_model.get_analyst_adj_params().evseq_cfg_params.get_evseq_cfg_lookback();
+			if (lookback > gui_model.get_min_evseq_lookback()) {
+				lookback_days = Math.min (OEGUIModel.fc_duration_to_days(lookback), gui_model.get_max_evseq_lookback_days());
+			}
+			updateParam(evSeqLookbackParam, lookback_days);
+
+		} else {
+
+			updateParam(evSeqOptionParam, EvSeqReportOption.AUTO);
+
+			double lookback_days = 0.0;
+			long lookback = (new EventSequenceParameters()).fetch().get_evseq_cfg_lookback();
+			if (lookback > gui_model.get_min_evseq_lookback()) {
+				lookback_days = Math.min (OEGUIModel.fc_duration_to_days(lookback), gui_model.get_max_evseq_lookback_days());
+			}
+			updateParam(evSeqLookbackParam, lookback_days);
+		}
+
 		// Flag to use custom parameters
 
-		if (gui_model.get_existing_analyst_opts() == null) {
-			updateParam(useCustomParamsParam, true);
-		} else {
-			// At this point one might look at gui_model.get_existing_analyst_opts().analyst_params
-			// to check if it is non-null and contains any non-default parameters, and update 
-			// useCustomParamsParam to false if not.  However, that is probably not what the user desires.
-			updateParam(useCustomParamsParam, true);
-		}
+		updateParam(useCustomParamsParam, f_custom_params_enable);
+
+		// At this point one might look at gui_model.get_existing_analyst_opts().analyst_params
+		// to check if it is non-null and contains any non-default parameters, and update 
+		// useCustomParamsParam to false if not.  However, that is probably not what the user desires.
 
 		return;
 	}
@@ -612,100 +711,6 @@ public class OEGUISubAnalyst extends OEGUIListener {
 		switch (parmgrp) {
 
 
-		// Server status.
-		// - In backgound:
-		//   1. Switch view to the console.
-		//   2. Fetch server status.
-		//   3. Pop up a dialog box to report the result.
-
-		case PARMGRP_SERVER_STATUS: {
-			if (!( f_sub_enable && f_server_status_enable )) {
-				return;
-			}
-
-			// Check for server access available
-
-			if (!( gui_top.get_defer_pin_request() )) {
-				if (!( gui_top.server_access_available() )) {
-					JOptionPane.showMessageDialog(gui_top.get_top_window(), "Server access is not available because no PIN was entered", "No server access", JOptionPane.INFORMATION_MESSAGE);
-					return;
-				}
-			}
-
-			// Request PIN if needed
-
-			if (gui_top.get_defer_pin_request()) {
-				if (!( gui_top.request_server_pin() )) {
-					return;
-				}
-			}
-
-			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
-			final int[] status_success = new int[1];
-			status_success[0] = 0;
-			GUICalcStep computeStep_1 = new GUICalcStep("Fetching AAFS Server Status", "...", new GUIEDTRunnable() {
-						
-				@Override
-				public void run_in_edt() throws GUIEDTException {
-					gui_view.view_show_console();
-				}
-			});
-			GUICalcStep computeStep_2 = new GUICalcStep("Fetching AAFS Server Status", "...", new Runnable() {
-						
-				@Override
-				public void run() {
-					status_success[0] = gui_model.fetchServerStatus(progress);
-				}
-			});
-			GUIEDTRunnable postComputeStep = new GUIEDTRunnable() {
-						
-				@Override
-				public void run_in_edt() throws GUIEDTException {
-					String title = "Server Status";
-					String message;
-					int message_type;
-					int total = status_success[0]/1000;
-					int healthy = status_success[0]%1000;
-					if (total < 1) {
-						message = "Configuration error: No servers were contacted";
-						message_type = JOptionPane.ERROR_MESSAGE;
-					}
-					else if (healthy == total) {
-						switch (total) {
-						case 1: message = "The server is ALIVE"; break;
-						case 2: message = "Both servers are ALIVE"; break;
-						default: message = "All servers are ALIVE"; break;
-						}
-						message_type = JOptionPane.INFORMATION_MESSAGE;
-					}
-					else if (healthy == 0) {
-						switch (total) {
-						case 1: message = "The server is DEAD"; break;
-						case 2: message = "Both servers are DEAD"; break;
-						default: message = "All servers are DEAD"; break;
-						}
-						message_type = JOptionPane.ERROR_MESSAGE;
-					}
-					else {
-						switch (healthy) {
-						case 1: message = "1 server is ALIVE, and "; break;
-						default: message = healthy + " servers are ALIVE, and "; break;
-						}
-						switch (total - healthy) {
-						case 1: message = message + "1 server is DEAD"; break;
-						default: message = message + (total - healthy) + " servers are DEAD"; break;
-						}
-						message_type = JOptionPane.WARNING_MESSAGE;
-					}
-					JOptionPane.showMessageDialog(gui_top.get_top_window(), message, title, message_type);
-				}
-			};
-			GUICalcRunnable.run_steps (progress, postComputeStep, computeStep_1, computeStep_2);
-
-
-
-		}
-		break;
 
 
 		// Analyst option changed.
@@ -718,6 +723,8 @@ public class OEGUISubAnalyst extends OEGUIListener {
 			report_analyst_change();
 		}
 		break;
+
+
 
 
 		// Button to edit Injectable text.
@@ -755,6 +762,45 @@ public class OEGUISubAnalyst extends OEGUIListener {
 		break;
 
 
+
+
+		// Button to edit analyst remark.
+		// - Pop up a dialog box to edit the text.
+
+		case PARMGRP_ANALYST_REMARK: {
+			if (!( f_sub_enable && f_analyst_option_enable )) {
+				return;
+			}
+
+			// Show a dialog containing the existing analyst remark
+
+			String prevText = gui_model.get_analyst_adj_params().analyst_remark;
+			if (prevText == null) {	// should never happen
+				prevText = "";
+			}
+			JTextArea area = new JTextArea(prevText);
+			JScrollPane scroll = new JScrollPane(area);
+			Dimension size = new Dimension(600, 200);
+			scroll.setPreferredSize(size);
+			scroll.setMinimumSize(size);
+			scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+			area.setLineWrap(true);
+			area.setWrapStyleWord(true);
+			int ret = JOptionPane.showConfirmDialog(gui_top.get_top_window(), scroll, "Set Analyst Remark (Caution - Publicly Visible)", JOptionPane.OK_CANCEL_OPTION);
+
+			// If user entered new text, store it
+
+			if (ret == JOptionPane.OK_OPTION) {
+				String text = area.getText().trim();
+				gui_model.get_analyst_adj_params().analyst_remark = text;
+				report_analyst_change();
+			}
+		}
+		break;
+
+
+
+
 		// Export analyst options button.
 		// - Display the file chooser.
 		// - Write the analyst options.
@@ -790,6 +836,8 @@ public class OEGUISubAnalyst extends OEGUIListener {
 			}
 		}
 		break;
+
+
 
 
 		// Button to send analyst options to server.
@@ -875,6 +923,8 @@ public class OEGUISubAnalyst extends OEGUIListener {
 		break;
 
 
+
+
 		// Analyst option edit button.
 		// - Do nothing.
 
@@ -884,6 +934,8 @@ public class OEGUISubAnalyst extends OEGUIListener {
 			}
 		}
 		break;
+
+
 
 
 		// Unknown parameter group

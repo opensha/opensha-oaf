@@ -2983,10 +2983,11 @@ public class OEGUIView extends OEGUIComponent {
 			throw new IllegalStateException ("OEGUIView.plotAFTable - Invalid model state: " + gui_model.cur_modstate_string());
 		}
 
-		// Allocate lists of models, names, and colors
+		// Allocate lists of models, names, and codes
 
-		List<String> aft_names = Lists.newArrayList();
-		List<String> aft_forecasts = Lists.newArrayList();
+		List<String> aft_names = new ArrayList<String>();
+		List<Integer> aft_pmcodes = new ArrayList<Integer>();
+		List<String> aft_forecasts =new ArrayList<String>();
 
 		// Tab number for selected forecast
 
@@ -2999,6 +3000,7 @@ public class OEGUIView extends OEGUIComponent {
 				selected_tab = aft_forecasts.size();
 			}
 			aft_names.add("ETAS");
+			aft_pmcodes.add(ForecastResults.PMCODE_ETAS);
 			aft_forecasts.add(gui_model.get_etasJSON());
 		}
 
@@ -3009,6 +3011,7 @@ public class OEGUIView extends OEGUIComponent {
 				selected_tab = aft_forecasts.size();
 			}
 			aft_names.add("RJ SeqSpecc");
+			aft_pmcodes.add(ForecastResults.PMCODE_SEQ_SPEC);
 			aft_forecasts.add(gui_model.get_seqSpecJSON());
 		}
 
@@ -3019,6 +3022,7 @@ public class OEGUIView extends OEGUIComponent {
 				selected_tab = aft_forecasts.size();
 			}
 			aft_names.add("RJ Generic");
+			aft_pmcodes.add(ForecastResults.PMCODE_GENERIC);
 			aft_forecasts.add(gui_model.get_genericJSON());
 		}
 
@@ -3029,6 +3033,7 @@ public class OEGUIView extends OEGUIComponent {
 				selected_tab = aft_forecasts.size();
 			}
 			aft_names.add("RJ Bayesian");
+			aft_pmcodes.add(ForecastResults.PMCODE_BAYESIAN);
 			aft_forecasts.add(gui_model.get_bayesianJSON());
 		}
 
@@ -3052,8 +3057,9 @@ public class OEGUIView extends OEGUIComponent {
 		
 		for (int i = 0; i < aft_forecasts.size(); i++) {
 			String name = aft_names.get(i);
+			int pmcode = aft_pmcodes.get(i);
 			String forecastJSON = aft_forecasts.get(i);
-			JPanel modcomp = (new OEGUIForecastTable(this, forecastJSON, name)).get_my_panel();
+			JPanel modcomp = (new OEGUIForecastTable(this, forecastJSON, name, pmcode)).get_my_panel();
 			if (i == selected_tab) {
 				selected_comp = modcomp;
 			}

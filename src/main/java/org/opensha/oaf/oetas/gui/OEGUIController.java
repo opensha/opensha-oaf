@@ -176,6 +176,7 @@ public class OEGUIController extends OEGUIListener {
 	private static final int PARMGRP_SAVE_CATALOG = 103;	// Button to save catalog
 	private static final int PARMGRP_PARAMS_BUTTON = 104;	// Button to compute aftershock parameters
 	private static final int PARMGRP_FORECAST_BUTTON = 105;	// Button to compute forecast
+	private static final int PARMGRP_SERVER_STATUS = 106;	// Button to fetch server status
 
 
 	//----- Sub-controllers -----
@@ -271,6 +272,17 @@ public class OEGUIController extends OEGUIListener {
 		saveCatalogButton.setInfo("Save catalog to file in 10 column format");
 		register_param (saveCatalogButton, "saveCatalogButton", PARMGRP_SAVE_CATALOG);
 		return saveCatalogButton;
+	}
+
+
+	// Fetch Server Status button.
+
+	private ButtonParameter fetchServerStatusButton;
+
+	private ButtonParameter init_fetchServerStatusButton () throws GUIEDTException {
+		fetchServerStatusButton = new ButtonParameter("AAFS Server", "Fetch Server Status");
+		register_param (fetchServerStatusButton, "fetchServerStatusButton", PARMGRP_SERVER_STATUS);
+		return fetchServerStatusButton;
 	}
 
 
@@ -403,10 +415,11 @@ public class OEGUIController extends OEGUIListener {
 		aafsParams.addParameter(sub_ctl_analyst_option.get_analystEditParam());
 		
 		aafsParams.addParameter(init_saveCatalogButton());
+		aafsParams.addParameter(init_fetchServerStatusButton());
 
 		// Create the container
 
-		aafsEditorHeight = (gui_top.get_height() * 2) / 10;
+		aafsEditorHeight = (gui_top.get_height() * 3) / 10;
 
 		aafsEditor = new ParameterListEditor(aafsParams);
 		aafsEditor.setTitle("More");
@@ -452,12 +465,6 @@ public class OEGUIController extends OEGUIListener {
 	private void setup_symbol_table () {
 
 		// Set up the symbol table
-
-		//add_symbol (fetchButton , "fetchButton");
-		//add_symbol (saveCatalogButton , "saveCatalogButton");
-
-		//add_symbol (computeAftershockParamsButton , "computeAftershockParamsButton");
-		//add_symbol (computeAftershockForecastButton , "computeAftershockForecastButton");
 
 		add_symbol (dataEditor , "dataEditor");
 		add_symbol (fitEditor , "fitEditor");
@@ -524,7 +531,11 @@ public class OEGUIController extends OEGUIListener {
 
 		// Analyst parameters
 
-		sub_ctl_analyst_option.sub_analyst_enable (true, true, f_catalog && f_params && f_fetched);
+		sub_ctl_analyst_option.sub_analyst_enable (true, f_catalog && f_params && f_fetched, f_catalog && f_fetched);
+
+		// Special functions
+
+		//enableParam(fetchServerStatusButton, true);
 
 		return;
 	}
@@ -1555,6 +1566,101 @@ public class OEGUIController extends OEGUIListener {
 			// Run in threads
 
 			GUICalcRunnable.run_steps (progress, null, computeStep_2, postComputeStep);
+		}
+		break;
+
+
+
+
+		// Server status.
+		// - In backgound:
+		//   1. Switch view to the console.
+		//   2. Fetch server status.
+		//   3. Pop up a dialog box to report the result.
+
+		case PARMGRP_SERVER_STATUS: {
+			if (filter_state(MODSTATE_INITIAL, FILTOPT_TEST)) {
+				return;
+			}
+
+			// Check for server access available
+
+			if (!( gui_top.get_defer_pin_request() )) {
+				if (!( gui_top.server_access_available() )) {
+					JOptionPane.showMessageDialog(gui_top.get_top_window(), "Server access is not available because no PIN was entered", "No server access", JOptionPane.INFORMATION_MESSAGE);
+					return;
+				}
+			}
+
+			// Request PIN if needed
+
+			if (gui_top.get_defer_pin_request()) {
+				if (!( gui_top.request_server_pin() )) {
+					return;
+				}
+			}
+
+			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
+			final int[] status_success = new int[1];
+			status_success[0] = 0;
+			GUICalcStep computeStep_1 = new GUICalcStep("Fetching AAFS Server Status", "...", new GUIEDTRunnable() {
+						
+				@Override
+				public void run_in_edt() throws GUIEDTException {
+					gui_view.view_show_console();
+				}
+			});
+			GUICalcStep computeStep_2 = new GUICalcStep("Fetching AAFS Server Status", "...", new Runnable() {
+						
+				@Override
+				public void run() {
+					status_success[0] = gui_model.fetchServerStatus(progress);
+				}
+			});
+			GUIEDTRunnable postComputeStep = new GUIEDTRunnable() {
+						
+				@Override
+				public void run_in_edt() throws GUIEDTException {
+					String title = "Server Status";
+					String message;
+					int message_type;
+					int total = status_success[0]/1000;
+					int healthy = status_success[0]%1000;
+					if (total < 1) {
+						message = "Configuration error: No servers were contacted";
+						message_type = JOptionPane.ERROR_MESSAGE;
+					}
+					else if (healthy == total) {
+						switch (total) {
+						case 1: message = "The server is ALIVE"; break;
+						case 2: message = "Both servers are ALIVE"; break;
+						default: message = "All servers are ALIVE"; break;
+						}
+						message_type = JOptionPane.INFORMATION_MESSAGE;
+					}
+					else if (healthy == 0) {
+						switch (total) {
+						case 1: message = "The server is DEAD"; break;
+						case 2: message = "Both servers are DEAD"; break;
+						default: message = "All servers are DEAD"; break;
+						}
+						message_type = JOptionPane.ERROR_MESSAGE;
+					}
+					else {
+						switch (healthy) {
+						case 1: message = "1 server is ALIVE, and "; break;
+						default: message = healthy + " servers are ALIVE, and "; break;
+						}
+						switch (total - healthy) {
+						case 1: message = message + "1 server is DEAD"; break;
+						default: message = message + (total - healthy) + " servers are DEAD"; break;
+						}
+						message_type = JOptionPane.WARNING_MESSAGE;
+					}
+					JOptionPane.showMessageDialog(gui_top.get_top_window(), message, title, message_type);
+				}
+			};
+			GUICalcRunnable.run_steps (progress, postComputeStep, computeStep_1, computeStep_2);
 		}
 		break;
 

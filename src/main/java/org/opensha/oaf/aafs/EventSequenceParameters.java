@@ -34,6 +34,16 @@ public class EventSequenceParameters {
 		return evseq_cfg_lookback;
 	}
 
+//	// This version returns 0L if the lookback time is less than or equal to the minimum value.
+//
+//	public final long get_evseq_cfg_lookback_min_to_zero (long minval) {
+//		return ((evseq_cfg_lookback <= minval) ? 0L : evseq_cfg_lookback);
+//	}
+//
+//	public final long get_evseq_cfg_lookback_min_to_zero () {
+//		return get_evseq_cfg_lookback_min_to_zero (ActionConfigFile.REC_MIN_EVSEQ_LOOKBACK);
+//	}
+
 
 	//----- Construction -----
 	
@@ -80,6 +90,15 @@ public class EventSequenceParameters {
 		}
 
 		return this;
+	}
+
+
+	// Make an object with the specified values.
+	// This funcction coerces the lookback time to be in range.
+
+	public static EventSequenceParameters make_coerce (int evseq_cfg_report, long evseq_cfg_lookback) {
+		return new EventSequenceParameters (evseq_cfg_report, SimpleUtils.clip_max_min_l (
+			ActionConfigFile.REC_MIN_EVSEQ_LOOKBACK, ActionConfigFile.REC_MAX_EVSEQ_LOOKBACK, evseq_cfg_lookback));
 	}
 
 

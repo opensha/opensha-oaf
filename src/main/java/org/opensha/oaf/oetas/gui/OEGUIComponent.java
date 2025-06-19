@@ -170,6 +170,30 @@ public class OEGUIComponent {
 
 
 
+	// Enumeration of event-sequence report options.
+	
+	public enum EvSeqReportOption {
+		AUTO("Auto"),
+		UPDATE("Update"),
+		IGNORE("Ignore"),
+		DELETE("Delete");
+		
+		private String label;
+		
+		private EvSeqReportOption (String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+
+
+
 	//----- Testing -----
 
 
