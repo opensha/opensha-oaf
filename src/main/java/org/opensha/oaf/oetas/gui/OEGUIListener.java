@@ -35,6 +35,8 @@ import org.opensha.oaf.util.gui.GUIEDTException;
 import org.opensha.oaf.util.gui.GUIEDTRunnable;
 import org.opensha.oaf.util.gui.GUIEventAlias;
 import org.opensha.oaf.util.gui.GUIExternalCatalog;
+import org.opensha.oaf.util.gui.GUIExternalCatalogV2;
+import org.opensha.oaf.util.gui.GUIPredicateStringParameter;
 import org.opensha.oaf.util.SharedCounter;
 import org.opensha.oaf.util.SharedCounterAutoInc;
 
@@ -189,6 +191,12 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 		return value;
 	}
 
+	protected String validParam (GUIPredicateStringParameter param) {
+		String value = param.getValue();
+		Preconditions.checkState (value != null && !value.isEmpty(), "Missing value: " + param.getName());
+		return value;
+	}
+
 
 	// Return true if a parameter is defined and passes validation.
 	// Returns false if the result is null.
@@ -207,6 +215,11 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 	}
 
 	protected boolean definedParam (StringParameter param) {
+		String value = param.getValue();
+		return value != null && !value.isEmpty();
+	}
+
+	protected boolean definedParam (GUIPredicateStringParameter param) {
 		String value = param.getValue();
 		return value != null && !value.isEmpty();
 	}
