@@ -24,6 +24,7 @@ import org.opensha.oaf.oetas.OEEnsembleInitializer;
 import org.opensha.oaf.oetas.OEExaminerSaveList;
 import org.opensha.oaf.oetas.OEInitFixedState;
 import org.opensha.oaf.oetas.OEOrigin;
+import org.opensha.oaf.oetas.OERandomGenerator;
 import org.opensha.oaf.oetas.OERupture;
 import org.opensha.oaf.oetas.OESeedParams;
 import org.opensha.oaf.oetas.OESimulator;
@@ -2314,6 +2315,94 @@ public class OEtasTest {
 
 
 
+	// test21/perturb_cat_mags
+	// Command line arguments:
+	//  in_filename  out_filename  mean  sdev  delta_min  delta_max  mag_min  mag_max
+	// Read a catalog file, and apply a normal perturbation to each aftershock magnitude
+	// (but not the mainshock magnitude).  Write the result to the output file.
+	// The perturbation will not be less than delta_min or greater than delta_max
+	// (typically delta_min == -delta_max).
+	// A magnitude will not be increased above mag_max or reduced below mag_min.
+
+	public static void test21 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Apply a normal perturbation to each magnitude in a catalog file");
+		String in_filename = get_filename_arg (testargs, "in_filename");
+		String out_filename = get_filename_arg (testargs, "out_filename");
+		double mean = testargs.get_double ("mean");
+		double sdev = testargs.get_double ("sdev");
+		double delta_min = testargs.get_double ("delta_min");
+		double delta_max = testargs.get_double ("delta_max");
+		double mag_min = testargs.get_double ("mref");
+		double mag_max = testargs.get_double ("msup");
+		testargs.end_test();
+
+		// Read the catalog
+
+		GUIExternalCatalog catalog = new GUIExternalCatalog();
+		catalog.read_from_file (in_filename, null);
+
+		System.out.println ();
+		System.out.println ("Read " + catalog.aftershocks.size() + " aftershocks from file: " + in_filename);
+
+		// Get a random number generator
+
+		OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+
+		// Loop over aftershocks ...
+
+		for (ObsEqkRupture rup : catalog.aftershocks) {
+
+			// Get the magnitude
+
+			double mag = rup.getMag();
+
+			// Loop until success ...
+
+			for (;;) {
+
+				// Get a normal deviate
+
+				double delta = rangen.normal_sample (mean, sdev);
+
+				// If it is in range ...
+
+				if (delta >= delta_min && delta <= delta_max) {
+
+					// New magnitude
+
+					double new_mag = mag + delta;
+
+					// If it is in range, set it and stop looping
+
+					if (new_mag >= Math.min (mag, mag_min) && new_mag <= Math.max (mag, mag_max)) {
+						rup.setMag (new_mag);
+						break;
+					}
+				}
+			}
+		}
+
+		// Write the perturbed catalog to a file
+
+		catalog.write_to_file (out_filename);
+
+		System.out.println ();
+		System.out.println ("Wrote " + catalog.aftershocks.size() + " perturbed aftershocks to file: " + out_filename);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -2442,6 +2531,12 @@ public class OEtasTest {
 
 		if (testargs.is_test ("test20", "write_sample_params_3")) {
 			test20 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test21", "perturb_cat_mags")) {
+			test21 (testargs);
 			return;
 		}
 

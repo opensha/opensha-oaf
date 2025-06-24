@@ -1375,6 +1375,22 @@ public class OERandomGenerator {
 
 
 
+	// Sample from a normal distribution.
+	// Parameters:
+	//  mean = Mean of normal distribution.
+	//  sdev = Standard deviation of normal distribution.
+	// Returns a normally distributed random value.
+	// Note: Uses the Box-Muller transform.
+
+	public double normal_sample (double mean, double sdev) {
+		final double u1 = uniform_sample (0.0, 1.0);
+		final double u2 = uniform_sample (0.0, 1.0);
+		return ( Math.sqrt (Math.max (0.0, -2.0 * Math.log (Math.max (Double.MIN_NORMAL, u1)))) * Math.cos (2.0 * Math.PI * u2) * sdev ) + mean;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -2136,6 +2152,78 @@ public class OERandomGenerator {
 					double rate = OERandomGenerator.omori_average_rate (p, c, t1, t2);
 					double comp = test_omori_average_rate (p, c, t1, t2);
 					System.out.println (p + "   " + rate + "   " + comp);
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #12
+		// Command format:
+		//  test12  mean  sdev  n
+		// Generate n random numbers from a normal distribution with given mean and standard deviation.
+		// Display the list of random numbers.
+		// Then sort the list and display the sorted list.
+
+		if (args[0].equalsIgnoreCase ("test12")) {
+
+			// 3 additional arguments
+
+			if (args.length != 4) {
+				System.err.println ("OERandomGenerator : Invalid 'test12' subcommand");
+				return;
+			}
+
+			try {
+
+				double mean = Double.parseDouble (args[1]);
+				double sdev = Double.parseDouble (args[2]);
+				int n = Integer.parseInt(args[3]);
+
+				// Say hello
+
+				System.out.println ("Generating normal random numbers");
+				System.out.println ("mean = " + mean);
+				System.out.println ("sdev = " + sdev);
+				System.out.println ("n = " + n);
+
+				// Get the random number generator
+
+				OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+
+				// Generate random numbers
+
+				double[] rand = new double[n];
+				for (int k = 0; k < n; ++k) {
+					rand[k] = rangen.normal_sample (mean, sdev);
+				}
+
+				// Display the list
+
+				System.out.println ();
+				System.out.println ("Random numbers");
+				System.out.println ();
+				for (int k = 0; k < n; ++k) {
+					System.out.println (k + "   " + rand[k]);
+				}
+
+				// Sort the list
+
+				Arrays.sort (rand);
+
+				// Display the sorted list
+
+				System.out.println ();
+				System.out.println ("Sorted andom numbers");
+				System.out.println ();
+				for (int k = 0; k < n; ++k) {
+					System.out.println (k + "   " + rand[k]);
 				}
 
 			} catch (Exception e) {
