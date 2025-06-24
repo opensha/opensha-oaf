@@ -776,12 +776,15 @@ public class OEConstants {
 
 
 	// Maximum number of excitation parameter combinations in a grid.
+	// (Typically, the number of combinations of zams and zmu.)
 
 	public static final int MAX_EXCITATION_GRID = 500000;
 
 	// Maximum number of statistical parameter combinations in a grid.
+	// (Typically, the number of combinations of c, p, and n.)
 
-	public static final int MAX_STATISTICS_GRID = 500000;
+	//public static final int MAX_STATISTICS_GRID = 500000;
+	public static final int MAX_STATISTICS_GRID = 10000000;	// increased value to support testing
 
 	// Default size of the bins used to clip the normalized log density function, in matural log units
 
