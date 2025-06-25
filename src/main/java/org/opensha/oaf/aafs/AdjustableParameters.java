@@ -783,6 +783,14 @@ public class AdjustableParameters {
 
 		public boolean f_saved = false;
 
+		// Saved advisory lag.
+
+		public long saved_advisory_lag = 0L;
+
+		// Saved injectable text.
+
+		public String saved_injectable_text = "";
+
 		// Saved forecast JSONs, can be null if none was available.
 		// If non-null, it is non-empty.
 
@@ -800,6 +808,10 @@ public class AdjustableParameters {
 		public void clear () {
 			f_saved = false;
 
+			saved_advisory_lag = 0L;
+
+			saved_injectable_text = "";
+
 			saved_generic_json = null;
 			saved_seq_spec_json = null;
 			saved_bayesian_json = null;
@@ -816,6 +828,10 @@ public class AdjustableParameters {
 			if (!( f_saved )) {
 				f_saved = true;
 
+				saved_advisory_lag = fc_results.advisory_lag;
+
+				saved_injectable_text = fc_results.injectable_text;
+
 				saved_generic_json = fc_results.get_pdl_model_json (ForecastResults.PMCODE_GENERIC);
 				saved_seq_spec_json = fc_results.get_pdl_model_json (ForecastResults.PMCODE_SEQ_SPEC);
 				saved_bayesian_json = fc_results.get_pdl_model_json (ForecastResults.PMCODE_BAYESIAN);
@@ -827,6 +843,20 @@ public class AdjustableParameters {
 		}
 
 		// Revert saved values to the forecast results, if they were previously saved.
+
+		public void revert_advisory_lag_to (ForecastResults fc_results) {
+			if (f_saved) {
+				fc_results.advisory_lag = saved_advisory_lag;
+			}
+			return;
+		}
+
+		public void revert_injectable_text_to (ForecastResults fc_results) {
+			if (f_saved) {
+				fc_results.injectable_text = saved_injectable_text;
+			}
+			return;
+		}
 
 		public void revert_forecast_json_to (ForecastResults fc_results) {
 			if (f_saved) {
@@ -854,6 +884,8 @@ public class AdjustableParameters {
 		}
 
 		public void revert_to (ForecastResults fc_results) {
+			revert_advisory_lag_to (fc_results);
+			revert_injectable_text_to (fc_results);
 			revert_forecast_json_to (fc_results);
 			revert_pdl_model_to (fc_results);
 			return;
@@ -922,6 +954,27 @@ public class AdjustableParameters {
 			// Save if needed
 
 			adj_save.save_from (fc_results);
+
+			// Advisory lag
+
+			if (f_adj_advisory_time_frame) {
+				long the_advisory_lag = ForecastResults.advisory_name_to_lag_via_enum (advisoryTimeFrame);
+				if (the_advisory_lag != 0L) {
+					fc_results.advisory_lag = the_advisory_lag;
+				} else {
+					adj_save.revert_advisory_lag_to (fc_results);
+				}
+			} else {
+				adj_save.revert_advisory_lag_to (fc_results);
+			}
+
+			// Injectable text
+
+			if (f_adj_injectable_text) {
+				fc_results.injectable_text = get_eff_injectable_text();
+			} else {
+				adj_save.revert_injectable_text_to (fc_results);
+			}
 
 			// Forecast JSON files
 
@@ -1293,6 +1346,68 @@ public class AdjustableParameters {
 		this.f_adj_intake = true;
 		this.intake_option = intake_option;
 		this.shadow_option = shadow_option;
+
+		return;
+	}
+
+
+
+
+	// Set values from user-supplied non-analyst options.
+	// Parameters:
+	//  nextForecastTime = Time of next forecast, 0L if unknown, -1L if none, -2L if not specified, or Long.MIN_VALUE if not adjusting.
+	//  the_duration = Duration for advisory time frame, or null if not adjusting.
+	//  the_template = Product template, or null if not adjusting.
+	//  pdl_model_pmcode = Code for the selected PDL model, or ForecastResults.PMCODE_INVALID if not adjusting.
+	// Note: This function does not set or change any analyst options,
+	// so typically you should call set_all_analyst_opts first.
+
+	public void set_all_non_analyst_opts (
+		long nextForecastTime,
+		USGS_AftershockForecast.Duration the_duration,
+		USGS_AftershockForecast.Template the_template,
+		int pdl_model_pmcode
+	) {
+
+		// Next forecast time, set to default if Long.MIN_VALUE
+
+		if (nextForecastTime == Long.MIN_VALUE) {
+			this.f_adj_next_forecast_time = false;
+			this.nextForecastTime = 0L;
+		} else {
+			this.f_adj_next_forecast_time = true;
+			this.nextForecastTime = nextForecastTime;
+		}
+
+		// Advisory duration, set to default if null
+
+		if (the_duration == null) {
+			this.f_adj_advisory_time_frame = false;
+			this.advisoryTimeFrame = null;
+		} else {
+			this.f_adj_advisory_time_frame = true;
+			this.advisoryTimeFrame = the_duration.toString();
+		}
+
+		// Product template, set to default if null
+
+		if (the_template == null) {
+			this.f_adj_template = false;
+			this.template = null;
+		} else {
+			this.f_adj_template = true;
+			this.template = the_template.toString();
+		}
+
+		// PDL model, set to not available if PMCODE_INVALID
+
+		if (pdl_model_pmcode == ForecastResults.PMCODE_INVALID) {
+			this.f_adj_pdl_model = false;
+			this.pdl_model_pmcode = ForecastResults.PMCODE_INVALID;
+		} else {
+			this.f_adj_pdl_model = true;
+			this.pdl_model_pmcode = pdl_model_pmcode;
+		}
 
 		return;
 	}

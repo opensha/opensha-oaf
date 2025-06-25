@@ -389,6 +389,23 @@ public class MarshalUtils {
 		return;
 	}
 
+	public static void to_json_file (Marshalable x, File file) {
+
+		try (
+			BufferedWriter file_writer = new BufferedWriter (new FileWriter (file));
+		){
+			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+			x.marshal (writer, null);
+			writer.check_write_complete ();
+			writer.write_json_file (file_writer);
+		}
+		catch (IOException e) {
+			throw new MarshalException ("MarshalUtils: I/O error while writing JSON file: " + file.getPath(), e);
+		}
+
+		return;
+	}
+
 
 
 
@@ -410,6 +427,27 @@ public class MarshalUtils {
 		}
 		catch (IOException e) {
 			throw new MarshalException ("MarshalUtils: I/O error while writing JSON file: " + filename, e);
+		}
+
+		return;
+	}
+
+	public static void to_formatted_json_file (Marshalable x, File file) {
+
+		try (
+			BufferedWriter file_writer = new BufferedWriter (new FileWriter (file));
+		){
+			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+			x.marshal (writer, null);
+			writer.check_write_complete ();
+
+			Object json_container = writer.get_json_container();
+			String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false, false);
+
+			file_writer.write (formatted_string);
+		}
+		catch (IOException e) {
+			throw new MarshalException ("MarshalUtils: I/O error while writing JSON file: " + file.getPath(), e);
 		}
 
 		return;
@@ -441,6 +479,27 @@ public class MarshalUtils {
 		return;
 	}
 
+	public static void to_formatted_compact_json_file (Marshalable x, File file) {
+
+		try (
+			BufferedWriter file_writer = new BufferedWriter (new FileWriter (file));
+		){
+			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+			x.marshal (writer, null);
+			writer.check_write_complete ();
+
+			Object json_container = writer.get_json_container();
+			String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false, true);
+
+			file_writer.write (formatted_string);
+		}
+		catch (IOException e) {
+			throw new MarshalException ("MarshalUtils: I/O error while writing JSON file: " + file.getPath(), e);
+		}
+
+		return;
+	}
+
 
 
 
@@ -457,6 +516,22 @@ public class MarshalUtils {
 		}
 		catch (IOException e) {
 			throw new MarshalException ("MarshalUtils: I/O error while reading JSON file: " + filename, e);
+		}
+
+		return;
+	}
+
+	public static void from_json_file (Marshalable x, File file) {
+
+		try (
+			BufferedReader file_reader = new BufferedReader (new FileReader (file));
+		){
+			MarshalImpJsonReader reader = new MarshalImpJsonReader (file_reader);
+			x.unmarshal (reader, null);
+			reader.check_read_complete ();
+		}
+		catch (IOException e) {
+			throw new MarshalException ("MarshalUtils: I/O error while reading JSON file: " + file.getPath(), e);
 		}
 
 		return;

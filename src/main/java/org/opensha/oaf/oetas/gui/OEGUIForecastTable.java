@@ -146,6 +146,8 @@ import org.opensha.oaf.util.gui.GUIExternalCatalog;
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.GUICmd;
+import org.opensha.oaf.aafs.AdjustableParameters;
+import org.opensha.oaf.aafs.ForecastData;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
@@ -170,25 +172,37 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 	// Parameter groups.
 
-	private static final int PARMGRP_FCTAB_EXPORT = 901;				// Export button
+	private static final int PARMGRP_FCTAB_EXPORT = 901;				// Export button (forecast.json only)
 	private static final int PARMGRP_FCTAB_PUBLISH = 902;				// Publish to PDL button
 	private static final int PARMGRP_FCTAB_ADVISORY_DUR_PARAM = 903;	// Advisory duration parameter
 	private static final int PARMGRP_FCTAB_TEMPLATE_PARAM = 904;		// Forecast template parameter
 	private static final int PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM = 905;	// Include probability above mainshock parameter
 	private static final int PARMGRP_FCTAB_INJECTABLE_TEXT = 906;		// Injectable text button
+	private static final int PARMGRP_FCTAB_FULL_EXPORT = 907;			// Export button (forecast_data.json)
 	
 
 	//----- Parameters within the panel -----
 
 
-	// Export JSON to file; button.
+	// Export JSON to file (forecast.json only); button.
 
 	private ButtonParameter exportButton;
 
 	private ButtonParameter init_exportButton () throws GUIEDTException {
-		exportButton = new ButtonParameter("JSON", "Export JSON...");
+		exportButton = new ButtonParameter("forecast.json", "Export forecast.json only...");
 		register_param (exportButton, "exportButton" + my_suffix, PARMGRP_FCTAB_EXPORT);
 		return exportButton;
+	}
+
+
+	// Export JSON to file (forecast_data.json); button.
+
+	private ButtonParameter exportFullButton;
+
+	private ButtonParameter init_exportFullButton () throws GUIEDTException {
+		exportFullButton = new ButtonParameter("JSON", "Export JSON...");
+		register_param (exportFullButton, "exportFullButton" + my_suffix, PARMGRP_FCTAB_FULL_EXPORT);
+		return exportFullButton;
 	}
 
 
@@ -286,9 +300,11 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 		ParameterList params = new ParameterList();
 
-		params.addParameter(init_exportButton());
+		params.addParameter(init_exportFullButton());
 
 		params.addParameter(init_publishButton());
+
+		params.addParameter(init_exportButton());
 
 		params.addParameter(init_advisoryDurationParam());
 
@@ -309,6 +325,11 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 
 	//----- Internal variables -----
+
+
+	// The JSON string containing the forecast, as supplied in the constructor.
+
+	private String my_json_string;
 
 
 	// The forecast holder for this panel.
@@ -354,32 +375,6 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 
 
-	//----- Debugging support -----
-
-
-//	// Add all parameters to the symbol table.
-//
-//	private void setup_symbol_table () {
-//
-//		String suffix = "@" + my_name.replaceAll("\\s", "");	// remove white space from name
-//
-//		// Set up the symbol table
-//
-//		add_symbol (exportButton , "exportButton" + suffix);
-//		add_symbol (publishButton , "publishButton" + suffix);
-//		add_symbol (advisoryDurationParam , "advisoryDurationParam" + suffix);
-//		add_symbol (templateParam , "templateParam" + suffix);
-//		add_symbol (probAboveMainParam , "probAboveMainParam" + suffix);
-//		add_symbol (injectableTextButton , "injectableTextButton" + suffix);
-//
-//		add_symbol (paramsEditor , "paramsEditor" + suffix);
-//
-//		return;
-//	}
-
-
-
-
 	//----- Construction -----
 
 
@@ -404,6 +399,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 		link_components (gui_comp);
 
 		// Save the forecast and name
+
+		this.my_json_string = my_json_string;
 
 		this.my_fc_holder = new USGS_ForecastHolder();
 		MarshalUtils.from_json_string (this.my_fc_holder, my_json_string);
@@ -465,6 +462,35 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 
 
+	// Make adjustable parameters for this forecast.
+
+	public AdjustableParameters make_fc_adj_params () throws GUIEDTException {
+
+		// Get the analyst parameters
+
+		OEGUISubAnalyst.XferAnalystImpl xfer = gui_controller.load_analyst_xfer();
+		AdjustableParameters adj_params = gui_model.make_analyst_adj_params (xfer);
+
+		// Add in the non-analyst parameters
+
+		long nextForecastTime = Long.MIN_VALUE;
+		USGS_AftershockForecast.Duration the_duration = validParam(advisoryDurationParam);
+		USGS_AftershockForecast.Template the_template = validParam(templateParam);
+		int pdl_model_pmcode = my_pmcode;
+
+		adj_params.set_all_non_analyst_opts (
+			nextForecastTime,
+			the_duration,
+			the_template,
+			pdl_model_pmcode
+		);
+
+		return adj_params;
+	}
+
+
+
+
 	//----- Parameter change actions ------
 
 
@@ -482,32 +508,26 @@ public class OEGUIForecastTable extends OEGUIListener {
 		switch (parmgrp) {
 
 
-		// *** Export to JSON file.
+
+
+		// *** Export to JSON file - forecast.json.
 
 		case PARMGRP_FCTAB_EXPORT: {
 
 			// Ask user to select file
 
-			if (chooser == null) {
-				chooser = new JFileChooser();
-			}
-			int ret = chooser.showSaveDialog(my_panel);
-			if (ret == JFileChooser.APPROVE_OPTION) {
-				File file = chooser.getSelectedFile();
+			File file = gui_top.showSaveFileDialog (exportButton);
+			if (file != null) {
 
-				// Set injectable text
+				// Get adjustable parameters
 
-				String injText = gui_model.get_analyst_adj_params().injectable_text;
-				if (injText != null && injText.length() == 0) {
-					injText = null;
-				}
-				my_fc_holder.set_injectable_text(injText);
+				AdjustableParameters adj_params = make_fc_adj_params();
 
-				// Convert forecast to JSON string, display error message if it fails
+				// Apply to our JSON text
 
 				String jsonText = null;
 				try {
-					jsonText = MarshalUtils.to_json_string (my_fc_holder);
+					jsonText = adj_params.adjust_forecast_json (my_json_string);
 				} catch (Exception e) {
 					jsonText = null;
 					e.printStackTrace();
@@ -515,7 +535,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 					JOptionPane.showMessageDialog(my_panel, message, "Error building JSON", JOptionPane.ERROR_MESSAGE);
 				}
 
-				// If conversion succeeded, write to file, display error message if I/O error
+				// If succeeded, write to file, display error message if I/O error
 
 				if (jsonText != null) {
 					try {
@@ -525,12 +545,68 @@ public class OEGUIForecastTable extends OEGUIListener {
 					} catch (IOException e) {
 						e.printStackTrace();
 						String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
-						JOptionPane.showMessageDialog(my_panel, message, "Error writing JSON", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(my_panel, message, "Error writing JSON to file", JOptionPane.ERROR_MESSAGE);
 					}
 				}
 			}
 		}
 		break;
+
+
+
+
+		// *** Export to JSON file - forecast.json.
+
+		case PARMGRP_FCTAB_FULL_EXPORT: {
+
+			// Ask user to select file
+
+			File file = gui_top.showSaveFileDialog (exportFullButton);
+			if (file != null) {
+
+				// Get adjustable parameters
+
+				AdjustableParameters adj_params = make_fc_adj_params();
+
+				// Get our ForecastData
+
+				ForecastData fcdata = gui_model.get_forecast_fcdata();
+
+				// Set for not sent to PDL
+
+				fcdata.pdl_event_id = "";
+				fcdata.pdl_is_reviewed = false;
+
+				// Apply to our ForecastData, with automatic reversion
+
+				try (
+					AdjustableParameters.AutoAdjForecastData auto_adj = adj_params.get_auto_adj (fcdata);
+				) {
+
+					// Write to file, display error message if I/O error
+
+					try {
+						MarshalUtils.to_json_file (fcdata, file);
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+						String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
+						JOptionPane.showMessageDialog(my_panel, message, "Error writing JSON to file", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+
+				// Exception from parameter adjustment
+
+				catch (Exception e) {
+					e.printStackTrace();
+					String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
+					JOptionPane.showMessageDialog(my_panel, message, "Error building JSON", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+		}
+		break;
+
+
 
 
 		//*** Publish forecast to PDL
@@ -650,12 +726,16 @@ public class OEGUIForecastTable extends OEGUIListener {
 		break;
 
 
+
+
 		//*** Set advisory duration, from dropdown list
 
 		case PARMGRP_FCTAB_ADVISORY_DUR_PARAM: {
 			my_fc_holder.set_advisory_time_frame_from_enum (validParam(advisoryDurationParam));
 		}
 		break;
+
+
 
 
 		//*** Set PDL template, from dropdown list
@@ -666,12 +746,16 @@ public class OEGUIForecastTable extends OEGUIListener {
 		break;
 
 
+
+
 		//*** Select whether to include probability of an aftershock larger than mainshock, from checkbox
 
 		case PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM: {
 			my_fc_holder.set_include_above_mainshock (validParam(probAboveMainParam));
 		}
 		break;
+
+
 
 
 		//*** Enter the injectable text
@@ -725,6 +809,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 			}
 		}
 		break;
+
+
 
 
 		// Unknown parameter group

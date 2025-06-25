@@ -113,6 +113,46 @@ public class ForecastResults implements Marshalable {
 		return null;
 	}
 
+	// Convert an advisory lag into an advisory name, using USGS_AftershockForecast.Duration.
+	// Returns null if there is no name for the given advisory lag.
+
+	public static String advisory_lag_to_name_via_enum (long the_advisory_lag) {
+		String name = null;
+
+		if (the_advisory_lag == ADVISORY_LAG_DAY) {
+			name = USGS_AftershockForecast.Duration.ONE_DAY.toString();
+		} else if (the_advisory_lag == ADVISORY_LAG_WEEK) {
+			name = USGS_AftershockForecast.Duration.ONE_WEEK.toString();
+		} else if (the_advisory_lag == ADVISORY_LAG_MONTH) {
+			name = USGS_AftershockForecast.Duration.ONE_MONTH.toString();
+		} else if (the_advisory_lag == ADVISORY_LAG_YEAR) {
+			name = USGS_AftershockForecast.Duration.ONE_YEAR.toString();
+		}
+
+		return name;
+	}
+
+	// Convert an advisory name to an advisory lag, using USGS_AftershockForecast.Duration.
+	// Comparison is case-insensitive and ignores leading and trailing white space.
+	// Returns 0L if the name is not recognized.
+
+	public static long advisory_name_to_lag_via_enum (String name) {
+		String s = name.trim();
+		long the_advisory_lag = 0L;
+
+		if (s.equalsIgnoreCase (USGS_AftershockForecast.Duration.ONE_DAY.toString())) {
+			the_advisory_lag = ADVISORY_LAG_DAY;
+		} else if (s.equalsIgnoreCase (USGS_AftershockForecast.Duration.ONE_WEEK.toString())) {
+			the_advisory_lag = ADVISORY_LAG_WEEK;
+		} else if (s.equalsIgnoreCase (USGS_AftershockForecast.Duration.ONE_MONTH.toString())) {
+			the_advisory_lag = ADVISORY_LAG_MONTH;
+		} else if (s.equalsIgnoreCase (USGS_AftershockForecast.Duration.ONE_YEAR.toString())) {
+			the_advisory_lag = ADVISORY_LAG_YEAR;
+		}
+
+		return the_advisory_lag;
+	}
+
 	// Convert a forecast lag to a flag indicating if sequence specific results should be calculated.
 
 	public static boolean forecast_lag_to_f_seq_spec (long the_forecast_lag, ActionConfig action_config) {
