@@ -193,6 +193,29 @@ public class OEGUIComponent {
 
 
 
+	// Enumeration of options for setting the time of next forecast.
+	
+	public enum NextForecastOption {
+		OMIT("Omit"),
+		UNKNOWN("Unknown"),
+		NONE("None"),
+		SET_TIME("Set Time");
+		
+		private String label;
+		
+		private NextForecastOption (String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+
+
 
 	//----- Testing -----
 

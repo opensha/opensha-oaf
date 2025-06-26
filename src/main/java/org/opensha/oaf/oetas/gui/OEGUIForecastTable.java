@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayDeque;
+import java.util.function.Predicate;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -143,6 +144,7 @@ import org.opensha.oaf.util.gui.GUIEDTException;
 import org.opensha.oaf.util.gui.GUIEDTRunnable;
 import org.opensha.oaf.util.gui.GUIEventAlias;
 import org.opensha.oaf.util.gui.GUIExternalCatalog;
+import org.opensha.oaf.util.gui.GUIPredicateStringParameter;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
@@ -182,6 +184,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private static final int PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM = 905;	// Include probability above mainshock parameter
 	private static final int PARMGRP_FCTAB_INJECTABLE_TEXT = 906;		// Injectable text button
 	private static final int PARMGRP_FCTAB_FULL_EXPORT = 907;			// Export button (forecast_data.json)
+	private static final int PARMGRP_FCTAB_NEXT_FC_OPTION = 908;		// Next forecast option
+	private static final int PARMGRP_FCTAB_NEXT_FC_TIME = 909;			// Next forecast time
 	
 
 	//----- Parameters within the panel -----
@@ -288,6 +292,127 @@ public class OEGUIForecastTable extends OEGUIListener {
 	}
 
 
+	// Set next forecast option; drop-down list.
+
+	private EnumParameter<NextForecastOption> nextForecastOptionParam;
+
+	private EnumParameter<NextForecastOption> init_nextForecastOptionParam () throws GUIEDTException {
+		nextForecastOptionParam = new EnumParameter<NextForecastOption>(
+				"Next Forecast", EnumSet.allOf(NextForecastOption.class), NextForecastOption.OMIT, null);
+		register_param (nextForecastOptionParam, "nextForecastOptionParam" + my_suffix, PARMGRP_FCTAB_NEXT_FC_OPTION);
+		return nextForecastOptionParam;
+	}
+
+
+	// Set next forecast time; edit box.
+
+	private GUIPredicateStringParameter nextForecastOptionTime = null;
+
+	private GUIPredicateStringParameter init_nextForecastOptionTime () throws GUIEDTException {
+		Predicate<String> predicate = (String s) -> {
+			boolean result = false;
+			if (s.trim().isEmpty()) {
+				result = true;
+			} else {
+				try {
+					SimpleUtils.string_to_time_permissive (s);
+					result = true;
+				} catch (Exception e) {
+					result = false;
+				}
+			}
+			return result;
+		};
+		nextForecastOptionTime = new GUIPredicateStringParameter(
+				"Next Forecast Time",
+				predicate,
+				"yyyy-mm-dd hh:mm",
+				"" );
+		register_param (nextForecastOptionTime, "nextForecastOptionTime" + my_suffix, PARMGRP_FCTAB_NEXT_FC_TIME);
+		enableParam (nextForecastOptionTime, false);
+		return nextForecastOptionTime;
+	}
+
+
+	// Get the next forecast time from the parameters, throw exception if not available.
+
+	public long get_nextForecastTime () {
+		long time = 0L;
+		NextForecastOption forecast_option = validParam(nextForecastOptionParam);
+		switch (forecast_option) {
+
+		case OMIT: {
+			time = -2L;
+		}
+		break;
+
+		case UNKNOWN: {
+			time = 0L;
+		}
+		break;
+
+		case NONE: {
+			time = -1L;
+		}
+		break;
+
+		case SET_TIME: {
+			if (!( definedParam(nextForecastOptionTime) )) {
+				throw new RuntimeException ("Next forecast time is not specified");
+			}
+			String s = validParam(nextForecastOptionTime);
+			if (s.trim().isEmpty()) {
+				throw new RuntimeException ("Next forecast time is not specified");
+			}
+			try {
+				time = SimpleUtils.string_to_time_permissive (s);
+			} catch (Exception e) {
+				throw new RuntimeException ("Next forecast time is invalid");
+			}
+		}
+		break;
+
+		default:
+			throw new RuntimeException ("Next forecast option is invalid");
+		}
+
+		return time;
+	}
+
+
+	// Pre-check the next forecast time.
+	// Return false if invalid, in which case a message is displayed.
+
+	public boolean precheck_nextForecastTime ()  throws GUIEDTException {
+		long time = 0L;
+		try {
+			time = get_nextForecastTime();
+		} catch (Exception e) {
+			String message = e.getMessage();
+			JOptionPane.showMessageDialog(my_panel, message, "Invalid next forecast time", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		if (time == 0L || time == -1L || time == -2L) {
+			return true;
+		}
+
+		long time_now = System.currentTimeMillis();
+		if (time <= time_now) {
+			String message = "Next forecast time cannot be before the current time";
+			JOptionPane.showMessageDialog(my_panel, message, "Invalid next forecast time", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+		if (time > time_now + (SimpleUtils.DAY_MILLIS * 400L)) {
+			String message = "Next forecast time cannot be more than 400 days in the future";
+			JOptionPane.showMessageDialog(my_panel, message, "Invalid next forecast time", JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		return true;
+	}
+
+
 
 
 	//--- Parameter container ---
@@ -314,6 +439,10 @@ public class OEGUIForecastTable extends OEGUIListener {
 		params.addParameter(init_templateParam());
 
 		params.addParameter(init_probAboveMainParam());
+
+		params.addParameter(init_nextForecastOptionParam());
+
+		params.addParameter(init_nextForecastOptionTime());
 
 		params.addParameter(init_injectableTextButton());
 
@@ -534,7 +663,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 			// Next forecast time
 
-			x_nextForecastTime = Long.MIN_VALUE;
+			//x_nextForecastTime = Long.MIN_VALUE;
+			x_nextForecastTime = get_nextForecastTime();
 
 			// Advisory duration
 
@@ -631,6 +761,12 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 		case PARMGRP_FCTAB_EXPORT: {
 
+			// Pre-check the next forecast time
+
+			if (!( precheck_nextForecastTime() )) {
+				return;
+			}
+
 			// Ask user to select file
 
 			File file = gui_top.showSaveFileDialog (exportButton);
@@ -677,6 +813,12 @@ public class OEGUIForecastTable extends OEGUIListener {
 		// *** Export to JSON file - forecast_data.json.
 
 		case PARMGRP_FCTAB_FULL_EXPORT: {
+
+			// Pre-check the next forecast time
+
+			if (!( precheck_nextForecastTime() )) {
+				return;
+			}
 
 			// Ask user to select file
 
@@ -733,6 +875,12 @@ public class OEGUIForecastTable extends OEGUIListener {
 		//*** Publish forecast to PDL
 
 		case PARMGRP_FCTAB_PUBLISH: {
+
+			// Pre-check the next forecast time
+
+			if (!( precheck_nextForecastTime() )) {
+				return;
+			}
 
 			// Ask user for confirmation
 
@@ -856,6 +1004,27 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 		case PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM: {
 			my_fc_holder.set_include_above_mainshock (validParam(probAboveMainParam));
+		}
+		break;
+
+
+
+
+		//*** Set next forecast option, from dropdown list
+
+		case PARMGRP_FCTAB_NEXT_FC_OPTION: {
+			if (nextForecastOptionTime != null) {
+				enableParam(nextForecastOptionTime, validParam(nextForecastOptionParam) == NextForecastOption.SET_TIME);
+			}
+		}
+		break;
+
+
+
+
+		//*** Set next forecast time
+
+		case PARMGRP_FCTAB_NEXT_FC_TIME: {
 		}
 		break;
 
