@@ -134,6 +134,7 @@ import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.MarshalUtils;
+import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.gui.GUIConsoleWindow;
 import org.opensha.oaf.util.gui.GUICalcStep;
 import org.opensha.oaf.util.gui.GUICalcRunnable;
@@ -148,6 +149,8 @@ import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.GUICmd;
 import org.opensha.oaf.aafs.AdjustableParameters;
 import org.opensha.oaf.aafs.ForecastData;
+import org.opensha.oaf.aafs.EventSequenceResult;
+import org.opensha.oaf.aafs.PDLSupport;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
@@ -360,17 +363,6 @@ public class OEGUIForecastTable extends OEGUIListener {
 	public JPanel get_my_panel () {
 		return my_panel;
 	}
-
-
-	// File chooser dialog, for exporting JSON.
-		
-	private JFileChooser chooser;
-
-
-	// PDL product and exception, for publishing forecast to PDL.
-
-	private Product pdl_product;
-	private Exception pdl_exception;
 
 
 
@@ -682,7 +674,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 
 
-		// *** Export to JSON file - forecast.json.
+		// *** Export to JSON file - forecast_data.json.
 
 		case PARMGRP_FCTAB_FULL_EXPORT: {
 
@@ -754,101 +746,84 @@ public class OEGUIForecastTable extends OEGUIListener {
 			// User confirmed ...
 
 			} else {
-				Product product = null;
 
-				// Set injectable text
+				// Get adjustable parameters
 
-				String injText = gui_model.get_analyst_adj_params().injectable_text;
-				if (injText != null && injText.length() == 0) {
-					injText = null;
-				}
-				my_fc_holder.set_injectable_text(injText);
+				AdjustableParameters adj_params = make_fc_adj_params();
+				if (adj_params != null) {
 
-				// Build the PDL product, display error message if it failed
+					// Get our ForecastData
 
-				try {
-					//product = OAF_Publisher.createProduct(gui_model.get_cur_mainshock().getEventId(), my_forecast);
-					String jsonText = MarshalUtils.to_json_string (my_fc_holder);
+					final ForecastData fcdata = gui_model.get_forecast_fcdata();
 
-					//Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (gui_model.get_cur_mainshock(), ComcatOAFAccessor.EITMOPT_OMIT_NULL_EMPTY);
-					//String eventNetwork = eimap.get (ComcatOAFAccessor.PARAM_NAME_NETWORK);
-					//String eventCode = eimap.get (ComcatOAFAccessor.PARAM_NAME_CODE);
-					String eventNetwork = gui_model.get_fcmain().mainshock_network;
-					String eventCode = gui_model.get_fcmain().mainshock_code;
+					// Set for not sent to PDL
 
-					String eventID = gui_model.get_cur_mainshock().getEventId();
-					if (gui_top.get_pdlUseEventIDParam()) {
-						eventID = gui_model.get_cat_eventIDParam();
-					}
-					long modifiedTime = 0L;
-					boolean isReviewed = true;
+					fcdata.pdl_event_id = "";
+					fcdata.pdl_is_reviewed = false;
 
-					String suggestedCode = eventID;
-					//long reviewOverwrite = 0L;
-					long reviewOverwrite = -1L;
-					String queryID = gui_model.get_cat_eventIDParam();
-					JSONObject geojson = null;
-					boolean f_gj_prod = true;
-					eventID = PDLCodeChooserOaf.chooseOafCode (suggestedCode, reviewOverwrite,
-						geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed);
+					// Parameters for sending to PDL
 
-					product = PDLProductBuilderOaf.createProduct (eventID, eventNetwork, eventCode, isReviewed, jsonText, modifiedTime);
-				} catch (Exception e) {
-					product = null;
-					e.printStackTrace();
-					String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
-					JOptionPane.showMessageDialog(my_panel, message, "Error building product", JOptionPane.ERROR_MESSAGE);
-				}
+					final boolean isReviewed = true;
+					final EventSequenceResult evseq_res = new EventSequenceResult();
 
-				// If we built the product, send it to PDL
+					// In case of error, this contains the error message (element 0) and the stack trace (element 1)
 
-				if (product != null) {
+					final String[] pdl_result = new String[2];
+					pdl_result[0] = null;
+					pdl_result[1] = null;
 
-					//  boolean isSent = false;
-					//  try {
-					//  	//OAF_Publisher.sendProduct(product);
-					//  	PDLSender.signProduct(product);
-					//  	PDLSender.sendProduct(product, true);
-					//  	isSent = true;
-					//  } catch (Exception e) {
-					//  	e.printStackTrace();
-					//  	String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
-					//  	JOptionPane.showMessageDialog(my_panel, message, "Error sending product", JOptionPane.ERROR_MESSAGE);
-					//  }
-					//  if (isSent) {
-					//  	JOptionPane.showMessageDialog(my_panel, "Success: Forecast has been successfully sent to PDL", "Publication succeeded", JOptionPane.INFORMATION_MESSAGE);
-					//  }
+					// Step to adjust parameters and send to PDL.
 
-					pdl_product = product;
-					pdl_exception = null;
 					GUICalcStep pdlSendStep = new GUICalcStep("Sending product to PDL", "...", new Runnable() {
 						@Override
 						public void run() {
-							try {
-								//OAF_Publisher.sendProduct(product);
-								PDLSender.signProduct(pdl_product);
-								PDLSender.sendProduct(pdl_product, true);
+							try (
+								AdjustableParameters.AutoAdjForecastData auto_adj = adj_params.get_auto_adj (fcdata);
+							) {
+								String event_id = PDLSupport.static_send_pdl_report (
+									isReviewed,
+									evseq_res,
+									fcdata
+								);
 							} catch (Exception e) {
-								pdl_exception = e;
+								pdl_result[0] = "Error: " + ClassUtils.getClassNameWithoutPackage(e.getClass()) + ": " + e.getMessage();
+								pdl_result[1] = SimpleUtils.getStackTraceAsString(e);
 							}
 						}
 					});
+
+					// Step to report result to user
+
 					GUIEDTRunnable postSendStep = new GUIEDTRunnable() {
-						
 						@Override
 						public void run_in_edt() throws GUIEDTException {
-							// Pop up a message displaying the result, either success or error  TODO: Use a reporter for this
-							if (pdl_exception == null) {
-								JOptionPane.showMessageDialog(my_panel, "Success: Forecast has been successfully sent to PDL", "Publication succeeded", JOptionPane.INFORMATION_MESSAGE);
-							} else {
-								pdl_exception.printStackTrace();
-								String message = ClassUtils.getClassNameWithoutPackage(pdl_exception.getClass())+": "+pdl_exception.getMessage();
-								JOptionPane.showMessageDialog(my_panel, message, "Error sending product", JOptionPane.ERROR_MESSAGE);
+
+							// If success, report what we did
+
+							if (pdl_result[0] == null) {
+								String message = "Success: Forecast has been successfully sent to PDL.";
+								if (evseq_res.was_evseq_sent_ok()) {
+									message = message + " An event-sequence product has been successfully sent to PDL.";
+								} else if (evseq_res.was_evseq_deleted()) {
+									message = message + " An existing event-sequence product has been successfully deleted.";
+								} else if (evseq_res.was_evseq_capped()) {
+									message = message + " An existing event-sequence product has been successfully capped.";
+								}
+								JOptionPane.showMessageDialog(my_panel, message, "Publication succeeded", JOptionPane.INFORMATION_MESSAGE);
+							}
+
+							// If error, report the exception
+							
+							else {
+								System.err.println (pdl_result[1]);
+								JOptionPane.showMessageDialog(my_panel, pdl_result[0], "Error sending product", JOptionPane.ERROR_MESSAGE);
 							}
 						}
 					};
-					GUICalcRunnable.run_steps (gui_top.get_top_window(), postSendStep, pdlSendStep);
 
+					// Run the steps
+
+					GUICalcRunnable.run_steps (gui_top.get_top_window(), postSendStep, pdlSendStep);
 				}
 			}
 		}

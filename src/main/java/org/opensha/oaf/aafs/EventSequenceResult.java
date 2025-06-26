@@ -181,6 +181,28 @@ public class EventSequenceResult {
 	}
 
 
+	// Return true if an event-sequence product was deleted.
+
+	public final boolean was_evseq_deleted () {
+		return (doesp == PDLCodeChooserEventSequence.DOESP_DELETED);
+	}
+
+
+	// Return true if an event-sequence product was capped.
+
+	public final boolean was_evseq_capped () {
+		return (doesp == PDLCodeChooserEventSequence.DOESP_CAPPED);
+	}
+
+
+	// Return true if an event-sequence product was sent successfully.
+	// Note that a successful send can be accompanied by a deletion.
+
+	public final boolean was_evseq_sent_ok () {
+		return (f_send_complete && props != null);
+	}
+
+
 	// toString - Convert to string.
 
 	@Override
