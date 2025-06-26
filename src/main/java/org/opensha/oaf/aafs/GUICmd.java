@@ -124,6 +124,16 @@ public class GUICmd {
 	public static boolean f_gui_debug = false;
 
 
+	// Flag indicating if we are running a GUI.
+	// This flag is set if exec_gui_cmd has been called.
+
+	private static boolean f_gui_mode = false;
+
+	public static boolean is_gui_mode () {
+		return f_gui_mode;
+	}
+
+
 
 
 	// Execute GUI command line.
@@ -139,6 +149,8 @@ public class GUICmd {
 	public static boolean exec_gui_cmd (String[] args, String caller_name) {
 
 		f_gui_debug = false;
+
+		f_gui_mode = true;
 	
 		// Check arguments
 

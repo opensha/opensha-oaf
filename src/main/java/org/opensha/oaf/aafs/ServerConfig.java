@@ -568,6 +568,12 @@ public final class ServerConfig {
 
 	public static String get_diag_filename_prefix () {
 
+		// No diagnostic file if we are running a GUI
+
+		if (GUICmd.is_gui_mode()) {
+			return null;
+		}
+
 		// Pattern from the configuration file
 
 		//String prefix_pattern = "'/data/aafs/diag/'yyyy-MM'/'yyyy-MM-dd-HH-mm-ss'-'";
