@@ -1077,16 +1077,25 @@ public class OEGUIController extends OEGUIListener {
 
 
 
-	// Load the transfer object for analyst parameters.
-	// Returns null if object could not be loaded due to some error (in which case a message is displayed). 
+	// Make a transfer object for analyst parameters.
 
-	public OEGUISubAnalyst.XferAnalystImpl load_analyst_xfer () throws GUIEDTException {
-		OEGUISubAnalyst.XferAnalystImpl xfer_analyst_impl = sub_ctl_analyst_option.make_analyst_xfer();
-		if (!( gui_top.call_xfer_load (xfer_analyst_impl, "Incorrect analyst parameters") )) {
-			return null;
-		}
-		return xfer_analyst_impl;
+	public OEGUISubAnalyst.XferAnalystImpl make_analyst_xfer () {
+		return sub_ctl_analyst_option.make_analyst_xfer();
 	}
+
+
+
+
+//	// Load the transfer object for analyst parameters.
+//	// Returns null if object could not be loaded due to some error (in which case a message is displayed). 
+//
+//	public OEGUISubAnalyst.XferAnalystImpl load_analyst_xfer () throws GUIEDTException {
+//		OEGUISubAnalyst.XferAnalystImpl xfer_analyst_impl = sub_ctl_analyst_option.make_analyst_xfer();
+//		if (!( gui_top.call_xfer_load (xfer_analyst_impl, "Incorrect analyst parameters") )) {
+//			return null;
+//		}
+//		return xfer_analyst_impl;
+//	}
 
 
 

@@ -462,27 +462,152 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 
 
+	//----- Parameter transfer -----
+
+
+
+
+	// Class to view relevant parameters.
+	// This class holds copies of the parameters.
+
+	public static abstract class XferForecastTableView {
+
+		// Next forecast time (the value Long.MIN_VALUE may be used to indicate no change from default).
+
+		public long x_nextForecastTime;
+
+		// Advisory duration.
+
+		public USGS_AftershockForecast.Duration x_advisoryDurationParam;
+
+		// Template.
+
+		public USGS_AftershockForecast.Template x_templateParam;
+
+		// PDL model code.
+
+		public int x_pmcode;
+
+		// Analyst parameters.
+
+		public OEGUISubAnalyst.XferAnalystView x_analyst;
+
+		// Get the implementation class.
+
+		public abstract XferForecastTableImpl xfer_get_impl ();
+	}
+
+
+
+
+	// Transfer parameters for catalog fetch or load.
+
+	public class XferForecastTableImpl extends XferForecastTableView implements OEGUIXferCommon {
+
+		// Get the implementation class.
+
+		@Override
+		public XferForecastTableImpl xfer_get_impl () {
+			return this;
+		}
+
+		// Constructor, ensure clean state.
+
+		public XferForecastTableImpl () {
+			internal_clean();
+		}
+
+
+		// Clear all dirty-value flags.
+
+		private void internal_clean () {
+			return;
+		}
+
+		@Override
+		public void xfer_clean () {
+			internal_clean();
+			return;
+		}
+
+
+		// Load values.
+
+		@Override
+		public XferForecastTableImpl xfer_load () {
+
+			// Clean state
+
+			xfer_clean();
+
+			// Next forecast time
+
+			x_nextForecastTime = Long.MIN_VALUE;
+
+			// Advisory duration
+
+			x_advisoryDurationParam = validParam(advisoryDurationParam);
+
+			// Template
+
+			x_templateParam = validParam(templateParam);
+
+			// PDL model code
+
+			x_pmcode = my_pmcode;
+
+			// Analyst parameters
+
+			x_analyst = gui_controller.make_analyst_xfer();
+			x_analyst.xfer_get_impl().xfer_load();
+
+			return this;
+		}
+
+
+		// Store modified values back into the parameters.
+
+		@Override
+		public void xfer_store () throws GUIEDTException {
+			return;
+		}
+	}
+
+
+
+
+	// Make a forecast table transfer object.
+
+	public XferForecastTableImpl make_forecast_table_xfer () {
+		return new XferForecastTableImpl();
+	}
+
+
+
+
 	// Make adjustable parameters for this forecast.
+	// Returns null if the parameters could not be loaded, in which case a message is displayed.
 
 	public AdjustableParameters make_fc_adj_params () throws GUIEDTException {
 
-		// Get the analyst parameters
+		// Load the parameters
 
-		OEGUISubAnalyst.XferAnalystImpl xfer = gui_controller.load_analyst_xfer();
-		AdjustableParameters adj_params = gui_model.make_analyst_adj_params (xfer);
+		XferForecastTableImpl xfer = make_forecast_table_xfer();
+		if (!( gui_top.call_xfer_load (xfer, "Incorrect forecast publishing parameters") )) {
+			return null;
+		}
+
+		// Set the analyst parameters
+
+		AdjustableParameters adj_params = gui_model.make_analyst_adj_params (xfer.x_analyst);
 
 		// Add in the non-analyst parameters
 
-		long nextForecastTime = Long.MIN_VALUE;
-		USGS_AftershockForecast.Duration the_duration = validParam(advisoryDurationParam);
-		USGS_AftershockForecast.Template the_template = validParam(templateParam);
-		int pdl_model_pmcode = my_pmcode;
-
 		adj_params.set_all_non_analyst_opts (
-			nextForecastTime,
-			the_duration,
-			the_template,
-			pdl_model_pmcode
+			xfer.x_nextForecastTime,
+			xfer.x_advisoryDurationParam,
+			xfer.x_templateParam,
+			xfer.x_pmcode
 		);
 
 		return adj_params;
@@ -522,30 +647,32 @@ public class OEGUIForecastTable extends OEGUIListener {
 				// Get adjustable parameters
 
 				AdjustableParameters adj_params = make_fc_adj_params();
+				if (adj_params != null) {
 
-				// Apply to our JSON text
+					// Apply to our JSON text
 
-				String jsonText = null;
-				try {
-					jsonText = adj_params.adjust_forecast_json (my_json_string);
-				} catch (Exception e) {
-					jsonText = null;
-					e.printStackTrace();
-					String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
-					JOptionPane.showMessageDialog(my_panel, message, "Error building JSON", JOptionPane.ERROR_MESSAGE);
-				}
-
-				// If succeeded, write to file, display error message if I/O error
-
-				if (jsonText != null) {
+					String jsonText = null;
 					try {
-						FileWriter fw = new FileWriter(file);
-						fw.write(jsonText);
-						fw.close();
-					} catch (IOException e) {
+						jsonText = adj_params.adjust_forecast_json (my_json_string);
+					} catch (Exception e) {
+						jsonText = null;
 						e.printStackTrace();
 						String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
-						JOptionPane.showMessageDialog(my_panel, message, "Error writing JSON to file", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(my_panel, message, "Error building JSON", JOptionPane.ERROR_MESSAGE);
+					}
+
+					// If succeeded, write to file, display error message if I/O error
+
+					if (jsonText != null) {
+						try {
+							FileWriter fw = new FileWriter(file);
+							fw.write(jsonText);
+							fw.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+							String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
+							JOptionPane.showMessageDialog(my_panel, message, "Error writing JSON to file", JOptionPane.ERROR_MESSAGE);
+						}
 					}
 				}
 			}
@@ -567,40 +694,42 @@ public class OEGUIForecastTable extends OEGUIListener {
 				// Get adjustable parameters
 
 				AdjustableParameters adj_params = make_fc_adj_params();
+				if (adj_params != null) {
 
-				// Get our ForecastData
+					// Get our ForecastData
 
-				ForecastData fcdata = gui_model.get_forecast_fcdata();
+					ForecastData fcdata = gui_model.get_forecast_fcdata();
 
-				// Set for not sent to PDL
+					// Set for not sent to PDL
 
-				fcdata.pdl_event_id = "";
-				fcdata.pdl_is_reviewed = false;
+					fcdata.pdl_event_id = "";
+					fcdata.pdl_is_reviewed = false;
 
-				// Apply to our ForecastData, with automatic reversion
+					// Apply to our ForecastData, with automatic reversion
 
-				try (
-					AdjustableParameters.AutoAdjForecastData auto_adj = adj_params.get_auto_adj (fcdata);
-				) {
+					try (
+						AdjustableParameters.AutoAdjForecastData auto_adj = adj_params.get_auto_adj (fcdata);
+					) {
 
-					// Write to file, display error message if I/O error
+						// Write to file, display error message if I/O error
 
-					try {
-						MarshalUtils.to_json_file (fcdata, file);
+						try {
+							MarshalUtils.to_json_file (fcdata, file);
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+							String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
+							JOptionPane.showMessageDialog(my_panel, message, "Error writing JSON to file", JOptionPane.ERROR_MESSAGE);
+						}
 					}
+
+					// Exception from parameter adjustment
+
 					catch (Exception e) {
 						e.printStackTrace();
 						String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
-						JOptionPane.showMessageDialog(my_panel, message, "Error writing JSON to file", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(my_panel, message, "Error building JSON", JOptionPane.ERROR_MESSAGE);
 					}
-				}
-
-				// Exception from parameter adjustment
-
-				catch (Exception e) {
-					e.printStackTrace();
-					String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
-					JOptionPane.showMessageDialog(my_panel, message, "Error building JSON", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		}

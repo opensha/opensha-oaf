@@ -434,7 +434,10 @@ public class OEGUITop extends OEGUIComponent {
 		catch (Exception e) {
 			result = false;
 			final Component owner = get_top_window();
-			final String message = e.getMessage();
+			String message = e.getMessage();
+			if (message == null || message.trim().isEmpty()) {
+				message = ClassUtils.getClassNameWithoutPackage(e.getClass());
+			}
 			//final String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+ ": " + e.getMessage();
 			//e.printStackTrace();
 			if (get_trace_events()) {
