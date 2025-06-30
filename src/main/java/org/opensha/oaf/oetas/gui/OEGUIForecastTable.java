@@ -309,25 +309,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private GUIPredicateStringParameter nextForecastOptionTime = null;
 
 	private GUIPredicateStringParameter init_nextForecastOptionTime () throws GUIEDTException {
-		Predicate<String> predicate = (String s) -> {
-			boolean result = false;
-			if (s.trim().isEmpty()) {
-				result = true;
-			} else {
-				try {
-					SimpleUtils.string_to_time_permissive (s);
-					result = true;
-				} catch (Exception e) {
-					result = false;
-				}
-			}
-			return result;
-		};
-		nextForecastOptionTime = new GUIPredicateStringParameter(
-				"Next Forecast Time",
-				predicate,
-				"yyyy-mm-dd hh:mm",
-				"" );
+		nextForecastOptionTime = makeTimeParam ("Next Forecast Time", "");
 		register_param (nextForecastOptionTime, "nextForecastOptionTime" + my_suffix, PARMGRP_FCTAB_NEXT_FC_TIME);
 		enableParam (nextForecastOptionTime, false);
 		return nextForecastOptionTime;
@@ -357,18 +339,10 @@ public class OEGUIForecastTable extends OEGUIListener {
 		break;
 
 		case SET_TIME: {
-			if (!( definedParam(nextForecastOptionTime) )) {
+			if (!( definedTimeParam(nextForecastOptionTime) )) {
 				throw new RuntimeException ("Next forecast time is not specified");
 			}
-			String s = validParam(nextForecastOptionTime);
-			if (s.trim().isEmpty()) {
-				throw new RuntimeException ("Next forecast time is not specified");
-			}
-			try {
-				time = SimpleUtils.string_to_time_permissive (s);
-			} catch (Exception e) {
-				throw new RuntimeException ("Next forecast time is invalid");
-			}
+			time = validTimeParam(nextForecastOptionTime);
 		}
 		break;
 
@@ -384,29 +358,44 @@ public class OEGUIForecastTable extends OEGUIListener {
 	// Return false if invalid, in which case a message is displayed.
 
 	public boolean precheck_nextForecastTime ()  throws GUIEDTException {
-		long time = 0L;
-		try {
-			time = get_nextForecastTime();
-		} catch (Exception e) {
-			String message = e.getMessage();
-			JOptionPane.showMessageDialog(my_panel, message, "Invalid next forecast time", JOptionPane.ERROR_MESSAGE);
-			return false;
-		}
+		NextForecastOption forecast_option = validParam(nextForecastOptionParam);
+		switch (forecast_option) {
 
-		if (time == 0L || time == -1L || time == -2L) {
-			return true;
+		case OMIT: {
 		}
+		break;
 
-		long time_now = System.currentTimeMillis();
-		if (time <= time_now) {
-			String message = "Next forecast time cannot be before the current time";
-			JOptionPane.showMessageDialog(my_panel, message, "Invalid next forecast time", JOptionPane.ERROR_MESSAGE);
-			return false;
+		case UNKNOWN: {
 		}
-		if (time > time_now + (SimpleUtils.DAY_MILLIS * 400L)) {
-			String message = "Next forecast time cannot be more than 400 days in the future";
-			JOptionPane.showMessageDialog(my_panel, message, "Invalid next forecast time", JOptionPane.ERROR_MESSAGE);
-			return false;
+		break;
+
+		case NONE: {
+		}
+		break;
+
+		case SET_TIME: {
+			if (!( definedTimeParam(nextForecastOptionTime) )) {
+				String message = "Next forecast time is not specified";
+				JOptionPane.showMessageDialog(my_panel, message, "Invalid next forecast time", JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
+			long time = validTimeParam(nextForecastOptionTime);
+			long time_now = System.currentTimeMillis();
+			if (time <= time_now) {
+				String message = "Next forecast time cannot be before the current time";
+				JOptionPane.showMessageDialog(my_panel, message, "Invalid next forecast time", JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
+			if (time > time_now + (SimpleUtils.DAY_MILLIS * 400L)) {
+				String message = "Next forecast time cannot be more than 400 days in the future";
+				JOptionPane.showMessageDialog(my_panel, message, "Invalid next forecast time", JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
+		}
+		break;
+
+		default:
+			throw new RuntimeException ("Next forecast option is invalid");
 		}
 
 		return true;

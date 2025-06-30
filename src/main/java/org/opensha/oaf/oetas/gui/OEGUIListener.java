@@ -1,6 +1,7 @@
 package org.opensha.oaf.oetas.gui;
 
 import java.util.IdentityHashMap;
+import java.util.function.Predicate;
 
 import javax.swing.SwingUtilities;
 
@@ -27,6 +28,7 @@ import com.google.common.primitives.Doubles;
 
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
+import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.gui.GUIConsoleWindow;
 import org.opensha.oaf.util.gui.GUICalcStep;
 import org.opensha.oaf.util.gui.GUICalcRunnable;
@@ -286,6 +288,100 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 	protected <E> void enableParam (Parameter<E> param, boolean enabled) throws GUIEDTException {
 		param.getEditor().setEnabled(enabled);
 		return;
+	}
+
+
+
+
+	//----- Date/Time parameter -----
+
+
+	// Make an edit field parameter for entering date and time.
+	// It accepts any time format recognized by SimpleUtils.string_to_time_permissive,
+	// plus an empty string and a string comprised entirely of white space.
+	// The default units is "yyyy-mm-dd hh:mm".
+	// If the initial value is given as a long, it is formatted as "yyyy-mm-dd hh:mm".
+	// Note: ConstraintException is an unchecked exceptions,
+	// but we list it for the sake of documentation.
+
+	protected GUIPredicateStringParameter makeTimeParam (String name, String units, String value) throws ConstraintException {
+		Predicate<String> predicate = (String s) -> {
+			boolean result = false;
+			if (s.trim().isEmpty()) {
+				result = true;
+			} else {
+				try {
+					SimpleUtils.string_to_time_permissive (s);
+					result = true;
+				} catch (Exception e) {
+					result = false;
+				}
+			}
+			return result;
+		};
+		return new GUIPredicateStringParameter(name, predicate, units, value);
+	}
+
+	GUIPredicateStringParameter makeTimeParam (String name, String value) throws ConstraintException {
+		return makeTimeParam (name, "yyyy-mm-dd hh:mm", value);
+	}
+
+	GUIPredicateStringParameter makeTimeParam (String name, long time) throws ConstraintException {
+		return makeTimeParam (name, "yyyy-mm-dd hh:mm", SimpleUtils.time_to_string_no_sec (time));
+	}
+
+
+	// Get the value of a time parameter, with validation.
+	// Throws an exception if value is null, empty, white space, or not a vaiid time.
+
+	protected long validTimeParam (GUIPredicateStringParameter param) {
+		if (!( definedParam (param) )) {
+			throw new RuntimeException ("Missing value: " + param.getName());
+		}
+		String s = validParam (param);
+		if (s.trim().isEmpty()) {
+			throw new RuntimeException ("Missing value: " + param.getName());
+		}
+		long time;
+		try {
+			time = SimpleUtils.string_to_time_permissive (s);
+		} catch (Exception e) {
+			throw new RuntimeException ("Invalid value: " + param.getName());	// should never happen
+		}
+		return time;
+	}
+
+
+	// Return true if a time parameter is defined and passes validation.
+	// Note: definedTimeParam returns false if and only if validTimeParam would throw an exception.
+
+	protected boolean definedTimeParam (GUIPredicateStringParameter param) {
+		if (!( definedParam (param) )) {
+			return false;
+		}
+		String s = validParam (param);
+		if (s.trim().isEmpty()) {
+			return false;
+		}
+		long time;
+		try {
+			time = SimpleUtils.string_to_time_permissive (s);
+		} catch (Exception e) {
+			return false;	// should never happen
+		}
+		return true;
+	}
+
+
+	// Set the value of a time parameter, and update the screen.
+	// Returns true if the value has changed.
+	// Does not fire a parameter change notification.  (More precisely, blocks any change
+	// notification fired by the parameter.)
+	// Note: ConstraintException and ParameterException are unchecked exceptions,
+	// but we list them for the sake of documentation.
+
+	protected boolean updateTimeParam (GUIPredicateStringParameter param, long time) throws GUIEDTException, ConstraintException, ParameterException {
+		return updateParam (param, SimpleUtils.time_to_string_no_sec (time));
 	}
 
 

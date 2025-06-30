@@ -287,14 +287,16 @@ public class OEGUITop extends OEGUIComponent {
 
 	public final Dimension get_dialog_dims (int num_params, boolean f_button_row) {
 		//int w = 300;
-		int w = paramWidth + 8;
+		//int w = paramWidth + 8;
+		int w = paramWidth + 20;
 		int h = Math.min(height, Math.max(3, num_params) * 60 + (f_button_row ? 160 : 130));
 		return new Dimension (w, h);
 	}
 
 	public final Dimension get_dialog_dims (int num_params, boolean f_button_row, int num_seps) {
 		//int w = 300;
-		int w = paramWidth + 8;
+		//int w = paramWidth + 8;
+		int w = paramWidth + 20;
 		int h = Math.min(height, (Math.max(3, num_params) * 60) + (num_seps * 12) + (f_button_row ? 160 : 130));
 		return new Dimension (w, h);
 	}

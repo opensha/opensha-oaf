@@ -194,6 +194,21 @@ public class SimpleUtils {
 
 
 
+	// Convert a time (in milliseconds after the epoch) to a human-readable string.
+	// This version does not have the seconds field or the "UTC" suffix (but the time is still UTC).
+
+	private static final SimpleDateFormat time_to_string_no_sec_fmt = new SimpleDateFormat ("yyyy-MM-dd HH:mm");
+	static {
+		time_to_string_no_sec_fmt.setTimeZone (tz_utc);
+	}
+
+	public static String time_to_string_no_sec (long the_time) {
+		return time_to_string_no_sec_fmt.format (new Date (the_time));
+	}
+
+
+
+
 	// Given a time (in milliseconds after the epoch), produce a string which
 	// is its numerical value followed by the human-readable form in parentheses.
 
