@@ -196,6 +196,28 @@ public class OEGUIComponent {
 
 
 
+	// Enumeration of event-sequence delete options.
+	
+	public enum EvSeqDeleteOption {
+		DELETE("Delete"),
+		IGNORE("Ignore"),
+		CAP("Cap End Time");
+		
+		private String label;
+		
+		private EvSeqDeleteOption (String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+
+
 	// Enumeration of options for setting the time of next forecast.
 	
 	public enum NextForecastOption {

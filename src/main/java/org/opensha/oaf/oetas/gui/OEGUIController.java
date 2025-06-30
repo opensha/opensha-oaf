@@ -206,6 +206,10 @@ public class OEGUIController extends OEGUIListener {
 
 	private OEGUISubAnalyst sub_ctl_analyst_option;
 
+	// Floating panel for delete product.
+
+	private OEGUISubDeleteProduct sub_ctl_delete_product;
+
 
 
 
@@ -417,9 +421,12 @@ public class OEGUIController extends OEGUIListener {
 		aafsParams.addParameter(init_saveCatalogButton());
 		aafsParams.addParameter(init_fetchServerStatusButton());
 
+		sub_ctl_delete_product = new OEGUISubDeleteProduct(this);
+		aafsParams.addParameter(sub_ctl_delete_product.get_deleteProductEditParam());
+
 		// Create the container
 
-		aafsEditorHeight = (gui_top.get_height() * 3) / 10;
+		aafsEditorHeight = (gui_top.get_height() * 4) / 10;
 
 		aafsEditor = new ParameterListEditor(aafsParams);
 		aafsEditor.setTitle("More");
@@ -532,6 +539,10 @@ public class OEGUIController extends OEGUIListener {
 		// Analyst parameters
 
 		sub_ctl_analyst_option.sub_analyst_enable (true, f_catalog && f_params && f_fetched, f_catalog && f_fetched);
+
+		// Delete product
+
+		sub_ctl_delete_product.sub_delete_product_enable (true, f_catalog && f_fetched);
 
 		// Special functions
 
@@ -816,6 +827,8 @@ public class OEGUIController extends OEGUIListener {
 		sub_ctl_forecast_param.update_fc_value_from_model();
 
 		sub_ctl_analyst_option.update_analyst_from_model();
+
+		sub_ctl_delete_product.update_delete_product_from_model();
 
 		return;
 	}
