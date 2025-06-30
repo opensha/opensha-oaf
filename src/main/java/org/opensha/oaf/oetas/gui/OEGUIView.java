@@ -3054,12 +3054,13 @@ public class OEGUIView extends OEGUIComponent {
 		// For each model, add a tab
 
 		JPanel selected_comp = null;
+		List<OEGUIForecastTable> sync_list = new ArrayList<OEGUIForecastTable>();
 		
 		for (int i = 0; i < aft_forecasts.size(); i++) {
 			String name = aft_names.get(i);
 			int pmcode = aft_pmcodes.get(i);
 			String forecastJSON = aft_forecasts.get(i);
-			JPanel modcomp = (new OEGUIForecastTable(this, forecastJSON, name, pmcode)).get_my_panel();
+			JPanel modcomp = (new OEGUIForecastTable(this, forecastJSON, name, pmcode, sync_list)).get_my_panel();
 			if (i == selected_tab) {
 				selected_comp = modcomp;
 			}

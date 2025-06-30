@@ -257,6 +257,21 @@ public class OEGUIForecastTable extends OEGUIListener {
 		return advisoryDurationParam;
 	}
 
+	private void sync_advisoryDurationParam () throws GUIEDTException {
+		if (f_sync_enabled && definedParam(advisoryDurationParam)) {
+			USGS_AftershockForecast.Duration value = validParam(advisoryDurationParam);
+			for (OEGUIForecastTable other : sync_list) {
+				if (other != this) {
+					try {
+						other.updateParam (other.advisoryDurationParam, value);
+					} catch (Exception e) {
+					}
+				}
+			}
+		}
+		return;
+	}
+
 
 	// Set forecast template; drop-down list.
 
@@ -269,6 +284,21 @@ public class OEGUIForecastTable extends OEGUIListener {
 		return templateParam;
 	}
 
+	private void sync_templateParam () throws GUIEDTException {
+		if (f_sync_enabled && definedParam(templateParam)) {
+			USGS_AftershockForecast.Template value = validParam(templateParam);
+			for (OEGUIForecastTable other : sync_list) {
+				if (other != this) {
+					try {
+						other.updateParam (other.templateParam, value);
+					} catch (Exception e) {
+					}
+				}
+			}
+		}
+		return;
+	}
+
 
 	// Include probability of aftershock larger than mainshock; checkbox.
 
@@ -278,6 +308,21 @@ public class OEGUIForecastTable extends OEGUIListener {
 		probAboveMainParam = new BooleanParameter("Include Prob \u2265 Main", my_fc_holder.get_include_above_mainshock());
 		register_param (probAboveMainParam, "probAboveMainParam" + my_suffix, PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM);
 		return probAboveMainParam;
+	}
+
+	private void sync_probAboveMainParam () throws GUIEDTException {
+		if (f_sync_enabled && definedParam(probAboveMainParam)) {
+			Boolean value = validParam(probAboveMainParam);
+			for (OEGUIForecastTable other : sync_list) {
+				if (other != this) {
+					try {
+						other.updateParam (other.probAboveMainParam, value);
+					} catch (Exception e) {
+					}
+				}
+			}
+		}
+		return;
 	}
 
 
@@ -303,6 +348,22 @@ public class OEGUIForecastTable extends OEGUIListener {
 		return nextForecastOptionParam;
 	}
 
+	private void sync_nextForecastOptionParam () throws GUIEDTException {
+		if (f_sync_enabled && definedParam(nextForecastOptionParam)) {
+			NextForecastOption value = validParam(nextForecastOptionParam);
+			for (OEGUIForecastTable other : sync_list) {
+				if (other != this) {
+					try {
+						other.updateParam (other.nextForecastOptionParam, value);
+						other.enableParam (other.nextForecastOptionTime, value == NextForecastOption.SET_TIME);
+					} catch (Exception e) {
+					}
+				}
+			}
+		}
+		return;
+	}
+
 
 	// Set next forecast time; edit box.
 
@@ -313,6 +374,21 @@ public class OEGUIForecastTable extends OEGUIListener {
 		register_param (nextForecastOptionTime, "nextForecastOptionTime" + my_suffix, PARMGRP_FCTAB_NEXT_FC_TIME);
 		enableParam (nextForecastOptionTime, false);
 		return nextForecastOptionTime;
+	}
+
+	private void sync_nextForecastOptionTime () throws GUIEDTException {
+		if (f_sync_enabled && definedParam(nextForecastOptionTime)) {
+			String value = validParam(nextForecastOptionTime);
+			for (OEGUIForecastTable other : sync_list) {
+				if (other != this) {
+					try {
+						other.updateParam (other.nextForecastOptionTime, value);
+					} catch (Exception e) {
+					}
+				}
+			}
+		}
+		return;
 	}
 
 
@@ -435,6 +511,13 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 		params.addParameter(init_injectableTextButton());
 
+		// Enable synchronization
+
+		if (sync_list != null) {
+			sync_list.add (this);
+			f_sync_enabled = true;
+		}
+
 		// Create the container
 
 		paramsEditor = new GriddedParameterListEditor(params, -1, 2);
@@ -474,6 +557,16 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private String my_suffix;
 
 
+	// List used to synchronize across tabs.
+
+	private List<OEGUIForecastTable> sync_list = null;
+
+
+	// True if sync is enabled.
+
+	private boolean f_sync_enabled = false;
+
+
 	// Our panel.
 
 	private JPanel my_panel;
@@ -502,7 +595,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 	// Constructor, accepts the forecast for this panel.
 		
-	public OEGUIForecastTable (OEGUIComponent gui_comp, String my_json_string, String my_name, int my_pmcode) throws GUIEDTException {
+	public OEGUIForecastTable (OEGUIComponent gui_comp, String my_json_string, String my_name, int my_pmcode, List<OEGUIForecastTable> sync_list) throws GUIEDTException {
 
 		// Link components
 
@@ -520,6 +613,9 @@ public class OEGUIForecastTable extends OEGUIListener {
 		this.my_pmcode = my_pmcode;
 
 		this.my_suffix = "@" + my_name.replaceAll("\\s", "");	// remove white space from name
+
+		this.sync_list = sync_list;
+		this.f_sync_enabled = false;
 
 		// Allocate the panel
 
@@ -972,7 +1068,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 		//*** Set advisory duration, from dropdown list
 
 		case PARMGRP_FCTAB_ADVISORY_DUR_PARAM: {
-			my_fc_holder.set_advisory_time_frame_from_enum (validParam(advisoryDurationParam));
+			//my_fc_holder.set_advisory_time_frame_from_enum (validParam(advisoryDurationParam));
+			sync_advisoryDurationParam();
 		}
 		break;
 
@@ -982,7 +1079,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 		//*** Set PDL template, from dropdown list
 
 		case PARMGRP_FCTAB_TEMPLATE_PARAM: {
-			my_fc_holder.set_template_from_enum (validParam(templateParam));
+			//my_fc_holder.set_template_from_enum (validParam(templateParam));
+			sync_templateParam();
 		}
 		break;
 
@@ -992,7 +1090,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 		//*** Select whether to include probability of an aftershock larger than mainshock, from checkbox
 
 		case PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM: {
-			my_fc_holder.set_include_above_mainshock (validParam(probAboveMainParam));
+			//my_fc_holder.set_include_above_mainshock (validParam(probAboveMainParam));
+			sync_probAboveMainParam();
 		}
 		break;
 
@@ -1005,6 +1104,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 			if (nextForecastOptionTime != null) {
 				enableParam(nextForecastOptionTime, validParam(nextForecastOptionParam) == NextForecastOption.SET_TIME);
 			}
+			sync_nextForecastOptionParam();
 		}
 		break;
 
@@ -1014,6 +1114,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 		//*** Set next forecast time
 
 		case PARMGRP_FCTAB_NEXT_FC_TIME: {
+			sync_nextForecastOptionTime();
 		}
 		break;
 
