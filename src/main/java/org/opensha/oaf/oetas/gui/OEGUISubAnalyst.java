@@ -188,7 +188,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 	private EnumParameter<AutoEnable> init_autoEnableParam () throws GUIEDTException {
 		autoEnableParam = new EnumParameter<AutoEnable>(
 				"Automatic Forecasts", EnumSet.allOf(AutoEnable.class), AutoEnable.NORMAL, null);
-		autoEnableParam.setInfo("Controls whether the automatic system generates forecasts");
+		autoEnableParam.setInfo("Controls whether the automatic system generates forecasts for this earthquake");
 		register_param (autoEnableParam, "autoEnableParam", PARMGRP_ANALYST_OPTION);
 		return autoEnableParam;
 	}
@@ -200,6 +200,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 	private BooleanParameter init_useCustomParamsParam () throws GUIEDTException {
 		useCustomParamsParam = new BooleanParameter("Use custom parameters", false);
+		useCustomParamsParam.setInfo("Selects whether to use custom statistical parameters");
 		register_param (useCustomParamsParam, "useCustomParamsParam", PARMGRP_ANALYST_OPTION);
 		return useCustomParamsParam;
 	}
@@ -217,7 +218,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 		forecastDurationParam = new DoubleParameter("Forecast Duration", duration_min, duration_max, Double.valueOf(duration_def));
 		forecastDurationParam.setUnits("Days");
-		forecastDurationParam.setInfo("Forecast duration relative to mainshock origin time");
+		forecastDurationParam.setInfo("Controls how long the automatic system keeps issuing forecasts, in days since the mainshock");
 		register_param (forecastDurationParam, "forecastDurationParam", PARMGRP_ANALYST_OPTION);
 		return forecastDurationParam;
 	}
@@ -229,6 +230,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 	private ButtonParameter init_setInjTextButton () throws GUIEDTException {
 		setInjTextButton = new ButtonParameter("Injectable Text", "Set Text...");
+		setInjTextButton.setInfo("Enter the injectable text that appears on the event page");
 		register_param (setInjTextButton, "setInjTextButton", PARMGRP_ANALYST_INJ_TEXT);
 		return setInjTextButton;
 	}
@@ -240,6 +242,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 	private ButtonParameter init_setAnRemarkButton () throws GUIEDTException {
 		setAnRemarkButton = new ButtonParameter("Analyst Remark", "Edit Remark...");
+		setAnRemarkButton.setInfo("Enter an analyst comment that is visible in the forecast_data.json file but does not appear on the event page");
 		register_param (setAnRemarkButton, "setAnRemarkButton", PARMGRP_ANALYST_REMARK);
 		return setAnRemarkButton;
 	}
@@ -270,7 +273,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 		evSeqLookbackParam = new DoubleParameter("Event-Sequence Lookback", lookback_min, lookback_max, Double.valueOf(lookback_config));
 		evSeqLookbackParam.setUnits("Days");
-		evSeqLookbackParam.setInfo("Event-sequence extent before the mainshock origin time");
+		evSeqLookbackParam.setInfo("Selects when the earthquake sequence starts, in days before the mainshock");
 		register_param (evSeqLookbackParam, "evSeqLookbackParam", PARMGRP_ANALYST_OPTION);
 		return evSeqLookbackParam;
 	}
@@ -282,6 +285,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 	private ButtonParameter init_exportAnalystOptionsButton () throws GUIEDTException {
 		exportAnalystOptionsButton = new ButtonParameter("Export Analyst Options", "Export to JSON...");
+		exportAnalystOptionsButton.setInfo("Exports the analyst options into a JSON file");
 		register_param (exportAnalystOptionsButton, "exportAnalystOptionsButton", PARMGRP_ANALYST_EXPORT);
 		return exportAnalystOptionsButton;
 	}
@@ -293,6 +297,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 	private ButtonParameter init_sendAnalystOptionsButton () throws GUIEDTException {
 		sendAnalystOptionsButton = new ButtonParameter("Send Analyst Options", "Send to Server...");
+		sendAnalystOptionsButton.setInfo("Sends the analyst options to the OAF server, and triggers a new forecast");
 		register_param (sendAnalystOptionsButton, "sendAnalystOptionsButton", PARMGRP_ANALYST_SEND);
 		return sendAnalystOptionsButton;
 	}
@@ -347,13 +352,14 @@ public class OEGUISubAnalyst extends OEGUIListener {
 		analystList.addParameter(evSeqLookbackParam);
 
 		analystList.addParameter(new GUISeparatorParameter("Separator1", gui_top.get_separator_color()));
+		analystList.addParameter(new GUISeparatorParameter("Separator2", gui_top.get_separator_color()));
 
 		analystList.addParameter(useCustomParamsParam);
 		analystList.addParameter(exportAnalystOptionsButton);
 		analystList.addParameter(sendAnalystOptionsButton);
 
 		analystEditParam.setListTitleText ("Analyst Parameters");
-		analystEditParam.setDialogDimensions (gui_top.get_dialog_dims(9, f_button_row, 1));
+		analystEditParam.setDialogDimensions (gui_top.get_dialog_dims(9, f_button_row, 2));
 		
 		analystEditParam.getEditor().refreshParamEditor();
 	}

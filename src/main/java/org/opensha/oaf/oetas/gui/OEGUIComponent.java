@@ -1,10 +1,13 @@
 package org.opensha.oaf.oetas.gui;
 
+import org.opensha.oaf.aafs.ServerConfig;
+import org.opensha.oaf.aafs.ServerConfigFile;
 
-// Reasenberg & Jones GUI - Common base class.
+
+// RJ & ETAS GUI - Common base class.
 // Michael Barall 04/16/2021
 //
-// GUI for working with the Reasenberg & Jones model.
+// GUI for working with the RJ and ETAS model.
 //
 // The GUI follows the model-view-controller design pattern.
 // This class is a common base class for GUI components.
@@ -211,6 +214,39 @@ public class OEGUIComponent {
 		public String toString() {
 			return label;
 		}
+	}
+
+
+
+
+	//----- Support -----
+
+
+	// Get a string describing the destination for PDL.
+
+	public String get_pdl_dest () {
+		String pdl_dest = "PDL (Dry Run)";
+		switch ((new ServerConfig()).get_pdl_enable()) {
+		case ServerConfigFile.PDLOPT_DEV:
+			pdl_dest = "PDL-Development";
+			break;
+		case ServerConfigFile.PDLOPT_PROD:
+			pdl_dest = "PDL-PRODUCTION";
+			break;
+		case ServerConfigFile.PDLOPT_SIM_DEV:
+			pdl_dest = "PDL-Dev [SIMULATED]";
+			break;
+		case ServerConfigFile.PDLOPT_SIM_PROD:
+			pdl_dest = "PDL-PROD [SIMULATED]";
+			break;
+		case ServerConfigFile.PDLOPT_DOWN_DEV:
+			pdl_dest = "PDL-Dev [SIM DOWN]";
+			break;
+		case ServerConfigFile.PDLOPT_DOWN_PROD:
+			pdl_dest = "PDL-PROD [SIM DOWN]";
+			break;
+		}
+		return pdl_dest;
 	}
 
 

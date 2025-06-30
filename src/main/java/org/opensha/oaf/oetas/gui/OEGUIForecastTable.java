@@ -159,10 +159,10 @@ import org.opensha.oaf.comcat.ComcatOAFProduct;
 import org.json.simple.JSONObject;
 
 
-// Reasenberg & Jones GUI - Aftershock table implementation.
+// RJ & ETAS GUI - Aftershock table implementation.
 // Michael Barall 04/22/2021
 //
-// GUI for working with the Reasenberg & Jones model.
+// GUI for working with the RJ and ETAS models.
 //
 // The GUI follows the model-view-controller design pattern.
 // This class is the aftershock forecast table.
@@ -181,8 +181,8 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private static final int PARMGRP_FCTAB_PUBLISH = 902;				// Publish to PDL button
 	private static final int PARMGRP_FCTAB_ADVISORY_DUR_PARAM = 903;	// Advisory duration parameter
 	private static final int PARMGRP_FCTAB_TEMPLATE_PARAM = 904;		// Forecast template parameter
-	private static final int PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM = 905;	// Include probability above mainshock parameter
-	private static final int PARMGRP_FCTAB_INJECTABLE_TEXT = 906;		// Injectable text button
+//	private static final int PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM = 905;	// Include probability above mainshock parameter
+//	private static final int PARMGRP_FCTAB_INJECTABLE_TEXT = 906;		// Injectable text button
 	private static final int PARMGRP_FCTAB_FULL_EXPORT = 907;			// Export button (forecast_data.json)
 	private static final int PARMGRP_FCTAB_NEXT_FC_OPTION = 908;		// Next forecast option
 	private static final int PARMGRP_FCTAB_NEXT_FC_TIME = 909;			// Next forecast time
@@ -197,6 +197,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 	private ButtonParameter init_exportButton () throws GUIEDTException {
 		exportButton = new ButtonParameter("forecast.json", "Export forecast.json only...");
+		exportButton.setInfo ("Export the forecast to a forecast.json file");
 		register_param (exportButton, "exportButton" + my_suffix, PARMGRP_FCTAB_EXPORT);
 		return exportButton;
 	}
@@ -208,6 +209,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 	private ButtonParameter init_exportFullButton () throws GUIEDTException {
 		exportFullButton = new ButtonParameter("JSON", "Export JSON...");
+		exportFullButton.setInfo ("Export the forecast to a forecast_data.json file");
 		register_param (exportFullButton, "exportFullButton" + my_suffix, PARMGRP_FCTAB_FULL_EXPORT);
 		return exportFullButton;
 	}
@@ -218,29 +220,10 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private ButtonParameter publishButton;
 
 	private ButtonParameter init_publishButton () throws GUIEDTException {
-		String publish_forecast = "Publish Forecast (Dry Run)...";
-		switch ((new ServerConfig()).get_pdl_enable()) {
-		case ServerConfigFile.PDLOPT_DEV:
-			publish_forecast = "Publish Forecast to PDL-Development...";
-			break;
-		case ServerConfigFile.PDLOPT_PROD:
-			publish_forecast = "Publish Forecast to PDL-PRODUCTION...";
-			break;
-		case ServerConfigFile.PDLOPT_SIM_DEV:
-			publish_forecast = "Publish Forecast to PDL-Dev [SIMULATED]...";
-			break;
-		case ServerConfigFile.PDLOPT_SIM_PROD:
-			publish_forecast = "Publish Forecast to PDL-PROD [SIMULATED]...";
-			break;
-		case ServerConfigFile.PDLOPT_DOWN_DEV:
-			publish_forecast = "Publish Forecast to PDL-Dev [SIM DOWN]...";
-			break;
-		case ServerConfigFile.PDLOPT_DOWN_PROD:
-			publish_forecast = "Publish Forecast to PDL-PROD [SIM DOWN]...";
-			break;
-		}
+		String publish_forecast = "Publish Forecast to " + get_pdl_dest() + "...";
 		//publishButton = new ButtonParameter("USGS PDL", "Publish Forecast");
 		publishButton = new ButtonParameter("USGS PDL", publish_forecast);
+		publishButton.setInfo ("Send the forecast to " + get_pdl_dest());
 		register_param (publishButton, "publishButton" + my_suffix, PARMGRP_FCTAB_PUBLISH);
 		return publishButton;
 	}
@@ -253,6 +236,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private EnumParameter<Duration> init_advisoryDurationParam () throws GUIEDTException {
 		advisoryDurationParam = new EnumParameter<USGS_AftershockForecast.Duration>(
 				"Advisory Duration", EnumSet.allOf(Duration.class), my_fc_holder.get_advisory_time_frame_as_enum(), null);
+		advisoryDurationParam.setInfo ("Select the advisory time frame for the forecast");
 		register_param (advisoryDurationParam, "advisoryDurationParam" + my_suffix, PARMGRP_FCTAB_ADVISORY_DUR_PARAM);
 		return advisoryDurationParam;
 	}
@@ -280,6 +264,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private EnumParameter<Template> init_templateParam () throws GUIEDTException {
 		templateParam = new EnumParameter<USGS_AftershockForecast.Template>(
 				"Template", EnumSet.allOf(Template.class), my_fc_holder.get_template_as_enum(), null);
+		templateParam.setInfo ("Select the template for the OAF product");
 		register_param (templateParam, "templateParam" + my_suffix, PARMGRP_FCTAB_TEMPLATE_PARAM);
 		return templateParam;
 	}
@@ -300,41 +285,42 @@ public class OEGUIForecastTable extends OEGUIListener {
 	}
 
 
-	// Include probability of aftershock larger than mainshock; checkbox.
+//	// Include probability of aftershock larger than mainshock; checkbox.
+//
+//	private BooleanParameter probAboveMainParam;
+//
+//	private BooleanParameter init_probAboveMainParam () throws GUIEDTException {
+//		probAboveMainParam = new BooleanParameter("Include Prob \u2265 Main", my_fc_holder.get_include_above_mainshock());
+//		probAboveMainParam.setInfo ("Select whether to include probability of an aftershock larger than the mainshock");
+//		register_param (probAboveMainParam, "probAboveMainParam" + my_suffix, PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM);
+//		return probAboveMainParam;
+//	}
+//
+//	private void sync_probAboveMainParam () throws GUIEDTException {
+//		if (f_sync_enabled && definedParam(probAboveMainParam)) {
+//			Boolean value = validParam(probAboveMainParam);
+//			for (OEGUIForecastTable other : sync_list) {
+//				if (other != this) {
+//					try {
+//						other.updateParam (other.probAboveMainParam, value);
+//					} catch (Exception e) {
+//					}
+//				}
+//			}
+//		}
+//		return;
+//	}
 
-	private BooleanParameter probAboveMainParam;
 
-	private BooleanParameter init_probAboveMainParam () throws GUIEDTException {
-		probAboveMainParam = new BooleanParameter("Include Prob \u2265 Main", my_fc_holder.get_include_above_mainshock());
-		register_param (probAboveMainParam, "probAboveMainParam" + my_suffix, PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM);
-		return probAboveMainParam;
-	}
-
-	private void sync_probAboveMainParam () throws GUIEDTException {
-		if (f_sync_enabled && definedParam(probAboveMainParam)) {
-			Boolean value = validParam(probAboveMainParam);
-			for (OEGUIForecastTable other : sync_list) {
-				if (other != this) {
-					try {
-						other.updateParam (other.probAboveMainParam, value);
-					} catch (Exception e) {
-					}
-				}
-			}
-		}
-		return;
-	}
-
-
-	// Set injectable text; button.
-
-	private ButtonParameter injectableTextButton;
-
-	private ButtonParameter init_injectableTextButton () throws GUIEDTException {
-		injectableTextButton = new ButtonParameter("Injectable Text", "Set text...");
-		register_param (injectableTextButton, "injectableTextButton" + my_suffix, PARMGRP_FCTAB_INJECTABLE_TEXT);
-		return injectableTextButton;
-	}
+//	// Set injectable text; button.
+//
+//	private ButtonParameter injectableTextButton;
+//
+//	private ButtonParameter init_injectableTextButton () throws GUIEDTException {
+//		injectableTextButton = new ButtonParameter("Injectable Text", "Set text...");
+//		register_param (injectableTextButton, "injectableTextButton" + my_suffix, PARMGRP_FCTAB_INJECTABLE_TEXT);
+//		return injectableTextButton;
+//	}
 
 
 	// Set next forecast option; drop-down list.
@@ -344,6 +330,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private EnumParameter<NextForecastOption> init_nextForecastOptionParam () throws GUIEDTException {
 		nextForecastOptionParam = new EnumParameter<NextForecastOption>(
 				"Next Forecast", EnumSet.allOf(NextForecastOption.class), NextForecastOption.OMIT, null);
+		nextForecastOptionParam.setInfo ("Select an option for when the next forecast will be issued");
 		register_param (nextForecastOptionParam, "nextForecastOptionParam" + my_suffix, PARMGRP_FCTAB_NEXT_FC_OPTION);
 		return nextForecastOptionParam;
 	}
@@ -371,6 +358,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 	private GUIPredicateStringParameter init_nextForecastOptionTime () throws GUIEDTException {
 		nextForecastOptionTime = makeTimeParam ("Next Forecast Time", "");
+		nextForecastOptionTime.setInfo ("Enter the time when the next forecast will be issued, yyyy-mm-dd hh:mm");
 		register_param (nextForecastOptionTime, "nextForecastOptionTime" + my_suffix, PARMGRP_FCTAB_NEXT_FC_TIME);
 		enableParam (nextForecastOptionTime, false);
 		return nextForecastOptionTime;
@@ -497,19 +485,19 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 		params.addParameter(init_publishButton());
 
-		params.addParameter(init_exportButton());
-
 		params.addParameter(init_advisoryDurationParam());
 
 		params.addParameter(init_templateParam());
 
-		params.addParameter(init_probAboveMainParam());
+//		params.addParameter(init_probAboveMainParam());
 
 		params.addParameter(init_nextForecastOptionParam());
 
 		params.addParameter(init_nextForecastOptionTime());
 
-		params.addParameter(init_injectableTextButton());
+//		params.addParameter(init_injectableTextButton());
+
+		params.addParameter(init_exportButton());
 
 		// Enable synchronization
 
@@ -969,7 +957,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 			// Ask user for confirmation
 
-			String userInput = JOptionPane.showInputDialog(my_panel, "Type \"PDL\" and press OK to publish forecast", "Confirm publication", JOptionPane.PLAIN_MESSAGE);
+			String userInput = JOptionPane.showInputDialog(my_panel, "You are sending the forecast to " + get_pdl_dest() + ".\nType \"PDL\" and press OK to publish forecast.", "Confirm publication", JOptionPane.PLAIN_MESSAGE);
 				
 			// User canceled, or did not enter correct text
 				
@@ -1087,13 +1075,13 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 
 
-		//*** Select whether to include probability of an aftershock larger than mainshock, from checkbox
-
-		case PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM: {
-			//my_fc_holder.set_include_above_mainshock (validParam(probAboveMainParam));
-			sync_probAboveMainParam();
-		}
-		break;
+//		//*** Select whether to include probability of an aftershock larger than mainshock, from checkbox
+//
+//		case PARMGRP_FCTAB_PROB_ABOVE_MAIN_PARAM: {
+//			//my_fc_holder.set_include_above_mainshock (validParam(probAboveMainParam));
+//			sync_probAboveMainParam();
+//		}
+//		break;
 
 
 
@@ -1121,57 +1109,57 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 
 
-		//*** Enter the injectable text
-
-		case PARMGRP_FCTAB_INJECTABLE_TEXT: {
-
-			//  // Show a dialog containing the existing injectable text
-			//  
-			//  String prevText = my_fc_holder.get_injectable_text();
-			//  if (prevText == null)
-			//  	prevText = "";
-			//  JTextArea area = new JTextArea(prevText);
-			//  Dimension size = new Dimension(300, 200);
-			//  area.setPreferredSize(size);
-			//  area.setMinimumSize(size);
-			//  area.setLineWrap(true);
-			//  area.setWrapStyleWord(true);
-			//  int ret = JOptionPane.showConfirmDialog(my_panel, area, "Set Injectable Text", JOptionPane.OK_CANCEL_OPTION);
-			//  
-			//  // If user entered new text, store it in the forecast
-			//  
-			//  if (ret == JOptionPane.OK_OPTION) {
-			//  	String text = area.getText().trim();
-			//  	if (text.length() == 0)
-			//  		text = null;
-			//  	my_fc_holder.set_injectable_text(text);
-			//  }
-
-			// Show a dialog containing the existing injectable text
-			// (Same code as in OEGUIController.)
-
-			String prevText = gui_model.get_analyst_adj_params().get_injectable_text_non_null();
-			if (prevText == null) {	// should never happen
-				prevText = "";
-			}
-			JTextArea area = new JTextArea(prevText);
-			JScrollPane scroll = new JScrollPane(area);
-			Dimension size = new Dimension(600, 200);
-			scroll.setPreferredSize(size);
-			scroll.setMinimumSize(size);
-			scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-			area.setLineWrap(true);
-			area.setWrapStyleWord(true);
-			int ret = JOptionPane.showConfirmDialog(gui_top.get_top_window(), scroll, "Set Injectable Text", JOptionPane.OK_CANCEL_OPTION);
-
-			// If user entered new text, store it
-
-			if (ret == JOptionPane.OK_OPTION) {
-				String text = area.getText().trim();
-				gui_model.get_analyst_adj_params().set_injectable_text_non_empty(text);
-			}
-		}
-		break;
+//		//*** Enter the injectable text
+//
+//		case PARMGRP_FCTAB_INJECTABLE_TEXT: {
+//
+//			//  // Show a dialog containing the existing injectable text
+//			//  
+//			//  String prevText = my_fc_holder.get_injectable_text();
+//			//  if (prevText == null)
+//			//  	prevText = "";
+//			//  JTextArea area = new JTextArea(prevText);
+//			//  Dimension size = new Dimension(300, 200);
+//			//  area.setPreferredSize(size);
+//			//  area.setMinimumSize(size);
+//			//  area.setLineWrap(true);
+//			//  area.setWrapStyleWord(true);
+//			//  int ret = JOptionPane.showConfirmDialog(my_panel, area, "Set Injectable Text", JOptionPane.OK_CANCEL_OPTION);
+//			//  
+//			//  // If user entered new text, store it in the forecast
+//			//  
+//			//  if (ret == JOptionPane.OK_OPTION) {
+//			//  	String text = area.getText().trim();
+//			//  	if (text.length() == 0)
+//			//  		text = null;
+//			//  	my_fc_holder.set_injectable_text(text);
+//			//  }
+//
+//			// Show a dialog containing the existing injectable text
+//			// (Same code as in OEGUIController.)
+//
+//			String prevText = gui_model.get_analyst_adj_params().get_injectable_text_non_null();
+//			if (prevText == null) {	// should never happen
+//				prevText = "";
+//			}
+//			JTextArea area = new JTextArea(prevText);
+//			JScrollPane scroll = new JScrollPane(area);
+//			Dimension size = new Dimension(600, 200);
+//			scroll.setPreferredSize(size);
+//			scroll.setMinimumSize(size);
+//			scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+//			area.setLineWrap(true);
+//			area.setWrapStyleWord(true);
+//			int ret = JOptionPane.showConfirmDialog(gui_top.get_top_window(), scroll, "Set Injectable Text", JOptionPane.OK_CANCEL_OPTION);
+//
+//			// If user entered new text, store it
+//
+//			if (ret == JOptionPane.OK_OPTION) {
+//				String text = area.getText().trim();
+//				gui_model.get_analyst_adj_params().set_injectable_text_non_empty(text);
+//			}
+//		}
+//		break;
 
 
 
