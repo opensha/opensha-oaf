@@ -69,6 +69,8 @@ public class OEGUIComponent {
 
 	// The model proceeds through a series of states.
 	// Initial state: The model is empty.
+	// Mainshock state: The model contains a mainshock, and a generic
+	//  model (which can be used to obtain default parameters).
 	// Catalog state: The model contains a mainshock, a search region,
 	//  a list of aftershocks, and a generic model (which is used to
 	//  obtain default parameters).
@@ -81,10 +83,11 @@ public class OEGUIComponent {
 
 	public static final int MODSTATE_MIN = 1;
 	public static final int MODSTATE_INITIAL = 1;
-	public static final int MODSTATE_CATALOG = 2;
-	public static final int MODSTATE_PARAMETERS = 3;
-	public static final int MODSTATE_FORECAST = 4;
-	public static final int MODSTATE_MAX = 4;
+	public static final int MODSTATE_MAINSHOCK = 2;
+	public static final int MODSTATE_CATALOG = 3;
+	public static final int MODSTATE_PARAMETERS = 4;
+	public static final int MODSTATE_FORECAST = 5;
+	public static final int MODSTATE_MAX = 5;
 
 
 	// Convert a model state to a string.
@@ -92,6 +95,7 @@ public class OEGUIComponent {
 	public static String get_modstate_as_string (int x) {
 		switch (x) {
 		case MODSTATE_INITIAL: return "MODSTATE_INITIAL";
+		case MODSTATE_MAINSHOCK: return "MODSTATE_MAINSHOCK";
 		case MODSTATE_CATALOG: return "MODSTATE_CATALOG";
 		case MODSTATE_PARAMETERS: return "MODSTATE_PARAMETERS";
 		case MODSTATE_FORECAST: return "MODSTATE_FORECAST";

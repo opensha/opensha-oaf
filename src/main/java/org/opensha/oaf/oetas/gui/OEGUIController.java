@@ -153,10 +153,10 @@ import org.opensha.oaf.util.LineSupplierFile;
 import org.json.simple.JSONObject;
 
 
-// Operational ETAS GUI - Controller implementation.
+// Operational RJ & ETAS GUI - Controller implementation.
 // Michael Barall 03/15/2021
 //
-// GUI for working with the operational ETAS model.
+// GUI for working with the RJ and ETAS model.
 //
 // The GUI follows the model-view-controller design pattern.
 // This class is the controller.
@@ -171,12 +171,13 @@ public class OEGUIController extends OEGUIListener {
 
 	// Parameter groups.
 
-	private static final int PARMGRP_DATA_SOURCE = 101;		// Data source parameters
-	private static final int PARMGRP_FETCH_BUTTON = 102;	// Button to fetch data
-	private static final int PARMGRP_SAVE_CATALOG = 103;	// Button to save catalog
-	private static final int PARMGRP_PARAMS_BUTTON = 104;	// Button to compute aftershock parameters
-	private static final int PARMGRP_FORECAST_BUTTON = 105;	// Button to compute forecast
-	private static final int PARMGRP_SERVER_STATUS = 106;	// Button to fetch server status
+	private static final int PARMGRP_DATA_SOURCE = 101;			// Data source parameters
+	private static final int PARMGRP_FETCH_BUTTON = 102;		// Button to fetch data
+	private static final int PARMGRP_SAVE_CATALOG = 103;		// Button to save catalog
+	private static final int PARMGRP_PARAMS_BUTTON = 104;		// Button to compute aftershock parameters
+	private static final int PARMGRP_FORECAST_BUTTON = 105;		// Button to compute forecast
+	private static final int PARMGRP_SERVER_STATUS = 106;		// Button to fetch server status
+	private static final int PARMGRP_PARAMS_FC_BUTTON = 107;	// Button to compute aftershock parameters and forecast in one step
 
 
 	//----- Sub-controllers -----
@@ -236,11 +237,19 @@ public class OEGUIController extends OEGUIListener {
 
 	private GUIButtonParameter computeAftershockParamsButton;
 
+//	private GUIButtonParameter init_computeAftershockParamsButton () throws GUIEDTException {
+//		computeAftershockParamsButton = new GUIButtonParameter("Aftershock Params", "Fit Parameters");
+//		computeAftershockParamsButton.setButtonForeground(gui_top.get_button_highlight());
+//		//computeAftershockParamsButton.setButtonBackground(new Color(255,170,170));
+//		register_param (computeAftershockParamsButton, "computeAftershockParamsButton", PARMGRP_PARAMS_BUTTON);
+//		return computeAftershockParamsButton;
+//	}
+
 	private GUIButtonParameter init_computeAftershockParamsButton () throws GUIEDTException {
-		computeAftershockParamsButton = new GUIButtonParameter("Aftershock Params", "Fit Parameters");
+		computeAftershockParamsButton = new GUIButtonParameter("Aftershock Params and Forecast", "Fit and Compute");
 		computeAftershockParamsButton.setButtonForeground(gui_top.get_button_highlight());
 		//computeAftershockParamsButton.setButtonBackground(new Color(255,170,170));
-		register_param (computeAftershockParamsButton, "computeAftershockParamsButton", PARMGRP_PARAMS_BUTTON);
+		register_param (computeAftershockParamsButton, "computeAftershockParamsButton", PARMGRP_PARAMS_FC_BUTTON);
 		return computeAftershockParamsButton;
 	}
 
@@ -492,17 +501,17 @@ public class OEGUIController extends OEGUIListener {
 
 	// Adjust the enable/disable state of all controls, according to the supplied parameters.
 	// Parameters:
+	//  f_mainshock = Mainshock is available.
 	//  f_catalog = Catalog is available.
 	//  f_params = Aftershock parameters are available.
 	//  f_forecast = Forecast is available.
-	//  f_edit_region = Edit region option is available. TODO - Remove
-	//  f_time_dep_mc = Time dependent parameters are being used. TODO - Remove
-	//  f_fetched = Catalog is available, and data was fetched from Comcat.
+	//  f_main_fetched = Mainshock is available, and it was fetched from Comcat (so has network/code and geojson).
+	//  f_cat_fetched = Catalog is available, and data was fetched from Comcat.
 	// Note: Controls are enabled by default, so controls that are always
 	// enabled do not need to be mentioned.
 	// Note: Also clears some controls, according to the supplied parameters.
 
-	private void adjust_enable (boolean f_catalog, boolean f_params, boolean f_forecast, boolean f_edit_region, boolean f_time_dep_mc, boolean f_fetched) throws GUIEDTException {
+	private void adjust_enable (boolean f_mainshock, boolean f_catalog, boolean f_params, boolean f_forecast, boolean f_main_fetched, boolean f_cat_fetched) throws GUIEDTException {
 
 		// Data parameters that are always enabled
 
@@ -538,11 +547,11 @@ public class OEGUIController extends OEGUIListener {
 
 		// Analyst parameters
 
-		sub_ctl_analyst_option.sub_analyst_enable (true, f_catalog && f_params && f_fetched, f_catalog && f_fetched);
+		sub_ctl_analyst_option.sub_analyst_enable (true, f_mainshock && f_catalog && f_params && f_main_fetched && f_cat_fetched, f_mainshock && f_main_fetched);
 
 		// Delete product
 
-		sub_ctl_delete_product.sub_delete_product_enable (true, f_catalog && f_fetched);
+		sub_ctl_delete_product.sub_delete_product_enable (true, f_mainshock && f_main_fetched);
 
 		// Special functions
 
@@ -557,13 +566,13 @@ public class OEGUIController extends OEGUIListener {
 	// Adjust the enable/disable state of all controls, according to the current state.
 
 	private void adjust_enable () throws GUIEDTException {
+		boolean f_mainshock = gui_model.modstate_has_mainshock();
 		boolean f_catalog = gui_model.modstate_has_catalog();
 		boolean f_params = gui_model.modstate_has_aftershock_params();
 		boolean f_forecast = gui_model.modstate_has_forecast();
-		boolean f_edit_region = true;	// TODO - Remove
-		boolean f_time_dep_mc = true;	// TODO - Remove
-		boolean f_fetched = gui_model.modstate_has_catalog() && gui_model.get_has_fetched_catalog();
-		adjust_enable (f_catalog, f_params, f_forecast, f_edit_region, f_time_dep_mc, f_fetched);
+		boolean f_main_fetched = gui_model.modstate_has_mainshock() && gui_model.get_has_fetched_mainshock();
+		boolean f_cat_fetched = gui_model.modstate_has_catalog() && gui_model.get_has_fetched_catalog();
+		adjust_enable (f_mainshock, f_catalog, f_params, f_forecast, f_main_fetched, f_cat_fetched);
 		return;
 	}
 
@@ -811,6 +820,23 @@ public class OEGUIController extends OEGUIListener {
 
 
 
+	// Update parameters after mainshock fetch or load.
+	// The purpose is to initialize parameters for aftershock parameter computation.
+
+	private void post_mainshock_param_update () throws GUIEDTException {
+
+		// Update parameter values
+
+		sub_ctl_analyst_option.update_analyst_from_model();
+
+		sub_ctl_delete_product.update_delete_product_from_model();
+
+		return;
+	}
+
+
+
+
 	// Update parameters after catalog fetch or load.
 	// The purpose is to initialize parameters for aftershock parameter computation.
 
@@ -825,10 +851,6 @@ public class OEGUIController extends OEGUIListener {
 		sub_ctl_etas_param.update_etas_value_from_model();
 
 		sub_ctl_forecast_param.update_fc_value_from_model();
-
-		sub_ctl_analyst_option.update_analyst_from_model();
-
-		sub_ctl_delete_product.update_delete_product_from_model();
 
 		return;
 	}
@@ -879,7 +901,7 @@ public class OEGUIController extends OEGUIListener {
 
 
 
-	// Transfer parameters for catalog fetch or load.
+	// Transfer parameters for parameter fitting.
 
 	public class XferFittingImpl extends XferFittingMod implements OEGUIXferCommon {
 
@@ -1010,7 +1032,7 @@ public class OEGUIController extends OEGUIListener {
 
 
 
-	// Transfer parameters for catalog fetch or load.
+	// Transfer parameters for forecast computation.
 
 	public class XferForecastImpl extends XferForecastMod implements OEGUIXferCommon {
 
@@ -1075,9 +1097,11 @@ public class OEGUIController extends OEGUIListener {
 
 
 
-	// Update parameters after aftershock parameter fitting.
+	// Update parameters after forecast computation.
 
 	private void post_forecast_update () throws GUIEDTException {
+
+		// Here goes any parameter updating that should occur after forecast computation
 
 		return;
 	}
@@ -1314,6 +1338,8 @@ public class OEGUIController extends OEGUIListener {
 					@Override
 					public void run_in_edt() throws GUIEDTException {
 						xfer_catalog_impl.xfer_store();
+						advance_state(MODSTATE_MAINSHOCK);
+						post_mainshock_param_update();
 						advance_state(MODSTATE_CATALOG);
 						post_fetch_param_update();
 					}
@@ -1334,26 +1360,26 @@ public class OEGUIController extends OEGUIListener {
 
 				GUICalcStep loadStep_1 = new GUICalcStep("Loading Events", "...", new Runnable() {
 						
-						@Override
-						public void run() {
+					@Override
+					public void run() {
 
-							//gui_model.loadCatalog(xfer_catalog_impl, new File (xfer_catalog_impl.x_dataSource.x_catalogFileParam));
+						//gui_model.loadCatalog(xfer_catalog_impl, new File (xfer_catalog_impl.x_dataSource.x_catalogFileParam));
 
-							File file = new File (xfer_catalog_impl.x_dataSource.x_catalogFileParam);
-							try (
-								LineSupplierFile lsf = new LineSupplierFile (file);
-							){
-								try {
-									gui_model.loadCatalog_1 (xfer_catalog_impl, lsf);
-								} catch (Exception e) {
-									throw new RuntimeException ("Error reading catalog file: " + lsf.error_locus(), e);
-								}
+						File file = new File (xfer_catalog_impl.x_dataSource.x_catalogFileParam);
+						try (
+							LineSupplierFile lsf = new LineSupplierFile (file);
+						){
+							try {
+								gui_model.loadCatalog_1 (xfer_catalog_impl, lsf);
+							} catch (Exception e) {
+								throw new RuntimeException ("Error reading catalog file: " + lsf.error_locus(), e);
 							}
-
-							gui_model.loadCatalog_2 (xfer_catalog_impl);
-
 						}
-					});
+
+						gui_model.loadCatalog_2 (xfer_catalog_impl);
+
+					}
+				});
 
 				// Call model to finish the load, possibly including a call to Comcat
 
@@ -1364,23 +1390,25 @@ public class OEGUIController extends OEGUIListener {
 					f_comcat ? "Contacting USGS ComCat. This is occasionally slow. If it fails, trying again often works." : "...",
 					new Runnable() {
 						
-						@Override
-						public void run() {
-							gui_model.loadCatalog_3 (xfer_catalog_impl);
-						}
-					});
+					@Override
+					public void run() {
+						gui_model.loadCatalog_3 (xfer_catalog_impl);
+					}
+				});
 
 				// Store back transfer parameters, update model state, and create plots
 
 				GUICalcStep postFetchPlotStep = new GUICalcStep("Plotting Events/Data", "...", new GUIEDTRunnable() {
 					
-						@Override
-						public void run_in_edt() throws GUIEDTException {
-							xfer_catalog_impl.xfer_store();
-							advance_state(MODSTATE_CATALOG);
-							post_fetch_param_update();
-						}
-					});
+					@Override
+					public void run_in_edt() throws GUIEDTException {
+						xfer_catalog_impl.xfer_store();
+						advance_state(MODSTATE_MAINSHOCK);
+						post_mainshock_param_update();
+						advance_state(MODSTATE_CATALOG);
+						post_fetch_param_update();
+					}
+				});
 
 				// Run in threads
 
@@ -1413,6 +1441,8 @@ public class OEGUIController extends OEGUIListener {
 					@Override
 					public void run_in_edt() throws GUIEDTException {
 						xfer_catalog_impl.xfer_store();
+						advance_state(MODSTATE_MAINSHOCK);
+						post_mainshock_param_update();
 						advance_state(MODSTATE_CATALOG);
 						post_fetch_param_update();
 					}
@@ -1607,6 +1637,96 @@ public class OEGUIController extends OEGUIListener {
 			// Run in threads
 
 			GUICalcRunnable.run_steps (progress, null, computeStep_2, postComputeStep);
+		}
+		break;
+
+
+
+
+		// Button to compute aftershock parameters and then compute forecast.
+		// - Dump any forecast that has been computed.
+		// - Dump any aftershock parameters that have been computed.
+		// - In backgound:
+		//   1. Construct sequence-specific model, with or without time-dependent Mc.
+		//   2. Construct Bayesian model, if possible.
+		//   3. Update controls displaying maximum-likelihood a, p, and c;
+		//      plot probability density functions;
+		//      re-plot the cumulative number plot;
+		//      select the tab for the probability density functions.
+		//      enable controls that require aftershock parameters;
+		//   4. Calculate expected mag-freq distributions for the models.
+		//   5. Plot them as expected number with magnitude >= Mc or Mc(t).
+		//   6. Remove the forecast pane from the tabbed panel, if it exists.
+		//   7. Calculate the forecast tables.
+		//   8. Plot them in the forecast pane.
+
+		case PARMGRP_PARAMS_FC_BUTTON: {
+			if (filter_state(MODSTATE_CATALOG)) {
+				return;
+			}
+			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
+			final XferFittingImpl xfer_fitting_impl = new XferFittingImpl();
+			final XferForecastImpl xfer_forecast_impl = new XferForecastImpl();
+
+			// Load the aftershock parameters
+
+			if (!( gui_top.call_xfer_load (xfer_fitting_impl, "Incorrect aftershock parameters") )) {
+				return;
+			}
+
+			// Load the forecast parameters (maybe should wait until after the call to post_fitting_param_update?)
+
+			if (!( gui_top.call_xfer_load (xfer_forecast_impl, "Incorrect forecast parameters") )) {
+				return;
+			}
+
+			// Fit parameters
+
+			GUICalcStep computeStep_2 = new GUICalcStep("Computing Aftershock Params", "...", new Runnable() {
+						
+				@Override
+				public void run() {
+					gui_model.fitParams(xfer_fitting_impl);
+				}
+			});
+
+			// Make plots and finalize
+
+			GUICalcStep postComputeStep_2 = new GUICalcStep("Plotting Model PDFs", "...", new GUIEDTRunnable() {
+						
+				@Override
+				public void run_in_edt() throws GUIEDTException {
+					xfer_fitting_impl.xfer_store();
+					advance_state(MODSTATE_PARAMETERS);
+					post_fitting_param_update();
+				}
+			});
+
+			// Compute the forecasts
+
+			GUICalcStep computeStep_3 = new GUICalcStep("Computing Forecast", "...", new Runnable() {
+						
+				@Override
+				public void run() {
+					gui_model.computeForecasts(progress, xfer_forecast_impl);
+				}
+			});
+
+			// Make plots and finalize
+
+			GUICalcStep postComputeStep_3 = new GUICalcStep("Plotting Forecast", "...", new GUIEDTRunnable() {
+						
+				@Override
+				public void run_in_edt() throws GUIEDTException {
+					xfer_forecast_impl.xfer_store();
+					advance_state(MODSTATE_FORECAST);
+					post_forecast_update();
+				}
+			});
+
+			// Run in threads
+
+			GUICalcRunnable.run_steps (progress, null, computeStep_2, postComputeStep_2, computeStep_3, postComputeStep_3);
 		}
 		break;
 

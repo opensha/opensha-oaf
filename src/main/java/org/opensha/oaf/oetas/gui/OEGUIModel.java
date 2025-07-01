@@ -182,6 +182,13 @@ public class OEGUIModel extends OEGUIComponent {
 	}
 
 
+	// Return true if the model state includes a mainshock.
+
+	public final boolean modstate_has_mainshock () {
+		return modstate >= MODSTATE_MAINSHOCK;
+	}
+
+
 	// Return true if the model state includes a catalog.
 
 	public final boolean modstate_has_catalog () {
@@ -345,12 +352,12 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 	// The mainshock structure.
-	// Available when model state >= MODSTATE_CATALOG.
+	// Available when model state >= MODSTATE_MAINSHOCK.
 
 	private ForecastMainshock fcmain;
 
 	public final ForecastMainshock get_fcmain () {
-		if (!( modstate >= MODSTATE_CATALOG )) {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
 			throw new IllegalStateException ("Access to OEGUIModel.fcmain while in state " + cur_modstate_string());
 		}
 		return fcmain;
@@ -405,7 +412,7 @@ public class OEGUIModel extends OEGUIComponent {
 	private SphRegion custom_search_region;
 
 	// Analyst adjustable parameters.
-	// Available when model state >= MODSTATE_CATALOG.
+	// Available when model state >= MODSTATE_MAINSHOCK.
 	// If a download file is available at the time the catalog is loaded, this is initialized
 	// from the analyst options in the download file.  Otherwise, it is initialized from
 	// a default set of analyst options.
@@ -413,7 +420,7 @@ public class OEGUIModel extends OEGUIComponent {
 	private AdjustableParameters analyst_adj_params;
 
 	public final AdjustableParameters get_analyst_adj_params () {
-		if (!( modstate >= MODSTATE_CATALOG )) {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
 			throw new IllegalStateException ("Access to OEGUIModel.analyst_adj_params while in state " + cur_modstate_string());
 		}
 		return analyst_adj_params;
@@ -431,6 +438,16 @@ public class OEGUIModel extends OEGUIComponent {
 		return has_fetched_catalog;
 	}
 
+	// True if the mainshock is fetched frm Comcat.
+	// Available when model state >= MODSTATE_MAINSHOCK.
+
+	public final boolean get_has_fetched_mainshock () {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
+			throw new IllegalStateException ("Access to OEGUIModel.has_fetched_mainshock while in state " + cur_modstate_string());
+		}
+		return fcmain.mainshock_geojson != null;
+	}
+
 
 
 	// The search region, or null if none.
@@ -445,12 +462,12 @@ public class OEGUIModel extends OEGUIComponent {
 	}
 
 	// The mainshock.
-	// Available when model state >= MODSTATE_CATALOG.
+	// Available when model state >= MODSTATE_MAINSHOCK.
 
 	private ObsEqkRupture cur_mainshock;
 
 	public final ObsEqkRupture get_cur_mainshock () {
-		if (!( modstate >= MODSTATE_CATALOG )) {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
 			throw new IllegalStateException ("Access to OEGUIModel.cur_mainshock while in state " + cur_modstate_string());
 		}
 		return cur_mainshock;
@@ -889,24 +906,24 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
-	//----- Controller parameters for the model -----
+	//----- Controller parameters for the model (used by the view) -----
 
-
-	// Event ID, for the catalog.
-	// Available when model state >= MODSTATE_CATALOG.
-
-	private String cat_eventIDParam;
-
-	public final String get_cat_eventIDParam () {
-		if (!( modstate >= MODSTATE_CATALOG )) {
-			throw new IllegalStateException ("Access to OEGUIModel.cat_eventIDParam while in state " + cur_modstate_string());
-		}
-		return cat_eventIDParam;
-	}
 
 	// Data start time, in days since the mainshock, for the catalog.
 	// Available when model state >= MODSTATE_CATALOG.
-	// TODO: Obtain value from fetch_fcparams?
+	// TODO: Obtain value from fetch_fcparams? Or from din_catalog?
+	//
+	// Notes: cat_dataStartTimeParam and cat_dataEndTimeParam are the catalog
+	// start and end times used by the view for plotting.  They are reported to
+	// the user through the data start and end time fields in the data source subpanel.
+	// - If the catalog is loaded from Comcat, they are the start and end times
+	//    used to fetch data.  They can be default values (-60 days to now), or
+	//    specified by the user.  User-specified values may be adjusted.
+	// - If the catalog is loaded from a file, they are the start and end times
+	//    in the catalog file, or user-supplied values.
+	// - If the catalog is obtained from a download file, they are the min_days
+	//    and max_days values in the contained parameters, or user-supplied values.
+	// In any case, these will be the start and end times in din_catalog.
 
 	private double cat_dataStartTimeParam;
 
@@ -919,7 +936,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 	// Data end time, in days since the mainshock, for the catalog.
 	// Available when model state >= MODSTATE_CATALOG.
-	// TODO: Obtain value from fetch_fcparams?
+	// TODO: Obtain value from fetch_fcparams? Or from din_catalog?
 
 	private double cat_dataEndTimeParam;
 
@@ -932,6 +949,10 @@ public class OEGUIModel extends OEGUIComponent {
 
 	// Mc for sequence, for the catalog, when first loaded.
 	// Available when model state >= MODSTATE_CATALOG.
+	//
+	// Note: At the time the catalog is loaded, this is computed as the magnitude
+	// where the binned magnitude-number distribution reaches is peak, plus 0.5.
+	// It is not subsequently changed.
 
 	private double cat_load_mcParam;
 
@@ -945,6 +966,13 @@ public class OEGUIModel extends OEGUIComponent {
 	// Mc for sequence, for the catalog.
 	// Initially the same as cat_load_mcParam, but can be changed by the user.
 	// Available when model state >= MODSTATE_CATALOG.
+	//
+	// Note: At the time the catalog is loaded, this is initialized to cat_load_mcParam.
+	// It can be changed by the user.  At the time of parameter fitting, it is set to
+	// the value of mc used in the fitting.  It is used by the view in plotting the
+	// magnitude-number distribution.  When parameters have not yet been fit, it is
+	// used by the view in plotting the cumulative number distribution (earthquakes
+	// with magnitude >= mc).
 
 	private double cat_mcParam;
 
@@ -957,6 +985,9 @@ public class OEGUIModel extends OEGUIComponent {
 
 	// b-value, for the catalog, when first loaded.
 	// Available when model state >= MODSTATE_CATALOG.
+	//
+	// Note: At the time the catalog is loaded, this is set to the b-value from the
+	// generic RJ parameters.  It is not subsequently changed.
 
 	private double cat_load_bParam;
 
@@ -970,6 +1001,11 @@ public class OEGUIModel extends OEGUIComponent {
 	// b-value, for the catalog.
 	// Initially the same as cat_load_bParam, but can be changed by the user.
 	// Available when model state >= MODSTATE_CATALOG.
+	//
+	// Note: At the time the catalog is loaded, this is initialized to cat_load_bParam.
+	// It can be changed by the user.  At the time of parameter fitting, it is set to
+	// the value of b used in the fitting.  It is used by the view in plotting the
+	// magnitude-number distribution.
 
 	private double cat_bParam;
 
@@ -1029,14 +1065,11 @@ public class OEGUIModel extends OEGUIComponent {
 
 		if (modstate < MODSTATE_CATALOG) {
 			din_catalog = null;
-			fcmain = null;
 			aafs_fcparams = null;
 			fetch_fcparams = null;
 			custom_search_region = null;
-			analyst_adj_params = null;
 			has_fetched_catalog = false;
 
-			cur_mainshock = null;
 			cur_aftershocks = null;
 			strict_aftershocks = null;
 			strict_foreshocks = null;
@@ -1049,6 +1082,15 @@ public class OEGUIModel extends OEGUIComponent {
 			forecast_fcdata = null;
 			aftershockMND = null;
 			mnd_mmaxc = 0.0;
+		}
+
+		// Structures not valid if we don't have a mainshock
+
+		if (modstate < MODSTATE_MAINSHOCK) {
+			fcmain = null;
+			analyst_adj_params = null;
+
+			cur_mainshock = null;
 		}
 
 		return;
@@ -1674,7 +1716,6 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Save the catalog parameters
 
-		cat_eventIDParam = xfer.x_dataSource.x_eventIDParam;
 		cat_dataStartTimeParam = xfer.x_dataSource.x_dataStartTimeParam;
 		cat_dataEndTimeParam = xfer.x_dataSource.x_dataEndTimeParam;
 		cat_mcParam = cat_load_mcParam;
@@ -2671,8 +2712,16 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 	// Make a set of adjustable parameters for analyst options.
+	// Note: This function can be called at state >= MODSTATE_MAINSHOCK, hence must only
+	//  use data available at that state.
 
 	public AdjustableParameters make_analyst_adj_params (OEGUISubAnalyst.XferAnalystView xfer) {
+
+		// Check we are in an acceptable state
+
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
+			throw new IllegalStateException ("Access to OEGUIModel.make_analyst_adj_params while in state " + cur_modstate_string());
+		}
 
 		// Event-sequence parameters
 
@@ -2748,9 +2797,18 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
-	// Make the analyst options, for sending to the server
+	// Make the analyst options, for sending to the server.
+	// If xfer.x_useCustomParamsParam is true, can be called when model state >= MODSTATE_PARAMETERS.
+	// If xfer.x_useCustomParamsParam is false, can be called when model state >= MODSTATE_MAINSHOCK,
+	//  hence only must use data available in that state.
 
 	public AnalystOptions make_analyst_options (OEGUISubAnalyst.XferAnalystView xfer) {
+
+		// Check we are in an acceptable state
+
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
+			throw new IllegalStateException ("Access to OEGUIModel.make_analyst_options while in state " + cur_modstate_string());
+		}
 
 		// Action configuration
 
@@ -2816,6 +2874,12 @@ public class OEGUIModel extends OEGUIComponent {
 			// If we want custom forecasting parameters ...
 
 			if (xfer.x_useCustomParamsParam) {
+
+				// Check we are in an acceptable state
+
+				if (!( modstate >= MODSTATE_PARAMETERS )) {
+					throw new IllegalStateException ("Access to OEGUIModel.make_analyst_options requesting custom parameters while in state " + cur_modstate_string());
+				}
 
 				// Magnitude of completeness parameters
 
@@ -3042,7 +3106,8 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 	// Export analyst options.
-	// Can be called when model state >= MODSTATE_PARAMETERS.
+	// If xfer.x_useCustomParamsParam is true, can be called when model state >= MODSTATE_PARAMETERS.
+	// If xfer.x_useCustomParamsParam is false, can be called when model state >= MODSTATE_MAINSHOCK.
 	// An exception is thrown if the file could not be written.
 
 	public void exportAnalystOptions (OEGUISubAnalyst.XferAnalystView xfer, File the_file) throws IOException {
@@ -3073,7 +3138,8 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 	// Send analyst options to server.
-	// Can be called when model state >= MODSTATE_PARAMETERS.
+	// If xfer.x_useCustomParamsParam is true, can be called when model state >= MODSTATE_PARAMETERS.
+	// If xfer.x_useCustomParamsParam is false, can be called when model state >= MODSTATE_MAINSHOCK.
 	// Returns true if success, false if unable to send to any server.
 	// An exception is thrown if the operation could not be performed.
 
