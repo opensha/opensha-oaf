@@ -733,7 +733,7 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 
 
-		// Button to edit Injectable text.
+		// Button to edit injectable text.
 		// - Pop up a dialog box to edit the text.
 
 		case PARMGRP_ANALYST_INJ_TEXT: {
@@ -832,13 +832,20 @@ public class OEGUISubAnalyst extends OEGUIListener {
 
 			// Export
 
+			boolean f_success = false;
 			try {
 				gui_model.exportAnalystOptions (xfer_analyst_impl, file);
 				xfer_analyst_impl.xfer_store();
+				f_success = true;
 			} catch (Exception e) {
 				e.printStackTrace();
 				JOptionPane.showMessageDialog(gui_top.get_top_window(), e.getMessage(),
 						"Error Exporting Analyst Options", JOptionPane.ERROR_MESSAGE);
+			}
+
+			if (f_success) {
+				String message = "Analyst options have been written to " + file.getPath();
+				JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Export succeeded", JOptionPane.INFORMATION_MESSAGE);
 			}
 		}
 		break;
@@ -923,8 +930,62 @@ public class OEGUISubAnalyst extends OEGUIListener {
 					}
 				}
 			};
-			GUICalcRunnable.run_steps (progress, postComputeStep, computeStep_2, computeStep_3);
 
+			// If we have the info needed to sent to PDL ...
+
+			if (gui_model.get_has_fetched_mainshock()) {
+
+				// Run the steps
+
+				GUICalcRunnable.run_steps (progress, postComputeStep, computeStep_2, computeStep_3);
+
+			}
+
+			// Otherwise ...
+
+			else {
+
+				// Ask user for Comcat event id
+
+				String user_query_id = null;
+
+				for (;;) {
+					user_query_id = JOptionPane.showInputDialog (gui_top.get_top_window(), "Enter ComCat event ID for the mainshock", gui_model.get_mainshock_display_id());
+
+					// If user canceled
+
+					if (user_query_id == null) {
+						JOptionPane.showMessageDialog(gui_top.get_top_window(), "Canceled: Analyst options have NOT been sent to server", "Send canceled", JOptionPane.INFORMATION_MESSAGE);
+						return;
+					}
+
+					// If it's not an empty string, stop looping
+
+					if (!( user_query_id.trim().isEmpty() )) {
+						break;
+					}
+				}
+
+				final String query_id = user_query_id.trim();
+
+				// Step to retrieve PDL info from Comcat
+
+				GUICalcStep pdlInfoStep = new GUICalcStep(
+					"Fetching Mainshock Information",
+					"Contacting USGS ComCat. This is occasionally slow. If it fails, trying again often works.",
+					new Runnable() {
+						
+					@Override
+					public void run() {
+						gui_model.fetch_mainshock_pdl_info (query_id);
+					}
+				});
+
+				// Run the steps
+
+				GUICalcRunnable.run_steps (progress, postComputeStep, pdlInfoStep, computeStep_2, computeStep_3);
+
+			}
 		}
 		break;
 

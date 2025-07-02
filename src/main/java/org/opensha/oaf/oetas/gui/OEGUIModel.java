@@ -440,12 +440,43 @@ public class OEGUIModel extends OEGUIComponent {
 
 	// True if the mainshock is fetched frm Comcat.
 	// Available when model state >= MODSTATE_MAINSHOCK.
+	// Note: Returns true if the mainshock has an event id that is not generated, a network, and a code.
+	// Note: A true return means fcmain contains the info needed for sending a product to PDL.
 
 	public final boolean get_has_fetched_mainshock () {
 		if (!( modstate >= MODSTATE_MAINSHOCK )) {
 			throw new IllegalStateException ("Access to OEGUIModel.has_fetched_mainshock while in state " + cur_modstate_string());
 		}
-		return fcmain.mainshock_geojson != null;
+		if (
+			fcmain.mainshock_event_id == null
+			|| fcmain.mainshock_event_id.trim().isEmpty()
+			|| EventIDGenerator.is_generated_id (fcmain.mainshock_event_id.trim())
+			|| fcmain.mainshock_network == null
+			|| fcmain.mainshock_network.trim().isEmpty()
+			|| fcmain.mainshock_code == null
+			|| fcmain.mainshock_code.trim().isEmpty()
+		) {
+			return false;
+		}
+		return true;
+	}
+
+	// Get the mainshock event id to be displayed to the user.
+	// Available when model state >= MODSTATE_MAINSHOCK.
+	// Returns an empty string if the mainshock hs an event id that is missing or generated.
+
+	public final String get_mainshock_display_id () {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
+			throw new IllegalStateException ("Access to OEGUIModel.mainshock_display_id while in state " + cur_modstate_string());
+		}
+		if (
+			fcmain.mainshock_event_id == null
+			|| fcmain.mainshock_event_id.trim().isEmpty()
+			|| EventIDGenerator.is_generated_id (fcmain.mainshock_event_id.trim())
+		) {
+			return "";
+		}
+		return fcmain.mainshock_event_id.trim();
 	}
 
 
@@ -1721,6 +1752,28 @@ public class OEGUIModel extends OEGUIComponent {
 		cat_mcParam = cat_load_mcParam;
 		cat_bParam = cat_load_bParam;
 
+		return;
+	}
+
+
+
+
+	// Fetch mainshock PDL info from Comcat.
+	// Parameters:
+	//  query_id = Event ID used to query Comcat.
+	// Throws exception if event not found or Comcat error.
+	// The PDL info is added to the existing fcmain, leaving time, mag, and location unchanged.
+
+	public void fetch_mainshock_pdl_info (String query_id) {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
+			throw new IllegalStateException ("Access to OEGUIModel.fetch_mainshock_pdl_info while in state " + cur_modstate_string());
+		}
+
+		ForecastMainshock my_fcmain = new ForecastMainshock();
+		my_fcmain.setup_mainshock_poll (query_id);
+		Preconditions.checkState(my_fcmain.mainshock_avail, "Event not found: %s", query_id);
+
+		fcmain.copy_from_no_time_mag_loc (my_fcmain);
 		return;
 	}
 

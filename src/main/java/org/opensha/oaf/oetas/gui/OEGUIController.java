@@ -547,7 +547,8 @@ public class OEGUIController extends OEGUIListener {
 
 		// Analyst parameters
 
-		sub_ctl_analyst_option.sub_analyst_enable (true, f_mainshock && f_catalog && f_params && f_main_fetched && f_cat_fetched, f_mainshock && f_main_fetched);
+		//sub_ctl_analyst_option.sub_analyst_enable (true, f_mainshock && f_catalog && f_params && f_main_fetched && f_cat_fetched, f_mainshock);
+		sub_ctl_analyst_option.sub_analyst_enable (true, f_mainshock && f_catalog && f_params, f_mainshock);
 
 		// Delete product
 

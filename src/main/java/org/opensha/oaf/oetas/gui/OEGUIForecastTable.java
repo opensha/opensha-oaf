@@ -865,14 +865,21 @@ public class OEGUIForecastTable extends OEGUIListener {
 					// If succeeded, write to file, display error message if I/O error
 
 					if (jsonText != null) {
+						boolean f_success = false;
 						try {
 							FileWriter fw = new FileWriter(file);
 							fw.write(jsonText);
 							fw.close();
+							f_success = true;
 						} catch (IOException e) {
 							e.printStackTrace();
 							String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
 							JOptionPane.showMessageDialog(my_panel, message, "Error writing JSON to file", JOptionPane.ERROR_MESSAGE);
+						}
+
+						if (f_success) {
+							String message = "Forecast has been written to " + file.getPath();
+							JOptionPane.showMessageDialog(my_panel, message, "Export succeeded", JOptionPane.INFORMATION_MESSAGE);
 						}
 					}
 				}
@@ -895,47 +902,120 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 			// Ask user to select file
 
-			File file = gui_top.showSaveFileDialog (exportFullButton);
+			final File file = gui_top.showSaveFileDialog (exportFullButton);
 			if (file != null) {
 
 				// Get adjustable parameters
 
-				AdjustableParameters adj_params = make_fc_adj_params();
+				final AdjustableParameters adj_params = make_fc_adj_params();
 				if (adj_params != null) {
 
 					// Get our ForecastData
 
-					ForecastData fcdata = gui_model.get_forecast_fcdata();
+					final ForecastData fcdata = gui_model.get_forecast_fcdata();
 
 					// Set for not sent to PDL
 
 					fcdata.pdl_event_id = "";
 					fcdata.pdl_is_reviewed = false;
 
-					// Apply to our ForecastData, with automatic reversion
+					// In case of error, this contains the error message (element 0) and the stack trace (element 1)
 
-					try (
-						AdjustableParameters.AutoAdjForecastData auto_adj = adj_params.get_auto_adj (fcdata);
-					) {
+					final String[] export_result = new String[2];
+					export_result[0] = null;
+					export_result[1] = null;
 
-						// Write to file, display error message if I/O error
+					// Step to adjust parameters and export to file.
 
-						try {
-							MarshalUtils.to_json_file (fcdata, file);
+					GUICalcStep fileExportStep = new GUICalcStep("Writing forecast to JSON file", "...", new Runnable() {
+						@Override
+						public void run() {
+							try (
+								AdjustableParameters.AutoAdjForecastData auto_adj = adj_params.get_auto_adj (fcdata);
+							) {
+								MarshalUtils.to_json_file (fcdata, file);
+							} catch (Exception e) {
+								export_result[0] = "Error: " + ClassUtils.getClassNameWithoutPackage(e.getClass()) + ": " + e.getMessage();
+								export_result[1] = SimpleUtils.getStackTraceAsString(e);
+							}
 						}
-						catch (Exception e) {
-							e.printStackTrace();
-							String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
-							JOptionPane.showMessageDialog(my_panel, message, "Error writing JSON to file", JOptionPane.ERROR_MESSAGE);
+					});
+
+					// Step to report result to user
+
+					GUIEDTRunnable postExportStep = new GUIEDTRunnable() {
+						@Override
+						public void run_in_edt() throws GUIEDTException {
+
+							// If success, report what we did
+
+							if (export_result[0] == null) {
+								String message = "Forecast has been written to " + file.getPath();
+								JOptionPane.showMessageDialog(my_panel, message, "Export succeeded", JOptionPane.INFORMATION_MESSAGE);
+							}
+
+							// If error, report the exception
+							
+							else {
+								System.err.println (export_result[1]);
+								JOptionPane.showMessageDialog(my_panel, export_result[0], "Error exporting forecast to file", JOptionPane.ERROR_MESSAGE);
+							}
 						}
+					};
+
+					// If we have the info needed to sent to PDL ...
+
+					if (gui_model.get_has_fetched_mainshock()) {
+
+						// Run the steps
+
+						GUICalcRunnable.run_steps (gui_top.get_top_window(), postExportStep, fileExportStep);
+
 					}
 
-					// Exception from parameter adjustment
+					// Otherwise ...
 
-					catch (Exception e) {
-						e.printStackTrace();
-						String message = ClassUtils.getClassNameWithoutPackage(e.getClass())+": "+e.getMessage();
-						JOptionPane.showMessageDialog(my_panel, message, "Error building JSON", JOptionPane.ERROR_MESSAGE);
+					else {
+
+						// Ask user for Comcat event id
+
+						String user_query_id = null;
+
+						for (;;) {
+							user_query_id = JOptionPane.showInputDialog (my_panel, "Enter ComCat event ID for the mainshock", gui_model.get_mainshock_display_id());
+
+							// If user canceled
+
+							if (user_query_id == null) {
+								return;
+							}
+
+							// If it's not an empty string, stop looping
+
+							if (!( user_query_id.trim().isEmpty() )) {
+								break;
+							}
+						}
+
+						final String query_id = user_query_id.trim();
+
+						// Step to retrieve PDL info from Comcat
+
+						GUICalcStep pdlInfoStep = new GUICalcStep(
+							"Fetching Mainshock Information",
+							"Contacting USGS ComCat. This is occasionally slow. If it fails, trying again often works.",
+							new Runnable() {
+						
+							@Override
+							public void run() {
+								gui_model.fetch_mainshock_pdl_info (query_id);
+							}
+						});
+
+						// Run the steps
+
+						GUICalcRunnable.run_steps (gui_top.get_top_window(), postExportStep, pdlInfoStep, fileExportStep);
+
 					}
 				}
 			}
@@ -970,7 +1050,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 				// Get adjustable parameters
 
-				AdjustableParameters adj_params = make_fc_adj_params();
+				final AdjustableParameters adj_params = make_fc_adj_params();
 				if (adj_params != null) {
 
 					// Get our ForecastData
@@ -1042,9 +1122,61 @@ public class OEGUIForecastTable extends OEGUIListener {
 						}
 					};
 
-					// Run the steps
+					// If we have the info needed to sent to PDL ...
 
-					GUICalcRunnable.run_steps (gui_top.get_top_window(), postSendStep, pdlSendStep);
+					if (gui_model.get_has_fetched_mainshock()) {
+
+						// Run the steps
+
+						GUICalcRunnable.run_steps (gui_top.get_top_window(), postSendStep, pdlSendStep);
+
+					}
+
+					// Otherwise ...
+
+					else {
+
+						// Ask user for Comcat event id
+
+						String user_query_id = null;
+
+						for (;;) {
+							user_query_id = JOptionPane.showInputDialog (my_panel, "Enter ComCat event ID for the mainshock", gui_model.get_mainshock_display_id());
+
+							// If user canceled
+
+							if (user_query_id == null) {
+								JOptionPane.showMessageDialog(my_panel, "Canceled: Forecast has NOT been sent to PDL", "Publication canceled", JOptionPane.INFORMATION_MESSAGE);
+								return;
+							}
+
+							// If it's not an empty string, stop looping
+
+							if (!( user_query_id.trim().isEmpty() )) {
+								break;
+							}
+						}
+
+						final String query_id = user_query_id.trim();
+
+						// Step to retrieve PDL info from Comcat
+
+						GUICalcStep pdlInfoStep = new GUICalcStep(
+							"Fetching Mainshock Information",
+							"Contacting USGS ComCat. This is occasionally slow. If it fails, trying again often works.",
+							new Runnable() {
+						
+							@Override
+							public void run() {
+								gui_model.fetch_mainshock_pdl_info (query_id);
+							}
+						});
+
+						// Run the steps
+
+						GUICalcRunnable.run_steps (gui_top.get_top_window(), postSendStep, pdlInfoStep, pdlSendStep);
+
+					}
 				}
 			}
 		}

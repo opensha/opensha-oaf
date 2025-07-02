@@ -391,6 +391,7 @@ public class ForecastMainshock implements Marshalable {
 	// Copy from another object.
 
 	public void copy_from (ForecastMainshock other) {
+		query_event_id = other.query_event_id;
 		mainshock_avail = other.mainshock_avail;
 		mainshock_event_id = other.mainshock_event_id;
 		mainshock_network = other.mainshock_network;
@@ -401,6 +402,25 @@ public class ForecastMainshock implements Marshalable {
 		mainshock_lat = other.mainshock_lat;
 		mainshock_lon = other.mainshock_lon;
 		mainshock_depth = other.mainshock_depth;
+		timeline_id = other.timeline_id;
+		mainshock_geojson = other.mainshock_geojson;
+		return;
+	}
+
+	// Copy from another object, except for time, magnitude, and location.
+
+	public void copy_from_no_time_mag_loc (ForecastMainshock other) {
+		query_event_id = other.query_event_id;
+		mainshock_avail = other.mainshock_avail;
+		mainshock_event_id = other.mainshock_event_id;
+		mainshock_network = other.mainshock_network;
+		mainshock_code = other.mainshock_code;
+		mainshock_id_list = ((other.mainshock_id_list == null) ? other.mainshock_id_list : other.mainshock_id_list.clone());
+		//mainshock_time = other.mainshock_time;
+		//mainshock_mag = other.mainshock_mag;
+		//mainshock_lat = other.mainshock_lat;
+		//mainshock_lon = other.mainshock_lon;
+		//mainshock_depth = other.mainshock_depth;
 		timeline_id = other.timeline_id;
 		mainshock_geojson = other.mainshock_geojson;
 		return;
