@@ -146,10 +146,12 @@ import org.opensha.oaf.aafs.GUICmd;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
+import org.opensha.oaf.oetas.OEConstants;
+
 import org.json.simple.JSONObject;
 
 
-// Operational ETAS GUI - Sub-controller for values common to RJ and ETAS.
+// Operational RJ & ETAS GUI - Sub-controller for values common to RJ and ETAS.
 // Michael Barall 09/04/2021
 //
 // This is a modeless dialog for entering common parameter values.
@@ -163,13 +165,14 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	// Parameter groups.
 
-	private static final int PARMGRP_COM_EDIT = 601;	// Button to open the common parameter edit dialog
-	private static final int PARMGRP_COM_VALUE = 602;	// Common parameter value change
-	private static final int PARMGRP_TIME_DEP_MC = 603;	// Checkbox for time-dependent magnitude of completeness
-	private static final int PARMGRP_SEQ_SPEC_MC = 604;	// Sequence-specific Mc value
-	private static final int PARMGRP_MAG_PREC = 605;	// Magnitude precision value
-	private static final int PARMGRP_COMPUTE_B = 606;	// Button to compute sequence-specific b-value
-	private static final int PARMGRP_B_VALUE = 607;		// b-value
+	private static final int PARMGRP_COM_EDIT = 601;		// Button to open the common parameter edit dialog
+	private static final int PARMGRP_COM_VALUE = 602;		// Common parameter value change
+//	private static final int PARMGRP_TIME_DEP_MC = 603;		// Checkbox for time-dependent magnitude of completeness
+	private static final int PARMGRP_SEQ_SPEC_MC = 604;		// Sequence-specific Mc value
+	private static final int PARMGRP_MAG_PREC = 605;		// Magnitude precision value
+	private static final int PARMGRP_COMPUTE_B = 606;		// Button to compute sequence-specific b-value
+	private static final int PARMGRP_B_VALUE = 607;			// b-value
+	private static final int PARMGRP_TIME_DEP_OPTION = 608;	// Option for time-dependent magnitude of completeness
 
 
 
@@ -177,15 +180,28 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	//----- Controls for the common parameter dialog -----
 
 
-	// Option to apply time-dependent Mc; check box.
-	// Default is obtained from generic parameters when the data is loaded (typically true).
+//	// Option to apply time-dependent Mc; check box.
+//	// Default is obtained from generic parameters when the data is loaded (typically true).
+//
+//	private BooleanParameter timeDepMcParam;
+//
+//	private BooleanParameter init_timeDepMcParam () throws GUIEDTException {
+//		timeDepMcParam = new BooleanParameter("Apply time dep. Mc", true);
+//		register_param (timeDepMcParam, "timeDepMcParam", PARMGRP_TIME_DEP_MC);
+//		return timeDepMcParam;
+//	}
 
-	private BooleanParameter timeDepMcParam;
 
-	private BooleanParameter init_timeDepMcParam () throws GUIEDTException {
-		timeDepMcParam = new BooleanParameter("Apply time dep. Mc", true);
-		register_param (timeDepMcParam, "timeDepMcParam", PARMGRP_TIME_DEP_MC);
-		return timeDepMcParam;
+	// Option to apply time-dependent Mc; dropdown containing an enumeration to select option.
+
+	private EnumParameter<TimeDepMagCompOption> timeDepOptionParam;
+
+	private EnumParameter<TimeDepMagCompOption> init_timeDepOptionParam () throws GUIEDTException {
+		timeDepOptionParam = new EnumParameter<TimeDepMagCompOption>(
+				"Apply time-dependent Mc", EnumSet.allOf(TimeDepMagCompOption.class), TimeDepMagCompOption.ENABLE, null);
+		timeDepOptionParam.setInfo("Selects options for time-dependent magnitude of completeness");
+		register_param (timeDepOptionParam, "timeDepOptionParam", PARMGRP_TIME_DEP_OPTION);
+		return timeDepOptionParam;
 	}
 
 
@@ -251,7 +267,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private DoubleParameter init_mcParam () throws GUIEDTException {
 		mcParam = new DoubleParameter("Mc For Sequence", 0d, 9d);
 		mcParam.getConstraint().setNullAllowed(true);
-		mcParam.setInfo("Default is Mmaxc+0.5, but user can modify");
+		mcParam.setInfo("Default is computed value of Mmaxc+0.5, but user can modify");
 		register_param (mcParam, "mcParam", PARMGRP_SEQ_SPEC_MC);
 		return mcParam;
 	}
@@ -264,7 +280,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private DoubleParameter init_magPrecisionParam () throws GUIEDTException {
 		magPrecisionParam = new DoubleParameter("Mag Precision", 0d, 1d, Double.valueOf(0.1));
-		magPrecisionParam.setInfo("Magnitude rounding applied by network");;
+		magPrecisionParam.setInfo("Magnitude rounding applied by network, for estimation of b-value");;
 		register_param (magPrecisionParam, "magPrecisionParam", PARMGRP_MAG_PREC);
 		return magPrecisionParam;
 	}
@@ -275,7 +291,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private ButtonParameter computeBButton;
 
 	private ButtonParameter init_computeBButton () throws GUIEDTException {
-		computeBButton = new ButtonParameter("Seq. Specific GR b-value", "Compute b (optional)");
+		computeBButton = new ButtonParameter("Sequence-specific GR b-value", "Compute b (optional)");
 		register_param (computeBButton, "computeBButton", PARMGRP_COMPUTE_B);
 		return computeBButton;
 	}
@@ -292,7 +308,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private DoubleParameter init_bParam () throws GUIEDTException {
 		bParam = new DoubleParameter("b-value", 1d);	// can't use DoubleParameter("b-value", null) because the call would be ambiguous
 		bParam.setValue(null);
-		bParam.setInfo("Default is from generic parameters, but user can modify");
+		bParam.setInfo("Default b-value is from the configured parameters, but user can modify");
 		register_param (bParam, "bParam", PARMGRP_B_VALUE);
 		return bParam;
 	}
@@ -304,7 +320,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private void init_commonValueDialogParam () throws GUIEDTException {
 		
-		init_timeDepMcParam();
+		init_timeDepOptionParam();
 		
 		init_fParam();
 		
@@ -342,7 +358,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		commonValueEditParam.setListTitleText ("Common Parameters");
 		commonValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(9, f_button_row, 1));
 
-		commonValueList.addParameter(timeDepMcParam);
+		commonValueList.addParameter(timeDepOptionParam);
 		commonValueList.addParameter(fParam);
 		commonValueList.addParameter(gParam);
 		commonValueList.addParameter(hParam);
@@ -392,21 +408,18 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private void adjust_enable () throws GUIEDTException {
 
-		// Get flag indicating time-dep parameters should be enabled
-
-		boolean f_apply_tdep = false;
-		if (f_common_value_enable) {
-			f_apply_tdep = validParam(timeDepMcParam);
-		}
-
 		// Enable parameters
 
-		enableParam(timeDepMcParam, f_common_value_enable);
+		enableParam(timeDepOptionParam, f_common_value_enable);
 
-		enableParam(fParam, f_apply_tdep);
-		enableParam(gParam, f_apply_tdep);
-		enableParam(hParam, f_apply_tdep);
-		enableParam(mCatParam, f_apply_tdep);
+		if (f_common_value_enable) {
+			adjust_for_time_dep_option();
+		} else {
+			enableParam(fParam, f_common_value_enable);
+			enableParam(gParam, f_common_value_enable);
+			enableParam(hParam, f_common_value_enable);
+			enableParam(mCatParam, f_common_value_enable);
+		}
 
 		enableParam(mcParam, f_common_value_enable);
 		enableParam(magPrecisionParam, f_common_value_enable);
@@ -418,7 +431,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		// Parameters that are cleared when they are disabled
 
 		if (!( f_common_value_enable )) {
-			updateParam(timeDepMcParam, true);
+			updateParam(timeDepOptionParam, TimeDepMagCompOption.ENABLE);
 
 			updateParam(fParam, null);
 			updateParam(gParam, null);
@@ -427,6 +440,73 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 			updateParam(mcParam, null);
 			updateParam(bParam, null);
+		}
+
+		return;
+	}
+
+
+	// Adjust enable/disable and values for the current time-dependent Mc option.
+	// Parameters for F, G, H which are disabled also have values set.
+
+	private void adjust_for_time_dep_option () throws GUIEDTException {
+
+		TimeDepMagCompOption time_dep_option = validParam(timeDepOptionParam);
+		switch (time_dep_option) {
+
+		case ENABLE:
+			enableParam(fParam, true);
+			enableParam(gParam, true);
+			enableParam(hParam, true);
+			enableParam(mCatParam, true);
+			break;
+
+		case WORLD:
+			enableParam(fParam, false);
+			enableParam(gParam, false);
+			enableParam(hParam, false);
+			enableParam(mCatParam, true);
+
+			updateParam(fParam, OEConstants.helm_capF (OEConstants.HELM_PARAM_WORLD));
+			updateParam(gParam, OEConstants.helm_capG (OEConstants.HELM_PARAM_WORLD));
+			updateParam(hParam, OEConstants.helm_capH (OEConstants.HELM_PARAM_WORLD));
+			break;
+
+		case CALIFORNIA:
+			enableParam(fParam, false);
+			enableParam(gParam, false);
+			enableParam(hParam, false);
+			enableParam(mCatParam, true);
+
+			updateParam(fParam, OEConstants.helm_capF (OEConstants.HELM_PARAM_CAL));
+			updateParam(gParam, OEConstants.helm_capG (OEConstants.HELM_PARAM_CAL));
+			updateParam(hParam, OEConstants.helm_capH (OEConstants.HELM_PARAM_CAL));
+			break;
+
+		case EQUALS_MCAT:
+			enableParam(fParam, false);
+			enableParam(gParam, false);
+			enableParam(hParam, false);
+			enableParam(mCatParam, true);
+
+			updateParam(fParam, OEConstants.helm_capF (OEConstants.HELM_PARAM_NONE));
+			updateParam(gParam, OEConstants.helm_capG (OEConstants.HELM_PARAM_NONE));
+			updateParam(hParam, OEConstants.helm_capH (OEConstants.HELM_PARAM_NONE));
+			break;
+
+		case EQUALS_MC:
+			enableParam(fParam, false);
+			enableParam(gParam, false);
+			enableParam(hParam, false);
+			enableParam(mCatParam, false);
+
+			updateParam(fParam, OEConstants.helm_capF (OEConstants.HELM_PARAM_NONE));
+			updateParam(gParam, OEConstants.helm_capG (OEConstants.HELM_PARAM_NONE));
+			updateParam(hParam, OEConstants.helm_capH (OEConstants.HELM_PARAM_NONE));
+			break;
+
+		default:
+			throw new IllegalArgumentException ("OEGUISubCommonValue.adjust_for_time_dep_option: Invalid magnitude of completeness option");
 		}
 
 		return;
@@ -456,7 +536,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		// Option to apply time-dependent Mc.
 
-		public boolean x_timeDepMcParam;		// parameter value, checked for validity
+		public TimeDepMagCompOption x_timeDepOptionParam;	// parameter value, checked for validity
 
 		// Helmstetter F parameter, present if using time-dependent Mc.
 
@@ -470,7 +550,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		public double x_hParam;					// parameter value, checked for validity
 
-		// Magnitude of completeness, present if using time-dependent Mc.
+		// Magnitude of completeness, present for both time-independent and time-dependent Mc.
 
 		public double x_mCatParam;				// parameter value, checked for validity
 
@@ -532,15 +612,49 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 			// Option for time-dependent Mc
 
-			x_timeDepMcParam = validParam(timeDepMcParam);
+			x_timeDepOptionParam = validParam(timeDepOptionParam);
 
 			// Parameters for time-dependent Mc
 
-			if (x_timeDepMcParam) {
+			switch (x_timeDepOptionParam) {
+
+			case ENABLE:
 				x_fParam = validParam(fParam);
 				x_gParam = validParam(gParam);
 				x_hParam = validParam(hParam);
 				x_mCatParam = validParam(mCatParam);
+				break;
+
+			case WORLD:
+				x_fParam = OEConstants.helm_capF (OEConstants.HELM_PARAM_WORLD);
+				x_gParam = OEConstants.helm_capG (OEConstants.HELM_PARAM_WORLD);
+				x_hParam = OEConstants.helm_capH (OEConstants.HELM_PARAM_WORLD);
+				x_mCatParam = validParam(mCatParam);
+				break;
+
+			case CALIFORNIA:
+				x_fParam = OEConstants.helm_capF (OEConstants.HELM_PARAM_CAL);
+				x_gParam = OEConstants.helm_capG (OEConstants.HELM_PARAM_CAL);
+				x_hParam = OEConstants.helm_capH (OEConstants.HELM_PARAM_CAL);
+				x_mCatParam = validParam(mCatParam);
+				break;
+
+			case EQUALS_MCAT:
+				x_fParam = OEConstants.helm_capF (OEConstants.HELM_PARAM_NONE);
+				x_gParam = OEConstants.helm_capG (OEConstants.HELM_PARAM_NONE);
+				x_hParam = OEConstants.helm_capH (OEConstants.HELM_PARAM_NONE);
+				x_mCatParam = validParam(mCatParam);
+				break;
+
+			case EQUALS_MC:
+				x_fParam = OEConstants.helm_capF (OEConstants.HELM_PARAM_NONE);
+				x_gParam = OEConstants.helm_capG (OEConstants.HELM_PARAM_NONE);
+				x_hParam = OEConstants.helm_capH (OEConstants.HELM_PARAM_NONE);
+				x_mCatParam = validParam(mcParam);
+				break;
+
+			default:
+				throw new IllegalArgumentException ("OEGUISubCommonValue.XferCommonValueImpl.xfer_load: Invalid magnitude of completeness option");
 			}
 
 			return this;
@@ -748,13 +862,48 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		updateParam(mcParam, gui_model.get_cat_mcParam());
 		updateParam(bParam, gui_model.get_cat_bParam());
 
-		updateParam(timeDepMcParam, !(gui_model.get_magCompParams().get_magCompFn().is_constant()));
-		updateParam(fParam, gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapF());
-		updateParam(gParam, gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapG());
-		updateParam(hParam, gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapH());
+		// Check for constant Mc
+
+		if (gui_model.get_magCompParams().get_magCompFn().is_constant()) {
+			updateParam(timeDepOptionParam, TimeDepMagCompOption.EQUALS_MCAT);
+		}
+
+		// Otherwise, check for the world and California special values
+
+		else {
+			double f = gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapF();
+			double g = gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapG();
+			double h = gui_model.get_magCompParams().get_magCompFn().getDefaultGUICapH();
+
+			if (
+				   Math.abs (f - OEConstants.helm_capF (OEConstants.HELM_PARAM_WORLD)) <= 0.001
+				&& Math.abs (g - OEConstants.helm_capG (OEConstants.HELM_PARAM_WORLD)) <= 0.001
+				&& Math.abs (h - OEConstants.helm_capH (OEConstants.HELM_PARAM_WORLD)) <= 0.001
+			) {
+				updateParam(timeDepOptionParam, TimeDepMagCompOption.WORLD);
+			}
+
+			else if (
+				   Math.abs (f - OEConstants.helm_capF (OEConstants.HELM_PARAM_CAL)) <= 0.001
+				&& Math.abs (g - OEConstants.helm_capG (OEConstants.HELM_PARAM_CAL)) <= 0.001
+				&& Math.abs (h - OEConstants.helm_capH (OEConstants.HELM_PARAM_CAL)) <= 0.001
+			) {
+				updateParam(timeDepOptionParam, TimeDepMagCompOption.CALIFORNIA);
+			}
+
+			else {
+				updateParam(timeDepOptionParam, TimeDepMagCompOption.ENABLE);
+				updateParam(fParam, f);
+				updateParam(gParam, g);
+				updateParam(hParam, h);
+			}
+		}
+
+		// The magnitude of completeness
+
 		updateParam(mCatParam, gui_model.get_magCompParams().get_magCat());
 
-		// Need to adjust enable to pick up enable state corresponding to time-dependent Mc flag
+		// Need to adjust enable to pick up enable state corresponding to time-dependent Mc option
 
 		adjust_enable();
 		return;
@@ -925,10 +1074,25 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 
 
-		// Use time-dependent magnitude of completeness option.
-		// - Dump any aftershock parameters that have been computed, and force contol enable/disable to be plotted.
+//		// Use time-dependent magnitude of completeness option.
+//		// - Dump any aftershock parameters that have been computed, and force control enable/disable to be adjusted.
+//
+//		case PARMGRP_TIME_DEP_MC: {
+//			if (!( f_sub_enable && f_common_value_enable )) {
+//				return;
+//			}
+//			adjust_enable();
+//			report_common_value_change();
+//		}
+//		break;
 
-		case PARMGRP_TIME_DEP_MC: {
+
+
+
+		// Use time-dependent magnitude of completeness option.
+		// - Dump any aftershock parameters that have been computed, and force control enable/disable to be adjusted.
+
+		case PARMGRP_TIME_DEP_OPTION: {
 			if (!( f_sub_enable && f_common_value_enable )) {
 				return;
 			}

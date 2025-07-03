@@ -2538,15 +2538,23 @@ public class OEGUIModel extends OEGUIComponent {
 			forecast_fcparams.seq_spec_params			// seq_spec_params
 		);
 
+		fetch_fcparams.seq_spec_params = forecast_fcparams.seq_spec_params;		// so it will be seen by make_analyst_options()
+
 		// Magnitude of completeness info
 						
 		double mCat;
 
 		MagCompFn magCompFn;
 
+		// Switch on time-dependent magnitude of completeness option
+
+		switch (xfer.x_commonValue.x_timeDepOptionParam) {
+
 		// If doing time-dependent magnitude of completeness
-					
-		if (xfer.x_commonValue.x_timeDepMcParam) {
+
+		case ENABLE:
+		case WORLD:
+		case CALIFORNIA:
 
 			double f = xfer.x_commonValue.x_fParam;
 						
@@ -2558,13 +2566,29 @@ public class OEGUIModel extends OEGUIComponent {
 
 			magCompFn = MagCompFn.makePageOrConstant (f, g, h);
 
+			break;
+
 		// Otherwise, time-independent magnitude of completeness
 
-		} else {
+		case EQUALS_MCAT:
 						
+			mCat = xfer.x_commonValue.x_mCatParam;
+
+			magCompFn = MagCompFn.makeConstant();
+
+			break;
+
+		case EQUALS_MC:
+						
+			//mCat = xfer.x_commonValue.x_mCatParam;
 			mCat = mc;
 
 			magCompFn = MagCompFn.makeConstant();
+
+			break;
+
+		default:
+			throw new IllegalArgumentException ("OEGUIModel.fitParams: Invalid magnitude of completeness option");
 		}
 
 		// Form magnitude-of-completeness parameters, save into both forecast and analyst parameters
@@ -2588,6 +2612,8 @@ public class OEGUIModel extends OEGUIComponent {
 			aafs_fcparams.mag_comp_regime,				// mag_comp_regime
 			forecast_fcparams.mag_comp_params			// mag_comp_params
 		);
+
+		fetch_fcparams.mag_comp_params = forecast_fcparams.mag_comp_params;		// so it will be seen by make_analyst_options()
 
 		// Adjust the minimum magnitude to the value for forecasting
 		// (GUI often uses a very low min mag for fetching aftershocks, we need to limit the number of aftershocks used)

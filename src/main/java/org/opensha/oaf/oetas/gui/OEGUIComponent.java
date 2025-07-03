@@ -69,14 +69,23 @@ public class OEGUIComponent {
 
 	// The model proceeds through a series of states.
 	// Initial state: The model is empty.
-	// Mainshock state: The model contains a mainshock, and a generic
-	//  model (which can be used to obtain default parameters).
+	// Mainshock state: The model contains a mainshock, and default or
+	//  existing adjustable parameters..
 	// Catalog state: The model contains a mainshock, a search region,
-	//  a list of aftershocks, and a generic model (which is used to
+	//  a list of aftershocks, and a generic RJ model (which is used to
 	//  obtain default parameters).
-	// Aftershock parameter state: The model contains a sequence specific
-	//  model, and, if applicable, a Bayesian model.
+	// Parameter state: The model contains a sequence specific RJ model,
+	//  a Bayesian RJ model if applicable, and an ETAS model if enabled..
 	// Forecast state: The model contains foreacast tables.
+	//
+	// Note: The RJ GUI goes from catalog to parameter state, and then
+	// from parameter to forecast state, in two steps.  In the RJ & ETAS
+	// GUI, these were merged into a single step due to the fact that the
+	// ETAS code is designed to work that way.
+	//
+	// Note: The mainshock state was added in the RJ & ETAS GUI to ease
+	// access to functionality that does not require a catalog to be loaded
+	// or a forecast to be computed.
 
 
 	// The model state indicators.
@@ -225,7 +234,7 @@ public class OEGUIComponent {
 	// Enumeration of options for setting the time of next forecast.
 	
 	public enum NextForecastOption {
-		OMIT("Omit"),
+		OMIT("Not Specified"),
 		UNKNOWN("Unknown"),
 		NONE("None"),
 		SET_TIME("Set Time");
@@ -233,6 +242,30 @@ public class OEGUIComponent {
 		private String label;
 		
 		private NextForecastOption (String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+
+
+	// Enumeration of options for setting the time-dependent magnitude of completeness.
+	
+	public enum TimeDepMagCompOption {
+		ENABLE("Enable"),
+		WORLD("World Values"),
+		CALIFORNIA("California Values"),
+		EQUALS_MCAT("Constant = Mcat"),
+		EQUALS_MC("Constant = Mc");
+		
+		private String label;
+		
+		private TimeDepMagCompOption (String label) {
 			this.label = label;
 		}
 		
