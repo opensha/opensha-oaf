@@ -1679,6 +1679,8 @@ public class OEGUIModel extends OEGUIComponent {
 			radiusCentroid
 		);
 
+		fetch_fcparams.mag_comp_avail = true;
+
 		// Make the search region
 
 		fetch_fcparams.set_aftershock_search_region (
@@ -2520,7 +2522,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// Form the RJ sequence-specific parameters, save into both forecast and analyst parameters
 
-		forecast_fcparams.seq_spec_params = new SeqSpecRJ_Parameters (
+		SeqSpecRJ_Parameters user_seq_spec_params = new SeqSpecRJ_Parameters (
 			b,
 			aRange.getLowerBound(),
 			aRange.getUpperBound(),
@@ -2533,12 +2535,22 @@ public class OEGUIModel extends OEGUIComponent {
 			cNum
 		);
 
-		forecast_analyst_opts.analyst_params.set_analyst_seq_spec_params (
-			true,										// seq_spec_avail
-			forecast_fcparams.seq_spec_params			// seq_spec_params
+		forecast_fcparams.set_analyst_seq_spec_params (
+			true,							// seq_spec_avail
+			user_seq_spec_params			// seq_spec_params
 		);
 
-		fetch_fcparams.seq_spec_params = forecast_fcparams.seq_spec_params;		// so it will be seen by make_analyst_options()
+		forecast_analyst_opts.analyst_params.set_analyst_seq_spec_params (
+			true,							// seq_spec_avail
+			user_seq_spec_params			// seq_spec_params
+		);
+
+		fetch_fcparams.seq_spec_params = user_seq_spec_params;	// so it will be seen by make_analyst_options()
+
+		//  fetch_fcparams.set_analyst_seq_spec_params (
+		//  	true,							// seq_spec_avail
+		//  	user_seq_spec_params			// seq_spec_params
+		//  );								// so it will be seen by make_analyst_options()
 
 		// Magnitude of completeness info
 						
@@ -2598,7 +2610,7 @@ public class OEGUIModel extends OEGUIComponent {
 		SearchMagFn magCentroid = aafs_fcparams.mag_comp_params.get_fcn_magCentroid();	// the original value
 		SearchRadiusFn radiusCentroid = forecast_fcparams.mag_comp_params.get_fcn_radiusCentroid();
 
-		forecast_fcparams.mag_comp_params = new MagCompPage_Parameters (
+		MagCompPage_Parameters user_mag_comp_params = new MagCompPage_Parameters (
 			mCat,
 			magCompFn,
 			magSample.makeForAnalystMagCat (mCat),
@@ -2607,13 +2619,25 @@ public class OEGUIModel extends OEGUIComponent {
 			radiusCentroid
 		);
 
+		forecast_fcparams.set_analyst_mag_comp_params (
+			true,										// mag_comp_avail
+			aafs_fcparams.mag_comp_regime,				// mag_comp_regime
+			user_mag_comp_params						// mag_comp_params
+		);
+
 		forecast_analyst_opts.analyst_params.set_analyst_mag_comp_params (
 			true,										// mag_comp_avail
 			aafs_fcparams.mag_comp_regime,				// mag_comp_regime
-			forecast_fcparams.mag_comp_params			// mag_comp_params
+			user_mag_comp_params						// mag_comp_params
 		);
 
-		fetch_fcparams.mag_comp_params = forecast_fcparams.mag_comp_params;		// so it will be seen by make_analyst_options()
+		fetch_fcparams.mag_comp_params = user_mag_comp_params;	// so it will be seen by make_analyst_options()
+
+		//  fetch_fcparams.set_analyst_mag_comp_params (
+		//  	true,										// mag_comp_avail
+		//  	aafs_fcparams.mag_comp_regime,				// mag_comp_regime
+		//  	user_mag_comp_params						// mag_comp_params
+		//  );										// so it will be seen by make_analyst_options()
 
 		// Adjust the minimum magnitude to the value for forecasting
 		// (GUI often uses a very low min mag for fetching aftershocks, we need to limit the number of aftershocks used)
@@ -2642,6 +2666,10 @@ public class OEGUIModel extends OEGUIComponent {
 				ForecastParameters.SEARCH_PARAM_OMIT,		// the_fit_start_inset
 				ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
 			);
+
+			forecast_fcparams.aftershock_search_fetch_meth = ForecastParameters.FETCH_METH_ANALYST;
+		} else {
+			forecast_fcparams.aftershock_search_fetch_meth = ForecastParameters.FETCH_METH_AUTO;
 		}
 
 		// Run the forecast
