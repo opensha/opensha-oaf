@@ -1211,11 +1211,19 @@ public class OEGUIController extends OEGUIListener {
 			break;
 
 		case CATALOG_FILE:
-			fetchButton.setButtonText ("Load Catalog");
+			fetchButton.setButtonText ("Load Catalog File");
 			break;
 
 		case PUBLISHED_FORECAST:
 			fetchButton.setButtonText ("Fetch Forecast");
+			break;
+
+		case MAINSHOCK_ONLY:
+			fetchButton.setButtonText ("Fetch Mainshock");
+			break;
+
+		case DOWNLOAD_FILE:
+			fetchButton.setButtonText ("Load Download File");
 			break;
 
 		case RJ_SIMULATION:
@@ -1353,6 +1361,42 @@ public class OEGUIController extends OEGUIListener {
 			break;
 
 
+			// Fetch mainshock only from Comcat
+
+			case MAINSHOCK_ONLY: {
+
+				// Call model to fetch mainshock from Comcat
+
+				GUICalcStep fetchStep_1 = new GUICalcStep(
+					"Fetching Mainshock",
+					"Contacting USGS ComCat. This is occasionally slow. If it fails, trying again often works.",
+					new Runnable() {
+						
+					@Override
+					public void run() {
+						gui_model.fetchMainshockOnly(xfer_catalog_impl);
+					}
+				});
+
+				// Store back transfer parameters, update model state, and create plots
+
+				GUICalcStep postFetchPlotStep = new GUICalcStep("Plotting Events/Data", "...", new GUIEDTRunnable() {
+						
+					@Override
+					public void run_in_edt() throws GUIEDTException {
+						xfer_catalog_impl.xfer_store();
+						advance_state(MODSTATE_MAINSHOCK);
+						post_mainshock_param_update();
+					}
+				});
+
+				// Run in threads
+
+				GUICalcRunnable.run_steps (progress, null, fetchStep_1, postFetchPlotStep);
+			}
+			break;
+
+
 			// Load catalog file
 
 			case CATALOG_FILE: {
@@ -1452,6 +1496,56 @@ public class OEGUIController extends OEGUIListener {
 				// Run in threads
 
 				GUICalcRunnable.run_steps (progress, null, fetchStep_1, postFetchPlotStep);
+			}
+			break;
+
+
+			// Load download file
+
+			case DOWNLOAD_FILE: {
+
+				// Call model to load catalog from download file
+
+				GUICalcStep loadStep_1 = new GUICalcStep("Loading Download File", "...", new Runnable() {
+						
+					@Override
+					public void run() {
+						gui_model.loadCatFromDownload_1 (xfer_catalog_impl);
+					}
+				});
+
+				// Call model to finish the load, possibly including a call to Comcat
+
+				boolean f_comcat = xfer_catalog_impl.x_dataSource.x_useComcatForMainshockParam;
+
+				GUICalcStep loadStep_2 = new GUICalcStep(
+					f_comcat ? "Fetching Mainshock" : "Loading Download File",
+					f_comcat ? "Contacting USGS ComCat. This is occasionally slow. If it fails, trying again often works." : "...",
+					new Runnable() {
+						
+					@Override
+					public void run() {
+						gui_model.loadCatFromDownload_2 (xfer_catalog_impl);
+					}
+				});
+
+				// Store back transfer parameters, update model state, and create plots
+
+				GUICalcStep postFetchPlotStep = new GUICalcStep("Plotting Events/Data", "...", new GUIEDTRunnable() {
+					
+					@Override
+					public void run_in_edt() throws GUIEDTException {
+						xfer_catalog_impl.xfer_store();
+						advance_state(MODSTATE_MAINSHOCK);
+						post_mainshock_param_update();
+						advance_state(MODSTATE_CATALOG);
+						post_fetch_param_update();
+					}
+				});
+
+				// Run in threads
+
+				GUICalcRunnable.run_steps (progress, null, loadStep_1, loadStep_2, postFetchPlotStep);
 			}
 			break;
 

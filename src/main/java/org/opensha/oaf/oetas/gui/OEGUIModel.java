@@ -655,6 +655,19 @@ public class OEGUIModel extends OEGUIComponent {
 	}
 
 
+	// If catalog was obtained from a download file, this is it.  Otherwise, it is null.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	private ForecastData loaded_fcdata;
+
+	public final ForecastData get_loaded_fcdata () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.loaded_fcdata while in state " + cur_modstate_string());
+		}
+		return loaded_fcdata;
+	}
+
+
 	// The RJ sequence-specific model.
 	// Available when model state >= MODSTATE_CATALOG.
 	// It is non-null when state >= MODSTATE_PARAMETERS.
@@ -1111,6 +1124,7 @@ public class OEGUIModel extends OEGUIComponent {
 			forecast_fcresults = null;
 			forecast_analyst_opts = null;
 			forecast_fcdata = null;
+			loaded_fcdata = null;
 			aftershockMND = null;
 			mnd_mmaxc = 0.0;
 		}
@@ -1209,6 +1223,7 @@ public class OEGUIModel extends OEGUIComponent {
 		forecast_fcresults = null;
 		forecast_analyst_opts = null;
 		forecast_fcdata = null;
+		loaded_fcdata = null;
 		aftershockMND = null;
 		mnd_mmaxc = 0.0;
 
@@ -1922,6 +1937,47 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+	// Fetch only the mainshock from Comcat.
+	// Parameters:
+	//  xfer = Transfer object to read/modify control parameters.
+	// This is called by the controller to initiate mainshock fetch.
+
+	public void fetchMainshockOnly (OEGUIController.XferCatalogMod xfer) {
+
+		System.out.println("Fetching Mainshock");
+		cur_mainshock = null;
+
+		// Will be fetching from Comcat
+
+		has_fetched_catalog = true;
+
+		// See if the event ID is an alias, and change it if so
+
+		String xlatid = GUIEventAlias.query_alias_dict (xfer.x_dataSource.x_eventIDParam);
+		if (xlatid != null) {
+			System.out.println("Translating Event ID: " + xfer.x_dataSource.x_eventIDParam + " -> " + xlatid);
+			xfer.x_dataSource.modify_eventIDParam(xlatid);
+		}
+
+		// Fetch mainshock into our data structures
+		
+		String eventID = xfer.x_dataSource.x_eventIDParam;
+		fcmain = new ForecastMainshock();
+		fcmain.setup_mainshock_poll (eventID);
+		Preconditions.checkState(fcmain.mainshock_avail, "Event not found: %s", eventID);
+
+		cur_mainshock = fcmain.get_eqk_rupture();
+
+		// Finish setting up the mainshock
+
+		setup_for_mainshock (xfer);
+
+		return;
+	}
+
+
+
+
 	// Load catalog from a file.
 	// Parameters:
 	//  xfer = Transfer object to read/modify control parameters.
@@ -2420,6 +2476,150 @@ public class OEGUIModel extends OEGUIComponent {
 
 		fcmain = new ForecastMainshock();
 		fcmain.copy_from (dlf.mainshock);
+
+		// Save the download file
+
+		loaded_fcdata = dlf;
+
+		// Finish setting up the mainshock
+
+		setup_for_mainshock (xfer, dlf);
+
+		// Allocate the catalog
+
+		din_catalog = new GUIExternalCatalogV2();
+
+		// Set symbols in the catalog
+
+		din_catalog.symdef_add_comcat (
+			cur_mainshock,
+			fetch_fcparams.min_days,
+			fetch_fcparams.max_days,
+			fetch_fcparams.min_depth,
+			fetch_fcparams.max_depth,
+			fetch_fcparams.aftershock_search_region,
+			null,
+			my_wrapLon,
+			fetch_fcparams.min_mag
+		);
+
+		// Get the list of aftershocks and foreshocks
+
+		ObsEqkRupList my_aftershocks = new ObsEqkRupList();
+		int neqk = cat.get_eqk_count();
+		for (int index = 0; index < neqk; ++index) {
+			my_aftershocks.add (cat.get_wrapped (index, "", my_wrapLon));
+		}
+
+		// Add them to the catalog
+
+		din_catalog.add_all_quakes (cur_mainshock, my_aftershocks, null);
+
+		// Display catalog result
+		
+		System.out.println ("Loaded " + din_catalog.get_total_size() + " earthquakes from published forecast");
+
+		// Perform post-fetch actions
+
+		postFetchActions (xfer);
+
+		return;
+	}
+
+
+
+
+	// Load catalog from a saved download file.
+	// Parameters:
+	//  xfer = Transfer object to read/modify control parameters.
+	// This is called by the controller to initiate catalog load from a saved download file.
+	// Part 1 reads the download file.
+	// Part 2 contacts Comcat for mainshock info (if selected) and completes the load.
+
+	public void loadCatFromDownload_1 (OEGUIController.XferCatalogMod xfer) {
+
+		// Get the download file
+
+		ForecastData dlf = new ForecastData();
+
+		try {
+			String filename = xfer.x_dataSource.x_catalogFileParam;
+			dlf.from_json_file_no_rebuild (filename);
+		}
+		catch (Exception e) {
+			throw new RuntimeException ("Error: Unable to read download file", e);
+		}
+
+		if (!( dlf.mainshock.mainshock_avail )) {
+			throw new RuntimeException ("Error: Download file does not contain a mainshock");
+		}
+
+		if (!( dlf.parameters.aftershock_search_avail
+			&& dlf.parameters.aftershock_search_region != null
+		)) {
+			throw new RuntimeException ("Error: Download file does not contain a search region");
+		}
+
+		// Save download file for use in part 2
+
+		loaded_fcdata = dlf;
+
+		return;
+	}
+
+	public void loadCatFromDownload_2 (OEGUIController.XferCatalogMod xfer) {
+
+		// The download file
+
+		ForecastData dlf = loaded_fcdata;
+
+		// If we want to update mainshock info ...
+
+		if (xfer.x_dataSource.x_useComcatForMainshockParam) {
+
+			// Get the mainshock id from the file
+
+			String query_id = dlf.mainshock.mainshock_event_id;
+
+			// Fetch the mainshock from Comcat
+
+			ForecastMainshock my_fcmain = new ForecastMainshock();
+			my_fcmain.setup_mainshock_poll (query_id);
+			Preconditions.checkState(my_fcmain.mainshock_avail, "Event not found: %s", query_id);
+
+			// Update mainshock info in the file
+		
+			dlf.mainshock.copy_from_no_time_mag_loc (my_fcmain);
+		}
+
+		// Update event id from the file (must come after mainshock update which might alter the id)
+
+		xfer.x_dataSource.modify_eventIDParam (dlf.mainshock.mainshock_event_id);
+
+		// Get the catalog
+
+		CompactEqkRupList cat = dlf.catalog.get_rupture_list();
+		if (cat == null) {
+			throw new RuntimeException ("Error: Download file does not contain a catalog");
+		}
+
+		// Get the catalog time range, in days since the mainshock
+
+		xfer.x_dataSource.modify_dataStartTimeParam (dlf.parameters.min_days);
+		xfer.x_dataSource.modify_dataEndTimeParam (dlf.parameters.max_days);
+
+		// Store mainshock into our data structures
+
+		boolean my_wrapLon = false;
+
+		cur_mainshock = dlf.mainshock.get_eqk_rupture();
+
+		fcmain = new ForecastMainshock();
+		fcmain.copy_from (dlf.mainshock);
+
+		// Save the download file (already done)
+
+		//loaded_fcdata = dlf;
 
 		// Finish setting up the mainshock
 

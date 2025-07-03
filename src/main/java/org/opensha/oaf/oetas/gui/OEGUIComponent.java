@@ -124,6 +124,8 @@ public class OEGUIComponent {
 		COMCAT("Comcat"),
 		CATALOG_FILE("Catalog File"),
 		PUBLISHED_FORECAST("Published Forecast"),
+		MAINSHOCK_ONLY("Mainshock Only"),
+		DOWNLOAD_FILE("Download File"),
 		RJ_SIMULATION("RJ Simulation"),
 		ETAS_SIMULATION("ETAS Simulation");
 		

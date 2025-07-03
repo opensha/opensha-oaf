@@ -182,6 +182,8 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 	private static final int PARMGRP_DATA_ENABLE_PARAM = 308;	// Data source parameters, that also change enable state
 
+	private static final int PARMGRP_DOWNLOAD_FILE_BROWSE = 309;	// Button to browse for download filename
+
 
 	//----- Sub-controllers -----
 
@@ -236,6 +238,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 	private DoubleParameter dataStartTimeParam_comcat;
 	private DoubleParameter dataStartTimeParam_catalog;
 	private DoubleParameter dataStartTimeParam_forecast;
+	private DoubleParameter dataStartTimeParam_dlf;
 	private DoubleParameter dataStartTimeParam_rj_sim;
 	private DoubleParameter dataStartTimeParam_etas_sim;
 
@@ -256,6 +259,11 @@ public class OEGUISubDataSource extends OEGUIListener {
 		dataStartTimeParam_forecast.setInfo("Data start relative to mainshock origin time");
 		register_param (dataStartTimeParam_forecast, "dataStartTimeParam_forecast", PARMGRP_DATA_SOURCE_PARAM);
 
+		dataStartTimeParam_dlf = new DoubleParameter("Data Start Time", -3650d, 36500d, Double.valueOf(0d));
+		dataStartTimeParam_dlf.setUnits("Days");
+		dataStartTimeParam_dlf.setInfo("Data start relative to mainshock origin time");
+		register_param (dataStartTimeParam_dlf, "dataStartTimeParam_dlf", PARMGRP_DATA_SOURCE_PARAM);
+
 		dataStartTimeParam_rj_sim = new DoubleParameter("Data Start Time", -3650d, 36500d, Double.valueOf(0d));
 		dataStartTimeParam_rj_sim.setUnits("Days");
 		dataStartTimeParam_rj_sim.setInfo("Data start relative to mainshock origin time");
@@ -275,8 +283,15 @@ public class OEGUISubDataSource extends OEGUIListener {
 		case COMCAT:             result = dataStartTimeParam_comcat;   break;
 		case CATALOG_FILE:       result = dataStartTimeParam_catalog;  break;
 		case PUBLISHED_FORECAST: result = dataStartTimeParam_forecast; break;
+		case DOWNLOAD_FILE:      result = dataStartTimeParam_dlf;      break;
 		case RJ_SIMULATION:      result = dataStartTimeParam_rj_sim;   break;
 		case ETAS_SIMULATION:    result = dataStartTimeParam_etas_sim; break;
+
+//		case PUBLISHED_FORECAST:
+		case MAINSHOCK_ONLY:
+//		case DOWNLOAD_FILE:
+			throw new IllegalStateException("get_useStartEndTimeParam: Invalid data source type: " + type);
+
 		default:
 			throw new IllegalStateException("Unknown data source type: " + type);
 		}
@@ -289,6 +304,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 	private DoubleParameter dataEndTimeParam_comcat;
 	private DoubleParameter dataEndTimeParam_catalog;
 	private DoubleParameter dataEndTimeParam_forecast;
+	private DoubleParameter dataEndTimeParam_dlf;
 	private DoubleParameter dataEndTimeParam_rj_sim;
 	private DoubleParameter dataEndTimeParam_etas_sim;
 
@@ -309,6 +325,11 @@ public class OEGUISubDataSource extends OEGUIListener {
 		dataEndTimeParam_forecast.setInfo("Data end relative to mainshock origin time");
 		register_param (dataEndTimeParam_forecast, "dataEndTimeParam_forecast", PARMGRP_DATA_SOURCE_PARAM);
 
+		dataEndTimeParam_dlf = new DoubleParameter("Data End Time", 0d, 36500d, Double.valueOf(0d));
+		dataEndTimeParam_dlf.setUnits("Days");
+		dataEndTimeParam_dlf.setInfo("Data end relative to mainshock origin time");
+		register_param (dataEndTimeParam_dlf, "dataEndTimeParam_dlf", PARMGRP_DATA_SOURCE_PARAM);
+
 		dataEndTimeParam_rj_sim = new DoubleParameter("Data End Time", 0d, 36500d, Double.valueOf(7d));
 		dataEndTimeParam_rj_sim.setUnits("Days");
 		dataEndTimeParam_rj_sim.setInfo("Data end relative to mainshock origin time");
@@ -328,8 +349,15 @@ public class OEGUISubDataSource extends OEGUIListener {
 		case COMCAT:             result = dataEndTimeParam_comcat;   break;
 		case CATALOG_FILE:       result = dataEndTimeParam_catalog;  break;
 		case PUBLISHED_FORECAST: result = dataEndTimeParam_forecast; break;
+		case DOWNLOAD_FILE:      result = dataEndTimeParam_dlf;      break;
 		case RJ_SIMULATION:      result = dataEndTimeParam_rj_sim;   break;
 		case ETAS_SIMULATION:    result = dataEndTimeParam_etas_sim; break;
+
+//		case PUBLISHED_FORECAST:
+		case MAINSHOCK_ONLY:
+//		case DOWNLOAD_FILE:
+			throw new IllegalStateException("get_useStartEndTimeParam: Invalid data source type: " + type);
+
 		default:
 			throw new IllegalStateException("Unknown data source type: " + type);
 		}
@@ -380,6 +408,8 @@ public class OEGUISubDataSource extends OEGUIListener {
 		case CATALOG_FILE:       result = useStartEndTimeParam_catalog;  break;
 
 		case PUBLISHED_FORECAST:
+		case MAINSHOCK_ONLY:
+		case DOWNLOAD_FILE:
 		case RJ_SIMULATION:
 		case ETAS_SIMULATION:
 			throw new IllegalStateException("get_useStartEndTimeParam: Invalid data source type: " + type);
@@ -390,10 +420,11 @@ public class OEGUISubDataSource extends OEGUIListener {
 		return result;
 	}
 
-	// Option to use analyst options when fetching from Comcat or catalog; default true (Comcat), false (catalog); check box.
+	// Option to use analyst options when fetching from Comcat, catalog, or mainshock; default true (Comcat, mainshock), false (catalog); check box.
 
 	private BooleanParameter useAnalystOptionsParam_comcat;
 	private BooleanParameter useAnalystOptionsParam_catalog;
+	private BooleanParameter useAnalystOptionsParam_mainonly;
 
 	private void init_useAnalystOptionsParam () throws GUIEDTException {
 
@@ -403,16 +434,21 @@ public class OEGUISubDataSource extends OEGUIListener {
 		useAnalystOptionsParam_catalog = new BooleanParameter("Use analyst options", false);
 		register_param (useAnalystOptionsParam_catalog, "useAnalystOptionsParam_catalog", PARMGRP_DATA_SOURCE_PARAM);
 
+		useAnalystOptionsParam_mainonly = new BooleanParameter("Use analyst options", true);
+		register_param (useAnalystOptionsParam_mainonly, "useAnalystOptionsParam_mainonly", PARMGRP_DATA_SOURCE_PARAM);
+
 		return;
 	}
 
 	private BooleanParameter get_useAnalystOptionsParam (DataSource type) {
 		BooleanParameter result;
 		switch (type) {
-		case COMCAT:             result = useAnalystOptionsParam_comcat;   break;
-		case CATALOG_FILE:       result = useAnalystOptionsParam_catalog;  break;
+		case COMCAT:             result = useAnalystOptionsParam_comcat;    break;
+		case CATALOG_FILE:       result = useAnalystOptionsParam_catalog;   break;
+		case MAINSHOCK_ONLY:     result = useAnalystOptionsParam_mainonly;  break;
 
 		case PUBLISHED_FORECAST:
+		case DOWNLOAD_FILE:
 		case RJ_SIMULATION:
 		case ETAS_SIMULATION:
 			throw new IllegalStateException("get_useAnalystOptionsParam: Invalid data source type: " + type);
@@ -433,37 +469,77 @@ public class OEGUISubDataSource extends OEGUIListener {
 		return useOuterRegionParam;
 	}
 
-	// Catalog file; edit box containing a string.
+	// Catalog or download file; edit box containing a string.
 
 	private StringParameter catalogFileParam;
+	private StringParameter downloadFileParam;
 
-	private StringParameter init_catalogFileParam () throws GUIEDTException {
+	private void init_catalogFileParam () throws GUIEDTException {
+
 		catalogFileParam = new StringParameter("Catalog Filename");
 		catalogFileParam.setValue("");
 		catalogFileParam.setInfo("Filename for loading a saved catalog");
 		register_param (catalogFileParam, "catalogFileParam", PARMGRP_DATA_SOURCE_PARAM);
-		return catalogFileParam;
+
+		downloadFileParam = new StringParameter("Download Filename");
+		downloadFileParam.setValue("");
+		downloadFileParam.setInfo("Filename for loading a saved download file");
+		register_param (downloadFileParam, "downloadFileParam", PARMGRP_DATA_SOURCE_PARAM);
+
+		return;
 	}
 
-	// Browse catalog file button.
+	// Browse catalog or download file button.
 
 	private ButtonParameter browseCatalogFileButton;
+	private ButtonParameter browseDownloadFileButton;
 
-	private ButtonParameter init_browseCatalogFileButton () throws GUIEDTException {
+	private void init_browseCatalogFileButton () throws GUIEDTException {
+
 		browseCatalogFileButton = new ButtonParameter("Browse Catalog File", "Browse...");
 		browseCatalogFileButton.setInfo("Browse for a catalog file");
 		register_param (browseCatalogFileButton, "browseCatalogFileButton", PARMGRP_CATALOG_FILE_BROWSE);
-		return browseCatalogFileButton;
+
+		browseDownloadFileButton = new ButtonParameter("Browse Download File", "Browse...");
+		browseDownloadFileButton.setInfo("Browse for a saved download file");
+		register_param (browseDownloadFileButton, "browseDownloadFileButton", PARMGRP_DOWNLOAD_FILE_BROWSE);
+
+		return;
 	}
 
-	// Option to use Comcat to get mainshock info when loading a catalog; default false; check box.
+	// Option to use Comcat to get mainshock info when loading a catalog or download file; default false; check box.
 
-	private BooleanParameter useComcatForMainshockParam;
+	private BooleanParameter useComcatForMainshockParam_catalog;
+	private BooleanParameter useComcatForMainshockParam_dlf;
 
 	private void init_useComcatForMainshockParam () throws GUIEDTException {
-		useComcatForMainshockParam = new BooleanParameter("Call Comcat for mainshock", false);
-		register_param (useComcatForMainshockParam, "useComcatForMainshockParam", PARMGRP_DATA_ENABLE_PARAM);
+
+		useComcatForMainshockParam_catalog = new BooleanParameter("Call Comcat for mainshock", false);
+		register_param (useComcatForMainshockParam_catalog, "useComcatForMainshockParam_catalog", PARMGRP_DATA_ENABLE_PARAM);
+
+		useComcatForMainshockParam_dlf = new BooleanParameter("Call Comcat for mainshock", false);
+		register_param (useComcatForMainshockParam_dlf, "useComcatForMainshockParam_dlf", PARMGRP_DATA_ENABLE_PARAM);
+
 		return;
+	}
+
+	private BooleanParameter get_useComcatForMainshockParam (DataSource type) {
+		BooleanParameter result;
+		switch (type) {
+		case CATALOG_FILE:       result = useComcatForMainshockParam_catalog;  break;
+		case DOWNLOAD_FILE:      result = useComcatForMainshockParam_dlf;      break;
+
+		case COMCAT:
+		case PUBLISHED_FORECAST:
+		case MAINSHOCK_ONLY:
+		case RJ_SIMULATION:
+		case ETAS_SIMULATION:
+			throw new IllegalStateException("get_useStartEndTimeParam: Invalid data source type: " + type);
+
+		default:
+			throw new IllegalStateException("Unknown data source type: " + type);
+		}
+		return result;
 	}
 
 	// Option to set aftershock region when loading a catalog; default false; check box.
@@ -663,7 +739,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(11, f_button_row));
 			dataSourceList.addParameter(catalogFileParam);
 			dataSourceList.addParameter(browseCatalogFileButton);
-			dataSourceList.addParameter(useComcatForMainshockParam);
+			dataSourceList.addParameter(get_useComcatForMainshockParam (type));
 			dataSourceList.addParameter(get_useAnalystOptionsParam (type));
 			dataSourceList.addParameter(get_useStartEndTimeParam (type));
 			dataSourceList.addParameter(get_dataStartTimeParam (type));
@@ -680,6 +756,22 @@ public class OEGUISubDataSource extends OEGUIListener {
 			dataSourceList.addParameter(populateForecastListButton);
 			dataSourceList.addParameter(includeSupersededParam);
 			dataSourceList.addParameter(forecastListDropdown);
+			dataSourceList.addParameter(get_dataStartTimeParam (type));
+			dataSourceList.addParameter(get_dataEndTimeParam (type));
+			break;
+
+		case MAINSHOCK_ONLY:
+			dataSourceEditParam.setListTitleText ("Mainshock Only");
+			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(1, f_button_row));
+			dataSourceList.addParameter(get_useAnalystOptionsParam (type));
+			break;
+
+		case DOWNLOAD_FILE:
+			dataSourceEditParam.setListTitleText ("Download File");
+			dataSourceEditParam.setDialogDimensions (gui_top.get_dialog_dims(5, f_button_row));
+			dataSourceList.addParameter(downloadFileParam);
+			dataSourceList.addParameter(browseDownloadFileButton);
+			dataSourceList.addParameter(get_useComcatForMainshockParam (type));
 			dataSourceList.addParameter(get_dataStartTimeParam (type));
 			dataSourceList.addParameter(get_dataEndTimeParam (type));
 			break;
@@ -760,13 +852,21 @@ public class OEGUISubDataSource extends OEGUIListener {
 		case CATALOG_FILE:
 			enableParam(get_dataStartTimeParam (type), validParam(get_useStartEndTimeParam (type)));
 			enableParam(get_dataEndTimeParam (type), validParam(get_useStartEndTimeParam (type)));
-			enableParam(get_useAnalystOptionsParam (type), validParam(useComcatForMainshockParam));
+			enableParam(get_useAnalystOptionsParam (type), validParam(get_useComcatForMainshockParam (type)));
 			enableParam(aftershockRegionParam_radius, validParam(useRegionForLoadParam));
 			enableParam(aftershockRegionParam_latitude, validParam(useRegionForLoadParam));
 			enableParam(aftershockRegionParam_longitude, validParam(useRegionForLoadParam));
 			break;
 
 		case PUBLISHED_FORECAST:
+			enableParam(get_dataStartTimeParam (type), false);
+			enableParam(get_dataEndTimeParam (type), false);
+			break;
+
+		case MAINSHOCK_ONLY:
+			break;
+
+		case DOWNLOAD_FILE:
 			enableParam(get_dataStartTimeParam (type), false);
 			enableParam(get_dataEndTimeParam (type), false);
 			break;
@@ -804,18 +904,20 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		public DataSource x_dataSourceTypeParam;	// Data source type
 
-		// Event ID. [COMCAT, CATALOG_FILE, PUBLISHED_FORECAST]  (can be modified for any type)
-		// For CATALOG_FILE only, can be null if the edit field is empty.
+		// Event ID. [COMCAT, CATALOG_FILE, PUBLISHED_FORECAST, MAINSHOCK_ONLY, DOWNLOAD_FILE]  (can be modified for any type)
+		// For CATALOG_FILE and DOWNLOAD_FILE only, can be null if the edit field is empty.
 
 		public String x_eventIDParam;				// parameter value, checked for validity
 		public abstract void modify_eventIDParam (String x);
 
-		// Data start time, in days since the mainshock. [COMCAT, CATALOG_FILE]
+		// Data start time, in days since the mainshock. [COMCAT, CATALOG_FILE, PUBLISHED_FORECAST, DOWNLOAD_FILE]
+		// For PUBLISHED_FORECAST and DOWNLOAD_FILE, used to return the time range to the user.
 
 		public double x_dataStartTimeParam;			// parameter value, checked for validity
 		public abstract void modify_dataStartTimeParam (double x);
 
-		// Data end time, in days since the mainshock. [COMCAT, CATALOG_FILE]
+		// Data end time, in days since the mainshock. [COMCAT, CATALOG_FILE, PUBLISHED_FORECAST, DOWNLOAD_FILE]
+		// For PUBLISHED_FORECAST and DOWNLOAD_FILE, used to return the time range to the user.
 
 		public double x_dataEndTimeParam;			// parameter value, checked for validity
 		public abstract void modify_dataEndTimeParam (double x);
@@ -832,7 +934,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		public boolean x_useStartEndTimeParam;		// parameter value, checked for validity
 
-		// Option to use analyst options when fetching from Comcat. [COMCAT, CATALOG_FILE]
+		// Option to use analyst options when fetching from Comcat. [COMCAT, CATALOG_FILE, MAINSHOCK_ONLY]
 
 		public boolean x_useAnalystOptionsParam;	// parameter value, checked for validity
 
@@ -844,11 +946,11 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 		public OEGUISubRegion.XferRegionView x_region;	// Region parameters
 
-		// Catalog file. [CATALOG_FILE]
+		// Catalog or download file. [CATALOG_FILE, DOWNLOAD_FILE]
 
 		public String x_catalogFileParam;			// parameter value, checked for validity
 
-		// Option to use Comcat to get mainshock info when loading a catalog file. [CATALOG_FILE]
+		// Option to use Comcat to get mainshock info when loading a catalog or download file. [CATALOG_FILE, DOWNLOAD_FILE]
 
 		public boolean x_useComcatForMainshockParam;	// parameter value, checked for validity
 
@@ -982,7 +1084,7 @@ public class OEGUISubDataSource extends OEGUIListener {
 				x_useStartEndTimeParam = validParam(get_useStartEndTimeParam (x_dataSourceTypeParam));
 				x_useAnalystOptionsParam = validParam(get_useAnalystOptionsParam (x_dataSourceTypeParam));
 				x_catalogFileParam = validParam(catalogFileParam);
-				x_useComcatForMainshockParam = validParam(useComcatForMainshockParam);
+				x_useComcatForMainshockParam = validParam(get_useComcatForMainshockParam (x_dataSourceTypeParam));
 				x_useRegionForLoadParam = validParam(useRegionForLoadParam);
 				if (validParam(useRegionForLoadParam)) {
 					double radius = validParam(aftershockRegionParam_radius);
@@ -1007,6 +1109,23 @@ public class OEGUISubDataSource extends OEGUIListener {
 					}
 					x_oaf_product = forecastList.get(fcix).oaf_product;
 				}
+				break;
+
+			case MAINSHOCK_ONLY:
+				x_eventIDParam = validParam(eventIDParam);
+				x_useAnalystOptionsParam = validParam(get_useAnalystOptionsParam (x_dataSourceTypeParam));
+				break;
+
+			case DOWNLOAD_FILE:
+				if (definedParam(eventIDParam)) {
+					x_eventIDParam = validParam(eventIDParam);
+				} else {
+					x_eventIDParam = null;
+				}
+				x_dataStartTimeParam = validParam(get_dataStartTimeParam (x_dataSourceTypeParam));
+				x_dataEndTimeParam = validParam(get_dataEndTimeParam (x_dataSourceTypeParam));
+				x_catalogFileParam = validParam(downloadFileParam);
+				x_useComcatForMainshockParam = validParam(get_useComcatForMainshockParam (x_dataSourceTypeParam));
 				break;
 
 			case RJ_SIMULATION:
@@ -1291,6 +1410,18 @@ public class OEGUISubDataSource extends OEGUIListener {
 			}
 			break;
 
+		case MAINSHOCK_ONLY:
+			if (definedParam(eventIDParam)) {
+				result = true;
+			}
+			break;
+
+		case DOWNLOAD_FILE:
+			if (definedParam(downloadFileParam)) {
+				result = true;
+			}
+			break;
+
 		case RJ_SIMULATION:
 			break;
 
@@ -1406,6 +1537,24 @@ public class OEGUISubDataSource extends OEGUIListener {
 			if (file != null) {
 				String filename = file.getAbsolutePath();
 				updateParam(catalogFileParam, filename);
+				report_data_source_change();
+			}
+		}
+		break;
+
+
+		// Download file browse button.
+		// - Open the file chooser.
+		// - If the user makes a selection, update the filename edit box.
+
+		case PARMGRP_DOWNLOAD_FILE_BROWSE: {
+			if (!( f_sub_enable )) {
+				return;
+			}
+			File file = gui_top.showSelectFileDialog (browseDownloadFileButton, "Select");
+			if (file != null) {
+				String filename = file.getAbsolutePath();
+				updateParam(downloadFileParam, filename);
 				report_data_source_change();
 			}
 		}
