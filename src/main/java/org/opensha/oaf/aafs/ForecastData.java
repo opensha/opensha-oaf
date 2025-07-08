@@ -24,6 +24,7 @@ import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.oaf.rj.CompactEqkRupList;
+import org.opensha.oaf.rj.USGS_ForecastHolder;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.commons.data.comcat.ComcatException;
 
@@ -738,6 +739,181 @@ public class ForecastData implements Marshalable {
 
 
 
+	// Make a PDL product, given the contents of forecast.json.
+	// Parameters:
+	//  evseq_res = Receives event-sequence pending send or deletion result, if any.
+	//  eventID = The event ID for PDL, which for us identifies the timeline (could be the mainshock event ID).
+	//  isReviewed = Review status, false means automatically generated.
+	//  fcmain = Mainshock information.
+	//  evseq_cfg_params = Event-sequence configuration parameters, can be null.
+	//  fc_holder = Holds the contents of forecast.json.
+	// Returns null if the product cannot be constructed due to the presence
+	// of a conflicting product in PDL.
+	// This version is used for sending both OAF and event-sequence products.
+	// Note: This is a static function.
+
+	public static Product make_pdl_product (EventSequenceResult evseq_res, String eventID, boolean isReviewed,
+		ForecastMainshock fcmain, EventSequenceParameters evseq_cfg_params, USGS_ForecastHolder fc_holder) throws Exception {
+
+		// Default to no event-sequence operation
+
+		evseq_res.clear();
+
+		if (eventID == null || eventID.isEmpty()) {
+			throw new IllegalArgumentException ("ForecastData.make_pdl_product: eventID is not specified");
+		}
+
+		// The JSON file to send
+
+		String jsonText = MarshalUtils.to_json_string (fc_holder);
+
+		if (jsonText == null) {
+			throw new IllegalStateException ("ForecastData.make_pdl_product: No JSON file available");
+		}
+
+		// The event network and code
+
+		String eventNetwork = fcmain.mainshock_network;
+		String eventCode = fcmain.mainshock_code;
+
+		// The event ID, which for us identifies the timeline
+
+		//String eventID = ...;
+
+		// Modification time, 0 means now
+
+		long modifiedTime = 0L;
+
+		// Review status, false means automatically generated
+
+		//boolean isReviewed = ...;
+
+		// Choose the code to use
+
+		String suggestedCode = eventID;
+		//long reviewOverwrite = (isReviewed ? 0L : 1L);		// don't overwrite reviewed forecast if we're not reviewed
+		long reviewOverwrite = -1L;
+		String queryID = fcmain.mainshock_event_id;
+		//JSONObject geojson = null;
+		JSONObject geojson = fcmain.mainshock_geojson;	// it's OK if this is null
+		boolean f_gj_prod = true;
+				
+		PDLCodeChooserOaf.DeleteOafOp del_op = new PDLCodeChooserOaf.DeleteOafOp();
+		GeoJsonHolder gj_used = new GeoJsonHolder (geojson, f_gj_prod);
+
+		String chosenCode = PDLCodeChooserOaf.checkChooseOafCode (suggestedCode, reviewOverwrite,
+			geojson, f_gj_prod, queryID, eventNetwork, eventCode, isReviewed, del_op, gj_used);
+
+		// If no chosen code, return null to indicate conflict
+
+		if (chosenCode == null || chosenCode.isEmpty()) {
+			del_op.do_delete();		// probably won't be anything to delete
+			return null;
+		}
+
+		// If event-sequence products are enabled, and we have event-sequence parameters ...
+
+		ActionConfig evseq_action_config = new ActionConfig();
+		if (evseq_action_config.get_is_evseq_enabled() && evseq_cfg_params != null) {
+
+			// If event-sequence reporting parameter is requesting event-sequence delete ...
+
+			int evseq_report = evseq_cfg_params.get_evseq_cfg_report();
+			if (evseq_report == ActionConfigFile.ESREP_DELETE) {
+
+				// Delete all event-sequence products
+					
+				System.out.println ("Deleting all event-sequence products.");
+
+				long cap_time = PDLCodeChooserEventSequence.CAP_TIME_DELETE;
+				boolean f_keep_reviewed = false;
+
+				int doesp = PDLCodeChooserEventSequence.deleteOldEventSequenceProducts (null,
+					gj_used.geojson, gj_used.f_gj_prod, queryID, isReviewed, cap_time, f_keep_reviewed);
+
+				// If succeeded (no exception), report the deletion
+
+				evseq_res.set_for_delete (queryID, doesp, cap_time);
+			}
+
+			// If event-sequence reporting parameter is requesting event-sequence send ...
+
+			else if (evseq_report == ActionConfigFile.ESREP_REPORT) {
+
+				// Choose the code, which will always equal the code used for OAF
+
+				boolean f_valid_ok = false;		// forces event-sequence code to be the code we supply, if reviewOverwrite == -1L
+				GeoJsonHolder evseq_gj_used = new GeoJsonHolder (gj_used.geojson, gj_used.f_gj_prod);
+
+				String evseq_chosenCode = PDLCodeChooserEventSequence.chooseEventSequenceCode (
+					chosenCode, f_valid_ok, reviewOverwrite, gj_used.geojson, gj_used.f_gj_prod, queryID,
+					eventNetwork, eventCode, isReviewed, evseq_gj_used);
+
+				// If we didn't get a code ...
+
+				if (evseq_chosenCode == null || evseq_chosenCode.isEmpty()) {
+					System.out.println ("Bypassing event-sequence product generation due to inability to obtain a PDL code.");
+				}
+
+				// Otherwise, build the event-sequence product ...
+
+				else {
+
+					PropertiesEventSequence evs_props = new PropertiesEventSequence();
+					String evseq_err = make_evseq_properties (evs_props, evseq_gj_used.geojson,
+						evseq_cfg_params, fc_holder.get_evseq_region(), fc_holder.get_evseq_end_time(), false);	// checks for null geojson, evseq_region
+
+					// If error during property build ...
+
+					if (evseq_err != null) {
+						System.out.println ("Bypassing event-sequence product generation: " + evseq_err + ".");
+					}
+
+					// Otherwise, we have the event-sequence properties
+
+					else {
+						System.out.println ("Created event-sequence properties.");
+						System.out.println (evs_props.toString());
+
+						evseq_res.set_for_pending_send (queryID, evs_props, evseq_chosenCode, isReviewed);
+					}
+				}
+			}
+		}
+
+		// Now delete any OAF products needed
+
+		del_op.do_delete();
+
+		// The content builder
+
+		PDLContentsXmlBuilder content_builder = new PDLContentsXmlBuilder();
+
+		// If we want forecast.json, attach it
+
+		if (PDLProductBuilderOaf.use_forecast_json()) {
+			PDLProductBuilderOaf.attach_forecast (content_builder, jsonText);
+		}
+
+		// Get the inline text
+
+		String inlineText = null;
+		if (PDLProductBuilderOaf.use_inline_text()) {
+			inlineText = jsonText;
+		}
+
+		// Build the product
+
+		Product product = PDLProductBuilderOaf.createProduct (
+			chosenCode, eventNetwork, eventCode, isReviewed, inlineText, modifiedTime,
+			content_builder.make_product_file_array());
+	
+		return product;
+	}
+
+
+
+
 	// Make a PDL product.
 	// Parameters:
 	//  eventID = The event ID for PDL, which for us identifies the timeline.
@@ -1092,6 +1268,95 @@ public class ForecastData implements Marshalable {
 		SphRegion sph_region = fcparam.aftershock_search_region;
 
 		if (!( evs_props.set_region_from_sph (sph_region) )) {
+			return "Failed to set region for event-sequence properties";
+		}
+
+		// Check invariant
+
+		String evs_inv = evs_props.check_invariant();
+
+		if (evs_inv != null) {
+			return "Invariant check failed for event-sequence properties: " + evs_inv;
+		}
+
+		// success
+
+		return null;
+	}
+
+
+
+
+	// Make event-sequence properties.
+	// Parameters:
+	//  evs_props = Receives the properties.
+	//  geojson = GeoJSON for the event.
+	//  evseq_cfg_params = Event-sequence configuration parameters (we use the lookback time).
+	//  evseq_region = Region for event-sequence.
+	//  seq_end_time = Sequence end time, in milliseconds, either relative or absolute.
+	//  f_rel_end_time = True if end time is relative, false if absolute.
+	// Returns null if success.
+	// If error, returns an error message.
+	// Note: This is a static function.
+
+	public static String make_evseq_properties (PropertiesEventSequence evs_props, JSONObject geojson,
+			EventSequenceParameters evseq_cfg_params, SphRegion evseq_region, long seq_end_time, boolean f_rel_end_time) {
+
+		ActionConfig evseq_action_config = new ActionConfig();
+
+		// Start by clearing the property object
+
+		evs_props.clear();
+
+		// If no GeoJSON, we cannot proceed
+
+		if (geojson == null) {
+			return "Failed to create event-sequence properties because no GeoJSON is available";
+		}
+
+		// If no event-sequence parameters, we cannot proceed
+
+		if (evseq_cfg_params == null) {
+			return "Failed to create event-sequence properties because no event-sequence parameters are available";
+		}
+
+		// If no search region, we cannot proceed
+
+		if (evseq_region == null) {
+			return "Failed to create event-sequence properties because no aftershock search region is available";
+		}
+
+		// Set properties for mainshock
+
+		if (!( evs_props.set_from_event_gj (geojson) )) {
+			return "Failed to set event-sequence properties for mainshock";
+		}
+
+		// Set start time
+
+		long start_delta = evseq_cfg_params.get_evseq_cfg_lookback();
+
+		if (!( evs_props.set_relative_start_time_millis (-start_delta) )) {		// note negative
+			return "Failed to set start time for event-sequence properties";
+		}
+
+		// Set end time
+
+		if (f_rel_end_time) {
+			long end_delta = seq_end_time;
+
+			if (!( evs_props.set_relative_end_time_millis (end_delta) )) {
+				return "Failed to set relative end time for event-sequence properties";
+			}
+		} else {
+			if (!( evs_props.set_end_time (seq_end_time) )) {
+				return "Failed to set absolute end time for event-sequence properties";
+			}
+		}
+
+		// Set the region
+
+		if (!( evs_props.set_region_from_sph (evseq_region) )) {
 			return "Failed to set region for event-sequence properties";
 		}
 

@@ -15,6 +15,7 @@ import org.opensha.oaf.util.SimpleUtils;
 
 import org.opensha.commons.data.comcat.ComcatException;
 import org.opensha.oaf.rj.CompactEqkRupList;
+import org.opensha.oaf.rj.USGS_ForecastHolder;
 
 import org.opensha.oaf.comcat.PropertiesEventSequence;
 import org.opensha.oaf.comcat.GeoJsonHolder;
@@ -278,6 +279,63 @@ public class PDLSupport extends ServerComponent {
 		// Finish the send
 
 		return static_send_pdl_report (isReviewed, evseq_res, forecast_data);
+	}
+
+
+
+
+	// Static version that also sends event-sequence products.
+	// This version derives event-sequence info from forecast.json, and sends only forecast.json.
+
+	public static void static_send_pdl_report (
+		boolean isReviewed,
+		EventSequenceResult evseq_res,
+		ForecastMainshock forecast_mainshock,
+		EventSequenceParameters evseq_cfg_params,
+		USGS_ForecastHolder fc_holder
+	) throws Exception {
+
+		evseq_res.clear();
+
+		// Check for availability of event id, network, and code
+
+		if (forecast_mainshock.mainshock_event_id == null || forecast_mainshock.mainshock_event_id.trim().isEmpty()) {
+			throw new IllegalArgumentException ("Cannot construct OAF product because the event ID is not available");
+		}
+		if (forecast_mainshock.mainshock_network == null || forecast_mainshock.mainshock_network.trim().isEmpty()
+			|| forecast_mainshock.mainshock_code == null || forecast_mainshock.mainshock_code.trim().isEmpty()) {
+			throw new IllegalArgumentException ("Cannot construct OAF product for event " + forecast_mainshock.mainshock_event_id + " because the mainshock network and code are not available");
+		}
+
+		// The suggested product code, derived from the event ID
+
+		String suggested_code = forecast_mainshock.mainshock_event_id;
+
+		// Build the product
+
+		Product product = ForecastData.make_pdl_product (evseq_res, suggested_code, isReviewed, forecast_mainshock, evseq_cfg_params, fc_holder);
+
+		// Stop if conflict
+
+		if (product == null) {
+			throw new RuntimeException ("Cannot construct OAF product for event " + forecast_mainshock.mainshock_event_id + " due to the presence of a conflicting product in PDL");
+		}
+
+		// Send event-sequence product, if any
+
+		evseq_res.perform_send();
+
+		// Sign the product
+
+		PDLSender.signProduct(product);
+
+		// Send the product, true means it is text
+
+		PDLSender.sendProduct(product, true);
+
+		// Done
+
+		return;
 	}
 
 

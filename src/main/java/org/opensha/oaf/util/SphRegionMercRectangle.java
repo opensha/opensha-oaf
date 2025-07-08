@@ -295,6 +295,73 @@ public class SphRegionMercRectangle extends SphRegion {
 	}
 
 
+	// Make a region from user display parameters.
+	// Parameters:
+	//  userParamMap = Map of parameters, which this function adds to.
+	// Returns null if the region could not be created.
+	// Each value in the map should be Number (or subclass thereof), String, or Boolean.
+	// Note: This function catches all exceptions, and returns null if an exception occurs.
+
+	public static SphRegionMercRectangle make_from_display_params (Map<String, Object> userParamMap) {
+		SphRegionMercRectangle region = null;
+		try {
+
+			// Check the region type
+
+			if (check_string_from_display_params (userParamMap, "regionType", "rectangle")) {
+
+				// Try to make the region
+
+				double lat_1 = get_double_from_display_params (userParamMap, "regionMinLat");
+				double lat_2 = get_double_from_display_params (userParamMap, "regionMaxLat");
+				double lon_1 = get_double_from_display_params (userParamMap, "regionMinLon");
+				double lon_2 = get_double_from_display_params (userParamMap, "regionMaxLon");
+
+				region = new SphRegionMercRectangle (lat_1, lat_2, lon_1, lon_2);
+			}
+		}
+
+		// Return null for any exception
+
+		catch (Exception e) {
+			region = null;
+		}
+		
+		return region;
+	}
+
+
+	// Check if a value of a parameter map has an expected string value, return false if not.
+
+	private static boolean check_string_from_display_params (Map<String, Object> userParamMap, String name, String expected) {
+		Object value = userParamMap.get (name);
+		if (value == null) {
+			return false;
+		}
+		if (value instanceof String) {
+			return expected.equals ((String)value);
+		}
+		return false;
+	}
+
+
+	// Return a value of a parameter map as a double, throw exception if not possible
+
+	private static double get_double_from_display_params (Map<String, Object> userParamMap, String name) {
+		Object value = userParamMap.get (name);
+		if (value == null) {
+			throw new IllegalArgumentException ("Value is missing or null: name = " + name);
+		}
+		if (value instanceof Number) {
+			return ((Number)value).doubleValue();
+		}
+		if (value instanceof String) {
+			return Double.parseDouble ((String)value);
+		}
+		throw new IllegalArgumentException ("Value is incorrect type: name = " + name);
+	}
+
+
 
 
 	//----- Marshaling -----

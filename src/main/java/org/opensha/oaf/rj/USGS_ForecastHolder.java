@@ -20,6 +20,7 @@ import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.MarshalUtils;
 
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.TestArgs;
 
 //import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -1532,6 +1533,31 @@ public class USGS_ForecastHolder implements Marshalable {
 	public final void set_next_forecast_time (long t) {
 		json_root.nextForecastTime = t;
 		return;
+	}
+
+
+
+
+	//----- Evnet-sequence support -----
+
+
+
+
+	// Get the region to use for event-sequence, according to the model parameters
+	// Returns null if the region could not be obtained.
+	// Note: The region is always a circle or rectangle.
+
+	public final SphRegion get_evseq_region () {
+		return SphRegion.make_circle_or_rect_from_display_params (json_root.model.parameters);
+	}
+
+
+
+
+	// Get the end time for event-sequence, in milliseconds since the epoch.
+
+	public final long get_evseq_end_time () {
+		return json_root.expireTime;
 	}
 
 

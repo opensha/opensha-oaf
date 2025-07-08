@@ -848,6 +848,30 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 	}
 
 
+	// Make a circular or rectangular region from user display parameters.
+	// Parameters:
+	//  userParamMap = Map of parameters, which this function adds to.
+	// Returns null if the region could not be created.
+	// Each value in the map should be Number (or subclass thereof), String, or Boolean.
+	// Note: This function throws no exceptions.
+
+	public static SphRegion make_circle_or_rect_from_display_params (Map<String, Object> userParamMap) {
+
+		SphRegionCircle circle = SphRegionCircle.make_from_display_params (userParamMap);
+		if (circle != null) {
+			return circle;
+		}
+
+		SphRegionMercRectangle rectangle = SphRegionMercRectangle.make_from_display_params (userParamMap);
+		if (rectangle != null) {
+			return rectangle;
+		}
+
+		return null;
+	}
+
+
+
 
 
 	//----- Marshaling -----
