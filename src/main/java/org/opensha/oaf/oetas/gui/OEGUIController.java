@@ -211,6 +211,10 @@ public class OEGUIController extends OEGUIListener {
 
 	private OEGUISubDeleteProduct sub_ctl_delete_product;
 
+	// Floating panel for file operations.
+
+	private OEGUISubFileOps sub_ctl_file_ops;
+
 
 
 
@@ -433,9 +437,12 @@ public class OEGUIController extends OEGUIListener {
 		sub_ctl_delete_product = new OEGUISubDeleteProduct(this);
 		aafsParams.addParameter(sub_ctl_delete_product.get_deleteProductEditParam());
 
+		sub_ctl_file_ops = new OEGUISubFileOps(this);
+		aafsParams.addParameter(sub_ctl_file_ops.get_fileOpsEditParam());
+
 		// Create the container
 
-		aafsEditorHeight = (gui_top.get_height() * 4) / 10;
+		aafsEditorHeight = (gui_top.get_height() * 5) / 10;
 
 		aafsEditor = new ParameterListEditor(aafsParams);
 		aafsEditor.setTitle("More");
@@ -553,6 +560,10 @@ public class OEGUIController extends OEGUIListener {
 		// Delete product
 
 		sub_ctl_delete_product.sub_delete_product_enable (true, f_mainshock && f_main_fetched);
+
+		// File operations
+
+		sub_ctl_file_ops.sub_file_ops_enable (true, f_mainshock && f_main_fetched);
 
 		// Special functions
 
@@ -831,6 +842,8 @@ public class OEGUIController extends OEGUIListener {
 		sub_ctl_analyst_option.update_analyst_from_model();
 
 		sub_ctl_delete_product.update_delete_product_from_model();
+
+		sub_ctl_file_ops.update_file_ops_from_model();
 
 		return;
 	}

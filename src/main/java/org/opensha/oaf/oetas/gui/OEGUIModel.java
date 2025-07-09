@@ -2,6 +2,7 @@ package org.opensha.oaf.oetas.gui;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
@@ -106,6 +107,7 @@ import org.opensha.oaf.comcat.ComcatProductOaf;
 import org.json.simple.JSONObject;
 
 import java.io.BufferedWriter;
+import java.io.BufferedReader;
 
 import org.opensha.oaf.aafs.ForecastMainshock;
 import org.opensha.oaf.aafs.ForecastParameters;
@@ -120,6 +122,7 @@ import org.opensha.oaf.aafs.AdjustableParameters;
 import org.opensha.oaf.aafs.EventSequenceParameters;
 
 import org.opensha.oaf.util.MarshalImpJsonWriter;
+import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.SimpleUtils;
 
 import java.io.StringReader;
@@ -3444,6 +3447,31 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+	// Read analyst options from a file.
+	// An exception is thrown if the file could not be written.
+
+	public AnalystOptions readAnalystOptions (File the_file) throws IOException {
+
+		// Make the analyst options
+
+		AnalystOptions anopt = null;
+
+		// Read the file
+
+		try (
+			BufferedReader file_reader = new BufferedReader (new FileReader (the_file));
+		){
+			MarshalImpJsonReader reader = new MarshalImpJsonReader (file_reader);
+			anopt = AnalystOptions.unmarshal_poly (reader, null);
+			reader.check_read_complete ();
+		}
+
+		return anopt;
+	}
+
+
+
+
 	// Send analyst options to server.
 	// If xfer.x_useCustomParamsParam is true, can be called when model state >= MODSTATE_PARAMETERS.
 	// If xfer.x_useCustomParamsParam is false, can be called when model state >= MODSTATE_MAINSHOCK.
@@ -3460,6 +3488,26 @@ public class OEGUIModel extends OEGUIComponent {
 
 		String event_id = fcmain.mainshock_event_id;
 		boolean f_disable = (xfer.x_autoEnableParam == AutoEnable.DISABLE);
+
+		boolean f_success = ServerCmd.gui_send_analyst_opts (progress, event_id, f_disable, anopt);
+
+		return f_success;
+	}
+
+
+
+
+	// Send analyst options to server.
+	// Can be called when model state >= MODSTATE_MAINSHOCK.
+	// Returns true if success, false if unable to send to any server.
+	// An exception is thrown if the operation could not be performed.
+
+	public boolean sendAnalystOptions (GUICalcProgressBar progress, AnalystOptions anopt) {
+
+		// Send to server
+
+		String event_id = fcmain.mainshock_event_id;
+		boolean f_disable = (anopt.intake_option == AnalystOptions.OPT_INTAKE_BLOCK);
 
 		boolean f_success = ServerCmd.gui_send_analyst_opts (progress, event_id, f_disable, anopt);
 
