@@ -1298,7 +1298,7 @@ public class GraphicalForecast{
 		return outputString.toString();
 	}
 	
-	// Build an html document for displaying the advisory, new style for BHA
+	// Build an html document for displaying the advisory, new style for USGS
 	public void writeHTML(File outputFile){
 
 		StringBuilder outputString = new StringBuilder();
@@ -1315,12 +1315,12 @@ public class GraphicalForecast{
 				+"		<meta name=\"software-version-date\" content=\"2021-10-01\">\n"
 				+"		<meta name=\"advisory-generated-date\" content=\"" + tags.get("V_DATE") + "\">\n"
 				+"		<meta name=\"disclaimer\" content=\"This advisory was generated using the USGS AftershockForecaster softare developed\n"
-				+"			on the OpenSHA platform by the US Geological Survey and the US-AID Bureau of Humanitarian Assistance. The forecast\n"
+				+"			on the OpenSHA platform by the US Geological Survey with support from interagency partners. The forecast\n"
 				+" 			provided herein is based primarily on the range of outcomes of past aftershock sequences in similar environments.\n"
 				+"			While this forecast describes the most likely outcomes for sequences like this one, it should not be treated as a\n"
-				+"			a specific prediction. This document is for official use only.\">\n"
+				+"			specific prediction.\">\n"
 				+"		<meta name=\"OpenSHA\" content=\"www.opensha.org/apps\">\n"
-				+"		<link rel=\"stylesheet\" href=\"BHAforecast.css\">\n"
+				+"		<link rel=\"stylesheet\" href=\"USGSforecast.css\">\n"
 				+"		<title>Aftershock Advisory and Forecast</title>\n"
 				+"		</head>\n"
 				+"");
@@ -1331,7 +1331,8 @@ public class GraphicalForecast{
 				+ "  <div>\n"
 				+ "    <table class=\"header\">\n"
 				+ "      <tr>\n"
-				+ "        <td class=\"leftLogo\"><img src=\"USAID_logo.png\" alt=\"\" class=\"logo\"></td>\n"
+//				+ "        <td class=\"leftLogo\"><img src=\"USAID_logo.png\" alt=\"\" class=\"logo\"></td>\n"
+				+ "        <td class=\"leftLogo\"><img src=\"Logo.png\" alt=\"\" class=\"logo\"></td>\n"
 				+ "        <td><span class=\"disclaimer\">" + tags.get("DISCLAIMER") + "</span>\n"
 				+ "				<br><h1>Aftershock Advisory and Forecast</h1></td>\n"
 				+ "        <td class=\"rightLogo\"><img src=\"Logo.png\" alt=\"\" class=\"logo\"></td>\n"
@@ -1453,8 +1454,10 @@ public class GraphicalForecast{
 //				+ "      Contour lines (if shown) give the chance of experiencing potentially damaging ground motions \n"
 //				+ "      (exceeding level VI on the Modified Mercalli Intensity scale).\n"
 //				+ "      Modified Mercalli Intensity level VI (strong ground shaking) is likely to cause damage, even in well-engineered structures. With more poorly engineered or weakened structures, damage can occur at lower intensity levels.\n"
-				+ "      This map shows the chance of experiencing strong shaking (Intensity level VI) from an aftershock within the next " + tags.get("FORECAST_INTERVAL") + "."
-				+ "		 Intensity level VI shaking can cause light damage in well-built structures, and can cause moderate to severe damage in less well-built or weakened structures. Shaking is even more likely at lower intensity levels, which could still cause damage in poorly built or weakened structures.\n"
+				+ "      The chance of experiencing strong shaking (Intensity level VI) from an aftershock within the next " + tags.get("FORECAST_INTERVAL") + "."
+				+ "		 Intensity level VI shaking can cause light damage in well-built structures, and can cause moderate to severe damage"
+				+ "		 in less well built or weakened structures. Shaking is even more likely at lower intensity levels, which could still "
+				+ " 	 cause damage in poorly built or weakened structures. Gray circles show the aftershocks that have occurred so far.\n"
 				+ "    </div>\n"
 				+ "  </div>");
 		
@@ -1490,7 +1493,7 @@ public class GraphicalForecast{
 	}
 
 	public void writeCSS(File outputFile) {
-		// the css file for the new HTML document for BHA
+		// the css file for the new HTML document for USGS
 		
 		StringBuilder outputString = new StringBuilder();
 		outputString.append("body {font-family:helvetica; background-color: white; page-break-inside:avoid}\n"
@@ -1615,7 +1618,7 @@ public class GraphicalForecast{
 				+ "<html>\n"
 				+ "<head>\n"
 				+ "	<title>Aftershock Forecast Bar Graph</title>\n"
-				+ "	<link rel=\"stylesheet\" href=\"BHAforecast.css\">\n"
+				+ "	<link rel=\"stylesheet\" href=\"USGSforecast.css\">\n"
 				+ "</head>\n"
 				+ "<body>");
 		
@@ -2333,7 +2336,7 @@ public class GraphicalForecast{
 			gf.writeHTML(new File(System.getenv("HOME") + "/example_forecast.html"));
 			gf.writeHTMLTable(new File(System.getenv("HOME") + "/Table.html"));
 			gf.writeBarGraphHTML(new File(System.getenv("HOME") + "/graphical_forecast.html"));
-			gf.writeCSS(new File(System.getenv("HOME") + "/BHAforecast.css"));
+			gf.writeCSS(new File(System.getenv("HOME") + "/USGSforecast.css"));
 //			gf.writeSummaryJson(new File(System.getenv("HOME") + "/forecast.json"));
 			
 		}catch(Exception e){

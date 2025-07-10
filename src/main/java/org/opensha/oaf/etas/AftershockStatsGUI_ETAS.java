@@ -6154,7 +6154,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			}
 
 			//print the css file
-			String cssFile = outFile.getParent() + "/" + "BHAforecast.css";
+			String cssFile = outFile.getParent() + "/" + "USGSforecast.css";
 			try {
 				System.out.println("Saving css file to: " + cssFile);
 				graphForecast.writeCSS(new File(cssFile));
@@ -6319,23 +6319,23 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				System.err.println("Couldn't locate file: " + pngFileIn);
 			}
 
-			// load the BHA logo
-			pngFileIn = "USAID_logo.png";
-			pngFileOut = pngFileIn;
-			logoIS = GraphicalForecast.class.getResourceAsStream("resources/" + pngFileIn);
-			if (logoIS != null){
-			
-				File destination = new File(outFile.getParent() + "/" + pngFileOut);
-
-				try {
-					FileUtils.copyInputStreamToFile(logoIS, destination);
-				} catch (IOException e) {
-				    e.printStackTrace();
-					System.err.println("Couldn't copy: " + pngFileIn + " to file: " + destination);
-				}
-			} else {
-				System.err.println("Couldn't locate file: " + pngFileIn);
-			}
+//			// load the BHA logo
+//			pngFileIn = "USAID_logo.png";
+//			pngFileOut = pngFileIn;
+//			logoIS = GraphicalForecast.class.getResourceAsStream("resources/" + pngFileIn);
+//			if (logoIS != null){
+//			
+//				File destination = new File(outFile.getParent() + "/" + pngFileOut);
+//
+//				try {
+//					FileUtils.copyInputStreamToFile(logoIS, destination);
+//				} catch (IOException e) {
+//				    e.printStackTrace();
+//					System.err.println("Couldn't copy: " + pngFileIn + " to file: " + destination);
+//				}
+//			} else {
+//				System.err.println("Couldn't locate file: " + pngFileIn);
+//			}
 
 			if (writeStochasticEventSets.getValue()) {
 				
