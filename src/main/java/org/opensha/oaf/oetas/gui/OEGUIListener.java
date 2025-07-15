@@ -26,6 +26,8 @@ import org.opensha.commons.param.impl.StringParameter;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Doubles;
 
+import org.jfree.data.Range;
+
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SimpleUtils;
@@ -382,6 +384,109 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 
 	protected boolean updateTimeParam (GUIPredicateStringParameter param, long time) throws GUIEDTException, ConstraintException, ParameterException {
 		return updateParam (param, SimpleUtils.time_to_string_no_sec (time));
+	}
+
+
+
+
+	//----- Range parameter checking -----
+
+
+
+
+//	// This function is called when there is a change in one of the grid range
+//	// parameter pairs, either the range (lower/upper bounds) or the number.
+//	// If the range is non-empty but the number is 1, then the number is set to defaultNum.
+//	// If the range is empty but the number is > 1, then the number is set to 1.
+//	// Otherwise, or if the range is invalid, then do nothing.
+//	
+//	private void updateRangeParams(RangeParameter rangeParam, IntegerParameter numParam, int defaultNum) throws GUIEDTException {
+//		if (gui_top.get_trace_events()) {
+//			System.out.println ("@@@@@ updateRangeParams (" + get_symbol(rangeParam) + ", " + get_symbol(numParam) + ", " + defaultNum + ")");
+//		}
+//
+//		Preconditions.checkState(defaultNum > 1);
+//		if (nonNullParam(rangeParam)) {
+//			Range range = validParam(rangeParam);
+//			boolean same = range.getLowerBound() == range.getUpperBound();
+//			if (same && ((!definedParam(numParam)) || validParam(numParam) > 1)) {
+//				updateParam(numParam, 1);
+//			}
+//			else if (!same && ((!definedParam(numParam)) || validParam(numParam) == 1)) {
+//				updateParam(numParam, defaultNum);
+//			}
+//		}
+//		return;
+//	}
+
+
+
+
+	// This function is called when there is a change in one of the grid range
+	// parameter pairs, either the range (lower/upper bounds) or the number.
+	// If the range is null, change it to the default range.  This is to work around a
+	// problem with the range parameter, which is that if the user clears the parameter
+	// then there is no obvious way for the user to enter a new value.
+	// If the number is null, change it to 1 or the default number depending on
+	// whether the range is empty or non-empty.
+	// We do not attempt to force correspondence between range and number, because
+	// doing so has proved to be awkward in use.
+	
+	public void updateRangeParams(RangeParameter rangeParam, IntegerParameter numParam,
+			int defaultNum, double defaultLower, double defaultUpper) throws GUIEDTException {
+		if (gui_top.get_trace_events()) {
+			System.out.println ("@@@@@ updateRangeParams (" + get_symbol(rangeParam) + ", " + get_symbol(numParam) + ", " + defaultNum + ", " + defaultLower + ", " + defaultUpper + ")");
+		}
+
+		Preconditions.checkState(defaultNum >= 1);
+		Preconditions.checkState(defaultUpper >= defaultLower);
+
+		if (!( definedParam(rangeParam) )) {
+			updateParam(rangeParam, new Range(defaultLower, defaultUpper));
+		}
+
+		if (!( definedParam(numParam) )) {
+			Range range = validParam(rangeParam);
+			if (range.getLowerBound() == range.getUpperBound()) {
+				updateParam(numParam, 1);
+			} else {
+				updateParam(numParam, defaultNum);
+			}
+		}
+
+		return;
+	}
+	
+
+
+
+//	// Check thet the grid range number is consistent with the range limits,
+//	// throw an exception if not.
+//	// validateRange must run on worker threads, and so must not set any parameters or write to the screen.
+//
+//	private void validateRange(Range range, int num, String name) {
+//		Preconditions.checkState(range != null, "Must supply "+name+" range");
+//		boolean same = range.getLowerBound() == range.getUpperBound();
+//		if (same)
+//			Preconditions.checkState(num == 1, "Num must equal 1 for fixed "+name);
+//		else
+//			Preconditions.checkState(num > 1, "Num must be >1 for variable "+name);
+//		return;
+//	}
+	
+
+
+
+	// Check thet the grid range number is consistent with the range limits,
+	// throw an exception if not.
+
+	public void validateRange(Range range, int num, String name) {
+		Preconditions.checkState(range != null, "Must supply " + name + " range");
+		if (range.getLowerBound() == range.getUpperBound())
+			Preconditions.checkState(num == 1, "Number must equal 1 for empty " + name + " range");
+		else
+			Preconditions.checkState(num > 1, "Number must be >1 for non-empty " + name + " range");
+		return;
 	}
 
 

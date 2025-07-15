@@ -312,8 +312,9 @@ public class OEGUITop extends OEGUIComponent {
 	// Get the color for separators (can be null for system default).
 
 	public Color get_separator_color () {
-		//return new Color(0, 128, 32);
-		return new Color(200, 200, 255);
+		//return new Color(0, 128, 32);			// first try
+		//return new Color(200, 200, 255);		// second try
+		return new Color(160, 160, 255);		// third try
 	}
 
 
@@ -756,11 +757,21 @@ public class OEGUITop extends OEGUIComponent {
 		//	gui_controller.get_aafsEditor()
 		//));
 
+		//JPanel paramsPanel = new JPanel(new GridLayout(1, 0));
+		//paramsPanel.add(stacked_comp_panel(
+		//	gui_controller.get_dataEditor(),
+		//	gui_controller.get_fitEditor(),
+		//	gui_controller.get_fcastEditor()
+		//));
+		//paramsPanel.add(stacked_comp_panel(
+		//	gui_controller.get_aafsEditor(),
+		//	gui_controller.get_fillerEditor()
+		//));
+
 		JPanel paramsPanel = new JPanel(new GridLayout(1, 0));
 		paramsPanel.add(stacked_comp_panel(
 			gui_controller.get_dataEditor(),
-			gui_controller.get_fitEditor(),
-			gui_controller.get_fcastEditor()
+			gui_controller.get_fitEditor()
 		));
 		paramsPanel.add(stacked_comp_panel(
 			gui_controller.get_aafsEditor(),

@@ -121,6 +121,15 @@ public class OEDiscreteRangeLogSkew extends OEDiscreteRange {
 
 
 
+	// Get the skew factor.
+
+	public double get_range_skew () {
+		return range_skew;
+	}
+
+
+
+
 	// Get the middle parameter value.
 	// The value is guaranteed to lie between get_range_min() and get_range_max(),
 	// but the definition of "middle" varies by subclass.

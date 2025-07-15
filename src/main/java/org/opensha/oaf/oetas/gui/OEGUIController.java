@@ -201,7 +201,7 @@ public class OEGUIController extends OEGUIListener {
 
 	// Floating panel for forecast parameters.
 
-	private OEGUISubForecast sub_ctl_forecast_param;
+	//private OEGUISubForecast sub_ctl_forecast_param;
 
 	// Floating panel for analyst options.
 
@@ -365,13 +365,16 @@ public class OEGUIController extends OEGUIListener {
 		fitParams.addParameter(sub_ctl_common_param.get_commonValueEditParam());
 	
 		sub_ctl_etas_param = new OEGUISubETASValue (this);
+		fitParams.addParameter(sub_ctl_etas_param.get_etasEnableParam());
 		fitParams.addParameter(sub_ctl_etas_param.get_etasValueEditParam());
+		fitParams.addParameter(sub_ctl_etas_param.get_etasOptionEditParam());
 		
 		fitParams.addParameter(init_computeAftershockParamsButton());
 
 		// Create the container
 
-		fitEditorHeight = (gui_top.get_height() * 4) / 10;
+		//fitEditorHeight = (gui_top.get_height() * 4) / 10;
+		fitEditorHeight = gui_top.get_height() - (dataEditorHeight);
 
 		fitEditor = new ParameterListEditor(fitParams);
 		fitEditor.setTitle("Aftershock Parameters");
@@ -380,36 +383,36 @@ public class OEGUIController extends OEGUIListener {
 	}
 
 
-	// Container for forecast parameters.
-
-	private ParameterListEditor fcastEditor;
-
-	public final ParameterListEditor get_fcastEditor () {
-		return fcastEditor;
-	}
-
-	private int fcastEditorHeight;
-
-	private ParameterListEditor init_fcastEditor () throws GUIEDTException {
-
-		// Controls in the "Forecasts" column
-		
-		ParameterList fcastParams = new ParameterList();
-	
-		sub_ctl_forecast_param = new OEGUISubForecast (this);
-		fcastParams.addParameter(sub_ctl_forecast_param.get_fcValueEditParam());
-		
-		fcastParams.addParameter(init_computeAftershockForecastButton());
-
-		// Create the container
-
-		fcastEditorHeight = gui_top.get_height() - (dataEditorHeight + fitEditorHeight);
-
-		fcastEditor = new ParameterListEditor(fcastParams);
-		fcastEditor.setTitle("Forecasts");
-		fcastEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), fcastEditorHeight));
-		return fcastEditor;
-	}
+//	// Container for forecast parameters.
+//
+//	private ParameterListEditor fcastEditor;
+//
+//	public final ParameterListEditor get_fcastEditor () {
+//		return fcastEditor;
+//	}
+//
+//	private int fcastEditorHeight;
+//
+//	private ParameterListEditor init_fcastEditor () throws GUIEDTException {
+//
+//		// Controls in the "Forecasts" column
+//		
+//		ParameterList fcastParams = new ParameterList();
+//	
+//		sub_ctl_forecast_param = new OEGUISubForecast (this);
+//		fcastParams.addParameter(sub_ctl_forecast_param.get_fcValueEditParam());
+//		
+//		fcastParams.addParameter(init_computeAftershockForecastButton());
+//
+//		// Create the container
+//
+//		fcastEditorHeight = gui_top.get_height() - (dataEditorHeight + fitEditorHeight);
+//
+//		fcastEditor = new ParameterListEditor(fcastParams);
+//		fcastEditor.setTitle("Forecasts");
+//		fcastEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), fcastEditorHeight));
+//		return fcastEditor;
+//	}
 
 
 	// Container for more functions.
@@ -491,7 +494,7 @@ public class OEGUIController extends OEGUIListener {
 
 		add_symbol (dataEditor , "dataEditor");
 		add_symbol (fitEditor , "fitEditor");
-		add_symbol (fcastEditor , "fcastEditor");
+		//add_symbol (fcastEditor , "fcastEditor");
 		add_symbol (aafsEditor , "aafsEditor");
 		add_symbol (fillerEditor , "fillerEditor");
 
@@ -548,9 +551,9 @@ public class OEGUIController extends OEGUIListener {
 
 		// Aftershock parameters that become enabled when parameters have been computed
 
-		sub_ctl_forecast_param.sub_fc_value_enable (true, f_catalog && f_params);
-
-		enableParam(computeAftershockForecastButton, f_catalog && f_params);
+		//sub_ctl_forecast_param.sub_fc_value_enable (true, f_catalog && f_params);
+		//
+		//enableParam(computeAftershockForecastButton, f_catalog && f_params);
 
 		// Analyst parameters
 
@@ -864,7 +867,7 @@ public class OEGUIController extends OEGUIListener {
 
 		sub_ctl_etas_param.update_etas_value_from_model();
 
-		sub_ctl_forecast_param.update_fc_value_from_model();
+		//sub_ctl_forecast_param.update_fc_value_from_model();
 
 		return;
 	}
@@ -1026,7 +1029,7 @@ public class OEGUIController extends OEGUIListener {
 		// Forecast parameters.
 		// Included values are checked for validity
 
-		public OEGUISubForecast.XferFCValueView x_fcValue;	// Forecast parameter values
+		//public OEGUISubForecast.XferFCValueView x_fcValue;	// Forecast parameter values
 
 		// Get the implementation class.
 
@@ -1060,7 +1063,7 @@ public class OEGUIController extends OEGUIListener {
 		// Allocate sub-controller transfer during construction, ensure clean state.
 
 		public XferForecastImpl () {
-			x_fcValue = sub_ctl_forecast_param.make_fc_value_xfer();
+			//x_fcValue = sub_ctl_forecast_param.make_fc_value_xfer();
 			internal_clean();
 		}
 
@@ -1089,7 +1092,7 @@ public class OEGUIController extends OEGUIListener {
 
 			// Forecast parameter values
 
-			x_fcValue.xfer_get_impl().xfer_load();
+			//x_fcValue.xfer_get_impl().xfer_load();
 
 			return this;
 		}
@@ -1102,7 +1105,7 @@ public class OEGUIController extends OEGUIListener {
 
 			// Forecast parameter values
 
-			x_fcValue.xfer_get_impl().xfer_store();
+			//x_fcValue.xfer_get_impl().xfer_store();
 
 			return;
 		}
@@ -1177,7 +1180,7 @@ public class OEGUIController extends OEGUIListener {
 
 		// Initialize the forecast/aafs column, top to bottom
 
-		init_fcastEditor();
+		//init_fcastEditor();
 		init_aafsEditor();
 
 		init_fillerEditor();
@@ -1943,109 +1946,6 @@ public class OEGUIController extends OEGUIListener {
 		}
 
 
-		return;
-	}
-
-
-
-
-	//----- Range parameter checking -----
-
-
-
-
-//	// This function is called when there is a change in one of the grid range
-//	// parameter pairs, either the range (lower/upper bounds) or the number.
-//	// If the range is non-empty but the number is 1, then the number is set to defaultNum.
-//	// If the range is empty but the number is > 1, then the number is set to 1.
-//	// Otherwise, or if the range is invalid, then do nothing.
-//	
-//	private void updateRangeParams(RangeParameter rangeParam, IntegerParameter numParam, int defaultNum) throws GUIEDTException {
-//		if (gui_top.get_trace_events()) {
-//			System.out.println ("@@@@@ updateRangeParams (" + get_symbol(rangeParam) + ", " + get_symbol(numParam) + ", " + defaultNum + ")");
-//		}
-//
-//		Preconditions.checkState(defaultNum > 1);
-//		if (nonNullParam(rangeParam)) {
-//			Range range = validParam(rangeParam);
-//			boolean same = range.getLowerBound() == range.getUpperBound();
-//			if (same && ((!definedParam(numParam)) || validParam(numParam) > 1)) {
-//				updateParam(numParam, 1);
-//			}
-//			else if (!same && ((!definedParam(numParam)) || validParam(numParam) == 1)) {
-//				updateParam(numParam, defaultNum);
-//			}
-//		}
-//		return;
-//	}
-
-
-
-
-	// This function is called when there is a change in one of the grid range
-	// parameter pairs, either the range (lower/upper bounds) or the number.
-	// If the range is null, change it to the default range.  This is to work around a
-	// problem with the range parameter, which is that if the user clears the parameter
-	// then there is no obvious way for the user to enter a new value.
-	// If the number is null, change it to 1 or the default number depending on
-	// whether the range is empty or non-empty.
-	// We do not attempt to force correspondence between range and number, because
-	// doing so has proved to be awkward in use.
-	
-	public void updateRangeParams(RangeParameter rangeParam, IntegerParameter numParam,
-			int defaultNum, double defaultLower, double defaultUpper) throws GUIEDTException {
-		if (gui_top.get_trace_events()) {
-			System.out.println ("@@@@@ updateRangeParams (" + get_symbol(rangeParam) + ", " + get_symbol(numParam) + ", " + defaultNum + ", " + defaultLower + ", " + defaultUpper + ")");
-		}
-
-		Preconditions.checkState(defaultNum > 1);
-		Preconditions.checkState(defaultUpper >= defaultLower);
-
-		if (!( definedParam(rangeParam) )) {
-			updateParam(rangeParam, new Range(defaultLower, defaultUpper));
-		}
-
-		if (!( definedParam(numParam) )) {
-			Range range = validParam(rangeParam);
-			if (range.getLowerBound() == range.getUpperBound()) {
-				updateParam(numParam, 1);
-			} else {
-				updateParam(numParam, defaultNum);
-			}
-		}
-
-		return;
-	}
-	
-
-
-
-//	// Check thet the grid range number is consistent with the range limits,
-//	// throw an exception if not.
-//	// validateRange must run on worker threads, and so must not set any parameters or write to the screen.
-//
-//	private void validateRange(Range range, int num, String name) {
-//		Preconditions.checkState(range != null, "Must supply "+name+" range");
-//		boolean same = range.getLowerBound() == range.getUpperBound();
-//		if (same)
-//			Preconditions.checkState(num == 1, "Num must equal 1 for fixed "+name);
-//		else
-//			Preconditions.checkState(num > 1, "Num must be >1 for variable "+name);
-//		return;
-//	}
-	
-
-
-
-	// Check thet the grid range number is consistent with the range limits,
-	// throw an exception if not.
-
-	public void validateRange(Range range, int num, String name) {
-		Preconditions.checkState(range != null, "Must supply " + name + " range");
-		if (range.getLowerBound() == range.getUpperBound())
-			Preconditions.checkState(num == 1, "Number must equal 1 for empty " + name + " range");
-		else
-			Preconditions.checkState(num > 1, "Number must be >1 for non-empty " + name + " range");
 		return;
 	}
 	

@@ -173,6 +173,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private static final int PARMGRP_COMPUTE_B = 606;		// Button to compute sequence-specific b-value
 	private static final int PARMGRP_B_VALUE = 607;			// b-value
 	private static final int PARMGRP_TIME_DEP_OPTION = 608;	// Option for time-dependent magnitude of completeness
+	private static final int PARMGRP_ALPHA_EQUALS_B = 609;	// Option to take alpha == b
 
 
 
@@ -314,6 +315,30 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	}
 
 
+	// Option to use alpha == b.
+
+	private BooleanParameter alphaEqualsBParam;
+
+	private BooleanParameter init_alphaEqualsBParam () throws GUIEDTException {
+		alphaEqualsBParam = new BooleanParameter("Use alpha = b", true);
+		register_param (alphaEqualsBParam, "alphaEqualsBParam", PARMGRP_ALPHA_EQUALS_B);
+		return alphaEqualsBParam;
+	}
+
+
+	// ETAS alpha parameter; edit box containing a number.
+
+	private DoubleParameter alphaParam;
+
+	private DoubleParameter init_alphaParam () throws GUIEDTException {
+		alphaParam = new DoubleParameter("alpha", 0.0, 3.0, Double.valueOf(1.0));
+		alphaParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		alphaParam.setValue(null);
+		register_param (alphaParam, "alphaParam", PARMGRP_COM_VALUE);
+		return alphaParam;
+	}
+
+
 
 
 	// Common parameter value dialog: initialize parameters within the dialog.
@@ -338,6 +363,10 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		
 		init_bParam();
 
+		init_alphaEqualsBParam();
+
+		init_alphaParam();
+
 		return;
 	}
 
@@ -356,7 +385,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		boolean f_button_row = false;
 
 		commonValueEditParam.setListTitleText ("Common Parameters");
-		commonValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(9, f_button_row, 1));
+		commonValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(11, f_button_row, 3));
 
 		commonValueList.addParameter(timeDepOptionParam);
 		commonValueList.addParameter(fParam);
@@ -367,9 +396,17 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		commonValueList.addParameter(new GUISeparatorParameter("Separator1", gui_top.get_separator_color()));
 
 		commonValueList.addParameter(mcParam);
+
+		commonValueList.addParameter(new GUISeparatorParameter("Separator2", gui_top.get_separator_color()));
+
 		commonValueList.addParameter(magPrecisionParam);
 		commonValueList.addParameter(computeBButton);
 		commonValueList.addParameter(bParam);
+
+		commonValueList.addParameter(new GUISeparatorParameter("Separator3", gui_top.get_separator_color()));
+
+		commonValueList.addParameter(alphaEqualsBParam);
+		commonValueList.addParameter(alphaParam);
 		
 		commonValueEditParam.getEditor().refreshParamEditor();
 	}
@@ -408,6 +445,13 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private void adjust_enable () throws GUIEDTException {
 
+		// Get flag indicating if alpha == b is forced
+
+		boolean f_alpha_eq_b = true;
+		if (f_common_value_enable) {
+			f_alpha_eq_b = validParam(alphaEqualsBParam);
+		}
+
 		// Enable parameters
 
 		enableParam(timeDepOptionParam, f_common_value_enable);
@@ -426,6 +470,9 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		enableParam(computeBButton, f_common_value_enable);
 		enableParam(bParam, f_common_value_enable);
 
+		enableParam(alphaEqualsBParam, f_common_value_enable);
+		enableParam(alphaParam, !f_alpha_eq_b);
+
 		enableParam(commonValueEditParam, f_sub_enable);
 
 		// Parameters that are cleared when they are disabled
@@ -440,6 +487,17 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 			updateParam(mcParam, null);
 			updateParam(bParam, null);
+
+			updateParam(alphaEqualsBParam, true);
+
+			updateParam(alphaParam, null);
+		}
+		else {
+			if (!( f_alpha_eq_b )) {
+				if (!( definedParam(alphaParam) )) {
+					updateParam(alphaParam, 1.0);
+				}
+			}
 		}
 
 		return;
@@ -554,6 +612,14 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		public double x_mCatParam;				// parameter value, checked for validity
 
+		// Flag indicating if alpha == b.
+
+		public boolean x_alphaEqualsBParam;		// parameter value, checked for validity
+
+		// Value of alpha, present if x_alphaEqualsBParam is false.
+
+		public double x_alphaParam;				// parameter value, checked for validity
+
 		// Get the implementation class.
 
 		public abstract XferCommonValueImpl xfer_get_impl ();
@@ -657,6 +723,16 @@ public class OEGUISubCommonValue extends OEGUIListener {
 				throw new IllegalArgumentException ("OEGUISubCommonValue.XferCommonValueImpl.xfer_load: Invalid magnitude of completeness option");
 			}
 
+			// Flag indicating if alpha == b.
+
+			x_alphaEqualsBParam = validParam(alphaEqualsBParam);
+
+			// Value of alpha, present if x_alphaEqualsBParam is false.
+
+			if (!( x_alphaEqualsBParam )) {
+				x_alphaParam = validParam(alphaParam);
+			}
+
 			return this;
 		}
 
@@ -665,6 +741,13 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		@Override
 		public void xfer_store () throws GUIEDTException {
+
+			// If we're forcing alpha == b, then update alpha with b-value from the model
+
+			if (x_alphaEqualsBParam) {
+				updateParam(alphaParam, gui_model.get_cat_bParam());
+			}
+
 			return;
 		}
 	}
@@ -822,7 +905,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	}
 
 
-	// Get the RJ parameter value edit button.
+	// Get the common parameter value edit button.
 	// The intent is to use this only to insert the control into the client.
 
 	public GUIParameterListParameter get_commonValueEditParam () throws GUIEDTException {
@@ -902,6 +985,11 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		// The magnitude of completeness
 
 		updateParam(mCatParam, gui_model.get_magCompParams().get_magCat());
+
+		// Alpha [TODO: Read from ETAS parameters]
+
+		updateParam(alphaEqualsBParam, true);
+		updateParam(alphaParam, 1.0);
 
 		// Need to adjust enable to pick up enable state corresponding to time-dependent Mc option
 
@@ -1093,6 +1181,22 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		// - Dump any aftershock parameters that have been computed, and force control enable/disable to be adjusted.
 
 		case PARMGRP_TIME_DEP_OPTION: {
+			if (!( f_sub_enable && f_common_value_enable )) {
+				return;
+			}
+			adjust_enable();
+			report_common_value_change();
+		}
+		break;
+
+
+
+
+		// Alpha equal b selection.
+		// - Adjust enable.
+		// - Report to top-level controller.
+
+		case PARMGRP_ALPHA_EQUALS_B: {
 			if (!( f_sub_enable && f_common_value_enable )) {
 				return;
 			}

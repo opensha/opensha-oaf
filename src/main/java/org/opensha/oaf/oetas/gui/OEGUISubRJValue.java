@@ -446,19 +446,19 @@ public class OEGUISubRJValue extends OEGUIListener {
 
 			x_aValRangeParam = validParam(aValRangeParam);
 			x_aValNumParam = validParam(aValNumParam);
-			gui_controller.validateRange(x_aValRangeParam, x_aValNumParam, "RJ a-value");
+			validateRange(x_aValRangeParam, x_aValNumParam, "RJ a-value");
 
 			// p-values
 
 			x_pValRangeParam = validParam(pValRangeParam);
 			x_pValNumParam = validParam(pValNumParam);
-			gui_controller.validateRange(x_pValRangeParam, x_pValNumParam, "RJ p-value");
+			validateRange(x_pValRangeParam, x_pValNumParam, "RJ p-value");
 
 			// c-values
 
 			x_cValRangeParam = validParam(cValRangeParam);
 			x_cValNumParam = validParam(cValNumParam);
-			gui_controller.validateRange(x_cValRangeParam, x_cValNumParam, "RJ c-value");
+			validateRange(x_cValRangeParam, x_cValNumParam, "RJ c-value");
 
 			int max_grid = 100000;
 			max_grid = max_grid / x_aValNumParam;
@@ -611,7 +611,7 @@ public class OEGUISubRJValue extends OEGUIListener {
 			if (!( f_sub_enable && f_rj_value_enable )) {
 				return;
 			}
-			gui_controller.updateRangeParams(aValRangeParam, aValNumParam, 51, -4.5, -0.5);
+			updateRangeParams(aValRangeParam, aValNumParam, 51, -4.5, -0.5);
 			report_rj_value_change();
 		}
 		break;
@@ -627,7 +627,7 @@ public class OEGUISubRJValue extends OEGUIListener {
 			if (!( f_sub_enable && f_rj_value_enable )) {
 				return;
 			}
-			gui_controller.updateRangeParams(pValRangeParam, pValNumParam, 45, 0.5, 2.0);
+			updateRangeParams(pValRangeParam, pValNumParam, 45, 0.5, 2.0);
 			report_rj_value_change();
 		}
 		break;
@@ -643,7 +643,7 @@ public class OEGUISubRJValue extends OEGUIListener {
 			if (!( f_sub_enable && f_rj_value_enable )) {
 				return;
 			}
-			gui_controller.updateRangeParams(cValRangeParam, cValNumParam, 45, 0.018, 0.018);
+			updateRangeParams(cValRangeParam, cValNumParam, 45, 0.018, 0.018);
 			report_rj_value_change();
 		}
 		break;

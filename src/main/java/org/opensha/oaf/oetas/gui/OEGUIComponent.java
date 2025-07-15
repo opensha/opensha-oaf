@@ -280,6 +280,29 @@ public class OEGUIComponent {
 
 
 
+	// Enumeration of ETAS enable options.
+	
+	public enum EtasEnableOption {
+		AUTO("Auto"),
+		ENABLE("Enable"),
+		DISABLE("Disable"),
+		ENABLE_FIT_ONLY("Enable (Fit Only)");
+		
+		private String label;
+		
+		private EtasEnableOption(String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+
+
 	//----- Support -----
 
 

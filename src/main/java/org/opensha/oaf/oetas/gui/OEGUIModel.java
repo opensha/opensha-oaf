@@ -139,6 +139,7 @@ import org.opensha.oaf.util.catalog.ObsEqkRupFilter;
 import org.opensha.oaf.util.LineConsumerFile;
 import org.opensha.oaf.util.LineSupplierFile;
 import org.opensha.oaf.oetas.OEOrigin;
+import org.opensha.oaf.oetas.env.OEtasParameters;
 
 
 // Operational ETAS GUI - Model implementation.
@@ -860,6 +861,20 @@ public class OEGUIModel extends OEGUIComponent {
 			throw new IllegalStateException ("Access to OEGUIModel.seqSpecParams while in state " + cur_modstate_string());
 		}
 		return aafs_fcparams.seq_spec_params;
+	}
+
+	// The ETAS parameters for the mainshock.
+	// Can be null if there are no ETAS parameters in the firecast parameters.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	public final OEtasParameters get_etasParams () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.get_etasParams while in state " + cur_modstate_string());
+		}
+		if (!( aafs_fcparams.etas_avail )) {
+			return null;
+		}
+		return aafs_fcparams.etas_params;
 	}
 
 	// Magnitude-number distribution of the catalog.

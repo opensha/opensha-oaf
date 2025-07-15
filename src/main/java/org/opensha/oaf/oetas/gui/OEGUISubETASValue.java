@@ -146,10 +146,15 @@ import org.opensha.oaf.aafs.GUICmd;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
+import org.opensha.oaf.oetas.OEConstants;
+import org.opensha.oaf.oetas.util.OEDiscreteRange;
+import org.opensha.oaf.oetas.util.OEDiscreteRangeLogSkew;
+import org.opensha.oaf.oetas.env.OEtasParameters;
+
 import org.json.simple.JSONObject;
 
 
-// Operational ETAS GUI - Sub-controller for ETAS parameter values.
+// Operational RJ & ETAS GUI - Sub-controller for ETAS parameter values.
 // Michael Barall 09/06/2021
 //
 // This is a modeless dialog for entering ETAS parameter values.
@@ -165,11 +170,162 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private static final int PARMGRP_ETAS_EDIT = 801;			// Button to open the ETAS parameter edit dialog
 	private static final int PARMGRP_ETAS_VALUE = 802;			// ETAS parameter value
-	private static final int PARMGRP_RANGE_ETAS_LOG_NMS = 803;	// ETAS parameter range log_nms
-	private static final int PARMGRP_RANGE_ETAS_LOG_N = 804;	// ETAS parameter range log_n
+	private static final int PARMGRP_RANGE_ETAS_N = 804;		// ETAS parameter range n
 	private static final int PARMGRP_RANGE_ETAS_P = 805;		// ETAS parameter range p
-	private static final int PARMGRP_RANGE_ETAS_LOG_C = 806;	// ETAS parameter range log_c
+	private static final int PARMGRP_RANGE_ETAS_C = 806;		// ETAS parameter range c
 	private static final int PARMGRP_ALPHA_EQUALS_B = 807;		// Option to take alpha == b
+	private static final int PARMGRP_RANGE_ETAS_ZAMS = 808;		// ETAS parameter range zmas
+	private static final int PARMGRP_RANGE_ETAS_ZMU = 809;		// ETAS parameter range zmu
+	private static final int PARMGRP_ETAS_ENABLE = 810;			// ETAS forecast enable dropdown
+	private static final int PARMGRP_ETAS_OPTION = 811;			// Button to open the ETAS parameter option dialog
+
+
+
+
+	// Default ranges for ETAS parameters.
+
+	private int def_n_size;
+	private double def_n_min;
+	private double def_n_max;
+
+	private double def_n_skew;
+
+	private int def_p_size;
+	private double def_p_min;
+	private double def_p_max;
+
+	private int def_c_size;
+	private double def_c_min;
+	private double def_c_max;
+
+	private int def_zams_size;
+	private double def_zams_min;
+	private double def_zams_max;
+
+	private boolean def_zams_relative;
+
+	private int def_zmu_size;
+	private double def_zmu_min;
+	private double def_zmu_max;
+
+	private boolean def_f_alpha_eq_b;
+	private double def_alpha_value;
+
+	// Initialize the default ranges using the defaults in OEConstants.
+
+	private void init_default_ranges () {
+
+		OEDiscreteRange def_n_range = OEConstants.def_n_range();
+		def_n_size = def_n_range.get_range_size();
+		def_n_min = def_n_range.get_range_min();
+		def_n_max = def_n_range.get_range_max();
+
+		if (def_n_range instanceof OEDiscreteRangeLogSkew) {
+			def_n_skew = ((OEDiscreteRangeLogSkew)def_n_range).get_range_skew();
+		} else {
+			def_n_skew = 1.0;
+		}
+
+		OEDiscreteRange def_p_range = OEConstants.def_p_range();
+		def_p_size = def_p_range.get_range_size();
+		def_p_min = def_p_range.get_range_min();
+		def_p_max = def_p_range.get_range_max();
+
+		OEDiscreteRange def_c_range = OEConstants.def_c_range();
+		def_c_size = def_c_range.get_range_size();
+		def_c_min = def_c_range.get_range_min();
+		def_c_max = def_c_range.get_range_max();
+
+		OEDiscreteRange def_zams_range = OEConstants.def_zams_range();
+		def_zams_size = def_zams_range.get_range_size();
+		def_zams_min = def_zams_range.get_range_min();
+		def_zams_max = def_zams_range.get_range_max();
+
+		def_zams_relative = OEConstants.def_relative_zams();
+
+		OEDiscreteRange def_zmu_range = OEConstants.def_zmu_range();
+		if (def_zmu_range == null) {
+			def_zmu_size = 1;
+			def_zmu_min = 0.0;
+			def_zmu_max = 0.0;
+		} else {
+			def_zmu_size = def_zmu_range.get_range_size();
+			def_zmu_min = def_zmu_range.get_range_min();
+			def_zmu_max = def_zmu_range.get_range_max();
+		}
+
+		OEDiscreteRange def_alpha_range = OEConstants.def_alpha_range();
+		if (def_alpha_range == null) {
+			def_f_alpha_eq_b = true;
+			def_alpha_value = 1.0;
+		} else {
+			def_f_alpha_eq_b = false;
+			def_alpha_value = def_alpha_range.get_range_middle();
+		}
+
+		return;
+	}
+
+	// Update the default ranges from ETAS parameters.
+	// Use defaults if etas_params is null or ranges are not available.
+
+	private void update_default_ranges (OEtasParameters etas_params) {
+
+		if (!( etas_params != null && etas_params.range_avail )) {
+			init_default_ranges();
+			return;
+		}
+
+		OEDiscreteRange def_n_range = etas_params.n_range;
+		def_n_size = def_n_range.get_range_size();
+		def_n_min = def_n_range.get_range_min();
+		def_n_max = def_n_range.get_range_max();
+
+		if (def_n_range instanceof OEDiscreteRangeLogSkew) {
+			def_n_skew = ((OEDiscreteRangeLogSkew)def_n_range).get_range_skew();
+		} else {
+			def_n_skew = 1.0;
+		}
+
+		OEDiscreteRange def_p_range = etas_params.p_range;
+		def_p_size = def_p_range.get_range_size();
+		def_p_min = def_p_range.get_range_min();
+		def_p_max = def_p_range.get_range_max();
+
+		OEDiscreteRange def_c_range = etas_params.c_range;
+		def_c_size = def_c_range.get_range_size();
+		def_c_min = def_c_range.get_range_min();
+		def_c_max = def_c_range.get_range_max();
+
+		OEDiscreteRange def_zams_range = etas_params.zams_range;
+		def_zams_size = def_zams_range.get_range_size();
+		def_zams_min = def_zams_range.get_range_min();
+		def_zams_max = def_zams_range.get_range_max();
+
+		def_zams_relative = etas_params.relative_zams;
+
+		OEDiscreteRange def_zmu_range = etas_params.zmu_range;
+		if (def_zmu_range == null) {
+			def_zmu_size = 1;
+			def_zmu_min = 0.0;
+			def_zmu_max = 0.0;
+		} else {
+			def_zmu_size = def_zmu_range.get_range_size();
+			def_zmu_min = def_zmu_range.get_range_min();
+			def_zmu_max = def_zmu_range.get_range_max();
+		}
+
+		OEDiscreteRange def_alpha_range = etas_params.alpha_range;
+		if (def_alpha_range == null) {
+			def_f_alpha_eq_b = true;
+			def_alpha_value = 1.0;
+		} else {
+			def_f_alpha_eq_b = false;
+			def_alpha_value = def_alpha_range.get_range_middle();
+		}
+
+		return;
+	}
 
 
 
@@ -177,55 +333,60 @@ public class OEGUISubETASValue extends OEGUIListener {
 	//----- Controls for the ETAS parameter dialog -----
 
 
-	// Range of a-values; two edit boxes containing numbers.
-	// Default is obtained from generic parameters when the data is loaded.
 
-	private RangeParameter lognmsETASValRangeParam;
 
-	private RangeParameter init_lognmsETASValRangeParam () throws GUIEDTException {
-		lognmsETASValRangeParam = new RangeParameter("ETAS log_nms Range", new Range(-2.5, 0.5));
-		register_param (lognmsETASValRangeParam, "lognmsETASValRangeParam", PARMGRP_RANGE_ETAS_LOG_NMS);
-		return lognmsETASValRangeParam;
+	// ETAS enable; dropdown containing an enumeration to select ETAS enable option.
+
+	private EnumParameter<EtasEnableOption> etasEnableParam;
+
+	private EnumParameter<EtasEnableOption> init_etasEnableParam () throws GUIEDTException {
+		etasEnableParam = new EnumParameter<EtasEnableOption>(
+				"ETAS Forecasts", EnumSet.allOf(EtasEnableOption.class), EtasEnableOption.DISABLE, null);
+		etasEnableParam.setInfo("Controls whether ETAS is used to generate forecasts");
+		register_param (etasEnableParam, "etasEnableParam", PARMGRP_ETAS_ENABLE);
+		return etasEnableParam;
 	}
 
 
-	// Number of a-values; edit box containing an integer.
+
+
+	// Range of n-values; two edit boxes containing numbers.
+	// Default is obtained from generic parameters when the data is loaded.
+
+	private RangeParameter nETASValRangeParam;
+
+	private RangeParameter init_nETASValRangeParam () throws GUIEDTException {
+		nETASValRangeParam = new RangeParameter("ETAS n Range", new Range(def_n_min, def_n_max));
+		nETASValRangeParam.setUnits("Log Scale");
+		nETASValRangeParam.setInfo("Branch ratio");
+		register_param (nETASValRangeParam, "nETASValRangeParam", PARMGRP_RANGE_ETAS_N);
+		return nETASValRangeParam;
+	}
+
+
+	// Number of n-values; edit box containing an integer.
 	// Default is obtained from generic parameters when the data is loaded.
 	// The value is forced == 1 when the range is empty, > 1 if the range is non-empty.
 
-	private IntegerParameter lognmsETASValNumParam;
+	private IntegerParameter nETASValNumParam;
 
-	private IntegerParameter init_lognmsETASValNumParam () throws GUIEDTException {
-		lognmsETASValNumParam = new IntegerParameter("ETAS log_nms Number", 1, 10000, Integer.valueOf(51));
-		lognmsETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
-		register_param (lognmsETASValNumParam, "lognmsETASValNumParam", PARMGRP_RANGE_ETAS_LOG_NMS);
-		return lognmsETASValNumParam;
+	private IntegerParameter init_nETASValNumParam () throws GUIEDTException {
+		nETASValNumParam = new IntegerParameter("ETAS n Number", 1, 10000, Integer.valueOf(def_n_size));
+		nETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		register_param (nETASValNumParam, "nETASValNumParam", PARMGRP_RANGE_ETAS_N);
+		return nETASValNumParam;
 	}
 
 
-	// Range of a-values; two edit boxes containing numbers.
-	// Default is obtained from generic parameters when the data is loaded.
+	// ETAS n skew parameter; edit box containing a number.
 
-	private RangeParameter lognETASValRangeParam;
+	private DoubleParameter nETASValSkewParam;
 
-	private RangeParameter init_lognETASValRangeParam () throws GUIEDTException {
-		lognETASValRangeParam = new RangeParameter("ETAS log_n Range", new Range(-2.5, 0.0));
-		register_param (lognETASValRangeParam, "lognETASValRangeParam", PARMGRP_RANGE_ETAS_LOG_N);
-		return lognETASValRangeParam;
-	}
-
-
-	// Number of a-values; edit box containing an integer.
-	// Default is obtained from generic parameters when the data is loaded.
-	// The value is forced == 1 when the range is empty, > 1 if the range is non-empty.
-
-	private IntegerParameter lognETASValNumParam;
-
-	private IntegerParameter init_lognETASValNumParam () throws GUIEDTException {
-		lognETASValNumParam = new IntegerParameter("ETAS log_n Number", 1, 10000, Integer.valueOf(31));
-		lognETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
-		register_param (lognETASValNumParam, "lognETASValNumParam", PARMGRP_RANGE_ETAS_LOG_N);
-		return lognETASValNumParam;
+	private DoubleParameter init_nETASValSkewParam () throws GUIEDTException {
+		nETASValSkewParam = new DoubleParameter("ETAS n Skew", Double.valueOf(def_n_skew));
+		nETASValSkewParam.setInfo("Controls distribution of grid points, 1.0 for uniform, >1.0 for more points at the high end of the range");
+		register_param (nETASValSkewParam, "nETASValSkewParam", PARMGRP_ETAS_VALUE);
+		return nETASValSkewParam;
 	}
 
 
@@ -235,7 +396,9 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private RangeParameter pETASValRangeParam;
 
 	private RangeParameter init_pETASValRangeParam () throws GUIEDTException {
-		pETASValRangeParam = new RangeParameter("ETAS p Range", new Range(0.5, 2.0));
+		pETASValRangeParam = new RangeParameter("ETAS p Range", new Range(def_p_min, def_p_max));
+		pETASValRangeParam.setUnits("Linear Scale");
+		pETASValRangeParam.setInfo("Omori exponent");
 		register_param (pETASValRangeParam, "pETASValRangeParam", PARMGRP_RANGE_ETAS_P);
 		return pETASValRangeParam;
 	}
@@ -248,7 +411,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private IntegerParameter pETASValNumParam;
 
 	private IntegerParameter init_pETASValNumParam () throws GUIEDTException {
-		pETASValNumParam = new IntegerParameter("ETAS p Number", 1, 10000, Integer.valueOf(31));
+		pETASValNumParam = new IntegerParameter("ETAS p Number", 1, 10000, Integer.valueOf(def_p_size));
 		pETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (pETASValNumParam, "pETASValNumParam", PARMGRP_RANGE_ETAS_P);
 		return pETASValNumParam;
@@ -258,12 +421,14 @@ public class OEGUISubETASValue extends OEGUIListener {
 	// Range of c-values; two edit boxes containing numbers.
 	// Default is an empty range obtained from generic parameters when the data is loaded.
 
-	private RangeParameter logcETASValRangeParam;
+	private RangeParameter cETASValRangeParam;
 
-	private RangeParameter init_logcETASValRangeParam () throws GUIEDTException {
-		logcETASValRangeParam = new RangeParameter("ETAS log_c Range", new Range(-5.0, 0.0));
-		register_param (logcETASValRangeParam, "logcETASValRangeParam", PARMGRP_RANGE_ETAS_LOG_C);
-		return logcETASValRangeParam;
+	private RangeParameter init_cETASValRangeParam () throws GUIEDTException {
+		cETASValRangeParam = new RangeParameter("ETAS c Range", new Range(def_c_min, def_c_max));
+		cETASValRangeParam.setUnits("Log Scale");
+		cETASValRangeParam.setInfo("Omori offset, in days");
+		register_param (cETASValRangeParam, "cETASValRangeParam", PARMGRP_RANGE_ETAS_C);
+		return cETASValRangeParam;
 	}
 
 
@@ -271,14 +436,84 @@ public class OEGUISubETASValue extends OEGUIListener {
 	// Default is 1, set when the data is loaded.
 	// The value is forced == 1 when the range is empty, > 1 if the range is non-empty.
 
-	private IntegerParameter logcETASValNumParam;
+	private IntegerParameter cETASValNumParam;
 
-	private IntegerParameter init_logcETASValNumParam () throws GUIEDTException {
-		logcETASValNumParam = new IntegerParameter("ETAS log_c Number", 1, 10000, Integer.valueOf(21));
-		logcETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
-		register_param (logcETASValNumParam, "logcETASValNumParam", PARMGRP_RANGE_ETAS_LOG_C);
-		return logcETASValNumParam;
+	private IntegerParameter init_cETASValNumParam () throws GUIEDTException {
+		cETASValNumParam = new IntegerParameter("ETAS c Number", 1, 10000, Integer.valueOf(def_c_size));
+		cETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		register_param (cETASValNumParam, "cETASValNumParam", PARMGRP_RANGE_ETAS_C);
+		return cETASValNumParam;
 	}
+
+
+	// Range of zamx-values; two edit boxes containing numbers.
+	// Default is obtained from generic parameters when the data is loaded.
+
+	private RangeParameter zamsETASValRangeParam;
+
+	private RangeParameter init_zamsETASValRangeParam () throws GUIEDTException {
+		zamsETASValRangeParam = new RangeParameter("ETAS zams Range", new Range(def_zams_min, def_zams_max));
+		zamsETASValRangeParam.setUnits("Linear Scale");
+		zamsETASValRangeParam.setInfo("Mainshock/foreshock productivity, can be relative to aftershock productivity, or absolute");
+		register_param (zamsETASValRangeParam, "zamsETASValRangeParam", PARMGRP_RANGE_ETAS_ZAMS);
+		return zamsETASValRangeParam;
+	}
+
+
+	// Number of zams-values; edit box containing an integer.
+	// Default is obtained from generic parameters when the data is loaded.
+	// The value is forced == 1 when the range is empty, > 1 if the range is non-empty.
+
+	private IntegerParameter zamsETASValNumParam;
+
+	private IntegerParameter init_zamsETASValNumParam () throws GUIEDTException {
+		zamsETASValNumParam = new IntegerParameter("ETAS zams Number", 1, 10000, Integer.valueOf(def_zams_size));
+		zamsETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		register_param (zamsETASValNumParam, "zamsETASValNumParam", PARMGRP_RANGE_ETAS_ZAMS);
+		return zamsETASValNumParam;
+	}
+
+
+	// Option to use relative value for zams.
+
+	private BooleanParameter zamsETASValRelativeParam;
+
+	private BooleanParameter init_zamsETASValRelativeParam () throws GUIEDTException {
+		zamsETASValRelativeParam = new BooleanParameter("Use relative zams", true);
+		zamsETASValRelativeParam.setInfo("Controls if mainshock productivty is given relative to aftershock productivity");
+		register_param (zamsETASValRelativeParam, "zamsETASValRelativeParam", PARMGRP_ETAS_VALUE);
+		return zamsETASValRelativeParam;
+	}
+
+
+	// Range of zmu-values; two edit boxes containing numbers.
+	// Default is obtained from generic parameters when the data is loaded.
+
+	private RangeParameter zmuETASValRangeParam;
+
+	private RangeParameter init_zmuETASValRangeParam () throws GUIEDTException {
+		zmuETASValRangeParam = new RangeParameter("ETAS zmu Range", new Range(def_zmu_min, def_zmu_max));
+		zmuETASValRangeParam.setUnits("Log Scale");
+		zmuETASValRangeParam.setInfo("Background rate in M3 per day, either a log scale or any single value");
+		register_param (zmuETASValRangeParam, "zmuETASValRangeParam", PARMGRP_RANGE_ETAS_ZMU);
+		return zmuETASValRangeParam;
+	}
+
+
+	// Number of zmu-values; edit box containing an integer.
+	// Default is obtained from generic parameters when the data is loaded.
+	// The value is forced == 1 when the range is empty, > 1 if the range is non-empty.
+
+	private IntegerParameter zmuETASValNumParam;
+
+	private IntegerParameter init_zmuETASValNumParam () throws GUIEDTException {
+		zmuETASValNumParam = new IntegerParameter("ETAS zmu Number", 1, 10000, Integer.valueOf(def_zmu_size));
+		zmuETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		register_param (zmuETASValNumParam, "zmuETASValNumParam", PARMGRP_RANGE_ETAS_ZMU);
+		return zmuETASValNumParam;
+	}
+
+
 
 
 	// Option to use alpha == b.
@@ -287,6 +522,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private BooleanParameter init_alphaEqualsBParam () throws GUIEDTException {
 		alphaEqualsBParam = new BooleanParameter("Use alpha = b", true);
+		alphaEqualsBParam.setInfo("Controls if alpha is fixed equal to the Gutenberg-Richter exponent b");
 		register_param (alphaEqualsBParam, "alphaEqualsBParam", PARMGRP_ALPHA_EQUALS_B);
 		return alphaEqualsBParam;
 	}
@@ -299,6 +535,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private DoubleParameter init_alphaParam () throws GUIEDTException {
 		alphaParam = new DoubleParameter("alpha", 1.0);	// can't use DoubleParameter("alpha", null) because the call would be ambiguous
 		alphaParam.setValue(null);
+		alphaParam.setInfo("The productivity exponent alpha, usually set equal to b");
 		register_param (alphaParam, "alphaParam", PARMGRP_ETAS_VALUE);
 		return alphaParam;
 	}
@@ -309,22 +546,32 @@ public class OEGUISubETASValue extends OEGUIListener {
 	// ETAS parameter value dialog: initialize parameters within the dialog.
 
 	private void init_etasValueDialogParam () throws GUIEDTException {
+
+		init_etasEnableParam();
 		
-		init_lognmsETASValRangeParam();
+		init_nETASValRangeParam();
 		
-		init_lognmsETASValNumParam();
+		init_nETASValNumParam();
 		
-		init_lognETASValRangeParam();
-		
-		init_lognETASValNumParam();
+		init_nETASValSkewParam();
 		
 		init_pETASValRangeParam();
 		
 		init_pETASValNumParam();
 		
-		init_logcETASValRangeParam();
+		init_cETASValRangeParam();
 		
-		init_logcETASValNumParam();
+		init_cETASValNumParam();
+		
+		init_zamsETASValRangeParam();
+		
+		init_zamsETASValNumParam();
+
+		init_zamsETASValRelativeParam();
+		
+		init_zmuETASValRangeParam();
+		
+		init_zmuETASValNumParam();
 
 		init_alphaEqualsBParam();
 
@@ -348,21 +595,20 @@ public class OEGUISubETASValue extends OEGUIListener {
 		boolean f_button_row = false;
 
 		etasValueEditParam.setListTitleText ("ETAS Parameters");
-		etasValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(10, f_button_row, 1));
+		etasValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(12, f_button_row, 0));
 
-		etasValueList.addParameter(lognmsETASValRangeParam);
-		etasValueList.addParameter(lognmsETASValNumParam);
-		etasValueList.addParameter(lognETASValRangeParam);
-		etasValueList.addParameter(lognETASValNumParam);
+		etasValueList.addParameter(nETASValRangeParam);
+		etasValueList.addParameter(nETASValNumParam);
+		etasValueList.addParameter(nETASValSkewParam);
 		etasValueList.addParameter(pETASValRangeParam);
 		etasValueList.addParameter(pETASValNumParam);
-		etasValueList.addParameter(logcETASValRangeParam);
-		etasValueList.addParameter(logcETASValNumParam);
-
-		etasValueList.addParameter(new GUISeparatorParameter("Separator1", gui_top.get_separator_color()));
-
-		etasValueList.addParameter(alphaEqualsBParam);
-		etasValueList.addParameter(alphaParam);
+		etasValueList.addParameter(cETASValRangeParam);
+		etasValueList.addParameter(cETASValNumParam);
+		etasValueList.addParameter(zamsETASValRangeParam);
+		etasValueList.addParameter(zamsETASValNumParam);
+		etasValueList.addParameter(zamsETASValRelativeParam);
+		etasValueList.addParameter(zmuETASValRangeParam);
+		etasValueList.addParameter(zmuETASValNumParam);
 		
 		etasValueEditParam.getEditor().refreshParamEditor();
 	}
@@ -372,12 +618,50 @@ public class OEGUISubETASValue extends OEGUIListener {
 		etasValueList = new ParameterList();
 		etasValueEditParam = new GUIParameterListParameter("ETAS Parameters", etasValueList, "Edit ETAS Params...",
 							"Edit ETAS Params", "ETAS Parameters", null, null, false, gui_top.get_trace_events());
-		etasValueEditParam.setInfo("Set Reasenberg and Jones parameter values");
+		etasValueEditParam.setInfo("Set ETAS parameter values");
 		register_param (etasValueEditParam, "etasValueEditParam", PARMGRP_ETAS_EDIT);
 
 		updateETASValueParamList();
 
 		return etasValueEditParam;
+	}
+
+
+
+
+	// ETAS option edit: button to activate the dialog.
+
+	private ParameterList etasOptionList;			// List of parameters in the dialog
+	private GUIParameterListParameter etasOptionEditParam;
+	
+
+	private void updateETASOptionParamList () throws GUIEDTException {
+		etasOptionList.clear();
+
+		boolean f_button_row = false;
+
+		etasOptionEditParam.setListTitleText ("ETAS Options");
+		etasOptionEditParam.setDialogDimensions (gui_top.get_dialog_dims(2, f_button_row, 1));
+
+		etasOptionList.addParameter(alphaEqualsBParam);
+		etasOptionList.addParameter(alphaParam);
+
+		etasOptionList.addParameter(new GUISeparatorParameter("Separator1", gui_top.get_separator_color()));
+		
+		etasOptionEditParam.getEditor().refreshParamEditor();
+	}
+	
+
+	private GUIParameterListParameter init_etasOptionEditParam () throws GUIEDTException {
+		etasOptionList = new ParameterList();
+		etasOptionEditParam = new GUIParameterListParameter("ETAS Options", etasOptionList, "Edit ETAS Options...",
+							"Edit ETAS Options", "ETAS Options", null, null, false, gui_top.get_trace_events());
+		etasOptionEditParam.setInfo("Set ETAS options");
+		register_param (etasOptionEditParam, "etasOptionEditParam", PARMGRP_ETAS_OPTION);
+
+		updateETASOptionParamList();
+
+		return etasOptionEditParam;
 	}
 
 
@@ -410,35 +694,47 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 		// Enable parameters
 
-		enableParam(lognmsETASValRangeParam, f_etas_value_enable);
-		enableParam(lognmsETASValNumParam, f_etas_value_enable);
-		enableParam(lognETASValRangeParam, f_etas_value_enable);
-		enableParam(lognETASValNumParam, f_etas_value_enable);
+		enableParam(nETASValRangeParam, f_etas_value_enable);
+		enableParam(nETASValNumParam, f_etas_value_enable);
+		enableParam(nETASValSkewParam, f_etas_value_enable);
 		enableParam(pETASValRangeParam, f_etas_value_enable);
 		enableParam(pETASValNumParam, f_etas_value_enable);
-		enableParam(logcETASValRangeParam, f_etas_value_enable);
-		enableParam(logcETASValNumParam, f_etas_value_enable);
+		enableParam(cETASValRangeParam, f_etas_value_enable);
+		enableParam(cETASValNumParam, f_etas_value_enable);
+		enableParam(zamsETASValRangeParam, f_etas_value_enable);
+		enableParam(zamsETASValNumParam, f_etas_value_enable);
+		enableParam(zamsETASValRelativeParam, f_etas_value_enable);
+		enableParam(zmuETASValRangeParam, f_etas_value_enable);
+		enableParam(zmuETASValNumParam, f_etas_value_enable);
 
 		enableParam(alphaEqualsBParam, f_etas_value_enable);
 		enableParam(alphaParam, !f_alpha_eq_b);
 
+		enableParam(etasEnableParam, f_sub_enable);
 		enableParam(etasValueEditParam, f_sub_enable);
+		enableParam(etasOptionEditParam, f_sub_enable);
 
 		// Parameters that are cleared when they are disabled
 
 		if (!( f_etas_value_enable )) {
-			updateParam(lognmsETASValRangeParam, null);
-			updateParam(lognmsETASValNumParam, null);
-			updateParam(lognETASValRangeParam, null);
-			updateParam(lognETASValNumParam, null);
+			updateParam(nETASValRangeParam, null);
+			updateParam(nETASValNumParam, null);
+			updateParam(nETASValSkewParam, null);
 			updateParam(pETASValRangeParam, null);
 			updateParam(pETASValNumParam, null);
-			updateParam(logcETASValRangeParam, null);
-			updateParam(logcETASValNumParam, null);
+			updateParam(cETASValRangeParam, null);
+			updateParam(cETASValNumParam, null);
+			updateParam(zamsETASValRangeParam, null);
+			updateParam(zamsETASValNumParam, null);
+			updateParam(zamsETASValRelativeParam, true);
+			updateParam(zmuETASValRangeParam, null);
+			updateParam(zmuETASValNumParam, null);
 
 			updateParam(alphaEqualsBParam, true);
-
 			updateParam(alphaParam, null);
+		}
+		else {
+			update_etas_value_from_defaults();
 		}
 
 		return;
@@ -458,21 +754,21 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	public static abstract class XferETASValueView {
 
-		// Range of log_nms.
+		// ETAS enable.
+
+		public EtasEnableOption x_etasEnableParam;	// parameter value, checked for validity
+
+		// Range of n.
 	
-		public Range x_lognmsETASValRangeParam;			// parameter value, checked for validity
+		public Range x_nETASValRangeParam;			// parameter value, checked for validity
 
-		// Number of log_nms.
+		// Number of n.
 
-		public int x_lognmsETASValNumParam;				// parameter value, checked for validity
+		public int x_nETASValNumParam;				// parameter value, checked for validity
 
-		// Range of log_n.
-	
-		public Range x_lognETASValRangeParam;			// parameter value, checked for validity
+		// Skew of n.
 
-		// Number of log_n.
-
-		public int x_lognETASValNumParam;				// parameter value, checked for validity
+		public double x_nETASValSkewParam;				// parameter value, checked for validity
 
 		// Range of p.
 	
@@ -482,13 +778,33 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 		public int x_pETASValNumParam;				// parameter value, checked for validity
 
-		// Range of log_c.
+		// Range of c.
 	
-		public Range x_logcETASValRangeParam;			// parameter value, checked for validity
+		public Range x_cETASValRangeParam;			// parameter value, checked for validity
 
-		// Number of log_c.
+		// Number of c.
 
-		public int x_logcETASValNumParam;				// parameter value, checked for validity
+		public int x_cETASValNumParam;				// parameter value, checked for validity
+
+		// Range of zams.
+	
+		public Range x_zamsETASValRangeParam;			// parameter value, checked for validity
+
+		// Number of zams.
+
+		public int x_zamsETASValNumParam;				// parameter value, checked for validity
+
+		// Relative zams.
+
+		public boolean x_zamsETASValRelativeParam;				// parameter value, checked for validity
+
+		// Range of zmu.
+	
+		public Range x_zmuETASValRangeParam;			// parameter value, checked for validity
+
+		// Number of zmu.
+
+		public int x_zmuETASValNumParam;				// parameter value, checked for validity
 
 		// Flag indicating if alpha == b.
 
@@ -546,36 +862,51 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 			xfer_clean();
 
-			// a-values
+			// ETAS enable
 
-			x_lognmsETASValRangeParam = validParam(lognmsETASValRangeParam);
-			x_lognmsETASValNumParam = validParam(lognmsETASValNumParam);
-			gui_controller.validateRange(x_lognmsETASValRangeParam, x_lognmsETASValNumParam, "ETAS log_nms");
+			x_etasEnableParam = validParam(etasEnableParam);
 
-			// a-values
+			// n-values
 
-			x_lognETASValRangeParam = validParam(lognETASValRangeParam);
-			x_lognETASValNumParam = validParam(lognETASValNumParam);
-			gui_controller.validateRange(x_lognETASValRangeParam, x_lognETASValNumParam, "ETAS log_n");
+			x_nETASValRangeParam = validParam(nETASValRangeParam);
+			x_nETASValNumParam = validParam(nETASValNumParam);
+			validateRange(x_nETASValRangeParam, x_nETASValNumParam, "ETAS n");
+
+			x_nETASValSkewParam = validParam(nETASValSkewParam);
 
 			// p-values
 
 			x_pETASValRangeParam = validParam(pETASValRangeParam);
 			x_pETASValNumParam = validParam(pETASValNumParam);
-			gui_controller.validateRange(x_pETASValRangeParam, x_pETASValNumParam, "ETAS p");
+			validateRange(x_pETASValRangeParam, x_pETASValNumParam, "ETAS p");
 
 			// c-values
 
-			x_logcETASValRangeParam = validParam(logcETASValRangeParam);
-			x_logcETASValNumParam = validParam(logcETASValNumParam);
-			gui_controller.validateRange(x_logcETASValRangeParam, x_logcETASValNumParam, "ETAS log_c");
+			x_cETASValRangeParam = validParam(cETASValRangeParam);
+			x_cETASValNumParam = validParam(cETASValNumParam);
+			validateRange(x_cETASValRangeParam, x_cETASValNumParam, "ETAS c");
 
-			int max_grid = 2000000;
-			max_grid = max_grid / x_lognmsETASValNumParam;
-			max_grid = max_grid / x_lognETASValNumParam;
+			// zams-values
+
+			x_zamsETASValRangeParam = validParam(zamsETASValRangeParam);
+			x_zamsETASValNumParam = validParam(zamsETASValNumParam);
+			validateRange(x_zamsETASValRangeParam, x_zamsETASValNumParam, "ETAS zams");
+
+			x_zamsETASValRelativeParam = validParam(zamsETASValRelativeParam);
+
+			// zmu-values
+
+			x_zmuETASValRangeParam = validParam(zmuETASValRangeParam);
+			x_zmuETASValNumParam = validParam(zmuETASValNumParam);
+			validateRange(x_zmuETASValRangeParam, x_zmuETASValNumParam, "ETAS zmu");
+
+			int max_grid = 5000000;
+			max_grid = max_grid / x_nETASValNumParam;
 			max_grid = max_grid / x_pETASValNumParam;
-			max_grid = max_grid / x_logcETASValNumParam;
-			Preconditions.checkState(max_grid > 0, "ETAS parameter search grid exceeds 2,000,000 entries");
+			max_grid = max_grid / x_cETASValNumParam;
+			max_grid = max_grid / x_zamsETASValNumParam;
+			max_grid = max_grid / x_zmuETASValNumParam;
+			Preconditions.checkState(max_grid > 0, "ETAS parameter search grid exceeds 5,000,000 entries");
 
 			// Flag indicating if alpha == b.
 
@@ -620,6 +951,10 @@ public class OEGUISubETASValue extends OEGUIListener {
 	public OEGUISubETASValue (OEGUIListener parent) throws GUIEDTException {
 		super(parent);
 
+		// Initialize default ranges
+
+		init_default_ranges();
+
 		// Default enable state
 
 		f_sub_enable = false;
@@ -629,10 +964,19 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 		init_etasValueDialogParam();
 		init_etasValueEditParam();
+		init_etasOptionEditParam();
 
 		// Set initial enable state
 
 		adjust_enable();
+	}
+
+
+	// Get the ETAS enable drop-down.
+	// The intent is to use this only to insert the control into the client.
+
+	public EnumParameter<EtasEnableOption> get_etasEnableParam () throws GUIEDTException {
+		return etasEnableParam;
 	}
 
 
@@ -641,6 +985,14 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	public GUIParameterListParameter get_etasValueEditParam () throws GUIEDTException {
 		return etasValueEditParam;
+	}
+
+
+	// Get the ETAS parameter option edit button.
+	// The intent is to use this only to insert the control into the client.
+
+	public GUIParameterListParameter get_etasOptionEditParam () throws GUIEDTException {
+		return etasOptionEditParam;
 	}
 
 
@@ -673,26 +1025,35 @@ public class OEGUISubETASValue extends OEGUIListener {
 	// This is called after catalog fetch or load.
 
 	public void update_etas_value_from_model () throws GUIEDTException {
-		//updateParam(lognmsETASValRangeParam, new Range(gui_model.get_seqSpecParams().get_min_a(), gui_model.get_seqSpecParams().get_max_a()));
-		//updateParam(lognmsETASValNumParam, gui_model.get_seqSpecParams().get_num_a());
-		//updateParam(lognETASValRangeParam, new Range(gui_model.get_seqSpecParams().get_min_a(), gui_model.get_seqSpecParams().get_max_a()));
-		//updateParam(lognETASValNumParam, gui_model.get_seqSpecParams().get_num_a());
-		//updateParam(pETASValRangeParam, new Range(gui_model.get_seqSpecParams().get_min_p(), gui_model.get_seqSpecParams().get_max_p()));
-		//updateParam(pETASValNumParam, gui_model.get_seqSpecParams().get_num_p());
-		//updateParam(logcETASValRangeParam, new Range(gui_model.get_seqSpecParams().get_min_c(), gui_model.get_seqSpecParams().get_max_c()));
-		//updateParam(logcETASValNumParam, gui_model.get_seqSpecParams().get_num_c());
 
-		updateParam(lognmsETASValRangeParam, new Range(-2.5, 0.5));
-		updateParam(lognmsETASValNumParam, 51);
-		updateParam(lognETASValRangeParam, new Range(-2.5, 0.0));
-		updateParam(lognETASValNumParam, 31);
-		updateParam(pETASValRangeParam, new Range(0.5, 2.0));
-		updateParam(pETASValNumParam, 31);
-		updateParam(logcETASValRangeParam, new Range(-5.0, 0.0));
-		updateParam(logcETASValNumParam, 21);
+		OEtasParameters etas_params = gui_model.get_etasParams();
 
-		updateParam(alphaEqualsBParam, true);
-		updateParam(alphaParam, 1.0);
+		update_default_ranges (etas_params);
+
+		update_etas_value_from_defaults();
+
+		return;
+	}
+
+
+	// Update ETAS values from the defaults.
+
+	private void update_etas_value_from_defaults () throws GUIEDTException {
+		updateParam(nETASValRangeParam, new Range(def_n_min, def_n_max));
+		updateParam(nETASValNumParam, def_n_size);
+		updateParam(nETASValSkewParam, def_n_skew);
+		updateParam(pETASValRangeParam, new Range(def_p_min, def_p_max));
+		updateParam(pETASValNumParam, def_p_size);
+		updateParam(cETASValRangeParam, new Range(def_c_min, def_c_max));
+		updateParam(cETASValNumParam, def_c_size);
+		updateParam(zamsETASValRangeParam, new Range(def_zams_min, def_zams_max));
+		updateParam(zamsETASValNumParam, def_zams_size);
+		updateParam(zamsETASValRelativeParam, def_zams_relative);
+		updateParam(zmuETASValRangeParam, new Range(def_zmu_min, def_zmu_max));
+		updateParam(zmuETASValNumParam, def_zmu_size);
+
+		updateParam(alphaEqualsBParam, def_f_alpha_eq_b);
+		updateParam(alphaParam, def_alpha_value);
 
 		return;
 	}
@@ -732,6 +1093,35 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 
 
+		// ETAS parameter option button.
+		// - Do nothing.
+
+		case PARMGRP_ETAS_OPTION: {
+			if (!( f_sub_enable )) {
+				return;
+			}
+		}
+		break;
+
+
+
+
+		// ETAS enable option.
+		// - Adjust enable.
+		// - Report to top-level controller.
+
+		case PARMGRP_ETAS_ENABLE: {
+			if (!( f_sub_enable && f_etas_value_enable )) {
+				return;
+			}
+			adjust_enable();
+			report_etas_value_change();
+		}
+		break;
+
+
+
+
 		// ETAS parameter value.
 		// - Report to top-level controller.
 
@@ -746,31 +1136,15 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 
 
-		// ETAS parameter value, log_nms.
+		// ETAS parameter value, n.
 		// - Adjust parameters if needed.
 		// - Report to top-level controller.
 
-		case PARMGRP_RANGE_ETAS_LOG_NMS: {
+		case PARMGRP_RANGE_ETAS_N: {
 			if (!( f_sub_enable && f_etas_value_enable )) {
 				return;
 			}
-			gui_controller.updateRangeParams(lognmsETASValRangeParam, lognmsETASValNumParam, 51, -2.5, 0.5);
-			report_etas_value_change();
-		}
-		break;
-
-
-
-
-		// ETAS parameter value, log_n.
-		// - Adjust parameters if needed.
-		// - Report to top-level controller.
-
-		case PARMGRP_RANGE_ETAS_LOG_N: {
-			if (!( f_sub_enable && f_etas_value_enable )) {
-				return;
-			}
-			gui_controller.updateRangeParams(lognETASValRangeParam, lognETASValNumParam, 31, -2.5, 0.0);
+			updateRangeParams(nETASValRangeParam, nETASValNumParam, def_n_size, def_n_min, def_n_max);
 			report_etas_value_change();
 		}
 		break;
@@ -786,7 +1160,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 			if (!( f_sub_enable && f_etas_value_enable )) {
 				return;
 			}
-			gui_controller.updateRangeParams(pETASValRangeParam, pETASValNumParam, 31, 0.5, 2.0);
+			updateRangeParams(pETASValRangeParam, pETASValNumParam, def_p_size, def_p_min, def_p_max);
 			report_etas_value_change();
 		}
 		break;
@@ -794,15 +1168,15 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 
 
-		// ETAS parameter value, log_c.
+		// ETAS parameter value, c.
 		// - Adjust parameters if needed.
 		// - Report to top-level controller.
 
-		case PARMGRP_RANGE_ETAS_LOG_C: {
+		case PARMGRP_RANGE_ETAS_C: {
 			if (!( f_sub_enable && f_etas_value_enable )) {
 				return;
 			}
-			gui_controller.updateRangeParams(logcETASValRangeParam, logcETASValNumParam, 21, -5.0, 0.0);
+			updateRangeParams(cETASValRangeParam, cETASValNumParam, def_c_size, def_c_min, def_c_max);
 			report_etas_value_change();
 		}
 		break;
@@ -810,16 +1184,48 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 
 
-		// ETAS parameter value, log_c.
+		// ETAS parameter value, zams.
+		// - Adjust parameters if needed.
 		// - Report to top-level controller.
+
+		case PARMGRP_RANGE_ETAS_ZAMS: {
+			if (!( f_sub_enable && f_etas_value_enable )) {
+				return;
+			}
+			updateRangeParams(zamsETASValRangeParam, zamsETASValNumParam, def_zams_size, def_zams_min, def_zams_max);
+			report_etas_value_change();
+		}
+		break;
+
+
+
+
+		// ETAS parameter value, zmu.
+		// - Adjust parameters if needed.
+		// - Report to top-level controller.
+
+		case PARMGRP_RANGE_ETAS_ZMU: {
+			if (!( f_sub_enable && f_etas_value_enable )) {
+				return;
+			}
+			updateRangeParams(zmuETASValRangeParam, zmuETASValNumParam, def_zmu_size, def_zmu_min, def_zmu_max);
+			report_etas_value_change();
+		}
+		break;
+
+
+
+
+		// ETAS parameter value, alpha equals b.
 		// - Adjust enable.
+		// - Report to top-level controller.
 
 		case PARMGRP_ALPHA_EQUALS_B: {
 			if (!( f_sub_enable && f_etas_value_enable )) {
 				return;
 			}
-			report_etas_value_change();
 			adjust_enable();
+			report_etas_value_change();
 		}
 		break;
 
