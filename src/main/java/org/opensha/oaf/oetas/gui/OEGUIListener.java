@@ -4,11 +4,15 @@ import java.util.IdentityHashMap;
 import java.util.function.Predicate;
 
 import javax.swing.SwingUtilities;
+import javax.swing.JComponent;
+import javax.swing.text.JTextComponent;
 
 import org.opensha.commons.exceptions.ConstraintException;
 import org.opensha.commons.exceptions.ParameterException;
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.param.ParameterList;
+import org.opensha.commons.param.editor.ParameterEditor;
+import org.opensha.commons.param.editor.AbstractParameterEditor;
 import org.opensha.commons.param.editor.impl.GriddedParameterListEditor;
 import org.opensha.commons.param.editor.impl.ParameterListEditor;
 import org.opensha.commons.param.event.ParameterChangeEvent;
@@ -288,6 +292,30 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 	// Enable or disable a parameter in the GUI.
 
 	protected <E> void enableParam (Parameter<E> param, boolean enabled) throws GUIEDTException {
+		param.getEditor().setEnabled(enabled);
+		return;
+	}
+
+
+	// DoubleParameter sets both the enabled and editable flags when setEnabled is called, which causes
+	// its behavior when disabled to be different than other parameters.  In particualat, it is grayed,
+	// which makes it very difficult to read the contents.  We work around this by accessing the
+	// text field directly.
+	// Implementation note: The editor is a subclass of AbstractParameterEditor<Double>, but due to
+	// type erasure we need to use the raw type AbstractParameterEditor or maybe the unbounded
+	// wildcard type AbstractParameterEditor<?>..
+
+	protected void enableParam (DoubleParameter param, boolean enabled) throws GUIEDTException {
+		ParameterEditor<Double> editor = param.getEditor();
+		if (editor != null && editor instanceof AbstractParameterEditor) {
+			JComponent widget = ((AbstractParameterEditor)editor).getWidget();
+			if (widget != null && widget instanceof JTextComponent) {
+				JTextComponent text_widget = (JTextComponent)widget;
+				text_widget.setEditable(true);
+				text_widget.setEnabled(enabled);
+				return;
+			}
+		}
 		param.getEditor().setEnabled(enabled);
 		return;
 	}
