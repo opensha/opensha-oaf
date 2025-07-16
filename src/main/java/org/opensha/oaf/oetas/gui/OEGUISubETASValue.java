@@ -129,6 +129,7 @@ import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
+import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.gui.GUIConsoleWindow;
 import org.opensha.oaf.util.gui.GUICalcStep;
 import org.opensha.oaf.util.gui.GUICalcRunnable;
@@ -150,6 +151,9 @@ import org.opensha.oaf.oetas.OEConstants;
 import org.opensha.oaf.oetas.util.OEDiscreteRange;
 import org.opensha.oaf.oetas.util.OEDiscreteRangeLogSkew;
 import org.opensha.oaf.oetas.env.OEtasParameters;
+import org.opensha.oaf.oetas.bay.OEBayFactoryMixedRNPC;
+import org.opensha.oaf.oetas.bay.OEBayFactoryGaussAPC;
+import org.opensha.oaf.oetas.bay.OEBayFactoryUniform;
 
 import org.json.simple.JSONObject;
 
@@ -178,6 +182,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private static final int PARMGRP_RANGE_ETAS_ZMU = 809;		// ETAS parameter range zmu
 	private static final int PARMGRP_ETAS_ENABLE = 810;			// ETAS forecast enable dropdown
 	private static final int PARMGRP_ETAS_OPTION = 811;			// Button to open the ETAS parameter option dialog
+	private static final int PARMGRP_ETAS_MODEL = 812;			// Option to select model
+	private static final int PARMGRP_ETAS_PRIOR = 813;			// Option to select prior
 
 
 
@@ -330,6 +336,108 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 
 
+	// Default values for model selection
+
+	private EtasModelOption def_etas_model;
+	private double def_bay_weight;
+
+	// Initialize from OEConstants.
+
+	private void init_default_model () {
+		def_etas_model = EtasModelOption.AUTO;
+		def_bay_weight = OEConstants.BAY_WT_BAYESIAN;
+		return;
+	}
+
+	// Initialize from ETAS parameters.
+
+	private boolean is_weight_bay (double weight) {
+		return (Math.abs (weight - OEConstants.BAY_WT_BAYESIAN) <= 0.0001);
+	}
+
+	private boolean is_weight_seq (double weight) {
+		return (Math.abs (weight - OEConstants.BAY_WT_SEQ_SPEC) <= 0.0001);
+	}
+
+	private boolean is_weight_gen (double weight) {
+		return (Math.abs (weight - OEConstants.BAY_WT_GENERIC) <= 0.0001);
+	}
+
+	private void update_default_model (OEtasParameters etas_params) {
+
+		if (!( etas_params != null && etas_params.bay_weight_avail )) {
+			init_default_model();
+			return;
+		}
+
+		// If the bay_weight and early_bay_weight are Bayesian and generic, assume AUTO
+
+		if (is_weight_bay(etas_params.bay_weight) && is_weight_gen(etas_params.early_bay_weight)) {
+			def_etas_model = EtasModelOption.AUTO;
+			def_bay_weight = OEConstants.BAY_WT_BAYESIAN;
+		}
+		else if (is_weight_bay(etas_params.bay_weight)) {
+			def_etas_model = EtasModelOption.BAYESIAN;
+			def_bay_weight = OEConstants.BAY_WT_BAYESIAN;
+		}
+		else if (is_weight_seq(etas_params.bay_weight)) {
+			def_etas_model = EtasModelOption.SEQSPEC;
+			def_bay_weight = OEConstants.BAY_WT_SEQ_SPEC;
+		}
+		else if (is_weight_gen(etas_params.bay_weight)) {
+			def_etas_model = EtasModelOption.GENERIC;
+			def_bay_weight = OEConstants.BAY_WT_GENERIC;
+		}
+		else {
+			def_etas_model = EtasModelOption.CUSTOM;
+			def_bay_weight = SimpleUtils.clip_max_min (0.0, 2.0, etas_params.bay_weight);
+		}
+
+		return;
+	}
+
+
+
+
+	// Default values for Bayesian prior.
+
+	private EtasPriorOption def_etas_prior;
+
+	// Initialize from OEConstants.
+
+	private void init_default_prior () {
+		def_etas_prior = EtasPriorOption.MIXED;
+		return;
+	}
+
+	// Initialize from ETAS parameters.
+
+	private void update_default_prior (OEtasParameters etas_params) {
+
+		if (!( etas_params != null && etas_params.bay_prior_avail )) {
+			init_default_prior();
+			return;
+		}
+
+		if (etas_params.bay_factory instanceof OEBayFactoryMixedRNPC) {
+			def_etas_prior = EtasPriorOption.MIXED;
+		}
+		else if (etas_params.bay_factory instanceof OEBayFactoryGaussAPC) {
+			def_etas_prior = EtasPriorOption.GAUSSIAN;
+		}
+		else if (etas_params.bay_factory instanceof OEBayFactoryUniform) {
+			def_etas_prior = EtasPriorOption.UNIFORM;
+		}
+		else {
+			def_etas_prior = EtasPriorOption.MIXED;
+		}
+
+		return;
+	}
+
+
+
+
 	//----- Controls for the ETAS parameter dialog -----
 
 
@@ -341,7 +449,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private EnumParameter<EtasEnableOption> init_etasEnableParam () throws GUIEDTException {
 		etasEnableParam = new EnumParameter<EtasEnableOption>(
-				"ETAS Forecasts", EnumSet.allOf(EtasEnableOption.class), EtasEnableOption.DISABLE, null);
+				"ETAS Forecasts", EnumSet.allOf(EtasEnableOption.class), EtasEnableOption.AUTO, null);
 		etasEnableParam.setInfo("Controls whether ETAS is used to generate forecasts");
 		register_param (etasEnableParam, "etasEnableParam", PARMGRP_ETAS_ENABLE);
 		return etasEnableParam;
@@ -516,6 +624,45 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 
 
+	// ETAS model; dropdown containing an enumeration to select ETAS enable option.
+
+	private EnumParameter<EtasModelOption> etasModelParam;
+
+	private EnumParameter<EtasModelOption> init_etasModelParam () throws GUIEDTException {
+		etasModelParam = new EnumParameter<EtasModelOption>(
+				"ETAS Model", EnumSet.allOf(EtasModelOption.class), def_etas_model, null);
+		etasModelParam.setInfo("Controls the model used to generate the ETAS forecast");
+		register_param (etasModelParam, "etasModelParam", PARMGRP_ETAS_MODEL);
+		return etasModelParam;
+	}
+
+
+	// ETAS custom Bayesian weight; edit box containing a number.
+
+	private DoubleParameter etasBayWeightParam;
+
+	private DoubleParameter init_etasBayWeightParam () throws GUIEDTException {
+		etasBayWeightParam = new DoubleParameter("ETAS Model Weight", 0.0, 2.0, Double.valueOf(def_bay_weight));
+		etasBayWeightParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		etasBayWeightParam.setInfo("Selects the model on a continuous scale: 0.0 = Sequence Specific, 1.0 = Bayesian, 2.0 = Generic");
+		register_param (etasBayWeightParam, "etasBayWeightParam", PARMGRP_ETAS_VALUE);
+		return etasBayWeightParam;
+	}
+
+
+	// ETAS prior; dropdown containing an enumeration to select ETAS enable option.
+
+	private EnumParameter<EtasPriorOption> etasPriorParam;
+
+	private EnumParameter<EtasPriorOption> init_etasPriorParam () throws GUIEDTException {
+		etasPriorParam = new EnumParameter<EtasPriorOption>(
+				"ETAS Prior", EnumSet.allOf(EtasPriorOption.class), def_etas_prior, null);
+		etasPriorParam.setInfo("Selects the Bayesian prior used to generate the ETAS forecast");
+		register_param (etasPriorParam, "etasPriorParam", PARMGRP_ETAS_PRIOR);
+		return etasPriorParam;
+	}
+
+
 	// Option to use alpha == b.
 
 	private BooleanParameter alphaEqualsBParam;
@@ -572,6 +719,12 @@ public class OEGUISubETASValue extends OEGUIListener {
 		init_zmuETASValRangeParam();
 		
 		init_zmuETASValNumParam();
+
+		init_etasModelParam();
+
+		init_etasBayWeightParam();
+
+		init_etasPriorParam();
 
 		init_alphaEqualsBParam();
 
@@ -641,12 +794,19 @@ public class OEGUISubETASValue extends OEGUIListener {
 		boolean f_button_row = false;
 
 		etasOptionEditParam.setListTitleText ("ETAS Options");
-		etasOptionEditParam.setDialogDimensions (gui_top.get_dialog_dims(2, f_button_row, 1));
+		etasOptionEditParam.setDialogDimensions (gui_top.get_dialog_dims(5, f_button_row, 2));
+
+		etasOptionList.addParameter(etasModelParam);
+		etasOptionList.addParameter(etasBayWeightParam);
+
+		etasOptionList.addParameter(new GUISeparatorParameter("Separator1", gui_top.get_separator_color()));
+
+		etasOptionList.addParameter(etasPriorParam);
+
+		etasOptionList.addParameter(new GUISeparatorParameter("Separator2", gui_top.get_separator_color()));
 
 		etasOptionList.addParameter(alphaEqualsBParam);
 		etasOptionList.addParameter(alphaParam);
-
-		etasOptionList.addParameter(new GUISeparatorParameter("Separator1", gui_top.get_separator_color()));
 		
 		etasOptionEditParam.getEditor().refreshParamEditor();
 	}
@@ -710,6 +870,14 @@ public class OEGUISubETASValue extends OEGUIListener {
 		enableParam(alphaEqualsBParam, f_etas_value_enable);
 		enableParam(alphaParam, !f_alpha_eq_b);
 
+		enableParam(etasModelParam, f_etas_value_enable);
+		if (f_etas_value_enable) {
+			adjust_for_model_option();
+		} else {
+			enableParam(etasBayWeightParam, f_etas_value_enable);
+		}
+		enableParam(etasPriorParam, f_etas_value_enable);
+
 		enableParam(etasEnableParam, f_sub_enable);
 		enableParam(etasValueEditParam, f_sub_enable);
 		enableParam(etasOptionEditParam, f_sub_enable);
@@ -732,9 +900,57 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 			updateParam(alphaEqualsBParam, true);
 			updateParam(alphaParam, null);
+			updateParam(etasModelParam, EtasModelOption.AUTO);
+			updateParam(etasBayWeightParam, null);
+			updateParam(etasPriorParam, EtasPriorOption.MIXED);
 		}
-		else {
-			update_etas_value_from_defaults();
+
+		return;
+	}
+
+
+	// Adjust enable/disable and values for the current model option.
+	// The enable status and value of the Bayesian weight is adjusted for the model selected.
+
+	private void adjust_for_model_option () throws GUIEDTException {
+
+		EtasModelOption model_option = validParam(etasModelParam);
+		switch (model_option) {
+
+		case AUTO: {
+			enableParam(etasBayWeightParam, false);
+			updateParam(etasBayWeightParam, null);
+		}
+		break;
+
+		case BAYESIAN: {
+			enableParam(etasBayWeightParam, false);
+			updateParam(etasBayWeightParam, OEConstants.BAY_WT_BAYESIAN);
+		}
+		break;
+
+		case SEQSPEC: {
+			enableParam(etasBayWeightParam, false);
+			updateParam(etasBayWeightParam, OEConstants.BAY_WT_SEQ_SPEC);
+		}
+		break;
+
+		case GENERIC: {
+			enableParam(etasBayWeightParam, false);
+			updateParam(etasBayWeightParam, OEConstants.BAY_WT_GENERIC);
+		}
+		break;
+
+		case CUSTOM: {
+			enableParam(etasBayWeightParam, true);
+			if (!( definedParam(etasBayWeightParam) )) {
+				updateParam(etasBayWeightParam, OEConstants.BAY_WT_BAYESIAN);
+			}
+		}
+		break;
+
+		default:
+			throw new IllegalArgumentException ("OEGUISubETASValue.adjust_for_model_option: Invalid ETAS model option");
 		}
 
 		return;
@@ -813,6 +1029,18 @@ public class OEGUISubETASValue extends OEGUIListener {
 		// Value of alpha, present if x_alphaEqualsBParam is false.
 
 		public double x_alphaParam;				// parameter value, checked for validity
+
+		// Model selection.
+
+		public EtasModelOption x_etasModelParam;	// parameter value, checked for validity
+
+		// Bayesian weight, present if x_etasModelParam is EtasModelOption.CUSTOM.
+
+		public double x_etasBayWeightParam;			// parameter value, checked for validity
+
+		// ETAS prior.
+
+		public EtasPriorOption x_etasPriorParam;	// parameter value, checked for validity
 
 		// Get the implementation class.
 
@@ -918,6 +1146,20 @@ public class OEGUISubETASValue extends OEGUIListener {
 				x_alphaParam = validParam(alphaParam);
 			}
 
+			// Model selection.
+
+			x_etasModelParam = validParam(etasModelParam);
+
+			// Bayesian weight, present if x_etasModelParam is EtasModelOption.CUSTOM.
+
+			if (x_etasModelParam == EtasModelOption.CUSTOM) {
+				x_etasBayWeightParam = validParam(etasBayWeightParam);
+			}
+
+			// ETAS prior.
+
+			x_etasPriorParam = validParam(etasPriorParam);
+
 			return this;
 		}
 
@@ -951,9 +1193,11 @@ public class OEGUISubETASValue extends OEGUIListener {
 	public OEGUISubETASValue (OEGUIListener parent) throws GUIEDTException {
 		super(parent);
 
-		// Initialize default ranges
+		// Initialize default ranges, model, prior
 
 		init_default_ranges();
+		init_default_model();
+		init_default_prior();
 
 		// Default enable state
 
@@ -969,6 +1213,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 		// Set initial enable state
 
 		adjust_enable();
+		update_etas_value_from_defaults();
 	}
 
 
@@ -1029,6 +1274,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 		OEtasParameters etas_params = gui_model.get_etasParams();
 
 		update_default_ranges (etas_params);
+		update_default_model (etas_params);
+		update_default_prior (etas_params);
 
 		update_etas_value_from_defaults();
 
@@ -1054,6 +1301,13 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 		updateParam(alphaEqualsBParam, def_f_alpha_eq_b);
 		updateParam(alphaParam, def_alpha_value);
+		updateParam(etasModelParam, def_etas_model);
+		if (def_etas_model == EtasModelOption.AUTO) {
+			updateParam(etasBayWeightParam, null);
+		} else {
+			updateParam(etasBayWeightParam, def_bay_weight);
+		}
+		updateParam(etasPriorParam, def_etas_prior);
 
 		return;
 	}
@@ -1225,6 +1479,36 @@ public class OEGUISubETASValue extends OEGUIListener {
 				return;
 			}
 			adjust_enable();
+			report_etas_value_change();
+		}
+		break;
+
+
+
+
+		// ETAS parameter value, model selection.
+		// - Adjust enable.
+		// - Report to top-level controller.
+
+		case PARMGRP_ETAS_MODEL: {
+			if (!( f_sub_enable && f_etas_value_enable )) {
+				return;
+			}
+			adjust_enable();
+			report_etas_value_change();
+		}
+		break;
+
+
+
+
+		// ETAS parameter value, Bayesian prior selection.
+		// - Report to top-level controller.
+
+		case PARMGRP_ETAS_PRIOR: {
+			if (!( f_sub_enable && f_etas_value_enable )) {
+				return;
+			}
 			report_etas_value_change();
 		}
 		break;

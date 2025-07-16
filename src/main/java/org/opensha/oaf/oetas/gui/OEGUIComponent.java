@@ -126,8 +126,10 @@ public class OEGUIComponent {
 		PUBLISHED_FORECAST("Published Forecast"),
 		MAINSHOCK_ONLY("Mainshock Only"),
 		DOWNLOAD_FILE("Download File"),
-		RJ_SIMULATION("RJ Simulation"),
-		ETAS_SIMULATION("ETAS Simulation");
+		//RJ_SIMULATION("RJ Simulation"),
+		//ETAS_SIMULATION("ETAS Simulation");
+		RJ_SIMULATION("Placeholder 1"),
+		ETAS_SIMULATION("Placeholder 2");
 		
 		private String name;
 		
@@ -291,6 +293,52 @@ public class OEGUIComponent {
 		private String label;
 		
 		private EtasEnableOption(String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+
+
+	// Enumeration of ETAS prior options.
+	
+	public enum EtasPriorOption {
+		MIXED("Mixed/Hierarchical"),
+		GAUSSIAN("Gaussian"),
+		UNIFORM("Uniform");
+		
+		private String label;
+		
+		private EtasPriorOption(String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+
+
+	// Enumeration of ETAS model options.
+	
+	public enum EtasModelOption {
+		AUTO("Auto"),
+		BAYESIAN("Bayesian"),
+		SEQSPEC("Sequence Specific"),
+		GENERIC("Generic"),
+		CUSTOM("Custom Weight");
+		
+		private String label;
+		
+		private EtasModelOption(String label) {
 			this.label = label;
 		}
 		

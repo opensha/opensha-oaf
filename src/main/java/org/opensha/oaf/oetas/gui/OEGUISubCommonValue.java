@@ -173,7 +173,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private static final int PARMGRP_COMPUTE_B = 606;		// Button to compute sequence-specific b-value
 	private static final int PARMGRP_B_VALUE = 607;			// b-value
 	private static final int PARMGRP_TIME_DEP_OPTION = 608;	// Option for time-dependent magnitude of completeness
-	private static final int PARMGRP_ALPHA_EQUALS_B = 609;	// Option to take alpha == b
+//	private static final int PARMGRP_ALPHA_EQUALS_B = 609;	// Option to take alpha == b
 
 
 
@@ -315,27 +315,55 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	}
 
 
-	// Option to use alpha == b.
+//	// Option to use alpha == b.
+//
+//	private BooleanParameter alphaEqualsBParam;
+//
+//	private BooleanParameter init_alphaEqualsBParam () throws GUIEDTException {
+//		alphaEqualsBParam = new BooleanParameter("Use alpha = b", true);
+//		register_param (alphaEqualsBParam, "alphaEqualsBParam", PARMGRP_ALPHA_EQUALS_B);
+//		return alphaEqualsBParam;
+//	}
 
-	private BooleanParameter alphaEqualsBParam;
 
-	private BooleanParameter init_alphaEqualsBParam () throws GUIEDTException {
-		alphaEqualsBParam = new BooleanParameter("Use alpha = b", true);
-		register_param (alphaEqualsBParam, "alphaEqualsBParam", PARMGRP_ALPHA_EQUALS_B);
-		return alphaEqualsBParam;
+//	// ETAS alpha parameter; edit box containing a number.
+//
+//	private DoubleParameter alphaParam;
+//
+//	private DoubleParameter init_alphaParam () throws GUIEDTException {
+//		alphaParam = new DoubleParameter("alpha", 0.0, 3.0, Double.valueOf(1.0));
+//		alphaParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+//		alphaParam.setValue(null);
+//		register_param (alphaParam, "alphaParam", PARMGRP_COM_VALUE);
+//		return alphaParam;
+//	}
+
+
+	// Fitting start inset in days; edit box containing a number.
+
+	private DoubleParameter fitStartInsetParam;
+
+	private DoubleParameter init_fitStartInsetParam () throws GUIEDTException {
+		fitStartInsetParam = new DoubleParameter("Fit Start Inset", 0.0, 3650.0, Double.valueOf(0.0));
+		fitStartInsetParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		fitStartInsetParam.setUnits("Days");
+		fitStartInsetParam.setInfo("Time after mainshock to begin fitting parameters");
+		register_param (fitStartInsetParam, "fitStartInsetParam", PARMGRP_COM_VALUE);
+		return fitStartInsetParam;
 	}
 
 
-	// ETAS alpha parameter; edit box containing a number.
+	// Fitting end inset in days; edit box containing a number.
 
-	private DoubleParameter alphaParam;
+	private DoubleParameter fitEndInsetParam;
 
-	private DoubleParameter init_alphaParam () throws GUIEDTException {
-		alphaParam = new DoubleParameter("alpha", 0.0, 3.0, Double.valueOf(1.0));
-		alphaParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
-		alphaParam.setValue(null);
-		register_param (alphaParam, "alphaParam", PARMGRP_COM_VALUE);
-		return alphaParam;
+	private DoubleParameter init_fitEndInsetParam () throws GUIEDTException {
+		fitEndInsetParam = new DoubleParameter("Fit End Inset", 0.0, 365.0, Double.valueOf(0.0));
+		fitEndInsetParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		fitEndInsetParam.setUnits("Days");
+		fitEndInsetParam.setInfo("Time before end of data to stop fitting parameters");
+		register_param (fitEndInsetParam, "fitEndInsetParam", PARMGRP_COM_VALUE);
+		return fitEndInsetParam;
 	}
 
 
@@ -363,9 +391,13 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		
 		init_bParam();
 
-		init_alphaEqualsBParam();
+		//init_alphaEqualsBParam();
 
-		init_alphaParam();
+		//init_alphaParam();
+
+		init_fitStartInsetParam();
+
+		init_fitEndInsetParam();
 
 		return;
 	}
@@ -405,8 +437,11 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		commonValueList.addParameter(new GUISeparatorParameter("Separator3", gui_top.get_separator_color()));
 
-		commonValueList.addParameter(alphaEqualsBParam);
-		commonValueList.addParameter(alphaParam);
+		//commonValueList.addParameter(alphaEqualsBParam);
+		//commonValueList.addParameter(alphaParam);
+
+		commonValueList.addParameter(fitStartInsetParam);
+		commonValueList.addParameter(fitEndInsetParam);
 		
 		commonValueEditParam.getEditor().refreshParamEditor();
 	}
@@ -445,12 +480,12 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private void adjust_enable () throws GUIEDTException {
 
-		// Get flag indicating if alpha == b is forced
-
-		boolean f_alpha_eq_b = true;
-		if (f_common_value_enable) {
-			f_alpha_eq_b = validParam(alphaEqualsBParam);
-		}
+		//// Get flag indicating if alpha == b is forced
+		//
+		//boolean f_alpha_eq_b = true;
+		//if (f_common_value_enable) {
+		//	f_alpha_eq_b = validParam(alphaEqualsBParam);
+		//}
 
 		// Enable parameters
 
@@ -470,8 +505,11 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		enableParam(computeBButton, f_common_value_enable);
 		enableParam(bParam, f_common_value_enable);
 
-		enableParam(alphaEqualsBParam, f_common_value_enable);
-		enableParam(alphaParam, !f_alpha_eq_b);
+		//enableParam(alphaEqualsBParam, f_common_value_enable);
+		//enableParam(alphaParam, !f_alpha_eq_b);
+
+		enableParam(fitStartInsetParam, f_common_value_enable);
+		enableParam(fitEndInsetParam, f_common_value_enable);
 
 		enableParam(commonValueEditParam, f_sub_enable);
 
@@ -488,17 +526,20 @@ public class OEGUISubCommonValue extends OEGUIListener {
 			updateParam(mcParam, null);
 			updateParam(bParam, null);
 
-			updateParam(alphaEqualsBParam, true);
+			//updateParam(alphaEqualsBParam, true);
 
-			updateParam(alphaParam, null);
+			//updateParam(alphaParam, null);
+
+			updateParam(fitStartInsetParam, null);
+			updateParam(fitEndInsetParam, null);
 		}
-		else {
-			if (!( f_alpha_eq_b )) {
-				if (!( definedParam(alphaParam) )) {
-					updateParam(alphaParam, 1.0);
-				}
-			}
-		}
+		//else {
+		//	if (!( f_alpha_eq_b )) {
+		//		if (!( definedParam(alphaParam) )) {
+		//			updateParam(alphaParam, 1.0);
+		//		}
+		//	}
+		//}
 
 		return;
 	}
@@ -612,13 +653,21 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		public double x_mCatParam;				// parameter value, checked for validity
 
-		// Flag indicating if alpha == b.
+		//// Flag indicating if alpha == b.
+		//
+		//public boolean x_alphaEqualsBParam;		// parameter value, checked for validity
+		//
+		//// Value of alpha, present if x_alphaEqualsBParam is false.
+		//
+		//public double x_alphaParam;				// parameter value, checked for validity
 
-		public boolean x_alphaEqualsBParam;		// parameter value, checked for validity
+		// Fitting start inset.
 
-		// Value of alpha, present if x_alphaEqualsBParam is false.
+		public double x_fitStartInsetParam;		// parameter value, checked for validity
 
-		public double x_alphaParam;				// parameter value, checked for validity
+		// Fitting end inset.
+
+		public double x_fitEndInsetParam;		// parameter value, checked for validity
 
 		// Get the implementation class.
 
@@ -723,15 +772,23 @@ public class OEGUISubCommonValue extends OEGUIListener {
 				throw new IllegalArgumentException ("OEGUISubCommonValue.XferCommonValueImpl.xfer_load: Invalid magnitude of completeness option");
 			}
 
-			// Flag indicating if alpha == b.
+			//// Flag indicating if alpha == b.
+			//
+			//x_alphaEqualsBParam = validParam(alphaEqualsBParam);
+			//
+			//// Value of alpha, present if x_alphaEqualsBParam is false.
+			//
+			//if (!( x_alphaEqualsBParam )) {
+			//	x_alphaParam = validParam(alphaParam);
+			//}
 
-			x_alphaEqualsBParam = validParam(alphaEqualsBParam);
+			// Fitting start inset
 
-			// Value of alpha, present if x_alphaEqualsBParam is false.
+			x_fitStartInsetParam = validParam(fitStartInsetParam);
 
-			if (!( x_alphaEqualsBParam )) {
-				x_alphaParam = validParam(alphaParam);
-			}
+			// Fitting end inset
+
+			x_fitEndInsetParam = validParam(fitEndInsetParam);
 
 			return this;
 		}
@@ -742,11 +799,11 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		@Override
 		public void xfer_store () throws GUIEDTException {
 
-			// If we're forcing alpha == b, then update alpha with b-value from the model
-
-			if (x_alphaEqualsBParam) {
-				updateParam(alphaParam, gui_model.get_cat_bParam());
-			}
+			//// If we're forcing alpha == b, then update alpha with b-value from the model
+			//
+			//if (x_alphaEqualsBParam) {
+			//	updateParam(alphaParam, gui_model.get_cat_bParam());
+			//}
 
 			return;
 		}
@@ -986,10 +1043,15 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		updateParam(mCatParam, gui_model.get_magCompParams().get_magCat());
 
-		// Alpha [TODO: Read from ETAS parameters]
+		//// Alpha [TODO: Read from ETAS parameters]
+		//
+		//updateParam(alphaEqualsBParam, true);
+		//updateParam(alphaParam, 1.0);
 
-		updateParam(alphaEqualsBParam, true);
-		updateParam(alphaParam, 1.0);
+		// Fitting start and end insets [TODO: Read from model]
+
+		updateParam(fitStartInsetParam, 0.0);
+		updateParam(fitEndInsetParam, 0.0);
 
 		// Need to adjust enable to pick up enable state corresponding to time-dependent Mc option
 
@@ -1192,18 +1254,18 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 
 
-		// Alpha equal b selection.
-		// - Adjust enable.
-		// - Report to top-level controller.
-
-		case PARMGRP_ALPHA_EQUALS_B: {
-			if (!( f_sub_enable && f_common_value_enable )) {
-				return;
-			}
-			adjust_enable();
-			report_common_value_change();
-		}
-		break;
+		//// Alpha equal b selection.
+		//// - Adjust enable.
+		//// - Report to top-level controller.
+		//
+		//case PARMGRP_ALPHA_EQUALS_B: {
+		//	if (!( f_sub_enable && f_common_value_enable )) {
+		//		return;
+		//	}
+		//	adjust_enable();
+		//	report_common_value_change();
+		//}
+		//break;
 
 
 
