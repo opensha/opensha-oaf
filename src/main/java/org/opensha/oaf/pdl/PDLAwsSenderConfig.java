@@ -85,6 +85,10 @@ public class PDLAwsSenderConfig implements Marshalable {
 		return ((sendProductPath.isEmpty()) ? SEND_PRODUCT_PATH_DEFAULT : sendProductPath);
 	}
 
+	protected boolean include_sendProductPath() {
+		return !(sendProductPath.isEmpty());
+	}
+
 
 	// Relative path to get URLs for uploading files (empty string selects default).
 
@@ -98,6 +102,10 @@ public class PDLAwsSenderConfig implements Marshalable {
 		return ((getUploadUrlsPath.isEmpty()) ? GET_UPLOAD_URLS_PATH_DEFAULT : getUploadUrlsPath);
 	}
 
+	protected boolean include_getUploadUrlsPathh() {
+		return !(getUploadUrlsPath.isEmpty());
+	}
+
 
 	// Content format to post products (empty string selects default).
 
@@ -109,6 +117,10 @@ public class PDLAwsSenderConfig implements Marshalable {
 
 	protected String get_contentFormat() {
 		return ((contentFormat.isEmpty()) ? DEFAULT_CONTENT_FORMAT : contentFormat);
+	}
+
+	protected boolean include_contentFormat() {
+		return !(contentFormat.isEmpty());
 	}
 
 
@@ -143,14 +155,20 @@ public class PDLAwsSenderConfig implements Marshalable {
 		keys.add (SIGN_PRODUCTS_PROPERTY);
 		props.setProperty (SIGN_PRODUCTS_PROPERTY, Boolean.toString(f_signing));
 
-		keys.add (SEND_PRODUCT_PATH_PROPERTY);
-		props.setProperty (SEND_PRODUCT_PATH_PROPERTY, get_sendProductPath());
+		if (include_sendProductPath()) {
+			keys.add (SEND_PRODUCT_PATH_PROPERTY);
+			props.setProperty (SEND_PRODUCT_PATH_PROPERTY, get_sendProductPath());
+		}
 
-		keys.add (GET_UPLOAD_URLS_PATH_PROPERTY);
-		props.setProperty (GET_UPLOAD_URLS_PATH_PROPERTY, get_getUploadUrlsPath());
+		if (include_getUploadUrlsPathh()) {
+			keys.add (GET_UPLOAD_URLS_PATH_PROPERTY);
+			props.setProperty (GET_UPLOAD_URLS_PATH_PROPERTY, get_getUploadUrlsPath());
+		}
 
-		keys.add (CONTENT_FORMAT_PROPERTY);
-		props.setProperty (CONTENT_FORMAT_PROPERTY, get_contentFormat());
+		if (include_contentFormat()) {
+			keys.add (CONTENT_FORMAT_PROPERTY);
+			props.setProperty (CONTENT_FORMAT_PROPERTY, get_contentFormat());
+		}
 
 		return;
 	}
@@ -276,6 +294,26 @@ public class PDLAwsSenderConfig implements Marshalable {
 		sendProductPath = TEST_SEND_PRODUCT_PATH;
 		getUploadUrlsPath = TEST_GET_UPLOAD_URLS_PATH;
 		contentFormat = TEST_CONTENT_FORMAT;
+		return;
+	}
+
+
+
+
+	// Set to test values.
+	// Parameters:
+	//  hubaddr = Hub address, not ending in slash.
+	//  subpath = Hub sub-path, beginning but not ending in slash, or empty to use defaults.
+
+	public final void setup_test_2 (String hubaddr, String subpath) {
+		connectTimeout = TEST_CONNECT_TIMEOUT;
+		url = hubaddr;
+		signProducts = TEST_SIGN_PRODUCTS;
+		if (!( subpath.isEmpty() )) {
+			sendProductPath = subpath + TEST_SEND_PRODUCT_PATH.substring (TEST_SEND_PRODUCT_PATH.lastIndexOf ("/"));
+			getUploadUrlsPath = subpath + TEST_GET_UPLOAD_URLS_PATH.substring (TEST_GET_UPLOAD_URLS_PATH.lastIndexOf ("/"));
+			contentFormat = TEST_CONTENT_FORMAT;
+		}
 		return;
 	}
 
@@ -569,7 +607,113 @@ public class PDLAwsSenderConfig implements Marshalable {
 			System.out.println ();
 
 			if (f_log) {
-				install_log_handler (Level.FINE);
+				install_log_handler (Level.FINER);
+			}
+
+			//AwsProductSender sender = sender_config.make_sender (TEST_PRIVATE_KEY);	// throws FileNotFoundException
+			AwsProductSender sender = sender_config.make_sender ("");
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2  hubaddr  subpath  f_log
+		// Same as test #1 except you can enter the hub address and sub-path (see setup_test_2()).
+		// If f_log is true, make logger output to console.
+
+		if (testargs.is_test ("test2")) {
+
+			// Read arguments
+
+			System.out.println ("Constructing, displaying, and marshaling AwsProductSender configuration");
+			String hubaddr = testargs.get_string ("hubaddr");
+			String subpath = testargs.get_string ("subpath");
+			boolean f_log = testargs.get_boolean ("f_log");
+			testargs.end_test();
+
+			// Create the values
+
+			PDLAwsSenderConfig sender_config = new PDLAwsSenderConfig();
+			sender_config.setup_test_2 (hubaddr, subpath);
+
+			// Display the contents
+
+			System.out.println ();
+			System.out.println ("********** Display as string **********");
+			System.out.println ();
+
+			System.out.println (sender_config.toString());
+
+			System.out.println ();
+			System.out.println ("********** Display as properties **********");
+			System.out.println ();
+
+			System.out.println (sender_config.show_props (TEST_PRIVATE_KEY));
+
+			System.out.println ();
+			System.out.println ("********** Display as code **********");
+			System.out.println ();
+
+			System.out.println (sender_config.show_code (TEST_PRIVATE_KEY));
+
+			// Marshal to JSON
+
+			System.out.println ();
+			System.out.println ("********** Marshal to JSON **********");
+			System.out.println ();
+
+			//String json_string = MarshalUtils.to_json_string (sender_config);
+			//System.out.println (MarshalUtils.display_json_string (json_string));
+
+			String json_string = MarshalUtils.to_formatted_compact_json_string (sender_config);
+			System.out.println (json_string);
+
+			// Unmarshal from JSON
+
+			System.out.println ();
+			System.out.println ("********** Unmarshal from JSON **********");
+			System.out.println ();
+			
+			PDLAwsSenderConfig sender_config2 = new PDLAwsSenderConfig();
+			MarshalUtils.from_json_string (sender_config2, json_string);
+
+			// Display the contents
+
+			System.out.println ();
+			System.out.println ("********** Display as string **********");
+			System.out.println ();
+
+			System.out.println (sender_config2.toString());
+
+			System.out.println ();
+			System.out.println ("********** Display as properties **********");
+			System.out.println ();
+
+			System.out.println (sender_config2.show_props (TEST_PRIVATE_KEY));
+
+			System.out.println ();
+			System.out.println ("********** Display as code **********");
+			System.out.println ();
+
+			System.out.println (sender_config2.show_code (TEST_PRIVATE_KEY));
+
+			// Make sender
+
+			System.out.println ();
+			System.out.println ("********** Make sender **********");
+			System.out.println ();
+
+			if (f_log) {
+				install_log_handler (Level.FINER);
 			}
 
 			//AwsProductSender sender = sender_config.make_sender (TEST_PRIVATE_KEY);	// throws FileNotFoundException
