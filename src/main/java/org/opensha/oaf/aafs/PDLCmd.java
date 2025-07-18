@@ -5,13 +5,19 @@ import java.nio.file.Paths;
 
 import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 import org.opensha.oaf.pdl.PDLSender;
-import gov.usgs.earthquake.product.Product;
+import org.opensha.oaf.pdl.PDLCodeChooserEventSequence;
+
+import org.opensha.oaf.util.MarshalUtils;
+import org.opensha.oaf.util.SimpleUtils;
+
+import org.opensha.oaf.rj.USGS_ForecastHolder;
 
 
-/**
- * PDL command-line interface.
- * Author: Michael Barall 07/23/2018.
- */
+// PDL command-line interface.
+// Author: Michael Barall 07/23/2018.
+//
+// Revised to support event-sequence, support sending forecast_data.json,
+// and use sending routines in PDLSupport.
 
 // This class contains a static routine that interprets command-line options.
 // Then it sets the PDL configuration, and/or sends a PDL product.
@@ -31,30 +37,55 @@ import gov.usgs.earthquake.product.Product;
 //
 // To delete a product, then in addition to the above you should also include all of these:
 // --delete
-// --code=PRODUCTCODE
-// --eventsource=EVENTNETWORK
-// --eventsourcecode=EVENTCODE
-// --source=PRODUCTSOURCE     [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE         [optional, defaults to configured value, which should be "oaf"]
-// --reviewed=ISREVIEWED      [optional, defaults to "true"]
-// The value of --code identifies the product that is to be deleted.  The value of --code is typically an event ID.
-// The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
-// these determine which event page displays the product.
+// --eventid=EVENTID
+// --evseq=EVSEQOPTION         [optional, defaults to "delete"]
+// --lookbacktime=EVSLOOKBACK  [optional, defaults to 30 days]
+// --captime=EVSEQCAPTIME      [required when --evseq=cap, ignored otherwise]
+// --code=PRODUCTCODE          [obsolote, ignored]
+// --eventsource=EVENTNETWORK  [deprecated, see below]
+// --eventsourcecode=EVENTCODE [deprecated, see below]
+// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
+// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
+// --reviewed=ISREVIEWED       [optional, defaults to "true"]
+// The value of --evseq must be "delete" (to delete any eventy-sequence product), "ignore" (to ignore any
+//  event-sequence product), or "cap" (to cap an existing event-sequence product).  If "cap", then
+//  --captime must be used to specify the end time of the sequence, preferably in ISO8601 format, although
+//  other formats are recognized.  If "delete" then an existing event-sequence product will be deleted
+//  even if there is no existing OAF product.
+// The value of --lookbacktime is the time, in days before the mainshock, when a sequence begins.
+// If --eventid is omitted, but --eventsource and --eventsourcecode are given, then the event ID is
+//  constructed by concatenating --eventsource and --eventsourcecode.
 // The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the deletion has been reviewed.
 //
-// If a JSON file exists on disk, then it can be sent as a product by including:
+// If a forecast.json file exists on disk, then it can be sent as a product by including:
 // --update=JSONFILENAME
-// --code=PRODUCTCODE
-// --eventsource=EVENTNETWORK
-// --eventsourcecode=EVENTCODE
-// --source=PRODUCTSOURCE     [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE         [optional, defaults to configured value, which should be "oaf"]
-// --reviewed=ISREVIEWED      [optional, defaults to "true"]
-// The value of --code identifies the product that is to be sent.  The value of --code is typically an event ID.
-// The product replaces any prior product that was sent with the same --code.
-// The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
-// these determine which event page displays the product.
+// --eventid=EVENTID
+// --evseq=EVSEQOPTION         [optional, defaults to "update"]
+// --lookbacktime=EVSLOOKBACK  [optional, defaults to 30 days]
+// --code=PRODUCTCODE          [obsolote, ignored]
+// --eventsource=EVENTNETWORK  [deprecated, see below]
+// --eventsourcecode=EVENTCODE [deprecated, see below]
+// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
+// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
+// --reviewed=ISREVIEWED       [optional, defaults to "true"]
+// The value of --evseq must be "update" (to send an event-sequence product), "delete" (to delete any existing
+//  event-sequence product), or "ignore" (to neither send nor delete an event-sequence product).
+// The value of --lookbacktime is the time, in days before the mainshock, when a sequence begins.
+// If --eventid is omitted, but --eventsource and --eventsourcecode are given, then the event ID is
+//  constructed by concatenating --eventsource and --eventsourcecode.
+// The optional parameters --source and --type identify the source (typically a network) and type of the product.
+// The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
+//
+// If a forecast_data.json file exists on disk, then it can be sent as a product by including:
+// --send=JSONFILENAME
+// --code=PRODUCTCODE          [obsolote, ignored]
+// --eventsource=EVENTNETWORK  [obsolote, ignored]
+// --eventsourcecode=EVENTCODE [obsolote, ignored]
+// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
+// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
+// --reviewed=ISREVIEWED       [optional, defaults to "true"]
+// All information, including the event ID and the event-sequence option, is taken from the forecast_data.json file.
 // The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
 //
@@ -70,24 +101,37 @@ public class PDLCmd {
 
 	public static final String PNAME_PDL = "--pdl";						// PDL access option
 	public static final String PNAME_KEYFILE = "--privateKey";			// File containing private key
-	public static final String PNAME_CODE = "--code";					// Product identifier
-	public static final String PNAME_EVENT_NETWORK = "--eventsource";	// Network for the event
-	public static final String PNAME_EVENT_CODE = "--eventsourcecode";	// Network's code for the event
-	public static final String PNAME_UPDATE = "--update";				// Send product update
+	public static final String PNAME_CODE = "--code";					// Product identifier [obsolote, ignored]
+	public static final String PNAME_EVENT_NETWORK = "--eventsource";	// Network for the event [deprecated]
+	public static final String PNAME_EVENT_CODE = "--eventsourcecode";	// Network's code for the event [deprecated]
+	public static final String PNAME_UPDATE = "--update";				// Send product update (forecast.json)
 	public static final String PNAME_DELETE = "--delete";				// Delete product
 	public static final String PNAME_SOURCE = "--source";				// Product source code (network code)
 	public static final String PNAME_TYPE = "--type";					// Product type
 	public static final String PNAME_REVIEWED = "--reviewed";			// Product is reviewed
 
+	public static final String PNAME_EVENT_ID = "--eventid";			// Event ID
+	public static final String PNAME_EVSEQ = "--evseq";					// Event-sequence options
+	public static final String PNAME_LOOKBACK_TIME = "--lookbacktime";	// Event-sequence lookback time in days
+	public static final String PNAME_CAP_TIME = "--captime";			// Event-sequence cap date/time
+	public static final String PNAME_SEND = "--send";					// Send product update (forecast_data.json)
+
 	// Values for the PNAME_PDL parameter
 
-	public static final String PVAL_DRYRUN = "dryrun";					// No PDL access (drt run)
+	public static final String PVAL_DRYRUN = "dryrun";					// No PDL access (dry run)
 	public static final String PVAL_DEV = "dev";						// PDL development server
 	public static final String PVAL_PROD = "prod";						// PDL production server
 	public static final String PVAL_SIM_DEV = "simdev";					// Simulated PDL development server
 	public static final String PVAL_SIM_PROD = "simprod";				// Simulated PDL production server
 	public static final String PVAL_DOWN_DEV = "downdev";				// Down PDL development server
 	public static final String PVAL_DOWN_PROD = "downprod";				// Down PDL production server
+
+	// Values for PNAME_EVSEQ parameter
+
+	public static final String PVAL_EVS_UPDATE = "update";				// Update (send) event-sequence product
+	public static final String PVAL_EVS_IGNORE = "ignore";				// Ignore (neither send nor delete) event-sequence product
+	public static final String PVAL_EVS_DELETE = "delete";				// Delete event-sequence product
+	public static final String PVAL_EVS_CAP = "cap";					// Cap (change end time of) event-sequence product
 
 	// String for splitting parameter into name and value
 
@@ -134,6 +178,14 @@ public class PDLCmd {
 		String product_type = null;
 		boolean f_is_reviewed = true;
 		boolean f_seen_reviewed = false;
+
+		String event_id = null;
+		String evseq = null;
+		long lookback_time = 30L * SimpleUtils.DAY_MILLIS;	// default lookback time
+		boolean f_seen_lookback_time = false;
+		long cap_time = 0L;
+		boolean f_seen_cap_time = false;
+		String send = null;
 
 		// Scan parameters
 
@@ -331,6 +383,90 @@ public class PDLCmd {
 				f_seen_reviewed = true;
 			}
 
+			// Event ID option
+
+			else if (name.equalsIgnoreCase (PNAME_EVENT_ID)) {
+				if (!( f_send )) {
+					System.out.println ("Unrecognized command-line option: " + arg);
+					return true;
+				}
+				if (event_id != null) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				event_id = value;
+			}
+
+			// Event-sequence option
+
+			else if (name.equalsIgnoreCase (PNAME_EVSEQ)) {
+				if (!( f_send )) {
+					System.out.println ("Unrecognized command-line option: " + arg);
+					return true;
+				}
+				if (evseq != null) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				evseq = value;
+			}
+
+			// Lookback time option
+
+			else if (name.equalsIgnoreCase (PNAME_LOOKBACK_TIME)) {
+				if (!( f_send )) {
+					System.out.println ("Unrecognized command-line option: " + arg);
+					return true;
+				}
+				if (f_seen_lookback_time) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				try {
+					lookback_time = SimpleUtils.days_to_millis (Double.parseDouble (value));
+				} catch (Exception e) {
+					System.out.println ("Invalid value in command-line option: " + arg);
+					return true;
+				}
+				f_seen_lookback_time = true;
+			}
+
+			// Cap time option
+
+			else if (name.equalsIgnoreCase (PNAME_CAP_TIME)) {
+				if (!( f_send )) {
+					System.out.println ("Unrecognized command-line option: " + arg);
+					return true;
+				}
+				if (f_seen_cap_time) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				try {
+					cap_time = SimpleUtils.string_to_time_permissive (value);
+				} catch (Exception e) {
+					System.out.println ("Invalid value in command-line option: " + arg);
+					return true;
+				}
+				f_seen_cap_time = true;
+			}
+
 			// Update option
 
 			else if (name.equalsIgnoreCase (PNAME_UPDATE)) {
@@ -346,6 +482,10 @@ public class PDLCmd {
 					System.out.println ("Command-line options cannot include both " + PNAME_UPDATE + " and " + PNAME_DELETE);
 					return true;
 				}
+				if (send != null) {
+					System.out.println ("Command-line options cannot include both " + PNAME_UPDATE + " and " + PNAME_SEND);
+					return true;
+				}
 				if (value == null || value.isEmpty()) {
 					System.out.println ("Missing value in command-line option: " + arg);
 					return true;
@@ -353,6 +493,36 @@ public class PDLCmd {
 				update = value;
 				if (!( Files.exists (Paths.get (update)) )) {
 					System.out.println ("Product file does not exist: " + update);
+					return true;
+				}
+			}
+
+			// Send option
+
+			else if (name.equalsIgnoreCase (PNAME_SEND)) {
+				if (!( f_send )) {
+					System.out.println ("Unrecognized command-line option: " + arg);
+					return true;
+				}
+				if (send != null) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (delete) {
+					System.out.println ("Command-line options cannot include both " + PNAME_SEND + " and " + PNAME_DELETE);
+					return true;
+				}
+				if (update != null) {
+					System.out.println ("Command-line options cannot include both " + PNAME_UPDATE + " and " + PNAME_SEND);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				send = value;
+				if (!( Files.exists (Paths.get (send)) )) {
+					System.out.println ("Product file does not exist: " + send);
 					return true;
 				}
 			}
@@ -370,6 +540,10 @@ public class PDLCmd {
 				}
 				if (update != null) {
 					System.out.println ("Command-line options cannot include both " + PNAME_UPDATE + " and " + PNAME_DELETE);
+					return true;
+				}
+				if (send != null) {
+					System.out.println ("Command-line options cannot include both " + PNAME_SEND + " and " + PNAME_DELETE);
 					return true;
 				}
 				if (!( value == null || value.isEmpty() )) {
@@ -393,13 +567,19 @@ public class PDLCmd {
 			pdl_enable = pdl_default;
 		}
 
-		// If config-only is not permitted, then we must have either update or delete
+		// If config-only is not permitted, then we must have either update, send, or delete
 
 		if (!( f_config )) {
-			if (!( delete || update != null )) {
-				System.out.println ("Command-line options must include one of " + PNAME_UPDATE + " and " + PNAME_DELETE);
+			if (!( delete || update != null || send != null )) {
+				System.out.println ("Command-line options must include one of " + PNAME_UPDATE + ", " + PNAME_SEND + ", or " + PNAME_DELETE);
 				return true;
 			}
+		}
+
+		// If event id is not specified, but network and code are, construct the event id from network and code
+
+		if (event_id == null && event_network != null && event_code != null) {
+			event_id = event_network + event_code;
 		}
 
 		// Server configuration
@@ -430,19 +610,36 @@ public class PDLCmd {
 			server_config.get_server_config_file().pdl_oaf_type = product_type;
 		}
 
-		// Send update
+		// Send update from forecast.json
 
 		if (update != null) {
 
 			// Check for required options
 
-			if (!( code != null
-				&& event_network != null
-				&& event_code != null )) {
-				System.out.println ("Cannot send PDL update because one or more of the following command-line options are missing:");
-				System.out.println (PNAME_CODE + ", " + PNAME_EVENT_NETWORK + ", " + PNAME_EVENT_CODE);
+			if (!( event_id != null )) {
+				System.out.println ("Cannot send PDL update because the following command-line option is missing:");
+				System.out.println (PNAME_EVENT_ID);
 				return true;
 			}
+
+			// Validate the event-sequence option
+
+			if (evseq == null) {
+				evseq = PVAL_EVS_UPDATE;		// default event-sequence action
+			}
+
+			if (!( evseq.equalsIgnoreCase (PVAL_EVS_UPDATE)
+				|| evseq.equalsIgnoreCase (PVAL_EVS_IGNORE)
+				|| evseq.equalsIgnoreCase (PVAL_EVS_DELETE) )) {
+				System.out.println ("Cannot send PDL update because the following command-line option has an invalid value:");
+				System.out.println (PNAME_EVSEQ);
+				return true;
+			}
+
+			// Parameters for sending to PDL
+
+			final boolean isReviewed = f_is_reviewed;
+			final EventSequenceResult evseq_res = new EventSequenceResult();
 
 			// Perform the send
 
@@ -450,30 +647,48 @@ public class PDLCmd {
 
 			try {
 
-				// Read in the file
+				// Load the forecast.json
 
-				String jsonText = new String (Files.readAllBytes (Paths.get (update)));
+				final USGS_ForecastHolder fc_holder = new USGS_ForecastHolder();
+				MarshalUtils.from_json_file (fc_holder, update);
 
-				// Modification time, 0 means now
+				// Get the mainshock information
 
-				long modifiedTime = 0L;
+				final ForecastMainshock fcmain = new ForecastMainshock();
+				fcmain.setup_mainshock_poll (event_id);
+				if (!( fcmain.mainshock_avail )) {
+					System.out.println ("Event not found: " + event_id);
+					return true;
+				}
 
-				// Review status, false means automatically generated
+				// Get event-sequence configuration
 
-				//boolean isReviewed = true;
-				boolean isReviewed = f_is_reviewed;
+				EventSequenceParameters evseq_cfg_params = null;
+				if (evseq.equalsIgnoreCase (PVAL_EVS_IGNORE)) {
+					evseq_cfg_params = EventSequenceParameters.make_coerce (
+						ActionConfigFile.ESREP_NO_REPORT, lookback_time);
+				}
+				else if (evseq.equalsIgnoreCase (PVAL_EVS_UPDATE)) {
+					evseq_cfg_params = EventSequenceParameters.make_coerce (
+						ActionConfigFile.ESREP_REPORT, lookback_time);
+				}
+				else if (evseq.equalsIgnoreCase (PVAL_EVS_DELETE)) {
+					evseq_cfg_params = EventSequenceParameters.make_coerce (
+						ActionConfigFile.ESREP_DELETE, lookback_time);
+				}
+				else {
+					throw new IllegalStateException ("Unexpected value of command-line option " + PNAME_EVSEQ);
+				}
 
-				// Build the product
+				// Send to PDL
 
-				Product product = PDLProductBuilderOaf.createProduct (code, event_network, event_code, isReviewed, jsonText, modifiedTime);
-
-				// Sign the product
-
-				PDLSender.signProduct (product);
-
-				// Send the product, true means it is text
-
-				PDLSender.sendProduct (product, true);
+				PDLSupport.static_send_pdl_report (
+					isReviewed,
+					evseq_res,
+					fcmain,
+					evseq_cfg_params,
+					fc_holder
+				);
 
 				// Success
 
@@ -481,16 +696,96 @@ public class PDLCmd {
 			}
 
 			catch (Exception e) {
-				System.out.println ("Exception occurred while attempting to send update to PDL.");
+				System.out.println ("Exception occurred while attempting to send forecast.json to PDL.");
 				e.printStackTrace();
 			}
 
 			// Inform user of result
 
+			System.out.println ();
+
 			if (send_ok) {
-				System.out.println ("PDL update was sent successfully.");
+				System.out.println ("Success: Forecast has been successfully sent to PDL.");
+				if (evseq_res.was_evseq_sent_ok()) {
+					System.out.println ("An event-sequence product has been successfully sent to PDL.");
+				} else if (evseq_res.was_evseq_deleted()) {
+					System.out.println ("An existing event-sequence product has been successfully deleted.");
+				} else if (evseq_res.was_evseq_capped()) {
+					System.out.println ("An existing event-sequence product has been successfully capped.");
+				}
 			} else {
-				System.out.println ("PDL update was NOT sent successfully.");
+				System.out.println ("Error: PDL update was NOT sent successfully.");
+			}
+		
+			return true;
+		}
+
+		// Send update from forecast_data.json
+
+		if (send != null) {
+
+			// Check for incompatible options
+
+			if (!( event_id == null && evseq == null && event_network == null && event_code == null )) {
+				System.out.println ("The following command-line options cannot be used together with " + PNAME_SEND + ":");
+				System.out.println (PNAME_EVENT_ID + ", " + PNAME_EVSEQ + ", " + PNAME_EVENT_NETWORK + ", " + PNAME_EVENT_CODE);
+				return true;
+			}
+
+			// Parameters for sending to PDL
+
+			final boolean isReviewed = f_is_reviewed;
+			final EventSequenceResult evseq_res = new EventSequenceResult();
+
+			// Perform the send
+
+			boolean send_ok = false;
+
+			try {
+
+				// Load the ForecastData
+
+				final ForecastData fcdata = new ForecastData();
+				MarshalUtils.from_json_file (fcdata, send);
+
+				// Set for not sent to PDL
+
+				fcdata.pdl_event_id = "";
+				fcdata.pdl_is_reviewed = false;
+
+				// Send to PDL
+
+				String resulting_event_id = PDLSupport.static_send_pdl_report (
+					isReviewed,
+					evseq_res,
+					fcdata
+				);
+
+				// Success
+
+				send_ok = true;
+			}
+
+			catch (Exception e) {
+				System.out.println ("Exception occurred while attempting to send forecast to PDL.");
+				e.printStackTrace();
+			}
+
+			// Inform user of result
+
+			System.out.println ();
+
+			if (send_ok) {
+				System.out.println ("Success: Forecast has been successfully sent to PDL.");
+				if (evseq_res.was_evseq_sent_ok()) {
+					System.out.println ("An event-sequence product has been successfully sent to PDL.");
+				} else if (evseq_res.was_evseq_deleted()) {
+					System.out.println ("An existing event-sequence product has been successfully deleted.");
+				} else if (evseq_res.was_evseq_capped()) {
+					System.out.println ("An existing event-sequence product has been successfully capped.");
+				}
+			} else {
+				System.out.println ("Error: PDL update was NOT sent successfully.");
 			}
 		
 			return true;
@@ -502,13 +797,56 @@ public class PDLCmd {
 
 			// Check for required options
 
-			if (!( code != null
-				&& event_network != null
-				&& event_code != null )) {
-				System.out.println ("Cannot send PDL delete because one or more of the following command-line options are missing:");
-				System.out.println (PNAME_CODE + ", " + PNAME_EVENT_NETWORK + ", " + PNAME_EVENT_CODE);
+			if (!( event_id != null )) {
+				System.out.println ("Cannot send PDL delete because the following command-line option is missing:");
+				System.out.println (PNAME_EVENT_ID);
 				return true;
 			}
+
+			// Validate the event-sequence option and adjust cap time
+
+			if (evseq == null) {
+				evseq = PVAL_EVS_DELETE;		// default event-sequence action
+			}
+
+			if (evseq.equalsIgnoreCase (PVAL_EVS_IGNORE)) {
+				if (f_seen_cap_time) {
+					System.out.println ("Command line option " + PNAME_CAP_TIME + " cannot be used together with " + PNAME_EVSEQ + "=" + PVAL_EVS_IGNORE);
+					return true;
+				}
+				cap_time = PDLCodeChooserEventSequence.CAP_TIME_NOP;
+			}
+			else if (evseq.equalsIgnoreCase (PVAL_EVS_DELETE)) {
+				if (f_seen_cap_time) {
+					System.out.println ("Command line option " + PNAME_CAP_TIME + " cannot be used together with " + PNAME_EVSEQ + "=" + PVAL_EVS_DELETE);
+					return true;
+				}
+				cap_time = PDLCodeChooserEventSequence.CAP_TIME_DELETE;
+			}
+			else if (evseq.equalsIgnoreCase (PVAL_EVS_CAP)) {
+				if (!( f_seen_cap_time )) {
+					System.out.println ("Cannot send PDL delete because the following command-line option is missing:");
+					System.out.println (PNAME_CAP_TIME);
+					return true;
+				}
+			}
+			else {
+				System.out.println ("Cannot send PDL delete because the following command-line option has an invalid value:");
+				System.out.println (PNAME_EVSEQ);
+				return true;
+			}
+
+			// Parameters for sending to PDL
+
+			final boolean isReviewed = f_is_reviewed;
+			final boolean f_keep_reviewed = false;
+
+			// This receives the delete result:
+			//   del_result[0] = True if an oaf product was deleted.
+			//   del_result[1] = True if an event-sequence product was deleted.
+			//   del_result[2] = True if an event-sequence product was capped.
+
+			boolean[] del_result = null;
 
 			// Perform the send
 
@@ -516,26 +854,43 @@ public class PDLCmd {
 
 			try {
 
-				// Modification time, 0 means now
+				// Get the mainshock information
 
-				long modifiedTime = 0L;
+				final ForecastMainshock fcmain = new ForecastMainshock();
+				fcmain.setup_mainshock_poll (event_id);
+				if (!( fcmain.mainshock_avail )) {
+					System.out.println ("Event not found: " + event_id);
+					return true;
+				}
 
-				// Review status, false means automatically generated
+				// Validate the cap time
 
-				//boolean isReviewed = true;
-				boolean isReviewed = f_is_reviewed;
+				if (evseq.equalsIgnoreCase (PVAL_EVS_CAP)) {
+					long time_now = System.currentTimeMillis();
+					long mainshock_time = fcmain.mainshock_time;
+					if (cap_time <= mainshock_time) {
+						System.out.println ("Event-sequence cap time cannot be before the mainshock time");
+						return true;
+					}
+					if (cap_time > mainshock_time + (SimpleUtils.DAY_MILLIS * 365L * 12L)) {
+						System.out.println ("Event-sequence cap time cannot be more than 12 years after the mainshock time");
+						return true;
+					}
+					if (cap_time > time_now) {
+						System.out.println ("Event-sequence cap time cannot be after the current time");
+						return true;
+					}
+				}
 
-				// Build the product
+				// Send delete
 
-				Product product = PDLProductBuilderOaf.createDeletionProduct (code, event_network, event_code, isReviewed, modifiedTime);
-
-				// Sign the product
-
-				PDLSender.signProduct (product);
-
-				// Send the product, true means it is text
-
-				PDLSender.sendProduct (product, true);
+				del_result = PDLSupport.static_delete_oaf_products (
+					fcmain,
+					isReviewed,
+					cap_time,
+					f_keep_reviewed,
+					null		// gj_holder
+				);
 
 				// Success
 
@@ -549,8 +904,21 @@ public class PDLCmd {
 
 			// Inform user of result
 
+			System.out.println ();
+
 			if (send_ok) {
-				System.out.println ("PDL delete was sent successfully.");
+				if (del_result[0] || del_result[1] || del_result[2]) {
+					if (del_result[0]) {
+						System.out.println ("Success: An OAF DELETE product has been successfully sent to PDL.");
+					}
+					if (del_result[1]) {
+						System.out.println ("Success: An existing event-sequence product has been successfully deleted.");
+					} else if (del_result[2]) {
+						System.out.println ("Success: An existing event-sequence product has been successfully capped.");
+					}
+				} else {
+					System.out.println ("Success, but no products were deleted.");
+				}
 			} else {
 				System.out.println ("PDL delete was NOT sent successfully.");
 			}
