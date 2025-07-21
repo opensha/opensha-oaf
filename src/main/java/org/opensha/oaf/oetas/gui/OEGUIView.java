@@ -1310,7 +1310,7 @@ public class OEGUIView extends OEGUIComponent {
 
 		// Save the final count
 		
-		double maxY = count;
+		double maxY = Math.max (3.0, count);	// Max prevents creation of a plot with an empty y-range equal to (0,0)
 
 		// Create lists of functions and characteristics, and add the count function to the lists
 		
