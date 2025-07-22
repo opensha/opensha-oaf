@@ -9,6 +9,8 @@ git clone https://github.com/opensha/opensha
 git clone https://github.com/opensha/opensha-oaf
 ```
 
+Building and running the OAF software requires Java version 17 or higher.
+
 To build the Reasenberg-Jones GUI app:
 
 ```bash

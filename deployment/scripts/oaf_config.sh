@@ -48,7 +48,7 @@ CPU_CORE_COUNT=
 # Source from which to obtain Java.
 # If it begins with "/" or "~", it is a fully-qualified filename.
 # Otherwise, it is a URL from which Java is downloaded.
-# If left blank, it defaults to Amazon Corretto 11.
+# If left blank, it defaults to Amazon Corretto 17.
 # This should be a path with the last component ending in .tar.gz.
 JAVA_SOURCE=
 

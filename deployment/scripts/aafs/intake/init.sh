@@ -12,7 +12,7 @@ NAME="Product Distribution"
 JAVA="java"
 
 # command managed by init script, this must be unique on the system because this script uses PS.
-COMMAND="$JAVA -jar /opt/aafs/oefjava/ProductClient.jar --configFile=config.ini --receive"
+COMMAND="$JAVA --add-opens java.base/java.lang=ALL-UNNAMED -jar /opt/aafs/oefjava/ProductClient.jar --configFile=config.ini --receive"
 
 
 ##

@@ -52,6 +52,10 @@
 #
 # dev_diffcfgc - Use git diff to compare the configuration files in ./oafcfg to the originals, with color.
 #
+# deployintake - Copy the intake scripts and configuration into /opt/aafs/intake.
+#                (Note that deploycfg and updatecfg also copy the intake scripts, among other things.)
+#                The user is prompted before any existing file in /opt/aafs/intake is changed.
+#
 # erase_config_server - Erase any existing server configuration file from /opt/aafs/oafcfg.
 #
 # erase_config_action - Erase any existing action configuration file from /opt/aafs/oafcfg.
@@ -788,6 +792,13 @@ case "$1" in
         git diff --color opensha-oaf/src/main/resources/org/opensha/oaf/oetas/bay/MixedRNPCConfig.json ./oafcfg/MixedRNPCConfig.json
         ;;
 
+    deployintake)
+        makenewdir /opt/aafs/intake
+        copyscr opensha-oaf/deployment/scripts/aafs/intake/init.sh /opt/aafs/intake/init.sh
+        copyscr opensha-oaf/deployment/scripts/aafs/intake/listener.sh /opt/aafs/intake/listener.sh
+        copycfg opensha-oaf/deployment/scripts/aafs/intake/config.ini /opt/aafs/intake/config.ini
+        ;;
+
     erase_config_server)
         rmexistingfile /opt/aafs/oafcfg/ServerConfig.json
         ;;
@@ -1149,6 +1160,8 @@ case "$1" in
         echo "  boaf.sh dev_deploycfg"
         echo "Use git diff to compare the configuration files in ./oafcfg to the originals, with color:"
         echo "  boaf.sh dev_diffcfgc"
+        echo "Copy the intake scripts and configuration into /opt/aafs/intake:"
+        echo "  boaf.sh deployintake"
         echo "Erase any existing server configuration file from /opt/aafs/oafcfg:"
         echo "  boaf.sh erase_config_server"
         echo "Erase any existing action configuration file from /opt/aafs/oafcfg:"

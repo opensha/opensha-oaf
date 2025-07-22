@@ -626,13 +626,13 @@ q_load_oaf_config () {
         exit 1
     fi
 
-    # If Java source is omitted, default to Coretto 11
+    # If Java source is omitted, default to Coretto 17
 
     if [ -z "$JAVA_SOURCE" ]; then
         if [ "$my_ARM_ARCH" == "$val_YES" ]; then
-           JAVA_SOURCE="https://corretto.aws/downloads/latest/amazon-corretto-11-aarch64-linux-jdk.tar.gz"
+           JAVA_SOURCE="https://corretto.aws/downloads/latest/amazon-corretto-17-aarch64-linux-jdk.tar.gz"
         else
-           JAVA_SOURCE="https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.tar.gz"
+           JAVA_SOURCE="https://corretto.aws/downloads/latest/amazon-corretto-17-x64-linux-jdk.tar.gz"
         fi
     fi
 
