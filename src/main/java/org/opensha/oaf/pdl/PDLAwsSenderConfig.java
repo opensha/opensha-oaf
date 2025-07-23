@@ -26,7 +26,7 @@ import gov.usgs.earthquake.aws.AwsProductSender;
 //
 // This is written based on PDL client version 3.5.0.
 
-public class PDLAwsSenderConfig implements Marshalable {
+public class PDLAwsSenderConfig extends PDLAnySenderConfig implements Marshalable {
 
 
 	//----- Parameters -----
@@ -236,6 +236,15 @@ public class PDLAwsSenderConfig implements Marshalable {
 		result.append ("sender.sendProduct (product);\n");
 
 		return result.toString();
+	}
+
+
+
+
+	// Get a string describing the destination.
+
+	public String show_destination () {
+		return get_url() + get_sendProductPath();
 	}
 
 

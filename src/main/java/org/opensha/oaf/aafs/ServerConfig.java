@@ -17,6 +17,8 @@ import java.util.TimeZone;
 import org.opensha.oaf.rj.OAFParameterSet;
 
 import org.opensha.oaf.pdl.PDLSenderConfig;
+import org.opensha.oaf.pdl.PDLAwsSenderConfig;
+import org.opensha.oaf.pdl.PDLAnySenderConfig;
 
 /**
  * Configuration for AAFS server actions.
@@ -310,10 +312,16 @@ public final class ServerConfig {
 		return param_set.pdl_oaf_type;
 	}
 
+	// PDL target option.
+
+	public int get_pdl_target() {
+		return param_set.pdl_target;
+	}
+
 	// Get the currently selected list of PDL senders.
 	// This returns a copy of the list, so the original cannot be modified.
 
-	public List<PDLSenderConfig> get_pdl_senders() {
+	public List<PDLAnySenderConfig> get_pdl_senders() {
 		return param_set.get_pdl_senders();
 	}
 
@@ -783,11 +791,12 @@ public final class ServerConfig {
 			System.out.println("pdl_err_rate = " + server_config.get_pdl_err_rate());
 			System.out.println("pdl_oaf_source = " + server_config.get_pdl_oaf_source());
 			System.out.println("pdl_oaf_type = " + server_config.get_pdl_oaf_type());
+			System.out.println("pdl_target = " + server_config.get_pdl_target());
 
-			List<PDLSenderConfig> pdl_senders = server_config.get_pdl_senders();
+			List<PDLAnySenderConfig> pdl_senders = server_config.get_pdl_senders();
 			System.out.println("pdl_senders = [");
 			for (int i = 0; i < pdl_senders.size(); ++i) {
-				PDLSenderConfig pdl_sender = pdl_senders.get(i);
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
 				System.out.println("  " + i + ":  " + pdl_sender.toString());
 			}
 			System.out.println("]");
@@ -801,7 +810,7 @@ public final class ServerConfig {
 			pdl_senders = server_config.get_pdl_senders();
 			System.out.println("pdl_senders (DEV) = [");
 			for (int i = 0; i < pdl_senders.size(); ++i) {
-				PDLSenderConfig pdl_sender = pdl_senders.get(i);
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
 				System.out.println("  " + i + ":  " + pdl_sender.toString());
 			}
 			System.out.println("]");
@@ -815,7 +824,7 @@ public final class ServerConfig {
 			pdl_senders = server_config.get_pdl_senders();
 			System.out.println("pdl_senders (PROD) = [");
 			for (int i = 0; i < pdl_senders.size(); ++i) {
-				PDLSenderConfig pdl_sender = pdl_senders.get(i);
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
 				System.out.println("  " + i + ":  " + pdl_sender.toString());
 			}
 			System.out.println("]");
@@ -829,7 +838,7 @@ public final class ServerConfig {
 			pdl_senders = server_config.get_pdl_senders();
 			System.out.println("pdl_senders (SIM DEV) = [");
 			for (int i = 0; i < pdl_senders.size(); ++i) {
-				PDLSenderConfig pdl_sender = pdl_senders.get(i);
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
 				System.out.println("  " + i + ":  " + pdl_sender.toString());
 			}
 			System.out.println("]");
@@ -843,7 +852,7 @@ public final class ServerConfig {
 			pdl_senders = server_config.get_pdl_senders();
 			System.out.println("pdl_senders (SIM PROD) = [");
 			for (int i = 0; i < pdl_senders.size(); ++i) {
-				PDLSenderConfig pdl_sender = pdl_senders.get(i);
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
 				System.out.println("  " + i + ":  " + pdl_sender.toString());
 			}
 			System.out.println("]");
@@ -857,7 +866,7 @@ public final class ServerConfig {
 			pdl_senders = server_config.get_pdl_senders();
 			System.out.println("pdl_senders (DOWN DEV) = [");
 			for (int i = 0; i < pdl_senders.size(); ++i) {
-				PDLSenderConfig pdl_sender = pdl_senders.get(i);
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
 				System.out.println("  " + i + ":  " + pdl_sender.toString());
 			}
 			System.out.println("]");
@@ -871,7 +880,97 @@ public final class ServerConfig {
 			pdl_senders = server_config.get_pdl_senders();
 			System.out.println("pdl_senders (DOWN PROD) = [");
 			for (int i = 0; i < pdl_senders.size(); ++i) {
-				PDLSenderConfig pdl_sender = pdl_senders.get(i);
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
+				System.out.println("  " + i + ":  " + pdl_sender.toString());
+			}
+			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+
+			// Adjust PDL enable to development + socket, and display senders
+
+			server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DEV;
+			server_config.get_server_config_file().pdl_target = ServerConfigFile.PDLTARG_SOCKET;
+			pdl_senders = server_config.get_pdl_senders();
+			System.out.println("pdl_senders (DEV, SOCKET) = [");
+			for (int i = 0; i < pdl_senders.size(); ++i) {
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
+				System.out.println("  " + i + ":  " + pdl_sender.toString());
+			}
+			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+
+			// Adjust PDL enable to development + aws, and display senders
+
+			server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DEV;
+			server_config.get_server_config_file().pdl_target = ServerConfigFile.PDLTARG_AWS;
+			pdl_senders = server_config.get_pdl_senders();
+			System.out.println("pdl_senders (DEV, AWS) = [");
+			for (int i = 0; i < pdl_senders.size(); ++i) {
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
+				System.out.println("  " + i + ":  " + pdl_sender.toString());
+			}
+			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+
+			// Adjust PDL enable to development + both, and display senders
+
+			server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_DEV;
+			server_config.get_server_config_file().pdl_target = ServerConfigFile.PDLTARG_BOTH;
+			pdl_senders = server_config.get_pdl_senders();
+			System.out.println("pdl_senders (DEV, BOTH) = [");
+			for (int i = 0; i < pdl_senders.size(); ++i) {
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
+				System.out.println("  " + i + ":  " + pdl_sender.toString());
+			}
+			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+
+			// Adjust PDL enable to production + socket, and display senders
+
+			server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_PROD;
+			server_config.get_server_config_file().pdl_target = ServerConfigFile.PDLTARG_SOCKET;
+			pdl_senders = server_config.get_pdl_senders();
+			System.out.println("pdl_senders (PROD, SOCKET) = [");
+			for (int i = 0; i < pdl_senders.size(); ++i) {
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
+				System.out.println("  " + i + ":  " + pdl_sender.toString());
+			}
+			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+
+			// Adjust PDL enable to production + aws, and display senders
+
+			server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_PROD;
+			server_config.get_server_config_file().pdl_target = ServerConfigFile.PDLTARG_AWS;
+			pdl_senders = server_config.get_pdl_senders();
+			System.out.println("pdl_senders (PROD, AWS) = [");
+			for (int i = 0; i < pdl_senders.size(); ++i) {
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
+				System.out.println("  " + i + ":  " + pdl_sender.toString());
+			}
+			System.out.println("]");
+			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
+			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
+			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+
+			// Adjust PDL enable to production + both, and display senders
+
+			server_config.get_server_config_file().pdl_enable = ServerConfigFile.PDLOPT_PROD;
+			server_config.get_server_config_file().pdl_target = ServerConfigFile.PDLTARG_BOTH;
+			pdl_senders = server_config.get_pdl_senders();
+			System.out.println("pdl_senders (PROD, BOTH) = [");
+			for (int i = 0; i < pdl_senders.size(); ++i) {
+				PDLAnySenderConfig pdl_sender = pdl_senders.get(i);
 				System.out.println("  " + i + ":  " + pdl_sender.toString());
 			}
 			System.out.println("]");

@@ -116,6 +116,8 @@ public class PDLCmd {
 	public static final String PNAME_CAP_TIME = "--captime";			// Event-sequence cap date/time
 	public static final String PNAME_SEND = "--send";					// Send product update (forecast_data.json)
 
+	public static final String PNAME_TARGET = "--target";				// PDL target option
+
 	// Values for the PNAME_PDL parameter
 
 	public static final String PVAL_DRYRUN = "dryrun";					// No PDL access (dry run)
@@ -132,6 +134,12 @@ public class PDLCmd {
 	public static final String PVAL_EVS_IGNORE = "ignore";				// Ignore (neither send nor delete) event-sequence product
 	public static final String PVAL_EVS_DELETE = "delete";				// Delete event-sequence product
 	public static final String PVAL_EVS_CAP = "cap";					// Cap (change end time of) event-sequence product
+
+	// Values for the PNAME_TARGET parameter
+
+	public static final String PVAL_TARG_SOCKET = "socket";				// SocketProductSender
+	public static final String PVAL_TARG_AWS = "aws";					// AwsProductSender
+	public static final String PVAL_TARG_BOTH = "both";					// Both
 
 	// String for splitting parameter into name and value
 
@@ -186,6 +194,8 @@ public class PDLCmd {
 		long cap_time = 0L;
 		boolean f_seen_cap_time = false;
 		String send = null;
+
+		int pdl_target = ServerConfigFile.PDLTARG_UNSPECIFIED;
 
 		// Scan parameters
 
@@ -245,6 +255,33 @@ public class PDLCmd {
 				else {
 					System.out.println ("Invalid value in command-line option: " + arg);
 					System.out.println ("Valid values are: " + PVAL_DRYRUN + ", " + PVAL_DEV + ", " + PVAL_PROD + ", " + PVAL_SIM_DEV + ", " + PVAL_SIM_PROD + ", " + PVAL_DOWN_DEV + ", " + PVAL_DOWN_PROD);
+					return true;
+				}
+			}
+
+			// PDL target option
+
+			else if (name.equalsIgnoreCase (PNAME_TARGET)) {
+				if (pdl_target != ServerConfigFile.PDLTARG_UNSPECIFIED) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				if (value.equalsIgnoreCase (PVAL_TARG_SOCKET)) {
+					pdl_target = ServerConfigFile.PDLTARG_SOCKET;
+				}
+				else if (value.equalsIgnoreCase (PVAL_TARG_AWS)) {
+					pdl_target = ServerConfigFile.PDLTARG_AWS;
+				}
+				else if (value.equalsIgnoreCase (PVAL_TARG_BOTH)) {
+					pdl_target = ServerConfigFile.PDLTARG_BOTH;
+				}
+				else {
+					System.out.println ("Invalid value in command-line option: " + arg);
+					System.out.println ("Valid values are: " + PVAL_TARG_SOCKET + ", " + PVAL_TARG_AWS + ", " + PVAL_TARG_BOTH);
 					return true;
 				}
 			}
@@ -590,6 +627,12 @@ public class PDLCmd {
 
 		if (pdl_enable != ServerConfigFile.PDLOPT_UNSPECIFIED) {
 			server_config.get_server_config_file().pdl_enable = pdl_enable;
+		}
+
+		// If PDL target is specified, enter it into server configuration
+
+		if (pdl_target != ServerConfigFile.PDLTARG_UNSPECIFIED) {
+			server_config.get_server_config_file().pdl_target = pdl_target;
 		}
 
 		// If key file is specified, enter it into server configuration

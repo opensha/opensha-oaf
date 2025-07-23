@@ -13,7 +13,7 @@ public class VersionInfo  {
 
 	// Program version.
 
-	public static final String program_version = "Version 1.04.1789 (07/22/2025)";
+	public static final String program_version = "Version 1.05.1790 (07/23/2025)";
 
 	// Program sponsor.
 
@@ -25,11 +25,11 @@ public class VersionInfo  {
 
 	// Minor version.
 
-	public static final int minor_version = 4;
+	public static final int minor_version = 5;
 
 	// Build.
 
-	public static final int build = 1789;
+	public static final int build = 1790;
 
 
 

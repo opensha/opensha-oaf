@@ -23,6 +23,8 @@ import org.opensha.oaf.util.InvariantViolationException;
 import org.opensha.oaf.rj.OAFParameterSet;
 
 import org.opensha.oaf.pdl.PDLSenderConfig;
+import org.opensha.oaf.pdl.PDLAwsSenderConfig;
+import org.opensha.oaf.pdl.PDLAnySenderConfig;
 
 /**
  * Configuration file for AAFS server.
@@ -63,19 +65,26 @@ import org.opensha.oaf.pdl.PDLSenderConfig;
  *  "pdl_err_rate" = Real number giving rate of simulated PDL errors.
  *	"pdl_oaf_source" = String giving creator (source network) for OAF PDL products.
  *	"pdl_oaf_type" = String giving product type for OAF PDL products.
- *	"pdl_dev_senders" = [ Array giving a list of PDL sender configurations for development PDL, in priority order.
+ *	[v3] "pdl_target" = Integer giving target for sending products: 1 = SocketProductSender, 2 = AwsProductSender, 3 = both..
+ *	"pdl_dev_senders" = [ Array giving a list of PDL sender configurations for development PDL, for SocketProductSender, in priority order.
  *		element = { Structure giving PDL server configuration.
  *			"host" = String giving PDL sender host name or IP address.
  *			"port" = Integer giving PDL sender port number.
  *			"connectTimeout" = Integer giving PDL sender connection timeout, in milliseconds.
  *		}
  *	]
- *	"pdl_prod_senders" = [ Array giving a list of PDL sender configurations for production PDL, in priority order.
+ *	"pdl_prod_senders" = [ Array giving a list of PDL sender configurations for production PDL, for SocketProductSender, in priority order.
  *		element = { Structure giving PDL server configuration.
  *			"host" = String giving PDL sender host name or IP address.
  *			"port" = Integer giving PDL sender port number.
  *			"connectTimeout" = Integer giving PDL sender connection timeout, in milliseconds.
  *		}
+ *	]
+ *	"pdl_dev_aws_senders" = [ Array giving a list of PDL sender configurations for development PDL, for AwsProductSender, in priority order.
+ *		element = { Structure containing marshaled PDLAwsSenderConfig. }
+ *	]
+ *	"pdl_prod_aws_senders" = [ Array giving a list of PDL sender configurations for production PDL, for AwsProductSender, in priority order.
+ *		element = { Structure containing marshaled PDLAwsSenderConfig. }
  *	]
  */
 public class ServerConfigFile implements Marshalable {
@@ -221,13 +230,35 @@ public class ServerConfigFile implements Marshalable {
 
 	public String pdl_oaf_type;
 
-	// List of PDL development senders.
+	// PDL target option. [v3]
+
+	public static final int PDLTARG_MIN = 1;
+	public static final int PDLTARG_SOCKET = 1;		// SocketProductSender
+	public static final int PDLTARG_AWS = 2;		// AwsProductSender
+	public static final int PDLTARG_BOTH = 3;		// Both
+	public static final int PDLTARG_MAX = 3;
+
+	public static final int PDLTARG_UNSPECIFIED = -1;	// PDL target is unspecified
+
+	public static final int PDLTARG_V2 = 1;			// Value for V1 and V2 files
+
+	public int pdl_target;
+
+	// List of PDL development senders, for SocketProductSender.
 
 	public ArrayList<PDLSenderConfig> pdl_dev_senders;
 
-	// List of PDL production senders.
+	// List of PDL production senders, for SocketProductSender.
 
 	public ArrayList<PDLSenderConfig> pdl_prod_senders;
+
+	// List of PDL development senders, for AwsProductSender.
+
+	public PDLAwsSenderConfig[] pdl_dev_aws_senders;
+
+	// List of PDL production senders, for AwsProductSender.
+
+	public PDLAwsSenderConfig[] pdl_prod_aws_senders;
 
 
 	//----- Construction -----
@@ -270,8 +301,11 @@ public class ServerConfigFile implements Marshalable {
 		pdl_err_rate = 0.0;
 		pdl_oaf_source = "";
 		pdl_oaf_type = "";
+		pdl_target = PDLTARG_V2;
 		pdl_dev_senders = new ArrayList<PDLSenderConfig>();
 		pdl_prod_senders = new ArrayList<PDLSenderConfig>();
+		pdl_dev_aws_senders = new PDLAwsSenderConfig[0];
+		pdl_prod_aws_senders = new PDLAwsSenderConfig[0];
 		return;
 	}
 
@@ -415,20 +449,32 @@ public class ServerConfigFile implements Marshalable {
 			throw new InvariantViolationException ("ServerConfigFile: Invalid pdl_oaf_type: " + ((pdl_oaf_type == null) ? "<null>" : pdl_oaf_type));
 		}
 
+		if (!( pdl_target >= PDLTARG_MIN && pdl_target <= PDLTARG_MAX )) {
+			throw new InvariantViolationException ("ServerConfigFile: Invalid pdl_target: " + pdl_target);
+		}
+
 		if (!( pdl_dev_senders != null )) {
 			throw new InvariantViolationException ("ServerConfigFile: pdl_dev_senders list is null");
 		}
 
-		if ( (pdl_enable == PDLOPT_DEV || pdl_enable == PDLOPT_SIM_DEV || pdl_enable == PDLOPT_DOWN_DEV) && pdl_dev_senders.size() == 0 ) {
-			throw new InvariantViolationException ("ServerConfigFile: pdl_dev_senders is empty, but pdl_enable = " + pdl_enable);
-		}
+//		if ( (pdl_enable == PDLOPT_DEV || pdl_enable == PDLOPT_SIM_DEV || pdl_enable == PDLOPT_DOWN_DEV) && pdl_dev_senders.size() == 0 ) {
+//			throw new InvariantViolationException ("ServerConfigFile: pdl_dev_senders is empty, but pdl_enable = " + pdl_enable);
+//		}
 
 		if (!( pdl_prod_senders != null )) {
 			throw new InvariantViolationException ("ServerConfigFile: pdl_prod_senders list is null");
 		}
 
-		if ( (pdl_enable == PDLOPT_PROD || pdl_enable == PDLOPT_SIM_PROD || pdl_enable == PDLOPT_DOWN_PROD) && pdl_prod_senders.size() == 0 ) {
-			throw new InvariantViolationException ("ServerConfigFile: pdl_prod_senders is empty, but pdl_enable = " + pdl_enable);
+//		if ( (pdl_enable == PDLOPT_PROD || pdl_enable == PDLOPT_SIM_PROD || pdl_enable == PDLOPT_DOWN_PROD) && pdl_prod_senders.size() == 0 ) {
+//			throw new InvariantViolationException ("ServerConfigFile: pdl_prod_senders is empty, but pdl_enable = " + pdl_enable);
+//		}
+
+		if (!( pdl_dev_aws_senders != null )) {
+			throw new InvariantViolationException ("ServerConfigFile: pdl_dev_aws_senders list is null");
+		}
+
+		if (!( pdl_prod_aws_senders != null )) {
+			throw new InvariantViolationException ("ServerConfigFile: pdl_prod_aws_senders list is null");
 		}
 
 		return;
@@ -493,6 +539,7 @@ public class ServerConfigFile implements Marshalable {
 		result.append ("pdl_err_rate = " + pdl_err_rate + "\n");
 		result.append ("pdl_oaf_source = " + ((pdl_oaf_source == null) ? "<null>" : pdl_oaf_source) + "\n");
 		result.append ("pdl_oaf_type = " + ((pdl_oaf_type == null) ? "<null>" : pdl_oaf_type) + "\n");
+		result.append ("pdl_target = " + pdl_target + "\n");
 
 		result.append ("pdl_dev_senders = [" + "\n");
 		for (int i = 0; i < pdl_dev_senders.size(); ++i) {
@@ -508,6 +555,18 @@ public class ServerConfigFile implements Marshalable {
 		}
 		result.append ("]" + "\n");
 
+		result.append ("pdl_dev_aws_senders = [" + "\n");
+		for (int i = 0; i < pdl_dev_aws_senders.length; ++i) {
+			result.append (i + ":  " + pdl_dev_aws_senders[i].toString() + "\n");
+		}
+		result.append ("]" + "\n");
+
+		result.append ("pdl_prod_aws_senders = [" + "\n");
+		for (int i = 0; i < pdl_prod_aws_senders.length; ++i) {
+			result.append (i + ":  " + pdl_prod_aws_senders[i].toString() + "\n");
+		}
+		result.append ("]" + "\n");
+
 		return result.toString();
 	}
 
@@ -517,24 +576,38 @@ public class ServerConfigFile implements Marshalable {
 	// Get the currently selected list of PDL senders.
 	// This returns a copy of the list, so the original cannot be modified.
 
-	public List<PDLSenderConfig> get_pdl_senders () {
-		ArrayList<PDLSenderConfig> pdl_senders = new ArrayList<PDLSenderConfig>();
+	public List<PDLAnySenderConfig> get_pdl_senders () {
+		ArrayList<PDLAnySenderConfig> pdl_senders = new ArrayList<PDLAnySenderConfig>();
 
 		switch (pdl_enable) {
 
 		case PDLOPT_DEV:
 		case PDLOPT_SIM_DEV:
 		case PDLOPT_DOWN_DEV:
-			for (PDLSenderConfig pdl_sender : pdl_dev_senders) {
-				pdl_senders.add (pdl_sender);
+			if (pdl_target == PDLTARG_SOCKET || pdl_target == PDLTARG_BOTH) {
+				for (PDLSenderConfig pdl_sender : pdl_dev_senders) {
+					pdl_senders.add (pdl_sender);
+				}
+			}
+			if (pdl_target == PDLTARG_AWS || pdl_target == PDLTARG_BOTH) {
+				for (PDLAwsSenderConfig pdl_sender : pdl_dev_aws_senders) {
+					pdl_senders.add (pdl_sender);
+				}
 			}
 			break;
 
 		case PDLOPT_PROD:
 		case PDLOPT_SIM_PROD:
 		case PDLOPT_DOWN_PROD:
-			for (PDLSenderConfig pdl_sender : pdl_prod_senders) {
-				pdl_senders.add (pdl_sender);
+			if (pdl_target == PDLTARG_SOCKET || pdl_target == PDLTARG_BOTH) {
+				for (PDLSenderConfig pdl_sender : pdl_prod_senders) {
+					pdl_senders.add (pdl_sender);
+				}
+			}
+			if (pdl_target == PDLTARG_AWS || pdl_target == PDLTARG_BOTH) {
+				for (PDLAwsSenderConfig pdl_sender : pdl_prod_aws_senders) {
+					pdl_senders.add (pdl_sender);
+				}
 			}
 			break;
 
@@ -684,6 +757,7 @@ public class ServerConfigFile implements Marshalable {
 
 	private static final int MARSHAL_VER_1 = 34001;
 	private static final int MARSHAL_VER_2 = 34002;
+	private static final int MARSHAL_VER_3 = 34003;
 
 	private static final String M_VERSION_NAME = "ServerConfigFile";
 
@@ -786,7 +860,7 @@ public class ServerConfigFile implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_2;
+		int ver = MARSHAL_VER_3;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -865,6 +939,48 @@ public class ServerConfigFile implements Marshalable {
 			marshal_pdl_sender_list (writer, "pdl_prod_senders" , pdl_prod_senders );
 
 			break;
+
+		case MARSHAL_VER_3:
+
+			mongo_config.marshal    (writer, "mongo_config"                        );
+
+			writer.marshalString    (        "server_name"      , server_name      );
+			writer.marshalInt       (        "server_number"    , server_number    );
+			marshal_string_coll     (writer, "server_db_handles", server_db_handles);
+			writer.marshalString    (        "log_con_aafs"     , log_con_aafs     );
+			writer.marshalString    (        "log_con_intake"   , log_con_intake   );
+			writer.marshalString    (        "log_con_control"  , log_con_control  );
+			writer.marshalString    (        "log_summary"      , log_summary      );
+
+			writer.marshalString    (        "diag_fn_prefix"    , diag_fn_prefix    );
+			writer.marshalInt       (        "diag_seq_lo"       , diag_seq_lo       );
+			writer.marshalInt       (        "diag_seq_hi"       , diag_seq_hi       );
+			writer.marshalString    (        "forecast_fn_prefix", forecast_fn_prefix);
+
+			writer.marshalString    (        "comcat_url"       , comcat_url       );
+			writer.marshalString    (        "feed_url"         , feed_url         );
+			writer.marshalString    (        "comcat_dev_url"   , comcat_dev_url   );
+			writer.marshalString    (        "feed_dev_url"     , feed_dev_url     );
+			writer.marshalDouble    (        "comcat_err_rate"  , comcat_err_rate  );
+			marshal_string_coll     (writer, "comcat_exclude"   , comcat_exclude   );
+			writer.marshalInt       (        "locat_bins"       , locat_bins       );
+			marshal_string_coll     (writer, "locat_filenames"  , locat_filenames  );
+			writer.marshalInt       (        "block_pdl_intake" , block_pdl_intake );
+			writer.marshalInt       (        "block_poll_intake", block_poll_intake);
+			writer.marshalInt       (        "block_fc_content" , block_fc_content );
+			writer.marshalDouble    (        "db_err_rate"      , db_err_rate      );
+			writer.marshalInt       (        "pdl_enable"       , pdl_enable       );
+			writer.marshalString    (        "pdl_key_filename" , pdl_key_filename );
+			writer.marshalDouble    (        "pdl_err_rate"     , pdl_err_rate     );
+			writer.marshalString    (        "pdl_oaf_source"   , pdl_oaf_source   );
+			writer.marshalString    (        "pdl_oaf_type"     , pdl_oaf_type     );
+			writer.marshalInt       (        "pdl_target"       , pdl_target       );
+			marshal_pdl_sender_list (writer, "pdl_dev_senders"  , pdl_dev_senders  );
+			marshal_pdl_sender_list (writer, "pdl_prod_senders" , pdl_prod_senders );
+			PDLAwsSenderConfig.marshal_array (writer, "pdl_dev_aws_senders", pdl_dev_aws_senders);
+			PDLAwsSenderConfig.marshal_array (writer, "pdl_prod_aws_senders", pdl_prod_aws_senders);
+
+			break;
 		}
 	
 		return;
@@ -876,7 +992,7 @@ public class ServerConfigFile implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Contents
 
@@ -919,8 +1035,11 @@ public class ServerConfigFile implements Marshalable {
 			pdl_err_rate      = reader.unmarshalDouble    (        "pdl_err_rate"     );
 			pdl_oaf_source    = reader.unmarshalString    (        "pdl_oaf_source"   );
 			pdl_oaf_type      = reader.unmarshalString    (        "pdl_oaf_type"     );
+			pdl_target        = PDLTARG_V2;
 			pdl_dev_senders   = unmarshal_pdl_sender_list (reader, "pdl_dev_senders"  );
 			pdl_prod_senders  = unmarshal_pdl_sender_list (reader, "pdl_prod_senders" );
+			pdl_dev_aws_senders = new PDLAwsSenderConfig[0];
+			pdl_prod_aws_senders = new PDLAwsSenderConfig[0];
 
 			break;
 
@@ -961,8 +1080,56 @@ public class ServerConfigFile implements Marshalable {
 			pdl_err_rate      = reader.unmarshalDouble    (        "pdl_err_rate"     );
 			pdl_oaf_source    = reader.unmarshalString    (        "pdl_oaf_source"   );
 			pdl_oaf_type      = reader.unmarshalString    (        "pdl_oaf_type"     );
+			pdl_target        = PDLTARG_V2;
 			pdl_dev_senders   = unmarshal_pdl_sender_list (reader, "pdl_dev_senders"  );
 			pdl_prod_senders  = unmarshal_pdl_sender_list (reader, "pdl_prod_senders" );
+			pdl_dev_aws_senders = new PDLAwsSenderConfig[0];
+			pdl_prod_aws_senders = new PDLAwsSenderConfig[0];
+
+			break;
+
+		case MARSHAL_VER_3:
+
+			mongo_config      = new MongoDBConfig         (reader, "mongo_config"     );
+
+			server_name       = reader.unmarshalString    (        "server_name"      );
+			server_number     = reader.unmarshalInt       (        "server_number"    );
+			server_db_handles = new ArrayList<String>();
+			unmarshal_string_coll                         (reader, "server_db_handles", server_db_handles);
+			log_con_aafs      = reader.unmarshalString    (        "log_con_aafs"     );
+			log_con_intake    = reader.unmarshalString    (        "log_con_intake"   );
+			log_con_control   = reader.unmarshalString    (        "log_con_control"  );
+			log_summary       = reader.unmarshalString    (        "log_summary"      );
+
+			diag_fn_prefix     = reader.unmarshalString    (        "diag_fn_prefix"    );
+			diag_seq_lo        = reader.unmarshalInt       (        "diag_seq_lo"       );
+			diag_seq_hi        = reader.unmarshalInt       (        "diag_seq_hi"       );
+			forecast_fn_prefix = reader.unmarshalString    (        "forecast_fn_prefix");
+
+			comcat_url        = reader.unmarshalString    (        "comcat_url"       );
+			feed_url          = reader.unmarshalString    (        "feed_url"         );
+			comcat_dev_url    = reader.unmarshalString    (        "comcat_dev_url"   );
+			feed_dev_url      = reader.unmarshalString    (        "feed_dev_url"     );
+			comcat_err_rate   = reader.unmarshalDouble    (        "comcat_err_rate"  );
+			comcat_exclude = new LinkedHashSet<String>();
+			unmarshal_string_coll                         (reader, "comcat_exclude"   , comcat_exclude   );
+			locat_bins        = reader.unmarshalInt       (        "locat_bins"       );
+			locat_filenames = new ArrayList<String>();
+			unmarshal_string_coll                         (reader, "locat_filenames"  , locat_filenames  );
+			block_pdl_intake  = reader.unmarshalInt       (        "block_pdl_intake" );
+			block_poll_intake = reader.unmarshalInt       (        "block_poll_intake");
+			block_fc_content  = reader.unmarshalInt       (        "block_fc_content" );
+			db_err_rate       = reader.unmarshalDouble    (        "db_err_rate"      );
+			pdl_enable        = reader.unmarshalInt       (        "pdl_enable"       );
+			pdl_key_filename  = reader.unmarshalString    (        "pdl_key_filename" );
+			pdl_err_rate      = reader.unmarshalDouble    (        "pdl_err_rate"     );
+			pdl_oaf_source    = reader.unmarshalString    (        "pdl_oaf_source"   );
+			pdl_oaf_type      = reader.unmarshalString    (        "pdl_oaf_type"     );
+			pdl_target        = reader.unmarshalInt       (        "pdl_target"       );
+			pdl_dev_senders   = unmarshal_pdl_sender_list (reader, "pdl_dev_senders"  );
+			pdl_prod_senders  = unmarshal_pdl_sender_list (reader, "pdl_prod_senders" );
+			pdl_dev_aws_senders = PDLAwsSenderConfig.unmarshal_array (reader, "pdl_dev_aws_senders");
+			pdl_prod_aws_senders = PDLAwsSenderConfig.unmarshal_array (reader, "pdl_prod_aws_senders");
 
 			break;
 		}

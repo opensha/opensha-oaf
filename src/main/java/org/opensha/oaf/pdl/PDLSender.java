@@ -2,6 +2,7 @@ package org.opensha.oaf.pdl;
 
 import gov.usgs.earthquake.distribution.ProductSender;
 import gov.usgs.earthquake.distribution.SocketProductSender;
+import gov.usgs.earthquake.aws.AwsProductSender;
 
 import gov.usgs.earthquake.product.ByteContent;
 import gov.usgs.earthquake.product.Content;
@@ -17,6 +18,7 @@ import java.net.URL;
 import java.util.Map;
 import java.util.List;
 import java.net.MalformedURLException;
+import java.util.logging.Level;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.util.health.HealthMonitor;
@@ -233,7 +235,7 @@ public class PDLSender {
 
 		// Get the list of senders
 
-		List<PDLSenderConfig> sender_list = server_config.get_pdl_senders();
+		List<PDLAnySenderConfig> sender_list = server_config.get_pdl_senders();
 
 		// If there are no senders, simulate success and just return
 
@@ -273,41 +275,90 @@ public class PDLSender {
 			// Attempt to send using the current sender
 
 			try {
-				SocketProductSender sender;
 
-				// Get configuration of the current sender
+				// SockeProductSender
 
-				PDLSenderConfig sender_config = sender_list.get (current_index);
-				String host = sender_config.get_host();
-				int port = sender_config.get_port();
-				int connectTimeout = sender_config.get_connectTimeout();
+				if (sender_list.get (current_index) instanceof PDLSenderConfig) {
 
-				if (server_config.get_is_pdl_permitted()) {
+					SocketProductSender sender;
 
-					System.out.println ("Sending PDL product to " + host + ":" + port);
+					// Get configuration of the current sender
 
-					// SocketProductSenders send directly to a PDL HUB and do not introduce
-					// any polling latency.
-					sender = new SocketProductSender(host, port, connectTimeout);
+					PDLSenderConfig sender_config = (PDLSenderConfig)(sender_list.get (current_index));
+					String host = sender_config.get_host();
+					int port = sender_config.get_port();
+					int connectTimeout = sender_config.get_connectTimeout();
 
-					// If product consists primarily of binary data, set this option `true`
-					// to accelerate distribution.
-					sender.setBinaryFormat(!is_text);
+					if (server_config.get_is_pdl_permitted()) {
 
-					// If product consists primarily of text data, set this option `true`
-					// to accelerate distribution.
-					sender.setEnableDeflate(is_text);
+						System.out.println ("Sending PDL product to " + host + ":" + port);
 
-					// ^^ Note ^^ Typically do not set both of the above options to `true` as
-					//            binary content doesn't compress efficiently but adds
-					//            processing overhead.
+						// SocketProductSenders send directly to a PDL HUB and do not introduce
+						// any polling latency.
+						sender = new SocketProductSender(host, port, connectTimeout);
+
+						// If product consists primarily of binary data, set this option `true`
+						// to accelerate distribution.
+						sender.setBinaryFormat(!is_text);
+
+						// If product consists primarily of text data, set this option `true`
+						// to accelerate distribution.
+						sender.setEnableDeflate(is_text);
+
+						// ^^ Note ^^ Typically do not set both of the above options to `true` as
+						//            binary content doesn't compress efficiently but adds
+						//            processing overhead.
 		
-					sender.sendProduct(product);
+						sender.sendProduct(product);
 
-				} else {
+					} else {
 
-					System.out.println ("[SIMULATED] Sending PDL product to " + host + ":" + port);
+						System.out.println ("[SIMULATED] Sending PDL product to " + host + ":" + port);
 				
+					}
+
+				}
+
+				// AwsProductSender
+
+				else if (sender_list.get (current_index) instanceof PDLAwsSenderConfig) {
+
+					AwsProductSender sender;
+
+					// Get configuration of the current sender
+
+					PDLAwsSenderConfig sender_config = (PDLAwsSenderConfig)(sender_list.get (current_index));
+
+					if (server_config.get_is_pdl_permitted()) {
+
+						System.out.println ("Sending PDL product to " + sender_config.show_destination());
+
+						// Enable logging
+
+						PDLAwsSenderConfig.install_log_handler (Level.FINER);
+
+						// Make and configure the sender
+
+						String pdl_key_filename = server_config.get_pdl_key_filename();
+						sender = sender_config.make_sender (pdl_key_filename);
+
+						// Send the product
+		
+						sender.sendProduct(product);
+
+					} else {
+
+						System.out.println ("[SIMULATED] Sending PDL product to " + sender_config.show_destination());
+				
+					}
+
+				}
+
+				// Unknown sender
+
+				else {
+					System.out.println ("UNEXPECTED ERROR: PDLSender: Encountered unknown type of sender configuration");
+					throw new PDLSendException ("PDLSender: Encountered unknown type of sender configuration");
 				}
 			}
 
@@ -369,7 +420,7 @@ public class PDLSender {
 		// Get the list of senders
 
 		ServerConfig server_config = new ServerConfig();
-		List<PDLSenderConfig> sender_list = server_config.get_pdl_senders();
+		List<PDLAnySenderConfig> sender_list = server_config.get_pdl_senders();
 
 		// If there are no senders, simulate success and just return
 
@@ -404,41 +455,90 @@ public class PDLSender {
 			// Attempt to send using the current sender
 
 			try {
-				SocketProductSender sender;
 
-				// Get configuration of the current sender
+				// SockeProductSender
 
-				PDLSenderConfig sender_config = sender_list.get (current_index);
-				String host = sender_config.get_host();
-				int port = sender_config.get_port();
-				int connectTimeout = sender_config.get_connectTimeout();
+				if (sender_list.get (current_index) instanceof PDLSenderConfig) {
 
-				if (server_config.get_is_pdl_permitted()) {
+					SocketProductSender sender;
 
-					System.out.println ("Sending PDL product to " + host + ":" + port);
+					// Get configuration of the current sender
 
-					// SocketProductSenders send directly to a PDL HUB and do not introduce
-					// any polling latency.
-					sender = new SocketProductSender(host, port, connectTimeout);
+					PDLSenderConfig sender_config = (PDLSenderConfig)(sender_list.get (current_index));
+					String host = sender_config.get_host();
+					int port = sender_config.get_port();
+					int connectTimeout = sender_config.get_connectTimeout();
 
-					// If product consists primarily of binary data, set this option `true`
-					// to accelerate distribution.
-					sender.setBinaryFormat(!is_text);
+					if (server_config.get_is_pdl_permitted()) {
 
-					// If product consists primarily of text data, set this option `true`
-					// to accelerate distribution.
-					sender.setEnableDeflate(is_text);
+						System.out.println ("Sending PDL product to " + host + ":" + port);
 
-					// ^^ Note ^^ Typically do not set both of the above options to `true` as
-					//            binary content doesn't compress efficiently but adds
-					//            processing overhead.
+						// SocketProductSenders send directly to a PDL HUB and do not introduce
+						// any polling latency.
+						sender = new SocketProductSender(host, port, connectTimeout);
+
+						// If product consists primarily of binary data, set this option `true`
+						// to accelerate distribution.
+						sender.setBinaryFormat(!is_text);
+
+						// If product consists primarily of text data, set this option `true`
+						// to accelerate distribution.
+						sender.setEnableDeflate(is_text);
+
+						// ^^ Note ^^ Typically do not set both of the above options to `true` as
+						//            binary content doesn't compress efficiently but adds
+						//            processing overhead.
 		
-					sender.sendProduct(product);
+						sender.sendProduct(product);
 
-				} else {
+					} else {
 
-					System.out.println ("[SIMULATED] Sending PDL product to " + host + ":" + port);
+						System.out.println ("[SIMULATED] Sending PDL product to " + host + ":" + port);
 				
+					}
+
+				}
+
+				// AwsProductSender
+
+				else if (sender_list.get (current_index) instanceof PDLAwsSenderConfig) {
+
+					AwsProductSender sender;
+
+					// Get configuration of the current sender
+
+					PDLAwsSenderConfig sender_config = (PDLAwsSenderConfig)(sender_list.get (current_index));
+
+					if (server_config.get_is_pdl_permitted()) {
+
+						System.out.println ("Sending PDL product to " + sender_config.show_destination());
+
+						// Enable logging
+
+						PDLAwsSenderConfig.install_log_handler (Level.FINER);
+
+						// Make and configure the sender
+
+						String pdl_key_filename = server_config.get_pdl_key_filename();
+						sender = sender_config.make_sender (pdl_key_filename);
+
+						// Send the product
+		
+						sender.sendProduct(product);
+
+					} else {
+
+						System.out.println ("[SIMULATED] Sending PDL product to " + sender_config.show_destination());
+				
+					}
+
+				}
+
+				// Unknown sender
+
+				else {
+					System.out.println ("UNEXPECTED ERROR: PDLSender: Encountered unknown type of sender configuration");
+					throw new PDLSendException ("PDLSender: Encountered unknown type of sender configuration");
 				}
 			}
 

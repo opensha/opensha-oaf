@@ -5,7 +5,7 @@ package org.opensha.oaf.pdl;
  * Configuration settings for a PDL sender.
  * Author: Michael Barall 06/03/2018.
  */
-public class PDLSenderConfig {
+public class PDLSenderConfig extends PDLAnySenderConfig {
 
 	// The host name.
 
@@ -69,7 +69,7 @@ public class PDLSenderConfig {
 
 	@Override
 	public String toString() {
-		return "host = " + ((host == null) ? "<null>" : host) + ", port = " + port + ", connectTimeout = " + connectTimeout; 
+		return "PDLSenderConfig: host = " + ((host == null) ? "<null>" : host) + ", port = " + port + ", connectTimeout = " + connectTimeout; 
 	}
 
 }
