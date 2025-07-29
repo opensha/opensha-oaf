@@ -2870,9 +2870,27 @@ public class OEGUIModel extends OEGUIComponent {
 
 		forecast_fcparams.next_scheduled_lag = 0L;
 
-		// If we are using a custom search region, record that in the analyst parameters
+		// Set inset parameters
 
-		if (custom_search_region != null) {
+		double the_fit_start_inset = xfer.x_commonValue.x_fitStartInsetParam;
+		boolean f_has_start_inset = (Math.abs(the_fit_start_inset - ForecastParameters.DEFAULT_FIT_START_INSET) > 0.000001);
+		if (!( f_has_start_inset )) {
+			the_fit_start_inset = ForecastParameters.DEFAULT_FIT_START_INSET;
+		}
+		forecast_fcparams.fit_start_inset = the_fit_start_inset;
+		fetch_fcparams.fit_start_inset = the_fit_start_inset;	// so it will be seen by make_analyst_options()
+
+		double the_fit_end_inset = xfer.x_commonValue.x_fitEndInsetParam;
+		boolean f_has_end_inset = (Math.abs(the_fit_end_inset - ForecastParameters.DEFAULT_FIT_END_INSET) > 0.000001);
+		if (!( f_has_end_inset )) {
+			the_fit_end_inset = ForecastParameters.DEFAULT_FIT_END_INSET;
+		}
+		forecast_fcparams.fit_end_inset = the_fit_end_inset;
+		fetch_fcparams.fit_end_inset = the_fit_end_inset;	// so it will be seen by make_analyst_options()
+
+		// If we are using a custom search region or inset parameters, record that in the analyst parameters
+
+		if (custom_search_region != null || f_has_start_inset || f_has_end_inset) {
 			forecast_analyst_opts.analyst_params.set_analyst_aftershock_search_params (
 				true,										// the_aftershock_search_avail
 				custom_search_region,						// the_aftershock_search_region
@@ -2881,8 +2899,8 @@ public class OEGUIModel extends OEGUIComponent {
 				ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_depth
 				ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_depth
 				ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_mag
-				ForecastParameters.SEARCH_PARAM_OMIT,		// the_fit_start_inset
-				ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
+				f_has_start_inset ? the_fit_start_inset : ForecastParameters.SEARCH_PARAM_OMIT,	// the_fit_start_inset
+				f_has_end_inset ? the_fit_end_inset : ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
 			);
 
 			forecast_fcparams.aftershock_search_fetch_meth = ForecastParameters.FETCH_METH_ANALYST;
@@ -3221,9 +3239,17 @@ public class OEGUIModel extends OEGUIComponent {
 					fetch_fcparams.seq_spec_params				// seq_spec_params
 				);
 
-				// If we used a custom search region, set it
+				// Inset parameters
 
-				if (custom_search_region != null) {
+				double the_fit_start_inset = fetch_fcparams.fit_start_inset;
+				boolean f_has_start_inset = (Math.abs(the_fit_start_inset - ForecastParameters.DEFAULT_FIT_START_INSET) > 0.000001);
+
+				double the_fit_end_inset = fetch_fcparams.fit_end_inset;
+				boolean f_has_end_inset = (Math.abs(the_fit_end_inset - ForecastParameters.DEFAULT_FIT_END_INSET) > 0.000001);
+
+				// If we used a custom search region or inset parameters, set it
+
+				if (custom_search_region != null || f_has_start_inset || f_has_end_inset) {
 					analyst_params.set_analyst_aftershock_search_params (
 						true,										// the_aftershock_search_avail
 						custom_search_region,						// the_aftershock_search_region
@@ -3232,8 +3258,8 @@ public class OEGUIModel extends OEGUIComponent {
 						ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_depth
 						ForecastParameters.SEARCH_PARAM_OMIT,		// the_max_depth
 						ForecastParameters.SEARCH_PARAM_OMIT,		// the_min_mag
-						ForecastParameters.SEARCH_PARAM_OMIT,		// the_fit_start_inset
-						ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
+						f_has_start_inset ? the_fit_start_inset : ForecastParameters.SEARCH_PARAM_OMIT,	// the_fit_start_inset
+						f_has_end_inset ? the_fit_end_inset : ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
 					);
 				}
 			}

@@ -344,7 +344,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private DoubleParameter fitStartInsetParam;
 
 	private DoubleParameter init_fitStartInsetParam () throws GUIEDTException {
-		fitStartInsetParam = new DoubleParameter("Fit Start Inset", 0.0, 3650.0, Double.valueOf(0.0));
+		fitStartInsetParam = new DoubleParameter("Fit Start Inset", -365.0, 3650.0, Double.valueOf(0.0));
 		fitStartInsetParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		fitStartInsetParam.setUnits("Days");
 		fitStartInsetParam.setInfo("Time after mainshock to begin fitting parameters");
