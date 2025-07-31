@@ -57,6 +57,7 @@ import org.opensha.oaf.rj.SeqSpecRJ_Parameters;
 import org.opensha.oaf.rj.USGS_AftershockForecast;
 import org.opensha.oaf.rj.USGS_AftershockForecast.Duration;
 import org.opensha.oaf.rj.USGS_AftershockForecast.Template;
+import org.opensha.oaf.rj.OAFRegimeParams;
 
 import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.LocationUtils;
@@ -139,7 +140,10 @@ import org.opensha.oaf.util.catalog.ObsEqkRupFilter;
 import org.opensha.oaf.util.LineConsumerFile;
 import org.opensha.oaf.util.LineSupplierFile;
 import org.opensha.oaf.oetas.OEOrigin;
+import org.opensha.oaf.oetas.OEConstants;
+import org.opensha.oaf.oetas.util.OEDiscreteRange;
 import org.opensha.oaf.oetas.env.OEtasParameters;
+import org.opensha.oaf.oetas.env.OEtasConfig;
 
 
 // Operational ETAS GUI - Model implementation.
@@ -864,7 +868,7 @@ public class OEGUIModel extends OEGUIComponent {
 	}
 
 	// The ETAS parameters for the mainshock.
-	// Can be null if there are no ETAS parameters in the firecast parameters.
+	// Can be null if there are no ETAS parameters in the forecast parameters.
 	// Available when model state >= MODSTATE_CATALOG.
 
 	public final OEtasParameters get_etasParams () {
@@ -876,6 +880,35 @@ public class OEGUIModel extends OEGUIComponent {
 		}
 		return aafs_fcparams.etas_params;
 	}
+
+//	// The ETAS parameters for the mainshock.
+//	// If there are no ETAS parameters in the forecast parameters,
+//	// make a set of ETAS parameters for the mainshock location.
+//	// Caller should handle the case of null parameters returned
+//	// within the OAFRegimeParams, although this should not happen.
+//	// Available when model state >= MODSTATE_CATALOG.
+//
+//	public final OAFRegimeParams<OEtasParameters> get_or_make_etasParams () {
+//		if (!( modstate >= MODSTATE_CATALOG )) {
+//			throw new IllegalStateException ("Access to OEGUIModel.get_or_make_etasParams while in state " + cur_modstate_string());
+//		}
+//
+//		// If present in forecast parameters, return it
+//
+//		if (aafs_fcparams.etas_avail) {
+//			return new OAFRegimeParams<OEtasParameters> (OAFTectonicRegime.forName (aafs_fcparams.etas_regime), aafs_fcparams.etas_params);
+//		}
+//
+//		// If no mainshock, return null (should never happen)
+//
+//		if (!( fcmain.mainshock_avail )) {
+//			return new OAFRegimeParams<OEtasParameters> (null, null);
+//		}
+//
+//		// Otherwise, return parameters based on mainshock location
+//
+//		return (new OEtasConfig()).get_resolved_params (fcmain.get_eqk_location(), null);
+//	}
 
 	// Magnitude-number distribution of the catalog.
 	// Available when model state >= MODSTATE_CATALOG.
@@ -963,6 +996,24 @@ public class OEGUIModel extends OEGUIComponent {
 
 	public long get_max_evseq_lookback () {
 		return max_evseq_lookback;
+	}
+
+
+	// Configured setting for event-sequence enable.
+
+	private boolean config_is_evseq_enabled;
+
+	public boolean get_config_is_evseq_enabled () {
+		return config_is_evseq_enabled;
+	}
+
+
+	// Configured setting for ETAS enable.
+
+	private boolean config_is_etas_enabled;
+
+	public boolean get_config_is_etas_enabled () {
+		return config_is_etas_enabled;
 	}
 
 
@@ -1257,6 +1308,12 @@ public class OEGUIModel extends OEGUIComponent {
 		min_evseq_lookback = ActionConfigFile.REC_MIN_EVSEQ_LOOKBACK;
 		def_evseq_lookback = ActionConfigFile.DEFAULT_EVSEQ_LOOKBACK;
 		max_evseq_lookback = ActionConfigFile.REC_MAX_EVSEQ_LOOKBACK;
+
+		config_is_evseq_enabled = action_config.get_is_evseq_enabled();
+		config_is_evseq_enabled = true;		// for testing
+
+		config_is_etas_enabled = action_config.get_is_etas_enabled();
+		config_is_etas_enabled = true;		// for testing
 
 		return;
 	}
@@ -2908,6 +2965,56 @@ public class OEGUIModel extends OEGUIComponent {
 			forecast_fcparams.aftershock_search_fetch_meth = ForecastParameters.FETCH_METH_AUTO;
 		}
 
+		// If ETAS is enabled ...
+
+		if (config_is_etas_enabled) {
+
+			// Set ETAS parameters in forecast parameters
+
+			forecast_fcparams.set_analyst_etas_params (
+				true,					// the_etas_avail
+				"",						// the_etas_regime
+				new OEtasParameters()	// the_etas_params
+			);
+
+			// Set ETAS parameters in analyst options
+
+			forecast_analyst_opts.analyst_params.set_analyst_etas_params (
+				true,					// the_etas_avail
+				"",						// the_etas_regime
+				new OEtasParameters()	// the_etas_params
+			);
+
+			fetch_fcparams.etas_params = forecast_analyst_opts.analyst_params.etas_params;	// so it will be seen by make_analyst_options()
+
+			// Make the ETAS parameters
+
+			forecast_fcparams.etas_regime = make_fit_etas_params (
+				xfer,
+				forecast_fcparams.etas_params,
+				forecast_analyst_opts.analyst_params.etas_params
+			);
+		}
+
+		// ETAS not enabled, make sure there are no ETAS parameters
+
+		else {
+
+			// No ETAS parameters in forecast parameters
+
+			forecast_fcparams.etas_fetch_meth = ForecastParameters.FETCH_METH_AUTO;
+			forecast_fcparams.etas_avail = false;
+			forecast_fcparams.set_default_etas_params();
+
+			// No ETAS parameters in analyst options
+
+			forecast_analyst_opts.analyst_params.etas_fetch_meth = ForecastParameters.FETCH_METH_AUTO;
+			forecast_analyst_opts.analyst_params.etas_avail = false;
+			forecast_analyst_opts.analyst_params.set_default_etas_params();
+
+			fetch_fcparams.etas_params = null;	// so it will be seen by make_analyst_options()
+		}
+
 		// Run the forecast
 		// Note: The aftershocks are filtered by time and magnitude in ForecastResults
 		// TODO: Get injectable text (or maybe injectable text can be added to JSON later, also next forecast time)
@@ -2954,6 +3061,259 @@ public class OEGUIModel extends OEGUIComponent {
 		cat_bParam = xfer.x_commonValue.x_bParam;
 
 		return;
+	}
+
+
+
+
+	// Make ETAS parameters to use in a forecast.
+	// Parameters:
+	//  xfer = Transfer object to read/modify control parameters.
+	//  forecast_etas_params = Receives ETAS parameters to use in a forecast.
+	//  analyst_etas_params = Receives ETAS parameters to use in analyst options.
+	// Returns the regime for the mainshock location.
+	// Note: Caller must check that ETAS is enabled in the action configuration before calling.
+
+	public String make_fit_etas_params (
+		OEGUIController.XferFittingMod xfer,
+		OEtasParameters forecast_etas_params,
+		OEtasParameters analyst_etas_params
+	) {
+
+		// Start with empty analyst parameters
+
+		analyst_etas_params.clear();
+
+		// Forecast parameters start as default parameters for the mainshock location
+
+		String regime_name = "";
+		OAFRegimeParams<OEtasParameters> loc_regime_params;
+		if (fcmain.mainshock_avail) {
+			loc_regime_params = (new OEtasConfig()).get_resolved_params (fcmain.get_eqk_location(), null);
+		} else {
+			loc_regime_params = new OAFRegimeParams<OEtasParameters> (null, null);
+		}
+		if (loc_regime_params.has_regime()) {
+			regime_name = loc_regime_params.regime.toString();
+		}
+		if (loc_regime_params.has_params()) {
+			forecast_etas_params.copy_from (loc_regime_params.params);
+		} else {
+			forecast_etas_params.set_to_typical_cv();
+		}
+
+		// Switch on ETAS eligibility option code
+
+		switch (xfer.x_etasValue.x_etasEnableParam) {
+
+		case DISABLE:
+
+			// If disable, just set disable eligibility and return
+
+			analyst_etas_params.set_eligible_params_to_analyst (
+				true,
+				OEConstants.ELIGIBLE_OPT_DISABLE
+			);
+			forecast_etas_params.merge_from (analyst_etas_params);
+			return regime_name;
+
+		case AUTO:
+
+			// If auto, don't need eligibility in analyst parameters
+
+			break;
+
+		case ENABLE_FIT_ONLY:
+
+			// If enable fit only, set number of catalogs to minimum
+
+			analyst_etas_params.set_num_catalogs_to_minimum();
+			// fall thru ...
+
+		case ENABLE:
+
+			// If enable or enable fit only, set eligibility to enable, copying magnitude ranges from forecast params
+				
+			analyst_etas_params.set_eligible_params_to_analyst (
+				true,
+				OEConstants.ELIGIBLE_OPT_ENABLE,
+				forecast_etas_params.eligible_main_mag,
+				forecast_etas_params.eligible_cat_max_mag,
+				forecast_etas_params.eligible_small_mag,
+				forecast_etas_params.eligible_above_mag_cat
+			);
+			break;
+
+		default:
+			throw new IllegalArgumentException ("OEGUIModel.make_fit_etas_params: Invalid ETAS enable option");
+		}
+
+		// ETAS parameter ranges
+
+		OEDiscreteRange b_range = make_single_range (
+			xfer.x_etasValue.x_useCommonBParam ? xfer.x_commonValue.x_bParam : xfer.x_etasValue.x_bETASParam
+		);
+		
+		OEDiscreteRange alpha_range = null;
+		if (!( xfer.x_etasValue.x_alphaEqualsBParam )) {
+			alpha_range = make_single_range (xfer.x_etasValue.x_alphaParam);
+		}
+
+		OEDiscreteRange c_range = make_log_range (
+			xfer.x_etasValue.x_cETASValRangeParam,
+			xfer.x_etasValue.x_cETASValNumParam
+		);
+
+		OEDiscreteRange p_range = make_linear_range (
+			xfer.x_etasValue.x_pETASValRangeParam,
+			xfer.x_etasValue.x_pETASValNumParam
+		);
+
+		OEDiscreteRange n_range = make_log_skew_range (
+			xfer.x_etasValue.x_nETASValRangeParam,
+			xfer.x_etasValue.x_nETASValNumParam,
+			xfer.x_etasValue.x_nETASValSkewParam
+		);
+
+		OEDiscreteRange zams_range = make_linear_range (
+			xfer.x_etasValue.x_zamsETASValRangeParam,
+			xfer.x_etasValue.x_zamsETASValNumParam
+		);
+
+		OEDiscreteRange zmu_range = make_log_range (
+			xfer.x_etasValue.x_zmuETASValRangeParam,
+			xfer.x_etasValue.x_zmuETASValNumParam
+		);
+
+		boolean relative_zams = xfer.x_etasValue.x_zamsETASValRelativeParam;
+
+		analyst_etas_params.set_range_to_analyst (
+			true,
+			b_range,
+			alpha_range,
+			c_range,
+			p_range,
+			n_range,
+			zams_range,
+			zmu_range,
+			relative_zams
+		);
+
+		// Bayesian prior
+
+		switch (xfer.x_etasValue.x_etasPriorParam) {
+
+		case MIXED:
+			analyst_etas_params.set_bay_prior_to_typical_mixed_rnpc();
+			break;
+
+		case GAUSSIAN:
+			analyst_etas_params.set_bay_prior_to_typical_gauss_apc();
+			break;
+
+		case UNIFORM:
+			analyst_etas_params.set_bay_prior_to_typical_uniform();
+			break;
+
+		default:
+			throw new IllegalArgumentException ("OEGUIModel.make_fit_etas_params: Invalid Bayesian prior option");
+		}
+
+		// Bayesian weight
+
+		switch (xfer.x_etasValue.x_etasModelParam) {
+
+		case AUTO:
+			break;
+
+		case BAYESIAN:
+			analyst_etas_params.set_bay_weight_to_analyst (
+				true,							// bay_weight_avail
+				OEConstants.BAY_WT_BAYESIAN,	// bay_weight
+				OEConstants.BAY_WT_BAYESIAN,	// early_bay_weight
+				OEConstants.DEF_EARLY_BAY_TIME	// early_bay_time
+			);
+			break;
+
+		case SEQSPEC:
+			analyst_etas_params.set_bay_weight_to_analyst (
+				true,							// bay_weight_avail
+				OEConstants.BAY_WT_SEQ_SPEC,	// bay_weight
+				OEConstants.BAY_WT_SEQ_SPEC,	// early_bay_weight
+				OEConstants.DEF_EARLY_BAY_TIME	// early_bay_time
+			);
+			break;
+
+		case GENERIC:
+			analyst_etas_params.set_bay_weight_to_analyst (
+				true,							// bay_weight_avail
+				OEConstants.BAY_WT_GENERIC,		// bay_weight
+				OEConstants.BAY_WT_GENERIC,		// early_bay_weight
+				OEConstants.DEF_EARLY_BAY_TIME	// early_bay_time
+			);
+			break;
+
+		case CUSTOM:
+			analyst_etas_params.set_bay_weight_to_analyst (
+				true,									// bay_weight_avail
+				xfer.x_etasValue.x_etasBayWeightParam,	// bay_weight
+				xfer.x_etasValue.x_etasBayWeightParam,	// early_bay_weight
+				OEConstants.DEF_EARLY_BAY_TIME			// early_bay_time
+			);
+			break;
+
+		default:
+			throw new IllegalArgumentException ("OEGUIModel.make_fit_etas_params: Invalid ETAS model option");
+		}
+
+		// Marge analyst parameters into forecast parameters
+
+		forecast_etas_params.merge_from (analyst_etas_params);
+		return regime_name;
+	}
+
+
+
+
+	// Make a single-element range.
+
+	public static OEDiscreteRange make_single_range (double x) {
+		return OEDiscreteRange.makeSingle (x);
+	}
+
+
+	// Make a linear range, or single if it only contains a single element.
+
+	public static OEDiscreteRange make_linear_range (Range range, int num) {
+		if (num == 1) {
+			return OEDiscreteRange.makeSingle (range.getLowerBound());
+		}
+		return OEDiscreteRange.makeLinear (num, range.getLowerBound(), range.getUpperBound());
+	}
+
+
+	// Make a log range, or single if it only contains a single element.
+	// (Implies that a single-element range can have zero limits.)
+
+	public static OEDiscreteRange make_log_range (Range range, int num) {
+		if (num == 1) {
+			return OEDiscreteRange.makeSingle (range.getLowerBound());
+		}
+		return OEDiscreteRange.makeLog (num, range.getLowerBound(), range.getUpperBound());
+	}
+
+
+	// Make a skewed log range, or single if it only contains a single element.
+	// (If skew is 1.0 then make a log range.)
+
+	public static OEDiscreteRange make_log_skew_range (Range range, int num, double skew) {
+		if (num == 1) {
+			return OEDiscreteRange.makeSingle (range.getLowerBound());
+		}
+		if (Math.abs (skew - 1.0) <= 1.0e-8) {
+			return OEDiscreteRange.makeLog (num, range.getLowerBound(), range.getUpperBound());
+		}
+		return OEDiscreteRange.makeLogSkew (num, range.getLowerBound(), range.getUpperBound(), skew);
 	}
 
 
@@ -3261,6 +3621,20 @@ public class OEGUIModel extends OEGUIComponent {
 						f_has_start_inset ? the_fit_start_inset : ForecastParameters.SEARCH_PARAM_OMIT,	// the_fit_start_inset
 						f_has_end_inset ? the_fit_end_inset : ForecastParameters.SEARCH_PARAM_OMIT		// the_fit_end_inset
 					);
+				}
+
+				// Set ETAS parameters
+
+				if (fetch_fcparams.etas_params != null) {
+					analyst_params.set_analyst_etas_params (
+						true,						// the_etas_avail
+						"",							// the_etas_regime
+						fetch_fcparams.etas_params	// the_etas_params
+					);
+				} else {
+					analyst_params.etas_fetch_meth = ForecastParameters.FETCH_METH_AUTO;
+					analyst_params.etas_avail = false;
+					analyst_params.set_default_etas_params();
 				}
 			}
 		}

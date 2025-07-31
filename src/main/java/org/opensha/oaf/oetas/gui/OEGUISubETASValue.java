@@ -184,6 +184,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private static final int PARMGRP_ETAS_OPTION = 811;			// Button to open the ETAS parameter option dialog
 	private static final int PARMGRP_ETAS_MODEL = 812;			// Option to select model
 	private static final int PARMGRP_ETAS_PRIOR = 813;			// Option to select prior
+	private static final int PARMGRP_USE_COMMON_B = 814;		// Option to use common b-value (same as RJ)
 
 
 
@@ -216,6 +217,9 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private boolean def_f_alpha_eq_b;
 	private double def_alpha_value;
+
+	private boolean def_f_use_common_b;
+	private double def_b_value;
 
 	// Initialize the default ranges using the defaults in OEConstants.
 
@@ -269,6 +273,10 @@ public class OEGUISubETASValue extends OEGUIListener {
 			def_alpha_value = def_alpha_range.get_range_middle();
 		}
 
+		OEDiscreteRange def_b_range = OEConstants.def_b_range();
+		def_f_use_common_b = true;
+		def_b_value = def_b_range.get_range_middle();
+
 		return;
 	}
 
@@ -277,7 +285,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private void update_default_ranges (OEtasParameters etas_params) {
 
-		if (!( etas_params != null && etas_params.range_avail )) {
+		if (!( etas_params != null && etas_params.range_avail && !(etas_params.eligible_params_avail && etas_params.eligible_option == OEConstants.ELIGIBLE_OPT_DISABLE) )) {
 			init_default_ranges();
 			return;
 		}
@@ -330,6 +338,10 @@ public class OEGUISubETASValue extends OEGUIListener {
 			def_alpha_value = def_alpha_range.get_range_middle();
 		}
 
+		OEDiscreteRange def_b_range = etas_params.b_range;
+		def_f_use_common_b = false;
+		def_b_value = def_b_range.get_range_middle();
+
 		return;
 	}
 
@@ -365,7 +377,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private void update_default_model (OEtasParameters etas_params) {
 
-		if (!( etas_params != null && etas_params.bay_weight_avail )) {
+		if (!( etas_params != null && etas_params.bay_weight_avail && !(etas_params.eligible_params_avail && etas_params.eligible_option == OEConstants.ELIGIBLE_OPT_DISABLE) )) {
 			init_default_model();
 			return;
 		}
@@ -414,7 +426,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private void update_default_prior (OEtasParameters etas_params) {
 
-		if (!( etas_params != null && etas_params.bay_prior_avail )) {
+		if (!( etas_params != null && etas_params.bay_prior_avail && !(etas_params.eligible_params_avail && etas_params.eligible_option == OEConstants.ELIGIBLE_OPT_DISABLE) )) {
 			init_default_prior();
 			return;
 		}
@@ -438,6 +450,40 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 
 
+	// Default values for ETAS enable.
+
+	private EtasEnableOption def_etas_enable;
+
+	// Initialize from OEConstants.
+
+	private void init_default_etas_enable () {
+		def_etas_enable = EtasEnableOption.AUTO;
+		return;
+	}
+
+	// Initialize from ETAS parameters.
+
+	private void update_default_etas_enable (OEtasParameters etas_params) {
+
+		if (!( etas_params != null && etas_params.eligible_params_avail )) {
+			init_default_etas_enable();
+			return;
+		}
+
+		if (etas_params.eligible_option == OEConstants.ELIGIBLE_OPT_DISABLE) {
+			def_etas_enable = EtasEnableOption.DISABLE;
+		} else if (etas_params.eligible_option == OEConstants.ELIGIBLE_OPT_ENABLE) {
+			def_etas_enable = EtasEnableOption.ENABLE;
+		} else {
+			def_etas_enable = EtasEnableOption.AUTO;
+		}
+
+		return;
+	}
+
+
+
+
 	//----- Controls for the ETAS parameter dialog -----
 
 
@@ -450,6 +496,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private EnumParameter<EtasEnableOption> init_etasEnableParam () throws GUIEDTException {
 		etasEnableParam = new EnumParameter<EtasEnableOption>(
 				"ETAS Forecasts", EnumSet.allOf(EtasEnableOption.class), EtasEnableOption.AUTO, null);
+		etasEnableParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		etasEnableParam.setInfo("Controls whether ETAS is used to generate forecasts");
 		register_param (etasEnableParam, "etasEnableParam", PARMGRP_ETAS_ENABLE);
 		return etasEnableParam;
@@ -663,6 +710,31 @@ public class OEGUISubETASValue extends OEGUIListener {
 	}
 
 
+	// Option to use common b-value.
+
+	private BooleanParameter useCommonBParam;
+
+	private BooleanParameter init_useCommonBParam () throws GUIEDTException {
+		useCommonBParam = new BooleanParameter("Use common b-value", true);
+		useCommonBParam.setInfo("Controls if ETAS b is fixed equal to the RJ Gutenberg-Richter exponent b");
+		register_param (useCommonBParam, "useCommonBParam", PARMGRP_USE_COMMON_B);
+		return useCommonBParam;
+	}
+
+
+	// ETAS b parameter; edit box containing a number.
+
+	private DoubleParameter bETASParam;
+
+	private DoubleParameter init_bETASParam () throws GUIEDTException {
+		bETASParam = new DoubleParameter("ETAS b", 1.0);	// can't use DoubleParameter("ETAS b", null) because the call would be ambiguous
+		bETASParam.setValue(null);
+		bETASParam.setInfo("The Gutenberg-Richter exponent b");
+		register_param (bETASParam, "bETASParam", PARMGRP_ETAS_VALUE);
+		return bETASParam;
+	}
+
+
 	// Option to use alpha == b.
 
 	private BooleanParameter alphaEqualsBParam;
@@ -680,7 +752,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private DoubleParameter alphaParam;
 
 	private DoubleParameter init_alphaParam () throws GUIEDTException {
-		alphaParam = new DoubleParameter("alpha", 1.0);	// can't use DoubleParameter("alpha", null) because the call would be ambiguous
+		alphaParam = new DoubleParameter("ETAS alpha", 1.0);	// can't use DoubleParameter("ETAS alpha", null) because the call would be ambiguous
 		alphaParam.setValue(null);
 		alphaParam.setInfo("The productivity exponent alpha, usually set equal to b");
 		register_param (alphaParam, "alphaParam", PARMGRP_ETAS_VALUE);
@@ -725,6 +797,10 @@ public class OEGUISubETASValue extends OEGUIListener {
 		init_etasBayWeightParam();
 
 		init_etasPriorParam();
+
+		init_useCommonBParam();
+
+		init_bETASParam();
 
 		init_alphaEqualsBParam();
 
@@ -794,7 +870,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 		boolean f_button_row = false;
 
 		etasOptionEditParam.setListTitleText ("ETAS Options");
-		etasOptionEditParam.setDialogDimensions (gui_top.get_dialog_dims(5, f_button_row, 2));
+		etasOptionEditParam.setDialogDimensions (gui_top.get_dialog_dims(7, f_button_row, 2));
 
 		etasOptionList.addParameter(etasModelParam);
 		etasOptionList.addParameter(etasBayWeightParam);
@@ -805,6 +881,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 		etasOptionList.addParameter(new GUISeparatorParameter("Separator2", gui_top.get_separator_color()));
 
+		etasOptionList.addParameter(useCommonBParam);
+		etasOptionList.addParameter(bETASParam);
 		etasOptionList.addParameter(alphaEqualsBParam);
 		etasOptionList.addParameter(alphaParam);
 		
@@ -845,6 +923,13 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private void adjust_enable () throws GUIEDTException {
 
+		// Get flag indicated if using common b-value
+
+		boolean f_use_common_b = true;
+		if (f_etas_value_enable) {
+			f_use_common_b = validParam(useCommonBParam);
+		}
+
 		// Get flag indicating if alpha == b is forced
 
 		boolean f_alpha_eq_b = true;
@@ -867,6 +952,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 		enableParam(zmuETASValRangeParam, f_etas_value_enable);
 		enableParam(zmuETASValNumParam, f_etas_value_enable);
 
+		enableParam(useCommonBParam, f_etas_value_enable);
+		enableParam(bETASParam, !f_use_common_b);
 		enableParam(alphaEqualsBParam, f_etas_value_enable);
 		enableParam(alphaParam, !f_alpha_eq_b);
 
@@ -898,11 +985,39 @@ public class OEGUISubETASValue extends OEGUIListener {
 			updateParam(zmuETASValRangeParam, null);
 			updateParam(zmuETASValNumParam, null);
 
+			updateParam(useCommonBParam, true);
+			updateParam(bETASParam, null);
 			updateParam(alphaEqualsBParam, true);
 			updateParam(alphaParam, null);
 			updateParam(etasModelParam, EtasModelOption.AUTO);
 			updateParam(etasBayWeightParam, null);
 			updateParam(etasPriorParam, EtasPriorOption.MIXED);
+		}
+		else {
+			if (f_use_common_b) {
+				updateParam(bETASParam, null);
+			} else {
+				if (!( definedParam(bETASParam) )) {
+					updateParam(bETASParam, def_b_value);
+				}
+			}
+
+			if (f_alpha_eq_b) {
+				updateParam(alphaParam, null);
+			} else {
+				if (!( definedParam(alphaParam) )) {
+					updateParam(alphaParam, def_alpha_value);
+				}
+			}
+		}
+
+		if (!( f_sub_enable )) {
+			updateParam(etasEnableParam, null);
+		}
+		else {
+			if (!( definedParam(etasEnableParam) )) {
+				updateParam(etasEnableParam, def_etas_enable);
+			}
 		}
 
 		return;
@@ -1022,6 +1137,14 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 		public int x_zmuETASValNumParam;				// parameter value, checked for validity
 
+		// Flag indicating if using common b-value.
+
+		public boolean x_useCommonBParam;				// parameter value, checked for validity
+
+		// Value of b, present if x_useCommonBParam is false.
+
+		public double x_bETASParam;				// parameter value, checked for validity
+
 		// Flag indicating if alpha == b.
 
 		public boolean x_alphaEqualsBParam;				// parameter value, checked for validity
@@ -1090,6 +1213,13 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 			xfer_clean();
 
+			// If subpanel is disabled, just set ETAS disable
+
+			if (!( f_sub_enable )) {
+				x_etasEnableParam = EtasEnableOption.DISABLE;
+				return this;
+			}
+
 			// ETAS enable
 
 			x_etasEnableParam = validParam(etasEnableParam);
@@ -1136,6 +1266,16 @@ public class OEGUISubETASValue extends OEGUIListener {
 			max_grid = max_grid / x_zmuETASValNumParam;
 			Preconditions.checkState(max_grid > 0, "ETAS parameter search grid exceeds 5,000,000 entries");
 
+			// Flag indicating if using common b-value.
+
+			x_useCommonBParam = validParam(useCommonBParam);
+
+			// Value of b, present if x_useCommonBParam is false.
+
+			if (!( x_useCommonBParam )) {
+				x_bETASParam = validParam(bETASParam);
+			}
+
 			// Flag indicating if alpha == b.
 
 			x_alphaEqualsBParam = validParam(alphaEqualsBParam);
@@ -1169,11 +1309,21 @@ public class OEGUISubETASValue extends OEGUIListener {
 		@Override
 		public void xfer_store () throws GUIEDTException {
 
-			// If we're forcing alpha == b, then update alpha with b-value from the model
-
-			if (x_alphaEqualsBParam) {
-				updateParam(alphaParam, gui_model.get_cat_bParam());
-			}
+			//  // If we're using common b-value, then update using the b-value from the model
+			//  
+			//  if (x_useCommonBParam) {
+			//  	updateParam(bETASParam, gui_model.get_cat_bParam());
+			//  }
+			//  
+			//  // If we're forcing alpha == b, then update alpha with b-value from the model
+			//  
+			//  if (x_alphaEqualsBParam) {
+			//  	if (x_useCommonBParam || !definedParam(bETASParam)) {
+			//  		updateParam(alphaParam, gui_model.get_cat_bParam());
+			//  	} else {
+			//  		updateParam(alphaParam, validParam(bETASParam));
+			//  	}
+			//  }
 
 			return;
 		}
@@ -1198,6 +1348,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 		init_default_ranges();
 		init_default_model();
 		init_default_prior();
+		init_default_etas_enable();
 
 		// Default enable state
 
@@ -1272,10 +1423,12 @@ public class OEGUISubETASValue extends OEGUIListener {
 	public void update_etas_value_from_model () throws GUIEDTException {
 
 		OEtasParameters etas_params = gui_model.get_etasParams();
+		//OEtasParameters etas_params = gui_model.get_or_make_etasParams().params;
 
 		update_default_ranges (etas_params);
 		update_default_model (etas_params);
 		update_default_prior (etas_params);
+		update_default_etas_enable (etas_params);
 
 		update_etas_value_from_defaults();
 
@@ -1286,6 +1439,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 	// Update ETAS values from the defaults.
 
 	private void update_etas_value_from_defaults () throws GUIEDTException {
+		updateParam(etasEnableParam, def_etas_enable);
+
 		updateParam(nETASValRangeParam, new Range(def_n_min, def_n_max));
 		updateParam(nETASValNumParam, def_n_size);
 		updateParam(nETASValSkewParam, def_n_skew);
@@ -1299,8 +1454,18 @@ public class OEGUISubETASValue extends OEGUIListener {
 		updateParam(zmuETASValRangeParam, new Range(def_zmu_min, def_zmu_max));
 		updateParam(zmuETASValNumParam, def_zmu_size);
 
+		updateParam(useCommonBParam, def_f_use_common_b);
+		if (def_f_use_common_b) {
+			updateParam(bETASParam, null);
+		} else {
+			updateParam(bETASParam, def_b_value);
+		}
 		updateParam(alphaEqualsBParam, def_f_alpha_eq_b);
-		updateParam(alphaParam, def_alpha_value);
+		if (def_f_alpha_eq_b) {
+			updateParam(alphaParam, null);
+		} else {
+			updateParam(alphaParam, def_alpha_value);
+		}
 		updateParam(etasModelParam, def_etas_model);
 		if (def_etas_model == EtasModelOption.AUTO) {
 			updateParam(etasBayWeightParam, null);
@@ -1463,6 +1628,22 @@ public class OEGUISubETASValue extends OEGUIListener {
 				return;
 			}
 			updateRangeParams(zmuETASValRangeParam, zmuETASValNumParam, def_zmu_size, def_zmu_min, def_zmu_max);
+			report_etas_value_change();
+		}
+		break;
+
+
+
+
+		// ETAS parameter value, use common b-value.
+		// - Adjust enable.
+		// - Report to top-level controller.
+
+		case PARMGRP_USE_COMMON_B: {
+			if (!( f_sub_enable && f_etas_value_enable )) {
+				return;
+			}
+			adjust_enable();
 			report_etas_value_change();
 		}
 		break;
