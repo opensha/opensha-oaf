@@ -194,7 +194,7 @@ public class OEGUISubRJValue extends OEGUIListener {
 
 	private IntegerParameter init_aValNumParam () throws GUIEDTException {
 		aValNumParam = new IntegerParameter("RJ a-value Number", 1, 10000, Integer.valueOf(101));
-		aValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//aValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (aValNumParam, "aValNumParam", PARMGRP_RANGE_RJ_A);
 		return aValNumParam;
 	}
@@ -220,7 +220,7 @@ public class OEGUISubRJValue extends OEGUIListener {
 
 	private IntegerParameter init_pValNumParam () throws GUIEDTException {
 		pValNumParam = new IntegerParameter("RJ p-value Number", 1, 10000, Integer.valueOf(45));
-		pValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//pValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (pValNumParam, "pValNumParam", PARMGRP_RANGE_RJ_P);
 		return pValNumParam;
 	}
@@ -246,7 +246,7 @@ public class OEGUISubRJValue extends OEGUIListener {
 
 	private IntegerParameter init_cValNumParam () throws GUIEDTException {
 		cValNumParam = new IntegerParameter("RJ c-value Number", 1, 10000, Integer.valueOf(1));
-		cValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//cValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (cValNumParam, "cValNumParam", PARMGRP_RANGE_RJ_C);
 		return cValNumParam;
 	}
@@ -333,25 +333,14 @@ public class OEGUISubRJValue extends OEGUIListener {
 
 	private void adjust_enable () throws GUIEDTException {
 
-		enableParam(aValRangeParam, f_rj_value_enable);
-		enableParam(aValNumParam, f_rj_value_enable);
-		enableParam(pValRangeParam, f_rj_value_enable);
-		enableParam(pValNumParam, f_rj_value_enable);
-		enableParam(cValRangeParam, f_rj_value_enable);
-		enableParam(cValNumParam, f_rj_value_enable);
+		enableDefaultParam(aValRangeParam, f_rj_value_enable, null);
+		enableDefaultParam(aValNumParam, f_rj_value_enable, null);
+		enableDefaultParam(pValRangeParam, f_rj_value_enable, null);
+		enableDefaultParam(pValNumParam, f_rj_value_enable, null);
+		enableDefaultParam(cValRangeParam, f_rj_value_enable, null);
+		enableDefaultParam(cValNumParam, f_rj_value_enable, null);
 
 		enableParam(rjValueEditParam, f_sub_enable);
-
-		// Parameters that are cleared when they are disabled
-
-		if (!( f_rj_value_enable )) {
-			updateParam(aValRangeParam, null);
-			updateParam(aValNumParam, null);
-			updateParam(pValRangeParam, null);
-			updateParam(pValNumParam, null);
-			updateParam(cValRangeParam, null);
-			updateParam(cValNumParam, null);
-		}
 
 		return;
 	}

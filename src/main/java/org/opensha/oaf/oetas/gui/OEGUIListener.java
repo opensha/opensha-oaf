@@ -1,11 +1,19 @@
 package org.opensha.oaf.oetas.gui;
 
 import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.ArrayDeque;
 import java.util.function.Predicate;
 
 import javax.swing.SwingUtilities;
 import javax.swing.JComponent;
 import javax.swing.text.JTextComponent;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 
 import org.opensha.commons.exceptions.ConstraintException;
 import org.opensha.commons.exceptions.ParameterException;
@@ -15,6 +23,7 @@ import org.opensha.commons.param.editor.ParameterEditor;
 import org.opensha.commons.param.editor.AbstractParameterEditor;
 import org.opensha.commons.param.editor.impl.GriddedParameterListEditor;
 import org.opensha.commons.param.editor.impl.ParameterListEditor;
+import org.opensha.commons.param.constraint.ParameterConstraint;
 import org.opensha.commons.param.event.ParameterChangeEvent;
 import org.opensha.commons.param.event.ParameterChangeListener;
 import org.opensha.commons.param.impl.BooleanParameter;
@@ -35,6 +44,7 @@ import org.jfree.data.Range;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.gui.GUIAbstractParameterEditor;
 import org.opensha.oaf.util.gui.GUIConsoleWindow;
 import org.opensha.oaf.util.gui.GUICalcStep;
 import org.opensha.oaf.util.gui.GUICalcRunnable;
@@ -155,9 +165,133 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 	// This function adds this object as a parameter change listener,
 	// and sets the symbol name and parameter group.
 
-	protected void register_param (Parameter<?> param, String symbol, int parmgrp) {
+	protected void register_param (Parameter<?> param, String symbol, int parmgrp) throws GUIEDTException {
+		configure_param (param, symbol);
 		param.addParameterChangeListener(this);
 		add_symbol (param, symbol, parmgrp);
+		return;
+	}
+
+
+
+
+	//----- Parameter configuration functions -----
+
+
+	// Get the inactive text color for text fields.
+
+	public static Color get_inactive_text_color () {
+		//return new Color(32, 32, 224);	// first try
+		return new Color(64, 64, 255);
+	}
+
+
+
+
+	// Get a list of text components within a given component.
+
+	public static List<JTextComponent> get_text_components_within (JComponent jcomp) throws GUIEDTException {
+		List<JTextComponent> result = new ArrayList<JTextComponent>();
+		if (jcomp != null) {
+			if (jcomp instanceof JTextComponent) {
+				result.add ((JTextComponent)jcomp);
+			}
+			else {
+				Deque<Container> containers = new ArrayDeque<Container>();
+				for (Container container = jcomp; container != null; container = containers.pollFirst()) {
+					synchronized (container.getTreeLock()) {
+						for (Component component : container.getComponents()) {
+							if (component != null) {
+								if (component instanceof JTextComponent) {
+									result.add ((JTextComponent)component);
+								}
+								else if (component instanceof Container) {
+									containers.addFirst ((Container)component);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return result;
+	}
+
+
+
+
+	// Get a list of text components within a parameter.
+
+	public static List<JTextComponent> get_text_components_within (Parameter<?> the_param) throws GUIEDTException {
+		ParameterEditor editor = the_param.getEditor();
+		if (editor != null) {
+			JComponent widget = null;
+			if (editor instanceof AbstractParameterEditor) {
+				widget = ((AbstractParameterEditor)editor).getWidget();
+			}
+			else if (editor instanceof GUIAbstractParameterEditor) {
+				widget = ((GUIAbstractParameterEditor)editor).getWidget();
+			}
+			if (widget != null) {
+				return get_text_components_within (widget);
+			}
+		}
+		return new ArrayList<JTextComponent>();
+	}
+
+
+
+
+	// Configure a parameter.
+	// This function sets the constraint (if any) to allow null values,
+	// and sets inactive text color for text fields.
+
+	public void configure_param (Parameter<?> the_param, String symbol) throws GUIEDTException {
+
+		// Parameter types that we configure
+
+		if (
+			the_param instanceof DoubleParameter
+			|| the_param instanceof IntegerParameter
+			|| the_param instanceof RangeParameter
+			|| the_param instanceof StringParameter
+			|| the_param instanceof GUIPredicateStringParameter
+		) {
+
+			// Allow null values
+
+			ParameterConstraint constraint = the_param.getConstraint();
+			if (constraint != null) {
+				constraint.setNullAllowed (true);
+			}
+
+			// Set inactive text color
+
+			int text_comp_count = 0;
+			for (JTextComponent text_widget : get_text_components_within (the_param)) {
+				++text_comp_count;
+				text_widget.setDisabledTextColor (get_inactive_text_color());
+			}
+
+			if (gui_top.get_trace_events()) {
+				System.out.println ("@@@@@ configure_param (" + symbol + "), enable null, text_comp_count = " + text_comp_count);
+			}
+		}
+
+		// Parameter types that are just set to allow null values
+
+		else if (
+			the_param instanceof EnumParameter
+		) {
+
+			// Allow null values
+
+			ParameterConstraint constraint = the_param.getConstraint();
+			if (constraint != null) {
+				constraint.setNullAllowed (true);
+			}
+		}
+
 		return;
 	}
 
@@ -289,34 +423,91 @@ public abstract class OEGUIListener extends OEGUIComponent implements ParameterC
 	}
 
 
+//	// Enable or disable a parameter in the GUI.
+//
+//	protected <E> void enableParam (Parameter<E> param, boolean enabled) throws GUIEDTException {
+//		param.getEditor().setEnabled(enabled);
+//		return;
+//	}
+
+
+//	// DoubleParameter sets both the enabled and editable flags when setEnabled is called, which causes
+//	// its behavior when disabled to be different than other parameters.  In particualat, it is grayed,
+//	// which makes it very difficult to read the contents.  We work around this by accessing the
+//	// text field directly.
+//	// Implementation note: The editor is a subclass of AbstractParameterEditor<Double>, but due to
+//	// type erasure we need to use the raw type AbstractParameterEditor or maybe the unbounded
+//	// wildcard type AbstractParameterEditor<?>..
+//
+//	protected void enableParam (DoubleParameter param, boolean enabled) throws GUIEDTException {
+//		ParameterEditor<Double> editor = param.getEditor();
+//		if (editor != null && editor instanceof AbstractParameterEditor) {
+//			JComponent widget = ((AbstractParameterEditor)editor).getWidget();
+//			if (widget != null && widget instanceof JTextComponent) {
+//				JTextComponent text_widget = (JTextComponent)widget;
+//				text_widget.setEditable(true);
+//				text_widget.setEnabled(enabled);
+//				return;
+//			}
+//		}
+//		param.getEditor().setEnabled(enabled);
+//		return;
+//	}
+
+
 	// Enable or disable a parameter in the GUI.
+	// This version sets both the enabled and editable flags for selected types of parameters.
+	// Doing this causes the field appearance to change when disabled, even if empty.
+	// Note that changing the disabled text color makes the field readable when disabled.
 
 	protected <E> void enableParam (Parameter<E> param, boolean enabled) throws GUIEDTException {
-		param.getEditor().setEnabled(enabled);
+
+		// For selected types, change both enabled and editable
+
+		int text_comp_count = 0;
+
+		if (
+			param instanceof DoubleParameter
+			|| param instanceof IntegerParameter
+			|| param instanceof RangeParameter
+			|| param instanceof StringParameter
+			|| param instanceof GUIPredicateStringParameter
+		) {
+			for (JTextComponent text_widget : get_text_components_within (param)) {
+				++text_comp_count;
+				text_widget.setEditable(enabled);
+				text_widget.setEnabled(enabled);
+			}
+		}
+
+		// For other types, or if we didn't find the text components, adjust enable thru the editor
+
+		if (text_comp_count == 0) {
+			param.getEditor().setEnabled(enabled);
+		}
+
+		if (gui_top.get_trace_events()) {
+			System.out.println ("@@@@@ enableParam (" + get_symbol(param) + ", text_comp_count = " + text_comp_count + ") -> " + enabled);
+		}
+
 		return;
 	}
 
 
-	// DoubleParameter sets both the enabled and editable flags when setEnabled is called, which causes
-	// its behavior when disabled to be different than other parameters.  In particualat, it is grayed,
-	// which makes it very difficult to read the contents.  We work around this by accessing the
-	// text field directly.
-	// Implementation note: The editor is a subclass of AbstractParameterEditor<Double>, but due to
-	// type erasure we need to use the raw type AbstractParameterEditor or maybe the unbounded
-	// wildcard type AbstractParameterEditor<?>..
 
-	protected void enableParam (DoubleParameter param, boolean enabled) throws GUIEDTException {
-		ParameterEditor<Double> editor = param.getEditor();
-		if (editor != null && editor instanceof AbstractParameterEditor) {
-			JComponent widget = ((AbstractParameterEditor)editor).getWidget();
-			if (widget != null && widget instanceof JTextComponent) {
-				JTextComponent text_widget = (JTextComponent)widget;
-				text_widget.setEditable(true);
-				text_widget.setEnabled(enabled);
-				return;
-			}
+
+	// Enable or disable a parameter in the GUI.
+	// If the parameter is disabled, then its value is set to to the default value.
+	// Note: If enableParam has special-case signatures for specific parameter types, then
+	// this function must have the same special-case signatures due to type erasure.
+	// Note: IntegerParameter requires that any update occur before enabling, because its
+	// constrained editor messes with the editable flag when the value is updated.
+
+	protected <E> void enableDefaultParam (Parameter<E> param, boolean enabled, E default_value) throws GUIEDTException {
+		if (!( enabled )) {
+			updateParam (param, default_value);
 		}
-		param.getEditor().setEnabled(enabled);
+		enableParam (param, enabled);
 		return;
 	}
 

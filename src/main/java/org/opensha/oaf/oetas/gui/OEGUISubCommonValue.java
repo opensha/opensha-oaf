@@ -213,7 +213,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private DoubleParameter init_fParam () throws GUIEDTException {
 		fParam = new DoubleParameter("F", 0.0, 2.0, Double.valueOf(0.5));
-		fParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//fParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (fParam, "fParam", PARMGRP_COM_VALUE);
 		return fParam;
 	}
@@ -226,7 +226,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private DoubleParameter init_gParam () throws GUIEDTException {
 		gParam = new DoubleParameter("G", -10.0, 100.0, Double.valueOf(0.25));
-		gParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//gParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (gParam, "gParam", PARMGRP_COM_VALUE);
 		return gParam;
 	}
@@ -239,7 +239,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private DoubleParameter init_hParam () throws GUIEDTException {
 		hParam = new DoubleParameter("H", 0.0, 10.0, Double.valueOf(1.0));
-		hParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//hParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (hParam, "hParam", PARMGRP_COM_VALUE);
 		return hParam;
 	}
@@ -252,7 +252,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private DoubleParameter init_mCatParam () throws GUIEDTException {
 		mCatParam = new DoubleParameter("Mcat", 1.0, 7.0, Double.valueOf(4.5));
-		mCatParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//mCatParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (mCatParam, "mCatParam", PARMGRP_COM_VALUE);
 		return mCatParam;
 	}
@@ -267,7 +267,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private DoubleParameter init_mcParam () throws GUIEDTException {
 		mcParam = new DoubleParameter("Mc For Sequence", 0d, 9d);
-		mcParam.getConstraint().setNullAllowed(true);
+		//mcParam.getConstraint().setNullAllowed(true);
 		mcParam.setInfo("Default is computed value of Mmaxc+0.5, but user can modify");
 		register_param (mcParam, "mcParam", PARMGRP_SEQ_SPEC_MC);
 		return mcParam;
@@ -332,7 +332,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 //
 //	private DoubleParameter init_alphaParam () throws GUIEDTException {
 //		alphaParam = new DoubleParameter("alpha", 0.0, 3.0, Double.valueOf(1.0));
-//		alphaParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+//		//alphaParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 //		alphaParam.setValue(null);
 //		register_param (alphaParam, "alphaParam", PARMGRP_COM_VALUE);
 //		return alphaParam;
@@ -345,7 +345,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private DoubleParameter init_fitStartInsetParam () throws GUIEDTException {
 		fitStartInsetParam = new DoubleParameter("Fit Start Inset", -365.0, 3650.0, Double.valueOf(0.0));
-		fitStartInsetParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//fitStartInsetParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		fitStartInsetParam.setUnits("Days");
 		fitStartInsetParam.setInfo("Time after mainshock to begin fitting parameters");
 		register_param (fitStartInsetParam, "fitStartInsetParam", PARMGRP_COM_VALUE);
@@ -359,7 +359,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private DoubleParameter init_fitEndInsetParam () throws GUIEDTException {
 		fitEndInsetParam = new DoubleParameter("Fit End Inset", 0.0, 365.0, Double.valueOf(0.0));
-		fitEndInsetParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//fitEndInsetParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		fitEndInsetParam.setUnits("Days");
 		fitEndInsetParam.setInfo("Time before end of data to stop fitting parameters");
 		register_param (fitEndInsetParam, "fitEndInsetParam", PARMGRP_COM_VALUE);
@@ -480,66 +480,38 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 	private void adjust_enable () throws GUIEDTException {
 
-		//// Get flag indicating if alpha == b is forced
-		//
-		//boolean f_alpha_eq_b = true;
-		//if (f_common_value_enable) {
-		//	f_alpha_eq_b = validParam(alphaEqualsBParam);
-		//}
-
 		// Enable parameters
 
-		enableParam(timeDepOptionParam, f_common_value_enable);
+		enableDefaultParam(timeDepOptionParam, f_common_value_enable, TimeDepMagCompOption.ENABLE);
 
 		if (f_common_value_enable) {
 			adjust_for_time_dep_option();
 		} else {
-			enableParam(fParam, f_common_value_enable);
-			enableParam(gParam, f_common_value_enable);
-			enableParam(hParam, f_common_value_enable);
-			enableParam(mCatParam, f_common_value_enable);
+			enableDefaultParam(fParam, f_common_value_enable, null);
+			enableDefaultParam(gParam, f_common_value_enable, null);
+			enableDefaultParam(hParam, f_common_value_enable, null);
+			enableDefaultParam(mCatParam, f_common_value_enable, null);
 		}
 
-		enableParam(mcParam, f_common_value_enable);
+		enableDefaultParam(mcParam, f_common_value_enable, null);
+
 		enableParam(magPrecisionParam, f_common_value_enable);
 		enableParam(computeBButton, f_common_value_enable);
-		enableParam(bParam, f_common_value_enable);
+		enableDefaultParam(bParam, f_common_value_enable, null);
 
-		//enableParam(alphaEqualsBParam, f_common_value_enable);
-		//enableParam(alphaParam, !f_alpha_eq_b);
-
-		enableParam(fitStartInsetParam, f_common_value_enable);
-		enableParam(fitEndInsetParam, f_common_value_enable);
-
-		enableParam(commonValueEditParam, f_sub_enable);
-
-		// Parameters that are cleared when they are disabled
-
-		if (!( f_common_value_enable )) {
-			updateParam(timeDepOptionParam, TimeDepMagCompOption.ENABLE);
-
-			updateParam(fParam, null);
-			updateParam(gParam, null);
-			updateParam(hParam, null);
-			updateParam(mCatParam, null);
-
-			updateParam(mcParam, null);
-			updateParam(bParam, null);
-
-			//updateParam(alphaEqualsBParam, true);
-
-			//updateParam(alphaParam, null);
-
-			updateParam(fitStartInsetParam, null);
-			updateParam(fitEndInsetParam, null);
-		}
-		//else {
-		//	if (!( f_alpha_eq_b )) {
-		//		if (!( definedParam(alphaParam) )) {
-		//			updateParam(alphaParam, 1.0);
-		//		}
+		//enableDefaultParam(alphaEqualsBParam, f_common_value_enable, true);
+		//boolean f_alpha_eq_b = validParam(alphaEqualsBParam);
+		//enableDefaultParam(alphaParam, !f_alpha_eq_b, null);
+		//if (!( f_alpha_eq_b )) {
+		//	if (!( definedParam(alphaParam) )) {
+		//		updateParam(alphaParam, 1.0);
 		//	}
 		//}
+
+		enableDefaultParam(fitStartInsetParam, f_common_value_enable, null);
+		enableDefaultParam(fitEndInsetParam, f_common_value_enable, null);
+
+		enableParam(commonValueEditParam, f_sub_enable);
 
 		return;
 	}

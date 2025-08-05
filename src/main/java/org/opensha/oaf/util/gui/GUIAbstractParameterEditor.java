@@ -264,7 +264,7 @@ public abstract class GUIAbstractParameterEditor<E> extends LabeledBorderPanel i
 			super.remove(widget);
 	}
 
-	protected final JComponent getWidget() {
+	public final JComponent getWidget() {
 		return widget;
 	}
 

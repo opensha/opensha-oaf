@@ -496,7 +496,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private EnumParameter<EtasEnableOption> init_etasEnableParam () throws GUIEDTException {
 		etasEnableParam = new EnumParameter<EtasEnableOption>(
 				"ETAS Forecasts", EnumSet.allOf(EtasEnableOption.class), EtasEnableOption.AUTO, null);
-		etasEnableParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//etasEnableParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		etasEnableParam.setInfo("Controls whether ETAS is used to generate forecasts");
 		register_param (etasEnableParam, "etasEnableParam", PARMGRP_ETAS_ENABLE);
 		return etasEnableParam;
@@ -527,7 +527,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private IntegerParameter init_nETASValNumParam () throws GUIEDTException {
 		nETASValNumParam = new IntegerParameter("ETAS n Number", 1, 10000, Integer.valueOf(def_n_size));
-		nETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//nETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (nETASValNumParam, "nETASValNumParam", PARMGRP_RANGE_ETAS_N);
 		return nETASValNumParam;
 	}
@@ -567,7 +567,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private IntegerParameter init_pETASValNumParam () throws GUIEDTException {
 		pETASValNumParam = new IntegerParameter("ETAS p Number", 1, 10000, Integer.valueOf(def_p_size));
-		pETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//pETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (pETASValNumParam, "pETASValNumParam", PARMGRP_RANGE_ETAS_P);
 		return pETASValNumParam;
 	}
@@ -595,7 +595,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private IntegerParameter init_cETASValNumParam () throws GUIEDTException {
 		cETASValNumParam = new IntegerParameter("ETAS c Number", 1, 10000, Integer.valueOf(def_c_size));
-		cETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//cETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (cETASValNumParam, "cETASValNumParam", PARMGRP_RANGE_ETAS_C);
 		return cETASValNumParam;
 	}
@@ -623,7 +623,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private IntegerParameter init_zamsETASValNumParam () throws GUIEDTException {
 		zamsETASValNumParam = new IntegerParameter("ETAS zams Number", 1, 10000, Integer.valueOf(def_zams_size));
-		zamsETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//zamsETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (zamsETASValNumParam, "zamsETASValNumParam", PARMGRP_RANGE_ETAS_ZAMS);
 		return zamsETASValNumParam;
 	}
@@ -663,7 +663,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private IntegerParameter init_zmuETASValNumParam () throws GUIEDTException {
 		zmuETASValNumParam = new IntegerParameter("ETAS zmu Number", 1, 10000, Integer.valueOf(def_zmu_size));
-		zmuETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//zmuETASValNumParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		register_param (zmuETASValNumParam, "zmuETASValNumParam", PARMGRP_RANGE_ETAS_ZMU);
 		return zmuETASValNumParam;
 	}
@@ -690,7 +690,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private DoubleParameter init_etasBayWeightParam () throws GUIEDTException {
 		etasBayWeightParam = new DoubleParameter("ETAS Model Weight", 0.0, 2.0, Double.valueOf(def_bay_weight));
-		etasBayWeightParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
+		//etasBayWeightParam.getConstraint().setNullAllowed(true);	// allows clearing when disabled
 		etasBayWeightParam.setInfo("Selects the model on a continuous scale: 0.0 = Sequence Specific, 1.0 = Bayesian, 2.0 = Generic");
 		register_param (etasBayWeightParam, "etasBayWeightParam", PARMGRP_ETAS_VALUE);
 		return etasBayWeightParam;
@@ -923,102 +923,57 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 	private void adjust_enable () throws GUIEDTException {
 
-		// Get flag indicated if using common b-value
-
-		boolean f_use_common_b = true;
-		if (f_etas_value_enable) {
-			f_use_common_b = validParam(useCommonBParam);
-		}
-
-		// Get flag indicating if alpha == b is forced
-
-		boolean f_alpha_eq_b = true;
-		if (f_etas_value_enable) {
-			f_alpha_eq_b = validParam(alphaEqualsBParam);
-		}
-
 		// Enable parameters
 
-		enableParam(nETASValRangeParam, f_etas_value_enable);
-		enableParam(nETASValNumParam, f_etas_value_enable);
-		enableParam(nETASValSkewParam, f_etas_value_enable);
-		enableParam(pETASValRangeParam, f_etas_value_enable);
-		enableParam(pETASValNumParam, f_etas_value_enable);
-		enableParam(cETASValRangeParam, f_etas_value_enable);
-		enableParam(cETASValNumParam, f_etas_value_enable);
-		enableParam(zamsETASValRangeParam, f_etas_value_enable);
-		enableParam(zamsETASValNumParam, f_etas_value_enable);
-		enableParam(zamsETASValRelativeParam, f_etas_value_enable);
-		enableParam(zmuETASValRangeParam, f_etas_value_enable);
-		enableParam(zmuETASValNumParam, f_etas_value_enable);
+		enableDefaultParam(nETASValRangeParam, f_etas_value_enable, null);
+		enableDefaultParam(nETASValNumParam, f_etas_value_enable, null);
+		enableDefaultParam(nETASValSkewParam, f_etas_value_enable, null);
+		enableDefaultParam(pETASValRangeParam, f_etas_value_enable, null);
+		enableDefaultParam(pETASValNumParam, f_etas_value_enable, null);
+		enableDefaultParam(cETASValRangeParam, f_etas_value_enable, null);
+		enableDefaultParam(cETASValNumParam, f_etas_value_enable, null);
+		enableDefaultParam(zamsETASValRangeParam, f_etas_value_enable, null);
+		enableDefaultParam(zamsETASValNumParam, f_etas_value_enable, null);
+		enableDefaultParam(zamsETASValRelativeParam, f_etas_value_enable, true);
+		enableDefaultParam(zmuETASValRangeParam, f_etas_value_enable, null);
+		enableDefaultParam(zmuETASValNumParam, f_etas_value_enable, null);
 
-		enableParam(useCommonBParam, f_etas_value_enable);
-		enableParam(bETASParam, !f_use_common_b);
-		enableParam(alphaEqualsBParam, f_etas_value_enable);
-		enableParam(alphaParam, !f_alpha_eq_b);
+		enableDefaultParam(useCommonBParam, f_etas_value_enable, true);
+		boolean f_use_common_b = validParam(useCommonBParam);
+		enableDefaultParam(bETASParam, !f_use_common_b, null);
+		if (!( f_use_common_b )) {
+			if (!( definedParam(bETASParam) )) {
+				updateParam(bETASParam, def_b_value);
+			}
+		}
 
-		enableParam(etasModelParam, f_etas_value_enable);
+		enableDefaultParam(alphaEqualsBParam, f_etas_value_enable, true);
+		boolean f_alpha_eq_b = validParam(alphaEqualsBParam);
+		enableDefaultParam(alphaParam, !f_alpha_eq_b, null);
+		if (!( f_alpha_eq_b )) {
+			if (!( definedParam(alphaParam) )) {
+				updateParam(alphaParam, def_alpha_value);
+			}
+		}
+
+		enableDefaultParam(etasModelParam, f_etas_value_enable, EtasModelOption.AUTO);
 		if (f_etas_value_enable) {
 			adjust_for_model_option();
 		} else {
-			enableParam(etasBayWeightParam, f_etas_value_enable);
-		}
-		enableParam(etasPriorParam, f_etas_value_enable);
-
-		enableParam(etasEnableParam, f_sub_enable);
-		enableParam(etasValueEditParam, f_sub_enable);
-		enableParam(etasOptionEditParam, f_sub_enable);
-
-		// Parameters that are cleared when they are disabled
-
-		if (!( f_etas_value_enable )) {
-			updateParam(nETASValRangeParam, null);
-			updateParam(nETASValNumParam, null);
-			updateParam(nETASValSkewParam, null);
-			updateParam(pETASValRangeParam, null);
-			updateParam(pETASValNumParam, null);
-			updateParam(cETASValRangeParam, null);
-			updateParam(cETASValNumParam, null);
-			updateParam(zamsETASValRangeParam, null);
-			updateParam(zamsETASValNumParam, null);
-			updateParam(zamsETASValRelativeParam, true);
-			updateParam(zmuETASValRangeParam, null);
-			updateParam(zmuETASValNumParam, null);
-
-			updateParam(useCommonBParam, true);
-			updateParam(bETASParam, null);
-			updateParam(alphaEqualsBParam, true);
-			updateParam(alphaParam, null);
-			updateParam(etasModelParam, EtasModelOption.AUTO);
-			updateParam(etasBayWeightParam, null);
-			updateParam(etasPriorParam, EtasPriorOption.MIXED);
-		}
-		else {
-			if (f_use_common_b) {
-				updateParam(bETASParam, null);
-			} else {
-				if (!( definedParam(bETASParam) )) {
-					updateParam(bETASParam, def_b_value);
-				}
-			}
-
-			if (f_alpha_eq_b) {
-				updateParam(alphaParam, null);
-			} else {
-				if (!( definedParam(alphaParam) )) {
-					updateParam(alphaParam, def_alpha_value);
-				}
-			}
+			enableDefaultParam(etasBayWeightParam, f_etas_value_enable, null);
 		}
 
-		if (!( f_sub_enable )) {
-			updateParam(etasEnableParam, null);
-		}
-		else {
+		enableDefaultParam(etasPriorParam, f_etas_value_enable, EtasPriorOption.MIXED);
+
+		enableDefaultParam(etasEnableParam, f_sub_enable, null);
+		if (f_sub_enable) {
 			if (!( definedParam(etasEnableParam) )) {
 				updateParam(etasEnableParam, def_etas_enable);
 			}
 		}
+
+		enableParam(etasValueEditParam, f_sub_enable);
+		enableParam(etasOptionEditParam, f_sub_enable);
 
 		return;
 	}

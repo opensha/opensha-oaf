@@ -342,7 +342,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 				if (other != this) {
 					try {
 						other.updateParam (other.nextForecastOptionParam, value);
-						other.enableParam (other.nextForecastOptionTime, value == NextForecastOption.SET_TIME);
+						other.enableDefaultParam (other.nextForecastOptionTime, value == NextForecastOption.SET_TIME, null);
 					} catch (Exception e) {
 					}
 				}
@@ -1222,7 +1222,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 		case PARMGRP_FCTAB_NEXT_FC_OPTION: {
 			if (nextForecastOptionTime != null) {
-				enableParam(nextForecastOptionTime, validParam(nextForecastOptionParam) == NextForecastOption.SET_TIME);
+				enableDefaultParam(nextForecastOptionTime, validParam(nextForecastOptionParam) == NextForecastOption.SET_TIME, null);
 			}
 			sync_nextForecastOptionParam();
 		}

@@ -292,11 +292,6 @@ public class OEGUISubForecast extends OEGUIListener {
 
 		enableParam(fcValueEditParam, f_sub_enable);
 
-		// Parameters that are cleared when they are disabled
-
-		//if (!( f_fc_value_enable )) {
-		//}
-
 		return;
 	}
 

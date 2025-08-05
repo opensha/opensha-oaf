@@ -387,8 +387,8 @@ public class OEGUISubDeleteProduct extends OEGUIListener {
 
 	private void adjust_enable () throws GUIEDTException {
 
-		enableParam(evseqDeleteOptionParam, f_delete_product_enable);
-		enableParam(evseqCapTimeParam, f_delete_product_enable && validParam(evseqDeleteOptionParam) == EvSeqDeleteOption.CAP);
+		enableDefaultParam(evseqDeleteOptionParam, f_delete_product_enable, EvSeqDeleteOption.DELETE);
+		enableDefaultParam(evseqCapTimeParam, f_delete_product_enable && validParam(evseqDeleteOptionParam) == EvSeqDeleteOption.CAP, null);
 		enableParam(publishDeleteButton, f_delete_product_enable);
 
 		enableParam(deleteProductEditParam, f_sub_enable);
@@ -576,7 +576,7 @@ public class OEGUISubDeleteProduct extends OEGUIListener {
 				return;
 			}
 			if (evseqCapTimeParam != null) {
-				enableParam(evseqCapTimeParam, validParam(evseqDeleteOptionParam) == EvSeqDeleteOption.CAP);
+				enableDefaultParam(evseqCapTimeParam, validParam(evseqDeleteOptionParam) == EvSeqDeleteOption.CAP, null);
 			}
 			report_delete_product_change();
 		}
