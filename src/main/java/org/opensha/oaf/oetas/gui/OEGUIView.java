@@ -1741,15 +1741,6 @@ public class OEGUIView extends OEGUIComponent {
 
 
 
-	// This flag enables a test mode, where a variable named "c" is forced to be on a log scale.
-	// This allows testing of log-scale plots using RJ parameters.
-	// Set to false when not testing.
-
-	private static final boolean force_c_log = true;
-
-
-
-
 	// Make a function from arrays of arguments and values, and a name.
 	// Parameters:
 	//  args = Function arguments.
@@ -1847,7 +1838,7 @@ public class OEGUIView extends OEGUIComponent {
 
 		// This is used to test log-range plotting when working with RJ, deactivate when not testing
 
-		if (force_c_log && var_name.equals("c")) {
+		if (gui_top.get_force_c_log() && var_name.equals("c")) {
 			range = OEDiscreteRange.makeLog (range.get_range_size(), range.get_range_min(), range.get_range_max());
 			value_array = range.get_range_array();
 		}
@@ -2138,12 +2129,12 @@ public class OEGUIView extends OEGUIComponent {
 
 		// This is used to test log-range plotting when working with RJ, deactivate when not testing
 
-		if (force_c_log && var_name1.equals("c")) {
+		if (gui_top.get_force_c_log() && var_name1.equals("c")) {
 			range1 = OEDiscreteRange.makeLog (range1.get_range_size(), range1.get_range_min(), range1.get_range_max());
 			value_array1 = range1.get_range_array();
 		}
 
-		if (force_c_log && var_name2.equals("c")) {
+		if (gui_top.get_force_c_log() && var_name2.equals("c")) {
 			range2 = OEDiscreteRange.makeLog (range2.get_range_size(), range2.get_range_min(), range2.get_range_max());
 			value_array2 = range2.get_range_array();
 		}
@@ -2445,12 +2436,12 @@ public class OEGUIView extends OEGUIComponent {
 
 		// This is used to test log-range plotting when working with RJ, deactivate when not testing
 
-		if (force_c_log && var_name1.equals("c")) {
+		if (gui_top.get_force_c_log() && var_name1.equals("c")) {
 			range1 = OEDiscreteRange.makeLog (range1.get_range_size(), range1.get_range_min(), range1.get_range_max());
 			value_array1 = range1.get_range_array();
 		}
 
-		if (force_c_log && var_name2.equals("c")) {
+		if (gui_top.get_force_c_log() && var_name2.equals("c")) {
 			range2 = OEDiscreteRange.makeLog (range2.get_range_size(), range2.get_range_min(), range2.get_range_max());
 			value_array2 = range2.get_range_array();
 		}

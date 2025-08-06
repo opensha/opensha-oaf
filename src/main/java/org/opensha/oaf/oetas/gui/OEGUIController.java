@@ -1797,6 +1797,13 @@ public class OEGUIController extends OEGUIListener {
 				return;
 			}
 
+			// Determine if we are doing fit-only
+
+			boolean f_fit_only = false;
+			if (xfer_fitting_impl.x_etasValue.x_etasEnableParam == EtasEnableOption.ENABLE_FIT_ONLY) {
+				f_fit_only = true;
+			}
+
 			// Fit parameters
 
 			GUICalcStep computeStep_2 = new GUICalcStep("Computing Aftershock Params", "...", new Runnable() {
@@ -1818,6 +1825,16 @@ public class OEGUIController extends OEGUIListener {
 					post_fitting_param_update();
 				}
 			});
+
+			// If fit-only, just run the fitting steps
+
+			if (f_fit_only) {
+
+				// Run in threads
+
+				GUICalcRunnable.run_steps (progress, null, computeStep_2, postComputeStep_2);
+				return;
+			}
 
 			// Compute the forecasts
 

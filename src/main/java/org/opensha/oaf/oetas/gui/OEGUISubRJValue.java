@@ -449,11 +449,11 @@ public class OEGUISubRJValue extends OEGUIListener {
 			x_cValNumParam = validParam(cValNumParam);
 			validateRange(x_cValRangeParam, x_cValNumParam, "RJ c-value");
 
-			int max_grid = 100000;
+			int max_grid = 200000;
 			max_grid = max_grid / x_aValNumParam;
 			max_grid = max_grid / x_pValNumParam;
 			max_grid = max_grid / x_cValNumParam;
-			Preconditions.checkState(max_grid > 0, "RJ parameter search grid exceeds 100,000 entries");
+			Preconditions.checkState(max_grid > 0, "RJ parameter search grid exceeds 200,000 entries");
 
 			return this;
 		}

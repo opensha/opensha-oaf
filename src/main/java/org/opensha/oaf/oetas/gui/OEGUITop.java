@@ -255,6 +255,18 @@ public class OEGUITop extends OEGUIComponent {
 
 
 
+	// This flag enables a test mode, where a variable named "c" is forced
+	// to plot on a log scale when plotting 1D and 2D PDFs.
+	// This allows testing of log-scale plots using RJ parameters.
+	// Set to false when not testing.
+
+	public final boolean get_force_c_log () {
+		return trace_events;
+	}
+
+
+
+
 	//----- Window layout -----
 
 
