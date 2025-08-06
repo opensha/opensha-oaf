@@ -2229,7 +2229,8 @@ public class OEGUIView extends OEGUIComponent {
 
 		CPT cpt;
 		try {
-			cpt = GMT_CPT_Files.MAX_SPECTRUM.instance().rescale (func.getMinZ(), func.getMaxZ());
+			//cpt = GMT_CPT_Files.MAX_SPECTRUM.instance().rescale (func.getMinZ(), func.getMaxZ());
+			cpt = GMT_CPT_Files.MAX_SPECTRUM.instance().rescale (0.0, func.getMaxZ() * 1.001);
 		} catch (IOException e) {
 			throw new InvariantViolationException ("OEGUIView.make_2d_pdf: Failed to make color scale", e);
 		}
@@ -2637,7 +2638,7 @@ public class OEGUIView extends OEGUIComponent {
 			pdfGraphsPane.removeAll();
 		}
 
-		// Get marginal distribution sets  TODO: Get by calling model
+		// Get RJ marginal distribution sets
 
 		OEMarginalDistSet gen_dist_set = null;
 		OEMarginalDistSet seq_dist_set = null;
@@ -2655,7 +2656,11 @@ public class OEGUIView extends OEGUIComponent {
 			bay_dist_set = (new OEMarginalDistSetBuilder()).make_rj_marginals (gui_model.get_bayesianModel(), true);
 		}
 
-		// Add tabs for 1D marginals
+		// Get ETAS marginal distribution set
+
+		OEMarginalDistSet etas_dist_set = gui_model.get_etas_marginals();
+
+		// Add tabs for RJ 1D marginals
 
 		make_1d_pdf (
 			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_A, "RJ " + OEMarginalDistSetBuilder.VNAME_RJ_A, OEMarginalDistSetBuilder.VNAME_RJ_A,
@@ -2678,7 +2683,44 @@ public class OEGUIView extends OEGUIComponent {
 			bay_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
 		);
 
-		// Add tabs for 2D PDFs
+		// Add tabs for ETAS 1D marginals
+
+		make_1d_pdf (
+			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_N, "E " + OEMarginalDistSetBuilder.VNAME_N, OEMarginalDistSetBuilder.VNAME_N,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+		);
+
+		make_1d_pdf (
+			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_ZAMS, "E " + OEMarginalDistSetBuilder.VNAME_ZAMS, OEMarginalDistSetBuilder.VNAME_ZAMS,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+		);
+
+		make_1d_pdf (
+			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_P, "E " + OEMarginalDistSetBuilder.VNAME_P, OEMarginalDistSetBuilder.VNAME_P,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+		);
+
+		make_1d_pdf (
+			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_C, "E " + OEMarginalDistSetBuilder.VNAME_C, OEMarginalDistSetBuilder.VNAME_C,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+		);
+
+		make_1d_pdf (
+			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_ZMU, "E " + OEMarginalDistSetBuilder.VNAME_ZMU, OEMarginalDistSetBuilder.VNAME_ZMU,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+		);
+
+		// Add tabs for RJ 2D PDFs
 
 		make_2d_pdf (
 			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_A + " vs " + OEMarginalDistSetBuilder.VNAME_RJ_C,
@@ -2702,6 +2744,121 @@ public class OEGUIView extends OEGUIComponent {
 			OEMarginalDistSetBuilder.VNAME_RJ_C,
 			OEMarginalDistSetBuilder.VNAME_RJ_P,
 			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
+		);
+
+		// Add tabs for ETAS 2D PDFs
+
+		String var1;
+		String var2;
+
+		var1 = OEMarginalDistSetBuilder.VNAME_N;
+		var2 = OEMarginalDistSetBuilder.VNAME_ZAMS;
+
+		make_2d_pdf (
+			"ETAS PDF for " + var1 + " vs " + var2,
+			"E " + var1 + "/" + var2,
+			var1,
+			var2,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+		);
+
+		var1 = OEMarginalDistSetBuilder.VNAME_N;
+		var2 = OEMarginalDistSetBuilder.VNAME_P;
+
+		make_2d_pdf (
+			"ETAS PDF for " + var1 + " vs " + var2,
+			"E " + var1 + "/" + var2,
+			var1,
+			var2,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+		);
+
+		var1 = OEMarginalDistSetBuilder.VNAME_N;
+		var2 = OEMarginalDistSetBuilder.VNAME_C;
+
+		make_2d_pdf (
+			"ETAS PDF for " + var1 + " vs " + var2,
+			"E " + var1 + "/" + var2,
+			var1,
+			var2,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+		);
+
+		var1 = OEMarginalDistSetBuilder.VNAME_N;
+		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
+
+		make_2d_pdf (
+			"ETAS PDF for " + var1 + " vs " + var2,
+			"E " + var1 + "/" + var2,
+			var1,
+			var2,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+		);
+
+		var1 = OEMarginalDistSetBuilder.VNAME_ZAMS;
+		var2 = OEMarginalDistSetBuilder.VNAME_P;
+
+		make_2d_pdf (
+			"ETAS PDF for " + var1 + " vs " + var2,
+			"E " + var1 + "/" + var2,
+			var1,
+			var2,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+		);
+
+		var1 = OEMarginalDistSetBuilder.VNAME_ZAMS;
+		var2 = OEMarginalDistSetBuilder.VNAME_C;
+
+		make_2d_pdf (
+			"ETAS PDF for " + var1 + " vs " + var2,
+			"E " + var1 + "/" + var2,
+			var1,
+			var2,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+		);
+
+		var1 = OEMarginalDistSetBuilder.VNAME_ZAMS;
+		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
+
+		make_2d_pdf (
+			"ETAS PDF for " + var1 + " vs " + var2,
+			"E " + var1 + "/" + var2,
+			var1,
+			var2,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+		);
+
+		var1 = OEMarginalDistSetBuilder.VNAME_P;
+		var2 = OEMarginalDistSetBuilder.VNAME_C;
+
+		make_2d_pdf (
+			"ETAS PDF for " + var1 + " vs " + var2,
+			"E " + var1 + "/" + var2,
+			var1,
+			var2,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+		);
+
+		var1 = OEMarginalDistSetBuilder.VNAME_P;
+		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
+
+		make_2d_pdf (
+			"ETAS PDF for " + var1 + " vs " + var2,
+			"E " + var1 + "/" + var2,
+			var1,
+			var2,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+		);
+
+		var1 = OEMarginalDistSetBuilder.VNAME_C;
+		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
+
+		make_2d_pdf (
+			"ETAS PDF for " + var1 + " vs " + var2,
+			"E " + var1 + "/" + var2,
+			var1,
+			var2,
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
 		);
 
 		// Add to the view

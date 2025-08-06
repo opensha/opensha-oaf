@@ -142,7 +142,9 @@ import org.opensha.oaf.util.LineSupplierFile;
 import org.opensha.oaf.oetas.OEOrigin;
 import org.opensha.oaf.oetas.OEConstants;
 import org.opensha.oaf.oetas.util.OEDiscreteRange;
+import org.opensha.oaf.oetas.util.OEMarginalDistSet;
 import org.opensha.oaf.oetas.env.OEtasParameters;
+import org.opensha.oaf.oetas.env.OEtasResults;
 import org.opensha.oaf.oetas.env.OEtasConfig;
 
 
@@ -788,6 +790,27 @@ public class OEGUIModel extends OEGUIComponent {
 			return null;
 		}
 		return forecast_fcresults.get_pdl_model_json (ForecastResults.PMCODE_ETAS);
+	}
+
+
+	// The ETAS full marginal distribution.
+	// Available when model state >= MODSTATE_PARAMETERS.
+	// Returns null if not available.
+
+	public final OEMarginalDistSet get_etas_marginals () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.get_etas_marginals while in state " + cur_modstate_string());
+		}
+		if (!( forecast_fcresults.etas_result_avail )) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome == null) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome instanceof OEtasResults) {
+			return ((OEtasResults)(forecast_fcresults.etas_outcome)).full_marginals;
+		}
+		return null;
 	}
 
 

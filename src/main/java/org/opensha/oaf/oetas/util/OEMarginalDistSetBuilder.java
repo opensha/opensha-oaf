@@ -454,12 +454,12 @@ public class OEMarginalDistSetBuilder {
 	// Index numbers and names for ETAS data, generic, sequence specific, bayesian, and active.
 
 	public static final int DMIX_GENERIC = 0;
-	public static final int DMIX_DEQ_SPEC = 1;
+	public static final int DMIX_SEQ_SPEC = 1;
 	public static final int DMIX_BAYESIAN = 2;
 	public static final int DMIX_ACTIVE = 3;
 
 	public static final String DNAME_GENERIC = "generic";
-	public static final String DNAME_DEQ_SPEC = "seqspec";
+	public static final String DNAME_SEQ_SPEC = "seqspec";
 	public static final String DNAME_BAYESIAN = "bayesian";
 	public static final String DNAME_ACTIVE = "active";
 
@@ -469,12 +469,12 @@ public class OEMarginalDistSetBuilder {
 	// Index numbers and names for second set of ETAS data, generic, sequence specific, bayesian, and active.
 
 	public static final int DMIX_GENERIC_2 = 4;
-	public static final int DMIX_DEQ_SPEC_2 = 5;
+	public static final int DMIX_SEQ_SPEC_2 = 5;
 	public static final int DMIX_BAYESIAN_2 = 6;
 	public static final int DMIX_ACTIVE_2 = 7;
 
 	public static final String DNAME_GENERIC_2 = "generic2";
-	public static final String DNAME_DEQ_SPEC_2 = "seqspec2";
+	public static final String DNAME_SEQ_SPEC_2 = "seqspec2";
 	public static final String DNAME_BAYESIAN_2 = "bayesian2";
 	public static final String DNAME_ACTIVE_2 = "active2";
 
@@ -551,7 +551,7 @@ public class OEMarginalDistSetBuilder {
 		double bay
 	) {
 		dist_w[DMIX_GENERIC] = gen;
-		dist_w[DMIX_DEQ_SPEC] = seq;
+		dist_w[DMIX_SEQ_SPEC] = seq;
 		dist_w[DMIX_BAYESIAN] = bay;
 		return;
 	}
@@ -568,7 +568,7 @@ public class OEMarginalDistSetBuilder {
 		double act
 	) {
 		dist_w[DMIX_GENERIC] = gen;
-		dist_w[DMIX_DEQ_SPEC] = seq;
+		dist_w[DMIX_SEQ_SPEC] = seq;
 		dist_w[DMIX_BAYESIAN] = bay;
 		dist_w[DMIX_ACTIVE] = act;
 		return;
@@ -590,11 +590,11 @@ public class OEMarginalDistSetBuilder {
 		double act2
 	) {
 		dist_w[DMIX_GENERIC] = gen;
-		dist_w[DMIX_DEQ_SPEC] = seq;
+		dist_w[DMIX_SEQ_SPEC] = seq;
 		dist_w[DMIX_BAYESIAN] = bay;
 		dist_w[DMIX_ACTIVE] = act;
 		dist_w[DMIX_GENERIC_2] = gen2;
-		dist_w[DMIX_DEQ_SPEC_2] = seq2;
+		dist_w[DMIX_SEQ_SPEC_2] = seq2;
 		dist_w[DMIX_BAYESIAN_2] = bay2;
 		dist_w[DMIX_ACTIVE_2] = act2;
 		return;
