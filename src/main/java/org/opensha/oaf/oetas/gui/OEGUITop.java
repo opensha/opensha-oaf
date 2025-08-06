@@ -224,6 +224,37 @@ public class OEGUITop extends OEGUIComponent {
 
 
 
+	// Return true to force the use of event-sequence parameters in the UI and
+	// forecast parameters, regardless of whether event-sequence is enabled in
+	// the action configuration.
+
+	public final boolean get_force_evseq_params () {
+		return trace_events;
+	}
+
+
+
+
+	// Return true to force the use of ETAS parameters in the UI and
+	// forecast parameters, regardless of whether ETAS is enabled in
+	// the action configuration.
+
+	public final boolean get_force_etas_params () {
+		return trace_events;
+	}
+
+
+
+
+	// Return true to force the minimum number of ETAS catalogs during simulation.
+
+	public final boolean get_force_min_etas_catalogs () {
+		return trace_events;
+	}
+
+
+
+
 	//----- Window layout -----
 
 

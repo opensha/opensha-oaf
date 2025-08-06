@@ -1310,10 +1310,8 @@ public class OEGUIModel extends OEGUIComponent {
 		max_evseq_lookback = ActionConfigFile.REC_MAX_EVSEQ_LOOKBACK;
 
 		config_is_evseq_enabled = action_config.get_is_evseq_enabled();
-		config_is_evseq_enabled = true;		// for testing
 
 		config_is_etas_enabled = action_config.get_is_etas_enabled();
-		config_is_etas_enabled = true;		// for testing
 
 		return;
 	}
@@ -2967,7 +2965,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		// If ETAS is enabled ...
 
-		if (config_is_etas_enabled) {
+		if (config_is_etas_enabled || gui_top.get_force_etas_params()) {
 
 			// Set ETAS parameters in forecast parameters
 
@@ -3072,9 +3070,10 @@ public class OEGUIModel extends OEGUIComponent {
 	//  forecast_etas_params = Receives ETAS parameters to use in a forecast.
 	//  analyst_etas_params = Receives ETAS parameters to use in analyst options.
 	// Returns the regime for the mainshock location.
-	// Note: Caller must check that ETAS is enabled in the action configuration before calling.
+	// Note: Caller must check that ETAS is enabled in the action configuration, or
+	// that use of ETAS parameters is forced, before calling.
 
-	public String make_fit_etas_params (
+	private String make_fit_etas_params (
 		OEGUIController.XferFittingMod xfer,
 		OEtasParameters forecast_etas_params,
 		OEtasParameters analyst_etas_params
@@ -3124,12 +3123,6 @@ public class OEGUIModel extends OEGUIComponent {
 			break;
 
 		case ENABLE_FIT_ONLY:
-
-			// If enable fit only, set number of catalogs to minimum
-
-			analyst_etas_params.set_num_catalogs_to_minimum();
-			// fall thru ...
-
 		case ENABLE:
 
 			// If enable or enable fit only, set eligibility to enable, copying magnitude ranges from forecast params
@@ -3146,6 +3139,12 @@ public class OEGUIModel extends OEGUIComponent {
 
 		default:
 			throw new IllegalArgumentException ("OEGUIModel.make_fit_etas_params: Invalid ETAS enable option");
+		}
+
+		// Use the minimum number of catalogs if enable fit only, or if forced
+
+		if (xfer.x_etasValue.x_etasEnableParam == EtasEnableOption.ENABLE_FIT_ONLY || gui_top.get_force_min_etas_catalogs()) {
+			analyst_etas_params.set_num_catalogs_to_minimum();
 		}
 
 		// ETAS parameter ranges

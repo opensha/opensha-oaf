@@ -213,8 +213,10 @@ public class OEGUISubDeleteProduct extends OEGUIListener {
 
 
 	// Get the event-sequence cap time from the parameters, throw exception if not available.
+	// Note: Caller must check that event-sequence is enabled in the action configuration, or
+	// that use of event-sequence parameters is forced, before calling.
 
-	public long get_evseqCapTime () {
+	private long get_evseqCapTime () {
 		long cap_time = 0L;
 		EvSeqDeleteOption evseq_delete_option = validParam(evseqDeleteOptionParam);
 		switch (evseq_delete_option) {
@@ -247,8 +249,10 @@ public class OEGUISubDeleteProduct extends OEGUIListener {
 
 	// Pre-check the event-sequence cap time.
 	// Return false if invalid, in which case a message is displayed.
+	// Note: Caller must check that event-sequence is enabled in the action configuration, or
+	// that use of event-sequence parameters is forced, before calling.
 
-	public boolean precheck_evseqCapTime ()  throws GUIEDTException {
+	private boolean precheck_evseqCapTime ()  throws GUIEDTException {
 		EvSeqDeleteOption evseq_delete_option = validParam(evseqDeleteOptionParam);
 		switch (evseq_delete_option) {
 
@@ -387,8 +391,14 @@ public class OEGUISubDeleteProduct extends OEGUIListener {
 
 	private void adjust_enable () throws GUIEDTException {
 
-		enableDefaultParam(evseqDeleteOptionParam, f_delete_product_enable, EvSeqDeleteOption.DELETE);
-		enableDefaultParam(evseqCapTimeParam, f_delete_product_enable && validParam(evseqDeleteOptionParam) == EvSeqDeleteOption.CAP, null);
+		if (gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params()) {
+			enableDefaultParam(evseqDeleteOptionParam, f_delete_product_enable, EvSeqDeleteOption.DELETE);
+			enableDefaultParam(evseqCapTimeParam, f_delete_product_enable && validParam(evseqDeleteOptionParam) == EvSeqDeleteOption.CAP, null);
+		} else {
+			enableDefaultParam(evseqDeleteOptionParam, false, null);
+			enableDefaultParam(evseqCapTimeParam, false, null);
+		}
+
 		enableParam(publishDeleteButton, f_delete_product_enable);
 
 		enableParam(deleteProductEditParam, f_sub_enable);
@@ -462,7 +472,11 @@ public class OEGUISubDeleteProduct extends OEGUIListener {
 
 			// Event-sequence cap time
 
-			x_evseqCapTime = get_evseqCapTime();
+			if (gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params()) {
+				x_evseqCapTime = get_evseqCapTime();
+			} else {
+				x_evseqCapTime = PDLCodeChooserEventSequence.CAP_TIME_NOP;
+			}
 
 			return this;
 		}
@@ -575,6 +589,9 @@ public class OEGUISubDeleteProduct extends OEGUIListener {
 			if (!( f_sub_enable && f_delete_product_enable )) {
 				return;
 			}
+			if (!( gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params() )) {
+				return;
+			}
 			if (evseqCapTimeParam != null) {
 				enableDefaultParam(evseqCapTimeParam, validParam(evseqDeleteOptionParam) == EvSeqDeleteOption.CAP, null);
 			}
@@ -590,6 +607,9 @@ public class OEGUISubDeleteProduct extends OEGUIListener {
 
 		case PARMGRP_DELPROD_CAP_TIME: {
 			if (!( f_sub_enable && f_delete_product_enable )) {
+				return;
+			}
+			if (!( gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params() )) {
 				return;
 			}
 			report_delete_product_change();
@@ -613,8 +633,10 @@ public class OEGUISubDeleteProduct extends OEGUIListener {
 
 			// Pre-check the event-sequence cap time
 
-			if (!( precheck_evseqCapTime() )) {
-				return;
+			if (gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params()) {
+				if (!( precheck_evseqCapTime() )) {
+					return;
+				}
 			}
 
 			// Load the delete product parameters

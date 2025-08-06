@@ -58,7 +58,8 @@ package org.opensha.oaf.aafs;
 // ***** Configuration commands *****
 //
 // These commands control program configuration options.
-// Currently, these control how to send products to PDL.
+// Currently, these control how to send products to PDL,
+// and allow for enabling event-sequence and ETAS.
 // If used alone, they affect the operation of the GUI.
 // If used in combination with one of the PDL commands,
 // they affect the operation of the command.
@@ -71,6 +72,8 @@ package org.opensha.oaf.aafs;
 // --pdl=prod
 // --pdl=simdev
 // --pdl=simprod
+// --pdl=downdev
+// --pdl=downprod
 // If the --pdl option is not specified, the default is dryrun.
 //
 //
@@ -79,40 +82,88 @@ package org.opensha.oaf.aafs;
 // If the --privateKey option is not specified, then products are sent unsigned.
 //
 //
+// To select the PDL target (which sender to use), use one of these:
+// --target=socket
+// --target=aws
+// --target=both
+// If the --target option is not specified, the default is taken from the server configuration file.
+// This option exists primarily for testing.
+//
+//
+// To select the event-sequence configuration option, use one of these:
+// --evseq-config=enable
+// --evseq-config=disable
+// If the --evseq-config option is not specified, the default is taken from the action configuration file.
+// This option exists primarily for testing.
+//
+//
+// To select the ETAS configuration option, use one of these:
+// --etas-config=enable
+// --etas-config=disable
+// If the --etas-config option is not specified, the default is taken from the action configuration file.
+// This option exists primarily for testing.
+//
+//
 // ***** PDL commands *****
 //
 // These commands can be used to send or delete a PDL product.
-// The --pdl and --privateKey options may be used in combination with
+// The --pdl, --privateKey, and --target options may be used in combination with
 // these commands to specify the PDL destination and signing options.
 //
 //
 // To delete a product, then in addition to the above you should also include all of these:
 // --delete
-// --code=PRODUCTCODE
-// --eventsource=EVENTNETWORK
-// --eventsourcecode=EVENTCODE
-// --source=PRODUCTSOURCE     [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE         [optional, defaults to configured value, which should be "oaf"]
-// --reviewed=ISREVIEWED      [optional, defaults to "true"]
-// The value of --code identifies the product that is to be deleted.  The value of --code is typically an event ID.
-// The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
-// these determine which event page displays the product.
+// --eventid=EVENTID
+// --evseq=EVSEQOPTION         [optional, defaults to "delete"]
+// --lookbacktime=EVSLOOKBACK  [optional, defaults to 30 days]
+// --captime=EVSEQCAPTIME      [required when --evseq=cap, ignored otherwise]
+// --code=PRODUCTCODE          [obsolote, ignored]
+// --eventsource=EVENTNETWORK  [deprecated, see below]
+// --eventsourcecode=EVENTCODE [deprecated, see below]
+// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
+// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
+// --reviewed=ISREVIEWED       [optional, defaults to "true"]
+// The value of --evseq must be "delete" (to delete any eventy-sequence product), "ignore" (to ignore any
+//  event-sequence product), or "cap" (to cap an existing event-sequence product).  If "cap", then
+//  --captime must be used to specify the end time of the sequence, preferably in ISO8601 format, although
+//  other formats are recognized.  If "delete" then an existing event-sequence product will be deleted
+//  even if there is no existing OAF product.
+// The value of --lookbacktime is the time, in days before the mainshock, when a sequence begins.
+// If --eventid is omitted, but --eventsource and --eventsourcecode are given, then the event ID is
+//  constructed by concatenating --eventsource and --eventsourcecode.
 // The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the deletion has been reviewed.
 //
 //
-// If a JSON file exists on disk, then it can be sent as a product by including:
+// If a forecast.json file exists on disk, then it can be sent as a product by including:
 // --update=JSONFILENAME
-// --code=PRODUCTCODE
-// --eventsource=EVENTNETWORK
-// --eventsourcecode=EVENTCODE
-// --source=PRODUCTSOURCE     [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE         [optional, defaults to configured value, which should be "oaf"]
-// --reviewed=ISREVIEWED      [optional, defaults to "true"]
-// The value of --code identifies the product that is to be sent.  The value of --code is typically an event ID.
-// The product replaces any prior product that was sent with the same --code.
-// The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
-// these determine which event page displays the product.
+// --eventid=EVENTID
+// --evseq=EVSEQOPTION         [optional, defaults to "update"]
+// --lookbacktime=EVSLOOKBACK  [optional, defaults to 30 days]
+// --code=PRODUCTCODE          [obsolote, ignored]
+// --eventsource=EVENTNETWORK  [deprecated, see below]
+// --eventsourcecode=EVENTCODE [deprecated, see below]
+// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
+// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
+// --reviewed=ISREVIEWED       [optional, defaults to "true"]
+// The value of --evseq must be "update" (to send an event-sequence product), "delete" (to delete any existing
+//  event-sequence product), or "ignore" (to neither send nor delete an event-sequence product).
+// The value of --lookbacktime is the time, in days before the mainshock, when a sequence begins.
+// If --eventid is omitted, but --eventsource and --eventsourcecode are given, then the event ID is
+//  constructed by concatenating --eventsource and --eventsourcecode.
+// The optional parameters --source and --type identify the source (typically a network) and type of the product.
+// The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
+//
+//
+// If a forecast_data.json file exists on disk, then it can be sent as a product by including:
+// --send=JSONFILENAME
+// --code=PRODUCTCODE          [obsolote, ignored]
+// --eventsource=EVENTNETWORK  [obsolote, ignored]
+// --eventsourcecode=EVENTCODE [obsolote, ignored]
+// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
+// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
+// --reviewed=ISREVIEWED       [optional, defaults to "true"]
+// All information, including the event ID and the event-sequence option, is taken from the forecast_data.json file.
 // The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
 

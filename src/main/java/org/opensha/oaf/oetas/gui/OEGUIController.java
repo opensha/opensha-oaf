@@ -543,7 +543,11 @@ public class OEGUIController extends OEGUIListener {
 
 		sub_ctl_rj_param.sub_rj_value_enable (true, f_catalog);
 		sub_ctl_common_param.sub_common_value_enable (true, f_catalog);
-		sub_ctl_etas_param.sub_etas_value_enable (true, f_catalog);
+
+		sub_ctl_etas_param.sub_etas_value_enable (
+			gui_model.get_config_is_etas_enabled() || gui_top.get_force_etas_params(),
+			f_catalog && (gui_model.get_config_is_etas_enabled() || gui_top.get_force_etas_params())
+		);
 
 		// Aftershock parameters that become enabled when the catalog is loaded
 
@@ -865,7 +869,9 @@ public class OEGUIController extends OEGUIListener {
 
 		sub_ctl_common_param.update_common_value_from_model();
 
-		sub_ctl_etas_param.update_etas_value_from_model();
+		if (gui_model.get_config_is_etas_enabled() || gui_top.get_force_etas_params()) {
+			sub_ctl_etas_param.update_etas_value_from_model();
+		}
 
 		//sub_ctl_forecast_param.update_fc_value_from_model();
 

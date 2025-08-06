@@ -28,12 +28,33 @@ import org.opensha.oaf.rj.USGS_ForecastHolder;
 // --pdl=prod
 // --pdl=simdev
 // --pdl=simprod
+// --pdl=downdev
+// --pdl=downprod
 // If the --pdl option is not specified, the default is taken from the pdl_default function parameter;
 // if pdl_default is not specified then the default is taken from the server configuration file.
 //
 // To specify a PDL key file, use:
 // --privateKey=PRIVATEKEYFILE
 // If the --privateKey option is not specified, then products are sent unsigned.
+//
+// To select the PDL target (which sender to use), use one of these:
+// --target=socket
+// --target=aws
+// --target=both
+// If the --target option is not specified, the default is taken from the server configuration file.
+// This option exists primarily for testing.
+//
+// To select the event-sequence configuration option, use one of these:
+// --evseq-config=enable
+// --evseq-config=disable
+// If the --evseq-config option is not specified, the default is taken from the action configuration file.
+// This option exists primarily for testing.
+//
+// To select the ETAS configuration option, use one of these:
+// --etas-config=enable
+// --etas-config=disable
+// If the --etas-config option is not specified, the default is taken from the action configuration file.
+// This option exists primarily for testing.
 //
 // To delete a product, then in addition to the above you should also include all of these:
 // --delete
@@ -118,6 +139,9 @@ public class PDLCmd {
 
 	public static final String PNAME_TARGET = "--target";				// PDL target option
 
+	public static final String PNAME_EVSEQ_CONFIG = "--evseq-config";	// Event-sequence configuration option
+	public static final String PNAME_ETAS_CONFIG = "--etas-config";		// ETAS configuration option
+
 	// Values for the PNAME_PDL parameter
 
 	public static final String PVAL_DRYRUN = "dryrun";					// No PDL access (dry run)
@@ -140,6 +164,16 @@ public class PDLCmd {
 	public static final String PVAL_TARG_SOCKET = "socket";				// SocketProductSender
 	public static final String PVAL_TARG_AWS = "aws";					// AwsProductSender
 	public static final String PVAL_TARG_BOTH = "both";					// Both
+
+	// Values for PNAME_EVSEQ_CONFIG parameter
+
+	public static final String PVAL_EVSCFG_ENABLE = "enable";			// Enable event-sequence product
+	public static final String PVAL_EVSCFG_DISABLE = "disable";			// Disable event-sequence product
+
+	// Values for PNAME_ETAS_CONFIG parameter
+
+	public static final String PVAL_ETASCFG_ENABLE = "enable";			// Enable ETAS forecasts
+	public static final String PVAL_ETASCFG_DISABLE = "disable";		// Disable ETAS forecasts
 
 	// String for splitting parameter into name and value
 
@@ -196,6 +230,9 @@ public class PDLCmd {
 		String send = null;
 
 		int pdl_target = ServerConfigFile.PDLTARG_UNSPECIFIED;
+
+		int evseq_config = ActionConfigFile.ESENA_UNSPECIFIED;
+		int etas_config = ActionConfigFile.ETAS_ENA_UNSPECIFIED;
 
 		// Scan parameters
 
@@ -504,6 +541,54 @@ public class PDLCmd {
 				f_seen_cap_time = true;
 			}
 
+			// Event-sequence configuration option
+
+			else if (name.equalsIgnoreCase (PNAME_EVSEQ_CONFIG)) {
+				if (evseq_config != ActionConfigFile.ESENA_UNSPECIFIED) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				if (value.equalsIgnoreCase (PVAL_EVSCFG_ENABLE)) {
+					evseq_config = ActionConfigFile.ESENA_ENABLE;
+				}
+				else if (value.equalsIgnoreCase (PVAL_EVSCFG_DISABLE)) {
+					evseq_config = ActionConfigFile.ESENA_DISABLE;
+				}
+				else {
+					System.out.println ("Invalid value in command-line option: " + arg);
+					System.out.println ("Valid values are: " + PVAL_EVSCFG_ENABLE + ", " + PVAL_EVSCFG_DISABLE);
+					return true;
+				}
+			}
+
+			// ETAS configuration option
+
+			else if (name.equalsIgnoreCase (PNAME_ETAS_CONFIG)) {
+				if (etas_config != ActionConfigFile.ETAS_ENA_UNSPECIFIED) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				if (value.equalsIgnoreCase (PVAL_ETASCFG_ENABLE)) {
+					etas_config = ActionConfigFile.ETAS_ENA_ENABLE;
+				}
+				else if (value.equalsIgnoreCase (PVAL_ETASCFG_DISABLE)) {
+					etas_config = ActionConfigFile.ETAS_ENA_DISABLE;
+				}
+				else {
+					System.out.println ("Invalid value in command-line option: " + arg);
+					System.out.println ("Valid values are: " + PVAL_EVSCFG_ENABLE + ", " + PVAL_EVSCFG_DISABLE);
+					return true;
+				}
+			}
+
 			// Update option
 
 			else if (name.equalsIgnoreCase (PNAME_UPDATE)) {
@@ -651,6 +736,22 @@ public class PDLCmd {
 
 		if (product_type != null) {
 			server_config.get_server_config_file().pdl_oaf_type = product_type;
+		}
+
+		// Action configuration
+
+		ActionConfig action_config = new ActionConfig();
+
+		// If event-sequence configuration is specified, enter it into the action configuration
+
+		if (evseq_config != ActionConfigFile.ESENA_UNSPECIFIED) {
+			action_config.get_action_config_file().evseq_enable = evseq_config;
+		}
+
+		// If ETAS configuration is specified, enter it into the action configuration
+
+		if (etas_config != ActionConfigFile.ETAS_ENA_UNSPECIFIED) {
+			action_config.get_action_config_file().etas_enable = etas_config;
 		}
 
 		// Send update from forecast.json

@@ -312,6 +312,8 @@ public class ActionConfigFile implements Marshalable {
 	public static final int ESENA_ENABLE = 1;		// Enable sending and deleting event-sequence products
 	public static final int ESENA_MAX = 1;
 
+	public static final int ESENA_UNSPECIFIED = -1;	// An unspecified value, not equal to any valid value
+
 	private static final int V1_EVSEQ_ENABLE = 0;	// Default value for v1 files
 
 	public int evseq_enable;
@@ -368,6 +370,8 @@ public class ActionConfigFile implements Marshalable {
 	public static final int ETAS_ENA_DISABLE = 0;	// Completely disable ETAS forecasts
 	public static final int ETAS_ENA_ENABLE = 1;	// Enable ETAS forecasts, original ETAS method
 	public static final int ETAS_ENA_MAX = 1;
+
+	public static final int ETAS_ENA_UNSPECIFIED = -1;	// An unspecified value, not equal to any valid value
 
 	private static final int V2_ETAS_ENABLE = 0;	// Default value for v2 and earlier files
 
