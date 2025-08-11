@@ -129,6 +129,7 @@ import org.opensha.oaf.pdl.PDLCodeChooserOaf;
 
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
+import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.gui.GUIConsoleWindow;
 import org.opensha.oaf.util.gui.GUICalcStep;
 import org.opensha.oaf.util.gui.GUICalcRunnable;
@@ -1145,12 +1146,30 @@ public class OEGUISubCommonValue extends OEGUIListener {
 					double mc = xfer_b_value_comp_impl.x_mcParam;
 					
 					double magPrecision = xfer_b_value_comp_impl.x_magPrecisionParam;
+
+					long mainshock_time = gui_model.get_cur_mainshock().getOriginTime();
+
+					ObsEqkRupList filteredRupList = new ObsEqkRupList();
+					for (ObsEqkRupture rup : gui_model.get_cur_aftershocks()) {
+						if (rup.getOriginTime() > mainshock_time && rup.getMag() >= mc) {	// foreshock fix
+							filteredRupList.add (rup);
+						}
+					}
+
+					if (filteredRupList.size() < 10) {
+						throw new RuntimeException ("Insufficient data to calculate b-value");
+					}
 					
-					ObsEqkRupList filteredRupList = gui_model.get_cur_aftershocks().getRupsAboveMag(mc);
 					double b = AftershockStatsCalc.getMaxLikelihood_b_value(filteredRupList, mc, magPrecision);
+
+					if (!( b >= 0.25 && b <= 4.0 )) {
+						throw new RuntimeException ("Calculated b-value is out-of-range, will not be used");
+					}
+
+					b = SimpleUtils.round_double_via_string ("%.3f", b);
 					xfer_b_value_comp_impl.modify_bParam(b);
 
-					System.out.println("Num rups \u2265 Mc = " + filteredRupList.size());
+					System.out.println("Number of aftershocks with magnitude at least Mc = " + filteredRupList.size());
 					System.out.println("Computed b-value: " + b);
 				}
 			});
