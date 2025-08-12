@@ -370,6 +370,10 @@ public class OEtasCatalogInfo implements Marshalable {
 
 		Map<String, Object> user_param_map = null;
 
+		// Default minimum magnitude bins
+
+		double[] min_mag_bins = null;
+
 		// Make the information object
 
 		USGS_ForecastInfo fc_info = (new USGS_ForecastInfo()).set (
@@ -380,7 +384,8 @@ public class OEtasCatalogInfo implements Marshalable {
 			advisory_lag,
 			injectable_text,
 			next_forecast_time,
-			user_param_map
+			user_param_map,
+			min_mag_bins
 		);
 
 		return fc_info;

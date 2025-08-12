@@ -261,9 +261,11 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 	// Set up advisory settings.
 	// Also set up for no mainshock.
+	// Parameters:
+	//  custom_min_mag_bins = Custom minimum magnitude bins for forecast, can be null or empty to use defaults.
 	// Throw an exception if advisory settings cannot be set up.
 
-	public void setup_advisory () {
+	public void setup_advisory (double[] custom_min_mag_bins) {
 
 		// Get action configuration
 
@@ -283,10 +285,18 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 		// Get the advisory magnitude values
 
-		adv_mag_values = new double[action_config.get_adv_min_mag_bin_count()];
-		for (int mag_ix = 0; mag_ix < adv_mag_values.length; ++mag_ix) {
-			adv_mag_values[mag_ix] = round_adv_mag (action_config.get_adv_min_mag_bin (mag_ix));
+		if (custom_min_mag_bins == null || custom_min_mag_bins.length == 0) {
+			adv_mag_values = new double[action_config.get_adv_min_mag_bin_count()];
+			for (int mag_ix = 0; mag_ix < adv_mag_values.length; ++mag_ix) {
+				adv_mag_values[mag_ix] = round_adv_mag (action_config.get_adv_min_mag_bin (mag_ix));
+			}
+		} else {
+			adv_mag_values = new double[custom_min_mag_bins.length];
+			for (int mag_ix = 0; mag_ix < adv_mag_values.length; ++mag_ix) {
+				adv_mag_values[mag_ix] = round_adv_mag (custom_min_mag_bins[mag_ix]);
+			}
 		}
+
 		Arrays.sort (adv_mag_values);		// should already be sorted, but just in case
 
 //		// Get the advisory fractile values
@@ -1630,7 +1640,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 				// Advisory settings
 
-				fcgrid.setup_advisory();
+				fcgrid.setup_advisory (null);
 
 				// Maihshock settings, if desired
 
@@ -1744,7 +1754,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 				// Advisory settings
 
-				fcgrid.setup_advisory();
+				fcgrid.setup_advisory (null);
 
 				// Maihshock settings, if desired
 
@@ -1876,7 +1886,7 @@ public class OEForecastGrid implements USGS_ForecastModel {
 
 				// Advisory settings
 
-				fcgrid.setup_advisory();
+				fcgrid.setup_advisory (null);
 
 				// Maihshock settings, if desired
 

@@ -1177,6 +1177,112 @@ public class ForecastParameters implements Marshalable {
 	}
 
 
+	//----- Forecast option parameters -----
+
+	// Forecast option parameter fetch method. [v4]
+
+	public int fcopt_fetch_meth = FETCH_METH_AUTO;
+
+	// Forecast option parameter available flag. [v4]
+
+	public boolean fcopt_avail = false;
+
+	// Forecast option minimum magnitude bins (null iff omitted). [v4]
+	// Bins must be given in increasing order.
+	// In analyst options, a zero-length array selects the defaults from the action configuration.
+
+	public double[] fcopt_min_mag_bins = null;
+
+	// Set forecast option parameters to default.
+
+	public void set_default_fcopt_params () {
+		fcopt_min_mag_bins = null;
+		return;
+	}
+
+	// Copy forecast option parameters from the other object.
+
+	public void copy_fcopt_params_from (ForecastParameters other) {
+		if (other.fcopt_min_mag_bins == null) {
+			fcopt_min_mag_bins = null;
+		} else {
+			fcopt_min_mag_bins = other.fcopt_min_mag_bins.clone();
+		}
+		return;
+	}
+
+	// Set forecast option parameters to analyst values.
+
+	public void set_analyst_fcopt_params (
+			boolean the_fcopt_avail,
+			double[] the_fcopt_min_mag_bins
+	) {
+		fcopt_fetch_meth = FETCH_METH_ANALYST;
+		fcopt_avail = the_fcopt_avail;
+		if (the_fcopt_min_mag_bins == null) {
+			fcopt_min_mag_bins = null;
+		} else {
+			fcopt_min_mag_bins = the_fcopt_min_mag_bins.clone();
+		}
+		return;
+	}
+
+	// Get resolved minimum magnitude bins, in a newly-allocated array.
+	// This function always returns a non-zero length array.
+
+	public double[] get_resolved_fcopt_min_mag_bins() {
+		if (fcopt_avail && fcopt_min_mag_bins != null && fcopt_min_mag_bins.length > 0) {
+			return fcopt_min_mag_bins.clone();
+		}
+		return (new ActionConfig()).get_adv_min_mag_bins_array();
+	}
+
+	// Fetch forecast option parameters.
+
+	public void fetch_fcopt_params (ForecastMainshock fcmain, ForecastParameters prior_params) {
+
+		// Inherit fetch method from prior parameters, or use default
+
+		if (prior_params != null) {
+			fcopt_fetch_meth = prior_params.fcopt_fetch_meth;
+		} else {
+			fcopt_fetch_meth = FETCH_METH_AUTO;
+		}
+
+		// Handle non-auto fetch methods
+
+		switch (fcopt_fetch_meth) {
+
+		// Analyst, copy from prior parameters
+
+		case FETCH_METH_ANALYST:
+			fcopt_avail = prior_params.fcopt_avail;
+			if (prior_params.fcopt_min_mag_bins == null) {
+				fcopt_min_mag_bins = null;
+			} else if (prior_params.fcopt_min_mag_bins.length == 0) {
+				fcopt_min_mag_bins = (new ActionConfig()).get_adv_min_mag_bins_array();
+			} else {
+				fcopt_min_mag_bins = prior_params.fcopt_min_mag_bins.clone();
+			}
+			return;
+
+		// Suppress, make not available
+
+		case FETCH_METH_SUPPRESS:
+			fcopt_avail = false;
+			set_default_fcopt_params();
+			return;
+		}
+
+		// Fetch parameters from configuration file
+
+		fcopt_avail = true;
+		fcopt_min_mag_bins = (new ActionConfig()).get_adv_min_mag_bins_array();
+
+		return;
+	}
+
+
 	//----- Transient parameters -----
 
 //	// The configured default injectable text, or "" if none, or null if not set.
@@ -1238,6 +1344,7 @@ public class ForecastParameters implements Marshalable {
 		fetch_aftershock_search_region (fcmain, prior_params, the_start_lag);
 		fetch_evseq_cfg_params (fcmain, prior_params);
 		fetch_etas_params (fcmain, prior_params);
+		fetch_fcopt_params (fcmain, prior_params);
 		return;
 	}
 
@@ -1252,6 +1359,7 @@ public class ForecastParameters implements Marshalable {
 		fetch_aftershock_search_region (fcmain, prior_params, the_start_lag);
 		fetch_evseq_cfg_params (fcmain, prior_params);
 		fetch_etas_params (fcmain, prior_params);
+		fetch_fcopt_params (fcmain, prior_params);
 		return;
 	}
 
@@ -1267,6 +1375,7 @@ public class ForecastParameters implements Marshalable {
 		fetch_seq_spec_params (fcmain, prior_params);
 		fetch_evseq_cfg_params (fcmain, prior_params);
 		fetch_etas_params (fcmain, prior_params);
+		fetch_fcopt_params (fcmain, prior_params);
 
 		return generic_avail && mag_comp_avail && seq_spec_avail;
 	}
@@ -1311,6 +1420,10 @@ public class ForecastParameters implements Marshalable {
 		etas_avail = false;
 		set_default_etas_params();
 
+		fcopt_fetch_meth = FETCH_METH_AUTO;
+		fcopt_avail = false;
+		set_default_fcopt_params();
+
 		set_default_transient_params();
 	
 		return;
@@ -1346,6 +1459,10 @@ public class ForecastParameters implements Marshalable {
 		etas_fetch_meth = other.etas_fetch_meth;
 		etas_avail = other.etas_avail;
 		copy_etas_params_from (other);
+
+		fcopt_fetch_meth = other.fcopt_fetch_meth;
+		fcopt_avail = other.fcopt_avail;
+		copy_fcopt_params_from (other);
 
 		copy_transient_params_from (other);
 	
@@ -1413,6 +1530,18 @@ public class ForecastParameters implements Marshalable {
 			result.append ("etas_params = " + etas_params.toString() + "\n");
 		}
 
+		result.append ("fcopt_fetch_meth = " + fcopt_fetch_meth + "\n");
+		result.append ("fcopt_avail = " + fcopt_avail + "\n");
+		if (fcopt_avail) {
+			result.append ("fcopt_min_mag_bins = [");
+			String sep = "";
+			for (double mag : fcopt_min_mag_bins) {
+				result.append (sep + mag);
+				sep = ", ";
+			}
+			result.append ("]" + "\n");
+		}
+
 //		if (def_injectable_text != null) {
 //			result.append ("def_injectable_text = " + def_injectable_text + "\n");
 //		}
@@ -1431,6 +1560,7 @@ public class ForecastParameters implements Marshalable {
 	private static final int MARSHAL_VER_1 = 22001;
 	private static final int MARSHAL_VER_2 = 22002;
 	private static final int MARSHAL_VER_3 = 22003;
+	private static final int MARSHAL_VER_4 = 22004;
 
 	private static final String M_VERSION_NAME = "ForecastParameters";
 
@@ -1453,7 +1583,7 @@ public class ForecastParameters implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_3;
+		int ver = MARSHAL_VER_4;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -1608,6 +1738,70 @@ public class ForecastParameters implements Marshalable {
 			}
 
 			break;
+
+		case MARSHAL_VER_4:
+
+			writer.marshalLong   ("forecast_lag"   , forecast_lag   );
+
+			writer.marshalInt    ("generic_calc_meth" , generic_calc_meth );
+			writer.marshalInt    ("seq_spec_calc_meth", seq_spec_calc_meth);
+			writer.marshalInt    ("bayesian_calc_meth", bayesian_calc_meth);
+			writer.marshalString ("injectable_text"   , injectable_text   );
+
+			writer.marshalInt     ("generic_fetch_meth", generic_fetch_meth);
+			writer.marshalBoolean ("generic_avail"     , generic_avail     );
+			if (generic_avail) {
+				writer.marshalString ("generic_regime", generic_regime);
+				generic_params.marshal (writer, "generic_params");
+			}
+
+			writer.marshalInt     ("mag_comp_fetch_meth", mag_comp_fetch_meth);
+			writer.marshalBoolean ("mag_comp_avail"     , mag_comp_avail     );
+			if (mag_comp_avail) {
+				writer.marshalString ("mag_comp_regime", mag_comp_regime);
+				mag_comp_params.marshal (writer, "mag_comp_params");
+			}
+
+			writer.marshalInt     ("seq_spec_fetch_meth", seq_spec_fetch_meth);
+			writer.marshalBoolean ("seq_spec_avail"     , seq_spec_avail     );
+			if (seq_spec_avail) {
+				seq_spec_params.marshal (writer, "seq_spec_params");
+			}
+
+			writer.marshalInt     ("aftershock_search_fetch_meth", aftershock_search_fetch_meth);
+			writer.marshalBoolean ("aftershock_search_avail"     , aftershock_search_avail     );
+			if (aftershock_search_avail) {
+				SphRegion.marshal_poly (writer, "aftershock_search_region", aftershock_search_region);
+				writer.marshalDouble ("min_days" , min_days );
+				writer.marshalDouble ("max_days" , max_days );
+				writer.marshalDouble ("min_depth", min_depth);
+				writer.marshalDouble ("max_depth", max_depth);
+				writer.marshalDouble ("min_mag"  , min_mag  );
+
+				writer.marshalDouble ("fit_start_inset", fit_start_inset);
+				writer.marshalDouble ("fit_end_inset"  , fit_end_inset  );
+			}
+
+			writer.marshalInt     ("evseq_cfg_fetch_meth", evseq_cfg_fetch_meth);
+			writer.marshalBoolean ("evseq_cfg_avail"     , evseq_cfg_avail     );
+			if (evseq_cfg_avail) {
+				evseq_cfg_params.marshal (writer, "evseq_cfg_params");
+			}
+
+			writer.marshalInt     ("etas_fetch_meth", etas_fetch_meth);
+			writer.marshalBoolean ("etas_avail"     , etas_avail     );
+			if (etas_avail) {
+				writer.marshalString ("etas_regime", etas_regime);
+				etas_params.marshal (writer, "etas_params");
+			}
+
+			writer.marshalInt     ("fcopt_fetch_meth", fcopt_fetch_meth);
+			writer.marshalBoolean ("fcopt_avail"     , fcopt_avail     );
+			if (fcopt_avail) {
+				writer.marshalDoubleArray ("fcopt_min_mag_bins", fcopt_min_mag_bins);
+			}
+
+			break;
 		}
 	
 		return;
@@ -1619,7 +1813,7 @@ public class ForecastParameters implements Marshalable {
 
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_4);
 
 		// Contents
 
@@ -1686,6 +1880,10 @@ public class ForecastParameters implements Marshalable {
 			etas_fetch_meth = FETCH_METH_AUTO;
 			etas_avail = false;
 			set_default_etas_params();
+
+			fcopt_fetch_meth = FETCH_METH_AUTO;
+			fcopt_avail = false;
+			set_default_fcopt_params();
 
 			set_default_transient_params();
 
@@ -1756,6 +1954,10 @@ public class ForecastParameters implements Marshalable {
 			etas_fetch_meth = FETCH_METH_AUTO;
 			etas_avail = false;
 			set_default_etas_params();
+
+			fcopt_fetch_meth = FETCH_METH_AUTO;
+			fcopt_avail = false;
+			set_default_fcopt_params();
 
 			set_default_transient_params();
 
@@ -1830,6 +2032,93 @@ public class ForecastParameters implements Marshalable {
 				etas_params = (new OEtasParameters()).unmarshal (reader, "etas_params");
 			} else {
 				set_default_etas_params();
+			}
+
+			fcopt_fetch_meth = FETCH_METH_AUTO;
+			fcopt_avail = false;
+			set_default_fcopt_params();
+
+			set_default_transient_params();
+
+			break;
+
+		case MARSHAL_VER_4:
+
+			forecast_lag    = reader.unmarshalLong   ("forecast_lag"   );
+
+			generic_calc_meth  = reader.unmarshalInt    ("generic_calc_meth" , CALC_METH_MIN, CALC_METH_MAX);
+			seq_spec_calc_meth = reader.unmarshalInt    ("seq_spec_calc_meth", CALC_METH_MIN, CALC_METH_MAX);
+			bayesian_calc_meth = reader.unmarshalInt    ("bayesian_calc_meth", CALC_METH_MIN, CALC_METH_MAX);
+			injectable_text    = reader.unmarshalString ("injectable_text");
+
+			generic_fetch_meth = reader.unmarshalInt     ("generic_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			generic_avail      = reader.unmarshalBoolean ("generic_avail");
+			if (generic_avail) {
+				generic_regime = reader.unmarshalString ("generic_regime");
+				generic_params = (new GenericRJ_Parameters()).unmarshal (reader, "generic_params");
+			} else {
+				set_default_generic_params();
+			}
+
+			mag_comp_fetch_meth = reader.unmarshalInt     ("mag_comp_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			mag_comp_avail      = reader.unmarshalBoolean ("mag_comp_avail");
+			if (mag_comp_avail) {
+				mag_comp_regime = reader.unmarshalString ("mag_comp_regime");
+				mag_comp_params = (new MagCompPage_Parameters()).unmarshal (reader, "mag_comp_params");
+			} else {
+				set_default_mag_comp_params();
+			}
+
+			seq_spec_fetch_meth = reader.unmarshalInt     ("seq_spec_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			seq_spec_avail      = reader.unmarshalBoolean ("seq_spec_avail");
+			if (seq_spec_avail) {
+				seq_spec_params = (new SeqSpecRJ_Parameters()).unmarshal (reader, "seq_spec_params");
+			} else {
+				set_default_seq_spec_params();
+			}
+
+			aftershock_search_fetch_meth = reader.unmarshalInt     ("aftershock_search_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			aftershock_search_avail      = reader.unmarshalBoolean ("aftershock_search_avail");
+			if (aftershock_search_avail) {
+				aftershock_search_region = SphRegion.unmarshal_poly (reader, "aftershock_search_region");
+				if (aftershock_search_region == null) {
+					throw new MarshalException ("Aftershock search region is null");
+				}
+				min_days  = reader.unmarshalDouble ("min_days" );
+				max_days  = reader.unmarshalDouble ("max_days" );
+				min_depth = reader.unmarshalDouble ("min_depth");
+				max_depth = reader.unmarshalDouble ("max_depth");
+				min_mag   = reader.unmarshalDouble ("min_mag"  );
+
+				fit_start_inset = reader.unmarshalDouble ("fit_start_inset");
+				fit_end_inset   = reader.unmarshalDouble ("fit_end_inset"  );
+			} else {
+				set_default_aftershock_search_params();
+			}
+
+			evseq_cfg_fetch_meth = reader.unmarshalInt     ("evseq_cfg_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			evseq_cfg_avail      = reader.unmarshalBoolean ("evseq_cfg_avail");
+			if (evseq_cfg_avail) {
+				evseq_cfg_params = (new EventSequenceParameters()).unmarshal (reader, "evseq_cfg_params");
+			} else {
+				set_default_evseq_cfg_params();
+			}
+
+			etas_fetch_meth = reader.unmarshalInt     ("etas_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			etas_avail      = reader.unmarshalBoolean ("etas_avail");
+			if (etas_avail) {
+				etas_regime = reader.unmarshalString ("etas_regime");
+				etas_params = (new OEtasParameters()).unmarshal (reader, "etas_params");
+			} else {
+				set_default_etas_params();
+			}
+
+			fcopt_fetch_meth = reader.unmarshalInt     ("fcopt_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
+			fcopt_avail      = reader.unmarshalBoolean ("fcopt_avail");
+			if (evseq_cfg_avail) {
+				fcopt_min_mag_bins = reader.unmarshalDoubleArray ("fcopt_min_mag_bins");
+			} else {
+				set_default_fcopt_params();
 			}
 
 			set_default_transient_params();

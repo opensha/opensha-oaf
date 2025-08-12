@@ -15,6 +15,8 @@ import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.SimpleUtils;
 import org.opensha.oaf.util.TestArgs;
 
+import org.opensha.oaf.aafs.ActionConfig;
+
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
 
@@ -89,6 +91,11 @@ public class USGS_ForecastInfo implements Marshalable {
 
 	public Map<String, Object> user_param_map;
 
+	// Minimum magnitude bins used to construct the forecast (not including mainshock magnitude).
+	// Must be non-null and non-empty.  Values must be listed in increasing order.
+
+	public double[] min_mag_bins;
+
 
 
 
@@ -108,6 +115,7 @@ public class USGS_ForecastInfo implements Marshalable {
 		injectable_text = "";
 		next_forecast_time = 0L;
 		user_param_map = new LinkedHashMap<String, Object>();
+		min_mag_bins = new double[0];
 		return;
 	}
 
@@ -125,6 +133,7 @@ public class USGS_ForecastInfo implements Marshalable {
 
 	// Set the values.
 	// This allows injectable_text == null and user_param_map == null.
+	// Also allows min_mag_bins == null or empty.
 
 	public final USGS_ForecastInfo set (
 		long event_time,
@@ -134,7 +143,8 @@ public class USGS_ForecastInfo implements Marshalable {
 		long advisory_lag,
 		String injectable_text,
 		long next_forecast_time,
-		Map<String, Object> user_param_map
+		Map<String, Object> user_param_map,
+		double[] min_mag_bins
 	) {
 		this.event_time = event_time;
 		this.start_time = start_time;
@@ -152,6 +162,11 @@ public class USGS_ForecastInfo implements Marshalable {
 		} else {
 			this.user_param_map = new LinkedHashMap<String, Object> (user_param_map);
 		}
+		if (min_mag_bins == null || min_mag_bins.length == 0) {
+			this.min_mag_bins = (new ActionConfig()).get_adv_min_mag_bins_array();
+		} else {
+			this.min_mag_bins = min_mag_bins.clone();
+		}
 		return this;
 	}
 
@@ -167,6 +182,7 @@ public class USGS_ForecastInfo implements Marshalable {
 	//  injectable_text = Injectable text to insert into the forecast.  Can be null or empty if none.
 	//  next_scheduled_lag = Time of next forecast relative to mainshock, or 0 if unknown, or negative if no more forecasts.
 	//  user_param_map = Additional model parameters to insert into the forecast.  Can be null or empty if none.
+	//  min_mag_bins = Minimum magnitude bins for the forecast.  Can be null or empty to use defaults.
 	// Note: After this call, start_time contains the rounded start time of the forecast, and f_round_start == false.
 
 	public final USGS_ForecastInfo set_typical (
@@ -175,7 +191,8 @@ public class USGS_ForecastInfo implements Marshalable {
 		long advisory_lag,
 		String injectable_text,
 		long next_scheduled_lag,
-		Map<String, Object> user_param_map
+		Map<String, Object> user_param_map,
+		double[] min_mag_bins
 	) {
 		this.event_time = event_time;
 		this.start_time = make_rounded_start_time (event_time, result_time);
@@ -192,6 +209,11 @@ public class USGS_ForecastInfo implements Marshalable {
 			this.user_param_map = new LinkedHashMap<String, Object>();
 		} else {
 			this.user_param_map = new LinkedHashMap<String, Object> (user_param_map);
+		}
+		if (min_mag_bins == null || min_mag_bins.length == 0) {
+			this.min_mag_bins = (new ActionConfig()).get_adv_min_mag_bins_array();
+		} else {
+			this.min_mag_bins = min_mag_bins.clone();
 		}
 		return this;
 	}
@@ -210,6 +232,7 @@ public class USGS_ForecastInfo implements Marshalable {
 		this.injectable_text = other.injectable_text;
 		this.next_forecast_time = other.next_forecast_time;
 		this.user_param_map = new LinkedHashMap<String, Object> (other.user_param_map);
+		this.min_mag_bins = other.min_mag_bins.clone();
 		return this;
 	}
 
@@ -247,8 +270,25 @@ public class USGS_ForecastInfo implements Marshalable {
 			result.append (entry.getKey() + " = " + entry.getValue().toString() + "\n");
 		}
 		result.append ("]" + "\n");
+		result.append ("min_mag_bins = [");
+		String sep = "";
+		for (double mag : min_mag_bins) {
+			result.append (sep + mag);
+			sep = ", ";
+		}
+		result.append ("]" + "\n");
 
 		return result.toString();
+	}
+
+
+
+
+	// Get the minimum magnitude bins.
+	// The returned array is newly-allocated.
+
+	public double[] get_min_mag_bins () {
+		return min_mag_bins.clone();
 	}
 
 
@@ -319,7 +359,8 @@ public class USGS_ForecastInfo implements Marshalable {
 
 		Instant eventDate = Instant.ofEpochMilli (event_time);
 		Instant startDate = Instant.ofEpochMilli (start_time);
-		USGS_AftershockForecast forecast = new USGS_AftershockForecast (model, aftershocks, eventDate, startDate, f_round_start);
+		//USGS_AftershockForecast forecast = new USGS_AftershockForecast (model, aftershocks, eventDate, startDate, f_round_start);
+		USGS_AftershockForecast forecast = new USGS_AftershockForecast (model, aftershocks, min_mag_bins.clone(), eventDate, startDate, f_round_start);
 
 		// Advisory duration
 
@@ -382,6 +423,7 @@ public class USGS_ForecastInfo implements Marshalable {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 123001;
+	private static final int MARSHAL_VER_2 = 123002;
 
 	private static final String M_VERSION_NAME = "USGS_ForecastInfo";
 
@@ -391,7 +433,7 @@ public class USGS_ForecastInfo implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_1;
+		int ver = MARSHAL_VER_2;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -414,6 +456,23 @@ public class USGS_ForecastInfo implements Marshalable {
 		}
 		break;
 
+		case MARSHAL_VER_2: {
+
+			writer.marshalLong ("event_time", event_time);
+			writer.marshalLong ("start_time", start_time);
+			writer.marshalBoolean ("f_round_start", f_round_start);
+			writer.marshalLong ("result_time", result_time);
+			writer.marshalLong ("advisory_lag", advisory_lag);
+			writer.marshalString ("injectable_text", injectable_text);
+			writer.marshalLong ("next_forecast_time", next_forecast_time);
+
+			MarshalUtils.marshalMapStringObject (writer, "user_param_map", user_param_map);
+
+			writer.marshalDoubleArray ("min_mag_bins", min_mag_bins);
+
+		}
+		break;
+
 		}
 
 		return;
@@ -425,7 +484,7 @@ public class USGS_ForecastInfo implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_1);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
 
 		// Contents
 
@@ -443,6 +502,26 @@ public class USGS_ForecastInfo implements Marshalable {
 
 			user_param_map = new LinkedHashMap<String, Object>();
 			MarshalUtils.unmarshalMapStringObject (reader, "user_param_map", user_param_map);
+
+			min_mag_bins = (new ActionConfig()).get_adv_min_mag_bins_array();
+
+		}
+		break;
+
+		case MARSHAL_VER_2: {
+
+			event_time = reader.unmarshalLong ("event_time");
+			start_time = reader.unmarshalLong ("start_time");
+			f_round_start = reader.unmarshalBoolean ("f_round_start");
+			result_time = reader.unmarshalLong ("result_time");
+			advisory_lag = reader.unmarshalLong ("advisory_lag");
+			injectable_text = reader.unmarshalString ("injectable_text");
+			next_forecast_time = reader.unmarshalLong ("next_forecast_time");
+
+			user_param_map = new LinkedHashMap<String, Object>();
+			MarshalUtils.unmarshalMapStringObject (reader, "user_param_map", user_param_map);
+
+			min_mag_bins = reader.unmarshalDoubleArray ("min_mag_bins");
 
 		}
 		break;
@@ -513,7 +592,8 @@ public class USGS_ForecastInfo implements Marshalable {
 			ADVISORY_LAG_WEEK,										// advisory_lag
 			"Test values for forecast info",						// injectable_text
 			SimpleUtils.string_to_time ("2011-12-08T10:15:30Z"),	// next_forecast_time
-			my_user_param_map										// user_param_map
+			my_user_param_map,										// user_param_map
+			null													// min_mag_bins
 		);
 
 		return fc_info;
@@ -540,7 +620,8 @@ public class USGS_ForecastInfo implements Marshalable {
 			ADVISORY_LAG_MONTH,										// advisory_lag
 			"Test values version 2 for forecast info",				// injectable_text
 			86400L * 1000L * 11L,									// next_scheduled_lag
-			my_user_param_map										// user_param_map
+			my_user_param_map,										// user_param_map
+			new double[]{3.0, 4.0, 5.0, 6.0, 7.0, 8.0}				// min_mag_bins
 		);
 
 		return fc_info;

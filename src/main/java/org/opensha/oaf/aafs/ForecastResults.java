@@ -637,7 +637,8 @@ public class ForecastResults implements Marshalable {
 				advisory_lag,					// advisory_lag
 				injectable_text,				// injectable_text
 				params.next_scheduled_lag,		// next_scheduled_lag
-				null							// user_param_map
+				null,							// user_param_map
+				params.get_resolved_fcopt_min_mag_bins()	// min_mag_bins
 			);
 
 			// Add parameters for magnitude of completeness and search region
@@ -773,7 +774,8 @@ public class ForecastResults implements Marshalable {
 				advisory_lag,					// advisory_lag
 				injectable_text,				// injectable_text
 				params.next_scheduled_lag,		// next_scheduled_lag
-				null							// user_param_map
+				null,							// user_param_map
+				params.get_resolved_fcopt_min_mag_bins()	// min_mag_bins
 			);
 
 			// Add parameters for magnitude of completeness and search region
@@ -910,7 +912,8 @@ public class ForecastResults implements Marshalable {
 				advisory_lag,					// advisory_lag
 				injectable_text,				// injectable_text
 				params.next_scheduled_lag,		// next_scheduled_lag
-				null							// user_param_map
+				null,							// user_param_map
+				params.get_resolved_fcopt_min_mag_bins()	// min_mag_bins
 			);
 
 			// Add parameters for magnitude of completeness and search region
@@ -1099,7 +1102,8 @@ public class ForecastResults implements Marshalable {
 				advisory_lag,					// advisory_lag
 				injectable_text,				// injectable_text
 				params.next_scheduled_lag,		// next_scheduled_lag
-				null							// user_param_map
+				null,							// user_param_map
+				params.get_resolved_fcopt_min_mag_bins()	// min_mag_bins
 			);
 		
 			// Add parameters for magnitude of completeness and search region
@@ -1340,7 +1344,8 @@ public class ForecastResults implements Marshalable {
 			advisory_lag,					// advisory_lag
 			injectable_text,				// injectable_text
 			params.next_scheduled_lag,		// next_scheduled_lag
-			null							// user_param_map
+			null,							// user_param_map
+			params.get_resolved_fcopt_min_mag_bins()	// min_mag_bins
 		);
 		
 		// Add parameters for magnitude of completeness and search region

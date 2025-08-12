@@ -1369,6 +1369,10 @@ public class OEExecEnvironment {
 
 		OEDisc2InitVoxSet voxel_set = new OEDisc2InitVoxSet();
 
+		// Set desired minimum magnitude bins
+
+		voxel_set.set_custom_min_mag_bins (forecast_info.get_min_mag_bins());
+
 		// Make the voxel builder
 
 		OEDisc2InitVoxBuilder voxel_builder = new OEDisc2InitVoxBuilder();

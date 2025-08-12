@@ -149,7 +149,7 @@ public class OESimulator {
 
 		// Advisory settings
 
-		sim_forecast_grid.setup_advisory();
+		sim_forecast_grid.setup_advisory (sim_initializer.get_custom_min_mag_bins());
 
 		// Mainshock settings, if initializer has one
 
@@ -189,7 +189,7 @@ public class OESimulator {
 
 		// Advisory settings
 
-		sim_forecast_grid.setup_advisory();
+		sim_forecast_grid.setup_advisory (sim_initializer.get_custom_min_mag_bins());
 
 		// Mainshock settings, if initializer has one
 

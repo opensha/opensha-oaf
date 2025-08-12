@@ -438,7 +438,8 @@ public class OEtasTest {
 			advisory_lag,					// advisory_lag
 			injectable_text,				// injectable_text
 			next_scheduled_lag,				// next_scheduled_lag
-			null							// user_param_map
+			null,							// user_param_map
+			null							// min_mag_bins
 		);
 
 		// Magnitude of completeness parameters

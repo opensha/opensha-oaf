@@ -86,6 +86,18 @@ public interface OEEnsembleInitializer {
 
 	public OECatalogRange get_range ();
 
+	// Get a list of custom minimum magnitude bins for computing the forecast.
+	// The returned object is newly-allocated and not retained in this object.
+	// Can return null or an empty array if no custom minimum magnitude bins have been set.
+
+	public double[] get_custom_min_mag_bins ();
+
+	// Set a list of custom minimum magnitude bins for computing the forecast.
+	// The supplied object is not retained in this object.
+	// The supplied object can be null or an empty array to set no custom minimum magnitude bins.
+
+	public void set_custom_min_mag_bins (double[] custom_min_mag_bins);
+
 	// Get the initial time and magnitude range of the catalog simulations.
 	// The returned object is newly-allocated and not retained in this object.
 

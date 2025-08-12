@@ -678,6 +678,37 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 
 
+	// Get a list of custom minimum magnitude bins for computing the forecast.
+	// The returned object is newly-allocated and not retained in this object.
+	// Can return null or an empty array if no custom minimum magnitude bins have been set.
+
+	private double[] custom_min_mag_bins = null;
+
+	@Override
+	public double[] get_custom_min_mag_bins () {
+		return custom_min_mag_bins;
+	}
+
+
+
+
+	// Set a list of custom minimum magnitude bins for computing the forecast.
+	// The supplied object is not retained in this object.
+	// The supplied object can be null or an empty array to set no custom minimum magnitude bins.
+
+	@Override
+	public void set_custom_min_mag_bins (double[] custom_min_mag_bins) {
+		if (custom_min_mag_bins == null) {
+			this.custom_min_mag_bins = null;
+		} else {
+			this.custom_min_mag_bins = custom_min_mag_bins.clone();
+		}
+		return;
+	}
+
+
+
+
 	// Return the mainshock magnitude.
 	// Check has_mainshock_mag() before calling this function.
 	// Note: If has_mainshock_mag() returns false, then this function should
