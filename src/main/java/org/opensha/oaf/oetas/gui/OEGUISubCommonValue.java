@@ -369,6 +369,19 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	}
 
 
+	// Option for forecast minimum magnitude bins; dropdown containing an enumeration to select option.
+
+	private EnumParameter<MinMagBinsOption> minMagBinsOptionParam;
+
+	private EnumParameter<MinMagBinsOption> init_minMagBinsOptionParam () throws GUIEDTException {
+		minMagBinsOptionParam = new EnumParameter<MinMagBinsOption>(
+				"Forecast Magnitude Bins", EnumSet.allOf(MinMagBinsOption.class), MinMagBinsOption.AUTO, null);
+		minMagBinsOptionParam.setInfo("Selects the set of minimum magnitude bins that appear in the forecast");
+		register_param (minMagBinsOptionParam, "minMagBinsOptionParam", PARMGRP_COM_VALUE);
+		return minMagBinsOptionParam;
+	}
+
+
 
 
 	// Common parameter value dialog: initialize parameters within the dialog.
@@ -401,6 +414,8 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		init_fitEndInsetParam();
 
+		init_minMagBinsOptionParam();
+
 		return;
 	}
 
@@ -419,7 +434,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		boolean f_button_row = false;
 
 		commonValueEditParam.setListTitleText ("Common Parameters");
-		commonValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(11, f_button_row, 3));
+		commonValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(12, f_button_row, 4));	// extra separator to loosen the layout
 
 		commonValueList.addParameter(timeDepOptionParam);
 		commonValueList.addParameter(fParam);
@@ -431,7 +446,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		commonValueList.addParameter(mcParam);
 
-		commonValueList.addParameter(new GUISeparatorParameter("Separator2", gui_top.get_separator_color()));
+		//commonValueList.addParameter(new GUISeparatorParameter("Separator2", gui_top.get_separator_color()));
 
 		commonValueList.addParameter(magPrecisionParam);
 		commonValueList.addParameter(computeBButton);
@@ -444,6 +459,10 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		commonValueList.addParameter(fitStartInsetParam);
 		commonValueList.addParameter(fitEndInsetParam);
+
+		commonValueList.addParameter(new GUISeparatorParameter("Separator4", gui_top.get_separator_color()));
+
+		commonValueList.addParameter(minMagBinsOptionParam);
 		
 		commonValueEditParam.getEditor().refreshParamEditor();
 	}
@@ -512,6 +531,8 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		enableDefaultParam(fitStartInsetParam, f_common_value_enable, null);
 		enableDefaultParam(fitEndInsetParam, f_common_value_enable, null);
+
+		enableDefaultParam(minMagBinsOptionParam, f_common_value_enable, MinMagBinsOption.AUTO);
 
 		enableParam(commonValueEditParam, f_sub_enable);
 
@@ -643,6 +664,10 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		public double x_fitEndInsetParam;		// parameter value, checked for validity
 
+		// Option for forecast minimum magnitude bins.
+
+		public MinMagBinsOption x_minMagBinsOptionParam;	// parameter value, checked for validity
+
 		// Get the implementation class.
 
 		public abstract XferCommonValueImpl xfer_get_impl ();
@@ -763,6 +788,10 @@ public class OEGUISubCommonValue extends OEGUIListener {
 			// Fitting end inset
 
 			x_fitEndInsetParam = validParam(fitEndInsetParam);
+
+			// Option for forecast minimum magnitude bins.
+
+			x_minMagBinsOptionParam = validParam(minMagBinsOptionParam);
 
 			return this;
 		}
@@ -1037,6 +1066,20 @@ public class OEGUISubCommonValue extends OEGUIListener {
 			updateParam(fitEndInsetParam, gui_model.get_fitEndInset());
 		} catch (Exception e) {
 			updateParam(fitEndInsetParam, ForecastParameters.DEFAULT_FIT_END_INSET);
+		}
+
+		// Forecast magnitude bins
+
+		double[] custom_min_mag_bins = gui_model.get_customMinMagBins();
+
+		if (custom_min_mag_bins == null) {
+			updateParam(minMagBinsOptionParam, MinMagBinsOption.AUTO);
+		}
+		else if (custom_min_mag_bins[custom_min_mag_bins.length - 1] >= 7.5) {
+			updateParam(minMagBinsOptionParam, MinMagBinsOption.RANGE_30_80);
+		}
+		else {
+			updateParam(minMagBinsOptionParam, MinMagBinsOption.RANGE_30_70);
 		}
 
 		// Need to adjust enable to pick up enable state corresponding to time-dependent Mc option

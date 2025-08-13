@@ -351,6 +351,28 @@ public class OEGUIComponent {
 
 
 
+	// Enumeration of options for forecast minimum magnitude bins.
+	
+	public enum MinMagBinsOption {
+		AUTO("Auto"),
+		RANGE_30_70("3.0 to 7.0"),
+		RANGE_30_80("3.0 to 8.0");
+		
+		private String label;
+		
+		private MinMagBinsOption(String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+
+
 	//----- Support -----
 
 

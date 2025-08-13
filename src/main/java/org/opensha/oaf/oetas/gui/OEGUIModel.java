@@ -932,6 +932,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 	// The custom minimum magnitude bins for the mainshock.
 	// Can be null if there are no custom minimum magnitude bins in the forecast parameters.
+	// If the return is non-null, then it is a non-empty array.
 	// Available when model state >= MODSTATE_CATALOG.
 
 	public final double[] get_customMinMagBins () {
@@ -3073,9 +3074,41 @@ public class OEGUIModel extends OEGUIComponent {
 			fetch_fcparams.etas_params = null;	// so it will be seen by make_analyst_options()
 		}
 
+		// Minimum magnitude bins
+
+		double[] custom_min_mag_bins = null;
+
+		switch (xfer.x_commonValue.x_minMagBinsOptionParam) {
+
+		case AUTO:
+			custom_min_mag_bins = null;
+			break;
+
+		case RANGE_30_70:
+			custom_min_mag_bins = new double[]{3.0, 4.0, 5.0, 6.0, 7.0};
+			break;
+
+		case RANGE_30_80:
+			custom_min_mag_bins = new double[]{3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+			break;
+
+		default:
+			throw new IllegalArgumentException ("OEGUIModel.fitParams: Invalid minimum magnitude bin option");
+		}
+
+		forecast_analyst_opts.analyst_params.set_analyst_fcopt_params (
+			custom_min_mag_bins						// the_fcopt_min_mag_bins
+		);
+
+		forecast_fcparams.fetch_fcopt_params (
+			gui_model.get_fcmain(),					// fcmain
+			forecast_analyst_opts.analyst_params	// prior_params
+		);
+
+		fetch_fcparams.fcopt_min_mag_bins = custom_min_mag_bins;	// so it will be seen by make_analyst_options()
+
 		// Run the forecast
 		// Note: The aftershocks are filtered by time and magnitude in ForecastResults
-		// TODO: Get injectable text (or maybe injectable text can be added to JSON later, also next forecast time)
 
 		ActionConfig action_config = new ActionConfig();
 		long the_forecast_lag = SimpleUtils.days_to_millis (forecast_fcparams.max_days);
@@ -3695,6 +3728,12 @@ public class OEGUIModel extends OEGUIComponent {
 					analyst_params.etas_avail = false;
 					analyst_params.set_default_etas_params();
 				}
+
+				// Minimum magnitude bins
+
+				analyst_params.set_analyst_fcopt_params (
+					fetch_fcparams.fcopt_min_mag_bins	// the_fcopt_min_mag_bins
+				);
 			}
 		}
 
