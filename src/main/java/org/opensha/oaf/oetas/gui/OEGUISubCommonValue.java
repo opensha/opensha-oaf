@@ -144,6 +144,7 @@ import org.opensha.oaf.util.gui.GUISeparatorParameter;
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.GUICmd;
+import org.opensha.oaf.aafs.ForecastParameters;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
@@ -1021,10 +1022,22 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		//updateParam(alphaEqualsBParam, true);
 		//updateParam(alphaParam, 1.0);
 
-		// Fitting start and end insets [TODO: Read from model]
+		// Fitting start and end insets
 
-		updateParam(fitStartInsetParam, 0.0);
-		updateParam(fitEndInsetParam, 0.0);
+		//updateParam(fitStartInsetParam, 0.0);
+		//updateParam(fitEndInsetParam, 0.0);
+
+		try {
+			updateParam(fitStartInsetParam, gui_model.get_fitStartInset());
+		} catch (Exception e) {
+			updateParam(fitStartInsetParam, ForecastParameters.DEFAULT_FIT_START_INSET);
+		}
+
+		try {
+			updateParam(fitEndInsetParam, gui_model.get_fitEndInset());
+		} catch (Exception e) {
+			updateParam(fitEndInsetParam, ForecastParameters.DEFAULT_FIT_END_INSET);
+		}
 
 		// Need to adjust enable to pick up enable state corresponding to time-dependent Mc option
 

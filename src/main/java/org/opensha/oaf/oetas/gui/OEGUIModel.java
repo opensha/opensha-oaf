@@ -904,6 +904,43 @@ public class OEGUIModel extends OEGUIComponent {
 		return aafs_fcparams.etas_params;
 	}
 
+	// The start of fitting interval for the mainshock.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	public final double get_fitStartInset () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.get_fitStartInset while in state " + cur_modstate_string());
+		}
+		if (!( aafs_fcparams.aftershock_search_avail )) {
+			return ForecastParameters.DEFAULT_FIT_START_INSET;
+		}
+		return aafs_fcparams.fit_start_inset;
+	}
+
+	// The end of fitting interval for the mainshock.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	public final double get_fitEndInset () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.get_fitEndInset while in state " + cur_modstate_string());
+		}
+		if (!( aafs_fcparams.aftershock_search_avail )) {
+			return ForecastParameters.DEFAULT_FIT_END_INSET;
+		}
+		return aafs_fcparams.fit_end_inset;
+	}
+
+	// The custom minimum magnitude bins for the mainshock.
+	// Can be null if there are no custom minimum magnitude bins in the forecast parameters.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	public final double[] get_customMinMagBins () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.get_customMinMagBins while in state " + cur_modstate_string());
+		}
+		return aafs_fcparams.get_custom_fcopt_min_mag_bins();
+	}
+
 //	// The ETAS parameters for the mainshock.
 //	// If there are no ETAS parameters in the forecast parameters,
 //	// make a set of ETAS parameters for the mainshock location.
