@@ -3,6 +3,7 @@ package org.opensha.oaf.rj;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.Arrays;
 
 import java.time.Instant;
 
@@ -167,6 +168,7 @@ public class USGS_ForecastInfo implements Marshalable {
 		} else {
 			this.min_mag_bins = min_mag_bins.clone();
 		}
+		Arrays.sort (this.min_mag_bins);		// should already be sorted, but just in case
 		return this;
 	}
 
@@ -215,6 +217,7 @@ public class USGS_ForecastInfo implements Marshalable {
 		} else {
 			this.min_mag_bins = min_mag_bins.clone();
 		}
+		Arrays.sort (this.min_mag_bins);		// should already be sorted, but just in case
 		return this;
 	}
 

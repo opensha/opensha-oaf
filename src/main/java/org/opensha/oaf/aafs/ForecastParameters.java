@@ -1187,15 +1187,22 @@ public class ForecastParameters implements Marshalable {
 
 	public boolean fcopt_avail = false;
 
+	// True if minimum magnitude bins were determined automatically. [v4]
+	// In analyst options, true indicates to let the system determine bins automatically.
+
+	public boolean fcopt_auto_min_mag_bins = false;
+
 	// Forecast option minimum magnitude bins (null iff omitted). [v4]
 	// Bins must be given in increasing order.
-	// In analyst options, a zero-length array selects the defaults from the action configuration.
+	// A zero-length array resolves to the defaults from the action configuration,
+	// but this should not be relied upon.
 
 	public double[] fcopt_min_mag_bins = null;
 
 	// Set forecast option parameters to default.
 
 	public void set_default_fcopt_params () {
+		fcopt_auto_min_mag_bins = false;
 		fcopt_min_mag_bins = null;
 		return;
 	}
@@ -1203,6 +1210,7 @@ public class ForecastParameters implements Marshalable {
 	// Copy forecast option parameters from the other object.
 
 	public void copy_fcopt_params_from (ForecastParameters other) {
+		fcopt_auto_min_mag_bins = other.fcopt_auto_min_mag_bins;
 		if (other.fcopt_min_mag_bins == null) {
 			fcopt_min_mag_bins = null;
 		} else {
@@ -1215,10 +1223,17 @@ public class ForecastParameters implements Marshalable {
 
 	public void set_analyst_fcopt_params (
 			boolean the_fcopt_avail,
+			boolean the_fcopt_auto_min_mag_bins,
 			double[] the_fcopt_min_mag_bins
 	) {
+		if (the_fcopt_avail) {
+			if (the_fcopt_min_mag_bins == null) {
+				throw new IllegalArgumentException ("ForecastParameters.set_analyst_fcopt_params: No minimum magnitude bins supplied");
+			}
+		}
 		fcopt_fetch_meth = FETCH_METH_ANALYST;
 		fcopt_avail = the_fcopt_avail;
+		fcopt_auto_min_mag_bins = the_fcopt_auto_min_mag_bins;
 		if (the_fcopt_min_mag_bins == null) {
 			fcopt_min_mag_bins = null;
 		} else {
@@ -1227,14 +1242,58 @@ public class ForecastParameters implements Marshalable {
 		return;
 	}
 
+	// Set forecast option parameters to analyst values.
+	// This is for parameters within analyst options.
+	// Parameters can be null if they are not to be overridden.
+
+	public void set_analyst_fcopt_params (
+		double[] the_fcopt_min_mag_bins
+	) {
+
+		// If nothing overridden, set for not available
+
+		if (the_fcopt_min_mag_bins == null) {
+			fcopt_fetch_meth = FETCH_METH_AUTO;
+			fcopt_avail = false;
+			set_default_fcopt_params();
+			return;
+		}
+
+		// Set up analyst options
+
+		fcopt_fetch_meth = FETCH_METH_ANALYST;
+		fcopt_avail = true;
+
+		if (the_fcopt_min_mag_bins == null) {
+			fcopt_auto_min_mag_bins = true;
+			fcopt_min_mag_bins = new double[0];
+		} else {
+			fcopt_auto_min_mag_bins = false;
+			fcopt_min_mag_bins = the_fcopt_min_mag_bins.clone();
+		}
+
+		return;
+	}
+
 	// Get resolved minimum magnitude bins, in a newly-allocated array.
+	// Returns bins from the action configuration if none are available in the parameters.
 	// This function always returns a non-zero length array.
 
-	public double[] get_resolved_fcopt_min_mag_bins() {
+	public double[] get_resolved_fcopt_min_mag_bins () {
 		if (fcopt_avail && fcopt_min_mag_bins != null && fcopt_min_mag_bins.length > 0) {
 			return fcopt_min_mag_bins.clone();
 		}
 		return (new ActionConfig()).get_adv_min_mag_bins_array();
+	}
+
+	// If there are custom minimum magnitude bins, return them in a newly-allocated array.
+	// Otherwise, return null.
+
+	public double[] get_custom_fcopt_min_mag_bins () {
+		if (fcopt_avail && !fcopt_auto_min_mag_bins) {
+			return fcopt_min_mag_bins.clone();
+		}
+		return null;
 	}
 
 	// Fetch forecast option parameters.
@@ -1257,12 +1316,15 @@ public class ForecastParameters implements Marshalable {
 
 		case FETCH_METH_ANALYST:
 			fcopt_avail = prior_params.fcopt_avail;
-			if (prior_params.fcopt_min_mag_bins == null) {
-				fcopt_min_mag_bins = null;
-			} else if (prior_params.fcopt_min_mag_bins.length == 0) {
-				fcopt_min_mag_bins = (new ActionConfig()).get_adv_min_mag_bins_array();
+			if (fcopt_avail) {
+				fcopt_auto_min_mag_bins = prior_params.fcopt_auto_min_mag_bins;
+				if (fcopt_auto_min_mag_bins) {
+					fcopt_min_mag_bins = (new ActionConfig()).get_adv_min_mag_bins_array();
+				} else {
+					fcopt_min_mag_bins = prior_params.fcopt_min_mag_bins.clone();
+				}
 			} else {
-				fcopt_min_mag_bins = prior_params.fcopt_min_mag_bins.clone();
+				set_default_fcopt_params();
 			}
 			return;
 
@@ -1277,6 +1339,7 @@ public class ForecastParameters implements Marshalable {
 		// Fetch parameters from configuration file
 
 		fcopt_avail = true;
+		fcopt_auto_min_mag_bins = true;
 		fcopt_min_mag_bins = (new ActionConfig()).get_adv_min_mag_bins_array();
 
 		return;
@@ -1533,6 +1596,7 @@ public class ForecastParameters implements Marshalable {
 		result.append ("fcopt_fetch_meth = " + fcopt_fetch_meth + "\n");
 		result.append ("fcopt_avail = " + fcopt_avail + "\n");
 		if (fcopt_avail) {
+			result.append ("fcopt_auto_min_mag_bins = " + fcopt_auto_min_mag_bins + "\n");
 			result.append ("fcopt_min_mag_bins = [");
 			String sep = "";
 			for (double mag : fcopt_min_mag_bins) {
@@ -1798,6 +1862,7 @@ public class ForecastParameters implements Marshalable {
 			writer.marshalInt     ("fcopt_fetch_meth", fcopt_fetch_meth);
 			writer.marshalBoolean ("fcopt_avail"     , fcopt_avail     );
 			if (fcopt_avail) {
+				writer.marshalBoolean ("fcopt_auto_min_mag_bins", fcopt_auto_min_mag_bins);
 				writer.marshalDoubleArray ("fcopt_min_mag_bins", fcopt_min_mag_bins);
 			}
 
@@ -2115,8 +2180,9 @@ public class ForecastParameters implements Marshalable {
 
 			fcopt_fetch_meth = reader.unmarshalInt     ("fcopt_fetch_meth", FETCH_METH_MIN, FETCH_METH_MAX);
 			fcopt_avail      = reader.unmarshalBoolean ("fcopt_avail");
-			if (evseq_cfg_avail) {
-				fcopt_min_mag_bins = reader.unmarshalDoubleArray ("fcopt_min_mag_bins");
+			if (fcopt_avail) {
+				fcopt_auto_min_mag_bins = reader.unmarshalBoolean ("fcopt_auto_min_mag_bins");
+				fcopt_min_mag_bins      = reader.unmarshalDoubleArray ("fcopt_min_mag_bins");
 			} else {
 				set_default_fcopt_params();
 			}
