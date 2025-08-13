@@ -1219,28 +1219,34 @@ public class ForecastParameters implements Marshalable {
 		return;
 	}
 
-	// Set forecast option parameters to analyst values.
+	// Return true if the array is null or empty.
 
-	public void set_analyst_fcopt_params (
-			boolean the_fcopt_avail,
-			boolean the_fcopt_auto_min_mag_bins,
-			double[] the_fcopt_min_mag_bins
-	) {
-		if (the_fcopt_avail) {
-			if (the_fcopt_min_mag_bins == null) {
-				throw new IllegalArgumentException ("ForecastParameters.set_analyst_fcopt_params: No minimum magnitude bins supplied");
-			}
-		}
-		fcopt_fetch_meth = FETCH_METH_ANALYST;
-		fcopt_avail = the_fcopt_avail;
-		fcopt_auto_min_mag_bins = the_fcopt_auto_min_mag_bins;
-		if (the_fcopt_min_mag_bins == null) {
-			fcopt_min_mag_bins = null;
-		} else {
-			fcopt_min_mag_bins = the_fcopt_min_mag_bins.clone();
-		}
-		return;
+	private static boolean is_null_or_empty (double[] x) {
+		return (x == null || x.length == 0);
 	}
+
+//	// Set forecast option parameters to analyst values.
+//
+//	public void set_analyst_fcopt_params (
+//			boolean the_fcopt_avail,
+//			boolean the_fcopt_auto_min_mag_bins,
+//			double[] the_fcopt_min_mag_bins
+//	) {
+//		if (the_fcopt_avail) {
+//			if (the_fcopt_min_mag_bins == null) {
+//				throw new IllegalArgumentException ("ForecastParameters.set_analyst_fcopt_params: No minimum magnitude bins supplied");
+//			}
+//		}
+//		fcopt_fetch_meth = FETCH_METH_ANALYST;
+//		fcopt_avail = the_fcopt_avail;
+//		fcopt_auto_min_mag_bins = the_fcopt_auto_min_mag_bins;
+//		if (the_fcopt_min_mag_bins == null) {
+//			fcopt_min_mag_bins = null;
+//		} else {
+//			fcopt_min_mag_bins = the_fcopt_min_mag_bins.clone();
+//		}
+//		return;
+//	}
 
 	// Set forecast option parameters to analyst values.
 	// This is for parameters within analyst options.
@@ -1252,7 +1258,7 @@ public class ForecastParameters implements Marshalable {
 
 		// If nothing overridden, set for not available
 
-		if (the_fcopt_min_mag_bins == null) {
+		if (is_null_or_empty (the_fcopt_min_mag_bins)) {
 			fcopt_fetch_meth = FETCH_METH_AUTO;
 			fcopt_avail = false;
 			set_default_fcopt_params();
@@ -1264,7 +1270,7 @@ public class ForecastParameters implements Marshalable {
 		fcopt_fetch_meth = FETCH_METH_ANALYST;
 		fcopt_avail = true;
 
-		if (the_fcopt_min_mag_bins == null) {
+		if (is_null_or_empty (the_fcopt_min_mag_bins)) {
 			fcopt_auto_min_mag_bins = true;
 			fcopt_min_mag_bins = new double[0];
 		} else {
@@ -1280,17 +1286,24 @@ public class ForecastParameters implements Marshalable {
 	// This function always returns a non-zero length array.
 
 	public double[] get_resolved_fcopt_min_mag_bins () {
-		if (fcopt_avail && fcopt_min_mag_bins != null && fcopt_min_mag_bins.length > 0) {
+		if (fcopt_avail && (!is_null_or_empty (fcopt_min_mag_bins))) {
 			return fcopt_min_mag_bins.clone();
 		}
 		return (new ActionConfig()).get_adv_min_mag_bins_array();
 	}
 
+	// Return true if there are custom miminum magnitude bins.
+
+	public boolean has_custom_fcopt_min_mag_bins () {
+		return ( fcopt_avail && (!fcopt_auto_min_mag_bins) && (!is_null_or_empty (fcopt_min_mag_bins)) );
+	}
+
 	// If there are custom minimum magnitude bins, return them in a newly-allocated array.
 	// Otherwise, return null.
+	// If the return is non-null, then it is a non-empty array.
 
 	public double[] get_custom_fcopt_min_mag_bins () {
-		if (fcopt_avail && !fcopt_auto_min_mag_bins) {
+		if (has_custom_fcopt_min_mag_bins()) {
 			return fcopt_min_mag_bins.clone();
 		}
 		return null;
@@ -1317,11 +1330,12 @@ public class ForecastParameters implements Marshalable {
 		case FETCH_METH_ANALYST:
 			fcopt_avail = prior_params.fcopt_avail;
 			if (fcopt_avail) {
-				fcopt_auto_min_mag_bins = prior_params.fcopt_auto_min_mag_bins;
-				if (fcopt_auto_min_mag_bins) {
-					fcopt_min_mag_bins = (new ActionConfig()).get_adv_min_mag_bins_array();
-				} else {
+				if (prior_params.has_custom_fcopt_min_mag_bins()) {
+					fcopt_auto_min_mag_bins = false;
 					fcopt_min_mag_bins = prior_params.fcopt_min_mag_bins.clone();
+				} else {
+					fcopt_auto_min_mag_bins = true;
+					fcopt_min_mag_bins = (new ActionConfig()).get_adv_min_mag_bins_array();
 				}
 			} else {
 				set_default_fcopt_params();
