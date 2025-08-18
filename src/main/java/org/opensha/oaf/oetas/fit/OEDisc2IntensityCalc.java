@@ -17,6 +17,8 @@ import org.opensha.oaf.oetas.OESimulator;
 import org.opensha.oaf.oetas.OECatalogParamsStats;
 import org.opensha.oaf.oetas.OESeedParamsStats;
 
+import org.opensha.oaf.oetas.env.OEtasIntegratedIntensityFile;
+
 import org.opensha.oaf.util.TestArgs;
 
 import org.opensha.oaf.util.AutoExecutorService;
@@ -275,6 +277,30 @@ public class OEDisc2IntensityCalc {
 				break;
 			}
 			return result;
+		}
+
+
+		// Make a new data line and set the common values in the holder.
+
+		public final void set_data_common (OEtasIntegratedIntensityFile ii_file, int cum_num) {
+			switch (ilkind) {
+			default:
+				throw new IllegalArgumentException ("OEDisc2IntensityCalc.TimePoint.set_data_common: Invalid kind: ilkind = " + ilkind);
+			case ILKIND_RUPTURE:
+				ii_file.set_data_common_rupture (
+					t_day,
+					rup_mag,
+					cum_num
+				);
+				break;
+			case ILKIND_FILL:
+				ii_file.set_data_common_fill (
+					t_day,
+					cum_num
+				);
+				break;
+			}
+			return;
 		}
 	}
 
@@ -745,6 +771,93 @@ public class OEDisc2IntensityCalc {
 		}
 
 		return result.toString();
+	}
+
+
+
+
+	// Make a holder containing the entire output file.
+	// If other objects are supplied, their integrated lambda values are included on each line.
+
+	public OEtasIntegratedIntensityFile output_file_to_holder (OEDisc2IntensityCalc... others) {
+		OEtasIntegratedIntensityFile ii_file = new OEtasIntegratedIntensityFile();
+
+		// Begin building
+
+		ii_file.begin_build (others.length + 1);
+
+		// One line for each timepoint
+
+		int lines = a_timepoint_list.length;
+
+		// First and last times
+
+		double t_first = a_timepoint_list[0].t_day;
+		double t_last = a_timepoint_list[lines - 1].t_day;
+
+		// Summary line
+
+		ii_file.set_summary_common (
+			t_first,
+			t_last,
+			lines,
+			split_num
+		);
+
+		int i_model = 0;
+
+		ii_file.set_summary_per_model (
+			i_model++,
+			split_mean,
+			split_var
+		);
+
+		// For each other object, set their mean and variance
+
+		for (OEDisc2IntensityCalc other : others) {
+			ii_file.set_summary_per_model (
+				i_model++,
+				other.split_mean,
+				other.split_var
+			);
+		}
+
+		// Loop over timepoints
+
+		for (int j = 0; j < lines; ++j) {
+
+			// Common data from the timepoint, including the cumulative number of ruptures
+
+			a_timepoint_list[j].set_data_common (ii_file, cum_rupture_num[j]);
+
+			// The cumulative, split, and incremental integrated lambda
+
+			i_model = 0;
+
+			ii_file.set_data_per_model (
+				i_model++,
+				cum_integrated_lambda[j],
+				split_integrated_lambda[j],
+				incr_integrated_lambda[j]
+			);
+
+			// For each other object, set their cumulative, split, and incremental integrated lambda
+			
+			for (OEDisc2IntensityCalc other : others) {
+				ii_file.set_data_per_model (
+					i_model++,
+					other.cum_integrated_lambda[j],
+					other.split_integrated_lambda[j],
+					other.incr_integrated_lambda[j]
+				);
+			}
+		}
+
+		// End building
+
+		ii_file.end_build (false, false);
+
+		return ii_file;
 	}
 
 
