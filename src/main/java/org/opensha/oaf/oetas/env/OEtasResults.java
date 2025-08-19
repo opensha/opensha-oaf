@@ -203,6 +203,14 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 	public OEMarginalDistSet full_marginals;
 
 
+	//----- GUI Support -----
+
+	// Integrated intensity function.
+	// This field is not marshaled.
+
+	public OEtasIntegratedIntensityFile ii_file;
+
+
 
 
 	//----- Construction -----
@@ -247,6 +255,8 @@ public class OEtasResults extends OEtasOutcome implements Marshalable {
 		marginals = null;
 		save_full_marginals = false;
 		full_marginals = null;
+
+		ii_file = null;
 		return;
 	}
 

@@ -36,6 +36,8 @@ import org.opensha.oaf.oetas.OECatalogRange;
 import org.opensha.oaf.oetas.OECatalogLimits;
 import org.opensha.oaf.oetas.OEGenerationInfo;
 
+import org.opensha.oaf.oetas.env.OEtasIntegratedIntensityFile;
+
 import org.opensha.oaf.oetas.util.OEArraysCalc;
 
 import org.opensha.oaf.oetas.except.OEException;
@@ -958,6 +960,69 @@ public class OEDisc2InitVoxSet implements OEEnsembleInitializer, OEDisc2InitVoxC
 		// Produce the file as a string
 
 		String result = intensity_calc.output_file_as_string (gen_intensity_calc, seq_intensity_calc, bay_intensity_calc);
+
+		return result;
+	}
+
+
+
+
+	// Write the integrated intensity data to a holder.
+	// Parmaeters:
+	//  max_frac_duration = Maximum interval duration, as a fraction of the total duration, or zero if no maximum.
+	//  history = The rupture history.
+	//  exec_timer = Execution timer for multi-threading, can be null to use single-threading.
+	// Throws exception if multi-threading error.
+	// Note: The fitting information must have f_intensity set, indicating that fitting saved the necessary information.
+
+	public final OEtasIntegratedIntensityFile write_integrated_intensity_to_holder (
+		double max_frac_duration,
+		OEDisc2History history,
+		SimpleExecTimer exec_timer
+	) throws OEException {
+
+		// Create and set configuration for MLE
+
+		OEDisc2IntensityCalc intensity_calc = (new OEDisc2IntensityCalc()).set_config (
+			max_frac_duration,
+			history,
+			fit_info
+		);
+
+		// Create and set configuration for generic, Sequence-specific, and Bayesian MLE
+
+		OEDisc2IntensityCalc gen_intensity_calc = (new OEDisc2IntensityCalc()).copy_config_from (intensity_calc);
+		OEDisc2IntensityCalc seq_intensity_calc = (new OEDisc2IntensityCalc()).copy_config_from (intensity_calc);
+		OEDisc2IntensityCalc bay_intensity_calc = (new OEDisc2IntensityCalc()).copy_config_from (intensity_calc);
+
+		// Set parameters
+
+		get_intensity_calc_params (intensity_calc);
+		get_gen_intensity_calc_params (gen_intensity_calc);
+		get_seq_intensity_calc_params (seq_intensity_calc);
+		get_bay_intensity_calc_params (bay_intensity_calc);
+
+		// Multi-threaded calculation
+
+		if (exec_timer != null) {
+			intensity_calc.calc_integrated_lambda_mt (exec_timer);
+			gen_intensity_calc.calc_integrated_lambda_mt (exec_timer);
+			seq_intensity_calc.calc_integrated_lambda_mt (exec_timer);
+			bay_intensity_calc.calc_integrated_lambda_mt (exec_timer);
+		}
+
+		// Single-threaded calculation
+
+		else {
+			intensity_calc.calc_integrated_lambda_st();
+			gen_intensity_calc.calc_integrated_lambda_st();
+			seq_intensity_calc.calc_integrated_lambda_st();
+			bay_intensity_calc.calc_integrated_lambda_st();
+		}
+
+		// Produce the file as a string
+
+		OEtasIntegratedIntensityFile result = intensity_calc.output_file_to_holder (gen_intensity_calc, seq_intensity_calc, bay_intensity_calc);
 
 		return result;
 	}

@@ -20,6 +20,8 @@ import org.opensha.oaf.util.TestArgs;
 
 import org.opensha.oaf.util.gui.GUIExternalCatalog;
 
+import org.opensha.oaf.aafs.GUICmd;
+
 import org.opensha.oaf.oetas.OECatalogParams;
 import org.opensha.oaf.oetas.OECatalogParamsMags;
 import org.opensha.oaf.oetas.OEConstants;
@@ -1335,7 +1337,7 @@ public class OEExecEnvironment {
 
 		// If we want the integrated intensity function, set flag to save required data
 
-		if (filename_intensity_calc != null) {
+		if (filename_intensity_calc != null || GUICmd.is_gui_mode()) {
 			fitter.set_f_intensity (true);
 		}
 
@@ -1514,6 +1516,24 @@ public class OEExecEnvironment {
 
 		// If we want to write the integrated intensity function ...
 
+		etas_results.ii_file = null;
+
+		if (GUICmd.is_gui_mode()) {
+
+			// Calculate integrated intensity for the GUI
+
+			try {
+				etas_results.ii_file = voxel_set.write_integrated_intensity_to_holder (
+					OEConstants.DEF_INTEGRATED_LAMBDA_RES,
+					history,
+					exec_timer
+				);
+			}
+			catch (Exception e) {
+				throw new IOException ("Error calculating integrated intensity function", e);
+			}
+		}
+
 		if (filename_intensity_calc != null) {
 
 			System.out.println();
@@ -1521,12 +1541,20 @@ public class OEExecEnvironment {
 			// Write the file
 
 			try {
-				voxel_set.write_integrated_intensity_to_file (
-					filename_intensity_calc,
-					OEConstants.DEF_INTEGRATED_LAMBDA_RES,
-					history,
-					exec_timer
-				);
+				if (etas_results.ii_file == null) {
+
+					voxel_set.write_integrated_intensity_to_file (
+						filename_intensity_calc,
+						OEConstants.DEF_INTEGRATED_LAMBDA_RES,
+						history,
+						exec_timer
+					);
+
+				} else {
+
+					etas_results.ii_file.write_file (filename_intensity_calc);
+
+				}
 			}
 			catch (Exception e) {
 				throw new IOException ("Error writing integrated intensity function file: " + filename_intensity_calc, e);

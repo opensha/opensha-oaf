@@ -146,6 +146,7 @@ import org.opensha.oaf.oetas.util.OEMarginalDistSet;
 import org.opensha.oaf.oetas.env.OEtasParameters;
 import org.opensha.oaf.oetas.env.OEtasResults;
 import org.opensha.oaf.oetas.env.OEtasConfig;
+import org.opensha.oaf.oetas.env.OEtasIntegratedIntensityFile;
 
 
 // Operational ETAS GUI - Model implementation.
@@ -809,6 +810,27 @@ public class OEGUIModel extends OEGUIComponent {
 		}
 		if (forecast_fcresults.etas_outcome instanceof OEtasResults) {
 			return ((OEtasResults)(forecast_fcresults.etas_outcome)).full_marginals;
+		}
+		return null;
+	}
+
+
+	// The ETAS integrated intensity function.
+	// Available when model state >= MODSTATE_PARAMETERS.
+	// Returns null if not available.
+
+	public final OEtasIntegratedIntensityFile get_etas_ii_file () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.get_etas_ii_file while in state " + cur_modstate_string());
+		}
+		if (!( forecast_fcresults.etas_result_avail )) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome == null) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome instanceof OEtasResults) {
+			return ((OEtasResults)(forecast_fcresults.etas_outcome)).ii_file;
 		}
 		return null;
 	}
