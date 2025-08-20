@@ -56,6 +56,7 @@ import org.opensha.oaf.oetas.except.OEException;
 import org.opensha.oaf.oetas.except.OEDataInvalidException;
 import org.opensha.oaf.oetas.except.OEFitException;
 import org.opensha.oaf.oetas.except.OEFitConvergenceException;
+import org.opensha.oaf.oetas.except.OEFitNoRupturesException;
 import org.opensha.oaf.oetas.except.OEFitThreadAbortException;
 import org.opensha.oaf.oetas.except.OEFitTimeoutException;
 import org.opensha.oaf.oetas.except.OERangeException;
@@ -118,7 +119,8 @@ public class OEExecEnvironment {
 	public static final int ETAS_RESCODE_DATA_INVALID = 16;			// Received invalid data
 	public static final int ETAS_RESCODE_UNKNOWN_FAILURE = 17;		// Failed for an unknown reason
 	public static final int ETAS_RESCODE_REJECTED = 18;				// ETAS forecast was rejected
-	public static final int ETAS_RESCODE_MAX = 18;
+	public static final int ETAS_RESCODE_FIT_NO_RUPTURES = 19;		// Unable to fit parameters because there are no ruptures in the history
+	public static final int ETAS_RESCODE_MAX = 19;
 
 	// Return a string identifying the result code
 
@@ -151,6 +153,7 @@ public class OEExecEnvironment {
 		case ETAS_RESCODE_DATA_INVALID: return "ETAS_RESCODE_DATA_INVALID";
 		case ETAS_RESCODE_UNKNOWN_FAILURE: return "ETAS_RESCODE_UNKNOWN_FAILURE";
 		case ETAS_RESCODE_REJECTED: return "ETAS_RESCODE_REJECTED";
+		case ETAS_RESCODE_FIT_NO_RUPTURES: return "ETAS_RESCODE_FIT_NO_RUPTURES";
 		}
 		return "ETAS_RESCODE_INVALID(" + result + ")";
 	}
@@ -189,6 +192,7 @@ public class OEExecEnvironment {
 		case ETAS_RESCODE_DATA_INVALID:			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
 		case ETAS_RESCODE_UNKNOWN_FAILURE:		return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
 		case ETAS_RESCODE_REJECTED:				return OEtasLogInfo.ETAS_LOGTYPE_REJECT;
+		case ETAS_RESCODE_FIT_NO_RUPTURES:		return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
 		}
 		if (result > 0) {
 			return OEtasLogInfo.ETAS_LOGTYPE_FAIL;
@@ -231,6 +235,7 @@ public class OEExecEnvironment {
 		if (e instanceof OEFitTimeoutException) {return ETAS_RESCODE_FIT_TIMEOUT;}
 		if (e instanceof OEFitThreadAbortException) {return ETAS_RESCODE_FIT_THREAD_ABORT;}
 		if (e instanceof OEFitConvergenceException) {return ETAS_RESCODE_FIT_CONVERGENCE;}
+		if (e instanceof OEFitNoRupturesException) {return ETAS_RESCODE_FIT_NO_RUPTURES;}
 		if (e instanceof OEFitException) {return ETAS_RESCODE_FIT_ABORT;}
 		if (e instanceof OEDataInvalidException) {return ETAS_RESCODE_DATA_INVALID;}
 		if (e instanceof OEException) {return ETAS_RESCODE_GENERAL_ABORT;}
@@ -1184,7 +1189,7 @@ public class OEExecEnvironment {
 
 	// Make the history.
 
-	private void make_history () throws IOException {
+	private void make_history () throws OEException, IOException {
 
 		// Make the history parameters
 
@@ -1208,6 +1213,14 @@ public class OEExecEnvironment {
 
 		System.out.println ();
 		System.out.println (history.toString());
+
+		// There must be at least one accepted rupture in the history
+
+		if (history.accept_count == 0) {
+			System.out.println ();
+			System.out.println ("Stopping ETAS calculation because there are no accepted ruptures in the history");
+			throw new OEFitNoRupturesException ("Stopping ETAS calculation because there are no accepted ruptures in the history");
+		}
 
 		// Save history into to the results
 
