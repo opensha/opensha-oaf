@@ -3227,7 +3227,7 @@ public class OEGUIView extends OEGUIComponent {
 			// Prevent the createion of a plot with an empty y-range equal to (0,0)
 
 			if (max_y < 2.7) {
-				cmlNumGraph.setY_AxisRange (0.0, 3.0);
+				widget.setY_AxisRange (0.0, 3.0);
 			}
 
 			// Add to the view
@@ -3380,7 +3380,7 @@ public class OEGUIView extends OEGUIComponent {
 			// Prevent the createion of a plot with an empty y-range equal to (0,0)
 
 			if (max_y < 2.7) {
-				cmlNumGraph.setY_AxisRange (0.0, 3.0);
+				widget.setY_AxisRange (0.0, 3.0);
 			}
 
 			// Add to the view
