@@ -163,6 +163,8 @@ import org.opensha.oaf.oetas.util.OEDiscreteRange;
 import org.opensha.oaf.oetas.util.OEMarginalDistSet;
 import org.opensha.oaf.oetas.util.OEMarginalDistSetBuilder;
 
+import org.opensha.oaf.oetas.env.OEtasIntegratedIntensityFile;
+
 
 // Reasenberg & Jones GUI - View implementation.
 // Michael Barall 03/15/2021
@@ -213,6 +215,8 @@ public class OEGUIView extends OEGUIComponent {
 
 	private JTabbedPane pdfGraphsPane;				// Tabbed plot of probability distribution function [MODSTATE_PARAMETERS]
 
+	private JTabbedPane etasNumGraphsPane;			// Tabbed plot of ETAS number graphs [MODSTATE_PARAMETERS]
+
 	//private GraphWidget aftershockExpectedGraph;	// Plot of forecast number vs magnitude [MODSTATE_FORECAST]
 
 	private JTabbedPane forecastTablePane;			// Tabbed display of forecast tables and controls [MODSTATE_FORECAST]
@@ -247,6 +251,8 @@ public class OEGUIView extends OEGUIComponent {
 		catalogTextPane = null;
 
 		pdfGraphsPane = null;
+
+		etasNumGraphsPane = null;
 
 		//aftershockExpectedGraph = null;
 
@@ -2683,6 +2689,32 @@ public class OEGUIView extends OEGUIComponent {
 			bay_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
 		);
 
+		// Add tabs for RJ 2D PDFs
+
+		make_2d_pdf (
+			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_A + " vs " + OEMarginalDistSetBuilder.VNAME_RJ_C,
+			"RJ " + OEMarginalDistSetBuilder.VNAME_RJ_A + "/" + OEMarginalDistSetBuilder.VNAME_RJ_C,
+			OEMarginalDistSetBuilder.VNAME_RJ_A,
+			OEMarginalDistSetBuilder.VNAME_RJ_C,
+			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
+		);
+
+		make_2d_pdf (
+			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_A + " vs " + OEMarginalDistSetBuilder.VNAME_RJ_P,
+			"RJ " + OEMarginalDistSetBuilder.VNAME_RJ_A + "/" + OEMarginalDistSetBuilder.VNAME_RJ_P,
+			OEMarginalDistSetBuilder.VNAME_RJ_A,
+			OEMarginalDistSetBuilder.VNAME_RJ_P,
+			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
+		);
+
+		make_2d_pdf (
+			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_C + " vs " + OEMarginalDistSetBuilder.VNAME_RJ_P,
+			"RJ " + OEMarginalDistSetBuilder.VNAME_RJ_C + "/" + OEMarginalDistSetBuilder.VNAME_RJ_P,
+			OEMarginalDistSetBuilder.VNAME_RJ_C,
+			OEMarginalDistSetBuilder.VNAME_RJ_P,
+			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
+		);
+
 		// Add tabs for ETAS 1D marginals
 
 		make_1d_pdf (
@@ -2718,32 +2750,6 @@ public class OEGUIView extends OEGUIComponent {
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
-		);
-
-		// Add tabs for RJ 2D PDFs
-
-		make_2d_pdf (
-			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_A + " vs " + OEMarginalDistSetBuilder.VNAME_RJ_C,
-			"RJ " + OEMarginalDistSetBuilder.VNAME_RJ_A + "/" + OEMarginalDistSetBuilder.VNAME_RJ_C,
-			OEMarginalDistSetBuilder.VNAME_RJ_A,
-			OEMarginalDistSetBuilder.VNAME_RJ_C,
-			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
-		);
-
-		make_2d_pdf (
-			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_A + " vs " + OEMarginalDistSetBuilder.VNAME_RJ_P,
-			"RJ " + OEMarginalDistSetBuilder.VNAME_RJ_A + "/" + OEMarginalDistSetBuilder.VNAME_RJ_P,
-			OEMarginalDistSetBuilder.VNAME_RJ_A,
-			OEMarginalDistSetBuilder.VNAME_RJ_P,
-			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
-		);
-
-		make_2d_pdf (
-			"RJ PDF for " + OEMarginalDistSetBuilder.VNAME_RJ_C + " vs " + OEMarginalDistSetBuilder.VNAME_RJ_P,
-			"RJ " + OEMarginalDistSetBuilder.VNAME_RJ_C + "/" + OEMarginalDistSetBuilder.VNAME_RJ_P,
-			OEMarginalDistSetBuilder.VNAME_RJ_C,
-			OEMarginalDistSetBuilder.VNAME_RJ_P,
-			seq_dist_set, OEMarginalDistSetBuilder.DNAME_RJ_PROB
 		);
 
 		// Add tabs for ETAS 2D PDFs
@@ -2866,6 +2872,520 @@ public class OEGUIView extends OEGUIComponent {
 		if (new_tab) {
 			tabbedPane.addTab("Model PDFs", null, pdfGraphsPane,
 					"Aftershock Model Prob Dist Funcs");
+		}
+
+		return;
+	}
+
+
+
+
+	//----- ETAS number graph tab -----
+
+
+
+
+	// Remove the ETAS number graphs tab.
+	// Performs no operation if the probability density function plot is not currently in the tabbed pane.
+
+	private void removeEtasNumGraphs () throws GUIEDTException {
+		if (etasNumGraphsPane != null) {
+			tabbedPane.remove (etasNumGraphsPane);
+			etasNumGraphsPane = null;
+		}
+		return;
+	}
+
+
+
+
+	// Plot the ETAS number graphs.
+	// This routine can re-plot an existing tab.
+	// Must be called with model state >= MODSTATE_PARAMETERS.
+	
+	private void plotEtasNumGraphs() throws GUIEDTException {
+
+		if (gui_top.get_trace_events()) {
+			System.out.println ("@@@@@ Entry: OEGUIView.plotEtasNumGraphs, tab count = " + tabbedPane.getTabCount());
+		}
+
+		if (!( gui_model.modstate_has_aftershock_params() )) {
+			throw new IllegalStateException ("OEGUIView.plotEtasNumGraphs - Invalid model state: " + gui_model.cur_modstate_string());
+		}
+
+		// Get the integrated intensity function, abort if we don't have it
+
+		OEtasIntegratedIntensityFile ii_file = gui_model.get_etas_ii_file();
+
+		if (ii_file == null) {
+			System.out.println ("@@@@@ Exit: OEGUIView.plotEtasNumGraphs: Integrated intensity function not available");
+			removeEtasNumGraphs();
+			return;
+		}
+
+		// Allocate a new component, or remove all the tabs from an existing component
+
+		boolean new_tab = false;
+
+		if (etasNumGraphsPane == null) {
+			etasNumGraphsPane = new JTabbedPane();
+			new_tab = true;
+		} else {
+			//  while (pdfGraphsPane.getTabCount() > 0) {
+			//  	pdfGraphsPane.removeTabAt(0);
+			//  }
+			etasNumGraphsPane.removeAll();
+		}
+
+		// Make cumulative number and sequence specific v time
+
+		make_etas_num_v_time (
+			"ETAS Sequence Specific Number v Time",		// title
+			"E Seq Number",								// tab_text
+			ii_file,									// ii_file
+			OEtasIntegratedIntensityFile.IIRANGE_ALL,	// ii_range
+			true,										// f_cum
+			false,										// f_gen
+			true,										// f_seq
+			false										// f_bay
+		);
+
+		// Make cumulative number and all models v time
+
+		make_etas_num_v_time (
+			"ETAS Number v Time",						// title
+			"E Number",									// tab_text
+			ii_file,									// ii_file
+			OEtasIntegratedIntensityFile.IIRANGE_ALL,	// ii_range
+			true,										// f_cum
+			true,										// f_gen
+			true,										// f_seq
+			true										// f_bay
+		);
+
+		// Make sequence specific v transformed time
+
+		make_etas_num_v_transformed_time (
+			"ETAS Sequence Specific Number v Intensity",	// title
+			"E Seq T.Time",									// tab_text
+			ii_file,										// ii_file
+			OEtasIntegratedIntensityFile.IIRANGE_BORDERED,	// ii_range
+			true,											// f_diag
+			false,											// f_gen
+			true,											// f_seq
+			false											// f_bay
+		);
+
+		// Make generic v transformed time
+
+		//make_etas_num_v_transformed_time (
+		//	"ETAS Generic Number v Intensity",				// title
+		//	"E Gen T.Time",									// tab_text
+		//	ii_file,										// ii_file
+		//	OEtasIntegratedIntensityFile.IIRANGE_BORDERED,	// ii_range
+		//	true,											// f_diag
+		//	true,											// f_gen
+		//	false,											// f_seq
+		//	false											// f_bay
+		//);
+
+		// Make Bayesian v transformed time
+
+		//make_etas_num_v_transformed_time (
+		//	"ETAS Bayesian Number v Intensity",				// title
+		//	"E Bay T.Time",									// tab_text
+		//	ii_file,										// ii_file
+		//	OEtasIntegratedIntensityFile.IIRANGE_BORDERED,	// ii_range
+		//	true,											// f_diag
+		//	false,											// f_gen
+		//	false,											// f_seq
+		//	true											// f_bay
+		//);
+
+		// Make all models v transformed time
+
+		make_etas_num_v_transformed_time (
+			"ETAS Number v Intensity",				// title
+			"E Transformed Time",									// tab_text
+			ii_file,										// ii_file
+			OEtasIntegratedIntensityFile.IIRANGE_BORDERED,	// ii_range
+			true,											// f_diag
+			true,											// f_gen
+			true,											// f_seq
+			true											// f_bay
+		);
+
+		// Add to the view
+
+		if (new_tab) {
+			tabbedPane.addTab("ETAS Number Plots", null, etasNumGraphsPane,
+					"Plots of ETAS intensity and transformed time");
+		}
+
+		return;
+	}
+
+
+
+
+	// Make a function from two variables in the integrated intensity function.
+	// Parameters:
+	//  ii_file = Integrated intensity function.
+	//  ii_range = Function range, from OEtasIntegratedIntensityFile.IIRANGE_XXXX.
+	//  arg_var = Argument (x) variable,  from OEtasIntegratedIntensityFile.IIVAR_XXXX.
+	//  arg_model = Argument (x) model,  from OEtasIntegratedIntensityFile.IIMODEL_XXXX.
+	//  val_var = Value (y) variable,  from OEtasIntegratedIntensityFile.IIVAR_XXXX.
+	//  val_model = Value (y) model,  from OEtasIntegratedIntensityFile.IIMODEL_XXXX.
+	//  name = Name to assign, can be null for none.
+
+	private ArbitrarilyDiscretizedFunc func_from_ii_file (
+		OEtasIntegratedIntensityFile ii_file,
+		int ii_range,
+		int arg_var,
+		int arg_model,
+		int val_var,
+		int val_model,
+		String name
+	) {
+		// Get x and y ranges
+
+		double[] args = ii_file.get_var_values (ii_range, arg_var, arg_model);
+		double[] vals = ii_file.get_var_values (ii_range, val_var, val_model);
+
+		// Make the function
+
+		return func_from_args_vals (args, vals, name);
+	}
+
+
+
+
+	// Make an ETAS number versus time plot.
+	// Parameters:
+	//  title = Plot title.
+	//  tab_text = Text to appear on the tab.
+	//  ii_file = Integrated intensity function.
+	//  ii_range = Function range, from OEtasIntegratedIntensityFile.IIRANGE_XXXX.
+	//  f_cum = True to include cumulative number.
+	//  f_gen = True to include generic model.
+	//  f_seq = True to include sequence specific model.
+	//  f_bay = True to include Bayesian model.
+
+	private void make_etas_num_v_time (
+		String title,
+		String tab_text,
+		OEtasIntegratedIntensityFile ii_file,
+		int ii_range,
+		boolean f_cum,
+		boolean f_gen,
+		boolean f_seq,
+		boolean f_bay
+	) {
+		// List of functions and characteristics
+		
+		//List<PlotElement> funcs = new ArrayList<PlotElement>();
+		List<ArbitrarilyDiscretizedFunc> funcs = new ArrayList<ArbitrarilyDiscretizedFunc>();
+		List<PlotCurveCharacterstics> chars = new ArrayList<PlotCurveCharacterstics>();
+
+		// Cumulative number
+
+		if (f_cum) {
+
+			double final_val = ii_file.get_final_var_value (
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_CUM_NUM,
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON
+			);
+
+			ArbitrarilyDiscretizedFunc func = func_from_ii_file (
+				ii_file,
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_T_DAY,			// arg_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// arg_model
+				OEtasIntegratedIntensityFile.IIVAR_CUM_NUM,			// val_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// val_model
+				"Data: " + Math.round(final_val)					// name
+			);
+
+			if (func != null) {
+				funcs.add (func);
+				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, Color.BLACK));
+			}
+		}
+
+		// Sequence specific
+
+		if (f_seq) {
+
+			double final_val = ii_file.get_final_var_value (
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,
+				OEtasIntegratedIntensityFile.IIMODEL_SEQSPEC
+			);
+
+			ArbitrarilyDiscretizedFunc func = func_from_ii_file (
+				ii_file,
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_T_DAY,			// arg_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// arg_model
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,	// val_var
+				OEtasIntegratedIntensityFile.IIMODEL_SEQSPEC,		// val_model
+				"SeqSpec: " + SimpleUtils.round_double_via_string ("%.3e", final_val)	// name
+			);
+
+			if (func != null) {
+				funcs.add (func);
+				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, sequence_specific_color));
+			}
+		}
+
+		// Generic
+
+		if (f_gen) {
+
+			double final_val = ii_file.get_final_var_value (
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,
+				OEtasIntegratedIntensityFile.IIMODEL_GENERIC
+			);
+
+			ArbitrarilyDiscretizedFunc func = func_from_ii_file (
+				ii_file,
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_T_DAY,			// arg_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// arg_model
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,	// val_var
+				OEtasIntegratedIntensityFile.IIMODEL_GENERIC,		// val_model
+				"Generic: " + SimpleUtils.round_double_via_string ("%.3e", final_val)	// name
+			);
+
+			if (func != null) {
+				funcs.add (func);
+				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, generic_color));
+			}
+		}
+
+		// Bayesian
+
+		if (f_bay) {
+
+			double final_val = ii_file.get_final_var_value (
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,
+				OEtasIntegratedIntensityFile.IIMODEL_BAYESIAN
+			);
+
+			ArbitrarilyDiscretizedFunc func = func_from_ii_file (
+				ii_file,
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_T_DAY,			// arg_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// arg_model
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,	// val_var
+				OEtasIntegratedIntensityFile.IIMODEL_BAYESIAN,		// val_model
+				"Bayesian: " + SimpleUtils.round_double_via_string ("%.3e", final_val)	// name
+			);
+
+			if (func != null) {
+				funcs.add (func);
+				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, bayesian_color));
+			}
+		}
+
+		// If we got at least one function ...
+
+		if (funcs.size() > 0) {
+
+			// Get the x and y ranges (min y is zero)
+
+			double min_x = Double.MAX_VALUE;
+			double max_x = -Double.MAX_VALUE;
+			double max_y = -Double.MAX_VALUE;
+			double min_y = 0.0;
+
+			for (ArbitrarilyDiscretizedFunc func : funcs) {
+				min_x = Math.min (min_x, func.getMinX());
+				max_x = Math.max (max_x, func.getMaxX());
+				max_y = Math.max (max_y, func.getMaxY());
+			}
+
+			// Create a plot with the given functions and characteristics, and font sizes
+		
+			PlotSpec spec = new PlotSpec(funcs, chars, title, "Time (Days)", "Cumulative Number or Intensity");
+			//spec.setLegendVisible(funcs.size() > 1);
+			spec.setLegendVisible(true);	// always show legend even if just one curve
+
+			GraphWidget widget;
+
+			// Linear scale with auto-ranging
+				
+			widget = new GraphWidget(spec);
+
+			// Adjust font sizes
+
+			setupGP(widget);
+
+			// Prevent the createion of a plot with an empty y-range equal to (0,0)
+
+			if (max_y < 2.7) {
+				cmlNumGraph.setY_AxisRange (0.0, 3.0);
+			}
+
+			// Add to the view
+
+			etasNumGraphsPane.addTab (tab_text, null, widget);
+		}
+
+		return;
+	}
+
+
+
+
+	// Make an ETAS number versus transformed time plot.
+	// Parameters:
+	//  title = Plot title.
+	//  tab_text = Text to appear on the tab.
+	//  ii_file = Integrated intensity function.
+	//  ii_range = Function range, from OEtasIntegratedIntensityFile.IIRANGE_XXXX.
+	//  f_diag = True to include diagonal line.
+	//  f_gen = True to include generic model.
+	//  f_seq = True to include sequence specific model.
+	//  f_bay = True to include Bayesian model.
+
+	private void make_etas_num_v_transformed_time (
+		String title,
+		String tab_text,
+		OEtasIntegratedIntensityFile ii_file,
+		int ii_range,
+		boolean f_diag,
+		boolean f_gen,
+		boolean f_seq,
+		boolean f_bay
+	) {
+		// List of functions and characteristics
+		
+		//List<PlotElement> funcs = new ArrayList<PlotElement>();
+		List<ArbitrarilyDiscretizedFunc> funcs = new ArrayList<ArbitrarilyDiscretizedFunc>();
+		List<PlotCurveCharacterstics> chars = new ArrayList<PlotCurveCharacterstics>();
+
+		// Sequence specific
+
+		if (f_seq) {
+
+			ArbitrarilyDiscretizedFunc func = func_from_ii_file (
+				ii_file,
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,	// arg_var
+				OEtasIntegratedIntensityFile.IIMODEL_SEQSPEC,		// arg_model
+				OEtasIntegratedIntensityFile.IIVAR_CUM_NUM,			// val_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// val_model
+				"SeqSpec"											// name
+			);
+
+			if (func != null) {
+				funcs.add (func);
+				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, sequence_specific_color));
+			}
+		}
+
+		// Generic
+
+		if (f_gen) {
+
+			ArbitrarilyDiscretizedFunc func = func_from_ii_file (
+				ii_file,
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,	// arg_var
+				OEtasIntegratedIntensityFile.IIMODEL_GENERIC,		// arg_model
+				OEtasIntegratedIntensityFile.IIVAR_CUM_NUM,			// val_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// val_model
+				"Generic"											// name
+			);
+
+			if (func != null) {
+				funcs.add (func);
+				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, generic_color));
+			}
+		}
+
+		// Bayesian
+
+		if (f_bay) {
+
+			ArbitrarilyDiscretizedFunc func = func_from_ii_file (
+				ii_file,
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,	// arg_var
+				OEtasIntegratedIntensityFile.IIMODEL_BAYESIAN,		// arg_model
+				OEtasIntegratedIntensityFile.IIVAR_CUM_NUM,			// val_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// val_model
+				"Bayesian"											// name
+			);
+
+			if (func != null) {
+				funcs.add (func);
+				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, bayesian_color));
+			}
+		}
+
+		// If we got at least one function ...
+
+		if (funcs.size() > 0) {
+
+			// Get the x and y ranges (min x and min y are zero)
+
+			double min_x = 0.0;
+			double max_x = -Double.MAX_VALUE;
+			double max_y = -Double.MAX_VALUE;
+			double min_y = 0.0;
+
+			for (ArbitrarilyDiscretizedFunc func : funcs) {
+				max_x = Math.max (max_x, func.getMaxX());
+				max_y = Math.max (max_y, func.getMaxY());
+			}
+
+			// Create diagonal line
+
+			if (f_diag) {
+				ArbitrarilyDiscretizedFunc func = new ArbitrarilyDiscretizedFunc();
+				double diag_lo = 0.0;
+				double diag_hi = Math.max (Math.min (3.0, max_x), max_y);
+				func.set (diag_lo, diag_lo);
+				func.set (diag_hi, diag_hi);
+				func.setName ("Diagonal");
+
+				funcs.add (0, func);
+				chars.add (0, new PlotCurveCharacterstics (PlotLineType.DASHED, 3f, Color.BLACK));
+				
+				max_x = Math.max (max_x, func.getMaxX());
+				max_y = Math.max (max_y, func.getMaxY());
+			}
+
+			// Create a plot with the given functions and characteristics, and font sizes
+		
+			PlotSpec spec = new PlotSpec(funcs, chars, title, "Cumulative Intensity (Transformed Time)", "Cumulative Number");
+			//spec.setLegendVisible(funcs.size() > 1);
+			spec.setLegendVisible(true);	// always show legend even if just one curve
+
+			GraphWidget widget;
+
+			// Linear scale with auto-ranging
+				
+			widget = new GraphWidget(spec);
+
+			// Adjust font sizes
+
+			setupGP(widget);
+
+			// Prevent the createion of a plot with an empty y-range equal to (0,0)
+
+			if (max_y < 2.7) {
+				cmlNumGraph.setY_AxisRange (0.0, 3.0);
+			}
+
+			// Add to the view
+
+			etasNumGraphsPane.addTab (tab_text, null, widget);
 		}
 
 		return;
@@ -3283,6 +3803,7 @@ public class OEGUIView extends OEGUIComponent {
 			plotCumulativeNum();	// re-plot because set of plots is changed
 			//plotPDFs();
 			plotPDFs_v2();
+			plotEtasNumGraphs();
 			tabbedPane.setSelectedComponent(pdfGraphsPane);
 			break;
 
@@ -3329,6 +3850,7 @@ public class OEGUIView extends OEGUIComponent {
 		// Plots for determining aftershock parameters
 
 		if (new_modstate < MODSTATE_PARAMETERS) {
+			removeEtasNumGraphs();
 			removePDFs();
 			if (new_modstate >= MODSTATE_CATALOG && old_modstate >= MODSTATE_PARAMETERS) {
 				plotCumulativeNum();	// re-plot because set of models is changed

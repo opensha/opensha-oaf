@@ -928,12 +928,14 @@ public class OEtasIntegratedIntensityFile {
 
 
 	// Index numbers of common models.
-	// (Negative values would be special models, none currently defined).
+	// Negative values are special models.
 
 	public static final int IIMODEL_ACTIVE = 0;			// active model
 	public static final int IIMODEL_GENERIC = 1;		// generic model
 	public static final int IIMODEL_SEQSPEC = 2;		// sequence specific model
 	public static final int IIMODEL_BAYESIAN = 3;		// Bayesian model
+
+	public static final int IIMODEL_COMMON = -1;		// can be used for variables common to all models
 
 
 
@@ -1031,6 +1033,57 @@ public class OEtasIntegratedIntensityFile {
 		}
 
 		return values;
+	}
+
+
+
+
+	// Return the final value of the given variable, for the given model, over the given range.
+	// Note: In case of IIVAR_CUM_NUM, the number is converted to double.
+
+	public double get_final_var_value (int iirange, int iivar, int i_model) {
+
+		// Get the range
+
+		IIDataLine[] range = get_selected_range (iirange);
+
+		// The value
+
+		double value;
+
+		// Switch on desired variable
+
+		switch (iivar) {
+
+		default:
+			throw new IllegalArgumentException ("OEtasIntegratedIntensityFile.get_final_var_value: Invalid variable selection: iivar = " + iivar);
+
+		case IIVAR_T_DAY:
+			value = range[range.length - 1].t_day;
+			break;
+
+		case IIVAR_RUP_MAG:
+			value = range[range.length - 1].rup_mag;
+			break;
+
+		case IIVAR_CUM_NUM:
+			value = (double)(range[range.length - 1].cum_num);
+			break;
+
+		case IIVAR_CUM_INTEGRAL:
+			value = range[range.length - 1].cum_integral[i_model];
+			break;
+
+		case IIVAR_SPLIT_INTEGRAL:
+			value = range[range.length - 1].split_integral[i_model];
+			break;
+
+		case IIVAR_INCR_INTEGRAL:
+			value = range[range.length - 1].incr_integral[i_model];
+			break;
+		}
+
+		return value;
 	}
 
 
