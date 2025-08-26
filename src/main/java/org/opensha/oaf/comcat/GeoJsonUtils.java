@@ -982,6 +982,10 @@ public class GeoJsonUtils {
 		return getString (event, "properties", "magType");
 	}
 
+	public static String getTitle (JSONObject event) {
+		return getString (event, "properties", "title");
+	}
+
 	public static Date getTime (JSONObject event) {
 		return getDate (event, "properties", "time");
 	}
@@ -1165,6 +1169,7 @@ public class GeoJsonUtils {
 				test_show_value ("tsunami", getTsunami (event));
 				test_show_value ("sig", getSig (event));
 				test_show_value ("nst", getNst (event));
+				test_show_value ("title", getTitle (event));
 
 			} catch (Exception e) {
 				e.printStackTrace();

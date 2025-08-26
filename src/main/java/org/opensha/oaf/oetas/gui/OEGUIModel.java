@@ -19,6 +19,8 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayDeque;
 import java.util.function.Predicate;
+import java.util.Comparator;
+import java.util.Arrays;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -104,6 +106,7 @@ import org.opensha.oaf.comcat.ComcatOAFAccessor;
 //import org.opensha.oaf.comcat.ComcatOAFProduct;
 import org.opensha.oaf.comcat.ComcatProduct;
 import org.opensha.oaf.comcat.ComcatProductOaf;
+import org.opensha.oaf.comcat.GeoJsonUtils;
 
 import org.json.simple.JSONObject;
 
@@ -121,10 +124,12 @@ import org.opensha.oaf.aafs.ActionConfigFile;
 import org.opensha.oaf.aafs.ServerClock;
 import org.opensha.oaf.aafs.AdjustableParameters;
 import org.opensha.oaf.aafs.EventSequenceParameters;
+import org.opensha.oaf.aafs.VersionInfo;
 
 import org.opensha.oaf.util.MarshalImpJsonWriter;
 import org.opensha.oaf.util.MarshalImpJsonReader;
 import org.opensha.oaf.util.SimpleUtils;
+import org.opensha.oaf.util.AsciiTable;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -263,6 +268,10 @@ public class OEGUIModel extends OEGUIComponent {
 		int old_modstate = modstate;
 		modstate = new_modstate;
 
+		// Update information
+
+		info_advance_state (old_modstate, new_modstate);
+
 		// Notify the view
 
 		gui_view.view_advance_state (old_modstate, new_modstate);
@@ -297,6 +306,10 @@ public class OEGUIModel extends OEGUIComponent {
 		if (!( new_modstate <= modstate )) {
 			throw new IllegalStateException ("OEGUIModel.retreat_modstate - Invalid model state transition: " + get_modstate_as_string(modstate) + " -> " + get_modstate_as_string(new_modstate));
 		}
+
+		// Retreat information even if state is not changing.
+
+		retreat_info_modstate (new_modstate);
 
 		// If state is not changing, just return
 
@@ -1395,6 +1408,10 @@ public class OEGUIModel extends OEGUIComponent {
 		config_is_evseq_enabled = action_config.get_is_evseq_enabled();
 
 		config_is_etas_enabled = action_config.get_is_etas_enabled();
+
+		// Set up information view
+
+		register_all_info_items();
 
 		return;
 	}
@@ -4117,6 +4134,553 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+
+	// Information for one section of the info panel.
+
+	public static class InfoItem {
+
+		// The tag for this item.
+		// Tags are assigned sequentially in the order that items are created.
+
+		public int info_tag;
+
+		// The model state in which this item can be active.
+
+		public int info_modstate;
+
+		// The title for this item.
+		// This must be non-null and non-empty, a single line not ending in a newline.
+
+		public String info_title;
+
+		// The text for this item.
+		// This can consist of multiple lines.
+		// Each line must end in a newline.
+		// This is null if the item is not active.
+
+		public String info_text;
+
+		// Construct an item.
+
+		public InfoItem (int info_tag, int info_modstate, String info_title) {
+			this.info_tag = info_tag;
+			this.info_modstate = info_modstate;
+			this.info_title = info_title;
+			this.info_text = null;
+		}
+	}
+
+
+
+
+	// Comparator that sorts info items into display order.
+	// The order is by decreasing model state, and then increasing tag.
+
+	public static class InfoItemComparator implements Comparator<InfoItem> {
+		@Override
+		public final int compare (InfoItem x, InfoItem y) {
+			int result = Integer.compare (y.info_modstate, x.info_modstate);
+			if (result == 0) {
+				result = Integer.compare (x.info_tag, y.info_tag);
+			}
+			return result;
+		}
+	}
+
+
+
+
+	// The list of information items.
+	// Note: Access to this list is synchronized so that items can be updated from compute threads.
+
+	private List<InfoItem> info_item_list = null;
+
+
+	// True if any info item has changed since the last time the list was retrieved.
+
+	private boolean f_info_dirty = true;
+
+
+	// Object used for locking access to information items.
+
+	private final Object info_lock_object = new Object();
+
+
+	// Tags for information items.
+
+	private int info_tag_version = -1;				// Program version
+	private int info_tag_processor = -1;			// Processor information
+	private int info_tag_memory = -1;				// Memory information
+	private int info_tag_mainshock = -1;			// Mainshock information
+	private int info_tag_rj_seq_fit = -1;			// RJ sequence-specific parameter Fit
+
+
+
+	// Create and register an info item.
+	// Returns the assigned tag.
+	// Note: Registration order determines the order in which items will be displayed
+	// within a model state.
+
+	private final int register_info_item (int info_modstate, String info_title) {
+		int info_tag;
+		synchronized (info_lock_object) {
+			info_tag = info_item_list.size();
+			info_item_list.add (new InfoItem (info_tag, info_modstate, info_title));
+		}
+		return info_tag;
+	}
+
+
+	// Register all info items.
+
+	private final void register_all_info_items () {
+		info_item_list = new ArrayList<InfoItem>();
+
+		info_tag_rj_seq_fit = register_info_item (MODSTATE_PARAMETERS, "Fitted RJ Parameters");
+
+		info_tag_mainshock = register_info_item (MODSTATE_MAINSHOCK, "Mainshock Information");
+
+		info_tag_memory = register_info_item (MODSTATE_INITIAL, "Memory Usage");
+		info_tag_processor = register_info_item (MODSTATE_INITIAL, "Processor");
+		info_tag_version = register_info_item (MODSTATE_INITIAL, "Version");
+
+		update_version_info();
+		update_processor_info();
+
+		return;
+	}
+
+
+
+
+	// Get the text to display in the information window.
+	// If f_force is false, return null if the dirty flag is not set.
+	// Note: Must run on EDT so it can access modstate.
+
+	public final String get_info_window_text (boolean f_force) throws GUIEDTException {
+		StringBuilder sb = null;
+		synchronized (info_lock_object) {
+
+			if (f_force || f_info_dirty) {
+
+				// Update memory information if we are getting text
+
+				update_memory_info();
+
+				// Scan the list to get all items active in the current model state
+
+				List<InfoItem> active_list = new ArrayList<InfoItem>();
+
+				for (InfoItem item : info_item_list) {
+					if (item.info_modstate <= modstate && item.info_text != null) {
+						active_list.add (item);
+					}
+				}
+
+				active_list.sort (new InfoItemComparator());
+
+				// Now write the active items
+
+				sb = new StringBuilder();
+				int item_count = 0;
+
+				for (InfoItem item : active_list) {
+
+					if (item_count > 0) {
+						sb.append ("\n");
+					}
+					sb.append ("*** ");
+					sb.append (item.info_title);
+					sb.append (" ***\n\n");
+					sb.append (item.info_text);
+
+					++item_count;
+				}
+
+				// Clear the dirty flag
+
+				f_info_dirty = false;
+			}
+		}
+
+		if (sb == null) {
+			return null;
+		}
+		return sb.toString();
+	}
+
+
+
+
+	// Set an information item.
+	// The text can be null to explicitly deactivate an item.
+	// Text can consist of multiple lines, each terminated by a newline.
+
+	public final void set_info_item (int info_tag, String info_text) {
+
+		// Append a newline to the text if needed
+
+		String eff_info_text = info_text;
+		if (!( eff_info_text == null || eff_info_text.endsWith ("\n") )) {
+			eff_info_text = eff_info_text + "\n";
+		}
+
+		String title;
+
+		synchronized (info_lock_object) {
+
+			// Validate the tag
+
+			if (!( info_tag >= 0 && info_tag < info_item_list.size() )) {
+				throw new RuntimeException ("OEGUIModel.set_info_item: Invalid info item tag: info_tag = " + info_tag);
+			}
+
+			// Change text in the selected item
+
+			InfoItem item = info_item_list.get (info_tag);
+			item.info_text = eff_info_text;
+			title = item.info_title;
+
+			// Set the dirty flag
+
+			f_info_dirty = true;
+		}
+
+		if (gui_top.get_trace_events()) {
+			if (info_text == null) {
+				System.out.println ("@@@@@ clearing information item: " + title);
+			} else {
+				System.out.println ("@@@@@ setting information item: " + title);
+			}
+		}
+
+		return;
+	}
+
+
+
+
+	// Retreat the model state for the information display.
+	// Clears the text in all items not visible at the new model state.
+	// Note: This should be called even if the model state is not changing.
+
+	private void retreat_info_modstate (int new_modstate) throws GUIEDTException {
+		if (gui_top.get_trace_events()) {
+			System.out.println ("@@@@@ retreat_info_modstate: " + get_modstate_as_string(modstate) + " -> " + get_modstate_as_string(new_modstate));
+		}
+
+		synchronized (info_lock_object) {
+			for (InfoItem item : info_item_list) {
+				if (item.info_modstate > new_modstate) {
+					if (item.info_text != null) {
+						item.info_text = null;
+						f_info_dirty = true;
+					}
+				}
+			}
+		}
+		return;
+	}
+
+
+
+
+	// Advance the model state for the information display.
+	// This sets information that can be done just from knowing the state is changing.
+	// Note: This should be called after modstate is changed but before the view is updated
+
+	private void info_advance_state (int old_modstate, int new_modstate) throws GUIEDTException {
+
+		switch (new_modstate) {
+
+		// Information for the mainshock
+
+		case MODSTATE_MAINSHOCK:
+			update_mainshock_info (get_fcmain());
+			break;
+
+		// Information for fetching the catalog
+
+		case MODSTATE_CATALOG:
+			break;
+
+		// Information for determining aftershock parameters
+
+		case MODSTATE_PARAMETERS:
+			update_rj_fit_info();
+			break;
+
+		// Information for computing a forecast
+
+		case MODSTATE_FORECAST:
+			break;
+		}
+
+		return;
+	}
+
+
+
+
+	// Update the memory info item.
+
+	public final void update_memory_info () {
+		StringBuilder sb = new StringBuilder();
+
+		long max_memory = Runtime.getRuntime().maxMemory();
+		long total_memory = Runtime.getRuntime().totalMemory();
+		long free_memory = Runtime.getRuntime().freeMemory();
+
+		long used_memory = total_memory - free_memory;
+
+		if (max_memory == Long.MAX_VALUE) {
+			sb.append ("max_memory = unlimited\n");
+		} else {
+			sb.append ("max_memory = " + (max_memory / 1048576L) + " M\n");
+		}
+			
+		sb.append ("total_memory = " + (total_memory / 1048576L) + " M\n");
+		sb.append ("free_memory = " + (free_memory / 1048576L) + " M\n");
+		sb.append ("used_memory = " + (used_memory / 1048576L) + " M\n");
+
+		set_info_item (info_tag_memory, sb.toString());
+		return;
+	}
+
+
+
+
+	// Update the processor info item.
+	// Note: This only needs to be called once.
+
+	public final void update_processor_info () {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append ("num_threads = " + AutoExecutorService.get_default_num_threads() + "\n");
+
+		set_info_item (info_tag_processor, sb.toString());
+		return;
+	}
+
+
+
+
+	// Update the version info item.
+	// Note: This only needs to be called once.
+
+	public final void update_version_info () {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append (VersionInfo.get_title() + "\n");
+
+		set_info_item (info_tag_version, sb.toString());
+		return;
+	}
+
+
+
+
+	// Update the mainshock info.
+
+	public final void update_mainshock_info (ForecastMainshock the_fcmain) {
+		if (the_fcmain != null && the_fcmain.mainshock_avail) {
+			StringBuilder sb = new StringBuilder();
+
+			if (!( the_fcmain.mainshock_event_id == null || the_fcmain.mainshock_event_id.isEmpty() || EventIDGenerator.is_generated_id(the_fcmain.mainshock_event_id) || the_fcmain.mainshock_geojson == null )) {
+				String title = GeoJsonUtils.getTitle (the_fcmain.mainshock_geojson);
+				if (!( title == null || title.isEmpty() )) {
+					sb.append (title + "\n");
+				}
+			}
+			if (!( the_fcmain.mainshock_event_id == null || the_fcmain.mainshock_event_id.isEmpty() || EventIDGenerator.is_generated_id(the_fcmain.mainshock_event_id) )) {
+				sb.append ("event_id = " + the_fcmain.mainshock_event_id + "\n");
+			}
+			if (!( the_fcmain.mainshock_network == null || the_fcmain.mainshock_network.isEmpty() )) {
+				sb.append ("network = " + the_fcmain.mainshock_network + "\n");
+			}
+			if (!( the_fcmain.mainshock_code == null || the_fcmain.mainshock_code.isEmpty() )) {
+				sb.append ("code = " + the_fcmain.mainshock_code + "\n");
+			}
+			if (!( the_fcmain.mainshock_event_id == null || the_fcmain.mainshock_event_id.isEmpty() || EventIDGenerator.is_generated_id(the_fcmain.mainshock_event_id) || the_fcmain.mainshock_id_list == null || the_fcmain.mainshock_id_list.length == 0 )) {
+				sb.append ("id_list = " + Arrays.toString (the_fcmain.mainshock_id_list) + "\n");
+			}
+			sb.append ("time = " + SimpleUtils.time_raw_and_string(the_fcmain.mainshock_time) + "\n");
+			sb.append ("mag = " + the_fcmain.mainshock_mag + "\n");
+			sb.append ("lat = " + the_fcmain.mainshock_lat + "\n");
+			sb.append ("lon = " + the_fcmain.mainshock_lon + "\n");
+			sb.append ("depth = " + the_fcmain.mainshock_depth + "\n");
+
+			set_info_item (info_tag_mainshock, sb.toString());
+		}
+		else {
+			set_info_item (info_tag_mainshock, null);
+		}
+		return;
+
+	}
+
+
+
+	// Update the RJ fit info.
+
+	public final void update_rj_fit_info () {
+
+		// Get the models
+
+		RJ_AftershockModel_SequenceSpecific seq_model = get_cur_model();
+		RJ_AftershockModel_Generic gen_model = get_genericModel();
+		RJ_AftershockModel_Bayesian bay_model = get_bayesianModel();
+
+		// If all models are null, nothing
+
+		if (seq_model == null && gen_model == null && bay_model == null) {
+			set_info_item (info_tag_rj_seq_fit, null);
+			return;
+		}
+
+		// Make a table
+
+		AsciiTable table = new AsciiTable();
+
+		table.add_row();
+		table.add_cell_left ("");
+		if (gen_model != null) {
+			table.add_cell_center (" Generic");
+		}
+		if (seq_model != null) {
+			table.add_cell_center (" SeqSpec");
+		}
+		if (bay_model != null) {
+			table.add_cell_center ("Bayesian");
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("a");
+		if (gen_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, gen_model.getMaxLikelihood_a()
+			));
+		}
+		if (seq_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, seq_model.getMaxLikelihood_a()
+			));
+		}
+		if (bay_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, bay_model.getMaxLikelihood_a()
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("p");
+		if (gen_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, gen_model.getMaxLikelihood_p()
+			));
+		}
+		if (seq_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, seq_model.getMaxLikelihood_p()
+			));
+		}
+		if (bay_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, bay_model.getMaxLikelihood_p()
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("c");
+		if (gen_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, gen_model.getMaxLikelihood_c()
+			));
+		}
+		if (seq_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, seq_model.getMaxLikelihood_c()
+			));
+		}
+		if (bay_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, bay_model.getMaxLikelihood_c()
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("sigma_a");
+		if (gen_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.3e", SimpleUtils.TRAILZ_OK, gen_model.getStdDev_a()
+			));
+		}
+		if (seq_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.3e", SimpleUtils.TRAILZ_OK, seq_model.getStdDev_a()
+			));
+		}
+		if (bay_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.3e", SimpleUtils.TRAILZ_OK, bay_model.getStdDev_a()
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("sigma_p");
+		if (gen_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.3e", SimpleUtils.TRAILZ_OK, gen_model.getStdDev_p()
+			));
+		}
+		if (seq_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.3e", SimpleUtils.TRAILZ_OK, seq_model.getStdDev_p()
+			));
+		}
+		if (bay_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.3e", SimpleUtils.TRAILZ_OK, bay_model.getStdDev_p()
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("sigma_c");
+		if (gen_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.3e", SimpleUtils.TRAILZ_OK, gen_model.getStdDev_c()
+			));
+		}
+		if (seq_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.3e", SimpleUtils.TRAILZ_OK, seq_model.getStdDev_c()
+			));
+		}
+		if (bay_model != null) {
+			table.add_cell_right (SimpleUtils.double_to_string_trailz (
+				"%.3e", SimpleUtils.TRAILZ_OK, bay_model.getStdDev_c()
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.set_column_seps (" ", " |", " | ");
+
+		set_info_item (info_tag_rj_seq_fit, table.toString());
+		return;
+	}
 
 
 
