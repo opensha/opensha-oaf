@@ -187,7 +187,16 @@ public class PDLSender {
 			return;
 		}
 
+		// Return if we don't want to sign products
+
+		if (!( server_config.get_is_pdl_we_sign() )) {
+			return;
+		}
+
 		// Attempt to sign the product
+					
+		System.out.println ();
+		System.out.println ("Signing PDL product");
 
 		try {
 			File privateKey = new File(pdl_key_filename); // OpenSSH private key file
@@ -260,6 +269,10 @@ public class PDLSender {
 
 		int success_index = -1;
 
+		// Flag indicates if senders should sign products
+
+		boolean f_sender_sign = server_config.get_is_pdl_sender_sign();
+
 		// Loop until we have sent to all destinations
 
 		for (int i = 0; i < sender_count; ++i) {
@@ -291,6 +304,7 @@ public class PDLSender {
 
 					if (server_config.get_is_pdl_permitted()) {
 
+						System.out.println ();
 						System.out.println ("Sending PDL product to " + host + ":" + port);
 
 						// SocketProductSenders send directly to a PDL HUB and do not introduce
@@ -331,6 +345,7 @@ public class PDLSender {
 
 					if (server_config.get_is_pdl_permitted()) {
 
+						System.out.println ();
 						System.out.println ("Sending PDL product to " + sender_config.show_destination());
 
 						// Enable logging
@@ -339,7 +354,12 @@ public class PDLSender {
 
 						// Make and configure the sender
 
-						String pdl_key_filename = server_config.get_pdl_key_filename();
+						String pdl_key_filename = "";
+						if (f_sender_sign && sender_config.sender_can_sign()) {
+							pdl_key_filename = server_config.get_pdl_key_filename();
+							f_sender_sign = false;	// only one sender should sign
+						}
+
 						sender = sender_config.make_sender (pdl_key_filename);
 
 						// Send the product
@@ -442,6 +462,10 @@ public class PDLSender {
 		int first_index = get_first_sender_index (sender_count, time_now);
 		int current_index = first_index;
 
+		// Flag indicates if senders should sign products
+
+		boolean f_sender_sign = server_config.get_is_pdl_sender_sign();
+
 		// Loop until there is a successful send
 
 		boolean f_success = false;
@@ -471,6 +495,7 @@ public class PDLSender {
 
 					if (server_config.get_is_pdl_permitted()) {
 
+						System.out.println ();
 						System.out.println ("Sending PDL product to " + host + ":" + port);
 
 						// SocketProductSenders send directly to a PDL HUB and do not introduce
@@ -511,6 +536,7 @@ public class PDLSender {
 
 					if (server_config.get_is_pdl_permitted()) {
 
+						System.out.println ();
 						System.out.println ("Sending PDL product to " + sender_config.show_destination());
 
 						// Enable logging
@@ -519,7 +545,12 @@ public class PDLSender {
 
 						// Make and configure the sender
 
-						String pdl_key_filename = server_config.get_pdl_key_filename();
+						String pdl_key_filename = "";
+						if (f_sender_sign && sender_config.sender_can_sign()) {
+							pdl_key_filename = server_config.get_pdl_key_filename();
+							f_sender_sign = false;	// only one sender should sign
+						}
+
 						sender = sender_config.make_sender (pdl_key_filename);
 
 						// Send the product

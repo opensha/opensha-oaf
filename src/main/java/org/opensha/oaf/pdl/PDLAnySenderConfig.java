@@ -11,4 +11,9 @@ public abstract class PDLAnySenderConfig {
 	public PDLAnySenderConfig () {
 	}
 
+
+	// Return true if this PDL sender is able to sign products.
+
+	public abstract boolean sender_can_sign ();
+
 }

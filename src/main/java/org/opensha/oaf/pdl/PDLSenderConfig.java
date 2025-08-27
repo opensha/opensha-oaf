@@ -72,4 +72,12 @@ public class PDLSenderConfig extends PDLAnySenderConfig {
 		return "PDLSenderConfig: host = " + ((host == null) ? "<null>" : host) + ", port = " + port + ", connectTimeout = " + connectTimeout; 
 	}
 
+
+	// Return true if this PDL sender is able to sign products.
+
+	@Override
+	public boolean sender_can_sign () {
+		return false;
+	}
+
 }

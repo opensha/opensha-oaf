@@ -197,6 +197,16 @@ public class PDLAwsSenderConfig extends PDLAnySenderConfig implements Marshalabl
 
 
 
+	// Return true if this PDL sender is able to sign products.
+
+	@Override
+	public boolean sender_can_sign () {
+		return signProducts;
+	}
+
+
+
+
 	// Display our contents as properties.
 
 	public String show_props (String privateKey) {

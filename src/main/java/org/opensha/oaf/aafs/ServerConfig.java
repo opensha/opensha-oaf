@@ -343,6 +343,29 @@ public final class ServerConfig {
 		return param_set.get_is_pdl_down();
 	}
 
+	// Get true if PDL senders should sign products.
+	// We return true if there is at least one sender and all are able to sign products.
+
+	public boolean get_is_pdl_sender_sign () {
+		List<PDLAnySenderConfig> sender_list = get_pdl_senders();
+		if (sender_list.isEmpty()) {
+			return false;
+		}
+		for (PDLAnySenderConfig sender : sender_list) {
+			if (!( sender.sender_can_sign() )) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	// Get true if we should sign PDL products.
+	// We return true if senders do not sign products.
+
+	public boolean get_is_pdl_we_sign () {
+		return !(get_is_pdl_sender_sign());
+	}
+
 
 	//----- Parameter modification -----
 
@@ -803,6 +826,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to development, and display senders
 
@@ -817,6 +842,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to production, and display senders
 
@@ -831,6 +858,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to simulated development, and display senders
 
@@ -845,6 +874,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to simulated production, and display senders
 
@@ -859,6 +890,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to down development, and display senders
 
@@ -873,6 +906,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to down production, and display senders
 
@@ -887,6 +922,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to development + socket, and display senders
 
@@ -902,6 +939,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to development + aws, and display senders
 
@@ -917,6 +956,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to development + both, and display senders
 
@@ -932,6 +973,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to production + socket, and display senders
 
@@ -947,6 +990,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to production + aws, and display senders
 
@@ -962,6 +1007,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			// Adjust PDL enable to production + both, and display senders
 
@@ -977,6 +1024,8 @@ public final class ServerConfig {
 			System.out.println("is_pdl_permitted = " + server_config.get_is_pdl_permitted());
 			System.out.println("is_pdl_readback_prod = " + server_config.get_is_pdl_readback_prod());
 			System.out.println("is_pdl_down = " + server_config.get_is_pdl_down());
+			System.out.println("is_pdl_sender_sign = " + server_config.get_is_pdl_sender_sign());
+			System.out.println("is_pdl_we_sign = " + server_config.get_is_pdl_we_sign());
 
 			return;
 		}
