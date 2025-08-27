@@ -268,7 +268,7 @@ public class OEGUIView extends OEGUIComponent {
 		consoleScroll = console.getScrollPane();
 		consoleScroll.setSize(gui_top.get_consoleWidth(), gui_top.get_consoleHeight());
 		JTextArea text = console.getTextArea();
-		text.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+		text.setFont(gui_top.get_consoleFont());
 		text.setCaretPosition(0);
 		text.setCaretPosition(text.getText().length());
 
@@ -534,13 +534,15 @@ public class OEGUIView extends OEGUIComponent {
 			String info_window_text = gui_model.get_info_window_text (true);
 			infoText = new JTextArea(info_window_text);
 			infoText.setEditable(false);
-			infoText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+			infoText.setFont(gui_top.get_consoleFont());
 			infoTextPane = new JScrollPane(infoText);
+			infoText.setCaretPosition(0);		// scroll to top of window
 			tabbedPane.addTab("Information", null, infoTextPane, "System Information");
 		} else {
 			String info_window_text = gui_model.get_info_window_text (false);
 			if (info_window_text != null) {
 				infoText.setText(info_window_text);
+				infoText.setCaretPosition(0);		// scroll to top of window
 			}
 		}
 		return;
@@ -1524,7 +1526,7 @@ public class OEGUIView extends OEGUIComponent {
 		if (catalogText == null) {
 			catalogText = new JTextArea(sw.toString());
 			catalogText.setEditable(false);
-			catalogText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+			catalogText.setFont(gui_top.get_consoleFont());
 			catalogTextPane = new JScrollPane(catalogText);
 			tabbedPane.addTab("Catalog", null, catalogTextPane, "Aftershock Catalog");
 		} else {

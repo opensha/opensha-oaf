@@ -261,7 +261,8 @@ public class OEGUITop extends OEGUIComponent {
 	// Set to false when not testing.
 
 	public final boolean get_force_c_log () {
-		return trace_events;
+		//return trace_events;
+		return false;
 	}
 
 
@@ -321,6 +322,14 @@ public class OEGUITop extends OEGUIComponent {
 
 	public final int get_consoleHeight () {
 		return consoleHeight;
+	}
+
+
+	// Font to use for console text (and similar text windows).
+
+	public final Font get_consoleFont () {
+		//return new Font (Font.MONOSPACED, Font.PLAIN, 12);
+		return new Font (Font.MONOSPACED, Font.PLAIN, 14);
 	}
 
 

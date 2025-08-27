@@ -152,6 +152,7 @@ import org.opensha.oaf.oetas.env.OEtasParameters;
 import org.opensha.oaf.oetas.env.OEtasResults;
 import org.opensha.oaf.oetas.env.OEtasConfig;
 import org.opensha.oaf.oetas.env.OEtasIntegratedIntensityFile;
+import org.opensha.oaf.oetas.fit.OEGridPoint;
 
 
 // Operational ETAS GUI - Model implementation.
@@ -844,6 +845,90 @@ public class OEGUIModel extends OEGUIComponent {
 		}
 		if (forecast_fcresults.etas_outcome instanceof OEtasResults) {
 			return ((OEtasResults)(forecast_fcresults.etas_outcome)).ii_file;
+		}
+		return null;
+	}
+
+
+	// The ETAS MLE grid point for the active model.
+	// Available when model state >= MODSTATE_PARAMETERS.
+	// Returns null if not available.
+
+	public final OEGridPoint get_etas_mle_grid_point () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.get_etas_mle_grid_point while in state " + cur_modstate_string());
+		}
+		if (!( forecast_fcresults.etas_result_avail )) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome == null) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome instanceof OEtasResults) {
+			return ((OEtasResults)(forecast_fcresults.etas_outcome)).mle_grid_point;
+		}
+		return null;
+	}
+
+
+	// The ETAS MLE grid point for the generic model.
+	// Available when model state >= MODSTATE_PARAMETERS.
+	// Returns null if not available.
+
+	public final OEGridPoint get_etas_gen_mle_grid_point () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.get_etas_gen_mle_grid_point while in state " + cur_modstate_string());
+		}
+		if (!( forecast_fcresults.etas_result_avail )) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome == null) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome instanceof OEtasResults) {
+			return ((OEtasResults)(forecast_fcresults.etas_outcome)).gen_mle_grid_point;
+		}
+		return null;
+	}
+
+
+	// The ETAS MLE grid point for the sequence-specific model.
+	// Available when model state >= MODSTATE_PARAMETERS.
+	// Returns null if not available.
+
+	public final OEGridPoint get_etas_seq_mle_grid_point () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.get_etas_seq_mle_grid_point while in state " + cur_modstate_string());
+		}
+		if (!( forecast_fcresults.etas_result_avail )) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome == null) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome instanceof OEtasResults) {
+			return ((OEtasResults)(forecast_fcresults.etas_outcome)).seq_mle_grid_point;
+		}
+		return null;
+	}
+
+
+	// The ETAS MLE grid point for the Bayesian model.
+	// Available when model state >= MODSTATE_PARAMETERS.
+	// Returns null if not available.
+
+	public final OEGridPoint get_etas_bay_mle_grid_point () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.get_etas_bay_mle_grid_point while in state " + cur_modstate_string());
+		}
+		if (!( forecast_fcresults.etas_result_avail )) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome == null) {
+			return null;
+		}
+		if (forecast_fcresults.etas_outcome instanceof OEtasResults) {
+			return ((OEtasResults)(forecast_fcresults.etas_outcome)).bay_mle_grid_point;
 		}
 		return null;
 	}
@@ -4212,7 +4297,8 @@ public class OEGUIModel extends OEGUIComponent {
 	private int info_tag_processor = -1;			// Processor information
 	private int info_tag_memory = -1;				// Memory information
 	private int info_tag_mainshock = -1;			// Mainshock information
-	private int info_tag_rj_seq_fit = -1;			// RJ sequence-specific parameter Fit
+	private int info_tag_rj_mle_fit = -1;			// RJ MLE and variance parameter it
+	private int info_tag_etas_mle_fit = -1;			// ETAS MLE parameter fit
 
 
 
@@ -4236,7 +4322,8 @@ public class OEGUIModel extends OEGUIComponent {
 	private final void register_all_info_items () {
 		info_item_list = new ArrayList<InfoItem>();
 
-		info_tag_rj_seq_fit = register_info_item (MODSTATE_PARAMETERS, "Fitted RJ Parameters");
+		info_tag_etas_mle_fit = register_info_item (MODSTATE_PARAMETERS, "Fitted ETAS MLE Parameters");
+		info_tag_rj_mle_fit = register_info_item (MODSTATE_PARAMETERS, "Fitted RJ Parameters");
 
 		info_tag_mainshock = register_info_item (MODSTATE_MAINSHOCK, "Mainshock Information");
 
@@ -4408,6 +4495,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		case MODSTATE_PARAMETERS:
 			update_rj_fit_info();
+			update_etas_fit_info();
 			break;
 
 		// Information for computing a forecast
@@ -4521,6 +4609,40 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+
+	// Format a number that appears in the RJ fit info.
+	// Based on its magnitude, either convert to fixed-point with 6 decimal places
+	// and trailing zero removal with right-padding, or floating-pint with 3 decimal places.
+
+	private static String rj_fit_num_format (double x) {
+
+		// First convert and round to floating point with 3 decimal places
+		
+		String result = SimpleUtils.double_to_string ("%.3e", x);
+
+		// Convert back to obtain rounded value, and then its absolute value
+
+		double rx = Double.parseDouble (result);
+		double ax = Math.abs (rx);
+
+		// Very small values format as exactly zero
+
+		if (ax <= 1.0e-99) {
+			result = SimpleUtils.double_to_string_trailz ("%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, 0.0);
+		}
+
+		// Values within fixed-point range format as fixed point
+
+		else if (ax <= 99.99 && ax >= 0.001) {
+			result = SimpleUtils.double_to_string_trailz ("%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, rx);
+		}
+
+		return result;
+	}
+
+
+
+
 	// Update the RJ fit info.
 
 	public final void update_rj_fit_info () {
@@ -4534,7 +4656,7 @@ public class OEGUIModel extends OEGUIComponent {
 		// If all models are null, nothing
 
 		if (seq_model == null && gen_model == null && bay_model == null) {
-			set_info_item (info_tag_rj_seq_fit, null);
+			set_info_item (info_tag_rj_mle_fit, null);
 			return;
 		}
 
@@ -4559,18 +4681,18 @@ public class OEGUIModel extends OEGUIComponent {
 		table.add_row();
 		table.add_cell_left ("a");
 		if (gen_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, gen_model.getMaxLikelihood_a()
+			table.add_cell_right (rj_fit_num_format (
+				gen_model.getMaxLikelihood_a()
 			));
 		}
 		if (seq_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, seq_model.getMaxLikelihood_a()
+			table.add_cell_right (rj_fit_num_format (
+				seq_model.getMaxLikelihood_a()
 			));
 		}
 		if (bay_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, bay_model.getMaxLikelihood_a()
+			table.add_cell_right (rj_fit_num_format (
+				bay_model.getMaxLikelihood_a()
 			));
 		}
 
@@ -4579,18 +4701,18 @@ public class OEGUIModel extends OEGUIComponent {
 		table.add_row();
 		table.add_cell_left ("p");
 		if (gen_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, gen_model.getMaxLikelihood_p()
+			table.add_cell_right (rj_fit_num_format (
+				gen_model.getMaxLikelihood_p()
 			));
 		}
 		if (seq_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, seq_model.getMaxLikelihood_p()
+			table.add_cell_right (rj_fit_num_format (
+				seq_model.getMaxLikelihood_p()
 			));
 		}
 		if (bay_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, bay_model.getMaxLikelihood_p()
+			table.add_cell_right (rj_fit_num_format (
+				bay_model.getMaxLikelihood_p()
 			));
 		}
 
@@ -4599,18 +4721,18 @@ public class OEGUIModel extends OEGUIComponent {
 		table.add_row();
 		table.add_cell_left ("c");
 		if (gen_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, gen_model.getMaxLikelihood_c()
+			table.add_cell_right (rj_fit_num_format (
+				gen_model.getMaxLikelihood_c()
 			));
 		}
 		if (seq_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, seq_model.getMaxLikelihood_c()
+			table.add_cell_right (rj_fit_num_format (
+				seq_model.getMaxLikelihood_c()
 			));
 		}
 		if (bay_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.6f", SimpleUtils.TRAILZ_PAD_RIGHT, bay_model.getMaxLikelihood_c()
+			table.add_cell_right (rj_fit_num_format (
+				bay_model.getMaxLikelihood_c()
 			));
 		}
 
@@ -4619,18 +4741,18 @@ public class OEGUIModel extends OEGUIComponent {
 		table.add_row();
 		table.add_cell_left ("sigma_a");
 		if (gen_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.3e", SimpleUtils.TRAILZ_OK, gen_model.getStdDev_a()
+			table.add_cell_right (rj_fit_num_format (
+				gen_model.getStdDev_a()
 			));
 		}
 		if (seq_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.3e", SimpleUtils.TRAILZ_OK, seq_model.getStdDev_a()
+			table.add_cell_right (rj_fit_num_format (
+				seq_model.getStdDev_a()
 			));
 		}
 		if (bay_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.3e", SimpleUtils.TRAILZ_OK, bay_model.getStdDev_a()
+			table.add_cell_right (rj_fit_num_format (
+				bay_model.getStdDev_a()
 			));
 		}
 
@@ -4639,18 +4761,18 @@ public class OEGUIModel extends OEGUIComponent {
 		table.add_row();
 		table.add_cell_left ("sigma_p");
 		if (gen_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.3e", SimpleUtils.TRAILZ_OK, gen_model.getStdDev_p()
+			table.add_cell_right (rj_fit_num_format (
+				gen_model.getStdDev_p()
 			));
 		}
 		if (seq_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.3e", SimpleUtils.TRAILZ_OK, seq_model.getStdDev_p()
+			table.add_cell_right (rj_fit_num_format (
+				seq_model.getStdDev_p()
 			));
 		}
 		if (bay_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.3e", SimpleUtils.TRAILZ_OK, bay_model.getStdDev_p()
+			table.add_cell_right (rj_fit_num_format (
+				bay_model.getStdDev_p()
 			));
 		}
 
@@ -4659,18 +4781,18 @@ public class OEGUIModel extends OEGUIComponent {
 		table.add_row();
 		table.add_cell_left ("sigma_c");
 		if (gen_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.3e", SimpleUtils.TRAILZ_OK, gen_model.getStdDev_c()
+			table.add_cell_right (rj_fit_num_format (
+				gen_model.getStdDev_c()
 			));
 		}
 		if (seq_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.3e", SimpleUtils.TRAILZ_OK, seq_model.getStdDev_c()
+			table.add_cell_right (rj_fit_num_format (
+				seq_model.getStdDev_c()
 			));
 		}
 		if (bay_model != null) {
-			table.add_cell_right (SimpleUtils.double_to_string_trailz (
-				"%.3e", SimpleUtils.TRAILZ_OK, bay_model.getStdDev_c()
+			table.add_cell_right (rj_fit_num_format (
+				bay_model.getStdDev_c()
 			));
 		}
 
@@ -4678,7 +4800,191 @@ public class OEGUIModel extends OEGUIComponent {
 
 		table.set_column_seps (" ", " |", " | ");
 
-		set_info_item (info_tag_rj_seq_fit, table.toString());
+		set_info_item (info_tag_rj_mle_fit, table.toString());
+		return;
+	}
+
+
+
+
+	// Update the ETAS fit info.
+
+	public final void update_etas_fit_info () {
+
+		// Get the MLE for each model
+
+		OEGridPoint gen_mle_grid_point = get_etas_gen_mle_grid_point();
+		OEGridPoint seq_mle_grid_point = get_etas_seq_mle_grid_point();
+		OEGridPoint bay_mle_grid_point = get_etas_bay_mle_grid_point();
+
+		// If all models are null, nothing
+
+		if (gen_mle_grid_point == null && seq_mle_grid_point == null && bay_mle_grid_point == null) {
+			set_info_item (info_tag_etas_mle_fit, null);
+			return;
+		}
+
+		// Make a table
+
+		AsciiTable table = new AsciiTable();
+
+		table.add_row();
+		table.add_cell_left ("");
+		if (gen_mle_grid_point != null) {
+			table.add_cell_center (" Generic");
+		}
+		if (seq_mle_grid_point != null) {
+			table.add_cell_center (" SeqSpec");
+		}
+		if (bay_mle_grid_point != null) {
+			table.add_cell_center ("Bayesian");
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("n");
+		if (gen_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				gen_mle_grid_point.n
+			));
+		}
+		if (seq_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				seq_mle_grid_point.n
+			));
+		}
+		if (bay_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				bay_mle_grid_point.n
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("p");
+		if (gen_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				gen_mle_grid_point.p
+			));
+		}
+		if (seq_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				seq_mle_grid_point.p
+			));
+		}
+		if (bay_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				bay_mle_grid_point.p
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("c");
+		if (gen_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				gen_mle_grid_point.c
+			));
+		}
+		if (seq_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				seq_mle_grid_point.c
+			));
+		}
+		if (bay_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				bay_mle_grid_point.c
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("zams");
+		if (gen_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				gen_mle_grid_point.zams
+			));
+		}
+		if (seq_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				seq_mle_grid_point.zams
+			));
+		}
+		if (bay_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				bay_mle_grid_point.zams
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("zmu");
+		if (gen_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				gen_mle_grid_point.zmu
+			));
+		}
+		if (seq_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				seq_mle_grid_point.zmu
+			));
+		}
+		if (bay_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				bay_mle_grid_point.zmu
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("b");
+		if (gen_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				gen_mle_grid_point.b
+			));
+		}
+		if (seq_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				seq_mle_grid_point.b
+			));
+		}
+		if (bay_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				bay_mle_grid_point.b
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.add_row();
+		table.add_cell_left ("alpha");
+		if (gen_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				gen_mle_grid_point.alpha
+			));
+		}
+		if (seq_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				seq_mle_grid_point.alpha
+			));
+		}
+		if (bay_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				bay_mle_grid_point.alpha
+			));
+		}
+
+		table.add_row_mixed ("-");
+
+		table.set_column_seps (" ", " |", " | ");
+
+		set_info_item (info_tag_etas_mle_fit, table.toString());
 		return;
 	}
 
