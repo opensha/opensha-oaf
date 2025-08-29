@@ -1436,6 +1436,23 @@ public class OEGUISubDataSource extends OEGUIListener {
 	}
 
 
+	// Inject text into the event ID edit box, exactly as if the user typed it.
+	// This is provided for use by event pickers.
+
+	public void inject_event_id (String event_id) throws GUIEDTException {
+		updateParam(eventIDParam, event_id);
+
+		// Same code as for a notification from eventIDParam
+
+		if (!( is_dropdown_list_current() )) {
+			clear_forecastListDropdown();
+		}
+		report_data_source_change();
+
+		return;
+	}
+
+
 
 
 	//----- Parameter change actions ------

@@ -215,6 +215,10 @@ public class OEGUIController extends OEGUIListener {
 
 	private OEGUISubFileOps sub_ctl_file_ops;
 
+	// Floating or modal panel for event picker.
+
+	private OEGUISubEventPicker sub_ctl_event_picker;
+
 
 
 
@@ -443,9 +447,12 @@ public class OEGUIController extends OEGUIListener {
 		sub_ctl_file_ops = new OEGUISubFileOps(this);
 		aafsParams.addParameter(sub_ctl_file_ops.get_fileOpsEditParam());
 
+		sub_ctl_event_picker = new OEGUISubEventPicker(this);
+		aafsParams.addParameter(sub_ctl_event_picker.get_eventPickerEditParam());
+
 		// Create the container
 
-		aafsEditorHeight = (gui_top.get_height() * 5) / 10;
+		aafsEditorHeight = (gui_top.get_height() * 6) / 10;
 
 		aafsEditor = new ParameterListEditor(aafsParams);
 		aafsEditor.setTitle("More");
@@ -571,6 +578,10 @@ public class OEGUIController extends OEGUIListener {
 		// File operations
 
 		sub_ctl_file_ops.sub_file_ops_enable (true, f_mainshock && f_main_fetched);
+
+		// Event picker
+
+		sub_ctl_event_picker.sub_event_picker_enable (true, true);
 
 		// Special functions
 
@@ -1156,6 +1167,17 @@ public class OEGUIController extends OEGUIListener {
 //		}
 //		return xfer_analyst_impl;
 //	}
+
+
+
+
+	// Inject text into the event ID edit box, exactly as if the user typed it.
+	// This is provided for use by event pickers.
+
+	public void inject_event_id (String event_id) throws GUIEDTException {
+		sub_ctl_data_source.inject_event_id (event_id);
+		return;
+	}
 
 
 

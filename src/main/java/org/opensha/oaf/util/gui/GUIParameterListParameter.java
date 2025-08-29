@@ -4,6 +4,8 @@ import java.util.ListIterator;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Window;
+import java.awt.Component;
 
 import org.dom4j.Element;
 import org.opensha.commons.exceptions.ParameterException;
@@ -240,6 +242,57 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 
 	public void setCancelButtonForeground (Color color) {
 		cancelButtonForeground = color;
+		return;
+	}
+
+
+	// The enable state for the OK button.
+
+	protected boolean okButtonEnabled = true;
+
+	public boolean getOkButtonEnabled () {
+		return okButtonEnabled;
+	}
+
+	public void setOkButtonEnabled (boolean isEnabled) {
+		okButtonEnabled = isEnabled;
+		return;
+	}
+
+
+	// The enable state for the cancel button.
+
+	protected boolean cancelButtonEnabled = true;
+
+	public boolean getCancelButtonEnabled () {
+		return cancelButtonEnabled;
+	}
+
+	public void setCancelButtonEnabled (boolean isEnabled) {
+		cancelButtonEnabled = isEnabled;
+		return;
+	}
+
+
+	// Refresh just the buttons, without refreshing the entire window.
+
+	public void refreshButtons () {
+		((GUIParameterListParameterEditor)getEditor()).refreshButtons();
+		return;
+	}
+
+
+	// The owner component for the dialog, if null then use default.
+	// By default it is this parameter's button, if it exists.
+
+	protected Component ownerComponent = null;
+
+	public Component getOwnerComponent () {
+		return ownerComponent;
+	}
+
+	public void setOwnerComponent (Component c) {
+		ownerComponent = c;
 		return;
 	}
 

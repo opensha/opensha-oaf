@@ -353,6 +353,17 @@ public class OEGUITop extends OEGUIComponent {
 		return new Dimension (w, h);
 	}
 
+	// Recommended dialog dimenstions for a wide pop-up parameter list.
+	// The rel_width is width relative to the standard width.
+
+	public final Dimension get_dialog_dims_wide (int num_params, boolean f_button_row, int num_seps, double rel_width) {
+		//int w = 300;
+		//int w = paramWidth + 8;
+		int w = ( (int)Math.round(((double)paramWidth) * rel_width) ) + 20;
+		int h = Math.min(height, (Math.max(3, num_params) * 60) + (num_seps * 12) + (f_button_row ? 160 : 130));
+		return new Dimension (w, h);
+	}
+
 
 	// Get the highlight color for buttons.
 

@@ -9,6 +9,7 @@ import java.awt.BorderLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Window;
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -378,8 +379,13 @@ public class GUIParameterListParameterEditor extends GUIAbstractParameterEditor<
 
 		// Set up the dialog box
 
+		Component ownerComponent = ((GUIParameterListParameter)getParameter()).getOwnerComponent();
+
 		Window owner = null;
-		if (button != null) {
+		if (ownerComponent != null) {
+			owner = SwingUtilities.windowForComponent(ownerComponent);
+		}
+		if (owner == null && button != null) {
 			owner = SwingUtilities.windowForComponent(button);
 		}
 		if (owner != null) {
@@ -392,6 +398,8 @@ public class GUIParameterListParameterEditor extends GUIAbstractParameterEditor<
 		frame.setSize(dialogDims);
 		if (dialogPosition != null) {
 			frame.setLocation(dialogPosition);
+		} else if (ownerComponent != null) {
+			frame.setLocationRelativeTo(ownerComponent);
 		} else if (button != null) {
 			frame.setLocationRelativeTo(button);
 		}
@@ -428,6 +436,7 @@ public class GUIParameterListParameterEditor extends GUIAbstractParameterEditor<
 			} else {
 				ok_button.setForeground(new Color(80,80,133));
 			}
+			ok_button.setEnabled(((GUIParameterListParameter)getParameter()).getOkButtonEnabled());
 			ok_button.addActionListener(new ActionListener() {
 				@Override public void actionPerformed(ActionEvent e) {
 					button_actionPerformed(e);
@@ -448,6 +457,7 @@ public class GUIParameterListParameterEditor extends GUIAbstractParameterEditor<
 			} else {
 				cancel_button.setForeground(new Color(80,80,133));
 			}
+			cancel_button.setEnabled(((GUIParameterListParameter)getParameter()).getCancelButtonEnabled());
 			cancel_button.addActionListener(new ActionListener() {
 				@Override public void actionPerformed(ActionEvent e) {
 					cancel_actionPerformed(e);
@@ -484,6 +494,39 @@ public class GUIParameterListParameterEditor extends GUIAbstractParameterEditor<
 		// Created the dialog
 
 		return true;
+	}
+
+
+	// Refresh just the buttons, if they exist.
+
+	public void refreshButtons () {
+
+		// Button to update the parameters and close the dialog
+
+		if (ok_button != null) {
+			ok_button.setText(((GUIParameterListParameter)getParameter()).getOkButtonText());
+			Color fg = ((GUIParameterListParameter)getParameter()).getOkButtonForeground();
+			if (fg != null) {
+				ok_button.setForeground(fg);
+			} else {
+				ok_button.setForeground(new Color(80,80,133));
+			}
+			ok_button.setEnabled(((GUIParameterListParameter)getParameter()).getOkButtonEnabled());
+		}
+
+		// Button to cancel the operation and close the dialog
+
+		if (cancel_button != null) {
+			cancel_button.setText(((GUIParameterListParameter)getParameter()).getCancelButtonText());
+			Color fg = ((GUIParameterListParameter)getParameter()).getCancelButtonForeground();
+			if (fg != null) {
+				cancel_button.setForeground(fg);
+			} else {
+				cancel_button.setForeground(new Color(80,80,133));
+			}
+			cancel_button.setEnabled(((GUIParameterListParameter)getParameter()).getCancelButtonEnabled());
+		}
+
 	}
 
 

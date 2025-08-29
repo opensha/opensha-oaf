@@ -373,6 +373,37 @@ public class OEGUIComponent {
 
 
 
+	// Enumeration of options for minimum magnitude in the event picker.
+	
+	public enum EvPickMinMagOption {
+		ANY("Any", -10.0),
+		MAG_45("M 4.5", 4.45),
+		MAG_50("M 5.0", 4.95),
+		MAG_55("M 5.5", 5.45),
+		MAG_60("M 6.0", 5.95),
+		MAG_65("M 6.5", 6.45);
+		
+		private String label;
+		private double mag;		// magnitude to use in Comcat search
+		
+		private EvPickMinMagOption(String label, double mag) {
+			this.label = label;
+			this.mag = mag;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+
+		public double get_mag() {
+			return mag;
+		}
+	}
+
+
+
+
 	//----- Support -----
 
 
