@@ -376,19 +376,29 @@ public class OEGUIComponent {
 	// Enumeration of options for minimum magnitude in the event picker.
 	
 	public enum EvPickMinMagOption {
-		ANY("Any", -10.0),
-		MAG_45("M 4.5", 4.45),
-		MAG_50("M 5.0", 4.95),
-		MAG_55("M 5.5", 5.45),
-		MAG_60("M 6.0", 5.95),
-		MAG_65("M 6.5", 6.45);
+		ANY("Any with OAF product", -10.0, 86400000L * 365L * 12L, true),
+		MAG_45("M 4.5 with OAF product", 4.45, 86400000L * 365L * 12L, true),
+		MAG_50("M 5.0 with OAF product", 4.95, 86400000L * 365L * 12L, true),
+		MAG_55("M 5.5 with OAF product", 5.45, 86400000L * 365L * 12L, true),
+		MAG_60("M 6.0 with OAF product", 5.95, 86400000L * 365L * 12L, true),
+		MAG_65("M 6.5 with OAF product", 6.45, 86400000L * 365L * 12L, true),
+		MAG_40_WEEK("M 4.0 in the past week", 3.95, 86400000L * 7L, false),
+		MAG_45_WEEK("M 4.5 in the past week", 4.45, 86400000L * 7L, false),
+		MAG_50_MONTH("M 5.0 in the past month", 4.95, 86400000L * 30L, false),
+		MAG_55_MONTH("M 5.5 in the past month", 5.45, 86400000L * 30L, false),
+		MAG_60_YEAR("M 6.0 in the past year", 5.95, 86400000L * 365L, false),
+		MAG_65_YEAR("M 6.5 in the past year", 6.45, 86400000L * 365L, false);
 		
 		private String label;
-		private double mag;		// magnitude to use in Comcat search
+		private double mag;				// magnitude to use in Comcat search
+		private long search_duration;	// duration of Comcat search
+		private boolean f_require_oaf;	// require OAF product during Comcat search
 		
-		private EvPickMinMagOption(String label, double mag) {
+		private EvPickMinMagOption(String label, double mag, long search_duration, boolean f_require_oaf) {
 			this.label = label;
 			this.mag = mag;
+			this.search_duration = search_duration;
+			this.f_require_oaf = f_require_oaf;
 		}
 		
 		@Override
@@ -398,6 +408,14 @@ public class OEGUIComponent {
 
 		public double get_mag() {
 			return mag;
+		}
+
+		public long get_search_duration () {
+			return search_duration;
+		}
+
+		public boolean get_f_require_oaf () {
+			return f_require_oaf;
 		}
 	}
 

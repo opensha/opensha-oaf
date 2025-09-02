@@ -7,12 +7,15 @@ import java.awt.Dimension;
 import java.awt.Window;
 import java.awt.Component;
 
+import javax.swing.JComponent;
+
 import org.dom4j.Element;
 import org.opensha.commons.exceptions.ParameterException;
 import org.opensha.commons.param.AbstractParameter;
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.param.ParameterList;
 import org.opensha.commons.param.editor.ParameterEditor;
+import org.opensha.commons.param.editor.AbstractParameterEditor;
 //import org.opensha.commons.param.editor.impl.ParameterListParameterEditor;
 //import org.opensha.commons.param.impl.ParameterListParameter;
 
@@ -217,7 +220,7 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 
 
 	// The foreground (text) color for the OK button, null for default.
-	// This is only examined when the button is created.
+	// This is only examined when the button is created or when refreshButtons is called.
 
 	protected Color okButtonForeground = null;
 
@@ -232,7 +235,7 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 
 
 	// The foreground (text) color for the cancel button, null for default.
-	// This is only examined when the button is created.
+	// This is only examined when the button is created or when refreshButtons is called.
 
 	protected Color cancelButtonForeground = null;
 
@@ -247,6 +250,7 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 
 
 	// The enable state for the OK button.
+	// This is only examined when the button is created or when refreshButtons is called.
 
 	protected boolean okButtonEnabled = true;
 
@@ -261,6 +265,7 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 
 
 	// The enable state for the cancel button.
+	// This is only examined when the button is created or when refreshButtons is called.
 
 	protected boolean cancelButtonEnabled = true;
 
@@ -284,6 +289,8 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 
 	// The owner component for the dialog, if null then use default.
 	// By default it is this parameter's button, if it exists.
+	// Note: If this parameter's button is not inserted into a window, then
+	// setOwnerComponent or setOwnerParameter should be called before calling openDialog.
 
 	protected Component ownerComponent = null;
 
@@ -293,6 +300,38 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 
 	public void setOwnerComponent (Component c) {
 		ownerComponent = c;
+		return;
+	}
+
+
+	// Set the owner component to be the widget for the given parameter.
+	// A null value sets the owner component to null.
+	// The parameter should be visible in a window.
+	// Often the parameter is a button associated with opening the dialog.
+	// An exception is thrown if the parameter's editor is not a subclass
+	// of AbstractParameterEditor or GUIAbstractParameterEditor.
+
+	public void setOwnerParameter (Parameter<?> the_param) {
+		JComponent widget = null;
+		if (the_param != null) {
+			ParameterEditor editor = the_param.getEditor();
+			if (editor == null) {
+				throw new IllegalArgumentException ("GUIParameterListParameterEditor.setOwnerParameter: Parameter does not have an editor");
+			}
+			if (editor instanceof AbstractParameterEditor) {
+				widget = ((AbstractParameterEditor)editor).getWidget();
+			}
+			else if (editor instanceof GUIAbstractParameterEditor) {
+				widget = ((GUIAbstractParameterEditor)editor).getWidget();
+			}
+			else {
+				throw new IllegalArgumentException ("GUIParameterListParameterEditor.setOwnerParameter: Parameter editor is not a subclass of AbstractParameterEditor or GUIAbstractParameterEditor");
+			}
+			if (widget == null) {
+				throw new IllegalArgumentException ("GUIParameterListParameterEditor.setOwnerParameter: Parameter editor returned a null widget");
+			}
+		}
+		setOwnerComponent (widget);
 		return;
 	}
 

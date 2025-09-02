@@ -391,7 +391,7 @@ public class OEGUISubEventPicker extends OEGUIListener {
 	// Note: This function should be called on a worker thread,
 	// and therefore cannot access the parameters.
 
-	private static ArrayList<AvailableEarthquake> make_pick_list (double minMag) {
+	private static ArrayList<AvailableEarthquake> make_pick_list (String description, double minMag, long search_duration, boolean f_require_oaf, SphRegion search_region) {
 
 		// Server configuration
 
@@ -422,22 +422,30 @@ public class OEGUISubEventPicker extends OEGUIListener {
 
 		String rup_event_id = null;
 		long endTime = System.currentTimeMillis();
-		long startTime = endTime - (SimpleUtils.DAY_MILLIS * 365L * 12L);
+		long startTime = endTime - search_duration;
 
 		double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
 		double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
-		SphRegionWorld region = new SphRegionWorld ();
+		SphRegion region;
+		if (search_region == null) {
+			region = new SphRegionWorld ();
+		} else {
+			region = search_region;
+		}
 		boolean wrapLon = false;
 		boolean extendedInfo = true;
 
-		String productType = server_config.get_pdl_oaf_type();
+		String productType = null;
+		if (f_require_oaf) {
+			productType = server_config.get_pdl_oaf_type();
+		}
 		boolean includeDeleted = false;
 
 		int visit_result = accessor.visitEventList (visitor, rup_event_id, startTime, endTime,
 				minDepth, maxDepth, region, wrapLon, extendedInfo,
 				minMag, productType, includeDeleted);
 
-		System.out.println ("Count of events with OAF products = " + eventList.size());
+		System.out.println ("Count of events (" + description + ") = " + eventList.size());
 
 		// Sort the list
 
@@ -868,8 +876,12 @@ public class OEGUISubEventPicker extends OEGUIListener {
 				@Override
 				public void run() {
 					try {
+						String description = "mag = " + xfer_event_picker_impl.x_evPickMinMagParam.toString();
 						double minMag = xfer_event_picker_impl.x_evPickMinMagParam.get_mag();
-						ArrayList<AvailableEarthquake> eventList = make_pick_list (minMag);
+						long search_duration = xfer_event_picker_impl.x_evPickMinMagParam.get_search_duration();
+						boolean f_require_oaf = xfer_event_picker_impl.x_evPickMinMagParam.get_f_require_oaf();
+						SphRegion search_region = null;
+						ArrayList<AvailableEarthquake> eventList = make_pick_list (description, minMag, search_duration, f_require_oaf, search_region);
 						xfer_event_picker_impl.modify_evPickList (eventList);
 					} catch (Exception e) {
 						search_result[0] = "Error: " + ClassUtils.getClassNameWithoutPackage(e.getClass()) + ": " + e.getMessage();
@@ -961,7 +973,7 @@ public class OEGUISubEventPicker extends OEGUIListener {
 
 			// Set owner component for the dialog
 
-			eventPickerEditParam.setOwnerComponent ( ((AbstractParameterEditor)(evPickModalOpenButton.getEditor())).getWidget() );
+			eventPickerEditParam.setOwnerParameter (evPickModalOpenButton);
 
 			// Open the dialog
 
