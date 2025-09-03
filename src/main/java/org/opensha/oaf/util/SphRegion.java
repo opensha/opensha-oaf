@@ -758,6 +758,242 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 
 
 
+
+	//----- Ranging -----
+
+
+
+
+	// LatitudeAccum - Accumulator for latitude ranges.
+
+	public static class LatitudeAccum {
+
+		// Accumulated minimum and maximum latitude.
+
+		public double accum_min_lat;
+		public double accum_max_lat;
+
+		// Constructor makes an "empty" range.
+
+		public LatitudeAccum () {
+			accum_min_lat = 180.0;
+			accum_max_lat = -180.0;
+		}
+
+		// Return true if the accumulator is empty (that is, no ranges have been accumulated).
+
+		public final boolean isEmpty () {
+			return (accum_max_lat < accum_min_lat);
+		}
+
+		// Accumulate a latitude range.
+		// Parameters must satisfy:  -90 <= lat_lo <= lat_hi < +90
+
+		public final void accum_lat_range (double lat_lo, double lat_hi) {
+			accum_min_lat = Math.min (accum_min_lat, lat_lo);
+			accum_max_lat = Math.max (accum_max_lat, lat_hi);
+			return;
+		}
+
+		// Accumulate the latitude range from the region.
+
+		public final void accum_lat_range (SphRegion region) {
+			accum_lat_range (region.min_lat, region.max_lat);
+			return;
+		}
+
+		// Set the latitude range in the region.
+
+		public final void set_lat_range (SphRegion region) {
+			if (isEmpty()) {
+				throw new IllegalStateException ("SphRegion.LatitudeAccum.set_lat_range: Attempt to set empty latitude range");
+			}
+			region.min_lat = accum_min_lat;
+			region.max_lat = accum_max_lat;
+			return;
+		}
+	}
+
+
+
+
+	// LongitudeAccum - Accumulator for longitude ranges.
+
+	public static class LongitudeAccum {
+
+		// Accumulated minimum and maximum longitude in the unwrapped domain -180 to +180..
+
+		public double unwrap_min_lon;
+		public double unwrap_max_lon;
+
+		// Accumulated minimum and maximum longitude in the wrapped domain 0 to +360..
+
+		public double wrap_min_lon;
+		public double wrap_max_lon;
+
+		// Constructor makes an "empty" range.
+
+		public LongitudeAccum () {
+			unwrap_min_lon = 720.0;
+			unwrap_max_lon = -720.0;
+			wrap_min_lon = 720.0;
+			wrap_max_lon = -720.0;
+		}
+
+		// Return true if the accumulator is empty (that is, no ranges have been accumulated).
+
+		public final boolean isEmpty () {
+			return (unwrap_max_lon < unwrap_min_lon);
+		}
+
+		// Return true if the wrapped range is preferred
+
+		public final boolean is_wrap_preferred () {
+			return (wrap_max_lon - wrap_min_lon < unwrap_max_lon - unwrap_min_lon);
+		}
+
+		// Internal function to accumulate in the unwrapped domain.
+
+		private void unwrap_accum (double lon_lo, double lon_hi)  {
+			unwrap_min_lon = Math.min (unwrap_min_lon, lon_lo);
+			unwrap_max_lon = Math.max (unwrap_max_lon, lon_hi);
+		}
+
+		// Internal function to accumulate in the wrapped domain.
+
+		private void wrap_accum (double lon_lo, double lon_hi)  {
+			wrap_min_lon = Math.min (wrap_min_lon, lon_lo);
+			wrap_max_lon = Math.max (wrap_max_lon, lon_hi);
+		}
+
+		// Internal function to set the unwrapped domain to the world.
+
+		private void unwrap_world ()  {
+			unwrap_min_lon = -180.0;
+			unwrap_max_lon = 180.0;
+		}
+
+		// Internal function to set the wrapped domain to the world.
+
+		private void wrap_world ()  {
+			wrap_min_lon = 0.0;
+			wrap_max_lon = 360.0;
+		}
+
+		// Accumulate a longitude range.
+		// Parameters must satisfy:  -360 <= lon_lo <= lon_hi < +360
+
+		public final void accum_lon_range (double lon_lo, double lon_hi) {
+
+			// Upper end lies in the +180 to +360 range ...
+
+			if (lon_hi > 180.0) {
+
+				// Crosses date line and prime meridian
+
+				if (lon_lo < 0.0) {
+					unwrap_world();
+					wrap_world();
+				}
+
+				// Crosses date line (entirely in the 0 to +360 range)
+
+				else if (lon_lo < 180.0) {
+					unwrap_world();
+					wrap_accum (lon_lo, lon_hi);
+				}
+
+				// Entirely in the +180 to +360 range
+
+				else {
+					unwrap_accum (lon_lo - 360.0, lon_hi - 360.0);
+					wrap_accum (lon_lo, lon_hi);
+				}
+			}
+
+			// Lower end lies in the -360 to -180 range ...
+
+			else if (lon_lo < -180.0) {
+
+				// Crosses date line and prime meridian
+
+				if (lon_hi > 0.0) {
+					unwrap_world();
+					wrap_world();
+				}
+
+				// Crosses date line (entirely in the -360 to 0 range)
+
+				else if (lon_hi > -180.0) {
+					unwrap_world();
+					wrap_accum (lon_lo + 360.0, lon_hi + 360.0);
+				}
+
+				// Entirely in the -360 to -180 range
+
+				else {
+					unwrap_accum (lon_lo + 360.0, lon_hi + 360.0);
+					wrap_accum (lon_lo + 360.0, lon_hi + 360.0);
+				}
+			}
+
+			// Lower end lies in the -180 to 0 range ...
+
+			else if (lon_lo < 0.0) {
+
+				// Crosses prime meridian (entirely in the -180 to +180 range)
+
+				if (lon_hi > 0.0) {
+					unwrap_accum (lon_lo, lon_hi);
+					wrap_world();
+				}
+
+				// Entirely in the -180 to 0 range
+
+				else {
+					unwrap_accum (lon_lo, lon_hi);
+					wrap_accum (lon_lo + 360.0, lon_hi + 360.0);
+				}
+			}
+
+			// Entirely in the 0 to +180 range
+
+			else {
+				unwrap_accum (lon_lo, lon_hi);
+				wrap_accum (lon_lo, lon_hi);
+			}
+
+			return;
+		}
+
+		// Accumulate the longitude range from the region.
+
+		public final void accum_lon_range (SphRegion region) {
+			accum_lon_range (region.min_lon, region.max_lon);
+			return;
+		}
+
+		// Set the longitude range in the region.
+
+		public final void set_lon_range (SphRegion region) {
+			if (isEmpty()) {
+				throw new IllegalStateException ("SphRegion.LongitudeAccum.set_lon_range: Attempt to set empty longitude range");
+			}
+			if (is_wrap_preferred()) {
+				region.plot_wrap = true;
+				region.min_lon = wrap_min_lon;
+				region.max_lon = wrap_max_lon;
+			} else {
+				region.plot_wrap = false;
+				region.min_lon = unwrap_min_lon;
+				region.max_lon = unwrap_max_lon;
+			}
+			return;
+		}
+	}
+
+
+
 	//----- Construction -----
 
 	/**
@@ -871,6 +1107,16 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 	}
 
 
+	/**
+	 * Construct a union from given lists of included and excluded regions.
+	 * @param include_list = List of regions to include.
+	 * @param exclude_list = List of regions to exclude.
+	 */
+	public static SphRegion makeUnion (List<SphRegion> include_list, List<SphRegion> exclude_list) {
+		return new SphRegionUnion (include_list, exclude_list);
+	}
+
+
 
 
 
@@ -891,6 +1137,7 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 	protected static final int MARSHAL_GC_POLYGON = 21001;
 	protected static final int MARSHAL_WORLD = 33001;
 	protected static final int MARSHAL_BOUNDING_BOX = 149001;
+	protected static final int MARSHAL_UNION = 151001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
@@ -903,6 +1150,23 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 	protected static final String MARSHAL_GC_POLYGON_S = "gc_polygon";
 	protected static final String MARSHAL_WORLD_S = "world";
 	protected static final String MARSHAL_BOUNDING_BOX_S = "bounding_box";
+	protected static final String MARSHAL_UNION_S = "union";
+
+	// Get the string for the given type code.
+
+	protected static String get_string_for_type (int type) {
+		switch (type) {
+		case MARSHAL_NULL: return MARSHAL_NULL_S;
+		case MARSHAL_CIRCLE: return MARSHAL_CIRCLE_S;
+		case MARSHAL_MERC_POLYGON: return MARSHAL_MERC_POLYGON_S;
+		case MARSHAL_MERC_RECTANGLE: return MARSHAL_MERC_RECTANGLE_S;
+		case MARSHAL_GC_POLYGON: return MARSHAL_GC_POLYGON_S;
+		case MARSHAL_WORLD: return MARSHAL_WORLD_S;
+		case MARSHAL_BOUNDING_BOX: return MARSHAL_BOUNDING_BOX_S;
+		case MARSHAL_UNION: return MARSHAL_UNION_S;
+		}
+		throw new IllegalArgumentException ("SphRegion.get_string_for_type: Unknown type code: type = " + type);
+	}
 
 	// Get the type code.
 
@@ -1025,11 +1289,40 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 			result = new SphRegionWorld();
 			result.do_umarshal (reader);
 			break;
+
+		case MARSHAL_UNION:
+			result = new SphRegionUnion();
+			result.do_umarshal (reader);
+			break;
 		}
 
 		reader.unmarshalMapEnd ();
 
 		return result;
+	}
+
+	// Marshal array of objects.
+
+	public static void marshal_array (MarshalWriter writer, String name, SphRegion[] x) {
+		int n = x.length;
+		writer.marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshal_poly (writer, null, x[i]);
+		}
+		writer.marshalArrayEnd ();
+		return;
+	}
+
+	// Unmarshal array of objects.
+
+	public static SphRegion[] unmarshal_array (MarshalReader reader, String name) {
+		int n = reader.unmarshalArrayBegin (name);
+		SphRegion[] x = new SphRegion[n];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshal_poly (reader, null);
+		}
+		reader.unmarshalArrayEnd ();
+		return x;
 	}
 
 	// Marshal object to a single unadorned line of text.
@@ -1070,6 +1363,10 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 
 			case MARSHAL_WORLD:
 				result.append (MARSHAL_WORLD_S);
+				break;
+
+			case MARSHAL_UNION:
+				result.append (MARSHAL_UNION_S);
 				break;
 			}
 
@@ -1137,6 +1434,14 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 			result = new SphRegionWorld();
 			result.unmarshal_from_line ("");
 			break;
+
+		case MARSHAL_UNION_S:
+			if (w.length != 2) {
+				throw new MarshalException ("SphRegion.unmarshal_from_line_poly: Invalid line: " + s);
+			}
+			result = new SphRegionUnion();
+			result.unmarshal_from_line (w[1]);
+			break;
 		}
 
 		return result;
@@ -1184,6 +1489,19 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 
 		System.out.println ((region2 == null) ? "<null>" : (region2.toString()));
 
+		// Marshal recovered region to string
+
+		System.out.println ();
+		System.out.println ("***** Writing recovered region to JSON string *****");
+		System.out.println ();
+
+		MarshalImpJsonWriter writer2 = new MarshalImpJsonWriter();
+		marshal_poly (writer2, null, region2);
+		writer2.check_write_complete ();
+		String json_string2 = writer2.get_json_string();
+
+		System.out.println (MarshalUtils.display_valid_json_string (json_string2));
+
 		// Marshal to line
 
 		System.out.println ();
@@ -1201,6 +1519,19 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 
 		SphRegion region3 = unmarshal_from_line_poly (line);
 		System.out.println ((region3 == null) ? "<null>" : (region3.toString()));
+
+		// Marshal recovered region to string
+
+		System.out.println ();
+		System.out.println ("***** Writing recovered region to JSON string *****");
+		System.out.println ();
+
+		MarshalImpJsonWriter writer3 = new MarshalImpJsonWriter();
+		marshal_poly (writer3, null, region3);
+		writer3.check_write_complete ();
+		String json_string3 = writer3.get_json_string();
+
+		System.out.println (MarshalUtils.display_valid_json_string (json_string3));
 
 		return;
 	}
@@ -1421,6 +1752,67 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 			System.out.println ("***** Making null *****");
 
 			SphRegion region = null;
+
+			// Run tests
+
+			test_marshal_poly (region);
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test4  c_lat  c_lon  c_radius_km  r_lat_1  r_lat_2  r_lon_1  r_lon_2  p_lat_1  p_lon_1 ...
+		// Test marshal/unmarshal for a union.
+		// This creates a union containing a circle and a rectangle as include regions,
+		// and a polygon as an exclude region.
+
+		if (testargs.is_test ("test7")) {
+
+			// Read arguments
+
+			System.out.println ("Test marshal/unmarshal for a union");
+			double c_lat = testargs.get_double ("c_lat");
+			double c_lon = testargs.get_double ("c_lon");
+			double c_radius_km = testargs.get_double ("c_radius_km");
+			double r_lat_1 = testargs.get_double ("r_lat_1");
+			double r_lat_2 = testargs.get_double ("r_lat_2");
+			double r_lon_1 = testargs.get_double ("r_lon_1");
+			double r_lon_2 = testargs.get_double ("r_lon_2");
+			double[] coords = testargs.get_double_tuple_array ("coords", -1, 6, 2, "p_lat", "p_lon");
+			testargs.end_test();
+
+			// Make the polygon
+
+			System.out.println ();
+			System.out.println ("***** Making union *****");
+
+			SphRegion c_region = SphRegion.makeCircle (new SphLatLon (c_lat, c_lon), c_radius_km);
+
+			SphRegion r_region = SphRegion.makeMercRectangle (r_lat_1, r_lat_2, r_lon_1, r_lon_2);
+
+			List<SphLatLon> vertex_list = new ArrayList<SphLatLon>();
+			for (int i = 0; i < coords.length; i += 2) {
+				vertex_list.add (new SphLatLon (coords[i], coords[i+1]));
+			}
+			SphRegion p_region = SphRegion.makeMercPolygon (vertex_list);
+
+			List<SphRegion> include_list = new ArrayList<SphRegion>();
+			include_list.add (c_region);
+			include_list.add (r_region);
+
+			List<SphRegion> exclude_list = new ArrayList<SphRegion>();
+			exclude_list.add (p_region);
+
+			SphRegion region = SphRegion.makeUnion (include_list, exclude_list);
 
 			// Run tests
 
