@@ -2,6 +2,8 @@ package org.opensha.oaf.aafs;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -1548,6 +1550,187 @@ public class ActionConfigFile implements Marshalable {
 		}
 
 		return "SHADOW_METHOD_INVALID(" + shadow_method_opt + ")";
+	}
+
+
+
+
+	//----- Event picker regions -----
+	//
+	// Eventually there will be a list of PickerSphRegion objects in the file.
+	// For now, we construct the picker list from the list of intake regions.
+
+	// Picker region descrptions.
+
+	private static final String PKDISC_WORLD = "World";
+	private static final String PKDISC_CALIFORNIA = "California";
+	private static final String PKDISC_CONUS = "CONUS";
+	private static final String PKDISC_CONUS_X_CA = "CONUS outside California";
+	private static final String PKDISC_ALASKA = "Alaska";
+	private static final String PKDISC_PUERTO_RICO = "Puerto Rico";
+	private static final String PKDISC_PACIFIC_TERR = "Guam, Marianas, Am.Samoa";
+	private static final String PKDISC_US = "US";
+	private static final String PKDISC_X_US = "Outside US";
+
+	// Known intake regions for constructing the picker regions
+
+	private static final String PKINT_CAL_NCSS = "CAL-NCSS";
+	private static final String PKINT_CAL_SCSN = "CAL-SCSN";
+	private static final String PKINT_ALASKA = "ALASKA";
+	private static final String PKINT_HAWAII = "HAWAII";
+	private static final String PKINT_PUERTO_RICO = "PUERTO-RICO";
+	private static final String PKINT_GUAM_MARIANAS = "GUAM-MARIANAS";
+	private static final String PKINT_AMERICAN_SAMOA = "AMERICAN-SAMOA";
+	private static final String PKINT_USA = "USA";
+	private static final String PKINT_WORLD = "WORLD";
+
+	// Make a picker region.
+	// Parameters:
+	//  region_map = Map from inteke region names to regions.
+	//  descrption = Description for the picker region.
+	//  pkints = Intake regions to include in the picker region.
+	//           A "-" in the list indicates that the following regions are excluded.
+	// Returns a picker region, or null if some intake region was not found.
+
+	private PickerSphRegion make_picker_region (Map<String, SphRegion> region_map, String description, String... pkints) {
+
+		// Regions to include and exclude
+
+		List<SphRegion> include_list = new ArrayList<SphRegion>();
+		List<SphRegion> exclude_list = new ArrayList<SphRegion>();
+
+		// Start including
+
+		boolean f_including = true;
+
+		// Loop over desired intake regions
+
+		for (String pkint : pkints) {
+			if (pkint.equals ("-")) {
+				f_including = false;
+			} else {
+				SphRegion r = region_map.get (pkint);
+				if (r == null) {
+					//System.out.println ("Did not find intake region: " + pkint + ", for picker region: " + description);
+					return null;
+				}
+				if (f_including) {
+					include_list.add (r);
+				} else {
+					exclude_list.add (r);
+				}
+			}
+		}
+
+		// Get the region to use
+
+		SphRegion region;
+		if (include_list.size() == 1 && exclude_list.size() == 0) {
+			region = include_list.get(0);
+		} else {
+			region = SphRegion.makeUnion (include_list, exclude_list);
+		}
+
+		return new PickerSphRegion (description, region);
+	}
+
+	// Make the region map for the picker list.
+
+	private Map<String, SphRegion> make_region_map () {
+		Map<String, SphRegion> region_map = new HashMap<String, SphRegion>();
+
+		// Loop over intake regions and add each to the map
+
+		for (IntakeSphRegion intake_region : pdl_intake_regions) {
+			region_map.put (intake_region.get_name(), intake_region.get_region());
+		}
+
+		// If there is no world region, add it
+
+		if (region_map.get (PKINT_WORLD) == null) {
+			region_map.put (PKINT_WORLD, SphRegion.makeWorld());
+		}
+
+		// If there is no Hawaii region, add it
+
+		if (region_map.get (PKINT_HAWAII) == null) {
+			List<SphLatLon> vertex_list = new ArrayList<SphLatLon>();
+			vertex_list.add (new SphLatLon (15.4500, -153.9000));
+			vertex_list.add (new SphLatLon (22.0200, -151.5200));
+			vertex_list.add (new SphLatLon (31.8800, -179.9999));
+			vertex_list.add (new SphLatLon (24.9300, -179.9999));
+			region_map.put (PKINT_HAWAII, SphRegion.makeMercPolygon (vertex_list));
+		}
+
+		return region_map;
+	}
+
+	// Make the picker region list from the intake region list.
+
+	private ArrayList<PickerSphRegion> make_picker_list_from_intake () {
+		ArrayList<PickerSphRegion> picker_list = new ArrayList<PickerSphRegion>();
+
+		// Make the map
+
+		Map<String, SphRegion> region_map = make_region_map();
+
+		// Make the picker regions
+
+		PickerSphRegion preg;
+
+		preg = make_picker_region (region_map, PKDISC_WORLD, PKINT_WORLD);
+		if (preg != null) {
+			picker_list.add (preg);
+		}
+
+		preg = make_picker_region (region_map, PKDISC_CALIFORNIA, PKINT_CAL_NCSS, PKINT_CAL_SCSN);
+		if (preg != null) {
+			picker_list.add (preg);
+		}
+
+		preg = make_picker_region (region_map, PKDISC_CONUS, PKINT_USA);
+		if (preg != null) {
+			picker_list.add (preg);
+		}
+
+		preg = make_picker_region (region_map, PKDISC_CONUS_X_CA, PKINT_USA, "-", PKINT_CAL_NCSS, PKINT_CAL_SCSN);
+		if (preg != null) {
+			picker_list.add (preg);
+		}
+
+		preg = make_picker_region (region_map, PKDISC_ALASKA, PKINT_ALASKA);
+		if (preg != null) {
+			picker_list.add (preg);
+		}
+
+		preg = make_picker_region (region_map, PKDISC_PUERTO_RICO, PKINT_PUERTO_RICO);
+		if (preg != null) {
+			picker_list.add (preg);
+		}
+
+		preg = make_picker_region (region_map, PKDISC_PACIFIC_TERR, PKINT_GUAM_MARIANAS, PKINT_AMERICAN_SAMOA);
+		if (preg != null) {
+			picker_list.add (preg);
+		}
+
+		preg = make_picker_region (region_map, PKDISC_US, PKINT_CAL_NCSS, PKINT_CAL_SCSN, PKINT_ALASKA, PKINT_HAWAII, PKINT_PUERTO_RICO, PKINT_GUAM_MARIANAS, PKINT_AMERICAN_SAMOA, PKINT_USA);
+		if (preg != null) {
+			picker_list.add (preg);
+		}
+
+		preg = make_picker_region (region_map, PKDISC_X_US, PKINT_WORLD, "-", PKINT_CAL_NCSS, PKINT_CAL_SCSN, PKINT_ALASKA, PKINT_HAWAII, PKINT_PUERTO_RICO, PKINT_GUAM_MARIANAS, PKINT_AMERICAN_SAMOA, PKINT_USA);
+		if (preg != null) {
+			picker_list.add (preg);
+		}
+
+		return picker_list;
+	}
+
+	// Get the list of event picker regions.
+	// It is guaranteed that the list is non-empty and the first entry is the world.
+
+	public List<PickerSphRegion> get_picker_regions () {
+		return make_picker_list_from_intake();
 	}
 
 

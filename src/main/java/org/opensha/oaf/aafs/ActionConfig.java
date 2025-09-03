@@ -682,6 +682,14 @@ public final class ActionConfig {
 		return param_set.get_pdl_intake_region_min_intake_mag ();
 	}
 
+	// Get the list of event picker regions.
+	// It is guaranteed that the list is non-empty and the first entry is the world.
+	// The caller should not modify this list.
+
+	public List<PickerSphRegion> get_picker_regions () {
+		return param_set.get_picker_regions();
+	}
+
 
 	//----- Derived convenience functions -----
 
@@ -1095,6 +1103,46 @@ public final class ActionConfig {
 
 			return;
 		}
+
+
+
+
+		// Subcommand : Test #2
+		// Command format:
+		//  test2
+		// Create an object, and display the event picker list.
+
+		if (args[0].equalsIgnoreCase ("test2")) {
+
+			// Zero additional argument
+
+			if (args.length != 1) {
+				System.err.println ("ActionConfig : Invalid 'test2' subcommand");
+				return;
+			}
+
+			// Create a configuration object
+
+			ActionConfig action_config = new ActionConfig();
+
+			// Display the event picker list
+
+			System.out.println ("");
+
+			List<PickerSphRegion> picker_regions = action_config.get_picker_regions();
+			System.out.println ("Number of event picker regions = " + picker_regions.size());
+
+			System.out.println ("");
+
+			for (PickerSphRegion r : picker_regions) {
+				System.out.println (r.extended_string());
+			}
+
+			return;
+		}
+
+
+
 
 		// Unrecognized subcommand.
 
