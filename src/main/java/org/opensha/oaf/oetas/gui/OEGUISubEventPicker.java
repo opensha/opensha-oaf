@@ -341,7 +341,8 @@ public class OEGUISubEventPicker extends OEGUIListener {
 
 			if (!( event_id == null || event_id.isEmpty() || description == null || description.isEmpty() )) {
 				String s1 = description.replaceAll ("[\\x00-\\x1F\\x7F\\xA0]", " ");	// map ASCII control chars and nbsp to space
-				String s2 = s1.replaceAll ("[^\\x00-\\xFF]", "?");			// map non-ASCII, non-Latin-1 chars to question mark
+				//String s2 = s1.replaceAll ("[^\\x00-\\xFF]", "?");			// map non-ASCII, non-Latin-1 chars to question mark
+				String s2 = s1;
 				String s_time = time_to_string_pick_fmt.format (new Date (time));
 				label = s_time + " M " + SimpleUtils.double_to_string ("%.1f", mag) + " - " + s2;
 				rupture = rup;

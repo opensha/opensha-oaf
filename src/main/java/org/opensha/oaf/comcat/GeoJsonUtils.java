@@ -1569,6 +1569,112 @@ public class GeoJsonUtils {
 
 
 
+		// Subcommand : Test #6
+		// Command format:
+		//  test6  event_id
+		// Fetch information for an event, and display it.
+		// Then display the description in Unicode, from the EI map and from the GeoJSON.
+
+		if (args[0].equalsIgnoreCase ("test6")) {
+
+			// One additional argument
+
+			if (args.length != 2) {
+				System.err.println ("GeoJsonUtils : Invalid 'test6' subcommand");
+				return;
+			}
+
+			String event_id = args[1];
+
+			try {
+
+				// Say hello
+
+				System.out.println ("Fetching event: " + event_id);
+
+				// Create the accessor
+
+				ComcatOAFAccessor accessor = new ComcatOAFAccessor();
+
+				// Get the rupture
+
+				ObsEqkRupture rup = accessor.fetchEvent (event_id, false, true);
+
+				// Display its information
+
+				if (rup == null) {
+					System.out.println ("Null return from fetchEvent");
+					System.out.println ("http_status = " + accessor.get_http_status_code());
+					System.out.println ("URL = " + accessor.get_last_url_as_string());
+					return;
+				}
+
+				System.out.println (ComcatOAFAccessor.rupToString (rup));
+
+				String rup_event_id = rup.getEventId();
+
+				System.out.println ("http_status = " + accessor.get_http_status_code());
+
+				Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+				for (String key : eimap.keySet()) {
+					System.out.println ("EI Map: " + key + " = " + eimap.get(key));
+				}
+
+				List<String> idlist = ComcatOAFAccessor.idsToList (eimap.get (ComcatOAFAccessor.PARAM_NAME_IDLIST), rup_event_id);
+
+				for (String id : idlist) {
+					System.out.println ("ID List: " + id);
+				}
+
+				System.out.println ("URL = " + accessor.get_last_url_as_string());
+
+				System.out.println ();
+				JSONObject event = accessor.get_last_geojson();
+
+				// Display description from the EI map
+
+				System.out.println ();
+				System.out.println ("********** Description from EI map **********");
+				System.out.println ();
+
+				String description = eimap.get (ComcatOAFAccessor.PARAM_NAME_DESCRIPTION);
+
+				for (int j = 0; j < description.length(); ++j) {
+					char ch = description.charAt(j);
+					int ich = (int)ch;
+					System.out.println ("U+" + String.format("%04X", ich) + "  " + description.substring(j, j+1));
+				}
+
+				// Display description from the GeoJSON
+
+				System.out.println ();
+				System.out.println ("********** Description from GeoJSON **********");
+				System.out.println ();
+
+				description = getPlace (event);
+
+				for (int j = 0; j < description.length(); ++j) {
+					char ch = description.charAt(j);
+					int ich = (int)ch;
+					System.out.println ("U+" + String.format("%04X", ich) + "  " + description.substring(j, j+1));
+				}
+
+				// Done
+
+				System.out.println ();
+				System.out.println ("Done");
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
 		// Unrecognized subcommand.
 
 		System.err.println ("GeoJsonUtils : Unrecognized subcommand : " + args[0]);
