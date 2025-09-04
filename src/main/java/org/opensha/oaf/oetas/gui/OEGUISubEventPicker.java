@@ -160,6 +160,7 @@ import org.opensha.oaf.aafs.AnalystOptions;
 import org.opensha.oaf.aafs.EventSequenceParameters;
 import org.opensha.oaf.aafs.PDLSupport;
 import org.opensha.oaf.aafs.ForecastMainshock;
+import org.opensha.oaf.aafs.PickerSphRegion;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
@@ -216,6 +217,24 @@ public class OEGUISubEventPicker extends OEGUIListener {
 		evPickMinMagParam.setInfo ("Select the minimum magnitude to use when searching for events");
 		register_param (evPickMinMagParam, "evPickMinMagParam", PARMGRP_EVPICK_VALUE);
 		return evPickMinMagParam;
+	}
+
+
+
+
+	// Event picker region option; drop-down list.
+
+	private List<PickerSphRegion> evPickRegionList;
+
+	private GUIDropdownParameter evPickRegionParam;
+
+	private GUIDropdownParameter init_evPickRegionParam () throws GUIEDTException {
+		evPickRegionList = (new ActionConfig()).get_picker_regions();
+		evPickRegionParam = new GUIDropdownParameter(
+				"Search Region", evPickRegionList, 0, null);
+		evPickRegionParam.setInfo("Select the region to search for events");
+		register_param (evPickRegionParam, "evPickRegionParam", PARMGRP_EVPICK_VALUE);
+		return evPickRegionParam;
 	}
 
 
@@ -477,6 +496,8 @@ public class OEGUISubEventPicker extends OEGUIListener {
 
 		init_evPickMinMagParam();
 
+		init_evPickRegionParam();
+
 		init_evPickPopulateButton();
 
 		if (f_imp_modal) {
@@ -511,10 +532,11 @@ public class OEGUISubEventPicker extends OEGUIListener {
 			eventPickerList.addParameter(new GUISeparatorParameter("Separator1", gui_top.get_separator_color()));
 
 			eventPickerList.addParameter(evPickMinMagParam);
+			eventPickerList.addParameter(evPickRegionParam);
 			eventPickerList.addParameter(evPickPopulateButton);
 
 			eventPickerEditParam.setListTitleText ("Search for Earthquake");
-			eventPickerEditParam.setDialogDimensions (gui_top.get_dialog_dims_wide(3, f_button_row, 1, 2.2));
+			eventPickerEditParam.setDialogDimensions (gui_top.get_dialog_dims_wide(4, f_button_row, 1, 2.2));
 
 		} else {
 
@@ -525,12 +547,13 @@ public class OEGUISubEventPicker extends OEGUIListener {
 			eventPickerList.addParameter(new GUISeparatorParameter("Separator1", gui_top.get_separator_color()));
 
 			eventPickerList.addParameter(evPickMinMagParam);
+			eventPickerList.addParameter(evPickRegionParam);
 			eventPickerList.addParameter(evPickPopulateButton);
 
 			eventPickerList.addParameter(evPickTransferButton);
 
 			eventPickerEditParam.setListTitleText ("Search for Earthquake");
-			eventPickerEditParam.setDialogDimensions (gui_top.get_dialog_dims_wide(4, f_button_row, 1, 2.2));
+			eventPickerEditParam.setDialogDimensions (gui_top.get_dialog_dims_wide(5, f_button_row, 1, 2.2));
 
 		}
 		
@@ -579,6 +602,7 @@ public class OEGUISubEventPicker extends OEGUIListener {
 	private void adjust_enable () throws GUIEDTException {
 
 		enableParam(evPickMinMagParam, f_event_picker_enable);
+		enableParam(evPickRegionParam, f_event_picker_enable);
 		enableParam(evPickPopulateButton, f_event_picker_enable);
 
 		if (!( f_event_picker_enable )) {
@@ -613,6 +637,10 @@ public class OEGUISubEventPicker extends OEGUIListener {
 		// Event picker minimum magnitude option.
 
 		public EvPickMinMagOption x_evPickMinMagParam;		// parameter value, checked for validity
+
+		// Selected pick region, or null if none selected.
+
+		public PickerSphRegion x_evPickRegion;
 
 		// If non-null, this is a new list for the dropdown.
 
@@ -681,6 +709,15 @@ public class OEGUISubEventPicker extends OEGUIListener {
 			// Event picker minimum magnitude option
 
 			x_evPickMinMagParam = validParam(evPickMinMagParam);
+
+			// Selected pick region, or null if none selected.
+
+			int rix = validParam(evPickRegionParam);
+			if (rix >= 0) {
+				x_evPickRegion = evPickRegionList.get (rix);
+			} else {
+				x_evPickRegion = null;
+			}
 
 			// List for the dropdown, we don't pass it during load
 
@@ -881,6 +918,9 @@ public class OEGUISubEventPicker extends OEGUIListener {
 						long search_duration = xfer_event_picker_impl.x_evPickMinMagParam.get_search_duration();
 						boolean f_require_oaf = xfer_event_picker_impl.x_evPickMinMagParam.get_f_require_oaf();
 						SphRegion search_region = null;
+						if (xfer_event_picker_impl.x_evPickRegion != null) {
+							search_region = xfer_event_picker_impl.x_evPickRegion.get_region();
+						}
 						ArrayList<AvailableEarthquake> eventList = make_pick_list (description, minMag, search_duration, f_require_oaf, search_region);
 						xfer_event_picker_impl.modify_evPickList (eventList);
 					} catch (Exception e) {
