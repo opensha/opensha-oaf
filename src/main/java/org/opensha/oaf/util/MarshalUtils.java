@@ -14,6 +14,15 @@ import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+
 import org.opensha.oaf.comcat.GeoJsonUtils;
 
 
@@ -535,6 +544,81 @@ public class MarshalUtils {
 		}
 
 		return;
+	}
+
+
+
+
+	//----- Reader/Writer creation -----
+
+
+
+
+	// Create a reader for a line of text.
+	// Parameters:
+	//  line = Line of text, with words separated by whitespace and using JSON escape sequences.
+	//  f_store_name = True if field names are stored in the line.
+	// Returns a subclass of MarshalReader.
+
+	public static MarshalImpInputReader reader_for_line (String line, boolean f_store_names) {
+		return new MarshalImpInputReader (
+			new MarshalInputLine (line),
+			f_store_names
+		);
+	}
+
+
+
+
+	// Create a writer for a line of text.
+	// Parameters:
+	//  sb = Destination for output, with words separated by whitespace and using JSON escape sequences.
+	//  f_unicode = True if output can contain Unicode characters U+0080 to U+FFFF.
+	//  f_quote_all = True to wrap all strings in quotes, false to use quotes only when necessary.
+	//  f_store_name = True if field names are stored in the line.
+	// Returns a subclass of MarshalWriter.
+
+	public static MarshalImpOutputWriter writer_for_line (StringBuilder sb, boolean f_unicode, boolean f_quote_all, boolean f_store_names) {
+		return new MarshalImpOutputWriter (
+			new MarshalOutputLine (sb, f_unicode, f_quote_all),
+			f_store_names
+		);
+	}
+
+
+
+
+	// Create a reader for a binary file.
+	// Parameters:
+	//  data_in = Binary data input.
+	//  f_store_name = True if field names are stored in the file.
+	// Returns a subclass of MarshalReader.
+	// Note: A data input (subclass of DataInput) can be created from a filename like this:
+	//  new DataInputStream (new BufferedInputStream (new FileInputStream (filename)))
+
+	public static MarshalImpInputReader reader_for_binary_file (DataInput data_in, boolean f_store_names) {
+		return new MarshalImpInputReader (
+			new MarshalInputBinaryStream (data_in),
+			f_store_names
+		);
+	}
+
+
+
+
+	// Create a writer for a binary file.
+	// Parameters:
+	//  data_out = Binary data output.
+	//  f_store_name = True if field names are stored in the file.
+	// Returns a subclass of MarshalWriter.
+	// Note: A data output (subclass of DataOutput) can be created from a filename like this:
+	//  new DataOutputStream (new BufferedOutputStream (new FileOutputStream (filename)))
+
+	public static MarshalImpOutputWriter writer_for_binary_file (DataOutput data_out, boolean f_store_names) {
+		return new MarshalImpOutputWriter (
+			new MarshalOutputBinaryStream (data_out),
+			f_store_names
+		);
 	}
 
 

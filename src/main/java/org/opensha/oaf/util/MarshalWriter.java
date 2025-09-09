@@ -1,6 +1,7 @@
 package org.opensha.oaf.util;
 
 import java.util.Collection;
+import java.io.Closeable;
 
 /**
  * Interface for marshaling parameters/data to the OAF database.
@@ -388,6 +389,33 @@ public interface MarshalWriter {
 		}
 		else {
 			throw new MarshalException ("marshalJsonScalar called with an invalid type");
+		}
+		return;
+	}
+
+
+	//----- Control functions -----
+
+	// Check write completion status.
+	// Throw exception if the current top-level object is incomplete.
+	// Returns the number of top level object written (which can be 0L if
+	// nothing has been written), or -1L if the number is unknown.
+	// Note that some writers are limited to a single top-level object.
+	// This function should be called when finished using the writer.
+
+	public long write_completion_check ();
+
+	// Attempt to close the data destination, throw exception if error.
+	// Performs no operation if the reader cannot do this.
+
+	public default void close_writer () {
+		try {
+			if (this instanceof Closeable) {
+				((Closeable)this).close();
+			}
+		}
+		catch (Exception e) {
+			throw new MarshalException ("Error attempting to close writer", e);
 		}
 		return;
 	}

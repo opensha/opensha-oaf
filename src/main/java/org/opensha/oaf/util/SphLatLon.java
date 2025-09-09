@@ -23,7 +23,7 @@ import org.opensha.oaf.util.MarshalException;
  *
  * This is an immutable object.
  */
-public class SphLatLon implements Marshalable, MarshalableAsLine {
+public class SphLatLon implements Marshalable {
 
 	//----- Contents -----
 
@@ -806,41 +806,6 @@ public class SphLatLon implements Marshalable, MarshalableAsLine {
 		return obj_list;
 	}
 
-	// Marshal object to a single unadorned line of text.
-
-	@Override
-	public String marshal_to_line () {
-		StringBuilder result = new StringBuilder();
-		result.append (Double.toString (lat));
-		result.append (" ");
-		result.append (Double.toString (lon));
-		return result.toString();
-	}
-
-	// Unmarshal object from a single unadorned line of text.
-
-	@Override
-	public SphLatLon unmarshal_from_line (String line) {
-		String s = line.trim();
-		String[] w = s.split ("[ \\t]+");
-		if (w.length != 2) {
-			throw new MarshalException ("SphLatLon.unmarshal_from_line : Invalid line: " + s);
-		}
-		double the_lat;
-		double the_lon;
-		try {
-			the_lat = Double.parseDouble (w[0]);
-			the_lon = Double.parseDouble (w[1]);
-		}
-		catch (Exception e) {
-			throw new MarshalException ("SphLatLon.unmarshal_from_line : Invalid line: " + s, e);
-		}
-		if (!( set (the_lat, the_lon) )) {
-			throw new MarshalException ("SphLatLon.unmarshal_from_line: Coordinates out-of-range: lat = " + the_lat + ", lon = " + the_lon);
-		}
-		return this;
-	}
-
 
 
 
@@ -959,66 +924,6 @@ public class SphLatLon implements Marshalable, MarshalableAsLine {
 
 				System.out.println();
 				System.out.println ("TWOPI = " + TWOPI);
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			return;
-		}
-
-
-
-
-		// Subcommand : Test #3
-		// Command format:
-		//  test3  lat  lon
-		// Test marshaling to/from a line..
-
-		if (args[0].equalsIgnoreCase ("test3")) {
-
-			// 4 additional arguments
-
-			if (!( args.length == 3 )) {
-				System.err.println ("SphLatLon : Invalid 'test3' subcommand");
-				return;
-			}
-
-			try {
-
-				String s_lat = args[1];
-				String s_lon = args[2];
-
-				// Say hello
-
-				System.out.println ("Testing marshaling to/from a line");
-				System.out.println ("s_lat = " + s_lat);
-				System.out.println ("s_lon = " + s_lon);
-
-				// Unmarshal
-
-				System.out.println ();
-				System.out.println ("Unmarshal from line");
-				System.out.println ();
-
-				String line1 = s_lat + " " + s_lon;
-				SphLatLon p = (new SphLatLon ()).unmarshal_from_line (line1);
-
-				System.out.println (p.toString());
-
-				// Marshal
-
-				System.out.println ();
-				System.out.println ("Marshal to line");
-				System.out.println ();
-
-				String line2 = p.marshal_to_line();
-				System.out.println (line2);
-
-				// Done
-
-				System.out.println ();
-				System.out.println ("Done");
 
 			} catch (Exception e) {
 				e.printStackTrace();

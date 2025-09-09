@@ -30,7 +30,7 @@ import org.opensha.oaf.util.TestArgs;
  * with calculations done using spherical geometry.  Subclasses define specific
  * types of region (circle, rectangle, polygon, etc.).
  */
-public abstract class SphRegion implements ComcatRegion, Marshalable, MarshalableAsLine {
+public abstract class SphRegion implements ComcatRegion, Marshalable {
 
 	//----- Querying -----
 
@@ -150,7 +150,7 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 	// The last point should not coincide with the first point.
 	//
 	// Note: This field is typically not marshaled because it can be re-built
-	// when needed. The subclass constructor and do_unmarshal and unmarshal_from_line methods must either
+	// when needed. The subclass constructor and do_unmarshal and do_umarshal_from_line methods must either
 	// set plot_border to null, or else build the list.  If they build the list,
 	// than make_plot_border can just throw an exception.  This class's
 	// constructor and do_unmarshal method set plot_border to null.
@@ -1325,23 +1325,22 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 		return x;
 	}
 
-	// Marshal object to a single unadorned line of text.
+	// Marshal object for a single unadorned line of text, internal.
 
-	@Override
-	public abstract String marshal_to_line ();
+	protected abstract void do_marshal_to_line (MarshalWriter writer);
 
-	// Unmarshal object from a single unadorned line of text.
+	// Unmarshal object for a single unadorned line of text, internal.
 
-	@Override
-	public abstract SphRegion unmarshal_from_line (String line);
+	protected abstract void do_umarshal_from_line (MarshalReader reader);
 
 	// Marshal object to a single unadorned line of text, polymorphic.
 
-	public static String marshal_to_line_poly (SphRegion obj) {
-		StringBuilder result = new StringBuilder();
+	public static void marshal_to_line_poly (MarshalWriter writer, String name, SphRegion obj) {
+
+		writer.marshalMapBegin (name);
 
 		if (obj == null) {
-			result.append (MARSHAL_NULL_S);
+			writer.marshalString ("type", MARSHAL_NULL_S);
 		} else {
 			int type = obj.get_marshal_type();
 			switch (type) {
@@ -1350,101 +1349,137 @@ public abstract class SphRegion implements ComcatRegion, Marshalable, Marshalabl
 				throw new MarshalException ("SphRegion.marshal_to_line_poly: Unknown class type code: type = " + type);
 
 			case MARSHAL_CIRCLE:
-				result.append (MARSHAL_CIRCLE_S);
+				writer.marshalString ("type", MARSHAL_CIRCLE_S);
 				break;
 
 			case MARSHAL_MERC_POLYGON:
-				result.append (MARSHAL_MERC_POLYGON_S);
+				writer.marshalString ("type", MARSHAL_MERC_POLYGON_S);
 				break;
 
 			case MARSHAL_MERC_RECTANGLE:
-				result.append (MARSHAL_MERC_RECTANGLE_S);
+				writer.marshalString ("type", MARSHAL_MERC_RECTANGLE_S);
 				break;
 
 			case MARSHAL_WORLD:
-				result.append (MARSHAL_WORLD_S);
+				writer.marshalString ("type", MARSHAL_WORLD_S);
 				break;
 
 			case MARSHAL_UNION:
-				result.append (MARSHAL_UNION_S);
+				writer.marshalString ("type", MARSHAL_UNION_S);
 				break;
 			}
 
-			String s = obj.marshal_to_line();
-			if (s.length() > 0) {
-				result.append (" ");
-				result.append (s);
-			}
+			obj.do_marshal_to_line (writer);
 		}
 
-		return result.toString();
+		writer.marshalMapEnd ();
+
+		return;
+	}
+
+	// Unmarshal object from a single unadorned line of text, polymorphic.
+
+	public static SphRegion unmarshal_from_line_poly (MarshalReader reader, String name) {
+		SphRegion result;
+
+		reader.unmarshalMapBegin (name);
+
+		String type_s = reader.unmarshalString ("type");
+
+		switch (type_s) {
+
+		default:
+			throw new MarshalException ("SphRegion.unmarshal_from_line_poly: Unknown region type: " + type_s);
+
+		case MARSHAL_NULL_S:
+			result = null;
+			break;
+
+		case MARSHAL_CIRCLE_S:
+			result = new SphRegionCircle();
+			result.do_umarshal_from_line (reader);
+			break;
+
+		case MARSHAL_MERC_POLYGON_S:
+			result = new SphRegionMercPolygon();
+			result.do_umarshal_from_line (reader);
+			break;
+
+		case MARSHAL_MERC_RECTANGLE_S:
+			result = new SphRegionMercRectangle();
+			result.do_umarshal_from_line (reader);
+			break;
+
+		case MARSHAL_WORLD_S:
+			result = new SphRegionWorld();
+			result.do_umarshal_from_line (reader);
+			break;
+
+		case MARSHAL_UNION_S:
+			result = new SphRegionUnion();
+			result.do_umarshal_from_line (reader);
+			break;
+		}
+
+		reader.unmarshalMapEnd ();
+
+		return result;
+	}
+
+	// Marshal object to a single unadorned line of text, polymorphic.
+
+	public static String marshal_to_line_poly (SphRegion obj) {
+
+		StringBuilder sb = new StringBuilder();
+		boolean f_unicode = false;
+		boolean f_quote_all = false;
+		boolean f_store_names = false;
+		MarshalWriter writer = MarshalUtils.writer_for_line (sb, f_unicode, f_quote_all, f_store_names);
+
+		marshal_to_line_poly (writer, null, obj);
+
+		writer.write_completion_check();
+
+		return sb.toString();
 	}
 
 	// Unmarshal object from a single unadorned line of text, polymorphic.
 
 	public static SphRegion unmarshal_from_line_poly (String line) {
-		SphRegion result;
 
-		String s = line.trim();
-		String[] w = s.split ("[ \\t]+", 2);
-		if (w.length == 0) {
-			throw new MarshalException ("SphRegion.unmarshal_from_line_poly: Invalid line: " + s);
-		}
+		boolean f_store_names = false;
+		MarshalReader reader = MarshalUtils.reader_for_line (line, f_store_names);
 
-		switch (w[0]) {
+		SphRegion result = unmarshal_from_line_poly (reader, null);
 
-		default:
-			throw new MarshalException ("SphRegion.unmarshal_from_line_poly: Unknown region type in line: " + s);
-
-		case MARSHAL_NULL_S:
-			if (w.length != 1) {
-				throw new MarshalException ("SphRegion.unmarshal_from_line_poly: Invalid line: " + s);
-			}
-			result = null;
-			break;
-
-		case MARSHAL_CIRCLE_S:
-			if (w.length != 2) {
-				throw new MarshalException ("SphRegion.unmarshal_from_line_poly: Invalid line: " + s);
-			}
-			result = new SphRegionCircle();
-			result.unmarshal_from_line (w[1]);
-			break;
-
-		case MARSHAL_MERC_POLYGON_S:
-			if (w.length != 2) {
-				throw new MarshalException ("SphRegion.unmarshal_from_line_poly: Invalid line: " + s);
-			}
-			result = new SphRegionMercPolygon();
-			result.unmarshal_from_line (w[1]);
-			break;
-
-		case MARSHAL_MERC_RECTANGLE_S:
-			if (w.length != 2) {
-				throw new MarshalException ("SphRegion.unmarshal_from_line_poly: Invalid line: " + s);
-			}
-			result = new SphRegionMercRectangle();
-			result.unmarshal_from_line (w[1]);
-			break;
-
-		case MARSHAL_WORLD_S:
-			if (w.length != 1) {
-				throw new MarshalException ("SphRegion.unmarshal_from_line_poly: Invalid line: " + s);
-			}
-			result = new SphRegionWorld();
-			result.unmarshal_from_line ("");
-			break;
-
-		case MARSHAL_UNION_S:
-			if (w.length != 2) {
-				throw new MarshalException ("SphRegion.unmarshal_from_line_poly: Invalid line: " + s);
-			}
-			result = new SphRegionUnion();
-			result.unmarshal_from_line (w[1]);
-			break;
-		}
+		boolean f_require_eof = true;
+		reader.read_completion_check (f_require_eof);
 
 		return result;
+	}
+
+	// Marshal array of objects to a single unadorned line of text, polymorphic..
+
+	public static void marshal_array_to_line_poly (MarshalWriter writer, String name, SphRegion[] x) {
+		int n = x.length;
+		writer.marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshal_to_line_poly (writer, null, x[i]);
+		}
+		writer.marshalArrayEnd ();
+		return;
+	}
+
+	// Unmarshal array of objects from a single unadorned line of text, polymorphic.
+
+	public static SphRegion[] unmarshal_array_from_line_poly (MarshalReader reader, String name) {
+		int n = reader.unmarshalArrayBegin (name);
+		SphRegion[] x = new SphRegion[n];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshal_from_line_poly (reader, null);
+		}
+		reader.unmarshalArrayEnd ();
+		return x;
 	}
 
 

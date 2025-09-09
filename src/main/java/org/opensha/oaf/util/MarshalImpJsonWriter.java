@@ -493,6 +493,18 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 		return root_context_write.get_root_status();
 	}
 
+	// Check write completion status.
+	// Throw exception if the current top-level object is incomplete.
+	// Returns the number of top level object written (which can be 0L if
+	// nothing has been written), or -1L if the number is unknown.
+	// Note that some writers are limited to a single top-level object.
+	// This function should be called when finished using the writer.
+
+	@Override
+	public long write_completion_check () {
+		return (check_write_complete() ? 1L : 0L);
+	}
+
 	/**
 	 * Get the JSON container.
 	 * It can be either JSONOrderedObject or JSONArray, or null.

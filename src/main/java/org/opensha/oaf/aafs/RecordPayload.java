@@ -111,6 +111,17 @@ public class RecordPayload implements MarshalWriter {
 		throw new UnsupportedOperationException ("RecordPayload does not support writing");
 	}
 
+	// Check write completion status.
+	// Throw exception if the current top-level object is incomplete.
+	// Returns the number of top level object written (which can be 0L if
+	// nothing has been written), or -1L if the number is unknown.
+	// Note that some writers are limited to a single top-level object.
+	// This function should be called when finished using the writer.
+
+	@Override
+	public long write_completion_check () {
+		return 0L;
+	}
 
 
 }

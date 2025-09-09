@@ -565,46 +565,36 @@ public class SphRegionMercPolygon extends SphRegion {
 		return result;
 	}
 
-	// Marshal object to a single unadorned line of text.
+	// Marshal object for a single unadorned line of text, internal.
 
 	@Override
-	public String marshal_to_line () {
-		StringBuilder result = new StringBuilder();
-		for (int i = 0; i < vertex_list.size(); ++i) {
-			SphLatLon p = vertex_list.get (i);
-			if (i != 0) {
-				result.append (" ");
-			}
-			result.append (Double.toString (p.get_lat()));
-			result.append (" ");
-			result.append (Double.toString (p.get_lon()));
-		}
-		return result.toString();
+	protected void do_marshal_to_line (MarshalWriter writer) {
+
+		// Save vertices
+
+		SphLatLon.marshal_list (writer, "vertex_list", vertex_list);
+		return;
 	}
 
-	// Unmarshal object from a single unadorned line of text.
+	// Unmarshal object for a single unadorned line of text, internal.
 
 	@Override
-	public SphRegionMercPolygon unmarshal_from_line (String line) {
-		String s = line.trim();
-		String[] w = s.split ("[ \\t]+");
-		if (!( w.length >= 6 && w.length % 2 == 0 )) {
-			throw new MarshalException ("SphRegionMercPolygon.unmarshal_from_line : Invalid line: " + s);
-		}
+	protected void do_umarshal_from_line (MarshalReader reader) {
+
+		// Get vertex list
+
+		ArrayList<SphLatLon> the_vertex_list = SphLatLon.unmarshal_list (reader, "vertex_list");
+
+		// Set up region
 
 		try {
-			List<SphLatLon> the_vertex_list = new ArrayList<SphLatLon>();
-			for (int i = 0; i < w.length; i += 2) {
-				double the_lat = Double.parseDouble (w[i]);
-				double the_lon = Double.parseDouble (w[i+1]);
-				the_vertex_list.add (new SphLatLon (the_lat, the_lon));
-			}
 			setup (the_vertex_list);
 		}
 		catch (Exception e) {
-			throw new MarshalException ("SphRegionMercPolygon.unmarshal_from_line : Invalid line: " + s, e);
+			throw new MarshalException ("SphRegionMercPolygon.do_umarshal_from_line: Failed to set up region", e);
 		}
-		return this;
+
+		return;
 	}
 
 }

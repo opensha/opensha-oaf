@@ -1,6 +1,7 @@
 package org.opensha.oaf.util;
 
 import java.util.Collection;
+import java.io.Closeable;
 
 /**
  * Interface for unmarshaling parameters/data from the OAF database.
@@ -504,5 +505,33 @@ public interface MarshalReader {
 		return x;
 	}
 
+
+	//----- Control functions -----
+
+	// Check read completion status.
+	// Throw exception if the current top-level object is incomplete.
+	// Returns the number of top level object read (which can be 0L if
+	// nothing has been read), or -1L if the number is unknown.
+	// Note that some readers are limited to a single top-level object.
+	// If f_require_eof is true, throw exception if the data source is not
+	// fully consumed.  Note that not all readers can perform this check.
+	// This function should be called when finished using the reader.
+
+	public long read_completion_check (boolean f_require_eof);
+
+	// Attempt to close the data source, throw exception if error.
+	// Performs no operation if the reader cannot do this.
+
+	public default void close_reader () {
+		try {
+			if (this instanceof Closeable) {
+				((Closeable)this).close();
+			}
+		}
+		catch (Exception e) {
+			throw new MarshalException ("Error attempting to close reader", e);
+		}
+		return;
+	}
 
 }

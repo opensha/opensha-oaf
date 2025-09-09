@@ -19,29 +19,25 @@ import java.io.FileOutputStream;
 
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 
-/**
- * Class for unmarshaling parameters/data from binary data storage.
- * Author: Michael Barall 10/01/2018.
- *
- * This reader can unmarshal multiple top-level objects from the source.
- *
- * If the source is Closeable, then closing the reader also closes the source.
- */
-public class MarshalImpDataReader implements MarshalReader, Closeable {
+
+// Class for unmarshaling objects from an input stream.
+// Author: Michael Barall.
+//
+// This reader can unmarshal multiple top-level objects from the source.
+//
+// If the source is Closeable, then closing the reader also closes the source.
+
+public class MarshalImpInputReader implements MarshalReader, Closeable {
 
 	//----- Data storage -----
 
 	// The data source.
 
-	private DataInput data_in;
+	private MarshalInput data_in;
 
 	// Flag, true if field names are stored.
 
 	private boolean f_store_names;
-
-	// The charset used for encoding strings.
-
-	private Charset charset_utf8;
 
 	//----- Context management -----
 
@@ -356,7 +352,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 		int array_size;
 		try {
 			if (f_store_names && name != null) {
-				String w = data_in.readUTF();
+				String w = data_in.readName();
 				if (!( name.equals(w) ))
 				{
 					throw new MarshalException ("Unmarshal field name mismatch: expected = " + name + ", got = " + w);
@@ -364,7 +360,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 			}
 			array_size = data_in.readInt();
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataReader: I/O exception", e);
+			throw new MarshalException ("MarshalImpInputReader: I/O exception", e);
 		}
 		current_context_read = new ContextArray (name, current_context_read, array_size);
 		return array_size;
@@ -387,7 +383,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 		current_context_read.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				String w = data_in.readUTF();
+				String w = data_in.readName();
 				if (!( name.equals(w) ))
 				{
 					throw new MarshalException ("Unmarshal field name mismatch: expected = " + name + ", got = " + w);
@@ -395,7 +391,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 			}
 			return data_in.readLong();
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataReader: I/O exception", e);
+			throw new MarshalException ("MarshalImpInputReader: I/O exception", e);
 		}
 	}
 
@@ -407,7 +403,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 		current_context_read.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				String w = data_in.readUTF();
+				String w = data_in.readName();
 				if (!( name.equals(w) ))
 				{
 					throw new MarshalException ("Unmarshal field name mismatch: expected = " + name + ", got = " + w);
@@ -415,7 +411,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 			}
 			return data_in.readDouble();
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataReader: I/O exception", e);
+			throw new MarshalException ("MarshalImpInputReader: I/O exception", e);
 		}
 	}
 
@@ -427,22 +423,15 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 		current_context_read.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				String w = data_in.readUTF();
+				String w = data_in.readName();
 				if (!( name.equals(w) ))
 				{
 					throw new MarshalException ("Unmarshal field name mismatch: expected = " + name + ", got = " + w);
 				}
 			}
-			//return data_in.readUTF();		// limit of 65535 bytes
-			int n = data_in.readInt();
-			if (n < 0) {
-				throw new MarshalException ("Unmarshal string: got negative length");
-			}
-			byte[] s_bytes = new byte[n];
-			data_in.readFully (s_bytes);
-			return new String (s_bytes, charset_utf8);
+			return data_in.readString();
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataReader: I/O exception", e);
+			throw new MarshalException ("MarshalImpInputReader: I/O exception", e);
 		}
 	}
 
@@ -454,7 +443,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 		current_context_read.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				String w = data_in.readUTF();
+				String w = data_in.readName();
 				if (!( name.equals(w) ))
 				{
 					throw new MarshalException ("Unmarshal field name mismatch: expected = " + name + ", got = " + w);
@@ -462,7 +451,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 			}
 			return data_in.readInt();
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataReader: I/O exception", e);
+			throw new MarshalException ("MarshalImpInputReader: I/O exception", e);
 		}
 	}
 
@@ -498,7 +487,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 		current_context_read.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				String w = data_in.readUTF();
+				String w = data_in.readName();
 				if (!( name.equals(w) ))
 				{
 					throw new MarshalException ("Unmarshal field name mismatch: expected = " + name + ", got = " + w);
@@ -506,7 +495,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 			}
 			return data_in.readBoolean();
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataReader: I/O exception", e);
+			throw new MarshalException ("MarshalImpInputReader: I/O exception", e);
 		}
 	}
 
@@ -518,7 +507,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 		current_context_read.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				String w = data_in.readUTF();
+				String w = data_in.readName();
 				if (!( name.equals(w) ))
 				{
 					throw new MarshalException ("Unmarshal field name mismatch: expected = " + name + ", got = " + w);
@@ -526,7 +515,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 			}
 			return data_in.readFloat();
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataReader: I/O exception", e);
+			throw new MarshalException ("MarshalImpInputReader: I/O exception", e);
 		}
 	}
 
@@ -535,21 +524,12 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 	/**
 	 * Create an object that reads from the given source.
 	 */
-	public MarshalImpDataReader (DataInput data_in, boolean f_store_names) {
+	public MarshalImpInputReader (MarshalInput data_in, boolean f_store_names) {
 		this.data_in = data_in;
 		this.f_store_names = f_store_names;
-		
-		charset_utf8 = Charset.forName ("UTF-8");
 
 		root_context_read = new ContextRoot();
 		current_context_read = root_context_read;
-	}
-
-	/**
-	 * Create an object that reads from the given file.
-	 */
-	public MarshalImpDataReader (String filename, boolean f_store_names) throws IOException {
-		this (new DataInputStream (new BufferedInputStream (new FileInputStream (filename))), f_store_names);
 	}
 
 	//----- Control -----
@@ -557,7 +537,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 	/**
 	 * Get the data source.
 	 */
-	public DataInput get_data_in () {
+	public MarshalInput get_data_in () {
 		return data_in;
 	}
 
@@ -616,7 +596,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 		// There needs to be at least one argument, which is the subcommand
 
 		if (args.length < 1) {
-			System.err.println ("MarshalImpDataReader : Missing subcommand");
+			System.err.println ("MarshalImpInputReader : Missing subcommand");
 			return;
 		}
 
@@ -625,7 +605,7 @@ public class MarshalImpDataReader implements MarshalReader, Closeable {
 
 		// Unrecognized subcommand.
 
-		System.err.println ("MarshalImpDataReader : Unrecognized subcommand : " + args[0]);
+		System.err.println ("MarshalImpInputReader : Unrecognized subcommand : " + args[0]);
 		return;
 
 	}

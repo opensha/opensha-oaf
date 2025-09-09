@@ -339,24 +339,33 @@ public class SphRegionWorld extends SphRegion {
 		return result;
 	}
 
-	// Marshal object to a single unadorned line of text.
+	// Marshal object for a single unadorned line of text, internal.
 
 	@Override
-	public String marshal_to_line () {
-		return "";
+	protected void do_marshal_to_line (MarshalWriter writer) {
+
+		// Save nothing
+
+		return;
 	}
 
-	// Unmarshal object from a single unadorned line of text.
+	// Unmarshal object for a single unadorned line of text, internal.
 
 	@Override
-	public SphRegionWorld unmarshal_from_line (String line) {
-		String s = line.trim();
-		if (s.length() > 0) {
-			throw new MarshalException ("SphRegionWorld.unmarshal_from_line : Invalid line: " + s);
+	protected void do_umarshal_from_line (MarshalReader reader) {
+
+		// Get nothing
+
+		// Set up region
+
+		try {
+			setup ();
+		}
+		catch (Exception e) {
+			throw new MarshalException ("SphRegionWorld.do_umarshal_from_line: Failed to set up region", e);
 		}
 
-		setup();
-		return this;
+		return;
 	}
 
 }

@@ -617,40 +617,38 @@ public class SphRegionCircle extends SphRegion {
 		return result;
 	}
 
-	// Marshal object to a single unadorned line of text.
+	// Marshal object for a single unadorned line of text, internal.
 
 	@Override
-	public String marshal_to_line () {
-		StringBuilder result = new StringBuilder();
-		result.append (Double.toString (center.get_lat()));
-		result.append (" ");
-		result.append (Double.toString (center.get_lon()));
-		result.append (" ");
-		result.append (Double.toString (radius));
-		return result.toString();
+	protected void do_marshal_to_line (MarshalWriter writer) {
+
+		// Save center and radius
+
+		center.marshal (writer, "center");
+		writer.marshalDouble ("radius", radius);
+		return;
 	}
 
-	// Unmarshal object from a single unadorned line of text.
+	// Unmarshal object for a single unadorned line of text, internal.
 
 	@Override
-	public SphRegionCircle unmarshal_from_line (String line) {
-		String s = line.trim();
-		String[] w = s.split ("[ \\t]+");
-		if (w.length != 3) {
-			throw new MarshalException ("SphRegionCircle.unmarshal_from_line : Invalid line: " + s);
-		}
+	protected void do_umarshal_from_line (MarshalReader reader) {
+
+		// Get center and radius
+
+		SphLatLon the_center = (new SphLatLon()).unmarshal (reader, "center");;
+		double the_radius = reader.unmarshalDouble ("radius");
+
+		// Set up region
 
 		try {
-			double the_lat = Double.parseDouble (w[0]);
-			double the_lon = Double.parseDouble (w[1]);
-			SphLatLon the_center = new SphLatLon (the_lat, the_lon);
-			double the_radius = Double.parseDouble (w[2]);
 			setup (the_center, the_radius);
 		}
 		catch (Exception e) {
-			throw new MarshalException ("SphRegionCircle.unmarshal_from_line : Invalid line: " + s, e);
+			throw new MarshalException ("SphRegionCircle.do_umarshal_from_line: Failed to set up region", e);
 		}
-		return this;
+
+		return;
 	}
 
 }

@@ -595,24 +595,38 @@ public class SphRegionUnion extends SphRegion {
 		return result;
 	}
 
-	// Marshal object to a single unadorned line of text.
+	// Marshal object for a single unadorned line of text, internal.
 
 	@Override
-	public String marshal_to_line () {
-		//throw new UnsupportedOperationException ("SphRegionUnion.marshal_to_line: Unsupported operation");
-		return "test";
+	protected void do_marshal_to_line (MarshalWriter writer) {
+
+		// Save lists
+
+		SphRegion.marshal_array_to_line_poly (writer, "include", include);
+		SphRegion.marshal_array_to_line_poly (writer, "exclude", exclude);
+		return;
 	}
 
-	// Unmarshal object from a single unadorned line of text.
+	// Unmarshal object for a single unadorned line of text, internal.
 
 	@Override
-	public SphRegionUnion unmarshal_from_line (String line) {
-		//throw new UnsupportedOperationException ("SphRegionUnion.unmarshal_from_line: Unsupported operation");
-		include = new SphRegion[1];
-		exclude = new SphRegion[0];
-		include[0] = SphRegion.makeWorld();
-		setup();
-		return this;
+	protected void do_umarshal_from_line (MarshalReader reader) {
+
+		// Get lists
+
+		include = SphRegion.unmarshal_array_from_line_poly (reader, "include");
+		exclude = SphRegion.unmarshal_array_from_line_poly (reader, "exclude");
+
+		// Set up region
+
+		try {
+			setup ();
+		}
+		catch (Exception e) {
+			throw new MarshalException ("SphRegionUnion.do_umarshal_from_line: Failed to set up region", e);
+		}
+
+		return;
 	}
 
 }

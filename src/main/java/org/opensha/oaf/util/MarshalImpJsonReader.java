@@ -716,6 +716,20 @@ public class MarshalImpJsonReader implements MarshalReader {
 		return root_context_read.get_root_status();
 	}
 
+	// Check read completion status.
+	// Throw exception if the current top-level object is incomplete.
+	// Returns the number of top level object read (which can be 0L if
+	// nothing has been read), or -1L if the number is unknown.
+	// Note that some readers are limited to a single top-level object.
+	// If f_require_eof is true, throw exception if the data source is not
+	// fully consumed.  Note that not all readers can perform this check.
+	// This function should be called when finished using the reader.
+
+	@Override
+	public long read_completion_check (boolean f_require_eof) {
+		return (check_read_complete() ? 1L : 0L);
+	}
+
 
 
 

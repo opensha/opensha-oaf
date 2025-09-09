@@ -520,42 +520,42 @@ public class SphRegionMercRectangle extends SphRegion {
 		return result;
 	}
 
-	// Marshal object to a single unadorned line of text.
+	// Marshal object for a single unadorned line of text, internal.
 
 	@Override
-	public String marshal_to_line () {
-		StringBuilder result = new StringBuilder();
-		result.append (min_lat);
-		result.append (" ");
-		result.append (max_lat);
-		result.append (" ");
-		result.append (min_lon);
-		result.append (" ");
-		result.append (max_lon);
-		return result.toString();
+	protected void do_marshal_to_line (MarshalWriter writer) {
+
+		// Save ranges
+
+		writer.marshalDouble ("min_lat", min_lat);
+		writer.marshalDouble ("max_lat", max_lat);
+		writer.marshalDouble ("min_lon", min_lon);
+		writer.marshalDouble ("max_lon", max_lon);
+		return;
 	}
 
-	// Unmarshal object from a single unadorned line of text.
+	// Unmarshal object for a single unadorned line of text, internal.
 
 	@Override
-	public SphRegionMercRectangle unmarshal_from_line (String line) {
-		String s = line.trim();
-		String[] w = s.split ("[ \\t]+");
-		if (w.length != 4) {
-			throw new MarshalException ("SphRegionMercRectangle.unmarshal_from_line : Invalid line: " + s);
-		}
+	protected void do_umarshal_from_line (MarshalReader reader) {
+
+		// Get ranges
+
+		double the_min_lat = reader.unmarshalDouble ("min_lat");
+		double the_max_lat = reader.unmarshalDouble ("max_lat");
+		double the_min_lon = reader.unmarshalDouble ("min_lon");
+		double the_max_lon = reader.unmarshalDouble ("max_lon");
+
+		// Set up region
 
 		try {
-			double lat_1 = Double.parseDouble (w[0]);
-			double lat_2 = Double.parseDouble (w[1]);
-			double lon_1 = Double.parseDouble (w[2]);
-			double lon_2 = Double.parseDouble (w[3]);
-			setup (lat_1, lat_2, lon_1, lon_2);
+			setup (the_min_lat, the_max_lat, the_min_lon, the_max_lon);
 		}
 		catch (Exception e) {
-			throw new MarshalException ("SphRegionMercRectangle.unmarshal_from_line : Invalid line: " + s, e);
+			throw new MarshalException ("SphRegionMercRectangle.do_umarshal_from_line: Failed to set up region", e);
 		}
-		return this;
+
+		return;
 	}
 
 }

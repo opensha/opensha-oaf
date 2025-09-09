@@ -19,29 +19,25 @@ import java.io.FileOutputStream;
 
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 
-/**
- * Class for marshaling parameters/data to binary data storage.
- * Author: Michael Barall 10/01/2018.
- *
- * This writer can marshal multiple top-level objects to the destination.
- *
- * If the destination is Closeable, then closing the writer also closes the destination.
- */
-public class MarshalImpDataWriter implements MarshalWriter, Closeable {
+
+// Class for marshaling objects to an output stream.
+// Author: Michael Barall.
+//
+// This writer can marshal multiple top-level objects to the destination.
+//
+// If the destination is Closeable, then closing the writer also closes the destination.
+
+public class MarshalImpOutputWriter implements MarshalWriter, Closeable {
 
 	//----- Data storage -----
 
 	// The data destination.
 
-	private DataOutput data_out;
+	private MarshalOutput data_out;
 
 	// Flag, true if field names are stored.
 
 	private boolean f_store_names;
-
-	// The charset used for encoding strings.
-
-	private Charset charset_utf8;
 
 	//----- Context management -----
 
@@ -355,11 +351,11 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 	public void marshalArrayBegin (String name, int array_size) {
 		try {
 			if (f_store_names && name != null) {
-				data_out.writeUTF (name);
+				data_out.writeName (name);
 			}
 			data_out.writeInt (array_size);
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataWriter: I/O exception", e);
+			throw new MarshalException ("MarshalImpOutputWriter: I/O exception", e);
 		}
 		current_context_write = new ContextArray (name, current_context_write, array_size);
 		return;
@@ -382,11 +378,11 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		current_context_write.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				data_out.writeUTF (name);
+				data_out.writeName (name);
 			}
 			data_out.writeLong (x);
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataWriter: I/O exception", e);
+			throw new MarshalException ("MarshalImpOutputWriter: I/O exception", e);
 		}
 		return;
 	}
@@ -399,11 +395,11 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		current_context_write.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				data_out.writeUTF (name);
+				data_out.writeName (name);
 			}
 			data_out.writeDouble (x);
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataWriter: I/O exception", e);
+			throw new MarshalException ("MarshalImpOutputWriter: I/O exception", e);
 		}
 		return;
 	}
@@ -416,15 +412,11 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		current_context_write.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				data_out.writeUTF (name);
+				data_out.writeName (name);
 			}
-			//data_out.writeUTF (x);		// limit of 65535 bytes
-			byte[] s_bytes = x.getBytes (charset_utf8);
-			int n = s_bytes.length;
-			data_out.writeInt (n);
-			data_out.write (s_bytes);
+			data_out.writeString (x);
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataWriter: I/O exception", e);
+			throw new MarshalException ("MarshalImpOutputWriter: I/O exception", e);
 		}
 		return;
 	}
@@ -437,11 +429,11 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		current_context_write.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				data_out.writeUTF (name);
+				data_out.writeName (name);
 			}
 			data_out.writeInt (x);
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataWriter: I/O exception", e);
+			throw new MarshalException ("MarshalImpOutputWriter: I/O exception", e);
 		}
 		return;
 	}
@@ -454,11 +446,11 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		current_context_write.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				data_out.writeUTF (name);
+				data_out.writeName (name);
 			}
 			data_out.writeBoolean (x);
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataWriter: I/O exception", e);
+			throw new MarshalException ("MarshalImpOutputWriter: I/O exception", e);
 		}
 		return;
 	}
@@ -471,11 +463,11 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		current_context_write.check_name (name);
 		try {
 			if (f_store_names && name != null) {
-				data_out.writeUTF (name);
+				data_out.writeName (name);
 			}
 			data_out.writeFloat (x);
 		} catch (IOException e) {
-			throw new MarshalException ("MarshalImpDataWriter: I/O exception", e);
+			throw new MarshalException ("MarshalImpOutputWriter: I/O exception", e);
 		}
 		return;
 	}
@@ -485,21 +477,12 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 	/**
 	 * Create an object that writes to the given destination.
 	 */
-	public MarshalImpDataWriter (DataOutput data_out, boolean f_store_names) {
+	public MarshalImpOutputWriter (MarshalOutput data_out, boolean f_store_names) {
 		this.data_out = data_out;
 		this.f_store_names = f_store_names;
-		
-		charset_utf8 = Charset.forName ("UTF-8");
 
 		root_context_write = new ContextRoot();
 		current_context_write = root_context_write;
-	}
-
-	/**
-	 * Create an object that writes to the given file.
-	 */
-	public MarshalImpDataWriter (String filename, boolean f_store_names) throws IOException {
-		this (new DataOutputStream (new BufferedOutputStream (new FileOutputStream (filename))), f_store_names);
 	}
 
 	//----- Control -----
@@ -507,7 +490,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 	/**
 	 * Get the data destination.
 	 */
-	public DataOutput get_data_out () {
+	public MarshalOutput get_data_out () {
 		return data_out;
 	}
 
@@ -559,12 +542,89 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 
 
+	// A string builder used as a data store for testing.
+
+	private static StringBuilder test_sb = null;
+
+
+
+
+	// Make an input source for testing.
+	// The following special filenames are supported:
+	//  "+"  --  A line with JSON escapes.
+	//  "-"  --  A line with JSON escapes.
+	// In case of a line source, the first 3000 characters are dumped to the screen.
+
+	private static MarshalInput test_make_input (String filename) throws IOException {
+		if (filename.equalsIgnoreCase ("+")) {
+			String s = test_sb.toString();
+			String display = s;
+			if (display.length() > 3000) {
+				display = s.substring (0, 3000) + " ...";
+			}
+			System.out.println();
+			System.out.println(display);
+			System.out.println();
+			return new MarshalInputLine (s);
+		}
+		if (filename.equalsIgnoreCase ("-")) {
+			String s = test_sb.toString();
+			String display = s;
+			if (display.length() > 3000) {
+				display = s.substring (0, 3000) + " ...";
+			}
+			System.out.println();
+			System.out.println(display);
+			System.out.println();
+			return new MarshalInputLine (s);
+		}
+		return new MarshalInputBinaryStream (new DataInputStream (new BufferedInputStream (new FileInputStream (filename))));
+	}
+
+
+
+
+	// Make an output source for testing.
+	// The following special filenames are supported:
+	//  "+"  --  A line with JSON escapes with all strings quoted.
+	//  "-"  --  A line with JSON escapes with strings quoted only as needed.
+
+	private static MarshalOutput test_make_output (String filename) throws IOException {
+		if (filename.equalsIgnoreCase ("+")) {
+			test_sb = new StringBuilder();
+			return new MarshalOutputLine (test_sb, false, true);
+		}
+		if (filename.equalsIgnoreCase ("-")) {
+			test_sb = new StringBuilder();
+			return new MarshalOutputLine (test_sb, false, false);
+		}
+		return new MarshalOutputBinaryStream (new DataOutputStream (new BufferedOutputStream (new FileOutputStream (filename))));
+	}
+
+
+
+
+	// Get extra characters to insert in string data.
+
+	private static String string_extra (int i) {
+		if (i % 8 == 2) {
+			return " ";
+		}
+		if (i % 8 == 6) {
+			return "\u00E6";
+		}
+		return "";
+	}
+
+
+
+
 	public static void main(String[] args) {
 
 		// There needs to be at least one argument, which is the subcommand
 
 		if (args.length < 1) {
-			System.err.println ("MarshalImpDataWriter : Missing subcommand");
+			System.err.println ("MarshalImpOutputWriter : Missing subcommand");
 			return;
 		}
 
@@ -576,13 +636,14 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		//  test1  filename  num_long  num_double  num_string  num_int
 		// Test marshaling and unmarshaling with the given numbers of long and double and string and int.
 		// Data values are randomly generated.
+		// Filename can be "+" for a line with all strings quoted, "-" for a line with strings quoted only as needed.
 
 		if (args[0].equalsIgnoreCase ("test1")) {
 
 			// Five additional arguments
 
 			if (args.length != 6) {
-				System.err.println ("MarshalImpDataWriter : Invalid 'test1' subcommand");
+				System.err.println ("MarshalImpOutputWriter : Invalid 'test1' subcommand");
 				return;
 			}
 
@@ -634,7 +695,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				String[] string_data = new String[num_string];
 				for (int i = 0; i < num_string; ++i) {
-					string_data[i] = "String" + Math.round (rangen.sample() * 1.0e12);
+					string_data[i] = "String" + string_extra(i) + Math.round (rangen.sample() * 1.0e12);
 					if (i < 10) {
 						System.out.println ("string_data[" + i + "] = " + string_data[i]);
 					}
@@ -652,8 +713,8 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				System.out.println ("Marshaling data ...");
 
-				MarshalImpDataWriter writer = new MarshalImpDataWriter (
-					new DataOutputStream (new BufferedOutputStream (new FileOutputStream (filename))), true);
+				MarshalImpOutputWriter writer = new MarshalImpOutputWriter (
+					test_make_output (filename), true);
 
 				writer.marshalArrayBegin (null, num_long + num_double + num_string + num_int + 2);
 
@@ -690,8 +751,8 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				System.out.println ("Unmarshaling data ...");
 
-				MarshalImpDataReader reader = new MarshalImpDataReader (
-					new DataInputStream (new BufferedInputStream (new FileInputStream (filename))), true);
+				MarshalImpInputReader reader = new MarshalImpInputReader (
+					test_make_input (filename), true);
 
 				int array_size = reader.unmarshalArrayBegin (null);
 
@@ -779,6 +840,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		//  test2  filename  num_long  num_double  num_string  num_int
 		// Test marshaling and unmarshaling with the given numbers of long and double and string and int.
 		// Data values are randomly generated.
+		// Filename can be "+" for a line with all strings quoted, "-" for a line with strings quoted only as needed.
 		// This is the same as test #1, except data values are written to a map instead of an array.
 
 		if (args[0].equalsIgnoreCase ("test2")) {
@@ -786,7 +848,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 			// Five additional arguments
 
 			if (args.length != 6) {
-				System.err.println ("MarshalImpDataWriter : Invalid 'test2' subcommand");
+				System.err.println ("MarshalImpOutputWriter : Invalid 'test2' subcommand");
 				return;
 			}
 
@@ -838,7 +900,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				String[] string_data = new String[num_string];
 				for (int i = 0; i < num_string; ++i) {
-					string_data[i] = "String" + Math.round (rangen.sample() * 1.0e12);
+					string_data[i] = "String" + string_extra(i) + Math.round (rangen.sample() * 1.0e12);
 					if (i < 10) {
 						System.out.println ("string_data[" + i + "] = " + string_data[i]);
 					}
@@ -856,8 +918,8 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				System.out.println ("Marshaling data ...");
 
-				MarshalImpDataWriter writer = new MarshalImpDataWriter (
-					new DataOutputStream (new BufferedOutputStream (new FileOutputStream (filename))), true);
+				MarshalImpOutputWriter writer = new MarshalImpOutputWriter (
+					test_make_output (filename), true);
 
 				writer.marshalMapBegin (null);
 
@@ -894,8 +956,8 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				System.out.println ("Unmarshaling data ...");
 
-				MarshalImpDataReader reader = new MarshalImpDataReader (
-					new DataInputStream (new BufferedInputStream (new FileInputStream (filename))), true);
+				MarshalImpInputReader reader = new MarshalImpInputReader (
+					test_make_input (filename), true);
 
 				reader.unmarshalMapBegin (null);
 
@@ -978,6 +1040,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		//  test3  filename  num_long  num_double  num_string  num_int
 		// Test marshaling and unmarshaling with the given numbers of long and double and string and int.
 		// Data values are randomly generated.
+		// Filename can be "+" for a line with all strings quoted, "-" for a line with strings quoted only as needed.
 		// This is the same as test #2, except field names are not stored in the file.
 
 		if (args[0].equalsIgnoreCase ("test3")) {
@@ -985,7 +1048,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 			// Five additional arguments
 
 			if (args.length != 6) {
-				System.err.println ("MarshalImpDataWriter : Invalid 'test3' subcommand");
+				System.err.println ("MarshalImpOutputWriter : Invalid 'test3' subcommand");
 				return;
 			}
 
@@ -1037,7 +1100,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				String[] string_data = new String[num_string];
 				for (int i = 0; i < num_string; ++i) {
-					string_data[i] = "String" + Math.round (rangen.sample() * 1.0e12);
+					string_data[i] = "String" + string_extra(i) + Math.round (rangen.sample() * 1.0e12);
 					if (i < 10) {
 						System.out.println ("string_data[" + i + "] = " + string_data[i]);
 					}
@@ -1055,8 +1118,8 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				System.out.println ("Marshaling data ...");
 
-				MarshalImpDataWriter writer = new MarshalImpDataWriter (
-					new DataOutputStream (new BufferedOutputStream (new FileOutputStream (filename))), false);
+				MarshalImpOutputWriter writer = new MarshalImpOutputWriter (
+					test_make_output (filename), false);
 
 				writer.marshalMapBegin (null);
 
@@ -1093,8 +1156,8 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				System.out.println ("Unmarshaling data ...");
 
-				MarshalImpDataReader reader = new MarshalImpDataReader (
-					new DataInputStream (new BufferedInputStream (new FileInputStream (filename))), false);
+				MarshalImpInputReader reader = new MarshalImpInputReader (
+					test_make_input (filename), false);
 
 				reader.unmarshalMapBegin (null);
 
@@ -1177,14 +1240,16 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		//  test4  filename  num_long  num_double  num_string  num_int
 		// Test marshaling and unmarshaling with the given numbers of long and double and string and int.
 		// Data values are randomly generated.
+		// Filename can be "+" for a line with all strings quoted, "-" for a line with strings quoted only as needed.
 		// This is the same as test #2, except data values are written to multiple maps, and all data is written twice.
+		// Also uses the close_writer and close_reader methods.
 
 		if (args[0].equalsIgnoreCase ("test4")) {
 
 			// Five additional arguments
 
 			if (args.length != 6) {
-				System.err.println ("MarshalImpDataWriter : Invalid 'test4' subcommand");
+				System.err.println ("MarshalImpOutputWriter : Invalid 'test4' subcommand");
 				return;
 			}
 
@@ -1236,7 +1301,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				String[] string_data = new String[num_string];
 				for (int i = 0; i < num_string; ++i) {
-					string_data[i] = "String" + Math.round (rangen.sample() * 1.0e12);
+					string_data[i] = "String" + string_extra(i) + Math.round (rangen.sample() * 1.0e12);
 					if (i < 10) {
 						System.out.println ("string_data[" + i + "] = " + string_data[i]);
 					}
@@ -1254,7 +1319,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				System.out.println ("Marshaling data ...");
 
-				MarshalImpDataWriter writer = new MarshalImpDataWriter (filename, true);
+				MarshalImpOutputWriter writer = new MarshalImpOutputWriter (test_make_output (filename), true);
 
 				writer.marshalMapBegin (null);
 
@@ -1330,14 +1395,14 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 					return;
 				}
 
-				writer.close();
+				writer.close_writer();
 				writer = null;
 
 				// Unmarshal and check the data
 
 				System.out.println ("Unmarshaling data ...");
 
-				MarshalImpDataReader reader = new MarshalImpDataReader (filename, true);
+				MarshalImpInputReader reader = new MarshalImpInputReader (test_make_input (filename), true);
 
 				int errors = 0;
 
@@ -1477,7 +1542,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 					return;
 				}
 
-				reader.close();
+				reader.close_reader();
 				reader = null;
 
 				System.out.println ("Error count: " + errors);
@@ -1497,14 +1562,16 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 		//  test5  filename  num_long  num_double  num_string  num_int
 		// Test marshaling and unmarshaling with the given numbers of long and double and string and int.
 		// Data values are randomly generated.
+		// Filename can be "+" for a line with all strings quoted, "-" for a line with strings quoted only as needed.
 		// This is the same as test #4, except field names are not stored in the file.
+		// Also uses the close_writer and close_reader methods.
 
 		if (args[0].equalsIgnoreCase ("test5")) {
 
 			// Five additional arguments
 
 			if (args.length != 6) {
-				System.err.println ("MarshalImpDataWriter : Invalid 'test5' subcommand");
+				System.err.println ("MarshalImpOutputWriter : Invalid 'test5' subcommand");
 				return;
 			}
 
@@ -1556,7 +1623,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				String[] string_data = new String[num_string];
 				for (int i = 0; i < num_string; ++i) {
-					string_data[i] = "String" + Math.round (rangen.sample() * 1.0e12);
+					string_data[i] = "String" + string_extra(i) + Math.round (rangen.sample() * 1.0e12);
 					if (i < 10) {
 						System.out.println ("string_data[" + i + "] = " + string_data[i]);
 					}
@@ -1574,7 +1641,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				System.out.println ("Marshaling data ...");
 
-				MarshalImpDataWriter writer = new MarshalImpDataWriter (filename, false);
+				MarshalImpOutputWriter writer = new MarshalImpOutputWriter (test_make_output (filename), false);
 
 				writer.marshalMapBegin (null);
 
@@ -1650,14 +1717,14 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 					return;
 				}
 
-				writer.close();
+				writer.close_writer();
 				writer = null;
 
 				// Unmarshal and check the data
 
 				System.out.println ("Unmarshaling data ...");
 
-				MarshalImpDataReader reader = new MarshalImpDataReader (filename, false);
+				MarshalImpInputReader reader = new MarshalImpInputReader (test_make_input (filename), false);
 
 				int errors = 0;
 
@@ -1797,7 +1864,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 					return;
 				}
 
-				reader.close();
+				reader.close_reader();
 				reader = null;
 
 				System.out.println ("Error count: " + errors);
@@ -1814,7 +1881,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 		// Unrecognized subcommand.
 
-		System.err.println ("MarshalImpDataWriter : Unrecognized subcommand : " + args[0]);
+		System.err.println ("MarshalImpOutputWriter : Unrecognized subcommand : " + args[0]);
 		return;
 
 	}

@@ -594,6 +594,32 @@ public class MarshalImpArray implements MarshalReader, MarshalWriter {
 		return root_context_write.get_root_status();
 	}
 
+	// Check read completion status.
+	// Throw exception if the current top-level object is incomplete.
+	// Returns the number of top level object read (which can be 0L if
+	// nothing has been read), or -1L if the number is unknown.
+	// Note that some readers are limited to a single top-level object.
+	// If f_require_eof is true, throw exception if the data source is not
+	// fully consumed.  Note that not all readers can perform this check.
+	// This function should be called when finished using the reader.
+
+	@Override
+	public long read_completion_check (boolean f_require_eof) {
+		return (check_read_complete() ? 1L : 0L);
+	}
+
+	// Check write completion status.
+	// Throw exception if the current top-level object is incomplete.
+	// Returns the number of top level object written (which can be 0L if
+	// nothing has been written), or -1L if the number is unknown.
+	// Note that some writers are limited to a single top-level object.
+	// This function should be called when finished using the writer.
+
+	@Override
+	public long write_completion_check () {
+		return (check_write_complete() ? 1L : 0L);
+	}
+
 	/**
 	 * Get the long store.
 	 * Returns a copy, with length equal to the amount of data, but at least one element.
