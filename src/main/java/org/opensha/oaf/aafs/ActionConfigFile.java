@@ -1567,6 +1567,7 @@ public class ActionConfigFile implements Marshalable {
 	private static final String PKDISC_CONUS = "CONUS";
 	private static final String PKDISC_CONUS_X_CA = "CONUS outside California";
 	private static final String PKDISC_ALASKA = "Alaska";
+	private static final String PKDISC_HAWAII = "Hawaii";
 	private static final String PKDISC_PUERTO_RICO = "Puerto Rico";
 	private static final String PKDISC_PACIFIC_TERR = "Guam, Marianas, Am.Samoa";
 	private static final String PKDISC_US = "US";
@@ -1699,6 +1700,11 @@ public class ActionConfigFile implements Marshalable {
 		}
 
 		preg = make_picker_region (region_map, PKDISC_ALASKA, PKINT_ALASKA);
+		if (preg != null) {
+			picker_list.add (preg);
+		}
+
+		preg = make_picker_region (region_map, PKDISC_HAWAII, PKINT_HAWAII);
 		if (preg != null) {
 			picker_list.add (preg);
 		}
