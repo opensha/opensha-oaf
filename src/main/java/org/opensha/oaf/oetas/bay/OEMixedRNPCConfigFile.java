@@ -421,7 +421,7 @@ public class OEMixedRNPCConfigFile extends OAF2ParameterSet<OEMixedRNPCParams> /
 
 	public static void main(String[] args) {
 		try {
-		TestArgs testargs = new TestArgs (args, "TestArgs");
+		TestArgs testargs = new TestArgs (args, "OEMixedRNPCConfigFile");
 
 
 

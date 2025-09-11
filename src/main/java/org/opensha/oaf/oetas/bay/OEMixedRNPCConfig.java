@@ -277,7 +277,7 @@ public class OEMixedRNPCConfig {
 
 	public static void main(String[] args) {
 		try {
-		TestArgs testargs = new TestArgs (args, "TestArgs");
+		TestArgs testargs = new TestArgs (args, "OEMixedRNPCConfig");
 
 
 

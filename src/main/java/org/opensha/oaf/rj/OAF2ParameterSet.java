@@ -1348,7 +1348,7 @@ public abstract class OAF2ParameterSet<T> implements Marshalable {
 
 	public static void main(String[] args) {
 		try {
-		TestArgs testargs = new TestArgs (args, "TestArgs");
+		TestArgs testargs = new TestArgs (args, "OAF2ParameterSet");
 
 
 

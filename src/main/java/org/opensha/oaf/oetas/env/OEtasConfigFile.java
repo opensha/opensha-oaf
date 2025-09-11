@@ -417,7 +417,7 @@ public class OEtasConfigFile extends OAF2ParameterSet<OEtasParameters> /* implem
 
 	public static void main(String[] args) {
 		try {
-		TestArgs testargs = new TestArgs (args, "TestArgs");
+		TestArgs testargs = new TestArgs (args, "OEtasConfigFile");
 
 
 

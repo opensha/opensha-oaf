@@ -193,7 +193,7 @@ public class OEtasConfig {
 
 	public static void main(String[] args) {
 		try {
-		TestArgs testargs = new TestArgs (args, "TestArgs");
+		TestArgs testargs = new TestArgs (args, "OEtasConfig");
 
 
 

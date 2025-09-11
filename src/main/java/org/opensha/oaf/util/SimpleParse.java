@@ -404,7 +404,7 @@ public class SimpleParse {
 
 	public static void main(String[] args) {
 		try {
-		TestArgs testargs = new TestArgs (args, "OEExecEnvironment");
+		TestArgs testargs = new TestArgs (args, "SimpleParse");
 
 
 
