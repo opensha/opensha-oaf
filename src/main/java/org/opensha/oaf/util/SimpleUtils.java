@@ -1624,6 +1624,51 @@ public class SimpleUtils {
 
 
 
+	// Given an array, allocate a new array of the same run-time type with the given length.
+
+	public static <T> T[] new_array_of_same_type (T[] original_array, int new_length) {
+
+		// Get the Class object representing the element type of the original array
+
+		Class<?> component_type = original_array.getClass().getComponentType();
+
+		// Create a new array of the same component type and specified length
+
+		@SuppressWarnings("unchecked")
+		T[] new_array = (T[]) java.lang.reflect.Array.newInstance (component_type, new_length);
+
+		return new_array;
+	}
+
+
+
+
+	// Given an array, allocate a new array of the same run-time type with the given length.
+	// Except, if the original array has the correct length then return the original array.
+
+	public static <T> T[] optional_new_array_of_same_type (T[] original_array, int new_length) {
+
+		// If the original array already has the correct length, return it
+
+		if (original_array.length == new_length) {
+			return original_array;
+		}
+
+		// Get the Class object representing the element type of the original array
+
+		Class<?> component_type = original_array.getClass().getComponentType();
+
+		// Create a new array of the same component type and specified length
+
+		@SuppressWarnings("unchecked")
+		T[] new_array = (T[]) java.lang.reflect.Array.newInstance (component_type, new_length);
+
+		return new_array;
+	}
+
+
+
+
 	//----- Testing -----
 
 

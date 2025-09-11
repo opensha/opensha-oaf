@@ -15,6 +15,11 @@ import static org.opensha.commons.geo.GeoTools.EARTH_RADIUS_MEAN;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
+import org.opensha.oaf.util.MarshalUtils;
+import static org.opensha.oaf.util.MarshalUtils.mifcn;
+import static org.opensha.oaf.util.MarshalUtils.uifcn;
+import static org.opensha.oaf.util.MarshalUtils.uibfcn;
 
 
 /**
@@ -785,12 +790,14 @@ public class SphLatLon implements Marshalable {
 	// Marshal a list of objects.
 
 	public static void marshal_list (MarshalWriter writer, String name, List<SphLatLon> obj_list) {
-		int n = obj_list.size();
-		writer.marshalArrayBegin (name, n);
-		for (SphLatLon obj : obj_list) {
-			obj.marshal (writer, null);
-		}
-		writer.marshalArrayEnd ();
+	//	int n = obj_list.size();
+	//	writer.marshalArrayBegin (name, n);
+	//	for (SphLatLon obj : obj_list) {
+	//		obj.marshal (writer, null);
+	//	}
+	//	writer.marshalArrayEnd ();
+
+		writer.marshalObjectCollection (name, obj_list, mifcn(SphLatLon::marshal));
 		return;
 	}
 
@@ -798,11 +805,14 @@ public class SphLatLon implements Marshalable {
 
 	public static ArrayList<SphLatLon> unmarshal_list (MarshalReader reader, String name) {
 		ArrayList<SphLatLon> obj_list = new ArrayList<SphLatLon>();
-		int n = reader.unmarshalArrayBegin (name);
-		for (int i = 0; i < n; ++i) {
-			obj_list.add ((new SphLatLon()).unmarshal (reader, null));
-		}
-		reader.unmarshalArrayEnd ();
+
+	//	int n = reader.unmarshalArrayBegin (name);
+	//	for (int i = 0; i < n; ++i) {
+	//		obj_list.add ((new SphLatLon()).unmarshal (reader, null));
+	//	}
+	//	reader.unmarshalArrayEnd ();
+
+		reader.unmarshalObjectCollection (name, obj_list, uifcn(SphLatLon::unmarshal, SphLatLon::new));
 		return obj_list;
 	}
 

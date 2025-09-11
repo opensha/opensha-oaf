@@ -16,7 +16,11 @@ import org.opensha.commons.data.comcat.ComcatRegion;
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
 import org.opensha.oaf.util.MarshalException;
+import org.opensha.oaf.util.Marshalable;
 import org.opensha.oaf.util.MarshalUtils;
+import static org.opensha.oaf.util.MarshalUtils.mifcn;
+import static org.opensha.oaf.util.MarshalUtils.uifcn;
+import static org.opensha.oaf.util.MarshalUtils.uibfcn;
 import org.opensha.oaf.util.TestArgs;
 
 
@@ -846,10 +850,11 @@ public abstract class SphRegion implements ComcatRegion, Marshalable {
 			return (unwrap_max_lon < unwrap_min_lon);
 		}
 
-		// Return true if the wrapped range is preferred
+		// Return true if the wrapped range is preferred.
+		// Note: Bias slightly in favor of the unwrapped range.
 
 		public final boolean is_wrap_preferred () {
-			return (wrap_max_lon - wrap_min_lon < unwrap_max_lon - unwrap_min_lon);
+			return (0.000001 + wrap_max_lon - wrap_min_lon < unwrap_max_lon - unwrap_min_lon);
 		}
 
 		// Internal function to accumulate in the unwrapped domain.
@@ -1304,25 +1309,29 @@ public abstract class SphRegion implements ComcatRegion, Marshalable {
 	// Marshal array of objects.
 
 	public static void marshal_array (MarshalWriter writer, String name, SphRegion[] x) {
-		int n = x.length;
-		writer.marshalArrayBegin (name, n);
-		for (int i = 0; i < n; ++i) {
-			marshal_poly (writer, null, x[i]);
-		}
-		writer.marshalArrayEnd ();
+	//	int n = x.length;
+	//	writer.marshalArrayBegin (name, n);
+	//	for (int i = 0; i < n; ++i) {
+	//		marshal_poly (writer, null, x[i]);
+	//	}
+	//	writer.marshalArrayEnd ();
+
+		writer.marshalObjectArray (name, x, SphRegion::marshal_poly);
 		return;
 	}
 
 	// Unmarshal array of objects.
 
 	public static SphRegion[] unmarshal_array (MarshalReader reader, String name) {
-		int n = reader.unmarshalArrayBegin (name);
-		SphRegion[] x = new SphRegion[n];
-		for (int i = 0; i < n; ++i) {
-			x[i] = unmarshal_poly (reader, null);
-		}
-		reader.unmarshalArrayEnd ();
-		return x;
+	//	int n = reader.unmarshalArrayBegin (name);
+	//	SphRegion[] x = new SphRegion[n];
+	//	for (int i = 0; i < n; ++i) {
+	//		x[i] = unmarshal_poly (reader, null);
+	//	}
+	//	reader.unmarshalArrayEnd ();
+	//	return x;
+
+		return reader.unmarshalObjectArray (name, new SphRegion[0], SphRegion::unmarshal_poly);
 	}
 
 	// Marshal object for a single unadorned line of text, internal.
@@ -1430,56 +1439,68 @@ public abstract class SphRegion implements ComcatRegion, Marshalable {
 
 	public static String marshal_to_line_poly (SphRegion obj) {
 
-		StringBuilder sb = new StringBuilder();
+	//	StringBuilder sb = new StringBuilder();
+	//	boolean f_unicode = false;
+	//	boolean f_quote_all = false;
+	//	boolean f_store_names = false;
+	//	MarshalWriter writer = MarshalUtils.writer_for_line (sb, f_unicode, f_quote_all, f_store_names);
+	//
+	//	marshal_to_line_poly (writer, null, obj);
+	//
+	//	writer.write_completion_check();
+	//
+	//	return sb.toString();
+
 		boolean f_unicode = false;
 		boolean f_quote_all = false;
 		boolean f_store_names = false;
-		MarshalWriter writer = MarshalUtils.writer_for_line (sb, f_unicode, f_quote_all, f_store_names);
-
-		marshal_to_line_poly (writer, null, obj);
-
-		writer.write_completion_check();
-
-		return sb.toString();
+		return MarshalUtils.lambda_to_line (SphRegion::marshal_to_line_poly, obj, f_unicode, f_quote_all, f_store_names);
 	}
 
 	// Unmarshal object from a single unadorned line of text, polymorphic.
 
 	public static SphRegion unmarshal_from_line_poly (String line) {
 
+	//	boolean f_store_names = false;
+	//	MarshalReader reader = MarshalUtils.reader_for_line (line, f_store_names);
+	//
+	//	SphRegion result = unmarshal_from_line_poly (reader, null);
+	//
+	//	boolean f_require_eof = true;
+	//	reader.read_completion_check (f_require_eof);
+	//
+	//	return result;
+
 		boolean f_store_names = false;
-		MarshalReader reader = MarshalUtils.reader_for_line (line, f_store_names);
-
-		SphRegion result = unmarshal_from_line_poly (reader, null);
-
-		boolean f_require_eof = true;
-		reader.read_completion_check (f_require_eof);
-
-		return result;
+		return MarshalUtils.lambda_from_line (SphRegion::unmarshal_from_line_poly, line, f_store_names);
 	}
 
 	// Marshal array of objects to a single unadorned line of text, polymorphic..
 
 	public static void marshal_array_to_line_poly (MarshalWriter writer, String name, SphRegion[] x) {
-		int n = x.length;
-		writer.marshalArrayBegin (name, n);
-		for (int i = 0; i < n; ++i) {
-			marshal_to_line_poly (writer, null, x[i]);
-		}
-		writer.marshalArrayEnd ();
+	//	int n = x.length;
+	//	writer.marshalArrayBegin (name, n);
+	//	for (int i = 0; i < n; ++i) {
+	//		marshal_to_line_poly (writer, null, x[i]);
+	//	}
+	//	writer.marshalArrayEnd ();
+
+		writer.marshalObjectArray (name, x, SphRegion::marshal_to_line_poly);
 		return;
 	}
 
 	// Unmarshal array of objects from a single unadorned line of text, polymorphic.
 
 	public static SphRegion[] unmarshal_array_from_line_poly (MarshalReader reader, String name) {
-		int n = reader.unmarshalArrayBegin (name);
-		SphRegion[] x = new SphRegion[n];
-		for (int i = 0; i < n; ++i) {
-			x[i] = unmarshal_from_line_poly (reader, null);
-		}
-		reader.unmarshalArrayEnd ();
-		return x;
+	//	int n = reader.unmarshalArrayBegin (name);
+	//	SphRegion[] x = new SphRegion[n];
+	//	for (int i = 0; i < n; ++i) {
+	//		x[i] = unmarshal_from_line_poly (reader, null);
+	//	}
+	//	reader.unmarshalArrayEnd ();
+	//	return x;
+
+		return reader.unmarshalObjectArray (name, new SphRegion[0], SphRegion::unmarshal_from_line_poly);
 	}
 
 
@@ -1576,7 +1597,7 @@ public abstract class SphRegion implements ComcatRegion, Marshalable {
 
 	public static void main(String[] args) {
 		try {
-		TestArgs testargs = new TestArgs (args, "OEGUIPartAutomation");
+		TestArgs testargs = new TestArgs (args, "SphRegion");
 
 
 
@@ -1585,6 +1606,8 @@ public abstract class SphRegion implements ComcatRegion, Marshalable {
 		// Command format:
 		//  test1  lat  lon  radius_km
 		// Test marshal/unmarshal for a circle.
+		// Here is an example command line:
+		//  test1  37.0 -120.0 200.0
 
 		if (testargs.is_test ("test1")) {
 
@@ -1623,6 +1646,8 @@ public abstract class SphRegion implements ComcatRegion, Marshalable {
 		//  test2  lat_1  lat_2  lon_1  lon_2
 		// Test marshal/unmarshal for a rectangle, specified by corners.
 		// Note: Longitudes must be in range -180 to +180.
+		// Here is an example command line:
+		//  test2  39.0 43.0 -115.0 -110.0
 
 		if (testargs.is_test ("test2")) {
 
@@ -1662,6 +1687,8 @@ public abstract class SphRegion implements ComcatRegion, Marshalable {
 		//  test3  lat_1  lat_2  lon_1  lon_2
 		// Test marshal/unmarshal for a rectangle, specified by ranges.
 		// Note: Longitudes must be in range -180 to +180, or in range 0 to +360.
+		// Here is an example command line:
+		//  test3  39.0 43.0 -115.0 -110.0
 
 		if (testargs.is_test ("test3")) {
 
@@ -1700,6 +1727,8 @@ public abstract class SphRegion implements ComcatRegion, Marshalable {
 		// Command format:
 		//  test4  lat_1  lon_1 ...
 		// Test marshal/unmarshal for a polygon.
+		// Here is an example command line:
+		//  test4  38.0 -119.0 40.0 -119.0 39.0 -112.0
 
 		if (testargs.is_test ("test4")) {
 
@@ -1805,10 +1834,12 @@ public abstract class SphRegion implements ComcatRegion, Marshalable {
 
 		// Subcommand : Test #7
 		// Command format:
-		//  test4  c_lat  c_lon  c_radius_km  r_lat_1  r_lat_2  r_lon_1  r_lon_2  p_lat_1  p_lon_1 ...
+		//  test7  c_lat  c_lon  c_radius_km  r_lat_1  r_lat_2  r_lon_1  r_lon_2  p_lat_1  p_lon_1 ...
 		// Test marshal/unmarshal for a union.
 		// This creates a union containing a circle and a rectangle as include regions,
 		// and a polygon as an exclude region.
+		// Here is an example command line:
+		//  test7  37.0 -120.0 200.0  39.0 43.0 -115.0 -110.0  38.0 -119.0 40.0 -119.0 39.0 -112.0
 
 		if (testargs.is_test ("test7")) {
 

@@ -2,6 +2,7 @@ package org.opensha.oaf.util;
 
 import java.util.Collection;
 import java.io.Closeable;
+import java.util.function.Supplier;
 
 /**
  * Interface for unmarshaling parameters/data from the OAF database.
@@ -533,5 +534,46 @@ public interface MarshalReader {
 		}
 		return;
 	}
+
+
+	//----- Object arrays and lists -----
+
+	// Unarshal an array of objects of type T.
+	// Each object is unmarshaled using a function with signature
+	//   (MarshalReader reader, String name) -> S.
+	// This is the typical signature of a static unmarshaling method.
+	// Here S is a subclass of T, so objects of type S can be assigned
+	// to variables of type T.  Typically S = T.
+	// See MarshalUtils for ways to adapt an instance unmarshaling method.
+	// If the prototype array is the correct size then it is used to return
+	// the result, otherwise a new array of the same run-time type is allocated.
+
+	public default <T> T[] unmarshalObjectArray (String name, T[] prototype, MarshalUtils.UnmarshalFunction<? extends T> func) {
+		int n = unmarshalArrayBegin (name);
+		T[] x =  SimpleUtils.optional_new_array_of_same_type (prototype, n);
+		for (int i = 0; i < n; ++i) {
+			x[i] = func.lambda_unmarshal (this, null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	// Unarshal a collection of objects of type T.
+	// Each object is unmarshaled using a function with signature
+	//   (MarshalReader reader, String name) -> S.
+	// This is the typical signature of a static unmarshaling method.
+	// Here S is a subclass of T, so objects of type S can be assigned
+	// to variables of type T.  Typically S = T.
+	// See MarshalUtils for ways to adapt an instance unmarshaling method.
+
+	public default <T> void unmarshalObjectCollection (String name, Collection<T> x, MarshalUtils.UnmarshalFunction<? extends T> func) {
+		int n = unmarshalArrayBegin (name);
+		for (int i = 0; i < n; ++i) {
+			x.add (func.lambda_unmarshal (this, null));
+		}
+		unmarshalArrayEnd ();
+		return;
+	}
+
 
 }
