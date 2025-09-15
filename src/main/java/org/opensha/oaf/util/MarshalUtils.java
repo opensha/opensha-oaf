@@ -1615,7 +1615,7 @@ public class MarshalUtils {
 
 				MarshalImpJsonReader reader = new MarshalImpJsonReader (formatted_string);
 				reader.unmarshalMapBegin (null);
-				SphRegion[] new_array = reader.unmarshalObjectArray ("region_array", new SphRegion[0], SphRegion::unmarshal_poly);
+				SphRegion[] new_array = reader.unmarshalObjectArray ("region_array", SphRegion.class, SphRegion::unmarshal_poly);
 				reader.unmarshalMapEnd ();
 				reader.check_read_complete ();
 
@@ -1651,7 +1651,7 @@ public class MarshalUtils {
 
 				MarshalImpJsonReader reader = new MarshalImpJsonReader (formatted_string);
 				reader.unmarshalMapBegin (null);
-				SphRegionCircle[] new_array = reader.unmarshalObjectArray ("circle_array", new SphRegionCircle[0], uifcn(SphRegionCircle::unmarshal, SphRegionCircle::new));
+				SphRegionCircle[] new_array = reader.unmarshalObjectArray ("circle_array", SphRegionCircle.class, uifcn(SphRegionCircle::unmarshal, SphRegionCircle::new));
 				reader.unmarshalMapEnd ();
 				reader.check_read_complete ();
 
@@ -1687,7 +1687,7 @@ public class MarshalUtils {
 
 				MarshalImpJsonReader reader = new MarshalImpJsonReader (formatted_string);
 				reader.unmarshalMapBegin (null);
-				SphRegionCircle[] new_array = reader.unmarshalObjectArray ("circle_array", new SphRegionCircle[0], uicfcn(SphRegionCircle::unmarshal, SphRegionCircle.class));
+				SphRegionCircle[] new_array = reader.unmarshalObjectArray ("circle_array", SphRegionCircle.class, uicfcn(SphRegionCircle::unmarshal, SphRegionCircle.class));
 				reader.unmarshalMapEnd ();
 				reader.check_read_complete ();
 

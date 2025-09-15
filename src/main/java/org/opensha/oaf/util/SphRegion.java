@@ -1331,7 +1331,7 @@ public abstract class SphRegion implements ComcatRegion, Marshalable {
 	//	reader.unmarshalArrayEnd ();
 	//	return x;
 
-		return reader.unmarshalObjectArray (name, new SphRegion[0], SphRegion::unmarshal_poly);
+		return reader.unmarshalObjectArray (name, SphRegion.class, SphRegion::unmarshal_poly);
 	}
 
 	// Marshal object for a single unadorned line of text, internal.
@@ -1500,7 +1500,7 @@ public abstract class SphRegion implements ComcatRegion, Marshalable {
 	//	reader.unmarshalArrayEnd ();
 	//	return x;
 
-		return reader.unmarshalObjectArray (name, new SphRegion[0], SphRegion::unmarshal_from_line_poly);
+		return reader.unmarshalObjectArray (name, SphRegion.class, SphRegion::unmarshal_from_line_poly);
 	}
 
 

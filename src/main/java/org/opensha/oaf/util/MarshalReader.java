@@ -540,6 +540,26 @@ public interface MarshalReader {
 
 	//----- Object arrays and lists -----
 
+//	// Unmarshal an array of objects of type T.
+//	// Each object is unmarshaled using a function with signature
+//	//   (MarshalReader reader, String name) -> S.
+//	// This is the typical signature of a static unmarshaling method.
+//	// Here S is a subclass of T, so objects of type S can be assigned
+//	// to variables of type T.  Typically S = T.
+//	// See MarshalUtils for ways to adapt an instance unmarshaling method.
+//	// If the prototype array is the correct size then it is used to return
+//	// the result, otherwise a new array of the same run-time type is allocated.
+//
+//	public default <T> T[] unmarshalObjectArray (String name, T[] prototype, MarshalUtils.UnmarshalFunction<? extends T> func) {
+//		int n = unmarshalArrayBegin (name);
+//		T[] x =  SimpleUtils.optional_new_array_of_same_type (prototype, n);
+//		for (int i = 0; i < n; ++i) {
+//			x[i] = func.lambda_unmarshal (this, null);
+//		}
+//		unmarshalArrayEnd ();
+//		return x;
+//	}
+
 	// Unmarshal an array of objects of type T.
 	// Each object is unmarshaled using a function with signature
 	//   (MarshalReader reader, String name) -> S.
@@ -547,12 +567,11 @@ public interface MarshalReader {
 	// Here S is a subclass of T, so objects of type S can be assigned
 	// to variables of type T.  Typically S = T.
 	// See MarshalUtils for ways to adapt an instance unmarshaling method.
-	// If the prototype array is the correct size then it is used to return
-	// the result, otherwise a new array of the same run-time type is allocated.
+	// The Class object determines the type of array returned.
 
-	public default <T> T[] unmarshalObjectArray (String name, T[] prototype, MarshalUtils.UnmarshalFunction<? extends T> func) {
+	public default <T> T[] unmarshalObjectArray (String name, Class<T> clazz, MarshalUtils.UnmarshalFunction<? extends T> func) {
 		int n = unmarshalArrayBegin (name);
-		T[] x =  SimpleUtils.optional_new_array_of_same_type (prototype, n);
+		T[] x =  SimpleUtils.new_array_of_type (clazz, n);
 		for (int i = 0; i < n; ++i) {
 			x[i] = func.lambda_unmarshal (this, null);
 		}
