@@ -1669,6 +1669,21 @@ public class SimpleUtils {
 
 
 
+	// Given a Class object, allocate a new array with components of the corresponding run-time type with the given length.
+
+	public static <T> T[] new_array_of_type (Class<T> component_type, int new_length) {
+
+		// Create a new array of the given component type and specified length
+
+		@SuppressWarnings("unchecked")
+		T[] new_array = (T[]) java.lang.reflect.Array.newInstance (component_type, new_length);
+
+		return new_array;
+	}
+
+
+
+
 	//----- Testing -----
 
 

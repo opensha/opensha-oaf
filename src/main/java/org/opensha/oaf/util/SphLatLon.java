@@ -20,6 +20,7 @@ import org.opensha.oaf.util.MarshalUtils;
 import static org.opensha.oaf.util.MarshalUtils.mifcn;
 import static org.opensha.oaf.util.MarshalUtils.uifcn;
 import static org.opensha.oaf.util.MarshalUtils.uibfcn;
+import static org.opensha.oaf.util.MarshalUtils.uicfcn;
 
 
 /**
@@ -797,14 +798,16 @@ public class SphLatLon implements Marshalable {
 	//	}
 	//	writer.marshalArrayEnd ();
 
-		writer.marshalObjectCollection (name, obj_list, mifcn(SphLatLon::marshal));
+	//	writer.marshalObjectCollection (name, obj_list, mifcn(SphLatLon::marshal));
+
+		writer.marshalObjectList (name, obj_list);
 		return;
 	}
 
 	// Unmarshal a list of objects.
 
 	public static ArrayList<SphLatLon> unmarshal_list (MarshalReader reader, String name) {
-		ArrayList<SphLatLon> obj_list = new ArrayList<SphLatLon>();
+	//	ArrayList<SphLatLon> obj_list = new ArrayList<SphLatLon>();
 
 	//	int n = reader.unmarshalArrayBegin (name);
 	//	for (int i = 0; i < n; ++i) {
@@ -812,8 +815,10 @@ public class SphLatLon implements Marshalable {
 	//	}
 	//	reader.unmarshalArrayEnd ();
 
-		reader.unmarshalObjectCollection (name, obj_list, uifcn(SphLatLon::unmarshal, SphLatLon::new));
-		return obj_list;
+	//	reader.unmarshalObjectCollection (name, obj_list, uifcn(SphLatLon::unmarshal, SphLatLon::new));
+	//	return obj_list;
+
+		return reader.unmarshalObjectList (name, SphLatLon.class);
 	}
 
 

@@ -1,6 +1,8 @@
 package org.opensha.oaf.util;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
 import java.io.Closeable;
 import java.util.function.Supplier;
 
@@ -434,7 +436,7 @@ public interface MarshalReader {
 		throw new MarshalUnsupportedException ("unmarshalJsonPeekType is not supported");
 	}
 
-	// Unarshal a JSON scalar.
+	// Unmarshal a JSON scalar.
 	// The returned object may be one of the following types:
 	//  null
 	//  Integer
@@ -487,7 +489,7 @@ public interface MarshalReader {
 		return x;
 	}
 
-	// Unarshal a JSON scalar, required to be non-null.
+	// Unmarshal a JSON scalar, required to be non-null.
 	// The returned object may be one of the following types:
 	//  Integer
 	//  Long
@@ -538,7 +540,7 @@ public interface MarshalReader {
 
 	//----- Object arrays and lists -----
 
-	// Unarshal an array of objects of type T.
+	// Unmarshal an array of objects of type T.
 	// Each object is unmarshaled using a function with signature
 	//   (MarshalReader reader, String name) -> S.
 	// This is the typical signature of a static unmarshaling method.
@@ -558,7 +560,7 @@ public interface MarshalReader {
 		return x;
 	}
 
-	// Unarshal a collection of objects of type T.
+	// Unmarshal a collection of objects of type T.
 	// Each object is unmarshaled using a function with signature
 	//   (MarshalReader reader, String name) -> S.
 	// This is the typical signature of a static unmarshaling method.
@@ -575,5 +577,48 @@ public interface MarshalReader {
 		return;
 	}
 
+	// Unmarshal an array of objects of type T that implements Marshalable.
+	// Each object is unmarshaled using Marshalable.unmarshal.
+	// The Class object specifies the type, and is used to create the array
+	// and the unmarshaled objects.
+
+	public default <T extends Marshalable> T[] unmarshalObjectArray (String name, Class<T> clazz) {
+		int n = unmarshalArrayBegin (name);
+		T[] x = SimpleUtils.new_array_of_type (clazz, n);
+		try {
+			for (int i = 0; i < n; ++i) {
+				T obj = clazz.getDeclaredConstructor().newInstance();
+				obj.unmarshal (this, null);
+				x[i] = obj;
+			}
+		}
+		catch (Exception e) {
+			throw new MarshalException ("MarshalReader.unmarshalObjectArray: Unable to allocate new object: class = " + clazz.getName(), e);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	// Unmarshal a list of objects of type T that implements Marshalable.
+	// Each object is unmarshaled using Marshalable.unmarshal.
+	// The Class object specifies the type, and is used to create the
+	// unmarshaled objects.
+
+	public default <T extends Marshalable> ArrayList<T> unmarshalObjectList (String name, Class<T> clazz) {
+		int n = unmarshalArrayBegin (name);
+		ArrayList<T> x = new ArrayList<T>();
+		try {
+			for (int i = 0; i < n; ++i) {
+				T obj = clazz.getDeclaredConstructor().newInstance();
+				obj.unmarshal (this, null);
+				x.add (obj);
+			}
+		}
+		catch (Exception e) {
+			throw new MarshalException ("MarshalReader.unmarshalObjectList: Unable to allocate new object: class = " + clazz.getName(), e);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
 
 }

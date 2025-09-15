@@ -1,6 +1,8 @@
 package org.opensha.oaf.util;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
 import java.io.Closeable;
 
 /**
@@ -454,6 +456,32 @@ public interface MarshalWriter {
 		marshalArrayBegin (name, n);
 		for (T y : x) {
 			func.lambda_marshal (this, null, y);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	// Marshal an array of objects of type T that implements Marshalable.
+	// Each object is marshaled using Marshalable.marshal.
+
+	public default <T extends Marshalable> void marshalObjectArray (String name, T[] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			x[i].marshal (this, null);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	// Marshal a list of objects of type T that implements Marshalable.
+	// Each object is marshaled using Marshalable.marshal.
+
+	public default <T extends Marshalable> void marshalObjectList (String name, List<T> x) {
+		int n = x.size();
+		marshalArrayBegin (name, n);
+		for (T y : x) {
+			y.marshal (this, null);
 		}
 		marshalArrayEnd ();
 		return;
