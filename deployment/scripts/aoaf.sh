@@ -930,6 +930,11 @@ q_check_pdl_key_file () {
         echo "OAF is configured so it will NOT send forecasts to PDL"
     elif [ "$PDL_OPTION" == "$val_PDL_DEV" ]; then
         echo "OAF is configured send forecasts to PDL-DEVELOPMENT"
+    elif [[ "$PDL_OPTION" == dev:* ]]; then
+        echo "OAF is configured send forecasts to PDL-DEVELOPMENT"
+        if [ ! -f "/opt/aafs/key/${PDL_OPTION#dev:}" ]; then
+            echo "You need to install the PDL key file: /opt/aafs/key/${PDL_OPTION#dev:}"
+        fi
     else
         echo "OAF is configured send forecasts to PDL-PRODUCTION"
         if [ ! -f "/opt/aafs/key/$PDL_OPTION" ]; then

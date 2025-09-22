@@ -75,8 +75,9 @@
 #     If any of these options contains an ampersand, then the ampersand must be escaped with a backslash.
 #     The PDL option must be one of the following:
 #       "none" = Forecasts are not sent to PDL.
-#       "dev" = Forecasts are sent to PDL-Development.
+#       "dev" = Forecasts are sent to PDL-Development, unsigned.
 #       keyfile name = Forecasts are sent to PDL-Production; the keyfile name must be a file in /opt/aafs/key.
+#       dev:keyfile name = Forecasts are sent to PDL-Development; the keyfile name must be a file in /opt/aafs/key.
 #     It is assumed that DBNAME is both the data storage database and authentication database.
 #     The server configuration file is written to /opt/aafs/oafcfg/ServerConfig.json.
 #
@@ -102,8 +103,9 @@
 #     If any of these options contains an ampersand, then the ampersand must be escaped with a backslash.
 #     The PDL option must be one of the following:
 #       "none" = Forecasts are not sent to PDL.
-#       "dev" = Forecasts are sent to PDL-Development.
+#       "dev" = Forecasts are sent to PDL-Development, unsigned.
 #       keyfile name = Forecasts are sent to PDL-Production; the keyfile name must be a file in /opt/aafs/key.
+#       dev:keyfile name = Forecasts are sent to PDL-Development; the keyfile name must be a file in /opt/aafs/key.
 #     It is assumed that DBNAME is both the data storage database and authentication database.
 #     The two servers MUST have different replica set names.
 #     It is assumed that both servers use the same database name, username, and password.
@@ -131,8 +133,9 @@
 #     If any of these options contains an ampersand, then the ampersand must be escaped with a backslash.
 #     The PDL option must be one of the following:
 #       "none" = Forecasts are not sent to PDL.
-#       "dev" = Forecasts are sent to PDL-Development.
+#       "dev" = Forecasts are sent to PDL-Development, unsigned.
 #       keyfile name = Forecasts are sent to PDL-Production; the keyfile name must be a file in /opt/aafs/key.
+#       dev:keyfile name = Forecasts are sent to PDL-Development; the keyfile name must be a file in /opt/aafs/key.
 #     It is assumed that DBNAME is both the data storage database and authentication database.
 #     The two servers MUST have different replica set names.
 #     It is assumed that both servers use the same database name, username, and password.
@@ -468,6 +471,10 @@ copysubsrv () {
         dev)
             PDL_ENABLE_0="1"
             PDL_KEYFILE_0=""
+            ;;
+        dev:*)
+            PDL_ENABLE_0="1"
+            PDL_KEYFILE_0="/opt/aafs/key/${22#dev:}"
             ;;
         *)
             PDL_ENABLE_0="2"

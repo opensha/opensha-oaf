@@ -183,11 +183,13 @@ MONGO_REP_SET_2=
 
 # Destination for forecasts.  Must be one of:
 #  "none" -- Do not send forecasts to PDL.
-#  "dev" -- Send forecasts to PDL developement servers.
+#  "dev" -- Send forecasts to PDL developement servers, unsigned.
 #  keyfile_name -- Send forecasts to PDL production servers.  The value is the name of
 #    the cryptographic key file that is used to sign forecasts (filename only, without
 #    a path).  This script does not install the key file.  The user must install the
 #    key file in /opt/aafs/key.
+#  dev:keyfile_name -- Send forecasts to PDL developement servers, signed with a
+#    cryptographic key file.  The user must install the key file in /opt/aafs/key.
 # If the SERVER_OPTION is "dev", then this is ignored and the default value "none" is used.
 PDL_OPTION=
 
