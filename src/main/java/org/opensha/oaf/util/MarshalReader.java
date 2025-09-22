@@ -538,7 +538,7 @@ public interface MarshalReader {
 	}
 
 
-	//----- Object arrays and lists -----
+	//----- Object arrays, lists, and individual objects -----
 
 //	// Unmarshal an array of objects of type T.
 //	// Each object is unmarshaled using a function with signature
@@ -638,6 +638,32 @@ public interface MarshalReader {
 		}
 		unmarshalArrayEnd ();
 		return x;
+	}
+
+	// Unmarshal an object of type T.
+	// The object is unmarshaled using a function with signature
+	//   (MarshalReader reader, String name) -> T.
+	// This is the typical signature of a static unmarshaling method.
+	// See MarshalUtils for ways to adapt an instance unmarshaling method.
+
+	public default <T> T unmarshalObject (String name, MarshalUtils.UnmarshalFunction<T> func) {
+		return func.lambda_unmarshal (this, name);
+	}
+
+	// Unmarshal an objects of type T that implements Marshalable.
+	// The object is unmarshaled using Marshalable.unmarshal.
+	// The Class object specifies the type, and is used to create the object.
+
+	public default <T extends Marshalable> T unmarshalObject (String name, Class<T> clazz) {
+		T obj;
+		try {
+			obj = clazz.getDeclaredConstructor().newInstance();
+		}
+		catch (Exception e) {
+			throw new MarshalException ("MarshalReader.unmarshalObject: Unable to allocate new object: class = " + clazz.getName(), e);
+		}
+		obj.unmarshal (this, name);
+		return obj;
 	}
 
 }

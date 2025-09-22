@@ -423,7 +423,7 @@ public interface MarshalWriter {
 	}
 
 
-	//----- Object arrays and lists -----
+	//----- Object arrays, lists, and individual objects -----
 
 	// Marshal an array of objects of type T.
 	// Each object is marshaled using a function with signature
@@ -484,6 +484,27 @@ public interface MarshalWriter {
 			y.marshal (this, null);
 		}
 		marshalArrayEnd ();
+		return;
+	}
+
+	// Marshal an object of type T.
+	// The object is marshaled using a function with signature
+	//   (MarshalWriter writer, String name, S obj) -> void.
+	// This is the typical signature of a static marshaling method.
+	// Here S is a superclass of T, so objects of type T can be assigned
+	// to variables of type S.  Typically S = T.
+	// See MarshalUtils for ways to adapt an instance marshaling method.
+
+	public default <T> void marshalObject (String name, T x, MarshalUtils.MarshalFunction<? super T> func) {
+		func.lambda_marshal (this, name, x);
+		return;
+	}
+
+	// Marshal an object of type T that implements Marshalable.
+	// The object is marshaled using Marshalable.marshal.
+
+	public default <T extends Marshalable> void marshalObject (String name, T x) {
+		x.marshal (this, name);
 		return;
 	}
 

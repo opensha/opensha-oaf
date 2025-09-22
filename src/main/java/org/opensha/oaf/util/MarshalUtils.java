@@ -650,7 +650,7 @@ public class MarshalUtils {
 	// A lambda function that unmarshals an object of type T, given a reader and a name.  The signature is:
 	//   (MarshalReader reader, String name) -> T
 	// This signature typically matches:
-	//  - A static unmarshaling method (often called lambda_unmarshal or unmarshal_poly).
+	//  - A static unmarshaling method (often called static_unmarshal or unmarshal_poly).
 	//  - An instance unmarshaling method that is bound to an object (using the obj::method syntax).
 	//  - A constructor that performs unmarshaling.
 	// Note: An instance unmarshaling method typically can be wrapped in uifcn to convert it into
@@ -1879,6 +1879,91 @@ public class MarshalUtils {
 
 				for (int j = 0; j < new_list.size(); ++j) {
 					System.out.println (j + ": " + new_list.get(j).toString());
+				}
+			}
+
+
+			// --- Individual object marshal/unmarshal
+
+			// Marshal/unmarshal the array of regions using static method
+
+			{
+				System.out.println ();
+				System.out.println ("***** Marshal array of 4 regions using marshalObject with marshal_poly *****");
+				System.out.println ();
+
+				MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+				writer.marshalMapBegin (null);
+				for (int j = 0; j < region_array.length; ++j) {
+					writer.marshalObject ("entry_" + j, region_array[j], SphRegion::marshal_poly);
+				}
+				writer.marshalMapEnd ();
+				writer.check_write_complete ();
+
+				Object json_container = writer.get_json_container();
+				String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false, true);
+				System.out.println (formatted_string);
+
+				System.out.println ();
+				System.out.println ("***** Unmarshal array of 4 regions using unmarshalObject with unmarshal_poly *****");
+				System.out.println ();
+
+				MarshalImpJsonReader reader = new MarshalImpJsonReader (formatted_string);
+				reader.unmarshalMapBegin (null);
+				SphRegion[] new_array = new SphRegion[region_array.length];
+				for (int j = 0; j < region_array.length; ++j) {
+					new_array[j] = reader.unmarshalObject ("entry_" + j, SphRegion::unmarshal_poly);
+				}
+				reader.unmarshalMapEnd ();
+				reader.check_read_complete ();
+
+				System.out.println ("Array type = " + new_array.getClass().getName());
+				System.out.println ("Array length = " + new_array.length);
+				System.out.println ();
+
+				for (int j = 0; j < new_array.length; ++j) {
+					System.out.println (j + ": " + new_array[j].toString());
+				}
+			}
+
+			// Marshal/unmarshal the array of circles using Marshalable
+
+			{
+				System.out.println ();
+				System.out.println ("***** Marshal array of 2 circles using marshalObject with Marshalable.marshal *****");
+				System.out.println ();
+
+				MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+				writer.marshalMapBegin (null);
+				for (int j = 0; j < circle_array.length; ++j) {
+					writer.marshalObject ("entry_" + j, circle_array[j]);
+				}
+				writer.marshalMapEnd ();
+				writer.check_write_complete ();
+
+				Object json_container = writer.get_json_container();
+				String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false, true);
+				System.out.println (formatted_string);
+
+				System.out.println ();
+				System.out.println ("***** Unmarshal array of 2 circles using unmarshalObject with Marshalable.unmarshal and class object *****");
+				System.out.println ();
+
+				MarshalImpJsonReader reader = new MarshalImpJsonReader (formatted_string);
+				reader.unmarshalMapBegin (null);
+				SphRegion[] new_array = new SphRegion[circle_array.length];
+				for (int j = 0; j < circle_array.length; ++j) {
+					new_array[j] = reader.unmarshalObject ("entry_" + j, SphRegionCircle.class);
+				}
+				reader.unmarshalMapEnd ();
+				reader.check_read_complete ();
+
+				System.out.println ("Array type = " + new_array.getClass().getName());
+				System.out.println ("Array length = " + new_array.length);
+				System.out.println ();
+
+				for (int j = 0; j < new_array.length; ++j) {
+					System.out.println (j + ": " + new_array[j].toString());
 				}
 			}
 
