@@ -222,6 +222,40 @@ public class OEGUIController extends OEGUIListener {
 
 
 
+	//----- Tool dialogs -----
+
+
+	// Modal panel for maximum likelihood b-value.
+
+	private OEGUISubToolBMaxLike sub_tool_b_max_like;
+
+	public OEGUISubToolBMaxLike get_sub_tool_b_max_like () {
+		return sub_tool_b_max_like;
+	}
+
+
+	// Modal panel for computing b-value using b-positive.
+
+	private OEGUISubToolBPositive sub_tool_b_positive;
+
+	public OEGUISubToolBPositive get_sub_tool_b_positive () {
+		return sub_tool_b_positive;
+	}
+
+
+
+
+	// Initialize the tool panels.
+
+	private void init_toolPanels () throws GUIEDTException {
+		sub_tool_b_max_like = new OEGUISubToolBMaxLike (this);
+		sub_tool_b_positive = new OEGUISubToolBPositive (this);
+		return;
+	}
+
+
+
+
 	//----- Controls for the Data Parameters column -----
 
 
@@ -1212,6 +1246,10 @@ public class OEGUIController extends OEGUIListener {
 		init_aafsEditor();
 
 		init_fillerEditor();
+
+		// Initialize the tool panels
+
+		init_toolPanels();
 
 		// Set up the symbol table
 

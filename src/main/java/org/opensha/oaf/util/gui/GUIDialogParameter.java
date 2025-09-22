@@ -43,6 +43,14 @@ public interface GUIDialogParameter {
 	public int getDialogTermCode ();
 
 
+	// Return true if the dialog termination code indicates the user pressed OK.
+	// The termination code becomes available when the dialog begins the process of closing.
+
+	public default boolean isDialogTermCodeOK () {
+		return (getDialogTermCode() == TERMCODE_OK);
+	}
+
+
 	// Return true if this is a modal dialog.
 
 	public boolean getModalDialog ();

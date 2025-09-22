@@ -171,11 +171,12 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private static final int PARMGRP_COM_VALUE = 602;		// Common parameter value change
 //	private static final int PARMGRP_TIME_DEP_MC = 603;		// Checkbox for time-dependent magnitude of completeness
 	private static final int PARMGRP_SEQ_SPEC_MC = 604;		// Sequence-specific Mc value
-	private static final int PARMGRP_MAG_PREC = 605;		// Magnitude precision value
+//	private static final int PARMGRP_MAG_PREC = 605;		// Magnitude precision value
 	private static final int PARMGRP_COMPUTE_B = 606;		// Button to compute sequence-specific b-value
 	private static final int PARMGRP_B_VALUE = 607;			// b-value
 	private static final int PARMGRP_TIME_DEP_OPTION = 608;	// Option for time-dependent magnitude of completeness
 //	private static final int PARMGRP_ALPHA_EQUALS_B = 609;	// Option to take alpha == b
+	private static final int PARMGRP_TOOL_SELECT = 610;		// Tool selection option
 
 
 
@@ -276,16 +277,29 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	}
 
 
-	// Precision of magnitudes in the catalog; edit box containing a number.
-	// Used in the algorithm to estimate the b-value.  Defaults to 0.1.
+//	// Precision of magnitudes in the catalog; edit box containing a number.
+//	// Used in the algorithm to estimate the b-value.  Defaults to 0.1.
+//
+//	private DoubleParameter magPrecisionParam;
+//
+//	private DoubleParameter init_magPrecisionParam () throws GUIEDTException {
+//		magPrecisionParam = new DoubleParameter("Mag Precision", 0d, 1d, Double.valueOf(0.1));
+//		magPrecisionParam.setInfo("Magnitude rounding applied by network, for estimation of b-value");;
+//		register_param (magPrecisionParam, "magPrecisionParam", PARMGRP_MAG_PREC);
+//		return magPrecisionParam;
+//	}
 
-	private DoubleParameter magPrecisionParam;
 
-	private DoubleParameter init_magPrecisionParam () throws GUIEDTException {
-		magPrecisionParam = new DoubleParameter("Mag Precision", 0d, 1d, Double.valueOf(0.1));
-		magPrecisionParam.setInfo("Magnitude rounding applied by network, for estimation of b-value");;
-		register_param (magPrecisionParam, "magPrecisionParam", PARMGRP_MAG_PREC);
-		return magPrecisionParam;
+	// Option to select a tool to apply; dropdown containing an enumeration to select option.
+
+	private EnumParameter<CommonValueToolsOption> toolSelectOptionParam;
+
+	private EnumParameter<CommonValueToolsOption> init_toolSelectOptionParam () throws GUIEDTException {
+		toolSelectOptionParam = new EnumParameter<CommonValueToolsOption>(
+				"Tools for Mc and b-value", EnumSet.allOf(CommonValueToolsOption.class), CommonValueToolsOption.B_MAX_LIKE, null);
+		toolSelectOptionParam.setInfo("Selects a tool to use for calculating magnitude of completeness or Gutenberg-Richter b-value");
+		register_param (toolSelectOptionParam, "toolSelectOptionParam", PARMGRP_TOOL_SELECT);
+		return toolSelectOptionParam;
 	}
 
 
@@ -294,7 +308,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private ButtonParameter computeBButton;
 
 	private ButtonParameter init_computeBButton () throws GUIEDTException {
-		computeBButton = new ButtonParameter("Sequence-specific GR b-value", "Compute b (optional)");
+		computeBButton = new ButtonParameter("Run tool for Mc or b-value", "Run tool");
 		register_param (computeBButton, "computeBButton", PARMGRP_COMPUTE_B);
 		return computeBButton;
 	}
@@ -400,7 +414,9 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		
 		init_mcParam();
 		
-		init_magPrecisionParam();
+		//init_magPrecisionParam();
+
+		init_toolSelectOptionParam();
 		
 		init_computeBButton();
 		
@@ -448,9 +464,10 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		//commonValueList.addParameter(new GUISeparatorParameter("Separator2", gui_top.get_separator_color()));
 
-		commonValueList.addParameter(magPrecisionParam);
-		commonValueList.addParameter(computeBButton);
+		//commonValueList.addParameter(magPrecisionParam);
 		commonValueList.addParameter(bParam);
+		commonValueList.addParameter(toolSelectOptionParam);
+		commonValueList.addParameter(computeBButton);
 
 		commonValueList.addParameter(new GUISeparatorParameter("Separator3", gui_top.get_separator_color()));
 
@@ -516,9 +533,10 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		enableDefaultParam(mcParam, f_common_value_enable, null);
 
-		enableParam(magPrecisionParam, f_common_value_enable);
-		enableParam(computeBButton, f_common_value_enable);
+		//enableParam(magPrecisionParam, f_common_value_enable);
 		enableDefaultParam(bParam, f_common_value_enable, null);
+		enableParam(toolSelectOptionParam, f_common_value_enable);
+		enableParam(computeBButton, f_common_value_enable);
 
 		//enableDefaultParam(alphaEqualsBParam, f_common_value_enable, true);
 		//boolean f_alpha_eq_b = validParam(alphaEqualsBParam);
@@ -832,7 +850,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 		// Magnitude precision.
 
-		public double x_magPrecisionParam;	// parameter value, checked for validity
+		//public double x_magPrecisionParam;	// parameter value, checked for validity
 
 		// b-value, can be null.
 
@@ -906,7 +924,7 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 			// Magnitude precision.
 					
-			x_magPrecisionParam = validParam(magPrecisionParam);
+			//x_magPrecisionParam = validParam(magPrecisionParam);
 
 			// b-value
 
@@ -1156,16 +1174,29 @@ public class OEGUISubCommonValue extends OEGUIListener {
 
 
 
-		// Precision of magnitudes in the catalog.
-		// - Dump any aftershock parameters that have been computed.
-		// - Set b-parameter to default from generic model, or unspecified if none.
-		// - If b-value was changed, re-plot the magnitude-frequency distribution.
+//		// Precision of magnitudes in the catalog.
+//		// - Dump any aftershock parameters that have been computed.
+//		// - Set b-parameter to default from generic model, or unspecified if none.
+//		// - If b-value was changed, re-plot the magnitude-frequency distribution.
+//
+//		case PARMGRP_MAG_PREC: {
+//			if (!( f_sub_enable && f_common_value_enable )) {
+//				return;
+//			}
+//			report_common_value_change();
+//		}
+//		break;
 
-		case PARMGRP_MAG_PREC: {
+
+
+
+		// Tool selection option.
+		// - Do nothing.
+
+		case PARMGRP_TOOL_SELECT: {
 			if (!( f_sub_enable && f_common_value_enable )) {
 				return;
 			}
-			report_common_value_change();
 		}
 		break;
 
@@ -1182,71 +1213,95 @@ public class OEGUISubCommonValue extends OEGUIListener {
 			if (!( f_sub_enable && f_common_value_enable )) {
 				return;
 			}
-			report_common_value_change();
 
-			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
-			final XferBValueCompImpl xfer_b_value_comp_impl = new XferBValueCompImpl();
+			// Select the tool we are applying ...
 
-			// Load the parameters
+			switch (validParam(toolSelectOptionParam)) {
+			default:
+				throw new RuntimeException ("OEGUISubCommonValue: Unknown tool selection option.");
 
-			if (!( gui_top.call_xfer_load (xfer_b_value_comp_impl, "Incorrect parameters for computing b-value") )) {
-				return;
-			}
 
-			// Call model to compute b-value
+			// Maximum likelihood b-Value
 
-			GUICalcStep bStep_1 = new GUICalcStep("Computing b", "...", new Runnable() {
-				
-				@Override
-				public void run() {
-					double mc = xfer_b_value_comp_impl.x_mcParam;
-					
-					double magPrecision = xfer_b_value_comp_impl.x_magPrecisionParam;
+			case B_MAX_LIKE: {
 
-					long mainshock_time = gui_model.get_cur_mainshock().getOriginTime();
+				final XferBValueCompImpl xfer_b_value_comp_impl = new XferBValueCompImpl();
+				final OEGUISubToolBMaxLike tool_b_max_like = gui_controller.get_sub_tool_b_max_like();
 
-					ObsEqkRupList filteredRupList = new ObsEqkRupList();
-					for (ObsEqkRupture rup : gui_model.get_cur_aftershocks()) {
-						if (rup.getOriginTime() > mainshock_time && rup.getMag() >= mc) {	// foreshock fix
-							filteredRupList.add (rup);
-						}
-					}
+				// Load the parameters
 
-					if (filteredRupList.size() < 10) {
-						throw new RuntimeException ("Insufficient data to calculate b-value");
-					}
-					
-					double b = AftershockStatsCalc.getMaxLikelihood_b_value(filteredRupList, mc, magPrecision);
+				if (!( gui_top.call_xfer_load (xfer_b_value_comp_impl, "Incorrect parameters for computing b-value") )) {
+					return;
+				}
 
-					if (!( b >= 0.25 && b <= 4.0 )) {
-						throw new RuntimeException ("Calculated b-value is out-of-range, will not be used");
-					}
+				// Open the dialog
 
-					b = SimpleUtils.round_double_via_string ("%.3f", b);
+				double mc = xfer_b_value_comp_impl.x_mcParam;
+
+				boolean f_ok = tool_b_max_like.open_b_max_like_dialog (computeBButton, mc);
+
+				// If we got a b-value, write it back
+
+				if (f_ok && tool_b_max_like.get_f_has_computed_b()) {
+
+					report_common_value_change();
+
+					double b = tool_b_max_like.get_computed_b();
 					xfer_b_value_comp_impl.modify_bParam(b);
 
-					System.out.println("Number of aftershocks with magnitude at least Mc = " + filteredRupList.size());
-					System.out.println("Computed b-value: " + b);
-				}
-			});
-
-			// Store back transfer parameters, re-plot and update state
-
-			GUICalcStep bStep_2 = new GUICalcStep("Computing b", "...", new GUIEDTRunnable() {
-				
-				@Override
-				public void run_in_edt() throws GUIEDTException {
 					xfer_b_value_comp_impl.xfer_store();
 
 					if (definedParam(bParam)) {
 						gui_model.change_bParam(validParam(bParam));
 					}
 				}
-			});
 
-			// Run in threads
+			}
+			break;
 
-			GUICalcRunnable.run_steps (progress, null, bStep_1, bStep_2);
+
+			// Compute b-Value using b-positive
+
+			case B_POSITIVE: {
+
+				final XferBValueCompImpl xfer_b_value_comp_impl = new XferBValueCompImpl();
+				final OEGUISubToolBPositive tool_b_positive = gui_controller.get_sub_tool_b_positive();
+
+				// Load the parameters
+
+				if (!( gui_top.call_xfer_load (xfer_b_value_comp_impl, "Incorrect parameters for computing b-value") )) {
+					return;
+				}
+
+				// Open the dialog
+
+				double min_mag = 0.0;
+
+				boolean f_ok = tool_b_positive.open_b_positive_dialog (computeBButton, min_mag);
+
+				// If we got a b-value, write it back
+
+				if (f_ok && tool_b_positive.get_f_has_computed_b()) {
+
+					report_common_value_change();
+
+					double b = tool_b_positive.get_computed_b();
+					xfer_b_value_comp_impl.modify_bParam(b);
+
+					xfer_b_value_comp_impl.xfer_store();
+
+					if (definedParam(bParam)) {
+						gui_model.change_bParam(validParam(bParam));
+					}
+				}
+
+			}
+			break;
+
+
+			}
+
+
 		}
 		break;
 

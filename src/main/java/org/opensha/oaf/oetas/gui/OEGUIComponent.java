@@ -422,6 +422,27 @@ public class OEGUIComponent {
 
 
 
+	// Enumeration of options for common value tools.
+	
+	public enum CommonValueToolsOption {
+		B_MAX_LIKE("Max Likelhood b"),
+		B_POSITIVE("b-Positive");
+		
+		private String label;
+		
+		private CommonValueToolsOption(String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+
+
 	//----- Support -----
 
 

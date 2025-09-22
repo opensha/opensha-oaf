@@ -434,6 +434,44 @@ public class AftershockStatsCalc {
 
 
 
+	// Estimate the b-value using the b-positive method (van der Elst, 2021, JGR Solid Earth).
+	// Parameters:
+	//  rups = List of aftershocks.
+	//  min_mag_diff = Minimum positive difference between magnitudes of successive aftershocks.
+	//  min_num_diff = Minimum number of differences needed.
+	// Returns the estimated b-value.
+	// Throws an exception if the number of positive difference is not >= min_diff_num,
+	// or if the mean positive difference is very close to min_mag_diff.
+	// Important: rups must be sorted in order of increasing time.
+	// Note: min_mag_diff is typically twice the magnitude accuracy, a typical value is 0.2.
+	// Note: The caller should check if the returned b-value lies in a reasonable range.
+
+	public static double calc_b_positive (List<ObsEqkRupture> rups, double min_mag_diff, int min_num_diff) {
+		double mean_diff = 0.0;
+		int num_diff = 0;
+		double last_mag = 1.0e20;	// no prior mag
+		for (ObsEqkRupture rup : rups) {
+			double mag = rup.getMag();
+			double diff = mag - last_mag;
+			if (diff >= min_mag_diff) {
+				mean_diff += diff;
+				++num_diff;
+			}
+			last_mag = mag;
+		}
+		if (num_diff < min_num_diff) {
+			throw new RuntimeException ("Too few positive differences: found " + num_diff + ", need " + min_num_diff);
+		}
+		mean_diff = (mean_diff / ((double)num_diff)) - min_mag_diff;
+		if (mean_diff < 0.01) {
+			throw new RuntimeException ("Mean positive difference is too small: found " + mean_diff + ", minimum allowed " + 0.01);
+		}
+		return (Math.log10(Math.E)) / mean_diff;
+	}
+
+
+
+
 	/**
 	 * [DEPRECATED]
 	 * This returns the Page et al. (2016) time-dependent magnitude of completeness 
