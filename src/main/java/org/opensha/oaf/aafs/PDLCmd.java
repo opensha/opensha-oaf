@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import org.opensha.oaf.pdl.PDLProductBuilderOaf;
 import org.opensha.oaf.pdl.PDLSender;
 import org.opensha.oaf.pdl.PDLCodeChooserEventSequence;
+import gov.usgs.earthquake.product.Product;
 
 import org.opensha.oaf.util.MarshalUtils;
 import org.opensha.oaf.util.SimpleUtils;
@@ -110,6 +111,43 @@ import org.opensha.oaf.rj.USGS_ForecastHolder;
 // The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
 //
+// To delete an OAF product directly to PDL, then in addition to the above you should also include all of these:
+// --delete
+// --direct=true
+// --code=PRODUCTCODE         [optional, defaults to --eventsource concatenated with --eventsourcecode]
+// --eventsource=EVENTNETWORK
+// --eventsourcecode=EVENTCODE
+// --source=PRODUCTSOURCE     [optional, defaults to configured value, which should be "us"]
+// --type=PRODUCTTYPE         [optional, defaults to configured value, which should be "oaf"]
+// --reviewed=ISREVIEWED      [optional, defaults to "true"]
+// The value of --code identifies the product that is to be deleted.  The value of --code is typically an event ID.
+// The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
+// these determine which event page displays the product.
+// The optional parameters --source and --type identify the source (typically a network) and type of the product.
+// The optional parameter --reviewed, which must be "true" or "false", indicates if the deletion has been reviewed.
+// An OAF DELETE product is sent directly to PDL, without calling Comcat.
+// This has no effect on any event-sequence product that may exist.
+// Direct delete is intended for use with scenario products, which should use --type=oaf-scenario.
+//
+// If a forecast.json file exists on disk, then it can be sent directly to PDL as a product by including:
+// --update=JSONFILENAME
+// --direct=true
+// --code=PRODUCTCODE         [optional, defaults to --eventsource concatenated with --eventsourcecode]
+// --eventsource=EVENTNETWORK
+// --eventsourcecode=EVENTCODE
+// --source=PRODUCTSOURCE     [optional, defaults to configured value, which should be "us"]
+// --type=PRODUCTTYPE         [optional, defaults to configured value, which should be "oaf"]
+// --reviewed=ISREVIEWED      [optional, defaults to "true"]
+// The value of --code identifies the product that is to be sent.  The value of --code is typically an event ID.
+// The product replaces any prior product that was sent with the same --code.
+// The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
+// these determine which event page displays the product.
+// The optional parameters --source and --type identify the source (typically a network) and type of the product.
+// The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
+// An OAF product is sent directly to PDL, without calling Comcat.
+// This does not send an event-sequence product and has no effect on any event-sequence product that may exist.
+// Direct update is intended for use with scenario products, which should use --type=oaf-scenario.
+//
 // The command line is considered to be "consumed" if a product or delete was sent to PDL,
 // or if an error was reported to the user.  If the command line is consumed, then the caller
 // should exit without taking further action.  If the command line is not consumed, then the
@@ -141,6 +179,8 @@ public class PDLCmd {
 
 	public static final String PNAME_EVSEQ_CONFIG = "--evseq-config";	// Event-sequence configuration option
 	public static final String PNAME_ETAS_CONFIG = "--etas-config";		// ETAS configuration option
+
+	public static final String PNAME_DIRECT = "--direct";				// Direct send to PDL
 
 	// Values for the PNAME_PDL parameter
 
@@ -233,6 +273,9 @@ public class PDLCmd {
 
 		int evseq_config = ActionConfigFile.ESENA_UNSPECIFIED;
 		int etas_config = ActionConfigFile.ETAS_ENA_UNSPECIFIED;
+
+		boolean f_is_direct = false;
+		boolean f_seen_direct = false;
 
 		// Scan parameters
 
@@ -455,6 +498,32 @@ public class PDLCmd {
 					return true;
 				}
 				f_seen_reviewed = true;
+			}
+
+			// Product send direct to PDL option
+
+			else if (name.equalsIgnoreCase (PNAME_DIRECT)) {
+				if (!( f_send )) {
+					System.out.println ("Unrecognized command-line option: " + arg);
+					return true;
+				}
+				if (f_seen_direct) {
+					System.out.println ("Duplicate command-line option: " + arg);
+					return true;
+				}
+				if (value == null || value.isEmpty()) {
+					System.out.println ("Missing value in command-line option: " + arg);
+					return true;
+				}
+				if (value.equalsIgnoreCase ("true")) {
+					f_is_direct = true;
+				} else if (value.equalsIgnoreCase ("false")) {
+					f_is_direct = false;
+				} else {
+					System.out.println ("Invalid value in command-line option: " + arg);
+					return true;
+				}
+				f_seen_direct = true;
 			}
 
 			// Event ID option
@@ -752,6 +821,140 @@ public class PDLCmd {
 
 		if (etas_config != ActionConfigFile.ETAS_ENA_UNSPECIFIED) {
 			action_config.get_action_config_file().etas_enable = etas_config;
+		}
+
+		// Send OAF update from forecast.json direct to PDL
+
+		if (f_is_direct && update != null) {
+
+			// Check for required options
+
+			if (!( event_network != null
+				&& event_code != null )) {
+				System.out.println ("Cannot send PDL update because one or more of the following command-line options are missing:");
+				System.out.println (PNAME_EVENT_NETWORK + ", " + PNAME_EVENT_CODE);
+				return true;
+			}
+
+			if (code == null) {
+				code = event_network + event_code;
+			}
+
+			// Perform the send
+
+			boolean send_ok = false;
+
+			try {
+
+				// Read in the file
+
+				String jsonText = new String (Files.readAllBytes (Paths.get (update)));
+
+				// Modification time, 0 means now
+
+				long modifiedTime = 0L;
+
+				// Review status, false means automatically generated
+
+				//boolean isReviewed = true;
+				boolean isReviewed = f_is_reviewed;
+
+				// Build the product
+
+				Product product = PDLProductBuilderOaf.createProduct (code, event_network, event_code, isReviewed, jsonText, modifiedTime);
+
+				// Sign the product
+
+				PDLSender.signProduct (product);
+
+				// Send the product, true means it is text
+
+				PDLSender.sendProduct (product, true);
+
+				// Success
+
+				send_ok = true;
+			}
+
+			catch (Exception e) {
+				System.out.println ("Exception occurred while attempting to send update to PDL.");
+				e.printStackTrace();
+			}
+
+			// Inform user of result
+
+			if (send_ok) {
+				System.out.println ("PDL update was sent successfully.");
+			} else {
+				System.out.println ("PDL update was NOT sent successfully.");
+			}
+		
+			return true;
+		}
+
+		// Send OAF delete direct to PDL
+
+		if (f_is_direct && delete) {
+
+			// Check for required options
+
+			if (!( event_network != null
+				&& event_code != null )) {
+				System.out.println ("Cannot send PDL delete because one or more of the following command-line options are missing:");
+				System.out.println (PNAME_EVENT_NETWORK + ", " + PNAME_EVENT_CODE);
+				return true;
+			}
+
+			if (code == null) {
+				code = event_network + event_code;
+			}
+
+			// Perform the send
+
+			boolean send_ok = false;
+
+			try {
+
+				// Modification time, 0 means now
+
+				long modifiedTime = 0L;
+
+				// Review status, false means automatically generated
+
+				//boolean isReviewed = true;
+				boolean isReviewed = f_is_reviewed;
+
+				// Build the product
+
+				Product product = PDLProductBuilderOaf.createDeletionProduct (code, event_network, event_code, isReviewed, modifiedTime);
+
+				// Sign the product
+
+				PDLSender.signProduct (product);
+
+				// Send the product, true means it is text
+
+				PDLSender.sendProduct (product, true);
+
+				// Success
+
+				send_ok = true;
+			}
+
+			catch (Exception e) {
+				System.out.println ("Exception occurred while attempting to send delete to PDL.");
+				e.printStackTrace();
+			}
+
+			// Inform user of result
+
+			if (send_ok) {
+				System.out.println ("PDL delete was sent successfully.");
+			} else {
+				System.out.println ("PDL delete was NOT sent successfully.");
+			}
+		
+			return true;
 		}
 
 		// Send update from forecast.json
