@@ -146,26 +146,88 @@ public class SearchRadiusFnWCClip extends SearchRadiusFn {
 
 
 	// Get the default Wells and Coppersmith radius multiplier value to be inserted into the GUI.
+	// The value is coerced to lie between 0.0 and 100.0.
 
 	@Override
 	public double getDefaultGUIRadiusMult () {
-		return radiusMult;
+		if (radiusMult <= 1.0e-6) {
+			return 0.0;
+		}
+		return Math.min (100.0, radiusMult);
 	}
 
 
 	// Get the default minimum radius value to be inserted into the GUI.
+	// The value is coerced to lie between 0.0 and 20000.0.
 
 	@Override
 	public double getDefaultGUIRadiusMin () {
-		return radiusMin;
+		if (radiusMin <= MIN_RADIUS) {
+			return 0.0;
+		}
+		return Math.min (MAX_RADIUS, radiusMin);
 	}
 
 
 	// Get the default maximum radius value to be inserted into the GUI.
+	// The value is coerced to lie between 0.0 and 20000.0.
 
 	@Override
 	public double getDefaultGUIRadiusMax () {
-		return radiusMax;
+		if (radiusMax <= 1.0e-6) {
+			return 0.0;
+		}
+		return Math.min (MAX_RADIUS, radiusMax);
+	}
+
+
+	// Return true if the GUI should regard this function as constant.
+	// If the return is true, then getDefaultGUIRadiusMin() retrieves the constant.
+
+	@Override
+	public boolean getDefaultGUIIsConstant () {
+		return (radiusMult <= 1.0e-6);
+	}
+
+
+	// Return true if the GUI should regard the other function as being the same as this function.
+
+	@Override
+	public boolean getDefaultGUIIsEqual (SearchRadiusFn other) {
+
+		// If the other function is a different type, return true if they are both constants
+
+		if (!( other instanceof SearchRadiusFnWCClip )) {
+			return (
+				getDefaultGUIIsConstant()
+				&& other.getDefaultGUIIsConstant()
+				&& Math.abs (getDefaultGUIRadiusMin() - other.getDefaultGUIRadiusMin()) <= 1.0e-2
+			);
+		}
+
+		// Compare two functions using effective multiplier, effective max, and effective min
+
+		SearchRadiusFnWCClip x = (SearchRadiusFnWCClip)other;
+
+		double eff_mult_1 = ( (radiusMult <= 1.0e-6) ? 0.0 : Math.min (100.0, radiusMult) );
+		double eff_mult_2 = ( (x.radiusMult <= 1.0e-6) ? 0.0 : Math.min (100.0, x.radiusMult) );
+		if (!( Math.abs (eff_mult_1 - eff_mult_2) <= 1.0e-5 )) {
+			return false;
+		}
+
+		double eff_max_1 = ((radiusMax > 1.0e-6 && radiusMax < MAX_RADIUS - 1.0e-3) ? radiusMax : MAX_RADIUS);
+		double eff_max_2 = ((x.radiusMax > 1.0e-6 && x.radiusMax < MAX_RADIUS - 1.0e-3) ? x.radiusMax : MAX_RADIUS);
+		if (!( Math.abs (eff_max_1 - eff_max_2) <= 1.0e-2 )) {
+			return false;
+		}
+
+		double eff_min_1 = Math.max (MIN_RADIUS, radiusMin);
+		double eff_min_2 = Math.max (MIN_RADIUS, x.radiusMin);
+		if (!( Math.abs (eff_min_1 - eff_min_2) <= 1.0e-2 )) {
+			return false;
+		}
+
+		return true;
 	}
 
 

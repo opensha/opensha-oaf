@@ -436,6 +436,60 @@ public class OEGUIModel extends OEGUIComponent {
 
 	private SphRegion custom_search_region;
 
+	// Resolved search region, or null if none.
+	// Available when model state >= MODSTATE_CATALOG.
+	// This is the region used for the aftershock search in Comcat.
+	// If custom_search_region is non-null, then this should have the same value.
+	// This is mainly for display on the info tab.
+
+	private SphRegion resolved_search_region;
+
+	public final SphRegion get_resolved_search_region () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.resolved_search_region while in state " + cur_modstate_string());
+		}
+		return resolved_search_region;
+	}
+
+	// Resolved search region specification, or null if none.
+	// Available when model state >= MODSTATE_CATALOG.
+	// This specifies the aftershock search region, as given by GUI parameters.
+	// This is mainly for display on the info tab or in the region sub-panel,
+	// but is also used to transfer the region spec from analyst options to the region sub-panel.
+
+	private OEGUISubRegion.RegionSpec resolved_region_spec;
+
+	public final OEGUISubRegion.RegionSpec get_resolved_region_spec () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.resolved_region_spec while in state " + cur_modstate_string());
+		}
+		return resolved_region_spec;
+	}
+
+	// True if the search region was loaded from a forecast.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	private boolean loaded_region_from_fc;
+
+	public final boolean get_loaded_region_from_fc () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.loaded_region_from_fc while in state " + cur_modstate_string());
+		}
+		return loaded_region_from_fc;
+	}
+
+	// True if parameters were loaded from a forecast.
+	// Available when model state >= MODSTATE_CATALOG.
+
+	private boolean loaded_params_from_fc;
+
+	public final boolean get_loaded_params_from_fc () {
+		if (!( modstate >= MODSTATE_CATALOG )) {
+			throw new IllegalStateException ("Access to OEGUIModel.loaded_params_from_fc while in state " + cur_modstate_string());
+		}
+		return loaded_params_from_fc;
+	}
+
 	// Analyst adjustable parameters.
 	// Available when model state >= MODSTATE_MAINSHOCK.
 	// If a download file is available at the time the catalog is loaded, this is initialized
@@ -1362,6 +1416,10 @@ public class OEGUIModel extends OEGUIComponent {
 			aafs_fcparams = null;
 			fetch_fcparams = null;
 			custom_search_region = null;
+			resolved_search_region = null;
+			resolved_region_spec = null;
+			loaded_region_from_fc = false;
+			loaded_params_from_fc = false;
 			has_fetched_catalog = false;
 
 			cur_aftershocks = null;
@@ -1459,6 +1517,10 @@ public class OEGUIModel extends OEGUIComponent {
 		aafs_fcparams = null;
 		fetch_fcparams = null;
 		custom_search_region = null;
+		resolved_search_region = null;
+		resolved_region_spec = null;
+		loaded_region_from_fc = false;
+		loaded_params_from_fc = false;
 		analyst_adj_params = null;
 		has_fetched_catalog = false;
 
@@ -1534,6 +1596,67 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+	// Clear the parameters that describe what is loaded from a forecast.
+	// On return:
+	//  - resolved_search_region is null.
+	//  - resolved_region_spec contains a Standard region.
+	//  - loaded_region_from_fc is false.
+	//  - loaded_params_from_fc is false.
+
+	private void clear_fc_load_params () {
+		resolved_search_region = null;
+		resolved_region_spec = new OEGUISubRegion.RegionSpec();		// sets to Standard region
+		loaded_region_from_fc = false;
+		loaded_params_from_fc = false;
+	}
+
+
+
+
+	// Set the parameters that describe what is loaded from a forecast, from a download file.
+	// On return:
+	//  - resolved_search_region is the search region from analyst parameters or forecast parameters, or null.
+	//  - resolved_region_spec contains the region in analyst parameters, or a Standard region if no analyst parameters.
+	//  - loaded_region_from_fc is false.
+	//  - loaded_params_from_fc is true if there are analyst parameters.
+
+	private void set_fc_load_params (ForecastData dlf) {
+		resolved_search_region = null;
+		resolved_region_spec = new OEGUISubRegion.RegionSpec();		// sets to Standard region
+		loaded_region_from_fc = false;
+		loaded_params_from_fc = false;
+
+		// If we have analyst parameters ...
+
+		if (dlf.analyst.analyst_params != null) {
+
+			// Loaded params from forecast
+
+			loaded_params_from_fc = true;
+
+			// Get the search region spec from the analyst parameters
+
+			resolved_region_spec.set_region_for_analyst (dlf.analyst.analyst_params, dlf.mainshock.get_eqk_location());
+
+			// Get the custom search region from the analyst parameters, if any
+
+			if (dlf.analyst.analyst_params.aftershock_search_avail) {
+				resolved_search_region = dlf.analyst.analyst_params.aftershock_search_region;
+			}
+		}
+
+		// If we didn't get the resolved search region, then look in the forecast parameters
+
+		if (resolved_search_region == null && dlf.parameters.aftershock_search_avail) {
+			resolved_search_region = dlf.parameters.aftershock_search_region;
+		}
+
+		return;
+	}
+
+
+
+
 	// Perform setup given the mainshock.
 	// On entry, fcmain and cur_mainshock both contain the mainshock.
 	// On return:
@@ -1541,6 +1664,10 @@ public class OEGUIModel extends OEGUIComponent {
 	//  - fetch_fcparams contains a copy of aafs_fcparams;
 	//    in particular, fetch_fcparams.aftershock_search_region == null.
 	//  - custom_search_region is the current analyst-supplied region, or null if none.
+	//  - resolved_search_region is the region for the most recent forecast, or null if none.
+	//  - resolved_region_spec is the spec for the analyst-supplied region in the most recent forecast, or the Standard region if none.
+	//  - loaded_region_from_fc is false.
+	//  - loaded_params_from_fc is true if there are analyst parameters in the most recent forecast.
 	//  - analyst_adj_params is the current analyst-supplied adjustable parameters.
 	//  //- Generic model is computed.
 
@@ -1557,6 +1684,10 @@ public class OEGUIModel extends OEGUIComponent {
 		// Analyst-supplied forecast parameters, or null if none
 
 		ForecastParameters analyst_fcparms = null;
+
+		// Initialize load parameters
+
+		clear_fc_load_params();
 
 		// Display list of OAF products for this mainshock
 
@@ -1598,6 +1729,10 @@ public class OEGUIModel extends OEGUIComponent {
 					catch (Exception e) {
 						throw new RuntimeException ("Error: Unable to read download file from Comcat", e);
 					}
+
+					// Set the load parameters
+
+					set_fc_load_params (dlf);
 
 					// Save the analyst options
 						
@@ -1677,6 +1812,10 @@ public class OEGUIModel extends OEGUIComponent {
 	//  - fetch_fcparams contains a copy of aafs_fcparams;
 	//    in particular, fetch_fcparams.aftershock_search_region contains the search region.
 	//  - custom_search_region is the analyst-specified search region, or null if none.
+	//  - resolved_search_region is the region for the supplied forecast, or null if none.
+	//  - resolved_region_spec is the spec for the analyst-supplied region in the supplied forecast, or the Standard region if none.
+	//  - loaded_region_from_fc is false.
+	//  - loaded_params_from_fc is true if there are analyst parameters in the download file.
 	//  - analyst_adj_params is the analyst-supplied adjustable parameters from the download file.
 	//  //- Generic model is computed.
 	// Note: This function should not be followed by a call to setup_search_region.
@@ -1718,6 +1857,10 @@ public class OEGUIModel extends OEGUIComponent {
 		if (dlf.analyst.analyst_params != null && dlf.analyst.analyst_params.aftershock_search_avail) {
 			custom_search_region = dlf.analyst.analyst_params.aftershock_search_region;
 		}
+
+		// Set the load parameters
+
+		set_fc_load_params (dlf);
 
 		// Save adjustable parameters from analyst options
 
@@ -1829,6 +1972,24 @@ public class OEGUIModel extends OEGUIComponent {
 		double search_min_mag = SearchMagFn.NO_MIN_MAG;
 		if (xfer.x_dataSource.x_useMinMagFetchParam) {
 			search_min_mag = xfer.x_dataSource.x_minMagFetchParam;
+		}
+
+		// Synchronize resolved region spec with user-selected region
+
+		if (resolved_region_spec == null) {
+			resolved_region_spec = new OEGUISubRegion.RegionSpec();		// constructor defaults to Standard region
+		}
+
+		if (xfer.x_dataSource.x_region.is_standard_region()) {
+			if (!( resolved_region_spec.is_standard_region() )) {
+				xfer.x_dataSource.x_region.load_from_region_spec (resolved_region_spec);
+
+				// We got the search region from the forecast
+
+				loaded_region_from_fc = true;
+			}
+		} else {
+			xfer.x_dataSource.x_region.save_to_region_spec (resolved_region_spec);
 		}
 
 		// Switch on region type
@@ -1973,6 +2134,10 @@ public class OEGUIModel extends OEGUIComponent {
 		if (!( fetch_fcparams.aftershock_search_avail )) {
 			throw new IllegalStateException("Failed to build aftershock search region");
 		}
+
+		// Save the resolved region
+
+		resolved_search_region = fetch_fcparams.aftershock_search_region;
 
 		return;
 	}
@@ -2587,6 +2752,12 @@ public class OEGUIModel extends OEGUIComponent {
 		// The region from a file is treated as a custom region
 
 		custom_search_region = the_aftershock_search_region;
+
+		// Resolved region and spec
+
+		clear_fc_load_params();
+		resolved_search_region = custom_search_region;
+		resolved_region_spec = null;
 
 		// Reclassify earthquakes and apply filter
 
@@ -4297,6 +4468,7 @@ public class OEGUIModel extends OEGUIComponent {
 	private int info_tag_processor = -1;			// Processor information
 	private int info_tag_memory = -1;				// Memory information
 	private int info_tag_mainshock = -1;			// Mainshock information
+	private int info_tag_region = -1;				// Aftershock search region information
 	private int info_tag_rj_mle_fit = -1;			// RJ MLE and variance parameter it
 	private int info_tag_etas_mle_fit = -1;			// ETAS MLE parameter fit
 
@@ -4324,6 +4496,8 @@ public class OEGUIModel extends OEGUIComponent {
 
 		info_tag_etas_mle_fit = register_info_item (MODSTATE_PARAMETERS, "Fitted ETAS MLE Parameters");
 		info_tag_rj_mle_fit = register_info_item (MODSTATE_PARAMETERS, "Fitted RJ Parameters");
+
+		info_tag_region = register_info_item (MODSTATE_CATALOG, "Aftershock search region");
 
 		info_tag_mainshock = register_info_item (MODSTATE_MAINSHOCK, "Mainshock Information");
 
@@ -4489,6 +4663,7 @@ public class OEGUIModel extends OEGUIComponent {
 		// Information for fetching the catalog
 
 		case MODSTATE_CATALOG:
+			update_region_info();
 			break;
 
 		// Information for determining aftershock parameters
@@ -4602,6 +4777,35 @@ public class OEGUIModel extends OEGUIComponent {
 		}
 		else {
 			set_info_item (info_tag_mainshock, null);
+		}
+		return;
+
+	}
+
+
+
+
+	// Update the aftershock search region info.
+
+	public final void update_region_info () {
+		if (resolved_search_region != null || resolved_region_spec != null) {
+			StringBuilder sb = new StringBuilder();
+
+			if (resolved_search_region != null) {
+				sb.append ("region = " + SphRegion.marshal_to_line_poly (resolved_search_region) + "\n");
+				if (resolved_region_spec != null) {
+					sb.append ("\n");
+				}
+			}
+
+			if (resolved_region_spec != null) {
+				sb.append (resolved_region_spec.toString());
+			}
+
+			set_info_item (info_tag_region, sb.toString());
+		}
+		else {
+			set_info_item (info_tag_region, null);
 		}
 		return;
 

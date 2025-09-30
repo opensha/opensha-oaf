@@ -788,6 +788,13 @@ public class OEGUIController extends OEGUIListener {
 
 
 
+	// Fetch count, used to decide if it is necessary to confirm Comcat region to user.
+
+	private int fetch_count = 0;
+
+
+
+
 	// Class to view relevant parameters.
 	// This class holds copies of the parameters.
 
@@ -1400,6 +1407,10 @@ public class OEGUIController extends OEGUIListener {
 				return;
 			}
 
+			// Count the fetch
+
+			++fetch_count;
+
 			// Switch on data source type
 
 			switch (xfer_catalog_impl.x_dataSource.x_dataSourceTypeParam) {
@@ -1408,6 +1419,28 @@ public class OEGUIController extends OEGUIListener {
 			// Fetch from Comcat
 
 			case COMCAT: {
+
+				// If this is not the first fetch, and the region is not Standard ...
+
+				if (fetch_count != 1 && xfer_catalog_impl.x_dataSource.x_region.x_regionTypeParam != RegionType.STANDARD) {
+
+					// Ask user to confirm choice of region
+
+					String message
+						= "Click \"Yes\" to use the currently-selected search region ("
+						+ xfer_catalog_impl.x_dataSource.x_region.x_regionTypeParam.toString()
+						+ ").\n\n"
+						+ "Click \"No\" to use the Standard search region.\n\n"
+						+ "Click \"Cancel\" to abort the fetch operation.";
+
+					int conf = JOptionPane.showConfirmDialog(gui_top.get_top_window(), message, "Confirm aftershock search region", JOptionPane.YES_NO_CANCEL_OPTION);
+					if (conf == JOptionPane.NO_OPTION) {
+						xfer_catalog_impl.x_dataSource.x_region.modify_regionTypeParam (RegionType.STANDARD);
+					}
+					else if (conf != JOptionPane.YES_OPTION) {
+						return;
+					}
+				}
 
 				// Call model to fetch from Comcat
 
@@ -1436,9 +1469,48 @@ public class OEGUIController extends OEGUIListener {
 					}
 				});
 
+				// Notify user if parameters or region were loaded from the most recent forecast
+
+				GUIEDTRunnable postFetchNotifyStep = new GUIEDTRunnable() {
+						
+					@Override
+					public void run_in_edt() throws GUIEDTException {
+
+						OEGUISubRegion.RegionSpec resolved_region_spec = gui_model.get_resolved_region_spec();
+						boolean loaded_region_from_fc = gui_model.get_loaded_region_from_fc();
+						boolean loaded_params_from_fc = gui_model.get_loaded_params_from_fc();
+
+						if (loaded_params_from_fc || loaded_region_from_fc) {
+							StringBuilder sb = new StringBuilder();
+							if (loaded_params_from_fc) {
+								sb.append ("Parameters were loaded from the most recent forecast.\n\n");
+							}
+							if (loaded_region_from_fc) {
+								sb.append ("The aftershock search region");
+								if (resolved_region_spec != null) {
+									if (!( resolved_region_spec.is_standard_region() )) {
+										sb.append (" (" + resolved_region_spec.x_regionTypeParam.toString() + ")");
+									}
+								}
+								sb.append (" was loaded from the most recent forecast.\n\n");
+							}
+							sb.append ("If you don't want to load information from the most recent forecast, then open the \"Edit Data Source\"\npanel, uncheck \"Use analyst options\"");
+							if (loaded_region_from_fc) {
+								sb.append (", set the region type to \"Standard\"");
+							}
+							sb.append (", and fetch the data again.");
+
+							String message = sb.toString();
+							String title = "Information Loaded From Forecast";
+							int message_type = JOptionPane.INFORMATION_MESSAGE;
+							JOptionPane.showMessageDialog(gui_top.get_top_window(), message, title, message_type);
+						}
+					}
+				};
+
 				// Run in threads
 
-				GUICalcRunnable.run_steps (progress, null, fetchStep_1, postFetchPlotStep);
+				GUICalcRunnable.run_steps (progress, postFetchNotifyStep, fetchStep_1, postFetchPlotStep);
 			}
 			break;
 

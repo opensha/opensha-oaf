@@ -127,6 +127,7 @@ public abstract class SearchRadiusFn {
 
 
 	// Get the default Wells and Coppersmith radius multiplier value to be inserted into the GUI.
+	// The value is coerced to lie between 0.0 and 100.0.
 
 	public double getDefaultGUIRadiusMult () {
 		return 1.0;
@@ -134,6 +135,7 @@ public abstract class SearchRadiusFn {
 
 
 	// Get the default minimum radius value to be inserted into the GUI.
+	// The value is coerced to lie between 0.0 and 20000.0.
 
 	public double getDefaultGUIRadiusMin () {
 		return 0.0;
@@ -141,10 +143,22 @@ public abstract class SearchRadiusFn {
 
 
 	// Get the default maximum radius value to be inserted into the GUI.
+	// The value is coerced to lie between 0.0 and 20000.0.
 
 	public double getDefaultGUIRadiusMax () {
 		return 0.0;
 	}
+
+
+	// Return true if the GUI should regard this function as constant.
+	// If the return is true, then getDefaultGUIRadiusMin() retrieves the constant.
+
+	public abstract boolean getDefaultGUIIsConstant ();
+
+
+	// Return true if the GUI should regard the other function as being the same as this function.
+
+	public abstract boolean getDefaultGUIIsEqual (SearchRadiusFn other);
 
 
 

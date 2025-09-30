@@ -97,6 +97,16 @@ public class SearchMagFnConstant extends SearchMagFn {
 	}
 
 
+	// Return true if this function returns a constant value indicating
+	// to skip the centroid calculation.
+	// This function is provided for use by the GUI.
+
+	@Override
+	public boolean isSkipCentroid () {
+		return (mag > SKIP_CENTROID_TEST);
+	}
+
+
 
 
 	//----- Construction -----

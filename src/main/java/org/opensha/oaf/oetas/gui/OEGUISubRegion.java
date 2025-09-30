@@ -141,6 +141,7 @@ import org.opensha.oaf.util.gui.GUIParameterListParameter;
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
 import org.opensha.oaf.aafs.GUICmd;
+import org.opensha.oaf.aafs.ForecastParameters;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
 
@@ -194,8 +195,8 @@ public class OEGUISubRegion extends OEGUIListener {
 	private DoubleParameter maxLatParam;		// Maximum latitude; appears when Region Type is Rectangular
 	private DoubleParameter minLonParam;		// Minimum longitude; appears when Region Type is Rectangular
 	private DoubleParameter maxLonParam;		// Maximum longitude; appears when Region Type is Rectangular
-	private DoubleParameter minDepthParam;		// Minimum depth; always appears
-	private DoubleParameter maxDepthParam;		// Maximum depth; always appears
+	private DoubleParameter minDepthParam;		// Minimum depth; appears for all except Standard
+	private DoubleParameter maxDepthParam;		// Maximum depth; appears for all except Standard
 	private DoubleParameter wcMultiplierParam;	// Wells and Coppersmith multiplier; appears for WC regions
 	private DoubleParameter minRadiusParam;		// Minimum radius; appears for WC regions
 	private DoubleParameter maxRadiusParam;		// Maximum radius; appears for WC regions
@@ -398,6 +399,502 @@ public class OEGUISubRegion extends OEGUIListener {
 
 
 
+
+	//----- Region operations -----
+
+
+
+
+	// Class to hold a region specification.
+
+	public static class RegionSpec {
+
+		// Search region.
+
+		public RegionType x_regionTypeParam;	// Region type
+
+		public double x_radiusParam;		// Search radius; appears when Region Type is Circular
+		public double x_minLatParam;		// Minimum latitude; appears when Region Type is Rectangular
+		public double x_maxLatParam;		// Maximum latitude; appears when Region Type is Rectangular
+		public double x_minLonParam;		// Minimum longitude; appears when Region Type is Rectangular
+		public double x_maxLonParam;		// Maximum longitude; appears when Region Type is Rectangular
+		public double x_minDepthParam;		// Minimum depth; appears for all except Standard
+		public double x_maxDepthParam;		// Maximum depth; appears for all except Standard
+		public double x_wcMultiplierParam;	// Wells and Coppersmith multiplier; appears for WC regions
+		public double x_minRadiusParam;		// Minimum radius; appears for WC regions
+		public double x_maxRadiusParam;		// Maximum radius; appears for WC regions
+		public double x_centerLatParam;		// Circle center latitude; appears for custom circle
+		public double x_centerLonParam;		// Circle center longitude; appears for custom circle
+
+
+		// Return true if this is a Standard region.
+
+		public final boolean is_standard_region () {
+			return (x_regionTypeParam == RegionType.STANDARD);
+		}
+
+
+		// Set to a Standard region.
+
+		public final void set_region_standard () {
+
+			x_regionTypeParam = RegionType.STANDARD;
+
+			x_radiusParam = 0.0;
+			x_minLatParam = 0.0;
+			x_maxLatParam = 0.0;
+			x_minLonParam = 0.0;
+			x_maxLonParam = 0.0;
+			x_minDepthParam = 0.0;
+			x_maxDepthParam = 0.0;
+			x_wcMultiplierParam = 0.0;
+			x_minRadiusParam = 0.0;
+			x_maxRadiusParam = 0.0;
+			x_centerLatParam = 0.0;
+			x_centerLonParam = 0.0;
+
+			return;
+		}
+
+
+		// Set to a Centroid WC Circle region.
+
+		public final void set_region_centroid_wc_circle (
+			double wc_mult,
+			double min_radius,
+			double max_radius,
+			double min_depth,
+			double max_depth
+		) {
+			set_region_standard();
+
+			x_regionTypeParam = RegionType.CENTROID_WC_CIRCLE;
+			x_minRadiusParam = min_radius;
+			x_maxRadiusParam = max_radius;
+			x_minDepthParam = min_depth;
+			x_maxDepthParam = max_depth;
+
+			return;
+		}
+
+
+		// Set to a Centroid Circle region.
+
+		public final void set_region_centroid_circle (
+			double radius,
+			double min_depth,
+			double max_depth
+		) {
+			set_region_standard();
+
+			x_regionTypeParam = RegionType.CENTROID_CIRCLE;
+			x_radiusParam = radius;
+			x_minDepthParam = min_depth;
+			x_maxDepthParam = max_depth;
+
+			return;
+		}
+
+
+		// Set to an Epicenter WC Circle region.
+
+		public final void set_region_epicenter_wc_circle (
+			double wc_mult,
+			double min_radius,
+			double max_radius,
+			double min_depth,
+			double max_depth
+		) {
+			set_region_standard();
+
+			x_regionTypeParam = RegionType.EPICENTER_WC_CIRCLE;
+			x_minRadiusParam = min_radius;
+			x_maxRadiusParam = max_radius;
+			x_minDepthParam = min_depth;
+			x_maxDepthParam = max_depth;
+
+			return;
+		}
+
+
+		// Set to an Epicenter Circle region.
+
+		public final void set_region_epicenter_circle (
+			double radius,
+			double min_depth,
+			double max_depth
+		) {
+			set_region_standard();
+
+			x_regionTypeParam = RegionType.EPICENTER_CIRCLE;
+			x_radiusParam = radius;
+			x_minDepthParam = min_depth;
+			x_maxDepthParam = max_depth;
+
+			return;
+		}
+
+
+		// Set to a Custom Circle region.
+
+		public final void set_region_custom_circle (
+			double radius,
+			double center_lat,
+			double center_lon,
+			double min_depth,
+			double max_depth
+		) {
+			set_region_standard();
+
+			x_regionTypeParam = RegionType.CUSTOM_CIRCLE;
+			x_radiusParam = radius;
+			x_centerLatParam = center_lat;
+			x_centerLonParam = center_lon;
+			x_minDepthParam = min_depth;
+			x_maxDepthParam = max_depth;
+
+			return;
+		}
+
+
+		// Set to a Custom Rectangle region.
+
+		public final void set_region_custom_rectangle (
+			double min_lat,
+			double max_lat,
+			double min_lon,
+			double max_lon,
+			double min_depth,
+			double max_depth
+		) {
+			set_region_standard();
+
+			x_regionTypeParam = RegionType.CUSTOM_RECTANGLE;
+			x_minLatParam = min_lat;
+			x_maxLatParam = max_lat;
+			x_minLonParam = min_lon;
+			x_maxLonParam = max_lon;
+			x_minDepthParam = min_depth;
+			x_maxDepthParam = max_depth;
+
+			return;
+		}
+
+
+		// Constructor sets up a Standard region.
+
+		public RegionSpec () {
+			set_region_standard();
+		}
+
+
+		// Set the region specified by the given analyst parameters.
+		// Parmaeters:
+		//  anparam = Forecast parameters, as they would appear in AnalystOptions. Can be null.
+		//  loc = Mainshock location.
+		// Returns this object.
+
+		public final RegionSpec set_region_for_analyst (ForecastParameters anparam, Location loc) {
+
+			// Check for standard region
+
+			if (is_anparam_standard_region (anparam, loc)) {
+				set_region_standard();
+				return this;
+			}
+
+			// Default depths
+
+			double min_depth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
+			double max_depth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+
+			// If aftershock search parameters are available ...
+
+			if (anparam.aftershock_search_avail) {
+
+				// Adjust depths if they are not defaulted
+
+				if (!( anparam.min_depth >= ForecastParameters.SEARCH_PARAM_TEST || Math.abs (anparam.min_depth - ComcatOAFAccessor.DEFAULT_MIN_DEPTH) <= 1.0e-3 )) {
+					min_depth = anparam.min_depth;
+				}
+				if (!( anparam.max_depth >= ForecastParameters.SEARCH_PARAM_TEST || Math.abs (anparam.max_depth - ComcatOAFAccessor.DEFAULT_MAX_DEPTH) <= 1.0e-3 )) {
+					max_depth = anparam.max_depth;
+				}
+
+				// If we have a custom region ...
+
+				if (!( anparam.aftershock_search_region == null )) {
+
+					// Circular region
+
+					if (anparam.aftershock_search_region.isCircular()) {
+						set_region_custom_circle (
+							anparam.aftershock_search_region.getCircleRadiusKm(),
+							anparam.aftershock_search_region.getCircleCenterLat(),
+							anparam.aftershock_search_region.getCircleCenterLon(),
+							min_depth,
+							max_depth
+						);
+						return this;
+					}
+
+					// Rectangular region (treat any non-circle as a rectangle)
+
+					set_region_custom_rectangle (
+						anparam.aftershock_search_region.getMinLat(),
+						anparam.aftershock_search_region.getMaxLat(),
+						anparam.aftershock_search_region.getMinLon(),
+						anparam.aftershock_search_region.getMaxLon(),
+						min_depth,
+						max_depth
+					);
+					return this;
+				}
+			}
+
+			// If magnitude of completeness parameters are available (should always be true) ...
+
+			if (anparam.mag_comp_avail) {
+
+				//SearchMagFn magSample = anparam.mag_comp_params.get_fcn_magSample();
+				SearchRadiusFn radiusSample = anparam.mag_comp_params.get_fcn_radiusSample();
+				SearchMagFn magCentroid = anparam.mag_comp_params.get_fcn_magCentroid();
+				//SearchRadiusFn radiusCentroid = anparam.mag_comp_params.get_fcn_radiusCentroid();
+
+				// If constant search radius ...
+
+				if (radiusSample.getDefaultGUIIsConstant()) {
+
+					// Get the radius
+
+					double radius = radiusSample.getDefaultGUIRadiusMin();
+
+					// If skip centroid, Epicenter Circle
+					
+					if (magCentroid.isSkipCentroid()) {
+						set_region_epicenter_circle (
+							radius,
+							min_depth,
+							max_depth
+						);
+						return this;
+					}
+
+					// Otherwise, Centroid Circle
+
+					set_region_centroid_circle (
+						radius,
+						min_depth,
+						max_depth
+					);
+					return this;
+				}
+
+				// Otherwise, WC search radius ...
+
+				double wc_mult = radiusSample.getDefaultGUIRadiusMult();
+				double min_radius = radiusSample.getDefaultGUIRadiusMin();
+				double max_radius = radiusSample.getDefaultGUIRadiusMax();
+
+				// If skip centroid, Epicenter WC Circle
+					
+				if (magCentroid.isSkipCentroid()) {
+					set_region_epicenter_wc_circle (
+						wc_mult,
+						min_radius,
+						max_radius,
+						min_depth,
+						max_depth
+					);
+					return this;
+				}
+
+				// Otherwise, Centroid WC Circle
+
+				set_region_centroid_wc_circle (
+					wc_mult,
+					min_radius,
+					max_radius,
+					min_depth,
+					max_depth
+				);
+				return this;
+
+			}
+
+			// No magnitude of completeness parameters (should never get here), set Standard region
+
+			set_region_standard();
+			return this;
+		}
+
+		// Display the region specification.
+		// This produces multi-line output with each line ending in newline.
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+
+			result.append ("region_type = " + x_regionTypeParam.toString() + "\n");
+		
+			switch (x_regionTypeParam) {
+
+			case STANDARD:
+				// do nothing
+				break;
+
+			case CENTROID_WC_CIRCLE:
+				result.append ("wc_mult = " + x_wcMultiplierParam + "\n");
+				result.append ("min_radius = " + x_minRadiusParam + "\n");
+				result.append ("max_radius = " + x_maxRadiusParam + "\n");
+				result.append ("min_depth = " + x_minDepthParam + "\n");
+				result.append ("max_depth = " + x_maxDepthParam + "\n");
+				break;
+
+			case CENTROID_CIRCLE:
+				result.append ("radius = " + x_radiusParam + "\n");
+				result.append ("min_depth = " + x_minDepthParam + "\n");
+				result.append ("max_depth = " + x_maxDepthParam + "\n");
+				break;
+
+			case EPICENTER_WC_CIRCLE:
+				result.append ("wc_mult = " + x_wcMultiplierParam + "\n");
+				result.append ("min_radius = " + x_minRadiusParam + "\n");
+				result.append ("max_radius = " + x_maxRadiusParam + "\n");
+				result.append ("min_depth = " + x_minDepthParam + "\n");
+				result.append ("max_depth = " + x_maxDepthParam + "\n");
+				break;
+
+			case EPICENTER_CIRCLE:
+				result.append ("radius = " + x_radiusParam + "\n");
+				result.append ("min_depth = " + x_minDepthParam + "\n");
+				result.append ("max_depth = " + x_maxDepthParam + "\n");
+				break;
+
+			case CUSTOM_CIRCLE:
+				result.append ("radius = " + x_radiusParam + "\n");
+				result.append ("center_lat = " + x_centerLatParam + "\n");
+				result.append ("center_lon = " + x_centerLonParam + "\n");
+				result.append ("min_depth = " + x_minDepthParam + "\n");
+				result.append ("max_depth = " + x_maxDepthParam + "\n");
+				break;
+
+			case CUSTOM_RECTANGLE:
+				result.append ("min_lat = " + x_minLatParam + "\n");
+				result.append ("max_lat = " + x_maxLatParam + "\n");
+				result.append ("min_lon = " + x_minLonParam + "\n");
+				result.append ("max_lon = " + x_maxLonParam + "\n");
+				result.append ("min_depth = " + x_minDepthParam + "\n");
+				result.append ("max_depth = " + x_maxDepthParam + "\n");
+				break;
+
+			default:
+				throw new IllegalStateException("Unknown region type: " + x_regionTypeParam);
+			}
+
+			return result.toString();
+		}
+
+	}
+
+
+
+
+	// Test if two sets of magnitude of completeness parameters are considered
+	// to refer to the same search region.
+	// Note: This returns true if:
+	//  - Both centroid magnitudes are skip-centroid or not skip-centroid.
+	//  - Both search radius functions are the same (within tolerance).
+	// Note that search magniudes and centroid radius are not considered.
+
+	public static boolean is_mag_comp_same_region (MagCompPage_Parameters mag_comp_1, MagCompPage_Parameters mag_comp_2) {
+
+		//SearchMagFn magSample_1 = mag_comp_1.get_fcn_magSample();
+		SearchRadiusFn radiusSample_1 = mag_comp_1.get_fcn_radiusSample();
+		SearchMagFn magCentroid_1 = mag_comp_1.get_fcn_magCentroid();
+		//SearchRadiusFn radiusCentroid_1 = mag_comp_1.get_fcn_radiusCentroid();
+
+		//SearchMagFn magSample_2 = mag_comp_2.get_fcn_magSample();
+		SearchRadiusFn radiusSample_2 = mag_comp_2.get_fcn_radiusSample();
+		SearchMagFn magCentroid_2 = mag_comp_2.get_fcn_magCentroid();
+		//SearchRadiusFn radiusCentroid_2 = mag_comp_2.get_fcn_radiusCentroid();
+
+		// Check agreement on skip-centroid
+
+		if (!( magCentroid_1.isSkipCentroid() == magCentroid_2.isSkipCentroid() )) {
+			return false;
+		}
+
+		// Check agreement on search Radius
+
+		if (!( radiusSample_1.getDefaultGUIIsEqual (radiusSample_2) )) {
+			return false;
+		}
+
+		return true;
+	}
+
+
+
+
+	// Test if a set of analyst forecast parameters select a Standard region.
+	// Parmaeters:
+	//  anparam = Forecast parameters, as they would appear in AnalystOptions. Can be null.
+	//  loc = Mainshock location.
+
+	public static boolean is_anparam_standard_region (ForecastParameters anparam, Location loc) {
+
+		// Null parameters select a Standard region.
+
+		if (anparam == null) {
+			return true;
+		}
+
+		// If aftershock search parameters are available ...
+
+		if (anparam.aftershock_search_avail) {
+
+			// Must not have a custom aftershock search region
+
+			if (!( anparam.aftershock_search_region == null )) {
+				return false;
+			}
+
+			// Depths must be defaulted or equal to the default
+
+			if (!( anparam.min_depth >= ForecastParameters.SEARCH_PARAM_TEST || Math.abs (anparam.min_depth - ComcatOAFAccessor.DEFAULT_MIN_DEPTH) <= 1.0e-3 )) {
+				return false;
+			}
+			if (!( anparam.max_depth >= ForecastParameters.SEARCH_PARAM_TEST || Math.abs (anparam.max_depth - ComcatOAFAccessor.DEFAULT_MAX_DEPTH) <= 1.0e-3 )) {
+				return false;
+			}
+		}
+
+		// If magnitude of completeness parameters are available ...
+
+		if (anparam.mag_comp_avail) {
+
+			// Get magnitude of completeness parameters for mainshock location
+
+			MagCompPage_ParametersFetch fetch = new MagCompPage_ParametersFetch();
+			OAFTectonicRegime regime = fetch.getRegion (loc);
+			MagCompPage_Parameters main_mag_comp_params = fetch.get(regime);
+
+			// Regions must be the same
+
+			if (!( is_mag_comp_same_region (anparam.mag_comp_params, main_mag_comp_params) )) {
+				return false;
+			}
+		}
+
+		// Found same region
+
+		return true;
+	}
+
+
+
+
 	//----- Parameter transfer -----
 
 
@@ -420,17 +917,51 @@ public class OEGUISubRegion extends OEGUIListener {
 		public double x_maxLatParam;		// Maximum latitude; appears when Region Type is Rectangular
 		public double x_minLonParam;		// Minimum longitude; appears when Region Type is Rectangular
 		public double x_maxLonParam;		// Maximum longitude; appears when Region Type is Rectangular
-		public double x_minDepthParam;		// Minimum depth; always appears
-		public double x_maxDepthParam;		// Maximum depth; always appears
+		public double x_minDepthParam;		// Minimum depth; appears for all except Standard
+		public double x_maxDepthParam;		// Maximum depth; appears for all except Standard
 		public double x_wcMultiplierParam;	// Wells and Coppersmith multiplier; appears for WC regions
 		public double x_minRadiusParam;		// Minimum radius; appears for WC regions
 		public double x_maxRadiusParam;		// Maximum radius; appears for WC regions
 		public double x_centerLatParam;		// Circle center latitude; appears for custom circle
 		public double x_centerLonParam;		// Circle center longitude; appears for custom circle
 
+		// Region modification
+
+		public abstract void modify_regionTypeParam (RegionType x);	// Region type
+
+		public abstract void modify_radiusParam (double x);			// Search radius; appears when Region Type is Circular
+		public abstract void modify_minLatParam (double x);			// Minimum latitude; appears when Region Type is Rectangular
+		public abstract void modify_maxLatParam (double x);			// Maximum latitude; appears when Region Type is Rectangular
+		public abstract void modify_minLonParam (double x);			// Minimum longitude; appears when Region Type is Rectangular
+		public abstract void modify_maxLonParam (double x);			// Maximum longitude; appears when Region Type is Rectangular
+		public abstract void modify_minDepthParam (double x);		// Minimum depth; appears for all except Standard
+		public abstract void modify_maxDepthParam (double x);		// Maximum depth; appears for all except Standard
+		public abstract void modify_wcMultiplierParam (double x);	// Wells and Coppersmith multiplier; appears for WC regions
+		public abstract void modify_minRadiusParam (double x);		// Minimum radius; appears for WC regions
+		public abstract void modify_maxRadiusParam (double x);		// Maximum radius; appears for WC regions
+		public abstract void modify_centerLatParam (double x);		// Circle center latitude; appears for custom circle
+		public abstract void modify_centerLonParam (double x);		// Circle center longitude; appears for custom circle
+
 		// Get the implementation class.
 
 		public abstract XferRegionImpl xfer_get_impl ();
+
+
+		// Return true if this is a Standard region.
+
+		public final boolean is_standard_region () {
+			return (x_regionTypeParam == RegionType.STANDARD);
+		}
+
+
+		// Load from a region specification.
+
+		public abstract void load_from_region_spec (RegionSpec rspec);
+
+
+		// Save to a region specification.
+
+		public abstract void save_to_region_spec (RegionSpec rspec);
 	}
 
 
@@ -454,9 +985,392 @@ public class OEGUISubRegion extends OEGUIListener {
 		}
 
 
+		// Region modification
+
+		private boolean dirty_regionTypeParam;		// Region type
+
+		private boolean dirty_radiusParam;			// Search radius; appears when Region Type is Circular
+		private boolean dirty_minLatParam;			// Minimum latitude; appears when Region Type is Rectangular
+		private boolean dirty_maxLatParam;			// Maximum latitude; appears when Region Type is Rectangular
+		private boolean dirty_minLonParam;			// Minimum longitude; appears when Region Type is Rectangular
+		private boolean dirty_maxLonParam;			// Maximum longitude; appears when Region Type is Rectangular
+		private boolean dirty_minDepthParam;		// Minimum depth; appears for all except Standard
+		private boolean dirty_maxDepthParam;		// Maximum depth; appears for all except Standard
+		private boolean dirty_wcMultiplierParam;	// Wells and Coppersmith multiplier; appears for WC regions
+		private boolean dirty_minRadiusParam;		// Minimum radius; appears for WC regions
+		private boolean dirty_maxRadiusParam;		// Maximum radius; appears for WC regions
+		private boolean dirty_centerLatParam;		// Circle center latitude; appears for custom circle
+		private boolean dirty_centerLonParam;		// Circle center longitude; appears for custom circle
+
+		@Override
+		public void modify_regionTypeParam (RegionType x) {	// Region type
+			x_regionTypeParam = x;
+			dirty_regionTypeParam = true;
+		}
+
+		@Override
+		public void modify_radiusParam (double x) {			// Search radius; appears when Region Type is Circular
+			x_radiusParam = x;
+			dirty_radiusParam = true;
+		}
+
+		@Override
+		public void modify_minLatParam (double x) {			// Minimum latitude; appears when Region Type is Rectangular
+			x_minLatParam = x;
+			dirty_minLatParam = true;
+		}
+
+		@Override
+		public void modify_maxLatParam (double x) {			// Maximum latitude; appears when Region Type is Rectangular
+			x_maxLatParam = x;
+			dirty_maxLatParam = true;
+		}
+
+		@Override
+		public void modify_minLonParam (double x) {			// Minimum longitude; appears when Region Type is Rectangular
+			x_minLonParam = x;
+			dirty_minLonParam = true;
+		}
+
+		@Override
+		public void modify_maxLonParam (double x) {			// Maximum longitude; appears when Region Type is Rectangular
+			x_maxLonParam = x;
+			dirty_maxLonParam = true;
+		}
+
+		@Override
+		public void modify_minDepthParam (double x) {		// Minimum depth; appears for all except Standard
+			x_minDepthParam = x;
+			dirty_minDepthParam = true;
+		}
+
+		@Override
+		public void modify_maxDepthParam (double x) {		// Maximum depth; appears for all except Standard
+			x_maxDepthParam = x;
+			dirty_maxDepthParam = true;
+		}
+
+		@Override
+		public void modify_wcMultiplierParam (double x) {	// Wells and Coppersmith multiplier; appears for WC regions
+			x_wcMultiplierParam = x;
+			dirty_wcMultiplierParam = true;
+		}
+
+		@Override
+		public void modify_minRadiusParam (double x) {		// Minimum radius; appears for WC regions
+			x_minRadiusParam = x;
+			dirty_minRadiusParam = true;
+		}
+
+		@Override
+		public void modify_maxRadiusParam (double x) {		// Maximum radius; appears for WC regions
+			x_maxRadiusParam = x;
+			dirty_maxRadiusParam = true;
+		}
+
+		@Override
+		public void modify_centerLatParam (double x) {		// Circle center latitude; appears for custom circle
+			x_centerLatParam = x;
+			dirty_centerLatParam = true;
+		}
+
+		@Override
+		public void modify_centerLonParam (double x) {		// Circle center longitude; appears for custom circle
+			x_centerLonParam = x;
+			dirty_centerLonParam = true;
+		}
+
+
+		// Set to a Standard region.
+
+		public final void set_region_standard () {
+
+			modify_regionTypeParam (RegionType.STANDARD);
+
+			return;
+		}
+
+
+		// Set to a Centroid WC Circle region.
+
+		public final void set_region_centroid_wc_circle (
+			double wc_mult,
+			double min_radius,
+			double max_radius,
+			double min_depth,
+			double max_depth
+		) {
+			modify_regionTypeParam (RegionType.CENTROID_WC_CIRCLE);
+			modify_minRadiusParam (min_radius);
+			modify_maxRadiusParam (max_radius);
+			modify_minDepthParam (min_depth);
+			modify_maxDepthParam (max_depth);
+
+			return;
+		}
+
+
+		// Set to a Centroid Circle region.
+
+		public final void set_region_centroid_circle (
+			double radius,
+			double min_depth,
+			double max_depth
+		) {
+			modify_regionTypeParam (RegionType.CENTROID_CIRCLE);
+			modify_radiusParam (radius);
+			modify_minDepthParam (min_depth);
+			modify_maxDepthParam (max_depth);
+
+			return;
+		}
+
+
+		// Set to an Epicenter WC Circle region.
+
+		public final void set_region_epicenter_wc_circle (
+			double wc_mult,
+			double min_radius,
+			double max_radius,
+			double min_depth,
+			double max_depth
+		) {
+			modify_regionTypeParam (RegionType.EPICENTER_WC_CIRCLE);
+			modify_minRadiusParam (min_radius);
+			modify_maxRadiusParam (max_radius);
+			modify_minDepthParam (min_depth);
+			modify_maxDepthParam (max_depth);
+
+			return;
+		}
+
+
+		// Set to an Epicenter Circle region.
+
+		public final void set_region_epicenter_circle (
+			double radius,
+			double min_depth,
+			double max_depth
+		) {
+			modify_regionTypeParam (RegionType.EPICENTER_CIRCLE);
+			modify_radiusParam (radius);
+			modify_minDepthParam (min_depth);
+			modify_maxDepthParam (max_depth);
+
+			return;
+		}
+
+
+		// Set to a Custom Circle region.
+
+		public final void set_region_custom_circle (
+			double radius,
+			double center_lat,
+			double center_lon,
+			double min_depth,
+			double max_depth
+		) {
+			modify_regionTypeParam (RegionType.CUSTOM_CIRCLE);
+			modify_radiusParam (radius);
+			modify_centerLatParam (center_lat);
+			modify_centerLonParam (center_lon);
+			modify_minDepthParam (min_depth);
+			modify_maxDepthParam (max_depth);
+
+			return;
+		}
+
+
+		// Set to a Custom Rectangle region.
+
+		public final void set_region_custom_rectangle (
+			double min_lat,
+			double max_lat,
+			double min_lon,
+			double max_lon,
+			double min_depth,
+			double max_depth
+		) {
+			modify_regionTypeParam (RegionType.CUSTOM_RECTANGLE);
+			modify_minLatParam (min_lat);
+			modify_maxLatParam (max_lat);
+			modify_minLonParam (min_lon);
+			modify_maxLonParam (max_lon);
+			modify_minDepthParam (min_depth);
+			modify_maxDepthParam (max_depth);
+
+			return;
+		}
+
+
+		// Load from a region specification.
+
+		@Override
+		public void load_from_region_spec (RegionSpec rspec) {
+		
+			switch (rspec.x_regionTypeParam) {
+
+			case STANDARD:
+				set_region_standard ();
+				break;
+
+			case CENTROID_WC_CIRCLE:
+				set_region_centroid_wc_circle (
+					rspec.x_wcMultiplierParam,
+					rspec.x_minRadiusParam,
+					rspec.x_maxRadiusParam,
+					rspec.x_minDepthParam,
+					rspec.x_maxDepthParam
+				);
+				break;
+
+			case CENTROID_CIRCLE:
+				set_region_centroid_circle (
+					rspec.x_radiusParam,
+					rspec.x_minDepthParam,
+					rspec.x_maxDepthParam
+				);
+				break;
+
+			case EPICENTER_WC_CIRCLE:
+				set_region_epicenter_wc_circle (
+					rspec.x_wcMultiplierParam,
+					rspec.x_minRadiusParam,
+					rspec.x_maxRadiusParam,
+					rspec.x_minDepthParam,
+					rspec.x_maxDepthParam
+				);
+				break;
+
+			case EPICENTER_CIRCLE:
+				set_region_epicenter_circle (
+					rspec.x_radiusParam,
+					rspec.x_minDepthParam,
+					rspec.x_maxDepthParam
+				);
+				break;
+
+			case CUSTOM_CIRCLE:
+				set_region_custom_circle (
+					rspec.x_radiusParam,
+					rspec.x_centerLatParam,
+					rspec.x_centerLonParam,
+					rspec.x_minDepthParam,
+					rspec.x_maxDepthParam
+				);
+				break;
+
+			case CUSTOM_RECTANGLE:
+				set_region_custom_rectangle (
+					rspec.x_minLatParam,
+					rspec.x_maxLatParam,
+					rspec.x_minLonParam,
+					rspec.x_maxLonParam,
+					rspec.x_minDepthParam,
+					rspec.x_maxDepthParam
+				);
+				break;
+
+			default:
+				throw new IllegalStateException("Unknown region type: " + rspec.x_regionTypeParam);
+			}
+
+			return;
+		}
+
+
+		// Save to a region specification.
+
+		@Override
+		public void save_to_region_spec (RegionSpec rspec) {
+		
+			switch (x_regionTypeParam) {
+
+			case STANDARD:
+				rspec.set_region_standard ();
+				break;
+
+			case CENTROID_WC_CIRCLE:
+				rspec.set_region_centroid_wc_circle (
+					x_wcMultiplierParam,
+					x_minRadiusParam,
+					x_maxRadiusParam,
+					x_minDepthParam,
+					x_maxDepthParam
+				);
+				break;
+
+			case CENTROID_CIRCLE:
+				rspec.set_region_centroid_circle (
+					x_radiusParam,
+					x_minDepthParam,
+					x_maxDepthParam
+				);
+				break;
+
+			case EPICENTER_WC_CIRCLE:
+				rspec.set_region_epicenter_wc_circle (
+					x_wcMultiplierParam,
+					x_minRadiusParam,
+					x_maxRadiusParam,
+					x_minDepthParam,
+					x_maxDepthParam
+				);
+				break;
+
+			case EPICENTER_CIRCLE:
+				rspec.set_region_epicenter_circle (
+					x_radiusParam,
+					x_minDepthParam,
+					x_maxDepthParam
+				);
+				break;
+
+			case CUSTOM_CIRCLE:
+				rspec.set_region_custom_circle (
+					x_radiusParam,
+					x_centerLatParam,
+					x_centerLonParam,
+					x_minDepthParam,
+					x_maxDepthParam
+				);
+				break;
+
+			case CUSTOM_RECTANGLE:
+				rspec.set_region_custom_rectangle (
+					x_minLatParam,
+					x_maxLatParam,
+					x_minLonParam,
+					x_maxLonParam,
+					x_minDepthParam,
+					x_maxDepthParam
+				);
+				break;
+
+			default:
+				throw new IllegalStateException("Unknown region type: " + x_regionTypeParam);
+			}
+
+			return;
+		}
+
+
 		// Clear all dirty-value flags.
 
 		private void internal_clean () {
+			dirty_regionTypeParam = false;
+			dirty_radiusParam = false;
+			dirty_minLatParam = false;
+			dirty_maxLatParam = false;
+			dirty_minLonParam = false;
+			dirty_maxLonParam = false;
+			dirty_minDepthParam = false;
+			dirty_maxDepthParam = false;
+			dirty_wcMultiplierParam = false;
+			dirty_minRadiusParam = false;
+			dirty_maxRadiusParam = false;
+			dirty_centerLatParam = false;
+			dirty_centerLonParam = false;
 			return;
 		}
 
@@ -543,6 +1457,75 @@ public class OEGUISubRegion extends OEGUIListener {
 
 		@Override
 		public void xfer_store () throws GUIEDTException {
+
+			if (dirty_radiusParam) {		// Search radius; appears when Region Type is Circular
+				dirty_radiusParam = false;
+				updateParam(radiusParam, x_radiusParam);
+			}
+
+			if (dirty_minLatParam) {		// Minimum latitude; appears when Region Type is Rectangular
+				dirty_minLatParam = false;
+				updateParam(minLatParam, x_minLatParam);
+			}
+
+			if (dirty_maxLatParam) {		// Maximum latitude; appears when Region Type is Rectangular
+				dirty_maxLatParam = false;
+				updateParam(maxLatParam, x_maxLatParam);
+			}
+
+			if (dirty_minLonParam) {		// Minimum longitude; appears when Region Type is Rectangular
+				dirty_minLonParam = false;
+				updateParam(minLonParam, x_minLonParam);
+			}
+
+			if (dirty_maxLonParam) {		// Maximum longitude; appears when Region Type is Rectangular
+				dirty_maxLonParam = false;
+				updateParam(maxLonParam, x_maxLonParam);
+			}
+
+			if (dirty_minDepthParam) {		// Minimum depth; appears for all except Standard
+				dirty_minDepthParam = false;
+				updateParam(minDepthParam, x_minDepthParam);
+			}
+
+			if (dirty_maxDepthParam) {		// Maximum depth; appears for all except Standard
+				dirty_maxDepthParam = false;
+				updateParam(maxDepthParam, x_maxDepthParam);
+			}
+
+			if (dirty_wcMultiplierParam) {	// Wells and Coppersmith multiplier; appears for WC regions
+				dirty_wcMultiplierParam = false;
+				updateParam(wcMultiplierParam, x_wcMultiplierParam);
+			}
+
+			if (dirty_minRadiusParam) {		// Minimum radius; appears for WC regions
+				dirty_minRadiusParam = false;
+				updateParam(minRadiusParam, x_minRadiusParam);
+			}
+
+			if (dirty_maxRadiusParam) {		// Maximum radius; appears for WC regions
+				dirty_maxRadiusParam = false;
+				updateParam(maxRadiusParam, x_maxRadiusParam);
+			}
+
+			if (dirty_centerLatParam) {		// Circle center latitude; appears for custom circle
+				dirty_centerLatParam = false;
+				updateParam(centerLatParam, x_centerLatParam);
+			}
+
+			if (dirty_centerLonParam) {		// Circle center longitude; appears for custom circle
+				dirty_centerLonParam = false;
+				updateParam(centerLonParam, x_centerLonParam);
+			}
+
+			if (dirty_regionTypeParam) {	// Region type
+				dirty_regionTypeParam = false;
+				updateParam(regionTypeParam, x_regionTypeParam);
+
+				updateRegionParamList(validParam(regionTypeParam));
+				adjust_enable();
+			}
+
 			return;
 		}
 	}

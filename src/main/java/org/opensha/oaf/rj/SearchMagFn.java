@@ -82,6 +82,13 @@ public abstract class SearchMagFn {
 	public abstract SearchMagFn makeRemovedMinMag (double min_mag);
 
 
+	// Return true if this function returns a constant value indicating
+	// to skip the centroid calculation.
+	// This function is provided for use by the GUI.
+
+	public abstract boolean isSkipCentroid ();
+
+
 
 
 
