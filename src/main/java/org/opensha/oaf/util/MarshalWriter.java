@@ -461,6 +461,26 @@ public interface MarshalWriter {
 		return;
 	}
 
+	// Marshal a list of objects of type T.
+	// Each object is marshaled using a function with signature
+	//   (MarshalWriter writer, String name, S obj) -> void.
+	// This is the typical signature of a static marshaling method.
+	// Here S is a superclass of T, so objects of type T can be assigned
+	// to variables of type S.  Typically S = T.
+	// See MarshalUtils for ways to adapt an instance marshaling method.
+	// Note: Calling marshalObjectCollection would produce the same result.
+	// This function is provided as a partner to MarshalReader.unmarshalObjectList.
+
+	public default <T> void marshalObjectList (String name, List<T> x, MarshalUtils.MarshalFunction<? super T> func) {
+		int n = x.size();
+		marshalArrayBegin (name, n);
+		for (T y : x) {
+			func.lambda_marshal (this, null, y);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
 	// Marshal an array of objects of type T that implements Marshalable.
 	// Each object is marshaled using Marshalable.marshal.
 

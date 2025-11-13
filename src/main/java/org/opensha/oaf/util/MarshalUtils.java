@@ -1743,7 +1743,7 @@ public class MarshalUtils {
 
 			{
 				System.out.println ();
-				System.out.println ("***** Marshal list of 4 regions using marshal_poly *****");
+				System.out.println ("***** Marshal list of 4 regions using marshal_poly (Collection form) *****");
 				System.out.println ();
 
 				MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
@@ -1757,7 +1757,7 @@ public class MarshalUtils {
 				System.out.println (formatted_string);
 
 				System.out.println ();
-				System.out.println ("***** Unmarshal list of 4 regions using unmarshal_poly *****");
+				System.out.println ("***** Unmarshal list of 4 regions using unmarshal_poly (Collection form) *****");
 				System.out.println ();
 
 				MarshalImpJsonReader reader = new MarshalImpJsonReader (formatted_string);
@@ -1775,11 +1775,44 @@ public class MarshalUtils {
 				}
 			}
 
+			{
+				System.out.println ();
+				System.out.println ("***** Marshal list of 4 regions using marshal_poly (List form) *****");
+				System.out.println ();
+
+				MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+				writer.marshalMapBegin (null);
+				writer.marshalObjectList ("region_list", region_list, SphRegion::marshal_poly);
+				writer.marshalMapEnd ();
+				writer.check_write_complete ();
+
+				Object json_container = writer.get_json_container();
+				String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false, true);
+				System.out.println (formatted_string);
+
+				System.out.println ();
+				System.out.println ("***** Unmarshal list of 4 regions using unmarshal_poly (List form) *****");
+				System.out.println ();
+
+				MarshalImpJsonReader reader = new MarshalImpJsonReader (formatted_string);
+				reader.unmarshalMapBegin (null);
+				List<SphRegion> new_list = reader.unmarshalObjectList ("region_list", SphRegion::unmarshal_poly);
+				reader.unmarshalMapEnd ();
+				reader.check_read_complete ();
+
+				System.out.println ("List length = " + new_list.size());
+				System.out.println ();
+
+				for (int j = 0; j < new_list.size(); ++j) {
+					System.out.println (j + ": " + new_list.get(j).toString());
+				}
+			}
+
 			// Marshal/unmarshal the list of circles using instance method with supplier
 
 			{
 				System.out.println ();
-				System.out.println ("***** Marshal list of 2 circles using marshal (mifcn wrapper) *****");
+				System.out.println ("***** Marshal list of 2 circles using marshal (mifcn wrapper) (Collection form) *****");
 				System.out.println ();
 
 				MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
@@ -1793,7 +1826,7 @@ public class MarshalUtils {
 				System.out.println (formatted_string);
 
 				System.out.println ();
-				System.out.println ("***** Unmarshal list of 2 circles using unmarshal (uifcn wrapper) *****");
+				System.out.println ("***** Unmarshal list of 2 circles using unmarshal (uifcn wrapper) (Collection form) *****");
 				System.out.println ();
 
 				MarshalImpJsonReader reader = new MarshalImpJsonReader (formatted_string);
@@ -1811,11 +1844,44 @@ public class MarshalUtils {
 				}
 			}
 
+			{
+				System.out.println ();
+				System.out.println ("***** Marshal list of 2 circles using marshal (mifcn wrapper) (List form) *****");
+				System.out.println ();
+
+				MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+				writer.marshalMapBegin (null);
+				writer.marshalObjectList ("circle_list", circle_list, mifcn(SphRegionCircle::marshal));
+				writer.marshalMapEnd ();
+				writer.check_write_complete ();
+
+				Object json_container = writer.get_json_container();
+				String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false, true);
+				System.out.println (formatted_string);
+
+				System.out.println ();
+				System.out.println ("***** Unmarshal list of 2 circles using unmarshal (uifcn wrapper) (List form) *****");
+				System.out.println ();
+
+				MarshalImpJsonReader reader = new MarshalImpJsonReader (formatted_string);
+				reader.unmarshalMapBegin (null);
+				List<SphRegionCircle> new_list = reader.unmarshalObjectList ("circle_list", uifcn(SphRegionCircle::unmarshal, SphRegionCircle::new));
+				reader.unmarshalMapEnd ();
+				reader.check_read_complete ();
+
+				System.out.println ("List length = " + new_list.size());
+				System.out.println ();
+
+				for (int j = 0; j < new_list.size(); ++j) {
+					System.out.println (j + ": " + new_list.get(j).toString());
+				}
+			}
+
 			// Marshal/unmarshal the list of circles using instance method with class object
 
 			{
 				System.out.println ();
-				System.out.println ("***** Marshal list of 2 circles using marshal (mifcn wrapper) *****");
+				System.out.println ("***** Marshal list of 2 circles using marshal (mifcn wrapper) (Collection form) *****");
 				System.out.println ();
 
 				MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
@@ -1829,13 +1895,46 @@ public class MarshalUtils {
 				System.out.println (formatted_string);
 
 				System.out.println ();
-				System.out.println ("***** Unmarshal list of 2 circles using unmarshal (uicfcn wrapper) *****");
+				System.out.println ("***** Unmarshal list of 2 circles using unmarshal (uicfcn wrapper) (Collection form) *****");
 				System.out.println ();
 
 				MarshalImpJsonReader reader = new MarshalImpJsonReader (formatted_string);
 				reader.unmarshalMapBegin (null);
 				List<SphRegionCircle> new_list = new ArrayList<SphRegionCircle>();
 				reader.unmarshalObjectCollection ("circle_list", new_list, uicfcn(SphRegionCircle::unmarshal, SphRegionCircle.class));
+				reader.unmarshalMapEnd ();
+				reader.check_read_complete ();
+
+				System.out.println ("List length = " + new_list.size());
+				System.out.println ();
+
+				for (int j = 0; j < new_list.size(); ++j) {
+					System.out.println (j + ": " + new_list.get(j).toString());
+				}
+			}
+
+			{
+				System.out.println ();
+				System.out.println ("***** Marshal list of 2 circles using marshal (mifcn wrapper) (List form) *****");
+				System.out.println ();
+
+				MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+				writer.marshalMapBegin (null);
+				writer.marshalObjectList ("circle_list", circle_list, mifcn(SphRegionCircle::marshal));
+				writer.marshalMapEnd ();
+				writer.check_write_complete ();
+
+				Object json_container = writer.get_json_container();
+				String formatted_string = GeoJsonUtils.jsonObjectToString (json_container, false, true);
+				System.out.println (formatted_string);
+
+				System.out.println ();
+				System.out.println ("***** Unmarshal list of 2 circles using unmarshal (uicfcn wrapper) (List form) *****");
+				System.out.println ();
+
+				MarshalImpJsonReader reader = new MarshalImpJsonReader (formatted_string);
+				reader.unmarshalMapBegin (null);
+				List<SphRegionCircle> new_list = reader.unmarshalObjectList ("circle_list", uicfcn(SphRegionCircle::unmarshal, SphRegionCircle.class));
 				reader.unmarshalMapEnd ();
 				reader.check_read_complete ();
 

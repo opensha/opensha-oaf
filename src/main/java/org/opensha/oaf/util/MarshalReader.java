@@ -596,6 +596,22 @@ public interface MarshalReader {
 		return;
 	}
 
+	// Unmarshal a list of objects of type T.
+	// Each object is unmarshaled using a function with signature
+	//   (MarshalReader reader, String name) -> T.
+	// This is the typical signature of a static unmarshaling method.
+	// See MarshalUtils for ways to adapt an instance unmarshaling method.
+
+	public default <T> ArrayList<T> unmarshalObjectList (String name, MarshalUtils.UnmarshalFunction<T> func) {
+		int n = unmarshalArrayBegin (name);
+		ArrayList<T> x = new ArrayList<T>();
+		for (int i = 0; i < n; ++i) {
+			x.add (func.lambda_unmarshal (this, null));
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
 	// Unmarshal an array of objects of type T that implements Marshalable.
 	// Each object is unmarshaled using Marshalable.unmarshal.
 	// The Class object specifies the type, and is used to create the array
