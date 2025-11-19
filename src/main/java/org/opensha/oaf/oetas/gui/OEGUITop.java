@@ -151,6 +151,10 @@ import org.opensha.oaf.util.gui.GUIEDTException;
 import org.opensha.oaf.util.gui.GUIEDTRunnable;
 import org.opensha.oaf.util.gui.GUIEventAlias;
 import org.opensha.oaf.util.gui.GUIExternalCatalog;
+import org.opensha.oaf.util.gui.GUIHtmlViewerDialog;
+import org.opensha.oaf.util.gui.GUIHelpListener;
+import org.opensha.oaf.oetas.OEConstants;
+import java.net.URL;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
@@ -159,6 +163,8 @@ import org.opensha.oaf.aafs.MongoDBSSLParams;
 import org.opensha.oaf.aafs.VersionInfo;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
+
+import java.util.function.Supplier;
 
 import org.json.simple.JSONObject;
 
@@ -219,6 +225,14 @@ public class OEGUITop extends OEGUIComponent {
 
 	public final boolean get_trace_events () {
 		return trace_events;
+	}
+
+	// Setting this flag true enables the built-in help system.
+
+	private boolean provide_help = true;
+
+	public final boolean get_provide_help () {
+		return provide_help;
 	}
 
 
@@ -738,6 +752,107 @@ public class OEGUITop extends OEGUIComponent {
 
 
 
+	//----- Help viewer -----
+
+
+
+
+	// The help viewer.
+
+	private GUIHtmlViewerDialog help_viewer = null;
+
+	// The owner for the help viewer.
+
+	private Component help_owner = null;
+
+	// The locator for the help viewer.
+
+	private Component help_locator = null;
+
+	// The directory that contains help files.
+
+	private static final String HELP_DIRECTORY = "guihelp/";
+
+
+
+
+	// Initialize the help viewer.
+
+	private void init_help () {
+		if (get_provide_help()) {
+			help_viewer = new GUIHtmlViewerDialog (false, trace_events);
+			help_owner = get_top_window();
+			help_locator = gui_view.get_tabbedPane();
+
+			Dimension help_size = new Dimension (get_chartWidth() * 3 / 4, get_height() * 3 / 4);
+			help_viewer.setDialogDimensions (help_size);
+			help_viewer.setDialogTitle ("OAF GUI Help Viewer");
+			help_viewer.setCancelText ("Close");
+		}
+
+		return;
+	}
+
+
+
+
+	// Show a help screen.
+	// Perameters:
+	//  c = Help component, from the help listener.
+	//  help_file = HTML filename, in the GUI help directory.
+
+	public void show_help (Component c, String help_file) throws GUIEDTException {
+		URL help_url = null;
+		if (help_file != null) {
+			if (get_trace_events()) {
+				System.out.println ("?!?!? Help request: " + help_file);
+			}
+			help_url = OEConstants.class.getResource (HELP_DIRECTORY + help_file);
+		}
+		else {
+			if (get_trace_events()) {
+				System.out.println ("?!?!? Help request: Null file");
+			}
+		}
+		help_viewer.openDialog (help_owner, help_locator, help_url);
+		return;
+	}
+
+
+
+
+	// Make a help listener that displays the specified help file.
+	// Returns null if help is not being provided.
+
+	public GUIHelpListener make_help (final String help_file) {
+		if (!( get_provide_help() )) {
+			return null;
+		}
+		return (c) -> {
+			show_help (c, help_file);
+			return;
+		};
+	}
+
+
+
+
+	// Make a help listener that displays the help file returned by the supplier.
+	// Returns null if help is not being provided.
+
+	public GUIHelpListener make_help (final Supplier<String> help_file_supplier) {
+		if (!( get_provide_help() )) {
+			return null;
+		}
+		return (c) -> {
+			show_help (c, help_file_supplier.get());
+			return;
+		};
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -847,8 +962,10 @@ public class OEGUITop extends OEGUIComponent {
 		get_top_window().setContentPane(mainPanel);
 		get_top_window().setSize(get_paramWidth()*paramColumns + get_chartWidth(), get_height());
 		get_top_window().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		get_top_window().setTitle("Aftershock Statistics GUI");
+		get_top_window().setTitle("Operational Aftershock Forecasting (OAF) GUI");
 		get_top_window().setLocationRelativeTo(null);
+
+		init_help();
 	}
 
 

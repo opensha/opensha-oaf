@@ -1,0 +1,61 @@
+<html>
+    <head>
+        <title>Data Source Options: Published Forecast</title>
+    </head>
+    <body>
+        <h2>Data Source Options: Published Forecast</h2>
+        <p>
+            This panel can display a list of all published forecasts for the mainshock,
+            and select one to load into the GUI.
+            Only forecasts that include a download file (forecast_data.json) are considered.
+            The mainshock event ID is specified using the <b>USGS Event ID</b> field on the main panel.
+        </p>
+        <p>
+            The GUI loads the earthquake catalog that is contained within the download file.
+            Also, forecast parameters in the GUI are initialized to the parameter values in the download file
+            that were used to create the published forecast.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Populate Forecast List</b></p>
+        <p>
+            Click this button to query Comcat and obtain a list of published forecasts
+            that include a download file.
+            The list is loaded into the <b>Available Forecasts</b> drop-down so that
+            you can make a selection.
+        </p>
+        <p>
+            Note that you don&#39;t have to click the button if you just want to use the
+            most recent forecast.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Include superseded</b></p>
+        <p>
+            Check the box if you want to retrieve a list of all forecasts for the mainshock.
+        </p>
+        <p>
+            Uncheck the box if you only want to retrieve the most recent forecast.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Available Forecasts</b></p>
+        <p>
+            If you clicked the <b>Populate</b> button, this drop-down lists all the published forecasts
+            that have a download file.
+            Each forecast is identified by the date and time it was issued.
+            Forecasts are listed in reverse chronologial order.
+            You should select the desired forecast from the list.
+        </p>
+        <p>
+            If you did not click the <b>Populate</b> button, this drop-down displays <i>Use current forecast</i>,
+            which tells the GUI to load the most recent forecast.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Data Start Time<br>Data End Time</b></p>
+        <p>
+            These are read-only fields.
+            When a published forecast is loaded, these fields are set to the start and end times of the
+            earthquake catalog, expressed as days since the mainshock.
+            The start time can be negative, to indicate that the catalog includes
+            foreshocks which occur before the mainshock.
+        </p>
+   </body>
+</html>

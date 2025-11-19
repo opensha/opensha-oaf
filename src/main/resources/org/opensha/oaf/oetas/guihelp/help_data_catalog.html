@@ -1,0 +1,116 @@
+<html>
+    <head>
+        <title>Data Source Options: Catalog File</title>
+    </head>
+    <body>
+        <h2>Data Source Options: Catalog File</h2>
+        <p>
+            This panel lets you specify options for loading an earthquake catalog from a file on disk.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Catalog Filename<br>Browse Catalog File</b></p>
+        <p>
+            Use these controls to select a disk file.
+            You can type the filename into the text box,
+            or you can click the <b>Browse</b> button to open a file chooser dialog.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Call Comcat for mainshock</b></p>
+        <p>
+            If this box is checked then, in addition to loading the catalog from a file,
+            the GUI also calls Comcat to obtain information about the mainshock.
+            This information can include such things as aftershock parameters and injectable
+            text used in a prior forecast, and information needed to send a forecast to PDL.
+            It also lets you handle a situation where the catalog file does not contain a mainshock.
+            The following rules apply.
+        </p>
+        <ul>
+            <li>
+                If the box is not checked, then there must be a mainshock in the catalog file.
+                In this case, all information about the mainshock comes from the catalog file.<br>&nbsp;
+            </li>
+            <li>
+                If the box is checked, and the <b>USGS Event ID</b> field on the main panel is blank,
+                then the catalog file must contain a mainshock entry with a Comcat ID.<br>&nbsp;
+            </li>
+            <li>
+                If the box is checked, and the <b>USGS Event ID</b> field on the main panel is not blank,
+                then the catalog file may, but does need to, contain a mainshock entry.
+                The event ID in the <b>USGS Event ID</b> field is used to query Comcat, even if there
+                is also a mainshock event ID in the catalog file; this can be useful if event IDs in
+                the catalog file are not Comcat IDs.
+            </li>
+        </ul>
+        <p>
+            If mainshock information is obtained from Comcat, and there is also a mainshock entry in
+            the catalog file, then the GUI uses the mainshock time, magnitude, and location obtained from
+            the catalog file (ignoring the time, magnitude, and location obtained from Comcat).
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Use analyst options</b></p>
+        <p>
+            If this box is checked, and <b>Call Comcat for mainshock</b> is also checked,
+            then the GUI examines the most recent forecast to see if it contains
+            analyst-supplied options for forecast parameters, search region, injectable text, etc.
+            If so, then those analyst-supplied options are used to initialize the GUI.
+        </p>
+        <p>
+            If the two boxes are not checked, or if no analyst-supplied options are found, then the GUI is
+            initialized to default values.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Use start and end times<br>Data Start Time<br>Data End Time</b></p>
+        <p>
+            The GUI needs to know the start and end times of the catalog.
+            The time range can be specified either within the catalog file, or by using these controls.
+        </p>
+        <ul>
+            <li>
+                If <b>Use start and end times</b> is checked, then you use the two text fields to enter
+                your desired catalog start and end times.
+                These fields contain the start and end times of the earthquake catalog,
+                expressed as days since the mainshock.
+                The start time can be negative, to indicate that the catalog includes
+                foreshocks which occur before the mainshock.<br>&nbsp;
+            </li>
+            <li>
+                If <b>Use start and end times</b> is checked, then the time range you enter takes
+                priority over any time range that may be present in the catalog file.
+                Also, only earthquakes within the time range you enter are loaded into the GUI
+                (except that a mainshock is always loaded regardless of whether it
+                is within the time range).<br>&nbsp;
+            </li>
+            <li>
+                If <b>Use start and end times</b> is not checked, then the two text fields are read-only.
+                In this case, there must be a time range specified within the catalog file.
+                When the catalog file is loaded, the text fields are filled in with the start and end
+                times that are given in the catalog file.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Set aftershock region<br>Region Radius<br>Region Latitude<br>Region Longitude</b></p>
+        <p>
+            The GUI needs to know the aftershock search region.
+            The region can be specified either within the catalog file, or by using these controls.
+        </p>
+        <ul>
+            <li>
+                If <b>Set aftershock region</b> is checked, then you use the three text fields to enter
+                a circular aftershock search region.
+                Enter the radius of the circle in kilometers,
+                and enter the latitude and longitude of the circle center in degrees.<br>&nbsp;
+            </li>
+            <li>
+                If <b>Set aftershock region</b> is checked, then the region you enter takes
+                priority over any search region that may be present in the catalog file.
+                Also, only earthquakes within the search region you enter are loaded into the GUI
+                (except that a mainshock is always loaded regardless of whether it
+                is within the region).<br>&nbsp;
+            </li>
+            <li>
+                If <b>Set aftershock region</b> is not checked, then the three text fields are disabled.
+                In this case, there must be an aftershock search region specified within the catalog file.
+            </li>
+        </ul>
+    </body>
+</html>

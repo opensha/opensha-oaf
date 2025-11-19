@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.geom.Point2D;
+import java.awt.Component;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -88,7 +89,7 @@ import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.param.ParameterList;
 import org.opensha.commons.param.editor.impl.GriddedParameterListEditor;
-import org.opensha.commons.param.editor.impl.ParameterListEditor;
+//import org.opensha.commons.param.editor.impl.ParameterListEditor;
 import org.opensha.commons.param.event.ParameterChangeEvent;
 import org.opensha.commons.param.event.ParameterChangeListener;
 import org.opensha.commons.param.impl.BooleanParameter;
@@ -138,6 +139,7 @@ import org.opensha.oaf.util.gui.GUIEventAlias;
 import org.opensha.oaf.util.gui.GUIExternalCatalog;
 import org.opensha.oaf.util.gui.GUIParameterListParameter;
 import org.opensha.oaf.util.gui.GUIButtonParameter;
+import org.opensha.oaf.util.gui.GUIParameterListEditor;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
@@ -348,15 +350,15 @@ public class OEGUIController extends OEGUIListener {
 
 	// Container for data parameters.
 
-	private ParameterListEditor dataEditor;
+	private GUIParameterListEditor dataEditor;
 
-	public final ParameterListEditor get_dataEditor () {
+	public final GUIParameterListEditor get_dataEditor () {
 		return dataEditor;
 	}
 
 	private int dataEditorHeight;
 
-	private ParameterListEditor init_dataEditor () throws GUIEDTException {
+	private GUIParameterListEditor init_dataEditor () throws GUIEDTException {
 
 		// Controls in the "Data Source" column
 
@@ -373,7 +375,7 @@ public class OEGUIController extends OEGUIListener {
 
 		dataEditorHeight = (gui_top.get_height() * 4) / 10;
 
-		dataEditor = new ParameterListEditor(dataParams);
+		dataEditor = new GUIParameterListEditor(dataParams, gui_top.make_help ("help_data_source.html"));
 		dataEditor.setTitle("Data Source");
 		dataEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), dataEditorHeight));
 		return dataEditor;
@@ -382,15 +384,15 @@ public class OEGUIController extends OEGUIListener {
 
 	// Container for aftershock parameters.
 
-	private ParameterListEditor fitEditor;
+	private GUIParameterListEditor fitEditor;
 
-	public final ParameterListEditor get_fitEditor () {
+	public final GUIParameterListEditor get_fitEditor () {
 		return fitEditor;
 	}
 
 	private int fitEditorHeight;
 
-	private ParameterListEditor init_fitEditor () throws GUIEDTException {
+	private GUIParameterListEditor init_fitEditor () throws GUIEDTException {
 
 		// Controls in the "Aftershock Parameters" column
 		
@@ -414,7 +416,7 @@ public class OEGUIController extends OEGUIListener {
 		//fitEditorHeight = (gui_top.get_height() * 4) / 10;
 		fitEditorHeight = gui_top.get_height() - (dataEditorHeight);
 
-		fitEditor = new ParameterListEditor(fitParams);
+		fitEditor = new GUIParameterListEditor(fitParams);
 		fitEditor.setTitle("Aftershock Parameters");
 		fitEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), fitEditorHeight));
 		return fitEditor;
@@ -423,15 +425,15 @@ public class OEGUIController extends OEGUIListener {
 
 //	// Container for forecast parameters.
 //
-//	private ParameterListEditor fcastEditor;
+//	private GUIParameterListEditor fcastEditor;
 //
-//	public final ParameterListEditor get_fcastEditor () {
+//	public final GUIParameterListEditor get_fcastEditor () {
 //		return fcastEditor;
 //	}
 //
 //	private int fcastEditorHeight;
 //
-//	private ParameterListEditor init_fcastEditor () throws GUIEDTException {
+//	private GUIParameterListEditor init_fcastEditor () throws GUIEDTException {
 //
 //		// Controls in the "Forecasts" column
 //		
@@ -446,7 +448,7 @@ public class OEGUIController extends OEGUIListener {
 //
 //		fcastEditorHeight = gui_top.get_height() - (dataEditorHeight + fitEditorHeight);
 //
-//		fcastEditor = new ParameterListEditor(fcastParams);
+//		fcastEditor = new GUIParameterListEditor(fcastParams);
 //		fcastEditor.setTitle("Forecasts");
 //		fcastEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), fcastEditorHeight));
 //		return fcastEditor;
@@ -455,15 +457,15 @@ public class OEGUIController extends OEGUIListener {
 
 	// Container for more functions.
 
-	private ParameterListEditor aafsEditor;
+	private GUIParameterListEditor aafsEditor;
 
-	public final ParameterListEditor get_aafsEditor () {
+	public final GUIParameterListEditor get_aafsEditor () {
 		return aafsEditor;
 	}
 
 	private int aafsEditorHeight;
 
-	private ParameterListEditor init_aafsEditor () throws GUIEDTException {
+	private GUIParameterListEditor init_aafsEditor () throws GUIEDTException {
 
 		// Controls in the "More" column
 		
@@ -488,7 +490,7 @@ public class OEGUIController extends OEGUIListener {
 
 		aafsEditorHeight = (gui_top.get_height() * 6) / 10;
 
-		aafsEditor = new ParameterListEditor(aafsParams);
+		aafsEditor = new GUIParameterListEditor(aafsParams);
 		aafsEditor.setTitle("More");
 		aafsEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), aafsEditorHeight));
 		return aafsEditor;
@@ -497,15 +499,15 @@ public class OEGUIController extends OEGUIListener {
 
 	// Container for filler.
 
-	private ParameterListEditor fillerEditor;
+	private GUIParameterListEditor fillerEditor;
 
-	public final ParameterListEditor get_fillerEditor () {
+	public final GUIParameterListEditor get_fillerEditor () {
 		return fillerEditor;
 	}
 
 	private int fillerEditorHeight;
 
-	private ParameterListEditor init_fillerEditor () throws GUIEDTException {
+	private GUIParameterListEditor init_fillerEditor () throws GUIEDTException {
 
 		// Controls in the "Filler" column
 		
@@ -515,7 +517,7 @@ public class OEGUIController extends OEGUIListener {
 
 		fillerEditorHeight = gui_top.get_height() - aafsEditorHeight;
 
-		fillerEditor = new ParameterListEditor(fillerParams);
+		fillerEditor = new GUIParameterListEditor(fillerParams);
 		fillerEditor.setTitle("...");
 		fillerEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), fillerEditorHeight));
 		return fillerEditor;

@@ -1,0 +1,98 @@
+<html>
+    <head>
+        <title>Data Source Panel</title>
+    </head>
+    <body>
+        <h2>Data Source Panel</h2>
+        <p>
+            Use the data source panel to load data into the GUI.
+            Data can come from Comcat, from a catalog file, or from a forecast download file.
+            The data consists of a mainshock and its associated foreshocks and aftershocks.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>USGS Event ID</b></p>
+        <p>
+            Enter a Comcat event ID if you are loading data from Comcat.
+            Otherwise, you can leave it blank.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Data Source Type</b></p>
+        <p>
+            This drop-down list selects what type of data you want to load.
+        </p>
+        <ul>
+            <li>
+                <i>Comcat</i> - Loads a mainshock from Comcat, calculates the aftershock search region,
+                and then fetches the foreshocks and aftershocks.<br>&nbsp;
+            </li>
+            <li>
+                <i>Catalog File</i> - Reads in a file that contains information about the mainshock,
+                foreshocks, and aftershocks. The file can also contain an aftershock search region
+                and other information.<br>&nbsp;
+            </li>
+            <li>
+                <i>Published Forecast</i> - Loads a mainshock from Comcat, and then retrieves the earthquake
+                catalog and forecast parameters from one of the existing aftershock forecasts.<br>&nbsp;
+            </li>
+            <li>
+                <i>Mainshock Only</i> - Loads only a mainshock from Comcat, without loading an earthquake catalog.
+                This can be used for operations that don&#39;t require a catalog, such as turning forecasts on or off,
+                setting injectable text, setting forecast duration, and selecting event-sequence options.<br>&nbsp;
+            </li>
+            <li>
+                <i>Download File</i> - Reads a forecast_data.json file, and obtains the mainshock,
+                earthquake catalog, and forecast parameters from the file.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Data Source</b></p>
+        <p>
+            Opens a sub-panel that lets you select various options for loading data.
+            The set of options varies depending on the data source type.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Catalog</b></p>
+        <p>
+            This button loads the data.
+            The data includes a mainshock,
+            and for all data types except <i>Mainshock Only</i> it also includes an earthquake catalog.
+            The earthquake catalog is displayed in the right-hand side of the GUI
+            in several tabs.
+        </p>
+        <ul>
+            <li>
+                <b>Catalog Tab</b> - Displays the earthquake catalog as a text file.<br>&nbsp;
+            </li>
+            <li>
+                <b>Epicenters Tab</b> - Plots the earthquake epicenter locations on a map.
+                Colors indicate the time at which an earhquake occurred.
+                The aftershock search region is shown as a dashed circle.
+                If regional data is available, then the outer region is shown as a larger dashed circle.<br>&nbsp;
+            </li>
+            <li>
+                <b>Mag/Num Dist Tab</b> - Groups aftershocks into magnitude bins 0.1 magnitude wide, and shows a
+                plot with magnitude on the horizontal axis and number on the vertical axis (a magnitude/number plot).
+                Also shows cumulative number of aftershocks, magnitude of completeness, and the Gutenberg-Richter relation.<br>&nbsp;
+            </li>
+            <li>
+                <b>Mag/Time Tab</b> - Plots earthquakes with time on the horizontal axis and magnitude on the
+                vertical axis (a magnitude/time plot).
+                Colors indicate distance from the epicenter.<br>&nbsp;
+            </li>
+            <li>
+                <b>Cumulative Num Plot Tab</b> - Plots the cumulative number of aftershocks as a function of time,
+                with time on the horizontal axis and number on the vertical axis.
+                Initially, the plot includes aftershocks whose magnitude is above the estimated time-independent
+                magnitude of completeness.
+                When forecasts are computed, the plot changes to include aftershocks whose magnitude is above the
+                time-dependent magnitude of competeness, and adds cumulative number plots obtained
+                from the Reasenberg-Jones forecasts.
+                (ETAS number plots are shown on a separate tab.)
+            </li>
+        </ul>
+        <p>
+            Depending on the selected options, the aftershock forecast parameters can be initialized to their default values,
+            or they can be initialized to values obtained from an existing forecast or download file.
+        </p>
+    </body>
+</html>
