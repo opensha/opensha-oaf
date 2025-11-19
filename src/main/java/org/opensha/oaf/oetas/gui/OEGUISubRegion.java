@@ -137,6 +137,7 @@ import org.opensha.oaf.util.gui.GUIEDTRunnable;
 import org.opensha.oaf.util.gui.GUIEventAlias;
 import org.opensha.oaf.util.gui.GUIExternalCatalog;
 import org.opensha.oaf.util.gui.GUIParameterListParameter;
+import org.opensha.oaf.util.gui.GUIHelpListener;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
@@ -210,19 +211,19 @@ public class OEGUISubRegion extends OEGUIListener {
 		radiusParam.setInfo("Radius of circular region");
 		register_param (radiusParam, "radiusParam", PARMGRP_REGION_PARAM);
 
-		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, Double.valueOf(32d));
+		minLatParam = new DoubleParameter("Min Latitude", -90d, 90d, Double.valueOf(32d));
 		minLatParam.setInfo("Minimum latitude of rectangular region");
 		register_param (minLatParam, "minLatParam", PARMGRP_REGION_PARAM);
 
-		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, Double.valueOf(36d));
+		maxLatParam = new DoubleParameter("Max Latitude", -90d, 90d, Double.valueOf(36d));
 		maxLatParam.setInfo("Maximum latitude of rectangular region");
 		register_param (maxLatParam, "maxLatParam", PARMGRP_REGION_PARAM);
 
-		minLonParam = new DoubleParameter("Min Lon", -180d, 180d, Double.valueOf(32d));
+		minLonParam = new DoubleParameter("Min Longitude", -180d, 180d, Double.valueOf(32d));
 		minLonParam.setInfo("Minimum longitude of rectangular region");
 		register_param (minLonParam, "minLonParam", PARMGRP_REGION_PARAM);
 
-		maxLonParam = new DoubleParameter("Max Lon", -180d, 180d, Double.valueOf(36d));
+		maxLonParam = new DoubleParameter("Max Longitude", -180d, 180d, Double.valueOf(36d));
 		maxLonParam.setInfo("Maximum longitude of rectangular region");
 		register_param (maxLonParam, "maxLonParam", PARMGRP_REGION_PARAM);
 
@@ -250,11 +251,11 @@ public class OEGUISubRegion extends OEGUIListener {
 		maxRadiusParam.setInfo("Maximum radius of circular region");
 		register_param (maxRadiusParam, "maxRadiusParam", PARMGRP_REGION_PARAM);
 		
-		centerLatParam = new DoubleParameter("Center Lat", -90d, 90d, Double.valueOf(34d));
+		centerLatParam = new DoubleParameter("Center Latitude", -90d, 90d, Double.valueOf(34d));
 		centerLatParam.setInfo("Latitude of center of circular region");
 		register_param (centerLatParam, "centerLatParam", PARMGRP_REGION_PARAM);
 
-		centerLonParam = new DoubleParameter("Center Lon", -180d, 180d, Double.valueOf(34d));
+		centerLonParam = new DoubleParameter("Center Longitude", -180d, 180d, Double.valueOf(34d));
 		centerLonParam.setInfo("Longitude of center of circular region");
 		register_param (centerLonParam, "centerLonParam", PARMGRP_REGION_PARAM);
 
@@ -351,12 +352,25 @@ public class OEGUISubRegion extends OEGUIListener {
 
 	private GUIParameterListParameter init_regionEditParam () throws GUIEDTException {
 		regionList = new ParameterList();
+		GUIHelpListener help_listener = gui_top.make_help (() -> {
+			String help_file = null;
+			switch (regionTypeParam.getValue()) {
+			case STANDARD:             help_file = null;                             break;
+			case CENTROID_WC_CIRCLE:   help_file = "help_region_centroid_wc.html";   break;
+			case CENTROID_CIRCLE:      help_file = "help_region_centroid.html";      break;
+			case EPICENTER_WC_CIRCLE:  help_file = "help_region_epicenter_wc.html";  break;
+			case EPICENTER_CIRCLE:     help_file = "help_region_epicenter.html";     break;
+			case CUSTOM_CIRCLE:        help_file = "help_region_circle.html";        break;
+			case CUSTOM_RECTANGLE:     help_file = "help_region_rectangle.html";     break;
+			}
+			return help_file;
+		});
 		if (gui_top.get_trace_events()) {
 			regionEditParam = new GUIParameterListParameter("Region", regionList, "Edit Region...",
-								"Edit Region", "Region Parameters", "Done", "Cancel", false, gui_top.get_trace_events());
+								"Edit Region", "Region Parameters", "Done", "Cancel", false, gui_top.get_trace_events(), help_listener);
 		} else {
 			regionEditParam = new GUIParameterListParameter("Region", regionList, "Edit Region...",
-								"Edit Region", "Region Parameters", null, null, false, gui_top.get_trace_events());
+								"Edit Region", "Region Parameters", null, null, false, gui_top.get_trace_events(), help_listener);
 		}
 		regionEditParam.setInfo("Select the region to search for aftershocks");
 		register_param (regionEditParam, "regionEditParam", PARMGRP_REGION_EDIT);

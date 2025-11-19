@@ -13,7 +13,7 @@ public class VersionInfo  {
 
 	// Program version.
 
-	public static final String program_version = "Version 1.05.1823 (11/18/2025)";
+	public static final String program_version = "Version 1.05.1824 (11/19/2025)";
 
 	// Program sponsor.
 
@@ -29,7 +29,7 @@ public class VersionInfo  {
 
 	// Build.
 
-	public static final int build = 1823;
+	public static final int build = 1824;
 
 
 
@@ -54,6 +54,13 @@ public class VersionInfo  {
 
 	public static String get_generator_name () {
 		return String.format ("%s %d.%02d.%04d", program_name, major_version, minor_version, build);
+	}
+
+
+	// Get the version number, as a string.
+
+	public static String get_version_number () {
+		return String.format ("%d.%02d.%04d", major_version, minor_version, build);
 	}
 
 }

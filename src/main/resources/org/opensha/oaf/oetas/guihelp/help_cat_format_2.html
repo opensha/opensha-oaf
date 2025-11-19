@@ -1,0 +1,262 @@
+<html>
+    <head>
+        <title>Catalog File Format</title>
+    </head>
+    <body>
+        <p><b><a href="help_data_catalog.html">&lt;- Go Back</a></b></p>
+        <h2>Catalog File Format</h2>
+        <p>
+            A catalog file contains a list of earthquakes.
+            For each earthquake, the file contains its data and time, latitude, longitude, depth,
+            magnitude, and, optionally, an ID.
+            Each earthquake is categorized as a mainshock, foreshock, aftershock, or regional.
+        </p>
+        <p>
+            In addition, a catalog file can contain a list of symbol definitions.
+            Symbols can be used to speify the catalog&#39;s time range, minimum magnitude,
+            depth range, aftershock search region, and outer search region.
+        </p>
+        <p>
+            We first show an example of a catalog file, and then describe the format in detail.
+        </p>
+        <p>&nbsp;</p>
+        <hr>
+        
+<pre>
+#define: time_range = -60.0 7.0
+#define: min_mag = 1.7
+#define: depth_range = -5.0 700.0
+#define: aftershock_region = circle 33.046702274101584 -116.59783947894726 10.0
+#define: outer_region = circle 33.046702274101584 -116.59783947894726 25.0
+#count: total 49
+#count: mainshock 1
+#count: foreshock 2
+#count: aftershock 42
+#count: regional 4
+#begin: mainshock
+#  Date      Time       Lat         Lon       Depth    Mag        ID
+2025-04-14 17:08:28   33.03583  -116.59483    14.29    5.21   ci40925991
+#begin: foreshock
+#  Date      Time       Lat         Lon       Depth    Mag        ID
+2025-04-13 22:54:16   33.03467  -116.59583    13.95    3.31   ci40925311
+2025-04-14 03:06:51   33.03583  -116.597      13.59    2.03   ci40925551
+#begin: aftershock
+#  Date      Time       Lat         Lon       Depth    Mag        ID
+2025-04-14 17:10:17   33.0535   -116.60883    15.08    2.83   ci40926015
+2025-04-14 17:10:21   33.07367  -116.6095     16.08    2.77   ci40926023
+2025-04-14 17:10:38   33.07467  -116.61483    14.26    2.47   ci37715564
+2025-04-14 17:10:44   33.0395   -116.587      14.47    2.5    ci37715556
+2025-04-14 17:10:54   33.0435   -116.58683    13.81    2.33   ci40926031
+2025-04-14 17:10:54   33.0405   -116.58917    13.47    2.41   ci37715548
+2025-04-14 17:11:29   33.03833  -116.588      14.04    2.35   ci40926039
+2025-04-14 17:11:40   33.03633  -116.57183    14.02    2.06   ci37715572
+2025-04-14 17:11:55   33.043    -116.58233    13.86    2.13   ci40926047
+2025-04-14 17:11:55   33.0375   -116.57133    12.79    2.1    ci37715580
+2025-04-14 17:12:07   33.04917  -116.60333    13.54    2.57   ci40926055
+2025-04-14 17:13:08   33.0395   -116.59617    11.95    2.97   ci40926079
+2025-04-14 17:13:39   33.05367  -116.608      14.49    1.84   ci37542933
+2025-04-14 17:14:03   33.04833  -116.6025     13.21    2.55   ci40926087
+2025-04-14 17:14:32   33.02917  -116.5845     14.64    1.7    ci40926095
+2025-04-14 17:17:51   33.04733  -116.59017    13.83    1.98   ci40926135
+2025-04-14 17:20:00   33.0415   -116.59983    14.14    1.76   ci40926159
+2025-04-14 17:21:30   33.04767  -116.60383    13.39    1.74   ci40926191
+2025-04-14 17:22:54   33.04283  -116.59717    13.12    1.95   ci40926215
+2025-04-14 17:25:18   33.0465   -116.603      13.56    2.11   ci40926231
+2025-04-14 17:25:22   33.09217  -116.5995     17.54    1.8    ci37715524
+2025-04-14 17:30:50   33.0315   -116.5885     14.52    1.75   ci40926295
+2025-04-14 17:44:29   33.02817  -116.592      14.26    1.88   ci40926391
+2025-04-14 17:52:46   33.03867  -116.59183    13.65    1.79   ci40926439
+2025-04-14 18:23:42   33.0405   -116.59217    12.57    3.95   ci40926623
+2025-04-14 18:26:07   33.03967  -116.59117    12.53    1.98   ci40926647
+2025-04-14 18:27:38   33.02117  -116.58233    14.04    2.11   ci40926663
+2025-04-14 18:55:06   33.05583  -116.61467    12.03    2.13   ci40926815
+2025-04-14 19:34:30   33.03833  -116.59267    12.76    2.58   ci40927015
+2025-04-14 19:55:51   33.05667  -116.61483    11.96    1.89   ci40927031
+2025-04-14 20:03:53   33.065    -116.60933    12.81    1.98   ci40927055
+2025-04-14 20:23:29   33.03917  -116.59417    12.72    2.88   ci40927095
+2025-04-14 23:15:06   33.065    -116.62783    13.82    1.76   ci40927375
+2025-04-14 23:46:22   33.03833  -116.5925     12.79    1.7    ci40927423
+2025-04-15 01:44:09   33.029    -116.5885     13.8     1.99   ci40927591
+2025-04-15 03:43:16   33.07133  -116.6315     12.78    2.12   ci40927743
+2025-04-15 13:28:53   33.0425   -116.582      12.99    1.93   ci40928375
+2025-04-17 19:43:09   33.0275   -116.58117    13.33    2.3    ci40931431
+2025-04-17 22:31:42   33.05433  -116.61233    12.52    2.61   ci40931567
+2025-04-18 09:55:21   33.06083  -116.618      13.05    2.54   ci40931879
+2025-04-18 16:33:11   33.0505   -116.6075     13.98    2.16   ci40932247
+2025-04-19 20:49:01   33.06     -116.60967    12.27    2.12   ci40933527
+#begin: regional
+#  Date      Time       Lat         Lon       Depth    Mag        ID
+2025-02-25 03:02:17   33.146    -116.51217    11.87    1.83   ci40193650
+2025-04-12 11:43:05   33.1695   -116.44117    11.63    1.7    ci40923903
+2025-04-14 16:56:08   33.05667  -116.454      13.29    1.81   ci40925967
+2025-04-17 22:51:43   33.14367  -116.55517    13.98    1.92   ci40931591
+</pre>
+        
+        <hr>
+        <p>&nbsp;</p>
+        <p><b>General Layout</b></p>
+        <p>
+            Each line in the file is either an earthquake line or a comment line.
+            A line that starts with # is a comment line.
+            A completely blank line is also considered to be a comment line.
+            All other lines are earthquake lines.
+        </p>
+        <p>
+            Items appearing within a line can be separated by any number of spaces and/or tabs.
+        </p>
+        <p>
+            Each earthquake line contains information for one earthquake:
+            date and time, latitude, longitude, depth, magnitude, and, optionally, an ID.
+            Earthquake lines are grouped into sections. Each section contains one type
+            of earthquake: mainshock, foreshock, aftershock, or regional.
+            This is described further below.
+        </p>
+        <p>
+            Some comment lines have special significance to the GUI.
+            A line that starts with &quot;#begin:&quot; is a section header.
+            A line that starts with &quot;#define:&quot; is a symbol definition.
+            These are described further below.
+            All other comment lines are ignored when the catalog file is loaded into the GUI.
+        </p>
+        <p>
+            When the GUI writes a catalog file, it adds several comment lines beginning with
+            &quot;#count:&quot; which show the total number of earthquakes in the file,
+            as well as the number of earthquakes in each section. These lines are purely for
+            documentation, and are ignored when the file is loaded into the GUI.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Earthquake Lines</b></p>
+        <p>
+            Each earthquake line describes one earthquake, and contains the following items:
+        </p>
+        <ol>
+            <li>
+                Date and time.
+            </li>
+            <li>
+                Latitude, in decimal degrees.
+            </li>
+            <li>
+                Longitude, in decimal degrees.
+            </li>
+            <li>
+                Depth, in kilometers.
+            </li>
+            <li>
+                Magnitude.
+            </li>
+            <li>
+                Event ID. This is optional. If included, it can be any string consisting of uppercase letters,
+                lowercase letters, digits, and the underscore character.
+            </li>
+        </ol>
+        <p>
+            The date and time consists of the year, month, day, hour, minute, and second, in that order.
+            The year must be given as four digits; the others can be given as one or two digits.
+            All times are UTC.
+            When loading a catalog file, the GUI accepts several formats.
+            Here are some examples.
+        </p>
+        <ul>
+            <li>Standard format: 2025-04-14 17:08:28</li>
+            <li>Leading zero suppression: 2025-4-14 17:8:28</li>
+            <li>ISO-8601 format: 2025-04-14T17:08:28Z</li>
+            <li>Space or tab delimited: 2025 04 14 17 08 28</li>
+            <li>Slash delimited zero suppressed date: 2025/4/14 17:08:28</li>
+            <li>UTC suffix: 2025-04-14 17:08:28 UTC</li>
+            <li>Dot delimited date and time: 2025.04.14 17.08.28</li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Section Headers</b></p>
+        <p>
+            A section header is a comment line that consists of &quot;#begin:&quot; followed by the
+            name of the section.
+            Earthquake lines that appear after the section header belong to that section.
+            The earthquakes within a section can be listed in any order.
+        </p>
+        <p>
+            The allowed section names and their meaning are:
+        </p>
+        <ul>
+            <li>
+                The &quot;mainshock&quot; section contains one earthquake, which is the mainshock.<br>&nbsp;
+            </li>
+            <li>
+                The &quot;aftershock&quot; section contains any number of earthquakes,
+                which are inside the aftershock search region and occurred after the mainshock.<br>&nbsp;
+            </li>
+            <li>
+                The &quot;foreshock&quot; section contains any number of earthquakes,
+                which are inside the aftershock search region and occurred before the mainshock.<br>&nbsp;
+            </li>
+            <li>
+                The &quot;regional&quot; section contains any number of earthquakes,
+                which are outside the aftershock search region.
+                They may have occurred before or after the mainshock.
+            </li>
+        </ul>
+        <p>
+            Sections may appear in any order, and all sections are optional.
+            However, if there is no &quot;mainshock&quot; section then you will have to manually enter
+            a mainshock event ID when loading the catalog file into the GUI.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Symbol Definitions</b></p>
+        <p>
+            A symbol definition is a comment line that consists of &quot;#define:&quot; followed by the
+            name of the symbol, followed by an equal sign, followed by the value of the symbol.
+            The value can consist of several data elements, which are typically numbers or strings.
+            Data elements can be separated by any number of spaces and/or tabs.
+        </p>
+        <p>
+            Some symbols have special meaning to the GUI. They are:
+        </p>
+        <ul>
+            <li>
+                The value of the &quot;time_range&quot; symbol is two numbers that give the start time
+                and end time of the catalog.
+                Times are expressed as days since the mainshock.
+                A negative number indicates a time before the mainshock.
+                (These are the start and end times used, e.g., for querying Comcat.
+                They are not the times of the earliest and latest earthquakes in the catalog.)<br>&nbsp;
+            </li>
+            <li>
+                The value of the &quot;min_mag&quot; symbol is a number that gives the
+                minimum magnitude of the catalog.
+                (This is the minimum magnitude used, e.g., for querying Comcat.
+                It is not the minimum magnitude of any earthquake in the catalog.)<br>&nbsp;
+            </li>
+            <li>
+                The value of the &quot;depth_range&quot; symbol is two numbers that give the minimum
+                and maximum depths of the catalog, expressed in kilometers.
+                (These are the minimum and maximum depths used, e.g., for querying Comcat.
+                They are not the minimum and maximum depth among earthquakes appearing in the catalog.)<br>&nbsp;
+            </li>
+            <li>
+                The &quot;aftershock_region&quot; symbol gives the aftershock search region.
+                If the region is a circle, then the value is the string &quot;circle&quot; followed
+                by three numbers that give the latitude of the center, the longitude of the center,
+                and the radius in kilometers.
+                If the region is a rectangle, then the value is the string &quot;rectangle&quot; followed
+                by four numbers that give the minimum latitude, the maximum latitude, the minimum longitude,
+                and the maximum longitude; if the ractangle crosses the date line then the maximum
+                longitude will be greater than 180 degrees.<br>&nbsp;
+            </li>
+            <li>
+                The &quot;outer_region&quot; symbol gives the search region used to obtain regional earthquakes.
+                The region is represented in the same way as the &quot;aftershock_region&quot; symbol.
+            </li>
+        </ul>
+        <p>
+            All symbol definitions are optional. It is recommended that the catalog file include at
+            least the &quot;time_range&quot; and &quot;aftershock_region&quot; symbols, because if those symbols
+            are missing then you have to enter that information into the GUI manually when loading
+            the catalog file.
+        </p>
+        <p>
+            When loading a catalog file, the GUI ignores any symbol definitions with names that the
+            GUI does not recognize. So, it is possible for you to define your own symbols, which the
+            GUI will ignore.
+        </p>
+    </body>
+</html>

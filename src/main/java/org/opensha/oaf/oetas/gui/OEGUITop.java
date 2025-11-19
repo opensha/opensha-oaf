@@ -962,7 +962,7 @@ public class OEGUITop extends OEGUIComponent {
 		get_top_window().setContentPane(mainPanel);
 		get_top_window().setSize(get_paramWidth()*paramColumns + get_chartWidth(), get_height());
 		get_top_window().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		get_top_window().setTitle("Operational Aftershock Forecasting (OAF) GUI");
+		get_top_window().setTitle("USGS Operational Aftershock Forecasting (OAF) GUI - Version " + VersionInfo.get_version_number());
 		get_top_window().setLocationRelativeTo(null);
 
 		init_help();

@@ -7,6 +7,11 @@
         <p>
             This panel lets you specify options for loading an earthquake catalog from a file on disk.
         </p>
+        <p>
+            The file must be a text file in the <b><a href="help_cat_format_2.html">catalog file format</a></b>.
+            Alternatively, the file can also be in the legacy file format that was used
+            in earlier versions of the GUI.
+        </p>
         <p>&nbsp;</p>
         <p><b>Catalog Filename<br>Browse Catalog File</b></p>
         <p>
@@ -98,7 +103,10 @@
                 If <b>Set aftershock region</b> is checked, then you use the three text fields to enter
                 a circular aftershock search region.
                 Enter the radius of the circle in kilometers,
-                and enter the latitude and longitude of the circle center in degrees.<br>&nbsp;
+                and enter the latitude and longitude of the circle center in decimal degrees.
+                The latitude can range from -90.0 to 90.0, with positive values denoting the northern hemisphere.
+                The longitude can range from -180.0 to 180.0, with positive values denoting the eastern hemisphere.
+                The maximum allowed radius is 20,000 km, which is slightly less than 180 degrees of arc.<br>&nbsp;
             </li>
             <li>
                 If <b>Set aftershock region</b> is checked, then the region you enter takes

@@ -1,0 +1,38 @@
+<html>
+    <head>
+        <title>Edit Region: Epicenter WC Circle</title>
+    </head>
+    <body>
+        <h2>Edit Region: Epicenter WC Circle</h2>
+        <p>
+            This region is a circle whose radius is a multiple of the Wells and Coppersmith rupture length.
+            The center of the circle is the mainshock&#39;s epicenter.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>WC Multiplier</b></p>
+        <p>
+            The region&#39;s radius is equal to the value of this field multiplied by the
+            Wells and Coppersmith rupture length.
+        </p>
+        <p>
+            For example, if the value of this field is 1.0 then the radius is equal to the
+            Wells and Coppersmith rupture length. If it is 2.0 then the radius is double the
+            Wells and Coppersmith rupture length, and so on.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Min Radius<br>Max Radius</b></p>
+        <p>
+            These fields contain the minimum and maximum allowed radius of the region, in kilometers.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Min Depth<br>Max Depth</b></p>
+        <p>
+            These fields contain the minimum and maximum allowed depth of aftershocks and foreshocks, in kilometers.
+            Any aftershocks or foreshocks whose depth lies outside this range are ignored.
+        </p>
+        <p>
+            The default values are -5.0 and 700.0, which is the largest depth range allowed by OpenSHA.
+            It is strongly recommended that you not change these value.
+        </p>
+    </body>
+</html>
