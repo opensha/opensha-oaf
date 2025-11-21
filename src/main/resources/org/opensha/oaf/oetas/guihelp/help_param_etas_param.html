@@ -1,0 +1,105 @@
+<html>
+    <head>
+        <title>Edit ETAS Parameters</title>
+    </head>
+    <body>
+        <h2>Edit ETAS Parameters</h2>
+        <p>
+            This panel lets you set the parameter ranges for the ETAS search grid.
+            The total number of points in the search grid is limited to a maximum of 5,000,000.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>ETAS n Range (Log Scale)<br>ETAS n Number<br>ETAS n Skew</b></p>
+        <p>
+            These fields control the range for the &quot;n&quot; parameter,
+            which is the branch ratio of aftershocks.
+            The branch ratio has a log scale.
+            You can enter the minimum and maximum values of the parameter,
+            and the number of grid points for the parameter.
+            If you want to fix the parameter at a single value,
+            enter 1 for the number and set the minimum and maximum to the same value.
+        </p>
+        <p>
+            The skew lets you adjust the distribution of grid points within the range.
+            If the skew equals 1.0, then grid points are equally spaced in log-space.
+            If the skew is greater then 1.0, then there is a higher density of grid
+            points at the upper end of the range.
+            For example, the default skew of 3.0 means that grid points are three
+            times denser (in log space) at the upper end of the range than at the
+            lower end of the range.
+            This can be useful because a small change in the branch ratio has
+            a greater effect when the branch ratio is large.
+        </p>
+        <p>
+            The maximum value of the branch ratio should be less than 1.0 to
+            avoid super-critical behavior.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>ETAS p Range (Linear Scale)<br>ETAS p Number</b></p>
+        <p>
+            These fields control the range for the &quot;p&quot; parameter,
+            which is the Omori exponent.
+            The Omori exponent has a linear scale, so the grid points are equally spaced.
+            You can enter the minimum and maximum values of the parameter,
+            and the number of grid points for the parameter.
+            If you want to fix the parameter at a single value,
+            enter 1 for the number and set the minimum and maximum to the same value.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>ETAS c Range (Log Scale)<br>ETAS c Number</b></p>
+        <p>
+            These fields control the range for the &quot;c&quot; parameter,
+            which is the Omori offset.
+            The Omori offset has a log scale, so the grid points are equally spaced in log-space.
+            You can enter the minimum and maximum values of the parameter,
+            and the number of grid points for the parameter.
+            If you want to fix the parameter at a single value,
+            enter 1 for the number and set the minimum and maximum to the same value.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>ETAS zams Range (Linear Scale)<br>ETAS zams Number</b></p>
+        <p>
+            These fields control the range for the &quot;zams&quot; parameter,
+            which is the mainshock and foreshock productivity.
+            The mainshock and foreshock productivity has a linear scale, so the grid points are equally spaced.
+            You can enter the minimum and maximum values of the parameter,
+            and the number of grid points for the parameter.
+            If you want to fix the parameter at a single value,
+            enter 1 for the number and set the minimum and maximum to the same value.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Use relative zams</b></p>
+        <p>
+            If this box is checked, then the value of &quot;zams&quot; is relative to the branch ratio.
+            For example, if &quot;zams&quot; equals zero then the mainshock and foreshocks have the same
+            productivity as an aftershock of the same magnitude.
+            If &quot;zams&quot; equals 0.5 then the mainshock and foreshocks have about three times as much
+            productivity as an aftershock of the same magnitude.
+        </p>
+        <p>
+            If the box is not checked, then &quot;zams&quot; is the absolute productivity of the
+            mainshock and foreshocks.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>ETAS zmu Range (Log Scale)<br>ETAS zmu Number</b></p>
+        <p>
+            These fields control the range for the &quot;zmu&quot; parameter,
+            which is the background rate.
+            The background rate is expressed in units of expected number of magnitude 3
+            earthquakes per day.
+        </p>
+        <p>
+            The background rate has a log scale, so the grid points are equally spaced in log-space.
+            You can enter the minimum and maximum values of the parameter,
+            and the number of grid points for the parameter.
+            If you want to fix the parameter at a single value,
+            enter 1 for the number and set the minimum and maximum to the same value.
+        </p>
+        <p>
+            You can set a zero background rate by entering 0.0 as the minimum and maximum
+            values, and entering 1 for the number.
+            If the number is greater than 1, then the background rate must be positive
+            (non-zero) because it is on a log scale.
+        </p>
+    </body>
+</html>

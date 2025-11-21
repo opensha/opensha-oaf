@@ -488,7 +488,8 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private GUIParameterListParameter init_commonValueEditParam () throws GUIEDTException {
 		commonValueList = new ParameterList();
 		commonValueEditParam = new GUIParameterListParameter("Common Parameters", commonValueList, "Common Params...",
-							"Edit Common Params", "Common Parameters", null, null, false, gui_top.get_trace_events());
+							"Edit Common Params", "Common Parameters", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_param_common.html"));
 		commonValueEditParam.setInfo("Set common parameter values");
 		register_param (commonValueEditParam, "commonValueEditParam", PARMGRP_COM_EDIT);
 

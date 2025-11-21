@@ -566,13 +566,15 @@ public class OEGUISubEventPicker extends OEGUIListener {
 		eventPickerList = new ParameterList();
 		if (f_imp_modal) {
 			eventPickerEditParam = new GUIParameterListParameter("Event Picker", eventPickerList, "Find Earthquake...",
-								"Find Earthquake", "Search for Earthquake", "Select", "Cancel", true, gui_top.get_trace_events());
-			eventPickerEditParam.setInfo("Search for earthquakes with an OAF product");
+								"Find Earthquake", "Search for Earthquake", "Select", "Cancel", true, gui_top.get_trace_events(),
+								gui_top.make_help_modal ("help_mtool_event_picker.html"));
+			eventPickerEditParam.setInfo("Search for earthquakes");
 			eventPickerEditParam.setOkButtonEnabled (false);
 		} else {
 			eventPickerEditParam = new GUIParameterListParameter("Event Picker", eventPickerList, "Find Earthquake...",
-								"Find Earthquake", "Search for Earthquake", null, null, false, gui_top.get_trace_events());
-			eventPickerEditParam.setInfo("Search for earthquakes with an OAF product");
+								"Find Earthquake", "Search for Earthquake", null, null, false, gui_top.get_trace_events(),
+								gui_top.make_help ("help_mtool_event_picker_modeless.html"));
+			eventPickerEditParam.setInfo("Search for earthquakes");
 		}
 		register_param (eventPickerEditParam, "eventPickerEditParam", PARMGRP_EVPICK_EDIT);
 

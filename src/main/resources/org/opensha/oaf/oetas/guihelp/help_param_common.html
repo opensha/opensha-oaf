@@ -1,0 +1,131 @@
+<html>
+    <head>
+        <title>Edit Common Parameters</title>
+    </head>
+    <body>
+        <h2>Edit Common Parameters</h2>
+        <p>
+            This panel lets you set parameters that are common to both Reasendberg-Jones and ETAS forecasts..
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Apply time-dependent Mc<br>F<br>G<br>H<br>Mcat</b></p>
+        <p>
+            These controls let you select a time-dependent magnitude of completeness,
+            according to the Helmstetter model.
+            You can also select a time-independent magnitude of completeness.
+        </p>
+        <p>
+            The <b>F</b>, <b>G</b>, and <b>H</b> fields contain the three Helmstetter parameters.
+            The <b>Mcat</b> field contains the catalog magnitude of completeness during &quot;normal&quot; times.
+        </p>
+        <p>
+            You use the drop-down to select the magnitude of completeness model you want to use.
+        </p>
+        <ul>
+            <li>
+                <i>Enable</i> - Enables the use of a Helmstetter time-dependent incompleteness model.
+                You need to enter the desired Helmstetter parameters into <b>F</b>, <b>G</b>, and <b>H</b>,
+                and you need to supply the catalog magnitude of completeness in <b>Mcat</b>.
+                Note that, by convention, setting <b>G</b> equal to 100.0 produces a time-independent
+                magnitude of completeness equal to the value of <b>Mcat</b>.<br>&nbsp;
+            </li>
+            <li>
+                <i>World Values</i> - Enables the use of a Helmstetter time-dependent incompleteness model
+                with standard values for the world catalog.
+                The <b>F</b>, <b>G</b>, and <b>H</b> fields are deactivated and set equal to the world values.
+                You need to supply the catalog magnitude of completeness in <b>Mcat</b>.<br>&nbsp;
+            </li>
+            <li>
+                <i>California Values</i> - Enables the use of a Helmstetter time-dependent incompleteness model
+                with standard values for the California catalog.
+                The <b>F</b>, <b>G</b>, and <b>H</b> fields are deactivated and set equal to the California values.
+                You need to supply the catalog magnitude of completeness in <b>Mcat</b>.<br>&nbsp;
+            </li>
+            <li>
+                <i>Constant - Mcat</i> - Selects a constant time-independent magnitude of completeness
+                equal to the value of <b>Mcat</b>.
+                The <b>F</b>, <b>G</b>, and <b>H</b> fields are deactivated, and <b>G</b> is set equal to 100.0.
+                You need to supply the catalog magnitude of completeness in <b>Mcat</b>.<br>&nbsp;
+            </li>
+            <li>
+                <i>Constant - Mc</i> - Selects a constant time-independent magnitude of completeness
+                equal to the value of <b>Mc</b> (which is described below).
+                The <b>F</b>, <b>G</b>, and <b>H</b> fields are deactivated, and <b>G</b> is set equal to 100.0.
+                You need to supply the catalog magnitude of completeness in <b>Mc</b>.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Mc</b></p>
+        <p>
+            The estimated magnitude of completeness for the catalog that has been loaded into the GUI.
+            When a catalog is loaded, the GUI initializes this field by applying a maximum curvature
+            algorithm to the catalog.
+            You can edit this value.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>b</b></p>
+        <p>
+            The Gutenberg-Richter b-value.
+            When a catalog is loaded, the GUI initializes this field to a pre-programmed value
+            (or to a value used in a prior forecast).
+            The initial value is likely to be 1.0.
+            You can edit this value.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Tools for Mc and b-value<br>Run tool for Mc and b-value</b></p>
+        <p>
+            These controls provide access to tools for analyzing the loaded catalog and
+            estimating the magnitude of completeness or b-value.
+            You select the tool you want from the drop-down, and then press the button
+            to launch the tool, which will open in a sub-panel.
+            There are currently two tools available:
+        </p>
+        <ul>
+            <li>
+                <i>Max Likelihood b</i> - Estimates b-value by applying a maximim likelihood algorithm.<br>&nbsp;
+            </li>
+            <li>
+                <i>b-Positive</i> - Estimates b-value by applying the b-positive algorithm.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Fit Start Inset<br>Fit End Inset</b></p>
+        <p>
+            By default, parameter fitting is done using all aftershocks from just after the
+            mainshock until the end of the catalog.
+            This time range is called the fitting interval.
+        </p>
+        <p>
+            Sometimes, you may want to shrink the fitting interval, so you don&#39;t use all those aftershocks.
+            For example, if the sequence seems to change character at some point in time,
+            you may want parameter fitting to start at that time instead of at the time of the mainshock.
+            Or, if the latter part of catalog is inaccurate due to delays in processing seismic data,
+            you may want parameter fitting to end some time before the end of the catalog.
+        </p>
+        <p>
+            The <b>Fit Start Inset</b> field specifies the start of the fitting interval,
+            expressed as days after the mainshock.
+            The <b>Fit End Inset</b> field specifies the end of the fitting interval,
+            expressed as days before the end of the catalog.
+            Thus, setting both fields to 0.0 yields the default fitting interval.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Forecast Magnitude Bins</b></p>
+        <p>
+            This drop-down selects the set of magnitude bins that appear in the forecast table.
+            The following options are available.
+        </p>
+        <ul>
+            <li>
+                <i>Auto</i> - Lets the system select the set of magnitude bins.
+                Currently, the default magnitude bins are 3.0, 4.0, 5.0, 6.0, and 7.0.<br>&nbsp;
+            </li>
+            <li>
+                <i>3.0 to 7.0</i> - Selects magnitude bins 3.0, 4.0, 5.0, 6.0, and 7.0.<br>&nbsp;
+            </li>
+            <li>
+                <i>3.0 to 8.0</i> - Selects magnitude bins 3.0, 4.0, 5.0, 6.0, 7.0, and 8.0.
+            </li>
+        </ul>
+    </body>
+</html>

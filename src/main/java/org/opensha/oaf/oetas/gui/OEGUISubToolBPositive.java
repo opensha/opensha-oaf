@@ -298,7 +298,8 @@ public class OEGUISubToolBPositive extends OEGUIListener {
 		bPositiveList = new ParameterList();
 
 		bPositiveEditParam = new GUIParameterListParameter("b-positive value", bPositiveList, "Compute b-positive...",
-							"Compute b-positive", "Compute b-positive", "Select", "Cancel", true, gui_top.get_trace_events());
+							"Compute b-positive", "Compute b-positive", "Select", "Cancel", true, gui_top.get_trace_events(),
+							gui_top.make_help_modal ("help_cptool_b_positive.html"));
 		bPositiveEditParam.setInfo("Compute the value of b-positive");
 		bPositiveEditParam.setOkButtonEnabled (false);
 		

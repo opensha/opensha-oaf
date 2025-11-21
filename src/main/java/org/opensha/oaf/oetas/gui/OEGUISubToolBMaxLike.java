@@ -298,7 +298,8 @@ public class OEGUISubToolBMaxLike extends OEGUIListener {
 		bMaxLikeList = new ParameterList();
 
 		bMaxLikeEditParam = new GUIParameterListParameter("Max Likelihood b-value", bMaxLikeList, "Compute Max Likelihood b...",
-							"Compute Max Likelihood b", "Compute Max Liklihoode b", "Select", "Cancel", true, gui_top.get_trace_events());
+							"Compute Max Likelihood b", "Compute Max Liklihoode b", "Select", "Cancel", true, gui_top.get_trace_events(),
+							gui_top.make_help_modal ("help_cptool_max_like_b.html"));
 		bMaxLikeEditParam.setInfo("Compute the maximum likelihood b-value");
 		bMaxLikeEditParam.setOkButtonEnabled (false);
 		

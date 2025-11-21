@@ -1,0 +1,55 @@
+<html>
+    <head>
+        <title>Edit RJ Parameters</title>
+    </head>
+    <body>
+        <h2>Edit RJ Parameters</h2>
+        <p>
+            This panel lets you set the parameter ranges for the Reasenberg-Jones search grid.
+            The total number of points in the search grid is limited to a maximum of 200,000.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>RJ a-value Range<br>RJ a-value Number</b></p>
+        <p>
+            These fields control the range for the &quot;a&quot; parameter,
+            which is the productivity.
+            The productivity has a linear scale, so the grid points are equally spaced.
+            You can enter the minimum and maximum values of the parameter,
+            and the number of grid points for the parameter.
+            If you want to fix the parameter at a single value,
+            enter 1 for the number and set the minimum and maximum to the same value.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>RJ p-value Range<br>RJ p-value Number</b></p>
+        <p>
+            These fields control the range for the &quot;p&quot; parameter,
+            which is the Omori exponent.
+            The Omori exponent has a linear scale, so the grid points are equally spaced.
+            You can enter the minimum and maximum values of the parameter,
+            and the number of grid points for the parameter.
+            If you want to fix the parameter at a single value,
+            enter 1 for the number and set the minimum and maximum to the same value.
+        </p>
+        <p>
+            Note that the RJ code cannot compute a Bayesian forecast if the Omori
+            exponent is allowed to vary.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>RJ c-value Range<br>RJ c-value Number</b></p>
+        <p>
+            These fields control the range for the &quot;c&quot; parameter,
+            which is the Omori offset.
+            The Omori offset has a linear scale, so the grid points are equally spaced.
+            You can enter the minimum and maximum values of the parameter,
+            and the number of grid points for the parameter.
+            If you want to fix the parameter at a single value,
+            enter 1 for the number and set the minimum and maximum to the same value.
+        </p>
+        <p>
+            Note that the RJ code cannot compute a Bayesian forecast if the Omori
+            offset is allowed to vary.
+            Also note that the Omori offset should probably have a log scale, but
+            for historical reasons it doesn&#39;t.
+        </p>
+    </body>
+</html>

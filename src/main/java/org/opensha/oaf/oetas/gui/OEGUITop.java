@@ -853,6 +853,48 @@ public class OEGUITop extends OEGUIComponent {
 
 
 
+	// Show a help screen for a modal dialog.
+	// Perameters:
+	//  c = Help component, from the help listener.
+	//  help_file = HTML filename, in the GUI help directory.
+	// The help component is used as the owner.
+
+	public void show_help_modal (Component c, String help_file) throws GUIEDTException {
+		URL help_url = null;
+		if (help_file != null) {
+			if (get_trace_events()) {
+				System.out.println ("?!?!? Help request: " + help_file);
+			}
+			help_url = OEConstants.class.getResource (HELP_DIRECTORY + help_file);
+		}
+		else {
+			if (get_trace_events()) {
+				System.out.println ("?!?!? Help request: Null file");
+			}
+		}
+		help_viewer.openDialog (c, help_locator, help_url);
+		return;
+	}
+
+
+
+
+	// Make a help listener that displays the specified help file for a modal dialog.
+	// Returns null if help is not being provided.
+
+	public GUIHelpListener make_help_modal (final String help_file) {
+		if (!( get_provide_help() )) {
+			return null;
+		}
+		return (c) -> {
+			show_help_modal (c, help_file);
+			return;
+		};
+	}
+
+
+
+
 	//----- Construction -----
 
 

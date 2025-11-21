@@ -303,7 +303,8 @@ public class OEGUISubRJValue extends OEGUIListener {
 	private GUIParameterListParameter init_rjValueEditParam () throws GUIEDTException {
 		rjValueList = new ParameterList();
 		rjValueEditParam = new GUIParameterListParameter("RJ Parameters", rjValueList, "Edit RJ Params...",
-							"Edit RJ Params", "RJ Parameters", null, null, false, gui_top.get_trace_events());
+							"Edit RJ Params", "RJ Parameters", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_param_rj.html"));
 		rjValueEditParam.setInfo("Set Reasenberg and Jones parameter values");
 		register_param (rjValueEditParam, "rjValueEditParam", PARMGRP_RJ_EDIT);
 

@@ -846,7 +846,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private GUIParameterListParameter init_etasValueEditParam () throws GUIEDTException {
 		etasValueList = new ParameterList();
 		etasValueEditParam = new GUIParameterListParameter("ETAS Parameters", etasValueList, "Edit ETAS Params...",
-							"Edit ETAS Params", "ETAS Parameters", null, null, false, gui_top.get_trace_events());
+							"Edit ETAS Params", "ETAS Parameters", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_param_etas_param.html"));
 		etasValueEditParam.setInfo("Set ETAS parameter values");
 		register_param (etasValueEditParam, "etasValueEditParam", PARMGRP_ETAS_EDIT);
 
@@ -893,7 +894,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private GUIParameterListParameter init_etasOptionEditParam () throws GUIEDTException {
 		etasOptionList = new ParameterList();
 		etasOptionEditParam = new GUIParameterListParameter("ETAS Options", etasOptionList, "Edit ETAS Options...",
-							"Edit ETAS Options", "ETAS Options", null, null, false, gui_top.get_trace_events());
+							"Edit ETAS Options", "ETAS Options", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_param_etas_opt.html"));
 		etasOptionEditParam.setInfo("Set ETAS options");
 		register_param (etasOptionEditParam, "etasOptionEditParam", PARMGRP_ETAS_OPTION);
 

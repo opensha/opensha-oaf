@@ -1,0 +1,60 @@
+<html>
+    <head>
+        <title>Tool: Compute b-value using b-positive</title>
+    </head>
+    <body>
+        <h2>Tool: Compute b-value using b-positive</h2>
+        <p>
+            This tool computes an estimated b-value using the b-positive algoritm
+            of van der Elst (2021, JGR Solid Earth).
+        </p>
+        <p>
+            Note that this tool is a modal dialog, which means that you must close the tool
+            before you can use any other part of the GUI.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Min Magnitude</b></p>
+        <p>
+            The b-positive algorithm only considers aftershocks that are at least a certain
+            minimum magnitude.
+            Use this field to specify the minimum magnitude.
+            A value of 0.0 effectively means to use all aftershocks in the catalog.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Min Magnitude Increase</b></p>
+        <p>
+            The b-positive algorithm searches for pairs of consecutive aftershocks where
+            the magnitude of the second aftershock exceeds the magnitude of the first aftershock
+            by at least some minimum amount.
+            Use this field to specify the minimum amount.
+        </p>
+        <p>
+            The value should be at least twice the precision of the magnitudes in the catalog.
+            A typical value is 0.2 or larger.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Compute b-positive</b></p>
+        <p>
+            Press the button to run the calculation.
+            The computed b-value is placed into the <b>b-value</b> field and into the <b>Select</b> button.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>b-value</b></p>
+        <p>
+            This is a read-only field that displays the computed b-value.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Select</b></p>
+        <p>
+            When you compute a b-value, this button becomes active, and the computed
+            b-value is inserted into the button.
+            Press the button to close the tool and transfer the b-value into the <b>b-value</b>
+            field in the <b>Common Parameters</b> panel.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Cancel</b></p>
+        <p>
+            Press this button to close the tool without choosing a new b-value.
+        </p>
+    </body>
+</html>

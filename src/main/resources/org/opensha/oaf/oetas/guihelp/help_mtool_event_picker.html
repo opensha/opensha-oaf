@@ -1,0 +1,92 @@
+<html>
+    <head>
+        <title>Event Picker</title>
+    </head>
+    <body>
+        <h2>Event Picker</h2>
+        <p>
+            You can use the event picker to search for earthquakes in Comcat.
+            Once you find an earthquake, you can select it for use in the GUI.
+        <p>
+            Note that the event picker is a modal dialog, which means that you must close it
+            before you can use any other part of the GUI.
+        </p>
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Available Earthquakes</b></p>
+        <p>
+            This drop-down shows the results of a search.
+            Earthquakes are listed in reverse chronological order (most recent first).
+            Each entry shows the date, magnitude, and description of an earthquake.
+            The drop-down is filled in when you click the <b>Populate</b> button.
+        </p>
+        <p>
+            You select the earthquake you want to work with from this drop-down.
+            When you click on an earthquake, it becomes selected and
+            its event ID appears in the <b>Select</b> button.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Minimum Magnitude</b></p>
+        <p>
+            Use this drop-down to select the type of search that you want to perform.
+            You can search for:
+        </p>
+        <ul>
+            <li>
+                Any earthquake that has an OAF product.<br>&nbsp;
+            </li>
+            <li>
+                An earthquake that has an OAF product and is at least a selected
+                minimum magnitude.
+                For example, you can search for earthquake of magnitude 6.0 and
+                larger with an OAF product.<br>&nbsp;
+            </li>
+            <li>
+                A recent earthquake of at least a selected magnitude, regardless
+                of whether or not it has an OAF product.
+                For example, you can search for magnitude 5.0 and larger earthquakes
+                within the past month.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Search Region</b></p>
+        <p>
+            Use this drop-down to select a geographic region to search.
+            If you select <i>World</i> then the search looks for earthquakes
+            anywhere in the world.
+            If you nake a different selection then the search is limited to
+            earthquakes in the selected region.
+        </p>
+        <p>
+            Note that the GUI usually looks in a somewhat larger area than the
+            selected region.
+            For example, if you select <i>California</i> then the GUI searches in
+            the area covered by the California seismic networks (SCSN and NCSS),
+            which extends somewhat beyond the borders of California.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Populate Event List</b></p>
+        <p>
+            Press the button to contact Comcat and perform the search.
+            The results of the search are inserted into the <b>Available Earthquakes</b>
+            drop-down list.
+        </p>
+        <p>
+            A dialog box is displayed if no earthquakes are found that satisfy the
+            conditions of the search.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Select</b></p>
+        <p>
+            When an earthquake in the <b>Available Earthquakes</b> drop-down is selected,
+            this button becomes active, and the event ID is inserted into the button.
+            Press the button to close the event picker and transfer the event ID
+            into the <b>USGS Event ID</b> field in the main panel.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Cancel</b></p>
+        <p>
+            Press this button to close the event picker without choosing an earthquake.
+        </p>
+    </body>
+</html>

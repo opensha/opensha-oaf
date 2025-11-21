@@ -416,7 +416,7 @@ public class OEGUIController extends OEGUIListener {
 		//fitEditorHeight = (gui_top.get_height() * 4) / 10;
 		fitEditorHeight = gui_top.get_height() - (dataEditorHeight);
 
-		fitEditor = new GUIParameterListEditor(fitParams);
+		fitEditor = new GUIParameterListEditor(fitParams, gui_top.make_help ("help_param_main.html"));
 		fitEditor.setTitle("Aftershock Parameters");
 		fitEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), fitEditorHeight));
 		return fitEditor;

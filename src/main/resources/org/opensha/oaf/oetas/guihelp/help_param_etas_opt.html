@@ -1,0 +1,76 @@
+<html>
+    <head>
+        <title>Edit ETAS Options</title>
+    </head>
+    <body>
+        <h2>Edit ETAS Options</h2>
+        <p>
+            This panel lets you select options for computing ETAS forecasts.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>ETAS Model<br>ETAS Model Weight</b></p>
+        <p>
+            The drop-down list selects which ETAS model to use for computing the forecast.
+        </p>
+        <ul>
+            <li>
+                <i>Auto</i> - Lets the system choose which model to use (generic, sequence-specific, or Bayesian).<br>&nbsp;
+            </li>
+            <li>
+                <i>Bayesian</i> - Use the Bayesian model.<br>&nbsp;
+            </li>
+            <li>
+                <i>Sequence Specific</i> - Use the sequence specific model.<br>&nbsp;
+            </li>
+            <li>
+                <i>Generic</i> - Use the generic model.<br>&nbsp;
+            </li>
+            <li>
+                <i>Custom Weight</i> - Activates the <b>ETAS Model Weight</b> field so you can enter
+                a model weight. A weight of 0.0 selects the sequence-specific model,
+                1.0 selects the Bayesian model, and 2.0 selects the generic model.
+                Weights between 0.0 and 1.0 interpolate between the sequence-specific and Bayesian
+                models, while weights between 1.0 and 2.0 interpolate between the Bayesian
+                and generic models.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>ETAS Prior</b></p>
+        <p>
+            The drop-down list selects which Bayesian prior to use for computing a Bayesian forecast.
+        </p>
+        <ul>
+            <li>
+                <i>Mixed/Hierarchical</i> - Use the mixed-form, hierarchical priors from Barall et al.<br>&nbsp;
+            </li>
+            <li>
+                <i>Gaussian</i> - Use Gaussian priors from van der Elst.<br>&nbsp;
+            </li>
+            <li>
+                <i>Uniform</i> - Use a uniform prior.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Use common b-value<br>ETAS b</b></p>
+        <p>
+            If the box is checked, then the ETAS forecast uses the same Gutenberg-Richter
+            b-value as the Reasenberg-Jones forecast.
+            That b-value comes from the <b>Common Parameters</b> panel.
+        </p>
+        <p>
+            If the box is not checked, then the <b>ETAS b</b> field is activated,
+            and you can enter the b-value that you want to use for ETAS forecasts.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Use alpha = b<br>ETAS alpha</b></p>
+        <p>
+            If the box is checked, then the ETAS parameter &quot;alpha&quot; is set
+            equal to the Gutenberg-Richter b-value.
+            This is the default.
+        </p>
+        <p>
+            If the box is not checked, then the <b>ETAS alpha</b> field is activated,
+            and you can enter the value that you want to use for the ETAS parameter &quot;alpha&quot;.
+        </p>
+    </body>
+</html>
