@@ -1,5 +1,8 @@
 package org.opensha.oaf.aafs;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 /**
  * Program version information.
@@ -13,7 +16,7 @@ public class VersionInfo  {
 
 	// Program version.
 
-	public static final String program_version = "Version 1.05.1824 (11/19/2025)";
+	public static final String program_version = "Version 1.05.1825 (12/01/2025)";
 
 	// Program sponsor.
 
@@ -29,7 +32,7 @@ public class VersionInfo  {
 
 	// Build.
 
-	public static final int build = 1824;
+	public static final int build = 1825;
 
 
 
@@ -61,6 +64,18 @@ public class VersionInfo  {
 
 	public static String get_version_number () {
 		return String.format ("%d.%02d.%04d", major_version, minor_version, build);
+	}
+
+
+	// Get the version date, as a string.
+
+	public static String get_version_date () {
+		Pattern pattern = Pattern.compile ("\\d{2}/\\d{2}/\\d{4}");
+		Matcher matcher = pattern.matcher (program_version);
+		if (matcher.find()) {
+			return matcher.group();	// returns the first match
+		}
+		return "00/00/0000";	// should never happen
 	}
 
 }

@@ -895,6 +895,22 @@ public class OEGUITop extends OEGUIComponent {
 
 
 
+	// Make a help listener that displays the help file returned by the supplier for a modal dialog.
+	// Returns null if help is not being provided.
+
+	public GUIHelpListener make_help_modal (final Supplier<String> help_file_supplier) {
+		if (!( get_provide_help() )) {
+			return null;
+		}
+		return (c) -> {
+			show_help_modal (c, help_file_supplier.get());
+			return;
+		};
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -1004,7 +1020,7 @@ public class OEGUITop extends OEGUIComponent {
 		get_top_window().setContentPane(mainPanel);
 		get_top_window().setSize(get_paramWidth()*paramColumns + get_chartWidth(), get_height());
 		get_top_window().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		get_top_window().setTitle("USGS Operational Aftershock Forecasting (OAF) GUI - Version " + VersionInfo.get_version_number());
+		get_top_window().setTitle("USGS Operational Aftershock Forecasting (OAF) GUI - Version " + VersionInfo.get_version_number() + " (" + VersionInfo.get_version_date() + ")");
 		get_top_window().setLocationRelativeTo(null);
 
 		init_help();

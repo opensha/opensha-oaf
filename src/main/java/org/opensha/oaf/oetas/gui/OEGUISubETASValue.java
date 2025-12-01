@@ -283,7 +283,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	// Update the default ranges from ETAS parameters.
 	// Use defaults if etas_params is null or ranges are not available.
 
-	private void update_default_ranges (OEtasParameters etas_params) {
+	private void update_default_ranges (OEtasParameters etas_params, double common_b_value) {
 
 		if (!( etas_params != null && etas_params.range_avail && !(etas_params.eligible_params_avail && etas_params.eligible_option == OEConstants.ELIGIBLE_OPT_DISABLE) )) {
 			init_default_ranges();
@@ -341,6 +341,9 @@ public class OEGUISubETASValue extends OEGUIListener {
 		OEDiscreteRange def_b_range = etas_params.b_range;
 		def_f_use_common_b = false;
 		def_b_value = def_b_range.get_range_middle();
+		if (Math.abs (def_b_value - common_b_value) <= 0.001) {
+			def_f_use_common_b = true;
+		}
 
 		return;
 	}
@@ -1318,9 +1321,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 		init_etasValueEditParam();
 		init_etasOptionEditParam();
 
-		// Set initial enable state
+		// Set default values and initial enable state
 
-		adjust_enable();
 		update_etas_value_from_defaults();
 	}
 
@@ -1382,7 +1384,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 		OEtasParameters etas_params = gui_model.get_etasParams();
 		//OEtasParameters etas_params = gui_model.get_or_make_etasParams().params;
 
-		update_default_ranges (etas_params);
+		update_default_ranges (etas_params, gui_model.get_cat_bParam());
 		update_default_model (etas_params);
 		update_default_prior (etas_params);
 		update_default_etas_enable (etas_params);
@@ -1394,6 +1396,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 
 	// Update ETAS values from the defaults.
+	// Also update the enable state.
 
 	private void update_etas_value_from_defaults () throws GUIEDTException {
 		updateParam(etasEnableParam, def_etas_enable);
@@ -1430,6 +1433,10 @@ public class OEGUISubETASValue extends OEGUIListener {
 			updateParam(etasBayWeightParam, def_bay_weight);
 		}
 		updateParam(etasPriorParam, def_etas_prior);
+
+		// Uodate data-dependent enable
+
+		adjust_enable();
 
 		return;
 	}
