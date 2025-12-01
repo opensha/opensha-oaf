@@ -97,6 +97,43 @@ public class GUIHtmlViewerDialog {
 	// Dialog termination code (see GUIDialogParameter.TERMCODE_XXXX).
 	private int dialog_termcode = 0;
 
+	// Text to appear on the back button (cannot be null).
+	//private static final String DEF_BACK_BUTTON_TEXT = "<";
+	//private static final String DEF_BACK_BUTTON_TEXT = "\u2190";		// arrow
+	//private static final String DEF_BACK_BUTTON_TEXT = "\u21A9";		// hook arrow
+	private static final String DEF_BACK_BUTTON_TEXT = "\u2B9C";		// equilateral arrowhead
+	private String back_button_text = DEF_BACK_BUTTON_TEXT;
+
+	// Text to appear on the forward button (cannot be null).
+	//private static final String DEF_FORWARD_BUTTON_TEXT = ">";
+	//private static final String DEF_FORWARD_BUTTON_TEXT = "\u2192";	// arrow
+	//private static final String DEF_FORWARD_BUTTON_TEXT = "\u21AA";	// hook arrow
+	private static final String DEF_FORWARD_BUTTON_TEXT = "\u2B9E";		// equilateral arrowhead
+	private String forward_button_text = DEF_FORWARD_BUTTON_TEXT;
+
+	// Set to enable the navigation bar.
+	private boolean f_nav_enable = false;
+
+	// Set to clear the navigation list whenever the dialog is closed.
+	private boolean f_nav_clear_on_close = true;
+
+	// Set to clear the navigation list on each call to openDialog.
+	private boolean f_nav_clear_on_open = false;
+
+	// The navigation list.
+	// Each element of the list must be either URL or String.
+	private ArrayList<Object> nav_list = new ArrayList<Object>();
+
+	// Index into the navigation list, can range from 0 to nav_list.size().
+	// It points one past the currently displayed page.
+	private int nav_index = 0;
+
+	// The back button, or null if not allocated.
+	protected JButton back_button = null;
+
+	// The forward button, or null if not allocated.
+	protected JButton forward_button = null;
+
 
 
 
@@ -253,6 +290,16 @@ public class GUIHtmlViewerDialog {
 	}
 
 
+	// Set error text in the editor.
+
+	private void editor_set_error_text (String editor_text) {
+		editor_pane.setText (editor_text);
+		editor_pane.setCaretPosition (0);
+		editor_pane.getCaret().setVisible(false);
+		return;
+	}
+
+
 	// Set the editor content.
 	// If the URL is non-null, the content is set from the URL.
 	// Otherwise, the content is set from the text (which must be HTML).
@@ -262,7 +309,7 @@ public class GUIHtmlViewerDialog {
 			try {
 				editor_set_page (editor_url);
 			} catch (IOException e) {
-				editor_set_text ("<html><body><h2>Error loading HTML</h2></body></html>");
+				editor_set_error_text ("<html><body><h2>Error loading HTML</h2></body></html>");
 				e.printStackTrace();
 			}
 		}
@@ -270,7 +317,24 @@ public class GUIHtmlViewerDialog {
 			editor_set_text (editor_text);
 		}
 		else {
-			editor_set_text ("<html><body><h2>No text was given</h2></body></html>");
+			editor_set_error_text ("<html><body><h2>No text was given</h2></body></html>");
+		}
+		return;
+	}
+
+
+	// Set the editor content.
+	// The content must be either URL or String.
+
+	protected void set_editor_content (Object editor_content) {
+		if (editor_content != null && editor_content instanceof URL) {
+			set_editor_content ((URL)editor_content, null);
+		}
+		else if (editor_content != null && editor_content instanceof String) {
+			set_editor_content (null, (String)editor_content);
+		}
+		else {
+			set_editor_content (null, null);
 		}
 		return;
 	}
@@ -336,6 +400,12 @@ public class GUIHtmlViewerDialog {
 
 	protected boolean doOpenDialog (Component owner, Component locator, URL editor_url, String editor_text) {
 
+		// Clear navigation list if desired
+
+		if (f_nav_clear_on_open) {
+			nav_clear_list();
+		}
+
 		// If the dialog already exists ...
 
 		if (frame != null) {
@@ -360,6 +430,7 @@ public class GUIHtmlViewerDialog {
 				// Update the content in the existing dialog
 
 				set_editor_content (editor_url, editor_text);
+				nav_new_page (editor_url, editor_text);
 
 				// Update title and button text and size if needed
 
@@ -456,6 +527,7 @@ public class GUIHtmlViewerDialog {
 		editor_pane.setEditable (false);
 
 		set_editor_content (editor_url, editor_text);
+		nav_new_page (editor_url, editor_text);
 
 		editor_pane.addHyperlinkListener(new HyperlinkListener() {
 			@Override
@@ -469,9 +541,10 @@ public class GUIHtmlViewerDialog {
 						try {
 							editor_set_page(e.getURL());
 						} catch (IOException ex) {
-							editor_set_text ("<html><body><h2>Error loading linked HTML</h2></body></html>");
+							editor_set_error_text ("<html><body><h2>Error loading linked HTML</h2></body></html>");
 							ex.printStackTrace();
 						}
+						nav_new_page (e.getURL(), null);
 					}
 				}
 			}
@@ -513,23 +586,107 @@ public class GUIHtmlViewerDialog {
 			});
 		}
 
-		// Add 0, 1, or 2 buttons
+		// If we want the navigation pane ...
 
-		if (ok_button != null && cancel_button != null) {
-			JPanel button_panel = new JPanel();
-			button_panel.setLayout(new BorderLayout(8, 0));
-			button_panel.add (ok_button, BorderLayout.WEST);
-			button_panel.add (cancel_button, BorderLayout.EAST);
-			frame.getContentPane().add(button_panel,new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-					GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
+		if (f_nav_enable) {
+
+			// BACK button
+
+			back_button = new JButton();
+			back_button.setText(back_button_text);
+			back_button.addActionListener(new ActionListener() {
+				@Override public void actionPerformed(ActionEvent e) {
+					back_actionPerformed(e);
+					return;
+				}
+			});
+
+			// FORWARD button
+
+			forward_button = new JButton();
+			forward_button.setText(forward_button_text);
+			forward_button.addActionListener(new ActionListener() {
+				@Override public void actionPerformed(ActionEvent e) {
+					forward_actionPerformed(e);
+					return;
+				}
+			});
+
+			// Force buttons to have the same size
+
+			unifyButtonSizes (back_button, forward_button);
+
+			// Navigation panel
+
+			JPanel nav_panel = new JPanel();
+			nav_panel.setLayout(new GridBagLayout());
+
+			// Add the BACK button
+
+			int gridx = 0;
+			nav_panel.add (back_button, new GridBagConstraints (gridx, 0, 1, 1, 1.0, 0.0,
+					GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0, 0, 0, 4), 0, 0));
+			++gridx;
+
+			// Add the OK button
+
+			if (ok_button != null) {
+				nav_panel.add (ok_button, new GridBagConstraints (gridx, 0, 1, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(0, 4, 0, 4), 0, 0));
+				++gridx;
+			}
+
+			// Add the CANCEL button
+
+			if (cancel_button != null) {
+				nav_panel.add (cancel_button, new GridBagConstraints (gridx, 0, 1, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(0, 4, 0, 4), 0, 0));
+				++gridx;
+			}
+
+			// Add the FORWARD button
+
+			nav_panel.add (forward_button, new GridBagConstraints (gridx, 0, 1, 1, 1.0, 0.0,
+					GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(0, 4, 0, 0), 0, 0));
+			++gridx;
+
+			// Add the navigation panel to the main panel
+
+			frame.getContentPane().add (nav_panel, new GridBagConstraints (0, 1, 1, 1, 1.0, 0.0,
+					GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(4, 4, 4, 4), 0, 0));
+
+			// Adjust the enable state of the navigation buttons
+
+			nav_adjust_button_enable();
 		}
-		else if (ok_button != null) {
-			frame.getContentPane().add(ok_button,new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-					GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
-		}
-		else if (cancel_button != null) {
-			frame.getContentPane().add(cancel_button,new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-					GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
+
+		// Otherwise, no navigation pane ...
+
+		else {
+
+			// No navigation buttons
+
+			back_button = null;
+			forward_button = null;
+
+			// Add 0, 1, or 2 buttons
+
+			if (ok_button != null && cancel_button != null) {
+				JPanel button_panel = new JPanel();
+				button_panel.setLayout(new BorderLayout(8, 0));
+				button_panel.add (ok_button, BorderLayout.WEST);
+				button_panel.add (cancel_button, BorderLayout.EAST);
+				frame.getContentPane().add(button_panel,new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
+			}
+			else if (ok_button != null) {
+				frame.getContentPane().add(ok_button,new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
+			}
+			else if (cancel_button != null) {
+				frame.getContentPane().add(cancel_button,new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 4, 4, 4), 0, 0));
+			}
 		}
 
 		// Make the dialog visible
@@ -610,6 +767,12 @@ public class GUIHtmlViewerDialog {
 			ok_button = null;
 			cancel_button = null;
 			editor_pane = null;
+
+			back_button = null;
+			forward_button = null;
+			if (f_nav_clear_on_close) {
+				nav_clear_list();
+			}
 
 			// Dispose of the dialog if requested
 
@@ -711,5 +874,194 @@ public class GUIHtmlViewerDialog {
 		}
 		return;
 	}
+
+
+	// Configure the navigation bar.
+	// Parameters:
+	//  f_nav_enable = True to enable navigation bar (takes effect the next time the dialog is created).
+	//  f_nav_clear_on_close = True to clear navigation list whenever dialog is closed (takes effect immediately).
+	//  f_nav_clear_on_close = True to clear navigation list whenever openDialog is called (takes effect immediately).
+	//  back_button_text = Text to appear on the back button, or null for default text (takes effect the next time the dialog is created).
+	//  forward_button_text = Text to appear on the forward button, or null for default text (takes effect the next time the dialog is created).
+
+	public void set_nav_config (boolean f_nav_enable, boolean f_nav_clear_on_close, boolean f_nav_clear_on_open, String back_button_text, String forward_button_text) {
+		this.f_nav_enable = f_nav_enable;
+		this.f_nav_clear_on_close = f_nav_clear_on_close;
+		this.f_nav_clear_on_open = f_nav_clear_on_open;
+		this.back_button_text = ((back_button_text == null) ? DEF_BACK_BUTTON_TEXT : back_button_text);
+		this.forward_button_text = ((forward_button_text == null) ? DEF_FORWARD_BUTTON_TEXT : forward_button_text);
+		return;
+	}
+
+
+	// Given two buttons, set them to have the same preferred and minimum sizes.
+
+	protected static void unifyButtonSizes (JButton button1, JButton button2) {
+
+		// Get original preferred sizes
+		Dimension pref1 = button1.getPreferredSize();
+		Dimension pref2 = button2.getPreferredSize();
+
+		// Get original minimum sizes
+		Dimension min1 = button1.getMinimumSize();
+		Dimension min2 = button2.getMinimumSize();
+
+		// Calculate maximum preferred size
+		int maxPrefWidth = Math.max(pref1.width, pref2.width);
+		int maxPrefHeight = Math.max(pref1.height, pref2.height);
+		Dimension newPrefSize = new Dimension(maxPrefWidth, maxPrefHeight);
+
+		// Calculate maximum minimum size
+		int maxMinWidth = Math.max(min1.width, min2.width);
+		int maxMinHeight = Math.max(min1.height, min2.height);
+		Dimension newMinSize = new Dimension(maxMinWidth, maxMinHeight);
+
+		// Apply new sizes to both buttons
+		button1.setPreferredSize(newPrefSize);
+		button2.setPreferredSize(newPrefSize);
+
+		button1.setMinimumSize(newMinSize);
+		button2.setMinimumSize(newMinSize);
+
+		return;
+	}
+
+
+	// Return true if navigation can go back.
+
+	protected final boolean nav_has_back () {
+		return nav_index > 1;
+	}
+
+	
+	// Return true if navigation can go forward.
+
+	protected final boolean nav_has_forward () {
+		return nav_index < nav_list.size();
+	}
+
+
+	// Set the enabled state of the navigation buttons.
+
+	protected final void nav_adjust_button_enable () {
+		if (back_button != null) {
+			back_button.setEnabled (nav_has_back());
+		}
+		if (forward_button != null) {
+			forward_button.setEnabled (nav_has_forward());
+		}
+		return;
+	}
+
+
+	// This function is called when user clicks the BACK button.
+
+	protected void back_actionPerformed (ActionEvent e) {
+		if (frame != null) {
+
+			if (D) {
+				System.out.println ("$$$$$ GUIHtmlViewerDialog: BACK button pressed");
+			}
+
+			if (nav_has_back()) {
+				--nav_index;
+				set_editor_content (nav_list.get (nav_index - 1));
+				nav_adjust_button_enable();
+			}
+		}
+		return;
+	}
+
+
+	// This function is called when user clicks the FORWARD button.
+
+	protected void forward_actionPerformed (ActionEvent e) {
+		if (frame != null) {
+
+			if (D) {
+				System.out.println ("$$$$$ GUIHtmlViewerDialog: FORWARD button pressed");
+			}
+
+			if (nav_has_forward()) {
+				++nav_index;
+				set_editor_content (nav_list.get (nav_index - 1));
+				nav_adjust_button_enable();
+			}
+		}
+		return;
+	}
+
+
+	// Return true if the two contents are the same.
+	// Each content must be URL or String.
+	// Implementation note: A simple technique would be to use equals().
+	// but applying equals() to URLs requires name resolution which can take time.
+	// So we compare URLs by comparing their string representations.
+
+	protected static boolean is_same_content (Object c1, Object c2) {
+		if (c1 == null) {
+			if (c2 == null) {
+				return true;
+			}
+			return false;
+		}
+		if (c2 == null) {
+			return false;
+		}
+
+		if (c1 instanceof URL && c2 instanceof URL) {
+			return c1.toString().equals (c2.toString());
+		}
+
+		if (c1 instanceof String && c2 instanceof String) {
+			return c1.equals (c2);
+		}
+
+		return false;
+	}
+
+
+	// Store a new page in the navigation list.
+	// The content must be URL or String.
+
+	protected void nav_new_page (Object content) {
+		if (content != null) {
+			while (nav_index < nav_list.size()) {
+				nav_list.remove (nav_list.size() - 1);
+			}
+			if (!( nav_index > 0 && is_same_content (nav_list.get (nav_index - 1), content) )) {	// Don't add duplicates
+				nav_list.add (content);
+				++nav_index;
+			}
+			nav_adjust_button_enable();
+		}
+		return;
+	}
+
+
+	// Store a new page in the navigation list.
+	// If the URL is non-null, the content is the URL.
+	// Otherwise, the content is the text (which must be HTML).
+
+	protected void nav_new_page (URL content_url, String content_text) {
+		if (content_url != null) {
+			nav_new_page (content_url);
+		}
+		else if (content_text != null) {
+			nav_new_page (content_text);
+		}
+		return;
+	}
+
+
+	// Clear the navigation list.
+
+	protected void nav_clear_list () {
+		nav_list.clear();
+		nav_index = 0;
+		nav_adjust_button_enable();
+		return;
+	}
+
 
 }

@@ -788,6 +788,7 @@ public class OEGUITop extends OEGUIComponent {
 			help_viewer.setDialogDimensions (help_size);
 			help_viewer.setDialogTitle ("OAF GUI Help Viewer");
 			help_viewer.setCancelText ("Close");
+			help_viewer.set_nav_config (true, false, false, null, null);
 		}
 
 		return;
