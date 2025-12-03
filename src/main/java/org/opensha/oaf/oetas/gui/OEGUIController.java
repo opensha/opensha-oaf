@@ -180,6 +180,7 @@ public class OEGUIController extends OEGUIListener {
 	private static final int PARMGRP_FORECAST_BUTTON = 105;		// Button to compute forecast
 	private static final int PARMGRP_SERVER_STATUS = 106;		// Button to fetch server status
 	private static final int PARMGRP_PARAMS_FC_BUTTON = 107;	// Button to compute aftershock parameters and forecast in one step
+	private static final int PARMGRP_HELP_TOPICS_BUTTON = 108;	// Button to open help topics
 
 
 	//----- Sub-controllers -----
@@ -340,6 +341,17 @@ public class OEGUIController extends OEGUIListener {
 		fetchServerStatusButton = new ButtonParameter("AAFS Server", "Fetch Server Status");
 		register_param (fetchServerStatusButton, "fetchServerStatusButton", PARMGRP_SERVER_STATUS);
 		return fetchServerStatusButton;
+	}
+
+
+	// Open Help Topics button.
+
+	private ButtonParameter openHelpTopicsButton;
+
+	private ButtonParameter init_openHelpTopicsButton () throws GUIEDTException {
+		openHelpTopicsButton = new ButtonParameter("Help Topics", "Open Help Topics");
+		register_param (openHelpTopicsButton, "openHelpTopicsButton", PARMGRP_HELP_TOPICS_BUTTON);
+		return openHelpTopicsButton;
 	}
 
 
@@ -512,6 +524,10 @@ public class OEGUIController extends OEGUIListener {
 		// Controls in the "Filler" column
 		
 		ParameterList fillerParams = new ParameterList();
+
+		if (gui_top.get_provide_help()) {
+			fillerParams.addParameter(init_openHelpTopicsButton());
+		}
 
 		// Create the container
 
@@ -2090,6 +2106,22 @@ public class OEGUIController extends OEGUIListener {
 				}
 			};
 			GUICalcRunnable.run_steps (progress, postComputeStep, computeStep_1, computeStep_2);
+		}
+		break;
+
+
+
+
+		// Open help topics.
+
+		case PARMGRP_HELP_TOPICS_BUTTON: {
+			if (filter_state(MODSTATE_INITIAL, FILTOPT_TEST)) {
+				return;
+			}
+
+			// Show help topics
+
+			gui_top.show_help (null, "help_topics.html");
 		}
 		break;
 

@@ -186,6 +186,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private static final int PARMGRP_FCTAB_FULL_EXPORT = 907;			// Export button (forecast_data.json)
 	private static final int PARMGRP_FCTAB_NEXT_FC_OPTION = 908;		// Next forecast option
 	private static final int PARMGRP_FCTAB_NEXT_FC_TIME = 909;			// Next forecast time
+	private static final int PARMGRP_FCTAB_HELP = 910;					// Help button
 	
 
 	//----- Parameters within the panel -----
@@ -466,6 +467,18 @@ public class OEGUIForecastTable extends OEGUIListener {
 	}
 
 
+	// Show help; button.
+
+	private ButtonParameter helpButton;
+
+	private ButtonParameter init_helpButton () throws GUIEDTException {
+		helpButton = new ButtonParameter("Show Help", "Help");
+		helpButton.setInfo ("Show help for the forecast table");
+		register_param (helpButton, "helpButton" + my_suffix, PARMGRP_FCTAB_HELP);
+		return helpButton;
+	}
+
+
 
 
 	//--- Parameter container ---
@@ -498,6 +511,10 @@ public class OEGUIForecastTable extends OEGUIListener {
 //		params.addParameter(init_injectableTextButton());
 
 		params.addParameter(init_exportButton());
+
+		if (gui_top.get_provide_help()) {
+			params.addParameter(init_helpButton());
+		}
 
 		// Enable synchronization
 
@@ -1235,6 +1252,16 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 		case PARMGRP_FCTAB_NEXT_FC_TIME: {
 			sync_nextForecastOptionTime();
+		}
+		break;
+
+
+
+
+		//*** Show help
+
+		case PARMGRP_FCTAB_HELP: {
+			gui_top.show_help (null, "help_forecast_table.html");
 		}
 		break;
 

@@ -32,6 +32,7 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLFrameHyperlinkEvent;
+import javax.swing.text.Document;
 
 
 // Dialog box that displays HTML, used mainly to display help text.
@@ -121,7 +122,7 @@ public class GUIHtmlViewerDialog {
 	private boolean f_nav_clear_on_open = false;
 
 	// The navigation list.
-	// Each element of the list must be either URL or String.
+	// Each element of the list must be either URL or String, or null.
 	private ArrayList<Object> nav_list = new ArrayList<Object>();
 
 	// Index into the navigation list, can range from 0 to nav_list.size().
@@ -133,6 +134,9 @@ public class GUIHtmlViewerDialog {
 
 	// The forward button, or null if not allocated.
 	protected JButton forward_button = null;
+
+	// True if the current editor content was supplies using setText.
+	private boolean f_used_set_text = false;
 
 
 
@@ -273,6 +277,27 @@ public class GUIHtmlViewerDialog {
 	// Set page in the editor.
 
 	private void editor_set_page (URL editor_url) throws IOException {
+
+		if (f_used_set_text) {
+			f_used_set_text = false;
+
+			// There is a problem with JEditorPane in that if setPage is used after setText,
+			// then the display may not be updated, particularly if setPage is redisplaying
+			// the last URL that was used (https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4412125).
+
+			if (D) {
+				System.out.println ("$$$$$ GUIHtmlViewerDialog: Applying workaround for setText issue");
+			}
+
+			// This is the workaround recommended by the page linked above.
+			Document doc = editor_pane.getDocument();
+			doc.putProperty (Document.StreamDescriptionProperty, null);
+
+			// This is the workaround recommended by Copilot.
+			//editor_pane.setContentType ("text/html");
+			//editor_pane.setDocument (editor_pane.getEditorKit().createDefaultDocument());
+		}
+
 		editor_pane.setPage (editor_url);
 		editor_pane.setCaretPosition (0);
 		editor_pane.getCaret().setVisible(false);
@@ -283,6 +308,7 @@ public class GUIHtmlViewerDialog {
 	// Set text in the editor.
 
 	private void editor_set_text (String editor_text) {
+		f_used_set_text = true;
 		editor_pane.setText (editor_text);
 		editor_pane.setCaretPosition (0);
 		editor_pane.getCaret().setVisible(false);
@@ -293,6 +319,7 @@ public class GUIHtmlViewerDialog {
 	// Set error text in the editor.
 
 	private void editor_set_error_text (String editor_text) {
+		f_used_set_text = true;
 		editor_pane.setText (editor_text);
 		editor_pane.setCaretPosition (0);
 		editor_pane.getCaret().setVisible(false);
@@ -303,13 +330,15 @@ public class GUIHtmlViewerDialog {
 	// Set the editor content.
 	// If the URL is non-null, the content is set from the URL.
 	// Otherwise, the content is set from the text (which must be HTML).
+	// An error page is displayed if both parameters are null, or if there
+	// is an error retrieving text from the URL.
 
 	protected void set_editor_content (URL editor_url, String editor_text) {
 		if (editor_url != null) {
 			try {
 				editor_set_page (editor_url);
 			} catch (IOException e) {
-				editor_set_error_text ("<html><body><h2>Error loading HTML</h2></body></html>");
+				editor_set_error_text ("<html><body><h2>Error loading HTML from URL</h2></body></html>");
 				e.printStackTrace();
 			}
 		}
@@ -317,16 +346,35 @@ public class GUIHtmlViewerDialog {
 			editor_set_text (editor_text);
 		}
 		else {
-			editor_set_error_text ("<html><body><h2>No text was given</h2></body></html>");
+			editor_set_error_text ("<html><body><h2>No text is available</h2></body></html>");
 		}
+		return;
+	}
+
+
+	// Set the editor content and add page to navigation.
+	// If the URL is non-null, the content is set from the URL.
+	// Otherwise, the content is set from the text (which must be HTML).
+	// An error page is displayed if both parameters are null, or if there
+	// is an error retrieving text from the URL.
+	// After displaying the page, it is added to navigation.
+
+	protected void set_editor_content_and_nav (URL editor_url, String editor_text) {
+		set_editor_content (editor_url, editor_text);
+		nav_new_page (editor_url, editor_text);
 		return;
 	}
 
 
 	// Set the editor content.
 	// The content must be either URL or String.
+	// This is intended for use by the navigation code to implement back/forward.
 
 	protected void set_editor_content (Object editor_content) {
+		//if (D) {
+		//	System.out.println ("$$$$$ GUIHtmlViewerDialog: Displaying navigation page: " + debug_content_to_string(editor_content));
+		//}
+
 		if (editor_content != null && editor_content instanceof URL) {
 			set_editor_content ((URL)editor_content, null);
 		}
@@ -429,8 +477,7 @@ public class GUIHtmlViewerDialog {
 
 				// Update the content in the existing dialog
 
-				set_editor_content (editor_url, editor_text);
-				nav_new_page (editor_url, editor_text);
+				set_editor_content_and_nav (editor_url, editor_text);
 
 				// Update title and button text and size if needed
 
@@ -525,9 +572,9 @@ public class GUIHtmlViewerDialog {
 		editor_pane = new JEditorPane();
 		editor_pane.setContentType ("text/html");
 		editor_pane.setEditable (false);
+		f_used_set_text = false;
 
-		set_editor_content (editor_url, editor_text);
-		nav_new_page (editor_url, editor_text);
+		set_editor_content_and_nav (editor_url, editor_text);
 
 		editor_pane.addHyperlinkListener(new HyperlinkListener() {
 			@Override
@@ -538,13 +585,7 @@ public class GUIHtmlViewerDialog {
 						HTMLDocument doc = (HTMLDocument) editor_pane.getDocument();
 						doc.processHTMLFrameHyperlinkEvent(evt);
 					} else {
-						try {
-							editor_set_page(e.getURL());
-						} catch (IOException ex) {
-							editor_set_error_text ("<html><body><h2>Error loading linked HTML</h2></body></html>");
-							ex.printStackTrace();
-						}
-						nav_new_page (e.getURL(), null);
+						set_editor_content_and_nav (e.getURL(), null);
 					}
 				}
 			}
@@ -960,7 +1001,7 @@ public class GUIHtmlViewerDialog {
 		if (frame != null) {
 
 			if (D) {
-				System.out.println ("$$$$$ GUIHtmlViewerDialog: BACK button pressed");
+				System.out.println ("$$$$$ GUIHtmlViewerDialog: BACK button pressed, index = " + nav_index + ", size = " + nav_list.size());
 			}
 
 			if (nav_has_back()) {
@@ -979,7 +1020,7 @@ public class GUIHtmlViewerDialog {
 		if (frame != null) {
 
 			if (D) {
-				System.out.println ("$$$$$ GUIHtmlViewerDialog: FORWARD button pressed");
+				System.out.println ("$$$$$ GUIHtmlViewerDialog: FORWARD button pressed, index = " + nav_index + ", size = " + nav_list.size());
 			}
 
 			if (nav_has_forward()) {
@@ -993,7 +1034,8 @@ public class GUIHtmlViewerDialog {
 
 
 	// Return true if the two contents are the same.
-	// Each content must be URL or String.
+	// Each content must be URL or String, or null.
+	// Nulls are handled correctly (null is only equal to another null).
 	// Implementation note: A simple technique would be to use equals().
 	// but applying equals() to URLs requires name resolution which can take time.
 	// So we compare URLs by comparing their string representations.
@@ -1022,19 +1064,31 @@ public class GUIHtmlViewerDialog {
 
 
 	// Store a new page in the navigation list.
-	// The content must be URL or String.
+	// The content must be URL or String, or null.
 
 	protected void nav_new_page (Object content) {
-		if (content != null) {
-			while (nav_index < nav_list.size()) {
-				nav_list.remove (nav_list.size() - 1);
-			}
-			if (!( nav_index > 0 && is_same_content (nav_list.get (nav_index - 1), content) )) {	// Don't add duplicates
-				nav_list.add (content);
-				++nav_index;
-			}
-			nav_adjust_button_enable();
+		//if (D) {
+		//	System.out.println ("$$$$$ GUIHtmlViewerDialog: Adding navigation page: " + debug_content_to_string(content));
+		//}
+
+		while (nav_index < nav_list.size()) {
+			nav_list.remove (nav_list.size() - 1);
 		}
+		if (!( nav_index > 0 && is_same_content (nav_list.get (nav_index - 1), content) )) {	// Don't add duplicates
+
+			if (D) {
+				System.out.println ("$$$$$ GUIHtmlViewerDialog: Adding navigation page, index = " + nav_index + ", size = " + nav_list.size());
+			}
+
+			nav_list.add (content);
+			++nav_index;
+		}
+		else {
+			if (D) {
+				System.out.println ("$$$$$ GUIHtmlViewerDialog: Duplicate navigation page, index = " + nav_index + ", size = " + nav_list.size());
+			}
+		}
+		nav_adjust_button_enable();
 		return;
 	}
 
@@ -1050,6 +1104,9 @@ public class GUIHtmlViewerDialog {
 		else if (content_text != null) {
 			nav_new_page (content_text);
 		}
+		else {
+			nav_new_page (null);
+		}
 		return;
 	}
 
@@ -1061,6 +1118,24 @@ public class GUIHtmlViewerDialog {
 		nav_index = 0;
 		nav_adjust_button_enable();
 		return;
+	}
+
+
+	// Convert content to string for debugging (only).
+
+	private String debug_content_to_string (Object content) {
+		if (content == null) {
+			return "<null>";
+		}
+		if (content instanceof String) {
+			String text = ((String)content);
+			return "String: " + text;
+		}
+		if (content instanceof URL) {
+			URL url = ((URL)content);
+			return "URL: " + url.toString();
+		}
+		return "Unknown: " + (content.toString());
 	}
 
 
