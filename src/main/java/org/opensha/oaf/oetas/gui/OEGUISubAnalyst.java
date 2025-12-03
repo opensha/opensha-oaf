@@ -368,7 +368,8 @@ public class OEGUISubAnalyst extends OEGUIListener {
 	private GUIParameterListParameter init_analystEditParam () throws GUIEDTException {
 		analystList = new ParameterList();
 		analystEditParam = new GUIParameterListParameter("Analyst Parameters", analystList, "Edit Analyst Params...",
-							"Edit Analyst Parameters", "Analyst Parameters", null, null, false, gui_top.get_trace_events());
+							"Edit Analyst Parameters", "Analyst Parameters", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_mtool_analyst_params.html"));
 		analystEditParam.setInfo("Set analyst parameter values, and send to AAFS server");
 		register_param (analystEditParam, "analystEditParam", PARMGRP_ANALYST_EDIT);
 

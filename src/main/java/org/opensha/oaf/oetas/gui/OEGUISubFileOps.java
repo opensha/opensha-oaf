@@ -310,7 +310,8 @@ public class OEGUISubFileOps extends OEGUIListener {
 	private GUIParameterListParameter init_fileOpsEditParam () throws GUIEDTException {
 		fileOpsList = new ParameterList();
 		fileOpsEditParam = new GUIParameterListParameter("File Operations", fileOpsList, "File Operations...",
-							"Perform File Operations", "File Operations", null, null, false, gui_top.get_trace_events());
+							"Perform File Operations", "File Operations", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_mtool_file_ops.html"));
 		fileOpsEditParam.setInfo("Read analyst options or forecast from a file, and send to AAFS server or to PDL");
 		register_param (fileOpsEditParam, "fileOpsEditParam", PARMGRP_FILEOPS_EDIT);
 

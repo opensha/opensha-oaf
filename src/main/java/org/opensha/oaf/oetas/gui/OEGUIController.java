@@ -502,7 +502,7 @@ public class OEGUIController extends OEGUIListener {
 
 		aafsEditorHeight = (gui_top.get_height() * 6) / 10;
 
-		aafsEditor = new GUIParameterListEditor(aafsParams);
+		aafsEditor = new GUIParameterListEditor(aafsParams, gui_top.make_help ("help_mtool_main.html"));
 		aafsEditor.setTitle("More");
 		aafsEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), aafsEditorHeight));
 		return aafsEditor;
