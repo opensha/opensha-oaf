@@ -1,0 +1,97 @@
+<html>
+    <head>
+        <title>More Tools Panel</title>
+    </head>
+    <body>
+        <h2>More Tools Panel</h2>
+        <p>
+            This panel provides a variety of tools, most of which let you interact with
+            the AAFS servers, PDL, and Comcat.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Analyst Parameers</b></p>
+        <p>
+            Opens a sub-panel that lets you adjust OAF server parameters.
+            You can use this sub-panel to perform the following tasks:
+        </p>
+        <ul>
+            <li>
+                Turn forecasts on or off.
+            </li>
+            <li>
+                Select how long the server should produce forecasts.
+            </li>
+            <li>
+                Enter injectable text or an analyst remark.
+            </li>
+            <li>
+                Select whether the server generates event-sequence products.
+            </li>
+            <li>
+                Select whether the server should use custom aftershock parameters.
+            </li>
+            <li>
+                Send analyst options to the server.
+            </li>
+            <li>
+                Save analyst options to a file.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Save Aftershock Catalog</b></p>
+        <p>
+            Lets you save the aftershock catalog to a file.
+            When you click this button, a file chooser opens to let you enter the filename.
+            The catalog is saved in the <a href="help_cat_format_2.html">catalog file format</a>.
+        </p>
+        <p>
+            This button becomes active when you load data into the GUI that includes a catalog.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>AAFS Server Status</b></p>
+        <p>
+            Contacts the AAFS servers and displays their current status.
+            For each server, the status is either <i>Alive</i> or <i>Dead</i>.
+            Additional status information is displaeyed in the <b>Console tab</b>.
+        </p>
+        <p>
+            The GUI comes pre-configured to communicate with a specific server or pair of servers.
+            If the servers require an encrypted connection, then you must install digital certificate
+            files in the same directory as the GUI JAR file, and the GUI may prompt you to enter a PIN.
+        </p>
+        <p>
+            The GUI can also be pre-configured not to communicate with any server.
+            In this case, clicking the button will produce error messages,
+            because the GUI will attempt to contact a non-existent server.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Delete Product</b></p>
+        <p>
+            Opens a sub-panel that lets you delete an OAF product from Comcat,
+            and optionally also modify or delete an associated event-sequence product.
+            The delete is sent directly to PDL.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>File Operations</b></p>
+        <p>
+            Opens a sub-panel that lets you perform the following operations on files:
+         </p>
+        <ul>
+            <li>
+                Send a saved forecast_data.json file directly to PDL (which may also send an event-sequence product).
+            </li>
+            <li>
+                Send a saved forecast.json file directly to PDL, and optionally also an event-sequence product.
+            </li>
+            <li>
+                Send a saved analyst options file to the AAFS servers.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Event Picker</b></p>
+        <p>
+            Opens a sub-panel that lets you search for earthquakes and pick an earthquake to work with.
+            Searches can be constrained by magnitude and by geographic region.
+        </p>
+    </body>
+</html>

@@ -1,0 +1,76 @@
+<html>
+    <head>
+        <title>Delete Product</title>
+    </head>
+    <body>
+        <h2>Delete Product</h2>
+        <p>
+            This panel lets you delete the OAF product for the current earthquake from Comcat.
+            Optionally, it can also delete or modify the event-sequence product for the current earthquake.
+        </p>
+        <p>
+            This function works by sending commands directly to PDL.
+            It does not contact the AAFS servers.
+        </p>
+        <p>
+            The panel becomes active when you load data into the GUI.
+            (If you load data from a catalog file then you need to check the <b>Call Comcat for mainshock</b>
+            chackbox in order for this panel to be active.)
+            The functions in this panel do not require that you fit parameters or compute a forecast;
+            all that is needed is a mainshock.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Event-Sequence Option<br>Cap Time</b></p>
+        <p>
+            Use the drop-down list to select whether you want to delete or modify the event-sequence product
+            for the current earthquake.
+        </p>
+        <ul>
+            <li>
+                <i>Delete</i> - If the current earthquake has an event-sequence product, it is deleted.<br>&nbsp;
+            </li>
+            <li>
+                <i>Ignore</i> - If the current earthquake has an event-sequence product, it is <b>not</b> deleted or modified.<br>&nbsp;
+            </li>
+            <li>
+                <i>Cap End Time</i> - If the current earthquake has an event-sequence product,
+                then the end time of the sequence is changed.
+                This is useful if you are deleting the OAF product because the current earthquake has become a
+                foreshock of a leter, larger earthquake.
+                In this case, you may want to set the end time to be just before the later, larger earthquake.
+                Note that this option can only modify an existing event-sequence product,
+                it cannot create an event-sequence product if one does not already exist.
+            </li>
+        </ul>
+        <p>
+            The text field becomes active if you choose the <i>Cap End Time</i> option.
+            Enter the date and time at which the sequence ends, in UTC.
+            It is recommended that you enter the date and time in the form &quot;yyyy-mm-dd hh:mm&quot;,
+            for example, &quot;2025-04-14 17:08&quot;.
+            You can also use <a href="help_entering_date_time.html">other time formats</a>.
+        </p>
+        <p>
+            These controls are disabled if the GUI is configured to not support event-sequence.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>PDL Delete</b></p>
+        <p>
+            Deletes the OAF product of the current earthquake by sending a delete command directly to PDL.
+        </p>
+        <p>
+            If selected, also deletes or modifies any existing event-sequence product of the current earthquake,
+            by sending commands directly to PDL.
+            It is possible to delete or modify an existing event-sequence product even if the current earthquake
+            does not have an OAF product.
+        </p>
+        <p>
+            The GUI displays a dialog box for you to comfirm that you want to perform the delete operation.
+        </p>
+        <p>
+            By default, the PDL destination is <i>Dry Run</i>, which means that the GUI goes through the motions
+            of deleting the OAF product but does not send anything to PDL.
+            In order to send commands to PDL, you must use the GUI command line to specify the
+            PDL destination and private key file.
+        </p>
+    </body>
+</html>

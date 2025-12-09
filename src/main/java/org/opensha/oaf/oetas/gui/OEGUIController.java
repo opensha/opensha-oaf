@@ -326,7 +326,7 @@ public class OEGUIController extends OEGUIListener {
 	private ButtonParameter saveCatalogButton;
 
 	private ButtonParameter init_saveCatalogButton () throws GUIEDTException {
-		saveCatalogButton = new ButtonParameter("Aftershock Catalog", "Save Catalog...");
+		saveCatalogButton = new ButtonParameter("Save Aftershock Catalog", "Save Catalog...");
 		saveCatalogButton.setInfo("Save catalog to file in 10 column format");
 		register_param (saveCatalogButton, "saveCatalogButton", PARMGRP_SAVE_CATALOG);
 		return saveCatalogButton;
@@ -338,7 +338,7 @@ public class OEGUIController extends OEGUIListener {
 	private ButtonParameter fetchServerStatusButton;
 
 	private ButtonParameter init_fetchServerStatusButton () throws GUIEDTException {
-		fetchServerStatusButton = new ButtonParameter("AAFS Server", "Fetch Server Status");
+		fetchServerStatusButton = new ButtonParameter("AAFS Server Status", "Fetch Server Status");
 		register_param (fetchServerStatusButton, "fetchServerStatusButton", PARMGRP_SERVER_STATUS);
 		return fetchServerStatusButton;
 	}

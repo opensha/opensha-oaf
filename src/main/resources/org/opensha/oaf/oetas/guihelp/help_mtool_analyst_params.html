@@ -1,0 +1,174 @@
+<html>
+    <head>
+        <title>Analyst Parameters</title>
+    </head>
+    <body>
+        <h2>Analyst Parameters</h2>
+        <p>
+            This panel lets you send a variety of analyst options to the servers.
+            The servers remember these options and use them in future forecasts.
+            You can:
+        </p>
+        <ul>
+            <li>
+                Turn forecasts on or off.
+            </li>
+            <li>
+                Select how long the servers should produce forecasts.
+            </li>
+            <li>
+                Enter injectable text or an analyst remark.
+            </li>
+            <li>
+                Select whether the servers generate event-sequence products.
+            </li>
+            <li>
+                Select whether the servers should use custom aftershock parameters.
+            </li>
+        </ul>
+        <p>
+            The panel becomes active when you load data into the GUI.
+            (If you load data from a catalog file then you need to check the <b>Call Comcat for mainshock</b>
+            checkbox in order for this panel to be active.)
+        </p>
+        <p>
+            Except for using custom aftershock parameters, the functions in this panel
+            do not require that you fit parameters or compute a forecast;
+            all that is needed is a mainshock.
+            If you want to use custom aftershock parameters, then you do need to fit
+            parameters and compute a forecast.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Automatic Forecasts</b></p>
+        <p>
+            This drop-down list tells the servers whether or not they should generate forecasts for the current earthquake.
+        </p>
+        <ul>
+            <li>
+                <i>Normal</i> - Let the servers decide whether or not to generate forecasts using
+                the standard algorithm.
+                The servers generate forecasts automatically if the earthquake is in a supported region,
+                the earthquake&#39;s magnitude is above the magnitude threshold for the region,
+                and the earthquake does not appear to be a foreshock or aftershock of a lerger earthquake.<br>&nbsp;
+            </li>
+            <li>
+                <i>Enable</i> - Tells the servers to generate forecasts for the current earthquake.<br>&nbsp;
+            </li>
+            <li>
+                <i>Disable</i> - Tells the servers to <b>not</b> generate forecasts for the current earthquake.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Forecast Duration</b></p>
+        <p>
+            Controls how long the automatic system keeps issuing forecasts, in days since the mainshock.
+            The default value of 365 causes the system to issue forecasts for one year after the mainshock.
+            You can enter values up to 3650, which is ten years.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Injectable Text</b></p>
+        <p>
+            Opens a dialog box for you to enter injectable text.
+            The injectable text appears on the event page for the current earthquake.
+            The injectable text cannot contain hyperlinks or any formatting.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Analyst Remark</b></p>
+        <p>
+            Opens a dialog box for you to enter an analyst remark.
+            The analyst remark does <b>not</b> appear on the event page for the current earthquake,
+            but it can be viewed by opening the download file (forecast_data.json).
+            The analyst remark cannot contain any formatting.
+            It can contain Internet addresses but they should refer only to highly-reliable pages.
+        </p>
+        <p>
+            Caution: Although the analyst remark does not appear on the event page,
+            it is visible to the public.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Event-Sequence Option<br>Event Sequence Lookback</b></p>
+        <p>
+            The drop-down list tells the servers whether or not they should generate event-sequence products
+            for the current earthquake.
+        </p>
+        <ul>
+            <li>
+                <i>Auto</i> - Let the servers decide whether or not to generate event-sequence products using
+                the standard algorithm.
+                By default, the servers generate an event-sequence product whenever they generate a forecast;
+                modify or delete the event-sequence product if the forecast is deleted
+                (for example, if the current earthquake becomes a foreshock of a later, larger earthquake);
+                and let the event-sequence product remain in Comcat after the last forecast is removed.<br>&nbsp;
+            </li>
+            <li>
+                <i>Update</i> - Tells the servers to generate event-sequence products for the current earthquake.
+                Currently, this is essentially the same thing as using the standard algorithm.<br>&nbsp;
+            </li>
+            <li>
+                <i>Ignore</i> - Tells the servers to <b>not</b> generate, modify, or delete event-sequence products
+                for the current earthquake.<br>&nbsp;
+            </li>
+            <li>
+                <i>Delete</i> - Tells the servers to <b>not</b> generate event-sequence products for the current earthquake,
+                <b>and</b> to delete any event-sequence product that already exists.
+            </li>
+        </ul>
+        <p>
+            The text field tells the servers when an earthquake sequence begins,
+            measured in days before the mainshock.
+            The default value is 30 days.
+            Note: This value is used <b>only</b> for generating the event-sequence product,
+            and is used on the event page to display foreshocks.
+            It has no effect on aftershock forecasts.
+        </p>
+        <p>
+            These controls are disabled if the GUI is configured to not support event-sequence.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Use Custom Parameters</b></p>
+        <p>
+            Check this box to send custom aftershock forecast parameters to the servers.
+            The servers remember the custom parameters and use them for future forecasts.
+            If the box is not checked, then the servers use the default parameters for the region
+            in which the current earthquakes is located.
+        </p>
+        <p>
+            The custom parameters include the aftershock search region, magnitude of completeness parameters,
+            b-value, fitting insets, forecast magnitude bins, Reasenberg-Jones parameter ranges,
+            ETAS enable option, ETAS parameter ranges, ETAS model (Bayesian, sequence-specific, generic),
+            and ETAS Bayesian prior.
+        </p>
+        <p>
+            Note that this checkbox does not become active until you fit forecast parameters
+            and compute a forecast.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Export Analyst Options</b></p>
+        <p>
+            Lets you save the analyst options to a JSON file.
+            When you click this button, a file chooser opens to let you enter the filename.
+        </p>
+        <p>
+            You can later send the saved analyst options to the servers using the
+            <b>File Operations</b> panel.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Send Analyst Options</b></p>
+        <p>
+            Lets you send the analyst options to the servers.
+            When you click this button, a dialog box opens asking you to confirm that you want to
+            send analyst options to the servers.
+        </p>
+        <p>
+            The GUI comes pre-configured to communicate with a specific server or pair of servers.
+            If the servers require an encrypted connection,
+            then you must install <a href="help_digital_cert_files.html">digital certificate files</a>,
+            and the GUI may prompt you to enter a PIN.
+        </p>
+        <p>
+            The GUI can also be pre-configured not to communicate with any server.
+            In this case, attempting to send analyst options will produce error messages,
+            because the GUI will attempt to contact a non-existent server.
+        </p>
+    </body>
+</html>

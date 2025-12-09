@@ -1,0 +1,118 @@
+<html>
+    <head>
+        <title>File Operations</title>
+    </head>
+    <body>
+        <h2>File Operations</h2>
+        <p>
+            This panel lets you transmit saved analyst options and saved forecasts.
+        </p>
+        <p>
+            The panel becomes active when you load data into the GUI.
+            (If you load data from a catalog file then you need to check the <b>Call Comcat for mainshock</b>
+            chackbox in order for this panel to be active.)
+            The functions in this panel do not require that you fit parameters or compute a forecast;
+            all that is needed is a mainshock.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Send Analyst Options File</b></p>
+        <p>
+            If you previously saved analyst options into a JSON file,
+            then you can use this button to send the saved options to the servers.
+            When you click this button, a file chooser opens to let you select the,
+            and then a dialog box opens asking you to confirm that you want to
+            send analyst options to the servers.
+        </p>
+        <p>
+            The GUI comes pre-configured to communicate with a specific server or pair of servers.
+            If the servers require an encrypted connection,
+            then you must install <a href="help_digital_cert_files.html">digital certificate files</a>,
+            and the GUI may prompt you to enter a PIN.
+        </p>
+        <p>
+            The GUI can also be pre-configured not to communicate with any server.
+            In this case, attempting to send analyst options will produce error messages,
+            because the GUI will attempt to contact a non-existent server.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Send Forecast File</b></p>
+        <p>
+            If you previously saved a forecast in the form of a forecast_data.json file,
+            then you can use this button to send the saved forecast directly to PDL.
+            When you click this button, a file chooser opens to let you select the,
+            and then a dialog box opens asking you to confirm that you want to
+            send the forecast to PDL.
+        </p>
+        <p>
+            The forecast_data.json file should contain a forecast for the earthquake that is
+            currenlty loaded in the GUI.
+            The GUI warns you if this is not true.
+        </p>
+        <p>
+            The forecast_data.json file contains information on whether or not to also send
+            an event-sequence product.
+            When you click this button, the event-sequence product is also sent,
+            if so indicated in the file.
+        </p>
+        <p>
+            By default, the PDL destination is <i>Dry Run</i>, which means that the GUI goes through the motions
+            of sending the OAF and event-sequence products but does not send anything to PDL.
+            In order to send products to PDL, you must use the GUI command line to specify the
+            PDL destination and private key file.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Event Sequence Option<br>Event Sequence Lookback<br>Send forecast.json</b></p>
+        <p>
+            If you previously saved a forecast in the form of a forecast.json file,
+            then you can use the button to send the saved forecast directly to PDL.
+            When you click this button, a file chooser opens to let you select the,
+            and then a dialog box opens asking you to confirm that you want to
+            send the forecast to PDL.
+        </p>
+        <p>
+            The forecast.json file should contain a forecast for the earthquake that is
+            currenlty loaded in the GUI.
+            The GUI has no way to check if this is true, so be certain to check it yourself.
+        </p>
+        <p>
+            When you click the button, the GUI can also send an event-sequence product,
+            in addition to sending an OAF product.
+            The forecast.json file contains no information about the event-sequence product.
+            So, you can use the drop-down list to select whether or not to also send an event-sequence product:
+        </p>
+        <ul>
+            <li>
+                <i>Auto</i> - Use the standard algorithm to decide whether or not to send an event-sequence product.
+                By default, the event-sequence product will be sent.<br>&nbsp;
+            </li>
+            <li>
+                <i>Update</i> - Send an event-sequence product for the current earthquake.
+                Currently, this is essentially the same thing as using the standard algorithm.<br>&nbsp;
+            </li>
+            <li>
+                <i>Ignore</i> - Do <b>not</b> generate, modify, or delete an event-sequence product
+                for the current earthquake.<br>&nbsp;
+            </li>
+            <li>
+                <i>Delete</i> - Delete any event-sequence product that already exists.
+            </li>
+        </ul>
+        <p>
+            The text field specifies when an earthquake sequence begins,
+            measured in days before the mainshock.
+            The default value is 30 days.
+            Note: This value is used <b>only</b> for generating the event-sequence product,
+            and is used on the event page to display foreshocks.
+            It has no effect on aftershock forecasts.
+        </p>
+        <p>
+            The event-sequence controls are disabled if the GUI is configured to not support event-sequence.
+        </p>
+        <p>
+            By default, the PDL destination is <i>Dry Run</i>, which means that the GUI goes through the motions
+            of sending the OAF and event-sequence products but does not send anything to PDL.
+            In order to send products to PDL, you must use the GUI command line to specify the
+            PDL destination and private key file.
+        </p>
+    </body>
+</html>

@@ -1,0 +1,213 @@
+<html>
+    <head>
+        <title>Forecast Table</title>
+    </head>
+    <body>
+        <h2>Forecast Table</h2>
+        <p>
+            This window shows the computed forecasts.
+            There can be up to four forecasts:
+        </p>
+        <ul>
+            <li>
+                ETAS.
+            </li>
+            <li>
+                Reasenberg-Jones sequence-specific.
+            </li>
+            <li>
+                Reasenberg-Jones generic.
+            </li>
+            <li>
+                Reasenberg-Jones Bayesian.
+            </li>
+        </ul>
+        <p>
+            Use the tabs at the top of the window to select which forecast you want to view.
+            The ETAS forecast, if present, can be either sequence-specific, generic, or Bayesian,
+            depending on the option you selected in the <b>ETAS Options</b> panel when
+            computing the forecast.
+        </p>
+        <p>
+            The selected forecast is shown in a table at the bottom of the window.
+            The table shows forecasts for four time windows: one day, one week, one month, and one year.
+            Each time window begins at, or shortly after, the end of the loaded earthquake catalog.
+            Normally, this is approximately the current time.
+        </p>
+        <p>
+            In each time window, forecasts are shown for several magnitude ranges.
+            By default, these are for aftershocks with magnitude at least 3.0, 4.0, 5.0, 6.0, 7.0,
+            and the mainshock magnitude.
+        </p>
+        <p>
+            In each magnitude range, the table shows the expected number of aftershock,
+            given as the lower and upper limits of the 95% confidence interval, plus the median.
+            The table also shows the probability of one or more aftershocks, given as a percentage.
+        </p>
+        <p>
+            In the center of the window is a set of controls that you can use to perform
+            the following functions:
+        </p>
+        <ul>
+            <li>
+                Save the forecast to a file.
+            </li>
+            <li>
+                Send the forecast to PDL.
+            </li>
+            <li>
+                Set the advisory duration.
+            </li>
+            <li>
+                Select the OAF product template.
+            </li>
+            <li>
+                Specify the time at which the next forecast will be issued.
+            </li>
+        </ul>
+        <p>
+            The controls are described in detail below.
+            Note that there are additional controls in the <b>Analyst Parameters</b> panel that you
+            can use to perform the following additional functions:
+        </p>
+        <ul>
+            <li>
+                Enter injectable text.
+            </li>
+            <li>
+                Enter an analyst remark.
+            </li>
+            <li>
+                Set options for the event-sequence product.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Export Forecast to File</b></p>
+        <p>
+            Lets you save the forecast to a file, in the form of a forecast_data.json file.
+            When you click this button, a file chooser opens to let you enter the filename.
+        </p>
+        <p>
+            The saved file contains all the forecasts shown in this window,
+            plus the advisory duration, the template, the time of next forecast,
+            the mainshock information, the aftershock search region,
+            the magnitude of completeness parameters, all the forecast parameters, the event-sequence options,
+            the injectable text and analyst remark (if any), and the earthquake catalog.
+            The forecast that is currently displayed in this window is considered to be the selected forecast.
+        </p>
+        <p>
+            You can later send the saved forecast to PDL using the <b>File Operations</b> panel.
+            If you do, the selected forecast (that is, the forecast that is displayed in this window at the
+            time the file is saved) is the forecast that will appear on the event page.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Send Forecast to PDL</b></p>
+        <p>
+            Lets you send the forecast to PDL.
+            When you click this button, a dialog box opens asking you to confirm that you want to
+            send the forecast to PDL.
+            The forecast that is currently displayed in this window (that is, the selected forecast)
+            is the forecast that will appear on the event page.
+        </p>
+        <p>
+            Unlike with earlier versions of the GUI, the forecast will include both forecast.json
+            and forecast_data.json files.
+        </p>
+        <p>
+            If the event-sequence options (set in the <b>Analyst Parameters</b> panel) specify that
+            an event-sequence product should be sent,
+            then clicking this button also sends the event-sequence product.
+        </p>
+        <p>
+            By default, the PDL destination is <i>Dry Run</i>, which means that the GUI goes through the motions
+            of sending the OAF and event-sequence products but does not send anything to PDL.
+            In order to send products to PDL, you must use the GUI command line to specify the
+            PDL destination and private key file.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Advisory Duration</b></p>
+        <p>
+            This drop-down list lets you set the aftershock forecast advisory duration.
+            The possible durations are:
+        </p>
+        <ul>
+            <li>
+                <i>1 Day</i>.
+            </li>
+            <li>
+                <i>1 Week</i>.
+            </li>
+            <li>
+                <i>1 Month</i>.
+            </li>
+            <li>
+                <i>1 Year</i>.
+            </li>
+        </ul>
+        <p>
+            The default advisory duration depends on how long ago the mainshock occurred.
+            It is recommended that the <i>1 Day</i> duration should not be used.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Template</b></p>
+        <p>
+            This drop-down list lets you set the OAF product template.
+            The possible templates are:
+        </p>
+        <ul>
+            <li>
+                <i>Mainshock</i>.
+            </li>
+            <li>
+                <i>Earthquake of Interest</i>.
+            </li>
+            <li>
+                <i>Swarm</i>.
+            </li>
+        </ul>
+        <p>
+            It is strongly recommended that you leave the template set to <i>Mainshock</i>.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Next Forecast<br>Next Forecast Time</b></p>
+        <p>
+            These controls let you specify when the next forecast will be issued.
+            This drop-down list offers the following choices.
+        </p>
+        <ul>
+            <li>
+                <i>Not Specified</i> - No information about the next forecast is provided.<br>&nbsp;
+            </li>
+            <li>
+                <i>Unknown</i> - Specifies that the next forecast will occur at an unknown time.<br>&nbsp;
+            </li>
+            <li>
+                <i>None</i> - Specifies that there will be no further forecasts.<br>&nbsp;
+            </li>
+            <li>
+                <i>Set Time</i> - Indicates that the next forecast is scheduled to occur at about the specified time.
+            </li>
+        </ul>
+        <p>
+            If you select <i>Set Time</i>, then the text box is activated.
+            Enter the date and time at which the next forecast is scheduled to occur, in UTC.
+            It is recommended that you enter the date and time in the form &quot;yyyy-mm-dd hh:mm&quot;,
+            for example, &quot;2025-04-14 17:08&quot;.
+            You can also use <a href="help_entering_date_time.html">other time formats</a>.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Export forecast.json</b></p>
+        <p>
+            Lets you save the currently-selected forecast to a file, in the form of a forecast.json file.
+            When you click this button, a file chooser opens to let you enter the filename.
+        </p>
+        <p>
+            The saved file contains only the one forecast that is currently displayed in this window.
+            It also contains the advisory duration, the template, the time of next forecast,
+            and the injectable text (if any) from the <b>Analyst Parameters</b> panel.
+        </p>
+        <p>
+            You can later send the saved forecast.json file to PDL using the <b>File Operations</b> panel.
+        </p>
+    </body>
+</html>

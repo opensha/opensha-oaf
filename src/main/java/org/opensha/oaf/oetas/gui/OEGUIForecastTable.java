@@ -197,7 +197,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private ButtonParameter exportButton;
 
 	private ButtonParameter init_exportButton () throws GUIEDTException {
-		exportButton = new ButtonParameter("forecast.json", "Export forecast.json only...");
+		exportButton = new ButtonParameter("Export forecast.json", "Export forecast.json only...");
 		exportButton.setInfo ("Export the forecast to a forecast.json file");
 		register_param (exportButton, "exportButton" + my_suffix, PARMGRP_FCTAB_EXPORT);
 		return exportButton;
@@ -209,7 +209,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private ButtonParameter exportFullButton;
 
 	private ButtonParameter init_exportFullButton () throws GUIEDTException {
-		exportFullButton = new ButtonParameter("JSON", "Export JSON...");
+		exportFullButton = new ButtonParameter("Export Forecast to File", "Export to JSON...");
 		exportFullButton.setInfo ("Export the forecast to a forecast_data.json file");
 		register_param (exportFullButton, "exportFullButton" + my_suffix, PARMGRP_FCTAB_FULL_EXPORT);
 		return exportFullButton;
@@ -221,9 +221,9 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private ButtonParameter publishButton;
 
 	private ButtonParameter init_publishButton () throws GUIEDTException {
-		String publish_forecast = "Publish Forecast to " + get_pdl_dest() + "...";
+		String publish_forecast = "Send Forecast to " + get_pdl_dest() + "...";
 		//publishButton = new ButtonParameter("USGS PDL", "Publish Forecast");
-		publishButton = new ButtonParameter("USGS PDL", publish_forecast);
+		publishButton = new ButtonParameter("Send Forecast to PDL", publish_forecast);
 		publishButton.setInfo ("Send the forecast to " + get_pdl_dest());
 		register_param (publishButton, "publishButton" + my_suffix, PARMGRP_FCTAB_PUBLISH);
 		return publishButton;
