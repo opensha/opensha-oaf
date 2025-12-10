@@ -1,0 +1,135 @@
+<html>
+    <head>
+        <title>Parameter and Forecast Windows</title>
+    </head>
+    <body>
+        <h2>Parameter and Forecast Windows</h2>
+        <p>
+            When you fit aftershock parameters,
+            several windows appear on the right side of the GUI.
+            The windows display the parameters in various ways.
+            If you also compute forecasts, then an additionall window appears to display the forecast.
+        </p>
+        <p>
+            You access the windows by clicking the tabs located in the top right area of the GUI.
+            The windows are described below.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Cumulative Num Plot Tab</b></p>
+        <p>
+            Plots the cumulative number of aftershocks as a function of time.
+            If a time-dependent magnitude of completeness is being used, then the plot only includes
+            aftershocks that are above the time-dependent magnitude of completeness Mc(t).
+            The plot also shows the expected number of aftershocks whose magnitude is above Mc(t),
+            as a function of time, as predicted by the RJ model.
+            The number of aftershcks is shown in black, while RJ sequence-specific is blue,
+            RJ generic is green, and RJ Bayesian is red.
+            The time-dependent magnitude of completeness Mc(t) is computed using the parameters
+            from the <b>Common Parameters</b> panel.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Model PDFs Tab</b></p>
+        <p>
+            Plots the marginal distributions of the model parameters.
+            The plots are displayed in a series of sub-tabs.
+            There are separate sub-tabs for RJ and ETAS marginal distributions.
+        </p>
+        <p>
+            For each model parameter that is not fixed, there is a plot of its
+            univariate or 1D marginal distribution.
+            The plot has the parameter value on the horizonal axis,
+            and the probability density on the vertical axis.
+            A single plot can include marginals for the generic, sequence-specific,
+            and/or Bayesian models.
+            The sequence-specific marginal is plotted as a blue histogram,
+            the generic as a green curve, and the Bayesian as a red curve.
+            The ETAS parameters n (branch ratio), c (Omori offset), and mu (background rate)
+            are plotted on a log scale; all others are plotted on a linear scale.
+        </p>
+        <p>
+            For each pair of model parameters that are not fixed, there is a plot of their
+            bivariate or 2D marginal distribution.
+            The plot has one parameter value on the horizonal axis and the other
+            parameter value on the vertical axis.
+            Color is used to show the probability density.
+            Only the sequence-specific model is shown in the 2D marginal plots.
+            (If a parameter is plotted on a log scale, then the axis is labeled with the
+            base-10 logarithm of the parameter value instead of the parameter value itself,
+            due to a limitation in the OpenSHA plotting library.)<br>&nbsp;
+        </p>
+        <p>&nbsp;</p>
+        <p><b>ETAS Number Plots Tab</b></p>
+        <p>
+            This window is only shown if ETAS is enabled.
+            It contains plots that compare the integral of the
+            ETAS intensity function with the observed cumulative number of aftershocks.
+            Ideally, they should be similar.
+            The plots are computed using the maximum likelihood estimates of the ETAS parameters.
+            The plots are displayed in a series of sub-tabs.
+        </p>
+        <p>
+            There are two plots that show both the integral of the ETAS intensity
+            function and the observed cumulative number of aftershocks on the same
+            graph, as functions of time.
+            Each plot has time on the horizontal axis,
+            and integrated intensity or cumulative number on the vertical axis.
+            Of the two plots, one shows only the sequence-specific model,
+            and the other shows generic, sequence-specific, and Bayesian models.
+        </p>
+        <p>
+            In addition, there are two plots that show the observed cumulative number of aftershocks
+            as a function of transformed time.
+            Each plot has transformed time on the horizontal axis,
+            and cumulative number on the vertical axis.
+            Transformed time is equal to the integral of the ETAS intensity function.
+            In other words, the ETAS model expects one aftershock per unit of transformed time.
+            If there was perfect agreement, the observed cumulative number of aftershocks
+            would plot as a straight line with a slope of one.
+            Of the two plots, one shows only the sequence-specific model,
+            and the other shows generic, sequence-specific, and Bayesian models.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Forecast Table Tab</b></p>
+        <p>
+            If you computed forecasts, then this window ontains the forecast tables.
+            There can be up to four forecasts:
+        </p>
+        <ul>
+            <li>
+                ETAS.
+            </li>
+            <li>
+                Reasenberg-Jones sequence-specific.
+            </li>
+            <li>
+                Reasenberg-Jones generic.
+            </li>
+            <li>
+                Reasenberg-Jones Bayesian.
+            </li>
+        </ul>
+        <p>
+            You use the tabs at the top of the window to select which forecast you want to view.
+            Each table shows the expected number of aftershocks (95% confidence interval and median), and the probability of one or more
+            aftershock, for various magnitude ranges, occurring in the next day, week, month, and year.
+            There are also controls you can use to:
+        </p>
+        <ul>
+            <li>
+                Save the forecast to a file.
+            </li>
+            <li>
+                Send the forecast to PDL.
+            </li>
+            <li>
+                Set the advisory duration.
+            </li>
+            <li>
+                Select the OAF product template.
+            </li>
+            <li>
+                Specify the time at which the next forecast will be issued.
+            </li>
+        </ul>
+    </body>
+</html>

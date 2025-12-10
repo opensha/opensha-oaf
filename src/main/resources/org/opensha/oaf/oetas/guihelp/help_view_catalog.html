@@ -1,0 +1,116 @@
+<html>
+    <head>
+        <title>Catalog Windows</title>
+    </head>
+    <body>
+        <h2>Catalog Windows</h2>
+        <p>
+            When you load an earthquake catalog into the GUI
+            (whether from Comcat, a catalog file, or an existing forecast),
+            several windows appear on the right side of the GUI.
+            The windows display the catalog in various ways.
+        </p>
+        <p>
+            You access the windows by clicking the tabs located in the top right area of the GUI.
+            The windows are described below.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Catalog Tab</b></p>
+        <p>
+            Displays the earthquake catalog as a text file.
+            The file is shown in the <a href="help_cat_format_2.html">catalog file format</a>.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Epicenters Tab</b></p>
+        <p>
+            Plots the earthquake epicenter locations on a map.
+            Aftershocks are plotted in colors that indicate the time at which the aftershock occurred.
+            Foreshocks are plotted in gray.
+            Each earthquake is shown as an open circle, with larger earthquakes shown as larger circles.
+            The aftershock search region is shown as a dashed circle.
+        </p>
+        <p>
+            If regional data is available, then the outer region is shown as a larger dashed circle.
+            The display of regional data is useful to assess if the aftershock search region
+            is enclosing the earthquake sequence, or if the aftershock search region
+            should be adjusted.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Mag/Num Dist Tab</b></p>
+        <p>
+            Shows a magnitude/number plot, with magnitude on the horizonal axis and number on the vertical axis.
+            The plot is constructed by grouping aftershocks into magnitude bins 0.1 magnitude wide.
+            Then the following are drawn:
+        </p>
+        <ul>
+            <li>
+                Blue circles showing the number of aftershocks in each bin.<br>&nbsp;
+            </li>
+            <li>
+                Black circles and lines showing the cumulative number of aftershocks as a function of magnitude.<br>&nbsp;
+            </li>
+            <li>
+                A yellow dashed line, with slope equal to the selected Gutenberg-Richter b-value,
+                positioned close to the black curve for comparison.<br>&nbsp;
+            </li>
+            <li>
+                A green vertical dashed line, labeled &quot;Mmaxc&quot;, at the magnitude of the bin
+                that contains the largest number of aftershocks.<br>&nbsp;
+            </li>
+            <li>
+                A cyan vertical dashed line, labeled &quot;Mc&quot;, at the estimated magnitude of completeness.<br>&nbsp;
+            </li>
+            <li>
+                A red vertical dashed line at the magnitude of the mainshock.
+            </li>
+        </ul>
+        <p>
+            The b-value used to draw the yellow dashed line is the <b>b-value</b> from the <b>Common Parameters</b>
+            panel; if you change <b>b-value</b> then the plot will be re-drawn accordingly.
+        </p>
+        <p>
+            The magnitude of completeness used to draw the cyan vertical dashed line is the value of <b>Mc</b> from the <b>Common Parameters</b>
+            panel; if you change <b>Mc</b> then the plot will be re-drawn accordingly.
+            By default, &quot;Mc&quot; is 0.5 magnitude larger than the &quot;Mmaxc&quot; magnitude.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Mag/Time Tab</b></p>
+        <p>
+            Shows a magnitude/time plot, with time on the horizonal axis and magnitude on the vertical axis.
+            Each earthquake is shown as a solid circle, colored to indicate distance from the epicenter.
+            Earthquakes of larger magnitude are shown as larger circles.
+        </p>
+        <p>
+            The plot includes aftershocks, the mainshock, and foreshocks.
+            When the plot is initially displayed, it begin 0.75 days before the mainshock,
+            even though the GUI by default fetches foreshocks up to 60 days before the mainshock.
+            If you want to see all the foreshocks, use the <b>Set Axis</b> control at the bottom
+            of the window to adjust the minimum x-value.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Cumulative Num Plot Tab</b></p>
+        <p>
+            Plots the cumulative number of aftershocks as a function of time,
+            starting at the time of the mainshock,    
+            with time on the horizontal axis and number on the vertical axis.
+        </p>
+        <p>
+            Initially, the plot includes aftershocks whose magnitude is above the estimated time-independent
+            magnitude of completeness.
+            The magnitude of completness used in the plot is the value of <b>Mc</b> from the <b>Common Parameters</b>
+            panel; if you change <b>Mc</b> then the plot will be re-drawn accordingly.
+        </p>
+        <p>
+            When forecasts are computed, the plot changes to include aftershocks whose magnitude is above the
+            time-dependent magnitude of competeness Mc(t), and adds cumulative number plots obtained
+            from the Reasenberg-Jones forecasts.
+            The number of aftershcks is shown in black, while RJ sequence-specific is blue,
+            RJ generic is green, and RJ Bayesian is red.
+            The time-dependent magnitude of completeness Mc(t) is computed using the parameters
+            from the <b>Common Parameters</b> panel.
+            The RJ curves show the expected number of aftershocks whose magnitude is above Mc(t),
+            as a function of time, as predicted by the RJ model.
+            (ETAS number plots are shown on a separate tab.)
+        </p>
+    </body>
+</html>
