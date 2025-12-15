@@ -52,10 +52,18 @@
             The plot has one parameter value on the horizonal axis and the other
             parameter value on the vertical axis.
             Color is used to show the probability density.
-            Only the sequence-specific model is shown in the 2D marginal plots.
+            For Reasenberg-Jones, only the sequence-specific model is shown in the 2D marginal plots.
+            For ETAS, there are tabs you can use to select between the sequence-specific,
+            Bayesian, and generic models.
             (If a parameter is plotted on a log scale, then the axis is labeled with the
             base-10 logarithm of the parameter value instead of the parameter value itself,
-            due to a limitation in the OpenSHA plotting library.)<br>&nbsp;
+            due to a limitation in the OpenSHA plotting library.)
+        </p>
+        <p>
+            For ETAS plots, if a custom model weight is selected in the <b>ETAS Options</b> panel,
+            then the 1D and 2D plots also include the resulting custom model.
+            In the 1D plots it is shown as an orange curve,
+            and in the 2D plots it is shown on an additional tab.
         </p>
         <p>&nbsp;</p>
         <p><b>ETAS Number Plots Tab</b></p>
@@ -87,6 +95,10 @@
             would plot as a straight line with a slope of one.
             Of the two plots, one shows only the sequence-specific model,
             and the other shows generic, sequence-specific, and Bayesian models.
+        </p>
+        <p>
+            If a custom model weight is selected in the <b>ETAS Options</b> panel,
+            then the plots also include the resulting custom model.
         </p>
         <p>&nbsp;</p>
         <p><b>Forecast Table Tab</b></p>

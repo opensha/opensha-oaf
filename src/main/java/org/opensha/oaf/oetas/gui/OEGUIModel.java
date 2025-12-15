@@ -740,7 +740,7 @@ public class OEGUIModel extends OEGUIComponent {
 	private ForecastData loaded_fcdata;
 
 	public final ForecastData get_loaded_fcdata () {
-		if (!( modstate >= MODSTATE_PARAMETERS )) {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {		// should be MODSTATE_CATALOG?
 			throw new IllegalStateException ("Access to OEGUIModel.loaded_fcdata while in state " + cur_modstate_string());
 		}
 		return loaded_fcdata;
@@ -985,6 +985,25 @@ public class OEGUIModel extends OEGUIComponent {
 			return ((OEtasResults)(forecast_fcresults.etas_outcome)).bay_mle_grid_point;
 		}
 		return null;
+	}
+
+
+	// True if the active ETAS model was created with a custom weight.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	private boolean f_etas_active_custom = false;
+
+	public final boolean get_f_etas_active_custom () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.boolean while in state " + cur_modstate_string());
+		}
+		if (!( forecast_fcresults.etas_result_avail )) {
+			return false;
+		}
+		if (forecast_fcresults.etas_outcome == null) {
+			return false;
+		}
+		return f_etas_active_custom;
 	}
 
 
@@ -3343,11 +3362,16 @@ public class OEGUIModel extends OEGUIComponent {
 
 			// Make the ETAS parameters
 
+			boolean[] etas_active_custom = new boolean[1];
+
 			forecast_fcparams.etas_regime = make_fit_etas_params (
 				xfer,
 				forecast_fcparams.etas_params,
-				forecast_analyst_opts.analyst_params.etas_params
+				forecast_analyst_opts.analyst_params.etas_params,
+				etas_active_custom
 			);
+
+			f_etas_active_custom = etas_active_custom[0];
 		}
 
 		// ETAS not enabled, make sure there are no ETAS parameters
@@ -3367,6 +3391,8 @@ public class OEGUIModel extends OEGUIComponent {
 			forecast_analyst_opts.analyst_params.set_default_etas_params();
 
 			fetch_fcparams.etas_params = null;	// so it will be seen by make_analyst_options()
+
+			f_etas_active_custom = false;
 		}
 
 		// Minimum magnitude bins
@@ -3457,6 +3483,7 @@ public class OEGUIModel extends OEGUIComponent {
 	//  xfer = Transfer object to read/modify control parameters.
 	//  forecast_etas_params = Receives ETAS parameters to use in a forecast.
 	//  analyst_etas_params = Receives ETAS parameters to use in analyst options.
+	//  etas_active_custom = 1-element array, returns a flag indicating if ETAS active model has a custom weight.
 	// Returns the regime for the mainshock location.
 	// Note: Caller must check that ETAS is enabled in the action configuration, or
 	// that use of ETAS parameters is forced, before calling.
@@ -3464,12 +3491,15 @@ public class OEGUIModel extends OEGUIComponent {
 	private String make_fit_etas_params (
 		OEGUIController.XferFittingMod xfer,
 		OEtasParameters forecast_etas_params,
-		OEtasParameters analyst_etas_params
+		OEtasParameters analyst_etas_params,
+		boolean[] etas_active_custom
 	) {
 
 		// Start with empty analyst parameters
 
 		analyst_etas_params.clear();
+
+		etas_active_custom[0] = false;
 
 		// Forecast parameters start as default parameters for the mainshock location
 
@@ -3647,6 +3677,7 @@ public class OEGUIModel extends OEGUIComponent {
 				xfer.x_etasValue.x_etasBayWeightParam,	// early_bay_weight
 				OEConstants.DEF_EARLY_BAY_TIME			// early_bay_time
 			);
+			etas_active_custom[0] = true;
 			break;
 
 		default:
@@ -5021,9 +5052,14 @@ public class OEGUIModel extends OEGUIComponent {
 		OEGridPoint seq_mle_grid_point = get_etas_seq_mle_grid_point();
 		OEGridPoint bay_mle_grid_point = get_etas_bay_mle_grid_point();
 
+		OEGridPoint act_mle_grid_point = null;
+		if (get_f_etas_active_custom()) {
+			act_mle_grid_point = get_etas_mle_grid_point();
+		}
+
 		// If all models are null, nothing
 
-		if (gen_mle_grid_point == null && seq_mle_grid_point == null && bay_mle_grid_point == null) {
+		if (gen_mle_grid_point == null && seq_mle_grid_point == null && bay_mle_grid_point == null && act_mle_grid_point == null) {
 			set_info_item (info_tag_etas_mle_fit, null);
 			return;
 		}
@@ -5043,6 +5079,9 @@ public class OEGUIModel extends OEGUIComponent {
 		if (bay_mle_grid_point != null) {
 			table.add_cell_center ("Bayesian");
 		}
+		if (act_mle_grid_point != null) {
+			table.add_cell_center (" Custom ");
+		}
 
 		table.add_row_mixed ("-");
 
@@ -5061,6 +5100,11 @@ public class OEGUIModel extends OEGUIComponent {
 		if (bay_mle_grid_point != null) {
 			table.add_cell_right (rj_fit_num_format (
 				bay_mle_grid_point.n
+			));
+		}
+		if (act_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				act_mle_grid_point.n
 			));
 		}
 
@@ -5083,6 +5127,11 @@ public class OEGUIModel extends OEGUIComponent {
 				bay_mle_grid_point.p
 			));
 		}
+		if (act_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				act_mle_grid_point.p
+			));
+		}
 
 		table.add_row_mixed ("-");
 
@@ -5101,6 +5150,11 @@ public class OEGUIModel extends OEGUIComponent {
 		if (bay_mle_grid_point != null) {
 			table.add_cell_right (rj_fit_num_format (
 				bay_mle_grid_point.c
+			));
+		}
+		if (act_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				act_mle_grid_point.c
 			));
 		}
 
@@ -5123,6 +5177,11 @@ public class OEGUIModel extends OEGUIComponent {
 				bay_mle_grid_point.zams
 			));
 		}
+		if (act_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				act_mle_grid_point.zams
+			));
+		}
 
 		table.add_row_mixed ("-");
 
@@ -5141,6 +5200,11 @@ public class OEGUIModel extends OEGUIComponent {
 		if (bay_mle_grid_point != null) {
 			table.add_cell_right (rj_fit_num_format (
 				bay_mle_grid_point.zmu
+			));
+		}
+		if (act_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				act_mle_grid_point.zmu
 			));
 		}
 
@@ -5163,6 +5227,11 @@ public class OEGUIModel extends OEGUIComponent {
 				bay_mle_grid_point.b
 			));
 		}
+		if (act_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				act_mle_grid_point.b
+			));
+		}
 
 		table.add_row_mixed ("-");
 
@@ -5181,6 +5250,11 @@ public class OEGUIModel extends OEGUIComponent {
 		if (bay_mle_grid_point != null) {
 			table.add_cell_right (rj_fit_num_format (
 				bay_mle_grid_point.alpha
+			));
+		}
+		if (act_mle_grid_point != null) {
+			table.add_cell_right (rj_fit_num_format (
+				act_mle_grid_point.alpha
 			));
 		}
 

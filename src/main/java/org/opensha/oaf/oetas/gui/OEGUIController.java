@@ -1419,6 +1419,10 @@ public class OEGUIController extends OEGUIListener {
 			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
 			final XferCatalogImpl xfer_catalog_impl = new XferCatalogImpl();
 
+			// Show console window during fetch
+
+			gui_view.view_show_console();
+
 			// Load the data source parameters
 
 			if (!( gui_top.call_xfer_load (xfer_catalog_impl, "Incorrect data source parameters") )) {
@@ -1934,6 +1938,10 @@ public class OEGUIController extends OEGUIListener {
 			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
 			final XferFittingImpl xfer_fitting_impl = new XferFittingImpl();
 			final XferForecastImpl xfer_forecast_impl = new XferForecastImpl();
+
+			// Show console window during fit and forecast
+
+			gui_view.view_show_console();
 
 			// Load the aftershock parameters
 

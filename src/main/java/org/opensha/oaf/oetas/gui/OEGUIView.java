@@ -297,6 +297,7 @@ public class OEGUIView extends OEGUIComponent {
 	private static final Color generic_color = Color.GREEN.darker();
 	private static final Color bayesian_color = Color.RED;
 	private static final Color sequence_specific_color = Color.BLUE.darker();
+	private static final Color active_color = Color.ORANGE;
 
 
 	// Get the time since the mainshock, in days.
@@ -582,8 +583,9 @@ public class OEGUIView extends OEGUIComponent {
 	// Plot the epicenters.
 	// This routine can re-plot an existing tab.
 	// Must be called with model state >= MODSTATE_CATALOG.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
 	
-	private void plotAftershockHypocs() {
+	private void plotAftershockHypocs() throws GUIEDTException {
 
 		if (gui_top.get_trace_events()) {
 			System.out.println ("@@@@@ Entry: OEGUIView.plotAftershockHypocs, tab count = " + tabbedPane.getTabCount());
@@ -1896,12 +1898,16 @@ public class OEGUIView extends OEGUIComponent {
 	//  seq_data_name = Data name, for sequence specific.
 	//  bay_dist_set = Marginal distribution set, for bayesian. Can be null.
 	//  bay_data_name = Data name, for bayesian.
+	//  act_dist_set = Marginal distribution set, for active. Can be null.
+	//  act_data_name = Data name, for bayesian.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
 
 	private void make_1d_pdf (
 		String title, String tab_text, String var_name,
 		OEMarginalDistSet gen_dist_set, String gen_data_name,
 		OEMarginalDistSet seq_dist_set, String seq_data_name,
-		OEMarginalDistSet bay_dist_set, String bay_data_name)
+		OEMarginalDistSet bay_dist_set, String bay_data_name,
+		OEMarginalDistSet act_dist_set, String act_data_name) throws GUIEDTException
 	{
 		// Natural scale
 
@@ -1942,6 +1948,16 @@ public class OEGUIView extends OEGUIComponent {
 		if (bay_func != null) {
 			funcs.add (bay_func);
 			chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 2f, bayesian_color));
+		}
+
+		// Active PDF
+
+		ArbitrarilyDiscretizedFunc act_func = make_1d_pdf_func (
+			act_dist_set, var_name, act_data_name, "Custom", rscale);
+
+		if (act_func != null) {
+			funcs.add (act_func);
+			chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 2f, active_color));
 		}
 
 		// If we got at least one function ...
@@ -2003,6 +2019,42 @@ public class OEGUIView extends OEGUIComponent {
 
 			pdfGraphsPane.addTab (tab_text, null, widget);
 		}
+
+		return;
+	}
+
+
+
+
+	// Make a 1D PDF given marginals.
+	// Parameters:
+	//  title = Plot title.
+	//  tab_text = Text to appear on the tab.
+	//  var_name = Variable name.
+	//  gen_dist_set = Marginal distribution set, for generic. Can be null.
+	//  gen_data_name = Data name, for generic.
+	//  seq_dist_set = Marginal distribution set, for sequence specific. Can be null.
+	//  seq_data_name = Data name, for sequence specific.
+	//  bay_dist_set = Marginal distribution set, for bayesian. Can be null.
+	//  bay_data_name = Data name, for bayesian.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
+
+	private void make_1d_pdf (
+		String title, String tab_text, String var_name,
+		OEMarginalDistSet gen_dist_set, String gen_data_name,
+		OEMarginalDistSet seq_dist_set, String seq_data_name,
+		OEMarginalDistSet bay_dist_set, String bay_data_name) throws GUIEDTException
+	{
+		OEMarginalDistSet act_dist_set = null;
+		String act_data_name = "";
+
+		make_1d_pdf (
+			title, tab_text, var_name,
+			gen_dist_set, gen_data_name,
+			seq_dist_set, seq_data_name,
+			bay_dist_set, bay_data_name,
+			act_dist_set, act_data_name
+		);
 
 		return;
 	}
@@ -2208,14 +2260,14 @@ public class OEGUIView extends OEGUIComponent {
 	// Make a 2D PDF given a marginal.
 	// Parameters:
 	//  title = Plot title.
-	//  tab_text = Text to appear on the tab.
 	//  var_name1 = Variable name #1.
 	//  var_name2 = Variable name #2.
 	//  dist_set = Marginal distribution set.
 	//  data_name = Data name.
+	// Returns the graph widget, or null if unable to create.
 
-	private void make_2d_pdf (
-		String title, String tab_text, String var_name1, String var_name2,
+	private GraphWidget make_2d_pdf (
+		String title, String var_name1, String var_name2,
 		OEMarginalDistSet dist_set, String data_name)
 	{
 		// Natural scale
@@ -2230,7 +2282,7 @@ public class OEGUIView extends OEGUIComponent {
 			dist_set, var_name1, var_name2, data_name, rscale);
 
 		if (func == null) {
-			return;
+			return null;
 		}
 		
 		// Get a color scale, for the Z-values in the pdf
@@ -2257,11 +2309,8 @@ public class OEGUIView extends OEGUIComponent {
 		
 		XYZPlotSpec spec = new XYZPlotSpec (func, cpt, title, name1, name2, "Density");
 		
-		//XYZGraphPanel xyzGP = new XYZGraphPanel();
-		//pdfGraphsPane.addTab(name1+" vs "+name2, null, xyzGP);
 		GraphWidget widget = new GraphWidget(spec);
 		setupGP(widget);
-		pdfGraphsPane.addTab (tab_text, null, widget);
 
 		// Draw the PDF
 
@@ -2270,6 +2319,152 @@ public class OEGUIView extends OEGUIComponent {
 		widget.setAxisRange(
 			new Range(func.getMinX()-0.5*xDelta, func.getMaxX()+0.5*xDelta),
 			new Range(func.getMinY()-0.5*yDelta, func.getMaxY()+0.5*yDelta));
+
+		return widget;
+	}
+
+
+
+
+	// Make a 2D PDF given a marginal.
+	// Parameters:
+	//  title = Plot title.
+	//  tab_text = Text to appear on the tab.
+	//  var_name1 = Variable name #1.
+	//  var_name2 = Variable name #2.
+	//  dist_set = Marginal distribution set.
+	//  data_name = Data name.
+
+	private void make_2d_pdf (
+		String title, String tab_text, String var_name1, String var_name2,
+		OEMarginalDistSet dist_set, String data_name)
+	{
+		// Make the widget for the 2D PDF
+
+		GraphWidget widget = make_2d_pdf (
+			title, var_name1, var_name2,
+			dist_set, data_name
+		);
+
+		// If we got one, add to the view
+
+		if (widget != null) {
+			pdfGraphsPane.addTab (tab_text, null, widget);
+		}
+
+		return;
+	}
+
+
+
+
+	// True to produce multiple 2D PDFs for ETAS.
+
+	private boolean f_multi_pdf_etas = true;
+
+
+
+
+	// Make a 2D PDF given a marginal.
+	// Parameters:
+	//  title = Plot title.
+	//  tab_text = Text to appear on the tab.
+	//  var_name1 = Variable name #1.
+	//  var_name2 = Variable name #2.
+	//  dist_set = Marginal distribution set.
+	//  data_name = Data name.
+	//  f_etas_active = True to display active mocel (as "custom").
+	// Note: If f_multi_pdf_etas, make a tabbed plot for multiple models,
+	// and ignore title and data_name.  Otherwise, make a single plot.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
+
+	private void make_2d_pdf_etas (
+		String title, String tab_text, String var_name1, String var_name2,
+		OEMarginalDistSet dist_set, String data_name, boolean f_etas_active) throws GUIEDTException
+	{
+		// Handle case of single plot
+
+		if (!( f_multi_pdf_etas )) {
+			make_2d_pdf (
+				title, tab_text, var_name1, var_name2,
+				dist_set, data_name
+			);
+			return;
+		}
+
+		// Tabbed pane and selected widget
+
+		JTabbedPane tab_pane = null;
+		GraphWidget selected_widget = null;
+
+		// Sequence specific
+
+		GraphWidget seq_widget = make_2d_pdf (
+			"ETAS (SeqSpec) PDF for " + var_name1 + " vs " + var_name2, var_name1, var_name2,
+			dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+		);
+
+		if (seq_widget != null) {
+			if (tab_pane == null) {
+				tab_pane = new JTabbedPane();
+				selected_widget = seq_widget;
+			}
+			tab_pane.addTab ("SeqSpec", null, seq_widget);
+		}
+
+		// Bayesian
+
+		GraphWidget bay_widget = make_2d_pdf (
+			"ETAS (Bayesian) PDF for " + var_name1 + " vs " + var_name2, var_name1, var_name2,
+			dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+		);
+
+		if (bay_widget != null) {
+			if (tab_pane == null) {
+				tab_pane = new JTabbedPane();
+				selected_widget = bay_widget;
+			}
+			tab_pane.addTab ("Bayesian", null, bay_widget);
+		}
+
+		// Generic
+
+		GraphWidget gen_widget = make_2d_pdf (
+			"ETAS (Generic) PDF for " + var_name1 + " vs " + var_name2, var_name1, var_name2,
+			dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC
+		);
+
+		if (gen_widget != null) {
+			if (tab_pane == null) {
+				tab_pane = new JTabbedPane();
+				selected_widget = gen_widget;
+			}
+			tab_pane.addTab ("Generic", null, gen_widget);
+		}
+
+		// Active
+
+		if (f_etas_active) {
+			GraphWidget act_widget = make_2d_pdf (
+				"ETAS (Custom) PDF for " + var_name1 + " vs " + var_name2, var_name1, var_name2,
+				dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
+			);
+
+			if (act_widget != null) {
+				if (tab_pane == null) {
+					tab_pane = new JTabbedPane();
+					selected_widget = act_widget;
+				}
+				tab_pane.addTab ("Custom", null, act_widget);
+			}
+		}
+
+		// If we made a graph, add to the view
+
+		if (tab_pane != null) {
+			tab_pane.setSelectedComponent (selected_widget);
+			pdfGraphsPane.addTab (tab_text, null, tab_pane);
+		}
 
 		return;
 	}
@@ -2532,13 +2727,14 @@ public class OEGUIView extends OEGUIComponent {
 	//  var_name2 = Variable name #2.
 	//  dist_set = Marginal distribution set.
 	//  data_name = Data name.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
 	//
 	// Note: Testing shows that ArbDiscrXYZ_DataSet does not plot properly when one
 	// of the axes is on a log scale.  So, use of this function is not recommended.
 
 	private void make_2d_pdf_v2 (
 		String title, String tab_text, String var_name1, String var_name2,
-		OEMarginalDistSet dist_set, String data_name)
+		OEMarginalDistSet dist_set, String data_name) throws GUIEDTException
 	{
 		// Natural scale
 
@@ -2668,6 +2864,12 @@ public class OEGUIView extends OEGUIComponent {
 
 		OEMarginalDistSet etas_dist_set = gui_model.get_etas_marginals();
 
+		boolean f_etas_active = gui_model.get_f_etas_active_custom();
+		OEMarginalDistSet etas_act_dist_set = null;
+		if (f_etas_active) {
+			etas_act_dist_set = etas_dist_set;
+		}
+
 		// Add tabs for RJ 1D marginals
 
 		make_1d_pdf (
@@ -2723,35 +2925,40 @@ public class OEGUIView extends OEGUIComponent {
 			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_N, "E " + OEMarginalDistSetBuilder.VNAME_N, OEMarginalDistSetBuilder.VNAME_N,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN,
+			etas_act_dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
 		);
 
 		make_1d_pdf (
 			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_ZAMS, "E " + OEMarginalDistSetBuilder.VNAME_ZAMS, OEMarginalDistSetBuilder.VNAME_ZAMS,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN,
+			etas_act_dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
 		);
 
 		make_1d_pdf (
 			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_P, "E " + OEMarginalDistSetBuilder.VNAME_P, OEMarginalDistSetBuilder.VNAME_P,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN,
+			etas_act_dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
 		);
 
 		make_1d_pdf (
 			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_C, "E " + OEMarginalDistSetBuilder.VNAME_C, OEMarginalDistSetBuilder.VNAME_C,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN,
+			etas_act_dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
 		);
 
 		make_1d_pdf (
 			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_ZMU, "E " + OEMarginalDistSetBuilder.VNAME_ZMU, OEMarginalDistSetBuilder.VNAME_ZMU,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN,
+			etas_act_dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
 		);
 
 		// Add tabs for ETAS 2D PDFs
@@ -2762,111 +2969,111 @@ public class OEGUIView extends OEGUIComponent {
 		var1 = OEMarginalDistSetBuilder.VNAME_N;
 		var2 = OEMarginalDistSetBuilder.VNAME_ZAMS;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_N;
 		var2 = OEMarginalDistSetBuilder.VNAME_P;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_N;
 		var2 = OEMarginalDistSetBuilder.VNAME_C;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_N;
 		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_ZAMS;
 		var2 = OEMarginalDistSetBuilder.VNAME_P;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_ZAMS;
 		var2 = OEMarginalDistSetBuilder.VNAME_C;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_ZAMS;
 		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_P;
 		var2 = OEMarginalDistSetBuilder.VNAME_C;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_P;
 		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_C;
 		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		// Add to the view
@@ -2925,6 +3132,8 @@ public class OEGUIView extends OEGUIComponent {
 			return;
 		}
 
+		boolean f_etas_active = gui_model.get_f_etas_active_custom();
+
 		// Allocate a new component, or remove all the tabs from an existing component
 
 		boolean new_tab = false;
@@ -2949,7 +3158,8 @@ public class OEGUIView extends OEGUIComponent {
 			true,										// f_cum
 			false,										// f_gen
 			true,										// f_seq
-			false										// f_bay
+			false,										// f_bay
+			false										// f_act
 		);
 
 		// Make cumulative number and all models v time
@@ -2962,7 +3172,8 @@ public class OEGUIView extends OEGUIComponent {
 			true,										// f_cum
 			true,										// f_gen
 			true,										// f_seq
-			true										// f_bay
+			true,										// f_bay
+			f_etas_active								// f_act
 		);
 
 		// Make sequence specific v transformed time
@@ -2975,7 +3186,8 @@ public class OEGUIView extends OEGUIComponent {
 			true,											// f_diag
 			false,											// f_gen
 			true,											// f_seq
-			false											// f_bay
+			false,											// f_bay
+			false											// f_act
 		);
 
 		// Make generic v transformed time
@@ -2988,7 +3200,8 @@ public class OEGUIView extends OEGUIComponent {
 		//	true,											// f_diag
 		//	true,											// f_gen
 		//	false,											// f_seq
-		//	false											// f_bay
+		//	false,											// f_bay
+		//	false											// f_act
 		//);
 
 		// Make Bayesian v transformed time
@@ -3001,20 +3214,38 @@ public class OEGUIView extends OEGUIComponent {
 		//	true,											// f_diag
 		//	false,											// f_gen
 		//	false,											// f_seq
-		//	true											// f_bay
+		//	true,											// f_bay
+		//	false											// f_act
 		//);
+
+		// Make active v transformed time
+
+		//if (f_etas_active) {
+		//	make_etas_num_v_transformed_time (
+		//		"ETAS Custom Number v Intensity",				// title
+		//		"E Custom T.Time",								// tab_text
+		//		ii_file,										// ii_file
+		//		OEtasIntegratedIntensityFile.IIRANGE_BORDERED,	// ii_range
+		//		true,											// f_diag
+		//		false,											// f_gen
+		//		false,											// f_seq
+		//		false,											// f_bay
+		//		true											// f_act
+		//	);
+		//}
 
 		// Make all models v transformed time
 
 		make_etas_num_v_transformed_time (
-			"ETAS Number v Intensity",				// title
-			"E Transformed Time",									// tab_text
+			"ETAS Number v Intensity",						// title
+			"E Transformed Time",							// tab_text
 			ii_file,										// ii_file
 			OEtasIntegratedIntensityFile.IIRANGE_BORDERED,	// ii_range
 			true,											// f_diag
 			true,											// f_gen
 			true,											// f_seq
-			true											// f_bay
+			true,											// f_bay
+			f_etas_active									// f_act
 		);
 
 		// Add to the view
@@ -3072,6 +3303,8 @@ public class OEGUIView extends OEGUIComponent {
 	//  f_gen = True to include generic model.
 	//  f_seq = True to include sequence specific model.
 	//  f_bay = True to include Bayesian model.
+	//  f_act = True to include active model.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
 
 	private void make_etas_num_v_time (
 		String title,
@@ -3081,8 +3314,9 @@ public class OEGUIView extends OEGUIComponent {
 		boolean f_cum,
 		boolean f_gen,
 		boolean f_seq,
-		boolean f_bay
-	) {
+		boolean f_bay,
+		boolean f_act
+	) throws GUIEDTException {
 		// List of functions and characteristics
 		
 		//List<PlotElement> funcs = new ArrayList<PlotElement>();
@@ -3193,6 +3427,32 @@ public class OEGUIView extends OEGUIComponent {
 			}
 		}
 
+		// Active
+
+		if (f_act) {
+
+			double final_val = ii_file.get_final_var_value (
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,
+				OEtasIntegratedIntensityFile.IIMODEL_ACTIVE
+			);
+
+			ArbitrarilyDiscretizedFunc func = func_from_ii_file (
+				ii_file,
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_T_DAY,			// arg_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// arg_model
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,	// val_var
+				OEtasIntegratedIntensityFile.IIMODEL_ACTIVE,		// val_model
+				"Custom: " + SimpleUtils.round_double_via_string ("%.3e", final_val)	// name
+			);
+
+			if (func != null) {
+				funcs.add (func);
+				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, active_color));
+			}
+		}
+
 		// If we got at least one function ...
 
 		if (funcs.size() > 0) {
@@ -3253,6 +3513,8 @@ public class OEGUIView extends OEGUIComponent {
 	//  f_gen = True to include generic model.
 	//  f_seq = True to include sequence specific model.
 	//  f_bay = True to include Bayesian model.
+	//  f_act = True to include active model.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
 
 	private void make_etas_num_v_transformed_time (
 		String title,
@@ -3262,8 +3524,9 @@ public class OEGUIView extends OEGUIComponent {
 		boolean f_diag,
 		boolean f_gen,
 		boolean f_seq,
-		boolean f_bay
-	) {
+		boolean f_bay,
+		boolean f_act
+	) throws GUIEDTException {
 		// List of functions and characteristics
 		
 		//List<PlotElement> funcs = new ArrayList<PlotElement>();
@@ -3327,6 +3590,26 @@ public class OEGUIView extends OEGUIComponent {
 			if (func != null) {
 				funcs.add (func);
 				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, bayesian_color));
+			}
+		}
+
+		// Active
+
+		if (f_act) {
+
+			ArbitrarilyDiscretizedFunc func = func_from_ii_file (
+				ii_file,
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,	// arg_var
+				OEtasIntegratedIntensityFile.IIMODEL_ACTIVE,		// arg_model
+				OEtasIntegratedIntensityFile.IIVAR_CUM_NUM,			// val_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// val_model
+				"Custom"											// name
+			);
+
+			if (func != null) {
+				funcs.add (func);
+				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, active_color));
 			}
 		}
 
