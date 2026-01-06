@@ -4604,6 +4604,122 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+	// Mainshock info for the window title, can be null or empty if none.
+
+	private String title_mainshock_info = null;
+
+	// Program state for the window title, can be null or empty if none.
+
+	private String title_program_state = null;
+
+	// Update window title.
+	// The model state can change up one state at a time, or down by any amount.
+
+	private void info_window_title (int the_modstate) throws GUIEDTException {
+
+		// If pre-mainshock, no info
+
+		if (the_modstate < MODSTATE_MAINSHOCK) {
+			title_program_state = null;
+			title_mainshock_info = null;
+		}
+
+		// Otherwise, we have at least a mainshock ...
+
+		else {
+
+			// Program state
+
+			switch (the_modstate) {
+
+			default:
+				title_program_state = null;
+				break;
+
+			// State for the mainshock
+
+			case MODSTATE_MAINSHOCK:
+				title_program_state = "Mainshock loaded";
+				title_mainshock_info = make_title_mainshock_info (get_fcmain());
+				break;
+
+			// State for fetching the catalog
+
+			case MODSTATE_CATALOG:
+				title_program_state = "Catalog loaded";
+				break;
+
+			// State for determining aftershock parameters
+
+			case MODSTATE_PARAMETERS:
+				title_program_state = "Parameters fitted";
+				break;
+
+			// State for computing a forecast
+
+			case MODSTATE_FORECAST:
+				title_program_state = "Forecast computed";
+				break;
+			}
+		}
+
+		// Update the window title
+
+		gui_top.set_window_title (title_mainshock_info, title_program_state);
+		return;
+	}
+
+
+
+
+	// Make the title string for the mainshock.
+
+	private static final TimeZone tz_utc = TimeZone.getTimeZone("UTC");
+
+	private static final SimpleDateFormat time_to_string_title_fmt = new SimpleDateFormat ("yyyy-MM-dd");
+	static {
+		time_to_string_title_fmt.setTimeZone (tz_utc);
+	}
+
+	private String make_title_mainshock_info (ForecastMainshock the_fcmain) {
+		String mainshock_info = null;
+		if (the_fcmain != null && the_fcmain.mainshock_avail) {
+
+			String event_id = null;
+			if (!( the_fcmain.mainshock_event_id == null || the_fcmain.mainshock_event_id.isEmpty() || EventIDGenerator.is_generated_id(the_fcmain.mainshock_event_id) )) {
+				event_id = the_fcmain.mainshock_event_id;
+			}
+
+			String place = null;
+			if (!( the_fcmain.mainshock_geojson == null )) {
+				place = GeoJsonUtils.getPlace (the_fcmain.mainshock_geojson);
+				if (place != null) {
+					String s1 = place.replaceAll ("[\\x00-\\x1F\\x7F\\xA0]", " ");	// map ASCII control chars and nbsp to space
+					//place = s1.replaceAll ("[^\\x00-\\xFF]", "?").trim();			// map non-ASCII, non-Latin-1 chars to question mark
+					place = s1.trim();
+				}
+			}
+
+			String s_time = time_to_string_title_fmt.format (new Date (the_fcmain.mainshock_time));
+
+			String s_mag = SimpleUtils.double_to_string ("%.1f", the_fcmain.mainshock_mag);
+
+			if (place != null) {
+				mainshock_info = s_time + " - M " + s_mag + " - " + place;
+			}
+			else if (event_id != null) {
+				mainshock_info = s_time + " - M " + s_mag + " - " + event_id;
+			}
+			else {
+				mainshock_info = s_time + " - M " + s_mag + " Mainshock";
+			}
+		}
+		return mainshock_info;
+	}
+
+
+
+
 	// Set an information item.
 	// The text can be null to explicitly deactivate an item.
 	// Text can consist of multiple lines, each terminated by a newline.
@@ -4671,6 +4787,11 @@ public class OEGUIModel extends OEGUIComponent {
 				}
 			}
 		}
+
+		// Update window title
+
+		info_window_title (new_modstate);
+
 		return;
 	}
 
@@ -4709,6 +4830,10 @@ public class OEGUIModel extends OEGUIComponent {
 		case MODSTATE_FORECAST:
 			break;
 		}
+
+		// Update window title
+
+		info_window_title (new_modstate);
 
 		return;
 	}

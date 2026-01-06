@@ -33,6 +33,8 @@ import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLFrameHyperlinkEvent;
 import javax.swing.text.Document;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 
 // Dialog box that displays HTML, used mainly to display help text.
@@ -77,7 +79,7 @@ public class GUIHtmlViewerDialog {
 	// Dialog title, or null for default title.
 	private String dialog_title = null;
 
-	// True if the dialog title has changed since the dialog was opened.
+	// True if the dialog title has changed since the title was last displayed.
 	private boolean changed_dialog_title = false;
 
 	// Text to appear on the ok button, or null for no button.
@@ -135,8 +137,11 @@ public class GUIHtmlViewerDialog {
 	// The forward button, or null if not allocated.
 	protected JButton forward_button = null;
 
-	// True if the current editor content was supplies using setText.
+	// True if the current editor content was supplied using setText.
 	private boolean f_used_set_text = false;
+
+	// True to display document title in the title bar.
+	private boolean f_show_doc_title = true;
 
 
 
@@ -203,6 +208,41 @@ public class GUIHtmlViewerDialog {
 
 
 
+	// Property change listener to catch page change events.
+
+	private static class MyPropertyChangeListener implements PropertyChangeListener {
+
+		// Link to outer class.
+		// (We code this explicitly so that we can break the link when the dialog is closed.)
+
+		private GUIHtmlViewerDialog outer;
+
+		public final void set_outer (GUIHtmlViewerDialog the_outer) {
+			outer = the_outer;
+			return;
+		}
+
+		public MyPropertyChangeListener (GUIHtmlViewerDialog the_outer) {
+			set_outer (the_outer);
+		}
+
+		// PropertyChangeListener function.
+		// Note: e.getOldValue() and e.getNewValue9) are the old and new URLs.
+
+		@Override public void propertyChange (PropertyChangeEvent e) {
+			if (outer != null) {
+				outer.frame_pageChanged (e);
+			}
+		}
+	}
+
+	// The current listener.
+
+	protected MyPropertyChangeListener property_change_listener = null;
+
+
+
+
 	// Constructor.
 
 	public GUIHtmlViewerDialog () {
@@ -242,14 +282,31 @@ public class GUIHtmlViewerDialog {
 	}
 
 
-	// Set dialog title for the next time it is opened.
-	// If called while the dialog is open, call refresh_dialog to change the on-screen title.
+	// Set the dialog title, or null for none.
+	// If called while the dialog is open, the change appears on-screen the next time a page is loaded,
+	// or you can call refresh_dialog to change the on-screen title immediately.
 	
 	public void setDialogTitle (String dialog_title) {
 		this.dialog_title = dialog_title;
 		this.changed_dialog_title = true;
 		return;
 	}
+
+
+	// Set the flag indicating if the document title whould be displayed in the dialog title.
+	// The default is true.
+	// If called while the dialog is open, the change appears on-screen the next time a page is loaded,
+	// or you can call refresh_dialog to change the on-screen title immediately.
+	// If f_show_doc_title is true, then every page should have a <title> element in the HTML header.
+	// If f_show_doc_title is true and dialog_title is non-null, then the on-screen title is the
+	// dialog title followed by a separator followed by the document title.
+	
+	public void setShowDocTitle (boolean f_show_doc_title) {
+		this.f_show_doc_title = f_show_doc_title;
+		this.changed_dialog_title = true;
+		return;
+	}
+
 
 
 	// Set ok button text for the next time it is opened.
@@ -312,6 +369,7 @@ public class GUIHtmlViewerDialog {
 		editor_pane.setText (editor_text);
 		editor_pane.setCaretPosition (0);
 		editor_pane.getCaret().setVisible(false);
+		update_dialog_title();
 		return;
 	}
 
@@ -323,6 +381,7 @@ public class GUIHtmlViewerDialog {
 		editor_pane.setText (editor_text);
 		editor_pane.setCaretPosition (0);
 		editor_pane.getCaret().setVisible(false);
+		update_dialog_title();
 		return;
 	}
 
@@ -338,7 +397,7 @@ public class GUIHtmlViewerDialog {
 			try {
 				editor_set_page (editor_url);
 			} catch (IOException e) {
-				editor_set_error_text ("<html><body><h2>Error loading HTML from URL</h2></body></html>");
+				editor_set_error_text ("<html><head><title>Error</title></head><body><h2>Error loading HTML from URL</h2></body></html>");
 				e.printStackTrace();
 			}
 		}
@@ -346,7 +405,7 @@ public class GUIHtmlViewerDialog {
 			editor_set_text (editor_text);
 		}
 		else {
-			editor_set_error_text ("<html><body><h2>No text is available</h2></body></html>");
+			editor_set_error_text ("<html><head><title>Error</title></head><body><h2>No text is available</h2></body></html>");
 		}
 		return;
 	}
@@ -399,10 +458,11 @@ public class GUIHtmlViewerDialog {
 			// Dialog title text
 
 			if (changed_dialog_title) {
-				changed_dialog_title = false;
-				if (dialog_title != null) {
-					frame.setTitle (dialog_title);
-				}
+				//changed_dialog_title = false;
+				//if (dialog_title != null) {
+				//	frame.setTitle (dialog_title);
+				//}
+				update_dialog_title();
 			}
 
 			// OK button text
@@ -439,6 +499,77 @@ public class GUIHtmlViewerDialog {
 			//}
 		}
 
+		return;
+	}
+
+
+	// Update the dialog title.
+
+	protected void update_dialog_title () {
+		if (frame != null) {
+
+			changed_dialog_title = false;
+
+			// Try to get the title of the currently displayed page
+
+			String page_title = null;
+			if (f_show_doc_title) {
+				Document doc = editor_pane.getDocument();
+				if (doc instanceof HTMLDocument) {
+					Object x = doc.getProperty (Document.TitleProperty);	// Document.TitleProperty should be "title"
+					if (x != null) {
+						if (x instanceof String) {
+							page_title = ((String)x).trim();
+							if (page_title.isEmpty()) {
+								page_title = null;
+							}
+						}
+					}
+				}
+			}
+
+			// Add dialog title as a prefix
+
+			if (page_title != null && dialog_title != null) {
+				page_title = dialog_title + "  \u2022  " + page_title;
+			}
+
+			// If we didn't get a title from the editor, use the dialog title
+
+			if (page_title == null) {
+				page_title = dialog_title;
+			}
+
+			// If we still have nothing, use a default title
+
+			if (page_title == null) {
+				page_title = "";
+			}
+
+			// Write to the title bar
+					
+			frame.setTitle (page_title);
+		}
+
+		return;
+	}
+
+
+	// Thie function is called if there is a "page" property change.
+
+	private void frame_pageChanged (PropertyChangeEvent e) {
+		if (frame != null) {
+
+			if (D) {
+				System.out.println ("$$$$$ GUIHtmlViewerDialog: frame_pageChanged: Page change notification: f_used_set_text = " + f_used_set_text);
+			}
+
+			// Update if the editor was set using setPage
+
+			if (!( f_used_set_text )) {
+				update_dialog_title();
+			}
+		}
 		return;
 	}
 
@@ -573,6 +704,9 @@ public class GUIHtmlViewerDialog {
 		editor_pane.setContentType ("text/html");
 		editor_pane.setEditable (false);
 		f_used_set_text = false;
+
+		property_change_listener = new MyPropertyChangeListener (this);
+		editor_pane.addPropertyChangeListener ("page", property_change_listener);
 
 		set_editor_content_and_nav (editor_url, editor_text);
 
@@ -804,6 +938,8 @@ public class GUIHtmlViewerDialog {
 			frame = null;
 			frame_listener.set_outer (null);
 			frame_listener = null;
+			property_change_listener.set_outer (null);
+			property_change_listener = null;
 			frame_window = null;
 			ok_button = null;
 			cancel_button = null;

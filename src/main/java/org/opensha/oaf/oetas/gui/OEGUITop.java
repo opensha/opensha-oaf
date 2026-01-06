@@ -1021,10 +1021,77 @@ public class OEGUITop extends OEGUIComponent {
 		get_top_window().setContentPane(mainPanel);
 		get_top_window().setSize(get_paramWidth()*paramColumns + get_chartWidth(), get_height());
 		get_top_window().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		get_top_window().setTitle("USGS Operational Aftershock Forecasting (OAF) GUI - Version " + VersionInfo.get_version_number() + " (" + VersionInfo.get_version_date() + ")");
+		//get_top_window().setTitle("USGS Operational Aftershock Forecasting (OAF) GUI - Version " + VersionInfo.get_version_number() + " (" + VersionInfo.get_version_date() + ")");
 		get_top_window().setLocationRelativeTo(null);
 
+		try {
+			set_window_title (null, null);
+		} catch (GUIEDTException e) {
+			throw new IllegalStateException ("OEGUITop.OEGUITop - Caught GUIEDTException, which should never be thrown", e);
+		}
+
 		init_help();
+	}
+
+
+
+
+	// The current window title (cannot be null).
+
+	private String current_window_title = "";
+
+
+	// Separator for window title components.
+
+	//private static final String window_title_sep = " - ";
+	private static final String window_title_sep = "    \u2022    ";		// Unicode bullet
+	//private static final String window_title_sep = "    \u25CF    ";		// Unicode black circle
+
+
+	// Set the window title.
+
+	public void set_window_title (String mainshock_info, String program_state) throws GUIEDTException {
+		String my_mainshock_info = ((mainshock_info == null) ? "" : mainshock_info.trim());
+		String my_program_state = ((program_state == null) ? "" : program_state.trim());
+		String new_title = "";
+
+		if (my_mainshock_info.isEmpty()) {
+			if (my_program_state.isEmpty()) {
+
+				// No info or state, use the default title
+
+				new_title = "USGS Operational Aftershock Forecasting (OAF) GUI" + window_title_sep + "Version " + VersionInfo.get_version_number() + " (" + VersionInfo.get_version_date() + ")";
+			}
+			else {
+
+				// Has program state only
+
+				new_title = "USGS OAF GUI" + window_title_sep + my_program_state;
+			}
+		}
+		else {
+			if (my_program_state.isEmpty()) {
+
+				// Has mainshock info only
+
+				new_title = "USGS OAF GUI" + window_title_sep + my_mainshock_info;
+			}
+			else {
+
+				// Has mainshock info and program state
+
+				new_title = "USGS OAF GUI" + window_title_sep + my_mainshock_info + window_title_sep + my_program_state;
+			}
+		}
+
+		// If title has changed, write to the window
+
+		if (!( new_title.equals (current_window_title) )) {
+			current_window_title = new_title;
+			get_top_window().setTitle (new_title);
+		}
+
+		return;
 	}
 
 
