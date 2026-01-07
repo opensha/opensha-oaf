@@ -1,0 +1,134 @@
+<html>
+    <head>
+        <title>Command Line: PDL Configuration</title>
+    </head>
+    <body>
+        <h2>Command Line: PDL Configuration</h2>
+        <p>
+            These command line options control how the GUI communicates with PDL when it sends products.
+            For example, the following command line can be used to tell the GUI to send products
+            to the PDL production system.
+        </p>
+<pre>
+java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile
+</pre>
+        <p>
+            In this example, the <code>--pdl</code> option specifies that products should be sent to the production PDL system,
+            and the <code>--privateKey</code> option specifies the digital key file that is used to sign products.
+            Note that the name of the GUI jar file may be different than shown.
+        </p>
+        <p>
+            PDL configuration options are described in detail below.
+            All PDL configuration options are optional; if omitted, then the GUI supplies defaults.
+        </p>
+        <p>
+            Options may appear in the command line in any order.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--pdl=dryrun
+--pdl=dev
+--pdl=prod
+</pre>
+        <p>
+            The <code>--pdl</code> option selects the destination when sending PDL products. It can have the following values:
+        </p>
+        <ul>
+            <li><i>dryrun</i> - Nothing is sent to PDL, but the GUI &quot;goes through the motions&quot; of sending products.</li>
+            <li><i>dev</i> - Send products to the PDL staging system.</li>
+            <li><i>prod</i> - Send products to the PDL production system.</li>
+        </ul>
+        <p>
+            Note that not all versions of the GUI are able to send products to the PDL staging system.
+            If the GUI does not support sending products to PDL staging, then <i>dev</i> effectively behaves the same as <i>dryrun</i>.
+        </p>
+        <p>
+            if the <code>--pdl</code> option is omitted, the default is <i>dryrun</i>.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--privateKey=PRIVATEKEYFILE
+</pre>
+        <p>
+            The <code>--privateKey</code> option specifies the name of a file that contains a digital key.
+            The key is used to digitally sign products.
+        </p>
+        <p>
+            If the <code>--privateKey</code> option is omitted, the default is to send products unsigned.
+        </p>
+        <p>
+            The PDL production system requires that products be signed.
+            Older versions of the PDL staging system accepted unsigned products, but newer versions require that products be signed.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--target=socket
+--target=aws
+--target=both
+</pre>
+        <p>
+            The <code>--target</code> option selects the PDL hub and communication protocal used when sending PDL products. It can have the following values:
+        </p>
+        <ul>
+            <li><i>socket</i> - Send products to the on-premise PDL hubs using the PDL socket protocol. This is the old way to send products.</li>
+            <li><i>aws</i> - Send products to the cloud PDL hubs using the PDL AWS protocol. This is the new way to send products.</li>
+            <li><i>both</i> - Send products to both on-premise and cloud PDL hubs.</li>
+        </ul>
+        <p>
+            Note that because the GUI only supports a single key file, the <i>both</i> selection won&#39;t work unless
+            both hubs are configured to accept the same digital key.
+        </p>
+        <p>
+            If the <code>--target</code> option is omitted, the GUI supplies a pre-programmed default.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--evseq-config=enable
+--evseq-config=disable
+</pre>
+        <p>
+            The <code>--evseq-config</code> option specifies whether the GUI can generate and send event-sequence products. It can have the following values:
+        </p>
+        <ul>
+            <li><i>enable</i> - The GUI can generate and send event-sequence products.</li>
+            <li><i>disable</i> - The GUI cannot generate and send event-sequence products.</li>
+        </ul>
+        <p>
+            Note that if the OAF server does not support event-sequence products, you cannot make the server generate event-sequence products
+            by enabling event-sequence in the GUI and then sending parameters to the server.
+        </p>
+        <p>
+            if the <code>--evseq-config</code> option is omitted, the GUI supplies a pre-programmed default.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--source=PRODUCTSOURCE
+</pre>
+        <p>
+            The <code>--source</code> option identifies the seismic network (or equivalent) that is the originator of products sent to PDL by the GUI.
+            The default value is &quot;us&quot;, which is the network code for the National Earthquake Information Center (NEIC).
+            For example, <code>--source=us</code>.
+        </p>
+        <p>
+            Note that the digital key used to sign PDL products must be authorized for use with the specified seismic network.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--type=PRODUCTTYPE
+</pre>
+        <p>
+            The <code>--type</code> option specifies the type of PDL product that the GUI uses to send aftershock forecasts to PDL.
+            The default value is &quot;oaf&quot;, which uses the standard operational aftershock forecast product.
+            For example, <code>--type=oaf</code>.
+        </p>
+        <p>
+            You can use &quot;oaf-scenario&quot; to send aftershock forecasts for an earthquake scenario exercise.
+            For example, <code>--type=oaf-scenario</code>.
+            There is no way to send an event-sequence product for an earthquake scenario,
+            so if you use <code>--type=oaf-scenario</code> then you should also use <code>--evseq-config=disable</code> (this does not happen automatically).
+        </p>
+        <p>
+            Note that the digital key used to sign PDL products must be authorized for use with the specified type of product.
+        </p>
+    </body>
+</html>

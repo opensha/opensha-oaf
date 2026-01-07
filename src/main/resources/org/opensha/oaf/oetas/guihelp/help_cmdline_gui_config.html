@@ -1,0 +1,60 @@
+<html>
+    <head>
+        <title>Command Line: GUI Configuration</title>
+    </head>
+    <body>
+        <h2>Command Line: GUI Configuration</h2>
+        <p>
+            These command line options are used to configure the GUI.
+            For example, the following command line can be used to enable ETAS forecasts within the GUI.
+        </p>
+<pre>
+java -jar AftershockGUI-2026_01_06.jar --etas-config=enable
+</pre>
+        <p>
+            In this example, the <code>--etas-config</code> option specifies that ETAS forecasts should be generated.
+            Note that the name of the GUI jar file may be different than shown.
+        </p>
+        <p>
+            GUI configuration options are described in detail below.
+            All GUI configuration options are optional; if omitted, then the GUI supplies defaults.
+        </p>
+        <p>
+            Options may appear in the command line in any order.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--etas-config=enable
+--etas-config=disable
+</pre>
+        <p>
+            The <code>--etas-config</code> option specifies whether the GUI should fit ETAS parameters and generate ETAS forecasts. It can have the following values:
+        </p>
+        <ul>
+            <li><i>enable</i> - Fit ETAS parameters and generate ETAS forecasts.</li>
+            <li><i>disable</i> - Do not fit ETAS parameters or generate ETAS forecasts.</li>
+        </ul>
+        <p>
+            Note that if the OAF server does not support ETAS, you cannot make the server generate ETAS forecasts
+            by enabling ETAS in the GUI and then sending forecast parameters to the server.
+        </p>
+        <p>
+            if the <code>--etas-config</code> option is omitted, the GUI supplies a pre-programmed default.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+debug
+</pre>
+        <p>
+            The <code>debug</code> option tells the GUI to run in debug mode.
+            In debug mode, the GUI writes messages to the console that trace the GUI&#39;s operation.
+        </p>
+        <p>
+            If the <code>debug</code> option is included, it must be the first option on the command line.
+            (This is an exception to the general rule that options may appear in any order.)
+        </p>
+        <p>
+            It is strongly recommended that the <code>debug</code> option not be used when performing production work.
+        </p>
+    </body>
+</html>
