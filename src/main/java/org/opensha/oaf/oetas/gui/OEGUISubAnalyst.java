@@ -943,10 +943,11 @@ public class OEGUISubAnalyst extends OEGUIListener {
 				@Override
 				public void run_in_edt() throws GUIEDTException {
 					if (send_success[0]) {
-						String message = "Success: Analyst options have been successfully sent to server";
+						String message = "Success: Analyst options have been successfully sent to server.";
 						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send Succeeded", JOptionPane.INFORMATION_MESSAGE);
 					} else {
-						String message = "Error: Unable to send analyst options to any server";
+						gui_view.view_show_console();
+						String message = "Error: Unable to send analyst options to any server.\n\nMore information may be available in the Console window.";
 						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send Failed", JOptionPane.ERROR_MESSAGE);
 					}
 				}

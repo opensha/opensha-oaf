@@ -1133,8 +1133,9 @@ public class OEGUIForecastTable extends OEGUIListener {
 							// If error, report the exception
 							
 							else {
+								gui_view.view_show_console();
 								System.err.println (pdl_result[1]);
-								JOptionPane.showMessageDialog(my_panel, pdl_result[0], "Error sending product", JOptionPane.ERROR_MESSAGE);
+								JOptionPane.showMessageDialog(my_panel, pdl_result[0] + "\n\nMore information may be available in the Console window.", "Error sending product", JOptionPane.ERROR_MESSAGE);
 							}
 						}
 					};
