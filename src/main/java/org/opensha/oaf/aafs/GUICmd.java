@@ -49,6 +49,12 @@ package org.opensha.oaf.aafs;
 // They do not interact with the servers.
 //
 //
+// Display the software version number.
+// Command formats:
+//  version
+//  --version
+//
+//
 // Convert a forecast data file from the website/database JSON
 // format to a friendly human-understandable JSON format.
 // Command format:
@@ -90,6 +96,16 @@ package org.opensha.oaf.aafs;
 // This option exists primarily for testing.
 //
 //
+// To specify the product source for sending to PDL (typically a seismic network), use:
+// --source=PRODUCTSOURCE
+// If the --source option is not specified, it  defaults to configured value, which should be "us".
+//
+//
+// To specify the aftershock forecast product type for sending to PDL, use:
+// --type=PRODUCTTYPE
+// If the --type option is not specified, it defaults to configured value, which should be "oaf".
+//
+//
 // To select the event-sequence configuration option, use one of these:
 // --evseq-config=enable
 // --evseq-config=disable
@@ -111,7 +127,7 @@ package org.opensha.oaf.aafs;
 // these commands to specify the PDL destination and signing options.
 //
 //
-// To delete a product, then in addition to the above you should also include all of these:
+// To delete a product, then in addition to the above you should also include these:
 // --delete
 // --eventid=EVENTID
 // --evseq=EVSEQOPTION         [optional, defaults to "delete"]
@@ -120,8 +136,6 @@ package org.opensha.oaf.aafs;
 // --code=PRODUCTCODE          [obsolote, ignored]
 // --eventsource=EVENTNETWORK  [deprecated, see below]
 // --eventsourcecode=EVENTCODE [deprecated, see below]
-// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
 // --reviewed=ISREVIEWED       [optional, defaults to "true"]
 // The value of --evseq must be "delete" (to delete any eventy-sequence product), "ignore" (to ignore any
 //  event-sequence product), or "cap" (to cap an existing event-sequence product).  If "cap", then
@@ -131,7 +145,6 @@ package org.opensha.oaf.aafs;
 // The value of --lookbacktime is the time, in days before the mainshock, when a sequence begins.
 // If --eventid is omitted, but --eventsource and --eventsourcecode are given, then the event ID is
 //  constructed by concatenating --eventsource and --eventsourcecode.
-// The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the deletion has been reviewed.
 //
 //
@@ -143,15 +156,12 @@ package org.opensha.oaf.aafs;
 // --code=PRODUCTCODE          [obsolote, ignored]
 // --eventsource=EVENTNETWORK  [deprecated, see below]
 // --eventsourcecode=EVENTCODE [deprecated, see below]
-// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
 // --reviewed=ISREVIEWED       [optional, defaults to "true"]
 // The value of --evseq must be "update" (to send an event-sequence product), "delete" (to delete any existing
 //  event-sequence product), or "ignore" (to neither send nor delete an event-sequence product).
 // The value of --lookbacktime is the time, in days before the mainshock, when a sequence begins.
 // If --eventid is omitted, but --eventsource and --eventsourcecode are given, then the event ID is
 //  constructed by concatenating --eventsource and --eventsourcecode.
-// The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
 //
 //
@@ -160,12 +170,42 @@ package org.opensha.oaf.aafs;
 // --code=PRODUCTCODE          [obsolote, ignored]
 // --eventsource=EVENTNETWORK  [obsolote, ignored]
 // --eventsourcecode=EVENTCODE [obsolote, ignored]
-// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
 // --reviewed=ISREVIEWED       [optional, defaults to "true"]
 // All information, including the event ID and the event-sequence option, is taken from the forecast_data.json file.
-// The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
+//
+//
+// To delete an OAF product directly to PDL, then in addition to the above you should also include these:
+// --delete
+// --direct=true
+// --code=PRODUCTCODE         [optional, defaults to --eventsource concatenated with --eventsourcecode]
+// --eventsource=EVENTNETWORK
+// --eventsourcecode=EVENTCODE
+// --reviewed=ISREVIEWED      [optional, defaults to "true"]
+// The value of --code identifies the product that is to be deleted.  The value of --code is typically an event ID.
+// The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
+// these determine which event page displays the product.
+// The optional parameter --reviewed, which must be "true" or "false", indicates if the deletion has been reviewed.
+// An OAF DELETE product is sent directly to PDL, without calling Comcat.
+// This has no effect on any event-sequence product that may exist.
+// Direct delete is intended for use with scenario products, which should use --type=oaf-scenario.
+//
+//
+// If a forecast.json file exists on disk, then it can be sent directly to PDL as a product by including:
+// --update=JSONFILENAME
+// --direct=true
+// --code=PRODUCTCODE         [optional, defaults to --eventsource concatenated with --eventsourcecode]
+// --eventsource=EVENTNETWORK
+// --eventsourcecode=EVENTCODE
+// --reviewed=ISREVIEWED      [optional, defaults to "true"]
+// The value of --code identifies the product that is to be sent.  The value of --code is typically an event ID.
+// The product replaces any prior product that was sent with the same --code.
+// The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
+// these determine which event page displays the product.
+// The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
+// An OAF product is sent directly to PDL, without calling Comcat.
+// This does not send an event-sequence product and has no effect on any event-sequence product that may exist.
+// Direct update is intended for use with scenario products, which should use --type=oaf-scenario.
 
 public class GUICmd {
 
@@ -289,6 +329,32 @@ public class GUICmd {
 					e.printStackTrace();
 					System.out.println ();
 					System.out.println (caller_name.trim() + " : The 'analyst_cli' subcommand failed with an exception");
+				}
+				return true;
+			}
+
+			// Subcommand : version
+			// Command formats:
+			//  version
+			//  --version
+			// Display the software version on the console, and exit.
+
+			if (args[0].equalsIgnoreCase ("version") || args[0].equalsIgnoreCase ("--version") ) {
+
+				if (args.length != 1) {
+					System.out.println (caller_name.trim() + " : Invalid 'version' subcommand");
+					return true;
+				}
+
+				String[] my_args = new String[1];
+				my_args[0] = "show_version";
+
+				try {
+					ServerCmd.cmd_show_version (my_args);
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.out.println ();
+					System.out.println (caller_name.trim() + " : The 'version' subcommand failed with an exception");
 				}
 				return true;
 			}

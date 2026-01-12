@@ -45,6 +45,14 @@ import org.opensha.oaf.rj.USGS_ForecastHolder;
 // If the --target option is not specified, the default is taken from the server configuration file.
 // This option exists primarily for testing.
 //
+// To specify the product source for sending to PDL (typically a seismic network), use:
+// --source=PRODUCTSOURCE
+// If the --source option is not specified, it  defaults to configured value, which should be "us".
+//
+// To specify the aftershock forecast product type for sending to PDL, use:
+// --type=PRODUCTTYPE
+// If the --type option is not specified, it defaults to configured value, which should be "oaf".
+//
 // To select the event-sequence configuration option, use one of these:
 // --evseq-config=enable
 // --evseq-config=disable
@@ -57,7 +65,7 @@ import org.opensha.oaf.rj.USGS_ForecastHolder;
 // If the --etas-config option is not specified, the default is taken from the action configuration file.
 // This option exists primarily for testing.
 //
-// To delete a product, then in addition to the above you should also include all of these:
+// To delete a product, then in addition to the above you should also include these:
 // --delete
 // --eventid=EVENTID
 // --evseq=EVSEQOPTION         [optional, defaults to "delete"]
@@ -66,8 +74,6 @@ import org.opensha.oaf.rj.USGS_ForecastHolder;
 // --code=PRODUCTCODE          [obsolote, ignored]
 // --eventsource=EVENTNETWORK  [deprecated, see below]
 // --eventsourcecode=EVENTCODE [deprecated, see below]
-// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
 // --reviewed=ISREVIEWED       [optional, defaults to "true"]
 // The value of --evseq must be "delete" (to delete any eventy-sequence product), "ignore" (to ignore any
 //  event-sequence product), or "cap" (to cap an existing event-sequence product).  If "cap", then
@@ -77,7 +83,6 @@ import org.opensha.oaf.rj.USGS_ForecastHolder;
 // The value of --lookbacktime is the time, in days before the mainshock, when a sequence begins.
 // If --eventid is omitted, but --eventsource and --eventsourcecode are given, then the event ID is
 //  constructed by concatenating --eventsource and --eventsourcecode.
-// The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the deletion has been reviewed.
 //
 // If a forecast.json file exists on disk, then it can be sent as a product by including:
@@ -88,15 +93,12 @@ import org.opensha.oaf.rj.USGS_ForecastHolder;
 // --code=PRODUCTCODE          [obsolote, ignored]
 // --eventsource=EVENTNETWORK  [deprecated, see below]
 // --eventsourcecode=EVENTCODE [deprecated, see below]
-// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
 // --reviewed=ISREVIEWED       [optional, defaults to "true"]
 // The value of --evseq must be "update" (to send an event-sequence product), "delete" (to delete any existing
 //  event-sequence product), or "ignore" (to neither send nor delete an event-sequence product).
 // The value of --lookbacktime is the time, in days before the mainshock, when a sequence begins.
 // If --eventid is omitted, but --eventsource and --eventsourcecode are given, then the event ID is
 //  constructed by concatenating --eventsource and --eventsourcecode.
-// The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
 //
 // If a forecast_data.json file exists on disk, then it can be sent as a product by including:
@@ -104,26 +106,20 @@ import org.opensha.oaf.rj.USGS_ForecastHolder;
 // --code=PRODUCTCODE          [obsolote, ignored]
 // --eventsource=EVENTNETWORK  [obsolote, ignored]
 // --eventsourcecode=EVENTCODE [obsolote, ignored]
-// --source=PRODUCTSOURCE      [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE          [optional, defaults to configured value, which should be "oaf"]
 // --reviewed=ISREVIEWED       [optional, defaults to "true"]
 // All information, including the event ID and the event-sequence option, is taken from the forecast_data.json file.
-// The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
 //
-// To delete an OAF product directly to PDL, then in addition to the above you should also include all of these:
+// To delete an OAF product directly to PDL, then in addition to the above you should also include these:
 // --delete
 // --direct=true
 // --code=PRODUCTCODE         [optional, defaults to --eventsource concatenated with --eventsourcecode]
 // --eventsource=EVENTNETWORK
 // --eventsourcecode=EVENTCODE
-// --source=PRODUCTSOURCE     [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE         [optional, defaults to configured value, which should be "oaf"]
 // --reviewed=ISREVIEWED      [optional, defaults to "true"]
 // The value of --code identifies the product that is to be deleted.  The value of --code is typically an event ID.
 // The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
 // these determine which event page displays the product.
-// The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the deletion has been reviewed.
 // An OAF DELETE product is sent directly to PDL, without calling Comcat.
 // This has no effect on any event-sequence product that may exist.
@@ -135,14 +131,11 @@ import org.opensha.oaf.rj.USGS_ForecastHolder;
 // --code=PRODUCTCODE         [optional, defaults to --eventsource concatenated with --eventsourcecode]
 // --eventsource=EVENTNETWORK
 // --eventsourcecode=EVENTCODE
-// --source=PRODUCTSOURCE     [optional, defaults to configured value, which should be "us"]
-// --type=PRODUCTTYPE         [optional, defaults to configured value, which should be "oaf"]
 // --reviewed=ISREVIEWED      [optional, defaults to "true"]
 // The value of --code identifies the product that is to be sent.  The value of --code is typically an event ID.
 // The product replaces any prior product that was sent with the same --code.
 // The values of --eventsource and --eventsourcecode identify the event with which the product is associated;
 // these determine which event page displays the product.
-// The optional parameters --source and --type identify the source (typically a network) and type of the product.
 // The optional parameter --reviewed, which must be "true" or "false", indicates if the product has been reviewed.
 // An OAF product is sent directly to PDL, without calling Comcat.
 // This does not send an event-sequence product and has no effect on any event-sequence product that may exist.
@@ -441,10 +434,10 @@ public class PDLCmd {
 			// Product source option
 
 			else if (name.equalsIgnoreCase (PNAME_SOURCE)) {
-				if (!( f_send )) {
-					System.out.println ("Unrecognized command-line option: " + arg);
-					return true;
-				}
+				//if (!( f_send )) {
+				//	System.out.println ("Unrecognized command-line option: " + arg);
+				//	return true;
+				//}
 				if (product_source != null) {
 					System.out.println ("Duplicate command-line option: " + arg);
 					return true;
@@ -459,10 +452,10 @@ public class PDLCmd {
 			// Product type option
 
 			else if (name.equalsIgnoreCase (PNAME_TYPE)) {
-				if (!( f_send )) {
-					System.out.println ("Unrecognized command-line option: " + arg);
-					return true;
-				}
+				//if (!( f_send )) {
+				//	System.out.println ("Unrecognized command-line option: " + arg);
+				//	return true;
+				//}
 				if (product_type != null) {
 					System.out.println ("Duplicate command-line option: " + arg);
 					return true;
