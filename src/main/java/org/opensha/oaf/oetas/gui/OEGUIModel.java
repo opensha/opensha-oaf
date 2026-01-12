@@ -4496,6 +4496,8 @@ public class OEGUIModel extends OEGUIComponent {
 	// Tags for information items.
 
 	private int info_tag_version = -1;				// Program version
+	private int info_tag_pdl_options = -1;			// PDL options
+	private int info_tag_configuration = -1;		// Program configuration
 	private int info_tag_processor = -1;			// Processor information
 	private int info_tag_memory = -1;				// Memory information
 	private int info_tag_mainshock = -1;			// Mainshock information
@@ -4534,9 +4536,13 @@ public class OEGUIModel extends OEGUIComponent {
 
 		info_tag_memory = register_info_item (MODSTATE_INITIAL, "Memory Usage");
 		info_tag_processor = register_info_item (MODSTATE_INITIAL, "Processor");
+		info_tag_configuration = register_info_item (MODSTATE_INITIAL, "Configuration");
+		info_tag_pdl_options = register_info_item (MODSTATE_INITIAL, "PDL Options");
 		info_tag_version = register_info_item (MODSTATE_INITIAL, "Version");
 
 		update_version_info();
+		update_pdl_options_info();
+		update_configuration_info();
 		update_processor_info();
 
 		return;
@@ -4893,6 +4899,53 @@ public class OEGUIModel extends OEGUIComponent {
 		sb.append (VersionInfo.get_title() + "\n");
 
 		set_info_item (info_tag_version, sb.toString());
+		return;
+	}
+
+
+
+
+	// Update the PDL options info item.
+	// Note: This only needs to be called once.
+
+	public final void update_pdl_options_info () {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append ("PDL destination = " + get_pdl_dest() + "\n");
+		sb.append ("Can send products to PDL = " + (get_can_send_to_pdl() ? "Yes" : "No") + "\n");
+
+		String pdl_keyfile = get_pdl_keyfile (true);
+		if (pdl_keyfile != null) {
+			sb.append ("PDL private key filename = " + pdl_keyfile + "\n");
+		}
+
+		String pdl_source = get_pdl_source (true);
+		if (pdl_source != null) {
+			sb.append ("Source network for products sent to PDL = \"" + pdl_source + "\"\n");
+		}
+
+		String pdl_type = get_pdl_type (true);
+		if (pdl_type != null) {
+			sb.append ("Product type for forecast products sent to PDL = \"" + pdl_type + "\"\n");
+		}
+
+		set_info_item (info_tag_pdl_options, sb.toString());
+		return;
+	}
+
+
+
+
+	// Update the configuration info item.
+	// Note: This only needs to be called once.
+
+	public final void update_configuration_info () {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append ("ETAS support = " + (get_is_etas_enabled() ? "Enabled" : "Disabled") + "\n");
+		sb.append ("Event-sequence support = " + (get_is_evseq_enabled() ? "Enabled" : "Disabled") + "\n");
+
+		set_info_item (info_tag_configuration, sb.toString());
 		return;
 	}
 

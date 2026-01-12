@@ -2,6 +2,8 @@ package org.opensha.oaf.oetas.gui;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
+import org.opensha.oaf.aafs.ActionConfig;
+import org.opensha.oaf.aafs.ActionConfigFile;
 
 
 // RJ & ETAS GUI - Common base class.
@@ -471,6 +473,86 @@ public class OEGUIComponent {
 			break;
 		}
 		return pdl_dest;
+	}
+
+
+
+
+	// Get a string containing the PDL key filename, or "None".
+	// If f_hasfile is false, return null if there is no filename.
+
+	public String get_pdl_keyfile (boolean f_hasfile) {
+		String keyfile = (new ServerConfig()).get_pdl_key_filename();
+		if (keyfile == null || keyfile.isEmpty()) {
+			if (f_hasfile) {
+				keyfile = "None";
+			} else {
+				keyfile = null;
+			}
+		}
+		return keyfile;
+	}
+
+
+
+
+	// Get a string containing the PDL product source.
+	// If f_nonstd is false, return null if it is the standard source.
+
+	public String get_pdl_source (boolean f_nonstd) {
+		String pdl_source = (new ServerConfig()).get_pdl_oaf_source();
+		if (pdl_source.equals (ServerConfigFile.PDLSOURCE_STD)) {
+			if (!( f_nonstd )) {
+				pdl_source = null;
+			}
+		}
+		return pdl_source;
+	}
+
+
+
+
+	// Get a string containing the PDL forecast product type.
+	// If f_nonstd is false, return null if it is the standard type.
+
+	public String get_pdl_type (boolean f_nonstd) {
+		String pdl_type = (new ServerConfig()).get_pdl_oaf_type();
+		if (pdl_type.equals (ServerConfigFile.PDLTYPE_STD)) {
+			if (!( f_nonstd )) {
+				pdl_type = null;
+			}
+		}
+		return pdl_type;
+	}
+
+
+
+
+	// Return true if we can send to PDL.
+
+	public boolean get_can_send_to_pdl () {
+		if ((new ServerConfig()).get_pdl_senders().isEmpty()) {
+			return false;
+		}
+		return true;
+	}
+
+
+
+
+	// Return true if event-sequence is enabled.
+
+	public boolean get_is_evseq_enabled () {
+		return (new ActionConfig()).get_is_evseq_enabled();
+	}
+
+
+
+
+	// Return true if ETAS is enabled.
+
+	public boolean get_is_etas_enabled () {
+		return (new ActionConfig()).get_is_etas_enabled();
 	}
 
 

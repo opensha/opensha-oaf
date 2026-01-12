@@ -226,9 +226,13 @@ public class ServerConfigFile implements Marshalable {
 
 	public String pdl_oaf_source;
 
+	public static final String PDLSOURCE_STD = "us";	// Standard value for PDL product source network
+
 	// Product type for OAF PDL products.
 
 	public String pdl_oaf_type;
+
+	public static final String PDLTYPE_STD = "oaf";		// Standarrd value for PDL forecast product type
 
 	// PDL target option. [v3]
 
