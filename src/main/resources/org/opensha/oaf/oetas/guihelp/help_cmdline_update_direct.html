@@ -1,0 +1,127 @@
+<html>
+    <head>
+        <title>Command Line: Direct Send a forecast.json File</title>
+    </head>
+    <body>
+        <h2>Command Line: Direct Send a forecast.json File to PDL</h2>
+        <p>
+            If you have a file that contains a forecast in forecast.json format,
+            you can use these command line options to send the forecast to PDL.
+            The forecast is sent directly to PDL, without calling Comcat first.
+            So, all necessary information must be given in the command line.
+            Direct send never sends or deletes an event-sequence product.
+        </p>
+        <p>
+            For example, the following command line can be used to send a foreast
+            to the PDL production system.
+            If the GUI is configured to support event-sequence, then the command line
+            also sends an event-sequence product.
+        </p>
+<pre>
+java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --update=my_forecast.json --direct=true --eventid=nc75289501
+</pre>
+        <p>
+            In this example, the <code>--pdl</code> option specifies that products should be sent to the production PDL system,
+            and the <code>--privateKey</code> option specifies the digital key file that is used to sign products.
+            The <code>--update</code> option specifies that we want to send a forecast,
+            and gives the name of the file that contains the forecast.json.
+            The <code>--eventid</code> option gives the event ID of the mainshock.
+            Note that the name of the GUI jar file may be different than shown.
+        </p>
+        <p>
+            Direct send is intended mainly for use in sending scenario products.
+            When used for scenario products, you should include the
+            <a href="help_cmdline_pdl.html">PDL configuration option</a> <code>--type=oaf-scenario</code>.
+            An example of direct sending a scenario product is:
+        </p>
+<pre>
+java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --type=oaf-scenario --update=my_forecast.json --direct=true --eventid=nc75289501
+</pre>
+        <p>
+            When direct sending a forecast.json, the following options are required:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--update=JSONFILENAME</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--direct=true</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--eventsource=EVENTNETWORK</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--eventsourcecode=EVENTCODE</code><br>
+            The following options are optional; if omitted, then the GUI supplies a default value:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--code=PRODUCTCODE</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--reviewed=ISREVIEWED</code><br>
+            The options are described in detail below.
+        </p>
+        <p>
+            In addition to the options described on this page, you can also use the
+            <a href="help_cmdline_pdl.html">PDL configuration options</a>.
+            The most often used PDL configuration options are:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--pdl=PDLDESTINATION</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--privateKey=PRIVATEKEYFILE</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--type=PRODUCTTYPE</code>
+        </p>
+        <p>
+            Options may appear in the command line in any order.
+        </p>
+        <p>
+            When you use the command line to send a forecast, the graphical user interface does not start.
+            After the forecast is sent, the GUI exits and returns control to the operating system.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--update=JSONFILENAME
+</pre>
+        <p>
+            The <code>--update</code> option specifies that you want to send a forecast to PDL,
+            and also gives the name of the file that contains the forecast in forecast.json format.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--direct=true
+</pre>
+        <p>
+            The <code>--direct=true</code> option specifies that you want to perform a direct send.
+        </p>
+        <p>
+            Note: If you omit the <code>--direct</code> option or if you include <code>--direct=false</code>,
+            then the GUI performs a <a href="help_cmdline_update.html">regular send</a> instead of a direct send.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--eventsource=EVENTNETWORK
+--eventsourcecode=EVENTCODE
+</pre>
+        <p>
+            The <code>--eventsource</code> and <code>--eventsourcecode</code> options identify the mainshock.
+            The <code>--eventsource</code> is the seismic network that reported the mainshock (usually, but not always, a 2-letter identifier).
+            The <code>--eventsourcecode</code>  is a &quot;code&quot; assigned to the mainshock by the seismic network (an alphanumeric string).
+        </p>
+        <p>
+            The event ID is obtained by concatenating the values of <code>--eventsource</code> and <code>--eventsourcecode</code>.
+            For example, if you write <code>--eventsource=nc --eventsourcecode=75289501</code> then the event ID is <code>nc75289501</code>.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--code=PRODUCTCODE
+</pre>
+        <p>
+            The <code>--code</code> option is the &quot;code&quot; that is assigned to the product you are sending.
+            In order to successfully replace an existing product, the value of <code>--code</code>
+            must match the &quot;code&quot; of the existing product; otherwise, the existing product and
+            the product you are sending will both be retained in Comcat.
+            Often, but not always, the &quot;code&quot; assigned to a product is the mainshock event ID.
+        </p>
+        <p>
+            If you omit the <code>--code</code> option, then the GUI supplies a default value,
+            which is the event ID derived from the <code>--eventsource</code> and <code>--eventsourcecode</code> options.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--reviewed=true
+--reviewed=false
+</pre>
+        <p>
+            The <code>--reviewed</code> option specifies whether the forecast is marked as being reviewed by an analyst.
+            The review status is shown on the event page.
+        </p>
+        <p>
+            If the <code>--reviewed</code> option is omitted, the GUI supplies a default value of <i>true</i>.
+        </p>
+    </body>
+</html>

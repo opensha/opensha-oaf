@@ -6,13 +6,14 @@
         <h2>Command Line: GUI Configuration</h2>
         <p>
             These command line options are used to configure the GUI.
-            For example, the following command line can be used to enable ETAS forecasts within the GUI.
+            For example, the following command line can be used to enable ETAS forecasts and event-sequence products within the GUI.
         </p>
 <pre>
-java -jar AftershockGUI-2026_01_06.jar --etas-config=enable
+java -jar AftershockGUI-2026_01_06.jar --etas-config=enable --evseq-config=enable
 </pre>
         <p>
-            In this example, the <code>--etas-config</code> option specifies that ETAS forecasts should be generated.
+            In this example, the <code>--etas-config</code> option specifies that ETAS forecasts should be generated,
+            and the <code>--evseq-config</code> option specifies that event-sequence products should be used.
             Note that the name of the GUI jar file may be different than shown.
         </p>
         <p>
@@ -21,6 +22,9 @@ java -jar AftershockGUI-2026_01_06.jar --etas-config=enable
         </p>
         <p>
             Options may appear in the command line in any order.
+        </p>
+        <p>
+            You can look at the <a href="help_view_information.html">information window</a> to see the GUI configuration options that are currently in effect.
         </p>
         <p>&nbsp;</p>
 <pre>
@@ -40,6 +44,25 @@ java -jar AftershockGUI-2026_01_06.jar --etas-config=enable
         </p>
         <p>
             if the <code>--etas-config</code> option is omitted, the GUI supplies a pre-programmed default.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--evseq-config=enable
+--evseq-config=disable
+</pre>
+        <p>
+            The <code>--evseq-config</code> option specifies whether the GUI can generate and send event-sequence products. It can have the following values:
+        </p>
+        <ul>
+            <li><i>enable</i> - The GUI can generate and send event-sequence products.</li>
+            <li><i>disable</i> - The GUI cannot generate and send event-sequence products.</li>
+        </ul>
+        <p>
+            Note that if the OAF server does not support event-sequence products, you cannot make the server generate event-sequence products
+            by enabling event-sequence in the GUI and then sending parameters to the server.
+        </p>
+        <p>
+            if the <code>--evseq-config</code> option is omitted, the GUI supplies a pre-programmed default.
         </p>
         <p>&nbsp;</p>
 <pre>

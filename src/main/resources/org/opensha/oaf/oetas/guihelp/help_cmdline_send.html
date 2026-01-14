@@ -1,0 +1,108 @@
+<html>
+    <head>
+        <title>Command Line: Sending a Forecast</title>
+    </head>
+    <body>
+        <h2>Command Line: Sending a Forecast to PDL</h2>
+        <p>
+            If you have a file that contains a saved forecast (in forecast_data.json format),
+            you can use these command line options to send the forecast to PDL.
+            The forecast will appear on the event page just like a forecast produced by the OAF servers,
+            with both forecast.json and forecast_data.json files available for download.
+        </p>
+        <p>
+            An event-sequence product will be sent if the event-sequence options contained within the
+            forecast_data.json file indicate that an event-sequence product should be sent,
+            and if the GUI is configured to support event-sequence.
+        </p>
+        <p>
+            For example, the following command line can be used to send a foreast
+            to the PDL production system.
+            If the GUI is configured to support event-sequence, then the command line
+            may also send an event-sequence product.
+        </p>
+<pre>
+java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --send=my_forecast_data.json
+</pre>
+        <p>
+            In this example, the <code>--pdl</code> option specifies that products should be sent to the production PDL system,
+            and the <code>--privateKey</code> option specifies the digital key file that is used to sign products.
+            The <code>--send</code> option specifies that we want to send a forecast,
+            and gives the name of the file that contains the forecast.json.
+            Note that the name of the GUI jar file may be different than shown.
+            Also, note that you don&#39;t need to specify the mainshock event ID, because it is
+            contained within the forecast_data.json file.
+        </p>
+        <p>
+            When sending a forecast, the following option is required:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--send=JSONFILENAME</code><br>
+            The following option is optional; if omitted, then the GUI supplies a default value:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--reviewed=ISREVIEWED</code><br>
+            The following options are obsolete; you should avoid using them:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--code=PRODUCTCODE</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--eventsource=EVENTNETWORK</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--eventsourcecode=EVENTCODE</code><br>
+            The options are described in detail below.
+        </p>
+        <p>
+            In addition to the options described on this page, you can also use the
+            <a href="help_cmdline_pdl.html">PDL configuration options</a>
+            and the <a href="help_cmdline_gui_config.html">GUI confguration options</a>.
+            The most often used PDL configuration options are:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--pdl=PDLDESTINATION</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--privateKey=PRIVATEKEYFILE</code><br>
+            The most often used GUI configuration option enables or disables support for event-sequence:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--evseq-config=EVSEQCONFIG</code>
+        </p>
+        <p>
+            Options may appear in the command line in any order.
+        </p>
+        <p>
+            When you use the command line to send a forecast, the graphical user interface does not start.
+            After the forecast is sent, the GUI exits and returns control to the operating system.
+        </p>
+        <p>
+            Note that, as an alternative to using the command line,
+            you can also send a saved forecast to PDL from within the graphical user interface
+            by opening the <b>File Operations</b> control panel.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--send=JSONFILENAME
+</pre>
+        <p>
+            The <code>--send</code> option specifies that you want to send a forecast to PDL,
+            and also gives the name of the file that contains the forecast in forecast_data.json format.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--reviewed=true
+--reviewed=false
+</pre>
+        <p>
+            The <code>--reviewed</code> option specifies whether the forecast is marked as being reviewed by an analyst.
+            The review status is shown on the event page.
+        </p>
+        <p>
+            If the <code>--reviewed</code> option is omitted, the GUI supplies a default value of <i>true</i>.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--code=PRODUCTCODE
+</pre>
+        <p>
+            The <code>--code</code> option is obsolete. If included, it is ignored.
+            It is supported to maintain compatibility with earlier versions of the GUI.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--eventsource=EVENTNETWORK
+--eventsourcecode=EVENTCODE
+</pre>
+        <p>
+            The <code>--eventsource</code> and <code>--eventsourcecode</code> options are obsolete.
+            If included, they are ignored.
+            They are supported to maintain compatibility with earlier versions of the GUI.
+        </p>
+    </body>
+</html>

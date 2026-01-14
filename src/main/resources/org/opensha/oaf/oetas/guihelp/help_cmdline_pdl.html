@@ -24,6 +24,9 @@ java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile
         <p>
             Options may appear in the command line in any order.
         </p>
+        <p>
+            You can look at the <a href="help_view_information.html">information window</a> to see the PDL configuration options that are currently in effect.
+        </p>
         <p>&nbsp;</p>
 <pre>
 --pdl=dryrun
@@ -39,11 +42,14 @@ java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile
             <li><i>prod</i> - Send products to the PDL production system.</li>
         </ul>
         <p>
-            Note that not all versions of the GUI are able to send products to the PDL staging system.
-            If the GUI does not support sending products to PDL staging, then <i>dev</i> effectively behaves the same as <i>dryrun</i>.
+            if the <code>--pdl</code> option is omitted, the default is <i>dryrun</i>.
         </p>
         <p>
-            if the <code>--pdl</code> option is omitted, the default is <i>dryrun</i>.
+            Note: Not all versions of the GUI are able to send products to the PDL staging system.
+            If you use <code>--pdl=dev</code>, you can check the <a href="help_view_information.html">information window</a>
+            to see if the GUI is able to send products to PDL.
+            If the GUI cannot send products to PDL, then the GUI will behave similarly to a dry run; that is,
+            it will report that the product has been sent successfully, but nothing will actually be sent.
         </p>
         <p>&nbsp;</p>
 <pre>
@@ -80,25 +86,6 @@ java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile
         </p>
         <p>
             If the <code>--target</code> option is omitted, the GUI supplies a pre-programmed default.
-        </p>
-        <p>&nbsp;</p>
-<pre>
---evseq-config=enable
---evseq-config=disable
-</pre>
-        <p>
-            The <code>--evseq-config</code> option specifies whether the GUI can generate and send event-sequence products. It can have the following values:
-        </p>
-        <ul>
-            <li><i>enable</i> - The GUI can generate and send event-sequence products.</li>
-            <li><i>disable</i> - The GUI cannot generate and send event-sequence products.</li>
-        </ul>
-        <p>
-            Note that if the OAF server does not support event-sequence products, you cannot make the server generate event-sequence products
-            by enabling event-sequence in the GUI and then sending parameters to the server.
-        </p>
-        <p>
-            if the <code>--evseq-config</code> option is omitted, the GUI supplies a pre-programmed default.
         </p>
         <p>&nbsp;</p>
 <pre>

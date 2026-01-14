@@ -1,32 +1,37 @@
 <html>
     <head>
-        <title>Command Line: Deleting a Forecast</title>
+        <title>Command Line: Sending a forecast.json File</title>
     </head>
     <body>
-        <h2>Command Line: Deleting a Forecast from PDL</h2>
+        <h2>Command Line: Sending a forecast.json File to PDL</h2>
         <p>
-            These command line options let you delete a forecast from PDL.
-            You can also delete or modify an existing event-sequence product.
-            For example, the following command line can be used to delete a foreast
-            from the PDL production system, and also delete any existing event-sequence product.
+            If you have a file that contains a forecast in forecast.json format,
+            you can use these command line options to send the forecast to PDL.
+            You can also send an event-sequence product.
+        </p>
+        <p>
+            For example, the following command line can be used to send a foreast
+            to the PDL production system.
+            If the GUI is configured to support event-sequence, then the command line
+            also sends an event-sequence product.
         </p>
 <pre>
-java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --delete --eventid=nc75289501
+java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --update=my_forecast.json --eventid=nc75289501
 </pre>
         <p>
             In this example, the <code>--pdl</code> option specifies that products should be sent to the production PDL system,
             and the <code>--privateKey</code> option specifies the digital key file that is used to sign products.
-            The <code>--delete</code> option specifies that we want to delete a forecast,
-            and the <code>--eventid</code> option gives the event ID of the mainshock.
+            The <code>--update</code> option specifies that we want to send a forecast,
+            and gives the name of the file that contains the forecast.json.
+            The <code>--eventid</code> option gives the event ID of the mainshock.
             Note that the name of the GUI jar file may be different than shown.
         </p>
         <p>
-            When deleting a forecast, the following options are required:<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;<code>--delete</code><br>
+            When sending a forecast.json, the following options are required:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--update=JSONFILENAME</code><br>
             &nbsp;&nbsp;&nbsp;&nbsp;<code>--eventid=EVENTID</code><br>
             The following options are optional; if omitted, then the GUI supplies a default value:<br>
             &nbsp;&nbsp;&nbsp;&nbsp;<code>--evseq=EVSEQOPTION</code><br>
-            &nbsp;&nbsp;&nbsp;&nbsp;<code>--captime=EVSEQCAPTIME</code><br>
             &nbsp;&nbsp;&nbsp;&nbsp;<code>--lookbacktime=EVSLOOKBACK</code><br>
             &nbsp;&nbsp;&nbsp;&nbsp;<code>--reviewed=ISREVIEWED</code><br>
             The following options are obsolete or deprecated; you should avoid using them:<br>
@@ -49,20 +54,21 @@ java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --delet
             Options may appear in the command line in any order.
         </p>
         <p>
-            When you use the command line to delete a forecast, the graphical user interface does not start.
-            After the forecast is deleted, the GUI exits and returns control to the operating system.
+            When you use the command line to send a forecast, the graphical user interface does not start.
+            After the forecast is sent, the GUI exits and returns control to the operating system.
         </p>
         <p>
             Note that, as an alternative to using the command line,
-            you can also delete a forecast from PDL from within the graphical user interface
-            by opening the <b>Delete Product</b> control panel.
+            you can also send a forecast.json file to PDL from within the graphical user interface
+            by opening the <b>File Operations</b> control panel.
         </p>
         <p>&nbsp;</p>
 <pre>
---delete
+--update=JSONFILENAME
 </pre>
         <p>
-            The <code>--delete</code> option specifies that you want to delete a forecast from PDL.
+            The <code>--update</code> option specifies that you want to send a forecast to PDL,
+            and also gives the name of the file that contains the forecast in forecast.json format.
         </p>
         <p>&nbsp;</p>
 <pre>
@@ -74,52 +80,25 @@ java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --delet
         </p>
         <p>&nbsp;</p>
 <pre>
+--evseq=update
 --evseq=delete
 --evseq=ignore
---evseq=cap
 </pre>
         <p>
-            The <code>--evseq</code> option specifies what to do if the mainshock has an event-sequence product. It can have the following values:
+            The <code>--evseq</code> option specifies whether to send an event-sequence product. It can have the following values:
         </p>
         <ul>
-            <li><i>delete</i> - Delete the event-sequence product from PDL.</li>
-            <li><i>ignore</i> - Do not delete or modify the existing event-sequence product.</li>
-            <li><i>cap</i> - Change the ending time of the existing event-sequence product. See the description of <code>--captime</code> below.</li>
+            <li><i>update</i> - Send an event-sequence product to PDL. The aftershock search region in the forecast.json is used to create the event-sequence product.</li>
+            <li><i>delete</i> - Delete any existing event-sequence product from PDL.</li>
+            <li><i>ignore</i> - Do not send an event-sequence product, and do not delete any existing event-sequence product.</li>
         </ul>
         <p>
-            If the <code>--evseq</code> option is omitted, the default value is <i>delete</i>. If the value is (or defaults to) <i>delete</i>,
-            then this command can delete an existing event-sequence product even if there is no corresponding oaf product.
+            If the <code>--evseq</code> option is omitted, the default value is <i>update</i>.
         </p>
         <p>
-            If there is no existing event-sequence product, this command never creates an event-sequence product
-            even if the value is <i>cap</i>.
-        </p>
-        <p>
-            If the GUI is configured to not support event-sequence, then an existing event-sequence product is never
-            deleted or modified regardless of the value of <code>--evseq</code>.
+            If the GUI is configured to not support event-sequence, then an event-sequence product is never sent,
+            and an existing event-sequence product is never deleted, regardless of the value of <code>--evseq</code>.
             Note that the <code>--evseq-config</code> option can be used to alter whether or not the GUI is configured to support event-sequence.
-        </p>
-        <p>&nbsp;</p>
-<pre>
---captime=EVSEQCAPTIME
-</pre>
-        <p>
-            If you use <code>--evseq=cap</code>, then you must also include the <code>--captime</code> option.
-            Its value is the new ending time for the event-sequence product.
-            If there is an existing event-sequence product, its ending time is changed to the time given in the <code>--captime</code> option.
-        </p>
-        <p>
-            On the command line, it is recommended that time be given in ISO-8601 format, for example <code>--captime=2025-04-14T17:08:28Z</code>.
-            You can also use <a href="help_entering_date_time.html">other time formats</a>,
-            but note that if you use a format that contains spaces then you must enclose the time in quotation marks.
-        </p>
-        <p>
-            Capping is typically used when a mainshock becomes a foreshock of a leter, larger earthquake that occurs nearby.
-            In this situation, you may want to retain the event-sequence product for the original mainshock.
-            but make the sequence end shortly before the later, larger earthquake.
-        </p>
-        <p>
-            If you don&#39;t use <code>--evseq=cap</code>, then the <code>--captime</code> option is not allowed.
         </p>
         <p>&nbsp;</p>
 <pre>
@@ -138,7 +117,8 @@ java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --delet
 --reviewed=false
 </pre>
         <p>
-            The <code>--reviewed</code> option specifies whether the deletion product is marked as being reviewed by an analyst.
+            The <code>--reviewed</code> option specifies whether the forecast is marked as being reviewed by an analyst.
+            The review status is shown on the event page.
         </p>
         <p>
             If the <code>--reviewed</code> option is omitted, the GUI supplies a default value of <i>true</i>.

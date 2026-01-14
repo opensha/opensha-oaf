@@ -1,0 +1,127 @@
+<html>
+    <head>
+        <title>Command Line: Direct Delete a Forecast</title>
+    </head>
+    <body>
+        <h2>Command Line: Direct Delete a Forecast from PDL</h2>
+        <p>
+            These command line options let you delete a forecast from PDL.
+            The deletion is sent directly to PDL, without calling Comcat first.
+            So, all necessary information must be given in the command line.
+            Direct deletion never deletes or modifies any existing event-sequence product.
+        </p>
+        <p>
+            For example, the following command line can be used to direct delete a foreast
+            from the PDL production system.
+        </p>
+<pre>
+java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --delete --direct=true --code=nc75289501 --eventsource=nc --eventsourcecode=75289501
+</pre>
+        <p>
+            In this example, the <code>--pdl</code> option specifies that products should be sent to the production PDL system,
+            and the <code>--privateKey</code> option specifies the digital key file that is used to sign products.
+            The <code>--delete</code> option specifies that we want to delete a forecast,
+            and the <code>--direct</code> option specifies that the deletion is to be sent directly to PDL.
+            The <code>--code</code> option gives the &quot;code&quot; that is assigned to the existing
+            product that is to be deleted.
+            The <code>--eventsource</code> option gives the seismic network that reported the mainshock
+            (usually, but not always, a 2-letter identifier).
+            The <code>--eventsourcecode</code> option gives the &quot;code&quot; that the seismic network
+            assigned to the mainshock.
+            Note that the name of the GUI jar file may be different than shown.
+        </p>
+        <p>
+            Direct delete is intended mainly for use in deleting scenario products.
+            When used for scenario products, you should include the
+            <a href="help_cmdline_pdl.html">PDL configuration option</a> <code>--type=oaf-scenario</code>.
+            An example of direct deleting a scenario product is:
+        </p>
+<pre>
+java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --type=oaf-scenario --delete --direct=true --code=nc75289501 --eventsource=nc --eventsourcecode=75289501
+</pre>
+        <p>
+            When direct deleting a forecast, the following options are required:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--delete</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--direct=true</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--eventsource=EVENTNETWORK</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--eventsourcecode=EVENTCODE</code><br>
+            The following options are optional; if omitted, then the GUI supplies a default value:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--code=PRODUCTCODE</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--reviewed=ISREVIEWED</code><br>
+            The options are described in detail below.
+        </p>
+        <p>
+            In addition to the options described on this page, you can also use the
+            <a href="help_cmdline_pdl.html">PDL configuration options</a>.
+            The most often used PDL configuration options are:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--pdl=PDLDESTINATION</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--privateKey=PRIVATEKEYFILE</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<code>--type=PRODUCTTYPE</code>
+        </p>
+        <p>
+            Options may appear in the command line in any order.
+        </p>
+        <p>
+            When you use the command line to delete a forecast, the graphical user interface does not start.
+            After the forecast is deleted, the GUI exits and returns control to the operating system.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--delete
+</pre>
+        <p>
+            The <code>--delete</code> option specifies that you want to delete a forecast from PDL.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--direct=true
+</pre>
+        <p>
+            The <code>--direct=true</code> option specifies that you want to perform a direct delete.
+        </p>
+        <p>
+            Note: If you omit the <code>--direct</code> option or if you include <code>--direct=false</code>,
+            then the GUI performs a <a href="help_cmdline_delete.html">regular deletion</a> instead of a direct deletion.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--eventsource=EVENTNETWORK
+--eventsourcecode=EVENTCODE
+</pre>
+        <p>
+            The <code>--eventsource</code> and <code>--eventsourcecode</code> options identify the mainshock.
+            The <code>--eventsource</code> is the seismic network that reported the mainshock (usually, but not always, a 2-letter identifier).
+            The <code>--eventsourcecode</code>  is a &quot;code&quot; assigned to the mainshock by the seismic network (an alphanumeric string).
+        </p>
+        <p>
+            The event ID is obtained by concatenating the values of <code>--eventsource</code> and <code>--eventsourcecode</code>.
+            For example, if you write <code>--eventsource=nc --eventsourcecode=75289501</code> then the event ID is <code>nc75289501</code>.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--code=PRODUCTCODE
+</pre>
+        <p>
+            The <code>--code</code> option is the &quot;code&quot; that is assigned to the existing product
+            you are trying delete.
+            In order to successfully delete an existing product, the value of <code>--code</code>
+            must match the &quot;code&quot; of the existing product; otherwise, the deletion won&#39;t work.
+            Often, but not always, the &quot;code&quot; of the existing product is the mainshock event ID.
+        </p>
+        <p>
+            If you omit the <code>--code</code> option, then the GUI supplies a default value,
+            which is the event ID derived from the <code>--eventsource</code> and <code>--eventsourcecode</code> options.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--reviewed=true
+--reviewed=false
+</pre>
+        <p>
+            The <code>--reviewed</code> option specifies whether the deletion product is marked as being reviewed by an analyst.
+        </p>
+        <p>
+            If the <code>--reviewed</code> option is omitted, the GUI supplies a default value of <i>true</i>.
+        </p>
+    </body>
+</html>
