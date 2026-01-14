@@ -11,6 +11,8 @@
             So, all necessary information must be given in the command line.
             Direct send never sends or deletes an event-sequence product.
         </p>
+        <p>&nbsp;</p>
+        <p><b>Example</b></p>
         <p>
             For example, the following command line can be used to send a foreast
             to the PDL production system.
@@ -37,6 +39,8 @@ java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --updat
 <pre>
 java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --type=oaf-scenario --update=my_forecast.json --direct=true --eventid=nc75289501
 </pre>
+        <p>&nbsp;</p>
+        <p><b>Summary</b></p>
         <p>
             When direct sending a forecast.json, the following options are required:<br>
             &nbsp;&nbsp;&nbsp;&nbsp;<code>--update=JSONFILENAME</code><br>
@@ -63,6 +67,8 @@ java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --type=
             When you use the command line to send a forecast, the graphical user interface does not start.
             After the forecast is sent, the GUI exits and returns control to the operating system.
         </p>
+        <p>&nbsp;</p>
+        <p><b>Option Details</b></p>
         <p>&nbsp;</p>
 <pre>
 --update=JSONFILENAME
