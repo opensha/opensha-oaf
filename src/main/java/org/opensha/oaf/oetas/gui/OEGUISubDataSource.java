@@ -219,9 +219,24 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 	private EnumParameter<DataSource> dataSourceTypeParam;
 
+//	private EnumParameter<DataSource> init_dataSourceTypeParam () throws GUIEDTException {
+//		dataSourceTypeParam = new EnumParameter<DataSource>(
+//				"Data Source Type", EnumSet.allOf(DataSource.class), DataSource.COMCAT, null);
+//		dataSourceTypeParam.setInfo("Source of earthquake catalog data");
+//		register_param (dataSourceTypeParam, "dataSourceTypeParam", PARMGRP_DATA_SOURCE_TYPE);
+//		return dataSourceTypeParam;
+//	}
+
 	private EnumParameter<DataSource> init_dataSourceTypeParam () throws GUIEDTException {
+		EnumSet<DataSource> supportedSources = EnumSet.of (
+			DataSource.COMCAT,
+			DataSource.CATALOG_FILE,
+			DataSource.PUBLISHED_FORECAST,
+			DataSource.MAINSHOCK_ONLY,
+			DataSource.DOWNLOAD_FILE
+		);
 		dataSourceTypeParam = new EnumParameter<DataSource>(
-				"Data Source Type", EnumSet.allOf(DataSource.class), DataSource.COMCAT, null);
+				"Data Source Type", supportedSources, DataSource.COMCAT, null);
 		dataSourceTypeParam.setInfo("Source of earthquake catalog data");
 		register_param (dataSourceTypeParam, "dataSourceTypeParam", PARMGRP_DATA_SOURCE_TYPE);
 		return dataSourceTypeParam;

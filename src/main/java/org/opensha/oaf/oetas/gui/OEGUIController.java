@@ -479,7 +479,7 @@ public class OEGUIController extends OEGUIListener {
 
 	private GUIParameterListEditor init_aafsEditor () throws GUIEDTException {
 
-		// Controls in the "More" column
+		// Controls in the "More Tools" column
 		
 		ParameterList aafsParams = new ParameterList();
 
@@ -503,7 +503,7 @@ public class OEGUIController extends OEGUIListener {
 		aafsEditorHeight = (gui_top.get_height() * 6) / 10;
 
 		aafsEditor = new GUIParameterListEditor(aafsParams, gui_top.make_help ("help_mtool_main.html"));
-		aafsEditor.setTitle("More");
+		aafsEditor.setTitle("More Tools");
 		aafsEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), aafsEditorHeight));
 		return aafsEditor;
 	}
