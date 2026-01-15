@@ -432,8 +432,9 @@ isfilewriteok () {
 # ${3} thru ${25} = Server parameters, see definitions below.
 # Note that ${22} is one of:
 #  "none" if forecasts are not sent to PDL.
-#  "dev" if forecasts are sent to PDL-Development.
-#  the name of a key file (which must be in /opt/aafs/key), if forecasts are sent to PDL-Production.
+#  "dev" if unsigned forecasts are sent to PDL-Development.
+#  the name of a key file (which must be in /opt/aafs/key), if signed forecasts are sent to PDL-Production.
+#  "dev:" followed by the name of a key file (which must be in /opt/aafs/key), if signed forecasts are sent to PDL-Development.
 
 copysubsrv () {
     if [ -f "${2}" ]; then
