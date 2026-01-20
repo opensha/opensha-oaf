@@ -42,7 +42,33 @@ import java.beans.PropertyChangeListener;
 //
 // HTML is displayed using JEditorPane and therefore HTML 3.2 is supported.
 //
-// The dialog can be modal or modeless.  It can optionally display a close button.
+// The dialog can be modal or modeless.
+//
+// The dialog can optionally display one or two buttons, denoted OK and Cancel,
+// either of which will close the dialog. The caller can find out which button was
+// clicked by examining a termination code. Typically, only one button is displayed.
+//
+// The dialog can optionally display Backward and Forward buttons, which can be
+// clicked to navigate backward and forward through the pages that have been viewed.
+//
+// The title of the current page can optionally be displayed in the dialog title bar.
+// This option is on by default. When this option is used, every page must contain
+// a <title> element.
+//
+// Pages can be supplied as either a URL or a String. The content must be HTML 3.2
+// in either case. A URL typically refers to a file contained within the Java jar file.
+//
+// Pages supplied as a URL can contain links to other pages. Generally, these should 
+// be relative links that refer to other files contained within the Java jar file.
+// (If a page is supplied as a String, in principle it can contain relative links
+// provided that it includes a <base> tag, but this is not likely to be useful.)
+//
+// Because only HTML 3.2 is supported, the dialog cannot be used to display pages
+// from the Internat, unless that caller can ensure that the pages are HTML 3.2.
+//
+// When the dislog is closed, its size and location are saved. When the dialog is
+// later re-opened, the size and location are restored. The caller can also Adjust
+// the size and location.
 
 public class GUIHtmlViewerDialog {
 
@@ -328,6 +354,20 @@ public class GUIHtmlViewerDialog {
 		this.cancel_button_text = cancel_button_text;
 		this.changed_cancel_button_text = true;
 		return;
+	}
+
+
+	// Get the dialog status code (see GUIDialogParameter.DLGSTAT_XXXX).
+
+	public int get_dialog_status () {
+		return dialog_status;
+	}
+
+
+	// Get the dialog termination code (see GUIDialogParameter.TERMCODE_XXXX).
+
+	public int get_dialog_termcode () {
+		return dialog_termcode;
 	}
 
 
@@ -877,8 +917,33 @@ public class GUIHtmlViewerDialog {
 
 
 	// Open the dialog.
+	// Parameters:
+	//  owner = Specifies the Window that owns the dialog. See below. Can be null.
+	//  locator = Specifies the initial location of the dialog. See below. Can be null.
+	//  editor_url or editor_text = Contents of the page to display. It must be HTML 3.2.
 	// Returns true if the dialog was created, false if not (because it already exists).
 	// If a modal dialog is created, this does not return until the dialog is closed.
+	// If the owner parameter is of type Window, then it is the dialog's owner. Otherwise,
+	//  if owner is non-null, then the dialog's owner is the Window that contains owner.
+	//  Otherwise (the owner parameter is null), the dialog's owner is null.
+	// If the dialog is already open and this call requests a different owner Window,
+	//  then the dialog is closed and re-opened with the new owner Window.
+	// The dialog appears on top of its owner Window, and is automatically closed when its
+	//  owner Window is closed.
+	// If there was a previous call to openDialog, and there has not been an intervening
+	//  call to setDialogDimensions, then the dialog's location and size remain unchanged.
+	//  Note that the user may have altered the location and size by manipulating the
+	//  dialog on-screen.
+	// Otherwise (this is the first call to openDialog or there has been an intervening
+	//  call to setDialogDimensions since the last call to openDialog), then the dialog's
+	//  size is eet to the value specified in setDialogDimensions (or a default size if
+	//  none is available). The dialog's location is set using the locator parameter.
+	//  If locator is non-null, then the dialog is centered over locator, but adjusted
+	//  to ensure the dialog is visible on-screen. If locator is null, then the dialog is
+	//  centered on the screen.
+	// Note that if a call to setDialogDimensions is followed by a call to refresh_dialog
+	//  while the dialog is open, that does not count as an "intervening" call to
+	//  setDialogDimensions because the size change was already processed.
 
 	public boolean openDialog (Component owner, Component locator, URL editor_url) {
 
