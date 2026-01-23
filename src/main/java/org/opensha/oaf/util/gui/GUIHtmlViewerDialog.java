@@ -35,6 +35,9 @@ import javax.swing.text.html.HTMLFrameHyperlinkEvent;
 import javax.swing.text.Document;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import javax.swing.plaf.basic.BasicArrowButton;
+import javax.swing.SwingConstants;
+
 
 
 // Dialog box that displays HTML, used mainly to display help text.
@@ -130,14 +133,18 @@ public class GUIHtmlViewerDialog {
 	//private static final String DEF_BACK_BUTTON_TEXT = "<";
 	//private static final String DEF_BACK_BUTTON_TEXT = "\u2190";		// arrow
 	//private static final String DEF_BACK_BUTTON_TEXT = "\u21A9";		// hook arrow
-	private static final String DEF_BACK_BUTTON_TEXT = "\u2B9C";		// equilateral arrowhead
+	//private static final String DEF_BACK_BUTTON_TEXT = "\u2B9C";		// equilateral arrowhead - looks nice, but not supported on all systems
+	private static final String DEF_BACK_BUTTON_TEXT = "\u25C0";		// left triangle
+	//private static final String DEF_BACK_BUTTON_TEXT = "";				// use BasicArrowButton
 	private String back_button_text = DEF_BACK_BUTTON_TEXT;
 
 	// Text to appear on the forward button (cannot be null).
 	//private static final String DEF_FORWARD_BUTTON_TEXT = ">";
 	//private static final String DEF_FORWARD_BUTTON_TEXT = "\u2192";	// arrow
 	//private static final String DEF_FORWARD_BUTTON_TEXT = "\u21AA";	// hook arrow
-	private static final String DEF_FORWARD_BUTTON_TEXT = "\u2B9E";		// equilateral arrowhead
+	//private static final String DEF_FORWARD_BUTTON_TEXT = "\u2B9E";	// equilateral arrowhead - looks nice, but not supported on all systems
+	private static final String DEF_FORWARD_BUTTON_TEXT = "\u25B6";	// right triangle
+	//private static final String DEF_FORWARD_BUTTON_TEXT = "";			// use BasicArrowButton
 	private String forward_button_text = DEF_FORWARD_BUTTON_TEXT;
 
 	// Set to enable the navigation bar.
@@ -807,8 +814,13 @@ public class GUIHtmlViewerDialog {
 
 			// BACK button
 
-			back_button = new JButton();
-			back_button.setText(back_button_text);
+			if (back_button_text.isEmpty()) {
+				back_button = new BasicArrowButton (SwingConstants.WEST);
+			} else {
+				back_button = new JButton();
+				back_button.setText(back_button_text);
+			}
+			back_button.setToolTipText("Back");
 			back_button.addActionListener(new ActionListener() {
 				@Override public void actionPerformed(ActionEvent e) {
 					back_actionPerformed(e);
@@ -818,8 +830,13 @@ public class GUIHtmlViewerDialog {
 
 			// FORWARD button
 
-			forward_button = new JButton();
-			forward_button.setText(forward_button_text);
+			if (forward_button_text.isEmpty()) {
+				forward_button = new BasicArrowButton (SwingConstants.EAST);
+			} else {
+				forward_button = new JButton();
+				forward_button.setText(forward_button_text);
+			}
+			forward_button.setToolTipText("Forward");
 			forward_button.addActionListener(new ActionListener() {
 				@Override public void actionPerformed(ActionEvent e) {
 					forward_actionPerformed(e);

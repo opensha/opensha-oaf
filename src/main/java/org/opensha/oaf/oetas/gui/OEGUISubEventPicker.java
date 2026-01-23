@@ -176,7 +176,7 @@ import org.json.simple.JSONObject;
 // Operational RJ & ETAS GUI - Sub-controller for event picker.
 // Michael Barall
 //
-// This is a modeless dialog for picking an event from a list of earthquakes with oaf products.
+// This is a modeless dialog for picking an event from a list of earthquakes with an OAF product or recent earthquakes.
 
 
 public class OEGUISubEventPicker extends OEGUIListener {
@@ -246,7 +246,7 @@ public class OEGUISubEventPicker extends OEGUIListener {
 
 	private ButtonParameter init_evPickPopulateButton () throws GUIEDTException {
 		evPickPopulateButton = new ButtonParameter("Populate Event List", "Populate...");
-		evPickPopulateButton.setInfo ("Get a list of earthquakes with OAF products from Comcat");
+		evPickPopulateButton.setInfo ("Get a list of earthquakes with an OAF product or recent earthquakes from Comcat");
 		register_param (evPickPopulateButton, "evPickPopulateButton", PARMGRP_EVPICK_POPULATE);
 		return evPickPopulateButton;
 	}
@@ -382,7 +382,7 @@ public class OEGUISubEventPicker extends OEGUIListener {
 		evPickList = new ArrayList<AvailableEarthquake>();
 		evPickListDropdown = new GUIDropdownParameter(
 				"Available Earthquakes", evPickList, GUIDropdownParameter.DROPDOWN_INDEX_EXTRA, "Click Populate...");
-		evPickListDropdown.setInfo("List of earthquakes with OAF products");
+		evPickListDropdown.setInfo("List of earthquakes with an OAF product or recent earthquakes");
 		register_param (evPickListDropdown, "evPickListDropdown", PARMGRP_EVPICK_EVENT);
 		return evPickListDropdown;
 	}
@@ -483,7 +483,7 @@ public class OEGUISubEventPicker extends OEGUIListener {
 
 	private ButtonParameter init_evPickModalOpenButton () throws GUIEDTException {
 		evPickModalOpenButton = new ButtonParameter("Event Picker", "Find Earthquake...");
-		evPickModalOpenButton.setInfo ("Search for earthquakes with an OAF product");
+		evPickModalOpenButton.setInfo ("Search for earthquakes with an OAF product or recent earthquakes");
 		register_param (evPickModalOpenButton, "evPickModalOpenButton", PARMGRP_EVPICK_MODAL_OPEN);
 		return evPickModalOpenButton;
 	}
