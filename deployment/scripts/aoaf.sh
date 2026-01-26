@@ -3019,9 +3019,9 @@ q_compile_oaf () {
     echo "Building production GUI..."
 
     if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
-        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS" "$ACTION_OPTION"
     else
-        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS" "$ACTION_OPTION"
     fi
 
     # Build the generic ETAS GUI
@@ -3035,9 +3035,9 @@ q_compile_oaf () {
     echo "Building production ETAS GUI..."
 
     if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
-        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS" "$ACTION_OPTION"
     else
-        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS" "$ACTION_OPTION"
     fi
 
 }
@@ -3082,9 +3082,9 @@ q_rebuild_gui () {
     echo "Building production RJ GUI..."
 
     if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
-        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS" "$ACTION_OPTION"
     else
-        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+        ./boaf.sh config_packgui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS" "$ACTION_OPTION"
     fi
 
     # Build the generic ETAS GUI
@@ -3098,9 +3098,9 @@ q_rebuild_gui () {
     echo "Building production ETAS GUI..."
 
     if [ "$my_IS_DUAL_SERVER" == "$val_YES" ]; then
-        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_2" "$MONGO_REP_SET_2" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS" "$ACTION_OPTION"
     else
-        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS"
+        ./boaf.sh config_pack_etas_gui "$GUI_DATE" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$SERVER_IP_1" "$MONGO_REP_SET_1" "$MONGO_NAME" "$MONGO_USER" "$MONGO_PASS" "$my_SSL_OPTIONS" "$ACTION_OPTION"
     fi
 
 }
