@@ -344,8 +344,13 @@ public class OEGUISubFileOps extends OEGUIListener {
 		enableParam(sendAnalystFileButton, f_file_ops_enable);
 		enableParam(sendForecastFileButton, f_file_ops_enable);
 
-		enableParam(evSeqOptionParam, f_file_ops_enable);
-		enableParam(evSeqLookbackParam, f_file_ops_enable);
+		if (gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params()) {
+			enableParam(evSeqOptionParam, f_file_ops_enable);
+			enableParam(evSeqLookbackParam, f_file_ops_enable);
+		} else {
+			enableDefaultParam(evSeqOptionParam, false, null);
+			enableDefaultParam(evSeqLookbackParam, false, null);
+		}
 
 		enableParam(sendFcJsonFileButton, f_file_ops_enable);
 
@@ -424,11 +429,19 @@ public class OEGUISubFileOps extends OEGUIListener {
 
 			// Event-sequence option.
 
-			x_evSeqOptionParam = validParam(evSeqOptionParam);
+			if (gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params()) {
+				x_evSeqOptionParam = validParam(evSeqOptionParam);
+			} else {
+				x_evSeqOptionParam = EvSeqReportOption.AUTO;
+			}
 
 			// Event-sequence lookback.
 
-			x_evSeqLookbackParam = validParam(evSeqLookbackParam);
+			if (gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params()) {
+				x_evSeqLookbackParam = validParam(evSeqLookbackParam);
+			} else {
+				x_evSeqLookbackParam = gui_model.get_config_evseq_lookback_days();
+			}
 
 			return this;
 		}
@@ -511,7 +524,12 @@ public class OEGUISubFileOps extends OEGUIListener {
 
 		// Event-sequence option and lookback
 
-		if (gui_model.get_analyst_adj_params().f_adj_evseq && gui_model.get_analyst_adj_params().evseq_cfg_params != null) {
+		if (!( gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params() )) {
+
+			updateParam(evSeqOptionParam, null);
+			updateParam(evSeqLookbackParam, null);
+
+		} else if (gui_model.get_analyst_adj_params().f_adj_evseq && gui_model.get_analyst_adj_params().evseq_cfg_params != null) {
 			switch (gui_model.get_analyst_adj_params().evseq_cfg_params.get_evseq_cfg_report()) {
 			case ActionConfigFile.ESREP_NO_REPORT:
 				updateParam(evSeqOptionParam, EvSeqReportOption.IGNORE);
