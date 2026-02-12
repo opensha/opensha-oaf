@@ -3127,7 +3127,9 @@ public class OEGUIView extends OEGUIComponent {
 		OEtasIntegratedIntensityFile ii_file = gui_model.get_etas_ii_file();
 
 		if (ii_file == null) {
-			System.out.println ("@@@@@ Exit: OEGUIView.plotEtasNumGraphs: Integrated intensity function not available");
+			if (gui_top.get_trace_events()) {
+				System.out.println ("@@@@@ Exit: OEGUIView.plotEtasNumGraphs: Integrated intensity function not available");
+			}
 			removeEtasNumGraphs();
 			return;
 		}
