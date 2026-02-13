@@ -2305,6 +2305,151 @@ public class ForecastResults implements Marshalable {
 
 
 
+	// Calculate forecast and write forecast.json files.
+	// Parameters:
+	//  pdl_enable = ETAS option: 0 = default, 100 = disable, 200 = enable.
+	//  event_id = Comcat event ID.
+	//  lag_days = Forecast lag, in days since the mainshock.
+	//  gen_filename = Filename for RJ generic forecast.json, can be null or empty or "-" if none.
+	//  seq_filename = Filename for RJ sequence specific forecast.json, can be null or empty or "-" if none.
+	//  bay_filename = Filename for RJ Bayesian forecast.json, can be null or empty or "-" if none.
+	//  etas_filename = Filename for ETAS forecast.json, can be null or empty or "-" if none.
+	// Returns true if success, false if some error.
+	// Note this is a public method.
+
+	public static boolean calc_and_write_fcj (
+		int pdl_enable,
+		String event_id,
+		double lag_days,
+		String gen_filename,
+		String seq_filename,
+		String bay_filename,
+		String etas_filename
+	) {
+		boolean retval = false;
+
+		try {
+
+			// Set the PDL enable code (ETAS enable or disable)
+
+			ServerConfig.set_opmode (pdl_enable);
+
+			// Fetch just the mainshock info
+
+			ForecastMainshock fcmain = new ForecastMainshock();
+			fcmain.setup_mainshock_only (event_id);
+
+			System.out.println ("");
+			System.out.println (fcmain.toString());
+
+			// Set the forecast time to be lag_days days after the mainshock
+
+			long the_forecast_lag = SimpleUtils.days_to_millis (lag_days);
+
+			// Get the advisory lag
+
+			ActionConfig action_config = new ActionConfig();
+
+			long advisory_lag;
+
+			if (the_forecast_lag >= action_config.get_advisory_dur_year()) {
+				advisory_lag = ADVISORY_LAG_YEAR;
+			} else if (the_forecast_lag >= action_config.get_advisory_dur_month()) {
+				advisory_lag = ADVISORY_LAG_MONTH;
+			} else if (the_forecast_lag >= action_config.get_advisory_dur_week()) {
+				advisory_lag = ADVISORY_LAG_WEEK;
+			} else {
+				advisory_lag = ADVISORY_LAG_DAY;
+			}
+
+			// Get parameters
+
+			ForecastParameters params = new ForecastParameters();
+			params.fetch_all_params (the_forecast_lag, fcmain, null);
+
+			// Get results
+
+			//boolean f_seq_spec = (the_forecast_lag >= action_config.get_seq_spec_min_lag());
+			boolean f_seq_spec = true;
+
+			ForecastResults results = new ForecastResults();
+			results.calc_all (fcmain.mainshock_time + the_forecast_lag, advisory_lag, "", fcmain, params, f_seq_spec);
+			results.write_calc_log (null);
+
+			// Generic RJ forecast
+
+			if (!( gen_filename == null || gen_filename.isEmpty() || gen_filename.equals("-") )) {
+				if (results.generic_result_avail) {
+					System.out.println ("");
+					System.out.println ("Writing generic RJ forecast.json to: " + gen_filename);
+					SimpleUtils.write_string_as_file (gen_filename, results.generic_json);
+				}
+				else {
+					System.out.println ("");
+					System.out.println ("WARNING: Generic RJ forecast is not available, unable to write file:" + gen_filename);
+				}
+			}
+
+			// Sequence specific RJ forecast
+
+			if (!( seq_filename == null || seq_filename.isEmpty() || seq_filename.equals("-") )) {
+				if (results.seq_spec_result_avail) {
+					System.out.println ("");
+					System.out.println ("Writing sequence-specific RJ forecast.json to: " + seq_filename);
+					SimpleUtils.write_string_as_file (seq_filename, results.seq_spec_json);
+				}
+				else {
+					System.out.println ("");
+					System.out.println ("WARNING: Sequence-specific RJ forecast is not available, unable to write file:" + seq_filename);
+				}
+			}
+
+			// Bayesian RJ forecast
+
+			if (!( bay_filename == null || bay_filename.isEmpty() || bay_filename.equals("-") )) {
+				if (results.bayesian_result_avail) {
+					System.out.println ("");
+					System.out.println ("Writing Bayesian RJ forecast.json to: " + bay_filename);
+					SimpleUtils.write_string_as_file (bay_filename, results.bayesian_json);
+				}
+				else {
+					System.out.println ("");
+					System.out.println ("WARNING: Bayesian RJ forecast is not available, unable to write file:" + bay_filename);
+				}
+			}
+
+			// ETAS forecast
+
+			if (!( etas_filename == null || etas_filename.isEmpty() || etas_filename.equals("-") )) {
+				if (results.has_etas_json()) {
+					System.out.println ("");
+					System.out.println ("Writing ETAS forecast.json to: " + etas_filename);
+					SimpleUtils.write_string_as_file (etas_filename, results.get_etas_json());
+				}
+				else {
+					System.out.println ("");
+					System.out.println ("WARNING: ETAS forecast is not available, unable to write file:" + etas_filename);
+				}
+			}
+
+			// Success
+
+			retval = true;
+
+		} catch (Exception e) {
+			System.out.println ("");
+			System.out.println ("ERROR: Unable to compute forecasts and save forecast.json files");
+			System.out.println ("");
+			e.printStackTrace();
+			System.out.println ("");
+		}
+
+		return retval;
+	}
+
+
+
+
 
 	public static void main(String[] args) {
 
@@ -2928,6 +3073,71 @@ public class ForecastResults implements Marshalable {
 
 				System.out.println ();
 				System.out.println ("Done");
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  pdl_enable  event_id  lag_days  gen_filename  seq_filename  bay_filename  etas_filename
+		// Calculate forecast for the given event at the given lag, and save the forecast.json files.
+		// The pdl_enable can be used to control ETAS: 0 = default, 100 = disable, 200 = enable.
+		// Any filename can be "" or "-" to skip that file.
+		// See calc_and_write_fcj for description.
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// 7 additional arguments
+
+			if (args.length != 8) {
+				System.err.println ("ForecastResults : Invalid 'test7' subcommand");
+				return;
+			}
+
+			try {
+
+				int pdl_enable = Integer.parseInt (args[1]);	// 0 = ETAS default, 100 = disable ETAS, 200 = enable ETAS
+				String the_event_id = args[2];
+				double lag_days = Double.parseDouble (args[3]);
+				String gen_filename = args[4];
+				String seq_filename = args[5];
+				String bay_filename = args[6];
+				String etas_filename = args[7];
+
+				// Say hello
+
+				System.out.println ("Computing forecast and writing forecast.json files");
+				System.out.println ("pdl_enable = " + pdl_enable);
+				System.out.println ("the_event_id = " + the_event_id);
+				System.out.println ("lag_days = " + lag_days);
+				System.out.println ("gen_filename = " + gen_filename);
+				System.out.println ("seq_filename = " + seq_filename);
+				System.out.println ("bay_filename = " + bay_filename);
+				System.out.println ("etas_filename = " + etas_filename);
+
+				System.out.println ("");
+
+				// Perform the operation
+
+				boolean f_success = calc_and_write_fcj (
+					pdl_enable,
+					the_event_id,
+					lag_days,
+					gen_filename,
+					seq_filename,
+					bay_filename,
+					etas_filename
+				);
+
+				System.out.println ("");
+				System.out.println ("Success = " + f_success);
 
 			} catch (Exception e) {
 				e.printStackTrace();

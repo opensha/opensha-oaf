@@ -2404,6 +2404,60 @@ public class OEtasTest {
 
 
 
+	// test22/gen_rj_forecasts
+	// Command line arguments:
+	//  event_id  lag_days  gen_filename  seq_filename  bay_filename
+	// Generate RJ forecasts for the given event at the given lag (time after mainshock in days)
+	// and write the forecast.json files.
+	// Any filename can be "" or "-" to skip it.
+
+	public static void test22 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Generate RJ forecasts and write the forecast.json files");
+		String event_id = testargs.get_string ("event_id");
+		double lag_days = testargs.get_double ("lag_days");
+		String gen_filename = get_filename_arg (testargs, "gen_filename");
+		String seq_filename = get_filename_arg (testargs, "seq_filename");
+		String bay_filename = get_filename_arg (testargs, "bay_filename");
+		testargs.end_test();
+
+		// Perform the operation
+
+		int pdl_enable = 100;		// disable ETAS
+		String etas_filename = null;
+
+		boolean f_success = ForecastResults.calc_and_write_fcj (
+			pdl_enable,
+			event_id,
+			lag_days,
+			gen_filename,
+			seq_filename,
+			bay_filename,
+			etas_filename
+		);
+
+		// Display result
+
+		System.out.println ();
+		if (f_success) {
+			System.out.println ("RJ forecasts were computed and written successfully");
+		} else {
+			System.out.println ("An error occurred while computing and writing RJ forecasts");
+		}
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -2538,6 +2592,12 @@ public class OEtasTest {
 
 		if (testargs.is_test ("test21", "perturb_cat_mags")) {
 			test21 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test22", "gen_rj_forecasts")) {
+			test22 (testargs);
 			return;
 		}
 
