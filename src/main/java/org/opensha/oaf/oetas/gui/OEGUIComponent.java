@@ -357,6 +357,8 @@ public class OEGUIComponent {
 	
 	public enum MinMagBinsOption {
 		AUTO("Auto"),
+		RANGE_30_50("3.0 to 5.0"),
+		RANGE_30_60("3.0 to 6.0"),
 		RANGE_30_70("3.0 to 7.0"),
 		RANGE_30_80("3.0 to 8.0");
 		

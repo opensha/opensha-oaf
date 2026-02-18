@@ -3405,6 +3405,14 @@ public class OEGUIModel extends OEGUIComponent {
 			custom_min_mag_bins = null;
 			break;
 
+		case RANGE_30_50:
+			custom_min_mag_bins = new double[]{3.0, 4.0, 5.0};
+			break;
+
+		case RANGE_30_60:
+			custom_min_mag_bins = new double[]{3.0, 4.0, 5.0, 6.0};
+			break;
+
 		case RANGE_30_70:
 			custom_min_mag_bins = new double[]{3.0, 4.0, 5.0, 6.0, 7.0};
 			break;

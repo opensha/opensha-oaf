@@ -1097,8 +1097,14 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		else if (custom_min_mag_bins[custom_min_mag_bins.length - 1] >= 7.5) {
 			updateParam(minMagBinsOptionParam, MinMagBinsOption.RANGE_30_80);
 		}
-		else {
+		else if (custom_min_mag_bins[custom_min_mag_bins.length - 1] >= 6.5) {
 			updateParam(minMagBinsOptionParam, MinMagBinsOption.RANGE_30_70);
+		}
+		else if (custom_min_mag_bins[custom_min_mag_bins.length - 1] >= 5.5) {
+			updateParam(minMagBinsOptionParam, MinMagBinsOption.RANGE_30_60);
+		}
+		else {
+			updateParam(minMagBinsOptionParam, MinMagBinsOption.RANGE_30_50);
 		}
 
 		// Need to adjust enable to pick up enable state corresponding to time-dependent Mc option
