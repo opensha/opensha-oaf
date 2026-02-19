@@ -1446,20 +1446,54 @@ public class OEGUIController extends OEGUIListener {
 
 				if (fetch_count != 1 && xfer_catalog_impl.x_dataSource.x_region.x_regionTypeParam != RegionType.STANDARD) {
 
+					//  // Ask user to confirm choice of region
+					//  
+					//  String message
+					//  	= "Click \"Yes\" to use the currently-selected search region ("
+					//  	+ xfer_catalog_impl.x_dataSource.x_region.x_regionTypeParam.toString()
+					//  	+ ").\n\n"
+					//  	+ "Click \"No\" to use the Standard search region.\n\n"
+					//  	+ "Click \"Cancel\" to abort the fetch operation.";
+					//  
+					//  int conf = JOptionPane.showConfirmDialog(gui_top.get_top_window(), message, "Confirm aftershock search region", JOptionPane.YES_NO_CANCEL_OPTION);
+					//  if (conf == JOptionPane.NO_OPTION) {
+					//  	xfer_catalog_impl.x_dataSource.x_region.modify_regionTypeParam (RegionType.STANDARD);
+					//  }
+					//  else if (conf != JOptionPane.YES_OPTION) {
+					//  	return;
+					//  }
+
 					// Ask user to confirm choice of region
 
 					String message
-						= "Click \"Yes\" to use the currently-selected search region ("
+						= "A custom aftershock search region is currently selected.\n"
+						+ "Do you want to continue using the custom search region, or switch back to the standard search region?\n\n"
+						+ "Click \"Custom Region\" to use the currently-selected custom search region ("
 						+ xfer_catalog_impl.x_dataSource.x_region.x_regionTypeParam.toString()
 						+ ").\n\n"
-						+ "Click \"No\" to use the Standard search region.\n\n"
+						+ "Click \"Standard Region\" to use the standard search region.\n\n"
 						+ "Click \"Cancel\" to abort the fetch operation.";
 
-					int conf = JOptionPane.showConfirmDialog(gui_top.get_top_window(), message, "Confirm aftershock search region", JOptionPane.YES_NO_CANCEL_OPTION);
-					if (conf == JOptionPane.NO_OPTION) {
+					Object[] options = {"Custom Region", "Standard Region", "Cancel"};
+					final int my_OPT_CUSTOM = 0;
+					final int my_OPT_STANDARD = 1;
+					final int my_OPT_CANCEL = 2;
+
+					int conf = JOptionPane.showOptionDialog (
+						gui_top.get_top_window(),				// parent window
+						message,								// message
+						"Confirm aftershock search region",		// dialog title
+						JOptionPane.YES_NO_CANCEL_OPTION,		// ignored when options are given
+						JOptionPane.QUESTION_MESSAGE,			// message type (determines icon)
+						null,									// icon
+						options,								// options
+						options[my_OPT_CUSTOM]					// default selection
+					);
+					
+					if (conf == my_OPT_STANDARD) {
 						xfer_catalog_impl.x_dataSource.x_region.modify_regionTypeParam (RegionType.STANDARD);
 					}
-					else if (conf != JOptionPane.YES_OPTION) {
+					else if (conf != my_OPT_CUSTOM) {
 						return;
 					}
 				}
