@@ -13,6 +13,7 @@ description = 93 km NW of Iquique, Chile
 ids = ,pt14091000,at00n3dm1y,usc000nzvd,iscgem610102185,atlas20140401234647,
 net = us
 code = c000nzvd
+magtype = mww
 
 http_status = 200
 Fetching event list

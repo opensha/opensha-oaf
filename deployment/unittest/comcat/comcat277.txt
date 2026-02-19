@@ -13,6 +13,7 @@ description = 4 km ESE of Lexington Hills, California
 ids = ,nc10089897,ushis4137,usp0003y7s,atlas19890808081327,
 net = nc
 code = 10089897
+magtype = ml
 
 http_status = 200
 Fetching event list

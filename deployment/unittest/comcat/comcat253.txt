@@ -13,6 +13,7 @@ description = 48 km W of Illapel, Chile
 ids = ,us20003k7a,at00nuskyv,pt15259054,gcmt20150916225433,iscgem611531714,atlas20150916225432,
 net = us
 code = 20003k7a
+magtype = mww
 
 http_status = 200
 Fetching event list

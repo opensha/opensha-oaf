@@ -15,6 +15,7 @@ description = 67 km NNE of Bharatpur, Nepal
 ids = ,us20002926,gcmt20150425061126,iscgem607208674,atlas20150425061125,
 net = us
 code = 20002926
+magtype = mww
 
 http_status = 200
 Fetching event list

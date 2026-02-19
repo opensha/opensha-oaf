@@ -13,11 +13,13 @@ description = 72 km N of Palu, Indonesia
 ids = ,us1000h3p4,iscgem616642238,
 net = us
 code = 1000h3p4
+magtype = mww
 
 http_status = 200
 EI Map: code = 1000h3p4
 EI Map: description = 72 km N of Palu, Indonesia
 EI Map: ids = ,us1000h3p4,iscgem616642238,
+EI Map: magtype = mww
 EI Map: net = us
 ID List: us1000h3p4
 ID List: iscgem616642238
