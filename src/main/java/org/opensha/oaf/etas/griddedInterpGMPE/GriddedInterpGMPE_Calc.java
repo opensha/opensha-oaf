@@ -41,10 +41,11 @@ import org.opensha.commons.util.cpt.CPT;
 import org.opensha.sha.calc.HazardCurveCalculator;
 import org.opensha.sha.earthquake.ERF;
 import org.opensha.sha.earthquake.EqkRupture;
+import org.opensha.sha.earthquake.PointSource;
 import org.opensha.sha.earthquake.ProbEqkRupture;
 import org.opensha.sha.earthquake.rupForecastImpl.PointSourceNshm;
-import org.opensha.sha.faultSurface.utils.PointSourceDistanceCorrection;
-import org.opensha.sha.faultSurface.utils.PointSourceDistanceCorrections;
+import org.opensha.sha.faultSurface.utils.ptSrcCorr.PointSourceDistanceCorrection;
+import org.opensha.sha.faultSurface.utils.ptSrcCorr.PointSourceDistanceCorrections;
 import org.opensha.sha.gui.infoTools.IMT_Info;
 import org.opensha.sha.imr.AttenRelRef;
 import org.opensha.sha.imr.ScalarIMR;
@@ -79,7 +80,8 @@ public class GriddedInterpGMPE_Calc {
 	private double[] allExceedRates; // source non-exceedance rates
 	private NDimensionalLinearInterpolation interpolator;
 	
-	private static final WeightedList<PointSourceDistanceCorrection> distCorrs = PointSourceDistanceCorrections.NSHM_2013.get();
+	private static final PointSourceDistanceCorrection distCorr = PointSourceDistanceCorrections.NSHM_2013.get();
+	private static final double minMagForDistCorr = 6d;
 	
 	public GriddedInterpGMPE_Calc(ScalarIMR gmpe, DiscretizedFunc xVals, double b, double minMag, double maxMag, int numMag,
 			DistanceInterpolator distInterp, AbstractGMPEInterpolation<?>... otherInterps) {
@@ -131,7 +133,7 @@ public class GriddedInterpGMPE_Calc {
 //		for (FocalMech mech : FocalMech.values())
 //			mechWtMap.put(mech, wtEach);
 		PointSourceNshm source = new PointSourceNshm(loc, inputMFD, duration, mechWtMap,
-				PointSourceNshm.M_DEPTH_CUT_DEFAULT, depths[0], depths[1], distCorrs);
+				PointSourceNshm.M_DEPTH_CUT_DEFAULT, depths[0], depths[1], distCorr, minMagForDistCorr);
 		
 		if(D) System.out.println("Precalculating GMPE for "+allInterps.size()+" dimensions, "+arrayCalc.rawArraySize()+" values");
 		
@@ -191,7 +193,10 @@ public class GriddedInterpGMPE_Calc {
 			Preconditions.checkState(logXVals.size() == interp.getNumBins());
 			double[] sourceExceedRates = new double[logXVals.size()];
 			
-			for (ProbEqkRupture rup : source) {
+			// this will apply any distance-corrections for the current site
+			PointSource calcSource = source.getForSite(gmpe.getSite());
+			
+			for (ProbEqkRupture rup : calcSource) {
 				try {
 					gmpe.setEqkRupture(rup);
 				} catch (WarningException e) {

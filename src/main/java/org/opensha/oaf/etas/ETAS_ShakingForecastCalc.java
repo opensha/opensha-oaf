@@ -25,8 +25,8 @@ import org.opensha.sha.calc.hazardMap.HazardDataSetLoader;
 import org.opensha.sha.earthquake.AbstractERF;
 import org.opensha.sha.earthquake.ProbEqkSource;
 import org.opensha.sha.earthquake.rupForecastImpl.PointSourceNshm;
-import org.opensha.sha.faultSurface.utils.PointSourceDistanceCorrection;
-import org.opensha.sha.faultSurface.utils.PointSourceDistanceCorrections;
+import org.opensha.sha.faultSurface.utils.ptSrcCorr.PointSourceDistanceCorrection;
+import org.opensha.sha.faultSurface.utils.ptSrcCorr.PointSourceDistanceCorrections;
 import org.opensha.sha.gui.infoTools.IMT_Info;
 import org.opensha.sha.imr.ScalarIMR;
 import org.opensha.sha.imr.param.SiteParams.Vs30_Param;
@@ -67,8 +67,8 @@ public class ETAS_ShakingForecastCalc {
 		
 		double durationYears = 1d; // this must be set to one, because the PSHA codes assume rateModel is annual, but we must give it the total number expected.
 		
-		GriddedForecast erf = new GriddedForecast(rateModel, refMag, maxMag, b, mechWts, depths, durationYears);
-		erf.updateForecast();
+//		GriddedForecast erf = new GriddedForecast(rateModel, refMag, maxMag, b, mechWts, depths, durationYears);
+//		erf.updateForecast();
 		
 		DiscretizedFunc xVals = new IMT_Info().getDefaultHazardCurve(gmpe.getIntensityMeasure());
 		
@@ -179,7 +179,8 @@ public class ETAS_ShakingForecastCalc {
 		public void updateForecast() {
 			sources = new ArrayList<>();
 			
-			WeightedList<PointSourceDistanceCorrection> distCorrs = PointSourceDistanceCorrections.NSHM_2013.get();
+			double minMagForDistCorr = 6d; // NSHM (2013) correction only comes in above 6 anyway
+			PointSourceDistanceCorrection distCorr = PointSourceDistanceCorrections.NSHM_2013.get();
 			
 			for (int i=0; i<rateModel.size(); i++) {
 				Location loc = rateModel.getLocation(i);
@@ -196,7 +197,7 @@ public class ETAS_ShakingForecastCalc {
 				else
 					mechWtMap = mechWts.get(i);
 				
-				PointSourceNshm source = new PointSourceNshm(loc, mfd, durationYears, mechWtMap, MAG_CUT, depths[0], depths[1], distCorrs);
+				PointSourceNshm source = new PointSourceNshm(loc, mfd, durationYears, mechWtMap, MAG_CUT, depths[0], depths[1], distCorr, minMagForDistCorr);
 				sources.add(source);
 			}
 		}
