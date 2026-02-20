@@ -79,6 +79,10 @@ public class ComcatLocalCatalogEntry {
 
 	public double rup_depth = 0.0;
 
+	// Magnitude type.
+
+	public String rup_magtype = null;
+
 
 
 
@@ -97,6 +101,7 @@ public class ComcatLocalCatalogEntry {
 		rup_lat = 0.0;
 		rup_lon = 0.0;
 		rup_depth = 0.0;
+		rup_magtype = null;
 		return;
 	}
 
@@ -152,6 +157,11 @@ public class ComcatLocalCatalogEntry {
 		rup_lat = hypo.getLatitude();
 		rup_lon = hypo.getLongitude();
 		rup_depth = hypo.getDepth();
+
+		rup_magtype = eimap.get (ComcatOAFAccessor.PARAM_NAME_MAGTYPE);
+		if (rup_magtype == null || !(pattern.matcher(rup_magtype).matches())) {
+			throw new RuntimeException ("ComcatLocalCatalogEntry.set_eqk_rupture: Missing or invalid magnitude type: rup_magtype = " + rup_magtype);
+		}
 
 		if (rup_lon > 180.0) {
 			rup_lon -= 360.0;
@@ -225,6 +235,8 @@ public class ComcatLocalCatalogEntry {
 			rup.addParameter(new StringParameter(ComcatOAFAccessor.PARAM_NAME_NETWORK, rup_network));
 			// adds the event code, which is needed for reporting to PDL
 			rup.addParameter(new StringParameter(ComcatOAFAccessor.PARAM_NAME_CODE, rup_code));
+			// adds the magnitude type, which is needed for OAF
+			rup.addParameter(new StringParameter(ComcatOAFAccessor.PARAM_NAME_MAGTYPE, rup_magtype));
 		}
 		
 		return rup;
@@ -255,6 +267,7 @@ public class ComcatLocalCatalogEntry {
 		rup_lat = other.rup_lat;
 		rup_lon = other.rup_lon;
 		rup_depth = other.rup_depth;
+		rup_magtype = other.rup_magtype;
 		return;
 	}
 
@@ -277,6 +290,7 @@ public class ComcatLocalCatalogEntry {
 		result.append ("rup_lat = " + rup_lat + "\n");
 		result.append ("rup_lon = " + rup_lon + "\n");
 		result.append ("rup_depth = " + rup_depth + "\n");
+		result.append ("rup_magtype = " + rup_magtype + "\n");
 
 		return result.toString();
 	}
@@ -301,6 +315,7 @@ public class ComcatLocalCatalogEntry {
 		result.append (rup_lat + " ");
 		result.append (rup_lon + " ");
 		result.append (rup_depth + " ");
+		result.append (rup_magtype + " ");
 		int idlen = rup_id_list.length;
 		result.append (idlen + " ");
 		for (int i = 0; i < idlen; ++i) {
@@ -330,6 +345,7 @@ public class ComcatLocalCatalogEntry {
 		rup_lat = scanner.nextDouble();
 		rup_lon = scanner.nextDouble();
 		rup_depth = scanner.nextDouble();
+		rup_magtype = scanner.next();
 		int idlen = scanner.nextInt();
 		if (idlen < 1) {
 			throw new RuntimeException ("ComcatLocalCatalogEntry.parse_line: Invalid id count");
