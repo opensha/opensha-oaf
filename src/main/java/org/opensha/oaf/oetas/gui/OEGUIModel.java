@@ -40,6 +40,7 @@ import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
 import org.opensha.commons.data.function.HistogramFunction;
 import org.opensha.commons.data.function.XY_DataSet;
 import org.opensha.commons.data.function.XY_DatasetBinner;
+import org.opensha.commons.param.impl.StringParameter;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.rj.CompactEqkRupList;
@@ -2239,6 +2240,50 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+	// Add a string parameter value to a rupture, if it is non-null and non-empty.
+
+	private static void add_string_param_to_rup (ObsEqkRupture rup, String name, String value) {
+		if (!( value == null || value.trim().isEmpty() )) {
+			rup.addParameter(new StringParameter(name, value));
+		}
+		return;
+	}
+
+
+
+
+	// Get a rupture object from a ForecastMainshock.
+	// Also sets network and magnitude type to indicate the source of the magnitude, if possible.
+	// If mag_source_rup is non-null, the network and magnitude type are copied from it if available.
+	// If mag_source_rup is null, the network and magnitude type are obtained from the geojson if available.
+
+	private static ObsEqkRupture get_eqk_rupture_ext (ForecastMainshock the_fcmain, ObsEqkRupture mag_source_rup) {
+
+		// Obtain standard info
+
+		ObsEqkRupture rup = the_fcmain.get_eqk_rupture();
+
+		// Copy from magnitude source, if provided
+
+		if (mag_source_rup != null) {
+			Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (mag_source_rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+			add_string_param_to_rup (rup, ComcatOAFAccessor.PARAM_NAME_NETWORK, eimap.get(ComcatOAFAccessor.PARAM_NAME_NETWORK));
+			add_string_param_to_rup (rup, ComcatOAFAccessor.PARAM_NAME_MAGTYPE, eimap.get(ComcatOAFAccessor.PARAM_NAME_MAGTYPE));
+		}
+
+		// Otherwise, copy from geojson, if available
+
+		else if (the_fcmain.mainshock_geojson != null) {
+			add_string_param_to_rup (rup, ComcatOAFAccessor.PARAM_NAME_NETWORK, GeoJsonUtils.getNet(the_fcmain.mainshock_geojson));
+			add_string_param_to_rup (rup, ComcatOAFAccessor.PARAM_NAME_MAGTYPE, GeoJsonUtils.getMagType(the_fcmain.mainshock_geojson));
+		}
+
+		return rup;
+	}
+
+
+
+
 	// Fetch events from Comcat.
 	// Parameters:
 	//  xfer = Transfer object to read/modify control parameters.
@@ -2268,7 +2313,8 @@ public class OEGUIModel extends OEGUIComponent {
 		fcmain.setup_mainshock_poll (eventID);
 		Preconditions.checkState(fcmain.mainshock_avail, "Event not found: %s", eventID);
 
-		cur_mainshock = fcmain.get_eqk_rupture();
+		//cur_mainshock = fcmain.get_eqk_rupture();
+		cur_mainshock = get_eqk_rupture_ext (fcmain, null);
 
 		// Finish setting up the mainshock
 
@@ -2287,6 +2333,7 @@ public class OEGUIModel extends OEGUIComponent {
 		ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
 		boolean my_wrapLon = false;
+		boolean my_extendedInfo = true;
 
 		// If we can make an outer region ...
 
@@ -2321,7 +2368,8 @@ public class OEGUIModel extends OEGUIComponent {
 				fetch_fcparams.max_depth,
 				outer_region,
 				my_wrapLon,
-				fetch_fcparams.min_mag
+				fetch_fcparams.min_mag,
+				my_extendedInfo
 			);
 
 			// Add them to the catalog
@@ -2361,7 +2409,8 @@ public class OEGUIModel extends OEGUIComponent {
 				fetch_fcparams.max_depth,
 				fetch_fcparams.aftershock_search_region,
 				my_wrapLon,
-				fetch_fcparams.min_mag
+				fetch_fcparams.min_mag,
+				my_extendedInfo
 			);
 
 			// Add them to the catalog
@@ -2408,7 +2457,8 @@ public class OEGUIModel extends OEGUIComponent {
 		fcmain.setup_mainshock_poll (eventID);
 		Preconditions.checkState(fcmain.mainshock_avail, "Event not found: %s", eventID);
 
-		cur_mainshock = fcmain.get_eqk_rupture();
+		//cur_mainshock = fcmain.get_eqk_rupture();
+		cur_mainshock = get_eqk_rupture_ext (fcmain, null);
 
 		// Finish setting up the mainshock
 
@@ -2648,13 +2698,16 @@ public class OEGUIModel extends OEGUIComponent {
 			// If the file contains a mainshock, use its time, mag, and location in place of Comcat's
 
 			int main_count = din_catalog.get_rup_list_size (GUIExternalCatalogV2.EQCAT_MAINSHOCK);
+			ObsEqkRupture mag_source_rup = null;
 			if (main_count == 1) {
-				fcmain.override_time_mag_loc (din_catalog.get_mainshock());
+				mag_source_rup = din_catalog.get_mainshock();
+				fcmain.override_time_mag_loc (mag_source_rup);
 			}
 
 			// The mainshock
 
-			cur_mainshock = fcmain.get_eqk_rupture();
+			//cur_mainshock = fcmain.get_eqk_rupture();
+			cur_mainshock = get_eqk_rupture_ext (fcmain, mag_source_rup);
 		}
 
 		// Otherwise, use mainshock from the file

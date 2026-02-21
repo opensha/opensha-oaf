@@ -7,12 +7,12 @@
         <p>
             A catalog file contains a list of earthquakes.
             For each earthquake, the file contains its date and time, latitude, longitude, depth,
-            magnitude, and, optionally, an ID.
+            magnitude, and, optionally, an ID, a network, and a magnitude type.
             Each earthquake is categorized as a mainshock, foreshock, aftershock, or regional.
         </p>
         <p>
             In addition, a catalog file can contain a list of symbol definitions.
-            Symbols can be used to speify the catalog&#39;s time range, minimum magnitude,
+            Symbols can be used to specify the catalog&#39;s time range, minimum magnitude,
             depth range, aftershock search region, and outer search region.
         </p>
         <p>
@@ -33,62 +33,62 @@
 #count: aftershock 42
 #count: regional 4
 #begin: mainshock
-#  Date      Time       Lat         Lon       Depth    Mag        ID
-2025-04-14 17:08:28   33.03583  -116.59483    14.29    5.21   ci40925991
+#  Date      Time       Lat         Lon       Depth    Mag        ID      Net  Mty
+2025-04-14 17:08:28   33.03583  -116.59483    14.29    5.21   ci40925991  ci   mw
 #begin: foreshock
-#  Date      Time       Lat         Lon       Depth    Mag        ID
-2025-04-13 22:54:16   33.03467  -116.59583    13.95    3.31   ci40925311
-2025-04-14 03:06:51   33.03583  -116.597      13.59    2.03   ci40925551
+#  Date      Time       Lat         Lon       Depth    Mag        ID      Net  Mty
+2025-04-13 22:54:16   33.03467  -116.59583    13.95    3.31   ci40925311  ci   ml
+2025-04-14 03:06:51   33.03583  -116.597      13.59    2.03   ci40925551  ci   ml
 #begin: aftershock
-#  Date      Time       Lat         Lon       Depth    Mag        ID
-2025-04-14 17:10:17   33.0535   -116.60883    15.08    2.83   ci40926015
-2025-04-14 17:10:21   33.07367  -116.6095     16.08    2.77   ci40926023
-2025-04-14 17:10:38   33.07467  -116.61483    14.26    2.47   ci37715564
-2025-04-14 17:10:44   33.0395   -116.587      14.47    2.5    ci37715556
-2025-04-14 17:10:54   33.0435   -116.58683    13.81    2.33   ci40926031
-2025-04-14 17:10:54   33.0405   -116.58917    13.47    2.41   ci37715548
-2025-04-14 17:11:29   33.03833  -116.588      14.04    2.35   ci40926039
-2025-04-14 17:11:40   33.03633  -116.57183    14.02    2.06   ci37715572
-2025-04-14 17:11:55   33.043    -116.58233    13.86    2.13   ci40926047
-2025-04-14 17:11:55   33.0375   -116.57133    12.79    2.1    ci37715580
-2025-04-14 17:12:07   33.04917  -116.60333    13.54    2.57   ci40926055
-2025-04-14 17:13:08   33.0395   -116.59617    11.95    2.97   ci40926079
-2025-04-14 17:13:39   33.05367  -116.608      14.49    1.84   ci37542933
-2025-04-14 17:14:03   33.04833  -116.6025     13.21    2.55   ci40926087
-2025-04-14 17:14:32   33.02917  -116.5845     14.64    1.7    ci40926095
-2025-04-14 17:17:51   33.04733  -116.59017    13.83    1.98   ci40926135
-2025-04-14 17:20:00   33.0415   -116.59983    14.14    1.76   ci40926159
-2025-04-14 17:21:30   33.04767  -116.60383    13.39    1.74   ci40926191
-2025-04-14 17:22:54   33.04283  -116.59717    13.12    1.95   ci40926215
-2025-04-14 17:25:18   33.0465   -116.603      13.56    2.11   ci40926231
-2025-04-14 17:25:22   33.09217  -116.5995     17.54    1.8    ci37715524
-2025-04-14 17:30:50   33.0315   -116.5885     14.52    1.75   ci40926295
-2025-04-14 17:44:29   33.02817  -116.592      14.26    1.88   ci40926391
-2025-04-14 17:52:46   33.03867  -116.59183    13.65    1.79   ci40926439
-2025-04-14 18:23:42   33.0405   -116.59217    12.57    3.95   ci40926623
-2025-04-14 18:26:07   33.03967  -116.59117    12.53    1.98   ci40926647
-2025-04-14 18:27:38   33.02117  -116.58233    14.04    2.11   ci40926663
-2025-04-14 18:55:06   33.05583  -116.61467    12.03    2.13   ci40926815
-2025-04-14 19:34:30   33.03833  -116.59267    12.76    2.58   ci40927015
-2025-04-14 19:55:51   33.05667  -116.61483    11.96    1.89   ci40927031
-2025-04-14 20:03:53   33.065    -116.60933    12.81    1.98   ci40927055
-2025-04-14 20:23:29   33.03917  -116.59417    12.72    2.88   ci40927095
-2025-04-14 23:15:06   33.065    -116.62783    13.82    1.76   ci40927375
-2025-04-14 23:46:22   33.03833  -116.5925     12.79    1.7    ci40927423
-2025-04-15 01:44:09   33.029    -116.5885     13.8     1.99   ci40927591
-2025-04-15 03:43:16   33.07133  -116.6315     12.78    2.12   ci40927743
-2025-04-15 13:28:53   33.0425   -116.582      12.99    1.93   ci40928375
-2025-04-17 19:43:09   33.0275   -116.58117    13.33    2.3    ci40931431
-2025-04-17 22:31:42   33.05433  -116.61233    12.52    2.61   ci40931567
-2025-04-18 09:55:21   33.06083  -116.618      13.05    2.54   ci40931879
-2025-04-18 16:33:11   33.0505   -116.6075     13.98    2.16   ci40932247
-2025-04-19 20:49:01   33.06     -116.60967    12.27    2.12   ci40933527
+#  Date      Time       Lat         Lon       Depth    Mag        ID      Net  Mty
+2025-04-14 17:10:17   33.0535   -116.60883    15.08    2.83   ci40926015  ci   ml
+2025-04-14 17:10:21   33.07367  -116.6095     16.08    2.77   ci40926023  ci   ml
+2025-04-14 17:10:38   33.07467  -116.61483    14.26    2.47   ci37715564  ci   ml
+2025-04-14 17:10:44   33.0395   -116.587      14.47    2.5    ci37715556  ci   ml
+2025-04-14 17:10:54   33.0435   -116.58683    13.81    2.33   ci40926031  ci   ml
+2025-04-14 17:10:54   33.0405   -116.58917    13.47    2.41   ci37715548  ci   ml
+2025-04-14 17:11:29   33.03833  -116.588      14.04    2.35   ci40926039  ci   ml
+2025-04-14 17:11:40   33.03633  -116.57183    14.02    2.06   ci37715572  ci   ml
+2025-04-14 17:11:55   33.043    -116.58233    13.86    2.13   ci40926047  ci   ml
+2025-04-14 17:11:55   33.0375   -116.57133    12.79    2.1    ci37715580  ci   ml
+2025-04-14 17:12:07   33.04917  -116.60333    13.54    2.57   ci40926055  ci   ml
+2025-04-14 17:13:08   33.0395   -116.59617    11.95    2.97   ci40926079  ci   ml
+2025-04-14 17:13:39   33.05367  -116.608      14.49    1.84   ci37542933  ci   ml
+2025-04-14 17:14:03   33.04833  -116.6025     13.21    2.55   ci40926087  ci   ml
+2025-04-14 17:14:32   33.02917  -116.5845     14.64    1.7    ci40926095  ci   ml
+2025-04-14 17:17:51   33.04733  -116.59017    13.83    1.98   ci40926135  ci   ml
+2025-04-14 17:20:00   33.0415   -116.59983    14.14    1.76   ci40926159  ci   ml
+2025-04-14 17:21:30   33.04767  -116.60383    13.39    1.74   ci40926191  ci   ml
+2025-04-14 17:22:54   33.04283  -116.59717    13.12    1.95   ci40926215  ci   ml
+2025-04-14 17:25:18   33.0465   -116.603      13.56    2.11   ci40926231  ci   ml
+2025-04-14 17:25:22   33.09217  -116.5995     17.54    1.8    ci37715524  ci   ml
+2025-04-14 17:30:50   33.0315   -116.5885     14.52    1.75   ci40926295  ci   ml
+2025-04-14 17:44:29   33.02817  -116.592      14.26    1.88   ci40926391  ci   ml
+2025-04-14 17:52:46   33.03867  -116.59183    13.65    1.79   ci40926439  ci   ml
+2025-04-14 18:23:42   33.0405   -116.59217    12.57    3.95   ci40926623  ci   ml
+2025-04-14 18:26:07   33.03967  -116.59117    12.53    1.98   ci40926647  ci   ml
+2025-04-14 18:27:38   33.02117  -116.58233    14.04    2.11   ci40926663  ci   ml
+2025-04-14 18:55:06   33.05583  -116.61467    12.03    2.13   ci40926815  ci   ml
+2025-04-14 19:34:30   33.03833  -116.59267    12.76    2.58   ci40927015  ci   ml
+2025-04-14 19:55:51   33.05667  -116.61483    11.96    1.89   ci40927031  ci   ml
+2025-04-14 20:03:53   33.065    -116.60933    12.81    1.98   ci40927055  ci   ml
+2025-04-14 20:23:29   33.03917  -116.59417    12.72    2.88   ci40927095  ci   ml
+2025-04-14 23:15:06   33.065    -116.62783    13.82    1.76   ci40927375  ci   ml
+2025-04-14 23:46:22   33.03833  -116.5925     12.79    1.7    ci40927423  ci   ml
+2025-04-15 01:44:09   33.029    -116.5885     13.8     1.99   ci40927591  ci   ml
+2025-04-15 03:43:16   33.07133  -116.6315     12.78    2.12   ci40927743  ci   ml
+2025-04-15 13:28:53   33.0425   -116.582      12.99    1.93   ci40928375  ci   ml
+2025-04-17 19:43:09   33.0275   -116.58117    13.33    2.3    ci40931431  ci   ml
+2025-04-17 22:31:42   33.05433  -116.61233    12.52    2.61   ci40931567  ci   ml
+2025-04-18 09:55:21   33.06083  -116.618      13.05    2.54   ci40931879  ci   ml
+2025-04-18 16:33:11   33.0505   -116.6075     13.98    2.16   ci40932247  ci   ml
+2025-04-19 20:49:01   33.06     -116.60967    12.27    2.12   ci40933527  ci   ml
 #begin: regional
-#  Date      Time       Lat         Lon       Depth    Mag        ID
-2025-02-25 03:02:17   33.146    -116.51217    11.87    1.83   ci40193650
-2025-04-12 11:43:05   33.1695   -116.44117    11.63    1.7    ci40923903
-2025-04-14 16:56:08   33.05667  -116.454      13.29    1.81   ci40925967
-2025-04-17 22:51:43   33.14367  -116.55517    13.98    1.92   ci40931591
+#  Date      Time       Lat         Lon       Depth    Mag        ID      Net  Mty
+2025-02-25 03:02:17   33.146    -116.51217    11.87    1.83   ci40193650  ci   ml
+2025-04-12 11:43:05   33.1695   -116.44117    11.63    1.7    ci40923903  ci   ml
+2025-04-14 16:56:08   33.05667  -116.454      13.29    1.81   ci40925967  ci   ml
+2025-04-17 22:51:43   33.14367  -116.55517    13.98    1.92   ci40931591  ci   ml
 </pre>
         
         <hr>
@@ -105,7 +105,8 @@
         </p>
         <p>
             Each earthquake line contains information for one earthquake:
-            date and time, latitude, longitude, depth, magnitude, and, optionally, an ID.
+            date and time, latitude, longitude, depth, magnitude, and, optionally, an ID,
+            a network, and a magnitude type.
             Earthquake lines are grouped into sections. Each section contains one type
             of earthquake: mainshock, foreshock, aftershock, or regional.
             This is described further below.
@@ -147,6 +148,21 @@
             <li>
                 Event ID. This is optional. If included, it can be any string consisting of uppercase letters,
                 lowercase letters, digits, and the underscore character.
+                If not included, it can be left blank or entered as a single dash.
+            </li>
+            <li>
+                Network. This is optional. If included, it can be a string consisting of uppercase letters,
+                lowercase letters, digits, and the underscore character.
+                It is the code for the seismic network that supplied the magnitude.
+                Typically, but not always, a seismic network code consists of two letters.
+                If not included, it can be left blank or entered as a single dash.
+            </li>
+            <li>
+                Magnitude type. This is optional. If included, it can be a string consisting of uppercase letters,
+                lowercase letters, digits, and the underscore character.
+                It is the code for the magnitude type.
+                Typically a magnitude type is two or three letters such as mw, mww, ml, mb, and so on.
+                If not included, it can be left blank or entered as a single dash.
             </li>
         </ol>
         <p>
@@ -165,6 +181,12 @@
             <li>UTC suffix: 2025-04-14 17:08:28 UTC</li>
             <li>Dot delimited date and time: 2025.04.14 17.08.28</li>
         </ul>
+        <p>
+            Entering a dash for the event ID is useful if the event ID is omitted but there is
+            a network or magnitude type. The dash tells the GUI to skip over the event ID.
+            Likewise, a dash for the network is useful if the network is omitted but there is
+            a magnitude type.
+        </p>
         <p>&nbsp;</p>
         <p><b>Section Headers</b></p>
         <p>
