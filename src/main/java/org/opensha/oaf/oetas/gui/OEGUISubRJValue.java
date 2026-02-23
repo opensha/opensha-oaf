@@ -162,11 +162,12 @@ public class OEGUISubRJValue extends OEGUIListener {
 
 	// Parameter groups.
 
-	private static final int PARMGRP_RJ_EDIT = 501;		// Button to open the RJ parameter edit dialog
-	private static final int PARMGRP_RJ_VALUE = 502;	// Reasenberg & Jones parameter value
-	private static final int PARMGRP_RANGE_RJ_A = 503;	// Reasenberg & Jones parameter range a
-	private static final int PARMGRP_RANGE_RJ_P = 504;	// Reasenberg & Jones parameter range p
-	private static final int PARMGRP_RANGE_RJ_C = 505;	// Reasenberg & Jones parameter range c
+	private static final int PARMGRP_RJ_EDIT = 501;			// Button to open the RJ parameter edit dialog
+	private static final int PARMGRP_RJ_VALUE = 502;		// Reasenberg & Jones parameter value
+	private static final int PARMGRP_RANGE_RJ_A = 503;		// Reasenberg & Jones parameter range a
+	private static final int PARMGRP_RANGE_RJ_P = 504;		// Reasenberg & Jones parameter range p
+	private static final int PARMGRP_RANGE_RJ_C = 505;		// Reasenberg & Jones parameter range c
+	private static final int PARMGRP_RJ_CHECK_GRID = 506;	// Reasenberg & Jones check grid size button
 
 
 
@@ -252,6 +253,18 @@ public class OEGUISubRJValue extends OEGUIListener {
 	}
 
 
+	// Check Grid Size button.
+
+	private ButtonParameter checkGridSizeButton;
+
+	private ButtonParameter init_checkGridSizeButton () throws GUIEDTException {
+		checkGridSizeButton = new ButtonParameter("Check Grid Size", "Check Grid Size...");
+		checkGridSizeButton.setInfo("Check if the RJ parameter search grid is OK or too large");
+		register_param (checkGridSizeButton, "checkGridSizeButton", PARMGRP_RJ_CHECK_GRID);
+		return checkGridSizeButton;
+	}
+
+
 
 
 	// RJ parameter value dialog: initialize parameters within the dialog.
@@ -269,6 +282,8 @@ public class OEGUISubRJValue extends OEGUIListener {
 		init_cValRangeParam();
 		
 		init_cValNumParam();
+
+		init_checkGridSizeButton();
 
 		return;
 	}
@@ -288,13 +303,14 @@ public class OEGUISubRJValue extends OEGUIListener {
 		boolean f_button_row = false;
 
 		rjValueEditParam.setListTitleText ("RJ Parameters");
-		rjValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(6, f_button_row));
+		rjValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(7, f_button_row));
 		rjValueList.addParameter(aValRangeParam);
 		rjValueList.addParameter(aValNumParam);
 		rjValueList.addParameter(pValRangeParam);
 		rjValueList.addParameter(pValNumParam);
 		rjValueList.addParameter(cValRangeParam);
 		rjValueList.addParameter(cValNumParam);
+		rjValueList.addParameter(checkGridSizeButton);
 		
 		rjValueEditParam.getEditor().refreshParamEditor();
 	}
@@ -340,6 +356,7 @@ public class OEGUISubRJValue extends OEGUIListener {
 		enableDefaultParam(pValNumParam, f_rj_value_enable, null);
 		enableDefaultParam(cValRangeParam, f_rj_value_enable, null);
 		enableDefaultParam(cValNumParam, f_rj_value_enable, null);
+		enableParam(checkGridSizeButton, f_rj_value_enable);
 
 		enableParam(rjValueEditParam, f_sub_enable);
 
@@ -635,6 +652,51 @@ public class OEGUISubRJValue extends OEGUIListener {
 			}
 			updateRangeParams(cValRangeParam, cValNumParam, 45, 0.018, 0.018);
 			report_rj_value_change();
+		}
+		break;
+
+
+
+
+		// Button to check grid size.
+		// - Pop up a dialog box to display size.
+
+		case PARMGRP_RJ_CHECK_GRID: {
+			if (!( f_sub_enable && f_rj_value_enable )) {
+				return;
+			}
+
+			// Show a dialog with grid size information
+
+			long grid_size = 1L;
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(aValNumParam));
+			}
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(pValNumParam));
+			}
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(cValNumParam));
+			}
+
+			long max_grid_size = 200000L;
+			int message_type = JOptionPane.INFORMATION_MESSAGE;
+
+			StringBuilder sb = new StringBuilder();			
+			if (grid_size <= 1000000000L) {
+				sb.append ("Current RJ grid size = " + grid_size + "\n\n");
+			} else {
+				sb.append ("Current RJ grid size = " + "more than 1000000000" + "\n\n");
+			}
+			sb.append ("Maximum allowed RJ grid size = " + max_grid_size + "\n\n");
+			if (grid_size <= max_grid_size) {
+				sb.append ("Grid size is OK.");
+			} else {
+				sb.append ("Grid size is too large.");
+				message_type = JOptionPane.ERROR_MESSAGE;
+			}
+
+			JOptionPane.showMessageDialog(gui_top.get_top_window(), sb.toString(), "RJ Grid Size", message_type);
 		}
 		break;
 
