@@ -1411,6 +1411,65 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+//----- Incompleteness parameters used for the fit (used by Information tab) -----
+
+	// The time-dependent incompleteness option for parameter fitting.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	private TimeDepMagCompOption info_time_dep_option = null;
+
+	public final TimeDepMagCompOption get_info_time_dep_option () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_time_dep_option while in state " + cur_modstate_string());
+		}
+		return info_time_dep_option;
+	}
+
+	// The magnitude of completeness for parameter fitting.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	private double info_time_dep_mcat;
+
+	public final double get_info_time_dep_mcat () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_time_dep_mcat while in state " + cur_modstate_string());
+		}
+		return info_time_dep_mcat;
+	}
+
+	// The Helmstetter parameters for parameter fitting.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	private double info_time_dep_f;
+
+	public final double get_info_time_dep_f () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_time_dep_f while in state " + cur_modstate_string());
+		}
+		return info_time_dep_f;
+	}
+
+	private double info_time_dep_g;
+
+	public final double get_info_time_dep_g () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_time_dep_g while in state " + cur_modstate_string());
+		}
+		return info_time_dep_g;
+	}
+
+	private double info_time_dep_h;
+
+	public final double get_info_time_dep_h () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_time_dep_h while in state " + cur_modstate_string());
+		}
+		return info_time_dep_h;
+	}
+
+
+
+
 	// Clear all data structures that are not valid in the current state.
 
 	private void clear_to_state () {
@@ -1427,6 +1486,8 @@ public class OEGUIModel extends OEGUIComponent {
 			forecast_fcresults = null;
 			forecast_analyst_opts = null;
 			forecast_fcdata = null;
+
+			info_time_dep_option = null;
 		}
 
 		// Structures not valid if we don't have a catalog
@@ -3279,6 +3340,12 @@ public class OEGUIModel extends OEGUIComponent {
 
 			magCompFn = MagCompFn.makePageOrConstant (f, g, h);
 
+			info_time_dep_option = xfer.x_commonValue.x_timeDepOptionParam;
+			info_time_dep_mcat = mCat;
+			info_time_dep_f = f;
+			info_time_dep_g = g;
+			info_time_dep_h = h;
+
 			break;
 
 		// Otherwise, time-independent magnitude of completeness
@@ -3289,6 +3356,9 @@ public class OEGUIModel extends OEGUIComponent {
 
 			magCompFn = MagCompFn.makeConstant();
 
+			info_time_dep_option = xfer.x_commonValue.x_timeDepOptionParam;
+			info_time_dep_mcat = mCat;
+
 			break;
 
 		case EQUALS_MC:
@@ -3297,6 +3367,9 @@ public class OEGUIModel extends OEGUIComponent {
 			mCat = mc;
 
 			magCompFn = MagCompFn.makeConstant();
+
+			info_time_dep_option = xfer.x_commonValue.x_timeDepOptionParam;
+			info_time_dep_mcat = mCat;
 
 			break;
 
@@ -4563,6 +4636,7 @@ public class OEGUIModel extends OEGUIComponent {
 	private int info_tag_memory = -1;				// Memory information
 	private int info_tag_mainshock = -1;			// Mainshock information
 	private int info_tag_region = -1;				// Aftershock search region information
+	private int info_tag_time_dep = -1;				// Time dependent incompleteness information
 	private int info_tag_rj_mle_fit = -1;			// RJ MLE and variance parameter it
 	private int info_tag_etas_mle_fit = -1;			// ETAS MLE parameter fit
 
@@ -4590,6 +4664,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		info_tag_etas_mle_fit = register_info_item (MODSTATE_PARAMETERS, "Fitted ETAS MLE Parameters");
 		info_tag_rj_mle_fit = register_info_item (MODSTATE_PARAMETERS, "Fitted RJ Parameters");
+		info_tag_time_dep = register_info_item (MODSTATE_PARAMETERS, "Time-Dependent Incompleteness Option");
 
 		info_tag_region = register_info_item (MODSTATE_CATALOG, "Aftershock search region");
 
@@ -4888,6 +4963,7 @@ public class OEGUIModel extends OEGUIComponent {
 		// Information for determining aftershock parameters
 
 		case MODSTATE_PARAMETERS:
+			update_time_dep_info();
 			update_rj_fit_info();
 			update_etas_fit_info();
 			break;
@@ -5272,6 +5348,26 @@ public class OEGUIModel extends OEGUIComponent {
 
 		table.add_row_mixed ("-");
 
+		table.add_row();
+		table.add_cell_left ("b");
+		if (gen_model != null) {
+			table.add_cell_right (rj_fit_num_format (
+				gen_model.get_b()
+			));
+		}
+		if (seq_model != null) {
+			table.add_cell_right (rj_fit_num_format (
+				seq_model.get_b()
+			));
+		}
+		if (bay_model != null) {
+			table.add_cell_right (rj_fit_num_format (
+				bay_model.get_b()
+			));
+		}
+
+		table.add_row_mixed ("-");
+
 		table.set_column_seps (" ", " |", " | ");
 
 		set_info_item (info_tag_rj_mle_fit, table.toString());
@@ -5503,6 +5599,71 @@ public class OEGUIModel extends OEGUIComponent {
 
 		set_info_item (info_tag_etas_mle_fit, table.toString());
 		return;
+	}
+
+
+
+
+	// Update the time-dependent incompleteness info.
+
+	public final void update_time_dep_info () {
+		TimeDepMagCompOption time_dep_option = get_info_time_dep_option();
+		if (time_dep_option != null) {
+			StringBuilder sb = new StringBuilder();
+
+			// Switch on time-dependent magnitude of completeness option
+
+			switch (time_dep_option) {
+
+			// If doing time-dependent magnitude of completeness
+
+			case ENABLE:
+				sb.append ("option = " + "Custom Values" + "\n");
+				sb.append ("Mcat = " + get_info_time_dep_mcat() + "\n");
+				sb.append ("F = " + get_info_time_dep_f() + "\n");
+				sb.append ("G = " + get_info_time_dep_g() + "\n");
+				sb.append ("H = " + get_info_time_dep_h() + "\n");
+				break;
+
+			case WORLD:
+				sb.append ("option = " + "World Values" + "\n");
+				sb.append ("Mcat = " + get_info_time_dep_mcat() + "\n");
+				sb.append ("F = " + get_info_time_dep_f() + "\n");
+				sb.append ("G = " + get_info_time_dep_g() + "\n");
+				sb.append ("H = " + get_info_time_dep_h() + "\n");
+				break;
+
+			case CALIFORNIA:
+				sb.append ("option = " + "California Values" + "\n");
+				sb.append ("Mcat = " + get_info_time_dep_mcat() + "\n");
+				sb.append ("F = " + get_info_time_dep_f() + "\n");
+				sb.append ("G = " + get_info_time_dep_g() + "\n");
+				sb.append ("H = " + get_info_time_dep_h() + "\n");
+				break;
+
+			// Otherwise, time-independent magnitude of completeness
+
+			case EQUALS_MCAT:
+				sb.append ("option = " + "Constant (Time-Independent)" + "\n");
+				sb.append ("Mcat = " + get_info_time_dep_mcat() + "\n");
+				break;
+
+			case EQUALS_MC:
+				sb.append ("option = " + "Constant (Time-Independent)" + "\n");
+				sb.append ("Mcat = " + get_info_time_dep_mcat() + "\n");
+				break;
+
+			default:
+				throw new IllegalArgumentException ("OEGUIModel.update_time_dep_info: Invalid magnitude of completeness option");
+			}
+
+			set_info_item (info_tag_time_dep, sb.toString());
+		}
+		else {
+			set_info_item (info_tag_time_dep, null);
+		}
+		return;
+
 	}
 
 
