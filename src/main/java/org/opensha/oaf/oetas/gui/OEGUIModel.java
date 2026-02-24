@@ -1470,6 +1470,47 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+//----- Tectonic regimes for the mainshock or downloaded forecast (used by Information tab) -----
+
+	// The tectonic regime for RJ generic parameters.
+	// Available when model state >= MODSTATE_MAINSHOCK.
+
+	private String info_generic_regime = null;
+
+	public final String get_info_generic_regime () {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_generic_regime while in state " + cur_modstate_string());
+		}
+		return info_generic_regime;
+	}
+
+	// The tectonic regime for magnitude of completeness parameters.
+	// Available when model state >= MODSTATE_MAINSHOCK.
+
+	private String info_mag_comp_regime = null;
+
+	public final String get_info_mag_comp_regime () {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_mag_comp_regime while in state " + cur_modstate_string());
+		}
+		return info_mag_comp_regime;
+	}
+
+	// The tectonic regime for ETAS parameters.
+	// Available when model state >= MODSTATE_MAINSHOCK.
+
+	private String info_etas_regime = null;
+
+	public final String get_info_etas_regime () {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_etas_regime while in state " + cur_modstate_string());
+		}
+		return info_etas_regime;
+	}
+
+
+
+
 	// Clear all data structures that are not valid in the current state.
 
 	private void clear_to_state () {
@@ -1525,6 +1566,10 @@ public class OEGUIModel extends OEGUIComponent {
 			analyst_adj_params = null;
 
 			cur_mainshock = null;
+
+			info_generic_regime = null;
+			info_mag_comp_regime = null;
+			info_etas_regime = null;
 		}
 
 		return;
@@ -1855,6 +1900,10 @@ public class OEGUIModel extends OEGUIComponent {
 		System.out.println ("Default sequence-specific parameters:");
 		System.out.println (aafs_fcparams.seq_spec_params.toString());
 
+		info_generic_regime = aafs_fcparams.generic_regime;
+		info_mag_comp_regime = aafs_fcparams.mag_comp_regime;
+		info_etas_regime = aafs_fcparams.etas_regime;
+
 		// Copy to fetch_fcparams
 
 		fetch_fcparams = new ForecastParameters();
@@ -1922,6 +1971,10 @@ public class OEGUIModel extends OEGUIComponent {
 
 		System.out.println ("Sequence-specific parameters used in forecast:");
 		System.out.println (aafs_fcparams.seq_spec_params.toString());
+
+		info_generic_regime = aafs_fcparams.generic_regime;
+		info_mag_comp_regime = aafs_fcparams.mag_comp_regime;
+		info_etas_regime = aafs_fcparams.etas_regime;
 
 		// Copy to fetch_fcparams
 
@@ -4635,6 +4688,7 @@ public class OEGUIModel extends OEGUIComponent {
 	private int info_tag_processor = -1;			// Processor information
 	private int info_tag_memory = -1;				// Memory information
 	private int info_tag_mainshock = -1;			// Mainshock information
+	private int info_tag_regimes = -1;				// Tectonic regimes
 	private int info_tag_region = -1;				// Aftershock search region information
 	private int info_tag_time_dep = -1;				// Time dependent incompleteness information
 	private int info_tag_rj_mle_fit = -1;			// RJ MLE and variance parameter it
@@ -4668,6 +4722,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		info_tag_region = register_info_item (MODSTATE_CATALOG, "Aftershock search region");
 
+		info_tag_regimes = register_info_item (MODSTATE_MAINSHOCK, "Tectonic Regimes");
 		info_tag_mainshock = register_info_item (MODSTATE_MAINSHOCK, "Mainshock Information");
 
 		info_tag_memory = register_info_item (MODSTATE_INITIAL, "Memory Usage");
@@ -4952,6 +5007,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		case MODSTATE_MAINSHOCK:
 			update_mainshock_info (get_fcmain());
+			update_regimes_info();
 			break;
 
 		// Information for fetching the catalog
@@ -5663,7 +5719,64 @@ public class OEGUIModel extends OEGUIComponent {
 			set_info_item (info_tag_time_dep, null);
 		}
 		return;
+	}
 
+
+
+
+	// Update the tectonic regimes info.
+
+	public final void update_regimes_info () {
+
+		// Get regimes, set any empty ones to null
+
+		String generic_regime = get_info_generic_regime();
+		if (generic_regime != null) {
+			generic_regime = generic_regime.trim();
+			if (generic_regime.isEmpty()) {
+				generic_regime = null;
+			}
+		}
+
+		String mag_comp_regime = get_info_mag_comp_regime();
+		if (mag_comp_regime != null) {
+			mag_comp_regime = mag_comp_regime.trim();
+			if (mag_comp_regime.isEmpty()) {
+				mag_comp_regime = null;
+			}
+		}
+
+		String etas_regime = get_info_etas_regime();
+		if (etas_regime != null) {
+			etas_regime = etas_regime.trim();
+			if (etas_regime.isEmpty()) {
+				etas_regime = null;
+			}
+		}
+
+		// If any are available, write the info
+
+		if (generic_regime != null || mag_comp_regime != null || etas_regime != null) {
+			StringBuilder sb = new StringBuilder();
+
+			if (generic_regime != null) {
+				sb.append ("tectonic regime for generic RJ parameters = " + generic_regime + "\n");
+			}
+
+			if (mag_comp_regime != null) {
+				sb.append ("tectonic regime for magnitude of completeness parameters = " + mag_comp_regime + "\n");
+			}
+
+			if (etas_regime != null) {
+				sb.append ("tectonic regime for ETAS parameters = " + etas_regime + "\n");
+			}
+
+			set_info_item (info_tag_regimes, sb.toString());
+		}
+		else {
+			set_info_item (info_tag_regimes, null);
+		}
+		return;
 	}
 
 
