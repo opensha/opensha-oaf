@@ -724,7 +724,10 @@ public class OEGUIView extends OEGUIComponent {
 
 			// Bin aftershocks by magnitude and time
 
-			EvenlyDiscretizedFunc timeFunc = HistogramFunction.getEncompassingHistogram(0d, timeCPT.getMaxValue()*0.99, 1d);	//TODO: Allow for time to extend before mainshock
+			//EvenlyDiscretizedFunc timeFunc = HistogramFunction.getEncompassingHistogram(0d, timeCPT.getMaxValue()*0.99, 1d);	//TODO: Allow for time to extend before mainshock
+			double plotDelta = Math.max (0.001, timeCPT.getMaxValue() / 100.0);
+			EvenlyDiscretizedFunc timeFunc = HistogramFunction.getEncompassingHistogram(0d, timeCPT.getMaxValue()*0.99, plotDelta);	//TODO: Allow for time to extend before mainshock
+			
 			XY_DataSet[][] aftershockDatasets = XY_DatasetBinner.bin2D(points, mags, timeDeltas, my_magSizeFunc, timeFunc);
 
 			// Bin aftershocks by magnitude and time.
