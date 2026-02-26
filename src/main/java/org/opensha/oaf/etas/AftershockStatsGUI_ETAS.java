@@ -1609,10 +1609,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			}
 		}
 	}
-
-	private static final int tickLabelFontSize = 16;
-	private static final int axisLabelFontSize = 16;
-	private static final int plotLabelFontSize = 16;
+	private static final PlotPreferences plotPrefs;
+	static {
+		plotPrefs = PlotPreferences.getDefaultAppPrefs();
+		plotPrefs.setTickLabelFontSize(16);
+		plotPrefs.setAxisLabelFontSize(16);
+		plotPrefs.setPlotLabelFontSize(16);
+		plotPrefs.setBackgroundColor(Color.WHITE);
+	}
 
 	private static Color[] extra_colors = {Color.GRAY, Color.BLUE, Color.ORANGE, Color.GREEN};
 
@@ -1623,11 +1627,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	}
 
 	private static void setupGP(GraphWidget widget) {
-		widget.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, tickLabelFontSize));
-		widget.setPlotLabelFontSize(plotLabelFontSize);
-		widget.setAxisLabelFontSize(axisLabelFontSize);
-		widget.setTickLabelFontSize(tickLabelFontSize);
-		widget.setBackgroundColor(Color.WHITE);
+		widget.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, plotPrefs.getTickLabelFontSize()));
+		widget.setPlotLabelFontSize(plotPrefs.getPlotLabelFontSize());
+		widget.setAxisLabelFontSize(plotPrefs.getAxisLabelFontSize());
+		widget.setTickLabelFontSize(plotPrefs.getTickLabelFontSize());
+		widget.setBackgroundColor(plotPrefs.getBackgroundColor());
 	}
 	// END Utility functions for updating dynamic elements of the GUI, plot specifications, etc.
 	
@@ -2171,7 +2175,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				double cptInc = 0d;
 				if ((timeCPT.getMaxValue() - timeCPT.getMinValue()) < 10)
 					cptInc = 1d;
-				subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
+				subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", plotPrefs,
 						cptInc, RectangleEdge.RIGHT);
 			} else {
 				XY_DataSet[] aftershockDatasets = XY_DatasetBinner.bin(points, mags, magSizeFunc);
@@ -2392,7 +2396,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, distCPT, "dist", distFunc, PlotSymbol.FILLED_CIRCLE);
 			
-			subtitle = GraphPanel.getLegendForCPT(distCPT, "Distance (km)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(distCPT, "Distance (km)", plotPrefs,
 					0d, RectangleEdge.RIGHT);
 		} else {
 			XY_DataSet[] magBinnedFuncs = XY_DatasetBinner.bin(points, mags, magSizeFunc);
@@ -5263,7 +5267,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						
 						spec.setPlotAnnotations(cityLabels);
 						
-						PaintScaleLegend subtitle = GraphPanel.getLegendForCPT(cpt, "Number", axisLabelFontSize, tickLabelFontSize,
+						PaintScaleLegend subtitle = GraphPanel.getLegendForCPT(cpt, "Number", plotPrefs,
 					             0, RectangleEdge.RIGHT);
 						if (subtitle != null)
 						spec.addSubtitle(subtitle);
@@ -5463,7 +5467,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							cptAxisLabel = cptUnits;
 						}
 
-						PaintScaleLegend subtitle = GraphPanel.getLegendForCPT(cpt2, cptAxisLabel, axisLabelFontSize, tickLabelFontSize,
+						PaintScaleLegend subtitle = GraphPanel.getLegendForCPT(cpt2, cptAxisLabel, plotPrefs,
 								0, RectangleEdge.RIGHT);
 						if (subtitle != null)
 							spec.addSubtitle(subtitle);

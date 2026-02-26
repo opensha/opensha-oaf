@@ -311,19 +311,23 @@ public class OEGUIView extends OEGUIComponent {
 
 
 	// Font sizes for graphs.
-
-	private static final int tickLabelFontSize = 22;
-	private static final int axisLabelFontSize = 24;
-	private static final int plotLabelFontSize = 24;
-
+	
+	private static final PlotPreferences plotPrefs;
+	static {
+		plotPrefs = PlotPreferences.getDefaultAppPrefs();
+		plotPrefs.setTickLabelFontSize(22);
+		plotPrefs.setAxisLabelFontSize(24);
+		plotPrefs.setPlotLabelFontSize(24);
+		plotPrefs.setBackgroundColor(Color.WHITE);
+	}
 
 	// Setup graph font sizes and background color.
 
 	private static void setupGP(GraphWidget widget) {
-		widget.setPlotLabelFontSize(plotLabelFontSize);
-		widget.setAxisLabelFontSize(axisLabelFontSize);
-		widget.setTickLabelFontSize(tickLabelFontSize);
-		widget.setBackgroundColor(Color.WHITE);
+		widget.setPlotLabelFontSize(plotPrefs.getPlotLabelFontSize());
+		widget.setAxisLabelFontSize(plotPrefs.getAxisLabelFontSize());
+		widget.setTickLabelFontSize(plotPrefs.getTickLabelFontSize());
+		widget.setBackgroundColor(plotPrefs.getBackgroundColor());
 		return;
 	}
 
@@ -741,7 +745,7 @@ public class OEGUIView extends OEGUIComponent {
 			if ((timeCPT.getMaxValue() - timeCPT.getMinValue()) < 10) {
 				cptInc = 1d;
 			}
-			subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", plotPrefs,
 					cptInc, RectangleEdge.RIGHT);
 
 		// Otherwise, color by magnitude ...
@@ -1170,7 +1174,7 @@ public class OEGUIView extends OEGUIComponent {
 			
 			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, my_distCPT, "dist", my_distFunc, PlotSymbol.FILLED_CIRCLE);
 			
-			subtitle = GraphPanel.getLegendForCPT(my_distCPT, "Distance (km)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(my_distCPT, "Distance (km)", plotPrefs,
 					0d, RectangleEdge.RIGHT);
 
 		// Otherwise, color by magnitude ...
@@ -1996,7 +2000,7 @@ public class OEGUIView extends OEGUIComponent {
 
 			if (OEDiscreteRange.is_rscale_log (rscale[0])) {
 
-				PlotPreferences plotPrefs = PlotPreferences.getDefault();
+				PlotPreferences plotPrefs = PlotPreferences.getDefaultAppPrefs();
 				boolean xLog = true;
 				boolean yLog = false;
 				Range xRange = new Range (min_x * Math.pow(max_x / min_x, -0.06), max_x * Math.pow(max_x / min_x, 0.06));
@@ -2786,7 +2790,7 @@ public class OEGUIView extends OEGUIComponent {
 		double min_y = y_bounds[0];
 		double max_y = y_bounds[1];
 
-		PlotPreferences plotPrefs = PlotPreferences.getDefault();
+		PlotPreferences plotPrefs = PlotPreferences.getDefaultAppPrefs();
 		boolean xLog = OEDiscreteRange.is_rscale_log (rscale[0]);
 		boolean yLog = OEDiscreteRange.is_rscale_log (rscale[1]);
 

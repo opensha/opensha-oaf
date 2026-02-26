@@ -64,6 +64,7 @@ import org.opensha.commons.gui.plot.GraphWidget;
 import org.opensha.commons.gui.plot.PlotCurveCharacterstics;
 import org.opensha.commons.gui.plot.PlotElement;
 import org.opensha.commons.gui.plot.PlotLineType;
+import org.opensha.commons.gui.plot.PlotPreferences;
 import org.opensha.commons.gui.plot.PlotSpec;
 import org.opensha.commons.gui.plot.PlotSymbol;
 import org.opensha.commons.gui.plot.jfreechart.xyzPlot.XYZPlotSpec;
@@ -915,15 +916,20 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 		return distCPT;
 	}
 	
-	private static final int tickLabelFontSize = 22;
-	private static final int axisLabelFontSize = 24;
-	private static final int plotLabelFontSize = 24;
+	private static final PlotPreferences plotPrefs;
+	static {
+		plotPrefs = PlotPreferences.getDefaultAppPrefs();
+		plotPrefs.setTickLabelFontSize(22);
+		plotPrefs.setAxisLabelFontSize(24);
+		plotPrefs.setPlotLabelFontSize(24);
+		plotPrefs.setBackgroundColor(Color.WHITE);
+	}
 	
 	private static void setupGP(GraphWidget widget) {
-		widget.setPlotLabelFontSize(plotLabelFontSize);
-		widget.setAxisLabelFontSize(axisLabelFontSize);
-		widget.setTickLabelFontSize(tickLabelFontSize);
-		widget.setBackgroundColor(Color.WHITE);
+		widget.setPlotLabelFontSize(plotPrefs.getPlotLabelFontSize());
+		widget.setAxisLabelFontSize(plotPrefs.getAxisLabelFontSize());
+		widget.setTickLabelFontSize(plotPrefs.getTickLabelFontSize());
+		widget.setBackgroundColor(plotPrefs.getBackgroundColor());
 	}
 	
 	private void plotAftershockHypocs() {
@@ -988,7 +994,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			double cptInc = 0d;
 			if ((timeCPT.getMaxValue() - timeCPT.getMinValue()) < 10)
 				cptInc = 1d;
-			subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", plotPrefs,
 					cptInc, RectangleEdge.RIGHT);
 		} else {
 			XY_DataSet[] aftershockDatasets = XY_DatasetBinner.bin(points, mags, magSizeFunc);
@@ -1277,7 +1283,7 @@ public class AftershockStatsGUI extends JFrame implements ParameterChangeListene
 			
 			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, distCPT, "dist", distFunc, PlotSymbol.FILLED_CIRCLE);
 			
-			subtitle = GraphPanel.getLegendForCPT(distCPT, "Distance (km)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(distCPT, "Distance (km)", plotPrefs,
 					0d, RectangleEdge.RIGHT);
 		} else {
 			XY_DataSet[] magBinnedFuncs = XY_DatasetBinner.bin(points, mags, magSizeFunc);
