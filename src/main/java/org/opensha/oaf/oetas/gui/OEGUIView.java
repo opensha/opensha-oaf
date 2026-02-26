@@ -724,7 +724,10 @@ public class OEGUIView extends OEGUIComponent {
 
 			// Bin aftershocks by magnitude and time
 
-			EvenlyDiscretizedFunc timeFunc = HistogramFunction.getEncompassingHistogram(0d, timeCPT.getMaxValue()*0.99, 1d);	//TODO: Allow for time to extend before mainshock
+			//EvenlyDiscretizedFunc timeFunc = HistogramFunction.getEncompassingHistogram(0d, timeCPT.getMaxValue()*0.99, 1d);	//TODO: Allow for time to extend before mainshock
+			double plotDelta = Math.max (0.001, timeCPT.getMaxValue() / 100.0);
+			EvenlyDiscretizedFunc timeFunc = HistogramFunction.getEncompassingHistogram(0d, timeCPT.getMaxValue()*0.99, plotDelta);	//TODO: Allow for time to extend before mainshock
+			
 			XY_DataSet[][] aftershockDatasets = XY_DatasetBinner.bin2D(points, mags, timeDeltas, my_magSizeFunc, timeFunc);
 
 			// Bin aftershocks by magnitude and time.
@@ -1303,6 +1306,7 @@ public class OEGUIView extends OEGUIComponent {
 		// Scan the list, and for each aftershock above the magnitude of completeness,
 		// add an point to the Function
 
+		countFunc.set(0.0, count);
 		for (int i=0; i<gui_model.get_cur_aftershocks().size(); i++) {
 			ObsEqkRupture aftershock = gui_model.get_cur_aftershocks().get(i);
 			double time = getTimeSinceMainshock(aftershock);	// time in days
@@ -1413,14 +1417,16 @@ public class OEGUIView extends OEGUIComponent {
 	private EvenlyDiscretizedFunc getModelCumNumWithTimePlot(RJ_AftershockModel the_model, double magMin, MagCompFn magCompFnPlot) {
 		double tMin = Math.max (0.0, gui_model.get_cat_dataStartTimeParam());	// foreshock fix
 		double tMax = gui_model.get_cat_dataEndTimeParam();
-		if (gui_model.modstate_has_forecast()) {
-			//tMax = Math.max(tMax, gui_model.get_cat_forecastEndTimeParam());	// if we have a forecast, extend at least to end of forecast
-			//TODO: For now, instead of a user parameter, use the data end time plus advisory duration
-			double end_days = gui_model.get_cat_dataEndTimeParam();
-			long end_millis = SimpleUtils.days_to_millis (end_days);
-			long adv_millis = ForecastResults.forecast_lag_to_advisory_lag (end_millis, new ActionConfig());
-			tMax = Math.max (tMax, end_days + SimpleUtils.millis_to_days (adv_millis));
-		}
+
+		//  if (gui_model.modstate_has_forecast()) {
+		//  	//tMax = Math.max(tMax, gui_model.get_cat_forecastEndTimeParam());	// if we have a forecast, extend at least to end of forecast
+		//  	//TODO: For now, instead of a user parameter, use the data end time plus advisory duration
+		//  	double end_days = gui_model.get_cat_dataEndTimeParam();
+		//  	long end_millis = SimpleUtils.days_to_millis (end_days);
+		//  	long adv_millis = ForecastResults.forecast_lag_to_advisory_lag (end_millis, new ActionConfig());
+		//  	tMax = Math.max (tMax, end_days + SimpleUtils.millis_to_days (adv_millis));
+		//  }
+
 		Preconditions.checkState(tMax > tMin);
 		double tDelta = (tMax - tMin)/1000d;
 		if (magCompFnPlot == null) {

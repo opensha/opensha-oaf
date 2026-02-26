@@ -76,27 +76,6 @@ java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile
         </p>
         <p>&nbsp;</p>
 <pre>
---target=socket
---target=aws
---target=both
-</pre>
-        <p>
-            The <code>--target</code> option selects the PDL hub and communication protocal used when sending PDL products. It can have the following values:
-        </p>
-        <ul>
-            <li><i>socket</i> - Send products to the on-premise PDL hubs using the PDL socket protocol. This is the old way to send products.</li>
-            <li><i>aws</i> - Send products to the cloud PDL hubs using the PDL AWS protocol. This is the new way to send products.</li>
-            <li><i>both</i> - Send products to both on-premise and cloud PDL hubs.</li>
-        </ul>
-        <p>
-            Note that because the GUI only supports a single key file, the <i>both</i> selection won&#39;t work unless
-            both hubs are configured to accept the same digital key.
-        </p>
-        <p>
-            If the <code>--target</code> option is omitted, the GUI supplies a pre-programmed default.
-        </p>
-        <p>&nbsp;</p>
-<pre>
 --source=PRODUCTSOURCE
 </pre>
         <p>
@@ -124,6 +103,34 @@ java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile
         </p>
         <p>
             Note that the digital key used to sign PDL products must be authorized for use with the specified type of product.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--target=socket
+--target=aws
+--target=both
+</pre>
+        <p>
+            The <code>--target</code> option is deprecated. You should not use it.
+            It is included for compatibility with earlier versions of the GUI.
+        </p>
+        <p>
+            The <code>--target</code> option selects the PDL hub and communication protocal used when sending PDL products. It can have the following values:
+        </p>
+        <ul>
+            <li><i>socket</i> - Send products to the on-premise PDL hubs using the PDL socket protocol. This is the old way to send products.</li>
+            <li><i>aws</i> - Send products to the cloud PDL hubs using the PDL AWS protocol. This is the new way to send products.</li>
+            <li><i>both</i> - Send products to both on-premise and cloud PDL hubs.</li>
+        </ul>
+        <p>
+            Note that because the GUI only supports a single key file, the <i>both</i> selection won&#39;t work unless
+            both hubs are configured to accept the same digital key.
+        </p>
+        <p>
+            If the <code>--target</code> option is omitted, the default is <i>aws</i>.
+        </p>
+        <p>
+            Note: The on-premise PDL hubs have been, or soon will be, decommissioned. All PDL products must be send to the cloud PDL hubs.
         </p>
     </body>
 </html>

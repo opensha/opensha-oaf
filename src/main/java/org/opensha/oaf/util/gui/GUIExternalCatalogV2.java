@@ -30,6 +30,7 @@ import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.LocationUtils;
+import org.opensha.commons.param.impl.StringParameter;
 
 import org.opensha.oaf.util.catalog.ObsEqkRupMinTimeComparator;
 import org.opensha.oaf.util.InvariantViolationException;
@@ -733,11 +734,21 @@ public class GUIExternalCatalogV2 {
 	// We also change the ordering of fields (put mag after lat/lon/depth) to match the original GUI format (requires no change to regex).
 	// Additionally, we allow lat/lon/depth/mag to use period or comma as the decimal point.
 
-	private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[.,]\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
+	//private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[.,]\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
 
 	// (?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)			= spaces/tabs, or dash/slash/period/comma optionally surrounded by spaces/tabs
 	// (?:[ \\t]+|[ \\t]*[:.,][ \\t]*)			= spaces/tabs, or colon/period/comma optionally surrounded by spaces/tabs
 	// (?:[.,]\\d*)?							= optional decimal part, period/comma optionally followed by digits
+
+	// This fifth form adds the network and magnitude type.
+	// It also adds "-" as an alternative for event id, network, and magnitude type to
+	// allow them to be explicitly omitted.
+
+	private static final Pattern quake_line_pattern = Pattern.compile ("[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[.,]\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)(?:[ \\t]+(-|[a-zA-Z_0-9]+)(?:[ \\t]+(-|[a-zA-Z_0-9]+)(?:[ \\t]+(-|[a-zA-Z_0-9]+))?)?)?[ \\t]*[\\n\\r]*");
+
+	// (?:[ \\t]+(-|[a-zA-Z_0-9]+))?			= optional nonempty alphanumeric string or "-" preceded by spaces/tabs
+	// (?:[ \\t]+(-|[a-zA-Z_0-9]+)(?:[ \\t]+(-|[a-zA-Z_0-9]+))?)?			= two such
+	// (?:[ \\t]+(-|[a-zA-Z_0-9]+)(?:[ \\t]+(-|[a-zA-Z_0-9]+)(?:[ \\t]+(-|[a-zA-Z_0-9]+))?)?)?			= three such
 
 
 	// Capture groups for the earthquake description.
@@ -757,6 +768,9 @@ public class GUIExternalCatalogV2 {
 	private static final int quake_mag_capture_group = 10;
 
 	private static final int quake_id_capture_group = 11;
+
+	private static final int quake_net_capture_group = 12;
+	private static final int quake_magtype_capture_group = 13;
 
 	// Pattern to recognize a valid event id.
 
@@ -810,12 +824,22 @@ public class GUIExternalCatalogV2 {
 		String mag = matcher.group (quake_mag_capture_group);
 
 		String id = matcher.group (quake_id_capture_group);	// might be null
-		if (id == null) {
+		if (id == null || id.equals("-")) {
 			if (f_generate_id) {
 				id = EventIDGenerator.generate_id();
 			} else {
 				id = "";
 			}
+		}
+
+		String net = matcher.group (quake_net_capture_group);	// might be null
+		if (net == null || net.equals("-")) {
+			net = "";
+		}
+
+		String magtype = matcher.group (quake_magtype_capture_group);	// might be null
+		if (magtype == null || magtype.equals("-")) {
+			magtype = "";
 		}
 
 		// Convert the date and time, allowing single-digit for all except year
@@ -885,11 +909,29 @@ public class GUIExternalCatalogV2 {
 		ObsEqkRupture result;
 		try {
 			result = new ObsEqkRupture (id, time, hypo, r_mag);
+			if (net.length() > 0) {
+				result.addParameter(new StringParameter(ComcatOAFAccessor.PARAM_NAME_NETWORK, net));
+			}
+			if (magtype.length() > 0) {
+				result.addParameter(new StringParameter(ComcatOAFAccessor.PARAM_NAME_MAGTYPE, magtype));
+			}
 		} catch (Exception e) {
 			throw new IllegalArgumentException ("GUIExternalCatalogV2.quake_parse_line: Error forming earthquake rupture object for line: " + line, e);
 		}
 
 		return result;
+	}
+
+
+	// Append a string to the given string builder.
+	// If the length of the string is less than width, pad with spaces on the right.
+
+	private static void append_and_pad (StringBuilder result, String s, int width) {
+		result.append (s);
+		for (int pad = width - s.length(); pad > 0; --pad) {
+			result.append (" ");
+		}
+		return;
 	}
 
 
@@ -914,22 +956,62 @@ public class GUIExternalCatalogV2 {
 		result.append (SimpleUtils.double_to_string_trailz ("%8.3f", SimpleUtils.TRAILZ_PAD_RIGHT, hypo.getDepth()));
 		result.append ("  ");
 		result.append (SimpleUtils.double_to_string_trailz ("%6.3f", SimpleUtils.TRAILZ_PAD_RIGHT, rup.getMag()));
+
 		String id = rup.getEventId();
 		if (id != null) {
 			id = id.trim();
-			if (id.length() > 0 && is_quake_id_valid (id) && (!( EventIDGenerator.is_generated_id(id) ))) {
-				result.append ("  ");
-				result.append (id);
+			if (id.isEmpty() || id.equals("-") || (!( is_quake_id_valid(id) )) || EventIDGenerator.is_generated_id(id)) {
+				id = null;
 			}
 		}
-		return result.toString();
+
+		Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+
+		String net = eimap.get (ComcatOAFAccessor.PARAM_NAME_NETWORK);
+		if (net != null) {
+			net = net.trim();
+			if (net.isEmpty() || net.equals("-") || (!( is_quake_id_valid(net) ))) {
+				net = null;
+			}
+		}
+
+		String magtype = eimap.get (ComcatOAFAccessor.PARAM_NAME_MAGTYPE);
+		if (magtype != null) {
+			magtype = magtype.trim();
+			if (magtype.isEmpty() || magtype.equals("-") || (!( is_quake_id_valid(magtype) ))) {
+				magtype = null;
+			}
+		}
+
+		if (magtype != null && net == null) {
+			net = "-";		// explicitly omit network if there is a magnitude type and no network
+		}
+
+		if (net != null && id == null) {
+			id = "-";		// explicitly omit event ID if there is a network and no event ID
+		}
+
+		if (id != null) {
+			result.append ("  ");
+			append_and_pad (result, id, 10);
+		}
+		if (net != null) {
+			result.append ("  ");
+			append_and_pad (result, net, 3);
+		}
+		if (magtype != null) {
+			result.append ("  ");
+			append_and_pad (result, magtype, 3);
+		}
+
+		return result.toString().trim();
 	}
 
 
 	// Format a comment line containing column headers for earthquake description.
 	// Line format, and number of columns:
-	//   date   time   lat   lon   depth   mag   id
-	//    10  1  8   2  9  2  10 2   8   2  6  2 1+
+	//   date   time   lat   lon   depth   mag   id   net   mty
+	//    10  1  8   2  9  2  10 2   8   2  6  2 10 2  3  2  3
 
 	public static String quake_format_header () {
 		StringBuilder result = new StringBuilder();
@@ -945,7 +1027,11 @@ public class GUIExternalCatalogV2 {
 		result.append ("  ");
 		result.append (" Mag  ");
 		result.append ("  ");
-		result.append ("    ID");
+		result.append ("    ID    ");
+		result.append ("  ");
+		result.append ("Net");
+		result.append ("  ");
+		result.append ("Mty");
 		return result.toString();
 	}
 
@@ -965,12 +1051,14 @@ public class GUIExternalCatalogV2 {
 
 	// Pattern to recognize a line containing a legacy mainshock.
 	// The legacy mainshock is given as a comment, on the next line after the introductory comment.
-	// Note: In principle, we only need to recognize the legacy format (only spaces/tabs allowed for date/time separators, no time zone, no event ID).
+	// Note: In principle, we only need to recognize the legacy format (only spaces/tabs allowed for date/time separators, no time zone, no event ID, no network, no magnitude type).
 	// For convenience, we use quake_line_pattern with a prefixed #, which is more permissive.
 
 	//private static final Pattern legacy_main_line_pattern = Pattern.compile ("[ \\t]*#[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*-[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*:[ \\t]*)(\\d\\d?)(?:\\.\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)[ \\t]+([0-9.eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
 	
-	private static final Pattern legacy_main_line_pattern = Pattern.compile ("[ \\t]*#[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[.,]\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
+	//private static final Pattern legacy_main_line_pattern = Pattern.compile ("[ \\t]*#[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[.,]\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)(?:[ \\t]+([a-zA-Z_0-9]+))?[ \\t]*[\\n\\r]*");
+	
+	private static final Pattern legacy_main_line_pattern = Pattern.compile ("[ \\t]*#[ \\t]*(\\d\\d\\d\\d)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[/.,-][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[tT][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[ \\t]+|[ \\t]*[:.,][ \\t]*)(\\d\\d?)(?:[.,]\\d*)?(?:[ \\t]*(?:[zZ]|[uU][tT][cC]))?[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)[ \\t]+([0-9.,eE+-]+)(?:[ \\t]+(-|[a-zA-Z_0-9]+)(?:[ \\t]+(-|[a-zA-Z_0-9]+)(?:[ \\t]+(-|[a-zA-Z_0-9]+))?)?)?[ \\t]*[\\n\\r]*");
 
 
 	// Parse a line which may contain a legacy mainshock.
@@ -1003,12 +1091,22 @@ public class GUIExternalCatalogV2 {
 		String mag = matcher.group (quake_mag_capture_group);
 
 		String id = matcher.group (quake_id_capture_group);	// might be null
-		if (id == null) {
+		if (id == null || id.equals("-")) {
 			if (f_generate_id) {
 				id = EventIDGenerator.generate_id();
 			} else {
 				id = "";
 			}
+		}
+
+		String net = matcher.group (quake_net_capture_group);	// might be null
+		if (net == null || net.equals("-")) {
+			net = "";
+		}
+
+		String magtype = matcher.group (quake_magtype_capture_group);	// might be null
+		if (magtype == null || magtype.equals("-")) {
+			magtype = "";
 		}
 
 		// Convert the date and time, allowing single-digit for all except year
@@ -1078,6 +1176,12 @@ public class GUIExternalCatalogV2 {
 		ObsEqkRupture result;
 		try {
 			result = new ObsEqkRupture (id, time, hypo, r_mag);
+			if (net.length() > 0) {
+				result.addParameter(new StringParameter(ComcatOAFAccessor.PARAM_NAME_NETWORK, net));
+			}
+			if (magtype.length() > 0) {
+				result.addParameter(new StringParameter(ComcatOAFAccessor.PARAM_NAME_MAGTYPE, magtype));
+			}
 		} catch (Exception e) {
 			throw new IllegalArgumentException ("GUIExternalCatalogV2.legacy_main_parse_line: Error forming earthquake rupture object for line: " + line, e);
 		}
@@ -1117,7 +1221,7 @@ public class GUIExternalCatalogV2 {
 				result.append (id);
 			}
 		}
-		return result.toString();
+		return result.toString().trim();
 	}
 
 
@@ -2306,9 +2410,10 @@ public class GUIExternalCatalogV2 {
 
 		double minDepth = ComcatOAFAccessor.DEFAULT_MIN_DEPTH;
 		double maxDepth = ComcatOAFAccessor.DEFAULT_MAX_DEPTH;
+		boolean my_extendedInfo = true;
 
 		ObsEqkRupList aftershocks = accessor.fetchAftershocks (mainshock, min_days, max_days,
-			minDepth, maxDepth, comcat_region, wrapLon, min_mag);
+			minDepth, maxDepth, comcat_region, wrapLon, min_mag, my_extendedInfo);
 
 		// Load into catalog
 

@@ -185,6 +185,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private static final int PARMGRP_ETAS_MODEL = 812;			// Option to select model
 	private static final int PARMGRP_ETAS_PRIOR = 813;			// Option to select prior
 	private static final int PARMGRP_USE_COMMON_B = 814;		// Option to use common b-value (same as RJ)
+	private static final int PARMGRP_ETAS_CHECK_GRID = 815;		// ETAS check grid size button
 
 
 
@@ -672,6 +673,18 @@ public class OEGUISubETASValue extends OEGUIListener {
 	}
 
 
+	// Check Grid Size button.
+
+	private ButtonParameter checkGridSizeButton;
+
+	private ButtonParameter init_checkGridSizeButton () throws GUIEDTException {
+		checkGridSizeButton = new ButtonParameter("Check Grid Size", "Check Grid Size...");
+		checkGridSizeButton.setInfo("Check if the ETAS parameter search grid is OK or too large");
+		register_param (checkGridSizeButton, "checkGridSizeButton", PARMGRP_ETAS_CHECK_GRID);
+		return checkGridSizeButton;
+	}
+
+
 
 
 	// ETAS model; dropdown containing an enumeration to select ETAS enable option.
@@ -795,6 +808,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 		
 		init_zmuETASValNumParam();
 
+		init_checkGridSizeButton();
+
 		init_etasModelParam();
 
 		init_etasBayWeightParam();
@@ -827,7 +842,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 		boolean f_button_row = false;
 
 		etasValueEditParam.setListTitleText ("ETAS Parameters");
-		etasValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(12, f_button_row, 0));
+		etasValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(13, f_button_row, 0));
 
 		etasValueList.addParameter(nETASValRangeParam);
 		etasValueList.addParameter(nETASValNumParam);
@@ -841,6 +856,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 		etasValueList.addParameter(zamsETASValRelativeParam);
 		etasValueList.addParameter(zmuETASValRangeParam);
 		etasValueList.addParameter(zmuETASValNumParam);
+		etasValueList.addParameter(checkGridSizeButton);
 		
 		etasValueEditParam.getEditor().refreshParamEditor();
 	}
@@ -942,6 +958,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 		enableDefaultParam(zamsETASValRelativeParam, f_etas_value_enable, true);
 		enableDefaultParam(zmuETASValRangeParam, f_etas_value_enable, null);
 		enableDefaultParam(zmuETASValNumParam, f_etas_value_enable, null);
+		enableParam(checkGridSizeButton, f_etas_value_enable);
 
 		enableDefaultParam(useCommonBParam, f_etas_value_enable, true);
 		boolean f_use_common_b = validParam(useCommonBParam);
@@ -1655,6 +1672,57 @@ public class OEGUISubETASValue extends OEGUIListener {
 				return;
 			}
 			report_etas_value_change();
+		}
+		break;
+
+
+
+
+		// Button to check grid size.
+		// - Pop up a dialog box to display size.
+
+		case PARMGRP_ETAS_CHECK_GRID: {
+			if (!( f_sub_enable && f_etas_value_enable )) {
+				return;
+			}
+
+			// Show a dialog with grid size information
+
+			long grid_size = 1L;
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(nETASValNumParam));
+			}
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(pETASValNumParam));
+			}
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(cETASValNumParam));
+			}
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(zamsETASValNumParam));
+			}
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(zmuETASValNumParam));
+			}
+
+			long max_grid_size = 5000000L;
+			int message_type = JOptionPane.INFORMATION_MESSAGE;
+
+			StringBuilder sb = new StringBuilder();			
+			if (grid_size <= 1000000000L) {
+				sb.append ("Current ETAS grid size = " + grid_size + "\n\n");
+			} else {
+				sb.append ("Current ETAS grid size = " + "more than 1000000000" + "\n\n");
+			}
+			sb.append ("Maximum allowed ETAS grid size = " + max_grid_size + "\n\n");
+			if (grid_size <= max_grid_size) {
+				sb.append ("Grid size is OK.");
+			} else {
+				sb.append ("Grid size is too large.");
+				message_type = JOptionPane.ERROR_MESSAGE;
+			}
+
+			JOptionPane.showMessageDialog(gui_top.get_top_window(), sb.toString(), "ETAS Grid Size", message_type);
 		}
 		break;
 

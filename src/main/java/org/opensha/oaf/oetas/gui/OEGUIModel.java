@@ -40,6 +40,7 @@ import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
 import org.opensha.commons.data.function.HistogramFunction;
 import org.opensha.commons.data.function.XY_DataSet;
 import org.opensha.commons.data.function.XY_DatasetBinner;
+import org.opensha.commons.param.impl.StringParameter;
 
 import org.opensha.oaf.rj.AftershockStatsCalc;
 import org.opensha.oaf.rj.CompactEqkRupList;
@@ -1410,6 +1411,106 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+//----- Incompleteness parameters used for the fit (used by Information tab) -----
+
+	// The time-dependent incompleteness option for parameter fitting.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	private TimeDepMagCompOption info_time_dep_option = null;
+
+	public final TimeDepMagCompOption get_info_time_dep_option () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_time_dep_option while in state " + cur_modstate_string());
+		}
+		return info_time_dep_option;
+	}
+
+	// The magnitude of completeness for parameter fitting.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	private double info_time_dep_mcat;
+
+	public final double get_info_time_dep_mcat () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_time_dep_mcat while in state " + cur_modstate_string());
+		}
+		return info_time_dep_mcat;
+	}
+
+	// The Helmstetter parameters for parameter fitting.
+	// Available when model state >= MODSTATE_PARAMETERS.
+
+	private double info_time_dep_f;
+
+	public final double get_info_time_dep_f () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_time_dep_f while in state " + cur_modstate_string());
+		}
+		return info_time_dep_f;
+	}
+
+	private double info_time_dep_g;
+
+	public final double get_info_time_dep_g () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_time_dep_g while in state " + cur_modstate_string());
+		}
+		return info_time_dep_g;
+	}
+
+	private double info_time_dep_h;
+
+	public final double get_info_time_dep_h () {
+		if (!( modstate >= MODSTATE_PARAMETERS )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_time_dep_h while in state " + cur_modstate_string());
+		}
+		return info_time_dep_h;
+	}
+
+
+
+
+//----- Tectonic regimes for the mainshock or downloaded forecast (used by Information tab) -----
+
+	// The tectonic regime for RJ generic parameters.
+	// Available when model state >= MODSTATE_MAINSHOCK.
+
+	private String info_generic_regime = null;
+
+	public final String get_info_generic_regime () {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_generic_regime while in state " + cur_modstate_string());
+		}
+		return info_generic_regime;
+	}
+
+	// The tectonic regime for magnitude of completeness parameters.
+	// Available when model state >= MODSTATE_MAINSHOCK.
+
+	private String info_mag_comp_regime = null;
+
+	public final String get_info_mag_comp_regime () {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_mag_comp_regime while in state " + cur_modstate_string());
+		}
+		return info_mag_comp_regime;
+	}
+
+	// The tectonic regime for ETAS parameters.
+	// Available when model state >= MODSTATE_MAINSHOCK.
+
+	private String info_etas_regime = null;
+
+	public final String get_info_etas_regime () {
+		if (!( modstate >= MODSTATE_MAINSHOCK )) {
+			throw new IllegalStateException ("Access to OEGUIModel.info_etas_regime while in state " + cur_modstate_string());
+		}
+		return info_etas_regime;
+	}
+
+
+
+
 	// Clear all data structures that are not valid in the current state.
 
 	private void clear_to_state () {
@@ -1426,6 +1527,8 @@ public class OEGUIModel extends OEGUIComponent {
 			forecast_fcresults = null;
 			forecast_analyst_opts = null;
 			forecast_fcdata = null;
+
+			info_time_dep_option = null;
 		}
 
 		// Structures not valid if we don't have a catalog
@@ -1463,6 +1566,10 @@ public class OEGUIModel extends OEGUIComponent {
 			analyst_adj_params = null;
 
 			cur_mainshock = null;
+
+			info_generic_regime = null;
+			info_mag_comp_regime = null;
+			info_etas_regime = null;
 		}
 
 		return;
@@ -1793,6 +1900,10 @@ public class OEGUIModel extends OEGUIComponent {
 		System.out.println ("Default sequence-specific parameters:");
 		System.out.println (aafs_fcparams.seq_spec_params.toString());
 
+		info_generic_regime = aafs_fcparams.generic_regime;
+		info_mag_comp_regime = aafs_fcparams.mag_comp_regime;
+		info_etas_regime = aafs_fcparams.etas_regime;
+
 		// Copy to fetch_fcparams
 
 		fetch_fcparams = new ForecastParameters();
@@ -1860,6 +1971,10 @@ public class OEGUIModel extends OEGUIComponent {
 
 		System.out.println ("Sequence-specific parameters used in forecast:");
 		System.out.println (aafs_fcparams.seq_spec_params.toString());
+
+		info_generic_regime = aafs_fcparams.generic_regime;
+		info_mag_comp_regime = aafs_fcparams.mag_comp_regime;
+		info_etas_regime = aafs_fcparams.etas_regime;
 
 		// Copy to fetch_fcparams
 
@@ -2239,6 +2354,50 @@ public class OEGUIModel extends OEGUIComponent {
 
 
 
+	// Add a string parameter value to a rupture, if it is non-null and non-empty.
+
+	private static void add_string_param_to_rup (ObsEqkRupture rup, String name, String value) {
+		if (!( value == null || value.trim().isEmpty() )) {
+			rup.addParameter(new StringParameter(name, value));
+		}
+		return;
+	}
+
+
+
+
+	// Get a rupture object from a ForecastMainshock.
+	// Also sets network and magnitude type to indicate the source of the magnitude, if possible.
+	// If mag_source_rup is non-null, the network and magnitude type are copied from it if available.
+	// If mag_source_rup is null, the network and magnitude type are obtained from the geojson if available.
+
+	private static ObsEqkRupture get_eqk_rupture_ext (ForecastMainshock the_fcmain, ObsEqkRupture mag_source_rup) {
+
+		// Obtain standard info
+
+		ObsEqkRupture rup = the_fcmain.get_eqk_rupture();
+
+		// Copy from magnitude source, if provided
+
+		if (mag_source_rup != null) {
+			Map<String, String> eimap = ComcatOAFAccessor.extendedInfoToMap (mag_source_rup, ComcatOAFAccessor.EITMOPT_NULL_TO_EMPTY);
+			add_string_param_to_rup (rup, ComcatOAFAccessor.PARAM_NAME_NETWORK, eimap.get(ComcatOAFAccessor.PARAM_NAME_NETWORK));
+			add_string_param_to_rup (rup, ComcatOAFAccessor.PARAM_NAME_MAGTYPE, eimap.get(ComcatOAFAccessor.PARAM_NAME_MAGTYPE));
+		}
+
+		// Otherwise, copy from geojson, if available
+
+		else if (the_fcmain.mainshock_geojson != null) {
+			add_string_param_to_rup (rup, ComcatOAFAccessor.PARAM_NAME_NETWORK, GeoJsonUtils.getNet(the_fcmain.mainshock_geojson));
+			add_string_param_to_rup (rup, ComcatOAFAccessor.PARAM_NAME_MAGTYPE, GeoJsonUtils.getMagType(the_fcmain.mainshock_geojson));
+		}
+
+		return rup;
+	}
+
+
+
+
 	// Fetch events from Comcat.
 	// Parameters:
 	//  xfer = Transfer object to read/modify control parameters.
@@ -2268,7 +2427,8 @@ public class OEGUIModel extends OEGUIComponent {
 		fcmain.setup_mainshock_poll (eventID);
 		Preconditions.checkState(fcmain.mainshock_avail, "Event not found: %s", eventID);
 
-		cur_mainshock = fcmain.get_eqk_rupture();
+		//cur_mainshock = fcmain.get_eqk_rupture();
+		cur_mainshock = get_eqk_rupture_ext (fcmain, null);
 
 		// Finish setting up the mainshock
 
@@ -2287,6 +2447,7 @@ public class OEGUIModel extends OEGUIComponent {
 		ComcatOAFAccessor accessor = new ComcatOAFAccessor();
 
 		boolean my_wrapLon = false;
+		boolean my_extendedInfo = true;
 
 		// If we can make an outer region ...
 
@@ -2321,7 +2482,8 @@ public class OEGUIModel extends OEGUIComponent {
 				fetch_fcparams.max_depth,
 				outer_region,
 				my_wrapLon,
-				fetch_fcparams.min_mag
+				fetch_fcparams.min_mag,
+				my_extendedInfo
 			);
 
 			// Add them to the catalog
@@ -2361,7 +2523,8 @@ public class OEGUIModel extends OEGUIComponent {
 				fetch_fcparams.max_depth,
 				fetch_fcparams.aftershock_search_region,
 				my_wrapLon,
-				fetch_fcparams.min_mag
+				fetch_fcparams.min_mag,
+				my_extendedInfo
 			);
 
 			// Add them to the catalog
@@ -2408,7 +2571,8 @@ public class OEGUIModel extends OEGUIComponent {
 		fcmain.setup_mainshock_poll (eventID);
 		Preconditions.checkState(fcmain.mainshock_avail, "Event not found: %s", eventID);
 
-		cur_mainshock = fcmain.get_eqk_rupture();
+		//cur_mainshock = fcmain.get_eqk_rupture();
+		cur_mainshock = get_eqk_rupture_ext (fcmain, null);
 
 		// Finish setting up the mainshock
 
@@ -2648,13 +2812,16 @@ public class OEGUIModel extends OEGUIComponent {
 			// If the file contains a mainshock, use its time, mag, and location in place of Comcat's
 
 			int main_count = din_catalog.get_rup_list_size (GUIExternalCatalogV2.EQCAT_MAINSHOCK);
+			ObsEqkRupture mag_source_rup = null;
 			if (main_count == 1) {
-				fcmain.override_time_mag_loc (din_catalog.get_mainshock());
+				mag_source_rup = din_catalog.get_mainshock();
+				fcmain.override_time_mag_loc (mag_source_rup);
 			}
 
 			// The mainshock
 
-			cur_mainshock = fcmain.get_eqk_rupture();
+			//cur_mainshock = fcmain.get_eqk_rupture();
+			cur_mainshock = get_eqk_rupture_ext (fcmain, mag_source_rup);
 		}
 
 		// Otherwise, use mainshock from the file
@@ -3226,6 +3393,12 @@ public class OEGUIModel extends OEGUIComponent {
 
 			magCompFn = MagCompFn.makePageOrConstant (f, g, h);
 
+			info_time_dep_option = xfer.x_commonValue.x_timeDepOptionParam;
+			info_time_dep_mcat = mCat;
+			info_time_dep_f = f;
+			info_time_dep_g = g;
+			info_time_dep_h = h;
+
 			break;
 
 		// Otherwise, time-independent magnitude of completeness
@@ -3236,6 +3409,9 @@ public class OEGUIModel extends OEGUIComponent {
 
 			magCompFn = MagCompFn.makeConstant();
 
+			info_time_dep_option = xfer.x_commonValue.x_timeDepOptionParam;
+			info_time_dep_mcat = mCat;
+
 			break;
 
 		case EQUALS_MC:
@@ -3244,6 +3420,9 @@ public class OEGUIModel extends OEGUIComponent {
 			mCat = mc;
 
 			magCompFn = MagCompFn.makeConstant();
+
+			info_time_dep_option = xfer.x_commonValue.x_timeDepOptionParam;
+			info_time_dep_mcat = mCat;
 
 			break;
 
@@ -4509,7 +4688,9 @@ public class OEGUIModel extends OEGUIComponent {
 	private int info_tag_processor = -1;			// Processor information
 	private int info_tag_memory = -1;				// Memory information
 	private int info_tag_mainshock = -1;			// Mainshock information
+	private int info_tag_regimes = -1;				// Tectonic regimes
 	private int info_tag_region = -1;				// Aftershock search region information
+	private int info_tag_time_dep = -1;				// Time dependent incompleteness information
 	private int info_tag_rj_mle_fit = -1;			// RJ MLE and variance parameter it
 	private int info_tag_etas_mle_fit = -1;			// ETAS MLE parameter fit
 
@@ -4537,9 +4718,11 @@ public class OEGUIModel extends OEGUIComponent {
 
 		info_tag_etas_mle_fit = register_info_item (MODSTATE_PARAMETERS, "Fitted ETAS MLE Parameters");
 		info_tag_rj_mle_fit = register_info_item (MODSTATE_PARAMETERS, "Fitted RJ Parameters");
+		info_tag_time_dep = register_info_item (MODSTATE_PARAMETERS, "Time-Dependent Incompleteness Option");
 
 		info_tag_region = register_info_item (MODSTATE_CATALOG, "Aftershock search region");
 
+		info_tag_regimes = register_info_item (MODSTATE_MAINSHOCK, "Tectonic Regimes");
 		info_tag_mainshock = register_info_item (MODSTATE_MAINSHOCK, "Mainshock Information");
 
 		info_tag_memory = register_info_item (MODSTATE_INITIAL, "Memory Usage");
@@ -4824,6 +5007,7 @@ public class OEGUIModel extends OEGUIComponent {
 
 		case MODSTATE_MAINSHOCK:
 			update_mainshock_info (get_fcmain());
+			update_regimes_info();
 			break;
 
 		// Information for fetching the catalog
@@ -4835,6 +5019,7 @@ public class OEGUIModel extends OEGUIComponent {
 		// Information for determining aftershock parameters
 
 		case MODSTATE_PARAMETERS:
+			update_time_dep_info();
 			update_rj_fit_info();
 			update_etas_fit_info();
 			break;
@@ -5219,6 +5404,26 @@ public class OEGUIModel extends OEGUIComponent {
 
 		table.add_row_mixed ("-");
 
+		table.add_row();
+		table.add_cell_left ("b");
+		if (gen_model != null) {
+			table.add_cell_right (rj_fit_num_format (
+				gen_model.get_b()
+			));
+		}
+		if (seq_model != null) {
+			table.add_cell_right (rj_fit_num_format (
+				seq_model.get_b()
+			));
+		}
+		if (bay_model != null) {
+			table.add_cell_right (rj_fit_num_format (
+				bay_model.get_b()
+			));
+		}
+
+		table.add_row_mixed ("-");
+
 		table.set_column_seps (" ", " |", " | ");
 
 		set_info_item (info_tag_rj_mle_fit, table.toString());
@@ -5449,6 +5654,128 @@ public class OEGUIModel extends OEGUIComponent {
 		table.set_column_seps (" ", " |", " | ");
 
 		set_info_item (info_tag_etas_mle_fit, table.toString());
+		return;
+	}
+
+
+
+
+	// Update the time-dependent incompleteness info.
+
+	public final void update_time_dep_info () {
+		TimeDepMagCompOption time_dep_option = get_info_time_dep_option();
+		if (time_dep_option != null) {
+			StringBuilder sb = new StringBuilder();
+
+			// Switch on time-dependent magnitude of completeness option
+
+			switch (time_dep_option) {
+
+			// If doing time-dependent magnitude of completeness
+
+			case ENABLE:
+				sb.append ("option = " + "Custom Values" + "\n");
+				sb.append ("Mcat = " + get_info_time_dep_mcat() + "\n");
+				sb.append ("F = " + get_info_time_dep_f() + "\n");
+				sb.append ("G = " + get_info_time_dep_g() + "\n");
+				sb.append ("H = " + get_info_time_dep_h() + "\n");
+				break;
+
+			case WORLD:
+				sb.append ("option = " + "World Values" + "\n");
+				sb.append ("Mcat = " + get_info_time_dep_mcat() + "\n");
+				sb.append ("F = " + get_info_time_dep_f() + "\n");
+				sb.append ("G = " + get_info_time_dep_g() + "\n");
+				sb.append ("H = " + get_info_time_dep_h() + "\n");
+				break;
+
+			case CALIFORNIA:
+				sb.append ("option = " + "California Values" + "\n");
+				sb.append ("Mcat = " + get_info_time_dep_mcat() + "\n");
+				sb.append ("F = " + get_info_time_dep_f() + "\n");
+				sb.append ("G = " + get_info_time_dep_g() + "\n");
+				sb.append ("H = " + get_info_time_dep_h() + "\n");
+				break;
+
+			// Otherwise, time-independent magnitude of completeness
+
+			case EQUALS_MCAT:
+				sb.append ("option = " + "Constant (Time-Independent)" + "\n");
+				sb.append ("Mcat = " + get_info_time_dep_mcat() + "\n");
+				break;
+
+			case EQUALS_MC:
+				sb.append ("option = " + "Constant (Time-Independent)" + "\n");
+				sb.append ("Mcat = " + get_info_time_dep_mcat() + "\n");
+				break;
+
+			default:
+				throw new IllegalArgumentException ("OEGUIModel.update_time_dep_info: Invalid magnitude of completeness option");
+			}
+
+			set_info_item (info_tag_time_dep, sb.toString());
+		}
+		else {
+			set_info_item (info_tag_time_dep, null);
+		}
+		return;
+	}
+
+
+
+
+	// Update the tectonic regimes info.
+
+	public final void update_regimes_info () {
+
+		// Get regimes, set any empty ones to null
+
+		String generic_regime = get_info_generic_regime();
+		if (generic_regime != null) {
+			generic_regime = generic_regime.trim();
+			if (generic_regime.isEmpty()) {
+				generic_regime = null;
+			}
+		}
+
+		String mag_comp_regime = get_info_mag_comp_regime();
+		if (mag_comp_regime != null) {
+			mag_comp_regime = mag_comp_regime.trim();
+			if (mag_comp_regime.isEmpty()) {
+				mag_comp_regime = null;
+			}
+		}
+
+		String etas_regime = get_info_etas_regime();
+		if (etas_regime != null) {
+			etas_regime = etas_regime.trim();
+			if (etas_regime.isEmpty()) {
+				etas_regime = null;
+			}
+		}
+
+		// If any are available, write the info
+
+		if (generic_regime != null || mag_comp_regime != null || etas_regime != null) {
+			StringBuilder sb = new StringBuilder();
+
+			if (generic_regime != null) {
+				sb.append ("tectonic regime for generic RJ parameters = " + generic_regime + "\n");
+			}
+
+			if (mag_comp_regime != null) {
+				sb.append ("tectonic regime for magnitude of completeness parameters = " + mag_comp_regime + "\n");
+			}
+
+			if (etas_regime != null) {
+				sb.append ("tectonic regime for ETAS parameters = " + etas_regime + "\n");
+			}
+
+			set_info_item (info_tag_regimes, sb.toString());
+		}
+		else {
+			set_info_item (info_tag_regimes, null);
+		}
 		return;
 	}
 

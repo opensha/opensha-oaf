@@ -813,7 +813,11 @@ public class OEGUISubAnalyst extends OEGUIListener {
 			scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 			area.setLineWrap(true);
 			area.setWrapStyleWord(true);
-			int ret = JOptionPane.showConfirmDialog(gui_top.get_top_window(), scroll, "Set Analyst Remark (Caution - Publicly Visible)", JOptionPane.OK_CANCEL_OPTION);
+			String title = "Append or Set Analyst Remark (Caution - Publicly Visible)";
+			if (prevText.trim().isEmpty()) {
+				title = "Set Analyst Remark (Caution - Publicly Visible)";
+			}
+			int ret = JOptionPane.showConfirmDialog(gui_top.get_top_window(), scroll, title, JOptionPane.OK_CANCEL_OPTION);
 
 			// If user entered new text, store it
 
