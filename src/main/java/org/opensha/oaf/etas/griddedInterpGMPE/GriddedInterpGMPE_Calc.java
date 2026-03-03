@@ -197,14 +197,7 @@ public class GriddedInterpGMPE_Calc {
 			PointSource calcSource = source.getForSite(gmpe.getSite());
 			
 			for (ProbEqkRupture rup : calcSource) {
-				try {
-					gmpe.setEqkRupture(rup);
-				} catch (WarningException e) {
-					System.err.println(e.getMessage());
-					// do nothing then
-				}
-				
-				gmpe.getExceedProbabilities(logXVals);
+				gmpe.getExceedProbabilities(rup, logXVals);
 				
 				double rupProb = rup.getProbability();
 				double rupRate = -Math.log(1 - rupProb);
