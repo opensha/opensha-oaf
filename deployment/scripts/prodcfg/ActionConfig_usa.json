@@ -35,7 +35,7 @@
   "removal_event_gap": "P0DT0H2M0S",
   "removal_foreign_block": "P30DT0H0M0S",
   "def_injectable_text": "",
-  "evseq_enable": 0,
+  "evseq_enable": 1,
   "evseq_report": 1,
   "evseq_lookback": "P30DT0H0M0S",
   "evseq_lookahead": "P365DT0H0M0S",

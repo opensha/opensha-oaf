@@ -20,6 +20,10 @@ java -jar AftershockGUI-2026_01_06.jar --etas-config=enable --evseq-config=enabl
             and the <code>--evseq-config</code> option specifies that event-sequence products should be used.
             Note that the name of the GUI jar file may be different than shown.
         </p>
+        <p>
+            Currently, the use of event-sequence products is enabled by default, so <code>--evseq-config=enable</code>
+            is not necessary.
+        </p>
         <p>&nbsp;</p>
         <p><b>Summary</b></p>
         <p>
@@ -51,7 +55,7 @@ java -jar AftershockGUI-2026_01_06.jar --etas-config=enable --evseq-config=enabl
             by enabling ETAS in the GUI and then sending forecast parameters to the server.
         </p>
         <p>
-            if the <code>--etas-config</code> option is omitted, the GUI supplies a pre-programmed default.
+            If the <code>--etas-config</code> option is omitted, the GUI supplies a pre-programmed default.
         </p>
         <p>&nbsp;</p>
 <pre>
@@ -70,7 +74,8 @@ java -jar AftershockGUI-2026_01_06.jar --etas-config=enable --evseq-config=enabl
             by enabling event-sequence in the GUI and then sending parameters to the server.
         </p>
         <p>
-            if the <code>--evseq-config</code> option is omitted, the GUI supplies a pre-programmed default.
+            If the <code>--evseq-config</code> option is omitted, the GUI supplies a pre-programmed default.
+            Currently, the pre-programmed default is <i>enable</i>.
         </p>
         <p>&nbsp;</p>
 <pre>
