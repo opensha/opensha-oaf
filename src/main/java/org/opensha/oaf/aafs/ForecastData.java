@@ -1145,7 +1145,7 @@ public class ForecastData implements Marshalable {
 
 		// Set properties for mainshock
 
-		if (!( evs_props.set_from_event_gj (geojson) )) {
+		if (!( evs_props.set_from_event_gj_for_sequence (geojson) )) {
 			return "Failed to set event-sequence properties for mainshock";
 		}
 
@@ -1237,7 +1237,7 @@ public class ForecastData implements Marshalable {
 
 		// Set properties for mainshock
 
-		if (!( evs_props.set_from_event_gj (geojson) )) {
+		if (!( evs_props.set_from_event_gj_for_sequence (geojson) )) {
 			return "Failed to set event-sequence properties for mainshock";
 		}
 
@@ -1328,7 +1328,7 @@ public class ForecastData implements Marshalable {
 
 		// Set properties for mainshock
 
-		if (!( evs_props.set_from_event_gj (geojson) )) {
+		if (!( evs_props.set_from_event_gj_for_sequence (geojson) )) {
 			return "Failed to set event-sequence properties for mainshock";
 		}
 
@@ -2424,7 +2424,7 @@ public class ForecastData implements Marshalable {
 
 			// Set properties for mainshock
 
-			if (!( evs_props.set_from_event_gj (fcmain.mainshock_geojson) )) {
+			if (!( evs_props.set_from_event_gj_for_sequence (fcmain.mainshock_geojson) )) {
 				System.out.println ("Failed to set event-sequence properties for mainshock");
 				return;
 			}
