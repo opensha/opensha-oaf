@@ -339,36 +339,101 @@ public class OEGUIView extends OEGUIComponent {
 	
 	private EvenlyDiscretizedFunc saved_magSizeFunc = null;
 	
-	private EvenlyDiscretizedFunc getMagSizeFunc() {
-		if (saved_magSizeFunc != null)
-			return saved_magSizeFunc;
+//  	private EvenlyDiscretizedFunc getMagSizeFunc() {
+//  		if (saved_magSizeFunc != null)
+//  			return saved_magSizeFunc;
+//  		
+//  		// size function
+//  		double minMag = 1.25;
+//  		double magDelta = 0.5;
+//  		int numMag = 2*8;
+//  		saved_magSizeFunc = new EvenlyDiscretizedFunc(minMag, numMag, magDelta);
+//  //		double maxMag = saved_magSizeFunc.getMaxX();
+//  //		double minSize = 1d;
+//  //		double maxSize = 20d;
+//  //		double sizeMult = 1.4;
+//  //		double size = minSize;
+//  		
+//  		double dS = 3;
+//  		for (int i=0; i<saved_magSizeFunc.size(); i++) {
+//  			double mag = saved_magSizeFunc.getX(i);
+//  //			double fract = (mag - minMag)/(maxMag - minMag);
+//  //			double size = minSize + fract*(maxSize - minSize);
+//  			
+//  //			saved_magSizeFunc.set(i, size);
+//  //			double radius = Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 1000 / 111.111;
+//  			// scale with stress drop, from Nicholas via e-mail 10/26/2015
+//  			double radius = Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 300d;
+//  			saved_magSizeFunc.set(i, radius);
+//  //			System.out.println("Mag="+mag+", radius="+radius);
+//  //			size *= sizeMult;
+//  		}
+//  		
+//  		return saved_magSizeFunc;
+//  	}
+	
+
+	// Build the magnitude size function, given the mainshock magnitude.
+	// Sizes are reduced for mainshock magnitude > 7.0.
+
+	private EvenlyDiscretizedFunc buildMagSizeFunc (double mainMag) {
 		
-		// size function
+		// Size function
+
 		double minMag = 1.25;
 		double magDelta = 0.5;
 		int numMag = 2*8;
 		saved_magSizeFunc = new EvenlyDiscretizedFunc(minMag, numMag, magDelta);
-//		double maxMag = saved_magSizeFunc.getMaxX();
-//		double minSize = 1d;
-//		double maxSize = 20d;
-//		double sizeMult = 1.4;
-//		double size = minSize;
-		
-		double dS = 3;
+
+		// The minimum and maximum sizes of a symbol
+
+		double minSize = 0.5;
+		double maxSize = 75.0;
+
+		// The magnitudes at which the minimum and maximum sizes occur
+
+		double minSizeMag = 2.5;
+		double maxSizeMag = 7.0;
+
+		// If the mainshock magnitude is larger than max, then adjust the magnitude range so max is the mainshock magnitude
+
+		//  if (mainMag > maxSizeMag) {
+		//  	minSizeMag += (mainMag - maxSizeMag);
+		//  	maxSizeMag = mainMag;
+		//  }
+
+		double discMainMag = saved_magSizeFunc.getX(saved_magSizeFunc.getClosestXIndex(mainMag));	// closest mag in the function
+		if (discMainMag > maxSizeMag) {
+			minSizeMag += (discMainMag - maxSizeMag);
+			maxSizeMag = discMainMag;
+		}
+
+		// Interpolation exponent
+		// Note: An exponent of 1.0 would makes sizes vary linearly with magnitude.
+
+		double interpExp = 4.0;
+
+		// Compute the size for each magnitude in the function
+
 		for (int i=0; i<saved_magSizeFunc.size(); i++) {
 			double mag = saved_magSizeFunc.getX(i);
-//			double fract = (mag - minMag)/(maxMag - minMag);
-//			double size = minSize + fract*(maxSize - minSize);
+			double fract = (mag - minSizeMag)/(maxSizeMag - minSizeMag);
+			fract = Math.max(0.000001, Math.min(1.0, fract));
+			double size = minSize + Math.pow(fract, interpExp)*(maxSize - minSize);
 			
-//			saved_magSizeFunc.set(i, size);
-//			double radius = Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 1000 / 111.111;
-			// scale with stress drop, from Nicholas via e-mail 10/26/2015
-			double radius = Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 300d;
-			saved_magSizeFunc.set(i, radius);
-//			System.out.println("Mag="+mag+", radius="+radius);
-//			size *= sizeMult;
+			saved_magSizeFunc.set(i, size);
 		}
 		
+		return saved_magSizeFunc;
+	}
+
+
+	// Get the magnitude size function.
+
+	private EvenlyDiscretizedFunc getMagSizeFunc() {
+		if (saved_magSizeFunc == null) {
+			throw new IllegalStateException ("OEGUIView.getMagSizeFunc - Magnitude size function has not been built");
+		}
 		return saved_magSizeFunc;
 	}
 
@@ -435,12 +500,82 @@ public class OEGUIView extends OEGUIComponent {
 		}
 		return saved_distCPT;
 	}
+
+
+
+
+	// Enumeration that gives the purpose for which a symbol is being plotted.
+	
+	private enum SymbolPurpose {
+		EPI_MAP("Display an epicenter on a map"),
+		MAIN_MAP("Display a mainshock on a map"),
+		CITY_MAP("Display a city on a map"),
+		MAG_TIME("An earthquake on a magnitude-time plot"),
+		MAG_FREQ("A symbol on a magnitude-frequency plot");
+		
+		private String label;
+		
+		private SymbolPurpose(String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+
+
+	// Make the PlotCurveCharacterstics to display a symbol, given the symbol purpose, symbol size, and color.
+	// Parameters:
+	//  SymbolPurpose = Symbol purpose.
+	//  symbolSize = Initial symbol size.
+	//  c = Color.
+	// This function chooses the appropriate symbol, which may vary with the purpose and size.
+	// It also may adjust the size used in the PlotCurveCharacterstics to make it display well.
+	// Note: This function provides a central place for adjusting all plotting symbols.
+
+	private PlotCurveCharacterstics makeCharsForSymbol (SymbolPurpose symbolPurpose, float symbolSize, Color c) {
+		PlotSymbol symbol = null;
+		float size = symbolSize;
+		switch (symbolPurpose) {
+
+		case EPI_MAP:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size += 1.0f;
+			break;
+
+		case MAIN_MAP:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size += 1.0f;
+			break;
+
+		case CITY_MAP:
+			symbol = PlotSymbol.SQUARE;
+			size += 2.0f;
+			break;
+
+		case MAG_TIME:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size += 1.0f;
+			break;
+
+		case MAG_FREQ:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size = Float.max (size, 3.0f);
+			break;
+		}
+
+		return new PlotCurveCharacterstics (symbol, size, c);
+	}
 	
 
 
 
 	private void buildFuncsCharsForBinned(XY_DataSet[] binnedFuncs,
-			List<PlotElement> funcs, List<PlotCurveCharacterstics> chars, PlotSymbol sym) {
+			List<PlotElement> funcs, List<PlotCurveCharacterstics> chars, SymbolPurpose purpose) {
 		EvenlyDiscretizedFunc my_magSizeFunc = getMagSizeFunc();
 		double magDelta = my_magSizeFunc.getDelta();
 		CPT magColorCPT = getMagCPT();
@@ -454,7 +589,7 @@ public class OEGUIView extends OEGUIComponent {
 			float size = (float)my_magSizeFunc.getY(i);
 			Color c = magColorCPT.getColor((float)my_magSizeFunc.getX(i));
 			funcs.add(xy);
-			chars.add(new PlotCurveCharacterstics(sym, size, c));
+			chars.add(makeCharsForSymbol(purpose, size, c));
 		}
 	}
 	
@@ -472,7 +607,7 @@ public class OEGUIView extends OEGUIComponent {
 	 * @param func2
 	 */
 	private void buildFuncsCharsForBinned2D(XY_DataSet[][] binnedFuncs, List<PlotElement> funcs,
-			List<PlotCurveCharacterstics> chars, CPT cpt, String name2, EvenlyDiscretizedFunc func2, PlotSymbol sym) {
+			List<PlotCurveCharacterstics> chars, CPT cpt, String name2, EvenlyDiscretizedFunc func2, SymbolPurpose purpose) {
 		EvenlyDiscretizedFunc my_magSizeFunc = getMagSizeFunc();
 		double magDelta = my_magSizeFunc.getDelta();
 		double func2Delta = func2.getDelta();
@@ -490,7 +625,7 @@ public class OEGUIView extends OEGUIComponent {
 				float size = (float)my_magSizeFunc.getY(i);
 				Color c = cpt.getColor((float)func2.getX(j));
 				funcs.add(xy);
-				chars.add(new PlotCurveCharacterstics(sym, size, c));
+				chars.add(makeCharsForSymbol(purpose, size, c));
 			}
 		}
 	}
@@ -499,7 +634,7 @@ public class OEGUIView extends OEGUIComponent {
 
 
 	private void buildFuncsCharsForBinnedFS(XY_DataSet[] binnedFuncs,
-			List<PlotElement> funcs, List<PlotCurveCharacterstics> chars, PlotSymbol sym, Color c) {
+			List<PlotElement> funcs, List<PlotCurveCharacterstics> chars, SymbolPurpose purpose, Color c) {
 		EvenlyDiscretizedFunc my_magSizeFunc = getMagSizeFunc();
 		double magDelta = my_magSizeFunc.getDelta();
 		for (int i=0; i<binnedFuncs.length; i++) {
@@ -511,7 +646,7 @@ public class OEGUIView extends OEGUIComponent {
 					+": "+xy.size()+" FS");
 			float size = (float)my_magSizeFunc.getY(i);
 			funcs.add(xy);
-			chars.add(new PlotCurveCharacterstics(sym, size, c));
+			chars.add(makeCharsForSymbol(purpose, size, c));
 		}
 	}
 
@@ -599,6 +734,10 @@ public class OEGUIView extends OEGUIComponent {
 			throw new IllegalStateException ("OEGUIView.plotAftershockHypocs - Invalid model state: " + gui_model.cur_modstate_string());
 		}
 
+		// Build the magnitude size function
+
+		buildMagSizeFunc (gui_model.get_cur_mainshock().getMag());
+
 		// The outer region, or null if none, to plot the regional aftershocks
 
 		SphRegion outer_region = gui_model.get_outer_region();
@@ -676,12 +815,12 @@ public class OEGUIView extends OEGUIComponent {
 			float size = (float)my_magSizeFunc.getY(my_magSizeFunc.getClosestXIndex(gui_model.get_cur_mainshock().getMag()));
 			Color c;
 			if (colorByTime) {
-				c = timeCPT.getMinColor();		//TODO: Use color for mainshock time, not necessarily min color
+				//c = timeCPT.getMinColor();		//TODO: Use color for mainshock time, not necessarily min color
+				c = new Color (128, 128, 128);		// This allows early aftershocks appearing on top of the mainshock to be visible
 			} else {
 				c = Color.BLACK;
 			}
-			//chars.add(new PlotCurveCharacterstics(PlotSymbol.FILLED_CIRCLE, size, c));
-			chars.add(new PlotCurveCharacterstics(PlotSymbol.CIRCLE, size, c));
+			chars.add(makeCharsForSymbol(SymbolPurpose.MAIN_MAP, size, c));
 		}
 		
 		// Create lists of aftershock epicenters, magnitudes, and times after mainshock in days
@@ -719,7 +858,7 @@ public class OEGUIView extends OEGUIComponent {
 
 			XY_DataSet[] foreshockDatasets = XY_DatasetBinner.bin(points_fs, mags_fs, my_magSizeFunc);
 			
-			buildFuncsCharsForBinnedFS(foreshockDatasets, funcs, chars, PlotSymbol.CIRCLE, Color.DARK_GRAY);
+			buildFuncsCharsForBinnedFS(foreshockDatasets, funcs, chars, SymbolPurpose.EPI_MAP, Color.DARK_GRAY);
 		}
 
 		// If coloring aftershock by time ...
@@ -736,8 +875,7 @@ public class OEGUIView extends OEGUIComponent {
 
 			// Bin aftershocks by magnitude and time.
 			
-			//buildFuncsCharsForBinned2D(aftershockDatasets, funcs, chars, timeCPT, "time", timeFunc, PlotSymbol.FILLED_CIRCLE);
-			buildFuncsCharsForBinned2D(aftershockDatasets, funcs, chars, timeCPT, "time", timeFunc, PlotSymbol.CIRCLE);
+			buildFuncsCharsForBinned2D(aftershockDatasets, funcs, chars, timeCPT, "time", timeFunc, SymbolPurpose.EPI_MAP);
 			
 			// The graph legend
 
@@ -755,7 +893,7 @@ public class OEGUIView extends OEGUIComponent {
 
 			XY_DataSet[] aftershockDatasets = XY_DatasetBinner.bin(points, mags, my_magSizeFunc);
 			
-			buildFuncsCharsForBinned(aftershockDatasets, funcs, chars, PlotSymbol.CIRCLE);
+			buildFuncsCharsForBinned(aftershockDatasets, funcs, chars, SymbolPurpose.EPI_MAP);
 		}
 		
 		// Now add outline of region, if we have one
@@ -904,8 +1042,8 @@ public class OEGUIView extends OEGUIComponent {
 		
 		mfd.setName("Incremental");
 		funcs.add(mfd);
-//		chars.add(new PlotCurveCharacterstics(PlotLineType.HISTOGRAM, 1f, Color.BLUE));
-		chars.add(new PlotCurveCharacterstics(PlotSymbol.CIRCLE, 6f, Color.BLUE));
+		//chars.add(new PlotCurveCharacterstics(PlotLineType.HISTOGRAM, 1f, Color.BLUE));
+		chars.add(makeCharsForSymbol(SymbolPurpose.MAG_FREQ, 6f, Color.BLUE));
 
 		// Get the magnitude range, for the X-axis
 		
@@ -951,7 +1089,7 @@ public class OEGUIView extends OEGUIComponent {
 			}
 			
 			funcs.add(cmlPoints);
-			chars.add(new PlotCurveCharacterstics(PlotSymbol.CIRCLE, 6f, Color.BLACK));
+			chars.add(makeCharsForSymbol(SymbolPurpose.MAG_FREQ, 6f, Color.BLACK));
 		}
 
 		// Get Y-axis range
@@ -1114,6 +1252,10 @@ public class OEGUIView extends OEGUIComponent {
 			throw new IllegalStateException ("OEGUIView.plotMagVsTime - Invalid model state: " + gui_model.cur_modstate_string());
 		}
 
+		// Build the magnitude size function
+
+		buildMagSizeFunc (gui_model.get_cur_mainshock().getMag());
+
 		// List of points and their corresponding magnitude, each point is (time, mag).
 
 		List<Point2D> points = Lists.newArrayList();
@@ -1172,7 +1314,7 @@ public class OEGUIView extends OEGUIComponent {
 			
 			CPT my_distCPT = getDistCPT();
 			
-			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, my_distCPT, "dist", my_distFunc, PlotSymbol.FILLED_CIRCLE);
+			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, my_distCPT, "dist", my_distFunc, SymbolPurpose.MAG_TIME);
 			
 			subtitle = GraphPanel.getLegendForCPT(my_distCPT, "Distance (km)", plotPrefs,
 					0d, RectangleEdge.RIGHT);
@@ -1185,7 +1327,7 @@ public class OEGUIView extends OEGUIComponent {
 				// The point points[k] is placed into the bin i so that: i is the index into
 				// my_magSizeFunc whose X-value is closest to mags[k].
 			
-			buildFuncsCharsForBinned(magBinnedFuncs, funcs, chars, PlotSymbol.CIRCLE);
+			buildFuncsCharsForBinned(magBinnedFuncs, funcs, chars, SymbolPurpose.MAG_TIME);
 		}
 
 		// Create a plot with the given functions and characteristics
