@@ -1375,30 +1375,116 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	} 
 	
 	// for plots: how to scale the symbols by size?
-	private EvenlyDiscretizedFunc magSizeFunc;
+	private EvenlyDiscretizedFunc saved_magSizeFunc = null;
+
+//	private EvenlyDiscretizedFunc getMagSizeFunc() {
+//			if (saved_magSizeFunc != null)
+//				return saved_magSizeFunc;
+//			
+//			// size function
+//			double minMag = 1.25;
+//			double magDelta = 0.5;
+//			int numMag = 2*8;
+//			saved_magSizeFunc = new EvenlyDiscretizedFunc(minMag, numMag, magDelta);
+//	
+//			double dS = 3d;
+//			for (int i=0; i<saved_magSizeFunc.size(); i++) {
+//				double mag = saved_magSizeFunc.getX(i);
+//	
+//				// scale with stress drop, from Nicholas via e-mail 10/26/2015
+//	//			double radius = Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 300d;
+//				// modified to have larger minimum size
+//				double radius = 2 + Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 1000d;
+//				saved_magSizeFunc.set(i, radius);
+//			}
+//			return saved_magSizeFunc;
+//		}
+	
+
+	// Build the magnitude size function, given the mainshock magnitude.
+	// Sizes are reduced for large mainshock magnitude.
+
+	private EvenlyDiscretizedFunc buildMagSizeFunc (double mainMag) {
+		
+		// Size function
+
+		double minMag = 1.25;
+		double magDelta = 0.5;
+		int numMag = 2*8;
+
+		if (mainMag >= 8.5) {
+			minMag = 2.25;
+		}
+
+		saved_magSizeFunc = new EvenlyDiscretizedFunc(minMag, numMag, magDelta);
+
+		// The minimum and maximum sizes of a symbol
+
+		double minSize = 2.0;
+		double maxSize = 76.5;
+
+		// The magnitudes at which the minimum and maximum sizes occur
+
+		double maxSizeMag = Math.max(7.5, mainMag);
+		maxSizeMag = saved_magSizeFunc.getX(saved_magSizeFunc.getClosestXIndex(maxSizeMag));
+
+		double minSizeMag = maxSizeMag - 4.5;
+		minSizeMag = saved_magSizeFunc.getX(saved_magSizeFunc.getClosestXIndex(minSizeMag));
+
+		// Get scale factors
+
+		double maxFunc = Math.pow(10.0, 0.5*maxSizeMag);
+		double minFunc = Math.pow(10.0, 0.5*minSizeMag);
+		double scale = (maxSize - minSize)/(maxFunc - minFunc);
+		double offset = minSize - minFunc*scale;
+
+		// Compute the size for each magnitude in the function
+
+		for (int i=0; i<saved_magSizeFunc.size(); i++) {
+			double mag = saved_magSizeFunc.getX(i);
+			mag = Math.max(minSizeMag, Math.min(maxSizeMag, mag));
+			double size = Math.pow(10.0, 0.5*mag)*scale + offset;
+			saved_magSizeFunc.set(i, size);
+		}
+		
+		return saved_magSizeFunc;
+	}
+
+
+	// Get the magnitude size function.
 
 	private EvenlyDiscretizedFunc getMagSizeFunc() {
-			if (magSizeFunc != null)
-				return magSizeFunc;
-			
-			// size function
-			double minMag = 1.25;
-			double magDelta = 0.5;
-			int numMag = 2*8;
-			magSizeFunc = new EvenlyDiscretizedFunc(minMag, numMag, magDelta);
-	
-			double dS = 3d;
-			for (int i=0; i<magSizeFunc.size(); i++) {
-				double mag = magSizeFunc.getX(i);
-	
-				// scale with stress drop, from Nicholas via e-mail 10/26/2015
-	//			double radius = Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 300d;
-				// modified to have larger minimum size
-				double radius = 2 + Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 1000d;
-				magSizeFunc.set(i, radius);
-			}
-			return magSizeFunc;
+		if (saved_magSizeFunc == null) {
+			throw new IllegalStateException ("Magnitude size function has not been built");
 		}
+		return saved_magSizeFunc;
+	}
+
+
+	// Get a string describing the range of magnitudes for an element of the magnitude size function.
+
+	private static String getMagRangeString (EvenlyDiscretizedFunc my_magSizeFunc, int i) {
+		double magDelta = my_magSizeFunc.getDelta();
+		double mag = my_magSizeFunc.getX(i);
+		if (i == 0) {
+			return "M < " + (float)(mag+0.5*magDelta);
+		}
+		if (i == my_magSizeFunc.size() - 1) {
+			return (float)(mag-0.5*magDelta) + " < M";
+		}
+		return (float)(mag-0.5*magDelta) + " < M < " + (float)(mag+0.5*magDelta);
+	}
+
+
+	// Color to use for mainshock in epicenter plot.
+
+	private static final Color main_map_color = new Color (128, 128, 128);
+
+
+	// True to plot cities on a map twice at slightly different sizes to make them bolder.
+
+	private static final boolean city_map_bold = true;
+
 
 	// for plotting: how to color the events by magnitude
 	private CPT getMagCPT(){
@@ -1555,11 +1641,78 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		
 		return probCPT;
 	}
+
+
+	// Enumeration that gives the purpose for which a symbol is being plotted.
+	
+	private enum SymbolPurpose {
+		EPI_MAP("Display an epicenter on a map"),
+		MAIN_MAP("Display a mainshock on a map"),
+		CITY_MAP("Display a city on a map"),
+		MAG_TIME("An earthquake on a magnitude-time plot"),
+		MAG_FREQ("A symbol on a magnitude-frequency plot");
+		
+		private String label;
+		
+		private SymbolPurpose(String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+	// Make the PlotCurveCharacterstics to display a symbol, given the symbol purpose, symbol size, and color.
+	// Parameters:
+	//  SymbolPurpose = Symbol purpose.
+	//  symbolSize = Initial symbol size.
+	//  c = Color.
+	// This function chooses the appropriate symbol, which may vary with the purpose and size.
+	// It also may adjust the size used in the PlotCurveCharacterstics to make it display well.
+	// Note: This function provides a central place for adjusting all plotting symbols.
+
+	private PlotCurveCharacterstics makeCharsForSymbol (SymbolPurpose symbolPurpose, float symbolSize, Color c) {
+		PlotSymbol symbol = null;
+		float size = symbolSize;
+		switch (symbolPurpose) {
+
+		case EPI_MAP:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size = Float.max(size, 1.0f) + 0.5f;
+			break;
+
+		case MAIN_MAP:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size = Float.max(size, 1.0f) + 0.5f;
+			break;
+
+		case CITY_MAP:
+			symbol = PlotSymbol.SQUARE;
+			size += 1.0f;
+			break;
+
+		case MAG_TIME:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size = Float.max(size, 2.0f) + 0.5f;
+			break;
+
+		case MAG_FREQ:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size = Float.max(size, 3.0f);
+			break;
+		}
+
+		return new PlotCurveCharacterstics (symbol, size, c);
+	}
+
 	
 	private void buildFuncsCharsForBinned(XY_DataSet[] binnedFuncs,
-			List<PlotElement> funcs, List<PlotCurveCharacterstics> chars, PlotSymbol sym) {
+			List<PlotElement> funcs, List<PlotCurveCharacterstics> chars, SymbolPurpose purpose) {
 		EvenlyDiscretizedFunc magSizeFunc = getMagSizeFunc();
-		double magDelta = magSizeFunc.getDelta();
+		//double magDelta = magSizeFunc.getDelta();
 		CPT magColorCPT = getMagCPT();
 		
 		for (int i=0; i<binnedFuncs.length; i++) {
@@ -1567,12 +1720,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			XY_DataSet xy = binnedFuncs[i];
 			if (xy.size() == 0)
 				continue;
-			xy.setName((float)(mag-0.5*magDelta)+" < M < "+(float)(mag+0.5*magDelta)
+			xy.setName(getMagRangeString(magSizeFunc, i)
 					+": "+xy.size()+" EQ");
 			float size = (float)magSizeFunc.getY(i);
 			Color c = magColorCPT.getColor((float)magSizeFunc.getX(i));
 			funcs.add(xy);
-			chars.add(new PlotCurveCharacterstics(sym, size, c));
+			chars.add(makeCharsForSymbol(purpose, size, c));
 		}
 	}
 
@@ -1587,9 +1740,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	 * @param func2
 	 */
 	private void buildFuncsCharsForBinned2D(XY_DataSet[][] binnedFuncs, List<PlotElement> funcs,
-			List<PlotCurveCharacterstics> chars, CPT cpt, String name2, EvenlyDiscretizedFunc func2, PlotSymbol sym) {
+			List<PlotCurveCharacterstics> chars, CPT cpt, String name2, EvenlyDiscretizedFunc func2, SymbolPurpose purpose) {
 		EvenlyDiscretizedFunc magSizeFunc = getMagSizeFunc();
-		double magDelta = magSizeFunc.getDelta();
+		//double magDelta = magSizeFunc.getDelta();
 		double func2Delta = func2.getDelta();
 		for (int i=0; i<binnedFuncs.length; i++) {
 			double mag = magSizeFunc.getX(i);
@@ -1598,17 +1751,18 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				if (xy.size() == 0)
 					continue;
 				double scalar2 = func2.getX(j);
-				String name = (float)(mag-0.5*magDelta)+" < M < "+(float)(mag+0.5*magDelta);
+				String name = getMagRangeString(magSizeFunc, i);
 				name += ", "+(float)(scalar2-0.5*func2Delta)+" < "+name2+" < "+(float)(scalar2+0.5*func2Delta);
 				name += ": "+xy.size()+" EQ";
 				xy.setName(name);
 				float size = (float)magSizeFunc.getY(i);
 				Color c = cpt.getColor((float)func2.getX(j));
 				funcs.add(xy);
-				chars.add(new PlotCurveCharacterstics(sym, size, c));
+				chars.add(makeCharsForSymbol(purpose, size, c));
 			}
 		}
 	}
+
 	private static final PlotPreferences plotPrefs;
 	static {
 		plotPrefs = PlotPreferences.getDefaultAppPrefs();
@@ -2118,7 +2272,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private void plotAftershockHypocs() {
 		List<PlotElement> funcs = Lists.newArrayList();
 		List<PlotCurveCharacterstics> chars = Lists.newArrayList();
-		
+	
+		buildMagSizeFunc (mainshock.getMag());	// build the magnitude-size function for the mainshock magnitude
+	
 		EvenlyDiscretizedFunc magSizeFunc = getMagSizeFunc();
 		
 		boolean colorByTime = true;
@@ -2148,10 +2304,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			float size = (float)magSizeFunc.getY(magSizeFunc.getClosestXIndex(mainshock.getMag()));
 			Color c;
 			if (colorByTime)
-				c = timeCPT.getMinColor();
+				//c = timeCPT.getMinColor();
+				c = main_map_color;		// This allows early aftershocks appearing on top of the mainshock to be visible
 			else
 				c = Color.BLACK;
-			chars.add(new PlotCurveCharacterstics(PlotSymbol.CIRCLE, size, c));
+			chars.add(makeCharsForSymbol(SymbolPurpose.MAIN_MAP, size, c));
 		}
 		
 		// now aftershocks
@@ -2170,7 +2327,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				EvenlyDiscretizedFunc timeFunc = HistogramFunction.getEncompassingHistogram(0d, timeCPT.getMaxValue()*0.99, 0.1d);
 				XY_DataSet[][] aftershockDatasets = XY_DatasetBinner.bin2D(points, mags, timeDeltas, magSizeFunc, timeFunc);
 
-				buildFuncsCharsForBinned2D(aftershockDatasets, funcs, chars, timeCPT, "time", timeFunc, PlotSymbol.CIRCLE);
+				buildFuncsCharsForBinned2D(aftershockDatasets, funcs, chars, timeCPT, "time", timeFunc, SymbolPurpose.EPI_MAP);
 
 				double cptInc = 0d;
 				if ((timeCPT.getMaxValue() - timeCPT.getMinValue()) < 10)
@@ -2180,7 +2337,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			} else {
 				XY_DataSet[] aftershockDatasets = XY_DatasetBinner.bin(points, mags, magSizeFunc);
 
-				buildFuncsCharsForBinned(aftershockDatasets, funcs, chars, PlotSymbol.CIRCLE);
+				buildFuncsCharsForBinned(aftershockDatasets, funcs, chars, SymbolPurpose.EPI_MAP);
 			}
 		}
 		
@@ -2196,8 +2353,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 2f, Color.GRAY));
 		}
 		
-		Collections.reverse(funcs);
-		Collections.reverse(chars);
+		//Collections.reverse(funcs);
+		//Collections.reverse(chars);
 		
 		PlotSpec spec = new PlotSpec(funcs, chars, "Aftershock Epicenters", "Longitude", "Latitude");
 				
@@ -2283,7 +2440,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 		if (aftershocks.size() > 0){
 			funcs.add(cmlPoints);
-			chars.add(new PlotCurveCharacterstics(PlotSymbol.CIRCLE, 6f, Color.BLACK));
+			chars.add(makeCharsForSymbol(SymbolPurpose.MAG_FREQ, 6f, Color.BLACK));
 		}
 		
 		// add Ogata entire-magnitude-range fit
@@ -2351,6 +2508,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private void plotMagVsTime() {
 		List<Point2D> points = Lists.newArrayList();
 		List<Double> mags = Lists.newArrayList();
+	
+		buildMagSizeFunc (mainshock.getMag());	// build the magnitude-size function for the mainshock magnitude
 		
 		points.add(new Point2D.Double(getTimeSinceMainshock(mainshock), mainshock.getMag()));
 		mags.add(mainshock.getMag());
@@ -2394,14 +2553,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 			CPT distCPT = getDistCPT().rescale(0, maxDist);
 			
-			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, distCPT, "dist", distFunc, PlotSymbol.FILLED_CIRCLE);
+			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, distCPT, "dist", distFunc, SymbolPurpose.MAG_TIME);
 			
 			subtitle = GraphPanel.getLegendForCPT(distCPT, "Distance (km)", plotPrefs,
 					0d, RectangleEdge.RIGHT);
 		} else {
 			XY_DataSet[] magBinnedFuncs = XY_DatasetBinner.bin(points, mags, magSizeFunc);
 			
-			buildFuncsCharsForBinned(magBinnedFuncs, funcs, chars, PlotSymbol.CIRCLE);
+			buildFuncsCharsForBinned(magBinnedFuncs, funcs, chars, SymbolPurpose.MAG_TIME);
 		}
 		
 		PlotSpec spec = new PlotSpec(funcs, chars, "Magnitude Vs Time", "Days Since Mainshock", "Magnitude");
@@ -5234,9 +5393,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						
 						// add epicenters to map
 						for (int j = 0; j < oldFuncs.size(); j++ ){
-							if (oldChars.get(j).getSymbol() == PlotSymbol.CIRCLE){
+							if (oldChars.get(j).getSymbol() == PlotSymbol.CIRCLE || oldChars.get(j).getSymbol() == PlotSymbol.FILLED_CIRCLE){
 								funcs.add(oldFuncs.get(j));
-								chars.add(new PlotCurveCharacterstics(PlotSymbol.CIRCLE, (float) (oldChars.get(j).getSymbolWidth()/10), Color.GRAY));
+								chars.add(makeCharsForSymbol(SymbolPurpose.EPI_MAP, (float) (oldChars.get(j).getSymbolWidth()/10), Color.GRAY));
 							}
 						}
 						
@@ -5254,7 +5413,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 						// add cities to map
 						funcs.add(cityPlot);
-						chars.add(new PlotCurveCharacterstics(PlotSymbol.SQUARE, 2, Color.BLACK));
+						chars.add(makeCharsForSymbol(SymbolPurpose.CITY_MAP, 2, Color.BLACK));
+						if (city_map_bold) {
+							funcs.add(cityPlot);
+							chars.add(makeCharsForSymbol(SymbolPurpose.CITY_MAP, 1.65f, Color.BLACK));
+						}
 						
 						// add countries to map
 						for (XY_DataSet elem : countryPlot) {
@@ -5402,9 +5565,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						List<PlotElement> funcs = Lists.newArrayList();
 						List<PlotCurveCharacterstics> chars = Lists.newArrayList();
 						for (int j = 0; j < oldFuncs.size(); j++ ){
-							if (oldChars.get(j).getSymbol() == PlotSymbol.CIRCLE){
+							if (oldChars.get(j).getSymbol() == PlotSymbol.CIRCLE || oldChars.get(j).getSymbol() == PlotSymbol.FILLED_CIRCLE){
 								funcs.add(oldFuncs.get(j));
-								chars.add(new PlotCurveCharacterstics(PlotSymbol.CIRCLE,  (float) (oldChars.get(j).getSymbolWidth()/10), Color.GRAY));
+								chars.add(makeCharsForSymbol(SymbolPurpose.EPI_MAP,  (float) (oldChars.get(j).getSymbolWidth()/10), Color.GRAY));
 							}
 						}
 
@@ -5439,7 +5602,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						}
 						if(D) System.out.println( cities.size() + " cities added to plot list.");
 						funcs.add(cityPlot);
-						chars.add(new PlotCurveCharacterstics(PlotSymbol.SQUARE, 2, Color.BLACK));
+						chars.add(makeCharsForSymbol(SymbolPurpose.CITY_MAP, 2, Color.BLACK));
+						if (city_map_bold) {
+							funcs.add(cityPlot);
+							chars.add(makeCharsForSymbol(SymbolPurpose.CITY_MAP, 1.65f, Color.BLACK));
+						}
 
 						// add countries to map
 						for (XY_DataSet elem : countryPlot) {
