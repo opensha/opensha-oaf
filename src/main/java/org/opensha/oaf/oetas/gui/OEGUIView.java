@@ -4198,7 +4198,7 @@ public class OEGUIView extends OEGUIComponent {
 			if (gui_model.get_isSeqSpecSelected()) {
 				selected_tab = aft_forecasts.size();
 			}
-			aft_names.add("RJ SeqSpecc");
+			aft_names.add("RJ SeqSpec");
 			aft_pmcodes.add(ForecastResults.PMCODE_SEQ_SPEC);
 			aft_forecasts.add(gui_model.get_seqSpecJSON());
 		}

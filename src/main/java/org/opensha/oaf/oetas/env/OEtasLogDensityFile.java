@@ -50,26 +50,26 @@ public class OEtasLogDensityFile {
 
 		// ETAS parameters
 
-		double b;
-		double alpha;
-		double c;
-		double p;
-		double n;
+		public double b;
+		public double alpha;
+		public double c;
+		public double p;
+		public double n;
 
-		double zams;
-		double zmu;
+		public double zams;
+		public double zmu;
 
 		// Log of Bayesian prior
 
-		double bay_log_density;
+		public double bay_log_density;
 
 		// Voxel volume
 
-		double bay_vox_volume;
+		public double bay_vox_volume;
 
 		// Log likelihood
 
-		double log_likelihood;
+		public double log_likelihood;
 
 
 
@@ -486,6 +486,66 @@ public class OEtasLogDensityFile {
 		}
 
 		return dist_sets;
+	}
+
+
+
+
+	// Get the maximum absolute difference between bay_log_density and log_likelihood.
+	// This is to support fitting verification testing.
+
+	public double get_max_abs_log_delta () {
+		if (ldf_file == null || ldf_file.isEmpty()) {
+			throw new RuntimeException ("OEtasLogDensityFile.get_max_abs_log_delta: No data loaded");
+		}
+
+		double max_abs_log_delta = 0.0;
+
+		for (LDFLine ldf_line : ldf_file) {
+			max_abs_log_delta = Math.max (max_abs_log_delta, Math.abs (ldf_line.bay_log_density - ldf_line.log_likelihood));
+		}
+
+		return max_abs_log_delta;
+	}
+
+
+
+
+	// Get the maximum absolute value of bay_log_density.
+	// This is to support fitting verification testing.
+
+	public double get_max_abs_bay_log_density () {
+		if (ldf_file == null || ldf_file.isEmpty()) {
+			throw new RuntimeException ("OEtasLogDensityFile.get_max_abs_bay_log_density: No data loaded");
+		}
+
+		double max_abs_bay_log_density = 0.0;
+
+		for (LDFLine ldf_line : ldf_file) {
+			max_abs_bay_log_density = Math.max (max_abs_bay_log_density, Math.abs (ldf_line.bay_log_density));
+		}
+
+		return max_abs_bay_log_density;
+	}
+
+
+
+
+	// Get the maximum absolute value of log_likelihood.
+	// This is to support fitting verification testing.
+
+	public double get_max_abs_log_likelihood () {
+		if (ldf_file == null || ldf_file.isEmpty()) {
+			throw new RuntimeException ("OEtasLogDensityFile.get_max_abs_log_likelihood: No data loaded");
+		}
+
+		double max_abs_log_likelihood = 0.0;
+
+		for (LDFLine ldf_line : ldf_file) {
+			max_abs_log_likelihood = Math.max (max_abs_log_likelihood, Math.abs (ldf_line.log_likelihood));
+		}
+
+		return max_abs_log_likelihood;
 	}
 
 

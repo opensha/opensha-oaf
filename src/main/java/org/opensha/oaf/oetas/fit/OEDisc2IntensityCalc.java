@@ -1653,6 +1653,9 @@ public class OEDisc2IntensityCalc {
 				}
 			}
 
+			double c_cross_intervals = OEConstants.DEF_C_CROSS_INTERVALS;
+			double c_self_intervals = OEConstants.DEF_C_SELF_INTERVALS;
+
 			// Now make the dummy fitting info object
 
 			fit_info.set (
@@ -1670,6 +1673,8 @@ public class OEDisc2IntensityCalc {
 				history.get_t_range_end(),		// hist_t_interval_end
 				group_t_interval_end,			// group_t_interval_end
 				true,							// f_intervals
+				c_cross_intervals,				// c_cross_intervals,
+				c_self_intervals,				// c_self_intervals,
 				lmr_opt,						// lmr_opt
 				true,							// f_intensity
 				like_int_begin,					// like_int_begin
@@ -1964,6 +1969,9 @@ public class OEDisc2IntensityCalc {
 				}
 			}
 
+			double c_cross_intervals = OEConstants.DEF_C_CROSS_INTERVALS;
+			double c_self_intervals = OEConstants.DEF_C_SELF_INTERVALS;
+
 			// Now make the dummy fitting info object
 
 			fit_info.set (
@@ -1981,6 +1989,8 @@ public class OEDisc2IntensityCalc {
 				history.get_t_range_end(),		// hist_t_interval_end
 				group_t_interval_end,			// group_t_interval_end
 				true,							// f_intervals
+				c_cross_intervals,				// c_cross_intervals,
+				c_self_intervals,				// c_self_intervals,
 				lmr_opt,						// lmr_opt
 				true,							// f_intensity
 				like_int_begin,					// like_int_begin

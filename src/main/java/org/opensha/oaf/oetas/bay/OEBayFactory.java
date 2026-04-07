@@ -145,6 +145,13 @@ public abstract class OEBayFactory implements Marshalable {
 	}
 
 
+	// Construct a factory that returns a function for verification of parameter fitting.
+
+	public static OEBayFactory makeVerFit () {
+		return new OEBayFactoryVerFit ();
+	}
+
+
 
 
 	//----- Marshaling -----
@@ -162,6 +169,7 @@ public abstract class OEBayFactory implements Marshalable {
 	protected static final int MARSHAL_FIXED = 138001;
 	protected static final int MARSHAL_GAUSSIAN_APC = 139001;
 	protected static final int MARSHAL_MIXED_RNPC = 148001;
+	protected static final int MARSHAL_VER_FIT = 153001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
@@ -274,6 +282,11 @@ public abstract class OEBayFactory implements Marshalable {
 
 		case MARSHAL_MIXED_RNPC:
 			result = new OEBayFactoryMixedRNPC();
+			result.do_umarshal (reader);
+			break;
+
+		case MARSHAL_VER_FIT:
+			result = new OEBayFactoryVerFit();
 			result.do_umarshal (reader);
 			break;
 		}
@@ -924,6 +937,36 @@ public abstract class OEBayFactory implements Marshalable {
 
 				test_factory_unknown_loc (bay_factory);
 			}
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #13
+		// Command format:
+		//  test13
+		// Test the fit verification prior factory.
+
+		if (testargs.is_test ("test13")) {
+
+			// Zero additional argument
+
+			testargs.end_test();
+
+			// Factory to test
+
+			OEBayFactory bay_factory = OEBayFactory.makeVerFit();
+
+			// Test it
+
+			test_factory_unknown_loc (bay_factory);
 
 			// Done
 

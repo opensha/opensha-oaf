@@ -955,6 +955,114 @@ public class OEtasTest {
 
 
 
+	// test23/write_sample_params_4
+	// Command line arguments:
+	//  filename  f_intervals  lmr_opt  fixed_zmu  fixed_zams  fixed_n  fixed_p  fixed_c  b  alpha  f_rel_ams  c_cross_intervals  c_self_intervals
+	// Write sample ETAS parameters to a file.
+	// This command sets a fitting verification Bayesian prior.
+	// It specifies the flag f_intervals that enables extended sources (default is true).
+	// It specifies the integer lmr_opt that controls likelihood magnitude ranges (default is 1).
+	// It lets you set fixed values for zmu, zams, n, p, or c.  Use -10.0 to select a range.
+	// Values of b and alpha are always fixed.
+	// Value of zams is relative if f_rel_ams is true.
+	// Ranges are kept small to limit output size.
+	// Simulation counts are set to minimum values.
+
+	public static void test23 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Writing sample ETAS parameters to a file, fitting verification prior");
+		String filename = testargs.get_string ("filename");
+		boolean f_intervals = testargs.get_boolean ("f_intervals");
+		int lmr_opt = testargs.get_int ("lmr_opt");
+		double fixed_zmu = testargs.get_double ("fixed_zmu");
+		double fixed_zams = testargs.get_double ("fixed_zams");
+		double fixed_n = testargs.get_double ("fixed_n");
+		double fixed_p = testargs.get_double ("fixed_p");
+		double fixed_c = testargs.get_double ("fixed_c");
+		double b = testargs.get_double ("b");
+		double alpha = testargs.get_double ("alpha");
+		boolean f_rel_ams = testargs.get_boolean ("f_rel_ams");
+		double c_cross_intervals = testargs.get_double ("c_cross_intervals");
+		double c_self_intervals = testargs.get_double ("c_self_intervals");
+		testargs.end_test();
+
+		// Create the parameters
+
+		OEtasParameters etas_params = new OEtasParameters();
+		etas_params.set_to_typical_cv ();
+		etas_params.set_bay_prior_to_analyst (true, OEBayFactory.makeVerFit());
+
+		etas_params.fit_f_intervals = f_intervals;
+		etas_params.fit_lmr_opt = lmr_opt;
+		etas_params.fit_c_cross_intervals = c_cross_intervals;
+		etas_params.fit_c_self_intervals = c_self_intervals;
+
+		if (fixed_zmu < -9.9) {
+			etas_params.zmu_range = OEDiscreteRange.makeLog (9, 0.01, 100.00);
+		} else {
+			etas_params.zmu_range = OEDiscreteRange.makeSingle (fixed_zmu);
+		}
+
+		if (fixed_zams < -9.9) {
+			if (f_rel_ams) {
+				etas_params.zams_range = OEDiscreteRange.makeLinear (13, -2.0, 1.0);
+			} else {
+				etas_params.zams_range = OEDiscreteRange.makeLinear (13, -4.50, -0.50);
+			}
+		} else {
+			etas_params.zams_range = OEDiscreteRange.makeSingle (fixed_zams);
+		}
+
+		if (fixed_n < -9.9) {
+			etas_params.n_range = OEDiscreteRange.makeLogSkew (13, 0.025, 0.90, 3.0);
+		} else {
+			etas_params.n_range = OEDiscreteRange.makeSingle (fixed_n);
+		}
+
+		if (fixed_p < -9.9) {
+			etas_params.p_range = OEDiscreteRange.makeLinear (13, 0.50, 2.00);
+		} else {
+			etas_params.p_range = OEDiscreteRange.makeSingle (fixed_p);
+		}
+
+		if (fixed_c < -9.9) {
+			etas_params.c_range = OEDiscreteRange.makeLog (11, 0.00001, 1.00000);
+		} else {
+			etas_params.c_range = OEDiscreteRange.makeSingle (fixed_c);
+		}
+
+		etas_params.b_range = OEDiscreteRange.makeSingle (b);
+
+		if (alpha == b) {
+			etas_params.alpha_range = null;
+		} else {
+			etas_params.alpha_range = OEDiscreteRange.makeSingle (alpha);
+		}
+
+		etas_params.relative_zams = f_rel_ams;
+
+		etas_params.set_num_catalogs_to_minimum();
+
+		// Write to file
+
+		MarshalUtils.to_formatted_json_file (etas_params, filename);
+
+		System.out.println ();
+		System.out.println ("Wrote sample parameters to file: " + filename);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
 	// test3
 	// Command line arguments:
 	//  zmu  zams  n  p  c  b  alpha  mref  msup  tbegin  tend  tint_br  mag_min_sim  mag_max_sim
@@ -2458,6 +2566,48 @@ public class OEtasTest {
 
 
 
+	// test24/check_ver_fit_ldf
+	// Command line arguments:
+	//  filename
+	// Read the log-density file produced using the fitting verification prior.
+	// Output the maximum difference between the prior and the fit.
+
+	public static void test24 (TestArgs testargs) throws Exception {
+
+		// Read arguments
+
+		System.out.println ("Checking fitting verification results in log-density file");
+		String filename = testargs.get_string ("filename");
+		testargs.end_test();
+
+		// Load the file
+
+		OEtasLogDensityFile ldf = new OEtasLogDensityFile();
+		ldf.load_file (filename);
+
+		// Display results
+
+		double max_abs_bay_log_density = ldf.get_max_abs_bay_log_density();
+		double max_abs_log_likelihood = ldf.get_max_abs_log_likelihood();
+		double max_abs_log_delta = ldf.get_max_abs_log_delta();
+
+		System.out.println ();
+		System.out.println ("max_abs_bay_log_density = " + max_abs_bay_log_density);
+		System.out.println ("max_abs_log_likelihood = " + max_abs_log_likelihood);
+		System.out.println ();
+		System.out.println ("max_abs_log_delta = " + max_abs_log_delta);
+
+		// Done
+
+		System.out.println ();
+		System.out.println ("Done");
+
+		return;
+	}
+
+
+
+
 	//----- Testing -----
 
 
@@ -2598,6 +2748,18 @@ public class OEtasTest {
 
 		if (testargs.is_test ("test22", "gen_rj_forecasts")) {
 			test22 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test23", "write_sample_params_4")) {
+			test23 (testargs);
+			return;
+		}
+
+
+		if (testargs.is_test ("test24", "check_ver_fit_ldf")) {
+			test24 (testargs);
 			return;
 		}
 

@@ -1332,8 +1332,10 @@ public class OEExecEnvironment {
 		boolean f_likelihood = true;
 		int lmr_opt = etas_params.get_fit_lmr_opt();
 		boolean f_background = etas_params.get_fit_f_background();
+		double c_cross_intervals = etas_params.get_fit_c_cross_intervals();
+		double c_self_intervals = etas_params.get_fit_c_self_intervals();
 
-		fitter.dfit_build (history, fit_params_mags, f_intervals, f_likelihood, lmr_opt, f_background);
+		fitter.dfit_build (history, fit_params_mags, f_intervals, f_likelihood, lmr_opt, f_background, c_cross_intervals, c_self_intervals);
 
 		// Set up grouping
 

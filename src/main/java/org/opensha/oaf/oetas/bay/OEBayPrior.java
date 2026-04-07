@@ -376,6 +376,13 @@ public abstract class OEBayPrior implements Marshalable {
 	}
 
 
+	// Construct a function for verification of parameter fitting.
+
+	public static OEBayPrior makeVerFit () {
+		return new OEBayPriorVerFit ();
+	}
+
+
 
 
 	//----- Marshaling -----
@@ -393,6 +400,7 @@ public abstract class OEBayPrior implements Marshalable {
 	protected static final int MARSHAL_NORMAL = 113001;
 	protected static final int MARSHAL_GAUSSIAN_APC = 135001;
 	protected static final int MARSHAL_MIXED_RNPC = 147001;
+	protected static final int MARSHAL_VER_FIT = 152001;
 
 	protected static final String M_TYPE_NAME = "ClassType";
 
@@ -505,6 +513,11 @@ public abstract class OEBayPrior implements Marshalable {
 
 		case MARSHAL_MIXED_RNPC:
 			result = new OEBayPriorMixedRNPC();
+			result.do_umarshal (reader);
+			break;
+
+		case MARSHAL_VER_FIT:
+			result = new OEBayPriorVerFit();
 			result.do_umarshal (reader);
 			break;
 		}

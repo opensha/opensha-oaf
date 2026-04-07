@@ -617,6 +617,14 @@ public class OEtasParameters implements Marshalable {
 
 	public int fit_lmr_opt = OEConstants.LMR_OPT_MCT_INFINITY;
 
+	// Coefficient for intervals to act as productivity sources for later intervals. [v4]
+
+	public double fit_c_cross_intervals = 1.0;
+
+	// Coefficient for intervals to act as productivity sources for themselves. [v4]
+
+	public double fit_c_self_intervals = 1.0;
+
 	// Clear fitting parameters.
 
 	public final void clear_fit_params () {
@@ -624,6 +632,8 @@ public class OEtasParameters implements Marshalable {
 
 		fit_f_intervals = false;
 		fit_lmr_opt = OEConstants.LMR_OPT_MCT_INFINITY;
+		fit_c_cross_intervals = 1.0;
+		fit_c_self_intervals = 1.0;
 		return;
 	}
 
@@ -634,6 +644,8 @@ public class OEtasParameters implements Marshalable {
 
 		fit_f_intervals = OEConstants.DEF_F_INTERVALS;
 		fit_lmr_opt = OEConstants.DEF_LMR_OPT;
+		fit_c_cross_intervals = OEConstants.DEF_C_CROSS_INTERVALS;
+		fit_c_self_intervals = OEConstants.DEF_C_SELF_INTERVALS;
 		return;
 	}
 
@@ -644,6 +656,8 @@ public class OEtasParameters implements Marshalable {
 
 		fit_f_intervals = other.fit_f_intervals;
 		fit_lmr_opt = other.fit_lmr_opt;
+		fit_c_cross_intervals = other.fit_c_cross_intervals;
+		fit_c_self_intervals = other.fit_c_self_intervals;
 		return;
 	}
 
@@ -652,11 +666,15 @@ public class OEtasParameters implements Marshalable {
 	public final void set_fit_params_to_analyst (
 		boolean fit_params_avail,
 		boolean fit_f_intervals,
-		int fit_lmr_opt
+		int fit_lmr_opt,
+		double fit_c_cross_intervals,
+		double fit_c_self_intervals
 	) {
 		this.fit_params_avail = fit_params_avail;
 		this.fit_f_intervals = fit_f_intervals;
 		this.fit_lmr_opt = fit_lmr_opt;
+		this.fit_c_cross_intervals = fit_c_cross_intervals;
+		this.fit_c_self_intervals = fit_c_self_intervals;
 		return;
 	}
 
@@ -690,6 +708,8 @@ public class OEtasParameters implements Marshalable {
 		if (fit_params_avail) {
 			sb.append ("fit_f_intervals = " + fit_f_intervals + "\n");
 			sb.append ("fit_lmr_opt = " + fit_lmr_opt + "\n");
+			sb.append ("fit_c_cross_intervals = " + fit_c_cross_intervals + "\n");
+			sb.append ("fit_c_self_intervals = " + fit_c_self_intervals + "\n");
 		}
 		return sb;
 	}
@@ -705,6 +725,17 @@ public class OEtasParameters implements Marshalable {
 		return;
 	}
 
+	private void marshal_fit_params_v4 (MarshalWriter writer) {
+		writer.marshalBoolean ("fit_params_avail", fit_params_avail);
+		if (fit_params_avail) {
+			writer.marshalBoolean ("fit_f_intervals", fit_f_intervals);
+			writer.marshalInt ("fit_lmr_opt", fit_lmr_opt);
+			writer.marshalDouble ("fit_c_cross_intervals", fit_c_cross_intervals);
+			writer.marshalDouble ("fit_c_self_intervals", fit_c_self_intervals);
+		}
+		return;
+	}
+
 	// Unmarshal fitting parameters.
 
 	private void unmarshal_fit_params_v1 (MarshalReader reader) {
@@ -712,6 +743,29 @@ public class OEtasParameters implements Marshalable {
 		if (fit_params_avail) {
 			fit_f_intervals = reader.unmarshalBoolean ("fit_f_intervals");
 			fit_lmr_opt = reader.unmarshalInt ("fit_lmr_opt");
+
+			fit_c_cross_intervals = 1.0;
+			fit_c_self_intervals = 1.0;
+		} else {
+			clear_fit_params();
+		}
+
+		// Check the invariant
+
+		String inv = check_fit_params_invariant();
+		if (inv != null) {
+			throw new MarshalException ("OEtasParameters.unmarshal_fit_params_v1: " + inv);
+		}
+		return;
+	}
+
+	private void unmarshal_fit_params_v4 (MarshalReader reader) {
+		fit_params_avail = reader.unmarshalBoolean ("fit_params_avail");
+		if (fit_params_avail) {
+			fit_f_intervals = reader.unmarshalBoolean ("fit_f_intervals");
+			fit_lmr_opt = reader.unmarshalInt ("fit_lmr_opt");
+			fit_c_cross_intervals = reader.unmarshalDouble ("fit_c_cross_intervals");
+			fit_c_self_intervals = reader.unmarshalDouble ("fit_c_self_intervals");
 		} else {
 			clear_fit_params();
 		}
@@ -743,6 +797,26 @@ public class OEtasParameters implements Marshalable {
 			throw new InvariantViolationException ("OEtasParameters.get_fit_lmr_opt: Fitting parameters not available");
 		}
 		return fit_lmr_opt;
+	}
+
+	// Get the fitting parameter c_cross_intervals.
+	// Note: Caller must check the fitting parameters are available.
+
+	public final double get_fit_c_cross_intervals () {
+		if (!( fit_params_avail )) {
+			throw new InvariantViolationException ("OEtasParameters.get_fit_c_cross_intervals: Fitting parameters not available");
+		}
+		return fit_c_cross_intervals;
+	}
+
+	// Get the fitting parameter c_self_intervals.
+	// Note: Caller must check the fitting parameters are available.
+
+	public final double get_fit_c_self_intervals() {
+		if (!( fit_params_avail )) {
+			throw new InvariantViolationException ("OEtasParameters.get_fit_c_self_intervals: Fitting parameters not available");
+		}
+		return fit_c_self_intervals;
 	}
 
 
@@ -3019,6 +3093,7 @@ public class OEtasParameters implements Marshalable {
 	private static final int MARSHAL_VER_1 = 121001;
 	private static final int MARSHAL_VER_2 = 121002;
 	private static final int MARSHAL_VER_3 = 121003;
+	private static final int MARSHAL_VER_4 = 121004;
 
 	private static final String M_VERSION_NAME = "OEtasParameters";
 
@@ -3028,7 +3103,7 @@ public class OEtasParameters implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_3;
+		int ver = MARSHAL_VER_4;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -3090,6 +3165,24 @@ public class OEtasParameters implements Marshalable {
 		}
 		break;
 
+		case MARSHAL_VER_4: {
+
+			marshal_hist_params_v1 (writer);
+			marshal_group_params_v1 (writer);
+			marshal_fit_params_v4 (writer);
+			marshal_fmag_range_v1 (writer);
+			marshal_tint_br_v1 (writer);
+			marshal_range_v2 (writer);
+			marshal_bay_prior_v2 (writer);
+			marshal_bay_weight_v1 (writer);
+			marshal_grid_post_v1 (writer);
+			marshal_num_catalogs_v1 (writer);
+			marshal_sim_params_v1 (writer);
+			marshal_eligible_params_v3 (writer);
+
+		}
+		break;
+
 		}
 
 		return;
@@ -3101,7 +3194,7 @@ public class OEtasParameters implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_4);
 
 		// Contents
 
@@ -3154,6 +3247,26 @@ public class OEtasParameters implements Marshalable {
 			unmarshal_hist_params_v1 (reader);
 			unmarshal_group_params_v1 (reader);
 			unmarshal_fit_params_v1 (reader);
+			unmarshal_fmag_range_v1 (reader);
+			unmarshal_tint_br_v1 (reader);
+			unmarshal_range_v2 (reader);
+			unmarshal_bay_prior_v2 (reader);
+			unmarshal_bay_weight_v1 (reader);
+			unmarshal_grid_post_v1 (reader);
+			unmarshal_num_catalogs_v1 (reader);
+			unmarshal_sim_params_v1 (reader);
+			unmarshal_eligible_params_v3 (reader);
+
+		}
+		break;
+
+		case MARSHAL_VER_4: {
+
+			clear();	// for fields that are not marshaled
+
+			unmarshal_hist_params_v1 (reader);
+			unmarshal_group_params_v1 (reader);
+			unmarshal_fit_params_v4 (reader);
 			unmarshal_fmag_range_v1 (reader);
 			unmarshal_tint_br_v1 (reader);
 			unmarshal_range_v2 (reader);
@@ -3387,6 +3500,12 @@ public class OEtasParameters implements Marshalable {
 
 			System.out.println ();
 			System.out.println ("get_fit_lmr_opt =\n" + etas_params.get_fit_lmr_opt());
+
+			System.out.println ();
+			System.out.println ("get_fit_c_cross_intervals =\n" + etas_params.get_fit_c_cross_intervals());
+
+			System.out.println ();
+			System.out.println ("get_fit_c_self_intervals =\n" + etas_params.get_fit_c_self_intervals());
 
 			System.out.println ();
 			System.out.println ("get_fmag_range(2.0, 2.0, 7.0, 6.0, 3.0) =\n" + etas_params.get_fmag_range(2.0, 2.0, 7.0, 6.0, 3.0).toString());
