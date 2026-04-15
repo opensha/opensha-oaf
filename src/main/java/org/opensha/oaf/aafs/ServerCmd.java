@@ -31,6 +31,7 @@ import org.opensha.oaf.rj.RJ_AftershockModel_SequenceSpecific;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
+import org.opensha.commons.util.ClassUtils;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -41,6 +42,7 @@ import org.opensha.oaf.util.TimeSplitOutputStream;
 import org.opensha.oaf.util.ConsoleRedirector;
 import org.opensha.oaf.util.gui.GUICalcProgressBar;
 import org.opensha.oaf.util.TestMode;
+import org.opensha.oaf.util.AutoOutNull;
 
 
 /**
@@ -2231,6 +2233,257 @@ public class ServerCmd {
 
 
 
+	// query_health - Query server health, on a local or remote server.
+	// The output is a single short line of text, not ending in newline.
+	// The output is "OK" if no issues detected.
+	// On a dual-server system, obtains health for both servers.
+	// This function eats all exceptions and all output.
+
+	public static final String STATUS_OK = "OK";
+
+	public static String query_health() {
+
+		// Buffer to construct result for multi servers
+
+		StringBuilder sb = new StringBuilder();
+
+		// Health of current or single server
+
+		String s_health = null;
+
+		// Number of servers processed
+
+		int s_count = 0;
+
+		// Number of servers with errors detected
+
+		int s_errors = 0;
+
+		// Number of servers that are primary
+
+		int s_primary = 0;
+
+		// Discard any output
+
+		try (
+			AutoOutNull auto_out_null = new AutoOutNull();
+		) {
+
+			// Get list of database handles
+
+			ServerConfig server_config = new ServerConfig();
+			List<String> db_handles = server_config.get_server_db_handles();
+
+			// Server number
+
+			int srvnum = server_config.is_dual_server() ? 9 : 1;
+
+			// Turn off excessive log messages
+
+			MongoDBLogControl.disable_excessive();
+
+			// Loop over possible database handles
+
+			for (int n = 0; n < db_handles.size(); ++n) {
+				String db_handle = db_handles.get(n);
+
+				// If we want this one ...
+
+				if (n == srvnum || (srvnum == 9 && n >= ServerConfigFile.SRVNUM_MIN && n <= ServerConfigFile.SRVNUM_MAX)) {
+					
+					// Count it
+
+					++s_count;
+
+					// Assume success
+
+					s_health = STATUS_OK;
+
+					// Fetch status
+
+					RiServerStatus sstat_payload = new RiServerStatus();
+					RelayItem relit = RelaySupport.get_remote_sstat_relay_item (db_handle, sstat_payload);
+
+					// Current time
+
+					long current_time = ServerClock.get_time();
+
+					// Count if this server is in primary state
+
+					if (relit != null && sstat_payload.primary_state == RelayLink.PRIST_PRIMARY) {
+						++s_primary;
+					}
+			
+					// If no status received
+
+					if (relit == null) {
+						s_health = "NO RESPONSE";
+						++s_errors;
+					}
+
+					// If server is shut down
+
+					else if (sstat_payload.primary_state == RelayLink.PRIST_SHUTDOWN) {
+						s_health = "SHUT DOWN";
+						++s_errors;
+					}
+
+					// If heartbeat stale
+
+					else if (current_time - sstat_payload.heartbeat_time > RelayLink.get_heartbeat_stale()) {
+						long age = current_time - sstat_payload.heartbeat_time;
+						long days = age / SimpleUtils.DAY_MILLIS;
+						long hours = (age / SimpleUtils.HOUR_MILLIS) % 24L;
+						long minutes = (age / SimpleUtils.MINUTE_MILLIS) % 60L;
+						if (days != 0L) {
+							s_health = String.format ("HEARTBEAT STALE %d-%02d:%02d", days, hours, minutes);
+							++s_errors;
+						} else {
+							s_health = String.format ("HEARTBEAT STALE %d:%02d", hours, minutes);
+							++s_errors;
+						}
+					}
+
+					// If server health issue
+
+					else if (!( HealthSupport.hs_clean_status (sstat_payload.health_status) )) {
+						s_health = "HEALTH ISSUE" + HealthSupport.hs_alert_causes (sstat_payload.health_status, " ", "", " ", String.format (" 0x%X", sstat_payload.health_status));
+						++s_errors;
+					}
+
+					// If connection issue
+
+					else if (!( sstat_payload.link_state == RelayLink.LINK_SOLO
+								|| sstat_payload.link_state == RelayLink.LINK_CONNECTED
+								|| sstat_payload.link_state == RelayLink.LINK_RESYNC )) {
+						if (sstat_payload.link_state == RelayLink.LINK_DISCONNECTED) {
+							s_health = "CONNECTION DISCONNECTED";
+							++s_errors;
+						}
+						else if (sstat_payload.link_state == RelayLink.LINK_CALLING) {
+							s_health = "CONNECTION DISCONNECTED";	// calling is a transient state, so report as disconnected
+							++s_errors;
+						}
+						else if (sstat_payload.link_state == RelayLink.LINK_INITIAL_SYNC) {
+							s_health = "CONNECTION SYNCHRONIZING";
+							++s_errors;
+						}
+						else {
+							s_health = "CONNECTION ISSUE " + sstat_payload.link_state;
+							++s_errors;
+						}
+					}
+
+					// If remote status issue
+
+					else if (!( sstat_payload.inferred_state == RelayLink.ISR_NONE
+								|| sstat_payload.inferred_state == RelayLink.ISR_OK
+								|| sstat_payload.inferred_state == RelayLink.ISR_NOT_SUPPLIED )) {
+						if (sstat_payload.inferred_state == RelayLink.ISR_UNSYNCED_MODE) {
+							s_health = "REMOTE NOT SYNCED";
+							++s_errors;
+						}
+						else if (sstat_payload.inferred_state == RelayLink.ISR_DEAD_BAD_HEALTH) {
+							s_health = "REMOTE HEALTH ISSUE";
+							++s_errors;
+						}
+						else if (sstat_payload.inferred_state == RelayLink.ISR_LISTENING) {
+							s_health = "REMOTE WAITING";
+							++s_errors;
+						}
+						else if (sstat_payload.inferred_state == RelayLink.ISR_DEAD_STALE_HEARTBEAT) {
+							s_health = "REMOTE STALE HEARTBEAT";
+							++s_errors;
+						}
+						else if (sstat_payload.inferred_state == RelayLink.ISR_NOT_CONNECTED) {
+							s_health = "REMOTE NOT CONNECTED";
+							++s_errors;
+						}
+						else {
+							s_health = "REMOTE ISSUE " + sstat_payload.inferred_state;
+							++s_errors;
+						}
+					}
+
+					// Append status
+
+					if (s_count > 1) {
+						sb.append (", ");
+					}
+					sb.append ("S" + n + ": " + s_health);
+				}
+			}
+		}
+
+		// Handle any exceptions
+
+		catch (Exception e) {
+			return "EXCEPTION " + ClassUtils.getClassNameWithoutPackage(e.getClass());
+		}
+		catch (Throwable e) {
+			return "EXCEPTION " + ClassUtils.getClassNameWithoutPackage(e.getClass());
+		}
+
+		// If no servers processed
+
+		if (s_count == 0) {
+			return "SERVER CONFIG ERROR";
+		}
+
+		// If found an error, return it
+
+		if (s_errors > 0) {
+			if (s_count == 1) {
+				return s_health;
+			}
+			return sb.toString();
+		}
+
+		// Check for single primary
+
+		if (s_primary == 0) {
+			return "NO PRIMARY";
+		}
+		if (s_primary > 1) {
+			return "DUAL PRIMARY";
+		}
+
+		// Success
+
+		return STATUS_OK;
+	}
+
+
+
+
+	// cmd_query_health - Query server health, on a local or remote server.
+	// The output is a single short line of text, not ending in newline.
+	// The output is "OK" if no issues detected.
+	// On a dual-server system, obtains health for both servers.
+
+	public static void cmd_query_health(String[] args) {
+
+		// 0 additional argument
+
+		if (args.length != 1) {
+			System.err.println ("ServerCmd : Invalid 'query_health' subcommand");
+			return;
+		}
+
+		// Get the health
+
+		String s_health = query_health();
+
+		// Display result
+
+		System.out.println (s_health);
+
+		return;
+	}
+
+
+
+
 	// Entry point.
 	
 	public static void main(String[] args) {
@@ -2661,6 +2914,20 @@ public class ServerCmd {
 		case "stop_health_monitor":
 			try {
 				cmd_stop_health_monitor(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+
+		// Subcommand : query_health
+		// Command format:
+		//  query_health
+		// Query health of the single or dual servers, and return a single line of text.
+		// This command eats exceptions, so no exception should occur here.
+
+		case "query_health":
+			try {
+				cmd_query_health(args);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
