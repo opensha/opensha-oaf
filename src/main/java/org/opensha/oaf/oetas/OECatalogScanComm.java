@@ -11,11 +11,15 @@ import static org.opensha.oaf.oetas.OEConstants.NO_MAG_POS_CHECK;
 // Class to communicate between a catalog scanner and catalog consumer.
 // Author: Michael Barall 12/28/2019.
 //
-// Note: We have deliberately omitted the catalog total size and number
+// [The following note no longer applies.]
+// [Note: We have deliberately omitted the catalog total size and number
 // of generations.  If those are not used, then it is possible for a consumer
 // to process a catalog that is never in memory all at once.  With the current
 // interface, all that needs to be in memory is the current, previous, and
-// next generations.
+// next generations.]
+//
+// Note: Per-catalog data beginning with cat_stop_time requires the
+// catalog to be in memory all at once.
 //
 // Note: A scanner implementation may choose to inherit from this class,
 // to have convenient access to these variables.
@@ -59,6 +63,10 @@ public class OECatalogScanComm {
 	// Number of ruptures in the catalog before the stop time.
 
 	public int cat_valid_size;
+
+	// Number of generations in the catalog.
+
+	public int cat_gen_count;
 
 
 	//----- Per-generation data -----
@@ -187,6 +195,7 @@ public class OECatalogScanComm {
 		result.append ("cat_size = " + cat_size + "\n");
 		result.append ("cat_etas_size = " + cat_etas_size + "\n");
 		result.append ("cat_valid_size = " + cat_valid_size + "\n");
+		result.append ("cat_gen_count = " + cat_gen_count + "\n");
 
 		result.append ("Per-generation data:" + "\n");
 		result.append ("i_gen = " + i_gen + "\n");
@@ -240,6 +249,7 @@ public class OECatalogScanComm {
 		cat_size = view.size();
 		cat_etas_size = view.etas_size();
 		cat_valid_size = view.valid_size();
+		cat_gen_count = view.get_gen_count();
 
 		return;
 	}

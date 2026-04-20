@@ -502,6 +502,132 @@ public class OEInitFixedState implements OEEnsembleInitializer {
 
 
 
+	// Set up to begin seeding, for given parameters and seed ruptures.
+	// Parameters:
+	//  zmu = Background rate.
+	//  zams = Mainshock/foreshock productivity, can be absolute or ralative.
+	//  n = Branch ratio.
+	//  p = Omori exponent.
+	//  c = Omori offset.
+	//  b = Gutenberg-Richter exponent.
+	//  alpha = Productivity exponent.
+	//  f_relative_zams = True if zams is relative.
+	//  mref = Minimum magnitude, also the reference magnitude and min mag for parameter definition.
+	//  msup = Maximum magnitude, also the max mag for parameter definition.
+	//  tbegin = Beginning time for which earthquakes are generated, in days.
+	//  tend = Ending time for which earthquakes are generated, in days.
+	//  tint_br = Time interval to use for branch ratio (instead of tend-tbegin).
+	//  mag_min_sim = Minimum magnitude for simulation.
+	//  mag_max_sim = Maximum magnitude for simulation.
+	//  mag_min_fit = Minimum magnitude for parameter fitting, ignored if f_relative_zams is false.
+	//  mag_max_fit = Maximum magnitude for parameter fitting, ignored if f_relative_zams is false.
+	//  gen_count_max = Maximum number of generations, 0 for no limit, -1 for OEConstants.DEF_MAX_GEN_COUNT (= 100).
+	//  max_cat_size = Maximum number of ruptures, 0 for no limit, -1 for OEConstants.DEF_MAX_CAT_SIZE (= 5000000).
+	//  time_mag_array = Array with N pairs of elements.  In each pair, the first
+	//                   element is time in days, the second element is magnitude.
+	//                   It is an error if this array has an odd number of elements.
+	//  f_verbose = True to print out the catalog parameters and seed ruptures.
+	// Note: If f_relative_zams is true, then the absolute zams is calculated using the branch
+	// ratio n applied to the magnitude range mag_min_fit to mag_max_fit;  often those are taken
+	// equal to mag_min_sim and mag_max_sim respectively.
+	// Note: The magnitude range for the first (seed) generation is mref to msup;  often those
+	// are take to be OEConstants.DEF_MREF (= 3.0) and OEConstants.DEF_MSUP (= 9.5) respectively.
+	// Note: For each supplied rupture, the productivity k is calculated as an *uncorrected*
+	// productivity derived from zams.
+	// Note: The productivity parameter passed to the catalog generator is calculated from
+	// the branch ratio n applied to the magnitude range mref to msup;  this is subsequently
+	// converted to the magnitude range mag_min_sim to mag_max_sim during simulation.
+
+	public OEInitFixedState setup_time_mag_list_for_params (
+		double zmu,
+		double zams,
+		double n,
+		double p,
+		double c,
+		double b,
+		double alpha,
+		boolean f_relative_zams,
+		double mref,
+		double msup,
+		double tbegin,
+		double tend,
+		double tint_br,
+		double mag_min_sim,
+		double mag_max_sim,
+		double mag_min_fit,
+		double mag_max_fit,
+		int gen_count_max,
+		int max_cat_size,
+		double[] time_mag_array,
+		boolean f_verbose
+	) {
+
+		// Absolute zams
+
+		double abs_zams = zams;
+
+		// If relative zams, compute zams for the given branch ratio
+
+		if (f_relative_zams) {
+			abs_zams = zams + OEStatsCalc.calc_zams_from_br (
+				n,
+				p,
+				c,
+				b,
+				alpha,
+				mag_min_fit,
+				mag_max_fit,
+				tint_br
+			);
+
+			if (f_verbose) {
+				System.out.println ();
+				System.out.println ("Equivalent absolute zams = " + abs_zams);
+			}
+		}
+
+		// Make the catalog parameters
+
+		OECatalogParams the_cat_params = (new OECatalogParams()).set_to_fixed_mag_tint_br (
+			n,				// n
+			p,				// p
+			c,				// c
+			b,				// b
+			alpha,			// alpha
+			mref,			// mref
+			msup,			// msup
+			tbegin,			// tbegin
+			tend,			// tend
+			tint_br,		// tint_br
+			mag_min_sim,	// mag_min_sim
+			mag_max_sim		// mag_max_sim
+		);
+
+		if (gen_count_max < 0) {
+			the_cat_params.gen_count_max = OEConstants.DEF_MAX_GEN_COUNT;
+		} else {
+			the_cat_params.gen_count_max = gen_count_max;
+		}
+
+		if (max_cat_size < 0) {
+			the_cat_params.max_cat_size = OEConstants.DEF_MAX_CAT_SIZE;
+		} else {
+			the_cat_params.max_cat_size = max_cat_size;
+		}
+
+		// Make the seed parameters
+
+		OESeedParams the_seed_params = (new OESeedParams()).set_from_zams_zmu (abs_zams, zmu, the_cat_params);
+
+		// Complete the setup
+
+		setup_time_mag_list (the_cat_params, the_seed_params, time_mag_array, f_verbose);
+		return this;
+	}
+
+
+
+
 	// Return the index of the mainshock within the initial rupture list, or -1 if none.
 
 	public final int get_mainshock_index () {
