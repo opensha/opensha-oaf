@@ -292,6 +292,24 @@ public class OEAccumGenInfo implements OEEnsembleAccumulator {
 			return (gen_count >= 2 && gen_valid_size[1] > 0);
 		}
 
+		// Get the largest magnitude of any valid aftershock.
+
+		public double calc_largest_valid_mag () {
+			double mag = 0.0;
+			boolean first = true;
+			for (int i_gen = 1; i_gen < gen_count; ++i_gen) {
+				if (gen_valid_size[i_gen] > 0) {
+					if (first) {
+						mag = rup_valid_max_mag[i_gen];
+						first = false;
+					} else {
+						mag = Math.max (mag, rup_valid_max_mag[i_gen]);
+					}
+				}
+			}
+			return mag;
+		}
+
 		// Calculate an effective branch ratio.
 		// Note: Only valid ruptures are considered.
 		// Note: If D is the number of direct aftershocks, C the total number of aftershocks,
@@ -359,6 +377,7 @@ public class OEAccumGenInfo implements OEEnsembleAccumulator {
 			result.append ("cat_valid_etas_size = " + cat_valid_etas_size + "\n");
 			result.append ("gen_count = " + gen_count + "\n");
 			result.append ("has_valid_direct = " + has_valid_direct() + "\n");
+			result.append ("largest_valid_mag = " + calc_largest_valid_mag() + "\n");
 			result.append ("effective_br = " + calc_effective_br() + "\n");
 
 			for (int i_gen = 0; i_gen < gen_count; ++i_gen) {
@@ -440,6 +459,11 @@ public class OEAccumGenInfo implements OEEnsembleAccumulator {
 
 	private int[] dval_direct_valid_size;
 
+	// Sorted list of the largest magnitude of valid aftershocks of catalogs with at least one valid direct aftershock.
+	// Dimension: dval_cat_size[dval_count]
+
+	private double[] dval_largest_valid_mag;
+
 	// Sorted list of the effective branch ratio of catalogs with at least one valid direct aftershock.
 	// Dimension: dval_cat_size[dval_count]
 
@@ -488,6 +512,7 @@ public class OEAccumGenInfo implements OEEnsembleAccumulator {
 		dval_count = 0;
 		dval_cat_valid_etas_size = new int[0];
 		dval_direct_valid_size = new int[0];
+		dval_largest_valid_mag = new double[0];
 		dval_effective_br = new double[0];
 
 		return;
@@ -519,6 +544,7 @@ public class OEAccumGenInfo implements OEEnsembleAccumulator {
 		dval_count = 0;
 		dval_cat_valid_etas_size = null;
 		dval_direct_valid_size = null;
+		dval_largest_valid_mag = null;
 		dval_effective_br = null;
 
 		return;
@@ -771,6 +797,7 @@ public class OEAccumGenInfo implements OEEnsembleAccumulator {
 
 		dval_cat_valid_etas_size = null;	// created during end_accumulation
 		dval_direct_valid_size = null;		// created during end_accumulation
+		dval_largest_valid_mag = null;		// created during end_accumulation
 		dval_effective_br = null;			// created during end_accumulation
 
 		return;
@@ -832,6 +859,7 @@ public class OEAccumGenInfo implements OEEnsembleAccumulator {
 
 		dval_cat_valid_etas_size = new int[dval_count];
 		dval_direct_valid_size = new int[dval_count];
+		dval_largest_valid_mag = new double[dval_count];
 		dval_effective_br = new double[dval_count];
 
 		int j = 0;
@@ -839,6 +867,7 @@ public class OEAccumGenInfo implements OEEnsembleAccumulator {
 			if (acc_cat_info[i_cat].has_valid_direct()) {
 				dval_cat_valid_etas_size[j] = acc_cat_info[i_cat].cat_valid_etas_size;
 				dval_direct_valid_size[j] = acc_cat_info[i_cat].gen_valid_size[1];
+				dval_largest_valid_mag[j] = acc_cat_info[i_cat].calc_largest_valid_mag();
 				dval_effective_br[j] = acc_cat_info[i_cat].calc_effective_br();
 				++j;
 			}
@@ -846,6 +875,7 @@ public class OEAccumGenInfo implements OEEnsembleAccumulator {
 
 		Arrays.sort (dval_cat_valid_etas_size);
 		Arrays.sort (dval_direct_valid_size);
+		Arrays.sort (dval_largest_valid_mag);
 		Arrays.sort (dval_effective_br);
 
 		return;
@@ -870,6 +900,13 @@ public class OEAccumGenInfo implements OEEnsembleAccumulator {
 
 	public final int get_fractile_direct_valid_size (double fractile) {
 		return OEArraysCalc.fractile_array (dval_direct_valid_size, fractile, 0, dval_count);
+	}
+
+
+	// Get a fractile of the largest magnitude of valid aftershocks of catalogs with at least one valid direct aftershock.
+
+	public final double get_fractile_largest_valid_mag (double fractile) {
+		return OEArraysCalc.fractile_array (dval_largest_valid_mag, fractile, 0, dval_count);
 	}
 
 
@@ -951,6 +988,22 @@ public class OEAccumGenInfo implements OEEnsembleAccumulator {
 			get_fractile_direct_valid_size (0.90),
 			get_fractile_direct_valid_size (0.95),
 			get_fractile_direct_valid_size (1.00)
+		));
+
+		// Largest magnitude of valid aftershocks of catalogs with at least one valid direct aftershock
+
+		result.append ("\n");
+		result.append ("Largest valid magnitude: fractiles 0%, 5%, 10%, 25%, 50%, 75%, 90%, 95%, 100%\n");
+		result.append (String.format ("%10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f\n",
+			get_fractile_largest_valid_mag (0.00),
+			get_fractile_largest_valid_mag (0.05),
+			get_fractile_largest_valid_mag (0.10),
+			get_fractile_largest_valid_mag (0.25),
+			get_fractile_largest_valid_mag (0.50),
+			get_fractile_largest_valid_mag (0.75),
+			get_fractile_largest_valid_mag (0.90),
+			get_fractile_largest_valid_mag (0.95),
+			get_fractile_largest_valid_mag (1.00)
 		));
 
 		// Effective branch ratio of catalogs with at least one valid direct aftershock
