@@ -304,7 +304,8 @@ public class OEMixedRNPCConfigFile extends OAF2ParameterSet<OEMixedRNPCParams> /
 
 
 	// Set to sample values.
-	// The selections are the rows from the embedded CSV file.
+	// The selections are the rows from the CSV file.
+	// If csv_filename is omitted, null, or empty, then use the embedded CSV filr.
 	// The regions are from the Generic RJ parameter file.
 	// If a region has a regime that does not correspond to any row in the CSV file,
 	// then it is added to the GLOBAL selection.
@@ -313,15 +314,24 @@ public class OEMixedRNPCConfigFile extends OAF2ParameterSet<OEMixedRNPCParams> /
 	// plus GLOBAL and others (currently regions within California).
 
 	public OEMixedRNPCConfigFile set_to_sample () {
+		return set_to_sample (null);
+	}
+
+	public OEMixedRNPCConfigFile set_to_sample (String csv_filename) {
 
 		// Load the data
 
 		GenericRJ_ParametersFetch fetch = new GenericRJ_ParametersFetch();
 		List<OAFRegion> fetch_region_list = fetch.get_region_list ();
 
-		// Load the embedded CSV file
+		// Load the CSV file
 
-		List<OEMixedRNPCParams> embedded_csv = OEMixedRNPCParams.import_embedded_csv();
+		List<OEMixedRNPCParams> embedded_csv;
+		if (csv_filename == null || csv_filename.trim().isEmpty()) {
+			embedded_csv = OEMixedRNPCParams.import_embedded_csv();
+		} else {
+			embedded_csv = OEMixedRNPCParams.import_csv_file (csv_filename);
+		}
 
 		// Make a set containing all tectonic regimes in the CSV file
 
@@ -674,6 +684,132 @@ public class OEMixedRNPCConfigFile extends OAF2ParameterSet<OEMixedRNPCParams> /
 			// Sample configuration file
 
 			OEMixedRNPCConfigFile mixed_rnpc_config = (new OEMixedRNPCConfigFile()).set_to_sample();
+
+			// Write to file
+
+			//MarshalUtils.to_formatted_json_file (mixed_rnpc_config, filename);
+			MarshalUtils.to_formatted_compact_json_file (mixed_rnpc_config, filename);
+
+			// Read back the file and display it
+
+			OEMixedRNPCConfigFile mixed_rnpc_config2 = new OEMixedRNPCConfigFile();
+			MarshalUtils.from_json_file (mixed_rnpc_config2, filename);
+
+			System.out.println ();
+			System.out.println ("********** Unmarshaled Sample Parameter Set **********");
+			System.out.println ();
+
+			System.out.println ();
+			System.out.println (mixed_rnpc_config2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #8
+		// Command format:
+		//  test8  csv_filename
+		// Read a CSV file, make a sample configuration file, and display it.
+
+		if (testargs.is_test ("test8")) {
+
+			// Read arguments
+
+			System.out.println ("Reading CSV file, displaying sample ETAS configuration file");
+			String csv_filename = testargs.get_string ("csv_filename");
+			testargs.end_test();
+
+			// Sample configuration file
+
+			OEMixedRNPCConfigFile mixed_rnpc_config = (new OEMixedRNPCConfigFile()).set_to_sample(csv_filename);
+
+			// Display it
+
+			System.out.println ();
+			System.out.println ("********** Sample Parameter Set **********");
+			System.out.println ();
+
+			System.out.println (mixed_rnpc_config.toString());
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #9
+		// Command format:
+		//  test9  csv_filename  filename
+		// Read a CSV file, make a sample configuration file, and write it to a file.
+		// This test writes the raw JSON.
+		// Then it reads back the file and displays it.
+
+		if (testargs.is_test ("test9")) {
+
+			// Read arguments
+
+			System.out.println ("Reading CSV file, writing sample ETAS configuration file, raw JSON");
+			String csv_filename = testargs.get_string ("csv_filename");
+			String filename = testargs.get_string ("filename");
+			testargs.end_test();
+
+			// Sample configuration file
+
+			OEMixedRNPCConfigFile mixed_rnpc_config = (new OEMixedRNPCConfigFile()).set_to_sample(csv_filename);
+
+			// Write to file
+
+			MarshalUtils.to_json_file (mixed_rnpc_config, filename);
+
+			// Read back the file and display it
+
+			OEMixedRNPCConfigFile mixed_rnpc_config2 = new OEMixedRNPCConfigFile();
+			MarshalUtils.from_json_file (mixed_rnpc_config2, filename);
+
+			System.out.println ();
+			System.out.println ("********** Unmarshaled Sample Parameter Set **********");
+			System.out.println ();
+
+			System.out.println (mixed_rnpc_config2.toString());
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #10
+		// Command format:
+		//  test10  csv_filename  filename
+		// Read a CSV file, make a sample configuration file, and write it to a file.
+		// This test writes the formatted JSON.
+		// Then it reads back the file and displays it.
+		// If filename is omitted, write MixedRNPCConfig.json in the current directory.
+
+		if (testargs.is_test ("test10")) {
+
+			// Read arguments
+
+			System.out.println ("Reading CSV file, writing sample ETAS configuration file, formatted JSON");
+			String csv_filename = testargs.get_string ("csv_filename");
+			String filename = testargs.get_string_opt ("filename", "MixedRNPCConfig.json");
+			testargs.end_test();
+
+			// Sample configuration file
+
+			OEMixedRNPCConfigFile mixed_rnpc_config = (new OEMixedRNPCConfigFile()).set_to_sample(csv_filename);
 
 			// Write to file
 

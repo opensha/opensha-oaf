@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.net.URL;
 
 import java.io.IOException;
+import java.io.File;
 
 import org.opensha.oaf.util.MarshalReader;
 import org.opensha.oaf.util.MarshalWriter;
@@ -115,6 +116,22 @@ public class OEMixedRNPCParams implements Marshalable {
 
 	private boolean f_use_alt_fit_n;
 
+	// Flag to use uniform distribution for relative zams. [v3]
+
+	private boolean f_uniform_zams;
+
+	// Flag to use uniform distribution for relative c. [v3]
+
+	private boolean f_uniform_c;
+
+	// Flag to use uniform distribution for relative p. [v3]
+
+	private boolean f_uniform_p;
+
+	// Flag to use uniform distribution for relative n. [v3]
+
+	private boolean f_uniform_n;
+
 
 
 
@@ -131,6 +148,45 @@ public class OEMixedRNPCParams implements Marshalable {
 
 		f_use_alt_fit_n = false;
 
+		return;
+	}
+
+
+
+
+	// Set up assumed parameters, version 3, for newly added parameters only.
+	// Assumes that the configurable parameters are already set up.
+
+	private void setup_assumed_params_v3_new () {
+
+		// Use fitted distribution for zams
+
+		f_uniform_zams = false;
+
+		// Use fitted distribution for c
+
+		f_uniform_c = false;
+
+		// Use fitted distribution for p
+
+		f_uniform_p = false;
+
+		// Use fitted distribution for n
+
+		f_uniform_n = false;
+
+		return;
+	}
+
+
+
+
+	// Set up assumed parameters, version 3.
+	// Assumes that the configurable parameters are already set up.
+
+	private void setup_assumed_params_v3 () {
+		setup_assumed_params_v1();
+		setup_assumed_params_v3_new();
 		return;
 	}
 
@@ -314,6 +370,22 @@ public class OEMixedRNPCParams implements Marshalable {
 		return f_use_alt_fit_n;
 	}
 
+	public final boolean get_f_uniform_zams () {
+		return f_uniform_zams;
+	}
+
+	public final boolean get_f_uniform_c () {
+		return f_uniform_c;
+	}
+
+	public final boolean get_f_uniform_p () {
+		return f_uniform_p;
+	}
+
+	public final boolean get_f_uniform_n () {
+		return f_uniform_n;
+	}
+
 
 
 
@@ -394,6 +466,9 @@ public class OEMixedRNPCParams implements Marshalable {
 	// Calculate the log of the selected fit to relative zams.
 
 	public final double calc_log_sel_fit_zams (double zams) {
+		if (f_uniform_zams) {
+			return 0.0;
+		}
 		if (f_use_alt_fit_zams) {
 			return calc_log_alt_fit_zams (zams);
 		}
@@ -416,6 +491,18 @@ public class OEMixedRNPCParams implements Marshalable {
 
 
 
+	// Calculate the log of the selected fit to c.
+
+	public final double calc_log_sel_fit_c (double c) {
+		if (f_uniform_c) {
+			return 0.0;
+		}
+		return calc_log_fit_c (c);
+	}
+
+
+
+
 	// Calculate the log of the fit to p.
 
 	public final double calc_log_fit_p (double p) {
@@ -424,6 +511,18 @@ public class OEMixedRNPCParams implements Marshalable {
 
 		return log_norm_fit_p - Math.log1p(r * r);
 
+	}
+
+
+
+
+	// Calculate the log of the selected fit to p.
+
+	public final double calc_log_sel_fit_p (double p) {
+		if (f_uniform_p) {
+			return 0.0;
+		}
+		return calc_log_fit_p (p);
 	}
 
 
@@ -480,6 +579,9 @@ public class OEMixedRNPCParams implements Marshalable {
 	// Calculate the log of the selected fit to n.
 
 	public final double calc_log_sel_fit_n (double n) {
+		if (f_uniform_n) {
+			return 0.0;
+		}
 		if (f_use_alt_fit_n) {
 			return calc_log_alt_fit_n (n);
 		}
@@ -493,7 +595,7 @@ public class OEMixedRNPCParams implements Marshalable {
 
 	public final double log_prior_likelihood_n_p_c (double n, double p, double c) {
 
-		double log_like = calc_log_sel_fit_n (n) + calc_log_fit_p (p) + calc_log_fit_c (c);
+		double log_like = calc_log_sel_fit_n (n) + calc_log_sel_fit_p (p) + calc_log_sel_fit_c (c);
 		return log_like;
 	}
 
@@ -562,6 +664,10 @@ public class OEMixedRNPCParams implements Marshalable {
 
 		f_use_alt_fit_zams = false;
 		f_use_alt_fit_n = false;
+		f_uniform_zams = false;
+		f_uniform_c = false;
+		f_uniform_p = false;
+		f_uniform_n = false;
 
 		// Derived parameters
 
@@ -639,7 +745,7 @@ public class OEMixedRNPCParams implements Marshalable {
 		this.alt_nomega	= alt_nomega;
 		this.alt_nalpha	= alt_nalpha;
 
-		setup_assumed_params_v1();
+		setup_assumed_params_v3();
 		setup_derived_params();
 		return this;
 	}
@@ -648,7 +754,7 @@ public class OEMixedRNPCParams implements Marshalable {
 
 
 	// Set the values.
-	// This sets configurable and assumed parameters, and computes the rest.
+	// This sets configurable and assumed parameters (v1), and computes the rest.
 
 	public final OEMixedRNPCParams set (
 		String regimeName,
@@ -703,6 +809,79 @@ public class OEMixedRNPCParams implements Marshalable {
 
 		this.f_use_alt_fit_zams	= f_use_alt_fit_zams;
 		this.f_use_alt_fit_n	= f_use_alt_fit_n	;
+
+		setup_assumed_params_v3_new();
+		setup_derived_params();
+		return this;
+	}
+
+
+
+
+	// Set the values.
+	// This sets configurable and assumed parameters (v3), and computes the rest.
+
+	public final OEMixedRNPCParams set (
+		String regimeName,
+		double rtx0,
+		double rty0,
+		double rtx1,
+		double rty1,
+		double rtx2,
+		double rty2,
+		double cmu,
+		double csigma,
+		double pmu,
+		double psigma,
+		double nzeta,
+		double nomega,
+		double nalpha,
+		double alt_rtx0,
+		double alt_rty0,
+		double alt_rtx1,
+		double alt_rty1,
+		double alt_rtx2,
+		double alt_rty2,
+		double alt_nzeta,
+		double alt_nomega,
+		double alt_nalpha,
+		boolean f_use_alt_fit_zams,
+		boolean f_use_alt_fit_n,
+		boolean f_uniform_zams,
+		boolean f_uniform_c,
+		boolean f_uniform_p,
+		boolean f_uniform_n
+	) {
+		this.regimeName	= regimeName;
+		this.rtx0		= rtx0		;
+		this.rty0		= rty0		;
+		this.rtx1		= rtx1		;
+		this.rty1		= rty1		;
+		this.rtx2		= rtx2		;
+		this.rty2		= rty2		;
+		this.cmu		= cmu		;
+		this.csigma		= csigma	;
+		this.pmu		= pmu		;
+		this.psigma		= psigma	;
+		this.nzeta		= nzeta		;
+		this.nomega		= nomega	;
+		this.nalpha		= nalpha	;
+		this.alt_rtx0	= alt_rtx0	;
+		this.alt_rty0	= alt_rty0	;
+		this.alt_rtx1	= alt_rtx1	;
+		this.alt_rty1	= alt_rty1	;
+		this.alt_rtx2	= alt_rtx2	;
+		this.alt_rty2	= alt_rty2	;
+		this.alt_nzeta	= alt_nzeta	;
+		this.alt_nomega	= alt_nomega;
+		this.alt_nalpha	= alt_nalpha;
+
+		this.f_use_alt_fit_zams	= f_use_alt_fit_zams;
+		this.f_use_alt_fit_n	= f_use_alt_fit_n	;
+		this.f_uniform_zams		= f_uniform_zams	;
+		this.f_uniform_c		= f_uniform_c		;
+		this.f_uniform_p		= f_uniform_p		;
+		this.f_uniform_n		= f_uniform_n		;
 
 		setup_derived_params();
 		return this;
@@ -797,6 +976,10 @@ public class OEMixedRNPCParams implements Marshalable {
 
 		this.f_use_alt_fit_zams		= other.f_use_alt_fit_zams		;
 		this.f_use_alt_fit_n		= other.f_use_alt_fit_n			;
+		this.f_uniform_zams			= other.f_uniform_zams			;
+		this.f_uniform_c			= other.f_uniform_c				;
+		this.f_uniform_p			= other.f_uniform_p				;
+		this.f_uniform_n			= other.f_uniform_n				;
 
 		this.log_norm_fit_zams		= other.log_norm_fit_zams		;
 		this.log_norm_fit_c			= other.log_norm_fit_c			;
@@ -865,6 +1048,10 @@ public class OEMixedRNPCParams implements Marshalable {
 
 		result.append ("f_use_alt_fit_zams = "	+ f_use_alt_fit_zams + "\n");
 		result.append ("f_use_alt_fit_n = "		+ f_use_alt_fit_n	 + "\n");
+		result.append ("f_uniform_zams = "		+ f_uniform_zams	 + "\n");
+		result.append ("f_uniform_c = "			+ f_uniform_c		 + "\n");
+		result.append ("f_uniform_p = "			+ f_uniform_p		 + "\n");
+		result.append ("f_uniform_n = "			+ f_uniform_n		 + "\n");
 
 		result.append ("log_norm_fit_zams = "		+ log_norm_fit_zams		 + "\n");
 		result.append ("log_norm_fit_c = "			+ log_norm_fit_c		 + "\n");
@@ -912,6 +1099,10 @@ public class OEMixedRNPCParams implements Marshalable {
 
 		result.append ("f_use_alt_fit_zams = "	+ f_use_alt_fit_zams + "\n");
 		result.append ("f_use_alt_fit_n = "		+ f_use_alt_fit_n	 + "\n");
+		result.append ("f_uniform_zams = "		+ f_uniform_zams	 + "\n");
+		result.append ("f_uniform_c = "			+ f_uniform_c		 + "\n");
+		result.append ("f_uniform_p = "			+ f_uniform_p		 + "\n");
+		result.append ("f_uniform_n = "			+ f_uniform_n		 + "\n");
 
 		return result.toString();
 	}
@@ -980,7 +1171,11 @@ public class OEMixedRNPCParams implements Marshalable {
 			+ alt_nomega	+ ", "
 			+ alt_nalpha	+ ", "
 			+ f_use_alt_fit_zams	+ ", "
-			+ f_use_alt_fit_n		+ "]";
+			+ f_use_alt_fit_n		+ ", "
+			+ f_uniform_zams		+ ", "
+			+ f_uniform_c			+ ", "
+			+ f_uniform_p			+ ", "
+			+ f_uniform_n			+ "]";
 		return result;
 	}
 
@@ -992,10 +1187,10 @@ public class OEMixedRNPCParams implements Marshalable {
 
 
 
-	// Import a row from the CSV.
+	// Import a row from the CSV, for rows with 23 columns.
 	// Returns this object.
 
-	private OEMixedRNPCParams import_csv_row (CSVFile<String> csv, int row) {
+	private OEMixedRNPCParams import_csv_row_23 (CSVFile<String> csv, int row) {
 
 		// Read configurable parameters
 
@@ -1025,7 +1220,54 @@ public class OEMixedRNPCParams implements Marshalable {
 
 		// Compute remaining parameters
 
-		setup_assumed_params_v1();
+		setup_assumed_params_v3();
+		setup_derived_params();
+		return this;
+	}
+
+
+
+
+	// Import a row from the CSV, for rows with 29 columns.
+	// Returns this object.
+
+	private OEMixedRNPCParams import_csv_row_29 (CSVFile<String> csv, int row) {
+
+		// Read configurable parameters
+
+		regimeName	= csv.get(row, 0).trim();
+		rtx0		= Double.parseDouble(csv.get(row,  1));
+		rty0		= Double.parseDouble(csv.get(row,  2));
+		rtx1		= Double.parseDouble(csv.get(row,  3));
+		rty1		= Double.parseDouble(csv.get(row,  4));
+		rtx2		= Double.parseDouble(csv.get(row,  5));
+		rty2		= Double.parseDouble(csv.get(row,  6));
+		cmu			= Double.parseDouble(csv.get(row,  7));
+		csigma		= Double.parseDouble(csv.get(row,  8));
+		pmu			= Double.parseDouble(csv.get(row,  9));
+		psigma		= Double.parseDouble(csv.get(row, 10));
+		nzeta		= Double.parseDouble(csv.get(row, 11));
+		nomega		= Double.parseDouble(csv.get(row, 12));
+		nalpha		= Double.parseDouble(csv.get(row, 13));
+		alt_rtx0	= Double.parseDouble(csv.get(row, 14));
+		alt_rty0	= Double.parseDouble(csv.get(row, 15));
+		alt_rtx1	= Double.parseDouble(csv.get(row, 16));
+		alt_rty1	= Double.parseDouble(csv.get(row, 17));
+		alt_rtx2	= Double.parseDouble(csv.get(row, 18));
+		alt_rty2	= Double.parseDouble(csv.get(row, 19));
+		alt_nzeta	= Double.parseDouble(csv.get(row, 20));
+		alt_nomega	= Double.parseDouble(csv.get(row, 21));
+		alt_nalpha	= Double.parseDouble(csv.get(row, 22));
+
+		f_use_alt_fit_zams	= Boolean.parseBoolean(csv.get(row, 23));
+		f_use_alt_fit_n		= Boolean.parseBoolean(csv.get(row, 24));
+		f_uniform_zams		= Boolean.parseBoolean(csv.get(row, 25));
+		f_uniform_c			= Boolean.parseBoolean(csv.get(row, 26));
+		f_uniform_p			= Boolean.parseBoolean(csv.get(row, 27));
+		f_uniform_n			= Boolean.parseBoolean(csv.get(row, 28));
+
+		// Compute remaining parameters
+
 		setup_derived_params();
 		return this;
 	}
@@ -1038,14 +1280,22 @@ public class OEMixedRNPCParams implements Marshalable {
 	// Note: The first row (row 0) consists of column headings, and so is skipped.
 
 	private static List<OEMixedRNPCParams> import_csv_rows (CSVFile<String> csv) {
-		if (!( csv.getNumCols() == 23 )) {
-			throw new MarshalException ("OEMixedRNPCParams.import_csv_rows: Incorrect number of columns: " + csv.getNumCols());
-		}
-
 		List<OEMixedRNPCParams> result = new ArrayList<OEMixedRNPCParams>();
 
-		for (int row = 1; row < csv.getNumRows(); row++) {
-			result.add ((new OEMixedRNPCParams()).import_csv_row (csv, row));
+		if (csv.getNumCols() == 23) {
+			for (int row = 1; row < csv.getNumRows(); row++) {
+				result.add ((new OEMixedRNPCParams()).import_csv_row_23 (csv, row));
+			}
+		}
+
+		else if (csv.getNumCols() == 29) {
+			for (int row = 1; row < csv.getNumRows(); row++) {
+				result.add ((new OEMixedRNPCParams()).import_csv_row_29 (csv, row));
+			}
+		}
+
+		else {
+			throw new MarshalException ("OEMixedRNPCParams.import_csv_rows: Incorrect number of columns: " + csv.getNumCols());
 		}
 
 		return result;
@@ -1077,6 +1327,27 @@ public class OEMixedRNPCParams implements Marshalable {
 
 
 
+	// Import all the rows from a CSV file.
+	// Returns a list of the resulting objects.
+
+	public static List<OEMixedRNPCParams> import_csv_file (String filename) {
+		List<OEMixedRNPCParams> result;
+
+		try {
+			File file = new File (filename);
+			CSVFile<String> csv = CSVFile.readFile (file, true);
+			result = import_csv_rows (csv);
+		}
+		catch (Exception e) {
+			throw new MarshalException ("OEMixedRNPCParams.import_embedded_csv: Error importing CSV file: " + filename, e);
+		}
+
+		return result;
+	}
+
+
+
+
 	//----- Marshaling -----
 
 
@@ -1085,7 +1356,8 @@ public class OEMixedRNPCParams implements Marshalable {
 	// Marshal version number.
 
 	private static final int MARSHAL_VER_1 = 145001;	// marshals only configurable parameters
-	private static final int MARSHAL_VER_2 = 145002;	// marshals configurable and assumed parameters
+	private static final int MARSHAL_VER_2 = 145002;	// marshals configurable and assumed parameters (v1)
+	private static final int MARSHAL_VER_3 = 145003;	// marshals configurable and assumed parameters (v3)
 
 	private static final String M_VERSION_NAME = "OEMixedRNPCParams";
 
@@ -1095,7 +1367,7 @@ public class OEMixedRNPCParams implements Marshalable {
 
 		// Version
 
-		int ver = MARSHAL_VER_2;
+		int ver = MARSHAL_VER_3;
 
 		writer.marshalInt (M_VERSION_NAME, ver);
 
@@ -1158,8 +1430,44 @@ public class OEMixedRNPCParams implements Marshalable {
 			writer.marshalDouble ("alt_nomega"	, alt_nomega	);
 			writer.marshalDouble ("alt_nalpha"	, alt_nalpha	);
 
-			writer.marshalBoolean ("f_use_alt_fit_zams", f_use_alt_fit_zams);
-			writer.marshalBoolean ("f_use_alt_fit_n", f_use_alt_fit_n);
+			writer.marshalBoolean ("f_use_alt_fit_zams"	, f_use_alt_fit_zams);
+			writer.marshalBoolean ("f_use_alt_fit_n"	, f_use_alt_fit_n	);
+
+		}
+		break;
+
+		case MARSHAL_VER_3: {
+
+			writer.marshalString ("regimeName"	, regimeName	);
+			writer.marshalDouble ("rtx0"		, rtx0			);
+			writer.marshalDouble ("rty0"		, rty0			);
+			writer.marshalDouble ("rtx1"		, rtx1			);
+			writer.marshalDouble ("rty1"		, rty1			);
+			writer.marshalDouble ("rtx2"		, rtx2			);
+			writer.marshalDouble ("rty2"		, rty2			);
+			writer.marshalDouble ("cmu"			, cmu			);
+			writer.marshalDouble ("csigma"		, csigma		);
+			writer.marshalDouble ("pmu"			, pmu			);
+			writer.marshalDouble ("psigma"		, psigma		);
+			writer.marshalDouble ("nzeta"		, nzeta			);
+			writer.marshalDouble ("nomega"		, nomega		);
+			writer.marshalDouble ("nalpha"		, nalpha		);
+			writer.marshalDouble ("alt_rtx0"	, alt_rtx0		);
+			writer.marshalDouble ("alt_rty0"	, alt_rty0		);
+			writer.marshalDouble ("alt_rtx1"	, alt_rtx1		);
+			writer.marshalDouble ("alt_rty1"	, alt_rty1		);
+			writer.marshalDouble ("alt_rtx2"	, alt_rtx2		);
+			writer.marshalDouble ("alt_rty2"	, alt_rty2		);
+			writer.marshalDouble ("alt_nzeta"	, alt_nzeta		);
+			writer.marshalDouble ("alt_nomega"	, alt_nomega	);
+			writer.marshalDouble ("alt_nalpha"	, alt_nalpha	);
+
+			writer.marshalBoolean ("f_use_alt_fit_zams"	, f_use_alt_fit_zams);
+			writer.marshalBoolean ("f_use_alt_fit_n"	, f_use_alt_fit_n	);
+			writer.marshalBoolean ("f_uniform_zams"		, f_uniform_zams	);
+			writer.marshalBoolean ("f_uniform_c"		, f_uniform_c		);
+			writer.marshalBoolean ("f_uniform_p"		, f_uniform_p		);
+			writer.marshalBoolean ("f_uniform_n"		, f_uniform_n		);
 
 		}
 		break;
@@ -1175,7 +1483,7 @@ public class OEMixedRNPCParams implements Marshalable {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Contents
 
@@ -1208,7 +1516,7 @@ public class OEMixedRNPCParams implements Marshalable {
 			alt_nalpha	= reader.unmarshalDouble ("alt_nalpha");
 
 			try {
-				setup_assumed_params_v1();
+				setup_assumed_params_v3();
 				setup_derived_params();
 			}
 			catch (Exception e) {
@@ -1244,8 +1552,52 @@ public class OEMixedRNPCParams implements Marshalable {
 			alt_nomega	= reader.unmarshalDouble ("alt_nomega");
 			alt_nalpha	= reader.unmarshalDouble ("alt_nalpha");
 
-			f_use_alt_fit_zams = reader.unmarshalBoolean ("f_use_alt_fit_zams");
-			f_use_alt_fit_n = reader.unmarshalBoolean ("f_use_alt_fit_n");
+			f_use_alt_fit_zams	= reader.unmarshalBoolean ("f_use_alt_fit_zams");
+			f_use_alt_fit_n		= reader.unmarshalBoolean ("f_use_alt_fit_n");
+
+			try {
+				setup_assumed_params_v3_new();
+				setup_derived_params();
+			}
+			catch (Exception e) {
+				throw new MarshalException ("OEMixedRNPCParams.do_umarshal: Error completing setup", e);
+			}
+
+		}
+		break;
+
+		case MARSHAL_VER_3: {
+
+			regimeName = reader.unmarshalString ("regimeName");
+			rtx0		= reader.unmarshalDouble ("rtx0");
+			rty0		= reader.unmarshalDouble ("rty0");
+			rtx1		= reader.unmarshalDouble ("rtx1");
+			rty1		= reader.unmarshalDouble ("rty1");
+			rtx2		= reader.unmarshalDouble ("rtx2");
+			rty2		= reader.unmarshalDouble ("rty2");
+			cmu			= reader.unmarshalDouble ("cmu");
+			csigma		= reader.unmarshalDouble ("csigma");
+			pmu			= reader.unmarshalDouble ("pmu");
+			psigma		= reader.unmarshalDouble ("psigma");
+			nzeta		= reader.unmarshalDouble ("nzeta");
+			nomega		= reader.unmarshalDouble ("nomega");
+			nalpha		= reader.unmarshalDouble ("nalpha");
+			alt_rtx0	= reader.unmarshalDouble ("alt_rtx0");
+			alt_rty0	= reader.unmarshalDouble ("alt_rty0");
+			alt_rtx1	= reader.unmarshalDouble ("alt_rtx1");
+			alt_rty1	= reader.unmarshalDouble ("alt_rty1");
+			alt_rtx2	= reader.unmarshalDouble ("alt_rtx2");
+			alt_rty2	= reader.unmarshalDouble ("alt_rty2");
+			alt_nzeta	= reader.unmarshalDouble ("alt_nzeta");
+			alt_nomega	= reader.unmarshalDouble ("alt_nomega");
+			alt_nalpha	= reader.unmarshalDouble ("alt_nalpha");
+
+			f_use_alt_fit_zams	= reader.unmarshalBoolean ("f_use_alt_fit_zams");
+			f_use_alt_fit_n		= reader.unmarshalBoolean ("f_use_alt_fit_n");
+			f_uniform_zams		= reader.unmarshalBoolean ("f_uniform_zams");
+			f_uniform_c			= reader.unmarshalBoolean ("f_uniform_c");
+			f_uniform_p			= reader.unmarshalBoolean ("f_uniform_p");
+			f_uniform_n			= reader.unmarshalBoolean ("f_uniform_n");
 
 			try {
 				setup_derived_params();
@@ -1674,6 +2026,48 @@ public class OEMixedRNPCParams implements Marshalable {
 				logfx[i] = mixed_rnpc_params.calc_log_alt_fit_n (xs[i]);
 			}
 			write_fcn_test_values (xs, logfx, filename_prefix + "alt_n.txt");
+
+			// Done
+
+			System.out.println ();
+			System.out.println ("Done");
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  filename
+		// Import values from a file, and display the resulting list.
+
+		if (testargs.is_test ("test7")) {
+
+			// Read arguments
+
+			System.out.println ("Read CSV file and display list");
+			String filename = testargs.get_string ("filename");
+			testargs.end_test();
+
+			// Read CSV file
+
+			System.out.println ();
+			System.out.println ("********** Read CSV file **********");
+			System.out.println ();
+
+			List<OEMixedRNPCParams> params_list = import_csv_file (filename);
+
+			// Display the list
+
+			System.out.println ();
+			System.out.println ("********** Display list **********");
+			System.out.println ();
+
+			for (OEMixedRNPCParams params : params_list) {
+				System.out.println (params.summary_string());
+			}
 
 			// Done
 
