@@ -217,14 +217,26 @@
 #          parameters for the class.
 #
 # runat - Run a class in the org.opensha.oaf package, using the compiled-in configuration, at a given time.
-#         After the 'run' keyword comes the application time (as either number of milliseconds
+#         After the 'runat' keyword comes the application time (as either number of milliseconds
 #         since the epoch, or ISO-8601 format), then the name of the class (without the
 #         'org.opensha.oaf.' prefix), followed by any command-line parameters for the class.
 #
 # runtestat - Run a class in the org.opensha.oaf package, using the compiled-in configuration, in test mode at a given time.
-#             After the 'run' keyword comes the test mode time (as either number of milliseconds
+#             After the 'runtestat' keyword comes the test mode time (as either number of milliseconds
 #             since the epoch, or ISO-8601 format), then the name of the class (without the
 #             'org.opensha.oaf.' prefix), followed by any command-line parameters for the class.
+#
+# run_mem - Like 'run' except the first parameter is the amount of memory to use for Java, in GB.
+#
+# runcfg_mem - Like 'runcfg' except the first parameter is the amount of memory to use for Java, in GB.
+#
+# runaafs_mem - Like 'runaafs' except the first parameter is the amount of memory to use for Java, in GB.
+#
+# runany_mem - Like 'runany' except the first parameter is the amount of memory to use for Java, in GB.
+#
+# runat_mem - Like 'runat' except the first parameter is the amount of memory to use for Java, in GB.
+#
+# runtestat_mem - Like 'runtestat' except the first parameter is the amount of memory to use for Java, in GB.
 
 
 
@@ -1152,6 +1164,50 @@ case "$1" in
         java "-Dtesttime=$TESTTIME" -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
         ;;
 
+    run_mem)
+        JMEMGB="$2"
+        JCLASS="org.opensha.oaf.$3"
+        shift 3
+        java -Xmx${JMEMGB}G -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
+    runcfg_mem)
+        JMEMGB="$2"
+        JCLASS="org.opensha.oaf.$3"
+        shift 3
+        java -Xmx${JMEMGB}G -Doafcfg=./oafcfg -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
+    runaafs_mem)
+        JMEMGB="$2"
+        JCLASS="org.opensha.oaf.$3"
+        shift 3
+        java -Xmx${JMEMGB}G -Doafcfg=/opt/aafs/oafcfg -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
+    runany_mem)
+        JMEMGB="$2"
+        JCLASS="$3"
+        shift 3
+        java -Xmx${JMEMGB}G -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
+    runat_mem)
+        JMEMGB="$2"
+        APPTIME="$3"
+        JCLASS="org.opensha.oaf.$4"
+        shift 4
+        java -Xmx${JMEMGB}G "-Dapptime=$APPTIME" -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
+    runtestat_mem)
+        JMEMGB="$2"
+        TESTTIME="$3"
+        JCLASS="org.opensha.oaf.$4"
+        shift 4
+        java -Xmx${JMEMGB}G "-Dtesttime=$TESTTIME" -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
     help)
         echo "Clone the OpenSHA repositories into the current directory:"
         echo "  boaf.sh clone"
@@ -1237,6 +1293,18 @@ case "$1" in
         echo "  boaf.sh runat apptime CLASSNAME [PARAMETER...]"
         echo "Run a class in the org.opensha.oaf package, using the compiled-in configuration, in test mode at a given time:"
         echo "  boaf.sh runtestat testtime CLASSNAME [PARAMETER...]"
+        echo "Run a class in the org.opensha.oaf package, in specified number of GB, using the compiled-in configuration:"
+        echo "  boaf.sh run_mem JAVAGB CLASSNAME [PARAMETER...]"
+        echo "Run a class in the org.opensha.oaf package, in specified number of GB, reading configuration from ./oafcfg:"
+        echo "  boaf.sh runcfg_mem JAVAGB CLASSNAME [PARAMETER...]"
+        echo "Run a class in the org.opensha.oaf package, in specified number of GB, reading configuration from /opt/aafs/oafcfg:"
+        echo "  boaf.sh runaafs_mem JAVAGB CLASSNAME [PARAMETER...]"
+        echo "Run a class in any package, in specified number of GB, using the compiled-in configuration:"
+        echo "  boaf.sh runany_mem JAVAGB FULLCLASSNAME [PARAMETER...]"
+        echo "Run a class in the org.opensha.oaf package, in specified number of GB, using the compiled-in configuration, at a given time:"
+        echo "  boaf.sh runat_mem JAVAGB apptime CLASSNAME [PARAMETER...]"
+        echo "Run a class in the org.opensha.oaf package, in specified number of GB, using the compiled-in configuration, in test mode at a given time:"
+        echo "  boaf.sh runtestat_mem JAVAGB testtime CLASSNAME [PARAMETER...]"
         ;;
 
     *)
