@@ -904,7 +904,7 @@ public class OEConstants {
 	// The default range of Omori c-value.
 
 	public static OEDiscreteRange def_c_range () {
-		return OEDiscreteRange.makeLog (21, 0.00001, 1.00000);
+		return OEDiscreteRange.makeLog (21, 0.0001, 1.00000);
 	}
 
 	// The default range of Omori p-value.
