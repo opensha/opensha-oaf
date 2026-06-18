@@ -16,18 +16,24 @@
         <p>
             For example, the following command line can be used to send a foreast
             to the PDL production system.
-            If the GUI is configured to support event-sequence, then the command line
-            also sends an event-sequence product.
+            This command line does not send an event-sequence product.
         </p>
 <pre>
-java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --update=my_forecast.json --direct=true --eventid=nc75289501
+java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --update=my_forecast.json --direct=true --eventsource=nc --eventsourcecode=75289501
 </pre>
         <p>
             In this example, the <code>--pdl</code> option specifies that products should be sent to the production PDL system,
             and the <code>--privateKey</code> option specifies the digital key file that is used to sign products.
             The <code>--update</code> option specifies that we want to send a forecast,
             and gives the name of the file that contains the forecast.json.
-            The <code>--eventid</code> option gives the event ID of the mainshock.
+            The <code>--direct</code> option specifies that the product is to be sent directly to PDL.
+            The <code>--eventsource</code> option gives the seismic network that reported the mainshock
+            (usually, but not always, a 2-letter identifier).
+            The <code>--eventsourcecode</code> option gives the &quot;code&quot; that the seismic network
+            assigned to the mainshock.
+            Although not shown in this example, a <code>--code</code> option could be used to assign a &quot;code&quot; to the product;
+            this example assigns a default &quot;code&quot; of &quot;nc75289501&quot; obtained from
+            the values of <code>--eventsource</code> and <code>--eventsourcecode</code>.
             Note that the name of the GUI jar file may be different than shown.
         </p>
         <p>
@@ -37,7 +43,7 @@ java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --updat
             An example of direct sending a scenario product is:
         </p>
 <pre>
-java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --type=oaf-scenario --update=my_forecast.json --direct=true --eventid=nc75289501
+java -jar AftershockGUI-2026_01_06.jar --pdl=prod --privateKey=mykeyfile --type=oaf-scenario --update=my_forecast.json --direct=true --eventsource=nc --eventsourcecode=75289501
 </pre>
         <p>&nbsp;</p>
         <p><b>Summary</b></p>

@@ -64,6 +64,12 @@ For the OAF server and analyst utilities:
 Barall, M., and van der Elst, N. (2025), Operational Aftershock Forecasting,
 USGS Software Release, [https://doi.org/10.5066/P1FJSYVJ](https://doi.org/10.5066/P1FJSYVJ).
 
+Barall, M. (2026), New Analyst GUI For Operational Aftershock Forecasting,
+USGS Software Release, [https://doi.org/10.5066/P13FAAPO](https://doi.org/10.5066/P13FAAPO).
+
+Barall, M. (2026), PDL Products for Operational Aftershock Forecasting,
+USGS Software Release, [https://doi.org/10.5066/P1NQMCXR](https://doi.org/10.5066/P1NQMCXR).
+
 For Aftershock Forecaster:
 
 van der Elst, N., Barall, M., and Milner, K. (2025), Aftershock Forecaster,
