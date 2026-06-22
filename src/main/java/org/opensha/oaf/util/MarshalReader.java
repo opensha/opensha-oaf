@@ -509,6 +509,67 @@ public interface MarshalReader {
 	}
 
 
+	//----- Extended type support -----
+
+	// Unmarshal a time.
+	// Internally, the time is a long that contains milliseconds since the epoch.
+	// Externally, it is a string in ISO-8601 format, which may include milliseconds.
+	// We use permissive rules when parsing the string (see SimpleUtils.string_to_time_permissive).
+
+	public default long unmarshalTime (String name) {
+		String s = unmarshalString (name);
+		long x;
+		try {
+			//x = SimpleUtils.string_to_time (s);
+			x = SimpleUtils.string_to_time_permissive (s);
+		}
+		catch (Exception e) {
+			throw new MarshalException ("MarshalReader.unmarshalTime: Invalid time: " + s, e);
+		}
+		return x;
+	}
+
+	// Unmarshal a time array.
+
+	public default long[] unmarshalTimeArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		long[] x = new long[n];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalTime (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+	// Unmarshal a duration.
+	// Internally, the duration is a long that contains milliseconds.
+	// Externally, it is a string in java.time.Duration format, which may include a "days" field.
+
+	public default long unmarshalDuration (String name) {
+		String s = unmarshalString (name);
+		long x;
+		try {
+			x = SimpleUtils.string_to_duration (s);
+		}
+		catch (Exception e) {
+			throw new MarshalException ("MarshalReader.unmarshalDuration: Invalid duration: " + s, e);
+		}
+		return x;
+	}
+
+	// Unmarshal a duration array.
+
+	public default long[] unmarshalDurationArray (String name) {
+		int n = unmarshalArrayBegin (name);
+		long[] x = new long[n];
+		for (int i = 0; i < n; ++i) {
+			x[i] = unmarshalDuration (null);
+		}
+		unmarshalArrayEnd ();
+		return x;
+	}
+
+
 	//----- Control functions -----
 
 	// Check read completion status.

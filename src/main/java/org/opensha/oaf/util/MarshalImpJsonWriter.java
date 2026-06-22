@@ -1328,6 +1328,207 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 
 
 
+		// Subcommand : Test #7
+		// Command format:
+		//  test7
+		// Test extended type functions.
+
+		if (args[0].equalsIgnoreCase ("test7")) {
+
+			// No additional arguments
+
+			if (args.length != 1) {
+				System.err.println ("MarshalImpJsonWriter : Invalid 'test7' subcommand");
+				return;
+			}
+
+			// Set up data
+
+			long time = SimpleUtils.string_to_time ("2011-12-03T10:15:30Z");
+			long[] time_arr = new long[2];
+			time_arr[0] = SimpleUtils.string_to_time ("2012-12-03T10:15:30.678Z");
+			time_arr[1] = SimpleUtils.string_to_time ("2013-12-03T10:15:30Z");
+
+			long duration = SimpleUtils.string_to_duration ("P200DT11H45M04.654S");
+			long[] duration_arr = new long[2];
+			duration_arr[0] = SimpleUtils.string_to_duration ("-PT11H0M04.654S");
+			duration_arr[1] = SimpleUtils.string_to_duration ("P7DT11H45M04S");
+
+			// Marshal the data
+
+			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+
+			writer.marshalMapBegin (null);
+
+			writer.marshalTime ("time", time);
+			writer.marshalTimeArray ("time_arr", time_arr);
+			writer.marshalDuration ("duration", duration);
+			writer.marshalDurationArray ("duration_arr", duration_arr);
+
+			writer.marshalMapEnd ();
+
+			if (!( writer.check_write_complete() )) {
+				System.out.println ("Writer reports writing not complete");
+				return;
+			}
+
+			String json_string = writer.get_json_string();
+
+			writer = null;
+
+			System.out.println ();
+			System.out.println ("JSON string:");
+			System.out.println ();
+			System.out.println (json_string);
+
+			// Unmarshal the data
+
+			Set<String> keys = new LinkedHashSet<String>();
+
+			MarshalImpJsonReader reader = new MarshalImpJsonReader (json_string);
+
+			reader.unmarshalJsonMapBegin (null, keys);
+
+			System.out.println ();
+			System.out.println ("Keys:");
+			System.out.println ();
+			for (String key : keys) {
+				System.out.println (key);
+			}
+			System.out.println ();
+
+			long u_time = reader.unmarshalTime ("time");
+			System.out.println ("u_time" + " = " + u_time + " = " + SimpleUtils.time_to_parseable_string(u_time));
+
+			long[] u_time_arr = reader.unmarshalTimeArray ("time_arr");
+			System.out.println ("u_time_arr [len = " + u_time_arr.length + "]:");
+			for (int i = 0; i < u_time_arr.length; ++i) {
+				System.out.println ("  " + i + ": " + u_time_arr[i] + " = " + SimpleUtils.time_to_parseable_string (u_time_arr[i]));
+			}
+
+			long u_duration = reader.unmarshalDuration ("duration");
+			System.out.println ("u_duration" + " = " + u_duration + " = " + SimpleUtils.duration_to_string_2(u_duration));
+
+			long[] u_duration_arr = reader.unmarshalDurationArray ("duration_arr");
+			System.out.println ("u_duration_arr [len = " + u_duration_arr.length + "]:");
+			for (int i = 0; i < u_duration_arr.length; ++i) {
+				System.out.println ("  " + i + ": " + u_duration_arr[i] + " = " + SimpleUtils.duration_to_string_2 (u_duration_arr[i]));
+			}
+
+			reader.unmarshalJsonMapEnd (false);
+
+			System.out.println ();
+
+			if (!( reader.check_read_complete() )) {
+				System.out.println ("Reader reports reading not complete");
+				return;
+			}
+
+			System.out.println ("Done");
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #8
+		// Command format:
+		//  test8
+		// Test extended type functions.
+		// Same as test #7 except the outer container is an array.
+
+		if (args[0].equalsIgnoreCase ("test8")) {
+
+			// No additional arguments
+
+			if (args.length != 1) {
+				System.err.println ("MarshalImpJsonWriter : Invalid 'test8' subcommand");
+				return;
+			}
+
+			// Set up data
+
+			long time = SimpleUtils.string_to_time ("2011-12-03T10:15:30Z");
+			long[] time_arr = new long[2];
+			time_arr[0] = SimpleUtils.string_to_time ("2012-12-03T10:15:30.678Z");
+			time_arr[1] = SimpleUtils.string_to_time ("2013-12-03T10:15:30Z");
+
+			long duration = SimpleUtils.string_to_duration ("P200DT11H45M04.654S");
+			long[] duration_arr = new long[2];
+			duration_arr[0] = SimpleUtils.string_to_duration ("-PT11H0M04.654S");
+			duration_arr[1] = SimpleUtils.string_to_duration ("P7DT11H45M04S");
+
+			// Marshal the data
+
+			MarshalImpJsonWriter writer = new MarshalImpJsonWriter();
+
+			writer.marshalArrayBegin (null, 4);
+
+			writer.marshalTime (null, time);
+			writer.marshalTimeArray (null, time_arr);
+			writer.marshalDuration (null, duration);
+			writer.marshalDurationArray (null, duration_arr);
+
+			writer.marshalArrayEnd ();
+
+			if (!( writer.check_write_complete() )) {
+				System.out.println ("Writer reports writing not complete");
+				return;
+			}
+
+			String json_string = writer.get_json_string();
+
+			writer = null;
+
+			System.out.println ();
+			System.out.println ("JSON string:");
+			System.out.println ();
+			System.out.println (json_string);
+
+			// Unmarshal the data
+
+			Set<String> keys = new LinkedHashSet<String>();
+
+			MarshalImpJsonReader reader = new MarshalImpJsonReader (json_string);
+
+			int array_size = reader.unmarshalArrayBegin (null);
+
+			System.out.println ();
+
+			long u_time = reader.unmarshalTime (null);
+			System.out.println ("u_time" + " = " + u_time + " = " + SimpleUtils.time_to_parseable_string(u_time));
+
+			long[] u_time_arr = reader.unmarshalTimeArray (null);
+			System.out.println ("u_time_arr [len = " + u_time_arr.length + "]:");
+			for (int i = 0; i < u_time_arr.length; ++i) {
+				System.out.println ("  " + i + ": " + u_time_arr[i] + " = " + SimpleUtils.time_to_parseable_string (u_time_arr[i]));
+			}
+
+			long u_duration = reader.unmarshalDuration (null);
+			System.out.println ("u_duration" + " = " + u_duration + " = " + SimpleUtils.duration_to_string_2(u_duration));
+
+			long[] u_duration_arr = reader.unmarshalDurationArray (null);
+			System.out.println ("u_duration_arr [len = " + u_duration_arr.length + "]:");
+			for (int i = 0; i < u_duration_arr.length; ++i) {
+				System.out.println ("  " + i + ": " + u_duration_arr[i] + " = " + SimpleUtils.duration_to_string_2 (u_duration_arr[i]));
+			}
+
+			reader.unmarshalArrayEnd ();
+
+			System.out.println ();
+
+			if (!( reader.check_read_complete() )) {
+				System.out.println ("Reader reports reading not complete");
+				return;
+			}
+
+			System.out.println ("Done");
+			return;
+		}
+
+
+
+
 		// Unrecognized subcommand.
 
 		System.err.println ("MarshalImpJsonWriter : Unrecognized subcommand : " + args[0]);

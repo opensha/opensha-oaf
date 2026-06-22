@@ -746,7 +746,7 @@ public class TestArgs {
 
 
 
-	// Get a time argument, as a long in milliseconds since the epochs.
+	// Get a time argument, as a long in milliseconds since the epoch.
 	// Times are ISO-8601 format, for example 2011-12-03T10:15:30Z.
 
 	public final long get_time (String arg_name) {
@@ -754,13 +754,52 @@ public class TestArgs {
 		long x = 0;
 		try {
 			x = SimpleUtils.string_to_time (my_args[arg_index]);
+			//x = SimpleUtils.string_to_time_permissive (my_args[arg_index]);
 		}
 		catch (Exception e) {
 			signal_error ("Invalid time argument", arg_name, e);
 		}
 		++arg_index;
 		if (f_echo && arg_name != null && !(arg_name.isEmpty())) {
-			System.out.println (arg_name + " = " + SimpleUtils.time_to_string(x));
+			System.out.println (arg_name + " = " + SimpleUtils.time_to_string_optional_millis(x));
+		}
+		return x;
+	}
+
+
+
+
+	// Get a time argument array.
+	// Parameters:
+	//  arg_name = Name of the array argument.
+	//  length = Length of array, a negative value counts from the end (-1 = all remaining, etc.).
+	//  min_length = Minimum required length of array.
+
+	public final long[] get_time_array (String arg_name, int length, int min_length) {
+		int rem_length = remaining();
+		int len = ((length >= 0) ? (length) : (rem_length + 1 + length));
+		if (len < Math.max (min_length, 0)) {
+			signal_error ("Array length (" + len + ") is less than minimum required length (" + Math.max (min_length, 0) + ")", arg_name);
+		}
+		if (len > rem_length) {
+			signal_error ("Array length (" + len + ") is greater than available length (" + rem_length + ")", arg_name);
+		}
+		long[] x = new long[len];
+		for (int i = 0; i < len; ++i) {
+			try {
+				x[i] = SimpleUtils.string_to_time (my_args[arg_index]);
+				//x[i] = SimpleUtils.string_to_time_permissive (my_args[arg_index]);
+			}
+			catch (Exception e) {
+				signal_error ("Invalid time array element", arg_name, e);
+			}
+			++arg_index;
+		}
+		if (f_echo && arg_name != null && !(arg_name.isEmpty())) {
+			System.out.println (arg_name + ":");
+			for (int i = 0; i < len; ++i) {
+				System.out.println ("  " + i + ": " + SimpleUtils.time_to_string_optional_millis(x[i]));
+			}
 		}
 		return x;
 	}
@@ -783,6 +822,43 @@ public class TestArgs {
 		++arg_index;
 		if (f_echo && arg_name != null && !(arg_name.isEmpty())) {
 			System.out.println (arg_name + " = " + SimpleUtils.duration_to_string_2(x));
+		}
+		return x;
+	}
+
+
+
+
+	// Get a duration argument array.
+	// Parameters:
+	//  arg_name = Name of the array argument.
+	//  length = Length of array, a negative value counts from the end (-1 = all remaining, etc.).
+	//  min_length = Minimum required length of array.
+
+	public final long[] get_duration_array (String arg_name, int length, int min_length) {
+		int rem_length = remaining();
+		int len = ((length >= 0) ? (length) : (rem_length + 1 + length));
+		if (len < Math.max (min_length, 0)) {
+			signal_error ("Array length (" + len + ") is less than minimum required length (" + Math.max (min_length, 0) + ")", arg_name);
+		}
+		if (len > rem_length) {
+			signal_error ("Array length (" + len + ") is greater than available length (" + rem_length + ")", arg_name);
+		}
+		long[] x = new long[len];
+		for (int i = 0; i < len; ++i) {
+			try {
+				x[i] = SimpleUtils.string_to_duration (my_args[arg_index]);
+			}
+			catch (Exception e) {
+				signal_error ("Invalid duration array element", arg_name, e);
+			}
+			++arg_index;
+		}
+		if (f_echo && arg_name != null && !(arg_name.isEmpty())) {
+			System.out.println (arg_name + ":");
+			for (int i = 0; i < len; ++i) {
+				System.out.println ("  " + i + ": " + SimpleUtils.duration_to_string_2(x[i]));
+			}
 		}
 		return x;
 	}
@@ -1002,6 +1078,81 @@ public class TestArgs {
 			System.out.println ("arr2 [len = " + arr2.length + "]:");
 			for (int i = 0; i < arr2.length; ++i) {
 				System.out.println ("  " + i + ": " + arr2[i]);
+			}
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #6
+		// Command format:
+		//  test6  time  dur
+		// Test the obtaining of time and duration arguments.
+
+		if (testargs.is_test ("test6")) {
+
+			// Read arguments
+
+			System.out.println ("Testing time and duration arguments");
+			long time = testargs.get_time ("time");
+			long duration = testargs.get_duration ("duration");
+			testargs.end_test();
+
+			// Display the command line
+
+			System.out.println ();
+			System.out.println ("Command line:");
+			System.out.println (testargs.get_cmdline());
+
+			// Display the arguments we got
+
+			System.out.println ();
+			System.out.println ("Arguments obtained:");
+			System.out.println ("time = " + time + " = " + SimpleUtils.time_to_parseable_string (time));
+			System.out.println ("duration = " + duration + " = " + SimpleUtils.duration_to_string_2 (duration));
+
+			return;
+		}
+
+
+
+
+		// Subcommand : Test #7
+		// Command format:
+		//  test7  len1  minlen1  time_arr1[...]  len2  minlen2  duration_arr2[...]
+		// Test the obtaining of time and duration arrays.
+
+		if (testargs.is_test ("test7")) {
+
+			// Read arguments
+
+			System.out.println ("Testing time and duration arrays");
+			int len1 = testargs.get_int ("len1");
+			int minlen1 = testargs.get_int ("minlen1");
+			long[] time_arr1 = testargs.get_time_array ("time_arr1", len1, minlen1);
+			int len2 = testargs.get_int ("len2");
+			int minlen2 = testargs.get_int ("minlen2");
+			long[] duration_arr2 = testargs.get_duration_array ("duration_arr2", len2, minlen2);
+			testargs.end_test();
+
+			// Display the command line
+
+			System.out.println ();
+			System.out.println ("Command line:");
+			System.out.println (testargs.get_cmdline());
+
+			// Display the arguments we got
+
+			System.out.println ();
+			System.out.println ("time_arr1 [len = " + time_arr1.length + "]:");
+			for (int i = 0; i < time_arr1.length; ++i) {
+				System.out.println ("  " + i + ": " + time_arr1[i] + " = " + SimpleUtils.time_to_parseable_string (time_arr1[i]));
+			}
+			System.out.println ("duration_arr2 [len = " + duration_arr2.length + "]:");
+			for (int i = 0; i < duration_arr2.length; ++i) {
+				System.out.println ("  " + i + ": " + duration_arr2[i] + " = " + SimpleUtils.duration_to_string_2 (duration_arr2[i]));
 			}
 
 			return;
