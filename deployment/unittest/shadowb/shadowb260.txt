@@ -49,3 +49,4 @@ separation_km = 264.066
 separation_days = 0.027
 seq_end_time_abs = 1267254748450 (2010-02-27 07:12:28 UTC)
 seq_end_time_rel_days = 0.000
+seq_end_rupture = null

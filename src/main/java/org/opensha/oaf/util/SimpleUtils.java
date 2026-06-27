@@ -274,6 +274,18 @@ public class SimpleUtils {
 
 
 
+	// Given a time (in milliseconds after the epoch), produce a string which
+	// is its numerical value followed by the parseable string (ISO-8601 format) in parentheses.
+	// If (and only if) the milliseconds are non-zero, then the seconds field includes
+	// a decimal part with three decimal places.
+
+	public static String time_raw_and_parseable_string (long the_time) {
+		return the_time + " (" + time_to_parseable_string(the_time) + ")";
+	}
+
+
+
+
 	// Convert a time (in milliseconds after the epoch) to a parseable string (ISO-8601 format).
 	// The result always has a 3-digit millisecond field.
 	// The result can be understood by string_to_time().

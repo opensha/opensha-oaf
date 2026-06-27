@@ -46,3 +46,11 @@ separation_km = 36.448
 separation_days = -1.229
 seq_end_time_abs = 1384679095530 (2013-11-17 09:04:55 UTC)
 seq_end_time_rel_days = 1.229
+seq_end_rupture = ObsEqkRupture:
+rup_event_id = usb000l0gq
+rup_time = 1384679095530 (2013-11-17 09:04:55 UTC)
+rup_mag = 7.7
+rup_lat = -60.2738
+rup_lon = -46.4011
+rup_depth = 10.0
+

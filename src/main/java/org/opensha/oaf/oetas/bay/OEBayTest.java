@@ -252,14 +252,14 @@ public class OEBayTest {
 			shadow = AftershockStatsShadow.find_shadow_v2 (rup, time_now,
 				search_radius, search_time_lo, search_time_hi,
 				centroid_rel_time_lo, centroid_rel_time_hi,
-				centroid_mag_floor, large_mag, separation, seq_end_time);
+				centroid_mag_floor, large_mag, separation, seq_end_time, null);
 				
 		} else {
 
 			shadow = AftershockStatsShadow.find_shadow_v3 (rup, time_now,
 				search_radius, search_time_lo, search_time_hi,
 				centroid_multiplier, sample_multiplier,
-				large_mag_3, separation, seq_end_time);
+				large_mag_3, separation, seq_end_time, null);
 
 		}
 

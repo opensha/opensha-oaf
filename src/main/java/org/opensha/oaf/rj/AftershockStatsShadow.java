@@ -764,7 +764,12 @@ public class AftershockStatsShadow {
 	//    time (in milliseconds since the mainshock).  If the mainshock is shadowed by an
 	//    earlier (or concurrent) event, then the sequence end time is the time of the
 	//    mainshock (and hence the relative time is zero).  Otherwise, the sequence end time
-	//    is the time of the earliest event that shadows the mainshock.
+	//    is the time of the earliest event that shadows the mainshock.  Can be null if not required.
+	//  seq_end_rupture = A 1-element array that is used to return the rupture that terminates
+	//    the sequence beginning with the mainshock.  If the mainshock is shadowed, then
+	//    seq_end_rupture[0] receives the earliest rupture that shadows the mainshock if it
+	//    is after the mainshock, or null if it is before or concurrent with the mainshock.
+	//    Can be null if not required.
 	// Returns:
 	// If the mainshock is not shadowed, then the return value is null.
 	// If the mainshock is shadowed, then the return value is the shadowing earthquake.
@@ -776,7 +781,8 @@ public class AftershockStatsShadow {
 	public static ObsEqkRupture find_shadow_v2 (ObsEqkRupture mainshock, long time_now,
 					double search_radius, long search_time_lo, long search_time_hi,
 					long centroid_rel_time_lo, long centroid_rel_time_hi,
-					double centroid_mag_floor, double large_mag, double[] separation, long[] seq_end_time) {
+					double centroid_mag_floor, double large_mag, double[] separation,
+					long[] seq_end_time, ObsEqkRupture[] seq_end_rupture) {
 
 		// Parameter validation
 
@@ -820,6 +826,12 @@ public class AftershockStatsShadow {
 		if (seq_end_time != null) {
 			if (seq_end_time.length < 2) {
 				throw new IllegalArgumentException ("AftershockStatsShadow.find_shadow_v2: Sequence end time array is too short");
+			}
+		}
+
+		if (seq_end_rupture != null) {
+			if (seq_end_rupture.length < 1) {
+				throw new IllegalArgumentException ("AftershockStatsShadow.find_shadow_v2: Sequence end rupture array is too short");
 			}
 		}
 
@@ -1052,6 +1064,10 @@ public class AftershockStatsShadow {
 							seq_end_time[1] = 0L;
 						}
 
+						if (seq_end_rupture != null) {
+							seq_end_rupture[0] = null;
+						}
+
 						if (f_verbose) {
 							System.out.println ("AftershockStatsShadow.find_shadow_v2: Mainshock is an aftershock of event " + earliest_candidate.candidate_event_id);
 						}
@@ -1180,6 +1196,10 @@ public class AftershockStatsShadow {
 							seq_end_time[1] = 0L;
 						}
 
+						if (seq_end_rupture != null) {
+							seq_end_rupture[0] = null;
+						}
+
 						if (f_verbose) {
 							System.out.println ("AftershockStatsShadow.find_shadow_v2: Mainshock is an aftershock of event " + earliest_candidate.candidate_event_id);
 						}
@@ -1200,6 +1220,10 @@ public class AftershockStatsShadow {
 			if (seq_end_time != null) {
 				seq_end_time[0] = earliest_candidate.candidate_time;
 				seq_end_time[1] = rel_time_millis;
+			}
+
+			if (seq_end_rupture != null) {
+				seq_end_rupture[0] = earliest_candidate.rupture;
 			}
 
 			if (f_verbose) {
@@ -1403,6 +1427,11 @@ public class AftershockStatsShadow {
 	//    earlier (or concurrent) event, then the sequence end time is the time of the
 	//    mainshock (and hence the relative time is zero).  Otherwise, the sequence end time
 	//    is the time of the earliest event that shadows the mainshock.
+	//  seq_end_rupture = A 1-element array that is used to return the rupture that terminates
+	//    the sequence beginning with the mainshock.  If the mainshock is shadowed, then
+	//    seq_end_rupture[0] receives the earliest rupture that shadows the mainshock if it
+	//    is after the mainshock, or null if it is before or concurrent with the mainshock.
+	//    Can be null if not required.
 	// Returns:
 	// If the mainshock is not shadowed, then the return value is null.
 	// If the mainshock is shadowed, then the return value is the shadowing earthquake.
@@ -1416,7 +1445,8 @@ public class AftershockStatsShadow {
 	public static ObsEqkRupture find_shadow_v3 (ObsEqkRupture mainshock, long time_now,
 					double search_radius, long search_time_lo, long search_time_hi,
 					double centroid_multiplier, double sample_multiplier,
-					double large_mag, double[] separation, long[] seq_end_time) {
+					double large_mag, double[] separation,
+					long[] seq_end_time, ObsEqkRupture[] seq_end_rupture) {
 
 		// Parameter validation
 
@@ -1461,6 +1491,12 @@ public class AftershockStatsShadow {
 		if (seq_end_time != null) {
 			if (seq_end_time.length < 2) {
 				throw new IllegalArgumentException ("AftershockStatsShadow.find_shadow_v3: Sequence end time array is too short");
+			}
+		}
+
+		if (seq_end_rupture != null) {
+			if (seq_end_rupture.length < 1) {
+				throw new IllegalArgumentException ("AftershockStatsShadow.find_shadow_v3: Sequence end rupture array is too short");
 			}
 		}
 
@@ -1675,6 +1711,10 @@ public class AftershockStatsShadow {
 					seq_end_time[1] = 0L;
 				}
 
+				if (seq_end_rupture != null) {
+					seq_end_rupture[0] = null;
+				}
+
 				String early_event_id = ((best_info.time <= mainshock_info.time) ? best_info.event_id : earliest_info.event_id);
 
 				if (f_verbose) {
@@ -1708,6 +1748,10 @@ public class AftershockStatsShadow {
 			if (seq_end_time != null) {
 				seq_end_time[0] = earliest_info.time;
 				seq_end_time[1] = rel_time_millis;
+			}
+
+			if (seq_end_rupture != null) {
+				seq_end_rupture[0] = earliest_info.rupture;
 			}
 
 			if (f_verbose) {
@@ -1949,6 +1993,7 @@ public class AftershockStatsShadow {
 				double large_mag = DEF_LARGE_MAG;
 				double[] separation = new double[2];
 				long[] seq_end_time = new long[2];
+				ObsEqkRupture[] seq_end_rupture = new ObsEqkRupture[1];
 
 				System.out.println ("");
 				System.out.println ("find_shadow_v2 parameters:");
@@ -1969,7 +2014,7 @@ public class AftershockStatsShadow {
 				ObsEqkRupture shadow = find_shadow_v2 (rup, time_now,
 					search_radius, search_time_lo, search_time_hi,
 					centroid_rel_time_lo, centroid_rel_time_hi,
-					centroid_mag_floor, large_mag, separation, seq_end_time);
+					centroid_mag_floor, large_mag, separation, seq_end_time, seq_end_rupture);
 
 				// Display results
 
@@ -2000,6 +2045,12 @@ public class AftershockStatsShadow {
 
 					System.out.println ("seq_end_time_abs = " + seq_end_time[0] + " (" + SimpleUtils.time_to_string(seq_end_time[0]) + ")");
 					System.out.println ("seq_end_time_rel_days = " + String.format ("%.3f", ((double)(seq_end_time[1]))/ComcatOAFAccessor.day_millis));
+
+					if (seq_end_rupture[0] == null) {
+						System.out.println ("seq_end_rupture = null");
+					} else {
+						System.out.println ("seq_end_rupture = " + ComcatOAFAccessor.rupToString (seq_end_rupture[0]));
+					}
 				}
 
 			} catch (Exception e) {
@@ -2081,6 +2132,7 @@ public class AftershockStatsShadow {
 				double large_mag = DEF_V3_LARGE_MAG;
 				double[] separation = new double[2];
 				long[] seq_end_time = new long[2];
+				ObsEqkRupture[] seq_end_rupture = new ObsEqkRupture[1];
 
 				System.out.println ("");
 				System.out.println ("find_shadow_v3 parameters:");
@@ -2092,7 +2144,7 @@ public class AftershockStatsShadow {
 				System.out.println ("sample_multiplier = " + sample_multiplier);
 				System.out.println ("large_mag = " + large_mag);
 
-				// Run find_shadow_v2
+				// Run find_shadow_v3
 
 				System.out.println ("");
 				System.out.println ("Finding shadow:");
@@ -2100,7 +2152,7 @@ public class AftershockStatsShadow {
 				ObsEqkRupture shadow = find_shadow_v3 (rup, time_now,
 					search_radius, search_time_lo, search_time_hi,
 					centroid_multiplier, sample_multiplier,
-					large_mag, separation, seq_end_time);
+					large_mag, separation, seq_end_time, seq_end_rupture);
 
 				// Display results
 
@@ -2131,6 +2183,12 @@ public class AftershockStatsShadow {
 
 					System.out.println ("seq_end_time_abs = " + seq_end_time[0] + " (" + SimpleUtils.time_to_string(seq_end_time[0]) + ")");
 					System.out.println ("seq_end_time_rel_days = " + String.format ("%.3f", ((double)(seq_end_time[1]))/ComcatOAFAccessor.day_millis));
+
+					if (seq_end_rupture[0] == null) {
+						System.out.println ("seq_end_rupture = null");
+					} else {
+						System.out.println ("seq_end_rupture = " + ComcatOAFAccessor.rupToString (seq_end_rupture[0]));
+					}
 				}
 
 			} catch (Exception e) {
