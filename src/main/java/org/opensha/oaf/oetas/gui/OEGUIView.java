@@ -1534,6 +1534,8 @@ public class OEGUIView extends OEGUIComponent {
 		// add an point to the Function
 
 		countFunc.set(0.0, count);
+		double count_last_time = 0.0;		// the last time put into the function
+		double small_time_delta = gui_model.get_cat_dataEndTimeParam() / 1000.0;	// small time relative to plot size
 		for (int i=0; i<gui_model.get_cur_aftershocks().size(); i++) {
 			ObsEqkRupture aftershock = gui_model.get_cur_aftershocks().get(i);
 			double time = getTimeSinceMainshock(aftershock);	// time in days
@@ -1543,8 +1545,14 @@ public class OEGUIView extends OEGUIComponent {
 			if (aftershock.getMag() < magCompFn.getMagCompleteness (magMain, magMin, time)) {
 				continue;
 			}
+			if (time - count_last_time > small_time_delta * 2.0) {
+				// This line creates a stairstep effect where each aftershock produces a near-vertical uptick;
+				// remove this line to smoothly interpolate from one aftershock to the next (the original version)
+				countFunc.set(time - small_time_delta, count);
+			}
 			count++;
 			countFunc.set(time, count);
+			count_last_time = time;
 		}
 		countFunc.set(gui_model.get_cat_dataEndTimeParam(), count);
 		countFunc.setName("Data: "+(int)countFunc.getMaxY());
