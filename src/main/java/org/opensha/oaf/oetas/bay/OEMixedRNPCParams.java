@@ -1651,6 +1651,15 @@ public class OEMixedRNPCParams implements Marshalable {
 
 
 
+	// Get a version associated with the embedded CSV.
+
+	public static String get_embedded_csv_version () {
+		return "2026.05.26";
+	}
+
+
+
+
 	// Import all the rows from a CSV file.
 	// Returns a list of the resulting objects.
 
@@ -1663,7 +1672,7 @@ public class OEMixedRNPCParams implements Marshalable {
 			result = import_csv_rows (csv);
 		}
 		catch (Exception e) {
-			throw new MarshalException ("OEMixedRNPCParams.import_embedded_csv: Error importing CSV file: " + filename, e);
+			throw new MarshalException ("OEMixedRNPCParams.import_csv_file: Error importing CSV file: " + filename, e);
 		}
 
 		return result;

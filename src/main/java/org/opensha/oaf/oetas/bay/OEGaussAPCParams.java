@@ -902,6 +902,15 @@ public class OEGaussAPCParams implements Marshalable {
 
 
 
+	// Get a version associated with the embedded CSV.
+
+	public static String get_embedded_csv_version () {
+		return "2019.08.09";
+	}
+
+
+
+
 	//----- Marshaling -----
 
 
@@ -1325,7 +1334,7 @@ public class OEGaussAPCParams implements Marshalable {
 		// Subcommand : Test #5
 		// Command format:
 		//  test5
-		// Import values from the embedded CSV file, and display the resulting list..
+		// Import values from the embedded CSV file, and display the resulting list.
 
 		if (testargs.is_test ("test5")) {
 

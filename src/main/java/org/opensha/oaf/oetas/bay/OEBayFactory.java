@@ -113,6 +113,12 @@ public abstract class OEBayFactory implements Marshalable {
 		return new OEBayFactoryGaussAPC (the_params);
 	}
 
+	// Construct a factory for a Gauss a/p/c prior, using global parameters.
+
+	public static OEBayFactory makeGaussAPC_global () {
+		return new OEBayFactoryGaussAPC (OEGaussAPCParams.GLOBAL_REGIME);
+	}
+
 
 	// Construct a factory for a mixed relative-ams/n/p/c prior, using mainshock location to select parameters.
 
@@ -142,6 +148,12 @@ public abstract class OEBayFactory implements Marshalable {
 
 	public static OEBayFactory makeMixedRNPC (OEMixedRNPCParams the_params) {
 		return new OEBayFactoryMixedRNPC (the_params);
+	}
+
+	// Construct a factory for a mixed relative-ams/n/p/c prior, using global parameters.
+
+	public static OEBayFactory makeMixedRNPC_global () {
+		return new OEBayFactoryMixedRNPC (OEMixedRNPCParams.GLOBAL_REGIME);
 	}
 
 

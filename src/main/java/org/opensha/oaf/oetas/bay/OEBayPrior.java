@@ -119,6 +119,31 @@ public abstract class OEBayPrior implements Marshalable {
 
 
 
+	//----- Information -----
+
+
+	// Get the name of the Bayesian prior.
+
+	public abstract String get_bay_name ();
+
+
+	// Get the regime or region for the Bayesian prior's internal parameters.
+
+	public abstract String get_bay_regime ();
+
+
+	// Return true if the Bayesian prior's internal parameters apply globally or are a global average.
+
+	public abstract boolean is_bay_regime_global ();
+
+
+	// Get a version associated with the Bayesian prior's internal parameters or formulas.
+
+	public abstract String get_bay_internal_version ();
+
+
+
+
 	//----- Construction -----
 
 

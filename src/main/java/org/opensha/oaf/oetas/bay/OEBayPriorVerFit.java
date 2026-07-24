@@ -225,6 +225,45 @@ public class OEBayPriorVerFit extends OEBayPrior {
 
 
 
+	//----- Information -----
+
+
+	// Get the name of the Bayesian prior.
+
+	public static final String bay_name = "Fit-Verification";
+
+	@Override
+	public String get_bay_name () {
+		return bay_name;
+	}
+
+
+	// Get the regime or region for the Bayesian prior's internal parameters.
+
+	@Override
+	public String get_bay_regime () {
+		return "GLOBAL";
+	}
+
+
+	// Return true if the Bayesian prior's internal parameters apply globally or are a global average.
+
+	@Override
+	public boolean is_bay_regime_global () {
+		return true;
+	}
+
+
+	// Get a version associated with the Bayesian prior's internal parameters or formulas.
+
+	@Override
+	public String get_bay_internal_version () {
+		return "1.0";
+	}
+
+
+
+
 	//----- Construction -----
 
 
