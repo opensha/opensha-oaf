@@ -996,7 +996,7 @@ public class AftershockStatsCalc {
 						double timeMillis = t*((double)MILLISEC_PER_DAY);
 						int eventId = aftershock_list.size() + 1;
 						long lag = (long)timeMillis;
-						aftershock_list.add(new ObsEqkRupture(Integer.toString(eventId), lag + originTime, null, mag));
+						aftershock_list.add(new ObsEqkRupture(Integer.toString(eventId), lag + originTime, new Location (0.0, 0.0, 0.0), mag));
 					}
 				}
 			}
@@ -1052,7 +1052,7 @@ public class AftershockStatsCalc {
 				double mag = Double.parseDouble(tok.nextToken());
 				double timeMillis = Double.parseDouble(tok.nextToken())*(double)MILLISEC_PER_DAY;
 				if(eventId != 0) // skip main shock
-					aftershockList.add(new ObsEqkRupture(Integer.toString(eventId), (long)timeMillis, null, mag));
+					aftershockList.add(new ObsEqkRupture(Integer.toString(eventId), (long)timeMillis, new Location (0.0, 0.0, 0.0), mag));
 				eventId+=1;
 				line = buffRead.readLine();
 			}
@@ -1095,7 +1095,7 @@ public class AftershockStatsCalc {
 //		a=-1.69, and p=1.05.  This will force you to search in the vicinity of p=1.
 
 
-		ObsEqkRupture mainShock = new ObsEqkRupture("0", 0l,null, 7.5);
+		ObsEqkRupture mainShock = new ObsEqkRupture("0", 0l, new Location (0.0, 0.0, 0.0), 7.5);
 		ObsEqkRupList aftershockList = readJeannesFile();
 		System.out.println("Num aShocks = "+aftershockList.size());
 		double magCat = 2.5;
