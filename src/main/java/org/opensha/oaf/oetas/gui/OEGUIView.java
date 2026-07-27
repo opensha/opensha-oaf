@@ -2022,6 +2022,45 @@ public class OEGUIView extends OEGUIComponent {
 
 
 
+	// Make a stairstep function from arrays of arguments and values, and a name.
+	// Parameters:
+	//  args = Function arguments.
+	//  vals = Function values.
+	//  name = Name to assign, can be null for none.
+	//  darg = Delta for arguments.
+	//  dval = Delta for values.
+	// If two successive points have arguments that differ by more than 2*darg and values
+	// that differ by more than dval, then a stairstep is created by inserting an additional
+	// point with argument darg less than the second point, and value equal to the first point.
+	// This assumes that arguments are given in increasing order.
+
+	private ArbitrarilyDiscretizedFunc func_from_args_vals_stairstep (double[] args, double[] vals, String name, double darg, double dval) {
+		if (!( args.length == vals.length )) {
+			throw new IllegalArgumentException ("OEGUIView.func_from_args_vals_stairstep: Array length mismatch: args.length = " + args.length + ", vals.length = " + vals.length);
+		}
+		ArbitrarilyDiscretizedFunc func = new ArbitrarilyDiscretizedFunc();
+
+		// Add all the points
+
+		for (int j = 0; j < args.length; ++j) {
+			if (j > 0 && args[j] - args[j-1] > 2.0*darg && Math.abs (vals[j] - vals[j-1]) > dval) {
+				func.set (args[j] - darg, vals[j-1]);
+			}
+			func.set (args[j], vals[j]);
+		}
+
+		// If a name is supplied, set it
+
+		if (name != null) {
+			func.setName (name);
+		}
+
+		return func;
+	}
+
+
+
+
 	// Make a 1D PDF function.
 	// Parameters:
 	//  dist_set = Marginal distribution set. Can be null.
@@ -3527,6 +3566,14 @@ public class OEGUIView extends OEGUIComponent {
 
 		double[] args = ii_file.get_var_values (ii_range, arg_var, arg_model);
 		double[] vals = ii_file.get_var_values (ii_range, val_var, val_model);
+
+		// Make stairstep function if plotting cumulative number
+
+		if (val_var == OEtasIntegratedIntensityFile.IIVAR_CUM_NUM && args.length > 1) {
+			double darg = (args[args.length - 1] - args[0]) / 1000.0;
+			double dval = 0.5;
+			return func_from_args_vals_stairstep (args, vals, name, darg, dval);
+		}
 
 		// Make the function
 
