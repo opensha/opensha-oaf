@@ -13,7 +13,7 @@ git clone https://github.com/opensha/opensha
 git clone https://github.com/opensha/opensha-oaf
 ```
 
-Building and running the OAF software requires Java version 17 or higher.
+Building and running the OAF software requires Java version 21 or higher.
 
 ## OAF Server and Analyst Utilities
 

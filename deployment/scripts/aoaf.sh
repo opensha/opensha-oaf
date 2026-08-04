@@ -630,9 +630,9 @@ q_load_oaf_config () {
 
     if [ -z "$JAVA_SOURCE" ]; then
         if [ "$my_ARM_ARCH" == "$val_YES" ]; then
-           JAVA_SOURCE="https://corretto.aws/downloads/latest/amazon-corretto-17-aarch64-linux-jdk.tar.gz"
+           JAVA_SOURCE="https://corretto.aws/downloads/latest/amazon-corretto-21-aarch64-linux-jdk.tar.gz"
         else
-           JAVA_SOURCE="https://corretto.aws/downloads/latest/amazon-corretto-17-x64-linux-jdk.tar.gz"
+           JAVA_SOURCE="https://corretto.aws/downloads/latest/amazon-corretto-21-x64-linux-jdk.tar.gz"
         fi
     fi
 
