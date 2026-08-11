@@ -21,7 +21,7 @@ dependencies {
 
     implementation project(path: ':opensha')
 
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
 }
 
 
@@ -31,7 +31,7 @@ dependencies {
 void createOafAppTask(String taskName, String prefix, String mainClass) {
     task (taskName, type: Jar, dependsOn: ':'+project.parentProject+':fatJar') {
         archiveBaseName = prefix
-        from { configurations.apiResolvable.collect {
+        from { configurations.fatJarResolvable.collect {
             it.isDirectory() ? it : zipTree(it).matching {
                 exclude { it.path.contains('META-INF') }
             }
@@ -69,7 +69,7 @@ ext {
 void createOafServerTask(String taskName, String prefix) {
     task (taskName, type: Jar, dependsOn: ':'+project.parentProject+':fatJar') {
         archiveBaseName = prefix
-        from { configurations.apiResolvable.collect {
+        from { configurations.fatJarResolvable.collect {
             it.isDirectory() ? it : zipTree(it).matching {
                 exclude { it.path.contains('META-INF') }
             }
